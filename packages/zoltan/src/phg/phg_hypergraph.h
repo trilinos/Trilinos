@@ -152,6 +152,8 @@ struct Zoltan_HGraph {
   ZOLTAN_ID_PTR Remove_ELIDs;/* LIDs of removed hyperedges */
   int *Remove_Esize;        /* Size (# of vtx) in each removed hyperedge */
   float *Remove_Ewgt;       /* Edge weights for each removed hyperedge */
+  ZOLTAN_ID_PTR Remove_Pin_GIDs; /* GIDs of vertices */
+  int *Remove_Pin_Procs;         /* Process owning each pin (Pin callbacks only) */
   int nRecv_GNOs;           /* Number of GNOs in Recv_GNOs. */
   int *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
                                received from other processors in row.

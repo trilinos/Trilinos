@@ -20,23 +20,38 @@ extern "C" {
 #include "zz_const.h"
 #include "parmetis_jostle.h"
 #include "zz_util_const.h"
+
+/*#define DEBUG_FILL_HYPERGRAPH 1*/
     
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
   ierr = ZOLTAN_MEMERR; \
   goto End; \
 }
+#define CHECK_FOR_MPI_ERROR(rc)  \
+  if (rc != MPI_SUCCESS){ \
+    MPI_Error_string(rc, mpi_err_str, &mpi_err_len);  \
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, mpi_err_str); \
+    ierr = ZOLTAN_FATAL; \
+    goto End; \
+  }
+
+static char mpi_err_str[MPI_MAX_ERROR_STRING];
+static int mpi_err_len;
 
 /*****************************************************************************/
 /* Function prototypes */
 
-static int hash_lookup(ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
-static int Zoltan_PHG_Fill_Hypergraph(ZZ*, ZHG*, PHGPartParams *, Partition*);
-static int get_vertex_global_numbers(ZZ *zz, int nVtx,
-  struct Hash_Node **ht, int nPins, ZOLTAN_ID_PTR pins, int *pin_gno);
+static int hash_lookup(ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**, struct Hash_Node **);
+static int get_vertex_global_numbers(ZZ *zz, ZHG *zhg,
+  int nVtx, struct Hash_Node **ht,
+  int nPins, ZOLTAN_ID_PTR pins, int *pin_gno, int *pin_procs);
 static int resolve_edge_weight_contributions( ZZ *zz, int ew_op,
   int ew_num_edges, ZOLTAN_ID_PTR ew_gids, ZOLTAN_ID_PTR ew_lids,
   float *ew_weights, void **ht);
+#ifdef DEBUG_FILL_HYPERGRAPH
+static void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight);  /* for debugging */
+#endif
 
 /*****************************************************************************/
 
@@ -71,6 +86,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   zhg->Remove_ELIDs = NULL;
   zhg->Remove_Esize = NULL;
   zhg->Remove_Ewgt = NULL;
+  zhg->Remove_Pin_GIDs = NULL;
+  zhg->Remove_Pin_Procs = NULL;
   zhg->VtxPlan = NULL;
   zhg->Recv_GNOs = NULL;
   zhg->nRecv_GNOs = 0;
@@ -122,9 +139,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
-    Zoltan_HG_HGraph_Free(&(zhg->HG));
-    Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->GIDs),
-     &(zhg->LIDs), &(zhg->Input_Parts), zoltan_hg);
+    Zoltan_PHG_Free_Hypergraph_Data(zhg);
+    ZOLTAN_FREE(&zhg);
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -134,7 +150,7 @@ End:
 /*****************************************************************************/
 
 
-static int Zoltan_PHG_Fill_Hypergraph(
+int Zoltan_PHG_Fill_Hypergraph(
   ZZ *zz,
   ZHG *zhg,      /* Description of hypergraph provided by the application. */
   PHGPartParams *hgp,                /* Parameters for PHG partitioning.*/
@@ -164,20 +180,21 @@ struct application_input {     /* Data provided by hypergraph callbacks. */
   int *pin_gno;                     /* Global numbers in range [0,GnVtx-1]
                                        for pins. */
   int *vtx_gno;                     /* Global numbers in range [0,GnVtx-1]
-                                       for vertices.  app.vtx_gno[i] is
+                                       for nVtx vertices.  app.vtx_gno[i] is
                                        global number for GID[i]. */
   int *edge_gno;                    /* Global numbers in range [0,GnEdge-1]
                                        for edges.  app.edge[i] is
                                        global number for this proc's edge i. */
-  float *vwgt;                      /* Vertex weights. */
+  float *vwgt;              /* Vertex weights for nVtx on processor objects. */
   float *ewgt;                      /* Edge weights. */
 } app;
 
 struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
 struct Hash_Node **hash_tab = NULL;   /* GIDs to global numbering system.   */
+struct Hash_Node *hn;
 ZOLTAN_COMM_OBJ *plan;
 
-int i, j, cnt, dim;
+int i, j, cnt, dim, rc;
 int msg_tag = 30000;
 int ierr = ZOLTAN_OK;
 int nProc = zz->Num_Proc;
@@ -196,30 +213,61 @@ int *dist_x = NULL, *dist_y = NULL;
 int nEdge, nVtx, nwgt = 0;
 int nrecv, *recv_gno = NULL; 
 int *tmpparts = NULL;
-int add_vweight, nvwgt;
+int add_vweight;
 int ew_num_edges;
 int ew_dim = zz->Edge_Weight_Dim;
+int new_hgraph_callbacks = 0;
 void *ew_ht;
 float *ew_weights;
 ZOLTAN_ID_PTR global_ids, ew_gids, ew_lids;
 int num_gid_entries = zz->Num_GID;
 HGraph *phg = &(zhg->HG);
-
-int nProc_x = phg->comm->nProc_x;
-int nProc_y = phg->comm->nProc_y;
-int myProc_x = phg->comm->myProc_x;
-int myProc_y = phg->comm->myProc_y;
+int nProc_x, nProc_y, myProc_x, myProc_y;
 int proc_offset;
 
 float frac_x, frac_y;
-float *tmpwgts = NULL;
-float *tmp, *final;
+float *tmpwgts=NULL; 
+float *fromwgt, *towgt, *wgts, *calcVwgt;
 
 int *gtotal = NULL;  /* Temporary arrays used for distributing vertices/edges */
 int *mycnt = NULL;
 int *gcnt = NULL;
 
+float edgeSizeThreshold;
+int randomizeInitDist, edge_weight_op, zoltan_lb_eval;
+int final_output, add_obj_weight;
+PHGPartParams *temphgp = NULL;
+
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  if (hgp){
+    randomizeInitDist = hgp->RandomizeInitDist;
+    edge_weight_op = hgp->edge_weight_op;
+    edgeSizeThreshold = hgp->EdgeSizeThreshold;
+    final_output = hgp->final_output;
+    add_obj_weight = hgp->add_obj_weight;
+    zoltan_lb_eval = 0;
+  }
+  else{
+    /*   
+     * hgp and input_parts are undefined when we are called from 
+     * Zoltan_LB_Eval.  (This only happens in the pins callback case.)
+     * In this case, we want all pins to be in the removed list.
+     * And we don't care how global numbers are assigned.
+     */
+    temphgp = (PHGPartParams *)ZOLTAN_MALLOC(sizeof(PHGPartParams));
+    Zoltan_PHG_Initialize_Params(zz, NULL, temphgp);
+
+    randomizeInitDist = 0;   /* faster */
+    edge_weight_op = temphgp->edge_weight_op;
+    edgeSizeThreshold = 0;   /* place all edges in "removed" list */
+    final_output = 1;        /* yes, compile a "removed" list     */
+    add_obj_weight = temphgp->add_obj_weight;
+
+    ZOLTAN_FREE(&temphgp);
+
+    zoltan_lb_eval = 1;
+  }
 
   /**************************************************/
   /* Obtain vertex information from the application */
@@ -237,7 +285,7 @@ int *gcnt = NULL;
   app.ewgt = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs), &(zhg->LIDs), 
-                             zz->Obj_Weight_Dim, &app.vwgt, 
+                             zz->Obj_Weight_Dim, &app.vwgt,
                              &(zhg->Input_Parts));
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
@@ -266,7 +314,7 @@ int *gcnt = NULL;
   global_ids = zhg->GIDs;
 
   /* Assign consecutive numbers (gnos) based on the order of the ids */
-  if (hgp->RandomizeInitDist) { 
+  if (randomizeInitDist) { 
     /* Randomize the input vertices */
     int tmp;
     gtotal = (int *) ZOLTAN_CALLOC(3*zz->Num_Proc+1, sizeof(int));
@@ -282,9 +330,12 @@ int *gcnt = NULL;
       mycnt[app.vtx_gno[i]]++;
     }
     /* Compute prefix of mycnt */
-    MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
-    MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
+    rc = MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
+
+    rc = MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
                   zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* Compute first gno for vertices going to each target bin */
     for (tmp = 0, i = 0; i < zz->Num_Proc; i++) {
@@ -311,12 +362,14 @@ int *gcnt = NULL;
     /* Construct gtotal[i] = the number of vertices on all procs < i. */
     /* Scan to compute partial sums of the number of objs */
 
-    MPI_Scan (&app.nVtx, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
+    rc = MPI_Scan (&app.nVtx, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* Gather data from all procs */
 
-    MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
+    rc = MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
                    &(gtotal[1]), 1, MPI_INT, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
     gtotal[0] = 0;
     app.GnVtx = gtotal[nProc];
 
@@ -350,8 +403,8 @@ int *gcnt = NULL;
      *   knows which process owns each of it's vertices (pin_procs).
      */
     ierr = Zoltan_HG_Hypergraph_Edge_Callbacks(zz, zhg,
-                                          app.GnVtx, hgp->EdgeSizeThreshold,
-                                          hgp->final_output, &app.nEdge, 
+                                          app.GnVtx, edgeSizeThreshold,
+                                          final_output, &app.nEdge, 
                                           &app.egids, &app.elids,
                                           &app.esizes, &app.ewgt,
                                           &app.nPins, &app.pins, 
@@ -376,6 +429,7 @@ int *gcnt = NULL;
     ew_lids = NULL;
     ew_weights = NULL;
     ew_ht = NULL;
+    new_hgraph_callbacks = 1;
 
     if (ew_dim && zz->Get_HG_Size_Edge_Weights && zz->Get_HG_Edge_Weights){
 
@@ -396,10 +450,11 @@ int *gcnt = NULL;
         ierr = zz->Get_HG_Edge_Weights(zz->Get_HG_Edge_Weights_Data,
                     zz->Num_GID, zz->Num_LID, ew_num_edges, ew_dim,
                     ew_gids, ew_lids, ew_weights);
+
       }
 
       if ((ierr==ZOLTAN_OK)||(ierr==ZOLTAN_WARN)){
-        ierr = resolve_edge_weight_contributions(zz, hgp->edge_weight_op,
+        ierr = resolve_edge_weight_contributions(zz, edge_weight_op,
                ew_num_edges, ew_gids, ew_lids, ew_weights, &ew_ht);
       }
 
@@ -418,10 +473,12 @@ int *gcnt = NULL;
      * two processes have the same row.  If edge weights were
      * provided above, obtain edge weights for the edges owned
      * by the process.
+     *
+     * This call uses the ew_ht and then frees it.
      */
     ierr = Zoltan_HG_Hypergraph_Pin_Callbacks(zz, zhg,
-                                app.GnVtx, hgp->EdgeSizeThreshold,
-                                hgp->final_output, ew_num_edges, ew_ht,
+                                app.GnVtx, edgeSizeThreshold,
+                                final_output, ew_num_edges, ew_ht,
                                 &app.nEdge, &app.egids,
                                 &app.elids,            /* optional */
                                 &app.esizes, &app.ewgt,
@@ -437,8 +494,8 @@ int *gcnt = NULL;
     /* Graph query functions, one hyperedge per vertex */
 
     ierr = Zoltan_HG_Graph_Callbacks(zz, zhg,
-                                     app.GnVtx, hgp->EdgeSizeThreshold,
-                                     hgp->final_output, &app.nEdge, 
+                                     app.GnVtx, edgeSizeThreshold,
+                                     final_output, &app.nEdge, 
                                      &app.egids, &app.elids,
                                      &app.esizes, &app.ewgt,
                                      &app.nPins, &app.pins, 
@@ -464,7 +521,7 @@ int *gcnt = NULL;
   app.pin_gno = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
   if ((app.nEdge && !app.edge_gno) || (app.nPins && !app.pin_gno)) MEMORY_ERROR;
 
-  if (hgp->RandomizeInitDist) {  
+  if (randomizeInitDist) {  
     /* Randomize the input edges */
     int tmp;
     memset(gtotal, 0, (3*zz->Num_Proc+1)*sizeof(int)); /* gtotal was alloc'ed
@@ -478,9 +535,11 @@ int *gcnt = NULL;
       mycnt[app.edge_gno[i]]++;
     }
     /* Compute prefix of mycnt */
-    MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
-    MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
+    rc = MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
+    rc = MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
                   zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* Compute first gno for vertices going to each target bin */
     for (tmp = 0, i = 0; i < zz->Num_Proc; i++) {
@@ -498,12 +557,14 @@ int *gcnt = NULL;
     }
   }
   else {
-    MPI_Scan (&app.nEdge, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
+    rc = MPI_Scan (&app.nEdge, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* Gather data from all procs */
 
-    MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
+    rc = MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
                    &(gtotal[1]), 1, MPI_INT, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
     gtotal[0] = 0;
     app.GnEdge = gtotal[nProc];
 
@@ -520,36 +581,73 @@ int *gcnt = NULL;
    */
   /***********************************************************************/
 
-  if (app.pin_procs == NULL){
+  if (new_hgraph_callbacks){
 
     /*
      * In the Pin_Callbacks case, we now obtain the vertex global
      * numbers for our pins from the processes owning those vertices.
+     *
+     * Also create "pin_procs" information, the process owning each
+     * vertex in each removed and kept hyperedge.  Under the old
+     * query function scheme, this was available using an application
+     * query function, but now the library needs to discover it.
      */
-    ierr = get_vertex_global_numbers(zz, app.nVtx, hash_tab,
-             app.nPins, app.pins, app.pin_gno);
+    app.pin_procs = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
+
+    ierr = get_vertex_global_numbers(zz, zhg, app.nVtx, hash_tab,
+             app.nPins, app.pins, app.pin_gno, app.pin_procs);
 
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting vertex global numbers");
       goto End;
     }
   }
-  else{
-    /*
-     * Edge_Callbacks or Graph_Callbacks case:
-     * For each pin GID in app.pins, request the global number (gno) from the
-     * input processor.
-     * Fill requests (using hash table) for GIDs local to this processor.
-     * Upon completion, app.pin_gno will contain the global nums.
-     */
 
+  /*
+   * Create a plan to communicate with all owners of my pin vertices.
+   *
+   * Edge_Callbacks or Graph_Callbacks case:
+   * For each pin GID in app.pins, request the global number (gno) from the
+   * input processor.  (Pin callbacks got this already.)  
+   * Fill requests (using hash table) for GIDs local to this processor.
+   * Upon completion, app.pin_gno will contain the global nums.
+   *
+   * Edge, Graph and Pin callbacks case:
+   * If ADD_OBJ_WEIGHT indicated that a vertex weight equal to the number
+   * of pins should be added, then obtain the sum of pins for each vertex now.
+   */
+
+  if (add_obj_weight != PHG_ADD_NO_WEIGHT){
+    add_vweight = 1;    /* may change in future to allow more than one */
+    calcVwgt = (float *)ZOLTAN_CALLOC(sizeof(float), app.nVtx);
+
+    if (add_obj_weight == PHG_ADD_UNIT_WEIGHT){
+      for (i=0; i<app.nVtx; i++){
+        calcVwgt[i] = 1.0;
+      }
+    }
+  }
+  else{
+    add_vweight = 0;
+    calcVwgt = NULL;
+  }
+
+  phg->VtxWeightDim =     /* 1 or greater */
+    zz->Obj_Weight_Dim +   /* 0 or more application supplied weights*/
+    add_vweight;           /* 0 or 1 additional calculated weights */
+
+  if ((add_obj_weight == PHG_ADD_PINS_WEIGHT) || !new_hgraph_callbacks){
+  
     ierr = Zoltan_Comm_Create(&plan, app.nPins, app.pin_procs, zz->Communicator,
                               msg_tag, &nRequests);
   
     if (nRequests) {
       pin_requests = ZOLTAN_MALLOC_GID_ARRAY(zz, nRequests);
-      request_gno = (int *) ZOLTAN_MALLOC(nRequests * sizeof(int));
-      if (!pin_requests || !request_gno)
+
+      if (!new_hgraph_callbacks){
+        request_gno = (int *) ZOLTAN_MALLOC(nRequests * sizeof(int));
+      }
+      if (!pin_requests || (!new_hgraph_callbacks && !request_gno))
         MEMORY_ERROR;
     }
   
@@ -558,15 +656,80 @@ int *gcnt = NULL;
                           sizeof(ZOLTAN_ID_TYPE) * num_gid_entries,
                           (char *) pin_requests);
   
-    for (i = 0; i < nRequests; i++)
-      request_gno[i] = hash_lookup(zz, &(pin_requests[i*num_gid_entries]),
-                                   app.nVtx, hash_tab);
+    for (i = 0; i < nRequests; i++){
+      j = hash_lookup(zz, &(pin_requests[i*num_gid_entries]), 
+                      app.nVtx, hash_tab, &hn);
+
+      if (!hn){ 
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "invalid hash table");
+        goto End;
+      }
+      
+      if (add_obj_weight == PHG_ADD_PINS_WEIGHT){
+        idx = hn - hash_nodes;
+        calcVwgt[idx] = calcVwgt[idx] + 1.0;
+      }
+      if (!new_hgraph_callbacks){
+        request_gno[i] = j;
+      }
+    }
   
-    msg_tag--;
-    Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) request_gno, sizeof(int), NULL,
-                           (char *) app.pin_gno);
+    if (!new_hgraph_callbacks){
+      msg_tag--;
+      Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) request_gno, sizeof(int), NULL,
+                             (char *) app.pin_gno);
+    }
   
     Zoltan_Comm_Destroy(&plan);
+  }
+
+  /***********************************************************************/
+  /* 
+   * Create list of vertex weights.  Some may have been provided by the
+   * application in Zoltan_Get_Obj_List, another may have been calculated
+   * above based on the value of the ADD_OBJ_WEIGHT parameter.
+   */
+  /***********************************************************************/
+
+  if (calcVwgt){
+    if (zz->Obj_Weight_Dim > 0){
+      wgts = (float *)ZOLTAN_MALLOC(sizeof(float) * app.nVtx * phg->VtxWeightDim);
+      if (!wgts){ 
+        MEMORY_ERROR
+      }
+  
+      towgt = wgts;
+      fromwgt = app.vwgt;
+  
+      for (i=0; i<app.nVtx; i++){
+        for (j=0; j < zz->Obj_Weight_Dim; j++){
+          *towgt++ = *fromwgt++;
+        }
+        *towgt++ = calcVwgt[i];
+      }
+      ZOLTAN_FREE(&calcVwgt);
+    }
+    else{
+      wgts = calcVwgt;
+    }
+
+    ZOLTAN_FREE(&app.vwgt);
+
+    app.vwgt = wgts;
+  }
+
+  if (zoltan_lb_eval){
+    /* 
+     * We were called from Zoltan_LB_Eval and we're done.
+     * All edges, pins, pin owners, etc are in the "removed" lists.
+     * We write vertex weights for vertices owned by this process 
+     * to the hypergraph structure (where pin weights normally are).
+     */
+
+    phg->vwgt = app.vwgt;
+    app.vwgt = NULL;
+
+    goto End;
   }
 
   /* 
@@ -576,6 +739,11 @@ int *gcnt = NULL;
    * and dist_y; in the future, we may prefer a hashing function
    * mapping GIDs to processor columns and rows. KDDKDD
    */
+
+  nProc_x = phg->comm->nProc_x;
+  nProc_y = phg->comm->nProc_y;
+  myProc_x = phg->comm->myProc_x;
+  myProc_y = phg->comm->myProc_y;
 
   phg->dist_x = dist_x = (int *) ZOLTAN_CALLOC((nProc_x+1), sizeof(int));
   phg->dist_y = dist_y = (int *) ZOLTAN_CALLOC((nProc_y+1), sizeof(int));
@@ -670,7 +838,6 @@ int *gcnt = NULL;
     tmparray[idx]++;
   }
 
-
   phg->nVtx = nVtx;
   phg->nEdge = nEdge;
   phg->nPins = nnz;
@@ -708,13 +875,13 @@ int *gcnt = NULL;
     zhg->nRecv_GNOs = nrecv;
 
     zhg->Recv_GNOs = recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+
     if (nrecv && !recv_gno) MEMORY_ERROR;
 
-    /* Use plan to send weights to the appropriate proc_x. */
+    /* Use plan to send global numbers to the appropriate proc_x. */
     msg_tag++;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vtx_gno, 
                           sizeof(int), (char *) recv_gno);
-
   }
   else {
     /* Save map of what needed. */
@@ -722,146 +889,70 @@ int *gcnt = NULL;
     zhg->Recv_GNOs = recv_gno = app.vtx_gno;
   }
 
-  /* Send vertex partition assignments to 2D distribution. */
+  /* Send vertex partition assignments and weights to 2D distribution. */
 
   tmpparts = (int *) ZOLTAN_CALLOC(phg->nVtx, sizeof(int));
   *input_parts = (int *) ZOLTAN_MALLOC(phg->nVtx * sizeof(int));
-  if (phg->nVtx && (!tmpparts || !*input_parts)) MEMORY_ERROR;
+
+  dim = phg->VtxWeightDim;
+  nwgt = phg->nVtx * dim;
+
+  tmpwgts = (float *)ZOLTAN_CALLOC(sizeof(float), nwgt);
+  phg->vwgt = (float *)ZOLTAN_MALLOC(sizeof(float) * nwgt);
+
+  if (phg->nVtx && 
+       (!tmpparts || !*input_parts || !tmpwgts || !phg->vwgt)) MEMORY_ERROR;
 
   if (phg->comm->nProc_x == 1)  {
     for (i = 0; i < app.nVtx; i++) {
       idx = app.vtx_gno[i];
       tmpparts[idx] = zhg->Input_Parts[i];
+      for (j=0; j<dim; j++){
+        tmpwgts[idx*dim + j] = app.vwgt[i*dim + j];
+      }
     }
   }
   else {
-    /* In using input_parts for recv, assuming nrecv <= phg->nVtx */
     msg_tag++;
     ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->Input_Parts,
                           sizeof(int), (char *) *input_parts);
 
+    msg_tag++;
+    ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vwgt,
+                          sizeof(float) * dim, (char *) phg->vwgt);
+
     for (i = 0; i < nrecv; i++) {
       idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
       tmpparts[idx] = (*input_parts)[i];
+      for (j=0; j<dim; j++){
+        tmpwgts[idx*dim + j] = phg->vwgt[i*dim + j];
+      }
     }
   }
 
-  /* Reduce partition assignments for all vertices within column 
+  /* Reduce partition assignments and weights for all vertices within column 
    * to all processors within column.
    */
 
-  if (phg->comm->col_comm != MPI_COMM_NULL)
-    MPI_Allreduce(tmpparts, *input_parts, phg->nVtx, MPI_INT, MPI_MAX, 
+  if (phg->comm->col_comm != MPI_COMM_NULL){
+    rc = MPI_Allreduce(tmpparts, *input_parts, phg->nVtx, MPI_INT, MPI_MAX, 
                   phg->comm->col_comm);
+    CHECK_FOR_MPI_ERROR(rc)
+
+    rc = MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX, 
+                  phg->comm->col_comm);
+    CHECK_FOR_MPI_ERROR(rc)
+  }
 
   ZOLTAN_FREE(&tmpparts);
-
-  /* Create arrays of vertex and edge weights */
-
-  if (hgp->add_obj_weight != PHG_ADD_NO_WEIGHT){
-    add_vweight = 1;
-  }
-  else{
-    add_vweight = 0;
-  }
-
-  phg->VtxWeightDim =     /* 1 or greater */
-    zz->Obj_Weight_Dim +   /* 0 or more application supplied weights*/
-    add_vweight;           /* 0 or 1 additional calculated weights */
-
-  nvwgt = phg->nVtx * phg->VtxWeightDim;
-
-  nwgt = MAX(nvwgt, phg->nEdge * zz->Edge_Weight_Dim);
-
-  tmpwgts   = (float *) ZOLTAN_CALLOC(nwgt , sizeof(float));
-  phg->vwgt = (float *) ZOLTAN_CALLOC(nvwgt, sizeof(float));
-
-  if (!tmpwgts || !phg->vwgt) MEMORY_ERROR;
-
-  if ((phg->comm->col_comm == MPI_COMM_NULL) ||
-      (zz->Obj_Weight_Dim == 0)) {
-    tmp = tmpwgts;
-    final = phg->vwgt;
-  }
-  else {
-    tmp = phg->vwgt;
-    final = tmpwgts;
-  }
-
-  /* Send vertex weights to 2D distribution. */
-
-  if (add_vweight) {
-    /* Either application did not specify object weights, so we
-     * are creating them, or application asked for calculated
-     * weights with ADD_OBJ_WEIGHT parameter. 
-     * Create uniform weights, or use #pins.
-     */
-    cnt = zz->Obj_Weight_Dim + 1;
- 
-    if (hgp->add_obj_weight == PHG_ADD_PINS_WEIGHT){ /* vertex degree */
-
-      /* sum local degrees to global degrees and use as vtx weight */
-      if (phg->comm->col_comm != MPI_COMM_NULL){
-        for (i = 0, j=zz->Obj_Weight_Dim; i < phg->nVtx; i++, j+=cnt){
-          tmp[j] = phg->vindex[i+1] - phg->vindex[i]; /* local degree */
-        }
-
-        MPI_Allreduce(tmp, final, nvwgt, MPI_FLOAT, MPI_SUM, 
-                      phg->comm->col_comm);
-      }
-      else{
-        for (i = 0, j=zz->Obj_Weight_Dim; i < phg->nVtx; i++, j+=cnt){
-          final[j] = phg->vindex[i+1] - phg->vindex[i];
-        }
-      }
-    }
-    else {                                           /* unit weights */
-
-      for (i = 0, j=zz->Obj_Weight_Dim; i < phg->nVtx; i++, j += cnt)
-        final[j] = 1.;
-    }
-  }
-
-  if (zz->Obj_Weight_Dim){
-
-    dim = zz->Obj_Weight_Dim;
-
-    if (phg->comm->nProc_x == 1)  {
-      for (i = 0; i < app.nVtx; i++) {
-        idx = app.vtx_gno[i];
-        for (j = 0; j < dim; j++)
-          final[idx * phg->VtxWeightDim + j] = app.vwgt[i * dim + j];
-      }
-    }
-    else {
-      
-      /* In using "tmp" for recv, assuming nrecv <= length of "tmp" */
-      msg_tag++;
-      ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vwgt, 
-                            dim*sizeof(float), (char *) tmp);
-      
-      for (i = 0; i < nrecv; i++) {
-        idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
-        for (j = 0; j < dim; j++) 
-          final[idx * phg->VtxWeightDim + j] = tmp[i * dim + j];
-      }
-    }
-
-    /* Reduce weights for all vertices within column 
-     * to all processors within column.
-     */
-
-    if (phg->comm->col_comm != MPI_COMM_NULL){
-      MPI_Allreduce(final, tmp, nvwgt, MPI_FLOAT, MPI_MAX, 
-                    phg->comm->col_comm);
-    }
-  }
+  ZOLTAN_FREE(&tmpwgts);
 
   if (!zz->LB.Remap_Flag && zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) {
     int gnremove;
-    MPI_Allreduce(&(zhg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM, 
+    rc = MPI_Allreduce(&(zhg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM, 
                   zz->Communicator);
-    if (!hgp->final_output || !gnremove) {
+    CHECK_FOR_MPI_ERROR(rc)
+    if (!final_output || !gnremove) {
       /* Don't need the plan long-term; destroy it now. */
       Zoltan_Comm_Destroy(&(zhg->VtxPlan));
       if (zhg->Recv_GNOs == app.vtx_gno) app.vtx_gno = NULL;
@@ -872,13 +963,14 @@ int *gcnt = NULL;
 
   /*  Send edge weights, if any */
 
+  dim = phg->EdgeWeightDim = zz->Edge_Weight_Dim;
+  nwgt = phg->nEdge * dim;
+
   if (zz->Edge_Weight_Dim) {
-    dim = phg->EdgeWeightDim = zz->Edge_Weight_Dim;
-    for (i = 0; i < phg->nEdge; i++) tmpwgts[i] = 0;
-    nwgt = phg->nEdge * dim;
+    tmpwgts   = (float *) ZOLTAN_CALLOC(nwgt , sizeof(float));
     phg->ewgt = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
-    if (nwgt && !phg->ewgt)
-      MEMORY_ERROR;
+
+    if (nwgt && (!phg->ewgt || !tmpwgts)) MEMORY_ERROR;
 
     if (phg->comm->nProc_y == 1) {
       for (i = 0; i < app.nEdge; i++) {
@@ -899,8 +991,15 @@ int *gcnt = NULL;
                     + EDGE_TO_PROC_Y(phg, app.edge_gno[i]) * nProc_x;
       
       msg_tag++;
+
+#if 0
+      /* lafisk - I think this may be an error */
       ierr = Zoltan_Comm_Create(&plan, app.nEdge, proclist, 
-                                phg->comm->col_comm, msg_tag, &nrecv);
+                                phg->comm->col_comm, msg_tag, &nrecv);  /* SIGSEGV */
+#else
+      ierr = Zoltan_Comm_Create(&plan, app.nEdge, proclist, 
+                                zz->Communicator, msg_tag, &nrecv); 
+#endif
 
       recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
       if (nrecv && !recv_gno) MEMORY_ERROR;
@@ -909,7 +1008,7 @@ int *gcnt = NULL;
       ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) app.edge_gno, sizeof(int),
                             (char *) recv_gno);
 
-      /* In using phg->vwgt for recv, assuming nrecv <= phg->nVtx */
+      /* In using phg->ewgt for recv, assuming nrecv <= phg->nVtx */
       msg_tag++;
       ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) app.ewgt, 
                             dim*sizeof(float), (char *) phg->ewgt);
@@ -929,8 +1028,9 @@ int *gcnt = NULL;
      */
 
     if (phg->comm->row_comm != MPI_COMM_NULL)
-      MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
+      rc = MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
                     phg->comm->row_comm);
+      CHECK_FOR_MPI_ERROR(rc)
   }
   else {
     /* KDDKDD  For now, do not assume uniform edge weights.
@@ -941,20 +1041,21 @@ int *gcnt = NULL;
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    Zoltan_HG_HGraph_Free(phg);
+    Zoltan_PHG_Free_Hypergraph_Data(zhg);
   }
   
   Zoltan_Multifree(__FILE__, __LINE__, 11, &app.egids,
                                            &app.elids,
                                            &app.pins, 
                                            &app.esizes, 
-                                           &app.pin_procs, 
                                            &app.pin_gno, 
+                                           &app.pin_procs, 
                                            &app.vwgt,
                                            &app.ewgt,
                                            &app.edge_gno,
                                            &hash_nodes,
                                            &hash_tab);
+
   if (zhg->Recv_GNOs != app.vtx_gno) 
     ZOLTAN_FREE(&app.vtx_gno);
   ZOLTAN_FREE(&tmparray);
@@ -964,6 +1065,25 @@ End:
   ZOLTAN_FREE(&sendbuf);
   ZOLTAN_FREE(&pin_requests);
   ZOLTAN_FREE(&request_gno);
+
+#ifdef DEBUG_FILL_HYPERGRAPH
+  for (i=0; i<zz->Num_Proc; i++){
+    if (i == zz->Proc){
+      printf("HYPERGRAPH on process %d\n",i);
+
+      if (add_obj_weight == PHG_ADD_PINS_WEIGHT) 
+         /* print sum of pin weights */
+        print_hypergraph(zz, zhg, zz->Obj_Weight_Dim);
+      else
+        print_hypergraph(zz, zhg, -1);
+
+      printf("\n");
+      fflush(stdout);
+    }
+  
+    rc = MPI_Barrier(MPI_COMM_WORLD);
+  }
+#endif
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
@@ -982,7 +1102,8 @@ int Zoltan_PHG_Removed_Cuts(
 {
 /* Function to compute the cuts of removed hyperedges.
  * This routine is needed ONLY for accurately computing cut statistics.
- * Pins for removed hyperedges were not retrieved before.
+ * Depending on which query functions were defined,
+ * pins for removed hyperedges may not have been retrieved before.
  * They must be retrieved now.
  */
 static char *yo = "Zoltan_PHG_Removed_Cuts";
@@ -1009,13 +1130,20 @@ int num_lid_entries = zz->Num_LID;
 int msg_tag = 23132;
 double ewgt;
 
-  /* Get pin information for removed hyperedges. */
+  /* Get pin information for removed hyperedges if necessary. */
 
   for (i = 0; i < zhg->nRemove; i++) npins += zhg->Remove_Esize[i];
 
   if (zhg->nRemove && npins != 0) {
-    if (zz->Get_HG_Edge_List) {
-      /* Hypergraph callbacks used to build hypergraph */
+    if (zhg->Remove_Pin_Procs){ 
+     /* 
+      * Pin callbacks built hypergraph previously.  They are
+      * expensive so we don't want to repeat them if possible.
+      */
+      pins = zhg->Remove_Pin_GIDs;
+      pin_procs = zhg->Remove_Pin_Procs;
+    }
+    else if (zz->Get_HG_Edge_List) {  /* Edge callbacks build hypergraph */
       
       pins = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
       pin_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
@@ -1033,8 +1161,7 @@ double ewgt;
         goto End;
       }
     }
-    else { 
-      /* Graph callbacks used to build hypergraph */
+    else if (zz->Get_Num_Edges) { /* Graph callbacks used to build hypergraph */
       ZOLTAN_ID_PTR lid;
       int ewgtdim = zz->Edge_Weight_Dim;
       float *gewgts = NULL;   /* Graph edge weights */
@@ -1094,6 +1221,11 @@ double ewgt;
       }
       ZOLTAN_FREE(&gewgts);
     }
+    else{
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+        "No way to obtain processes owning pins");
+      goto End;
+    }
   }
 
   /* Communicate Output_Part info for off-processor pins */
@@ -1110,7 +1242,9 @@ double ewgt;
   Zoltan_Comm_Do(plan, msg_tag, (char *) pins, 
                  num_gid_entries * sizeof(ZOLTAN_ID_TYPE), (char *) recvpins);
 
-  ZOLTAN_FREE(&pins);
+  if (!zhg->Remove_Pin_GIDs){
+    ZOLTAN_FREE(&pins);
+  }
 
   if (nrecv) {
     hash_nodes = (struct Hash_Node *) ZOLTAN_MALLOC(nObj * 
@@ -1139,7 +1273,7 @@ double ewgt;
 
     /* Gather partition information for pin requests */
     for (i = 0; i < nrecv; i++) {
-      j = hash_lookup(zz, &(recvpins[i*num_gid_entries]), nObj, hash_tab);
+      j = hash_lookup(zz, &(recvpins[i*num_gid_entries]), nObj, hash_tab, NULL);
       outparts[i] = zhg->Output_Parts[j];
     }
     
@@ -1185,7 +1319,9 @@ double ewgt;
 
 End:
 
-  ZOLTAN_FREE(&pin_procs);
+  if (!zhg->Remove_Pin_Procs){
+    ZOLTAN_FREE(&pin_procs);
+  }
   ZOLTAN_FREE(&parts);
 
   return ierr;
@@ -1196,7 +1332,8 @@ static int hash_lookup(
   ZZ *zz,
   ZOLTAN_ID_PTR key,
   int nVtx,
-  struct Hash_Node **hash_tab
+  struct Hash_Node **hash_tab,
+  struct Hash_Node **hn
 )
 {
 /* Looks up a key GID in the hash table; returns its gno. */
@@ -1205,10 +1342,14 @@ static int hash_lookup(
   int i;
   struct Hash_Node *ptr;
 
+  if (hn) *hn = NULL;
+
   i = Zoltan_Hash(key, zz->Num_GID, (unsigned int) nVtx);
   for (ptr=hash_tab[i]; ptr != NULL; ptr = ptr->next){
-    if (ZOLTAN_EQ_GID(zz, ptr->gid, key))
+    if (ZOLTAN_EQ_GID(zz, ptr->gid, key)){
+      if (hn) *hn = ptr;
       return (ptr->gno);
+    }
   }
   /* Key not in hash table */
   return -1;
@@ -1217,42 +1358,97 @@ static int hash_lookup(
 static int create_gno_list(ZZ *zz, ZOLTAN_ID_PTR rcvBufGids, int nVtx,
               struct Hash_Node **ht, int *sndBufGnos);
 static int apply_new_gnos(ZZ *zz,
-         ZOLTAN_ID_PTR gids, int *pinIdx, int *new_gnos, int *pin_gnos);
+         ZOLTAN_ID_PTR gids, int *pinIdx, int *new_gnos, int *pin_gnos,
+         int *pin_procs, int *remove_pin_procs, int npins, int rproc);
 
-static int get_vertex_global_numbers(ZZ *zz,
+static int get_vertex_global_numbers(ZZ *zz, ZHG *zhg,
   int nVtx, struct Hash_Node **ht,
-  int nPins, ZOLTAN_ID_PTR pins, int *pin_gno)
+  int nPins, ZOLTAN_ID_PTR pins, int *pin_gno, int *pin_procs)
 {
+char *yo = "get_vertex_global_numbers";
 int i, gno, maxUnSet, unSet, ngnos, ngids;
-ZOLTAN_ID_PTR p, rcvBufGids, sndBufGids;
-int *sndBufGnos, *rcvBufGnos, *pinIdx;
+ZOLTAN_ID_PTR p, rcvBufGids=NULL, sndBufGids=NULL;
+int *sndBufGnos=NULL, *rcvBufGnos=NULL, *pinIdx=NULL;
 int rank, nprocs, send_to_proc, recv_from_proc;
 int rcvBufGidSize, rcvBufGnoSize, sndBufGidSize;
-int gids_tag, gnos_tag;
+int gids_tag, gnos_tag, rc;
+int nRemovePins, totalPins;
 MPI_Request gids_req, gnos_req;
 MPI_Status status;
+int ierr=ZOLTAN_OK;
 
-  /* Write vertex global number for all vertices I own */
-
-  pinIdx = (int *)ZOLTAN_MALLOC(nPins * sizeof(int));
-
-  for (i=0, p=pins ; i<nPins; i++, p += zz->Num_GID){
-    gno = hash_lookup(zz, p, nVtx, ht);
-    pin_gno[i] = gno;   /* -1 if not mine, global number otherwise */
-    pinIdx[i] = i;      /* will map pin GIDs to pin GNOs */
-  }
-  sndBufGids = ZOLTAN_MALLOC_GID_ARRAY(zz, nPins + 1);
-
-  sndBufGids[0] = nPins;
-  ZOLTAN_COPY_GID_ARRAY(sndBufGids + zz->Num_GID, pins, zz, nPins);
-
-  /* Rewite sndBufGids with only those GIDs for which we need gnos
-   * and update pinIdx to map them to pin_gno array.
+  /*  
+   * First, determine whether there are any removed pins.  For
+   * these, we only need to know which process owns the vertex.
    */
 
-  unSet = apply_new_gnos(zz, sndBufGids, pinIdx, NULL, pin_gno);
+  nRemovePins = 0;
+  for (i=0; i<zhg->nRemove; i++){
+    nRemovePins += zhg->Remove_Esize[i];
+  }
 
-  MPI_Allreduce(&unSet, &maxUnSet, 1, MPI_INT, MPI_MAX, zz->Communicator);
+  if (nRemovePins){
+    ZOLTAN_FREE(&zhg->Remove_Pin_Procs);
+    zhg->Remove_Pin_Procs = (int *)ZOLTAN_MALLOC(nRemovePins * sizeof(int));
+
+    /* Note which vertices are mine */
+    for (i=0, p=zhg->Remove_Pin_GIDs ; i<nRemovePins; i++, p += zz->Num_GID){
+      gno = hash_lookup(zz, p, nVtx, ht, NULL);
+      if (gno >= 0){
+        zhg->Remove_Pin_Procs[i] = zz->Proc;
+      }
+      else{
+        zhg->Remove_Pin_Procs[i] = -1;
+      }
+    }
+  }
+
+  /* For pins in our edges, we need to contact the owning process
+   * to find out the global number.  Create message buffers (include
+   * removed pins if we have any) and determine which of the
+   * pin vertices we own.
+   */
+
+  totalPins = nPins + nRemovePins;
+
+  pinIdx = (int *)ZOLTAN_MALLOC(totalPins * sizeof(int));
+
+  for (i=0, p=pins ; i<totalPins; i++){
+    pinIdx[i] = i; 
+
+    if (i  < nPins){
+      gno = hash_lookup(zz, p, nVtx, ht, NULL);
+   
+      if (gno >= 0){
+        pin_procs[i] = zz->Proc;
+        pin_gno[i] = gno;
+      }
+      else{
+        pin_procs[i] = -1;
+        pin_gno[i] = -1;
+      }
+      p += zz->Num_GID;
+    }
+  }
+  sndBufGids = ZOLTAN_MALLOC_GID_ARRAY(zz, totalPins + 1);
+
+  sndBufGids[0] = totalPins;
+  ZOLTAN_COPY_GID_ARRAY(sndBufGids + zz->Num_GID, pins, zz, nPins);
+
+  if (nRemovePins){
+    ZOLTAN_COPY_GID_ARRAY(sndBufGids + (zz->Num_GID * (1 + nPins)),
+                        zhg->Remove_Pin_GIDs, zz, nRemovePins);
+  }
+
+  /* Rewite sndBufGids with only those GIDs for which we need gnos/owners
+   * and update pinIdx to map them to the arrays.
+   */
+
+  unSet = apply_new_gnos(zz, sndBufGids, pinIdx, NULL, pin_gno, 
+                         pin_procs, zhg->Remove_Pin_Procs, nPins, 0);
+
+  rc = MPI_Allreduce(&unSet, &maxUnSet, 1, MPI_INT, MPI_MAX, zz->Communicator);
+  CHECK_FOR_MPI_ERROR(rc)
 
   if (maxUnSet == 0){
     ZOLTAN_FREE(&pinIdx);
@@ -1283,41 +1479,48 @@ MPI_Status status;
 
     /* post a recv for neighbor to left for gids to translate */
 
-    MPI_Irecv(rcvBufGids, rcvBufGidSize, MPI_INT, recv_from_proc,
+    rc = MPI_Irecv(rcvBufGids, rcvBufGidSize, MPI_INT, recv_from_proc,
                gids_tag, zz->Communicator, &gids_req);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* send my gids to neighbor to right, and post a receive for
      * the translated gnos                                      */
 
-    MPI_Send(sndBufGids, sndBufGidSize, MPI_INT, send_to_proc,
+    rc = MPI_Send(sndBufGids, sndBufGidSize, MPI_INT, send_to_proc,
                gids_tag, zz->Communicator);
-    MPI_Irecv(rcvBufGnos, rcvBufGnoSize, MPI_INT, send_to_proc,
+    CHECK_FOR_MPI_ERROR(rc)
+
+    rc = MPI_Irecv(rcvBufGnos, rcvBufGnoSize, MPI_INT, send_to_proc,
                gnos_tag, zz->Communicator, &gnos_req);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* Await the gids from my left, translate the ones
        I own, and send back the global numbers                 */
 
-    MPI_Wait(&gids_req, &status);
+    rc = MPI_Wait(&gids_req, &status);
+    CHECK_FOR_MPI_ERROR(rc)
+
     ngnos = create_gno_list(zz, rcvBufGids, nVtx, ht, sndBufGnos);
-    MPI_Send(sndBufGnos, (ngnos*2)+1, MPI_INT, recv_from_proc,
+
+    rc = MPI_Send(sndBufGnos, (ngnos*2)+1, MPI_INT, recv_from_proc,
              gnos_tag, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* Await the translated GIDs from my right, add them to
        my pin_gno list, create a new smaller list of
        untranslated GIDs.                                   */
 
-    MPI_Wait(&gnos_req, &status);
-    ngids = apply_new_gnos(zz, sndBufGids, pinIdx, rcvBufGnos, pin_gno);
+    rc = MPI_Wait(&gnos_req, &status);
+    CHECK_FOR_MPI_ERROR(rc)
+
+    ngids = apply_new_gnos(zz, sndBufGids, pinIdx, rcvBufGnos, pin_gno, 
+                  pin_procs, zhg->Remove_Pin_Procs, nPins, send_to_proc);
 
     sndBufGidSize = (ngids + 1) * zz->Num_GID;
     rcvBufGnoSize = 2 * ngids + 1;
   }
 
-  if (ngids > 0){
-    /* I did not get vertex global numbers for all of my
-     * vertex GIDs.  Error.
-     */
-  }
+End:
 
   ZOLTAN_FREE(&pinIdx);
   ZOLTAN_FREE(&sndBufGids);
@@ -1325,11 +1528,17 @@ MPI_Status status;
   ZOLTAN_FREE(&sndBufGnos);
   ZOLTAN_FREE(&rcvBufGnos);
 
-  return ZOLTAN_OK;
+  if (ngids > 0){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Failed to obtain all vertex global IDs.")
+    return ZOLTAN_FATAL;
+  }
+
+  return ierr;
 }
 
 static int apply_new_gnos(ZZ *zz,
-         ZOLTAN_ID_PTR gids, int *pinIdx, int *new_gnos, int *pin_gnos)
+         ZOLTAN_ID_PTR gids, int *pinIdx, int *new_gnos, int *pin_gnos,
+         int *pin_procs, int *remove_pin_procs, int npins, int rproc)
 {
 int nTranslated, nUntranslated;
 int ngids, i, which, gno;
@@ -1350,12 +1559,18 @@ ZOLTAN_ID_PTR p1, p2;
     which = rbuf[0];
     gno = rbuf[1];
 
-    pin_gnos[pinIdx[which]] = gno;
+    if (pinIdx[which] < npins){
+      pin_gnos[pinIdx[which]] = gno;
+      pin_procs[pinIdx[which]] = rproc;
+    }
+    else{
+      remove_pin_procs[pinIdx[which] - npins] = rproc;
+    }
     rbuf += 2;
   }
 
-  /* Rewrite Gid list to contain only Gids we need gnos for
-   * and update pinIdx list to map them to pin_gno array.
+  /* Rewrite Gid list to contain only Gids we need owner for
+   * and update pinIdx list to map them to the arrays.
    */
 
   ngids = gids[0];
@@ -1364,7 +1579,9 @@ ZOLTAN_ID_PTR p1, p2;
 
   for (i=0; i<ngids; i++){
 
-    if (pin_gnos[pinIdx[i]] < 0){
+    if ( ((pinIdx[i] < npins) && (pin_procs[pinIdx[i]] < 0)) ||
+         ((pinIdx[i] >= npins) && (remove_pin_procs[pinIdx[i] - npins] < 0))){
+
       if (p1 < p2){
         ZOLTAN_SET_GID(zz, p1, p2);
         pinIdx[nUntranslated] = pinIdx[i];
@@ -1395,7 +1612,7 @@ ZOLTAN_ID_PTR p;
     buf = sndBufGnos + 1;
 
     for (i=0; i<numIds; i++){
-      gno = hash_lookup(zz, p, nVtx, ht);
+      gno = hash_lookup(zz, p, nVtx, ht, NULL);
       if (gno >= 0){
         *buf++ = i;
         *buf++ = gno;
@@ -1423,9 +1640,9 @@ static int resolve_edge_weight_contributions(
   /* return a hash table useful for looking up edge weights.      */
 
 char *yo = "resolve_edge_weight_contributions";
-ZOLTAN_ID_PTR rcvBufGids, sndBufGids, gidptr, lidptr;
-float *rcvBufWeights, *sndBufWeights, *wptr;
-int rank, nprocs, right_proc, left_proc;
+ZOLTAN_ID_PTR rcvBufGids=NULL, sndBufGids=NULL, gidptr, lidptr;
+float *rcvBufWeights=NULL, *sndBufWeights=NULL, *wptr;
+int rank, nprocs, right_proc, left_proc, rc;
 int rcvBufGidSize, sndBufGidSize, sndBufWeightSize;
 int gids_tag, weights_tag, match_tag;
 int match_left, match_right;
@@ -1438,7 +1655,7 @@ struct _ewht{
   struct _ewht *next;
 } *ewNodes=NULL, *en;
 struct _ewht **ewht = NULL;
-int i, j, w, ierr, nEdgesMax, nids, first_match=0, error_flag;
+int i, j, k, w, ierr, nEdgesMax, nids, first_match=0, error_flag;
 int dim = zz->Edge_Weight_Dim;
 int lenGID = zz->Num_GID;
 int lenLID = zz->Num_LID;
@@ -1446,8 +1663,9 @@ int lenLID = zz->Num_LID;
   *ht = NULL;
   ierr = ZOLTAN_OK;
 
-  MPI_Allreduce(&ew_num_edges, &nEdgesMax, 1, MPI_INT, MPI_MAX,
+  rc = MPI_Allreduce(&ew_num_edges, &nEdgesMax, 1, MPI_INT, MPI_MAX,
                  zz->Communicator);
+  CHECK_FOR_MPI_ERROR(rc)
 
   if (nEdgesMax <= 0){
     return ZOLTAN_OK;
@@ -1525,65 +1743,75 @@ int lenLID = zz->Num_LID;
 
     /* post a recv for neighbor to left for edge gids */
 
-    MPI_Irecv(rcvBufGids, rcvBufGidSize, MPI_INT, left_proc,
+    rc = MPI_Irecv(rcvBufGids, rcvBufGidSize, MPI_INT, left_proc,
                gids_tag, zz->Communicator, &gids_req);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* send my gids to neighbor to right */
 
-    MPI_Send(sndBufGids, sndBufGidSize, MPI_INT, right_proc,
+    rc = MPI_Send(sndBufGids, sndBufGidSize, MPI_INT, right_proc,
                gids_tag, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
 
-    /* Await edge gids from my left.  If we have edges in
+    /* Await edge gids from my left.  If we have any edges in
      * common, post a receive for the weights and tell
      * proc on the left to send the weights to me.
      */
 
-    MPI_Wait(&gids_req, &status);  /*TODO check for error in every MPI_Wait */
+    rc = MPI_Wait(&gids_req, &status);
+    CHECK_FOR_MPI_ERROR(rc)
 
     match_left = 0;
     nids = rcvBufGids[0];
     gidptr = rcvBufGids + lenGID;
 
-    for (i=0; (i<nids) && ew_num_edges; i++){
+    for (k=0; (k<nids) && ew_num_edges && !match_left; k++){
       j = Zoltan_Hash(gidptr, lenGID, ew_num_edges);
       en = ewht[j];
-      while (en){
+      while (en && !match_left){
         if (ZOLTAN_EQ_GID(zz, gidptr, en->egid)){
           match_left = 1;
-          first_match = i;
-          MPI_Irecv(rcvBufWeights, nids*dim, MPI_FLOAT, left_proc,
-               weights_tag, zz->Communicator, &weights_req);
-
-          break;
+          first_match = k;
         }
         en = en->next;
       }
       gidptr += lenGID;
     }
 
-    MPI_Send(&match_left, 1, MPI_INT, left_proc, match_tag, zz->Communicator);
+    if (match_left){
+        rc = MPI_Irecv(rcvBufWeights, nids*dim, MPI_FLOAT, left_proc,
+             weights_tag, zz->Communicator, &weights_req);
+        CHECK_FOR_MPI_ERROR(rc)
+    }
+
+    rc = MPI_Send(&match_left, 1, MPI_INT, left_proc, match_tag, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
 
     /* Await message from right, indicating whether it needs
      * my edge weights, and send them if so.
      */
 
-    MPI_Recv(&match_right, 1, MPI_INT, right_proc, match_tag, zz->Communicator,
+    rc = MPI_Recv(&match_right, 1, MPI_INT, right_proc, match_tag, zz->Communicator,
      &status);
+    CHECK_FOR_MPI_ERROR(rc)
 
     if (match_right){
-      MPI_Send(sndBufWeights, sndBufWeightSize, MPI_FLOAT, right_proc,
+      rc = MPI_Send(sndBufWeights, sndBufWeightSize, MPI_FLOAT, right_proc,
                weights_tag, zz->Communicator);
+      CHECK_FOR_MPI_ERROR(rc)
     }
 
     /* Await edge weights from left (if I requested them) and
      * resolve common weights (add, take max, or flag error if different).
      */
     if (match_left){
-      MPI_Wait(&weights_req, &status);
+      rc = MPI_Wait(&weights_req, &status);
+      CHECK_FOR_MPI_ERROR(rc)
+
       gidptr = rcvBufGids + (first_match + 1)*lenGID;
       wptr = rcvBufWeights + (first_match * dim);
 
-      for (i=first_match; (i<nids) && (ierr!=ZOLTAN_FATAL); i++){
+      for (k=first_match; (k<nids) && (ierr!=ZOLTAN_FATAL); k++){
         j = Zoltan_Hash(gidptr, lenGID, ew_num_edges);
         en = ewht[j];
         while (en){
@@ -1620,6 +1848,7 @@ int lenLID = zz->Num_LID;
       }
     }
   }
+End:
 
   Zoltan_Multifree(__FILE__, __LINE__, 4,
        &sndBufWeights, &rcvBufGids, &sndBufGids, &rcvBufWeights);
@@ -1634,6 +1863,92 @@ int lenLID = zz->Num_LID;
   return ierr;
 }
 
+#ifdef DEBUG_FILL_HYPERGRAPH
+static void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
+{
+  int i, j, npins, nremovedpins;
+  int ewdim = zz->Edge_Weight_Dim;
+  int vwdim = zhg->HG.VtxWeightDim;
+  float *wgt, *vwgt, sum;
+  int *pin, *owner, *lno;
+  HGraph *hg = &zhg->HG;
+
+  printf("VERTICES (%d): (gid lid inpart outpart)\n",zhg->nObj);
+
+  for (i=0; i<zhg->nObj; i++){
+    if (zhg->Input_Parts && zhg->Output_Parts){
+      printf("  %d:  %d  %d  %d  %d\n", i, zhg->GIDs[i], zhg->LIDs[i],
+               zhg->Input_Parts[i], zhg->Output_Parts[i]);
+    }
+    else{
+      printf("  %d:  %d  %d \n", i, zhg->GIDs[i], zhg->LIDs[i]);
+    }
+  }
+
+  printf("REMOVED EDGES (%d): (gid lid size pins/owners %d weights)\n",
+                  zhg->nRemove, ewdim);
+
+  pin = zhg->Remove_Pin_GIDs;
+  owner = zhg->Remove_Pin_Procs;
+  wgt = zhg->Remove_Ewgt;
+  nremovedpins = 0;
+
+  for (i=0; i<zhg->nRemove; i++){
+    printf("  %d:  %d  %d  %d  ",i, zhg->Remove_EGIDs[i], zhg->Remove_ELIDs[i],
+                zhg->Remove_Esize[i]);
+    for (j=0; j<zhg->Remove_Esize[i]; j++){
+      if (j && (j%10==0)){
+        printf("\n      ");
+      }
+      printf("%d/%d ",*pin++, *owner++);
+    }
+    for (j=0; j<ewdim; j++){
+      printf(" %f ", *wgt++);
+    }
+    printf("\n");
+
+    nremovedpins += zhg->Remove_Esize[i];
+  }
+  if (zhg->nRemove > 0){
+    printf("  Total pins removed: %d\n",nremovedpins);
+  }
+
+  printf("%d EDGES (%d weights), %d total PINS:\n",
+          hg->nEdge, ewdim, hg->nPins);
+
+  wgt = hg->ewgt;
+  lno = hg->hvertex;
+  vwgt = hg->vwgt;
+
+  for (i=0; i<hg->nEdge; i++){
+    npins = hg->hindex[i+1] - hg->hindex[i];
+
+    printf(" edge %d: ",EDGE_LNO_TO_GNO(hg, i));
+    for (j=0; j<ewdim; j++){
+      printf(" %f",*wgt++);
+    }
+    printf("\n %d pins: ", npins);
+    for (j=0; j<npins; j++){
+      printf("%d ", *lno++);
+    }
+    printf("\n");
+  }
+
+  printf("%d PIN global numbers and %d weights:\n", hg->nVtx, vwdim);
+
+  sum = 0;
+
+  for (i=0; i<hg->nVtx; i++){
+    printf("  %d  %d: ", i, VTX_LNO_TO_GNO(hg, i));
+    for (j=0; j<vwdim; j++){
+      if (j==sumWeight) sum += *vwgt;
+      printf("%f ", *vwgt++);
+    }
+    printf("\n");
+  }
+  if (sum > 0.0) printf("Weight %d sums to %f\n",sumWeight+1,sum);
+}
+#endif
 
 
 #ifdef __cplusplus

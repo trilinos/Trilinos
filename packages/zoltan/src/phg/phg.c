@@ -73,7 +73,6 @@ static PARAM_VARS PHG_params[] = {
 
 /* prototypes for static functions: */
 
-static int Zoltan_PHG_Initialize_Params(ZZ*, float *, PHGPartParams*);
 static int Zoltan_PHG_Output_Parts(ZZ*, ZHG*, Partition);
 static int Zoltan_PHG_Return_Lists(ZZ*, ZHG*, int*, ZOLTAN_ID_PTR*, 
   ZOLTAN_ID_PTR*, int**, int**);
@@ -447,6 +446,25 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
 }
+/*****************************************************************************/
+
+void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg)
+{
+  if (zoltan_hg != NULL) {
+    Zoltan_Multifree(__FILE__, __LINE__, 10, &zoltan_hg->GIDs,
+                                            &zoltan_hg->LIDs,
+                                            &zoltan_hg->Input_Parts,
+                                            &zoltan_hg->Output_Parts,
+                                            &zoltan_hg->Remove_EGIDs,
+                                            &zoltan_hg->Remove_ELIDs,
+                                            &zoltan_hg->Remove_Esize,
+                                            &zoltan_hg->Remove_Ewgt,
+                                            &zoltan_hg->Remove_Pin_GIDs,
+                                            &zoltan_hg->Remove_Pin_Procs);
+
+    Zoltan_HG_HGraph_Free (&zoltan_hg->HG);
+  }
+}
 
 /*****************************************************************************/
 
@@ -456,15 +474,7 @@ void Zoltan_PHG_Free_Structure(ZZ *zz)
   ZHG *zoltan_hg = (ZHG*) zz->LB.Data_Structure;
 
   if (zoltan_hg != NULL) {
-    Zoltan_Multifree(__FILE__, __LINE__, 8, &zoltan_hg->GIDs,
-                                            &zoltan_hg->LIDs,
-                                            &zoltan_hg->Input_Parts,
-                                            &zoltan_hg->Output_Parts,
-                                            &zoltan_hg->Remove_EGIDs,
-                                            &zoltan_hg->Remove_ELIDs,
-                                            &zoltan_hg->Remove_Esize,
-                                            &zoltan_hg->Remove_Ewgt);
-    Zoltan_HG_HGraph_Free (&zoltan_hg->HG);
+    Zoltan_PHG_Free_Hypergraph_Data(zoltan_hg);
     ZOLTAN_FREE (&zz->LB.Data_Structure);
   }
 }
@@ -472,7 +482,7 @@ void Zoltan_PHG_Free_Structure(ZZ *zz)
     
 /*****************************************************************************/
 
-static int Zoltan_PHG_Initialize_Params(
+int Zoltan_PHG_Initialize_Params(
   ZZ *zz,   /* the Zoltan data structure */
   float *part_sizes,
   PHGPartParams *hgp
@@ -614,8 +624,6 @@ static int Zoltan_PHG_Initialize_Params(
 
     hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT; /* default object weight */
   }
-
-  /* TODO put this next parameter in the User's Guide */
 
   if (!strcasecmp(edge_weight_op, "max")){
     hgp->edge_weight_op = PHG_MAX_EDGE_WEIGHTS;

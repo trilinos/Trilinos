@@ -27,8 +27,23 @@ extern "C" {
   goto End; \
 }
 
+#define CHECK_FOR_MPI_ERROR(rc)  \
+  if (rc != MPI_SUCCESS){ \
+    MPI_Error_string(rc, mpi_err_str, &mpi_err_len);  \
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, mpi_err_str); \
+    ierr = ZOLTAN_FATAL; \
+    goto End; \
+  }
+
+#if VERBOSE_EDGE_INFO
+static void show_edges(char *s, ZZ *zz, int num_lists, int num_pins, 
+                int *edg_GID, int *row_ptr, int *vtx_GID);
+#endif
+
 static int ignore_some_edges(ZZ *, ZHG *, int, float, int, int *,
-  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, float *, int);
+  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, float *, ZOLTAN_ID_PTR, int);
+static int remove_empty_edges(ZZ *zz, int *num_lists, int num_pins, 
+   ZOLTAN_ID_PTR edg_GID, int *row_ptr, ZOLTAN_ID_PTR vtx_GID);
 static int convert_to_CRS( ZZ *zz, int num_pins, int *col_ptr,
     int *num_lists, ZOLTAN_ID_PTR *vtx_GID,
     int **row_ptr, ZOLTAN_ID_PTR *edg_GID);
@@ -39,17 +54,19 @@ static int distribute_edges(ZZ *zz, int *num_lists, int *num_pins,
     int **row_ptr, ZOLTAN_ID_PTR *vtx_GID,
     int need_weights, int max_need_weights, char *out_need_list,
     int ew_table_size, void *htptr, float **edg_weight);
-static int exchange(ZZ *zz, int proc, void *htptr,
+static int exchange(ZZ *zz, int proc, int *change, void *htptr,
    ZOLTAN_ID_PTR egid, ZOLTAN_ID_PTR inbuf, int inbufsize,
    int exchange_weights, int ew_num_edges, void *ewhtptr, float *edg_weights,
    char *out_need_list, int out_need_list_size,
    char *in_need_list, int in_need_list_size,
    float *out_weights, int out_weights_size,
    float *in_weights, int in_weights_size);
-static int do_transfers(ZZ *zz, int proc, void *hn, int numMatches,
+static int do_transfers(ZZ *zz, int proc, void *hn, char *mine, int numMatches,
   int *myMatch, ZOLTAN_ID_PTR egid, int *yourMatch, ZOLTAN_ID_PTR inbuf);
 static float *find_weights(ZZ *zz,
               void *ewhtptr, int ew_num_edges, ZOLTAN_ID_PTR eid);
+static char mpi_err_str[MPI_MAX_ERROR_STRING];
+static int mpi_err_len;
 /*****************************************************************************/
 
 int Zoltan_HG_Hypergraph_Edge_Callbacks(
@@ -101,8 +118,12 @@ int num_lid_entries = zz->Num_LID;
     *elids = ZOLTAN_MALLOC_LID_ARRAY(zz, *nedges);
     *esizes = (int *) ZOLTAN_MALLOC(*nedges * sizeof(int));
     nwgt = *nedges * ewgtdim;
-    if (nwgt) 
+    if (nwgt){
       *ewgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
+    }
+    else{
+      *ewgts = NULL;
+    }
     if (!*esizes || !*egids || (num_lid_entries && !*elids) ||
         (nwgt && !*ewgts)) MEMORY_ERROR;
 
@@ -116,13 +137,21 @@ int num_lid_entries = zz->Num_LID;
     }
                      
     /* Remove dense edges from input list */
+
     ierr = ignore_some_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
-                             nedges, *egids, *elids, *esizes, *ewgts, 0);
+                          nedges, *egids, *elids, *esizes, *ewgts, NULL, 0);
 
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "Error returned from ignore_some_edges.");
       goto End;
+    }
+
+    if (*nedges == 0){
+      ZOLTAN_FREE(egids);
+      ZOLTAN_FREE(elids);
+      ZOLTAN_FREE(esizes);
+      ZOLTAN_FREE(ewgts);
     }
 
     /* Now get lists of vertices that are in hyperedges */
@@ -196,7 +225,7 @@ int Zoltan_HG_Hypergraph_Pin_Callbacks(
 /*                                                                     */
 /* If the application had defined the edge weight callbacks, the       */
 /* supplied edges and weights are in the htptr table.  If they are not */
-/* for the edges which our pins are part of, so we we need to share    */
+/* for the edges which our pins are part of, we we need to share       */
 /* those while redistributing the pins.                                */
 
 static char *yo = "Zoltan_HG_Hypergraph_Pin_Callbacks";
@@ -222,7 +251,7 @@ int lenLID = zz->Num_LID;
 
   ewht = (struct _ewht **)htptr;
   if (ewht){
-    ewNodes = ewht[ew_num_edges];
+    ewNodes = ewht[ew_num_edges]; /* so we can free it when done */
   }
   else{
     ewNodes = NULL;
@@ -256,7 +285,6 @@ int lenLID = zz->Num_LID;
         Zoltan_Multifree(__FILE__, __LINE__, 3, &vtx_GID, &col_ptr, &edg_GID);
         MEMORY_ERROR;
       }
-
       ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, num_gid_entries,
                num_lists, num_pins, format,
                vtx_GID, col_ptr, edg_GID);
@@ -269,6 +297,7 @@ int lenLID = zz->Num_LID;
                      &vtx_GID,    /* replace with pins           */
                      &row_ptr,    /* index into start of each row in vtx_GID */
                      &edg_GID);   /* replace with row (edge) GIDs */
+
       }
 
       ZOLTAN_FREE(&col_ptr);
@@ -297,6 +326,14 @@ int lenLID = zz->Num_LID;
        "Error calling hypergraph compressed pin storage query");
     goto End;
   }
+
+  /*
+   * Remove edges with no pins.  This would happen later in 
+   * ignore_some_edges, but doing it now makes distribute_edges() faster.
+   */
+
+  ierr = 
+    remove_empty_edges(zz, &num_lists, num_pins, edg_GID, row_ptr, vtx_GID);
 
   /*
    * If we have edge weights for any of our edges, apply them now.
@@ -330,7 +367,7 @@ int lenLID = zz->Num_LID;
 
     if (j > 0){
       /* If at least one process supplied weights in the query function
-       * we need to process them.
+       * we need to process them.  Otherwise we go with the unit default.
        */
       need_weights = num_lists;
       need_list = (char *)ZOLTAN_MALLOC(num_lists * sizeof(char));
@@ -390,11 +427,32 @@ int lenLID = zz->Num_LID;
    * This is necessary so we can enumerate all edges in the matrix.
    */
 
+#if VERBOSE_EDGE_INFO 
+  for (i=0; i<zz->Num_Proc; i++){
+    if (i == zz->Proc){
+      show_edges("BEFORE", zz, num_lists, num_pins, edg_GID, row_ptr, vtx_GID);
+      fflush(stdout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+#endif
+
   ierr =
     distribute_edges(zz, &num_lists, &num_pins,
                      &edg_GID, &edg_LID, &row_ptr, &vtx_GID,
                      need_weights, max_need_weights, need_list,
                      ew_num_edges, htptr, &edg_weight);
+
+#if VERBOSE_EDGE_INFO
+  for (i=0; i<zz->Num_Proc; i++){
+    if (i == zz->Proc){
+      show_edges("AFTER", zz, num_lists, num_pins, edg_GID, row_ptr, vtx_GID);
+      fflush(stdout);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  fflush(stdout);
+#endif
 
   ZOLTAN_FREE(&need_list);
 
@@ -409,27 +467,41 @@ int lenLID = zz->Num_LID;
   *egids = edg_GID;
   *elids = edg_LID;
   *ewgts = edg_weight;
-  size_ptr = *esizes = (int *) ZOLTAN_MALLOC(num_lists * sizeof(int));
+  size_ptr = *esizes = NULL;
 
-  for (i=0; i<num_lists-1; i++){
-    size_ptr[i] = row_ptr[i+1] - row_ptr[i];
+  if (num_lists > 0){
+    size_ptr = *esizes = (int *) ZOLTAN_MALLOC(num_lists * sizeof(int));
+    for (i=0; i<num_lists-1; i++){
+      size_ptr[i] = row_ptr[i+1] - row_ptr[i];
+    }
+    size_ptr[num_lists-1] = num_pins - row_ptr[num_lists - 1];
+
+    ZOLTAN_FREE(&row_ptr);
+  
+    /* Remove dense edges from input list */
+    ierr = ignore_some_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
+                   nedges, edg_GID, edg_LID, *esizes, edg_weight, vtx_GID, 0);
+  
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                         "Error returned from ignore_some_edges.");
+      goto End;
+    }
+  } else {
+    ZOLTAN_FREE(egids);
+    ZOLTAN_FREE(elids);
+    ZOLTAN_FREE(esizes);
+    ZOLTAN_FREE(ewgts);
+    ZOLTAN_FREE(&vtx_GID);
   }
-  size_ptr[num_lists-1] = num_pins - row_ptr[num_lists - 1];
 
-  ZOLTAN_FREE(&row_ptr);
+  num_pins = 0;
+  for (i=0; i<*nedges; i++){
+    num_pins += size_ptr[i];
+  }
 
   *npins = num_pins;
   *pins = vtx_GID;
-
-  /* Remove dense edges from input list */
-  ierr = ignore_some_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
-                           nedges, edg_GID, edg_LID, *esizes, edg_weight, 0);
-
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                       "Error returned from ignore_some_edges.");
-    goto End;
-  }
 
 End:
 
@@ -453,7 +525,8 @@ int rank = zz->Proc;
 int lenGID = zz->Num_GID;
 int lenLID = zz->Num_LID;
 int ierr = ZOLTAN_OK;
-int i, j, maxEdges, nedges, npins, change, rc;
+int ew_dim = zz->Edge_Weight_Dim;
+int i, j, maxEdges, nedges, npins, update_lists, pin_change;
 int *rptr;
 ZOLTAN_ID_PTR egid, eptr, elidptr, vptr, inbuf;
 struct _egidNode {
@@ -463,17 +536,20 @@ struct _egidNode {
   char pinsAreCopies;
   struct _egidNode *next;
 } *egidNode, *en;
-struct _egidNode **ht;  /* hash table for my pin edges */
+struct _egidNode **ht=NULL;  /* hash table for my pin edges */
 int l0, l1, lLen, myL, left;
 int r0, r1, rLen, myR;
 int relativeRank, inbufsize, have_pins, esize, v, e;
 int in_need_list_size=0, in_weights_size=0, out_weights_size=0;
 char *in_need_list=NULL;
-float *in_weights=NULL, *out_weights=NULL;
+float *in_weights=NULL, *out_weights=NULL, *wptr=NULL;
 
-/* If there is an edge such that more than one process has pins for */
-/* that edge, assign the edge to only one process.  Transfer all    */
-/* pins to that process.                                            */
+/* If there is an edge such that more than one process has pins for  */
+/* that edge, assign the edge to only one process.  Transfer all     */
+/* pins to that process.                                             */ 
+/*                                                                   */
+/* Also obtain edg_weights for my edges from processes which         */
+/* supplied them in the edge weight query functions.                 */
 
   nedges = *num_lists;
   npins = *num_pins;
@@ -563,10 +639,10 @@ float *in_weights=NULL, *out_weights=NULL;
 
   /*
    **Problem: Edges may be spread across processes.  (More
-   * than one process owns pins for the same edge.  Pins may
-   * or may not overlap.)
+   * than one process owns pins for the same edge, although
+   * no two processes own the same pin.)
    **Goal: Assign each edge to only one process.  Each process
-   * owns all pins for each of it's edges.
+   * then acquires all pins for each of it's edges.
    **Other problem: We assume the combined list of every
    * process' edge list is in general too large to fit in the
    * memory allocated to a single process. So we don't do a
@@ -577,13 +653,13 @@ float *in_weights=NULL, *out_weights=NULL;
    * with every other process.  Following one exchange, the
    * two processes involved decide which process should own
    * each edge they have in common.  The owning process gets
-   * all pins for the edge it owns.  This exchange and decision
+   * all pins for the edge it owns.  This decision and exchange
    * must be completed before beginning the exchange with the next
    * process.  And a process is never assigned an edge that it
    * did not have at the beginning of the exchange.
    *
    * At the end of nprocs-1 exchanges, each edge is owned by
-   * only one process.
+   * only one process, and that process has all pins for the edge,
    */
 
   /*
@@ -595,7 +671,8 @@ float *in_weights=NULL, *out_weights=NULL;
 
   myL = 0;
   myR = nprocs-1;
-  change = 0;
+  update_lists = 0;
+  ierr = ZOLTAN_OK;
 
   while ((myR - myL > 0) && (ierr != ZOLTAN_FATAL)){
 
@@ -607,19 +684,20 @@ float *in_weights=NULL, *out_weights=NULL;
 
       for (i=0; i<rLen; i++){
         j = r0 + ((relativeRank + i) % rLen);
-        rc = exchange(zz, j, (void *)ht, egid, inbuf, inbufsize,
+
+        ierr = exchange(zz, j, &pin_change, (void *)ht, egid, inbuf, inbufsize,
                max_need_weights, ew_table_size, (void *)htptr, *edg_weights,
                out_need_list, nedges,
                in_need_list, in_need_list_size,
                out_weights, out_weights_size,
                in_weights, in_weights_size);
 
-        if (rc > 0){
-          change = 1;
+        if (ierr != ZOLTAN_OK){
+          break; 
         }
-        else if (rc < 0){
-          ierr = ZOLTAN_FATAL;
-          break;
+
+        if (!update_lists && pin_change){
+          update_lists = 1;
         }
       }
       myL = l0;
@@ -631,19 +709,20 @@ float *in_weights=NULL, *out_weights=NULL;
 
       for (i=0; i<lLen; i++){
         j = l0 + ((relativeRank + lLen - i) % lLen);
-        rc = exchange(zz, j, (void *)ht, egid, inbuf, inbufsize,
+
+        ierr = exchange(zz, j, &pin_change, (void *)ht, egid, inbuf, inbufsize,
                max_need_weights, ew_table_size, (void *)htptr, *edg_weights,
                out_need_list, nedges,
                in_need_list, in_need_list_size,
                out_weights, out_weights_size,
                in_weights, in_weights_size);
 
-        if (rc > 0){
-          change = 1;
+        if (ierr != ZOLTAN_OK){
+          break; 
         }
-        else if (rc < 0){
-          ierr = ZOLTAN_FATAL;
-          break;
+
+        if (!update_lists && pin_change){
+          update_lists = 1;
         }
       }
       myL = r0;
@@ -657,7 +736,7 @@ float *in_weights=NULL, *out_weights=NULL;
   ZOLTAN_FREE(&in_weights);
   ZOLTAN_FREE(&out_weights);
 
-  if (change && (ierr != ZOLTAN_FATAL)){ /* Must rewrite my edge lists */
+  if (update_lists && (ierr != ZOLTAN_FATAL)){ /* Must rewrite my edge lists */
 
     nedges = npins = 0;
 
@@ -673,15 +752,15 @@ float *in_weights=NULL, *out_weights=NULL;
       *num_lists = nedges;
       *num_pins = npins;
 
-      eptr = *edg_GID = ZOLTAN_REALLOC_GID_ARRAY(zz, *edg_GID, nedges);
-      rptr = *row_ptr = (int *)ZOLTAN_REALLOC(*row_ptr, nedges);
-
+      rptr = (int *)ZOLTAN_MALLOC(sizeof(int) * nedges);
+      eptr = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges);
       elidptr = ZOLTAN_MALLOC_LID_ARRAY(zz, nedges);
       vptr = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
+      wptr = (float *)ZOLTAN_MALLOC(sizeof(float) * nedges * ew_dim);
 
-      if (!eptr || !rptr || !elidptr || !vptr){
-        Zoltan_Multifree(__FILE__, __LINE__, 4,
-          &eptr, &rptr, &elidptr, &vptr);
+      if (!eptr || !rptr || !elidptr || !vptr || (ew_dim && !wptr)){
+        Zoltan_Multifree(__FILE__, __LINE__, 5,
+          &eptr, &rptr, &elidptr, &vptr, &wptr);
         MEMORY_ERROR;
       }
 
@@ -693,15 +772,25 @@ float *in_weights=NULL, *out_weights=NULL;
           ZOLTAN_SET_GID(zz, eptr + (e*lenGID), en->egidBuf);
           ZOLTAN_SET_LID(zz, elidptr + (e*lenLID), *edg_LID + (i*lenLID));
           ZOLTAN_COPY_GID_ARRAY(vptr + (v*lenGID), en->pins, zz, npins);
+          for (j=0; j<ew_dim; j++){
+            wptr[e*ew_dim+j] = (*edg_weights)[i*ew_dim+j];
+          }
           rptr[e] = v;
           e++;
           v += npins;
         }
       }
+
+      ZOLTAN_FREE(edg_GID);
+      *edg_GID = eptr;
       ZOLTAN_FREE(edg_LID);
       *edg_LID = elidptr;
       ZOLTAN_FREE(vtx_GID);
       *vtx_GID = vptr;
+      ZOLTAN_FREE(row_ptr);
+      *row_ptr = rptr;
+      ZOLTAN_FREE(edg_weights);
+      *edg_weights = wptr;
     }
     else{
       *num_lists = 0;
@@ -709,6 +798,7 @@ float *in_weights=NULL, *out_weights=NULL;
       ZOLTAN_FREE(edg_GID);
       ZOLTAN_FREE(vtx_GID);
       ZOLTAN_FREE(row_ptr);
+      ZOLTAN_FREE(edg_weights);
     }
   }
 
@@ -730,6 +820,9 @@ static int divideInterval(int rank, int myL, int myR,
 int inLeftHalf= 0;
 int center;
 
+/* Divide interval of process ranks in half, if odd number of      */
+/* processes, one "half" will have one more process than the other.*/
+
   center = (myL + myR) / 2;
 
   *l0 = myL;
@@ -743,7 +836,7 @@ int center;
 
   return inLeftHalf;
 }
-static int exchange(ZZ *zz, int proc, void *htptr,
+static int exchange(ZZ *zz, int proc, int *change, void *htptr,
      ZOLTAN_ID_PTR egid, ZOLTAN_ID_PTR inbuf, int inbufsize,
      int exchange_weights, int ew_num_edges, void *ewhtptr, float *edg_weights,
      char *out_need_list, int out_need_list_size,
@@ -764,34 +857,50 @@ int tag=0xff, need_tag=0xf1, weight_tag=0xf2;
 int lenGID = zz->Num_GID;
 int numMyEdges, numYourEdges, numAEdges, numBEdges, numMyPins, numYourPins;
 int *myMatch=NULL, *yourMatch=NULL;
-int *matchA, *matchB, *Bidx, nMatches;
-int i, j, k, w, nweights_found=0, lengthA;
+int *matchA, *matchB, nMatches;
+int rc, i, j, w, nweights_found=0;
+int favorA, favorB, idxA, idxB;
 MPI_Request req, need_list_req, weight_req;
 MPI_Status status;
 ZOLTAN_ID_PTR eptr, eid, gidsA, gidsB;
 float *wptr=NULL, *wgts;
+char *I_Win = NULL; 
+int *gidsAMatchIdx=NULL;
 int dim = zz->Edge_Weight_Dim;
-int ierr=ZOLTAN_OK, ret_val = 0;
+int ierr=ZOLTAN_OK;
 
-  /* TODO put comments at top of every function                */
-  /* Returns 1 if my edges lists changed during this exchange, */
-  /* 0 if my edges did not change, -1 on error.                */
-  /* If only edge weights changed, still returns 0 because no  */
-  /* arrays need to be re-written.                             */
+  /* Two processes exchange lists of edges IDs and sizes.  If  */
+  /* a match of non-empty edges is found, the edge is assigned */
+  /* to only one process, and the pins are transferred.        */
+  /*                                                           */
+  /* Also during this exchange, a process supplies edge weights*/
+  /* it may have that are required by the other process.       */
+  /*                                                           */
+  /* If this exchange results in a change of pins for the      */
+  /* process, the change flag is set, indicating that edge/pin */
+  /* lists need to be re-written when all exchanges are        */
+  /* completed.                                                */
+
+  *change = 0;
 
   ht = (struct _egidNode **)htptr;
 
   /* post receive for other process' edge GIDs, and possibly edge weights
       needed array and edge weights response */
 
-  MPI_Irecv(inbuf, inbufsize * lenGID, MPI_INT, proc,
+  rc = MPI_Irecv(inbuf, inbufsize * lenGID, MPI_INT, proc,
             tag, zz->Communicator, &req);
 
+  CHECK_FOR_MPI_ERROR(rc);
+
   if (exchange_weights){
-    MPI_Irecv(in_need_list, in_need_list_size, MPI_CHAR, proc, need_tag,
+    rc = MPI_Irecv(in_need_list, in_need_list_size, MPI_CHAR, proc, need_tag,
                  zz->Communicator, &need_list_req);
-    MPI_Irecv(in_weights, in_weights_size, MPI_FLOAT, proc, weight_tag,
+    CHECK_FOR_MPI_ERROR(rc);
+
+    rc = MPI_Irecv(in_weights, in_weights_size, MPI_FLOAT, proc, weight_tag,
                  zz->Communicator, &weight_req);
+    CHECK_FOR_MPI_ERROR(rc);
   }
 
   /* send my edge GIDs to that process, along with possibly my edge
@@ -799,39 +908,50 @@ int ierr=ZOLTAN_OK, ret_val = 0;
 
   numMyEdges = egid[0];
 
-  MPI_Send(egid, (2*numMyEdges + 1) * lenGID, MPI_INT, proc,
+  rc = MPI_Send(egid, (2*numMyEdges + 1) * lenGID, MPI_INT, proc,
             tag, zz->Communicator);
+  CHECK_FOR_MPI_ERROR(rc);
 
   if (exchange_weights){
-    MPI_Send(out_need_list, out_need_list_size, MPI_CHAR, proc,
+    rc = MPI_Send(out_need_list, out_need_list_size, MPI_CHAR, proc,
                need_tag, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc);
   }
 
 
   /* await GIDs, then process to see if we have any in common,
        and possibly if we have any edge weights they need */
 
-  MPI_Wait(&req, &status);
+  rc = MPI_Wait(&req, &status);
+  CHECK_FOR_MPI_ERROR(rc);
 
   if (exchange_weights){
-    MPI_Wait(&need_list_req, &status);
+    rc = MPI_Wait(&need_list_req, &status);
+    CHECK_FOR_MPI_ERROR(rc);
     wptr = out_weights + 1;
     nweights_found = 0;
   }
 
   eptr = inbuf;
-  numYourEdges = eptr[0];  /* TODO sanity check here */
+  numYourEdges = eptr[0]; 
+
+  if (numYourEdges > (inbufsize-1)/2){
+    /* Sanity check: number of edges exceeds maximum number of edges */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid gid message from remote process");
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
 
   j = ((numYourEdges < numMyEdges) ? numYourEdges : numMyEdges);
 
   if ((j <= 0) && !exchange_weights){
-    return 0;   /* no change to my edge lists */
+    return ZOLTAN_OK; 
   }
 
   myMatch   = (int *)ZOLTAN_MALLOC(j * sizeof(int));
   yourMatch = (int *)ZOLTAN_MALLOC(j * sizeof(int));
 
-  if (!myMatch || !yourMatch){
+  if (j && (!myMatch || !yourMatch)){
     Zoltan_Multifree(__FILE__, __LINE__, 2, &myMatch, &yourMatch);
     MEMORY_ERROR
   }
@@ -856,7 +976,7 @@ int ierr=ZOLTAN_OK, ret_val = 0;
     numYourPins = eptr[lenGID];
     numMyPins   = 0;
 
-    if (numYourPins > 0){
+    if (numMyEdges && (numYourPins > 0)){
       j = Zoltan_Hash(eid, lenGID, (unsigned int)numMyEdges);
 
       en = ht[j];
@@ -886,10 +1006,12 @@ int ierr=ZOLTAN_OK, ret_val = 0;
   if (exchange_weights){
     out_weights[0] = nweights_found;
 
-    MPI_Send(out_weights, (nweights_found * (dim+1)) + 1, MPI_FLOAT, proc,
+    rc = MPI_Send(out_weights, (nweights_found * (dim+1)) + 1, MPI_FLOAT, proc,
              weight_tag, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc);
 
-    MPI_Wait(&weight_req, &status);
+    rc = MPI_Wait(&weight_req, &status);
+    CHECK_FOR_MPI_ERROR(rc);
 
     if (in_weights[0] > 0){
       wgts = in_weights + 1;
@@ -908,12 +1030,11 @@ int ierr=ZOLTAN_OK, ret_val = 0;
   /* If we share edges in common, proceed to decide who gets the edge. */
 
   if (nMatches == 0){
-    ZOLTAN_FREE(&myMatch);
-    ZOLTAN_FREE(&yourMatch);
-    return 0;  /* no change to my edge lists */
+    ierr = ZOLTAN_OK;
+    goto End;
   }
 
-  ret_val = 1;
+  *change = 1;
 
   /* Determine which process gets each shared edge.  Be careful to
    * do the calculation in exactly the same way on both processes.
@@ -937,52 +1058,90 @@ int ierr=ZOLTAN_OK, ret_val = 0;
     numAEdges = numMyEdges;
   }
 
-  Bidx = (int *)ZOLTAN_MALLOC(numAEdges * sizeof(int));
+  I_Win= (char *)ZOLTAN_MALLOC(sizeof(char) * nMatches);
+  if (!I_Win) MEMORY_ERROR
 
-  if (!Bidx) MEMORY_ERROR
+  favorA = favorB = 0;
 
+  /* This array allows us to evaluate matches in the same order
+   * on both processes.
+   */
+  gidsAMatchIdx = (int *)ZOLTAN_MALLOC(sizeof(int) * numAEdges);
+  if (!gidsAMatchIdx) MEMORY_ERROR
+
+  for (i=0; i<numAEdges; i++){
+    gidsAMatchIdx[i] = -1;
+  }
   for (i=0; i<nMatches; i++){
-    j = (2*matchA[i] + 2) * lenGID;
-    gidsA[j] = -gidsA[j];          /* make pins negative to flag it */
-    Bidx[matchA[i]] = matchB[i];   /* location of B's matching edge */
+    gidsAMatchIdx[matchA[i]] = i;
   }
 
-  lengthA = numAEdges;
-  k = 2 * lenGID;
+  w = numAEdges;
 
-  for (i=0; i<lengthA; i++){
+  for (j=0; j<w; j++){
 
-    if (gidsA[k] < 0){
-      if (numAEdges < numBEdges){
-        j = (2 * Bidx[i] + 2) * lenGID;  /* matching edge in other array */
-        gidsB[j] = -gidsB[j];            /* flag that B sends to A */
-        gidsA[k] = -gidsA[k];            /* rather than A sends to B */
-        numBEdges--;
-      }
-      else{
-        numAEdges--;
-      }
+    if (gidsAMatchIdx[j] < 0) continue;
+
+    i = gidsAMatchIdx[j];
+
+    idxA = (2*matchA[i] + 2) * lenGID; /* location of A's num pins */
+    idxB = (2*matchB[i] + 2) * lenGID; /* location of B's num pins */
+
+
+    /* Give edge to the process having the most pins.  In case
+     * of a tie, give it to the process having the least edges.
+     * In case of a tie again, give it to the process of lowest rank.
+     *
+     * If a large imbalance in number of edges occurs, correct this
+     * by favoring one process until the imbalance is corrected.
+     */
+
+    if (favorA){
+      I_Win[i] = (matchA == myMatch);
+      numBEdges--;
     }
-    k += (2 * lenGID);
-  }
+    else if (favorB){
+      I_Win[i] = (matchB == myMatch);
+      numAEdges--;
+    }
+    else if (gidsA[idxA] < gidsB[idxB]){
+      I_Win[i] = (matchB == myMatch);
+      numAEdges--;
+    }
+    else if (gidsA[idxA] > gidsB[idxB]){
+      I_Win[i] = (matchA == myMatch);
+      numBEdges--;
+    }
+    else if (numAEdges < numBEdges){
+      I_Win[i] = (matchA == myMatch);
+      numBEdges--;
+    }
+    else if (numAEdges > numBEdges){
+      I_Win[i] = (matchB == myMatch);
+      numAEdges--;
+    }
+    else{
+      I_Win[i] = (matchA == myMatch);
+      numBEdges--;
+    }
 
-  ZOLTAN_FREE(&Bidx);
+    favorA = numAEdges * 2 < numBEdges;
+    favorB = numBEdges * 2 < numAEdges;
+  }
 
   /* exchange pins, update my edge and pin information */
 
-  ierr = do_transfers(zz, proc, (void *)ht,
+  ierr = do_transfers(zz, proc, (void *)ht, I_Win,
             nMatches, myMatch, egid, yourMatch, inbuf);
 
 End:
 
-  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
-    ret_val = -1;
-  }
-
+  ZOLTAN_FREE(&gidsAMatchIdx);
+  ZOLTAN_FREE(&I_Win);
   ZOLTAN_FREE(&myMatch);
   ZOLTAN_FREE(&yourMatch);
 
-  return ret_val;
+  return ierr;
 }
 static float *find_weights(ZZ *zz,
               void *ewhtptr, int ew_num_edges, ZOLTAN_ID_PTR eid)
@@ -996,6 +1155,11 @@ struct _ewht{
 struct _ewht **ewht = NULL;
 float *weights = NULL;
 int idx;
+
+  /* Search the edge weights returned by the edge weight query */
+  /* function to see if I have the edge weights for this edge. */
+
+  if (ew_num_edges < 1) return NULL;
 
   ewht = (struct _ewht **)ewhtptr;
 
@@ -1013,9 +1177,10 @@ int idx;
 
   return weights;
 }
-static int do_transfers(ZZ *zz, int proc, void *hn, int numMatches,
+static int do_transfers(ZZ *zz, int proc, void *hn, char *mine, int numMatches,
   int *myMatch, ZOLTAN_ID_PTR egid, int *yourMatch, ZOLTAN_ID_PTR inbuf)
 {
+static char *yo = "do_transfers";
 struct _egidNode {
   ZOLTAN_ID_PTR egidBuf;
   int idx;
@@ -1026,15 +1191,15 @@ struct _egidNode {
 struct _egidNode **egidTable;
 ZOLTAN_ID_PTR eptr;
 int lenGID = zz->Num_GID;
-int recvSize, sendSize, i, j, nrecvs, idx, npins, nedges, nMyPins;
+int recvSize, sendSize, i, j, nrecvs, idx, npins, nedges, nMyPins, rc;
 int tagPins = 0xf0f0;
 ZOLTAN_ID_PTR recvBuf=NULL, sendBuf=NULL, pinBuf=NULL;
 MPI_Request reqPins;
 MPI_Status status;
+int ierr = ZOLTAN_OK;
 
-  /* TODO check for duplicate pins and filter them out */
-  /* This is expensive, so maybe we should only do it if they */
-  /* request this service with a parameter.                   */
+  /* Two processes have pins for the same edge.  Transfer all the */
+  /* pins to one process.                                         */
 
   egidTable = (struct _egidNode **)hn;
   nedges = egid[0];
@@ -1047,15 +1212,14 @@ MPI_Status status;
   nrecvs = 0;
 
   for (i=0; i<numMatches; i++){
-    j = (2 * yourMatch[i] + 2) * lenGID;
-
-    if (inbuf[j] < 0){
-      recvSize += (2 - inbuf[j]);
+    if (mine[i]){
+      j = (2 * yourMatch[i] + 2) * lenGID;
+      recvSize += (2 + inbuf[j]);
       nrecvs++;
     }
     else{
       j = (2 * myMatch[i] + 2) * lenGID;
-      sendSize += (2 - egid[j]);
+      sendSize += (2 + egid[j]);
     }
   }
 
@@ -1063,8 +1227,12 @@ MPI_Status status;
 
   if (recvSize > 0){
     recvBuf = (unsigned int *)ZOLTAN_MALLOC_GID_ARRAY(zz, recvSize);
-    MPI_Irecv(recvBuf, recvSize * lenGID, MPI_INT, proc,
+    if (!recvBuf) MEMORY_ERROR
+
+    rc = MPI_Irecv(recvBuf, recvSize * lenGID, MPI_INT, proc,
               tagPins, zz->Communicator, &reqPins);
+
+    CHECK_FOR_MPI_ERROR(rc)
   }
 
   /*
@@ -1078,16 +1246,18 @@ MPI_Status status;
 
   if (sendSize > 0){
     sendBuf = (unsigned int *)ZOLTAN_MALLOC_GID_ARRAY(zz, sendSize);
+    if (!sendBuf) MEMORY_ERROR
+
     eptr = sendBuf;
 
     for (i=0; i<numMatches; i++){
-      j = (2 * myMatch[i] + 2) * lenGID;
-      npins = egid[j];
 
-      if (npins < 0){       /* I give this edge to other proc */
+      if (mine[i] == 0){       /* I give this edge to other proc */
+
+        j = (2 * myMatch[i] + 2) * lenGID;
+        npins = egid[j];
 
         egid[j] = 0;             /* now I have no pins in edge */
-        npins = -npins;
 
         *eptr = yourMatch[i];                   /* your edge ID index */
         eptr += lenGID;
@@ -1108,8 +1278,10 @@ MPI_Status status;
       }
     }
 
-    MPI_Send(sendBuf, sendSize*lenGID, MPI_INT, proc, tagPins,
+    rc = MPI_Send(sendBuf, sendSize*lenGID, MPI_INT, proc, tagPins,
              zz->Communicator);
+
+    CHECK_FOR_MPI_ERROR(rc)
 
     ZOLTAN_FREE(&sendBuf);
   }
@@ -1117,7 +1289,8 @@ MPI_Status status;
   /* Add pins received from other process to my list.  */
 
   if (recvSize > 0){
-    MPI_Wait(&reqPins, &status);
+    rc = MPI_Wait(&reqPins, &status);
+    CHECK_FOR_MPI_ERROR(rc)
 
     eptr = recvBuf;
 
@@ -1149,9 +1322,11 @@ MPI_Status status;
     }
   }
 
+End:
+
   ZOLTAN_FREE(&recvBuf);
 
-  return ZOLTAN_OK;
+  return ierr;
 }
 /*****************************************************************************/
 static int convert_to_CRS(
@@ -1379,11 +1554,18 @@ float *gewgts = NULL;     /* Graph-edge weights */
     /* Remove dense edges from input list */
 
     ierr = ignore_some_edges(zz, zhg, gnVtx, esize_threshold, return_removed,
-                              nedges, *egids, *elids, *esizes, *ewgts, 1);
+                           nedges, *egids, *elids, *esizes, *ewgts, NULL, 1);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                          "Error returned from ignore_some_edges.");
       goto End;
+    }
+
+    if (*nedges == 0){
+      ZOLTAN_FREE(egids);
+      ZOLTAN_FREE(elids);
+      ZOLTAN_FREE(esizes);
+      ZOLTAN_FREE(ewgts);
     }
 
     /* Now get lists of vertices that are in hyperedges */
@@ -1478,6 +1660,8 @@ static int ignore_some_edges (
                               Output:  For hypergraph input, edge weights for 
                                        each kept hyperedge on this proc.
                               Ignored for graph input. */
+  ZOLTAN_ID_PTR pins,      /* Input: NULL, or pin GIDs for each edge
+                              Output: If not NULL on input, pins remaining */
   int graph_input          /* Input:   Indicates graph input. */
                       
 )
@@ -1494,21 +1678,26 @@ int num_lid_entries = zz->Num_LID;
 int nkeep;                /* Number of edges below gesize_threshold. */
 int nremove;              /* Number of edges to be removed; i.e., number of
                              edges above gesize_threshold. */
+int nremove_size;         /* Number of pins in removed edges */
 ZOLTAN_ID_PTR remove_egids = NULL;  /* Edge GIDs for removed edges */
 ZOLTAN_ID_PTR remove_elids = NULL;  /* Edge LIDs for removed edges */
 int *remove_esizes = NULL;          /* Edge sizes (# pins) for removed edges */
 float *remove_ewgts = NULL;         /* Edge weights for removed edges */
 float gesize_threshold;   /* Edges with more vertices than gesize_threshold
                              are considered to be dense. */
+ZOLTAN_ID_PTR keep_pins, remove_pins, in_pins;
 
   /* Remove dense edges and zero-sized edges from input list */
   gesize_threshold = esize_threshold * gnVtx;
   nremove = 0;
+  nremove_size = 0;
   for (i = 0; i < *nedges; i++) 
     /* Compute esizes[i]+graph_input; graph_input will add one GID to hedge */
     if (((esizes[i]+graph_input) > gesize_threshold) || 
-        ((esizes[i]+graph_input) == 0))
+        ((esizes[i]+graph_input) == 0)){
       nremove++;
+      if (pins) nremove_size += esizes[i];
+    }
 
   if (nremove) {
     if (return_removed) {
@@ -1526,12 +1715,19 @@ float gesize_threshold;   /* Edges with more vertices than gesize_threshold
                          = (float *) ZOLTAN_CALLOC(nremove * ewgtdim,
                                                    sizeof(float));
 
+      zhg->Remove_Pin_GIDs = ZOLTAN_MALLOC_LID_ARRAY(zz, nremove_size);
+
       if (!remove_egids || (num_lid_entries && !remove_elids) 
+          || (nremove_size && !zhg->Remove_Pin_GIDs)
           || !remove_esizes || (ewgtdim && !remove_ewgts)) MEMORY_ERROR;
     }
       
     nremove = nkeep = 0;
-    for (i = 0; i < *nedges; i++)
+    keep_pins = pins;
+    remove_pins = zhg->Remove_Pin_GIDs;
+    in_pins = pins;
+
+    for (i = 0; i < *nedges; i++){
       /* Compare esizes[i]+graph_input; graph_input adds one GID to hedge */
       if (((esizes[i]+graph_input) <= gesize_threshold) &&
           ((esizes[i]+graph_input) > 0)) {
@@ -1546,6 +1742,11 @@ float gesize_threshold;   /* Edges with more vertices than gesize_threshold
           if (!graph_input)
             for (j = 0; j < ewgtdim; j++)
               ewgts[nkeep*ewgtdim + j] = ewgts[i*ewgtdim + j];
+
+          if (pins){
+            ZOLTAN_COPY_GID_ARRAY(keep_pins, in_pins, zz, esizes[i]);
+            keep_pins += (esizes[i] * num_gid_entries);
+          }
         }
         nkeep++;
       }
@@ -1558,16 +1759,77 @@ float gesize_threshold;   /* Edges with more vertices than gesize_threshold
           ZOLTAN_SET_LID(zz, &(remove_elids[nremove*num_lid_entries]),
                              &(elids[i*num_lid_entries]));
         remove_esizes[nremove] = esizes[i];
+
+        if (pins){
+          ZOLTAN_COPY_GID_ARRAY(remove_pins, in_pins, zz, esizes[i]);
+          remove_pins += (esizes[i] * num_gid_entries);
+        }
         if (!graph_input)
           for (j = 0; j < ewgtdim; j++)
             remove_ewgts[nremove*ewgtdim + j] = ewgts[i*ewgtdim + j];
         nremove++;
       }
+      in_pins += (esizes[i] * num_gid_entries);
+    }
     *nedges = nkeep;
   }
 End:
   return ierr;
 }
+static int remove_empty_edges(ZZ *zz, int *num_lists, int num_pins, 
+   ZOLTAN_ID_PTR edg_GID, int *row_ptr, ZOLTAN_ID_PTR vtx_GID)
+{
+int nedges = 0;
+ZOLTAN_ID_PTR old_e, new_e;
+int i, size, npins;
+
+  /* remove edges with no pins from the edge list */
+
+  old_e = new_e = edg_GID;
+  npins = 0;
+
+  for (i=0; i<*num_lists; i++){
+    size = ((i < *num_lists-1) ? row_ptr[i+1] : num_pins) - row_ptr[i];
+
+    if (size > 0){
+      if (new_e < old_e){
+        ZOLTAN_SET_GID(zz, new_e, old_e);
+        row_ptr[nedges] = npins;
+      }
+      new_e += zz->Num_GID;
+      nedges++;
+      npins += size;
+    }
+    old_e += zz->Num_GID;
+  }
+
+  *num_lists = nedges;
+
+  return ZOLTAN_OK;
+}
+
+#if VERBOSE_EDGE_INFO
+static void show_edges(char *s, ZZ *zz, int num_lists, int num_pins, 
+                int *edg_GID, int *row_ptr, int *vtx_GID)
+{
+int i, j, size, sumsize=0;
+int *v = vtx_GID;
+
+  /* helpful in debugging */
+  printf("%s> Process %d, %d edges, %d pins\n",s, zz->Proc, num_lists, num_pins);
+  for (i=0; i<num_lists; i++){
+    size = (i < num_lists-1 ? row_ptr[i+1] : num_pins) - row_ptr[i];
+    sumsize += size;
+    printf("Edge %d, size %d\n  ", edg_GID[i], size);
+    for (j=0; j<size; j++){
+      printf("%d ",   *v++);
+    }
+    printf("\n");
+  }
+  printf("Sum of edge sizes: %d\n",sumsize);
+}
+#endif
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
