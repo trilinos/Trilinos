@@ -48,6 +48,267 @@ from   Numeric    import *
 
 ##########################################################################
 
+class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
+    "TestCase class for Epetra SerialDense Matrices"
+
+    def setUp(self):
+        self.comm  = Epetra.PyComm()
+        self.size  = 4
+        self.rows  = 2
+        self.cols  = 4
+        self.array = [[0.1, 2.3, 4.5],
+                      [6.7, 8.9, 0.1],
+                      [2.3, 4.5, 6.7]]
+
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testMatrixConstructor0(self):
+        "Test Epetra.SerialDenseMatrix default constructor"
+        sdm = Epetra.SerialDenseMatrix()
+        self.assertEqual(sdm.CV(), Epetra.Copy)
+        self.assertEqual(sdm.M(), 0)
+        self.assertEqual(sdm.N(), 0)
+
+    def testMatrixConstructor1(self):
+        "Test Epetra.SerialDenseMatrix bool constructor"
+        sdm = Epetra.SerialDenseMatrix(False)
+        self.assertEqual(sdm.CV(), Epetra.View)
+        self.assertEqual(sdm.M(), 0)
+        self.assertEqual(sdm.N(), 0)
+
+    def testMatrixConstructor2(self):
+        "Test Epetra.SerialDenseMatrix sized constructor"
+        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
+        self.assertEqual(sdm.CV(), Epetra.View)
+        self.assertEqual(sdm.M(), self.rows)
+        self.assertEqual(sdm.N(), self.cols)
+
+    def testMatrixConstructor3(self):
+        "Test Epetra.SerialDenseMatrix sized+bool constructor"
+        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols,False)
+        self.assertEqual(sdm.CV(), Epetra.Copy)
+        self.assertEqual(sdm.M(), self.rows)
+        self.assertEqual(sdm.N(), self.cols)
+
+    def testMatrixConstructor4(self):
+        "Test Epetra.SerialDenseMatrix 1D list constructor"
+        list = self.array[1]
+        sdm = Epetra.SerialDenseMatrix(list)
+        self.assertEqual(sdm.CV(), Epetra.View)
+        self.assertEqual(sdm.M(), 0)
+        self.assertEqual(sdm.N(), 0)
+
+    def testMatrixConstructor5(self):
+        "Test Epetra.SerialDenseMatrix 2D list constructor"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertEqual(sdm.CV(), Epetra.View)
+        self.assertEqual(sdm.M(), len(self.array))
+        self.assertEqual(sdm.N(), len(self.array[0]))
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEquals(sdm[i,j], self.array[i][j])
+
+    def testMatrixConstructor6(self):
+        "Test Epetra.SerialDenseMatrix 2D list+bool constructor"
+        sdm = Epetra.SerialDenseMatrix(self.array,False)
+        self.assertEqual(sdm.CV(), Epetra.View)
+        self.assertEqual(sdm.M(), len(self.array))
+        self.assertEqual(sdm.N(), len(self.array[0]))
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEquals(sdm[i,j], self.array[i][j])
+
+    def testMatrixConstructor7(self):
+        "Test Epetra.SerialDenseMatrix copy constructor"
+        sdm1 = Epetra.SerialDenseMatrix(self.rows,self.cols)
+        sdm2 = Epetra.SerialDenseMatrix(sdm1)
+        self.assertEqual(sdm2.CV(), Epetra.View)
+        self.assertEqual(sdm1.M(), sdm2.M())
+        self.assertEqual(sdm1.N(), sdm2.N())
+
+    def testMatrixShape(self):
+        "Test Epetra.SerialDenseMatrix Shape method"
+        sdm = Epetra.SerialDenseMatrix()
+        self.assertEqual(sdm.M(), 0)
+        self.assertEqual(sdm.N(), 0)
+        sdm.Shape(self.rows,self.cols)
+        self.assertEqual(sdm.M(), self.rows)
+        self.assertEqual(sdm.N(), self.cols)
+
+    def testMatrixReshape1(self):
+        "Test Epetra.SerialDenseMatrix Reshape method to smaller"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertEqual(sdm.M(), len(self.array)   )
+        self.assertEqual(sdm.N(), len(self.array[0]))
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],self.array[i][j])
+        sdm.Reshape(sdm.M()-1,sdm.N()-1)
+        self.assertEqual(sdm.M(), len(self.array)   -1)
+        self.assertEqual(sdm.N(), len(self.array[0])-1)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],self.array[i][j])
+
+    def testMatrixReshape2(self):
+        "Test Epetra.SerialDenseMatrix Reshape method to larger"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertEqual(sdm.M(), len(self.array)   )
+        self.assertEqual(sdm.N(), len(self.array[0]))
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],self.array[i][j])
+        sdm.Reshape(sdm.M()+1,sdm.N()+1)
+        self.assertEqual(sdm.M(), len(self.array)   +1)
+        self.assertEqual(sdm.N(), len(self.array[0])+1)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                if (i < len(self.array)) and (j < len(self.array[0])):
+                    self.assertEqual(sdm[i,j],self.array[i][j])
+                else:
+                    self.assertEqual(sdm[i,j],0.0)
+
+    def testMatrixScale(self):
+        "Test Epetra.SerialDenseMatrix Scale Method"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],self.array[i][j])
+        result = sdm.Scale(2)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],2*self.array[i][j])
+
+    def testMatrixNormOne(self):
+        "Test Epetra.SerialDenseMatrix NormOne method"
+        a   = array(self.array)
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertAlmostEqual(sdm.NormOne(), max(sum(abs(a),axis=0)))
+
+    def testMatrixNormInf(self):
+        "Test Epetra.SerialDenseMatrix NormInf method"
+        a   = array(self.array)
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertAlmostEqual(sdm.NormInf(), max(sum(abs(a),axis=1)))
+
+    def testMatrixIndexErrors(self):
+        "Test Epetra.SerialDenseMatrix index errors "
+        sdm = Epetra.SerialDenseMatrix(self.size,self.size)
+        #self.assertRaises(TypeError, sdm.__getitem__, 0,1,2)
+        self.assertRaises(TypeError, sdm.__setitem__, 0,1,2,3.14)
+
+    def testMatrixPrint(self):
+        "Test Epetra.SerialDenseMatrix Print method"
+        n   = self.size
+        sdm = Epetra.SerialDenseMatrix(n,n)
+        filename = "testSerialDense%d.dat" % self.comm.MyPID()
+        f = open(filename, "w")
+        sdm.Print(f)
+        f.close()
+        out = "\nData access mode: View\nA_Copied: no\nRows(M): %d\nColumns(N): %d\nLDA: %d\n" \
+              % (n,n,n) + (n * "0 " + "\n") * n
+        f = open(filename, "r")
+        self.assertEqual(f.read(), out)
+        f.close()
+
+    def testMatrixStr(self):
+        "Test Epetra.SerialDenseMatrix __str__ method"
+        n   = self.size
+        sdv = Epetra.SerialDenseMatrix(n,n)
+        row = "[" + n * " 0. "
+        row = row[:-1] + "]\n "
+        out = "[" + n*row
+        out = out[:-2] + "]"
+        self.assertEqual(str(sdv), out)
+
+    def testMatrixInPlaceAdd(self):
+        "Test Epetra.SerialDenseMatrix += operator"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],self.array[i][j])
+        sdm += sdm
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],2*self.array[i][j])
+
+    def testMatrixRandom(self):
+        "Test Epetra.SerialDenseMatrix Random method"
+        sdm = Epetra.SerialDenseMatrix(self.size,self.size)
+        for i in range(self.size):
+            for j in range(self.size):
+                self.assertEqual(sdm[i,j], 0.0)
+        result = sdm.Random()
+        self.assertEqual(result, 0)
+        for i in range(self.size):
+            for j in range(self.size):
+                self.assertEqual(sdm[i,j]>-1.0, True)
+                self.assertEqual(sdm[i,j]< 1.0, True)
+
+    def testMatrixLDA(self):
+        "Test Epetra.SerialDenseMatrix LDA method"
+        for numRows in range(4,10):
+            for numCols in range(4,10):
+                sdm = Epetra.SerialDenseMatrix(numRows,numCols)
+                self.assertEqual(sdm.LDA(),sdm.M())
+
+    def testMatrixUseTranspose(self):
+        "Test Epetra.SerialDenseMatrix UseTranspose method"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertEqual(sdm.UseTranspose(), False)
+
+    def testMatrixSetUseTranspose(self):
+        "Test Epetra.SerialDenseMatrix SetUseTranspose method"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        for state in (True,False):
+            sdm.SetUseTranspose(state)
+            self.assertEqual(sdm.UseTranspose(), state)
+
+    def testMatrixLabel(self):
+        "Test Epetra.SerialDenseMatrix Label method"
+        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
+        self.assertEqual(sdm.Label(), "Epetra::SerialDenseMatrix")
+
+    def testMatrixHasNormInf(self):
+        "Test Epetra.SerialDenseMatrix HasNormInf method"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertEqual(sdm.HasNormInf(), True)
+
+    def testMatrixRowDim(self):
+        "Test Epetra.SerialDenseMatrix RowDim method"
+        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
+        self.assertEqual(sdm.RowDim(), sdm.M())
+
+    def testMatrixColDim(self):
+        "Test Epetra.SerialDenseMatrix ColDim method"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        self.assertEqual(sdm.ColDim(), sdm.N())
+
+#     def testMatrixMultiply(self):
+#         "Test Epetra.SerialDenseMatrix Multiply method"
+#         this = Epetra.SerialDenseMatrix(3,4)
+#         print
+#         this.Print()
+#         a    = Epetra.SerialDenseMatrix([[ 1, 16],
+#                                          [ 7, 10],
+#                                          [13,  4]])
+#         a.Print()
+#         b    = Epetra.SerialDenseMatrix([[0, 2, 4,  6],
+#                                          [5, 3, 1, -1]])
+#         b.Print()
+#         c    = Epetra.SerialDenseMatrix([[80, 50, 20, -10],
+#                                          [50, 44, 38,  32],
+#                                          [20, 38, 56,  74]])
+#         result = this.Multiply("N","N",1.0,a,b,1.0)
+#         this.Print()
+#         self.assertEqual(result, 0)
+#         for i in range(this.M()):
+#             for j in range(this.N()):
+#                 self.assertEqual(this[i,j], 0.5*c[i,j])
+
+##########################################################################
+
 class EpetraSerialDenseVectorTestCase(unittest.TestCase):
     "TestCase class for Epetra SerialDense Vectors"
 
@@ -269,213 +530,6 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
 
 ##########################################################################
 
-class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
-    "TestCase class for Epetra SerialDense Matrices"
-
-    def setUp(self):
-        self.comm  = Epetra.PyComm()
-        self.size  = 4
-        self.rows  = 2
-        self.cols  = 4
-        self.array = [[0.1, 2.3, 4.5],
-                      [6.7, 8.9, 0.1],
-                      [2.3, 4.5, 6.7]]
-
-    def tearDown(self):
-        self.comm.Barrier()
-
-    def testMatrixConstructor0(self):
-        "Test Epetra.SerialDenseMatrix default constructor"
-        sdm = Epetra.SerialDenseMatrix()
-        self.assertEqual(sdm.CV(), Epetra.Copy)
-        self.assertEqual(sdm.M(), 0)
-        self.assertEqual(sdm.N(), 0)
-
-    def testMatrixConstructor1(self):
-        "Test Epetra.SerialDenseMatrix bool constructor"
-        sdm = Epetra.SerialDenseMatrix(False)
-        self.assertEqual(sdm.CV(), Epetra.View)
-        self.assertEqual(sdm.M(), 0)
-        self.assertEqual(sdm.N(), 0)
-
-    def testMatrixConstructor2(self):
-        "Test Epetra.SerialDenseMatrix sized constructor"
-        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
-        self.assertEqual(sdm.CV(), Epetra.View)
-        self.assertEqual(sdm.M(), self.rows)
-        self.assertEqual(sdm.N(), self.cols)
-
-    def testMatrixConstructor3(self):
-        "Test Epetra.SerialDenseMatrix sized+bool constructor"
-        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols,False)
-        self.assertEqual(sdm.CV(), Epetra.Copy)
-        self.assertEqual(sdm.M(), self.rows)
-        self.assertEqual(sdm.N(), self.cols)
-
-    def testMatrixConstructor4(self):
-        "Test Epetra.SerialDenseMatrix 1D list constructor"
-        list = self.array[1]
-        sdm = Epetra.SerialDenseMatrix(list)
-        self.assertEqual(sdm.CV(), Epetra.View)
-        self.assertEqual(sdm.M(), 0)
-        self.assertEqual(sdm.N(), 0)
-
-    def testMatrixConstructor5(self):
-        "Test Epetra.SerialDenseMatrix 2D list constructor"
-        sdm = Epetra.SerialDenseMatrix(self.array)
-        self.assertEqual(sdm.CV(), Epetra.View)
-        self.assertEqual(sdm.M(), len(self.array))
-        self.assertEqual(sdm.N(), len(self.array[0]))
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEquals(sdm[i,j], self.array[i][j])
-
-    def testMatrixConstructor6(self):
-        "Test Epetra.SerialDenseMatrix 2D list+bool constructor"
-        sdm = Epetra.SerialDenseMatrix(self.array,False)
-        self.assertEqual(sdm.CV(), Epetra.View)
-        self.assertEqual(sdm.M(), len(self.array))
-        self.assertEqual(sdm.N(), len(self.array[0]))
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEquals(sdm[i,j], self.array[i][j])
-
-    def testMatrixConstructor7(self):
-        "Test Epetra.SerialDenseMatrix copy constructor"
-        sdm1 = Epetra.SerialDenseMatrix(self.rows,self.cols)
-        sdm2 = Epetra.SerialDenseMatrix(sdm1)
-        self.assertEqual(sdm2.CV(), Epetra.View)
-        self.assertEqual(sdm1.M(), sdm2.M())
-        self.assertEqual(sdm1.N(), sdm2.N())
-
-    def testMatrixShape(self):
-        "Test Epetra.SerialDenseMatrix Shape method"
-        sdm = Epetra.SerialDenseMatrix()
-        self.assertEqual(sdm.M(), 0)
-        self.assertEqual(sdm.N(), 0)
-        sdm.Shape(self.rows,self.cols)
-        self.assertEqual(sdm.M(), self.rows)
-        self.assertEqual(sdm.N(), self.cols)
-
-    def testMatrixReshape1(self):
-        "Test Epetra.SerialDenseMatrix Reshape method to smaller"
-        sdm = Epetra.SerialDenseMatrix(self.array)
-        self.assertEqual(sdm.M(), len(self.array)   )
-        self.assertEqual(sdm.N(), len(self.array[0]))
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEqual(sdm[i,j],self.array[i][j])
-        sdm.Reshape(sdm.M()-1,sdm.N()-1)
-        self.assertEqual(sdm.M(), len(self.array)   -1)
-        self.assertEqual(sdm.N(), len(self.array[0])-1)
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEqual(sdm[i,j],self.array[i][j])
-
-    def testMatrixReshape2(self):
-        "Test Epetra.SerialDenseMatrix Reshape method to larger"
-        sdm = Epetra.SerialDenseMatrix(self.array)
-        self.assertEqual(sdm.M(), len(self.array)   )
-        self.assertEqual(sdm.N(), len(self.array[0]))
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEqual(sdm[i,j],self.array[i][j])
-        sdm.Reshape(sdm.M()+1,sdm.N()+1)
-        self.assertEqual(sdm.M(), len(self.array)   +1)
-        self.assertEqual(sdm.N(), len(self.array[0])+1)
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                if (i < len(self.array)) and (j < len(self.array[0])):
-                    self.assertEqual(sdm[i,j],self.array[i][j])
-                else:
-                    self.assertEqual(sdm[i,j],0.0)
-
-    def testMatrixScale(self):
-        "Test Epetra.SerialDenseMatrix Scale Method"
-        sdm = Epetra.SerialDenseMatrix(self.array)
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEqual(sdm[i,j],self.array[i][j])
-        result = sdm.Scale(2)
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEqual(sdm[i,j],2*self.array[i][j])
-
-    def testMatrixNormOne(self):
-        "Test Epetra.SerialDenseMatrix NormOne method"
-        a   = array(self.array)
-        sdm = Epetra.SerialDenseMatrix(self.array)
-        self.assertAlmostEqual(sdm.NormOne(), max(sum(abs(a),axis=0)))
-
-    def testMatrixNormInf(self):
-        "Test Epetra.SerialDenseMatrix NormInf method"
-        a   = array(self.array)
-        sdm = Epetra.SerialDenseMatrix(self.array)
-        self.assertAlmostEqual(sdm.NormInf(), max(sum(abs(a),axis=1)))
-
-    def testMatrixIndexErrors(self):
-        "Test Epetra.SerialDenseMatrix index errors "
-        sdm = Epetra.SerialDenseMatrix(self.size,self.size)
-        #self.assertRaises(TypeError, sdm.__getitem__, 0,1,2)
-        self.assertRaises(TypeError, sdm.__setitem__, 0,1,2,3.14)
-
-    def testMatrixPrint(self):
-        "Test Epetra.SerialDenseMatrix Print method"
-        n   = self.size
-        sdm = Epetra.SerialDenseMatrix(n,n)
-        filename = "testSerialDense%d.dat" % self.comm.MyPID()
-        f = open(filename, "w")
-        sdm.Print(f)
-        f.close()
-        out = "\nData access mode: View\nA_Copied: no\nRows(M): %d\nColumns(N): %d\nLDA: %d\n" \
-              % (n,n,n) + (n * "0 " + "\n") * n
-        f = open(filename, "r")
-        self.assertEqual(f.read(), out)
-        f.close()
-
-    def testMatrixStr(self):
-        "Test Epetra.SerialDenseMatrix __str__ method"
-        n   = self.size
-        sdv = Epetra.SerialDenseMatrix(n,n)
-        row = "[" + n * " 0. "
-        row = row[:-1] + "]\n "
-        out = "[" + n*row
-        out = out[:-2] + "]"
-        self.assertEqual(str(sdv), out)
-
-    def testMatrixInPlaceAdd(self):
-        "Test Epetra.SerialDenseMatrix += operator"
-        sdm = Epetra.SerialDenseMatrix(self.array)
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEqual(sdm[i,j],self.array[i][j])
-        sdm += sdm
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEqual(sdm[i,j],2*self.array[i][j])
-
-    def testMatrixRandom(self):
-        "Test Epetra.SerialDenseMatrix Random method"
-        sdm = Epetra.SerialDenseMatrix(self.size,self.size)
-        for i in range(self.size):
-            for j in range(self.size):
-                self.assertEqual(sdm[i,j], 0.0)
-        result = sdm.Random()
-        self.assertEqual(result, 0)
-        for i in range(self.size):
-            for j in range(self.size):
-                self.assertEqual(sdm[i,j]>-1.0, True)
-                self.assertEqual(sdm[i,j]< 1.0, True)
-
-    def testMatrixLDA(self):
-        "Test Epetra.SerialDenseMatrix LDA method"
-        for numRows in range(4,10):
-            for numCols in range(4,10):
-                sdm = Epetra.SerialDenseMatrix(numRows,numCols)
-                self.assertEqual(sdm.LDA(),sdm.M())
-
-##########################################################################
-
 class EpetraSerialDenseSolverTestCase(unittest.TestCase):
     "TestCase class for Epetra SerialDense Solvers"
 
@@ -516,8 +570,8 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(EpetraSerialDenseVectorTestCase))
     suite.addTest(unittest.makeSuite(EpetraSerialDenseMatrixTestCase))
+    suite.addTest(unittest.makeSuite(EpetraSerialDenseVectorTestCase))
     suite.addTest(unittest.makeSuite(EpetraSerialDenseSolverTestCase))
 
     # Create a communicator
