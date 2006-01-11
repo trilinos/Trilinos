@@ -52,9 +52,10 @@ class AztecOO_Operator: public virtual Epetra_Operator {
   /*! Facilitates the use of an AztecOO solver instance as an operator.  This is particularly designed
       for using AztecOO as a preconditioner within another AztecOO instance.
     \param In - A fully-constructed AztecOO object.
-    \param In - Number of iterations that should be performed.  \em Exactly this many iteration will be done.
+    \param In - Number of iterations that should be performed.  \em Exactly this many iterations will be done if Tol = 0.0.
+    \param In - Tolerance used for each application of AztecOO solver.
   */
-  AztecOO_Operator(AztecOO * solver, int NumIters);
+  AztecOO_Operator(AztecOO * solver, int NumIters, double Tol = 0.0);
     //! Destructor
   ~AztecOO_Operator();
   //@}
@@ -117,6 +118,9 @@ class AztecOO_Operator: public virtual Epetra_Operator {
 
   //! Returns the number of iterations that will be performed with the AztecOO solver.
   int NumIters() const {return(NumIters_);};
+
+  //! Returns the tolerance this will be used by the AztecOO solver.
+  double Tol() const {return(Tol_);};
   
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(false);};
@@ -146,6 +150,7 @@ class AztecOO_Operator: public virtual Epetra_Operator {
 
   AztecOO * solver_;
   int NumIters_;
+  double Tol_;
   char * Label_;
 };
 

@@ -32,9 +32,10 @@
 #include "Epetra_Map.h"
 
 //==============================================================================
-AztecOO_Operator::AztecOO_Operator(AztecOO * solver, int NumIters) 
+AztecOO_Operator::AztecOO_Operator(AztecOO * solver, int NumIters, double Tol) 
   : solver_(solver),
     NumIters_(NumIters),
+    Tol_(Tol),
     Label_(0) {
 
   Label_ = "AztecOO Operator";
@@ -58,7 +59,8 @@ int AztecOO_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVect
   solver_->SetLHS(&Y);
 
   // Finally do iterations (set tolerance to zero to force all iterations to be done)
-  int ierr = solver_->recursiveIterate(NumIters_, 0.0);
+  int ierr = solver_->recursiveIterate(NumIters_, Tol_);
+  //int ierr = solver_->recursiveIterate(NumIters_, Tol_);
 
   if (ierr==1) ierr = 0; // We force maxits, don't report as an error
 

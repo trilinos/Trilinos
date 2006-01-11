@@ -734,16 +734,17 @@ int AztecOO::recursiveIterate(int MaxIters, double Tolerance)
     }
   }
 
-  options_[AZ_recursion_level]++;
-  AZ_oldsolve(x_, b_, options_, params_, status_, proc_config_,
-	      Amat_, Prec_, Scaling_);
-  options_[AZ_recursion_level]--;
-  if (prec_allocated == 1) {
-    AZ_precond_destroy(&Prec_);
-    Prec_ = 0;
-    prec_allocated = 0;
-  }
-          
+  for (int i=0; i< X_->NumVectors(); i++) {
+    options_[AZ_recursion_level]++;
+    AZ_oldsolve(x_ + i*x_LDA_, b_ + i*b_LDA_, options_, params_, status_, proc_config_,
+		Amat_, Prec_, Scaling_);
+    options_[AZ_recursion_level]--;
+    if (prec_allocated == 1) {
+      AZ_precond_destroy(&Prec_);
+      Prec_ = 0;
+      prec_allocated = 0;
+    }
+  }          
 
 
   // Determine end status
@@ -913,7 +914,7 @@ int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Toleranc
 
 
   bool FirstCallToSolver = true;
-  double oldResid;
+  double oldResid=0.0;
 
   // Keep copy of best old solution
   Epetra_MultiVector Xold(*X_);
