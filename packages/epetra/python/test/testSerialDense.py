@@ -249,6 +249,24 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         for i in range(len(vals)):
             self.assertEqual(sdv[i], vals[i])
 
+    def testVectorScale(self):
+        "Test Epetra.SerialDenseVector Scale Method"
+        sdv = Epetra.SerialDenseVector(self.list)
+        for i in range(sdv.Length()):
+            self.assertEqual(sdv[i],self.list[i])
+        result = sdv.Scale(2)
+        for i in range(sdv.Length()):
+            self.assertEqual(sdv[i],2*self.list[i])
+
+    def testVectorInPlaceAdd(self):
+        "Test Epetra.SerialDenseVector += operator"
+        sdv = Epetra.SerialDenseVector(self.list)
+        for i in range(sdv.Length()):
+            self.assertEqual(sdv[i],self.list[i])
+        sdv += sdv
+        for i in range(sdv.Length()):
+            self.assertEqual(sdv[i],2*self.list[i])
+
 ##########################################################################
 
 class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
@@ -424,6 +442,37 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         out = "[" + n*row
         out = out[:-2] + "]"
         self.assertEqual(str(sdv), out)
+
+    def testMatrixInPlaceAdd(self):
+        "Test Epetra.SerialDenseMatrix += operator"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],self.array[i][j])
+        sdm += sdm
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j],2*self.array[i][j])
+
+    def testMatrixRandom(self):
+        "Test Epetra.SerialDenseMatrix Random method"
+        sdm = Epetra.SerialDenseMatrix(self.size,self.size)
+        for i in range(self.size):
+            for j in range(self.size):
+                self.assertEqual(sdm[i,j], 0.0)
+        result = sdm.Random()
+        self.assertEqual(result, 0)
+        for i in range(self.size):
+            for j in range(self.size):
+                self.assertEqual(sdm[i,j]>-1.0, True)
+                self.assertEqual(sdm[i,j]< 1.0, True)
+
+    def testMatrixLDA(self):
+        "Test Epetra.SerialDenseMatrix LDA method"
+        for numRows in range(4,10):
+            for numCols in range(4,10):
+                sdm = Epetra.SerialDenseMatrix(numRows,numCols)
+                self.assertEqual(sdm.LDA(),sdm.M())
 
 ##########################################################################
 
