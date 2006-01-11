@@ -427,7 +427,8 @@ BlockKrylovSchurEpetraExGenAmesos_DEPENDENCIES = \
 
 BlockKrylovSchurEpetraExGenAmesos_CXXFLAGS = \
 	-I$(top_srcdir)/src \
-	-I$(top_srcdir)/util/ModeLaplace
+	-I$(top_srcdir)/util/ModeLaplace \
+	-I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
 
 
 #np# List libraries that np is dependent on.
