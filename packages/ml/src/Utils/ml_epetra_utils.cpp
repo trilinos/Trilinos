@@ -682,40 +682,161 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   return 1;
 }
 
+// ======================================================================
 int ML_back_to_epetraCrs(ML_Operator *Mat1Mat2, ML_Operator *Result, 
 			 ML_Operator *Mat1, ML_Operator *Mat2)
 {
-  int *global_rows;
+  //---------------------------------------------------------------------------
+  Epetra_CrsMatrix *Mat1_epet = (Epetra_CrsMatrix *) Mat1->data;
+  Epetra_CrsMatrix *Mat2_epet = (Epetra_CrsMatrix *) Mat2->data;
+  
+  //---------------------------------------------------------------------------
+  // for temporary use create a linear row map, range map, domain map and a matrix
+  Epetra_Map* linrowmap = new Epetra_Map(Mat1_epet->RowMap().NumGlobalElements(),
+                                         Mat1_epet->RowMap().NumMyElements(),0,
+                                         Mat1_epet->Comm());
+  Epetra_Map* linrangemap = new Epetra_Map(Mat1_epet->OperatorRangeMap().NumGlobalElements(),
+                                           Mat1_epet->OperatorRangeMap().NumMyElements(),0,
+                                           Mat1_epet->Comm());
+  Epetra_Map* lindomainmap = new Epetra_Map(Mat2_epet->OperatorDomainMap().NumGlobalElements(),
+                                            Mat2_epet->OperatorDomainMap().NumMyElements(),0,
+                                            Mat2_epet->Comm());
+  Epetra_CrsMatrix* tmpresult = new Epetra_CrsMatrix(Copy,*linrowmap,500,false);
+  
 
-  Epetra_RowMatrix *Mat1_epet = (Epetra_RowMatrix *) Mat1->data;
-  Epetra_RowMatrix *Mat2_epet = (Epetra_RowMatrix *) Mat2->data;
-
-  Epetra_CrsMatrix *Result_epet = new Epetra_CrsMatrix(Copy, 
-				            Mat1_epet->RowMatrixRowMap(),
-					    Mat2_epet->RowMatrixColMap(), 0);
+  // see results as ML_Operator
+  //ML_Operator_Print(Mat2,"Mat2");
+  //ML_Operator_Print(Mat1Mat2,"Mat1Mat2");
+  
+  // warning
+  // when either Mat1 or Mat2 contain empty columns, this routine fails.
+  // This is due to difering philosophies in ML and Epetra w.r.t
+  // local column indices. In case of empty columns, ML keeps those
+  // local column indices while Epetra strips them out.
+  // This appears in serial and in parallel.
+  // I currently do not see any elegant way to fix this easily.
+  // (One fix proposed by Ray would be to add another layer of indirect addressing to
+  // the ML_Epetra_CrsMatrix_getrow to fix this. But this will come at
+  // some price and in most cases will not be needed)
+  
+  //---------------------------------------------------------------------------
+  // The result matrix Mat1Mat2:
+  // - ML created a new row numbering that is a linear map for the rows 
+  //   no matter what the input maps were
+  // - row indices are local
+  // - ML created a column numbering matching the new row map
+  // - col indices are global
+  
+  //---------------------------------------------------------------------------
+  // fill the temporary matrix tmpresult which has linear maps as well
   int allocated = 0, row_length;
   int *bindx = NULL;
   double *val = NULL;
-
-  global_rows = Mat1_epet->RowMatrixRowMap().MyGlobalElements();
-  for (int i = 0; i < Mat1Mat2->getrow->Nrows; i++) {
-    ML_get_matrix_row(Mat1Mat2, 1, &i, &allocated, &bindx, &val,
-		      &row_length, 0);
-
-    Result_epet->InsertGlobalValues(global_rows[i],
-					       row_length, val,
-					       bindx);
+  int* global_rows = linrowmap->MyGlobalElements();
+  if (Mat1Mat2->getrow->Nrows != Mat1_epet->RowMap().NumMyElements())
+  {
+    cout << "Rowmap of ML_Operator and Epetra_CrsMatrix are different!\n";
+    exit(-1);
   }
-  int ierr=Result_epet->FillComplete(Mat1_epet->OperatorRangeMap(),
-				    Mat2_epet->OperatorDomainMap());
-
+  for (int i=0; i<Mat1Mat2->getrow->Nrows; ++i) 
+  {
+    // get the row
+    ML_get_matrix_row(Mat1Mat2, 1, &i, &allocated, &bindx, &val,&row_length, 0);
+    // ML pads empty rows with a zero, take these out again in the result
+    if (row_length==1 && val[0]==0.0) continue;
+    // the row index i is an ml linear map
+    // the row index global_rows[i] is the true Epetra grid
+    // we have columns bindx which are global but refer to MLs linear map
+    // this matches the map of tmpresult
+    int err = tmpresult->InsertGlobalValues(global_rows[i],row_length, 
+                                            val,bindx);
+    if (err!=0 && err != 1) cout << "tmpresult->InsertGlobalValues returned " << err << endl;
+  }
   if (bindx != NULL) ML_free(bindx);
   if (val != NULL) ML_free(val);
+
+  int err = tmpresult->FillComplete(*lindomainmap,*linrangemap);
+  if (err) 
+  {
+    cerr <<"Error in Epetra_CrsMatrix FillComplete" << err << endl;
+    EPETRA_CHK_ERR(err);
+  }
+  delete linrowmap;
+  delete linrangemap;
+  delete lindomainmap;
+
+  //---------------------------------------------------------------------------
+  // compute the global column lookup of the final result matrix
+  // the unknown column map is an overlapping version of the Mat2_epet->OperatorDomainMap()
+  const Epetra_Comm& comm = Mat2_epet->Comm();
+  const Epetra_Map& dommap = Mat2_epet->OperatorDomainMap();
+  vector<int> gcolumns(dommap.NumGlobalElements());
+  int countold=0;
+  int count=0;
+  for (int proc=0; proc<comm.NumProc(); ++proc)
+  {
+    if (proc==comm.MyPID())
+      for (int i=0; i<dommap.NumMyElements(); ++i)
+      {
+        //cout << "Proc " << proc << " gcolumns[" << countold << "+" << count << "] = " << dommap.GID(i) << endl;
+        gcolumns[countold+count] = dommap.GID(i);
+        if (gcolumns[countold+count]<0) cout << "Cannot find gcid for lcid\n";
+        ++count;
+      }
+    comm.Broadcast(&count,1,proc);
+    comm.Broadcast(&gcolumns[countold],count,proc);
+    countold += count;
+    count=0;
+  }
+  
+  //if (comm.MyPID()==0)
+  //for (int i=0; i<(int)gcolumns.size(); ++i) cout << "gcolumns[ " << i << "] = " << gcolumns[i] << endl;
+  //---------------------------------------------------------------------------
+  // create the final result matrix with the correct row map
+  Epetra_CrsMatrix *Result_epet = new Epetra_CrsMatrix(Copy,Mat1_epet->RowMap(),
+                                                       20,false);
+  //---------------------------------------------------------------------------
+  // fill the final result from the tmpresult
+  vector<int> gcid(50);
+  for (int i=0; i<tmpresult->NumMyRows(); ++i)
+  {
+    int lrid = i; // holds for both matrices
+    int grid = Result_epet->GRID(i); // holds for Result_epet
+    if (grid<0) cout << "Cannot find grid for lrid\n";
+    int numindices;
+    int* indices;
+    double* values;
+    int err = tmpresult->ExtractMyRowView(lrid,numindices,values,indices);
+    if (err) cout << "tmpresult->ExtractMyRowView returned " << err << endl;
+    // indices[j] are lcid which is what we wanted
+    if (numindices>(int)gcid.size()) gcid.resize(numindices);
+    for (int j=0; j<numindices; ++j)
+    {
+      // get the gcid in the tmpresult matrix
+      // gcid in tmpresult is from the linear column map
+      int tmpgcid = tmpresult->GCID(indices[j]);
+      if (tmpgcid<0 || tmpgcid>=(int)gcolumns.size()) 
+        cout << "Cannot find tmpgcid " << tmpgcid << " for lcid (out of range)\n";
+      // get the gcid from the lookup vector
+      gcid[j] = gcolumns[tmpgcid];
+    }
+    // insert row into final result matrix
+    err = Result_epet->InsertGlobalValues(grid,numindices,values,&(gcid[0]));
+    if (err != 0 && err != 1) cout << "Result_epet->InsertGlobalValues returned " << err << endl;
+  }
+  int ierr=Result_epet->FillComplete(Mat2_epet->OperatorDomainMap(),
+                                     Mat1_epet->OperatorRangeMap());
   if (ierr!=0) {
-    cerr <<"Error in Epetra_VbrMatrix FillComplete" << ierr << endl;
+    cerr <<"Error in Epetra_CrsMatrix FillComplete" << ierr << endl;
     EPETRA_CHK_ERR(ierr);
   }
 
+  // tidy up
+  delete tmpresult;
+  gcolumns.clear();
+  gcid.clear();
+  
+  // wrap the result
   ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix *) Result_epet, Result);
 
   return 1;
