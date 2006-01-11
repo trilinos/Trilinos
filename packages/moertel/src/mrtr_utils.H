@@ -187,9 +187,28 @@ The user is responsible for freeing the returned result.
 \param B : Matrix B to multiply
 \param transB : flag indicating whether B*T shall be used
 \return Result upon success and NULL upon failure
+\warning The method fails if any of A or B have empty columns. 
+See ML bug 1913 for details.
 */
 Epetra_CrsMatrix* MatMatMult(Epetra_CrsMatrix& A, bool transA, 
                              Epetra_CrsMatrix& B, bool transB);
+
+/*!
+\brief Multiply matrices A*B
+
+matrices A and B are mutliplied and the result is allocated and returned.
+The method makes uses EpetraExt for multiplication
+The user is responsible for freeing the returned result.
+
+\param A : Matrix A to multiply
+\param transA : flag indicating whether A*T shall be used
+\param B : Matrix B to multiply
+\param transB : flag indicating whether B*T shall be used
+\return Result upon success and NULL upon failure
+*/
+Epetra_CrsMatrix* MatMatMult_EpetraExt(Epetra_CrsMatrix& A, bool transA, 
+                                       Epetra_CrsMatrix& B, bool transB,
+                                       int outlevel);
 
 
 } // namespace MOERTEL

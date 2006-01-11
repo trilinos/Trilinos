@@ -424,6 +424,8 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
            Atilde = A + ( B WT - I) A W B^T + B WT A (W B^T - I)
            
         5) Build BWT = B * WT
+
+        6) Build BWTmI = BWT - I
   */    
   
   int err=0;
@@ -559,23 +561,18 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
 
   //--------------------------------------------------------------------------
   // 5) Build BWT = B * WT
-
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*inputmatrix_,false,*inputmatrix_,false);// maybe
-  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*I,false,*I,false); // wrong
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*inputmatrix_,false,*B,false); // no
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*inputmatrix_,false,*WT,true); // no
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,false,*WT,false); // yes
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*I,false,*WT,true); // yes
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*I,false,*B,false); // yes
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,true,*inputmatrix_,false);  // yes
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*WT,false,*inputmatrix_,false); // yes
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*WT,false,*I,false); // yes
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,true,*I,false); // yes
-  //Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*WT,false,*B,false); // no
-
-  cout << "BWT\n" << *BWT;
+  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult_EpetraExt(*B,false,*WT,false,OutLevel()); // yes
+  //cout << "BWT\n" << *BWT;
 
   
+  //--------------------------------------------------------------------------
+  // 6) Build BWTmI = BWT - I
+  Epetra_CrsMatrix* BWTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
+  MatrixMatrixAdd(*BWT,false,1.0,*BWTmI,0.0);
+  MatrixMatrixAdd(*I,false,-1.0,*BWTmI,1.0);
+  BWTmI->FillComplete();
+  BWTmI->OptimizeStorage();
+  cout << "BWTmI\n" << *BWTmI;
   
   
   
@@ -591,7 +588,8 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   
   
   
-  // allocated annmap, WT, trans (which is owner of B), lm_to_dof, I
+  // allocated annmap, WT, trans (which is owner of B), lm_to_dof, I, BWT, 
+  //           BWTmI
   exit(0);
   return NULL;
 }

@@ -38,7 +38,9 @@
 #include "mrtr_segment_bilinearquad.H"
 #include "mrtr_node.H"
 
+#include <Epetra_Time.h>
 #include <EpetraExt_Transpose_RowMatrix.h>
+#include <EpetraExt_MatrixMatrix.h>
 
 /*----------------------------------------------------------------------*
  | allocate a segment depending on the type                 mwgee 07/05|
@@ -350,7 +352,7 @@ void MOERTEL::sort(double* dlist, int N, int* list2)
  | Multiply matrices A*B                                     mwgee 01/06|
  *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA, 
-                             Epetra_CrsMatrix& B, bool transB)
+                                      Epetra_CrsMatrix& B, bool transB)
 {
   // transpose A if indicated
   Epetra_CrsMatrix* Atrans = &A;
@@ -460,3 +462,81 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   return result;
 }
 
+/*----------------------------------------------------------------------*
+ | Multiply matrices A*B                                     mwgee 01/06|
+ *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* MOERTEL::MatMatMult_EpetraExt(Epetra_CrsMatrix& A, bool transA, 
+                                                Epetra_CrsMatrix& B, bool transB,
+                                                int outlevel)
+{
+  // transpose A if indicated
+  Epetra_CrsMatrix* Atrans = &A;
+  EpetraExt::RowMatrix_Transpose* transposerA = NULL;
+  if (transA)
+  {
+    transposerA = new EpetraExt::RowMatrix_Transpose(false);
+    Atrans = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposerA)(const_cast<Epetra_CrsMatrix&>(A)))));
+    if (!Atrans)
+    {
+      cout << "***ERR*** MOERTEL::MatMatMult:\n"
+           << "***ERR*** transpose of A failed\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }
+  }  
+  
+  // transpose B if indicated
+  Epetra_CrsMatrix* Btrans = &B;
+  EpetraExt::RowMatrix_Transpose* transposerB = NULL;
+  if (transB)
+  {
+    transposerB = new EpetraExt::RowMatrix_Transpose(false);
+    Btrans = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposerB)(const_cast<Epetra_CrsMatrix&>(B)))));
+    if (!Btrans)
+    {
+      cout << "***ERR*** MOERTEL::MatMatMult:\n"
+           << "***ERR*** transpose of B failed\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }
+  }
+  
+  // make sure FillComplete was called on the matrices
+  if (!Atrans->Filled()) 
+  {
+    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+         << "***ERR*** FillComplete() was not called on matrix A\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return NULL;
+  }
+  if (!Btrans->Filled()) 
+  {
+    cout << "***ERR*** MOERTEL::MatMatMult:\n"
+         << "***ERR*** FillComplete() was not called on matrix B\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return NULL;
+  }
+  
+  // create resultmatrix with correct rowmap
+  Epetra_CrsMatrix* C = new Epetra_CrsMatrix(Copy,Atrans->RowMap(),20,false);
+  
+  // make the mutliply
+  Epetra_Time time(Atrans->Comm());
+  if (outlevel>9)
+    time.ResetStartTime();
+
+  int err = EpetraExt::MatrixMatrix::Multiply(*Atrans,false,*Btrans,false,*C);
+  if (err) cout << "MOERTEL: EpetraExt::MatrixMatrix::Multiply returned err = " << err << endl;
+
+  if (outlevel>9 && Atrans->Comm().MyPID()==0)
+    cout << "MOERTEL (Proc 0): Time for matrix-matrix product " << time.ElapsedTime() << " sec\n";
+
+  C->OptimizeStorage();
+
+  if (transA)
+    delete transposerA;
+  if (transB)
+    delete transposerB;
+  
+  return C;
+}

@@ -32,9 +32,9 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "mrtr_manager.H"
+#include "mrtr_utils.H"
 #include "EpetraExt_MatrixMatrix.h"  // for adding matrices
 #include <EpetraExt_Transpose_RowMatrix.h>
-#include <EpetraExt_View_CrsGraph.h>
 #include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*
@@ -416,7 +416,16 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
               |_   _|
   
         3) Build B (has rowmap/rangemap problemmap_ and domainmap annmap)
+        
+        4) Build I, the identity matrix with maps problemmap_,problemmap_);
+        
+        After constructing WT ,B and I we can start building Atilde (spdmatrix_)
+        
+           Atilde = A + ( B WT - I) A W B^T + B WT A (W B^T - I)
+           
+        5) Build BWT = B * WT
 
+        6) Build BWTmI = BWT - I
   */    
   
   int err=0;
@@ -507,8 +516,11 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
       newindices[j] = D_->GCID(indices[j]);
       if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
     }
+    //cout << "Inserting from D in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
+    //cout << endl;
     err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
-    if (err<0) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
   
     // extract and add values from M
     err = M_->ExtractMyRowView(lmlrid,numentries,values,indices);
@@ -519,21 +531,65 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
       newindices[j] = M_->GCID(indices[j]);
       if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
     }
+    //cout << "Inserting from M in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
+    //cout << endl;
     err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
-    if (err<0) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
   }
-  tmp->FillComplete(*(problemmap_.get()),*annmap);  
-  cout << *tmp;
+  tmp->FillComplete(*(problemmap_.get()),*annmap);
+
   // B is transposed of tmp
   EpetraExt::RowMatrix_Transpose* trans = new EpetraExt::RowMatrix_Transpose(false);
   Epetra_CrsMatrix* B = &(dynamic_cast<Epetra_CrsMatrix&>(((*trans)(const_cast<Epetra_CrsMatrix&>(*tmp)))));
-  cout << *B;
+
   delete tmp; tmp = NULL;
+  newindices.clear();
 
+  //--------------------------------------------------------------------------
+  // 4) create I
+  Epetra_CrsMatrix* I = new Epetra_CrsMatrix(Copy,*problemmap_,1,true);
+  for (int i=0; i<I->NumMyRows(); ++i)
+  {
+    double one = 1.0;
+    int grid = I->GRID(i);
+    if (grid<0) cout << "Cannot find grid for i\n";
+    err = I->InsertGlobalValues(grid,1,&one,&grid);
+    if (err<0) cout << "I->InsertGlobalValues returned err=" << err << endl;
+  }
+  I->FillComplete(*problemmap_,*problemmap_);
 
+  //--------------------------------------------------------------------------
+  // 5) Build BWT = B * WT
+  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult_EpetraExt(*B,false,*WT,false,OutLevel()); // yes
+  //cout << "BWT\n" << *BWT;
 
-
-  // allocated annmap, WT, trans (which is owner of B)
+  
+  //--------------------------------------------------------------------------
+  // 6) Build BWTmI = BWT - I
+  Epetra_CrsMatrix* BWTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
+  MatrixMatrixAdd(*BWT,false,1.0,*BWTmI,0.0);
+  MatrixMatrixAdd(*I,false,-1.0,*BWTmI,1.0);
+  BWTmI->FillComplete();
+  BWTmI->OptimizeStorage();
+  cout << "BWTmI\n" << *BWTmI;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  // allocated annmap, WT, trans (which is owner of B), lm_to_dof, I, BWT, 
+  //           BWTmI
   exit(0);
   return NULL;
 }
