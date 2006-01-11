@@ -310,8 +310,18 @@ LOCA_ANASAZI = \
 
 else
 
-LOCA_ANASAZI_H =
-LOCA_ANASAZI = 
+LOCA_ANASAZI_H = \
+	$(srcdir)/LOCA_AnasaziOperator_AbstractStrategy.H \
+	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
+	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
+	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
+	$(srcdir)/LOCA_AnasaziOperator_Factory.H
+
+LOCA_ANASAZI = \
+	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
+	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
+	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
+	$(srcdir)/LOCA_AnasaziOperator_Factory.C
 
 endif
 

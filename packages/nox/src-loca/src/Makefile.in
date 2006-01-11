@@ -140,10 +140,6 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.H \
-	$(srcdir)/Anasazi_LOCA_MultiVecTraits.H \
-	$(srcdir)/Anasazi_LOCA_OperatorTraits.H \
-	$(srcdir)/Anasazi_LOCA_Sort.H \
-	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H \
@@ -217,8 +213,6 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.C \
-	$(srcdir)/Anasazi_LOCA_Sort.C \
-	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.C \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.C \
@@ -287,6 +281,10 @@ am__objects_5 =  \
 	libloca_a-LOCA_MultiContinuation_ArcLengthGroup.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_ArcLengthConstraint.$(OBJEXT) \
 	libloca_a-LOCA_MultiContinuation_Factory.$(OBJEXT)
+@BUILD_LOCAANASAZI_FALSE@am__objects_6 = libloca_a-LOCA_AnasaziOperator_JacobianInverse.$(OBJEXT) \
+@BUILD_LOCAANASAZI_FALSE@	libloca_a-LOCA_AnasaziOperator_ShiftInvert.$(OBJEXT) \
+@BUILD_LOCAANASAZI_FALSE@	libloca_a-LOCA_AnasaziOperator_Cayley.$(OBJEXT) \
+@BUILD_LOCAANASAZI_FALSE@	libloca_a-LOCA_AnasaziOperator_Factory.$(OBJEXT)
 @BUILD_LOCAANASAZI_TRUE@am__objects_6 = libloca_a-LOCA_AnasaziOperator_JacobianInverse.$(OBJEXT) \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_ShiftInvert.$(OBJEXT) \
 @BUILD_LOCAANASAZI_TRUE@	libloca_a-LOCA_AnasaziOperator_Cayley.$(OBJEXT) \
@@ -456,10 +454,6 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
 	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
 	$(srcdir)/LOCA_AnasaziOperator_Factory.H \
-	$(srcdir)/Anasazi_LOCA_MultiVecTraits.H \
-	$(srcdir)/Anasazi_LOCA_OperatorTraits.H \
-	$(srcdir)/Anasazi_LOCA_Sort.H \
-	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H \
@@ -962,7 +956,13 @@ LOCA_FACTORY = \
 	$(srcdir)/LOCA_Factory.C \
 	$(srcdir)/LOCA_GlobalData.C
 
-@BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI_H = 
+@BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI_H = \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_AbstractStrategy.H \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.H \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_Cayley.H \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_Factory.H
+
 @BUILD_LOCAANASAZI_TRUE@LOCA_ANASAZI_H = \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_AbstractStrategy.H \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.H \
@@ -974,7 +974,12 @@ LOCA_FACTORY = \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/Anasazi_LOCA_Sort.H \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_Eigensolver_AnasaziStrategy.H
 
-@BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI = 
+@BUILD_LOCAANASAZI_FALSE@LOCA_ANASAZI = \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_Cayley.C \
+@BUILD_LOCAANASAZI_FALSE@	$(srcdir)/LOCA_AnasaziOperator_Factory.C
+
 @BUILD_LOCAANASAZI_TRUE@LOCA_ANASAZI = \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_JacobianInverse.C \
 @BUILD_LOCAANASAZI_TRUE@	$(srcdir)/LOCA_AnasaziOperator_ShiftInvert.C \
