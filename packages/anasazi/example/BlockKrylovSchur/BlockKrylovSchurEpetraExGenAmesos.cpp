@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   //  Variables used for the Block Arnoldi Method
   //
   int nev = 10;
-  int blockSize = 1;  
+  int blockSize = 3;  
   int maxBlocks = 3*nev/blockSize;
   int maxRestarts = 5;
   //int step = 5;
