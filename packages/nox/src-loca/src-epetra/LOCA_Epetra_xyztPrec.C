@@ -119,6 +119,10 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
     splitVec = new Epetra_Vector(splitVec_);
     splitRes = new Epetra_Vector(splitVec_);
     splitVecOld = new Epetra_Vector(splitVec_);
+    input_EV_RCP = Teuchos::rcp(splitRes, false);
+    result_EV_RCP = Teuchos::rcp(splitVec, false);
+    input_NEV = new NOX::Epetra::Vector(input_EV_RCP, NOX::Epetra::Vector::CreateView);
+    result_NEV = new NOX::Epetra::Vector(result_EV_RCP, NOX::Epetra::Vector::CreateView);
   }
   else if (prec == "None") {
     label = "LOCA::Epetra::xyztPrec::None";
@@ -140,7 +144,9 @@ LOCA::Epetra::xyztPrec::
   if (splitVec) delete splitVec;
   if (splitRes) delete massBlock;
   if (splitVecOld) delete splitVecOld;
-
+  if (input_NEV) delete input_NEV;
+  if (result_NEV) delete result_NEV;
+  if (linSys != Teuchos::null) linSys->destroyPreconditioner();
 }
 
 
@@ -166,11 +172,11 @@ ApplyInverse(const Epetra_MultiVector& input,
 	     Epetra_MultiVector& result) const
 {
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
-
+  
   if (prec == "None") {
     return 0;
   }
-
+  
   if (prec == "Global") {
     // convert multivectors to vectors
     Epetra_MultiVector& input_EMV = const_cast<Epetra_MultiVector&>(input);
@@ -187,11 +193,11 @@ ApplyInverse(const Epetra_MultiVector& input,
     
     // apply preconditioner as specified in lsParams
     bool stat = linSys->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
-
-//    return (stat) ? 0 : 1;
+    
+    //    return (stat) ? 0 : 1;
   }    
   else if (prec == "Sequential" || prec == "Parallel") {
-
+    
     // convert multivectors to vectors
     Epetra_MultiVector& input_EMV = const_cast<Epetra_MultiVector&>(input);
     Epetra_Vector& input_EV = dynamic_cast<Epetra_Vector&>(input_EMV);
@@ -200,112 +206,72 @@ ApplyInverse(const Epetra_MultiVector& input,
     // residual needs to be in BlockVector and contain values from input
     EpetraExt::BlockVector residual(solution);    // inherit offsets from solution
     residual.Epetra_Vector::operator=(input_EV);  // populate with input values
-
-#ifdef FILE_DEBUG
-      cout << "residual = \n" << residual << endl;
-      char fname[255];
-#endif
-
+    
     // Set up loop logic for Sequential (block Gauss Seydel over time domains)
     // or parallel (Jacobi by time domains)
     int sequentialDomains, innerCheck;
     if (prec=="Sequential") {
-       sequentialDomains = globalComm->NumSubDomains();
-       innerCheck = globalComm->SubDomainRank();
+      sequentialDomains = globalComm->NumSubDomains();
+      innerCheck = globalComm->SubDomainRank();
     }
     else if (prec=="Parallel") {
-       sequentialDomains = 1;
-       innerCheck = 0;  
-       //In General:  innerCheck = globalComm->SubDomainRank() % sequentialDomains;
+      sequentialDomains = 1;
+      innerCheck = 0;  
+      //In General:  innerCheck = globalComm->SubDomainRank() % sequentialDomains;
     }
-
-    for (int isd=0; isd < sequentialDomains; isd++) {
-
-    // Communicate data from other time domains into overlapped vector
-    // This serves as a barrier as well.
-    solutionOverlap.Import(solution, overlapImporter, Insert);
-
-    //Work only on active time domain
-    if ( isd == innerCheck ) {
-
-    for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
-      // Extract jacobian block to use in solve
-      //   diagonal is column 0 on first step, colum one on all other)
-      if (globalComm->FirstTimeStepOnDomain() + i == 0)
-           jacobian.ExtractBlock(*jacobianBlock, 0, 0);
-      else
-           jacobian.ExtractBlock(*jacobianBlock, i, 1);
-      linSys->setJacobianOperatorForSolve(Asolve);
-
-#ifdef FILE_DEBUG
-      sprintf(fname,"jacBlock_%d.m",i);
-      EpetraExt::RowMatrixToMatlabFile(fname,*jacobianBlock);
-      cout << "jacobianBlock = \n" << *jacobianBlock << endl;
-#endif
-
-      // get x and residual (r) corresponding to current block
-      residual.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
-      solution.ExtractBlockValues(*splitVec, jacobian.RowIndex(i));
-
-#ifdef FILE_DEBUG
-      // debugging output
-      sprintf(fname,"splitRes_%d.m",i);
-      EpetraExt::VectorToMatlabFile(fname,*splitRes);
-      cout << "splitRes = \n" << *splitRes << endl;
-      sprintf(fname,"splitVec_%d.m",i);
-      EpetraExt::VectorToMatlabFile(fname,*splitVec);
-      cout << "splitVec = \n" << *splitVec << endl;
-#endif
-
-      // Create a new preconditioner for the single block
-      linSys->destroyPreconditioner();
-      linSys->createPreconditioner(*splitVec, lsParams, false);
-
-      int blockRowOld = jacobian.RowIndex(i) - 1;  //Hardwired for -1 in stencil
-      if (blockRowOld >= 0)  {
-	// update RHS with mass matrix * solution from previous time step 
-	// (which will be from previous time domain if i==0)
-	if (i==0) solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	else      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	jacobian.ExtractBlock(*massBlock, i, 0);
-#ifdef FILE_DEBUG
-	sprintf(fname,"massBlock_%d.m",i);
-	EpetraExt::RowMatrixToMatlabFile(fname,*massBlock);
-#endif
-	massBlock->Multiply(false, *splitVecOld, *splitVec);
-
-	splitRes->Update(-1.0, *splitVec, 1.0);
-      }	
-      
-      // use referenced counted pointers to vectors
-      const Teuchos::RefCountPtr<Epetra_Vector> input_EV_RCP = Teuchos::rcp(splitRes, false);
-      Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP = Teuchos::rcp(splitVec, false);
     
-      // copied from GLOBAL prec, but only need to do once in constructor for SEQUENTIAL
-      const NOX::Epetra::Vector input_NEV(input_EV_RCP, NOX::Epetra::Vector::CreateView);
-      NOX::Epetra::Vector result_NEV(result_EV_RCP, NOX::Epetra::Vector::CreateView);
-//result_NEV.init(0.0);  //Zero init guess might be better?
-
-      // solve the problem
-      bool stat = linSys->applyJacobianInverse(lsParams, input_NEV, result_NEV);
-      solution.LoadBlockValues(result_NEV.getEpetraVector(), jacobian.RowIndex(i));
-
-#ifdef FILE_DEBUG
-      sprintf(fname,"splitResAfterSolve_%d.m",i);
-      EpetraExt::VectorToMatlabFile(fname,*splitRes);
-      cout << "splitResAfterSolve = \n" << *splitRes << endl;
-#endif
-
-    }
-    }
-
+    for (int isd=0; isd < sequentialDomains; isd++) {
+      
+      // Communicate data from other time domains into overlapped vector
+      // This serves as a barrier as well.
+      solutionOverlap.Import(solution, overlapImporter, Insert);
+      
+      //Work only on active time domain
+      if ( isd == innerCheck ) {
+	
+	for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
+	  // Extract jacobian block to use in solve
+	  //   diagonal is column 0 on first step, colum one on all other)
+	  if (globalComm->FirstTimeStepOnDomain() + i == 0)
+	    jacobian.ExtractBlock(*jacobianBlock, 0, 0);
+	  else
+	    jacobian.ExtractBlock(*jacobianBlock, i, 1);
+	  linSys->setJacobianOperatorForSolve(Asolve);
+	  
+	  // get x and residual (r) corresponding to current block
+	  residual.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+	  solution.ExtractBlockValues(*splitVec, jacobian.RowIndex(i));
+	  
+	  // Create a new preconditioner for the single block
+	  linSys->destroyPreconditioner();
+	  linSys->createPreconditioner(*splitVec, lsParams, false);
+	  
+	  int blockRowOld = jacobian.RowIndex(i) - 1;  //Hardwired for -1 in stencil
+	  if (blockRowOld >= 0)  {
+	    // update RHS with mass matrix * solution from previous time step 
+	    // (which will be from previous time domain if i==0)
+	    if (i==0) 
+	      solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	    else      
+	      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	    jacobian.ExtractBlock(*massBlock, i, 0);
+	    massBlock->Multiply(false, *splitVecOld, *splitVec);
+	    splitRes->Update(-1.0, *splitVec, 1.0);
+	  }	
+	  
+	  // solve the problem
+	  bool stat = linSys->applyJacobianInverse(lsParams, *input_NEV, *result_NEV);
+	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
+	  //solution.LoadBlockValues((*result_NEV).getEpetraVector(), jacobian.RowIndex(i));
+	  
+	}
+      }
     }
     
     result = solution;
   }    
-  else {
-  }
-    return 0;
+
+  return 0;
 }
 
 double LOCA::Epetra::xyztPrec::

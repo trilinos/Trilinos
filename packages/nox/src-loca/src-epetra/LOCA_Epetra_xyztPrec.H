@@ -134,7 +134,10 @@ private:
   Epetra_Vector *splitVec; //tmp space
   Epetra_Vector *splitRes; //tmp space
   Epetra_Vector *splitVecOld; //tmp space
-
+  Teuchos::RefCountPtr<Epetra_Vector> input_EV_RCP;
+  Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP;
+  NOX::Epetra::Vector *input_NEV;
+  NOX::Epetra::Vector *result_NEV;
 
   //! Label for this operator
   string label;
