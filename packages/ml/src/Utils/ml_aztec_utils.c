@@ -2359,51 +2359,55 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
 int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
                              int num_dirichlet_rows)
 {
-   int *rows, i, j, bcrow;
-   double *vals;
-   struct ML_CSR_MSRdata *data;
-#ifdef ML_ZEROOUTPINNEDNODES
-   int *cols, *pinnednodes;
-#endif
+   int *rows, i, j, bcrow;    struct ML_CSR_MSRdata *data;
+   double *vals;    int *cols;
+   int Nloc, Nghosts;
+   double *dtemp;
+
+   Nloc = (*Tmat)->invec_leng;
+
+   if ((*Tmat)->getrow->pre_comm == NULL)
+     Nghosts = 0;
+   else {
+     if ((*Tmat)->getrow->pre_comm->total_rcv_length <= 0)
+       ML_CommInfoOP_Compute_TotalRcvLength((*Tmat)->getrow->pre_comm);
+     Nghosts = (*Tmat)->getrow->pre_comm->total_rcv_length;
+   }
+
+   dtemp = (double *) ML_allocate( sizeof(double) * (Nloc+Nghosts+1));
 
    data = (struct ML_CSR_MSRdata *) ((*Tmat)->data);
    rows = data->rowptr;
    vals = data->values;
-#ifdef ML_ZEROOUTPINNEDNODES
    cols = data->columns;
-   pinnednodes = (int *) ML_allocate((*Tmat)->invec_leng * sizeof(int) );
-   for (i=0; i<(*Tmat)->invec_leng; i++) pinnednodes[i] = 0;
-#endif
 
+   /* set all local col indices to 1 */
+   for( i=0 ; i<Nloc ; i++ ) dtemp[i] = 1.0;
+   /* set all ghost column indices to 0*/
+   for (i=0 ; i<Nghosts; i++) dtemp[i+Nloc] = 0.0;
+   /* set all local col indices of dirichlet rows to -1*/
    for (i=0;i<num_dirichlet_rows;i++) {
       bcrow = dirichlet_rows[i];
-      for (j = rows[bcrow]; j< rows[bcrow+1]; j++) {
-         vals[j] = 0.0;
-#ifdef ML_ZEROOUTPINNEDNODES
-         if (cols[j] < (*Tmat)->invec_leng)
-            pinnednodes[ cols[j] ] = 1;
-         else {
-            printf("(%d) ERROR: col indx too large (%d >= %d) ",
-                   (*Tmat)->comm->ML_mypid, cols[j] , (*Tmat)->invec_leng);
-            printf("in ML_Tmat_applyDirichletBC\n");
-            fflush(stdout);
-            exit(1);
-         }
-#endif
-      }
+      for (j = rows[bcrow]; j< rows[bcrow+1]; j++)
+         if ( (cols[j]) < Nloc )
+           dtemp[cols[j]] = -1.0;
    }
-#ifdef ML_ZEROOUTPINNEDNODES
-   /* If a node is the endpoint of a Dirichlet edge, the corresponding
-    *       column of T should be completely zeroed out. */
-   printf("\n\n\aIn ML_Tmat_applyDirichletBC: zeroing out pinned nodes\n\n");
-   fflush(stdout);
+
+   /* exchange column indices */
+   ML_exchange_bdry(dtemp,(*Tmat)->getrow->pre_comm,
+                    Nloc, (*Tmat)->comm, ML_OVERWRITE,NULL);
+
+   // If a node is the endpoint of a Dirichlet edge, the corresponding
+   //       column of T should be completely zeroed out.
    for (i=0;i<(*Tmat)->outvec_leng;i++) {
       for (j = rows[i]; j< rows[i+1]; j++) {
-         if (pinnednodes[cols[j]]) vals[j] = 0.0;
+         if ( dtemp[cols[j]] == -1.0 )
+           vals[j] = 0.0;
       }
    }
-   ML_free(pinnednodes);
-#endif
+
+   ML_free(dtemp);
+
    return 0;
 } /*ML_Tmat_applyDirichletBC*/
 
