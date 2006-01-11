@@ -87,6 +87,7 @@ srcFiles = ["Epetra_wrap.cpp",
             os.path.join(srcdir,"Epetra_NumPyMultiVector.cpp"      ),
             os.path.join(srcdir,"Epetra_NumPyVector.cpp"           ),
             os.path.join(srcdir,"Epetra_NumPyIntVector.cpp"        ),
+            os.path.join(srcdir,"Epetra_NumPySerialDenseMatrix.cpp"),
             os.path.join(srcdir,"Epetra_NumPySerialDenseVector.cpp") ]
 
 # Compiler and linker

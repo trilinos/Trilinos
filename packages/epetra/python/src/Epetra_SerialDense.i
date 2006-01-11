@@ -11,6 +11,7 @@
 #include "Epetra_IntSerialDenseVector.h"
 
 // Local interface includes
+#include "Epetra_NumPySerialDenseMatrix.h"
 #include "Epetra_NumPySerialDenseVector.h"
 %}
 
@@ -38,7 +39,7 @@
 
 // Rename directives
 %rename(SerialDenseOperator   ) Epetra_SerialDenseOperator;
-%rename(SerialDenseMatrix     ) Epetra_SerialDenseMatrix;
+%rename(NumPySerialDenseMatrix) Epetra_NumPySerialDenseMatrix;
 %rename(SerialSymDenseMatrix  ) Epetra_SerialSymDenseMatrix;
 %rename(NumPySerialDenseVector) Epetra_NumPySerialDenseVector;
 %rename(SerialDenseSolver     ) Epetra_SerialDenseSolver;
@@ -55,12 +56,51 @@
 %include "Epetra_IntSerialDenseVector.h"
 
 // Local interface include directives
+%include "Epetra_NumPySerialDenseMatrix.h"
 %include "Epetra_NumPySerialDenseVector.h"
 
 // Python code
 %pythoncode %{
 
 from UserArray import *
+
+class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
+    def __init__(self, *args):
+      	"""
+      	__init__(self, bool set_object_label=True) -> SerialDenseMatrix
+      	__init__(self, int numRows, int numCols, bool set_object_label=True) -> SerialDenseMatrix
+      	__init__(self, PyObject array, bool set_object_label=True) -> SerialDenseMatrix
+      	__init__(self, SerialDenseMatrix source) -> SerialDenseMatrix
+      	"""
+        NumPySerialDenseMatrix.__init__(self, *args)
+        UserArray.__init__(self,self.A(),'d',copy=False,savespace=False)
+        self.__protected = True
+    def __str__(self):
+        return str(self.array)
+    def __setattr__(self, key, value):
+        "Protect the 'array' and 'shape' attributes"
+        if key in self.__dict__:
+            if self.__protected:
+                if key == "array":
+                    raise AttributeError, "Cannot change Epetra.SerialDenseMatrix array attribute"
+                if key == "shape":
+                    raise AttributeError, "Cannot change Epetra.SerialDenseMatrix shape attribute"
+        UserArray.__setattr__(self, key, value)
+    def __call__(self,i,j):
+        "__call__(self, int i, int j) -> double"
+        return self.__getitem__(i,j)
+    def Shape(self,numRows,numCols):
+        "Shape(self, int numRows, int numCols) -> int"
+        result = NumPySerialDenseMatrix.Shape(self,numRows,numCols)
+        self.__protected = False
+        UserArray.__init__(self,self.A(),'d',copy=False,savespace=False)
+        self.__protected = True
+    def Reshape(self,numRows,numCols):
+        "Reshape(self, int numRows, int numCols) -> int"
+        result = NumPySerialDenseMatrix.Reshape(self,numRows,numCols)
+        self.__protected = False
+        UserArray.__init__(self,self.A(),'d',copy=False,savespace=False)
+        self.__protected = True
 
 class SerialDenseVector(UserArray,NumPySerialDenseVector):
     def __init__(self, *args):
@@ -77,9 +117,9 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         return str(self.array)
     def __setattr__(self, key, value):
         "Protect the 'array' attribute"
-        if key == "array":
-            if key in self.__dict__:
-                if self.__protected:
+        if key in self.__dict__:
+            if self.__protected:
+                if key == "array":
                     raise AttributeError, "Cannot change Epetra.SerialDenseVector array attribute"
         UserArray.__setattr__(self, key, value)
     def __call__(self,i):
@@ -101,35 +141,35 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
 %}
 
 // Extend directives
-%extend Epetra_SerialDenseMatrix {
+// %extend Epetra_SerialDenseMatrix {
 
-  double * __getitem__(int i) {
-    return self->operator[](i);
-  }
+//   double * __getitem__(int i) {
+//     return self->operator[](i);
+//   }
 
-  PyObject * __getitem__(PyObject * args) {
-    int i, j;
-    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-      PyErr_SetString(PyExc_IndexError, "Invalid index");
-      return NULL;
-    }
-    double * column = self->operator[](j);
-    return PyFloat_FromDouble(column[i]);
-  }
+//   PyObject * __getitem__(PyObject * args) {
+//     int i, j;
+//     if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
+//       PyErr_SetString(PyExc_IndexError, "Invalid index");
+//       return NULL;
+//     }
+//     double * column = self->operator[](j);
+//     return PyFloat_FromDouble(column[i]);
+//   }
 
-  PyObject * __setitem__(PyObject * args, double val) {
-    int i, j;
-    if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-      PyErr_SetString(PyExc_IndexError, "Invalid index");
-      return NULL;
-    }
-    double * column = self->operator[](j);
-    column[i] = val;
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
+//   PyObject * __setitem__(PyObject * args, double val) {
+//     int i, j;
+//     if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
+//       PyErr_SetString(PyExc_IndexError, "Invalid index");
+//       return NULL;
+//     }
+//     double * column = self->operator[](j);
+//     column[i] = val;
+//     Py_INCREF(Py_None);
+//     return Py_None;
+//   }
 
-}
+// }
 
 // %extend Epetra_SerialDenseVector {
 
