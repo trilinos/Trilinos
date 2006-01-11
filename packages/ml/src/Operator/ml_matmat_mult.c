@@ -996,13 +996,23 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    N_input_vector = Mat2->invec_leng;
    getrow_comm    = Mat2->getrow->pre_comm;
 
-   ML_create_unique_col_id(N_input_vector, &(Mat2->getrow->loc_glob_map),
-                           getrow_comm, &max_per_proc, comm);
+   if (matrix_type != ML_EpetraCRS_MATRIX)
+     ML_create_unique_col_id(N_input_vector, &(Mat2->getrow->loc_glob_map),
+                             getrow_comm, &max_per_proc, comm);
+   else
+#ifdef ML_WITH_EPETRA
+     ML_create_unique_col_id_exactoffset(N_input_vector, &(Mat2->getrow->loc_glob_map),
+                                         getrow_comm, &max_per_proc, comm);
+#else
+     pr_error("ML_2matmult: ML_EpetraCRS_MATRIX requires epetra to be compiled in.\n");
+#endif
+
    Mat2->getrow->use_loc_glob_map = ML_YES;
 
-   if (max_per_proc == 0 && comm->ML_mypid == 0) {
-     pr_error("ERROR: In ML_2matmult, maximum number of local unknowns\n       on any processor (max_per_proc) is zero !\n");
-   }
+   if (matrix_type != ML_EpetraCRS_MATRIX)
+     if (max_per_proc == 0 && comm->ML_mypid == 0) {
+       pr_error("ERROR: In ML_2matmult, maximum number of local unknowns\n       on any processor (max_per_proc) is zero !\n");
+     }
 
    if (Mat1->getrow->pre_comm != NULL)
       ML_exchange_rows( Mat2, &Mat2comm, Mat1->getrow->pre_comm);
