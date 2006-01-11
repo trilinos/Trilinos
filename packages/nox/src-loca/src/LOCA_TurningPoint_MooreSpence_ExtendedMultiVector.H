@@ -63,7 +63,7 @@ namespace LOCA {
       class ExtendedMultiVector : public LOCA::Extended::MultiVector {
 
 	/*!
-	 * \brief Declare LOCA::TurningPoint::MooreSpece::ExtendedVector as 
+	 * \brief Declare LOCA::TurningPoint::MooreSpence::ExtendedVector as 
 	 * a friend class so it can call protected methods.
 	 */
 	friend class ExtendedVector;
