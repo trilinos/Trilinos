@@ -23,8 +23,8 @@
 </head>
 <body bgcolor="#ffffff">
 <div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_parmetis.html">Next</a>&nbsp; |&nbsp; <a
- href="ug_alg_reftree.html">Previous</a></i></b></div>
+|&nbsp; <a href="ug_alg_oct.html">Next</a>&nbsp; |&nbsp; <a
+ href="ug_alg_jostle.html">Previous</a></i></b></div>
 <h2>
 <a name="Hypergraph Partitioning"></a>Hypergraph Partitioning</h2>
 Hypergraph partitioning is a useful partitioning and
@@ -45,7 +45,12 @@ It has been
 shown that the hypergraph model gives a more accurate representation
 of communication cost (volume) than the graph model. In particular,
 for sparse matrix-vector multiplication, the hypergraph model
-<strong>exactly</strong> represents communication volume. </p>
+<strong>exactly</strong> represents communication volume. 
+Sparse matrices can be partitioned either along rows or columns;
+in the row-net model the columns are vertices and each row corresponds 
+to an hyperedge, while in the column-net model the roles of vertices 
+and hyperedges are reversed.  </p>
+
 <p>Zoltan contains a native parallel hypergraph partitioner, called PHG
 (Parallel HyperGraph partitioner). In addition, Zoltan provides
 access to <a href="http://bmi.osu.edu/%7Eumit/software.htm">PaToH</a>,
@@ -54,17 +59,14 @@ Note that PaToH is not part of Zoltan and should be obtained
 separately from the <a href="http://bmi.osu.edu/%7Eumit/software.htm">
 PaToH web site</a>.
 Zoltan-PHG is a fully parallel multilevel hypergraph partitioner. For
-further technical description, see <a href="../Zoltan_cite.html">
-[Devine,Boman,Heaphy,Bisseling,Catalyurek IPDPS'06]</a>.<br>
-<br>
+further technical description, see <a href="ug_refs.html#hypergraph-ipdps06">[Devine et al, 2006]</a>.<br>
+<p>
 Planned features currently not supported:<br>
 </p>
 <ul>
   <li>Adaptive (diffusive) repartitioning</li>
-  <li>Multiconstraint partitioning<br>
-  </li>
-  <li>2-dimensional (sparse matrix) partitioning<br>
-  </li>
+  <li>Multiconstraint partitioning </li>
+  <li>2-dimensional (sparse matrix) partitioning </li>
 </ul>
 &nbsp;
 <table nosave="" width="100%">
@@ -216,7 +218,7 @@ bisection (0/1).<br>
     <tr nosave="" valign="top">
       <td>&nbsp;&nbsp; <span style="font-style: italic;">PHG_BAL_TOL_ADJUSTMENT</span><br>
       </td>
-      <td nosave=""><br>
+      <td nosave="">Controls how the balance tolerance is adjusted at each level of bisection.<br>
       </td>
     </tr>
     <tr>
