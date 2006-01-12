@@ -348,6 +348,84 @@ void MOERTEL::sort(double* dlist, int N, int* list2)
   return;
 }
 
+
+/*----------------------------------------------------------------------*
+ |                                                                 08/05|
+ |  modified version of the epetraext matrixmatrixadd                   |
+ |  NOTE:                                                               |
+ |  - A has to be FillComplete, B must NOT be FillComplete()            |
+ *----------------------------------------------------------------------*/
+int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
+                             Epetra_CrsMatrix& B,double scalarB )
+{
+  //
+  //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
+
+  if (!A.Filled())
+  {
+     cout << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
+          << "***ERR*** FillComplete was not called on A\n"
+          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+     exit(EXIT_FAILURE);
+  }
+  if (B.Filled())
+  {
+     cout << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
+          << "***ERR*** FillComplete was called on B\n"
+          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+     exit(EXIT_FAILURE);
+  }
+  
+  //explicit tranpose A formed as necessary
+  Epetra_CrsMatrix* Aprime = 0;
+  EpetraExt::RowMatrix_Transpose* Atrans = 0;
+  if( transposeA )
+  {
+    Atrans = new EpetraExt::RowMatrix_Transpose(false);
+    Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
+  }
+  else
+    Aprime = const_cast<Epetra_CrsMatrix*>(&A);
+    
+  //Loop over B's rows and sum into
+  int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
+  int NumEntries;
+  vector<int> Indices(MaxNumEntries);
+  vector<double> Values(MaxNumEntries);
+
+  int NumMyRows = A.NumMyRows();
+  int Row, err;
+
+  if( scalarA )
+  {
+    for( int i = 0; i < NumMyRows; ++i )
+    {
+      Row = Aprime->GRID(i);
+      EPETRA_CHK_ERR(Aprime->ExtractGlobalRowCopy(Row,MaxNumEntries,NumEntries,&Values[0],&Indices[0]));
+      if( scalarA != 1.0 )
+        for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
+      if( B.Filled() ) {//Sum In Values
+        err = B.SumIntoGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
+        assert( err == 0 );
+      }
+      else {
+        err = B.InsertGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
+        assert( err == 0 || err == 1 );
+      }
+    }
+  }
+
+  Indices.clear();
+  Values.clear();
+
+  if( Atrans ) delete Atrans;
+
+  return(0);
+}
+
+
+
+#if 0
 /*----------------------------------------------------------------------*
  | Multiply matrices A*B                                     mwgee 01/06|
  *----------------------------------------------------------------------*/
@@ -461,55 +539,25 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
     delete transposerB;
   return result;
 }
+#endif
+
 
 /*----------------------------------------------------------------------*
  | Multiply matrices A*B                                     mwgee 01/06|
  *----------------------------------------------------------------------*/
-Epetra_CrsMatrix* MOERTEL::MatMatMult_EpetraExt(Epetra_CrsMatrix& A, bool transA, 
-                                                Epetra_CrsMatrix& B, bool transB,
-                                                int outlevel)
+Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA, 
+                                      Epetra_CrsMatrix& B, bool transB,
+                                      int outlevel)
 {
-  // transpose A if indicated
-  Epetra_CrsMatrix* Atrans = &A;
-  EpetraExt::RowMatrix_Transpose* transposerA = NULL;
-  if (transA)
-  {
-    transposerA = new EpetraExt::RowMatrix_Transpose(false);
-    Atrans = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposerA)(const_cast<Epetra_CrsMatrix&>(A)))));
-    if (!Atrans)
-    {
-      cout << "***ERR*** MOERTEL::MatMatMult:\n"
-           << "***ERR*** transpose of A failed\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return NULL;
-    }
-  }  
-  
-  // transpose B if indicated
-  Epetra_CrsMatrix* Btrans = &B;
-  EpetraExt::RowMatrix_Transpose* transposerB = NULL;
-  if (transB)
-  {
-    transposerB = new EpetraExt::RowMatrix_Transpose(false);
-    Btrans = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposerB)(const_cast<Epetra_CrsMatrix&>(B)))));
-    if (!Btrans)
-    {
-      cout << "***ERR*** MOERTEL::MatMatMult:\n"
-           << "***ERR*** transpose of B failed\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-      return NULL;
-    }
-  }
-  
   // make sure FillComplete was called on the matrices
-  if (!Atrans->Filled()) 
+  if (!A.Filled()) 
   {
     cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix A\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return NULL;
   }
-  if (!Btrans->Filled()) 
+  if (!B.Filled()) 
   {
     cout << "***ERR*** MOERTEL::MatMatMult:\n"
          << "***ERR*** FillComplete() was not called on matrix B\n"
@@ -518,25 +566,75 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult_EpetraExt(Epetra_CrsMatrix& A, bool transA
   }
   
   // create resultmatrix with correct rowmap
-  Epetra_CrsMatrix* C = new Epetra_CrsMatrix(Copy,Atrans->RowMap(),20,false);
+  Epetra_CrsMatrix* C = NULL;
+  if (!transA)
+    C = new Epetra_CrsMatrix(Copy,A.OperatorRangeMap(),20,false);
+  else
+    C = new Epetra_CrsMatrix(Copy,A.OperatorDomainMap(),20,false);
   
-  // make the mutliply
-  Epetra_Time time(Atrans->Comm());
+  // make the multiply
+  Epetra_Time time(A.Comm());
   if (outlevel>9)
     time.ResetStartTime();
 
-  int err = EpetraExt::MatrixMatrix::Multiply(*Atrans,false,*Btrans,false,*C);
+  int err = EpetraExt::MatrixMatrix::Multiply(A,transA,B,transB,*C);
   if (err) cout << "MOERTEL: EpetraExt::MatrixMatrix::Multiply returned err = " << err << endl;
 
-  if (outlevel>9 && Atrans->Comm().MyPID()==0)
+  if (outlevel>9 && A.Comm().MyPID()==0)
     cout << "MOERTEL (Proc 0): Time for matrix-matrix product " << time.ElapsedTime() << " sec\n";
 
   C->OptimizeStorage();
 
-  if (transA)
-    delete transposerA;
-  if (transB)
-    delete transposerB;
-  
   return C;
+}
+
+/*----------------------------------------------------------------------*
+ | strip out zeros from a matrix                             m.gee 01/06|
+ *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
+{
+  Epetra_CrsMatrix* out = new Epetra_CrsMatrix(Copy,A.RowMap(),10,false);
+  for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
+  {
+    int grow = A.GRID(lrow); 
+    if (grow<0) 
+    { 
+      cout << "***ERR*** MOERTEL::StripZeros:\n"
+           << "***ERR*** Cannot gind global row indes from local row index\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      delete out;
+      return NULL;
+    }
+    int numentries;
+    int* lindices;
+    double* values;
+    int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
+    if (err) 
+    { 
+      cout << "***ERR*** MOERTEL::StripZeros:\n"
+           << "***ERR*** A.ExtractMyRowView returned " << err << endl
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      delete out;
+      return NULL;
+    }
+    for (int j=0; j<numentries; ++j)
+    {
+      int lcol = lindices[j];  
+      int gcol = A.GCID(lcol); 
+      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      if (abs(values[j])<eps)
+        continue;
+      int err = out->InsertGlobalValues(grow,1,&values[j],&gcol);
+      if (err != 0 && err != 1) 
+      { 
+        cout << "***ERR*** MOERTEL::StripZeros:\n"
+             << "***ERR*** out->InsertGlobalValues returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        delete out;
+        return NULL;
+      }
+    }
+  }
+  out->FillComplete(A.OperatorDomainMap(),A.OperatorRangeMap());
+  return out;
 }

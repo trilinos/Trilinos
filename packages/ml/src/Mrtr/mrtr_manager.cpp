@@ -51,6 +51,7 @@ M_(null),
 saddlemap_(null),
 saddlematrix_(null),
 spdmatrix_(null),
+spdrhs_(null),
 solverparams_(null)
 {
 }

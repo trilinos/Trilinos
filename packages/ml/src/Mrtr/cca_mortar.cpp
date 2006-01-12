@@ -691,6 +691,7 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
 
   // choose solver package
   params.set("Solver","Amesos");
+  //params.set("Solver","ML/Aztec");
 
   // argument sublist for amesos
   Teuchos::ParameterList& amesosparams = params.sublist("Amesos");
@@ -699,12 +700,16 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   amesosparams.set("PrintStatus",true);
   amesosparams.set("UseTranspose",true);
   
+  // argument sublist for aztec
+
+  // argument sublist for ml
+
   //-------------------------------------------------------------------
   // solve
   bool ok = mrtr_manager->Solve(params,esol,erhs); 
   if (!ok) cout << "***ERR** MOERTEL::Manager::Solve() returned false\n";
 
-  //mrtr_manager->ResetSolver();
+  mrtr_manager->ResetSolver();
 
   //-------------------------------------------------------------------
   // copy result back

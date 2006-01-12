@@ -175,6 +175,28 @@ void swap(kind& a, kind& b)
   b = tmp;
   return;
 }
+
+/*!
+\brief Add matrices A+B
+
+Perform B = scalarB * B + scalarA * A ^ transposeA
+If scalarB is 0.0, then B = scalarA * A ^ transposeA isperformed.
+
+This is a modified version of EpetraExt's MatrixMatrixAdd.
+FillComplete() must not be called on B upon entry, 
+FillComplete() will not be called on B upon exit by this method.
+
+\param A : Matrix A to add to B
+\param transposeA : flag indicating whether A*T shall be added
+\param scalarA : scalar factor for A
+\param B : Matrix B to be added to
+\param scalarB : scalar factor for B
+\return Zero upon success
+*/
+int MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
+                    Epetra_CrsMatrix& B,double scalarB);
+
+#if 0
 /*!
 \brief Multiply matrices A*B
 
@@ -192,6 +214,7 @@ See ML bug 1913 for details.
 */
 Epetra_CrsMatrix* MatMatMult(Epetra_CrsMatrix& A, bool transA, 
                              Epetra_CrsMatrix& B, bool transB);
+#endif
 
 /*!
 \brief Multiply matrices A*B
@@ -206,10 +229,23 @@ The user is responsible for freeing the returned result.
 \param transB : flag indicating whether B*T shall be used
 \return Result upon success and NULL upon failure
 */
-Epetra_CrsMatrix* MatMatMult_EpetraExt(Epetra_CrsMatrix& A, bool transA, 
-                                       Epetra_CrsMatrix& B, bool transB,
-                                       int outlevel);
+Epetra_CrsMatrix* MatMatMult(Epetra_CrsMatrix& A, bool transA, 
+                             Epetra_CrsMatrix& B, bool transB,
+                             int outlevel);
 
+/*!
+\brief Strip out values from a matrix below a certain tolerance
+
+Allocates and returns a new matrix and copies A to it where entries
+with an absoute value smaller then eps are negelected.
+The method calls FillComplete(A.OperatorDomainMap(),A.OperatorRangeMap())
+on the result.
+
+\param A : Matrix A to strip
+\param eps : tolerance
+\return The new matrix upon success, NULL otherwise
+*/
+Epetra_CrsMatrix* StripZeros(Epetra_CrsMatrix& A, double eps);
 
 } // namespace MOERTEL
 #endif // MOERTEL_UTILS_H

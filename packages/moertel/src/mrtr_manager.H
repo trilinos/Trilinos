@@ -331,9 +331,26 @@ public:
   /*!
   \brief Construct a spd system of equations if possible
   
+  If dual Lagrange multipliers are used, a symm. positive definit 
+  system of equations can be constructed from the saddle point problem.
+  The final solution of the problem is then obtained from<br>
+  Atilde x = RHSMatrix * b
   
+  \sa GetSPDRHSMatrix()
   */
   Epetra_CrsMatrix* MakeSPDProblem();
+
+  /*!
+  \brief returns the righ hand side matrix of the spd system of equations
+  
+  If dual Lagrange multipliers are used, a symm. positive definit 
+  system of equations can be constructed from the saddle point problem.
+  The final solution of the problem is then obtained from<br>
+  Atilde x = RHSMatrix * b
+  
+  \sa MakeSPDProblem()
+  */
+  Epetra_CrsMatrix* GetRHSMatrix();
 
   /*!
   \brief Set a parameter list holding solver parameters
@@ -423,10 +440,6 @@ private:
   // choose the dofs for lagrange multipliers
   RefCountPtr<Epetra_Map> LagrangeMultiplierDofs();
   
-  // modified version of the epetraext matrixmatrixadd
-  int MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
-                      Epetra_CrsMatrix& B,double scalarB );
-
   // automatically choose mortar side (called when mortarside==-2 on any interface)
   bool ChooseMortarSide();
   bool ChooseMortarSide_2D(vector<RefCountPtr<MOERTEL::Interface> >& inter);
@@ -448,6 +461,7 @@ private:
   RefCountPtr<Epetra_Map>       saddlemap_;           // the rowmap of the saddlepointproblem
   RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
   RefCountPtr<Epetra_CrsMatrix> spdmatrix_;           // the spd matrix of the problem;
+  RefCountPtr<Epetra_CrsMatrix> spdrhs_;              // the matrix to left-muttliply the rhs vector with for the spd problem
 
   RefCountPtr<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    
   RefCountPtr<MOERTEL::Solver>        solver_;        // the mortar solver

@@ -66,79 +66,6 @@ bool MOERTEL::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCo
   return false;
 }
 
-/*----------------------------------------------------------------------*
- |                                                                 08/05|
- |  modified version of the epetraext matrixmatrixadd                   |
- |  NOTE:                                                               |
- |  - A has to be FillComplete, B must NOT be FillComplete()            |
- *----------------------------------------------------------------------*/
-int MOERTEL::Manager::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double scalarA,
-                      Epetra_CrsMatrix& B,double scalarB )
-{
-  //
-  //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
-
-  if (!A.Filled())
-  {
-     cout << "***ERR*** MOERTEL::Manager::MatrixMatrixAdd:\n"
-          << "***ERR*** FillComplete was not called on A\n"
-          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-     exit(EXIT_FAILURE);
-  }
-  if (B.Filled())
-  {
-     cout << "***ERR*** MOERTEL::Manager::MatrixMatrixAdd:\n"
-          << "***ERR*** FillComplete was called on B\n"
-          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-     exit(EXIT_FAILURE);
-  }
-  
-  //explicit tranpose A formed as necessary
-  Epetra_CrsMatrix* Aprime = 0;
-  EpetraExt::RowMatrix_Transpose* Atrans = 0;
-  if( transposeA )
-  {
-    Atrans = new EpetraExt::RowMatrix_Transpose(false);
-    Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
-  }
-  else
-    Aprime = const_cast<Epetra_CrsMatrix*>(&A);
-    
-  //Loop over B's rows and sum into
-  int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
-  int NumEntries;
-  vector<int> Indices(MaxNumEntries);
-  vector<double> Values(MaxNumEntries);
-
-  int NumMyRows = A.NumMyRows();
-  int Row, err;
-
-  if( scalarA )
-  {
-    for( int i = 0; i < NumMyRows; ++i )
-    {
-      Row = Aprime->GRID(i);
-      EPETRA_CHK_ERR(Aprime->ExtractGlobalRowCopy(Row,MaxNumEntries,NumEntries,&Values[0],&Indices[0]));
-      if( scalarA != 1.0 )
-        for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
-      if( B.Filled() ) {//Sum In Values
-        err = B.SumIntoGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
-        assert( err == 0 );
-      }
-      else {
-        err = B.InsertGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
-        assert( err == 0 || err == 1 );
-      }
-    }
-  }
-
-  Indices.clear();
-  Values.clear();
-
-  if( Atrans ) delete Atrans;
-
-  return(0);
-}
 
 /*----------------------------------------------------------------------*
  | Create the saddle point problem map (private)             mwgee 11/05|
@@ -279,15 +206,15 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
   saddlematrix_ = rcp(new Epetra_CrsMatrix(Copy,*saddlemap_,90));
 
   // add values from inputmatrix
-  MatrixMatrixAdd(*inputmatrix_,false,1.0,*saddlematrix_,0.0);
+  MOERTEL::MatrixMatrixAdd(*inputmatrix_,false,1.0,*saddlematrix_,0.0);
   
   // add values from D_
-  MatrixMatrixAdd(*D_,false,1.0,*saddlematrix_,1.0);
-  MatrixMatrixAdd(*D_,true,1.0,*saddlematrix_,1.0);  
+  MOERTEL::MatrixMatrixAdd(*D_,false,1.0,*saddlematrix_,1.0);
+  MOERTEL::MatrixMatrixAdd(*D_,true,1.0,*saddlematrix_,1.0);  
 
   // add values from M_
-  MatrixMatrixAdd(*M_,false,1.0,*saddlematrix_,1.0);
-  MatrixMatrixAdd(*M_,true,1.0,*saddlematrix_,1.0);  
+  MOERTEL::MatrixMatrixAdd(*M_,false,1.0,*saddlematrix_,1.0);
+  MOERTEL::MatrixMatrixAdd(*M_,true,1.0,*saddlematrix_,1.0);  
 
   saddlematrix_->FillComplete();
   saddlematrix_->OptimizeStorage();
@@ -426,6 +353,18 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
         5) Build BWT = B * WT
 
         6) Build BWTmI = BWT - I
+
+        7) Build BWTmIAWBT = BWTmI * A * W * B^T
+
+        8) Allocate spdmatrix_  = A + BWTmIAWBT
+
+        9) Build WBTmI = WT^T * B^T - I
+        
+        10) Build BWTAWBTmI = BWT * A * WBTmI and add to spdmatrix_
+            Call FillComplete on spdmatrix_
+            
+        11) Build ImBWT = I - BWT and store it
+
   */    
   
   int err=0;
@@ -488,7 +427,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
       return NULL;
     }  
   }
-  WT->FillComplete(*(problemmap_.get()),*annmap);  
+  WT->FillComplete(*problemmap_,*annmap);  
   
   //--------------------------------------------------------------------------
   // 3) create B
@@ -561,37 +500,90 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
 
   //--------------------------------------------------------------------------
   // 5) Build BWT = B * WT
-  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult_EpetraExt(*B,false,*WT,false,OutLevel()); // yes
-  //cout << "BWT\n" << *BWT;
-
+  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,false,*WT,false,OutLevel()); 
   
   //--------------------------------------------------------------------------
   // 6) Build BWTmI = BWT - I
   Epetra_CrsMatrix* BWTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
-  MatrixMatrixAdd(*BWT,false,1.0,*BWTmI,0.0);
-  MatrixMatrixAdd(*I,false,-1.0,*BWTmI,1.0);
+  MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*BWTmI,0.0);
+  MOERTEL::MatrixMatrixAdd(*I,false,-1.0,*BWTmI,1.0);
   BWTmI->FillComplete();
-  BWTmI->OptimizeStorage();
-  cout << "BWTmI\n" << *BWTmI;
   
+  //--------------------------------------------------------------------------
+  // 7) Build BWTmIAWBT = BWTmI * A * W * B^T
+  Epetra_CrsMatrix* AW   = MOERTEL::MatMatMult(*inputmatrix_,false,*WT,true,OutLevel()); 
+  Epetra_CrsMatrix* AWBT = MOERTEL::MatMatMult(*AW,false,*B,true,OutLevel()); 
+  delete AW; AW = NULL;
+  Epetra_CrsMatrix* BWTmIAWBT = MOERTEL::MatMatMult(*BWTmI,false,*AWBT,false,OutLevel());
+  delete AWBT; AWBT = NULL;
+  delete BWTmI; BWTmI = NULL;
   
+  //--------------------------------------------------------------------------
+  // 8) Allocate spdmatrix_ and add A and BWTmIAWBT
+  spdmatrix_ = rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
+  MOERTEL::MatrixMatrixAdd(*BWTmIAWBT,false,1.0,*spdmatrix_,0.0);
+  delete BWTmIAWBT; BWTmIAWBT = NULL;
+  MOERTEL::MatrixMatrixAdd(*inputmatrix_,false,1.0,*spdmatrix_,1.0);
   
+  //--------------------------------------------------------------------------
+  // 9) Build WBT = WT^T * B^T
+  Epetra_CrsMatrix* WBT = MOERTEL::MatMatMult(*WT,true,*B,true,OutLevel()); 
+  Epetra_CrsMatrix* WBTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
+  MOERTEL::MatrixMatrixAdd(*I,false,1.0,*WBTmI,0.0);
+  MOERTEL::MatrixMatrixAdd(*WBT,false,1.0,*WBTmI,1.0);
+  WBTmI->FillComplete();
+  delete WBT; WBT = NULL;
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  // allocated annmap, WT, trans (which is owner of B), lm_to_dof, I, BWT, 
-  //           BWTmI
-  exit(0);
-  return NULL;
+  //--------------------------------------------------------------------------
+  // 10) Build BWTAWBTmI = BWT * A * WBTmI and add to spdmatrix_
+  Epetra_CrsMatrix* BWTA      = MOERTEL::MatMatMult(*BWT,false,*inputmatrix_,false,OutLevel()); 
+  Epetra_CrsMatrix* BWTAWBTmI = MOERTEL::MatMatMult(*BWTA,false,*WBTmI,false,OutLevel()); 
+  delete BWTA; BWTA = NULL;
+  delete WBTmI; WBTmI = NULL;
+  MOERTEL::MatrixMatrixAdd(*BWTAWBTmI,false,1.0,*spdmatrix_,1.0);
+  delete BWTAWBTmI; BWTAWBTmI = NULL;
+  spdmatrix_->FillComplete(); 
+  spdmatrix_->OptimizeStorage();
+
+  //--------------------------------------------------------------------------
+  // 11) Build ImBWT = I - BWT and store it
+  spdrhs_ = rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
+  MOERTEL::MatrixMatrixAdd(*I,false,1.0,*spdrhs_,0.0); 
+  delete I; I = NULL;
+  MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*spdrhs_,1.0);  
+  delete BWT; BWT = NULL;
+  spdrhs_->FillComplete(); 
+  spdrhs_->OptimizeStorage();
+   
+  //--------------------------------------------------------------------------
+  // tidy up
+  delete annmap;
+  delete WT;
+  delete trans; B = NULL;
+  lm_to_dof.clear();
+
+  return spdmatrix_.get();
+}
+
+/*----------------------------------------------------------------------*
+ | Return the right hand side matrix of the reduced system   mwgee 01/06|
+ *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* MOERTEL::Manager::GetRHSMatrix()
+{
+  if (spdrhs_ != null)
+    return spdrhs_.get();
+  else
+  {
+    Epetra_CrsMatrix* tmp = MakeSPDProblem();
+    if (!tmp)
+    {
+      cout << "***ERR*** MOERTEL::Manager::GetRHSMatrix:\n"
+           << "***ERR*** Cannot compute reduced system of equations\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }
+    return spdrhs_.get();
+  }
 }
 
 /*----------------------------------------------------------------------*
@@ -603,6 +595,7 @@ void MOERTEL::Manager::ResetSolver()
   solver_ = null;
   saddlematrix_ = null;
   spdmatrix_ = null;
+  spdrhs_ = null;
   return;
 }
 
@@ -611,7 +604,9 @@ void MOERTEL::Manager::ResetSolver()
  *----------------------------------------------------------------------*/
 void MOERTEL::Manager::SetSolverParameters(ParameterList& params)
 {
-  solverparams_ = rcp(new Teuchos::ParameterList(params));
+  solverparams_ = rcp(&params);
+  // MOERTEL does not take ownership of the parameterlist
+  solverparams_.release();
   return;
 }
 
@@ -754,7 +749,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   }
 
   //---------------------------------------------------------------------------
-  // build a saddle point system
+  // build a spd system
   else if (system=="SPDSystem" || system=="spdsystem" || system=="spd_system" || 
            system=="SPD_System" || system=="SPDSYSTEM" || system=="SPD_SYSTEM")
   {
@@ -770,6 +765,25 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
       }
     }
     matrix = spdmatrix_;
+    // we have to multiply the rhs vector b with spdrhs_ to fit with spdmatrix_
+    if (spdrhs_==null)
+    {
+      cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+           << "***ERR*** Cannot build righthandside for spd problem\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    Epetra_Vector *tmp = new Epetra_Vector(b->Map(),false);
+    int err = spdrhs_->Multiply(false,*b,*tmp);
+    if (err)
+    {
+      cout << "***ERR*** MOERTEL::Manager::Solve:\n"
+           << "***ERR*** spdrhs_->Multiply returned err = " << err << endl
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    b = rcp(tmp);
+    b.set_has_ownership();
   }
 
   //---------------------------------------------------------------------------
@@ -805,7 +819,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
     for (int i=0; i<sol.MyLength(); ++i)
       sol[i] = (*x)[i];
   }
-  
+  cout << sol;
   //---------------------------------------------------------------------------
   // output the parameter list to see whether something was unused  
   if (OutLevel()>8 && Comm().MyPID()==0)
