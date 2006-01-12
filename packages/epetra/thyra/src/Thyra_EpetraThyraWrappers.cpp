@@ -103,6 +103,7 @@ Thyra::create_MPIVectorBase(
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(space.get()==NULL);
 #endif
+  if(!epetra_v.get()) return Teuchos::null;
   // New local view of raw data
   double *localValues;
   epetra_v->ExtractView( &localValues );
@@ -122,6 +123,7 @@ Thyra::create_MPIVectorBase(
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(space.get()==NULL);
 #endif
+  if(!epetra_v.get()) return Teuchos::null;
   // New local view of raw data
   double *localValues;
   epetra_v->ExtractView( &localValues );
@@ -143,6 +145,7 @@ Thyra::create_MPIMultiVectorBase(
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
+  if(!epetra_mv.get()) return Teuchos::null;
   // New local view of raw data
   double *localValues; int leadingDim;
 	if( epetra_mv->ConstantStride() ) {
@@ -169,6 +172,7 @@ Thyra::create_MPIMultiVectorBase(
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
+  if(!epetra_mv.get()) return Teuchos::null;
   // New local view of raw data
   double *localValues; int leadingDim;
 	if( epetra_mv->ConstantStride() ) {
