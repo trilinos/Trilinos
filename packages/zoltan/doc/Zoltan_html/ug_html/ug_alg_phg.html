@@ -27,12 +27,25 @@
  href="ug_alg_reftree.html">Previous</a></i></b></div>
 <h2>
 <a name="Hypergraph Partitioning"></a>Hypergraph Partitioning</h2>
-Hypergraph partitioning is a very useful partitioning and
+Hypergraph partitioning is a useful partitioning and
 load balancing method when connectivity data is available. It can be
 viewed as a more sophisticated alternative to
 the traditional graph partitioning.
-<p>TODO: Overview of hypergraph partitioning goes here!
-</p>
+<p>A hypergraph consists of vertices and hyperedges. A hyperedge
+connects
+one or more vertices. A graph is a special case of a hypergraph where
+each edge has size two (two vertices). The hypergraph model is well
+suited to parallel computing, where vertices correspond to data objects
+and hyperedges represent the communication requirements. The basic partitioning 
+problem is to partition the vertices into <i>k</i> approximately equal 
+sets such that the number of cut hyperedges is minimized. 
+Most partitioners (including Zoltan-PHG) allows a more general
+model where both vertices and hyperedges can be assigned weights.
+It has been
+shown that the hypergraph model gives a more accurate representation
+of communication cost (volume) than the graph model. In particular,
+for sparse matrix-vector multiplication, the hypergraph model
+<strong>exactly</strong> represents communication volume. </p>
 <p>Zoltan contains a native parallel hypergraph partitioner, called PHG
 (Parallel HyperGraph partitioner). In addition, Zoltan provides
 access to <a href="http://bmi.osu.edu/%7Eumit/software.htm">PaToH</a>,
@@ -42,13 +55,15 @@ separately from the <a href="http://bmi.osu.edu/%7Eumit/software.htm">
 PaToH web site</a>.
 Zoltan-PHG is a fully parallel multilevel hypergraph partitioner. For
 further technical description, see <a href="../Zoltan_cite.html">
-[Devine,Boman,Heaphy,Bisseling,Catalyurek 2006]</a>.<br>
+[Devine,Boman,Heaphy,Bisseling,Catalyurek IPDPS'06]</a>.<br>
 <br>
 Planned features currently not supported:<br>
 </p>
 <ul>
   <li>Adaptive (diffusive) repartitioning</li>
   <li>Multiconstraint partitioning<br>
+  </li>
+  <li>2-dimensional (sparse matrix) partitioning<br>
   </li>
 </ul>
 &nbsp;
@@ -173,9 +188,9 @@ The best is selected.<br>
  style="font-style: italic;">PHG_REFINEMENT</span><br>
       </td>
       <td style="vertical-align: top;">Refinement algorithm:<br>
-FM <br>
-FM2 - two-way FM<br>
-None - no refinement<br>
+      <span style="font-style: italic;">FM2</span> - two-way FM
+(approximate)<br>
+      <span style="font-style: italic;">None</span> - no refinement<br>
       </td>
     </tr>
     <tr>
@@ -233,44 +248,82 @@ number of vertices.<br>
     <tr>
       <td><br>
       </td>
-      <td><i><br>
-      </i></td>
+      <td><span style="font-style: italic;">PHG_OUTPUT_LEVEL=0</span></td>
     </tr>
     <tr>
       <td><br>
       </td>
-      <td><i><br>
-      </i></td>
+      <td><span style="font-style: italic;">PHG_FINAL_OUTPUT=1</span></td>
     </tr>
     <tr>
       <td><br>
       </td>
-      <td><i><br>
-      </i></td>
+      <td><i>PHG_REDUCTION_METHOD=ipm</i></td>
     </tr>
     <tr>
       <td><br>
       </td>
-      <td><i><br>
-      </i></td>
+      <td><span style="font-style: italic;">PHG_REDUCTION_LIMIT=100</span></td>
     </tr>
     <tr>
       <td><br>
       </td>
-      <td><i><br>
-      </i></td>
+      <td><span style="font-style: italic;">PHG_VERTEX_VISIT_ORDER=1</span></td>
     </tr>
     <tr>
       <td><br>
       </td>
-      <td><i><br>
-      </i></td>
+      <td><span style="font-style: italic;">PHG_EDGE_SCALING=0</span></td>
     </tr>
     <tr>
       <td><br>
       </td>
-      <td><i><br>
-      </i></td>
+      <td><span style="font-style: italic;">PHG_VERTEX_SCALING=0</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><i>PHG_COARSE_PARTITIONING=gr0</i></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><i>PHG_COARSE_ITERATIONS=10</i></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REFINEMENT=fm2</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><i>PHG_FM_LOOP_LIMIT=10</i></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_FM_MAX_NEG_MOVE=100</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_PROC_SPLIT=1</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_BAL_TOL_ADJUSTMENT=0.7</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_RANDOMIZE_INPUT=0</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">EDGE_SIZE_THRESHOLD=0.25</span></td>
     </tr>
     <tr>
       <td valign="top"><b>Required Query Functions:</b></td>
