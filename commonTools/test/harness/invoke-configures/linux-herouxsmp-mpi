@@ -3,7 +3,7 @@ CXXFLAGS=-O3 \
 CFLAGS=-O3 \
 FFLAGS=-O3 \
 --with-libs="/u/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0/dsclibdbl_linux_lam.a \
-/u/TrilinosTestHarness/Trilinos3PL/prebuilt/pardiso-1.2.3/libpardiso_GNU_IA32.so \
+/u/TrilinosTestHarness/Trilinos3PL/prebuilt/pardiso-3.0/libpardiso_GNU_IA32.so \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2/libtaucs_linux_lam.a \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libumfpack_linux_lam.a \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libamd_linux_lam.a \
@@ -23,7 +23,7 @@ FFLAGS=-O3 \
 --enable-amesos-klu \
 --enable-amesos-umfpack \
 --enable-amesos-dscpack \
---disable-amesos-pardiso \
+--enable-amesos-pardiso \
 --enable-amesos-superlu \
 --enable-amesos-superludist \
 --enable-amesos-taucs \
