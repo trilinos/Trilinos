@@ -54,10 +54,6 @@ namespace Kokkos {
     //! Default constructor
     OskiMultiVector(void):
       dataInitialized_(false),
-      numRows_(0),
-      numCols_(0),
-      rowInc_(0),
-      colInc_(0),
       values_(0),
       allValues_(0),
       isStrided_(false) {};
@@ -65,14 +61,11 @@ namespace Kokkos {
     //! Copy constructor.
     OskiMultiVector(const OskiMultiVector& source):
       dataInitialized_(source.dataInitialized_),
-      numRows_(source.numRows_),
-      numCols_(source.numCols_),
-      rowInc_(source.rowInc_),
-      colInc_(source.colInc_),
       values_(source.values_),
       allValues_(source.allValues_),
-      isStrided_(source.isStrided_) {
-
+      isStrided_(source.isStrided_) 
+      x_view_ = oski_CopyVecView(source.x_view_) {
+	// Look at this piece -  is it necessary?
     if (isStrided_ && numCols_>0) {
       ScalarType ** tmpValues = new ScalarType*[numCols_];
       for (OrdinalType i=0;i<numCols_; i++) tmpValues[i] = values_[i];
@@ -83,6 +76,7 @@ namespace Kokkos {
     //! OskiMultiVector Destructor
     virtual ~OskiMultiVector(){
 
+    oski_DestroyVecView(x_view_);
     if (isStrided_ && numCols_>0) delete [] values_;
     
     };
@@ -96,22 +90,21 @@ namespace Kokkos {
       \param numRows (In)  Number of rows in multivector (length of each vector).
       \param numCols (In)  Number of columns in multivector (number of vectors).
       \param values (In)  Array of pointers of length getNumCols().  values[i] is a
-      vector of length numRows.
+      vector of length numRows.  Vector must be stored with a constant increment
+      between rows.  (May change in the future.)
       \return Integer error code, set to 0 if successful.
     */
     int initializeValues(OrdinalType numRows, OrdinalType numCols, ScalarType ** values) {
-      numRows_ = numRows;
-      numCols_ = numCols;
-      rowInc_ = 0;
-      colInc_ = 1;
-      values_ = values;
+      if (numCols==1) oski_CreateVecView(values[0],numRows,STRIDE_UNIT);
+      else oski_CreateMultiVecView(values[0],numRows,numCols,LAYOUT_COLMAJ,numRows);
+      values_ = values; // **doesn't allow noncontiguous vectors at this point
       allValues_ = 0;
       isStrided_ = false;
       dataInitialized_ = true;
       return(0);
       };
 	
-    //! Initialize using a two-dimensional array MAY NOT SUPPORT THIS
+    //! Initialize using a two-dimensional array
     /*!
       This interface supports multivectors that are stored as 2D arrays, or subsections of one.
       \param numRows (In)  Number of rows in multivector (length of each vector).
@@ -128,11 +121,9 @@ namespace Kokkos {
     */
     int initializeValues(OrdinalType numRows, OrdinalType numCols, ScalarType * values,
 			 OrdinalType rowInc, OrdinalType colInc = 1) {
-      numRows_ = numRows;
-      numCols_ = numCols;
-      rowInc_ = rowInc;
-      colInc_ = colInc;
-      values_ = 0;
+      if (numCols==1) oski_CreateVecView(values,numRows,colInc);
+      else oski_CreateMultiVecView(values,numRows,numCols,LAYOUT_COLMAJ,numRows);
+      values_ = 0;// **Figure out if I can/ need to accept this array of values
       allValues_ = values;
       isStrided_ = true;
       dataInitialized_ = true;
@@ -178,28 +169,38 @@ namespace Kokkos {
     //@{ \name DenseMultiVector Attribute access methods.
 	
     //! Number of rows
-    virtual OrdinalType getNumRows() const {return(numRows_);};
+    virtual OrdinalType getNumRows() const {return(x_view_->length);};
 	
     //! Number of columns
-    virtual OrdinalType getNumCols() const{return(numCols_);};
+    virtual OrdinalType getNumCols() const{return(x_view_->numcols);};
 	
     //! Indicates whether or not array is strided
     virtual bool getIsStrided() const {return(isStrided_);};
 	
     //! Increment between entries in a row of the multivector, normally = numRows().
-    virtual OrdinalType getRowInc() const {return(rowInc_);};
+    virtual OrdinalType getRowInc() const {
+      OrdinalType leadDim = x_view_->lead_dim;
+      OrdinalType rowInc = 0;
+      if (x_view_->orient == LAYOUT_ROWMAJ) rowInc = leadDim;
+      else rowInc = leadDim/x_view_->length;
+      return(rowInc);    
+    };
 	
     //! Increment between entries in a column of the multivector, normally = 1.
-    virtual OrdinalType getColInc() const {return(colInc_);};
+    virtual OrdinalType getColInc() const {
+      OrdinalType leadDim = x_view_->lead_dim;
+      OrdinalType colInc = 0;
+      if (x_view_->orient == LAYOUT_COLMAJ) colInc = leadDim;
+      else colInc = leadDim/x_view_->num_vecs;
+      return(colInc);
+    };
 	
     //@}
 
   protected:
+    oski_vecview_t x_view_;
+
     bool dataInitialized_;
-    OrdinalType numRows_;
-    OrdinalType numCols_;
-    OrdinalType rowInc_;
-    OrdinalType colInc_;
 
     ScalarType ** values_;
     ScalarType * allValues_;
