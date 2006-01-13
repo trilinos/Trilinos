@@ -150,8 +150,8 @@ int main(int argc, char *argv[])
   double right_bc = 1.0;
   double nonlinear_factor = 1.0;
   int ierr = 0;
-  double reltol = 1.0e-9;
-  double abstol = 1.0e-9;
+  double reltol = 1.0e-8;
+  double abstol = 1.0e-8;
   double lstol = 1.0e-11;
 
   int MyPID;
