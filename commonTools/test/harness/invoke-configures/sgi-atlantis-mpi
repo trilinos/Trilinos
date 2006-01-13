@@ -9,8 +9,8 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 /scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1/libamd_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/superlu-3.0.july05/libsuperlu_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/superludist-2.0.1/libsuperludist_atlantis.a \
-/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libmumps_atlantis.a \
-/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libpord_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.5.4/libdmumps_atlantis.a \
+/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.5.4/libpord_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/scalapack-1.7/libscalapack_atlantis.a \
 /scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3/libblacs_atlantis.a \
 -lfortran -lmpi" \
@@ -18,7 +18,7 @@ LDFLAGS=" -64 -L/usr/lib64/mips4/r10000 -L/usr/lib64/mips4 -L/usr/lib64 -LANG:st
 -I/scratch1/mnpheno/Trilinos3PL/prebuilt/umfpack-4.1 \
 -I/scratch1/mnpheno/Trilinos3PL/prebuilt/superlu-3.0.july05/ \
 -I/scratch1/mnpheno/Trilinos3PL/prebuilt/superludist-2.0.1/ \
--I/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.3" \
+-I/scratch1/mnpheno/Trilinos3PL/prebuilt/mumps-4.5.4" \
 --enable-mpi \
 --with-mpi-libs=-lmpi \
 --disable-default-packages \
