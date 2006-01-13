@@ -56,6 +56,7 @@ int main(int argc, char* argv[])
   if (verbose) cout<<endl<<"********** CHECKING KOKKOS  OSKI MULTIVECTOR **********"<<endl<<endl;
 
   // OSKI must be initialized
+  //extern "C" 
   oski_Init();
 
   // default constructor test
@@ -136,9 +137,10 @@ int main(int argc, char* argv[])
   else {
     if (verbose) cout << "successful."<<endl;
   }
-    
+  
   // OSKI can optionally be shut-down
-  oski_Close();    
+  //extern "C" 
+  oski_Close();
 
   //
   // If a test failed output the number of failed tests.

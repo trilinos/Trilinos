@@ -33,8 +33,9 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_MultiVector.hpp"
-#include <oski/oski.h>
-
+extern "C" {
+  #include <oski/oski.h>
+}
 namespace Kokkos {
 
 //! Kokkos::OskiMultiVector: Implementation of the abstract Kokkos::MultiVector  that wraps an oski_vecview_t object.
