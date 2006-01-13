@@ -26,8 +26,8 @@
 // ************************************************************************
 //@HEADER
 
-#include "Kokkos_DenseMultiVector.hpp"
-#include "Kokkos_DenseVector.hpp"
+#include "Kokkos_OskiMultiVector.hpp"
+//#include "Kokkos_DenseVector.hpp"
 #include "Kokkos_Version.hpp"
 
 using namespace std;
@@ -36,8 +36,8 @@ using namespace Kokkos;
 #define OTYPE int
 #define STYPE double
 
-typedef DenseMultiVector<OTYPE, STYPE> DMultiVector;
-typedef DenseVector<OTYPE, STYPE> DVector;
+typedef OskiMultiVector<OTYPE, STYPE> OMultiVector;
+//typedef DenseVector<OTYPE, STYPE> DVector;
 
 int main(int argc, char* argv[]) 
 {
@@ -53,11 +53,14 @@ int main(int argc, char* argv[])
 
 
 
-  if (verbose) cout<<endl<<"********** CHECKING KOKKOS  DENSE VECTOR/MULTIVECTOR **********"<<endl<<endl;
+  if (verbose) cout<<endl<<"********** CHECKING KOKKOS  OSKI MULTIVECTOR **********"<<endl<<endl;
+
+  // OSKI must be initialized
+  oski_Init();
 
   // default constructor test
-  DMultiVector A;
-  if (verbose) cout <<"default constructor -- construct empty matrix ";
+  OMultiVector A;
+  if (verbose) cout <<"default constructor -- construct empty multiVector ";
   if ( A.getNumRows()!=0 || A.getNumCols()!=0 || 
        A.getIsStrided()!=false ||A.getRowInc()!=0 ||
        A.getColInc()!=0) {
@@ -87,7 +90,7 @@ int main(int argc, char* argv[])
 	if (verbose) cout << "successful."<<endl;
   }
 
-  DMultiVector B;
+  OMultiVector B;
   B.initializeValues(numVectors, length, allValues, length, 1);
   if (verbose) cout <<"default constructor -- initialize using 2D array ";
   if ( B.getNumRows()!=numVectors || B.getNumCols()!=length || 
@@ -104,7 +107,7 @@ int main(int argc, char* argv[])
 
   // constructor 2 (copy constructor)
 
-  DMultiVector C(A);
+  OMultiVector C(A);
   if(verbose) cout <<"constructor 2 -- copy constructor "; 
   if ( C.getNumRows()!=numVectors || C.getNumCols()!=length || 
        C.getIsStrided()!=false ||C.getRowInc()!=0 ||
@@ -134,12 +137,13 @@ int main(int argc, char* argv[])
     if (verbose) cout << "successful."<<endl;
   }
     
-    
+  // OSKI can optionally be shut-down
+  oski_Close();    
 
   //
   // If a test failed output the number of failed tests.
   //
   if(numberFailedTests > 0) cout << "Number of failed tests: " << numberFailedTests << endl;
 
- return 0;
+ return numberFailedTests;
 }  

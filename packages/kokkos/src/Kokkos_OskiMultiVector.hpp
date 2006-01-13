@@ -33,6 +33,7 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_MultiVector.hpp"
+#include <oski/oski.h>
 
 namespace Kokkos {
 
@@ -63,12 +64,13 @@ namespace Kokkos {
       dataInitialized_(source.dataInitialized_),
       values_(source.values_),
       allValues_(source.allValues_),
-      isStrided_(source.isStrided_) 
-      x_view_ = oski_CopyVecView(source.x_view_) {
+      isStrided_(source.isStrided_) { 
+      x_view_ = oski_CopyVecView(source.x_view_);
 	// Look at this piece -  is it necessary?
-    if (isStrided_ && numCols_>0) {
-      ScalarType ** tmpValues = new ScalarType*[numCols_];
-      for (OrdinalType i=0;i<numCols_; i++) tmpValues[i] = values_[i];
+    OrdinalType numCols = x_view_->num_cols;
+    if (isStrided_ &&  numCols>0) {
+      ScalarType ** tmpValues = new ScalarType*[numCols];
+      for (OrdinalType i=0;i<numCols; i++) tmpValues[i] = values_[i];
       values_ = tmpValues;
     }
 };
@@ -77,7 +79,7 @@ namespace Kokkos {
     virtual ~OskiMultiVector(){
 
     oski_DestroyVecView(x_view_);
-    if (isStrided_ && numCols_>0) delete [] values_;
+    if (isStrided_ && x_view_->num_cols>0) delete [] values_;
     
     };
     //@}
@@ -128,9 +130,9 @@ namespace Kokkos {
       isStrided_ = true;
       dataInitialized_ = true;
 
-    if (numCols_>0) {
-      values_ = new ScalarType*[numCols_];
-      for (OrdinalType i=0;i<numCols_; i++) values_[i] = allValues_+i*rowInc;
+    if (numCols>0) {
+      values_ = new ScalarType*[numCols];
+      for (OrdinalType i=0;i<numCols; i++) values_[i] = allValues_+i*rowInc;
     }
       return(0);
       };
@@ -158,7 +160,7 @@ namespace Kokkos {
     virtual ScalarType * getValues(OrdinalType i) const {
       if (!dataInitialized_ || // No data to return
 	  i<0 || // Out of range
-	  i>=numRows_ // Out of range
+	  i>=x_view_->num_rows // Out of range
 	  ) return(0);
       return(values_[i]);
     };
@@ -169,29 +171,29 @@ namespace Kokkos {
     //@{ \name DenseMultiVector Attribute access methods.
 	
     //! Number of rows
-    virtual OrdinalType getNumRows() const {return(x_view_->length);};
+    virtual OrdinalType getNumRows() const {return(x_view_->num_rows);};
 	
     //! Number of columns
-    virtual OrdinalType getNumCols() const{return(x_view_->numcols);};
+    virtual OrdinalType getNumCols() const{return(x_view_->num_cols);};
 	
     //! Indicates whether or not array is strided
     virtual bool getIsStrided() const {return(isStrided_);};
 	
     //! Increment between entries in a row of the multivector, normally = numRows().
     virtual OrdinalType getRowInc() const {
-      OrdinalType leadDim = x_view_->lead_dim;
+      OrdinalType leadDim = x_view_->stride;
       OrdinalType rowInc = 0;
       if (x_view_->orient == LAYOUT_ROWMAJ) rowInc = leadDim;
-      else rowInc = leadDim/x_view_->length;
+      else rowInc = leadDim/x_view_->num_rows;
       return(rowInc);    
     };
 	
     //! Increment between entries in a column of the multivector, normally = 1.
     virtual OrdinalType getColInc() const {
-      OrdinalType leadDim = x_view_->lead_dim;
+      OrdinalType leadDim = x_view_->stride;
       OrdinalType colInc = 0;
       if (x_view_->orient == LAYOUT_COLMAJ) colInc = leadDim;
-      else colInc = leadDim/x_view_->num_vecs;
+      else colInc = leadDim/x_view_->num_cols;
       return(colInc);
     };
 	
