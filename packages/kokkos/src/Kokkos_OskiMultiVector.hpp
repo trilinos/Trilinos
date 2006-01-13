@@ -79,7 +79,7 @@ namespace Kokkos {
     //! OskiMultiVector Destructor
     virtual ~OskiMultiVector(){
 
-    oski_DestroyVecView(x_view_);
+    if (dataInitialized_) oski_DestroyVecView(x_view_);
     if (isStrided_ && x_view_->num_cols>0) delete [] values_;
     
     };
@@ -172,16 +172,26 @@ namespace Kokkos {
     //@{ \name DenseMultiVector Attribute access methods.
 	
     //! Number of rows
-    virtual OrdinalType getNumRows() const {return(x_view_->num_rows);};
+    virtual OrdinalType getNumRows() const {
+      if (dataInitialized_) return(x_view_->num_rows);
+      else return(0);
+    };
 	
     //! Number of columns
-    virtual OrdinalType getNumCols() const{return(x_view_->num_cols);};
+    virtual OrdinalType getNumCols() const{
+      if (dataInitialized_) return(x_view_->num_cols);
+      else return(0);
+    };
 	
     //! Indicates whether or not array is strided
-    virtual bool getIsStrided() const {return(isStrided_);};
+    virtual bool getIsStrided() const {
+      if (dataInitialized_) return(isStrided_);
+      else return(false);
+    };
 	
     //! Increment between entries in a row of the multivector, normally = numRows().
     virtual OrdinalType getRowInc() const {
+      if (!dataInitialized_) return(0);
       OrdinalType leadDim = x_view_->stride;
       OrdinalType rowInc = 0;
       if (x_view_->orient == LAYOUT_ROWMAJ) rowInc = leadDim;
@@ -191,6 +201,7 @@ namespace Kokkos {
 	
     //! Increment between entries in a column of the multivector, normally = 1.
     virtual OrdinalType getColInc() const {
+      if (!dataInitialized_) return(0);
       OrdinalType leadDim = x_view_->stride;
       OrdinalType colInc = 0;
       if (x_view_->orient == LAYOUT_COLMAJ) colInc = leadDim;
