@@ -79,19 +79,19 @@ Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
 //=============================================================================
 Amesos_Pardiso::~Amesos_Pardiso() 
 {
-  int n = SerialMatrix().NumMyRows();
   int phase = -1;                 /* Release internal memory. */
   int error = 0;
   int idum;
   double ddum;
 
-  if (Problem_->GetOperator() != 0 && Comm().MyPID() == 0)
+  if (Problem_->GetOperator() != 0 && Comm().MyPID() == 0) {
+    int n = SerialMatrix().NumMyRows();
     F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
                 &n, &ddum, &ia_[0], &ja_[0], &idum, &nrhs_,
                 iparm_, &msglvl_, &ddum, &ddum, &error);
+  }
 
   AMESOS_CHK_ERRV(CheckError(error));
-
   // print out some information if required by the user
   if ((verbose_ && PrintTiming_) || verbose_ == 2) PrintTiming();
   if ((verbose_ && PrintStatus_) || verbose_ == 2) PrintStatus();
@@ -195,43 +195,43 @@ int Amesos_Pardiso::SetParameters( const Teuchos::ParameterList &ParameterList)
 
   if (ParameterList.isSublist("pardiso")) 
   {
-    Teuchos::ParameterList& PardisoList = ParameterList.sublist("Pardiso");
+    const Teuchos::ParameterList& PardisoList = ParameterList.sublist("Pardiso");
 
     if (PardisoList.isParameter("MSGLVL"))
-      msglvl_ = PardisoList.get("MSGLVL", msglvl_);
+      msglvl_ = PardisoList.get<int>("MSGLVL");
     else
       if ( debug_ ) msglvl_ = 1 ; //  msglvl prints statistical information, but is the closest 
     //  thing I found to debug print statements - KSS
 
     if (PardisoList.isParameter("IPARM(1)"))
-      IPARM(1) = PardisoList.get("IPARM(1)",  IPARM(1));
+      IPARM(1) = PardisoList.get<int>("IPARM(1)");
 
     if (PardisoList.isParameter("IPARM(2)"))
-      IPARM(2) = PardisoList.get("IPARM(2)",  IPARM(2));
+      IPARM(2) = PardisoList.get<int>("IPARM(2)");
 
     if (PardisoList.isParameter("IPARM(3)"))
-      IPARM(3) = PardisoList.get("IPARM(3)",  IPARM(3));
+      IPARM(3) = PardisoList.get<int>("IPARM(3)");
 
     if (PardisoList.isParameter("IPARM(4)"))
-      IPARM(4) = PardisoList.get("IPARM(4)",  IPARM(4));
+      IPARM(4) = PardisoList.get<int>("IPARM(4)");
 
     if (PardisoList.isParameter("IPARM(8)"))
-      IPARM(8) = PardisoList.get("IPARM(8)",  IPARM(8));
+      IPARM(8) = PardisoList.get<int>("IPARM(8)");
 
     if (PardisoList.isParameter("IPARM(10)"))
-      IPARM(10) = PardisoList.get("IPARM(10)", IPARM(10));
+      IPARM(10) = PardisoList.get<int>("IPARM(10)");
 
     if (PardisoList.isParameter("IPARM(11)"))
-      IPARM(11) = PardisoList.get("IPARM(11)", IPARM(17));
+      IPARM(11) = PardisoList.get<int>("IPARM(11)");
 
     if (PardisoList.isParameter("IPARM(18)"))
-      IPARM(18) = PardisoList.get("IPARM(18)", IPARM(18));
+      IPARM(18) = PardisoList.get<int>("IPARM(18)");
 
     if (PardisoList.isParameter("IPARM(19)"))
-      IPARM(19) = PardisoList.get("IPARM(19)", IPARM(19));
+      IPARM(19) = PardisoList.get<int>("IPARM(19)");
 
     if (PardisoList.isParameter("IPARM(21)"))
-      IPARM(21) = PardisoList.get("IPARM(21)", IPARM(21));
+      IPARM(21) = PardisoList.get<int>("IPARM(21)");
   }
   
   return 0;

@@ -513,7 +513,7 @@ int NextMain( int argc, char *argv[] ) {
 #endif
 
 #ifdef HAVE_AMESOS_PARDISO
-  AmesosClasses.push_back( "Amesos_Pardiso" );
+  //  bug #1915  AmesosClasses.push_back( "Amesos_Pardiso" );
 #endif
 
 #ifdef HAVE_AMESOS_PARAKLETE
