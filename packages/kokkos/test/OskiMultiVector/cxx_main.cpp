@@ -79,9 +79,24 @@ int main(int argc, char* argv[])
   for (int i=0; i<numVectors; i++) values[i] = allValues+i*length;
   for (int i=0; i<length*numVectors; i++) allValues[i] = (STYPE) i;
 
+//      for (int i=0; i<numVectors; i++) {
+//        cout << values[i] << endl;
+//      }
+//	cout << *(values[2]) << endl;
+//  STYPE * Y = *values;
+//      for (int i=0; i<numVectors; i++) {
+//        cout << Y[i] << endl;
+//      }
+
+
   A.initializeValues(numVectors, length, values);
   if (verbose) cout <<"default constructor -- initialize using array of pointers ";
-  if ( A.getNumRows()!=numVectors || A.getNumCols()!=length || 
+cout << endl << "***" << endl << 
+	A.getRowInc() << endl <<
+	A.getColInc() << endl << 
+	"***" << endl;
+
+  if ( A.getNumRows()!=numVectors || A.getNumCols()!=length ||
        A.getIsStrided()!=false ||A.getRowInc()!=0 ||
        A.getColInc()!=1) {
 	if (verbose) cout << "unsuccessful."<<endl;
@@ -90,7 +105,7 @@ int main(int argc, char* argv[])
   else {
 	if (verbose) cout << "successful."<<endl;
   }
-
+/*
   OMultiVector B;
   B.initializeValues(numVectors, length, allValues, length, 1);
   if (verbose) cout <<"default constructor -- initialize using 2D array ";
@@ -137,7 +152,7 @@ int main(int argc, char* argv[])
   else {
     if (verbose) cout << "successful."<<endl;
   }
-  
+*/  
   // OSKI can optionally be shut-down
   //extern "C" 
   oski_Close();

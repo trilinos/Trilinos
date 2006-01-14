@@ -79,7 +79,9 @@ namespace Kokkos {
     //! OskiMultiVector Destructor
     virtual ~OskiMultiVector(){
 
-    if (dataInitialized_) oski_DestroyVecView(x_view_);
+    // **This is causing huge problems, see if "newing" arrays is the problem
+    // Check for mem leaks
+    //if (dataInitialized_) oski_DestroyVecView(x_view_);
     if (isStrided_ && x_view_->num_cols>0) delete [] values_;
     
     };
@@ -98,12 +100,13 @@ namespace Kokkos {
       \return Integer error code, set to 0 if successful.
     */
     int initializeValues(OrdinalType numRows, OrdinalType numCols, ScalarType ** values) {
-      if (numCols==1) oski_CreateVecView(values[0],numRows,STRIDE_UNIT);
-      else oski_CreateMultiVecView(values[0],numRows,numCols,LAYOUT_COLMAJ,numRows);
+      if (numCols==1) x_view_=oski_CreateVecView(*values,numRows,STRIDE_UNIT);
+      else x_view_=oski_CreateMultiVecView(*values,numRows,numCols,LAYOUT_COLMAJ,numRows);
       values_ = values; // **doesn't allow noncontiguous vectors at this point
       allValues_ = 0;
       isStrided_ = false;
       dataInitialized_ = true;
+
       return(0);
       };
 	
