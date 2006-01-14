@@ -119,7 +119,10 @@ public:
   void Extract(); 
 
   //! Applies a given rotation \c Q to the projected eigenproblem.
-  void Rotate(const Teuchos::SerialDenseMatrix<OrdinalType,ScalarType> &Q); 
+  void Rotate(const Teuchos::SerialDenseMatrix<OrdinalType,ScalarType> &Q);
+   
+  void UpdateG(int size, int start);
+  void Restart();
 
   //! Sets the vector that will contain the computed eigenvalues.
   void SetTheta(const std::vector<ScalarType>* theta); 
@@ -189,7 +192,7 @@ public:
     // Update _A (i.e. Atilde)
     for(i=0; i < _actualSize; ++i){
       for (j=0; j < U.GetNumberVecs(); ++j){
-	MVT::MvDot( *_U[i], *_AU[oldSize+j], &Aij);
+	MVT::MvDot( *_U[i], *_AU[oldSize+j], &Aij, Anasazi::NO_CONJ);
 	_A(i, oldSize + j) = Aij[0];
       }
     }
@@ -222,6 +225,16 @@ public:
     _actualSize = Q.numCols();    
   }
 
+  void UpdateG(int size, int start) {
+  	Teuchos::SerialDenseMatrix<int,double> Aview(Teuchos::View, _A.values(), _A.stride(), size, size);
+	
+	Aview.putScalar((double)0);
+	for (int i=0; i<size; i++) Aview(i,i)=(*_theta)[start+i];
+	_actualSize=size;
+  }
+  
+  void Restart() {_actualSize=0;}
+  
   //! Sets the vector that will contain the computed eigenvalues.
   void SetTheta(std::vector<double> *theta)  
   {
@@ -329,13 +342,12 @@ public:
   /*! \fixme: NOW ONLY SYMMETRIC PROBLEMS!
    */
   ProjectedEigenproblem(const string& MatrixType, int maxSize)
-  {
+  {    
     _A.shape(maxSize, maxSize);
     _A2.shape(maxSize, maxSize);
     _Awork.shape(maxSize, maxSize);
     _work.resize(3*maxSize);
-    _rwork.resize(2 * _maxSize);
-
+    _rwork.resize(2*maxSize);
     _actualSize = 0;
     _maxSize = maxSize;
     if (MatrixType == "General")
@@ -369,18 +381,17 @@ public:
     oldSize = _actualSize;
     for(i=0; i < U.GetNumberVecs(); ++i){
       list[0] = i;
-
+      
       _U[_actualSize]  = MVT::CloneView( U, list);
       _AU[_actualSize] = MVT::CloneView( AU, list);
       _BU[_actualSize] = MVT::CloneView( BU, list);
       _actualSize++;
     }
 
-
     // Update _A (i.e. Atilde)
     for(i=0; i < _actualSize; ++i){
       for (j=0; j < U.GetNumberVecs(); ++j){
-	MVT::MvDot( *_U[i], *_AU[oldSize+j], &Aij);
+	MVT::MvDot( *(_U[i]), *(_AU[oldSize+j]), &Aij, Anasazi::NO_CONJ);
 	_A(i, oldSize + j) = Aij[0];
       }
     }
@@ -389,6 +400,8 @@ public:
   //! Extracts the eigenpairs from the current projected problem using LAPACK.
   void Extract()
   {
+  
+
     // Mirror the matrix _A                     
     for(int i=1; i<_actualSize; ++i){
       for(int j=0; j<i; ++j){
@@ -397,11 +410,9 @@ public:
     }
 
     _A2 = _A;
-    _lapack.GEEV('N', 'V', _actualSize, _A2.values(), _maxSize, 
-                 &((*_theta)[0]), 0, 1, _Z->values(), _maxSize, 
-                 &(_work[0]), 3*_maxSize, &(_rwork[0]), &_info);
-    //for (int i = 0 ; i < _actualSize ; ++i)
-
+    
+    _lapack.GEEV('N', 'V', _actualSize, _A2.values(), _maxSize, &((*_theta)[0]), 0, 1, _Z->values(), _maxSize, &(_work[0]), 3*_maxSize, &(_rwork[0]), &_info);
+    
   }
 
   void Rotate(const Teuchos::SerialDenseMatrix<int,complex<double> > &Q)      // During a restart, this can be simplified
@@ -415,6 +426,7 @@ public:
       }
     }
 
+    #if 0
     _A.reshape(Q.numRows(), Q.numRows());
     _Awork.shape(_A.numRows(), Q.numCols());
     ret = _Awork.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, _A, Q, 0.0); assert(ret == 0);
@@ -422,8 +434,29 @@ public:
     ret = _A.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, _Awork, 0.0); assert(ret == 0);
     _A.reshape(_maxSize, _maxSize);
     _actualSize = Q.numCols();    
+    #else
+    Teuchos::SerialDenseMatrix<int,std::complex<double> > *Aview;
+    Aview=new Teuchos::SerialDenseMatrix<int,std::complex<double> >(Teuchos::View, _A.values(), _A.stride(), Q.numRows(), Q.numRows());
+    _Awork.shape(Q.numRows(), Q.numCols());
+    ret = _Awork.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0, *Aview, Q, 0.0); assert(ret == 0);
+    delete Aview;
+    Aview=new Teuchos::SerialDenseMatrix<int,std::complex<double> >(Teuchos::View, _A.values(), _A.stride(), Q.numCols(), Q.numCols());
+    ret = Aview->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, 1.0, Q, _Awork, 0.0); assert(ret == 0);
+    delete Aview;
+    _actualSize = Q.numCols();
+    #endif
   }
 
+  void UpdateG(int size, int start) {
+  	Teuchos::SerialDenseMatrix<int,std::complex<double> > Aview(Teuchos::View, _A.values(), _A.stride(), size, size);
+	
+	Aview.putScalar((std::complex<double>)0);
+	for (int i=0; i<size; i++) Aview(i,i)=(*_theta)[start+i];
+	_actualSize=size;
+  }
+  
+  void Restart() {_actualSize=0;}
+  
   //! Sets the vector that will contain the computed eigenvalues.
   void SetTheta(std::vector<complex<double> > *theta)  
   {

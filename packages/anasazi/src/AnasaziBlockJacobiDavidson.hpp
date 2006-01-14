@@ -35,19 +35,50 @@
 #ifndef ANASAZI_BLOCK_JACOBI_DAVIDSON_HPP
 #define ANASAZI_BLOCK_JACOBI_DAVIDSON_HPP
 
+#include <sys/times.h>
+#include <sys/timeb.h>
+
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziBasicSort.hpp"
 #include "AnasaziEigensolver.hpp"
 #include "AnasaziEigenproblem.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperator.hpp"
 #include "AnasaziOperatorTraits.hpp"
-#include "AnasaziUtils.hpp"
-#include "AnasaziBasicSort.hpp"
 #include "AnasaziProjectedEigenproblem.hpp"
 #include "AnasaziOutputManager.hpp"
+#include "AnasaziUtils.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
+
+//_SAB_Special: use only, if there exists a special fast MvTimesMatAddMv function, which can take a view of "this" as argument
+#define _SAB_Special
+
+//_SAB_lateDefl: usefull, if _SAB_reorthog is also defined: late deflation is done and the SearchSpace will be reorthogonalized not only after restart, but also after conversion
+//#define _SAB_lateDefl
+
+//_SAB_modTargetSwitch: switch target separately for each search vector
+//#define _SAB_modTargetSwitch
+
+//_SAB_reorthog: to reorthogonalise search space after restart
+//#define _SAB_reorthog
+
+//_SAB_compare: some output and changes to compare with Oskar's Algo
+#define _SAB_compare
+
+//_SAB_DEBUG: for debugging purpose, write certain data to files
+//#define _SAB_DEBUG
+#define _SAB_DEBUG_ITER 30
+
+//_SAB_TIMING: prints out needed time for the phases of the algorithm
+//#define _SAB_TIMING
+
+//_SAB_STATISTICS: prints out needed iterations and gmres steps and total time needed
+//#define _SAB_STATISTICS
+
+//_SAB_without_os: without output
+//#define _SAB_without_os
 
 /*!
 \class Anasazi::BlockJacobiDavidson
@@ -198,11 +229,11 @@ of the approximations gained during the previous iterations. In contrast to Kryl
 
 \author Oscar Chinellato (ETHZ/ICOS), Sabine Emch (ETHZ), Marzio Sala (ETHZ/COLAB)
 
-\date Last updated on Nov-05
+\date Last updated on 01-Nov-05
 */
 namespace Anasazi {
 
-  template<class ScalarType, class MagnitudeType,  class MV, class OP>
+  template<class ScalarType, class MV, class OP>
   class BlockJacobiDavidson : public Eigensolver<ScalarType,MV,OP> 
   {
   public:
@@ -262,11 +293,12 @@ namespace Anasazi {
 
     //@}
   private:
-
+     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+     
     /*! \brief These methods will not be defined.     */
-    BlockJacobiDavidson(const BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP> &method);
-    BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP>& operator=
-      (const BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP> &method);
+    BlockJacobiDavidson(const BlockJacobiDavidson<ScalarType,MV,OP> &method);
+    BlockJacobiDavidson<ScalarType,MV,OP>& operator=
+      (const BlockJacobiDavidson<ScalarType,MV,OP> &method);
 
     inline Teuchos::RefCountPtr<MV> CV(MV& rhs, int which)
     {
@@ -274,6 +306,15 @@ namespace Anasazi {
       list[0] = which;
 
       Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs.CloneView(list));
+      return(res);
+    }
+    
+    inline Teuchos::RefCountPtr<MV> CC(MV& rhs, int which)
+    {
+      std::vector<int> list(1);
+      list[0] = which;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs.CloneCopy(list));
       return(res);
     }
 
@@ -287,12 +328,28 @@ namespace Anasazi {
       return(res);
     }
 
+    inline Teuchos::RefCountPtr<MV> CC(MV& rhs, int first, int last)
+    {
+      std::vector<int> list(last - first);
+      for (int i = first ; i < last ; ++i)
+        list[i - first] = i;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs.CloneCopy(list));
+      return(res);
+    }
+    
     inline Teuchos::RefCountPtr<MV> CV(MV& rhs, std::vector<int>& list)
     {
       Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs.CloneView(list));
       return(res);
     }
 
+     inline Teuchos::RefCountPtr<MV> CC(MV& rhs, std::vector<int>& list)
+    {
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs.CloneCopy(list));
+      return(res);
+    }
+    
     inline Teuchos::RefCountPtr<MV> CV(Teuchos::RefCountPtr<MV>& rhs, int which)
     {
       std::vector<int> list(1);
@@ -302,6 +359,15 @@ namespace Anasazi {
       return(res);
     }
 
+    inline Teuchos::RefCountPtr<MV> CC(Teuchos::RefCountPtr<MV>& rhs, int which)
+    {
+      std::vector<int> list(1);
+      list[0] = which;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs->CloneCopy(list));
+      return(res);
+    }
+    
     inline Teuchos::RefCountPtr<MV> CV(Teuchos::RefCountPtr<MV>& rhs, 
                                    int first, int last)
     {
@@ -313,6 +379,17 @@ namespace Anasazi {
       return(res);
     }
 
+    inline Teuchos::RefCountPtr<MV> CC(Teuchos::RefCountPtr<MV>& rhs, 
+                                   int first, int last)
+    {
+      std::vector<int> list(last - first);
+      for (int i = first ; i < last ; ++i)
+        list[i - first] = i;
+
+      Teuchos::RefCountPtr<MV> res = Teuchos::rcp(rhs->CloneCopy(list));
+      return(res);
+    }
+    
     inline Teuchos::RefCountPtr<MV> CV(Teuchos::RefCountPtr<MV>& rhs, 
                                        std::vector<int>& list)
     {
@@ -385,8 +462,8 @@ namespace Anasazi {
   //
   // Implementation
   //
-  template <class ScalarType, class MagnitudeType, class MV, class OP>
-  BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP>::
+  template <class ScalarType, class MV, class OP>
+  BlockJacobiDavidson<ScalarType,MV,OP>::
   BlockJacobiDavidson(const Teuchos::RefCountPtr<Eigenproblem<ScalarType,MV,OP> > &problem,
                         const Teuchos::RefCountPtr<SortManager<ScalarType,MV,OP> > &sm,
                         const Teuchos::RefCountPtr<OutputManager<ScalarType> > &om,
@@ -405,23 +482,24 @@ namespace Anasazi {
     _nev(problem->GetNEV()),
     _maxIters(_pl.get("Max Iters", 100)),
     _blockSize(_pl.get("Block Size", 1)),
-    _residual_tolerance(_pl.get("Tol", 10e-8)),
+    _residual_tolerance(_pl.get("Tol", 1e-6)),
     _numRestarts(0),
     _iters(0),
-    _TARGET(_pl.get("Target", 0.0)),
+   // _TARGET(_pl.get<ScalarType>("Target", Teuchos::ScalarTraits<ScalarType>::zero())),
+    _TARGET((ScalarType)1),
     _SMIN(_pl.get("SMIN", 20)), 
     _SMAX(_pl.get("SMAX", 30)),
     _knownEV(0),
-    _LSIterMax(_pl.get("KrylovSolver: MaxIters", 100)),
-    _LSRestart(_pl.get("KrylovSolver: Restart",100)),
-    _elin(_pl.get("KrylovSolver: Tolerance", 10e-8)),
+    _LSIterMax(_pl.get("KrylovSolver: MaxIters", 200)),
+    _LSRestart(_pl.get("KrylovSolver: Restart",20)),
+    _elin(_pl.get("KrylovSolver: Tolerance", 10e-9)),
     _gamma(_pl.get("gamma", 2)),
     _eswitch(_pl.get("Switch", 0.1))
   {
   }
 
-  template <class ScalarType, class MagnitudeType, class MV, class OP>
-  ReturnType BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP>::solve()
+  template <class ScalarType, class MV, class OP>
+  ReturnType BlockJacobiDavidson<ScalarType,MV,OP>::solve()
   {
     // ============= //
     // Sanity checks //
@@ -453,11 +531,12 @@ namespace Anasazi {
         _os << "ERROR : Initial vector is not specified, set initial vector in eigenproblem "<<endl;
       return Failed;
     }
-  
-    if (iVec->GetNumberVecs() != _blockSize) 
+ 
+    if (iVec->GetNumberVecs() != _blockSize) //Alternative: ds=iVec->GetNumberVecs setzen (ds>0!)
     {
       if (_om->isVerbosityAndPrint(Anasazi::Error)) 
         _os << "ERROR : Search space has incorrect dimension" << endl;
+	_os << "iVec.numVecs: " << iVec->GetNumberVecs() << "blocksize: " << _blockSize << endl;
       return Failed;
     }
     
@@ -485,6 +564,24 @@ namespace Anasazi {
       return Failed;
     } 
 
+    if (iVec->GetVecLength()-_nev<_SMAX) {
+        if (_om->isVerbosityAndPrint(Anasazi::Error))
+		_os << "ERROR : itialization vector length bigger than SMAX-nev" << endl;
+	return Failed;
+    }
+    
+    if (_SMIN>=_SMAX) {
+        if (_om->isVerbosityAndPrint(Anasazi::Error))
+		_os << "ERROR : SMIN >= SMAX" << endl;
+	return Failed;
+    }
+    
+    if (_SMIN<=_blockSize) {
+    	if (_om->isVerbosityAndPrint(Anasazi::Error))
+		_os << "ERROR : SMIN <= blocksize" << endl;
+	return Failed;
+    }
+    
     // =============================== //
     // templated values of 1's and 0's //
     // =============================== //
@@ -497,7 +594,7 @@ namespace Anasazi {
     // ===================== //
     
     // Allocate the subspace U (and AU, BU), the Ritz-Galerkin matrix and the Ritz values ...
-    int SearchSpaceSize = 0, outer=0;
+    int SearchSpaceSize = 0, outer=0, ds=_blockSize, restartsOld=0;
     std::vector<int> sublist;
 
     Teuchos::RefCountPtr<MV> U, AU, BU;
@@ -505,32 +602,77 @@ namespace Anasazi {
     AU = MVT::Clone(*iVec, _SMAX);
     BU = MVT::Clone(*iVec, _SMAX);
 
-    // Convenience multivectors, used to extract views of U, AU, BU
-    MV *Utmp;
-    MV *AUtmp;
-    MV *BUtmp;
-    MV *Rtmp;
-
+    #ifdef _SAB_TIMING
+    struct timeb tb0, tbOrth, tbExt, tbConv, tbCorr, tbGMRES, tbRest;
+    struct tms tm0, tmOrth, tmExt, tmConv, tmCorr, tmGMRES, tmRest;
+    int tOrth1=0, tOrth2=0, tExt1=0, tExt2=0, tConv1=0, tConv2=0, tCorr1=0, tCorr2=0, tGMRES1=0, tGMRES2=0, tRest1=0, tRest2=0;
+    #endif
+    
+    #ifdef _SAB_STATISTICS
+    int numtotGMRES=0;
+    struct timeb tbTot0, tbTot;
+    struct tms tmTot0, tmTot;
+    
+    ftime(&tbTot0);
+    times(&tmTot0);
+    #endif
+    
     _normR.resize(_nev); // container for norms
     
     // working array
     std::vector<ScalarType> theta(_SMAX), vc(1);
-    std::vector<int> perm(_SMAX), iperm(_SMAX), vQ2;
+    std::vector<int> perm(_SMAX), iperm(_SMAX), cperm(_SMAX), vQ2;
     Teuchos::SerialDenseMatrix<int, ScalarType> Z(_SMAX, _SMAX), LkTrans(_nev,_nev), Rk(_nev,_nev);
-    Teuchos::SerialDenseMatrix<int, ScalarType> Ztmp, *lk, *rk;
-    Anasazi::Operator<ScalarType> *Ksys, *Asys;
+    Teuchos::SerialDenseMatrix<int, ScalarType> Ztmp;
 
     // Allocate space for the residuals ...
-    Teuchos::RefCountPtr<MV> R;
-    R = MVT::CloneCopy(*iVec);
+    std::vector<Teuchos::RefCountPtr<MV> > R(_blockSize);
+    //std::vector<MV*> R(_blockSize);
+    sublist.resize(1);
+    assert(iVec->GetNumberVecs()==_blockSize);
+    for (int i=0; i<_blockSize; i++) {
+    	sublist[0]=i;
+    	R[i]=Teuchos::rcp(iVec->CloneCopy(sublist));
+	//R[i]=iVec->CloneCopy(sublist);
+    }
+    Teuchos::RefCountPtr<MV> mvtmp;
+    mvtmp = MVT::Clone(*iVec,1);
 
     // Allocate space for the result ...
     int conv = 0;   // number of converged eigenpairs per iteration
     int purged = 0; // number of deflated eigenpairs per iteration
     std::vector<ScalarType> sigma(_blockSize);
-    MV *Qtmp, *Qtmp2;
-    MV *BQtmp, *BQtmp2;
-    MV *KBQtmp, *KBQtmp2, *h;
+    MV *Qtmp;
+    MV *BQtmp;
+    MV *KBQtmp, *h;
+    
+    #ifdef _SAB_compare
+    FILE *file;
+    file=fopen("Res2.txt","w");
+    #endif
+    
+    #ifdef _SAB_DEBUG
+    FILE *file2, *fileC, *fileAU, *fileBU, *fileTheta, *fileZ, *fileKsys, *fileAsys, *fileR, *fileMisc;
+    FILE *fileLk, *fileRk;
+    
+    fprintf(file,"Trilinos Algo\n");
+    
+    file2=fopen("EntriesU.txt","w");
+    fileAU=fopen("EntriesAU.txt","w");
+    fileBU=fopen("EntriesBU.txt","w");
+    fileTheta=fopen("EntriesTheta.txt","w");
+    fileZ=fopen("EntriesZ.txt","w");
+    fileKsys=fopen("EntriesKsys.txt","w");
+    fileAsys=fopen("EntriesAsys.txt","w");
+    fileR=fopen("EntriesR.txt","w");
+    fileMisc=fopen("EntriesMisc.txt","w");
+    fileC=fopen("EntriesC.txt","w");
+    fileLk=fopen("EntriesLk.txt","w");
+    fileRk=fopen("EntriesRk.txt","w");
+    #endif
+    
+     
+    Teuchos::RefCountPtr<MV> Qtmp2, BQtmp2, KBQtmp2;
 
     Teuchos::RefCountPtr<MV> BQ, KBQ;
     Teuchos::BLAS<int,ScalarType> blas;
@@ -549,10 +691,12 @@ namespace Anasazi {
     SearchSpaceSize = 0;
     _iters = 0;
 
+    #ifndef _SAB_without_os
     if (_om->doPrint()) 
     {
       _os << "[Starting Solver]" << endl;
     }
+    #endif
 
     // ================================================ //
     // Start the (Block-) Jacobi/Davidson iteration ... //
@@ -566,64 +710,124 @@ namespace Anasazi {
       // subspace vectors and w.r.t. found eigenvectors Q   //
       // ================================================== //
       
+      #ifdef _SAB_TIMING
+      ftime(&tb0);
+      times(&tm0);
+      #endif
+      
       std::vector<ScalarType> eta(1);
       std::vector<MagnitudeType> nrm(1);
       std::vector<MagnitudeType> nrm_q(1);
-
-      for(int i=0; i < _blockSize; i++)
-      {
-        sublist.resize(1);
-
-        // Gram-Schmidt reduce the vector ...
-        for(int j=0; j < SearchSpaceSize ; j++)
-        {
-          CV(R, i)->MvDot(*CV(BU, j), &eta, Anasazi::NO_CONJ);
-          CV(R, i)->MvAddMv(ScalarOne, *CV(R, i), -eta[0], *CV(U, j));
-        }
-
-        for(int j=0; j < _knownEV; j++)
-        {
-          CV(R, i)->MvDot(*CV(BQ, j), &eta, Anasazi::NO_CONJ);
-          CV(R, i)->MvAddMv(ScalarOne, *CV(R, i), -eta[0], *CV(_evecs, j));
-        }
+      
+      sublist.resize(1);
+      
+      for(int i=0; i < ds; i++)
+      {    
+	// B-normalise the vector
+	if (_B.get() != 0) {
+		ok=_B->Apply(*(R[i]), *mvtmp);
+		assert(ok==Anasazi::Ok);
+		R[i]->MvDot(*mvtmp, &eta, Anasazi::NO_CONJ);
+	} else R[i]->MvDot(*R[i], &eta, Anasazi::NO_CONJ);
 	
-        // Now B-normalise the vector ...
-        if (_B.get() != 0)
-           _B->Apply(*CV(R, i), *CV(_evecs, _knownEV));
-        else
-        {
-          sublist[0] = i;
-          CV(_evecs, _knownEV)->SetBlock(*CV(R, i), sublist);
-        }
+	eta[0]=sqrt(eta[0]); //FIXME: replace with corrected Teuchos-function        
+        R[i]->MvAddMv(ScalarOne / eta[0], *(R[i]), ScalarZero, *mvtmp);
 	
+	
+	MagnitudeType l=(MagnitudeType)0.001;
+	int onemore = 0;
+  	while(1){
+
+    		if (onemore == 1) {break;}
+    		if ((l < 1.1) && (l > 0.9)) {onemore = 1;} //Achtung: ist SMAX>DIM-nev, dann gibt's hier eine Endlosschleife
+		#ifdef _SAB_DEBUG
+		else printf("need more\n");
+		#endif
+				
+		// Gram-Schmidt reduce the vector ...
+		for(int j=0; j < SearchSpaceSize ; j++)
+		{
+			R[i]->MvDot(*CV(BU, j), &eta, Anasazi::NO_CONJ);
+			R[i]->MvAddMv(ScalarOne, *(R[i]), -eta[0], *CV(U, j));
+		}
+		
+		for(int j=0; j < _knownEV; j++)
+		{
+			R[i]->MvDot(*CV(BQ, j), &eta, Anasazi::NO_CONJ);
+			R[i]->MvAddMv(ScalarOne, *(R[i]), -eta[0], *CV(_evecs, j));
+		}
+		
+		// Now B-normalise the vector ...
+		if (_B.get() != 0) {
+			ok=_B->Apply(*(R[i]), *mvtmp);
+			assert(ok==Anasazi::Ok);
+			R[i]->MvDot(*mvtmp, &eta, Anasazi::NO_CONJ);
+		} else R[i]->MvDot(*(R[i]), &eta, Anasazi::NO_CONJ);
+		
+		eta[0]=sqrt(eta[0]); //FIXME: replace with corrected Teuchos-function
+		l=Teuchos::ScalarTraits<ScalarType>::magnitude(eta[0]);
+		R[i]->MvAddMv(ScalarOne / eta[0], *(R[i]), ScalarZero, *mvtmp);
+	}
+	
+	 #ifdef _SAB_DEBUG
+      	//Teste orhogonalitaet
+	/*
+	if (_B.get() != 0) _B->Apply(*CV(R, i), *CV(_evecs, _knownEV));
+	else {
+		sublist[0] = i;
+		CV(_evecs, _knownEV)->SetBlock(*CV(R, i), sublist);
+	}
+		
 	CV(R, i)->MvDot(*CV(_evecs, _knownEV), &eta, Anasazi::NO_CONJ);
-        eta[0] = Teuchos::ScalarTraits<ScalarType>::squareroot(eta[0]);
-        // scaling of Rtmp
-        CV(R, i)->MvAddMv(ScalarOne / eta[0], *CV(R, i), ScalarZero, *CV(R, i));
+	cout << "eta: " << eta[0] << endl;
+	*/
+      	#endif
 	
-        sublist[0] = SearchSpaceSize;
-        U->SetBlock(*CV(R, i),sublist);
-	
-        BUtmp = BU->CloneView(sublist);
-        if (_B.get() != 0)
-          _B->Apply(*CV(R, i), *CV(BU, SearchSpaceSize));
-        else
-          CV(BU, SearchSpaceSize)->SetBlock(*CV(R, i), sublist);
-
+	//update U, BU
+	sublist[0]=SearchSpaceSize;
+        U->SetBlock(*(R[i]),sublist);
+        if (_B.get()) {
+		ok=_B->Apply(*(R[i]), *CV(BU, SearchSpaceSize));
+		assert(ok==Anasazi::Ok);
+	} else CV(BU, SearchSpaceSize)->SetBlock(*(R[i]), sublist);
+	  
         SearchSpaceSize++;
       }
       
       // Update AU
-     
       sublist.resize(_blockSize);
-      for(int i=0; i<_blockSize; ++i) sublist[i]=(SearchSpaceSize - _blockSize) + i;
-
-      _A->Apply(*CV(U, sublist), *CV(AU, sublist));
+      for(int i=0; i<_blockSize; ++i) {
+      	sublist[i]=(SearchSpaceSize - _blockSize) + i;
+      }
+      
+      ok=_A->Apply(*CV(U, sublist), *CV(AU, sublist));
+      assert(ok==Anasazi::Ok);
+      
+      #ifdef _SAB_DEBUG
+      if ((_iters<_SAB_DEBUG_ITER) || (restartsOld!=_numRestarts)) {
+	fprintf(file2,"%d: U:\n",_iters);
+	CV(U,0,SearchSpaceSize)->MvPrintf_abs(file2);
+	
+	fprintf(fileAU,"%d: AU:\n",_iters);
+	CV(AU,0,SearchSpaceSize)->MvPrintf_abs(fileAU);
+	
+	fprintf(fileBU,"%d: BU:\n",_iters);
+	CV(BU,0,SearchSpaceSize)->MvPrintf_abs(fileBU);
+      }
+      #endif
       
       // Update the ProjectedEigenproblem component by telling it
       // about the space increase
       PE.Add(*CV(U, sublist), *CV(AU, sublist), *CV(BU, sublist));
 
+      #ifdef _SAB_TIMING
+      ftime(&tbOrth);
+      times(&tmOrth);
+      
+      tOrth1+=(tbOrth.time-tb0.time)*1000+tbOrth.millitm-tb0.millitm;
+      tOrth2+=tmOrth.tms_utime-tm0.tms_utime+tmOrth.tms_stime-tm0.tms_stime;
+      #endif
+      
       // ====================================================== //
       // Extract eigenpair approximations from the space, then  //
       // Sort eigenpairs with respect to TARGET and compute the //
@@ -631,73 +835,170 @@ namespace Anasazi {
       // CAUTION: At return of the sorting manager, the thetas  //
       // are sorted!!                                           //
       // ====================================================== //
-
+      
+      #ifdef _SAB_TIMING
+      ftime(&tb0);
+      times(&tm0);
+      #endif
+      
       PE.Extract();
-
+      
+      #ifdef _SAB_DEBUG
+      if ((_iters<_SAB_DEBUG_ITER) || (restartsOld!=_numRestarts)) {
+      	fprintf(fileTheta,"%d: theta:\n",_iters);
+      	for (int i=0; i<SearchSpaceSize; i++) {
+		fprintf(fileTheta,"%1.16f %1.16f\n",theta[i].real(), theta[i].imag());
+	}
+	
+	fprintf(fileZ,"%d: Z:\n",_iters);
+	for (int i=0; i<SearchSpaceSize; i++) {
+		fprintf(fileZ,"[ ");
+		for (int j=0; j<SearchSpaceSize; j++) {
+			fprintf(fileZ,"(%1.16f, %1.16f) ",Z(i,j).real(), Z(i,j).imag());
+		}
+		fprintf(fileZ,"\n");
+	}
+      }
+      #endif
+      
       for(int i=0; i<SearchSpaceSize ; ++i) {theta[i] -= _TARGET;}
       _sm->sort((Eigensolver<ScalarType,MV,OP>*)NULL, SearchSpaceSize , &theta[0], &perm);
       
       for(int i=0; i<SearchSpaceSize ; ++i) {theta[i] += _TARGET;}
-      for(int i=0; i<SearchSpaceSize ; ++i) { iperm[perm[i]]=i;}
+      for(int i=0; i<SearchSpaceSize ; ++i) { iperm[i]=i;}
+      for(int i=0; i<SearchSpaceSize; i++) { cperm[i]=i;}
 
       // Permute the Z entries according to perm
       Ztmp.shape(SearchSpaceSize ,1);
-
+      
       for(int j=0; j<SearchSpaceSize ; ++j){
-        if (perm[j] != j){
+        if (iperm[perm[j]] != j){
           for(int i=0; i<SearchSpaceSize ; ++i) {Ztmp[0][i] = Z[j][i];}
-          for(int i=0; i<SearchSpaceSize ; ++i) {Z[j][i] = Z[perm[j]][i];}
-          for(int i=0; i<SearchSpaceSize ; ++i) {Z[perm[j]][i] = Ztmp[0][i];}
+          for(int i=0; i<SearchSpaceSize ; ++i) {Z[j][i] = Z[iperm[perm[j]]][i];}
+          for(int i=0; i<SearchSpaceSize ; ++i) {Z[iperm[perm[j]]][i] = Ztmp[0][i];}
 
-          perm[iperm[j]] = perm[j];	  
+          int h=iperm[perm[j]];
+	  iperm[perm[j]]=j;
+	  iperm[cperm[j]]=h;
+	  
+	  cperm[h]=cperm[j];
+	  cperm[j]=perm[j];
         }
       }
       
+      
+      #ifdef _SAB_DEBUG
+      if ((_iters<_SAB_DEBUG_ITER) || (restartsOld!=_numRestarts)) {
+      	fprintf(fileTheta,"%dss: theta:\n",_iters);
+      	for (int i=0; i<SearchSpaceSize; i++) {
+		fprintf(fileTheta,"%1.16f %1.16f\n",theta[i].real(), theta[i].imag());
+	}
+	
+	fprintf(fileZ,"%dss: Z:\n",_iters);
+	for (int i=0; i<SearchSpaceSize; i++) {
+		fprintf(fileZ,"[ ");
+		for (int j=0; j<SearchSpaceSize; j++) {
+			fprintf(fileZ,"(%1.16f, %1.16f) ",Z(i,j).real(), Z(i,j).imag());
+		}
+		fprintf(fileZ,"\n");
+	}
+      }
+      #endif
+      
+      //Skalieren
+      for(int j=0; j<SearchSpaceSize; j++) {
+       Teuchos::SerialDenseMatrix<int,ScalarType> H(1,1), Zview(Teuchos::View, Z[j], Z.stride(), SearchSpaceSize, 1);
+        H.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, Zview, Zview, ScalarZero);
+       H(0,0) = 1.0/sqrt(H(0,0)); //FIXME: replace later with corrected Teuchos-function
+     
+       blas.SCAL(SearchSpaceSize, H(0,0), Z[j], 1);
+     }
+     
+     #ifdef _SAB_DEBUG
+      if ((_iters<_SAB_DEBUG_ITER) || (restartsOld!=_numRestarts)) {
+      	fprintf(fileTheta,"%dss: theta:\n",_iters);
+      	for (int i=0; i<SearchSpaceSize; i++) {
+		fprintf(fileTheta,"%1.16f %1.16f\n",theta[i].real(), theta[i].imag());
+	}
+	
+	fprintf(fileZ,"%dss: Z:\n",_iters);
+	for (int i=0; i<SearchSpaceSize; i++) {
+		fprintf(fileZ,"[ ");
+		for (int j=0; j<SearchSpaceSize; j++) {
+			fprintf(fileZ,"(%1.16f, %1.16f) ",Z(i,j).real(), Z(i,j).imag());
+		}
+		fprintf(fileZ,"\n");
+	}
+      }
+      #endif
+     
+     #ifdef _SAB_TIMING
+      ftime(&tbExt);
+      times(&tmExt);
+      
+      tExt1+=(tbExt.time-tb0.time)*1000+tbExt.millitm-tb0.millitm;
+      tExt2+=tmExt.tms_utime-tm0.tms_utime+tmExt.tms_stime-tm0.tms_stime;
+      #endif
+      
+      #ifdef _SAB_TIMING
+      ftime(&tb0);
+      times(&tm0);
+      #endif
+      
       // Check for convergence of the approximative eigenpairs. If
       // some of them are accurate enough, add them to the space _evecs
-      Ztmp.shape(SearchSpaceSize, 1);
-
-      for(int i=0; i<SearchSpaceSize ; ++i) {Ztmp[0][i] = Z[0][i];}
       
-      CV(BQ, _knownEV)->MvTimesMatAddMv(ScalarOne, *CV(BU, 0, SearchSpaceSize), Ztmp, ScalarZero);
+      // Ztmp = Z(:,0)
+      Ztmp.shape(SearchSpaceSize, 1);
+      for(int i=0; i<SearchSpaceSize ; ++i) {Ztmp[0][i] = Z[0][i];}
 
-      // compute K^{-1} BQtmp
-      _Prec->Apply(*CV(BQ, _knownEV), *CV(KBQ, _knownEV)); //Qk=[_Qk _qk]
-
-      // Now compute residual
-      // Rtmp = AU*Z(:,1)
-      CV(R, 0)->MvTimesMatAddMv (ScalarOne, *CV(AU, 0, SearchSpaceSize), Ztmp, ScalarZero);
-      // Rtmp = Rtmp - theta[0]*AU*Z(:,1) = Rtmp - theta[0] * BQtmp
-      CV(R, 0)->MvAddMv (ScalarOne, *CV(R, 0), -theta[0], *CV(BQ, _knownEV));
-      // nrm  = ||Rtmp||
-      CV(R, 0)->MvNorm(&nrm);
-      // Qtmp = U*Z(:,1)
+      // Qtmp = U*Z(:,0), BQtmp = BU*Z(:,0), nrm_q = ||Qtmp||
       CV(_evecs, _knownEV)->MvTimesMatAddMv (ScalarOne, *CV(U, 0, SearchSpaceSize), Ztmp, ScalarZero);
-
-      // nrm  = ||Rtmp||
       CV(_evecs, _knownEV)->MvNorm(&nrm_q);
+      CV(BQ, _knownEV)->MvTimesMatAddMv(ScalarOne, *CV(BU, 0, SearchSpaceSize), Ztmp, ScalarZero);
+      
+      // Rtmp = AU*Z(:,0)-theta[0]*BU*Z(:,0), nrm = ||Rtmp||
+      R[0]->MvTimesMatAddMv (ScalarOne, *CV(AU, 0, SearchSpaceSize), Ztmp, ScalarZero);
+      R[0]->MvAddMv (ScalarOne, *(R[0]), -theta[0], *CV(BQ, _knownEV));
+      R[0]->MvNorm(&nrm);
+       
+      //relative norm     
       nrm[0] /= nrm_q[0];
 
+      #ifndef _SAB_without_os
       if (_om->doPrint()) 
       {
         _os << "It: " << _iters << ", knownEV: " << _knownEV;
        // _os << ", s: " << s << ", rel_normr = " << nrm[0];
-        _os << ", SearchSpaceSize : " << SearchSpaceSize  << ", rel_normr = " << nrm[0]/nrm_q[0];
+        _os << ", SearchSpaceSize : " << SearchSpaceSize  << ", rel_normr = " << nrm[0];
         _os << ", theta_i = ";
         _os << "(" << theta[0] << ")";
         int j = ANASAZI_MIN(SearchSpaceSize ,5);
         for(int i=1; i<j; ++i){
           _os << ", (" << theta[i] << ")";
         }
-        _os << endl;
+        _os << "(Tol=" << _residual_tolerance << ")" << endl;
       }
+      #endif
+      
+      #ifdef _SAB_compare
+      fprintf(file,"it=%d nrm/nrm_q=%1.16f\n",_iters, nrm[0]);
+      #endif
       
       conv = 0;
-    
-      while (nrm[0] <= _residual_tolerance) 
+
+      #ifndef _SAB_compare      
+      while ((conv<SearchSpaceSize-1)&&(nrm[0] <= _residual_tolerance)) 
+      #else
+      if (nrm[0] <= _residual_tolerance) //nur fuer Vergleich mit Oskars Code
+      #endif
       {
-        // Qtmp is already in the proper state...
+ 	#ifdef _SAB_compare
+        fprintf(file,"converged EP\n");
+	#endif
 	
+        //new eigenvector already saved in _evecs
+	//save new eigenvalue in _evals
         (*_evals)[_knownEV] = theta[conv];
 	
         _normR[_knownEV] = nrm[0]; // relative norm
@@ -708,62 +1009,79 @@ namespace Anasazi {
         conv++;
 	
 	outer=0;
+      
+	//BQ already updated (BQ := [BQ BQtmp])
 	
 	if (_Prec.get()) 
         {
+		//KBQ := [KBQ _Prec*BQtmp]
+		ok=_Prec->Apply(*CV(BQ, _knownEV-1), *CV(KBQ, _knownEV-1));
+		assert(ok==Anasazi::Ok);
+	
+		//update Lk an Rk	
 		if (_knownEV==1) {
 			LkTrans(0,0)=ScalarOne;
-                        // FIXME: The following brings a bug...
-			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ);
-			//CV(BQ, _knownEV) ->MvDot(*CV(KBQ, _knownEV), &vc, Anasazi::NO_CONJ);
+			CV(BQ, _knownEV-1) ->MvDot(*CV(KBQ, _knownEV-1), &vc, Anasazi::NO_CONJ);
 			Rk(0,0)=vc[0];
 		} else {
-			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV-1], LkTrans.stride(), _knownEV-1, 1); //(*)
-			CV(BQ, _knownEV)->MvTransMv(ScalarOne, *CV(KBQ, 0, _knownEV - 1), *lk);
-						
-			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), ScalarOne, Rk.values(), Rk.stride(), lk->values(), lk->stride());
+			Teuchos::SerialDenseMatrix<int,ScalarType> lk(Teuchos::View, LkTrans[_knownEV-1], LkTrans.stride(), _knownEV-1, 1), rk(Teuchos::View, Rk[_knownEV-1], Rk.stride(), _knownEV-1, 1), H(1,1);
 			
-			rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV-1], Rk.stride(), _knownEV-1, 1); //(*)
-			CV(KBQ, _knownEV)->MvTransMv(ScalarOne, *CV(KBQ, 0, _knownEV - 1), *rk);
+			CV(BQ, _knownEV-1)->MvTransMv(ScalarOne, *CV(KBQ, 0, _knownEV - 1), lk, Anasazi::NO_CONJ);			
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::NON_UNIT_DIAG, lk.numRows(), lk.numCols(), ScalarOne, Rk.values(), Rk.stride(), lk.values(), lk.stride());
 			
-			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
+			CV(KBQ,_knownEV-1)->MvTransMv(ScalarOne, *CV(BQ,0,_knownEV - 1), rk, Anasazi::NO_CONJ);
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk.numRows(), rk.numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk.values(), rk.stride());
 			
-			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ);
-                        ///CV(BQ, _knownEV)->MvDot(*CV(KBQ, _knownEV), &vc, Anasazi::NO_CONJ);
+                        CV(BQ, _knownEV-1)->MvDot(*CV(KBQ, _knownEV-1), &vc, Anasazi::NO_CONJ);
 			ScalarType rho=vc[0];
-			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1); //(*)
-			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, *lk, *rk, ScalarZero); //rho+=lk*rk
-			rho-=(*H)(0,0);
-			delete(H); //(#)
-			delete(lk); //(#)
-			delete(rk); //(#)
+			H.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, lk, rk, ScalarZero); //rho+=lk*rk
+			rho-=H(0,0);
 			
-			LkTrans(_knownEV-1,_knownEV-1)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]			
+			LkTrans(_knownEV-1,_knownEV-1)=ScalarOne; //_Lk:=[Lk 0; lk^T 1]			
 			Rk(_knownEV-1,_knownEV-1)=rho; //Rk:=[Rk rk; 0 rho]
 		}
+		
+		#ifdef _SAB_DEBUG
+		fprintf(fileLk,"%dconv: Lk:\n",_iters);
+		for (int i=0; i<_knownEV; i++) {
+			fprintf(fileLk,"[ ");
+			for (int j=0; j<_knownEV; j++) {
+				fprintf(fileLk,"(%1.16f, %1.16f) ",LkTrans(j,i).real(), LkTrans(j,i).imag());
+			}
+			fprintf(fileLk,"]\n");
+		}
+		
+		fprintf(fileRk,"%dconv: Rk:\n",_iters);
+		for (int i=0; i<_knownEV; i++) {
+			fprintf(fileRk,"[ ");
+			for (int j=0; j<_knownEV; j++) {
+				fprintf(fileRk,"(%1.16f, %1.16f) ",Rk(i,j).real(), Rk(i,j).imag());
+			}
+			fprintf(fileRk,"]\n");
+		}
+		#endif
 	}
 	
+	//Ztmp = Z(:,conv)
         for(int i=0; i<SearchSpaceSize ; ++i) {Ztmp[0][i] = Z[conv][i];}
 
+	// Qtmp = U*Z(:,conv), BQtmp = BU*Z(:,conv), nrm_q = ||Qtmp||
+        CV(_evecs, _knownEV)->MvTimesMatAddMv (ScalarOne, *CV(U, 0, SearchSpaceSize), Ztmp, ScalarZero);
+        CV(_evecs, _knownEV)->MvNorm(&nrm_q);
         CV(BQ, _knownEV)->MvTimesMatAddMv(ScalarOne, *CV(BU, 0, SearchSpaceSize), Ztmp, ScalarZero);
 
-        // compute K^{-1} BQtmp
-        _Prec->Apply(*CV(BQ, _knownEV), *CV(KBQ, _knownEV)); //Qk=[_Qk _qk]
-
-        // Now compute residual
-        // Rtmp = AU*Z(:,1)
-        CV(R, 0)->MvTimesMatAddMv (ScalarOne, *CV(AU, 0, SearchSpaceSize), Ztmp, ScalarZero);
-        // Rtmp = Rtmp - theta[conv]*AU*Z(:,1) = Rtmp - theta[conv] * BQtmp
-        CV(R, 0)->MvAddMv (ScalarOne, *CV(R, 0), -theta[conv], *CV(BQ, _knownEV));
-        // nrm  = ||Rtmp||
-        CV(R, 0)->MvNorm(&nrm);
-        // Qtmp = U*Z(:,1)
-        CV(_evecs, _knownEV)->MvTimesMatAddMv (ScalarOne, *CV(U, 0, SearchSpaceSize), Ztmp, ScalarZero);
-        // nrm  = ||Rtmp||
-        CV(_evecs, _knownEV)->MvNorm(&nrm_q);
+        // Rtmp = AU*Z(:,conv) - theta[conv]*BU*Z(:,conv), nrm = ||Rtmp||
+        R[0]->MvTimesMatAddMv (ScalarOne, *CV(AU, 0, SearchSpaceSize), Ztmp, ScalarZero);
+        R[0]->MvAddMv (ScalarOne, *R[0], -theta[conv], *CV(BQ, _knownEV));
+        R[0]->MvNorm(&nrm);
+        
+	//relative norm
         nrm[0] /= nrm_q[0];
+	#ifdef _SAB_compare
+	fprintf(file,"it=%d nrm/nrm_q=%1.16f\n",_iters, nrm[0]);
+	#endif
       }
-
+      
       if (_knownEV == _nev) {
       	break;
       }
@@ -774,23 +1092,53 @@ namespace Anasazi {
       // matrix. The U, AU and BU matrices are adapted ONLY in the //
       // end)                                                      //
       // ========================================================= //
-      
       if (conv > 0)
       {
+      	#ifndef _SAB_without_os
         if (_om->doPrint()) 
         {
           _os << "[Converged (" << conv << ")]" << endl;
-        }
+	}
+	#endif
 	
-        Teuchos::SerialDenseMatrix<int,ScalarType> ZZ(Teuchos::View, Z[conv], Z.stride(), SearchSpaceSize, SearchSpaceSize - conv);
+	ds=ANASAZI_MIN(SearchSpaceSize-conv,_blockSize);
 	
-        CV(U, 0, SearchSpaceSize - conv)->MvTimesMatAddMv(ScalarOne, *CV(U, 0, SearchSpaceSize), ZZ, ScalarZero);
-        CV(AU, 0, SearchSpaceSize - conv)->MvTimesMatAddMv(ScalarOne, *CV(AU, 0, SearchSpaceSize), ZZ, ScalarZero);
-        CV(BU, 0, SearchSpaceSize - conv)->MvTimesMatAddMv(ScalarOne, *CV(BU, 0, SearchSpaceSize), ZZ, ScalarZero);
+	#ifndef _SAB_lateDefl
+	assert(SearchSpaceSize-conv>0);
+        Teuchos::SerialDenseMatrix<int,ScalarType> ZZ(Teuchos::View, Z[conv], Z.stride(), SearchSpaceSize, SearchSpaceSize - conv), ZZ2(Teuchos::View, Z[0], Z.stride(), SearchSpaceSize-conv, SearchSpaceSize-conv);
+	
+	#ifdef _SAB_Special
+	
+	//update U, AU, BU	
+	CV(U,0,SearchSpaceSize-conv)->MvTimesMatAddMv(ScalarOne, *CV(U,0,SearchSpaceSize), ZZ, ScalarZero);
+	CV(AU,0,SearchSpaceSize-conv)->MvTimesMatAddMv(ScalarOne, *CV(AU,0,SearchSpaceSize), ZZ, ScalarZero);
+	CV(BU,0,SearchSpaceSize-conv)->MvTimesMatAddMv(ScalarOne, *CV(BU,0,SearchSpaceSize), ZZ, ScalarZero);
+	
+	#else
+	
+	MV *mvtmp2=U->Clone(SearchSpaceSize-conv);
+	
+	sublist.resize(SearchSpaceSize-conv);	
+	for (int i=0; i<SearchSpaceSize-conv; i++) sublist[i]=i;
+	
+	//update U, AU, BU
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(U,0,SearchSpaceSize), ZZ, ScalarZero);
+	U->SetBlock(*mvtmp2, sublist);
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(AU,0,SearchSpaceSize), ZZ, ScalarZero);
+	AU->SetBlock(*mvtmp2, sublist);
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(BU,0,SearchSpaceSize), ZZ, ScalarZero);
+	BU->SetBlock(*mvtmp2, sublist);
+	
+	delete mvtmp2;
+	
+	#endif
 
-        PE.Rotate(ZZ);
+	//update G (projected eigenvalue problem)
+        //PE.Rotate(ZZ);
+	PE.UpdateG(SearchSpaceSize-conv,conv);
 
-	ZZ.putScalar(ScalarZero);	
+	//update Z and theta
+	ZZ2.putScalar(ScalarZero);
 	for(int i=0; i<(SearchSpaceSize-conv); ++i){
 	  theta[i] = theta[i+conv];
 	  Z(i,i) = ScalarOne;
@@ -798,162 +1146,266 @@ namespace Anasazi {
 
         // Finally, compute the new search space size
         SearchSpaceSize = SearchSpaceSize - conv;
+	
+	#ifdef _SAB_DEBUG
+	if ((_iters<_SAB_DEBUG_ITER) || (restartsOld!=_numRestarts)) {
+		fprintf(fileTheta,"%dconv: theta:\n",_iters);
+		for (int i=0; i<SearchSpaceSize; i++) {
+			fprintf(fileTheta,"%1.16f %1.16f\n",theta[i].real(), theta[i].imag());
+		}
+		
+		fprintf(fileZ,"%dconv: Z:\n",_iters);
+		for (int i=0; i<SearchSpaceSize; i++) {
+			fprintf(fileZ,"[ ");
+			for (int j=0; j<SearchSpaceSize; j++) {
+				fprintf(fileZ,"(%1.16f, %1.16f) ",Z(i,j).real(), Z(i,j).imag());
+			}
+			fprintf(fileZ,"\n");
+		}
+	}
+	#endif
+	
+	#endif
       }	  
       
-      // Switch targer
+      #ifdef _SAB_TIMING
+      ftime(&tbConv);
+      times(&tmConv);
       
-      for(int i=0; i<_blockSize; ++i)
+      tConv1+=(tbConv.time-tb0.time)*1000+tbConv.millitm-tb0.millitm;
+      tConv2+=tmConv.tms_utime-tm0.tms_utime+tmConv.tms_stime-tm0.tms_stime;
+      #endif
+      
+      #ifndef _SAB_modTargetSwitch
+      // Switch target
+      for(int i=0; i<ds; ++i)
       {
- 	if (nrm[0]<nrm_q[0]*_eswitch) sigma[i] = theta[0];
+ 	if (nrm[0]<_eswitch) sigma[i] = theta[0];
  	else sigma[i] = _TARGET;
       }
+      #endif
 
       // ====================================================== //
       // Compute the residuals of the best blockSize eigenpair  //
       // approximations and precondition them, i.e. compute the //
       // new search space directions                            //
       // ====================================================== //
+      
+      #ifdef _SAB_TIMING
+      ftime(&tb0);
+      times(&tm0);
+      #endif
 
-      sublist.resize(SearchSpaceSize);
-      for(int i=0; i<SearchSpaceSize; ++i) sublist[i]=i;
-
-      Utmp  = U->CloneView(sublist); //(*)
-      AUtmp = AU->CloneView(sublist); //(*)
-      BUtmp = BU->CloneView(sublist); //(*)
-
+      //views needed for correction
+      Qtmp2 = CV(_evecs,0,_knownEV+1);
+      BQtmp2 = CV(BQ,0,_knownEV+1);
+      KBQtmp2 = CV(KBQ,0,_knownEV+1);
+      
       sublist.resize(1);
-      for (int i=0; i<_blockSize ; ++i){
-        Teuchos::SerialDenseMatrix<int,ScalarType> ZZ(Teuchos::View, Z[i], Z.stride(), SearchSpaceSize, 1);
-
- 	CV(R, i)->MvTimesMatAddMv (ScalarOne, *CV(AU, 0, SearchSpaceSize), ZZ, ScalarZero);	
+      for (int j=0; j<ds ; j++){
+      	#ifdef _SAB_lateDefl
+	Teuchos::SerialDenseMatrix<int,ScalarType> ZZ(Teuchos::View, Z[j+conv], Z.stride(), SearchSpaceSize, 1);
+	#else
+	Teuchos::SerialDenseMatrix<int,ScalarType> ZZ(Teuchos::View, Z[j], Z.stride(), SearchSpaceSize, 1);
+	#endif
 	
- 	CV(_evecs, _knownEV)->MvTimesMatAddMv (ScalarOne, *CV(BU, 0, SearchSpaceSize), ZZ, ScalarZero);	
-	CV(R, i)->MvAddMv (ScalarOne, *CV(R, i), -theta[i], *CV(_evecs, _knownEV));
-#if 0
-        // TO CHECK IN THE FUTURE???? BETTER STRATEGIES FOR TARGET SWITCH???
+	sublist[0]=_knownEV;
+	
+	// Qtmp = U*ZZ, BQtmp = BU*ZZ
+	CV(_evecs, _knownEV)->MvTimesMatAddMv (ScalarOne, *CV(U, 0, SearchSpaceSize), ZZ, ScalarZero);
+	if (_B.get()) {
+		ok=_B->Apply(*CV(_evecs, _knownEV), *CV(BQ, _knownEV));
+		assert(ok==Anasazi::Ok);
+	} else CV(BQ, _knownEV)->SetBlock(*CV(_evecs, _knownEV), sublist);
+	
+	//Rtmp = AU*ZZ - theta[j(+conv)]*BU*ZZ
+ 	R[j]->MvTimesMatAddMv (ScalarOne, *CV(AU, 0, SearchSpaceSize), ZZ, ScalarZero);
+	#ifdef _SAB_lateDefl
+	R[j]->MvAddMv (ScalarOne, *(R[j]), -theta[j+conv], *CV(BQ, _knownEV));
+	#else
+	R[j]->MvAddMv (ScalarOne, *(R[j]), -theta[j], *CV(BQ, _knownEV));
+	#endif
+	
+	#ifdef _SAB_modTargetSwitch
 	// nrm = ||Rtmp||
-        Rtmp->MvNorm(&nrm);
+        R[j]->MvNorm(&nrm);
 
- 	sublist[0] = _knownEV;
- 	Qtmp->MvTimesMatAddMv (ScalarOne, (*Utmp), (ZZ), ScalarZero);	
-        // nrm  = ||Qtmp||	
-        Qtmp->MvNorm(&nrm_q);
-
-	//TARGET SWITCH
-	if (nrm[0]<nrm_q[0]*_eswitch) sigma[i]=theta[i];
-	else sigma[i]=_TARGET;
-#endif
-      }
-
-      sublist.resize(1);
-      sublist[0] = _knownEV;
-
-      Qtmp = _evecs->CloneView(sublist); //(*)
-      BQtmp = BQ->CloneView(sublist); //(*)
-      KBQtmp = KBQ->CloneView(sublist); //(*)
-      
-      vQ2.resize(_knownEV+1);
-      for (int i=0; i<=_knownEV; i++) vQ2[i]=i;
-      Qtmp2 = _evecs->CloneView(vQ2); //(*)
-      BQtmp2=BQ->CloneView(vQ2); //(*)
-      KBQtmp2=KBQ->CloneView(vQ2); //(*)
-      
-      for(int j=0; j<_blockSize; ++j)
-      {
-        sublist[0] = j;
-        Rtmp = R->CloneView(sublist); //(*)
-
-        Teuchos::SerialDenseMatrix<int,ScalarType> ZZ(Teuchos::View, Z[j], Z.stride(), SearchSpaceSize, 1);
-	///Qtmp->MvTimesMatAddMv (ScalarOne, *Utmp, ZZ, ScalarZero); //Qtmp:=U*Z(:,conv+j)
-	CV(_evecs, _knownEV)->MvTimesMatAddMv (ScalarOne, *CV(U, 0, SearchSpaceSize), ZZ, ScalarZero); //Qtmp:=U*Z(:,conv+j)
+	// nrm_q = ||Qtmp||
+        CV(_evecs,_knownEV)->MvNorm(&nrm_q);
 	
-	if (_B.get()) _B->Apply(*CV(_evecs, _knownEV), *CV(BQ, _knownEV)); //Qb(:,_knownEV)=BQtmp:=B*Q(;,_knownEV)
-        else CV(BQ, _knownEV)->SetBlock(*CV(_evecs, _knownEV), sublist); //Qb(:,_knownEV)=BQtmp:=Q(;,_knownEV)
-
-	//CORRECTION
-      	sublist[0]=_knownEV;
-		
-        // SABINE: please change the JacDavOpX so that they work with
-        // RefCountPtr, otherwise the CV() function does not work...
+	if (nrm[0]<nrm_q[0]*_eswitch) {
+		#ifndef _SAB_lateDefl
+		sigma[j]=theta[j];
+		#else
+		sigma[j]=theta[j+conv];
+		#endif
+	} else sigma[j]=_TARGET;
+	#endif
+	
+	Teuchos::RefCountPtr<Anasazi::OpBase<ScalarType, MV> > Ksys, Asys;
+	
+	//operator Ksys
 	if (!_Prec.get()) {
-		Ksys = new JacDavOp1<ScalarType,MV>(*Qtmp2, *BQtmp2); //Ksys:=I-Q*Qb^(T) //(*)
+		//Ksys:=I-Q*Qb^(T)
+		Ksys = Teuchos::rcp(new OpKsysSimple<ScalarType,MV>(Qtmp2, BQtmp2));
 	} else {
 		sublist[0]=_knownEV;
-		_Prec->Apply(*BQtmp, *KBQtmp); //Qk(:,_knownEV)=KBQtmp:=Prec*Qb(:,_knownEV)
+		
+		//KBQtmp = _Prec*BQtmp
+		ok=_Prec->Apply(*CV(BQ,_knownEV), *CV(KBQ,_knownEV));
+		assert(ok==Anasazi::Ok);
 		
 		if (_knownEV==0) {
 			LkTrans(0,0)=ScalarOne; //Lk(0,0):=1
-			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ); //vc[0]:=BQtmp*KBQtmp //FIXME: Transpose in complex case
+			CV(BQ,_knownEV)->MvDot(*CV(KBQ,_knownEV), &vc, Anasazi::NO_CONJ); //vc[0]:=BQtmp*KBQtmp
 			Rk(0,0)=vc[0];//Rk(0,0)=vc[0]
 		} else {
-			lk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, LkTrans[_knownEV], LkTrans.stride(), _knownEV, 1);
-			BQtmp->MvTransMv(ScalarOne, *CV(KBQ, 0, _knownEV), *lk);
-						
-			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, lk->numRows(), lk->numCols(), ScalarOne, Rk.values(), Rk.stride(), lk->values(), lk->stride());
+			Teuchos::SerialDenseMatrix<int,ScalarType> lk(Teuchos::View, LkTrans[_knownEV], LkTrans.stride(), _knownEV, 1);
 			
-			rk=new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, Rk[_knownEV], Rk.stride(), _knownEV, 1);
-			KBQtmp->MvTransMv(ScalarOne, *CV(BQ, 0, _knownEV), *rk);
-		
-			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk->numRows(), rk->numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk->values(), rk->stride());
+			CV(BQ,_knownEV)->MvTransMv(ScalarOne, *CV(KBQ,0,_knownEV), lk, Anasazi::NO_CONJ);
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::NON_UNIT_DIAG, lk.numRows(), lk.numCols(), ScalarOne, Rk.values(), Rk.stride(), lk.values(), lk.stride());
 			
-			BQtmp->MvDot(*KBQtmp, &vc, Anasazi::NO_CONJ);
+			Teuchos::SerialDenseMatrix<int,ScalarType> rk(Teuchos::View, Rk[_knownEV], Rk.stride(), _knownEV, 1);
+			
+			CV(KBQ,_knownEV)->MvTransMv(ScalarOne, *CV(BQ,0,_knownEV), rk, Anasazi::NO_CONJ);
+			blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::TRANS, Teuchos::UNIT_DIAG, rk.numRows(), rk.numCols(), ScalarOne, LkTrans.values(), LkTrans.stride(), rk.values(), rk.stride());
+			
+			CV(BQ,_knownEV)->MvDot(*CV(KBQ,_knownEV), &vc, Anasazi::NO_CONJ);
 			ScalarType rho=vc[0];
-			Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType> (1,1);
-			H->multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, *lk, *rk, ScalarZero); //rho+=lk*rk
-			rho-=(*H)(0,0);
-			delete(H); //(#)
-			delete(rk); //(#)
-			delete(lk); //(#)
+			Teuchos::SerialDenseMatrix<int,ScalarType> H(1,1);
+			H.multiply(Teuchos::TRANS, Teuchos::NO_TRANS, ScalarOne, lk, rk, ScalarZero); //rho+=lk*rk
+			rho-=H(0,0);
 
-			LkTrans(_knownEV,_knownEV)=Teuchos::ScalarTraits<ScalarType>::one(); //_Lk:=[Lk 0; lk^T 1]
+			LkTrans(_knownEV,_knownEV)=ScalarOne; //_Lk:=[Lk 0; lk^T 1]
 			Rk(_knownEV,_knownEV)=rho; //Rk:=[Rk rk; 0 rho]
 		}
+		Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > LkTransView, RkView;
+		LkTransView = Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, LkTrans.values(), LkTrans.stride(), _knownEV+1, _knownEV+1));
 		
-		Teuchos::SerialDenseMatrix<int,ScalarType> *LkTransView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, LkTrans.values(), LkTrans.stride(), _knownEV+1, _knownEV+1);
-		
-		Teuchos::SerialDenseMatrix<int,ScalarType> *RkView=new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, Rk.values(), Rk.stride(), _knownEV+1, _knownEV+1);
+		RkView = Teuchos::rcp(new Teuchos::SerialDenseMatrix<int,ScalarType> (Teuchos::View, Rk.values(), Rk.stride(), _knownEV+1, _knownEV+1));
 	
-		Ksys=new JacDavOp4<ScalarType,MV,OP>(*KBQtmp2, *LkTransView, *RkView, *BQtmp2, _Prec); //Ksys:=(I-Qk*(Lk*Rk)^(-1)*Qb^(T))*K^(-1)
+		Ksys=Teuchos::rcp(new OpKsysSoph<ScalarType,MV,OP>(KBQtmp2, LkTransView, RkView, BQtmp2, _Prec));
 	}
-
-	Asys=new JacDavOp2<ScalarType, MV, OP>(*BQtmp2, *Qtmp2, _A, sigma[j], _B); //Asys:=(I-Qb*Q^(T))*(_A-_sigma*_B) //(*)
 	
-	Teuchos::SerialDenseMatrix<int,ScalarType> *H=new Teuchos::SerialDenseMatrix<int,ScalarType>(); //(*)
-	H->shapeUninitialized(_knownEV+1,1);
-
-	Rtmp->MvTransMv(ScalarOne, *Qtmp2, *H);
-	MV *r=Rtmp->CloneCopy(); //(*)
-	r->MvTimesMatAddMv(ScalarOne, *BQtmp2, *H, -ScalarOne); //r:=-(I-Qb*Q^(T))*_r
-	delete H; //(#)
+	//operator Asys:=(I-Qb*Q^(T))*(_A-_sigma*_B)
+	Asys=Teuchos::rcp(new OpAsys<ScalarType, MV, OP>(BQtmp2, Qtmp2, _A, sigma[j], _B)); 
 	
-	GMRES<ScalarType,MV,Anasazi::Operator<ScalarType> > gmres;
+	Teuchos::SerialDenseMatrix<int,ScalarType> H; 
+	H.shapeUninitialized(_knownEV+1,1);
+
+	R[j]->MvTransMv(ScalarOne, *Qtmp2, H, Anasazi::NO_CONJ);
+	Teuchos::RefCountPtr<MV> r=Teuchos::rcp(R[j]->CloneCopy());
+	r->MvTimesMatAddMv(ScalarOne, *BQtmp2, H, -ScalarOne); //r:=-(I-Qb*Q^(T))*_r
+
+	GMRES<ScalarType,MV,Anasazi::OpBase<ScalarType,MV> > gmres;
 	
 	gmres.setMaxIter(_LSIterMax);
-	//printf("outer=%d, gamma=%d, tol=%f\n",outer,_gamma,ANASAZI_MAX(pow(_gamma,-(double)outer),_elin));
 	gmres.setTolerance(ANASAZI_MAX(pow(_gamma,-(double)outer),_elin));
 	gmres.setRestart(_LSRestart);
 	
-	Rtmp->MvInit(ScalarZero);
+	R[j]->MvInit(ScalarZero);
 	
-	ok=gmres.solve(*Asys, *Ksys, *r, *Rtmp); 
-	
-	delete Rtmp; //(#)
-	delete r; //(#)
-	delete Asys; //(#)
-	delete Ksys; //(#)
-	
-	if (ok!=Anasazi::Ok) {
-		printf("GMRES failed\n");
-		if (ok==Anasazi::Unconverged) printf("GMRES: not converged\n");
-		else printf("numerical failure\n");
+	#ifdef _SAB_DEBUG
+	fprintf(fileLk,"%d: Lk:\n",_iters);
+	for (int i=0; i<=_knownEV; i++) {
+		fprintf(fileLk,"[ ");
+		for (int j=0; j<=_knownEV; j++) {
+			fprintf(fileLk,"(%1.16f, %1.16f) ",LkTrans(j,i).real(), LkTrans(j,i).imag());
+		}
+		fprintf(fileLk,"]\n");
 	}
-	//assert(ok==Anasazi::Ok); //ignore failure
 	
-	printf("GMRES (it=%d, restarts=%d)\n",gmres.getIterations(), gmres.getRestarts());
-      }
+	fprintf(fileRk,"%d: Rk:\n",_iters);
+	for (int i=0; i<=_knownEV; i++) {
+		fprintf(fileRk,"[ ");
+		for (int j=0; j<=_knownEV; j++) {
+			fprintf(fileRk,"(%1.16f, %1.16f) ",Rk(i,j).real(), Rk(i,j).imag());
+		}
+		fprintf(fileRk,"]\n");
+	}
+		
+	if ((_iters<_SAB_DEBUG_ITER) || (restartsOld!=_numRestarts)) {
+		MV *bla, *bla2;
+		
+		bla=R[j]->CloneCopy();
+		bla2=R[j]->CloneCopy();
+		
+		bla->MvInit(std::complex<double>(0.0,0.0));
+		for (int ibla=0; ibla<=_knownEV; ibla++) {
+			(*bla)[0][ibla]=std::complex<double>(1.0,0.0);
+			Ksys->Apply(*bla,*bla2);
+			fprintf(fileKsys, "%d: Ksys[%d]:\n",_iters,ibla);
+			bla2->MvPrintf(fileKsys);
+			(*bla)[0][ibla]=std::complex<double>(0.0,0.0);
+		}
+		
+		for (int ibla=0; ibla<=_knownEV; ibla++) {
+			(*bla)[0][ibla]=std::complex<double>(1.0,0.0);
+			Asys->Apply(*bla,*bla2);
+			fprintf(fileAsys, "%d: Asys:\n",_iters);
+			bla2->MvPrintf(fileAsys);
+			(*bla)[0][ibla]=std::complex<double>(0.0,0.0);
+		}
+		
+		fprintf(fileR, "%d: r\n",_iters);
+		r->MvPrintf(fileR);
+		
+		fprintf(fileMisc, "%d: Q:\n",_iters);
+		Qtmp2->MvPrintf(fileMisc);
+		
+		fprintf(fileMisc, "%d: Qb:\n",_iters);
+		BQtmp2->MvPrintf(fileMisc);
+		
+		if (_Prec.get()) {
+			fprintf(fileMisc, "%d: Qk:\n",_iters);
+			KBQtmp2->MvPrintf(fileMisc);
+		}
+		
+		delete bla;
+		delete bla2;
+	}
+	#endif
+	
+	#ifdef _SAB_TIMING
+        ftime(&tbOrth);
+        times(&tmOrth);
+        #endif
+	
+	
+	ok=gmres.solve(*Asys, *Ksys, *r, *(R[j])); 
 
-      // DELETED THIS FOR SAFETY... THEY SHOULD GO AWAY ANYWAY..
-      ///delete Utmp, AUtmp, BUtmp, Qtmp, BQtmp, KBQtmp, Qtmp2, BQtmp2, KBQtmp2; //(#)(#)(#)(#)(#)(#)(#)(#)(#)
+	#ifdef _SAB_TIMING
+	ftime(&tbGMRES);
+	times(&tmGMRES);
+	
+	tGMRES1+=(tbGMRES.time-tbOrth.time)*1000+tbGMRES.millitm-tbOrth.millitm;
+	tGMRES2+=tmGMRES.tms_utime-tmOrth.tms_utime+tmGMRES.tms_stime-tmOrth.tms_stime;
+	#endif
+
+	printf("GMRES: %d %d\n",gmres.getIterations(), gmres.getRestarts());
+	
+	#ifdef _SAB_STATISTICS
+	numtotGMRES+=gmres.getIterations();
+	#endif
+	
+      #ifdef _SAB_DEBUG      
+      if ((_iters<_SAB_DEBUG_ITER) || (restartsOld!=_numRestarts)) {
+        //printf("nach GMRES\n");
+      	fprintf(fileC,"%d: c:\n",_iters);
+      	R[j]->MvPrintf(fileC);
+      }
+      #endif
+     
+	//printf("GMRES (it=%d, restarts=%d)\n",gmres.getIterations(), gmres.getRestarts());
+      }
+      
+      #ifdef _SAB_TIMING
+      ftime(&tbCorr);
+      times(&tmCorr);
+      
+      tCorr1+=(tbCorr.time-tb0.time)*1000+tbCorr.millitm-tb0.millitm;
+      tCorr2+=tmCorr.tms_utime-tm0.tms_utime+tmCorr.tms_stime-tm0.tms_stime;
+      #endif
 
       // ========================================================= //
       // Check the actual search space size and perform a restart, //
@@ -961,34 +1413,206 @@ namespace Anasazi {
       // subspace                                                  //
       // ========================================================= //
       
+      #ifdef _SAB_TIMING
+      ftime(&tb0);
+      times(&tm0);
+      #endif
+    
+      restartsOld=_numRestarts;
+      
       purged = 0;
-      if ((SearchSpaceSize + _blockSize)>_SMAX){
-        purged = SearchSpaceSize - (_SMIN - _blockSize);
+      
+      #ifdef _SAB_lateDefl
+      if ((SearchSpaceSize -conv + _blockSize)>_SMAX){
+      //if ((SearchSpaceSize - conv + _blockSize)>ANASAZI_MIN(iVec->GetVecLength()-_knownEV,_SMAX) ) {
+      	purged = SearchSpaceSize - conv - (_SMIN - _blockSize);
+      #else
+       if ((SearchSpaceSize + _blockSize)>_SMAX){
+       //if ((SearchSpaceSize + _blockSize)> ANASAZI_MIN(iVec->GetVecLength()-_knownEV,_SMAX) ) {
+      	purged = SearchSpaceSize - (_SMIN - _blockSize);
+      #endif
 
+      #ifndef _SAB_without_os
         if (_om->doPrint()) 
         {
           _os << "[Restart (" << SearchSpaceSize  << " -> "
               << SearchSpaceSize - purged << ")]" << endl;
         }
-
+	#endif
+	
         // increment restart counter
-        ++_numRestarts;
+        _numRestarts++;
+	
+	assert(SearchSpaceSize-purged>0);
+	
+	#ifdef _SAB_lateDefl
+	}
+	if ((conv + purged)>0) {
+	#endif
+	
+	#ifdef _SAB_lateDefl
+	Teuchos::SerialDenseMatrix<int, ScalarType> ZZ(Teuchos::View, Z[conv],
+                                                       Z.stride(), SearchSpaceSize,
+                                                       SearchSpaceSize - conv - purged);
+	
+	MV *mvtmp2=U->Clone(SearchSpaceSize-conv-purged);
+	
+	sublist.resize(SearchSpaceSize-conv-purged);	
+	for (int i=0; i<SearchSpaceSize-conv-purged; i++) sublist[i]=i;
+	
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(U,0,SearchSpaceSize), ZZ, ScalarZero);
+	U->SetBlock(*mvtmp2, sublist);
+	
+	#ifndef _SAB_reorthog
+	// wird sonst bei Reorthogonalisierung berechnet
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(AU,0,SearchSpaceSize), ZZ, ScalarZero);
+	AU->SetBlock(*mvtmp2, sublist);
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(BU,0,SearchSpaceSize), ZZ, ScalarZero);
+	BU->SetBlock(*mvtmp2, sublist);
+	#endif
+	
+	delete mvtmp2;
+	
+	#else
 	
 	// Reshape the Z matrix according to the restart behaviour	
-        Teuchos::SerialDenseMatrix<int, ScalarType> ZZ(Teuchos::View, Z[0], Z.stride(), SearchSpaceSize,
+        Teuchos::SerialDenseMatrix<int, ScalarType> ZZ(Teuchos::View, Z[0],
+                                                       Z.stride(), SearchSpaceSize,
                                                        SearchSpaceSize - purged);
+		
+	#ifdef _SAB_Special
 	
-        // Using "SearchSpaceSize - purged" does not work below, no idea why...
-        CV(U, 0, SearchSpaceSize)->MvTimesMatAddMv(ScalarOne, *CV(U, 0, SearchSpaceSize), ZZ, ScalarZero);
-        CV(AU, 0, SearchSpaceSize)->MvTimesMatAddMv(ScalarOne, *CV(AU, 0, SearchSpaceSize), ZZ, ScalarZero);
-        CV(BU, 0, SearchSpaceSize)->MvTimesMatAddMv(ScalarOne, *CV(BU, 0, SearchSpaceSize), ZZ, ScalarZero);
-
-        PE.Rotate(ZZ);
-
-        // Finally, compute the new search space size
-        SearchSpaceSize -= purged;
-      }	  
-    
+	CV(U,0,SearchSpaceSize-purged)->MvTimesMatAddMv(ScalarOne, *CV(U,0,SearchSpaceSize), ZZ, ScalarZero);
+	
+	#ifndef _SAB_reorthog
+	// wird sonst bei Reorthogonalisierung berechnet
+	CV(AU,0,SearchSpaceSize-purged)->MvTimesMatAddMv(ScalarOne, *CV(AU,0,SearchSpaceSize), ZZ, ScalarZero);
+	CV(BU,0,SearchSpaceSize-purged)->MvTimesMatAddMv(ScalarOne, *CV(BU,0,SearchSpaceSize), ZZ, ScalarZero);
+	#endif
+	
+	#else				       
+	
+	MV *mvtmp2=U->Clone(SearchSpaceSize-purged);
+	
+	sublist.resize(SearchSpaceSize-purged);	
+	for (int i=0; i<SearchSpaceSize-purged; i++) sublist[i]=i;
+	
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(U,0,SearchSpaceSize), ZZ, ScalarZero);
+	U->SetBlock(*mvtmp2, sublist);
+	
+	#ifndef _SAB_reorthog
+	// wird sonst bei Reorthogonalisierung berechnet
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(AU,0,SearchSpaceSize), ZZ, ScalarZero);
+	AU->SetBlock(*mvtmp2, sublist);
+	mvtmp2->MvTimesMatAddMv(ScalarOne, *CV(BU,0,SearchSpaceSize), ZZ, ScalarZero);
+	BU->SetBlock(*mvtmp2, sublist);
+	#endif
+	
+	delete mvtmp2;
+	
+	#endif
+	#endif
+	
+	// Finally, compute the new search space size
+	#ifdef _SAB_lateDefl
+	SearchSpaceSize = SearchSpaceSize - conv - purged;
+	#else
+	SearchSpaceSize = SearchSpaceSize - purged;
+	#endif
+	
+	#ifndef _SAB_reorthog
+	
+	#ifndef _SAB_lateDefl
+	PE.UpdateG(SearchSpaceSize,0);
+	#else
+	PE.UpdateG(SearchSpaceSize,conv);
+	#endif
+        //PE.Rotate(ZZ);
+	#else
+	
+	//Reorthogonalisation
+	sublist.resize(1);
+		
+	for(int i=0; i < SearchSpaceSize; i++) {
+		sublist[0]=i;
+		MV *utmp=U->CloneView(sublist);
+		
+		if (_B.get() != 0) {
+			ok=_B->Apply(*utmp, *mvtmp);
+			assert(ok==Anasazi::Ok);
+			utmp->MvDot(*mvtmp, &eta, Anasazi::NO_CONJ);
+		} else utmp->MvDot(*utmp, &eta, Anasazi::NO_CONJ);
+		
+		eta[0]=sqrt(eta[0]); //FIXME: replace with corrected Teuchos-function        
+		utmp->MvAddMv(ScalarOne / eta[0], *utmp, ScalarZero, *mvtmp);
+		
+		MagnitudeType l=(MagnitudeType)0.001;
+		int onemore = 0;
+		while(1){
+	
+			if (onemore == 1) {break;}
+			if ((l < 1.1) && (l > 0.9)) {onemore = 1;} //Achtung: ist SMAX>DIM-nev, dann gibt's hier eine Endlosschleife
+			#ifdef _SAB_DEBUG
+			else printf("need more (l=%f)\n",l);
+			#endif
+				
+			// Gram-Schmidt reduce the vector ...
+			for(int j=0; j < i ; j++)
+			{
+				utmp->MvDot(*CV(BU, j), &eta, Anasazi::NO_CONJ);
+				utmp->MvAddMv(ScalarOne, *utmp, -eta[0], *CV(U,j));
+			}
+			
+			for(int j=0; j < _knownEV; j++)
+			{
+				utmp->MvDot(*CV(BQ, j), &eta, Anasazi::NO_CONJ);
+				utmp->MvAddMv(ScalarOne, *utmp, -eta[0], *CV(_evecs, j));
+			}
+			
+			// Now B-normalise the vector ...
+			if (_B.get() != 0) {
+				ok=_B->Apply(*utmp, *mvtmp);
+				assert(ok==Anasazi::Ok);
+				utmp->MvDot(*mvtmp, &eta, Anasazi::NO_CONJ);
+			} else utmp->MvDot(*utmp, &eta, Anasazi::NO_CONJ);
+			
+			eta[0]=sqrt(eta[0]); //FIXME: replace with corrected Teuchos-function
+			
+			l=Teuchos::ScalarTraits<ScalarType>::magnitude(eta[0]);
+			utmp->MvAddMv(ScalarOne / eta[0], *utmp, ScalarZero, *mvtmp);
+		}
+		
+		//update BU
+		sublist[0]=i;
+		if (_B.get()) {
+			ok=_B->Apply(*utmp, *CV(BU, i));
+			assert(ok==Anasazi::Ok);
+        	else CV(BU, i)->SetBlock(*utmp, sublist);
+		
+		delete utmp;
+	}
+	
+	//update AU
+	sublist.resize(SearchSpaceSize);
+	for(int i=0; i<SearchSpaceSize; ++i) sublist[i]=i;
+      
+	ok=_A->Apply(*CV(U, sublist), *CV(AU, sublist));
+	assert(ok==Anasazi::Ok);
+	
+	//update G (projected eigenvalue problem)
+	PE.Restart();
+	PE.Add(*CV(U, sublist), *CV(AU, sublist), *CV(BU, sublist));
+	#endif
+	
+      }
+      
+      #ifdef _SAB_TIMING
+      ftime(&tbRest);
+      times(&tmRest);
+      
+      tRest1+=(tbRest.time-tb0.time)*1000+tbRest.millitm-tb0.millitm;
+      tRest2+=tmRest.tms_utime-tm0.tms_utime+tmRest.tms_stime-tm0.tms_stime;
+      #endif
 
       // Update the iteration step counter
       _iters++;
@@ -996,6 +1620,48 @@ namespace Anasazi {
       outer++;
     }
 
+    #ifdef _SAB_compare
+    fclose(file);
+    #endif
+    
+    #ifdef _SAB_DEBUG
+    fclose(file2);
+    fclose(fileAU);
+    fclose(fileBU);
+    fclose(fileTheta);
+    fclose(fileZ);
+    fclose(fileKsys);
+    fclose(fileAsys);
+    fclose(fileR);
+    fclose(fileMisc);
+    fclose(fileC);
+    fclose(fileLk);
+    fclose(fileRk);
+    #endif
+    
+    #ifdef _SAB_STATISTICS
+    ftime(&tbTot);
+    times(&tmTot);
+    
+    if (_om->doPrint()) {
+    	_os << "Time: " << (tbTot.time-tbTot0.time)*1000+tbTot.millitm-tbTot0.millitm << " (" << tmTot.tms_utime-tmTot0.tms_utime+tmTot.tms_stime-tmTot0.tms_stime << ")" << endl;
+    
+    	_os << "Iterations: " << _iters << " (GMRES: " << numtotGMRES << ")" << endl;
+    }
+    #endif
+      
+    #ifdef _SAB_TIMING
+    if (_om->doPrint()) 
+    {      
+    	_os << "Orthog: " << tOrth1 << " ms  (" << tOrth2 << ")" << endl;
+    	_os << "Extract: " << tExt1 << " ms  (" << tExt2 << ")" << endl;
+    	_os << "Conv: " << tConv1 << " ms  (" << tConv2 << ")" << endl;
+    	_os << "Corr: " << tCorr1 << " ms  (" << tCorr2 << ")" << endl;
+    	_os << "GMRES: " << tGMRES1 << " ms  (" << tGMRES2 << ")" << endl;
+    	_os << "Rest: " << tRest1 << " ms (" << tRest2 << ")" << endl;
+    }
+    #endif
+    
     //return(Ok);
     if (_knownEV==_nev) return Ok;
     else return Unconverged;
@@ -1003,12 +1669,12 @@ namespace Anasazi {
   } // solve()
 
   // ==========================================================================
-  template <class ScalarType, class MagnitudeType, class MV, class OP>
-  void BlockJacobiDavidson<ScalarType,MagnitudeType,MV,OP>::
+  template <class ScalarType, class MV, class OP>
+  void BlockJacobiDavidson<ScalarType,MV,OP>::
   currentStatus()
   {
     if (_om->doPrint()) 
-    {
+    {      
       _os.setf(ios::scientific, ios::floatfield);
       _os.precision(6);
       _os <<endl;
@@ -1042,7 +1708,7 @@ namespace Anasazi {
         _os << "[none computed]"<<endl;
       }
       _os << "******************************************************" << endl;  
-      _os << endl; 
+      _os << endl;       
     }
   }
 } // namespace Anasazi
