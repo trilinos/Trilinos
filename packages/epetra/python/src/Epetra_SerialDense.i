@@ -73,7 +73,7 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
       	__init__(self, SerialDenseMatrix source) -> SerialDenseMatrix
       	"""
         NumPySerialDenseMatrix.__init__(self, *args)
-        UserArray.__init__(self,self.A(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
         self.__protected = True
     def __str__(self):
         return str(self.array)
@@ -93,13 +93,13 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
         "Shape(self, int numRows, int numCols) -> int"
         result = NumPySerialDenseMatrix.Shape(self,numRows,numCols)
         self.__protected = False
-        UserArray.__init__(self,self.A(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
         self.__protected = True
     def Reshape(self,numRows,numCols):
         "Reshape(self, int numRows, int numCols) -> int"
         result = NumPySerialDenseMatrix.Reshape(self,numRows,numCols)
         self.__protected = False
-        UserArray.__init__(self,self.A(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
         self.__protected = True
 
 class SerialDenseVector(UserArray,NumPySerialDenseVector):
@@ -111,7 +111,7 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
       	__init__(self, SerialDenseVector source) -> SerialDenseVector
       	"""
         NumPySerialDenseVector.__init__(self, *args)
-        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
         self.__protected = True
     def __str__(self):
         return str(self.array)
@@ -129,13 +129,13 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         "Size(self, int length) -> int"
         result = NumPySerialDenseVector.Size(self,length)
         self.__protected = False
-        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
         self.__protected = True
     def Resize(self,length):
         "Resize(self, int length) -> int"
         result = NumPySerialDenseVector.Resize(self,length)
         self.__protected = False
-        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=False)
+        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
         self.__protected = True
 
 %}
