@@ -92,8 +92,8 @@ int main(int argc, char* argv[])
   A.initializeValues(numVectors, length, values);
   if (verbose) cout <<"default constructor -- initialize using array of pointers ";
 cout << endl << "***" << endl << 
-	A.getRowInc() << endl <<
-	A.getColInc() << endl << 
+	A.getRowInc() << " 0" << endl <<
+	A.getColInc() << " 1" << endl << 
 	"***" << endl;
 
   if ( A.getNumRows()!=numVectors || A.getNumCols()!=length ||
@@ -105,10 +105,15 @@ cout << endl << "***" << endl <<
   else {
 	if (verbose) cout << "successful."<<endl;
   }
-/*
+
   OMultiVector B;
   B.initializeValues(numVectors, length, allValues, length, 1);
   if (verbose) cout <<"default constructor -- initialize using 2D array ";
+
+cout << endl << "***" << endl <<
+	B.getRowInc() << " " << length << endl <<
+	B.getColInc() << " 1" << endl;
+
   if ( B.getNumRows()!=numVectors || B.getNumCols()!=length || 
        B.getIsStrided()!=true ||B.getRowInc()!=length ||
        B.getColInc()!=1) {
@@ -118,15 +123,19 @@ cout << endl << "***" << endl <<
   else {
 	if (verbose) cout << "successful."<<endl;
   }
-  
 
 
   // constructor 2 (copy constructor)
 
   OMultiVector C(A);
   if(verbose) cout <<"constructor 2 -- copy constructor "; 
+
+cout << endl << "***" << endl <<
+        C.getRowInc() << " " << length << endl <<
+        C.getColInc() << " 1" << endl;
+
   if ( C.getNumRows()!=numVectors || C.getNumCols()!=length || 
-       C.getIsStrided()!=false ||C.getRowInc()!=0 ||
+       C.getIsStrided()!=false || C.getRowInc()!=0 ||
        C.getColInc()!=1) {
 	if (verbose) cout << "unsuccessful."<<endl;
 	numberFailedTests++;
@@ -142,8 +151,11 @@ cout << endl << "***" << endl <<
   for (int j=0; j<numVectors; j++) {
     Bvals = B.getValues(j);
     Cvals = C.getValues(j);
-    for (int i=0; i<length; i++) 
+//    cout << "My Value Test: " << endl;
+//    cout << *Bvals << " " << **(B.getValues()) << endl;
+    for (int i=0; i<length; i++)//{
       if (Bvals[i]!=Cvals[i]) valueTest = false;
+//      cout << Bvals[i] << "  ";}
   }
   if (!valueTest) {
     if (verbose) cout << "unsuccessful."<<endl;
@@ -152,7 +164,7 @@ cout << endl << "***" << endl <<
   else {
     if (verbose) cout << "successful."<<endl;
   }
-*/  
+  
   // OSKI can optionally be shut-down
   //extern "C" 
   oski_Close();

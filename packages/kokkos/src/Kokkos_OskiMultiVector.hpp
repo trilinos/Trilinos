@@ -127,8 +127,8 @@ namespace Kokkos {
     */
     int initializeValues(OrdinalType numRows, OrdinalType numCols, ScalarType * values,
 			 OrdinalType rowInc, OrdinalType colInc = 1) {
-      if (numCols==1) oski_CreateVecView(values,numRows,colInc);
-      else oski_CreateMultiVecView(values,numRows,numCols,LAYOUT_COLMAJ,numRows);
+      if (numCols==1) x_view_=oski_CreateVecView(values,numRows,colInc);
+      else x_view_=oski_CreateMultiVecView(values,numRows,numCols,LAYOUT_COLMAJ,numRows);
       values_ = 0;// **Figure out if I can/ need to accept this array of values
       allValues_ = values;
       isStrided_ = true;
@@ -150,7 +150,8 @@ namespace Kokkos {
         the values are not copied by this method.  Memory allocation is 
 	handled by the multivector object itself.  
     */
-    virtual ScalarType ** getValues() const {return(values_);};
+//    virtual ScalarType ** getValues() const {return(values_);};
+    virtual ScalarType ** getValues() const {return(&(x_view_->val));};
 
     //! Returns a pointer to an array of values for the ith column of the multivector.
     /*! Extract a pointer to the values in the ith column of the multivector.  Note that
