@@ -53,7 +53,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 //_SAB_Special: use only, if there exists a special fast MvTimesMatAddMv function, which can take a view of "this" as argument
-#define _SAB_Special
+//#define _SAB_Special
 
 //_SAB_lateDefl: usefull, if _SAB_reorthog is also defined: late deflation is done and the SearchSpace will be reorthogonalized not only after restart, but also after conversion
 //#define _SAB_lateDefl
@@ -1382,7 +1382,7 @@ namespace Anasazi {
 	tGMRES2+=tmGMRES.tms_utime-tmOrth.tms_utime+tmGMRES.tms_stime-tmOrth.tms_stime;
 	#endif
 
-	printf("GMRES: %d %d\n",gmres.getIterations(), gmres.getRestarts());
+	//printf("GMRES: %d %d\n",gmres.getIterations(), gmres.getRestarts());
 	
 	#ifdef _SAB_STATISTICS
 	numtotGMRES+=gmres.getIterations();

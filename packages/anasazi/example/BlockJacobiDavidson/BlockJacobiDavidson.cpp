@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
 
   // Initialize the Block Jacobi-Davidson solver
   typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-  Anasazi::BlockJacobiDavidson<ScalarType, MagnitudeType, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  Anasazi::BlockJacobiDavidson<ScalarType, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
                            
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();

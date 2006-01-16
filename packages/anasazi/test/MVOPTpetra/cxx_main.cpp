@@ -519,7 +519,7 @@ int main(int argc, char *argv[])
   MyPL.set("Target", TARGET);
 
   // Initialize the Block Jacobi-Davidson solver
-  Anasazi::BlockJacobiDavidson<ScalarType, MagnitudeType, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  Anasazi::BlockJacobiDavidson<ScalarType, MV, OP> MySolver(MyProblem, MySM, MyOM, MyPL);
                            
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
