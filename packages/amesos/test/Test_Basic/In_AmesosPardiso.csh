@@ -101,11 +101,11 @@ $mpigo  3 amesos_test.exe PARDISO SuperLU.rua 0 1 1 0 1e-14 1e-14  >>SST.stdout
 #
 #  Test one process, three processes and three processes transposes, tiny distributed matrix, on PARDISO
 #
-$mpigo  1 amesos_test.exe PARDISO   fidapm05.rua 0 1 1 0   100 1e-1 >>SST.stdout
-$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 0   100 1e-1 >>SST.stdout
-$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1   100 1e-1 >>SST.stdout
-$mpigo  2 amesos_test.exe PARDISO   fidapm05.rua 1 1 4 1   100 1e-1 >>SST.stdout
-$mpigo  4 amesos_test.exe PARDISO   fidapm05.rua 1 1 -3 1  100 1e-1 >>SST.stdout
+$mpigo  1 amesos_test.exe PARDISO   fidapm05.rua 0 1 1 0   100 1e-9 >>SST.stdout
+$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 0   100 1e-9 >>SST.stdout
+$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1   100 1e-9 >>SST.stdout
+$mpigo  2 amesos_test.exe PARDISO   fidapm05.rua 1 1 4 1   100 1e-9 >>SST.stdout
+$mpigo  4 amesos_test.exe PARDISO   fidapm05.rua 1 1 -3 1  100 1e-9 >>SST.stdout
 #
 #  Test some more small matrices
 #
@@ -122,8 +122,8 @@ $mpigo  4 amesos_test.exe PARDISO   fidapm05.rua 1 1 -3 1  100 1e-1 >>SST.stdout
 # COMMENT fails on herouxsmp bug #1916 $mpigo  3 amesos_test.exe PARDISO   ImpcolE.rua 0 1 1 0  1e-8  1e-9   >>SST.stdout
 # COMMENT fails on herouxsmp bug #1916 $mpigo  3 amesos_test.exe PARDISO   ImpcolE.rua 0 1 3 1  1e-7  1e-9   >>SST.stdout
 # COMMENT fails on herouxsmp bug #1916 $mpigo  3 amesos_test.exe PARDISO   ImpcolE.rua 0 1 -3 1 1e-7  1e-9   >>SST.stdout
-$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-1 >>SST.stdout
-$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-1 >>SST.stdout
+$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-9 >>SST.stdout
+$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-9 >>SST.stdout
 #
 #  Test some tranpose solves
 #
@@ -179,8 +179,8 @@ $mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-1 >>SST.stdout
 # COMMENT fails on herouxsmp bug #1916 $mpigo  3 amesos_test.exe PARDISO   ImpcolE.rua 0 1 1 0  1e-8  1e-9   >>SST.stdout
 # COMMENT fails on herouxsmp bug #1916 $mpigo  3 amesos_test.exe PARDISO   ImpcolE.rua 0 1 3 1  1e-7  1e-9   >>SST.stdout
 # COMMENT fails on herouxsmp bug #1916 $mpigo  3 amesos_test.exe PARDISO   ImpcolE.rua 0 1 -3 1 1e-7  1e-9   >>SST.stdout
-$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-1 >>SST.stdout
-$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-1 >>SST.stdout
+$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-9 >>SST.stdout
+$mpigo  3 amesos_test.exe PARDISO   fidapm05.rua 1 1 1 1  100 1e-9 >>SST.stdout
 #
 #  Test some tranpose solves
 #
