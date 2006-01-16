@@ -84,14 +84,14 @@ namespace Tpetra
 
         FillCompleted_ = false;
 
-        NumGlobalNonzeros_ = ordinalOne();
-        NumMyNonzeros_     = ordinalOne();
+        NumGlobalNonzeros_ = ordinalZero();
+        NumMyNonzeros_     = ordinalZero();
 
-        NumGlobalDiagonals_ = ordinalOne();
-        NumMyDiagonals_     = ordinalOne();
+        NumGlobalDiagonals_ = ordinalZero();
+        NumMyDiagonals_     = ordinalZero();
 
-        GlobalMaxNumEntries_ = ordinalOne();
-        MyMaxNumEntries_     = ordinalOne();
+        GlobalMaxNumEntries_ = ordinalZero();
+        MyMaxNumEntries_     = ordinalZero();
       }
 
       // !Destructor.
@@ -151,7 +151,7 @@ namespace Tpetra
       //! Returns the number of matrix rows owned by the calling image. 
       inline OrdinalType getNumMyRows () const
       {
-        return(RowSpace_.getMyElements());
+        return(RowSpace_.getNumMyElements());
       }
 
       //! Returns the number of matrix columns owned by the calling image. 
@@ -160,7 +160,7 @@ namespace Tpetra
         if(!isFillCompleted())
           throw(-1);
         
-        return(ColSpace_->getMyElements());
+        return(ColSpace_->getNumMyElements());
       }
 
       //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons. 
@@ -187,7 +187,7 @@ namespace Tpetra
         if(!isFillCompleted())
           throw(-1);
         
-        return(Indices_[index].size());
+        return(Indices_[RowSpace_.getLID(index)].size());
       }
 
       //! Returns the maximum number of nonzero entries across all rows/columns on all images. 
@@ -434,7 +434,7 @@ namespace Tpetra
                          OrdinalType const numEntries, ScalarType const* values, 
                          OrdinalType const* indices) 
       {
-        for (OrdinalType i = ordinalZero() ; i < NumEntries ; ++i)
+        for (OrdinalType i = ordinalZero() ; i < numEntries ; ++i)
           submitEntry(CM, myRowOrColumn, indices[i], values[i]);
       }
 
@@ -445,7 +445,7 @@ namespace Tpetra
       inline void getMyRowCopy(const OrdinalType MyRow, OrdinalType& NumEntries,
                                vector<OrdinalType>& Indices, vector<ScalarType>& Values) const
       {
-        if (FillCompleted_)
+        if (isFillCompleted() == false)
           throw(-1);
 
         NumEntries = Indices_[MyRow].size();
