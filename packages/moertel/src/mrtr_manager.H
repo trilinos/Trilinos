@@ -356,7 +356,7 @@ public:
   \brief Set a parameter list holding solver parameters
   
   Set a ParameterList containing solver options. This class does not take
-  ownership over params but instead stores a deep copy of it.<br>
+  ownership over params but instead uses a view of it.<br>
   Options are:<br>
   \code
   Teuchos::ParameterList params;
