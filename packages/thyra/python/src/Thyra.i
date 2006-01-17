@@ -48,17 +48,15 @@ in-depth information."
 #include <sstream>
 
 // Thyra includes
-#include "Thyra_Config.h"
+// #include "Thyra_Config.h"
 #include "Thyra_SerialVectorSpaceStd.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+#include "Thyra_VectorStdOps.hpp"
 %}
 
 // Ignore directives
-%ignore Thyra::VectorSpaceBase<double>::createMember() const;
-%ignore Thyra::VectorSpaceBase<double>::createMembers(int) const;
-%ignore Thyra::VectorSpaceBase<double>::createMemberView(const RTOpPack::MutableSubVectorT<double> &raw_v) const;
-%ignore Thyra::VectorSpaceBase<double>::createMemberView(const RTOpPack::SubVectorT<double> &raw_v) const;
-%ignore Thyra::VectorSpaceBase<double>::createMembersView(const RTOpPack::MutableSubMultiVectorT<double> &raw_mv) const;
-%ignore Thyra::VectorSpaceBase<double>::createMembersView(const RTOpPack::SubMultiVectorT<double> &raw_mv) const;
+%ignore *::operator=;
 
 // Auto-documentation feature.
 %feature("autodoc", "1");
@@ -66,27 +64,64 @@ in-depth information."
 // C++ STL support.
 %include "std_string.i"
 
-// Thyra interface includes.
+
+// Thyra interface imports and includes
 using namespace std;
 #define TEMPLATE_FRIENDS_NOT_SUPPORTED
+%import  "Teuchos_VerbosityLevel.hpp"
 %import  "Teuchos_Describable.hpp"
 %import  "RTOp_config.h"
 %import  "Thyra_OperatorVectorTypes.hpp"
 %import  "Thyra_ScalarProdBaseDecl.hpp"
 %include "Thyra_VectorSpaceBaseDecl.hpp"
+%include "Thyra_LinearOpBaseDecl.hpp"
+%include "Thyra_MultiVectorBaseDecl.hpp"
+%include "Thyra_VectorBaseDecl.hpp"
+%include "Teuchos_RefCountPtrDecl.hpp"
 %include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 %include "Thyra_ScalarProdVectorSpaceBaseDecl.hpp"
 %include "Thyra_SerialVectorSpaceBaseDecl.hpp"
 %include "Thyra_SerialVectorSpaceStdDecl.hpp"
+%include "Thyra_VectorStdOpsDecl.hpp"
 
-using namespace Thyra;
-%template (VectorSpaceBaseDouble)           Thyra::VectorSpaceBase<double>;
-%template (VectorSpaceDefaultBaseDouble)    Thyra::VectorSpaceDefaultBase<double>;
-%template (ScalarProdVectorSpaceBaseDouble) Thyra::ScalarProdVectorSpaceBase<double>;
-%template (SerialVectorSpaceBaseDouble)     Thyra::SerialVectorSpaceBase<double>;
-%template (SerialVectorSpaceStdDouble)      Thyra::SerialVectorSpaceStd<double>;
+// Macro for an interface, templated on type
+%define INTERFACE(type)
 
-%template (createMemberDouble) Thyra::createMember<double>;
+%ignore Teuchos::RefCountPtr<Thyra::VectorBase<type> >::access_node() const;
+%ignore Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >::access_node() const;
+
+%ignore Thyra::VectorSpaceBase<type>::createMember() const;
+%ignore Thyra::VectorSpaceBase<type>::createMembers(int) const;
+%ignore Thyra::VectorSpaceBase<type>::createMemberView(const RTOpPack::MutableSubVectorT<type> &raw_v) const;
+%ignore Thyra::VectorSpaceBase<type>::createMemberView(const RTOpPack::SubVectorT<type> &raw_v) const;
+%ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::MutableSubMultiVectorT<type> &raw_mv) const;
+%ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::SubMultiVectorT<type> &raw_mv) const;
+
+// This is the start of a typemap for converting RefCountPtr's for a
+// VectorBase<double> to a raw pointer
+// %typemap(in) Teuchos::RefCountPtr<Thyra::VectorBase<type> >* {
+//   
+// }
+
+%template (RCPVectorBase_ ## type)      Teuchos::RefCountPtr<Thyra::VectorBase<type> >;
+%template (RCPVectorSpaceBase_ ## type) Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >;
+
+%template (VectorSpaceBase_ ## type)           Thyra::VectorSpaceBase<type>;
+%template (LinearOpBase_ ## type)              Thyra::LinearOpBase<type,type>;
+%template (MultiVectorBase_ ## type)           Thyra::MultiVectorBase<type>;
+%template (VectorBase_ ## type)      	       Thyra::VectorBase<type>;
+%template (VectorSpaceDefaultBase_ ## type)    Thyra::VectorSpaceDefaultBase<type>;
+%template (ScalarProdVectorSpaceBase_ ## type) Thyra::ScalarProdVectorSpaceBase<type>;
+%template (SerialVectorSpaceBase_ ## type)     Thyra::SerialVectorSpaceBase<type>;
+%template (SerialVectorSpaceStd_ ## type)      Thyra::SerialVectorSpaceStd<type>;
+%template (createMember_ ## type)              Thyra::createMember<type>;
+%template (V_S_ ## type)                       Thyra::V_S<type>;
+%template (sum_ ## type)                       Thyra::sum<type>;
+
+%enddef
+
+// Instantiations of interfaces
+INTERFACE(double)
 
 // Extensions.
 

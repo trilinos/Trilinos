@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#         PyTrilinos.Thyra: Python Interface to Thyra
+#               PyTrilinos.Thyra: Python Interface to Thyra
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -30,7 +30,7 @@
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = \
-	setpath.py
+	setpath.py exSimple.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -38,14 +38,17 @@ EXTRA_DIST = \
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = 
+EXAMPLE_SUITE = exSimple
 
-check-am: $(EXAMPLE_SUITE)
+SETPATH_PY = setpath.py
+
+all: $(EXAMPLE_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
 
 # Run the example script
-ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+ex%: $(srcdir)/ex%.py
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-# Clean target
-CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc
+clean:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
+	/bin/rm -f *.pyc

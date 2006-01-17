@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#         PyTrilinos.Thyra: Python Interface to Thyra
+#               PyTrilinos.Thyra: Python Interface to Thyra
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
