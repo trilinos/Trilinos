@@ -324,7 +324,7 @@ PHGPartParams *temphgp = NULL;
     /* Compute random processor bin. */
     /* Temporarily store processor bin number in app.vtx_gno. */
     /* Count how many local vtxs selected processor bin */
-    Zoltan_Srand(zz->Proc, NULL);
+    Zoltan_Srand(Zoltan_Rand(NULL)+zz->Proc, NULL);
     for (i = 0; i < app.nVtx; i++) {
       app.vtx_gno[i] = Zoltan_Rand_InRange(NULL, zz->Num_Proc);
       mycnt[app.vtx_gno[i]]++;
