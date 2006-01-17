@@ -208,15 +208,17 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
      vwgt_dim = zhg->HG.VtxWeightDim;
      num_obj = zhg->nObj;
+     global_ids = zhg->GIDs;
+     local_ids = zhg->LIDs;
      vwgts = zhg->HG.vwgt;
      part = zhg->Input_Parts;
   }
-  else{
+  else {
   
     ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, 
                                zz->Obj_Weight_Dim, &vwgts, &part);
   
-    if (ierr == ZOLTAN_FATAL){
+    if (ierr == ZOLTAN_FATAL) {
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ierr;
     }
@@ -780,18 +782,19 @@ End:
      Zoltan_PHG_Free_Hypergraph_Data(zhg);
      ZOLTAN_FREE(&zhg);
   }
-  else{
+  else {
     ZOLTAN_FREE(&global_ids);
     ZOLTAN_FREE(&local_ids);
     ZOLTAN_FREE(&part); 
-    ZOLTAN_FREE(&tmp_cutwgt);
     ZOLTAN_FREE(&vwgts);
-    ZOLTAN_FREE(&ewgts);
-    ZOLTAN_FREE(&nbors_global);
-    ZOLTAN_FREE(&nbors_proc);
-    ZOLTAN_FREE(&proc_count);
-    ZOLTAN_FREE(&edges_per_obj);
   }
+  ZOLTAN_FREE(&nbors_global);
+  ZOLTAN_FREE(&nbors_proc);
+  ZOLTAN_FREE(&ewgts);
+  ZOLTAN_FREE(&tmp_cutwgt);
+  ZOLTAN_FREE(&proc_count);
+  ZOLTAN_FREE(&edges_per_obj);
+
   if (compute_part){
     ZOLTAN_FREE(&all_arr);
     ZOLTAN_FREE(&vwgt_arr);
