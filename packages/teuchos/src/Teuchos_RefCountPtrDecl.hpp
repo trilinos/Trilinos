@@ -659,12 +659,14 @@ public:
 	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
 	const RefCountPtr<T>& assert_not_null() const;
 
-private:
+public: // Bad bad bad
 
 	// //////////////////////////////////////
 	// Private types
 
 	typedef PrivateUtilityPack::RefCountPtr_node			node_t;
+
+private:
 
 	// //////////////////////////////////////////////////////////////
 	// Private data members
