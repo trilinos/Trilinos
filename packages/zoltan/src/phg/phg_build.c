@@ -1014,14 +1014,8 @@ PHGPartParams *temphgp = NULL;
       
       msg_tag++;
 
-#if 0
-      /* lafisk - I think this may be an error */
-      ierr = Zoltan_Comm_Create(&plan, app.nEdge, proclist, 
-                                phg->comm->col_comm, msg_tag, &nrecv);  /* SIGSEGV */
-#else
       ierr = Zoltan_Comm_Create(&plan, app.nEdge, proclist, 
                                 zz->Communicator, msg_tag, &nrecv); 
-#endif
 
       recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
       if (nrecv && !recv_gno) MEMORY_ERROR;
