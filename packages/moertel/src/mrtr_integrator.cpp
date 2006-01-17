@@ -756,6 +756,22 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
   const int nnode       = sseg.Nnode();
   MOERTEL::Node** snode = sseg.Nodes();
 
+#if 0
+  // set a row of Ddense in each snode
+  for (int row=0; row<nnode; ++row)
+  {
+    // assemble only to my own nodes
+    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID())
+      continue;
+    
+    // row node is internal node
+    for (int col=0; col<nnode; ++col)
+      snode[row]->AddDValue(Ddense(row,col),snode[col]->Id());
+  } // for (int row=0; row<nnode; ++row)
+#endif
+
+
+#if 1
   // set a row of Ddense in each snode
   for (int row=0; row<nnode; ++row)
   {
@@ -794,9 +810,8 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
             curr->second->AddMValue((w*Ddense(row,col)),snode[col]->Id());
         }
     }
-  
-        
   } // for (int row=0; row<nnode; ++row)
+#endif
 
   return true;
 }
@@ -815,7 +830,23 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
   MOERTEL::Node** snode  = sseg.Nodes();
   MOERTEL::Node** mnode  = mseg.Nodes();
 
-  // set a row of Ddense in each snode
+#if 0 // the orig version
+  // set a row of Mdense in each snode
+  for (int row=0; row<nsnode; ++row)
+  {
+    // assemble only to my own nodes
+    if (inter.NodePID(snode[row]->Id()) != inter.lComm()->MyPID()) 
+      continue;
+      
+    // standard assembly for internal nodes
+    for (int col=0; col<nmnode; ++col)
+      // note the sign change here!!!!
+      snode[row]->AddMValue(-Mdense(row,col),mnode[col]->Id());
+  }
+#endif
+
+#if 1 // the orig version
+  // set a row of Mdense in each snode
   for (int row=0; row<nsnode; ++row)
   {
     // assemble only to my own nodes
@@ -837,7 +868,7 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
         for (int col=0; col<nmnode; ++col)
           curr->second->AddMValue(w*Mdense(row,col),mnode[col]->Id());
     }
-
   }
+#endif
   return true;
 }

@@ -421,6 +421,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       interface->SetFunctionTypes(MOERTEL::Function::func_LinearTri,      // the isoparametric function
                                   MOERTEL::Function::func_DualLinearTri); // the LM space
                                   //MOERTEL::Function::func_LinearTri); // the LM space
+                                  //MOERTEL::Function::func_ConstantTri); // the LM space
     }
       
     //-----------------------------------------------------------------
@@ -686,8 +687,8 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   //-------------------------------------------------------------------
   // create a Teuchos Parameter List holding solver arguments
   Teuchos::ParameterList params;
-  //params.set("System","SaddleSystem");
-  params.set("System","SPDSystem");
+  params.set("System","SaddleSystem");
+  //params.set("System","SPDSystem");
 
   // choose solver package
   params.set("Solver","Amesos");

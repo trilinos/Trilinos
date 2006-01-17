@@ -1565,6 +1565,7 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
   MOERTEL::Function_DualLinear1D*  func3 = NULL;
   MOERTEL::Function_LinearTri*     func4 = NULL;
   MOERTEL::Function_DualLinearTri* func5 = NULL;
+  MOERTEL::Function_ConstantTri*   func6 = NULL;
   switch(primal_)
   {
     case MOERTEL::Function::func_Linear1D:
@@ -1644,7 +1645,12 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
     case MOERTEL::Function::func_DualLinearTri:
       func5 = new MOERTEL::Function_DualLinearTri(OutLevel());
       SetFunctionAllSegmentsSide(side,1,func5);
-      delete func4; func4 = NULL;
+      delete func5; func5 = NULL;
+    break;
+    case MOERTEL::Function::func_ConstantTri:
+      func6 = new MOERTEL::Function_ConstantTri(OutLevel());
+      SetFunctionAllSegmentsSide(side,1,func6);
+      delete func6; func6 = NULL;
     break;
     case MOERTEL::Function::func_none:
       cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"

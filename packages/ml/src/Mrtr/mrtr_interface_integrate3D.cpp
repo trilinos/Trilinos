@@ -467,7 +467,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
         if (Drow==null && Mrow==null)
           continue;
         
-        cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " unassembled\n"; 
+        //cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " unassembled\n"; 
         
         // fill the D sendbuffer
         if (Drow != null)
@@ -490,8 +490,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
             ++countD;
           }
         }
-        cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id()
-             << " countD " << countD << endl;
+        //cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " countD " << countD << endl;
         
         // fill the M sendbuffer
         if (Mrow != null)
@@ -515,8 +514,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
           }
         }
         
-        cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id()
-             << " countM " << countM << endl;
+        //cout << "lProc " << lComm()->MyPID() << " Node " << curr->second->Id() << " countM " << countM << endl;
       } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
       
       
@@ -609,7 +607,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
                 {
                   int row = slmdof[k];
                   int col = sdof[k];
-                  cout << "Proc " << lComm()->MyPID() << " inserting D row/col:" << row << "/" << col << " val " << val << endl;
+                  //cout << "Proc " << lComm()->MyPID() << " inserting D row/col:" << row << "/" << col << " val " << val << endl;
                   int err = D.SumIntoGlobalValues(row,1,&val,&col);
                   if (err)
                     err = D.InsertGlobalValues(row,1,&val,&col);
@@ -689,7 +687,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
                 {
                   int row = slmdof[k];
                   int col = mdof[k];
-                  cout << "Proc " << lComm()->MyPID() << " inserting M row/col:" << row << "/" << col << " val " << val << endl;
+                  //cout << "Proc " << lComm()->MyPID() << " inserting M row/col:" << row << "/" << col << " val " << val << endl;
                   int err = M.SumIntoGlobalValues(row,1,&val,&col);
                   if (err)
                     err = M.InsertGlobalValues(row,1,&val,&col);
