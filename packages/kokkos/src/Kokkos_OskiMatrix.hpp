@@ -33,6 +33,9 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CisMatrix.hpp"
+extern "C" {
+  #include <oski/oski.h>
+}
 
 namespace Kokkos {
 
@@ -144,6 +147,8 @@ namespace Kokkos {
     //@{ \name Matrix Attribute set methods.
 
     //! Set whether or not the compressed index matrix has no entries below the diagonal, assumed false.
+// See OSKI UG pg 19.
+
     virtual int setIsUpperTriangular(bool tf) {isUpperTriangular_=tf; return(0);};
 	
     //! Set whether or not the compressed index matrix has no entries above the diagonal, assumed false.

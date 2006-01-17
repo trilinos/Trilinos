@@ -198,8 +198,8 @@ namespace Kokkos {
       if (!dataInitialized_) return(0);
       OrdinalType leadDim = x_view_->stride;
       OrdinalType rowInc = 0;
-      if (x_view_->orient == LAYOUT_ROWMAJ) rowInc = leadDim;
-      else rowInc = leadDim/x_view_->num_rows;
+      if (x_view_->orient == LAYOUT_COLMAJ) rowInc = leadDim;
+      else rowInc = leadDim/x_view_->num_cols;
       return(rowInc);    
     };
 	
@@ -208,8 +208,8 @@ namespace Kokkos {
       if (!dataInitialized_) return(0);
       OrdinalType leadDim = x_view_->stride;
       OrdinalType colInc = 0;
-      if (x_view_->orient == LAYOUT_COLMAJ) colInc = leadDim;
-      else colInc = leadDim/x_view_->num_cols;
+      if (x_view_->orient == LAYOUT_ROWMAJ) colInc = leadDim;
+      else colInc = leadDim/x_view_->num_rows;
       return(colInc);
     };
 	
