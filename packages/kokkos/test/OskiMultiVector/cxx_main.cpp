@@ -89,15 +89,11 @@ int main(int argc, char* argv[])
 //      }
 
 
-  A.initializeValues(numVectors, length, values);
+  A.initializeValues(length, numVectors, values);
   if (verbose) cout <<"default constructor -- initialize using array of pointers ";
-cout << endl << "***" << endl << 
-	A.getRowInc() << " 0" << endl <<
-	A.getColInc() << " 1" << endl << 
-	"***" << endl;
-
-  if ( A.getNumRows()!=numVectors || A.getNumCols()!=length ||
-       A.getIsStrided()!=false ||A.getRowInc()!=0 ||
+  if ( A.getNumRows()!=length || A.getNumCols()!=numVectors ||
+	// enforcing getIsStrided()==true for now
+       A.getIsStrided()!=true ||A.getRowInc()!=length ||
        A.getColInc()!=1) {
 	if (verbose) cout << "unsuccessful."<<endl;
 	numberFailedTests++;
@@ -107,14 +103,14 @@ cout << endl << "***" << endl <<
   }
 
   OMultiVector B;
-  B.initializeValues(numVectors, length, allValues, length, 1);
+  B.initializeValues(length, numVectors, allValues, length, 1);
   if (verbose) cout <<"default constructor -- initialize using 2D array ";
 
-cout << endl << "***" << endl <<
-	B.getRowInc() << " " << length << endl <<
-	B.getColInc() << " 1" << endl;
+//cout << endl << "***" << endl <<
+//	B.getRowInc() << " " << length << endl <<
+//	B.getColInc() << " 1" << endl;
 
-  if ( B.getNumRows()!=numVectors || B.getNumCols()!=length || 
+  if ( B.getNumRows()!=length || B.getNumCols()!=numVectors || 
        B.getIsStrided()!=true ||B.getRowInc()!=length ||
        B.getColInc()!=1) {
 	if (verbose) cout << "unsuccessful."<<endl;
@@ -130,12 +126,9 @@ cout << endl << "***" << endl <<
   OMultiVector C(A);
   if(verbose) cout <<"constructor 2 -- copy constructor "; 
 
-cout << endl << "***" << endl <<
-        C.getRowInc() << " " << length << endl <<
-        C.getColInc() << " 1" << endl;
-
-  if ( C.getNumRows()!=numVectors || C.getNumCols()!=length || 
-       C.getIsStrided()!=false || C.getRowInc()!=0 ||
+  if ( C.getNumRows()!=length || C.getNumCols()!=numVectors || 
+	// enforcing getIsStrided()==true for now
+       C.getIsStrided()!=true || C.getRowInc()!=length ||
        C.getColInc()!=1) {
 	if (verbose) cout << "unsuccessful."<<endl;
 	numberFailedTests++;

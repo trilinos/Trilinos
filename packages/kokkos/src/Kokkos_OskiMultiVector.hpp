@@ -95,17 +95,19 @@ namespace Kokkos {
       \param numRows (In)  Number of rows in multivector (length of each vector).
       \param numCols (In)  Number of columns in multivector (number of vectors).
       \param values (In)  Array of pointers of length getNumCols().  values[i] is a
-      vector of length numRows.  Vector must be stored with a constant increment
+      vector of length numRows.  Vector must be stored with a constant stride
       between rows.  (May change in the future.)
       \return Integer error code, set to 0 if successful.
     */
     int initializeValues(OrdinalType numRows, OrdinalType numCols, ScalarType ** values) {
+      values_ = values;
+      allValues_ = 0;
+      dataInitialized_ = true;
+      //isStrided_ = false; don't need this unless we can use such a MultiVec
+      for (int i = 0; i < numCols-1; i++) if (values_[i+1] - values_[i] != numRows) return(-1); // doesn't allow nonstrided vectors at this point
+      isStrided_ = true;
       if (numCols==1) x_view_=oski_CreateVecView(*values,numRows,STRIDE_UNIT);
       else x_view_=oski_CreateMultiVecView(*values,numRows,numCols,LAYOUT_COLMAJ,numRows);
-      values_ = values; // **doesn't allow noncontiguous vectors at this point
-      allValues_ = 0;
-      isStrided_ = false;
-      dataInitialized_ = true;
 
       return(0);
       };
