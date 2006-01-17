@@ -585,7 +585,9 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         "Test Epetra.MultiVector SetSeed method with negative seed"
         emv  = Epetra.MultiVector(self.map,1)
         seed = -2005
-        self.assertRaises(TypeError,emv.SetSeed,seed)
+        # The exception type depends on the version of SWIG used to generate the
+        # wrapper
+        self.assertRaises((TypeError,OverflowError),emv.SetSeed,seed)
 
     def testPrint(self):
         "Test Epetra.MultiVector Print method"
