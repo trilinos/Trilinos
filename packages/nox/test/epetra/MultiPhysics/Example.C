@@ -280,8 +280,8 @@ int main(int argc, char *argv[])
   combo->addStatusTest(finiteValue);
 
   // Make this explicit
-  //bool doOffBlocks = true;
-  bool doOffBlocks = false;
+  bool doOffBlocks = true;
+  //bool doOffBlocks = false;
 
   // Create the Problem Manager
   Problem_Manager problemManager(Comm, doOffBlocks);

@@ -356,29 +356,30 @@ void Problem_Manager::registerComplete()
     bool distance1 = false;
     int verbose = 0;
 
-    TmpMapColorings[probId] = new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose);
-    ColorMaps[probId] = &( (*(TmpMapColorings[probId]))(problem.getGraph()) );
-    ColorMapIndexSets[probId] = new EpetraExt::CrsGraph_MapColoringIndex( *(ColorMaps[probId]) );
-    ColumnsSets[probId] = & (*(ColorMapIndexSets[probId]))( problem.getGraph() );
+    TmpMapColorings[probId] = Teuchos::rcp(new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose));
+    ColorMaps[probId] = Teuchos::rcp(&( (*(TmpMapColorings[probId]))(problem.getGraph()) ));
+    ColorMapIndexSets[probId] = Teuchos::rcp(new EpetraExt::CrsGraph_MapColoringIndex( *(ColorMaps[probId]) ));
+    ColumnsSets[probId] = Teuchos::rcp(& (*(ColorMapIndexSets[probId]))( problem.getGraph() ));
 
     Teuchos::RefCountPtr<Epetra_CrsGraph> problemGraph( &problem.getGraph(), false );
 
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
-    //MatrixOperators[probId] = new NOX::Epetra::FiniteDifferenceColoring(
-    //    	*(*(Interfaces.find(probId))).second, 
-    //            *problem.getSolution(), 
-    //            problem.getGraph(), 
-    //            *(*(ColorMaps.find(probId))).second, 
-    //            *(*(ColumnsSets.find(probId))).second,
-    //		useParallel,
-    //    	distance1);
-    MatrixOperators[probId] = Teuchos::rcp(new NOX::Epetra::FiniteDifference(
-                nlParams->sublist("Printing"),
+    MatrixOperators[probId] = Teuchos::rcp( new NOX::Epetra::FiniteDifferenceColoring(
+        	nlParams->sublist("Printing"),
                 Interfaces[probId],
-	        nox_soln,
-	        problemGraph ));
+		nox_soln,
+                problemGraph,
+                ColorMaps[probId],
+                ColumnsSets[probId],
+    		useParallel,
+        	distance1) );
+    //MatrixOperators[probId] = Teuchos::rcp(new NOX::Epetra::FiniteDifference(
+    //            nlParams->sublist("Printing"),
+    //            Interfaces[probId],
+    //            nox_soln,
+    //            problemGraph ));
     //NOX::Epetra::Interface::Jacobian& jacInt = 
     NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::FiniteDifference*>(MatrixOperators[probId].get());
     Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = Teuchos::rcp(p_jacInt, false);
@@ -1381,6 +1382,8 @@ bool Problem_Manager::evaluate(
   if (fillF) {
     computeAllF();
     copyProblemsToComposite(*rhsVector, GROUP_F);
+    //cout << "Problem_Manager::evaluate - total filled residual :\n" << *rhsVector << endl;
+
   }
 
   if (fillMatrix) {
@@ -1393,6 +1396,10 @@ bool Problem_Manager::evaluate(
     copyProblemJacobiansToComposite();
 
     Matrix->FillComplete();
+
+    //Matrix->Print(cout);
+
+    //exit(1);
 
 #ifdef DEBUG_PROBLEM_MANAGER
     Matrix->Print(cout);

@@ -209,10 +209,10 @@ private:
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring
-  map<int, EpetraExt::CrsGraph_MapColoring*> TmpMapColorings;
-  map<int, Epetra_MapColoring*> ColorMaps;
-  map<int, EpetraExt::CrsGraph_MapColoringIndex*> ColorMapIndexSets;
-  map<int, vector<Epetra_IntVector>*> ColumnsSets;
+  map<int, Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoring> > TmpMapColorings;
+  map<int, Teuchos::RefCountPtr<Epetra_MapColoring> > ColorMaps;
+  map<int, Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex> > ColorMapIndexSets;
+  map<int, Teuchos::RefCountPtr<vector<Epetra_IntVector> > > ColumnsSets;
   map<int, Teuchos::RefCountPtr<Epetra_Operator> > MatrixOperators;
 
   // These containers allow off-diagonal block contributions representing

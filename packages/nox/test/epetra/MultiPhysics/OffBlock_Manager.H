@@ -110,7 +110,8 @@ private:
   Epetra_Map                           * blockRowMap;
   Epetra_Map                           * blockColMap;
   Teuchos::RefCountPtr<Epetra_Vector>    rowMapVec;
-  NOX::Epetra::Vector                  * noxVec;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> graph;
+  Teuchos::RefCountPtr<NOX::Epetra::Vector>  noxVec;
   Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoring>  mapColoring;
   Teuchos::RefCountPtr<Epetra_MapColoring>  colorMap;
   Teuchos::RefCountPtr<EpetraExt::CrsGraph_MapColoringIndex> colorMapIndex;
