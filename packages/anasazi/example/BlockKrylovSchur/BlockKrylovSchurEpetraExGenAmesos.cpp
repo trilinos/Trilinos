@@ -353,7 +353,7 @@ int AmesosGenOp::SetUseTranspose(bool useTranspose)
     massMtx_->SetUseTranspose(useTranspose);
 
   return 0;
-};
+}
 
 int AmesosGenOp::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) const 
 {
@@ -390,4 +390,4 @@ int AmesosGenOp::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y ) cons
   }
   
   return 0;
-};
+}
