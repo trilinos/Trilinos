@@ -298,7 +298,6 @@ void OffBlock_Manager::createFDobjects( bool useColoring )
     colorMap      = Teuchos::rcp( & ((*mapColoring)(*graph)) );
     colorMapIndex = Teuchos::rcp( new EpetraExt::CrsGraph_MapColoringIndex(*colorMap) );
     columnSet     = Teuchos::rcp( (& (*colorMapIndex)( *graph )));
-    //columnSet     = Teuchos::rcp( new vector<Epetra_IntVector>( colorMapIndex->operator()(*graph)));
   
     if (MyPID == 0) {
       printf("\n\tTime to color Jacobian # %d (%d) --> %e sec. \n",

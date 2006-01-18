@@ -359,7 +359,7 @@ void Problem_Manager::registerComplete()
     TmpMapColorings[probId] = Teuchos::rcp(new EpetraExt::CrsGraph_MapColoring(algType, reordering, distance1, verbose));
     ColorMaps[probId] = Teuchos::rcp(&( (*(TmpMapColorings[probId]))(problem.getGraph()) ));
     ColorMapIndexSets[probId] = Teuchos::rcp(new EpetraExt::CrsGraph_MapColoringIndex( *(ColorMaps[probId]) ));
-    ColumnsSets[probId] = Teuchos::rcp(& (*(ColorMapIndexSets[probId]))( problem.getGraph() ));
+    ColumnsSets[probId] = Teuchos::rcp(& (*(ColorMapIndexSets[probId]))( problem.getGraph() ), false);
 
     Teuchos::RefCountPtr<Epetra_CrsGraph> problemGraph( &problem.getGraph(), false );
 
