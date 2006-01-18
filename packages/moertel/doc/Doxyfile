@@ -42,9 +42,10 @@
 
 PROJECT_NAME           = Moertel
 
-INPUT                  = ../src
+INPUT                  = index.doc 
+INPUT                 += ../src 
 
-FILE_PATTERNS          = *.H
+FILE_PATTERNS          = *.H *.cpp *.tag
 
 EXAMPLE_PATH           = ../example/
 
