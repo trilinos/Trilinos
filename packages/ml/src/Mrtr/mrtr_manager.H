@@ -75,9 +75,17 @@ using namespace Teuchos;
 \brief MOERTEL: namespace of the Moertel package
 
 The Moertel package depends on \ref Epetra, \ref EpetraExt, \ref Teuchos,
-\ref Amesos and \ref ML
-
-It makes use of the Epetra define EPETRA_MPI
+\ref Amesos, \ref ML and \ref AztecOO:<br>
+Use at least the following lines in the configure of Trilinos:<br>
+\code
+--enable-moertel 
+--enable-epetra 
+--enable-epetraext
+--enable-teuchos 
+--enable-ml
+--enable-aztecoo --enable-aztecoo-teuchos 
+--enable-amesos
+\endcode
 
 */
 namespace MOERTEL
@@ -357,7 +365,15 @@ public:
   
   Set a ParameterList containing solver options. This class does not take
   ownership over params but instead uses a view of it.<br>
-  Options are:<br>
+  Currently Moertel has interfaces to the Amesos, the AztecOO and the ML package.<br>
+  All packages are controlled by this parameter list. The parameter list
+  Contains a general part where the package and the type of linear system
+  to be generated is chosen and contains one or more sub-parameter lists which
+  are passed on to the appropiate package. This way all parameters described
+  in the documentation of Amesos, ML and Aztec can be passed to the approbiate
+  package.<br>
+
+  Below one example how to choose the parameter list is given:<br>
   \code
   Teuchos::ParameterList params;
   params.set("System","SaddleSystem"); // use a saddle point system of equations in solve
@@ -366,17 +382,71 @@ public:
 
   // choose solver package
   params.set("Solver","Amesos");       // use solver package Amesos
+  // or
+  params.set("Solver","ML/Aztec");     // use solver packages ML and AztecOO
   
   // argument sublist passed to and used for Amesos
   // see Amesos documentation, all configured Amesos solvers can be used
+  // This is an example of possible parameters
   Teuchos::ParameterList& amesosparams = params.sublist("Amesos");
   amesosparams.set("Solver","Amesos_Klu"); // name of Amesos solver to use
-  amesosparams.set("PrintTiming",false);
-  amesosparams.set("PrintStatus",false);
+  amesosparams.set("PrintTiming",false);   
+  amesosparams.set("PrintStatus",false);   
   amesosparams.set("UseTranspose",true);
+
+  // argument sublist passed to and used for ML
+  // see ML documentation, all configured parameters recognized by the
+  // ML_Epetra::ml_MultiLevelPreconditioner class can be used
+  // Moertel sets the ML default parameters first which are then overridden by
+  // this list
+  // This is an example configuration:
+  Teuchos::ParameterList& mlparams = params.sublist("ML");
+  ML_Epetra::SetDefaults("SA",mlparams);
+  mlparams.set("output",6);
+  mlparams.set("print unused",-2);
+  mlparams.set("increasing or decreasing","increasing");
+  mlparams.set("PDE equations",3);
+  mlparams.set("max levels",20);
+  mlparams.set("aggregation: type","Uncoupled");
+  mlparams.set("coarse: max size",2500);
+  mlparams.set("coarse: type","Amesos-KLU");
+  mlparams.set("smoother: type","MLS");
+  mlparams.set("smoother: MLS polynomial order",3);
+  mlparams.set("smoother: sweeps",1);
+  mlparams.set("smoother: pre or post","both");
+  mlparams.set("null space: type","pre-computed");
+  mlparams.set("null space: add default vectors",false);
+  int dimnullspace  = 6;
+  int dimnsp        = dimnullspace*nummyrows;
+  double* nsp       = new double[dimnsp];
+  application_compute_nullspace(nsp,dimnsp);
+  mlparams.set("null space: dimension",dimnullspace);
+  // the user is responsible for freeing nsp after solve
+  mlparams.set("null space: vectors",nsp); 
+
+  // argument sublist passed to and used for AztecOO
+  // see AztecOO documentation, all configured parameters recognized by the
+  // AztecOO class can be used
+  // Moertel sets the Aztec default parameters first which are then overridden by
+  // this list
+  // This is an example configuration:
+  Teuchos::ParameterList& aztecparams = params.sublist("Aztec");
+  aztecparams.set("AZ_solver","AZ_cg");
+  // if "AZ_user_precond" is specified, ML will be used as a preconditioner
+  // Any other aztec-buildin preconditioner can be used as well 
+  aztecparams.set("AZ_precond","AZ_user_precond");
+  aztecparams.set("AZ_max_iter",500);
+  aztecparams.set("AZ_output",100);
+  aztecparams.set("AZ_tol",1.0e-08);
+  aztecparams.set("AZ_scaling","AZ_none");
+
   \endcode
   
   \param params : Parameter list containing solver options
+  
+  \warning When using ML and/or Aztec, one has to use "SPDSystem" as system matrix
+           as the amg-preconditioned iterative method will currently fail on the 
+           saddle point system.
   */
   void SetSolverParameters(ParameterList& params);
 

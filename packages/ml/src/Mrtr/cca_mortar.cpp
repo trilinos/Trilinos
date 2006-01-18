@@ -43,6 +43,8 @@ static class Epetra_SerialComm* comm;
 static class MOERTEL::Manager* mrtr_manager;
 class Epetra_CrsMatrix* saddleproblem;
 
+static const int outlevel = 10;
+
 /*----------------------------------------------------------------------*
  |  routine to create mortar interfaces                      m.gee 06/05|
  *----------------------------------------------------------------------*/
@@ -64,7 +66,6 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
 #endif
 
   // output level (0-10)
-  int outlevel = 10;
 
   //-------------------------------------------------------------------
   // get discretization
@@ -679,7 +680,7 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   //-------------------------------------------------------------------
   // create Epetra_Vectors from rhs and sol
   Epetra_Map* rowmap = mrtr_manager->ProblemMap();  
-  Epetra_Vector esol(*rowmap,false);
+  Epetra_Vector esol(*rowmap,true);
   Epetra_Vector erhs(*rowmap,false);
   for (int i=0; i<erhs.MyLength(); ++i)
     erhs[i] = rhs->vec.a.dv[i];
@@ -687,12 +688,12 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   //-------------------------------------------------------------------
   // create a Teuchos Parameter List holding solver arguments
   Teuchos::ParameterList params;
-  params.set("System","SaddleSystem");
-  //params.set("System","SPDSystem");
+  //params.set("System","SaddleSystem");
+  params.set("System","SPDSystem");
 
   // choose solver package
-  params.set("Solver","Amesos");
-  //params.set("Solver","ML/Aztec");
+  //params.set("Solver","Amesos");
+  params.set("Solver","ML/Aztec");
 
   // argument sublist for amesos
   Teuchos::ParameterList& amesosparams = params.sublist("Amesos");
@@ -702,13 +703,46 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   amesosparams.set("UseTranspose",true);
   
   // argument sublist for aztec
+  Teuchos::ParameterList& aztecparams = params.sublist("Aztec");
+  aztecparams.set("AZ_solver","AZ_cg");
+  aztecparams.set("AZ_precond","AZ_user_precond");
+  aztecparams.set("AZ_max_iter",500);
+  aztecparams.set("AZ_output",100);
+  aztecparams.set("AZ_tol",1.0e-08);
+  aztecparams.set("AZ_scaling","AZ_none");
 
   // argument sublist for ml
+  Teuchos::ParameterList& mlparams = params.sublist("ML");
+  ML_Epetra::SetDefaults("SA",mlparams);
+  mlparams.set("output",6);
+  mlparams.set("print unused",1/*-2*/);
+  mlparams.set("increasing or decreasing","increasing");
+  mlparams.set("PDE equations",3);
+  mlparams.set("max levels",5);
+  mlparams.set("aggregation: type","Uncoupled");
+  mlparams.set("coarse: max size",128);
+  mlparams.set("coarse: type","Amesos-KLU");
+  mlparams.set("smoother: type","MLS");
+  mlparams.set("smoother: MLS polynomial order",3);
+  mlparams.set("smoother: sweeps",1);
+  mlparams.set("smoother: pre or post","both");
+  mlparams.set("null space: type","pre-computed");
+  mlparams.set("null space: add default vectors",false);
+  int dimnullspace = 6;
+  int nummyrows = mrtr_manager->ProblemMap()->NumMyElements();
+  int numglobalrows = mrtr_manager->ProblemMap()->NumGlobalElements();
+  int* update       = mrtr_manager->ProblemMap()->MyGlobalElements();
+  int dimnsp        = dimnullspace*nummyrows;
+  double* nsp   = new double[dimnsp];
+  int numdf = 0;
+  ccarat_nox_nullspace(nsp,dimnsp,update,1,NULL,nummyrows,numglobalrows,&numdf);
+  mlparams.set("null space: dimension",dimnullspace);
+  mlparams.set("null space: vectors",nsp);
 
   //-------------------------------------------------------------------
   // solve
   bool ok = mrtr_manager->Solve(params,esol,erhs); 
-  if (!ok) cout << "***ERR** MOERTEL::Manager::Solve() returned false\n";
+  if (!ok) cout << "***ERR*** MOERTEL::Manager::Solve() returned false\n";
 
   mrtr_manager->ResetSolver();
 
@@ -718,7 +752,8 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
     sol->vec.a.dv[i] = esol[i];
 
   delete mrtr_manager; mrtr_manager = 0;
-
+  delete [] nsp; nsp = NULL;
+  
   return (int)ok;
 }
 #endif // MORTAR

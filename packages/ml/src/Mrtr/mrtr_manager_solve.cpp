@@ -137,6 +137,10 @@ bool MOERTEL::Manager::BuildSaddleMap()
  *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
 {
+  // time this process
+  Epetra_Time time(Comm());
+  time.ResetStartTime();
+  
   // check whether all interfaces are complete and integrated
   map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
@@ -219,6 +223,12 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
   saddlematrix_->FillComplete();
   saddlematrix_->OptimizeStorage();
 
+  // time this process
+  double t = time.ElapsedTime();
+  if (OutLevel()>5 && Comm().MyPID()==0)
+    cout << "MOERTEL (Proc 0): Construct saddle system in " << t << " sec\n";
+  
+
   return saddlematrix_.get();
 }
 
@@ -228,6 +238,10 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
  *----------------------------------------------------------------------*/
 Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
 {
+  // time this process
+  Epetra_Time time(Comm());
+  time.ResetStartTime();
+
   // check whether all interfaces are complete and integrated
   map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
   for (curr=interface_.begin(); curr != interface_.end(); ++curr)
@@ -562,6 +576,11 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   delete trans; B = NULL;
   lm_to_dof.clear();
 
+  // time this process
+  double t = time.ElapsedTime();
+  if (OutLevel()>5 && Comm().MyPID()==0)
+    cout << "MOERTEL (Proc 0): Construct spd system in " << t << " sec\n";
+
   return spdmatrix_.get();
 }
 
@@ -722,7 +741,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   
   //---------------------------------------------------------------------------
   // build a saddle point system
-  if (system=="SaddleSystem" || system=="saddlesystem" || system=="SADDLESYSTEM" || 
+  if (system=="SaddleSystem"  || system=="saddlesystem"  || system=="SADDLESYSTEM" || 
       system=="Saddle_System" || system=="saddle_system" || system=="SADDLE_SYSTEM")
   {
     if (saddlematrix_==null)
@@ -750,7 +769,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
 
   //---------------------------------------------------------------------------
   // build a spd system
-  else if (system=="SPDSystem" || system=="spdsystem" || system=="spd_system" || 
+  else if (system=="SPDSystem"  || system=="spdsystem" || system=="spd_system" || 
            system=="SPD_System" || system=="SPDSYSTEM" || system=="SPD_SYSTEM")
   {
     if (spdmatrix_==null)
@@ -806,10 +825,10 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   bool ok = solver_->Solve(solverparams_,matrix,x,b);
   if (!ok)
   {
-    cout << "***ERR*** MOERTEL::Manager::Solve:\n"
-         << "***ERR*** MOERTEL::Solver::Solve returned an error\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
+    if (Comm().MyPID()==0)
+    cout << "***WRN*** MOERTEL::Manager::Solve:\n"
+         << "***WRN*** MOERTEL::Solver::Solve returned an error\n"
+         << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
   
   //---------------------------------------------------------------------------
@@ -819,16 +838,8 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
     for (int i=0; i<sol.MyLength(); ++i)
       sol[i] = (*x)[i];
   }
-  cout << sol;
-  //---------------------------------------------------------------------------
-  // output the parameter list to see whether something was unused  
-  if (OutLevel()>8 && Comm().MyPID()==0)
-  {
-    cout << "MOERTEL: Solver Parameters:\n";
-    solverparams_->print(cout);
-  }
 
-  return true;
+  return ok;
 }
 
 

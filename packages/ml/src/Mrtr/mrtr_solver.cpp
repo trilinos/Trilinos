@@ -44,7 +44,10 @@ matrix_(null),
 matrixisnew_(true),
 x_(null),
 b_(null),
-amesossolver_(null)
+linearproblem_(null),
+amesossolver_(null),
+mlprec_(null),
+aztecsolver_(null)
 {
 }
 
@@ -86,6 +89,8 @@ bool MOERTEL::Solver::Solve(RefCountPtr<Teuchos::ParameterList> params,
  *----------------------------------------------------------------------*/
 bool MOERTEL::Solver::Solve()
 {
+  bool ok = false;
+  
   //---------------------------------------------------------------------------
   // check the linear system  
   if (x_==null || b_==null || matrix_==null)
@@ -111,34 +116,62 @@ bool MOERTEL::Solver::Solve()
   if (linearproblem_==null)
     linearproblem_ = rcp(new Epetra_LinearProblem());
 
-  //b_.get()->PutScalar(0.0);
-  //x_.get()->PutScalar(0.0);
   linearproblem_->SetLHS(x_.get());
   linearproblem_->SetRHS(b_.get());
-    
   if (matrixisnew_)
     linearproblem_->SetOperator(matrix_.get());
     
   linearproblem_->CheckInput();
-  
   //---------------------------------------------------------------------------
   // get type of solver to be used
   string solver = params_->get("Solver","None");
   
   //---------------------------------------------------------------------------
+  // time the solution process
+  Epetra_Time time(Comm());
+  time.ResetStartTime();
+
+  //---------------------------------------------------------------------------
   // use Amesos
   if (solver=="Amesos" || solver=="amesos" || solver=="AMESOS")
   {
-    ParameterList amesosparams = params_->sublist("Amesos");
-    bool ok = Solve_Amesos(amesosparams);
+    ParameterList& amesosparams = params_->sublist("Amesos");
+    ok = Solve_Amesos(amesosparams);
     if (!ok)
     {
+      cout << "***WRN*** MOERTEL::Solver::Solve:\n"
+           << "***WRN*** Solve_Amesos returned false\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    }
+  }
+
+  //---------------------------------------------------------------------------
+  // use ML/Aztec
+  else if (solver=="ML/Aztec" || solver=="ml/aztec" || solver=="ML" ||
+           solver=="ml"       || solver=="Ml"       || solver=="Aztec" ||
+           solver=="AZTEC"    || solver=="aztec")
+  {
+    // see whether we have a spd system
+    string system = params_->get("System","None");
+    if (system!="SPDSystem"  && system!="spdsystem" && system!="spd_system" && 
+        system!="SPD_System" && system!="SPDSYSTEM" && system!="SPD_SYSTEM")
+    {
       cout << "***ERR*** MOERTEL::Solver::Solve:\n"
-           << "***ERR*** Solve_Amesos returned false\n"
+           << "***ERR*** To use ML?Aztec for solution, parameter \"System\" hast to be \"SPDSystem\" \n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
+    ParameterList& mlparams    = params_->sublist("ML");
+    ParameterList& aztecparams = params_->sublist("Aztec");
+    ok = Solve_MLAztec(mlparams,aztecparams);
+    if (!ok)
+    {
+      cout << "***WRN*** MOERTEL::Solver::Solve:\n"
+           << "***WRN*** Solve_MLAztec returned false\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    }
   }
+
 
   //---------------------------------------------------------------------------
   // unknown solver
@@ -147,13 +180,21 @@ bool MOERTEL::Solver::Solve()
     cout << "***ERR*** MOERTEL::Solver::Solve:\n"
          << "***ERR*** solver type is unknown\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
+    ok = false;
   }
-  return true;
+
+
+  //---------------------------------------------------------------------------
+  // time the solution process
+  double t = time.ElapsedTime();
+  if (OutLevel()>5 && Comm().MyPID()==0)
+    cout << "MOERTEL (Proc 0): Solution of system of equations in " << t << " sec\n";
+
+  return ok;
 }
 
 /*----------------------------------------------------------------------*
- |  solve a linear system (public)                           mwgee 12/05|
+ |  solve a linear system (private)                          mwgee 12/05|
  |  using Amesos                                                        |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Solver::Solve_Amesos(ParameterList& amesosparams)
@@ -212,6 +253,87 @@ bool MOERTEL::Solver::Solve_Amesos(ParameterList& amesosparams)
     cout << "***ERR*** MOERTEL::Solver::Solve_Amesos:\n"
          << "***ERR*** Amesos returned " << ok << "\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  return false;
+}
+
+/*----------------------------------------------------------------------*
+ |  solve a linear system (private)                          mwgee 01/06|
+ |  using ML and AztecOO                                                |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams, 
+                                    ParameterList& aztecparams)
+{
+  
+  // create ML preconditioner if aztec parameter indicates user preconditioner
+  string preconditioner = aztecparams.get("AZ_precond","none");
+  if (preconditioner=="none")
+  {
+    cout << "***ERR*** MOERTEL::Solver::Solve_MLAztec:\n"
+         << "***ERR*** Aztec parameter \"AZ_precond\" is not set\n"
+         << "***ERR*** set to \"AZ_user_precond\" to use ML or to some Aztec internal method\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (preconditioner=="AZ_user_precond")
+    if (mlprec_==null || matrixisnew_);
+    mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams),true);
+  
+  // create the Aztec solver
+  aztecsolver_ = rcp(new AztecOO());  
+  aztecsolver_->SetAztecDefaults();
+  aztecsolver_->SetProblem(*linearproblem_);
+  aztecsolver_->SetParameters(aztecparams,true);
+  if (mlprec_ != null)
+    aztecsolver_->SetPrecOperator(mlprec_.get());
+  
+  // solve it
+  double tol  = aztecparams.get("AZ_tol",1.0e-05);
+  int maxiter = aztecparams.get("AZ_max_iter",1000);
+  aztecsolver_->Iterate(maxiter,tol);
+  matrixisnew_ = false;
+  const double* azstatus = aztecsolver_->GetAztecStatus();
+  if (azstatus[AZ_why] == AZ_normal)
+    return true;
+  else if (azstatus[AZ_why] == AZ_breakdown)
+  {
+    if (Comm().MyPID() == 0)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+         << "MOERTEL: ***WRN*** Aztec returned status AZ_breakdown\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  else if (azstatus[AZ_why] == AZ_loss)
+  {
+    if (Comm().MyPID() == 0)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+         << "MOERTEL: ***WRN*** Aztec returned status AZ_loss\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  else if (azstatus[AZ_why] == AZ_ill_cond)
+  {
+    if (Comm().MyPID() == 0)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+         << "MOERTEL: ***WRN*** Aztec returned status AZ_ill_cond\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  else if (azstatus[AZ_why] == AZ_maxits)
+  {
+    if (Comm().MyPID() == 0)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+         << "MOERTEL: ***WRN*** Aztec returned status AZ_maxits\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  else
+  {
+    if (Comm().MyPID() == 0)
+    cout << "MOERTEL: ***WRN*** MOERTEL::Solver::Solve_MLAztec:\n"
+         << "MOERTEL: ***WRN*** Aztec returned unknown status: " << azstatus[AZ_why] << "\n"
+         << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
   return false;
