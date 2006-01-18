@@ -58,12 +58,21 @@
 #else
 #include <Epetra_SerialComm.h>
 #endif
+
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
+
 #include "Amesos.h"
 #include "Amesos_BaseSolver.h"
 
+#include "ml_common.h"
+#include "ml_include.h"
+#include "ml_epetra_utils.h"
+#include "ml_epetra.h"
+#include "ml_epetra_operator.h"
+#include "ml_MultiLevelPreconditioner.h"
 
+#include "AztecOO.h"
 
 
 using namespace std;
@@ -73,9 +82,17 @@ using namespace Teuchos;
 \brief MOERTEL: namespace of the Moertel package
 
 The Moertel package depends on \ref Epetra, \ref EpetraExt, \ref Teuchos,
-\ref Amesos and \ref ML
-
-It makes use of the Epetra define EPETRA_MPI
+\ref Amesos, \ref ML and \ref AztecOO:<br>
+Use at least the following lines in the configure of Trilinos:<br>
+\code
+--enable-moertel 
+--enable-epetra 
+--enable-epetraext
+--enable-teuchos 
+--enable-ml
+--enable-aztecoo --enable-aztecoo-teuchos 
+--enable-amesos
+\endcode
 
 */
 namespace MOERTEL
@@ -84,7 +101,7 @@ namespace MOERTEL
 /*!
 \class Solver
 
-\brief <b>  </b>
+\brief <b>The solver interface to Amesos, ML and Aztec</b>
 
 
 \author Michael W. Gee (mwgee@sandia.gov)
@@ -154,6 +171,7 @@ private:
 
   bool Solve();
   bool Solve_Amesos(ParameterList& amesosparams);
+  bool Solve_MLAztec(ParameterList& mlparams, ParameterList& aztecparams);
 
   // don't want = operator and copy-ctor
   Solver operator = (const Solver& old);
@@ -161,20 +179,20 @@ private:
 
 private:
 
-  int                                 outlevel_;      // output level (0-10)
-  Epetra_Comm&                        comm_;          // communicator (global, contains ALL procs)
+  int                                               outlevel_;      // output level (0-10)
+  Epetra_Comm&                                      comm_;          // communicator (global, contains ALL procs)
   
-  Teuchos::ParameterList*             params_;        // solution parameters
+  Teuchos::ParameterList*                           params_;        // solution parameters
 
-  RefCountPtr<Epetra_CrsMatrix>       matrix_;        // linear system
-  bool                                matrixisnew_;   // flag indicating whether system has been solved before
+  RefCountPtr<Epetra_CrsMatrix>                     matrix_;        // linear system
+  bool                                              matrixisnew_;   // flag indicating whether system has been solved before
+  RefCountPtr<Epetra_Vector>                        x_;             // solution vector
+  RefCountPtr<Epetra_Vector>                        b_;             // rhs vector
   
-  RefCountPtr<Epetra_Vector>          x_;             // solution vector
-  RefCountPtr<Epetra_Vector>          b_;             // rhs vector
-  
-  RefCountPtr<Epetra_LinearProblem>   linearproblem_;  // the linear system
-
-  RefCountPtr<Amesos_BaseSolver>      amesossolver_;  // the amesos solver
+  RefCountPtr<Epetra_LinearProblem>                 linearproblem_; // the linear system
+  RefCountPtr<Amesos_BaseSolver>                    amesossolver_;  // the amesos solver
+  RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
+  RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
 };
 
 } // namespace MOERTEL

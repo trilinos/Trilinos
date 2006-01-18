@@ -47,9 +47,25 @@
 #include <ctime>
 #include <iostream>
 
-//! MOERTEL: namespace of the Moertel package
 using namespace std;
 
+/*!
+\brief MOERTEL: namespace of the Moertel package
+
+The Moertel package depends on \ref Epetra, \ref EpetraExt, \ref Teuchos,
+\ref Amesos, \ref ML and \ref AztecOO:<br>
+Use at least the following lines in the configure of Trilinos:<br>
+\code
+--enable-moertel 
+--enable-epetra 
+--enable-epetraext
+--enable-teuchos 
+--enable-ml
+--enable-aztecoo --enable-aztecoo-teuchos 
+--enable-amesos
+\endcode
+
+*/
 namespace MOERTEL
 {
 
