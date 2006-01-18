@@ -52,11 +52,9 @@ EXAMPLE_SUITE = exSimple
 SETPATH = setpath.py
 
 all: $(EXAMPLE_SUITE)
-	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-exSimple:
-	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+ex%:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-clean:
-	if [ $(srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
-	/bin/rm -f *.pyc
+CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
