@@ -40,12 +40,14 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = 
 
+SETPATH = setpath.py
+
 check-am: $(EXAMPLE_SUITE)
 
-# Run the example script
-ex%: $(srcdir)/ex%.py $(srcdir)/setpath.py
-	cp $^ .
-	$(PYTHON) $@.py
+all: $(EXAMPLE_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-# Clean target
-CLEANFILES = $(patsubst %, %.py, $(EXAMPLE_SUITE)) setpath.py setpath.pyc
+ex%:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+
+CLEANFILES = $(EXAMPLE_SUITE:=.py) setpath.py *.pyc
