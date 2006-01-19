@@ -378,7 +378,7 @@ int gen_geom, int gen_graph, int gen_hg)
     /* Each proc prints its pins. For global IDs we print 1 integer.*/
 
     Zoltan_Print_Sync_Start(zz->Communicator, 0); 
-    sprintf(full_fname, "%s.hg", fname);
+    sprintf(full_fname, "%s.mtxp", fname);  /* matrixmarket plus */
     if (zz->Proc == 0)
       fp = fopen(full_fname, "w");
     else
