@@ -282,6 +282,7 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of tests
 TEST_SUITE = testColoring
 SETPATH = setpath.py
+CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc
 all: all-am
 
 .SUFFIXES:
@@ -370,6 +371,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -378,6 +380,8 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
+clean: clean-am
+
 clean-am: clean-generic mostlyclean-am
 
 distclean: distclean-am
@@ -435,14 +439,8 @@ uninstall-am: uninstall-info-am
 all: $(TEST_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-# Copy the test script
 test%: $(srcdir)/test%.py
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
-
-# Clean target
-clean:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
-	/bin/rm -f *.pyc
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
