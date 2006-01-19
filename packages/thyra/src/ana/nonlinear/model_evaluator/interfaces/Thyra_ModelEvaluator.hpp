@@ -1030,14 +1030,32 @@ public:
 // //////////////////////////////////
 // Helper functions
 
-/** \brief . */
+/** \brief Evaluate <tt>f(x)</tt>. */
 template<class Scalar>
 inline 
 void eval_f(
   const ModelEvaluator<Scalar>                                    &model
   ,const VectorBase<Scalar>                                       &x
-  ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag   &t
   ,VectorBase<Scalar>                                             *f
+  )
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  inArgs.set_x(Teuchos::rcp(&x,false));
+  outArgs.set_f(Teuchos::rcp(f,false));
+  model.evalModel(inArgs,outArgs);
+}
+
+/** \brief Evaluate <tt>f(x)</tt> and <tt>W(x) = beta*DfDx(x)</tt>. */
+template<class Scalar>
+inline 
+void eval_f_W(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const VectorBase<Scalar>                                       &x
+  ,const Scalar                                                   &beta
+  ,VectorBase<Scalar>                                             *f
+  ,LinearOpWithSolveBase<Scalar>                                  *W
   )
 {
 
@@ -1047,16 +1065,16 @@ void eval_f(
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
 
   inArgs.set_x(Teuchos::rcp(&x,false));
-  if(inArgs.supports(MEB::IN_ARG_t))
-    inArgs.set_t(t);
+  inArgs.set_beta(beta);
 
   outArgs.set_f(Teuchos::rcp(f,false));
+  if(W) outArgs.set_W(Teuchos::rcp(W,false));
 
   model.evalModel(inArgs,outArgs);
 
 }
 
-/** \brief . */
+/** \brief Evaluate <tt>f(x_dot,x,t)</tt>. */
 template<class Scalar>
 inline 
 void eval_f(
@@ -1084,7 +1102,8 @@ void eval_f(
 
 }
 
-/** \brief . */
+/** \brief Evaluate <tt>f(x_dot,x,t)</tt> and
+ * <tt>W(x_dot,x,t,alpha,beta) = beta*DfDx_dot(x_dot,x,t)beta*DfDx(x_dot,x,t)</tt>. */
 template<class Scalar>
 inline 
 void eval_f_W(
@@ -1112,33 +1131,6 @@ void eval_f_W(
   inArgs.set_beta(beta);
 
   if(f) outArgs.set_f(Teuchos::rcp(f,false));
-  if(W) outArgs.set_W(Teuchos::rcp(W,false));
-
-  model.evalModel(inArgs,outArgs);
-
-}
-
-/** \brief . */
-template<class Scalar>
-inline 
-void eval_f_W(
-  const ModelEvaluator<Scalar>                                    &model
-  ,const VectorBase<Scalar>                                       &x
-  ,const Scalar                                                   &beta
-  ,VectorBase<Scalar>                                             *f
-  ,LinearOpWithSolveBase<Scalar>                                  *W
-  )
-{
-
-  typedef Thyra::ModelEvaluatorBase MEB;
-
-  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
-  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
-
-  inArgs.set_x(Teuchos::rcp(&x,false));
-  inArgs.set_beta(beta);
-
-  outArgs.set_f(Teuchos::rcp(f,false));
   if(W) outArgs.set_W(Teuchos::rcp(W,false));
 
   model.evalModel(inArgs,outArgs);
@@ -1341,7 +1333,7 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -1361,7 +1353,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( EInArgsMembers arg, bool 
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!");
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!");
   supports_[arg] = supports;
 }
 
@@ -1408,7 +1400,7 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -1601,7 +1593,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsMembers arg, boo
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   supports_[arg] = supports;
 }
