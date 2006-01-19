@@ -207,6 +207,10 @@ extern int Zoltan_HG_Hypergraph_Pin_Callbacks(ZZ *, ZHG *, int, float, int,
 extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int, float, int, int *,
   ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *,
   int **);
+extern int Zoltan_Call_Hypergraph_Pin_Query(ZZ *zz, int *num_lists,
+   int *num_pins, ZOLTAN_ID_PTR *edg_GID, int **row_ptr, 
+   ZOLTAN_ID_PTR *vtx_GID);
+
     
 
     

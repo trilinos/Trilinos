@@ -230,12 +230,11 @@ int Zoltan_HG_Hypergraph_Pin_Callbacks(
 
 static char *yo = "Zoltan_HG_Hypergraph_Pin_Callbacks";
 int ierr = ZOLTAN_OK;
-int i, j, have_pins, row_storage, w;
-int num_gid_entries = zz->Num_GID;
+int i, j, w;
 ZOLTAN_ID_PTR vtx_GID=NULL, edg_GID=NULL, edg_LID, egptr, elptr;
 float *edg_weight, *wptr;
 int num_lists, num_pins;
-int *row_ptr=NULL, *col_ptr, *size_ptr;
+int *row_ptr=NULL, *size_ptr;
 struct _ewht{
   ZOLTAN_ID_PTR egid;
   ZOLTAN_ID_PTR elid;
@@ -243,7 +242,7 @@ struct _ewht{
   struct _ewht *next;
 } *ewNodes=NULL, *en;
 struct _ewht **ewht = NULL;
-int max_need_weights, need_weights, format;
+int max_need_weights, need_weights;
 char *need_list=NULL;
 int dim = zz->Edge_Weight_Dim;
 int lenGID = zz->Num_GID;
@@ -257,68 +256,8 @@ int lenLID = zz->Num_LID;
     ewNodes = NULL;
   }
 
-  /* Get size and type of compressed pin storage */
-
-  ierr = zz->Get_HG_Size_CS(zz->Get_HG_Size_CS_Data,
-                            &num_lists, &num_pins, &format);
-
-  if ((format != ZOLTAN_COMPRESSED_ROWS)&&(format != ZOLTAN_COMPRESSED_COLS)){
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-      "Invalid compression format returned in Get_HG_Size_CS");
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  have_pins = ((num_lists > 0) && (num_pins > 0));
-  row_storage = (format == ZOLTAN_COMPRESSED_ROWS);
-
-  /* Get the hypergraph pins in compressed storage format */
-
-  if (have_pins){
-    if (!row_storage){    /* compressed column storage */
-
-      vtx_GID = ZOLTAN_MALLOC_GID_ARRAY(zz, num_lists);
-      col_ptr = (int *)ZOLTAN_MALLOC(num_lists * sizeof(int));
-      edg_GID = ZOLTAN_MALLOC_GID_ARRAY(zz, num_pins);
-
-      if (!vtx_GID || !col_ptr || !edg_GID){
-        Zoltan_Multifree(__FILE__, __LINE__, 3, &vtx_GID, &col_ptr, &edg_GID);
-        MEMORY_ERROR;
-      }
-      ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, num_gid_entries,
-               num_lists, num_pins, format,
-               vtx_GID, col_ptr, edg_GID);
-
-      if ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)){
-        ierr = convert_to_CRS(zz,
-                     num_pins,    /* number of pins doesn't change */
-                     col_ptr,
-                     &num_lists,  /* replace with number of rows */
-                     &vtx_GID,    /* replace with pins           */
-                     &row_ptr,    /* index into start of each row in vtx_GID */
-                     &edg_GID);   /* replace with row (edge) GIDs */
-
-      }
-
-      ZOLTAN_FREE(&col_ptr);
-    }
-    else{               /* compressed row storage */
-
-      edg_GID = ZOLTAN_MALLOC_GID_ARRAY(zz, num_lists);
-      row_ptr = (int *)ZOLTAN_MALLOC(num_lists * sizeof(int));
-      vtx_GID = ZOLTAN_MALLOC_GID_ARRAY(zz, num_pins);
-
-      if (!vtx_GID || !row_ptr || !edg_GID){
-        Zoltan_Multifree(__FILE__, __LINE__, 3, &vtx_GID, &row_ptr, &edg_GID);
-        MEMORY_ERROR;
-      }
-
-      ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, num_gid_entries,
-                 num_lists, num_pins, format,
-                 edg_GID, row_ptr, vtx_GID);
-
-    }
-  }
+  ierr = Zoltan_Call_Hypergraph_Pin_Query(zz, &num_lists, &num_pins,
+              &edg_GID, &row_ptr, &vtx_GID);
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
     Zoltan_Multifree(__FILE__, __LINE__, 3, &vtx_GID, &row_ptr, &edg_GID);
@@ -1325,6 +1264,106 @@ int ierr = ZOLTAN_OK;
 End:
 
   ZOLTAN_FREE(&recvBuf);
+
+  return ierr;
+}
+/*****************************************************************************/
+
+int Zoltan_Call_Hypergraph_Pin_Query(ZZ *zz, 
+   int *num_lists,         /* output: number of edges */
+   int *num_pins,          /* output: total number of pins in edges */
+   ZOLTAN_ID_PTR *edg_GID, /* output: list of edge global IDs */
+   int **row_ptr,          /* output: loc in vtx_GID for start of each edge */
+   ZOLTAN_ID_PTR *vtx_GID) /* output: vertex global ID for each pin */
+{
+static char *yo = "Zoltan_Call_Hypergraph_Pin_Query";
+int ierr = ZOLTAN_OK;
+int nl, np, format, have_pins, row_storage;
+ZOLTAN_ID_PTR vid, eid;
+int *rptr, *cptr;
+
+  /*
+   * Call the pin query functions.  Pins may be provided in
+   * compressed row storage format or compressed column storage
+   * format.  Return compressed rows, converting if necessary.
+   */
+
+  *edg_GID = NULL;
+  *vtx_GID = NULL;
+  *row_ptr = NULL;
+  *num_lists = *num_pins = 0;
+
+  if (!zz->Get_HG_Size_CS || !zz->Get_HG_CS){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Hypergraph query functions undefined");
+    return ZOLTAN_FATAL;
+  }
+
+  /* Get size and type of compressed pin storage */
+
+  ierr = zz->Get_HG_Size_CS(zz->Get_HG_Size_CS_Data,
+                            &nl, &np, &format);
+
+  if ((format != ZOLTAN_COMPRESSED_ROWS)&&(format != ZOLTAN_COMPRESSED_COLS)){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+      "Invalid compression format returned in Get_HG_Size_CS");
+    return ZOLTAN_FATAL;
+  }
+
+  have_pins = ((nl > 0) && (np > 0));
+  row_storage = (format == ZOLTAN_COMPRESSED_ROWS);
+
+  /* Get the hypergraph pins in compressed storage format */
+
+  if (have_pins){
+    if (!row_storage){    /* compressed column storage */
+
+      vid = ZOLTAN_MALLOC_GID_ARRAY(zz, nl);
+      cptr = (int *)ZOLTAN_MALLOC(nl * sizeof(int));
+      eid = ZOLTAN_MALLOC_GID_ARRAY(zz, np);
+
+      if (!vid|| !cptr || !eid){
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &vid, &cptr, &eid);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "memory allocation");
+        return ZOLTAN_FATAL;
+      }
+      ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
+               nl, np, format, vid, cptr, eid);
+
+      if ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)){
+        ierr = convert_to_CRS(zz,
+                     np,    /* number of pins doesn't change */
+                     cptr,
+                     &nl,     /* replace with number of rows */
+                     &vid,    /* replace with pins           */
+                     &rptr,   /* index into start of each row in vid */
+                     &eid);   /* replace with row (edge) GIDs */
+
+      }
+
+      ZOLTAN_FREE(&cptr);
+    }
+    else{               /* compressed row storage */
+
+      eid = ZOLTAN_MALLOC_GID_ARRAY(zz, nl);
+      rptr = (int *)ZOLTAN_MALLOC(nl * sizeof(int));
+      vid = ZOLTAN_MALLOC_GID_ARRAY(zz, np);
+
+      if (!vid || !rptr || !eid){
+        Zoltan_Multifree(__FILE__, __LINE__, 3, &vid, &rptr, &eid);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "memory allocation");
+        return ZOLTAN_FATAL;
+      }
+
+      ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
+                 nl, np, format, eid, rptr, vid);
+    }
+
+    *edg_GID = eid;
+    *vtx_GID = vid;
+    *row_ptr = rptr;
+    *num_lists = nl;
+    *num_pins = np;
+  }
 
   return ierr;
 }
