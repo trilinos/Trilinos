@@ -428,6 +428,7 @@ PHGPartParams *temphgp = NULL;
     ew_gids = NULL;
     ew_lids = NULL;
     ew_weights = NULL;
+    ew_num_edges = 0;
     ew_ht = NULL;
     new_hgraph_callbacks = 1;
 
