@@ -47,11 +47,6 @@ import unittest
 
 ####################################################################
 
-# Swahili support
-haveSwahili = "Newp_Jambo" in dir(Triutils)
-
-####################################################################
-
 class TriutilsTestCase(unittest.TestCase):
     "TestCase class for Triutils module"
 
@@ -68,41 +63,6 @@ class TriutilsTestCase(unittest.TestCase):
         front   = "Triutils Version "
         version = Triutils.Triutils_Version()
         self.assertEquals(version[:len(front)], front)
-
-    def testHelloConstructor(self):
-        "Test Triutils Hello constructor"
-        hello = Triutils.Newp_Hello(self.comm)
-        # No assert here; just executing without an exception is enough
-
-    def testHelloPrint(self):
-        "Test Triutils Hello print operator"
-        hello = Triutils.Newp_Hello(self.comm)
-        if self.comm.MyPID() == 0:
-            result = "This will print out one line for each of the " + \
-                     str(self.comm.NumProc()) + " processes \n\n"
-        else:
-            result = ""
-        result += "Hello.  I am process %d" % self.comm.MyPID()
-        string = hello.__str__()
-        self.assertEquals(string, result)
-
-    if haveSwahili:
-        def testJamboConstructor(self):
-            "Test Triutils Jambo constructor"
-            jambo = Triutils.Newp_Jambo(self.comm)
-            # No assert here; just executing without an exception is enough
-
-        def testJamboPrint(self):
-            "Test Triutils Jambo print operator"
-            jambo = Triutils.Newp_Jambo(self.comm)
-            if self.comm.MyPID() == 0:
-                result = "This will print out one line for each of the " + \
-                         str(self.comm.NumProc()) + " processes \n\n"
-            else:
-                result = ""
-            result += "Jambo.  I am process %d" % self.comm.MyPID()
-            string = jambo.__str__()
-            self.assertEquals(string, result)
 
 ####################################################################
 
