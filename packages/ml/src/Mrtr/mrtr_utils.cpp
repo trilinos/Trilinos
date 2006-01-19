@@ -580,10 +580,11 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   int err = EpetraExt::MatrixMatrix::Multiply(A,transA,B,transB,*C);
   if (err) cout << "MOERTEL: EpetraExt::MatrixMatrix::Multiply returned err = " << err << endl;
 
-  C->OptimizeStorage();
-
   if (outlevel>9 && A.Comm().MyPID()==0)
+  {
     cout << "MOERTEL (Proc 0): Time for matrix-matrix product " << time.ElapsedTime() << " sec\n";
+    fflush(stdout);
+  }
 
   return C;
 }

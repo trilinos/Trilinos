@@ -706,7 +706,7 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   Teuchos::ParameterList& aztecparams = params.sublist("Aztec");
   aztecparams.set("AZ_solver","AZ_cg");
   aztecparams.set("AZ_precond","AZ_user_precond");
-  aztecparams.set("AZ_max_iter",500);
+  aztecparams.set("AZ_max_iter",1200);
   aztecparams.set("AZ_output",100);
   aztecparams.set("AZ_tol",1.0e-08);
   aztecparams.set("AZ_scaling","AZ_none");
@@ -718,12 +718,12 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   mlparams.set("print unused",1/*-2*/);
   mlparams.set("increasing or decreasing","increasing");
   mlparams.set("PDE equations",3);
-  mlparams.set("max levels",5);
+  mlparams.set("max levels",10);
   mlparams.set("aggregation: type","Uncoupled");
-  mlparams.set("coarse: max size",128);
+  mlparams.set("coarse: max size",4000);
   mlparams.set("coarse: type","Amesos-KLU");
-  mlparams.set("smoother: type","MLS");
-  mlparams.set("smoother: MLS polynomial order",3);
+  mlparams.set("smoother: type","symmetric Gauss-Seidel"); /* MLS symmetric Gauss-Seidel */
+  mlparams.set("smoother: MLS polynomial order",1);
   mlparams.set("smoother: sweeps",1);
   mlparams.set("smoother: pre or post","both");
   mlparams.set("null space: type","pre-computed");

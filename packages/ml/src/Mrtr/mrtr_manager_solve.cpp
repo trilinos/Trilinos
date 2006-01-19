@@ -525,12 +525,10 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   
   //--------------------------------------------------------------------------
   // 7) Build BWTmIAWBT = BWTmI * A * W * B^T
-  Epetra_CrsMatrix* AW   = MOERTEL::MatMatMult(*inputmatrix_,false,*WT,true,OutLevel()); 
-  Epetra_CrsMatrix* AWBT = MOERTEL::MatMatMult(*AW,false,*B,true,OutLevel()); 
-  delete AW; AW = NULL;
-  Epetra_CrsMatrix* BWTmIAWBT = MOERTEL::MatMatMult(*BWTmI,false,*AWBT,false,OutLevel());
-  delete AWBT; AWBT = NULL;
-  delete BWTmI; BWTmI = NULL;
+  Epetra_CrsMatrix* BWTmIA = MOERTEL::MatMatMult(*BWTmI,false,*inputmatrix_,false,OutLevel());
+  Epetra_CrsMatrix* WBT    = MOERTEL::MatMatMult(*WT,true,*B,true,OutLevel());
+  Epetra_CrsMatrix* BWTmIAWBT = MOERTEL::MatMatMult(*BWTmIA,false,*WBT,false,OutLevel());
+  delete BWTmIA; BWTmIA = NULL;
   
   //--------------------------------------------------------------------------
   // 8) Allocate spdmatrix_ and add A and BWTmIAWBT
@@ -540,8 +538,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   MOERTEL::MatrixMatrixAdd(*inputmatrix_,false,1.0,*spdmatrix_,1.0);
   
   //--------------------------------------------------------------------------
-  // 9) Build WBT = WT^T * B^T
-  Epetra_CrsMatrix* WBT = MOERTEL::MatMatMult(*WT,true,*B,true,OutLevel()); 
+  // 9) Build WBTmI = WT^T * B^T - I
   Epetra_CrsMatrix* WBTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
   MOERTEL::MatrixMatrixAdd(*I,false,1.0,*WBTmI,0.0);
   MOERTEL::MatrixMatrixAdd(*WBT,false,1.0,*WBTmI,1.0);
