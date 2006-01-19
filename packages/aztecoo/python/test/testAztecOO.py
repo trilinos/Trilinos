@@ -47,11 +47,6 @@ import unittest
 
 ####################################################################
 
-# Swahili support
-haveSwahili = "Newp_Jambo" in dir(AztecOO)
-
-####################################################################
-
 class AztecOOTestCase(unittest.TestCase):
     "TestCase class for AztecOO module"
 
@@ -68,41 +63,6 @@ class AztecOOTestCase(unittest.TestCase):
         front   = "AztecOO Version "
         version = AztecOO.AztecOO_Version()
         self.assertEquals(version[:len(front)], front)
-
-    def testHelloConstructor(self):
-        "Test AztecOO Hello constructor"
-        hello = AztecOO.Newp_Hello(self.comm)
-        # No assert here; just executing without an exception is enough
-
-    def testHelloPrint(self):
-        "Test AztecOO Hello print operator"
-        hello = AztecOO.Newp_Hello(self.comm)
-        if self.comm.MyPID() == 0:
-            result = "This will print out one line for each of the " + \
-                     str(self.comm.NumProc()) + " processes \n\n"
-        else:
-            result = ""
-        result += "Hello.  I am process %d" % self.comm.MyPID()
-        string = hello.__str__()
-        self.assertEquals(string, result)
-
-    if haveSwahili:
-        def testJamboConstructor(self):
-            "Test AztecOO Jambo constructor"
-            jambo = AztecOO.Newp_Jambo(self.comm)
-            # No assert here; just executing without an exception is enough
-
-        def testJamboPrint(self):
-            "Test AztecOO Jambo print operator"
-            jambo = AztecOO.Newp_Jambo(self.comm)
-            if self.comm.MyPID() == 0:
-                result = "This will print out one line for each of the " + \
-                         str(self.comm.NumProc()) + " processes \n\n"
-            else:
-                result = ""
-            result += "Jambo.  I am process %d" % self.comm.MyPID()
-            string = jambo.__str__()
-            self.assertEquals(string, result)
 
 ####################################################################
 
