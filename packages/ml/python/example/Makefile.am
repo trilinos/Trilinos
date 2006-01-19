@@ -66,5 +66,4 @@ all: $(EXAMPLE_SUITE)
 ex%: $(srcdir)/ex%.py 
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then cp $(srcdir)/$@.py . ; fi
 
-# Clean target
-CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.py
+CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
