@@ -45,11 +45,7 @@ SETPATH = setpath.py
 all: $(TEST_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-# Run the test script
-test%: $(srcdir)/test%.py
+test%:
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-# Clean target
-clean:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
-	/bin/rm -f *.pyc
+CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc

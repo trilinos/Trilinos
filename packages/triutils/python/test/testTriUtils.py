@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#         PyTrilinos.TriUtils: Python Interface to TriUtils
+#         PyTrilinos.Triutils: Python Interface to Triutils
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -38,22 +38,22 @@ import sys
 
 try:
     import setpath
-    import Epetra, TriUtils
+    import Epetra, Triutils
 except ImportError:
-    from PyTrilinos import Epetra, TriUtils
-    print >>sys.stderr, "Using system-installed Epetra, TriUtils"
+    from PyTrilinos import Epetra, Triutils
+    print >>sys.stderr, "Using system-installed Epetra, Triutils"
 
 import unittest
 
 ####################################################################
 
 # Swahili support
-haveSwahili = "Newp_Jambo" in dir(TriUtils)
+haveSwahili = "Newp_Jambo" in dir(Triutils)
 
 ####################################################################
 
-class TriUtilsTestCase(unittest.TestCase):
-    "TestCase class for TriUtils module"
+class TriutilsTestCase(unittest.TestCase):
+    "TestCase class for Triutils module"
 
     def setUp(self):
         self.comm = Epetra.PyComm()
@@ -64,19 +64,19 @@ class TriUtilsTestCase(unittest.TestCase):
         self.comm.Barrier()
 
     def testVersion(self):
-        "Test TriUtils TriUtils_Version function"
-        front   = "TriUtils Version "
-        version = TriUtils.TriUtils_Version()
+        "Test Triutils Triutils_Version function"
+        front   = "Triutils Version "
+        version = Triutils.Triutils_Version()
         self.assertEquals(version[:len(front)], front)
 
     def testHelloConstructor(self):
-        "Test TriUtils Hello constructor"
-        hello = TriUtils.Newp_Hello(self.comm)
+        "Test Triutils Hello constructor"
+        hello = Triutils.Newp_Hello(self.comm)
         # No assert here; just executing without an exception is enough
 
     def testHelloPrint(self):
-        "Test TriUtils Hello print operator"
-        hello = TriUtils.Newp_Hello(self.comm)
+        "Test Triutils Hello print operator"
+        hello = Triutils.Newp_Hello(self.comm)
         if self.comm.MyPID() == 0:
             result = "This will print out one line for each of the " + \
                      str(self.comm.NumProc()) + " processes \n\n"
@@ -88,13 +88,13 @@ class TriUtilsTestCase(unittest.TestCase):
 
     if haveSwahili:
         def testJamboConstructor(self):
-            "Test TriUtils Jambo constructor"
-            jambo = TriUtils.Newp_Jambo(self.comm)
+            "Test Triutils Jambo constructor"
+            jambo = Triutils.Newp_Jambo(self.comm)
             # No assert here; just executing without an exception is enough
 
         def testJamboPrint(self):
-            "Test TriUtils Jambo print operator"
-            jambo = TriUtils.Newp_Jambo(self.comm)
+            "Test Triutils Jambo print operator"
+            jambo = Triutils.Newp_Jambo(self.comm)
             if self.comm.MyPID() == 0:
                 result = "This will print out one line for each of the " + \
                          str(self.comm.NumProc()) + " processes \n\n"
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(TriUtilsTestCase))
+    suite.addTest(unittest.makeSuite(TriutilsTestCase))
 
     # Create a communicator
     comm    = Epetra.PyComm()
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
-       "\n*******************\nTesting TriUtils\n*******************\n"
+       "\n*******************\nTesting Triutils\n*******************\n"
     verbosity = 2 * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
