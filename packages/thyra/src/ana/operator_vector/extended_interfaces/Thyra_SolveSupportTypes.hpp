@@ -195,6 +195,18 @@ struct SolveStatus {
     }
 };
 
+/** \brief Print the solve status to a stream */
+template <class Scalar>
+std::ostream& operator<<( std::ostream& out, const SolveStatus<Scalar> &solveStatus )
+{
+  out
+    << "solveStatus = " << toString(solveStatus.solveStatus) << std::endl
+    << "achievedTol = " << SolveStatus<Scalar>::achievedTolToString(solveStatus.achievedTol) << std::endl
+    << "iterations  = " << solveStatus.iterations << std::endl
+    << "message     = \"" << solveStatus.message << "\"" << std::endl;
+  return out;
+}
+
 /** \brief Enum defining the status of a preconditioner object.
  *
  * \ingroup Equation_solve_foundation_code_grp
