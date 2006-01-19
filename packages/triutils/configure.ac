@@ -319,6 +319,8 @@ AC_CONFIG_FILES([
                 python/src/TRILINOS_HOME_DIR
                 python/src/__init__.py
                 python/src/.deps/dummy
+		python/test/Makefile
+		python/example/Makefile
                 ])
 
 AC_OUTPUT()

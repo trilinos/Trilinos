@@ -27,13 +27,25 @@
 # @HEADER
 
 ## #######################################################################
-## Subdirectories to be make'd recursively
+## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
+EXTRA_DIST = \
+	setpath.py
 
-if BUILD_TESTS
-TEST_SUBDIR=test
-endif
+## #######################################################################
+## Files to be deleted by 'make maintainer-clean'
+## #######################################################################
+MAINTAINERCLEANFILES = Makefile.in
 
-EXAMPLE_SUBDIR=example
+# Define the suite of examples
+EXAMPLE_SUITE = 
 
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SETPATH = setpath.py
+
+all: $(EXAMPLE_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+
+ex%:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+
+CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
