@@ -47,11 +47,6 @@ import unittest
 
 ####################################################################
 
-# Swahili support
-haveSwahili = "Newp_Jambo" in dir(Amesos)
-
-####################################################################
-
 class AmesosTestCase(unittest.TestCase):
     "TestCase class for Amesos module"
 
@@ -62,47 +57,6 @@ class AmesosTestCase(unittest.TestCase):
     def tearDown(self):
         # This will help tame the printing
         self.comm.Barrier()
-
-    def testVersion(self):
-        "Test Amesos Amesos_Version function"
-        front   = "Amesos Version "
-        version = Amesos.Amesos_Version()
-        self.assertEquals(version[:len(front)], front)
-
-    def testHelloConstructor(self):
-        "Test Amesos Hello constructor"
-        hello = Amesos.Newp_Hello(self.comm)
-        # No assert here; just executing without an exception is enough
-
-    def testHelloPrint(self):
-        "Test Amesos Hello print operator"
-        hello = Amesos.Newp_Hello(self.comm)
-        if self.comm.MyPID() == 0:
-            result = "This will print out one line for each of the " + \
-                     str(self.comm.NumProc()) + " processes \n\n"
-        else:
-            result = ""
-        result += "Hello.  I am process %d" % self.comm.MyPID()
-        string = hello.__str__()
-        self.assertEquals(string, result)
-
-    if haveSwahili:
-        def testJamboConstructor(self):
-            "Test Amesos Jambo constructor"
-            jambo = Amesos.Newp_Jambo(self.comm)
-            # No assert here; just executing without an exception is enough
-
-        def testJamboPrint(self):
-            "Test Amesos Jambo print operator"
-            jambo = Amesos.Newp_Jambo(self.comm)
-            if self.comm.MyPID() == 0:
-                result = "This will print out one line for each of the " + \
-                         str(self.comm.NumProc()) + " processes \n\n"
-            else:
-                result = ""
-            result += "Jambo.  I am process %d" % self.comm.MyPID()
-            string = jambo.__str__()
-            self.assertEquals(string, result)
 
 ####################################################################
 
