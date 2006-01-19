@@ -171,7 +171,7 @@ SolveStatus<Scalar> NewtonNonlinearSolver<Scalar>::solve(
     solveStatus.message = "CVODE status test failed!";
   }
   //
-  return SolveStatus<Scalar>();
+  return solveStatus;
 }
 
 } // namespace Thyra
