@@ -53,19 +53,16 @@ MAINTAINERCLEANFILES = Makefile.in
 # Define the suite of examples
 EXAMPLE_SUITE = 
 
-SETPATH_PY = setpath.py
+SETPATH = setpath.py
 
 if BUILD_NOX_PYTHON
 if BUILD_LAPACK_EXAMPLES
 all: $(EXAMPLE_SUITE)
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-# Run the example script
-ex%: $(srcdir)/ex%.py
+ex%:
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-clean:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm *.py ; fi
-	/bin/rm -f *.pyc
+CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
 endif
 endif
