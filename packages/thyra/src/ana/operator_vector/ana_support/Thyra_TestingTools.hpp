@@ -149,7 +149,7 @@ bool Thyra::testMaxErr(
 template<class Scalar>
 std::ostream& Thyra::operator<<( std::ostream& o, const VectorBase<Scalar>& v )
 {
-  return o << describe(v,Teuchos::VERB_HIGH);
+  return o << describe(v,Teuchos::VERB_EXTREME);
 }
 
 template<class Scalar>
