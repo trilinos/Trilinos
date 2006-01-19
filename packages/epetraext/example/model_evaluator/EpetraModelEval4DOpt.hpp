@@ -7,7 +7,9 @@
 #include "Epetra_Comm.h"
 #include "Epetra_CrsGraph.h"
 
-/** \brief 
+/** \brief An upgrade of <tt>EpetraModelEval2DSim</tt> that add the ability to
+ * manipulate the parameters, adds a response function and includes first
+ * derivatives.
  *
  * ToDo: Finish Documentation!
  */

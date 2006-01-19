@@ -30,10 +30,10 @@ EpetraModelEval4DOpt::EpetraModelEval4DOpt(
 	epetra_comm_ = rcp(new Epetra_SerialComm());
 #endif
 
-  const int ny = 2, nu = 2, ng = 1;
+  const int nx = 2, np = 2, ng = 1;
 
-  map_x_ = rcp(new Epetra_Map(ny,0,*epetra_comm_));
-  map_p_ = rcp(new Epetra_Map(nu,0,*epetra_comm_));
+  map_x_ = rcp(new Epetra_Map(nx,0,*epetra_comm_));
+  map_p_ = rcp(new Epetra_Map(np,0,*epetra_comm_));
   map_g_ = rcp(new Epetra_Map(ng,0,*epetra_comm_));
 
   //const double inf = infiniteBound();
@@ -49,11 +49,11 @@ EpetraModelEval4DOpt::EpetraModelEval4DOpt(
   gU_ = rcp(new Epetra_Vector(*map_g_));  gU_->PutScalar(+inf);
 
   // Initialize the graph for W CrsMatrix object
-  W_graph_ = rcp(new Epetra_CrsGraph(::Copy,*map_x_,ny));
+  W_graph_ = rcp(new Epetra_CrsGraph(::Copy,*map_x_,nx));
   {
-    int indices[ny] = { 0, 1 };
-    for( int i = 0; i < ny; ++i )
-      W_graph_->InsertGlobalIndices(i,ny,indices);
+    int indices[nx] = { 0, 1 };
+    for( int i = 0; i < nx; ++i )
+      W_graph_->InsertGlobalIndices(i,nx,indices);
   }
   W_graph_->FillComplete();
 
@@ -141,7 +141,6 @@ EpetraModelEval4DOpt::createInArgs() const
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(1);
   inArgs.setSupports(IN_ARG_x,true);
-  inArgs.setSupports(IN_ARG_alpha,true);
   inArgs.setSupports(IN_ARG_beta,true);
   return inArgs;
 }
