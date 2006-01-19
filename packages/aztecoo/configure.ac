@@ -415,6 +415,7 @@ AC_CONFIG_FILES([
     python/src/__init__.py
     python/src/.deps/dummy
     python/example/Makefile
+    python/test/Makefile
     thyra/Makefile
     thyra/src/Makefile
     thyra/example/Makefile

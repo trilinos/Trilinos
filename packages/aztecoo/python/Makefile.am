@@ -30,8 +30,12 @@
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
+if BUILD_TESTS
+TEST_SUBDIR=test
+endif
+
 if BUILD_EXAMPLES
 EXAMPLE_SUBDIR=example
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
