@@ -314,7 +314,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of tests
 TEST_SUITE = 
-SETPATH_PY = setpath.py
+SETPATH = setpath.py
+@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc
 all: all-am
 
 .SUFFIXES:
@@ -403,6 +404,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-rm -f $(CONFIG_CLEAN_FILES)
@@ -411,9 +413,7 @@ maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
-@BUILD_LAPACK_TESTS_FALSE@clean: clean-am
-
-@BUILD_NOX_PYTHON_FALSE@clean: clean-am
+clean: clean-am
 
 clean-am: clean-generic mostlyclean-am
 
@@ -470,15 +470,10 @@ uninstall-am: uninstall-info-am
 
 
 @BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@all: $(TEST_SUITE)
-@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
+@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-# Run the example script
-@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@test%: $(srcdir)/test%.py
+@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@test%:
 @BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
-
-@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@clean:
-@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
-@BUILD_LAPACK_TESTS_TRUE@@BUILD_NOX_PYTHON_TRUE@	/bin/rm -f *.pyc
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

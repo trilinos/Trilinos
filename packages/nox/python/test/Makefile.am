@@ -61,12 +61,9 @@ if BUILD_NOX_TESTS
 all: $(TEST_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH_PY) . ; fi
 
-# Run the example script
-test%: $(srcdir)/test%.py
+test%:
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-clean:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
-	/bin/rm -f *.pyc
+CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc
 endif
 endif
