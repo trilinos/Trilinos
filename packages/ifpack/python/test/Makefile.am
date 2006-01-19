@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 # 
-#              PyTrilinos.IFPACK: Python Interface to IFPACK
+#         PyTrilinos.IFPACK: Python Interface to IFPACK
 #                   Copyright (2005) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -27,15 +27,25 @@
 # @HEADER
 
 ## #######################################################################
-## Subdirectories to be make'd recursively
+## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
+EXTRA_DIST = \
+	setpath.py testIFPACK.py
 
-if BUILD_TESTS
-TEST_SUBDIR=test
-endif
+## #######################################################################
+## Files to be deleted by 'make maintainer-clean'
+## #######################################################################
+MAINTAINERCLEANFILES = Makefile.in
 
-if BUILD_EXAMPLES
-EXAMPLE_SUBDIR=example
-endif
+# Define the suite of tests
+TEST_SUITE = testIFPACK
 
-SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
+SETPATH = setpath.py
+
+all: $(TEST_SUITE)
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
+
+test%:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
+
+CLEANFILES = $(TEST_SUITE:=.py) $(SETPATH) *.pyc

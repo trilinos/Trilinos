@@ -78,6 +78,7 @@ Finally, the following functions are avaiable in the IFPACK module:
 
 // Amesos includes
 #include "Ifpack.h"
+#include "Ifpack_Version.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_IC.h"
@@ -95,8 +96,10 @@ Finally, the following functions are avaiable in the IFPACK module:
 %feature("autodoc", "1");
 
 %ignore operator<<(ostream &, const Ifpack_Preconditioner &);// From python, use __str__
+%ignore Epetra_Version();
 
 %rename(Factory               ) Ifpack;
+%rename(Version               ) Ifpack_Version;
 %rename(Preconditioner        ) Ifpack_Preconditioner;
 %rename(IC                    ) Ifpack_IC;
 %rename(ICT                   ) Ifpack_ICT;
@@ -135,6 +138,7 @@ using namespace std;
 
 // IFPACK interface includes
 %include "Ifpack.h"
+%include "Ifpack_Version.h"
 %include "Ifpack_Utils.h"
 %include "Ifpack_Preconditioner.h"
 %include "Ifpack_IC.h"
@@ -157,3 +161,6 @@ using namespace std;
   }
 }
 
+%pythoncode %{
+__version__ = Version().split()[2]
+%}
