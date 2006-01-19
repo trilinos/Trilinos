@@ -44,13 +44,10 @@ SETPATH = setpath.py
 all: $(EXAMPLE_SUITE)
 	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$(SETPATH) . ; fi
 
-exGaleri: $(srcdir)/exGaleri.py
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/exGaleri.py . ; fi
+ex%:
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/$@.py . ; fi
 
-exReadHB: $(srcdir)/exReadHB.py
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $(srcdir)/exReadHB.py $(srcdir)/gre__115.rua . ; fi
+exReadHB: $(srcdir)/exReadHB.py $(srcdir)/gre__115.rua
+	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/cp $^ . ; fi
 
-# Clean target
-clean:
-	if [ $(top_srcdir) != @abs_top_builddir@ ]; then /bin/rm -f *.py ; fi
-	/bin/rm -f *.pyc
+CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
