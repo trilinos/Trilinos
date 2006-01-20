@@ -540,67 +540,82 @@ ZOLTAN_ID_PTR gid;
      * that all local objects be included in the export list.
      */
 
-    all_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &error);
+    if (*num_export_objs == 0){
+      /* all local objects are remaining on processor */
+       
+      Zoltan_Get_Obj_List(zz, num_export_objs, 
+               export_global_ids, export_local_ids,
+               0, &fdummy, export_to_part);
 
-    if (all_num_obj > *num_export_objs){
+      *export_procs = (int *)ZOLTAN_MALLOC(*num_export_objs * sizeof(int));
 
-      /* Create a lookup table for exported IDs */
-
-      if (*num_export_objs > 16){
-        ts = (*num_export_objs) / 4;   /* what's a good table size? */
+      for (i=0; i<*num_export_objs; i++){
+        (*export_procs)[i] = zz->Proc;
       }
-      else{
-        ts = *num_export_objs;
-      }
+    }
+    else{
+      all_num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &error);
 
-      ht = create_hash_table(zz, *export_global_ids, *num_export_objs, ts);
-
-      /* Create a list of all gids, lids and partitions */
-
-      error= Zoltan_Get_Obj_List(zz, &all_num_obj, 
-               &all_global_ids, &all_local_ids,
-               0, &fdummy, &parts);
-
-      if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)){
-        sprintf(msg, "Error building complete export list; "
-                     "%d returned by Zoltan_Get_Obj_List\n", error);
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return error;
-      }
-
-      export_all_procs = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
-      export_all_to_part = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
-
-      gid = all_global_ids;
-
-      for (i=0; i < all_num_obj; i++, gid += zz->Num_GID){
-
-        idIdx = search_hash_table(zz, gid, ht, ts);
-
-        if (idIdx >= 0){
-          export_all_procs[i] = (*export_procs)[idIdx];
-          export_all_to_part[i] = (*export_to_part)[idIdx];
+      if (*num_export_objs < all_num_obj){
+  
+        /* Create a lookup table for exported IDs */
+  
+        if (*num_export_objs > 16){   /* could be 0, maybe only importing */
+          ts = (*num_export_objs) / 4;   /* what's a good table size? */
         }
         else{
-          export_all_procs[i] = zz->Proc;
-          export_all_to_part[i] = parts[i];
+          ts = *num_export_objs;
         }
+  
+        ht = create_hash_table(zz, *export_global_ids, *num_export_objs, ts);
+  
+        /* Create a list of all gids, lids and partitions */
+  
+        error= Zoltan_Get_Obj_List(zz, &all_num_obj, 
+                 &all_global_ids, &all_local_ids,
+                 0, &fdummy, &parts);
+  
+        if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)){
+          sprintf(msg, "Error building complete export list; "
+                       "%d returned by Zoltan_Get_Obj_List\n", error);
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+          ZOLTAN_TRACE_EXIT(zz, yo);
+          return error;
+        }
+  
+        export_all_procs = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
+        export_all_to_part = (int *)ZOLTAN_MALLOC(all_num_obj * sizeof(int));
+  
+        gid = all_global_ids;
+  
+        for (i=0; i < all_num_obj; i++, gid += zz->Num_GID){
+  
+          idIdx = search_hash_table(zz, gid, ht, ts);
+  
+          if (idIdx >= 0){
+            export_all_procs[i] = (*export_procs)[idIdx];
+            export_all_to_part[i] = (*export_to_part)[idIdx];
+          }
+          else{
+            export_all_procs[i] = zz->Proc;
+            export_all_to_part[i] = parts[i];
+          }
+        }
+  
+        free_hash_table(ht, ts);
+  
+        ZOLTAN_FREE(export_global_ids); 
+        ZOLTAN_FREE(export_local_ids); 
+        ZOLTAN_FREE(export_procs);
+        ZOLTAN_FREE(export_to_part);
+        ZOLTAN_FREE(&parts);
+  
+        *export_global_ids = all_global_ids;
+        *export_local_ids = all_local_ids;
+        *export_procs = export_all_procs;
+        *export_to_part = export_all_to_part;
+        *num_export_objs = all_num_obj;
       }
-
-      free_hash_table(ht, ts);
-
-      ZOLTAN_FREE(export_global_ids); 
-      ZOLTAN_FREE(export_local_ids); 
-      ZOLTAN_FREE(export_procs);
-      ZOLTAN_FREE(export_to_part);
-      ZOLTAN_FREE(&parts);
-
-      *export_global_ids = all_global_ids;
-      *export_local_ids = all_local_ids;
-      *export_procs = export_all_procs;
-      *export_to_part = export_all_to_part;
-      *num_export_objs = all_num_obj;
     }
   }
 
