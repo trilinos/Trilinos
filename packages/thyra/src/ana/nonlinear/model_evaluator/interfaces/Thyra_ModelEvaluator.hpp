@@ -1074,6 +1074,26 @@ void eval_f_W(
 
 }
 
+/** \brief Evaluate <tt>f(x,t)</tt>. */
+template<class Scalar>
+inline 
+void eval_f(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const VectorBase<Scalar>                                       &x
+  ,const Scalar                                                   &t
+  ,VectorBase<Scalar>                                             *f
+  )
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+  inArgs.set_x(Teuchos::rcp(&x,false));
+  if(inArgs.supports(MEB::IN_ARG_t)) inArgs.set_t(t);
+  outArgs.set_f(Teuchos::rcp(f,false));
+  model.evalModel(inArgs,outArgs);
+}
+
+
 /** \brief Evaluate <tt>f(x_dot,x,t)</tt>. */
 template<class Scalar>
 inline 
