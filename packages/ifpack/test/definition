@@ -26,6 +26,12 @@
     COMM = SERIAL, MPI(1-4);
 }
 
+(FRAMEWORK, INSTALL, IFPACKPyTests) {
+    DIRS = ../python/test;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI(1-4);
+}
+
 (FRAMEWORK, INSTALL, IFPACKPyExamples) {
     DIRS = ../python/example;
     COMM = SERIAL, MPI(1-4);

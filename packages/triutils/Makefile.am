@@ -82,6 +82,56 @@ all-libs:
 	cd src ; $(MAKE) all-libs
 
 ## #######################################################################
+## The below targets allow you to use the new
+## testharness to run the test suite as make targets
+## #######################################################################
+
+TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
+
+if HAVE_MPI
+TRIUTILS_CHECK_COMM=mpi
+else
+TRIUTILS_CHECK_COMM=serial
+endif
+
+run-pytests:
+	@echo
+	@echo "===================================="
+	@echo "Running the Python/Triutils tests..."
+	@echo "===================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(TRIUTILS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=TriutilsPyTests \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=triutils
+
+run-pyexamples:
+	@echo
+	@echo "======================================="
+	@echo "Running the Python/Triutils examples..."
+	@echo "======================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(TRIUTILS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=TriutilsPyExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=triutils
+
+## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################
 if USING_EXPORT_MAKEFILES

@@ -37,6 +37,12 @@
     COMM = SERIAL, MPI;
 }
 
+(FRAMEWORK, INSTALL, AztecOOPyTests) {
+    DIRS = ../python/test;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI(1-4);
+}
+
 (FRAMEWORK, INSTALL, AztecOOPyExamples) {
     DIRS = ../python/example;
     COMM = SERIAL, MPI(1-4);

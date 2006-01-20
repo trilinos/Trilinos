@@ -275,6 +275,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @PYTHON_USE_TRUE@PYTHON_SUBDIR = python
 SUBDIRS = src $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
+@HAVE_MPI_FALSE@TRIUTILS_CHECK_COMM = serial
+@HAVE_MPI_TRUE@TRIUTILS_CHECK_COMM = mpi
 all: all-recursive
 
 .SUFFIXES:
@@ -685,6 +689,42 @@ all-local:
 
 all-libs:
 	cd src ; $(MAKE) all-libs
+
+run-pytests:
+	@echo
+	@echo "===================================="
+	@echo "Running the Python/Triutils tests..."
+	@echo "===================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(TRIUTILS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=TriutilsPyTests \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=triutils
+
+run-pyexamples:
+	@echo
+	@echo "======================================="
+	@echo "Running the Python/Triutils examples..."
+	@echo "======================================="
+	@echo
+	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
+	@echo
+	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--comm=$(TRIUTILS_CHECK_COMM) \
+	--mpi-go="$(TRILINOS_MPI_GO)" \
+	--build-dir=$(TRILINOS_BUILD_DIR) \
+	--category=TriutilsPyExamples \
+	--output-dir=@abs_top_builddir@/test/runtests-results \
+	--verbosity=1 \
+	--packages=triutils
 
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.triutils $(exec_prefix)/include/.
