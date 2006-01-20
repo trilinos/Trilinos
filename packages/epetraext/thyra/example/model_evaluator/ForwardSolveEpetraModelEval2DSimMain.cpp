@@ -2,7 +2,6 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_DampenedNewtonNonlinearSolver.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
@@ -13,8 +12,6 @@ int main( int argc, char* argv[] )
 	using Teuchos::CommandLineProcessor;
   typedef Teuchos::RefCountPtr<Thyra::VectorBase<double> > VectorPtr;
 
-  Teuchos::GlobalMPISession  mpiSession(&argc,&argv);
-
   bool success = true;
 
 	try {
@@ -22,6 +19,27 @@ int main( int argc, char* argv[] )
 		//
 		// Get options from the command line
 		//
+
+		CommandLineProcessor  clp(false); // Don't throw exceptions
+
+    clp.setDocString(
+      "This example program solves a simple 2 x 2 set of nonlinear equations using a simple\n"
+      "dampened Newton method.\n\n"
+
+      "The equations that are solved are:\n\n"
+
+      "  f[0] =       x[0]      + x[1]*x[1] - p[0];\n"
+      "  f[1] = d * ( x[0]*x[0] - x[1]      - p[1] );\n\n"
+
+      "The Jacobian for these equations is nonsingular for every point except x=(-0.5,0.5)\n"
+      "and x=(0.5,-0.5)  You can cause the Jacobian to be singular at the solution by setting\n"
+      "p[0]=x[0]+x[1]*x[1] and p[1] = x[0]*x[0]-x[1] for these values of x.\n\n"
+
+      "The equations are solved using a simple dampended Newton method that uses a Armijo\n"
+      "line search which is implemented in the general class Thyra::DampenedNewtonNonlinearsolver\n"
+      "You can get different levels of detail about the Newton method by adjustingthe command-line\n"
+      "option \"verb-level\" (see above)\n"
+      );
 		
 		double       d           = 10.0;
     double       p0          = 2.0;
@@ -43,18 +61,18 @@ int main( int argc, char* argv[] )
     bool showSetInvalidArg = false;
     bool showGetInvalidArg = false;
 
-		CommandLineProcessor  clp(false); // Don't throw exceptions
-
-		clp.setOption( "d", &d );
-		clp.setOption( "p0", &p0 );
-		clp.setOption( "p1", &p1 );
-		clp.setOption( "x00", &x00 );
-		clp.setOption( "x01", &x01 );
-    clp.setOption( "verb-level", &verbLevel, numVerbLevels, verbLevelValues, verbLevelNames );
+		clp.setOption( "d", &d, "Model constant d" );
+		clp.setOption( "p0", &p0, "Model constant p[0]" );
+		clp.setOption( "p1", &p1, "Model constant p[1]" );
+		clp.setOption( "x00", &x00, "Initial guess for x[0]" );
+		clp.setOption( "x01", &x01, "Initial guess for x[1]" );
+    clp.setOption( "verb-level", &verbLevel, numVerbLevels, verbLevelValues, verbLevelNames, "Verbosity level" );
     clp.setOption( "tol", &tol, "Nonlinear solve tolerance" );
     clp.setOption( "max-iters", &maxIters, "Maximum number of nonlinear iterations" );
-    clp.setOption( "show-set-invalid-arg", "no-show-set-invalid-arg", &showSetInvalidArg );
-    clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg );
+    clp.setOption( "show-set-invalid-arg", "no-show-set-invalid-arg", &showSetInvalidArg
+                   ,"Determines if an attempt is made to set an invalid/unsupported ModelEvaluator input argument"  );
+    clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg
+                   ,"Determines if an attempt is made to get an invalid/unsupported ModelEvaluator output argument"  );
 	
 		CommandLineProcessor::EParseCommandLineReturn
 			parse_return = clp.parse(argc,argv,&std::cerr);
