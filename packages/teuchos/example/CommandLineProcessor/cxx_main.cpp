@@ -23,6 +23,11 @@ int main(int argc, char* argv[])
     
     // Creating an empty command line processor looks like:
     Teuchos::CommandLineProcessor My_CLP;
+
+    My_CLP.setDocString(
+      "This example program demonstrates how to use this Teuchos::CommandLineProcessor class\n"
+      "to get options from the command-line and print this help messange automatically.\n"
+      );
     
     /* To set and option, it must be given a name and default value.  Additionally,
        each option can be given a help string.  Although it is not necessary, a help

@@ -68,6 +68,11 @@ CommandLineProcessor::CommandLineProcessor(
 
 // Set up options
 
+void CommandLineProcessor::setDocString( const char doc_string[] )
+{
+  doc_string_ = doc_string;
+}
+
 void CommandLineProcessor::setOption(
 	const char     option_true[]
 	,const char    option_false[]
@@ -338,6 +343,9 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
 		}
 		out << ")\n";
 	}
+  if(doc_string_.length()) {
+    out << "\nDETAILED DOCUMENTATION:\n\n" << doc_string_ << std::endl;
+  }
 	if(throwExceptions_)
 		TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
 #ifdef HAVE_MPI

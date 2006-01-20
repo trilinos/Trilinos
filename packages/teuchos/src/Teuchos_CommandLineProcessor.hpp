@@ -68,8 +68,9 @@ public:
 		,PARSE_UNRECOGNIZED_OPTION     = -1 /*!< The command line parser encountered an unrecognized option. */
 	};
 
-	/** \brief . */
-	//@{ \name Constructors
+	/** \name Constructors */
+  //@{
+
 	/** \brief Default Constructor
 	 *
 	 * @param  throwExceptions
@@ -86,7 +87,11 @@ public:
 
 	//@}
 
-	//@{ \name Set up options
+	/** \name Set up options */
+  //@{
+  
+  /** \brief Set a documentation sting for the entire program printed when --help is specified. */
+  void setDocString( const char doc_string[] );
 
 	/** \brief Set a boolean option.
 	 *
@@ -388,6 +393,7 @@ private:
 
 	bool 				                     throwExceptions_;
 	bool				                     recogniseAllOptions_;
+  std::string                      doc_string_;
 	options_list_t                   options_list_;
 	options_documentation_list_t     options_documentation_list_;
 	enum_opt_data_list_t             enum_opt_data_list_;
