@@ -24,11 +24,7 @@ EpetraModelEval4DOpt::EpetraModelEval4DOpt(
 {
   using Teuchos::rcp;
 
-#ifdef HAVE_MPI
-	epetra_comm_ = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
 	epetra_comm_ = rcp(new Epetra_SerialComm());
-#endif
 
   const int nx = 2, np = 2, ng = 1;
 

@@ -15,11 +15,7 @@ EpetraModelEval2DSim::EpetraModelEval2DSim(
 {
   using Teuchos::rcp;
 
-#ifdef HAVE_MPI
-	epetra_comm_ = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-#else
 	epetra_comm_ = rcp(new Epetra_SerialComm());
-#endif
 
   const int nx = 2;
 
