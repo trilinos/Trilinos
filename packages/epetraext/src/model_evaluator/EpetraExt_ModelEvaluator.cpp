@@ -271,6 +271,11 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
 void ModelEvaluator::OutArgs::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
+    Np()==0, std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_l(l): *this = \'"<<modelEvalDescription_<<"\':  Error, "
+    "no auxiliary parameters subvectors p(l) are supported!!"
+    );
+  TEST_FOR_EXCEPTION(
     !( 1 <= l && l <= Np() ), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_l(l): "
     "*this = \'"<<modelEvalDescription_<<"\': Error, "
@@ -280,6 +285,11 @@ void ModelEvaluator::OutArgs::assert_l(int l) const
 
 void ModelEvaluator::OutArgs::assert_j(int j) const
 {
+  TEST_FOR_EXCEPTION(
+    Ng()==0, std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): *this = \'"<<modelEvalDescription_<<"\':  Error, "
+    "no auxiliary functions g(j) are supported!!"
+    );
   TEST_FOR_EXCEPTION(
     !( 1 <= j && j <= Ng() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): *this = \'"<<modelEvalDescription_<<"\':  Error, "

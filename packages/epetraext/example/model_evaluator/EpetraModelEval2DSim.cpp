@@ -9,8 +9,9 @@ EpetraModelEval2DSim::EpetraModelEval2DSim(
   ,const double        p1
   ,const double        x00
   ,const double        x01
+  ,const bool          showGetInvalidArg
   )
-  :d_(d)
+  :d_(d),showGetInvalidArg_(showGetInvalidArg)
 {
   using Teuchos::rcp;
 
@@ -104,8 +105,10 @@ void EpetraModelEval2DSim::evalModel( const InArgs& inArgs, const OutArgs& outAr
   // Get the output arguments
   //
   Teuchos::RefCountPtr<Epetra_Vector>       f_inout = outArgs.get_f();
-  //Teuchos::RefCountPtr<Epetra_Vector>       g_inout = outArgs.get_g(1);
   Teuchos::RefCountPtr<Epetra_Operator>     W_inout = outArgs.get_W();
+  if(showGetInvalidArg_) {
+    Teuchos::RefCountPtr<Epetra_Vector> g1_inout = outArgs.get_g(1);
+  }
   //
   // Compute the functions
   //

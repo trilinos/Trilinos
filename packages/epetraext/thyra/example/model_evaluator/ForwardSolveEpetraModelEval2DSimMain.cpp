@@ -40,6 +40,9 @@ int main( int argc, char* argv[] )
     double       tol         = 1e-10;
     int          maxIters    = 100;
 
+    bool showSetInvalidArg = false;
+    bool showGetInvalidArg = false;
+
 		CommandLineProcessor  clp(false); // Don't throw exceptions
 
 		clp.setOption( "d", &d );
@@ -50,6 +53,8 @@ int main( int argc, char* argv[] )
     clp.setOption( "verb-level", &verbLevel, numVerbLevels, verbLevelValues, verbLevelNames );
     clp.setOption( "tol", &tol, "Nonlinear solve tolerance" );
     clp.setOption( "max-iters", &maxIters, "Maximum number of nonlinear iterations" );
+    clp.setOption( "show-set-invalid-arg", "no-show-set-invalid-arg", &showSetInvalidArg );
+    clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg );
 	
 		CommandLineProcessor::EParseCommandLineReturn
 			parse_return = clp.parse(argc,argv,&std::cerr);
@@ -62,13 +67,19 @@ int main( int argc, char* argv[] )
 
     *out << "\nCreating the nonlinear equations object ...\n";
 		
-    EpetraModelEval2DSim epetraModel(d,p0,p1,x00,x01);
+    EpetraModelEval2DSim epetraModel(d,p0,p1,x00,x01,showGetInvalidArg);
 
     Thyra::EpetraModelEvaluator thyraModel; // Sets default options!
     thyraModel.initialize(
       Teuchos::rcp(&epetraModel,false)
       ,Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory())
       );
+
+    if( showSetInvalidArg ) {
+      *out << "\nAttempting to set an invalid input argument that throws an exception ...\n\n";
+      Thyra::ModelEvaluatorBase::InArgs<double> inArgs = thyraModel.createInArgs();
+      inArgs.set_x_dot(createMember(thyraModel.get_x_space()));
+    }
     
     *out << "\nCreating the nonlinear solver and solving the equations ...\n\n";
 

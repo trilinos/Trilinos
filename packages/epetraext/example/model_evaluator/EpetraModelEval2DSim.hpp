@@ -23,11 +23,12 @@ public:
 
   // Constructor
   EpetraModelEval2DSim(
-		const double         d           = 10.0
-		,const double        p0          = 2.0
-		,const double        p1          = 0.0
-		,const double        x00         = 1.0
-		,const double        x01         = 1.0
+		const double         d                   = 10.0
+		,const double        p0                  = 2.0
+		,const double        p1                  = 0.0
+		,const double        x00                 = 1.0
+		,const double        x01                 = 1.0
+    ,const bool          showGetInvalidArg   = false
     );
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
@@ -56,6 +57,8 @@ private:
   // Private member data
 
   double    d_;
+  bool      showGetInvalidArg_;
+
 
 	bool      isInitialized_;
 
