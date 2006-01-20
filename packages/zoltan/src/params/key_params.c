@@ -234,7 +234,7 @@ int  idx 			/* index of vector param, -1 if scalar */
           tmp = ZOLTAN_LB_EXPORT_LISTS;  /* export lists */
           status = 3;
         }
-        else if (strstr(result.sval, "PARTITION")==0) {
+        else if (strstr(result.sval, "PARTITION")!=NULL) {
           /* list of every object's process/partition assignment */
           tmp = ZOLTAN_LB_COMPLETE_EXPORT_LISTS; 
           status = 3;
