@@ -410,7 +410,7 @@ exit $exitStatus;
         close MACHINE_FILE;
         
         # Run runtests
-        if (!($skipTests || (defined $buildOptions{'BUILD-ONLY'} && $buildOptions{'BUILD-ONLY'} =~ m/"YES"/i))) {
+        if (!($skipTests || (defined $buildOptions{'BUILD-ONLY'} && $buildOptions{'BUILD-ONLY'} =~ m/YES/i))) {
             $cmd  = "perl runtests ";
             $cmd .= "--trilinos-dir=$trilinosDir ";
             $cmd .= "--build-dir=".$buildOptions{'BUILD-DIR'}." ";
