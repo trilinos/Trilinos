@@ -167,19 +167,30 @@ run-tests: all-am
 	@if [ -d packages/nox       ]; then cd packages/nox;       $(MAKE) run-tests; fi
 	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-tests; fi
 
-run-pyexamples: all-am
-	@if [ -d packages/epetra    ]; then cd packages/epetra;    $(MAKE) run-pyexamples; fi
-	@if [ -d packages/epetraext ]; then cd packages/epetraext; $(MAKE) run-pyexamples; fi
-	@if [ -d packages/aztecoo   ]; then cd packages/aztecoo;   $(MAKE) run-pyexamples; fi
-	@if [ -d packages/ifpack    ]; then cd packages/ifpack;    $(MAKE) run-pyexamples; fi
-	@if [ -d packages/amesos    ]; then cd packages/amesos;    $(MAKE) run-pyexamples; fi
-	@if [ -d packages/ml        ]; then cd packages/ml;        $(MAKE) run-pyexamples; fi
-	@if [ -d packages/nox       ]; then cd packages/nox;       $(MAKE) run-pyexamples; fi
-	@if [ -d packages/didasko   ]; then cd packages/didasko;   $(MAKE) run-pyexamples; fi
-
 run-pytests: all-am
+	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) run-pytests; fi
 	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) run-pytests; fi
+	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) run-pytests; fi
 	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) run-pytests; fi
-	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) run-pytests; fi
+	@if [ -d packages/aztecoo     ]; then cd packages/aztecoo;     $(MAKE) run-pytests; fi
+	@if [ -d packages/galeri      ]; then cd packages/galeri;      $(MAKE) run-pytests; fi
+	@if [ -d packages/amesos      ]; then cd packages/amesos;      $(MAKE) run-pytests; fi
+	@if [ -d packages/ifpack      ]; then cd packages/ifpack;      $(MAKE) run-pytests; fi
+	@if [ -d packages/anasazi     ]; then cd packages/anasazi;     $(MAKE) run-pytests; fi
 	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) run-pytests; fi
 	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) run-pytests; fi
+	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) run-pytests; fi
+
+run-pyexamples: all-am
+	@if [ -d packages/thyra       ]; then cd packages/thyra;       $(MAKE) run-pyexamples; fi
+	@if [ -d packages/epetra      ]; then cd packages/epetra;      $(MAKE) run-pyexamples; fi
+	@if [ -d packages/triutils    ]; then cd packages/triutils;    $(MAKE) run-pyexamples; fi
+	@if [ -d packages/epetraext   ]; then cd packages/epetraext;   $(MAKE) run-pyexamples; fi
+	@if [ -d packages/aztecoo     ]; then cd packages/aztecoo;     $(MAKE) run-pyexamples; fi
+	@if [ -d packages/galeri      ]; then cd packages/galeri;      $(MAKE) run-pyexamples; fi
+	@if [ -d packages/amesos      ]; then cd packages/amesos;      $(MAKE) run-pyexamples; fi
+	@if [ -d packages/ifpack      ]; then cd packages/ifpack;      $(MAKE) run-pyexamples; fi
+	@if [ -d packages/anasazi     ]; then cd packages/anasazi;     $(MAKE) run-pyexamples; fi
+	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) run-pyexamples; fi
+	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) run-pyexamples; fi
+	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) run-pyexamples; fi
