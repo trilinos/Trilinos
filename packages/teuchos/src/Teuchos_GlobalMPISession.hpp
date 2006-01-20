@@ -60,7 +60,7 @@ public:
    *
    * \param argc  [in] Argment passed into <tt>main(argc,argv)</tt>
    * \param argv  [in] Argment passed into <tt>main(argc,argv)</tt>
-   * \param out   [in] If <tt>traceOut!=NULL</tt>, then a small message on each
+   * \param out   [in] If <tt>out!=NULL</tt>, then a small message on each
    *              processor will be printed to this stream.  The default is <tt>&std::cerr</tt>.
    *
    * <b>Warning!</b> This constructor can only be called once per
