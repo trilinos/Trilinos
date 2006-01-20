@@ -163,7 +163,11 @@ public:
   bool Solve(RefCountPtr<Teuchos::ParameterList> params,
              RefCountPtr<Epetra_CrsMatrix> matrix,
              RefCountPtr<Epetra_Vector> x,
-             RefCountPtr<Epetra_Vector> b);
+             RefCountPtr<Epetra_Vector> b,
+             Epetra_CrsMatrix& I,
+             Epetra_CrsMatrix& BWT,
+             Epetra_CrsMatrix& B,
+             Epetra_CrsMatrix& WT);
   
   //@}
 
@@ -193,6 +197,12 @@ private:
   RefCountPtr<Amesos_BaseSolver>                    amesossolver_;  // the amesos solver
   RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
   RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
+
+  // testing only
+  Epetra_CrsMatrix* I_;
+  Epetra_CrsMatrix* BWT_;
+  Epetra_CrsMatrix* B_;
+  Epetra_CrsMatrix* WT_;
 };
 
 } // namespace MOERTEL

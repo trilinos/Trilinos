@@ -540,7 +540,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   //--------------------------------------------------------------------------
   // 9) Build WBTmI = WT^T * B^T - I
   Epetra_CrsMatrix* WBTmI = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
-  MOERTEL::MatrixMatrixAdd(*I,false,1.0,*WBTmI,0.0);
+  MOERTEL::MatrixMatrixAdd(*I,false,-1.0,*WBTmI,0.0);
   MOERTEL::MatrixMatrixAdd(*WBT,false,1.0,*WBTmI,1.0);
   WBTmI->FillComplete();
   delete WBT; WBT = NULL;
@@ -559,17 +559,20 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   //--------------------------------------------------------------------------
   // 11) Build ImBWT = I - BWT and store it
   spdrhs_ = rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
+  BWT_    = rcp(BWT); // for testing
+  BWT_->OptimizeStorage();
   MOERTEL::MatrixMatrixAdd(*I,false,1.0,*spdrhs_,0.0); 
-  delete I; I = NULL;
-  MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*spdrhs_,1.0);  
-  delete BWT; BWT = NULL;
+  I_      = rcp(I); // for testing
+  MOERTEL::MatrixMatrixAdd(*BWT,false,-1.0,*spdrhs_,1.0);  
   spdrhs_->FillComplete(); 
   spdrhs_->OptimizeStorage();
    
   //--------------------------------------------------------------------------
   // tidy up
   delete annmap;
-  delete WT;
+  WT_ = rcp(WT);
+  // delete WT;
+  B_ = rcp(new Epetra_CrsMatrix(*B));
   delete trans; B = NULL;
   lm_to_dof.clear();
 
@@ -612,6 +615,7 @@ void MOERTEL::Manager::ResetSolver()
   saddlematrix_ = null;
   spdmatrix_ = null;
   spdrhs_ = null;
+  BWT_    = null;
   return;
 }
 
@@ -755,7 +759,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
     matrix = saddlematrix_;
     b = rcp(new Epetra_Vector(*saddlemap_,true)); 
     b.set_has_ownership();
-    x = rcp(new Epetra_Vector(*saddlemap_,true)); 
+    x = rcp(new Epetra_Vector(*saddlemap_,false)); 
     x.set_has_ownership();
     for (int i=0; i<rhs.MyLength(); ++i)
     {
@@ -819,7 +823,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   
   //---------------------------------------------------------------------------
   // solve
-  bool ok = solver_->Solve(solverparams_,matrix,x,b);
+  bool ok = solver_->Solve(solverparams_,matrix,x,b,*I_,*BWT_,*B_,*WT_);
   if (!ok)
   {
     if (Comm().MyPID()==0)

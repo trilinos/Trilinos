@@ -52,6 +52,7 @@ saddlemap_(null),
 saddlematrix_(null),
 spdmatrix_(null),
 spdrhs_(null),
+BWT_(null),
 solverparams_(null),
 solver_(null)
 {
