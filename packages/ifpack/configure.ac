@@ -429,6 +429,7 @@ AC_CONFIG_FILES([
                 python/src/__init__.py
                 python/src/.deps/dummy
                 python/example/Makefile
+                python/test/Makefile
                 ])
 
 AC_OUTPUT()
