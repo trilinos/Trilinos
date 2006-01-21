@@ -15,7 +15,7 @@
 //  TestOptions tests all options for each Amesos Class on a limited number 
 //  of matrices.  
 //
-//  TestOptions - Calls TestOneMatrix for each of several matrices
+
 //  TestOneMatrix - Test one matrix 
 //    - Distributed vs not distributed -
 //    - Transpose vs not transposed -
@@ -91,6 +91,7 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
   //  the test/ directory (as it is in nightly testing and in make "run-tests")
   //
   FILE *in_file = fopen( in_filename, "r");
+
   char *filename;
   if (in_file == NULL ) 
     filename = &in_filename[1] ; //  Strip off ithe "." from
@@ -100,6 +101,7 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
     fclose( in_file );
   }
 
+  symmetric = false ; 
   string FileName = filename ;
 
   int FN_Size = FileName.size() ; 
@@ -290,7 +292,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
   //  These tests are all disabled in TestAllClasses.cpp
   //
   int RangemapMax = 4; // bug should be four:  ( no change, serial, bizarre dist, replicated )
-  int DomainmapMax = 4; // bug should be four:  ( no change, serial, bizarre dist, replicated )
+  int DomainmapMax = 4; // bug should be four:  ( no change, serial, bizarre dist, replicated )  IRRELEVANT see ThisDomainMax  
 
   //
   //  DiagonalOpts controls whether diagonal elements are left alone,
@@ -330,9 +332,9 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 	  //  replicated maps, hence we do not allow any fancy indexing
 	  //
 	  int ThisRangemapMax = RangemapMax ;
-	  if ( iterRowindex > 0 || iterColindex > 0 ) 
-	    ThisRangemapMax = EPETRA_MIN( 3, ThisRangemapMax );
-	  int ThisDomainmapMax = ThisRangemapMax ;
+              // Bug #1920 Amesos classes can't replicated domanin or ranges  if ( iterRowindex > 0 || iterColindex > 0 ) 
+	  ThisRangemapMax = EPETRA_MIN( 3, ThisRangemapMax );
+	  int ThisDomainmapMax =  EPETRA_MIN( 3, ThisRangemapMax );  // Bug #1920 
 	  for ( int iterRangemap = 0 ; iterRangemap < ThisRangemapMax; iterRangemap++ ) {
 	    for ( int iterDomainmap = 0 ; iterDomainmap < ThisDomainmapMax; iterDomainmap++ ) {
 	      for ( int iterDiagonalOpts = 0 ; iterDiagonalOpts < DiagonalOptsMax; iterDiagonalOpts++ ) {
@@ -348,17 +350,6 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		//  If the row and column indices don't match, eliminating a column from the map is, typically, irrelevant
 		if ( ( iterColindex == 0 && distribute ) || iterDiagonalOpts == 0 ) { 
 		  for ( int EpetraMatrixType = 0 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
-		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
-				     " filename = " << filename <<
-				     " distribute = " << distribute <<
-				     " iterRowindex = " << iterRowindex <<
-				     " iterColindex = " << iterColindex <<
-				     " iterRangemap = " << iterRangemap <<
-				     " iterDomainmap = " << iterDomainmap <<
-				     " EpetraMatrixType = " << EpetraMatrixType <<
-				     " iterDiagonalOpts = " << iterDiagonalOpts <<
-				     " transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
-
 		    //
 		    //  We test only one level for different indexing or different Range and Domain maps
 		    //  to avoid hassles of moving data from the domain space to the range space and back
@@ -384,6 +375,18 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 								       iterDomainmap
 								       ) ; 
 		    
+		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
+				     " filename = " << filename <<
+				     " symmetric = " << symmetric <<
+				     " distribute = " << distribute <<
+				     " iterRowindex = " << iterRowindex <<
+				     " iterColindex = " << iterColindex <<
+				     " iterRangemap = " << iterRangemap <<
+				     " iterDomainmap = " << iterDomainmap <<
+				     " EpetraMatrixType = " << EpetraMatrixType <<
+				     " iterDiagonalOpts = " << iterDiagonalOpts <<
+				     " transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
+
 		    //
 		    //  This causes a failure in Amesos_Superludist:
 		    Epetra_CrsMatrix* Cmat = &*Bmat;
@@ -397,30 +400,31 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		      MaxError = Rcond*Rcond1*Rcond2;
 		    } else if  ( Rcond*Rcond1 > 1e-16 ) {
 		      Level = EPETRA_MIN( 2, MaxLevel );
-		      MaxError = Rcond*Rcond1*Rcond2;
+		      MaxError = Rcond*Rcond1;
 		    } else {
 		      Level = EPETRA_MIN( 1, MaxLevel );
-		      MaxError = Rcond*Rcond1*Rcond2;
+		      MaxError = Rcond;
 		    }
+
 		    int NumTheseTests = 0 ; 
 		    int Error = TestAllClasses( AmesosClasses, EpetraMatrixType, 
-						 AmesosClassesInstalled, 
-						 Cmat, 
-						 transpose, 
-						 verbose, 
-						 symmetric, 
-						 Level,
-						 MaxError, 
-						 iterDiagonalOpts, 
-						 iterRowindex,
-						 iterColindex,
-						 iterRangemap,
-						 iterDomainmap,
-						 distribute,
-						 filename,
-						 error, 
-						 residual, 
-						 NumTheseTests ) ;
+						AmesosClassesInstalled, 
+						Cmat, 
+						transpose ,
+						verbose, 
+						symmetric, 
+						Level,
+						MaxError, 
+						iterDiagonalOpts, 
+						iterRowindex,
+						iterColindex,
+						iterRangemap,
+						iterDomainmap,
+						distribute,
+						filename,
+						error, 
+						residual, 
+						NumTheseTests ) ;
 		    NumTests += NumTheseTests ;
 		    NumErrors += Error ;
 		    if ( Comm.MyPID() == 0  && ( ( verbose && NumTheseTests ) || Error ) ) {
@@ -471,7 +475,11 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 #endif
 
 //
-//  Usage:  TestOptions [-s] [-v]
+//  Usage:  TestOptions [-s] [-v] [-q]
+//
+//  -s = short
+//  -v = verbose
+//  -q = quiet 
 //
 
 int NextMain( int argc, char *argv[] ) {
@@ -483,57 +491,6 @@ int NextMain( int argc, char *argv[] ) {
   Epetra_SerialComm Comm;
 #endif
 
-#ifdef HAVE_AMESOS_TAUCS
-  AmesosClasses.push_back( "Amesos_Taucs" );
-#endif
-
-#if 1
-#ifdef HAVE_AMESOS_KLU
-  AmesosClasses.push_back( "Amesos_Klu" );
-#endif
-
-#ifdef HAVE_AMESOS_SUPERLU
-  AmesosClasses.push_back( "Amesos_Superlu" );
-#endif
-
-#ifdef HAVE_AMESOS_SUPERLUDIST
-  AmesosClasses.push_back( "Amesos_Superludist" );
-#endif
-
-#ifdef HAVE_AMESOS_MUMPS
-  AmesosClasses.push_back( "Amesos_Mumps" );
-#endif
-
-#ifdef HAVE_AMESOS_PASTIX
-  AmesosClasses.push_back( "Amesos_Pastix" );
-#endif
-
-#ifdef HAVE_AMESOS_SCALAPACK
-  AmesosClasses.push_back( "Amesos_Scalapack" ) ;
-#endif
-
-#ifdef HAVE_AMESOS_PARDISO
-  //  bug #1915  AmesosClasses.push_back( "Amesos_Pardiso" );
-#endif
-
-#ifdef HAVE_AMESOS_PARAKLETE
-  AmesosClasses.push_back( "Amesos_Paraklete" );
-#endif
-
-#ifdef HAVE_AMESOS_LAPACK
-  AmesosClasses.push_back( "Amesos_Lapack" );
-#endif
-
-#ifdef HAVE_AMESOS_UMFPACK
-  AmesosClasses.push_back( "Amesos_Umfpack" );
-#endif
-#ifdef HAVE_AMESOS_DSCPACK
-  //  This fails on my Fedora Core linux box
-  //  AmesosClasses.push_back( "Amesos_Dscpack" );         //  bug #1205 
-#endif
-#endif
-
-  NumAmesosClasses = AmesosClasses.size();
 
   bool verbose = false; 
   bool small = false ; 
@@ -569,8 +526,66 @@ int NextMain( int argc, char *argv[] ) {
     exit(-1);
   }
 
+
+
+
+
+#ifdef HAVE_AMESOS_DSCPACK
+  //  This fails on my Fedora Core linux box
+  if ( ! quiet ) AmesosClasses.push_back( "Amesos_Dscpack" );         //  bug #1205 
+#endif
+
+#if 1
+#ifdef HAVE_AMESOS_TAUCS
+  AmesosClasses.push_back( "Amesos_Taucs" );
+#endif
+
+#ifdef HAVE_AMESOS_SUPERLU
+  AmesosClasses.push_back( "Amesos_Superlu" );
+#endif
+
+#ifdef HAVE_AMESOS_KLU
+  AmesosClasses.push_back( "Amesos_Klu" );
+#endif
+
+#ifdef HAVE_AMESOS_PARDISO
+  //  bug #1915  
+  AmesosClasses.push_back( "Amesos_Pardiso" );
+#endif
+
+#ifdef HAVE_AMESOS_SUPERLUDIST
+  AmesosClasses.push_back( "Amesos_Superludist" );
+#endif
+
+#ifdef HAVE_AMESOS_MUMPS
+  AmesosClasses.push_back( "Amesos_Mumps" );
+#endif
+
+#ifdef HAVE_AMESOS_PASTIX
+  AmesosClasses.push_back( "Amesos_Pastix" );
+#endif
+
+#ifdef HAVE_AMESOS_SCALAPACK
+  AmesosClasses.push_back( "Amesos_Scalapack" ) ;
+#endif
+
+#ifdef HAVE_AMESOS_PARAKLETE
+  AmesosClasses.push_back( "Amesos_Paraklete" );
+#endif
+
+#ifdef HAVE_AMESOS_LAPACK
+  AmesosClasses.push_back( "Amesos_Lapack" );
+#endif
+
+#ifdef HAVE_AMESOS_UMFPACK
+  AmesosClasses.push_back( "Amesos_Umfpack" );
+#endif
+#endif
+
+  NumAmesosClasses = AmesosClasses.size();
   vector<bool> AmesosClassesInstalled( NumAmesosClasses );
 
+  assert( NumAmesosClasses > 0 ) ; 
 
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
@@ -616,40 +631,37 @@ int NextMain( int argc, char *argv[] ) {
   int result = 0 ; 
   int numtests = 0 ;
 
-  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/Diagonal.mtx", Comm, verbose, false, 1e-6 , numtests ) ;
-  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/MissingADiagonal.mtx", Comm, verbose, false, 1e-6 , numtests ) ;
-#if 0
+  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/Diagonal.mtx", Comm, verbose, false, 1e-1 , numtests ) ;
+  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/MissingADiagonal.mtx", Comm, verbose, false, 1e-2 , numtests ) ;
   //
   //  TriDiagonal.mtx remains non-singular even after a diagaonal element is removed from the map 
   //
-  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/TriDiagonal.mtx", Comm, verbose, true, 1e-6 , numtests ) ;
+  //  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/TriDiagonal.mtx", Comm, verbose, true, 1e-6 , numtests ) ;
   //  symmetric = false; // Bizarre bug causes the following assert to fail even though symmetric, when printed, is false.  When the print statement is in, this line is not necessary and the assert does NOT fail.  
   //  cout << __FILE__ << "::" << __LINE__ << " symmetric = " << symmetric << endl ; 
   
+  // Khead.triS fails on DSCPACK 
+  result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/Khead.triS", Comm, verbose, true, 1e-6 , numtests ) ;
   
-#if 0
-      // Khead.triS fails on DSCPACK 
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/Khead.triS", Comm, verbose, true, 1e-6 , numtests ) ;
-#endif
-
-      //
-      //  small is set by TestValgrind - keep testing to a minimum because execution time is so slow
-      //  quiet is set by TestQuietAmesos - dscpack is not quiet at the moment, hence we can't test symmetric matrices
-      //  in TestQuietAmesos
-      //
-      //  bug #1205 
-      //
-      if ( ! small && ! quiet ) {
-	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/bcsstk04.mtx", Comm, verbose, false, 1e-6 , numtests ) ;
-	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, false, 1e-6 , numtests ) ;
-	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.rua", Comm, verbose, false, 1e-6 , numtests ) ;
-	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-6 , numtests ) ;
-      }
-
-      //      result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.triU", Comm, verbose, 1e-6 , numtests ) ;
-
-
-#endif
+  //
+  //  small is set by TestValgrind - keep testing to a minimum because execution time is so slow
+  //  quiet is set by TestQuietAmesos - dscpack is not quiet at the moment, hence we can't test symmetric matrices
+  //  in TestQuietAmesos
+  //
+  //  bug #1205 
+  //
+  if ( ! small ) {
+    result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/bcsstk04.mtx", Comm, verbose, false, 1e-4 , numtests ) ;
+    result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, false, 1e-5 , numtests ) ;
+    if ( Comm.NumProc() == 1) {
+      result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.rua", Comm, verbose, false, 1e-2 , numtests ) ;
+      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-6 , numtests ) ;
+    }
+  }
+ 
+   if ( Comm.NumProc() == 1)   
+    result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.triU", Comm, verbose, true, 1e-6 , numtests ) ;
+  
   if ( ! quiet && Comm.MyPID() == 0 ) cout << result << " Tests failed " ; 
 
   if (! quiet && Comm.MyPID() == 0 ) cout << numtests << " Tests performed " << endl ; 

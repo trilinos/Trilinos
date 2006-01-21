@@ -77,7 +77,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
   bool TrustMe = ParamList.get( "TrustMe", false );
 
-  bool MyVerbose = false ; 
+  bool MyVerbose = verbose ; 
 
   RefCountPtr<Epetra_CrsMatrix> MyMat ; 
   RefCountPtr<Epetra_CrsMatrix> MyMatWithDiag ; 
@@ -107,8 +107,14 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   
   Epetra_CrsMatrix* MatPtr = &*MyMat ;
 
-  OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, verbose, 
-				      ParamList, MatPtr, Rcond ) );
+  const string AC = AmesosClass ;
+  if ( AC != "Amesos_Pardiso" ) {
+    OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, verbose, 
+					ParamList, MatPtr, Rcond ) );
+  } else {
+    if (MyVerbose) cout << " AC = "  << AC << " not tested in Partial Factorization" <<endl ; 
+  }
+
 
   if (ParamList.isParameter("AddToDiag")) { 
     //
@@ -422,7 +428,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 		      << norm_diff /norm_one << endl ; 
 
     relresidual = norm_diff / norm_one ; 
-
 
     if (iam == 0 ) {
       if ( relresidual * Rcond < 1e-16 ) {

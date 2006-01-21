@@ -81,7 +81,9 @@ int TestOtherClasses( const char* AmesosClass,
     }
   }
 
-  if ( RowMapEqualsColMap ) {
+  string AC = AmesosClass ; 
+  bool dscpack = (AC.find("scpack") < AC.find("wont_find_this_xzd") );  // Bug #1929 - AddToDiag is not supported in Amesos_Dscpack 
+  if ( RowMapEqualsColMap && ! dscpack ) {
     Teuchos::ParameterList ParamList ;
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     ParamList.set( "Redistribute", false );

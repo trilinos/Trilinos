@@ -30,7 +30,12 @@ int TestAllClasses( const vector<string> AmesosClasses,
   bool RowMapEqualsColMap = ( ReindexColMap == 0 ) ; 
 
   string StringFilename = filename ; 
-  bool MissingADiagonal = ( StringFilename == "../Test_Basic/MissingADiagonal.mtx" );
+  bool MissingADiagonal = ( StringFilename.find("MissingADiagonal") < StringFilename.find("xdz_notaname_garbage") );
+  bool bcsstk04 = ( StringFilename.find("bcsstk04") < StringFilename.find("xdz_notaname_garbage") );
+  bool Khead = ( StringFilename.find("Khead") < StringFilename.find("xdz_notaname_garbage") );
+  bool Superlu_rua = ( StringFilename.find("Superlu_rua") < StringFilename.find("xdz_notaname_garbage") );
+  bool ImpcolB = ( StringFilename.find("ImpcolB") < StringFilename.find("xdz_notaname_garbage") );
+  bool a662_bus_out = ( StringFilename.find("662_bus_out") < StringFilename.find("xdz_notaname_garbage") );
   if ( MissingADiagonal ) RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
 
   const Epetra_Map& row_map = Amat->RowMap() ; 
@@ -89,8 +94,13 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	  RunTaucsTest = false ;   //  Bug #1403
 	if ( MissingADiagonal ) RunTaucsTest = false ; // Bug #1449
 	if ( transpose ) RunTaucsTest = false ; // Bug #1579
+	if ( a662_bus_out)  RunTaucsTest = false ; // Bug #1449
+	//	if ( Superlu_rua )  RunTaucsTest = false ; // Bug #1449
+	if ( ! symmetric ) RunTaucsTest = false ; 
+	if ( Khead ) RunTaucsTest = false ;   // Bug #1449
 
 	if ( RunTaucsTest && verbose) cout << " Testing TAUCS " << endl ; 
+	
 	
 	if ( RunTaucsTest ) Errors = TestOtherClasses("Amesos_Taucs",
 							 EpetraMatrixType,
@@ -106,10 +116,13 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Pardiso" ) {
 	bool RunPardisoTest = true;
-	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
+	if ( ReindexRowMap != 0  || ReindexColMap != 0 ) // Bug #969 
 	  RunPardisoTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunPardisoTest = false ;   //  Bug #1403
+	if (! RowMapEqualsColMap ) RunPardisoTest = false ; 
+	if ( bcsstk04 ) RunPardisoTest = false ;   // Bug #1924 
+	if ( a662_bus_out )  RunPardisoTest = false ; // Bug #1923
 
 	if ( RunPardisoTest && verbose) cout << " Testing PARDISO " << endl ; 
 	
@@ -161,6 +174,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ( ReindexRowMap || ReindexColMap ) ) 
 	  RunKluTest = false ;  
 #endif
+	if ( ImpcolB ) RunKluTest = false ;   // See bug #1928 
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
 					    EpetraMatrixType,
 					    transpose, 
@@ -188,7 +202,9 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	       << " RangeMapType = " <<  RangeMapType 
 	       << " distribute = " <<  distribute 
 	       << " filename = " <<  filename 
+	       << " NumTests = " <<  NumTests 
 	       << " Errors = " <<  Errors << endl ;  
+
       } else if ( AmesosClasses[i] == "Amesos_Superlu" ) {
 	bool RunSuperluTest = true;
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
@@ -196,6 +212,9 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( MissingADiagonal ) RunSuperluTest = false ; // Bug #1404
 	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunSuperluTest = false ;   //  Bug #1403
+	if ( bcsstk04 && transpose ) RunSuperluTest = false ;  // Bug #1927 
+	if ( a662_bus_out && transpose ) RunSuperluTest = false ;  // Bug #1927 
+	if ( Khead ) RunSuperluTest= false ;  // Bug #1927 
 
 	if ( RunSuperluTest ) {
 	  if ( verbose) cout << " Testing SUPERLU " << endl ; 
@@ -226,13 +245,14 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	       << " RangeMapType = " <<  RangeMapType 
 	       << " distribute = " <<  distribute 
 	       << " filename = " <<  filename 
+	       << " NumTests = " <<  NumTests 
 	       << " Errors = " <<  Errors << endl ;  
       } else if ( AmesosClasses[i] == "Amesos_Pastix" ) {
 	bool RunPastixTest = true;
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
 	  RunPastixTest = false ;   //  Bug #969
 	if ( MissingADiagonal ) RunPastixTest = false ; // Bug #1404
-	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
+	//	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunPastixTest = false ;   //  Bug #1403
 
 	if ( RunPastixTest ) {
@@ -255,7 +275,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
 	  RunParakleteTest = false ;   //  Bug #969
 	if ( MissingADiagonal ) RunParakleteTest = false ; // Bug #1404
-	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
+	//	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunParakleteTest = false ;   //  Bug #1403
 
 	if ( RunParakleteTest ) {
@@ -282,26 +302,29 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	assert( sym_int == sym_int_out ) ; 
 
 	bool RunDscpackTest = true;
-	if ( symmetric ) RunDscpackTest = false ; 
-	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && distribute )  //  Bug #969
+	if ( ! symmetric ) RunDscpackTest = false ; 
+	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) )  //  Bug #969
 	  RunDscpackTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunDscpackTest = false ;   //  Bug #1403
+	if ( Khead ) RunDscpackTest = false ;   // Bug #1924 
+
+
 	if ( RunDscpackTest ) { 
 	  if ( verbose) cout << " Testing DSCPACK " << endl ; 
     
 	  Errors = TestOtherClasses("Amesos_Dscpack",
-							 EpetraMatrixType,
-				     Amat, 
-				     transpose, 
-				     verbose, 
-				     Levels, 
-				     Rcond, 
-				     RowMapEqualsColMap,
-				     maxrelerror, 
-				     maxrelresidual, 
-				     NumTests ) ;
+				    EpetraMatrixType,
+				    Amat, 
+				    transpose, 
+				    verbose, 
+				    Levels, 
+				    Rcond, 
+				    RowMapEqualsColMap,
+				    maxrelerror, 
+				    maxrelresidual, 
+				    NumTests ) ;
 	} else {
-	  if ( verbose ) cout << " DSCPACK not tested on unsymmetric matrices " 
+	  if ( verbose ) cout << " DSCPACK is not tested on this matrix " 
 			      << endl ; 
 	}
     
@@ -313,6 +336,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	}
 	if ( ReindexRowMap || ReindexColMap ) RunSuperludistTest = false ;    //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunSuperludistTest = false ;   //  Bug #1403
+	if ( Khead ) RunSuperludistTest= false ;  // Bug #
 	if ( RunSuperludistTest ) { 
 	  if ( verbose) cout << " Testing Superludist " << endl ; 
   
@@ -327,26 +351,35 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				    NumTests ) ;
 	}
       }
-      if ( Amat->Comm().MyPID() == 0 && Errors ) 
-	cout << " FAILURE in "  // bug change to &&
-	     << __FILE__ << "::"  << __LINE__
-	     << " " << AmesosClasses[i] << " "  
-	     << " EpetraMatrixType = " <<  EpetraMatrixType 
-	     << " transpose = " <<  transpose 
-	     << " symmetric = " <<  symmetric 
-	     << " Levels = " <<  Levels 
-	     << " Diagonal = " <<  Diagonal 
-	     << " ReindexRowMap = " <<  ReindexRowMap 
-	     << " ReindexColMap = " <<  ReindexColMap 
-	     << " DomainMapType = " <<  DomainMapType 
-	     << " RangeMapType = " <<  RangeMapType 
-	     << " distribute = " <<  distribute 
-	     << " filename = " <<  filename 
-	     << " Errors = " <<  Errors << endl ;  
-	errors += Errors ;
+      if ( Amat->Comm().MyPID() == 0 ) {
+	if ( Errors || ( verbose && NumTests > 0 ) ) { 
+	  if ( Errors ) { 
+	    cout << " FAILURE in " ; 
+	  } else { 
+	    cout << " NO FAILURE in " ; 
+	  }
+	
+	  cout << __FILE__ << "::"  << __LINE__
+	       << " " << AmesosClasses[i] << " "  
+	       << " EpetraMatrixType = " <<  EpetraMatrixType 
+	       << " transpose = " <<  transpose 
+	       << " symmetric = " <<  symmetric 
+	       << " Levels = " <<  Levels 
+	       << " Diagonal = " <<  Diagonal 
+	       << " ReindexRowMap = " <<  ReindexRowMap 
+	       << " ReindexColMap = " <<  ReindexColMap 
+	       << " DomainMapType = " <<  DomainMapType 
+	       << " RangeMapType = " <<  RangeMapType 
+	       << " distribute = " <<  distribute 
+	       << " filename = " <<  filename 
+	       << " NumTests = " <<  NumTests 
+	       << " Errors = " <<  Errors << endl ;  
+	}
+      }
+      errors += Errors ;
     }
   }
-	  
+  
   if ( verbose) cout << " TestAllClasses errors = " << errors << endl ; 
 
   return errors;

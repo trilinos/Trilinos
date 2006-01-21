@@ -56,7 +56,8 @@ Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   maxfct_(1),
   mnum_(1),
   msglvl_(0),
-  nrhs_(1)
+  nrhs_(1),
+  pardiso_initialized_(false)
 {
   // Sets all parameters (many unused) to zero
   for (int i = 1 ; i < 64 ; ++i)
@@ -84,7 +85,7 @@ Amesos_Pardiso::~Amesos_Pardiso()
   int idum;
   double ddum;
 
-  if (Problem_->GetOperator() != 0 && Comm().MyPID() == 0) {
+  if (pardiso_initialized_ ) {
     int n = SerialMatrix().NumMyRows();
     F77_PARDISO(pt_, &maxfct_, &mnum_, &mtype_, &phase,
                 &n, &ddum, &ia_[0], &ja_[0], &idum, &nrhs_,
@@ -139,7 +140,7 @@ int Amesos_Pardiso::ConvertToPardiso()
 
   if (Comm().MyPID() == 0) 
   {
-    ia_.resize(SerialMatrix().NumMyRows());
+    ia_.resize(SerialMatrix().NumMyRows()+1);
     ja_.resize(SerialMatrix().NumMyNonzeros());
     aa_.resize(SerialMatrix().NumMyNonzeros());
 
@@ -256,7 +257,7 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     // ============================================================== //
 
     F77_PARDISOINIT(pt_,  &mtype_, iparm_);
-
+    pardiso_initialized_ = true; 
     /*
     char* var = getenv("OMP_NUM_THREADS");
     if(var != NULL)

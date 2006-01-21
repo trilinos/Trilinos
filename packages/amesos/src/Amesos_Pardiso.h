@@ -176,6 +176,7 @@ private:
   vector<int>    ia_;
   vector<int>    ja_;
 
+  bool pardiso_initialized_ ; 
   int mtype_;
   void* pt_[64];
 
