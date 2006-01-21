@@ -64,14 +64,14 @@ Thyra::create_MPIVectorSpaceBase(
 			"the associated MPI_Comm object can not be MPI_COMM_NULL!"
 			);
 #endif // _DEBUG
-//		std::cout << "EpetraVectorSpace::initialize(...): mpiComm = " << mpiComm << std::endl;
+     //std::cout << "EpetraVectorSpace::initialize(...): mpiComm = " << mpiComm << std::endl;
 	}
 	else {
-		std::cout << "EpetraVectorSpace::initialize(...): Not using an Epetra_MpiComm!\n";
+		//std::cout << "EpetraVectorSpace::initialize(...): Not using an Epetra_MpiComm!\n";
 		mpiComm = MPI_COMM_NULL;
 	}
 #else // RTOp_USE_MPI
-//	std::cout << "EpetraVectorSpace::initialize(...): Not using an Epetra_MpiComm!\n";
+  //std::cout << "EpetraVectorSpace::initialize(...): Not using an Epetra_MpiComm!\n";
 	mpiComm = MPI_COMM_NULL;
 #endif // RTOp_USE_MPI
 	const Index localSubDim = epetra_map->NumMyElements();
