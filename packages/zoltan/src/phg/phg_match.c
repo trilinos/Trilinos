@@ -894,7 +894,12 @@ static int pmatching_ipm (ZZ *zz,
         if (count > 0)  {
           if (s - send + HEADER_SIZE + 2 * count > nSend ) {
             sendsize = s - send;
+#if 0 
+/* KDDKDD -- Temporary fix  -- changed value of i; waiting for Bob's check.  */
             i = MAX (1.2 * nSend, HEADER_SIZE + 2 * count);
+printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-send+HEADER_SIZE+2*count, (int) (1.2 * nSend), i);
+#endif
+            i = MAX (1.2 * nSend, s - send + HEADER_SIZE + 2 * count);
             MACRO_REALLOC (i, nSend, send);       /* enlarge buffer */
             s = send + sendsize;         /* since realloc buffer could move */
           }      
