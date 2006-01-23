@@ -2773,6 +2773,20 @@ int Zoltan_Color(
     int *color_exp            /* Output: Colors assigned to local vertices */
                               /* The application must allocate enough space */
     ); 
+
+/* Interface routine for Zoltan_Color_Test */
+int Zoltan_Color_Test(
+    struct Zoltan_Struct *zz, /* Zoltan structure */
+    int *num_gid_entries,     /* # of entries for a global id */
+    int *num_lid_entries,     /* # of entries for a local id */
+    int num_obj,              /* Input: number of objects */
+    ZOLTAN_ID_PTR global_ids, /* Input: global ids of the vertices */
+                              /* The application must allocate enough space */    
+    ZOLTAN_ID_PTR local_ids,  /* Input: local ids of the vertices */
+                              /* The application must allocate enough space */
+    int *color_exp            /* Output: Colors assigned to local vertices */
+                              /* The application must allocate enough space */
+    ); 
     
 
 /*****************************************************************************/
