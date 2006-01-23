@@ -107,7 +107,7 @@ cleanUp();
                     "log-verbosity=i" => \$logVerbosity,
                     "quiet" => \$quiet,
                     "help" => \$help );
-        
+
         # Print help and exit.
         if ($help) { 
             printHelp();
@@ -192,11 +192,12 @@ cleanUp();
             $mpiGo = "mpirun -np "; 
         }
         if ($comm eq "mpi") {
-            $mpiGo =~ m/^(\w*)/;
-            my $mpiGoProg = $1;
+            my @mpiGoArray = split(" ",$mpiGo);
+            my $mpiGoProg = $mpiGoArray[0];
+            #print "mpiGoProg =\"$mpiGoProg\"\n";
             `which $mpiGoProg`;
             if ($?) {
-                die "cannot find mpi-go command: $mpiGo\n";
+                die "cannot find mpi-go command: $mpiGoProg\n";
             } else {
                 $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = $mpiGo;
             }
