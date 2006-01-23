@@ -201,7 +201,7 @@ extern int Zoltan_HG_Hypergraph_Edge_Callbacks(ZZ *, ZHG *, int, float, int,
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, 
   ZOLTAN_ID_PTR *, int **);
 extern int Zoltan_HG_Hypergraph_Pin_Callbacks(ZZ *, ZHG *, int, float, int,
-  int, void *,
+  int, void *, int,
   int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **,
   int *, ZOLTAN_ID_PTR *);
 extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int, float, int, int *,
