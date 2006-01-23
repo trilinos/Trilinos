@@ -110,10 +110,12 @@ void MPIVectorBase<Scalar>::applyOp(
   RTOp_index_type  overlap_first_local_ele  = 0;
   RTOp_index_type  overalap_local_sub_dim   = 0;
   RTOp_index_type  overlap_global_offset    = 0;
-  RTOp_parallel_calc_overlap(
-    globalDim_, localSubDim_, localOffset_, first_ele_in, sub_dim_in, global_offset_in
-    ,&overlap_first_local_ele, &overalap_local_sub_dim, &overlap_global_offset
-    );
+  if(localSubDim_) {
+    RTOp_parallel_calc_overlap(
+      globalDim_, localSubDim_, localOffset_, first_ele_in, sub_dim_in, global_offset_in
+      ,&overlap_first_local_ele, &overalap_local_sub_dim, &overlap_global_offset
+      );
+  }
   const Range1D local_rng = (
     overlap_first_local_ele!=0
     ? Range1D( localOffset_ + overlap_first_local_ele, localOffset_ + overlap_first_local_ele + overalap_local_sub_dim - 1 )
@@ -133,15 +135,16 @@ void MPIVectorBase<Scalar>::applyOp(
     }}
   }
   // Apply the RTOp operator object (all processors must participate)
+  const bool validSubVecs = ( localSubDim_ > 0 && overlap_first_local_ele );
   RTOpPack::MPI_apply_op(
-    locallyReplicated ? MPI_COMM_NULL : mpiSpc.mpiComm()                   // comm
-    ,op                                                                    // op
-    ,-1                                                                    // root_rank (perform an all-reduce)
-    ,num_vecs                                                              // num_vecs
-    ,num_vecs && overlap_first_local_ele ? &sub_vecs[0] : NULL             // sub_vecs
-    ,num_targ_vecs                                                         // num_targ_vecs
-    ,num_targ_vecs && overlap_first_local_ele ? &sub_targ_vecs[0] : NULL   // targ_sub_vecs
-    ,reduct_obj                                                            // reduct_obj
+    locallyReplicated ? MPI_COMM_NULL : mpiSpc.mpiComm()        // comm
+    ,op                                                         // op
+    ,-1                                                         // root_rank (perform an all-reduce)
+    ,num_vecs                                                   // num_vecs
+    ,num_vecs && validSubVecs ? &sub_vecs[0] : NULL             // sub_vecs
+    ,num_targ_vecs                                              // num_targ_vecs
+    ,num_targ_vecs && validSubVecs ? &sub_targ_vecs[0] : NULL   // targ_sub_vecs
+    ,reduct_obj                                                 // reduct_obj
     );
   // Free and commit the local data
   if( overlap_first_local_ele != 0 ) {
@@ -161,6 +164,16 @@ void MPIVectorBase<Scalar>::applyOp(
 template<class Scalar>
 void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVectorT<Scalar>* sub_vec ) const
 {
+  if( rng_in == Range1D::Invalid ) {
+    // Just return an null view
+    sub_vec->initialize(
+      rng_in.lbound()-1  // globalOffset
+      ,0                 // subDim
+      ,0                 // values
+      ,1                 // stride
+      );
+    return;
+  }
   const Range1D rng = validateRange(rng_in);
   if( rng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
@@ -201,6 +214,16 @@ void MPIVectorBase<Scalar>::freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec
 template<class Scalar>
 void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::MutableSubVectorT<Scalar>* sub_vec )
 {
+  if( rng_in == Range1D::Invalid ) {
+    // Just return an null view
+    sub_vec->initialize(
+      rng_in.lbound()-1  // globalOffset
+      ,0                 // subDim
+      ,0                 // values
+      ,1                 // stride
+      );
+    return;
+  }
   const Range1D rng = validateRange(rng_in);
   if( rng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!

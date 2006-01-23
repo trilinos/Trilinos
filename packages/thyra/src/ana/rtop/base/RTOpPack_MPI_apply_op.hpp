@@ -448,9 +448,10 @@ void RTOpPack::MPI_apply_op(
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
+  const int localSubDim = ( num_vecs ? sub_vecs[0].subDim() : sub_targ_vecs[0].subDim() );
   // See if we need to do any global communication at all?
   if( comm == MPI_COMM_NULL || reduct_objs == NULL ) {
-    if( sub_vecs || sub_targ_vecs ) {
+    if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
       for( int kc = 0; kc < num_cols; ++kc ) {
         op.apply_op(
           num_vecs,sub_vecs+kc*num_vecs,num_targ_vecs,sub_targ_vecs+kc*num_targ_vecs
@@ -478,11 +479,12 @@ void RTOpPack::MPI_apply_op(
     i_reduct_objs( wss, num_cols );
   for( int kc = 0; kc < num_cols; ++kc ) {
     i_reduct_objs[kc] = op.reduct_obj_create();
-    if( sub_vecs || sub_targ_vecs )
+    if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
       op.apply_op(
         num_vecs, sub_vecs+kc*num_vecs, num_targ_vecs, sub_targ_vecs+kc*num_targ_vecs
         ,&*i_reduct_objs[kc]
-          );
+        );
+    }
   }
   //
   // Reduce the local intermediate reduction objects into the global reduction objects

@@ -54,7 +54,8 @@ template<class Scalar>
 void MPIVectorSpaceStd<Scalar>::initialize( MPI_Comm mpiComm, const Index localSubDim, const Index globalDim )
 {
 #ifdef _DEBUG
-  TEST_FOR_EXCEPT( !( localSubDim > 0 ) );
+  //TEST_FOR_EXCEPT( !( localSubDim > 0 ) );
+  TEST_FOR_EXCEPT( !( localSubDim >= 0 ) );
 #endif
   mpiComm_     = mpiComm;
   localSubDim_ = localSubDim;
@@ -101,7 +102,7 @@ MPIVectorSpaceStd<Scalar>::createMember() const
   return Teuchos::rcp(
     new MPIVectorStd<Scalar>(
       Teuchos::rcp(this,false)
-      ,Teuchos::rcp( new Scalar[localSubDim_], Teuchos::DeallocArrayDelete<Scalar>(), true )
+      ,Teuchos::rcp( (localSubDim_ ? new Scalar[localSubDim_] : 0 ), Teuchos::DeallocArrayDelete<Scalar>(), true )
       ,1
       )
     );
@@ -115,7 +116,7 @@ MPIVectorSpaceStd<Scalar>::createMembers(int numMembers) const
     new MPIMultiVectorStd<Scalar>(
       Teuchos::rcp(this,false)
       ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(this->smallVecSpcFcty()->createVecSpc(numMembers),true)
-      ,Teuchos::rcp( new Scalar[localSubDim_*numMembers], Teuchos::DeallocArrayDelete<Scalar>(), true )
+      ,Teuchos::rcp( (localSubDim_ ? new Scalar[localSubDim_*numMembers] : 0), Teuchos::DeallocArrayDelete<Scalar>(), true )
       ,localSubDim_
       )
     );

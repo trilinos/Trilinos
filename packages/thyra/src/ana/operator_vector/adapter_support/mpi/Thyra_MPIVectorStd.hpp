@@ -61,7 +61,7 @@ void MPIVectorStd<Scalar>::initialize(
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(mpiSpace.get()==NULL);
-  TEST_FOR_EXCEPT(localValues.get()==NULL);
+  TEST_FOR_EXCEPT(mpiSpace->localSubDim() > 0 && localValues.get()==NULL);
   TEST_FOR_EXCEPT(stride==0);
 #endif
   mpiSpace_      = mpiSpace;

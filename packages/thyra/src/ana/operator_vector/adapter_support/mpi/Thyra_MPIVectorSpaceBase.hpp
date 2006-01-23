@@ -98,7 +98,7 @@ void MPIVectorSpaceBase<Scalar>::updateState( const Index globalDim )
 {
   const Index localSubDim = this->localSubDim(); 
   const MPI_Comm mpiComm  = MPI_COMM_NULL;
-  if( localSubDim > 0 ) {
+  if( localSubDim >= 0 ) {
 #ifdef RTOp_USE_MPI
     typedef Teuchos::RawMPITraits<Index> IRMT;
     MPI_Comm mpiComm = this->mpiComm();
