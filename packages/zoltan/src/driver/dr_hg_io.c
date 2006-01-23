@@ -42,6 +42,8 @@ extern "C" {
 #define MAX_STR_LENGTH 80
 #endif
 
+#define IS_BLANK(c) ((c == '\t') || (c == ' '))
+
 static int dist_hyperedges(MPI_Comm comm, PARIO_INFO_PTR, int, int, int, int *,
                            int *, int **, int **, int **, int **, 
                            int *, float **, short *);
@@ -1287,7 +1289,7 @@ int l, i;
   c = line;
   l = 0;
 
-  while (isblank(*c) && (l < max)){ c++; l++; } /* skip initial spaces */
+  while (IS_BLANK(*c) && (l < max)){ c++; l++; } /* skip initial spaces */
 
   if ((l>=max) || !*c || (*c == '\n')) return NULL;
 
@@ -1296,7 +1298,7 @@ int l, i;
   for (i=0; i < which; i++){
     while (isgraph(*c) && (l < max)){ c++; l++;} /* skip token */
     if ((l>=max) || !*c || (*c == '\n')) return NULL;
-    while (isblank(*c) && (l < max)){ c++; l++;} /* skip space */
+    while (IS_BLANK(*c) && (l < max)){ c++; l++;} /* skip space */
     if ((l>=max) || !*c || (*c == '\n')) return NULL;
   }
 
