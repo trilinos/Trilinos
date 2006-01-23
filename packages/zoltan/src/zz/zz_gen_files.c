@@ -231,6 +231,10 @@ int gen_geom, int gen_graph, int gen_hg)
     if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
       goto End;
     }
+
+    if (num_geom == 0){
+      gen_geom = 0;
+    }
    }
 
   Zoltan_Print_Sync_Start(zz->Communicator, 0); 
