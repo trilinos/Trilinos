@@ -161,14 +161,9 @@ int gen_geom, int gen_graph, int gen_hg)
         zz->Get_HG_Size_CS != NULL && zz->Get_HG_CS != NULL ;
 
     if (!have_edge_callbacks && !have_pin_callbacks){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-        "Hypergraph output requested, "
-        "but no corresponding query function was found.\n");
-
-      error = ZOLTAN_FATAL;
-      goto End;
+      gen_hg = 0;
     }
-    if (have_edge_callbacks){
+    else if (have_edge_callbacks){
       /* error = Zoltan_HG_Build_Hypergraph(zz, &zhg, NULL); */
       /* Get data in parallel. Zoltan_HG_Build_Hypergraph
          currently only works in serial. */
