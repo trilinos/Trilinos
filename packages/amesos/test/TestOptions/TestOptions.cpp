@@ -652,10 +652,12 @@ int NextMain( int argc, char *argv[] ) {
   //
   if ( ! small ) {
     result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/bcsstk04.mtx", Comm, verbose, false, 1e-4 , numtests ) ;
-    result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, false, 1e-5 , numtests ) ;
-    if ( Comm.NumProc() == 1) {
-      result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.rua", Comm, verbose, false, 1e-2 , numtests ) ;
-      result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-6 , numtests ) ;
+    if (! quiet) { 
+      result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, false, 1e-5 , numtests ) ;
+      if ( Comm.NumProc() == 1) {
+	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.rua", Comm, verbose, false, 1e-2 , numtests ) ;
+	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-6 , numtests ) ;
+      }
     }
   }
  
