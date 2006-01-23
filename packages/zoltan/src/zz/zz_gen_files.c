@@ -240,6 +240,9 @@ int gen_geom, int gen_graph, int gen_hg)
 
   Zoltan_Print_Sync_Start(zz->Communicator, 0); 
 
+  /* Do we need this if we have pin callbacks?  Vertex assignment
+   * is in "matrixmarket plus" file.
+   */
   /* Write object assignments to file. */
   /* For now, only write partition number. */
   if (num_obj > 0){
@@ -375,6 +378,11 @@ int gen_geom, int gen_graph, int gen_hg)
 
   if (gen_hg && have_pin_callbacks){
 
+    /* PLEASE READ: If you change the format of this "matrixmarket plus"
+     * file, please change dr_hg_io.c:process_mtxp_file(), which 
+     * reads the file for zdrive.
+     */
+
     /* Each proc prints its pins. For global IDs we print 1 integer.*/
 
     Zoltan_Print_Sync_Start(zz->Communicator, 0); 
@@ -416,26 +424,24 @@ int gen_geom, int gen_graph, int gen_hg)
     fflush(fp);
     Zoltan_Print_Sync_End(zz->Communicator, 0); 
 
-    /* Each proc prints its vertex weights. */
+    /* Each proc prints its vertices and vertex weights. */
 
-    if (zz->Obj_Weight_Dim > 0){
-      Zoltan_Print_Sync_Start(zz->Communicator, 0); 
+    Zoltan_Print_Sync_Start(zz->Communicator, 0); 
 
-      vptr = global_ids;
-      wptr = float_vwgt;
+    vptr = global_ids;
+    wptr = float_vwgt;
 
-      fseek(fp, 0, SEEK_END);
-      for (i=0; i<num_obj; i++){
-        fprintf(fp, "%d %d ",  zz->Proc, *vptr);
-        for (j=0; j<zz->Obj_Weight_Dim; j++){
-          fprintf(fp, "%f ", *wptr++);
-        }
-        vptr += zz->Num_GID;
-        fprintf(fp, "\n");
+    fseek(fp, 0, SEEK_END);
+    for (i=0; i<num_obj; i++){
+      fprintf(fp, "%d %d ",  zz->Proc, *vptr);
+      for (j=0; j<zz->Obj_Weight_Dim; j++){
+        fprintf(fp, "%f ", *wptr++);
       }
-      fflush(fp);
-      Zoltan_Print_Sync_End(zz->Communicator, 0); 
+      vptr += zz->Num_GID;
+      fprintf(fp, "\n");
     }
+    fflush(fp);
+    Zoltan_Print_Sync_End(zz->Communicator, 0); 
 
     /* Each proc prints its edge weights. */
 
