@@ -31,6 +31,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -150,12 +151,11 @@ int main(int argc, char *argv[])
   bool verbose = true;
   bool result;
 
-  MPI_Init(&argc,&argv);
 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
+  const int numProc = Teuchos::GlobalMPISession::getNProc();
   MPI_Comm mpiComm = MPI_COMM_WORLD;
-  int procRank, numProc;
-  MPI_Comm_size( mpiComm, &numProc );
-  MPI_Comm_rank( mpiComm, &procRank );
 
   try {
 
@@ -217,8 +217,6 @@ int main(int argc, char *argv[])
     if(success) std::cout << "\nAll of the tests seem to have run successfully!\n";
     else        std::cout << "\nOh no! at least one of the tests failed!\n";	
   }
-  
-  MPI_Finalize();
   
   return success ? 0 : 1;
 
