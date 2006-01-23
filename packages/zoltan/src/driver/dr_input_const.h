@@ -31,6 +31,7 @@ extern "C" {
 #define CHACO_FILE        2
 #define HYPERGRAPH_FILE   3
 #define MATRIXMARKET_FILE 4
+#define MATRIXMARKET_PLUS_FILE 5
 
 /* define matrix_obj options */
 #define ROWS            0
@@ -166,6 +167,14 @@ extern int read_hypergraph_file(
 );
 
 extern int read_mm_file(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+);
+
+extern int read_mtxplus_file(
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,

@@ -382,6 +382,12 @@ static int read_mesh(
         return 0;
     }
   }
+  else if (pio_info->file_type == MATRIXMARKET_PLUS_FILE) {
+    if (!read_mtxplus_file(Proc, Num_Proc, prob, pio_info, mesh)) {
+        Gen_Error(0, "fatal: Error returned from read_mtxplus_file\n");
+        return 0;
+    }
+  }
 #endif
   else if (pio_info->file_type == NO_FILE) {
     if (!create_random_input(Proc, Num_Proc, prob, pio_info, mesh)) {
@@ -451,6 +457,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->hindex         = NULL;
   mesh->hvertex        = NULL;
   mesh->hvertex_proc   = NULL;
+  mesh->heWgtId        = NULL;
   mesh->hewgts         = NULL;
 }
 

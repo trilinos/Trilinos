@@ -157,8 +157,11 @@ struct Mesh_Description
                                    Global IDs are always stored. */
   int    *hvertex_proc;         /* array listing the processor owning vertices
                                    in hvertex. */
+  int    heNumWgts;             /* number of edges for which we have weights */
+  int    *heWgtId;              /* global edge ID of the heNumWgts edges,
+                                    if NULL it's the same as hgid            */
   float  *hewgts;               /* for hypergraphs, an array of hyperedge
-                                   weights; size = hewgt_dim * nhedges;      */
+                                   weights; size = hewgt_dim * heNumWgts;  */
 };
 typedef struct Mesh_Description  MESH_INFO;
 typedef struct Mesh_Description *MESH_INFO_PTR;

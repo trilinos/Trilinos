@@ -138,11 +138,19 @@ ELEM_INFO_PTR current_elem;
     for (j = mesh->hindex[i]; j < mesh->hindex[i+1]; j++)
       printf("%d ", mesh->hvertex[j]);
     printf(")\n");
-    if (mesh->hewgt_dim) {
-      printf("Edge Weights:  ");
+  }
+  if (mesh->hewgt_dim && (mesh->heNumWgts > 0)){
+    printf("\nHyperedge Weights\n");
+    for (i=0; i<mesh->heNumWgts; i++){ 
+      if (mesh->heWgtId){
+        printf("Hyperedge %d (%d):  (", mesh->heWgtId[i], i);
+      }
+      else{
+        printf("Hyperedge %d (%d):  (", mesh->hgid[i], i);
+      }
       for (j = 0; j < mesh->hewgt_dim; j++) 
         printf("%f ", mesh->hewgts[i*mesh->hewgt_dim + j]);
-      printf("\n");
+      printf(")\n");
     }
   }
   print_sync_end(Proc, Num_Proc, 1);

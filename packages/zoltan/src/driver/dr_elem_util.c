@@ -116,6 +116,7 @@ int i;
   safe_free((void **) &(mesh->hindex));
   safe_free((void **) &(mesh->hvertex));
   safe_free((void **) &(mesh->hvertex_proc));
+  safe_free((void **) &(mesh->heWgtId));
   safe_free((void **) &(mesh->hewgts));
 }
 

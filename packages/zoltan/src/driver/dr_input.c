@@ -123,6 +123,10 @@ int read_cmd_file (
           }
         }
       }
+      else if (strcmp(value, "matrixmarket+") == 0)  {
+        pio_info->file_type       = MATRIXMARKET_PLUS_FILE;
+        pio_info->matrix_obj      = COLUMNS; 
+      }
       else if ((strcmp(value, "hypergraph") == 0)  
                || (strcmp(value, "matrixmarket") == 0)) {
         if (strcmp(value, "hypergraph") == 0)
@@ -577,6 +581,7 @@ void brdcst_cmd_info (
     break;
   case HYPERGRAPH_FILE:
   case MATRIXMARKET_FILE:
+  case MATRIXMARKET_PLUS_FILE:
     mesh->data_type = HYPERGRAPH;
     break;
   }

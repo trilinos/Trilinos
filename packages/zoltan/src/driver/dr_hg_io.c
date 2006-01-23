@@ -16,6 +16,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <ctype.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -41,6 +45,14 @@ extern "C" {
 static int dist_hyperedges(MPI_Comm comm, PARIO_INFO_PTR, int, int, int, int *,
                            int *, int **, int **, int **, int **, 
                            int *, float **, short *);
+static int process_mtxp_file(char *filebuf, int fsize, 
+  int nprocs, int myrank,
+  int *nGlobalEdges, int *nGlobalVtxs, int *vtxWDim, int *edgeWDim,
+  int *nMyPins, int **myPinI, int **myPinJ,
+  int *nMyVtx, int **myVtxNum, float **myVtxWgts,
+  int *nMyEdgeWgts, int **myEdgeNum, float **myEdgeWgts);
+static int create_edge_lists(int nMyPins, int *myPinI, int *myPinJ, 
+      int *numHEdges, int **edgeGno, int **edgeIdx, int **pinGno);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -251,7 +263,10 @@ int read_hypergraph_file(
   mesh->hindex = hindex;
   mesh->hvertex = hvertex;
   mesh->hvertex_proc = hvertex_proc;
+  mesh->heNumWgts = nhedges;
+  mesh->heWgtId = NULL;
   mesh->hewgts = hewgts;
+  
 
   mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
   if (!mesh->eb_etypes) {
@@ -334,9 +349,7 @@ int read_hypergraph_file(
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
-
 /*****************************************************************************/
-
 static int dist_hyperedges(
   MPI_Comm comm,		/* MPI Communicator */
   PARIO_INFO_PTR pio_info,      /* Parallel IO info */
@@ -601,6 +614,701 @@ int hedge_init_dist_type;
 
   DEBUG_TRACE_END(myproc, yo);
   return 1;
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/* Read "matrixmarket plus", the format written by Zoltan_Generate_Files
+ * when hypergraph was given with the pin query functions.  (So each
+ * process supplies some subset of pins to Zoltan.  Each process owns
+ * some of the vertices and supplies weights for those.  Each process
+ * may supply weights for edges.  The edges may not be the edges of 
+ * their pins.  More than one process may supply a weight for the same
+ * edge.)
+ *
+ * The file format is similar to matrixmarket, but lists vertex weights 
+ * and edge weights, and lists processors owning pins, processors owning 
+ * vertices, and processors providing edge weights.  
+ *
+ * The number of processes in the file may be different than the number
+ * of zdrive processes.  In that case, some zdrive processes may have
+ * no pins and vertices, or some may get the pins and vertices of more
+ * than one of the processes in the file.
+ */
+int read_mtxplus_file(
+  int Proc,
+  int Num_Proc,
+  PROB_INFO_PTR prob,
+  PARIO_INFO_PTR pio_info,
+  MESH_INFO_PTR mesh
+)
+{
+  /* Local declarations. */
+  const char  *yo = "read_mtxplus_file";
+  char filename[256], cmesg[256];
+  struct stat statbuf;
+  int rc, fsize, i, j;
+  char *filebuf=NULL;
+  FILE *fp;
+  int nGlobalEdges, nGlobalVtxs, vtxWDim, edgeWDim; 
+  int nMyPins, nMyVtx, nMyEdgeWgts;
+  int *myPinI, *myPinJ, *myVtxNum, *myEWGno;
+  float *myVtxWgts, *myEdgeWgts;
+  int status;
+  int numHEdges; 
+  int *edgeGno, *edgeIdx, *pinGno;
+
+  DEBUG_TRACE_START(Proc, yo);
+
+  /* Process 0 reads the file and broadcasts it */
+
+  if (Proc == 0) {
+    fsize = 0;
+    fp = NULL;
+    sprintf(filename, "%s.mtxp", pio_info->pexo_fname);
+
+    rc = stat(filename, &statbuf);
+
+    if (rc == 0){
+      fsize = statbuf.st_size;
+
+      fp = fopen(filename, "r");
+
+      if (!fp){
+        fsize = 0;
+      }
+      else{
+        filebuf = (char *)malloc(fsize+1);
+
+        rc = fread(filebuf, 1, fsize, fp);
+
+        if (rc != fsize){
+          free(filebuf);
+          fsize = 0;
+          fp = NULL;
+        }
+        else{
+          filebuf[fsize] = 0;
+          fsize++;
+        }
+        fclose(fp);
+      }
+    }
+  }
+
+  MPI_Bcast(&fsize, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+  if (fsize == 0) {
+    sprintf(cmesg, "fatal:  Could not open/read hypergraph file %s", filename);
+    Gen_Error(0, cmesg);
+    return 0;
+  }
+
+  if (Proc > 0){
+    filebuf = (char *)malloc(fsize);
+  }
+
+  MPI_Bcast(filebuf, fsize, MPI_BYTE, 0, MPI_COMM_WORLD);
+
+  /* Each process reads through the file, obtaining it's
+   * pins, vertex weights and edge weights.  The file lists
+   * global IDs for the vertices and edges.  These will be
+   * assigned global numbers based on the order they appear
+   * in the file.  The global numbers begin with zero.
+   * Returns 1 on success, 0 on failure.
+   */
+
+  rc = process_mtxp_file(filebuf, fsize, Num_Proc, Proc,
+          &nGlobalEdges, &nGlobalVtxs, &vtxWDim, &edgeWDim,
+          &nMyPins, &myPinI, &myPinJ,
+          &nMyVtx, &myVtxNum, &myVtxWgts,
+          &nMyEdgeWgts, &myEWGno, &myEdgeWgts);
+
+  free(filebuf);
+
+  MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+  if (status != Num_Proc){
+    return 0;
+  }
+
+  /*
+   * From the lists of pins, create edge lists.  Then
+   * write the mesh data structure.
+   */
+
+  rc = create_edge_lists(nMyPins, myPinI, myPinJ, 
+            &numHEdges, &edgeGno, &edgeIdx, &pinGno);
+
+  MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+  if (status != Num_Proc){
+    return 0;
+  }
+
+  safe_free((void **)&myPinI);
+  safe_free((void **)&myPinJ);
+
+  /* Initialize mesh structure for Hypergraph. */
+  mesh->data_type = HYPERGRAPH;
+  mesh->num_elems = nMyVtx;
+  mesh->vwgt_dim = vtxWDim;
+  mesh->ewgt_dim = 0;
+  mesh->elem_array_len = mesh->num_elems + 5;
+  mesh->num_dims = 0;
+  mesh->num_el_blks = 1;
+
+  mesh->gnhedges = nGlobalEdges;
+  mesh->nhedges = numHEdges;
+  mesh->hewgt_dim = edgeWDim;
+
+  mesh->hgid = edgeGno;
+  mesh->hindex = edgeIdx;
+  mesh->hvertex = pinGno;
+  mesh->hvertex_proc = NULL;     /* don't know don't care */
+  mesh->heNumWgts = nMyEdgeWgts;
+  mesh->heWgtId = myEWGno;
+  mesh->hewgts = myEdgeWgts;
+
+  mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
+  if (!mesh->eb_etypes) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+  mesh->eb_ids = mesh->eb_etypes + mesh->num_el_blks;
+  mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
+  mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
+  mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
+
+  mesh->eb_names = (char **) malloc (mesh->num_el_blks * sizeof(char *));
+  if (!mesh->eb_names) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+
+  mesh->eb_etypes[0] = -1;
+  mesh->eb_ids[0] = 1;
+  mesh->eb_cnts[0] = nGlobalVtxs;
+  mesh->eb_nattrs[0] = 0;
+  mesh->eb_nnodes[0] = 0;
+
+  /* allocate space for name */
+  mesh->eb_names[0] = (char *) malloc((MAX_STR_LENGTH+1) * sizeof(char));
+  if (!mesh->eb_names[0]) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+  strcpy(mesh->eb_names[0], "hypergraph");
+
+  /* allocate the element structure array */
+  mesh->elements = (ELEM_INFO_PTR) malloc (mesh->elem_array_len 
+                                         * sizeof(ELEM_INFO));
+  if (!(mesh->elements)) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
+
+  /*
+   * Write the element structure with the vertices and weights
+   */
+  for (i = 0; i < mesh->elem_array_len; i++) {
+    initialize_element(&(mesh->elements[i]));
+    if (i < mesh->num_elems){
+      mesh->elements[i].globalID = myVtxNum[i];
+      mesh->elements[i].my_part  = Proc;
+      for (j=0; j<vtxWDim; j++){
+        mesh->elements[i].cpu_wgt[j] = myVtxWgts[i*vtxWDim + j];
+      }
+    }
+  }
+
+  safe_free((void **) &myVtxWgts);
+  safe_free((void **) &myVtxNum);
+
+ if (Debug_Driver > 3)
+   print_distributed_mesh(Proc, Num_Proc, mesh);
+
+  DEBUG_TRACE_END(Proc, yo);
+  return 1;
+}
+
+/*****************************************************************************/
+/* Read the "matrixmarket plus" file and create arrays of
+ * my pins, vertices, vertex weights and edge weights.
+ */
+/*****************************************************************************/
+static char *get_token(char *line, int which, int max);
+static int find_gno(int *gnos, int gnolen, int id);
+static int add_gid(int *gno, int gnolen, int *nextid, int id);
+static char *first_char(char *buf, int max);
+static char *next_line(char *buf, int max);
+static int longest_line(char *buf);
+
+static int process_mtxp_file(char *filebuf, int fsize, 
+  int nprocs, int myrank,
+  int *nGlobalEdges, int *nGlobalVtxs, int *vtxWDim, int *edgeWDim,
+  int *nMyPins, int **myPinI, int **myPinJ,
+  int *nMyVtx, int **myVtxNum, float **myVtxWgts,
+  int *nMyEdgeWgts, int **myEdgeNum, float **myEdgeWgts)
+{
+int nedges, nvtxs, npins, vdim, edim, numew;
+int countMyVtxs, countMyEdges, countMyPins;
+int proc, mine, nextpin, linemax, rc;
+int eid, vid, i, j;
+int nexte, nextv;
+float procf;
+int *egno, *vgno, *myi, *myj, *myvno, *myeno;
+char *line, *pinsBuf, *vwgtsBuf, *ewgtsBuf, *token;
+float *myvwgt, *myewgt;
+char cmesg[160];
+
+  *nGlobalEdges = *nGlobalVtxs = *nMyPins = 0;
+  *nMyVtx = *nMyEdgeWgts = *vtxWDim = *edgeWDim = 0;
+  *myPinI = *myPinJ = *myVtxNum = *myEdgeNum = NULL;
+  *myVtxWgts = *myEdgeWgts = NULL;
+
+  linemax = longest_line(filebuf);
+  line = first_char(filebuf, fsize);
+
+  if (line && (*line == '%')){
+    line = next_line(filebuf, fsize);  /* skip comments */
+  }
+
+  if (!line){
+    sprintf(cmesg, "Truncated file\n");
+    Gen_Error(0, cmesg);
+    return 0;
+  }
+
+  rc = sscanf(line, "%d %d %d %d %d %d", &nedges, &nvtxs, &npins,
+            &vdim, &numew, &edim);
+
+  if (rc != 6){
+    snprintf(cmesg, 160,"%s\nFirst line should have 6 values in it\n",line);
+    Gen_Error(0, cmesg);
+    return 0;
+  }
+
+  if (!nedges || !nvtxs){
+    return 1;
+  }
+
+  myvno = myeno = myi = myj = NULL;
+  myewgt = myvwgt = NULL;
+
+  /* Read through the pins, vertex weights and edge weights.
+   * Accumulate all vertex and edge IDs, and map these to
+   * consecutive global numbers beginning with zero.
+   *
+   * Also count my pins, my vertices, and the number of edges
+   * for which I provide weights.
+   */
+
+  countMyPins = 0;
+  countMyVtxs = 0;
+  countMyEdges = 0;
+  nexte = nextv = 0;
+
+  egno = (int *)malloc(sizeof(int) * nedges);
+  vgno = (int *)malloc(sizeof(int) * nvtxs);
+  if (!egno || !vgno){
+    sprintf(cmesg, "memory allocation\n");
+    Gen_Error(0, cmesg);
+    goto failure;
+  }
+
+  for (i=0; i<npins; i++){           /* PINS */
+    line = next_line(line, fsize);
+
+    if (!line){  
+      if (myrank == 0) printf("File is truncated in pins\n");
+      goto failure;
+    }
+
+    if (i == 0) pinsBuf = line;
+
+    rc = sscanf(line, "%d %d %f", &eid, &vid, &procf);
+    if (rc != 3){
+      snprintf(cmesg,160,"%s\nlooking for \"edge vertex process\"\n",line);
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+    mine = (((int)procf % nprocs) == myrank);
+
+    rc = add_gid(egno, nedges, &nexte, eid);
+    if (rc >= 0){
+      rc = add_gid(vgno, nvtxs, &nextv, vid);
+    }
+
+    if (rc < 0){
+      sprintf(cmesg,"File has more gids than totals at top indicate\n");
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+
+    if (mine){
+      countMyPins++;
+    }
+  }
+
+  for (i=0; i<nvtxs; i++){        /* VERTICES and possibly WEIGHTS */
+    line = next_line(line, fsize);
+
+    if (!line){
+      sprintf(cmesg,"File is truncated at vertex weights\n");
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+
+    if (i == 0) vwgtsBuf = line;
+    rc = sscanf(line, "%d %d", &proc, &vid);
+    if (rc != 2){
+      snprintf(cmesg,160,
+      "%s\nlooking for \"process vertex {optional weights}\"\n",line);
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+
+    rc = add_gid(vgno, nvtxs, &nextv, vid);
+
+    if (rc < 0){
+      sprintf(cmesg,"File has more than %d vertices\n",nvtxs);
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+
+    if ((proc % nprocs) == myrank){
+      countMyVtxs++;
+    }
+  }
+
+  if (numew > 0){                      /* HYPEREDGE WEIGHTS */
+    for (i=0; i<numew; i++){
+      line = next_line(line, fsize);
+
+      if (!line){  /* error */
+        sprintf(cmesg,"File is truncated at edge weights\n");
+        Gen_Error(0, cmesg);
+        goto failure;
+      }
+
+      if (i == 0) ewgtsBuf = line;
+
+      rc = sscanf(line, "%d %d", &proc, &eid);
+      if (rc != 2){
+        snprintf(cmesg,160,
+        "%s\nlooking for \"process edge {optional weights}\"\n",line);
+        Gen_Error(0, cmesg);
+        goto failure;
+      }
+      rc = add_gid(egno, nedges, &nexte, eid);
+
+      if (rc < 0){
+        sprintf(cmesg,"File has more than %d edge IDs\n",nedges);
+        Gen_Error(0, cmesg);
+        goto failure;
+      }
+
+      if ((proc % nprocs) == myrank){
+        countMyEdges++;
+      }
+    }
+  }
+
+  if (countMyPins > 0){
+    myi = (int *)malloc(sizeof(int) * countMyPins);
+    myj = (int *)malloc(sizeof(int) * countMyPins);
+    if (!myi || !myj){
+      sprintf(cmesg,"memory allocation\n");
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+    nextpin = 0;
+
+    line = pinsBuf;
+    for (i=0; i<npins; i++){
+      sscanf(line, "%d %d %f", &eid, &vid, &procf);
+      mine = (((int)procf % nprocs) == myrank);
+
+      if (mine){
+        myi[nextpin] = find_gno(egno, nedges, eid);
+        myj[nextpin] = find_gno(vgno, nvtxs, vid);
+        nextpin++;
+      }
+      line = next_line(line, fsize);
+    }
+  }
+
+  if (countMyVtxs > 0){
+    myvno = (int *)malloc(sizeof(int) * countMyVtxs);
+    if (vdim > 0){
+      myvwgt = (float *)malloc(sizeof(float) * countMyVtxs * vdim);
+    }
+    if (!myvno || (vdim && !myvwgt)){
+      sprintf(cmesg,"memory allocation\n");
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+    line = vwgtsBuf;
+    nextv = 0;
+
+    for (i=0; i<nvtxs; i++){
+      sscanf(line, "%d %d", &proc, &vid);
+      if ((proc % nprocs) == myrank){
+        myvno[nextv] = find_gno(vgno, nvtxs, vid); 
+        for (j=0; j<vdim; j++){
+          token = get_token(line, 2 + j, linemax);
+          if (!token){
+            snprintf(cmesg,160,"%s\nCan't find %d vertex weights\n",line,vdim);
+            Gen_Error(0, cmesg);
+            goto failure;
+          }
+          myvwgt[nextv*vdim + j] = (float)atof(token);
+        }
+        nextv++;
+      }
+      line = next_line(line, fsize);
+    }
+  }
+
+  if (countMyEdges > 0){
+    myeno = (int *)malloc(sizeof(int) * countMyEdges);
+    myewgt = (float *)malloc(sizeof(float) * countMyEdges * edim);
+    if (!myeno || !myewgt){
+      sprintf(cmesg,"memory allocation\n");
+      Gen_Error(0, cmesg);
+      goto failure;
+    }
+    line = ewgtsBuf;
+    nexte = 0;
+
+    for (i=0; i<numew; i++){
+      sscanf(line, "%d %d", &proc, &eid);
+      if ((proc % nprocs) == myrank){
+        myeno[nexte] = find_gno(egno, nedges, eid); 
+        for (j=0; j<edim; j++){
+          token = get_token(line, 2 + j, linemax);
+          if (!token){
+            snprintf(cmesg,160,"%s\nCan't find %d edge weights\n",line,edim);
+            Gen_Error(0, cmesg);
+            goto failure;
+          }
+          myewgt[nexte*edim + j] = (float)atof(token);
+        }
+        nexte++;
+      }
+      line = next_line(line, fsize);
+    }
+  }
+
+  rc = 1;   /* success */
+  goto done;
+
+failure:
+  if (myvno) free(myvno);
+  if (myvwgt) free(myvwgt);
+  if (myeno) free(myeno);
+  if (myewgt) free(myewgt);
+  if (myi) free(myi);
+  if (myj) free(myj);
+  nedges = nvtxs = vdim = edim = 0;
+  countMyPins = countMyVtxs = countMyEdges = 0;
+  rc = 0;
+
+done:
+
+  if (egno) free(egno);
+  if (vgno) free(vgno);
+
+  *nGlobalEdges = nedges;
+  *nGlobalVtxs = nvtxs;
+  *vtxWDim = vdim;
+  *edgeWDim = edim;
+
+  *nMyPins = countMyPins;
+  *myPinI  = myi;
+  *myPinJ  = myj;
+
+  *nMyVtx = countMyVtxs;
+  *myVtxNum = myvno;
+  *myVtxWgts = myvwgt;
+
+  *nMyEdgeWgts = countMyEdges;
+  *myEdgeNum = myeno;
+  *myEdgeWgts = myewgt;
+
+  return rc;
+}
+static int create_edge_lists(int nMyPins, int *myPinI, int *myPinJ, 
+      int *numHEdges, int **edgeGno, int **edgeIdx, int **pinGno)
+{
+int nedges, i, lid;
+int *eids, *pins, *count, *start;
+
+  *numHEdges = 0;
+  *edgeGno = *edgeIdx = *pinGno = NULL;
+
+  if (nMyPins == 0){
+    *edgeIdx = (int *)malloc(sizeof(int));
+    **edgeIdx = 0;
+    return 1;
+  }
+
+  /* create list of each edge ID, and count of each */
+
+  eids = (int *)malloc(sizeof(int) * nMyPins);
+  count = (int *)calloc(sizeof(int), nMyPins);
+
+  if (!eids || !count){
+    safe_free((void**)&eids);
+    safe_free((void**)&count);
+    Gen_Error(0, "memory allocation");
+    return 0;
+  }
+  nedges = 0;
+
+  for (i = 0; i<nMyPins; i++){
+    lid = add_gid(eids, nMyPins, &nedges, myPinI[i]);
+    count[lid]++;
+  }
+
+  start = (int *)malloc(sizeof(int) * (nedges+1));
+  pins = (int *)malloc(sizeof(int) * nMyPins);
+  if (!start|| !pins){
+    safe_free((void**)&eids);
+    safe_free((void**)&count);
+    safe_free((void**)&start);
+    safe_free((void**)&pins);
+    Gen_Error(0, "memory allocation");
+    return 0;
+  }
+  start[0] = 0;
+  for (i=0; i<nedges; i++){
+    start[i+1] = start[i] + count[i]; 
+    count[i] = 0;
+  }
+
+  for (i=0; i<nMyPins; i++){
+    lid = find_gno(eids, nedges, myPinI[i]);
+    pins[start[lid] + count[lid]] = myPinJ[i];
+    count[lid]++;
+  }
+
+  free(count);
+
+  *numHEdges = nedges;
+  *edgeGno   = eids;
+  *edgeIdx   = start;
+  *pinGno    = pins;
+
+  return 1;
+}
+static char *get_token(char *line, int which, int max)
+{
+char *c;
+int l, i;
+
+  /* Return a pointer to the which'th white space separated
+   * token in the line.  which is 0 for the first token.
+   */
+
+  c = line;
+  l = 0;
+
+  while (isblank(*c) && (l < max)){ c++; l++; } /* skip initial spaces */
+
+  if ((l>=max) || !*c || (*c == '\n')) return NULL;
+
+  if (which == 0) return c;
+
+  for (i=0; i < which; i++){
+    while (isgraph(*c) && (l < max)){ c++; l++;} /* skip token */
+    if ((l>=max) || !*c || (*c == '\n')) return NULL;
+    while (isblank(*c) && (l < max)){ c++; l++;} /* skip space */
+    if ((l>=max) || !*c || (*c == '\n')) return NULL;
+  }
+
+  return c;
+}
+static int find_gno(int *gnos, int gnolen, int id)
+{
+int i;
+
+  for (i=0; i< gnolen; i++){
+    if (gnos[i] == id){
+      return i;
+    }
+  }
+  return -1; 
+}
+static int add_gid(int *gno, int gnolen, int *nextid, int id)
+{
+int i;
+int last = *nextid;
+
+  if (last > gnolen) return -1;  /* no room in list */
+
+  for (i=0; i< last; i++){
+    if (gno[i] == id){
+      return i;  /* already on the list */
+    }
+  }
+  if (last == gnolen) return -1;  /* no room in list */
+
+  gno[last] = id;
+
+  *nextid = last + 1;
+
+  return last;
+}
+static char *first_char(char *buf, int max)
+{
+char *c = buf;
+int sanity = 0;
+
+  while (*c && isspace(*c) && (sanity++ < max)) c++;
+
+  if ((sanity > max) || !*c) return NULL;
+
+  return c;
+}
+static char *next_line(char *buf, int max)
+{
+char *c = buf;
+int sanity = 0;
+int first=1;
+
+  /* return pointer to the next non-comment */
+
+  while (first || (*c == '%')){
+    while (*c && (*c != '\n') && (sanity++ < max)) c++;
+
+    if ((sanity >= max) || (*c == 0)){
+      return NULL;
+    }
+    first = 0;
+    c++;
+  }
+
+  return c;
+}
+static int longest_line(char *buf)
+{
+int maxline, linecount;
+char *c;
+
+  linecount = maxline = 0;
+  c = buf;
+
+  while (*c){
+    while (*c && *c++ != '\n') linecount++;
+    if (linecount > maxline){
+      maxline = linecount;
+    }
+    linecount = 0;
+  }
+  return maxline;
 }
 
 /*****************************************************************************/

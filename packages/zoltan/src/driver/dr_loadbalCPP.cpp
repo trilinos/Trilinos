@@ -358,26 +358,31 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
   }
 
   if (mesh->data_type == HYPERGRAPH) {
-    if (zz.Set_Num_HG_Edges_Fn(get_num_hg_edges, 
+    if (zz.Set_HG_Size_CS_Fn(get_hg_size_compressed_pin_storage, 
          (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Set_Num_HG_Edges_Fn()\n");
+        "fatal:  error returned from zz.Set_HG_Size_CS_Fn()\n");
+      return 0;
+    }
+    if (zz.Set_HG_CS_Fn(get_hg_compressed_pin_storage, 
+         (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, 
+        "fatal:  error returned from zz.Set_HG_CS_Fn()\n");
+      return 0;
+    }
+    if (zz.Set_HG_Size_Edge_Weights_Fn(get_hg_size_edge_weights, 
+         (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, 
+        "fatal:  error returned from zz.Set_HG_Size_Edge_Weights_Fn()\n");
+      return 0;
+    }
+    if (zz.Set_HG_Edge_Weights_Fn(get_hg_edge_weights, 
+         (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, 
+        "fatal:  error returned from zz.Set_HG_Edge_Weights_Fn()\n");
       return 0;
     }
 
-    if (zz.Set_HG_Edge_Info_Fn( get_hg_edge_info, 
-                         (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Set_HG_Edge_Info_Fn()\n");
-      return 0;
-    }
-
-    if (zz.Set_HG_Edge_List_Fn( get_hg_edge_list, 
-                         (void *) mesh) == ZOLTAN_FATAL) {
-      Gen_Error(0, 
-        "fatal:  error returned from Zoltan_Set_HG_Edge_List_Fn()\n");
-      return 0;
-    }
   }
 
   /* Functions for partitions */
@@ -1301,161 +1306,158 @@ int get_partition(void *data, int num_gid_entries, int num_lid_entries,
 
   return current_elem->my_part;
 }
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_hg_size_compressed_pin_storage(
+  void *data,
+  int *num_lists,
+  int *num_pins,
+  int *format)
+{
+  int npins, i;
+  MESH_INFO_PTR mesh;
 
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    return ZOLTAN_FATAL;
+  }
+
+  mesh = (MESH_INFO_PTR) data;
+
+  *num_lists = mesh->nhedges;
+  *format = ZOLTAN_COMPRESSED_ROWS;
+  *num_pins = mesh->hindex[mesh->nhedges];
+
+  STOP_CALLBACK_TIMER;
+
+  return ZOLTAN_OK;
+}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_num_hg_edges(
-  void *data, 
-  int *ierr)
+int get_hg_size_edge_weights(
+  void *data,
+  int *num_edge)
 {
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
 
   if (data == NULL) {
-    *ierr = ZOLTAN_FATAL;
-    return -1;
-  }
-
-  mesh = (MESH_INFO_PTR) data;
-  *ierr = ZOLTAN_OK;
-
-  STOP_CALLBACK_TIMER;
-
-  return mesh->nhedges;
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-int get_num_hg_pins(
-  void *data, 
-  int *ierr)
-{
-  MESH_INFO_PTR mesh;
-
-  START_CALLBACK_TIMER;
-
-  if (data == NULL) {
-    *ierr = ZOLTAN_FATAL;
-    return -1;
+    return ZOLTAN_FATAL;
   }
 
   mesh = (MESH_INFO_PTR) data;
 
-  *ierr = ZOLTAN_OK;
+  *num_edge = mesh->heNumWgts;
 
   STOP_CALLBACK_TIMER;
 
-  return mesh->hindex[mesh->nhedges];
+  return ZOLTAN_OK;
 }
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_hg_edge_info(
+int get_hg_compressed_pin_storage(
   void *data,
   int num_gid_entries,
-  int num_lid_entries,
-  int nedges,
-  int ewgt_dim,
-  ZOLTAN_ID_PTR edge_gids,
-  ZOLTAN_ID_PTR edge_lids,
-  int *edge_sizes,
-  float *edge_weights
-)
+  int nrowcol,
+  int npins,
+  int format,
+  ZOLTAN_ID_PTR rowcol_GID,
+  int *rowcol_ptr,
+  ZOLTAN_ID_PTR pin_GID)
 {
   MESH_INFO_PTR mesh;
-  int i, j;
-  int gid = num_gid_entries-1;
-  int lid = num_lid_entries-1;
-  int *hindex;
+  ZOLTAN_ID_PTR edg_GID, vtx_GID;
+  int *row_ptr;
+  int nedges;
   int ierr = ZOLTAN_OK;
 
   START_CALLBACK_TIMER;
 
-  if (data == NULL) {
+  if (format != ZOLTAN_COMPRESSED_ROWS){
     ierr = ZOLTAN_FATAL;
     goto End;
   }
-   
-  mesh = (MESH_INFO_PTR) data;
-  hindex = mesh->hindex;
-  if (nedges != mesh->nhedges) {
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-   
-  for (i = 0; i < mesh->nhedges; i++) {
-    edge_gids[i*num_gid_entries+gid] = mesh->hgid[i];
-    if (num_lid_entries) edge_lids[i*num_lid_entries+lid] = i;
-    edge_sizes[i] = hindex[i+1] - hindex[i];
-    for (j = 0; j < ewgt_dim; j++) {
-      if (mesh->hewgt_dim > j)
-        edge_weights[j + i*ewgt_dim] = mesh->hewgts[j + i*mesh->hewgt_dim];
-      else
-        edge_weights[j + i*ewgt_dim] = 1.0;
-    }
-  }  
 
-End:
-    
-  STOP_CALLBACK_TIMER;
-  return ierr;
-}
+  edg_GID = rowcol_GID;
+  vtx_GID = pin_GID;
+  row_ptr = rowcol_ptr;
+  nedges = nrowcol;
  
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-int get_hg_edge_list(
-  void *data,
-  int num_gid_entries,
-  int num_lid_entries,
-  int nedges,
-  ZOLTAN_ID_PTR edge_gids,
-  ZOLTAN_ID_PTR edge_lids,
-  int *edge_sizes,
-  ZOLTAN_ID_PTR edge_verts,
-  int *edge_procs
-)
-{
-  MESH_INFO_PTR mesh;
-  int i, j, k, local_id;
-  int pcnt;
-  int gid = num_gid_entries-1;
-  int lid = num_lid_entries-1;
-  int *hindex;
-  int ierr = ZOLTAN_OK;
-
-  START_CALLBACK_TIMER;
-
   if (data == NULL) {
     ierr = ZOLTAN_FATAL;
     goto End;
   }
-   
+  
   mesh = (MESH_INFO_PTR) data;
-  hindex = mesh->hindex;
-
-  pcnt = 0;
-  for (i = 0; i < nedges; i++) {
-    local_id = (num_lid_entries ? edge_lids[i*num_lid_entries+lid]
-                                : in_list(edge_gids[i*num_gid_entries+gid],
-                                          mesh->nhedges, mesh->hgid));     
-    for (j = hindex[local_id]; j < hindex[local_id+1]; j++) {
-      edge_procs[pcnt] = mesh->hvertex_proc[j];
-      for (k = 0; k < gid; k++) edge_verts[k+pcnt*num_gid_entries] = 0;
-      edge_verts[gid+pcnt*num_gid_entries] = mesh->hvertex[j];
-      pcnt++;
-    }
-  }  
+   
+  memcpy(edg_GID, mesh->hgid, sizeof(int) * num_gid_entries * nedges);
+  memcpy(vtx_GID, mesh->hvertex,
+          sizeof(int) * num_gid_entries * npins);
+  memcpy(row_ptr, mesh->hindex, sizeof(int) * nedges);
 
 End:
-    
+
+  STOP_CALLBACK_TIMER;
+  return ierr;
+} 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+  
+int get_hg_edge_weights(
+  void *data, 
+  int num_gid_entries,
+  int num_lid_entries,
+  int nedges,
+  int ewgt_dim, 
+  ZOLTAN_ID_PTR edge_gids,
+  ZOLTAN_ID_PTR edge_lids,
+  float *edge_weights
+) 
+{ 
+  MESH_INFO_PTR mesh;
+  int i, ierr = ZOLTAN_OK;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL){
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  mesh = (MESH_INFO_PTR) data;
+
+  if (nedges > mesh->heNumWgts){
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  if (mesh->heWgtId){
+    memcpy(edge_gids, mesh->heWgtId,sizeof(int) * num_gid_entries * nedges);
+  }
+  else{
+    memcpy(edge_gids, mesh->hgid,sizeof(int) * num_gid_entries * nedges);
+  }
+  memset(edge_lids, 0, sizeof(int) * num_lid_entries * nedges);
+
+  for (i=0; i<nedges; i++){
+    edge_lids[i*num_lid_entries] = i;
+  }
+
+  memcpy(edge_weights, mesh->hewgts, sizeof(float) * ewgt_dim * nedges);
+
+End:
+
   STOP_CALLBACK_TIMER;
   return ierr;
 }
+
+
 
 /*****************************************************************************/
 /*****************************************************************************/

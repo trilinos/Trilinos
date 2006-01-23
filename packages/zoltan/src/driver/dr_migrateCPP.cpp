@@ -578,7 +578,8 @@ void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
     Gen_Error(0, "Fatal: error updating element dd");
   }
 
-  if (mesh->data_type == HYPERGRAPH && !update_hvertex_proc(mesh)) {
+  if (mesh->data_type == HYPERGRAPH && mesh->hvertex_proc &&
+       !update_hvertex_proc(mesh)) {
     Gen_Error(0, "Fatal: error updating hyperedges");
   }
 
