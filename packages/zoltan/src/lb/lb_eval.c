@@ -47,6 +47,7 @@ extern "C" {
 static int eval_edge_list(ZZ *, int, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR,
   int *, float *, int, int, int, int *, int *, int *, int *, float *,
   int *, float *, int *, int *);
+static int get_max_partition(ZZ *zz, int *parts, int nparts);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -102,7 +103,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int num_lid_entries = zz->Num_LID;
   int gid_off, lid_off;
   int have_graph_callbacks;
-  int have_edge_callbacks;
   int have_pin_callbacks;
   int edge_list_size;
   int sum;
@@ -111,13 +111,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int *nobj_arr, *cut_arr, *bndry_arr, *commvol_arr, *all_arr, *all_arr_glob;
   float *vwgt_arr, *vwgt_arr_glob, *cutwgt_arr, *cutwgt_arr_glob;
 
-
-  int nedges = 0;
-  ZOLTAN_ID_PTR egids = NULL;
-  ZOLTAN_ID_PTR elids = NULL;
-  int* esizes = NULL;
-  int nwgt, vwgt_dim;
-  int ewgtdim = zz->Edge_Weight_Dim;
+  int vwgt_dim;
   double hgraph_global_sum[2];
   double hgraph_local_stats[2];
   ZHG* zhg;
@@ -140,14 +134,22 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   edges_per_obj = NULL;
   part_sizes = NULL;
 
+  /* Get partition information. We need LB.Num_Global_Parts */
+  /* We don't know if the application uses a Zoltan-style
+     mapping of partitions to processsors, so avoid Part2Proc! */
+  ierr = Zoltan_LB_Build_PartDist(zz);
+  if (ierr == ZOLTAN_FATAL){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_LB_Build_PartDist returned error");
+    goto End;
+  }
+
+  nparts = zz->LB.Num_Global_Parts; /* Requested number of partitions. */
+  maxpart = -1;                     /* flag that it's not computed     */
+
   /* Have graph or hypergraph query functions? */
   have_graph_callbacks = 
        ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
         (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL));
-  have_edge_callbacks = 
-        zz->Get_Num_HG_Edges != NULL && 
-        zz->Get_HG_Edge_Info != NULL &&
-        zz->Get_HG_Edge_List != NULL;
   have_pin_callbacks = 
         zz->Get_HG_Size_CS != NULL && zz->Get_HG_CS != NULL ;
 
@@ -167,51 +169,64 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
      * zhg->HG.vwgts (which normally holds pin weights instead).  
      * Number of vertex weights may exceed zz->Obj_Weight_Dim if
      * the ADD_OBJ_WEIGHT parameter is set.
-     */
+    */
 
-     zhg = (ZHG*) ZOLTAN_CALLOC(1, sizeof(ZHG));
-     if (zhg == NULL) {
-       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-       ierr = ZOLTAN_MEMERR;
-       goto End;
-     }
+    zhg = (ZHG*) ZOLTAN_CALLOC(1, sizeof(ZHG));
+    if (zhg == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
   
-     ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, 
-              NULL,   /* no parameters */
-              NULL);  /* initial partition assignment irrelevant */
+    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, 
+             NULL,   /* no parameters */
+             NULL);  /* initial partition assignment irrelevant */
 
-     if (ierr == ZOLTAN_FATAL){
-       Zoltan_PHG_Free_Hypergraph_Data(zhg);
-       ZOLTAN_FREE(&zhg);
-       ZOLTAN_TRACE_EXIT(zz, yo);
-       return ierr;
-     }
+    if (ierr == ZOLTAN_FATAL){
+      Zoltan_PHG_Free_Hypergraph_Data(zhg);
+      ZOLTAN_FREE(&zhg);
+      ZOLTAN_TRACE_EXIT(zz, yo);
+      return ierr;
+    }
 
-     if (zhg->nObj){
-       zhg->Output_Parts = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nObj);
-       memcpy(zhg->Output_Parts, zhg->Input_Parts, sizeof(int) * zhg->nObj);
-     }
+    if (zhg->nObj){
+      zhg->Output_Parts = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nObj);
+      memcpy(zhg->Output_Parts, zhg->Input_Parts, sizeof(int) * zhg->nObj);
+    }
 
-     /* Perform cut calculations and find global max, min and sum */
-     ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
+    maxpart = get_max_partition(zz, zhg->Input_Parts, zhg->nObj);
 
-     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
-       Zoltan_PHG_Free_Hypergraph_Data(zhg);
-       ZOLTAN_FREE(&zhg);
-       ZOLTAN_FREE(&zhg->Output_Parts);
-       return ZOLTAN_FATAL;
-     }
-            
-     MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
-                   MPI_DOUBLE, MPI_SUM, zz->Communicator);
+    if (maxpart+1 != nparts){
+      sprintf(msg, 
+        "Actual # of partitions (%1d) != requested # partitions (%1d)", 
+        maxpart+1, nparts);
+      if (zz->Proc==0){
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+        printf("%s No cut statistics available.\n", yo);
+      }
+    }
+    else{
+      /* Perform cut calculations and find global max, min and sum */
+      ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
+  
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
+        Zoltan_PHG_Free_Hypergraph_Data(zhg);
+        ZOLTAN_FREE(&zhg);
+        ZOLTAN_FREE(&zhg->Output_Parts);
+        return ZOLTAN_FATAL;
+      }
+              
+      MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
+                    MPI_DOUBLE, MPI_SUM, zz->Communicator);
+    }
 
-     vwgt_dim = zhg->HG.VtxWeightDim;
-     num_obj = zhg->nObj;
-     global_ids = zhg->GIDs;
-     local_ids = zhg->LIDs;
-     vwgts = zhg->HG.vwgt;
-     part = zhg->Input_Parts;
+    vwgt_dim = zhg->HG.VtxWeightDim;
+    num_obj = zhg->nObj;
+    global_ids = zhg->GIDs;
+    local_ids = zhg->LIDs;
+    vwgts = zhg->HG.vwgt;
+    part = zhg->Input_Parts;
   }
   else {
   
@@ -230,26 +245,10 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   compute_part = (zz->Get_Partition != NULL || zz->Get_Partition_Multi != NULL);
 
   if (compute_part){
-    /* Get partition information. We need LB.Num_Global_Parts */
-    /* We don't know if the application uses a Zoltan-style
-       mapping of partitions to processsors, so avoid Part2Proc! */
-    ierr = Zoltan_LB_Build_PartDist(zz);
-    if (ierr == ZOLTAN_FATAL){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_LB_Build_PartDist returned error");
-      goto End;
-    }
-    /* Requested number of partitions. */
-    nparts = zz->LB.Num_Global_Parts;
 
-    /* Compute actual number of partitions. */
-    maxpart = 0;
-    for (i=0; i<num_obj; i++)
-      if (part[i]>maxpart) 
-        maxpart = part[i];
-    /* Find max over all procs. */
-    i = maxpart;
-    MPI_Allreduce(&i, &maxpart, 1, MPI_INT, MPI_MAX,
-                  zz->Communicator);
+    if (maxpart < 0){ /* Compute actual number of partitions. */
+      maxpart = get_max_partition(zz, part, num_obj);
+    }
 
     if (maxpart+1 > nparts){
       ierr = ZOLTAN_WARN;
@@ -407,84 +406,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       if (proc_count[j]>=0) num_adj++;
       
   }
-  
-  if (have_edge_callbacks) {
-
-    /* Compute cutl and cutn statistics using Zoltan_PHG_Removed_Cuts on */
-    /* the hypergraph with all edges removed. */
-
-    /* BUG - the vertex weights do not contain the extra weights if
-     *   ADD_OBJ_WEIGHT specifies an extra calculated vertex weight.
-     */
-    
-    nedges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
-      goto End;
-    }
-
-    if (nedges > 0) {
-
-      /* Get info about the edges:  GIDs, LIDs, sizes, edge weights */
-      egids = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges);
-      elids = ZOLTAN_MALLOC_LID_ARRAY(zz, nedges);
-      esizes = (int *) ZOLTAN_MALLOC(nedges * sizeof(int));
-      nwgt = nedges * ewgtdim;
-      if (nwgt) 
-        ewgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
-      if (!esizes || !egids || (num_lid_entries && !elids) ||
-          (nwgt && !ewgts))  {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-        ierr = ZOLTAN_MEMERR;
-        goto End;
-      }
-
-      ierr = zz->Get_HG_Edge_Info(zz->Get_HG_Edge_Info_Data,
-                                  num_gid_entries, num_lid_entries,
-                                  nedges, ewgtdim, 
-                                  egids, elids, esizes, ewgts); 
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_HG_Edge_Info");
-        goto End;
-      }
-    }
-
-    /* create and fill zhg structure with all removed edges */
-    zhg = (ZHG*) ZOLTAN_MALLOC(sizeof(ZHG));
-    if (zhg == NULL) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-
-    zhg->nObj = num_obj;
-    zhg->GIDs = global_ids;
-    zhg->LIDs = local_ids;
-    zhg->nRemove = nedges;
-    zhg->Remove_EGIDs = egids;
-    zhg->Remove_ELIDs = elids;
-    zhg->Remove_Ewgt = ewgts;
-    zhg->Remove_Esize = esizes;
-    zhg->Remove_Pin_GIDs = NULL;
-    zhg->Remove_Pin_Procs = NULL;
-    zhg->Input_Parts = part;
-    zhg->Output_Parts = part;
-    zhg->nRecv_GNOs = 0;
-
-    /* Perform cut calculations and find global max, min and sum */
-    ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
-            
-    MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
-                  MPI_DOUBLE, MPI_SUM, zz->Communicator);
-
-    ZOLTAN_FREE(&esizes);
-    ZOLTAN_FREE(&egids);
-    ZOLTAN_FREE(&elids);
-    ZOLTAN_FREE(&ewgts);
-    ZOLTAN_FREE(&zhg);
-  }  
   
   if (print_stats){
     imin = 1;
@@ -759,7 +680,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           imbal[i]);
       }
 
-      if (have_edge_callbacks) {
+      if (have_pin_callbacks && (maxpart+1 == nparts)) {
         printf("%s  No. hyperedge cuts (cutl):            %8.0f\n", yo, 
                 hgraph_global_sum[0]);
         printf("%s  No. cut hyperedges (cutn):            %8.0f\n\n", yo,
@@ -803,6 +724,20 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
 
   return ierr;
+}
+static int get_max_partition(ZZ *zz, int *parts, int nparts)
+{
+  int i, maxpart=0;
+    
+  for (i=0; i<nparts; i++)
+    if (parts[i]>maxpart) 
+      maxpart = parts[i];
+
+  i = maxpart;
+  MPI_Allreduce(&i, &maxpart, 1, MPI_INT, MPI_MAX,
+                zz->Communicator);
+
+  return maxpart;
 }
 /***************************************************************************/
 static int eval_edge_list(
