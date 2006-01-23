@@ -669,38 +669,35 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
           return 0;
       }
       
-      /* Only do coloring if this was specified in the driver input file */
+      /* Only do coloring if it is specified in the driver input file */
       /* Do coloring after load balancing */        
-      if (Debug_Driver > 0) {
-          if (Proc == 0) printf("\nBEFORE coloring\n");
-          /* Not yet impl. */
-      }
-      /* Color array is allocated within the Zoltan_Color. */
       if (Zoltan_Color(zz, &num_gid_entries, &num_lid_entries,
                        mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
           Gen_Error(0, "fatal:  error returned from Zoltan_Color()\n");
           return 0;
       }
 
-
-      /* UVCUVC: TODO check coloring!!!! */
+      /* Verify coloring */
       if (Debug_Driver > 0) {
-          if (Proc == 0) printf("\nAFTER coloring\n");
-          /* Not yet impl. */
+          if (Proc == 0)
+              printf("\nVerifying coloring result\n");
+          if (Zoltan_Color_Test(zz, &num_gid_entries, &num_lid_entries,
+                                mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
+              Gen_Error(0, "fatal:  error returned from Zoltan_Color_Test()\n");
+              return 0;
+          }
       }
-
 
       /* Copy color info as "perm" into mesh structure */
       for (i = 0; i < mesh->num_elems; i++){
           int lid = lids[num_lid_entries * i + (num_lid_entries - 1)];
           mesh->elements[lid].perm_value = color[i];
       }
-
       
       /* Free color data */
       safe_free((void **) &color);
       safe_free((void **) &gids);
-      safe_free((void **) &lids);                
+      safe_free((void **) &lids);
     }
 
   
