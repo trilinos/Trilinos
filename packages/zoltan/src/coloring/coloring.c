@@ -265,6 +265,7 @@ int Zoltan_Color(
   for (i=0; i<nvtx; i++) 
       color_exp[i] = color[i];
 
+#if 0
   /* Check if there is an error in coloring */
   if (distance == 1 && zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) { 
       for (i=0; i<nvtx; i++) {
@@ -275,6 +276,7 @@ int Zoltan_Color(
           }
       }
   }
+#endif
   
  End:  
   Zoltan_Multifree(__FILE__,__LINE__, 6, &vtxdist, &xadj, &adjncy, &input_parts, &adjproc, &color);
