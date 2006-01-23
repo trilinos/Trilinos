@@ -836,11 +836,12 @@ int read_mtxplus_file(
 /*****************************************************************************/
 /* Read the "matrixmarket plus" file and create arrays of
  * my pins, vertices, vertex weights and edge weights.
+ *
+ * Assumption: vertex and edge global IDs in the file are 
+ *  consecutive integers, probably starting at 0 or 1.
  */
 /*****************************************************************************/
 static char *get_token(char *line, int which, int max);
-static int find_gno(int *gnos, int gnolen, int id);
-static int add_gid(int *gno, int gnolen, int *nextid, int id);
 static char *first_char(char *buf, int max);
 static char *next_line(char *buf, int max);
 static int longest_line(char *buf);
@@ -856,9 +857,10 @@ int nedges, nvtxs, npins, vdim, edim, numew;
 int countMyVtxs, countMyEdges, countMyPins;
 int proc, mine, nextpin, linemax, rc;
 int eid, vid, i, j;
+int mineid, minvid, maxeid, maxvid, numeids, numvids;
 int nexte, nextv;
 float procf;
-int *egno, *vgno, *myi, *myj, *myvno, *myeno;
+int *myi, *myj, *myvno, *myeno;
 char *line, *pinsBuf, *vwgtsBuf, *ewgtsBuf, *token;
 float *myvwgt, *myewgt;
 char cmesg[160];
@@ -890,7 +892,7 @@ char cmesg[160];
     return 0;
   }
 
-  if (!nedges || !nvtxs){
+  if (!nedges || !nvtxs || !npins){
     return 1;
   }
 
@@ -910,14 +912,6 @@ char cmesg[160];
   countMyEdges = 0;
   nexte = nextv = 0;
 
-  egno = (int *)malloc(sizeof(int) * nedges);
-  vgno = (int *)malloc(sizeof(int) * nvtxs);
-  if (!egno || !vgno){
-    sprintf(cmesg, "memory allocation\n");
-    Gen_Error(0, cmesg);
-    goto failure;
-  }
-
   for (i=0; i<npins; i++){           /* PINS */
     line = next_line(line, fsize);
 
@@ -936,21 +930,25 @@ char cmesg[160];
     }
     mine = (((int)procf % nprocs) == myrank);
 
-    rc = add_gid(egno, nedges, &nexte, eid);
-    if (rc >= 0){
-      rc = add_gid(vgno, nvtxs, &nextv, vid);
+    if (i){
+      if (eid < mineid) mineid = eid;
+      if (vid < minvid) minvid = vid;
+      if (eid > maxeid) maxeid = eid;
+      if (vid > maxvid) maxvid = vid;
     }
-
-    if (rc < 0){
-      sprintf(cmesg,"File has more gids than totals at top indicate\n");
-      Gen_Error(0, cmesg);
-      goto failure;
+    else{
+      mineid = maxeid = eid;
+      minvid = maxvid = vid;
     }
 
     if (mine){
       countMyPins++;
     }
   }
+
+  numeids = maxeid - mineid + 1;
+
+  
 
   for (i=0; i<nvtxs; i++){        /* VERTICES and possibly WEIGHTS */
     line = next_line(line, fsize);
@@ -970,18 +968,15 @@ char cmesg[160];
       goto failure;
     }
 
-    rc = add_gid(vgno, nvtxs, &nextv, vid);
-
-    if (rc < 0){
-      sprintf(cmesg,"File has more than %d vertices\n",nvtxs);
-      Gen_Error(0, cmesg);
-      goto failure;
-    }
+    if (vid < minvid) minvid = vid;
+    if (vid > maxvid) maxvid = vid;
 
     if ((proc % nprocs) == myrank){
       countMyVtxs++;
     }
   }
+
+  numvids = maxvid - minvid + 1;
 
   if (numew > 0){                      /* HYPEREDGE WEIGHTS */
     for (i=0; i<numew; i++){
@@ -1002,7 +997,9 @@ char cmesg[160];
         Gen_Error(0, cmesg);
         goto failure;
       }
-      rc = add_gid(egno, nedges, &nexte, eid);
+
+      if (eid < mineid) mineid = eid;
+      if (eid > maxeid) maxeid = eid;
 
       if (rc < 0){
         sprintf(cmesg,"File has more than %d edge IDs\n",nedges);
@@ -1014,6 +1011,24 @@ char cmesg[160];
         countMyEdges++;
       }
     }
+  }
+
+  numeids = maxeid - mineid + 1;
+  rc = 1;
+
+  if (numeids != nedges){
+    sprintf(cmesg,"found range of %d edges (not %d expected) in file\n", 
+            numeids,nedges);
+    rc = 0;
+  }
+  else if (numvids != nvtxs){
+    sprintf(cmesg,"found range of %d vertices (not %d expected) in file\n", 
+            numvids,nvtxs);
+    rc = 0;
+  }
+  if (!rc){
+    Gen_Error(0, cmesg);
+    goto failure;
   }
 
   if (countMyPins > 0){
@@ -1032,8 +1047,8 @@ char cmesg[160];
       mine = (((int)procf % nprocs) == myrank);
 
       if (mine){
-        myi[nextpin] = find_gno(egno, nedges, eid);
-        myj[nextpin] = find_gno(vgno, nvtxs, vid);
+        myi[nextpin] = eid - mineid;
+        myj[nextpin] = vid - minvid;
         nextpin++;
       }
       line = next_line(line, fsize);
@@ -1056,7 +1071,7 @@ char cmesg[160];
     for (i=0; i<nvtxs; i++){
       sscanf(line, "%d %d", &proc, &vid);
       if ((proc % nprocs) == myrank){
-        myvno[nextv] = find_gno(vgno, nvtxs, vid); 
+        myvno[nextv] = vid - minvid;
         for (j=0; j<vdim; j++){
           token = get_token(line, 2 + j, linemax);
           if (!token){
@@ -1086,7 +1101,7 @@ char cmesg[160];
     for (i=0; i<numew; i++){
       sscanf(line, "%d %d", &proc, &eid);
       if ((proc % nprocs) == myrank){
-        myeno[nexte] = find_gno(egno, nedges, eid); 
+        myeno[nexte] = eid - mineid;
         for (j=0; j<edim; j++){
           token = get_token(line, 2 + j, linemax);
           if (!token){
@@ -1118,9 +1133,6 @@ failure:
 
 done:
 
-  if (egno) free(egno);
-  if (vgno) free(vgno);
-
   *nGlobalEdges = nedges;
   *nGlobalVtxs = nvtxs;
   *vtxWDim = vdim;
@@ -1140,46 +1152,104 @@ done:
 
   return rc;
 }
+int _zoltan_sortFunc(const void *a, const void *b)
+{
+  int ia, ib;
+
+  ia = *(int *)a;
+  ib = *(int *)b;
+
+  if (ia < ib){
+    return -1;
+  }
+  else if (ia > ib){
+    return 1;
+  }
+  else{
+    return 0;
+  }
+}
+
 static int create_edge_lists(int nMyPins, int *myPinI, int *myPinJ, 
       int *numHEdges, int **edgeGno, int **edgeIdx, int **pinGno)
 {
 int nedges, i, lid;
-int *eids, *pins, *count, *start;
+int *pins, *count, *start, *eidList, *match, *idx;
 
   *numHEdges = 0;
   *edgeGno = *edgeIdx = *pinGno = NULL;
 
   if (nMyPins == 0){
     *edgeIdx = (int *)malloc(sizeof(int));
-    **edgeIdx = 0;
+    **edgeIdx = 0; /* number of pins */
     return 1;
   }
 
-  /* create list of each edge ID, and count of each */
+  eidList = (int *)malloc(sizeof(int) * nMyPins);
+  idx = (int *)malloc(sizeof(int) * nMyPins);
+  pins = (int *)malloc(sizeof(int) * nMyPins);
 
-  eids = (int *)malloc(sizeof(int) * nMyPins);
-  count = (int *)calloc(sizeof(int), nMyPins);
-
-  if (!eids || !count){
-    safe_free((void**)&eids);
-    safe_free((void**)&count);
+  if (!eidList || !idx || !pins){
+    safe_free((void**)&eidList);
+    safe_free((void**)&idx);
+    safe_free((void**)&pins);
     Gen_Error(0, "memory allocation");
     return 0;
   }
-  nedges = 0;
 
-  for (i = 0; i<nMyPins; i++){
-    lid = add_gid(eids, nMyPins, &nedges, myPinI[i]);
-    count[lid]++;
+  /* create a sorted list of unique edges IDs */
+
+  memcpy(eidList, myPinI, sizeof(int) * nMyPins);
+  qsort((void *)eidList, nMyPins, sizeof(int), _zoltan_sortFunc);
+
+  for (i=1, nedges=1; i < nMyPins; i++){
+    if (eidList[i] == eidList[nedges-1]) continue;
+    if (nedges < i){
+      eidList[nedges] = eidList[i];
+    }
+    nedges++;
   }
 
-  start = (int *)malloc(sizeof(int) * (nedges+1));
-  pins = (int *)malloc(sizeof(int) * nMyPins);
-  if (!start|| !pins){
-    safe_free((void**)&eids);
-    safe_free((void**)&count);
-    safe_free((void**)&start);
+  eidList = (int *)realloc(eidList, nedges * sizeof(int));
+
+  /* Count pins in each edge, map pins to local edge index */
+
+  count = (int *)calloc(sizeof(int), nedges);
+
+  if (!count){
+    safe_free((void**)&eidList);
+    safe_free((void**)&idx);
     safe_free((void**)&pins);
+    Gen_Error(0, "memory allocation");
+    return 0;
+  }
+
+  for (i = 0; i<nMyPins; i++){
+    match = bsearch((const void *)(myPinI + i), (const void *)eidList,
+                    nedges, sizeof(int), _zoltan_sortFunc);
+
+    if (!match){
+      safe_free((void**)&eidList);
+      safe_free((void**)&idx);
+      safe_free((void**)&pins);
+      safe_free((void**)&count);
+      Gen_Error(0, "bsearch failure");
+      return 0;
+    }
+
+    lid = (int *)match - eidList;
+    count[lid]++;
+    idx[i] = lid;
+  }
+
+  /* Create edges lists */
+
+  start = (int *)malloc(sizeof(int) * (nedges+1));
+  if (!start){
+    safe_free((void**)&eidList);
+    safe_free((void**)&idx);
+    safe_free((void**)&pins);
+    safe_free((void**)&count);
     Gen_Error(0, "memory allocation");
     return 0;
   }
@@ -1190,15 +1260,16 @@ int *eids, *pins, *count, *start;
   }
 
   for (i=0; i<nMyPins; i++){
-    lid = find_gno(eids, nedges, myPinI[i]);
+    lid = idx[i];
     pins[start[lid] + count[lid]] = myPinJ[i];
     count[lid]++;
   }
 
   free(count);
+  free(idx);
 
   *numHEdges = nedges;
-  *edgeGno   = eids;
+  *edgeGno   = eidList;
   *edgeIdx   = start;
   *pinGno    = pins;
 
@@ -1230,37 +1301,6 @@ int l, i;
   }
 
   return c;
-}
-static int find_gno(int *gnos, int gnolen, int id)
-{
-int i;
-
-  for (i=0; i< gnolen; i++){
-    if (gnos[i] == id){
-      return i;
-    }
-  }
-  return -1; 
-}
-static int add_gid(int *gno, int gnolen, int *nextid, int id)
-{
-int i;
-int last = *nextid;
-
-  if (last > gnolen) return -1;  /* no room in list */
-
-  for (i=0; i< last; i++){
-    if (gno[i] == id){
-      return i;  /* already on the list */
-    }
-  }
-  if (last == gnolen) return -1;  /* no room in list */
-
-  gno[last] = id;
-
-  *nextid = last + 1;
-
-  return last;
 }
 static char *first_char(char *buf, int max)
 {
