@@ -129,13 +129,15 @@ uninstall-hook:
 
 TRILINOS_HOME_DIR=@abs_top_srcdir@
 TRILINOS_BUILD_DIR=@abs_top_builddir@
+TRILINOS_MPI_MAX_PROC=4
+TRILINOS_TEST_CATEGORY=INSTALL
 
 runtests-serial :
 	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=serial \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=INSTALL \
+  --category=$(TRILINOS_TEST_CATEGORY) \
   --output-dir=@abs_top_builddir@/runtests-results
 
 runtests-mpi :
@@ -143,8 +145,9 @@ runtests-mpi :
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=mpi \
   --mpi-go=$(TRILINOS_MPI_GO) \
+  --max-proc=$(TRILINOS_MPI_MAX_PROC) \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=INSTALL \
+  --category=$(TRILINOS_TEST_CATEGORY) \
   --output-dir=@abs_top_builddir@/runtests-results
 
 run-examples: all-am
