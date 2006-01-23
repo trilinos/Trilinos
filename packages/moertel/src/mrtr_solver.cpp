@@ -78,18 +78,10 @@ void MOERTEL::Solver::SetSystem(RefCountPtr<Epetra_CrsMatrix> matrix,
 bool MOERTEL::Solver::Solve(RefCountPtr<Teuchos::ParameterList> params,
                             RefCountPtr<Epetra_CrsMatrix> matrix,
                             RefCountPtr<Epetra_Vector> x,
-                            RefCountPtr<Epetra_Vector> b,
-                            Epetra_CrsMatrix& I,
-                            Epetra_CrsMatrix& BWT,
-                            Epetra_CrsMatrix& B,
-                            Epetra_CrsMatrix& WT)
+                            RefCountPtr<Epetra_Vector> b)
 {
   SetParameters(params.get());
   SetSystem(matrix,x,b);
-  I_ = &I;
-  BWT_ = &BWT;
-  B_ = &B;
-  WT_ = &WT;
   return Solve();
 }
 
@@ -289,7 +281,7 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
     if (mlprec_==null || matrixisnew_);
     mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams),true);
   
-#if 1
+#if 0
   // serial and on 1 level only
   const ML* ml = mlprec_->GetML();
   int nlevel = ml->ML_num_actual_levels; 
@@ -363,6 +355,7 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   delete Rmod; Rmod = NULL;
   tmp5->FillComplete(P->OperatorDomainMap(),P->OperatorRangeMap());
   Epetra_CrsMatrix* Pmod = MOERTEL::StripZeros(*tmp5,1.0e-12);
+  delete tmp5; tmp5 = NULL;
   //cout << *Pmod;
   
   // fine grid matrix is matrix_, fine grid lhs, rhs are b_, x_
@@ -395,33 +388,21 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   //Epetra_CrsMatrix* PR   = MOERTEL::StripZeros(*tmp7,1.0e-12); delete tmp7;
   //cout << *PR;
   
-  // do WTcoarse = R WT P
-  // padd WT to be of full size and square
-  /* previously done
-  Epetra_CrsMatrix* tmp8 = new Epetra_CrsMatrix(Copy,I_->RowMap(),10,false);
-  MOERTEL::MatrixMatrixAdd(*WT_,false,1.0,*tmp8,0.0);
-  WT_ = tmp8;
-  WT_->FillComplete(I_->RowMap(),I_->RowMap());
-  Epetra_CrsMatrix* tmp9    = MOERTEL::MatMatMult(*P,true,*WT_,false,OutLevel());
-  Epetra_CrsMatrix* WTcoarse = MOERTEL::MatMatMult(*tmp9,false,*P,false,OutLevel());  
-  delete tmp9;*/
-  //cout << *WTcoarse;
-  
   // restrict rcoarse = R r
   Epetra_Vector* rcoarse = new Epetra_Vector(Icoarse->RowMap(),true);
   P->Multiply(true,*r,*rcoarse);
-  //cout << *rcoarse;
+  cout << *rcoarse;
   
   // see that WTcoarse rcoarse != 0 ( with standard prolongator )
   Epetra_Vector* WTcoarse_rcoarse = new Epetra_Vector(Icoarse->RowMap(),true);
   WTcoarse->Multiply(false,*rcoarse,*WTcoarse_rcoarse);
-  //cout << *WTcoarse_rcoarse;
+  cout << *WTcoarse_rcoarse;
 
-  // see that WTcoarse2 rcoarse = 0 ( with modified prolongator )
+  // see that WTcoarse rcoarse = 0 ( with modified prolongator ) not true
   Pmod->Multiply(true,*r,*rcoarse);
-  //cout << *rcoarse;
+  cout << *rcoarse;
   WTcoarse->Multiply(false,*rcoarse,*WTcoarse_rcoarse);
-  //cout << *WTcoarse_rcoarse;
+  cout << *WTcoarse_rcoarse;
 
 #endif
 
@@ -442,7 +423,7 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   aztecsolver_->Iterate(maxiter,tol);
   matrixisnew_ = false;
   const double* azstatus = aztecsolver_->GetAztecStatus();
-/*
+
   if (azstatus[AZ_why] == AZ_normal)
     return true;
   else if (azstatus[AZ_why] == AZ_breakdown)
@@ -485,11 +466,11 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-*/
+
 #endif  
 
 
-#if 1
+#if 0
 
   // test whether the solution e (or x as initial guess was zero) satisfies
   // B^T e = 0 ok this is true

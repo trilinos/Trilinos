@@ -559,22 +559,19 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   //--------------------------------------------------------------------------
   // 11) Build ImBWT = I - BWT and store it
   spdrhs_ = rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
-  BWT_    = rcp(BWT); // for testing
-  BWT_->OptimizeStorage();
   MOERTEL::MatrixMatrixAdd(*I,false,1.0,*spdrhs_,0.0); 
-  I_      = rcp(I); // for testing
+  delete I; I = NULL;
   MOERTEL::MatrixMatrixAdd(*BWT,false,-1.0,*spdrhs_,1.0);  
+  delete BWT; BWT = NULL;
   spdrhs_->FillComplete(); 
   spdrhs_->OptimizeStorage();
    
   //--------------------------------------------------------------------------
   // tidy up
-  delete annmap;
-  WT_ = rcp(WT);
-  // delete WT;
-  B_ = rcp(new Epetra_CrsMatrix(*B));
-  delete trans; B = NULL;
   lm_to_dof.clear();
+  delete annmap;
+  delete WT; WT = NULL;
+  delete trans; B = NULL;
 
   // time this process
   double t = time.ElapsedTime();
@@ -615,7 +612,6 @@ void MOERTEL::Manager::ResetSolver()
   saddlematrix_ = null;
   spdmatrix_ = null;
   spdrhs_ = null;
-  BWT_    = null;
   return;
 }
 
@@ -823,7 +819,7 @@ bool MOERTEL::Manager::Solve(Epetra_Vector& sol, const Epetra_Vector& rhs)
   
   //---------------------------------------------------------------------------
   // solve
-  bool ok = solver_->Solve(solverparams_,matrix,x,b,*I_,*BWT_,*B_,*WT_);
+  bool ok = solver_->Solve(solverparams_,matrix,x,b);
   if (!ok)
   {
     if (Comm().MyPID()==0)

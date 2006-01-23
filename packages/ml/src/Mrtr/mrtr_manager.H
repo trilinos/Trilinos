@@ -532,11 +532,6 @@ private:
   RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
   RefCountPtr<Epetra_CrsMatrix> spdmatrix_;           // the spd matrix of the problem;
   RefCountPtr<Epetra_CrsMatrix> spdrhs_;              // the matrix to left-muttliply the rhs vector with for the spd problem
-  // testing only
-  RefCountPtr<Epetra_CrsMatrix> BWT_;                 // the projection operator
-  RefCountPtr<Epetra_CrsMatrix> I_;          
-  RefCountPtr<Epetra_CrsMatrix> WT_;          
-  RefCountPtr<Epetra_CrsMatrix> B_;          
 
   RefCountPtr<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    
   RefCountPtr<MOERTEL::Solver>        solver_;        // the mortar solver
