@@ -845,7 +845,8 @@ int read_mtxplus_file(
 /*****************************************************************************/
 static char *get_token(char *line, int which, int max);
 static char *first_char(char *buf, int max);
-static char *next_line(char *buf, int max);
+static char *next_line(char *buf, int max, char *str);
+static void make_string(char *buf, char *str);
 static int longest_line(char *buf);
 
 static int process_mtxp_file(char *filebuf, int fsize, 
@@ -863,7 +864,7 @@ int mineid, minvid, maxeid, maxvid, numeids, numvids;
 int nexte, nextv;
 float procf;
 int *myi, *myj, *myvno, *myeno;
-char *line, *pinsBuf, *vwgtsBuf, *ewgtsBuf, *token;
+char *line, *token, *linestr, *pinBuf, *vwgtBuf, *ewgtBuf;
 float *myvwgt, *myewgt;
 char cmesg[160];
 
@@ -873,10 +874,11 @@ char cmesg[160];
   *myVtxWgts = *myEdgeWgts = NULL;
 
   linemax = longest_line(filebuf);
-  line = first_char(filebuf, fsize);
+  linestr = (char *)malloc(linemax+1);
 
+  line = first_char(filebuf, fsize);
   if (line && (*line == '%')){
-    line = next_line(filebuf, fsize);  /* skip comments */
+    line = next_line(filebuf, fsize, linestr);  /* skip comments */
   }
 
   if (!line){
@@ -885,7 +887,7 @@ char cmesg[160];
     return 0;
   }
 
-  rc = sscanf(line, "%d %d %d %d %d %d", &nedges, &nvtxs, &npins,
+  rc = sscanf(linestr, "%d %d %d %d %d %d", &nedges, &nvtxs, &npins,
             &vdim, &numew, &edim);
 
   if (rc != 6){
@@ -895,11 +897,13 @@ char cmesg[160];
   }
 
   if (!nedges || !nvtxs || !npins){
+    free(linestr);
     return 1;
   }
 
   myvno = myeno = myi = myj = NULL;
   myewgt = myvwgt = NULL;
+  pinBuf = vwgtBuf = ewgtBuf = NULL;
 
   /* Read through the pins, vertex weights and edge weights.
    * Accumulate all vertex and edge IDs, and map these to
@@ -915,18 +919,17 @@ char cmesg[160];
   nexte = nextv = 0;
 
   for (i=0; i<npins; i++){           /* PINS */
-    line = next_line(line, fsize);
+    line = next_line(line, fsize, linestr);
 
     if (!line){  
       if (myrank == 0) printf("File is truncated in pins\n");
       goto failure;
     }
+    if (!i) pinBuf = line;
 
-    if (i == 0) pinsBuf = line;
-
-    rc = sscanf(line, "%d %d %f", &eid, &vid, &procf);
+    rc = sscanf(linestr, "%d %d %f", &eid, &vid, &procf);
     if (rc != 3){
-      snprintf(cmesg,160,"%s\nlooking for \"edge vertex process\"\n",line);
+      snprintf(cmesg,160,"%s\nlooking for \"edge vertex process\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
     }
@@ -950,22 +953,20 @@ char cmesg[160];
 
   numeids = maxeid - mineid + 1;
 
-  
-
   for (i=0; i<nvtxs; i++){        /* VERTICES and possibly WEIGHTS */
-    line = next_line(line, fsize);
+    line = next_line(line, fsize, linestr);
 
     if (!line){
       sprintf(cmesg,"File is truncated at vertex weights\n");
       Gen_Error(0, cmesg);
       goto failure;
     }
+    if (!i) vwgtBuf = line;
 
-    if (i == 0) vwgtsBuf = line;
-    rc = sscanf(line, "%d %d", &proc, &vid);
+    rc = sscanf(linestr, "%d %d", &proc, &vid);
     if (rc != 2){
       snprintf(cmesg,160,
-      "%s\nlooking for \"process vertex {optional weights}\"\n",line);
+      "%s\nlooking for \"process vertex {optional weights}\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
     }
@@ -982,7 +983,7 @@ char cmesg[160];
 
   if (numew > 0){                      /* HYPEREDGE WEIGHTS */
     for (i=0; i<numew; i++){
-      line = next_line(line, fsize);
+      line = next_line(line, fsize, linestr);
 
       if (!line){  /* error */
         sprintf(cmesg,"File is truncated at edge weights\n");
@@ -990,12 +991,12 @@ char cmesg[160];
         goto failure;
       }
 
-      if (i == 0) ewgtsBuf = line;
+      if (!i) ewgtBuf = line;
 
-      rc = sscanf(line, "%d %d", &proc, &eid);
+      rc = sscanf(linestr, "%d %d", &proc, &eid);
       if (rc != 2){
         snprintf(cmesg,160,
-        "%s\nlooking for \"process edge {optional weights}\"\n",line);
+        "%s\nlooking for \"process edge {optional weights}\"\n",linestr);
         Gen_Error(0, cmesg);
         goto failure;
       }
@@ -1033,6 +1034,8 @@ char cmesg[160];
     goto failure;
   }
 
+  /* Start over at beginning of file and save my pins, and weights */
+
   if (countMyPins > 0){
     myi = (int *)malloc(sizeof(int) * countMyPins);
     myj = (int *)malloc(sizeof(int) * countMyPins);
@@ -1043,21 +1046,25 @@ char cmesg[160];
     }
     nextpin = 0;
 
-    line = pinsBuf;
+    make_string(pinBuf, linestr);
+    line = pinBuf;
+  
     for (i=0; i<npins; i++){
-      sscanf(line, "%d %d %f", &eid, &vid, &procf);
+  
+      sscanf(linestr, "%d %d %f", &eid, &vid, &procf);
       mine = (((int)procf % nprocs) == myrank);
-
+  
       if (mine){
         myi[nextpin] = eid - mineid;
         myj[nextpin] = vid - minvid;
         nextpin++;
       }
-      line = next_line(line, fsize);
+      line = next_line(line, fsize, linestr);
     }
   }
 
-  if (countMyVtxs > 0){
+  if (countMyVtxs){
+
     myvno = (int *)malloc(sizeof(int) * countMyVtxs);
     if (vdim > 0){
       myvwgt = (float *)malloc(sizeof(float) * countMyVtxs * vdim);
@@ -1067,17 +1074,19 @@ char cmesg[160];
       Gen_Error(0, cmesg);
       goto failure;
     }
-    line = vwgtsBuf;
     nextv = 0;
 
+    make_string(vwgtBuf, linestr);
+    line = vwgtBuf;
+  
     for (i=0; i<nvtxs; i++){
-      sscanf(line, "%d %d", &proc, &vid);
+      sscanf(linestr, "%d %d", &proc, &vid);
       if ((proc % nprocs) == myrank){
         myvno[nextv] = vid - minvid;
         for (j=0; j<vdim; j++){
-          token = get_token(line, 2 + j, linemax);
+          token = get_token(linestr, 2 + j, strlen(linestr));
           if (!token){
-            snprintf(cmesg,160,"%s\nCan't find %d vertex weights\n",line,vdim);
+            snprintf(cmesg,160,"%s\nCan't find %d vertex weights\n",linestr,vdim);
             Gen_Error(0, cmesg);
             goto failure;
           }
@@ -1085,7 +1094,7 @@ char cmesg[160];
         }
         nextv++;
       }
-      line = next_line(line, fsize);
+      line = next_line(line, fsize, linestr);
     }
   }
 
@@ -1097,17 +1106,19 @@ char cmesg[160];
       Gen_Error(0, cmesg);
       goto failure;
     }
-    line = ewgtsBuf;
     nexte = 0;
 
+    make_string(ewgtBuf, linestr);
+    line = ewgtBuf;
+
     for (i=0; i<numew; i++){
-      sscanf(line, "%d %d", &proc, &eid);
+      sscanf(linestr, "%d %d", &proc, &eid);
       if ((proc % nprocs) == myrank){
         myeno[nexte] = eid - mineid;
         for (j=0; j<edim; j++){
-          token = get_token(line, 2 + j, linemax);
+          token = get_token(linestr, 2 + j, strlen(linestr));
           if (!token){
-            snprintf(cmesg,160,"%s\nCan't find %d edge weights\n",line,edim);
+            snprintf(cmesg,160,"%s\nCan't find %d edge weights\n",linestr,edim);
             Gen_Error(0, cmesg);
             goto failure;
           }
@@ -1115,7 +1126,7 @@ char cmesg[160];
         }
         nexte++;
       }
-      line = next_line(line, fsize);
+      line = next_line(line, fsize, linestr);
     }
   }
 
@@ -1134,6 +1145,7 @@ failure:
   rc = 0;
 
 done:
+  free(linestr);
 
   *nGlobalEdges = nedges;
   *nGlobalVtxs = nvtxs;
@@ -1315,13 +1327,28 @@ int sanity = 0;
 
   return c;
 }
-static char *next_line(char *buf, int max)
+static void make_string(char *buf, char *str)
+{
+  *str = 0;
+
+  while (*buf && (*buf != '\n')){
+    *str++ = *buf++;
+  }
+
+  *str = 0;
+}
+static char *next_line(char *buf, int max, char *str)
 {
 char *c = buf;
 int sanity = 0;
 int first=1;
 
-  /* return pointer to the next non-comment */
+  /* Return pointer to the next non-comment. Also copy
+   * the line to a null-terminated C string because sscanf
+   * may perform really poorly on very long strings.
+   */
+
+  if (str) *str = 0;
 
   while (first || (*c == '%')){
     while (*c && (*c != '\n') && (sanity++ < max)) c++;
@@ -1331,6 +1358,10 @@ int first=1;
     }
     first = 0;
     c++;
+  }
+
+  if (str){
+    make_string(c, str);
   }
 
   return c;
