@@ -47,8 +47,13 @@ static int get_vertex_global_numbers(ZZ *zz, ZHG *zhg,
   int nVtx, struct Hash_Node **ht,
   int nPins, ZOLTAN_ID_PTR pins, int *pin_gno, int *pin_procs);
 static int resolve_edge_weight_contributions( ZZ *zz, int ew_op,
-  int ew_num_edges, ZOLTAN_ID_PTR ew_gids, ZOLTAN_ID_PTR ew_lids,
-  float *ew_weights, void **ht);
+  int *ew_num_edges, ZOLTAN_ID_PTR ew_gids, ZOLTAN_ID_PTR ew_lids,
+  float *ew_weights, void **ht, int *htsize);
+static int combine_weights_for_same_edge(ZZ *zz, int ew_op,
+          int *ew_num_edges, 
+          ZOLTAN_ID_PTR ew_gids, ZOLTAN_ID_PTR ew_lids, 
+          float *ew_weights, void **ht, int *htsize);
+static int combine_weights(int ew_op, float *dest, float *src, int n);
 #ifdef DEBUG_FILL_HYPERGRAPH
 static void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight);  /* for debugging */
 #endif
@@ -214,7 +219,7 @@ int nEdge, nVtx, nwgt = 0;
 int nrecv, *recv_gno = NULL; 
 int *tmpparts = NULL;
 int add_vweight;
-int ew_num_edges;
+int ew_num_edges, ew_ht_size;
 int ew_dim = zz->Edge_Weight_Dim;
 int new_hgraph_callbacks = 0;
 void *ew_ht;
@@ -452,18 +457,41 @@ PHGPartParams *temphgp = NULL;
                     zz->Num_GID, zz->Num_LID, ew_num_edges, ew_dim,
                     ew_gids, ew_lids, ew_weights);
 
+
       }
 
       if ((ierr==ZOLTAN_OK)||(ierr==ZOLTAN_WARN)){
+        /* 
+         * Global operation: merge all weight contributions for
+         * the same hyperedge using the PHG_EDGE_WEIGHT_OPERATION
+         * parameter.  Create a hash table for obtaining the weight
+         * of a particular local hyperedge.
+         *
+         * Call may rewrite with shorter lists if edges appear more than
+         * once in the list.  So this call may change ew_num_edges.
+         */
         ierr = resolve_edge_weight_contributions(zz, edge_weight_op,
-               ew_num_edges, ew_gids, ew_lids, ew_weights, &ew_ht);
+               &ew_num_edges, ew_gids, ew_lids, ew_weights, 
+               &ew_ht, &ew_ht_size);
+      }
+
+      rc = (((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)) ? 0 : 1);
+
+      MPI_Allreduce(&rc, &cnt, 1, MPI_INT, MPI_MAX, zz->Communicator);
+
+      if (cnt && ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN))){
+        ierr = ZOLTAN_FATAL;   /* another process had an error */
       }
 
       if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
         Zoltan_Multifree(__FILE__, __LINE__, 3,
                          &ew_gids, &ew_lids, &ew_weights);
 
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+        if (ew_ht){
+          Zoltan_Multifree(__FILE__, __LINE__, 2, &ew_ht[ew_ht_size], &ew_ht);
+        }
+
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
           "Error querying/processing edge weights");
         goto End;
       }
@@ -479,7 +507,7 @@ PHGPartParams *temphgp = NULL;
      */
     ierr = Zoltan_HG_Hypergraph_Pin_Callbacks(zz, zhg,
                                 app.GnVtx, edgeSizeThreshold,
-                                final_output, ew_num_edges, ew_ht,
+                                final_output, ew_num_edges, ew_ht, ew_ht_size,
                                 &app.nEdge, &app.egids,
                                 &app.elids,            /* optional */
                                 &app.esizes, &app.ewgt,
@@ -1394,6 +1422,7 @@ MPI_Request gids_req, gnos_req;
 MPI_Status status;
 int ierr=ZOLTAN_OK;
 
+
   /*  
    * First, determine whether there are any removed pins.  For
    * these, we only need to know which process owns the vertex.
@@ -1622,7 +1651,7 @@ ZOLTAN_ID_PTR p;
 
   numGnos = 0;
 
-  if (rcvBufGids && (rcvBufGids[0] > 0)){
+  if ((nVtx > 0) && rcvBufGids && (rcvBufGids[0] > 0)){
 
     numIds = rcvBufGids[0];
     p = rcvBufGids + zz->Num_GID;
@@ -1645,11 +1674,12 @@ ZOLTAN_ID_PTR p;
 /*****************************************************************************/
 static int resolve_edge_weight_contributions(
          ZZ *zz, int ew_op,
-         int ew_num_edges,
+         int *ew_num_edges,
          ZOLTAN_ID_PTR ew_gids,
          ZOLTAN_ID_PTR ew_lids,
          float *ew_weights,  /* rewrite weights if necessary */
-         void **ht)          /* returns search structure for edges */
+         void **ht,          /* returns search structure for edges */
+         int *htsize)        /* size of hash table */
 {
   /* Multiple processes may have supplied weights for the same   */
   /* edge.  We resolve these in a manner depending on the        */
@@ -1657,7 +1687,7 @@ static int resolve_edge_weight_contributions(
   /* return a hash table useful for looking up edge weights.      */
 
 char *yo = "resolve_edge_weight_contributions";
-ZOLTAN_ID_PTR rcvBufGids=NULL, sndBufGids=NULL, gidptr, lidptr;
+ZOLTAN_ID_PTR rcvBufGids=NULL, sndBufGids=NULL, gidptr;
 float *rcvBufWeights=NULL, *sndBufWeights=NULL, *wptr;
 int rank, nprocs, right_proc, left_proc, rc;
 int rcvBufGidSize, sndBufGidSize, sndBufWeightSize;
@@ -1672,15 +1702,15 @@ struct _ewht{
   struct _ewht *next;
 } *ewNodes=NULL, *en;
 struct _ewht **ewht = NULL;
-int i, j, k, w, ierr, nEdgesMax, nids, first_match=0, error_flag;
+int i, j, k, ierr, nEdgesMax, nids, first_match=0;
+int nedges, ew_ht_size;
 int dim = zz->Edge_Weight_Dim;
 int lenGID = zz->Num_GID;
-int lenLID = zz->Num_LID;
 
   *ht = NULL;
   ierr = ZOLTAN_OK;
 
-  rc = MPI_Allreduce(&ew_num_edges, &nEdgesMax, 1, MPI_INT, MPI_MAX,
+  rc = MPI_Allreduce(ew_num_edges, &nEdgesMax, 1, MPI_INT, MPI_MAX,
                  zz->Communicator);
   CHECK_FOR_MPI_ERROR(rc)
 
@@ -1688,34 +1718,29 @@ int lenLID = zz->Num_LID;
     return ZOLTAN_OK;
   }
 
-  /* create a search structure to look up weight by edge gid */
+  /* If this process listed the same gid more than once, combine
+   * any weights supplied for the same gid.  (zdrive may do this
+   * when reading a "matrixmarket plus" file created by n processes
+   * into a zdrive application of fewer than n processes.)
+   * 
+   * Also create a search structure to find a weight given a gid.
+   */
+  
+  rc = combine_weights_for_same_edge(zz, ew_op,
+          ew_num_edges, ew_gids, ew_lids, ew_weights, ht, htsize);
 
-  if (ew_num_edges > 0){
-    ewNodes =
-      (struct _ewht *)ZOLTAN_MALLOC(ew_num_edges * sizeof(struct _ewht));
-    ewht =
-      (struct _ewht **)ZOLTAN_CALLOC(ew_num_edges+1, sizeof(struct _ewht *));
+  if (rc != ZOLTAN_OK){
+  }
 
-    ewht[ew_num_edges] = ewNodes;
+  ewht = (struct _ewht **)*ht;
+  ew_ht_size = *htsize;
+  nedges = *ew_num_edges;
 
-    gidptr = ew_gids;
-    lidptr = ew_lids;
-    wptr = ew_weights;
-
-    for (i=0; i<ew_num_edges; i++){
-      j = Zoltan_Hash(gidptr, lenGID, (unsigned int)ew_num_edges);
-
-      ewNodes[i].egid = gidptr;
-      ewNodes[i].elid = lidptr;
-      ewNodes[i].weights = wptr;
-      ewNodes[i].next = ewht[j];
-
-      ewht[j] = ewNodes + i;
-
-      gidptr += lenGID;
-      lidptr += lenLID;
-      wptr += dim;
-    }
+  if (ewht){
+    ewNodes = ewht[ew_ht_size];  /* stored pointer here */
+  }
+  else{
+    ewNodes = NULL;
   }
 
   /*
@@ -1723,10 +1748,10 @@ int lenLID = zz->Num_LID;
    * provided for the same edge.
    */
 
-  sndBufWeightSize = ew_num_edges*dim;
+  sndBufWeightSize = nedges*dim;
   sndBufWeights = (float *)ZOLTAN_MALLOC(sndBufWeightSize * sizeof(float));
   rcvBufGids = ZOLTAN_MALLOC_GID_ARRAY(zz, nEdgesMax+1);
-  sndBufGids = ZOLTAN_MALLOC_GID_ARRAY(zz, ew_num_edges+1);
+  sndBufGids = ZOLTAN_MALLOC_GID_ARRAY(zz, nedges+1);
   rcvBufWeights = (float *)ZOLTAN_MALLOC(nEdgesMax*dim*sizeof(float));
 
   if ((sndBufWeightSize && !sndBufWeights) ||
@@ -1740,9 +1765,9 @@ int lenLID = zz->Num_LID;
   }
 
   rcvBufGidSize = lenGID * (nEdgesMax+1);
-  sndBufGidSize = lenGID * (ew_num_edges+1);
-  sndBufGids[0] = ew_num_edges;
-  ZOLTAN_COPY_GID_ARRAY(sndBufGids+lenGID, ew_gids, zz, ew_num_edges);
+  sndBufGidSize = lenGID * (nedges+1);
+  sndBufGids[0] = nedges;
+  ZOLTAN_COPY_GID_ARRAY(sndBufGids+lenGID, ew_gids, zz, nedges);
 
   if (sndBufWeightSize){
     memcpy(sndBufWeights, ew_weights, sndBufWeightSize * sizeof(float));
@@ -1782,8 +1807,8 @@ int lenLID = zz->Num_LID;
     nids = rcvBufGids[0];
     gidptr = rcvBufGids + lenGID;
 
-    for (k=0; (k<nids) && ew_num_edges && !match_left; k++){
-      j = Zoltan_Hash(gidptr, lenGID, ew_num_edges);
+    for (k=0; (k<nids) && nedges && !match_left; k++){
+      j = Zoltan_Hash(gidptr, lenGID, ew_ht_size);
       en = ewht[j];
       while (en && !match_left){
         if (ZOLTAN_EQ_GID(zz, gidptr, en->egid)){
@@ -1801,14 +1826,16 @@ int lenLID = zz->Num_LID;
         CHECK_FOR_MPI_ERROR(rc)
     }
 
-    rc = MPI_Send(&match_left, 1, MPI_INT, left_proc, match_tag, zz->Communicator);
+    rc = MPI_Send(&match_left, 1, MPI_INT, left_proc, match_tag, 
+                  zz->Communicator);
     CHECK_FOR_MPI_ERROR(rc)
 
     /* Await message from right, indicating whether it needs
      * my edge weights, and send them if so.
      */
 
-    rc = MPI_Recv(&match_right, 1, MPI_INT, right_proc, match_tag, zz->Communicator,
+    rc = MPI_Recv(&match_right, 1, MPI_INT, right_proc, match_tag, 
+                  zz->Communicator,
      &status);
     CHECK_FOR_MPI_ERROR(rc)
 
@@ -1829,32 +1856,14 @@ int lenLID = zz->Num_LID;
       wptr = rcvBufWeights + (first_match * dim);
 
       for (k=first_match; (k<nids) && (ierr!=ZOLTAN_FATAL); k++){
-        j = Zoltan_Hash(gidptr, lenGID, ew_num_edges);
+        j = Zoltan_Hash(gidptr, lenGID, ew_ht_size);
         en = ewht[j];
         while (en){
           if (ZOLTAN_EQ_GID(zz, gidptr, en->egid)){
-            if (ew_op == PHG_FLAG_ERROR_EDGE_WEIGHTS){
-              for (w=0; w<dim; w++){
-                if (wptr[w] != en->weights[w]){
-                  error_flag = 1;
-                  ierr = ZOLTAN_FATAL;
-                  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Inconsistent edge weights");
-                  break;
-                }
-              }
-            } else if (ew_op == PHG_MAX_EDGE_WEIGHTS){
-              for (w=0; w<dim; w++){
-                if (wptr[w] > en->weights[w]){
-                  en->weights[w] = wptr[w];
-                }
-              }
-            } else if (ew_op == PHG_ADD_EDGE_WEIGHTS){
-              for (w=0; w<dim; w++){
-                en->weights[w] += wptr[w];
-              }
-            }
-            else{
-              /* error, parameter value is invalid */
+            ierr = combine_weights(ew_op, en->weights, wptr, dim);
+            if (ierr == ZOLTAN_FATAL){  
+              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Inconsistent edge weights");
+              /* finish nprocs loop so application doesn't hang */
             }
             break;
           }
@@ -1875,9 +1884,140 @@ End:
     ZOLTAN_FREE(&ewht);
   }
 
-  *ht = (void *)ewht;
-
   return ierr;
+}
+static int combine_weights_for_same_edge(ZZ *zz, int ew_op,
+          int *ew_num_edges, 
+          ZOLTAN_ID_PTR ew_gids, ZOLTAN_ID_PTR ew_lids, 
+          float *ew_weights, void **ht, int *htsize)
+{
+char *yo = "combine_weights_for_same_edge";
+int ierr, nedges, edge_count, i, j, w;
+struct _ewht{
+  ZOLTAN_ID_PTR egid;
+  ZOLTAN_ID_PTR elid;
+  float *weights;
+  struct _ewht *next;
+} *ewNodes=NULL, *en;
+struct _ewht **ewht = NULL;
+int dim = zz->Edge_Weight_Dim;
+int lenGID = zz->Num_GID;
+int lenLID = zz->Num_LID;
+ZOLTAN_ID_PTR rgid, rlid, wgid, wlid;
+float *rwgt, *wwgt;
+
+  *ht = NULL;
+  *htsize = 0;
+
+  if (*ew_num_edges < 1){
+    return ZOLTAN_OK;
+  }
+
+  /* I have a list of edge global IDs, and weights for each edge.
+   * Create a search structure to locate an edge weight(s) given
+   * it's global ID.  In the process, if the same global ID is
+   * listed more than once, combine the weights for the edge according
+   * to the PHG_EDGE_WEIGHT_OPERATION, and only list the edge once.
+   */
+
+  nedges = *ew_num_edges;
+  edge_count = 0;
+
+  ewNodes =
+    (struct _ewht *)ZOLTAN_MALLOC(nedges * sizeof(struct _ewht));
+  ewht =
+    (struct _ewht **)ZOLTAN_CALLOC(nedges + 1, sizeof(struct _ewht *));
+
+  if (!ewNodes || !ewht){
+    ZOLTAN_FREE(&ewNodes);
+    ZOLTAN_FREE(&ewht);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "memory allocation");
+    return ZOLTAN_MEMERR;
+  }
+
+  rgid = wgid = ew_gids;
+  rlid = wlid = ew_lids;
+  rwgt = wwgt = ew_weights;
+
+  for (i=0; i<nedges; i++){
+    j = Zoltan_Hash(rgid, lenGID, (unsigned int)nedges);
+
+    en = ewht[j];
+
+    while (en){
+      if (ZOLTAN_EQ_GID(zz, en->egid, rgid)){
+        ierr = combine_weights(ew_op, en->weights, rwgt, dim);
+        if (ierr != ZOLTAN_OK){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Inconsistent edge weights");
+          return ZOLTAN_FATAL;
+        }
+        break;
+      }
+      en = en->next;
+    }
+
+    if (en == NULL){   /* edge was not a duplicate */
+
+      if (edge_count < i){
+        ZOLTAN_SET_GID(zz, wgid, rgid);
+        ZOLTAN_SET_LID(zz, wlid, rlid);
+        for (w=0; w<dim; w++){
+          wwgt[w] = rwgt[w];
+        }
+      }
+
+      ewNodes[edge_count].egid = wgid;
+      ewNodes[edge_count].elid = wlid;
+      ewNodes[edge_count].weights = wwgt;
+      ewNodes[edge_count].next = ewht[j];
+
+      ewht[j] = ewNodes + edge_count;
+
+      edge_count++;
+
+      wgid += lenGID;
+      wlid += lenLID;
+      wwgt += dim;
+    }
+
+    rgid += lenGID;
+    rlid += lenLID;
+    rwgt += dim;
+  }
+
+  ewht[nedges] = ewNodes;  /* save pointer so it can be free'd later */
+
+  *ew_num_edges = edge_count;
+  *ht = (void *)ewht;
+  *htsize = nedges;
+
+  return ZOLTAN_OK;
+}
+static int combine_weights(int ew_op, float *dest, float *src, int n)
+{
+  int w;
+
+  if (ew_op == PHG_FLAG_ERROR_EDGE_WEIGHTS){
+    for (w=0; w<n; w++){
+      if (src[w] != dest[w]){
+        return ZOLTAN_FATAL;
+      }
+    }
+  } else if (ew_op == PHG_MAX_EDGE_WEIGHTS){
+    for (w=0; w<n; w++){
+      if (src[w] > dest[w]){
+        dest[w] = src[w];
+      }
+    }
+  } else if (ew_op == PHG_ADD_EDGE_WEIGHTS){
+    for (w=0; w<n; w++){
+      dest[w] += src[w];
+    }
+  }
+  else{
+    return ZOLTAN_FATAL;
+  }
+  return ZOLTAN_OK;
 }
 
 #ifdef DEBUG_FILL_HYPERGRAPH
