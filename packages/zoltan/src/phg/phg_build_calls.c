@@ -206,6 +206,7 @@ int Zoltan_HG_Hypergraph_Pin_Callbacks(
   int ew_num_edges,        /* Input: num edges from edge weight queries */
   void *htptr,             /* Input: hash table for edge weights from query */
                            /*        we free hash table when done           */
+  int htsize,              /* Input: size of hash table */
   int *nedges,             /* Output:  Number of hyperedges on this processor */
   ZOLTAN_ID_PTR *egids,    /* Output:  GIDs of hyperedges on this processor */
   ZOLTAN_ID_PTR *elids,    /* Output:  LIDs (if provided by application) */
@@ -250,7 +251,7 @@ int lenLID = zz->Num_LID;
 
   ewht = (struct _ewht **)htptr;
   if (ewht){
-    ewNodes = ewht[ew_num_edges]; /* so we can free it when done */
+    ewNodes = ewht[htsize]; /* so we can free it when done */
   }
   else{
     ewNodes = NULL;
@@ -324,7 +325,7 @@ int lenLID = zz->Num_LID;
         elptr = edg_LID;
         wptr = edg_weight;
         for (i=0; i < num_lists; i++){
-          j = Zoltan_Hash(egptr, lenGID, (unsigned int)ew_num_edges);
+          j = Zoltan_Hash(egptr, lenGID, (unsigned int)htsize);
           en = ewht[j];
           while (en){
             if (ZOLTAN_EQ_GID(zz, egptr, en->egid)){
@@ -380,7 +381,7 @@ int lenLID = zz->Num_LID;
     distribute_edges(zz, &num_lists, &num_pins,
                      &edg_GID, &edg_LID, &row_ptr, &vtx_GID,
                      need_weights, max_need_weights, need_list,
-                     ew_num_edges, htptr, &edg_weight);
+                     htsize, htptr, &edg_weight);
 
 #if VERBOSE_EDGE_INFO
   for (i=0; i<zz->Num_Proc; i++){
@@ -777,7 +778,7 @@ int center;
 }
 static int exchange(ZZ *zz, int proc, int *change, void *htptr,
      ZOLTAN_ID_PTR egid, ZOLTAN_ID_PTR inbuf, int inbufsize,
-     int exchange_weights, int ew_num_edges, void *ewhtptr, float *edg_weights,
+     int exchange_weights, int htsize, void *ewhtptr, float *edg_weights,
      char *out_need_list, int out_need_list_size,
      char *in_need_list, int in_need_list_size,
      float *out_weights, int out_weights_size,
@@ -903,7 +904,7 @@ int ierr=ZOLTAN_OK;
     eid         = eptr;
 
     if (exchange_weights && in_need_list[i]){
-      wgts = find_weights(zz, ewhtptr, ew_num_edges, eid);
+      wgts = find_weights(zz, ewhtptr, htsize, eid);
       if (wgts){
         *wptr++ = (float)i;
         for (w=0; w<dim; w++){
@@ -1083,7 +1084,7 @@ End:
   return ierr;
 }
 static float *find_weights(ZZ *zz,
-              void *ewhtptr, int ew_num_edges, ZOLTAN_ID_PTR eid)
+              void *ewhtptr, int htsize, ZOLTAN_ID_PTR eid)
 {
 struct _ewht{
   ZOLTAN_ID_PTR egid;
@@ -1098,11 +1099,11 @@ int idx;
   /* Search the edge weights returned by the edge weight query */
   /* function to see if I have the edge weights for this edge. */
 
-  if (ew_num_edges < 1) return NULL;
+  if (htsize < 1) return NULL;
 
   ewht = (struct _ewht **)ewhtptr;
 
-  idx = Zoltan_Hash(eid, zz->Num_GID, (unsigned int)ew_num_edges);
+  idx = Zoltan_Hash(eid, zz->Num_GID, (unsigned int)htsize);
 
   en = ewht[idx];
 
