@@ -52,7 +52,22 @@ double Epetra_Time::WallTime(void) const
 {
 #ifdef EPETRA_MPI
 
-  return(MPI_Wtime());
+	int mpiInitialized;
+	MPI_Initialized(&mpiInitialized);
+
+	if( mpiInitialized ) {
+
+		return(MPI_Wtime());
+
+	}
+	else {
+
+		clock_t start;
+
+		start = clock();
+		return( (double)( start ) / CLOCKS_PER_SEC );
+
+	}
 
 #elif ICL
 
