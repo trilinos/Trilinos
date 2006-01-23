@@ -3,6 +3,12 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_CrsMatrix.h"
 
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif
+
 namespace {
 
 inline double sqr( const double& s ) { return s*s; }
