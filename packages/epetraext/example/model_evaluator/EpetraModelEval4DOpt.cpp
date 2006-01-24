@@ -202,29 +202,29 @@ void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outAr
   //
   // Get the output arguments
   //
-  Teuchos::RefCountPtr<Epetra_Vector>       f_inout = outArgs.get_f();
-  Teuchos::RefCountPtr<Epetra_Vector>       g_inout = outArgs.get_g(1);
-  Teuchos::RefCountPtr<Epetra_Operator>     W_inout = outArgs.get_W();
-  Teuchos::RefCountPtr<Epetra_MultiVector>  DfDp_inout = get_DfDp_mv(1,outArgs);
-  Teuchos::RefCountPtr<Epetra_MultiVector>  DgDx_trans_inout = get_DgDx_mv(1,outArgs,DERIV_TRANS_MV_BY_ROW);
-  Teuchos::RefCountPtr<Epetra_MultiVector>  DgDp_trans_inout = get_DgDp_mv(1,1,outArgs,DERIV_TRANS_MV_BY_ROW);
+  Epetra_Vector       *f_out = outArgs.get_f().get();
+  Epetra_Vector       *g_out = outArgs.get_g(1).get();
+  Epetra_Operator     *W_out = outArgs.get_W().get();
+  Epetra_MultiVector  *DfDp_out = get_DfDp_mv(1,outArgs).get();
+  Epetra_MultiVector  *DgDx_trans_out = get_DgDx_mv(1,outArgs,DERIV_TRANS_MV_BY_ROW).get();
+  Epetra_MultiVector  *DgDp_trans_out = get_DgDp_mv(1,1,outArgs,DERIV_TRANS_MV_BY_ROW).get();
   //
   // Compute the functions
   //
-  if(f_inout.get()) {
-    Epetra_Vector &f = *f_inout;
+  if(f_out) {
+    Epetra_Vector &f = *f_out;
     // zero-based indexing for Epetra!
     f[0] =        x[0]      + x[1]*x[1] - p[0];
     f[1] = d_ * ( x[0]*x[0] - x[1]      - p[1] );
   }
-  if(g_inout.get()) {
-    Epetra_Vector &g = *g_inout;
+  if(g_out) {
+    Epetra_Vector &g = *g_out;
     // zero-based indexing for Epetra, 1-based indexing for Thyra!
     g[0] = 0.5 * ( sqr(x[0]-xt0_) + sqr(x[1]-xt1_) + sqr(p[0]-pt0_) + sqr(p[1]-pt1_) );
   }
-  if(W_inout.get()) {
+  if(W_out) {
     const double beta = inArgs.get_beta();
-    Epetra_CrsMatrix &DfDx = dyn_cast<Epetra_CrsMatrix>(*W_inout);
+    Epetra_CrsMatrix &DfDx = dyn_cast<Epetra_CrsMatrix>(*W_out);
     DfDx.PutScalar(0.0);
     //
     // Fill W = beta*DfDx
@@ -243,19 +243,19 @@ void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outAr
     values[1] = -beta*d_;           indexes[1] = 1;
     DfDx.SumIntoGlobalValues( 1, 2, values, indexes );
   }
-  if(DfDp_inout.get()) {
-    Epetra_MultiVector &DfDp = *DfDp_inout;
+  if(DfDp_out) {
+    Epetra_MultiVector &DfDp = *DfDp_out;
     DfDp.PutScalar(0.0);
     DfDp[0][0] = -1.0;
     DfDp[1][1] = -d_;
   }
-  if(DgDx_trans_inout.get()) {
-    Epetra_Vector &DgDx_trans = *(*DgDx_trans_inout)(0);
+  if(DgDx_trans_out) {
+    Epetra_Vector &DgDx_trans = *(*DgDx_trans_out)(0);
     DgDx_trans[0] = x[0]-xt0_;
     DgDx_trans[1] = x[1]-xt1_;
   }
-  if(DgDp_trans_inout.get()) {
-    Epetra_Vector &DgDp_trans = *(*DgDp_trans_inout)(0);
+  if(DgDp_trans_out) {
+    Epetra_Vector &DgDp_trans = *(*DgDp_trans_out)(0);
     DgDp_trans[0] = p[0]-pt0_;
     DgDp_trans[1] = p[1]-pt1_;
   }
