@@ -100,24 +100,24 @@ void EpetraModelEval2DSim::evalModel( const InArgs& inArgs, const OutArgs& outAr
   //
   // Get the output arguments
   //
-  Teuchos::RefCountPtr<Epetra_Vector>       f_inout = outArgs.get_f();
-  Teuchos::RefCountPtr<Epetra_Operator>     W_inout = outArgs.get_W();
+  Epetra_Vector       *f_out = outArgs.get_f().get();
+  Epetra_Operator     *W_out = outArgs.get_W().get();
   if(showGetInvalidArg_) {
-    Teuchos::RefCountPtr<Epetra_Vector> g1_inout = outArgs.get_g(1);
+    Epetra_Vector *g_out = outArgs.get_g(1).get();
   }
   //
   // Compute the functions
   //
   const Epetra_Vector &p = *p_;
-  if(f_inout.get()) {
-    Epetra_Vector &f = *f_inout;
+  if(f_out) {
+    Epetra_Vector &f = *f_out;
     // zero-based indexing for Epetra!
     f[0] =        x[0]      + x[1]*x[1] - p[0];
     f[1] = d_ * ( x[0]*x[0] - x[1]      - p[1] );
   }
-  if(W_inout.get()) {
+  if(W_out) {
     const double beta = inArgs.get_beta();
-    Epetra_CrsMatrix &DfDx = dyn_cast<Epetra_CrsMatrix>(*W_inout);
+    Epetra_CrsMatrix &DfDx = dyn_cast<Epetra_CrsMatrix>(*W_out);
     DfDx.PutScalar(0.0);
     //
     // Fill W = beta*DfDx
