@@ -51,8 +51,6 @@ namespace Thyra {
  * simultaneously and for <tt>*this</tt> factory object to be destroyed
  * without affecting the created <tt>%AmesosLinearOpWithSolve</tt> objects.
  *
- * 
- *
  * <b>Development notes:</b> This class has been designed to allow for "smart"
  * <tt>EpetraLinearOpBase</tt> subclasses that can create an
  * <tt>Epetra_Operator</tt> view on command where the underlying storage may
@@ -159,6 +157,14 @@ public:
     ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
     ,EPreconditionerInputType                            *precOpType
     ) const;
+
+  //@}
+
+  /** \name Public functions overridden from Teuchos::Describable. */
+  //@{
+
+  /** \brief . */
+  std::string description() const;
 
   //@}
 

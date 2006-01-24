@@ -322,6 +322,17 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   if(precOpType) *precOpType = PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Just to not have junk!
 }
 
+// Public functions overridden from Teuchos::Describable
+
+std::string AmesosLinearOpWithSolveFactory::description() const
+{
+  std::ostringstream oss;
+  oss << "Thyra::AmesosLinearOpWithSolveFactory{";
+  oss << "solverType=" << toString(solverType_);
+  oss << "}";
+  return oss.str();
+}
+
 } // namespace Thyra
 
 #endif // __sun
