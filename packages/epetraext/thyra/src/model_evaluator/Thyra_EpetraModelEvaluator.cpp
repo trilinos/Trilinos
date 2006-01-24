@@ -455,9 +455,15 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 std::string EpetraModelEvaluator::description() const
 {
   std::ostringstream oss;
-  oss << "Thyra::EpetraModelEvaluator{epetraModel=";
+  oss << "Thyra::EpetraModelEvaluator{";
+  oss << "epetraModel=";
   if(epetraModel_.get())
     oss << "\'"<<epetraModel_->description()<<"\'";
+  else
+    oss << "NULL";
+  oss << ",W_factory=";
+  if(W_factory_.get())
+    oss << "\'"<<W_factory_->description()<<"\'";
   else
     oss << "NULL";
   oss << "}";
