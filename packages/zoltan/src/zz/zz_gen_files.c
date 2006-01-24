@@ -82,7 +82,7 @@ int gen_geom, int gen_graph, int gen_hg)
   FILE *fp;
   char full_fname[256];
   int *vtxdist, *xadj, *adjncy, *part, *adjproc, *edgeSize;
-  int *heprocs, *hindex;
+  int *heprocs, *hindex, *pinsProc;
   ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts, *eWgts, *wptr;
   double *xyz;
@@ -186,15 +186,26 @@ int gen_geom, int gen_graph, int gen_hg)
         error = ZOLTAN_FATAL;
         goto End;
       }
-
-      /* get the global number of pins */
-       
-      for (i=0, j=0; i <nEdges; i++){
-        j += edgeSize[i];
+      /*
+       * Process 0 gets a count of pins for each process.
+       * (My number of pins is at the end of the edgeSize array.)
+       */
+      pinsProc = NULL;
+      if (zz->Proc == 0){
+        pinsProc = (int *)ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
       }
-    
-      MPI_Reduce(&j, &glob_pins, 1, MPI_INT, MPI_SUM, 0, 
-          zz->Communicator);  
+      MPI_Gather(edgeSize + nEdges, 1, MPI_INT, pinsProc, 1, MPI_INT,
+                 0, zz->Communicator);
+
+      glob_pins = 0;
+      if (zz->Proc == 0){
+        for (i=0; i<zz->Num_Proc; i++){
+          glob_pins += pinsProc[i];
+        }
+ 
+      }
+
+      MPI_Bcast(&glob_pins, 1, MPI_INT, 0, zz->Communicator);
 
       /* Get the global number of edges that weights were
        * provided for.  More than one process may supply
@@ -203,6 +214,7 @@ int gen_geom, int gen_graph, int gen_hg)
 
       MPI_Reduce(&nEwgts, &glob_ewgts, 1, MPI_INT, MPI_SUM, 0, 
           zz->Communicator);  
+
     }
   }
 
@@ -401,11 +413,23 @@ int gen_geom, int gen_graph, int gen_hg)
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
       fprintf(fp, 
-        "%% #hyperedges #vertices #pins dim-vertex-weights "
+        "%% #hyperedges #vertices #pins #procs dim-vertex-weights "
         "#edge-weight-entries dim-edge-weights\n");
-      fprintf(fp, "%d %d %d %d %d %d", glob_hedges, glob_nvtxs,
-        glob_pins, zz->Obj_Weight_Dim, glob_ewgts, zz->Edge_Weight_Dim);
+      fprintf(fp, "%d %d %d %d %d %d %d", 
+        glob_hedges, glob_nvtxs, glob_pins, 
+        zz->Num_Proc,
+        zz->Obj_Weight_Dim, glob_ewgts, zz->Edge_Weight_Dim);
       fprintf(fp, "\n");
+
+      /* list start of each process' pins followed by total pins*/
+
+      fprintf(fp, "0\n");
+      j = 0;
+      for (i=0; i<zz->Num_Proc; i++){  
+        fprintf(fp,"%d\n",j + pinsProc[i]);
+        j += pinsProc[i];
+      }
+      ZOLTAN_FREE(&pinsProc);
     }
 
     eptr = edgeIds;
@@ -728,7 +752,7 @@ static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
   /* esize array is actually index into vgids, we need size of each edge */
 
   for (i=0; i<numEdges; i++){
-    size = ((i == numEdges-1) ? num_pins : esize[i+1]) - esize[i];
+    size = esize[i+1] - esize[i];
     esize[i] = size;
   }
 
