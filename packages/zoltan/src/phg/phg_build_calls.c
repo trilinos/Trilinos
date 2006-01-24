@@ -1275,6 +1275,7 @@ int Zoltan_Call_Hypergraph_Pin_Query(ZZ *zz,
    int *num_pins,          /* output: total number of pins in edges */
    ZOLTAN_ID_PTR *edg_GID, /* output: list of edge global IDs */
    int **row_ptr,          /* output: loc in vtx_GID for start of each edge */
+                           /*         plus num_pins in last element         */
    ZOLTAN_ID_PTR *vtx_GID) /* output: vertex global ID for each pin */
 {
 static char *yo = "Zoltan_Call_Hypergraph_Pin_Query";
@@ -1346,7 +1347,7 @@ int *rptr, *cptr;
     else{               /* compressed row storage */
 
       eid = ZOLTAN_MALLOC_GID_ARRAY(zz, nl);
-      rptr = (int *)ZOLTAN_MALLOC(nl * sizeof(int));
+      rptr = (int *)ZOLTAN_MALLOC((nl+1) * sizeof(int));
       vid = ZOLTAN_MALLOC_GID_ARRAY(zz, np);
 
       if (!vid || !rptr || !eid){
@@ -1357,6 +1358,8 @@ int *rptr, *cptr;
 
       ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
                  nl, np, format, eid, rptr, vid);
+
+      rptr[nl] = np;
     }
 
     *edg_GID = eid;
@@ -1465,7 +1468,7 @@ int *p;
     }
   }
 
-  p = (int *)ZOLTAN_MALLOC(numEdges * sizeof(int));
+  p = (int *)ZOLTAN_MALLOC((numEdges+1) * sizeof(int));
   egid = ccs_egids = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges);
   vgid = ccs_vgids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_pins);
 
@@ -1494,6 +1497,7 @@ int *p;
       hn = hn->next;
     }
   }
+  p[e] = num_pins;
 
 End:
   for (idx=0; idx<maxEdges; idx++){
