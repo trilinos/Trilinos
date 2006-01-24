@@ -38,6 +38,16 @@ extern "C" {
 #define COLUMNS         1
 #define NONZEROS        2
 
+/* define the initial distribution types - for Chaco file vertices
+   and for hypergraph file pins  */
+
+#define INITIAL_FILE   0   /* Chaco vertices or hypergraph pins */
+#define INITIAL_LINEAR 1   /* Chaco vertices or hypergraph pins */
+#define INITIAL_CYCLIC 2   /* Chaco vertices or hypergraph pins */
+#define INITIAL_OWNER  3   /* Chaco vertices */
+#define INITIAL_ROW    4   /* hypergraph pins */
+#define INITIAL_COL    5   /* hypergraph pins */
+#define INITIAL_ZERO   6   /* hypergraph pins */
 
 #define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
@@ -61,7 +71,7 @@ struct Parallel_IO
                         /*     /pfs/tmp_1)                                   */
 
   int     file_type;    /* input file type */
-  int     init_dist_type;      /* Flag indicating how input data
+  int     init_dist_type;      /* Flag indicating how input objects
                                   should be initially distributed.     */
   int     init_dist_procs;     /* How many procs to use in 
                                   the initial distribution.            */
@@ -73,6 +83,8 @@ struct Parallel_IO
                                   no. of weights per object.           */
   int     matrix_obj;          /* What are the objects to be balanced
                                   for a sparse matrix? (ROWS, COLUMNS) */
+  int     init_dist_pins;      /* For hypergraphs, how should pins be  
+                                  initially distributed.               */
 
   /* The root location of the parallel disks */
   char    pdsk_root[FILENAME_MAX+1];

@@ -47,7 +47,8 @@ extern "C" {
 static int dist_hyperedges(MPI_Comm comm, PARIO_INFO_PTR, int, int, int, int *,
                            int *, int **, int **, int **, int **, 
                            int *, float **, short *);
-static int process_mtxp_file(char *filebuf, int fsize, 
+static int process_mtxp_file(PARIO_INFO_PTR pio_info,
+  char *filebuf, int fsize, 
   int nprocs, int myrank,
   int *nGlobalEdges, int *nGlobalVtxs, int *vtxWDim, int *edgeWDim,
   int *nMyPins, int **myPinI, int **myPinJ,
@@ -721,7 +722,7 @@ int read_mtxplus_file(
    * Returns 1 on success, 0 on failure.
    */
 
-  rc = process_mtxp_file(filebuf, fsize, Num_Proc, Proc,
+  rc = process_mtxp_file(pio_info, filebuf, fsize, Num_Proc, Proc,
           &nGlobalEdges, &nGlobalVtxs, &vtxWDim, &edgeWDim,
           &nMyPins, &myPinI, &myPinJ,
           &nMyVtx, &myVtxNum, &myVtxWgts,
@@ -848,20 +849,27 @@ static char *first_char(char *buf, int max);
 static char *next_line(char *buf, int max, char *str);
 static void make_string(char *buf, char *str);
 static int longest_line(char *buf);
+static int my_pin(int eid, int vid, int proc, 
+       int pin, int npins, int mymin, int mymax,
+       int myrank, int nprocs, PARIO_INFO_PTR pio_info);
+static int my_vtx(int proc, int vtx, int mymin, int mymax,
+       int myrank, int nprocs, PARIO_INFO_PTR pio_info);
 
-static int process_mtxp_file(char *filebuf, int fsize, 
+static int process_mtxp_file(PARIO_INFO_PTR pio_info,
+  char *filebuf, int fsize, 
   int nprocs, int myrank,
   int *nGlobalEdges, int *nGlobalVtxs, int *vtxWDim, int *edgeWDim,
   int *nMyPins, int **myPinI, int **myPinJ,
   int *nMyVtx, int **myVtxNum, float **myVtxWgts,
   int *nMyEdgeWgts, int **myEdgeNum, float **myEdgeWgts)
 {
-int nedges, nvtxs, npins, vdim, edim, numew;
+int nedges, nvtxs, npins, vdim, edim, numew, nFileProcs;
 int countMyVtxs, countMyEdges, countMyPins;
 int proc, mine, nextpin, linemax, rc;
 int eid, vid, i, j;
 int mineid, minvid, maxeid, maxvid, numeids, numvids;
-int nexte, nextv;
+int nexte, nextv, nDistProcs;
+int myminPin, mymaxPin, myminVtx, mymaxVtx, myshare, share;
 float procf;
 int *myi, *myj, *myvno, *myeno;
 char *line, *token, *linestr, *pinBuf, *vwgtBuf, *ewgtBuf;
@@ -887,11 +895,12 @@ char cmesg[160];
     return 0;
   }
 
-  rc = sscanf(linestr, "%d %d %d %d %d %d", &nedges, &nvtxs, &npins,
+  rc = sscanf(linestr, "%d %d %d %d %d %d %d", 
+            &nedges, &nvtxs, &npins, &nFileProcs,
             &vdim, &numew, &edim);
 
-  if (rc != 6){
-    snprintf(cmesg, 160,"%s\nFirst line should have 6 values in it\n",line);
+  if (rc != 7){
+    snprintf(cmesg, 160,"%s\nFirst line should have 6 values in it\n",linestr);
     Gen_Error(0, cmesg);
     return 0;
   }
@@ -899,6 +908,41 @@ char cmesg[160];
   if (!nedges || !nvtxs || !npins){
     free(linestr);
     return 1;
+  }
+
+  for (i=0; i<=nFileProcs; i++){
+    /* skip index into start of each process' pins and also
+     * skip total number of pins
+     */
+    line = next_line(line, fsize, NULL);
+  }
+
+  myminPin = mymaxPin = -1;
+  myminVtx = mymaxVtx = -1;
+  if ((pio_info->init_dist_procs > 0) && 
+      (pio_info->init_dist_procs < nprocs)){
+    nDistProcs = pio_info->init_dist_procs;
+  }
+  else{
+    nDistProcs = nprocs;
+  }
+  if (pio_info->init_dist_type == INITIAL_LINEAR){ /* vertex distribution */
+    if (myrank < nDistProcs){
+      share = nvtxs / nDistProcs;
+      i = nvtxs - (nDistProcs * share);
+      myshare = ((myrank < i) ? share+1 : share);
+      myminVtx = myrank * myshare;
+      if (myrank >= i) myminVtx += i;
+      mymaxVtx = myminVtx + myshare - 1;
+    }
+  }
+  if (pio_info->init_dist_pins == INITIAL_LINEAR){ /* pin distribution */
+    share = npins / nprocs;
+    i = npins - (nprocs * share);
+    myshare = ((myrank < i) ? share+1 : share);
+    myminPin = myrank * myshare;
+    if (myrank >= i) myminPin += i;
+    mymaxPin = myminPin + myshare - 1;
   }
 
   myvno = myeno = myi = myj = NULL;
@@ -933,7 +977,9 @@ char cmesg[160];
       Gen_Error(0, cmesg);
       goto failure;
     }
-    mine = (((int)procf % nprocs) == myrank);
+
+    mine = my_pin(eid, vid, (int)procf, i, npins, 
+                  myminPin, mymaxPin, myrank, nprocs, pio_info);
 
     if (i){
       if (eid < mineid) mineid = eid;
@@ -974,7 +1020,9 @@ char cmesg[160];
     if (vid < minvid) minvid = vid;
     if (vid > maxvid) maxvid = vid;
 
-    if ((proc % nprocs) == myrank){
+    mine = my_vtx(proc, i, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
+
+    if (mine){
       countMyVtxs++;
     }
   }
@@ -1052,7 +1100,9 @@ char cmesg[160];
     for (i=0; i<npins; i++){
   
       sscanf(linestr, "%d %d %f", &eid, &vid, &procf);
-      mine = (((int)procf % nprocs) == myrank);
+
+      mine = my_pin(eid, vid, (int)procf, i, npins, 
+                  myminPin, mymaxPin, myrank, nprocs, pio_info);
   
       if (mine){
         myi[nextpin] = eid - mineid;
@@ -1081,7 +1131,8 @@ char cmesg[160];
   
     for (i=0; i<nvtxs; i++){
       sscanf(linestr, "%d %d", &proc, &vid);
-      if ((proc % nprocs) == myrank){
+      mine = my_vtx(proc, i, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
+      if (mine){
         myvno[nextv] = vid - minvid;
         for (j=0; j<vdim; j++){
           token = get_token(linestr, 2 + j, strlen(linestr));
@@ -1165,6 +1216,67 @@ done:
   *myEdgeWgts = myewgt;
 
   return rc;
+}
+static int my_vtx(int proc, int vtx, int mymin, int mymax,
+       int myrank, int nprocs, PARIO_INFO_PTR pio_info)
+{
+  int mine;
+
+  if (myrank >= nprocs) return 0;
+  if (nprocs == 1) return 1;
+
+  if (pio_info->init_dist_type == INITIAL_FILE){
+    /* The process ID of the vertex is in the file */
+    mine = ((proc % nprocs) == myrank);
+  }
+  else if (pio_info->init_dist_type == INITIAL_CYCLIC){
+    /* Deal out the vertices in a random fashion */
+    mine = ((vtx % nprocs) == myrank); 
+  }
+  else if (pio_info->init_dist_type == INITIAL_LINEAR){
+    /* First process gets first nvtxs/nprocs vertices, and so on */
+    mine = ((vtx >= mymin) && (vtx <= mymax));
+  }
+
+  return mine;
+}
+static int my_pin(int eid, int vid, int proc, 
+       int pin, int npins, int mymin, int mymax,
+       int myrank, int nprocs, PARIO_INFO_PTR pio_info)
+{
+  int mine;
+
+  if (nprocs == 1) return 1;
+
+  if (pio_info->init_dist_pins == INITIAL_ZERO){
+    /* Node zero initially has all pins */
+    mine = (myrank == 0);
+  }  
+  else if (pio_info->init_dist_pins == INITIAL_FILE){
+    /* The process ID of the pin owner is in the file */
+    mine = ((proc % nprocs) == myrank);
+  }
+  else if (pio_info->init_dist_pins == INITIAL_CYCLIC){
+    /* Deal out the pins in a random fashion */
+    mine = ((pin % nprocs) == myrank); 
+  }
+  else if (pio_info->init_dist_pins == INITIAL_LINEAR){
+    /* First process gets first npins/nprocs pins, and so on */
+    mine = ((pin >= mymin) && (pin <= mymax));
+  }
+  else if (pio_info->init_dist_pins == INITIAL_ROW){
+    /* Each process gets entire rows (hyperedges) of pins, no 
+       row is split across processes  */
+
+    mine = ((eid % nprocs) == myrank);
+  }
+  else if (pio_info->init_dist_pins == INITIAL_COL){
+    /* Each process gets entire columns of pins, no column is split
+       across processes  */
+    mine = ((vid % nprocs) == myrank);
+  }
+
+  return mine;
 }
 int _zoltan_sortFunc(const void *a, const void *b)
 {

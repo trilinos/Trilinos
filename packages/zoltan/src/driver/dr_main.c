@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -55,8 +57,11 @@ struct Output_Flags Output;
 double Total_Partition_Time = 0.0;  /* Total over Number_Iterations */
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
-static void print_input_info(FILE *, int, PROB_INFO_PTR, float);
+static void print_input_info(FILE *, int, PROB_INFO_PTR, PARIO_INFO_PTR, float );
 static void initialize_mesh(MESH_INFO_PTR);
+#ifdef DEBUG_READ_MESH
+static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv);
+#endif
 
 #include <unistd.h>
 
@@ -157,6 +162,7 @@ int main(int argc, char *argv[])
   pio_info.init_size		= -1;
   pio_info.init_dim 		= -1;
   pio_info.init_vwgt_dim 	= -1;
+  pio_info.init_dist_pins       = -1;
   pio_info.pdsk_root[0]		= '\0';
   pio_info.pdsk_subdir[0]	= '\0';
   pio_info.pexo_fname[0]	= '\0';
@@ -185,7 +191,7 @@ int main(int argc, char *argv[])
       error = 1;
     }
 
-    print_input_info(stdout, Num_Proc, &prob, version);
+    print_input_info(stdout, Num_Proc, &prob, &pio_info, version);
   }
 
   MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
@@ -355,6 +361,7 @@ static int read_mesh(
   PARIO_INFO_PTR pio_info,
   MESH_INFO_PTR mesh)
 {
+  int i, tpins, the, tverts, pins, he, verts;
 /* local declarations */
 /*-----------------------------Execution Begins------------------------------*/
   if (pio_info->file_type == CHACO_FILE) {
@@ -399,25 +406,88 @@ static int read_mesh(
     Gen_Error(0, "fatal: Invalid file type.\n");
     return 0;
   }
+
+#ifdef DEBUG_READ_MESH
+  for (i=0; i<Num_Proc; i++){
+    if (i == Proc){
+      printf("Process %d:\n",i);
+      print_mesh(mesh, &pins, &he, &verts);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  MPI_Reduce(&pins, &tpins, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&he, &the, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&verts, &tverts, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  if (Proc == 0){
+    printf("Total pins %d, total vertices %d, total hyperedges %d\n",
+                 tpins, tverts, the);
+  }
+#endif
   return 1;
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob, 
-float zoltan_version)
+PARIO_INFO_PTR pio, float zoltan_version)
 {
 int i;
 
   fprintf(fp, "Input values:\n");
   fprintf(fp, "  Zoltan version %g\n",zoltan_version);
   fprintf(fp, "  %s version %s\n", DRIVER_NAME, VER_STR);
-  fprintf(fp, "  Total number of Processors = %d\n\n", Num_Proc);
+  fprintf(fp, "  Total number of Processors = %d\n", Num_Proc);
 
   fprintf(fp, "\n  Performing load balance using %s.\n", prob->method);
   fprintf(fp, "\tParameters:\n");
   for (i = 0; i < prob->num_params; i++)
     fprintf(fp, "\t\t%s %s\n", prob->params[i].Name, prob->params[i].Val);
+
+  if ((pio->init_dist_procs > 0) && (pio->init_dist_procs != Num_Proc)){
+    fprintf(fp, "\n  Distribute input objects to only %d processes initially.\n", 
+             pio->init_dist_procs);
+  }
+  if (pio->init_dist_type >= 0){
+    fprintf(fp, "\n  Initially distribute input objects");
+    switch (pio->init_dist_type){
+      case INITIAL_FILE:
+      case INITIAL_OWNER:
+        fprintf(fp," according to assignments in file.");
+        break;
+      case INITIAL_LINEAR:
+        fprintf(fp," in linear fashion (first n/p to process 0, etc).");
+        break;
+      case INITIAL_CYCLIC:
+        fprintf(fp," in cyclic (round robin) fashion.");
+        break;
+    }
+    fprintf(fp, "\n");
+  }
+  if (pio->init_dist_pins >= 0){
+    fprintf(fp, "\n  Distribute pins");
+    switch (pio->init_dist_pins){
+      case INITIAL_FILE:
+        fprintf(fp," according to assignments in file.");
+        break;
+      case INITIAL_LINEAR:
+        fprintf(fp," in linear fashion (first n/p to process 0, etc).");
+        break;
+      case INITIAL_CYCLIC:
+        fprintf(fp," in cyclic (round robin) fashion.");
+        break;
+      case INITIAL_ROW:
+        fprintf(fp," so each process gets full rows.");
+        break;
+      case INITIAL_COL:
+        fprintf(fp," so each process gets full columns.");
+        break;
+      case INITIAL_ZERO:
+        fprintf(fp," all to process zero.");
+        break;
+    }
+    fprintf(fp, "\n");
+  }
+
 
   fprintf(fp, "##########################################################\n");
 }
@@ -460,6 +530,34 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->heWgtId        = NULL;
   mesh->hewgts         = NULL;
 }
+
+#ifdef DEBUG_READ_MESH
+static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv)
+{
+  int i, j;
+  printf("%d edges out of a total %d\n",m->nhedges,m->gnhedges);
+  for (i=0; i<m->nhedges; i++){
+    printf("  %d: ", m->hgid[i]);
+    for (j=m->hindex[i]; j<m->hindex[i+1]; j++){
+      printf("%d ", m->hvertex[j]);
+    }
+    printf("\n");
+  }
+  printf("Total pins: %d\n", m->hindex[m->nhedges]);
+  
+
+  printf("%d vertices: ", m->num_elems);
+  for (i=0; i<m->num_elems; i++){
+    printf("%d ", m->elements[i].globalID);
+  }
+  printf("\n");
+  fflush(stdout);
+
+  *tp = m->hindex[m->nhedges];
+  *the = m->nhedges;
+  *tv = m->num_elems;
+}
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

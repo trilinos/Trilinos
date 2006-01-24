@@ -123,19 +123,28 @@ int read_cmd_file (
           }
         }
       }
-      else if (strcmp(value, "matrixmarket+") == 0)  {
-        pio_info->file_type       = MATRIXMARKET_PLUS_FILE;
-        pio_info->matrix_obj      = COLUMNS; 
-      }
       else if ((strcmp(value, "hypergraph") == 0)  
-               || (strcmp(value, "matrixmarket") == 0)) {
-        if (strcmp(value, "hypergraph") == 0)
+               || (strcmp(value, "matrixmarket") == 0)
+               || (strcmp(value, "matrixmarket+") == 0)) {
+        if (strcmp(value, "hypergraph") == 0){
           pio_info->file_type       = HYPERGRAPH_FILE;
-        else
+          pio_info->init_dist_type  = INITIAL_LINEAR;
+          pio_info->init_dist_pins  = INITIAL_ROW;
+        }
+        else if (strcmp(value, "matrixmarket") == 0){
           pio_info->file_type       = MATRIXMARKET_FILE;
-        pio_info->init_dist_type  = INITIAL_LINEAR;
+          pio_info->init_dist_type  = INITIAL_LINEAR;
+          pio_info->init_dist_pins  = INITIAL_ROW;
+        }
+        else if (strcmp(value, "matrixmarket+") == 0){
+          pio_info->file_type       = MATRIXMARKET_PLUS_FILE;
+          pio_info->init_dist_type  = INITIAL_FILE;
+          pio_info->init_dist_pins  = INITIAL_FILE;
+        }
+
         pio_info->init_dist_procs = -1;
         pio_info->matrix_obj = COLUMNS; 
+
         pline = line;
         keepreading = 1; /* dummy value to enter loop */
 
@@ -159,6 +168,23 @@ int read_cmd_file (
                 return 0;
               }
               pio_info->init_dist_type = i;
+            }
+            else if (!strcmp(string, "pins")) {
+              if      (!strcmp(value, "linear"))  i = INITIAL_LINEAR;
+              else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
+              else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;
+              else if (!strcmp(value, "file"))    i = INITIAL_FILE;
+              else if (!strcmp(value, "zero"))    i = INITIAL_ZERO;
+              else if (!strcmp(value, "row"))     i = INITIAL_ROW;
+              else if (!strcmp(value, "rows"))    i = INITIAL_ROW;
+              else if (!strcmp(value, "column"))  i = INITIAL_COL;
+              else if (!strcmp(value, "col"))     i = INITIAL_COL;
+              else if (!strcmp(value, "cols"))    i = INITIAL_COL;
+              else  {
+                Gen_Error(0, "fatal: bad initial pins argument");
+                return 0;
+              }
+              pio_info->init_dist_pins = i;
             }
             else if (!strcmp(string, "procs"))  {
               if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &nv) != 1){

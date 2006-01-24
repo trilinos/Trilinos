@@ -486,6 +486,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     Timer_Callback_Time = 0.0;
 #endif /* TIMER_CALLBACKS */
 
+
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
     if (Zoltan_LB_Partition(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
