@@ -1387,13 +1387,15 @@ static int hash_lookup(
   int i;
   struct Hash_Node *ptr;
 
-  if (hn) *hn = NULL;
-
-  i = Zoltan_Hash(key, zz->Num_GID, (unsigned int) nVtx);
-  for (ptr=hash_tab[i]; ptr != NULL; ptr = ptr->next){
-    if (ZOLTAN_EQ_GID(zz, ptr->gid, key)){
-      if (hn) *hn = ptr;
-      return (ptr->gno);
+  if (hash_tab){
+    if (hn) *hn = NULL;
+  
+    i = Zoltan_Hash(key, zz->Num_GID, (unsigned int) nVtx);
+    for (ptr=hash_tab[i]; ptr != NULL; ptr = ptr->next){
+      if (ZOLTAN_EQ_GID(zz, ptr->gid, key)){
+        if (hn) *hn = ptr;
+        return (ptr->gno);
+      }
     }
   }
   /* Key not in hash table */
