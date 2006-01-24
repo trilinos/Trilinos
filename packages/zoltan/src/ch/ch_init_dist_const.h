@@ -23,13 +23,6 @@
 extern "C" {
 #endif
 
-
-/* define the Chaco initial distribution types */
-#define INITIAL_FILE   0
-#define INITIAL_LINEAR 1
-#define INITIAL_CYCLIC 2
-#define INITIAL_OWNER  3
-
 extern void ch_dist_init(int, int, PARIO_INFO_PTR, short **, int, MPI_Comm);
 extern int ch_dist_num_vtx(int, short *);
 extern int ch_dist_max_num_vtx(short *);
