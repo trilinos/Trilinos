@@ -1225,15 +1225,15 @@ std::string Thyra::toString(ModelEvaluatorBase::EInArgsMembers arg)
 {
   switch(arg) {
     case ModelEvaluatorBase::IN_ARG_x_dot:
-      return "OUT_ARG_x_dot";
+      return "IN_ARG_x_dot";
     case ModelEvaluatorBase::IN_ARG_x:
-      return "OUT_ARG_x";
+      return "IN_ARG_x";
     case ModelEvaluatorBase::IN_ARG_t:
-      return "OUT_ARG_t";
+      return "IN_ARG_t";
     case ModelEvaluatorBase::IN_ARG_alpha:
-      return "OUT_ARG_alpha";
+      return "IN_ARG_alpha";
     case ModelEvaluatorBase::IN_ARG_beta:
-      return "OUT_ARG_beta";
+      return "IN_ARG_beta";
     default:
       TEST_FOR_EXCEPT(true);
   }
@@ -1353,7 +1353,7 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -1373,7 +1373,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( EInArgsMembers arg, bool 
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!");
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!");
   supports_[arg] = supports;
 }
 
@@ -1383,7 +1383,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_supports(EInArgsMembers arg) con
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
     ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "model = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << toString(arg) << " is not supported!"
     );
 }
@@ -1394,7 +1394,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
   TEST_FOR_EXCEPTION(
     !( 1 <= l && l <= Np() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
-    " *this = \'"<<modelEvalDescription_<<"\': Error, "
+    " model = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter l = " << l << " is not in the range [1,"<<Np()<<"]!"
     );
 }
@@ -1420,7 +1420,7 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -1613,7 +1613,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsMembers arg, boo
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!"
     );
   supports_[arg] = supports;
 }
@@ -1675,7 +1675,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsMembers arg) c
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(arg): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument arg = " << toString(arg) << " is not supported!"
     );
 }
@@ -1687,7 +1687,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDfDp arg, int 
   TEST_FOR_EXCEPTION(
     supports_DfDp_[l-1].none(), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DfDp,l): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DfDp(l) with index l = " << l << " is not supported!"
     );
 }
@@ -1699,7 +1699,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDgDx arg, int 
   TEST_FOR_EXCEPTION(
     supports_DgDx_[j-1].none(), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DgDx,j): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx(j) with index j = " << j << " is not supported!"
     );
 }
@@ -1711,7 +1711,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDgDp arg, int 
   TEST_FOR_EXCEPTION(
     supports_DgDx_[ (j-1)*Np() + (l-1) ].none(), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DgDp,j,l): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
     );
 }
@@ -1722,7 +1722,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_l(int l) const
   TEST_FOR_EXCEPTION(
     !( 1 <= l && l <= Np() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "model = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter subvector p(l) index l = " << l << " is not in the range [1,"<<Np()<<"]!"
     );
 }
@@ -1733,7 +1733,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_j(int j) const
   TEST_FOR_EXCEPTION(
     !( 1 <= j && j <= Ng() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_j(j): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "model = \'"<<modelEvalDescription_<<"\': Error, "
     "The auxiliary function g(j) index j = " << j << " is not in the range [1,"<<Ng()<<"]!"
     );
 }

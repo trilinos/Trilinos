@@ -76,7 +76,7 @@ bool ModelEvaluator::InArgs::supports(EInArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -85,7 +85,7 @@ void ModelEvaluator::InArgs::_setSupports( EInArgsMembers arg, bool supports )
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\':Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\':Error, arg="<<arg<<" is invalid!"
     );
   supports_[arg] = supports;
 }
@@ -94,7 +94,7 @@ void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
-    ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(arg): *this = \'"<<modelEvalDescription_<<"\': Error, "
+    ,"EpetraExt::ModelEvaluator::InArgs::assert_supports(arg): model = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << arg << " is not supported!"
     );
 }
@@ -103,7 +103,7 @@ void ModelEvaluator::InArgs::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
     !( 1 <= l && l <= Np() ), std::logic_error
-    ,"EpetraExt::ModelEvaluator::InArgs::assert_l(l): *this = \'"<<modelEvalDescription_<<"\': Error, "
+    ,"EpetraExt::ModelEvaluator::InArgs::assert_l(l): model = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter l = " << l << " is not in the range [1,"<<Np()<<"]!"
     );
 }
@@ -121,7 +121,7 @@ bool ModelEvaluator::OutArgs::supports(EOutArgsMembers arg) const
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
     );
   return supports_[arg];
 }
@@ -178,7 +178,7 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 {
   TEST_FOR_EXCEPTION(
     int(arg)>=NUM_E_OUT_ARGS_MEMBERS || int(arg) < 0,std::logic_error
-    ,"*this = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
+    ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<arg<<" is invalid!"
     );
   supports_[arg] = supports;
 }
@@ -230,7 +230,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
   TEST_FOR_EXCEPTION(
     !supports_[arg], std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_supports(arg): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "model = \'"<<modelEvalDescription_<<"\': Error, "
     "The argument arg = " << arg << " is not supported!"
     );
 }
@@ -241,7 +241,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
   TEST_FOR_EXCEPTION(
     supports_DfDp_[l-1].none(), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp,l): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DfDp(l) with index l = " << l << " is not supported!"
     );
 }
@@ -252,7 +252,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
   TEST_FOR_EXCEPTION(
     supports_DgDx_[j-1].none(), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx,j): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx(j) with index j = " << j << " is not supported!"
     );
 }
@@ -263,7 +263,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
   TEST_FOR_EXCEPTION(
     supports_DgDx_[ (j-1)*Np() + (l-1) ].none(), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error,"
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
     );
 }
@@ -272,13 +272,13 @@ void ModelEvaluator::OutArgs::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
     Np()==0, std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_l(l): *this = \'"<<modelEvalDescription_<<"\':  Error, "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_l(l): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "no auxiliary parameters subvectors p(l) are supported!!"
     );
   TEST_FOR_EXCEPTION(
     !( 1 <= l && l <= Np() ), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_l(l): "
-    "*this = \'"<<modelEvalDescription_<<"\': Error, "
+    "model = \'"<<modelEvalDescription_<<"\': Error, "
     "The parameter subvector p(l) index l = " << l << " is not in the range [1,"<<Np()<<"]!"
     );
 }
@@ -287,12 +287,12 @@ void ModelEvaluator::OutArgs::assert_j(int j) const
 {
   TEST_FOR_EXCEPTION(
     Ng()==0, std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): *this = \'"<<modelEvalDescription_<<"\':  Error, "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "no auxiliary functions g(j) are supported!!"
     );
   TEST_FOR_EXCEPTION(
     !( 1 <= j && j <= Ng() ), std::logic_error
-    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): *this = \'"<<modelEvalDescription_<<"\':  Error, "
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "The auxiliary function g(j) index j = " << j << " is not in the range [1,"<<Ng()<<"]!"
     );
 }
