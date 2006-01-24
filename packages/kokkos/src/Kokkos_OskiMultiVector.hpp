@@ -153,7 +153,10 @@ namespace Kokkos {
 	handled by the multivector object itself.  
     */
 //    virtual ScalarType ** getValues() const {return(values_);};
-    virtual ScalarType ** getValues() const {return(&(x_view_->val));};
+    virtual ScalarType ** getValues() const {
+	if (dataInitialized_) return(&(x_view_->val));
+	else return(-1);
+    };
 
     //! Returns a pointer to an array of values for the ith column of the multivector.
     /*! Extract a pointer to the values in the ith column of the multivector.  Note that

@@ -144,30 +144,6 @@ namespace Kokkos {
 	
     //@}
 
-    //@{ \name Matrix Attribute set methods.
-
-    //! Set whether or not the compressed index matrix has no entries below the diagonal, assumed false.
-// See OSKI UG pg 19.
-
-    virtual int setIsUpperTriangular(bool tf) {isUpperTriangular_=tf; return(0);};
-	
-    //! Set whether or not the compressed index matrix has no entries above the diagonal, assumed false.
-    virtual int setIsLowerTriangular(bool tf) {isLowerTriangular_=tf; return(0);};
-	
-    //! Set whether or not the compressed index matrix has explicit diagonal entries.
-    virtual int setHasDiagonalEntries(bool tf) {hasDiagonalEntries_=tf; return(0);};
-	
-    //! Set whether or not the compressed index matrix should be treated as unit diagonal, assumed false
-    /*! \warning This method will not accept a "true" argument unless setHasDiagonalEntries() has be 
-        called with a "false" argument first.
-    */
-    virtual int setHasImplicitUnitDiagonal(bool tf) {
-      if (tf && hasDiagonalEntries_) return(-1); // Cannot set unit diagonal unless there are no explicit diagonal entries
-      hasImplicitUnitDiagonal_=tf; 
-      return(0);};
-
-    //@}
-
     //@{ \name Validity tests.
 
     //! Check if the matrix structure is valid for user-assertion of Upper/Lower Triangular and implicit unit diagonal.
@@ -214,26 +190,26 @@ namespace Kokkos {
     //@}
 
   protected:
+//remove the ones with a "No" later and replace with OSKI equiv.
+    OrdinalType numRows_;//No
+    OrdinalType numCols_;//No
+    OrdinalType numEntries_;//Yes?
 
-    OrdinalType numRows_;
-    OrdinalType numCols_;
-    OrdinalType numEntries_;
+    ScalarType ** values_;//Yes
+    ScalarType * allValues_;//Yes
 
-    ScalarType ** values_;
-    ScalarType * allValues_;
+    OrdinalType ** indices_;//Yes?
+    OrdinalType * allIndices_;//Yes?
 
-    OrdinalType ** indices_;
-    OrdinalType * allIndices_;
+    OrdinalType * pntr_;//No
+    OrdinalType * profile_;//Yes?
+    bool isRowOriented_;//Yes?
+    mutable bool isUpperTriangular_;//No?
+    mutable bool isLowerTriangular_;//No?
+    bool hasImplicitUnitDiagonal_;//No?
+    mutable bool hasDiagonalEntries_;//No?
 
-    OrdinalType * pntr_;
-    OrdinalType * profile_;
-    bool isRowOriented_;
-    mutable bool isUpperTriangular_;
-    mutable bool isLowerTriangular_;
-    bool hasImplicitUnitDiagonal_;
-    mutable bool hasDiagonalEntries_;
-
-    bool isOskiMatrix_;
+   bool isOskiMatrix_;//No? - no equiv, create dataInitialized_ 
   };
 
 } // namespace Kokkos
