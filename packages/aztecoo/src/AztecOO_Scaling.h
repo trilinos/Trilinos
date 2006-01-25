@@ -40,13 +40,13 @@
    function-pointer, to provide a call-back that Aztec can use to
    scale Epetra matrices passed in by AztecOO.
 */
-extern "C" int AztecOO_scale_epetra(int action,
-                                    AZ_MATRIX* Amat,
-                                    int options[],
-                                    double b[],
-                                    double x[],
-                                    int proc_config[],
-                                    AZ_SCALING* scaling);
+int AztecOO_scale_epetra(int action,
+                         AZ_MATRIX* Amat,
+                         int options[],
+                         double b[],
+                         double x[],
+                         int proc_config[],
+                         AZ_SCALING* scaling);
 
 #endif
 
