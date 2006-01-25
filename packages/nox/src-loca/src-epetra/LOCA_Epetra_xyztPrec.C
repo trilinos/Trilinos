@@ -36,9 +36,8 @@
 //! Constructor
 LOCA::Epetra::xyztPrec::
 xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_, 
-	 Epetra_Vector &splitVec_, 
-	 Epetra_RowMatrix &splitJac_,
-	 Epetra_RowMatrix &splitMass_,
+	 Epetra_CrsMatrix &splitJac_,
+	 Epetra_CrsMatrix &splitMass_,
 	 EpetraExt::BlockVector &solution_,
          EpetraExt::BlockVector& solutionOverlap_,
 	 Epetra_Import &overlapImporter_,
@@ -49,8 +48,8 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   splitVec(0),
   splitRes(0),
   splitVecOld(0),
-  splitJac(dynamic_cast<Epetra_CrsMatrix &>(splitJac_)),
-  splitMass(dynamic_cast<Epetra_CrsMatrix &>(splitMass_)),
+  splitJac(splitJac_),
+  splitMass(splitMass_),
   solution(solution_),
   solutionOverlap(solutionOverlap_),
   overlapImporter(overlapImporter_),
@@ -116,13 +115,15 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 							iReq, iJac, 
 							A, solution));
     Asolve = Teuchos::rcp(jacobianBlock,false);
-    splitVec = new Epetra_Vector(splitVec_);
-    splitRes = new Epetra_Vector(splitVec_);
-    splitVecOld = new Epetra_Vector(splitVec_);
-    input_EV_RCP = Teuchos::rcp(splitRes, false);
-    result_EV_RCP = Teuchos::rcp(splitVec, false);
-    input_NEV = new NOX::Epetra::Vector(input_EV_RCP, NOX::Epetra::Vector::CreateView);
-    result_NEV = new NOX::Epetra::Vector(result_EV_RCP, NOX::Epetra::Vector::CreateView);
+
+    // Create temporary space for Epetra vectors and NOX vies of same space
+    splitVecOld = new Epetra_Vector(splitJac.RowMap());
+    splitVec = new Epetra_Vector(splitJac.RowMap());
+    splitRes = new Epetra_Vector(splitJac.RowMap());
+    splitRes_RCP = Teuchos::rcp(splitRes, false);
+    splitVec_RCP = Teuchos::rcp(splitVec, false);
+    splitRes_NEV = new NOX::Epetra::Vector(splitRes_RCP, NOX::Epetra::Vector::CreateView);
+    splitVec_NEV = new NOX::Epetra::Vector(splitVec_RCP, NOX::Epetra::Vector::CreateView);
   }
   else if (prec == "None") {
     label = "LOCA::Epetra::xyztPrec::None";
@@ -144,8 +145,8 @@ LOCA::Epetra::xyztPrec::
   if (splitVec) delete splitVec;
   if (splitRes) delete massBlock;
   if (splitVecOld) delete splitVecOld;
-  if (input_NEV) delete input_NEV;
-  if (result_NEV) delete result_NEV;
+  if (splitRes_NEV) delete splitRes_NEV;
+  if (splitVec_NEV) delete splitVec_NEV;
   if (linSys != Teuchos::null) linSys->destroyPreconditioner();
 }
 
@@ -171,6 +172,7 @@ int LOCA::Epetra::xyztPrec::
 ApplyInverse(const Epetra_MultiVector& input,
 	     Epetra_MultiVector& result) const
 {
+	static int count=0;
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
   
   if (prec == "None") {
@@ -178,34 +180,23 @@ ApplyInverse(const Epetra_MultiVector& input,
   }
   
   if (prec == "Global") {
-    // convert multivectors to vectors
-    Epetra_MultiVector& input_EMV = const_cast<Epetra_MultiVector&>(input);
-    Epetra_Vector& input_EV = dynamic_cast<Epetra_Vector&>(input_EMV);
-    Epetra_Vector& result_EV = dynamic_cast<Epetra_Vector&>(result);
-    
-    // use referenced counted pointers to vectors
-    const Teuchos::RefCountPtr<Epetra_Vector> input_EV_RCP = Teuchos::rcp(&input_EV, false);
-    Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP = Teuchos::rcp(&result_EV, false);
-    
-    // create views of vectors 
-    const NOX::Epetra::Vector input_NEV(input_EV_RCP, NOX::Epetra::Vector::CreateView);
-    NOX::Epetra::Vector result_NEV(result_EV_RCP, NOX::Epetra::Vector::CreateView);
+    // create NOX vectors as views of input and results vectors 
+    const Teuchos::RefCountPtr<Epetra_Vector> input_RCP =
+      Teuchos::rcp( const_cast<Epetra_Vector*>(input(0)), false);
+    Teuchos::RefCountPtr<Epetra_Vector> result_RCP = Teuchos::rcp(result(0), false);
+    const NOX::Epetra::Vector input_NEV(input_RCP, NOX::Epetra::Vector::CreateView);
+    NOX::Epetra::Vector result_NEV(result_RCP, NOX::Epetra::Vector::CreateView);
     
     // apply preconditioner as specified in lsParams
     bool stat = linSys->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
-    
+
     //    return (stat) ? 0 : 1;
   }    
   else if (prec == "Sequential" || prec == "Parallel") {
     
-    // convert multivectors to vectors
-    Epetra_MultiVector& input_EMV = const_cast<Epetra_MultiVector&>(input);
-    Epetra_Vector& input_EV = dynamic_cast<Epetra_Vector&>(input_EMV);
-    Epetra_Vector& result_EV = dynamic_cast<Epetra_Vector&>(result);
-    
     // residual needs to be in BlockVector and contain values from input
     EpetraExt::BlockVector residual(solution);    // inherit offsets from solution
-    residual.Epetra_Vector::operator=(input_EV);  // populate with input values
+    residual.Epetra_Vector::operator=(*input(0));  // populate with input values
     
     // Set up loop logic for Sequential (block Gauss Seydel over time domains)
     // or parallel (Jacobi by time domains)
@@ -241,7 +232,7 @@ ApplyInverse(const Epetra_MultiVector& input,
 	  // get x and residual (r) corresponding to current block
 	  residual.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
 	  solution.ExtractBlockValues(*splitVec, jacobian.RowIndex(i));
-	  
+
 	  // Create a new preconditioner for the single block
 	  linSys->destroyPreconditioner();
 	  linSys->createPreconditioner(*splitVec, lsParams, false);
@@ -259,10 +250,9 @@ ApplyInverse(const Epetra_MultiVector& input,
 	    splitRes->Update(-1.0, *splitVec, 1.0);
 	  }	
 	  
-	  // solve the problem
-	  bool stat = linSys->applyJacobianInverse(lsParams, *input_NEV, *result_NEV);
+	  // solve the problem, and put solution into slution vector
+	  bool stat = linSys->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
 	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
-	  //solution.LoadBlockValues((*result_NEV).getEpetraVector(), jacobian.RowIndex(i));
 	  
 	}
       }

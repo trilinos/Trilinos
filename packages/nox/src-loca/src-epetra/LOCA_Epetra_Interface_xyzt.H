@@ -154,6 +154,8 @@ private:
   NOX::Parameter::List* precPrintParams;
   NOX::Parameter::List* precLSParams;
   LOCA::Epetra::xyztPrec* preconditioner;
+  Epetra_CrsMatrix* splitJacCrs;
+  Epetra_CrsMatrix* splitMassCrs;
 
 };
 } // namespace Interface

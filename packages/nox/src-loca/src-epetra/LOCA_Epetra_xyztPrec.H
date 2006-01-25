@@ -60,9 +60,8 @@ class xyztPrec : public Epetra_Operator,
 
   //! Constructor
   xyztPrec(EpetraExt::BlockCrsMatrix& jacobian, 
-	   Epetra_Vector &splitVec, 
-	   Epetra_RowMatrix &splitJac,
-	   Epetra_RowMatrix &splitMass,
+	   Epetra_CrsMatrix &splitJac,
+	   Epetra_CrsMatrix &splitMass,
 	   EpetraExt::BlockVector& solution,
 	   EpetraExt::BlockVector& solutionOverlap,
 	   Epetra_Import &overlapImporter,
@@ -134,10 +133,10 @@ private:
   Epetra_Vector *splitVec; //tmp space
   Epetra_Vector *splitRes; //tmp space
   Epetra_Vector *splitVecOld; //tmp space
-  Teuchos::RefCountPtr<Epetra_Vector> input_EV_RCP;
-  Teuchos::RefCountPtr<Epetra_Vector> result_EV_RCP;
-  NOX::Epetra::Vector *input_NEV;
-  NOX::Epetra::Vector *result_NEV;
+  Teuchos::RefCountPtr<Epetra_Vector> splitRes_RCP; 
+  Teuchos::RefCountPtr<Epetra_Vector> splitVec_RCP;
+  NOX::Epetra::Vector *splitRes_NEV; //view of splitRes
+  NOX::Epetra::Vector *splitVec_NEV; //view of splitVec
 
   //! Label for this operator
   string label;

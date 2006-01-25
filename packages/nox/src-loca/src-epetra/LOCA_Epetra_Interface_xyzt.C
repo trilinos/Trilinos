@@ -103,7 +103,22 @@ xyzt::xyzt(
 
    // Create preconditioner
    if (precLSParams != 0) {
-     preconditioner = new LOCA::Epetra::xyztPrec(*jacobian, splitVec, *splitJac, *splitMass,
+     //Preconditioner needs CrsMatrix, must convert VBR or others
+     
+     splitJacCrs = dynamic_cast<Epetra_CrsMatrix *>(splitJac.get());
+     if (splitJacCrs == NULL) {
+        cout << "CAST OF splitJacCrs failed!, constructing CRS matrix " << endl;
+
+        std::vector< std::vector<int> > row(1); row[0].push_back(0);
+	std::vector<int> col; col.push_back(0);
+        splitJacCrs = (Epetra_CrsMatrix *)
+	   new EpetraExt::BlockCrsMatrix(*splitJac, row, col, splitJac->Comm());
+        splitMassCrs = (Epetra_CrsMatrix *)
+	   new EpetraExt::BlockCrsMatrix(*splitMass, row, col, splitMass->Comm());
+     }
+     else splitMassCrs = dynamic_cast<Epetra_CrsMatrix *>(splitMass.get());
+
+     preconditioner = new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *splitMassCrs,
 		                                 *solution, *solutionOverlap, *overlapImporter,
 						 *precPrintParams, *precLSParams, globalComm);
      if (preconditioner != 0) {
