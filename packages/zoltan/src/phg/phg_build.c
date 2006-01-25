@@ -478,10 +478,6 @@ PHGPartParams *temphgp = NULL;
         Zoltan_Multifree(__FILE__, __LINE__, 3,
                          &ew_gids, &ew_lids, &ew_weights);
 
-        if (ew_ht){
-          Zoltan_Multifree(__FILE__, __LINE__, 2, &ew_ht[ew_ht_size], &ew_ht);
-        }
-
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
           "Error querying/processing edge weights");
         goto End;
@@ -1699,6 +1695,8 @@ int lenGID = zz->Num_GID;
           ew_num_edges, ew_gids, ew_lids, ew_weights, ht, htsize);
 
   if (rc != ZOLTAN_OK){
+    ierr = rc;
+    goto End;
   }
 
   ewht = (struct _ewht **)*ht;
