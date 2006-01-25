@@ -181,6 +181,17 @@ public:
       ,supportsTransMVByRow_(mvOrientation==DERIV_TRANS_MV_BY_ROW)
       {}
     /** \brief . */
+    DerivativeSupport( EDerivativeLinearOp, EDerivativeMultiVectorOrientation mvOrientation )
+      :supportsLinearOp_(true), supportsMVByCol_(mvOrientation==DERIV_MV_BY_COL)
+      ,supportsTransMVByRow_(mvOrientation==DERIV_TRANS_MV_BY_ROW)
+      {}
+    /** \brief . */
+    DerivativeSupport( EDerivativeMultiVectorOrientation mvOrientation1, EDerivativeMultiVectorOrientation mvOrientation2 )
+      :supportsLinearOp_(false)
+      ,supportsMVByCol_(mvOrientation1==DERIV_MV_BY_COL||mvOrientation2==DERIV_MV_BY_COL)
+      ,supportsTransMVByRow_(mvOrientation1==DERIV_TRANS_MV_BY_ROW||mvOrientation2==DERIV_TRANS_MV_BY_ROW)
+      {}
+    /** \brief . */
     DerivativeSupport& plus(EDerivativeLinearOp)
       { supportsLinearOp_ = true; return *this; }
     /** \brief . */
@@ -291,6 +302,9 @@ public:
     /** \brief . */
     DerivativeMultiVector getDerivativeMultiVector() const
       { return dmv_; }
+    /** \brief . */
+    bool isEmpty() const
+        { return !lo_.get() && !dmv_.getMultiVector().get(); }
   private:
     Teuchos::RefCountPtr<Epetra_Operator>   lo_;
     DerivativeMultiVector                   dmv_;
