@@ -397,28 +397,6 @@ struct Zoltan_Struct {
                                           to be passed to
                                           Get_Child_Weight()         */
   /***************************************************************************/
-  ZOLTAN_NUM_HG_EDGES_FN *Get_Num_HG_Edges;    
-                                       /* Fn ptr to get a processor's
-                                          number of hypergraph edges.*/
-  ZOLTAN_NUM_HG_EDGES_FORT_FN *Get_Num_HG_Edges_Fort;
-                                       /* Fortran version      */
-  void *Get_Num_HG_Edges_Data;         /* Ptr to user defined data
-                                          to be passed to
-                                          Get_Num_HG_Edges()         */
-  /***************************************************************************/
-  ZOLTAN_HG_EDGE_INFO_FN *Get_HG_Edge_Info;    
-                                       /* Fn ptr to get hyperedge info.      */
-  ZOLTAN_HG_EDGE_INFO_FORT_FN *Get_HG_Edge_Info_Fort;/* Fortran version      */
-  void *Get_HG_Edge_Info_Data;         /* Ptr to user defined data
-                                          to be passed to Get_HG_Edge_Info() */
-  /***************************************************************************/
-  ZOLTAN_HG_EDGE_LIST_FN *Get_HG_Edge_List;    
-                                       /* Fn ptr to get a processor's
-                                          hyperedge vertex lists.           */
-  ZOLTAN_HG_EDGE_LIST_FORT_FN *Get_HG_Edge_List_Fort;/* Fortran version      */
-  void *Get_HG_Edge_List_Data;         /* Ptr to user defined data
-                                          to be passed to Get_HG_Edge_List() */
-  /***************************************************************************/
   ZOLTAN_HG_SIZE_CS_FN *Get_HG_Size_CS;    
                                        /* Fn ptr to get size and format of
                                           hypergraph compressed storage.  */

@@ -77,10 +77,6 @@ ZOLTAN_NEXT_COARSE_OBJ_FN get_next_coarse_element;
 ZOLTAN_PARTITION_MULTI_FN get_partition_multi;
 ZOLTAN_PARTITION_FN get_partition;
 
-ZOLTAN_HG_EDGE_LIST_FN get_hg_edge_list;
-ZOLTAN_HG_EDGE_INFO_FN get_hg_edge_info;
-ZOLTAN_NUM_HG_EDGES_FN get_num_hg_edges;
-
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

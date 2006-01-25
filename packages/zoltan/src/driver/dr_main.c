@@ -361,7 +361,9 @@ static int read_mesh(
   PARIO_INFO_PTR pio_info,
   MESH_INFO_PTR mesh)
 {
+#ifdef DEBUG_READ_MESH
   int i, tpins, the, tverts, pins, he, verts;
+#endif
 /* local declarations */
 /*-----------------------------Execution Begins------------------------------*/
   if (pio_info->file_type == CHACO_FILE) {

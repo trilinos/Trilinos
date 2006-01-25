@@ -27,11 +27,7 @@ CC			= gcc -Wall
 CPPC			= g++ -Wall -Wno-deprecated
 #CC			= gcc -Wall -fprofile-arcs -ftest-coverage
 
-INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
-			  -I/Net/local/lang/SC3.0.1/ansi_include \
-			  -I/Net/proj/zoltan/arch/solaris/include \
-                          -I/Net/local/mpi/include \
-                          -I/Net/local/mpi/build/solaris/ch_p4/include
+INCLUDE_PATH		= -I/usr/local/mpich-1.2.7/include
 
 DBG_FLAGS		= -g 
 OPT_FLAGS		= -O
@@ -45,22 +41,21 @@ SPPR_HEAD 		= spprinc.most
 F90_MODULE_PREFIX 	= -M
 FARG      		= farg_typical
 
-MPI_LIB			= -lpmpich -lmpich -lsocket -lnsl -laio -lgcc
-MPI_LIBPATH		= -L/Net/local/mpi/build/solaris/ch_p4/lib \
-                  -L/Net/local/gnu/lib/gcc-lib/sparc-sun-solaris2.8/3.2.1
+MPI_LIB			= -lmpich 
+MPI_LIBPATH		= -L/usr/local/mpich-1.2.7/lib
 
-PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS3
-PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+#PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/solaris/lib/ParMETIS3
+#PARMETIS_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
-JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
-JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
-JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
+#JOSTLE_LIBPATH 		= -L/Net/local/proj/zoltan/arch/solaris/lib
+#JOSTLE_INCPATH 		= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 		= /Net/local/proj/zoltan/arch/all/src
 
-PATOH_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
-PATOH_INCPATH		= -I/Net/local/proj/zoltan/arch/all/src
+#PATOH_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
+#PATOH_INCPATH		= -I/Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/solaris/lib
-NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/solaris/include
+#NEMESIS_LIBPATH		= -L/usr/lib
+#NEMESIS_INCPATH		= -I/usr/include
 
 #----------------------------------------------------------------
 # Definitions required to build vtk_view and vtk_write.  Pre-built

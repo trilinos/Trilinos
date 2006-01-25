@@ -233,8 +233,6 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Num_Edges = NULL;
   zz->Get_Edge_List_Multi = NULL;
   zz->Get_Edge_List = NULL;
-  zz->Get_Num_HG_Edges = NULL;
-  zz->Get_HG_Edge_List = NULL;
   zz->Get_HG_Size_CS = NULL;
   zz->Get_HG_CS = NULL;
   zz->Get_HG_Size_Edge_Weights = NULL;
@@ -283,8 +281,6 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Partition_Data = NULL;
   zz->Get_Num_Edges_Data = NULL;
   zz->Get_Edge_List_Data = NULL;
-  zz->Get_Num_HG_Edges_Data = NULL;
-  zz->Get_HG_Edge_List_Data = NULL;
   zz->Get_HG_Size_CS_Data = NULL;
   zz->Get_HG_CS_Data = NULL;
   zz->Get_HG_Size_Edge_Weights_Data = NULL;

@@ -27,14 +27,9 @@ extern "C" {
 
 /* Temporary prototypes. These functions are HG routines
    currently not compiled into Zoltan, but duplicated in this file. */
-static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex, 
-           ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
-           float **p_edge_wgts, int *glob_hedges, int *glob_pins);
 static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
                    ZOLTAN_ID_PTR *edgeIds, ZOLTAN_ID_PTR *vtxIds, 
                    int *nEwgts, ZOLTAN_ID_PTR *eWgtIds, float **eWgts);
-static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, 
-           int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts);
 static int turn_off_reduce_dimensions(ZZ *zz);
 static int merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, int size_merged,
            ZOLTAN_ID_PTR idbuf, int numIds, void *htptr, int htSize);
@@ -89,7 +84,6 @@ int gen_geom, int gen_graph, int gen_hg)
   int i, j, k, num_obj, num_geom, num_edges, reduce;
   int glob_nvtxs, glob_edges, glob_hedges, glob_pins, glob_ewgts;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
-  int have_edge_callbacks;
   int have_pin_callbacks;
   int nEdges, nEwgts;
   ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
@@ -153,22 +147,10 @@ int gen_geom, int gen_graph, int gen_hg)
 
   /* Build hypergraph, or get hypergraph data. */
   if (gen_hg){
-    have_edge_callbacks =
-        zz->Get_Num_HG_Edges != NULL &&
-        zz->Get_HG_Edge_Info != NULL &&
-        zz->Get_HG_Edge_List != NULL;
-    have_pin_callbacks =
-        zz->Get_HG_Size_CS != NULL && zz->Get_HG_CS != NULL ;
+    have_pin_callbacks = zz->Get_HG_Size_CS != NULL && zz->Get_HG_CS != NULL;
 
-    if (!have_edge_callbacks && !have_pin_callbacks){
+    if (!have_pin_callbacks){
       gen_hg = 0;
-    }
-    else if (have_edge_callbacks){
-      /* error = Zoltan_HG_Build_Hypergraph(zz, &zhg, NULL); */
-      /* Get data in parallel. Zoltan_HG_Build_Hypergraph
-         currently only works in serial. */
-      error = Zoltan_HG_Get_Hedges(zz, &hindex, &hevtxs, &heprocs, &hewgts,
-              &glob_hedges, &glob_pins);
     }
     else{
 
@@ -252,7 +234,7 @@ int gen_geom, int gen_graph, int gen_hg)
   Zoltan_Print_Sync_Start(zz->Communicator, 0); 
 
   /* Do we need this if we have pin callbacks?  Vertex assignment
-   * is in "matrixmarket plus" file.
+   * is in the hypergraph file.
    */
   /* Write object assignments to file. */
   /* For now, only write partition number. */
@@ -349,45 +331,7 @@ int gen_geom, int gen_graph, int gen_hg)
 
   /* Write hypergraph to file, if applicable. */
 
-  if (gen_hg && have_edge_callbacks){
-    Zoltan_Print_Sync_Start(zz->Communicator, 0); 
-    if (zz->Get_Num_HG_Edges == NULL || zz->Get_HG_Edge_List == NULL) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Hypergraph output requested, but no corresponding query function was found.\n");
-      error = ZOLTAN_FATAL;
-      Zoltan_Print_Sync_End(zz->Communicator, 0); 
-      goto End;
-    }
-    sprintf(full_fname, "%s.hg", fname);
-    if (zz->Proc == 0)
-      fp = fopen(full_fname, "w");
-    else
-      fp = fopen(full_fname, "a");
-    if (fp==NULL){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Could not open file for writing.\n");
-      error = ZOLTAN_FATAL;
-      Zoltan_Print_Sync_End(zz->Communicator, 0); 
-      goto End;
-    }
-
-    /* If proc 0, write first line. */
-    if (zz->Proc == 0){
-      fprintf(fp, "%% First line: #vertices #hyperedges #pins weight_flag\n");
-      fprintf(fp, "%d %d %d %1d%1d%1d", glob_nvtxs, glob_hedges, 
-        glob_pins, ZOLTAN_PRINT_VTX_NUM, 
-        (zz->Obj_Weight_Dim>0), (zz->Edge_Weight_Dim>0));
-      if (zz->Obj_Weight_Dim>1 || zz->Edge_Weight_Dim>1)
-        fprintf(fp, " %d %d", zz->Obj_Weight_Dim, zz->Edge_Weight_Dim);
-      fprintf(fp, "\n");
-    }
-
-    /* Each proc prints its part of the hgraph. */
-    Zoltan_HG_Print_Hedges(zz, fp, hindex, hevtxs, hewgts);
-
-    fclose(fp);
-    Zoltan_Print_Sync_End(zz->Communicator, 0); 
-  }
-
-  if (gen_hg && have_pin_callbacks){
+  if (gen_hg){
 
     /* PLEASE READ: If you change the format of this "matrixmarket plus"
      * file, please change dr_hg_io.c:process_mtxp_file(), which 
@@ -503,12 +447,7 @@ End:
   ZOLTAN_FREE(&float_vwgt);
   ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&part);
-  if ( have_edge_callbacks){
-    ZOLTAN_FREE(&hindex);
-    ZOLTAN_FREE(&hevtxs);
-    ZOLTAN_FREE(&heprocs);
-    ZOLTAN_FREE(&hewgts);
-  }
+  
   if ( have_pin_callbacks){
     ZOLTAN_FREE(&edgeSize);
     ZOLTAN_FREE(&edgeIds);
@@ -521,157 +460,6 @@ End:
   return error;
 }
 
-/************************************************************************ 
- * EBEB: The routines below were copied from the hg directory because   *
- * Zoltan is distributed without hg. Duplicate functions should be      *
- * removed later.                                                       *
- ************************************************************************/
-
-/* Each proc gets hypergraph data from query functions.
- * Compute some global values. 
- * All procs must participate due to collective communication.
- */
-static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex, 
-           ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
-           float **p_edge_wgts, int *glob_hedges, int *glob_pins)
-{
-  int i, ierr, cnt, j, nEdge, npins, numwgts, minproc;
-  int loc_hedges, loc_pins;
-  int *hindex = NULL, *edge_procs = NULL;
-  ZOLTAN_ID_PTR edge_verts = NULL;
-  ZOLTAN_ID_PTR edge_gids = NULL, edge_lids = NULL;
-  float *edge_wgts = NULL;
-  static char *yo = "Zoltan_HG_Get_Hedges";
-
-  ZOLTAN_TRACE_ENTER(zz, yo);
-  ierr = ZOLTAN_OK;
-
-  /* Get hyperedge information from application through query functions. */
-
-  nEdge = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Get_Num_HG_Edges");
-    goto End;
-  }
-  if (nEdge > 0) {
-    edge_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, nEdge);
-    edge_lids = ZOLTAN_MALLOC_LID_ARRAY(zz, nEdge);
-    (*p_hindex) = (int *) ZOLTAN_MALLOC((nEdge+1) * sizeof(int));
-    hindex = *p_hindex;
-    numwgts = nEdge * zz->Edge_Weight_Dim;
-    if (numwgts){
-       (*p_edge_wgts) = (float *) ZOLTAN_MALLOC(numwgts * sizeof(float));
-       edge_wgts = *p_edge_wgts;
-    }
-    if (!edge_gids || (zz->Num_LID && !edge_lids) || 
-        !hindex || (numwgts && !edge_wgts)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-    ierr = zz->Get_HG_Edge_Info(zz->Get_HG_Edge_Info_Data, 
-                                zz->Num_GID, zz->Num_LID, nEdge,
-                                zz->Edge_Weight_Dim,
-                                edge_gids, edge_lids, 
-                                hindex, edge_wgts);
-    npins = 0;
-    for (i = 0; i < nEdge; i++) npins += hindex[i];
-
-    (*p_edge_verts) = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
-    edge_verts = *p_edge_verts;
-    (*p_edge_procs) = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
-    edge_procs = *p_edge_procs;
-    if (npins && (!edge_verts || !edge_procs)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-    ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data, 
-                                zz->Num_GID, zz->Num_LID, 
-                                nEdge, edge_gids, edge_lids,
-                                hindex, edge_verts, edge_procs);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_HG_Edge_List");
-      goto End;
-    }
-  }
-  /* Build hindex from edge_sizes */
-  cnt = 0;
-  for (i = 0; i < nEdge; i++) {
-    j = hindex[i];
-    hindex[i] = cnt;
-    cnt += j;
-  }
-  hindex[nEdge] = cnt;
-
-  /* Compute local hg statistics. */
-  /* Make hindex negative if hedge is owned by another proc. */
-  loc_hedges = loc_pins = 0;
-  for (i = 0; i < nEdge; i++) {
-    minproc = zz->Num_Proc;
-    for (j=hindex[i]; j<hindex[i+1]; j++)
-      if (edge_procs[j]<minproc)
-        minproc = edge_procs[j];
-    if (minproc == zz->Proc){  /* my hyperedge */
-      loc_hedges++;
-      loc_pins += (hindex[i+1] - hindex[i]); /* edge_size[i] */
-    }
-    else  /* lowest proc owns hyperedge, not me */
-      hindex[i] = -hindex[i];
-  }
-
-  /* Sanity check */
-  if (cnt != npins) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                       "Input error:  Number of pins != sum of edge sizes");
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  /* Compute global #pins and #hyperedges, no duplicates */
-  MPI_Allreduce(&loc_hedges, glob_hedges, 1, MPI_INT, MPI_SUM,
-      zz->Communicator);
-  MPI_Allreduce(&loc_pins, glob_pins, 1, MPI_INT, MPI_SUM,
-      zz->Communicator);
-
-End:
-  /* Memory will be freed in calling function. */
-
-  ZOLTAN_TRACE_EXIT(zz, yo);
-
-  return ierr;
-}
-
-#define ABS(x) ((x)<0 ? -(x) : (x))
-
-/* Each processor prints its hyperedges to file. */
-static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, 
-           int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts)
-{
-  int i, j, ierr, num_edges;
-  char *yo = "Zoltan_HG_Print_Hedges";
-
-  ZOLTAN_TRACE_ENTER(zz, yo);
-
-  ierr = ZOLTAN_OK;
-  num_edges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
-
-  for (i=0; i<num_edges; i++){
-    if (hindex[i]>=0){
-      /* Only print hyperedges owned by me (to avoid duplicate hedges) */
-      for (j=hindex[i]; j<ABS(hindex[i+1]); j++){ 
-        /* EBEB - Print global ids as integers. */
-        fprintf(fp, "%d ", (int) hevtxs[j]);
-      }
-    }
-    fprintf(fp, "\n");
-  }
-
-  /* Print weights. EBEB - Not yet impl. */
-
-  ZOLTAN_TRACE_EXIT(zz, yo);
-  return ierr;
-}
 static int turn_off_reduce_dimensions(ZZ *zz)
 {
   int reduce=0;

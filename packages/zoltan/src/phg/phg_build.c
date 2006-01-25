@@ -221,7 +221,8 @@ int *tmpparts = NULL;
 int add_vweight;
 int ew_num_edges, ew_ht_size;
 int ew_dim = zz->Edge_Weight_Dim;
-int new_hgraph_callbacks = 0;
+int hypergraph_callbacks = 0;
+int graph_callbacks = 0;
 void *ew_ht;
 float *ew_weights;
 ZOLTAN_ID_PTR global_ids, ew_gids, ew_lids;
@@ -272,6 +273,13 @@ PHGPartParams *temphgp = NULL;
     ZOLTAN_FREE(&temphgp);
 
     zoltan_lb_eval = 1;
+  }
+  if (zz->Get_HG_Size_CS && zz->Get_HG_CS){
+    hypergraph_callbacks = 1;
+  }
+  else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
+           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
+    graph_callbacks = 1;
   }
 
   /**************************************************/
@@ -400,28 +408,12 @@ PHGPartParams *temphgp = NULL;
   app.nEdge = 0;
   app.nPins = 0;
   app.GnEdge = 0;
-  if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_HG_Edge_Info) {
-    /*
-     * Each processor:
-     *   owns a set of complete edges (all pins in one or more rows)
-     *   supplies the weights for those edges
-     *   knows which process owns each of it's vertices (pin_procs).
-     */
-    ierr = Zoltan_HG_Hypergraph_Edge_Callbacks(zz, zhg,
-                                          app.GnVtx, edgeSizeThreshold,
-                                          final_output, &app.nEdge, 
-                                          &app.egids, &app.elids,
-                                          &app.esizes, &app.ewgt,
-                                          &app.nPins, &app.pins, 
-                                          &app.pin_procs);
 
-  }else if (zz->Get_HG_Size_CS && zz->Get_HG_CS){
+  if (hypergraph_callbacks){
     /*
      * Each processor:
      *   owns a set of pins (nonzeros)
      *   may provide some edge weights
-     *   does NOT know which processes own other vertices
-     *     (so app.pin_procs is NULL and will be filled in later)
      *
      * The edge weights supplied by the application may not be
      * for the edges represented by it's pins.  More than one
@@ -435,7 +427,6 @@ PHGPartParams *temphgp = NULL;
     ew_weights = NULL;
     ew_num_edges = 0;
     ew_ht = NULL;
-    new_hgraph_callbacks = 1;
 
     if (ew_dim && zz->Get_HG_Size_Edge_Weights && zz->Get_HG_Edge_Weights){
 
@@ -517,8 +508,7 @@ PHGPartParams *temphgp = NULL;
     ZOLTAN_FREE(&ew_lids);
     ZOLTAN_FREE(&ew_weights);
 
-    } else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
-             (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
+    } else if (graph_callbacks){
 
     /* Graph query functions, one hyperedge per vertex */
 
@@ -610,16 +600,13 @@ PHGPartParams *temphgp = NULL;
    */
   /***********************************************************************/
 
-  if (new_hgraph_callbacks){
-
+  if (hypergraph_callbacks){
     /*
-     * In the Pin_Callbacks case, we now obtain the vertex global
-     * numbers for our pins from the processes owning those vertices.
-     *
-     * Also create "pin_procs" information, the process owning each
-     * vertex in each removed and kept hyperedge.  Under the old
-     * query function scheme, this was available using an application
-     * query function, but now the library needs to discover it.
+     * Determine which process owns the vertex for each of my
+     * pins (write it to app.pin_procs), and while doing so
+     * obtain the vertex global number for each pin.  (In the case
+     * of graph callbacks, the pin_procs were provided by the
+     * application in the callback function.)
      */
     app.pin_procs = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
 
@@ -635,13 +622,11 @@ PHGPartParams *temphgp = NULL;
   /*
    * Create a plan to communicate with all owners of my pin vertices.
    *
-   * Edge_Callbacks or Graph_Callbacks case:
+   * Graph Callbacks case:
    * For each pin GID in app.pins, request the global number (gno) from the
-   * input processor.  (Pin callbacks got this already.)  
-   * Fill requests (using hash table) for GIDs local to this processor.
-   * Upon completion, app.pin_gno will contain the global nums.
+   * input processor.  (Hypergraph callbacks got this already.)  
    *
-   * Edge, Graph and Pin callbacks case:
+   * Graph and Hypergraph callbacks case:
    * If ADD_OBJ_WEIGHT indicated that a vertex weight equal to the number
    * of pins should be added, then obtain the sum of pins for each vertex now.
    */
@@ -687,7 +672,7 @@ PHGPartParams *temphgp = NULL;
     }
   }
 
-  if ((add_obj_weight == PHG_ADD_PINS_WEIGHT) || !new_hgraph_callbacks){
+  if ((add_obj_weight == PHG_ADD_PINS_WEIGHT) || graph_callbacks){
   
     ierr = Zoltan_Comm_Create(&plan, app.nPins, app.pin_procs, zz->Communicator,
                               msg_tag, &nRequests);
@@ -695,10 +680,10 @@ PHGPartParams *temphgp = NULL;
     if (nRequests) {
       pin_requests = ZOLTAN_MALLOC_GID_ARRAY(zz, nRequests);
 
-      if (!new_hgraph_callbacks){
+      if (graph_callbacks){
         request_gno = (int *) ZOLTAN_MALLOC(nRequests * sizeof(int));
       }
-      if (!pin_requests || (!new_hgraph_callbacks && !request_gno))
+      if (!pin_requests || (graph_callbacks && !request_gno))
         MEMORY_ERROR;
     }
   
@@ -720,12 +705,12 @@ PHGPartParams *temphgp = NULL;
         idx = hn - hash_nodes;
         calcVwgt[idx] = calcVwgt[idx] + 1.0;
       }
-      if (!new_hgraph_callbacks){
+      if (graph_callbacks){
         request_gno[i] = j;
       }
     }
   
-    if (!new_hgraph_callbacks){
+    if (graph_callbacks){
       msg_tag--;
       Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) request_gno, sizeof(int), NULL,
                              (char *) app.pin_gno);
@@ -1182,29 +1167,11 @@ double ewgt;
   if (zhg->nRemove && npins != 0) {
     if (zhg->Remove_Pin_Procs){ 
      /* 
-      * Pin callbacks built hypergraph previously.  They are
+      * Hypergraph callbacks built graph previously.  They are
       * expensive so we don't want to repeat them if possible.
       */
       pins = zhg->Remove_Pin_GIDs;
       pin_procs = zhg->Remove_Pin_Procs;
-    }
-    else if (zz->Get_HG_Edge_List) {  /* Edge callbacks build hypergraph */
-      
-      pins = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
-      pin_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
-      if (!pins || !pin_procs) MEMORY_ERROR;
-
-      ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data,
-                                  num_gid_entries, num_lid_entries, 
-                                  zhg->nRemove,
-                                  zhg->Remove_EGIDs, zhg->Remove_ELIDs,
-                                  zhg->Remove_Esize, pins, pin_procs);
-   
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                           "Error returned from getting HG_Edge_Lists");
-        goto End;
-      }
     }
     else if (zz->Get_Num_Edges) { /* Graph callbacks used to build hypergraph */
       ZOLTAN_ID_PTR lid;
