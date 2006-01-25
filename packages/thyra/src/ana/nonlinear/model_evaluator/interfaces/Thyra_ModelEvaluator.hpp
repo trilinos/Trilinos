@@ -1053,6 +1053,31 @@ inline
 void eval_f_W(
   const ModelEvaluator<Scalar>                                    &model
   ,const VectorBase<Scalar>                                       &x
+  ,VectorBase<Scalar>                                             *f
+  ,LinearOpWithSolveBase<Scalar>                                  *W
+  )
+{
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
+  MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
+
+  inArgs.set_x(Teuchos::rcp(&x,false));
+
+  outArgs.set_f(Teuchos::rcp(f,false));
+  if(W) outArgs.set_W(Teuchos::rcp(W,false));
+
+  model.evalModel(inArgs,outArgs);
+
+}
+
+/** \brief Evaluate <tt>f(x)</tt> and <tt>W(x) = beta*DfDx(x)</tt>. */
+template<class Scalar>
+inline 
+void eval_f_W(
+  const ModelEvaluator<Scalar>                                    &model
+  ,const VectorBase<Scalar>                                       &x
   ,const Scalar                                                   &beta
   ,VectorBase<Scalar>                                             *f
   ,LinearOpWithSolveBase<Scalar>                                  *W

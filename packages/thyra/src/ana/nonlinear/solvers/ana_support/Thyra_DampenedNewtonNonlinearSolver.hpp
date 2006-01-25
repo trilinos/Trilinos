@@ -161,7 +161,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     maxIters = solveCriteria->maxIterations;
   }
 	// Compute the initial starting point
-  eval_f_W( model, *x, ST::one(), &*f, &*J );
+  eval_f_W( model, *x, &*f, &*J );
 	// Print the starting point
 	if(out.get() && dumpAll) {
 		*out << "\nInitial starting point:\n";
@@ -203,7 +203,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     // Compute the Jacobian if we have not already
     if(newtonIter > 1) {
       if(out.get() && showNewtonDetails) *out << "\nComputing the Jacobian J at current point ...\n";
-      eval_f_W<Scalar>( model, *x, ST::one(), NULL, &*J );
+      eval_f_W<Scalar>( model, *x, NULL, &*J );
       if(out.get() && dumpAll) *out << "\nJ =\n" << *J;
     }
     // Compute the newton step: dx = -inv(J)*f
