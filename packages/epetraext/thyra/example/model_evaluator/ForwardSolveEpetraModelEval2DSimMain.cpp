@@ -1,4 +1,5 @@
 #include "EpetraModelEval2DSim.hpp"
+#include "EpetraModelEval4DOpt.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_DampenedNewtonNonlinearSolver.hpp"
@@ -58,6 +59,8 @@ int main( int argc, char* argv[] )
     double       tol         = 1e-10;
     int          maxIters    = 100;
 
+    bool         use4DOpt    = false;
+
     bool showSetInvalidArg = false;
     bool showGetInvalidArg = false;
 
@@ -69,10 +72,12 @@ int main( int argc, char* argv[] )
     clp.setOption( "verb-level", &verbLevel, numVerbLevels, verbLevelValues, verbLevelNames, "Verbosity level" );
     clp.setOption( "tol", &tol, "Nonlinear solve tolerance" );
     clp.setOption( "max-iters", &maxIters, "Maximum number of nonlinear iterations" );
+    clp.setOption( "use-4D-opt", "use-2D-sim", &use4DOpt
+                   ,"Determines if the EpetraModelEval4DOpt or EpetraModelEval2DSim subclasses are used"  );
     clp.setOption( "show-set-invalid-arg", "no-show-set-invalid-arg", &showSetInvalidArg
                    ,"Determines if an attempt is made to set an invalid/unsupported ModelEvaluator input argument"  );
     clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg
-                   ,"Determines if an attempt is made to get an invalid/unsupported ModelEvaluator output argument"  );
+                   ,"Determines if an attempt is made to get an invalid/unsupported ModelEvaluator output argument (2DSim only)"  );
 	
 		CommandLineProcessor::EParseCommandLineReturn
 			parse_return = clp.parse(argc,argv,&std::cerr);
@@ -85,11 +90,17 @@ int main( int argc, char* argv[] )
 
     *out << "\nCreating the nonlinear equations object ...\n";
 		
-    EpetraModelEval2DSim epetraModel(d,p0,p1,x00,x01,showGetInvalidArg);
+    Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> epetraModel;
+    if(use4DOpt) {
+      epetraModel = rcp(new EpetraModelEval4DOpt(0.0,0.0,p0,p1,d,x00,x01,p0,p1));
+    }
+    else {
+      epetraModel = rcp(new EpetraModelEval2DSim(d,p0,p1,x00,x01,showGetInvalidArg));
+    }
 
     Thyra::EpetraModelEvaluator thyraModel; // Sets default options!
     thyraModel.initialize(
-      Teuchos::rcp(&epetraModel,false)
+      epetraModel
       ,Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory())
       );
 

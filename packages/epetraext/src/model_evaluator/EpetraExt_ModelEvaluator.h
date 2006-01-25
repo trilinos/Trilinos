@@ -581,6 +581,13 @@ protected:
 std::string toString( ModelEvaluator::EDerivativeMultiVectorOrientation orientation );
 
 /** \brief . */
+Teuchos::RefCountPtr<Epetra_Operator>
+get_DfDp_op(
+  const int                                                            l
+  ,const ModelEvaluator::OutArgs                                       &outArgs
+  );
+
+/** \brief . */
 Teuchos::RefCountPtr<Epetra_MultiVector>
 get_DfDp_mv(
   const int                                                            l

@@ -143,7 +143,6 @@ EpetraModelEval4DOpt::createInArgs() const
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(1);
   inArgs.setSupports(IN_ARG_x,true);
-  inArgs.setSupports(IN_ARG_beta,true);
   return inArgs;
 }
 
@@ -223,24 +222,23 @@ void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outAr
     g[0] = 0.5 * ( sqr(x[0]-xt0_) + sqr(x[1]-xt1_) + sqr(p[0]-pt0_) + sqr(p[1]-pt1_) );
   }
   if(W_out) {
-    const double beta = inArgs.get_beta();
     Epetra_CrsMatrix &DfDx = dyn_cast<Epetra_CrsMatrix>(*W_out);
     DfDx.PutScalar(0.0);
     //
-    // Fill W = beta*DfDx
+    // Fill W = DfDx
     //
-    // W = beta*DfDx = beta * [      1.0,  2*x[1] ]
-    //                        [ 2*d*x[0],     -d  ]
+    // W = DfDx = [      1.0,  2*x[1] ]
+    //            [ 2*d*x[0],     -d  ]
     //
     double values[2];
     int indexes[2];
     // Row [0]
-    values[0] = beta;               indexes[0] = 0;
-    values[1] = 2.0*beta*x[1];      indexes[1] = 1;
+    values[0] = 1.0;           indexes[0] = 0;
+    values[1] = 2.0*x[1];      indexes[1] = 1;
     DfDx.SumIntoGlobalValues( 0, 2, values, indexes );
     // Row [1]
-    values[0] = 2.0*beta*d_*x[0];   indexes[0] = 0;
-    values[1] = -beta*d_;           indexes[1] = 1;
+    values[0] = 2.0*d_*x[0];   indexes[0] = 0;
+    values[1] = -d_;           indexes[1] = 1;
     DfDx.SumIntoGlobalValues( 1, 2, values, indexes );
   }
   if(DfDp_out) {

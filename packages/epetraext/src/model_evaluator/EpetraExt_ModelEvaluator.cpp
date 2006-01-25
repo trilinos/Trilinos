@@ -30,6 +30,21 @@
 
 namespace {
 
+Teuchos::RefCountPtr<Epetra_Operator>
+getLinearOp(
+  const std::string                                                    &modelEvalDescription
+  ,const EpetraExt::ModelEvaluator::Derivative                         &deriv
+  ,const std::string                                                   &derivName
+  )
+{
+  TEST_FOR_EXCEPTION(
+    deriv.getDerivativeMultiVector().getMultiVector().get() != NULL, std::logic_error
+    ,"For model \'" << modelEvalDescription << "\' the derivative \'"
+    << derivName << "\' is of type Epetra_MultiVector and not of type Epetra_Operator!"
+    );
+  return deriv.getLinearOp();
+}
+
 Teuchos::RefCountPtr<Epetra_MultiVector>
 getMultiVector(
   const std::string                                                    &modelEvalDescription
@@ -388,6 +403,20 @@ std::string EpetraExt::toString( ModelEvaluator::EDerivativeMultiVectorOrientati
       TEST_FOR_EXCEPT(true);
   }
   return ""; // Should never be called
+}
+
+Teuchos::RefCountPtr<Epetra_Operator>
+EpetraExt::get_DfDp_op(
+  const int                                                            l
+  ,const ModelEvaluator::OutArgs                                       &outArgs
+  )
+{
+  std::ostringstream derivName; derivName << "DfDp("<<l<<")";
+  return getLinearOp(
+    outArgs.modelEvalDescription()
+    ,outArgs.get_DfDp(l)
+    ,derivName.str()
+    );
 }
 
 Teuchos::RefCountPtr<Epetra_MultiVector>

@@ -32,7 +32,8 @@ noinst_PROGRAMS = ForwardSolveEpetraModelEval2DSim
 
 ForwardSolveEpetraModelEval2DSim_SOURCES = \
   $(srcdir)/ForwardSolveEpetraModelEval2DSimMain.cpp\
-  $(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp
+  $(top_srcdir)/example/model_evaluator/EpetraModelEval2DSim.cpp \
+  $(top_srcdir)/example/model_evaluator/EpetraModelEval4DOpt.cpp
 ForwardSolveEpetraModelEval2DSim_DEPENDENCIES = $(common_dependencies)
 ForwardSolveEpetraModelEval2DSim_LDADD = $(common_ldadd)
 
