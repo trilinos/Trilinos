@@ -124,7 +124,8 @@ thyra = \
 --enable-thyra \
 --enable-epetra-thyra \
 --enable-capo \
---enable-rythmos
+--enable-rythmos \
+--enable-moocho
 
 triutils = \
 --enable-triutils \
