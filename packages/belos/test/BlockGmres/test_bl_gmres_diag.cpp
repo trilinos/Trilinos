@@ -1,14 +1,14 @@
 
 
 #include <BelosConfigDefs.hpp>
-#include <BelosLinearProblemManager.hpp>
+#include <BelosLinearProblem.hpp>
 #include <BelosOutputManager.hpp>
 #include <BelosStatusTestMaxIters.hpp>
 #include <BelosStatusTestMaxRestarts.hpp>
 #include <BelosStatusTestResNorm.hpp>
 #include <BelosStatusTestCombo.hpp>
 #include <BelosEpetraOperator.hpp>
-#include <BelosPetraInterface.hpp>
+#include <BelosEpetraAdapter.hpp>
 #include <BelosBlockGmres.hpp>
 
 #include <Epetra_Map.h>
@@ -191,125 +191,128 @@ int Trilinos_Interface::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y
 
 class Iterative_Inverse_Operator : public Vector_Operator
 {
+
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator    OP;
+
   public:
 
-    Iterative_Inverse_Operator(unsigned n, 
-                               Vector_Operator *pA, 
-                               bool print);              
+  Iterative_Inverse_Operator(unsigned n, 
+			     Vector_Operator *pA, 
+			     bool print);              
+  
+  virtual ~Iterative_Inverse_Operator() 
+  {
+    delete pComm; delete pMap;
+    delete test1; delete test2; delete test3; delete test4;
 
-    virtual ~Iterative_Inverse_Operator() 
-    {
-       delete pE;    delete pComm; delete pMap;
-       delete pPE;   delete pPX;   delete pPB;   delete pProb;
-       delete test1; delete test2; delete test3; delete test4;
-       delete pTest; delete pOM;   delete pBelos;
-    }
-
-    virtual vector<double> & operator () (const vector<double> &b);
-
-  private:
-
-    Vector_Operator *pA;       // operator which will be inverted 
-                               // supplies a matrix vector multiply
-    const bool print;
-
-    Epetra_Comm  *pComm;
-    Epetra_Map      *pMap;
-    Epetra_Operator *pE;
-
-    PetraMat<double> *pPE;   
-    PetraVec<double> *pPX;   
-    PetraVec<double> *pPB;
-    StatusTestMaxIters<double>    *test1;
-    StatusTestMaxRestarts<double> *test2;
-    StatusTestCombo<double>       *test3;
-    StatusTestResNorm<double>     *test4;
-    StatusTestCombo<double>       *pTest;
-    LinearProblemManager<double>  *pProb;
-    OutputManager<double>         *pOM;
-    BlockGmres<double>            *pBelos;
+  }
+  
+  virtual vector<double> & operator () (const vector<double> &b);
+  
+private:
+  
+  Vector_Operator *pA;       // operator which will be inverted 
+  // supplies a matrix vector multiply
+  const bool print;
+  
+  Epetra_Comm     *pComm;
+  Epetra_Map      *pMap;
+  
+  Teuchos::RefCountPtr<OP> pPE;   
+  Teuchos::RefCountPtr<MV> pPX;   
+  Teuchos::RefCountPtr<MV> pPB;
+  StatusTestMaxIters<double,MV,OP>    *test1;
+  StatusTestMaxRestarts<double,MV,OP> *test2;
+  StatusTestCombo<double,MV,OP>       *test3;
+  StatusTestResNorm<double,MV,OP>     *test4;
+  Teuchos::RefCountPtr<Teuchos::ParameterList>         pList;
+  Teuchos::RefCountPtr<StatusTestCombo<double,MV,OP> > pTest;
+  Teuchos::RefCountPtr<LinearProblem<double,MV,OP> >   pProb;
+  Teuchos::RefCountPtr<OutputManager<double> >         pOM;
+  Teuchos::RefCountPtr<BlockGmres<double,MV,OP> >      pBelos;
 };
 
 Iterative_Inverse_Operator::Iterative_Inverse_Operator(unsigned n, 
                                                        Vector_Operator *pA, 
                                                        bool print)
-    : Vector_Operator(n, n),      // square operator
-      pA(pA), 
-      print(print) 
+  : Vector_Operator(n, n),      // square operator
+    pA(pA), 
+    print(print) 
 {
-
-    unsigned n_global;
-
+  
+  unsigned n_global;
+  
 #ifdef EPETRA_MPI
-    MPI_Allreduce(&n, &n_global, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
-    pComm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  MPI_Allreduce(&n, &n_global, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
+  pComm = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-    pComm = new Epetra_SerialComm();
-    n_global = n;
+  pComm = new Epetra_SerialComm();
+  n_global = n;
 #endif
-    pMap =  new Epetra_Map(n_global, n, 0, *pComm);
+  pMap =  new Epetra_Map(n_global, n, 0, *pComm);
+  
+  pPE = Teuchos::rcp( new Trilinos_Interface(pA, pComm, pMap) );
+  pPX = Teuchos::rcp( new Epetra_MultiVector(*pMap, 1) );  // block size of 1
+  pPB = Teuchos::rcp( new Epetra_MultiVector(*pMap, 1) );
+  
+  pProb = Teuchos::rcp( new LinearProblem<double,MV,OP>(pPE, pPX, pPB) );
+  pProb->SetBlockSize(1);
+  
+  int restart  = 10; 
+  int max_iter = 100;
+  double tol = 1.0e-10;
+  
+  test1 = new StatusTestMaxIters<double,MV,OP>( max_iter );
+  test2 = new StatusTestMaxRestarts<double,MV,OP>( static_cast<int>(ceil((double)max_iter/restart)) );
+  test3 = new StatusTestCombo<double,MV,OP>(Belos::StatusTestCombo<double,MV,OP>::OR, *test1, *test2);
+  test4 = new StatusTestResNorm<double,MV,OP>( tol );
+  test4->DefineResForm( Belos::StatusTestResNorm<double,MV,OP>::Explicit, Belos::TwoNorm );
+  pTest = Teuchos::rcp( new StatusTestCombo<double,MV,OP>(Belos::StatusTestCombo<double,MV,OP>::OR, *test3, *test4) );
+  
+  int pid = pComm->MyPID();
+  
+  pOM = Teuchos::rcp( new OutputManager<double>(pid, 2, 0) );
 
-    pE = new Trilinos_Interface(pA, pComm, pMap);
+  pList = Teuchos::rcp( new Teuchos::ParameterList );
+  pList->set( "Length", restart );  
 
-    pPE = new PetraMat<double>(pE);
-
-    pPX = new PetraVec<double>(*pMap, 1);  // block size of 1
-    pPB = new PetraVec<double>(*pMap, 1);
-    
-    pProb = new LinearProblemManager<double>(pPE, pPX, pPB);
-    pProb->SetBlockSize(1);
-    
-    int max_iter = 100;
-    int restart  = 10; 
-    double tol = 1.0e-10;
-
-    test1 = new StatusTestMaxIters<double>( max_iter );
-    test2 = new StatusTestMaxRestarts<double>( static_cast<int>(ceil((double)max_iter/restart)) );
-    test3 = new StatusTestCombo<double>(Belos::StatusTestCombo<double>::OR, *test1, *test2);
-    test4 = new StatusTestResNorm<double>( tol );
-    test4->DefineResForm( Belos::StatusTestResNorm<double>::Explicit, Belos::TwoNorm );
-    pTest = new StatusTestCombo<double>(Belos::StatusTestCombo<double>::OR, *test3, *test4);
-
-    int pid = pComm->MyPID();
-
-    pOM = new OutputManager<double>(pid, 2, 0);
-    
-    pBelos = new BlockGmres<double>(*pProb, *pTest, *pOM, restart);
-
+  pBelos = Teuchos::rcp( new BlockGmres<double,MV,OP>(pProb, pTest, pOM, pList) );
+  
 }
 
 vector<double> & Iterative_Inverse_Operator::operator () (const vector<double> &b)
 {
-    for (unsigned int i=0; i < b.size(); ++i) pPB->ReplaceMyValue(i, 0, b[i]);
-    pPX->MvInit( 0.0 );
-    //pPX->Random();
-
-    Teuchos::Time timer("Belos");
-
-    // Reset problem and status test for next solve (HKT)
-    pProb->Reset(pPX,pPB);
-    pTest->Reset();
-
-    timer.start();
-    pBelos->Solve();
-    timer.stop();
-
-    int pid = pComm->MyPID();
-
-    if (pid == 0 && print)
-        if (pTest->GetStatus() == Belos::Converged)
-        {
-            cout << endl << "pid[" << pid << "] Block GMRES converged in " 
-                 << pBelos->GetNumIters() << " iterations" << endl;
-            cout << "Solution time: " << timer.totalElapsedTime() << endl;
-            
-        }
-        else 
-            cout << endl << "pid[" << pid << "] Block GMRES did not converge" << endl;
-    
-    pPX->ExtractCopy(&y[0], pPX->Stride());       // store the result in Vector_Operator::y
-
-    return y;
+  for (unsigned int i=0; i < b.size(); ++i) pPB->ReplaceMyValue(i, 0, b[i]);
+  pPX->PutScalar( 0.0 );
+  //pPX->Random();
+  
+  Teuchos::Time timer("Belos");
+  
+  // Reset problem and status test for next solve (HKT)
+  pProb->Reset(pPX,pPB);
+  pTest->Reset();
+  
+  timer.start();
+  pBelos->Solve();
+  timer.stop();
+  
+  int pid = pComm->MyPID();
+  
+  if (pid == 0 && print)
+    if (pTest->GetStatus() == Belos::Converged)
+      {
+	cout << endl << "pid[" << pid << "] Block GMRES converged in " 
+	     << pBelos->GetNumIters() << " iterations" << endl;
+	cout << "Solution time: " << timer.totalElapsedTime() << endl;
+	
+      }
+    else 
+      cout << endl << "pid[" << pid << "] Block GMRES did not converge" << endl;
+  
+  pPX->ExtractCopy(&y[0], pPX->Stride());       // store the result in Vector_Operator::y
+  
+  return y;
 }
 
 //************************************************************************************************

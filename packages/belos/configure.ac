@@ -216,8 +216,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, tsfcore, TSFCORE, BUILD_TSFCORE, yes, [Bui
 
 TAC_ARG_CHECK_FEATURE_SUB(tsfcore, epetra, TSFCORE_EPETRA)
 AM_CONDITIONAL(BUILD_TSFCORE_EPETRA, test "X$ac_cv_use_tsfcore" != "Xno" &&
-					test "X$ac_cv_use_tsfcore_epetra" != "Xno")
-				
+				test "X$ac_cv_use_tsfcore_epetra" != "Xno")
+
 # ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
@@ -231,14 +231,14 @@ TAC_ARG_WITH_INCDIRS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
+AC_F77_WRAPPERS
+
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
 if test "X$ac_cv_use_belos_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-AC_F77_WRAPPERS
 
 ### Belos requires both BLAS and LAPACK
 ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
@@ -308,7 +308,6 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
-		Makefile.export.belos
 		src/Makefile
 		test/Makefile
 		test/BlockCG/Makefile

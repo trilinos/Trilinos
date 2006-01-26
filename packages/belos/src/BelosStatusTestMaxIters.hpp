@@ -46,8 +46,8 @@
 
 namespace Belos {
 
-template<class TYPE>
-class StatusTestMaxIters: public StatusTest<TYPE> {
+template <class ScalarType, class MV, class OP>
+class StatusTestMaxIters: public StatusTest<ScalarType,MV,OP> {
 
  public:
 
@@ -66,7 +66,7 @@ class StatusTestMaxIters: public StatusTest<TYPE> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus(IterativeSolver<TYPE> *iSolver );
+  StatusType CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const {return(status_);};
@@ -119,8 +119,8 @@ private:
 
 };
 
-  template<class TYPE> 
-  StatusTestMaxIters<TYPE>::StatusTestMaxIters(int maxIters)
+  template <class ScalarType, class MV, class OP> 
+  StatusTestMaxIters<ScalarType,MV,OP>::StatusTestMaxIters(int maxIters)
   {
     if (maxIters < 1)
       maxIters_ = 1;
@@ -131,29 +131,29 @@ private:
     status_ = Unchecked;
   }
   
-  template<class TYPE>
-  StatusType StatusTestMaxIters<TYPE>::CheckStatus(IterativeSolver<TYPE> *iSolver )
+  template <class ScalarType, class MV, class OP>
+  StatusType StatusTestMaxIters<ScalarType,MV,OP>::CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver )
   {
     status_ = Unconverged;
     nIters_ = iSolver->GetNumIters();
-    if (nIters_ > maxIters_)
+    if (nIters_ >= maxIters_)
       status_ = Failed;
     return status_;
   }
   
-  template<class TYPE>
-  void StatusTestMaxIters<TYPE>::Reset()
+  template <class ScalarType, class MV, class OP>
+  void StatusTestMaxIters<ScalarType,MV,OP>::Reset()
   {
     nIters_ = 0;
     status_ = Unchecked;
   }    
     
-  template<class TYPE>
-  ostream& StatusTestMaxIters<TYPE>::Print(ostream& os, int indent) const
+  template <class ScalarType, class MV, class OP>
+  ostream& StatusTestMaxIters<ScalarType,MV,OP>::Print(ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
-    this->PrintStatus(os, status_);
+    PrintStatus(os, status_);
     os << "Number of Iterations = ";
     os << nIters_;
     os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " == " : " > "));

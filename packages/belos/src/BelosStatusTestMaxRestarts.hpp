@@ -47,8 +47,8 @@
 
 namespace Belos {
 
-template<class TYPE>
-class StatusTestMaxRestarts: public StatusTest<TYPE> {
+template <class ScalarType, class MV, class OP>
+class StatusTestMaxRestarts: public StatusTest<ScalarType,MV,OP> {
 
  public:
 
@@ -67,7 +67,7 @@ class StatusTestMaxRestarts: public StatusTest<TYPE> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus(IterativeSolver<TYPE> *iSolver );
+  StatusType CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const {return(status_);};
@@ -120,8 +120,8 @@ private:
 
 };
 
-  template<class TYPE> 
-  StatusTestMaxRestarts<TYPE>::StatusTestMaxRestarts(int maxRestarts)
+  template <class ScalarType, class MV, class OP> 
+  StatusTestMaxRestarts<ScalarType,MV,OP>::StatusTestMaxRestarts(int maxRestarts)
   {
     if (maxRestarts < 1)
       maxRestarts_ = 1;
@@ -132,8 +132,8 @@ private:
     status_ = Unchecked;
   }
   
-  template<class TYPE>
-  StatusType StatusTestMaxRestarts<TYPE>::CheckStatus(IterativeSolver<TYPE> *iSolver )
+  template <class ScalarType, class MV, class OP>
+  StatusType StatusTestMaxRestarts<ScalarType,MV,OP>::CheckStatus(IterativeSolver<ScalarType,MV,OP> *iSolver )
   {
     status_ = Unconverged;
     nRestarts_ = iSolver->GetNumRestarts();
@@ -142,19 +142,19 @@ private:
     return status_;
   }
   
-  template<class TYPE>
-  void StatusTestMaxRestarts<TYPE>::Reset()
+  template <class ScalarType, class MV, class OP>
+  void StatusTestMaxRestarts<ScalarType,MV,OP>::Reset()
   {
     status_ = Unchecked;
     nRestarts_ = 0;
   }
 
-  template<class TYPE>
-  ostream& StatusTestMaxRestarts<TYPE>::Print(ostream& os, int indent) const
+  template <class ScalarType, class MV, class OP>
+  ostream& StatusTestMaxRestarts<ScalarType,MV,OP>::Print(ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
-    this->PrintStatus(os, status_);
+    PrintStatus(os, status_);
     os << "Number of Restarts = ";
     os << nRestarts_;
     os << ((nRestarts_ < maxRestarts_) ? " < " : ((nRestarts_ == maxRestarts_) ? " == " : " > "));

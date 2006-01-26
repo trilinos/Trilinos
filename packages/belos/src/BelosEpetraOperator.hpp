@@ -39,10 +39,10 @@
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 
-#include "BelosLinearProblemManager.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOutputManager.hpp"
-#include "BelosPetraInterface.hpp"
+#include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
 
@@ -64,14 +64,14 @@ namespace Belos {
 //
 ///////////////////////////////////////////////////////////////
 
-template <class TYPE>
+template <class ScalarType, class MV, class OP>
 class EpetraOperator : public virtual Epetra_Operator {
 public:
   //@{ \name Constructor / Destructor
   
   //! Constructor
-  EpetraOperator( LinearProblemManager<TYPE>& lp, StatusTest<TYPE>& stest, 
-		  OutputManager<TYPE>& om, Teuchos::ParameterList& plist );
+  EpetraOperator( LinearProblem<ScalarType,MV,OP>& lp, StatusTest<ScalarType,MV,OP>& stest, 
+		  OutputManager<ScalarType>& om, Teuchos::ParameterList& plist );
   
   //! Destructor
   ~EpetraOperator();
@@ -101,7 +101,7 @@ public:
   //@{ \name Attribute access functions
   
   //! Return the label of the operator.
-  const char* Label() const { return(Solver); };
+  char* Label() const { return(Solver); };
   
   //! Return whether the operator is using the transpose.
   bool UseTranspose() const { return(false); };
@@ -120,9 +120,9 @@ public:
   //@}	   
 private:
 
-  LinearProblemManager<TYPE>& lp_;
-  StatusTest<TYPE>& stest_;
-  OutputManager<TYPE>& om_;
+  LinearProblem<ScalarType,MV,OP>& lp_;
+  StatusTest<ScalarType,MV,OP>& stest_;
+  OutputManager<ScalarType>& om_;
   Teuchos::ParameterList& plist_;
 
   const int Maxits;
@@ -134,61 +134,61 @@ private:
 //
 // Constructor.
 //
-template <class TYPE>
-EpetraOperator<TYPE>::EpetraOperator( LinearProblemManager<TYPE>& lp,
-				      StatusTest<TYPE>& stest,
-				      OutputManager<TYPE>& om,
-				      Teuchos::ParameterList& plist )
+template <class ScalarType, class MV, class OP>
+EpetraOperator<ScalarType,MV,OP>::EpetraOperator( LinearProblem<ScalarType,MV,OP>& lp,
+					    StatusTest<ScalarType,MV,OP>& stest,
+					    OutputManager<ScalarType>& om,
+					    Teuchos::ParameterList& plist )
   : lp_(lp), 
     stest_(stest), 
     om_(om), 
     plist_(plist), 
-    Maxits(plist.get("Max Iters", 25)), 
-    Solver(0)
+    Solver(0),
+    Maxits(plist.get("Max Iters", 25)) 
 {
   string solver = plist_.get("Solver", "BlockGMRES");
 
   // Copy string to character array.  
   // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
   Solver = new char[solver.length()+1];
-  for (int i=0; i<(int)solver.length()+1; i++) {
+  for (int i=0; i<solver.length()+1; i++) {
     Solver[i] = solver[i];
   } 
   Solver[solver.length()] = 0;
 }
 
-template<class TYPE>
-EpetraOperator<TYPE>::~EpetraOperator()
+template<class ScalarType, class MV, class OP>
+EpetraOperator<ScalarType,MV,OP>::~EpetraOperator()
 {
   delete [] Solver;
 }
 
-template<class TYPE>
-const Epetra_Comm& EpetraOperator<TYPE>::Comm() const 
+template<class ScalarType, class MV, class OP>
+const Epetra_Comm& EpetraOperator<ScalarType,MV,OP>::Comm() const 
 { 
-  PetraMat<TYPE>* tempMat = dynamic_cast<PetraMat<TYPE>* >(lp_.GetOperator()); assert(tempMat != NULL);  
+  EpetraOp* tempMat = dynamic_cast<EpetraOp* >(lp_.GetOperator()); assert(tempMat != NULL);  
   return ((tempMat->GetMat())->Comm());
 }
   
-template<class TYPE>
-const Epetra_Map& EpetraOperator<TYPE>::OperatorDomainMap() const 
+template<class ScalarType, class MV, class OP>
+const Epetra_Map& EpetraOperator<ScalarType,MV,OP>::OperatorDomainMap() const 
 { 
-  PetraMat<TYPE>* tempMat = dynamic_cast<PetraMat<TYPE>* >(lp_.GetOperator()); assert(tempMat != NULL);  
+  EpetraOp* tempMat = dynamic_cast<EpetraOp* >(lp_.GetOperator()); assert(tempMat != NULL);  
   return((tempMat->GetMat())->OperatorDomainMap());
 }
 
-template<class TYPE>
-const Epetra_Map& EpetraOperator<TYPE>::OperatorRangeMap() const 
+template<class ScalarType, class MV, class OP>
+const Epetra_Map& EpetraOperator<ScalarType,MV,OP>::OperatorRangeMap() const 
 { 
-  PetraMat<TYPE>* tempMat = dynamic_cast<PetraMat<TYPE>* >(lp_.GetOperator()); assert(tempMat != NULL);
+  EpetraOp* tempMat = dynamic_cast<EpetraOp* >(lp_.GetOperator()); assert(tempMat != NULL);
   return((tempMat->GetMat())->OperatorRangeMap());
 }
 
-template<class TYPE>
-int EpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
+template<class ScalarType, class MV, class OP>
+int EpetraOperator<ScalarType,MV,OP>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
-	TYPE zero = 0.0, one = 1.0;
-	PetraVec<TYPE> vec_X(X), vec_Y(Y);
+	ScalarType zero = 0.0, one = 1.0;
+	EpetraMultiVec vec_X(X), vec_Y(Y);
 	lp_.Reset( &vec_Y, &vec_X );
 	stest_.Reset();
 	//
@@ -196,11 +196,11 @@ int EpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector
 	// exist already and just be reset with a new RHS.
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
-		BlockGmres<TYPE> MyBlockGmres( lp_, stest_, om_, Maxits );
+		BlockGmres<ScalarType,MV,OP> MyBlockGmres( lp_, stest_, om_, Maxits );
 		MyBlockGmres.Solve();
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
-		BlockCG<TYPE> MyBlockCG( lp_, stest_, om_);
+		BlockCG<ScalarType,MV,OP> MyBlockCG( lp_, stest_, om_);
 		MyBlockCG.Solve();
 	}
 	// Copy solution into output vector Y.
@@ -214,11 +214,11 @@ int EpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiVector
 	return(0);
 }
 
-template<class TYPE>
-int EpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
+template<class ScalarType, class MV, class OP>
+int EpetraOperator<ScalarType,MV,OP>::ApplyInverse( const Epetra_MultiVector &X, Epetra_MultiVector &Y ) const
 {
-	TYPE zero = 0.0, one = 1.0;
-	PetraVec<TYPE> vec_X(X), vec_Y(Y);
+	ScalarType zero = 0.0, one = 1.0;
+	EpetraMultiVec vec_X(X), vec_Y(Y);
 	lp_.Reset( &vec_Y, &vec_X );
 	stest_.Reset();
 	//
@@ -226,11 +226,11 @@ int EpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra_Mult
 	// exist already and just be reset with a new RHS.
 	//
 	if (strcmp(Solver,"BlockGMRES")==0) {
-		BlockGmres<TYPE> MyBlockGmres( lp_, stest_, om_, Maxits );
+		BlockGmres<ScalarType,MV,OP> MyBlockGmres( lp_, stest_, om_, Maxits );
 		MyBlockGmres.Solve();
 	}
 	if (strcmp(Solver,"BlockCG")==0) {
-		BlockCG<TYPE> MyBlockCG( lp_, stest_, om_);
+		BlockCG<ScalarType,MV,OP> MyBlockCG( lp_, stest_, om_);
 		MyBlockCG.Solve();
 	}
 	// Copy solution into output vector Y.

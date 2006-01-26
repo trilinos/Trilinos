@@ -72,14 +72,14 @@
 
 namespace Belos {
 
-template <class TYPE>
-class StatusTestCombo: public StatusTest<TYPE> {
+template <class ScalarType, class MV, class OP>
+class StatusTestCombo: public StatusTest<ScalarType,MV,OP> {
 	
  public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef std::vector< StatusTest<TYPE>* > st_vector;
+  typedef std::vector< StatusTest<ScalarType,MV,OP>* > st_vector;
   typedef typename st_vector::iterator iterator;
   typedef typename st_vector::const_iterator const_iterator;
 
@@ -103,13 +103,13 @@ class StatusTestCombo: public StatusTest<TYPE> {
   StatusTestCombo(ComboType t);
 
   //! Single test constructor.
-  StatusTestCombo(ComboType t, StatusTest<TYPE>& test1);
+  StatusTestCombo(ComboType t, StatusTest<ScalarType,MV,OP>& test1);
 
   //! Dual test constructor.
-  StatusTestCombo(ComboType t, StatusTest<TYPE>& test1, StatusTest<TYPE>& test2);
+  StatusTestCombo(ComboType t, StatusTest<ScalarType,MV,OP>& test1, StatusTest<ScalarType,MV,OP>& test2);
 
   //! Add another test to this combination.
-  StatusTestCombo<TYPE>& AddStatusTest(StatusTest<TYPE>& add_test);
+  StatusTestCombo<ScalarType,MV,OP>& AddStatusTest(StatusTest<ScalarType,MV,OP>& add_test);
 
   //! Destructor
   virtual ~StatusTestCombo() {};
@@ -121,7 +121,7 @@ class StatusTestCombo: public StatusTest<TYPE> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus( IterativeSolver<TYPE>* iSolver );
+  StatusType CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const { return(status_); };
@@ -164,17 +164,17 @@ protected:
 
   //@{ \name Internal methods.
   //! Use this for checkStatus when this is an OR type combo. Updates status.
-  void OrOp( IterativeSolver<TYPE>* iSolver );
+  void OrOp( IterativeSolver<ScalarType,MV,OP>* iSolver );
 
   //! Use this for checkStatus when this is an AND type combo. Updates status.
-  void AndOp( IterativeSolver<TYPE>* iSolver );
+  void AndOp( IterativeSolver<ScalarType,MV,OP>* iSolver );
 
   //! Use this for checkStatus when this is a sequential AND type combo. Updates status.
-  void SeqOp( IterativeSolver<TYPE>* iSolver );
+  void SeqOp( IterativeSolver<ScalarType,MV,OP>* iSolver );
 
   //! Check whether or not it is safe to add a to the list of
   //! tests. This is necessary to avoid any infinite recursions.
-  bool IsSafe(StatusTest<TYPE>& test1);
+  bool IsSafe(StatusTest<ScalarType,MV,OP>& test1);
   //@}
 
  private:
@@ -192,23 +192,23 @@ protected:
 
 };
 
-template <class TYPE>
-StatusTestCombo<TYPE>::StatusTestCombo(ComboType t)
+template <class ScalarType, class MV, class OP>
+StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t)
 {
   type_ = t;
   status_ = Unchecked;
 }
 
-template <class TYPE>
-StatusTestCombo<TYPE>::StatusTestCombo(ComboType t, StatusTest<TYPE>& test1)
+template <class ScalarType, class MV, class OP>
+StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t, StatusTest<ScalarType,MV,OP>& test1)
 {
   type_ = t;
   tests_.push_back(&test1);
   status_ = Unchecked;
 }
 
-template <class TYPE>
-StatusTestCombo<TYPE>::StatusTestCombo(ComboType t, StatusTest<TYPE>& test1, StatusTest<TYPE>& test2)
+template <class ScalarType, class MV, class OP>
+StatusTestCombo<ScalarType,MV,OP>::StatusTestCombo(ComboType t, StatusTest<ScalarType,MV,OP>& test1, StatusTest<ScalarType,MV,OP>& test2)
 {
   type_ = t;
   tests_.push_back(&test1);
@@ -216,8 +216,8 @@ StatusTestCombo<TYPE>::StatusTestCombo(ComboType t, StatusTest<TYPE>& test1, Sta
   status_ = Unchecked;
 }
 
-template <class TYPE>
-StatusTestCombo<TYPE>& StatusTestCombo<TYPE>::AddStatusTest(StatusTest<TYPE>& add_test)
+template <class ScalarType, class MV, class OP>
+StatusTestCombo<ScalarType,MV,OP>& StatusTestCombo<ScalarType,MV,OP>::AddStatusTest(StatusTest<ScalarType,MV,OP>& add_test)
 {
   if (IsSafe(add_test))
     tests_.push_back(&add_test);
@@ -234,8 +234,8 @@ StatusTestCombo<TYPE>& StatusTestCombo<TYPE>::AddStatusTest(StatusTest<TYPE>& ad
   return *this;
 }
 
-template <class TYPE>
-bool StatusTestCombo<TYPE>::IsSafe(StatusTest<TYPE>& test1)
+template <class ScalarType, class MV, class OP>
+bool StatusTestCombo<ScalarType,MV,OP>::IsSafe(StatusTest<ScalarType,MV,OP>& test1)
 {
   // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (&test1 == this)
@@ -245,7 +245,7 @@ bool StatusTestCombo<TYPE>::IsSafe(StatusTest<TYPE>& test1)
   // in the list because that can also lead to infinite recursions.
   for (iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
-    StatusTestCombo<TYPE>* ptr = dynamic_cast< StatusTestCombo<TYPE> *>(*i);
+    StatusTestCombo<ScalarType,MV,OP>* ptr = dynamic_cast< StatusTestCombo<ScalarType,MV,OP> *>(*i);
     if (ptr != NULL)
       if (!ptr->IsSafe(test1))
         return false;
@@ -253,15 +253,15 @@ bool StatusTestCombo<TYPE>::IsSafe(StatusTest<TYPE>& test1)
   return true;
 }
 
-template <class TYPE>
-bool StatusTestCombo<TYPE>::ResidualVectorRequired() const
+template <class ScalarType, class MV, class OP>
+bool StatusTestCombo<ScalarType,MV,OP>::ResidualVectorRequired() const
 {
   // If any of the StatusTest object require the residual vector, then return true.
   
   // Recursively test this property.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
-    StatusTest<TYPE>* ptr = dynamic_cast< StatusTest<TYPE> *>(*i);
+    StatusTest<ScalarType,MV,OP>* ptr = dynamic_cast< StatusTest<ScalarType,MV,OP> *>(*i);
     if (ptr != NULL)
       if (ptr->ResidualVectorRequired())
         return true;
@@ -271,8 +271,8 @@ bool StatusTestCombo<TYPE>::ResidualVectorRequired() const
   return false;
 }
 
-template <class TYPE>
-StatusType StatusTestCombo<TYPE>::CheckStatus( IterativeSolver<TYPE>* iSolver )
+template <class ScalarType, class MV, class OP>
+StatusType StatusTestCombo<ScalarType,MV,OP>::CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver )
 {
   status_ = Unconverged;
 
@@ -286,10 +286,10 @@ StatusType StatusTestCombo<TYPE>::CheckStatus( IterativeSolver<TYPE>* iSolver )
   return status_;
 }
 
-template <class TYPE>
-void StatusTestCombo<TYPE>::Reset( )
+template <class ScalarType, class MV, class OP>
+void StatusTestCombo<ScalarType,MV,OP>::Reset( )
 {
-  // Resets all status tests.
+  // Resets all status tests in my list.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
     {
       (*i)->Reset();
@@ -300,8 +300,8 @@ void StatusTestCombo<TYPE>::Reset( )
   return;
 }
 
-template <class TYPE>
-void StatusTestCombo<TYPE>::OrOp( IterativeSolver<TYPE>* iSolver )
+template <class ScalarType, class MV, class OP>
+void StatusTestCombo<ScalarType,MV,OP>::OrOp( IterativeSolver<ScalarType,MV,OP>* iSolver )
 {
   bool isFailed = false;
 
@@ -325,8 +325,8 @@ void StatusTestCombo<TYPE>::OrOp( IterativeSolver<TYPE>* iSolver )
   return;
 }
 
-template <class TYPE>
-void StatusTestCombo<TYPE>::AndOp( IterativeSolver<TYPE>* iSolver )
+template <class ScalarType, class MV, class OP>
+void StatusTestCombo<ScalarType,MV,OP>::AndOp( IterativeSolver<ScalarType,MV,OP>* iSolver )
 {
   bool isUnconverged = false;
   bool isFailed = false;
@@ -358,8 +358,8 @@ void StatusTestCombo<TYPE>::AndOp( IterativeSolver<TYPE>* iSolver )
   return;
 }
 
-template <class TYPE>
-void StatusTestCombo<TYPE>::SeqOp( IterativeSolver<TYPE>* iSolver ) 
+template <class ScalarType, class MV, class OP>
+void StatusTestCombo<ScalarType,MV,OP>::SeqOp( IterativeSolver<ScalarType,MV,OP>* iSolver ) 
 {
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
@@ -381,11 +381,11 @@ void StatusTestCombo<TYPE>::SeqOp( IterativeSolver<TYPE>* iSolver )
   return;
 }
 
-template <class TYPE>
-ostream& StatusTestCombo<TYPE>::Print(ostream& os, int indent) const {
+template <class ScalarType, class MV, class OP>
+ostream& StatusTestCombo<ScalarType,MV,OP>::Print(ostream& os, int indent) const {
   for (int j = 0; j < indent; j ++)
     os << ' ';
-  this->PrintStatus(os, status_);
+  PrintStatus(os, status_);
   os << ((type_ == OR) ? "OR" : (type_ == AND) ? "AND" :"SEQ");
   os << " Combination";
   os << " -> " << endl;

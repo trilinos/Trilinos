@@ -30,9 +30,9 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 Dummy_SOURCES = Dummy
 
-bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp 
+bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
-bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp 
+bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
 bl_pcg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \

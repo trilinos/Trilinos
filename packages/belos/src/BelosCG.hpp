@@ -49,11 +49,11 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
-#include "BelosLinearProblemManager.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosOperator.hpp"
-#include "BelosMultiVec.hpp"
 #include "BelosStatusTest.hpp"
+#include "BelosMultiVecTraits.hpp"
 
 /*!	\class Belos::CG
 
@@ -65,279 +65,267 @@
 */
 
 namespace Belos {
-
-template <class TYPE>
-class CG : public IterativeSolver<TYPE> { 
-public:
-  //@{ \name Constructor/Destructor.
-  //! %Belos::CG constructor.
-  CG(LinearProblemManager<TYPE>& lp, StatusTest<TYPE>& stest, OutputManager<TYPE>& om);
   
-  //! %CG destructor.
-  virtual ~CG();
-  //@}
-  
-  //@{ \name Accessor methods
-  
-  //! Get the iteration count for the current linear system.
-  int GetNumIters() const { return( _iter ); }
-  
-  //! Get the restart count of the iteration method for the current linear system [not valid for CG].
-  int GetNumRestarts() const { return(0); }
-   
-  //! Get the solvers native residual for the current linear system.
-  /*! 
-      \note The memory for the residual MultiVec must be handled by the calling routine.
-   */
-  MultiVec<TYPE>* GetNativeResiduals( TYPE *normvec ) const;
-  
-  //! Get the actual residual vector for the current linear system.
-  /*! This may force the solver to compute a current residual for its linear
-  	system.  For CG, this method is not useful since the linear problem
-	manager always has the current solution.
-  */
-  MultiVec<TYPE>* GetCurrentSoln() { return _cur_block_sol->CloneCopy(); };
-  
-  //! Get a constant reference to the current linear problem.  
-  /*! This may include a current solution, if the solver has recently restarted or completed.
-   */
-  LinearProblemManager<TYPE>& GetLinearProblem() const { return( _lp ); }
-
-  //@} 
-  
-  //@{ \name Solver application method.
-  
-  /*! \brief This method uses the iterative method to compute approximate solutions
-    to the original problem.  This method can return unconverged if the maximum number
-    of iterations is reached, or numerical breakdown is observed.
-  */
-  void Solve();
-  //@}
+  template <class ScalarType, class MV, class OP>
+  class CG : public IterativeSolver<ScalarType,MV,OP> { 
+  public:
+    //@{ \name Constructor/Destructor.
+    //! %Belos::CG constructor.
+    CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
+       const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest, 
+       const RefCountPtr<OutputManager<ScalarType> > &om);
     
-private:
-
-  void SetCGBlkTols();
-
-  //! Linear problem manager [ must be passed in by the user ]
-  LinearProblemManager<TYPE>& _lp; 
-
-  //! Status test [ must be passed in by the user ]
-  StatusTest<TYPE>& _stest; 
-
-  //! Output manager [ must be passed in by the user ]
-  OutputManager<TYPE>& _om;
-
-  //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
-  MultiVec<TYPE> *_cur_block_sol;
-
-  //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
-  MultiVec<TYPE> *_cur_block_rhs; 
-
-  //! Pointer to block of the current residual vectors.
-  MultiVec<TYPE> *_residvec;
-
-  //! Current blocksize, iteration number, and basis pointer.
-  int _iter;
-
-  //! Numerical breakdown tolerances.
-  TYPE _prec, _dep_tol;
-
-  //! Output stream.
-  ostream& _os;
-};
-
-//
-// Implementation
-//
-
-template <class TYPE>
-CG<TYPE>::CG(LinearProblemManager<TYPE>& lp,
-		       StatusTest<TYPE>& stest,
-		       OutputManager<TYPE>& om) : 
-  _lp(lp), 
-  _stest(stest),
-  _om(om),
-  _cur_block_sol(0),
-  _cur_block_rhs(0),
-  _residvec(0),
-  _iter(0),
-  _prec(5.0e-15), 
-  _dep_tol(0.75),
-  _os(om.GetOStream())
-{ 
+    //! %Belos::CG destructor.
+    virtual ~CG() {};
+    //@}
+    
+    //@{ \name Accessor methods
+    
+    //! Get the iteration count for the current linear system.
+    int GetNumIters() const { return( _iter ); }
+    
+    //! Get the restart count of the iteration method for the current linear system [not valid for CG].
+    int GetNumRestarts() const { return(0); }
+    
+    //! Get the solvers native residual for the current linear system.
+    /*! 
+      \note The memory for the residual MultiVec must be handled by the calling routine.
+    */
+    RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const;
+    
+    //! Get the actual residual vector for the current linear system.
+    /*! This may force the solver to compute a current residual for its linear
+      system.  For CG, this method is not useful since the linear problem
+      manager always has the current solution.
+    */
+    RefCountPtr<MV> GetCurrentSoln() { return MVT::CloneCopy( *_cur_block_sol ); };
+  
+    //! Get a constant reference to the current linear problem.  
+    /*! This may include a current solution, if the solver has recently restarted or completed.
+     */
+    LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const { return( *_lp ); }
+    
+    //@} 
+    
+    //@{ \name Solver application method.
+    
+    /*! \brief This method uses the iterative method to compute approximate solutions
+      to the original problem.  This method can return unconverged if the maximum number
+      of iterations is reached, or numerical breakdown is observed.
+    */
+    void Solve();
+    //@}
+    
+  private:
+    
+    void SetCGBlkTols();
+    
+    //! Linear problem manager [ must be passed in by the user ]
+    RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
+    
+    //! Status test [ must be passed in by the user ]
+    RefCountPtr<StatusTest<ScalarType,MV,OP> > _stest; 
+    
+    //! Output manager [ must be passed in by the user ]
+    RefCountPtr<OutputManager<ScalarType> > _om;
+    
+    //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
+    RefCountPtr<MV> _cur_block_sol;
+    
+    //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
+    RefCountPtr<MV> _cur_block_rhs; 
+    
+    //! Pointer to block of the current residual vectors.
+    RefCountPtr<MV> _residvec;
+    
+    //! Output stream.
+    ostream* _os;
+    
+    //! Current blocksize, iteration number, and basis pointer.
+    int _iter;
+    
+    //! Numerical breakdown tolerances.
+    ScalarType _prec, _dep_tol;
+    
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+  };
+  
   //
-  // Set the block orthogonality tolerances
+  // Implementation
   //
-  SetCGBlkTols();
-}
-
-template <class TYPE>
-CG<TYPE>::~CG() 
-{
- if (_residvec) delete _residvec; 
-}
-
-template <class TYPE>
-void CG<TYPE>::SetCGBlkTols() 
-{
-  const TYPE two = 2.0;
-  TYPE eps;
-  char precision = 'P';
-  Teuchos::LAPACK<int,TYPE> lapack;
-  eps = lapack.LAMCH(precision);
-  _prec = eps;
-  _dep_tol = 1/sqrt(two);
-}
-
-template <class TYPE>
-MultiVec<TYPE>* CG<TYPE>::GetNativeResiduals( TYPE *normvec ) const 
-{
-  std::vector<int> index(1);
-  index[ 0 ] = 0;
-  MultiVec<TYPE>* ResidMV = _residvec->CloneView( &index[0], 1 );
-  return ResidMV;
-}
-
-template <class TYPE>
-void CG<TYPE>::Solve () 
-{
-  //
-  bool exit_flg = false;
-  const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-  Teuchos::LAPACK<int,TYPE> lapack;
-  Teuchos::SerialDenseMatrix<int,TYPE> alpha( 1, 1 );
-  Teuchos::SerialDenseMatrix<int,TYPE> beta( 1, 1 );
-  Teuchos::SerialDenseMatrix<int,TYPE> temp_sdm( 1, 1 );
-  MultiVec<TYPE> *_p=0, *_Ap=0, *_z=0;
-  //
-  // Retrieve the first linear system to be solved.
-  //
-  _cur_block_sol = _lp.GetCurrLHSVec();
-  _cur_block_rhs = _lp.GetCurrRHSVec();
-  //
-  //  Start executable statements. 
-  //
-  while (_cur_block_sol && _cur_block_rhs ) {
+  
+  template <class ScalarType, class MV, class OP>
+  CG<ScalarType,MV,OP>::CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
+			   const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
+			   const RefCountPtr<OutputManager<ScalarType> > &om) : 
+    _lp(lp), 
+    _stest(stest),
+    _om(om),
+    _os(&om->GetOStream()),
+    _iter(0),
+    _prec(5.0e-15), 
+    _dep_tol(0.75)
+  { 
     //
-    // Only continue if the linear system is single-vector.
+    // Set the block orthogonality tolerances
     //
-    if ( _lp.GetBlockSize() > 1 ) return;
+    SetCGBlkTols();
+  }
+  
+  template <class ScalarType, class MV, class OP>
+  void CG<ScalarType,MV,OP>::SetCGBlkTols() 
+  {
+    const ScalarType two = 2.0;
+    ScalarType eps;
+    char precision = 'P';
+    Teuchos::LAPACK<int,ScalarType> lapack;
+    eps = lapack.LAMCH(precision);
+    _prec = eps;
+    _dep_tol = 1/sqrt(two);
+  }
+  
+  template <class ScalarType, class MV, class OP>
+  RefCountPtr<const MV> CG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<ScalarType> *normvec ) const 
+  {
+    std::vector<int> index( 1 );
+    index[0] = 0;
+    RefCountPtr<MV> ResidMV = MVT::CloneView( *_residvec, index );
+    return ResidMV;
+  }
+  
+  template <class ScalarType, class MV, class OP>
+  void CG<ScalarType,MV,OP>::Solve () 
+  {
     //
-    if (_om.doOutput( 0 )) {
-      _os << endl;
-      _os << "===================================================" << endl;
-      _os << "Solving linear system(s):  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
-      _os << endl;
-    }	
+    bool exit_flg = false;
+    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    Teuchos::LAPACK<int,ScalarType> lapack;
+    Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
+    Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
+    Teuchos::SerialDenseMatrix<int,ScalarType> temp_sdm( 1, 1 );
+    RefCountPtr<MV> _p, _Ap, _z;
     //
-    _residvec = _cur_block_sol->Clone( 1 ); assert(_residvec!=NULL);
-    _p = _cur_block_sol->Clone( 1 ); assert(_p!=NULL);
-    _Ap = _cur_block_sol->Clone( 1 ); assert(_Ap!=NULL);
-    _z = _cur_block_sol->Clone( 1 ); assert(_z!=NULL);
+    // Retrieve the first linear system to be solved.
     //
-    // ************ Compute the initial residual ********************************
+    _cur_block_sol = _lp->GetCurrLHSVec();
+    _cur_block_rhs = _lp->GetCurrRHSVec();
     //
-    // p0 = r0 = cur_block_rhs - A * cur_block_sol 
+    //  Start executable statements. 
     //
-    _p->MvAddMv(one, *_cur_block_sol, zero, *_cur_block_sol);
-    //
-    // Multiply the current solution by A and store in _Ap
-    //       _Ap = A*_p 
-    //
-    _lp.ApplyOp( *_p, *_Ap );
-    //
-    // Compute initial residual and store in _residvec
-    //     _residvec = cur_block_rhs - _Ap
-    //
-    _residvec->MvAddMv(one, *_cur_block_rhs, -one, *_Ap);
-    _p->MvAddMv( one, *_residvec, zero, *_residvec );
-    //
-    //----------------Compute initial direction vectors--------------------------
-    // Initially, they are set to the preconditioned residuals
-    //
-    if (_lp.ApplyLeftPrec( *_residvec, *_z ) != Ok ) { _z->MvAddMv( one , *_residvec, zero, *_residvec); }
-    //
-    // ***************************************************************************
-    // ************************Main CG Loop***************************************
-    // ***************************************************************************
-    // 
-    if (_om.doOutput( 2 )) _os << "Entering main CG loop" << endl << endl;
-    //
-    for (_iter=0; _stest.CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
-    {
+    while (_cur_block_sol.get() && _cur_block_rhs.get() ) {
       //
-      // Multiply the current direction vector by A and store in _Ap
+      // Only continue if the linear system is single-vector.
+      //
+      if ( _lp->GetBlockSize() > 1 ) return;
+      //
+      if (_om->doOutput( 0 )) {
+	*_os << endl;
+	*_os << "===================================================" << endl;
+	*_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
+	*_os << endl;
+      }	
+      //
+      _residvec = MVT::Clone( *_cur_block_sol, 1 );
+      _p = MVT::Clone( *_cur_block_sol, 1 );
+      _Ap = MVT::Clone( *_cur_block_sol, 1 ); 
+      _z = MVT::Clone( *_cur_block_sol, 1 ); 
+      //
+      // ************ Compute the initial residual ********************************
+      //
+      // p0 = r0 = cur_block_rhs - A * cur_block_sol 
+      //
+      MVT::MvAddMv(one, *_cur_block_sol, zero, *_cur_block_sol, *_p);
+      //
+      // Multiply the current solution by A and store in _Ap
       //       _Ap = A*_p 
       //
-      _lp.ApplyOp( *_p, *_Ap );  
+      _lp->ApplyOp( *_p, *_Ap );
       //
-      // Compute alpha := <_residvec, _z> / <_p, _Ap >
+      // Compute initial residual and store in _residvec
+      //     _residvec = cur_block_rhs - _Ap
       //
-      _p->MvTransMv( one, *_Ap, temp_sdm );      
-      _residvec->MvTransMv( one/temp_sdm(0,0), *_z, alpha );
+      MVT::MvAddMv(one, *_cur_block_rhs, -one, *_Ap, *_residvec);
+      MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_p );
       //
-      // Check that alpha is a positive number!
+      //----------------Compute initial direction vectors--------------------------
+      // Initially, they are set to the preconditioned residuals
       //
-      if ( alpha(0,0) <= zero ) {
-	if (_om.doOutput( 0 )) {
-	  _os << " Exiting CG iteration " << endl;
-	  _os << " Reason: Non-positive value for p^T*A*p ("<< alpha(0,0) <<") !!! "<< endl;
-	}
-	break; // Get out from this solve.
+      if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { MVT::MvAddMv( one , *_residvec, zero, *_residvec, *_z); }
+      //
+      // ***************************************************************************
+      // ************************Main CG Loop***************************************
+      // ***************************************************************************
+      // 
+      if (_om->doOutput( 2 )) *_os << "Entering main CG loop" << endl << endl;
+      //
+      for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
+	{
+	  //
+	  // Multiply the current direction vector by A and store in _Ap
+	  //       _Ap = A*_p 
+	  //
+	  _lp->ApplyOp( *_p, *_Ap );  
+	  //
+	  // Compute alpha := <_residvec, _z> / <_p, _Ap >
+	  //
+	  MVT::MvTransMv( one, *_p, *_Ap, temp_sdm );
+	  MVT::MvTransMv( one/temp_sdm(0,0), *_residvec, *_z, alpha );
+	  //
+	  // Check that alpha is a positive number!
+	  //
+	  if ( alpha(0,0) <= zero ) {
+	    if (_om->doOutput( 0 )) {
+	      *_os << " Exiting CG iteration " << endl;
+	      *_os << " Reason: Non-positive value for p^T*A*p ("<< alpha(0,0) <<") !!! "<< endl;
+	    }
+	    break; // Get out from this solve.
+	  }
+	  //
+	  // Update the solution vector x := x + alpha * _p
+	  //
+	  MVT::MvAddMv( one, *_cur_block_sol, alpha(0,0), *_p, *_cur_block_sol );
+	  _lp->SolutionUpdated();
+	  //
+	  // Compute the denominator of beta before residual is updated [ old <_residvec, _z> ]
+	  //
+	  MVT::MvTransMv( one, *_residvec, *_z, temp_sdm );
+	  //
+	  // Compute the new residual _residvec := _residvec - alpha * _Ap
+	  //
+	  MVT::MvAddMv( one, *_residvec, -alpha(0,0), *_Ap, *_residvec );
+	  //
+	  // Compute beta := [ new <_residvec, _z> ] / [ old <_residvec, _z> ], and the new direction vector
+	  //
+	  if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z); }
+	  //
+	  MVT::MvTransMv( one/temp_sdm(0,0), *_residvec, *_z, beta );
+	  //
+	  MVT::MvAddMv( one, *_residvec, beta(0,0), *_p, *_p );
+	  //
+	} // end of the main CG loop -- for(_iter = 0;...)
+      // *******************************************************************************
+      //
+      // Inform the linear problem manager that we are done with the current block of linear systems.
+      //
+      _lp->SetCurrLSVec();
+      //
+      // Get the next block of linear systems, if it returns the null pointer we are done.
+      //
+      _cur_block_sol = _lp->GetCurrLHSVec();
+      _cur_block_rhs = _lp->GetCurrRHSVec();
+      //
+      // Print out solver status.
+      //
+      if (_om->doOutput( 0 )) {
+	_stest->Print(*_os);
       }
       //
-      // Update the solution vector x := x + alpha * _p
-      //
-      _cur_block_sol->MvAddMv( one, *_cur_block_sol, alpha(0,0), *_p );
-      _lp.SolutionUpdated();
-      //
-      // Compute the denominator of beta before residual is updated [ old <_residvec, _z> ]
-      //
-      _residvec->MvTransMv( one, *_z, temp_sdm );
-      //
-      // Compute the new residual _residvec := _residvec - alpha * _Ap
-      //
-      _residvec->MvAddMv( one, *_residvec, -alpha(0,0), *_Ap );
-      //
-      // Compute beta := [ new <_residvec, _z> ] / [ old <_residvec, _z> ], and the new direction vector
-      //
-      if (_lp.ApplyLeftPrec( *_residvec, *_z ) != Ok ) { _z->MvAddMv( one, *_residvec, zero, *_residvec ); }
-      //
-      _residvec->MvTransMv( one/temp_sdm(0,0), *_z, beta );
-      //
-      _p->MvAddMv( one, *_residvec, beta(0,0), *_p );
-      //
-    } // end of the main CG loop -- for(_iter = 0;...)
-    // *******************************************************************************
+    } // end while ( _cur_block_sol && _cur_block_rhs )
+    // **********************************************************************************
     //
-    // Inform the linear problem manager that we are done with the current block of linear systems.
-    //
-    _lp.SetCurrLSVec();
-    //
-    // Get the next block of linear systems, if it returns the null pointer we are done.
-    //
-    _cur_block_sol = _lp.GetCurrLHSVec();
-    _cur_block_rhs = _lp.GetCurrRHSVec();
-    //
-    // Print out solver status.
-    //
-    if (_om.doOutput( 0 )) {
-      _stest.Print(_os);
-    }
-    //
-    // **************Free heap space**************
-    //   
-    if (_residvec) { delete _residvec; _residvec=0; }
-    if (_p) { delete _p; _p=0; }
-    if (_Ap) { delete _Ap; _Ap=0;}
-    if (_z) { delete _z; _z=0; }
-    //
-  } // end while ( _cur_block_sol && _cur_block_rhs )
-  // **********************************************************************************
+  } // end CGSolve()
   //
-} // end CGSolve()
-//
 } // namespace Belos
 //
 #endif // BELOS_CG_HPP

@@ -37,34 +37,36 @@
 // information used by block solver - can be user specified) to solve for
 // other sizes of systems. For example, one could set numrhs = 1 and block = 1,
 // to solve a single right-hand side system in the traditional way, or, set
-// numrhs = 1 and block > 1 to solve a single rhs-system with a block implementation. 
+// numrhs = 1 and block > 1 to sove a single rhs-system with a block implementation. 
 //
 // 
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosBlockCG.hpp"
+#include "BelosBlockGmres.hpp"
 #include "createEpetraProblem.hpp"
-#include "Trilinos_Util.h"
-#include "Ifpack_CrsIct.h"
+#include "Ifpack_IlukGraph.h"
+#include "Ifpack_CrsRiluk.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Teuchos_Time.hpp"
-//
+#include "Teuchos_ParameterList.hpp"
+
 int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI	
-  // Initialize MPI	
-  MPI_Init(&argc,&argv); 	
-  Belos::MPIFinalize mpiFinalize // Will call finalize with *any* return
-#endif
+  MPI_Init(&argc,&argv);
+  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
+#endif	
   //
+  using Teuchos::ParameterList;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos Preconditioned CG");
+  Teuchos::Time timer("Belos Preconditioned Gmres");
   //
   // Get the problem
   //
@@ -74,10 +76,10 @@ int main(int argc, char *argv[]) {
   int return_val =Belos::createEpetraProblem(argc,argv,NULL,&A,NULL,NULL,&MyPID,&verbose);
   if(return_val != 0) return return_val;
   //
-  // *****Select the Preconditioner*****
+  // *****Construct the Preconditioner*****
   //
   if (verbose) cout << endl << endl;
-  if (verbose) cout << "Constructing ICT preconditioner" << endl;
+  if (verbose) cout << "Constructing ILU preconditioner" << endl;
   int Lfill = 0;
   // if (argc > 2) Lfill = atoi(argv[2]);
   if (verbose) cout << "Using Lfill = " << Lfill << endl;
@@ -90,22 +92,22 @@ int main(int argc, char *argv[]) {
   double Rthresh = 1.0;
   // if (argc >5) Rthresh = atof(argv[5]);
   if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
-  double dropTol = 1.0e-6;
   //
-  Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
+  Teuchos::RefCountPtr<Ifpack_IlukGraph> ilukGraph;
+  Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
   //
   if (Lfill > -1) {
-    ICT = Teuchos::rcp( new Ifpack_CrsIct(*A, dropTol, Lfill) );
-    ICT->SetAbsoluteThreshold(Athresh);
-    ICT->SetRelativeThreshold(Rthresh);
-    int initerr = ICT->InitValues(*A);
+    ilukGraph = Teuchos::rcp( new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap) );
+    assert(ilukGraph->ConstructFilledGraph()==0);
+    ilukFactors = Teuchos::rcp( new Ifpack_CrsRiluk(*ilukGraph) );
+    int initerr = ilukFactors->InitValues(*A);
     if (initerr != 0) cout << "InitValues error = " << initerr;
-    assert(ICT->Factor() == 0);
+    assert(ilukFactors->Factor() == 0);
   }
   //
   bool transA = false;
   double Cond_Est;
-  ICT->Condest(transA, Cond_Est);
+  ilukFactors->Condest(transA, Cond_Est);
   if (verbose) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
@@ -115,8 +117,8 @@ int main(int argc, char *argv[]) {
   //
   typedef Belos::Operator<double> OP;
   typedef Belos::MultiVec<double> MV;
-  typedef Belos::OperatorTraits<double, MV, OP> OPT;
-  typedef Belos::MultiVecTraits<double, MV> MVT;
+  typedef Belos::MultiVecTraits<double,MV> MVT;
+  typedef Belos::OperatorTraits<double,MV,OP> OPT;
   //
   // Construct a Belos::Operator instance through the Epetra interface.
   //
@@ -124,7 +126,7 @@ int main(int argc, char *argv[]) {
   //
   // call the ctor for the preconditioning object
   //
-  Belos::EpetraPrecOp Prec( ICT );
+  Belos::EpetraPrecOp Prec( ilukFactors );
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
@@ -133,36 +135,48 @@ int main(int argc, char *argv[]) {
   const int NumGlobalElements = Map.NumGlobalElements();
   int numrhs = 15;  // total number of right-hand sides to solve for
   int block = 10;  // blocksize used by solver
+  int numrestarts = 20; // number of restarts allowed 
   int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
+  int length = 15;
   double tol = 1.0e-6;  // relative residual tolerance
   //
-  // *****Construct initial guess and random right-hand-sides *****
+  ParameterList My_PL;
+  My_PL.set( "Length", length );
+  My_PL.set( "Variant", "Flexible" );
+  //
+  // *****Construct solution vector and random right-hand-sides *****
   //
   Belos::EpetraMultiVec soln(Map, numrhs);
   Belos::EpetraMultiVec rhs(Map, numrhs);
   rhs.MvRandom();
-  //
-  // *****Create Linear Problem for Belos Solver
-  //
-  Belos::LinearProblem<double,MV,OP> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
-  My_LP.SetLeftPrec( rcp(&Prec, false) );
+  Belos::LinearProblem<double,MV,OP>
+    My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
+  My_LP.SetRightPrec( rcp(&Prec,false) );
+  //My_LP.SetLeftPrec( rcp(&Prec,false) );
   My_LP.SetBlockSize( block );
-  //
-  // *****Create Status Test Class for the Belos Solver
-  //
+  
+  typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
+  typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
   Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
-  Belos::StatusTestResNorm<double,MV,OP> test2( tol );
-  Belos::StatusTestCombo<double,MV,OP> My_Test( Belos::StatusTestCombo<double,MV,OP>::OR, test1, test2 );
+  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
+  StatusTestCombo_t BasicTest( StatusTestCombo_t::OR, test1, test2 );
+  StatusTestResNorm_t test3( tol );
+  test3.DefineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
+  BasicTest.AddStatusTest( test3 );
+  StatusTestResNorm_t ExpTest( tol );
+  ExpTest.DefineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm ); 
+  StatusTestCombo_t My_Test( StatusTestCombo_t::SEQ, BasicTest, ExpTest );
   
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
     My_OM.SetVerbosity( 2 );
   //
   // *******************************************************************
-  // *************Start the block CG iteration*************************
+  // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::BlockCG<double, MV, OP > MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
+  Belos::BlockGmres<double,MV,OP>
+    MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
   //
   // **********Print out information about problem*******************
   //
@@ -171,60 +185,62 @@ int main(int argc, char *argv[]) {
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << block << endl;
-    cout << "Max number of CG iterations: " << maxits << endl; 
+    cout << "Number of restarts allowed: " << numrestarts << endl;
+    cout << "Length of block Arnoldi factorization: " << length*block << " ( "<< length << " blocks ) " <<endl;
+    cout << "Max number of Gmres iterations: " << maxits << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
   }
-  
+  //
+  //
   if (verbose) {
     cout << endl << endl;
-    cout << "Running Block CG -- please wait" << endl;
+    cout << "Running Block Gmres -- please wait" << endl;
     cout << (numrhs+block-1)/block 
 	 << " pass(es) through the solver required to solve for " << endl; 
     cout << numrhs << " right-hand side(s) -- using a block size of " << block
 	 << endl << endl;
   }
   timer.start(true);
-  MyBlockCG.Solve();	
+  MyBlockGmres.Solve();
   timer.stop();
   //
   // Compute actual residuals.
   //
   std::vector<double> actual_resids( numrhs );
   std::vector<double> rhs_norm( numrhs );
-  Belos::EpetraMultiVec resid( Map, numrhs );
+  Belos::EpetraMultiVec resid(Map, numrhs);
   OPT::Apply( Amat, soln, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
   MVT::MvNorm( resid, &actual_resids );
   MVT::MvNorm( rhs, &rhs_norm );
   if (verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
-    for (int i=0; i<numrhs; i++) {
+    for ( int i=0; i<numrhs; i++) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
   }
-  
+
   if (verbose) {
     cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
-
+  
 #ifdef EPETRA_MPI
 
-  MPI_Finalize() ;
-
+  MPI_Finalize();
+  
 #endif
-
+  
   if (My_Test.GetStatus()!=Belos::Converged) {
-	if (verbose)
-      		cout << "End Result: TEST FAILED" << endl;	
-	return -1;
+        if (verbose)
+                cout << "End Result: TEST FAILED" << endl;
+        return -1;
   }
   //
   // Default return value
   //
   if (verbose)
     cout << "End Result: TEST PASSED" << endl;
-  return 0;  
+  return 0;
   //
-} // end test_bl_pcg_hb.cpp
-
+} // end test_bl_fgmres_hb.cpp
