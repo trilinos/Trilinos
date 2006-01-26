@@ -1,0 +1,10 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters	= obj_weight_dim=1
+Zoltan Parameters	= add_obj_weight=none
+Zoltan Parameters	= edge_weight_dim=0
+File Type               = matrixmarket+, initial distribution=cyclic, initial pins=cyclic
+File Name               = ibm01
+Parallel Disk Info	= number=0
+zdrive migration        = 0
+
