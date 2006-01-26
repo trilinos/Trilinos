@@ -63,6 +63,7 @@ int gen_geom, int gen_graph, int gen_hg)
  *   zz,         pointer to Zoltan struct
  *   fname,      the basename for the output files
  *   base_index, first vertex (object) is labelled 0 or 1?
+ *                 ignored for hypergraphs, Matrix Market standard says "1".
  *   gen_geom,   generate geometry file? 
  *   gen_graph,  generate graph file? 
  *   gen_hg,     generate hypergraph file? 
@@ -77,7 +78,7 @@ int gen_geom, int gen_graph, int gen_hg)
   FILE *fp;
   char full_fname[256];
   int *vtxdist, *xadj, *adjncy, *part, *adjproc, *edgeSize;
-  int *heprocs, *hindex, *pinsProc;
+  int *heprocs, *hindex;
   ZOLTAN_ID_PTR hevtxs;
   float *float_vwgt, *ewgts, *hewgts, *eWgts, *wptr;
   double *xyz;
@@ -87,7 +88,6 @@ int gen_geom, int gen_graph, int gen_hg)
   int have_pin_callbacks;
   int nEdges, nEwgts;
   ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
-  float encodeProc;
 
   char *yo = "Zoltan_Generate_Files";
 
@@ -168,32 +168,16 @@ int gen_geom, int gen_graph, int gen_hg)
         error = ZOLTAN_FATAL;
         goto End;
       }
-      /*
-       * Process 0 gets a count of pins for each process.
-       * (My number of pins is at the end of the edgeSize array.)
+      /* Get the global number of pins. (My total is at end
+       * of edgeSize array.)
        */
-      pinsProc = NULL;
-      if (zz->Proc == 0){
-        pinsProc = (int *)ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
-      }
-      MPI_Gather(edgeSize + nEdges, 1, MPI_INT, pinsProc, 1, MPI_INT,
-                 0, zz->Communicator);
-
-      glob_pins = 0;
-      if (zz->Proc == 0){
-        for (i=0; i<zz->Num_Proc; i++){
-          glob_pins += pinsProc[i];
-        }
- 
-      }
-
-      MPI_Bcast(&glob_pins, 1, MPI_INT, 0, zz->Communicator);
+      MPI_Reduce(edgeSize+nEdges, &glob_pins, 1, MPI_INT, MPI_SUM, 0, 
+          zz->Communicator);  
 
       /* Get the global number of edges that weights were
        * provided for.  More than one process may supply
        * weights for a given edge.
        */
-
       MPI_Reduce(&nEwgts, &glob_ewgts, 1, MPI_INT, MPI_SUM, 0, 
           zz->Communicator);  
 
@@ -336,6 +320,17 @@ int gen_geom, int gen_graph, int gen_hg)
     /* PLEASE READ: If you change the format of this "matrixmarket plus"
      * file, please change dr_hg_io.c:process_mtxp_file(), which 
      * reads the file for zdrive.
+     *
+     * This format is our own extension of the NIST Matrix Market file
+     * format.  We wished to store vertex and edge weights, and also
+     * pin, vertex weight and edge weight ownership data in the file.
+     * Here are some rules from their design document:
+     *  1. lines are limited to 1024 characters
+     *  2. blank lines may appear anywhere after the first line
+     *  3. numeric data on a line is separated by one or more blanks
+     *  4. real data is in floating-point decimal format, can use "e" notation
+     *  5. all indices are 1-based
+     *  6. character data may be upper or lower case. 
      */
 
     /* Each proc prints its pins. For global IDs we print 1 integer.*/
@@ -357,33 +352,31 @@ int gen_geom, int gen_graph, int gen_hg)
     /* If proc 0, write first line. */
     if (zz->Proc == 0){
       fprintf(fp, 
-        "%% #hyperedges #vertices #pins #procs dim-vertex-weights "
-        "#edge-weight-entries dim-edge-weights\n");
-      fprintf(fp, "%d %d %d %d %d %d %d", 
+        "%%%%MatrixMarket+ distributed-matrix coordinate real general\n%%\n");
+      fprintf(fp, 
+        "%%rows = hyperedges, columns = vertices\n%%\n");
+      fprintf(fp, 
+        "%%#rows #columns #pins #procs dim-vertex-weights "
+        "#edge-weight-entries dim-edge-weights\n%%\n");
+      fprintf(fp, "%d %d %d %d %d %d %d\n", 
         glob_hedges, glob_nvtxs, glob_pins, 
         zz->Num_Proc,
         zz->Obj_Weight_Dim, glob_ewgts, zz->Edge_Weight_Dim);
-      fprintf(fp, "\n");
-
-      /* list start of each process' pins followed by total pins*/
-
-      fprintf(fp, "0\n");
-      j = 0;
-      for (i=0; i<zz->Num_Proc; i++){  
-        fprintf(fp,"%d\n",j + pinsProc[i]);
-        j += pinsProc[i];
-      }
-      ZOLTAN_FREE(&pinsProc);
+      fprintf(fp, 
+        "%%\n%%========================================================\n");
+      fprintf(fp, 
+        "%% Edge ID, Vertex ID, 1.0, Process ID\n%%\n");
+      fprintf(fp, 
+        "%% Edge and Vertex IDs are 1-based, process IDs are zero-based.\n%%\n");
     }
 
     eptr = edgeIds;
     vptr = vtxIds;
-    encodeProc = (float)zz->Proc + .1;
 
     fseek(fp, 0, SEEK_END);
     for (i=0; i<nEdges; i++){
       for (j=0; j<edgeSize[i]; j++){
-        fprintf(fp, "%d %d %4.1f\n",*eptr, *vptr, encodeProc);
+        fprintf(fp, "%d %d 1.0 %d\n",*eptr + 1, *vptr + 1, zz->Proc);
         vptr += zz->Num_GID;
       }
       eptr += zz->Num_GID;
@@ -399,13 +392,21 @@ int gen_geom, int gen_graph, int gen_hg)
     wptr = float_vwgt;
 
     fseek(fp, 0, SEEK_END);
+
+    if (zz->Proc == 0){
+      fprintf(fp, 
+        "%%\n%%========================================================\n");
+      fprintf(fp, 
+        "%% Vertex ID, Vertex weights, Process ID\n%%\n");
+    }
+
     for (i=0; i<num_obj; i++){
-      fprintf(fp, "%d %d ",  zz->Proc, *vptr);
+      fprintf(fp, "%d ",  *vptr + 1);
       for (j=0; j<zz->Obj_Weight_Dim; j++){
         fprintf(fp, "%f ", *wptr++);
       }
+      fprintf(fp, "%d\n",  zz->Proc);
       vptr += zz->Num_GID;
-      fprintf(fp, "\n");
     }
     fflush(fp);
     Zoltan_Print_Sync_End(zz->Communicator, 0); 
@@ -420,13 +421,21 @@ int gen_geom, int gen_graph, int gen_hg)
       wptr = eWgts;
 
       fseek(fp, 0, SEEK_END);
+
+      if (zz->Proc == 0){
+        fprintf(fp, 
+          "%%\n%%========================================================\n");
+        fprintf(fp, 
+          "%% Edge ID, Edge weights, Process ID\n%%\n");
+      }
+
       for (i=0; i<nEwgts; i++){
-        fprintf(fp, "%d %d ",  zz->Proc, *eptr);
+        fprintf(fp, "%d ",  *eptr + 1);
         for (j=0; j<zz->Edge_Weight_Dim; j++){
           fprintf(fp, "%f ", *wptr++);
         }
+        fprintf(fp, "%d\n",  zz->Proc);
         eptr += zz->Num_GID;
-        fprintf(fp, "\n");
       }
 
       fflush(fp);
