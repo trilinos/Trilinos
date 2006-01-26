@@ -7573,7 +7573,7 @@ else
   ac_cv_implicit_use_belos=no
 fi;
 
-if test "Xyes" != "Xno"; then
+if test "Xno" != "Xno"; then
   ac_cv_anasazi_using_belos_default=$ac_cv_implicit_use_belos
 else
   ac_cv_anasazi_using_belos_default=no
