@@ -66,6 +66,7 @@ DiagonalEpetraLinearOpWithSolveFactory::createOp() const
 void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
   ,LinearOpWithSolveBase<double>                             *Op
+  ,const ESupportSolveUse                                    supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPT(Op==NULL);
@@ -95,6 +96,7 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
   ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
   ,EPreconditionerInputType                            *precOpType
+  ,ESupportSolveUse                                    *supportSolveUse
   ) const
 {
   using Teuchos::get_extra_data;

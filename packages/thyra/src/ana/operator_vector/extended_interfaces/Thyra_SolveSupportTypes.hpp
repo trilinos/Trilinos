@@ -207,6 +207,18 @@ std::ostream& operator<<( std::ostream& out, const SolveStatus<Scalar> &solveSta
   return out;
 }
 
+/** \brief Enum how a <tt>LinearOpWithSolveBase</tt> object will be used for
+ * solves after it is constructed.
+ *
+ * \ingroup Equation_solve_foundation_code_grp
+ */
+enum ESupportSolveUse {
+  SUPPORT_SOLVE_UNSPECIFIED  ///< How the output LOWSB object will be useded for solves in unspecified
+  ,SUPPORT_SOLVE_FORWARD_ONLY  ///< The output LOWSB object will only be used for forward solves
+  ,SUPPORT_SOLVE_TRANSPOSE_ONLY  ///< The output LOWSB object will only be used for transpose solves
+  ,SUPPORT_SOLVE_FORWARD_AND_TRANSPOSE  ///< The output LOWSB object will used for forward and transpose solves
+};
+
 /** \brief Enum defining the status of a preconditioner object.
  *
  * \ingroup Equation_solve_foundation_code_grp

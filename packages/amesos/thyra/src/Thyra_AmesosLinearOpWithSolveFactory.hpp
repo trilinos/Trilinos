@@ -135,6 +135,7 @@ public:
   void initializeOp(
     const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
     ,LinearOpWithSolveBase<double>                             *Op
+    ,const ESupportSolveUse                                    supportSolveUse
     ) const;
 
   /** \brief Returns <tt>false</tt> . */
@@ -148,6 +149,7 @@ public:
     ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
     ,const EPreconditionerInputType                             precOpType
     ,LinearOpWithSolveBase<double>                              *Op
+    ,const ESupportSolveUse                                      supportSolveUse
     ) const;
 
   /** \brief . */
@@ -156,6 +158,7 @@ public:
     ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
     ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
     ,EPreconditionerInputType                            *precOpType
+    ,ESupportSolveUse                                    *supportSolveUse
     ) const;
 
   //@}

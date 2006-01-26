@@ -519,6 +519,10 @@ public:
    *                already been passed through this function several times.  Note that subclasses
    *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
    *                before attempting to dynamic cast the object.
+   * \param  supportSolveUse
+   *                [in] Determines if <tt>Op->solve(...)</tt> or <tt>Op->solveTranspose(...)</tt> will
+   *                be called.  This allows <tt>*this</tt> factory object determine how to best initialae
+   *                the <tt>*Op</tt> object.  Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
@@ -526,6 +530,13 @@ public:
    * <li><tt>Op!=NULL</tt>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
    *     this function.
+   * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_FORWARD_ONLY<tt>]
+   *     <tt>this->solveSupportsConj(conj)==true</tt> for any value of <tt>conj</tt>
+   * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_TRANSPOSE_ONLY<tt>]
+   *     <tt>this->solveTransposeSupportsConj(conj)==true</tt> for any value of <tt>conj</tt>
+   * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_FORWARD_AND_TRANSPOSE<tt>]
+   *     <tt>this->solveSupportsConj(conj)==true && this->solveTransposeSupportsConj(conj)==true</tt>
+   *     for any value of <tt>conj</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
@@ -535,6 +546,10 @@ public:
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
    *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
+   * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
+   * <li><t>Op->solveSupportsSolveTolType(conj,solveTolType)==this->solveSupportsSolveTolType(conj,solveTolType)</tt>
+   * <li><t>Op->solveTransposeSupportsSolveTolType(conj,solveTolType)==this->solveTransposeSupportsSolveTolType(conj,solveTolType)</tt>
    * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
@@ -552,6 +567,7 @@ public:
   virtual void initializeOp(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
+    ,const ESupportSolveUse                                                      supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const = 0;
 
   /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return
@@ -601,12 +617,47 @@ public:
     ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp       = NULL
     ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *precOp      = NULL
     ,EPreconditionerInputType                                             *precOpType  = NULL
+    ,ESupportSolveUse                                                     *supportSolveUse = NULL
     ) const = 0;
   
   //@}
 
   /** @name Virtual public functions with default implementations */
   //@{
+
+
+  /** \brief Return if <tt>solve()</tt> supports the argument <tt>conj</tt>.
+   *
+   * The default implementation returns <tt>true</tt> for real valued scalar types
+   * or when <tt>conj==NONCONJ_ELE</tt> for complex valued types.
+   */
+  virtual bool solveSupportsConj(EConj conj) const;
+
+  /** \brief Return if <tt>solveTranspose()</tt> supports the argument <tt>conj</tt>.
+   *
+   * The default implementation returns <tt>false</tt>.
+   */
+  virtual bool solveTransposeSupportsConj(EConj conj) const;
+
+  /** \brief Return if <tt>solve()</tt> supports the solve tolerance type
+   * <tt>ESolveTolType</tt>.
+   *
+   * The default implementation returns <tt>true</tt> for
+   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
+   * assumed by default that the solver implementation will only be able to
+   * check for and enforce a tolerance on the residual.
+   */
+  virtual bool solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
+
+  /** \brief Return if <tt>solveTranspose()</tt> supports the solve tolerance
+   * type <tt>ESolveTolType</tt>.
+   *
+   * The default implementation returns <tt>true</tt> for
+   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
+   * assumed by default that the solver implementation will only be able to
+   * check for and enforce a tolerance on the residual.
+   */
+  virtual bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object but allow for reuse of
@@ -636,6 +687,10 @@ public:
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
    *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
+   * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
+   * <li><t>Op->solveSupportsSolveTolType(conj,solveTolType)==this->solveSupportsSolveTolType(conj,solveTolType)</tt>
+   * <li><t>Op->solveTransposeSupportsSolveTolType(conj,solveTolType)==this->solveTransposeSupportsSolveTolType(conj,solveTolType)</tt>
    * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
@@ -680,6 +735,10 @@ public:
    *                already been passed through this function several times.  Note that subclasses
    *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
    *                before attempting to dynamic cast the object.
+   * \param  supportSolveUse
+   *                [in] Determines if <tt>Op->solve(...)</tt> or <tt>Op->solveTranspose(...)</tt> will
+   *                be called.  This allows <tt>*this</tt> factory object determine how to best initialae
+   *                the <tt>*Op</tt> object.  Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
@@ -691,6 +750,13 @@ public:
    * <li>It is allowed for an implementation to throw an exception if 
    *     <tt>this->supportsPreconditionerInputType(precOpType)==false</tt> but this is
    *     not required.
+   * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_FORWARD_ONLY<tt>]
+   *     <tt>this->solveSupportsConj(conj)==true</tt> for any value of <tt>conj</tt>
+   * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_TRANSPOSE_ONLY<tt>]
+   *     <tt>this->solveTransposeSupportsConj(conj)==true</tt> for any value of <tt>conj</tt>
+   * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_FORWARD_AND_TRANSPOSE<tt>]
+   *     <tt>this->solveSupportsConj(conj)==true && this->solveTransposeSupportsConj(conj)==true</tt>
+   *     for any value of <tt>conj</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
@@ -700,6 +766,10 @@ public:
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
    *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
+   * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
+   * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
+   * <li><t>Op->solveSupportsSolveTolType(conj,solveTolType)==this->solveSupportsSolveTolType(conj,solveTolType)</tt>
+   * <li><t>Op->solveTransposeSupportsSolveTolType(conj,solveTolType)==this->solveTransposeSupportsSolveTolType(conj,solveTolType)</tt>
    * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
@@ -721,11 +791,10 @@ public:
    * </ul>
    *
    * <b>Warning!</b> It is allowed for an implementation to throw an exception
-   * if
-   * <tt>this->supportsPreconditionerInputType(precOpType)==false</tt>
-   * so therefore a client should not call this function if preconditioners
-   * are not supported!  The mode of silently ignoring preconditioners is
-   * acceptable in some cases.
+   * if <tt>this->supportsPreconditionerInputType(precOpType)==false</tt> so
+   * therefore a client should not call this function if preconditioners are
+   * not supported!  The mode of silently ignoring preconditioners is
+   * acceptable in some cases and is therefore allowed behavior.
    *
    * The default implementation throws an exception which is consistent with
    * the default implementation of
@@ -737,6 +806,7 @@ public:
     ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &precOp
     ,const EPreconditionerInputType                                               precOpType
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
+    ,const ESupportSolveUse                                                       supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const;
 
   //@}
@@ -765,16 +835,41 @@ Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
 createAndInitializeLinearOpWithSolve(
   const LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>                  &factory
   ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
+  ,const ESupportSolveUse                                                       supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
   )
 {
   Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
     Op = factory.createOp();
-  factory.initializeOp(fwdOp,&*Op);
+  factory.initializeOp(fwdOp,&*Op,supportSolveUse);
   return Op;
 }
 
 // /////////////////////////
 // Implementations
+
+template <class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveSupportsConj(EConj conj) const
+{
+  return true;
+}
+
+template <class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveTransposeSupportsConj(EConj conj) const
+{
+  return false;
+}
+
+template <class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+{
+  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
+}
+
+template <class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+{
+  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
+}
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseOp(
@@ -797,6 +892,7 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePrecondit
   ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &precOp
   ,const EPreconditionerInputType                                               precOpType
   ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
+  ,const ESupportSolveUse                                                       supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPTION(

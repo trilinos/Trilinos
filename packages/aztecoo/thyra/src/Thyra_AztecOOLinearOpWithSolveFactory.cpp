@@ -96,6 +96,7 @@ AztecOOLinearOpWithSolveFactory::createOp() const
 void AztecOOLinearOpWithSolveFactory::initializeOp(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
   ,LinearOpWithSolveBase<double>                             *Op
+  ,const ESupportSolveUse                                     supportSolveUse
   ) const
 {
   this->initializeOp_impl(fwdOp,Teuchos::null,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,false,Op);
@@ -132,6 +133,7 @@ void AztecOOLinearOpWithSolveFactory::initializePreconditionedOp(
   ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
   ,const EPreconditionerInputType                             precOpType
   ,LinearOpWithSolveBase<double>                              *Op
+  ,const ESupportSolveUse                                     supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPT(precOp.get()==NULL);
@@ -143,6 +145,7 @@ void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
   ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *precOp
   ,EPreconditionerInputType                           *precOpType
+  ,ESupportSolveUse                                   *supportSolveUse
   ) const
 {
 #ifdef _DEBUG

@@ -120,6 +120,7 @@ AmesosLinearOpWithSolveFactory::createOp() const
 void AmesosLinearOpWithSolveFactory::initializeOp(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
   ,LinearOpWithSolveBase<double>                             *Op
+  ,const ESupportSolveUse                                    supportSolveUse
   ) const
 {
 #ifdef _DEBUG
@@ -285,6 +286,7 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
   ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
   ,const EPreconditionerInputType                             precOpType
   ,LinearOpWithSolveBase<double>                              *Op
+  ,const ESupportSolveUse                                     supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPTION(
@@ -292,7 +294,7 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
     ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
     "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
     );
-  this->initializeOp(fwdOp,Op); // Ignore the precondtioner!
+  this->initializeOp(fwdOp,Op,supportSolveUse); // Ignore the precondtioner!
 }
 
 void AmesosLinearOpWithSolveFactory::uninitializeOp(
@@ -300,6 +302,7 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
   ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
   ,EPreconditionerInputType                            *precOpType
+  ,ESupportSolveUse                                    *supportSolveUse
   ) const
 {
 #ifdef _DEBUG
@@ -336,4 +339,3 @@ std::string AmesosLinearOpWithSolveFactory::description() const
 } // namespace Thyra
 
 #endif // __sun
-
