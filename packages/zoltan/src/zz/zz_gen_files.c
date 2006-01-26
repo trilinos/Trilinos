@@ -84,10 +84,13 @@ int gen_geom, int gen_graph, int gen_hg)
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges, reduce;
   int glob_nvtxs, glob_edges, glob_hedges, glob_pins, glob_ewgts;
+  int minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
+  int numPins, edgeOffset, vtxOffset;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   int have_pin_callbacks;
   int nEdges, nEwgts;
   ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
+  int lenGID = zz->Num_GID;
 
   char *yo = "Zoltan_Generate_Files";
 
@@ -130,8 +133,8 @@ int gen_geom, int gen_graph, int gen_hg)
   }
   else{
     /* Compute global number of vertices. */
-    MPI_Reduce(&num_obj, &glob_nvtxs, 1, MPI_INT, MPI_SUM, 0, 
-        zz->Communicator);  
+    MPI_Allreduce(&num_obj, &glob_nvtxs, 1, MPI_INT, MPI_SUM, 
+                  zz->Communicator);  
   }
 
   /* Local number of edges. */
@@ -146,6 +149,9 @@ int gen_geom, int gen_graph, int gen_hg)
   glob_edges /= 2;
 
   /* Build hypergraph, or get hypergraph data. */
+  /* We assume edge IDs and vertex (object) IDs are consecutive integers.
+   * We'll write out one-based IDs.
+   */
   if (gen_hg){
     have_pin_callbacks = zz->Get_HG_Size_CS != NULL && zz->Get_HG_CS != NULL;
 
@@ -168,10 +174,11 @@ int gen_geom, int gen_graph, int gen_hg)
         error = ZOLTAN_FATAL;
         goto End;
       }
-      /* Get the global number of pins. (My total is at end
-       * of edgeSize array.)
+      numPins = edgeSize[nEdges];
+
+      /* Get the global number of pins for process 0. 
        */
-      MPI_Reduce(edgeSize+nEdges, &glob_pins, 1, MPI_INT, MPI_SUM, 0, 
+      MPI_Reduce(&numPins, &glob_pins, 1, MPI_INT, MPI_SUM, 0, 
           zz->Communicator);  
 
       /* Get the global number of edges that weights were
@@ -181,6 +188,37 @@ int gen_geom, int gen_graph, int gen_hg)
       MPI_Reduce(&nEwgts, &glob_ewgts, 1, MPI_INT, MPI_SUM, 0, 
           zz->Communicator);  
 
+      /* We assume the Edge IDs and Vertex IDs are integers and
+       * are contiguous.  Figure out what the lowest ID is.
+       * Matrix Market files are one-based so we may adjust IDs.
+       */
+      minid = glob_hedges * 10;
+      maxid = 0;
+      for (i=0; i<nEdges; i++){
+        if (edgeIds[i*lenGID] < minid) minid = edgeIds[i*lenGID];
+        if (edgeIds[i*lenGID] > maxid) maxid = edgeIds[i*lenGID];
+      }
+      MPI_Allreduce(&minid, &minEdgeId, 1, MPI_INT, MPI_MIN, zz->Communicator);  
+      MPI_Allreduce(&maxid, &maxEdgeId, 1, MPI_INT, MPI_MAX, zz->Communicator);  
+      minid = glob_nvtxs * 10;
+      maxid = 0;
+      for (i=0; i<num_obj; i++){
+        if (global_ids[i*lenGID] < minid) minid = global_ids[i*lenGID];
+        if (global_ids[i*lenGID] > maxid) maxid = global_ids[i*lenGID];
+      }
+      MPI_Allreduce(&minid, &minVtxId, 1, MPI_INT, MPI_MIN, zz->Communicator);  
+      MPI_Allreduce(&maxid, &maxVtxId, 1, MPI_INT, MPI_MAX, zz->Communicator);  
+
+      if ( ((maxVtxId - minVtxId + 1) != glob_nvtxs) ||
+           ((maxEdgeId - minEdgeId + 1) != glob_hedges)){
+    
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Edge or Vertex IDs not consecutive.");
+        error = ZOLTAN_FATAL;
+        goto End;
+      }
+
+      edgeOffset = 1 - minEdgeId;
+      vtxOffset = 1 - minVtxId;
     }
   }
 
@@ -333,8 +371,6 @@ int gen_geom, int gen_graph, int gen_hg)
      *  6. character data may be upper or lower case. 
      */
 
-    /* Each proc prints its pins. For global IDs we print 1 integer.*/
-
     Zoltan_Print_Sync_Start(zz->Communicator, 0); 
     sprintf(full_fname, "%s.mtxp", fname);  /* matrixmarket plus */
     if (zz->Proc == 0)
@@ -376,10 +412,11 @@ int gen_geom, int gen_graph, int gen_hg)
     fseek(fp, 0, SEEK_END);
     for (i=0; i<nEdges; i++){
       for (j=0; j<edgeSize[i]; j++){
-        fprintf(fp, "%d %d 1.0 %d\n",*eptr + 1, *vptr + 1, zz->Proc);
-        vptr += zz->Num_GID;
+        fprintf(fp, "%d %d 1.0 %d\n",
+                eptr[0] + edgeOffset, vptr[0] + vtxOffset, zz->Proc);
+        vptr += lenGID;
       }
-      eptr += zz->Num_GID;
+      eptr += lenGID;
     }
     fflush(fp);
     Zoltan_Print_Sync_End(zz->Communicator, 0); 
@@ -401,12 +438,12 @@ int gen_geom, int gen_graph, int gen_hg)
     }
 
     for (i=0; i<num_obj; i++){
-      fprintf(fp, "%d ",  *vptr + 1);
+      fprintf(fp, "%d ",  vptr[0] + vtxOffset);
       for (j=0; j<zz->Obj_Weight_Dim; j++){
         fprintf(fp, "%f ", *wptr++);
       }
       fprintf(fp, "%d\n",  zz->Proc);
-      vptr += zz->Num_GID;
+      vptr += lenGID;
     }
     fflush(fp);
     Zoltan_Print_Sync_End(zz->Communicator, 0); 
@@ -430,12 +467,12 @@ int gen_geom, int gen_graph, int gen_hg)
       }
 
       for (i=0; i<nEwgts; i++){
-        fprintf(fp, "%d ",  *eptr + 1);
+        fprintf(fp, "%d ",  eptr[0] + edgeOffset);
         for (j=0; j<zz->Edge_Weight_Dim; j++){
           fprintf(fp, "%f ", *wptr++);
         }
         fprintf(fp, "%d\n",  zz->Proc);
-        eptr += zz->Num_GID;
+        eptr += lenGID;
       }
 
       fflush(fp);
