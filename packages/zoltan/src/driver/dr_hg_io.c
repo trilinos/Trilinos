@@ -973,8 +973,9 @@ char cmesg[160];
     if (!i) pinBuf = line;
 
     rc = sscanf(linestr, "%d %d %f %d", &eid, &vid, &pinVal, &proc);
-    if (rc != 4){
-      snprintf(cmesg,160,"%s\nlooking for \"edge vertex process\"\n",linestr);
+    if ((rc != 4) || (eid < 1) || (eid > nedges) ||
+        (vid < 1) || (vid > nvtxs) || (proc < 0) || (proc >= nFileProcs)){
+      snprintf(cmesg,160,"%s\nlooking for \"edge vertex pin process\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
     }
@@ -985,7 +986,7 @@ char cmesg[160];
     mine = my_pin(eid, vid, proc, i, npins, 
                   myminPin, mymaxPin, myrank, nprocs, pio_info);
 
-    if (i){
+    if (i){  /* should get rid of this, IDs are always 1 ... N */
       if (eid < mineid) mineid = eid;
       if (vid < minvid) minvid = vid;
       if (eid > maxeid) maxeid = eid;
@@ -1015,14 +1016,14 @@ char cmesg[160];
 
     rc = sscanf(linestr, "%d", &vid);
     token = get_token(linestr, vdim + 1, strlen(linestr));
-    if ((rc != 1) || !token){
+    if (token) proc = atoi(token);
+    if ((rc != 1) || !token || 
+         (vid < 1) || (vid > nvtxs) || (proc < 0) || (proc >= nFileProcs)){
       snprintf(cmesg,160,
       "%s\nlooking for \"vertex {optional weights} process\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
     }
-    
-    proc = atoi(token);
 
     vid -= 1;
 
@@ -1052,7 +1053,9 @@ char cmesg[160];
 
       rc = sscanf(linestr, "%d", &eid);
       token = get_token(linestr, edim + 1, strlen(linestr));
-      if ((rc != 1) || !token){
+      if (token) proc = atoi(token);
+      if ((rc != 1) || !token || 
+          (eid < 1) || (eid > nedges) || (proc < 0) || (proc >= nFileProcs)){
         snprintf(cmesg,160,
         "%s\nlooking for \"edge {optional weights} process\"\n",linestr);
         Gen_Error(0, cmesg);
@@ -1116,7 +1119,6 @@ char cmesg[160];
 
       eid -= 1;
       vid -= 1;
-
       mine = my_pin(eid, vid, proc, i, npins, 
                   myminPin, mymaxPin, myrank, nprocs, pio_info);
   
