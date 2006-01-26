@@ -217,6 +217,7 @@ extern int Debug_Driver;
 extern int Debug_Chaco_Input;
 extern int Number_Iterations;
 extern int Driver_Action;
+extern int Do_Migration;
 extern int Chaco_In_Assign_Inv;
 extern struct Test_Flags Test;
 extern struct Output_Flags Output;

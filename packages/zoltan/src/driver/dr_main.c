@@ -51,6 +51,7 @@ int Number_Iterations = 1;
 int Driver_Action = 1;	/* Flag indicating load-balancing or ordering. */
 int Debug_Chaco_Input = 0;
 int Chaco_In_Assign_Inv = 0;
+int Do_Migration = 1;
 struct Test_Flags Test;
 struct Output_Flags Output;
 

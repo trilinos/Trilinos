@@ -415,6 +415,12 @@ int read_cmd_file (
     else if (sscanf(line," zdrive debug level" SKIPEQ "%d%n",
                     &Debug_Driver,&n)==1)
       continue;                                /* The Debug reporting level */
+    else if (sscanf(line," zdrive migration" SKIPEQ "%d%n",
+                    &Do_Migration,&n)==1)
+      continue;                             /* option to turn off migration */ 
+    else if (sscanf(line," zdrive migrate" SKIPEQ "%d%n",
+                    &Do_Migration,&n)==1)
+      continue;                             /* option to turn off migration */ 
 
     else if (sscanf(line, " zoltan parameter %*[s\t ]%[=]%n", dummy, &n)==1) {
       pline = line;
@@ -557,10 +563,11 @@ void brdcst_cmd_info (
 {
   int ctrl_id;
   int size;
-  int int_params[15];  /* Make sure this array is large enough */
+  int int_params[16];  /* Make sure this array is large enough */
 
   int j = 0;
   int_params[j++] = Debug_Driver;
+  int_params[j++] = Do_Migration;
   int_params[j++] = Test.DDirectory;
   int_params[j++] = Test.Local_Partitions;
   int_params[j++] = Test.Multi_Callbacks;
@@ -580,6 +587,7 @@ void brdcst_cmd_info (
 
   j = 0;
   Debug_Driver           = int_params[j++];
+  Do_Migration           = int_params[j++];
   Test.DDirectory        = int_params[j++];
   Test.Local_Partitions  = int_params[j++];
   Test.Multi_Callbacks   = int_params[j++];
