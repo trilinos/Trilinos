@@ -528,10 +528,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
                           export_procs, export_to_part);
     }
 #endif
-  
-printf("%d num import %d num export %d\n",Proc,num_imported, num_exported);
-fflush(stdout);
-while(1);
+
     /*
      * Call another routine to perform the migration
      */
