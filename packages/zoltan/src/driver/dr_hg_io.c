@@ -622,22 +622,27 @@ int hedge_init_dist_type;
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
-/* Read "matrixmarket plus", the format written by Zoltan_Generate_Files
- * when hypergraph was given with the pin query functions.  (So each
- * process supplies some subset of pins to Zoltan.  Each process owns
- * some of the vertices and supplies weights for those.  Each process
- * may supply weights for edges.  The edges may not be the edges of 
- * their pins.  More than one process may supply a weight for the same
- * edge.)
+/* Read "matrixmarket plus", the format written by Zoltan_Generate_Files.
  *
- * The file format is similar to matrixmarket, but lists vertex weights 
- * and edge weights, and lists processors owning pins, processors owning 
- * vertices, and processors providing edge weights.  
+ * This format is our own extension of the NIST Matrix Market file
+ * format.  We wished to store vertex and edge weights, and also
+ * pin, vertex weight and edge weight ownership data in the file.
+ * Here are some rules from the NIST design document:
+ *  1. lines are limited to 1024 characters
+ *  2. blank lines may appear anywhere after the first line
+ *  3. numeric data on a line is separated by one or more blanks
+ *  4. real data is in floating-point decimal format, can use "e" notation
+ *  5. all indices are 1-based
+ *  6. character data may be upper or lower case.
  *
- * The number of processes in the file may be different than the number
- * of zdrive processes.  In that case, some zdrive processes may have
- * no pins and vertices, or some may get the pins and vertices of more
- * than one of the processes in the file.
+ * The contents of the file reflects the data returned by the
+ * application in the hypergraph query functions.  In particular:
+ *
+ * Each process supplied some subset of pins to Zoltan.  Each owned
+ * some of the vertices and supplied weights for those.  Each may have
+ * supplied weights for edges.  The edges need not be the edges of 
+ * their pins.  More than one process may have supplied a weight for 
+ * the same edge.
  */
 int read_mtxplus_file(
   int Proc,
@@ -848,7 +853,6 @@ static char *get_token(char *line, int which, int max);
 static char *first_char(char *buf, int max);
 static char *next_line(char *buf, int max, char *str);
 static void make_string(char *buf, char *str);
-static int longest_line(char *buf);
 static int my_pin(int eid, int vid, int proc, 
        int pin, int npins, int mymin, int mymax,
        int myrank, int nprocs, PARIO_INFO_PTR pio_info);
@@ -865,12 +869,12 @@ static int process_mtxp_file(PARIO_INFO_PTR pio_info,
 {
 int nedges, nvtxs, npins, vdim, edim, numew, nFileProcs;
 int countMyVtxs, countMyEdges, countMyPins;
-int proc, mine, nextpin, linemax, rc;
+int proc, mine, nextpin, rc;
 int eid, vid, i, j;
 int mineid, minvid, maxeid, maxvid, numeids, numvids;
 int nexte, nextv, nDistProcs;
 int myminPin, mymaxPin, myminVtx, mymaxVtx, myshare, share;
-float procf;
+float pinVal;
 int *myi, *myj, *myvno, *myeno;
 char *line, *token, *linestr, *pinBuf, *vwgtBuf, *ewgtBuf;
 float *myvwgt, *myewgt;
@@ -881,12 +885,16 @@ char cmesg[160];
   *myPinI = *myPinJ = *myVtxNum = *myEdgeNum = NULL;
   *myVtxWgts = *myEdgeWgts = NULL;
 
-  linemax = longest_line(filebuf);
-  linestr = (char *)malloc(linemax+1);
+  linestr = (char *)malloc(MATRIX_MARKET_MAX_LINE+1);
+  if (!linestr){
+    sprintf(cmesg, "memory allocation\n");
+    Gen_Error(0, cmesg);
+    return 0;
+  }
 
   line = first_char(filebuf, fsize);
   if (line && (*line == '%')){
-    line = next_line(filebuf, fsize, linestr);  /* skip comments */
+    line = next_line(filebuf, fsize, linestr);  /* skip comments & blanks */
   }
 
   if (!line){
@@ -908,13 +916,6 @@ char cmesg[160];
   if (!nedges || !nvtxs || !npins){
     free(linestr);
     return 1;
-  }
-
-  for (i=0; i<=nFileProcs; i++){
-    /* skip index into start of each process' pins and also
-     * skip total number of pins
-     */
-    line = next_line(line, fsize, NULL);
   }
 
   myminPin = mymaxPin = -1;
@@ -971,14 +972,17 @@ char cmesg[160];
     }
     if (!i) pinBuf = line;
 
-    rc = sscanf(linestr, "%d %d %f", &eid, &vid, &procf);
-    if (rc != 3){
+    rc = sscanf(linestr, "%d %d %f %d", &eid, &vid, &pinVal, &proc);
+    if (rc != 4){
       snprintf(cmesg,160,"%s\nlooking for \"edge vertex process\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
     }
 
-    mine = my_pin(eid, vid, (int)procf, i, npins, 
+    eid -= 1;
+    vid -= 1;
+
+    mine = my_pin(eid, vid, proc, i, npins, 
                   myminPin, mymaxPin, myrank, nprocs, pio_info);
 
     if (i){
@@ -1009,13 +1013,18 @@ char cmesg[160];
     }
     if (!i) vwgtBuf = line;
 
-    rc = sscanf(linestr, "%d %d", &proc, &vid);
-    if (rc != 2){
+    rc = sscanf(linestr, "%d", &vid);
+    token = get_token(linestr, vdim + 1, strlen(linestr));
+    if ((rc != 1) || !token){
       snprintf(cmesg,160,
-      "%s\nlooking for \"process vertex {optional weights}\"\n",linestr);
+      "%s\nlooking for \"vertex {optional weights} process\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
     }
+    
+    proc = atoi(token);
+
+    vid -= 1;
 
     if (vid < minvid) minvid = vid;
     if (vid > maxvid) maxvid = vid;
@@ -1041,13 +1050,17 @@ char cmesg[160];
 
       if (!i) ewgtBuf = line;
 
-      rc = sscanf(linestr, "%d %d", &proc, &eid);
-      if (rc != 2){
+      rc = sscanf(linestr, "%d", &eid);
+      token = get_token(linestr, edim + 1, strlen(linestr));
+      if ((rc != 1) || !token){
         snprintf(cmesg,160,
-        "%s\nlooking for \"process edge {optional weights}\"\n",linestr);
+        "%s\nlooking for \"edge {optional weights} process\"\n",linestr);
         Gen_Error(0, cmesg);
         goto failure;
       }
+      proc = atoi(token);
+
+      eid -= 1;
 
       if (eid < mineid) mineid = eid;
       if (eid > maxeid) maxeid = eid;
@@ -1099,9 +1112,12 @@ char cmesg[160];
   
     for (i=0; i<npins; i++){
   
-      sscanf(linestr, "%d %d %f", &eid, &vid, &procf);
+      sscanf(linestr, "%d %d %f %d", &eid, &vid, &pinVal, &proc);
 
-      mine = my_pin(eid, vid, (int)procf, i, npins, 
+      eid -= 1;
+      vid -= 1;
+
+      mine = my_pin(eid, vid, proc, i, npins, 
                   myminPin, mymaxPin, myrank, nprocs, pio_info);
   
       if (mine){
@@ -1130,12 +1146,15 @@ char cmesg[160];
     line = vwgtBuf;
   
     for (i=0; i<nvtxs; i++){
-      sscanf(linestr, "%d %d", &proc, &vid);
+      sscanf(linestr, "%d", &vid);
+      token = get_token(linestr, vdim + 1, strlen(linestr));
+      proc = atoi(token);
+      vid -= 1;
       mine = my_vtx(proc, i, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
       if (mine){
         myvno[nextv] = vid - minvid;
         for (j=0; j<vdim; j++){
-          token = get_token(linestr, 2 + j, strlen(linestr));
+          token = get_token(linestr, 1 + j, strlen(linestr));
           if (!token){
             snprintf(cmesg,160,"%s\nCan't find %d vertex weights\n",linestr,vdim);
             Gen_Error(0, cmesg);
@@ -1163,11 +1182,14 @@ char cmesg[160];
     line = ewgtBuf;
 
     for (i=0; i<numew; i++){
-      sscanf(linestr, "%d %d", &proc, &eid);
+      sscanf(linestr, "%d", &eid);
+      token = get_token(linestr, edim + 1, strlen(linestr));
+      proc = atoi(token);
+      eid -= 1;
       if ((proc % nprocs) == myrank){
         myeno[nexte] = eid - mineid;
         for (j=0; j<edim; j++){
-          token = get_token(linestr, 2 + j, strlen(linestr));
+          token = get_token(linestr, 1 + j, strlen(linestr));
           if (!token){
             snprintf(cmesg,160,"%s\nCan't find %d edge weights\n",linestr,edim);
             Gen_Error(0, cmesg);
@@ -1455,14 +1477,17 @@ char *c = buf;
 int sanity = 0;
 int first=1;
 
-  /* Return pointer to the next non-comment. Also copy
+  /* Skip current line, and any following comments or blank lines.
+   * Return pointer to the next line. Also copy
    * the line to a null-terminated C string because sscanf
    * may perform really poorly on very long strings.
    */
 
   if (str) *str = 0;
 
-  while (first || (*c == '%')){
+  while (c && (first || (*c == '%'))){
+
+    /* go to end of line */
     while (*c && (*c != '\n') && (sanity++ < max)) c++;
 
     if ((sanity >= max) || (*c == 0)){
@@ -1470,32 +1495,17 @@ int first=1;
     }
     first = 0;
     c++;
+
+    /* skip blank lines, and/or initial white space */
+    c = first_char(c, max);
   }
 
-  if (str){
+  if (str && c){
     make_string(c, str);
   }
 
   return c;
 }
-static int longest_line(char *buf)
-{
-int maxline, linecount;
-char *c;
-
-  linecount = maxline = 0;
-  c = buf;
-
-  while (*c){
-    while (*c && *c++ != '\n') linecount++;
-    if (linecount > maxline){
-      maxline = linecount;
-    }
-    linecount = 0;
-  }
-  return maxline;
-}
-
 /*****************************************************************************/
 
 #ifdef __cplusplus

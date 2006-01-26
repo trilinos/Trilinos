@@ -36,6 +36,9 @@ extern "C" {
 #define FILENAME_MAX    1024
 #endif
 
+/* Maximum defined by the NIST standard */
+#define MATRIX_MARKET_MAX_LINE  1024
+
 #define MAX_NP_ELEM	27 /* max nodes per element */
 #define MAX_DIM		 3 /* max number of coordinate dimensions */
 #define MAX_CPU_WGTS	10 /* max number of cpu weights */
