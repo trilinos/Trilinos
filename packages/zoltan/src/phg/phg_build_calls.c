@@ -125,6 +125,8 @@ int dim = zz->Edge_Weight_Dim;
 int lenGID = zz->Num_GID;
 int lenLID = zz->Num_LID;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   ewht = (struct _ewht **)htptr;
   if (ewht){
     ewNodes = ewht[htsize]; /* so we can free it when done */
@@ -366,6 +368,8 @@ float *in_weights=NULL, *out_weights=NULL, *wptr=NULL;
 /*                                                                   */
 /* Also obtain edg_weights for my edges from processes which         */
 /* supplied them in the edge weight query functions.                 */
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   nedges = *num_lists;
   npins = *num_pins;
@@ -628,6 +632,7 @@ End:
   ZOLTAN_FREE(&egidNode);
   ZOLTAN_FREE(&egid);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 static int divideInterval(int rank, int myL, int myR,
@@ -1160,6 +1165,7 @@ int nl, np, format, have_pins, row_storage;
 ZOLTAN_ID_PTR vid, eid;
 int *rptr, *cptr;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   /*
    * Call the pin query functions.  Pins may be provided in
    * compressed row storage format or compressed column storage
@@ -1173,6 +1179,7 @@ int *rptr, *cptr;
 
   if (!zz->Get_HG_Size_CS || !zz->Get_HG_CS){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Hypergraph query functions undefined");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -1184,6 +1191,7 @@ int *rptr, *cptr;
   if ((format != ZOLTAN_COMPRESSED_ROWS)&&(format != ZOLTAN_COMPRESSED_COLS)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
       "Invalid compression format returned in Get_HG_Size_CS");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -1202,6 +1210,7 @@ int *rptr, *cptr;
       if (!vid|| !cptr || !eid){
         Zoltan_Multifree(__FILE__, __LINE__, 3, &vid, &cptr, &eid);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "memory allocation");
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_FATAL;
       }
       ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
@@ -1229,6 +1238,7 @@ int *rptr, *cptr;
       if (!vid || !rptr || !eid){
         Zoltan_Multifree(__FILE__, __LINE__, 3, &vid, &rptr, &eid);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "memory allocation");
+        ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_FATAL;
       }
 
@@ -1245,6 +1255,7 @@ int *rptr, *cptr;
     *num_pins = np;
   }
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 /*****************************************************************************/
@@ -1440,6 +1451,8 @@ ZOLTAN_ID_PTR vgids = zhg->GIDs;     /* Vertex info */
 ZOLTAN_ID_PTR vlids = zhg->LIDs;     /* Vertex info */
 ZOLTAN_ID_PTR lid;
 float *gewgts = NULL;     /* Graph-edge weights */
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   *nedges = nvtx;   /* One hyperedge per graph vertex */
   

@@ -1156,6 +1156,8 @@ int num_lid_entries = zz->Num_LID;
 int msg_tag = 23132;
 double ewgt;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   /* Get pin information for removed hyperedges if necessary. */
 
   for (i = 0; i < zhg->nRemove; i++) npins += zhg->Remove_Esize[i];
@@ -1332,6 +1334,8 @@ End:
   }
   ZOLTAN_FREE(&parts);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
   return ierr;
 }
 /*****************************************************************************/
@@ -1387,7 +1391,7 @@ MPI_Request gids_req, gnos_req;
 MPI_Status status;
 int ierr=ZOLTAN_OK;
 
-
+  ZOLTAN_TRACE_ENTER(zz, yo);
   /*  
    * First, determine whether there are any removed pins.  For
    * these, we only need to know which process owns the vertex.
@@ -1464,6 +1468,7 @@ int ierr=ZOLTAN_OK;
   if (maxUnSet == 0){
     ZOLTAN_FREE(&pinIdx);
     ZOLTAN_FREE(&sndBufGids);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_OK;    /* all processes have all global numbers */
   }
 
@@ -1541,8 +1546,11 @@ End:
 
   if (ngids > 0){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Failed to obtain all vertex global IDs.")
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
 
   return ierr;
 }
@@ -1672,6 +1680,8 @@ int nedges, ew_ht_size;
 int dim = zz->Edge_Weight_Dim;
 int lenGID = zz->Num_GID;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   *ht = NULL;
   ierr = ZOLTAN_OK;
 
@@ -1680,6 +1690,7 @@ int lenGID = zz->Num_GID;
   CHECK_FOR_MPI_ERROR(rc)
 
   if (nEdgesMax <= 0){
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_OK;
   }
 
@@ -1728,6 +1739,7 @@ int lenGID = zz->Num_GID;
        &sndBufWeights, &rcvBufGids, &sndBufGids, &rcvBufWeights,
        &ewNodes, &ewht);
 
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1851,6 +1863,7 @@ End:
     ZOLTAN_FREE(&ewht);
   }
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 static int combine_weights_for_same_edge(ZZ *zz, int ew_op,
@@ -1873,10 +1886,13 @@ int lenLID = zz->Num_LID;
 ZOLTAN_ID_PTR rgid, rlid, wgid, wlid;
 float *rwgt, *wwgt;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   *ht = NULL;
   *htsize = 0;
 
   if (*ew_num_edges < 1){
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_OK;
   }
 
@@ -1899,6 +1915,7 @@ float *rwgt, *wwgt;
     ZOLTAN_FREE(&ewNodes);
     ZOLTAN_FREE(&ewht);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "memory allocation");
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -1916,6 +1933,7 @@ float *rwgt, *wwgt;
         ierr = combine_weights(ew_op, en->weights, rwgt, dim);
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Inconsistent edge weights");
+          ZOLTAN_TRACE_EXIT(zz, yo);
           return ZOLTAN_FATAL;
         }
         break;
@@ -1958,6 +1976,7 @@ float *rwgt, *wwgt;
   *ht = (void *)ewht;
   *htsize = nedges;
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ZOLTAN_OK;
 }
 static int combine_weights(int ew_op, float *dest, float *src, int n)
