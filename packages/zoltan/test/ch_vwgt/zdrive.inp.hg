@@ -1,8 +1,0 @@
-Decomposition Method 	= hg
-Zoltan Parameters	= remap=0
-Zoltan Parameters	= obj_weight_dim=1
-Zoltan Parameters	= debug_level=10
-Zoltan Parameters	= num_global_partitions=3
-File Type		= hypergraph
-File Name		= vwgt
-Parallel Disk Info	= number=0
