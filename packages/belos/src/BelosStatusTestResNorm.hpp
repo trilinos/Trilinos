@@ -482,7 +482,7 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::Print(ostream& os, int indent) con
 {
   for (int j = 0; j < indent; j ++)
     os << ' ';
-  PrintStatus(os, status_);
+  this->PrintStatus(os, status_);
   os << "(";
   os << ((resnormtype_==OneNorm) ? "1-Norm" : (resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm");
   os << ((restype_==Explicit) ? " Exp" : " Imp");

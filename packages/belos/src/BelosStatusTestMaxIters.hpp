@@ -153,7 +153,7 @@ private:
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
-    PrintStatus(os, status_);
+    this->PrintStatus(os, status_);
     os << "Number of Iterations = ";
     os << nIters_;
     os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " == " : " > "));
