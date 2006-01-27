@@ -106,8 +106,6 @@ while ( $#argv )
   else if ( "$1" == "-yes_serial" ) then
      @ yes_serial = 1
      @ no_nemesis = 1   # Nemesis input files require multiple processors
-  else if ( "$1" == "-yes_hg" ) then
-     @ yes_hg = 1
   else if ( "$1" == "-old_interface" ) then
      @ old_interface = 1
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
