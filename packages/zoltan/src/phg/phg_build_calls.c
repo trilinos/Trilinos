@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include <math.h>
 #include "zz_const.h"
 #include "zz_util_const.h"
 #include "phg_hypergraph.h"
@@ -1299,7 +1300,7 @@ int numGID = zz->Num_GID;
    * vertices for each edge.
    */
 
-  ht_size = (int)sqrtf((float)num_pins);
+  ht_size = (int)sqrt((double)num_pins);
 
   if (ht_size < 10) ht_size = num_pins;
 
@@ -1349,7 +1350,7 @@ int numGID = zz->Num_GID;
    * and the list of unique edge IDs.                          
    */
 
-  vIdx = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges+1);
+  vIdx = (int *)ZOLTAN_MALLOC((numEdges+1) * sizeof(int));
   edges = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges);
 
   if (!vIdx || !edges){
