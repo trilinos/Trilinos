@@ -15,7 +15,7 @@ CORE_H = \
 	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
-	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosEpetraOperator.h \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
@@ -30,7 +30,9 @@ CORE_H = \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp
 
-CORE = 
+CORE = \
+	$(srcdir)/BelosEpetraOperator.cpp
+
 
 UTIL = \
 	$(srcdir)/BelosVersion.cpp

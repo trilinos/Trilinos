@@ -85,16 +85,18 @@ am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execin
 libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libbelos_a_DEPENDENCIES =
-am__objects_1 =
+am__objects_1 = BelosEpetraOperator.$(OBJEXT)
 am__objects_2 = BelosVersion.$(OBJEXT)
+am__objects_3 =
 am_libbelos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_1) $(am__objects_1)
+	$(am__objects_3) $(am__objects_3) $(am__objects_3) \
+	$(am__objects_3) $(am__objects_3) $(am__objects_3)
 libbelos_a_OBJECTS = $(am_libbelos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BelosVersion.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BelosEpetraOperator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BelosVersion.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -239,7 +241,7 @@ CORE_H = \
 	$(srcdir)/BelosCG.hpp \
 	$(srcdir)/BelosConfigDefs.hpp \
 	$(srcdir)/BelosEpetraAdapter.hpp \
-	$(srcdir)/BelosEpetraOperator.hpp \
+	$(srcdir)/BelosEpetraOperator.h \
 	$(srcdir)/BelosIterativeSolver.hpp \
 	$(srcdir)/BelosLinearProblem.hpp \
 	$(srcdir)/BelosMultiVec.hpp \
@@ -254,7 +256,9 @@ CORE_H = \
 	$(srcdir)/BelosStatusTestResNorm.hpp \
 	$(srcdir)/BelosTypes.hpp
 
-CORE = 
+CORE = \
+	$(srcdir)/BelosEpetraOperator.cpp
+
 UTIL = \
 	$(srcdir)/BelosVersion.cpp
 
@@ -451,6 +455,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BelosEpetraOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BelosVersion.Po@am__quote@
 
 .cpp.o:
@@ -468,6 +473,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+BelosEpetraOperator.o: $(srcdir)/BelosEpetraOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosEpetraOperator.o -MD -MP -MF "$(DEPDIR)/BelosEpetraOperator.Tpo" -c -o BelosEpetraOperator.o `test -f '$(srcdir)/BelosEpetraOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosEpetraOperator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BelosEpetraOperator.Tpo" "$(DEPDIR)/BelosEpetraOperator.Po"; else rm -f "$(DEPDIR)/BelosEpetraOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BelosEpetraOperator.cpp' object='BelosEpetraOperator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BelosEpetraOperator.Po' tmpdepfile='$(DEPDIR)/BelosEpetraOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BelosEpetraOperator.o `test -f '$(srcdir)/BelosEpetraOperator.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosEpetraOperator.cpp
+
+BelosEpetraOperator.obj: $(srcdir)/BelosEpetraOperator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosEpetraOperator.obj -MD -MP -MF "$(DEPDIR)/BelosEpetraOperator.Tpo" -c -o BelosEpetraOperator.obj `if test -f '$(srcdir)/BelosEpetraOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/BelosEpetraOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BelosEpetraOperator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BelosEpetraOperator.Tpo" "$(DEPDIR)/BelosEpetraOperator.Po"; else rm -f "$(DEPDIR)/BelosEpetraOperator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BelosEpetraOperator.cpp' object='BelosEpetraOperator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BelosEpetraOperator.Po' tmpdepfile='$(DEPDIR)/BelosEpetraOperator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BelosEpetraOperator.obj `if test -f '$(srcdir)/BelosEpetraOperator.cpp'; then $(CYGPATH_W) '$(srcdir)/BelosEpetraOperator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BelosEpetraOperator.cpp'; fi`
 
 BelosVersion.o: $(srcdir)/BelosVersion.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BelosVersion.o -MD -MP -MF "$(DEPDIR)/BelosVersion.Tpo" -c -o BelosVersion.o `test -f '$(srcdir)/BelosVersion.cpp' || echo '$(srcdir)/'`$(srcdir)/BelosVersion.cpp; \

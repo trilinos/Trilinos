@@ -7,8 +7,8 @@
 #include <BelosStatusTestMaxRestarts.hpp>
 #include <BelosStatusTestResNorm.hpp>
 #include <BelosStatusTestCombo.hpp>
-#include <BelosEpetraOperator.hpp>
 #include <BelosEpetraAdapter.hpp>
+#include <BelosEpetraOperator.h>
 #include <BelosBlockGmres.hpp>
 
 #include <Epetra_Map.h>
