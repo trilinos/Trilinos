@@ -25,17 +25,17 @@
 # Chaco problems to run
 set ch_name  = (simple nograph vwgt ewgt bug degenerate degenerateAA onedbug grid20x19 film hammond)
 set ch_nproc = (4 4 3 4 3 6 6 3 5 6 8) # no. of procs
+
 # Nemesis problems to run  
 set nem_name = (box_064 ti_300 ti_4k)
 set nem_nproc = (5 6 9) # no. of procs
 set nem_pdisk = (1 2 2) # parallel disk info
 
-# EBEB Hg testing is not ready for prime time, so turned it off.
-# Hypergraph problems to run, and methods to use
-set hg_name = (ibm01 ibm02 ibm03 ibm04 ibm05 ibm06 ibm07 ibm08 ibm09 ibm10 \
-               ibm11 ibm12 ibm13 ibm14 ibm15 ibm16 ibm17 ibm18)
-set hg_methods = (mxm rrm rem rhm grm lhm pgm gm2 rm2 gm3 gm4 mxp rep rhp grp \
-                  lhp rrp pgp mxg reg rhg grg rrg ipm)
+# Hypergraph problems, methods and sizes.  If you add tests here, you
+# may also want to update the hg_* values in the "yes_serial" case.
+set hg_methods = (file rows cols cyclic)
+set hg_name  = (simple felix ibm01 ibm01 ibm18 ibm18)
+set hg_nproc = (4      4     4     3     4     5)
 
 # Set default options
 set out_tag = out
@@ -61,12 +61,12 @@ set no_parmetis = $?ZOLTAN_NO_PARMETIS
 set no_order = $?ZOLTAN_NO_ORDER
 set no_color = $?ZOLTAN_NO_COLOR
 set no_reftree = $?ZOLTAN_NO_REFTREE
+set no_hg = $?ZOLTAN_NO_HG
 set yes_jostle = $?ZOLTAN_YES_JOSTLE
 set yes_fortran = $?ZOLTAN_YES_FORTRAN
 set yes_cpp = $?ZOLTAN_YES_CPP
 set yes_serial = $?ZOLTAN_YES_SERIAL
 set old_interface = $?ZOLTAN_OLD_INTERFACE
-set yes_hg = $?ZOLTAN_YES_HG
 
 # Parse command-line options. 
 # These options will override the environment variables.
@@ -91,6 +91,8 @@ while ( $#argv )
      @ no_parmetis = 1
   else if ( "$1" == "-no_reftree" ) then
      @ no_reftree = 1
+  else if ( "$1" == "-no_hg" ) then
+     @ no_hg = 1
   else if ( "$1" == "-no_order" ) then
      @ no_order = 1
   else if ( "$1" == "-no_color" ) then
@@ -154,6 +156,10 @@ end # while ( $#argv )
 
 if ( $yes_serial ) then
   set ch_nproc = (1 1 1 1 1 1 1 1 1 1 1) # no. of procs
+
+  set hg_methods = (serial)   # creates 8 partitions
+  set hg_name  = (simple felix ibm01 ibm18)
+  set hg_nproc = (1      1     1     1)
 endif
 
 # Determine what command to use to launch a parallel program based on $arch
@@ -819,60 +825,92 @@ if (! $no_nemesis ) then
 endif # Nemesis
 
 # Loop over hg problems
-if ( $yes_hg) then
+if (! $no_hg) then
   @ nprob = $#hg_name
+  @ nfailed = 0
+  while ( $#hg_name )
 
-  cd hg_test
-  if (-e ./zdrive) /bin/rm ./zdrive
-  /bin/cp ../$zdrive .
+    # Go to the next test directory, initialize
+    cd hg_${hg_name[1]}
+    @ np = $hg_nproc[1]
 
-  # Check output directories 
-  if (! -d $outdir ) mkdir $outdir
-  if (! -d $answers ) mkdir $answers
- 
-  # Save input file 
-  if (-e zdrive.inp ) /bin/cp zdrive.inp zdrive.inp.bak
+    if ( $np > 0 ) then
+      echo "Running test case ${hg_name[1]} on ${hg_nproc[1]} procs" | tee -a ../$logfile
   
-  foreach name ( $hg_name )
+      # Check output directories 
+      if (! -d $outdir ) mkdir $outdir
+      if (! -d $answers ) then
+        echo "Warning: Answer directory missing in hg_${hg_name[1]}" | tee -a ../$logfile
+      endif
+  
+      # Save generic input file 
+      if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
+  
+      # Loop over all methods
+      foreach mtd ( $hg_methods )
+        # Clear fail flag
+        @ fail = 0
+  
+        # Run zdrive and check the output against stored answer
+  
+        if (-e zdrive.inp.${mtd} ) then
+          /bin/cp zdrive.inp.${mtd} zdrive.inp
+          if (-e ${outdir}/${hg_name[1]}.$mtd.$np.0 ) then
+            /bin/rm ${outdir}/${hg_name[1]}.$mtd.$np.*
+          endif
+  
+          # Run the driver
+          $run $np ../$zdrive
+          sleep 1 # Make sure all processes have time to write to disk
+      
+          # Save and compare output files 
+          @ i = 0
+          while ( $i < $np )
+            /bin/mv ${hg_name[1]}.$out_tag.$np.$i  ${outdir}/${hg_name[1]}.$mtd.$np.$i
+            if (-e ${answers}/${hg_name[1]}.$mtd.$np.$i.$arch ) then
+       	      set answerfile = ${answers}/${hg_name[1]}.$mtd.$np.$i.$arch
+            else
+              set answerfile = ${answers}/${hg_name[1]}.$mtd.$np.$i
+            endif
+            diff -ciw ${outdir}/${hg_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+            if ( $status ) then 
+              @ fail = 1
+            endif
+  
+            @ i = $i + 1
+          end
+    
+          # Report success or failure 
+          if ( $fail ) then
+            @ nfailed = $nfailed + 1
+            echo "Test problem ${hg_name[1]}/${mtd} FAILED" | tee -a ../$logfile
+          else
+            echo "Test problem ${hg_name[1]}/${mtd} OK" | tee -a ../$logfile 
+          endif
+        endif   # if method exists
+      end # next method
+  
+      # Restore zdrive.inp
+      if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
 
-    echo "Running test case ${name}" | tee -a ../$logfile
+    endif  # np is more than zerof
 
-    # Loop over all methods
-    foreach mtd ( $hg_methods )
+    # Shift arguments and return to original directory
+    shift hg_name
+    shift hg_nproc
+    cd ..
+  end # next name
+  
+  # Print failure summary
+  echo " " | tee -a $logfile
+  if ( $nfailed == 0 ) then
+    echo "Success: all hypergraph problems passed." | tee -a $logfile
+  else
+    echo "Failure: $nfailed hypergraph problems failed." | tee -a $logfile
+  endif
+  echo " " | tee -a $logfile
 
-        # Check input file
-        if (-e zdrive.inp.${name} ) then
-            /bin/rm  zdrive.inp
-            /bin/cp  zdrive.inp.${name} zdrive.inp
-
-            # add some parameters not already in the input file
-            /bin/echo "Zoltan Parameters = hg_reduction_method=$mtd" \
-                >> zdrive.inp
-            /bin/echo "Zoltan Parameters = hg_reduction_local_improvement=no" \
-                >> zdrive.inp
-            /bin/echo "Zoltan Parameters = hg_local_refinement=no" \
-                >> zdrive.inp
-            /bin/echo "Zoltan Parameters = hg_reduction_limit=5000" \
-                >> zdrive.inp
-            #/bin/echo "Zoltan Parameters = hg_global partitioning=ran" \
-            #    >> zdrive.inp
-            /bin/echo "number of iterations = 10" >> zdrive.inp
-            # Run the driver
-            ./zdrive > $outdir/${name}.$mtd
-
-        else
-            echo "Warning: Can't find hg_test/zdrive.inp.${name}, skipping..." \
-                | tee -a ../$logfile
-        endif
-
-    end # foreach method
-
-    # Restore zdrive.inp
-    if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
-  end # foreach name
-  cd ..  
-endif # Hypergraph
-
+endif # hg
 
 ###
 
