@@ -23,6 +23,7 @@
 #include "CrsMatrices/Galeri_Star2D.h"
 #include "CrsMatrices/Galeri_UniFlow2D.h"
 #include "CrsMatrices/Galeri_Recirc2D.h"
+#include "CrsMatrices/Galeri_BentPipe2D.h"
 #include "CrsMatrices/Galeri_Stretched2D.h"
 #include "CrsMatrices/Galeri_Laplace1DNeumann.h"
 #include "CrsMatrices/Galeri_BigCross2D.h"
@@ -323,6 +324,27 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     double ly = List.get("ly", 1.0);
 
     return(Matrices::Recirc2D(Map, nx, ny, lx, ly, conv, diff)); 
+  }
+  else if (MatrixType == "BentPipe2D")
+  {
+    int nx = List.get("nx", -1);
+    int ny = List.get("ny", -1);
+    if (nx == -1 || ny == -1)
+    {
+      int n = Map->NumGlobalElements();
+      nx = (int)sqrt((double)n); 
+      ny = nx;
+      if (nx * ny != n)
+        throw(Exception(__FILE__, __LINE__,
+                        "You need to specify nx and ny"));
+    }
+
+    double conv = List.get("conv", 1.0);
+    double diff = List.get("diff", 1.0e-5);
+    double lx = List.get("lx", 1.0);
+    double ly = List.get("ly", 1.0);
+
+    return(Matrices::BentPipe2D(Map, nx, ny, lx, ly, conv, diff)); 
   }
   else if (MatrixType == "Laplace3D")
   {

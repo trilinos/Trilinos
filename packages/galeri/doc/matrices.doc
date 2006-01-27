@@ -74,6 +74,21 @@ To present the list of supported matrices we adopt the following symbols:
 <P>
 The list of supported matrices is now reported in alphabetical order. 
 
+- \c BentPipe2D (MAP2D, PAR): Returns a matrix corresponding to the
+finite-difference discretization of the problem
+\f[
+- \epsilon \Delta u + (v_x,v_y) \cdot \nabla u = f
+\f]
+on the unit square, with homogeneous Dirichlet boundary conditions. A
+standard 5-pt stencil is used to discretize the diffusive term, and a
+simple upwind stencil is used for the convective term. Here,
+  \f[
+  v_x = 2 conv x (x/2 - 1) (1 - 2y), \quad \quad \quad 
+  v_y =-4 conv y (y - 1) (1 - x)
+  \f]
+  The value of \f$\epsilon\f$ can be specified using \c diff, and that of
+  \f$V\f$ using \c conv. The default values are \c diff=1e-5, \c conv=1.
+
 - \c BigCross2D (MAP2D, PAR): Creates a matrix corresponding to the following 
   stencil:
   \f[
@@ -310,7 +325,8 @@ on the unit square, with homogeneous Dirichlet boundary conditions. A
 standard 5-pt stencil is used to discretize the diffusive term, and a
 simple upwind stencil is used for the convective term. Here,
   \f[
-  v_x = ( y - 1/2 ) V, \quad \quad \quad v_y = ( 1/2 - x ) V
+  v_x = 4 conv x (x - 1) (1 - 2y), \quad \quad \quad 
+  v_y =-4 conv y (y - 1) (1 - 2x)
   \f]
   The value of \f$\epsilon\f$ can be specified using \c diff, and that of
   \f$V\f$ using \c conv. The default values are \c diff=1e-5, \c conv=1.

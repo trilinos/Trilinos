@@ -64,6 +64,7 @@ CORE_H = $(srcdir)/Galeri_Version.h                    \
 	 $(srcdir)/CrsMatrices/Galeri_Pei.h               \
 	 $(srcdir)/CrsMatrices/Galeri_JordanBlock.h       \
 	 $(srcdir)/CrsMatrices/Galeri_Recirc2D.h          \
+	 $(srcdir)/CrsMatrices/Galeri_BentPipe2D.h        \
 	 $(srcdir)/FiniteElements/Galeri_AbstractGrid.h           \
 	 $(srcdir)/FiniteElements/Galeri_AbstractProblem.h        \
 	 $(srcdir)/FiniteElements/Galeri_AbstractQuadrature.h     \
