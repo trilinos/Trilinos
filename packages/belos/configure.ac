@@ -227,11 +227,14 @@ TAC_ARG_WITH_LIBDIRS
 # enable use of --with-incdirs="-Lincdir1 -Lincdir2 ..." to prepend to CPPFLAGS
 TAC_ARG_WITH_INCDIRS
 
+# #np# - Yet another opportunity to remove code if you aren't
+# using Fortran
+# Define F77_FUNC that will be used to link with Fortran subroutines, e.g., BLAS/LAPACK - trash WORKGXX
+AC_F77_WRAPPERS
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
-
-AC_F77_WRAPPERS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
@@ -308,6 +311,7 @@ AC_SUBST(ac_aux_dir)
 
 AC_CONFIG_FILES([
 		Makefile 
+		Makefile.export.belos
 		src/Makefile
 		test/Makefile
 		test/BlockCG/Makefile
