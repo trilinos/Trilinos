@@ -327,6 +327,14 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
   }
   else if (MatrixType == "BentPipe2D")
   {
+    /*
+     * to visualize the convective field in MATLAB:
+     >> [x,y] = meshgrid(0:0.02:1, 0:0.02:1);
+     >> bx = 4 * x .* (x - 1) .* (1 - 2 * y);
+     >> by = -4 * y .* (y - 1) .* (1 - 2 * x);
+     >> % select the starting point of the streamlines
+     >> streamline(stream2(x,y,bx,by,[0.5 0.5 0.5], [0.2 0.4 0.6]))
+    */
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
     if (nx == -1 || ny == -1)
