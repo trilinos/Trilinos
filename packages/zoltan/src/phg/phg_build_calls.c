@@ -1194,6 +1194,7 @@ int *rptr, *cptr;
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_FATAL;
   }
+  ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_Size_CS");
 
   have_pins = ((nl > 0) && (np > 0));
   row_storage = (format == ZOLTAN_COMPRESSED_ROWS);
@@ -1216,6 +1217,8 @@ int *rptr, *cptr;
       ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
                nl, np, format, vid, cptr, eid);
 
+      ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
+
       if ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)){
         ierr = convert_to_CRS(zz,
                      np,    /* number of pins doesn't change */
@@ -1224,9 +1227,7 @@ int *rptr, *cptr;
                      &vid,    /* replace with pins           */
                      &rptr,   /* index into start of each row in vid */
                      &eid);   /* replace with row (edge) GIDs */
-
       }
-
       ZOLTAN_FREE(&cptr);
     }
     else{               /* compressed row storage */
@@ -1245,6 +1246,7 @@ int *rptr, *cptr;
       ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
                  nl, np, format, eid, rptr, vid);
 
+      ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
       rptr[nl] = np;
     }
 
@@ -1267,21 +1269,29 @@ static int convert_to_CRS(
     ZOLTAN_ID_PTR *edg_GID)
 {
 static char *yo = "convert_to_CRS";
-int maxEdges = num_pins;
 int numVerts = *num_lists;
-int numEdges, ierr;
+int numEdges, ierr, ht_size;
 ZOLTAN_ID_PTR egid, vgid;
-int v, e, idx, found, pin;
+int v, e, idx, found, npins;
 struct _hash_node {
   ZOLTAN_ID_PTR egid;
-  char *verts;
+  int numVerts;
+  int firstVert;
+  int nextVert;
   struct _hash_node *next;
-} *hn, *tmp;
-struct _hash_node **hash_table;
-ZOLTAN_ID_PTR ccs_egids=NULL, ccs_vgids=NULL;
-int *p;
+} *hn=NULL, *tmp;
+struct _hash_node **hash_table=NULL;
+ZOLTAN_ID_PTR edges=NULL, pins=NULL;
+int *eIdx=NULL, *vIdx=NULL;
+int numGID = zz->Num_GID;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   ierr = ZOLTAN_OK;
+
+  if (num_pins == 0){
+    return ierr;
+  }
 
   /*
    * Convert from CCS to CRS (compressed columns to compressed rows)
@@ -1289,108 +1299,123 @@ int *p;
    * vertices for each edge.
    */
 
+  ht_size = (int)sqrtf((float)num_pins);
+
+  if (ht_size < 10) ht_size = num_pins;
+
   hash_table =
-    (struct _hash_node **)ZOLTAN_CALLOC(maxEdges, sizeof(struct _hash_node *));
+    (struct _hash_node **)ZOLTAN_CALLOC(ht_size, sizeof(struct _hash_node *));
 
   if (!hash_table){
     return ZOLTAN_MEMERR;
   }
 
+  /* For each edge, count how many vertices (pins) it has */
+
   egid = *edg_GID;
-
-  for (v=0; v<numVerts; v++){
-    numEdges = ((v == numVerts-1) ?
-              (num_pins - col_ptr[v]) : (col_ptr[v+1] - col_ptr[v]));
-
-    for (e=0; e<numEdges; e++){
-
-       idx = Zoltan_Hash(egid, zz->Num_GID, (unsigned int)maxEdges);
-       found = 0;
-       hn = hash_table[idx];
-
-       while (hn){
-         if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
-           hn->verts[v] = 1;
-           found = 1;
-           break;
-         }
-         else{
-           hn = hn->next;
-         }
-       }
-       if (!found){
-         hn = (struct _hash_node *)ZOLTAN_MALLOC(sizeof(struct _hash_node));
-         if (!hn){
-           ierr = ZOLTAN_MEMERR;
-           goto End;
-         }
-         hn->egid = egid;
-         hn->verts = (char *)ZOLTAN_CALLOC(numVerts, sizeof(char));
-         if (!hn->verts){
-           ierr = ZOLTAN_MEMERR;
-           goto End;
-         }
-         hn->verts[v] = 1;
-         hn->next = hash_table[idx];
-         hash_table[idx] = hn;
-       }
-
-       egid += zz->Num_GID;
-    }
-  }
-
-  /* Build compressed row arrays from tables just calculated */
-
   numEdges = 0;
-  for (idx=0; idx<maxEdges; idx++){
+
+  for (e=0; e<num_pins; e++){
+     idx = Zoltan_Hash(egid, numGID, (unsigned int)ht_size);
+     found = 0;
+     hn = hash_table[idx];
+
+     while (hn){
+       if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
+         hn->numVerts++;
+         found = 1;
+         break;
+       }
+       else{
+         hn = hn->next;
+       }
+     }
+     if (!found){
+       hn = (struct _hash_node *)ZOLTAN_MALLOC(sizeof(struct _hash_node));
+       if (!hn){
+         ierr = ZOLTAN_MEMERR;
+         goto End;
+       }
+       hn->egid = egid;
+       hn->numVerts = 1;
+       hn->next = hash_table[idx];
+       hash_table[idx] = hn;
+       numEdges++;
+     }
+     egid += numGID;
+  }
+
+  /* Create array of indices into the start of each edge's pins,
+   * and the list of unique edge IDs.                          
+   */
+
+  vIdx = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges+1);
+  edges = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges);
+
+  if (!vIdx || !edges){
+    ZOLTAN_FREE(&vIdx);
+    ZOLTAN_FREE(&edges);
+    ierr = ZOLTAN_MEMERR;
+  }
+  vIdx[0] = 0;
+  e = 0;
+
+  for (idx=0; idx < ht_size; idx++){
     hn = hash_table[idx];
     while (hn){
-      numEdges++;
+      ZOLTAN_SET_GID(zz, edges + e*numGID, hn->egid);
+      hn->firstVert = vIdx[e];
+      hn->nextVert  = 0;
+      vIdx[e+1] = vIdx[e] + hn->numVerts;
       hn = hn->next;
-      if (numEdges > maxEdges){
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid row/column information");
-        ierr = ZOLTAN_FATAL;
-        goto End;
-      }
+      e++;
     }
   }
+  
+  /* Write out pins */
 
-  p = (int *)ZOLTAN_MALLOC((numEdges+1) * sizeof(int));
-  egid = ccs_egids = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges);
-  vgid = ccs_vgids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_pins);
-
-  if (!p || !egid || !vgid){
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &p, &egid, &vgid);
+  pins = ZOLTAN_MALLOC_GID_ARRAY(zz, num_pins);
+  if (!pins){
+    ZOLTAN_FREE(&vIdx);
+    ZOLTAN_FREE(&edges);
     ierr = ZOLTAN_MEMERR;
-    goto End;
   }
 
-  for (idx=0, e=0, v=0; idx<maxEdges; idx++){
-    hn = hash_table[idx];
-    while (hn){
+  vgid = *vtx_GID;
+  egid = *edg_GID;
+  eIdx = col_ptr;
 
-      p[e] = v;
-      ZOLTAN_SET_GID(zz, egid, hn->egid);
+  for (v=0; v < numVerts; v++){
+    npins = ((v == (numVerts - 1)) ? num_pins : eIdx[v+1]) - eIdx[v];
 
-      for (pin=0; pin<numVerts; pin++){
-        if (hn->verts[pin]){
-          ZOLTAN_SET_GID(zz, vgid, *vtx_GID + pin * zz->Num_GID);
-          vgid += zz->Num_LID;
-          v++;
+    for (e=0; e < npins; e++){
+      idx = Zoltan_Hash(egid, numGID, (unsigned int)ht_size);
+      hn = hash_table[idx];
+
+      while (hn){
+        if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
+
+          ZOLTAN_SET_GID(zz,
+             pins + numGID*(hn->firstVert + hn->nextVert),
+             vgid);
+
+          hn->nextVert++;
+          break;
+        }
+        else{
+         hn = hn->next;
         }
       }
-      egid += zz->Num_GID;
-      e++;
-      hn = hn->next;
+
+      egid += numGID;
     }
+    vgid += numGID;
   }
-  p[e] = num_pins;
 
 End:
-  for (idx=0; idx<maxEdges; idx++){
+  for (idx=0; idx<ht_size; idx++){
     hn = hash_table[idx];
     while (hn){
-      ZOLTAN_FREE(&hn->verts);
       tmp = hn;
       hn = hn->next;
       ZOLTAN_FREE(&tmp);
@@ -1400,10 +1425,12 @@ End:
 
   *num_lists = numEdges;
   ZOLTAN_FREE(vtx_GID);
-  *vtx_GID = ccs_vgids;
+  *vtx_GID = pins;
   ZOLTAN_FREE(edg_GID);
-  *edg_GID = ccs_egids;
-  *row_ptr = p;
+  *edg_GID = edges;
+  *row_ptr = vIdx;
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
 
   return ierr;
 }
