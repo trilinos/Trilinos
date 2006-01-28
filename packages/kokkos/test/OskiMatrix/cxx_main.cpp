@@ -26,9 +26,9 @@
 // ************************************************************************
 //@HEADER
 
-#include "Kokkos_DenseMultiVector.hpp"
-#include "Kokkos_DenseVector.hpp"
-#include "Kokkos_HbMatrix.hpp"
+#include "Kokkos_OskiMultiVector.hpp"
+#include "Kokkos_OskiVector.hpp"
+#include "Kokkos_OskiMatrix.hpp"
 #include "Kokkos_Version.hpp"
 #include "GenerateHbProblem.hpp"
 
@@ -43,7 +43,7 @@ int PrintTestResults(string, TYPE, TYPE, bool);
 
 int ReturnCodeCheck(string, int, int, bool);
 
-/*
+
 template<typename OrdinalType, typename ScalarType>
 void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
@@ -63,10 +63,10 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *& b,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
-*/
-typedef MultiVector<OTYPE, STYPE> DMultiVector;
-typedef Vector<OTYPE, STYPE> DVector;
-typedef CisMatrix<OTYPE, STYPE> DHbMatrix;
+
+typedef MultiVector<OTYPE, STYPE> OMultiVector;
+typedef Vector<OTYPE, STYPE> OVector;
+typedef CisMatrix<OTYPE, STYPE> OMatrix;
 
 int main(int argc, char* argv[]) 
 {
@@ -80,10 +80,10 @@ int main(int argc, char* argv[])
   int numberFailedTests = 0;
   string testName = "";
 
-  DHbMatrix * A;
-  DVector * x;
-  DVector * b;
-  DVector * xexact;
+  OMatrix * A;
+  OVector * x;
+  OVector * b;
+  OVector * xexact;
   OTYPE nx = 10;
   OTYPE ny = nx;
   OTYPE npoints = 7;
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
     KokkosTest::GenerateHbProblem<OTYPE, STYPE>
       problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
     
-    if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Classic HbMatrix **********"<<endl<<endl;
+    if (verbose) cout<<endl<<"********** CHECKING KOKKOS  OskiMatrix on a Classic HbMatrix input **********"<<endl<<endl;
     
     // Check output objects
     if (verbose) cout <<"Checking Attribute accessors ";
@@ -186,3 +186,4 @@ int ReturnCodeCheck(string testName, int returnCode, int expectedResult, bool ve
     }
   return result;
 }
+

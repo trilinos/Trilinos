@@ -80,8 +80,8 @@ namespace Kokkos {
     virtual ~OskiMultiVector(){
 
     // **This is causing huge problems, see if "newing" arrays is the problem
-    // Check for mem leaks
-    //if (dataInitialized_) oski_DestroyVecView(x_view_);
+    // Fixed? 
+    if (dataInitialized_) oski_DestroyVecView(x_view_);
     if (isStrided_ && x_view_->num_cols>0) delete [] values_;
     
     };
@@ -155,7 +155,7 @@ namespace Kokkos {
 //    virtual ScalarType ** getValues() const {return(values_);};
     virtual ScalarType ** getValues() const {
 	if (dataInitialized_) return(&(x_view_->val));
-	else return(-1);
+	else return(values_);
     };
 
     //! Returns a pointer to an array of values for the ith column of the multivector.
@@ -233,3 +233,4 @@ namespace Kokkos {
 
 } // namespace Kokkos
 #endif /* KOKKOS_OSKIMULTIVECTOR_HPP */
+

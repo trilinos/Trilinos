@@ -190,6 +190,8 @@ namespace Kokkos {
     //@}
 
   protected:
+    oski_matrix_t A_tunable_;
+
 //remove the ones with a "No" later and replace with OSKI equiv.
     OrdinalType numRows_;//No
     OrdinalType numCols_;//No
@@ -218,43 +220,27 @@ using namespace Kokkos;
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
  OskiMatrix<OrdinalType, ScalarType>::OskiMatrix() 
-  : numRows_(0),
-    numCols_(0),
-    numEntries_(0),
+  : numEntries_(0),
     values_(0),
     allValues_(0),
     indices_(0),
     allIndices_(0),
-    pntr_(0),
     profile_(0),
-    isRowOriented_(true),
-    isUpperTriangular_(false),
-    isLowerTriangular_(false),
-    hasImplicitUnitDiagonal_(false),
-    hasDiagonalEntries_(true),
-    isOskiMatrix_(true)
+    isRowOriented_(true)
 {
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 OskiMatrix<OrdinalType, ScalarType>::OskiMatrix(const OskiMatrix<OrdinalType, ScalarType> &matrix) 
-  : numRows_(matrix.numRows_),
-    numCols_(matrix.numCols_),
-    numEntries_(matrix.numEntries_),
+  : numEntries_(matrix.numEntries_),
     values_(matrix.values_),
     allValues_(matrix.allValues_),
     indices_(matrix.indices_),
     allIndices_(matrix.allIndices_),
-    pntr_(matrix.pntr_),
     profile_(matrix.profile_),
-    isRowOriented_(matrix.isRowOriented_),
-    isUpperTriangular_(matrix.isUpperTriangular_),
-    isLowerTriangular_(matrix.isLowerTriangular_),
-    hasImplicitUnitDiagonal_(matrix.hasImplicitUnitDiagonal_),
-    hasDiagonalEntries_(matrix.hasDiagonalEntries_),
-    isOskiMatrix_(matrix.isOskiMatrix_)
-
+    isRowOriented_(matrix.isRowOriented_)
+    
 {
 }
 
