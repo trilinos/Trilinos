@@ -1345,7 +1345,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Operator_ChangeToSinglePrecision(ml_edges->Pmat+grid_level);
      ML_Operator_Profile(Pe, "edge", profile_its);
-     ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
+     ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level, NULL);
      ML_Operator_ChangeToSinglePrecision(&(ml_edges->Rmat[grid_level+1]));
      ML_memory_check("L%d TransP end",grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);

@@ -36,7 +36,7 @@ extern int ML_Operator_ChangeToChar(ML_Operator *matrix);
 extern int ML_Operator_ImplicitTranspose(ML_Operator *Rmat, 
 					 ML_Operator *Pmat,
 					 int PostCommAlreadySet);
-extern int ML_Gen_Restrictor_TransP(ML *, int, int);
+extern int ML_Gen_Restrictor_TransP(ML *, int, int, ML_Operator*);
 extern int ML_Gen_Prolongator_Getrow(ML *, int , int , int , int ,
             int (*)(void* , int , int *, int , int *, double *, int *),
             int (*)(double *, void*), void *data, int);

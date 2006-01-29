@@ -1252,6 +1252,17 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     Time.ResetStartTime();
 
+    // Added on Jan-06
+    if (List_.get("aggregation: use tentative restriction", false))
+    {
+      agg_->minimizing_energy = -1;
+    }
+
+    if (List_.get("aggregation: symmetrize matrix", false))
+      ml_->symmetrize_matrix = ML_TRUE;
+    else
+      ml_->symmetrize_matrix = ML_FALSE;
+      
     // energy minimization
     if (List_.get("energy minimization: enable", false))
       agg_->minimizing_energy = List_.get("energy minimization: type", 1);
@@ -2683,7 +2694,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
       SetSmoothingDampingClassic();
 
       agg_->Restriction_smoothagg_transpose = ML_FALSE;      
-      //      ml_->symmetrize_matrix == ML_TRUE;
 
     }  else if( DampingType == "classic-use-A" ) {
 

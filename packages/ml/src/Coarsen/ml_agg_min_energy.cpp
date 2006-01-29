@@ -388,7 +388,12 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   if (ag->minimizing_energy != 1) {
     DinvADinvAP0 = ML_Operator_Create(P0->comm);
+    // Ray, please look at this... From the formula on the paper, the first
+    // operator is the non-scaled A... I got better results using `2' with no
+    // scaling at least for one test case...
+    //
     ML_2matmult(Amat, DinvAP0_subset, DinvADinvAP0, ML_CSR_MATRIX);
+    //ML_2matmult(UnscaledAmat, DinvAP0_subset, DinvADinvAP0, ML_CSR_MATRIX);
 
     // Scale result. Note: if Amat corresponds to a scalar PDE, the 
     // point scaling is already incorporated into Amat so there is  
@@ -570,6 +575,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
          << ag->minimizing_energy << ")" << endl;
     cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
          << " (" << zero_all << " zeros out of " << n_0_tot << ")" << endl;
+    cout << endl;
   }
 
   // convert the omega's from column-based to row-based
@@ -656,31 +662,41 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   ML_Operator* Amat = &(ml->Amat[level]); //already created and filled
   prev_P_tentatives = ag->P_tentative; // for keep_P_tentative
   ML_Operator* P0 = prev_P_tentatives[clevel]; // already created and filled
+  ML_Operator* P0_trans = NULL;
+  ML_Operator* P0TA     = NULL;
+  ML_Operator* ttt      = NULL;
+  ML_Operator* Scaled_P0TA = NULL;
 
   double *RowOmega = ag->old_RowOmegas;
+  bool NSR = false; // NonSmoothed Restriction
 
-  ML_Operator* P0_trans = ML_Operator_Create(P0->comm);
-  ML_Operator* P0TA     = ML_Operator_Create(P0->comm);
+  if (NSR) // I just take the transpose of the tentative prolongator and go home
+  {
+    if (ml->comm->ML_mypid == 0)
+      printf("Using non-smoothed restriction\n\n");
 
-  ML_Operator_Transpose_byrow(P0, P0_trans);
-  ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
+    ML_Gen_Restrictor_TransP(ml, level, clevel, P0);
+  }
+  else
+  {
+    P0_trans = ML_Operator_Create(P0->comm);
+    P0TA     = ML_Operator_Create(P0->comm);
 
-  // This code should work just fine, however, it is a bit of a waste
-  // when num_PDEs = 1.
+    ML_Operator_Transpose_byrow(P0, P0_trans);
+    ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
 
-  ML_Operator* ttt = ML_Operator_ImplicitlyBlockDinvScale(Amat);
+    // This code should work just fine, however, it is a bit of a waste
+    // when num_PDEs = 1.
 
-  ML_AGG_DinvP(P0TA, (MLSthing *) ttt->data, Amat->num_PDEs,1,0,Amat);
-  ML_Operator* Scaled_P0TA = 0;
-  Scaled_P0TA = ML_Operator_ImplicitlyVCScale(P0TA, &(RowOmega[0]), 0);
-  ML_Operator_Add(P0_trans,Scaled_P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
+    ttt = ML_Operator_ImplicitlyBlockDinvScale(Amat);
 
-
+    ML_AGG_DinvP(P0TA, (MLSthing *) ttt->data, Amat->num_PDEs,1,0,Amat);
+    Scaled_P0TA = ML_Operator_ImplicitlyVCScale(P0TA, &(RowOmega[0]), 0);
+    ML_Operator_Add(P0_trans,Scaled_P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
+  }
 
   ML_Operator_Set_1Levels(&(ml->Rmat[level]), &(ml->SingleLevel[level]), 
                           &(ml->SingleLevel[clevel]));
-
-
 
   if ( ag->old_RowOmegas != NULL) ML_free(ag->old_RowOmegas);
   ag->old_RowOmegas = NULL;

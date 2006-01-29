@@ -254,7 +254,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
  
       }
       /* end of check */
-      ML_Gen_Restrictor_TransP(ml, level, next);
+      ML_Gen_Restrictor_TransP(ml, level, next, NULL);
       ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
       ML_memory_check("L%d: TransP end",level);
 
@@ -555,10 +555,22 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 
      if ( ml->comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
        for (ii=0; ii<numSmSweeps; ii++)
-         printf("\nProlongator/Restriction smoother (level %d) : damping factor #%d = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n",
-         level, ii+1, dampingFactors[ii]/ max_eigen, level,
-         dampingFactors[ii], max_eigen );
-       printf("\n");
+       {
+         if (ag->minimizing_energy == -1)
+         {
+           printf("\nProlongator smoother (level %d) : damping factor #%d = %e\nProlongator smoother (level %d) : ( = %e / %e)\nNon-smoothed restriction is used.\n",
+                  level, ii+1, dampingFactors[ii]/ max_eigen, level,
+                  dampingFactors[ii], max_eigen );
+         }
+         else
+         {
+           printf("\nProlongator/Restriction smoother (level %d) : damping factor #%d = %e\nProlongator/Restriction smoother (level %d) : ( = %e / %e)\n",
+                  level, ii+1, dampingFactors[ii]/ max_eigen, level,
+                  dampingFactors[ii], max_eigen );
+         }
+         if (ml->symmetrize_matrix == ML_TRUE) printf("Smoothing with A + A^T\n");
+         printf("\n");
+       }
      }
 
      /* Create the prolongator smoother operator, I-omega*inv(D)*A. */
@@ -1871,7 +1883,7 @@ int  ML_Gen_MGHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      if (ag->smoothP_damping_factor != 0.0 ) {
        ML_Operator_Clean(mat);
        ML_Operator_Init(mat,ml->comm);
-       ML_Gen_Restrictor_TransP(ml, old_mesh_level, mesh_level);
+       ML_Gen_Restrictor_TransP(ml, old_mesh_level, mesh_level, NULL);
      }
 
      /* clean and regenerate A */
@@ -2736,6 +2748,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    
    /* Added on Jul-05 */
    switch (ag->minimizing_energy) {
+   case -1:
    case 0:
      ML_AGG_Gen_Prolongator(ml,level,clevel,data);   
      break;
@@ -2790,7 +2803,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
     /* Then, we will have to build a new P based on A.                        */
     /* ********************************************************************** */
 
-    ML_Gen_Restrictor_TransP(ml, level, next);
+    ML_Gen_Restrictor_TransP(ml, level, next, NULL);
 
     /* ********************************************************************** */
     /* Now rebuilt P using the saved tentative guy. We need to compute the    */
@@ -2833,8 +2846,18 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
     
     /* Added on Jul-05 */
     switch (ag->minimizing_energy) {
+    case -1:
+      if (ag->P_tentative == NULL)
+      {
+        fprintf(stderr, "Asked for ag->minimizing_energy == -1, but\n");
+        fprintf(stderr, "the tentative prolongator has not been saved.\n");
+        fprintf(stderr, "(file %d, line %d)\n", __FILE__, __LINE__);
+        exit(EXIT_FAILURE);
+      }
+      ML_Gen_Restrictor_TransP(ml, level, next, ag->P_tentative[next]);
+      break;
     case 0:
-      ML_Gen_Restrictor_TransP(ml, level, next);   
+      ML_Gen_Restrictor_TransP(ml, level, next, NULL);   
       break;
     case 1: /* Z_1 */
     case 2: /* Z_2 */

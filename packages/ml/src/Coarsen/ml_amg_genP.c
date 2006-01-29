@@ -146,7 +146,7 @@ int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
       flag = user_gen_prolongator(ml,level,next,(void*)&(ml->Amat[level]),amg);
       if (flag < 0) break;
 
-      ML_Gen_Restrictor_TransP(ml, level, next);
+      ML_Gen_Restrictor_TransP(ml, level, next, NULL);
 
       if ( ml->comm->ML_mypid == 0 && amg->print_flag < ML_Get_PrintLevel())
          printf("ML_AMG : generate Galerkin coarse matrix \n");

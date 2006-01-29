@@ -266,9 +266,14 @@ printf("we've changed the data pointer ? ....\n");
 /* Take the Prolongator given by ml_handle->Pmat[level2], transpose
  * it and store it into the matrix given by ml_handle->Rmat[level].
  *
+ * Added on Jan-06, MS.
+ * If the operator to transpose is available outside the ml_handle
+ * thing, then one can pass it using Ptent; otherwise set Ptent to NULL
+ * to transpose Pmat = &(ml_handle->Pmat[level2]).
  * -------------------------------------------------------------------- */
 
-int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
+int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2,
+                             ML_Operator* Ptent)
 {
 
    ML_Operator *Pmat, *Rmat;
@@ -286,8 +291,11 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
 
    /* pull out things from ml_handle */
 
+   if (Ptent == NULL) /* this is the default behavior */
+     Pmat  = &(ml_handle->Pmat[level2]);
+   else
+     Pmat  = Ptent;
 
-   Pmat  = &(ml_handle->Pmat[level2]);
    temp = (struct ML_CSR_MSRdata *) Pmat->data;
    Rmat  = &(ml_handle->Rmat[level]);
    isize = Pmat->outvec_leng;

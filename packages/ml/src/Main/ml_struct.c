@@ -6335,7 +6335,7 @@ int ML_build_ggb(ML *ml, void *data)
     
   /* ML_Operator_Print(Pmat, "Pmat"); */
 
-  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
+  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0, NULL);
   /* ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), CSR_densematvec); */
  
 
@@ -6636,7 +6636,7 @@ void ML_build_ggb_cheap(ML *ml, void *data)
     
   /* ML_Operator_Print(Pmat, "Pmat"); */
 
-  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
+  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0, NULL);
 
   /* Define Qtilde */
 
