@@ -2,6 +2,7 @@
 #define PYEPETRA_UTILS_H
 
 #include "Python.h"
+#include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include <vector>
 
