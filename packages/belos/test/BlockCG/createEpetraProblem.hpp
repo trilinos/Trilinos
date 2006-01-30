@@ -37,15 +37,6 @@ class Epetra_MultiVector;
 
 namespace Belos {
 
-class MPIFinalize {
-public:
-  ~MPIFinalize() {
-#ifdef EPETRA_MPI 
-    MPI_Finalize();
-#endif
-  }
-};
-
 int createEpetraProblem(
 			 int                              argc
 			 ,char                            *argv[]
