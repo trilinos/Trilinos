@@ -224,12 +224,6 @@ int main(int argc, char *argv[]) {
     cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
   
-#ifdef EPETRA_MPI
-	
-  MPI_Finalize();
-
-#endif
-
   if (My_Test.GetStatus()!=Belos::Converged) {
 	if (verbose)
       		cout << "End Result: TEST FAILED" << endl;	

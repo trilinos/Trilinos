@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI	
   // Initialize MPI	
   MPI_Init(&argc,&argv); 	
+  Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
 #endif
   //
   using Teuchos::RefCountPtr;
@@ -206,12 +207,6 @@ int main(int argc, char *argv[]) {
   if (verbose) {
     cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
-
-#ifdef EPETRA_MPI
-
-  MPI_Finalize() ;
-
-#endif
 
   if (My_Test.GetStatus()!=Belos::Converged) {
 	if (verbose)
