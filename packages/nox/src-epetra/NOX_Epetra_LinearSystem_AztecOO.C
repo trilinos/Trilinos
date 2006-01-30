@@ -538,6 +538,11 @@ applyJacobianInverse(Parameter::List &p,
 		     const NOX::Epetra::Vector& input, 
 		     NOX::Epetra::Vector& result)
 {
+  // AGS: Rare option, similar to Max Iters=1 but twice as fast.
+    if ( p.getParameter("Use Preconditioner as Solver", false) ) 
+      return applyRightPreconditioning(false, p, input, result);
+
+
   double startTime = timer.WallTime();
 
   // Need non-const version of the input vector
