@@ -26,6 +26,9 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef TPETRA_CRSMATRIX_HPP
+#define TPETRA_CRSMATRIX_HPP
+
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #ifdef TPETRA_MPI
@@ -136,7 +139,7 @@ namespace Tpetra
       //! Returns the number of global matrix rows. 
       inline OrdinalType getNumGlobalRows () const
       {
-        return(RowSpace_.getGlobalElements());
+        return(RowSpace_.getNumGlobalElements());
       }
 
       //! Returns the number of global matrix columns. 
@@ -927,3 +930,4 @@ namespace Tpetra
   }; // class CrsMatrix
 
 } // namespace Tpetra
+#endif
