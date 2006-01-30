@@ -1,6 +1,7 @@
 amesos = \
 --enable-amesos \
---with-ml_amesos 
+--with-ml_amesos \
+--enable-moertel 
 
 anasazi = \
 --enable-anasazi \
@@ -35,10 +36,13 @@ epetra = \
 --enable-belos \
 --enable-claps \
 --enable-epetraext \
+--enable-galeri \
 --enable-ifpack \
 --enable-komplex \
+--enable-meros \
 --enable-ml_epetra \
 --enable-ml_aztecoo \
+--enable-moertel \
 --enable-new_package \
 --enable-nox-epetra \
 --enable-nox-epetra-examples \
@@ -49,7 +53,11 @@ epetra = \
 
 epetraext = \
 --enable-epetraext \
+--enable-moertel \
 --enable-thyra
+
+galeri = \
+--enable-galeri
 
 ifpack = \
 --enable-ifpack \
@@ -69,8 +77,12 @@ meros = \
 
 ml = \
 --enable-ml \
+--enable-moertel \
 --enable-nox \
 --enable-loca
+
+moertel = \
+--enable-moertel
 
 new_package = \
 --enable-new_package
@@ -111,9 +123,11 @@ teuchos = \
 --enable-belos \
 --enable-amesos \
 --with-ml_amesos \
+--enable-moertel \
 --enable-anasazi \
 --with-loca-anasazi \
 --enable-capo \
+--enable-galeri \
 --enable-rythmos \
 --enable-thyra
 
