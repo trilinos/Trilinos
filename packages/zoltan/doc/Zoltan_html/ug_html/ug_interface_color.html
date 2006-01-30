@@ -104,7 +104,7 @@ should be the total number of objects residing on a processor. &nbsp;</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
 
-<td>An array of&nbsp; global IDs of objects to be colored on this processor.
+<td>Upon return, an array of global IDs of objects to be colored on this processor.
 (size = <i>num_obj</i> * <i>num_gid_entries</i>)
 <br>Memory for this array must have been allocated before
 <b>Zoltan_Color </b>is called.</td> 
@@ -113,7 +113,7 @@ should be the total number of objects residing on a processor. &nbsp;</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
 
-<td>[Optional.] An array of local IDs of objects to be colored on this
+<td>[Optional.] Upon return, an array of local IDs of objects to be colored on this
 processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)
 <br>Memory for this array must have been allocated before
 <b>Zoltan_Color </b>is called.</td> 
