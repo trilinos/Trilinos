@@ -568,7 +568,7 @@ namespace Anasazi {
   
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::iterate(const int steps) {
-    int i,temp;
+    int i=0;
     int tempsteps = steps;
     int blk_red_steps = 0;
     //
@@ -645,7 +645,6 @@ namespace Anasazi {
         //
         // Move the pointer and update the iteration count.
         //
-        temp = _maxBlocks-_jstart;
         _iter += blk_red_steps;
         tempsteps -= blk_red_steps;
         _jstart += blk_red_steps;
@@ -770,7 +769,6 @@ namespace Anasazi {
     std::vector<int> index( _blockSize );
     std::vector<MagnitudeType> norm1( _blockSize );
     std::vector<MagnitudeType> norm2( _blockSize );
-    ReturnType ret; 
     //
     // Associate (j+1)-st block of ArnoldiVecs with F_vec.
     //
@@ -824,7 +822,7 @@ namespace Anasazi {
       // Compute trans(V_prev)*B*F_vec and store in the j'th diagonal
       // block of the Hessenberg matrix
       //
-      ret = _problem->InnerProd( *V_prev, *F_vec, dense_mat );
+      _problem->InnerProd( *V_prev, *F_vec, dense_mat );
       //
       // Update the orthogonalization coefficients for the j-th block
       // column of the Hessenberg matrix.
@@ -908,7 +906,6 @@ namespace Anasazi {
     Teuchos::SerialDenseVector<int,ScalarType> dense_vec;
     std::vector<MagnitudeType> norm1(IntOne);
     std::vector<MagnitudeType> norm2(IntOne);
-    ReturnType ret;
     //
     // Place the candidate vectors Vec_in into the (j+1)-st block of ArnoldiVecs.
     //
@@ -971,7 +968,7 @@ namespace Anasazi {
       //
       // Compute trans(Q_vec)*B*q_vec
       //
-      ret = _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
+      _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
       //
       // Sum results [0:num_prev-1] into column (num_prev-_blockSize)
       // of the Hessenberg matrix
@@ -990,7 +987,7 @@ namespace Anasazi {
         //
         // Compute trans(Q_vec)*q_vec
         //
-        ret = _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
+        _problem->InnerProd( *Q_vec, *q_vec, dense_vec );
         //
         // Sum results [0:num_prev-1] into column (num_prev-_blockSize)
         // of the Hessenberg matrix
@@ -1025,7 +1022,7 @@ namespace Anasazi {
         // orthogonalization with a correction step if needed.
         //
         for (int num_orth=0; num_orth<2; num_orth++){
-          ret = _problem->InnerProd( *Q_vec, *tptr, dense_vec );
+          _problem->InnerProd( *Q_vec, *tptr, dense_vec );
           // Note that we don't change the entries of the
           // Hessenberg matrix when we orthogonalize a
           // random vector
@@ -1102,7 +1099,6 @@ namespace Anasazi {
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     bool addvec = false; 
-    ReturnType ret;
     //
     std::vector<MagnitudeType> norm1(IntOne), norm2(IntOne);
     Teuchos::RefCountPtr<MV> qj, Qj, tptr;
@@ -1146,7 +1142,7 @@ namespace Anasazi {
         // j of VecIn against columns 0:j-1 of VecIn. In other words,
         // result = trans(Qj)*B*qj.
         //
-        ret = _problem->InnerProd( *Qj, *qj, rj );
+        _problem->InnerProd( *Qj, *qj, rj );
         //
         // Sum results[0:j-1] into column j of R.
         //
@@ -1162,7 +1158,7 @@ namespace Anasazi {
           //
           // Repeat process with newly computed qj
           //
-          ret = _problem->InnerProd( *Qj, *qj, rj );
+          _problem->InnerProd( *Qj, *qj, rj );
           //
           // Sum results[0:j-1] into column j of R.
           //
@@ -1213,7 +1209,7 @@ namespace Anasazi {
             _problem->MvNorm( *tptr, &norm1 );
             //
             for (int num_orth=0; num_orth<2; num_orth++){
-              ret = _problem->InnerProd( *Qj, *tptr, tj );
+              _problem->InnerProd( *Qj, *tptr, tj );
               MVT::MvTimesMatAddMv( -one, *Qj, tj, one, *tptr );
             }
             _problem->MvNorm( *tptr, &norm2 );
@@ -1937,7 +1933,7 @@ namespace Anasazi {
     }    
 
     Teuchos::SerialDenseMatrix<int,ScalarType> VTV(m,m);
-    ret = _problem->InnerProd( *Vj, *Vj, VTV );
+    _problem->InnerProd( *Vj, *Vj, VTV );
     if (ret != Ok) { }
     ScalarType* ptr=VTV.values();
     ScalarType column_sum;
@@ -1962,7 +1958,7 @@ namespace Anasazi {
     
     Teuchos::SerialDenseMatrix<int,ScalarType> E(m,_blockSize);
     
-    ret = _problem->InnerProd( *Vj, *F_vec, E );
+    _problem->InnerProd( *Vj, *F_vec, E );
     if (ret != Ok) { }
     ScalarType* ptr_Ej=E.values();
     
@@ -2016,31 +2012,6 @@ namespace Anasazi {
       }
     }
   }
-
-  //----------------------------------------------------------------------------------------
-  //----------------------------------------------------------------------------------------
-  /*
-  
-  template < class ScalarType >
-  inline Teuchos::ScalarTraits<ScalarType>::magnitudeType LAPY2(Teuchos::ScalarTraits<ScalarType>::magnitudeType* a, 
-							 Teuchos::ScalarTraits<ScalarType>::magnitudeType* b ) {
-    Teuchos::LAPACK<int,Teuchos::ScalarTraits<ScalarType>::magnitudeType> lapack; 
-    return lapack.LAPY2( a, b );
-  }
-
-  template < class ANSZI_CPLX_CLASS<double> >
-  inline double LAPY2( double* a, double* b ) {
-    return Teuchos::ScalarTraits<double>::magnitude( a );
-  }
-
-  template < class ANSZI_CPLX_CLASS<float> >
-  inline float LAPY2( float* a, float* b ) {
-    return Teuchos::ScalarTraits<float>::magnitude( a );
-  }
-  */
-  //----------------------------------------------------------------------------------------
-  //----------------------------------------------------------------------------------------
-  
 
 } // End of namespace Anasazi
 
