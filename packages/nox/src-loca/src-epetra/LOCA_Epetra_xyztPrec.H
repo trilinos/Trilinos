@@ -126,15 +126,13 @@ private:
   const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
 
   // Objects created in constructor
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys;
-  Teuchos::RefCountPtr<const Epetra_Operator> Asolve;
-  Epetra_CrsMatrix *jacobianBlock;
-  Epetra_CrsMatrix *massBlock;
+  //Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys;
+  std::vector<NOX::Epetra::LinearSystemAztecOO *> linSys;
+  std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> > jacobianBlock;
+  std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> > massBlock;
   Epetra_Vector *splitVec; //tmp space
   Epetra_Vector *splitRes; //tmp space
   Epetra_Vector *splitVecOld; //tmp space
-  Teuchos::RefCountPtr<Epetra_Vector> splitRes_RCP; 
-  Teuchos::RefCountPtr<Epetra_Vector> splitVec_RCP;
   NOX::Epetra::Vector *splitRes_NEV; //view of splitRes
   NOX::Epetra::Vector *splitVec_NEV; //view of splitVec
 

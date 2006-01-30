@@ -56,33 +56,38 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   printParams(precPrintParams_), 
   lsParams(precLSParams_), 
   globalComm(globalComm_),
-  linSys(),
-  jacobianBlock(0),
-  massBlock(0)
+  linSys(std::vector<NOX::Epetra::LinearSystemAztecOO*>(globalComm_->NumTimeStepsOnDomain())),
+  jacobianBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(globalComm_->NumTimeStepsOnDomain())),
+  massBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(globalComm_->NumTimeStepsOnDomain()))
 {
 
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
 
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = 
+    Teuchos::rcp(&((NOX::Epetra::Interface::Required&)*this),false);
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = 
+    Teuchos::rcp(&((NOX::Epetra::Interface::Jacobian&)*this),false);
+
   if (prec == "Global") {
     label = "LOCA::Epetra::xyztPrec::Global";
     cout << "LOCA::Epetra::xyztPrec = Global" << endl;
-    // Create the Linear System
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = 
-      Teuchos::rcp(&((NOX::Epetra::Interface::Required&)*this),false);
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = 
-      Teuchos::rcp(&((NOX::Epetra::Interface::Jacobian&)*this),false);
-    Teuchos::RefCountPtr<Epetra_Operator> A =
-      Teuchos::rcp(&jacobian,false);
-    linSys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
-							iReq, iJac, 
-							A, solution));
 
-    Teuchos::RefCountPtr<const Epetra_Operator> Asolve =
-      Teuchos::rcp(&jacobian,false);
-    linSys->setJacobianOperatorForSolve(Asolve);
+    // Create the Linear System
+    linSys[0] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
+				iReq, iJac, Teuchos::rcp(&jacobian,false), solution);
+
+    linSys[0]->setJacobianOperatorForSolve(Teuchos::rcp(&jacobian,false));
   }
-  else if (prec == "Sequential" || prec == "Parallel") {
+  else if (prec == "SequentialLowMemory" || prec == "ParallelLowMemory" || 
+           prec == "Sequential" || prec == "Parallel") {
+    if (prec == "SequentialLowMemory") {
+      label = "LOCA::Epetra::xyztPrec::SequentialLowMemory";
+      cout << "LOCA::Epetra::xyztPrec = SequentialLowMemory" << endl;
+    }
+    else if (prec == "ParallelLowMemory") {
+      label = "LOCA::Epetra::xyztPrec::ParallelLowMemory";
+      cout << "LOCA::Epetra::xyztPrec = ParallelLowMemory" << endl;
+    }
     if (prec == "Sequential") {
       label = "LOCA::Epetra::xyztPrec::Sequential";
       cout << "LOCA::Epetra::xyztPrec = Sequential" << endl;
@@ -92,38 +97,30 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
       cout << "LOCA::Epetra::xyztPrec = Parallel" << endl;
     }
     
-    // Create the single block jacobian
-    jacobianBlock = new Epetra_CrsMatrix(splitJac);
-    jacobianBlock->PutScalar(0.0);
-    jacobian.ExtractBlock(*jacobianBlock, 0, 0);
-    //cout << "jacobianBlock = \n" << *jacobianBlock << endl;
-
-    // Create the single block jacobian
-    massBlock = new Epetra_CrsMatrix(splitMass);
-    massBlock->PutScalar(0.0);
-    //cout << "jacobianBlock = \n" << *jacobianBlock << endl;
-
-    // Create the Linear System
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = 
-      Teuchos::rcp(&((NOX::Epetra::Interface::Required&)*this),false);
-    Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = 
-      Teuchos::rcp(&((NOX::Epetra::Interface::Jacobian&)*this),false);
-    Teuchos::RefCountPtr<Epetra_Operator> A =
-      Teuchos::rcp(jacobianBlock,false);
-    linSys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
-							iReq, iJac, 
-							A, solution));
-    Asolve = Teuchos::rcp(jacobianBlock,false);
-
     // Create temporary space for Epetra vectors and NOX vies of same space
     splitVecOld = new Epetra_Vector(splitJac.RowMap());
     splitVec = new Epetra_Vector(splitJac.RowMap());
     splitRes = new Epetra_Vector(splitJac.RowMap());
-    splitRes_RCP = Teuchos::rcp(splitRes, false);
-    splitVec_RCP = Teuchos::rcp(splitVec, false);
-    splitRes_NEV = new NOX::Epetra::Vector(splitRes_RCP, NOX::Epetra::Vector::CreateView);
-    splitVec_NEV = new NOX::Epetra::Vector(splitVec_RCP, NOX::Epetra::Vector::CreateView);
+    splitRes_NEV = new NOX::Epetra::Vector(Teuchos::rcp(splitRes, false),
+		                           NOX::Epetra::Vector::CreateView);
+    splitVec_NEV = new NOX::Epetra::Vector(Teuchos::rcp(splitVec, false),
+		                           NOX::Epetra::Vector::CreateView);
+
+    // Create the Linear System
+    int imax = 1;
+    if (prec == "Sequential" || prec == "Parallel") 
+       imax = globalComm->NumTimeStepsOnDomain();
+
+    for (int i=0; i < imax; i++) {
+      jacobianBlock[i] = Teuchos::rcp(new Epetra_CrsMatrix(splitJac));
+      jacobianBlock[i]->PutScalar(0.0);
+      massBlock[i] = Teuchos::rcp(new Epetra_CrsMatrix(splitMass));
+      massBlock[i]->PutScalar(0.0);
+      //jacobian.ExtractBlock(*jacobianBlock[i], 0, 0);
+      linSys[i] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
+			iReq, iJac, jacobianBlock[i], solution);
+    }
+	
   }
   else if (prec == "None") {
     label = "LOCA::Epetra::xyztPrec::None";
@@ -140,14 +137,22 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 LOCA::Epetra::xyztPrec::
 ~xyztPrec()
 {
-  if (jacobianBlock) delete jacobianBlock;
-  if (massBlock) delete massBlock;
   if (splitVec) delete splitVec;
-  if (splitRes) delete massBlock;
+  if (splitRes) delete splitRes;
   if (splitVecOld) delete splitVecOld;
   if (splitRes_NEV) delete splitRes_NEV;
   if (splitVec_NEV) delete splitVec_NEV;
-  if (linSys != Teuchos::null) linSys->destroyPreconditioner();
+
+  string prec = lsParams.getParameter("XYZTPreconditioner","None");
+
+  int imax=1;
+  if (prec == "Sequential" || prec == "Parallel") 
+     imax =  globalComm->NumTimeStepsOnDomain();
+
+  for (int i=0; i < imax; i++) {
+    linSys[i]->destroyPreconditioner();
+    delete linSys[i];
+  }
 }
 
 
@@ -172,7 +177,7 @@ int LOCA::Epetra::xyztPrec::
 ApplyInverse(const Epetra_MultiVector& input,
 	     Epetra_MultiVector& result) const
 {
-	static int count=0;
+
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
   
   if (prec == "None") {
@@ -181,16 +186,82 @@ ApplyInverse(const Epetra_MultiVector& input,
   
   if (prec == "Global") {
     // create NOX vectors as views of input and results vectors 
-    const Teuchos::RefCountPtr<Epetra_Vector> input_RCP =
-      Teuchos::rcp( const_cast<Epetra_Vector*>(input(0)), false);
-    Teuchos::RefCountPtr<Epetra_Vector> result_RCP = Teuchos::rcp(result(0), false);
-    const NOX::Epetra::Vector input_NEV(input_RCP, NOX::Epetra::Vector::CreateView);
-    NOX::Epetra::Vector result_NEV(result_RCP, NOX::Epetra::Vector::CreateView);
+    const NOX::Epetra::Vector input_NEV(Teuchos::rcp( const_cast<Epetra_Vector*>(input(0)), false),
+		                        NOX::Epetra::Vector::CreateView);
+    NOX::Epetra::Vector result_NEV(Teuchos::rcp(result(0), false), NOX::Epetra::Vector::CreateView);
     
     // apply preconditioner as specified in lsParams
-    bool stat = linSys->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
+    bool stat = linSys[0]->applyRightPreconditioning(false, lsParams, input_NEV, result_NEV);
 
     //    return (stat) ? 0 : 1;
+  }    
+  else if (prec == "SequentialLowMemory" || prec == "ParallelLowMemory") {
+    
+    // residual needs to be in BlockVector and contain values from input
+    EpetraExt::BlockVector residual(solution);    // inherit offsets from solution
+    residual.Epetra_Vector::operator=(*input(0));  // populate with input values
+    
+    // Set up loop logic for SequentialLowMemory (block Gauss Seydel over time domains)
+    // or parallel (Jacobi by time domains)
+    int sequentialDomains, innerCheck;
+    if (prec=="SequentialLowMemory") {
+      sequentialDomains = globalComm->NumSubDomains();
+      innerCheck = globalComm->SubDomainRank();
+    }
+    else if (prec=="ParallelLowMemory") {
+      sequentialDomains = 1;
+      innerCheck = 0;  
+      //In General:  innerCheck = globalComm->SubDomainRank() % sequentialDomains;
+    }
+    
+    for (int isd=0; isd < sequentialDomains; isd++) {
+      
+      // Communicate data from other time domains into overlapped vector
+      // This serves as a barrier as well.
+      solutionOverlap.Import(solution, overlapImporter, Insert);
+      
+      //Work only on active time domain
+      if ( isd == innerCheck ) {
+	
+	for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
+	  bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
+	  // Extract jacobian block to use in solve
+	  //   diagonal is column 0 on first step, colum one on all other)
+	  if (isFirstGlobalTimeStep)
+	    jacobian.ExtractBlock(*jacobianBlock[0], 0, 0);
+	  else
+	    jacobian.ExtractBlock(*jacobianBlock[0], i, 1);
+	  linSys[0]->setJacobianOperatorForSolve(jacobianBlock[0]);
+	  
+	  // get x and residual (r) corresponding to current block
+	  residual.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+	  solution.ExtractBlockValues(*splitVec, jacobian.RowIndex(i));
+
+	  // Create a new preconditioner for the single block
+	  linSys[0]->destroyPreconditioner();
+	  linSys[0]->createPreconditioner(*splitVec, lsParams, false);
+	  
+	  if (!isFirstGlobalTimeStep)  {
+	    // update RHS with mass matrix * solution from previous time step 
+	    // (which will be from previous time domain if i==0)
+	    if (i==0) 
+	      solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	    else      
+	      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	    jacobian.ExtractBlock(*massBlock[0], i, 0);
+	    massBlock[0]->Multiply(false, *splitVecOld, *splitVec);
+	    splitRes->Update(-1.0, *splitVec, 1.0);
+	  }	
+	  
+	  // solve the problem, and put solution into slution vector
+	  bool stat = linSys[0]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
+	  
+	}
+      }
+    }
+    
+    result = solution;
   }    
   else if (prec == "Sequential" || prec == "Parallel") {
     
@@ -198,7 +269,7 @@ ApplyInverse(const Epetra_MultiVector& input,
     EpetraExt::BlockVector residual(solution);    // inherit offsets from solution
     residual.Epetra_Vector::operator=(*input(0));  // populate with input values
     
-    // Set up loop logic for Sequential (block Gauss Seydel over time domains)
+    // Set up loop logic for SequentialLowMemory (block Gauss Seydel over time domains)
     // or parallel (Jacobi by time domains)
     int sequentialDomains, innerCheck;
     if (prec=="Sequential") {
@@ -221,39 +292,30 @@ ApplyInverse(const Epetra_MultiVector& input,
       if ( isd == innerCheck ) {
 	
 	for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
-	  // Extract jacobian block to use in solve
-	  //   diagonal is column 0 on first step, colum one on all other)
-	  if (globalComm->FirstTimeStepOnDomain() + i == 0)
-	    jacobian.ExtractBlock(*jacobianBlock, 0, 0);
-	  else
-	    jacobian.ExtractBlock(*jacobianBlock, i, 1);
-	  linSys->setJacobianOperatorForSolve(Asolve);
+
+	  bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
+
+	  // This line is needed or else Aztec error -11
+	  linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
 	  
 	  // get x and residual (r) corresponding to current block
 	  residual.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
 	  solution.ExtractBlockValues(*splitVec, jacobian.RowIndex(i));
 
-	  // Create a new preconditioner for the single block
-	  linSys->destroyPreconditioner();
-	  linSys->createPreconditioner(*splitVec, lsParams, false);
-	  
-	  int blockRowOld = jacobian.RowIndex(i) - 1;  //Hardwired for -1 in stencil
-	  if (blockRowOld >= 0)  {
+	  if (!isFirstGlobalTimeStep)  {
 	    // update RHS with mass matrix * solution from previous time step 
 	    // (which will be from previous time domain if i==0)
 	    if (i==0) 
 	      solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
 	    else      
 	      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
-	    jacobian.ExtractBlock(*massBlock, i, 0);
-	    massBlock->Multiply(false, *splitVecOld, *splitVec);
+	    massBlock[i]->Multiply(false, *splitVecOld, *splitVec);
 	    splitRes->Update(-1.0, *splitVec, 1.0);
 	  }	
 	  
 	  // solve the problem, and put solution into slution vector
-	  bool stat = linSys->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+	  bool stat = linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
 	  solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
-	  
 	}
       }
     }
@@ -339,21 +401,32 @@ computePreconditioner(const Epetra_Vector& x,
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
   if (prec == "Global") {
     cout << "Global Preconditioner" << endl;
-    linSys->destroyPreconditioner();
-    linSys->createPreconditioner(x, lsParams, false);
+    linSys[0]->destroyPreconditioner();
+    linSys[0]->createPreconditioner(x, lsParams, false);
     return true;
   }    
-  else if (prec == "Sequential") {
-    cout << "Sequential Preconditioner" << endl;
-    // The next two lines should be performed for each block in ApplyInverse
-    //linSys->destroyPreconditioner();
-    //linSys->createPreconditioner(x, lsParams, false);
+  else if (prec == "SequentialLowMemory") {
+    cout << "SequentialLowMemory Preconditioner" << endl;
     return true;
   }    
-  else if (prec == "Parallell") {
-    cout << "Parallel Preconditioner" << endl;
+  else if (prec == "ParallelLowMemory") {
+    cout << "ParallelLowMemory Preconditioner" << endl;
     return true;
   }    
+  else if (prec == "Sequential"  || prec == "Parallel") {
+    for (int i=0; i< globalComm->NumTimeStepsOnDomain(); i++ ) {
+      if (globalComm->FirstTimeStepOnDomain() + i == 0)
+        jacobian.ExtractBlock(*jacobianBlock[i], 0, 0);
+      else {
+        jacobian.ExtractBlock(*jacobianBlock[i], i, 1);
+        jacobian.ExtractBlock(*massBlock[i], i, 0);
+      }
+      //is following line needed???
+      linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
+      linSys[i]->destroyPreconditioner();
+      linSys[i]->createPreconditioner(x, lsParams, false);
+    }
+  }
   else {
     cout << "No Preconditioner" << endl;
     return true;
