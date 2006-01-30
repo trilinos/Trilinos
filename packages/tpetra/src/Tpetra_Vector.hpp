@@ -92,7 +92,8 @@ namespace Tpetra {
 		}
   
 		//! Set object values from user array. Throws an exception if an incorrect number of entries are specified.
-		Vector(ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
+                // MS: added a `const' qualifier
+		Vector(const ScalarType* vectorEntries, OrdinalType numEntries, VectorSpace<OrdinalType, ScalarType> const& VectorSpace)
 			: DistObject<OrdinalType, ScalarType>(VectorSpace.elementSpace(), 
 												  VectorSpace.platform().createScalarComm(),
 												  "Tpetra::Vector")
@@ -311,7 +312,11 @@ namespace Tpetra {
 			// add up squares of entries
 			ScalarType localSum = Teuchos::ScalarTraits<ScalarType>::zero();
 			for(OrdinalType i = ordinalZero; i < length; i++)
-				localSum += scalarArray()[i] * scalarArray()[i];
+                                // the general (complex) case requires the
+                                // conjugate of the first term, which is not
+                                // needed for real numbers.
+				//localSum += scalarArray()[i] * scalarArray()[i];
+                                localSum += Teuchos::ScalarTraits<ScalarType>::conjugate(scalarArray()[i]) * scalarArray()[i];
 		
 			// calculate global sum
 			ScalarType globalSum;
