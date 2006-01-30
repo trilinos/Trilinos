@@ -1,58 +1,59 @@
 #reddish.sandia.gov
 #PGI 6.0 cross for Red Storm:
-#module load compilers/pgi PrgEnv
-module load PrgEnv
-#  cd /projects/alegra/rrdrake/TPL/trilinos/5.0/build/opt_storm && /projects/alegra/rrdrake/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
-../configure \
-        --prefix=/projects/alegra/rrdrake/TPL/trilinos/5.0/build/opt_storm \
-        --host=i686-intel-linux \
-        --enable-nox-epetra \
-        --enable-aztecoo-azlu \
-        --enable-amesos \
-        --without-ml_superlu \
-        --without-ml_zoltan \
-	--enable-teuchos \
-        --enable-triutils \
-         --enable-anasazi \
-        --enable-epetraext-transform \
-        --disable-ml_enrich \
-        --disable-dependency-tracking \
-        --with-blas="-L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
-        --with-lapack="-L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/projects/alegra/rrdrake/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
-        --with-incdirs="-I/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU/SRC" \
-        --with-ldflags="-L/projects/alegra/rrdrake/TPL/trilinos/5.0/y12m -L/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU" \
-        --with-libs="-ly12m -L/dev/null" \
-        --enable-mpi \
-        --with-mpi-libs="" CXXCPP="CC -tp k8-64 -fast -E" \
-        CC="cc -tp k8-64 -fast" \
-        CXX="CC -tp k8-64 -fast" \
-        F77="ftn -tp k8-64 -fast" \
-        CPPFLAGS="-DCODE_MP -DMPICH_SKIP_MPICXX -DLC_FLINK -DNDEBUG -I/projects/alegra/rrdrake/TPL/zoltan/1.54/include -I/projects/alegra/rrdrake/TPL/trilinos/5.0/DSuperLU/SRC" \
-        CFLAGS="" \
-        CXXFLAGS="" \
-        FFLAGS="" \
-        LDFLAGS=" "  FLIBS="-lpapi -lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl -lpgc -lm -lcatamount -lsysio -lportals -lC -lcrtend" \
-        --with-ar="ar rcv" \
+source /opt/modules/default/init/bash
+module load PrgEnv-pgi
+../configure --cache-file=config.cache --host=i686-intel-linux \
+--enable-nox-epetra \
+--enable-aztecoo-azlu \
 --enable-aztecoo \
---enable-belos \
---enable-capo \
---enable-claps \
---enable-didasko \
+--enable-amesos \
 --enable-epetra \
 --enable-epetraext \
 --enable-ifpack \
+--enable-loca \
+--enable-nox \
+--enable-new_package \
+--without-ml_superlu \
+--enable-ml \
+--with-ml_zoltan \
+--with-ml_parmetis3x \
+--enable-teuchos \
+--enable-triutils \
+--enable-anasazi \
+--enable-epetraext-transform \
+--disable-default-packages \
+--disable-examples \
+--disable-ml-tests \
+--disable-ml_enrich \
+--disable-dependency-tracking \
+--with-blas="-L/home/jmwille/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/home/jmwille/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
+--with-lapack="-L/home/jmwille/TPL/lapackblas/3.0/lib/opt_storm -llapack -L/home/jmwille/TPL/lapackblas/3.0/lib/opt_storm -lblas" \
+--with-incdirs="-I/home/jmwille/TPL/superlu/1.1/include" \
+--with-ldflags="-L/home/jmwille/TPL/y12m/1.0/lib/opt_storm \
+-ly12m -L/home/jmwille/TPL/superlu/1.1/lib/opt_storm -lsuperlu" \
+--with-libs="-L/dev/null" --enable-mpi --with-mpi-incdir="" \
+--with-mpi-libdir="" --with-mpi-libs="" \
+CC="cc -tp k8-64 -fast" \
+CXX="CC -tp k8-64 -fast" \
+F77="ftn -tp k8-64 -fast" \
+CPPFLAGS="-DMPICH_SKIP_MPICXX -DNDEBUG -I/home/jmwille/TPL/superlu/1.1/include -I/home/jmwille/TPL/zoltan/1.56/include -I/home/jmwille/TPL/parmetis/3.1/include" \
+CFLAGS="" CXXFLAGS="" FFLAGS="" LDFLAGS=" " \
+FLIBS="-lpgf90 -lpgf90_rpm1 -lpgf902 -lpgf90rtl -lpgftnrtl" \
+        --with-ar="ar rcv" \
+--enable-claps \
+--enable-didasko \
 --enable-kokkos \
 --enable-komplex \
---enable-loca \
---enable-meros \
---enable-ml \
---enable-new-package \
---enable-nox \
 --enable-pliris \
---enable-rythmos \
 --enable-thyra \
---enable-tpetra \
 --enable-teuchos-complex \
---enable-tsfextended \
---disable-default-packages
+--enable-capo \
+--enable-meros \
+--enable-rythmos \
+--enable-moocho \
+--enable-tpetra \
+--enable-moertel \
+--enable-galeri \
+--disable-amesos-thyra \
+--disable-aztecoo-thyra
 

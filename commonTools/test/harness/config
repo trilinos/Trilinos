@@ -193,7 +193,7 @@ RUN (redstormXcompile-nightly-mpi) {
     BUILD-ONLY          = YES;
 #    MPI-START           = lamboot;
 #    MPI-STOP            = lamhalt;
-    TTR-DIR             = /localhome/jmwille/TrilinosTestHarness/TrilinosTestResults;
+    TTR-DIR             = /projects/trilinos/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
                                                                                                      
 }
