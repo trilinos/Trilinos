@@ -68,7 +68,12 @@ Planned features currently not supported:<br>
   <li>Multiconstraint partitioning </li>
   <li>2-dimensional (sparse matrix) partitioning </li>
 </ul>
-&nbsp;
+<p>
+For applications that already use Zoltan to do graph partitioning, it is
+fairly easy to upgrade to hypergraph partitioning. See the section
+<a href="ug_graph_vs_hg.html">graph vs. hypergraph</a> partitioning. 
+</p>
+
 <table nosave="" width="100%">
   <tbody>
     <tr>
@@ -100,6 +105,20 @@ PHG_OUTPUT_LEVEL</span><br>
       </td>
       <td style="vertical-align: top;">Print stats about final
 partitioning? (0/1)<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_NPROC_VERTEX</span><br>
+      </td>
+      <td style="vertical-align: top;">Desired number of processes in the vertex direction (for 2D internal layout)
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_NPROC_HEDGE</span><br>
+      </td>
+      <td style="vertical-align: top;">Desired number of processes in the hyperedge direction (for 2D internal layout)
       </td>
     </tr>
     <tr>
@@ -386,6 +405,7 @@ pair</td>
     </tr>
 </table>
 <p>
+It is possible to provide the graph query functions instead of the hypergraph queries, though this is not recommended. If only graph query functions are registered, Zoltan will automatically create a hypergraph from the graph, but some information (specifically, edge weights) will be lost. 
 </p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
  href="ug_alg_jostle.html">Next:&nbsp;
