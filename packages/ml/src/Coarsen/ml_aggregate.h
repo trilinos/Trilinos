@@ -99,6 +99,7 @@ typedef struct ML_Aggregate_Struct
 /*mgee*/
   void  *vblock_data;                 /**< holds data structure aggr_vblock */
   int minimizing_energy; 
+  double minimizing_energy_droptol;    
   double   *old_RowOmegas;
 
 } ML_Aggregate;

@@ -182,7 +182,8 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     NodeMatrix_ = NULL;
   }
   
-  // stick data in OutputList
+  // stick data in OutputList. Note that ApplicationTime_ does not include the
+  // time for the first application.
 
   OutputList_.set("time: total", FirstApplicationTime_+ApplicationTime_);
 
@@ -1261,6 +1262,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     if (List_.get("energy minimization: enable", false))
       agg_->minimizing_energy = List_.get("energy minimization: type", 1);
 
+    agg_->minimizing_energy_droptol = List_.get("energy minimization: droptol", 0.0);
+
     NumLevels_ = 
       ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 
@@ -2011,9 +2014,8 @@ ApplyInverse(const Epetra_MultiVector& X,
 #ifdef ML_MALLOC
     This->memory_[ML_MEM_PREC_OTHER_MALLOC] = before_malloc - after_malloc;
 #endif
+    This->ApplicationTime_ += t;
   }
-  
-  This->ApplicationTime_ += t;
   
   ++(This->NumApplications_);
 
