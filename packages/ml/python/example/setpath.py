@@ -46,6 +46,9 @@ fullPath   = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
 epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
                                            "python", "src", "build", libDir,
                                            "PyTrilinos"))
+epetraextPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetraext",
+                                           "python", "src", "build", libDir,
+                                           "PyTrilinos"))
 galeriPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "galeri",
                                              "python", "src", "build", libDir,
                                              "PyTrilinos"))
@@ -59,6 +62,8 @@ if fullPath:
     sys.path.insert(0,fullPath)
 if epetraPath:
     sys.path.insert(1,epetraPath)
+if epetraextPath:
+    sys.path.insert(1,epetraextPath)
 if galeriPath:
     sys.path.insert(2,galeriPath)
 if aztecooPath:
