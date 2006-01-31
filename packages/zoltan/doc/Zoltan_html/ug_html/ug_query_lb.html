@@ -1732,7 +1732,8 @@ application will supply the sparse matrix, how many rows or columns
 there will be, and how many pins.  The actual sparse matrix is supplied
 with a query function of the type
 <b><a href="#ZOLTAN_HG_CS_FN">ZOLTAN_HG_CS_FN_TYPE</a></b>.
-It is required by all applications using the hypergraph methods
+<br> <br>
+This query function required by all applications using the hypergraph methods
 of Zoltan (unless they are using the
 <a href="#Graph-based Functions">graph-based</a>
 functions with hypergraph code instead).
@@ -1813,13 +1814,13 @@ a hypergraph, represented as a sparse matrix.  The size and format
 of the data to be returned must have been supplied to Zoltan using a
 <b><a href="#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN_TYPE</a></b>
 function.
-<br> 
+<br> <br>
 When a hypergraph is distributed across multiple processes, Zoltan
 expects that all processes share a consistent global numbering
 scheme for hyperedges (rows) and vertices (columns).  Also, no two
 processes should return the same pin (matrix non-zero) in this
 query function.
-<br>
+<br> <br>
 This query function 
 is required by all applications using the hypergraph methods
 of Zoltan (unless they are using the
@@ -1966,7 +1967,7 @@ with the <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>
 parameter.  The actual edge weights will be supplied with a 
 <b><a href="#ZOLTAN_HG_EDGE_WEIGHTS_FN">ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE</a></b>
 function.
-<br>
+<br> <br>
 This query function is not required.  If no hyperedge weights are
 supplied, Zoltan will assume every hyperedge has weight 1.0.
 
@@ -2036,7 +2037,7 @@ same hyperedge, the different edge weights will be resolved according
 to the value of the
 <a href="ug_alg_phg.html#PHG_EDGE_WEIGHT_OPERATION">PHG_EDGE_WEIGHT_OPERATION</a> 
 parameter.
-<br>
+<br><br>
 This query function is not required.  If no hyperedge weights are
 supplied, Zoltan will assume every hyperedge has weight 1.0.
 
