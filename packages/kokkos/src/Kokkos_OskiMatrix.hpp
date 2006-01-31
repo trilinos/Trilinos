@@ -27,6 +27,9 @@
 //@HEADER
 
 // Author: Jim Willenbring jmwille@sandia.gov 08-12-2005
+// ** should be able to use an OSKI matrix as a classic HB matrix
+// ** Users can potentially extract the pointers they need, might be nice
+// to have an "is a" relationship eventually.
 
 #ifndef KOKKOS_OSKIMATRIX_HPP
 #define KOKKOS_OSKIMATRIX_HPP
@@ -164,7 +167,7 @@ namespace Kokkos {
     //@{ \name Matrix Attribute access methods.
 	
     //! Returns true if the compressed index matrix was formed using an OSKI CSR or CSC matrix.
-    bool getIsOskiMatrix() const {return(isOskiMatrix_);};
+//    bool getIsOskiMatrix() const {return(isOskiMatrix_);};
 	
     //! Returns true if the compressed index matrix should be interpreted as a row matrix.
     bool getIsRowOriented() const {return(isRowOriented_);};
@@ -191,20 +194,21 @@ namespace Kokkos {
 
   protected:
     oski_matrix_t A_tunable_;
+    bool dataInitialized_;
 
 //remove the ones with a "No" later and replace with OSKI equiv.
     OrdinalType numRows_;//No
     OrdinalType numCols_;//No
     OrdinalType numEntries_;//Yes?
 
-    ScalarType ** values_;//Yes
+    //ScalarType ** values_;//Yes
     ScalarType * allValues_;//Yes
 
     OrdinalType ** indices_;//Yes?
     OrdinalType * allIndices_;//Yes?
 
     OrdinalType * pntr_;//No
-    OrdinalType * profile_;//Yes?
+    //OrdinalType * profile_;//Yes?
     bool isRowOriented_;//Yes?
     mutable bool isUpperTriangular_;//No?
     mutable bool isLowerTriangular_;//No?
@@ -220,40 +224,59 @@ using namespace Kokkos;
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
  OskiMatrix<OrdinalType, ScalarType>::OskiMatrix() 
-  : numEntries_(0),
-    values_(0),
+  : numRows_(0),
+    numCols_(0),
+    numEntries_(0),
+    //values_(0),
     allValues_(0),
-    indices_(0),
+    //indices_(0),
     allIndices_(0),
-    profile_(0),
-    isRowOriented_(true)
+    pntr_(0),
+    //profile_(0),
+    isRowOriented_(true),
+    isUpperTriangular_(false),
+    isLowerTriangular_(false),
+    hasImplicitUnitDiagonal_(false),
+    hasDiagonalEntries_(true),
+    dataInitialized_(false)
 {
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 OskiMatrix<OrdinalType, ScalarType>::OskiMatrix(const OskiMatrix<OrdinalType, ScalarType> &matrix) 
-  : numEntries_(matrix.numEntries_),
-    values_(matrix.values_),
+  : numRows_(matrix.numRows_),
+    numCols_(matrix.numCols_),
+    numEntries_(matrix.numEntries_),
+    //values_(matrix.values_),
     allValues_(matrix.allValues_),
     indices_(matrix.indices_),
     allIndices_(matrix.allIndices_),
-    profile_(matrix.profile_),
-    isRowOriented_(matrix.isRowOriented_)
-    
+    pntr_(matrix.pntr_),
+    //profile_(matrix.profile_),
+    isRowOriented_(matrix.isRowOriented_),
+    isUpperTriangular_(matrix.isUpperTriangular_),
+    isLowerTriangular_(matrix.isLowerTriangular_),
+    hasImplicitUnitDiagonal_(matrix.hasImplicitUnitDiagonal_),
+    hasDiagonalEntries_(matrix.hasDiagonalEntries_),
+    dataInitialized_(matrix.dataInitialized_)
 {
+    if (dataInitialized_) 
+      A_tunable_ = oski_CopyMat(matrix.A_tunable_);
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-OskiMatrix<OrdinalType, ScalarType>::~OskiMatrix(){}
+OskiMatrix<OrdinalType, ScalarType>::~OskiMatrix(){
+    if (dataInitialized_) oski_DestroyMat(A_tunable_);
+}
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 int OskiMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
 							   OrdinalType * pntr, OrdinalType * indx) { 
-  // Oski version
-
+  
+  if (dataInitialized_) return(-1);
   numRows_ = numRows;
   numCols_ = numCols;
   isRowOriented_ = isRowOriented;
@@ -264,22 +287,28 @@ int OskiMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows
   if (isRowOriented_) numEntries_ = pntr_[numRows_];
   else numEntries_ = pntr_[numCols_];
   
-  isOskiMatrix_ = true;
+  //isOskiMatrix_ = true;//eventually this should be removed
   return(0);
 }
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 int OskiMatrix<OrdinalType, ScalarType>::initializeValues(ScalarType * values) { 
-  // Oskversion
-
-  if (!isOskiMatrix_) return(-1); // initialization methods must match
+  //if (!isOskiMatrix_) return(-1); // initialization methods must match
+  if (dataInitialized_) return(-1);//Cannot reinitialize values using this 
+					// method at this time
 
   allValues_ = values;
-  
+  //OSKI Matrix constructor
+  if (isRowOriented_)
+    A_tunable_ = oski_CreateMatCSR(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,1,INDEX_ZERO_BASED);//**Zero based only for now
+  else
+    A_tunable_ = oski_CreateMatCSC(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,1,INDEX_ZERO_BASED);//**Zero based only for now
+
+  dataInitialized_ = true;
   return(0);
 }
-
+/* We aren't able to support general hb format at this time
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 int OskiMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
@@ -315,20 +344,20 @@ int OskiMatrix<OrdinalType, ScalarType>::initializeValues(ScalarType ** values) 
   
   return(0);
 }
-
+*/
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
 int OskiMatrix<OrdinalType, ScalarType>::getIndices(OrdinalType i, OrdinalType & numRowEntries, OrdinalType *& indices) const { 
   // Oski version
   
-  if (isOskiMatrix_) {
+//  if (isOskiMatrix_) {
     numRowEntries = pntr_[i+1] - pntr_[i];
     indices = allIndices_ + pntr_[i];
-  }
-  else {
-    numRowEntries = profile_[i];
-    indices = indices_[i];
-  }
+//  }
+//  else {
+//    numRowEntries = profile_[i];
+//    indices = indices_[i];
+//  }
 
   if (numRowEntries==0) return(1); // Warning, no nonzeros in this row/column
   if (numRowEntries<0) return(-1); // Fatal, nonsense data
@@ -344,14 +373,14 @@ int OskiMatrix<OrdinalType, ScalarType>::getValues(OrdinalType i, ScalarType *& 
   // Oski version
   
   OrdinalType numRowEntries;
-  if (isOskiMatrix_) {
+//  if (isOskiMatrix_) {
     numRowEntries = pntr_[i+1] - pntr_[i];
     values = allValues_ + pntr_[i];
-  }
-  else {
-    numRowEntries = profile_[i];
-    values = values_[i];
-  }
+//  }
+//  else {
+//    numRowEntries = profile_[i];
+//    values = values_[i];
+//  }
 
   if (numRowEntries==0) return(1); // Warning, no nonzeros in this row/column
   if (numRowEntries<0) return(-1); // Fatal, nonsense data
@@ -359,7 +388,6 @@ int OskiMatrix<OrdinalType, ScalarType>::getValues(OrdinalType i, ScalarType *& 
   
   return(0);
 }
-
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
@@ -371,7 +399,7 @@ int OskiMatrix<OrdinalType, ScalarType>::checkStructure() const {
   int numOuter = numCols_;
   if (isRowOriented_) numOuter = numRows_;
 
-  if (isClassicHbMatrix_) {
+//  if (isClassicHbMatrix_) {
     for (OrdinalType i=0; i< numOuter; i++) {
       OrdinalType j0 = pntr_[i];
       OrdinalType j1 = pntr_[i+1];
@@ -382,19 +410,19 @@ int OskiMatrix<OrdinalType, ScalarType>::checkStructure() const {
 	if (i==j) noDiag = false;
       }
     } 
-  }
-  else {
-    for (OrdinalType i=0; i< numOuter; i++) {
-      OrdinalType * curIndices = indices_[i];
-      OrdinalType j1 = pntr_[i+1];
-      for (OrdinalType jj=0; jj<j1; jj++) {
-	OrdinalType j = curIndices[jj];
-	if (i<j) isUpper = false;
-	if (i>j) isLower = false;
-	if (i==j) noDiag = false;
-      }
-    } 
-  }
+//  }
+//  else {
+//    for (OrdinalType i=0; i< numOuter; i++) {
+//      OrdinalType * curIndices = indices_[i];
+//      OrdinalType j1 = pntr_[i+1];
+//      for (OrdinalType jj=0; jj<j1; jj++) {
+//	OrdinalType j = curIndices[jj];
+//	if (i<j) isUpper = false;
+//	if (i>j) isLower = false;
+//	if (i==j) noDiag = false;
+//      }
+//    } 
+//  }
   int ierr = 0;
   // Test the values of upper, lower, and noDiag and make sure they are compatible with user-asserted values
 

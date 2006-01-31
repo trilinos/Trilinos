@@ -66,14 +66,16 @@ namespace Kokkos {
       values_(source.values_),
       allValues_(source.allValues_),
       isStrided_(source.isStrided_) { 
-      x_view_ = oski_CopyVecView(source.x_view_);
+      if (dataInitialized_) {
+	x_view_ = oski_CopyVecView(source.x_view_);
 	// Look at this piece -  is it necessary?
-    OrdinalType numCols = x_view_->num_cols;
-    if (isStrided_ &&  numCols>0) {
-      ScalarType ** tmpValues = new ScalarType*[numCols];
-      for (OrdinalType i=0;i<numCols; i++) tmpValues[i] = values_[i];
-      values_ = tmpValues;
-    }
+        OrdinalType numCols = x_view_->num_cols;
+        if (isStrided_ &&  numCols>0) {
+          ScalarType ** tmpValues = new ScalarType*[numCols];
+          for (OrdinalType i=0;i<numCols; i++) tmpValues[i] = values_[i];
+          values_ = tmpValues;
+        }
+      }
 };
 
     //! OskiMultiVector Destructor
