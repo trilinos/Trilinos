@@ -31,6 +31,7 @@ CORE_H = \
 	$(srcdir)/BelosTypes.hpp
 
 CORE = \
+	$(srcdir)/BelosEpetraAdapter.cpp \
 	$(srcdir)/BelosEpetraOperator.cpp
 
 
