@@ -1131,9 +1131,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // ====================================================================== //
      
   if (SolvingMaxwell_ == false) {
-    bool UseSymmetrize = false;
-    UseSymmetrize = List_.get("aggregation: symmetrize",
-                  UseSymmetrize);
+    bool UseSymmetrize = List_.get("aggregation: symmetrize", false);
     if (UseSymmetrize == true) ML_Set_Symmetrize(ml_, ML_YES);
     else                       ML_Set_Symmetrize(ml_, ML_NO);  
   }
@@ -1144,7 +1142,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // ====================================================================== //
 
   if( SolvingMaxwell_ == false ) {
-    ML_CHK_ERR(SetSmoothingDamping());
+    if (!List_.get("energy minimization: enable", false))
+      ML_CHK_ERR(SetSmoothingDamping());
   }
   else 
     // FIXME check this!!!!! 4/29/05
@@ -1258,11 +1257,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
       agg_->minimizing_energy = -1;
     }
 
-    if (List_.get("aggregation: symmetrize matrix", false))
-      ml_->symmetrize_matrix = ML_TRUE;
-    else
-      ml_->symmetrize_matrix = ML_FALSE;
-      
     // energy minimization
     if (List_.get("energy minimization: enable", false))
       agg_->minimizing_energy = List_.get("energy minimization: type", 1);
