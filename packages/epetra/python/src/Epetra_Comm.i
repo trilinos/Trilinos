@@ -424,6 +424,7 @@ def PyComm():
 #else
 %pythoncode %{
 def PyComm():
+  "PyComm() -> Epetra.MpiComm(MPI_COMM_WORLD)"
   return MpiComm(cvar.CommWorld);
 %}
 #endif
