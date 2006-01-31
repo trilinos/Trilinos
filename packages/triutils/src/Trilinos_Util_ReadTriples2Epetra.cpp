@@ -105,13 +105,14 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
     vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
-    fgets( buffer, BUFSIZE, in_file ); // Throw away the Tim Davis Header Line 
+    if ( TimDavisHeader ) fgets( buffer, BUFSIZE, in_file ); // Throw away the Tim Davis Header Line 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
       double val ; 
       sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
       const int i_index = ( ZeroBased?i:i-1 );
       const int j_index = ( ZeroBased?j:j-1 );
+
       int iptr = iptrs[i_index] ; 
       iptrs[i_index]++ ;
       vals[iptr] = val ; 

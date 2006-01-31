@@ -55,7 +55,6 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
-#include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
 #include "Trilinos_Util_Version.h"
@@ -114,6 +113,22 @@
   // Call routine to read in HB problem
   Trilinos_Util_ReadHb2Epetra( &HBname[0], Comm, readMap, HbA, Hbx, 
 			       Hbb, Hbxexact) ;
+
+
+#if 0
+  cout << " HbA " ; 
+  HbA->Print( cout ) ; 
+  cout << endl ; 
+
+  cout << " MatrixMarketA " ; 
+  MatrixMarketA->Print( cout ) ; 
+  cout << endl ; 
+
+  cout << " TriplesA " ; 
+  TriplesA->Print( cout ) ; 
+  cout << endl ; 
+#endif
+
 
   int TripleErr = 0 ; 
   int MMerr = 0 ; 

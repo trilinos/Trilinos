@@ -40,7 +40,6 @@
 CORE_H = \
 	$(srcdir)/Trilinos_Util.h \
 	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.h \
-	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.h \
 	$(srcdir)/Trilinos_Util_CountMatrixMarket.h \
 	$(srcdir)/Trilinos_Util_CountTriples.h \
 	$(srcdir)/Trilinos_Util_CrsMatrixGallery.h \

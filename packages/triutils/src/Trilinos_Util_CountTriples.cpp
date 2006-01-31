@@ -50,7 +50,7 @@ void Trilinos_Util_CountTriples( const char *data_file,
 ) { 
 
   FILE *in_file ;
-  
+
   N_rows = 0 ; 
   nnz = 0 ; 
   int vecsize = non_zeros.size(); 
