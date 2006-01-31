@@ -1186,8 +1186,7 @@ int *rptr, *cptr;
 
   /* Get size and type of compressed pin storage */
 
-  ierr = zz->Get_HG_Size_CS(zz->Get_HG_Size_CS_Data,
-                            &nl, &np, &format);
+  zz->Get_HG_Size_CS(zz->Get_HG_Size_CS_Data, &nl, &np, &format, &ierr);
 
   if ((format != ZOLTAN_COMPRESSED_ROWS)&&(format != ZOLTAN_COMPRESSED_COLS)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
@@ -1215,8 +1214,8 @@ int *rptr, *cptr;
         ZOLTAN_TRACE_EXIT(zz, yo);
         return ZOLTAN_FATAL;
       }
-      ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
-               nl, np, format, vid, cptr, eid);
+      zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
+               nl, np, format, vid, cptr, eid, &ierr);
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
 
@@ -1244,8 +1243,8 @@ int *rptr, *cptr;
         return ZOLTAN_FATAL;
       }
 
-      ierr = zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
-                 nl, np, format, eid, rptr, vid);
+      zz->Get_HG_CS(zz->Get_HG_CS_Data, zz->Num_GID,
+                 nl, np, format, eid, rptr, vid, &ierr);
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
       rptr[nl] = np;

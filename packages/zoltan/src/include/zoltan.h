@@ -1710,22 +1710,17 @@ typedef void ZOLTAN_CHILD_WEIGHT_FORT_FN(
  *    num_lists           --  number of rows (vertices) or columns (edges)
  *    num_pins            --  total non-zeroes in rows or columns
  *    format              --  ZOLTAN_COMPRESSED_ROWS or ZOLTAN_COMPRESSED_COLS
- *  Returned value:       --  error code
+ *    ierr                --  error code
  */
 
-typedef int ZOLTAN_HG_SIZE_CS_FN(
+typedef void ZOLTAN_HG_SIZE_CS_FN(
   void *data,
   int *num_lists,
   int *num_pins,
-  int *format
+  int *format,
+  int *ierr
 );
 
-typedef int ZOLTAN_HG_SIZE_CS_FORT_FN(
-  void *data,
-  int *num_lists,
-  int *num_pins,
-  int *format
-);
 /*****************************************************************************/
 /*
  *  Function to return the non-zeroes of a hypergraph in
@@ -1751,11 +1746,10 @@ typedef int ZOLTAN_HG_SIZE_CS_FORT_FN(
  *                     non-zero in each row
  *                   if ZOLTAN_COMPRESSED_COLS: global edge ID for each
  *                     non-zero in each column
- *
- *  Returned value:       --  error code
+ *    ierr       --  error code
  */
 
-typedef int ZOLTAN_HG_CS_FN(
+typedef void ZOLTAN_HG_CS_FN(
   void *data,
   int num_gid_entries,
   int nrowcol,
@@ -1763,7 +1757,8 @@ typedef int ZOLTAN_HG_CS_FN(
   int format,
   ZOLTAN_ID_PTR rowcol_GID,
   int *rowcol_ptr,
-  ZOLTAN_ID_PTR pin_GID
+  ZOLTAN_ID_PTR pin_GID,
+  int *ierr
 );
 
 typedef int ZOLTAN_HG_CS_FORT_FN(
@@ -1785,17 +1780,13 @@ typedef int ZOLTAN_HG_CS_FORT_FN(
  *    data                --  pointer to user defined data structure
  *  Output:
  *    num_edges           --  number of edges
- *  Returned value:       --  error code
+ *    ierr                --  error code
  */
 
-typedef int ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN(
+typedef void ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN(
   void *data,
-  int *num_edges
-);
-
-typedef int ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN(
-  void *data,
-  int *num_edges
+  int *num_edges,
+  int *ierr
 );
 
 /*****************************************************************************/
@@ -1815,11 +1806,10 @@ typedef int ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN(
  *    edge_GID     --  list of edge global IDs for which weights are reported
  *    edge_LID     --  optional list of edge local IDs
  *    edge_weight  --  list of weights, by edge by dim
- *
- *  Returned value:       --  error code
+ *    ierr         --  error code
  */
 
-typedef int ZOLTAN_HG_EDGE_WEIGHTS_FN(
+typedef void ZOLTAN_HG_EDGE_WEIGHTS_FN(
   void *data,
   int num_gid_entries,
   int num_lid_entries,
@@ -1827,18 +1817,8 @@ typedef int ZOLTAN_HG_EDGE_WEIGHTS_FN(
   int edge_weight_dim,
   ZOLTAN_ID_PTR edge_GID,
   ZOLTAN_ID_PTR edge_LID,
-  float *edge_weight
-);
-
-typedef int ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN(
-  void *data,
-  int num_gid_entries,
-  int num_lid_entries,
-  int nedges,
-  int edge_weight_dim,
-  ZOLTAN_ID_PTR edge_GID,
-  ZOLTAN_ID_PTR edge_LID,
-  float *edge_weight
+  float *edge_weight,
+  int *ierr
 );
 
 /*****************************************************************************/

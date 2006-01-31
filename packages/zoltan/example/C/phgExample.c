@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 
   phgHandle = 
     exSetHGDivisions(
-      COMPLETE_ROWS,          /* each process has some rows of hg */
+      BLOCKS,          /* each process has some rows of hg */
       ALL_HAVE_EDGE_WEIGHTS,  /* each process has some of the edge weights */ 
       1,                  /* do edge weights supplied by processes overlap */ 
       ZOLTAN_COMPRESSED_ROWS); /* compressed pin format for query function */
@@ -173,6 +173,11 @@ int main(int argc, char *argv[])
   /* evaluate the quality of the partitioning */
 
   Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+
+
+  /* Print out the partitioning to a text file */
+
+  Zoltan_Generate_Files(zz, "example", 0, 0, 0, 1);
 
 End:
   /*

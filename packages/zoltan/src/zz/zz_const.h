@@ -400,28 +400,23 @@ struct Zoltan_Struct {
   ZOLTAN_HG_SIZE_CS_FN *Get_HG_Size_CS;    
                                        /* Fn ptr to get size and format of
                                           hypergraph compressed storage.  */
-  ZOLTAN_HG_SIZE_CS_FORT_FN *Get_HG_Size_CS_Fort;/* Fortran version      */
   void *Get_HG_Size_CS_Data;         /* Ptr to user defined data
                                         to be passed to Get_HG_Size_CS() */
   /***************************************************************************/
   ZOLTAN_HG_CS_FN *Get_HG_CS;    
                                        /* Fn ptr to get hypergraph pins
                                           in a compressed storage format.  */
-  ZOLTAN_HG_CS_FORT_FN *Get_HG_CS_Fort;/* Fortran version      */
   void *Get_HG_CS_Data;                /* Ptr to user defined data
                                         to be passed to Get_HG_CS() */
   /***************************************************************************/
   ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *Get_HG_Size_Edge_Weights;    
                                        /* Fn ptr to get size of hypergraph
                                           edge weights to be returned.  */
-  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN *Get_HG_Size_Edge_Weights_Fort;
-                                        /* Fortran version      */
   void *Get_HG_Size_Edge_Weights_Data;     /* Ptr to user defined data
                                   to be passed to Get_HG_Size_Edge_Weights() */
   /***************************************************************************/
   ZOLTAN_HG_EDGE_WEIGHTS_FN *Get_HG_Edge_Weights;    
                                        /* Fn ptr to get hyperedge weights */
-  ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN *Get_HG_Edge_Weights_Fort;/* Fortran version      */
   void *Get_HG_Edge_Weights_Data;                /* Ptr to user defined data
                                         to be passed to Get_HG_Edge_Weights() */
   /***************************************************************************/

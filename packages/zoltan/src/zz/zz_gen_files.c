@@ -544,8 +544,8 @@ static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
 
   if (dim && zz->Get_HG_Size_Edge_Weights && zz->Get_HG_Edge_Weights){
 
-    ierr = zz->Get_HG_Size_Edge_Weights(
-                 zz->Get_HG_Size_Edge_Weights_Data, &ew_num_edges);
+     zz->Get_HG_Size_Edge_Weights(
+                 zz->Get_HG_Size_Edge_Weights_Data, &ew_num_edges, &ierr);
 
     if (((ierr==ZOLTAN_OK)||(ierr==ZOLTAN_WARN)) && (ew_num_edges > 0)){
       ew_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, ew_num_edges);
@@ -559,9 +559,9 @@ static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
         goto End;
       }
 
-      ierr = zz->Get_HG_Edge_Weights(zz->Get_HG_Edge_Weights_Data,
+      zz->Get_HG_Edge_Weights(zz->Get_HG_Edge_Weights_Data,
                   zz->Num_GID, zz->Num_LID, ew_num_edges, dim,
-                  ew_gids, lids, ew_weights);
+                  ew_gids, lids, ew_weights, &ierr);
 
       ZOLTAN_FREE(&lids);
     }

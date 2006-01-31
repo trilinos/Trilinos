@@ -61,18 +61,18 @@ void exGetHgVerticesAndWeights(void *data, int num_gid_entries,
   int num_lid_entries, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int wgt_dim, float *obj_weights, int *ierr);
 
-int exGetHgSizeAndFormat(void *data, 
-  int *num_lists, int *num_pins, int *format);
+void exGetHgSizeAndFormat(void *data, 
+  int *num_lists, int *num_pins, int *format, int *ierr);
 
-int exGetHg(void *data,  int num_gid_entries,
+void exGetHg(void *data,  int num_gid_entries,
   int nrowcol, int npins, int format,
-  ZOLTAN_ID_PTR rowcol_GID, int *rowcol_ptr, ZOLTAN_ID_PTR pin_GID);
+  ZOLTAN_ID_PTR rowcol_GID, int *rowcol_ptr, ZOLTAN_ID_PTR pin_GID, int *ierr);
 
-int exGetHgEdgeWeightSize(void *data, int *num_edges);
+void exGetHgEdgeWeightSize(void *data, int *num_edges, int *ierr);
 
-int exGetHgEdgeWeights(void *data,  int num_gid_entries,
+void exGetHgEdgeWeights(void *data,  int num_gid_entries,
   int num_lid_entries, int nedges, int edge_weight_dim,
-  ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float *edge_weight);
+  ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float *edge_weight, int *ierr);
 #ifdef __cplusplus
 }
 #endif

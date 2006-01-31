@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 #define DIFFERENT_PROCS_DIFFERENT_EDGE_WEIGHTS 0
-#define EDGE_WEIGHT_EQUALS_GID 1
+#define EDGE_WEIGHT_EQUALS_GID 0
 #define VTX_WEIGHT_EQUALS_GID 1
 
 #define NROWS 28
@@ -244,7 +244,8 @@ void exFreeDivisions(void *data)
 /*
 ** The query functions
 */
-int exGetHgSizeAndFormat(void *data, int *num_lists, int *num_pins, int *format)
+void exGetHgSizeAndFormat(void *data, 
+   int *num_lists, int *num_pins, int *format, int *ierr)
 {
 struct _division *div;
 int nedges=0;
@@ -283,12 +284,12 @@ int r, c;
   else{
     *num_lists = nverts;
   }
-  return ZOLTAN_OK; 
+  *ierr =ZOLTAN_OK; 
 }
 
-int exGetHg(void *data,  int num_gid_entries,
+void exGetHg(void *data,  int num_gid_entries,
   int nrowcol, int npins, int format,
-  ZOLTAN_ID_PTR rowcol_GID, int *rowcol_ptr, ZOLTAN_ID_PTR pin_GID)
+  ZOLTAN_ID_PTR rowcol_GID, int *rowcol_ptr, ZOLTAN_ID_PTR pin_GID, int *ierr)
 {
   int i, j, e, v;
   struct _division *div;
@@ -331,10 +332,10 @@ int exGetHg(void *data,  int num_gid_entries,
     }
   }
 
-  return ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 }
 
-int exGetHgEdgeWeightSize(void *data, int *num_edges)
+void exGetHgEdgeWeightSize(void *data, int *num_edges, int *ierr)
 {
   struct _division *div;
 
@@ -355,12 +356,12 @@ int exGetHgEdgeWeightSize(void *data, int *num_edges)
   else{
     *num_edges = 0;
   }
-  return ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 }
 
-int exGetHgEdgeWeights(void *data,  int num_gid_entries,
+void exGetHgEdgeWeights(void *data,  int num_gid_entries,
   int num_lid_entries, int nedges, int edge_weight_dim,
-  ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float *edge_weight)
+  ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float *edge_weight, int *ierr)
 {
   struct _division *div;
   int i, e;
@@ -389,7 +390,7 @@ int exGetHgEdgeWeights(void *data,  int num_gid_entries,
     }
   }
 
-  return ZOLTAN_OK;
+  *ierr ZOLTAN_OK;
 }
 int exGetHgNumVertices(void *data, int *ierr)
 {
