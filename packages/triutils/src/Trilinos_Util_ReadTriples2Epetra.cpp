@@ -26,6 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
+// Notes:
+//   This file deserves a Teuchos Parameter List parameter.
+//   However, that would require making the triutils package dependent on Teuchos
+
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <vector>
@@ -43,17 +48,19 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
 				      Epetra_Vector *&xexact,
-				      bool NonUniformMap=false ) {
+				      bool NonUniformMap=false,
+				      bool TimDavisHeader=false,
+				      bool ZeroBased=false ) {
   FILE *in_file ;
   int N_rows, nnz ; 
 
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
   vector<int> non_zeros;   // Number of non-zeros in each row
-  Trilinos_Util_CountTriples( data_file, symmetric, non_zeros, N_rows, nnz, comm ) ;
+  Trilinos_Util_CountTriples( data_file, symmetric, non_zeros, N_rows, nnz, comm, TimDavisHeader, ZeroBased ) ;
 
 #if 0
-  cout << " Trilinos_Util_ReadTriples2Epetra.cpp:58 N_rows = " << N_rows << endl << "non_zeros = " ; 
+  cout << " Trilinos_Util_ReadTriples2Epetra.cpp::" << __LINE__ << "  N_rows = " << N_rows << endl << "non_zeros = " ; 
   for (int i= 0; i<N_rows; i++ )  cout << non_zeros[i] ; 
   cout << endl ; 
   comm.Barrier();
@@ -98,23 +105,26 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
     vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
+    fgets( buffer, BUFSIZE, in_file )o; // Throw away the Tim Davis Header Line 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
       double val ; 
       sscanf( buffer, "%d %d %lg", &i, &j, &val ) ; 
-      int iptr = iptrs[i-1] ; 
-      iptrs[i-1]++ ;
+      const int i_index = ( ZeroBased?i:i-1 );
+      const int j_index = ( ZeroBased?j:j-1 );
+      int iptr = iptrs[i_index] ; 
+      iptrs[i_index]++ ;
       vals[iptr] = val ; 
-      inds[iptr] = j-1 ; 
+      inds[iptr] = j_index ; 
       //
       //  If this is a symmetric matrix, we need to enter the entry 
       //  for the other triangular half
       //
       if (symmetric && i != j ) {
-	iptr = iptrs[j-1] ; 
-	iptrs[j-1]++;
+	iptr = iptrs[j_index] ; 
+	iptrs[j_index]++;
 	vals[iptr] = val ; 
-	inds[iptr] = i-1 ; 
+	inds[iptr] = i_index ; 
       }
     } 
     fclose(in_file);

@@ -348,7 +348,9 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				      Epetra_Vector *& x, 
 				      Epetra_Vector *& b,
 				      Epetra_Vector *&xexact,
-				      bool NonUniformMap=false ) ;
+				      bool NonUniformMap=false,
+				      bool TimDavisHeader=false,
+				      bool ZeroBased=false ) ;
 				      
 int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 				      const Epetra_Comm  &comm, 

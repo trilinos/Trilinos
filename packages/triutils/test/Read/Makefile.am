@@ -39,6 +39,10 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/In_bcsstk01.mtx  bcsstk01.mtx
 	cp  $(srcdir)/In_bcsstk01.triS  bcsstk01.triS
 
+	cp  $(srcdir)/In_Diagonal.rsa  Diagonal.rsa
+	cp  $(srcdir)/In_Diagonal.mtx  Diagonal.mtx
+	cp  $(srcdir)/In_Diagonal.TimD  Diagonal.TimD
+
 	cp  $(srcdir)/In_fs_183_4.rua  fs_183_4.rua
 	cp  $(srcdir)/In_fs_183_4.mtx  fs_183_4.mtx
 	cp  $(srcdir)/In_fs_183_4.triU  fs_183_4.triU
@@ -79,5 +83,7 @@ EXTRA_DIST = \
 	$(srcdir)/In_bcsstk01.rsa $(srcdir)/In_bcsstk01.mtx \
 	$(srcdir)/In_bcsstk01.triS $(srcdir)/In_fs_183_4.rua \
 	$(srcdir)/In_fs_183_4.mtx $(srcdir)/In_fs_183_4.triU \
+	$(srcdir)/In_Diagonal.rua $(srcdir)/In_Diagonal.mtx \
+	$(srcdir)/In_Diagonal.TimD \
 	$(srcdir)/In_impcol_a.rua $(srcdir)/In_impcol_a.mtx \
-	$(srcdir)/In_impcol_a.triU
+	$(srcdir)/In_impcol_a.triU 

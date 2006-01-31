@@ -84,19 +84,26 @@
   int TRI_Size = TRIname.size() ; 
   string LastFiveBytes = TRIname.substr( EPETRA_MAX(0,TRI_Size-5), TRI_Size );
 
-  if ( LastFiveBytes == ".triU" ) { 
-    // Call routine to read in unsymmetric Triplet matrix
+  if ( LastFiveBytes == ".TimD" ) { 
+    // Call routine to read in a file with a Tim Davis header and zero-based indexing
     EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( &TRIname[0], false, Comm, 
 						      readMap, TriplesA, Triplesx, 
-						      Triplesb, Triplesxexact) );
+						      Triplesb, Triplesxexact, false, true, true ) );
   } else {
-    if ( LastFiveBytes == ".triS" ) { 
-      // Call routine to read in symmetric Triplet matrix
-      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( &TRIname[0], true, Comm, 
+    if ( LastFiveBytes == ".triU" ) { 
+    // Call routine to read in unsymmetric Triplet matrix
+      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( &TRIname[0], false, Comm, 
 							readMap, TriplesA, Triplesx, 
-							Triplesb, Triplesxexact) );
+							Triplesb, Triplesxexact, false, false ) );
     } else {
-      assert( false ) ; 
+      if ( LastFiveBytes == ".triS" ) { 
+	// Call routine to read in symmetric Triplet matrix
+	EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( &TRIname[0], true, Comm, 
+							  readMap, TriplesA, Triplesx, 
+							  Triplesb, Triplesxexact, false, false ) );
+      } else {
+	assert( false ) ; 
+      }
     }
   }
 
@@ -176,6 +183,7 @@ int main( int argc, char *argv[] ) {
   ierr += TestOneMatrix( "bcsstk01.rsa",  "bcsstk01.mtx",  "bcsstk01.triS", Comm, verbose );
   ierr += TestOneMatrix( "fs_183_4.rua",  "fs_183_4.mtx",  "fs_183_4.triU", Comm, verbose );
   ierr += TestOneMatrix( "impcol_a.rua",  "impcol_a.mtx",  "impcol_a.triU", Comm, verbose );
+  ierr += TestOneMatrix( "Diagonal.rua",  "Diagonal.mtx",  "Diagonal.TimD", Comm, verbose );
 
 
   return ( ierr ) ; 

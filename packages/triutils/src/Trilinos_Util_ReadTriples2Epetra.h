@@ -40,5 +40,6 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 				 Epetra_Vector *& x, 
 				 Epetra_Vector *& b,
 				 Epetra_Vector *&xexact,
-				 bool NonUniformMap=false ) ;
+				 bool NonUniformMap=false,
+				 bool ZeroBased=false ) ;
 #endif

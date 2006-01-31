@@ -44,7 +44,10 @@ void Trilinos_Util_CountTriples( const char *data_file,
 				 bool symmetric, 
 				 vector<int> &non_zeros,
 				 int &N_rows, int &nnz, 
-				 const Epetra_Comm  &comm) { 
+				 const Epetra_Comm  &comm, 
+				 bool TimDavisHeader=false,
+				 bool ZeroBased=false 
+) { 
 
   FILE *in_file ;
   
@@ -57,6 +60,11 @@ void Trilinos_Util_CountTriples( const char *data_file,
   bool first_off_diag = true ; 
   bool upper ;
 
+  int num_rows = -1 ; 
+  int num_cols = -1 ; 
+  int num_nz = -1 ; 
+  int hdr_type = -131313 ; 
+    
   if(comm.MyPID() == 0)  { 
     /* Get information about the array stored in the file specified in the  */
     /* argument list:                                                       */
@@ -68,12 +76,28 @@ void Trilinos_Util_CountTriples( const char *data_file,
 	exit(1);
       }
     
-    
+    if ( TimDavisHeader ) { 
+      fgets( buffer, BUFSIZE, in_file );
+      sscanf( buffer, "%d %d %d %d", &num_rows, &num_cols, &num_nz, &hdr_type ) ; 
+      if( hdr_type != 0 ) {
+	if ( hdr_type == -131313 ) 
+	  printf("Bad Tim Davis header line.  Should have four  values and the fourth must be zero.\n"); 
+	else
+	  printf("Bad Tim Davis header line.  Fourth value must be zero, but is %d.\n", hdr_type); 
+	exit(1);
+      }
+      if ( num_rows != num_cols ) {
+	printf( "Bad Tim Davis header line.  First two values, number of rows and columns must be equal.  We see %d and %d\n" ,
+		num_rows, num_cols ) ; 
+      }
+    } 
+
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
       double val ; 
       i = -13 ;   // Check for blank lines 
       sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
+      if ( ZeroBased ) { i++; j++ ; } 
       if ( i > 0 ) { 
 	int needvecsize = i;
 	if (symmetric) needvecsize = EPETRA_MAX(i,j) ;
@@ -103,6 +127,18 @@ void Trilinos_Util_CountTriples( const char *data_file,
     } 
     fclose(in_file);
   }
+
+  if ( TimDavisHeader && comm.MyPID() == 0)  { 
+    if ( num_rows != N_rows ) {
+      printf( " Bad Tim Davis Header Line.  The first value should be the number of rows.  We see %d, but the actual number of rows is: %d\n",
+	      num_rows, N_rows );
+    }
+    if ( num_nz != nnz ) {
+      printf( " Bad Tim Davis Header Line.  The third value should be the number of non-zeros.  We see %d, but the actual number of non-zeros is: %d\n",
+	      num_nz, nnz );
+    }
+  }
+
   comm.Broadcast( &N_rows, 1, 0 );
   comm.Broadcast( &nnz, 1, 0 );
   return;
