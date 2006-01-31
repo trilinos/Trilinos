@@ -434,7 +434,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     //             diag( P0' A' D^{-1}' ( A' D^{-1}' D^{-1} A) D^{-1} A P0)
     //
     multiply_all(DinvAP0_subset, DinvADinvAP0, &NumeratorAtRootPts[0]);
-    multiply_all(DinvADinvAP0, DinvADinvAP0, &DenominatorAtRootPts[0]);
+    multiply_self_all(DinvADinvAP0, &DenominatorAtRootPts[0]);
+    //multiply_all(DinvADinvAP0, DinvADinvAP0, &DenominatorAtRootPts[0]);
 
     break;
 
@@ -449,7 +450,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     //
     //
     multiply_all(P0, DinvADinvAP0,  &NumeratorAtRootPts[0]);
-    multiply_all(DinvAP0, DinvAP0, &tmp[0]);
+    multiply_self_all(DinvAP0, &tmp[0]);
+    //multiply_all(DinvAP0, DinvAP0, &tmp[0]);
 
     for (int i = 0 ; i < n_0 ; ++i) NumeratorAtRootPts[i] += tmp[i];
     multiply_all(DinvAP0, DinvADinvAP0, &DenominatorAtRootPts[0]);
@@ -719,7 +721,6 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   ml->Rmat[level].build_time =  GetClock() - t0;
   ml->timing->total_build_time += ml->Rmat[level].build_time;
 #endif
-
 
   if (ttt != NULL) ML_Operator_Destroy(&ttt);
   if (P0_trans != NULL) ML_Operator_Destroy(&P0_trans);  
