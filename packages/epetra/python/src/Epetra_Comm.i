@@ -1,4 +1,32 @@
-// -*- C++ -*-
+// -*- c++ -*-
+
+// @HEADER
+// ***********************************************************************
+//
+//            PyTrilinos.Epetra: Python Interface to Epetra
+//                 Copyright (2005) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
 
 %{
 #include "Epetra_Object.h"
@@ -45,9 +73,11 @@ PyObject* Finalize() {
   return Py_BuildValue("");
 }
 
-MPI_Comm CommWorld() {
-  return(MPI_COMM_WORLD);
-}
+// CommWorld used to be a function, but I have changed it to a
+// constant in order to suppress a memory leak warning we are getting
+// under swig 1.3.28.  (And with luck, I have actually fixed a memory
+// leak ;-)
+extern const MPI_Comm CommWorld = (MPI_COMM_WORLD);
 #else
 PyObject* Init_Argv(PyObject *args) {
   return Py_BuildValue("");
@@ -63,7 +93,7 @@ PyObject* Finalize() {
 PyObject* Init_Argv(PyObject *args);
 PyObject* Finalize();
 #ifdef HAVE_MPI
-MPI_Comm CommWorld();
+extern const MPI_Comm CommWorld;
 #endif
 
 // Ignore directives
@@ -394,6 +424,6 @@ def PyComm():
 #else
 %pythoncode %{
 def PyComm():
-  return MpiComm(CommWorld());
+  return MpiComm(cvar.CommWorld);
 %}
 #endif
