@@ -132,9 +132,14 @@ ELEM_INFO_PTR current_elem;
 
   printf("\nHyperedges\n");
   printf("Number of global hyperedges:  %d\n", mesh->gnhedges);
-  printf("Number of local hyperedges:   %d\n", mesh->nhedges);
+  if (mesh->format == ZOLTAN_COMPRESSED_ROWS){
+    printf("Number of rows (edges):   %d\n", mesh->nhedges);
+  }
+  else{
+    printf("Number of columns (vertices):   %d\n", mesh->nhedges);
+  }
   for (i = 0; i < mesh->nhedges; i++) {
-    printf("Hyperedge %d (%d):  (", mesh->hgid[i], i);
+    printf("  %d (%d):  (", mesh->hgid[i], i);
     for (j = mesh->hindex[i]; j < mesh->hindex[i+1]; j++)
       printf("%d ", mesh->hvertex[j]);
     printf(")\n");

@@ -145,21 +145,28 @@ struct Mesh_Description
   ELEM_INFO_PTR elements;       /* array of elements that are in the mesh.   */
   int     gnhedges;             /* for hypergraphs, the number of global
                                    hyperedges.*/
-  int     nhedges;              /* for hypergraphs, the number of local 
-                                   hyperedges.*/
   int     hewgt_dim;            /* for hypergraphs, the number of weights per
                                    hyperedge.                                */
-  int    *hgid;                 /* Global numbering for hyperedges; numbering
-                                   is derived implicitly from order hyperedges
+
+                                /* The following fields usually supply the
+                                   pins in the hyperedges (rows).  But if 
+                                  "format" indicates columns instead of rows, 
+                                   we store vertices and their pins here. */
+  int     format;               /* rows (edges) or columns (vertices) */
+  int     nhedges;              /* # local edges (if cols: # pin vertices) */
+  int    *hgid;                 /* Global number for edges (or pin vertices),
+                                   derived implicitly from order pins
                                    are read from file. Numbering is 0-based. */
   int    *hindex;               /* for hypergraphs, an entry for each 
-                                   hyperedge, giving the starting index into
-                                   hvertex for that hyperedge.               */ 
-  int    *hvertex;              /* for hypergraphs, an array listing the 
-                                   vertices making up each hyperedge.
-                                   Global IDs are always stored. */
-  int    *hvertex_proc;         /* array listing the processor owning vertices
-                                   in hvertex. */
+                                   edge (or vertex), giving the starting index
+                                   into hvertex for hyperedge (or vertex).*/ 
+  int    *hvertex;              /* row storage: global number for each pin
+                                   vertex, col storage: global number for
+                                   each pin hyperedge                     */
+  int    *hvertex_proc;         /* row storage: array listing the processor 
+                                   owning vertices in hvertex, or NULL if
+                                   don't care.  col storage: NULL */
+
   int    heNumWgts;             /* number of edges for which we have weights */
   int    *heWgtId;              /* global edge ID of the heNumWgts edges,
                                     if NULL it's the same as hgid            */

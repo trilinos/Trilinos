@@ -742,12 +742,25 @@ int read_mtxplus_file(
   }
 
   /*
-   * From the lists of pins, create edge lists.  Then
-   * write the mesh data structure.
+   * From the lists of pins, create edge lists.  (Unless
+   * the initial pin distribution is by column, in which
+   * case we will test the hypergraph query interface's
+   * ability to accept pins by column rather than row.)
    */
 
-  rc = create_edge_lists(nMyPins, myPinI, myPinJ, 
+  if (pio_info->init_dist_pins != INITIAL_COL){       /* CRS */
+    rc = create_edge_lists(nMyPins, myPinI, myPinJ, 
             &numHEdges, &edgeGno, &edgeIdx, &pinGno);
+    mesh->format = ZOLTAN_COMPRESSED_ROWS;
+  }
+  else{                                               /* CCS */
+    /* actually creating vertex lists, since we switched
+     * the role of I and J in the argument list.
+     */
+    rc = create_edge_lists(nMyPins, myPinJ, myPinI, 
+            &numHEdges, &edgeGno, &edgeIdx, &pinGno);
+    mesh->format = ZOLTAN_COMPRESSED_COLS;
+  }
 
   MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
@@ -768,12 +781,12 @@ int read_mtxplus_file(
   mesh->num_el_blks = 1;
 
   mesh->gnhedges = nGlobalEdges;
-  mesh->nhedges = numHEdges;
+  mesh->nhedges = numHEdges;     /* (or num vertices if CCS) */
   mesh->hewgt_dim = edgeWDim;
 
-  mesh->hgid = edgeGno;
-  mesh->hindex = edgeIdx;
-  mesh->hvertex = pinGno;
+  mesh->hgid = edgeGno;          /* (or vertex gno if CCS) */
+  mesh->hindex = edgeIdx;        /* (or vertex index if CCS) */
+  mesh->hvertex = pinGno;        /* (or gno of pin edge if CCS) */
   mesh->hvertex_proc = NULL;     /* don't know don't care */
   mesh->heNumWgts = nMyEdgeWgts;
   mesh->heWgtId = myEWGno;

@@ -1412,43 +1412,45 @@ int get_partition(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_hg_size_compressed_pin_storage(
+void get_hg_size_compressed_pin_storage(
   void *data,
   int *num_lists,
   int *num_pins,
-  int *format)
+  int *format, int *ierr)
 {
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
 
   if (data == NULL) {
-    return ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
+     return;
   }
 
   mesh = (MESH_INFO_PTR) data;
 
   *num_lists = mesh->nhedges;
-  *format = ZOLTAN_COMPRESSED_ROWS;
+  *format = mesh->format;
   *num_pins = mesh->hindex[mesh->nhedges];
 
   STOP_CALLBACK_TIMER;
 
-  return ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 }
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_hg_size_edge_weights(
+void get_hg_size_edge_weights(
   void *data,
-  int *num_edge)
+  int *num_edge, int *ierr)
 {
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
 
   if (data == NULL) {
-    return ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
+    return;
   }
 
   mesh = (MESH_INFO_PTR) data;
@@ -1457,12 +1459,12 @@ int get_hg_size_edge_weights(
 
   STOP_CALLBACK_TIMER;
 
-  return ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 }
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_hg_compressed_pin_storage(
+void get_hg_compressed_pin_storage(
   void *data,
   int num_gid_entries,
   int nrowcol,
@@ -1470,18 +1472,24 @@ int get_hg_compressed_pin_storage(
   int format,
   ZOLTAN_ID_PTR rowcol_GID,
   int *rowcol_ptr,
-  ZOLTAN_ID_PTR pin_GID)
+  ZOLTAN_ID_PTR pin_GID, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ZOLTAN_ID_PTR edg_GID, vtx_GID;
   int *row_ptr;
   int nedges;
-  int ierr = ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 
   START_CALLBACK_TIMER;
 
-  if (format != ZOLTAN_COMPRESSED_ROWS){
-    ierr = ZOLTAN_FATAL;
+  mesh = (MESH_INFO_PTR) data;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  if (format != mesh->format){
+    *ierr = ZOLTAN_FATAL;
     goto End;
   }
 
@@ -1489,13 +1497,6 @@ int get_hg_compressed_pin_storage(
   vtx_GID = pin_GID;
   row_ptr = rowcol_ptr;
   nedges = nrowcol;
-  
-  if (data == NULL) {
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-
-  mesh = (MESH_INFO_PTR) data;
     
   memcpy(edg_GID, mesh->hgid, sizeof(int) * num_gid_entries * nedges);
   memcpy(vtx_GID, mesh->hvertex,
@@ -1505,13 +1506,12 @@ int get_hg_compressed_pin_storage(
 End:
 
   STOP_CALLBACK_TIMER;
-  return ierr;
 } 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
   
-int get_hg_edge_weights(
+void get_hg_edge_weights(
   void *data, 
   int num_gid_entries,
   int num_lid_entries,
@@ -1519,23 +1519,24 @@ int get_hg_edge_weights(
   int ewgt_dim, 
   ZOLTAN_ID_PTR edge_gids,
   ZOLTAN_ID_PTR edge_lids,
-  float *edge_weights
+  float *edge_weights, int *ierr
 )
 {
   MESH_INFO_PTR mesh;
-  int i, ierr = ZOLTAN_OK;
+  int i; 
+  *ierr = ZOLTAN_OK;
 
   START_CALLBACK_TIMER;
 
   if (data == NULL){
-    ierr = ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
     goto End;
   }
 
   mesh = (MESH_INFO_PTR) data;
 
   if (nedges > mesh->heNumWgts){
-    ierr = ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
     goto End;
   }
 
@@ -1556,7 +1557,7 @@ int get_hg_edge_weights(
 End:
 
   STOP_CALLBACK_TIMER;
-  return ierr;
+  return; 
 }
 
 

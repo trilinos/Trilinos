@@ -45,7 +45,6 @@
 extern "C" {
 #endif
 
-
 int Debug_Driver = 1;
 int Number_Iterations = 1;
 int Driver_Action = 1;	/* Flag indicating load-balancing or ordering. */
@@ -421,8 +420,14 @@ static int read_mesh(
   MPI_Reduce(&he, &the, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&verts, &tverts, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   if (Proc == 0){
-    printf("Total pins %d, total vertices %d, total hyperedges %d\n",
+    if (mesh->format == ZOLTAN_COMPRESSED_ROWS){
+      printf("Total pins %d, total vertices %d, total rows %d\n",
                  tpins, tverts, the);
+    }
+    else{
+      printf("Total pins %d, total vertices %d, total columns %d\n",
+                 tpins, tverts, the);
+    }
   }
 #endif
   return 1;
@@ -525,6 +530,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_sideids  = NULL;
   mesh->ecmap_neighids = NULL;
   mesh->elements       = NULL;
+  mesh->format         = ZOLTAN_COMPRESSED_ROWS;
   mesh->hgid           = NULL;
   mesh->hindex         = NULL;
   mesh->hvertex        = NULL;
@@ -537,7 +543,13 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
 static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv)
 {
   int i, j;
-  printf("%d edges out of a total %d\n",m->nhedges,m->gnhedges);
+  printf("Global number of hyperedges %d\n",m->gnhedges);
+  if (m->format == ZOLTAN_COMPRESSED_ROWS){
+    printf("Pins: %d edges\n",m->nhedges);
+  }
+  else{
+    printf("Pins: %d vertices\n",m->nhedges);
+  }
   for (i=0; i<m->nhedges; i++){
     printf("  %d: ", m->hgid[i]);
     for (j=m->hindex[i]; j<m->hindex[i+1]; j++){
@@ -545,8 +557,8 @@ static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv)
     }
     printf("\n");
   }
-  printf("Total pins: %d\n", m->hindex[m->nhedges]);
   
+  printf("Total pins: %d\n", m->hindex[m->nhedges]);
 
   printf("%d vertices: ", m->num_elems);
   for (i=0; i<m->num_elems; i++){
