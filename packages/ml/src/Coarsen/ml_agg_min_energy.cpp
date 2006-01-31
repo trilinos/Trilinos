@@ -15,6 +15,7 @@ using namespace std;
 
 static int     Dinv_size = -1;
 static double* Dinv      = 0;
+static bool    SinglePrecision = true; // to save memory
 
 void peek(char *str, ML_Operator *mat, int row ) 
 {
@@ -212,6 +213,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   int         Ncoarse, Nfine, gNfine, gNcoarse;
   ML_Operator **prev_P_tentatives;
   ML_Aggregate * ag = (ML_Aggregate *) data;
+  double dropping = ag->minimizing_energy_droptol;
 
 #ifdef ML_TIMING
   double t0;
@@ -333,12 +335,16 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 			      DinvAP0);
   }
 
+  if (SinglePrecision)
+    ML_Operator_ChangeToSinglePrecision(DinvAP0);
+
   // rst: This is a routine that will drop small entries. In Premo
   //      there are billions of small values. I don't really remember
   //      the current state of this code nor do I remember how to choose
   //      good values for the dropping ... so it is commented out.
   //
-  // ML_CSR_DropSmall(DinvAP0, 1e-4, 1e-4, 1e-4);
+  if (dropping != 0.0)
+    ML_CSR_DropSmall(DinvAP0, 0.0, dropping, 0.0);
 
   Numerator   = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+1));
   Denominator = (double *) ML_allocate(sizeof(double)*(P0->invec_leng+1));
@@ -370,7 +376,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     // Form the compressed matrix
     DinvAP0_subset = ML_CSRmatrix_ColumnSubset(DinvAP0, Nroots,root_pts);
 
-    // ML_CSR_DropSmall(DinvAP0_subset, 1e-4, 1e-4, 1e-4);
+    if (dropping != 0.0)
+      ML_CSR_DropSmall(DinvAP0_subset, 0.0, dropping, 0.0);
   }
 
   ML_Operator* DinvADinvAP0 = 0;
@@ -388,10 +395,6 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   if (ag->minimizing_energy != 1) {
     DinvADinvAP0 = ML_Operator_Create(P0->comm);
-    // Ray, please look at this... From the formula on the paper, the first
-    // operator is the non-scaled A... I got better results using `2' with no
-    // scaling at least for one test case...
-    //
     ML_2matmult(Amat, DinvAP0_subset, DinvADinvAP0, ML_CSR_MATRIX);
     //ML_2matmult(UnscaledAmat, DinvAP0_subset, DinvADinvAP0, ML_CSR_MATRIX);
 
@@ -401,9 +404,13 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     if (Amat->num_PDEs != 1) 
       ML_Operator_ExplicitDinvA(Amat->num_PDEs,(MLSthing *)DinvAmat->data,
 				DinvADinvAP0);  
-    // ML_CSR_DropSmall(DinvADinvAP0, 1e-4, 1e-4, 1e-4); 
-  }
 
+    if (dropping != 0.0)
+      ML_CSR_DropSmall(DinvADinvAP0, 0.0, dropping, 0.0); 
+
+    if (SinglePrecision)
+      ML_Operator_ChangeToSinglePrecision(DinvADinvAP0);
+  }
 
   switch (ag->minimizing_energy) {
   case 1:
@@ -575,6 +582,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
          << ag->minimizing_energy << ")" << endl;
     cout << "Damping parameter: min = " << min_all <<  ", max = " << max_all 
          << " (" << zero_all << " zeros out of " << n_0_tot << ")" << endl;
+    cout << "Dropping tolerance for DinvAP_0 = " << dropping << endl;
     cout << endl;
   }
 
@@ -611,7 +619,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   //		      DinvAP0->getrow->pre_comm);
 
   ML_Operator_Add(P0, OmegaDinvAP0, &(ml->Pmat[clevel]), ML_CSR_MATRIX, -1.0);
-  // ML_CSR_DropSmall(&(ml->Pmat[clevel]), 1.e-4, 1.e-4, 1.e-4);
+  if (dropping != 0.0)
+    ML_CSR_DropSmall(&(ml->Pmat[clevel]), 0.0, dropping, 0.0);
 
   ML_Operator_Set_1Levels(&(ml->Pmat[clevel]), &(ml->SingleLevel[clevel]),
                           &(ml->SingleLevel[level]));
@@ -684,6 +693,8 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 
     ML_Operator_Transpose_byrow(P0, P0_trans);
     ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
+    if (SinglePrecision)
+      ML_Operator_ChangeToSinglePrecision(P0TA);
 
     // This code should work just fine, however, it is a bit of a waste
     // when num_PDEs = 1.
