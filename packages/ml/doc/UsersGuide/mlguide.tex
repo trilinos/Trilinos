@@ -111,7 +111,7 @@ SAND2004--4819 \\
 Unlimited Release \\
 %\hfill
 %\begin{center}
-Printed August 2005
+Printed January 2006
 \end{center}
 
 \vspace{0.2in}
@@ -1332,6 +1332,21 @@ method), {\tt Anomr} (the A-norm of the matrix), {\tt Anasazi}
   $\star$}{[{\tt int}] Defines the maximum number of next-level matrix rows
   per process (only for {\tt ParMETIS} aggregation
 scheme). Default: 128.}
+
+\choicebox{\tt aggregation: use tentative restriction}{[{\tt bool}] 
+  If {\tt true}, then the final restriction operator at level $\ell$
+    is computed as $R_\ell = P_{\ell,0}^T$, where $P_{\ell,0}$ is the
+    tentative prolongator. Note that the final prolongator is still computed
+    as specified by parameter {\tt aggregation: damping factor}. Default: {\tt
+      false}.}
+
+\choicebox{\tt aggregation: symmetrize}{[{\tt bool}] If {\tt true}, then the
+  final prolongator for level $\ell$ is computed as $P_\ell = 
+  (I - \omega / \lambda_{max} (A + A^T)) P_{0,\ell}$, where $\omega$ is the
+  damping parameter specified using {\tt aggregation: damping factor}, 
+  $\lambda_{max}$ is the maximum eigenvalue of $D^{-1}A$, and
+  $P_{0,\ell}$ is the tentative prolongator at level $\ell$. The
+  restriction is defined as $R_\ell = P_\ell^T$. Default: {\tt false}.}
 
 %----------------------------------%
 \subsubsection{Smoothing Parameters}
