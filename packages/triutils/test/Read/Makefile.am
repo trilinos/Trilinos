@@ -39,7 +39,7 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/In_bcsstk01.mtx  bcsstk01.mtx
 	cp  $(srcdir)/In_bcsstk01.triS  bcsstk01.triS
 
-	cp  $(srcdir)/In_Diagonal.rsa  Diagonal.rsa
+	cp  $(srcdir)/In_Diagonal.rua  Diagonal.rua
 	cp  $(srcdir)/In_Diagonal.mtx  Diagonal.mtx
 	cp  $(srcdir)/In_Diagonal.TimD  Diagonal.TimD
 

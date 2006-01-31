@@ -105,7 +105,7 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
     vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
-    fgets( buffer, BUFSIZE, in_file )o; // Throw away the Tim Davis Header Line 
+    fgets( buffer, BUFSIZE, in_file ); // Throw away the Tim Davis Header Line 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
       double val ; 
