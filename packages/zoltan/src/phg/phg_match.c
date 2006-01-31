@@ -490,15 +490,13 @@ static int pmatching_ipm (ZZ *zz,
 {
   int i, j, k, n, m, round, vindex;                        /* loop counters  */
   int *r, *s;                                /* pointers to send/rec buffers */
-  int lno, count, kstart, old_kstart;                      /* temp variables */
+  int lno, count;                                          /* temp variables */
   int candidate_gno;                             /* gno of current candidate */
   int sendcnt, sendsize, reccnt, recsize, msgsize;         /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
                               /* identical on all procs in hgc->Communicator.*/
   int nCandidates;            /* # of candidates on this proc; identical     */
                               /* on all procs in hgc->col_comm.              */
-  int nTotal;                 /* on a given proc, total # of candidates for  */
-                              /* which to compute inner products.            */
   int total_nCandidates;      /* Sum of nCandidates across row. */
   int *send = NULL,    nSend,             /* working buffers and their sizes */
       *dest = NULL,    nDest,  
@@ -651,6 +649,7 @@ static int pmatching_ipm (ZZ *zz,
     
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */    
     if (cFLAG)  {
+        int nTotal;
       /* select upto nCandidates unmatched vertices to locally match */
       for (nTotal = 0; nTotal < nCandidates && vindex < hg->nVtx; vindex++)
         if (cmatch [visit[vindex]] == visit[vindex])  {         /* unmatched */
@@ -743,18 +742,17 @@ static int pmatching_ipm (ZZ *zz,
     /************************ PHASE 2: ***************************************/
       
     /* for each candidate vertex, compute all local partial inner products */    
-    kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
-    while (kstart < total_nCandidates)  {
-      MACRO_TIMER_START (2, "Matching kstart A", 0);
-      for (i = 0; i < hgc->nProc_y; i++)
+
+    MACRO_TIMER_START (2, "Matching kstart A", 0);
+    for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = -1;                  /* to flag data not found for that row */
-      sendsize = 0;                    /* position in send buffer */
-      sendcnt  = 0;                    /* count of messages in send buffer */
-      s        = send;                 /* start at send buffer origin */
-      for (k = kstart; k < total_nCandidates; k++)  {
+    sendsize = 0;                    /* position in send buffer */
+    sendcnt  = 0;                    /* count of messages in send buffer */
+    s        = send;                 /* start at send buffer origin */
+    for (k = 0; k < total_nCandidates; k++)  {
         if (permute[k] == -1)
-          continue;                /* don't have this sparse candidate locally */
-             
+            continue;                /* don't have this sparse candidate locally */
+        
         if (!cFLAG)  {
           r = &edgebuf[permute[k]];
           candidate_gno   = *r++;          /* gno of candidate vertex */
@@ -842,34 +840,30 @@ static int pmatching_ipm (ZZ *zz,
 /* --k;   since couldn't actually fit k into this buffer */             
           break;   
         }  
-      }                  /* DONE: loop over k */                    
-         
-      MACRO_TIMER_STOP (2);
-      MACRO_TIMER_START (3, "Matching kstart B", 0);
-     
-      /* synchronize all rows in this column to next kstart value */
-      old_kstart = kstart;      
-      MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
-            
-      /* Send inner product data in send buffer to appropriate rows */
-      err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
-       &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
-      if (err != ZOLTAN_OK)
+    }                  /* DONE: loop over k */                    
+    
+    MACRO_TIMER_STOP (2);
+    MACRO_TIMER_START (3, "Matching kstart B", 0);
+    
+    /* Send inner product data in send buffer to appropriate rows */
+    err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
+                                 &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
+    if (err != ZOLTAN_OK)
         goto fini;
-        
-      /* build index into receive buffer pointer for each proc's row of data */
-      for (i = 0; i < hgc->nProc_y; i++)
+    
+    /* build index into receive buffer pointer for each proc's row of data */
+    for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = recsize;       /* sentinal in case no row's data available */
-      k = 0;
-      for (r = rec; r < rec + recsize; r++)
+    k = 0;
+    for (r = rec; r < rec + recsize; r++)
         if (*r < 0)  {
-          *r = -(*r) - 1;           /* make sentinal candidate_index positive */
-          rows[k++] = (r - rec) - 1;  /* points to gno */
+            *r = -(*r) - 1;           /* make sentinal candidate_index positive */
+            rows[k++] = (r - rec) - 1;  /* points to gno */
         }
-                
-      /* merge partial i.p. sum data to compute total inner products */
-      s = send; 
-      for (n = old_kstart; n < kstart; n++)  {
+    
+    /* merge partial i.p. sum data to compute total inner products */
+    s = send; 
+    for (n = 0; n < total_nCandidates; n++)  {
         m = 0;       
         for (i = 0; i < hgc->nProc_y; i++)   
           if (rows[i] < recsize && rec [rows[i]+1] == n)  {
@@ -916,17 +910,17 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
           }  
           sums[lno] = 0.0;  
         }     
-      }
-      sendsize = s - send;   /* size (in ints) of send buffer */
-       
-      /* Communicate total inner product results to MASTER ROW */
-      MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
-
-      if (hgc->myProc_y == 0) {
+    }
+    sendsize = s - send;   /* size (in ints) of send buffer */
+    
+    /* Communicate total inner product results to MASTER ROW */
+    MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
+    
+    if (hgc->myProc_y == 0) {
         recsize = 0;
         for (i = 0; i < hgc->nProc_y; i++)
           recsize += size[i];        
-          
+        
         dest[0] = 0;
         for (i = 1; i < hgc->nProc_y; i++)
           dest[i] = dest[i-1] + size[i-1];
@@ -935,13 +929,13 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
           i = MAX (1.2 * nRec, recsize);
           MACRO_REALLOC (i, nRec, rec);      /* make rec buffer bigger */
         }
-      }
+    }
 
-      MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
-       hgc->col_comm);
+    MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
+                 hgc->col_comm);
        
-      /* Determine best vertex and best sum for each candidate */
-      if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
+    /* Determine best vertex and best sum for each candidate */
+    if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
           candidate_gno   = *r++;
           candidate_index = *r++;
@@ -975,19 +969,19 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
           }
         }
       }
-      if (cFLAG)                          /* Broadcast what we matched so far */
+    if (cFLAG)                          /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
-      MACRO_TIMER_STOP (3);    
-    }            /* DONE: kstart < max_nTotal loop */ 
-
-    if (cFLAG)
-      continue;      /* skip phases 3 and 4, continue rounds */ 
+    MACRO_TIMER_STOP (3);    
     
-
+    
+    if (cFLAG)
+        continue;      /* skip phases 3 and 4, continue rounds */ 
+    
+    
     /************************ NEW PHASE 3: ********************************/
-
+    
     MACRO_TIMER_START (4, "Matching Phase 3", 1);
-
+    
     /* Only MASTER ROW computes best global match for candidates */
     /* EBEB or perhaps we can do this fully distributed? */
     if (hgc->myProc_y == 0) {
