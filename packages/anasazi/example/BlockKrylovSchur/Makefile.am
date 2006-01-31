@@ -160,7 +160,7 @@ BlockKrylovSchurEpetraExGenAmesos_CXXFLAGS = \
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExGenAmesos_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
-	$(EXPORT_LIBS)
+	$(EXPORT_LIBS) $(TEUCHOS_MPI_LIBS) $(TEUCHOS_BLAS_LIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
