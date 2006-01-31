@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
      rcp( new Anasazi::BasicSort<ST,MV,OP>(which) );
 
   // Get the data from the HB file
-  int dim,dim2,nnz,nrhs;
+  int dim,dim2,nnz;
   double *dvals;
   int *colptr,*rowind;
   ST *cvals;
