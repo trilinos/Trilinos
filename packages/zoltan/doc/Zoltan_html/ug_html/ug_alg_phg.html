@@ -229,6 +229,16 @@ bisection (0/1).<br>
 hyperedges in internal parallel 2D layout? (0/1)<br>
       </td>
     </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp; <a NAME="PHG_EDGE_WEIGHT_OPERATION"></a><span
+ style="font-style: italic;">PHG_EDGE_WEIGHT_OPERATION</span>
+      </td>
+      <td style="vertical-align: top;">Operation to be applied to edge weights supplied by different processes for the same hyperedge:<br>
+<i>add</i> - the hyperedge weight will be the sum of the supplied weights<br>
+<i>max</i> - the hyperedge weight will be the maximum of the supplied weights<br>
+<i>error</i> - if the hyperedge weights are not equal, Zoltan will flag an error, otherwise the hyperedge weight will be the value returned by the processes<br>
+      </td>
+    </tr>
     <tr nosave="" valign="top">
       <td>&nbsp;&nbsp; <span style="font-style: italic;">EDGE_SIZE_THRESHOLD</span><br>
       </td>
@@ -321,6 +331,11 @@ number of vertices.<br>
       <td style="vertical-align: top;"><br>
       </td>
       <td style="vertical-align: top;"><span style="font-style: italic;">PHG_RANDOMIZE_INPUT=0</span></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><span style="font-style: italic;">PHG_EDGE_WEIGHT_OPERATION=max</span></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
