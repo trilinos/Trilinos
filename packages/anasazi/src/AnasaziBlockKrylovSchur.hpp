@@ -1934,7 +1934,6 @@ namespace Anasazi {
 
     Teuchos::SerialDenseMatrix<int,ScalarType> VTV(m,m);
     _problem->InnerProd( *Vj, *Vj, VTV );
-    if (ret != Ok) { }
     ScalarType* ptr=VTV.values();
     ScalarType column_sum;
     
@@ -1959,7 +1958,6 @@ namespace Anasazi {
     Teuchos::SerialDenseMatrix<int,ScalarType> E(m,_blockSize);
     
     _problem->InnerProd( *Vj, *F_vec, E );
-    if (ret != Ok) { }
     ScalarType* ptr_Ej=E.values();
     
     for (k=0;k<_blockSize;k++) {
