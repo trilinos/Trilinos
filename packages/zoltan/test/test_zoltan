@@ -34,7 +34,7 @@ set nem_pdisk = (1 2 2) # parallel disk info
 # Hypergraph problems, methods and sizes.  If you add tests here, you
 # may also want to update the hg_* values in the "yes_serial" case.
 set hg_methods = (file rows cols cyclic)
-set hg_name  = (simple felix ibm01 ibm01 ibm18 ibm18)
+set hg_name  = (simple felix ibm01 ibm01 ibm03 ibm03)
 set hg_nproc = (4      4     4     3     4     5)
 
 # Set default options
@@ -156,7 +156,7 @@ if ( $yes_serial ) then
   set ch_nproc = (1 1 1 1 1 1 1 1 1 1 1) # no. of procs
 
   set hg_methods = (serial)   # creates 8 partitions
-  set hg_name  = (simple felix ibm01 ibm18)
+  set hg_name  = (simple felix ibm01 ibm03)
   set hg_nproc = (1      1     1     1)
 endif
 
