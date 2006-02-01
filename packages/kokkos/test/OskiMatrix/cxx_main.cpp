@@ -30,7 +30,7 @@
 #include "Kokkos_OskiVector.hpp"
 #include "Kokkos_OskiMatrix.hpp"
 #include "Kokkos_Version.hpp"
-#include "GenerateHbProblem.hpp"
+#include "GenerateOskiProblem.hpp"
 
 using namespace std;
 using namespace Kokkos;
@@ -43,9 +43,9 @@ int PrintTestResults(string, TYPE, TYPE, bool);
 
 int ReturnCodeCheck(string, int, int, bool);
 
-
+/* We don't need this because Kokkos::OskiVector inherits from Kokkos::OskiMultiVector 
 template<typename OrdinalType, typename ScalarType>
-void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+void GenerateHbProblem(bool isRowOriented,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -53,9 +53,9 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       Kokkos::Vector<OrdinalType, ScalarType> *& b,
 		       Kokkos::Vector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
-
+*/
 template<typename OrdinalType, typename ScalarType>
-void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
+void GenerateOskiProblem(bool isRowOriented,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
 		       OrdinalType * xoff, OrdinalType * yoff, OrdinalType nrhs,
 		       Kokkos::CisMatrix<OrdinalType, ScalarType> *& A, 
@@ -65,7 +65,7 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
 		       OrdinalType & numEntries);
 
 typedef MultiVector<OTYPE, STYPE> OMultiVector;
-typedef Vector<OTYPE, STYPE> OVector;
+typedef MultiVector<OTYPE, STYPE> OVector;
 typedef CisMatrix<OTYPE, STYPE> OMatrix;
 
 int main(int argc, char* argv[]) 
@@ -94,10 +94,9 @@ int main(int argc, char* argv[])
   OTYPE numEquations = nx*ny;
   OTYPE numEntries; 
   {
-    bool generateClassicHbMatrix = true;
     bool isRowOriented = true;
-    KokkosTest::GenerateHbProblem<OTYPE, STYPE>
-      problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
+    KokkosTest::GenerateOskiProblem<OTYPE, STYPE>
+      problem(isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
     
     if (verbose) cout<<endl<<"********** CHECKING KOKKOS  OskiMatrix on a Classic HbMatrix input **********"<<endl<<endl;
     
@@ -111,7 +110,8 @@ int main(int argc, char* argv[])
       if (verbose) cout << "successful."<<endl;
     }
   }
-  {
+/*  {
+ OSKI cannot accept generalized HB matrices at this time
     bool generateClassicHbMatrix = false;
     bool isRowOriented = false;
     
@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
       if (verbose) cout << "successful."<<endl;
     }
   }
-  //
+*/  //
   // If a test failed output the number of failed tests.
   //
   if(numberFailedTests > 0) cout << "Number of failed tests: " << numberFailedTests << endl;

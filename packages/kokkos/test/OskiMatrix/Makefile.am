@@ -31,11 +31,11 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = OskiMatrix_test
 
-OskiMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/../HbMatrix/GenerateHbProblem.hpp
+OskiMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/GenerateOskiProblem.hpp
 
 OskiMatrix_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 
-OskiMatrix_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/HbMatrix
+OskiMatrix_test_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/
 
 OskiMatrix_test_LDADD = $(top_builddir)/src/libkokkos.a $(LIBS) \
 	$(BLAS_LIBS) $(FLIBS)
