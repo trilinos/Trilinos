@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package epetra subdirectory example built successfully."
+	@echo ""
+
 #SUBDIRS = ImportExport petra_power_method InverseIteration \
 #          petra_howle petra_transpose petra_nonlinear verySimple
 SUBDIRS = petra_power_method verySimple UG_Ex1 UG_ExMaps my_example
