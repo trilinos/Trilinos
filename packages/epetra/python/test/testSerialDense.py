@@ -285,21 +285,33 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         sdm = Epetra.SerialDenseMatrix(self.array)
         self.assertEqual(sdm.ColDim(), sdm.N())
 
+# *** Matrix multiplication will not work until we convert from Numeric ***
+# *** to NumPy.  This will allow us to support FORTRAN-order indexing   ***
+
 #     def testMatrixMultiply(self):
 #         "Test Epetra.SerialDenseMatrix Multiply method"
 #         this = Epetra.SerialDenseMatrix(3,4)
 #         print
-#         this.Print()
 #         a    = Epetra.SerialDenseMatrix([[ 1, 16],
 #                                          [ 7, 10],
 #                                          [13,  4]])
+#         print "----------\na"
+#         print a
 #         a.Print()
+
 #         b    = Epetra.SerialDenseMatrix([[0, 2, 4,  6],
 #                                          [5, 3, 1, -1]])
+#         print "----------\nb"
+#         print b
 #         b.Print()
+
 #         c    = Epetra.SerialDenseMatrix([[80, 50, 20, -10],
 #                                          [50, 44, 38,  32],
 #                                          [20, 38, 56,  74]])
+#         print "----------\nc"
+#         print c
+#         c.Print()
+
 #         result = this.Multiply("N","N",1.0,a,b,1.0)
 #         this.Print()
 #         self.assertEqual(result, 0)
