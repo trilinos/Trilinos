@@ -152,8 +152,8 @@ A.Multiply(UseTranspose, X, Y)
 Notes
 =====
 
-An Epetra.Vector object is at the same time a Numeric vector, and it
-can therefore be used everywhere Numeric vectors are accepted.
+An Epetra.Vector object is at the same time a Numeric array, and it
+can therefore be used everywhere Numeric arrays are accepted.
 "
 %enddef
 
@@ -170,9 +170,6 @@ can therefore be used everywhere Numeric vectors are accepted.
 // Epetra includes
 #include "Epetra_Version.h"
 #include "Epetra_Object.h"
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_LocalMap.h"
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_CompObject.h"
@@ -210,47 +207,28 @@ can therefore be used everywhere Numeric vectors are accepted.
 %feature("director") PyRowMatrix;
 
 // Ignore directives
+%ignore *::operator=;         // Not overrideable in python
+%ignore *::operator[];        // Replaced with __setitem__ method
+%ignore *::operator[] const;  // Replaced with __getitem__ method
+%ignore *::print;             // Replaced with __str__ method
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
-%ignore Epetra_Object::Print(ostream &) const;
-%ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
+%ignore NumPyArrayBase::getDataArray() const;
+%ignore NumPyArrayBase::getArrayObject() const;
+%ignore Epetra_Object::Print(ostream &) const;       // Replaced with __str__ method
+%ignore Epetra_MapColoring::operator()(int) const;
 %ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
 %ignore Epetra_CompObject::UpdateFlops(float) const; // Use double version
-%ignore Epetra_BlockMap::operator=(const Epetra_BlockMap &);
-%ignore Epetra_Map::operator=(const Epetra_Map &);
-%ignore Epetra_LocalMap::operator=(const Epetra_LocalMap &);
-%ignore Epetra_CrsGraph::operator=(const Epetra_CrsGraph &);
-%ignore Epetra_CrsGraph::operator[](int);            // See %extend CrsGraph
-%ignore Epetra_CrsGraph::operator[](int) const;      //       __getitem__()
-%ignore Epetra_MapColoring::operator[](int);         // See %extend Mapcoloring
-%ignore Epetra_MapColoring::operator[](int) const;   //       __getitem__()
-%ignore Epetra_MapColoring::operator()(int) const;
-%ignore Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix &);
-%ignore Epetra_CrsMatrix::operator[](int);           // See %extend CrsMatrix
-%ignore Epetra_CrsMatrix::operator[](int) const;     //       __getitem__()
-%ignore Epetra_FECrsMatrix::operator=(const Epetra_FECrsMatrix &);
-%ignore Epetra_FECrsMatrix::operator[](int);           // See %extend FECrsMatrix
-%ignore Epetra_FECrsMatrix::operator[](int) const;     //       __getitem__()
+%ignore Epetra_LinearProblem::SetOperator()(int) const;
+%ignore Epetra_VbrMatrix::Solve(bool, bool, bool,
+				Epetra_Vector const&, Epetra_Vector&) const;
 // Epetra_VbrMatrix member function
 // Solve(bool,bool,bool,Epetra_Vector const&,Epetra_Vector&) const does not
 // appear to be implemented.  Apparently overridden by
 // Solve(bool,bool,bool,Epetra_MultiVector const&,Epetra_MultiVector&) const
-%ignore Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix &);
-%ignore Epetra_VbrMatrix::Solve(bool, bool, bool,
-				Epetra_Vector const&, Epetra_Vector&) const;
-%ignore NumPyArrayBase::print(std::ostream &) const;       // faciltated by __str__
-%ignore NumPyArray::print(std::ostream &) const;           // faciltated by __str__
-%ignore NumPyArrayContiguous::print(std::ostream &) const; // faciltated by __str__
-%ignore NumPyArrayBase::getDataArray() const;
-%ignore NumPyArrayBase::getArrayObject() const;
-%ignore Epetra_LinearProblem::SetOperator()(int) const;
-%ignore Epetra_Time::operator=(const Epetra_Time &);
 
 // Rename directives
 %rename(Version      ) Epetra_Version;
 %rename(Object       ) Epetra_Object;
-%rename(BlockMap     ) Epetra_BlockMap;
-%rename(Map          ) Epetra_Map;
-%rename(LocalMap     ) Epetra_LocalMap;
 %rename(SrcDistObject) Epetra_SrcDistObject;
 %rename(DistObject   ) Epetra_DistObject;
 %rename(CompObject   ) Epetra_CompObject;
@@ -306,10 +284,8 @@ using namespace std;
 %include "Epetra_Object.h"
 
 %include "Epetra_Comm.i"
+%include "Epetra_Maps.i"
 
-%include "Epetra_BlockMap.h"
-%include "Epetra_Map.h"
-%include "Epetra_LocalMap.h"
 %include "Epetra_SrcDistObject.h"
 %include "Epetra_DistObject.h"
 %include "Epetra_CompObject.h"
@@ -429,7 +405,6 @@ using namespace std;
     int j2 = j;
     return self->InsertGlobalValues(i, 1, &val2, &j2);
   }
-
 
   int InsertGlobalValues(const int row, PyObject* Values, PyObject* Indices)
   {
@@ -568,69 +543,6 @@ using namespace std;
   }
 }
 
-%extend Epetra_Map 
-{
-  Epetra_Map(const int NumGlobalElements,
-             const Epetra_IntSerialDenseVector& MyGlobalElements,
-             const int IndexBase, const Epetra_Comm& Comm)
-  {
-    return(new Epetra_Map(NumGlobalElements, MyGlobalElements.Length(),
-                         (int*)MyGlobalElements.Values(), IndexBase, Comm));
-  }
-
-  Epetra_Map(const int NumGlobalElements,
-             PyObject* MyGlobalElements, const int IndexBase,
-             const Epetra_Comm& Comm)
-  {
-    if (PyList_Check(MyGlobalElements) == 0)
-    {
-      cerr << "Input object is not a list" << endl;
-      return NULL;
-    }
-
-    int len = PyList_Size(MyGlobalElements);
-
-    vector<int> list(len);
-
-    for (int i = 0 ; i < len ; ++i)
-    {
-      PyObject* Index;
-      Index = PyList_GetItem(MyGlobalElements, i);
-
-      if (PyInt_Check(Index) == 0)
-      {
-        cerr << "Indices must be integers" << endl;
-        return NULL;
-      }
-
-      list[i] = PyLong_AsLong(Index);
-    }
-    return(new Epetra_Map(NumGlobalElements, len, &list[0], IndexBase, Comm));
-  }
-
-  PyObject*  MyGlobalElements()
-  {
-    int* MyGlobalElements_Epetra = self->MyGlobalElements();
-    PyObject* MyGlobalElements_Python,* item;
-    int size = self->NumMyElements();
-    if (size <= 0)
-      goto fail;
-
-    MyGlobalElements_Python = PyList_New(size);
-
-    for (int i = 0 ; i < size ; ++i)
-    {
-      item = PyInt_FromLong(MyGlobalElements_Epetra[i]);
-      PyList_SetItem(MyGlobalElements_Python, i, item);
-    }
-
-    return(MyGlobalElements_Python);
-fail:
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
-}
-
 %extend NumPyArrayBase {
   using namespace std;
   string __str__() {
@@ -648,6 +560,8 @@ __version__ = Version().split()[2]
 
 %}
 
+%warnfilter(473) PyOperator;
+%warnfilter(473) PyRowMatrix;
 %include "Epetra_PyOperator.h"
 %include "Epetra_PyRowMatrix.h"
 
