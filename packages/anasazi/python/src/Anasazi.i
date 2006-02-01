@@ -49,6 +49,8 @@ in-depth information."
 
 // Anasazi includes
 #include "AnasaziVersion.cpp"
+#include "AnasaziBasicSort.hpp"
+#include "AnasaziOutputManager.hpp"
 %}
 
 // Ignore directives.  Here we use them to prevent wrapping the Print
@@ -65,11 +67,17 @@ in-depth information."
 // this is often enough to greatly increase the wrapper's usability.
 %feature("autodoc", "1");
 
+%ignore *::operator=;
+
+%rename (OutputManager_) Anasazi::OutputManager;
+
 // C++ STL support.  If the wrapped class uses standard template
 // library containers, the following %include-s wraps the containers
 // and makes certain conversions seamless, such as between std::string
 // and python strings.
 %include "std_string.i"
+
+ //%import "Epetra.i"
 
 // Anasazi interface includes.  Create a %include line for every
 // header file with a prototype you want wrapped.  In this example,
@@ -77,6 +85,10 @@ in-depth information."
 // class, and Newp_Jambo contains an optional class.
 using namespace std;
 %include "AnasaziVersion.cpp"
+%include "AnasaziBasicSort.hpp"
+%include "AnasaziOutputManager.hpp"
+
+ //%template (OutputManager) Anasazi::OutputManager<double>;
 
 // Extensions.  The %extend directive allows you to extend classes to
 // include additional methods.  In this example, we are adding a
