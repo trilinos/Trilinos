@@ -65,6 +65,7 @@
 #include "mrtr_node.H"
 #include "mrtr_interface.H"
 #include "mrtr_solver.H"
+#include "mrtr_utils.H"
 
 
 
@@ -90,6 +91,7 @@ Use at least the following lines in the configure of Trilinos:<br>
 */
 namespace MOERTEL
 {
+  class MOERTEL::Solver;
 
 /*!
 \class Manager
@@ -146,6 +148,8 @@ class Manager
 {
 public:
 
+  friend class MOERTEL::Solver;
+  
   /*!
   \brief Specification of the problem dimension
   
@@ -515,7 +519,7 @@ private:
   bool ChooseMortarSide_2D(vector<RefCountPtr<MOERTEL::Interface> >& inter);
   bool ChooseMortarSide_3D(vector<RefCountPtr<MOERTEL::Interface> >& inter);
   
-private:
+protected:
 
   int                           outlevel_;            // output level (0-10)
   Epetra_Comm&                  comm_;                // communicator (global, contains ALL procs)
@@ -532,6 +536,9 @@ private:
   RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
   RefCountPtr<Epetra_CrsMatrix> spdmatrix_;           // the spd matrix of the problem;
   RefCountPtr<Epetra_CrsMatrix> spdrhs_;              // the matrix to left-muttliply the rhs vector with for the spd problem
+  RefCountPtr<Epetra_CrsMatrix> I_;
+  RefCountPtr<Epetra_CrsMatrix> WT_;
+  RefCountPtr<Epetra_CrsMatrix> B_;
 
   RefCountPtr<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    
   RefCountPtr<MOERTEL::Solver>        solver_;        // the mortar solver

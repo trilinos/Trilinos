@@ -263,5 +263,11 @@ on the result.
 */
 Epetra_CrsMatrix* StripZeros(Epetra_CrsMatrix& A, double eps);
 
+/*!
+\brief Print matrix to file
+
+*/
+bool Print_Matrix(string name, Epetra_CrsMatrix& A);
+
 } // namespace MOERTEL
 #endif // MOERTEL_UTILS_H

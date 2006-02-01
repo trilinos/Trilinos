@@ -639,3 +639,50 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
   out->FillComplete(A.OperatorDomainMap(),A.OperatorRangeMap());
   return out;
 }
+
+/*----------------------------------------------------------------------*
+ | print matrix                                              m.gee 01/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A)
+{
+  char mypidc[100];
+  sprintf(mypidc,"%d",A.Comm().MyPID());
+  name = name + mypidc + ".mtx";
+  char* nameptr = &name[0];
+  FILE* out = fopen(nameptr,"w");
+  for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
+  {
+    int grow = A.GRID(lrow); 
+    if (grow<0) 
+    { 
+      cout << "***ERR*** MOERTEL::Print_Matrix:\n"
+           << "***ERR*** Cannot gind global row indes from local row index\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    int numentries;
+    int* lindices;
+    double* values;
+    int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
+    if (err) 
+    { 
+      cout << "***ERR*** MOERTEL::StripZeros:\n"
+           << "***ERR*** A.ExtractMyRowView returned " << err << endl
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      delete out;
+      return false;
+    }
+    for (int j=0; j<numentries; ++j)
+    {
+      int lcol = lindices[j];  
+      int gcol = A.GCID(lcol); 
+      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      fprintf(out," %d   %d   %20.10e\n",grow,gcol,values[j]);
+    }
+  }
+  fflush(out);
+  fclose(out);
+  cout << "Epetra_CrsMatrix is written to file " << name << endl;
+  fflush(stdout);
+  return true;
+}

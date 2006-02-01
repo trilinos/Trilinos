@@ -74,6 +74,8 @@
 
 #include "AztecOO.h"
 
+#include "mrtr_manager.H"
+#include "mrtr_utils.H"
 
 using namespace std;
 using namespace Teuchos;
@@ -95,8 +97,11 @@ Use at least the following lines in the configure of Trilinos:<br>
 \endcode
 
 */
+
+
 namespace MOERTEL
 {
+class MOERTEL::Manager;
 
 /*!
 \class Solver
@@ -163,7 +168,8 @@ public:
   bool Solve(RefCountPtr<Teuchos::ParameterList> params,
              RefCountPtr<Epetra_CrsMatrix> matrix,
              RefCountPtr<Epetra_Vector> x,
-             RefCountPtr<Epetra_Vector> b);
+             RefCountPtr<Epetra_Vector> b,
+             MOERTEL::Manager& manager);
   
   //@}
 
@@ -193,6 +199,10 @@ private:
   RefCountPtr<Amesos_BaseSolver>                    amesossolver_;  // the amesos solver
   RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
   RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
+
+  Epetra_CrsMatrix* WT_;
+  Epetra_CrsMatrix* B_;
+  Epetra_CrsMatrix* I_;  
 };
 
 } // namespace MOERTEL
