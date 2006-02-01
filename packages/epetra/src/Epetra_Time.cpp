@@ -29,6 +29,9 @@
 
 #include "Epetra_Time.h"
 
+#ifdef EPETRA_MPI
+#include <time.h>
+#endif
 
 //=============================================================================
 Epetra_Time::Epetra_Time(const Epetra_Comm& Comm) 
