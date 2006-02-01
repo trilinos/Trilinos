@@ -38,8 +38,15 @@ endif
 
 EXEEXT = .exe
 
+if HAVE_AMESOS_PARAKLETE
+PARAKLETE_TEST = run_pk
+else
+PARAKLETE_TEST = 
+endif
+
+
 if HAVE_AMESOS_GALERI
-EXAMPLES_GALERI = example_AmesosFactory example_AmesosFactory_HB compare_solvers
+EXAMPLES_GALERI = example_AmesosFactory example_AmesosFactory_HB compare_solvers $(PARAKLETE_TEST)
 else
 EXAMPLES_GALERI = 
 endif
@@ -73,6 +80,11 @@ compare_solvers_SOURCES      = $(srcdir)/compare_solvers.cpp
 compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 compare_solvers_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 compare_solvers_LDADD        = $(EXAMPLE_LIBS)
+
+run_pk_SOURCES      = $(srcdir)/run_pk.c
+run_pk_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+run_pk_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+run_pk_LDADD        = $(EXAMPLE_LIBS)
 
 a_trivial_mpi_test_SOURCES      = $(srcdir)/a_trivial_mpi_test.cpp
 a_trivial_mpi_test_CXXFLAGS     = 

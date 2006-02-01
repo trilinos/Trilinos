@@ -48,12 +48,6 @@
 using namespace Teuchos;
 using namespace Galeri;
 
-#include "Trilinos_Util.h"
-#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
-#include "CrsMatrixTranspose.h"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Epetra_Export.h"
-
 int MyCreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm, 
 		     Epetra_Map *& readMap,
 		     const bool transpose, const bool distribute, 
@@ -86,47 +80,40 @@ int MyCreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
   string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
 
-  if ( LastFiveBytes == ".TimD" ) { 
-    // Call routine to read in a file in a Zero Based File in Tim Davis format 
+  if ( LastFiveBytes == ".triU" ) { 
+    // Call routine to read in unsymmetric Triplet matrix
     EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( filename, false, Comm, readMap, readA, readx, 
-						      readb, readxexact, false, true, true ) );
+						      readb, readxexact) );
     symmetric = false; 
   } else {
-    if ( LastFiveBytes == ".triU" ) { 
-      // Call routine to read in unsymmetric Triplet matrix
-      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( filename, false, Comm, readMap, readA, readx, 
+    if ( LastFiveBytes == ".triS" ) { 
+      // Call routine to read in symmetric Triplet matrix
+      EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( filename, true, Comm, readMap, readA, readx, 
 							readb, readxexact) );
-      symmetric = false; 
+      symmetric = true; 
     } else {
-      if ( LastFiveBytes == ".triS" ) { 
-	// Call routine to read in symmetric Triplet matrix
-	EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( filename, true, Comm, readMap, readA, readx, 
-							  readb, readxexact) );
-	symmetric = true; 
-      } else {
-	if (  LastFourBytes == ".mtx" ) { 
-	  EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( filename, Comm, readMap, 
-								 readA, readx, readb, readxexact) );   
-	  FILE* in_file = fopen( filename, "r");
-	  assert (in_file != NULL) ;  // Checked in Trilinos_Util_CountMatrixMarket() 
-	  const int BUFSIZE = 800 ; 
-	  char buffer[BUFSIZE] ; 
-	  fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
-	  string headerline1 = buffer;
+      if (  LastFourBytes == ".mtx" ) { 
+	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( filename, Comm, readMap, 
+							       readA, readx, readb, readxexact) );   
+	FILE* in_file = fopen( filename, "r");
+	assert (in_file != NULL) ;  // Checked in Trilinos_Util_CountMatrixMarket() 
+	const int BUFSIZE = 800 ; 
+	char buffer[BUFSIZE] ; 
+	fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
+	string headerline1 = buffer;
 #ifdef TFLOP
-	  if ( headerline1.find("symmetric") < BUFSIZE ) symmetric = true;
+	if ( headerline1.find("symmetric") < BUFSIZE ) symmetric = true;
 #else
-	  if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
-	  
+	if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
+
 #endif
-	  fclose(in_file);
-	  
-	} else {
-	  // Call routine to read in HB problem
-	  Trilinos_Util_ReadHb2Epetra( filename, Comm, readMap, readA, readx, 
-				       readb, readxexact) ;
-	  if (  LastFourBytes == ".rsa" ) symmetric = true ; 
-	}
+	fclose(in_file);
+
+      } else {
+	// Call routine to read in HB problem
+	Trilinos_Util_ReadHb2Epetra( filename, Comm, readMap, readA, readx, 
+						     readb, readxexact) ;
+	if (  LastFourBytes == ".rsa" ) symmetric = true ; 
       }
     }
   }
@@ -188,6 +175,7 @@ int MyCreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
 
 
 
+
 // ===================== //
 // M A I N   D R I V E R //
 // ===================== //
@@ -216,7 +204,7 @@ int main(int argc, char *argv[])
   // subdivided into mx x my x mz cubes, each assigned to a 
   // different processor.
 
-#ifndef FILENAME_SPECIFIED_ON_COMMAND_LINE
+#if 0
   ParameterList GaleriList;
   GaleriList.set("nx", 4);
   GaleriList.set("ny", 4);
@@ -239,7 +227,10 @@ int main(int argc, char *argv[])
   bool symmetric ; 
   Epetra_CrsMatrix *Matrix = 0 ;
   Epetra_Map *Map = 0 ;
-  MyCreateCrsMatrix( argv[1], Comm, Map, transpose, distribute, symmetric, Matrix ) ;
+  CreateCrsMatrix( "ibm.triU", Comm, Map, transpose, distribute, &symmetric, Matrix ) ;
+
+
+
 
 #endif
 
@@ -261,21 +252,7 @@ int main(int argc, char *argv[])
 
   vector<string> SolverType;
   SolverType.push_back("Amesos_Paraklete");
-  SolverType.push_back("Amesos_Klu");
-  char junk ; 
-  //  if ( Comm.MyPID() == 0 ) cin >> junk; 
-  Comm.Barrier() ; 
-#if 0
-  SolverType.push_back("Amesos_Lapack");
-  SolverType.push_back("Amesos_Umfpack");
-  SolverType.push_back("Amesos_Pardiso");
-  SolverType.push_back("Amesos_Taucs");
-  SolverType.push_back("Amesos_Superlu");
-  SolverType.push_back("Amesos_Superludist");
-  SolverType.push_back("Amesos_Mumps");
-  SolverType.push_back("Amesos_Dscpack");
-  SolverType.push_back("Amesos_Scalapack");
-#endif
+
   Epetra_Time Time(Comm);
   
   // this is the Amesos factory object that will create 
@@ -303,58 +280,15 @@ int main(int argc, char *argv[])
       assert (Solver != 0);
 
       Solver->SetParameters(List);
-      Solver->SetUseTranspose( true) ; 
 
       // 5.- factorize and solve
       
-
-      Comm.Barrier() ; 
-      if (verbose) 
-        cout << endl
-             << "Solver " << SolverType[i] 
-             << ", verbose = " << verbose << endl ; 
-      Comm.Barrier() ; 
-
-
       Time.ResetStartTime();
       AMESOS_CHK_ERR(Solver->SymbolicFactorization());
-      if (verbose) 
-        cout << endl
-             << "Solver " << SolverType[i] 
-             << ", symbolic factorization time = " 
-             << Time.ElapsedTime() << endl;
-      Comm.Barrier() ; 
-
-      AMESOS_CHK_ERR(Solver->NumericFactorization());
-      if (verbose) 
-        cout << "Solver " << SolverType[i] 
-             << ", numeric factorization time = " 
-             << Time.ElapsedTime() << endl;
-      Comm.Barrier() ; 
-
-      AMESOS_CHK_ERR(Solver->Solve());
-      if (verbose) 
-        cout << "Solver " << SolverType[i] 
-             << ", solve time = " 
-             << Time.ElapsedTime() << endl;
-      Comm.Barrier() ; 
-  
-      // 6.- compute difference between exact solution and Amesos one
-      //     (there are other ways of doing this in Epetra, but let's
-      //     keep it simple)
-      double d = 0.0, d_tot = 0.0;
-      for (int j = 0 ; j< LHS.Map().NumMyElements() ; ++j)
-        d += (LHS[0][j] - 1.0) * (LHS[0][j] - 1.0);
-
-      Comm.SumAll(&d,&d_tot,1);
-      if (verbose)
-        cout << "Solver " << SolverType[i] << ", ||x - x_exact||_2 = " 
-             << sqrt(d_tot) << endl;
 
       // 7.- delete the object
       delete Solver;
 
-      TotalResidual += d_tot;
     }
   }
 

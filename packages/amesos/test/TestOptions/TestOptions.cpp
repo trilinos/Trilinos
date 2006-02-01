@@ -37,7 +37,6 @@
 
 #include "Trilinos_Util.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
-#include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Amesos_BaseSolver.h"
@@ -530,12 +529,16 @@ int NextMain( int argc, char *argv[] ) {
 
 
 
+#ifdef HAVE_AMESOS_UMFPACK
+  AmesosClasses.push_back( "Amesos_Umfpack" );
+#endif
+
+#if 1
 #ifdef HAVE_AMESOS_DSCPACK
   //  This fails on my Fedora Core linux box
   if ( ! quiet ) AmesosClasses.push_back( "Amesos_Dscpack" );         //  bug #1205 
 #endif
 
-#if 1
 #ifdef HAVE_AMESOS_TAUCS
   AmesosClasses.push_back( "Amesos_Taucs" );
 #endif
@@ -577,9 +580,6 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Lapack" );
 #endif
 
-#ifdef HAVE_AMESOS_UMFPACK
-  AmesosClasses.push_back( "Amesos_Umfpack" );
-#endif
 #endif
 
   NumAmesosClasses = AmesosClasses.size();
@@ -653,8 +653,8 @@ int NextMain( int argc, char *argv[] ) {
   if ( ! small ) {
     result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/bcsstk04.mtx", Comm, verbose, false, 1e-4 , numtests ) ;
     if (! quiet) { 
-      result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, false, 1e-5 , numtests ) ;
       if ( Comm.NumProc() == 1) {
+	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, false, 1e-5 , numtests ) ;
 	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.rua", Comm, verbose, false, 1e-2 , numtests ) ;
 	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-6 , numtests ) ;
       }

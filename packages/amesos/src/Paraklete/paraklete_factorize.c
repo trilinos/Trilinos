@@ -154,6 +154,7 @@ static paraklete_numeric *paraklete_allocate_numeric
     }
 
     PR1 ((cm->file, "proc %d LU ok\n", myid)) ;
+
     return (LU) ;
 }
 
@@ -452,6 +453,7 @@ paraklete_numeric *paraklete_factorize
 	PR0 ((cm->file, "proc %d everybody fails factorize\n", Common->myid)) ;
 	Common->status = PK_OUT_OF_MEMORY ;
 	paraklete_free_numeric (&LU, Common) ;
+	printf( " paraklete_factorize.c:458 returning failure \n" ) ; 
 	return (NULL) ;
     }
 
@@ -673,12 +675,14 @@ paraklete_numeric *paraklete_factorize
     {
 	PR0 ((cm->file, "proc %d Singular matrix: %d of %d\n", myid, kk, n)) ;
 	Common->status = PK_SINGULAR ;
+	printf( " paraklete_factorize.c:686 returning failure \n" ) ; 
     }
 
     if (Common->status != PK_OK)
     {
 	/* out of memory, singular matrix, or unknown error */
 	paraklete_free_numeric (&LU, Common) ;
+	printf( " paraklete_factorize.c:686 status = %d should be %d returning failure \n", Common->status, PK_OK ) ; 
 	return (NULL) ;
     }
 
@@ -705,6 +709,7 @@ paraklete_numeric *paraklete_factorize
 	PR0 ((cm->file, "proc %d everybody fails in PQ\n", Common->myid)) ;
 	Common->status = PK_OUT_OF_MEMORY ;
 	paraklete_free_numeric (&LU, Common) ;
+	printf( " paraklete_factorize.c:711 returning failure \n" ) ; 
 	return (NULL) ;
     }
 

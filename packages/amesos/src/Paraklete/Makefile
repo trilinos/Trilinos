@@ -39,7 +39,8 @@ CC = mpicc -Wall -W -Wshadow -Wmissing-prototypes -Wstrict-prototypes \
 # plain blas:
 # LIB = -lmetis -lsecond -lm -llapack_plain -lblas_plain -lg2c
 # LIB = -lmetis -lsecond -lm -llapack -lgoto -lg2c -lefence -lpthread
-LIB = -lmetis -lsecond -lm -llapack -lgoto -lxerbla -lg2c
+LIB = -L. -lmetis -lsecond -lm -llapack -lgoto -lxerbla -lg2c
+LIB = -L. -lmetis
 
 PSRC = paraklete_analyze.c  \
 	paraklete_factorize.c \

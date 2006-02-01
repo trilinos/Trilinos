@@ -6,7 +6,7 @@ INCLUDES = -I../Lib
 CFLAGS = $(COPTIONS) $(OPTFLAGS) $(INCLUDES)
 
 ## LIBS = -lmetis -lm
-LIBS = -lmetis -lm -lefence
+LIBS = -lmetis -lm 
 LD = $(CC) $(LDOPTIONS) -L. -L..
 METISLIB = ../libmetis.a
 

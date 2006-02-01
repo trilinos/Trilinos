@@ -1583,7 +1583,7 @@ void *cholmod_realloc
 (
     void *p,
     size_t *n,	    /* on input, n = current size. on output, n = new size */
-    size_t new,	    /* requested size of the block of memory */
+    size_t new_block,	    /* requested size of the block of memory */
     size_t size,    /* size of each item */
     cholmod_common *Common
 ) ;
@@ -1597,7 +1597,7 @@ int cholmod_realloc_multiple
     void **X,	    /* complex, double, or float block */
     void **Z,	    /* double or float block */
     size_t *old,    /* current size of both blocks */
-    size_t new,	    /* requested size */
+    size_t new_block,	    /* requested size */
     cholmod_common *Common
 ) ;
 

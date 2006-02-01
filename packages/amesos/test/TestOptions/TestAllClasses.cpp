@@ -175,6 +175,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	  RunKluTest = false ;  
 #endif
 	if ( ImpcolB ) RunKluTest = false ;   // See bug #1928 
+
+
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
 					    EpetraMatrixType,
 					    transpose, 
@@ -271,12 +273,24 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	}
 
       } else if ( AmesosClasses[i] == "Amesos_Paraklete" ) {
+
 	bool RunParakleteTest = true;
-	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
+	if ( (   ReindexColMap != 0  ) )  //  Bug #969
 	  RunParakleteTest = false ;   //  Bug #969
-	if ( MissingADiagonal ) RunParakleteTest = false ; // Bug #1404
-	//	RowMapEqualsColMap = false ; // Bug #1405 - this turns off the AddToDiag test 
-	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunParakleteTest = false ;   //  Bug #1403
+
+	//	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunParakleteTest = false ;   //  Bug #1403
+	if ( RunParakleteTest && verbose) cout << " Testing PARAKLETE " << endl ; 
+
+	Teuchos::ParameterList ParamList;
+	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
+	if ( ( RangeMapType != 0 || DomainMapType != 0 || distribute ) ) 
+	  ParamList.set( "DontTrustMe", true );
+	if ( ! transpose ) RunParakleteTest = false ; // Bug #1953 
+#ifndef HAVE_AMESOS_EPETRAEXT
+	if ( ( ReindexRowMap || ReindexColMap ) ) 
+	  RunParakleteTest = false ;  
+#endif
+	//	if ( ImpcolB ) RunParakleteTest = false ;   // See bug #1928 
 
 	if ( RunParakleteTest ) {
 	  if ( verbose) cout << " Testing Paraklete " << endl ; 

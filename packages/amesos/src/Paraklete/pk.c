@@ -142,7 +142,7 @@ void my_handler (int status, char *msg)
 /* === pk =================================================================== */
 /* ========================================================================== */
 
-int main (int argc, char **argv)
+int PK_main(int argc, char **argv)
 {
     cholmod_sparse *A ;
     paraklete_common *Common, pcommon ;
