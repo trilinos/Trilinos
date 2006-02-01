@@ -58,8 +58,6 @@ using namespace Teuchos;
 #define SType2     double
 #define OType	   int
 
-// TOL defines the tolerance allowed for differences in BLAS output. Set to 0 for strict comparisons.
-#define TOL        1
 // MVMIN/MAX define the minimum and maximum dimensions of generated matrices and vectors, respectively.
 #define MVMIN      2
 #define MVMAX      20
@@ -105,13 +103,13 @@ template<typename TYPE>
 void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab = 0);
 
 template<typename TYPE1, typename TYPE2>
-bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, double Tolerance = 0);
+bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, TYPE2 Tolerance = Teuchos::ScalarTraits<TYPE2>::zero());
 
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance = 0);
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, TYPE2 Tolerance = Teuchos::ScalarTraits<TYPE2>::zero());
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, double Tolerance = 0);
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, TYPE2 Tolerance = Teuchos::ScalarTraits<TYPE2>::zero());
 
 // For most types, this function is just a wrapper for static_cast(), but for mp_real/double, it calls mp::dble()
 // The second input parameter is not used; it is only needed to determine what type to convert *to*
@@ -223,7 +221,8 @@ int main(int argc, char *argv[])
   Teuchos::ETransp TRANS, TRANSA, TRANSB;
   Teuchos::EDiag DIAG;
   SType2 convertTo = ScalarTraits<SType2>::zero();
-
+  SType2 TOL = 1e-5;
+  
   srand(time(NULL));
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -1092,7 +1091,7 @@ int main(int argc, char *argv[])
 	  cout << "SType2alpha = " << SType2alpha << endl;
 	  cout << "SType1beta = " << SType1beta << endl;
 	  cout << "SType2beta = " << SType2beta << endl;
-	  if(SIDE == 'L') {
+	  if (Teuchos::ESideChar[SIDE] == 'L') {
 	      PrintMatrix(SType1A, M, M, LDA,"SType1A", matlab);
 	      PrintMatrix(SType2A, M, M, LDA,"SType2A", matlab);
 	  } else {
@@ -1292,7 +1291,7 @@ int main(int argc, char *argv[])
 	  cout << "Test #" << TotalTestCount << " --" << endl;
 	  cout << "SType1alpha = " << SType1alpha << endl;
 	  cout << "SType2alpha = " << SType2alpha << endl;
-	  if (SIDE == 'L') {
+          if(Teuchos::ESideChar[SIDE] == 'L') { 
 	    PrintMatrix(SType1A, M, M, LDA, "SType1A", matlab);
 	    PrintMatrix(SType2A, M, M, LDA, "SType2A", matlab);
 	  } else {
@@ -1491,9 +1490,14 @@ int main(int argc, char *argv[])
       if(debug)
 	{
 	  cout << "Test #" << TotalTestCount << " --" << endl;
+	  cout << Teuchos::ESideChar[SIDE] << "\t" 
+	       << Teuchos::EUploChar[UPLO] << "\t" 
+	       << Teuchos::ETranspChar[TRANSA] << "\t" 
+	       << Teuchos::EDiagChar[DIAG] << endl;
+	  cout << "M="<<M << "\t" << "N="<<N << "\t" << "LDA="<<LDA << "\t" << "LDB="<<LDB << endl;
 	  cout << "SType1alpha = " << SType1alpha << endl;
 	  cout << "SType2alpha = " << SType2alpha << endl;
-	  if (SIDE == 'L') {
+	  if (Teuchos::ESideChar[SIDE] == 'L') {
 	      PrintMatrix(SType1A, M, M, LDA, "SType1A", matlab);
 	      PrintMatrix(SType2A, M, M, LDA, "SType2A", matlab);
 	  } else {
@@ -1514,6 +1518,8 @@ int main(int argc, char *argv[])
 	  PrintMatrix(SType2B, M, N, LDB, "SType2B_after_operation", matlab);
 	}
 
+      if (CompareMatrices(SType1B, SType2B, M, N, LDB, TOL)==0)
+	cout << "FAILED TEST!!!!!!" << endl;
       GoodTestSubcount += CompareMatrices(SType1B, SType2B, M, N, LDB, TOL);
 
       delete [] SType1A;
@@ -1621,45 +1627,81 @@ void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool
 }
 
 template<typename TYPE1, typename TYPE2>
-bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, double Tolerance)
+bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, TYPE2 Tolerance)
 {
   TYPE2 convertTo = ScalarTraits<SType2>::zero();
-  return(ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Scalar1, convertTo)) - ScalarTraits<TYPE2>::magnitude(Scalar2)) <= Tolerance);
+  TYPE2 temp = ScalarTraits<TYPE2>::magnitude(Scalar2);
+  TYPE2 temp2 = ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Scalar1, convertTo)) - temp);
+  if (temp != ScalarTraits<TYPE2>::zero()) {
+    temp2 /= temp;
+  }
+  return( temp2 < Tolerance );
 }
 
+
+/*  Function:  CompareVectors
+    Purpose:   Compares the difference between two vectors using relative euclidean-norms, i.e. ||v_1-v_2||_2/||v_2||_2
+*/
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, double Tolerance)
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, TYPE2 Tolerance)
 {
   TYPE2 convertTo = ScalarTraits<SType2>::zero();
+  TYPE2 temp = ScalarTraits<SType2>::zero();
+  TYPE2 temp2 = ScalarTraits<SType2>::zero();
+  TYPE2 sum = ScalarTraits<SType2>::zero();
+  TYPE2 sum2 = ScalarTraits<SType2>::zero();
   int i;
   for(i = 0; i < Size; i++)
     {
-      // if(ScalarTraits<TYPE1>::magnitude(ScalarTraits<TYPE1>::magnitude(Vector1[i]) - ScalarTraits<TYPE1>::magnitude((TYPE1)Vector2[i])) > Tolerance)
-      if(ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Vector1[i], convertTo)) - ScalarTraits<TYPE2>::magnitude(Vector2[i])) > Tolerance)
-	{
-	  return 0;
-	}
+      temp2 = ScalarTraits<TYPE2>::magnitude(Vector2[i]);
+      sum2 += temp2*temp2;
+      temp = ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Vector1[i], convertTo)) - temp2);
+      sum += temp*temp;
     }
-  return 1;
+  temp = Teuchos::ScalarTraits<TYPE2>::squareroot(sum2);
+  if (temp != Teuchos::ScalarTraits<TYPE2>::zero())
+    temp2 = Teuchos::ScalarTraits<TYPE2>::squareroot(sum)/temp;
+  else
+    temp2 = Teuchos::ScalarTraits<TYPE2>::squareroot(sum);
+  if (temp2 > Tolerance)
+    return 0;
+  else
+    return 1;
 }
 
+/*  Function:  CompareMatrices
+    Purpose:   Compares the difference between two matrices using relative frobenius-norms, i.e. ||M_1-M_2||_F/||M_2||_F
+*/
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, double Tolerance)
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, TYPE2 Tolerance)
 {
   TYPE2 convertTo = ScalarTraits<SType2>::zero();
+  TYPE2 temp = ScalarTraits<SType2>::zero();
+  TYPE2 temp2 = ScalarTraits<SType2>::zero();
+  TYPE2 sum = ScalarTraits<SType2>::zero();
+  TYPE2 sum2 = ScalarTraits<SType2>::zero();
   int i,j;
   for(j = 0; j < Columns; j++)
-     {
-  	for(i = 0; i < Rows; i++)
-    	   {
-      	      if(ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Matrix1[j*LDM + i], convertTo)) - ScalarTraits<TYPE2>::magnitude(Matrix2[j*LDM + i])) > Tolerance)
-		{
-	  	   return 0;
-		}
-	   }
-     }
-  return 1;
+    {
+      for(i = 0; i < Rows; i++)
+	{
+	  temp2 = ScalarTraits<TYPE2>::magnitude(Matrix2[j*LDM + i]);
+	  sum2 = temp2*temp2;
+	  temp = ScalarTraits<TYPE2>::magnitude(ScalarTraits<TYPE2>::magnitude(ConvertType(Matrix1[j*LDM + i],convertTo)) - temp2); 
+	  sum = temp*temp;
+	}
+    }
+  temp = Teuchos::ScalarTraits<TYPE2>::squareroot(sum2);
+  if (temp != Teuchos::ScalarTraits<TYPE2>::zero())
+    temp2 = Teuchos::ScalarTraits<TYPE2>::squareroot(sum)/temp;
+  else
+    temp2 = Teuchos::ScalarTraits<TYPE2>::squareroot(sum);
+  if (temp2 > Tolerance)
+    return 0;
+  else
+    return 1;
 }
+
 
 template<typename TYPE1, typename TYPE2>
 TYPE2 ConvertType(TYPE1 T1, TYPE2 T2)
