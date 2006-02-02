@@ -106,6 +106,10 @@ pliris = \
 pytrilinos = \
 --enable-pytrilinos
 
+rtop = \
+--enable-thyra \
+--enable-moocho
+
 rythmos = \
 --enable-rythmos
 
@@ -124,10 +128,12 @@ teuchos = \
 --enable-amesos \
 --with-ml_amesos \
 --enable-moertel \
+--enable-moocho \
 --enable-anasazi \
 --with-loca-anasazi \
 --enable-capo \
 --enable-galeri \
+--enable-rtop \
 --enable-rythmos \
 --enable-thyra
 

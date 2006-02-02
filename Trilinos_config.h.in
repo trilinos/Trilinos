@@ -75,6 +75,9 @@
 /* Define if want to build pytrilinos */
 #undef HAVE_PYTRILINOS
 
+/* Define if want to build rtop */
+#undef HAVE_RTOP
+
 /* Define if want to build rythmos */
 #undef HAVE_RYTHMOS
 
