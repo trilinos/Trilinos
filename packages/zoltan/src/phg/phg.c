@@ -56,7 +56,6 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
   {"PHG_FM_LOOP_LIMIT",               NULL,  "INT",    0},
   {"PHG_FM_MAX_NEG_MOVE",             NULL,  "INT",    0},    
-  {"PHG_COARSE_ITERATIONS",           NULL,  "INT",    0},    
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
   {"USE_TIMERS",                      NULL,  "INT",    0},    
   {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",  0},
@@ -519,8 +518,6 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE", &hgp->fm_max_neg_move);  
   Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
                                  hgp->coarsepartition_str);
-  Zoltan_Bind_Param(PHG_params, "PHG_COARSE_ITERATIONS",
-                                 (void*) &hgp->num_coarse_iter);  
   Zoltan_Bind_Param(PHG_params, "PHG_USE_TIMERS",
                                  (void*) &hgp->use_timers);  
   Zoltan_Bind_Param(PHG_params, "USE_TIMERS",
@@ -573,7 +570,6 @@ int Zoltan_PHG_Initialize_Params(
   hgp->kway = 0;
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
-  hgp->num_coarse_iter = 1 + 9/zz->Num_Proc;
   hgp->part_sizes = part_sizes;
   hgp->RandomizeInitDist = 0;
   hgp->EdgeSizeThreshold = 0.25;  

@@ -24,30 +24,16 @@ extern "C" {
  * AND add entry to CoarsePartitionFns array 
  * AND increment NUM_COARSEPARTITION_FN.
  */
-#define NUM_COARSEPARTITION_FNS 9
+#define NUM_COARSEPARTITION_FNS 3
 
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr0;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr1;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr2;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr3;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_gr4;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_rip;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ripk;
-static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_spm;
 
 static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] = 
                                       {&coarse_part_gr0,
-                                       &coarse_part_gr1,
-                                       &coarse_part_gr2,
-                                       &coarse_part_gr3,
-                                       &coarse_part_gr4,
                                        &coarse_part_ran,
                                        &coarse_part_lin,
-                                       &coarse_part_rip,
-                                       &coarse_part_ripk,
-                                       &coarse_part_spm,
                                       };
 
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
@@ -76,18 +62,13 @@ char *str, *str2;
     hgp->LocalCoarsePartition = 0;
   }
 
-  if      (!strcasecmp(str, "auto"))  return NULL;
-  else if (!strcasecmp(str, "ran"))   return coarse_part_ran;
-  else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
-  else if (!strcasecmp(str, "rip"))   return coarse_part_rip;
-  else if (!strcasecmp(str, "ripk"))  return coarse_part_ripk;
-  else if (!strcasecmp(str, "gr0"))   return coarse_part_gr0;
-  else if (!strcasecmp(str, "gr1"))   return coarse_part_gr1;
-  else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
-  else if (!strcasecmp(str, "gr3"))   return coarse_part_gr3;
-  else if (!strcasecmp(str, "gr4"))   return coarse_part_gr4;
-  else if (!strcasecmp(str, "spm"))   return coarse_part_spm;
-  else if (!strcasecmp(str, "no"))    return NULL;
+  if      (!strcasecmp(str, "auto"))   return NULL;
+  else if (!strcasecmp(str, "ran"))    return coarse_part_ran;
+  else if (!strcasecmp(str, "random")) return coarse_part_ran;
+  else if (!strcasecmp(str, "lin"))    return coarse_part_lin;
+  else if (!strcasecmp(str, "linear")) return coarse_part_lin;
+  else if (!strcasecmp(str, "gr0"))    return coarse_part_gr0;
+  else if (!strcasecmp(str, "greedy")) return coarse_part_gr0;
   else {                              *ierr = ZOLTAN_FATAL; return NULL;}
 }
 
@@ -131,6 +112,11 @@ int worst, new_cand;
 float bal, cut, worst_cut;
 int fine_timing = (hgp->use_timers > 2);
 static int timer_cpart=-1, timer_gather=-1, timer_refine=-1; 
+
+/* Number of iterations to try coarse partitioning on each proc. */
+/* 10 when p=1, and 1 when p is large. */
+const int num_coarse_iter = 1 + 9/zz->Num_Proc; 
+
 
   if (fine_timing) {
     if (timer_gather < 0)
@@ -259,7 +245,7 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
     new_cand = 0;
     new_part = spart;
 
-    for (i=0; i<hgp->num_coarse_iter; i++){
+    for (i=0; i< num_coarse_iter; i++){
         int savefmlooplimit=hgp->fm_loop_limit;
         
       /* Overwrite worst partition with new candidate. */
@@ -331,7 +317,7 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
     /* For now, only pick the best one, in the future we pick the k best. */
 
     ierr = pick_best(zz, hgp, phg->comm, shg, numPart, 
-              MIN(NUM_PART_KEEP, hgp->num_coarse_iter), spart,
+              MIN(NUM_PART_KEEP, num_coarse_iter), spart,
               bestvals);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -542,155 +528,6 @@ static int coarse_part_ran (
     return err;
 }
 
-
-/**************************************************************************
- * Random inner product partitioning.
- * Pick a random positive vector, compute inner products, sort the vertices
- * by the scaled inner product values. Do sequence partitioning.
- * This is a fast method but better than pure random.
- */
-static int coarse_part_rip (
-  ZZ *zz,
-  HGraph *hg,
-  int p,
-  float *part_sizes,
-  Partition part,
-  PHGPartParams *hgp
-)
-{
-    int i, j, k, err=0, nedges;
-    int *order=NULL; 
-    float *ran=NULL;
-    float *iprod = NULL;
-    char *yo = "coarse_part_rip";
-
-    order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int));
-    ran    = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float));
-    iprod  = (float *) ZOLTAN_MALLOC (hg->nVtx*sizeof(float));
-    if (!(order && ran && iprod)) {
-        ZOLTAN_FREE ((void**) &order);
-        ZOLTAN_FREE ((void**) &ran);
-        ZOLTAN_FREE ((void**) &iprod);
-        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-    }
-    for (i=0; i<hg->nVtx; i++)
-        order[i] = i;
-
-    /* Generate positive random numbers for edges */
-    for (j=0; j<hg->nEdge; j++){
-      ran[j] = ((float) Zoltan_Rand(NULL))/ZOLTAN_RAND_MAX; 
-    }
-
-    /* Compute scaled inner products with random vector. */
-    for (i=0; i<hg->nVtx; i++){
-      iprod[i] = 0.0;
-      for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
-        j = hg->vedge[k];
-        iprod[i] += ran[j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
-      }
-      nedges = (hg->vindex[i+1] - hg->vindex[i]);
-      /* scale by norm of vertex column */
-      /* no need to scale random vector */
-      if (nedges)
-        iprod[i] /= sqrt((double) nedges);
-    }
-
-    /* Sort inner product values. */
-    Zoltan_quicksort_pointer_dec_float(order, iprod, 0, hg->nVtx-1);
-
-    /* Call sequence partitioning. */
-    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
-
-    ZOLTAN_FREE (&order);
-    ZOLTAN_FREE (&ran);
-    ZOLTAN_FREE (&iprod);
-    return err;
-}
-
-
-
-/**************************************************************************
- * Random inner product partitioning; k-cluster version.
- * Pick k random positive vectors. For each vertex (column),
- * compute inner product with each of the k "cluster" vectors.
- * Assign the vertex to the most similar cluster vector.
- * 
- * This is a fast method but better than pure random.
- * 
- * Future: We could iterate and obtain a k-means clustering method. 
- */
-static int coarse_part_ripk (
-  ZZ *zz,
-  HGraph *hg,
-  int p,
-  float *part_sizes,
-  Partition part,
-  PHGPartParams *hgp
-)
-{
-    int i, j, k, err=0, pp, best_part;
-    float *ran=NULL, *target_wgt=NULL;
-    float iprod, best_val, sum;
-    char *yo = "coarse_part_ripk";
-
-    ran         = (float *) ZOLTAN_MALLOC (p*hg->nEdge*sizeof(float));
-    target_wgt  = (float *) ZOLTAN_MALLOC (p*sizeof(float));
-    if (!(ran && target_wgt)) {
-        ZOLTAN_FREE (&ran);
-        ZOLTAN_FREE (&target_wgt);
-        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-    }
-
-    /* Compute target partition weights */
-    if (hg->vwgt){
-      sum = 0.0;
-      for (i=0; i<hg->nVtx; i++){
-        sum += hg->vwgt[i];
-      }
-    }
-    else
-      sum = hg->nVtx;
-
-    for (pp=0; pp<p; pp++){
-      target_wgt[pp] = sum * part_sizes[pp];
-    }
-
-    /* Generate positive random numbers for edges */
-    for (j=0; j<p*hg->nEdge; j++){
-      ran[j] = ((float) Zoltan_Rand(NULL))/ZOLTAN_RAND_MAX; 
-    }
-
-    /* Compute inner products with the random vectors. */
-    for (i=0; i<hg->nVtx; i++){
-      best_part = -1;
-      best_val = -1;
-      for (pp=0; pp<p; pp++){
-        iprod = 0.0;
-        for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
-          j = hg->vedge[k];
-          /* EBEB We could improve memory/cache performance by
-                  computing all p inner products simultaneously. */
-          iprod += ran[pp*(hg->nEdge)+j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
-        }
-        /* Scale iprod value by target part weight to ensure balance. */
-        iprod *= target_wgt[pp];
-        /* Pick best partition (cluster). */
-        if (iprod > best_val){
-          best_val  = iprod;
-          best_part = pp;
-        }
-      }
-      /* Found best partition. Update target weight. */
-      part[i] = best_part;
-      target_wgt[best_part] = MAX(target_wgt[best_part]-hg->vwgt[i], 0.0);
-    }
-
-    ZOLTAN_FREE (&ran);
-    ZOLTAN_FREE (&target_wgt);
-    return err;
-}
 
 /*********************************************************************/
 /* Greedy ordering/partitioning based on a priority function
@@ -1044,37 +881,12 @@ End:
 }
 
 
-
 /*****************************************************************/
 /* Entry points for all the greedy methods. */
 static int coarse_part_gr0 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
   Partition part, PHGPartParams *hgp)
 {
   return coarse_part_greedy(zz, hg, p, part_sizes, part, 0, hgp);
-}
-
-static int coarse_part_gr1 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
-  Partition part, PHGPartParams *hgp)
-{
-  return coarse_part_greedy(zz, hg, p, part_sizes, part, 1, hgp);
-}
-
-static int coarse_part_gr2 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
-  Partition part, PHGPartParams *hgp)
-{
-  return coarse_part_greedy(zz, hg, p, part_sizes, part, 2, hgp);
-}
-
-static int coarse_part_gr3 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
-  Partition part, PHGPartParams *hgp)
-{
-  return coarse_part_greedy(zz, hg, p, part_sizes, part, 3, hgp);
-}
-
-static int coarse_part_gr4 (ZZ *zz, HGraph *hg, int p, float *part_sizes, 
-  Partition part, PHGPartParams *hgp)
-{
-  return coarse_part_greedy(zz, hg, p, part_sizes, part, 4, hgp);
 }
 
 /*****************************************************************************/
@@ -1162,122 +974,6 @@ int err = ZOLTAN_OK;
 
 End:
   return err;
-}
-
-/**************************************************************************
- * Spectral partitioning using the power method.
- * Computes the second smallest eigenvector (Fiedler vector) of D-A'*A,
- * which is the 2nd largest of (A'*A + alpha*I-D) for large enough alpha. 
- *
- * EBEB: Incomplete, not ready for use!!
- * TODO: Account for edge weights.
- */
-static int coarse_part_spm (
-  ZZ *zz,
-  HGraph *hg,
-  int p,
-  float *part_sizes,
-  Partition part,
-  PHGPartParams *hgp
-)
-{
-#if 1
-  char *yo = "coarse_part_spm";
-  ZOLTAN_PRINT_ERROR (zz->Proc, yo,"spectral partitioning not yet available.\n");
-  return -1;
-#else /* Experimental spectral code not ready yet. */
-    int i, j, k, iter, err=0, maxdeg;
-    int *order=NULL; 
-    float sum, sum2;
-    float *x=NULL, *xx=NULL, *deg=NULL;
-    float *y=NULL;
-    char *yo = "coarse_part_spm";
-
-    order  = (int *) ZOLTAN_MALLOC (hg->nVtx*sizeof(int));
-    x      = (float *) ZOLTAN_MALLOC (3*hg->nVtx*sizeof(float));
-    y      = (float *) ZOLTAN_MALLOC (hg->nEdge*sizeof(float));
-    xx     = x + hg->nVtx;
-    deg    = xx + hg->nVtx;
- 
-    if (!(order && x && y)) {
-        ZOLTAN_FREE ((void**) &order);
-        ZOLTAN_FREE ((void**) &x);
-        ZOLTAN_FREE ((void**) &y);
-        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-    }
-    for (i=0; i<hg->nVtx; i++)
-        order[i] = i;
-
-    /* Generate initial random vector. */
-    for (j=0; j<hg->nVtx; j++){
-      x[j] = ((float) Zoltan_Rand(NULL))/ZOLTAN_RAND_MAX; 
-    }
-
-    /* Compute vertex degrees = #edges */
-    maxdeg = 0;
-    for (i=0; i<hg->nVtx; i++){
-      deg[i] = (hg->vindex[i+1] - hg->vindex[i]);
-      maxdeg = MAX(maxdeg, deg[i]);
-    }
-
-    /* Power method for (A'*A+alpha*I-D) */
-    for (iter=0; iter<MIN(100,hg->nVtx); iter++){
-      /* y = A*x */
-      for (j=0; j<hg->nEdge; j++){
-        y[j] = 0.0;
-        for (k=hg->hindex[j]; k<hg->hindex[j+1]; k++) {
-          i = hg->hvertex[k];
-          y[j] += x[i];
-        }
-      }
-      /* xx = A'*y = A'*A*x */
-      for (i=0; i<hg->nVtx; i++){
-        xx[i] = 0.0;
-        for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
-          j = hg->vedge[k];
-          xx[i] += y[j];
-        }
-      }
-      /* xx += (maxdeg*I-D)*x  */
-      for (i=0; i<hg->nVtx; i++){
-        xx[i] += (maxdeg-deg[i])*x[i];
-      }
-      /* Project out constant term. */
-      /* First compute sum(xx) and norm(xx). */
-      sum = sum2 = 0.;
-      for (i=0; i<hg->nVtx; i++){
-        sum  += xx[i];
-        sum2 += xx[i]*xx[i];
-      }
-      /* xx = xx - (xx'*e)/(norm(xx)*norm(e)) *e  */
-      /* TODO : projection */
-
-      /* Scale: x = xx/norm(xx) */
-      for (i=0; i<hg->nVtx; i++){
-        x[i] = xx[i]/sqrt(sum2);
-      }
-
-#ifdef DEBUG_
-      /* Debug */
-      printf("Debug: spectral; iteration %d, Fiedler vector x: \n", iter);
-      for (i=0; i<hg->nVtx; i++) printf("%f ", x[i]);
-      printf("\n");
-#endif
-
-    }
-
-    /* Sort Fiedler vector entries. */
-    Zoltan_quicksort_pointer_dec_float(order, x, 0, hg->nVtx-1);
-
-    /* Call sequence partitioning. */
-    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
-
-    ZOLTAN_FREE (&order);
-    ZOLTAN_FREE (&x);
-    ZOLTAN_FREE (&y);
-    return err;
-#endif
 }
 
 #ifdef __cplusplus
