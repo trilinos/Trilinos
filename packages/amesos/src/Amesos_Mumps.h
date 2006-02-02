@@ -53,16 +53,13 @@ class Amesos_EpetraInterface;
 #else
 #include "Epetra_Comm.h"
 #endif
+#include "Teuchos_RefCountPtr.hpp"
+#include <map>
+using namespace Teuchos;
 
-#ifndef HAVE_AMESOS_SMUMPS
-#define AMESOS_TYPE double
-#else
-#define AMESOS_TYPE float
-#endif
-
-
-//! Amesos_Mumps:  An object-oriented wrapper for CERFACS' MUMPS.
-/*!  Amesos_Mumps is an interface to the CERFACS' sparse parallel direct
+//! Amesos_Mumps:  An object-oriented wrapper for the double precision version of MUMPS.
+/*!  Amesos_Mumps is an interface to the the double precision version of 
+  the sparse parallel direct
   solver MUMPS.  Given an Epetra_RowMatrix A, and two
   Epetra_MultiVectors X and B, the solution with Amesos_Mumps reads as
   follows:
@@ -88,12 +85,6 @@ class Amesos_EpetraInterface;
   special functions are available for Epetra_CrsMatrix and
   Epetra_VbrMatrix objects.
 
-  The single-precision version of MUMPS can be used by enabling the
-  option \c --enable-amesos-smumps.  Note that this option overwrites
-  --enable-amesos-mumps.  The choice between single-precision and
-  double-precision must be done at configuration (and compilation)
-  time.
-
   As Amesos is based on Epetra, and Epetra is only double-precision, we
   still require an Epetra_LinearProblem composed by a double-precision
   matrix, and two double-precision vectors. The solution vector is
@@ -106,20 +97,17 @@ class Amesos_EpetraInterface;
   Amesos_BaseSolver. The main redistribution utilities, as well as a
   getrow function, is obtained by EpetraBaseSolver.
   
-  \warning This interface has been developed with MUMPS 4.3.1.
+  \warning This interface is compatible with MUMPS 4.5.4.
 
-  \author Marzio Sala, 9214
+  \date Last modified 26-Jan-06
+
+  \author Marzio Sala, ETHZ.
   
 */
 
-// Amesos_Mumps_Pimpl contains a pointer to the structures defined in 
-// dmumps.h and smumps.h.  This prevents Amesos_Mumps.h 
-// from having to include dmumps.h.
-//
-//  Doxygen does not handle forward class references well.
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-class Amesos_Mumps_Pimpl ; 
-#endif
+extern "C" {
+#include "dmumps_c.h"
+}
 
 class Amesos_Mumps: public Amesos_BaseSolver,
                     private Amesos_Time, 
@@ -182,6 +170,7 @@ public:
   //@{ \name MUMPS' specify functions
 
   
+#if 0
   //! Returns the Schur complement matrix as an Epetra_CrsMatrix.
   /*! Returns the (dense) Schur complement matrix as an Epetra_CrsMatrix. This
       matrix is defined on all the processes in the Epetra Communicator. However,
@@ -209,7 +198,7 @@ public:
       Epetra_SerialDenseMatrix must be freed by the user!
   */
   Epetra_SerialDenseMatrix * GetDenseSchurComplement();
-  
+#endif
   
   //! Set prescaling.
   /*! Use double precision vectors of size N (global dimension of the matrix) as
@@ -219,7 +208,7 @@ public:
       Both input vectors are \c float with --enable-amesos-smumps, \c double otherwise.
       
   */
-  int SetPrecscaling(AMESOS_TYPE * ColSca, AMESOS_TYPE * RowSca )
+  int SetPrecscaling(double * ColSca, double * RowSca )
   {
     ColSca_ = ColSca;
     RowSca_ = RowSca;
@@ -232,7 +221,7 @@ public:
 
       \param RowSca (In) -\c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
   */
-  int SetRowScaling(AMESOS_TYPE * RowSca )
+  int SetRowScaling(double * RowSca )
   {
     RowSca_ = RowSca;
     return 0;
@@ -244,7 +233,7 @@ public:
 
       \param ColSca (In) - \c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
   */
-  int SetColScaling(AMESOS_TYPE * ColSca )
+  int SetColScaling(double * ColSca )
   {
     ColSca_ = ColSca;
     return 0;
@@ -261,26 +250,12 @@ public:
     return 0;
   }
 
-  //! Sets the Maxis value (see MUMPS' manual)
-  int SetMaxis(int Maxis)
-  {
-    Maxis_ = Maxis;
-    return 0;
-  }
-
-  //! Sets the Maxs value (see MUMPS' manual)
-  int SetMaxs( int Maxs) 
-  {
-    Maxs_ = Maxs;
-    return 0;
-  }
-
   //! Gets the pointer to the RINFO array (defined on all processes).
   /*! Gets the pointer to the internally stored RINFO array, of type \c
     float if option \c --enable-amesos-smumps is enabled, \c double
     otherwise.
    */
-  AMESOS_TYPE * GetRINFO() ;
+  double * GetRINFO() ;
 
   //! Gets the pointer to the INFO array (defined on all processes).
   /*! Gets the pointer to the internally stored INFO array, of type \c int.
@@ -292,7 +267,7 @@ public:
     the host process only), of type \c float if option \c
     --enable-amesos-smumps is enabled, \c double otherwise.
    */
-  AMESOS_TYPE * GetRINFOG() ;
+  double * GetRINFOG() ;
 
   //! Get the pointer to the INFOG array (defined on host only).
   /*! Gets the pointer to the internally stored INFOG (defined on the
@@ -300,17 +275,11 @@ public:
    */
   int * GetINFOG() ;
 
-  //! Copies the input array (of size 40) into the internally stored ICNTL array.
-  int SetICNTL(int * ictnl);
-
   //! Set ICNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
-  int SetICNTL(int pos, int value);
-
-  //! Copy the input array (of size 5) into the internally stored CNTL array.
-  int SetCNTL(double * ctnl);
+  void SetICNTL(int pos, int value);
 
   //! Set CNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
-  int SetCNTL(int pos, double value);
+  void SetCNTL(int pos, double value);
 
   //@}
   
@@ -332,10 +301,10 @@ public:
 
 protected:
   
-  Teuchos::RefCountPtr<Amesos_Mumps_Pimpl> PrivateMumpsData_; 
-
   //! Returns a reference to the linear system matrix.
   Epetra_RowMatrix& Matrix();
+
+  const Epetra_RowMatrix& Matrix() const;
 
   //! Returns a reference to the map for redistributed matrix.
   Epetra_Map& RedistrMap();
@@ -378,34 +347,17 @@ protected:
   //! values of nonzero elements
   vector<double> Val;
 
-#ifdef HAVE_AMESOS_SMUMPS
-  //! single-precision values of nonzero elements
-  vector<float> SVal;
-  //! single-precision solution vector (on host only)
-  vector<float> SVector;
-#endif
-  
   //! Maximum number of processors in the MUMPS' communicator
   int MaxProcs_;
   
   //! If \c true, solve the problem with AT.
   bool UseTranspose_;
   
-  //! Discard all elements whose absolute value is below this value
-  double Threshold_;
-  
-  int icntl_[40];        
-  AMESOS_TYPE cntl_[5];  
- 
   //! Row and column scaling
-  AMESOS_TYPE * RowSca_, * ColSca_; 
+  double * RowSca_, * ColSca_; 
 
   //! PermIn for MUMPS.
   int * PermIn_;
-  //! MAXIS for MUMPS.
-  int Maxis_;
-  // MAXS for MUMPS.
-  int Maxs_;  
 
   //! Number of rows in the Schur complement (if required)
   int NumSchurComplementRows_;
@@ -413,29 +365,33 @@ protected:
   int * SchurComplementRows_;
 
   //! Pointer to the Schur complement, as CrsMatrix.
-  Epetra_CrsMatrix * CrsSchurComplement_; 
+  RefCountPtr<Epetra_CrsMatrix> CrsSchurComplement_; 
   //! Pointer to the Schur complement,as DenseMatrix.
-  Epetra_SerialDenseMatrix * DenseSchurComplement_;
+  RefCountPtr<Epetra_SerialDenseMatrix> DenseSchurComplement_;
 
   //! Pointer to the linear problem to be solved.
   const Epetra_LinearProblem* Problem_;
 
   //! Redistributed matrix.
-  Epetra_Map* RedistrMap_;
+  RefCountPtr<Epetra_Map> RedistrMap_;
   //! Redistributed importer (from Matrix().RowMatrixRowMap() to RedistrMatrix().RowMatrixRowMap()).
-  Epetra_Import* RedistrImporter_;
+  RefCountPtr<Epetra_Import> RedistrImporter_;
   //! Redistributed matrix (only if MaxProcs_ > 1).
-  Epetra_CrsMatrix* RedistrMatrix_;
+  RefCountPtr<Epetra_CrsMatrix> RedistrMatrix_;
   //! Map with all elements on process 0 (for solution and rhs).
-  Epetra_Map* SerialMap_;
+  RefCountPtr<Epetra_Map> SerialMap_;
   //! Importer from Matrix.OperatorDomainMap() to SerialMap_.
-  Epetra_Import* SerialImporter_;
+  RefCountPtr<Epetra_Import> SerialImporter_;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   //! MPI communicator used by MUMPS
   MPI_Comm MUMPSComm_;
 #endif
   
+  DMUMPS_STRUC_C MDS;
+
+  map<int, int> ICNTL;
+  map<int, double> CNTL;
 };  // class Amesos_Mumps
 
 #endif /* AMESOS_MUMPS_H */
