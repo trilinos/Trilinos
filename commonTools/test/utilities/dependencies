@@ -84,6 +84,9 @@ ml = \
 moertel = \
 --enable-moertel
 
+moocho = \
+--enable-moocho
+
 new_package = \
 --enable-new_package
 
