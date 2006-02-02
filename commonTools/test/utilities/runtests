@@ -1031,6 +1031,12 @@ cleanUp();
         $file =~ s/\s*$//mg;        # remove trailing spaces
         $file =~ s/\n//g;           # remove all newlines (force ourselves
                                     # to avoid making assumptions about formatting)
+                                    
+        # Escape key characters
+        $file =~ s/\\\{/\[\[\[ESCAPED_LEFT_BRACE\]\]\]/g;
+        $file =~ s/\\\}/\[\[\[ESCAPED_RIGHT_BRACE\]\]\]/g;
+        $file =~ s/\\\,/\[\[\[ESCAPED_COMMA\]\]\]/g;
+        $file =~ s/\\\;/\[\[\[ESCAPED_SEMICOLON\]\]\]/g;
         
         # Split definition file into groups.
         # This gives us an array of strings of the essential form (.*){.*}.
@@ -1147,7 +1153,14 @@ cleanUp();
             if ($key eq "EXIT-STATUS") {
                 push(@valueList, $valuesString);
             } else {
-                @valueList = $valuesString =~ m/\s*(.+?)\s*[,;]/g;
+                @valueList = $valuesString =~ m/\s*(.+?)\s*[,;]/g;                
+                # replace [[[ESCAPED_PUNCTUATION]]] with actual punctuation
+                foreach my $escapedString (@valueList) {
+                    $escapedString =~ s/\[\[\[ESCAPED_LEFT_BRACE\]\]\]/\{/g;
+                    $escapedString =~ s/\[\[\[ESCAPED_RIGHT_BRACE\]\]\]/\}/g;
+                    $escapedString =~ s/\[\[\[ESCAPED_COMMA\]\]\]/\,/g;
+                    $escapedString =~ s/\[\[\[ESCAPED_SEMICOLON\]\]\]/\;/g;       
+                }                
             }
             
             # Add new key=>(values) entry in array.
