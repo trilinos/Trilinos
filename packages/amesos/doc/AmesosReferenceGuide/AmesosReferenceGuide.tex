@@ -48,7 +48,7 @@
 Marzio Sala
 }
 
-\SANDprintDate{September 2004}
+\SANDprintDate{September 2004 (last updated on Jan 2006)}
 \SANDreleaseType{Unlimited Release}
 
 \newcommand{\epetra}{{\sc Epetra}}
@@ -263,7 +263,7 @@ bool IsAvailable = Factory.Query(SolverType);
     \tt Amesos\_Taucs        & serial   & symmetric & TAUCS 2.2 \\
     \tt Amesos\_Superlu      & serial   & general & SuperLU 3.0 \\
     \tt Amesos\_Superludist & parallel & general & SuperLU\_DIST 2.0 \\
-    \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.3.1 \\
+    \tt Amesos\_Mumps        & parallel & SPD, sym, general & MUMPS 4.5.4 \\
     \tt Amesos\_Dscpack      & parallel & symmetric & DSCPACK 1.0 \\
     \hline
   \end{tabular}
@@ -509,12 +509,13 @@ means to use its 2nd alternative method, and so on.}
 Solver-specific parameters are reported in each direct solver's subsection.
 The general procedure is to create a sublist with a given name (for
 instance, the sublist for MUMPS is "mumps"), then set all the
-solver's specific parameters in this sublist. An example is as follows:
+solver's specific parameters in this sublist. 
+For example, to enable MUMPS'
+output, one can proceed as follows:
 \begin{verbatim}
-int ictnl[40];
 // defines here the entries of ictnl
 Teuchos::ParameterList & MumpsList = AmesosList.sublist("mumps");
-MumpsList.set("ICTNL", ictnl);
+MumpsList.set("ICTNL(2)", 6);
 \end{verbatim}
 Parameters and sublists not recognized are simply ignored. Recall that
 parameter names are case sensitive!
@@ -846,7 +847,7 @@ values are as reported in the SuperLU\_DIST manual.
     DOUBLE}.}
 
 %-----------------------------------------------------------------------------
-\subsection{Interface to MUMPS 4.3.1}
+\subsection{Interface to MUMPS 4.5.4}
 \label{sec:mumps}
 %-----------------------------------------------------------------------------
 
@@ -870,58 +871,51 @@ For details about the algorithms and the
 implementation, as well as of the input parameters, we refer
 to~\cite{mumps-manual}
 
-In order to interface with MUMPS 4.3.1, \amesos\ must be configured with
-the option\footnote{The MUMPS interface can take be used on a subset of
-  the processes. To that aim, it must be possible to convert from a C++
-  MPI communicator to a FORTRAN MPI communicator. Such a conversion is
-  not always possible. In you experience compilation problems with {\tt
-    Amesos\_Mumps}, you can try the option {\tt
-    --disable-amesos-mumps\_mpi\_c2f}.}
-\verb!--enable-amesos-mumps!.
-The location of the header files should be specified using \verb!--with-incdirs!,
-the location of the library with \verb!--with-ldflags!, and the library
-to be linked by \verb!--with-libs!. See Section~\ref{sec:configuration} for an
-example.
+In order to interface with MUMPS 4.5.4, \amesos\ must be configured with the
+option \verb!--enable-amesos-mumps!. The MUMPS interface can be compiled in
+serial or in MPI mode. In this latter case, the interface can take be used on
+a subset of the processes. To that aim, it must be possible to convert from a
+C++ MPI communicator to a FORTRAN MPI communicator. Such a conversion is not
+always possible. In you experience compilation problems with {\tt
+Amesos\_Mumps}, you can try the option {\tt
+--disable-amesos-mumps\_mpi\_c2f}.
 
-It is also possible to configure with support for the single precision
-version of MUMPS, using option \verb!--enable-amesos-smumps!.
-This is intended to be used when
-the precision of the solution is not of primary importance, for example,
-if \amesos\ is used to solve the coarse problem in multilevel
-preconditioners, like \ml~\cite{ml-guide}. In this case, users may decide
-to use single-precision solves of the coarse problem
-to save memory and computational time. As
-\amesos\ is based on the Epetra\_LinearProblem class
-(defined for double precision only), this interface
-still requires double-precision matrix and vectors.
-After the solver phase, the single precision vector
-is copied into the double-precision solution vector
-of the given Epetra\_LinearProblem. If the single precision interface is 
-enabled, this automatically disables the double-precision one.
+The location of the header files should be specified using
+\verb!--with-incdirs!, the location of the library with \verb!--with-ldflags!,
+  and the library to be linked by \verb!--with-libs!. See
+  Section~\ref{sec:configuration} for an example.
 
 \medskip
 
 The MUMPS constructor will look for a sublist, called
 \verb!mumps!. 
-The user can set all the MUMPS's parameters, by sticking pointers to the
+All ICNTL($i$), $i=1,\ldots,40$ and CNTL(j), $j=1,\ldots,5$ options can be set
+by
+The user can set all the MUMPS's parameters by se
+
+
+
 integer array ICNTL and the double array CNTL to the parameters list,
 or by using the functions reported at the end of this section.
 
 \vskip .1in
-\choicebox{\tt ICTNL}{({\tt int[40]}) Pointer to an integer array, containing
-  the integer parameters (see~\cite[pages 13--17]{mumps-manual}).}
+\choicebox{\tt ICTNL($i$)}{({\tt int}) This allows to set all ICNTL($i$),
+  $i=1,\ldots,40$ parameters. For example, {\tt list.set("ICNTL(2)", 6)} sets
+    the second value of the ICNTL array. Numbering are as reported on the
+    MUMPS manual, starting from 1.}
 
-\choicebox{\tt CTNL}{({\tt double[5]}) Pointer to an double array, containing
-  the double parameters (see~\cite[page 17]{mumps-manual}).}
+\choicebox{\tt CTNL($i$)}{({\tt double}) This allows to set all CNTL($i$),
+  $i=1,\ldots,5$ parameters. Numbering are as reported on the
+    MUMPS manual, starting from 1.}
 
 \choicebox{\tt PermIn}{({\tt int *}) Use integer vectors of size
   NumGlobalElements (global dimension of the matrix) as given ordering.
   {\tt PermIn} must be defined on the host only, and allocated by the
   user, if the user sets ICNTL(7) = 1.}
   
-\choicebox{\tt Maxis}{({\tt int}) Set Maxis value.}
+%%\choicebox{\tt Maxis}{({\tt int}) Set Maxis value.}
 
-\choicebox{\tt Maxs}{({\tt int}) Set Maxs value.}
+%%\choicebox{\tt Maxs}{({\tt int}) Set Maxs value.}
 
 \choicebox{\tt ColPrecScaling}{({\tt double *}) Use double precision vectors
   of size NumGlobalElements (global dimension of the matrix) as scaling
