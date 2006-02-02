@@ -134,6 +134,31 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map3.SameAs(map3),True)
         self.assertEqual(self.map4.SameAs(map4),True)
 
+#     # This currently fails
+#     def testRemoteIDList(self):
+#         "Test Epetra.BlockMap RemoteIDList method"
+#         gidList = arange(self.numGlobalEl)
+#         if self.myPID==0:
+#             print
+#             print "gidList =", gidList
+#         pidList = zeros( self.numGlobalEl)
+#         lidList = arange(self.numGlobalEl)
+#         for p in range(1,self.numProc):
+#             start  = 4*p + p*(p-1)/2
+#             length = 4 + p
+#             pidList[start:] += 1
+#             lidList[start:start+length] = range(length)
+#         if self.myPID==0:
+#             print "pidList =", pidList
+#             print "lidList =", lidList
+#         result = self.map4.RemoteIDList(gidList)
+#         if self.myPID==0:
+#             print "result[0] =", result[0]
+#             print "result[1] =", result[1]
+#             print "result[2] =", result[2]
+#         self.assertEqual(result[0], pidList)
+#         self.assertEqual(result[1], lidList)
+
     def testLID(self):
         "Test Epetra.BlockMap LID method"
         for gid in range(self.map3.NumGlobalElements()):

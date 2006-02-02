@@ -39,6 +39,8 @@
 // These are replaced with extensions
 %ignore Epetra_BlockMap::Epetra_BlockMap(int,int,int*,int, int,const Epetra_Comm&);
 %ignore Epetra_BlockMap::Epetra_BlockMap(int,int,int*,int*,int,const Epetra_Comm&);
+%ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*) const;
+%ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*,int*) const;
 
 // Rename directives
 %rename(BlockMap) Epetra_BlockMap;
@@ -58,10 +60,10 @@
 		  int                 elementSize,
 		  int                 indexBase,
 		  const Epetra_Comm & comm                ) {
-    // The wrapper for this constructor cannot be called because
-    // (under the SWIG-generated logic) it is masked by the next
-    // constructor; However, it does serve a documentation purpose
-    // [via %feature("autodoc")], so I keep it as a shell.
+    // The wrapper for this constructor cannot be called from python
+    // because (under the SWIG-generated logic) it is masked by the
+    // next constructor; However, it does serve a documentation
+    // purpose [via %feature("autodoc")], so I keep it as a shell.
     return NULL;
   }
 
@@ -123,6 +125,51 @@
   fail:
     Py_XDECREF(elementArray);
     Py_XDECREF(elementSizeArray);
+    return NULL;
+  }
+
+  PyObject * RemoteIDList(PyObject * GIDList) {
+    int        numIDs[1];
+    int        result;
+    int      * GIDData 	 = NULL;
+    int      * PIDData 	 = NULL;
+    int      * LIDData 	 = NULL;
+    int      * sizeData  = NULL;
+    PyObject * GIDArray  = NULL;
+    PyObject * PIDArray  = NULL;
+    PyObject * LIDArray  = NULL;
+    PyObject * sizeArray = NULL;
+    PyObject * returnObj = NULL;
+    GIDArray = PyArray_ContiguousFromObject(GIDList,'i',1,1);
+    if (GIDArray == NULL) goto fail;
+    numIDs[0] = ((PyArrayObject*)GIDArray)->dimensions[0];
+    GIDData   = (int*) malloc(numIDs[0]*sizeof(int));
+    PIDData   = (int*) malloc(numIDs[0]*sizeof(int));
+    LIDData   = (int*) malloc(numIDs[0]*sizeof(int));
+    sizeData  = (int*) malloc(numIDs[0]*sizeof(int));
+    result    = self->RemoteIDList(numIDs[0],GIDData,PIDData,LIDData,sizeData);
+    printf("GID PID LID Size\n--- --- --- ----\n");
+    for (int i=0; i<numIDs[0]; i++)
+      printf("%3d %3d %3d %4d\n",GIDData[i],PIDData[i],LIDData[i],sizeData[i]);
+//     if (result != 0) {
+//       PyErr_Format(PyExc_RuntimeError,"Bad RemoteIDList return code = %d", result);
+//       goto fail;
+//     }
+    PIDArray  = PyArray_FromDimsAndData(1,numIDs,PyArray_INT,(char*)PIDData );
+    if (PIDArray == NULL) goto fail;
+    LIDArray  = PyArray_FromDimsAndData(1,numIDs,PyArray_INT,(char*)LIDData );
+    if (LIDArray == NULL) goto fail;
+    sizeArray = PyArray_FromDimsAndData(1,numIDs,PyArray_INT,(char*)sizeData);
+    if (sizeArray == NULL) goto fail;
+    returnObj = Py_BuildValue("(OOO)",PIDArray,LIDArray,sizeArray);
+    //Py_DECREF(GIDArray );
+    return returnObj;
+
+  fail:
+    Py_XDECREF(GIDArray );
+    Py_XDECREF(PIDArray );
+    Py_XDECREF(LIDArray );
+    Py_XDECREF(sizeArray);
     return NULL;
   }
 
