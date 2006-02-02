@@ -97,10 +97,6 @@ struct PHGPartParamsStruct {
                        -1 if not specificed/auto */
   int nProc_y_req;  /* user's request for nProc_y (PHG_NPROC_Y)
                        -1 if not specificed/auto */
-  int proc_split;   /* 0 means processors will not be split in RB,
-                       >0 means they will be split into two parts for each side
-                       of the recursion */
-                    
 
   int num_coarse_iter;  /* Number of coarse partitions to try on each proc. */
   int visit_order;      /* Vertex visit order. */

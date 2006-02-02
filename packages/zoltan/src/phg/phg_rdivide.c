@@ -23,6 +23,8 @@
 #define _DEBUG3
 */
 
+/* if you want to disable processor split, set PHG_PROC_SPLIT to 0 */
+#define PHG_PROC_SPLIT 1
 
 static int split_hypergraph(int *pins[2], HGraph*, HGraph*, Partition, int,
                             ZZ*, double *, double *);
@@ -237,7 +239,9 @@ int Zoltan_PHG_rdivide(
   if (detail_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_split, hgc->Communicator);
 
-  if (hgp->proc_split && (hgc->nProc>1) && left && right) {
+
+#if PHG_PROC_SPLIT 
+  if ((hgc->nProc>1) && left && right) {
       /* redistribute left and right parts */
       leftend = (int)((float) (hgc->nProc-1) 
                     * (float) left->dist_x[hgc->nProc_x] 
@@ -247,10 +251,12 @@ int Zoltan_PHG_rdivide(
       
       if (hgp->nProc_x_req != 1 && hgp->nProc_y_req != 1)  { /* Want 2D decomp */
           if ((leftend+1) > SMALL_PRIME && Zoltan_PHG_isPrime(leftend+1))
-              --leftend; /* if it was prime just use one less #procs ( since it should be bigger than 7 it is safe to decrement)  */
+              --leftend; /* if it was prime just use one less #procs
+                            (since it should be bigger than 7 it is safe to decrement)  */
           rightstart = leftend + 1;
           if ((hgc->nProc-rightstart) > SMALL_PRIME && Zoltan_PHG_isPrime(hgc->nProc-rightstart))
-          ++rightstart; /* #procs for right was prime so reduce the number of procs by increasing offset by one */
+          ++rightstart; /* #procs for right was prime so reduce the number of procs
+                           by increasing offset by one */
       } else
           rightstart = leftend + 1;
       
@@ -266,6 +272,9 @@ int Zoltan_PHG_rdivide(
   } else {
       rightstart = leftend = -1;
   }
+#else
+  rightstart = leftend = -1;  
+#endif
 
       /* if we want proc_split and there are more than one procs avail, and
          the left and right exist and they have enough vertex to distribute */

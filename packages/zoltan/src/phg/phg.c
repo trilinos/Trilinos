@@ -44,7 +44,6 @@ static PARAM_VARS PHG_params[] = {
   {"CHECK_GRAPH",                     NULL,  "INT",    0},
   {"PHG_NPROC_X",                     NULL,  "INT",    0},
   {"PHG_NPROC_Y",                     NULL,  "INT",    0},
-  {"PHG_PROC_SPLIT",                  NULL,  "INT",    0},  
   {"PHG_REDUCTION_LIMIT",             NULL,  "INT",    0},
   {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
   {"PHG_REDUCTION_METHOD_FAST",       NULL,  "STRING", 0},
@@ -505,7 +504,6 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "CHECK_GRAPH", &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &hgp->nProc_x_req);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &hgp->nProc_y_req);
-  Zoltan_Bind_Param(PHG_params, "PHG_PROC_SPLIT", &hgp->proc_split);  
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT", &hgp->redl);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD_FAST", hgp->redm_fast);
@@ -551,7 +549,6 @@ int Zoltan_PHG_Initialize_Params(
   strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
-  hgp->proc_split = 1;
   hgp->LocalCoarsePartition = 0;
   hgp->edge_scaling = 0;
   hgp->vtx_scaling = 0;
