@@ -529,16 +529,12 @@ int NextMain( int argc, char *argv[] ) {
 
 
 
-#ifdef HAVE_AMESOS_UMFPACK
-  AmesosClasses.push_back( "Amesos_Umfpack" );
-#endif
-
-#if 1
 #ifdef HAVE_AMESOS_DSCPACK
   //  This fails on my Fedora Core linux box
   if ( ! quiet ) AmesosClasses.push_back( "Amesos_Dscpack" );         //  bug #1205 
 #endif
 
+#if 1
 #ifdef HAVE_AMESOS_TAUCS
   AmesosClasses.push_back( "Amesos_Taucs" );
 #endif
@@ -580,6 +576,9 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Lapack" );
 #endif
 
+#ifdef HAVE_AMESOS_UMFPACK
+  AmesosClasses.push_back( "Amesos_Umfpack" );
+#endif
 #endif
 
   NumAmesosClasses = AmesosClasses.size();
