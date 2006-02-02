@@ -411,9 +411,6 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KL
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for the double-precision version of MUMPS], 
 		AMESOS_MUMPS, no)
 
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, smumps, [Enable Amesos interface support for the single-precision version of MUMPS. This is intended for use in conjuction with multilevel preconditioners (in particular ML). Users may decide to use single-precision solves of the coarse problem to save memory and computational time. Note: As Amesos is based on the Epetra_LinearProblem class (defined for double precision only), this interface still requires double-precision matrix and vectors. After the solver phase, the single precision vector is copied into the double-precision solution vector of the given Epetra_LinearProblem. If enabled, disabled double-precision version of MUMPS.], 
-		AMESOS_SMUMPS, no)
-
 TAC_ARG_ENABLE_FEATURE_SUB(amesos, mumps_mpi_c2f, [Enable conversion from C++ MPI commnicator to FORTRAN MPI communicator.], AMESOS_MPI_C2F, yes) 
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, pardiso, [Enable Amesos interface support for the double-precision version of PARDISO], 
@@ -608,16 +605,16 @@ fi
 
 #if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
 #   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+##if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+  ##if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-    AC_TRY_LINK_FUNC(Cdgebs2d,,
-    AC_MSG_ERROR([[Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))  
+    ##AC_TRY_LINK_FUNC(Cdgebs2d,,
+    ##AC_MSG_ERROR([[Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))  
 
-  fi
+  ##fi
 
-fi
+##fi
 		
 #  =================  #
 #  S C A L A P A C K  #
@@ -643,10 +640,9 @@ fi
 #  M U M P S  #
 #  =========  #
 
-# PORD (required by both MUMPS and SMUMPS)
+# PORD (required by both MUMPS)
 
-if test "X$ac_cv_use_amesos_mumps" != "Xno" || 
-  test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
   if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
@@ -670,24 +666,6 @@ AC_CHECK_HEADER([dmumps_c.h],,AC_MSG_ERROR([[Cannot find header files for MUMPS 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
 else
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, false ) 
-fi
-
-# SMUMPS
-
-if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
-
-  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-
-    AC_TRY_LINK_FUNC(smumps_c,,
-    AC_MSG_ERROR([[Cannot find the single precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsmumps.a, or use --with-libs=-lsmumps --with-ldflags=-L/home/username/lib).]]))  
-  fi
-
-  AC_CHECK_HEADER([smumps_c.h],,AC_MSG_ERROR([[Cannot find header files for MUMPS (smumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include).]]))
-
-  AM_CONDITIONAL(HAVE_AMESOS_SMUMPS, true ) 
-  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-else
-  AM_CONDITIONAL(HAVE_AMESOS_SMUMPS, false ) 
 fi
 
 #  =============  #
