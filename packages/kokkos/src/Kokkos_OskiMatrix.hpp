@@ -300,11 +300,12 @@ int OskiMatrix<OrdinalType, ScalarType>::initializeValues(ScalarType * values) {
 
   allValues_ = values;
   //OSKI Matrix constructor
-  if (isRowOriented_)
+  if (isRowOriented_) 
     A_tunable_ = oski_CreateMatCSR(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,1,INDEX_ZERO_BASED);//**Zero based only for now
   else
     A_tunable_ = oski_CreateMatCSC(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,1,INDEX_ZERO_BASED);//**Zero based only for now
 
+  if (A_tunable_ == NULL) return(-2);
   dataInitialized_ = true;
   return(0);
 }

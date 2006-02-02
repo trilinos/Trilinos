@@ -60,8 +60,10 @@ namespace Kokkos {
     OskiVector(const OskiVector& source):
       OskiMultiVector<OrdinalType, ScalarType>(source) {};
 
+    // Based on the Epetra_Vector class, it doesn't look like I need to call
+    // the OskiMultiVector Destructor
     //! OskiVector Destructor
-    virtual ~OskiVector(){~OskiMultiVector<OrdinalType,ScalarType>();};
+    virtual ~OskiVector(){};
     //@}
 
     //@{ \name Initialization methods
@@ -91,7 +93,9 @@ namespace Kokkos {
 	handled by the vector object itself.  The getInc() method 
 	should be used to access values, especially if getInc() != 1.
     */
-    virtual ScalarType * getValues() const {return(*OskiMultiVector<OrdinalType,ScalarType>::getValues());};
+//consider changing this to *.  Oski uses *, the ** is just to stay consistant
+// with MultiVector.  That would have to be changed as well.
+    virtual ScalarType ** getValues() const {return(OskiMultiVector<OrdinalType,ScalarType>::getValues());};
 	
 	
     //@}

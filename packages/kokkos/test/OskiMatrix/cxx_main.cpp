@@ -93,10 +93,12 @@ int main(int argc, char* argv[])
 
   OTYPE numEquations = nx*ny;
   OTYPE numEntries; 
+  oski_Init();
   {
     bool isRowOriented = true;
+if (verbose) cout<<endl<<"********** Entering problem generator ******" << endl;
     KokkosTest::GenerateOskiProblem<OTYPE, STYPE>
-      problem(isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
+      problem(isRowOriented, nx, ny, npoints, xoff, yoff, 1, A, x, b, xexact, numEntries);
     
     if (verbose) cout<<endl<<"********** CHECKING KOKKOS  OskiMatrix on a Classic HbMatrix input **********"<<endl<<endl;
     
