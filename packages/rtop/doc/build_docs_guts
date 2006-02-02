@@ -1,0 +1,14 @@
+#!/bin/bash
+
+pushd ../src/interfaces/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/interfaces/doc/Doxyfile
+
+pushd ../src/support/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/support/doc/Doxyfile
+
+pushd ../src/ops_lib/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/ops_lib/doc/Doxyfile
+
+./generate_Doxyfile
+doxygen Doxyfile
+

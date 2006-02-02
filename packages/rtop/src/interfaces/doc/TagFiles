@@ -1,0 +1,6 @@
+#
+# Relative to any Trilinos/packages/package/doc
+#
+TAGFILES += \
+  ../../common/tag_files/teuchos.tag=../../../../../../teuchos/doc/html \
+  ../../common/tag_files/RTOpInterfaces.tag=../../../../../../rtop/src/interfaces/doc/html

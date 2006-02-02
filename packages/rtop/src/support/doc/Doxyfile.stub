@@ -1,0 +1,26 @@
+@INCLUDE = ../src/interfaces/doc/TagFiles
+#
+# Package options
+#
+PROJECT_NAME           = "Support Software for Vector Reduction/Transformation Operators"
+OUTPUT_DIRECTORY       = ../src/support/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src/support/doc/index.doc \
+                         ../src/support
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       = *.cpp *.hpp
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+GENERATE_TAGFILE       = ../../common/tag_files/RTOpSupport.tag
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO

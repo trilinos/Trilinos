@@ -89,8 +89,8 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = teuchos PyTrilinos thyra kokkos epetra triutils tpetra \
-	epetraext aztecoo galeri amesos ifpack komplex claps \
+DIST_SUBDIRS = teuchos PyTrilinos rtop thyra kokkos epetra triutils \
+	tpetra epetraext aztecoo galeri amesos ifpack komplex claps \
 	TSFCoreUtils TSFCore belos anasazi pliris ml moertel TSF meros \
 	nox capo rythmos new_package moocho TSFExtended didasko \
 	external
@@ -145,6 +145,8 @@ BUILD_PLIRIS_FALSE = @BUILD_PLIRIS_FALSE@
 BUILD_PLIRIS_TRUE = @BUILD_PLIRIS_TRUE@
 BUILD_PYTRILINOS_FALSE = @BUILD_PYTRILINOS_FALSE@
 BUILD_PYTRILINOS_TRUE = @BUILD_PYTRILINOS_TRUE@
+BUILD_RTOP_FALSE = @BUILD_RTOP_FALSE@
+BUILD_RTOP_TRUE = @BUILD_RTOP_TRUE@
 BUILD_RYTHMOS_FALSE = @BUILD_RYTHMOS_FALSE@
 BUILD_RYTHMOS_TRUE = @BUILD_RYTHMOS_TRUE@
 BUILD_TEUCHOS_FALSE = @BUILD_TEUCHOS_FALSE@
@@ -273,6 +275,8 @@ AUTOMAKE_OPTIONS = foreign
 @BUILD_RYTHMOS_TRUE@RYTHMOS_LIB_BUILD_CMND = cd rythmos ; $(MAKE) all-libs ;
 @BUILD_TEUCHOS_TRUE@TEUCHOS_SUBDIR = teuchos
 @BUILD_TEUCHOS_TRUE@TEUCHOS_LIB_BUILD_CMND = cd teuchos ; $(MAKE) all-libs ;
+@BUILD_RTOP_TRUE@RTOP_SUBDIR = rtop
+@BUILD_RTOP_TRUE@RTOP_LIB_BUILD_CMND = cd rtop ; $(MAKE) all-libs ;
 @BUILD_THYRA_TRUE@THYRA_SUBDIR = thyra
 @BUILD_THYRA_TRUE@THYRA_LIB_BUILD_CMND = cd thyra ; $(MAKE) all-libs ;
 @BUILD_TPETRA_TRUE@TPETRA_SUBDIR = tpetra
@@ -292,6 +296,7 @@ AUTOMAKE_OPTIONS = foreign
 SUBDIRS = \
 	$(TEUCHOS_SUBDIR)      \
 	$(PYTRILINOS_SUBDIR)   \
+	$(RTOP_SUBDIR)         \
 	$(THYRA_SUBDIR)        \
 	$(KOKKOS_SUBDIR)       \
 	$(EPETRA_SUBDIR)       \
@@ -605,6 +610,7 @@ uninstall-info: uninstall-info-recursive
 all-libs:
 	$(TEUCHOS_LIB_BUILD_CMND)
 	$(PYTRILINOS_LIB_BUILD_CMND)
+	$(RTOP_LIB_BUILD_CMND)
 	$(THYRA_LIB_BUILD_CMND)
 	$(KOKKOS_LIB_BUILD_CMND)
 	$(EPETRA_LIB_BUILD_CMND)

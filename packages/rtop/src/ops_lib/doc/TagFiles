@@ -1,0 +1,5 @@
+#
+# Relative to any Trilinos/packages/package/doc
+#
+@INCLUDE = ../../rtop/src/support/doc/TagFiles
+TAGFILES += ../../common/tag_files/RTOpOpsLib.tag=../../../../../../rtop/src/ops_lib/doc/html

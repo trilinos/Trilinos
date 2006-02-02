@@ -111,6 +111,8 @@ TAC_ARG_ENABLE_FEATURE(rythmos, [Build rythmos], RYTHMOS, no)
 
 TAC_ARG_ENABLE_FEATURE(teuchos, [Build teuchos], TEUCHOS, no)
 
+TAC_ARG_ENABLE_FEATURE(rtop, [Build RTOP], RTOP, no)
+
 TAC_ARG_ENABLE_FEATURE(thyra, [Build thyra], THYRA, no)
 
 TAC_ARG_ENABLE_FEATURE(moocho, [Build moocho], MOOCHO, no)
@@ -157,6 +159,18 @@ else
   BUILD_TEUCHOS=no
 fi
 AM_CONDITIONAL(BUILD_TEUCHOS, test "X$BUILD_TEUCHOS" != "Xno")
+
+if test "X$ac_cv_use_rtop" != "Xno" ||
+	test "X$ac_cv_use_thyra" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/rtop])
+  BUILD_RTOP=yes
+  if test "X$ac_cv_use_rtop_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-rtop"
+  fi
+else
+  BUILD_RTOP=no
+fi
+AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||

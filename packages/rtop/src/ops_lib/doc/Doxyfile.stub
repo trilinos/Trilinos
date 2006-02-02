@@ -1,0 +1,26 @@
+@INCLUDE = ../src/support/doc/TagFiles
+#
+# Package options
+#
+PROJECT_NAME           = "Collection of Concrete Vector Reduction/Transformation Operator Implementations"
+OUTPUT_DIRECTORY       = ../src/ops_lib/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src/ops_lib/doc/index.doc \
+                         ../src/ops_lib
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       = *.cpp *.hpp
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+GENERATE_TAGFILE       = ../../common/tag_files/RTOpOpsLib.tag
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO

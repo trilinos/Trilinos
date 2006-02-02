@@ -184,6 +184,11 @@ TEUCHOS_SUBDIR = teuchos
 TEUCHOS_LIB_BUILD_CMND = cd teuchos ; $(MAKE) all-libs ;
 endif
 
+if BUILD_RTOP
+RTOP_SUBDIR = rtop
+RTOP_LIB_BUILD_CMND = cd rtop ; $(MAKE) all-libs ;
+endif
+
 if BUILD_THYRA
 THYRA_SUBDIR = thyra
 THYRA_LIB_BUILD_CMND = cd thyra ; $(MAKE) all-libs ;
@@ -224,6 +229,7 @@ endif
 SUBDIRS = \
 	$(TEUCHOS_SUBDIR)      \
 	$(PYTRILINOS_SUBDIR)   \
+	$(RTOP_SUBDIR)         \
 	$(THYRA_SUBDIR)        \
 	$(KOKKOS_SUBDIR)       \
 	$(EPETRA_SUBDIR)       \
@@ -257,6 +263,7 @@ SUBDIRS = \
 all-libs:
 	$(TEUCHOS_LIB_BUILD_CMND)
 	$(PYTRILINOS_LIB_BUILD_CMND)
+	$(RTOP_LIB_BUILD_CMND)
 	$(THYRA_LIB_BUILD_CMND)
 	$(KOKKOS_LIB_BUILD_CMND)
 	$(EPETRA_LIB_BUILD_CMND)

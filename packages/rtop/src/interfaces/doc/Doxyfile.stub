@@ -1,0 +1,26 @@
+#
+# Package options
+#
+PROJECT_NAME           = "Fundamental Vector Reduction/Transformation Operator (RTOp) Interfaces"
+OUTPUT_DIRECTORY       = ../src/interfaces/doc
+#
+# What and how documentation is extracted
+#
+INPUT                  = ../src/interfaces/doc/index.doc \
+                         ../src/interfaces
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       = *.cpp *.hpp
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+TAGFILES               = ../../common/tag_files/teuchos.tag=../../../../../../teuchos/doc/html
+GENERATE_TAGFILE       = ../../common/tag_files/RTOpInterfaces.tag
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO
