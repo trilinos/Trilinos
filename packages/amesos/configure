@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_PERFORMANCE_TRUE HAVE_PERFORMANCE_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE HAVE_COVERAGE_TRUE HAVE_COVERAGE_FALSE HAVE_AMESOS_EPETRAEXT_TRUE HAVE_AMESOS_EPETRAEXT_FALSE HAVE_AMESOS_TRIUTILS_TRUE HAVE_AMESOS_TRIUTILS_FALSE HAVE_AMESOS_GALERI_TRUE HAVE_AMESOS_GALERI_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS ENABLE_AMESOS_THYRA_TRUE ENABLE_AMESOS_THYRA_FALSE BLAS_LIBS LAPACK_LIBS tac_with_trilinosdatadir HAVE_AMESOS_LAPACK_TRUE HAVE_AMESOS_LAPACK_FALSE NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE CPP HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_SMUMPS_TRUE HAVE_AMESOS_SMUMPS_FALSE HAVE_AMESOS_PARDISO_TRUE HAVE_AMESOS_PARDISO_FALSE HAVE_AMESOS_PASTIX_TRUE HAVE_AMESOS_PASTIX_FALSE HAVE_AMESOS_PARAKLETE_TRUE HAVE_AMESOS_PARAKLETE_FALSE HAVE_AMESOS_TAUCS_TRUE HAVE_AMESOS_TAUCS_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_PERFORMANCE_TRUE HAVE_PERFORMANCE_FALSE HAVE_VALGRIND_TRUE HAVE_VALGRIND_FALSE HAVE_COVERAGE_TRUE HAVE_COVERAGE_FALSE HAVE_AMESOS_EPETRAEXT_TRUE HAVE_AMESOS_EPETRAEXT_FALSE HAVE_AMESOS_TRIUTILS_TRUE HAVE_AMESOS_TRIUTILS_FALSE HAVE_AMESOS_GALERI_TRUE HAVE_AMESOS_GALERI_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS ENABLE_AMESOS_THYRA_TRUE ENABLE_AMESOS_THYRA_FALSE BLAS_LIBS LAPACK_LIBS tac_with_trilinosdatadir HAVE_AMESOS_LAPACK_TRUE HAVE_AMESOS_LAPACK_FALSE NEED_PARAMETER_LIST_TRUE NEED_PARAMETER_LIST_FALSE HAVE_AMESOS_KLU_TRUE HAVE_AMESOS_KLU_FALSE CPP HAVE_AMESOS_UMFPACK_TRUE HAVE_AMESOS_UMFPACK_FALSE HAVE_AMESOS_SUPERLU_TRUE HAVE_AMESOS_SUPERLU_FALSE HAVE_AMESOS_SUPERLUDIST_TRUE HAVE_AMESOS_SUPERLUDIST_FALSE HAVE_AMESOS_DSCPACK_TRUE HAVE_AMESOS_DSCPACK_FALSE HAVE_AMESOS_SCALAPACK_TRUE HAVE_AMESOS_SCALAPACK_FALSE HAVE_AMESOS_MUMPS_TRUE HAVE_AMESOS_MUMPS_FALSE HAVE_AMESOS_PARDISO_TRUE HAVE_AMESOS_PARDISO_FALSE HAVE_AMESOS_PASTIX_TRUE HAVE_AMESOS_PASTIX_FALSE HAVE_AMESOS_PARAKLETE_TRUE HAVE_AMESOS_PARAKLETE_FALSE HAVE_AMESOS_TAUCS_TRUE HAVE_AMESOS_TAUCS_FALSE HAVE_AMESOS_MERIKOS_TRUE HAVE_AMESOS_MERIKOS_FALSE HAVE_AMESOS_KUNDERT_TRUE HAVE_AMESOS_KUNDERT_FALSE TRILINOS_TEMPLATE_OBJS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -952,20 +952,6 @@ Optional Features:
                           yes)
   --enable-amesos-mumps   Enable Amesos interface support for the
                           double-precision version of MUMPS (default is no)
-  --enable-amesos-smumps  Enable Amesos interface support for the
-                          single-precision version of MUMPS. This is intended
-                          for use in conjuction with multilevel
-                          preconditioners (in particular ML). Users may decide
-                          to use single-precision solves of the coarse problem
-                          to save memory and computational time. Note: As
-                          Amesos is based on the Epetra_LinearProblem class
-                          (defined for double precision only), this interface
-                          still requires double-precision matrix and vectors.
-                          After the solver phase, the single precision vector
-                          is copied into the double-precision solution vector
-                          of the given Epetra_LinearProblem. If enabled,
-                          disabled double-precision version of MUMPS. (default
-                          is no)
   --enable-amesos-mumps_mpi_c2f
                           Enable conversion from C++ MPI commnicator to
                           FORTRAN MPI communicator. (default is yes)
@@ -3909,7 +3895,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3912:" \
+echo "$as_me:3898:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8769,7 +8755,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8772: \"$ac_link\") >&5
+(eval echo $as_me:8758: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8847,7 +8833,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8850: \"$ac_link\") >&5
+(eval echo $as_me:8836: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11668,32 +11654,6 @@ fi
 
 
 
-# Check whether --enable-amesos-smumps or --disable-amesos-smumps was given.
-if test "${enable_amesos_smumps+set}" = set; then
-  enableval="$enable_amesos_smumps"
-  ac_cv_use_amesos_smumps=$enableval
-else
-  ac_cv_use_amesos_smumps=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use amesos-smumps" >&5
-echo $ECHO_N "checking whether to use amesos-smumps... $ECHO_C" >&6
-
-if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS_SMUMPS
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
 # Check whether --enable-amesos-mumps_mpi_c2f or --disable-amesos-mumps_mpi_c2f was given.
 if test "${enable_amesos_mumps_mpi_c2f+set}" = set; then
   enableval="$enable_amesos_mumps_mpi_c2f"
@@ -13497,77 +13457,16 @@ fi
 
 #if test "X$ac_cv_use_amesos_scalapack" != "Xno" ||
 #   test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
+##if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
-  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+  ##if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
+    ##AC_TRY_LINK_FUNC(Cdgebs2d,,
+    ##AC_MSG_ERROR([[Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib).]]))
 
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char Cdgebs2d ();
-#ifdef F77_DUMMY_MAIN
+  ##fi
 
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-Cdgebs2d ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  :
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-{ { echo "$as_me:$LINENO: error: Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib)." >&5
-echo "$as_me: error: Cannot find the CBLACS library (used by MUMPS and/or ScaLAPACK), specify a location using for example --with-libs=/home/username/lib/libblacs.a, or --with-libs=-lblacs --with-ldflags=-L/home/username/lib)." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-  fi
-
-fi
+##fi
 
 #  =================  #
 #  S C A L A P A C K  #
@@ -13699,10 +13598,9 @@ fi
 #  M U M P S  #
 #  =========  #
 
-# PORD (required by both MUMPS and SMUMPS)
+# PORD (required by both MUMPS)
 
-if test "X$ac_cv_use_amesos_mumps" != "Xno" ||
-  test "X$ac_cv_use_amesos_smumps" != "Xno" ; then
+if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
   if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
@@ -14019,257 +13917,6 @@ if false ; then
 else
   HAVE_AMESOS_MUMPS_TRUE='#'
   HAVE_AMESOS_MUMPS_FALSE=
-fi
-
-fi
-
-# SMUMPS
-
-if test "X$ac_cv_use_amesos_smumps" != "Xno"; then
-
-  if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-
-    cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char smumps_c ();
-#ifdef F77_DUMMY_MAIN
-
-#  ifdef __cplusplus
-     extern "C"
-#  endif
-   int F77_DUMMY_MAIN() { return 1; }
-
-#endif
-int
-main ()
-{
-smumps_c ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  :
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-{ { echo "$as_me:$LINENO: error: Cannot find the single precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsmumps.a, or use --with-libs=-lsmumps --with-ldflags=-L/home/username/lib)." >&5
-echo "$as_me: error: Cannot find the single precision MUMPS library, specify a location using --with-libs, (ex.  --with-libs=/home/username/lib/libsmumps.a, or use --with-libs=-lsmumps --with-ldflags=-L/home/username/lib)." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-  fi
-
-  if test "${ac_cv_header_smumps_c_h+set}" = set; then
-  echo "$as_me:$LINENO: checking for smumps_c.h" >&5
-echo $ECHO_N "checking for smumps_c.h... $ECHO_C" >&6
-if test "${ac_cv_header_smumps_c_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_smumps_c_h" >&5
-echo "${ECHO_T}$ac_cv_header_smumps_c_h" >&6
-else
-  # Is the header compilable?
-echo "$as_me:$LINENO: checking smumps_c.h usability" >&5
-echo $ECHO_N "checking smumps_c.h usability... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-$ac_includes_default
-#include <smumps_c.h>
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_header_compiler=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_header_compiler=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
-echo "${ECHO_T}$ac_header_compiler" >&6
-
-# Is the header present?
-echo "$as_me:$LINENO: checking smumps_c.h presence" >&5
-echo $ECHO_N "checking smumps_c.h presence... $ECHO_C" >&6
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <smumps_c.h>
-_ACEOF
-if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
-  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } >/dev/null; then
-  if test -s conftest.err; then
-    ac_cpp_err=$ac_c_preproc_warn_flag
-    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
-  else
-    ac_cpp_err=
-  fi
-else
-  ac_cpp_err=yes
-fi
-if test -z "$ac_cpp_err"; then
-  ac_header_preproc=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-  ac_header_preproc=no
-fi
-rm -f conftest.err conftest.$ac_ext
-echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
-echo "${ECHO_T}$ac_header_preproc" >&6
-
-# So?  What about this header?
-case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
-  yes:no: )
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h: accepted by the compiler, rejected by the preprocessor!" >&5
-echo "$as_me: WARNING: smumps_c.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h: proceeding with the compiler's result" >&5
-echo "$as_me: WARNING: smumps_c.h: proceeding with the compiler's result" >&2;}
-    ac_header_preproc=yes
-    ;;
-  no:yes:* )
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h: present but cannot be compiled" >&5
-echo "$as_me: WARNING: smumps_c.h: present but cannot be compiled" >&2;}
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h:     check for missing prerequisite headers?" >&5
-echo "$as_me: WARNING: smumps_c.h:     check for missing prerequisite headers?" >&2;}
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h: see the Autoconf documentation" >&5
-echo "$as_me: WARNING: smumps_c.h: see the Autoconf documentation" >&2;}
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h:     section \"Present But Cannot Be Compiled\"" >&5
-echo "$as_me: WARNING: smumps_c.h:     section \"Present But Cannot Be Compiled\"" >&2;}
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h: proceeding with the preprocessor's result" >&5
-echo "$as_me: WARNING: smumps_c.h: proceeding with the preprocessor's result" >&2;}
-    { echo "$as_me:$LINENO: WARNING: smumps_c.h: in the future, the compiler will take precedence" >&5
-echo "$as_me: WARNING: smumps_c.h: in the future, the compiler will take precedence" >&2;}
-    (
-      cat <<\_ASBOX
-## ---------------------------------- ##
-## Report this to kstanley@cs.utk.edu ##
-## ---------------------------------- ##
-_ASBOX
-    ) |
-      sed "s/^/$as_me: WARNING:     /" >&2
-    ;;
-esac
-echo "$as_me:$LINENO: checking for smumps_c.h" >&5
-echo $ECHO_N "checking for smumps_c.h... $ECHO_C" >&6
-if test "${ac_cv_header_smumps_c_h+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_header_smumps_c_h=$ac_header_preproc
-fi
-echo "$as_me:$LINENO: result: $ac_cv_header_smumps_c_h" >&5
-echo "${ECHO_T}$ac_cv_header_smumps_c_h" >&6
-
-fi
-if test $ac_cv_header_smumps_c_h = yes; then
-  :
-else
-  { { echo "$as_me:$LINENO: error: Cannot find header files for MUMPS (smumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&5
-echo "$as_me: error: Cannot find header files for MUMPS (smumps_c.h), specify a location using --with-incdirs (ex.  --with-incdirs=-I/home/username/include)." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-
-
-
-
-if true ; then
-  HAVE_AMESOS_SMUMPS_TRUE=
-  HAVE_AMESOS_SMUMPS_FALSE='#'
-else
-  HAVE_AMESOS_SMUMPS_TRUE='#'
-  HAVE_AMESOS_SMUMPS_FALSE=
-fi
-
-
-
-if true ; then
-  NEED_PARAMETER_LIST_TRUE=
-  NEED_PARAMETER_LIST_FALSE='#'
-else
-  NEED_PARAMETER_LIST_TRUE='#'
-  NEED_PARAMETER_LIST_FALSE=
-fi
-
-else
-
-
-if false ; then
-  HAVE_AMESOS_SMUMPS_TRUE=
-  HAVE_AMESOS_SMUMPS_FALSE='#'
-else
-  HAVE_AMESOS_SMUMPS_TRUE='#'
-  HAVE_AMESOS_SMUMPS_FALSE=
 fi
 
 fi
@@ -14609,7 +14256,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:14612: \"$ac_link\") >&5
+(eval echo $as_me:14259: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -14687,7 +14334,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:14690: \"$ac_link\") >&5
+(eval echo $as_me:14337: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -15377,27 +15024,6 @@ if test -z "${HAVE_AMESOS_MUMPS_TRUE}" && test -z "${HAVE_AMESOS_MUMPS_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_MUMPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_AMESOS_MUMPS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_SMUMPS_TRUE}" && test -z "${HAVE_AMESOS_SMUMPS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${NEED_PARAMETER_LIST_TRUE}" && test -z "${NEED_PARAMETER_LIST_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"NEED_PARAMETER_LIST\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_AMESOS_SMUMPS_TRUE}" && test -z "${HAVE_AMESOS_SMUMPS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_AMESOS_SMUMPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16221,8 +15847,6 @@ s,@HAVE_AMESOS_SCALAPACK_TRUE@,$HAVE_AMESOS_SCALAPACK_TRUE,;t t
 s,@HAVE_AMESOS_SCALAPACK_FALSE@,$HAVE_AMESOS_SCALAPACK_FALSE,;t t
 s,@HAVE_AMESOS_MUMPS_TRUE@,$HAVE_AMESOS_MUMPS_TRUE,;t t
 s,@HAVE_AMESOS_MUMPS_FALSE@,$HAVE_AMESOS_MUMPS_FALSE,;t t
-s,@HAVE_AMESOS_SMUMPS_TRUE@,$HAVE_AMESOS_SMUMPS_TRUE,;t t
-s,@HAVE_AMESOS_SMUMPS_FALSE@,$HAVE_AMESOS_SMUMPS_FALSE,;t t
 s,@HAVE_AMESOS_PARDISO_TRUE@,$HAVE_AMESOS_PARDISO_TRUE,;t t
 s,@HAVE_AMESOS_PARDISO_FALSE@,$HAVE_AMESOS_PARDISO_FALSE,;t t
 s,@HAVE_AMESOS_PASTIX_TRUE@,$HAVE_AMESOS_PASTIX_TRUE,;t t
