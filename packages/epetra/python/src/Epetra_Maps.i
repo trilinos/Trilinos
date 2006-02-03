@@ -44,6 +44,15 @@
 %ignore Epetra_BlockMap::FindLocalElementID(int,int&,int&) const;
 %ignore Epetra_BlockMap::MyGlobalElements(int*) const;
 %ignore Epetra_BlockMap::MyGlobalElements() const;
+%ignore Epetra_BlockMap::FirstPointInElementList(int*) const;
+%ignore Epetra_BlockMap::FirstPointInElementList() const;
+%ignore Epetra_BlockMap::ElementSizeList(int*) const;
+%ignore Epetra_BlockMap::ElementSizeList() const;
+%ignore Epetra_BlockMap::PointToElementList(int*) const;
+%ignore Epetra_BlockMap::PointToElementList() const;
+// These are expert methods not wrapped
+%ignore Epetra_BlockMap::ReferenceCount() const;
+%ignore Epetra_BlockMap::DataPtr() const;
 
 // Rename directives
 %rename(BlockMap) Epetra_BlockMap;
@@ -206,6 +215,69 @@
 
   fail:
     Py_XDECREF(geArray );
+    return NULL;
+  }
+
+  PyObject * FirstPointInElementList() {
+    int        numEls[1];
+    int        result;
+    int      * fpeData  = NULL;
+    PyObject * fpeArray = NULL;
+    numEls[0] = self->NumMyElements();
+    fpeArray  = PyArray_FromDims(1,numEls,PyArray_INT);
+    if (fpeArray == NULL) goto fail;
+    fpeData = (int*) (((PyArrayObject*)fpeArray)->data);
+    result = self->FirstPointInElementList(fpeData);
+    if (result != 0) {
+      PyErr_Format(PyExc_RuntimeError,"Bad FirstPointInElementList return code = %d", result);
+      goto fail;
+    }
+    return fpeArray;
+
+  fail:
+    Py_XDECREF(fpeArray );
+    return NULL;
+  }
+
+  PyObject * ElementSizeList() {
+    int        numEls[1];
+    int        result;
+    int      * eslData  = NULL;
+    PyObject * eslArray = NULL;
+    numEls[0] = self->NumMyElements();
+    eslArray  = PyArray_FromDims(1,numEls,PyArray_INT);
+    if (eslArray == NULL) goto fail;
+    eslData = (int*) (((PyArrayObject*)eslArray)->data);
+    result = self->ElementSizeList(eslData);
+    if (result != 0) {
+      PyErr_Format(PyExc_RuntimeError,"Bad ElementSizeList return code = %d", result);
+      goto fail;
+    }
+    return eslArray;
+
+  fail:
+    Py_XDECREF(eslArray );
+    return NULL;
+  }
+
+  PyObject * PointToElementList() {
+    int        numPts[1];
+    int        result;
+    int      * pteData  = NULL;
+    PyObject * pteArray = NULL;
+    numPts[0] = self->NumMyPoints();
+    pteArray  = PyArray_FromDims(1,numPts,PyArray_INT);
+    if (pteArray == NULL) goto fail;
+    pteData = (int*) (((PyArrayObject*)pteArray)->data);
+    result = self->PointToElementList(pteData);
+    if (result != 0) {
+      PyErr_Format(PyExc_RuntimeError,"Bad PointToElementList return code = %d", result);
+      goto fail;
+    }
+    return pteArray;
+
+  fail:
+    Py_XDECREF(pteArray );
     return NULL;
   }
 

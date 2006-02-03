@@ -147,9 +147,10 @@ class EpetraBlockMapTestCase(unittest.TestCase):
             pidList[start:] += 1
             lidList[ start:start+length] = range(length)
         result = self.map3.RemoteIDList(gidList)
-        self.assertEqual(result[0], pidList )
-        self.assertEqual(result[1], lidList )
-        self.assertEqual(result[2], sizeList)
+        for id in range(len(gidList)):
+            self.assertEqual(result[0][id], pidList[id] )
+            self.assertEqual(result[1][id], lidList[id] )
+            self.assertEqual(result[2][id], sizeList[id])
 
     def testRemoteIDList2(self):
         "Test Epetra.BlockMap RemoteIDList method for variable element size"
@@ -165,9 +166,10 @@ class EpetraBlockMapTestCase(unittest.TestCase):
             lidList[ start:start+length] = range(length)
             sizeList[start:start+length] = range(5,5+length)
         result = self.map4.RemoteIDList(gidList)
-        self.assertEqual(result[0], pidList )
-        self.assertEqual(result[1], lidList )
-        self.assertEqual(result[2], sizeList)
+        for id in range(len(gidList)):
+            self.assertEqual(result[0][id], pidList[id] )
+            self.assertEqual(result[1][id], lidList[id] )
+            self.assertEqual(result[2][id], sizeList[id])
 
     def testLID(self):
         "Test Epetra.BlockMap LID method"
@@ -178,6 +180,13 @@ class EpetraBlockMapTestCase(unittest.TestCase):
                 lid = -1
             self.assertEqual(self.map3.LID(gid),lid)
 
+    def testGID(self):
+        "Test Epetra.BlockMap GID method"
+        for lid in range(self.map3.NumMyElements()):
+            self.assertEqual(self.map3.GID(lid), self.myGlobalEls[lid])
+        for lid in range(self.map4.NumMyElements()):
+            self.assertEqual(self.map4.GID(lid), self.myGlobalEls[lid])
+
     def testFindLocalElementID(self):
         "Test Epetra.BlockMap FindLocalElementID method"
         pointID = 0
@@ -187,13 +196,6 @@ class EpetraBlockMapTestCase(unittest.TestCase):
                 self.assertEqual(result[0], lid   )
                 self.assertEqual(result[1], offset)
                 pointID += 1
-
-    def testGID(self):
-        "Test Epetra.BlockMap GID method"
-        for lid in range(self.map3.NumMyElements()):
-            self.assertEqual(self.map3.GID(lid), self.myGlobalEls[lid])
-        for lid in range(self.map4.NumMyElements()):
-            self.assertEqual(self.map4.GID(lid), self.myGlobalEls[lid])
 
     def testMyGID(self):
         "Test Epetra.BlockMap MyGID method"
@@ -414,9 +416,53 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map3.DistributedGlobal(), distributedGlobal)
         self.assertEqual(self.map4.DistributedGlobal(), distributedGlobal)
 
+    def testFirstPointInElementList(self):
+        "Test Epetra.BlockMap FirstPointInElementList method"
+        firstPoints1 = [lid*self.elSizeConst for lid in range(self.numMyElConst)]
+        firstPoints2 = [lid*self.elSizeConst for lid in range(self.numMyEl     )]
+        firstPoints3 = firstPoints2
+        firstPoints4 = [sum(self.elSizeList[:lid]) for lid in range(self.numMyEl)]
+        result1      = self.map1.FirstPointInElementList()
+        result2      = self.map2.FirstPointInElementList()
+        result3      = self.map3.FirstPointInElementList()
+        result4      = self.map4.FirstPointInElementList()
+        for lid in range(self.numMyElConst):
+            self.assertEqual(result1[lid], firstPoints1[lid])
+        for lid in range(self.numMyEl):
+            self.assertEqual(result2[lid], firstPoints2[lid])
+            self.assertEqual(result3[lid], firstPoints3[lid])
+            self.assertEqual(result4[lid], firstPoints4[lid])
+
+    def testElementSizeList(self):
+        "Test Epetra.BlockMap ElementSizeList method"
+        size1 = [self.elSizeConst for lid in range(self.numMyElConst)]
+        size2 = [self.elSizeConst for lid in range(self.numMyEl     )]
+        size3 = size2
+        size4 = self.elSizeList
+        result1 = self.map1.ElementSizeList()
+        result2 = self.map2.ElementSizeList()
+        result3 = self.map3.ElementSizeList()
+        result4 = self.map4.ElementSizeList()
+        for lid in range(self.numMyElConst):
+            self.assertEqual(result1[lid], size1[lid])
+        for lid in range(self.numMyEl):
+            self.assertEqual(result2[lid], size2[lid])
+            self.assertEqual(result3[lid], size3[lid])
+            self.assertEqual(result4[lid], size4[lid])
+
+    def testPointToElementList(self):
+        "Test Epetra.BlockMap PointToElementList method"
+        elementList = []
+        for lid in range(self.map4.NumMyElements()):
+            for offset in range(self.map4.ElementSize(lid)):
+                elementList.append(lid)
+        result = self.map4.PointToElementList()
+        for pointID in range(len(elementList)):
+            self.assertEqual(result[pointID], elementList[pointID])
+
     def testStr(self):
         "Test Epetra.BlockMap __str__ method"
-        lines   = 7 + self.numMyEl
+        lines   = 7 + self.numMyElConst
         if self.myPID == 0: lines += 7
         s = str(self.map1)
         s = s.splitlines()
@@ -429,12 +475,20 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         f = open(filename, "w")
         self.map2.Print(f)
         f.close()
-        f = open(filename, "r")
-        s = f.readlines()
-        f.close()
+        s = open(filename, "r").readlines()
         lines = 7 + self.numMyEl
         if myPID == 0: lines += 7
         self.assertEquals(len(s), lines)
+
+    def testComm(self):
+        "Test Epetra.BlockMap Comm method"
+        comms = [self.map1.Comm(),
+                 self.map2.Comm(),
+                 self.map3.Comm(),
+                 self.map4.Comm()]
+        for comm in comms:
+            self.assertEqual(comm.NumProc(),self.comm.NumProc())
+            self.assertEqual(comm.MyPID()  ,self.comm.MyPID()  )
 
 ##########################################################################
 
