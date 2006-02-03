@@ -45,7 +45,8 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 EXTRA_DIST = \
 	setpath.py testBlockMap.py testComm.py testCrsGraph.py testIntVector.py \
-	testMap.py testMultiVector.py testObject.py testSerialDense.py testVector.py
+	testLocalMap.py testMap.py testMultiVector.py testObject.py \
+	testSerialDense.py testVector.py
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
@@ -54,7 +55,8 @@ MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of tests
 TEST_SUITE = testObject testSerialDense testComm testBlockMap testMap \
-	     testMultiVector testVector testIntVector testCrsGraph
+	     testLocalMap testMultiVector testVector testIntVector \
+	     testCrsGraph
 
 SETPATH = setpath.py
 
