@@ -126,6 +126,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
+	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
@@ -157,8 +158,8 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_Flops.$(OBJEXT) Teuchos_GlobalMPISession.$(OBJEXT) \
 	Teuchos_MPIReductionOpBase.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
 	Teuchos_ParameterEntry.$(OBJEXT) \
-	Teuchos_ParameterList.$(OBJEXT) Teuchos_RefCountPtr.$(OBJEXT) \
-	Teuchos_ScalarTraits.$(OBJEXT) \
+	Teuchos_ParameterList.$(OBJEXT) Teuchos_Range1D.$(OBJEXT) \
+	Teuchos_RefCountPtr.$(OBJEXT) Teuchos_ScalarTraits.$(OBJEXT) \
 	Teuchos_TestForException.$(OBJEXT) Teuchos_Time.$(OBJEXT) \
 	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_Utils.$(OBJEXT) \
 	Teuchos_VerboseObject.$(OBJEXT) Teuchos_Workspace.$(OBJEXT)
@@ -204,6 +205,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterEntry.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterList.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterXMLFileReader.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Range1D.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_RefCountPtr.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ScalarTraits.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StrUtils.Po \
@@ -263,6 +265,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
 	$(srcdir)/Teuchos_Polynomial.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
+	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
@@ -487,6 +490,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
 	$(srcdir)/Teuchos_Polynomial.hpp \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
+	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
@@ -519,6 +523,7 @@ CORE = \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
+	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
@@ -808,6 +813,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterEntry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterList.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterXMLFileReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Range1D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RefCountPtr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ScalarTraits.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StrUtils.Po@am__quote@
@@ -1036,6 +1042,22 @@ Teuchos_ParameterList.obj: $(srcdir)/Teuchos_ParameterList.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_ParameterList.Po' tmpdepfile='$(DEPDIR)/Teuchos_ParameterList.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterList.obj `if test -f '$(srcdir)/Teuchos_ParameterList.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterList.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterList.cpp'; fi`
+
+Teuchos_Range1D.o: $(srcdir)/Teuchos_Range1D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Range1D.o -MD -MP -MF "$(DEPDIR)/Teuchos_Range1D.Tpo" -c -o Teuchos_Range1D.o `test -f '$(srcdir)/Teuchos_Range1D.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Range1D.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_Range1D.Tpo" "$(DEPDIR)/Teuchos_Range1D.Po"; else rm -f "$(DEPDIR)/Teuchos_Range1D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_Range1D.cpp' object='Teuchos_Range1D.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_Range1D.Po' tmpdepfile='$(DEPDIR)/Teuchos_Range1D.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Range1D.o `test -f '$(srcdir)/Teuchos_Range1D.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Range1D.cpp
+
+Teuchos_Range1D.obj: $(srcdir)/Teuchos_Range1D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Range1D.obj -MD -MP -MF "$(DEPDIR)/Teuchos_Range1D.Tpo" -c -o Teuchos_Range1D.obj `if test -f '$(srcdir)/Teuchos_Range1D.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Range1D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Range1D.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_Range1D.Tpo" "$(DEPDIR)/Teuchos_Range1D.Po"; else rm -f "$(DEPDIR)/Teuchos_Range1D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_Range1D.cpp' object='Teuchos_Range1D.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_Range1D.Po' tmpdepfile='$(DEPDIR)/Teuchos_Range1D.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Range1D.obj `if test -f '$(srcdir)/Teuchos_Range1D.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Range1D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Range1D.cpp'; fi`
 
 Teuchos_RefCountPtr.o: $(srcdir)/Teuchos_RefCountPtr.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_RefCountPtr.o -MD -MP -MF "$(DEPDIR)/Teuchos_RefCountPtr.Tpo" -c -o Teuchos_RefCountPtr.o `test -f '$(srcdir)/Teuchos_RefCountPtr.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_RefCountPtr.cpp; \

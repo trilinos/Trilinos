@@ -381,6 +381,9 @@ const double Teuchos_Underflow = 2.23E-308;
 #undef TEUCHOS_CHK_REF
 #endif
 
+/* The integral type that is used for the largest vector space */
+typedef int Teuchos_Index; /* ToDo: Determine this in configure for the machine */
+
 /* Make error report silent by defining TEUCHOS_NO_ERROR_REPORTS */
 
 #define TEUCHOS_CHK_ERR(a) { if (a != 0)  return(a);}
