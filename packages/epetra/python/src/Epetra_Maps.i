@@ -251,25 +251,25 @@
     return(new Epetra_Map(NumGlobalElements, len, &list[0], IndexBase, Comm));
   }
 
-  PyObject*  MyGlobalElements()
-  {
-    int* MyGlobalElements_Epetra = self->MyGlobalElements();
-    PyObject* MyGlobalElements_Python,* item;
-    int size = self->NumMyElements();
-    if (size <= 0)
-      goto fail;
+//   PyObject*  MyGlobalElements()
+//   {
+//     int* MyGlobalElements_Epetra = self->MyGlobalElements();
+//     PyObject* MyGlobalElements_Python,* item;
+//     int size = self->NumMyElements();
+//     if (size <= 0)
+//       goto fail;
 
-    MyGlobalElements_Python = PyList_New(size);
+//     MyGlobalElements_Python = PyList_New(size);
 
-    for (int i = 0 ; i < size ; ++i)
-    {
-      item = PyInt_FromLong(MyGlobalElements_Epetra[i]);
-      PyList_SetItem(MyGlobalElements_Python, i, item);
-    }
+//     for (int i = 0 ; i < size ; ++i)
+//     {
+//       item = PyInt_FromLong(MyGlobalElements_Epetra[i]);
+//       PyList_SetItem(MyGlobalElements_Python, i, item);
+//     }
 
-    return(MyGlobalElements_Python);
-fail:
-    Py_INCREF(Py_None);
-    return Py_None;
-  }
+//     return(MyGlobalElements_Python);
+// fail:
+//     Py_INCREF(Py_None);
+//     return Py_None;
+//   }
 }
