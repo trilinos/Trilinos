@@ -62,9 +62,11 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTest.hpp"
+#include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
 
 using Teuchos::ParameterList;
+using Teuchos::RefCountPtr;
 
 /*!	
   \class Belos::BlockGmres
@@ -105,9 +107,6 @@ namespace Belos {
     //! Get the solvers native residuals for the current block of linear systems.
     /*! For GMRES this is not the same as the actual residual of the linear system and the
 	residual is not in MultiVec form, so the normvec will be populated with the residual norm.
-	
-	\param  normvec  [out] Array (length <tt>blocksize</tt>) of computed norm values
-	                 for current residuals.
      */
     RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const;
 
@@ -144,7 +143,8 @@ namespace Belos {
     bool BlockReduction(bool&);
 
     //! Method for orthogonalization of one block.
-    bool QRFactorAug(MV&, Teuchos::SerialDenseMatrix<int,ScalarType>&,
+    bool QRFactorAug(MV&, 
+		     Teuchos::SerialDenseMatrix<int,ScalarType>&,
 		     bool);
 
     //! Method for block orthogonalization when a dependency has not been detected in the Krylov basis.
@@ -153,26 +153,32 @@ namespace Belos {
     //! Method for block orthogonalization when a dependency has been detected in the Krylov basis.
     bool BlkOrthSing(MV&);
 
+    //! Method for updating QR factorization of upper Hessenberg matrix 
+    void UpdateLSQR(Teuchos::SerialDenseMatrix<int,ScalarType>&,Teuchos::SerialDenseMatrix<int,ScalarType>&);
+
     //! Method for checking the orthogonality of the Krylov basis.
     void CheckKrylovOrth(const int);
 
+    //! Method for computing Givens rotation
+    void givens_rot(ScalarType&, ScalarType&, ScalarType&, ScalarType&, ScalarType&);
+
     //! Reference to the linear problem being solver for with the solver. [passed in by user]
-    RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp;
+    RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
 
     //! Reference to the status test, which provides the stopping criteria for the solver. [passed in by user]
     RefCountPtr<StatusTest<ScalarType,MV,OP> > _stest; 
 
     //! Reference to the output manager for this linear solver. [passed in by user]
     RefCountPtr<OutputManager<ScalarType> > _om;
-    
+
     //! Parameter list containing information for configuring the linear solver. [passed in by user]
-    RefCountPtr<ParameterList> _pl;
+    RefCountPtr<ParameterList> _pl;     
 
     //! Pointers to the Krylov basis constructed by the solver.
     RefCountPtr<MV> _basisvecs;
 
     //! Pointers to the preconditioned Krylov basis constructed by the solver. [ used in Flexible GMRES ]
-    RefCountPtr<MV> _z_basisvecs;
+    RefCountPtr<MV> _z_basisvecs; 
 
     //! Pointers to the current right-hand side and solution multivecs being solved for.
     RefCountPtr<MV> _cur_block_rhs, _cur_block_sol;
@@ -191,8 +197,9 @@ namespace Belos {
     int _restartiter, _totaliter, _iter;
     bool _flexible;
     ScalarType _dep_tol, _blk_tol, _sing_tol;
+    Teuchos::SerialDenseVector<int,ScalarType> beta, cs, sn;
 
-    typedef MultiVecTraits<ScalarType,MV>  MVT;
+    typedef MultiVecTraits<ScalarType, MV> MVT;
   };
   //
   // Implementation
@@ -200,21 +207,21 @@ namespace Belos {
   // Note: I should define a copy constructor and overload = because of the use of new
   //
   template <class ScalarType, class MV, class OP>
-  BlockGmres<ScalarType,MV,OP>::BlockGmres(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
-			       const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
-			       const RefCountPtr<OutputManager<ScalarType> >&om,
-			       const RefCountPtr<ParameterList> &pl) : 
+  BlockGmres<ScalarType,MV,OP>::BlockGmres(const RefCountPtr< LinearProblem<ScalarType,MV,OP> >& lp, 
+					   const RefCountPtr< StatusTest<ScalarType,MV,OP> >& stest,
+					   const RefCountPtr< OutputManager<ScalarType> >& om,
+					   const RefCountPtr< ParameterList > &pl ):
     _lp(lp),
     _stest(stest),
     _om(om),
     _pl(pl),
     _os(&om->GetOStream()),
-    _length(_pl->get("Length", 25 )), 
+    _length(_pl->get("Length",25)),
     _blocksize(0), 
     _restartiter(0), 
     _totaliter(0),
     _iter(0),
-    _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") )
+    _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") )    
   {
     //
     // Set up the block orthogonality tolerances
@@ -224,7 +231,8 @@ namespace Belos {
     
   template <class ScalarType, class MV, class OP>
   BlockGmres<ScalarType,MV,OP>::~BlockGmres() 
-  {}
+  {
+  }
   
   template <class ScalarType, class MV, class OP>
   void BlockGmres<ScalarType,MV,OP>::SetGmresBlkTols() 
@@ -245,20 +253,21 @@ namespace Belos {
     //
     // If this is the first iteration for a new right-hand side return the
     // residual for the current block rhs and solution.
+    // NOTE: Make sure the incoming vector is the correct size!
     //
-    if ( normvec && (int)normvec->size() < _blocksize )
-	normvec->resize( _blocksize );
+    if ( normvec && (int)normvec->size() < _blocksize )                         
+      normvec->resize( _blocksize );                                          
 
     if (_totaliter == 0) {
-      RefCountPtr<MV> temp_res = MVT::Clone(*_cur_block_rhs,_blocksize);
-      _lp->ComputeResVec( &*temp_res, &*_cur_block_sol, &*_cur_block_rhs );
+      RefCountPtr<MV> temp_res = MVT::Clone( *_cur_block_rhs, _blocksize );
+      _lp->ComputeResVec( &*temp_res, &*_cur_block_sol, &*_cur_block_rhs);
       MVT::MvNorm( *temp_res, normvec );
+      return temp_res;
     } else {
       if (normvec) {
         Teuchos::BLAS<int,ScalarType> blas;
-	for (int j=0; j<_blocksize; j++) {
+	for (int j=0; j<_blocksize; j++)
 	  (*normvec)[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
-        }
       }
     }
     return null;
@@ -273,7 +282,7 @@ namespace Belos {
     //
     RefCountPtr<MV> cur_sol_copy = MVT::CloneCopy(*_cur_block_sol);
     if (_iter==0) { 
-        return cur_sol_copy;
+        return cur_sol_copy; 
     } else {
       const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
       int i, m = _iter*_blocksize;
@@ -289,18 +298,18 @@ namespace Belos {
 	       Teuchos::NON_UNIT_DIAG, m, _blocksize, one,  
 	       _hessmatrix.values(), _hessmatrix.stride(), y.values(), y.stride() );
     
-      std::vector<int> index( m );
+      std::vector<int> index(m);
       for ( i=0; i<m; i++ ) {   
         index[i] = i;
       }
       if (_flexible) {
 	RefCountPtr<const MV> Zjp1 = MVT::CloneView( *_z_basisvecs, index );
 	MVT::MvTimesMatAddMv( one, *Zjp1, y, one, *cur_sol_copy );
-      }
+      } 
       else {
 	RefCountPtr<const MV> Vjp1 = MVT::CloneView( *_basisvecs, index );
 	MVT::MvTimesMatAddMv( one, *Vjp1, y, one, *cur_sol_copy );
-      }    
+      }
     }
     return cur_sol_copy;
   }
@@ -308,16 +317,14 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void BlockGmres<ScalarType,MV,OP>::Solve () 
   {
-    int i,j, maxidx;
+    int i=0;
+    std::vector<int> index;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    ScalarType sigma, mu, vscale, maxelem;
-    RefCountPtr<MV> U_vec;
+    Teuchos::RefCountPtr<MV> U_vec;
     bool dep_flg = false, exit_flg = false;
     Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
-    std::vector<int> index;
-    std::vector<ScalarType> beta;
     //
     // Obtain the first block linear system form the linear problem manager.
     //
@@ -327,9 +334,8 @@ namespace Belos {
     //
     //  Start executable statements. 
     //
-    while ( _cur_block_rhs.get() && _cur_block_sol.get() ) {
+    while ( _cur_block_sol.get() && _cur_block_sol.get() ) {
       //
-      beta.resize( (_length+1)*_blocksize );
       if (_om->doOutput( 0 )) {
         *_os << endl;
         *_os << "===================================================" << endl;
@@ -345,29 +351,22 @@ namespace Belos {
       //
       _basisvecs = MVT::Clone(*_cur_block_rhs,(_length+1)*_blocksize);
       if (_flexible)
-	_z_basisvecs = MVT::Clone(*_cur_block_rhs,(_length+1)*_blocksize);
+	_z_basisvecs = MVT::Clone(*_cur_block_rhs, (_length+1)*_blocksize);
       //
       // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
       //
       _hessmatrix.shape((_length+1)*_blocksize, _length*_blocksize);
       _z.shape((_length+1)*_blocksize, _blocksize); 
       //
-      for (_restartiter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _restartiter++) {
-        //
-        // Print out solver status
-        // 
-        if (_om->doOutput( 2 )) {
-	  *_os << endl;
-	  _stest->Print(*_os); 
-	  *_os << endl;
-	  *_os << "===================================================" << endl;
-        }
+      //
+      for ( _restartiter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; ++_restartiter ) {
 	//
-	// Associate the initial block of _basisvecs with U_vec.
+	// Associate the initial block of _basisvecs with U_vec
+	// Reset the index vector (this might have been changed if there was a restart)
 	//
-        index.resize( _blocksize );
-        for (i=0; i < _blocksize; i++) { index[i] = i; }
-	U_vec = MVT::CloneView(*_basisvecs, index);
+	index.resize(_blocksize);
+	for (i=0; i < _blocksize; i++) { index[i] = i; }
+	U_vec = MVT::CloneView( *_basisvecs, index );
 	//
 	// Compute current residual and place into 1st block
 	//
@@ -389,110 +388,90 @@ namespace Belos {
 	    *_os << "  Reason: Failed to compute initial block of orthonormal basis vectors"
 		 << endl << endl;
 	  }
-	  if (U_vec.get()) {U_vec = null;}
 	}
 	//
-	for (_iter=0; _iter<_length && _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++, ++_totaliter) {
+	// NOTE:  U_vec is a view into the set of basis vectors (_basisvecs), which is not guaranteed to
+	// be updated when U_vec is changed.  Thus, to ensure consistency between U_vec and _basisvecs,
+	// U_vec must be destroyed at this point!
+	//
+	if (U_vec.get()) {U_vec == null;}
+	//
+	//	
+	for (_iter=0; _iter<_length && _stest->CheckStatus(this) == Unconverged && !exit_flg; ++_iter, ++_totaliter) {
 	  //
 	  // Compute a length _length block Arnoldi Reduction (one step at a time),
 	  // the exit_flg indicates if we cannot extend the Arnoldi Reduction.
           // If exit_flg is true, then we need to leave this loop and compute the latest solution.
+          //
+	  // NOTE:  There's an exception here if the blocksize is equal to one, then a lucky
+	  // breakdown has occurred, so we should update the least-squares problem.
 	  //
 	  //dep_flg = true;
 	  exit_flg = BlockReduction(dep_flg);
-	  if (exit_flg){ 
+	  if (exit_flg && _blocksize > 1){ 
 	    break;
 	  }
 	  //
-	  // QR factorization of Least-Squares system with Householder reflectors
+	  // Update the new Least-Squares solution through the QR factorization of the new
+	  // block in the upper Hessenberg matrix.
 	  //
-	  for (j=0; j<_blocksize; j++) {
-	    //
-	    // Apply previous Householder reflectors to new block of Hessenberg matrix
-	    //
-	    for (i=0; i<_iter*_blocksize+j; i++) {
-	      sigma = blas.DOT( _blocksize, &_hessmatrix(i+1,i), 1, &_hessmatrix(i+1,_iter*_blocksize+j), 1);
-	      sigma += _hessmatrix(i,_iter*_blocksize+j);
-	      sigma *= beta[i];
-	      blas.AXPY(_blocksize, -sigma, &_hessmatrix(i+1,i), 1, &_hessmatrix(i+1,_iter*_blocksize+j), 1);
-	      _hessmatrix(i,_iter*_blocksize+j) -= sigma;
-	    }
-	    //
-	    // Compute new Householder reflector
-	    //
-	    maxidx = blas.IAMAX( _blocksize+1, &_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j), 1 );
-	    maxelem = _hessmatrix(_iter*_blocksize+j+maxidx-1,_iter*_blocksize+j);
-	    for (i=0; i<_blocksize+1; i++) 
-	      _hessmatrix(_iter*_blocksize+j+i,_iter*_blocksize+j) /= maxelem;
-	    sigma = blas.DOT( _blocksize, &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, 
-			      &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1 );
-	    if (sigma == zero) {
-	      beta[_iter*_blocksize + j] = zero;
-	    } else {
-	      mu = sqrt(_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j)*_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j)+sigma);
-	      if ( _hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) < zero ) {
-		vscale = _hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) - mu;
-	      } else {
-		vscale = -sigma / (_hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) + mu);
-	      }
-	      beta[_iter*_blocksize+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
-	      _hessmatrix(_iter*_blocksize+j,_iter*_blocksize+j) = maxelem*mu;
-	      for (i=0; i<_blocksize; i++)
-		_hessmatrix(_iter*_blocksize+j+1+i,_iter*_blocksize+j) /= vscale;
-	    }
-	    //
-	    // Apply new Householder reflector to rhs
-	    //
-	    for (i=0; i<_blocksize; i++) {
-	      sigma = blas.DOT( _blocksize, &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, &_z(_iter*_blocksize+j+1,i), 1);
-	      sigma += _z(_iter*_blocksize+j,i);
-	      sigma *= beta[_iter*_blocksize+j];
-	      blas.AXPY(_blocksize, -sigma, &_hessmatrix(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, &_z(_iter*_blocksize+j+1,i), 1);
-	      _z(_iter*_blocksize+j,i) -= sigma;
-	    }
-	  }
+	  UpdateLSQR( _hessmatrix, _z );
 	  //
-
 	} // end for (_iter=0;...
 	//
 	// Update the solutions by solving the triangular system to get the Krylov weights.
 	//
         if (_iter) {
 	  //
-	  // Solve Least-Squares System.
 	  // Make a copy of _z since it may be used in the convergence test to compute native residuals.
-	  //
 	  Teuchos::SerialDenseMatrix<int,ScalarType> _z_copy( Teuchos::Copy,_z, _iter*_blocksize, _blocksize );	
+	  //
 	  blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
-		   Teuchos::NON_UNIT_DIAG, _iter*_blocksize, _blocksize, one,
-		   _hessmatrix.values(), _hessmatrix.stride(), _z_copy.values(), _z_copy.stride() ); 
+		     Teuchos::NON_UNIT_DIAG, _iter*_blocksize, _blocksize, one,
+		     _hessmatrix.values(), _hessmatrix.stride(), _z_copy.values(), _z_copy.stride() ); 
+	  //                                                                    
+          // Update Solution.                                                   
+	  //                                                                      
+          // 1)  For the flexible variant the solution will be updated directly,
+	  // Check status if _iter==_length                                       
+          // otherwise the updated residual will be passed back to the linear problem.
+	  //                                                                      
+          // 2)  Inform the linear problem that the solution was updated, pass updated residual if necessary.
 	  //
-	  // Update Solution.
-	  // 1)  For the flexible variant the solution will be updated directly,
-	  // otherwise the updated residual will be passed back to the linear problem.
-	  // 2)  Inform the linear problem that the solution was updated, pass updated residual if necessary.
-	  //
-          index.resize( _iter*_blocksize );
-          for (i=0; i < _iter*_blocksize; i++) { index[i] = i; }
+	  index.resize( _iter*_blocksize );
+	  for (i=0; i < _iter*_blocksize; i++) { index[i] = i; }
 	  if (_flexible) {
-            RefCountPtr<const MV> Zjp1 = MVT::CloneView(*_z_basisvecs, index);
+	    RefCountPtr<const MV> Zjp1 = MVT::CloneView( *_z_basisvecs, index );
 	    MVT::MvTimesMatAddMv( one, *Zjp1, _z_copy, one, *_cur_block_sol );
 	    _lp->SolutionUpdated();
 	  } else {
-	    RefCountPtr<const MV> Vjp1 = MVT::CloneView(*_basisvecs, index);
-	    RefCountPtr<MV> solnUpdate = MVT::Clone(*_cur_block_sol,_blocksize );
+	    RefCountPtr<const MV> Vjp1 = MVT::CloneView( *_basisvecs, index );
+	    RefCountPtr<MV> solnUpdate = MVT::Clone( *_cur_block_sol, _blocksize ); 
 	    MVT::MvTimesMatAddMv( one, *Vjp1, _z_copy, zero, *solnUpdate );
-	    _lp->SolutionUpdated( &*solnUpdate );
+	    //
+	    // Update the solution held by the linear problem.
+	    //	  
+	    _lp->SolutionUpdated( solnUpdate.get() );
+	    //
 	  }
-        }
+	} // if (_iter) 
+	//
+	// Check status if _iter==_length
+	//
+	if (_iter == _length) {
+	  _stest->CheckStatus(this);
+	}
+	//
+	// Print out solver status
+	// 
 	if (_om->doOutput( 0 )) {
-	  if (exit_flg) {
+	  _stest->Print(*_os);
+	  if (exit_flg && _stest->GetStatus()!=Converged) {
 	    *_os << " Exiting Block GMRES --- " << endl;
 	    *_os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
 	    *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
 	  }
-	}
-	if (U_vec.get()) {U_vec = null;}
+	} 
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
@@ -509,58 +488,53 @@ namespace Belos {
       _cur_block_sol = _lp->GetCurrLHSVec();
       _cur_block_rhs = _lp->GetCurrRHSVec();
       //
-      // **************Free heap space**************
-      //
-      _basisvecs = null;
-      //
-      // Print out solver status
-      // 
-      if (_om->doOutput( 0 )) {
-	*_os << endl;
-	_stest->Print(*_os); 
-	*_os << endl;
-	*_os << "===================================================" << endl;
-      }
     } // end while( _cur_block_sol && _cur_block_rhs )
     //
   } // end Solve()
   
-    
+  
   template<class ScalarType, class MV, class OP>
   bool BlockGmres<ScalarType,MV,OP>::BlockReduction ( bool& dep_flg ) 
   {
     //
     int i;	
     std::vector<int> index( _blocksize );
-    RefCountPtr<MV> AU_vec = MVT::Clone(*_basisvecs,_blocksize);
+    RefCountPtr<MV> AU_vec = MVT::Clone( *_basisvecs,_blocksize );
     //
     // Associate the j-th block of _basisvecs with U_vec.
     //
     for ( i=0; i<_blocksize; i++ ) {
       index[i] = _iter*_blocksize+i;
     }
-    RefCountPtr<MV> U_vec = MVT::CloneView(*_basisvecs, index);
-    //
+    RefCountPtr<MV> U_vec = MVT::CloneView( *_basisvecs, index );
+    //                                                                          
     // If this is the flexible variant apply operator separately, else apply composite operator.
-    // 
-    if (_flexible) {
-      RefCountPtr<MV> Z_vec = MVT::CloneView(*_z_basisvecs, index);
+    //                                                                          
+    if (_flexible) {                                                            
       //
-      //  Apply right preconditioning and store it in _z_basisvecs.
-      //
-      _lp->ApplyRightPrec( *U_vec, *Z_vec );
-      //
-      //  Apply operator and store it in AU_vec.
-      //
-      _lp->ApplyOp( *Z_vec, *AU_vec );
-    } else
+      RefCountPtr<MV> Z_vec = MVT::CloneView( *_z_basisvecs, index );             
+      //                                                                        
+      //  Apply right preconditioning and store it in _z_basisvecs.             
+      //                                                                        
+      _lp->ApplyRightPrec( *U_vec, *Z_vec );                                    
+      //                                                                        
+      //  Apply operator and store it in AU_vec.                                
+      //                                                                        
+      _lp->ApplyOp( *Z_vec, *AU_vec );                                          
+    } 
+    else                                                                      
       _lp->Apply( *U_vec, *AU_vec ); 
+    //
+    //  Orthogonalize the new block in the Krylov expansion and check for dependencies.
     //
     bool dep = false;
     if (!dep_flg){
       dep = BlkOrth(*AU_vec);
       if (dep) {
 	dep_flg = true;
+	if (_blocksize == 1) {
+	  return dep_flg;
+	}
       }
     }
     // If any dependencies have been detected during this step of
@@ -586,10 +560,10 @@ namespace Belos {
     // vectors and all previous blocks, then the vectors within the
     // new block are orthogonalized.
     //
-    int i, k, row_offset, col_offset;
-    const int max_num_orth = 2;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    const int max_num_orth = 2;
+    int i, k, row_offset, col_offset;
     std::vector<int> index( _blocksize );
     std::vector<ScalarType> norm1( _blocksize );
     std::vector<ScalarType> norm2( _blocksize );
@@ -600,7 +574,7 @@ namespace Belos {
     //
     // Associate (j+1)-st block of ArnoldiVecs with F_vec.
     //
-    RefCountPtr<MV> F_vec = MVT::CloneView(*_basisvecs, index);
+    RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, index );
     //
     // Copy preconditioned AU_vec into (j+1)st block of _basisvecs
     //
@@ -623,13 +597,13 @@ namespace Belos {
     int num_prev = (_iter+1)*_blocksize;
     index.resize( num_prev );
     for (i=0; i<num_prev; i++) { index[i] = i; }
-    RefCountPtr<MV> V_prev = MVT::CloneView(*_basisvecs, index);
+    RefCountPtr<MV> V_prev = MVT::CloneView( *_basisvecs, index );
     //
     // Create a matrix to store the product trans(V_prev)*F_vec
     //
     Teuchos::SerialDenseMatrix<int,ScalarType> dense_mat( num_prev, _blocksize );
     //
-    MVT::MvNorm(*F_vec,&norm1);
+    MVT::MvNorm(*F_vec, &norm1);
     //
     // Perform two steps of block classical Gram-Schmidt so that
     // F_vec is orthogonal to the columns of V_prev.
@@ -639,7 +613,7 @@ namespace Belos {
       // Compute trans(V_prev)*F_vec and store in the j'th diagonal
       // block of the Hessenberg matrix
       //
-      MVT::MvTransMv(one, *V_prev, *F_vec, dense_mat);
+      MVT::MvTransMv (one, *V_prev, *F_vec, dense_mat);
       //
       // Update the orthogonalization coefficients for the j-th block
       // column of the Hessenberg matrix.
@@ -653,9 +627,10 @@ namespace Belos {
       // F_vec <- F_vec - V(0:(j+1)*block-1,:) * H(0:num_prev-1,j:num_prev-1)
       //
       MVT::MvTimesMatAddMv( -one, *V_prev, dense_mat, one, *F_vec );
+      //
     } // end for num_orth=0;...)
       //
-    MVT::MvNorm(*F_vec,&norm2);
+    MVT::MvNorm( *F_vec, &norm2 );
     //
     // Check to make sure the new block of Arnoldi vectors are 
     // not dependent on previous Arnoldi vectors
@@ -675,7 +650,7 @@ namespace Belos {
       //
     if (_om->doOutput( 2 )) {
       *_os << "Checking Orthogonality after BlkOrth()"
-	     << " Iteration: " << _iter << endl;
+	  << " Iteration: " << _iter << endl;
       CheckKrylovOrth(_iter);
     }
     //
@@ -690,7 +665,7 @@ namespace Belos {
       //
       row_offset = (_iter+1)*_blocksize; col_offset = _iter*_blocksize;
       Teuchos::SerialDenseMatrix<int,ScalarType> sub_block_hess(Teuchos::View, _hessmatrix, _blocksize, _blocksize,
-							  row_offset, col_offset);
+								row_offset, col_offset);
       flg = QRFactorAug( *F_vec, sub_block_hess, false );
     }
     //
@@ -715,7 +690,7 @@ namespace Belos {
     Teuchos::SerialDenseVector<int,ScalarType> dense_vec;
     int i, k, num_orth;
     std::vector<int> index( _blocksize );
-    std::vector<int> index2(IntOne);
+    std::vector<int> index2( IntOne );
     std::vector<ScalarType> nm1(IntOne);
     std::vector<ScalarType> nm2(IntOne);
     //
@@ -725,7 +700,7 @@ namespace Belos {
     //
     // Associate (j+1)-st block of ArnoldiVecs with F_vec.
     //
-    RefCountPtr<MV> F_vec = MVT::CloneView(*_basisvecs, index);
+    RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, index );
     //
     // Copy preconditioned AU_vec into (j+1)st block of _basisvecs
     //
@@ -743,7 +718,7 @@ namespace Belos {
     //
     RefCountPtr<const MV> Q_vec;
     RefCountPtr<MV> q_vec, tptr;
-    tptr = MVT::Clone(*F_vec,IntOne);
+    tptr = MVT::Clone( *F_vec, IntOne ); 
     //
     // Start a loop to orthogonalize each of the _blocksize
     // columns of F_vec against all previous _basisvecs
@@ -751,30 +726,31 @@ namespace Belos {
     bool flg = false;
     //
     for (int num_prev = (_iter+1)*_blocksize; num_prev < (_iter+2)*_blocksize; num_prev++) {
+      //
       // Initialize dense vector.
+      //
       dense_vec.size(num_prev);
       //
       // Grab the next column of _basisvecs
       //
       index2[0] = num_prev;
-      q_vec = MVT::CloneView(*_basisvecs, index2);
+      q_vec = MVT::CloneView( *_basisvecs, index2 );
       //
       // Grab all previous columns of _basisvecs
       //
       index.resize( num_prev );
-      for (k=0; k<num_prev; k++)
-        index[k] = k;
-      Q_vec = MVT::CloneView(*_basisvecs, index);
+      for (k=0; k<num_prev; k++) { index[k] = k; }
+      Q_vec = MVT::CloneView( *_basisvecs, index ); 
       //
       // Do one step of classical Gram-Schmidt orthogonalization
       // with a 2nd correction step if needed.
       //
       bool dep = false;
-      MVT::MvNorm(*q_vec,&nm1);
+      MVT::MvNorm( *q_vec, &nm1 );
       //
       // Compute trans(Q_vec)*q_vec
       //
-      MVT::MvTransMv( one, *Q_vec, *q_vec, dense_vec);
+      MVT::MvTransMv( one, *Q_vec, *q_vec, dense_vec );
       //
       // Sum results [0:num_prev-1] into column (num_prev-_blocksize)
       // of the Hessenberg matrix
@@ -786,7 +762,7 @@ namespace Belos {
       //
       MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
       //
-      MVT::MvNorm(*q_vec,&nm2);
+      MVT::MvNorm( *q_vec, &nm2 );
       //
       if (nm2[0] < nm1[0] * _dep_tol) {
 	// 
@@ -794,7 +770,7 @@ namespace Belos {
 	//
 	// Compute trans(Q_vec)*q_vec
 	//
-	MVT::MvTransMv(one, *Q_vec, *q_vec, dense_vec);
+	MVT::MvTransMv( one, *Q_vec, *q_vec, dense_vec );
 	//
 	// Sum results [0:num_prev-1] into column (num_prev-_blocksize)
 	// of the Hessenberg matrix
@@ -804,9 +780,9 @@ namespace Belos {
 	}
 	// Compute q_vec<- q_vec - Q_vec * dense_vec
 	//
-	MVT::MvTimesMatAddMv(-one, *Q_vec, dense_vec, one, *q_vec);
+	MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
 	//
-	MVT::MvNorm(*q_vec,&nm2);
+	MVT::MvNorm( *q_vec, &nm2 );
       }
       //
       // Check for linear dependence
@@ -819,7 +795,7 @@ namespace Belos {
 	// Normalize the new q_vec
 	//
 	ScalarType rjj = one/nm2[0];
-	MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec ); 
+	MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
 	//
 	// Enter norm of q_vec to the [(j+1)*_blocksize + iter] row
 	// in the [(j*_blocksize + iter] column of the Hessenberg matrix
@@ -838,31 +814,35 @@ namespace Belos {
 	// We could try adding a random unit vector instead -- not 
 	// sure if this would make any difference.
 	//
-	MVT::MvRandom(*tptr);
-	MVT::MvNorm(*tptr,&nm1);
+	MVT::MvRandom( *tptr );
+	MVT::MvNorm( *tptr, &nm1 );
 	//
 	// This code  is automatically doing 2 steps of orthogonalization
 	// after adding a random vector. We could do one step of
 	// orthogonalization with a correction step if needed.
 	//
-	for (num_orth=0; num_orth<2; num_orth++){
-	  MVT::MvTransMv(one, *Q_vec, *tptr, dense_vec);
-	  // Note that we don't change the entries of the
-	  // Hessenberg matrix when we orthogonalize a 
-	  // random vector
-	  MVT::MvTimesMatAddMv(-one, *Q_vec, dense_vec, one, *tptr);
-	}
+	for (num_orth=0; num_orth<2; num_orth++)
+	  {
+	    MVT::MvTransMv(one, *Q_vec, *tptr, dense_vec);
+	    // Note that we don't change the entries of the
+	    // Hessenberg matrix when we orthogonalize a 
+	    // random vector
+	    MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *tptr );
+	  }
 	//
-	MVT::MvNorm(*tptr,&nm2);
+	MVT::MvNorm( *tptr, &nm2 );
 	//
 	if (nm2[0] >= nm1[0] * _sing_tol){ 
+	  //
 	  // Copy vector into the current column of _basisvecs
+	  //
 	  MVT::MvAddMv( one, *tptr, zero, *tptr, *q_vec );
-	  MVT::MvNorm(*q_vec,&nm2);
+	  MVT::MvNorm( *q_vec, &nm2 );
+	  //
 	  // Normalize the new q_vec
 	  //
 	  ScalarType rjj = one/nm2[0];
-	  MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec ); 
+	  MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
 	  //
 	  // Enter a zero in the [(j+1)*_blocksize + iter] row in the
 	  // [(j*_blocksize + iter] column of the Hessenberg matrix
@@ -870,6 +850,7 @@ namespace Belos {
 	  _hessmatrix( num_prev, num_prev-_blocksize ) = zero;
 	}
 	else {
+	  //
 	  // Can't produce a new orthonormal basis vector
 	  // Return a flag so we can exit this pass of block GMRES
 	  flg = true;
@@ -881,9 +862,9 @@ namespace Belos {
     } // end for (iter=0;...)
       //
     if (_om->doOutput( 2 )){
-      	*_os << endl;
-	*_os << "Checking Orthogonality after BlkOrthSing()"
-	     << " Iteration: " << _iter << endl;
+      *_os << endl;
+      *_os << "Checking Orthogonality after BlkOrthSing()"
+	  << " Iteration: " << _iter << endl;
       CheckKrylovOrth(_iter);
     }
     //
@@ -891,27 +872,28 @@ namespace Belos {
     //
   } // end BlkOrthSing()
   
-
+  
+  
   template<class ScalarType, class MV, class OP>
   bool BlockGmres<ScalarType,MV,OP>::QRFactorAug(MV& VecIn, 
-				     Teuchos::SerialDenseMatrix<int,ScalarType>& FouierR, 
-				     bool blkone) 
+						 Teuchos::SerialDenseMatrix<int,ScalarType>& FouierR, 
+						 bool blkone) 
   {
     int i,j,k;
-    int nb = MVT::GetNumberVecs(VecIn); 
+    int nb = MVT::GetNumberVecs( VecIn ); 
     const int IntOne = 1;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    std::vector<int> index, index2( IntOne );
     bool addvec = false;
     bool flg = false;
     //
-    std::vector<ScalarType> norm1(IntOne);
-    std::vector<ScalarType> norm2(IntOne);
+    std::vector<int> index, index2( IntOne );
+    std::vector<ScalarType> norm1( IntOne );
+    std::vector<ScalarType> norm2( IntOne );
     Teuchos::SerialDenseVector<int,ScalarType> rj; 
     RefCountPtr<const MV> Qj;
     RefCountPtr<MV> qj, tptr;
-    tptr = MVT::Clone(*_basisvecs,IntOne);
+    tptr = MVT::Clone(*_basisvecs, IntOne); 
     //
     // Zero out the array that will contain the Fourier coefficients.
     //
@@ -942,11 +924,10 @@ namespace Belos {
 	// basis for first j columns of the entering VecIn).
 	//
 	rj.size(j);
-        index.resize(j);
-        for (i=0; i<j; i++)
-          index[i] = i;
+	index.resize(j);
+	for (i=0; i<j; i++) { index[i] = i; }	
 	Qj = MVT::CloneView( VecIn, index );
-	MVT::MvNorm(*qj,&norm1);
+	MVT::MvNorm( *qj, &norm1 );
 	//
 	// Do one step of classical Gram-Schmidt orthogonalization
 	// with a second correction step if needed
@@ -965,9 +946,9 @@ namespace Belos {
 	//
 	// Compute qj <- qj - Qj * rj.
 	//
-	MVT::MvTimesMatAddMv(-one, *Qj, rj, one, *qj);
+	MVT::MvTimesMatAddMv( -one, *Qj, rj, one, *qj );
 	//
-	MVT::MvNorm(*qj,&norm2);
+	MVT::MvNorm( *qj, &norm2 );
 	//
 	if (norm2[0] < norm1[0] * _dep_tol){
 	  //
@@ -983,9 +964,9 @@ namespace Belos {
 	  //
 	  // Compute qj <- qj - Qj * rj.
 	  //
-	  MVT::MvTimesMatAddMv(-one, *Qj, rj, one, *qj);
+	  MVT::MvTimesMatAddMv( -one, *Qj, rj, one, *qj );
 	  //
-	  MVT::MvNorm(*qj,&norm2);
+	  MVT::MvNorm( *qj, &norm2 );
 	}
 	//
 	// Check for dependencies
@@ -1023,15 +1004,15 @@ namespace Belos {
 	    addvec = true;
 	    Teuchos::SerialDenseVector<int,ScalarType> tj(j);
 	    //
-	    MVT::MvRandom(*tptr);
-	    MVT::MvNorm(*tptr,&norm1);
+	    MVT::MvRandom( *tptr );
+	    MVT::MvNorm( *tptr, &norm1 );
 	    //
 	    int num_orth;
 	    for (num_orth=0; num_orth<2; num_orth++){
-	      MVT::MvTransMv(one, *Qj, *tptr, tj);
-	      MVT::MvTimesMatAddMv(-one, *Qj, tj, one, *tptr);
+	      MVT::MvTransMv( one, *Qj, *tptr, tj );
+	      MVT::MvTimesMatAddMv( -one, *Qj, tj, one, *tptr );
 	    }
-	    MVT::MvNorm(*tptr,&norm2); 
+	    MVT::MvNorm( *tptr, &norm2 ); 
 	    //
 	    if (norm2[0] >= norm1[0] * _sing_tol){
 	      // Copy vector into current column of _basisvecs
@@ -1048,11 +1029,11 @@ namespace Belos {
       // If we have not exited, compute the norm of column j of
       // VecIn (qj), then normalize qj to make it into a unit vector
       //
-      std::vector<ScalarType> normq( IntOne );
-      MVT::MvNorm(*qj,&normq);
+      std::vector<ScalarType> normq(IntOne);
+      MVT::MvNorm( *qj, &normq );
       //
       ScalarType rjj = one / normq[0];
-      MVT::MvAddMv( rjj, *qj, zero, *qj, *qj ); // RAB: Warning aliasing of arguments!
+      MVT::MvAddMv ( rjj, *qj, zero, *qj, *qj );
       //
       if (addvec){
 	// We've added a random vector, so
@@ -1069,34 +1050,131 @@ namespace Belos {
     //
   } // end QRFactorAug()
   
-  
   template<class ScalarType, class MV, class OP>
-  void BlockGmres<ScalarType,MV,OP>::CheckKrylovOrth( const int j )
+  void BlockGmres<ScalarType,MV,OP>::UpdateLSQR( Teuchos::SerialDenseMatrix<int,ScalarType>& R, 
+				     Teuchos::SerialDenseMatrix<int,ScalarType>& z )
+  {
+    int i, j, maxidx;
+    ScalarType sigma, mu, vscale, maxelem, temp;
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    Teuchos::BLAS<int, ScalarType> blas;
+    //
+    // Apply previous transformations and compute new transformation to reduce upper-Hessenberg
+    // system to upper-triangular form.  
+    // NOTE:  When _iter==0, storage will be created for the transformations.
+    //
+    if (_blocksize == 1) 
+      {
+	if (_iter==0) {
+	  cs.resize( _length+1 );
+	  sn.resize( _length+1 );
+	}
+	//
+	// QR factorization of Least-Squares system with Givens rotations
+	//
+	for (i=0; i<_iter; i++) {
+	  //
+	  // Apply previous Givens rotations to new column of Hessenberg matrix
+	  //
+	  temp = cs[i]*R(i,_iter) + sn[i]*R(i+1,_iter);
+	  R(i+1,_iter) = -sn[i]*R(i,_iter) + cs[i]*R(i+1,_iter);
+	  R(i,_iter) = temp;
+	}
+	//
+	// Calculate new Givens rotation
+	//
+	givens_rot( R(_iter,_iter), R(_iter+1,_iter), cs[_iter], sn[_iter], temp );
+	R(_iter,_iter) = temp;
+	R(_iter+1,_iter) = zero;
+	//
+	// Update RHS w/ new transformation
+	//
+	z(_iter+1,0) = -sn[_iter]*z(_iter,0);
+	z(_iter,0) = cs[_iter]*z(_iter,0);
+      } 
+    else
+      {
+	if (_iter==0) {
+	  beta.size((_length+1)*_blocksize);
+	}
+	//
+	// QR factorization of Least-Squares system with Householder reflectors
+	//
+	for (j=0; j<_blocksize; j++) {
+	  //
+	  // Apply previous Householder reflectors to new block of Hessenberg matrix
+	  //
+	  for (i=0; i<_iter*_blocksize+j; i++) {
+	    sigma = blas.DOT( _blocksize, &R(i+1,i), 1, &R(i+1,_iter*_blocksize+j), 1);
+	    sigma += R(i,_iter*_blocksize+j);
+	    sigma *= beta[i];
+	    blas.AXPY(_blocksize, -sigma, &R(i+1,i), 1, &R(i+1,_iter*_blocksize+j), 1);
+	    R(i,_iter*_blocksize+j) -= sigma;
+	  }
+	  //
+	  // Compute new Householder reflector
+	  //
+	  maxidx = blas.IAMAX( _blocksize+1, &R(_iter*_blocksize+j,_iter*_blocksize+j), 1 );
+	  maxelem = R(_iter*_blocksize+j+maxidx-1,_iter*_blocksize+j);
+	  for (i=0; i<_blocksize+1; i++) 
+	    R(_iter*_blocksize+j+i,_iter*_blocksize+j) /= maxelem;
+	  sigma = blas.DOT( _blocksize, &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 1, 
+			    &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 1 );
+	  if (sigma == zero) {
+	    beta[_iter*_blocksize + j] = zero;
+	  } else {
+	    mu = sqrt(R(_iter*_blocksize+j,_iter*_blocksize+j)*R(_iter*_blocksize+j,_iter*_blocksize+j)+sigma);
+	    if ( R(_iter*_blocksize+j,_iter*_blocksize+j) < zero ) {
+	      vscale = R(_iter*_blocksize+j,_iter*_blocksize+j) - mu;
+	    } else {
+	      vscale = -sigma / (R(_iter*_blocksize+j,_iter*_blocksize+j) + mu);
+	    }
+	    beta[_iter*_blocksize+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
+	    R(_iter*_blocksize+j,_iter*_blocksize+j) = maxelem*mu;
+	    for (i=0; i<_blocksize; i++)
+	      R(_iter*_blocksize+j+1+i,_iter*_blocksize+j) /= vscale;
+	  }
+	  //
+	  // Apply new Householder reflector to rhs
+	  //
+	  for (i=0; i<_blocksize; i++) {
+	    sigma = blas.DOT( _blocksize, &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 
+			      1, &z(_iter*_blocksize+j+1,i), 1);
+	    sigma += z(_iter*_blocksize+j,i);
+	    sigma *= beta[_iter*_blocksize+j];
+	    blas.AXPY(_blocksize, -sigma, &R(_iter*_blocksize+j+1,_iter*_blocksize+j), 
+		      1, &z(_iter*_blocksize+j+1,i), 1);
+	    z(_iter*_blocksize+j,i) -= sigma;
+	  }
+	}
+      } // end if (_blocksize == 1)
+  } // end UpdateLSQR
+  
+
+  template<class ScalarType, class MV, class OP>
+  void BlockGmres<ScalarType,MV,OP>::CheckKrylovOrth( const int j ) 
   {
     int i,k,m=(j+1)*_blocksize;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::SerialDenseMatrix<int,ScalarType> VTV; VTV.shape(m,m);
-    std::vector<int> index( _blocksize );
+    std::vector<int> index(_blocksize);
+    std::vector<ScalarType> ptr_norms(_blocksize);
     
     for ( i=0; i<_blocksize; i++ ) {
       index[i] = m+i;
     }
-    RefCountPtr<MV> F_vec = MVT::CloneView(*_basisvecs, index);
+    RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, index );
     
-    std::vector<ScalarType> ptr_norms( m );
-    ScalarType sum = zero;
-    
-    MVT::MvNorm(*F_vec,&ptr_norms);
+    ScalarType sum = zero;    
+    MVT::MvNorm( *F_vec, &ptr_norms );
     for ( i=0; i<_blocksize; i++ ) {
       sum += ptr_norms[i];
     }
     
     index.resize( m );
-    for ( i=0; i<m; i++ ) {
-      index[i] = i;
-    }
-    RefCountPtr<MV> Vj = MVT::CloneView(*_basisvecs,index);
+    for ( i=0; i<m; i++ ) { index[i] = i; }
+    RefCountPtr<MV> Vj = MVT::CloneView( *_basisvecs, index );
     MVT::MvTransMv(one, *Vj, *Vj, VTV);
     ScalarType column_sum;
     //
@@ -1112,9 +1190,10 @@ namespace Belos {
 	}
 	column_sum += VTV(i,k);
       }
-      *_os <<  " V^T*V-I " << "for column " << k << " is " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) <<  endl;
+      *_os <<  " V^T*V-I " << "for column " << k << " is " 
+	  << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) <<  endl;
     }
-    *_os <<  endl;
+    *_os << " " <<  endl;
     
     Teuchos::SerialDenseMatrix<int,ScalarType> E; E.shape(m,_blocksize);
     
@@ -1126,13 +1205,57 @@ namespace Belos {
 	column_sum += E(i,k);
       }
       if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
-      *_os << " Orthogonality with F " << "for column " << k << " is " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) <<  endl;
+      *_os << " Orthogonality with F " << "for column " << k << " is " 
+	  << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) <<  endl;
     }
-    *_os << endl;
+    *_os << " " <<  endl;
     //
     //
   } // end CheckKrylovOrth
     
+
+  template<class ScalarType, class MV, class OP>
+  void BlockGmres<ScalarType,MV,OP>::givens_rot(ScalarType& a, ScalarType& b, ScalarType& c, ScalarType& s, ScalarType& tau)
+  {
+    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    //
+    // Initialize variables
+    //
+    c = zero;
+    s = zero;
+    tau = zero;
+    //
+    // If the second direction is already zero, no transformation is needed.
+    //
+    if (b == zero) {
+      c = one;
+      s = zero;
+      tau = a;
+      return;
+    }
+    //
+    // Compute Givens rotation
+    //
+    if (Teuchos::ScalarTraits<ScalarType>::magnitude(a) > Teuchos::ScalarTraits<ScalarType>::magnitude(b)) 
+      {
+	c = b/a;
+	tau = Teuchos::ScalarTraits<ScalarType>::squareroot( one + c*c );
+	s = c/tau;
+	c = one/tau;
+	tau *= a;
+      }
+    else 
+      {
+	s = a/b;
+	tau = Teuchos::ScalarTraits<ScalarType>::squareroot( one + s*s );
+	c = s/tau;
+	s = one/tau;
+	tau *= b;
+      }
+  } // end givens_rot
+
+
 } // end namespace Belos
 
 #endif
