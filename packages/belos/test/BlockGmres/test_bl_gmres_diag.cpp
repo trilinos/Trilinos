@@ -97,7 +97,9 @@ class Composed_Operator : public Vector_Operator
 {
   public:
 
-    Composed_Operator(unsigned n, Vector_Operator *pA, Vector_Operator *pB);
+    Composed_Operator(unsigned n, 
+		      const Teuchos::RefCountPtr<Vector_Operator>& pA, 
+		      const Teuchos::RefCountPtr<Vector_Operator>& pB);
 
     virtual ~Composed_Operator() {};
 
@@ -105,13 +107,13 @@ class Composed_Operator : public Vector_Operator
 
   private:
 
-    Vector_Operator *pA; 
-    Vector_Operator *pB; 
+    Teuchos::RefCountPtr<Vector_Operator> pA; 
+    Teuchos::RefCountPtr<Vector_Operator> pB; 
 };
 
 Composed_Operator::Composed_Operator(unsigned n, 
-                                     Vector_Operator *pA, 
-                                     Vector_Operator *pB) 
+                                     const Teuchos::RefCountPtr<Vector_Operator>& pA, 
+                                     const Teuchos::RefCountPtr<Vector_Operator>& pB) 
     : Vector_Operator(n, n), pA(pA), pB(pB) 
 {
 }
@@ -198,7 +200,7 @@ class Iterative_Inverse_Operator : public Vector_Operator
   public:
 
   Iterative_Inverse_Operator(unsigned n, 
-			     Vector_Operator *pA, 
+			     const Teuchos::RefCountPtr<Vector_Operator>& pA, 
 			     bool print);              
   
   virtual ~Iterative_Inverse_Operator() 
@@ -212,7 +214,7 @@ class Iterative_Inverse_Operator : public Vector_Operator
   
 private:
   
-  Vector_Operator *pA;       // operator which will be inverted 
+  Teuchos::RefCountPtr<Vector_Operator> pA;       // operator which will be inverted 
   // supplies a matrix vector multiply
   const bool print;
   
@@ -234,7 +236,7 @@ private:
 };
 
 Iterative_Inverse_Operator::Iterative_Inverse_Operator(unsigned n, 
-                                                       Vector_Operator *pA, 
+                                                       const Teuchos::RefCountPtr<Vector_Operator>& pA, 
                                                        bool print)
   : Vector_Operator(n, n),      // square operator
     pA(pA), 
@@ -252,7 +254,7 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(unsigned n,
 #endif
   pMap =  new Epetra_Map(n_global, n, 0, *pComm);
   
-  pPE = Teuchos::rcp( new Trilinos_Interface(pA, pComm, pMap) );
+  pPE = Teuchos::rcp( new Trilinos_Interface(pA.get(), pComm, pMap) );
   pPX = Teuchos::rcp( new Epetra_MultiVector(*pMap, 1) );  // block size of 1
   pPB = Teuchos::rcp( new Epetra_MultiVector(*pMap, 1) );
   
@@ -339,7 +341,7 @@ int main(int argc, char *argv[])
     vector<double> x(n, 1.0);
 
     // Inner computes inv(D2)*y
-    Diagonal_Operator_2 *D2(new Diagonal_Operator_2(n, 1.0));
+    Teuchos::RefCountPtr<Diagonal_Operator_2> D2 = Teuchos::rcp(new Diagonal_Operator_2(n, 1.0));
     Iterative_Inverse_Operator A2(n, D2, true); 
     
     // should return x=(1, 1/2, 1/3, ..., 1/10)
@@ -356,15 +358,17 @@ int main(int argc, char *argv[])
     // ************************************
 
     // Inner computes inv(D)*x
-    Diagonal_Operator *D(new Diagonal_Operator(n, 4.0));
-    Iterative_Inverse_Operator *Inner(new Iterative_Inverse_Operator(n, D, false)); 
+    Teuchos::RefCountPtr<Diagonal_Operator> D = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
+    Teuchos::RefCountPtr<Iterative_Inverse_Operator> Inner = 
+      Teuchos::rcp(new Iterative_Inverse_Operator(n, D, false)); 
 
     // Composed_Operator computed inv(D)*B*x
-    Diagonal_Operator *B(new Diagonal_Operator(n, 4.0));
-    Composed_Operator *C(new Composed_Operator(n, Inner, B)); 
+    Teuchos::RefCountPtr<Diagonal_Operator> B = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
+    Teuchos::RefCountPtr<Composed_Operator> C = Teuchos::rcp(new Composed_Operator(n, Inner, B)); 
 
     // Outer computes inv(C) = inv(inv(D)*B)*x = inv(B)*D*x = x
-    Iterative_Inverse_Operator *Outer(new Iterative_Inverse_Operator(n, C, true)); 
+    Teuchos::RefCountPtr<Iterative_Inverse_Operator> Outer =
+      Teuchos::rcp(new Iterative_Inverse_Operator(n, C, true)); 
 
     // should return x=1/4
     vector<double> y(n, 1.0);
@@ -398,13 +402,6 @@ int main(int argc, char *argv[])
 #ifdef EPETRA_MPI
     MPI_Finalize(); 
 #endif
-
-    delete D;
-    delete D2;
-    delete B;
-    delete C;
-    delete Inner;
-    delete Outer;
 
   if (norm_z > 1e-10 || Teuchos::ScalarTraits<double>::isnaninf( norm_z ) ) {
         if (pid==0)
