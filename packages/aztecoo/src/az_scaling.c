@@ -2341,7 +2341,8 @@ void AZ_sum_bdry(double x[], int data_org[], int proc_config[])
   double *buffer;                    /* for incoming messages */
   N_unpadded = data_org[AZ_N_internal] + data_org[AZ_N_border];
   name       = data_org[AZ_name];
-  type       = (type += 1) % AZ_NUM_MSGS;
+  ++type;
+  type       = type % AZ_NUM_MSGS;
 
   /* Send the external points to neighbors */
   total = 0;
