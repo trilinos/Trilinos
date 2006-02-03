@@ -269,6 +269,11 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map3.NumMyElements(), self.numMyEl     )
         self.assertEqual(self.map4.NumMyElements(), self.numMyEl     )
 
+    def testMyGlobalElements(self):
+        "Test Epetra.BlockMap MyGlobalElements method"
+        result = self.map4.MyGlobalElements()
+        self.assertEqual(result, self.myGlobalEls)
+
     def testElementSize1(self):
         "Test Epetra.BlockMap ElementSize method for constant element sizes"
         self.assertEqual(self.map1.ElementSize(), self.elSizeConst)

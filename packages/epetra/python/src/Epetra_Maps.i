@@ -42,6 +42,8 @@
 %ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*) const;
 %ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*,int*) const;
 %ignore Epetra_BlockMap::FindLocalElementID(int,int&,int&) const;
+%ignore Epetra_BlockMap::MyGlobalElements(int*) const;
+%ignore Epetra_BlockMap::MyGlobalElements() const;
 
 // Rename directives
 %rename(BlockMap) Epetra_BlockMap;
@@ -183,6 +185,27 @@
     return Py_BuildValue("(ii)",elementID,elementOffset);
 
   fail:
+    return NULL;
+  }
+
+  PyObject * MyGlobalElements() {
+    int        numEls[1];
+    int        result;
+    int      * geData  = NULL;
+    PyObject * geArray = NULL;
+    numEls[0] = self->NumMyElements();
+    geArray   = PyArray_FromDims(1,numEls,PyArray_INT);
+    if (geArray == NULL) goto fail;
+    geData = (int*) (((PyArrayObject*)geArray)->data);
+    result = self->MyGlobalElements(geData);
+    if (result != 0) {
+      PyErr_Format(PyExc_RuntimeError,"Bad MyGlobalElements return code = %d", result);
+      goto fail;
+    }
+    return geArray;
+
+  fail:
+    Py_XDECREF(geArray );
     return NULL;
   }
 
