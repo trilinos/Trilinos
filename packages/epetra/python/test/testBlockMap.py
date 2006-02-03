@@ -134,30 +134,40 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map3.SameAs(map3),True)
         self.assertEqual(self.map4.SameAs(map4),True)
 
-#     # This currently fails
-#     def testRemoteIDList(self):
-#         "Test Epetra.BlockMap RemoteIDList method"
-#         gidList = arange(self.numGlobalEl)
-#         if self.myPID==0:
-#             print
-#             print "gidList =", gidList
-#         pidList = zeros( self.numGlobalEl)
-#         lidList = arange(self.numGlobalEl)
-#         for p in range(1,self.numProc):
-#             start  = 4*p + p*(p-1)/2
-#             length = 4 + p
-#             pidList[start:] += 1
-#             lidList[start:start+length] = range(length)
-#         if self.myPID==0:
-#             print "pidList =", pidList
-#             print "lidList =", lidList
-#         result = self.map4.RemoteIDList(gidList)
-#         if self.myPID==0:
-#             print "result[0] =", result[0]
-#             print "result[1] =", result[1]
-#             print "result[2] =", result[2]
-#         self.assertEqual(result[0], pidList)
-#         self.assertEqual(result[1], lidList)
+    def testRemoteIDList1(self):
+        "Test Epetra.BlockMap RemoteIDList method for constant element size"
+        gidList  = range(self.numGlobalEl)
+        gidList.reverse()  # Match the setUp pattern
+        pidList  = zeros( self.numGlobalEl)
+        lidList  = arange(self.numGlobalEl)
+        sizeList = ones(  self.numGlobalEl) * self.elSizeConst
+        for p in range(1,self.numProc):
+            start  = 4*p + p*(p-1)/2
+            length = 4 + p
+            pidList[start:] += 1
+            lidList[ start:start+length] = range(length)
+        result = self.map3.RemoteIDList(gidList)
+        self.assertEqual(result[0], pidList )
+        self.assertEqual(result[1], lidList )
+        self.assertEqual(result[2], sizeList)
+
+    def testRemoteIDList2(self):
+        "Test Epetra.BlockMap RemoteIDList method for variable element size"
+        gidList  = range(self.numGlobalEl)
+        gidList.reverse()  # Match the setUp pattern
+        pidList  = zeros( self.numGlobalEl)
+        lidList  = arange(self.numGlobalEl)
+        sizeList = arange(self.numGlobalEl) + 5
+        for p in range(1,self.numProc):
+            start  = 4*p + p*(p-1)/2
+            length = 4 + p
+            pidList[start:] += 1
+            lidList[ start:start+length] = range(length)
+            sizeList[start:start+length] = range(5,5+length)
+        result = self.map4.RemoteIDList(gidList)
+        self.assertEqual(result[0], pidList )
+        self.assertEqual(result[1], lidList )
+        self.assertEqual(result[2], sizeList)
 
     def testLID(self):
         "Test Epetra.BlockMap LID method"
@@ -167,6 +177,16 @@ class EpetraBlockMapTestCase(unittest.TestCase):
             else:
                 lid = -1
             self.assertEqual(self.map3.LID(gid),lid)
+
+    def testFindLocalElementID(self):
+        "Test Epetra.BlockMap FindLocalElementID method"
+        pointID = 0
+        for lid in range(self.map4.NumMyElements()):
+            for offset in range(self.map4.ElementSize(lid)):
+                result = self.map4.FindLocalElementID(pointID)
+                self.assertEqual(result[0], lid   )
+                self.assertEqual(result[1], offset)
+                pointID += 1
 
     def testGID(self):
         "Test Epetra.BlockMap GID method"

@@ -41,6 +41,7 @@
 %ignore Epetra_BlockMap::Epetra_BlockMap(int,int,int*,int*,int,const Epetra_Comm&);
 %ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*) const;
 %ignore Epetra_BlockMap::RemoteIDList(int,const int *,int*,int*,int*) const;
+%ignore Epetra_BlockMap::FindLocalElementID(int,int&,int&) const;
 
 // Rename directives
 %rename(BlockMap) Epetra_BlockMap;
@@ -143,26 +144,23 @@
     GIDArray = PyArray_ContiguousFromObject(GIDList,'i',1,1);
     if (GIDArray == NULL) goto fail;
     numIDs[0] = ((PyArrayObject*)GIDArray)->dimensions[0];
-    GIDData   = (int*) malloc(numIDs[0]*sizeof(int));
-    PIDData   = (int*) malloc(numIDs[0]*sizeof(int));
-    LIDData   = (int*) malloc(numIDs[0]*sizeof(int));
-    sizeData  = (int*) malloc(numIDs[0]*sizeof(int));
-    result    = self->RemoteIDList(numIDs[0],GIDData,PIDData,LIDData,sizeData);
-    printf("GID PID LID Size\n--- --- --- ----\n");
-    for (int i=0; i<numIDs[0]; i++)
-      printf("%3d %3d %3d %4d\n",GIDData[i],PIDData[i],LIDData[i],sizeData[i]);
-//     if (result != 0) {
-//       PyErr_Format(PyExc_RuntimeError,"Bad RemoteIDList return code = %d", result);
-//       goto fail;
-//     }
-    PIDArray  = PyArray_FromDimsAndData(1,numIDs,PyArray_INT,(char*)PIDData );
+    PIDArray  = PyArray_FromDims(1,numIDs,PyArray_INT);
     if (PIDArray == NULL) goto fail;
-    LIDArray  = PyArray_FromDimsAndData(1,numIDs,PyArray_INT,(char*)LIDData );
+    LIDArray  = PyArray_FromDims(1,numIDs,PyArray_INT);
     if (LIDArray == NULL) goto fail;
-    sizeArray = PyArray_FromDimsAndData(1,numIDs,PyArray_INT,(char*)sizeData);
+    sizeArray = PyArray_FromDims(1,numIDs,PyArray_INT);
     if (sizeArray == NULL) goto fail;
+    GIDData  = (int*) (((PyArrayObject*)GIDArray)->data);
+    PIDData  = (int*) (((PyArrayObject*)PIDArray)->data);
+    LIDData  = (int*) (((PyArrayObject*)LIDArray)->data);
+    sizeData = (int*) (((PyArrayObject*)sizeArray)->data);
+    result   = self->RemoteIDList(numIDs[0],GIDData,PIDData,LIDData,sizeData);
+    if (result != 0) {
+      PyErr_Format(PyExc_RuntimeError,"Bad RemoteIDList return code = %d", result);
+      goto fail;
+    }
     returnObj = Py_BuildValue("(OOO)",PIDArray,LIDArray,sizeArray);
-    //Py_DECREF(GIDArray );
+    Py_DECREF(GIDArray );
     return returnObj;
 
   fail:
@@ -170,6 +168,21 @@
     Py_XDECREF(PIDArray );
     Py_XDECREF(LIDArray );
     Py_XDECREF(sizeArray);
+    return NULL;
+  }
+
+  PyObject * FindLocalElementID(int pointID) {
+    int result;
+    int elementID;
+    int elementOffset;
+    result   = self->FindLocalElementID(pointID,elementID,elementOffset);
+    if (result != 0) {
+      PyErr_Format(PyExc_RuntimeError,"Bad FindLocalElementID return code = %d", result);
+      goto fail;
+    }
+    return Py_BuildValue("(ii)",elementID,elementOffset);
+
+  fail:
     return NULL;
   }
 
