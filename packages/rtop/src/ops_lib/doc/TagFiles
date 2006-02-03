@@ -1,5 +1,2 @@
-#
-# Relative to any Trilinos/packages/package/doc
-#
-@INCLUDE = ../../rtop/src/support/doc/TagFiles
-TAGFILES += ../../common/tag_files/RTOpOpsLib.tag=../../../../../../rtop/src/ops_lib/doc/html
+@INCLUDE = rtop/src/support/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+TAGFILES += $(TRILINOS_HOME)/packages/common/tag_files/RTOpOpsLib.tag=$(TRILINOS_HOME)/packages/rtop/src/ops_lib/doc/html

@@ -1,6 +1,3 @@
-#
-# Relative to any Trilinos/packages/package/doc
-#
+@INCLUDE=teuchos/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
 TAGFILES += \
-  ../../common/tag_files/teuchos.tag=../../../../../../teuchos/doc/html \
-  ../../common/tag_files/RTOpInterfaces.tag=../../../../../../rtop/src/interfaces/doc/html
+  $(TRILINOS_HOME)/packages/common/tag_files/RTOpInterfaces.tag=$(TRILINOS_HOME)/packages/rtop/src/interfaces/doc/html

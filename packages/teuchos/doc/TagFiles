@@ -1,0 +1,2 @@
+TAGFILES += \
+  $(TRILINOS_HOME)/packages/common/tag_files/teuchos.tag=$(TRILINOS_HOME)/packages/teuchos/doc/html
