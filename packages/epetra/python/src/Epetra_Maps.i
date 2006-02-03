@@ -50,6 +50,7 @@
 %ignore Epetra_BlockMap::ElementSizeList() const;
 %ignore Epetra_BlockMap::PointToElementList(int*) const;
 %ignore Epetra_BlockMap::PointToElementList() const;
+%ignore Epetra_Map::Epetra_Map(int,int,int*,int,const Epetra_Comm&);
 // These are expert methods not wrapped
 %ignore Epetra_BlockMap::ReferenceCount() const;
 %ignore Epetra_BlockMap::DataPtr() const;
@@ -285,63 +286,34 @@
 
 
 %extend Epetra_Map {
-  Epetra_Map(const int NumGlobalElements,
-             const Epetra_IntSerialDenseVector& MyGlobalElements,
-             const int IndexBase, const Epetra_Comm& Comm)
-  {
-    return(new Epetra_Map(NumGlobalElements, MyGlobalElements.Length(),
-                         (int*)MyGlobalElements.Values(), IndexBase, Comm));
+
+  Epetra_Map(int                 numGlobalElements,
+	     PyObject          * myGlobalElementArray,
+	     int                 indexBase,
+	     const Epetra_Comm & comm) {
+    // Declarations
+    int          numMyElements;
+    int        * myGlobalElements = NULL;
+    PyObject   * elementArray     = NULL;
+    Epetra_Map * returnMap        = NULL;
+    // Check for integer PyObject in the argument list
+    if (PyInt_Check(myGlobalElementArray)) {
+      numMyElements = (int) PyInt_AsLong(myGlobalElementArray);
+      returnMap = new Epetra_Map(numGlobalElements,numMyElements,indexBase,comm);
+    } else {
+      // Obtain a Numeric element array and check
+      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',1,1);
+      if (elementArray == NULL) goto fail;
+      numMyElements    = ((PyArrayObject*)elementArray)->dimensions[0];
+      myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
+      returnMap = new Epetra_Map(numGlobalElements,numMyElements,myGlobalElements,
+				 indexBase,comm);
+      Py_DECREF(elementArray);
+    }
+    return returnMap;
+  fail:
+    Py_XDECREF(elementArray);
+    return NULL;
   }
 
-  Epetra_Map(const int NumGlobalElements,
-             PyObject* MyGlobalElements, const int IndexBase,
-             const Epetra_Comm& Comm)
-  {
-    if (PyList_Check(MyGlobalElements) == 0)
-    {
-      cerr << "Input object is not a list" << endl;
-      return NULL;
-    }
-
-    int len = PyList_Size(MyGlobalElements);
-
-    vector<int> list(len);
-
-    for (int i = 0 ; i < len ; ++i)
-    {
-      PyObject* Index;
-      Index = PyList_GetItem(MyGlobalElements, i);
-
-      if (PyInt_Check(Index) == 0)
-      {
-        cerr << "Indices must be integers" << endl;
-        return NULL;
-      }
-
-      list[i] = PyLong_AsLong(Index);
-    }
-    return(new Epetra_Map(NumGlobalElements, len, &list[0], IndexBase, Comm));
-  }
-
-//   PyObject*  MyGlobalElements()
-//   {
-//     int* MyGlobalElements_Epetra = self->MyGlobalElements();
-//     PyObject* MyGlobalElements_Python,* item;
-//     int size = self->NumMyElements();
-//     if (size <= 0)
-//       goto fail;
-
-//     MyGlobalElements_Python = PyList_New(size);
-
-//     for (int i = 0 ; i < size ; ++i)
-//     {
-//       item = PyInt_FromLong(MyGlobalElements_Epetra[i]);
-//       PyList_SetItem(MyGlobalElements_Python, i, item);
-//     }
-
-//     return(MyGlobalElements_Python);
-// fail:
-//     Py_INCREF(Py_None);
-//     return Py_None;
-//   }
 }
