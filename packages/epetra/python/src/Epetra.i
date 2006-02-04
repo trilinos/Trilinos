@@ -278,36 +278,36 @@ can therefore be used everywhere Numeric arrays are accepted.
 %include "std_vector.i"
 %include "exception.i"
 
-// Epetra interface includes
+// Epetra interface includes and imports
 using namespace std;
 %include "Epetra_Version.h"
+%include "Epetra_CombineMode.h"
+%include "Epetra_DataAccess.h"
 %include "Epetra_Object.h"
-
-%include "Epetra_Comm.i"
-%include "Epetra_Maps.i"
-
 %include "Epetra_SrcDistObject.h"
 %include "Epetra_DistObject.h"
 %include "Epetra_CompObject.h"
-%include "Epetra_BLAS.h"
-%include "Epetra_LAPACK.h"
+%import  "Epetra_BLAS.h"       // These two classes are not included because I do not
+%import  "Epetra_LAPACK.h"     // want to expose their functionality to python
+%include "Epetra_Time.h"
+%include "Epetra_Import.h"
+%include "Epetra_Export.h"
+%include "Epetra_MapColoring.h"
 
-%include "Epetra_Vectors.i"
 %include "Epetra_SerialDense.i"
+%include "Epetra_Comm.i"
+%include "Epetra_Maps.i"
+%include "Epetra_Vectors.i"
+//%include Epetra_Graphs.i
+//%include Epetra_Operators.i
 
 %include "Epetra_CrsGraph.h"
-%include "Epetra_MapColoring.h"
 %include "Epetra_Operator.h"
 %include "Epetra_RowMatrix.h"
 %include "Epetra_CrsMatrix.h"
 %include "Epetra_FECrsMatrix.h"
 %include "Epetra_VbrMatrix.h"
-%include "Epetra_DataAccess.h"
 %include "Epetra_LinearProblem.h"
-%include "Epetra_CombineMode.h"
-%include "Epetra_Import.h"
-%include "Epetra_Export.h"
-%include "Epetra_Time.h"
 
 // Local interface includes
 %include "NumPyArray.h"
