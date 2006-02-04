@@ -1,0 +1,146 @@
+// -*- c++ -*-
+
+// @HEADER
+// ***********************************************************************
+//
+//            PyTrilinos.Epetra: Python Interface to Epetra
+//                 Copyright (2005) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+
+%{
+
+// Epetra includes
+#include "Epetra_ConfigDefs.h"
+#include "Epetra_Version.h"
+#include "Epetra_CombineMode.h"
+#include "Epetra_DataAccess.h"
+#include "Epetra_Object.h"
+#include "Epetra_SrcDistObject.h"
+#include "Epetra_DistObject.h"
+#include "Epetra_CompObject.h"
+#include "Epetra_BLAS.h"
+#include "Epetra_LAPACK.h"
+#include "Epetra_Time.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
+#include "Epetra_MapColoring.h"
+
+// Local includes
+#include "FileStream.h"
+#include "NumPyArray.h"
+#include "NumPyWrapper.h"
+#include "PyEpetra_Utils.h"  
+%}
+
+// Ignore directives
+%ignore *::operator=;         // Not overrideable in python
+%ignore *::operator[];        // Replaced with __setitem__ method
+%ignore *::operator[] const;  // Replaced with __getitem__ method
+%ignore *::print;             // Replaced with __str__ method
+%ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
+%ignore NumPyArrayBase::getDataArray() const;
+%ignore NumPyArrayBase::getArrayObject() const;
+%ignore Epetra_Object::Print(ostream &) const;       // Replaced with __str__ method
+%ignore Epetra_MapColoring::operator()(int) const;
+%ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
+%ignore Epetra_CompObject::UpdateFlops(float) const; // Use double version
+
+// Rename directives
+%rename(Version      ) Epetra_Version;
+%rename(Object       ) Epetra_Object;
+%rename(SrcDistObject) Epetra_SrcDistObject;
+%rename(DistObject   ) Epetra_DistObject;
+%rename(CompObject   ) Epetra_CompObject;
+%rename(BLAS         ) Epetra_BLAS;
+%rename(LAPACK       ) Epetra_LAPACK;
+%rename(Time         ) Epetra_Time;
+%rename(Import       ) Epetra_Import;
+%rename(Export       ) Epetra_Export;
+%rename(MapColoring  ) Epetra_MapColoring;
+
+// Include directives
+%include "std_string.i"
+%include "Epetra_Version.h"
+%include "Epetra_CombineMode.h"
+%include "Epetra_DataAccess.h"
+%include "Epetra_Object.h"
+%include "Epetra_SrcDistObject.h"
+%include "Epetra_DistObject.h"
+%include "Epetra_CompObject.h"
+%import  "Epetra_BLAS.h"       // These two classes are not included because I do not
+%import  "Epetra_LAPACK.h"     // want to expose their functionality to python
+%include "Epetra_Time.h"
+%include "Epetra_Import.h"
+%include "Epetra_Export.h"
+%include "Epetra_MapColoring.h"
+
+// Extensions
+%extend Epetra_Object {
+
+  // Define the __str__() method, used by the python str() operator on any
+  // object given to the python print command.
+  string __str__() {
+    stringstream os;
+    self->Print(os);             // Put the output in os
+    string s = os.str();         // Extract the string from os
+    int last = s.length();       // Get the last index
+    if (s.substr(last) == "\n")
+      last-=1;                   // Ignore any trailing newline
+    return s.substr(0,last);     // Return the string
+  }
+
+  // The Epetra_Object::Print(ostream) method is ignored and replaced by a
+  // Print() method here that takes a python file as its argument.  If no
+  // argument is given, then output is to standard out.
+  PyObject * Print(PyObject*pf=NULL) const {
+    if (pf == NULL) {
+      self->Print(std::cout);
+    } else {
+      if (!PyFile_Check(pf)) {
+	PyErr_SetString(PyExc_IOError, "Print() method expects file object");
+	return NULL;
+      } else {
+	std::FILE*   f = PyFile_AsFile(pf);
+	FileStream   buffer(f);
+	std::ostream os(&buffer);
+	self->Print(os);
+      }
+    }
+    Py_INCREF(Py_None);
+    return Py_None;
+  }
+}
+
+%extend Epetra_MapColoring {
+  int & __getitem__(int i) {
+    return self->operator[](i);
+  }
+}
+
+// Python code.  Here we set the __version__ string
+%pythoncode %{
+
+__version__ = Version().split()[2]
+
+%}
