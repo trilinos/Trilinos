@@ -8,7 +8,8 @@ OUTPUT_DIRECTORY       = ../src/interfaces/nonlinear/solvers/ana/fundamental/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/index.doc \
-                         ../src/interfaces/nonlinear/solvers/ana/fundamental
+                         ../src/interfaces/nonlinear/solvers/ana/fundamental \
+                         ./dirs.doc
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

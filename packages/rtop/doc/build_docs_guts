@@ -1,6 +1,11 @@
 #!/bin/bash
 
-export TRILINOS_HOME=`pwd`/../../..
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+fi
 
 echo
 echo "Building doxygen documentation for rtop/src/interfaces ..."

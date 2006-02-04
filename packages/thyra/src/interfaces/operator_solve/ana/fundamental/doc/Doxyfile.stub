@@ -8,7 +8,8 @@ OUTPUT_DIRECTORY       = ../src/interfaces/operator_solve/ana/fundamental/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../src/interfaces/operator_solve/ana/fundamental/doc/index.doc \
-                         ../src/interfaces/operator_solve/ana/fundamental
+                         ../src/interfaces/operator_solve/ana/fundamental \
+                         ./dirs.doc
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 

@@ -6,7 +6,8 @@ OUTPUT_DIRECTORY       = .
 #
 # What and how documentation is extracted
 #
-INPUT                  = ./index.doc
+INPUT                  = ./index.doc \
+                         ./dirs.doc
 EXCLUDE                = 
 EXAMPLE_PATTERNS       =
 INPUT_FILTER           = 

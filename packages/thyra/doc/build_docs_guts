@@ -48,8 +48,8 @@ echo
 echo "Generating browser doxygen documentation for all of Thyra as a single doxygen documentation collection ..."
 echo
 
-pushd ./all ; ./generate_Doxyfile ; popd
-doxygen ./all/Doxyfile
+pushd ../all/doc ; ./generate_Doxyfile ; popd
+doxygen ../all/doc/Doxyfile
 
 
 echo

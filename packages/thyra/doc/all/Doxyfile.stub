@@ -8,6 +8,7 @@ OUTPUT_DIRECTORY       = ./all
 # What and how documentation is extracted
 #
 INPUT                  = ./all/index.doc \
+                         ./dirs.doc \
                          ../src \
                          ../example \
                          ../test

@@ -13,7 +13,7 @@ rm -r ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
 
 rm -r ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
 
-rm -r all/html
+rm -r ../all/doc/html
 
 rm -r html
 
@@ -30,7 +30,7 @@ mkdir ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
 
 mkdir ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
 
-mkdir all/html
+mkdir ../all/doc/html
 
 mkdir html
 

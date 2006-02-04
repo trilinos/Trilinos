@@ -8,7 +8,8 @@ OUTPUT_DIRECTORY       = ../src/interfaces/nonlinear/model_evaluator/ana/fundame
 # What and how documentation is extracted
 #
 INPUT                  = ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/index.doc \
-                         ../src/interfaces/nonlinear/model_evaluator/ana/fundamental
+                         ../src/interfaces/nonlinear/model_evaluator/ana/fundamental \
+                         ./dirs.doc
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
