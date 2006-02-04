@@ -1,0 +1,28 @@
+@INCLUDE = rtop/doc/TagFiles
+#
+# Package options
+#
+PROJECT_NAME           = "Thyra Package Browser (Single Doxygen Collection)"
+OUTPUT_DIRECTORY       = ./all
+#
+# What and how documentation is extracted
+#
+INPUT                  = ./all/index.doc \
+                         ../src \
+                         ../example \
+                         ../test
+FILE_PATTERNS          = *.h *c *.hpp *.cpp
+RECURSIVE              = YES
+EXCLUDE                = 
+EXCLUDE_PATTERNS       = *.x *.o *.out
+EXAMPLE_PATH           =
+EXAMPLE_PATTERNS       =
+IMAGE_PATH             =
+INPUT_FILTER           = 
+ALPHABETICAL_INDEX     = YES
+IGNORE_PREFIX          = 
+#
+# Links to other packages
+#
+ALLEXTERNALS           = NO
+EXTERNAL_GROUPS        = NO

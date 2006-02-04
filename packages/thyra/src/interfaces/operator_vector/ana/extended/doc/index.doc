@@ -1,0 +1,60 @@
+/*! \mainpage Extended Thyra Operator/Vector Interfaces for Abstract Numerical Algorithms
+
+
+\section thyra_src_interfaces_operator_vector_ana_extended_outline_sec Outline
+
+<ul>
+<li> \ref thyra_src_interfaces_operator_vector_ana_extended_into_sec
+<li> \ref thyra_src_interfaces_operator_vector_ana_extended_software_sec
+<li> \ref thyra_src_interfaces_operator_vector_ana_extended_links_sec
+</ul>
+
+\section thyra_src_interfaces_operator_vector_ana_extended_into_sec Introduction
+
+This doxygen collection documents a set of interfaces that are derived from or
+extend the <a href="../../../fundamental/doc/html/index.html">Fundamental
+Thyra ANA Operator/Vector Interfaces</a> in simple ways but yet are used to
+define interoperability between objects in many contexts.
+
+\section thyra_src_interfaces_operator_vector_ana_extended_software_sec Software
+
+<ul>
+
+  <li> <b>Interfaces to product vector spaces, vectors and multi-vectors</b>
+  
+    <ul>
+    <li><tt>Thyra::ProductVectorSpaceBase</tt> defines an interface for a composite product vector space composed out of one
+        or more constituent <tt>Thyra::VectorSpaceBase</tt> objects.
+    <li><tt>Thyra::ProductVectorBase</tt> defines an interface for a composite product vector composed out of one
+        or more constituent <tt>Thyra::VectorBase</tt> objects.
+    <li><tt>Thyra::ProductMultiVectorBase</tt>  defines an interface for a composite product multi-vector composed out of one
+        or more constituent <tt>Thyra::MultiVectorBase</tt> objects.
+    </ul>
+
+  <li> <b>Composite linear operator base classes</b>
+  
+    <ul>
+    <li><tt>Thyra::ScaledAdjointLinearOpBase</tt> is the base class for all decorator subclasses that implicitly
+      scale and/or transpose a <tt>Thyra::LinearOpBase</tt> object.
+    <li>...
+    </ul>
+
+  <li> <b>Miscellaneous</b>
+  
+    <ul>
+    <li><tt>Thyra::MultiVectorRandomizerBase</tt> is an interface for strategy objects that can randomize vectors and multi-vectors.
+    <li><tt>Teuchos::PolynomialTraits</tt> is a concrete traits class that is used in the <tt>Thyra::ModelEvaluator</tt> interface.
+    </ul>
+
+</ul>
+  
+\section thyra_src_interfaces_operator_vector_ana_extended_links_sec Links
+
+<ul>
+
+<li> <a href="../../../fundamental/doc/html/index.html">Fundamental Thyra ANA Operator/Vector Interfaces</a>
+<li> <a href="../../../../../../../doc/html/index.html">Main Thyra package documentation page</a>
+
+</ul>
+
+*/
