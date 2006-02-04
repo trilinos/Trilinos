@@ -53,7 +53,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/ana/operator_vector/interfaces/Thyra_VectorBase.hpp)
+AC_CONFIG_SRCDIR(/src/interfaces/operator_vector/ana/fundamental/Thyra_VectorBase.hpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -291,14 +291,11 @@ AC_CONFIG_FILES([
     Makefile.export.thyra
     src/Makefile
     example/Makefile
-    example/ana/Makefile
-    example/ana/operator_vector/Makefile
+    example/operator_vector/Makefile
+    example/operator_solve/Makefile
     example/external/Makefile
     test/Makefile
-    test/ana/Makefile
-    test/ana/operator_vector/Makefile
-    test/scripts/daily/serial/run_operator_vector_tests.pl
-    test/scripts/daily/mpi/run_operator_vector_tests.pl
+    test/operator_vector/Makefile
     python/Makefile
     python/src/Makefile
     python/src/TRILINOS_HOME_DIR

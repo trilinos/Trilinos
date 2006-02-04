@@ -147,7 +147,7 @@ namespace Anasazi {
 
       Teuchos::RefCountPtr< TMVB > cc;
       if (contig) {
-        RangePack::Range1D rng(lb,lb+numvecs-1);
+        Thyra::Range1D rng(lb,lb+numvecs-1);
         // create a contiguous view to the relevant part of the source multivector
         cc = mv.subView(rng);
       }
@@ -192,7 +192,7 @@ namespace Anasazi {
 
       Teuchos::RefCountPtr< const TMVB > cc;
       if (contig) {
-        RangePack::Range1D rng(lb,lb+numvecs-1);
+        Thyra::Range1D rng(lb,lb+numvecs-1);
         // create a contiguous view to the relevant part of the source multivector
         cc = mv.subView(rng);
       }

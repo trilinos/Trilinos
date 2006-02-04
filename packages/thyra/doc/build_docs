@@ -3,26 +3,34 @@
 # Remove the directories to make sure that we don't have rebuild problems
 # that can sometimes happen with doxygen
 
-rm -r ../src/utils/doc/html
+rm -r ../src/interfaces/operator_vector/ana/fundamental/doc/html
 
-rm -r ../src/ana/rtop/doc/html
+rm -r ../src/interfaces/operator_vector/ana/extended/doc/html
 
-rm -r ../src/ana/operator_vector/doc/html
+rm -r ../src/interfaces/operator_solve/ana/fundamental/doc/html
 
-rm -r ../src/ana/nonlinear/doc/html
+rm -r ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
+
+rm -r ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
+
+rm -r all/html
 
 rm -r html
 
 # Create new directories manually since the doxygen exe under windows
 # seems to be messing this up.
 
-mkdir ../src/utils/doc/html
+mkdir ../src/interfaces/operator_vector/ana/fundamental/doc/html
 
-mkdir ../src/ana/rtop/doc/html
+mkdir ../src/interfaces/operator_vector/ana/extended/doc/html
 
-mkdir ../src/ana/operator_vector/doc/html
+mkdir ../src/interfaces/operator_solve/ana/fundamental/doc/html
 
-mkdir ../src/ana/nonlinear/doc/html
+mkdir ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
+
+mkdir ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
+
+mkdir all/html
 
 mkdir html
 

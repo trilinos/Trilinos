@@ -59,13 +59,13 @@ class EpetraLinearOp : virtual public EpetraLinearOpBase {
 public:
 
   /** \brief . */
-  using SingleScalarEuclideanLinearOpBase<RTOp_value_type>::euclideanApply;
+  using SingleScalarEuclideanLinearOpBase<double>::euclideanApply;
 
 	/** @name Public types */
 	//@{
 
 	/** \brief . */
-	typedef RTOp_value_type Scalar;
+	typedef double Scalar;
 
 	//@}
 

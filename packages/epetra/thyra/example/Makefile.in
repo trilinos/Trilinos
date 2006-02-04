@@ -307,7 +307,7 @@ common_dependencies = $(top_builddir)/thyra/src/libepetrathyra.a $(top_builddir)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(EPETRA_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRA_LIBS))
-AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/ana/operator_vector $(EXPORT_INCLUDES)
+AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_vector $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 EXTRA_DIST = $(srcdir)/createTridiagEpetraLinearOp.hpp
 all: all-am

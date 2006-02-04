@@ -1,0 +1,3 @@
+RTOp_index_type    Teuchos_Index
+RTOp_char_type     ::RTOpPack::char_type
+RangePack          Teuchos

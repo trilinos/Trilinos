@@ -1,12 +1,17 @@
 ? Doxyfile
 ? html
-/*! \mainpage Thyra : Interfaces and Support code for the Interoperability of Abstract Numerical Algorithms
+/*! \mainpage Thyra : Interfaces and Support code for Abstract Numerical Algorithms (ANAs)
 
 \section thyra_outline_sec Outline
 
 <ul>
 <li> \ref thyra_intro_sec
 <li> \ref thyra_software_sec
+  <ul>
+  <li>\ref thyra_interfaces_sec
+  <li>\ref thyra_support_sec
+  <li>\ref thyra_browse_sec
+  </ul>
 <li> \ref thyra_software_technicalities_sec
 <li> \ref thyra_dependencies_sec
 <li> \ref thyra_configuration_sec
@@ -20,10 +25,10 @@
 
 The %Thyra package contains a set of interfaces and supporting code that
 defines basic interoperability mechanisms between different types of numerical
-software.  The foundation of all of these interfaces are the mathematical
-concepts of vectors, vector spaces, and linear operators.  All other
-interfaces and support software are built on these basic operator/vector
-interfaces.
+software.  The foundation of all the interfaces related to abstract numerical
+algorithms (ANAs) are the mathematical concepts of vectors, vector spaces, and
+linear operators.  All other ANA interfaces and support software are built on
+these fundamental operator/vector interfaces.
 
 This main page provides the starting point for all of the documentation for
 %Thyra interfaces and software.  This documentation is generated using
@@ -38,44 +43,109 @@ The Doxygen-generated documentation is broken up into a number of different
 doxygen collections in an attempt to make each individual collection more
 manageable to browse and comprehend.
 
-Below are links to the different Doxygen documentation collections for the
-different aspects of Thyra:
+The thrya package is broadly divided into interoperability interfaces and
+support software and the directory structure and the doxygen documentation is
+also divided in this way.  Below are links to the different Doxygen
+documentation collections for the different aspects of Thyra.  This
+organization also exactly mirrors the <a
+href="../all/html/dirs.html">directory structure of thyra</a>.
+
+\subsection thyra_interfaces_sec Thyra interoperability interfaces
 
 <ul>
 
-<li> <a href="../../src/utils/doc/html/index.html">Miscellaneous Utilities</a>: Some utility code
-that does not belong in any one of the below collections of code.
-
-<li> Abstract Numerical Algorithm (ANA) Software: Interfaces and support code for developing and using
-ANAs.
+<li> <b>Interoperability Interfaces</b>
 
   <ul>
 
-  <li> <a href="../../src/ana/rtop/doc/html/index.html">RTOp: Vector Reduction/Transformation Operators</a>:
-  Documents the basic RTOp interfaces and support software and
-  catalogs a library of pre-created RTOp subclasses.
+  <li> <b>Operator/Vector Interfaces</b>
 
-  <li> <a href="../../src/ana/operator_vector/doc/html/index.html">Operator/Vector Interfaces and Support Software</a>:
-  Contains the most fundamental %Thyra operator/vector interfaces as well as standard adapter code and ANA development
-  utilities.
+    <ul>
 
-  <li> <a href="../../src/ana/nonlinear/doc/html/index.html">Nonlinear Interfaces and Support Software</a>:
-  Contains the some fundamental interfaces for developing nonlinear ANAs and also includes related support
-  software.
+    <li> <b>Operator/Vector Interfaces for Abstract Numerical Algorithms</b>
 
-  </ul>
+      <ul>
+  
+      <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
+        Fundamental ANA Operator/Vector Interfaces</a></b>
+  
+      <li> <b><a href="../../src/interfaces/operator_vector/ana/extended/doc/html/index.html">
+        Extended ANA Operator/Vector Interfaces</a></b>
+  
+      </ul>
 
-<li> Other Thyra software
+    </ul>
 
-  <ul>
+  <li> <b>Operator Solve Interfaces</b>
 
-  <li> Single program multiple data (SPMD) vector and matrix creational, loading and accessing interfaces: These are abstract
-  interfaces that application code can use to fill vectors and sparse matrices on distributed-memory
-  parallel computers (as well as on SMP computers of course) [Does not exist yet].
+    <ul>
+
+    <li> <b>Operator Solve Interfaces for Abstract Numerical Algorithms</b>
+
+      <ul>
+  
+      <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
+        Fundamental ANA Operator Solve Interfaces</a></b>
+  
+      </ul>
+
+    </ul>
+
+  <li> <b>Nonlinear Interfaces</b>
+
+    <ul>
+  
+    <li><b>Model Evaluator Interfaces</b>
+
+      <ul>
+
+      <li><b>Model Evaluator Interfaces for Abstract Numerical Algorithms</b>
+
+        <ul>
+
+        <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
+          Fundamental ANA Model Evaluator Interfaces</a></b>
+
+        </ul>
+
+      </ul>
+  
+    <li><b>Nonlinear Solver Interfaces</b>
+
+      <ul>
+
+      <li><b>Nonlinear Solver Interfaces for Abstract Numerical Algorithms</b>
+
+        <ul>
+
+        <li><b><a href="../../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html/index.html">
+          Fundamental ANA Nonlinear Solver Interfaces</a></b>
+
+        </ul>
+
+      </ul>
+
+    </ul>
 
   </ul>
 
 </ul>
+
+\subsection thyra_support_sec Thyra support software and examples
+
+<ul>
+
+<li> <b>Support software</b>
+
+</ul>
+
+\subsection thyra_browse_sec Browse all of Thyra as a single doxygen collection
+
+You can browse all of Thyra as a <A HREF="../all/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Thyra software.  However, this is a good way to browse the <a
+href="../all/html/dirs.html">directory structure of thyra</a>, to <a
+href="../all/html/files.html">locate files</a>, etc.
 
 \section thyra_software_technicalities_sec Some Technicalities about Thyra Interfaces and Supporting Software
 
@@ -293,14 +363,15 @@ The contributors to the %Thyra package, or related packages, in alphabetical
 order, are:
 
 <ul>
-<li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead developer
+<li> Roscoe Bartlett (rabartl@sandia.gov): %Thyra lead developer, MOOCHO lead developer
 <li> Paul Boggs (ptboggs@sandia.gov) : Split/O3D lead developer, %Thyra developer
 <li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer, %Thyra developer
-<li> Michael Heroux (maherou@sandia.gov): Trilinos leader
+<li> Michael Heroux (maherou@sandia.gov): Trilinos leader, %Thyra developer
 <li> Rob Hoekstra (rjhoeks@sandia.gov) : %EpetraExt lead developer
 <li> Victoria Howle (vehowle@sandia.gov) : %Meros lead developer, %Thyra developer
 <li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer, %Thyra developer
 <li> Roger Pawlowski (rppawlo@sandia.gov) : %NOX lead developer
+<li> Eric Phipps (etphipp@sandia.gov) : %LOCA co-lead developer, %Thyra developer
 <li> Heidi Thornquist (hkthorn@sandia.gov): %Belos lead developer, %Thyra developer
 <li> Allan Williams (william@sandia.gov) : %FEI lead developer, %Thyra developer
 </ul>

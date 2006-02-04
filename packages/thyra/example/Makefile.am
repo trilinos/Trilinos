@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = ana external
+SUBDIRS = operator_vector operator_solve external

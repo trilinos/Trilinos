@@ -1,25 +1,23 @@
 
-include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+include @abs_top_builddir@/../rtop/Makefile.export.rtop
 
 _THYRA_INCLUDES = \
-  -I@abs_top_srcdir@/src/ana/nonlinear/model_evaluator/ana_support \
-  -I@abs_top_srcdir@/src/ana/nonlinear/model_evaluator/interfaces \
-  -I@abs_top_srcdir@/src/ana/nonlinear/solvers/ana_support \
-  -I@abs_top_srcdir@/src/ana/nonlinear/solvers/interfaces \
-  -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support \
-  -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/mpi \
-  -I@abs_top_srcdir@/src/ana/operator_vector/adapter_support/serial \
-  -I@abs_top_srcdir@/src/ana/operator_vector/ana_support \
-  -I@abs_top_srcdir@/src/ana/operator_vector/extended_interfaces \
-  -I@abs_top_srcdir@/src/ana/operator_vector/interfaces \
-  -I@abs_top_srcdir@/src/ana/rtop/ops_lib \
-  -I@abs_top_srcdir@/src/ana/rtop/base \
-  -I@abs_top_srcdir@/src/utils \
-  -I@abs_top_srcdir@/src \
-  -I@abs_top_builddir@/src \
-  $(TEUCHOS_INCLUDES)
+  -I@abs_top_srcdir@/src/interfaces/operator_vector/ana/fundamental\
+  -I@abs_top_srcdir@/src/interfaces/operator_vector/ana/extended\
+  -I@abs_top_srcdir@/src/interfaces/operator_solve/ana/fundamental\
+  -I@abs_top_srcdir@/src/interfaces/nonlinear/model_evaluator/ana/fundamental\
+  -I@abs_top_srcdir@/src/interfaces/nonlinear/solvers/ana/fundamental\
+  -I@abs_top_srcdir@/src/support/operator_vector/adapter_support\
+  -I@abs_top_srcdir@/src/support/operator_vector/adapter_support/serial\
+  -I@abs_top_srcdir@/src/support/operator_vector/adapter_support/mpi\
+  -I@abs_top_srcdir@/src/support/operator_vector/client_support\
+  -I@abs_top_srcdir@/src/support/nonlinear/model_evaluator/client_support\
+  -I@abs_top_srcdir@/src/support/nonlinear/solvers/client_support\
+  -I@abs_top_srcdir@/src\
+  -I@abs_top_builddir@/src\
+  $(RTOP_INCLUDES)
 
-_THYRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lthyra $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
+_THYRA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lthyra $(RTOP_LIBS) @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@THYRA_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_THYRA_INCLUDES))
 @USING_GNUMAKE_TRUE@THYRA_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_THYRA_LIBS))

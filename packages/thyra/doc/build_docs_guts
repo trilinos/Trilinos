@@ -1,20 +1,60 @@
 #!/bin/bash
 
-pushd ../src/utils/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/utils/doc/Doxyfile
-
-pushd ../src/ana/rtop/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/ana/rtop/doc/Doxyfile
+echo
+echo "Generating LinearAlgebraFunctionConvention.pdf file ..."
+echo
 
 pushd ../../../doc/Thyra/linear_algebra_function_convention; make pdf ; popd
-cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf ../src/ana/operator_vector/doc/html/.
+cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf ../src/interfaces/operator_vector/ana/fundamental/doc/html/.
 
-pushd ../src/ana/operator_vector/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/ana/operator_vector/doc/Doxyfile
+echo
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/fundamental ..."
+echo
 
-pushd ../src/ana/nonlinear/doc ; ./generate_Doxyfile ; popd
-doxygen ../src/ana/nonlinear/doc/Doxyfile
+pushd ../src/interfaces/operator_vector/ana/fundamental/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/interfaces/operator_vector/ana/fundamental/doc/Doxyfile
+
+echo
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/extended ..."
+echo
+
+pushd ../src/interfaces/operator_vector/ana/extended/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/interfaces/operator_vector/ana/extended/doc/Doxyfile
+
+echo
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_solve/ana/fundamental ..."
+echo
+
+pushd ../src/interfaces/operator_solve/ana/fundamental/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/interfaces/operator_solve/ana/fundamental/doc/Doxyfile
+
+echo
+echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental ..."
+echo
+
+pushd ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/Doxyfile
+
+echo
+echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/solvers/ana/fundamental ..."
+echo
+
+pushd ../src/interfaces/nonlinear/solvers/ana/fundamental/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/Doxyfile
+
+# ToDo: Add more individual doxygen collections
+
+echo
+echo "Generating browser doxygen documentation for all of Thyra as a single doxygen documentation collection ..."
+echo
+
+pushd ./all ; ./generate_Doxyfile ; popd
+doxygen ./all/Doxyfile
+
+
+echo
+echo "Generating main documentation page for thyra ..."
+echo
 
 ./generate_Doxyfile
 doxygen Doxyfile
-

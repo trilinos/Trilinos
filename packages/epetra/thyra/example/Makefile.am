@@ -63,11 +63,11 @@ EXPORT_INCLUDES = $(EPETRA_INCLUDES)
 EXPORT_LIBS = $(EPETRA_LIBS)
 endif
 
-AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/ana/operator_vector $(EXPORT_INCLUDES)
+AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_vector $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
 EXTRA_DIST = $(srcdir)/createTridiagEpetraLinearOp.hpp
- 
+
 # This is already added part of EPETRA_LIBS and therefore automake does not need to add this again!
 LIBS =

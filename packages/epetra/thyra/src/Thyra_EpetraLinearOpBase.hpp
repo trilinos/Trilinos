@@ -47,7 +47,7 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
-class EpetraLinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<RTOp_value_type> {
+class EpetraLinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<double> {
 public:
 
   /** \name Pure virtual functions that must be overridden in subclasses. */

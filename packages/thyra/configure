@@ -273,7 +273,7 @@ PACKAGE_VERSION='version of the day'
 PACKAGE_STRING='thyra version of the day'
 PACKAGE_BUGREPORT='rabartl@sandia.gov'
 
-ac_unique_file="/src/ana/operator_vector/interfaces/Thyra_VectorBase.hpp"
+ac_unique_file="/src/interfaces/operator_vector/ana/fundamental/Thyra_VectorBase.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -6989,7 +6989,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/ana/Makefile example/ana/operator_vector/Makefile example/external/Makefile test/Makefile test/ana/Makefile test/ana/operator_vector/Makefile test/scripts/daily/serial/run_operator_vector_tests.pl test/scripts/daily/mpi/run_operator_vector_tests.pl python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export.thyra src/Makefile example/Makefile example/operator_vector/Makefile example/operator_solve/Makefile example/external/Makefile test/Makefile test/operator_vector/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -7706,14 +7706,11 @@ do
   "Makefile.export.thyra" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.thyra" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-  "example/ana/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/ana/Makefile" ;;
-  "example/ana/operator_vector/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/ana/operator_vector/Makefile" ;;
+  "example/operator_vector/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/operator_vector/Makefile" ;;
+  "example/operator_solve/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/operator_solve/Makefile" ;;
   "example/external/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/external/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
-  "test/ana/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ana/Makefile" ;;
-  "test/ana/operator_vector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/ana/operator_vector/Makefile" ;;
-  "test/scripts/daily/serial/run_operator_vector_tests.pl" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/serial/run_operator_vector_tests.pl" ;;
-  "test/scripts/daily/mpi/run_operator_vector_tests.pl" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/run_operator_vector_tests.pl" ;;
+  "test/operator_vector/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/operator_vector/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
   "python/src/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/src/Makefile" ;;
   "python/src/TRILINOS_HOME_DIR" ) CONFIG_FILES="$CONFIG_FILES python/src/TRILINOS_HOME_DIR" ;;

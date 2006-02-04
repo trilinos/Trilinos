@@ -70,11 +70,9 @@ host_triplet = @host@
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.thyra.in $(srcdir)/Makefile.in \
 	$(top_srcdir)/configure \
-	$(top_srcdir)/python/src/.deps/dummy.in \
-	$(top_srcdir)/test/scripts/daily/mpi/run_operator_vector_tests.pl.in \
-	$(top_srcdir)/test/scripts/daily/serial/run_operator_vector_tests.pl.in \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing config/mkinstalldirs
+	$(top_srcdir)/python/src/.deps/dummy.in config/config.guess \
+	config/config.sub config/depcomp config/install-sh \
+	config/missing config/mkinstalldirs
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
@@ -99,10 +97,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno configure.status.lineno
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Thyra_Config.h
-CONFIG_CLEAN_FILES = Makefile.export.thyra \
-	test/scripts/daily/serial/run_operator_vector_tests.pl \
-	test/scripts/daily/mpi/run_operator_vector_tests.pl \
-	python/src/.deps/dummy
+CONFIG_CLEAN_FILES = Makefile.export.thyra python/src/.deps/dummy
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -342,10 +337,6 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 Makefile.export.thyra: $(top_builddir)/config.status $(srcdir)/Makefile.export.thyra.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
-test/scripts/daily/serial/run_operator_vector_tests.pl: $(top_builddir)/config.status $(top_srcdir)/test/scripts/daily/serial/run_operator_vector_tests.pl.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-test/scripts/daily/mpi/run_operator_vector_tests.pl: $(top_builddir)/config.status $(top_srcdir)/test/scripts/daily/mpi/run_operator_vector_tests.pl.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
 python/src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/python/src/.deps/dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 uninstall-info-am:
@@ -469,7 +460,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps $(distdir)/test/scripts/daily/mpi $(distdir)/test/scripts/daily/serial
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/python/src $(distdir)/python/src/.deps
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
