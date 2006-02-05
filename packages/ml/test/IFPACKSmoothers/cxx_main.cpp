@@ -1,6 +1,6 @@
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALEREI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_IFPACK)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -51,9 +51,9 @@ int main(int argc, char *argv[]) {
   // ===================== //
   
   ParameterList GaleriList;
-  GaleriList.set("nx", 5);
-  GaleriList.set("ny", 5);
-  GaleriList.set("nz", 5 * Comm.NumProc());
+  GaleriList.set("nx", 10);
+  GaleriList.set("ny", 10);
+  GaleriList.set("nz", 10 * Comm.NumProc());
   GaleriList.set("mx", 1);
   GaleriList.set("my", 1);
   GaleriList.set("mz", Comm.NumProc());
@@ -135,9 +135,9 @@ int main(int argc, char *argv[]) {
       IFPACKList.set("relaxation: type", TestList[i]);
       IFPACKList.set("relaxation: sweeps", sweeps);
       IFPACKList.set("relaxation: damping factor", Damping);
-      IFPACKList.set("relaxation: zero starting solution", false);
-      IFPACKList.set("partitioner: type", "metis");
-      IFPACKList.set("partitioner: local parts", -1);
+      // MS // The following is no longer required, I changed ml_ifpack.c
+      // MS // to compute the residual in ML.
+      //IFPACKList.set("relaxation: zero starting solution", true);
 
       MLList.set("output", 0);
       Time.ResetStartTime();
