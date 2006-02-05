@@ -33,6 +33,7 @@
 #include "Ifpack_ILUT.h"
 #include "Ifpack_Condest.h"
 #include "Ifpack_Utils.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
@@ -68,18 +69,32 @@ Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix* A) :
   ApplyInverseTime_(0.0),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
-  Time_(Comm())
-{ }
+  Time_(Comm()),
+  GlobalNonzeros_(0),
+  SerialComm_(0),
+  SerialMap_(0)
+{
+  // do nothing here..
+}
 
 //==============================================================================
 Ifpack_ILUT::~Ifpack_ILUT()
 {
+  Destroy();
+}
 
-  if (L_)
-    delete L_;
+//==============================================================================
+void Ifpack_ILUT::Destroy()
+{
+  if (L_) delete L_; L_ = 0;
 
-  if (U_)
-    delete U_;
+  if (U_) delete U_; U_ = 0;
+
+  if (SerialComm_)
+  {
+    delete SerialComm_; SerialComm_ = 0;
+    delete SerialMap_;  SerialMap_  = 0;
+  }
 
   IsInitialized_ = false;
   IsComputed_ = false;
@@ -88,7 +103,6 @@ Ifpack_ILUT::~Ifpack_ILUT()
 //==========================================================================
 int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
 {
-
   LevelOfFill_ = List.get("fact: ilut level-of-fill",LevelOfFill());
   if (LevelOfFill_ <= 0.0)
     IFPACK_CHK_ERR(-2); // must be greater than 0.0
@@ -109,19 +123,15 @@ int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
 //==========================================================================
 int Ifpack_ILUT::Initialize()
 {
-  IsInitialized_ = false;
+  // delete previously allocated factorization
+  Destroy();
+
   Time_.ResetStartTime();
 
   if (Matrix().NumMyRows() != Matrix().NumMyCols())
     IFPACK_CHK_ERR(-2);
     
   NumMyRows_ = Matrix().NumMyRows();
-
-  // delete previously allocated factorization
-  if (L_)
-    delete L_;
-  if (U_)
-    delete U_;
 
   // nothing else to do here
   IsInitialized_ = true;
@@ -132,8 +142,9 @@ int Ifpack_ILUT::Initialize()
 }
 
 //==========================================================================
-class Ifpack_AbsComp {
-public:
+class Ifpack_AbsComp 
+{
+ public:
   inline bool operator()(const double& x, const double& y) 
   {
     return(IFPACK_ABS(x) > IFPACK_ABS(y));
@@ -146,7 +157,6 @@ public:
 // MS // WARNING: Still not fully tested!
 int Ifpack_ILUT::Compute() 
 {
-
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
 
@@ -159,11 +169,22 @@ int Ifpack_ILUT::Compute()
   vector<double> RowValuesL(Length);
   vector<int>    RowIndicesU(Length);
   vector<double> RowValuesU(Length);
+  bool distributed = (Comm().NumProc() > 1)?true:false;
 
+  if (distributed)
+  {
+    SerialComm_ = new Epetra_SerialComm;
+    SerialMap_ = new Epetra_Map(NumMyRows_, 0, *SerialComm_);
+    assert (SerialComm_ != 0);
+    assert (SerialMap_ != 0);
+  }
+  else
+    SerialMap_ = const_cast<Epetra_Map*>(&A_.RowMatrixRowMap());
+  
   int RowNnzU;
 
-  L_ = new Epetra_CrsMatrix(Copy,A_.RowMatrixRowMap(),0);
-  U_ = new Epetra_CrsMatrix(Copy,A_.RowMatrixRowMap(),0);
+  L_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
+  U_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
 
   if ((L_ == 0) || (U_ == 0))
     IFPACK_CHK_ERR(-5);
@@ -171,6 +192,22 @@ int Ifpack_ILUT::Compute()
   // insert first row in U_ and L_
   IFPACK_CHK_ERR(A_.ExtractMyRowCopy(0,Length,RowNnzU,
                                      &RowValuesU[0],&RowIndicesU[0]));
+
+  if (distributed)
+  {
+    int count = 0;
+    for (int i = 0 ;i < RowNnzU ; ++i) 
+    {
+      if (RowIndicesU[i] < NumMyRows_){
+        RowIndicesU[count] = RowIndicesU[i];
+        RowValuesU[count] = RowValuesU[i];
+        ++count;
+      }
+      else
+        continue;
+    }
+    RowNnzU = count;
+  }
 
   // modify diagonal
   for (int i = 0 ;i < RowNnzU ; ++i) {
@@ -202,6 +239,22 @@ int Ifpack_ILUT::Compute()
     // get row `row_i' of the matrix, store in U pointers
     IFPACK_CHK_ERR(A_.ExtractMyRowCopy(row_i,Length,RowNnzU,
                                        &RowValuesU[0],&RowIndicesU[0]));
+
+    if (distributed)
+    {
+      int count = 0;
+      for (int i = 0 ;i < RowNnzU ; ++i) 
+      {
+        if (RowIndicesU[i] < NumMyRows_){
+          RowIndicesU[count] = RowIndicesU[i];
+          RowValuesU[count] = RowValuesU[i];
+          ++count;
+        }
+        else
+          continue;
+      }
+      RowNnzU = count;
+    }
 
     int NnzLower = 0;
     int NnzUpper = 0;
@@ -386,6 +439,9 @@ int Ifpack_ILUT::Compute()
   RHS1.Norm2(&Norm);
 #endif
 
+  int MyNonzeros = L_->NumGlobalNonzeros() + U_->NumGlobalNonzeros();
+  Comm().SumAll(&MyNonzeros, &GlobalNonzeros_, 1);
+
   IsComputed_ = true;
 
   ++NumCompute_;
@@ -408,6 +464,10 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
 
   Time_.ResetStartTime();
 
+  // NOTE: L_ and U_ are based on SerialMap_, while Xcopy is based
+  // on A.Map()... which are in general different. However, Solve()
+  // does not seem to care... which is fine with me.
+  //
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
   const Epetra_MultiVector* Xcopy;
@@ -423,8 +483,7 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
     delete Xcopy;
 
   ++NumApplyInverse_;
-  ApplyInverseFlops_ += X.NumVectors() * 2 *(L_->NumGlobalNonzeros() + 
-                                             U_->NumGlobalNonzeros());
+  ApplyInverseFlops_ += X.NumVectors() * 2 * GlobalNonzeros_;
   ApplyInverseTime_ += Time_.ElapsedTime();
 
   return(0);

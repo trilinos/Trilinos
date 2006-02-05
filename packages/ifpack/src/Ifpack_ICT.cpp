@@ -34,6 +34,7 @@
 #include "Ifpack_Condest.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_HashTable.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
@@ -68,8 +69,12 @@ Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
   ApplyInverseTime_(0.0),
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
-  Time_(Comm())
+  Time_(Comm()),
+  GlobalNonzeros_(0),
+  SerialComm_(0),
+  SerialMap_(0)
 {
+  // do nothing here
 }
 
 //==============================================================================
@@ -82,6 +87,12 @@ Ifpack_ICT::~Ifpack_ICT()
 void Ifpack_ICT::Destroy()
 {
   if (H_) delete H_; H_ = 0;
+
+  if (SerialComm_)
+  {
+    delete SerialComm_; SerialComm_ = 0;
+    delete SerialMap_;  SerialMap_  = 0;
+  }
 
   IsInitialized_ = false;
   IsComputed_ = false;
@@ -132,7 +143,6 @@ int Ifpack_ICT::Initialize()
 //==========================================================================
 int Ifpack_ICT::Compute() 
 {
-
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
 
@@ -144,16 +154,45 @@ int Ifpack_ICT::Compute()
   vector<int>    RowIndices(Length);
   vector<double> RowValues(Length);
 
+  bool distributed = (Comm().NumProc() > 1)?true:false;
+
+  if (distributed)
+  {
+    SerialComm_ = new Epetra_SerialComm;
+    SerialMap_ = new Epetra_Map(NumMyRows_, 0, *SerialComm_);
+    assert (SerialComm_ != 0);
+    assert (SerialMap_ != 0);
+  }
+  else
+    SerialMap_ = const_cast<Epetra_Map*>(&A_.RowMatrixRowMap());
+
   int RowNnz;
   double flops = 0.0;
 
-  H_ = new Epetra_CrsMatrix(Copy,A_.RowMatrixRowMap(),0);
+  H_ = new Epetra_CrsMatrix(Copy,*SerialMap_,0);
   if (H_ == 0)
     IFPACK_CHK_ERR(-5);
 
   // get A(0,0) element and insert it (after sqrt)
   IFPACK_CHK_ERR(A_.ExtractMyRowCopy(0,Length,RowNnz,
                                      &RowValues[0],&RowIndices[0]));
+
+  // skip off-processor elements
+  if (distributed)
+  {
+    int count = 0;
+    for (int i = 0 ;i < RowNnz ; ++i) 
+    {
+      if (RowIndices[i] < NumMyRows_){
+        RowIndices[count] = RowIndices[i];
+        RowValues[count] = RowValues[i];
+        ++count;
+      }
+      else
+        continue;
+    }
+    RowNnz = count;
+  }
 
   // modify diagonal
   double diag_val = 0.0;
@@ -180,12 +219,29 @@ int Ifpack_ICT::Compute()
     IFPACK_CHK_ERR(A_.ExtractMyRowCopy(row_i,Length,RowNnz,
                                        &RowValues[0],&RowIndices[0]));
 
+    // skip off-processor elements
+    if (distributed)
+    {
+      int count = 0;
+      for (int i = 0 ;i < RowNnz ; ++i) 
+      {
+        if (RowIndices[i] < NumMyRows_){
+          RowIndices[count] = RowIndices[i];
+          RowValues[count] = RowValues[i];
+          ++count;
+        }
+        else
+          continue;
+      }
+      RowNnz = count;
+    }
+
     // number of nonzeros in this row are defined as the nonzeros
     // of the matrix, plus the level of fill 
     int LOF = (int)(LevelOfFill() * RowNnz);
     if (LOF == 0) LOF = 1;
 
-    // convert line `row_i' into STL map for fast access
+    // convert line `row_i' into hash for fast access
     Ifpack_HashTable Hash(oldSize * 2 + 1);
 
     double h_ii = 0.0;
@@ -335,6 +391,8 @@ int Ifpack_ICT::Compute()
   cout << endl;
   cout << RHS1;
 #endif
+  int MyNonzeros = H_->NumGlobalNonzeros();
+  Comm().SumAll(&MyNonzeros, &GlobalNonzeros_, 1);
 
   IsComputed_ = true;
   double TotalFlops; // sum across all the processors
@@ -368,6 +426,10 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
   else
     Xcopy = &X;
 
+  // NOTE: H_ is based on SerialMap_, while Xcopy is based
+  // on A.Map()... which are in general different. However, Solve()
+  // does not seem to care... which is fine with me.
+  //
   EPETRA_CHK_ERR(H_->Solve(false,false,false,*Xcopy,Y));
   EPETRA_CHK_ERR(H_->Solve(false,true,false,Y,Y));
 
@@ -375,7 +437,7 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
     delete Xcopy;
 
   // these are global flop count
-  ApplyInverseFlops_ += 4.0 * H_->NumGlobalNonzeros();
+  ApplyInverseFlops_ += 4.0 * GlobalNonzeros_;
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_.ElapsedTime();

@@ -39,6 +39,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
 class Epetra_RowMatrix;
+class Epetra_SerialComm;
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
@@ -304,6 +305,9 @@ private:
     return(*this);
   }
 
+  //! Releases all allocated memory.
+  void Destroy();
+
   // @}
   // @{ Internal data
 
@@ -355,7 +359,10 @@ private:
   mutable double ApplyInverseFlops_;
   //! Used for timing purposed
   mutable Epetra_Time Time_;
-
+  //! Global number of nonzeros in L and U factors
+  int GlobalNonzeros_;
+  Epetra_SerialComm* SerialComm_;
+  Epetra_Map* SerialMap_;
 }; // Ifpack_ILUT
 
 #endif // HAVE_IFPACK_TEUCHOS
