@@ -86,6 +86,16 @@ UMFPACK_H =
 UMFPACK =
 endif
 
+if HAVE_AMESOS_MC64
+MC64_H = \
+	$(srcdir)/Amesos_MC64.h
+MC64 = \
+	$(srcdir)/Amesos_MC64.cpp
+else
+MC64_H =
+MC64 =
+endif
+
 #if HAVE_AMESOS_SCALAPACK
 #SCALAPACK_H = \
 #	$(srcdir)/Amesos_Scalapack.h
@@ -414,7 +424,9 @@ COMP_H = \
         $(srcdir)/Amesos_Time.h \
         $(srcdir)/Amesos_Control.h \
         $(srcdir)/Amesos_Support.h \
-        $(srcdir)/Amesos_Status.h
+        $(srcdir)/Amesos_Status.h \
+	$(srcdir)/Amesos_Scaling.h \
+	$(srcdir)/Amesos_Reordering.h
 
 COMP = \
 	$(srcdir)/CrsMatrixTranspose.cpp
@@ -502,6 +514,7 @@ AMESOS_H = \
 	$(TAUCS_H) \
 	$(PASTIX_H) \
 	$(PARAKLETE_H) \
+	$(MC64_H) \
 	$(SCALAPACK_H) \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
@@ -524,6 +537,7 @@ libamesos_a_SOURCES = \
 	$(TAUCS) \
 	$(PASTIX) \
 	$(PARAKLETE) \
+	$(MC64) \
 	$(SCALAPACK) \
 	$(FACTORY) \
 	$(SUPERLU) \

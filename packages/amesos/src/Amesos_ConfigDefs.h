@@ -57,6 +57,10 @@
 #undef VERSION
 #endif
 
+#ifdef F77_FUNC
+#undef F77_FUNC
+#endif
+
 #include "Amesos_config.h"
 #include "Epetra_ConfigDefs.h"
 #ifdef HAVE_VECTOR

@@ -51,13 +51,19 @@ else
 EXAMPLES_GALERI = 
 endif
 
+if HAVE_AMESOS_MC64
+EXAMPLES_MC64 = example_MC64
+else
+EXAMPLES_MC64 = 
+endif
+
 if HAVE_MPI
 EXAMPLES_MPI = a_trivial_mpi_test
 else
 EXAMPLES_MPI = 
 endif
 
-noinst_PROGRAMS = $(EXAMPLES_MPI) example_AmesosFactory_Tridiag $(EXAMPLES_GALERI)
+noinst_PROGRAMS = $(EXAMPLES_MPI) example_AmesosFactory_Tridiag $(EXAMPLES_GALERI) $(EXAMPLES_MC64)
 
 EXTRA_DIST = In_662_bus.rsa
 
@@ -80,6 +86,11 @@ compare_solvers_SOURCES      = $(srcdir)/compare_solvers.cpp
 compare_solvers_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
 compare_solvers_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 compare_solvers_LDADD        = $(EXAMPLE_LIBS)
+
+example_MC64_SOURCES      = $(srcdir)/example_MC64.cpp
+example_MC64_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+example_MC64_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+example_MC64_LDADD        = $(EXAMPLE_LIBS)
 
 run_pk_SOURCES      = $(srcdir)/run_pk.c
 run_pk_DEPENDENCIES = $(top_builddir)/src/libamesos.a 

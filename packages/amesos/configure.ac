@@ -428,6 +428,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, taucs, [Enable Amesos interface support for 
 #TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
 #		AMESOS_KUNDERT, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB(amesos, mc64, [Enable Amesos interface support for reordering routine MC64], 
+		AMESOS_MC64, no)
+
 AM_CONDITIONAL(NEED_PARAMETER_LIST, false ) 
 
 #
@@ -725,6 +728,16 @@ if test "X$ac_cv_use_amesos_merikos" != "Xno"; then
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
 else
   AM_CONDITIONAL(HAVE_AMESOS_MERIKOS, false ) 
+fi
+
+#  ======  #
+#  M C 6 4 #
+#  =====  #
+
+if test "X$ac_cv_use_amesos_mc64" != "Xno"; then
+  AM_CONDITIONAL(HAVE_AMESOS_MC64, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_MC64, false ) 
 fi
 
 #

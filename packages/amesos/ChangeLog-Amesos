@@ -31,6 +31,23 @@ Please submit Amesos bugs at software.sandia.gov/bugzilla.
 
 ------------------------------------------------------------------------------
 
+Feb 2006
+
+*) Added support for MC64 algorithm (reordering and scaling).
+   [M. Sala]
+
+------------------------------------------------------------------------------
+
+Jan 2006
+
+*) Cleaned the MUMPS interface. Improved memory management by using smart
+   pointers. Dropped the not-so-well-tested single-precision MUMPS.
+   Improved passing of CNTL and ICNTL through the parameter list. Momentarily
+   dropped support for Schur complement computation.
+   [M. Sala]
+
+------------------------------------------------------------------------------
+
 Nov 2005
 
 *) Increases the performances of the UMFPACK interface by a factor of

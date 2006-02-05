@@ -38,6 +38,9 @@
 /* Define if want to build amesos-lapack */
 #undef HAVE_AMESOS_LAPACK
 
+/* Define if want to build amesos-mc64 */
+#undef HAVE_AMESOS_MC64
+
 /* Define if want to build amesos-mumps_mpi_c2f */
 #undef HAVE_AMESOS_MPI_C2F
 
