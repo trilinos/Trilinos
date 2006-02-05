@@ -48,7 +48,7 @@
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
 Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
   A_(*A),
-  Comm_(Comm()),
+  Comm_(A_.Comm()),
   H_(0),
   Condest_(-1.0),
   Athresh_(0.0),
