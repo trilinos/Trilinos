@@ -70,7 +70,7 @@ using namespace std;
 #define TEMPLATE_FRIENDS_NOT_SUPPORTED
 %import  "Teuchos_VerbosityLevel.hpp"
 %import  "Teuchos_Describable.hpp"
-%import  "RTOp_config.h"
+%import  "RTOp_MPI_config.h"
 %import  "Thyra_OperatorVectorTypes.hpp"
 %import  "Thyra_ScalarProdBaseDecl.hpp"
 %include "Thyra_VectorSpaceBaseDecl.hpp"
