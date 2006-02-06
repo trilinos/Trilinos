@@ -388,7 +388,7 @@ int Amesos_Mumps::SymbolicFactorization()
 
     MPI_Group OrigGroup, MumpsGroup;
     MPI_Comm_group(MPI_COMM_WORLD, &OrigGroup);
-    MPI_Group_incl(OrigGroup, MaxProcs_, ProcsInGroup, &MumpsGroup);
+    MPI_Group_incl(OrigGroup, MaxProcs_, &ProcsInGroup[0], &MumpsGroup);
     MPI_Comm_create(MPI_COMM_WORLD, MumpsGroup, &MUMPSComm_);
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MUMPSComm_);
   } 
