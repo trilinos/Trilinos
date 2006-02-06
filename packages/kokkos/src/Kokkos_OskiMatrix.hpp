@@ -77,12 +77,27 @@ namespace Kokkos {
       (if isRowOriented is true) or ith column (if isRowOriented is false).
       \param indx (In)  Packed array of indices.  indx[pntr[i]] contains the first index of the ith row
       (if isRowOriented is true) or ith column (if isRowOriented is false).
+      \param type (In) Matrix type.  OSKI supports: MAT_GENERAL (default), 
+      MAT_TRI_UPPER, MAT_TRI_LOWER, MAT_SYMM_UPPER, MAT_SYMM_LOWER, 
+      MAT_SYMM_FULL, MAT_HERM_UPPER, MAT_HERM_LOWER, MAT_HERM_FULL.
+      \param diagExplicit (In) Non-zero diagonal entries are specified 
+      explicitly (default true).  False implies all diagonal entries are 
+      implicitly zero.
+      \param indexBase (In) Array indicies can start at zero (default) or one.
+      \param indexUnsorted (In) Indices within each row (column) appear in any
+      order (default: true).  False indicates indices are sorted in increasing 
+      order.
+      \param indexRepeated (In) Indicies may appear multiple times (default:
+      true).  False indicates all indices are unique.
+
       \return Integer error code, set to 0 if successful.
     */
-    int initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
-			    OrdinalType * pntr, OrdinalType * indx);
+    int initializeStructure(OrdinalType numRows, OrdinalType numCols, 
+	bool isRowOriented, OrdinalType * pntr, OrdinalType * indx, 
+	oski_inmatprop_t type=MAT_GENERAL, bool diagExplicit=true, int indexBase=0, 
+	bool indexUnsorted=true, bool indexRepeated=true);
 
-    //! Initialize structure of matrix
+    //! Initialize matrix values
     /*!
       \param values (In)  Packed array of matrix values. values[pntr[i]] contains the first entry of the ith row
       (if isRowOriented is true) or ith column (if isRowOriented is false).
@@ -106,9 +121,9 @@ namespace Kokkos {
       (if isRowOriented is true) or ith column (if isRowOriented is false).
       \return Integer error code, set to 0 if successful.
     */
-    int initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
+/*    int initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
 			    OrdinalType * profile, OrdinalType ** indx);
- 
+*/ 
     //! Initialize structure of matrix
     /*!
       \param values (In)  An array of pointers to arrays of matrix values. values[[i][0] contains the first entry of the ith row
@@ -173,13 +188,13 @@ namespace Kokkos {
     bool getIsRowOriented() const {return(isRowOriented_);};
 	
     //! Returns true if the compressed index matrix has no entries below the diagonal.
-    virtual bool getIsUpperTriangular() const {return(isUpperTriangular_);};
+    virtual bool getIsUpperTriangular() const {return(matrixType_==MAT_TRI_UPPER);};
 	
     //! Returns true if the compressed index matrix has no entries above the diagonal.
-    virtual bool getIsLowerTriangular() const {return(isLowerTriangular_);};
+    virtual bool getIsLowerTriangular() const {return(matrixType_==MAT_TRI_LOWER);};
 	
     //! Returns true if the compressed index matrix has no diagonal entries, but should be treated as unit diagonal.
-    virtual bool getHasImplicitUnitDiagonal() const {return(hasImplicitUnitDiagonal_);};
+    virtual bool getHasImplicitUnitDiagonal() const {return(diagExplicit_==MAT_UNIT_DIAG_IMPLICIT);};
 	
     //! Number of rows
     OrdinalType getNumRows() const {return(numRows_);};
@@ -210,10 +225,16 @@ namespace Kokkos {
     OrdinalType * pntr_;//No
     //OrdinalType * profile_;//Yes?
     bool isRowOriented_;//Yes?
-    mutable bool isUpperTriangular_;//No?
-    mutable bool isLowerTriangular_;//No?
-    bool hasImplicitUnitDiagonal_;//No?
+    //mutable bool isUpperTriangular_;//No? **change these to look at MatrixType
+    //mutable bool isLowerTriangular_;//No?
+    //bool hasImplicitUnitDiagonal_;//No?
     mutable bool hasDiagonalEntries_;//No?
+
+    oski_inmatprop_t matrixType_;
+    oski_inmatprop_t diagExplicit_;
+    oski_inmatprop_t indexBase_;
+    oski_inmatprop_t indexUnsorted_;
+    oski_inmatprop_t indexRepeated_;
 
    bool isOskiMatrix_;//No? - no equiv, create dataInitialized_ 
   };
@@ -234,9 +255,9 @@ template<typename OrdinalType, typename ScalarType>
     pntr_(0),
     //profile_(0),
     isRowOriented_(true),
-    isUpperTriangular_(false),
-    isLowerTriangular_(false),
-    hasImplicitUnitDiagonal_(false),
+    //isUpperTriangular_(false),
+    //isLowerTriangular_(false),
+    //hasImplicitUnitDiagonal_(false),
     hasDiagonalEntries_(true),
     dataInitialized_(false)
 {
@@ -255,9 +276,9 @@ OskiMatrix<OrdinalType, ScalarType>::OskiMatrix(const OskiMatrix<OrdinalType, Sc
     pntr_(matrix.pntr_),
     //profile_(matrix.profile_),
     isRowOriented_(matrix.isRowOriented_),
-    isUpperTriangular_(matrix.isUpperTriangular_),
-    isLowerTriangular_(matrix.isLowerTriangular_),
-    hasImplicitUnitDiagonal_(matrix.hasImplicitUnitDiagonal_),
+    //isUpperTriangular_(matrix.isUpperTriangular_),
+    //isLowerTriangular_(matrix.isLowerTriangular_),
+    //hasImplicitUnitDiagonal_(matrix.hasImplicitUnitDiagonal_),
     hasDiagonalEntries_(matrix.hasDiagonalEntries_),
     dataInitialized_(matrix.dataInitialized_)
 {
@@ -273,8 +294,10 @@ OskiMatrix<OrdinalType, ScalarType>::~OskiMatrix(){
 
 //==============================================================================
 template<typename OrdinalType, typename ScalarType>
-int OskiMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows, OrdinalType numCols, bool isRowOriented,
-							   OrdinalType * pntr, OrdinalType * indx) { 
+int OskiMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows, 
+	OrdinalType numCols, bool isRowOriented, OrdinalType * pntr, 
+	OrdinalType * indx, oski_inmatprop_t type, bool diagExplicit, 
+	int indexBase, bool indexUnsorted, bool indexRepeated) { 
   
   if (dataInitialized_) return(-1);
   numRows_ = numRows;
@@ -282,7 +305,36 @@ int OskiMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows
   isRowOriented_ = isRowOriented;
   pntr_ = pntr;
   allIndices_ = indx;
+  if (type == MAT_GENERAL || type == MAT_TRI_UPPER || 
+	type == MAT_TRI_LOWER || type == MAT_SYMM_UPPER || 
+	type == MAT_SYMM_LOWER || type == MAT_SYMM_FULL ||
+	type == MAT_HERM_UPPER || type == MAT_HERM_LOWER || 
+	type == MAT_HERM_FULL)
+    matrixType_ = type;
+  else
+    return (-1);
 
+  if (diagExplicit)
+    diagExplicit_ = MAT_DIAG_EXPLICIT;
+  else
+    diagExplicit_ = MAT_UNIT_DIAG_IMPLICIT;
+
+  if (indexBase==1)
+    indexBase_ = INDEX_ONE_BASED;
+  else if (indexBase==0)
+    indexBase_ = INDEX_ZERO_BASED;
+  else
+    return (-2);
+
+  if (indexUnsorted)
+    indexUnsorted_ = INDEX_UNSORTED;
+  else
+    indexUnsorted_ = INDEX_SORTED;
+
+  if (indexRepeated)
+    indexRepeated_ = INDEX_REPEATED;
+  else
+    indexRepeated_ = INDEX_UNIQUE;
 
   if (isRowOriented_) numEntries_ = pntr_[numRows_];
   else numEntries_ = pntr_[numCols_];
@@ -300,10 +352,11 @@ int OskiMatrix<OrdinalType, ScalarType>::initializeValues(ScalarType * values) {
 
   allValues_ = values;
   //OSKI Matrix constructor
+ 
   if (isRowOriented_) 
-    A_tunable_ = oski_CreateMatCSR(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,1,INDEX_ZERO_BASED);//**Zero based only for now
+    A_tunable_ = oski_CreateMatCSR(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,5,matrixType_,diagExplicit_,indexBase_,indexUnsorted_,indexRepeated_);
   else
-    A_tunable_ = oski_CreateMatCSC(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,1,INDEX_ZERO_BASED);//**Zero based only for now
+    A_tunable_ = oski_CreateMatCSC(pntr_,allIndices_,allValues_,numRows_,numCols_,SHARE_INPUTMAT,5,matrixType_,diagExplicit_,indexBase_,indexUnsorted_,indexRepeated_);
 
   if (A_tunable_ == NULL) return(-2);
   dataInitialized_ = true;
@@ -427,21 +480,19 @@ int OskiMatrix<OrdinalType, ScalarType>::checkStructure() const {
   int ierr = 0;
   // Test the values of upper, lower, and noDiag and make sure they are compatible with user-asserted values
 
-  if (isUpperTriangular_ && !isUpper) { // User asserts upper triangular, but it's not
+  if (matrixType_==MAT_TRI_UPPER && !isUpper) { // User asserts upper triangular, but it's not
     ierr = -1;
-    isUpperTriangular_ = isUpper;
   }
-  else if (!isUpperTriangular_ && isUpper) { // User does not assert upper triangular, but it is
+  else if (!(matrixType_==MAT_TRI_UPPER || matrixType_==MAT_SYMM_UPPER) && isUpper) { // User does not assert upper triangular, but it is
     ierr = 1;
-    isUpperTriangular_ = isUpper;
+    //May not be able to change at this point if values are initiated
   }
-  if (isLowerTriangular_ && !isLower) { // User asserts lower triangular, but it's not
+  if (matrixType_==MAT_TRI_LOWER && !isLower) { // User asserts lower triangular, but it's not
     ierr = -2;
-    isLowerTriangular_ = isLower;
   }
-  else if (!isLowerTriangular_ && isLower) { // User does not assert lower triangular, but it is
+  else if (!(matrixType_==MAT_TRI_LOWER || matrixType_==MAT_SYMM_LOWER) && isLower) { // User does not assert lower triangular, but it is
     ierr = 2;
-    isLowerTriangular_ = isLower;
+    //May not be able to change at this point if values are initiated
   }
   if (!hasDiagonalEntries_ && !noDiag) { // User asserts no diagonal, but values are given
     ierr = -3;
@@ -451,3 +502,4 @@ int OskiMatrix<OrdinalType, ScalarType>::checkStructure() const {
 }
 
 #endif /* KOKKOS_OSKIMATRIX_HPP */
+
