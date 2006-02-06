@@ -50,6 +50,9 @@
 
 #include "ml_include.h"
 #if defined(HAVE_ML_AZTEC2_1) || defined(HAVE_ML_AZTECOO)
+#define AZTEC
+#endif
+
 #ifdef AZTEC
 #undef AxTEC
 #endif
@@ -104,11 +107,11 @@ extern ML_Operator *user_T_build (struct user_partition *,
 #else
 extern  int user_update_ghost_edges(double vector[], void *data);
 extern  int user_update_ghost_nodes(double vector[], void *data);
-extern  int user_Ke_matvec(void *, int, double *, int , double *);
-extern  int user_Ke_getrow(void *, int, int *, int, int *, double *, int *);
-extern  int user_T_matvec(void *, int, double *, int, double *);
-extern  int user_T_getrow(void *, int, int *, int, int *, double *, int *);
-extern  int user_Kn_getrow(void *, int, int *, int, int *, double *, int *);
+extern  int user_Ke_matvec(ML_Operator *, int, double *, int , double *);
+extern  int user_Ke_getrow(ML_Operator *, int, int *, int, int *, double *, int *);
+extern  int user_T_matvec(ML_Operator *, int, double *, int, double *);
+extern  int user_T_getrow(ML_Operator *, int, int *, int, int *, double *, int *);
+extern  int user_Kn_getrow(ML_Operator *, int, int *, int, int *, double *, int *);
 #endif
 
 
@@ -259,7 +262,7 @@ int main(int argc, char *argv[])
 			Edge_Partition.Nlocal + Edge_Partition.Nghost);
 
   ML_Operator_Set_ApplyFunc(&(ml_edges->Amat[MaxMgLevels-1]),
-			       ML_INTERNAL, user_Ke_matvec);
+			       user_Ke_matvec);
 
 
   /* Build Kn directly as an ML matrix.                                  */
@@ -277,11 +280,11 @@ int main(int argc, char *argv[])
   user_Tmat_data.Kn   = &(ml_nodes->Amat[MaxMgLevels-1]);
 
   ML_Operator_Set_ApplyFuncData(Tmat, Node_Partition.Nlocal,
-				Edge_Partition.Nlocal, ML_INTERNAL, 
+				Edge_Partition.Nlocal,
 				(void *) &user_Tmat_data, Edge_Partition.Nlocal,
 				  user_T_matvec, 0);
 
-  ML_Operator_Set_Getrow(Tmat,ML_INTERNAL,Edge_Partition.Nlocal,user_T_getrow);
+  ML_Operator_Set_Getrow(Tmat,Edge_Partition.Nlocal,user_T_getrow);
 
   ML_CommInfoOP_Generate( &(Tmat->getrow->pre_comm), user_update_ghost_nodes, 
 			    &Node_Partition, ml_edges->comm, Tmat->invec_leng, 
@@ -312,7 +315,7 @@ int main(int argc, char *argv[])
   Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,MaxMgLevels-1,
 					     ML_DECREASING,ag,Tmat,Tmat_trans, 
 					     &Tmat_array,&Tmat_trans_array, 
-					     smoothPe_flag, 1.5, 0);
+					     smoothPe_flag, 1.5, 0, ML_DDEFAULT);
 
   /* Set the Hiptmair subsmoothers */
 
@@ -967,7 +970,7 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
 }
 #else
 
-int user_Ke_matvec(void *data, int Nlocal_edges, double p[], int N_out, 
+int user_Ke_matvec(ML_Operator *data, int Nlocal_edges, double p[], int N_out, 
 		   double Ap[])
 {
   int i, global_id, ii, jj, nx, horv;
@@ -1029,7 +1032,7 @@ int user_Ke_matvec(void *data, int Nlocal_edges, double p[], int N_out,
   return 1;
 }
 
-int user_Ke_getrow(void *data, int N_requested_rows, int requested_rows[],
+int user_Ke_getrow(ML_Operator *data,int N_requested_rows, int requested_rows[],
 	      int allocated_space, int columns[], double values[], 
 	      int row_lengths[])
 {
@@ -1089,7 +1092,7 @@ int user_Ke_getrow(void *data, int N_requested_rows, int requested_rows[],
   return 1;
 }
 
-int user_Kn_getrow(void *data, int N_requested_rows, int requested_rows[],
+int user_Kn_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
 	      int allocated_space, int cols[], double val[], 
 	      int row_lengths[])
 
@@ -1100,7 +1103,7 @@ int user_Kn_getrow(void *data, int N_requested_rows, int requested_rows[],
   struct user_partition *Node_Partition;
 
   if (allocated_space < 9) return 0;
-  Node_Partition = (struct user_partition *) data;
+  Node_Partition = (struct user_partition *) data->data;
   ids = Node_Partition->my_local_ids;
 
   nx = (int) sqrt( ((double) Node_Partition->Nglobal) + .00001);
@@ -1128,7 +1131,7 @@ int user_Kn_getrow(void *data, int N_requested_rows, int requested_rows[],
   return(1);
 }
 
-int user_T_getrow(void *data, int N_requested_rows, int requested_rows[],
+int user_T_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[],
 	      int allocated_space, int columns[], double values[], 
 	      int row_lengths[])
 
@@ -1173,7 +1176,7 @@ int user_T_getrow(void *data, int N_requested_rows, int requested_rows[],
 
   return 1;
 }
-int user_T_matvec(void *data, int Nlocal_nodes, double p[], int Nlocal_edges, double Ap[])
+int user_T_matvec(ML_Operator *data, int Nlocal_nodes, double p[], int Nlocal_edges, double Ap[])
 {
   int i, global_id, ii, jj, nx, horv;
   struct user_partition *Edge_Partition;
@@ -1224,6 +1227,7 @@ int user_T_matvec(void *data, int Nlocal_nodes, double p[], int Nlocal_edges, do
 int user_update_ghost_edges(double vector[], void *data)
 {
 
+#ifdef ML_MPI
   struct user_partition *Partition;
   int *my_local_ids, i, nx, Nloc, type = 7103;
   MPI_Request  request;
@@ -1268,12 +1272,14 @@ int user_update_ghost_edges(double vector[], void *data)
   MPI_Wait(&request, &status);
 
   free(send_buf);
+#endif /* ML_MPI */
   return 1;
 }
 
 int user_update_ghost_nodes(double vector[], void *data)
 {
 
+#ifdef ML_MPI
   struct user_partition *Partition;
   int *my_local_ids, i, nx, Nloc, type = 7107;
   MPI_Request  request;
@@ -1311,24 +1317,8 @@ int user_update_ghost_nodes(double vector[], void *data)
 
   MPI_Wait(&request, &status);
   free(send_buf);
+#endif /* ML_MPI */
 
   return 1;
 }
 #endif
-
-#else
-
-int main(int argc, char *argv[]) 
-{
-#ifdef ML_MPI
-  MPI_Init(&argc,&argv);
-#endif
-  puts("Please configure ML with --enable-aztecoo to run this example");
-#ifdef ML_MPI
-  MPI_Finalize();
-#endif
-  /* returns ok not to break the test harness */
-  return(EXIT_SUCCESS);
-}
-
-#endif /* HAVE_ML_AZTECOO || HAVE_ML_AZTEC2_1 */
