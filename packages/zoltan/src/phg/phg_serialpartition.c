@@ -52,7 +52,8 @@ char *str, *str2;
 
   *ierr = ZOLTAN_OK;
 
-  /* TODO: remove local partitioning option? */
+  /* local partitioning option is not effective and
+     should only be used for debugging and testing */
   str2 = hgp->coarsepartition_str;
   if (!strncasecmp(str2, "l-", 2)) {
     str = str2+2;
@@ -132,6 +133,14 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
   }
 
+  /* Force LocalCoarsePartition if large global graph */
+#define LARGE_GRAPH_VTX   32000
+#define LARGE_GRAPH_PINS 256000
+  if (phg->dist_x[phg->comm->nProc_x] > LARGE_GRAPH_VTX){
+    /* TODO: || (global_nPins > LARGE_GRAPH_PINS) */
+    hgp->LocalCoarsePartition = 1;
+  }
+
   /* take care of all special cases first */
 
   if (!strcasecmp(hgp->coarsepartition_str, "no")) {
@@ -158,7 +167,6 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
   }
-  /* TODO: Trigger LocalCoarsePartition if large global graph */
   else if (hgp->LocalCoarsePartition) {
     /* Apply local partitioner to each column */
     ierr = local_coarse_partitioner(zz, phg, numPart, part_sizes, part, hgp,
