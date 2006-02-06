@@ -39,25 +39,25 @@ static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
-  {"PHG_FINAL_OUTPUT",                NULL,  "INT",    0},
   {"FINAL_OUTPUT",                    NULL,  "INT",    0},
   {"CHECK_GRAPH",                     NULL,  "INT",    0},
-  {"PHG_NPROC_X",                     NULL,  "INT",    0},
-  {"PHG_NPROC_Y",                     NULL,  "INT",    0},
-  {"PHG_REDUCTION_LIMIT",             NULL,  "INT",    0},
-  {"PHG_REDUCTION_METHOD",            NULL,  "STRING", 0},
-  {"PHG_REDUCTION_METHOD_FAST",       NULL,  "STRING", 0},
+  {"CHECK_HYPERGRAPH",                NULL,  "INT",    0},
+  {"PHG_NPROC_VERTEX",                NULL,  "INT",    0},
+  {"PHG_NPROC_EDGE",                  NULL,  "INT",    0},
+  {"PHG_COARSENING_LIMIT",            NULL,  "INT",    0},
+  {"PHG_COARSENING_METHOD",           NULL,  "STRING", 0},
+  {"PHG_COARSENING_METHOD_FAST",      NULL,  "STRING", 0},
   {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
   {"PHG_EDGE_SCALING",                NULL,  "INT",    0},
   {"PHG_VERTEX_SCALING",              NULL,  "INT",    0},
-  {"PHG_COARSE_PARTITIONING",         NULL,  "STRING", 0},
-  {"PHG_REFINEMENT",                  NULL,  "STRING", 0},
+  {"PHG_COARSEPARTITION_METHOD",      NULL,  "STRING", 0},
+  {"PHG_REFINEMENT_METHOD",           NULL,  "STRING", 0},
   {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
-  {"PHG_FM_LOOP_LIMIT",               NULL,  "INT",    0},
-  {"PHG_FM_MAX_NEG_MOVE",             NULL,  "INT",    0},    
+  {"PHG_REFINEMENT_LOOP_LIMIT",       NULL,  "INT",    0},
+  {"PHG_REFINEMENT_MAX_NEG_MOVE",     NULL,  "INT",    0},    
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
   {"USE_TIMERS",                      NULL,  "INT",    0},    
-  {"EDGE_SIZE_THRESHOLD",             NULL,  "FLOAT",  0},
+  {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
   {"PHG_BAL_TOL_ADJUSTMENT",          NULL,  "FLOAT",  0},  
   {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING",  0},
   {"PARKWAY_SERPART",                 NULL,  "STRING", 0},
@@ -499,28 +499,30 @@ int Zoltan_PHG_Initialize_Params(
   
   Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_PACKAGE", &hgp->hgraph_pkg);
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
-  Zoltan_Bind_Param(PHG_params, "PHG_FINAL_OUTPUT", &hgp->final_output); 
   Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
   Zoltan_Bind_Param(PHG_params, "CHECK_GRAPH", &hgp->check_graph);   
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &hgp->nProc_x_req);
-  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &hgp->nProc_y_req);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_LIMIT", &hgp->redl);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD", hgp->redm_str);
-  Zoltan_Bind_Param(PHG_params, "PHG_REDUCTION_METHOD_FAST", hgp->redm_fast);
+  Zoltan_Bind_Param(PHG_params, "CHECK_HYPERGRAPH", &hgp->check_graph);   
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_VERTEX", &hgp->nProc_x_req);
+  Zoltan_Bind_Param(PHG_params, "PHG_NPROC_EDGE", &hgp->nProc_y_req);
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_LIMIT", &hgp->redl);
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", hgp->redm_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD_FAST", hgp->redm_fast);
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER", &hgp->visit_order);
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SCALING", &hgp->edge_scaling);
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING", &hgp->vtx_scaling);
-  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT", hgp->refinement_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_METHOD", hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY", &hgp->kway);
-  Zoltan_Bind_Param(PHG_params, "PHG_FM_LOOP_LIMIT", &hgp->fm_loop_limit);
-  Zoltan_Bind_Param(PHG_params, "PHG_FM_MAX_NEG_MOVE", &hgp->fm_max_neg_move);  
-  Zoltan_Bind_Param(PHG_params, "PHG_COARSE_PARTITIONING", 
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_LOOP_LIMIT", 
+                                &hgp->fm_loop_limit);
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_MAX_NEG_MOVE", 
+                                &hgp->fm_max_neg_move);  
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", 
                                  hgp->coarsepartition_str);
   Zoltan_Bind_Param(PHG_params, "PHG_USE_TIMERS",
                                  (void*) &hgp->use_timers);  
   Zoltan_Bind_Param(PHG_params, "USE_TIMERS",
                                  (void*) &hgp->use_timers);  
-  Zoltan_Bind_Param(PHG_params, "EDGE_SIZE_THRESHOLD",
+  Zoltan_Bind_Param(PHG_params, "PHG_EDGE_SIZE_THRESHOLD",
                                  (void*) &hgp->EdgeSizeThreshold);  
   Zoltan_Bind_Param(PHG_params, "PHG_BAL_TOL_ADJUSTMENT",
                                  (void*) &hgp->bal_tol_adjustment);  
