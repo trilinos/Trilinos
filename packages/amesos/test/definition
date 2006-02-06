@@ -32,8 +32,7 @@
 }
 
 (FRAMEWORK, INSTALL ) {   
-    DIRS = TestOptions,
-	   Test_Epetra_RowMatrix,
+    DIRS = Test_Epetra_RowMatrix,
            Test_Epetra_CrsMatrix,
            Test_Detailed,
            Test_MultipleSolves,
@@ -44,6 +43,16 @@
            Test_UMFPACK,
            Test_DSCPACK,
            Test_MUMPS;
+    COMM = SERIAL, MPI(1-4); 
+}
+
+#
+#  TestOptions can't find ../Test_Basic/Diagonal.mtx even though TestOptions works fine 
+#  when run from within TestAmesos and TestQuietAmesos  Bug #1960  
+#
+(FRAMEWORK, INSTALL ) {   
+    DIRS = TestOptions;
+    X-HOST = atlantis;
     COMM = SERIAL, MPI(1-4); 
 }
 
