@@ -3,11 +3,11 @@
 # Package options
 #
 PROJECT_NAME           = "Thyra Package Browser (Single Doxygen Collection)"
-OUTPUT_DIRECTORY       = ./all
+OUTPUT_DIRECTORY       = ../all/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ./all/index.doc \
+INPUT                  = ../all/doc/index.doc \
                          ./dirs.doc \
                          ../src \
                          ../example \

@@ -1,5 +1,12 @@
 #!/bin/bash
 
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+fi
+
 echo
 echo "Generating LinearAlgebraFunctionConvention.pdf file ..."
 echo
@@ -41,6 +48,13 @@ echo
 
 pushd ../src/interfaces/nonlinear/solvers/ana/fundamental/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/Doxyfile
+
+echo
+echo "Generating doxygen documentation for thyra/src/support/operator_vector ..."
+echo
+
+pushd ../src/support/operator_vector/doc ; ./generate_Doxyfile ; popd
+doxygen ../src/support/operator_vector/doc/Doxyfile
 
 # ToDo: Add more individual doxygen collections
 

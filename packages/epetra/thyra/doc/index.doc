@@ -2,7 +2,7 @@
 
 This doxygen collection documents a small amount of code that wraps Epetra
 objects to create adapter objects which implement the <a
-href="../../../../thyra/src/ana/operator_vector/doc/html/index.html">Thyra ANA
+href="../../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA
 Operator/Vector Interfaces</a>.
 
 These wrappers use a minimal amount of code by making heavy use of the
@@ -26,7 +26,7 @@ the Epetra to Thyra adapter code.
 <ul>
 
 <li><a
-href="../../../../thyra/src/ana/operator_vector/doc/html/index.html">Thyra ANA
+href="../../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA
 Operator/Vector Interfaces</a>
 
 <li><a

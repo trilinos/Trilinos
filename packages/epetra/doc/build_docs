@@ -1,6 +1,21 @@
 #!/bin/sh
 
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+fi
+
+echo
+echo "Generating main epetra doxygen documentation ..."
+echo
+
 doxygen DoxyfileWeb
+
+echo
+echo "Generating epetra/thyra doxygen documentation ..."
+echo
 
 cd ../thyra/doc ; ./generate_Doxyfile ; cd ../../doc
 doxygen ../thyra/doc/Doxyfile

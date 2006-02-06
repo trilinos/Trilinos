@@ -1,2 +1,0 @@
-#!/bin/sh
-cat ../Doxyfile.options Doxyfile.stub > Doxyfile

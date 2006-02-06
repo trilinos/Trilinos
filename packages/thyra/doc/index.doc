@@ -99,7 +99,20 @@ structure of thyra</a>.
 
 <ul>
 
-<li> <b>Support software</b>
+<li> <b>Support software and examples</b>
+
+  <ul>
+
+  <li> <b><a href="../../src/support/operator_vector/doc/html/index.html">
+    Operator/Vector Support</a></b>
+
+  <li> <b><a href="../../src/support/nolinear/model_evaluator/doc/html/index.html">
+    Nonlinear Model Evaluator Support</a></b>
+
+  <li> <b><a href="../../src/support/nolinear/solvers/doc/html/index.html">
+     Nonlinear Solvers Support</a></b>
+
+  </ul>
 
 </ul>
 

@@ -1,7 +1,8 @@
 #
 # Include the global look and feel options
 #
-@INCLUDE               = ../../../../Trilinos/packages/common/Doxyfile
+@INCLUDE_PATH          = $(TRILINOS_HOME)/packages
+@INCLUDE               = common/Doxyfile
 #
 # Package options
 #

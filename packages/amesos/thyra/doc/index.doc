@@ -62,7 +62,7 @@ the %Amesos to %Thyra linear solver adapters:
 
 */
 
-/** \defgroup single_amesos_thyra_adapters_testing_prg_grp Testing Program for the Amesos/Thyra Linear Solver Adapters
+/** \defgroup single_amesos_thyra_adapters_testing_prg_grp Testing Program for the Amesos/Thyra Linear Solver Adapters.
 
 \ingroup Amesos_Thyra_examples_grp
 
