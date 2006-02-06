@@ -113,6 +113,9 @@ class StatusTest {
     case  Failed:
       os << "Failed";
       break;
+    case  NaN:  
+      os << "NaN";
+      break;
     case  Converged:
       os << "Converged";
       break;
