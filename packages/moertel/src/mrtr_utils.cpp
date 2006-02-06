@@ -381,19 +381,21 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
   EpetraExt::RowMatrix_Transpose* Atrans = 0;
   if( transposeA )
   {
-    Atrans = new EpetraExt::RowMatrix_Transpose(false);
+    Atrans = new EpetraExt::RowMatrix_Transpose(false,NULL,false);
     Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
   }
   else
     Aprime = const_cast<Epetra_CrsMatrix*>(&A);
     
+  B.Scale(scalarB);
+  
   //Loop over B's rows and sum into
   int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
   int NumEntries;
   vector<int> Indices(MaxNumEntries);
   vector<double> Values(MaxNumEntries);
 
-  int NumMyRows = A.NumMyRows();
+  int NumMyRows = Aprime->NumMyRows();
   int Row, err;
 
   if( scalarA )
@@ -404,13 +406,19 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
       EPETRA_CHK_ERR(Aprime->ExtractGlobalRowCopy(Row,MaxNumEntries,NumEntries,&Values[0],&Indices[0]));
       if( scalarA != 1.0 )
         for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
-      if( B.Filled() ) {//Sum In Values
-        err = B.SumIntoGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
-        assert( err == 0 );
-      }
-      else {
-        err = B.InsertGlobalValues( Row, NumEntries, &Values[0], &Indices[0] );
-        assert( err == 0 || err == 1 );
+      for (int j=0; j<NumEntries; ++j)
+      {
+        err = B.SumIntoGlobalValues(Row,1,&Values[j],&Indices[j]);
+        if (err)
+        err = B.InsertGlobalValues(Row,1,&Values[j],&Indices[j]);
+        if (err != 0 && err != 1)
+        {
+          cout << "***ERR*** MOERTEL::MatrixMatrixAdd:\n"
+               << "***ERR*** InsertGlobalValues returned " << err << "\n"
+               << "Row " << Row << " Col " << Indices[j] << endl
+               << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          exit(EXIT_FAILURE);
+        }
       }
     }
   }
@@ -643,20 +651,31 @@ Epetra_CrsMatrix* MOERTEL::StripZeros(Epetra_CrsMatrix& A, double eps)
 /*----------------------------------------------------------------------*
  | print matrix                                              m.gee 01/06|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A)
+bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
 {
   char mypidc[100];
   sprintf(mypidc,"%d",A.Comm().MyPID());
   name = name + mypidc + ".mtx";
   char* nameptr = &name[0];
   FILE* out = fopen(nameptr,"w");
+  if (!out)
+  {
+    cout << "***ERR*** MOERTEL::Print_Matrix:\n"
+         << "***ERR*** Cannot open file " << name << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  // write global and local dimensions of this operator
+  fprintf(out,"%d %d\n",A.RangeMap().NumGlobalElements(),A.DomainMap().NumGlobalElements());
+  fprintf(out,"%d %d\n",A.RowMap().NumMyElements(),A.ColMap().NumMyElements());
   for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
   {
     int grow = A.GRID(lrow); 
     if (grow<0) 
     { 
       cout << "***ERR*** MOERTEL::Print_Matrix:\n"
-           << "***ERR*** Cannot gind global row indes from local row index\n"
+           << "***ERR*** Cannot gind global row index from local row index\n"
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
@@ -666,7 +685,7 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A)
     int err  = A.ExtractMyRowView(lrow,numentries,values,lindices);
     if (err) 
     { 
-      cout << "***ERR*** MOERTEL::StripZeros:\n"
+      cout << "***ERR*** MOERTEL::Print_Matrix:\n"
            << "***ERR*** A.ExtractMyRowView returned " << err << endl
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       delete out;
@@ -677,12 +696,50 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A)
       int lcol = lindices[j];  
       int gcol = A.GCID(lcol); 
       if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
-      fprintf(out," %d   %d   %20.10e\n",grow,gcol,values[j]);
+      fprintf(out," %d   %d   %20.10e\n",grow+ibase,gcol+ibase,values[j]);
     }
   }
   fflush(out);
   fclose(out);
   cout << "Epetra_CrsMatrix is written to file " << name << endl;
+  fflush(stdout);
+  return true;
+}
+
+
+/*----------------------------------------------------------------------*
+ | print matrix                                              m.gee 02/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
+{
+  char mypidc[100];
+  sprintf(mypidc,"%d",v.Comm().MyPID());
+  name = name + mypidc + ".vec";
+  char* nameptr = &name[0];
+  FILE* out = fopen(nameptr,"w");
+  if (!out)
+  {
+    cout << "***ERR*** MOERTEL::Print_Vector:\n"
+         << "***ERR*** Cannot open file " << name << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  fprintf(out,"%d %d\n",v.GlobalLength(),v.MyLength());
+  for (int lrow=0; lrow<v.MyLength(); ++lrow)
+  {
+    int grow = v.Map().GID(lrow); 
+    if (grow<0) 
+    { 
+      cout << "***ERR*** MOERTEL::Print_Vector:\n"
+           << "***ERR*** Cannot gind global row index from local row index\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    fprintf(out," %d   %20.10e\n",grow+ibase,v[lrow]);
+  }
+  fflush(out);
+  fclose(out);
+  cout << "Epetra_Vector is written to file " << name << endl;
   fflush(stdout);
   return true;
 }

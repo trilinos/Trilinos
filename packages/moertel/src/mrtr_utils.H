@@ -56,6 +56,7 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
 #include "ml_common.h"
 #include "ml_include.h"
 #include "ml_epetra_utils.h"
@@ -266,8 +267,30 @@ Epetra_CrsMatrix* StripZeros(Epetra_CrsMatrix& A, double eps);
 /*!
 \brief Print matrix to file
 
+Prints an Epetra_CrsMatrix to file in serial and parallel.
+Will create several files with process id appended to the name in parallel.
+Index base can either be 0 or 1.
+The first row of the file gives the global size of the range and domain map, 
+the sond row gives the local size of the row- and column map. 
+
+\param name : Name of file without appendix, appendix will be .mtx
+\param A : Matrix to print
+\param ibase : Index base, should be either 1 or 0 
 */
-bool Print_Matrix(string name, Epetra_CrsMatrix& A);
+bool Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase);
+
+/*!
+\brief Print vector to file
+
+Prints an Epetra_Vector to file in serial and parallel.
+Will create several files with process id appended to the name in parallel.
+Index base can either be 0 or 1.
+
+\param name : Name of file without appendix, appendix will be .vec
+\param v : Vector to print
+\param ibase : Index base, should be either 1 or 0 
+*/
+bool Print_Vector(string name, Epetra_Vector& v, int ibase);
 
 } // namespace MOERTEL
 #endif // MOERTEL_UTILS_H
