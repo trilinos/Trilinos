@@ -19,8 +19,6 @@ extern "C" {
 #include <stdlib.h>
 #include "phg.h"
 
-#undef  USE_SUBROUNDS
-
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_local_ipm;   /* local ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
@@ -36,7 +34,6 @@ typedef struct triplet {
     float ip;           /* total inner product between candidate and partner */
 } Triplet;
 
-static Triplet *Tmp_Best = NULL;  /* Temp buf used in MPI_Allreduce fn */
 static HGraph *HG_Ptr;
 
 
@@ -490,7 +487,7 @@ static int pmatching_ipm (ZZ *zz,
 {
   int i, j, k, n, m, round, vindex;                        /* loop counters  */
   int *r, *s;                                /* pointers to send/rec buffers */
-  int lno, count;                                          /* temp variables */
+  int lno, count, kstart, old_kstart;                      /* temp variables */
   int candidate_gno;                             /* gno of current candidate */
   int sendcnt, sendsize, reccnt, recsize, msgsize;         /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
@@ -649,7 +646,7 @@ static int pmatching_ipm (ZZ *zz,
     
     memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */    
     if (cFLAG)  {
-        int nTotal;
+      int nTotal;
       /* select upto nCandidates unmatched vertices to locally match */
       for (nTotal = 0; nTotal < nCandidates && vindex < hg->nVtx; vindex++)
         if (cmatch [visit[vindex]] == visit[vindex])  {         /* unmatched */
@@ -743,15 +740,17 @@ static int pmatching_ipm (ZZ *zz,
       
     /* for each candidate vertex, compute all local partial inner products */    
 
-    MACRO_TIMER_START (2, "Matching kstart A", 0);
-    for (i = 0; i < hgc->nProc_y; i++)
+    kstart = old_kstart = 0;         /* next candidate (of nTotal) to process */
+    while (kstart < total_nCandidates) {
+      MACRO_TIMER_START (2, "Matching kstart A", 0);
+      for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = -1;                  /* to flag data not found for that row */
-    sendsize = 0;                    /* position in send buffer */
-    sendcnt  = 0;                    /* count of messages in send buffer */
-    s        = send;                 /* start at send buffer origin */
-    for (k = 0; k < total_nCandidates; k++)  {
+      sendsize = 0;                    /* position in send buffer */
+      sendcnt  = 0;                    /* count of messages in send buffer */
+      s        = send;                 /* start at send buffer origin */
+      for (k = kstart; k < total_nCandidates; k++)  {
         if (permute[k] == -1)
-            continue;                /* don't have this sparse candidate locally */
+          continue;                /* don't have this sparse candidate locally */
         
         if (!cFLAG)  {
           r = &edgebuf[permute[k]];
@@ -767,23 +766,23 @@ static int pmatching_ipm (ZZ *zz,
         /* now compute the row's nVtx inner products for kth candidate */
         m = 0;
         if (!cFLAG) {
-            if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-              INNER_PRODUCT1(1.0)
-            else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-              INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]])
-            else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-              INNER_PRODUCT1(hg->ewgt[*r])
-            else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-              INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
+          if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT1(1.0)
+          else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT1(hg->ewgt[*r])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT1(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[*r])
         } else   {                                            /* cFLAG */
-            if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
-              INNER_PRODUCT2(1.0)
-            else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
-              INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
-            else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
-              INNER_PRODUCT2(hg->ewgt[edge])
-            else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
-              INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])
+          if      ((hg->ewgt == NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT2(1.0)
+          else if ((hg->ewgt == NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal == NULL))
+            INNER_PRODUCT2(hg->ewgt[edge])
+          else if ((hg->ewgt != NULL) && (hgp->vtx_scal != NULL))
+            INNER_PRODUCT2(hgp->vtx_scal[hg->hvertex[j]] * hg->ewgt[edge])
         }
           
         /* if local vtx, remove self inner product (useless maximum) */
@@ -840,33 +839,38 @@ static int pmatching_ipm (ZZ *zz,
 /* --k;   since couldn't actually fit k into this buffer */             
           break;   
         }  
-    }                  /* DONE: loop over k */                    
+      }                  /* DONE: loop over k */                    
     
-    MACRO_TIMER_STOP (2);
-    MACRO_TIMER_START (3, "Matching kstart B", 0);
+      MACRO_TIMER_STOP (2);
+      MACRO_TIMER_START (3, "Matching kstart B", 0);
     
-    /* Send inner product data in send buffer to appropriate rows */
-    err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
-                                 &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
-    if (err != ZOLTAN_OK)
+      /* synchronize all rows in this column to next kstart value */
+      old_kstart = kstart;
+      MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
+
+
+      /* Send inner product data in send buffer to appropriate rows */
+      err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
+                                   &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
+      if (err != ZOLTAN_OK)
         goto fini;
     
-    /* build index into receive buffer pointer for each proc's row of data */
-    for (i = 0; i < hgc->nProc_y; i++)
+      /* build index into receive buffer pointer for each proc's row of data */
+      for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = recsize;       /* sentinal in case no row's data available */
-    k = 0;
-    for (r = rec; r < rec + recsize; r++)
+      k = 0;
+      for (r = rec; r < rec + recsize; r++)
         if (*r < 0)  {
-            *r = -(*r) - 1;           /* make sentinal candidate_index positive */
-            rows[k++] = (r - rec) - 1;  /* points to gno */
+          *r = -(*r) - 1;           /* make sentinal candidate_index positive */
+          rows[k++] = (r - rec) - 1;  /* points to gno */
         }
     
-    /* merge partial i.p. sum data to compute total inner products */
-    s = send; 
-    for (n = 0; n < total_nCandidates; n++)  {
+      /* merge partial i.p. sum data to compute total inner products */
+      s = send; 
+      for (n = old_kstart; n < kstart; n++) {
         m = 0;       
         for (i = 0; i < hgc->nProc_y; i++)   
-          if (rows[i] < recsize && rec [rows[i]+1] == n)  {
+          if (rows[i] < recsize && rec [rows[i]+1] == n) {
             candidate_gno   = rec [rows[i]++];
             candidate_index = rec [rows[i]++];   /* skip candidate index */
             count           = rec [rows[i]++];
@@ -910,13 +914,13 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
           }  
           sums[lno] = 0.0;  
         }     
-    }
-    sendsize = s - send;   /* size (in ints) of send buffer */
+      }
+      sendsize = s - send;   /* size (in ints) of send buffer */
     
-    /* Communicate total inner product results to MASTER ROW */
-    MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
+      /* Communicate total inner product results to MASTER ROW */
+      MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
     
-    if (hgc->myProc_y == 0) {
+      if (hgc->myProc_y == 0) {
         recsize = 0;
         for (i = 0; i < hgc->nProc_y; i++)
           recsize += size[i];        
@@ -929,13 +933,13 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
           i = MAX (1.2 * nRec, recsize);
           MACRO_REALLOC (i, nRec, rec);      /* make rec buffer bigger */
         }
-    }
+      }
 
-    MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
-                 hgc->col_comm);
+      MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
+                   hgc->col_comm);
        
-    /* Determine best vertex and best sum for each candidate */
-    if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
+      /* Determine best vertex and best sum for each candidate */
+      if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = rec; r < rec + recsize;)  {
           candidate_gno   = *r++;
           candidate_index = *r++;
@@ -969,9 +973,11 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
           }
         }
       }
-    if (cFLAG)                          /* Broadcast what we matched so far */
+      if (cFLAG)                          /* Broadcast what we matched so far */
         MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
-    MACRO_TIMER_STOP (3);    
+      MACRO_TIMER_STOP (3);    
+    }            /* DONE: kstart < max_nTotal loop */
+
     
     
     if (cFLAG)
@@ -1089,7 +1095,6 @@ fini:
     MPI_Op_free(&phasethreeop);
     MPI_Type_free(&phasethreetype);
     ZOLTAN_FREE(&global_best);
-    ZOLTAN_FREE(&Tmp_Best);
   }
 
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
