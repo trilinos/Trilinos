@@ -806,13 +806,13 @@ static int pmatching_ipm (ZZ *zz,
         /* message is <candidate_gno, candidate_index, count, <lno, psum>> */
         if (sendsize + msgsize <= nSend)  {
           /* flag first data in each destination row for merging */
-          if (rows[candidate_gno % hgc->nProc_y] != 1)  {
-            rows[candidate_gno % hgc->nProc_y] = 1;
+          if (rows[candidate_index % hgc->nProc_y] != 1)  {
+            rows[candidate_index % hgc->nProc_y] = 1;
             candidate_index = -candidate_index -1;
           }
           
           /* current partial sums fit, so put them into the send buffer */
-          dest[sendcnt]   = candidate_gno % hgc->nProc_y; /* destination proc */
+          dest[sendcnt]   = candidate_index % hgc->nProc_y;    /* destination */
           size[sendcnt++] = msgsize;          /* size of message */
           sendsize       += msgsize;          /* cummulative size of message */
           *s++ = candidate_gno;
