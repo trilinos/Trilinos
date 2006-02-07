@@ -123,6 +123,7 @@ namespace Belos {
      */
     LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const { return( *_lp ); }
 
+    int Reset( const RefCountPtr<ParameterList>& pl = null );
     //@} 
 
     //@{ \name Solver application method.
@@ -192,7 +193,7 @@ namespace Belos {
     //! The output stream for sending solver information.
     ostream *_os;
 
-    const int _length;
+    int _length;
     int _blocksize;
     int _restartiter, _totaliter, _iter;
     bool _flexible;
@@ -493,6 +494,23 @@ namespace Belos {
   } // end Solve()
   
   
+  template<class ScalarType, class MV, class OP>
+  int BlockGmres<ScalarType,MV,OP>::Reset( const RefCountPtr<ParameterList>& pl )
+  {
+    // Set new parameter list if one is passed in.
+    if (pl.get() != 0 )  
+      _pl = pl;
+    _length = _pl->get("Length",25);
+    _blocksize = 0;
+    _restartiter = 0; 
+    _totaliter = 0;
+    _iter = 0;
+    // If there is a "Variant" parameter in the list, check to see if it's "Flexible" (i.e. flexible GMRES)
+    if (_pl->isParameter("Variant"))
+      _flexible = (Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible");
+    return 0;
+  }
+
   template<class ScalarType, class MV, class OP>
   bool BlockGmres<ScalarType,MV,OP>::BlockReduction ( bool& dep_flg ) 
   {
