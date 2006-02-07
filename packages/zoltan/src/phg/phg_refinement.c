@@ -39,8 +39,10 @@ static ZOLTAN_PHG_REFINEMENT_FN refine_fm2;
 ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char *str)
 {
   
-  if      (!strcasecmp(str, "fm2"))            return refine_fm2;  
+  if      (!strcasecmp(str, "fm"))             return refine_fm2;  
+  else if (!strcasecmp(str, "fm2"))            return refine_fm2;  
   else if (!strcasecmp(str, "no"))             return refine_no;
+  else if (!strcasecmp(str, "none"))           return refine_no;
   else                                         return NULL;
 }
 
