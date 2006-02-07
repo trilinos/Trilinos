@@ -125,7 +125,7 @@ namespace Belos {
     //
     // print (*this)
     //
-    void MvPrint() const { cout<< *this << endl; };
+    void MvPrint( ostream& os ) const { os << *this << endl; };
   private:
   };
   
