@@ -135,6 +135,20 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.assertEqual(self.importer.NumRecv(), numRecv)
         self.assertEqual(self.exporter.NumRecv(), numRecv)
 
+    def testSourceMap(self):
+        "Test Epetra.Import/Export SourceMap method"
+        source1 = self.importer.SourceMap()
+        source2 = self.exporter.SourceMap()
+        self.assertEqual(source1.SameAs(self.map2), True)
+        self.assertEqual(source2.SameAs(self.map2), True)
+
+    def testTargetMap(self):
+        "Test Epetra.Import/Export TargetMap method"
+        target1 = self.importer.TargetMap()
+        target2 = self.exporter.TargetMap()
+        self.assertEqual(target1.SameAs(self.map1), True)
+        self.assertEqual(target2.SameAs(self.map1), True)
+
 ##########################################################################
 
 if __name__ == "__main__":
