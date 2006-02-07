@@ -100,7 +100,15 @@ PHG_OUTPUT_LEVEL</span><br>
       </td>
     </tr>
     <tr>
-      <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_REDUCTION_METHOD</i></td>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">CHECK_GRAPH</span><br>
+      </td>
+      <td style="vertical-align: top;">Check that the query functions
+return valid input data. This slows performance; intended for debugging.<br>
+      </td>
+    </tr>
+    <tr>
+      <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_COARSENING_METHOD</i></td>
       <td>The method to use in matching/coarsening; currently these are
 available.&nbsp; <br>
       <span style="font-style: italic;">ipm</span> - inner product
@@ -111,12 +119,12 @@ on each processor. Faster but often gives poor quality. <br>
       </i></td>
     </tr>
     <tr>
-      <td valign="top">&nbsp;&nbsp;&nbsp; <i>PHG_COARSE_PARTITIONING</i></td>
+      <td valign="top">&nbsp;&nbsp;&nbsp; <i>PHG_COARSEPARTITION_METHOD</i></td>
       <td>Method to partition the coarsest (smallest) hypergraph;
 typically done in serial:<br>
       <span style="font-style: italic;">random</span> - random<br>
       <span style="font-style: italic;">linear</span> - linear
-assignment of the vertices <br>
+assignment of the vertices (ordered by the user query function)<br>
       <span style="font-style: italic;">greedy</span> - greedy method
 based on minimizing cuts<br>
       <span style="font-style: italic;">auto</span> -&nbsp;
@@ -125,29 +133,29 @@ automatically select from the above methods<br>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
- style="font-style: italic;">PHG_REFINEMENT</span><br>
+ style="font-style: italic;">PHG_REFINEMENT_METHOD</span><br>
       </td>
       <td style="vertical-align: top;">Refinement algorithm:<br>
       <span style="font-style: italic;">fm2</span> - two-way FM
 (approximate)<br>
-      <span style="font-style: italic;">None</span> - no refinement<br>
+      <span style="font-style: italic;">none</span> - no refinement<br>
       </td>
     </tr>
     <tr>
-      <td>&nbsp;&nbsp;&nbsp; <i>PHG_FM_LOOP_LIMIT</i></td>
+      <td>&nbsp;&nbsp;&nbsp; <i>PHG_REFINEMENT_LOOP_LIMIT</i></td>
       <td>Loop limit in FM refinement. (Higher number means more
 refinement.) <br>
       </td>
     </tr>
     <tr nosave="" valign="top">
-      <td>&nbsp;&nbsp;&nbsp; <span style="font-style: italic;">PHG_FM_MAX_NEG_MOVE</span><br>
+      <td>&nbsp;&nbsp;&nbsp; <span style="font-style: italic;">PHG_REFINEMENT_MAX_NEG_MOVE</span><br>
       </td>
       <td nosave="">Maximum number of negative moves allowed in FM. (Higher
 number means more
 refinement.) </td>
     </tr>
     <tr>
-      <td style="vertical-align: top;">&nbsp; <span
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
  style="font-style: italic;">PHG_RANDOMIZE_INPUT</span><br>
       </td>
       <td style="vertical-align: top;">Randomize layout of vertices and
@@ -170,7 +178,7 @@ returned by the processes<br>
       </td>
     </tr>
     <tr nosave="" valign="top">
-      <td>&nbsp;&nbsp; <span style="font-style: italic;">EDGE_SIZE_THRESHOLD</span><br>
+      <td>&nbsp;&nbsp; <span style="font-style: italic;">PHG_EDGE_SIZE_THRESHOLD</span><br>
       </td>
       <td nosave="">Ignore hyperedges greater than this fraction times
 number of vertices.<br>
@@ -188,6 +196,12 @@ number of vertices.<br>
       </i></td>
     </tr>
     <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">CHECK_GRAPH=0</span><br>
+      </td>
+    </tr>
+    <tr>
       <td><br>
       </td>
       <td><span style="font-style: italic;">PHG_OUTPUT_LEVEL=0</span></td>
@@ -195,27 +209,27 @@ number of vertices.<br>
     <tr>
       <td><br>
       </td>
-      <td><i>PHG_REDUCTION_METHOD=ipm</i></td>
+      <td><i>PHG_COARSENING_METHOD=ipm</i></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><i>PHG_COARSE_PARTITIONING=auto</i></td>
+      <td style="vertical-align: top;"><i>PHG_COARSEPARTITION_METHOD=auto</i></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REFINEMENT=fm2</span></td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REFINEMENT_METHOD=fm2</span></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><i>PHG_FM_LOOP_LIMIT=10</i></td>
+      <td style="vertical-align: top;"><i>PHG_REFINEMENT_LOOP_LIMIT=10</i></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_FM_MAX_NEG_MOVE=250</span></td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REFINEMENT_MAX_NEG_MOVE=250</span></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
@@ -230,7 +244,7 @@ number of vertices.<br>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><span style="font-style: italic;">EDGE_SIZE_THRESHOLD=0.25</span></td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_EDGE_SIZE_THRESHOLD=0.25</span></td>
     </tr>
     <tr>
       <td valign="top"><b>Required Query Functions:</b></td>
