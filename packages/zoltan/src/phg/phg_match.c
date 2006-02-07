@@ -19,6 +19,7 @@ extern "C" {
 #include <stdlib.h>
 #include "phg.h"
 
+
 static ZOLTAN_PHG_MATCHING_FN pmatching_ipm;         /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN pmatching_local_ipm;   /* local ipm */
 static ZOLTAN_PHG_MATCHING_FN pmatching_alt_ipm;     /* alternating ipm */
@@ -459,7 +460,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 /* convenience macro to encapsulate resizing a buffer when necessary. Note: */
 /* currently ZOLTAN_REALLOC aborts on any error and doesn't return - But... */
 #define MACRO_REALLOC(new_size, old_size, buffer)  {\
-  old_size = new_size;\
+  old_size = (new_size);\
   if (!(buffer = (int*) ZOLTAN_REALLOC (buffer, old_size * sizeof(int)))) {\
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");\
     err = ZOLTAN_MEMERR;\
@@ -525,9 +526,10 @@ static int pmatching_ipm (ZZ *zz,
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
   char *yo = "pmatching_ipm";
   
-  
+   
   ZOLTAN_TRACE_ENTER (zz, yo);
   MACRO_TIMER_START (0, "matching setup", 0);
+  Zoltan_Srand_Sync (Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
      
   /* this restriction may be removed later, but for now NOTE this test */
   if (sizeof(int) < sizeof(float))  {
@@ -605,12 +607,10 @@ static int pmatching_ipm (ZZ *zz,
   } 
 
   if (!cFLAG)
-    if (!(edgebuf = (int*) ZOLTAN_MALLOC (nEdgebuf * sizeof(int)))
-       || (nCandidates && !(select = (int*) ZOLTAN_MALLOC (nCandidates
-       * sizeof(int))))) {
-          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
-          err = ZOLTAN_MEMERR;
-          goto fini;
+    if (!(edgebuf = (int*) ZOLTAN_MALLOC (nEdgebuf * sizeof(int))))  {
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
+      err = ZOLTAN_MEMERR;
+      goto fini;
     }  
   
   if (!(dest    = (int*) ZOLTAN_MALLOC (nDest              * sizeof(int)))
@@ -620,12 +620,14 @@ static int pmatching_ipm (ZZ *zz,
    || (nSend && !(send = (int*) ZOLTAN_MALLOC (nSend * sizeof(int))))
    || (nRec  && !(rec  = (int*) ZOLTAN_MALLOC (nRec  * sizeof(int))))
    || (total_nCandidates && !(permute = (int*) ZOLTAN_MALLOC (total_nCandidates
-   * sizeof(int))))) {
+   * sizeof(int))))
+   || (total_nCandidates && !(select = (int*) ZOLTAN_MALLOC (total_nCandidates
+   * sizeof(int)))))   {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error.");
         err = ZOLTAN_MEMERR;
         goto fini;
   }
-    
+  
   /* Compute candidates' vertex visit order (selection). Random is default. */
   Zoltan_PHG_Vertex_Visit_Order (zz, hg, hgp, visit);
   
@@ -648,14 +650,17 @@ static int pmatching_ipm (ZZ *zz,
     if (cFLAG)  {
       int nTotal;
       /* select upto nCandidates unmatched vertices to locally match */
+      for (i = 0; i < total_nCandidates; i++)
+        permute[i] = -1;                       /* to flag missing candidates  */
+        
       for (nTotal = 0; nTotal < nCandidates && vindex < hg->nVtx; vindex++)
         if (cmatch [visit[vindex]] == visit[vindex])  {         /* unmatched */
           permute [nTotal++] = visit[vindex];    /* select it as a candidate */
           cmatch [visit[vindex]] = -visit[vindex]-1;  /* mark as pending match */
         }
-      for (i = nTotal; i < total_nCandidates; i++)
-        permute[i] = -1;                       /* to flag missing candidates  */
       total_nCandidates = nTotal;
+      for (i = 0; i < total_nCandidates; i++)
+        select[i] = i;      
     }
     else  {       
       /* Select upto nCandidates unmatched vertices to globally match. */
@@ -672,11 +677,8 @@ static int pmatching_ipm (ZZ *zz,
         if (hg->vindex[lno+1] > hg->vindex[lno])
           sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE; 
       }
-      if (sendsize > nSend) {
-        i = MAX (1.2 * nSend, sendsize);         /* prevent frequent realloc */
-        MACRO_REALLOC (i, nSend, send);          /* resize send buffer */
-      }
-    
+      if (sendsize > nSend)
+        MACRO_REALLOC (1.2 * sendsize, nSend, send);    /* resize send buffer */    
       /* put <candidate_gno, candidate_index, count, <edge>> into send buffer */
       s = send;
       for (i = 0; i < sendcnt; i++)   {
@@ -698,10 +700,8 @@ static int pmatching_ipm (ZZ *zz,
       recsize = 0;
       for (i = 0; i < hgc->nProc_x; i++)
         recsize += size[i];          /* compute total size of edgebuf in ints */
-      if (recsize > nEdgebuf) {
-        i = MAX (1.2 * nEdgebuf, recsize);
-        MACRO_REALLOC (i, nEdgebuf, edgebuf);        /* enlarge edgebuf */
-      }
+      if (recsize > nEdgebuf)
+        MACRO_REALLOC (1.2 * recsize, nEdgebuf, edgebuf);  /* enlarge edgebuf */
     
       /* setup displacement array necessary for MPI_Allgatherv */
       dest[0] = 0;
@@ -712,26 +712,19 @@ static int pmatching_ipm (ZZ *zz,
       MPI_Allgatherv(send, sendsize, MPI_INT, edgebuf, size, dest, MPI_INT,
        hgc->row_comm);
          
-      /* create random permutation of index into the edge buffer */
+      /* Communication has grouped candidates by processor, rescramble!     */
+      /* Otherwise all candidates from proc column 0 will be matched first, */
+      for (i = 0; i < total_nCandidates; i++)
+        select[i] = i;
+      Zoltan_Rand_Perm_Int (select, total_nCandidates, &(hgc->RNGState_col));
+      
       for (i = 0; i < total_nCandidates; i++)
         permute[i] = -1;                 /* to flag missing sparse candidates */
       for (i = 0 ; i < recsize; i += count)   {
         int indx        = i++;              /* position of next gno in edgebuf */
         candidate_index = edgebuf[i++];
-        count           = edgebuf[i++];     /* count of edges */
+        count           = edgebuf[i++];     /* count of edges */      
         permute[candidate_index] = indx ;   /* save position of gno in edgebuf */
-      }
-    
-      /* Communication has grouped candidates by processor, rescramble!     */
-      /* Otherwise all candidates from proc column 0 will be matched first, */
-      /* Future: Instead of Zoltan_Rand_Perm_Int, we could use              */
-      /* Zoltan_PHG_Vertex_Visit_Order() to reorder the candidates          */
-      /* but that routine uses a local hg so won't work on the candidates.  */
-      if (hgc->nProc_x > 1) {
-        Zoltan_Srand_Sync(Zoltan_Rand(NULL),&(hgc->RNGState_col),hgc->col_comm);
-#ifdef RTHRTH
-        Zoltan_Rand_Perm_Int (permute, total_nCandidates, &(hgc->RNGState_col));
-#endif 
       }
     }            /* DONE:  if (cFLAG) else ...  */                          
     MACRO_TIMER_STOP (1);
@@ -749,11 +742,11 @@ static int pmatching_ipm (ZZ *zz,
       sendcnt  = 0;                    /* count of messages in send buffer */
       s        = send;                 /* start at send buffer origin */
       for (k = kstart; k < total_nCandidates; k++)  {
-        if (permute[k] == -1)
+        if (permute[select[k]] == -1) 
           continue;                /* don't have this sparse candidate locally */
         
         if (!cFLAG)  {
-          r = &edgebuf[permute[k]];
+          r = &edgebuf[permute[select[k]]];
           candidate_gno   = *r++;          /* gno of candidate vertex */
           candidate_index = *r++;          /* candidate_index of vertex */
           count           = *r++;          /* count of following hyperedges */
@@ -805,10 +798,9 @@ static int pmatching_ipm (ZZ *zz,
 
         /* iff necessary, resize send buffer to fit at least first message */
         msgsize = HEADER_SIZE + 2 * count;
-        if (sendcnt == 0 && (msgsize > nSend))  {
-          i = MAX (1.2 * nSend, msgsize);
-          MACRO_REALLOC (i, nSend, send);  /* make send buffer bigger */
-          s = send;    
+        if (sendcnt == 0 && (msgsize > nSend)) {
+          MACRO_REALLOC (1.2 * msgsize, nSend, send);  /* increase buffer size */
+          s = send;         
         }
         
         /* message is <candidate_gno, candidate_index, count, <lno, psum>> */
@@ -836,7 +828,7 @@ static int pmatching_ipm (ZZ *zz,
         else  {           /* psum message doesn't fit into buffer */
           for (i = 0; i < count; i++)              
             sums[aux[i]] = 0.0;
-/* --k;   since couldn't actually fit k into this buffer */             
+          k--;   /* since couldn't actually fit kth message into this buffer */
           break;   
         }  
       }                  /* DONE: loop over k */                    
@@ -848,10 +840,9 @@ static int pmatching_ipm (ZZ *zz,
       old_kstart = kstart;
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
 
-
       /* Send inner product data in send buffer to appropriate rows */
       err = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
-                                   &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
+       &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
       if (err != ZOLTAN_OK)
         goto fini;
     
@@ -869,10 +860,10 @@ static int pmatching_ipm (ZZ *zz,
       s = send; 
       for (n = old_kstart; n < kstart; n++) {
         m = 0;       
-        for (i = 0; i < hgc->nProc_y; i++)   
-          if (rows[i] < recsize && rec [rows[i]+1] == n) {
+        for (i = 0; i < hgc->nProc_y; i++) 
+          if (rows[i] < recsize && rec [rows[i]+1] == select[n])  {
             candidate_gno   = rec [rows[i]++];
-            candidate_index = rec [rows[i]++];   /* skip candidate index */
+            candidate_index = rec [rows[i]++];
             count           = rec [rows[i]++];
             for (j = 0; j < count; j++)  {
               lno = rec [rows[i]++];                    
@@ -892,13 +883,7 @@ static int pmatching_ipm (ZZ *zz,
         if (count > 0)  {
           if (s - send + HEADER_SIZE + 2 * count > nSend ) {
             sendsize = s - send;
-#if 0 
-/* KDDKDD -- Temporary fix  -- changed value of i; waiting for Bob's check.  */
-            i = MAX (1.2 * nSend, HEADER_SIZE + 2 * count);
-printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-send+HEADER_SIZE+2*count, (int) (1.2 * nSend), i);
-#endif
-            i = MAX (1.2 * nSend, s - send + HEADER_SIZE + 2 * count);
-            MACRO_REALLOC (i, nSend, send);       /* enlarge buffer */
+            MACRO_REALLOC (1.2*(sendsize + HEADER_SIZE + 2*count), nSend, send);
             s = send + sendsize;         /* since realloc buffer could move */
           }      
           *s++ = candidate_gno;
@@ -929,10 +914,8 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
         for (i = 1; i < hgc->nProc_y; i++)
           dest[i] = dest[i-1] + size[i-1];
         
-        if (recsize > nRec) {
-          i = MAX (1.2 * nRec, recsize);
-          MACRO_REALLOC (i, nRec, rec);      /* make rec buffer bigger */
-        }
+        if (recsize > nRec)
+          MACRO_REALLOC (1.2 * recsize, nRec, rec);      /* make rec buffer bigger */
       }
 
       MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
@@ -957,12 +940,12 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
          
           /* For hybrid ipm, keep matches that are above average in c-ipm */
           ipsum += bestsum;
-          num_matches_considered++;
+          num_matches_considered++;        
           if (cFLAG && bestsum > MAX(TSUM_THRESHOLD, 
-              hgp->hybrid_keep_factor*ipsum/num_matches_considered))  {
+              hgp->hybrid_keep_factor*ipsum/num_matches_considered))  {            
+            cmatch[bestlno] = -1;                   
             match[bestlno]       = candidate_gno;
             match[candidate_gno] = bestlno;
-            cmatch[bestlno] = -1;         
           }
                         
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
@@ -972,18 +955,15 @@ printf("%d KDDKDD REALLOC old %d left %d tw %d new %d \n", zz->Proc, nSend, s-se
             master_data[candidate_index].ip = bestsum;
           }
         }
-      }
-      if (cFLAG)                          /* Broadcast what we matched so far */
-        MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
+      } 
       MACRO_TIMER_STOP (3);    
     }            /* DONE: kstart < max_nTotal loop */
 
-    
-    
-    if (cFLAG)
-        continue;      /* skip phases 3 and 4, continue rounds */ 
-    
-    
+    if (cFLAG)  {
+      MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);          
+      continue;      /* skip phases 3 and 4, continue rounds */ 
+    }    
+
     /************************ NEW PHASE 3: ********************************/
     
     MACRO_TIMER_START (4, "Matching Phase 3", 1);
@@ -1096,7 +1076,7 @@ fini:
     MPI_Type_free(&phasethreetype);
     ZOLTAN_FREE(&global_best);
   }
-
+  
   Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
    &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
    &master_data, &master_procs);
