@@ -76,6 +76,7 @@
 
 #include "mrtr_manager.H"
 #include "mrtr_utils.H"
+#include "mrtr_WrapMultiLevelPreconditioner.H"
 
 using namespace std;
 using namespace Teuchos;
@@ -198,11 +199,12 @@ private:
   RefCountPtr<Epetra_LinearProblem>                 linearproblem_; // the linear system
   RefCountPtr<Amesos_BaseSolver>                    amesossolver_;  // the amesos solver
   RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
+  RefCountPtr<MOERTEL::ConstrainedPreconditioner>   moertelprec_;   // the constrained mlpreconditioner
   RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
 
-  Epetra_CrsMatrix* WT_;
-  Epetra_CrsMatrix* B_;
-  Epetra_CrsMatrix* I_;  
+  RefCountPtr<Epetra_CrsMatrix>                     WT_;
+  RefCountPtr<Epetra_CrsMatrix>                     B_;
+  RefCountPtr<Epetra_CrsMatrix>                     I_;  
 };
 
 } // namespace MOERTEL

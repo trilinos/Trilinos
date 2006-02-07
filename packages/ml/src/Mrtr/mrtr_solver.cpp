@@ -49,7 +49,11 @@ b_(null),
 linearproblem_(null),
 amesossolver_(null),
 mlprec_(null),
-aztecsolver_(null)
+moertelprec_(null),
+aztecsolver_(null),
+WT_(null),
+B_(null),
+I_(null)
 {
 }
 
@@ -84,9 +88,16 @@ bool MOERTEL::Solver::Solve(RefCountPtr<Teuchos::ParameterList> params,
 {
   SetParameters(params.get());
   SetSystem(matrix,x,b);
-  WT_ = manager.WT_.get(); 
-  B_ = manager.B_.get(); 
-  I_ = manager.I_.get(); 
+  if (manager.spdrhs_ == null)
+  {
+    cout << "***ERR*** MOERTEL::Solver::Solve:\n"
+         << "***ERR*** condensed mortar system is NULL\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  WT_     = manager.WT_;     
+  B_      = manager.B_;      
+  I_      = manager.I_;      
   return Solve();
 }
 
@@ -282,21 +293,28 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  if (preconditioner=="AZ_user_precond")
-    if (mlprec_==null || matrixisnew_);
-    {
-      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams),true);
-      // create a constrained mortar-ml-preconditioner here
-    }  
-  
   // make initial guess x satisfy constraints: x = (I-WBT)x
   Epetra_Vector* xtmp = new Epetra_Vector(x_->Map(),false);
   B_->Multiply(true,*x_,*xtmp);
   WT_->Multiply(true,*xtmp,*xtmp);
   x_->Update(-1.0,*xtmp,1.0);
-  delete xtmp; xtmp = NULL;
 
-#if 1
+  // make rhs satisfy constraints
+  WT_->Multiply(false,*b_,*xtmp);
+  B_->Multiply(false,*xtmp,*xtmp);
+  b_->Update(-1.0,*xtmp,1.0);
+  delete xtmp; xtmp = NULL;
+  
+  if (preconditioner=="AZ_user_precond")
+    if (mlprec_==null || matrixisnew_);
+    {
+      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams),true);
+      // create a constrained mortar-ml-preconditioner
+      moertelprec_ = rcp(new MOERTEL::ConstrainedPreconditioner(mlprec_,I_,WT_,B_));
+    }  
+  
+  
+#if 0
   
   // serial and on 1 level only
   // in parallel the gids of range and domain map of P are not ok as
@@ -472,8 +490,8 @@ exit(0);
   aztecsolver_->SetAztecDefaults();
   aztecsolver_->SetProblem(*linearproblem_);
   aztecsolver_->SetParameters(aztecparams,true);
-  if (mlprec_ != null)
-    aztecsolver_->SetPrecOperator(mlprec_.get());
+  if (mlprec_ != null && moertelprec_ != null)
+    aztecsolver_->SetPrecOperator(moertelprec_.get());
   
   // solve it
   double tol  = aztecparams.get("AZ_tol",1.0e-05);
@@ -481,7 +499,7 @@ exit(0);
   aztecsolver_->Iterate(maxiter,tol);
   matrixisnew_ = false;
   const double* azstatus = aztecsolver_->GetAztecStatus();
-/*
+
   if (azstatus[AZ_why] == AZ_normal)
     return true;
   else if (azstatus[AZ_why] == AZ_breakdown)
@@ -524,7 +542,7 @@ exit(0);
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-*/
+
 #endif  
 
 

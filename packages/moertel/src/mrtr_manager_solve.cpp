@@ -557,7 +557,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   spdmatrix_->OptimizeStorage();
 
   //--------------------------------------------------------------------------
-  // 11) Build ImBWT = I - BWT and store it
+  // 11) Build ImBWT = I - BWT and store it as spdrhs_
   spdrhs_ = rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
   MOERTEL::MatrixMatrixAdd(*I,false,1.0,*spdrhs_,0.0); 
   //delete I; I = NULL;
