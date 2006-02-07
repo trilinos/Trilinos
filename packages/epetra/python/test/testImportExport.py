@@ -55,7 +55,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.comm       = Epetra.PyComm()
         self.numProc    = self.comm.NumProc()
         self.myPID      = self.comm.MyPID()
-        self.myN        = 2
+        self.myN        = 3
         self.globalN    = self.myN * self.numProc
         self.globalSize = self.globalN*self.globalN
         self.gids       = arange(self.globalSize)
@@ -80,8 +80,8 @@ class EpetraImportExportTestCase(unittest.TestCase):
         source2 = self.exporter.SourceMap()
         target1 = self.importer.TargetMap()
         target2 = self.exporter.TargetMap()
-        self.assertEqual(source1.SameAs(source2), True )
-        self.assertEqual(target1.SameAs(target2), True )
+        self.assertEqual(source1.SameAs(source2), True)
+        self.assertEqual(target1.SameAs(target2), True)
         if self.numProc > 1:
             self.assertEqual(target1.SameAs(source1), False)
             self.assertEqual(target2.SameAs(source2), False)
@@ -94,8 +94,8 @@ class EpetraImportExportTestCase(unittest.TestCase):
         source2  = exporter.SourceMap()
         target1  = importer.TargetMap()
         target2  = exporter.TargetMap()
-        self.assertEqual(source1.SameAs(source2), True )
-        self.assertEqual(target1.SameAs(target2), True )
+        self.assertEqual(source1.SameAs(source2), True)
+        self.assertEqual(target1.SameAs(target2), True)
         if self.numProc > 1:
             self.assertEqual(target1.SameAs(source1), False)
             self.assertEqual(target2.SameAs(source2), False)
