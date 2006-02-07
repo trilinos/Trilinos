@@ -16,6 +16,7 @@
 <li> \ref thyra_dependencies_sec
 <li> \ref thyra_configuration_sec
 <li> \ref thyra_external_projects_sec
+<li> \ref thyra_faq_sec
 <li> \ref thyra_documents_sec
 <li> \ref thyra_contributors_sec
 <li> \ref thyra_related_software_sec
@@ -54,42 +55,36 @@ structure of thyra</a>.
 
 <ul>
 
-<li> <b>Interoperability Interfaces</b>
+<li> <b>Operator/Vector Interfaces</b>
 
   <ul>
 
-  <li> <b>Operator/Vector Interfaces</b>
+  <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
+    Fundamental ANA Operator/Vector Interfaces</a></b>
 
-    <ul>
-  
-    <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
-      Fundamental ANA Operator/Vector Interfaces</a></b>
-  
-    <li> <b><a href="../../src/interfaces/operator_vector/ana/extended/doc/html/index.html">
-      Extended ANA Operator/Vector Interfaces</a></b>
-  
-    </ul>
+  <li> <b><a href="../../src/interfaces/operator_vector/ana/extended/doc/html/index.html">
+    Extended ANA Operator/Vector Interfaces</a></b>
 
-  <li> <b>Operator Solve Interfaces</b>
+  </ul>
 
-    <ul>
-  
-    <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
-      Fundamental ANA Operator Solve Interfaces</a></b>
-  
-    </ul>
+<li> <b>Operator Solve Interfaces</b>
 
-  <li> <b>Nonlinear Interfaces</b>
+  <ul>
 
-    <ul>
+  <li> <b><a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
+    Fundamental ANA Operator Solve Interfaces</a></b>
 
-    <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
-      Fundamental ANA Model Evaluator Interfaces</a></b>
+  </ul>
 
-    <li><b><a href="../../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html/index.html">
-      Fundamental ANA Nonlinear Solver Interfaces</a></b>
+<li> <b>Nonlinear Interfaces</b>
 
-    </ul>
+  <ul>
+
+  <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
+    Fundamental ANA Model Evaluator Interfaces</a></b>
+
+  <li><b><a href="../../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html/index.html">
+    Fundamental ANA Nonlinear Solver Interfaces</a></b>
 
   </ul>
 
@@ -99,20 +94,17 @@ structure of thyra</a>.
 
 <ul>
 
-<li> <b>Support software and examples</b>
+<li> <b><a href="../../src/support/operator_vector/doc/html/index.html">
+  Operator/Vector Support</a></b>
 
-  <ul>
+<li> <b><a href="../../src/support/operator_solve/doc/html/index.html">
+  Operator Solve Support</a></b>
 
-  <li> <b><a href="../../src/support/operator_vector/doc/html/index.html">
-    Operator/Vector Support</a></b>
+<li> <b><a href="../../src/support/nonlinear/model_evaluator/doc/html/index.html">
+  Nonlinear Model Evaluator Support</a></b>
 
-  <li> <b><a href="../../src/support/nolinear/model_evaluator/doc/html/index.html">
-    Nonlinear Model Evaluator Support</a></b>
-
-  <li> <b><a href="../../src/support/nolinear/solvers/doc/html/index.html">
-     Nonlinear Solvers Support</a></b>
-
-  </ul>
+<li> <b><a href="../../src/support/nonlinear/solvers/doc/html/index.html">
+   Nonlinear Solvers Support</a></b>
 
 </ul>
 
@@ -297,6 +289,11 @@ were used to build Trilinos.  Of particular importance are <tt>THYRA_CXX</tt>,
 <tt>THYRA_DEFS</tt>, <tt>THYRA_CPPFLAGS</tt>, and <tt>THYRA_CXXLD</tt> since
 these ensure that the same C++ compiler and the same <tt>-D</tt> macro
 definitions are used.
+
+\section thyra_faq_sec Frequently Asked Questions (FAQ)
+
+Click \ref thyra_faq_grp "here" for a list of frequently asked questions (FAQ)
+compiled for thyra.
 
 \section thyra_documents_sec Documents Describing or are Related to Thyra
 

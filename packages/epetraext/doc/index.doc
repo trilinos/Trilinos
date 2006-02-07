@@ -69,6 +69,10 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 <li> Matlab: Communication interface between Epetra and Matlab.  Exports Epetra objects to Matlab and imports objects from Matlab.
      Sends user specified Matlab commands to the Matlab engine to modify the Matlab workspace which provides user interaction with the Matlab engine.
 
+<li> Nonlinear Model Evaluator: <tt>EpetraExt::ModelEvaluator</tt> provides an
+Epetra-specific interface to nonlinear models for use by equation solvers all the
+way up to optimization.
+
 </ul>
 
 \section EpetraExt_adapters EpetraExt adapters
@@ -78,7 +82,7 @@ interfaces.  Support for these adapters can be turned on at configure time.
 
 <ul>
 
-<li> <a href="../../thyra/doc/html/index.html">EpetraExt/Thyra Vector
+<li> <a href="../../thyra/doc/html/index.html">EpetraExt/Thyra
 Adapters</a>: These adapters implement various advanced %Thyra interfaces in
 terms of %EpetraExt code.
 

@@ -18,7 +18,6 @@ useful as a developer's reference and should only be used as such.
 <li> \ref Thyra_Op_Vec_foundational_interfaces_sec
 <li> \ref thyra_operator_vector_use_cases_sec
 <li> \ref thyra_operator_vector_examples_sec
-<li> \ref Thyra_Op_Vec_faq_sec
 <li> \ref Thyra_Op_Vec_links_to_other_documentation_sec
 </ul>
 
@@ -118,12 +117,6 @@ created and used.
 
 </ol>
 
-
-\section Thyra_Op_Vec_faq_sec Frequently Asked Questions (FAQ)
-
-Click \ref Thyra_Op_Vec_faq_grp "here" for a list of frequently asked
-questions (FAQ) compiled for this collection of code.
-
 \section Thyra_Op_Vec_links_to_other_documentation_sec Links to Other Documentation Collections
 
 Below are links to other related documentation:
@@ -158,166 +151,6 @@ object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
 to to define an iterative linear solver such as GMRES or CG.
 
 </ul>
-
-*/
-
-/** \defgroup Thyra_Op_Vec_faq_grp Frequently Asked Questions (FAQ) about Thyra Operator/Vector Software
-
-\section Thyra_Op_Vec_faq_outline_sec Outline
-
-<ul>
-
-<li>\ref Thyra_Op_Vec_faq_rcp_sec
-
-  <ul>
-  <li>\ref Thyra_Op_Vec_faq_rcp_important_sec
-  <li>\ref Thyra_Op_Vec_faq_rcp_amp_star_sec
-  <li>\ref Thyra_Op_Vec_faq_rcp_everywhere_sec
-  </ul>
-
-<li>\ref Thyra_Op_Vec_faq_itfc_sec
-
-  <ul>
-  <li>\ref Thyra_Op_Vec_faq_why_helper_funcs_sec
-  <li>\ref Thyra_Op_Vec_faq_index_op_sec
-  <li>\ref Thyra_Op_Vec_faq_op_overload_sec
-  <li>\ref Thyra_Op_Vec_faq_Scalar_sec
-  <li>\ref Thyra_Op_Vec_faq_creating_vecs_multivecs_sec
-  </ul>
-
-</ul>
-
-\section Thyra_Op_Vec_faq_rcp_sec Questions about the smart pointer class Teuchos::RefCountPtr
-
-\subsection Thyra_Op_Vec_faq_rcp_important_sec Q: What are RefCountPtr objects and why are they important?
-
-<b>A:</b>The class Teuchos::RefCountPtr implements a form of reference
-counting which, through the magic of smart pointers in C++, allows objects to
-be created and used without much concern for when and where they should be
-deleted.  It is a form of garbage collection but is not as general or fail-
-safe as in languages with built in garbage collection.  For more information
-see:
-
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
-
-and click on: <tt>Teuchos::RefCountPtr</tt>
-
-\subsection Thyra_Op_Vec_faq_rcp_amp_star_sec Q: Do I really have to write &*ptr all the time?
-
-What are the benefits of &* vs. get()?
-
-<b>A:</b> There are two ways to get at the underlying raw pointer to an
-object that is wrapped in the RefCountPtr<C> object <tt>c_ptr</tt>:
-
-\code
-
-C *c_rptr1 = c_ptr.get(); // Unchecked, can be NULL
-C *c_rptr2 = &*c_ptr;     // Checked in debug build and will not return NULL
-\endcode
-
-You should use <tt>c_ptr.get()</tt> when it is okay for the pointer to be
-<tt>NULL</tt>.  On the other hand, you should use <tt>&*c_ptr</tt> when you
-don't want to allow the raw pointer to be <tt>NULL</tt>.  This is because the
-operator function <tt>Teuchos::RefCountPtr::operator*()</tt> will throw an
-exception if <tt>Teuchos::RefCountPtr::get()==NULL</tt> when the code is
-compiled using the macro define <tt>-D_DEBUG</tt>.
-
-For more information see Item 3 in Appendix B in 
-
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
-
-\subsection Thyra_Op_Vec_faq_rcp_everywhere_sec Q: Should my code use RefCountPtr's everywhere?
-
-<b>A:</b> You should only use RefCountPtr to wrap objects where a persisting
-relationship is being formed or maintained.  For non-persisting relationships,
-use raw C++ references and pointers.
-
-For more information see the main body and Appendix D of the document:
-
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
-
-\section Thyra_Op_Vec_faq_itfc_sec Questions about Fundamental Thyra Operator/Vector Interfaces
-
-\subsection Thyra_Op_Vec_faq_why_helper_funcs_sec Q: Why is Thyra written with so many non-member helper functions instead of member functions?
-
-In my C++ class we were told that the beauty of OOP is that functions and data
-can be put together into classes to combine the operations with the data they
-operate on.
-
-<b>A:</b> Generally member functions should only be used over non-member
-functions when direct access to private or protected data for functions is
-required.  By minimizing the amount of code that can access non-public data
-you greatly simplify maintenance.  See section 11.3.1 in "The C++ Programming
-Language: Special Edition" for a discussion of this topic.
-
-\subsection Thyra_Op_Vec_faq_index_op_sec Q: Why don't Thyra vectors support element access using the an overloaded operator[]?
-
-<b>A:</b> Direct element access to vector data through the
-<tt>Thyra::VectorBase</tt> interface can not be allowed in most general
-abstract numerical algorithms except in very specialized cases.  Direct
-element access assumes that all of the the vector data is readily available
-which is not the case in distributed-memory, out-of-core and certainly not
-client/server runtime configurations.  In addition, an overloaded
-<tt>operator[]</tt> function would be extremely inefficient since it would
-have to be a virtual function.
-
-For more information on the philosophy of the design of vector interface
-<tt>Thyra::VectorBase</tt> see the document "Vector Reduction/Transformation
-Operators" at:
-
-http://software.sandia.gov/RTOp/RTOpTOMS.pdf
-
-\subsection Thyra_Op_Vec_faq_op_overload_sec Q: Why doesn't Thyra support linear algebra operations using overloaded operators for +, -, *, etc?
-
-<b>A:</b> Supporting Matlab-like syntax for linear algebra operations like:
-
-\verbatim
-
-  y = alpha*x + z;
-
-  y = adjoint(A)*x + B*z;
-\endverbatim
-
-for large abstract objects in a near-optimally efficient manner is extremely
-non-trivial.  Such a capability can be supported through the creation of
-handle classes and compile-time expression templates but such an
-implementation is complicated and is difficult for beginners to debug through.
-There are a whole host of other reasons they Matlab-like syntax will not work
-as well as in Matlab.  For a slightly more detailed discussion, see the document
-
-<b><a href="./LinearAlgebraFunctionConvention.pdf">A Simple Convention for
-the Specification of Linear Algebra Function Prototypes in C++ </a></b>
-
-In short, Thyra does not (yet) support operator overloading for Matlab-like
-syntax and will not until the resulting code can be as efficient, compile-time
-safe, and as debuggable as the current lower-level function-call interface.
-However, check back with Thyra in the near future and you might find such
-handle classes with operator overloading.
-
-\subsection Thyra_Op_Vec_faq_Scalar_sec Q: Where is the Scalar class, and how do I use it to replace my underlying data-type, e.g. double, in my ANA? 
-
-<b>A:</b> The 'Scalar' class in a template argument in all of the core Thyra
-interface code.  The goal of this template argument is to allow many abstract
-numerical algorithms to be written in a general form to support a number of
-different scalar types (e.g. real, complex, extended precision etc.).  While
-the interfaces, the composite classes, and many of the concrete
-implementations are fully templated some are not and can only support one
-scalar type (e.g. see the Epetra/Thyra adapters).
-
-See the <tt>Thyra::sillyCgSolve()</tt> and <tt>Thyra::sillyPowerMethod()</tt>
-examples for how this templating is used.
-
-\subsection Thyra_Op_Vec_faq_creating_vecs_multivecs_sec Q: How do I create a Thyra::VectorBase or Thyra::MultiVectorBase object?
-
-The member functions Thyra::VectorSpaceBase::createMember() and
-Thyra::VectorSpaceBase::createMembers() are protected and can not be called by
-client code.
-
-<b>A:</b> You must use the non-member functions <tt>Thyra::createMember()</tt>
-and <tt>Thyra::createMembers()</tt> described \ref
-Thyra_Op_Vec_createMember_grp "here".
-
-<!-- \subsection Thyra_Op_Vec_faq_xxx_sec Q: -->
 
 */
 

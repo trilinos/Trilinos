@@ -30,9 +30,14 @@ solving a set of nonlinear equations represented through the
 <ul>
 
 <li> <a href="../../../../../../operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator/Vector Interfaces</a>
+
 <li> <a href="../../../../../../operator_solve/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator Solve Interfaces</a>
+
 <li> <a href="../../../../../model_evaluator/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Model Evaluator Interfaces</a>
-<li> <a href="../../../../../../../../doc/html/index.html">Main Thyra package documentation page</a>
+
+<li> <a href="../../../../../../../support/nonlinear/solvers/doc/html/index.html">Nonlinear Solvers Support Software and Examples</a>
+
+<li> <a href="../../../../../../../../doc/html/index.html">Main Thyra Package Documentation Page</a>
 
 </ul>
 

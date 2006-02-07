@@ -15,6 +15,10 @@ rm -r ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
 
 rm -r ../src/support/operator_vector/doc/html
 
+rm -r ../src/support/nonlinear/model_evaluator/doc/html
+
+rm -r ../src/support/nonlinear/solvers/doc/html
+
 rm -r ../all/doc/html
 
 rm -r html
@@ -33,6 +37,10 @@ mkdir ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
 mkdir ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
 
 mkdir ../src/support/operator_vector/doc/html
+
+mkdir ../src/support/nonlinear/model_evaluator/doc/html
+
+mkdir ../src/support/nonlinear/solvers/doc/html
 
 mkdir ../all/doc/html
 

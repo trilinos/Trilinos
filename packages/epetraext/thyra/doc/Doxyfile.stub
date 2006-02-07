@@ -1,4 +1,4 @@
-@INCLUDE = epetra/doc/TagFiles   # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+@INCLUDE = epetra/doc/TagFiles
 #
 # Package options
 #
@@ -9,12 +9,17 @@ OUTPUT_DIRECTORY       = ../thyra/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../thyra/doc/index.doc \
-                         ../thyra/src
+                         ../thyra/src \
+                         ../example/model_evaluator/EpetraModelEval2DSim.cpp \
+                         ../example/model_evaluator/EpetraModelEval2DSim.hpp \
+                         ../example/model_evaluator/EpetraModelEval4DOpt.cpp \
+                         ../example/model_evaluator/EpetraModelEval4DOpt.hpp
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           = 
+EXAMPLE_PATH           = ../example/model_evaluator \
+                         ../thyra/example/model_evaluator
 EXAMPLE_PATTERNS       = *.cpp *.hpp
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES

@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# Build all documentation related to Thyra
-
-cd ../../teuchos/doc ; ./build_docs ; cd -
-
-./build_docs
-
-cd ../../epetra/doc ; ./build_docs

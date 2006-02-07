@@ -1,12 +1,11 @@
 /*! \mainpage EpetraExt/%Thyra Adapters
 
-
-
 \section EpetraExt_Thyra_outline_sec Outline
 
 <ul>
 <li> \ref EpetraExt_Thyra_intro_sec
 <li> \ref EpetraExt_Thyra_software_sec
+<li> \ref EpetraExt_Thyra_examples_sec
 <li> \ref EpetraExt_Thyra_links_sec
 </ul>
 
@@ -31,12 +30,20 @@ This doxygen collection documents versions EpetraExt/Thyra adpaters.
 
 </ul>
 
+\section EpetraExt_Thyra_examples_sec Examples
+
+<ul>
+
+<li> \ref epetraext_thyra_fwd_solve_2d_sim_prg_grp
+
+</ul>
+
 \section EpetraExt_Thyra_links_sec Links to other documentation
 
 <ul>
 
 <li><a
-href="../../../../thyra/src/ana/nonlinear/doc/html/index.html">Thyra ANA
+href="../../../../thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">Thyra ANA
 Nonlinear Interfaces</a>
 
 <li><a
@@ -45,3 +52,23 @@ href="../../../doc/html/index.html">Main EpetraExt Documentation</a>
 </ul>
 
 */
+
+/** \defgroup epetraext_thyra_fwd_solve_2d_sim_prg_grp Simple Forward Solve Example Problem
+
+To see the full listing of this click: <a
+href="ForwardSolveEpetraModelEval2DSimMain_8cpp-example.html">
+ForwardSolveEpetraModelEval2DSimMain.cpp </a>.
+
+*/
+
+/** \example ForwardSolveEpetraModelEval2DSimMain.cpp
+
+*/
+
+/** \example EpetraModelEval2DSim.hpp */
+
+/** \example EpetraModelEval2DSim.cpp */
+
+/** \example EpetraModelEval4DOpt.hpp */
+
+/** \example EpetraModelEval4DOpt.cpp */

@@ -35,7 +35,10 @@ generating or updating a <tt>Thyra::LinearOpWithSolveBase</tt> object out of a
 <ul>
 
 <li> <a href="../../../../../operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator/Vector Interfaces</a>
-<li> <a href="../../../../../../../doc/html/index.html">Main Thyra package documentation page</a>
+
+<li> <a href="../../../../../../support/operator_solve/doc/html/index.html">Operator Solve Support Software and Examples</a>
+
+<li> <a href="../../../../../../../doc/html/index.html">Main Thyra Package Documentation Page</a>
 
 </ul>
 
