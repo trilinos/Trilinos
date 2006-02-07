@@ -35,28 +35,32 @@ P_{IFPACK}^{-1} = \sum_{i = 0}^{NumProcs-1} P_i A_i^{-1} R_i
 where \f$R_i\f$ is the restriction operator from the global vector, to the
 overlapping subdomain \f$i\f$,
 and \f$P_i\f$ is the prolongator operator. 
-\f$P_i\f$ is generally be the transpose of \f$R_i\f$ (in which case
+\f$P_i\f$ is generally the transpose of \f$R_i\f$ (in which case
 the resulting preconditioner is symmetic).
-If is supposed that each subdomain
-is assigned to a different processors.
+It is assumed that each subdomain
+is assigned to a different processor.
 
 <P>A key component of the previous formula is a strategy to apply
 \f$A_i^{-1}\f$. Using IFPACK, this can be defined by one of the
 following:
 - one or more steps of a point/block method (like Jacobi and Gauss-Seidel);
-- an incomplete factorization (for symmetric and non-symmetric matrix, with
+- an incomplete factorization (for symmetric and non-symmetric matrices, with
   dropping based on graph or on values);
 - an exact LU solve on each subdomain (using Amesos' factorizations).
 
 More precisely, the choices for \f$A_i^{-1}\f$ are:
-- point relaxation preconditioners (through class Ifpack_PointRelaxation).
+
+<ul>
+
+<li> Point relaxation preconditioners (through class Ifpack_PointRelaxation).
   Point relaxation preconditioners are probably the simplest iterative methods,
   and are generally used as smoothers in multilevel
   methods (for instance, within ML). Available choices are:
   - Jacobi
   - Gauss-Seidel
   - symmetric Guass-Seidel
-- block relaxation preconditioners (through class Ifpack_BlockRelaxation).
+
+<li> Block relaxation preconditioners (through class Ifpack_BlockRelaxation).
 Block relaxation preconditioners represent an extension of point preconditioners.  The
 local matrix \f$A_i\f$ is divided into blocks, then a relaxation method is
 applied on the block structure of \f$A_i\f$. 
@@ -72,11 +76,15 @@ LAPACK routines are used to factorize the block and to perform the backsolve.
 For large blocks, instead, it is suggested to store the blocks are sparse
 matrices (Epetra_CrsMatrix's). Any IFPACK preconditioner derived from
 Ifpack_Preconditioner can be used to apply the inverse of the diagonal blocks.
-- point incomplete factorizations (through classes Ifpack_IC, Ifpack_ICT,
+
+<li> Point incomplete factorizations (through classes Ifpack_IC, Ifpack_ICT,
   Ifpack_ILU, Ifpack_ILUT). See \ref ifp_ilu .
-- exact factorizations (through class Ifpack_Amesos):
+
+<li> Exact factorizations (through class Ifpack_Amesos):
   - all Amesos classes can be used to compute the LU factorization
     of a given matrix.
+
+</ul>
 
 \note IFPACK preconditioners can be used as smoothers for multilevel solvers,
 like ML.
@@ -102,6 +110,7 @@ reported below.
 - \c "enable-amesos" enables the support for Amesos (off by default).
 - \c "enable-aztecoo" enables the support for AztecOO (on by default).
 - \c "enable-teuchos" enables the support for Teuchos (off by default).
+- \c "enable-thyra" enables the support for Thyra (off by default).
 - \c "enable-triutils" enables the support for Triutils (on by default).
 - \c "enable-ifpack-metis" enables the support for the METIS package. The
   location of the header files should be specified using 
