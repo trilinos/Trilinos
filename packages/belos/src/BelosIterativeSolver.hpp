@@ -103,6 +103,15 @@ class IterativeSolver {
   */
   virtual LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const = 0;
 
+  /*! \brief Reset the solver to its initialized state.
+     This is not a required method for all solvers, but a method that should be
+     implemented by any solver whos object maintains state information.  The reset
+     method is used to reset a solver object so it can then be reused, i.e. in
+     inner-outer iterations.  This ONLY resets the solver object's state, the LinearProblem
+     and StatusTest need to be reset separately.
+  */
+  virtual int Reset() { return 0; }
+    
   //@}
 
 };
