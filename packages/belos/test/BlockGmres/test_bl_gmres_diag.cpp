@@ -45,6 +45,13 @@ class Vector_Operator
 
     unsigned m, n;        // an (m x n) operator 
     vector<double> y;
+
+  private:
+
+    // Not allowing copy construction.
+    Vector_Operator( const Vector_Operator& ) {};
+    Vector_Operator* operator=( const Vector_Operator& ) {};
+
 };
 
 //************************************************************************************************
@@ -120,11 +127,7 @@ Composed_Operator::Composed_Operator(unsigned n,
 
 vector<double> & Composed_Operator::operator () (const vector<double> &x)
 {
-    Vector_Operator &A(*pA);
-    Vector_Operator &B(*pB);
-
-    y = A(B(x));
-
+    y = (*pA)((*pB)(x));
     return y;
 }
 
@@ -134,9 +137,9 @@ class Trilinos_Interface : public Epetra_Operator
 {
   public:
 
-    Trilinos_Interface(Vector_Operator   *pA,
-                       const Epetra_Comm *pComm,
-                       const Epetra_Map  *pMap)
+    Trilinos_Interface(const Teuchos::RefCountPtr<Vector_Operator>   pA,
+                       const Teuchos::RefCountPtr<const Epetra_Comm> pComm,
+                       const Teuchos::RefCountPtr<const Epetra_Map>  pMap)
         : pA(pA), pComm(pComm), pMap(pMap) 
     {
     };
@@ -168,9 +171,9 @@ class Trilinos_Interface : public Epetra_Operator
 
   private:
 
-    Vector_Operator   *pA;
-    const Epetra_Comm *pComm;
-    const Epetra_Map  *pMap;
+    Teuchos::RefCountPtr<Vector_Operator>   pA;
+    Teuchos::RefCountPtr<const Epetra_Comm> pComm;
+    Teuchos::RefCountPtr<const Epetra_Map>  pMap;
 
     bool use_transpose;
 };
@@ -179,13 +182,10 @@ int Trilinos_Interface::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y
 {
     vector<double> x(X.MyLength());
     X.ExtractCopy(&x[0], X.MyLength());
-
-    Vector_Operator &A(*pA);
-    x = A(x);
+    x = (*pA)(x);
 
     for (int i = 0; i < Y.MyLength(); ++i) 
         Y.ReplaceMyValue(i, 0, x[i]);
-
     return(0);
 }
 
@@ -201,14 +201,9 @@ class Iterative_Inverse_Operator : public Vector_Operator
 
   Iterative_Inverse_Operator(unsigned n, 
 			     const Teuchos::RefCountPtr<Vector_Operator>& pA, 
-			     bool print);              
+			     string opString="Iterative Solver", bool print=false);              
   
-  virtual ~Iterative_Inverse_Operator() 
-  {
-    delete pComm; delete pMap;
-    delete test1; delete test2; delete test3; delete test4;
-
-  }
+  virtual ~Iterative_Inverse_Operator() {}
   
   virtual vector<double> & operator () (const vector<double> &b);
   
@@ -218,16 +213,17 @@ private:
   // supplies a matrix vector multiply
   const bool print;
   
-  Epetra_Comm     *pComm;
-  Epetra_Map      *pMap;
+  Teuchos::Time timer;
+  Teuchos::RefCountPtr<Epetra_Comm> pComm;
+  Teuchos::RefCountPtr<Epetra_Map>  pMap;
   
   Teuchos::RefCountPtr<OP> pPE;   
   Teuchos::RefCountPtr<MV> pPX;   
   Teuchos::RefCountPtr<MV> pPB;
-  StatusTestMaxIters<double,MV,OP>    *test1;
-  StatusTestMaxRestarts<double,MV,OP> *test2;
-  StatusTestCombo<double,MV,OP>       *test3;
-  StatusTestResNorm<double,MV,OP>     *test4;
+  Teuchos::RefCountPtr<StatusTestMaxIters<double,MV,OP> >    test1;
+  Teuchos::RefCountPtr<StatusTestMaxRestarts<double,MV,OP> > test2;
+  Teuchos::RefCountPtr<StatusTestCombo<double,MV,OP> >       test3;
+  Teuchos::RefCountPtr<StatusTestResNorm<double,MV,OP> >     test4;
   Teuchos::RefCountPtr<Teuchos::ParameterList>         pList;
   Teuchos::RefCountPtr<StatusTestCombo<double,MV,OP> > pTest;
   Teuchos::RefCountPtr<LinearProblem<double,MV,OP> >   pProb;
@@ -237,24 +233,25 @@ private:
 
 Iterative_Inverse_Operator::Iterative_Inverse_Operator(unsigned n, 
                                                        const Teuchos::RefCountPtr<Vector_Operator>& pA, 
-                                                       bool print)
+                                                       string opString, bool print)
   : Vector_Operator(n, n),      // square operator
     pA(pA), 
-    print(print) 
+    print(print),
+    timer(opString)
 {
   
   unsigned n_global;
   
 #ifdef EPETRA_MPI
   MPI_Allreduce(&n, &n_global, 1, MPI_UNSIGNED, MPI_SUM, MPI_COMM_WORLD);
-  pComm = new Epetra_MpiComm(MPI_COMM_WORLD);
+  pComm = Teuchos::rcp( new Epetra_MpiComm(MPI_COMM_WORLD) );
 #else
-  pComm = new Epetra_SerialComm();
+  pComm = Teuchos::rcp( new Epetra_SerialComm() );
   n_global = n;
 #endif
-  pMap =  new Epetra_Map(n_global, n, 0, *pComm);
+  pMap =  Teuchos::rcp( new Epetra_Map(n_global, n, 0, *pComm) );
   
-  pPE = Teuchos::rcp( new Trilinos_Interface(pA.get(), pComm, pMap) );
+  pPE = Teuchos::rcp( new Trilinos_Interface(pA, pComm, pMap ) );
   pPX = Teuchos::rcp( new Epetra_MultiVector(*pMap, 1) );  // block size of 1
   pPB = Teuchos::rcp( new Epetra_MultiVector(*pMap, 1) );
   
@@ -265,33 +262,35 @@ Iterative_Inverse_Operator::Iterative_Inverse_Operator(unsigned n,
   int max_iter = 100;
   double tol = 1.0e-10;
   
-  test1 = new StatusTestMaxIters<double,MV,OP>( max_iter );
-  test2 = new StatusTestMaxRestarts<double,MV,OP>( static_cast<int>(ceil((double)max_iter/restart)) );
-  test3 = new StatusTestCombo<double,MV,OP>(Belos::StatusTestCombo<double,MV,OP>::OR, *test1, *test2);
-  test4 = new StatusTestResNorm<double,MV,OP>( tol );
+  test1 = Teuchos::rcp( new StatusTestMaxIters<double,MV,OP>( max_iter ) );
+  test2 = Teuchos::rcp( new StatusTestMaxRestarts<double,MV,OP>( static_cast<int>(ceil((double)max_iter/restart)) ) );
+  test3 = Teuchos::rcp( new StatusTestCombo<double,MV,OP>(Belos::StatusTestCombo<double,MV,OP>::OR, *test1, *test2) );
+  test4 = Teuchos::rcp( new StatusTestResNorm<double,MV,OP>( tol ) );
   test4->DefineResForm( Belos::StatusTestResNorm<double,MV,OP>::Explicit, Belos::TwoNorm );
   pTest = Teuchos::rcp( new StatusTestCombo<double,MV,OP>(Belos::StatusTestCombo<double,MV,OP>::OR, *test3, *test4) );
   
   int pid = pComm->MyPID();
+ 
+  if (print)
+    pOM = Teuchos::rcp( new OutputManager<double>(pid, 2, 0) );
+  else
+    pOM = Teuchos::rcp( new OutputManager<double>(pid) );
   
-  pOM = Teuchos::rcp( new OutputManager<double>(pid, 2, 0) );
-
   pList = Teuchos::rcp( new Teuchos::ParameterList );
   pList->set( "Length", restart );  
 
   pBelos = Teuchos::rcp( new BlockGmres<double,MV,OP>(pProb, pTest, pOM, pList) );
-  
 }
 
 vector<double> & Iterative_Inverse_Operator::operator () (const vector<double> &b)
 {
-  for (unsigned int i=0; i < b.size(); ++i) pPB->ReplaceMyValue(i, 0, b[i]);
+  for (unsigned int i=0; i < b.size(); ++i) {
+    pPB->ReplaceMyValue(i, 0, b[i]); 
+  }
   pPX->PutScalar( 0.0 );
-  //pPX->Random();
   
-  Teuchos::Time timer("Belos");
-  
-  // Reset problem and status test for next solve (HKT)
+  // Reset the solver, problem, and status test for next solve (HKT)
+  pBelos->Reset();
   pProb->Reset(pPX,pPB);
   pTest->Reset();
   
@@ -305,7 +304,7 @@ vector<double> & Iterative_Inverse_Operator::operator () (const vector<double> &
     if (pTest->GetStatus() == Belos::Converged)
       {
 	cout << endl << "pid[" << pid << "] Block GMRES converged in " 
-	     << pBelos->GetNumIters() << " iterations" << endl;
+	     << pBelos->GetNumIters() << " iteration(s)" << endl;
 	cout << "Solution time: " << timer.totalElapsedTime() << endl;
 	
       }
@@ -334,15 +333,11 @@ int main(int argc, char *argv[])
 
     unsigned int n(10);
 
-    // ************************************
-    // SHOWS WHEN BELOS DOES WORK
-    // ************************************
-
     vector<double> x(n, 1.0);
 
     // Inner computes inv(D2)*y
     Teuchos::RefCountPtr<Diagonal_Operator_2> D2 = Teuchos::rcp(new Diagonal_Operator_2(n, 1.0));
-    Iterative_Inverse_Operator A2(n, D2, true); 
+    Iterative_Inverse_Operator A2(n, D2, "Belos (inv(D2))", true); 
     
     // should return x=(1, 1/2, 1/3, ..., 1/10)
     x = A2(x);
@@ -351,16 +346,13 @@ int main(int argc, char *argv[])
       std::cout << "Vector x should have all entries [1, 1/2, 1/3, ..., 1/10]" << std::endl;
       for (unsigned int i = 0; i < n; ++i)
         std::cout << "x[" << i << "]=" << x[i] << std::endl;
+      std::cout << std::endl;
     }
-
-    // ************************************
-    // THIS SHOWS WHERE BELOS DOES NOT WORK
-    // ************************************
-
+    
     // Inner computes inv(D)*x
     Teuchos::RefCountPtr<Diagonal_Operator> D = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
     Teuchos::RefCountPtr<Iterative_Inverse_Operator> Inner = 
-      Teuchos::rcp(new Iterative_Inverse_Operator(n, D, false)); 
+      Teuchos::rcp(new Iterative_Inverse_Operator(n, D, "Belos (inv(D))", false)); 
 
     // Composed_Operator computed inv(D)*B*x
     Teuchos::RefCountPtr<Diagonal_Operator> B = Teuchos::rcp(new Diagonal_Operator(n, 4.0));
@@ -368,23 +360,22 @@ int main(int argc, char *argv[])
 
     // Outer computes inv(C) = inv(inv(D)*B)*x = inv(B)*D*x = x
     Teuchos::RefCountPtr<Iterative_Inverse_Operator> Outer =
-      Teuchos::rcp(new Iterative_Inverse_Operator(n, C, true)); 
-
+      Teuchos::rcp(new Iterative_Inverse_Operator(n, C, "Belos (inv(C)=inv(inv(D)*B)", true)); 
+    
     // should return x=1/4
     vector<double> y(n, 1.0);
-    Vector_Operator &AI(*Inner);
-    y = AI(y);
+    y = (*Inner)(y);
 
     if (pid==0) {
       std::cout << "Vector y should have all entries [1/4, 1/4, 1/4, ..., 1/4]" << std::endl;
       for (unsigned int i = 0; i < n; ++i) 
         std::cout << "y[" << i << "]=" << y[i] << std::endl;
+      std::cout << std::endl;
     }      
 
     // should return x=1
     vector<double> z(n, 1.0);
-    Vector_Operator &AO(*Outer);
-    z = AO(z);
+    z = (*Outer)(z);
 
     if (pid==0) {
       std::cout << "Vector z should have all entries [1, 1, 1, ..., 1]" << std::endl;
@@ -408,6 +399,7 @@ int main(int argc, char *argv[])
                 cout << "End Result: TEST FAILED" << endl;
         return -1;
   }
+
   //
   // Default return value
   //
