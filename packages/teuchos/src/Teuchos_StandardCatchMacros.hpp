@@ -31,6 +31,27 @@
 
 #include "Teuchos_ConfigDefs.hpp"
 
+/** \brief Simple macro that catches and reports standard exceptions and other exceptions.
+ *
+ * \ingroup teuchos_language_support_grp
+ *
+ * This macro should be used to write simple <tt>main()</tt> program functions
+ * wrapped in a try statement as:
+
+ \code
+
+ int main(...)
+ {
+   bool verbose = true;
+   bool success = true;
+   try {
+     ...
+   }
+   TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+   return ( success ? 0 : 1 );
+ }
+ \endcode
+ */
 #define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
 	catch( const std::exception &excpt ) { \
 		if((VERBOSE)) \

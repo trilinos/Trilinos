@@ -35,6 +35,8 @@ namespace Teuchos {
 
 /** \brief Return a constant reference to an object given a non-const reference.
  *
+ * \ingroup teuchos_language_support_grp
+ *
  * This function just provides a shorthand notation for
  * \verbatim const_cast<const T&>(t) \endverbatim
  * as

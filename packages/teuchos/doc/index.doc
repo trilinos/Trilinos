@@ -109,14 +109,41 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
 	to access the <tt>const</tt> version of a member function given a non-<tt>const</tt> reference
 	to an object.
 
+  </ul>
+
+<li> <b> Outputting support </b>
+
+  <ul>
+
+  <li><tt>Teuchos::FancyOStream</tt> wraps any <tt>std::ostream</tt> object and
+  produces nicely indented outputting.  It can also add prefixes to each line
+  of output such as the processor rank.
+
+  <li><tt>Teuchos::OSTab</tt> is used in conjunction with a
+  <tt>Teuchos::FancyOStream</tt> object to generate exception safe indentation
+  control as well as set other information related to the line prefix.
+
+  <li><tt>Teuchos::VerboseObject</tt> is a base class that objects can inherit
+  from that makes producing coordinated informative outputting easier.  This
+  class can be inherited by any C++ subclass without requiring any function
+  overrides but to be useful the class object must use the embedded ostream
+  and verbosity level to print its activities.
+
 	<li><tt>Teuchos::oblackholestream</tt> is a concrete subclass of <tt>std::ostream</tt>
-	that ignores all output.  This class is very useful in writting SPMD parallel programs
+	that ignores all output.  This class is very useful in writing SPMD parallel programs
 	and controlling which processor(s) produce output.  Generally only the the root process
 	uses a real <tt>std::ostream</tt> object while all of the slave processors use
 	a <tt>Teuchos::oblackholestream</tt> for console output.
 
-  </ul>
+  <li> <tt>Teuchos::Describable</tt> defines an interface that
+	subclasses can override that allows the creation of formated
+	output of an object's state complete with indentation control.
+	This class has default definitions for all of its virtual member
+	functions and therefore can be inherited by existing C++ classes
+	without requiring any additional implementation support to get
+	started.
 
+  </ul>
 
 <li> <b> Performance Monitoring </b>
 
@@ -142,22 +169,6 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   the exception was thrown.  The macro TEST_FOR_EXCEPT() is a shorter
 	macro that just accepts a logic test and is therefore easier to write.
 	Please use TEST_FOR_EXCEPT(!test) as an alternative to assert(test).
-
-  </ul>
-
-
-<li> <b> Debugging Support </b>
-
-  <ul>
-
-  <li> Pretty Printing Objects: The abstract base class
-  <tt>Teuchos::Describable</tt> defines an interface that
-	subclasses can override that allows the creation of formated
-	output of an object's state complete with indentation control.
-	This class has default definitions for all of its virtual member
-	functions and therefore can be inherited by existing C++ classes
-	without requiring any additional implementation support to get
-	started.
 
   </ul>
 
@@ -209,3 +220,9 @@ are tags, attributes, and character content.
 </ul>
 
 */
+
+/** \defgroup teuchos_outputting_grp Teuchos Outputting Utilities */
+
+/** \defgroup teuchos_language_support_grp Teuchos Language Support Utilities */
+
+/** \example FancyOutputting_test.cpp */

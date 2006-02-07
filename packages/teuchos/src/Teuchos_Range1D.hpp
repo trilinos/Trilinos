@@ -34,6 +34,10 @@
 #ifndef TEUCHOS_RANGE1D_HPP
 #define TEUCHOS_RANGE1D_HPP
 
+/*! \file Teuchos_Range1D.hpp
+    \brief .
+*/
+
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TestForException.hpp"
 

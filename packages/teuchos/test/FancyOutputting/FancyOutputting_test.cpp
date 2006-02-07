@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
     // correctly
     //
 
-    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1).setShowTabCount(true);
+   out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1).setShowTabCount(true);
     out->setProcRankAndSize(mpiSession.getRank(),mpiSession.getNProc());
     
     *out << "\n***\n*** Testing basic FancyOStream and OSTab classes\n***\n\n";

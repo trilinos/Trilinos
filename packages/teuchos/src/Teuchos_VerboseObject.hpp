@@ -38,6 +38,8 @@ namespace Teuchos {
 /** \brief Non-templated base class for objects that can print their
  * activities to a stream.
  *
+ * \ingroup teuchos_outputting_grp
+ *
  * Objects that derive from this interface print to a default class-owned
  * (i.e. static) output stream object (set using <tt>setDefaultOStream()</tt>)
  * or the output stream can be set on an object-by-object basis using

@@ -38,6 +38,8 @@ namespace Teuchos {
 /** \brief Stream buffering class that performs the magic of indenting
  * data sent to an std::ostream object.
  *
+ * \ingroup teuchos_outputting_grp
+ *
  * Note, this is not a user-level class.  Users should use
  * <tt>basic_FancyOStream</tt>.
  */
@@ -390,6 +392,8 @@ private:
 /** \brief Tabbing class for helping to create formated, indented output for a
  * <tt>basic_FancyOStream</tt> object.
  *
+ * \ingroup teuchos_outputting_grp
+ *
  * Use the typedef <tt>OSStream</tt> for support for the <tt>char</tt>
  * character type.
  *
@@ -460,13 +464,19 @@ private:
 // ///////////////////////////////
 // Typedefs
 
-/** \brief . */
+/** \brief .
+ * \ingroup teuchos_outputting_grp
+ */
 typedef basic_FancyOStream<char> FancyOStream;
 
-/** \brief . */
+/** \brief .
+ * \ingroup teuchos_outputting_grp
+ */
 typedef basic_OSTab<char> OSTab;
 
-/** \brief .*/
+/** \brief .
+ * \ingroup teuchos_outputting_grp
+ */
 #define TEUCHOS_OSTAB ::Teuchos::OSTab __localThisTab = this->getOSTab()
 
 // ////////////////////////////////

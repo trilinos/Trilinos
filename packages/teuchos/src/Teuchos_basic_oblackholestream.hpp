@@ -35,12 +35,13 @@ namespace Teuchos {
 
 /** \brief <tt>basic_ostream<></tt> subclass that does nothing but discard output.
  *
+ * \ingroup teuchos_outputting_grp
+ *
  * Use the class anytime you must pass an <tt>basic_ostream<></tt> object
  * but don't want the output for any reason.
  *
  * This subclass just sets the stream buffer to NULL and that is all you need to do!
  */
-//@{
 template<typename _CharT, typename _Traits>
 class basic_oblackholestream
 	: virtual public std::basic_ostream<_CharT, _Traits>

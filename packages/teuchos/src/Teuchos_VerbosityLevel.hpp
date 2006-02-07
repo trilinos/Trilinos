@@ -29,11 +29,18 @@
 #ifndef TEUCHOS_VERBOSITY_LEVEL_HPP
 #define TEUCHOS_VERBOSITY_LEVEL_HPP
 
+/*! \file Teuchos_VerbosityLevel.hpp
+    \brief .
+*/
+
 #include "Teuchos_ConfigDefs.hpp"
 
 namespace Teuchos {
 
-/** \brief Verbosity level */
+/** \brief Verbosity level.
+
+\ingroup teuchos_outputting_grp
+*/
 enum EVerbosityLevel {
 	VERB_DEFAULT=-1  ///< Generate output as defined by the object
 	,VERB_NONE=0     ///< Generate no output

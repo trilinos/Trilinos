@@ -33,9 +33,13 @@
 
 namespace Teuchos {
 
-/** We create this class so that we may throw a bad_cast when appropriate and
-	still use the TEST_FOR_EXCEPTION macro.  We recommend users try to catch a
-	bad_cast.
+/** \brief Exception class for bad cast.
+
+\ingroup teuchos_language_support_grp
+
+We create this class so that we may throw a bad_cast when appropriate and
+still use the TEST_FOR_EXCEPTION macro.  We recommend users try to catch a
+bad_cast.
 */
 class m_bad_cast : public std::bad_cast {
 	std::string msg;
@@ -51,6 +55,8 @@ void dyn_cast_throw_exception( const char type_from_name[], const char type_from
 /** \brief Dynamic casting utility function meant to replace
  * <tt>dynamic_cast<T&></tt> by throwing a better documented error
  * message.
+ *
+ * \ingroup teuchos_language_support_grp
  *
  * Existing uses of the built-in <tt>dynamic_cast<T&>()</tt> operator
  * such as:

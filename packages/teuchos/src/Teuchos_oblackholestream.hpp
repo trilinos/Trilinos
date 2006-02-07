@@ -32,6 +32,9 @@
 #include "Teuchos_basic_oblackholestream.hpp"
 
 namespace Teuchos {
+  /** \brief .
+   * \ingroup teuchos_outputting_grp
+   */
 	typedef basic_oblackholestream<char,std::char_traits<char> >   oblackholestream;
 }
 
