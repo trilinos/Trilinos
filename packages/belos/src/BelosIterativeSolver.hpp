@@ -35,6 +35,11 @@
 */
 
 #include "BelosLinearProblem.hpp"
+#include "Teuchos_ParameterList.hpp"
+
+using Teuchos::RefCountPtr;
+using Teuchos::ParameterList;
+
 
 /*! \class Belos::IterativeSolver
   \brief The Belos::IterativeSolver is a templated virtual base class that defines the
@@ -107,10 +112,12 @@ class IterativeSolver {
      This is not a required method for all solvers, but a method that should be
      implemented by any solver whos object maintains state information.  The reset
      method is used to reset a solver object so it can then be reused, i.e. in
-     inner-outer iterations.  This ONLY resets the solver object's state, the LinearProblem
-     and StatusTest need to be reset separately.
+     inner-outer iterations.  An optional parameter list can be passed in to change
+     any solver parameters necessary.
+     \note This method can ONLY be expected to reset the solver object's state, 
+     the LinearProblem and StatusTest need to be reset separately.
   */
-  virtual int Reset() { return 0; }
+  virtual int Reset( const RefCountPtr<ParameterList>& pl = null ) { return 0; }
     
   //@}
 
