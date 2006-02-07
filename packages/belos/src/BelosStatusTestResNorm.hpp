@@ -340,6 +340,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   StatusType StatusTestResNorm<ScalarType,MV,OP>::CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver )
   {
   int i;
+  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   LinearProblem<ScalarType,MV,OP>& lp = iSolver->GetLinearProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
@@ -380,10 +382,10 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     }
 
     // Initialize the testvector.
-    for (i=0; i<numrhs_; i++) { testvector_[i] = 1.0; }
+    for (i=0; i<numrhs_; i++) { testvector_[i] = one; }
 
     // Return an error if the scaling is zero.
-    if (scalevalue_==0.0) {
+    if (scalevalue_ == zero) {
       status_ = Failed;
       return(status_);
     }
@@ -427,8 +429,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     // See if the linear problem manager has been updated before
     // asking for the true residual from the solver.
     //
+    //
     if ( lp.IsSolutionUpdated() ) {
-      const MV& cur_res = lp.GetCurrResVec();
+      const MV &cur_res = lp.GetCurrResVec();
       std::vector<ScalarType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
       MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
       for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
@@ -449,10 +452,20 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   status_ = Converged; // This will be set to unconverged or NaN.
   if ( scalevector_.size() > 0 ) {
     for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
-      testvector_[ i ] = resvector_[ i ] / scalevector_[ i ] / scalevalue_;
-      if (testvector_[ i ] > tolerance_)
+     
+      // Scale the vector accordingly
+      if ( scalevector_[i] != zero ) {
+	// Don't intentionally divide by zero.
+        testvector_[ i ] = resvector_[ i ] / scalevector_[ i ] / scalevalue_;
+      } else {
+	testvector_[ i ] = resvector_[ i ] / scalevalue_;
+      }
+
+      // Check if any of the residuals are larger than the tolerance.
+      if (testvector_[ i ] > tolerance_) {
 	status_ = Unconverged;
-      else if (testvector_[ i ] < tolerance_) { 
+	return(status_);
+      } else if (testvector_[ i ] < tolerance_) { 
 	// do nothing.
       } else {
 	status_ = NaN;            
