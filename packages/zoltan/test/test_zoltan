@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/csh -v
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
@@ -164,13 +164,6 @@ endif
 if (! $?run ) then
   if ( $?arch ) then
     switch ( $arch )
-    case generic:
-    case gcc:
-    case gccP3:
-    case g++:
-    case linux:
-    case mac:
-    case purecov:
     case solaris:
     case sun:
     case sgi32:
@@ -203,6 +196,19 @@ if (! $?run ) then
     case dec:
       set run = "dmpirun -np"
       breaksw
+    case generic:
+    case gcc:
+    case gccP3:
+    case g++:
+    case linux:
+    case mac:
+    case purecov:
+      set run = "mpirun -np"
+      breaksw
+    case qed:
+      set run = "mpiexec -comm mpich-p4 -n "
+      set suffix = "linux"
+      breaksw
     default:
       echo "Unknown arch type. Please use -cmd to specify the run command."
       exit -2
@@ -213,7 +219,12 @@ if (! $?run ) then
     goto usage
   endif
 endif
-  
+
+# suffix for special answer files
+if (! ${?suffix}) then
+   set suffix=${arch}
+endif
+
 # Fortran?
 if ( $yes_fortran ) then
    set no_nemesis = 1
@@ -609,8 +620,8 @@ if (! $no_chaco ) then
           @ i = 0
           while ( $i < $np )
             /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
-            if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$arch ) then
-       	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$arch
+            if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
+       	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix
             else
               set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
             endif
@@ -623,8 +634,8 @@ if (! $no_chaco ) then
             if (-e ${ch_name[1]}.drops.$np.$i ) then
               @ droptest = 1
               /bin/mv ${ch_name[1]}.drops.$np.$i  ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i
-              if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$arch ) then
-       	        set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$arch
+              if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix ) then
+       	        set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix
               else
                 set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
               endif
@@ -740,8 +751,8 @@ if (! $no_nemesis ) then
                set pdir = pio_${pdirno}
             endif
             /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
-            if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$arch ) then
-       	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$arch
+            if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix ) then
+       	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix
             else
               set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
             endif
@@ -753,8 +764,8 @@ if (! $no_nemesis ) then
             if (-e ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i ) then
               @ droptest = 1
               /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i  ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i
-              if (-e ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$arch ) then
-      	        set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$arch
+              if (-e ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix ) then
+      	        set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix
               else
                 set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i
               endif
@@ -865,8 +876,8 @@ if (! $no_hg) then
           @ i = 0
           while ( $i < $np )
             /bin/mv ${hg_name[1]}.$out_tag.$np.$i  ${outdir}/${hg_name[1]}.$mtd.$np.$i
-            if (-e ${answers}/${hg_name[1]}.$mtd.$np.$i.$arch ) then
-       	      set answerfile = ${answers}/${hg_name[1]}.$mtd.$np.$i.$arch
+            if (-e ${answers}/${hg_name[1]}.$mtd.$np.$i.$suffix ) then
+       	      set answerfile = ${answers}/${hg_name[1]}.$mtd.$np.$i.$suffix
             else
               set answerfile = ${answers}/${hg_name[1]}.$mtd.$np.$i
             endif
