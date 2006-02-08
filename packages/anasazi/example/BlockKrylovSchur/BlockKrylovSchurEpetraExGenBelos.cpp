@@ -56,8 +56,8 @@
 #include "Epetra_LinearProblem.h"
 
 // Include header for Belos solver and solver interface for Epetra_Operator
-#include "BelosPetraInterface.hpp"
-#include "BelosEpetraOperator.hpp"
+#include "BelosEpetraOperator.h"
+#include "BelosEpetraAdapter.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestCombo.hpp"
@@ -184,36 +184,40 @@ int main(int argc, char *argv[]) {
   int maxits = K->NumGlobalRows()/blockSize - 1; // maximum number of iterations to run
   double btol = 1.0e-7;  // relative residual tolerance
   //
-  // Create the Belos::LinearProblemManager
+  // Create the Belos::LinearProblem
   //
-  Belos::PetraMat<double> BelosMat(K.get());
-  Belos::PetraPrec<double> BelosPrec(ICT.get());
-  Belos::LinearProblemManager<double> My_LP;
-  My_LP.SetOperator( &BelosMat );
-  My_LP.SetLeftPrec( &BelosPrec );
-  My_LP.SetBlockSize( blockSize );
+  Teuchos::RefCountPtr<Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > 
+	  My_LP = Teuchos::rcp( new Belos::LinearProblem<double,Epetra_MultiVector,Epetra_Operator>() );
+  My_LP->SetOperator( K );
+  My_LP->SetLeftPrec( ICT );
+  My_LP->SetBlockSize( blockSize );
   //
   // Create the Belos::StatusTest
   //
-  Belos::StatusTestMaxIters<double> test1( maxits );
-  Belos::StatusTestResNorm<double> test2( btol );
-  Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+  Belos::StatusTestMaxIters<double,Epetra_MultiVector,Epetra_Operator> test1( maxits );
+  Belos::StatusTestResNorm<double,Epetra_MultiVector,Epetra_Operator> test2( btol );
+  Teuchos::RefCountPtr<Belos::StatusTestCombo<double,Epetra_MultiVector,Epetra_Operator> >
+	  My_Test = Teuchos::rcp( 
+			  new Belos::StatusTestCombo<double,Epetra_MultiVector,Epetra_Operator>
+			  ( Belos::StatusTestCombo<double,Epetra_MultiVector,Epetra_Operator>::OR, 
+			  test1, test2 ) );
   //
   // Create the Belos::OutputManager
   //
-  Belos::OutputManager<double> My_OM( MyPID );
-  //My_OM.SetVerbosity( 2 );
+  Teuchos::RefCountPtr<Belos::OutputManager<double> > My_OM = 
+	  Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
+  //My_OM->SetVerbosity( 2 );
   //
   // Create the ParameterList for the Belos Operator
   // 
-  Teuchos::ParameterList My_List;
-  My_List.set( "Solver", "BlockCG" );
-  My_List.set( "MaxIters", maxits );
+  Teuchos::RefCountPtr<Teuchos::ParameterList> My_List = Teuchos::rcp( new Teuchos::ParameterList() );
+  My_List->set( "Solver", "BlockCG" );
+  My_List->set( "MaxIters", maxits );
   //
   // Create the Belos::EpetraOperator
   //
-  Teuchos::RefCountPtr<Belos::EpetraOperator<double> > BelosOp = 
-    Teuchos::rcp( new Belos::EpetraOperator<double>(My_LP, My_Test, My_OM, My_List ));
+  Teuchos::RefCountPtr<Belos::EpetraOperator> BelosOp = 
+    Teuchos::rcp( new Belos::EpetraOperator( My_LP, My_Test, My_OM, My_List ));
   //
   // ************************************
   // Start the block Arnoldi iteration
