@@ -33,6 +33,12 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+
+int multiply_list(int * list, int n) {
+  int product = list[0];
+  for (int i=1; i<n; i++) product *= list[i];
+  return product;
+}
 %}
 
 // Ignore directives
@@ -102,9 +108,10 @@
 	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,elementSize,
 					     indexBase,comm);
       } else {
-	elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',1,1);
+	elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
 	if (elementArray == NULL) goto fail;
-	numMyElements    = ((PyArrayObject*)elementArray)->dimensions[0];
+	numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
+					 ((PyArrayObject*)elementArray)->nd);
 	myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
 	// Constructor for user-defined, arbitrary distribution of constant-size elements
 	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
@@ -113,14 +120,16 @@
       }
     } else {
       // Obtain a Numeric element array and check
-      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',1,1);
+      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = ((PyArrayObject*)elementArray)->dimensions[0];
+      numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
+				       ((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       // Obtain a Numric element size array and check
-      elementSizeArray = PyArray_ContiguousFromObject(myElementSizes,'i',1,1);
+      elementSizeArray = PyArray_ContiguousFromObject(myElementSizes,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElementSizes = ((PyArrayObject*)elementSizeArray)->dimensions[0];
+      numMyElementSizes = multiply_list(((PyArrayObject*)elementSizeArray)->dimensions,
+					((PyArrayObject*)elementSizeArray)->nd);
       if (numMyElements != numMyElementSizes) {
 	PyErr_Format(PyExc_ValueError,
 		     "Element and element size arrays must have same lengths\n"
@@ -153,9 +162,10 @@
     PyObject * LIDArray  = NULL;
     PyObject * sizeArray = NULL;
     PyObject * returnObj = NULL;
-    GIDArray = PyArray_ContiguousFromObject(GIDList,'i',1,1);
+    GIDArray = PyArray_ContiguousFromObject(GIDList,'i',0,0);
     if (GIDArray == NULL) goto fail;
-    numIDs[0] = ((PyArrayObject*)GIDArray)->dimensions[0];
+    numIDs[0] = multiply_list(((PyArrayObject*)GIDArray)->dimensions,
+			      ((PyArrayObject*)GIDArray)->nd);
     PIDArray  = PyArray_FromDims(1,numIDs,PyArray_INT);
     if (PIDArray == NULL) goto fail;
     LIDArray  = PyArray_FromDims(1,numIDs,PyArray_INT);
@@ -302,9 +312,10 @@
       returnMap = new Epetra_Map(numGlobalElements,numMyElements,indexBase,comm);
     } else {
       // Obtain a Numeric element array and check
-      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',1,1);
+      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = ((PyArrayObject*)elementArray)->dimensions[0];
+      numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
+				       ((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       returnMap = new Epetra_Map(numGlobalElements,numMyElements,myGlobalElements,
 				 indexBase,comm);

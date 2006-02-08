@@ -65,6 +65,12 @@
 %ignore Epetra_MapColoring::operator()(int) const;
 %ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
 %ignore Epetra_CompObject::UpdateFlops(float) const; // Use double version
+// These are Import/Export methods that get extended below
+%ignore *::PermuteFromLIDs() const;
+%ignore *::PermuteToLIDs() const;
+%ignore *::RemoteLIDs() const;
+%ignore *::ExportLIDs() const;
+%ignore *::ExportPIDs() const;
 
 // Rename directives
 %rename(Version      ) Epetra_Version;
@@ -137,6 +143,37 @@
     return self->operator[](i);
   }
 }
+
+// Import/Export extensions are done with a couple of nested macros
+%define MOVER_METHOD(methodName, numMethod)
+  PyObject * methodName() {
+    int        numIDs[]    = {self->numMethod()};
+    int      * ids         = NULL;
+    int      * returnData  = NULL;
+    PyObject * returnArray = PyArray_FromDims(1,numIDs,'i');
+    if (returnArray == NULL) goto fail;
+    ids        = self->methodName();
+    returnData = (int*)((PyArrayObject*)returnArray)->data;
+    for (int i=0; i<numIDs[0]; i++) returnData[i] = ids[i];
+    return returnArray;
+  fail:
+    return NULL;
+  }
+%enddef
+
+%define EXTEND_DATA_MOVER(type)
+%extend Epetra_ ## type {
+  MOVER_METHOD(PermuteFromLIDs,	NumPermuteIDs)
+  MOVER_METHOD(PermuteToLIDs,  	NumPermuteIDs)
+  MOVER_METHOD(RemoteLIDs,     	NumRemoteIDs )
+  MOVER_METHOD(ExportLIDs,     	NumExportIDs )
+  MOVER_METHOD(ExportPIDs,     	NumExportIDs )
+}
+%enddef
+
+EXTEND_DATA_MOVER(Import)
+EXTEND_DATA_MOVER(Export)
+// End Import/Export extensions
 
 // Python code.  Here we set the __version__ string
 %pythoncode %{
