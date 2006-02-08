@@ -2397,8 +2397,8 @@ int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
    ML_exchange_bdry(dtemp,(*Tmat)->getrow->pre_comm,
                     Nloc, (*Tmat)->comm, ML_OVERWRITE,NULL);
 
-   // If a node is the endpoint of a Dirichlet edge, the corresponding
-   //       column of T should be completely zeroed out.
+   /* If a node is the endpoint of a Dirichlet edge, the corresponding */
+   /*       column of T should be completely zeroed out. */
    for (i=0;i<(*Tmat)->outvec_leng;i++) {
       for (j = rows[i]; j< rows[i+1]; j++) {
          if ( dtemp[cols[j]] == -1.0 )
