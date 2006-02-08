@@ -1,4 +1,4 @@
-## Required Dependency on thyra
+## Required Dependency on teuchos
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
 ## Required Dependency on Epetra
