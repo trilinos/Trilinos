@@ -238,11 +238,26 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.assertEqual(target1.SameAs(self.map1), True)
         self.assertEqual(target2.SameAs(self.map1), True)
 
-#     def testZ(self):
-#         "Test Epetra.Import/Export Z"
-#         print
-#         print "importer =", self.importer
-#         print "exporter =", self.exporter
+    def testPrint(self):
+        "Test Epetra.Import/Export Print method"
+        filename = "testImportExport%d.dat" % self.myPID
+        f = open(filename,"w")
+        self.importer.Print(f)
+        f.close()
+        s = open(filename,"r").readlines()
+        lines = 42 + 2*self.myN*self.myN*self.numProc
+        if self.myPID == 0: lines += 14
+        if self.numProc == 1: lines -= 10
+        self.assertEquals(len(s),lines)
+
+    def testStr(self):
+        "Test Epetra.Import/Export __str__ method"
+        s = str(self.exporter)
+        s = s.splitlines()
+        lines = 41 + 2*self.myN*self.myN*self.numProc
+        if self.myPID == 0: lines += 14
+        if self.numProc == 1: lines -= 10
+        self.assertEquals(len(s),lines)
 
 ##########################################################################
 
