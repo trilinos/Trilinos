@@ -42,6 +42,9 @@
 /* Define if want to build ifpack */
 #undef HAVE_IFPACK
 
+/* Define if want to build isorropia */
+#undef HAVE_ISORROPIA
+
 /* Define if want to build kokkos */
 #undef HAVE_KOKKOS
 

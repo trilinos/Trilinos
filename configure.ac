@@ -67,6 +67,8 @@ TAC_ARG_ENABLE_FEATURE(external, [Build external package in packages/external], 
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ifpack, [Build ifpack], IFPACK)
 
+TAC_ARG_ENABLE_FEATURE(isorropia, [Build isorropia], ISORROPIA, no)
+
 TAC_ARG_ENABLE_FEATURE(kokkos, [Build kokkos], KOKKOS, no)
 
 TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, no)
@@ -433,6 +435,17 @@ else
   BUILD_NOX=no
 fi
 AM_CONDITIONAL(BUILD_NOX, test "X$BUILD_NOX" != "Xno")
+
+if test "X$ac_cv_use_isorropia" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/isorropia])
+  BUILD_ISORROPIA=yes
+  if test "X$ac_cv_use_isorropia_explicit" != "Xyes"; then
+    ac_configure_args="$ac_configure_args --enable-isorropia"
+  fi
+else
+  BUILD_ISORROPIA=no
+fi
+AM_CONDITIONAL(BUILD_ISORROPIA, test "X$BUILD_ISORROPIA" != "Xno")
 
 ## #np# - Copy the next section, and change package name
 if test "X$ac_cv_use_new_package" != "Xno"; then
