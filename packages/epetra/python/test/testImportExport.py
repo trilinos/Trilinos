@@ -62,10 +62,10 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.gids.shape = (self.globalN,self.globalN)
         self.start      = self.myN * self.myPID
         self.end        = self.start + self.myN
-        self.map1       = Epetra.Map(-1,self.gids[:,self.start:self.end],0,self.comm)
-        self.map2       = Epetra.Map(-1,self.gids[self.start:self.end,:],0,self.comm)
-        self.importer   = Epetra.Import(self.map1,self.map2)
-        self.exporter   = Epetra.Export(self.map2,self.map1)
+        self.trgMap     = Epetra.Map(-1,self.gids[:,self.start:self.end],0,self.comm)
+        self.srcMap     = Epetra.Map(-1,self.gids[self.start:self.end,:],0,self.comm)
+        self.importer   = Epetra.Import(self.trgMap, self.srcMap)
+        self.exporter   = Epetra.Export(self.srcMap, self.trgMap)
         self.numSameIDs = 0
         if self.myPID   == 0: self.numSameIDs = self.myN
         if self.numProc == 1: self.numSameIDs = self.myN * self.myN
@@ -119,7 +119,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
         if self.numProc == 1:
             permuteFromGIDs = zeros((0,))
         permuteFromGIDs = ravel(permuteFromGIDs)
-        lists           = self.map2.RemoteIDList(permuteFromGIDs)
+        lists           = self.srcMap.RemoteIDList(permuteFromGIDs)
         permuteFromLIDs = lists[1]
         result          = self.importer.PermuteFromLIDs()
         self.assertEqual(len(result), len(permuteFromLIDs))
@@ -138,7 +138,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
         if self.numProc == 1:
             permuteToGIDs = zeros((0,))
         permuteToGIDs = ravel(permuteToGIDs)
-        lists         = self.map1.RemoteIDList(permuteToGIDs)
+        lists         = self.trgMap.RemoteIDList(permuteToGIDs)
         permuteToLIDs = lists[1]
         result        = self.importer.PermuteToLIDs()
         self.assertEqual(len(result), len(permuteToLIDs))
@@ -163,7 +163,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
                 start = p * self.myN
                 end   = start + self.myN
                 remoteGIDs.extend(ravel(self.gids[start:end,self.start:self.end]))
-        lists      = self.map1.RemoteIDList(remoteGIDs)
+        lists      = self.trgMap.RemoteIDList(remoteGIDs)
         remoteLIDs = lists[1]
         result     = self.importer.RemoteLIDs()
         self.assertEqual(len(result), len(remoteLIDs))
@@ -190,7 +190,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
                 start = p * self.myN
                 end   = start + self.myN
                 exportGIDs.extend(ravel(self.gids[self.start:self.end,start:end]))
-        lists      = self.map2.RemoteIDList(exportGIDs)
+        lists      = self.srcMap.RemoteIDList(exportGIDs)
         exportLIDs = lists[1]
         result     = self.importer.ExportLIDs()
         self.assertEqual(len(result), len(exportLIDs))
@@ -205,7 +205,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
                 start = p * self.myN
                 end   = start + self.myN
                 exportGIDs.extend(ravel(self.gids[self.start:self.end,start:end]))
-        lists      = self.map1.RemoteIDList(exportGIDs)
+        lists      = self.trgMap.RemoteIDList(exportGIDs)
         exportPIDs = lists[0]
         result     = self.importer.ExportPIDs()
         self.assertEqual(len(result), len(exportPIDs))
@@ -228,15 +228,15 @@ class EpetraImportExportTestCase(unittest.TestCase):
         "Test Epetra.Import/Export SourceMap method"
         source1 = self.importer.SourceMap()
         source2 = self.exporter.SourceMap()
-        self.assertEqual(source1.SameAs(self.map2), True)
-        self.assertEqual(source2.SameAs(self.map2), True)
+        self.assertEqual(source1.SameAs(self.srcMap), True)
+        self.assertEqual(source2.SameAs(self.srcMap), True)
 
     def testTargetMap(self):
         "Test Epetra.Import/Export TargetMap method"
         target1 = self.importer.TargetMap()
         target2 = self.exporter.TargetMap()
-        self.assertEqual(target1.SameAs(self.map1), True)
-        self.assertEqual(target2.SameAs(self.map1), True)
+        self.assertEqual(target1.SameAs(self.trgMap), True)
+        self.assertEqual(target2.SameAs(self.trgMap), True)
 
     def testPrint(self):
         "Test Epetra.Import/Export Print method"
