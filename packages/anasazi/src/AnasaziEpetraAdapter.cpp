@@ -28,6 +28,10 @@
 
 #include "AnasaziEpetraAdapter.hpp"
 
+/*! \file AnasaziEpetraAdapter.cpp
+ *   \brief Implementations of Anasazi multi-vector and operator classes using Epetra_MultiVector and Epetra_Operator classes
+ *   */
+
 namespace Anasazi {
 
   ///////////////////////////////////////////////////////////////////////////////

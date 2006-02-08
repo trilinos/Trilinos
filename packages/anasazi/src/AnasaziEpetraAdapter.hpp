@@ -27,7 +27,7 @@
 // @HEADER
 
 /*! \file AnasaziEpetraAdapter.hpp
-  \brief Implementations of Anasazi multi-vector and operator classes using Epetra_MultiVector and Epetra_Operator classes
+  \brief Declarations of Anasazi multi-vector and operator classes using Epetra_MultiVector and Epetra_Operator classes
 */
 
 #ifndef ANASAZI_EPETRA_ADAPTER_HPP

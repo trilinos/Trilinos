@@ -35,7 +35,7 @@
 // * I do not assume that an operator is deterministic; I do assume that the
 //   operator, applied to 0, will return 0.
 
-/*! \file MVOPTester.hpp
+/*! \file AnasaziMVOPTester.hpp
   \brief Test routines for MultiVecTraits and OperatorTraits conformity.
 */
 
