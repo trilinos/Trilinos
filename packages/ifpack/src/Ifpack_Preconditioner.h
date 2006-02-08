@@ -18,20 +18,20 @@ class Epetra_RowMatrix;
 
   This class is a simple extension to Epetra_Operator. It provides 
   the following additional methods:
-  - Initialize(), that performs all operations based on the graph
+  - Initialize() performs all operations based on the graph
     of the matrix (without considering the numerical values);
-  - IsInitialized(), that returns true if the preconditioner
+  - IsInitialized() returns true if the preconditioner
     has been successfully initialized;
-  - Compute(), that computes all is required to apply the
+  - Compute() computes all is required to apply the
     preconditioner, using matrix values  (and assuming that the
     sparsity of the matrix has not been changed);
-  - IsComputed(), that should return true is the preconditioner
+  - IsComputed() should return true if the preconditioner
     has been successfully computed, false otherwise.
   - Condest() returns an estimation of the condition number, or -1.0
     if not available
   - Matrix() returns a reference to the matrix to be preconditioned.
 
-It is supposed that Compute() calls Initialize() if IsInitialized()
+It is required that Compute() call Initialize() if IsInitialized()
 returns false. The preconditioner is applied by ApplyInverse()
 (which returns if IsComputed() is false). Every time that Initialize()
 is called, the object destroys all the previously allocated 
@@ -59,8 +59,8 @@ While Ifpack_CG and Ifpack_GMRES construct and AztecOO solver, and
 use methods AZ_cg_condnum and AZ_gmres_condnum to evaluate an
 accurate (but very expensive) estimate of the condition number, 
 Ifpack_Cheap computes \f$\|(P)^{-1}e\|_\infty\f$, which is
-only a very rude estimation of the actual condition number. Note that
-this estimated number can result < 1.0. 
+only a very crude estimation of the actual condition number. Note that
+this estimated number can be less than 1.0. 
 However, this approach has the following advantages:
 - since finding \f$z\f$ such that \f$P z = y\f$
 is a basic kernel for applying the preconditioner, computing this
@@ -82,7 +82,7 @@ this problem, we must be able to detect it.
 
   
 \note 
-  If IFPACK is configure with Teuchos support, method SetParameters()
+  If IFPACK is configured with Teuchos support, method SetParameters()
   should be adopted. Otherwise, users can set parameters (one at-a-time),
   using methods SetParameter(), for integers and doubles.
   \date Sep-04
