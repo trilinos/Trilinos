@@ -51,6 +51,11 @@ import unittest
 class EpetraImportExportTestCase(unittest.TestCase):
     "TestCase for Epetra_Import and Epetra_Export objects"
 
+    # This test case tests Import and Export objects for a transpose problem.
+    # The global problem is defined by a naturally-ordered NxN grid, where N =
+    # n*(# of processors) and n=2.  The source map is a column-wise 1D
+    # decomposition, and the target map is a row-wise 1D decomposition.
+
     def setUp(self):
         self.comm       = Epetra.PyComm()
         self.numProc    = self.comm.NumProc()
