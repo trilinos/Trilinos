@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
   Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,MaxMgLevels-1,
 					     ML_DECREASING,ag,Tmat,Tmat_trans, 
 					     &Tmat_array,&Tmat_trans_array, 
-					     smoothPe_flag, 1.5, 0, ML_DDEFAULT);
+					     smoothPe_flag, ML_DDEFAULT, 0);
 
   /* Set the Hiptmair subsmoothers */
 
