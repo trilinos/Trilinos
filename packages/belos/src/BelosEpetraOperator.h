@@ -47,6 +47,8 @@
 #include "BelosBlockCG.hpp"
 
 #include "Teuchos_ParameterList.hpp"
+using Teuchos::RefCountPtr;
+using Teuchos::ParameterList;
 
 /*! \class Belos::EpetraOperator
     \brief This class provides and interface to the Epetra_Operator class, so Belos can be 
@@ -69,10 +71,10 @@ public:
   //@{ \name Constructor / Destructor
   
   //! Constructor
-  EpetraOperator( const Teuchos::RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
-		  const Teuchos::RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> >& stest, 
-		  const Teuchos::RefCountPtr<OutputManager<double> >& om, 
-		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& plist );
+  EpetraOperator( const RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> >& lp, 
+		  const RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> >& stest, 
+		  const RefCountPtr<OutputManager<double> >& om, 
+		  const RefCountPtr<ParameterList>& plist );
   
   //! Destructor
   virtual ~EpetraOperator() {}
@@ -121,10 +123,11 @@ public:
   //@}	   
 private:
 
-  Teuchos::RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
-  Teuchos::RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> > stest_;
-  Teuchos::RefCountPtr<OutputManager<double> > om_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList> plist_;
+  RefCountPtr<IterativeSolver<double,Epetra_MultiVector,Epetra_Operator> > solver_;
+  RefCountPtr<LinearProblem<double,Epetra_MultiVector,Epetra_Operator> > lp_;
+  RefCountPtr<StatusTest<double,Epetra_MultiVector,Epetra_Operator> > stest_;
+  RefCountPtr<OutputManager<double> > om_;
+  RefCountPtr<ParameterList> plist_;
 
   const int Maxits;
   std::vector<char> Solver;

@@ -50,7 +50,7 @@ class Vector_Operator
 
     // Not allowing copy construction.
     Vector_Operator( const Vector_Operator& ) {};
-    Vector_Operator* operator=( const Vector_Operator& ) {};
+    Vector_Operator* operator=( const Vector_Operator& ) { return NULL; };
 
 };
 

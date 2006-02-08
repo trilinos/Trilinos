@@ -108,6 +108,9 @@ class IterativeSolver {
   */
   virtual LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const = 0;
 
+  //@}
+  //@{ \name Reset methods
+  
   /*! \brief Reset the solver to its initialized state.
      This is not a required method for all solvers, but a method that should be
      implemented by any solver whos object maintains state information.  The reset
@@ -121,6 +124,14 @@ class IterativeSolver {
     
   //@}
 
+  //@{ \name Solve method
+ 
+  /*! \brief Use the iterative method prescribed by the solver to compute the solution
+      to the linear problem.
+   */
+  virtual void Solve() = 0;
+
+  //@}
 };
 
 } // end Belos namespace
