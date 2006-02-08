@@ -90,10 +90,10 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = teuchos PyTrilinos rtop thyra kokkos epetra triutils \
-	tpetra epetraext aztecoo galeri amesos ifpack komplex claps \
-	TSFCoreUtils TSFCore belos anasazi pliris ml moertel TSF meros \
-	nox capo rythmos new_package moocho TSFExtended didasko \
-	external
+	tpetra epetraext isorropia aztecoo galeri amesos ifpack \
+	komplex claps TSFCoreUtils TSFCore belos anasazi pliris ml \
+	moertel TSF meros nox capo rythmos new_package moocho \
+	TSFExtended didasko external
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = aclocal -I config
 AMTAR = @AMTAR@
@@ -125,6 +125,8 @@ BUILD_GALERI_FALSE = @BUILD_GALERI_FALSE@
 BUILD_GALERI_TRUE = @BUILD_GALERI_TRUE@
 BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
+BUILD_ISORROPIA_FALSE = @BUILD_ISORROPIA_FALSE@
+BUILD_ISORROPIA_TRUE = @BUILD_ISORROPIA_TRUE@
 BUILD_KOKKOS_FALSE = @BUILD_KOKKOS_FALSE@
 BUILD_KOKKOS_TRUE = @BUILD_KOKKOS_TRUE@
 BUILD_KOMPLEX_FALSE = @BUILD_KOMPLEX_FALSE@
@@ -265,6 +267,8 @@ AUTOMAKE_OPTIONS = foreign
 @BUILD_MOOCHO_TRUE@MOOCHO_LIB_BUILD_CMND = cd moocho ; $(MAKE) all-libs ;
 @BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_SUBDIR = new_package
 @BUILD_NEW_PACKAGE_TRUE@NEW_PACKAGE_LIB_BUILD_CMND = echo "new_package does not support all-libs yet";
+@BUILD_ISORROPIA_TRUE@ISORROPIA_SUBDIR = isorropia
+@BUILD_ISORROPIA_TRUE@ISORROPIA_LIB_BUILD_CMND = cd isorropia ; $(MAKE) all-libs ;
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
 @BUILD_NOX_TRUE@NOX_LIB_BUILD_CMND = cd nox ; $(MAKE) all-libs ;
 @BUILD_PLIRIS_TRUE@PLIRIS_SUBDIR = pliris
@@ -303,6 +307,7 @@ SUBDIRS = \
 	$(TRIUTILS_SUBDIR)     \
 	$(TPETRA_SUBDIR)       \
 	$(EPETRAEXT_SUBDIR)    \
+	$(ISORROPIA_SUBDIR)    \
 	$(AZTECOO_SUBDIR)      \
 	$(GALERI_SUBDIR)       \
 	$(AMESOS_SUBDIR)       \
@@ -617,6 +622,7 @@ all-libs:
 	$(TRIUTILS_LIB_BUILD_CMND)
 	$(TPETRA_LIB_BUILD_CMND)
 	$(EPETRAEXT_LIB_BUILD_CMND)
+	$(ISORROPIA_LIB_BUILD_CMND)
 	$(AZTECOO_LIB_BUILD_CMND)
 	$(AMESOS_LIB_BUILD_CMND)
 	$(IFPACK_LIB_BUILD_CMND)

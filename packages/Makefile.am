@@ -159,6 +159,11 @@ NEW_PACKAGE_SUBDIR = new_package
 NEW_PACKAGE_LIB_BUILD_CMND = echo "new_package does not support all-libs yet";
 endif
 
+if BUILD_ISORROPIA
+ISORROPIA_SUBDIR = isorropia
+ISORROPIA_LIB_BUILD_CMND = cd isorropia ; $(MAKE) all-libs ;
+endif
+
 if BUILD_NOX
 NOX_SUBDIR = nox
 NOX_LIB_BUILD_CMND = cd nox ; $(MAKE) all-libs ;
@@ -236,6 +241,7 @@ SUBDIRS = \
 	$(TRIUTILS_SUBDIR)     \
 	$(TPETRA_SUBDIR)       \
 	$(EPETRAEXT_SUBDIR)    \
+	$(ISORROPIA_SUBDIR)    \
 	$(AZTECOO_SUBDIR)      \
 	$(GALERI_SUBDIR)       \
 	$(AMESOS_SUBDIR)       \
@@ -270,6 +276,7 @@ all-libs:
 	$(TRIUTILS_LIB_BUILD_CMND)
 	$(TPETRA_LIB_BUILD_CMND)
 	$(EPETRAEXT_LIB_BUILD_CMND)
+	$(ISORROPIA_LIB_BUILD_CMND)
 	$(AZTECOO_LIB_BUILD_CMND)
 	$(AMESOS_LIB_BUILD_CMND)
 	$(IFPACK_LIB_BUILD_CMND)
