@@ -143,17 +143,12 @@ Fiduccia-Mattheyses (FM)<br>
       </td>
     </tr>
     <tr>
-      <td>&nbsp;&nbsp;&nbsp; <i>PHG_REFINEMENT_LOOP_LIMIT</i></td>
-      <td>Loop limit in FM refinement. (Higher number means more
-refinement.) <br>
+      <td>&nbsp;&nbsp;&nbsp; <i>PHG_REFINEMENT_QUALITY</i></td>
+      <td>Knob to control the trade-off between run time and quality. 1
+is the recommended (default) setting, &gt;1 gives more refinement
+(higher quality partitions), while &lt;1 gives less refinement (and
+poorer quality).<br>
       </td>
-    </tr>
-    <tr nosave="" valign="top">
-      <td>&nbsp;&nbsp;&nbsp; <span style="font-style: italic;">PHG_REFINEMENT_MAX_NEG_MOVE</span><br>
-      </td>
-      <td nosave="">Maximum number of negative moves allowed in FM. (Higher
-number means more
-refinement.) </td>
     </tr>
     <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp; <span
@@ -183,6 +178,19 @@ returned by the processes<br>
       </td>
       <td nosave="">Ignore hyperedges greater than this fraction times
 number of vertices.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp; <span
+ style="font-style: italic;">ADD_OBJ_WEIGHT</span><br>
+      </td>
+      <td style="vertical-align: top;">Add implicit vertex (object)
+weight. This will be in addition to the user-defined weights. (Note:
+Multi-weight partitioning is not yet supported, so currently only use
+this option with obj_weight_dim=0.) Valid values:<br>
+"none"<br>
+"unit" or "vertices"<br>
+"pins" or "nonzeros" or "vertex degree"<br>
       </td>
     </tr>
     <tr>
@@ -220,17 +228,12 @@ number of vertices.<br>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REFINEMENT_METHOD=fm2</span></td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REFINEMENT_METHOD=fm</span></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><i>PHG_REFINEMENT_LOOP_LIMIT=10</i></td>
-    </tr>
-    <tr>
-      <td style="vertical-align: top;"><br>
-      </td>
-      <td style="vertical-align: top;"><span style="font-style: italic;">PHG_REFINEMENT_MAX_NEG_MOVE=250</span></td>
+      <td style="vertical-align: top;"><i>PHG_REFINEMENT_QUALITY=1</i></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
@@ -246,6 +249,11 @@ number of vertices.<br>
       <td style="vertical-align: top;"><br>
       </td>
       <td style="vertical-align: top;"><span style="font-style: italic;">PHG_EDGE_SIZE_THRESHOLD=0.25</span></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;"><br>
+      </td>
+      <td style="vertical-align: top;"><span style="font-style: italic;">ADD_OBJ_WEIGHT=none</span></td>
     </tr>
     <tr>
       <td valign="top"><b>Required Query Functions:</b></td>
