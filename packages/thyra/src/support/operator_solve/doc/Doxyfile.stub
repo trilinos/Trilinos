@@ -8,6 +8,7 @@ OUTPUT_DIRECTORY       = ../src/support/operator_solve/doc
 # What and how documentation is extracted
 #
 INPUT                  = ../src/support/operator_solve/doc/index.doc \
+                         ../src/support/operator_solve/client_support \
                          ./dirs.doc \
                          ../example/operator_solve/ComplexFFTLinearOp.hpp \
                          ../example/operator_solve/RealComplexFFTLinearOp.hpp

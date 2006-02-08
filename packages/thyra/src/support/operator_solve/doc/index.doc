@@ -18,7 +18,29 @@ Thyra ANA Operator Solve Interfaces</a>.
 
 \section thyra_src_support_operator_solve_software_sec Software
 
-The actually is no such support software yet!
+<ul>
+
+<li><b>Composite Subclasses</b>
+
+  <ul>
+
+  <li><tt>Thyra::DiagonalLinearOpWithSolve</tt> implements the
+  <tt>Thyra::LinearOpWithSolveBase</tt> interface for diagonal linear
+  operators.
+
+  </ul>
+
+<li><b>Testing Support</b>
+
+  <ul>
+
+  <li><tt>Thyra::LinearOpWithSolveTester</tt> is a unit testing class for
+  <tt>Thyra::LinearOpWithSolveBase</tt> and can be used to check the solve
+  accuracy of any linear solve.
+
+  </ul>
+
+</ul>
   
 \section thyra_src_support_operator_solve_examples_sec Examples
 

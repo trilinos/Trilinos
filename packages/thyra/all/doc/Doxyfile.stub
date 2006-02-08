@@ -1,4 +1,12 @@
+
 @INCLUDE = rtop/doc/TagFiles
+#
+# Override some options from Doxyfile.options
+#
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
 #
 # Package options
 #
