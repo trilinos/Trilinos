@@ -55,6 +55,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_DIRECT_KWAY",                 NULL,  "INT",    0},
   {"PHG_REFINEMENT_LOOP_LIMIT",       NULL,  "INT",    0},
   {"PHG_REFINEMENT_MAX_NEG_MOVE",     NULL,  "INT",    0},    
+  {"PHG_REFINEMENT_QUALITY",          NULL,  "FLOAT",  0},
   {"PHG_USE_TIMERS",                  NULL,  "INT",    0},    
   {"USE_TIMERS",                      NULL,  "INT",    0},    
   {"PHG_EDGE_SIZE_THRESHOLD",         NULL,  "FLOAT",  0},
@@ -516,6 +517,8 @@ int Zoltan_PHG_Initialize_Params(
                                 &hgp->fm_loop_limit);
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_MAX_NEG_MOVE", 
                                 &hgp->fm_max_neg_move);  
+  Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_QUALITY", 
+                                &hgp->refinement_quality);  
   Zoltan_Bind_Param(PHG_params, "PHG_COARSEPARTITION_METHOD", 
                                  hgp->coarsepartition_str);
   Zoltan_Bind_Param(PHG_params, "PHG_USE_TIMERS",
@@ -569,6 +572,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->kway = 0;
   hgp->fm_loop_limit = 10;
   hgp->fm_max_neg_move = 250;  
+  hgp->refinement_quality = 1;
   hgp->part_sizes = part_sizes;
   hgp->RandomizeInitDist = 0;
   hgp->EdgeSizeThreshold = 0.25;  
@@ -597,6 +601,7 @@ int Zoltan_PHG_Initialize_Params(
     goto End;
   }
 
+  /* Parse add_obj_weight parameter */
   if (!strcasecmp(add_obj_weight, "none")){
     hgp->add_obj_weight = PHG_ADD_NO_WEIGHT;
   } else if (!strcasecmp(add_obj_weight, "vertices")){
@@ -630,6 +635,16 @@ int Zoltan_PHG_Initialize_Params(
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
     "Invalid PHG_EDGE_WEIGHT_OPERATION parameter.\n");
     goto End;
+  }
+
+  /* Adjust refinement parameters using hgp->refinement_quality */
+  if (hgp->refinement_quality < 0.5/hgp->fm_loop_limit) 
+    /* No refinement */
+    strncpy(hgp->refinement_str,      "no",   MAX_PARAM_STRING_LEN);
+  else {
+    /* Scale FM parameters */
+    hgp->fm_loop_limit   *= hgp->refinement_quality;
+    hgp->fm_max_neg_move *= hgp->refinement_quality;
   }
 
   if (zz->LB.Method == PHG) {

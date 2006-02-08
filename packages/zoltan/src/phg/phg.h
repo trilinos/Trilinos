@@ -75,9 +75,11 @@ struct PHGPartParamsStruct {
   char refinement_str[MAX_PARAM_STRING_LEN]; /* Refinement string and */
   ZOLTAN_PHG_REFINEMENT_FN *Refinement;      /* pointer to refinement fn */
 
-  int fm_loop_limit;    /* Number of FM loops if the refinement is FM */
+  int fm_loop_limit;    /* Number of FM loops (if the refinement is FM) */
   int fm_max_neg_move;  /* Maximum number of vertex moves with negative gain;
                            an early stop condition. <0 means try all moves */
+  float refinement_quality; /* Adjustment to refinement parameter settings; 
+                               1 means the defaults, higher means more ref. */
     
   int check_graph;      /* Flag indicating whether the input hypergraph should 
                          * be checked for errors. */
