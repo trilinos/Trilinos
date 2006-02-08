@@ -513,7 +513,8 @@ public:
    * given a "compatible" <tt>LinearOpBase</tt> object.
    *
    * \param  fwdOp  [in] The forward linear operator that will be used to create
-   *                the output <tt>LinearOpWithSolveBase</tt> object.
+   *                the output <tt>LinearOpWithSolveBase</tt> object.  Note that this object is remembered
+   *                by the <tt>*Op</tt> object on output.
    * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
    *                be created first by <tt>this->createOp()</tt>.  The object may have also
    *                already been passed through this function several times.  Note that subclasses
@@ -541,7 +542,7 @@ public:
    *
    * <b>Postconditions:</b><ul>
    * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
-   *     not be created successfully (do to a factorization failure or some other cause).
+   *     not be created successfully (e.g. due to a factorization failure or some other cause).
    * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
@@ -554,15 +555,8 @@ public:
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
    *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
-   *     be modified.
+   *     be modified and become invalid.
    * </ul>
-   *
-   * This is the default initialization function for a
-   * <tt>LinearOpWithSolveBase</tt> object.  For a direct solver, the
-   * factorization would be computed, perhaps from scratch.  For an iterative
-   * solver, the preconditioner would be computed from the values in
-   * <tt>*fwdOp</tt> if appropriate.
-   *
    */
   virtual void initializeOp(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
@@ -580,29 +574,30 @@ public:
    *                remember some aspect of the matrix <tt>fwdOp</tt> that will allow
    *                for a more efficient initialization next time through
    *                <tt>this->initializeOp()</tt>.
-   * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, the on output, the
-   *                same forward operator passed into <tt>this->initializeOp()</tt> will be
-   *                returned.
-   * \param  precOp [in/out] If <tt>precOp!=NULL</tt> on input, the on output, the
+   * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to the
+   *                same forward operator passed into <tt>this->initializeOp()</tt>.
+   * \param  precOp [in/out] If <tt>precOp!=NULL</tt> on input, then on output, this is set to
    *                same preconditioner operator passed into <tt>this->initializePreconditionedOp()</tt> will be
    *                returned if the preconditioner was not ignored.
    * \param  precOpType
-   *                [in/out] If <tt>precOpType!=NULL</tt> on input, the on output, the
+   *                [in/out] If <tt>precOpType!=NULL</tt> on input, then on output this is set to
    *                same option value passed to <tt>this->initializePreconditionedOp()</tt> will be
    *                returned if the preconditioner was not ignored.
-   *                
+   * \param  ESupportSolveUse
+   *                [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to
+   *                same option value passed to <tt>this->initializeOp()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
    *     this function.
    * <li><tt>Op</tt> may or may not have been passed through a call to
-   *     <tt>this->initialize()</tt> or <tt>this->initializePreconditionedOp()</tt>.
+   *     <tt>this->initializeOp()</tt> or <tt>this->initializePreconditionedOp()</tt>.
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li>If <tt>*Op</tt> on input was initialized through a call to <tt>this->initializeOp()</tt>
-   *     then <tt>return.get()!=NULL</tt>.
-   * <li>If <tt>*Op</tt> was uninitialized on input and <tt>fwdOp!=NULL</tt> then <tt>fwdOp->get()==NULL</tt>.
+   *     and if <tt>fwdOp!=NULL</tt> then <tt>(*fwdOp).get()!=NULL</tt>.
+   * <li>If <tt>*Op</tt> was uninitialized on input and <tt>fwdOp!=NULL</tt> then <tt>fwdOp->get()==NULL</tt> out output.
    * <li>On output, <tt>*Op</tt> can be considered to be uninitialized and
    *     it is safe to modify the forward operator object <tt>*(*fwdOp)</tt> returned in <tt>fwdOp</tt>.
    *     The default is <tt>fwdOp==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOp</tt>.
@@ -610,12 +605,12 @@ public:
    *
    * This function should be called before the forward operator passed in to
    * <tt>this->initializeOp()</tt> is modified.  Otherwise, <tt>*this</tt>
-   * could be left in an inconsistent state.
+   * could be left in an inconsistent state.  However, this is not required.
    */
   virtual void uninitializeOp(
     LinearOpWithSolveBase<RangeScalar,DomainScalar>                       *Op
     ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp       = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *precOp      = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> >  *precOp      = NULL
     ,EPreconditionerInputType                                             *precOpType  = NULL
     ,ESupportSolveUse                                                     *supportSolveUse = NULL
     ) const = 0;
@@ -624,7 +619,6 @@ public:
 
   /** @name Virtual public functions with default implementations */
   //@{
-
 
   /** \brief Return if <tt>solve()</tt> supports the argument <tt>conj</tt>.
    *
@@ -803,7 +797,7 @@ public:
    */
   virtual void initializePreconditionedOp(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >     &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &precOp
+    ,const Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> >    &precOp
     ,const EPreconditionerInputType                                               precOpType
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
     ,const ESupportSolveUse                                                       supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
@@ -889,7 +883,7 @@ bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::supportsPreconditio
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePreconditionedOp(
   const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >     &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &precOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> >    &precOp
   ,const EPreconditionerInputType                                               precOpType
   ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
   ,const ESupportSolveUse                                                       supportSolveUse

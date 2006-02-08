@@ -308,8 +308,6 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_ExplicitVectorView.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpTester.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpTesterDecl.hpp\
-  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpWithSolveTester.hpp \
-  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpWithSolveTesterDecl.hpp \
   $(srcdir)/support/operator_vector/client_support/Thyra_MultiVectorAllocator.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_MultiVectorStdOps.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_MultiVectorStdOpsDecl.hpp\
@@ -418,6 +416,12 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorStdDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerialization.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerializationDecl.hpp
+
+SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
+  $(srcdir)/support/operator_vector/client_support/Thyra_DiagonalLinearOpWithSolve.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_DiagonalLinearOpWithSolveDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpWithSolveTester.hpp \
+  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpWithSolveTesterDecl.hpp
 
 INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluator.hpp

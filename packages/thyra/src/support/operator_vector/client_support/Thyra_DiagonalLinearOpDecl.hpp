@@ -29,8 +29,8 @@
 #ifndef THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
 #define THYRA_DIAGONAL_LINEAR_OP_DECL_HPP
 
-#include "Thyra_LinearOpWithSolveBaseDecl.hpp"
-#include "Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp"
+#include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -59,27 +59,12 @@ namespace Thyra {
  *
  * where <tt>n = this->domain()->dim()</tt>.
  *
- * The defined operator implements <tt>this->solve()</tt> as follows:
- *
- \verbatim
-
- x = inv(op(M))*b
- 
- =>
-
- x(i) = (1/gamma)*b(i)/diag(i), for i = 1 ... n
- \endverbatim
- *
- * where <tt>n = this->domain()->dim()</tt>.
- *
- * That is all there is to this subclass.
- *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 class DiagonalLinearOp
-  : virtual public LinearOpWithSolveBase<Scalar>               // Public interface
-  , virtual protected SingleRhsLinearOpWithSolveBase<Scalar>   // Implementation detail
+  : virtual public LinearOpBase<Scalar>               // Public interface
+  , virtual protected SingleRhsLinearOpBase<Scalar>   // Implementation detail
 {
 public:
 
@@ -187,25 +172,6 @@ protected:
     ,VectorBase<Scalar>          *y
     ,const Scalar                alpha
     ,const Scalar                beta
-    ) const;
-  //@}
-
-  /** @name Overridden from SingleScalarLinearOpWithSolveBase */
-  //@{
-  /** \brief . */
-  bool solveSupportsTrans(ETransp M_trans) const;
-  /** \brief . */
-  bool solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const;
-  //@}
-
-  /** @name Overridden from SingleRhsLinearOpWithSolveBase */
-  //@{
-  /** \brief . */
-  SolveStatus<Scalar> solve(
-    const ETransp                         M_trans
-    ,const VectorBase<Scalar>             &b
-    ,VectorBase<Scalar>                   *x
-    ,const SolveCriteria<Scalar>          *solveCriteria
     ) const;
   //@}
 

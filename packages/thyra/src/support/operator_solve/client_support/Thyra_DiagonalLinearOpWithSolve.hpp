@@ -26,23 +26,25 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_DIAGONAL_LINEAR_OP_HPP
-#define THYRA_DIAGONAL_LINEAR_OP_HPP
+#ifndef THYRA_DIAGONAL_LINEAR_OP_WITH_SOLVE_HPP
+#define THYRA_DIAGONAL_LINEAR_OP_WITH_SOLVE_HPP
 
-#include "Thyra_DiagonalLinearOpDecl.hpp"
+#include "Thyra_DiagonalLinearOpWithSolveDecl.hpp"
+#include "Thyra_DiagonalLinearOp.hpp"
 #include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_TestingTools.hpp" // ToDo: I need to have a better way to get eps()!
 
 namespace Thyra {
 
 // Constructors/initializers/accessors
 
 template<class Scalar>
-DiagonalLinearOp<Scalar>::DiagonalLinearOp()
+DiagonalLinearOpWithSolve<Scalar>::DiagonalLinearOpWithSolve()
 {}
 
 template<class Scalar>
-DiagonalLinearOp<Scalar>::DiagonalLinearOp(
+DiagonalLinearOpWithSolve<Scalar>::DiagonalLinearOpWithSolve(
   const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
   ,const Scalar                                           &gamma
   )
@@ -50,81 +52,50 @@ DiagonalLinearOp<Scalar>::DiagonalLinearOp(
   initialize(diag,gamma);
 }
 
-template<class Scalar>
-void DiagonalLinearOp<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
-  ,const Scalar                                           &gamma
-  )
-{
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT(diag.get()==NULL);
-#endif
-  diag_ = diag;
-  gamma_ = gamma;
-}
-
-template<class Scalar>
-void DiagonalLinearOp<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >  *diag
-  ,Scalar                                          *gamma
-  )
-{
-  if(diag) *diag = diag_;
-  if(gamma) *gamma = gamma_;
-  diag_ = Teuchos::null;
-}
-
-// Overridden from LinearOpBase
-
-template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
-DiagonalLinearOp<Scalar>::range() const
-{
-  return diag_->space();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
-DiagonalLinearOp<Scalar>::domain() const
-{
-  return diag_->space();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-DiagonalLinearOp<Scalar>::clone() const
-{
-  return Teuchos::null; // Not supported yet but could be
-}
-
 // protected
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from SingleScalarLinearOpWithSolveBase
 
 template<class Scalar>
-bool DiagonalLinearOp<Scalar>::opSupported(ETransp M_trans) const
+bool DiagonalLinearOpWithSolve<Scalar>::solveSupportsTrans(ETransp M_trans) const
 {
   return true; // ToDo: Update this!
 }
 
-// Overridden from SingleRhsLinearOpBase
+template<class Scalar>
+bool DiagonalLinearOpWithSolve<Scalar>::solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const
+{
+  return true;
+}
+
+// Overridden from SingleRhsLinearOpWithSolveBase
 
 template<class Scalar>
-void DiagonalLinearOp<Scalar>::apply(
-  const ETransp                M_trans
-  ,const VectorBase<Scalar>    &x
-  ,VectorBase<Scalar>          *y
-  ,const Scalar                alpha
-  ,const Scalar                beta
+SolveStatus<Scalar> DiagonalLinearOpWithSolve<Scalar>::solve(
+  const ETransp                         M_trans
+  ,const VectorBase<Scalar>             &b
+  ,VectorBase<Scalar>                   *x
+  ,const SolveCriteria<Scalar>          *solveCriteria
   ) const
 {
   // RAB: 4/16/2005: Warning! this does not work if Scalar is a complex type
   // and M_trans==CONJTRANS!
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  if( beta != ST::one() ) Vt_S( y, beta );
-  ele_wise_prod( Scalar(alpha*gamma_), x, *diag_, y );
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  typedef SolveCriteria<Scalar> SC;
+  typedef SolveStatus<Scalar>   SS;
+  assign(x,ST::zero());
+  ele_wise_divide( Scalar(ST::one()/this->gamma()), b, *this->diag(), x );
+  SS solveStatus;
+  solveStatus.solveStatus
+    = (solveCriteria && solveCriteria->solveTolType!=SOLVE_TOL_DEFAULT
+       ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNKNOWN );
+  solveStatus.achievedTol = SolveStatus<Scalar>::unknownTolerance();
+  solveStatus.iterations = 1;
+  return solveStatus;
 }
 
 }	// end namespace Thyra
 
-#endif	// THYRA_DIAGONAL_LINEAR_OP_HPP
+#endif	// THYRA_DIAGONAL_LINEAR_OP_WITH_SOLVE_HPP
