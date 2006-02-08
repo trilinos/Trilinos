@@ -50,7 +50,7 @@ int ML_Smoother_Ifpack(ML_Smoother *sm,int inlen,double x[],int outlen,
     ML_Ifpack_Solve(Ifpack_Handle, x2, rhs2);
 
     /* for (i = 0 ; i < n ; i++) x[i] += x2[i]; */
-    DAXPY(&n, &minus_one_double, x2, &one_int, x, &one_int);
+    DAXPY_F77(&n, &minus_one_double, x2, &one_int, x, &one_int);
 
     ML_free(rhs2);
     ML_free(x2);
