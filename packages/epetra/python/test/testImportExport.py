@@ -55,7 +55,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.comm       = Epetra.PyComm()
         self.numProc    = self.comm.NumProc()
         self.myPID      = self.comm.MyPID()
-        self.myN        = 3
+        self.myN        = 2
         self.globalN    = self.myN * self.numProc
         self.globalSize = self.globalN*self.globalN
         self.gids       = arange(self.globalSize)
@@ -111,17 +111,101 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.assertEqual(self.importer.NumPermuteIDs(), numPermuteIDs)
         self.assertEqual(self.exporter.NumPermuteIDs(), numPermuteIDs)
 
+    def testPermuteFromLIDs(self):
+        "Test Epetra.Import/Export PermuteFromLIDs method"
+        permuteFromGIDs = self.gids[self.start:self.end,self.start:self.end]
+        if self.myPID == 0:
+            permuteFromGIDs = permuteFromGIDs[1:,:]
+        if self.numProc == 1:
+            permuteFromGIDs = zeros((0,))
+        permuteFromGIDs = ravel(permuteFromGIDs)
+        lists           = self.map2.RemoteIDList(permuteFromGIDs)
+        permuteFromLIDs = lists[1]
+        result          = self.importer.PermuteFromLIDs()
+        self.assertEqual(len(result), len(permuteFromLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i],permuteFromLIDs[i])
+        result = self.exporter.PermuteFromLIDs()
+        self.assertEqual(len(result), len(permuteFromLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i],permuteFromLIDs[i])
+
+    def testPermuteToLIDs(self):
+        "Test Epetra.Import/Export PermuteToLIDs method"
+        permuteToGIDs = self.gids[self.start:self.end,self.start:self.end]
+        if self.myPID == 0:
+            permuteToGIDs = permuteToGIDs[1:,:]
+        if self.numProc == 1:
+            permuteToGIDs = zeros((0,))
+        permuteToGIDs = ravel(permuteToGIDs)
+        lists         = self.map1.RemoteIDList(permuteToGIDs)
+        permuteToLIDs = lists[1]
+        result        = self.importer.PermuteToLIDs()
+        self.assertEqual(len(result), len(permuteToLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i],permuteToLIDs[i])
+        result = self.exporter.PermuteToLIDs()
+        self.assertEqual(len(result), len(permuteToLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i],permuteToLIDs[i])
+
     def testNumRemoteIDs(self):
         "Test Epetra.Import/Export NumRemoteIDs method"
         numRemoteIDs  = self.myN * (self.globalN - self.myN)
         self.assertEqual(self.importer.NumRemoteIDs(), numRemoteIDs)
         self.assertEqual(self.exporter.NumRemoteIDs(), numRemoteIDs)
 
+    def testRemoteLIDs(self):
+        "Test Epetra.Import/Export RemoteLIDs method"
+        localGIDs   = ravel(self.gids[:,self.start:self.end])
+        inPlaceGIDs = ravel(self.gids[self.start:self.end,self.start:self.end])
+        remoteGIDs  = [gid for gid in localGIDs if gid not in inPlaceGIDs]
+        lists       = self.map1.RemoteIDList(remoteGIDs)
+        remoteLIDs  = lists[1]
+        result      = self.importer.RemoteLIDs()
+        self.assertEqual(len(result), len(remoteLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i], remoteLIDs[i])
+        result = self.exporter.RemoteLIDs()
+        self.assertEqual(len(result), len(remoteLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i], remoteLIDs[i])
+
     def testNumExportIDs(self):
         "Test Epetra.Import/Export NumExportIDs method"
         numExportIDs  = self.myN * (self.globalN - self.myN)
         self.assertEqual(self.importer.NumExportIDs(), numExportIDs)
         self.assertEqual(self.exporter.NumExportIDs(), numExportIDs)
+
+    def testExportLIDs(self):
+        "Test Epetra.Import/Export ExportLIDs method"
+        exportGIDs = []
+        for p in range(self.numProc):
+            if p != self.myPID:
+                start = p * self.myN
+                end   = start + self.myN
+                exportGIDs.extend(ravel(self.gids[self.start:self.end,start:end]))
+        lists      = self.map2.RemoteIDList(exportGIDs)
+        exportLIDs = lists[1]
+        result     = self.importer.ExportLIDs()
+        self.assertEqual(len(result), len(exportLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i], exportLIDs[i])
+
+    def testExportPIDs(self):
+        "Test Epetra.Import/Export ExportPIDs method"
+        exportGIDs = []
+        for p in range(self.numProc):
+            if p != self.myPID:
+                start = p * self.myN
+                end   = start + self.myN
+                exportGIDs.extend(ravel(self.gids[self.start:self.end,start:end]))
+        lists      = self.map1.RemoteIDList(exportGIDs)
+        exportPIDs = lists[0]
+        result     = self.importer.ExportPIDs()
+        self.assertEqual(len(result), len(exportPIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i], exportPIDs[i])
 
     def testNumSend(self):
         "Test Epetra.Import/Export NumSend method"
@@ -148,6 +232,12 @@ class EpetraImportExportTestCase(unittest.TestCase):
         target2 = self.exporter.TargetMap()
         self.assertEqual(target1.SameAs(self.map1), True)
         self.assertEqual(target2.SameAs(self.map1), True)
+
+#     def testZ(self):
+#         "Test Epetra.Import/Export Z"
+#         print
+#         print "importer =", self.importer
+#         print "exporter =", self.exporter
 
 ##########################################################################
 
