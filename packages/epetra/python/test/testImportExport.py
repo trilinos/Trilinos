@@ -157,19 +157,24 @@ class EpetraImportExportTestCase(unittest.TestCase):
 
     def testRemoteLIDs(self):
         "Test Epetra.Import/Export RemoteLIDs method"
-        localGIDs   = ravel(self.gids[:,self.start:self.end])
-        inPlaceGIDs = ravel(self.gids[self.start:self.end,self.start:self.end])
-        remoteGIDs  = [gid for gid in localGIDs if gid not in inPlaceGIDs]
-        lists       = self.map1.RemoteIDList(remoteGIDs)
-        remoteLIDs  = lists[1]
-        result      = self.importer.RemoteLIDs()
+        remoteGIDs = []
+        for p in range(self.numProc):
+            if p!= self.myPID:
+                start = p * self.myN
+                end   = start + self.myN
+                remoteGIDs.extend(ravel(self.gids[start:end,self.start:self.end]))
+        lists      = self.map1.RemoteIDList(remoteGIDs)
+        remoteLIDs = lists[1]
+        result     = self.importer.RemoteLIDs()
         self.assertEqual(len(result), len(remoteLIDs))
+        # I've run into some situations where the result IDs are not ordered the
+        # same way that I built the GID list
         for i in range(len(result)):
-            self.assertEqual(result[i], remoteLIDs[i])
+            self.assertEqual(result[i] in remoteLIDs, True)
         result = self.exporter.RemoteLIDs()
         self.assertEqual(len(result), len(remoteLIDs))
         for i in range(len(result)):
-            self.assertEqual(result[i], remoteLIDs[i])
+            self.assertEqual(result[i] in remoteLIDs, True)
 
     def testNumExportIDs(self):
         "Test Epetra.Import/Export NumExportIDs method"
