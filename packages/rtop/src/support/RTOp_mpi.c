@@ -39,7 +39,7 @@
  * RTOp_USE_MPI is defined then this header file will also include
  * RTOp_mpi.h for these delcarations.
  */
-#include "RTOp_mpi.h"
+#include "RTOp_MPI_config.h"
 
 #ifndef RTOp_USE_MPI
 
