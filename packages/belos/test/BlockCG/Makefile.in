@@ -71,8 +71,9 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = bl_cg_hb$(EXEEXT)
-@BUILD_IFPACK_TRUE@am__EXEEXT_2 = bl_pcg_hb$(EXEEXT)
+@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = bl_cg_hb$(EXEEXT)
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 =  \
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	bl_pcg_hb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
@@ -83,7 +84,7 @@ bl_cg_hb_OBJECTS = $(am_bl_cg_hb_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(BELOS_LIBS))
+@USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
 am_bl_pcg_hb_OBJECTS = bl_pcg_hb-test_bl_pcg_hb.$(OBJEXT) \
 	bl_pcg_hb-createEpetraProblem.$(OBJEXT)
 bl_pcg_hb_OBJECTS = $(am_bl_pcg_hb_OBJECTS)
@@ -123,6 +124,8 @@ BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
+BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 BUILD_TSFCORE_EPETRA_FALSE = @BUILD_TSFCORE_EPETRA_FALSE@
 BUILD_TSFCORE_EPETRA_TRUE = @BUILD_TSFCORE_EPETRA_TRUE@
 BUILD_TSFCORE_FALSE = @BUILD_TSFCORE_FALSE@
@@ -236,15 +239,13 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-
-#if BUILD_TRIUTILS
-@BUILD_IFPACK_TRUE@BELOS_BCG_IFPACK_EX = bl_pcg_hb
-BELOS_BCG_HB_EX = bl_cg_hb
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BCG_IFPACK_EX = bl_pcg_hb
+@BUILD_TRIUTILS_TRUE@BELOS_BCG_HB_EX = bl_cg_hb
 Dummy_SOURCES = Dummy
 bl_pcg_hb_SOURCES = $(srcdir)/test_bl_pcg_hb.cpp $(srcdir)/createEpetraProblem.cpp
 bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp $(srcdir)/createEpetraProblem.cpp
@@ -256,24 +257,8 @@ bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
-bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
+bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src
+bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 bl_pcg_hb_LDADD = $(EXPORT_LIBS)
 bl_cg_hb_LDADD = $(EXPORT_LIBS)
 all: all-am

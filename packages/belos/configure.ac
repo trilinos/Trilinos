@@ -210,6 +210,9 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # Optional: Ifpack, TSFCore
 # ------------------------------------------------------------------------
 
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils.], [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack.], [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, tsfcore, TSFCORE, BUILD_TSFCORE, yes, [Build tests that use TSFCore.], [Build tests that use TSFCore. Can be overridden with --disable-belos-tsfcore.])
@@ -316,6 +319,7 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
+		test/MVOPTester/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile

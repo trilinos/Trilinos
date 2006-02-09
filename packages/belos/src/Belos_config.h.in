@@ -114,6 +114,9 @@
 #undef HAVE_TESTS
 
 /* Define if want to build with belos enabled */
+#undef HAVE_TRIUTILS
+
+/* Define if want to build with belos enabled */
 #undef HAVE_TSFCORE
 
 /* Define if want to build tsfcore-epetra */

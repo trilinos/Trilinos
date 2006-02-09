@@ -4,23 +4,23 @@
 include $(top_builddir)/Makefile.export.belos
 
 if USING_GNUMAKE
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_LIBS))
-EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 else
-EXPORT_LIBS = $(BELOS_LIBS)
-EXPORT_INC_PATH = $(BELOS_INCLUDES)
+EXPORT_LIBS = $(BELOS_TEST_LIBS)
+EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
-#if BUILD_TRIUTILS
+if BUILD_TRIUTILS
 if BUILD_IFPACK
 BELOS_BCG_IFPACK_EX = bl_pcg_hb
 endif
 BELOS_BCG_HB_EX = bl_cg_hb
-#endif
+endif
 
 noinst_PROGRAMS = $(BELOS_BCG_HB_EX) $(BELOS_BCG_IFPACK_EX) Dummy
 
@@ -42,23 +42,9 @@ bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
+bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src
 
-bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
+bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
 bl_pcg_hb_LDADD = $(EXPORT_LIBS)
 

@@ -40,7 +40,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) Dummy$(EXEEXT)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	Dummy$(EXEEXT)
 subdir = test/BlockGmres
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -71,9 +72,11 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = bl_gmres_hb$(EXEEXT) bl_gmres_diag$(EXEEXT)
-@BUILD_IFPACK_TRUE@am__EXEEXT_2 = bl_pgmres_hb$(EXEEXT) \
-@BUILD_IFPACK_TRUE@	bl_fgmres_hb$(EXEEXT)
+am__EXEEXT_1 = bl_gmres_diag$(EXEEXT)
+@BUILD_TRIUTILS_TRUE@am__EXEEXT_2 = bl_gmres_hb$(EXEEXT)
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_3 =  \
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	bl_pgmres_hb$(EXEEXT) \
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@	bl_fgmres_hb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
@@ -84,7 +87,7 @@ bl_fgmres_hb_OBJECTS = $(am_bl_fgmres_hb_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(BELOS_LIBS))
+@USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
 am_bl_gmres_diag_OBJECTS = bl_gmres_diag-test_bl_gmres_diag.$(OBJEXT)
 bl_gmres_diag_OBJECTS = $(am_bl_gmres_diag_OBJECTS)
 am_bl_gmres_hb_OBJECTS = bl_gmres_hb-test_bl_gmres_hb.$(OBJEXT) \
@@ -136,6 +139,8 @@ BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
+BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 BUILD_TSFCORE_EPETRA_FALSE = @BUILD_TSFCORE_EPETRA_FALSE@
 BUILD_TSFCORE_EPETRA_TRUE = @BUILD_TSFCORE_EPETRA_TRUE@
 BUILD_TSFCORE_FALSE = @BUILD_TSFCORE_FALSE@
@@ -249,15 +254,14 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
-
-#if BUILD_TRIUTILS
-@BUILD_IFPACK_TRUE@BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
-BELOS_BGMRES_EX = bl_gmres_hb bl_gmres_diag
+@BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
+@BUILD_TRIUTILS_TRUE@BELOS_BGMRES_NOPREC_EX = bl_gmres_hb 
+BELOS_BGMRES_EX = bl_gmres_diag
 Dummy_SOURCES = Dummy
 bl_pgmres_hb_SOURCES = $(srcdir)/test_bl_pgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
 bl_fgmres_hb_SOURCES = $(srcdir)/test_bl_fgmres_hb.cpp $(srcdir)/createEpetraProblem.cpp
@@ -279,42 +283,10 @@ bl_gmres_diag_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
-bl_fgmres_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../ifpack/src \
-		-I$(top_builddir)/../ifpack/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
-bl_gmres_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
-bl_gmres_diag_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
+bl_pgmres_hb_CXXFLAGS = -I$(top_srcdir)/src
+bl_fgmres_hb_CXXFLAGS = -I$(top_srcdir)/src 
+bl_gmres_hb_CXXFLAGS = -I$(top_srcdir)/src 
+bl_gmres_diag_CXXFLAGS = -I$(top_srcdir)/src
 bl_pgmres_hb_LDADD = $(EXPORT_LIBS)
 bl_fgmres_hb_LDADD = $(EXPORT_LIBS)
 bl_gmres_hb_LDADD = $(EXPORT_LIBS)

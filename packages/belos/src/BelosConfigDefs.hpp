@@ -142,4 +142,9 @@ using namespace std;
 
 #endif /*HAVE_CONFIG_H*/
 
+/* Define some macros */
+#define BELOS_MAX(x,y) (( (x) > (y) ) ? (x)  : (y) )     /* max function  */
+#define BELOS_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
+#define BELOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
+
 #endif /* BELOS_CONFIGDEFS_HPP */
