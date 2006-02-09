@@ -291,6 +291,8 @@ namespace Anasazi {
     //! This method requests that the solver print out its current status to screen.
     void currentStatus();
 
+    int GetNumberFound();
+
     //@}
   private:
      typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -486,9 +488,9 @@ namespace Anasazi {
     _numRestarts(0),
     _iters(0),
    // _TARGET(_pl.get<ScalarType>("Target", Teuchos::ScalarTraits<ScalarType>::zero())),
-    _TARGET((ScalarType)1),
-    _SMIN(_pl.get("SMIN", 20)), 
-    _SMAX(_pl.get("SMAX", 30)),
+    _TARGET(_pl.get("sigma", (ScalarType)0)),
+    _SMIN(_pl.get("jmin", 20)), 
+    _SMAX(_pl.get("jmax", 30)),
     _knownEV(0),
     _LSIterMax(_pl.get("KrylovSolver: MaxIters", 200)),
     _LSRestart(_pl.get("KrylovSolver: Restart",20)),
@@ -697,6 +699,15 @@ namespace Anasazi {
       _os << "[Starting Solver]" << endl;
     }
     #endif
+
+
+    // ================================================ //
+    // Initialise the linear solver                     //
+    // ================================================ //
+    GMRES<ScalarType,MV,Anasazi::OpBase<ScalarType,MV> > gmres;
+    gmres.setMaxIter(_LSIterMax);
+    gmres.setRestart(_LSRestart);
+    
 
     // ================================================ //
     // Start the (Block-) Jacobi/Davidson iteration ... //
@@ -968,16 +979,16 @@ namespace Anasazi {
       #ifndef _SAB_without_os
       if (_om->doPrint()) 
       {
-        _os << "It: " << _iters << ", knownEV: " << _knownEV;
-       // _os << ", s: " << s << ", rel_normr = " << nrm[0];
-        _os << ", SearchSpaceSize : " << SearchSpaceSize  << ", rel_normr = " << nrm[0];
-        _os << ", theta_i = ";
-        _os << "(" << theta[0] << ")";
-        int j = ANASAZI_MIN(SearchSpaceSize ,5);
-        for(int i=1; i<j; ++i){
-          _os << ", (" << theta[i] << ")";
-        }
-        _os << "(Tol=" << _residual_tolerance << ")" << endl;
+	//         _os << "It: " << _iters << ", knownEV: " << _knownEV;
+	// 	// _os << ", s: " << s << ", rel_normr = " << nrm[0];
+	//         _os << ", SearchSpaceSize : " << SearchSpaceSize  << ", rel_normr = " << nrm[0];
+	//         _os << ", theta_i = ";
+	//         _os << "(" << theta[0] << ")";
+	//         int j = ANASAZI_MIN(SearchSpaceSize ,5);
+	//         for(int i=1; i<j; ++i){
+	//           _os << ", (" << theta[i] << ")";
+	//         }
+	//         _os << "(Tol=" << _residual_tolerance << ")" << endl;
       }
       #endif
       
@@ -1297,11 +1308,9 @@ namespace Anasazi {
 	Teuchos::RefCountPtr<MV> r=Teuchos::rcp(R[j]->CloneCopy());
 	r->MvTimesMatAddMv(ScalarOne, *BQtmp2, H, -ScalarOne); //r:=-(I-Qb*Q^(T))*_r
 
-	GMRES<ScalarType,MV,Anasazi::OpBase<ScalarType,MV> > gmres;
-	
-	gmres.setMaxIter(_LSIterMax);
+	// Set adaptive inner tolerance
 	gmres.setTolerance(ANASAZI_MAX(pow(_gamma,-(double)outer),_elin));
-	gmres.setRestart(_LSRestart);
+
 	
 	R[j]->MvInit(ScalarZero);
 	
@@ -1373,6 +1382,19 @@ namespace Anasazi {
 	
 	
 	ok=gmres.solve(*Asys, *Ksys, *r, *(R[j])); 
+
+      #ifndef _SAB_without_os
+      if (_om->doPrint()) 
+      {
+	_os << _iters << " " << _knownEV << " " << SearchSpaceSize << " " << nrm[0] << " " << gmres.getIterations() << " " << sigma[0] << " ";
+	int j = ANASAZI_MIN(SearchSpaceSize ,5);
+	for(int i=1; i<j; ++i){
+	  _os << " (" << theta[i] << ")";
+	}
+	_os << endl;
+      }
+      #endif
+
 
 	#ifdef _SAB_TIMING
 	ftime(&tbGMRES);
@@ -1711,6 +1733,15 @@ namespace Anasazi {
       _os << endl;       
     }
   }
+
+  // ==========================================================================
+  template <class ScalarType, class MV, class OP>
+  int BlockJacobiDavidson<ScalarType,MV,OP>::
+  GetNumberFound()
+  {
+    return(_knownEV);
+  } 
+
 } // namespace Anasazi
 
 #endif
