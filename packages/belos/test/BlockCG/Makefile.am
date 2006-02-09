@@ -17,12 +17,12 @@ EXEEXT = .exe
 
 if BUILD_TRIUTILS
 if BUILD_IFPACK
-BELOS_BCG_IFPACK_EX = bl_pcg_hb
+BELOS_BCG_IFPACK_EX = bl_pcg_hb 
 endif
-BELOS_BCG_HB_EX = bl_cg_hb
+BELOS_BCG_HB_EX = bl_cg_hb Dummy
 endif
 
-noinst_PROGRAMS = $(BELOS_BCG_HB_EX) $(BELOS_BCG_IFPACK_EX) Dummy
+noinst_PROGRAMS = $(BELOS_BCG_IFPACK_EX) $(BELOS_BCG_HB_EX) 
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/bcsstk14.hb  bcsstk14.hb

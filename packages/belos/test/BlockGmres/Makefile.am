@@ -19,11 +19,11 @@ if BUILD_TRIUTILS
 if BUILD_IFPACK
 BELOS_BGMRES_IFPACK_EX = bl_pgmres_hb bl_fgmres_hb
 endif
-BELOS_BGMRES_NOPREC_EX = bl_gmres_hb 
+BELOS_BGMRES_NOPREC_EX = bl_gmres_hb Dummy 
 endif
 BELOS_BGMRES_EX = bl_gmres_diag
 
-noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_IFPACK_EX) Dummy
+noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_NOPREC_EX) 
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(srcdir)/orsirr1.hb orsirr1.hb

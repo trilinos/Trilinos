@@ -19,6 +19,13 @@
 }
 
 (FRAMEWORK) {
+    TESTS = MVOPTester/MVOPTester_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = -v;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK) {
     TESTS = BlockGmres/bl_gmres_diag.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI;
