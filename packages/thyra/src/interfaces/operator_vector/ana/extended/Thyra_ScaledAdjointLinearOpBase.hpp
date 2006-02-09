@@ -30,7 +30,7 @@
 #define THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_HPP
 
 #include "Thyra_ScaledAdjointLinearOpBaseDecl.hpp"
-#include "Thyra_SingleScalarLinearOpBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 template<class Scalar>
 void Thyra::unwrap(

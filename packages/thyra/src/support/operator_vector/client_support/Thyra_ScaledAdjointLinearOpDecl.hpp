@@ -30,6 +30,7 @@
 #define THYRA_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
 
 #include "Thyra_ScaledAdjointLinearOpBaseDecl.hpp"
+#include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -106,7 +107,10 @@ changes that are made.
 
 */
 template<class Scalar>
-class ScaledAdjointLinearOp : virtual public ScaledAdjointLinearOpBase<Scalar> {
+class ScaledAdjointLinearOp
+  : virtual public ScaledAdjointLinearOpBase<Scalar>     // Interface
+  , virtual protected SingleScalarLinearOpBase<Scalar>   // Implementation
+{
 public:
 
   /** \brief . */

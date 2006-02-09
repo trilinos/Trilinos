@@ -29,7 +29,7 @@
 #ifndef THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP
 #define THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP
 
-#include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -55,11 +55,11 @@ a <tt>Scalar</tt>, and the operation <tt>op(Op)</tt> is specified by a
 
 */
 template<class Scalar>
-class ScaledAdjointLinearOpBase : virtual public SingleScalarLinearOpBase<Scalar> {
+class ScaledAdjointLinearOpBase : virtual public LinearOpBase<Scalar> {
 public:
 
   /** \brief . */
-  using SingleScalarLinearOpBase<Scalar>::apply;
+  using LinearOpBase<Scalar>::apply;
 
   /** @name Pure virtual functions to be overridden in subclasses */
   //@{
