@@ -311,21 +311,21 @@ AM_CONDITIONAL(BUILD_ANASAZI_EXPERIMENTAL, [test "X$ac_cv_use_anasazi_experiment
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, triutils, ANASAZI_TRIUTILS, BUILD_TRIUTILS, yes, [Build examples which use Triutils.], [Build examples which use Triutils. Can be overridden with --disable-anasazi-triutils.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, belos, ANASAZI_BELOS, BUILD_BELOS, yes, [Build examples which use Belos.], [Build examples which use Belos. Can be overridden with --disable-anasazi-belos.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, belos, ANASAZI_BELOS, BUILD_BELOS, yes, [Build examples which use Belos. Can be overridden with --disable-anasazi-belos.], [Build examples which use Belos.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, aztecoo, ANASAZI_AZTECOO, BUILD_AZTECOO, yes, [Build examples which use AztecOO.], [Build examples which use AztecOO. Can be overridden with --disable-anasazi-aztecoo.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, aztecoo, ANASAZI_AZTECOO, BUILD_AZTECOO, yes, [Build examples which use AztecOO. Can be overridden with --disable-anasazi-aztecoo.], [Build examples which use AztecOO.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, amesos, ANASAZI_AMESOS, BUILD_AMESOS, yes, [Build examples which use Amesos.], [Build examples which use Amesos. Can be overridden with --disable-anasazi-amesos.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, amesos, ANASAZI_AMESOS, BUILD_AMESOS, yes, [Build examples which use Amesos. Can be overridden with --disable-anasazi-amesos.], [Build examples which use Amesos.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, ifpack, ANASAZI_IFPACK, BUILD_IFPACK, yes, [Build examples which use Ifpack.], [Build examples which use Ifpack. Can be overridden with --disable-anasazi-ifpack.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, ifpack, ANASAZI_IFPACK, BUILD_IFPACK, yes, [Build examples which use Ifpack. Can be overridden with --disable-anasazi-ifpack.], [Build examples which use Ifpack.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_ANASAZI_THYRA, yes, [Build code which uses Thyra.], [Build code which uses Thyra. Can be overridden with --disable-anasazi-thyra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_ANASAZI_THYRA, yes, [Build code which uses Thyra. Can be overridden with --disable-anasazi-thyra.], [Build code which uses Thyra.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build examples which use Epetra-Thyra adapters.], [Build examples which use Epetra-Thyra adapters. Can be overridden with --disable-epetra-thyra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build examples which use Epetra-Thyra adapters. Can be overridden with --disable-epetra-thyra.], [Build examples which use Epetra-Thyra adapters.])
 
-#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code], [Build examples/tests which use complex<> code.  Can be overridden with --disable-teuchos-complex])
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code. Can be overridden with --disable-teuchos-complex.], [Build examples/tests which use complex code.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, tpetra, ANASAZI_TPETRA, BUILD_ANASAZI_TPETRA, no, [Build examples which use Tpetra adapters.], [Build examples which use Tpetra adapters.  Can be overridden with --disable-anasazi-tpetra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, tpetra, ANASAZI_TPETRA, BUILD_ANASAZI_TPETRA, no, [Build examples which use Tpetra adapters.  Can be overridden with --disable-anasazi-tpetra.], [Build examples which use Tpetra adapters.])
 
 # ------------------------------------------------------------------------
 # Enable optional python wrappers

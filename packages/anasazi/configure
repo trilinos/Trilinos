@@ -912,28 +912,28 @@ Optional Features:
                           with --disable-anasazi-triutils.
   --enable-anasazi-triutils
                           Build examples which use Triutils.
-  --enable-belos          Build examples which use Belos. Can be overridden
+  --enable-belos          Build examples which use Belos.
+  --enable-anasazi-belos  Build examples which use Belos. Can be overridden
                           with --disable-anasazi-belos.
-  --enable-anasazi-belos  Build examples which use Belos.
-  --enable-aztecoo        Build examples which use AztecOO. Can be overridden
-                          with --disable-anasazi-aztecoo.
+  --enable-aztecoo        Build examples which use AztecOO.
   --enable-anasazi-aztecoo
-                          Build examples which use AztecOO.
-  --enable-amesos         Build examples which use Amesos. Can be overridden
+                          Build examples which use AztecOO. Can be overridden
+                          with --disable-anasazi-aztecoo.
+  --enable-amesos         Build examples which use Amesos.
+  --enable-anasazi-amesos Build examples which use Amesos. Can be overridden
                           with --disable-anasazi-amesos.
-  --enable-anasazi-amesos Build examples which use Amesos.
-  --enable-ifpack         Build examples which use Ifpack. Can be overridden
+  --enable-ifpack         Build examples which use Ifpack.
+  --enable-anasazi-ifpack Build examples which use Ifpack. Can be overridden
                           with --disable-anasazi-ifpack.
-  --enable-anasazi-ifpack Build examples which use Ifpack.
-  --enable-thyra          Build code which uses Thyra. Can be overridden with
+  --enable-thyra          Build code which uses Thyra.
+  --enable-anasazi-thyra  Build code which uses Thyra. Can be overridden with
                           --disable-anasazi-thyra.
-  --enable-anasazi-thyra  Build code which uses Thyra.
-  --enable-thyra          Build examples which use Epetra-Thyra adapters. Can
+  --enable-thyra          Build examples which use Epetra-Thyra adapters.
+  --enable-epetra-thyra   Build examples which use Epetra-Thyra adapters. Can
                           be overridden with --disable-epetra-thyra.
-  --enable-epetra-thyra   Build examples which use Epetra-Thyra adapters.
-  --enable-tpetra         Build examples which use Tpetra adapters. Can be
+  --enable-tpetra         Build examples which use Tpetra adapters.
+  --enable-anasazi-tpetra Build examples which use Tpetra adapters. Can be
                           overridden with --disable-anasazi-tpetra.
-  --enable-anasazi-tpetra Build examples which use Tpetra adapters.
   --enable-python[=PYTHON]
                           absolute path name of Python executable
 
@@ -7881,7 +7881,7 @@ fi
 
 
 
-#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code], [Build examples/tests which use complex<> code.  Can be overridden with --disable-teuchos-complex])
+#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code. Can be overridden with --disable-teuchos-complex.], [Build examples/tests which use complex code.])
 
 
 
