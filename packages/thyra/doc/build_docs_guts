@@ -18,70 +18,60 @@ echo
 echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/fundamental ..."
 echo
 
-pushd ../src/interfaces/operator_vector/ana/fundamental/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/interfaces/operator_vector/ana/fundamental/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/extended ..."
 echo
 
-pushd ../src/interfaces/operator_vector/ana/extended/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/interfaces/operator_vector/ana/extended/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/interfaces/operator_solve/ana/fundamental ..."
 echo
 
-pushd ../src/interfaces/operator_solve/ana/fundamental/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/interfaces/operator_solve/ana/fundamental/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental ..."
 echo
 
-pushd ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/solvers/ana/fundamental ..."
 echo
 
-pushd ../src/interfaces/nonlinear/solvers/ana/fundamental/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/support/operator_vector ..."
 echo
 
-pushd ../src/support/operator_vector/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/support/operator_vector/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/support/operator_solve ..."
 echo
 
-pushd ../src/support/operator_solve/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/support/operator_solve/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/support/nonlinear/model_evaluator ..."
 echo
 
-pushd ../src/support/nonlinear/model_evaluator/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/support/nonlinear/model_evaluator/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/support/nonlinear/solvers ..."
 echo
 
-pushd ../src/support/nonlinear/solvers/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/support/nonlinear/solvers/doc/Doxyfile
 
 echo
 echo "Generating browser doxygen documentation for all of Thyra as a single doxygen documentation collection ..."
 echo
 
-pushd ../all/doc ; ./generate_Doxyfile ; popd
 doxygen ../all/doc/Doxyfile
 
 
@@ -89,5 +79,4 @@ echo
 echo "Generating main documentation page for thyra ..."
 echo
 
-./generate_Doxyfile
 doxygen Doxyfile
