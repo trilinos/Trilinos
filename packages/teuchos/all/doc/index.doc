@@ -1,0 +1,9 @@
+/*! \mainpage Teuchos Browser (Single Doxygen Collection)
+
+The purpose of this doxygen documentation collection is to allow experienced
+developers a quick and easy way to browse all of the teuchos package in a
+single doxygen documentation collection.  Most people are better off starting
+at the <a href="../../../doc/html/index.html">main Teuchos documentation
+page</a> since this is where one will find examples and tutorials.
+
+*/

@@ -1,5 +1,18 @@
 /*! \mainpage Teuchos:  The Trilinos Tools Library
 
+\section Teuchos_outline Outline
+
+<ul>
+<li>\ref Teuchos_intro
+<li>\ref Teuchos_contributors
+<li>\ref Teuchos_startup
+  <ul>
+  <li>\ref Teuchos_sclasses
+  <li>\ref Teuchos_eclasses
+  </ul>
+<li>\ref Teuchos_browser
+</ul>
+
 \section Teuchos_intro Introduction
 
 Teuchos provides a suite of common tools for Trilinos for developers to use.  These tools 
@@ -30,7 +43,6 @@ Additionally, boundschecking for some of the container classes can be enabled th
 Trilinos with <i>--enable-teuchos-abc</i>.  <b>Boundschecking incurs a significant performance penalty and so is 
 not recommended for production builds.</b>  To enable complex arithmetic in the computational classes, 
 Teuchos must be configured with <i>--enable-teuchos-complex</i>.
-
 
 \subsection Teuchos_sclasses Teuchos "Standard" Classes
 
@@ -218,6 +230,14 @@ are tags, attributes, and character content.
 </ul>
 
 </ul>
+
+\section Teuchos_browser Browse all of Teuchos
+
+You can browse all of Teuchos as a <A HREF="../../all/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Teuchos software.  However, this is a good way to browse the <a
+href="../../all/doc/html/dirs.html">directory structure of teuchos</a>, to <a
+href="../../all/doc/html/files.html">locate files</a>, etc.
 
 */
 
