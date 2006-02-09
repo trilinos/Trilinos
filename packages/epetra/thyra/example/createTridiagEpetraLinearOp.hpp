@@ -52,7 +52,7 @@ A=
 Teuchos::RefCountPtr<Thyra::LinearOpBase<double> >
 createTridiagEpetraLinearOp(
 	const int      globalDim
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
 	,MPI_Comm      mpiComm
 #endif
 	,const double  diagScale

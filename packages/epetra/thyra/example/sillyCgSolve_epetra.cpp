@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	bool result;
 	int procRank = 0;
 	
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
 	MPI_Init(&argc,&argv);
 #endif
 	
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 	// (A) Get basic MPI info
 	//
 	
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
 	int numProc;
 	MPI_Comm mpiComm = MPI_COMM_WORLD;
 	MPI_Comm_size( mpiComm, &numProc );
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 		RefCountPtr<Thyra::LinearOpBase<double> >
 			A = createTridiagEpetraLinearOp(
 				globalDim
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
 				,mpiComm
 #endif
 				,diagScale,verbose,out
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 		else         out << "\nOh no! At least one of the tests failed!\n";
 	}
 
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
  	MPI_Finalize();
 #endif
 

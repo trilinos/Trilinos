@@ -30,7 +30,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
 # include "Epetra_MpiComm.h"
 #else
 # include "Epetra_SerialComm.h"
@@ -38,7 +38,7 @@
 
 Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > createTridiagEpetraLinearOp(
 	const int      globalDim
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
 	,MPI_Comm      mpiComm
 #endif
 	,const double  diagScale
@@ -53,7 +53,7 @@ Teuchos::RefCountPtr<Thyra::LinearOpBase<double> > createTridiagEpetraLinearOp(
 	// (A) Create Epetra_Map
 	//
 
-#ifdef RTOp_USE_MPI
+#ifdef HAVE_MPI
 	if(verbose) out << "\nCreating Epetra_MpiComm ...\n";
 	Epetra_MpiComm epetra_comm(mpiComm); // Note, Epetra_MpiComm is just a handle class to Epetra_MpiCommData object!
 #else
