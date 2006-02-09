@@ -231,7 +231,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 THYRA_LIB = libthyra.a
 
 THYRA_H = \
-  $(srcdir)/Thyra_ConfigDefs.hpp \
+  $(srcdir)/Thyra_ConfigDefs.hpp $(srcdir)/Thyra_Version.hpp \
   $(INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL_H)\
   $(INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H)\
 	$(INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H)\
@@ -244,7 +244,7 @@ THYRA_H = \
   $(INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H)\
   $(SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H)
 
-libthyra_a_SOURCES =
+libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp
 
 #We need the following to support separate build directories
 
