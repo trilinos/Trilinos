@@ -19,7 +19,7 @@ rm -r ../src/support/nonlinear/model_evaluator/doc/html
 
 rm -r ../src/support/nonlinear/solvers/doc/html
 
-rm -r ../all/doc/html
+rm -r ../browser/doc/html
 
 rm -r html
 
@@ -42,7 +42,7 @@ mkdir ../src/support/nonlinear/model_evaluator/doc/html
 
 mkdir ../src/support/nonlinear/solvers/doc/html
 
-mkdir ../all/doc/html
+mkdir ../browser/doc/html
 
 mkdir html
 

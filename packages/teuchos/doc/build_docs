@@ -11,7 +11,7 @@ echo
 echo "Generating doxygen browser documentation for all of teuchos as a single doxygen collection ..."
 echo
 
-doxygen ../all/doc/Doxyfile
+doxygen ../browser/doc/Doxyfile
 
 echo
 echo "Generating main teuchos doxygen documentation pages ..."

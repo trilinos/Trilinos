@@ -29,7 +29,7 @@ echo
 echo "Building doxygen browser documentation for al of rtop as a single doxygen collection ..."
 echo
 
-doxygen ../all/doc/Doxyfile
+doxygen ../browser/doc/Doxyfile
 
 echo
 echo "Building main doxygen documentation page for rtop ..."

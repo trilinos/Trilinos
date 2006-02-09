@@ -72,7 +72,7 @@ echo
 echo "Generating browser doxygen documentation for all of Thyra as a single doxygen documentation collection ..."
 echo
 
-doxygen ../all/doc/Doxyfile
+doxygen ../browser/doc/Doxyfile
 
 
 echo

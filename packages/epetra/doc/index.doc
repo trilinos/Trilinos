@@ -2,6 +2,22 @@
 \htmlonly
 \endhtmlonly
 
+\section Epetra_outline Outline
+
+<ul>
+<li>\ref Epetra_intro
+<li>\ref Epetra_startup
+  <ul>
+  <li>\ref Epetra_formulations
+  <li>\ref Epetra_trilinos
+  <li>\ref Epetra_aztec2trilinos
+  <li>\ref Epetra_wrappers
+  <li>\ref Epetra_example
+  </ul>
+<li>\ref Epetra_adapters
+<li>\ref Epetra_browser
+</ul>
+
 \section Epetra_intro Introduction
 Epetra provides the fundamental construction
 routines and services function that are required for serial and
@@ -10,7 +26,7 @@ foundation for all Trilinos solvers.
 
 \section Epetra_startup Overview of Epetra.
 
-\subsection formulations Epetra Classes
+\subsection Epetra_formulations Epetra Classes
 
 Epetra contains a number of classes.  They can be categorized as follows:
 
@@ -172,5 +188,13 @@ Epetra objects and turn them into %Thyra objects.
 <li> Epetra to Pythos Adapters ???: These are Python wrappers that allow Epetra to be used from Python.
 
 </ul>
+
+\section Epetra_browser Browse all of Epetra as a single doxygen collection
+
+You can browse all of Epetra as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Epetra software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of epetra</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 */

@@ -1,4 +1,8 @@
-@INCLUDE = thyra/doc/TagFiles   # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+#
+# Note: all relative paths are relative to package/doc!
+#
+@INCLUDE = Doxyfile.options
+@INCLUDE = thyra/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
 #
 # Package options
 #

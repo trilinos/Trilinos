@@ -2,7 +2,7 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE=teuchos/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
+@INCLUDE = rtop/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
 #
 # Override some options from Doxyfile.options
 #
@@ -13,14 +13,17 @@ EXTRACT_LOCAL_CLASSES  = YES
 #
 # Package options
 #
-PROJECT_NAME           = "RTOp Package Browser (Single Doxygen Collection)"
-OUTPUT_DIRECTORY       = ../all/doc
+PROJECT_NAME           = "Thyra Package Browser (Single Doxygen Collection)"
+OUTPUT_DIRECTORY       = ../browser/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../all/doc/index.doc \
-                         ../src
-FILE_PATTERNS          = *.h *c *.hpp *.cpp
+INPUT                  = ../browser/doc/index.doc \
+                         ./dirs.doc \
+                         ../src \
+                         ../example \
+                         ../test
+FILE_PATTERNS          = *.h *c *.hpp *.cpp groups.doc
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
@@ -35,4 +38,5 @@ IGNORE_PREFIX          =
 #
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
+GENERATE_TAGFILE       = ../../common/tag_files/thyraBrowser.tag
 #

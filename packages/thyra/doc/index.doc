@@ -48,7 +48,7 @@ The thrya package is broadly divided into interoperability interfaces and
 support software and the directory structure and the doxygen documentation is
 also divided in this way.  Below are links to the different Doxygen
 documentation collections for the different aspects of Thyra.  This
-organization also mirrors the <a href="../../all/doc/html/dirs.html">directory
+organization also mirrors the <a href="../../browser/doc/html/dirs.html">directory
 structure of thyra</a>.
 
 \subsection thyra_interfaces_sec Thyra interoperability interfaces
@@ -110,11 +110,11 @@ structure of thyra</a>.
 
 \subsection thyra_browse_sec Browse all of Thyra as a single doxygen collection
 
-You can browse all of Thyra as a <A HREF="../../all/doc/html/index.html">single
+You can browse all of Thyra as a <A HREF="../../browser/doc/html/index.html">single
 doxygen collection</A>. Warning, this is not the recommended way to learn
 about Thyra software.  However, this is a good way to browse the <a
-href="../../all/doc/html/dirs.html">directory structure of thyra</a>, to <a
-href="../../all/doc/html/files.html">locate files</a>, etc.
+href="../../browser/doc/html/dirs.html">directory structure of thyra</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 \section thyra_software_technicalities_sec Some Technicalities about Thyra Interfaces and Supporting Software
 

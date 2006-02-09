@@ -17,5 +17,4 @@ echo
 echo "Generating amesos/thyra doxygen documentation ..."
 echo
 
-cd ../thyra/doc ; ./generate_Doxyfile ; cd ../../doc
 doxygen ../thyra/doc/Doxyfile

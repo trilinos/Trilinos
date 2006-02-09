@@ -2,13 +2,13 @@
 \htmlonly
 \endhtmlonly
 
-\section intro Introduction
+\section aztecoo_intro Introduction
 AztecOO provides an object-oriented interface the the well-known Aztec
 solver library.  Furthermore, it allows flexible construction of matrix and vector arguments via Epetra 
 matrix and vector classes.  Finally, AztecOO provide additional functionality not found in Aztec and
 any future enhancements to the Aztec package will be available only through the AztecOO interfaces.
 
-\section startup Overview of AztecOO.
+\section aztecoo_startup Overview of AztecOO.
 
 AztecOO contains a number of classes.  They are:
 
@@ -33,7 +33,7 @@ AztecOO contains a number of classes.  They are:
 
 </ul>
 
-\section matrixfree AztecOO and Matrix Free usage.
+\section aztecoo_matrixfree AztecOO and Matrix Free usage.
 
 AztecOO supports a ``matrix-free'' mechanism via the pure virtual class Epetra_RowMatrix.  This class is
 part of Epetra and is implemented by the Epetra_CrsMatrix and Epetra_VbrMatrix classes.  It is possible
@@ -43,5 +43,13 @@ matrix for constructing preconditioners.
 \htmlonly
 For details of Epetra, see the <a href="../../../epetra/doc/html/index.html">Epetra home page</a>.
 \endhtmlonly
+
+\section aztecoo_thyra Thyra support
+
+The <a href="../../thyra/doc/html/index.html">AztecOO to Thyra Linear Solver
+Adapters</a> take <tt>Thyra::LinearOpBase</tt> objects that wrap
+<tt>Epetra_Operator</tt> objects and turn them into
+<tt>Thyra::LinearOpWithSolveBase</tt> objects which can then be used to solve
+linear systems using the <tt>AztecOO</tt> class.
 
 */
