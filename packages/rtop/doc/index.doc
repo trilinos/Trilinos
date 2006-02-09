@@ -22,5 +22,11 @@ concrete reduction and/or transformation operators.
 
 </ul>
 
+You can browse all of RTOp as a <A HREF="../../all/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about RTOp software.  However, this is a good way to browse the <a
+href="../../all/doc/html/dirs.html">directory structure of rtop</a>, to <a
+href="../../all/doc/html/files.html">locate files</a>, etc.
+
 */
 

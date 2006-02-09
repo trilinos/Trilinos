@@ -9,6 +9,8 @@ rm -r ../src/support/doc/html
 
 rm -r ../src/ops_lib/doc/html
 
+rm -r ../all/doc/html
+
 rm -r html
 
 # Create new directories manually since the doxygen exe under windows
@@ -19,6 +21,8 @@ mkdir ../src/interfaces/doc/html
 mkdir ../src/support/doc/html
 
 mkdir ../src/ops_lib/doc/html
+
+mkdir ../all/doc/html
 
 mkdir html
 

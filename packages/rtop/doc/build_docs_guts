@@ -11,27 +11,29 @@ echo
 echo "Building doxygen documentation for rtop/src/interfaces ..."
 echo
 
-pushd ../src/interfaces/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/interfaces/doc/Doxyfile
 
 echo
 echo "Building doxygen documentation for rtop/src/support ..."
 echo
 
-pushd ../src/support/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/support/doc/Doxyfile
 
 echo
 echo "Building doxygen documentation for rtop/src/ops_lib ..."
 echo
 
-pushd ../src/ops_lib/doc ; ./generate_Doxyfile ; popd
 doxygen ../src/ops_lib/doc/Doxyfile
+
+echo
+echo "Building doxygen browser documentation for al of rtop as a single doxygen collection ..."
+echo
+
+doxygen ../all/doc/Doxyfile
 
 echo
 echo "Building main doxygen documentation page for rtop ..."
 echo
 
-./generate_Doxyfile
 doxygen Doxyfile
 
