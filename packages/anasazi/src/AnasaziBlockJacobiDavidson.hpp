@@ -583,7 +583,16 @@ namespace Anasazi {
 		_os << "ERROR : SMIN <= blocksize" << endl;
 	return Failed;
     }
-    
+
+    // ================== //
+    // get the projection //
+    // ================== //
+
+    Teuchos::RefCountPtr<OP> CON;
+
+    if (_pl.isParameter("CON"))
+      CON = _pl.get("CON", CON);
+
     // =============================== //
     // templated values of 1's and 0's //
     // =============================== //
@@ -636,7 +645,15 @@ namespace Anasazi {
     	sublist[0]=i;
     	R[i]=Teuchos::rcp(iVec->CloneCopy(sublist));
 	//R[i]=iVec->CloneCopy(sublist);
+
+	// apply projection to R
+        if (CON.get())
+	  {
+	    CON->Apply(*(R[i].get()), *(R[i].get()));
+	  }
     }
+
+
     Teuchos::RefCountPtr<MV> mvtmp;
     mvtmp = MVT::Clone(*iVec,1);
 
@@ -699,7 +716,6 @@ namespace Anasazi {
       _os << "[Starting Solver]" << endl;
     }
     #endif
-
 
     // ================================================ //
     // Initialise the linear solver                     //
@@ -1383,12 +1399,18 @@ namespace Anasazi {
 	
 	ok=gmres.solve(*Asys, *Ksys, *r, *(R[j])); 
 
+	// apply projection to R
+        if (CON.get())
+	  {
+	    CON->Apply(*(R[j].get()), *(R[j].get()));
+	  }
+
       #ifndef _SAB_without_os
       if (_om->doPrint()) 
       {
-	_os << _iters << " " << _knownEV << " " << SearchSpaceSize << " " << nrm[0] << " " << gmres.getIterations() << " " << sigma[0] << " ";
+	_os << _iters << " " << _knownEV << " " << SearchSpaceSize << " " << nrm[0] << " " << gmres.getIterations() << " [" << sigma[0] << "] ";
 	int j = ANASAZI_MIN(SearchSpaceSize ,5);
-	for(int i=1; i<j; ++i){
+	for(int i=0; i<j; ++i){
 	  _os << " (" << theta[i] << ")";
 	}
 	_os << endl;
