@@ -57,7 +57,7 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 
       /* Do case where command line argument is an integer.
 	 Interpret integer as the constant block size */
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
       if (partition_file[0] >='0' && partition_file[0] <='9')
 	{
 	  blocksize = atoi(partition_file);
@@ -130,7 +130,7 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 			   420000000/8);
       *N_blk_global = N_blk_equations;
 
-      printf("\nEstimated Storage parameters for VBR:\n");
+      printf("%s", "\nEstimated Storage parameters for VBR:\n");
       printf("   Number of block  equations = %d\n",N_blk_equations);
       printf("   Number of block  entries   = %d\n",N_block_entries);
       printf("   Number of scalar entries   = %d\n",n_vbr_nonzeros);
@@ -173,7 +173,7 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 				 (*n_blk_nonzeros+1)*sizeof(int)) ;
       *val = (double *) realloc((void *) (*val),
 				(*n_nonzeros+1)*sizeof(double)) ;
-      printf("\nActual Storage parameters for VBR:\n");
+      printf("%s", "\nActual Storage parameters for VBR:\n");
       printf("   Number of block  equations = %d\n",N_blk_equations);
       printf("   Number of block  entries   = %d\n",*n_blk_nonzeros);
       printf("   Number of scalar entries   = %d\n",*n_nonzeros);
@@ -187,7 +187,7 @@ void Trilinos_Util_create_vbr(const Epetra_Comm & Comm, char *partition_file,
 	     (float)total_vbr_storage/(float)total_msr_storage);
 
   
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
     }
 
     else {

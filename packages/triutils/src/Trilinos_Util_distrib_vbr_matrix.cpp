@@ -56,7 +56,7 @@ void Trilinos_Util_distrib_vbr_matrix(const Epetra_Comm & Comm,
   if(MyPID == 0)
     {
       if ((*xexact) != NULL) have_xexact = 1;
-      printf("Broadcasting exact solution\n");
+      printf("%s", "Broadcasting exact solution\n");
     }
 
   if(NumProc  > 1)

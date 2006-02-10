@@ -82,12 +82,12 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
 
       if (Nrhs < 0 ) Nrhs = 0;
 
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
       printf("Matrix in file %s is %d x %d, \n",data_file, *N_global, N_columns);
       printf("with %d nonzeros with type %3s;\n", n_entries, Type);
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
       printf("Title: %72s\n",Title);
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
       /*Nrhs = 0; */
       printf("%d right-hand-side(s) available.\n",Nrhs);
 
@@ -95,7 +95,7 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
       isym = 0;
       if (Type[1] == 'S') 
 	{
-	  printf("Converting symmetric matrix to nonsymmetric storage\n");
+	  printf("%s", "Converting symmetric matrix to nonsymmetric storage\n");
 	  n_entries = 2*n_entries - N_columns;
 	  isym = 1;
 	}
@@ -135,7 +135,7 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
 	  
 	  /* Set Xexact to a random vector */
 
-	  printf("Setting  random exact solution  vector\n");
+	  printf("%s", "Setting  random exact solution  vector\n");
 	  *xexact = (double *) calloc(N_columns,sizeof(double));
 	  
 	  for (i=0;i<*N_global;i++)	 (*xexact)[i] =
@@ -281,12 +281,12 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
 
       if (Nrhs < 0 ) Nrhs = 0;
 
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
       printf("Matrix in file %s is %d x %d, \n",data_file, *N_global, N_columns);
       printf("with %d nonzeros with type %3s;\n", n_entries, Type);
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
       printf("Title: %72s\n",Title);
-      printf("***************************************************************\n");
+      printf("%s", "***************************************************************\n");
       /*Nrhs = 0; */
       //printf("%d right-hand-side(s) available.\n",Nrhs);
 
@@ -294,7 +294,7 @@ void Trilinos_Util_read_hb(char *data_file, int MyPID,
       isym = 0;
       if (Type[1] == 'S') 
 	{
-	  printf("Converting symmetric matrix to nonsymmetric storage\n");
+	  printf("%s", "Converting symmetric matrix to nonsymmetric storage\n");
 	  n_entries = 2*n_entries - N_columns;
 	  isym = 1;
 	}
