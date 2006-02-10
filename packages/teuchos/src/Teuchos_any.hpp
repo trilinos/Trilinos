@@ -38,8 +38,6 @@ namespace Teuchos {
 
 /** \brief  \brief Modified boost::any class, which is a container for a templated value.
  */
-// ToDo: Finish documentation!
-
 class any
 {
 public:
@@ -216,13 +214,22 @@ const ValueType& any_cast(const any &operand)
 	return any_cast<ValueType>(const_cast<any&>(operand));
 }
 
+/*! \relates any
+    \brief Converts the value in <tt>any</tt> to a string.
+*/
+inline std::string toString(const any &rhs)
+{
+  std::ostringstream oss;
+  rhs.print(oss);
+	return oss.str();
+}
 
 /*! \relates any
     \brief Writes "any" input <tt>rhs</tt> to the output stream <tt>os</tt>.
 */
 inline std::ostream & operator<<(std::ostream & os, const any &rhs)
 {
-       	rhs.print(os);
+  rhs.print(os);
 	return os;
 }
 
