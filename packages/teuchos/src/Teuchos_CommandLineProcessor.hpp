@@ -199,7 +199,8 @@ public:
 	
 	//@}
 
-	//@{ \name Parse methods
+	/** \name Parse methods */
+  //@{
 
 	/** \brief Parse a command line.
 	 *
@@ -262,7 +263,8 @@ public:
 
 	//@}
 
-	//@{ \name Miscellaneous method
+	/** \name Miscellaneous method */
+  //@{
 
 	/** \brief Print the help message.
 	 *
@@ -276,7 +278,8 @@ public:
 
 	//@}
 
-	//@{ \name Behavior modes
+	/** \name Behavior modes */
+  //@{
 
 	/// Set if an exception is thrown, there is a parse error, or help is printed.
 	void throwExceptions ( const bool & throwExceptions ) { throwExceptions_ = throwExceptions; };
@@ -292,7 +295,8 @@ public:
 
 	//@}
 
-	//@{ \name Exception classes
+	/** \name Exception classes */
+  //@{
 
 	/// Thrown if a parse exception occurs and  throwExceptions==true
 	class ParseError : public std::logic_error

@@ -221,7 +221,8 @@ public:
   template<typename T>
   const T* getPtr(const string& name) const;  
   
-  /*! \brief Retrieves the pointer and entry if it exists. */
+  /*! \brief Retrieves the pointer for an entry with the name <tt>name</tt> if
+   *  it exists. */
   const ParameterEntry* getEntryPtr(const string& name) const;  
 
   //@}
@@ -342,11 +343,11 @@ public:
    * to a breath-first search but it would take more work.
    */
   void validateParameters(
-    const std::string                &paramListName
-    ,const ParameterList             &validParamList
-    ,const int                       depth               = 1000
-    ,const EValidateUsed             validateUsed        = VALIDATE_USED_ENABLED
-    ,const EValidateDefaults         validateDefaults    = VALIDATE_DEFAULTS_ENABLED
+    const std::string          &paramListName   
+    ,const ParameterList       &validParamList
+    ,const int                 depth            = 1000
+    ,const EValidateUsed       validateUsed     = VALIDATE_USED_ENABLED
+    ,const EValidateDefaults   validateDefaults = VALIDATE_DEFAULTS_ENABLED
     ) const;
 
   //@}
