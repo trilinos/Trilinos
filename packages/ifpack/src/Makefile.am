@@ -134,7 +134,8 @@ COMP_H = \
 	$(srcdir)/Ifpack_RCMReordering.h          \
 	$(srcdir)/Ifpack_SPARSKIT.h               \
 	$(srcdir)/Ifpack_METISReordering.h        \
-	$(srcdir)/Ifpack_OverlappingRowMatrix.h
+	$(srcdir)/Ifpack_OverlappingRowMatrix.h   \
+	$(srcdir)/Ifpack_ValidParameters.h
 
 
 COMP = \
@@ -173,7 +174,8 @@ COMP = \
 	$(srcdir)/Ifpack_UserPartitioner.cpp        \
 	$(srcdir)/Ifpack_RCMReordering.cpp          \
 	$(srcdir)/Ifpack_METISReordering.cpp        \
-	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp
+	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp   \
+	$(srcdir)/Ifpack_ValidParameters.cpp
 
 # ------------------------------------------------------------------------
 # Ifpack library specifications
