@@ -189,7 +189,7 @@ int mm_write_mtx_crd_size(FILE *f, int M, int N, int nz)
 
 int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
 {
-    char line[MM_MAX_LINE_LENGTH];
+    char line[MM_MAX_LINE_LENGTH], *c;
     int num_items_read;
 
     /* set return null parameter values, in case we exit with errors */
@@ -200,7 +200,10 @@ int mm_read_mtx_crd_size(FILE *f, int *M, int *N, int *nz )
     {
         if (fgets(line,MM_MAX_LINE_LENGTH,f) == NULL) 
             return MM_PREMATURE_EOF;
-    }while (line[0] == '%');
+
+        c = line;
+        while (*c && (*c != '\n') && isspace(*c)) c++;
+    }while (*c == '%');
 
     /* line[] is either blank or has M,N, nz */
     if (sscanf(line, "%d %d %d", M, N, nz) == 3)
