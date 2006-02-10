@@ -36,10 +36,10 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
   else if (PrecType == "block relaxation stand-alone") {
     return(new Ifpack_BlockRelaxation<Ifpack_DenseContainer>(Matrix));
   }
-#ifdef HAVE_IFPACK_AMESOS
   else if (PrecType == "block relaxation stand-alone (ILU)") {
-    return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >(Matrix));
+    return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_ILU> >(Matrix));
   }
+#ifdef HAVE_IFPACK_AMESOS
   else if (PrecType == "block relaxation stand-alone (Amesos)") {
     return(new Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> >(Matrix));
   }
