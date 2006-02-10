@@ -1,0 +1,6 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters	= phg_refinement_method=none
+File Type		= matrixmarket+
+File Name		= simple
+Parallel Disk Info	= number=0
