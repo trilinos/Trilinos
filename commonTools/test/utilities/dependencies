@@ -42,6 +42,7 @@ epetra = \
 --enable-meros \
 --enable-ml_epetra \
 --enable-ml_aztecoo \
+--enable-ml_multiple_rhs \
 --enable-moertel \
 --enable-new_package \
 --enable-nox-epetra \
