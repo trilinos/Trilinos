@@ -48,6 +48,7 @@ FFLAGS=-O3 \
 --enable-ml \
 --enable-ml_multiple_rhs=4 \
 --with-ml-64bit-integer="long long" \
+--enable-moertel \
 --enable-new_package \
 --enable-new_swahili \
 --enable-nox \
