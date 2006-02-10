@@ -123,6 +123,7 @@ AC_ARG_ENABLE( ml_multiple_rhs,
              AC_HELP_STRING([--enable-ml_multiple_rhs],[Enables blocked code
                 for multiple right hand sides.  Example:
                 --enable-ml_multiple_rhs=4 for a blocking factor of 4.
+                This option requires that Epetra be enable.
                 NOTE:  With the icc compiler, you may need to add
                 CXXFLAGS="-Kc++" to the configure line, in order for it to
                 interpret *.c files as c++ files.  Similarly, with Compaq
@@ -132,6 +133,11 @@ AC_ARG_ENABLE( ml_multiple_rhs,
                 will be overwritten by CXXFLAGS. (default is no)]),
              [ac_cv_use_ml_multiple_rhs=${enableval}],
              [ac_cv_use_ml_multiple_rhs=no])
+
+if test "X$ac_cv_use_epetra" == "Xno"; then
+ AC_MSG_ERROR([[The use of --enable-ml_multiple_rhs in ML requires Epetra.]])
+# ac_cv_use_ml_multiple_rhs=no;
+fi
 
 if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
 CC=${CXX}
