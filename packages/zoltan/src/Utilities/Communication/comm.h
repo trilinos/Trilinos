@@ -95,6 +95,9 @@ struct Zoltan_Comm_Obj {	/* data for mapping between decompositions */
     MPI_Comm  comm;		/* communicator for operation */
     MPI_Request *request;       /* MPI requests for posted recvs */
     MPI_Status *status;		/* MPI status for those recvs */
+    
+    ZOLTAN_COMM_OBJ* plan_reverse;   /* to support POST & WAIT */
+    char*     recv_buff;  /* To support POST & WAIT */    
 };
 
 

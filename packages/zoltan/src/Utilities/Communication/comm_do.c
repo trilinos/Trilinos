@@ -63,14 +63,6 @@ char *recv_data)		/* array of data I'll own after comm */
    return status;
 }
 
-/*****************************************************************************/
-static char  *recv_buff;	/* place to receive messages */
-/* 
- * KDDKDD This static variable will not work when multiple posts are issued
- * KDDKDD using different plans before the corresponding waits are issued. 
- */
-
-/*****************************************************************************/
 
 int       Zoltan_Comm_Do_Post(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
@@ -136,11 +128,11 @@ char *recv_data)		/* array of data I'll own after comm */
 
     if (plan->indices_from == NULL) {
 	/* Data can go directly into user space. */
-	recv_buff = recv_data;
+	plan->recv_buff = recv_data;
     }
     else {			/* Need to buffer receive to reorder */
-	recv_buff = (char *) ZOLTAN_MALLOC(plan->total_recv_size * nbytes);
-	if (recv_buff == NULL && plan->total_recv_size * nbytes != 0)
+	plan->recv_buff = (char *) ZOLTAN_MALLOC(plan->total_recv_size * nbytes);
+	if (plan->recv_buff == NULL && plan->total_recv_size * nbytes != 0)
 	    out_of_mem = 1;
     }
 
@@ -149,7 +141,7 @@ char *recv_data)		/* array of data I'll own after comm */
 	    k = 0;
 	    for (i = 0; i < plan->nrecvs + plan->self_msg; i++) {
 		if (plan->procs_from[i] != my_proc) {
-		    MPI_Irecv((void *) &recv_buff[plan->starts_from[i] * nbytes],
+		    MPI_Irecv((void *) & plan->recv_buff[plan->starts_from[i] * nbytes],
 			      plan->lengths_from[i] * nbytes,
 			      (MPI_Datatype) MPI_BYTE, plan->procs_from[i], tag,
 			      plan->comm, &plan->request[k]);
@@ -167,7 +159,7 @@ char *recv_data)		/* array of data I'll own after comm */
 		if (plan->procs_from[i] != my_proc) {
                     if (plan->sizes_from[i]) 
 		        MPI_Irecv((void *)
-                                  &recv_buff[plan->starts_from_ptr[i] * nbytes],
+                &plan->recv_buff[plan->starts_from_ptr[i] * nbytes],
 			          plan->sizes_from[i] * nbytes,
 			          (MPI_Datatype) MPI_BYTE, plan->procs_from[i], 
 			          tag, plan->comm, &plan->request[k]);
@@ -200,7 +192,7 @@ char *recv_data)		/* array of data I'll own after comm */
     if (j > 0) {		/* Some proc is out of memory -> Punt */
 	ZOLTAN_FREE(&send_buff);
 	if (plan->indices_from != NULL)
-	    ZOLTAN_FREE(&recv_buff);
+	    ZOLTAN_FREE(&plan->recv_buff);
 	return (ZOLTAN_MEMERR);
     }
 
@@ -232,7 +224,7 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 
 	    if (plan->self_msg) {	/* Copy data to self. */
-		memcpy(&recv_buff[self_recv_address],
+		memcpy(&plan->recv_buff[self_recv_address],
 		       &send_data[plan->starts_to[self_num] * nbytes],
 		       plan->lengths_to[self_num] * nbytes);
 	    }
@@ -261,7 +253,7 @@ char *recv_data)		/* array of data I'll own after comm */
 	    }
 	    if (plan->self_msg) {	/* Copy data to self. */
 		for (k = 0; k < plan->lengths_to[self_num]; k++) {
-		    memcpy(&recv_buff[self_recv_address],
+		    memcpy(&plan->recv_buff[self_recv_address],
 		      &send_data[plan->indices_to[self_index++] * nbytes], nbytes);
 		    self_recv_address += nbytes;
 		}
@@ -291,7 +283,7 @@ char *recv_data)		/* array of data I'll own after comm */
 
 	    if (plan->self_msg) {	/* Copy data to self. */
                 if (plan->sizes_to[self_num])
-		    memcpy(&recv_buff[self_recv_address],
+		    memcpy(&plan->recv_buff[self_recv_address],
 		           &send_data[plan->starts_to_ptr[self_num] * nbytes],
 		           plan->sizes_to[self_num] * nbytes);
 	    }
@@ -329,7 +321,7 @@ char *recv_data)		/* array of data I'll own after comm */
 		    j = plan->starts_to[self_num];
 		    for (k = 0; k < plan->lengths_to[self_num]; k++) {
 		        jj = plan->indices_to_ptr[j];
-		        memcpy(&recv_buff[self_recv_address],
+		        memcpy(&plan->recv_buff[self_recv_address],
 			       &send_data[jj * nbytes],
 			       plan->sizes[plan->indices_to[j]] * nbytes);
 		        self_recv_address += plan->sizes[plan->indices_to[j]] 
@@ -379,7 +371,7 @@ char *recv_data)		/* array of data I'll own after comm */
             if (!plan->sizes_from || plan->sizes_from[self_num]) {
 	        for (j = plan->lengths_from[self_num]; j; j--) {
 		    memcpy(&recv_data[plan->indices_from[k] * nbytes],
-		        &recv_buff[k * nbytes], nbytes);
+		        &plan->recv_buff[k * nbytes], nbytes);
 		    k++;
 	        }
 	    }
@@ -398,12 +390,12 @@ char *recv_data)		/* array of data I'll own after comm */
 	    k = plan->starts_from[i];
 	    for (j = plan->lengths_from[i]; j; j--) {
 		memcpy(&recv_data[plan->indices_from[k] * nbytes],
-		    &recv_buff[k * nbytes], nbytes);
+		    &plan->recv_buff[k * nbytes], nbytes);
 		k++;
 	    }
 	}
 
-	ZOLTAN_FREE(&recv_buff);
+	ZOLTAN_FREE(&plan->recv_buff);
     }
 
     return (ZOLTAN_OK);

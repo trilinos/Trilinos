@@ -44,14 +44,6 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
           sizes, recv_data);
     return status;
 }    
-    
-/******************************************************************************/
-static ZOLTAN_COMM_OBJ *plan_reverse;	/* communication data structure */
-
-/* 
- * KDDKDD This static variable will not work when multiple posts are issued
- * KDDKDD using different plans before the corresponding waits are issued. 
- */
 
 /******************************************************************************/
 /* Perform a reverse communication operation.  Communication object describes */
@@ -92,66 +84,67 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 	    max_recv_length = plan->lengths_from[i];
     }
 
-    plan_reverse = (ZOLTAN_COMM_OBJ *) ZOLTAN_MALLOC(sizeof(ZOLTAN_COMM_OBJ));
+    plan->plan_reverse =(ZOLTAN_COMM_OBJ*)ZOLTAN_MALLOC(sizeof(ZOLTAN_COMM_OBJ));
 
-    plan_reverse->nvals = plan->nvals_recv;
-    plan_reverse->nvals_recv = plan->nvals;
-    plan_reverse->lengths_to = plan->lengths_from;
-    plan_reverse->procs_to = plan->procs_from;
-    plan_reverse->indices_to = plan->indices_from;
-    plan_reverse->starts_to = plan->starts_from;
-    plan_reverse->lengths_from = plan->lengths_to;
-    plan_reverse->procs_from = plan->procs_to;
-    plan_reverse->indices_from = plan->indices_to;
-    plan_reverse->starts_from = plan->starts_to;
-    plan_reverse->nrecvs = plan->nsends;
-    plan_reverse->nsends = plan->nrecvs;
-    plan_reverse->self_msg = plan->self_msg;
-    plan_reverse->max_send_size = max_recv_length;
-    plan_reverse->total_recv_size = total_send_length;
-    plan_reverse->comm = plan->comm;
-    plan_reverse->sizes = NULL;
-    plan_reverse->sizes_to = NULL;
-    plan_reverse->sizes_from = NULL;
-    plan_reverse->starts_to_ptr = NULL;
-    plan_reverse->starts_from_ptr = NULL;
-    plan_reverse->indices_to_ptr = NULL;
-    plan_reverse->indices_from_ptr = NULL;
+    plan->plan_reverse->nvals = plan->nvals_recv;
+    plan->plan_reverse->nvals_recv = plan->nvals;
+    plan->plan_reverse->lengths_to = plan->lengths_from;
+    plan->plan_reverse->procs_to = plan->procs_from;
+    plan->plan_reverse->indices_to = plan->indices_from;
+    plan->plan_reverse->starts_to = plan->starts_from;
+    plan->plan_reverse->lengths_from = plan->lengths_to;
+    plan->plan_reverse->procs_from = plan->procs_to;
+    plan->plan_reverse->indices_from = plan->indices_to;
+    plan->plan_reverse->starts_from = plan->starts_to;
+    plan->plan_reverse->nrecvs = plan->nsends;
+    plan->plan_reverse->nsends = plan->nrecvs;
+    plan->plan_reverse->self_msg = plan->self_msg;
+    plan->plan_reverse->max_send_size = max_recv_length;
+    plan->plan_reverse->total_recv_size = total_send_length;
+    plan->plan_reverse->comm = plan->comm;
+    plan->plan_reverse->sizes = NULL;
+    plan->plan_reverse->sizes_to = NULL;
+    plan->plan_reverse->sizes_from = NULL;
+    plan->plan_reverse->starts_to_ptr = NULL;
+    plan->plan_reverse->starts_from_ptr = NULL;
+    plan->plan_reverse->indices_to_ptr = NULL;
+    plan->plan_reverse->indices_from_ptr = NULL;
 
 
-    plan_reverse->request = (MPI_Request *)
-	ZOLTAN_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Request));
-    if (plan_reverse->request == NULL && plan_reverse->nrecvs != 0) {
-        ZOLTAN_FREE(&plan_reverse);
+    plan->plan_reverse->request = (MPI_Request *)
+	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Request));
+    if (plan->plan_reverse->request == NULL && plan->plan_reverse->nrecvs != 0) {
+        ZOLTAN_FREE(&plan->plan_reverse);
 	return(ZOLTAN_MEMERR);
     }
 
-    plan_reverse->status = (MPI_Status *)
-	ZOLTAN_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Status));
-    if (plan_reverse->status == NULL && plan_reverse->nrecvs != 0) {
-        ZOLTAN_FREE(&(plan_reverse->request));
-        ZOLTAN_FREE(&plan_reverse);
+    plan->plan_reverse->status = (MPI_Status *)
+	ZOLTAN_MALLOC(plan->plan_reverse->nrecvs * sizeof(MPI_Status));
+    if (plan->plan_reverse->status == NULL && plan->plan_reverse->nrecvs != 0) {
+        ZOLTAN_FREE(&(plan->plan_reverse->request));
+        ZOLTAN_FREE(&plan->plan_reverse);
 	return(ZOLTAN_MEMERR);
     }
 
-    comm_flag = Zoltan_Comm_Resize(plan_reverse, sizes, tag, &sum_recv_sizes);
+    comm_flag =Zoltan_Comm_Resize(plan->plan_reverse,sizes,tag,&sum_recv_sizes);
 
     if (comm_flag != ZOLTAN_OK && comm_flag != ZOLTAN_WARN) {
-        ZOLTAN_FREE(&(plan_reverse->status));
-        ZOLTAN_FREE(&(plan_reverse->request));
-        ZOLTAN_FREE(&plan_reverse);
+        ZOLTAN_FREE(&(plan->plan_reverse->status));
+        ZOLTAN_FREE(&(plan->plan_reverse->request));
+        ZOLTAN_FREE(&plan->plan_reverse);
 	return(comm_flag);
     }
 
-    if (sum_recv_sizes != plan_reverse->total_recv_size){
+    if (sum_recv_sizes != plan->plan_reverse->total_recv_size){
        /* Sanity check */
-       ZOLTAN_FREE(&(plan_reverse->status));
-       ZOLTAN_FREE(&(plan_reverse->request));
-       ZOLTAN_FREE(&plan_reverse);
+       ZOLTAN_FREE(&(plan->plan_reverse->status));
+       ZOLTAN_FREE(&(plan->plan_reverse->request));
+       ZOLTAN_FREE(&plan->plan_reverse);
        return(ZOLTAN_FATAL);
     }
 
-    comm_flag = Zoltan_Comm_Do_Post(plan_reverse, tag, send_data, nbytes, recv_data);
+    comm_flag = Zoltan_Comm_Do_Post(plan->plan_reverse, tag, send_data, nbytes,
+     recv_data);
 
     return (comm_flag);
 }
@@ -169,20 +162,20 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
 {
     int       comm_flag;		/* status flag */
     
-    comm_flag = Zoltan_Comm_Do_Wait(plan_reverse, tag, send_data, nbytes, recv_data);
+    comm_flag = Zoltan_Comm_Do_Wait(plan->plan_reverse, tag, send_data, nbytes, recv_data);
         
     if (sizes != NULL) {
-        ZOLTAN_FREE(&plan_reverse->sizes);
-	ZOLTAN_FREE(&plan_reverse->sizes_to);
-	ZOLTAN_FREE(&plan_reverse->sizes_from);
-	ZOLTAN_FREE(&plan_reverse->starts_to_ptr);
-	ZOLTAN_FREE(&plan_reverse->starts_from_ptr);
-	ZOLTAN_FREE(&plan_reverse->indices_to_ptr);
-	ZOLTAN_FREE(&plan_reverse->indices_from_ptr);
+        ZOLTAN_FREE(&plan->plan_reverse->sizes);
+	ZOLTAN_FREE(&plan->plan_reverse->sizes_to);
+	ZOLTAN_FREE(&plan->plan_reverse->sizes_from);
+	ZOLTAN_FREE(&plan->plan_reverse->starts_to_ptr);
+	ZOLTAN_FREE(&plan->plan_reverse->starts_from_ptr);
+	ZOLTAN_FREE(&plan->plan_reverse->indices_to_ptr);
+	ZOLTAN_FREE(&plan->plan_reverse->indices_from_ptr);
     }
-    ZOLTAN_FREE(&(plan_reverse->status));
-    ZOLTAN_FREE(&(plan_reverse->request));
-    ZOLTAN_FREE(&plan_reverse);
+    ZOLTAN_FREE(&(plan->plan_reverse->status));
+    ZOLTAN_FREE(&(plan->plan_reverse->request));
+    ZOLTAN_FREE(&plan->plan_reverse);
 
     return(comm_flag);
 }
