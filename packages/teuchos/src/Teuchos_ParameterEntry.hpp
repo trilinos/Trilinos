@@ -37,24 +37,23 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_any.hpp"
 
-/*! \class Teuchos::ParameterEntry
-    \brief This object is held as the "value" in the Teuchos::ParameterList map.
-
-    This structure holds a \c Teuchos::any value and information on the status of this
-    parameter (isUsed, isDefault, etc.).  The type of parameter is chosen through the
-    templated Set/Get methods.
-*/
-
 namespace Teuchos {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 class ParameterList; // another parameter type (forward declaration)
 #endif
 
-class ParameterEntry {
+/*! \brief This object is held as the "value" in the Teuchos::ParameterList map.
 
+    This structure holds a \c Teuchos::any value and information on the status of this
+    parameter (isUsed, isDefault, etc.).  The type of parameter is chosen through the
+    templated Set/Get methods.
+*/
+class ParameterEntry {
 public:
-  //@{ \name Constructors/Destructor
+
+  /** \name Constructors/Destructor */
+  //@{
 
   //! Default Constructor
   ParameterEntry();
@@ -64,18 +63,15 @@ public:
 
   //! Templated constructor
   template<typename T>
-  explicit ParameterEntry(T value, bool isDefault = false)
-  : val_(value),
-    isUsed_(false),
-    isDefault_(isDefault)
-  {}
+  explicit ParameterEntry(T value, bool isDefault = false);
 
   //! Destructor
-  ~ParameterEntry() {};
+  ~ParameterEntry();
 
   //@}
 
-  //@{ \name Set Methods
+  /** \name Set Methods */
+  //@{
 
   //! Replace the current parameter entry with \c source.
   ParameterEntry& operator=(const ParameterEntry& source);
@@ -88,18 +84,15 @@ public:
 	    </ul>
   */
   template<typename T>
-  void setValue(T value, bool isDefault = false)
-  {
-    val_ = value;
-    isDefault_ = isDefault;
-  }
+  void setValue(T value, bool isDefault = false);
 
   //! Create a parameter entry that is an empty list.
   ParameterList& setList(bool isDefault = false);
 
   //@}
 
-  //@{ \name Get Methods 
+  /** \name Get Methods */
+  //@{
    
   /*! \brief Templated get method that uses the input pointer type to determine the type of parameter to return.  
 
@@ -107,49 +100,34 @@ public:
 	    an exception will be thrown by the any_cast.
   */
   template<typename T>
-  T& getValue(T *ptr) const
-  {
-    isUsed_ = true;
-    return const_cast<T&>(Teuchos::any_cast<T>( val_ ));
-  }
+  T& getValue(T *ptr) const;
 
-  /*! \brief Direct access to the Teuchos::any data value underlying
-   * this object. 
-   * \note This is needed for conversion of a Teuchos parameter entry
-   * to a NOX parameter entry. KL 7 August 2004.
+  /*! \brief Direct access to the Teuchos::any data value underlying this
+   *  object.
    */
-  const any& getAny() const 
-  {
-    return val_;
-  }
+  const any& getAny() const;
+
   //@}
 
-  //@{ \name Attribute Methods  
+  /** \name Attribute Methods */
+  //@{
   
   //! Return whether or not the value has been used; i.e., whether or not the value has been retrieved via a get function.
-  bool isUsed() const { return isUsed_; }
+  bool isUsed() const;
 
   //! Return whether or not the value itself is a list.
-  bool isList() const { return isList_; }
+  bool isList() const;
 
-  /*! \brief Test the type of the data being contained. 
-   * \note This is not strictly necessary for conversion to NOX parameters, 
-   * but allows us to use the type-specific NOX parameter constructors 
-   * for standard data types (ints, doubles, strings, sublists, etc) which 
-   * gives us better type diagnostics in NOX. Anything non-standard can 
-   * be written to a NOX AnyPtr parameter. 
-   * KL 7 August 2004 */
-  template <typename T> 
-  bool isType() const 
-  {
-    return val_.type() == typeid(T);
-  }
+  /*! \brief Test the type of the data being contained. */
+  template <typename T>
+  bool isType() const;
 
   /** Indicate whether this entry takes on the default value */
-  bool isDefault() const {return isDefault_;}
+  bool isDefault() const;
+
   //@}
 
-  //@{ \name I/O Methods
+  /** \name I/O Methods */
 
   /*! \brief Output a non-list parameter to the given output stream.  
 
@@ -158,6 +136,7 @@ public:
       it will be followed by "[unused]".  This function is called by the "ostream& operator<<". 
   */
   ostream& leftshift(ostream& os) const;
+
   //@}
 
 private:
@@ -198,7 +177,66 @@ inline ostream& operator<<(ostream& os, const ParameterEntry& e)
   return e.leftshift(os);
 }
 
-} // namespace Teuchos
+// ///////////////////////////////////////////
+// Inline and Template Function Definitions
 
+// Constructor/Destructor
+
+template<typename T>
+inline
+ParameterEntry::ParameterEntry(T value, bool isDefault)
+  : val_(value),
+    isUsed_(false),
+    isDefault_(isDefault)
+{}
+
+inline
+ParameterEntry::~ParameterEntry()
+{}
+
+// Set Methods
+
+template<typename T>
+inline
+void ParameterEntry::setValue(T value, bool isDefault)
+{
+  val_ = value;
+  isDefault_ = isDefault;
+}
+
+// Get Methods
+
+template<typename T>
+inline
+T& ParameterEntry::getValue(T *ptr) const
+{
+  isUsed_ = true;
+  return const_cast<T&>(Teuchos::any_cast<T>( val_ ));
+}
+
+inline
+const any& ParameterEntry::getAny() const
+{ return val_; }
+
+// Attribute Methods
+
+inline
+bool ParameterEntry::isUsed() const
+{ return isUsed_; }
+
+inline
+bool ParameterEntry::isList() const
+{ return isList_; }
+
+template <typename T>
+inline
+bool ParameterEntry::isType() const
+{ return val_.type() == typeid(T); }
+
+inline
+bool ParameterEntry::isDefault() const
+{ return isDefault_; }
+
+} // namespace Teuchos
 
 #endif

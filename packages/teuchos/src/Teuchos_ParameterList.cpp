@@ -26,16 +26,64 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"	// class definition
+//#define TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+
+#include "Teuchos_ParameterList.hpp"
+
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+#include "Teuchos_VerboseObject.hpp"
+#endif
 
 /* NOTE: ASCI Red (TFLOP) does not support the i-> function for iterators 
  * in the STL.  Therefore when compiling for the TFLOP we must redefine the 
  * iterator from i-> to (*i). This slows things down on other platforms 
  * so we switch between the two when necessary.
  */
-using namespace Teuchos;
 
-ParameterList::ParameterList() {}
+namespace {
+
+std::string filterValueToString(const Teuchos::ParameterEntry& entry )
+{
+  return ( entry.isList() ? std::string("...") : toString(entry.getAny()) );
+}
+
+std::string validParametersString( const Teuchos::ParameterList& paramList )
+{
+  std::ostringstream oss;
+  oss << "{";
+  Teuchos::ParameterList::ConstIterator itr;
+  int i;
+  for( itr = paramList.begin(), i = 0; itr != paramList.end(); ++itr, ++i ) {
+    const std::string              &entryName   = paramList.name(itr);
+    const Teuchos::ParameterEntry  &entry       = paramList.entry(itr);
+    if(i) oss << ",";
+    oss
+      << "\""<<entryName<<"\":"<<entry.getAny().type().name()
+      <<"="<<filterValueToString(entry);
+  }
+  oss << "}";
+  return oss.str();
+}
+
+struct ListPlusNamePlusValidList {
+  std::string              listName;
+  Teuchos::ParameterList   *list;
+  Teuchos::ParameterList   *validList;
+  ListPlusNamePlusValidList(
+    const  std::string       &_listName
+    ,Teuchos::ParameterList  *_list
+    ,Teuchos::ParameterList  *_validList
+    )
+    :listName(_listName),list(_list),validList(_validList)
+    {}
+};
+
+} // namespace 
+
+namespace Teuchos {
+
+ParameterList::ParameterList()
+{}
 
 ParameterList::ParameterList(const ParameterList& source) 
 {
@@ -52,15 +100,14 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
 }
 
 ParameterList::~ParameterList() 
-{
-}
+{}
 
 void ParameterList::unused(ostream& os) const
 {
   for (ConstIterator i = params_.begin(); i != params_.end(); ++i) {
     if (!(entry(i).isUsed())) {
       os << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
-	   << " is unused" << endl;
+         << " is unused" << endl;
     }
   }
 }
@@ -88,9 +135,9 @@ ParameterList& ParameterList::sublist(const string& name)
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
   if (i != params_.end()) {
-     TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,
-	" Parameter " << name << " is not a list!" );
-     return getValue<ParameterList>(entry(i));
+    TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,
+                        " Parameter " << name << " is not a list!" );
+    return getValue<ParameterList>(entry(i));
   }
 
   // If it does not exist, create a new empty list and return a reference
@@ -104,15 +151,15 @@ const ParameterList& ParameterList::sublist(const string& name) const
 
   // If it does not exist, throw an error
   TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
-	" Parameter " << name << " is not a valid list!" );
+                      " Parameter " << name << " is not a valid list!" );
 
   // If it does exist and is a list, return the list value.
   TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,
-	" Parameter " << name << " is not a list!" );
+                      " Parameter " << name << " is not a list!" );
   return getValue<ParameterList>(entry(i));
 }
   
-ostream& ParameterList::print(ostream& os, int indent) const
+ostream& ParameterList::print(ostream& os, int indent, bool showTypes) const
 {
   if (params_.begin() == params_.end()) 
   {
@@ -124,14 +171,19 @@ ostream& ParameterList::print(ostream& os, int indent) const
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
     {
       for (int j = 0; j < indent; j ++)
-	os << ' ';
+        os << ' ';
       if (entry(i).isList()) 
       {
-	os << name(i) << " -> " << endl;
-	getValue<ParameterList>(entry(i)).print(os, indent + 2);
+        os << name(i) << " -> " << endl;
+        getValue<ParameterList>(entry(i)).print(os, indent + 2, showTypes);
       }
       else
-	os << name(i) << " = " << entry(i) << endl;
+      {
+        os << name(i);
+        if(showTypes)
+          os << " : " << entry(i).getAny().type().name();
+        os << " = " << entry(i) << endl;
+      }
     }
   return os;
 }
@@ -184,3 +236,79 @@ const ParameterEntry& ParameterList::entry(ConstIterator i) const
 
 #endif
 
+void ParameterList::validateParameters(
+  const std::string                &paramListName
+  ,const ParameterList             &validParamList
+  ,const int                       depth
+  ,const EValidateUsed             validateUsed
+  ,const EValidateDefaults         validateDefaults
+  ) const
+{
+  typedef std::deque<ListPlusNamePlusValidList> sublist_list_t;
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+  RefCountPtr<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
+  OSTab tab(out);
+  *out << "\n*** Entering ParameterList::validateParameters(paramListName=\""<<paramListName<<"\") ...\n";
+#endif
+  //
+  // First loop through and validate the parameters at this level.
+  //
+  // Here we generate a list of sublists that we will search next
+  //
+  sublist_list_t sublist_list;
+  ConstIterator itr;
+  for( itr = this->begin(); itr != this->end(); ++itr ) {
+    const std::string    &entryName   = this->name(itr);
+    const ParameterEntry &entry       = this->entry(itr);
+    if(
+      ( entry.isUsed() && validateUsed!=VALIDATE_USED_ENABLED )
+      ||
+      ( entry.isDefault() && validateDefaults!=VALIDATE_DEFAULTS_ENABLED )
+      )
+    {
+      continue;
+    }
+    const ParameterEntry *validEntry = validParamList.getEntryPtr(entryName);
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+    OSTab tab(out);
+    *out << "\nentryName=\""<<entryName<<"\"\n";
+#endif
+    const bool validType = ( validEntry!=NULL ? entry.getAny().type() == validEntry->getAny().type() : false );
+    TEST_FOR_EXCEPTION(
+      !( validEntry!=NULL && validType )
+      ,Exceptions::InvalidParameter
+      ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny().type().name()<<"\""
+      ",value=\""<<filterValueToString(entry)<<"\"} in the parameter (sub)list \""<<paramListName<<"\" "
+      << ( validEntry==NULL
+           ? "was not found in the list of valid parameters"
+           : std::string("exists in the list of valid parameters but has the wrong type.  The correct type is \"")
+           +validEntry->getAny().type().name()+std::string("\"")
+        )
+      << ". The valid parameters and types include "<<validParametersString(validParamList)
+      );
+    if( entry.isList() && depth > 0 ) {
+      sublist_list.push_back(
+        ListPlusNamePlusValidList(
+          paramListName+"->"+entryName,&getValue<ParameterList>(entry),&getValue<ParameterList>(*validEntry)
+          )
+        );
+    }
+  }
+  //
+  // Now loop through the sublists and validate their parameters
+  //
+  for( sublist_list_t::const_iterator sl_itr = sublist_list.begin(); sl_itr != sublist_list.end(); ++sl_itr ) {
+    sl_itr->list->validateParameters(
+      sl_itr->listName
+      ,*sl_itr->validList
+      ,depth-1
+      ,validateUsed
+      ,validateDefaults
+      );
+  }
+#ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
+  *out << "\n*** Exiting ParameterList::validateParameters(paramListName=\""<<paramListName<<"\") ...\n";
+#endif
+}
+
+} // namespace Teuchos
