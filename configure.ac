@@ -179,7 +179,6 @@ AM_CONDITIONAL(BUILD_RTOP, test "X$BUILD_RTOP" != "Xno")
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
-	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/thyra])
   BUILD_THYRA=yes

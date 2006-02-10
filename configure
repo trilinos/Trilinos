@@ -2969,7 +2969,6 @@ fi
 
 if test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
-	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno"; then
 
 
