@@ -882,9 +882,10 @@ Optional Features:
   --enable-ml_multiple_rhs
                           Enables blocked code for multiple right hand sides.
                           Example: --enable-ml_multiple_rhs=4 for a blocking
-                          factor of 4. NOTE: With the icc compiler, you may
-                          need to add CXXFLAGS="-Kc++" to the configure line,
-                          in order for it to interpret *.c files as c++ files.
+                          factor of 4. This option requires that Epetra be
+                          enable. NOTE: With the icc compiler, you may need to
+                          add CXXFLAGS="-Kc++" to the configure line, in order
+                          for it to interpret *.c files as c++ files.
                           Similarly, with Compaq compilers, you may need to
                           add CXXFLAGS="-x cxx" to the configure line. One
                           word of warning: be sure that whatever compiler
@@ -3289,6 +3290,13 @@ else
   ac_cv_use_ml_multiple_rhs=no
 fi;
 
+if test "X$ac_cv_use_epetra" == "Xno"; then
+ { { echo "$as_me:$LINENO: error: The use of --enable-ml_multiple_rhs in ML requires Epetra." >&5
+echo "$as_me: error: The use of --enable-ml_multiple_rhs in ML requires Epetra." >&2;}
+   { (exit 1); exit 1; }; }
+# ac_cv_use_ml_multiple_rhs=no;
+fi
+
 if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
 CC=${CXX}
 # if multiple rhs are going to be used, create a preprocessor macro
@@ -4006,7 +4014,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4009:" \
+echo "$as_me:4017:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9832,7 +9840,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9835: \"$ac_link\") >&5
+(eval echo $as_me:9843: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9910,7 +9918,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9913: \"$ac_link\") >&5
+(eval echo $as_me:9921: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12863,7 +12871,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12866: \"$ac_link\") >&5
+(eval echo $as_me:12874: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12941,7 +12949,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:12944: \"$ac_link\") >&5
+(eval echo $as_me:12952: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
