@@ -195,8 +195,13 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Checks if tests should be built and which ones should be built
+# Checks if examples and tests should be built and which ones should be built
 # ------------------------------------------------------------------------
+
+#TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive 
+#to this option)], EXAMPLES, yes)
+#TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, examples, [Build Belos examples], BELOS_EXAMPLES)
+#AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_belos_examples" != "Xno" ])
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, tests, [Build Belos tests], BELOS_TESTS)
@@ -211,15 +216,13 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils.], [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack.], [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.], [Build tests that use Ifpack.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, tsfcore, TSFCORE, BUILD_TSFCORE, yes, [Build tests that use TSFCore.], [Build tests that use TSFCore. Can be overridden with --disable-belos-tsfcore.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, thyra, BELOS_THYRA, BUILD_BELOS_THYRA, yes, [Build source code and tests that use Thyra. Can be overridden with --disable-belos-thyra.], [Build source code and tests that use Thyra.])
 
-TAC_ARG_CHECK_FEATURE_SUB(tsfcore, epetra, TSFCORE_EPETRA)
-AM_CONDITIONAL(BUILD_TSFCORE_EPETRA, test "X$ac_cv_use_tsfcore" != "Xno" &&
-				test "X$ac_cv_use_tsfcore_epetra" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build source code and tests that use Epetra-Thyra wrappers. Can be overridden with --disable-epetra-thyra.], [Build source code and tests that use Epetra-Thyra wrappers.])
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -323,6 +326,10 @@ AC_CONFIG_FILES([
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
+		thyra/Makefile
+		thyra/src/Makefile
+		thyra/test/Makefile
+		thyra/test/MVOPTester/Makefile
 		])
 
 AC_OUTPUT()

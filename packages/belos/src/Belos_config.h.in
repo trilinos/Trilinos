@@ -17,8 +17,17 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* Define if want to build with belos enabled */
+#undef HAVE_BELOS_IFPACK
+
 /* Define if want to build belos-tests */
 #undef HAVE_BELOS_TESTS
+
+/* Define if want to build with belos enabled */
+#undef HAVE_BELOS_THYRA
+
+/* Define if want to build with belos enabled */
+#undef HAVE_BELOS_TRIUTILS
 
 /* Define if you have a BLAS library. */
 #undef HAVE_BLAS
@@ -38,14 +47,14 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
+/* Define if want to build with epetra enabled */
+#undef HAVE_EPETRA_THYRA
+
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
-
-/* Define if want to build with belos enabled */
-#undef HAVE_IFPACK
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -112,15 +121,6 @@
 
 /* Define if want to build tests */
 #undef HAVE_TESTS
-
-/* Define if want to build with belos enabled */
-#undef HAVE_TRIUTILS
-
-/* Define if want to build with belos enabled */
-#undef HAVE_TSFCORE
-
-/* Define if want to build tsfcore-epetra */
-#undef HAVE_TSFCORE_EPETRA
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

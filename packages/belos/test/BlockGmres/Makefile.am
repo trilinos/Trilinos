@@ -51,7 +51,7 @@ bl_gmres_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-bl_gmres_diag_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+bl_gmres_diag_DEPENDENCIES = \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 

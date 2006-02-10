@@ -86,7 +86,11 @@ if BUILD_TESTS
 TEST_SUBDIR=test
 endif
 
-SUBDIRS = src $(TEST_SUBDIR)
+if BUILD_BELOS_THYRA
+THYRA_SUBDIR=thyra
+endif
+
+SUBDIRS = src $(TEST_SUBDIR) $(THYRA_SUBDIR)
 
 
 ## #######################################################################
