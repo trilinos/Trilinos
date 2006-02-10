@@ -30,6 +30,9 @@
 #define THYRA_CREATE_TRIDIAG_EPETRA_LINEAR_OP_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
 
 /** \brief \brief This function generates a tridiagonal linear operator using Epetra.
  *
