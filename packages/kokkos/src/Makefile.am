@@ -67,7 +67,8 @@ SERIAL_H =
 EXTRA_EXPERIMENTAL_H = \
 	$(srcdir)/Kokkos_OskiMultiVector.hpp \
 	$(srcdir)/Kokkos_OskiVector.hpp \
-	$(srcdir)/Kokkos_OskiMatrix.hpp
+	$(srcdir)/Kokkos_OskiMatrix.hpp \
+	$(srcdir)/Kokkos_OskiSparseMultiply.hpp
 
 SERIAL = 
 

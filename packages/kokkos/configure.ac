@@ -312,6 +312,7 @@ AC_CONFIG_FILES([
 		test/Permutation/Makefile
 		test/OskiMultiVector/Makefile
 		test/OskiMatrix/Makefile
+		test/OskiSparseMultiply/Makefile
 		example/Makefile])
 
 AC_OUTPUT()
