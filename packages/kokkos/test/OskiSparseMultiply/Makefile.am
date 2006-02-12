@@ -32,7 +32,7 @@ EXEEXT = .exe
 noinst_PROGRAMS = OskiSparseMultiply_test
 
 OskiSparseMultiply_test_SOURCES = $(srcdir)/cxx_main.cpp \
-$(srcdir)/../BaseSparseMultiply/scsrmm2.f $(srcdir)/GenerateHbProblem.hpp
+$(srcdir)/../BaseSparseMultiply/scsrmm2.f $(srcdir)/GenerateOskiProblem.hpp
 
 OskiSparseMultiply_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 

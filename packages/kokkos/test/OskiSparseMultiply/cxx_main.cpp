@@ -26,22 +26,21 @@
 // ************************************************************************
 //@HEADER
 
-#include "Kokkos_DenseMultiVector.hpp"
-#include "Kokkos_DenseVector.hpp"
-#include "Kokkos_HbMatrix.hpp"
-#include "Kokkos_BaseSparseMultiply.hpp"
-#include "Kokkos_PackedSparseMultiply.hpp"
+#include "Kokkos_OskiMultiVector.hpp"
+#include "Kokkos_OskiVector.hpp"
+#include "Kokkos_OskiMatrix.hpp"
+#include "Kokkos_OskiSparseMultiply.hpp"
 #include "Kokkos_Time.hpp"
 #include "Kokkos_Flops.hpp"
 #include "Kokkos_Version.hpp"
-#include "GenerateHbProblem.hpp"
+#include "GenerateOskiProblem.hpp"
 
 using namespace std;
 using namespace Kokkos;
 
 #define OTYPE int
 #define STYPE double
-#define MULTCLASS BaseSparseMultiply
+#define MULTCLASS OskiSparseMultiply
 
 template<typename TYPE>
 int PrintTestResults(string, TYPE, TYPE, bool);
@@ -60,9 +59,9 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool ha
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
 */
-typedef MultiVector<OTYPE, STYPE> DMultiVector;
-typedef Vector<OTYPE, STYPE> DVector;
-typedef CisMatrix<OTYPE, STYPE> DHbMatrix;
+typedef OskiMultiVector<OTYPE, STYPE> OMultiVector;
+//typedef Vector<OTYPE, STYPE> OMultiVector;
+typedef OskiMatrix<OTYPE, STYPE> OMatrix;
 
 int main(int argc, char* argv[]) 
 {
@@ -76,13 +75,13 @@ int main(int argc, char* argv[])
   int numberFailedTests = 0;
   string testName = "";
 
-  DHbMatrix * A;
-  DVector * x;
-  DVector * b;
-  DVector * xexact;
-  DMultiVector * xm;
-  DMultiVector * bm;
-  DMultiVector * xexactm;
+  OMatrix * A;
+  OMultiVector * x;
+  OMultiVector * b;
+  OMultiVector * xexact;
+  OMultiVector * xm;
+  OMultiVector * bm;
+  OMultiVector * xexactm;
   OTYPE nx = 100;
   OTYPE ny = nx;
   OTYPE npoints = 11;
@@ -96,14 +95,14 @@ int main(int argc, char* argv[])
 		      << "Size of Scalar  Type (in bytes) = " << sizeof(STYPE) << endl;
 
   {
-    bool generateClassicHbMatrix = true;
+    //bool generateClassicHbMatrix = true;
     bool isRowOriented = true;
     bool hasImplicitUnitDiagonal = false;
-    KokkosTest::GenerateHbProblem<OTYPE, STYPE>
-      problem(generateClassicHbMatrix, isRowOriented,hasImplicitUnitDiagonal,
+    KokkosTest::GenerateOskiProblem<OTYPE, STYPE>
+      problem(isRowOriented,hasImplicitUnitDiagonal,
 	      nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
     
-    if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Classic HbMatrix **********" << " Dim = " << numEquations <<endl<<endl;
+    if (verbose) cout<<endl<<"********** CHECKING OskiSparseMultiply **********" << " Dim = " << numEquations <<endl<<endl;
     
     // Check output objects
     if (verbose) cout <<"Checking Attribute accessors .......";
@@ -116,7 +115,7 @@ int main(int argc, char* argv[])
     }
     if (verbose) cout <<"Checking if attribute set/check is working.......";
 
-    Kokkos::HbMatrix<OTYPE, STYPE> * HbA = dynamic_cast<Kokkos::HbMatrix<OTYPE, STYPE> *>(A);
+    Kokkos::OskiMatrix<OTYPE, STYPE> * HbA = dynamic_cast<Kokkos::OskiMatrix<OTYPE, STYPE> *>(A);
     HbA->setHasDiagonalEntries(false); // Invalid, but testing it
     assert(HbA->checkStructure()==-3);
     HbA->setIsLowerTriangular(true); // Invalid, but testing it
@@ -149,7 +148,7 @@ int main(int argc, char* argv[])
     if (verbose) cout << "Difference between exact and computed = " << sum << endl;
     if (verbose) cout << "MFLOPS = " << mflops << endl;
   }
-  {
+/*  {
     bool generateClassicHbMatrix = false;
     bool isRowOriented = false;
     bool hasImplicitUnitDiagonal = false;
@@ -192,7 +191,7 @@ int main(int argc, char* argv[])
     for (OTYPE i=0; i<numEquations; i++) sum += xv[i] - bv[i];
     if (verbose) cout << "Difference between exact and computed = " << sum << endl;
     if (verbose) cout << "MFLOPS = " << mflops << endl;
-  }
+  }*/
   //
   // If a test failed output the number of failed tests.
   //
