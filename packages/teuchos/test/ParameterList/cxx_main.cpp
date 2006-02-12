@@ -584,6 +584,20 @@ int main(int argc, char *argv[])
 #endif
 
   //-----------------------------------------------------------
+  // Print out main list
+  //-----------------------------------------------------------
+
+  if (verbose) {
+    print_break();
+    cout << "The Final Parameter List" << endl;
+    print_break();
+    PL_Main.print(cout);
+    print_break();
+    cout << "The unused parameters" << endl;
+    PL_Main.unused(cout);
+  }
+
+  //-----------------------------------------------------------
   // Show error outputs
   //-----------------------------------------------------------
 
@@ -711,23 +725,6 @@ int main(int argc, char *argv[])
   catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
     FailedTests += 1;
-  }
-
-  //-----------------------------------------------------------
-  // Print out main list
-  //-----------------------------------------------------------
-
-  if (verbose) {
-    print_break();
-    cout << "The Final Parameter List" << endl;
-    print_break();
-    PL_Main.print(cout);
-    print_break();
-    cout << "The unused parameters" << endl;
-    PL_Main.unused(cout);
-    print_break();
-    cout << "Number of Failed Tests : " << FailedTests << endl;
-    print_break();
   }
 
   //-----------------------------------------------------------
