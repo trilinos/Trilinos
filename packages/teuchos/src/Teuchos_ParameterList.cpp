@@ -64,6 +64,9 @@ struct ListPlusNamePlusValidList {
 
 namespace Teuchos {
 
+ParameterList::ParameterList()
+{}
+
 ParameterList::ParameterList(const std::string &name)
   :name_(name)
 {}

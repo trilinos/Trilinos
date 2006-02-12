@@ -28,6 +28,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_getConst.hpp"
 #include "Teuchos_Version.hpp"
 
 #ifdef HAVE_TEUCHOS_EXTENDED
@@ -231,11 +232,12 @@ int main(int argc, char *argv[])
     // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
     //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
-    int max_iters = 0;
+    int max_iters = 0, max_iters_again = 0;
     string nonlin_solver;
     tempMeth = true;
     try {
       max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
+      max_iters_again = Teuchos::getConst(PL_My_Polynomial).INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<string>("Nonlinear Solver");
     }
     catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }  
@@ -244,6 +246,11 @@ int main(int argc, char *argv[])
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
     }
     if (tempMeth && max_iters==3) { if (verbose) cout << "yes" << endl; }
+    else { if (verbose) cout << "no" << endl; FailedTests++; }
+    if (verbose) {
+      cout<< "  Can we retrieve const information using the CORRECT variable type ... ";
+    }
+    if (tempMeth && max_iters_again==3) { if (verbose) cout << "yes" << endl; }
     else { if (verbose) cout << "no" << endl; FailedTests++; }
 
     //-----------------------------------------------------------
@@ -312,10 +319,12 @@ int main(int argc, char *argv[])
     // (This will be tested using the INVALID_TEMPLATE_QUALIFIER which indicates whether a
     //  non-templated code needs ".template" before the method name )
     //-----------------------------------------------------------
-    int* max_iters_ptr = 0;
+    int *max_iters_ptr = 0;
+    const int *max_iters_ptr_again = 0;
     string* nonlin_solver_ptr;
 
     max_iters_ptr = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
+    max_iters_ptr_again = Teuchos::getConst(PL_My_Polynomial).INVALID_TEMPLATE_QUALIFIER getPtr<int>("Max Iters");
     nonlin_solver_ptr = PL_Main.INVALID_TEMPLATE_QUALIFIER getPtr<string>("Nonlinear Solver");
 
     if (verbose) {
@@ -324,6 +333,15 @@ int main(int argc, char *argv[])
     }
     if (max_iters_ptr) {
       if ((*max_iters_ptr)==3) {
+        if (verbose) cout << "yes" << endl; 
+      }
+      else { if (verbose) cout << "no" << endl; FailedTests++; }
+    }
+    if (verbose) {
+      cout<< "  Can we retrieve const information using the CORRECT variable type ... ";
+    }
+    if (max_iters_ptr_again) {
+      if ((*max_iters_ptr_again)==3) {
         if (verbose) cout << "yes" << endl; 
       }
       else { if (verbose) cout << "no" << endl; FailedTests++; }

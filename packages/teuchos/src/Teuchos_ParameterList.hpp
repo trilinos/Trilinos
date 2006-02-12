@@ -114,7 +114,10 @@ public:
   //@{
 
   //! Constructor
-  ParameterList(const std::string &name = "");
+  ParameterList();
+
+  //! Constructor
+  ParameterList(const std::string &name);
   
   //! Copy Constructor
   ParameterList(const ParameterList& source);
@@ -448,7 +451,7 @@ T& ParameterList::get(const string& name)
 template<typename T>
 const T& ParameterList::get(const string& name) const
 {
-  ParameterEntry *entry = this->getEntryPtr(name);
+  const ParameterEntry *entry = this->getEntryPtr(name);
   validateEntryExists("get",name,entry);
   this->template validateEntryType<T>("get",name,*entry);
   return getValue<T>(*entry);
