@@ -238,7 +238,7 @@ int main(int argc, char *argv[])
       max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<string>("Nonlinear Solver");
     }
-    catch( std::exception& e ) { tempMeth = false; }  
+    catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }  
     if (verbose) {
       cout<< "Is the templated 'get' method functional ... "<<endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     try {
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
     }
-    catch( std::exception& e ) {
+    catch( const Teuchos::Exceptions::InvalidParameter& e ) {
       tempMeth = true;
       FailedTests--;        
     }
@@ -277,7 +277,7 @@ int main(int argc, char *argv[])
       max_iters = PL_My_Polynomial.INVALID_TEMPLATE_QUALIFIER get<int>("Max Iters");
       nonlin_solver = PL_Main.INVALID_TEMPLATE_QUALIFIER get<string>("Nonlinear Solver");
     }
-    catch( std::exception& e ) { tempMeth = false; }  
+    catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }  
     if (verbose) {
       cout<< "Is the templated 'get' method functional ... "<<endl;
       cout<< "  Can we retrieve information using the CORRECT variable type ... ";
@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
     try {
       mbf = PL_LinSol.INVALID_TEMPLATE_QUALIFIER get<float>( "Tol" );
     }
-    catch( std::exception& e ) {
+    catch( const Teuchos::Exceptions::InvalidParameter& e ) {
       tempMeth = true;
       FailedTests--;        
     }
@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
       def_step = getParameter<int>(PL_Polynomial, "Default Step");
       alpha_fact = getParameter<double>(PL_Polynomial, "Alpha Factor");
     }
-    catch( std::exception& e ) { tempMeth = false; }
+    catch( const Teuchos::Exceptions::InvalidParameter& e ) { tempMeth = false; }
     if (verbose && def_step==1) {
       cout<< "Is the helper function 'getParameter' functional ... ";
     }
@@ -557,13 +557,53 @@ int main(int argc, char *argv[])
     ParameterList readBack = reader.toParameterList(xml);
     if (verbose) readBack.print(cout);
   }
-  catch(std::exception& e)
+  catch(const std::exception& e)
   {
     cerr << "caught exception " << e.what() << endl;
-    FailedTests += 1;
+    FailedTests++;
   }
 
 #endif
+
+  //-----------------------------------------------------------
+  // Show error outputs
+  //-----------------------------------------------------------
+
+  if (verbose) {
+    print_break();
+    cout << "Assessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    print_break();
+  }
+  try {
+    getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerances");
+    if (verbose) cout << "Did not throw exception, error!\n";
+    FailedTests += 1;
+  }
+  catch(const Teuchos::Exceptions::InvalidParameter &e) {
+    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  }
+  catch(const std::exception &e) {
+    cerr << "caught unexpected exception: " << e.what() << endl;
+    FailedTests += 1;
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Assessing a parameter using the wrong parameter type (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    print_break();
+  }
+  try {
+    getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerance");
+    if (verbose) cout << "Did not throw exception, error!\n";
+    FailedTests += 1;
+  }
+  catch(const Teuchos::Exceptions::InvalidParameter &e) {
+    cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
+  }
+  catch(const std::exception &e) {
+    cerr << "caught unexpected exception: " << e.what() << endl;
+    FailedTests += 1;
+  }
 
   //-----------------------------------------------------------
   // Validate the parameter list
@@ -579,14 +619,14 @@ int main(int argc, char *argv[])
   try {
     PL_Main_copy.validateParameters("PL_Main_copy",PL_Main);
   }
-  catch(std::exception &e) {
+  catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
     FailedTests += 1;
   }
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter type (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Adding an invalid parameter type then validating (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
     print_break();
   }
   try {
@@ -595,10 +635,10 @@ int main(int argc, char *argv[])
     if (verbose) cout << "Did not throw exception, error!\n";
     FailedTests += 1;
   }
-  catch(Teuchos::Exceptions::InvalidParameter &e) {
+  catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
-  catch(std::exception &e) {
+  catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
     FailedTests += 1;
   }
@@ -606,7 +646,7 @@ int main(int argc, char *argv[])
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid parameter name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Adding an invalid parameter name then validating (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
     print_break();
   }
   try {
@@ -615,17 +655,17 @@ int main(int argc, char *argv[])
     if (verbose) cout << "Did not throw exception, error!\n";
     FailedTests += 1;
   }
-  catch(Teuchos::Exceptions::InvalidParameter &e) {
+  catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
-  catch(std::exception &e) {
+  catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
     FailedTests += 1;
   }
 
   if (verbose) {
     print_break();
-    cout << "Adding an invalid sublist (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Adding an invalid sublist then validating (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
     print_break();
   }
   try {
@@ -634,10 +674,10 @@ int main(int argc, char *argv[])
     if (verbose) cout << "Did not throw exception, error!\n";
     FailedTests += 1;
   }
-  catch(Teuchos::Exceptions::InvalidParameter &e) {
+  catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
-  catch(std::exception &e) {
+  catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
     FailedTests += 1;
   }
@@ -650,7 +690,7 @@ int main(int argc, char *argv[])
   try {
     PL_Main_copy.validateParameters("PL_Main_copy",PL_Main,0);
   }
-  catch(std::exception &e) {
+  catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
     FailedTests += 1;
   }

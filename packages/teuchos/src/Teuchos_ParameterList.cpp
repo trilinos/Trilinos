@@ -47,24 +47,6 @@ std::string filterValueToString(const Teuchos::ParameterEntry& entry )
   return ( entry.isList() ? std::string("...") : toString(entry.getAny()) );
 }
 
-std::string validParametersString( const Teuchos::ParameterList& paramList )
-{
-  std::ostringstream oss;
-  oss << "{";
-  Teuchos::ParameterList::ConstIterator itr;
-  int i;
-  for( itr = paramList.begin(), i = 0; itr != paramList.end(); ++itr, ++i ) {
-    const std::string              &entryName   = paramList.name(itr);
-    const Teuchos::ParameterEntry  &entry       = paramList.entry(itr);
-    if(i) oss << ",";
-    oss
-      << "\""<<entryName<<"\":"<<entry.getAny().type().name()
-      <<"="<<filterValueToString(entry);
-  }
-  oss << "}";
-  return oss.str();
-}
-
 struct ListPlusNamePlusValidList {
   std::string              listName;
   Teuchos::ParameterList   *list;
@@ -82,11 +64,13 @@ struct ListPlusNamePlusValidList {
 
 namespace Teuchos {
 
-ParameterList::ParameterList()
+ParameterList::ParameterList(const std::string &name)
+  :name_(name)
 {}
 
 ParameterList::ParameterList(const ParameterList& source) 
 {
+  name_ = source.name_;
   params_ = source.params_;
 }
 
@@ -95,6 +79,7 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
   if (&source == this)
     return *this;
 
+  name_ = source.name_;
   params_ = source.params_;
   return *this;
 }
@@ -110,6 +95,24 @@ void ParameterList::unused(ostream& os) const
          << " is unused" << endl;
     }
   }
+}
+
+std::string ParameterList::currentParametersString() const
+{
+  std::ostringstream oss;
+  oss << "{";
+  ParameterList::ConstIterator itr;
+  int i;
+  for( itr = this->begin(), i = 0; itr != this->end(); ++itr, ++i ) {
+    const std::string     &entryName   = this->name(itr);
+    const ParameterEntry  &entry       = this->entry(itr);
+    if(i) oss << ",";
+    oss
+      << "\""<<entryName<<"\":"<<entry.getAny().type().name()
+      <<"="<<filterValueToString(entry);
+  }
+  oss << "}";
+  return oss.str();
 }
 
 bool ParameterList::isSublist(const string& name) const
@@ -135,13 +138,21 @@ ParameterList& ParameterList::sublist(const string& name)
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
   if (i != params_.end()) {
-    TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,
-                        " Parameter " << name << " is not a list!" );
+    TEST_FOR_EXCEPTION(
+      !entry(i).isList(), std::runtime_error,
+      " Parameter " << name << " is not a list, it is of type \""
+      <<entry(i).getAny().type().name()<<"\"!" );
     return getValue<ParameterList>(entry(i));
   }
 
-  // If it does not exist, create a new empty list and return a reference
-  return params_[name].setList(true);
+  // The list does not exist so create a new empty list and return its reference
+  const ParameterList newSubList(name);
+  return any_cast<ParameterList>(
+    params_.insert(Map::value_type(name,ParameterEntry(newSubList,false,true))).first->second.getAny()
+    );
+  // Note that above I am very careful to construct the parameter list entry
+  // directly in the insertion call to avoid the creation of a tempory list
+  // object.  This looks ugly but it should be fast.
 }
 
 const ParameterList& ParameterList::sublist(const string& name) const
@@ -284,7 +295,7 @@ void ParameterList::validateParameters(
            : std::string("exists in the list of valid parameters but has the wrong type.  The correct type is \"")
            +validEntry->getAny().type().name()+std::string("\"")
         )
-      << ". The valid parameters and types include "<<validParametersString(validParamList)
+      << ". The valid parameters and types are "<<validParamList.currentParametersString()
       );
     if( entry.isList() && depth > 0 ) {
       sublist_list.push_back(

@@ -114,7 +114,7 @@ public:
   //@{
 
   //! Constructor
-  ParameterList();
+  ParameterList(const std::string &name = "");
   
   //! Copy Constructor
   ParameterList(const ParameterList& source);
@@ -189,7 +189,7 @@ public:
   */
   std::string& get(const string& name, const char* def_value);
   
-  /*! \brief Retrieves parameter \c name of type \c T from a list, an
+  /*! \brief Retrieves parameter \c name of type \c T from a list, an <tt>Exceptions::InvalidParameter</tt>
     exception is thrown if this parameter doesn't exist or is the wrong type.
     \note The syntax for calling this method is: <tt> list.template get<int>(
     "Iters" ) </tt>
@@ -197,7 +197,7 @@ public:
   template<typename T>
   T& get(const string& name);
   
-  /*! \brief Retrieves parameter \c name of type \c T from a constant list, an
+  /*! \brief Retrieves parameter \c name of type \c T from a constant list, an <tt>Exceptions::InvalidParameter</tt>
     exception is thrown if this parameter doesn't exist or is the wrong type.
     \note The syntax for calling this method is: <tt> list.template get<int>(
     "Iters" ) </tt>
@@ -223,6 +223,10 @@ public:
   
   /*! \brief Retrieves the pointer for an entry with the name <tt>name</tt> if
    *  it exists. */
+  ParameterEntry* getEntryPtr(const string& name);  
+  
+  /*! \brief Retrieves the pointer for a constant entry with the name <tt>name</tt> if
+   *  it exists. */
   const ParameterEntry* getEntryPtr(const string& name) const;  
 
   //@}
@@ -247,6 +251,9 @@ public:
   
   /** \name Attribute Functions */
   //@{
+
+  /*! \brief Query the name of this parameter list. */
+  const std::string& name() const;
 
   /*! \brief Query the existence of a parameter.  \return "true" if a
     parameter with this \c name exists, else "false".
@@ -288,6 +295,9 @@ public:
   
   //! Print out unused parameters in the ParameterList.
   void unused(ostream& os) const;
+
+  //! Create a single formated string of all of the zero-level parameters in this list
+  std::string currentParametersString() const;
 
   //@}
 
@@ -356,9 +366,16 @@ private: // Functions
   
   //! Access to ParameterEntry (i.e., returns i->second)
   ParameterEntry& entry(Iterator i);
+  //! Validate that a parameter exists
+  void validateEntryExists( const std::string &funcName, const std::string &name, const ParameterEntry *entry ) const;
+  //! Validate that a type is the same
+  template<typename T>
+  void validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const;
   
 private: // Data members
-  
+
+  //! Name of the (sub)list
+  std::string name_;
   //! Parameter list
   Map params_;
 };
@@ -404,8 +421,7 @@ T& ParameterList::get(const string& name, T def_value)
     i = params_.find(name);
   } else {
     // The parameter was found, make sure it is the same type as T.
-    TEST_FOR_EXCEPTION( entry(i).getAny().type() != typeid(T), std::runtime_error,
-                        "get ( " << name << ", T def_value ) failed -- parameter is wrong type! " );
+    this->template validateEntryType<T>("get",name,entry(i));
   }
 
   // Return the value of the parameter
@@ -423,23 +439,19 @@ std::string& ParameterList::get(const string& name, const char* def_value)
 template<typename T>
 T& ParameterList::get(const string& name) 
 {
-  ConstIterator i = params_.find(name);
-  TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
-                      "get ( " << name << " ) failed -- parameter does not exist! " );
-  TEST_FOR_EXCEPTION( entry(i).getAny().type() != typeid(T), std::runtime_error,
-                      "get ( " << name << " ) failed -- parameter is wrong type! " );
-  return getValue<T>(entry(i));
+  ParameterEntry *entry = this->getEntryPtr(name);
+  validateEntryExists("get",name,entry);
+  this->template validateEntryType<T>("get",name,*entry);
+  return getValue<T>(*entry);
 }
   
 template<typename T>
 const T& ParameterList::get(const string& name) const
 {
-  ConstIterator i = params_.find(name);
-  TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
-                      "get ( " << name << " ) failed -- parameter does not exist! " );
-  TEST_FOR_EXCEPTION( entry(i).getAny().type() != typeid(T), std::runtime_error,
-                      "get ( " << name << " ) failed -- parameter is wrong type! " );
-  return getValue<T>(entry(i));
+  ParameterEntry *entry = this->getEntryPtr(name);
+  validateEntryExists("get",name,entry);
+  this->template validateEntryType<T>("get",name,*entry);
+  return getValue<T>(*entry);
 }
 
 template<typename T>
@@ -463,6 +475,16 @@ const T* ParameterList::getPtr(const string& name) const
 }
 
 inline
+ParameterEntry*
+ParameterList::getEntryPtr(const string& name)
+{
+  Map::iterator i = params_.find(name);
+  if ( i == params_.end() )
+    return NULL;
+  return &entry(i);
+}
+
+inline
 const ParameterEntry*
 ParameterList::getEntryPtr(const string& name) const
 {
@@ -473,6 +495,12 @@ ParameterList::getEntryPtr(const string& name) const
 }
 
 // Attribute Functions
+
+inline
+const std::string& ParameterList::name() const
+{
+  return name_;
+}
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 template<typename T>
@@ -512,6 +540,29 @@ bool ParameterList::isType(const string& name) const
   return true;
 }
 
+// private
+
+inline
+void ParameterList::validateEntryExists( const std::string &funcName, const std::string &name, const ParameterEntry *entry ) const
+{
+  TEST_FOR_EXCEPTION(
+    entry==NULL, Exceptions::InvalidParameter,
+    funcName<<"(...): Error!  The parameter \""<<name<<"\" does not exist in the parameter (sub)list \""<<this->name()<<"\"."
+    "  The current parameters set in (sub)list \""<<this->name()<<"\" are " << this->currentParametersString() << "!"
+    );
+}
+
+template<typename T>
+void ParameterList::validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const
+{
+  TEST_FOR_EXCEPTION(
+    entry.getAny().type() != typeid(T), Exceptions::InvalidParameter,
+    funcName<<"(...): Error!  An attempt was made to access parameter \""<<name<<"\""
+    " of type \""<<entry.getAny().type().name()<<"\" in the parameter (sub)list \""<<this->name()<<"\""
+    " using the incorrect type \""<<typeid(T).name()<<"\"!"
+    );
+}
+
 // //////////////////////////////////////
 // Helper functions
   
@@ -524,17 +575,7 @@ bool ParameterList::isType(const string& name) const
 template<typename T>
 T& getParameter( ParameterList& l, const string& name )
 {
-  T temp_var;
-  // CAREFUL:  We need to be sure the parameter exists before using the temp variable to get the parameter.
-  // This parameter was not found or is wrong type, throw an exception
-  TEST_FOR_EXCEPTION( !l.isParameter( name ), std::runtime_error,
-                      "getParameter ( " << name << " ) failed -- parameter does not exist! " );
-  TEST_FOR_EXCEPTION( !l.isType( name, &temp_var ), std::runtime_error,
-                      "getParameter ( " << name << " ) failed -- parameter is wrong type! " );
-  //
-  // This parameter exists and is of the right type, so we can retrieve it safely.    
-  //
-  return l.get( name, temp_var );
+  return l.template get<T>(name);
 }
   
 /*! \relates ParameterList
@@ -546,17 +587,7 @@ T& getParameter( ParameterList& l, const string& name )
 template<typename T>
 const T& getParameter( const ParameterList& l, const string& name )
 {
-  T temp_var;
-  // CAREFUL:  We need to be sure the parameter exists before using the temp variable to get the parameter.
-  // This parameter was not found or is wrong type, throw an exception
-  TEST_FOR_EXCEPTION( !l.isParameter( name ), std::runtime_error,
-                      "getParameter ( " << name << " ) failed -- parameter does not exist! " );
-  TEST_FOR_EXCEPTION( !l.isType( name, &temp_var ), std::runtime_error,
-                      "getParameter ( " << name << " ) failed -- parameter is wrong type! " );
-  //
-  // This parameter exists and is of the right type, so we can retrieve it safely.    
-  //
-  return l.get( name, temp_var );
+  return l.template get<T>(name);
 }
   
 /*! \relates ParameterList

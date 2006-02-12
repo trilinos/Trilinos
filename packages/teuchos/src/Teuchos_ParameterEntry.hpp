@@ -63,7 +63,7 @@ public:
 
   //! Templated constructor
   template<typename T>
-  explicit ParameterEntry(T value, bool isDefault = false);
+  explicit ParameterEntry(T value, bool isDefault = false, bool isList = false);
 
   //! Destructor
   ~ParameterEntry();
@@ -103,6 +103,11 @@ public:
   T& getValue(T *ptr) const;
 
   /*! \brief Direct access to the Teuchos::any data value underlying this
+   *  object.
+   */
+  any& getAny();
+
+  /*! \brief Constant direct access to the Teuchos::any data value underlying this
    *  object.
    */
   const any& getAny() const;
@@ -184,8 +189,9 @@ inline ostream& operator<<(ostream& os, const ParameterEntry& e)
 
 template<typename T>
 inline
-ParameterEntry::ParameterEntry(T value, bool isDefault)
+ParameterEntry::ParameterEntry(T value, bool isDefault, bool isList)
   : val_(value),
+    isList_(isList),
     isUsed_(false),
     isDefault_(isDefault)
 {}
@@ -213,6 +219,10 @@ T& ParameterEntry::getValue(T *ptr) const
   isUsed_ = true;
   return const_cast<T&>(Teuchos::any_cast<T>( val_ ));
 }
+
+inline
+any& ParameterEntry::getAny()
+{ return val_; }
 
 inline
 const any& ParameterEntry::getAny() const
