@@ -131,6 +131,7 @@ libepetrathyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 =  \
 	Thyra_DiagonalEpetraLinearOpWithSolveFactory.$(OBJEXT) \
 	Thyra_EpetraLinearOp.$(OBJEXT) \
+	Thyra_EpetraOperatorViewExtractorStd.$(OBJEXT) \
 	Thyra_EpetraThyraWrappers.$(OBJEXT) \
 	Thyra_get_Epetra_Operator.$(OBJEXT)
 am_libepetrathyra_a_OBJECTS = $(am__objects_1)
@@ -140,6 +141,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Thyra_DiagonalEpetraLinearOpWithSolveFactory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Thyra_EpetraLinearOp.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Thyra_EpetraThyraWrappers.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Thyra_get_Epetra_Operator.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -303,12 +305,15 @@ SOURCE_H = \
 	$(srcdir)/Thyra_EpetraTypes.hpp \
 	$(srcdir)/Thyra_EpetraLinearOpBase.hpp \
 	$(srcdir)/Thyra_EpetraLinearOp.hpp \
+	$(srcdir)/Thyra_EpetraOperatorViewExtractorBase.hpp \
+	$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.hpp \
 	$(srcdir)/Thyra_EpetraThyraWrappers.hpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.hpp
 
 SOURCE = \
 	$(srcdir)/Thyra_DiagonalEpetraLinearOpWithSolveFactory.cpp \
 	$(srcdir)/Thyra_EpetraLinearOp.cpp \
+	$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp \
 	$(srcdir)/Thyra_EpetraThyraWrappers.cpp \
 	$(srcdir)/Thyra_get_Epetra_Operator.cpp
 
@@ -443,6 +448,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DiagonalEpetraLinearOpWithSolveFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_EpetraLinearOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_EpetraThyraWrappers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_get_Epetra_Operator.Po@am__quote@
 
@@ -493,6 +499,22 @@ Thyra_EpetraLinearOp.obj: $(srcdir)/Thyra_EpetraLinearOp.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_EpetraLinearOp.Po' tmpdepfile='$(DEPDIR)/Thyra_EpetraLinearOp.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_EpetraLinearOp.obj `if test -f '$(srcdir)/Thyra_EpetraLinearOp.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_EpetraLinearOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_EpetraLinearOp.cpp'; fi`
+
+Thyra_EpetraOperatorViewExtractorStd.o: $(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_EpetraOperatorViewExtractorStd.o -MD -MP -MF "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Tpo" -c -o Thyra_EpetraOperatorViewExtractorStd.o `test -f '$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Tpo" "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Po"; else rm -f "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp' object='Thyra_EpetraOperatorViewExtractorStd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Po' tmpdepfile='$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_EpetraOperatorViewExtractorStd.o `test -f '$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp
+
+Thyra_EpetraOperatorViewExtractorStd.obj: $(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_EpetraOperatorViewExtractorStd.obj -MD -MP -MF "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Tpo" -c -o Thyra_EpetraOperatorViewExtractorStd.obj `if test -f '$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Tpo" "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Po"; else rm -f "$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp' object='Thyra_EpetraOperatorViewExtractorStd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.Po' tmpdepfile='$(DEPDIR)/Thyra_EpetraOperatorViewExtractorStd.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_EpetraOperatorViewExtractorStd.obj `if test -f '$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_EpetraOperatorViewExtractorStd.cpp'; fi`
 
 Thyra_EpetraThyraWrappers.o: $(srcdir)/Thyra_EpetraThyraWrappers.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_EpetraThyraWrappers.o -MD -MP -MF "$(DEPDIR)/Thyra_EpetraThyraWrappers.Tpo" -c -o Thyra_EpetraThyraWrappers.o `test -f '$(srcdir)/Thyra_EpetraThyraWrappers.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_EpetraThyraWrappers.cpp; \

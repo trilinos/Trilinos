@@ -31,6 +31,7 @@
 #define THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+#include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
@@ -98,6 +99,16 @@ public:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( int, adjDefaultMaxIterations )
   /** \brief The default solution tolerance on the residual for adjoint solves. */
  	STANDARD_MEMBER_COMPOSITION_MEMBERS( double, adjDefaultTol )
+    
+  /** \brief Set the strategy object used to extract an
+   * <tt>Epetra_Operator</tt> view of an input forward operator.
+   *
+   * This view will then be dynamically casted to <tt>Epetra_RowMatrix</tt>
+   * before it is used.
+   *
+   * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
+   */
+  STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor )
 
   /** \brief Set the parameters that will be used for the forward aztec sovler.
    *

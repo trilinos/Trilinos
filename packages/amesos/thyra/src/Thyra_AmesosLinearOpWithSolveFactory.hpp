@@ -34,6 +34,7 @@
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Thyra_AmesosTypes.hpp"
 #include "Amesos_BaseSolver.h"
+#include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
 
@@ -119,6 +120,16 @@ public:
    * to <tt>this->initializeOp()</tt>).
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, throwOnPrecInput )
+    
+  /** \brief Set the strategy object used to extract an
+   * <tt>Epetra_Operator</tt> view of an input forward operator.
+   *
+   * This view will then be dynamically casted to <tt>Epetra_RowMatrix</tt>
+   * before it is used.
+   *
+   * The default implementation used is <tt>EpetraOperatorViewExtractorBase</tt>.
+   */
+  STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor )
 
   //@}
 

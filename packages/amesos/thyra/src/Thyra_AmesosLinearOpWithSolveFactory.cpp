@@ -32,6 +32,7 @@
 
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
+#include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
@@ -72,6 +73,10 @@
 #include "Amesos_Paraklete.h"
 #endif
 
+namespace {
+const std::string epetraFwdOp_str = "epetraFwdOp";
+} // namespace
+
 namespace Thyra {
 
 // Constructors/initializers/accessors
@@ -84,8 +89,9 @@ AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
     )
   :solverType_(solverType)
   ,refactorizationPolicy_(refactorizationPolicy)
-   ,paramList_(paramList)
-   ,throwOnPrecInput_(throwOnPrecInput)
+  ,paramList_(paramList)
+  ,throwOnPrecInput_(throwOnPrecInput)
+  ,epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
 {}
 
 // Overridden from LinearOpWithSolveFactoryBase
@@ -94,18 +100,15 @@ bool AmesosLinearOpWithSolveFactory::isCompatible(
   const LinearOpBase<double> &fwdOp
   ) const
 {
-  double                     wrappedScalar = 0.0;
-  ETransp                    wrappedTransp = NOTRANS;
-  const LinearOpBase<double> *wrappedFwdOp = NULL;
-  ::Thyra::unwrap(fwdOp,&wrappedScalar,&wrappedTransp,&wrappedFwdOp);
-  const EpetraLinearOpBase *eFwdOp = NULL;
-  if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(wrappedFwdOp)) )
-    return false;
   Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  eFwdOp->getEpetraOpView(&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport);
+  double                                      epetraFwdOpScalar;
+  epetraFwdOpViewExtractor_->getEpetraOpView(
+    Teuchos::rcp(&fwdOp,false)
+    ,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
     return false;
   return true;
@@ -127,22 +130,16 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
   //
-  // Unwrap and get the forward operator
+  // Unwrap and get the forward Epetra_Operator object
   //
-  double                                              wrappedFwdOpScalar = 0.0;
-  ETransp                                             wrappedFwdOpTransp = NOTRANS;
-  Teuchos::RefCountPtr<const LinearOpBase<double> >   wrappedFwdOp; 
-  unwrap(fwdOp,&wrappedFwdOpScalar,&wrappedFwdOpTransp,&wrappedFwdOp);
-  Teuchos::RefCountPtr<const EpetraLinearOpBase>
-    epetraFwdOp = Teuchos::rcp_dynamic_cast<const EpetraLinearOpBase>(wrappedFwdOp,true);
-  // Get a RCP to the Epetra_Operator view of the forward operator (see the Thyra::EpetraLinearOpBase::getEpetraOpView(...))
-  Teuchos::RefCountPtr<const Epetra_Operator> epetra_epetraFwdOp;
-  ETransp                                     epetra_epetraFwdOpTransp;
-  EApplyEpetraOpAs                            epetra_epetraFwdOpApplyAs;
-  EAdjointEpetraOp                            epetra_epetraFwdOpAdjointSupport;
-  epetraFwdOp->getEpetraOpView(&epetra_epetraFwdOp,&epetra_epetraFwdOpTransp,&epetra_epetraFwdOpApplyAs,&epetra_epetraFwdOpAdjointSupport);
-  // Get the overall transpose that amesos solver will use
-  const ETransp amesosOpTransp = trans_trans(real_trans(epetra_epetraFwdOpTransp),wrappedFwdOpTransp);
+  Teuchos::RefCountPtr<const Epetra_Operator> epetraFwdOp;
+  ETransp                                     epetraFwdOpTransp;
+  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
+  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
+  double                                      epetraFwdOpScalar;
+  epetraFwdOpViewExtractor_->getEpetraOpView(
+    fwdOp,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    );
   // Get the AmesosLinearOpWithSolve object
   AmesosLinearOpWithSolve
     *amesosOp = &Teuchos::dyn_cast<AmesosLinearOpWithSolve>(*Op);
@@ -153,8 +150,8 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   if(!startOver) {
     startOver =
       (
-        amesosOpTransp != amesosOp->get_amesosSolverTransp() ||
-        epetra_epetraFwdOp.get() != amesosOp->get_epetraLP()->GetOperator()
+        epetraFwdOpTransp != amesosOp->get_amesosSolverTransp() ||
+        epetraFwdOp.get() != amesosOp->get_epetraLP()->GetOperator()
         // We must start over if the matrix object changes.  This is a
         // weakness of Amesos but there is nothing I can do about this right
         // now!
@@ -172,8 +169,8 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Create the linear problem and set the operator with memory of RCP to Epetra_Operator view!
     Teuchos::RefCountPtr<Epetra_LinearProblem>
       epetraLP = Teuchos::rcp(new Epetra_LinearProblem());
-    epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetra_epetraFwdOp));
-    Teuchos::set_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >( epetra_epetraFwdOp, "epetra_epetraFwdOp", &epetraLP );
+    epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetraFwdOp));
+    Teuchos::set_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >( epetraFwdOp, epetraFwdOp_str, &epetraLP );
     // Create the concrete solver
     Teuchos::RefCountPtr<Amesos_BaseSolver>
       amesosSolver;
@@ -248,7 +245,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     amesosSolver->SymbolicFactorization();
     amesosSolver->NumericFactorization();
     // Initialize the LOWS object and we are done!
-    amesosOp->initialize(fwdOp,epetraLP,amesosSolver,amesosOpTransp,wrappedFwdOpScalar);
+    amesosOp->initialize(fwdOp,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
   }
   else {
     //
@@ -262,8 +259,8 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     Teuchos::RefCountPtr<Amesos_BaseSolver>
       amesosSolver = amesosOp->get_amesosSolver();
     // Reset the forward operator with memory of RCP to Epetra_Operator view!
-    epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetra_epetraFwdOp));
-    Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(epetraLP,"epetra_epetraFwdOp") = epetra_epetraFwdOp;
+    epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetraFwdOp));
+    Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(epetraLP,epetraFwdOp_str) = epetraFwdOp;
     // Reset the parameters
     if(paramList_.get()) amesosSolver->SetParameters(*paramList_);
     // Repivot if asked
@@ -272,7 +269,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     amesosSolver->NumericFactorization();
     // Reinitialize the LOWS object and we are done! (we must do this to get the
     // possibly new transpose and scaling factors back in)
-    amesosOp->initialize(fwdOp,epetraLP,amesosSolver,amesosOpTransp,wrappedFwdOpScalar);
+    amesosOp->initialize(fwdOp,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
   }
 }
 
@@ -315,7 +312,7 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   if(_fwdOp.get()) {
     // Erase the Epetra_Operator view of the forward operator!
     Teuchos::RefCountPtr<Epetra_LinearProblem> epetraLP = amesosOp->get_epetraLP();
-    Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(epetraLP,"epetra_epetraFwdOp") = Teuchos::null;
+    Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(epetraLP,epetraFwdOp_str) = Teuchos::null;
     // Note, we did not erase the address of the operator in epetraLP->GetOperator() since
     // it seems that the amesos solvers do not recheck the value of GetProblem()->GetOperator()
     // so you had better not rest this!
