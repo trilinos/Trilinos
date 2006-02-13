@@ -54,7 +54,7 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
-  int i, ierr, gerr;
+  int ierr, gerr;
   gerr = 0;
 
 #ifdef HAVE_MPI
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 
   // Get the data from the HB file
   int info;
-  int dim,dim2,nnz,nrhs;
+  int dim,dim2,nnz;
   double *dvals;
   int *colptr,*rowind;
   ST *cvals;
