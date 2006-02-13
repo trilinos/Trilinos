@@ -41,6 +41,12 @@
 /* Define to 1 if you have the <cmath> header file. */
 #undef HAVE_CMATH
 
+/* Define to 1 if you have the <complex> header file. */
+#undef HAVE_COMPLEX
+
+/* Define to 1 if you have the <complex.h> header file. */
+#undef HAVE_COMPLEX_H
+
 /* Define to 1 if you have the <cstdio> header file. */
 #undef HAVE_CSTDIO
 
@@ -121,6 +127,9 @@
 
 /* Define if want to build tests */
 #undef HAVE_TESTS
+
+/* Define if want to build teuchos-complex */
+#undef HAVE_TEUCHOS_COMPLEX
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

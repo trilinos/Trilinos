@@ -133,7 +133,7 @@ public:
 	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
 	*/
 
-        virtual void MvNorm ( std::vector<ScalarType>* normvec, NormType type = TwoNorm ) const = 0;
+        virtual void MvNorm ( std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec, NormType type = TwoNorm ) const = 0;
 
 	//@}
 	//@{ \name Initialization methods.
@@ -210,7 +210,7 @@ public:
     static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>* b )
     { mv.MvDot( A, b ); }
     ///
-    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<ScalarType>* normvec, NormType type = TwoNorm )
+    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>* normvec, NormType type = TwoNorm )
     { mv.MvNorm(normvec,type); }
     ///
     static void SetBlock( const MultiVec<ScalarType>& A, const std::vector<int>& index, MultiVec<ScalarType>& mv )

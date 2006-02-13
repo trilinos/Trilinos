@@ -147,6 +147,7 @@ AC_CHECK_HEADERS([cassert assert.h], [break],)
 AC_CHECK_HEADERS([cmath math.h], [break],)
 AC_CHECK_HEADERS([iostream iostream.h], [break],)
 AC_CHECK_HEADERS([string string.h], [break],)
+AC_CHECK_HEADERS([complex complex.h], [break],)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Belos requires at least one or the other.]])
@@ -171,6 +172,11 @@ fi
 if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cmath or math.h.  Belos requires at least one or the other.]])
 fi
+
+if test "X$ac_cv_header_complex" != "Xyes" && test "X$ac_cv_header_complex_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find complex or complex.h.  Belos requires at least one or the other.]])
+fi
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -215,6 +221,8 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # Optional: Ifpack, TSFCore
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
+AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
 
@@ -323,7 +331,7 @@ AC_CONFIG_FILES([
 		test/BlockCG/Makefile
 		test/BlockGmres/Makefile
 		test/MVOPTester/Makefile
-		test/scripts/Makefile
+                test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
 		thyra/Makefile

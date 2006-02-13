@@ -190,14 +190,6 @@ else
 BUILD_IFPACK_LIBS =
 endif
 
-# RPP: Commenting out TSFCore support since it is depricated and the 
-# doesn't have the new export makefile system installed.
-##if BUILD_TSFCORE_EPETRA
-##BUILD_TSFCORE_EPETRA_LIBS = cd $(top_builddir)/../tsfcore ; $(MAKE) all-libs
-##else
-##BUILD_TSFCORE_EPETRA_LIBS =
-##endif
-
 all-libs:
 	$(MAKE) libbelos.a
 	cd $(top_builddir)/../epetra ; $(MAKE) all-libs

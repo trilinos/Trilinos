@@ -2,4 +2,3 @@
 # @HEADER
 
 SUBDIRS = scripts BlockCG BlockGmres MVOPTester
-
