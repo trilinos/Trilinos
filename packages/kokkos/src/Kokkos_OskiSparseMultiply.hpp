@@ -34,6 +34,9 @@
 #include "Kokkos_Vector.hpp"
 #include "Kokkos_Permutation.hpp"
 #include "Kokkos_SparseOperation.hpp" 
+extern "C" {
+  #include <oski/oski.h>
+}
 
 namespace Kokkos {
 

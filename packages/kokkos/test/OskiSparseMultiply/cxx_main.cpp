@@ -99,6 +99,7 @@ int main(int argc, char* argv[])
     bool isRowOriented = true;
     bool hasImplicitUnitDiagonal = false;
     OTYPE nrhs = 1;
+    oski_Init();
     KokkosTest::GenerateOskiProblem<OTYPE, STYPE>
       problem(isRowOriented,hasImplicitUnitDiagonal,
 	      nx, ny, npoints, xoff, yoff, nrhs, A, x, b, xexact, numEntries);
