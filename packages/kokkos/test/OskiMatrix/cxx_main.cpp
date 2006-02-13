@@ -53,7 +53,7 @@ void GenerateHbProblem(bool isRowOriented,
 		       Kokkos::Vector<OrdinalType, ScalarType> *& b,
 		       Kokkos::Vector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
-*/
+
 template<typename OrdinalType, typename ScalarType>
 void GenerateOskiProblem(bool isRowOriented,
 		       OrdinalType nx, OrdinalType ny, OrdinalType npoints, 
@@ -63,7 +63,7 @@ void GenerateOskiProblem(bool isRowOriented,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *& b,
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
-
+*/
 typedef MultiVector<OTYPE, STYPE> OMultiVector;
 typedef MultiVector<OTYPE, STYPE> OVector;
 typedef CisMatrix<OTYPE, STYPE> OMatrix;

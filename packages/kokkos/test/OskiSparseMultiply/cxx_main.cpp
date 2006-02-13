@@ -59,9 +59,9 @@ void GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented, bool ha
 		       Kokkos::MultiVector<OrdinalType, ScalarType> *&xexact,
 		       OrdinalType & numEntries);
 */
-typedef OskiMultiVector<OTYPE, STYPE> OMultiVector;
-//typedef Vector<OTYPE, STYPE> OMultiVector;
-typedef OskiMatrix<OTYPE, STYPE> OMatrix;
+typedef MultiVector<OTYPE, STYPE> OMultiVector;
+typedef MultiVector<OTYPE, STYPE> OVector;
+typedef CisMatrix<OTYPE, STYPE> OMatrix;
 
 int main(int argc, char* argv[]) 
 {
@@ -76,9 +76,9 @@ int main(int argc, char* argv[])
   string testName = "";
 
   OMatrix * A;
-  OMultiVector * x;
-  OMultiVector * b;
-  OMultiVector * xexact;
+  OVector * x;
+  OVector * b;
+  OVector * xexact;
   OMultiVector * xm;
   OMultiVector * bm;
   OMultiVector * xexactm;
@@ -98,10 +98,10 @@ int main(int argc, char* argv[])
     //bool generateClassicHbMatrix = true;
     bool isRowOriented = true;
     bool hasImplicitUnitDiagonal = false;
+    OTYPE nrhs = 1;
     KokkosTest::GenerateOskiProblem<OTYPE, STYPE>
       problem(isRowOriented,hasImplicitUnitDiagonal,
-	      nx, ny, npoints, xoff, yoff, 1, A, x, b, xexact, numEntries);
-    
+	      nx, ny, npoints, xoff, yoff, nrhs, A, x, b, xexact, numEntries);
     if (verbose) cout<<endl<<"********** CHECKING OskiSparseMultiply **********" << " Dim = " << numEquations <<endl<<endl;
     
     // Check output objects

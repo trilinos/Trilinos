@@ -219,6 +219,9 @@ namespace Kokkos {
       else colInc = leadDim/x_view_->num_rows;
       return(colInc);
     };
+
+    //! Underlying OSKI MultiVector
+    virtual oski_vecview_t getX_view() const{return(x_view_);};
 	
     //@}
 

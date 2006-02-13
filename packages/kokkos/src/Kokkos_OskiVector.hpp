@@ -107,7 +107,10 @@ namespace Kokkos {
 	
     //! Increment between entries in the vector, normally = 1.
     virtual OrdinalType getInc() const {return(OskiMultiVector<OrdinalType,ScalarType>::getRowInc());};
-	
+
+    //! Underlying OSKI Vector
+        virtual oski_vecview_t getX_view() const{return(OskiMultiVector<OrdinalType,ScalarType>::getX_view());};
+
     //@}
 
 //  protected:

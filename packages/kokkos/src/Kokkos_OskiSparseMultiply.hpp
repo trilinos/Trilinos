@@ -377,19 +377,24 @@ namespace Kokkos {
 
     int oskiReturn = 0;
 
-    OskiMatrix <OrdinalType,ScalarType> A_tunable = dynamic_cast<Kokkos::OskiMatrix<OrdinalType,ScalarType> >(matrixForValues_);
+    OskiMatrix<OrdinalType,ScalarType> *A_tunable = dynamic_cast<Kokkos::OskiMatrix<OrdinalType,ScalarType> *>(matrixForValues_);
+
+    const OskiMultiVector<OrdinalType,ScalarType> * x_view = dynamic_cast<Kokkos::OskiMultiVector<OrdinalType,ScalarType> const *>(&x);
+
+    OskiMultiVector <OrdinalType,ScalarType> *y_view = dynamic_cast<Kokkos::OskiMultiVector<OrdinalType,ScalarType> *>(&y);
+
 
     if (!conjA && !transA) {
 
-	oskiReturn = oski_MatMult(A_tunable.getA_tunable(), OP_NORMAL, 1.0, x, 0.0, y);
+	oskiReturn = oski_MatMult(A_tunable->getA_tunable(), OP_NORMAL, 1.0, x_view->getX_view(), 0.0, y_view->getX_view());
     }
     else if (!conjA && transA) {
 
-	oskiReturn = oski_MatMult(A_tunable.getA_tunable(), OP_TRANS, 1.0, x, 0.0, y);
+	oskiReturn = oski_MatMult(A_tunable->getA_tunable(), OP_TRANS, 1.0, x_view->getX_view(), 0.0, y_view->getX_view());
     }
     else {//conjA && transA
 
-	oskiReturn = oski_MatMult(A_tunable.getA_tunable(), OP_CONJ_TRANS, 1.0, x, 0.0, y);
+	oskiReturn = oski_MatMult(A_tunable->getA_tunable(), OP_CONJ_TRANS, 1.0, x_view->getX_view(), 0.0, y_view->getX_view());
     }
     updateFlops(this->costOfMatVec_ * ((double) numVectors));
     return(oskiReturn);
