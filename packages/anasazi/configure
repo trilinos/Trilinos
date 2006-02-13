@@ -7881,8 +7881,6 @@ fi
 
 
 
-#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code. Can be overridden with --disable-teuchos-complex.], [Build examples/tests which use complex code.])
-
 
 
 # Check whether --enable-tpetra or --disable-tpetra was given.
@@ -8961,7 +8959,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8964: \"$ac_link\") >&5
+(eval echo $as_me:8962: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9039,7 +9037,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9042: \"$ac_link\") >&5
+(eval echo $as_me:9040: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11878,7 +11876,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11881: \"$ac_link\") >&5
+(eval echo $as_me:11879: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11956,7 +11954,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11959: \"$ac_link\") >&5
+(eval echo $as_me:11957: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

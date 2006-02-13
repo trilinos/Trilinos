@@ -323,8 +323,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, thyra, ANASAZI_THYRA, BUILD_ANASAZI_THYR
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build examples which use Epetra-Thyra adapters. Can be overridden with --disable-epetra-thyra.], [Build examples which use Epetra-Thyra adapters.])
 
-#TAC_ARG_ENABLE_CAN_USE_PACKAGE(teuchos, complex, TEUCHOS_COMPLEX, BUILD_TEUCHOS_COMPLEX, yes, [Build examples/tests which use complex code. Can be overridden with --disable-teuchos-complex.], [Build examples/tests which use complex code.])
-
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, tpetra, ANASAZI_TPETRA, BUILD_ANASAZI_TPETRA, no, [Build examples which use Tpetra adapters.  Can be overridden with --disable-anasazi-tpetra.], [Build examples which use Tpetra adapters.])
 
 # ------------------------------------------------------------------------
