@@ -129,9 +129,19 @@ public:
   
   /** \name Set Functions */
   //@{
+
+  /** \brief Set the name of <tt>*this</tt> list.
+   */
+  void setName( const std::string &name );
   
-  //! Replace the current parameter list with \c source.
+  /** Replace the current parameter list with \c source.
+   * \note This also replaces the name returned by <tt>this->name()</tt>
+   */
   ParameterList& operator=(const ParameterList& source);
+  
+  /** Set just the parameters in <tt>source</tt>.
+   */
+  ParameterList& setParameters(const ParameterList& source);
   
   /*! \brief Sets different types of parameters. The type depends on the second entry.  
     
@@ -356,8 +366,7 @@ public:
    * to a breath-first search but it would take more work.
    */
   void validateParameters(
-    const std::string          &paramListName   
-    ,const ParameterList       &validParamList
+    const ParameterList        &validParamList
     ,const int                 depth            = 1000
     ,const EValidateUsed       validateUsed     = VALIDATE_USED_ENABLED
     ,const EValidateDefaults   validateDefaults = VALIDATE_DEFAULTS_ENABLED
@@ -385,6 +394,12 @@ private: // Data members
 
 // /////////////////////////////////////////////////////
 // Inline and Template Function Definitions
+
+inline
+void ParameterList::setName( const std::string &name )
+{
+  name_ = name;
+}
 
 // Set functions
  

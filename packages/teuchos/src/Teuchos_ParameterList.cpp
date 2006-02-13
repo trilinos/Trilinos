@@ -47,16 +47,14 @@ std::string filterValueToString(const Teuchos::ParameterEntry& entry )
   return ( entry.isList() ? std::string("...") : toString(entry.getAny()) );
 }
 
-struct ListPlusNamePlusValidList {
-  std::string              listName;
+struct ListPlusValidList {
   Teuchos::ParameterList   *list;
   Teuchos::ParameterList   *validList;
-  ListPlusNamePlusValidList(
-    const  std::string       &_listName
-    ,Teuchos::ParameterList  *_list
+  ListPlusValidList(
+    Teuchos::ParameterList   *_list
     ,Teuchos::ParameterList  *_validList
     )
-    :listName(_listName),list(_list),validList(_validList)
+    :list(_list),validList(_validList)
     {}
 };
 
@@ -65,6 +63,7 @@ struct ListPlusNamePlusValidList {
 namespace Teuchos {
 
 ParameterList::ParameterList()
+  :name_("ANONYMOUS")
 {}
 
 ParameterList::ParameterList(const std::string &name)
@@ -83,6 +82,12 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
     return *this;
 
   name_ = source.name_;
+  params_ = source.params_;
+  return *this;
+}
+
+ParameterList& ParameterList::setParameters(const ParameterList& source) 
+{
   params_ = source.params_;
   return *this;
 }
@@ -149,9 +154,11 @@ ParameterList& ParameterList::sublist(const string& name)
   }
 
   // The list does not exist so create a new empty list and return its reference
-  const ParameterList newSubList(name);
+  const ParameterList newSubList(this->name()+std::string("->")+name);
   return any_cast<ParameterList>(
-    params_.insert(Map::value_type(name,ParameterEntry(newSubList,false,true))).first->second.getAny()
+    params_.insert(
+      Map::value_type(name,ParameterEntry(newSubList,false,true))
+      ).first->second.getAny()
     );
   // Note that above I am very careful to construct the parameter list entry
   // directly in the insertion call to avoid the creation of a tempory list
@@ -251,18 +258,17 @@ const ParameterEntry& ParameterList::entry(ConstIterator i) const
 #endif
 
 void ParameterList::validateParameters(
-  const std::string                &paramListName
-  ,const ParameterList             &validParamList
+  const ParameterList              &validParamList
   ,const int                       depth
   ,const EValidateUsed             validateUsed
   ,const EValidateDefaults         validateDefaults
   ) const
 {
-  typedef std::deque<ListPlusNamePlusValidList> sublist_list_t;
+  typedef std::deque<ListPlusValidList> sublist_list_t;
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
   RefCountPtr<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
   OSTab tab(out);
-  *out << "\n*** Entering ParameterList::validateParameters(paramListName=\""<<paramListName<<"\") ...\n";
+  *out << "\n*** Entering ParameterList::validateParameters(...) for this->name()=\""<<this->name()<<"\"...\n";
 #endif
   //
   // First loop through and validate the parameters at this level.
@@ -292,7 +298,7 @@ void ParameterList::validateParameters(
       !( validEntry!=NULL && validType )
       ,Exceptions::InvalidParameter
       ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny().type().name()<<"\""
-      ",value=\""<<filterValueToString(entry)<<"\"} in the parameter (sub)list \""<<paramListName<<"\" "
+      ",value=\""<<filterValueToString(entry)<<"\"} in the parameter (sub)list \""<<this->name()<<"\" "
       << ( validEntry==NULL
            ? "was not found in the list of valid parameters"
            : std::string("exists in the list of valid parameters but has the wrong type.  The correct type is \"")
@@ -302,8 +308,8 @@ void ParameterList::validateParameters(
       );
     if( entry.isList() && depth > 0 ) {
       sublist_list.push_back(
-        ListPlusNamePlusValidList(
-          paramListName+"->"+entryName,&getValue<ParameterList>(entry),&getValue<ParameterList>(*validEntry)
+        ListPlusValidList(
+          &getValue<ParameterList>(entry),&getValue<ParameterList>(*validEntry)
           )
         );
     }
@@ -313,15 +319,14 @@ void ParameterList::validateParameters(
   //
   for( sublist_list_t::const_iterator sl_itr = sublist_list.begin(); sl_itr != sublist_list.end(); ++sl_itr ) {
     sl_itr->list->validateParameters(
-      sl_itr->listName
-      ,*sl_itr->validList
+      *sl_itr->validList
       ,depth-1
       ,validateUsed
       ,validateDefaults
       );
   }
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
-  *out << "\n*** Exiting ParameterList::validateParameters(paramListName=\""<<paramListName<<"\") ...\n";
+  *out << "\n*** Existing ParameterList::validateParameters(...) for this->name()=\""<<this->name()<<"\"...\n";
 #endif
 }
 

@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
   // Create Main Parameter List / Sublist Structure
   //-----------------------------------------------------------
 
-  ParameterList PL_Main;
+  ParameterList PL_Main("PL_Main");
   ParameterList& PL_Direction = PL_Main.sublist("Direction");
   ParameterList& PL_Newton = PL_Direction.sublist("Newton");
   ParameterList& PL_LinSol = PL_Newton.sublist("Linear Solver");
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
     int ARI = 0, default_step = 0, max_iter_inc = 0, rec_step = 0;
     double alpha_factor = 0.0, min_bnds_factor = 0.0, max_bnds_factor = 0.0;
     bool force_interp = true, use_cntrs = false;
-    ParameterList PL_My_LineSearch;
+    ParameterList PL_My_LineSearch("PL_My_LineSearch");
     string ls_method = PL_My_LineSearch.get("Method", "Polynomial");
     ParameterList& PL_Polynomial = PL_My_LineSearch.sublist("Polynomial");
     ARI = PL_Polynomial.get("Allowed Relative Increase", 100 );
@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
     //-----------------------------------------------------------
     // Set the Line Search Parameter List equal to the one just constructed
     //-----------------------------------------------------------
-    PL_LineSearch = PL_My_LineSearch;
+    PL_LineSearch.setParameters(PL_My_LineSearch);
     ParameterList& PL_My_Polynomial = PL_LineSearch.sublist("Polynomial");
     if (verbose) cout<< "Is 'operator=' functional ... ";
     if ( PL_My_Polynomial.isParameter("Recovery Step Type") ) {
@@ -212,7 +212,7 @@ int main(int argc, char *argv[])
       if (verbose) cout<< "no" << endl;
       FailedTests++;
     }  
-    ParameterList Copied_PL_Main( PL_Main );
+    ParameterList Copied_PL_Main(PL_Main);
     if (verbose) cout<< "Is the copy constructor functional ... ";
     if ( Copied_PL_Main.isParameter("Nonlinear Solver") ) {
       if (verbose) cout<< "yes" << endl;
@@ -641,7 +641,8 @@ int main(int argc, char *argv[])
   // Validate the parameter list
   //-----------------------------------------------------------
 
-  Teuchos::ParameterList PL_Main_copy = PL_Main;
+  Teuchos::ParameterList PL_Main_copy("PL_Main_copy");
+  PL_Main_copy.setParameters(PL_Main);
 
   if (verbose) {
     print_break();
@@ -649,7 +650,7 @@ int main(int argc, char *argv[])
     print_break();
   }
   try {
-    PL_Main_copy.validateParameters("PL_Main_copy",PL_Main);
+    PL_Main_copy.validateParameters(PL_Main);
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
@@ -663,7 +664,7 @@ int main(int argc, char *argv[])
   }
   try {
     PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",10.0); // Should be an int!
-    PL_Main_copy.validateParameters("PL_Main_copy",PL_Main);
+    PL_Main_copy.validateParameters(PL_Main);
     if (verbose) cout << "Did not throw exception, error!\n";
     FailedTests += 1;
   }
@@ -683,7 +684,7 @@ int main(int argc, char *argv[])
   }
   try {
     PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iter",10);
-    PL_Main_copy.validateParameters("PL_Main_copy",PL_Main);
+    PL_Main_copy.validateParameters(PL_Main);
     if (verbose) cout << "Did not throw exception, error!\n";
     FailedTests += 1;
   }
@@ -702,7 +703,7 @@ int main(int argc, char *argv[])
   }
   try {
     PL_Main_copy.sublist("Line Search").sublist("Polynomials").set("Max Iters",10); // param correct, sublist wrong
-    PL_Main_copy.validateParameters("PL_Main_copy",PL_Main);
+    PL_Main_copy.validateParameters(PL_Main);
     if (verbose) cout << "Did not throw exception, error!\n";
     FailedTests += 1;
   }
@@ -720,7 +721,7 @@ int main(int argc, char *argv[])
     print_break();
   }
   try {
-    PL_Main_copy.validateParameters("PL_Main_copy",PL_Main,0);
+    PL_Main_copy.validateParameters(PL_Main,0);
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
