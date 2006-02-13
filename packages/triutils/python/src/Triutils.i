@@ -43,21 +43,13 @@
 #include "Trilinos_Util_Version.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
-
-void Trilinos_Util_ReadHb2Epetra(char *data_file,
-				 const Epetra_Comm  &comm, 
-				 Epetra_Map *& map, 
-				 Epetra_CrsMatrix *& A, 
-				 Epetra_Vector *& x, 
-				 Epetra_Vector *& b,
-				 Epetra_Vector *&xexact);
 %}
 
 // Auto-documentation feature
 %feature("autodoc", "1");
 
 // Ignore directives
-%ignore operator<<;
+%ignore *::operator<<;
 
 // Rename directives
 %rename Trilinos_Util_ReadHb2Epetra ReadHB;
@@ -97,13 +89,23 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 %typemap(in,numinputs=0) Epetra_Vector *&OutXexact(Epetra_Vector* _xexact) {
     $1 = &_xexact;
 }
-void Trilinos_Util_ReadHb2Epetra(char *data_file,
-				 const Epetra_Comm  &comm, 
-				 Epetra_Map *& OutMap, 
-				 Epetra_CrsMatrix *& OutMatrix, 
-				 Epetra_Vector *& OutX, 
-				 Epetra_Vector *& OutB,
-				 Epetra_Vector *& OutXexact);
+
+%typemap(out) Epetra_MultiVector * {
+  Epetra_NumPyMultiVector * npmv;
+  static swig_type_info *ty = SWIG_TypeQuery("Epetra_NumPyMultiVector *");
+  npmv = new Epetra_NumPyMultiVector(*$1);
+  $result = SWIG_NewPointerObj(npmv, ty, 1);
+}
+
+%inline {
+void Trilinos_Util_ReadHb2Epetra(char               * data_file,
+				 const Epetra_Comm  & comm, 
+				 Epetra_Map        *& OutMap, 
+				 Epetra_CrsMatrix  *& OutMatrix, 
+				 Epetra_Vector     *& OutX, 
+				 Epetra_Vector     *& OutB,
+				 Epetra_Vector     *& OutXexact);
+}
 
 // Epetra interface includes
 using namespace std;
@@ -113,9 +115,15 @@ using namespace std;
 %include "Trilinos_Util_CrsMatrixGallery.h"
 %include "Trilinos_Util_Version.h"
 
+// Epetra vector/Numeric array support
+// %rename(_AuxMultiVector) MultiVector;
+// %rename(_AuxVector     ) Vector;
+// %inline {struct MultiVector {};}
+// %inline {struct Vector {};}
+
 // Python code
 %pythoncode %{
-
-  __version__ = Triutils_Version().split()[2]
-
+__version__ = Triutils_Version().split()[2]
+#_Triutils._AuxMultiVector_swigregister(Epetra.MultiVector)
+#_Triutils._AuxVector_swigregister(Epetra.Vector)
 %}
