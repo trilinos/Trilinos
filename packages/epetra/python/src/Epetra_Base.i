@@ -29,7 +29,6 @@
 // @HEADER
 
 %{
-
 // Epetra includes
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Version.h"
@@ -41,9 +40,9 @@
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
 #include "Epetra_LAPACK.h"
+#include "Epetra_Flops.h"
 #include "Epetra_Time.h"
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
+#include "Epetra_Util.h"
 #include "Epetra_MapColoring.h"
 
 // Local includes
@@ -80,13 +79,12 @@
 %rename(CompObject   ) Epetra_CompObject;
 %rename(BLAS         ) Epetra_BLAS;
 %rename(LAPACK       ) Epetra_LAPACK;
+%rename(FLOPS        ) Epetra_Flops;
 %rename(Time         ) Epetra_Time;
-%rename(Import       ) Epetra_Import;
-%rename(Export       ) Epetra_Export;
+%rename(Util         ) Epetra_Util;
 %rename(MapColoring  ) Epetra_MapColoring;
 
 // Include directives
-%include "std_string.i"
 %include "Epetra_Version.h"
 %include "Epetra_CombineMode.h"
 %include "Epetra_DataAccess.h"
@@ -96,9 +94,9 @@
 %include "Epetra_CompObject.h"
 %import  "Epetra_BLAS.h"       // These two classes are not included because I do not
 %import  "Epetra_LAPACK.h"     // want to expose their functionality to python
+%include "Epetra_Flops.h"
 %include "Epetra_Time.h"
-%include "Epetra_Import.h"
-%include "Epetra_Export.h"
+%include "Epetra_Util.h"
 %include "Epetra_MapColoring.h"
 
 // Extensions
@@ -144,40 +142,7 @@
   }
 }
 
-// Import/Export extensions are done with a couple of nested macros
-%define MOVER_METHOD(methodName, numMethod)
-  PyObject * methodName() {
-    int        numIDs[]    = {self->numMethod()};
-    int      * ids         = NULL;
-    int      * returnData  = NULL;
-    PyObject * returnArray = PyArray_FromDims(1,numIDs,'i');
-    if (returnArray == NULL) goto fail;
-    ids        = self->methodName();
-    returnData = (int*)((PyArrayObject*)returnArray)->data;
-    for (int i=0; i<numIDs[0]; i++) returnData[i] = ids[i];
-    return returnArray;
-  fail:
-    return NULL;
-  }
-%enddef
-
-%define EXTEND_DATA_MOVER(type)
-%extend Epetra_ ## type {
-  MOVER_METHOD(PermuteFromLIDs,	NumPermuteIDs)
-  MOVER_METHOD(PermuteToLIDs,  	NumPermuteIDs)
-  MOVER_METHOD(RemoteLIDs,     	NumRemoteIDs )
-  MOVER_METHOD(ExportLIDs,     	NumExportIDs )
-  MOVER_METHOD(ExportPIDs,     	NumExportIDs )
-}
-%enddef
-
-EXTEND_DATA_MOVER(Import)
-EXTEND_DATA_MOVER(Export)
-// End Import/Export extensions
-
 // Python code.  Here we set the __version__ string
 %pythoncode %{
-
 __version__ = Version().split()[2]
-
 %}

@@ -30,13 +30,14 @@
 
 %{
 // Epetra includes
+#include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_SerialDenseOperator.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialSymDenseMatrix.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialDenseSolver.h"
-#include "Epetra_IntSerialDenseMatrix.h"
-#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseSVD.h"
 
 // Local interface includes
 #include "Epetra_NumPySerialDenseMatrix.h"
@@ -44,44 +45,34 @@
 %}
 
 // Ignore directives
-%ignore Epetra_SerialDenseMatrix::operator=(const Epetra_SerialDenseMatrix &);
-%ignore Epetra_SerialDenseMatrix::operator[](int);
-%ignore Epetra_SerialDenseMatrix::operator[](int) const;
 %ignore Epetra_SerialDenseMatrix::operator()(int,int) const;
 %ignore Epetra_SerialDenseMatrix::A() const;
-%ignore Epetra_SerialDenseVector::operator=(const Epetra_SerialDenseVector &);
-%ignore Epetra_SerialDenseVector::operator[](int);
-%ignore Epetra_SerialDenseVector::operator[](int) const;
 %ignore Epetra_SerialDenseVector::operator()(int);
 %ignore Epetra_SerialDenseVector::operator()(int) const;
-%ignore Epetra_IntSerialDenseMatrix::operator=(const Epetra_IntSerialDenseMatrix &);
-%ignore Epetra_IntSerialDenseMatrix::operator[](int);
-%ignore Epetra_IntSerialDenseMatrix::operator[](int) const;
 %ignore Epetra_IntSerialDenseMatrix::operator()(int,int) const;
 %ignore Epetra_IntSerialDenseMatrix::A() const;
-%ignore Epetra_IntSerialDenseVector::operator=(const Epetra_IntSerialDenseVector &);
-%ignore Epetra_IntSerialDenseVector::operator[](int);
-%ignore Epetra_IntSerialDenseVector::operator[](int) const;
 %ignore Epetra_IntSerialDenseVector::operator()(int);
 %ignore Epetra_IntSerialDenseVector::operator()(int) const;
 
 // Rename directives
+%rename(IntSerialDenseMatrix  ) Epetra_IntSerialDenseMatrix;
+%rename(IntSerialDenseVector  ) Epetra_IntSerialDenseVector;
 %rename(SerialDenseOperator   ) Epetra_SerialDenseOperator;
 %rename(NumPySerialDenseMatrix) Epetra_NumPySerialDenseMatrix;
 %rename(SerialSymDenseMatrix  ) Epetra_SerialSymDenseMatrix;
 %rename(NumPySerialDenseVector) Epetra_NumPySerialDenseVector;
 %rename(SerialDenseSolver     ) Epetra_SerialDenseSolver;
-%rename(IntSerialDenseMatrix  ) Epetra_IntSerialDenseMatrix;
-%rename(IntSerialDenseVector  ) Epetra_IntSerialDenseVector;
+%rename(SerialDenseSVD        ) Epetra_SerialDenseSVD;
 
 // Epetra include directives
+%include "Epetra_IntSerialDenseMatrix.h"
+%include "Epetra_IntSerialDenseVector.h"
 %include "Epetra_SerialDenseOperator.h"
 %include "Epetra_SerialDenseMatrix.h"
 %include "Epetra_SerialSymDenseMatrix.h"
 %include "Epetra_SerialDenseVector.h"
 %include "Epetra_SerialDenseSolver.h"
-%include "Epetra_IntSerialDenseMatrix.h"
-%include "Epetra_IntSerialDenseVector.h"
+%include "Epetra_SerialDenseSVD.h"
 
 // Local interface include directives
 %include "Epetra_NumPySerialDenseMatrix.h"
@@ -230,3 +221,8 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
     column[i] = val;
   }
 }
+
+// Epetra_SerialSpdDenseSolver is apparently not built
+//#include "Epetra_SerialSpdDenseSolver.h"
+//%rename(SerialSpdDenseSolver  ) Epetra_SerialSpdDenseSolver;
+//%include "Epetra_SerialSpdDenseSolver.h"

@@ -32,24 +32,16 @@
 // Epetra includes
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_IntVector.h"
 
 // Local includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyIntVector.h"
-
-// These are place-holders on the C++ side for the python-defined
-// MultiVector, Vector and IntVector classes
-struct MultiVector { };
-struct Vector { };
-struct IntVector { };
 %}
 
 // Ignore directives
-%ignore Epetra_MultiVector::operator=(const Epetra_MultiVector &);
-%ignore Epetra_MultiVector::operator[](int);
-%ignore Epetra_MultiVector::operator[](int) const;
 %ignore Epetra_MultiVector::operator()(int) const;
 %ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;  // These Extract methods
 %ignore Epetra_MultiVector::ExtractCopy(double **       ) const;  // are given functionality
@@ -65,8 +57,6 @@ struct IntVector { };
 %ignore Epetra_MultiVector::MeanValue(double*) const;
 %ignore Epetra_MultiVector::ResetView(double **);     // These are expert
 %ignore Epetra_MultiVector::Pointers() const;         // methods not supported in python
-%ignore Epetra_Vector::operator[](int);
-%ignore Epetra_Vector::operator[](int) const;
 %ignore Epetra_Vector::ExtractCopy(double * ) const;  // These Extract methods are given functionality
 %ignore Epetra_Vector::ExtractView(double **) const;  // in the derived class Epetra_NumPyVector
 %ignore Epetra_Vector::ReplaceGlobalValues(int,double*,int*);      // These four Replace methods are overloaded
@@ -78,27 +68,28 @@ struct IntVector { };
 %ignore Epetra_Vector::SumIntoMyValues(int,double*,int*);	   // and int* arguments replaced with PyObject*s
 %ignore Epetra_Vector::SumIntoMyValues(int,int,double*,int*);	   // and the first int argument made implicit
 %ignore Epetra_Vector::ResetView(double *);           // Expert method not supported in python
-%ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
-%ignore Epetra_IntVector::operator[](int);
-%ignore Epetra_IntVector::operator[](int) const;
 
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
 %rename(NumPyVector     ) Epetra_NumPyVector;
 %rename(NumPyIntVector  ) Epetra_NumPyIntVector;
+%rename(FEVector        ) Epetra_FEVector;
 %rename(_AuxMultiVector ) MultiVector;
 %rename(_AuxVector      ) Vector;
 %rename(_AuxIntVector   ) IntVector;
 
 // These are place-holders on the C++ side for the python-defined
 // MultiVector, Vector and IntVector classes
-struct MultiVector { };
-struct Vector { };
-struct IntVector { };
+%inline {
+  struct MultiVector { };
+  struct Vector      { };
+  struct IntVector   { };
+}
 
 // Import directives for Epetra
 %include "Epetra_MultiVector.h"
 %include "Epetra_Vector.h"
+%include "Epetra_FEVector.h"
 %include "Epetra_IntVector.h"
 
 // Local interface includes
@@ -181,7 +172,7 @@ class IntVector(UserArray,NumPyIntVector):
         UserArray.__setattr__(self, key, value)
 
 _Epetra._AuxMultiVector_swigregister(MultiVector)
-_Epetra._AuxVector_swigregister(Vector)
-_Epetra._AuxIntVector_swigregister(IntVector)
+_Epetra._AuxVector_swigregister(          Vector)
+_Epetra._AuxIntVector_swigregister(    IntVector)
 
 %}

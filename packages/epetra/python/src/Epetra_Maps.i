@@ -33,6 +33,10 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
+#include "Epetra_Directory.h"
+#include "Epetra_BasicDirectory.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 
 int multiply_list(int * list, int n) {
   int product = list[0];
@@ -62,14 +66,22 @@ int multiply_list(int * list, int n) {
 %ignore Epetra_BlockMap::DataPtr() const;
 
 // Rename directives
-%rename(BlockMap) Epetra_BlockMap;
-%rename(Map     ) Epetra_Map;
-%rename(LocalMap) Epetra_LocalMap;
+%rename(BlockMap      ) Epetra_BlockMap;
+%rename(Map           ) Epetra_Map;
+%rename(LocalMap      ) Epetra_LocalMap;
+%rename(Directory     ) Epetra_Directory;
+%rename(BasicDirectory) Epetra_BasicDirectory;
+%rename(Import        ) Epetra_Import;
+%rename(Export        ) Epetra_Export;
 
 // Include directives
 %include "Epetra_BlockMap.h"
 %include "Epetra_Map.h"
 %include "Epetra_LocalMap.h"
+%include "Epetra_Directory.h"
+%include "Epetra_BasicDirectory.h"
+%include "Epetra_Import.h"
+%include "Epetra_Export.h"
 
 // Extend directives
 %extend Epetra_BlockMap {
@@ -294,7 +306,6 @@ int multiply_list(int * list, int n) {
 
 }
 
-
 %extend Epetra_Map {
 
   Epetra_Map(int                 numGlobalElements,
@@ -326,5 +337,35 @@ int multiply_list(int * list, int n) {
     Py_XDECREF(elementArray);
     return NULL;
   }
-
 }
+
+// Import/Export extensions are done with a couple of nested macros
+%define MOVER_METHOD(methodName, numMethod)
+  PyObject * methodName() {
+    int        numIDs[]    = {self->numMethod()};
+    int      * ids         = NULL;
+    int      * returnData  = NULL;
+    PyObject * returnArray = PyArray_FromDims(1,numIDs,'i');
+    if (returnArray == NULL) goto fail;
+    ids        = self->methodName();
+    returnData = (int*)((PyArrayObject*)returnArray)->data;
+    for (int i=0; i<numIDs[0]; i++) returnData[i] = ids[i];
+    return returnArray;
+  fail:
+    return NULL;
+  }
+%enddef
+
+%define EXTEND_DATA_MOVER(type)
+%extend Epetra_ ## type {
+  MOVER_METHOD(PermuteFromLIDs,	NumPermuteIDs)
+  MOVER_METHOD(PermuteToLIDs,  	NumPermuteIDs)
+  MOVER_METHOD(RemoteLIDs,     	NumRemoteIDs )
+  MOVER_METHOD(ExportLIDs,     	NumExportIDs )
+  MOVER_METHOD(ExportPIDs,     	NumExportIDs )
+}
+%enddef
+
+EXTEND_DATA_MOVER(Import)
+EXTEND_DATA_MOVER(Export)
+// End Import/Export extensions

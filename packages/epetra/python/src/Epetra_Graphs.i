@@ -29,11 +29,13 @@
 // @HEADER
 
 %{
+#include "Epetra_OffsetIndex.h"
 #include "Epetra_CrsGraph.h"
 %}
 
 // Rename directives
-%rename(CrsGraph) Epetra_CrsGraph;
+%rename(OffsetIndex) Epetra_OffsetIndex;
+%rename(CrsGraph   ) Epetra_CrsGraph;
 
 // Local interface includes
 %include "NumPyArray.h"
@@ -63,6 +65,7 @@
 }
 
 // Include directives
+%include "Epetra_OffsetIndex.h"
 %include "Epetra_CrsGraph.h"
 
 // Extend directives
@@ -71,3 +74,8 @@
     return self->operator[](i);
   }
 }
+
+// Epetra_FECrsGraph is apparently not built
+//#include "Epetra_FECrsGraph.h"
+//%rename(FECrsGraph ) Epetra_FECrsGraph;
+//%include "Epetra_FECrsGraph.h"

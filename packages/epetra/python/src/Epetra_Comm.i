@@ -32,71 +32,16 @@
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-
-PyObject* Init_Argv(PyObject *args) {
-  int ierr = 0;
-  MPI_Initialized(&ierr);
-  if (ierr)
-    return Py_BuildValue("");
-
-  int i, error, myid, size;
-  int argc = 0;
-  char **argv;
-  /* Reconstruct C-commandline */
-  argc = PyList_Size(args); //Number of commandline arguments
-  argv = (char**) malloc((argc+1)*sizeof(char*));
-  for (i=0; i<argc; i++) argv[i] = PyString_AsString(PyList_GetItem(args, i));
-  argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
-  error = MPI_Init(&argc, &argv);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  if (error) {
-    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    PyErr_SetString(PyExc_RuntimeError, "MPI initialization error");
-    return NULL;
-  }
-  return Py_BuildValue("");
-}
-
-PyObject* Finalize() {
-  int error, myid;
-  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-  // FIXME: add if finalized!
-  error = MPI_Finalize();
-  if (error) {
-    PyErr_SetString(PyExc_RuntimeError, "MPI Finalize error");
-    return NULL;
-  }
-  return Py_BuildValue("");
-}
-
-// CommWorld used to be a function, but I have changed it to a
-// constant in order to suppress a memory leak warning we are getting
-// under swig 1.3.28.  (And with luck, I have actually fixed a memory
-// leak ;-)
-extern const MPI_Comm CommWorld = (MPI_COMM_WORLD);
-#else
-PyObject* Init_Argv(PyObject *args) {
-  return Py_BuildValue("");
-}
-
-PyObject* Finalize() {
-  return Py_BuildValue("");
-}
-#endif
+#include "Epetra_Distributor.h"
+#include "Epetra_SerialDistributor.h"
 %}
 
 // Cretae python interfaces to MPI initialization and finalization
 PyObject* Init_Argv(PyObject *args);
 PyObject* Finalize();
-#ifdef HAVE_MPI
-extern const MPI_Comm CommWorld;
-#endif
 
 // Ignore directives
+%ignore *::operator=;
 %ignore *::Broadcast(int*   ,int    ,int) const;  // These are replaced by %extend below:
 %ignore *::Broadcast(long*  ,int    ,int) const;  //   Broadcast(PyObject*,int)
 %ignore *::Broadcast(double*,int    ,int) const;
@@ -115,17 +60,12 @@ extern const MPI_Comm CommWorld;
 %ignore *::ScanSum(  int*   ,int*   ,int) const;  // These are replaced by %extend below:
 %ignore *::ScanSum(  long*  ,long*  ,int) const;  //   ScanSum(PyObject*)
 %ignore *::ScanSum(  double*,double*,int) const;
-%ignore Epetra_SerialComm::operator=(const Epetra_SerialComm &);
-#ifdef HAVE_MPI
-%ignore Epetra_MpiComm::operator=(const Epetra_MpiComm &);
-#endif
 
 // Rename directives
-%rename(Comm      ) Epetra_Comm;
-%rename(SerialComm) Epetra_SerialComm;
-#ifdef HAVE_MPI
-%rename(MpiComm   ) Epetra_MpiComm;
-#endif
+%rename(Comm      	 ) Epetra_Comm;
+%rename(SerialComm	 ) Epetra_SerialComm;
+%rename(Distributor  	 ) Epetra_Distributor;
+%rename(SerialDistributor) Epetra_Distributor;
 
 // Include the Numeric typemaps and helper functions
 %include "numeric.i"
@@ -135,9 +75,8 @@ extern const MPI_Comm CommWorld;
 // Include directives
 %include "Epetra_Comm.h"
 %include "Epetra_SerialComm.h"
-#ifdef HAVE_MPI
-%include "Epetra_MpiComm.h"
-#endif
+%include "Epetra_Distributor.h"
+%include "Epetra_SerialDistributor.h"
 
 /* Extend directives.  Many of the communicator methods take C arrays
  * as input or output arguments.  These extensions allow the python
@@ -415,16 +354,83 @@ atexit.register(Finalize)
 
 %}
 
-#ifndef HAVE_MPI
-%pythoncode %{
-def PyComm():
-  "PyComm() -> Epetra.SerialComm"
-  return SerialComm();
+#ifdef HAVE_MPI
+%{
+#include "mpi.h"
+#include "Epetra_MpiComm.h"
+#include "Epetra_MpiDistributor.h"
+
+PyObject* Init_Argv(PyObject *args) {
+  int ierr = 0;
+  MPI_Initialized(&ierr);
+  if (ierr)
+    return Py_BuildValue("");
+
+  int i, error, myid, size;
+  int argc = 0;
+  char **argv;
+  /* Reconstruct C-commandline */
+  argc = PyList_Size(args); //Number of commandline arguments
+  argv = (char**) malloc((argc+1)*sizeof(char*));
+  for (i=0; i<argc; i++) argv[i] = PyString_AsString(PyList_GetItem(args, i));
+  argv[argc] = NULL; //Lam 7.0 requires last arg to be NULL
+  error = MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  if (error) {
+    MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    PyErr_SetString(PyExc_RuntimeError, "MPI initialization error");
+    return NULL;
+  }
+  return Py_BuildValue("");
+}
+
+PyObject* Finalize() {
+  int error, myid;
+  MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+  // FIXME: add if finalized!
+  error = MPI_Finalize();
+  if (error) {
+    PyErr_SetString(PyExc_RuntimeError, "MPI Finalize error");
+    return NULL;
+  }
+  return Py_BuildValue("");
+}
 %}
-#else
+
+// CommWorld used to be a function, but I have changed it to a
+// constant in order to suppress a memory leak warning we are getting
+// under swig 1.3.28.  (And with luck, I have actually fixed a memory
+// leak ;-)
+%inline {extern const MPI_Comm CommWorld = (MPI_COMM_WORLD);}
+
+%rename(MpiComm       ) Epetra_MpiComm;
+%rename(MpiDistributor) Epetra_Distributor;
+
+%include "Epetra_MpiComm.h"
+%include "Epetra_MpiDistributor.h"
+
 %pythoncode %{
 def PyComm():
   "PyComm() -> Epetra.MpiComm(MPI_COMM_WORLD)"
   return MpiComm(cvar.CommWorld);
+%}
+
+#else
+
+%{
+PyObject* Init_Argv(PyObject *args) {
+  return Py_BuildValue("");
+}
+
+PyObject* Finalize() {
+  return Py_BuildValue("");
+}
+%}
+
+%pythoncode %{
+def PyComm():
+  "PyComm() -> Epetra.SerialComm"
+  return SerialComm();
 %}
 #endif

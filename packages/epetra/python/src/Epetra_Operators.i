@@ -33,7 +33,10 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
+#include "Epetra_CrsSingletonFilter.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
+#include "Epetra_JadOperator.h"
 #include "Epetra_LinearProblem.h"
 
 // Local includes
@@ -51,19 +54,25 @@
 				Epetra_Vector const&, Epetra_Vector&) const;
 
 // Rename directives
-%rename(Operator     ) Epetra_Operator;
-%rename(RowMatrix    ) Epetra_RowMatrix;
-%rename(CrsMatrix    ) Epetra_CrsMatrix;
-%rename(FECrsMatrix  ) Epetra_FECrsMatrix;
-%rename(VbrMatrix    ) Epetra_VbrMatrix;
-%rename(LinearProblem) Epetra_LinearProblem;
+%rename(Operator             ) Epetra_Operator;
+%rename(RowMatrix            ) Epetra_RowMatrix;
+%rename(CrsMatrix            ) Epetra_CrsMatrix;
+%rename(FECrsMatrix          ) Epetra_FECrsMatrix;
+%rename(CrsSingletonFilter   ) Epetra_CrsSingletonFilter;
+%rename(VbrMatrix            ) Epetra_VbrMatrix;
+%rename(FEVbrMatrix          ) Epetra_FEVbrMatrix;
+%rename(JadOperator          ) Epetra_JadOperator;
+%rename(LinearProblem        ) Epetra_LinearProblem;
 
 // Include directives
 %include "Epetra_Operator.h"
 %include "Epetra_RowMatrix.h"
 %include "Epetra_CrsMatrix.h"
 %include "Epetra_FECrsMatrix.h"
+%include "Epetra_CrsSingletonFilter.h"
 %include "Epetra_VbrMatrix.h"
+%include "Epetra_FEVbrMatrix.h"
+%include "Epetra_JadOperator.h"
 %include "Epetra_LinearProblem.h"
 
 // Extend directives
@@ -253,3 +262,15 @@
 %warnfilter(473) PyRowMatrix;
 %include "Epetra_PyOperator.h"
 %include "Epetra_PyRowMatrix.h"
+
+// Epetra_RowMatrixTransposer, Epetra_FastCrsMatrix and
+// Epetra_LinearProblemRedistor are apparently not built
+//#include "Epetra_RowMatrixTransposer.h"
+//#include "Epetra_FastCrsMatrix.h"
+//#include "Epetra_LinearProblemRedistor.h"
+//%rename(RowMatrixTransposer  ) Epetra_RowMatrixTransposer;
+//%rename(FastCrsMatrix        ) Epetra_FastCrsMatrix;
+//%rename(LinearProblemRedistor) Epetra_LinearProblem;
+//%include "Epetra_RowMatrixTransposer.h"
+//%include "Epetra_FastCrsMatrix.h"
+//%include "Epetra_LinearProblemRedistor.h"
