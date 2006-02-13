@@ -31,10 +31,14 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_OskiMatrix.hpp" 
+#include "Kokkos_Vector.hpp"
+#include "Kokkos_Permutation.hpp"
 #include "Kokkos_SparseOperation.hpp" 
 
-
 namespace Kokkos {
+
+// ** Currently we are using CisMatrix and MultiVector in places where we 
+// actually require OSKI objects.  We need to enforce that the types are right!
 
 //! Kokkos::OskiSparseMultiply: A class for computing sparse matrix multiplication operations using functions provided by OSKI.
 
@@ -92,7 +96,7 @@ namespace Kokkos {
              class since structure and values will be shared.
       \return Integer error code, set to 0 if successful.
     */
-    virtual int initializeStructure(const OskiMatrix<OrdinalType, ScalarType>& A, bool willKeepStructure = true);
+    virtual int initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepStructure = true);
  
     //! Initialize values of matrix
     /*!
@@ -106,12 +110,19 @@ namespace Kokkos {
 
       \return Integer error code, set to 0 if successful, returns - 1 if checkStructure is true and structure is changed.
     */
-    virtual int initializeValues(const OskiMatrix<OrdinalType, ScalarType>& A, bool willKeepValues = true,
+    virtual int initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepValues = true,
 				 bool checkStructure = false);
  
     //@}
 
     //@{ \name Computational methods.
+
+// We won't use a Vector version of this because OskiVector inherits from 
+// OskiMultiVector - we need this to satisfy the requirement that certain
+// methods be implemented.
+
+    virtual int apply(const Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y,
+                      bool transA = false, bool conjA = false) const;
 	
     //! Returns the result of a Kokkos_OskiSparseMultiply multiplied by multiple vectors in x, results in y.
     /*! 
@@ -122,7 +133,7 @@ namespace Kokkos {
 		
       \return Integer error code, set to 0 if successful.
     */
-    virtual int apply(const OskiMultiVector<OrdinalType, ScalarType>& x, OskiMultiVector<OrdinalType, ScalarType>& y, 
+    virtual int apply(const MultiVector<OrdinalType, ScalarType>& x, MultiVector<OrdinalType, ScalarType>& y, 
 		      bool transA = false, bool conjA = false) const;
     //@}
 	
@@ -139,13 +150,21 @@ namespace Kokkos {
     virtual bool getCanUseValues() const {return(true);};
 
     //! Returns a reference to the most recent Kokkos::OskiMatrix that was passed into the \e this object.
-    virtual const OskiMatrix<OrdinalType, ScalarType> & getMatrix() const {
+    virtual const CisMatrix<OrdinalType, ScalarType> & getMatrix() const {
       if (matrixForValues_==0) return(*matrixForStructure_);
       else return(*matrixForValues_);
     };
 		
     //@}
-  
+
+    //! Returns a reference to the left Kokkos::Permutation object, which is the identity for this implementation.
+    virtual const Permutation<OrdinalType, ScalarType> & getLeftPermutation() const {
+      return(leftPermutation_);};
+
+    //! Returns a reference to the right Kokkos::Permutation object, which is the identity for this implementation.
+    virtual const Permutation<OrdinalType, ScalarType> & getRightPermutation() const {
+      return(rightPermutation_);};
+
   protected:
 
     void copyEntries();
@@ -157,8 +176,10 @@ namespace Kokkos {
     }; 
     typedef struct EntryStruct Entry;
     
-    OskiMatrix<OrdinalType, ScalarType> * matrixForStructure_;
-    OskiMatrix<OrdinalType, ScalarType> * matrixForValues_;
+    CisMatrix<OrdinalType, ScalarType> * matrixForStructure_;
+    CisMatrix<OrdinalType, ScalarType> * matrixForValues_;
+    Permutation<OrdinalType, ScalarType> leftPermutation_;
+    Permutation<OrdinalType, ScalarType> rightPermutation_;
 
     bool isRowOriented_; //Some of these can be removed!
     bool haveStructure_;
@@ -198,6 +219,8 @@ namespace Kokkos {
   OskiSparseMultiply<OrdinalType, ScalarType>::OskiSparseMultiply(const OskiSparseMultiply<OrdinalType, ScalarType> &source) 
     : matrixForStructure_(source.matrixForStructure_),
       matrixForValues_(source.matrixForValues_),
+      leftPermutation_(source.leftPermutation_),
+      rightPermutation_(source.rightPermutation_),
       isRowOriented_(source.isRowOriented_),
       haveStructure_(source.haveStructure_),
       haveValues_(source.haveValues_),
@@ -258,14 +281,14 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int OskiSparseMultiply<OrdinalType, ScalarType>::initializeStructure(const OskiMatrix<OrdinalType, ScalarType>& A,
+  int OskiSparseMultiply<OrdinalType, ScalarType>::initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A,
 								       bool willKeepStructure) {
 
 // It we just have to pass the Oski Objects, we may not need this.
 // It could be as simple as storing a pointer to the appropriate OskiMatrix
     if (haveStructure_) return(-1); // Can only call this one time!
 
-    matrixForStructure_ = const_cast<OskiMatrix<OrdinalType, ScalarType> *> (&A);
+    matrixForStructure_ = const_cast<CisMatrix<OrdinalType, ScalarType> *> (&A);
     OrdinalType i, j;
     isRowOriented_ = A.getIsRowOriented();
     hasUnitDiagonal_ = A.getHasImplicitUnitDiagonal();
@@ -301,14 +324,14 @@ namespace Kokkos {
 
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
-  int OskiSparseMultiply<OrdinalType, ScalarType>::initializeValues(const OskiMatrix<OrdinalType, ScalarType>& A, 
+  int OskiSparseMultiply<OrdinalType, ScalarType>::initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, 
 							       bool willKeepValues, bool checkStructure) {
 // **Again, we may just have to store the OskiMatrix.  If this is true, we may
 // have to extract some info from the mat vec objects anyway
 
     if (!haveStructure_) return(-1); // Must have structure first!
 
-    matrixForValues_ = const_cast<OskiMatrix<OrdinalType, ScalarType> *> (&A);
+    matrixForValues_ = const_cast<CisMatrix<OrdinalType, ScalarType> *> (&A);
     OrdinalType i, j;
 
     ScalarType * valuesRC;
@@ -327,6 +350,15 @@ namespace Kokkos {
   }
 
   //==============================================================================
+
+// Dummy method
+
+  template<typename OrdinalType, typename ScalarType>
+  int OskiSparseMultiply<OrdinalType, ScalarType>::apply(const Vector<OrdinalType, ScalarType>& x,
+                                                    Vector<OrdinalType, ScalarType> & y,
+                                                    bool transA, bool conjA) const {return(-1);}
+
+//=============================================================================
   template<typename OrdinalType, typename ScalarType>
   int OskiSparseMultiply<OrdinalType, ScalarType>::apply(const MultiVector<OrdinalType, ScalarType>& x, 
 						    MultiVector<OrdinalType, ScalarType> & y,
@@ -341,26 +373,23 @@ namespace Kokkos {
     OrdinalType numVectors = x.getNumCols();
     if (numVectors!=y.getNumCols()) return(-5); // Not the same number of vectors in x and y
 
-    OrdinalType i, j, k, curNumEntries;
-    Entry * curEntries = allEntries_;
-
     OrdinalType * profile = profile_;
 
-    ScalarType ** xpp = x.getValues();
-    ScalarType ** ypp = y.getValues();
     int oskiReturn = 0;
 
-    if (!conjA && !transA) ) {
+    OskiMatrix <OrdinalType,ScalarType> A_tunable = dynamic_cast<Kokkos::OskiMatrix<OrdinalType,ScalarType> >(matrixForValues_);
 
-	oskiReturn = oski_MatMult(this, OP_NORMAL, 1.0, x, 0.0, y);
+    if (!conjA && !transA) {
+
+	oskiReturn = oski_MatMult(A_tunable.getA_tunable(), OP_NORMAL, 1.0, x, 0.0, y);
     }
     else if (!conjA && transA) {
 
-	oskiReturn = oski_MatMult(this, OP_TRANS, 1.0, x, 0.0, y);
+	oskiReturn = oski_MatMult(A_tunable.getA_tunable(), OP_TRANS, 1.0, x, 0.0, y);
     }
     else {//conjA && transA
 
-	oskiReturn = oski_MatMult(this, OP_CONJ_TRANS, 1.0, x, 0.0, y);
+	oskiReturn = oski_MatMult(A_tunable.getA_tunable(), OP_CONJ_TRANS, 1.0, x, 0.0, y);
     }
     updateFlops(this->costOfMatVec_ * ((double) numVectors));
     return(oskiReturn);

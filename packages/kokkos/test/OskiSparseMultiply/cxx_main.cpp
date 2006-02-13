@@ -100,7 +100,7 @@ int main(int argc, char* argv[])
     bool hasImplicitUnitDiagonal = false;
     KokkosTest::GenerateOskiProblem<OTYPE, STYPE>
       problem(isRowOriented,hasImplicitUnitDiagonal,
-	      nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
+	      nx, ny, npoints, xoff, yoff, 1, A, x, b, xexact, numEntries);
     
     if (verbose) cout<<endl<<"********** CHECKING OskiSparseMultiply **********" << " Dim = " << numEquations <<endl<<endl;
     
@@ -116,12 +116,12 @@ int main(int argc, char* argv[])
     if (verbose) cout <<"Checking if attribute set/check is working.......";
 
     Kokkos::OskiMatrix<OTYPE, STYPE> * HbA = dynamic_cast<Kokkos::OskiMatrix<OTYPE, STYPE> *>(A);
-    HbA->setHasDiagonalEntries(false); // Invalid, but testing it
-    assert(HbA->checkStructure()==-3);
-    HbA->setIsLowerTriangular(true); // Invalid, but testing it
-    assert(HbA->checkStructure()==-2);
-    HbA->setIsUpperTriangular(true); // Invalid, but testing it
-    assert(HbA->checkStructure()==-1);
+//    HbA->setHasDiagonalEntries(false); // Invalid, but testing it
+//    assert(HbA->checkStructure()==-3);
+//    HbA->setIsLowerTriangular(true); // Invalid, but testing it
+//    assert(HbA->checkStructure()==-2);
+//    HbA->setIsUpperTriangular(true); // Invalid, but testing it
+//    assert(HbA->checkStructure()==-1);
     assert(HbA->checkStructure()==0);
     if (verbose) cout << "successful."<<endl;
     
@@ -141,8 +141,10 @@ int main(int argc, char* argv[])
 
     double mflops = opAflops/opAtime/1000000.0;
     
-    STYPE * bv = b->getValues();
-    STYPE * xv = x->getValues();
+    STYPE ** bvtmp = b->getValues();
+    STYPE ** xvtmp = x->getValues();
+    STYPE * bv = bvtmp[0];
+    STYPE * xv = xvtmp[0];
     STYPE sum = 0.0;
     for (OTYPE i=0; i<numEquations; i++) sum += xv[i] - bv[i];
     if (verbose) cout << "Difference between exact and computed = " << sum << endl;

@@ -205,6 +205,9 @@ namespace Kokkos {
     //! Number of matrix entries
     OrdinalType getNumEntries() const {return(numEntries_);};
 	
+    //! Underlying OSKI Matrix
+    oski_matrix_t getA_tunable() const{return(A_tunable_);};
+
     //@}
 
   protected:
