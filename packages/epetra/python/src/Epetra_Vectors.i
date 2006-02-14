@@ -133,6 +133,8 @@ class MultiVector(UserArray,NumPyMultiVector):
         __init__(self, PyObject array) -> MultiVector
         """
         NumPyMultiVector.__init__(self, *args)
+        errorMsg = self.ErrorMsg()
+        if errorMsg: raise ValueError, errorMsg
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)

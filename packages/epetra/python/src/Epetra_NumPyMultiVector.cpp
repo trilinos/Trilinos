@@ -40,6 +40,7 @@ const Epetra_SerialComm   Epetra_NumPyMultiVector::defaultComm = Epetra_SerialCo
 PyArrayObject           * Epetra_NumPyMultiVector::tmp_array   = NULL               ;
 Epetra_Map              * Epetra_NumPyMultiVector::tmp_map     = NULL               ;
 PyArrayObject           * Epetra_NumPyMultiVector::tmp_range   = NULL               ;
+char                    * Epetra_NumPyMultiVector::error_str   = NULL               ;
 
 // Static helper functions
 // =============================================================================
@@ -48,9 +49,11 @@ double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
   
-  // If this fails, build a single vector with all zeros
+  // If this fails, indicate an error by setting error_str, but build
+  // a single vector with length zero to prevent a Bus Error
   if (!tmp_array) {
-    int dimensions[ ] = { 1, PyObject_Length(pyObject) };
+    error_str = "Error converting argument to an array";
+    int dimensions[ ] = { 1, 0 };
     tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
 
   // If the contiguous PyArrayObject built successfully, make sure it has the correct
@@ -75,14 +78,22 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
     int numVectors = (int) PyInt_AsLong(pyObject);
     int dimensions[ ] = { numVectors, blockMap.NumMyPoints() };
     tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
+    if (tmp_array == NULL) {
+      error_str  = "Error creating array";
+      dimensions[0] = 1;
+      dimensions[1] = 0;
+      tmp_array  = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
+    }
 
   // PyObject argument is not an int ... try to build a contiguous PyArrayObject from it
   } else {
     if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
 
-    // If this fails, build a single vector with all zeros
+    // If this fails, indicate an error by setting error_str, but build
+    // a single vector with length zero to prevent a Bus Error
     if (!tmp_array) {
-      int dimensions[ ] = { 1, blockMap.NumMyPoints() };
+      error_str = "Error converting argument to an array";
+      int dimensions[ ] = { 1, 0 };
       tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
 
     // If the contiguous PyArrayObject built successfully, make sure it has the correct
@@ -197,6 +208,10 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
 
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
+
+  // Error message
+  error_msg = error_str;
+  error_str = NULL;
 }
 
 // =============================================================================
@@ -209,6 +224,10 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_MultiVector & sour
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(2,dims,PyArray_DOUBLE,
 						    (char *)v[0]);
+
+  // Error message
+  error_msg = error_str;
+  error_str = NULL;
 }
 
 // =============================================================================
@@ -217,14 +236,16 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   Epetra_MultiVector(View, blockMap, getArray(blockMap,pyObject),
 		     blockMap.NumMyPoints(), getNumVectors(blockMap,pyObject))
 {
-  // Get the pointer to the array from static variable and clear
-  assert(NULL != tmp_array);
+  // Store the array pointer
   array     = tmp_array;
   tmp_array = NULL;
 
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
 
+  // Error message
+  error_msg = error_str;
+  error_str = NULL;
 }
 
 // =============================================================================
@@ -254,9 +275,12 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
 						    (char *)v[0]);
 
   // We're done with the tmp_range array
-  assert(NULL != tmp_range);
   Py_XDECREF(tmp_range);
   tmp_range = NULL;
+
+  // Error message
+  error_msg = error_str;
+  error_str = NULL;
 }
 
 // =============================================================================
@@ -265,14 +289,16 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(PyObject * pyObject):
 		     getVectorSize(pyObject), getNumVectors(pyObject))
 {
   // Store the pointer to the Epetra_Map
-  assert(NULL != tmp_map);
   map     = tmp_map;
   tmp_map = NULL;
 
   // Store the pointer to the PyArrayObject
-  assert(NULL != tmp_array);
   array     = tmp_array;
   tmp_array = NULL;
+
+  // Error message
+  error_msg = error_str;
+  error_str = NULL;
 }
 
 // =============================================================================
@@ -281,6 +307,13 @@ Epetra_NumPyMultiVector::~Epetra_NumPyMultiVector()
 {
   Py_XDECREF(array);
   delete map;
+}
+
+// =============================================================================
+PyObject * Epetra_NumPyMultiVector::ErrorMsg() const
+{
+  if (error_msg == NULL) return Py_BuildValue("");
+  return PyString_FromString(error_msg);
 }
 
 // =============================================================================

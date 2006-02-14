@@ -52,6 +52,9 @@ public:
   // Destructor
   virtual ~Epetra_NumPyMultiVector();
 
+  // Error reporting (should be checked after constructor is called)
+  PyObject * ErrorMsg() const;
+
   // Overridden Epetra_MultiVector methods with more python-like signatures
   PyObject * ExtractCopy() const;
   PyObject * ExtractView() const;
@@ -82,6 +85,7 @@ private:
   static PyArrayObject * tmp_array;
   static Epetra_Map    * tmp_map;
   static PyArrayObject * tmp_range;
+  static char          * error_str;
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the
@@ -101,6 +105,7 @@ private:
   // Private data
   Epetra_BlockMap * map;
   PyArrayObject   * array;
+  char            * error_msg;
 
 };
 
