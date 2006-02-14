@@ -60,10 +60,10 @@
 %ignore operator<<(ostream &, const Epetra_Object &);// From python, use __str__
 %ignore NumPyArrayBase::getDataArray() const;
 %ignore NumPyArrayBase::getArrayObject() const;
-%ignore Epetra_Object::Print(ostream &) const;       // Replaced with __str__ method
+%ignore Epetra_Object::Print(ostream &) const;
 %ignore Epetra_MapColoring::operator()(int) const;
-%ignore Epetra_CompObject::UpdateFlops(int) const;   // Use long int version
-%ignore Epetra_CompObject::UpdateFlops(float) const; // Use double version
+%ignore *::UpdateFlops(int) const;   // Use long int version
+%ignore *::UpdateFlops(float) const; // Use double version
 // These are Import/Export methods that get extended below
 %ignore *::PermuteFromLIDs() const;
 %ignore *::PermuteToLIDs() const;

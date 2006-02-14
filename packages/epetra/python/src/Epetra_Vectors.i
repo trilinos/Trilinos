@@ -43,10 +43,12 @@
 
 // Ignore directives
 %ignore Epetra_MultiVector::operator()(int) const;
-%ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;  // These Extract methods
-%ignore Epetra_MultiVector::ExtractCopy(double **       ) const;  // are given functionality
-%ignore Epetra_MultiVector::ExtractView(double **, int *) const;  // in the derived class
-%ignore Epetra_MultiVector::ExtractView(double ***      ) const;  // Epetra_NumPyMultiVector
+// The following methods are given functionality in the derived class
+// Epetra_NumPyMultiVector
+%ignore Epetra_MultiVector::ExtractCopy(double *, int   ) const;
+%ignore Epetra_MultiVector::ExtractCopy(double **       ) const;
+%ignore Epetra_MultiVector::ExtractView(double **, int *) const;
+%ignore Epetra_MultiVector::ExtractView(double ***      ) const;
 %ignore Epetra_MultiVector::Dot(const Epetra_MultiVector&,double*) const;
 %ignore Epetra_MultiVector::Norm1(double*) const;
 %ignore Epetra_MultiVector::Norm2(double*) const;
@@ -55,28 +57,29 @@
 %ignore Epetra_MultiVector::MinValue(double*) const;
 %ignore Epetra_MultiVector::MaxValue(double*) const;
 %ignore Epetra_MultiVector::MeanValue(double*) const;
-%ignore Epetra_MultiVector::ResetView(double **);     // These are expert
-%ignore Epetra_MultiVector::Pointers() const;         // methods not supported in python
-%ignore Epetra_Vector::ExtractCopy(double * ) const;  // These Extract methods are given functionality
-%ignore Epetra_Vector::ExtractView(double **) const;  // in the derived class Epetra_NumPyVector
-%ignore Epetra_Vector::ReplaceGlobalValues(int,double*,int*);      // These four Replace methods are overloaded
-%ignore Epetra_Vector::ReplaceGlobalValues(int,int,double*,int*);  // in Epetra_NumPyVector with the double*
-%ignore Epetra_Vector::ReplaceMyValues(int,double*,int*);          // and int* arguments replaced with PyObject*s
-%ignore Epetra_Vector::ReplaceMyValues(int,int,double*,int*);      // and the first int argument made implicit
-%ignore Epetra_Vector::SumIntoGlobalValues(int,double*,int*);      // These four SumInto methods are overloaded
-%ignore Epetra_Vector::SumIntoGlobalValues(int,int,double*,int*);  // in Epetra_NumPyVector with the double*
-%ignore Epetra_Vector::SumIntoMyValues(int,double*,int*);	   // and int* arguments replaced with PyObject*s
-%ignore Epetra_Vector::SumIntoMyValues(int,int,double*,int*);	   // and the first int argument made implicit
-%ignore Epetra_Vector::ResetView(double *);           // Expert method not supported in python
+// The following are expert methods not supported in python
+%ignore Epetra_MultiVector::ResetView(double **);
+%ignore Epetra_MultiVector::Pointers() const;
+// The following methods are given functionality in the derived class
+// Epetra_NumPyVector
+%ignore Epetra_Vector::ExtractCopy(double * ) const;
+%ignore Epetra_Vector::ExtractView(double **) const;
+%ignore Epetra_Vector::ReplaceGlobalValues(int,double*,int*);
+%ignore Epetra_Vector::ReplaceGlobalValues(int,int,double*,int*);
+%ignore Epetra_Vector::ReplaceMyValues(int,double*,int*);
+%ignore Epetra_Vector::ReplaceMyValues(int,int,double*,int*);
+%ignore Epetra_Vector::SumIntoGlobalValues(int,double*,int*);
+%ignore Epetra_Vector::SumIntoGlobalValues(int,int,double*,int*);
+%ignore Epetra_Vector::SumIntoMyValues(int,double*,int*);
+%ignore Epetra_Vector::SumIntoMyValues(int,int,double*,int*);
+// The following is an expert method not supported in python
+%ignore Epetra_Vector::ResetView(double *);
 
 // Rename directives
 %rename(NumPyMultiVector) Epetra_NumPyMultiVector;
 %rename(NumPyVector     ) Epetra_NumPyVector;
 %rename(NumPyIntVector  ) Epetra_NumPyIntVector;
 %rename(FEVector        ) Epetra_FEVector;
-%rename(_AuxMultiVector ) MultiVector;
-%rename(_AuxVector      ) Vector;
-%rename(_AuxIntVector   ) IntVector;
 
 // These are place-holders on the C++ side for the python-defined
 // MultiVector, Vector and IntVector classes
@@ -85,6 +88,19 @@
   struct Vector      { };
   struct IntVector   { };
 }
+
+// Typemaps
+%define TYPEMAP_OUT(vector,numPyVector)
+%typemap(out) vector * {
+  numPyVector * vec = new numPyVector(*$1);
+  static swig_type_info *ty = SWIG_TypeQuery("numPyVector *");
+  $result = SWIG_NewPointerObj(vec, ty, 1);
+}
+%enddef
+
+TYPEMAP_OUT(Epetra_MultiVector,Epetra_NumPyMultiVector)
+TYPEMAP_OUT(Epetra_Vector,     Epetra_NumPyVector     )
+TYPEMAP_OUT(Epetra_IntVector,  Epetra_NumPyIntVector  )
 
 // Import directives for Epetra
 %include "Epetra_MultiVector.h"
@@ -131,6 +147,7 @@ class MultiVector(UserArray,NumPyMultiVector):
                 raise ValueError, "Epetra.MultiVector shape is " + str(value) + \
 		  " but must have minimum of 2 elements"
         UserArray.__setattr__(self, key, value)
+_Epetra.NumPyMultiVector_swigregister(MultiVector)
 
 class Vector(UserArray,NumPyVector):
     def __init__(self, *args):
@@ -151,6 +168,7 @@ class Vector(UserArray,NumPyVector):
             if key in self.__dict__:
                 raise AttributeError, "Cannot change Epetra.Vector array attribute"
         UserArray.__setattr__(self, key, value)
+_Epetra.NumPyVector_swigregister(          Vector)
 
 class IntVector(UserArray,NumPyIntVector):
     def __init__(self, *args):
@@ -170,9 +188,6 @@ class IntVector(UserArray,NumPyIntVector):
             if key in self.__dict__:
                 raise AttributeError, "Cannot change Epetra.IntVector array attribute"
         UserArray.__setattr__(self, key, value)
-
-_Epetra._AuxMultiVector_swigregister(MultiVector)
-_Epetra._AuxVector_swigregister(          Vector)
-_Epetra._AuxIntVector_swigregister(    IntVector)
+_Epetra.NumPyIntVector_swigregister(    IntVector)
 
 %}

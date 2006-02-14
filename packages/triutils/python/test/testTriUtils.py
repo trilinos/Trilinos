@@ -51,7 +51,11 @@ class TriutilsTestCase(unittest.TestCase):
     "TestCase class for Triutils module"
 
     def setUp(self):
-        self.comm = Epetra.PyComm()
+        self.comm    = Epetra.PyComm()
+        self.numProc = self.comm.NumProc()
+        self.gallery = Triutils.CrsMatrixGallery("laplace_2d",self.comm)
+        self.gallery.Set("nx",10*self.numProc)
+        self.gallery.Set("ny",10*self.numProc)
         self.comm.Barrier()
 
     def tearDown(self):
@@ -63,6 +67,12 @@ class TriutilsTestCase(unittest.TestCase):
         front   = "Triutils Version "
         version = Triutils.Triutils_Version()
         self.assertEquals(version[:len(front)], front)
+
+    def testGetRHS(self):
+        "Test Triutils.CrsMatrixGallery GetRHS method"
+        rhs = self.gallery.GetRHS()
+        s   = str(type(rhs))
+        self.assertEqual(s,"<class 'Epetra.MultiVector'>")
 
 ####################################################################
 
