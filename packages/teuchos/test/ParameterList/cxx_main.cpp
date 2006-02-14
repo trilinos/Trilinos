@@ -170,7 +170,7 @@ int main(int argc, char *argv[])
     if (verbose) cout << "yes"<< endl;
   } else {
     if (verbose) cout << "no"<< endl;
-    FailedTests++;        
+    FailedTests++;
   }
 
   //-----------------------------------------------------------
@@ -603,7 +603,7 @@ int main(int argc, char *argv[])
 
   if (verbose) {
     print_break();
-    cout << "Assessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Accessing a parameter using the wrong name (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
     print_break();
   }
   try {
@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
 
   if (verbose) {
     print_break();
-    cout << "Assessing a parameter using the wrong parameter type (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
+    cout << "Accessing a parameter using the wrong parameter type (should throw a Teuchos::Exceptions::InvalidParameter exception)...\n";
     print_break();
   }
   try {
@@ -651,6 +651,7 @@ int main(int argc, char *argv[])
   }
   try {
     PL_Main_copy.validateParameters(PL_Main);
+    if (verbose) cout << "Did not throw exception, success!\n\n";
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
@@ -722,6 +723,7 @@ int main(int argc, char *argv[])
   }
   try {
     PL_Main_copy.validateParameters(PL_Main,0);
+    if (verbose) cout << "Did not throw exception, success!\n\n";
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;

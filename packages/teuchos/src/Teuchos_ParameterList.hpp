@@ -383,6 +383,8 @@ private: // Functions
   //! Validate that a type is the same
   template<typename T>
   void validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const;
+  //! Update sublist names recursively
+  void updateSubListNames();
   
 private: // Data members
 

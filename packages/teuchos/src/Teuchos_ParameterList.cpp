@@ -89,6 +89,7 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
 ParameterList& ParameterList::setParameters(const ParameterList& source) 
 {
   params_ = source.params_;
+  this->updateSubListNames();
   return *this;
 }
 
@@ -328,6 +329,23 @@ void ParameterList::validateParameters(
 #ifdef TEUCHOS_PARAMETER_LIST_SHOW_TRACE
   *out << "\n*** Existing ParameterList::validateParameters(...) for this->name()=\""<<this->name()<<"\"...\n";
 #endif
+}
+
+// private
+
+void ParameterList::updateSubListNames()
+{
+  const std::string this_name = this->name();
+  Map::iterator itr;
+  for( itr = params_.begin(); itr != params_.end(); ++itr ) {
+    const std::string    &entryName   = this->name(itr);
+    const ParameterEntry &entry       = this->entry(itr);
+    if(entry.isList()) {
+      ParameterList &sublist = getValue<ParameterList>(entry);
+      sublist.setName(this_name+std::string("->")+entryName);
+      sublist.updateSubListNames();
+    }
+  }
 }
 
 } // namespace Teuchos
