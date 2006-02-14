@@ -12,6 +12,12 @@ import os
 import copy
 import getopt
 
+version = sys.version_info[0] + sys.version_info[1]/10.0
+if version < 2.3:
+    True = 1
+    False = 0
+
+
 class CompareRule:
     """
     This class provides an easy to use rule object from a compareTestOutput
