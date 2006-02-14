@@ -60,7 +60,13 @@ EXTRA_CLAPS_H = \
 	$(srcdir)/preconditioners/my_feti_sparse_solver.hpp \
 	$(srcdir)/preconditioners/myzero.hpp \
 	$(srcdir)/preconditioners/sparse_lu.hpp \
-	$(srcdir)/preconditioners/CLIP_solver.hpp
+	$(srcdir)/preconditioners/CLIP_solver.hpp \
+	$(srcdir)/preconditioners/sparse_lu2.hpp \
+	$(srcdir)/preconditioners/solver_crd.hpp \
+	$(srcdir)/preconditioners/CLIP_solver2.hpp \
+	$(srcdir)/preconditioners/CRS_serial.hpp \
+	$(srcdir)/preconditioners/preconditioner_crd.hpp \
+	$(srcdir)/preconditioners/krylov_crd.hpp
 
 EXTRA_CLAPS = \
 	$(srcdir)/preconditioners/CLOP_constraint.cpp \
@@ -70,7 +76,11 @@ EXTRA_CLAPS = \
 	$(srcdir)/preconditioners/CRD_utils.cpp \
 	$(srcdir)/preconditioners/EpetraExtCD_MatrixMatrix.cpp \
 	$(srcdir)/preconditioners/sparse_lu.cpp \
-	$(srcdir)/preconditioners/CLIP_solver.cpp
+	$(srcdir)/preconditioners/CLIP_solver.cpp \
+	$(srcdir)/preconditioners/sparse_lu2.cpp \
+	$(srcdir)/preconditioners/CLIP_solver2.cpp \
+	$(srcdir)/preconditioners/CRS_serial.cpp \
+	$(srcdir)/preconditioners/krylov_crd.cpp
 
 EXTRA_SCLAPS_H = \
 	$(srcdir)/salinas/SCLOP_solver.hpp \

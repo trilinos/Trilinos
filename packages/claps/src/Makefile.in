@@ -128,6 +128,10 @@ am__libclaps_a_SOURCES_DIST = $(srcdir)/Claps_Version.cpp \
 	$(srcdir)/preconditioners/EpetraExtCD_MatrixMatrix.cpp \
 	$(srcdir)/preconditioners/sparse_lu.cpp \
 	$(srcdir)/preconditioners/CLIP_solver.cpp \
+	$(srcdir)/preconditioners/sparse_lu2.cpp \
+	$(srcdir)/preconditioners/CLIP_solver2.cpp \
+	$(srcdir)/preconditioners/CRS_serial.cpp \
+	$(srcdir)/preconditioners/krylov_crd.cpp \
 	$(srcdir)/salinas/SCLOP_interface.cpp \
 	$(srcdir)/salinas/SCLOP_solver.cpp \
 	$(srcdir)/salinas/SCLIP_interface.cpp \
@@ -136,7 +140,9 @@ am__objects_1 = Claps_Version.$(OBJEXT)
 am__objects_2 = CLOP_constraint.$(OBJEXT) CLOP_graph.$(OBJEXT) \
 	CLOP_solver.$(OBJEXT) CLOP_sub.$(OBJEXT) CRD_utils.$(OBJEXT) \
 	EpetraExtCD_MatrixMatrix.$(OBJEXT) sparse_lu.$(OBJEXT) \
-	CLIP_solver.$(OBJEXT)
+	CLIP_solver.$(OBJEXT) sparse_lu2.$(OBJEXT) \
+	CLIP_solver2.$(OBJEXT) CRS_serial.$(OBJEXT) \
+	krylov_crd.$(OBJEXT)
 am__objects_3 = SCLOP_interface.$(OBJEXT) SCLOP_solver.$(OBJEXT) \
 	SCLIP_interface.$(OBJEXT) SCLIP_solver.$(OBJEXT)
 @HAVE_SCLAPS_TRUE@am__objects_4 = $(am__objects_3)
@@ -147,17 +153,19 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/CLIP_solver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/CLIP_solver2.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CLOP_constraint.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CLOP_graph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CLOP_solver.Po ./$(DEPDIR)/CLOP_sub.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/CRD_utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/CRD_utils.Po ./$(DEPDIR)/CRS_serial.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Claps_Version.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SCLIP_interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SCLIP_solver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SCLOP_interface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/SCLOP_solver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/sparse_lu.Po
+@AMDEP_TRUE@	./$(DEPDIR)/krylov_crd.Po ./$(DEPDIR)/sparse_lu.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/sparse_lu2.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -181,6 +189,12 @@ am__include_HEADERS_DIST = $(srcdir)/Claps_ConfigDefs.hpp \
 	$(srcdir)/preconditioners/myzero.hpp \
 	$(srcdir)/preconditioners/sparse_lu.hpp \
 	$(srcdir)/preconditioners/CLIP_solver.hpp \
+	$(srcdir)/preconditioners/sparse_lu2.hpp \
+	$(srcdir)/preconditioners/solver_crd.hpp \
+	$(srcdir)/preconditioners/CLIP_solver2.hpp \
+	$(srcdir)/preconditioners/CRS_serial.hpp \
+	$(srcdir)/preconditioners/preconditioner_crd.hpp \
+	$(srcdir)/preconditioners/krylov_crd.hpp \
 	$(srcdir)/salinas/SCLOP_solver.hpp \
 	$(srcdir)/salinas/SCLIP_solver.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -316,7 +330,13 @@ EXTRA_CLAPS_H = \
 	$(srcdir)/preconditioners/my_feti_sparse_solver.hpp \
 	$(srcdir)/preconditioners/myzero.hpp \
 	$(srcdir)/preconditioners/sparse_lu.hpp \
-	$(srcdir)/preconditioners/CLIP_solver.hpp
+	$(srcdir)/preconditioners/CLIP_solver.hpp \
+	$(srcdir)/preconditioners/sparse_lu2.hpp \
+	$(srcdir)/preconditioners/solver_crd.hpp \
+	$(srcdir)/preconditioners/CLIP_solver2.hpp \
+	$(srcdir)/preconditioners/CRS_serial.hpp \
+	$(srcdir)/preconditioners/preconditioner_crd.hpp \
+	$(srcdir)/preconditioners/krylov_crd.hpp
 
 EXTRA_CLAPS = \
 	$(srcdir)/preconditioners/CLOP_constraint.cpp \
@@ -326,7 +346,11 @@ EXTRA_CLAPS = \
 	$(srcdir)/preconditioners/CRD_utils.cpp \
 	$(srcdir)/preconditioners/EpetraExtCD_MatrixMatrix.cpp \
 	$(srcdir)/preconditioners/sparse_lu.cpp \
-	$(srcdir)/preconditioners/CLIP_solver.cpp
+	$(srcdir)/preconditioners/CLIP_solver.cpp \
+	$(srcdir)/preconditioners/sparse_lu2.cpp \
+	$(srcdir)/preconditioners/CLIP_solver2.cpp \
+	$(srcdir)/preconditioners/CRS_serial.cpp \
+	$(srcdir)/preconditioners/krylov_crd.cpp
 
 EXTRA_SCLAPS_H = \
 	$(srcdir)/salinas/SCLOP_solver.hpp \
@@ -542,18 +566,22 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLIP_solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLIP_solver2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_constraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CLOP_sub.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRD_utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CRS_serial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Claps_Version.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExtCD_MatrixMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLIP_interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLIP_solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLOP_interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SCLOP_solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/krylov_crd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparse_lu.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sparse_lu2.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -714,6 +742,70 @@ CLIP_solver.obj: $(srcdir)/preconditioners/CLIP_solver.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLIP_solver.Po' tmpdepfile='$(DEPDIR)/CLIP_solver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLIP_solver.obj `if test -f '$(srcdir)/preconditioners/CLIP_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/CLIP_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/CLIP_solver.cpp'; fi`
+
+sparse_lu2.o: $(srcdir)/preconditioners/sparse_lu2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparse_lu2.o -MD -MP -MF "$(DEPDIR)/sparse_lu2.Tpo" -c -o sparse_lu2.o `test -f '$(srcdir)/preconditioners/sparse_lu2.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/sparse_lu2.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/sparse_lu2.Tpo" "$(DEPDIR)/sparse_lu2.Po"; else rm -f "$(DEPDIR)/sparse_lu2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/sparse_lu2.cpp' object='sparse_lu2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/sparse_lu2.Po' tmpdepfile='$(DEPDIR)/sparse_lu2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparse_lu2.o `test -f '$(srcdir)/preconditioners/sparse_lu2.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/sparse_lu2.cpp
+
+sparse_lu2.obj: $(srcdir)/preconditioners/sparse_lu2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sparse_lu2.obj -MD -MP -MF "$(DEPDIR)/sparse_lu2.Tpo" -c -o sparse_lu2.obj `if test -f '$(srcdir)/preconditioners/sparse_lu2.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/sparse_lu2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/sparse_lu2.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/sparse_lu2.Tpo" "$(DEPDIR)/sparse_lu2.Po"; else rm -f "$(DEPDIR)/sparse_lu2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/sparse_lu2.cpp' object='sparse_lu2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/sparse_lu2.Po' tmpdepfile='$(DEPDIR)/sparse_lu2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sparse_lu2.obj `if test -f '$(srcdir)/preconditioners/sparse_lu2.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/sparse_lu2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/sparse_lu2.cpp'; fi`
+
+CLIP_solver2.o: $(srcdir)/preconditioners/CLIP_solver2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLIP_solver2.o -MD -MP -MF "$(DEPDIR)/CLIP_solver2.Tpo" -c -o CLIP_solver2.o `test -f '$(srcdir)/preconditioners/CLIP_solver2.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/CLIP_solver2.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLIP_solver2.Tpo" "$(DEPDIR)/CLIP_solver2.Po"; else rm -f "$(DEPDIR)/CLIP_solver2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/CLIP_solver2.cpp' object='CLIP_solver2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLIP_solver2.Po' tmpdepfile='$(DEPDIR)/CLIP_solver2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLIP_solver2.o `test -f '$(srcdir)/preconditioners/CLIP_solver2.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/CLIP_solver2.cpp
+
+CLIP_solver2.obj: $(srcdir)/preconditioners/CLIP_solver2.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CLIP_solver2.obj -MD -MP -MF "$(DEPDIR)/CLIP_solver2.Tpo" -c -o CLIP_solver2.obj `if test -f '$(srcdir)/preconditioners/CLIP_solver2.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/CLIP_solver2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/CLIP_solver2.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CLIP_solver2.Tpo" "$(DEPDIR)/CLIP_solver2.Po"; else rm -f "$(DEPDIR)/CLIP_solver2.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/CLIP_solver2.cpp' object='CLIP_solver2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CLIP_solver2.Po' tmpdepfile='$(DEPDIR)/CLIP_solver2.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CLIP_solver2.obj `if test -f '$(srcdir)/preconditioners/CLIP_solver2.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/CLIP_solver2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/CLIP_solver2.cpp'; fi`
+
+CRS_serial.o: $(srcdir)/preconditioners/CRS_serial.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRS_serial.o -MD -MP -MF "$(DEPDIR)/CRS_serial.Tpo" -c -o CRS_serial.o `test -f '$(srcdir)/preconditioners/CRS_serial.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/CRS_serial.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CRS_serial.Tpo" "$(DEPDIR)/CRS_serial.Po"; else rm -f "$(DEPDIR)/CRS_serial.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/CRS_serial.cpp' object='CRS_serial.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CRS_serial.Po' tmpdepfile='$(DEPDIR)/CRS_serial.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRS_serial.o `test -f '$(srcdir)/preconditioners/CRS_serial.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/CRS_serial.cpp
+
+CRS_serial.obj: $(srcdir)/preconditioners/CRS_serial.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT CRS_serial.obj -MD -MP -MF "$(DEPDIR)/CRS_serial.Tpo" -c -o CRS_serial.obj `if test -f '$(srcdir)/preconditioners/CRS_serial.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/CRS_serial.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/CRS_serial.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CRS_serial.Tpo" "$(DEPDIR)/CRS_serial.Po"; else rm -f "$(DEPDIR)/CRS_serial.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/CRS_serial.cpp' object='CRS_serial.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CRS_serial.Po' tmpdepfile='$(DEPDIR)/CRS_serial.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRS_serial.obj `if test -f '$(srcdir)/preconditioners/CRS_serial.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/CRS_serial.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/CRS_serial.cpp'; fi`
+
+krylov_crd.o: $(srcdir)/preconditioners/krylov_crd.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT krylov_crd.o -MD -MP -MF "$(DEPDIR)/krylov_crd.Tpo" -c -o krylov_crd.o `test -f '$(srcdir)/preconditioners/krylov_crd.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/krylov_crd.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/krylov_crd.Tpo" "$(DEPDIR)/krylov_crd.Po"; else rm -f "$(DEPDIR)/krylov_crd.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/krylov_crd.cpp' object='krylov_crd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/krylov_crd.Po' tmpdepfile='$(DEPDIR)/krylov_crd.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o krylov_crd.o `test -f '$(srcdir)/preconditioners/krylov_crd.cpp' || echo '$(srcdir)/'`$(srcdir)/preconditioners/krylov_crd.cpp
+
+krylov_crd.obj: $(srcdir)/preconditioners/krylov_crd.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT krylov_crd.obj -MD -MP -MF "$(DEPDIR)/krylov_crd.Tpo" -c -o krylov_crd.obj `if test -f '$(srcdir)/preconditioners/krylov_crd.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/krylov_crd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/krylov_crd.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/krylov_crd.Tpo" "$(DEPDIR)/krylov_crd.Po"; else rm -f "$(DEPDIR)/krylov_crd.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/preconditioners/krylov_crd.cpp' object='krylov_crd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/krylov_crd.Po' tmpdepfile='$(DEPDIR)/krylov_crd.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o krylov_crd.obj `if test -f '$(srcdir)/preconditioners/krylov_crd.cpp'; then $(CYGPATH_W) '$(srcdir)/preconditioners/krylov_crd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/preconditioners/krylov_crd.cpp'; fi`
 
 SCLOP_interface.o: $(srcdir)/salinas/SCLOP_interface.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SCLOP_interface.o -MD -MP -MF "$(DEPDIR)/SCLOP_interface.Tpo" -c -o SCLOP_interface.o `test -f '$(srcdir)/salinas/SCLOP_interface.cpp' || echo '$(srcdir)/'`$(srcdir)/salinas/SCLOP_interface.cpp; \
