@@ -40,7 +40,7 @@ const Epetra_SerialComm   Epetra_NumPyMultiVector::defaultComm = Epetra_SerialCo
 PyArrayObject           * Epetra_NumPyMultiVector::tmp_array   = NULL               ;
 Epetra_Map              * Epetra_NumPyMultiVector::tmp_map     = NULL               ;
 PyArrayObject           * Epetra_NumPyMultiVector::tmp_range   = NULL               ;
-char                    * Epetra_NumPyMultiVector::error_str   = NULL               ;
+char                    * Epetra_NumPyMultiVector::tmp_error   = NULL               ;
 
 // Static helper functions
 // =============================================================================
@@ -49,10 +49,10 @@ double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
   
-  // If this fails, indicate an error by setting error_str, but build
+  // If this fails, indicate an error by setting tmp_error, but build
   // a single vector with length zero to prevent a Bus Error
   if (!tmp_array) {
-    error_str = "Error converting argument to an array";
+    tmp_error = "Error converting argument to an array";
     int dimensions[ ] = { 1, 0 };
     tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
 
@@ -79,7 +79,7 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
     int dimensions[ ] = { numVectors, blockMap.NumMyPoints() };
     tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
     if (tmp_array == NULL) {
-      error_str  = "Error creating array";
+      tmp_error  = "Error creating array";
       dimensions[0] = 1;
       dimensions[1] = 0;
       tmp_array  = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
@@ -89,10 +89,10 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
   } else {
     if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
 
-    // If this fails, indicate an error by setting error_str, but build
+    // If this fails, indicate an error by setting tmp_error, but build
     // a single vector with length zero to prevent a Bus Error
     if (!tmp_array) {
-      error_str = "Error converting argument to an array";
+      tmp_error = "Error converting argument to an array";
       int dimensions[ ] = { 1, 0 };
       tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
 
@@ -210,8 +210,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   map = new Epetra_BlockMap(blockMap);
 
   // Error message
-  error_msg = error_str;
-  error_str = NULL;
+  error_msg = tmp_error;
+  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -226,8 +226,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_MultiVector & sour
 						    (char *)v[0]);
 
   // Error message
-  error_msg = error_str;
-  error_str = NULL;
+  error_msg = tmp_error;
+  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -244,8 +244,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   map = new Epetra_BlockMap(blockMap);
 
   // Error message
-  error_msg = error_str;
-  error_str = NULL;
+  error_msg = tmp_error;
+  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -279,8 +279,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   tmp_range = NULL;
 
   // Error message
-  error_msg = error_str;
-  error_str = NULL;
+  error_msg = tmp_error;
+  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -297,8 +297,8 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(PyObject * pyObject):
   tmp_array = NULL;
 
   // Error message
-  error_msg = error_str;
-  error_str = NULL;
+  error_msg = tmp_error;
+  tmp_error = NULL;
 }
 
 // =============================================================================

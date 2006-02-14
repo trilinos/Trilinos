@@ -85,7 +85,7 @@ private:
   static PyArrayObject * tmp_array;
   static Epetra_Map    * tmp_map;
   static PyArrayObject * tmp_range;
-  static char          * error_str;
+  static char          * tmp_error;
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the

@@ -79,12 +79,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
     def testConstructor03(self):
         "Test Epetra.MultiVector (BlockMap,bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        emv = Epetra.MultiVector(self.map,list)
-        self.assertEquals(emv.NumVectors(),1)
-        self.assertEquals(emv.MyLength(), self.length)
-        self.assertEquals(emv.GlobalLength(), self.length*comm.NumProc())
-        for i in range(emv.shape[1]):
-            self.assertEquals(emv[0,i], 0.0)
+        self.assertRaises(ValueError, Epetra.MultiVector, self.map, list)
 
     def testConstructor04(self):
         "Test Epetra.MultiVector (BlockMap,1D-small-list) constructor"
@@ -229,12 +224,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
     def testConstructor16(self):
         "Test Epetra.MultiVector (bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        emv  = Epetra.MultiVector(list)
-        self.assertEquals(emv.NumVectors(),1)
-        self.assertEquals(emv.MyLength(),len(list))
-        self.assertEquals(emv.GlobalLength(), len(list))
-        for i in range(emv.shape[1]):
-            self.assertEquals(emv[0,i], 0.0)
+        self.assertRaises(ValueError, Epetra.MultiVector, list)
 
     def testConstructor17(self):
         "Test Epetra.MultiVector (Copy,MultiVector,range-of-1) constructor"

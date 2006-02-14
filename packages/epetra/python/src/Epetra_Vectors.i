@@ -161,6 +161,8 @@ class Vector(UserArray,NumPyVector):
         __init__(self, PyObject array) -> Vector
         """
         NumPyVector.__init__(self, *args)
+        errorMsg = self.ErrorMsg()
+        if errorMsg: raise ValueError, errorMsg
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)
