@@ -42,12 +42,7 @@
 # ************************************************************************
 # @HEADER
 
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside EpetraExt. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
+# The following line helps the test harness recover from build errors.
 
 
 SOURCES = $(libepetraext_a_SOURCES) $(EXTRA_libepetraext_a_SOURCES)
@@ -563,6 +558,13 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside EpetraExt. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 CORE_H = \
      $(srcdir)/EpetraExt_ConfigDefs.h \
      $(srcdir)/EpetraExt_MatrixMatrix.h \
@@ -2170,7 +2172,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS) EpetraExt_config.h
+all-am: Makefile $(LIBRARIES) $(HEADERS) EpetraExt_config.h all-local
 installdirs:
 	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir)
 install: install-am
@@ -2250,13 +2252,13 @@ ps-am:
 uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-hdr distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-exec install-exec-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-libLIBRARIES ctags distclean \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-includeHEADERS install-info \
+	install-info-am install-libLIBRARIES install-man \
 	install-nodist_execincludeHEADERS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
@@ -2264,6 +2266,11 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
+
+all-local:
+	@echo ""
+	@echo "Trilinos package epetraext subdirectory src built successfully."
+	@echo ""
 
 #We need the following to support separate build directories
 #AM_CPPFLAGS = \

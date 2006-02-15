@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package epetraext subdirectory src built successfully."
+	@echo ""
+
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
