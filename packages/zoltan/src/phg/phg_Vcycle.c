@@ -88,10 +88,10 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
     return ZOLTAN_FATAL;
   }
 
-  /* Set reduction method. */
+  /* Set coarsening method. */
   hgp->matching = NULL;
   if (!(Zoltan_PHG_Set_Matching_Fn (hgp)))  {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_REDUCTION_METHOD.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSENING_METHOD.");
     return ZOLTAN_FATAL;
   }
 
@@ -99,13 +99,13 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
    * partitioning method later if reduction to 1 proc fails              */
   hgp->CoarsePartition = Zoltan_PHG_Set_CoarsePartition_Fn(hgp, &err);
   if (err != ZOLTAN_OK)  {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSE_PARTITIONING.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_COARSEPARTITION_METHOD.");
       return ZOLTAN_FATAL;
   }
 
   /* Set refinement method. */
   if (!(hgp->Refinement = Zoltan_PHG_Set_Refinement_Fn(hgp->refinement_str)))  {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_REFINEMENT.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_REFINEMENT_METHOD.");
     return ZOLTAN_FATAL;
   }
   return ZOLTAN_OK;
