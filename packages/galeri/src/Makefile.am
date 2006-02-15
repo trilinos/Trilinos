@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package galeri subdirectory src built successfully."
+	@echo ""
+
 CORE_H = $(srcdir)/Galeri_Version.h                    \
 	 $(srcdir)/Galeri_ConfigDefs.h                 \
 	 $(srcdir)/Galeri_Maps.h                       \
