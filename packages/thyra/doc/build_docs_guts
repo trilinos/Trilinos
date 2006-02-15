@@ -12,7 +12,7 @@ echo "Generating LinearAlgebraFunctionConvention.pdf file ..."
 echo
 
 pushd ../../../doc/Thyra/linear_algebra_function_convention; make pdf ; popd
-cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf ../src/interfaces/operator_vector/ana/fundamental/doc/html/.
+cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf ../src/support/operator_vector/doc/html/.
 
 echo
 echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/fundamental ..."
