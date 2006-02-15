@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package aztecoo subdirectory example built successfully."
+	@echo ""
+
 #SUBDIRS = azoo_iterate_hb aztec_app aztec_hb AztecOO AztecOO_UserOpUserMat \
 #	IfpackAztecOO simple_epetra_aztecoo
 # note that simple_epetra_aztecoo, any AztecOO*, and azoo should not be built when "core Aztec" is 
