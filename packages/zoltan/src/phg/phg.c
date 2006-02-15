@@ -546,7 +546,7 @@ int Zoltan_PHG_Initialize_Params(
   /* Set default values */
   strncpy(hgp->hgraph_pkg,       "default",  MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redm_fast,           "c-ipm", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_fast,           "l-ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "auto",  MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
   strncpy(hgp->parkway_serpart,     "patoh", MAX_PARAM_STRING_LEN);
@@ -560,12 +560,12 @@ int Zoltan_PHG_Initialize_Params(
   hgp->vtx_scal = NULL;  /* Array for storing vertex degree scale vector. 
                             Should perhaps go in hg structure, not the
                             param struct? */
-  hgp->visit_order = 1;  /* Random */
+  hgp->visit_order = 0;  /* Random */
   hgp->check_graph = 0;
-  hgp->bal_tol = zz->LB.Imbalance_Tol[0];
+  hgp->bal_tol = zz->LB.Imbalance_Tol[0]; /* Make vector for multiconstraint */
   hgp->bal_tol_adjustment = 0.7;
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
-  hgp->output_level = PHG_DEBUG_LIST;
+  hgp->output_level = PHG_DEBUG_NONE;
   hgp->final_output = 0;
   hgp->nProc_x_req = -1;
   hgp->nProc_y_req = -1;

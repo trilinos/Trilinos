@@ -39,15 +39,15 @@ int Zoltan_PHG_Vertex_Visit_Order(
   /* Permute order array according to chosen strategy. */
   switch (hgp->visit_order){
     case 0: 
-      /* linear (natural) node visit order */
-      break;
-
-    case 1: 
-      /* random node visit order */
-      /* Synchronize within column so each column proc visits in same order */
+      /* random node visit order (recommended)  */
+      /* Synchronize so each proc in column visits in same order */
       Zoltan_Srand_Sync(Zoltan_Rand(NULL), &(hg->comm->RNGState_col),
                         hg->comm->col_comm);
       Zoltan_Rand_Perm_Int (order, hg->nVtx, &(hg->comm->RNGState_col));
+      break;
+
+    case 1: 
+      /* linear (natural) vertex visit order */
       break;
 
     case 2: 
@@ -58,6 +58,7 @@ int Zoltan_PHG_Vertex_Visit_Order(
 
     case 3: 
       /* increasing vertex degree */
+      /* intentionally fall through into next case */
     case 4: 
       /* increasing vertex degree, weighted by # pins */
 
