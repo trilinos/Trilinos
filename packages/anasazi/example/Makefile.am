@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package anasazi subdirectory example built successfully."
+	@echo ""
+
 if BUILD_ANASAZI_EXPERIMENTAL
 EXPERIMENTAL_SUBDIR = BlockJacobiDavidson
 endif

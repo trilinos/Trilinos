@@ -26,4 +26,11 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package anasazi subdirectory util built successfully."
+	@echo ""
+
 SUBDIRS = ModeLaplace

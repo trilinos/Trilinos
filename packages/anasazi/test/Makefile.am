@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package anasazi subdirectory test built successfully."
+	@echo ""
+
 if BUILD_TEUCHOS_COMPLEX
 if BUILD_TRIUTILS
 COMPLEX_SUBDIR = ARPACKExamples MVOPComplex LOBPCGComplex BlockDavidsonComplex BlockKrylovSchurComplex 
