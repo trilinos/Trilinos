@@ -1,7 +1,7 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters	= ADD_OBJ_WEIGHT=none
-Zoltan Parameters       = PHG_BAL_TOL_ADJUSTMENT = 0.6
+Zoltan Parameters       = PHG_BAL_TOL_ADJUSTMENT = 1.0
 File Type		= matrixmarket+
 File Name		= simple
 Parallel Disk Info	= number=0
