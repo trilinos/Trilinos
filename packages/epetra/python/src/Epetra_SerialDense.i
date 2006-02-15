@@ -42,6 +42,7 @@
 // Local interface includes
 #include "Epetra_NumPySerialDenseMatrix.h"
 #include "Epetra_NumPySerialDenseVector.h"
+#include "Epetra_NumPyIntSerialDenseVector.h"
 %}
 
 // Ignore directives
@@ -55,14 +56,14 @@
 %ignore Epetra_IntSerialDenseVector::operator()(int) const;
 
 // Rename directives
-%rename(IntSerialDenseMatrix  ) Epetra_IntSerialDenseMatrix;
-%rename(IntSerialDenseVector  ) Epetra_IntSerialDenseVector;
-%rename(SerialDenseOperator   ) Epetra_SerialDenseOperator;
-%rename(NumPySerialDenseMatrix) Epetra_NumPySerialDenseMatrix;
-%rename(SerialSymDenseMatrix  ) Epetra_SerialSymDenseMatrix;
-%rename(NumPySerialDenseVector) Epetra_NumPySerialDenseVector;
-%rename(SerialDenseSolver     ) Epetra_SerialDenseSolver;
-%rename(SerialDenseSVD        ) Epetra_SerialDenseSVD;
+%rename(IntSerialDenseMatrix     ) Epetra_IntSerialDenseMatrix;
+%rename(NumPyIntSerialDenseVector) Epetra_NumPyIntSerialDenseVector;
+%rename(SerialDenseOperator   	 ) Epetra_SerialDenseOperator;
+%rename(NumPySerialDenseMatrix	 ) Epetra_NumPySerialDenseMatrix;
+%rename(SerialSymDenseMatrix  	 ) Epetra_SerialSymDenseMatrix;
+%rename(NumPySerialDenseVector	 ) Epetra_NumPySerialDenseVector;
+%rename(SerialDenseSolver     	 ) Epetra_SerialDenseSolver;
+%rename(SerialDenseSVD        	 ) Epetra_SerialDenseSVD;
 
 // Epetra include directives
 %include "Epetra_IntSerialDenseMatrix.h"
@@ -77,6 +78,7 @@
 // Local interface include directives
 %include "Epetra_NumPySerialDenseMatrix.h"
 %include "Epetra_NumPySerialDenseVector.h"
+%include "Epetra_NumPyIntSerialDenseVector.h"
 
 // Python code
 %pythoncode %{
@@ -156,6 +158,43 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         result = NumPySerialDenseVector.Resize(self,length)
         self.__protected = False
         UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
+        self.__protected = True
+
+class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
+    def __init__(self, *args):
+      	"""
+      	__init__(self) -> IntSerialDenseVector
+      	__init__(self, int length) -> IntSerialDenseVector
+      	__init__(self, PyObject array) -> IntSerialDenseVector
+      	__init__(self, IntSerialDenseVector source) -> IntSerialDenseVector
+      	"""
+        NumPyIntSerialDenseVector.__init__(self, *args)
+        self.CheckForError()
+        UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
+        self.__protected = True
+    def __str__(self):
+        return str(self.array)
+    def __setattr__(self, key, value):
+        "Protect the 'array' attribute"
+        if key in self.__dict__:
+            if self.__protected:
+                if key == "array":
+                    raise AttributeError, "Cannot change Epetra.IntSerialDenseVector array attribute"
+        UserArray.__setattr__(self, key, value)
+    def __call__(self,i):
+        "__call__(self, int i) -> int"
+        return self.__getitem__(i)
+    def Size(self,length):
+        "Size(self, int length) -> int"
+        result = NumPyIntSerialDenseVector.Size(self,length)
+        self.__protected = False
+        UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
+        self.__protected = True
+    def Resize(self,length):
+        "Resize(self, int length) -> int"
+        result = NumPyIntSerialDenseVector.Resize(self,length)
+        self.__protected = False
+        UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
         self.__protected = True
 
 %}
