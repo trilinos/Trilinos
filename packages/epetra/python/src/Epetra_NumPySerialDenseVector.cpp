@@ -28,28 +28,37 @@
 
 #include "Epetra_NumPySerialDenseVector.h"
 
-// Static variable
+// Static variables
 // =============================================================================
 PyArrayObject * Epetra_NumPySerialDenseVector::tmp_array = NULL;
+char          * Epetra_NumPySerialDenseVector::tmp_error = NULL;
 
 // Static helper functions
 // =============================================================================
 double * Epetra_NumPySerialDenseVector::getArray(PyObject * pyObject)
 {
   // If tmp_array is NULL, build a PyArrayObject from the pyObject
-  if (!tmp_array) {
+  if (tmp_array == NULL) {
     // If pyObject is an int, build an array of that length
     if PyInt_Check(pyObject) {
       int dimensions[ ] = {(int) PyInt_AsLong(pyObject)};
       tmp_array = (PyArrayObject*) PyArray_FromDims(1,dimensions,'d');
+      if (tmp_array == NULL) {
+	tmp_error = "Error creating array";
+	dimensions[0] = 0;
+	tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
+      }
+
     // Else try to build a contiguous PyArrayObject from the pyObject
     } else {
       tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',0,0);
     }
   }
-  // If this fails, build a single vector with all zeros
+
+  // If this fails, set an error but build a single vector with zero length
   if (!tmp_array) {
-    int dimensions[ ] = { PyObject_Length(pyObject) };
+    tmp_error = "Error converting argument to an array";
+    int dimensions[ ] = { 0 };
     tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
   }
 
@@ -67,6 +76,8 @@ void Epetra_NumPySerialDenseVector::setArray()
     array = (PyArrayObject*) PyArray_FromDimsAndData(1,dimensions,'d',
 						     (char*)Epetra_SerialDenseVector::Values());
   }
+  error_msg = tmp_error;
+  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -116,6 +127,14 @@ Epetra_NumPySerialDenseVector::~Epetra_NumPySerialDenseVector() {
 }
 
 // Methods
+// =============================================================================
+PyObject * Epetra_NumPySerialDenseVector::CheckForError() const
+{
+  if (error_msg == NULL) return Py_BuildValue("");
+  PyErr_SetString(PyExc_ValueError,error_msg);
+  return NULL;
+}
+
 // =============================================================================
 int Epetra_NumPySerialDenseVector::Size(int length) {
   // Call the base-class method

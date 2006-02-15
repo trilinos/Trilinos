@@ -130,6 +130,7 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
       	__init__(self, SerialDenseVector source) -> SerialDenseVector
       	"""
         NumPySerialDenseVector.__init__(self, *args)
+        self.CheckForError()
         UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
         self.__protected = True
     def __str__(self):

@@ -371,6 +371,11 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         self.assertEqual(sdv2.CV(), Epetra.View)
         self.assertEqual(sdv1.Length(), sdv2.Length())
 
+    def testVectorConstructor5(self):
+        "Test Epetra.SerialDenseVector bad-list constructor"
+        list = [0,1.0,"e","pi"]
+        self.assertRaises(ValueError,Epetra.SerialDenseVector,list)
+
     def testVectorPrint(self):
         "Test Epetra.SerialDenseVector Print method"
         sdv = Epetra.SerialDenseVector(self.size)
