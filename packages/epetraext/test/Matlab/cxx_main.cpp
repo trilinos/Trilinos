@@ -73,7 +73,8 @@ cout << "going to setup MPI...\n";
   char s [BUFSIZE] ;
   char matlabBuffer [MATLABBUF];
   cout << "going to init matlab\n";
-  EpetraExt::EpetraExt_MatlabEngine engine (comm);
+  EpetraExt::EpetraExt_MatlabEngine * enginePtr = new EpetraExt::EpetraExt_MatlabEngine(comm);
+  EpetraExt::EpetraExt_MatlabEngine & engine = *enginePtr;
   cout << "matlab started\n";
   
   /* GetCrsMatrix test
@@ -352,7 +353,8 @@ cout << "going to setup MPI...\n";
   MPI_Finalize();
 #endif
 
-  delete &engine;
+  delete enginePtr;
+
   return(0);
  
 }
