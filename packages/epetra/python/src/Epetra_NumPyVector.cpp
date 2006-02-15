@@ -231,10 +231,11 @@ Epetra_NumPyVector::~Epetra_NumPyVector()
 }
 
 // =============================================================================
-PyObject * Epetra_NumPyVector::ErrorMsg() const
+PyObject * Epetra_NumPyVector::CheckForError() const
 {
   if (error_msg == NULL) return Py_BuildValue("");
-  return PyString_FromString(error_msg);
+  PyErr_SetString(PyExc_ValueError,error_msg);
+  return NULL;
 }
 
 // =============================================================================

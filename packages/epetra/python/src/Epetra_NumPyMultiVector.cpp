@@ -310,10 +310,11 @@ Epetra_NumPyMultiVector::~Epetra_NumPyMultiVector()
 }
 
 // =============================================================================
-PyObject * Epetra_NumPyMultiVector::ErrorMsg() const
+PyObject * Epetra_NumPyMultiVector::CheckForError() const
 {
   if (error_msg == NULL) return Py_BuildValue("");
-  return PyString_FromString(error_msg);
+  PyErr_SetString(PyExc_ValueError,error_msg);
+  return NULL;
 }
 
 // =============================================================================

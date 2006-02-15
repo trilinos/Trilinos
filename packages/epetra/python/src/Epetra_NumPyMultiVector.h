@@ -53,7 +53,7 @@ public:
   virtual ~Epetra_NumPyMultiVector();
 
   // Error reporting (should be checked after constructor is called)
-  PyObject * ErrorMsg() const;
+  PyObject * CheckForError() const;
 
   // Overridden Epetra_MultiVector methods with more python-like signatures
   PyObject * ExtractCopy() const;

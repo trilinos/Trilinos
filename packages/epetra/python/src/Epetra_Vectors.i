@@ -133,8 +133,7 @@ class MultiVector(UserArray,NumPyMultiVector):
         __init__(self, PyObject array) -> MultiVector
         """
         NumPyMultiVector.__init__(self, *args)
-        errorMsg = self.ErrorMsg()
-        if errorMsg: raise ValueError, errorMsg
+        self.CheckForError()
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)
@@ -161,8 +160,7 @@ class Vector(UserArray,NumPyVector):
         __init__(self, PyObject array) -> Vector
         """
         NumPyVector.__init__(self, *args)
-        errorMsg = self.ErrorMsg()
-        if errorMsg: raise ValueError, errorMsg
+        self.CheckForError()
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)
@@ -183,6 +181,7 @@ class IntVector(UserArray,NumPyIntVector):
         __init__(self, PyObject array) -> IntVector
         """
         NumPyIntVector.__init__(self, *args)
+        self.CheckForError()
         UserArray.__init__(self,self.ExtractView(),'i',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)

@@ -52,7 +52,7 @@ public:
   ~Epetra_NumPyVector();
 
   // Error reporting (should be checked after constructor is called)
-  PyObject * ErrorMsg() const;
+  PyObject * CheckForError() const;
 
   // Overridden Epetra_Vector methods with more python-like signatures
   PyObject * ExtractCopy() const;

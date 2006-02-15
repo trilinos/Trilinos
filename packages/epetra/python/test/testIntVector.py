@@ -78,12 +78,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
     def testConstructor03(self):
         "Test Epetra.IntVector (BlockMap,bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        eiv = Epetra.IntVector(self.map,list)
-        self.assertEquals(eiv.typecode(),'i')
-        self.assertEquals(eiv.MyLength(), self.length)
-        self.assertEquals(eiv.GlobalLength(), self.length*comm.NumProc())
-        for i in range(eiv.shape[0]):
-            self.assertEquals(eiv[i], 0)
+        self.assertRaises(ValueError,Epetra.IntVector,self.map,list)
 
     def testConstructor04(self):
         "Test Epetra.IntVector (BlockMap,1D-small-list) constructor"
@@ -220,12 +215,7 @@ class EpetraIntVectorTestCase(unittest.TestCase):
     def testConstructor15(self):
         "Test Epetra.IntVector (bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        eiv  = Epetra.IntVector(list)
-        self.assertEquals(eiv.typecode(),'i')
-        self.assertEquals(eiv.MyLength(),len(list))
-        self.assertEquals(eiv.GlobalLength(), len(list))
-        for i in range(eiv.shape[0]):
-            self.assertEquals(eiv[i], 0)
+        self.assertRaises(ValueError,Epetra.IntVector,list)
 
     def testConstructor16(self):
         "Test Epetra.IntVector copy constructor"
