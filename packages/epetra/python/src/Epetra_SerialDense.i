@@ -65,6 +65,27 @@
 %rename(SerialDenseSolver     	 ) Epetra_SerialDenseSolver;
 %rename(SerialDenseSVD        	 ) Epetra_SerialDenseSVD;
 
+// These are place-holders on the C++ side for the python-defined
+// SerialDenseMatrix, SerialDenseVector and IntSerialDenseVector
+%inline {
+  struct SerialDenseMatrix   { };
+  struct SerialDenseVector   { };
+  struct IntSerialDenseVector{ };
+}
+
+// Typemaps
+%define TYPEMAP_OUT(vector,numPyVector)
+%typemap(out) vector * {
+  numPyVector * vec = new numPyVector(*$1);
+  static swig_type_info *ty = SWIG_TypeQuery("numPyVector *");
+  $result = SWIG_NewPointerObj(vec, ty, 1);
+}
+%enddef
+
+TYPEMAP_OUT(Epetra_SerialDenseMatrix,   Epetra_NumPySerialDenseMatrix   )
+TYPEMAP_OUT(Epetra_SerialDenseVector,   Epetra_NumPySerialDenseVector   )
+TYPEMAP_OUT(Epetra_IntSerialDenseVector,Epetra_NumPyIntSerialDenseVector)
+
 // Epetra include directives
 %include "Epetra_IntSerialDenseMatrix.h"
 %include "Epetra_IntSerialDenseVector.h"
@@ -122,6 +143,7 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
         self.__protected = False
         UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
         self.__protected = True
+_Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
 
 class SerialDenseVector(UserArray,NumPySerialDenseVector):
     def __init__(self, *args):
@@ -159,6 +181,7 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         self.__protected = False
         UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
         self.__protected = True
+_Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 
 class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
     def __init__(self, *args):
@@ -196,6 +219,7 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
         self.__protected = False
         UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
         self.__protected = True
+_Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 
 %}
 

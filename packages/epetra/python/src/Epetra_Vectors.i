@@ -102,7 +102,7 @@ TYPEMAP_OUT(Epetra_MultiVector,Epetra_NumPyMultiVector)
 TYPEMAP_OUT(Epetra_Vector,     Epetra_NumPyVector     )
 TYPEMAP_OUT(Epetra_IntVector,  Epetra_NumPyIntVector  )
 
-// Import directives for Epetra
+// Include directives for Epetra
 %include "Epetra_MultiVector.h"
 %include "Epetra_Vector.h"
 %include "Epetra_FEVector.h"
