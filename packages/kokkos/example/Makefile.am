@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package kokkos subdirectory example built successfully."
+	@echo ""
+
 #These examples are not portable enough for the autotools build
 #SUBDIRS = MultiVec SparseMatByMultiVec SparseMatByMultiVec5
 

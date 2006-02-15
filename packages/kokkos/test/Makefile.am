@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package kokkos subdirectory test built successfully."
+	@echo ""
+
 if HAVE_KOKKOS_EXPERIMENTAL
 OSKIMULTIVECTOR_SUBDIR=OskiMultiVector
 OSKIMATRIX_SUBDIR=OskiMatrix
