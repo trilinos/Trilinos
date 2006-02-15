@@ -272,10 +272,6 @@ EXTRA_DIST = Doxyfile             \
              header.tex           \
              AmesosReferenceGuide/AmesosReferenceGuide.pdf
 
-
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make maintainer-clean'
-# ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
@@ -347,7 +343,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile
+all-am: Makefile all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -420,15 +416,26 @@ ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: all all-am check check-am clean clean-generic distclean \
-	distclean-generic distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-info-am
+.PHONY: all all-am all-local check check-am clean clean-generic \
+	distclean distclean-generic distdir dvi dvi-am html html-am \
+	info info-am install install-am install-data install-data-am \
+	install-exec install-exec-am install-info install-info-am \
+	install-man install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am uninstall \
+	uninstall-am uninstall-info-am
 
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package amesos subdirectory doc built successfully."
+	@echo ""
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -14,4 +14,11 @@ EXTRA_DIST = Doxyfile             \
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package amesos subdirectory doc built successfully."
+	@echo ""
+
 MAINTAINERCLEANFILES = Makefile.in

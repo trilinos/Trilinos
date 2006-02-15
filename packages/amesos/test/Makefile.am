@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package amesos subdirectory test built successfully."
+	@echo ""
+
 if HAVE_PERFORMANCE
 PERF_SUBDIR = Test_Performance
 else

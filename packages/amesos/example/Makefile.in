@@ -42,6 +42,8 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
 SOURCES = $(a_trivial_mpi_test_SOURCES) $(compare_solvers_SOURCES) $(example_AmesosFactory_SOURCES) $(example_AmesosFactory_HB_SOURCES) $(example_AmesosFactory_Tridiag_SOURCES) $(example_MC64_SOURCES) $(run_pk_SOURCES)
 
 srcdir = @srcdir@
@@ -692,7 +694,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -765,17 +767,22 @@ ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-man install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+all-local:
+	@echo ""
+	@echo "Trilinos package amesos subdirectory example built successfully."
+	@echo ""
 
 include $(top_builddir)/Makefile.export.amesos
 

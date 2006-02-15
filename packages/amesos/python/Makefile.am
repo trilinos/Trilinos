@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package amesos subdirectory python built successfully."
+	@echo ""
+
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
