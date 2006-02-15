@@ -26,6 +26,12 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package ifpack subdirectory src built successfully."
+	@echo ""
 
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
