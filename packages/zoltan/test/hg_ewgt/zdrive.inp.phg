@@ -1,0 +1,5 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+File Type		= hypergraph
+File Name		= ewgt 
+Parallel Disk Info	= number=0
