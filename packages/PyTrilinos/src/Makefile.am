@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package pytrilinos subdirectory src built successfully."
+	@echo ""
+
 CORE_H = \
 	$(srcdir)/Callback.h        \
 	$(srcdir)/FileStream.h      \

@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package pytrilinos subdirectory example built successfully."
+	@echo ""
+
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
 ## #######################################################################

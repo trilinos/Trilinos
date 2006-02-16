@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package pytrilinos subdirectory test built successfully."
+	@echo ""
+
 ## #######################################################################
 ## Options to automake (rarely used - don't worry about it)
 ## #######################################################################
