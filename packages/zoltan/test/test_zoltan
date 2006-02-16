@@ -1,4 +1,4 @@
-#!/bin/csh -v
+#!/bin/csh
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
