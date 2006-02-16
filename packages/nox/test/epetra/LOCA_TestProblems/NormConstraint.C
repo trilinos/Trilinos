@@ -183,7 +183,13 @@ NormConstraint::isDXZero() const
 }
 
 void
+NormConstraint::notifyCompletedStep()
+{
+}
+
+void
 NormConstraint::setIsZeroDX(bool flag)
 {
   isZeroDgDx = flag;
 }
+

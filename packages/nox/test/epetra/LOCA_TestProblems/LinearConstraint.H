@@ -127,6 +127,9 @@ public:
    */
   virtual bool isDXZero() const;
 
+  //! Notify constraint that the continuation step is completed
+  virtual void notifyCompletedStep();
+
   //@}
 
   //! Set solution component of constraint derivative
