@@ -67,8 +67,11 @@ The most important classes of the EpetraExt module are:
 #include "Epetra_DistObject.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MapColoring.h"
+
+// Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_PyOperator.h"
@@ -109,14 +112,14 @@ namespace EpetraExt {
 %}
 
 // Ignore directives
-%ignore Epetra_CrsGraph::operator[](int);
-%ignore Epetra_CrsGraph::operator[](int) const;
-%ignore Epetra_CrsGraph::operator=(const Epetra_CrsGraph &);
-%ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
-%ignore Epetra_IntVector::operator[](int);
-%ignore Epetra_IntVector::operator[](int) const;
-%ignore Epetra_MapColoring::operator[](int);
-%ignore Epetra_MapColoring::operator[](int) const;
+// %ignore Epetra_CrsGraph::operator[](int);
+// %ignore Epetra_CrsGraph::operator[](int) const;
+// %ignore Epetra_CrsGraph::operator=(const Epetra_CrsGraph &);
+// %ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
+// %ignore Epetra_IntVector::operator[](int);
+// %ignore Epetra_IntVector::operator[](int) const;
+// %ignore Epetra_MapColoring::operator[](int);
+// %ignore Epetra_MapColoring::operator[](int) const;
 
 using namespace std;
 // C++ STL support
@@ -260,7 +263,5 @@ namespace EpetraExt
 
 // Python code.
 %pythoncode %{
-
   __version__ = EpetraExt_Version().split()[2]
-
 %}
