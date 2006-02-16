@@ -33,22 +33,23 @@
 #include "LOCA.H"
 #include "LOCA_LAPACK.H"
 
-#include "LOCA_BorderedSystem_AbstractStrategy.H"
+#include "LOCA_BorderedSolver_AbstractStrategy.H"
 #include "LOCA_Parameter_SublistParser.H"
 
 #include "ChanProblemInterface.H"
-#include "NormConstraint.H"
+#include "LinearConstraint.H"
 #include "NOX_TestCompare.H"
 
 // Global variables used in main() and testSolve()
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp;
-Teuchos::RefCountPtr<NormConstraint> constraints;
+Teuchos::RefCountPtr<LinearConstraint> constraints;
 Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> bordering;
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> direct;
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> bordering;
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> direct;
 Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 Teuchos::RefCountPtr<NOX::TestCompare> testCompare;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
+Teuchos::RefCountPtr<NOX::Abstract::MultiVector> B;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> F;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> G;
@@ -59,8 +60,7 @@ Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_direct;
 
 int  
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
-	  bool contiguous, double reltol, double abstol, 
-	  const string& testName) {
+	  double reltol, double abstol, const string& testName) {
   int ierr = 0;
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
@@ -76,7 +76,7 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> g = 
     Teuchos::null;
 
-   if (!flagA)
+  if (!flagA)
     a = A;
   if (!flagC)
     c = C;
@@ -87,22 +87,27 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   constraints->setIsZeroDX(flagB);
 
   // Set up bordered problem
-  bordering->setIsContiguous(contiguous);
   bordering->setMatrixBlocks(grp, a, constraints, c);
+  bordering->initForSolve();
 
-  direct->setIsContiguous(contiguous);
   direct->setMatrixBlocks(grp, a, constraints, c);
+  direct->initForSolve();
+
+  X_bordering->init(0.0);
+  Y_bordering->putScalar(0.0);
+  X_direct->init(0.0);
+  Y_direct->putScalar(0.0);
 
   // Solve using bordering
   NOX::Abstract::Group::ReturnType borderingStatus = 
-    bordering->applyInverse(*(parsedParams->getSublist("Linear Solver")),
+    bordering->applyInverseTranspose(*(parsedParams->getSublist("Linear Solver")),
 			    f.get(), g.get(), *X_bordering, *Y_bordering);
   if (borderingStatus != NOX::Abstract::Group::Ok)
     ++ierr;
 
   // Solve using direct
   NOX::Abstract::Group::ReturnType directStatus = 
-    direct->applyInverse(*(parsedParams->getSublist("Linear Solver")),
+    direct->applyInverseTranspose(*(parsedParams->getSublist("Linear Solver")),
 			 f.get(), g.get(), *X_direct, *Y_direct);
   if (directStatus != NOX::Abstract::Group::Ok)
     ++ierr;
@@ -131,14 +136,17 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
 
 int main(int argc, char *argv[])
 {
-  int n = 10;
+  int nConstraints = 10;
+  int nRHS = 7;
+
+  int n = 100;
   double alpha = 1.0;
   double beta = 0.0;
   double gamma = 2.0;
   double scale = 1.0;
   int ierr = 0;
-  double reltol = 1.0e-13;
-  double abstol = 1.0e-13;
+  double reltol = 1.0e-9;
+  double abstol = 1.0e-9;
 
   alpha = alpha / scale;
 
@@ -211,14 +219,14 @@ int main(int argc, char *argv[])
     grp->setX(*xnew);
 
     // Create the constraints object & constraint param IDs list
-    constraints = Teuchos::rcp(new NormConstraint(n, p));
+    constraints = Teuchos::rcp(new LinearConstraint(nConstraints, p, *xnew));
     Teuchos::RefCountPtr< vector<int> > constraintParamIDs = 
       Teuchos::rcp(new vector<int>(1));
     (*constraintParamIDs)[0] = p.getIndex("alpha");
 
     // Create bordering solver
     bordering
-      = globalData->locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
@@ -228,7 +236,7 @@ int main(int argc, char *argv[])
 
     // Create direct solver
     direct
-      = globalData->locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
@@ -241,65 +249,142 @@ int main(int argc, char *argv[])
     grp->computeF();
     grp->computeJacobian();
 
+    // A
+    A = grp->getX().createMultiVector(nConstraints);
+    A->random();
+    
     // B
     constraints->setX(grp->getX());
+    B = grp->getX().createMultiVector(nConstraints);
+    B->random();
+    constraints->setDgDx(*B);
     constraints->computeConstraints();
     constraints->computeDX();
 
     // C
-    C = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,1));
+    C = 
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
+							       nConstraints));
     C->random();
 
     // Set up left- and right-hand sides
-    F = grp->getX().createMultiVector(3);
+    F = grp->getX().createMultiVector(nRHS);
     F->random();
-    G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
+    G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
+								 nRHS));
     G->random();
-    X_bordering = F->clone(3);
+    X_bordering = F->clone(NOX::ShapeCopy);
     Y_bordering = 
-      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
-    X_direct = F->clone(3);
-    Y_direct = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(1,2));
-
-    // Setup A block as a view of the last column of F
-    vector<int> indexA(1); 
-    indexA[0] = 2;
-    A = F->subView(indexA);
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
+							       nRHS));
+    X_direct = F->clone(NOX::ShapeCopy);
+    Y_direct = 
+      Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
+							       nRHS));
 
     string testName;
 
-    // Test all nonzero, contiguous
-    testName = "Testing all nonzero, contiguous";
-    ierr += testSolve(false, false, false, false, false, true,
+    // Test all nonzero
+    testName = "Testing all nonzero";
+    ierr += testSolve(false, false, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test B = 0, contiguous
-    testName = "Testing B=0, contiguous";
-    ierr += testSolve(false, true, false, false, false, true,
+    // Test A = 0
+    testName = "Testing A=0";
+    ierr += testSolve(true, false, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test C = 0, contiguous
-    testName = "Testing C=0, contiguous";
-    ierr += testSolve(false, false, true, false, false, true,
+    // Test B = 0
+    testName = "Testing B=0";
+    ierr += testSolve(false, true, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test G = 0, contiguous
-    testName = "Testing G=0, contiguous";
-    ierr += testSolve(false, false, false, false, true, true,
+    // Test C = 0
+    testName = "Testing C=0";
+    ierr += testSolve(false, false, true, false, false,
 		      reltol, abstol, testName);
 
-    // Test B,G = 0, contiguous
-    testName = "Testing B,G=0, contiguous";
-    ierr += testSolve(false, true, false, false, true, true,
+    // Test F = 0
+    testName = "Testing F=0";
+    ierr += testSolve(false, false, false, true, false,
 		      reltol, abstol, testName);
 
-    // Test C,G = 0, contiguous
-    testName = "Testing C,G=0, contiguous";
-    ierr += testSolve(false, false, true, false, true, true,
+    // Test G = 0
+    testName = "Testing G=0";
+    ierr += testSolve(false, false, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test A,B = 0
+    testName = "Testing A,B=0";
+    ierr += testSolve(true, true, false, false, false,
+		      reltol, abstol, testName);
+
+    // Test A,F = 0
+    testName = "Testing A,F=0";
+    ierr += testSolve(true, false, false, true, false,
+		      reltol, abstol, testName);
+
+    // Test A,G = 0
+    testName = "Testing A,G=0";
+    ierr += testSolve(true, false, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test B,F = 0
+    testName = "Testing B,F=0";
+    ierr += testSolve(false, true, false, true, false,
+		      reltol, abstol, testName);
+
+    // Test B,G = 0
+    testName = "Testing B,G=0";
+    ierr += testSolve(false, true, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test C,F = 0
+    testName = "Testing C,F=0";
+    ierr += testSolve(false, false, true, true, false,
+		      reltol, abstol, testName);
+
+    // Test C,G = 0
+    testName = "Testing C,G=0";
+    ierr += testSolve(false, false, true, false, true,
+		      reltol, abstol, testName);
+
+    // Test F,G = 0
+    testName = "Testing F,G=0";
+    ierr += testSolve(false, false, false, true, true,
+		      reltol, abstol, testName);
+
+    // Test A,B,F = 0
+    testName = "Testing A,B,F=0";
+    ierr += testSolve(true, true, false, true, false,
+		      reltol, abstol, testName);
+
+    // Test A,B,G = 0
+    testName = "Testing A,B,G=0";
+    ierr += testSolve(true, true, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test A,F,G = 0
+    testName = "Testing A,F,G=0";
+    ierr += testSolve(true, false, false, true, true,
+		      reltol, abstol, testName);
+
+    // Test B,F,G = 0
+    testName = "Testing B,F,G=0";
+    ierr += testSolve(false, true, false, true, true,
+		      reltol, abstol, testName);
+
+    // Test C,F,G = 0
+    testName = "Testing C,F,G=0";
+    ierr += testSolve(false, false, true, true, true, 
+		      reltol, abstol, testName);
+
+    // Test A,B,F,G = 0
+    testName = "Testing A,B,F,G=0";
+    ierr += testSolve(true, true, false, true, true, 
 		      reltol, abstol, testName);
 
     destroyGlobalData(globalData);
-
   }
 
   catch (std::exception& e) {

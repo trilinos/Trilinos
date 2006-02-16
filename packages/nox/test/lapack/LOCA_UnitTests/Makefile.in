@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(anasaziJacobianInverse_SOURCES) $(borderedSolveContiguous_SOURCES) $(borderedSolveNonContiguous_SOURCES)
+SOURCES = $(anasaziJacobianInverse_SOURCES) $(borderedSolve_SOURCES) $(transposeBorderedSolve_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -100,8 +100,8 @@ CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 @BUILD_LOCAANASAZI_TRUE@am__EXEEXT_1 =  \
 @BUILD_LOCAANASAZI_TRUE@	anasaziJacobianInverse$(EXEEXT)
-am__EXEEXT_2 = borderedSolveNonContiguous$(EXEEXT)
-am__EXEEXT_3 = borderedSolveContiguous$(EXEEXT)
+am__EXEEXT_2 = borderedSolve$(EXEEXT)
+am__EXEEXT_3 = transposeBorderedSolve$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_anasaziJacobianInverse_OBJECTS = AnasaziJacobianInverse.$(OBJEXT)
 anasaziJacobianInverse_OBJECTS = $(am_anasaziJacobianInverse_OBJECTS)
@@ -109,31 +109,25 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(LOCA_LAPACK_TEST_LIBS))
-am_borderedSolveContiguous_OBJECTS =  \
-	BorderedSolveContiguous.$(OBJEXT)
-borderedSolveContiguous_OBJECTS =  \
-	$(am_borderedSolveContiguous_OBJECTS)
-am_borderedSolveNonContiguous_OBJECTS =  \
-	BorderedSolveNonContiguous.$(OBJEXT)
-borderedSolveNonContiguous_OBJECTS =  \
-	$(am_borderedSolveNonContiguous_OBJECTS)
+am_borderedSolve_OBJECTS = BorderedSolve.$(OBJEXT)
+borderedSolve_OBJECTS = $(am_borderedSolve_OBJECTS)
+am_transposeBorderedSolve_OBJECTS = TransposeBorderedSolve.$(OBJEXT)
+transposeBorderedSolve_OBJECTS = $(am_transposeBorderedSolve_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AnasaziJacobianInverse.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BorderedSolveContiguous.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BorderedSolveNonContiguous.Po
+@AMDEP_TRUE@	./$(DEPDIR)/BorderedSolve.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TransposeBorderedSolve.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(anasaziJacobianInverse_SOURCES) \
-	$(borderedSolveContiguous_SOURCES) \
-	$(borderedSolveNonContiguous_SOURCES)
+SOURCES = $(anasaziJacobianInverse_SOURCES) $(borderedSolve_SOURCES) \
+	$(transposeBorderedSolve_SOURCES)
 DIST_SOURCES = $(anasaziJacobianInverse_SOURCES) \
-	$(borderedSolveContiguous_SOURCES) \
-	$(borderedSolveNonContiguous_SOURCES)
+	$(borderedSolve_SOURCES) $(transposeBorderedSolve_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -352,8 +346,8 @@ target_vendor = @target_vendor@
 AM_CPPFLAGS = $(TEST_INCLUDES)
 @BUILD_LOCAANASAZI_FALSE@ANASAZIJACOBIANINVERSE = 
 @BUILD_LOCAANASAZI_TRUE@ANASAZIJACOBIANINVERSE = anasaziJacobianInverse
-BORDEREDSOLVENC = borderedSolveNonContiguous
-BORDEREDSOLVEC = borderedSolveContiguous
+BORDEREDSOLVE = borderedSolve
+TRANSBORDEREDSOLVE = transposeBorderedSolve
 anasaziJacobianInverse_SOURCES = \
 	$(srcdir)/AnasaziJacobianInverse.C 
 
@@ -366,20 +360,20 @@ anasaziJacobianInverse_DEPENDENCIES = \
 	$(top_builddir)/test/lapack/LOCA_TestProblems/liblocatestproblems.a
 
 anasaziJacobianInverse_LDADD = $(TEST_LIBS)
-borderedSolveNonContiguous_SOURCES = \
-	$(srcdir)/BorderedSolveNonContiguous.C
+borderedSolve_SOURCES = \
+	$(srcdir)/BorderedSolve.C
 
-borderedSolveNonContiguous_DEPENDENCIES = \
+borderedSolve_DEPENDENCIES = \
 	$(anasaziJacobianInverse_DEPENDENCIES)
 
-borderedSolveNonContiguous_LDADD = $(TEST_LIBS)
-borderedSolveContiguous_SOURCES = \
-	$(srcdir)/BorderedSolveContiguous.C
+borderedSolve_LDADD = $(TEST_LIBS)
+transposeBorderedSolve_SOURCES = \
+	$(srcdir)/TransposeBorderedSolve.C
 
-borderedSolveContiguous_DEPENDENCIES = \
+transposeBorderedSolve_DEPENDENCIES = \
 	$(anasaziJacobianInverse_DEPENDENCIES)
 
-borderedSolveContiguous_LDADD = $(TEST_LIBS)
+transposeBorderedSolve_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -429,12 +423,12 @@ clean-noinstPROGRAMS:
 anasaziJacobianInverse$(EXEEXT): $(anasaziJacobianInverse_OBJECTS) $(anasaziJacobianInverse_DEPENDENCIES) 
 	@rm -f anasaziJacobianInverse$(EXEEXT)
 	$(CXXLINK) $(anasaziJacobianInverse_LDFLAGS) $(anasaziJacobianInverse_OBJECTS) $(anasaziJacobianInverse_LDADD) $(LIBS)
-borderedSolveContiguous$(EXEEXT): $(borderedSolveContiguous_OBJECTS) $(borderedSolveContiguous_DEPENDENCIES) 
-	@rm -f borderedSolveContiguous$(EXEEXT)
-	$(CXXLINK) $(borderedSolveContiguous_LDFLAGS) $(borderedSolveContiguous_OBJECTS) $(borderedSolveContiguous_LDADD) $(LIBS)
-borderedSolveNonContiguous$(EXEEXT): $(borderedSolveNonContiguous_OBJECTS) $(borderedSolveNonContiguous_DEPENDENCIES) 
-	@rm -f borderedSolveNonContiguous$(EXEEXT)
-	$(CXXLINK) $(borderedSolveNonContiguous_LDFLAGS) $(borderedSolveNonContiguous_OBJECTS) $(borderedSolveNonContiguous_LDADD) $(LIBS)
+borderedSolve$(EXEEXT): $(borderedSolve_OBJECTS) $(borderedSolve_DEPENDENCIES) 
+	@rm -f borderedSolve$(EXEEXT)
+	$(CXXLINK) $(borderedSolve_LDFLAGS) $(borderedSolve_OBJECTS) $(borderedSolve_LDADD) $(LIBS)
+transposeBorderedSolve$(EXEEXT): $(transposeBorderedSolve_OBJECTS) $(transposeBorderedSolve_DEPENDENCIES) 
+	@rm -f transposeBorderedSolve$(EXEEXT)
+	$(CXXLINK) $(transposeBorderedSolve_LDFLAGS) $(transposeBorderedSolve_OBJECTS) $(transposeBorderedSolve_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -443,8 +437,8 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AnasaziJacobianInverse.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BorderedSolveContiguous.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BorderedSolveNonContiguous.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BorderedSolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TransposeBorderedSolve.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -478,37 +472,37 @@ AnasaziJacobianInverse.obj: $(srcdir)/AnasaziJacobianInverse.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AnasaziJacobianInverse.obj `if test -f '$(srcdir)/AnasaziJacobianInverse.C'; then $(CYGPATH_W) '$(srcdir)/AnasaziJacobianInverse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AnasaziJacobianInverse.C'; fi`
 
-BorderedSolveContiguous.o: $(srcdir)/BorderedSolveContiguous.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BorderedSolveContiguous.o -MD -MP -MF "$(DEPDIR)/BorderedSolveContiguous.Tpo" -c -o BorderedSolveContiguous.o `test -f '$(srcdir)/BorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/BorderedSolveContiguous.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BorderedSolveContiguous.Tpo" "$(DEPDIR)/BorderedSolveContiguous.Po"; else rm -f "$(DEPDIR)/BorderedSolveContiguous.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BorderedSolveContiguous.C' object='BorderedSolveContiguous.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BorderedSolveContiguous.Po' tmpdepfile='$(DEPDIR)/BorderedSolveContiguous.TPo' @AMDEPBACKSLASH@
+BorderedSolve.o: $(srcdir)/BorderedSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BorderedSolve.o -MD -MP -MF "$(DEPDIR)/BorderedSolve.Tpo" -c -o BorderedSolve.o `test -f '$(srcdir)/BorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/BorderedSolve.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BorderedSolve.Tpo" "$(DEPDIR)/BorderedSolve.Po"; else rm -f "$(DEPDIR)/BorderedSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BorderedSolve.C' object='BorderedSolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BorderedSolve.Po' tmpdepfile='$(DEPDIR)/BorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BorderedSolveContiguous.o `test -f '$(srcdir)/BorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/BorderedSolveContiguous.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BorderedSolve.o `test -f '$(srcdir)/BorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/BorderedSolve.C
 
-BorderedSolveContiguous.obj: $(srcdir)/BorderedSolveContiguous.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BorderedSolveContiguous.obj -MD -MP -MF "$(DEPDIR)/BorderedSolveContiguous.Tpo" -c -o BorderedSolveContiguous.obj `if test -f '$(srcdir)/BorderedSolveContiguous.C'; then $(CYGPATH_W) '$(srcdir)/BorderedSolveContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BorderedSolveContiguous.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BorderedSolveContiguous.Tpo" "$(DEPDIR)/BorderedSolveContiguous.Po"; else rm -f "$(DEPDIR)/BorderedSolveContiguous.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BorderedSolveContiguous.C' object='BorderedSolveContiguous.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BorderedSolveContiguous.Po' tmpdepfile='$(DEPDIR)/BorderedSolveContiguous.TPo' @AMDEPBACKSLASH@
+BorderedSolve.obj: $(srcdir)/BorderedSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BorderedSolve.obj -MD -MP -MF "$(DEPDIR)/BorderedSolve.Tpo" -c -o BorderedSolve.obj `if test -f '$(srcdir)/BorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/BorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BorderedSolve.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BorderedSolve.Tpo" "$(DEPDIR)/BorderedSolve.Po"; else rm -f "$(DEPDIR)/BorderedSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BorderedSolve.C' object='BorderedSolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BorderedSolve.Po' tmpdepfile='$(DEPDIR)/BorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BorderedSolveContiguous.obj `if test -f '$(srcdir)/BorderedSolveContiguous.C'; then $(CYGPATH_W) '$(srcdir)/BorderedSolveContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BorderedSolveContiguous.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BorderedSolve.obj `if test -f '$(srcdir)/BorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/BorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BorderedSolve.C'; fi`
 
-BorderedSolveNonContiguous.o: $(srcdir)/BorderedSolveNonContiguous.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BorderedSolveNonContiguous.o -MD -MP -MF "$(DEPDIR)/BorderedSolveNonContiguous.Tpo" -c -o BorderedSolveNonContiguous.o `test -f '$(srcdir)/BorderedSolveNonContiguous.C' || echo '$(srcdir)/'`$(srcdir)/BorderedSolveNonContiguous.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BorderedSolveNonContiguous.Tpo" "$(DEPDIR)/BorderedSolveNonContiguous.Po"; else rm -f "$(DEPDIR)/BorderedSolveNonContiguous.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BorderedSolveNonContiguous.C' object='BorderedSolveNonContiguous.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BorderedSolveNonContiguous.Po' tmpdepfile='$(DEPDIR)/BorderedSolveNonContiguous.TPo' @AMDEPBACKSLASH@
+TransposeBorderedSolve.o: $(srcdir)/TransposeBorderedSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TransposeBorderedSolve.o -MD -MP -MF "$(DEPDIR)/TransposeBorderedSolve.Tpo" -c -o TransposeBorderedSolve.o `test -f '$(srcdir)/TransposeBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/TransposeBorderedSolve.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TransposeBorderedSolve.Tpo" "$(DEPDIR)/TransposeBorderedSolve.Po"; else rm -f "$(DEPDIR)/TransposeBorderedSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TransposeBorderedSolve.C' object='TransposeBorderedSolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TransposeBorderedSolve.Po' tmpdepfile='$(DEPDIR)/TransposeBorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BorderedSolveNonContiguous.o `test -f '$(srcdir)/BorderedSolveNonContiguous.C' || echo '$(srcdir)/'`$(srcdir)/BorderedSolveNonContiguous.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TransposeBorderedSolve.o `test -f '$(srcdir)/TransposeBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/TransposeBorderedSolve.C
 
-BorderedSolveNonContiguous.obj: $(srcdir)/BorderedSolveNonContiguous.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT BorderedSolveNonContiguous.obj -MD -MP -MF "$(DEPDIR)/BorderedSolveNonContiguous.Tpo" -c -o BorderedSolveNonContiguous.obj `if test -f '$(srcdir)/BorderedSolveNonContiguous.C'; then $(CYGPATH_W) '$(srcdir)/BorderedSolveNonContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BorderedSolveNonContiguous.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BorderedSolveNonContiguous.Tpo" "$(DEPDIR)/BorderedSolveNonContiguous.Po"; else rm -f "$(DEPDIR)/BorderedSolveNonContiguous.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BorderedSolveNonContiguous.C' object='BorderedSolveNonContiguous.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BorderedSolveNonContiguous.Po' tmpdepfile='$(DEPDIR)/BorderedSolveNonContiguous.TPo' @AMDEPBACKSLASH@
+TransposeBorderedSolve.obj: $(srcdir)/TransposeBorderedSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TransposeBorderedSolve.obj -MD -MP -MF "$(DEPDIR)/TransposeBorderedSolve.Tpo" -c -o TransposeBorderedSolve.obj `if test -f '$(srcdir)/TransposeBorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/TransposeBorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TransposeBorderedSolve.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TransposeBorderedSolve.Tpo" "$(DEPDIR)/TransposeBorderedSolve.Po"; else rm -f "$(DEPDIR)/TransposeBorderedSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TransposeBorderedSolve.C' object='TransposeBorderedSolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TransposeBorderedSolve.Po' tmpdepfile='$(DEPDIR)/TransposeBorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o BorderedSolveNonContiguous.obj `if test -f '$(srcdir)/BorderedSolveNonContiguous.C'; then $(CYGPATH_W) '$(srcdir)/BorderedSolveNonContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BorderedSolveNonContiguous.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TransposeBorderedSolve.obj `if test -f '$(srcdir)/TransposeBorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/TransposeBorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TransposeBorderedSolve.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

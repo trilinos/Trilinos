@@ -54,14 +54,14 @@ ANASAZIJACOBIANINVERSE =
 
 endif
 
-BORDEREDSOLVENC = borderedSolveNonContiguous
-BORDEREDSOLVEC = borderedSolveContiguous
+BORDEREDSOLVE = borderedSolve
+TRANSBORDEREDSOLVE = transposeBorderedSolve
 
 if BUILD_LOCA_LAPACK_TESTS
 noinst_PROGRAMS = \
 	$(ANASAZIJACOBIANINVERSE) \
-	$(BORDEREDSOLVENC) \
-	$(BORDEREDSOLVEC)
+	$(BORDEREDSOLVE) \
+	$(TRANSBORDEREDSOLVE)
 endif
 
 anasaziJacobianInverse_SOURCES = \
@@ -77,21 +77,21 @@ anasaziJacobianInverse_DEPENDENCIES = \
 
 anasaziJacobianInverse_LDADD = $(TEST_LIBS)
 
-borderedSolveNonContiguous_SOURCES = \
-	$(srcdir)/BorderedSolveNonContiguous.C
+borderedSolve_SOURCES = \
+	$(srcdir)/BorderedSolve.C
 
-borderedSolveNonContiguous_DEPENDENCIES = \
+borderedSolve_DEPENDENCIES = \
 	$(anasaziJacobianInverse_DEPENDENCIES)
 
-borderedSolveNonContiguous_LDADD = $(TEST_LIBS)
+borderedSolve_LDADD = $(TEST_LIBS)
 
-borderedSolveContiguous_SOURCES = \
-	$(srcdir)/BorderedSolveContiguous.C
+transposeBorderedSolve_SOURCES = \
+	$(srcdir)/TransposeBorderedSolve.C
 
-borderedSolveContiguous_DEPENDENCIES = \
+transposeBorderedSolve_DEPENDENCIES = \
 	$(anasaziJacobianInverse_DEPENDENCIES)
 
-borderedSolveContiguous_LDADD = $(TEST_LIBS)
+transposeBorderedSolve_LDADD = $(TEST_LIBS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
