@@ -165,24 +165,20 @@ class EpetraMapColoringTestCase(unittest.TestCase):
         colors = range(self.mySize)
         mc     = Epetra.MapColoring(self.map,colors)
         for color in colors:
-            globalElements = range(color,self.globalSize,self.mySize)
-            blockMap       = mc.GenerateBlockMap(color)
-            result         = blockMap.MyGlobalElements()
-            self.assertEqual(len(result), len(globalElements))
-            for i in range(len(result)):
-                self.assertEqual(result[i],globalElements[i])
+            blockMap = mc.GenerateBlockMap(color)
+            result   = blockMap.MyGlobalElements()
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0],self.map.GID(color))
 
     def testGenerateMap(self):
         "Test Epetra.MapColoring GenerateMap method"
         colors = range(self.mySize)
         mc     = Epetra.MapColoring(self.map,colors)
         for color in colors:
-            globalElements = range(color,self.globalSize,self.mySize)
-            map            = mc.GenerateMap(color)
-            result         = map.MyGlobalElements()
-            self.assertEqual(len(result), len(globalElements))
-            for i in range(len(result)):
-                self.assertEqual(result[i],globalElements[i])
+            map    = mc.GenerateMap(color)
+            result = map.MyGlobalElements()
+            self.assertEqual(len(result), 1)
+            self.assertEqual(result[0],self.map.GID(color))
 
 ##########################################################################
 
