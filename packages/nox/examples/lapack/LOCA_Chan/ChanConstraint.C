@@ -191,3 +191,8 @@ ChanConstraint::isDXZero() const
 {
   return false;
 }
+
+void
+ChanConstraint::notifyCompletedStep()
+{
+}

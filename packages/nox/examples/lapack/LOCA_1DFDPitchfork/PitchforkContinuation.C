@@ -83,7 +83,8 @@ int main()
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Method", "Pitchfork:  Moore-Spence");
+    bifurcationList.setParameter("Type", "Pitchfork");
+    bifurcationList.setParameter("Formulation", "Moore-Spence");
     bifurcationList.setParameter("Solver Method", "Salinger Bordering");
     //bifurcationList.setParameter("Solver Method", "Phipps Bordering");
     //bifurcationList.setParameter("Bordered Solver Method", "LAPACK Direct Solve");

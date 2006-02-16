@@ -66,6 +66,10 @@ int main(int argc, char *argv[])
 {
   int ierr = 0;
 
+  double nonlinear_factor = 1.0;
+  double left_bc = 0.0;
+  double right_bc = 2.07;
+
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -126,12 +130,14 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
   //locaStepperList.setParameter("Continuation Method", "Natural");
   locaStepperList.setParameter("Continuation Method", "Arc Length");
+  //locaStepperList.setParameter("Bordered Solver Method", "Nested");
+  //locaStepperList.setParameter("Bordered Solver Method", "Householder");
   //locaStepperList.setParameter("Continuation Parameter", "Right BC");
   locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
-  locaStepperList.setParameter("Initial Value", 1.0);
+  locaStepperList.setParameter("Initial Value", nonlinear_factor);
   locaStepperList.setParameter("Max Value", 2.0);
   locaStepperList.setParameter("Min Value", 0.05);
-  locaStepperList.setParameter("Max Steps", 30);
+  locaStepperList.setParameter("Max Steps", 20);
   locaStepperList.setParameter("Max Nonlinear Iterations", 15);
   locaStepperList.setParameter("Enable Arc Length Scaling", true);
   locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
@@ -142,16 +148,37 @@ int main(int argc, char *argv[])
   locaStepperList.setParameter("Min Tangent Factor", 0.8);
   locaStepperList.setParameter("Tangent Factor Exponent",1.5);
 
+  NOX::Parameter::List& nestedList = 
+    locaStepperList.sublist("Nested Bordered Solver");
+  nestedList.setParameter("Bordered Solver Method", "Householder");
+  nestedList.setParameter("Include UV In Preconditioner", true);
+  nestedList.setParameter("Use P For Preconditioner", true);
+
   // Create bifurcation sublist
   NOX::Parameter::List& bifurcationList = 
     locaParamsList.sublist("Bifurcation");
-  bifurcationList.setParameter("Method", "Turning Point:  Moore-Spence");
+  bifurcationList.setParameter("Type", "Turning Point");
+  //bifurcationList.setParameter("Formulation", "Moore-Spence");
+  bifurcationList.setParameter("Formulation", "Minimally Augmented");
   bifurcationList.setParameter("Solver Method", "Phipps Bordering");
-  //bifurcationList.setParameter("Bordered Solver Method", "Householder");
-  bifurcationList.setParameter("Bordered Solver Method", "Augmented");
+  //bifurcationList.setParameter("Solver Method", "Salinger Bordering");
+  bifurcationList.setParameter("Bordered Solver Method", "Householder");
+  //bifurcationList.setParameter("Bordered Solver Method", "Augmented");
   bifurcationList.setParameter("Bifurcation Parameter", "Right BC");
+  //bifurcationList.setParameter("Bifurcation Parameter", "Nonlinear Factor");
   bifurcationList.setParameter("Length Normalization Vector", nullVec);
+//   bifurcationList.setParameter("Initial Null Vector Computation",
+// 			       "Solve df/dp");
   bifurcationList.setParameter("Initial Null Vector", nullVec);
+  bifurcationList.setParameter("Initial A Vector", nullVec);
+  bifurcationList.setParameter("Initial B Vector", nullVec);
+  bifurcationList.setParameter("Update Null Vectors Every Continuation Step", 
+			       true);
+  bifurcationList.setParameter("Update Null Vectors Every Nonlinear Iteration",
+			       false);
+  bifurcationList.setParameter("Symmetric Jacobian", false);
+  bifurcationList.setParameter("Include UV In Preconditioner", true);
+  //bifurcationList.setParameter("Use P For Preconditioner", true);
 
   // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
   locaStepperList.setParameter("Compute Eigenvalues",false);
@@ -189,11 +216,12 @@ int main(int argc, char *argv[])
   // Create the NOX printing parameter list
   NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
   nlPrintParams.setParameter("MyPID", MyPID); 
+  nlPrintParams.setParameter("Output Precision", 6); 
   nlPrintParams.setParameter("Output Information", 
 			     NOX::Utils::OuterIteration + 
 			     NOX::Utils::OuterIterationStatusTest + 
 			     NOX::Utils::InnerIteration +
-			     //NOX::Utils::Parameters + 
+			     NOX::Utils::Parameters + 
 			     NOX::Utils::Details + 
 			     NOX::Utils::LinearSolverDetails +
 			     NOX::Utils::Warning + 
@@ -203,7 +231,7 @@ int main(int argc, char *argv[])
   // Create the "Line Search" sublist for the "Line Search Based" solver
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
   searchParams.setParameter("Method", "Full Step");
-  searchParams.setParameter("Max Iters", 7);
+  searchParams.setParameter("Max Iters", 10);
   searchParams.setParameter("Default Step", 1.0000);
   searchParams.setParameter("Recovery Step", 0.0001);
   searchParams.setParameter("Minimum Step", 0.0001);
@@ -221,13 +249,19 @@ int main(int argc, char *argv[])
   // Create the "Linear Solver" sublist for the "Direction" sublist
   NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
   lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 100);  
-  lsParams.setParameter("Tolerance", 1e-4);
+  lsParams.setParameter("Max Iterations", 200);  
+  lsParams.setParameter("Tolerance", 1e-6);
   lsParams.setParameter("Output Frequency", 50);    
-  lsParams.setParameter("Scaling", "None");             
-  //lsParams.setParameter("Scaling", "Row Sum");          
+  //lsParams.setParameter("Scaling", "None");             
+  //lsParams.setParameter("Scaling", "Row Sum");  
+  lsParams.setParameter("Compute Scaling Manually", false);
   //lsParams.setParameter("Preconditioning", "None");  
-  lsParams.setParameter("Preconditioner", "Ifpack");
+  //lsParams.setParameter("Preconditioner", "Ifpack");
+  lsParams.setParameter("Preconditioner", "New Ifpack");
+  lsParams.setParameter("Ifpack Preconditioner", "ILU");
+  Teuchos::ParameterList ifpackParams;
+  ifpackParams.set("fact: level-of-fill", 1);
+  lsParams.setParameter("Ifpack Teuchos Parameter List", &ifpackParams);
   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
   //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
   //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
@@ -243,9 +277,9 @@ int main(int argc, char *argv[])
 
   // Create and initialize the parameter vector
   LOCA::ParameterVector pVector;
-  pVector.addParameter("Nonlinear Factor",1.0);
-  pVector.addParameter("Left BC", 0.0);
-  pVector.addParameter("Right BC", 2.07);
+  pVector.addParameter("Nonlinear Factor",nonlinear_factor);
+  pVector.addParameter("Left BC", left_bc);
+  pVector.addParameter("Right BC", right_bc);
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -258,10 +292,33 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Epetra_RowMatrix> Amat = 
     Teuchos::rcp(&Problem.getJacobian(),false);
 
+  // Create scaling object
+  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling = Teuchos::null;
+//   scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
+//   Teuchos::RefCountPtr<Epetra_Vector> scalingVector = 
+//     Teuchos::rcp(new Epetra_Vector(soln.Map()));
+//   //scaling->addRowSumScaling(NOX::Epetra::Scaling::Left, scalingVector);
+//   scaling->addColSumScaling(NOX::Epetra::Scaling::Right, scalingVector);
+
+  // Create transpose scaling object
+  Teuchos::RefCountPtr<NOX::Epetra::Scaling> trans_scaling = Teuchos::null;
+  trans_scaling = Teuchos::rcp(new NOX::Epetra::Scaling);
+  Teuchos::RefCountPtr<Epetra_Vector> transScalingVector = 
+    Teuchos::rcp(new Epetra_Vector(soln.Map()));
+//   trans_scaling->addRowSumScaling(NOX::Epetra::Scaling::Right, 
+// 				  transScalingVector);
+  trans_scaling->addColSumScaling(NOX::Epetra::Scaling::Left, 
+				  transScalingVector);
+  //bifurcationList.setParameter("Transpose Scaling", trans_scaling);
+  //bifurcationList.setParameter("Transpose Solver Method","Transpose Preconditioner");
+  bifurcationList.setParameter("Transpose Solver Method","Explicit Transpose");
+  //bifurcationList.setParameter("Transpose Solver Method","Left Preconditioning");
+
   // Create the linear systems
   Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(nlPrintParams, lsParams,
-						      iReq, iJac, Amat, soln));
+						      iReq, iJac, Amat, soln,
+						      scaling));
 
   // Create the loca vector
   NOX::Epetra::Vector locaSoln(soln);

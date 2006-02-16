@@ -44,6 +44,7 @@ int main()
     double scale = 1.0;
     int maxNewtonIters = 10;
     //int maxNewtonIters = 6;
+    bool use_initial_guess = false;
 
     // Create output file to save solutions
     ofstream outFile("ChanTPContinuation.dat");
@@ -56,7 +57,55 @@ int main()
     // Create initial guess for the null vector of jacobian
     Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVec = 
       Teuchos::rcp(new NOX::LAPACK::Vector(n));
-    nullVec->init(1.0);               // initial value 1.0
+   
+    double conparam;
+    double bifparam;
+    NOX::LAPACK::Vector initial_x(n);
+    NOX::LAPACK::Vector initial_v(n);
+    if (use_initial_guess) {
+      // read in initial guess
+      ifstream inFile("ChanTPContinuation.dat.at_tp0");
+      
+      // get size
+      int n2;
+      inFile >> n2;
+
+      if (n2 != n) {
+	cerr << "Error!  Size of discretization in initial guess file" << endl
+	     << "does not match specifed size!" << endl;
+	throw "NOX::Error";
+      }
+      
+      // get conparam
+      inFile >> conparam;
+      
+      // get x
+      for (int i=0; i<n; i++)
+	inFile >> initial_x(i);
+
+      // get bifparam
+      inFile >> bifparam;
+
+      // get v
+      for (int i=0; i<n; i++)
+	inFile >> initial_v(i);
+
+      alpha = bifparam;
+      beta = conparam;
+      *nullVec = initial_v;
+    }
+    else {
+       nullVec->init(1.0);               // initial value 1.0
+    }
+
+    // Create initial values for a and b
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> a_vec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));
+    a_vec->init(1.0);
+
+    Teuchos::RefCountPtr<NOX::Abstract::Vector> b_vec = 
+      Teuchos::rcp(new NOX::LAPACK::Vector(n));
+    b_vec->init(1.0);
 
     // Create parameter list
     Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
@@ -69,6 +118,7 @@ int main()
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
     //stepperList.setParameter("Continuation Method", "Natural");
     stepperList.setParameter("Continuation Method", "Arc Length");
+    stepperList.setParameter("Bordered Solver Method", "Nested");
     stepperList.setParameter("Continuation Parameter", "beta");
     stepperList.setParameter("Initial Value", beta);
     stepperList.setParameter("Max Value", 1.0);
@@ -84,16 +134,25 @@ int main()
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
 
+    NOX::Parameter::List& nestedList = 
+      stepperList.sublist("Nested Bordered Solver");
+    nestedList.setParameter("Bordered Solver Method", "LAPACK Direct Solve");
+
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Method", "Turning Point:  Moore-Spence");
-    bifurcationList.setParameter("Solver Method", "Salinger Bordering");
+    bifurcationList.setParameter("Type", "Turning Point");
+    //bifurcationList.setParameter("Formulation", "Moore-Spence");
+    bifurcationList.setParameter("Formulation", "Minimally Augmented");
+    //bifurcationList.setParameter("Solver Method", "Salinger Bordering");
+    bifurcationList.setParameter("Solver Method", "Phipps Bordering");
     bifurcationList.setParameter("Bifurcation Parameter", "alpha");
     bifurcationList.setParameter("Length Normalization Vector", nullVec);
     bifurcationList.setParameter("Initial Null Vector", nullVec);
-//     bifurcationList.setParameter("Bordered Solver Method", 
-// 				 "LAPACK Direct Solve");
+    bifurcationList.setParameter("Initial A Vector", a_vec);
+    bifurcationList.setParameter("Initial B Vector", b_vec);
+    bifurcationList.setParameter("Bordered Solver Method", 
+				 "LAPACK Direct Solve");
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -138,6 +197,7 @@ int main()
 			       NOX::Utils::Warning + 
 			       NOX::Utils::StepperIteration +
 			       NOX::Utils::StepperDetails);
+    //nlPrintParams.setParameter("Output Precision", 12);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -165,10 +225,13 @@ int main()
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, chan));
     
     grp->setParams(p);
+    if (use_initial_guess) {
+      grp->setX(initial_x);
+    }
 
     // Set up the status tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
-      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-5, 
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
 					      NOX::StatusTest::NormF::Scaled));
     Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> statusTestB = 
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
