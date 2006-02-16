@@ -378,7 +378,8 @@ NOX::LAPACK::Group::applyJacobianInverseMultiVector(
 {
 
   if (!isJacobian()) {
-    cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverseMultiVector() - invalid Jacobian" << endl;
+    cerr << "ERROR: NOX::LAPACK::Group::applyJacobianInverseMultiVector() "
+	 << "- invalid Jacobian" << endl;
     throw "NOX Error";
   }
 
