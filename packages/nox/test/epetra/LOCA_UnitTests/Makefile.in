@@ -43,7 +43,7 @@
 # ************************************************************************
 # @HEADER
 
-SOURCES = $(compositeConstraint_SOURCES) $(compositeConstraintMVDX_SOURCES) $(householderBorderedSolve_SOURCES) $(householderBorderedSolveContiguous_SOURCES)
+SOURCES = $(compositeConstraint_SOURCES) $(compositeConstraintMVDX_SOURCES) $(householderBorderedSolve_SOURCES) $(householderTransposeBorderedSolve_SOURCES) $(transposeSolve_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,7 +68,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_LOCA_EPETRA_TESTS_TRUE@noinst_PROGRAMS = $(am__EXEEXT_1) \
 @BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_2) $(am__EXEEXT_3) \
-@BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_4)
+@BUILD_LOCA_EPETRA_TESTS_TRUE@	$(am__EXEEXT_4) $(am__EXEEXT_5)
 subdir = test/epetra/LOCA_UnitTests
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -100,9 +100,10 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = householderBorderedSolve$(EXEEXT)
-am__EXEEXT_2 = householderBorderedSolveContiguous$(EXEEXT)
-am__EXEEXT_3 = compositeConstraint$(EXEEXT)
-am__EXEEXT_4 = compositeConstraintMVDX$(EXEEXT)
+am__EXEEXT_2 = householderTransposeBorderedSolve$(EXEEXT)
+am__EXEEXT_3 = transposeSolve$(EXEEXT)
+am__EXEEXT_4 = compositeConstraint$(EXEEXT)
+am__EXEEXT_5 = compositeConstraintMVDX$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_compositeConstraint_OBJECTS = CompositeConstraint.$(OBJEXT)
 compositeConstraint_OBJECTS = $(am_compositeConstraint_OBJECTS)
@@ -119,17 +120,20 @@ am_householderBorderedSolve_OBJECTS =  \
 	HouseholderBorderedSolve.$(OBJEXT)
 householderBorderedSolve_OBJECTS =  \
 	$(am_householderBorderedSolve_OBJECTS)
-am_householderBorderedSolveContiguous_OBJECTS =  \
-	HouseholderBorderedSolveContiguous.$(OBJEXT)
-householderBorderedSolveContiguous_OBJECTS =  \
-	$(am_householderBorderedSolveContiguous_OBJECTS)
+am_householderTransposeBorderedSolve_OBJECTS =  \
+	HouseholderTransposeBorderedSolve.$(OBJEXT)
+householderTransposeBorderedSolve_OBJECTS =  \
+	$(am_householderTransposeBorderedSolve_OBJECTS)
+am_transposeSolve_OBJECTS = TransposeSolve.$(OBJEXT)
+transposeSolve_OBJECTS = $(am_transposeSolve_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/CompositeConstraint.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CompositeConstraintMVDX.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HouseholderBorderedSolve.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/HouseholderBorderedSolveContiguous.Po
+@AMDEP_TRUE@	./$(DEPDIR)/HouseholderTransposeBorderedSolve.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TransposeSolve.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -138,11 +142,13 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(compositeConstraint_SOURCES) \
 	$(compositeConstraintMVDX_SOURCES) \
 	$(householderBorderedSolve_SOURCES) \
-	$(householderBorderedSolveContiguous_SOURCES)
+	$(householderTransposeBorderedSolve_SOURCES) \
+	$(transposeSolve_SOURCES)
 DIST_SOURCES = $(compositeConstraint_SOURCES) \
 	$(compositeConstraintMVDX_SOURCES) \
 	$(householderBorderedSolve_SOURCES) \
-	$(householderBorderedSolveContiguous_SOURCES)
+	$(householderTransposeBorderedSolve_SOURCES) \
+	$(transposeSolve_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -360,7 +366,8 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(LOCA_EPETRA_TEST_INCLUDES))
 AM_CPPFLAGS = $(TEST_INCLUDES)
 HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve
-HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous
+HOUSEHOLDERTRANSBORDEREDSOLVE = householderTransposeBorderedSolve
+TRANSPOSESOLVE = transposeSolve
 COMPOSITECONSTRAINT = compositeConstraint
 COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX
 householderBorderedSolve_SOURCES = \
@@ -375,13 +382,22 @@ householderBorderedSolve_DEPENDENCIES = \
 	$(top_builddir)/test/epetra/LOCA_TestProblems/liblocatestproblems.a
 
 householderBorderedSolve_LDADD = $(TEST_LIBS)
-householderBorderedSolveContiguous_SOURCES = \
-	$(srcdir)/HouseholderBorderedSolveContiguous.C 
+householderTransposeBorderedSolve_SOURCES = \
+	$(srcdir)/HouseholderTransposeBorderedSolve.C 
 
-householderBorderedSolveContiguous_DEPENDENCIES = \
+householderTransposeBorderedSolve_DEPENDENCIES = \
 	$(householderBorderedSolve_DEPENDENCIES)
 
-householderBorderedSolveContiguous_LDADD = \
+householderTransposeBorderedSolve_LDADD = \
+	$(householderBorderedSolve_LDADD)
+
+transposeSolve_SOURCES = \
+	$(srcdir)/TransposeSolve.C 
+
+transposeSolve_DEPENDENCIES = \
+	$(householderBorderedSolve_DEPENDENCIES)
+
+transposeSolve_LDADD = \
 	$(householderBorderedSolve_LDADD)
 
 compositeConstraint_SOURCES = \
@@ -457,9 +473,12 @@ compositeConstraintMVDX$(EXEEXT): $(compositeConstraintMVDX_OBJECTS) $(composite
 householderBorderedSolve$(EXEEXT): $(householderBorderedSolve_OBJECTS) $(householderBorderedSolve_DEPENDENCIES) 
 	@rm -f householderBorderedSolve$(EXEEXT)
 	$(CXXLINK) $(householderBorderedSolve_LDFLAGS) $(householderBorderedSolve_OBJECTS) $(householderBorderedSolve_LDADD) $(LIBS)
-householderBorderedSolveContiguous$(EXEEXT): $(householderBorderedSolveContiguous_OBJECTS) $(householderBorderedSolveContiguous_DEPENDENCIES) 
-	@rm -f householderBorderedSolveContiguous$(EXEEXT)
-	$(CXXLINK) $(householderBorderedSolveContiguous_LDFLAGS) $(householderBorderedSolveContiguous_OBJECTS) $(householderBorderedSolveContiguous_LDADD) $(LIBS)
+householderTransposeBorderedSolve$(EXEEXT): $(householderTransposeBorderedSolve_OBJECTS) $(householderTransposeBorderedSolve_DEPENDENCIES) 
+	@rm -f householderTransposeBorderedSolve$(EXEEXT)
+	$(CXXLINK) $(householderTransposeBorderedSolve_LDFLAGS) $(householderTransposeBorderedSolve_OBJECTS) $(householderTransposeBorderedSolve_LDADD) $(LIBS)
+transposeSolve$(EXEEXT): $(transposeSolve_OBJECTS) $(transposeSolve_DEPENDENCIES) 
+	@rm -f transposeSolve$(EXEEXT)
+	$(CXXLINK) $(transposeSolve_LDFLAGS) $(transposeSolve_OBJECTS) $(transposeSolve_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -470,7 +489,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CompositeConstraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CompositeConstraintMVDX.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HouseholderBorderedSolve.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HouseholderBorderedSolveContiguous.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HouseholderTransposeBorderedSolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TransposeSolve.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -536,21 +556,37 @@ HouseholderBorderedSolve.obj: $(srcdir)/HouseholderBorderedSolve.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderBorderedSolve.obj `if test -f '$(srcdir)/HouseholderBorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderBorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderBorderedSolve.C'; fi`
 
-HouseholderBorderedSolveContiguous.o: $(srcdir)/HouseholderBorderedSolveContiguous.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderBorderedSolveContiguous.o -MD -MP -MF "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" -c -o HouseholderBorderedSolveContiguous.o `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" "$(DEPDIR)/HouseholderBorderedSolveContiguous.Po"; else rm -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderBorderedSolveContiguous.C' object='HouseholderBorderedSolveContiguous.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderBorderedSolveContiguous.Po' tmpdepfile='$(DEPDIR)/HouseholderBorderedSolveContiguous.TPo' @AMDEPBACKSLASH@
+HouseholderTransposeBorderedSolve.o: $(srcdir)/HouseholderTransposeBorderedSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderTransposeBorderedSolve.o -MD -MP -MF "$(DEPDIR)/HouseholderTransposeBorderedSolve.Tpo" -c -o HouseholderTransposeBorderedSolve.o `test -f '$(srcdir)/HouseholderTransposeBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderTransposeBorderedSolve.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderTransposeBorderedSolve.Tpo" "$(DEPDIR)/HouseholderTransposeBorderedSolve.Po"; else rm -f "$(DEPDIR)/HouseholderTransposeBorderedSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderTransposeBorderedSolve.C' object='HouseholderTransposeBorderedSolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderTransposeBorderedSolve.Po' tmpdepfile='$(DEPDIR)/HouseholderTransposeBorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderBorderedSolveContiguous.o `test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderBorderedSolveContiguous.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderTransposeBorderedSolve.o `test -f '$(srcdir)/HouseholderTransposeBorderedSolve.C' || echo '$(srcdir)/'`$(srcdir)/HouseholderTransposeBorderedSolve.C
 
-HouseholderBorderedSolveContiguous.obj: $(srcdir)/HouseholderBorderedSolveContiguous.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderBorderedSolveContiguous.obj -MD -MP -MF "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" -c -o HouseholderBorderedSolveContiguous.obj `if test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderBorderedSolveContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderBorderedSolveContiguous.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo" "$(DEPDIR)/HouseholderBorderedSolveContiguous.Po"; else rm -f "$(DEPDIR)/HouseholderBorderedSolveContiguous.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderBorderedSolveContiguous.C' object='HouseholderBorderedSolveContiguous.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderBorderedSolveContiguous.Po' tmpdepfile='$(DEPDIR)/HouseholderBorderedSolveContiguous.TPo' @AMDEPBACKSLASH@
+HouseholderTransposeBorderedSolve.obj: $(srcdir)/HouseholderTransposeBorderedSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT HouseholderTransposeBorderedSolve.obj -MD -MP -MF "$(DEPDIR)/HouseholderTransposeBorderedSolve.Tpo" -c -o HouseholderTransposeBorderedSolve.obj `if test -f '$(srcdir)/HouseholderTransposeBorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderTransposeBorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderTransposeBorderedSolve.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HouseholderTransposeBorderedSolve.Tpo" "$(DEPDIR)/HouseholderTransposeBorderedSolve.Po"; else rm -f "$(DEPDIR)/HouseholderTransposeBorderedSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HouseholderTransposeBorderedSolve.C' object='HouseholderTransposeBorderedSolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HouseholderTransposeBorderedSolve.Po' tmpdepfile='$(DEPDIR)/HouseholderTransposeBorderedSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderBorderedSolveContiguous.obj `if test -f '$(srcdir)/HouseholderBorderedSolveContiguous.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderBorderedSolveContiguous.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderBorderedSolveContiguous.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HouseholderTransposeBorderedSolve.obj `if test -f '$(srcdir)/HouseholderTransposeBorderedSolve.C'; then $(CYGPATH_W) '$(srcdir)/HouseholderTransposeBorderedSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HouseholderTransposeBorderedSolve.C'; fi`
+
+TransposeSolve.o: $(srcdir)/TransposeSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TransposeSolve.o -MD -MP -MF "$(DEPDIR)/TransposeSolve.Tpo" -c -o TransposeSolve.o `test -f '$(srcdir)/TransposeSolve.C' || echo '$(srcdir)/'`$(srcdir)/TransposeSolve.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TransposeSolve.Tpo" "$(DEPDIR)/TransposeSolve.Po"; else rm -f "$(DEPDIR)/TransposeSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TransposeSolve.C' object='TransposeSolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TransposeSolve.Po' tmpdepfile='$(DEPDIR)/TransposeSolve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TransposeSolve.o `test -f '$(srcdir)/TransposeSolve.C' || echo '$(srcdir)/'`$(srcdir)/TransposeSolve.C
+
+TransposeSolve.obj: $(srcdir)/TransposeSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT TransposeSolve.obj -MD -MP -MF "$(DEPDIR)/TransposeSolve.Tpo" -c -o TransposeSolve.obj `if test -f '$(srcdir)/TransposeSolve.C'; then $(CYGPATH_W) '$(srcdir)/TransposeSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TransposeSolve.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TransposeSolve.Tpo" "$(DEPDIR)/TransposeSolve.Po"; else rm -f "$(DEPDIR)/TransposeSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TransposeSolve.C' object='TransposeSolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TransposeSolve.Po' tmpdepfile='$(DEPDIR)/TransposeSolve.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TransposeSolve.obj `if test -f '$(srcdir)/TransposeSolve.C'; then $(CYGPATH_W) '$(srcdir)/TransposeSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TransposeSolve.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

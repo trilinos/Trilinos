@@ -33,7 +33,7 @@
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
 
-#include "LOCA_BorderedSystem_AbstractStrategy.H"
+#include "LOCA_BorderedSolver_AbstractStrategy.H"
 #include "LOCA_Parameter_SublistParser.H"
 #include "NOX_TestCompare.H"
 
@@ -56,8 +56,8 @@
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp;
 Teuchos::RefCountPtr<LinearConstraint> constraints;
 Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> bordering;
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> householder;
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> bordering;
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> householder;
 Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 Teuchos::RefCountPtr<NOX::TestCompare> testCompare;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
@@ -72,7 +72,7 @@ Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_householder;
 
 int  
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
-	  bool contiguous, double reltol, double abstol, 
+	  double reltol, double abstol, 
 	  const string& testName) {
   int ierr = 0;
 
@@ -100,11 +100,11 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   constraints->setIsZeroDX(flagB);
 
   // Set up bordered problem
-  bordering->setIsContiguous(contiguous);
   bordering->setMatrixBlocks(grp, a, constraints, c);
+  bordering->initForSolve();
 
-  householder->setIsContiguous(contiguous);
   householder->setMatrixBlocks(grp, a, constraints, c);
+  householder->initForSolve();
 
   X_bordering->init(0.0);
   Y_bordering->putScalar(0.0);
@@ -140,9 +140,6 @@ int main(int argc, char *argv[])
 {
   int nConstraints = 10;
   int nRHS = 7;
-
-//   int nConstraints = 1;
-//   int nRHS = 1;
 
   double left_bc = 0.0;
   double right_bc = 1.0;
@@ -315,7 +312,7 @@ int main(int argc, char *argv[])
 
     // Create bordering solver
     bordering
-      = globalData->locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
@@ -325,7 +322,7 @@ int main(int argc, char *argv[])
 
     // Create householder solver
     householder
-      = globalData->locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
@@ -372,104 +369,104 @@ int main(int argc, char *argv[])
 
     string testName;
 
-    // Test all nonzero, noncontiguous
-    testName = "Testing all nonzero, noncontiguous";
-    ierr += testSolve(false, false, false, false, false, false,
+    // Test all nonzero
+    testName = "Testing all nonzero";
+    ierr += testSolve(false, false, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test A = 0, noncontiguous
-    testName = "Testing A=0, noncontiguous";
-    ierr += testSolve(true, false, false, false, false, false,
+    // Test A = 0
+    testName = "Testing A=0";
+    ierr += testSolve(true, false, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test B = 0, noncontiguous
-    testName = "Testing B=0, noncontiguous";
-    ierr += testSolve(false, true, false, false, false, false,
+    // Test B = 0
+    testName = "Testing B=0";
+    ierr += testSolve(false, true, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test C = 0, noncontiguous
-    testName = "Testing C=0, noncontiguous";
-    ierr += testSolve(false, false, true, false, false, false,
+    // Test C = 0
+    testName = "Testing C=0";
+    ierr += testSolve(false, false, true, false, false,
 		      reltol, abstol, testName);
 
-    // Test F = 0, noncontiguous
-    testName = "Testing F=0, noncontiguous";
-    ierr += testSolve(false, false, false, true, false, false,
+    // Test F = 0
+    testName = "Testing F=0";
+    ierr += testSolve(false, false, false, true, false,
 		      reltol, abstol, testName);
 
-    // Test G = 0, noncontiguous
-    testName = "Testing G=0, noncontiguous";
-    ierr += testSolve(false, false, false, false, true, false,
+    // Test G = 0
+    testName = "Testing G=0";
+    ierr += testSolve(false, false, false, false, true,
 		      reltol, abstol, testName);
 
-    // Test A,B = 0, noncontiguous
-    testName = "Testing A,B=0, noncontiguous";
-    ierr += testSolve(true, true, false, false, false, false,
+    // Test A,B = 0
+    testName = "Testing A,B=0";
+    ierr += testSolve(true, true, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test A,F = 0, noncontiguous
-    testName = "Testing A,F=0, noncontiguous";
-    ierr += testSolve(true, false, false, true, false, false,
+    // Test A,F = 0
+    testName = "Testing A,F=0";
+    ierr += testSolve(true, false, false, true, false,
 		      reltol, abstol, testName);
 
-    // Test A,G = 0, noncontiguous
-    testName = "Testing A,G=0, noncontiguous";
-    ierr += testSolve(true, false, false, false, true, false,
+    // Test A,G = 0
+    testName = "Testing A,G=0";
+    ierr += testSolve(true, false, false, false, true,
 		      reltol, abstol, testName);
 
-    // Test B,F = 0, noncontiguous
-    testName = "Testing B,F=0, noncontiguous";
-    ierr += testSolve(false, true, false, true, false, false,
+    // Test B,F = 0
+    testName = "Testing B,F=0";
+    ierr += testSolve(false, true, false, true, false,
 		      reltol, abstol, testName);
 
-    // Test B,G = 0, noncontiguous
-    testName = "Testing B,G=0, noncontiguous";
-    ierr += testSolve(false, true, false, false, true, false,
+    // Test B,G = 0
+    testName = "Testing B,G=0";
+    ierr += testSolve(false, true, false, false, true,
 		      reltol, abstol, testName);
 
-    // Test C,F = 0, noncontiguous
-    testName = "Testing C,F=0, noncontiguous";
-    ierr += testSolve(false, false, true, true, false, false,
+    // Test C,F = 0
+    testName = "Testing C,F=0";
+    ierr += testSolve(false, false, true, true, false,
 		      reltol, abstol, testName);
 
-    // Test C,G = 0, noncontiguous
-    testName = "Testing C,G=0, noncontiguous";
-    ierr += testSolve(false, false, true, false, true, false,
+    // Test C,G = 0
+    testName = "Testing C,G=0";
+    ierr += testSolve(false, false, true, false, true,
 		      reltol, abstol, testName);
 
-    // Test F,G = 0, noncontiguous
-    testName = "Testing F,G=0, noncontiguous";
-    ierr += testSolve(false, false, false, true, true, false,
+    // Test F,G = 0
+    testName = "Testing F,G=0";
+    ierr += testSolve(false, false, false, true, true,
 		      reltol, abstol, testName);
 
-    // Test A,B,F = 0, noncontiguous
-    testName = "Testing A,B,F=0, noncontiguous";
-    ierr += testSolve(true, true, false, true, false, false,
+    // Test A,B,F = 0
+    testName = "Testing A,B,F=0";
+    ierr += testSolve(true, true, false, true, false,
 		      reltol, abstol, testName);
 
-    // Test A,B,G = 0, noncontiguous
-    testName = "Testing A,B,G=0, noncontiguous";
-    ierr += testSolve(true, true, false, false, true, false,
+    // Test A,B,G = 0
+    testName = "Testing A,B,G=0";
+    ierr += testSolve(true, true, false, false, true,
 		      reltol, abstol, testName);
 
-    // Test A,F,G = 0, noncontiguous
-    testName = "Testing A,F,G=0, noncontiguous";
-    ierr += testSolve(true, false, false, true, true, false,
+    // Test A,F,G = 0
+    testName = "Testing A,F,G=0";
+    ierr += testSolve(true, false, false, true, true,
 		      reltol, abstol, testName);
 
-    // Test B,F,G = 0, noncontiguous
-    testName = "Testing B,F,G=0, noncontiguous";
-    ierr += testSolve(false, true, false, true, true, false,
+    // Test B,F,G = 0
+    testName = "Testing B,F,G=0";
+    ierr += testSolve(false, true, false, true, true,
 		      reltol, abstol, testName);
 
-    // Test C,F,G = 0, noncontiguous
-    testName = "Testing C,F,G=0, noncontiguous";
-    ierr += testSolve(false, false, true, true, true, false,
+    // Test C,F,G = 0
+    testName = "Testing C,F,G=0";
+    ierr += testSolve(false, false, true, true, true,
 		      reltol, abstol, testName);
 
-    // Test A,B,F,G = 0, noncontiguous
-    testName = "Testing A,B,F,G=0, noncontiguous";
-    ierr += testSolve(true, true, false, true, true, false,
+    // Test A,B,F,G = 0
+    testName = "Testing A,B,F,G=0";
+    ierr += testSolve(true, true, false, true, true,
 		      reltol, abstol, testName);
 
     destroyGlobalData(globalData);

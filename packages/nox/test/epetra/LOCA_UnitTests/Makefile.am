@@ -44,14 +44,16 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 HOUSEHOLDERBORDEREDSOLVE = householderBorderedSolve
-HOUSEHOLDERBORDEREDSOLVECONTIGUOUS = householderBorderedSolveContiguous
+HOUSEHOLDERTRANSBORDEREDSOLVE = householderTransposeBorderedSolve
+TRANSPOSESOLVE = transposeSolve
 COMPOSITECONSTRAINT = compositeConstraint
 COMPOSITECONSTRAINTMVDX = compositeConstraintMVDX
 
 if BUILD_LOCA_EPETRA_TESTS
 noinst_PROGRAMS = \
 	$(HOUSEHOLDERBORDEREDSOLVE) \
-	$(HOUSEHOLDERBORDEREDSOLVECONTIGUOUS) \
+	$(HOUSEHOLDERTRANSBORDEREDSOLVE) \
+	$(TRANSPOSESOLVE) \
 	$(COMPOSITECONSTRAINT) \
 	$(COMPOSITECONSTRAINTMVDX)
 endif
@@ -69,13 +71,22 @@ householderBorderedSolve_DEPENDENCIES = \
 
 householderBorderedSolve_LDADD = $(TEST_LIBS)
 
-householderBorderedSolveContiguous_SOURCES = \
-	$(srcdir)/HouseholderBorderedSolveContiguous.C 
+householderTransposeBorderedSolve_SOURCES = \
+	$(srcdir)/HouseholderTransposeBorderedSolve.C 
 
-householderBorderedSolveContiguous_DEPENDENCIES = \
+householderTransposeBorderedSolve_DEPENDENCIES = \
 	$(householderBorderedSolve_DEPENDENCIES)
 
-householderBorderedSolveContiguous_LDADD = \
+householderTransposeBorderedSolve_LDADD = \
+	$(householderBorderedSolve_LDADD)
+
+transposeSolve_SOURCES = \
+	$(srcdir)/TransposeSolve.C 
+
+transposeSolve_DEPENDENCIES = \
+	$(householderBorderedSolve_DEPENDENCIES)
+
+transposeSolve_LDADD = \
 	$(householderBorderedSolve_LDADD)
 
 compositeConstraint_SOURCES = \

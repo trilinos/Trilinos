@@ -33,7 +33,7 @@
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
 
-#include "LOCA_BorderedSystem_AbstractStrategy.H"
+#include "LOCA_BorderedSolver_AbstractStrategy.H"
 #include "LOCA_Parameter_SublistParser.H"
 #include "NOX_TestCompare.H"
 
@@ -56,8 +56,8 @@
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grp;
 Teuchos::RefCountPtr<LinearConstraint> constraints;
 Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> bordering;
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> householder;
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> bordering;
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> householder;
 Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 Teuchos::RefCountPtr<NOX::TestCompare> testCompare;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> A;
@@ -66,15 +66,13 @@ Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> C;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> F;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> G;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_bordering;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_bordering_sol;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_bordering;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_householder;
-Teuchos::RefCountPtr<NOX::Abstract::MultiVector> X_householder_sol;
 Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> Y_householder;
 
 int  
 testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
-	  bool contiguous, double reltol, double abstol, 
+	  double reltol, double abstol, 
 	  const string& testName) {
   int ierr = 0;
 
@@ -102,11 +100,11 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
   constraints->setIsZeroDX(flagB);
 
   // Set up bordered problem
-  bordering->setIsContiguous(contiguous);
   bordering->setMatrixBlocks(grp, a, constraints, c);
+  bordering->initForTransposeSolve();
 
-  householder->setIsContiguous(contiguous);
   householder->setMatrixBlocks(grp, a, constraints, c);
+  householder->initForTransposeSolve();
 
   X_bordering->init(0.0);
   Y_bordering->putScalar(0.0);
@@ -115,20 +113,20 @@ testSolve(bool flagA, bool flagB, bool flagC, bool flagF, bool flagG,
 
   // Solve using bordering
   NOX::Abstract::Group::ReturnType borderingStatus = 
-    bordering->applyInverse(*(parsedParams->getSublist("Linear Solver")),
+    bordering->applyInverseTranspose(*(parsedParams->getSublist("Linear Solver")),
 			    f.get(), g.get(), *X_bordering, *Y_bordering);
   if (borderingStatus == NOX::Abstract::Group::Failed)
     ++ierr;
 
   // Solve using householder
   NOX::Abstract::Group::ReturnType householderStatus = 
-    householder->applyInverse(*(parsedParams->getSublist("Linear Solver")),
+    householder->applyInverseTranspose(*(parsedParams->getSublist("Linear Solver")),
 			      f.get(), g.get(), *X_householder, 
 			      *Y_householder);
   if (householderStatus == NOX::Abstract::Group::Failed)
     ++ierr;
 
-  ierr += testCompare->testMultiVector(*X_householder_sol, *X_bordering_sol,
+  ierr += testCompare->testMultiVector(*X_householder, *X_bordering,
 				       reltol, abstol, "Solution Component");
 
   ierr += testCompare->testMatrix(*Y_householder, *Y_bordering, 
@@ -142,9 +140,6 @@ int main(int argc, char *argv[])
 {
   int nConstraints = 10;
   int nRHS = 7;
-
-//   int nConstraints = 1;
-//   int nRHS = 1;
 
   double left_bc = 0.0;
   double right_bc = 1.0;
@@ -171,9 +166,9 @@ int main(int argc, char *argv[])
 #endif
 
     // Get the total number of processors
-    int NumProc = Comm.NumProc();
     MyPID = Comm.MyPID();
-
+    int NumProc = Comm.NumProc();
+    
     bool verbose = false;
     // Check for verbose output
     if (argc>1)
@@ -234,10 +229,10 @@ int main(int argc, char *argv[])
     lsParams.setParameter("Aztec Solver", "GMRES");  
     lsParams.setParameter("Max Iterations", 100);  
     lsParams.setParameter("Tolerance", lstol);
-     if (verbose)
+    if (verbose)
       lsParams.setParameter("Output Frequency", 1);
     else
-      lsParams.setParameter("Output Frequency", 0);   
+      lsParams.setParameter("Output Frequency", 0);
     lsParams.setParameter("Scaling", "None");             
     lsParams.setParameter("Preconditioner", "Ifpack");
     //lsParams.setParameter("Preconditioner", "AztecOO");
@@ -303,7 +298,7 @@ int main(int argc, char *argv[])
     grp = Teuchos::rcp(new LOCA::Epetra::Group(globalData, nlPrintParams, 
 					       iReq, locaSoln, 
 					       linsys, pVector));
-
+    
     // Change initial guess to a random vector
     Teuchos::RefCountPtr<NOX::Abstract::Vector> xnew = 
       grp->getX().clone();
@@ -317,7 +312,7 @@ int main(int argc, char *argv[])
 
     // Create bordering solver
     bordering
-      = globalData->locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
@@ -327,7 +322,7 @@ int main(int argc, char *argv[])
 
     // Create householder solver
     householder
-      = globalData->locaFactory->createBorderedSystemStrategy(
+      = globalData->locaFactory->createBorderedSolverStrategy(
 				     parsedParams, 
 				     parsedParams->getSublist("Constraints"));
 
@@ -339,6 +334,10 @@ int main(int argc, char *argv[])
     // Evaluate blocks
     grp->computeF();
     grp->computeJacobian();
+
+    // A
+    A = grp->getX().createMultiVector(nConstraints);
+    A->random();
     
     // B
     constraints->setX(grp->getX());
@@ -354,64 +353,124 @@ int main(int argc, char *argv[])
     C->random();
 
     // Set up left- and right-hand sides
-    F = grp->getX().createMultiVector(nRHS+nConstraints);
+    F = grp->getX().createMultiVector(nRHS);
     F->random();
     G = Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 								 nRHS));
     G->random();
-    X_bordering = F->clone(nRHS+nConstraints);
+    X_bordering = F->clone(NOX::ShapeCopy);
     Y_bordering = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
-    X_householder = F->clone(nRHS+nConstraints);
+    X_householder = F->clone(NOX::ShapeCopy);
     Y_householder = 
       Teuchos::rcp(new NOX::Abstract::MultiVector::DenseMatrix(nConstraints,
 							       nRHS));
 
-    // Setup A block as a view of the last column of F
-    vector<int> indexF(nRHS);
-    vector<int> indexA(nConstraints); 
-    for (int i=0; i<nRHS; i++)
-      indexF[i] = i;
-    for (int i=0; i<nConstraints; i++)
-      indexA[i] = nRHS+i;
-    A = F->subView(indexA);
-    X_bordering_sol = X_bordering->subView(indexF);
-    X_householder_sol = X_householder->subView(indexF);
-
     string testName;
 
-    // Test all nonzero, contiguous
-    testName = "Testing all nonzero, contiguous";
-    ierr += testSolve(false, false, false, false, false, true,
+    // Test all nonzero
+    testName = "Testing all nonzero";
+    ierr += testSolve(false, false, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test B = 0, contiguous
-    testName = "Testing B=0, contiguous";
-    ierr += testSolve(false, true, false, false, false, true,
+    // Test A = 0
+    testName = "Testing A=0";
+    ierr += testSolve(true, false, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test C = 0, contiguous
-    testName = "Testing C=0, contiguous";
-    ierr += testSolve(false, false, true, false, false, true,
+    // Test B = 0
+    testName = "Testing B=0";
+    ierr += testSolve(false, true, false, false, false,
 		      reltol, abstol, testName);
 
-    // Test G = 0, contiguous
-    testName = "Testing G=0, contiguous";
-    ierr += testSolve(false, false, false, false, true, true,
+    // Test C = 0
+    testName = "Testing C=0";
+    ierr += testSolve(false, false, true, false, false,
 		      reltol, abstol, testName);
 
-    // Test B,G = 0, contiguous
-    testName = "Testing B,G=0, contiguous";
-    ierr += testSolve(false, true, false, false, true, true,
+    // Test F = 0
+    testName = "Testing F=0";
+    ierr += testSolve(false, false, false, true, false,
 		      reltol, abstol, testName);
 
-    // Test C,G = 0, contiguous
-    testName = "Testing C,G=0, contiguous";
-    ierr += testSolve(false, false, true, false, true, true,
+    // Test G = 0
+    testName = "Testing G=0";
+    ierr += testSolve(false, false, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test A,B = 0
+    testName = "Testing A,B=0";
+    ierr += testSolve(true, true, false, false, false,
+		      reltol, abstol, testName);
+
+    // Test A,F = 0
+    testName = "Testing A,F=0";
+    ierr += testSolve(true, false, false, true, false,
+		      reltol, abstol, testName);
+
+    // Test A,G = 0
+    testName = "Testing A,G=0";
+    ierr += testSolve(true, false, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test B,F = 0
+    testName = "Testing B,F=0";
+    ierr += testSolve(false, true, false, true, false,
+		      reltol, abstol, testName);
+
+    // Test B,G = 0
+    testName = "Testing B,G=0";
+    ierr += testSolve(false, true, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test C,F = 0
+    testName = "Testing C,F=0";
+    ierr += testSolve(false, false, true, true, false,
+		      reltol, abstol, testName);
+
+    // Test C,G = 0
+    testName = "Testing C,G=0";
+    ierr += testSolve(false, false, true, false, true,
+		      reltol, abstol, testName);
+
+    // Test F,G = 0
+    testName = "Testing F,G=0";
+    ierr += testSolve(false, false, false, true, true,
+		      reltol, abstol, testName);
+
+    // Test A,B,F = 0
+    testName = "Testing A,B,F=0";
+    ierr += testSolve(true, true, false, true, false,
+		      reltol, abstol, testName);
+
+    // Test A,B,G = 0
+    testName = "Testing A,B,G=0";
+    ierr += testSolve(true, true, false, false, true,
+		      reltol, abstol, testName);
+
+    // Test A,F,G = 0
+    testName = "Testing A,F,G=0";
+    ierr += testSolve(true, false, false, true, true,
+		      reltol, abstol, testName);
+
+    // Test B,F,G = 0
+    testName = "Testing B,F,G=0";
+    ierr += testSolve(false, true, false, true, true,
+		      reltol, abstol, testName);
+
+    // Test C,F,G = 0
+    testName = "Testing C,F,G=0";
+    ierr += testSolve(false, false, true, true, true,
+		      reltol, abstol, testName);
+
+    // Test A,B,F,G = 0
+    testName = "Testing A,B,F,G=0";
+    ierr += testSolve(true, true, false, true, true,
 		      reltol, abstol, testName);
 
     destroyGlobalData(globalData);
+
   }
 
   catch (std::exception& e) {
