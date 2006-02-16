@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     nx = (int) strtol(argv[1],NULL,10);
   else
     nx = 8;
-  int ny = 8 * Comm.NumProc();
+  int ny = nx * Comm.NumProc(); // each subdomain is a square
 
   ParameterList GaleriList;
   GaleriList.set("nx", nx);
