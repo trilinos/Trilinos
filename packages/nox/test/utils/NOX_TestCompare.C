@@ -52,17 +52,20 @@ int NOX::TestCompare::testValue(double value,
 {
   bool passed;
   double testValue;
+  double testTolerance;
 
   // test for zero
-  if (compareType == NOX::TestCompare::Relative && value_expected == 0.0)
+  if (compareType == NOX::TestCompare::Relative && ((value_expected == 0.0) ||
+						    (value == 0.0)))
     compareType = NOX::TestCompare::Absolute;
 
+  testValue = fabs(value-value_expected);
   if (compareType == NOX::TestCompare::Absolute)
-    testValue = fabs(value-value_expected);
+    testTolerance = tolerance;
   else
-    testValue = fabs(value-value_expected) / fabs(value_expected);
+    testTolerance = tolerance * fabs(value_expected);
 
-  if (testValue > tolerance)
+  if (testValue > testTolerance)
     passed = false;
   else
     passed = true;
