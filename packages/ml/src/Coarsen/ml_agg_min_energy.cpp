@@ -291,6 +291,9 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     exit(EXIT_FAILURE);
   }
 
+  int Nghost = 0;
+  if (Amat->getrow->pre_comm != 0)
+    Nghost = Amat->getrow->pre_comm->total_rcv_length;
   ML_Operator *UnscaledAmat = NULL;
   if (Amat->num_PDEs == 1) {
 
@@ -298,7 +301,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     // point scaling automatically in Amat so we don't need to worry about
     // it any more.                                                       
 
-    Dinv = (double *) ML_allocate(sizeof(double)*(Amat->outvec_leng+1));
+    Dinv = (double *) ML_allocate(sizeof(double)*(Amat->outvec_leng + Nghost +1));
     for (int row = 0; row < Amat->outvec_leng; row++) {
       Dinv[row] = 1.;
       ML_get_matrix_row(Amat, 1, &row, &allocated, &bindx,&val,&row_length,0); 
@@ -590,7 +593,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
 
   // convert the omega's from column-based to row-based
 
-  double* RowOmega = (double *) ML_allocate(sizeof(double)*(n+1));
+  double* RowOmega = (double *) ML_allocate(sizeof(double)*(n + Nghost + 1));
   ag->old_RowOmegas = RowOmega;
 
   for (int row = 0 ; row < n ; row++) {
@@ -620,6 +623,8 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   //  ML_CommInfoOP_Clone(&(OmegaDinvAP0->getrow->pre_comm), 
   //		      DinvAP0->getrow->pre_comm);
 
+  // The following sometimes crashes when used with MIS aggregation
+  // (in parallel).
   ML_Operator_Add(P0, OmegaDinvAP0, &(ml->Pmat[clevel]), ML_CSR_MATRIX, -1.0);
   if (dropping != 0.0)
     ML_CSR_DropSmall(&(ml->Pmat[clevel]), 0.0, dropping, 0.0);
@@ -681,8 +686,11 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
   double *RowOmega = ag->old_RowOmegas;
   bool NSR = false; // NonSmoothed Restriction
 
-  if (NSR) // I just take the transpose of the tentative prolongator and go home
+  if (NSR) 
   {
+    // I just take the transpose of the tentative prolongator and go home.
+    // The idea is nice but simply doesn't work at all -- you get the
+    // same results of "pure" NSR (without energy minimization).
     if (ml->comm->ML_mypid == 0)
       printf("Using non-smoothed restriction\n\n");
 
@@ -694,18 +702,43 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
     P0TA     = ML_Operator_Create(P0->comm);
 
     ML_Operator_Transpose_byrow(P0, P0_trans);
-    ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
-    if (SinglePrecision)
-      ML_Operator_ChangeToSinglePrecision(P0TA);
 
-    // This code should work just fine, however, it is a bit of a waste
-    // when num_PDEs = 1.
+    if (Amat->num_PDEs == 1)
+    {
+      if (Amat->getrow->pre_comm != NULL) 
+      {
+        // communicate Dinv and RowOmega for ghost columns 
+        ML_exchange_bdry(Dinv, Amat->getrow->pre_comm, Amat->invec_leng,
+                         Amat->comm, ML_OVERWRITE, NULL);
+        ML_exchange_bdry(RowOmega, Amat->getrow->pre_comm, Amat->invec_leng,
+                         Amat->comm, ML_OVERWRITE, NULL);
+        int Nghost = Amat->getrow->pre_comm->total_rcv_length;
+        for (int i = 0; i < Amat->outvec_leng + Nghost; ++i)
+          Dinv[i] *= RowOmega[i];
+      }
 
-    ttt = ML_Operator_ImplicitlyBlockDinvScale(Amat);
+      Amat = ML_Operator_ImplicitlyVCScale(Amat, Dinv, 0);
 
-    ML_AGG_DinvP(P0TA, (MLSthing *) ttt->data, Amat->num_PDEs,1,0,Amat);
-    Scaled_P0TA = ML_Operator_ImplicitlyVCScale(P0TA, &(RowOmega[0]), 0);
-    ML_Operator_Add(P0_trans,Scaled_P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
+      ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
+
+      ML_Operator_Add(P0_trans,P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
+      if (SinglePrecision)
+        ML_Operator_ChangeToSinglePrecision(&(ml->Rmat[level]));
+    }
+    else
+    {
+      // This code should work just fine, however, it is a bit of a waste
+      // when num_PDEs = 1. 
+      ML_2matmult(P0_trans, Amat, P0TA, ML_CSR_MATRIX);
+      if (SinglePrecision)
+        ML_Operator_ChangeToSinglePrecision(P0TA);
+
+      ttt = ML_Operator_ImplicitlyBlockDinvScale(Amat);
+
+      ML_AGG_DinvP(P0TA, (MLSthing *) ttt->data, Amat->num_PDEs,1,0,Amat);
+      Scaled_P0TA = ML_Operator_ImplicitlyVCScale(P0TA, &(RowOmega[0]), 0);
+      ML_Operator_Add(P0_trans,Scaled_P0TA,&(ml->Rmat[level]),ML_CSR_MATRIX,-1.0);
+    }
   }
 
   ML_Operator_Set_1Levels(&(ml->Rmat[level]), &(ml->SingleLevel[level]), 
