@@ -30,17 +30,15 @@
 // ************************************************************************
 //@HEADER
                                                                                 
-#ifndef LOCA_EPETRA_COMPACTWYOP_H
-#define LOCA_EPETRA_COMPACTWYOP_H
+#ifndef LOCA_EPETRA_LOWRANKUPDATEOP_H
+#define LOCA_EPETRA_LOWRANKUPDATEOP_H
 
 #include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_BLAS.hpp"     // class data element
 
 #include "Epetra_Operator.h"	// base class
 #include "Epetra_LocalMap.h"    // class data element
 #include "Epetra_MultiVector.h" // class data element
 #include "NOX_Common.H"         // for string data member
-#include "NOX_Abstract_MultiVector.H" // for DenseMatrix
 
 // forward declarations
 namespace LOCA {
@@ -52,16 +50,15 @@ namespace LOCA {
   namespace Epetra {
     
     /*! 
-     * \brief An Epetra operator for solving extended sets of equations using
-     * Householder transformations.
+     * \brief An Epetra operator for implementing the operator
+     * \f$P = J + U V^T\f$.
      */
     /*!
-     * This class implements the \f$P\f$ operator as described in the
-     * LOCA::BorderedSolver::EpetraHouseholder documentation for solving
-     * an extended set of equations.  It uses the \f$Q\f$ factor from 
-     * a QR factorization using the compact WY representation.
+     * This class implements the Epetra_Operator interface for 
+     * \f$P = J + U V^T\f$ where \f$J\f$ is an Epetra_Operator and 
+     * \f$U\f$ and \f$V\f$ are Epetra_MultiVectors.  
      */
-    class CompactWYOp : public Epetra_Operator {
+    class LowRankUpdateOp : public virtual Epetra_Operator {
       
     public:
 
@@ -69,29 +66,19 @@ namespace LOCA {
       /*!
        * \param global_data [in] The global data object
        * \param jacOperator [in] Jacobian operator J
-       * \param A_multiVec [in] Multivector representing A
-       * \param Y_x_multiVec [in] Multivector representing the solution 
-       *  component of the Y matrix in the compact WY representation
-       * \param Y_p_matrix [in] Matrix representing the parameter 
-       *  component of the Y matrix in the compact WY representation
-       * \param T_matrix [in] Matrix representing the T matrix in the 
-       *  compact WY representation.
+       * \param U_multiVec [in] Multivector representing U
+       * \param V_multiVec [in] Multivector representing V
        */
-      CompactWYOp(
+      LowRankUpdateOp(
         const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	const Teuchos::RefCountPtr<const Epetra_Operator>& jacOperator, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& A_multiVec, 
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>& Y_x_multiVec,
-	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& Y_p_matrix,
-	const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& T_matrix);
+	const Teuchos::RefCountPtr<Epetra_Operator>& jacOperator, 
+	const Teuchos::RefCountPtr<const Epetra_MultiVector>& U_multiVec, 
+	const Teuchos::RefCountPtr<const Epetra_MultiVector>& V_multiVec);
 
       //! Destructor
-      virtual ~CompactWYOp();
+      virtual ~LowRankUpdateOp();
 
-      //! The operator currently does not support a transpose
-      /*! 
-       * Setting this to true throws an error.
-       */
+      //! Set to true if the transpose of the operator is requested
       virtual int SetUseTranspose(bool UseTranspose);
 
       /*! 
@@ -111,7 +98,7 @@ namespace LOCA {
       /*!
        * This is defined only if %NormInf() of the underlying operator \f$J\f$
        * is defined and is given by 
-       * \f$\|J\|_\infty+\|A\|_\infty\f$.
+       * \f$\|J\|_\infty+\|U\|_\infty\|V\|_\infty\f$.
        */
       virtual double NormInf() const;
     
@@ -145,34 +132,13 @@ namespace LOCA {
        */
       virtual const Epetra_Map& OperatorRangeMap () const;
 
-      /*!
-       * \brief Initialize operator.  Call this before starting a linear
-       * solve.  The Epetra_MultiVector argument \em x must be of the
-       * same size and distribution as arguments to Apply().
-       */
-      void init(const Epetra_MultiVector& x);
-
-      /*!
-       * \brief Finish up solve.  Call this after a linear solve is
-       * finished to inform the operator that the solve is completed.
-       */
-      void finish();
-
-      /*!
-       * \brief Applies the operator Q with a zero parameter component
-       * on input.
-       */
-      void applyCompactWY(const Epetra_MultiVector& x, 
-			  Epetra_MultiVector& result_x, 
-			  Epetra_MultiVector& result_p) const;
-
     private:
 
       //! Private to prohibit copying
-      CompactWYOp(const CompactWYOp&);
+      LowRankUpdateOp(const LowRankUpdateOp&);
 
       //! Private to prohibit copying
-      CompactWYOp& operator=(const CompactWYOp&);
+      LowRankUpdateOp& operator=(const LowRankUpdateOp&);
 
     protected:
 
@@ -186,28 +152,19 @@ namespace LOCA {
       Epetra_LocalMap localMap;
     
       //! Stores operator representing J
-      Teuchos::RefCountPtr<const Epetra_Operator> J;
+      Teuchos::RefCountPtr<Epetra_Operator> J;
   
-      //! Stores multivector representing A
-      Teuchos::RefCountPtr<const Epetra_MultiVector> A;
+      //! Stores multivector representing U
+      Teuchos::RefCountPtr<const Epetra_MultiVector> U;
 
-      //! Stores multivector representing solution component of Y
-      Teuchos::RefCountPtr<const Epetra_MultiVector> Y_x;
+      //! Stores multivector representing V
+      Teuchos::RefCountPtr<const Epetra_MultiVector> V;
 
-      //! Stores multivector representing parameter component of Y
-      Epetra_MultiVector Y_p;
-
-      //! Stores multivector representing T
-      Epetra_MultiVector T;
+      //! Flag indicating whether to use the transpose
+      bool useTranspose;
 
       //! Temporary matrix
-      Epetra_MultiVector* tmpMat1;
-
-      //! Temporary multivec
-      Epetra_MultiVector* tmpMV;
-
-      //! BLAS wrappers, used for triangular matrix-matrix products
-      Teuchos::BLAS<int,double> dblas;
+      mutable Teuchos::RefCountPtr<Epetra_MultiVector> tmpMat;
 
     };
   } // namespace Epetra

@@ -30,10 +30,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BORDEREDSYSTEM_EPETRAAUGMENTED_H
-#define LOCA_BORDEREDSYSTEM_EPETRAAUGMENTED_H
+#ifndef LOCA_BORDEREDSOLVER_EPETRAAUGMENTED_H
+#define LOCA_BORDEREDSOLVER_EPETRAAUGMENTED_H
 
-#include "LOCA_BorderedSystem_AbstractStrategy.H"  // base class
+#include "LOCA_BorderedSolver_AbstractStrategy.H"  // base class
 
 // forward declarations
 namespace LOCA {
@@ -51,7 +51,7 @@ namespace LOCA {
 
 namespace LOCA {
 
-  namespace BorderedSystem {
+  namespace BorderedSolver {
     
     /*! 
      * \brief Bordered system solver strategy based on augmenting the Jacobian
@@ -82,7 +82,7 @@ namespace LOCA {
      * \f]
      * by creating a new Epetra_Map for the additional equations.
      */
-    class EpetraAugmented : public LOCA::BorderedSystem::AbstractStrategy {
+    class EpetraAugmented : public LOCA::BorderedSolver::AbstractStrategy {
 
     public:
 
@@ -101,12 +101,6 @@ namespace LOCA {
       //! Destructor
       virtual ~EpetraAugmented();
 
-      /*! 
-       * \brief Set flag indicating whether F and A are stored in a 
-       * continguous multivector.
-       */
-      virtual void setIsContiguous(bool flag);
-
       //! Set blocks
       /*!
        * The \c blockA or \c blockC pointer may be null if either is zero.
@@ -114,10 +108,26 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+          const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+
+      //! Intialize solver for a solve
+      /*!
+       * This should be called after setMatrixBlocks(), but before 
+       * applyInverse().
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      initForSolve();
+
+      //! Intialize solver for a transpose solve
+      /*!
+       * This should be called after setMatrixBlocks(), but before 
+       * applyInverseTranspose().
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      initForTransposeSolve();
   
       /*! 
        * \brief Computed extended matrix-multivector product
@@ -199,36 +209,6 @@ namespace LOCA {
 		   NOX::Abstract::MultiVector& X,
 		   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
-    protected:
-
-      /*!
-       * \brief Solves the extended system of equations when the A block
-       * is zero using a simple block elimination.
-       */
-      NOX::Abstract::Group::ReturnType 
-      solveAZero(NOX::Parameter::List& params,
-		 const LOCA::MultiContinuation::ConstraintInterface* BB,
-		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		 const NOX::Abstract::MultiVector* F,
-		 const NOX::Abstract::MultiVector::DenseMatrix* G,
-		 NOX::Abstract::MultiVector& X,
-		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
-
-      /*!
-       * \brief Solves the extended system of equations when the B block
-       * is zero using a simple block elimination.
-       */
-      NOX::Abstract::Group::ReturnType 
-      solveBZero(NOX::Parameter::List& params,
-		 const NOX::Abstract::MultiVector* AA,
-		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		 const NOX::Abstract::MultiVector* F,
-		 const NOX::Abstract::MultiVector::DenseMatrix* G,
-		 NOX::Abstract::MultiVector& X,
-		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
-
-      
-
     private:
 
       //! Private to prohibit copying
@@ -272,11 +252,8 @@ namespace LOCA {
       //! flag indicating whether C block is zero
       bool isZeroC;
 
-      //! flag indicating whether F and A are contiguous
-      bool isContiguous;
-
     };
-  } // namespace BorderedSystem
+  } // namespace BorderedSolver
 } // namespace LOCA
 
 #endif

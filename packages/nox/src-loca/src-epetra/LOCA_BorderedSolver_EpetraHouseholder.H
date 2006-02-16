@@ -30,15 +30,16 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BORDEREDSYSTEM_EPETRAHOUSEHOLDER_H
-#define LOCA_BORDEREDSYSTEM_EPETRAHOUSEHOLDER_H
+#ifndef LOCA_BORDEREDSOLVER_EPETRAHOUSEHOLDER_H
+#define LOCA_BORDEREDSOLVER_EPETRAHOUSEHOLDER_H
 
-#include "LOCA_BorderedSystem_AbstractStrategy.H"  // base class
+#include "LOCA_BorderedSolver_AbstractStrategy.H"  // base class
 
+#include "LOCA_BorderedSolver_HouseholderQR.H" // class data element
 #include "Teuchos_BLAS.hpp" // class data element
-#include "Teuchos_LAPACK.hpp" // class data element
 
 // forward declarations
+class Epetra_CrsMatrix;
 namespace LOCA {
   class GlobalData;
   namespace Parameter {
@@ -54,7 +55,7 @@ namespace LOCA {
 
 namespace LOCA {
 
-  namespace BorderedSystem {
+  namespace BorderedSolver {
     
     //! Bordered system solver strategy based on Householder transformations
     /*! 
@@ -176,6 +177,13 @@ namespace LOCA {
      *        Z_X
      *     \end{bmatrix}.
      * \f]
+     * It can be further shown that the \f$P\f$ operator above can be 
+     * written
+     * \f[
+     *     P = J + U V^T
+     * \f]
+     * where \f$U = A*Y_1 + J*Y_2\f$, \f$V = Y_2*T^T\f$ and 
+     * \f$Y = [Y_1 ; Y_2]\f$.
      * The equation \f$P Z_X = \tilde{F}\f$ is solved using an iterative solver
      * using the definition of \f$P Z_X\f$ above, in this case AztecOO.  The
      * system is preconditioned using the preconditioner for \f$J\f$.  The
@@ -185,11 +193,32 @@ namespace LOCA {
      * stored using the compact WY representation:  \f$Q = I + Y^T T Y\f$
      * (see R. Schreiver and C. Van Loan, "A Storage-Efficient WY Represntation
      * for Products of Householder Transformations," SIAM J. Sci. Stat. 
-     * Comput., Vol. 10, No. 1, pp. 53-57, January 1989).  The operator
-     * representing \f$P\f$ is encapsulated in the class 
-     * LOCA::Epetra::CompactWYOp.
+     * Comput., Vol. 10, No. 1, pp. 53-57, January 1989).  
+     * 
+     * The operator representing \f$P\f$ is encapsulated in the class 
+     * LOCA::Epetra::LowRankUpdateRowMatrix if \f$J\f$ is an Epetra_RowMatrix
+     * and LOCA::Epetra::LowRankUpdateOp otherwise.  If the row matrix
+     * version is available \f$P\f$ can be scaled and also used to 
+     * construct a preconditioner.  If "Include UV In Preconditioner"
+     * is true as discussed below, the \f$U\f$ and \f$V\f$ terms will
+     * be included when computing this preconditioner, which can help
+     * stability when \f$J\f$ is nearly singular.
+     *
+     * The class is intialized via the \c solverParams parameter list 
+     * argument to the constructor.  The parameters this class recognizes 
+     * are:
+     * <ul>
+     * <li> "Include UV In Preconditioner" -- [bool] (default: false) -
+     *      Flag indicating whether to use the \f$U\f$ and \f$V\f$ terms
+     *      in the preconditioner for \f$P\f$
+     * <li> "Use P For Preconditioner" -- [bool] (default: false) -
+     *      Flag indicating whether to use the representation of \f$P\f$ as
+     *      a LOCA::Epetra::LowRankUpdateRowMatrix for computing the 
+     *      preconditioner.  This is valid only for preconditioners that
+     *      accept an Epetra_RowMatrix interface.
+     * </ul>
      */
-    class EpetraHouseholder : public LOCA::BorderedSystem::AbstractStrategy {
+    class EpetraHouseholder : public LOCA::BorderedSolver::AbstractStrategy {
 
     public:
 
@@ -197,8 +226,7 @@ namespace LOCA {
       /*!
        * \param global_data [in] Global data object
        * \param topParams [in] Parsed top-level parameter list 
-       * \param solverParams [in] Bordered solver parameters.  Currently none
-       * are referenced.
+       * \param solverParams [in] Bordered solver parameters as described above
        */
       EpetraHouseholder(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
@@ -208,12 +236,6 @@ namespace LOCA {
       //! Destructor
       virtual ~EpetraHouseholder();
 
-      /*! 
-       * \brief Set flag indicating whether F and A are stored in a 
-       * continguous multivector.
-       */
-      virtual void setIsContiguous(bool flag);
-
       //! Set blocks
       /*!
        * The \c blockA or \c blockC pointer may be null if either is zero.
@@ -221,10 +243,26 @@ namespace LOCA {
        * via ConstraintInterface::isConstraintDerivativesXZero.
        */
       virtual void setMatrixBlocks(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+          const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+
+      //! Intialize solver for a solve
+      /*!
+       * This should be called after setMatrixBlocks(), but before 
+       * applyInverse().
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      initForSolve();
+
+      //! Intialize solver for a transpose solve
+      /*!
+       * This should be called after setMatrixBlocks(), but before 
+       * applyInverseTranspose().
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      initForTransposeSolve();
   
       /*! 
        * \brief Computed extended matrix-multivector product
@@ -306,88 +344,37 @@ namespace LOCA {
 		   NOX::Abstract::MultiVector& X,
 		   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
+      /*! 
+       * \brief Solves the transpose of the extended system as defined above
+       */
+      /*!
+       * The \em params argument is the linear solver parameters. 
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyInverseTranspose(NOX::Parameter::List& params,
+			    const NOX::Abstract::MultiVector* F,
+			    const NOX::Abstract::MultiVector::DenseMatrix* G,
+			    NOX::Abstract::MultiVector& X,
+			    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
     protected:
 
-      /*!
-       * \brief Factors the constraint derivatives using the QR-factorization
-       * and generates the Y, T, and R matrices as described above.
-       */
-      void factorConstraints();
+      NOX::Abstract::Group::ReturnType  
+      computeUV(const NOX::Abstract::MultiVector::DenseMatrix& Y1,
+		const NOX::Abstract::MultiVector& Y2,
+		const NOX::Abstract::MultiVector::DenseMatrix& T,
+		const NOX::Abstract::MultiVector& A,
+		NOX::Abstract::MultiVector& U,
+		NOX::Abstract::MultiVector& V,
+		bool use_jac_transpose);
 
       /*!
-       * \brief Computes the Householder vector \c V_x, \c V_p for column 
-       * \c col of \c A_x and \c A_p, starting at row \c col of A_p.
+       * \brief Overwrites the Jacobian \f$J\f$ with \f$J + U V^T\f$
+       * for computing the preconditioner of \f$P\f$.
        */
-      /*!
-       * The algorithm implemented here is essentially algorithm 5.1.1
-       * of Golub and Van Loan.
-       */
-      void computeHouseholderVector(
-			  int col,
-			  const NOX::Abstract::MultiVector& A_x,
-			  const NOX::Abstract::MultiVector::DenseMatrix& A_p,
-			  NOX::Abstract::MultiVector& V_x,
-			  NOX::Abstract::MultiVector::DenseMatrix& V_p,
-			  double& beta);
-
-      /*!
-       * \brief Applies the Householder vector \c V_x, \c V_p to the
-       * matrix sub-block represented by \c A_x and A_p.
-       */
-      void applyHouseholderVector(
-			   const NOX::Abstract::MultiVector& V_x,
-			   const NOX::Abstract::MultiVector::DenseMatrix& V_p,
-			   double beta,
-			   NOX::Abstract::MultiVector& A_x,
-			   NOX::Abstract::MultiVector::DenseMatrix& A_p);
-
-      /*!
-       * \brief Applies the operator Q as described above overwriting
-       * \c x and \c y.  If either of \c x or \c y are zero on input,
-       * set the corresponding \c isZeroX or \c isZeroY flags.  Set\
-       * \c useTranspose to \c true to instead apply the transpose of Q.
-       */
-      void applyCompactWY(NOX::Abstract::MultiVector& x,
-			  NOX::Abstract::MultiVector::DenseMatrix& y,
-			  bool isZeroX, bool isZeroY, bool useTranspose) const;
-
-      /*!
-       * \brief Another version of applyCompactWY() that does not overwrite
-       * its inputs.  If either input is zero, set the corresponding pointer
-       * to NULL.
-       */
-      void applyCompactWY(
-		     const NOX::Abstract::MultiVector* input_x,
-		     const NOX::Abstract::MultiVector::DenseMatrix* input_y,
-		     NOX::Abstract::MultiVector& result_x,
-		     NOX::Abstract::MultiVector::DenseMatrix& result_y,
-		     bool useTranspose) const;
-
-      /*!
-       * \brief Solves the extended system of equations when the A block
-       * is zero using a simple block elimination.
-       */
-      NOX::Abstract::Group::ReturnType 
-      solveAZero(NOX::Parameter::List& params,
-		 const LOCA::MultiContinuation::ConstraintInterface* BB,
-		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		 const NOX::Abstract::MultiVector* F,
-		 const NOX::Abstract::MultiVector::DenseMatrix* G,
-		 NOX::Abstract::MultiVector& X,
-		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
-
-      /*!
-       * \brief Solves the extended system of equations when the B block
-       * is zero using a simple block elimination.
-       */
-      NOX::Abstract::Group::ReturnType 
-      solveBZero(NOX::Parameter::List& params,
-		 const NOX::Abstract::MultiVector* AA,
-		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		 const NOX::Abstract::MultiVector* F,
-		 const NOX::Abstract::MultiVector::DenseMatrix* G,
-		 NOX::Abstract::MultiVector& X,
-		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+      void updateJacobianForPreconditioner(const NOX::Abstract::MultiVector& U,
+					   const NOX::Abstract::MultiVector& V,
+					   Epetra_CrsMatrix& jac) const;
 
       
 
@@ -422,20 +409,44 @@ namespace LOCA {
       //! Pointer to constraint interface
       Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints;
 
+      //! QR Factorization object
+      LOCA::BorderedSolver::HouseholderQR qrFact;
+
       //! Solution component of Householder multivec
       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> house_x;
 
       //! Parameter component of Householder multivec
       NOX::Abstract::MultiVector::DenseMatrix house_p;
 
-      //! "T" matrix in compact WY representation
+      //! T matrix in compact WY representation
       NOX::Abstract::MultiVector::DenseMatrix T;
 
       //! R matrix in QR factorization
       NOX::Abstract::MultiVector::DenseMatrix R;
 
-      //! Vector store 1 single Householder vector
-      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> v_x;
+      //! U matrix in low-rank update form P = J + U*V^T
+      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> U;
+
+      //! V matrix in low-rank update form P = J + U*V^T
+      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> V;
+
+      //! Solution component of Householder multivec for transposed system
+      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> house_x_trans;
+
+      //! Parameter component of Householder multivec for transposed system
+      NOX::Abstract::MultiVector::DenseMatrix house_p_trans;
+
+      //! T matrix in compact WY representation for transposed system
+      NOX::Abstract::MultiVector::DenseMatrix T_trans;
+
+      //! R matrix in QR factorization for transposed system
+      NOX::Abstract::MultiVector::DenseMatrix R_trans;
+
+      //! U matrix in low-rank update form P = J + U*V^T for transposed system
+      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> U_trans;
+
+      //! V matrix in low-rank update form P = J + U*V^T for transposed system
+      Teuchos::RefCountPtr<NOX::Abstract::MultiVector> V_trans;
 
       //! Number of constraint equations
       int numConstraints;
@@ -449,17 +460,29 @@ namespace LOCA {
       //! flag indicating whether C block is zero
       bool isZeroC;
 
-      //! flag indicating whether F and A are contiguous
-      bool isContiguous;
+      /*! 
+       * \brief Flag indicating whether constraint factorization for solve 
+       * has been computed
+       */
+      bool isValidForSolve;
+
+      /*! 
+       * \brief Flag indicating whether constraint factorization for transpoe 
+       * solve has been computed
+       */
+      bool isValidForTransposeSolve;
 
       //! BLAS Wrappers
       Teuchos::BLAS<int,double> dblas;
 
-      //! LAPACK Wrappers
-      Teuchos::LAPACK<int,double> dlapack;
+      //! Flag indicating whether to include U*V^T terms in preconditioner
+      bool includeUV;
+
+      //! Flag indicating whether to use P = J + U*V^T in preconditioner
+      bool use_P_For_Prec;
 
     };
-  } // namespace BorderedSystem
+  } // namespace BorderedSolver
 } // namespace LOCA
 
 #endif

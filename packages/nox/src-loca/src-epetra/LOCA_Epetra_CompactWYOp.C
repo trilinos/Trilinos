@@ -111,7 +111,7 @@ LOCA::Epetra::CompactWYOp::ApplyInverse(const Epetra_MultiVector& cInput,
 					Epetra_MultiVector& Result) const
 {
   globalData->locaErrorCheck->throwError(
-	  "LOCA::Epetra::CompactWYOp::SetUseTranspose",
+	  "LOCA::Epetra::CompactWYOp::ApplyInverse",
 	  "Operator does not support ApplyInverse");
     return -1;
 }

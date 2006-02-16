@@ -34,8 +34,8 @@
 
 #include "LOCA_Epetra_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
-#include "LOCA_BorderedSystem_EpetraHouseholder.H"
-#include "LOCA_BorderedSystem_EpetraAugmented.H"
+#include "LOCA_BorderedSolver_EpetraHouseholder.H"
+#include "LOCA_BorderedSolver_EpetraAugmented.H"
 
 LOCA::Epetra::Factory::Factory() :
   globalData()
@@ -54,16 +54,16 @@ LOCA::Epetra::Factory::init(
 }
 
 bool
-LOCA::Epetra::Factory::createBorderedSystemStrategy(
+LOCA::Epetra::Factory::createBorderedSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy)
+       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy)
 {
   // Instantiate Householder strategy if requested
   if (strategyName == "Householder") {
     strategy = 
-      Teuchos::rcp(new LOCA::BorderedSystem::EpetraHouseholder(globalData,
+      Teuchos::rcp(new LOCA::BorderedSolver::EpetraHouseholder(globalData,
 							       topParams,
 							       solverParams));
     return true;
@@ -71,7 +71,7 @@ LOCA::Epetra::Factory::createBorderedSystemStrategy(
   // Instantiate augmented strategy if requested
   else if (strategyName == "Augmented") {
     strategy = 
-      Teuchos::rcp(new LOCA::BorderedSystem::EpetraAugmented(globalData,
+      Teuchos::rcp(new LOCA::BorderedSolver::EpetraAugmented(globalData,
 							     topParams,
 							     solverParams));
     return true;

@@ -39,23 +39,38 @@
 
 LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
-	$(srcdir)/LOCA_Epetra_Group.H \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_AbstractStrategy.H \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.H \
+	$(srcdir)/LOCA_Epetra_IdentityOp.H \
+	$(srcdir)/LOCA_Epetra_LeftPreconditionedOp.H \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_LeftPreconditioning.H \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_Factory.H \
 	$(srcdir)/LOCA_Epetra_Interface_Required.H \
 	$(srcdir)/LOCA_Epetra_Interface_MassMatrix.H \
         $(srcdir)/LOCA_Epetra_Interface_TimeDependent.H \
+	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.H \
-	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.H \
+	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.H \
+	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.H \
+	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.H \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
-	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.H \
+	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H
 
 LOCA_EPETRA = \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.C \
+	$(srcdir)/LOCA_Epetra_IdentityOp.C \
+	$(srcdir)/LOCA_Epetra_LeftPreconditionedOp.C \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_LeftPreconditioning.C \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_Factory.C \
 	$(srcdir)/LOCA_Epetra_Group.C \
 	$(srcdir)/LOCA_Epetra_CompactWYOp.C \
-	$(srcdir)/LOCA_BorderedSystem_EpetraHouseholder.C \
+	$(srcdir)/LOCA_Epetra_LowRankUpdateOp.C \
+	$(srcdir)/LOCA_Epetra_LowRankUpdateRowMatrix.C \
+	$(srcdir)/LOCA_BorderedSolver_EpetraHouseholder.C \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
-	$(srcdir)/LOCA_BorderedSystem_EpetraAugmented.C \
+	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
 	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 
@@ -71,6 +86,22 @@ else
 LOCA_EPETRA_XYZT_H = 
 
 LOCA_EPETRA_XYZT = 
+endif
+
+if BUILD_NOX_EPETRAEXT_SUPPORT
+
+EPETRAEXT_TLS_H = \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.H
+
+EPETRAEXT_TLS = \
+	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.C
+
+else
+
+EPETRAEXT_TLS_H = 
+
+EPETRAEXT_TLS = 
+
 endif
 
 # ------------------------------------------------------------------------
@@ -91,8 +122,8 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 # ------------------------------------------------------------------------
 
 liblocaepetra_a_SOURCES = \
-	$(LOCA_EPETRA)  $(LOCA_EPETRA_XYZT) \
-	$(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H)
+	$(LOCA_EPETRA)  $(LOCA_EPETRA_XYZT) $(EPETRAEXT_TLS) \
+	$(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H) $(EPETRAEXT_TLS_H)
 
 # ------------------------------------------------------------------------
 # When to turn it on
@@ -106,7 +137,7 @@ lib_LIBRARIES = liblocaepetra.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H)
+include_HEADERS = $(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H) $(EPETRAEXT_TLS_H)
 
 endif
 

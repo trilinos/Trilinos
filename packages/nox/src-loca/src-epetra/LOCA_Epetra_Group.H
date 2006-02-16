@@ -3,40 +3,41 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //                  LOCA Continuation Algorithm Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//                                                                                 
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-// USA                                                                                
-// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
-// (rppawlo@sandia.gov), Sandia National Laboratories.
-// 
+// USA
+// Questions? Contact Andy Salinger (agsalin@sandia.gov) or Eric Phipps
+// (etphipp@sandia.gov), Sandia National Laboratories.
+//
 // ************************************************************************
 //@HEADER
 
 #ifndef LOCA_EPETRA_GROUP_H
 #define LOCA_EPETRA_GROUP_H
 
-#include "LOCA_Abstract_Group.H"    // base class
-#include "NOX_Epetra_Group.H"    // base class
-#include "LOCA_Parameter_Vector.H"  // class data element
-#include "NOX_Common.H"             // class data element (string)
+#include "LOCA_Abstract_Group.H"               // base class
+#include "LOCA_Abstract_TransposeSolveGroup.H" // base class
+#include "NOX_Epetra_Group.H"                  // base class
+#include "LOCA_Parameter_Vector.H"             // class data element
+#include "NOX_Common.H"                        // class data element (string)
 #include "LOCA_Epetra_Interface_TimeDependent.H"
 
 // Forward declares
@@ -49,6 +50,9 @@ namespace LOCA {
   namespace Epetra {
     namespace Interface {
       class Required;
+    }
+    namespace TransposeLinearSystem {
+      class AbstractStrategy;
     }
   }
 }
@@ -85,7 +89,8 @@ namespace LOCA {
     */
 
     class Group : public virtual NOX::Epetra::Group, 
-		  public virtual LOCA::Abstract::Group {
+		  public virtual LOCA::Abstract::Group,
+		  public virtual LOCA::Abstract::TransposeSolveGroup {
 
     public:
       //! Constructor with NO linear system (VERY LIMITED).
@@ -164,10 +169,32 @@ namespace LOCA {
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods.
+       * @name Implementation of LOCA::Abstract::TransposeSolveGroup methods.
        */
       //@{
-      
+
+      //! Solve Jacobian-tranpose system 
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTransposeInverse(NOX::Parameter::List& params, 
+				    const NOX::Abstract::Vector& input, 
+				    NOX::Abstract::Vector& result) const;
+
+      //! Solve Jacobian-tranpose system with multiple right-hand sides
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTransposeInverseMultiVector(
+				    NOX::Parameter::List& params, 
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const;
+
+      //@}
+
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Copy
+      virtual void copy(const NOX::Abstract::Group& source);
 
       //! Set the parameters
       virtual void setParams(const ParameterVector& p);
@@ -186,6 +213,27 @@ namespace LOCA {
 
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      /*! 
+       * This method is called every time a solution is saved by the 
+       * multiparameter continuation code MF for later visualization
+       * and should project the solution vector down to a few scalars.
+       * The array \c px will be preallocated to the proper length
+       * given by projectToDrawDimension().
+       *
+       * The implementation here is to call the corresponding method
+       * in the interface.
+       */
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      /*!
+       * The implementation here is to call the corresponding method 
+       * in the interface.
+       */
+      virtual int projectToDrawDimension() const;
 
       //! Compute a scaled dot product
       /*! 
@@ -208,36 +256,18 @@ namespace LOCA {
       virtual void printSolution(const NOX::Abstract::Vector& x,
                                  const double conParam) const;
 
-      //@}
-
+      //! Scales a vector using scaling vector
       /*! 
-       * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
+       * The implementation here uses the scaling vector \f$s\f$ if one
+       * is supplied:
+       * \f[
+       *     x_i = a_i*s_i.
+       * \f]
+       * If the scaling vector is not provided, the vector is rescaled by
+       * the square root of its length.
        */
-      //@{
-
-      //! Copy
-      virtual void copy(const NOX::Abstract::Group& source);
-
-      //! Projects solution to a few scalars for multiparameter continuation
-      /*! 
-       * This method is called every time a solution is saved by the 
-       * multiparameter continuation code MF for later visualization
-       * and should project the solution vector down to a few scalars.
-       * The array \c px will be preallocated to the proper length
-       * given by projectToDrawDimension().
-       *
-       * The implementation here is to call the corresponding method
-       * in the interface.
-       */
-      virtual void projectToDraw(const NOX::Abstract::Vector& x,
-				 double *px) const;
-
-      //! Returns the dimension of the project to draw array
-      /*!
-       * The implementation here is to call the corresponding method 
-       * in the interface.
-       */
-      virtual int projectToDrawDimension() const;
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
 
@@ -294,26 +324,6 @@ namespace LOCA {
 				double shift);
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.
-       */
-      //@{
-
-      //! Scales a vector using scaling vector
-      /*! 
-       * The implementation here uses the scaling vector \f$s\f$ if one
-       * is supplied:
-       * \f[
-       *     x_i = a_i*s_i.
-       * \f]
-       * If the scaling vector is not provided, the vector is rescaled by
-       * the square root of its length.
-       */
-      virtual void
-      scaleVector(NOX::Abstract::Vector& x) const;
-
-      //@}
-
       //! Return the userInterface.
       virtual Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> 
       getUserInterface();
@@ -348,6 +358,10 @@ namespace LOCA {
 
       //! Stores a pointer to the scale vector
       Teuchos::RefCountPtr<NOX::Abstract::Vector> scaleVecPtr;
+
+      //! Stores transpose linear solver strategy
+      mutable Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> tls_strategy;
+
     };
 
   } // namespace Epetra
