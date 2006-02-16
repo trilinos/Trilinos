@@ -30,36 +30,35 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NORMCONSTRAINT_H
-#define NORMCONSTRAINT_H
+#ifndef LINEARCONSTRAINT_H
+#define LINEARCONSTRAINT_H
 
 #include "LOCA.H"
-#include "LOCA_LAPACK.H"
 
-//! A simple constraint equation based on the solution norm
+//! A simple linear constraint equation
 /*!
  * This class implements the LOCA::MultiContinuation::ConstraintInterfaceMVDX
- * constraint interface for a simple norm constraint:
+ * constraint interface for a simple linear constraint:
  * \f[
- *      g(x,p) = \frac{1}{2 N} \|x\|^2 - \gamma
+ *      g(x,p) = \frac{dg}{dx}*x 
  * \f]
- * where \f$x\f$ is the solution vector and \gamma is the constraint
- * parameter.
+ * where \f$x\f$ is the solution vector.
  */
-class NormConstraint : 
+class LinearConstraint : 
   public LOCA::MultiContinuation::ConstraintInterfaceMVDX {
   
 public:
   
   //! Constructor
-  NormConstraint(int N, const LOCA::ParameterVector& pVec);
+  LinearConstraint(int NumConstraints, const LOCA::ParameterVector& pVec,
+		   NOX::Abstract::Vector& cloneVec);
 
   //! Copy constructor
-  NormConstraint(const NormConstraint& source, 
-		 NOX::CopyType type = NOX::DeepCopy);
+  LinearConstraint(const LinearConstraint& source, 
+		   NOX::CopyType type = NOX::DeepCopy);
 
   //! Destructor
-  virtual ~NormConstraint();
+  virtual ~LinearConstraint();
 
   /*! 
    * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX
@@ -105,7 +104,7 @@ public:
    */
   virtual NOX::Abstract::Group::ReturnType
   computeDP(const vector<int>& paramIDs, 
-	    NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
+	    NOX::Abstract::MultiVector::DenseMatrix& dp, 
 	    bool isValidG);
 
   //! Return \c true if constraint residuals are valid
@@ -133,6 +132,12 @@ public:
 
   //@}
 
+  //! Set solution component of constraint derivative
+  void setDgDx(const NOX::Abstract::MultiVector& A);
+
+  //! Set parameter component of constraint derivative
+  void setDgDp(const NOX::Abstract::MultiVector::DenseMatrix& A);
+
   /*!
    * \brief Set the flag determinging whether isDXZero() 
    * returns true or false.  This is for testing bordered solvers when B
@@ -143,12 +148,12 @@ public:
 private:
 
   //! Prohibit generation and use of operator=()
-  NormConstraint& operator=(const NormConstraint& source);
+  LinearConstraint& operator=(const LinearConstraint& source);
 
 protected:
 
-  //! Dimension of discretization
-  int n;
+  //! Number of constraints
+  int m;
 
   //! Constraint values
   NOX::Abstract::MultiVector::DenseMatrix constraints;
@@ -156,14 +161,23 @@ protected:
   //! Flag indicating whether constraints are valid
   bool isValidConstraints;
 
-  //! Parameter vector
-  LOCA::ParameterVector p;
-
   //! Solution vector
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> x;
 
+  //! Solution component of constraint derivative
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> dgdx;
+
   //! Flag indicating whether dgdx is zero
   bool isZeroDgDx;
+
+  //! Parameter vector
+  LOCA::ParameterVector p;
+
+  //! Parameter vector as a DenseMatrix (view of p)
+  NOX::Abstract::MultiVector::DenseMatrix pvec;
+
+  //! Parameter component of constraint derivative
+  NOX::Abstract::MultiVector::DenseMatrix dgdp;
 
 };
 
