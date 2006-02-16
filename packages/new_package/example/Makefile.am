@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package new_package subdirectory example built successfully."
+	@echo ""
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = hello_test  RunValgrind
