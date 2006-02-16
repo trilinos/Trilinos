@@ -53,7 +53,7 @@ int * Epetra_NumPyIntVector::getArray(PyObject * pyObject)
   if (!tmp_array) {
     tmp_error = "Error converting argument to an array";
     int dimensions[ ] = { 0 };
-    tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
+    tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
   }
 
   return (int*)(tmp_array->data);
