@@ -46,6 +46,8 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
     
     if (!strcasecmp(hgp->redm_str, "no"))
         hgp->matching = NULL;
+    else if (!strcasecmp(hgp->redm_str, "none"))
+        hgp->matching = NULL;
     else if (!strcasecmp(hgp->redm_str, "ipm"))
         hgp->matching = pmatching_ipm;
     else if (!strcasecmp(hgp->redm_str, "l-ipm"))
