@@ -66,6 +66,16 @@ void NOX::Epetra::Scaling::addRowSumScaling(ScaleType type, const Teuchos::RefCo
   scaleVector.push_back(D);
 }
 
+void NOX::Epetra::Scaling::addColSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D)
+{
+  if ( Teuchos::is_null(tmpVectorPtr) )
+    tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(*D));
+
+  scaleType.push_back(type);
+  sourceType.push_back(ColSum);
+  scaleVector.push_back(D);
+}
+
 void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
 {
   
@@ -91,6 +101,27 @@ void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
       diagonal->Reciprocal(*diagonal);
 
     }
+
+    else if (sourceType[i] == ColSum) {
+      
+      diagonal = scaleVector[i].get();
+
+      // Make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't 
+      // perform a row sum scale!
+      const Epetra_RowMatrix* test = 0;
+      test = dynamic_cast<const Epetra_RowMatrix*>(problem.GetOperator());
+      if (test == 0) {
+	cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
+	     << "For \"Column Sum\" scaling, the Matrix must be an "
+	     << "Epetra_RowMatrix derived object!" << endl;
+	throw "NOX Error";
+      }
+      
+      test->InvColSums(*diagonal);
+      diagonal->Reciprocal(*diagonal);
+
+    }
+
   }
 
 }
@@ -108,8 +139,11 @@ void NOX::Epetra::Scaling::scaleLinearSystem(Epetra_LinearProblem& problem)
       problem.LeftScale(*tmpVectorPtr);
 
     }
-    else if (scaleType[i] == Right)
-      problem.RightScale(*diagonal);
+    else if (scaleType[i] == Right) {
+
+      tmpVectorPtr->Reciprocal(*diagonal);
+      problem.RightScale(*tmpVectorPtr);
+    }
 
   }
 }
@@ -125,9 +159,7 @@ void NOX::Epetra::Scaling::unscaleLinearSystem(Epetra_LinearProblem& problem)
       problem.LeftScale(*diagonal);
     }
     else if (scaleType[i] == Right) {
-
-      tmpVectorPtr->Reciprocal(*diagonal);
-      problem.RightScale(*tmpVectorPtr);
+      problem.RightScale(*diagonal);
       
     }
   }
@@ -185,8 +217,10 @@ void NOX::Epetra::Scaling::print(ostream& os)
     string source = " ";
     if (sourceType[i] == UserDefined)
       source = "User Defined Vector";
-    else
+    else if (sourceType[i] == RowSum)
       source = "Row Sum";
+    else if (sourceType[i] == ColSum)
+      source = "Col Sum";
 
     if (scaleType[i] == Left) {
       os << "       " << (i+1) << ".  Left Scaled with " << source << endl;

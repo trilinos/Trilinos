@@ -57,7 +57,7 @@ class Scaling {
 public:
   
   //! Describes where the scaling vector comes from.
-  enum SourceType {None, RowSum, UserDefined};
+  enum SourceType {None, RowSum, ColSum, UserDefined};
   
   //! Describes the type of scaling to apply.
   enum ScaleType {Left, Right};
@@ -73,6 +73,9 @@ public:
 
   //! Add "Row Sum" scaling to the scaling object.  The supplied vector is used to store the current row sum vector.
   virtual void addRowSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
+
+  //! Add "Col Sum" scaling to the scaling object.  The supplied vector is used to store the current row sum vector.
+  virtual void addColSumScaling(ScaleType type, const Teuchos::RefCountPtr<Epetra_Vector>& D);
 
   //! Computes Row Sum scaling diagonal vectors.  Only needs to be called if a row sum scaling has been requested.
   virtual void computeScaling(const Epetra_LinearProblem& problem);
