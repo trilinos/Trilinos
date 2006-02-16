@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Method", "None");
+    bifurcationList.setParameter("Type", "None");
 
 #ifdef HAVE_LOCA_ANASAZI
     // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
