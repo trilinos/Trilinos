@@ -391,6 +391,9 @@ public:
   //! Reset the linear solver parameters
   virtual void reset(NOX::Parameter::List& linearSolverParams);
 
+  //! Get the scaling object
+  virtual Teuchos::RefCountPtr<NOX::Epetra::Scaling> getScaling();
+
   //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::Epetra::Scaling for details on how to specify scaling of the linear system.  
   void resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s);
 
@@ -405,6 +408,12 @@ public:
   virtual Teuchos::RefCountPtr<const NOX::Epetra::Interface::Preconditioner> 
   getPrecInterface() const;
 
+  //! Indicates whether a preconditioner has been constructed
+  virtual bool isPreconditionerConstructed() const;
+
+  //! Indicates whether the linear system has a preconditioner
+  virtual bool hasPreconditioner() const;
+
   //! Jacobian Epetra_Operator accessor
   virtual Teuchos::RefCountPtr<const Epetra_Operator> getJacobianOperator() const;
 
@@ -415,10 +424,14 @@ public:
   virtual Teuchos::RefCountPtr<const Epetra_Operator> getPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
-  virtual const Epetra_Operator& getGeneratedPrecOperator() const;
+  /*!
+   * Note:  This should only be called if hasPreconditioner() returns true.
+   */
+  virtual Teuchos::RefCountPtr<const Epetra_Operator> 
+  getGeneratedPrecOperator() const;
 
   //! Return preconditioner operator generated and stored in AztecOO
-  virtual Epetra_Operator& getGeneratedPrecOperator();
+  virtual Teuchos::RefCountPtr<Epetra_Operator> getGeneratedPrecOperator();
 
   //virtual void getNormLastLinearSolveResidual(double & residual) const;
 
@@ -432,6 +445,9 @@ public:
   virtual void setJacobianOperatorForSolve(const Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp);
 
   //! Set preconditioner operator for solve
+  /*!
+   * Note:  This should only be called if hasPreconditioner() returns true.
+   */
   virtual void setPrecOperatorForSolve(const Teuchos::RefCountPtr<const Epetra_Operator>& solvePrecOp);
 
 protected:

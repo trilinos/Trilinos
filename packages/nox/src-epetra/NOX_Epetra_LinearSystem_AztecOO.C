@@ -234,6 +234,7 @@ NOX::Epetra::LinearSystemAztecOO::~LinearSystemAztecOO()
 void NOX::Epetra::LinearSystemAztecOO::
 reset(NOX::Parameter::List& linearSolverParams)
 {
+
   // First remove any preconditioner that may still be active
   destroyPreconditioner();
 
@@ -904,11 +905,10 @@ createIfpackPreconditioner(Parameter::List& p) const
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*vbr);
     ifpackPreconditionerPtr->Factor();
-    return true;
   }
 
   // check to see if it is a Crs matrix
-  if (precType == EpetraCrsMatrix) {
+  else if (precType == EpetraCrsMatrix) {
 
     Epetra_CrsMatrix* crs = 0;
 
@@ -930,11 +930,10 @@ createIfpackPreconditioner(Parameter::List& p) const
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->Factor();
-    return true;
   }
   
   // check to see if it is an operator that contains a Crs matrix
-  if (precType == EpetraRowMatrix) {
+  else if (precType == EpetraRowMatrix) {
 
     // The following checks only for FiniteDiffernce based operators and
     // further that the underlying matrix is in Crs format......
@@ -962,16 +961,28 @@ createIfpackPreconditioner(Parameter::List& p) const
       Teuchos::rcp(new Ifpack_CrsRiluk(*ifpackGraphPtr));
     ifpackPreconditionerPtr->InitValues(*crs);
     ifpackPreconditionerPtr->Factor();
-    return true;
   }
-  
-  // If we made it this far, this routine should not have been called
-  // in the first place.  An incorrect prec matrix object was supplied and
-  // should have been caught in the checkOperatorValidity() method.
-  throwError("createIfpackPreconditioner",
-	     "Ifpack requires a CRS or VBR matrix!");
 
-  return false;
+  else {
+  
+    // If we made it this far, this routine should not have been called
+    // in the first place.  An incorrect prec matrix object was supplied and
+    // should have been caught in the checkOperatorValidity() method.
+    throwError("createIfpackPreconditioner",
+	       "Ifpack requires a CRS or VBR matrix!");
+    return false;
+  }
+
+  // Print condition number estimate
+  if (utils.isPrintType(Utils::Details)) {
+    double kappa;
+    ifpackPreconditionerPtr->Condest(false, kappa);
+    utils.out() << 
+      "\n       Condition number estimate of preconditioner is " << 
+      utils.sciformat(kappa) << std::endl;
+  }
+
+  return true;
 }
 
 //***********************************************************************
@@ -1003,23 +1014,24 @@ createNewIfpackPreconditioner(Parameter::List& p) const
 
   Ifpack Factory;
 
-  //check to see if it is a VBR matrix
-  if (precType == EpetraVbrMatrix) {
+  //check to see if it is a row matrix
+  if (precType == EpetraVbrMatrix || precType == EpetraCrsMatrix ||
+      precType == EpetraRowMatrix) {
 
-    Epetra_VbrMatrix* vbr = 0;
+    Epetra_RowMatrix* row = 0;
 
     if (precMatrixSource == UseJacobian)
-      vbr = dynamic_cast<Epetra_VbrMatrix*>(jacPtr.get());
+      row = dynamic_cast<Epetra_RowMatrix*>(jacPtr.get());
     else if (precMatrixSource == SeparateMatrix)
-      vbr = dynamic_cast<Epetra_VbrMatrix*>(precPtr.get());
+      row = dynamic_cast<Epetra_RowMatrix*>(precPtr.get());
 
-    if (vbr == 0)
+    if (row == 0)
       throwError("createIfpackPreconditioner", 
-		 "Dynamic cast to VBR Matrix failed!");
+		 "Dynamic cast to Row Matrix failed!");
 
     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
       p.getParameter("Ifpack Preconditioner", "ILU"), 
-      vbr, 
+      row, 
       p.getParameter("Overlap", 0) ));
     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
     newIfpackPreconditionerPtr->Initialize();
@@ -1027,59 +1039,83 @@ createNewIfpackPreconditioner(Parameter::List& p) const
     return true;
   }
 
-  // check to see if it is a Crs matrix
-  if (precType == EpetraCrsMatrix) {
+//   //check to see if it is a VBR matrix
+//   if (precType == EpetraVbrMatrix) {
 
-    Epetra_CrsMatrix* crs = 0;
+//     Epetra_VbrMatrix* vbr = 0;
 
-    if (precMatrixSource == UseJacobian)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr.get());
-    else if (precMatrixSource == SeparateMatrix)
-      crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr.get());
+//     if (precMatrixSource == UseJacobian)
+//       vbr = dynamic_cast<Epetra_VbrMatrix*>(jacPtr.get());
+//     else if (precMatrixSource == SeparateMatrix)
+//       vbr = dynamic_cast<Epetra_VbrMatrix*>(precPtr.get());
 
-    if (crs == 0)
-      throwError("createNewIfpackPreconditioner", 
-		 "Dynamic cast to CRS Matrix failed!");
+//     if (vbr == 0)
+//       throwError("createIfpackPreconditioner", 
+// 		 "Dynamic cast to VBR Matrix failed!");
 
-    newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
-      p.getParameter("Ifpack Preconditioner", "ILU"), 
-      crs, 
-      p.getParameter("Overlap", 0) ));
-    newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
-    newIfpackPreconditionerPtr->Initialize();
-    newIfpackPreconditionerPtr->Compute();
-    return true;
-  }
+//     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
+//       p.getParameter("Ifpack Preconditioner", "ILU"), 
+//       vbr, 
+//       p.getParameter("Overlap", 0) ));
+//     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
+//     newIfpackPreconditionerPtr->Initialize();
+//     newIfpackPreconditionerPtr->Compute();
+//     return true;
+//   }
+
+//   // check to see if it is a Crs matrix
+//   if (precType == EpetraCrsMatrix) {
+
+//     Epetra_CrsMatrix* crs = 0;
+
+//     if (precMatrixSource == UseJacobian)
+//       crs = dynamic_cast<Epetra_CrsMatrix*>(jacPtr.get());
+//     else if (precMatrixSource == SeparateMatrix)
+//       crs = dynamic_cast<Epetra_CrsMatrix*>(precPtr.get());
+
+//     if (crs == 0)
+//       throwError("createNewIfpackPreconditioner", 
+// 		 "Dynamic cast to CRS Matrix failed!");
+
+//     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
+//       p.getParameter("Ifpack Preconditioner", "ILU"), 
+//       crs, 
+//       p.getParameter("Overlap", 0) ));
+//     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
+//     newIfpackPreconditionerPtr->Initialize();
+//     newIfpackPreconditionerPtr->Compute();
+//     return true;
+//   }
   
-  // check to see if it is an operator that contains a Crs matrix
-  if (precType == EpetraRowMatrix) {
+//   // check to see if it is an operator that contains a Crs matrix
+//   if (precType == EpetraRowMatrix) {
 
-    // The following checks only for FiniteDiffernce based operators and
-    // further that the underlying matrix is in Crs format......
-    Epetra_CrsMatrix* crs = 0;
-    NOX::Epetra::FiniteDifference* FDoperator = 0;
+//     // The following checks only for FiniteDiffernce based operators and
+//     // further that the underlying matrix is in Crs format......
+//     Epetra_CrsMatrix* crs = 0;
+//     NOX::Epetra::FiniteDifference* FDoperator = 0;
 
-    if (precMatrixSource == UseJacobian)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr.get());
-    else if (precMatrixSource == SeparateMatrix)
-      FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr.get());
+//     if (precMatrixSource == UseJacobian)
+//       FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(jacPtr.get());
+//     else if (precMatrixSource == SeparateMatrix)
+//       FDoperator = dynamic_cast<NOX::Epetra::FiniteDifference*>(precPtr.get());
 
-    if (FDoperator != 0)
-      crs = &(FDoperator->getUnderlyingMatrix());
+//     if (FDoperator != 0)
+//       crs = &(FDoperator->getUnderlyingMatrix());
 
-    if (crs == 0)
-      throwError("createNewIfpackPreconditioner", 
-		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
+//     if (crs == 0)
+//       throwError("createNewIfpackPreconditioner", 
+// 		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
 
-    newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
-      p.getParameter("Ifpack Preconditioner", "ILU"), 
-      crs, 
-      p.getParameter("Overlap", 0) ));
-    newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
-    newIfpackPreconditionerPtr->Initialize();
-    newIfpackPreconditionerPtr->Compute();
-    return true;
-  }
+//     newIfpackPreconditionerPtr = Teuchos::rcp(Factory.Create(
+//       p.getParameter("Ifpack Preconditioner", "ILU"), 
+//       crs, 
+//       p.getParameter("Overlap", 0) ));
+//     newIfpackPreconditionerPtr->SetParameters(*teuchosParams);
+//     newIfpackPreconditionerPtr->Initialize();
+//     newIfpackPreconditionerPtr->Compute();
+//     return true;
+//   }
   
   // If we made it this far, this routine should not have been called
   // in the first place.  An incorrect prec matrix object was supplied and
@@ -1235,6 +1271,13 @@ computeJacobian(const NOX::Epetra::Vector& x)
 }
 
 //***********************************************************************
+Teuchos::RefCountPtr<NOX::Epetra::Scaling>
+NOX::Epetra::LinearSystemAztecOO::getScaling()
+{
+  return scaling;
+}
+
+//***********************************************************************
 void NOX::Epetra::LinearSystemAztecOO::
 resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& scalingObject)
 {
@@ -1267,6 +1310,18 @@ NOX::Epetra::LinearSystemAztecOO::getPrecInterface() const
   return precInterfacePtr;
 }
 
+bool
+NOX::Epetra::LinearSystemAztecOO::hasPreconditioner() const
+{
+  return (precAlgorithm != None_);
+}
+
+bool
+NOX::Epetra::LinearSystemAztecOO::isPreconditionerConstructed() const
+{
+  return isPrecConstructed;
+}
+
 //***********************************************************************
 Teuchos::RefCountPtr<const Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getJacobianOperator() const
@@ -1288,17 +1343,17 @@ NOX::Epetra::LinearSystemAztecOO::getPrecOperator() const
 }
 
 //***********************************************************************
-const Epetra_Operator&
+Teuchos::RefCountPtr<const Epetra_Operator> 
 NOX::Epetra::LinearSystemAztecOO::getGeneratedPrecOperator() const
 {
-  return *(aztecSolverPtr->GetPrecOperator());
+  return Teuchos::rcp(aztecSolverPtr->GetPrecOperator(), false);
 }
 
 //***********************************************************************
-Epetra_Operator&
+Teuchos::RefCountPtr<Epetra_Operator>
 NOX::Epetra::LinearSystemAztecOO::getGeneratedPrecOperator()
 {
-  return *(aztecSolverPtr->GetPrecOperator());
+  return Teuchos::rcp(aztecSolverPtr->GetPrecOperator(), false);
 }
 
 //***********************************************************************
@@ -1365,6 +1420,7 @@ NOX::Epetra::LinearSystemAztecOO::setJacobianOperatorForSolve(
   }
 
   solveJacOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solveJacOp);
+  jacPtr = solveJacOpPtr;
   OperatorType solveOpType = getOperatorType(*solveJacOp);
   if ((solveOpType == EpetraRowMatrix) ||
       (solveOpType == EpetraVbrMatrix) ||
@@ -1386,3 +1442,5 @@ NOX::Epetra::LinearSystemAztecOO::setPrecOperatorForSolve(
   solvePrecOpPtr = Teuchos::rcp_const_cast<Epetra_Operator>(solvePrecOp);
   aztecSolverPtr->SetPrecOperator(solvePrecOpPtr.get());
 }
+
+
