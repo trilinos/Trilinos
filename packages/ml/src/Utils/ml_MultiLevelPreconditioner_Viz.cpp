@@ -52,7 +52,7 @@ extern int ML_Aggregate_Stats_CleanUp_Amalgamate( ML *ml, ML_Aggregate *ag);
 #include "ml_viz_stats.h"
 
 // ============================================================================
-// Used in VizMePleaze()
+// could be made static...
 void ML_Epetra::MultiLevelPreconditioner::
 RandomAndZero(double * tmp_rhs, double * tmp_sol, int size)
 {
@@ -73,6 +73,13 @@ VisualizeAggregates()
 
     ML_CHK_ERR(Visualize(true, false, false, false, -1, -1, -1));
 
+  }
+  else
+  {
+    cout << PrintMsg_ << "You need to specify `viz: enable' = true" << endl;
+    cout << PrintMsg_ << "in the parameter list before building the ML" << endl;
+    cout << PrintMsg_ << "preconditioner in order to visualize" << endl;
+    ML_CHK_ERR(-1);
   }
   return(0);
 }
@@ -100,6 +107,14 @@ VisualizeSmoothers(int NumPreCycles, int NumPostCycles)
 
     ML_CHK_ERR(ierr);
   }
+  else
+  {
+    cout << PrintMsg_ << "You need to specify `viz: enable' = true" << endl;
+    cout << PrintMsg_ << "in the parameter list before building the ML" << endl;
+    cout << PrintMsg_ << "preconditioner in order to visualize" << endl;
+    ML_CHK_ERR(-1);
+  }
+
   return(0);
 }
 
@@ -117,6 +132,13 @@ VisualizeCycle(int NumCycles)
                -1, -1, NumCycles);
 
     ML_CHK_ERR(ierr);
+  }
+  else
+  {
+    cout << PrintMsg_ << "You need to specify `viz: enable' = true" << endl;
+    cout << PrintMsg_ << "in the parameter list before building the ML" << endl;
+    cout << PrintMsg_ << "preconditioner in order to visualize" << endl;
+    ML_CHK_ERR(-1);
   }
   return(0);
 }

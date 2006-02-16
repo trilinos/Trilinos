@@ -114,8 +114,11 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   
   // may need to clean up after visualization and statistics
-  ML_Aggregate_VizAndStats_Clean(ml_);
-  if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
+  if (List_.get("viz: enable", false))
+  {
+    ML_Aggregate_VizAndStats_Clean(ml_);
+    if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
+  }
 
   // destroy aggregate information
   if ((agg_)->aggr_info != NULL) {
@@ -1073,10 +1076,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // visualize aggregate shape and other statistics.                        //
   // ====================================================================== //
   
-  if (SolvingMaxwell_) {
-    ML_Aggregate_VizAndStats_Setup(ml_nodes_);
+  if (List_.get("viz: enable", false))
+  { 
+    if (SolvingMaxwell_) {
+      ML_Aggregate_VizAndStats_Setup(ml_nodes_);
+    }
+    ML_Aggregate_VizAndStats_Setup(ml_);
   }
-  ML_Aggregate_VizAndStats_Setup(ml_);
 
   // ====================================================================== //
   // If present, fix the finest-level coordinates in the hierarchy          //
@@ -1187,7 +1193,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // west claims attentions, the VBR junk is a small gift to her
     Epetra_FECrsMatrix* FakeCrsMatrix = 0;
 
-    bool MyCodeIsCrap = true;
+    bool MyCodeIsQuestionable = true;
     Epetra_VbrMatrix* MeDummy;
     int NumMyRowElements = 0;
     Epetra_SerialDenseMatrix** oldValues = 0;
@@ -1202,7 +1208,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
       MeDummy = const_cast<Epetra_VbrMatrix*>
         (dynamic_cast<const Epetra_VbrMatrix*>(RowMatrix_));
 
-      if (MeDummy && MyCodeIsCrap) {
+      if (MeDummy && MyCodeIsQuestionable) {
 
         NumMyRowElements = MeDummy->RowMap().NumMyElements();
         oldValues = new Epetra_SerialDenseMatrix*[NumMyRowElements];
@@ -1260,9 +1266,19 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     // energy minimization
     if (List_.get("energy minimization: enable", false))
-      agg_->minimizing_energy = List_.get("energy minimization: type", 1);
+    {
+      if (verbose_)
+      {
+        cout << endl;
+        cout << "Warning: Option `energy minimization' is safer when used with" << endl;
+        cout << "Warning: Uncoupled aggregation scheme. Other aggregation schemes" << endl;
+        cout << "Warning: may crash the code." << endl;
+        cout << endl;
+      }
+      agg_->minimizing_energy = List_.get("energy minimization: type", 2);
 
-    agg_->minimizing_energy_droptol = List_.get("energy minimization: droptol", 0.0);
+      agg_->minimizing_energy_droptol = List_.get("energy minimization: droptol", 0.0);
+    }
 
     NumLevels_ = 
       ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
@@ -1276,7 +1292,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       Time.ResetStartTime();
     
-      if (MeDummy && MyCodeIsCrap) {
+      if (MeDummy && MyCodeIsQuestionable) {
 
         for (int LocalRow = 0; LocalRow < NumMyRowElements ; ++LocalRow) {
 
