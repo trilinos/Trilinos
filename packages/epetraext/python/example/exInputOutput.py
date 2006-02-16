@@ -30,6 +30,8 @@ def main():
   if comm.MyPID() == 0: print "I/O for BlockMap ... ",
   EpetraExt.BlockMapToMatrixMarketFile("map.mm", map)
   (ierr, map2) = EpetraExt.MatrixMarketFileToBlockMap("map.mm", comm)
+  print "ierr =", ierr
+  print "map2 =", map2
   if map2.SameAs(map):
     if comm.MyPID() == 0: print "ok"
   else:

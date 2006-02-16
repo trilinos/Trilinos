@@ -85,9 +85,14 @@ Solver.Iterate(1550, 1e-5)
 #include <sstream>
 #include <vector>
 
+// Epetra includes
 #include "Epetra_Map.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_JadOperator.h"
+
+// Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_PyOperator.h"
@@ -102,7 +107,7 @@ Solver.Iterate(1550, 1e-5)
 // Auto-documentation feature
 %feature("autodoc", "1");
 
-// Epetra interface includes
+// Epetra interface import
 using namespace std;
 %import "Epetra.i"
 
@@ -113,7 +118,5 @@ using namespace std;
 
 // Python code
 %pythoncode %{
-
-  __version__ = AztecOO_Version().split()[2]
-
+__version__ = AztecOO_Version().split()[2]
 %}

@@ -63,20 +63,26 @@ Finally, the following functions are avaiable in the IFPACK module:
 
 #include "Ifpack_ConfigDefs.h"
 
+// Epetra includes
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #endif
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Operator.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_JadOperator.h"
+
+// Epetra python includes
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
 
+// Teuchos include
 #include "Teuchos_ParameterList.hpp"
 
-// Amesos includes
+// IFPACK includes
 #include "Ifpack.h"
 #include "Ifpack_Version.h"
 #include "Ifpack_Utils.h"

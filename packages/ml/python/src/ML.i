@@ -114,15 +114,21 @@ print r.Norm2()
 
 #include "ml_config.h"
 
+// Epetra includes
 #include "Epetra_Map.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_NumPyMultiVector.h"
-#include "Epetra_NumPyVector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_JadOperator.h"
+
+// Epetra python includes
+#include "Epetra_NumPyMultiVector.h"
+#include "Epetra_NumPyVector.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
+
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
 #include "MLAPI.h"

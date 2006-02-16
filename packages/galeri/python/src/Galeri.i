@@ -72,6 +72,7 @@ Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_PyRowMatrix.h"
 #include "Epetra_NumPyMultiVector.h"
