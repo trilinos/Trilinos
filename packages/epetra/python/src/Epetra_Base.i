@@ -61,7 +61,11 @@
 %ignore NumPyArrayBase::getDataArray() const;
 %ignore NumPyArrayBase::getArrayObject() const;
 %ignore Epetra_Object::Print(ostream &) const;
+%ignore Epetra_MapColoring::Epetra_MapColoring(const Epetra_BlockMap &, int*, const int);
 %ignore Epetra_MapColoring::operator()(int) const;
+%ignore Epetra_MapColoring::ListOfColors() const;
+%ignore Epetra_MapColoring::ColorLIDList(int) const;
+%ignore Epetra_MapColoring::ElementColors() const;
 %ignore *::UpdateFlops(int) const;   // Use long int version
 %ignore *::UpdateFlops(float) const; // Use double version
 // These are Import/Export methods that get extended below
@@ -137,8 +141,73 @@
 }
 
 %extend Epetra_MapColoring {
-  int & __getitem__(int i) {
+
+  Epetra_MapColoring(const Epetra_BlockMap & map,
+		     PyObject * elementColors,
+		     const int defaultColor=0) {
+    Epetra_MapColoring * mapColoring;
+    int * colors = 0;
+    if (PyInt_Check(elementColors)) {
+      int myDefaultColor = (int) PyInt_AsLong(elementColors);
+      mapColoring = new Epetra_MapColoring(map,myDefaultColor);
+    } else {
+      PyArrayObject * colorArray = (PyArrayObject*) PyArray_ContiguousFromObject(elementColors,
+										 'i',0,0);
+      if (colorArray) colors = (int*)(colorArray->data);
+      mapColoring = new Epetra_MapColoring(map,colors,defaultColor);
+      Py_XDECREF(colorArray);
+    }
+    return mapColoring;
+  }
+
+  int __getitem__(int i) {
     return self->operator[](i);
+  }
+
+  void __setitem__(int i, int color) {
+    self->operator[](i) = color;
+  }
+
+  PyObject * ListOfColors() {
+    int      * list    = self->ListOfColors();
+    int        dims[ ] = { self->NumColors() };
+    int      * data;
+    PyObject * retObj  = PyArray_FromDims(1,dims,'i');
+    if (retObj == NULL) goto fail;
+    data = (int*)(((PyArrayObject*)(retObj))->data);
+    for (int i = 0; i<dims[0]; i++) data[i] = list[i];
+    return retObj;
+  fail:
+    Py_XDECREF(retObj);
+    return NULL;
+  }
+
+  PyObject * ColorLIDList(int color) {
+    int      * list    = self->ColorLIDList(color);
+    int        dims[ ] = { self->NumElementsWithColor(color) };
+    int      * data;
+    PyObject * retObj  = PyArray_FromDims(1,dims,'i');
+    if (retObj == NULL) goto fail;
+    data = (int*)(((PyArrayObject*)(retObj))->data);
+    for (int i = 0; i<dims[0]; i++) data[i] = list[i];
+    return retObj;
+  fail:
+    Py_XDECREF(retObj);
+    return NULL;
+  }
+
+  PyObject * ElementColors() {
+    int      * list    = self->ElementColors();
+    int        dims[ ] = { self->Map().NumMyElements() };
+    int      * data;
+    PyObject * retObj  = PyArray_FromDims(1,dims,'i');
+    if (retObj == NULL) goto fail;
+    data = (int*)(((PyArrayObject*)(retObj))->data);
+    for (int i = 0; i<dims[0]; i++) data[i] = list[i];
+    return retObj;
+  fail:
+    Py_XDECREF(retObj);
+    return NULL;
   }
 }
 
