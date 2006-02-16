@@ -89,7 +89,8 @@ int main(int argc, char *argv[])
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Method", "Turning Point:  Moore-Spence");
+    bifurcationList.setParameter("Type", "Turning Point");
+    bifurcationList.setParameter("Formulation", "Moore-Spence");
     bifurcationList.setParameter("Bifurcation Parameter", "alpha");
     bifurcationList.setParameter("Length Normalization Vector", nullVec);
     bifurcationList.setParameter("Initial Null Vector", nullVec);

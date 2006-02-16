@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     // Create bifurcation sublist
     NOX::Parameter::List& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Method", "None");
+    bifurcationList.setParameter("Type", "None");
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
