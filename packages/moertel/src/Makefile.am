@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package moertel subdirectory src built successfully."
+	@echo ""
+
 CORE = \
 	$(srcdir)/mrtr_convexhull.cpp \
 	$(srcdir)/mrtr_point.cpp \
