@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package tpetra subdirectory test built successfully."
+	@echo ""
+
 #if BUILD_TPETRA_TESTS
 STANDARD_SUBDIRS = Platform Comm Distributor ElementSpace Directory ImportExport BlockElementSpace VectorSpace Vector CisMatrix DistObject BasicPerfTest
 #endif

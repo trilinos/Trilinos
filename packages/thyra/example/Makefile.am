@@ -26,4 +26,11 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package thyra subdirectory example built successfully."
+	@echo ""
+
 SUBDIRS = operator_vector operator_solve external

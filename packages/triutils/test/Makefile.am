@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package triutils subdirectory test built successfully."
+	@echo ""
+
 SUBDIRS = Read
 
 EXTRA_DIST = definition
