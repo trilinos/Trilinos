@@ -491,7 +491,8 @@ bool Group::isNormNewtonSolveResidual() const
 
 bool Group::isPreconditioner() const 
 {  
-  return ((sharedLinearSystem.isOwner(this)) && (isValidPreconditioner));
+  return ((sharedLinearSystem.isOwner(this)) && (isValidPreconditioner) &&
+	  (sharedLinearSystem.getObject(this)->isPreconditionerConstructed()));
 }
 
 bool Group::isConditionNumber() const 
