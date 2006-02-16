@@ -71,8 +71,10 @@ class TriutilsTestCase(unittest.TestCase):
     def testGetRHS(self):
         "Test Triutils.CrsMatrixGallery GetRHS method"
         rhs = self.gallery.GetRHS()
-        s   = str(type(rhs))
-        self.assertEqual(s,"<class 'Epetra.MultiVector'>")
+        if hasattr(Epetra,'NumPyMultiVectorPtr'):
+            self.assertEqual(isinstance(rhs,Epetra.NumPyMultiVectorPtr), True)
+        else:
+            self.assertEqual(isinstance(rhs,Epetra.MultiVector), True)
 
 ####################################################################
 

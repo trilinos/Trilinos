@@ -90,12 +90,12 @@
     $1 = &_xexact;
 }
 
-%typemap(out) Epetra_MultiVector * {
-  Epetra_NumPyMultiVector * npmv;
-  static swig_type_info *ty = SWIG_TypeQuery("Epetra_NumPyMultiVector *");
-  npmv = new Epetra_NumPyMultiVector(*$1);
-  $result = SWIG_NewPointerObj(npmv, ty, 1);
-}
+// %typemap(out) Epetra_MultiVector * {
+//   Epetra_NumPyMultiVector * npmv;
+//   static swig_type_info *ty = SWIG_TypeQuery("Epetra_NumPyMultiVector *");
+//   npmv = new Epetra_NumPyMultiVector(*$1);
+//   $result = SWIG_NewPointerObj(npmv, ty, 1);
+// }
 
 %inline {
 void Trilinos_Util_ReadHb2Epetra(char               * data_file,
@@ -115,15 +115,7 @@ using namespace std;
 %include "Trilinos_Util_CrsMatrixGallery.h"
 %include "Trilinos_Util_Version.h"
 
-// Epetra vector/Numeric array support
-// %rename(_AuxMultiVector) MultiVector;
-// %rename(_AuxVector     ) Vector;
-// %inline {struct MultiVector {};}
-// %inline {struct Vector {};}
-
 // Python code
 %pythoncode %{
 __version__ = Triutils_Version().split()[2]
-#_Triutils._AuxMultiVector_swigregister(Epetra.MultiVector)
-#_Triutils._AuxVector_swigregister(Epetra.Vector)
 %}
