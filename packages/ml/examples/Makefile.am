@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	echo "Trilinos package ml subdirectory examples built successfully."
+	@echo ""
+
 SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other MLAPI Visualization NonlinML 
 
 EXTRA_DIST = ExampleMatrices/simple_matrix.aij README
