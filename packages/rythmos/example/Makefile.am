@@ -26,4 +26,11 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package rythmos subdirectory example built successfully."
+	@echo ""
+
 SUBDIRS = basicExample verySimple refCountPtrExample refCountPtrExample2 constExample epetra

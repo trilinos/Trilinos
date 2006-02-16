@@ -26,6 +26,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package rythmos subdirectory src built successfully."
+	@echo ""
+
 #np# Note the following paragraph.
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The

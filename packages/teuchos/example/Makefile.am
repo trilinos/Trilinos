@@ -26,6 +26,12 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package teuchos subdirectory example built successfully."
+	@echo ""
 
 STANDARD_SUBDIRS = BLAS CommandLineProcessor DenseMatrix hilbert LAPACK ParameterList RefCountPtr TimeMonitor
 
