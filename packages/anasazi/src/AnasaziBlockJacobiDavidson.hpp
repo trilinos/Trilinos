@@ -52,6 +52,10 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
+//USEQMRS: Switch between GMRES and QMR
+#define USEQMRS
+
+
 //_SAB_Special: use only, if there exists a special fast MvTimesMatAddMv function, which can take a view of "this" as argument
 //#define _SAB_Special
 
@@ -451,7 +455,8 @@ namespace Anasazi {
     //! Residual norm of computed and accepted eigenvalues.
     std::vector<MagnitudeType> _normR;
     bool _haveKinv;
-    int _LSIterMax, _LSRestart, _gamma;
+    int _LSIterMax, _LSRestart;
+    double  _gamma;
     double _elin, _eswitch;
     
     //
@@ -482,9 +487,11 @@ namespace Anasazi {
     _evecs(_problem->GetEvecs()),
     _evals(problem->GetEvals()), 
     _nev(problem->GetNEV()),
-    _maxIters(_pl.get("Max Iters", 100)),
-    _blockSize(_pl.get("Block Size", 1)),
-    _residual_tolerance(_pl.get("Tol", 1e-6)),
+    // FIXME: we have to give nice names to all these parameters
+    // and write them down somewhere...
+    _maxIters(_pl.get("maxiters", 100)),
+    _blockSize(_pl.get("blocksize", 1)),
+    _residual_tolerance(_pl.get("eigtol", 1e-6)),
     _numRestarts(0),
     _iters(0),
    // _TARGET(_pl.get<ScalarType>("Target", Teuchos::ScalarTraits<ScalarType>::zero())),
@@ -495,8 +502,8 @@ namespace Anasazi {
     _LSIterMax(_pl.get("KrylovSolver: MaxIters", 200)),
     _LSRestart(_pl.get("KrylovSolver: Restart",20)),
     _elin(_pl.get("KrylovSolver: Tolerance", 10e-9)),
-    _gamma(_pl.get("gamma", 2)),
-    _eswitch(_pl.get("Switch", 0.1))
+    _gamma(_pl.get("gamma", 2.0)),
+    _eswitch(_pl.get("switch", 0.1))
   {
   }
 
@@ -720,9 +727,16 @@ namespace Anasazi {
     // ================================================ //
     // Initialise the linear solver                     //
     // ================================================ //
+    #ifdef USEQMRS
+    QMRS<ScalarType,MV,Anasazi::OpBase<ScalarType,MV> > qmrs;
+    qmrs.setMaxIter(_LSIterMax);
+
+    #else
     GMRES<ScalarType,MV,Anasazi::OpBase<ScalarType,MV> > gmres;
     gmres.setMaxIter(_LSIterMax);
     gmres.setRestart(_LSRestart);
+
+    #endif
     
 
     // ================================================ //
@@ -1017,7 +1031,8 @@ namespace Anasazi {
       #ifndef _SAB_compare      
       while ((conv<SearchSpaceSize-1)&&(nrm[0] <= _residual_tolerance)) 
       #else
-      if (nrm[0] <= _residual_tolerance) //nur fuer Vergleich mit Oskars Code
+        // FIXME: IS THIS RIGHT??
+      if (nrm[0]*nrm_q[0] <= _residual_tolerance) //nur fuer Vergleich mit Oskars Code
       #endif
       {
  	#ifdef _SAB_compare
@@ -1207,7 +1222,9 @@ namespace Anasazi {
       // Switch target
       for(int i=0; i<ds; ++i)
       {
- 	if (nrm[0]<_eswitch) sigma[i] = theta[0];
+        // FIXME: IS THIS RIGHT??
+ 	//if (nrm[0]<_eswitch) sigma[i] = theta[0];
+	if (nrm[0]*nrm_q[0]<_eswitch) sigma[i] = theta[0];
  	else sigma[i] = _TARGET;
       }
       #endif
@@ -1325,8 +1342,11 @@ namespace Anasazi {
 	r->MvTimesMatAddMv(ScalarOne, *BQtmp2, H, -ScalarOne); //r:=-(I-Qb*Q^(T))*_r
 
 	// Set adaptive inner tolerance
-	gmres.setTolerance(ANASAZI_MAX(pow(_gamma,-(double)outer),_elin));
-
+	#ifdef USEQMRS
+	qmrs.setTolerance(ANASAZI_MAX(pow(_gamma,-(double)outer - 1),_elin));
+	#else
+	gmres.setTolerance(ANASAZI_MAX(pow(_gamma,-(double)outer - 1),_elin));
+        #endif
 	
 	R[j]->MvInit(ScalarZero);
 	
@@ -1396,8 +1416,12 @@ namespace Anasazi {
         times(&tmOrth);
         #endif
 	
-	
+		
+	#ifdef USEQMRS
+	ok=qmrs.solve(*Asys, *Ksys, *r, *(R[j])); 
+	#else
 	ok=gmres.solve(*Asys, *Ksys, *r, *(R[j])); 
+        #endif
 
 	// apply projection to R
         if (CON.get())
@@ -1405,10 +1429,20 @@ namespace Anasazi {
 	    CON->Apply(*(R[j].get()), *(R[j].get()));
 	  }
 
+	int linSolIterations;
+	#ifdef USEQMRS
+	linSolIterations = qmrs.getIterations();
+	#else
+	linSolIterations = gmres.getIterations();
+	#endif
+
+
+
+	// OUTPUT
       #ifndef _SAB_without_os
       if (_om->doPrint()) 
       {
-	_os << _iters << " " << _knownEV << " " << SearchSpaceSize << " " << nrm[0] << " " << gmres.getIterations() << " [" << sigma[0] << "] ";
+	_os << _iters << " " << _knownEV << " " << SearchSpaceSize << " " << nrm[0]*nrm_q[0] << " " << linSolIterations << " [" << sigma[0] << "] ";
 	int j = ANASAZI_MIN(SearchSpaceSize ,5);
 	for(int i=0; i<j; ++i){
 	  _os << " (" << theta[i] << ")";
@@ -1429,7 +1463,7 @@ namespace Anasazi {
 	//printf("GMRES: %d %d\n",gmres.getIterations(), gmres.getRestarts());
 	
 	#ifdef _SAB_STATISTICS
-	numtotGMRES+=gmres.getIterations();
+	numtotGMRES+=linSolIterations;
 	#endif
 	
       #ifdef _SAB_DEBUG      
