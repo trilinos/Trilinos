@@ -1624,6 +1624,7 @@ ML_Operator *ML_Operator_ImplicitlyVCScale(ML_Operator *Amat, double* scale,
   matrix->data_destroy   = ML_implicitvscale_Destroy;
   if (OnDestroy_FreeChild) new_data->destroy_child = 1;
 
+  ML_CommInfoOP_Clone(&(matrix->getrow->pre_comm), Amat->getrow->pre_comm);
   return matrix;
 }
 
