@@ -26,6 +26,13 @@
 # ************************************************************************
 #@HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package pliris subdirectory test built successfully."
+	@echo ""
+
 if HAVE_EPETRA
 if HAVE_MPI
 VECTOR_RANDOM_SUBDIR = vector_random
