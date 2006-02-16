@@ -33,7 +33,6 @@ set nem_pdisk = (1 2 2) # parallel disk info
 
 # Hypergraph problems, methods and sizes.  If you add tests here, you
 # may also want to update the hg_* values in the "yes_serial" case.
-set hg_methods = (file rows cols cyclic)
 set hg_name  = (simple felix ibm01 ibm01 ibm03 ibm03)
 set hg_nproc = (4      4     4     3     4     5)
 
@@ -835,6 +834,61 @@ endif # Nemesis
 
 # Loop over hg problems
 if (! $no_hg) then
+  set hg_methods=( \
+phg \
+phg.addobjwgt \
+phg.bal_tol_adjustment1.0 \
+phg.check_hypergraph1 \
+phg.coarsening_limit200 \
+phg.coarsening_method_cipm \
+phg.coarsening_method_lipm \
+phg.coarsening_method_none \
+phg.coarsepartition_method_greedy \
+phg.coarsepartition_method_linear \
+phg.coarsepartition_method_none \
+phg.coarsepartition_method_random \
+phg.debug_level \
+phg.edge_scaling1 \
+phg.edge_scaling2 \
+phg.edge_size_threshold1.0 \
+phg.fast_coarsening_method \
+phg.final_output2 \
+phg.imbalance_tol1.02 \
+phg.initial_distribution.cols \
+phg.initial_distribution.cyclic \
+phg.initial_distribution.file \
+phg.initial_distribution.rows \
+phg.initial_distribution.serial \
+phg.k64 \
+phg.nproc_edge1 \
+phg.nproc_edge2 \
+phg.nproc_vertex1 \
+phg.nproc_vertex2 \
+phg.num_global_partitions2 \
+phg.output_level0 \
+phg.output_level4 \
+phg.random \
+phg.randomize_input \
+phg.refinement_loop_limit20 \
+phg.refinement_max_neg_move50 \
+phg.refinement_method_none \
+phg.remap0 \
+phg.seed \
+phg.use_timers1 \
+phg.use_timers2 \
+phg.vertex_scaling1 \
+phg.vertex_scaling2 \
+phg.vertex_scaling3 \
+phg.vertex_scaling4 \
+phg.vertex_visit_order1 \
+phg.vertex_visit_order2 \
+phg.vertex_visit_order3 \
+phg.vertex_visit_order4 \
+)
+# phg.coarsening_limit1 \
+# bug in phg.coarsening_limit1
+
+
   @ nprob = $#hg_name
   @ nfailed = 0
   while ( $#hg_name )
