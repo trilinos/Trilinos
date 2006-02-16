@@ -31,8 +31,6 @@
 //@HEADER
 
 #include "LOCA_LAPACK_Group.H"	// class definition
-#include "NOX_BLAS_Wrappers.H"
-#include "NOX_LAPACK_Wrappers.H"
 #include "Teuchos_LAPACK.hpp"
 
 LOCA::LAPACK::Group::Group(
@@ -118,18 +116,6 @@ LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source,
 LOCA::LAPACK::Group::~Group() 
 {}
 
-NOX::Abstract::Group& 
-LOCA::LAPACK::Group::operator=(const NOX::Abstract::Group& source) {
-  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
-  return *this;
-}
-
-NOX::LAPACK::Group&
-LOCA::LAPACK::Group::operator=(const NOX::LAPACK::Group& source) {
-  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
-  return *this;
-}
-
 LOCA::LAPACK::Group& 
 LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
 
@@ -141,6 +127,18 @@ LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
   hasMassMatrix = source.hasMassMatrix;
   isValidMass = source.isValidMass;
 
+  return *this;
+}
+
+NOX::Abstract::Group& 
+LOCA::LAPACK::Group::operator=(const NOX::Abstract::Group& source) {
+  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
+  return *this;
+}
+
+NOX::LAPACK::Group&
+LOCA::LAPACK::Group::operator=(const NOX::LAPACK::Group& source) {
+  operator=(dynamic_cast<const LOCA::LAPACK::Group&>(source));
   return *this;
 }
 
@@ -161,43 +159,101 @@ LOCA::LAPACK::Group::computeJacobian() {
   return NOX::LAPACK::Group::computeJacobian();
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
-			    const NOX::Abstract::Vector* const* inputs,
-			    NOX::Abstract::Vector** outputs, int nVecs) const
+NOX::Abstract::Group::ReturnType 
+LOCA::LAPACK::Group::applyJacobianTransposeInverse(
+				     NOX::Parameter::List& p, 
+				     const NOX::Abstract::Vector& input, 
+				     NOX::Abstract::Vector& result) const 
 {
-  if (nVecs < 1)
-    return NOX::Abstract::Group::Failed;
+
+  if (!isJacobian()) {
+    cerr << "ERROR: " 
+	 << "LOCA::LAPACK::Group::applyJacobianTransposeInverse()"
+	 << " - invalid Jacobian" << endl;
+    throw "NOX Error";
+  }
+
+  NOX::LAPACK::Vector& lapack_result = 
+    dynamic_cast<NOX::LAPACK::Vector&>(result);
 
   int m = jacobianMatrix.numRows();
   int n = jacobianMatrix.numCols();
   int lda = jacobianMatrix.numRows();
   int info;
+  Teuchos::LAPACK<int,double> dlapack;
+
+  // copy input into result
+  result = input;
+
+  // Compute Jacobian LU factorization if invalid
+  if (!isValidJacobianLUFact) {
+    jacobianLUFact = jacobianMatrix;
+
+    dlapack.GETRF(m, n, &jacobianLUFact(0,0), lda, &pivots[0], &info);
+
+    if (info != 0)
+      return NOX::Abstract::Group::Failed;
+
+    isValidJacobianLUFact = true;
+  }
+
+  // Backsolve using LU factorization
+  dlapack.GETRS('T', n, 1, &jacobianLUFact(0,0), lda, &pivots[0], 
+		&lapack_result(0), m, &info);
+  
+  if (info != 0)
+      return NOX::Abstract::Group::Failed;
+    
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
+				     NOX::Parameter::List& p, 
+				     const NOX::Abstract::MultiVector& input, 
+				     NOX::Abstract::MultiVector& result) const 
+{
+
+  if (!isJacobian()) {
+    cerr << "ERROR: " 
+	 << "LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector()"
+	 << " - invalid Jacobian" << endl;
+    throw "NOX Error";
+  }
+
+  // Number of RHS
+  int nVecs = input.numVectors();
+
+  int m = jacobianMatrix.numRows();
+  int n = jacobianMatrix.numCols();
+  int lda = jacobianMatrix.numRows();
+  int info;
+  Teuchos::LAPACK<int,double> dlapack;
 
   // Copy all input vectors into one matrix
   NOX::LAPACK::Matrix B(m,nVecs);
   const NOX::LAPACK::Vector* constVecPtr;
   for (int j=0; j<nVecs; j++) {
-    constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(inputs[j]);
+    constVecPtr = dynamic_cast<const NOX::LAPACK::Vector*>(&(input[j]));
     for (int i=0; i<m; i++)
       B(i,j) = (*constVecPtr)(i);
   }
 
   // Compute Jacobian LU factorization if invalid
-  if (!NOX::LAPACK::Group::isValidJacobianLUFact) {
-    NOX::LAPACK::Group::jacobianLUFact = NOX::LAPACK::Group::jacobianMatrix;
-    DGETRF_F77(&m, &n, &jacobianLUFact(0,0), &lda, 
-	       &NOX::LAPACK::Group::pivots[0], &info);
+  if (!isValidJacobianLUFact) {
+    jacobianLUFact = jacobianMatrix;
+
+    dlapack.GETRF(m, n, &jacobianLUFact(0,0), lda, &pivots[0], &info);
 
     if (info != 0)
       return NOX::Abstract::Group::Failed;
 
-    NOX::LAPACK::Group::isValidJacobianLUFact = true;
+    isValidJacobianLUFact = true;
   }
 
   // Backsolve using LU factorization
-  DGETRS_F77("N", &n, &nVecs, &jacobianLUFact(0,0), &lda, &pivots[0], 
-  	     &B(0,0), &m, &info);
+  dlapack.GETRS('T', n, nVecs, &jacobianLUFact(0,0), lda, &pivots[0], 
+		&B(0,0), m, &info);
 
   if (info != 0)
       return NOX::Abstract::Group::Failed;
@@ -205,12 +261,17 @@ LOCA::LAPACK::Group::applyJacobianInverseMulti(NOX::Parameter::List& params,
   // Copy result from matrix
   NOX::LAPACK::Vector* vecPtr;
   for (int j=0; j<nVecs; j++) {
-    vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(outputs[j]);
+    vecPtr = dynamic_cast<NOX::LAPACK::Vector*>(&(result[j]));
     for (int i=0; i<m; i++)
       (*vecPtr)(i) = B(i,j);
   }
-
+    
   return NOX::Abstract::Group::Ok;
+}
+
+void
+LOCA::LAPACK::Group::copy(const NOX::Abstract::Group& source) {
+  *this = source;
 }
 
 void
@@ -220,23 +281,11 @@ LOCA::LAPACK::Group::setParams(const LOCA::ParameterVector& p)
   params = p;
 }
 
-const LOCA::ParameterVector& 
-LOCA::LAPACK::Group::getParams() const
-{
-  return params;
-}
-
 void
 LOCA::LAPACK::Group::setParam(int paramID, double val)
 {
   resetIsValid();
   params.setValue(paramID, val);
-}
-
-double
-LOCA::LAPACK::Group::getParam(int paramID) const
-{
-  return params.getValue(paramID);
 }
 
 void
@@ -246,49 +295,22 @@ LOCA::LAPACK::Group::setParam(string paramID, double val)
   params.setValue(paramID, val);
 }
 
+const LOCA::ParameterVector& 
+LOCA::LAPACK::Group::getParams() const
+{
+  return params;
+}
+
 double
-LOCA::LAPACK::Group::getParam(string paramID) const
+LOCA::LAPACK::Group::getParam(int paramID) const
 {
   return params.getValue(paramID);
 }
 
 double
-LOCA::LAPACK::Group::computeScaledDotProduct(
-				       const NOX::Abstract::Vector& a,
-				       const NOX::Abstract::Vector& b) const
+LOCA::LAPACK::Group::getParam(string paramID) const
 {
-  return a.innerProduct(b) / a.length();
-}
-
-void
-LOCA::LAPACK::Group::scaleVector(NOX::Abstract::Vector& x) const
-{
-  x.scale(1.0 / sqrt(static_cast<double>(x.length())));
-}
-
-void 
-LOCA::LAPACK::Group::printSolution(const double conParam) const
-{
-   printSolution(xVector, conParam);
-}
-
-void
-LOCA::LAPACK::Group::printSolution(const NOX::LAPACK::Vector& x_,
-                                   const double conParam) const
-{
-   locaProblemInterface.printSolution(x_, conParam);
-}
-
-void
-LOCA::LAPACK::Group::printSolution(const NOX::Abstract::Vector& x_,
-                                   const double conParam) const
-{
-   printSolution(dynamic_cast<const NOX::LAPACK::Vector&>(x_), conParam);
-}
-
-void
-LOCA::LAPACK::Group::copy(const NOX::Abstract::Group& source) {
-  *this = source;
+  return params.getValue(paramID);
 }
 
 void
@@ -306,19 +328,31 @@ LOCA::LAPACK::Group::projectToDrawDimension() const
   return locaProblemInterface.projectToDrawDimension();
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
+double
+LOCA::LAPACK::Group::computeScaledDotProduct(
+				       const NOX::Abstract::Vector& a,
+				       const NOX::Abstract::Vector& b) const
 {
-  int size = jacobianMatrix.numRows();
+  return a.innerProduct(b) / a.length();
+}
 
-  // Scale the matrix by the value of the homotopy continuation param
-  jacobianMatrix.scale(conParamValue);
+void 
+LOCA::LAPACK::Group::printSolution(const double conParam) const
+{
+   printSolution(xVector, conParam);
+}
 
-  // Add the scaled identity matrix to the jacobian
-  for (int i = 0; i < size; i++) 
-    jacobianMatrix(i,i) += (1.0 - conParamValue);
+void
+LOCA::LAPACK::Group::printSolution(const NOX::Abstract::Vector& x_,
+                                   const double conParam) const
+{
+   printSolution(dynamic_cast<const NOX::LAPACK::Vector&>(x_), conParam);
+}
 
-  return NOX::Abstract::Group::Ok;
+void
+LOCA::LAPACK::Group::scaleVector(NOX::Abstract::Vector& x) const
+{
+  x.scale(1.0 / sqrt(static_cast<double>(x.length())));
 }
 
 NOX::Abstract::Group::ReturnType
@@ -347,24 +381,10 @@ LOCA::LAPACK::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
   return applyMassMatrix(lapackInput, lapackResult);
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::LAPACK::Group::applyMassMatrix(const NOX::LAPACK::Vector& input,
-		      NOX::LAPACK::Vector& result) const
+bool
+LOCA::LAPACK::Group::isMassMatrix() const 
 {
-  // Check validity of the mass matrix
-  if (!isMassMatrix()) 
-    return NOX::Abstract::Group::BadDependency;
-
-  // Compute result = M * input
-  int m = massMatrix.numRows();
-  int n = massMatrix.numCols();
-  int lda = massMatrix.numRows();
-
-  DGEMV_F77("N", &m, &n, &NOX::LAPACK::d_one, &massMatrix(0,0), &lda, 
-	    &input(0), &NOX::LAPACK::i_one, &NOX::LAPACK::d_zero, &result(0), 
-	    &NOX::LAPACK::i_one);
-
-  return NOX::Abstract::Group::Ok;
+  return isValidMass && hasMassMatrix;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -436,9 +456,8 @@ LOCA::LAPACK::Group::applyComplexInverseMulti(
   }
 
   // Solve A*X = B
-  Teuchos::LAPACK< int,complex<double> > L;
-  L.GESV(n, m, A, n, piv, B, n, &info);
-  //ZGESV_F77(&n, &m, &A(0,0), &n, piv, &B(0,0), &n, &info);
+  Teuchos::LAPACK< int,complex<double> > clapack;
+  clapack.GESV(n, m, A, n, piv, B, n, &info);
 
   if (info != 0)
       return NOX::Abstract::Group::Failed;
@@ -462,16 +481,52 @@ LOCA::LAPACK::Group::applyComplexInverseMulti(
   return NOX::Abstract::Group::Ok;
 }
 
+NOX::Abstract::Group::ReturnType 
+LOCA::LAPACK::Group::augmentJacobianForHomotopy(double conParamValue)
+{
+  int size = jacobianMatrix.numRows();
+
+  // Scale the matrix by the value of the homotopy continuation param
+  jacobianMatrix.scale(conParamValue);
+
+  // Add the scaled identity matrix to the jacobian
+  for (int i = 0; i < size; i++) 
+    jacobianMatrix(i,i) += (1.0 - conParamValue);
+
+  return NOX::Abstract::Group::Ok;
+}
+
+void
+LOCA::LAPACK::Group::printSolution(const NOX::LAPACK::Vector& x_,
+                                   const double conParam) const
+{
+   locaProblemInterface.printSolution(x_, conParam);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::LAPACK::Group::applyMassMatrix(const NOX::LAPACK::Vector& input,
+		      NOX::LAPACK::Vector& result) const
+{
+  // Check validity of the mass matrix
+  if (!isMassMatrix()) 
+    return NOX::Abstract::Group::BadDependency;
+
+  // Compute result = M * input
+  int m = massMatrix.numRows();
+  int n = massMatrix.numCols();
+  int lda = massMatrix.numRows();
+  Teuchos::BLAS<int,double> dblas;
+
+  dblas.GEMV(Teuchos::NO_TRANS, m, n, 1.0, &massMatrix(0,0), lda, &input(0), 
+	     1, 0.0, &result(0), 1);
+
+  return NOX::Abstract::Group::Ok;
+}
+
 bool
 LOCA::LAPACK::Group::hasMass() const 
 {
   return hasMassMatrix;
-}
-
-bool
-LOCA::LAPACK::Group::isMassMatrix() const 
-{
-  return isValidMass && hasMassMatrix;
 }
 
 void

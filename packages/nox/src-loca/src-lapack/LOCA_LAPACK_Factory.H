@@ -68,11 +68,11 @@ namespace LOCA {
 
        //! Create bordered system solver strategy
       virtual bool
-      createBorderedSystemStrategy(
+      createBorderedSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy);
+       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy);
 
       //! Create eigensolver strategy
       virtual bool

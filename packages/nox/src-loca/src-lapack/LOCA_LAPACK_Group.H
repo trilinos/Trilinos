@@ -33,10 +33,11 @@
 #ifndef LOCA_LAPACK_GROUP_H
 #define LOCA_LAPACK_GROUP_H
 
-#include "LOCA_Abstract_Group.H"	// base class
-#include "NOX_LAPACK_Group.H"           // base class
-#include "LOCA_Parameter_Vector.H"      // class data element
-#include "LOCA_LAPACK_Interface.H"      // class data element
+#include "LOCA_Abstract_Group.H"	       // base class
+#include "LOCA_Abstract_TransposeSolveGroup.H" // base class
+#include "NOX_LAPACK_Group.H"                  // base class
+#include "LOCA_Parameter_Vector.H"             // class data element
+#include "LOCA_LAPACK_Interface.H"             // class data element
 
 namespace LOCA {
 
@@ -82,7 +83,10 @@ namespace LOCA {
       array.
     */
     
-    class Group : public NOX::LAPACK::Group, public LOCA::Abstract::Group {
+    class Group : 
+      public NOX::LAPACK::Group, 
+      public LOCA::Abstract::Group,
+      public virtual LOCA::Abstract::TransposeSolveGroup {
 
     public:
 
@@ -152,9 +156,32 @@ namespace LOCA {
       //@}
 
       /*! 
-       * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods.
+       * @name Implementation of LOCA::Abstract::TransposeSolveGroup methods.
        */
       //@{
+
+      //! Solve Jacobian-tranpose system 
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTransposeInverse(NOX::Parameter::List& params, 
+				    const NOX::Abstract::Vector& input, 
+				    NOX::Abstract::Vector& result) const;
+
+      //! Solve Jacobian-tranpose system with multiple right-hand sides
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTransposeInverseMultiVector(
+				    NOX::Parameter::List& params, 
+				    const NOX::Abstract::MultiVector& input, 
+				    NOX::Abstract::MultiVector& result) const;
+
+      //@}
+      
+      /*! 
+       * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
+       */
+      //@{
+
+      //! Copy
+      virtual void copy(const NOX::Abstract::Group& source);
 
       //! Set the parameter vector
       void setParams(const LOCA::ParameterVector& p);
@@ -173,45 +200,6 @@ namespace LOCA {
 
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
-
-      //! Compute a scaled dot product
-      /*! 
-       * The implementation here is a.dot(b) / a.length()
-       */
-      virtual double
-      computeScaledDotProduct(const NOX::Abstract::Vector& a,
-			      const NOX::Abstract::Vector& b) const;
-
-      //! Scales a vector
-      /*! 
-       * The implementation here is x.scale(1.0/sqrt(x.length))
-       */
-      virtual void
-      scaleVector(NOX::Abstract::Vector& x) const;
-
-      //! applyJacobianInverse for multiple right-hand sides
-      virtual NOX::Abstract::Group::ReturnType
-      applyJacobianInverseMulti(NOX::Parameter::List& params,
-			   const NOX::Abstract::Vector* const* inputs,
-			   NOX::Abstract::Vector** outputs, int nVecs) const;
-
-      //! Print out the solution vector and continuation parameter
-      void printSolution(const double conParam) const;
-
-      //! Print out a vector and a parameter
-      void printSolution(const NOX::Abstract::Vector& x_, 
-			 const double conParam) const;
-
-      //@}
-
-      
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
-       */
-      //@{
-
-      //! Copy
-      virtual void copy(const NOX::Abstract::Group& source);
 
       //! Projects solution to a few scalars for multiparameter continuation
       /*! 
@@ -233,6 +221,28 @@ namespace LOCA {
        * in the interface.
        */
       virtual int projectToDrawDimension() const;
+
+      //! Compute a scaled dot product
+      /*! 
+       * The implementation here is a.dot(b) / a.length()
+       */
+      virtual double
+      computeScaledDotProduct(const NOX::Abstract::Vector& a,
+			      const NOX::Abstract::Vector& b) const;
+
+      //! Print out the solution vector and continuation parameter
+      void printSolution(const double conParam) const;
+
+      //! Print out a vector and a parameter
+      void printSolution(const NOX::Abstract::Vector& x_, 
+			 const double conParam) const;
+
+      //! Scales a vector
+      /*! 
+       * The implementation here is x.scale(1.0/sqrt(x.length))
+       */
+      virtual void
+      scaleVector(NOX::Abstract::Vector& x) const;
 
       //@}
 

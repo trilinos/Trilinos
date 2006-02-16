@@ -34,7 +34,7 @@
 
 #include "LOCA_LAPACK_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
-#include "LOCA_BorderedSystem_LAPACKDirectSolve.H"
+#include "LOCA_BorderedSolver_LAPACKDirectSolve.H"
 #include "LOCA_Eigensolver_DGGEVStrategy.H"
 
 LOCA::LAPACK::Factory::Factory() :
@@ -54,16 +54,16 @@ LOCA::LAPACK::Factory::init(
 }
 
 bool
-LOCA::LAPACK::Factory::createBorderedSystemStrategy(
+LOCA::LAPACK::Factory::createBorderedSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-       Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy)
+       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy)
 {
   // Instantiate DGGEV strategy if requested
   if (strategyName == "LAPACK Direct Solve") {
     strategy = 
-      Teuchos::rcp(new LOCA::BorderedSystem::LAPACKDirectSolve(globalData,
+      Teuchos::rcp(new LOCA::BorderedSolver::LAPACKDirectSolve(globalData,
 							       topParams,
 							       solverParams));
     return true;

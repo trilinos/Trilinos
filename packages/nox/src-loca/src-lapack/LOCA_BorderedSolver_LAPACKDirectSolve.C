@@ -30,14 +30,14 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_BorderedSystem_LAPACKDirectSolve.H"
+#include "LOCA_BorderedSolver_LAPACKDirectSolve.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 #include "LOCA_LAPACK.H"
-#include "NOX_LAPACK_Wrappers.H"
+#include "Teuchos_LAPACK.hpp"
 
-LOCA::BorderedSystem::LAPACKDirectSolve::LAPACKDirectSolve(
+LOCA::BorderedSolver::LAPACKDirectSolve::LAPACKDirectSolve(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& slvrParams): 
@@ -56,30 +56,23 @@ LOCA::BorderedSystem::LAPACKDirectSolve::LAPACKDirectSolve(
   isZeroB(true),
   isZeroC(true),
   isZeroF(true),
-  isZeroG(true),
-  isContiguous(false)
+  isZeroG(true)
 {
 }
 
-LOCA::BorderedSystem::LAPACKDirectSolve::~LAPACKDirectSolve()
+LOCA::BorderedSolver::LAPACKDirectSolve::~LAPACKDirectSolve()
 {
 }
 
 void
-LOCA::BorderedSystem::LAPACKDirectSolve::setIsContiguous(bool flag)
-{
-  isContiguous = flag;
-}
-
-void
-LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
-	 const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
+         const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	 const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	 const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)
 {
   string callingFunction = 
-    "LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks()";
+    "LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks()";
   const NOX::LAPACK::Vector *v;
   const NOX::Abstract::MultiVector *BV;
 
@@ -186,7 +179,8 @@ LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
 
   // Factor augmented Jacobian
   int info;
-  DGETRF_F77(&N, &N, &(*augmentedJ)(0,0), &N, &pivots[0], &info);
+  Teuchos::LAPACK<int,double> dlapack;
+  dlapack.GETRF(N, N, &(*augmentedJ)(0,0), N, &pivots[0], &info);
   if (info != 0)
     globalData->locaErrorCheck->throwError(
 		 callingFunction,
@@ -194,7 +188,19 @@ LOCA::BorderedSystem::LAPACKDirectSolve::setMatrixBlocks(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::LAPACKDirectSolve::apply(
+LOCA::BorderedSolver::LAPACKDirectSolve::initForSolve()
+{
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::BorderedSolver::LAPACKDirectSolve::initForTransposeSolve()
+{
+  return NOX::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::BorderedSolver::LAPACKDirectSolve::apply(
 			  const NOX::Abstract::MultiVector& X,
 			  const NOX::Abstract::MultiVector::DenseMatrix& Y,
 			  NOX::Abstract::MultiVector& U,
@@ -227,7 +233,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::apply(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::LAPACKDirectSolve::applyTranspose(
+LOCA::BorderedSolver::LAPACKDirectSolve::applyTranspose(
 			  const NOX::Abstract::MultiVector& X,
 			  const NOX::Abstract::MultiVector::DenseMatrix& Y,
 			  NOX::Abstract::MultiVector& U,
@@ -260,7 +266,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyTranspose(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
+LOCA::BorderedSolver::LAPACKDirectSolve::applyInverse(
 			      NOX::Parameter::List& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
@@ -269,12 +275,6 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
 {
   bool isZeroF = (F == NULL);
   bool isZeroG = (G == NULL);
-
-  // ensure F and A are nonzero if contiguous
-  if (isContiguous && (isZeroF || isZeroA)) 
-     globalData->locaErrorCheck->throwError(
-		  "LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse()",
-		  "Blocks F and A cannont be contiguous when one is zero");
 
   // If F & G are zero, the solution is zero
   if (isZeroF && isZeroG) {
@@ -287,27 +287,10 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
   const NOX::LAPACK::Vector *v;
   NOX::LAPACK::Vector *w;
 
-  if (!isZeroF && isContiguous)
-    numColsRHS = F->numVectors() - A->numVectors();
-  else if (!isZeroF)
+  if (!isZeroF)
     numColsRHS = F->numVectors();
   else 
     numColsRHS = G->numCols();
-
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> FF;
-  if (!isZeroF && isContiguous) {
-    // create subindexing vectors
-    vector<int> indexF(numColsRHS);
-    for (int i=0; i<numColsRHS; i++)
-      indexF[i] = i;
-    
-    // Get actual F
-    FF = F->subView(indexF);
-  }
-  else if (!isZeroF)
-    FF = Teuchos::rcp(F, false);
-  else
-    FF = Teuchos::null;
     
   // Concatenate F & G into a single matrix
   NOX::LAPACK::Matrix RHS(N,numColsRHS);
@@ -318,7 +301,7 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
   }
   else {
     for (int j=0; j<numColsRHS; j++) {
-      v = dynamic_cast<const NOX::LAPACK::Vector*>(&(*FF)[j]);
+      v = dynamic_cast<const NOX::LAPACK::Vector*>(&(*F)[j]);
       for (int i=0; i<n; i++)
 	RHS(i,j) = (*v)(i);
     }
@@ -336,8 +319,83 @@ LOCA::BorderedSystem::LAPACKDirectSolve::applyInverse(
 
   // Solve for LHS
   int info;
-  DGETRS_F77("N", &N, &numColsRHS, &(*augmentedJ)(0,0), &N, &pivots[0],
-	     &RHS(0,0), &N, &info);
+  Teuchos::LAPACK<int,double> dlapack;
+  dlapack.GETRS('N', N, numColsRHS, &(*augmentedJ)(0,0), N, &pivots[0],
+		&RHS(0,0), N, &info);
+
+  // Copy result into X and Y
+  for (int j=0; j<numColsRHS; j++) {
+    w = dynamic_cast<NOX::LAPACK::Vector*>(&X[j]);
+    for (int i=0; i<n; i++)
+      (*w)(i) = RHS(i,j);
+    for (int i=0; i<m; i++)
+      Y(i,j) = RHS(n+i,j);
+  }
+
+  if (info != 0)
+    return NOX::Abstract::Group::Failed;
+  else
+    return NOX::Abstract::Group::Ok;
+  
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::BorderedSolver::LAPACKDirectSolve::applyInverseTranspose(
+			      NOX::Parameter::List& params,
+			      const NOX::Abstract::MultiVector* F,
+			      const NOX::Abstract::MultiVector::DenseMatrix* G,
+			      NOX::Abstract::MultiVector& X,
+			      NOX::Abstract::MultiVector::DenseMatrix& Y) const
+{
+  bool isZeroF = (F == NULL);
+  bool isZeroG = (G == NULL);
+
+  // If F & G are zero, the solution is zero
+  if (isZeroF && isZeroG) {
+    X.init(0.0);
+    Y.putScalar(0.0);
+    return NOX::Abstract::Group::Ok;
+  }
+
+  int numColsRHS;
+  const NOX::LAPACK::Vector *v;
+  NOX::LAPACK::Vector *w;
+
+  if (!isZeroF)
+    numColsRHS = F->numVectors();
+  else 
+    numColsRHS = G->numCols();
+    
+  // Concatenate F & G into a single matrix
+  NOX::LAPACK::Matrix RHS(N,numColsRHS);
+  if (isZeroF) {
+    for (int j=0; j<numColsRHS; j++)
+      for (int i=0; i<n; i++)
+	RHS(i,j) = 0.0;
+  }
+  else {
+    for (int j=0; j<numColsRHS; j++) {
+      v = dynamic_cast<const NOX::LAPACK::Vector*>(&(*F)[j]);
+      for (int i=0; i<n; i++)
+	RHS(i,j) = (*v)(i);
+    }
+  }
+  if (isZeroG) {
+    for (int j=0; j<numColsRHS; j++)
+      for (int i=0; i<m; i++)
+	RHS(i+n,j) = 0.0;
+  }
+  else {
+    for (int j=0; j<numColsRHS; j++)
+      for (int i=0; i<m; i++)
+	RHS(i+n,j) = (*G)(i,j);
+  }
+
+  // Solve for LHS
+  int info;
+  Teuchos::LAPACK<int,double> dlapack;
+  dlapack.GETRS('T', N, numColsRHS, &(*augmentedJ)(0,0), N, &pivots[0],
+		&RHS(0,0), N, &info);
 
   // Copy result into X and Y
   for (int j=0; j<numColsRHS; j++) {

@@ -113,7 +113,7 @@ am__DEPENDENCIES_1 =
 liblocalapack_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = LOCA_LAPACK_Group.$(OBJEXT) \
 	LOCA_Eigensolver_DGGEVStrategy.$(OBJEXT) \
-	LOCA_BorderedSystem_LAPACKDirectSolve.$(OBJEXT) \
+	LOCA_BorderedSolver_LAPACKDirectSolve.$(OBJEXT) \
 	LOCA_LAPACK_Factory.$(OBJEXT)
 am__objects_2 =
 am_liblocalapack_a_OBJECTS = $(am__objects_1) $(am__objects_2)
@@ -121,7 +121,7 @@ liblocalapack_a_OBJECTS = $(am_liblocalapack_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOCA_LAPACK_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LOCA_LAPACK_Group.Po
@@ -140,7 +140,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA_LAPACK.H \
 	$(srcdir)/LOCA_LAPACK_Group.H \
 	$(srcdir)/LOCA_LAPACK_Interface.H \
 	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.H \
-	$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.H \
+	$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.H \
 	$(srcdir)/LOCA_LAPACK_Factory.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
@@ -360,13 +360,13 @@ LOCA_LAPACK_H = \
 	$(srcdir)/LOCA_LAPACK_Group.H \
 	$(srcdir)/LOCA_LAPACK_Interface.H \
 	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.H \
-	$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.H \
+	$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.H \
 	$(srcdir)/LOCA_LAPACK_Factory.H
 
 LOCA_LAPACK = \
 	$(srcdir)/LOCA_LAPACK_Group.C \
 	$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C \
-	$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C \
+	$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C \
 	$(srcdir)/LOCA_LAPACK_Factory.C
 
 
@@ -486,7 +486,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_Eigensolver_DGGEVStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_LAPACK_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCA_LAPACK_Group.Po@am__quote@
@@ -539,21 +539,21 @@ LOCA_Eigensolver_DGGEVStrategy.obj: $(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_Eigensolver_DGGEVStrategy.obj `if test -f '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Eigensolver_DGGEVStrategy.C'; fi`
 
-LOCA_BorderedSystem_LAPACKDirectSolve.o: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_LAPACKDirectSolve.o -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o LOCA_BorderedSystem_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='LOCA_BorderedSystem_LAPACKDirectSolve.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
+LOCA_BorderedSolver_LAPACKDirectSolve.o: $(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSolver_LAPACKDirectSolve.o -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo" -c -o LOCA_BorderedSolver_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo" "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' object='LOCA_BorderedSolver_LAPACKDirectSolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSolver_LAPACKDirectSolve.o `test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C
 
-LOCA_BorderedSystem_LAPACKDirectSolve.obj: $(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSystem_LAPACKDirectSolve.obj -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" -c -o LOCA_BorderedSystem_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo" "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C' object='LOCA_BorderedSystem_LAPACKDirectSolve.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/LOCA_BorderedSystem_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
+LOCA_BorderedSolver_LAPACKDirectSolve.obj: $(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_BorderedSolver_LAPACKDirectSolve.obj -MD -MP -MF "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo" -c -o LOCA_BorderedSolver_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo" "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po"; else rm -f "$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C' object='LOCA_BorderedSolver_LAPACKDirectSolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.Po' tmpdepfile='$(DEPDIR)/LOCA_BorderedSolver_LAPACKDirectSolve.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSystem_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSystem_LAPACKDirectSolve.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCA_BorderedSolver_LAPACKDirectSolve.obj `if test -f '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_BorderedSolver_LAPACKDirectSolve.C'; fi`
 
 LOCA_LAPACK_Factory.o: $(srcdir)/LOCA_LAPACK_Factory.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCA_LAPACK_Factory.o -MD -MP -MF "$(DEPDIR)/LOCA_LAPACK_Factory.Tpo" -c -o LOCA_LAPACK_Factory.o `test -f '$(srcdir)/LOCA_LAPACK_Factory.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Factory.C; \
