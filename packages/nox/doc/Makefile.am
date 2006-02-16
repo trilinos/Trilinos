@@ -29,6 +29,13 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package nox subdirectory doc built successfully."
+	@echo ""
+
 ## #######################################################################
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################

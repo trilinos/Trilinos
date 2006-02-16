@@ -29,6 +29,12 @@
 # ************************************************************************
 # @HEADER
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package nox subdirectory src built successfully."
+	@echo ""
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)

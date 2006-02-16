@@ -43,12 +43,7 @@
 # ************************************************************************
 # @HEADER
 
-# ------------------------------------------------------------------------
-# For each category, create two variables - NAME and NAME_H. The
-# second is the list of headers to be installed, i.e., any header that
-# might someday be needed by some other code outside NOX. The first is
-# the list of all source and any other header files.
-# ------------------------------------------------------------------------
+# The following line helps the test harness recover from build errors.
 
 
 SOURCES = $(libnoxpetsc_a_SOURCES)
@@ -351,6 +346,13 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+
+# ------------------------------------------------------------------------
+# For each category, create two variables - NAME and NAME_H. The
+# second is the list of headers to be installed, i.e., any header that
+# might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 PETSC_H = \
 	$(srcdir)/NOX_Petsc.H \
 	$(srcdir)/NOX_Petsc_Vector.H \
@@ -660,7 +662,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS)
+all-am: Makefile $(LIBRARIES) $(HEADERS) all-local
 installdirs:
 	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 install: install-am
@@ -739,11 +741,11 @@ ps-am:
 uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-libLIBRARIES ctags distclean \
+	distclean-compile distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-exec install-exec-am \
 	install-includeHEADERS install-info install-info-am \
 	install-libLIBRARIES install-man install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
@@ -752,6 +754,11 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES
 
+
+all-local:
+	@echo ""
+	@echo "Trilinos package nox subdirectory src-petsc built successfully."
+	@echo ""
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies

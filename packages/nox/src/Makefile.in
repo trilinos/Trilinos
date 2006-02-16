@@ -43,9 +43,7 @@
 # ************************************************************************
 # @HEADER
 
-# ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
+# The following line helps the test harness recover from build errors.
 
 
 SOURCES = $(libnox_a_SOURCES) $(nodist_libnox_a_SOURCES)
@@ -432,6 +430,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
 lib_LIBRARIES = libnox.a
 
 # ------------------------------------------------------------------------
@@ -1720,7 +1722,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS) NOX_Config.h
+all-am: Makefile $(LIBRARIES) $(HEADERS) NOX_Config.h all-local
 installdirs:
 	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir) $(DESTDIR)$(execincludedir) $(DESTDIR)$(includedir)
 install: install-am
@@ -1801,13 +1803,13 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS \
 	uninstall-nodist_includeHEADERS
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-hdr distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-exec install-exec-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man \
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-libLIBRARIES ctags distclean \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-exec \
+	install-exec-am install-includeHEADERS install-info \
+	install-info-am install-libLIBRARIES install-man \
 	install-nodist_execincludeHEADERS \
 	install-nodist_includeHEADERS install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \
@@ -1817,6 +1819,11 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS \
 	uninstall-nodist_includeHEADERS
 
+
+all-local:
+	@echo ""
+	@echo "Trilinos package nox subdirectory src built successfully."
+	@echo ""
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
