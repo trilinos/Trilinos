@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BORDEREDSYSTEM_FACTORY_H
-#define LOCA_BORDEREDSYSTEM_FACTORY_H
+#ifndef LOCA_BORDEREDSOLVER_FACTORY_H
+#define LOCA_BORDEREDSOLVER_FACTORY_H
 
 #include "Teuchos_RefCountPtr.hpp"
 
@@ -46,16 +46,16 @@ namespace LOCA {
   namespace Parameter {
     class SublistParser;
   }
-  namespace BorderedSystem {
+  namespace BorderedSolver {
     class AbstractStrategy;
   }
 }
 
 namespace LOCA {
 
-  namespace BorderedSystem {
+  namespace BorderedSolver {
 
-    //! Factory for creating %BorderedSystem strategy objects
+    //! Factory for creating %BorderedSolver strategy objects
     /*!
      * The parameters passed to the create() through the \c solverParams
      * argument method should specify the "Bordered Solver Method" 
@@ -64,7 +64,8 @@ namespace LOCA {
      * <ul>
      * <li> "Bordered Solver Method" - Name of the method. Valid choices are
      *   <ul>
-     *   <li> "Bordering" (LOCA::BorderedSystem::Bordering) [Default]
+     *   <li> "Bordering" (LOCA::BorderedSolver::Bordering) [Default]
+     *   <li> "Nested" (LOCA::BorderedSolver::Nested)
      *   </ul>
      * </ul>
      */
@@ -83,7 +84,7 @@ namespace LOCA {
        * \param topParams [in] Parsed top-level parameter list.  
        * \param solverParams [in] Solver parameters as described above
        */
-      Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>
+      Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
       create(
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
@@ -106,8 +107,8 @@ namespace LOCA {
 
     }; // Class Factory
 
-  } // Namespace BorderedSystem
+  } // Namespace BorderedSolver
 
 } // Namespace LOCA
 
-#endif // LOCA_BORDEREDSYSTEM_FACTORY_H
+#endif // LOCA_BORDEREDSOLVER_FACTORY_H

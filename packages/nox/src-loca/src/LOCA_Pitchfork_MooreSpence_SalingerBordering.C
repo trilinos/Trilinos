@@ -82,8 +82,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MooreSpence::SalingerBordering::solve(
 	   NOX::Parameter::List& params,
 	   const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
-           LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result,
-	   bool isContiguous) const
+           LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const
 {
   string callingFunction = 
     "LOCA::Pitchfork::MooreSpence::SalingerBordering::solve()";
@@ -107,132 +106,62 @@ LOCA::Pitchfork::MooreSpence::SalingerBordering::solve(
   Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> result_param = 
     result.getBifParams();
 
-  if (isContiguous) {
+  int m = input.numVectors();
+  vector<int> index_input(m);
+  for (int i=0; i<m; i++)
+    index_input[i] = i;
 
-    // Expand input, result by 1 column to store solve of psi
-    int m = input.numVectors()-1;
-    vector<int> index_input(m+1);
-    for (int i=0; i<m+1; i++)
-      index_input[i] = i;
+  // Create new multivectors with m+2 columns
+  // First m columns store input_x, input_null, result_x, result_null
+  // respectively, next column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
+  // respectively, last column stores psi, 0, J^-1 psi, etc...
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+    input_x->clone(m+2);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+    input_null->clone(m+2);
+  
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+    result_x->clone(m+2);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+    result_null->clone(m+2);
+  
+  // Set first m columns to input_x
+  cont_input_x->setBlock(*input_x, index_input);
+  
+  // Set column m+1 to dfdp
+  (*cont_input_x)[m] = *dfdp;
+  
+  // Set column m+2 to psi
+  (*cont_input_x)[m+1] = *asymVector;
+  
+  // Set first m columns to input_null
+  cont_input_null->setBlock(*input_null, index_input);
+  
+  // Set column m+1 to dJndp
+  (*cont_input_null)[m] = *dJndp;
+  
+  // Set column m+2 to 0
+  (*cont_input_null)[m+1].init(0.0);
+  
+  // Initialize result multivectors to 0
+  cont_result_x->init(0.0);
+  cont_result_null->init(0.0);
+  
+  // Solve
+  status = solveContiguous(params, *cont_input_x, *cont_input_null, 
+			   *input_slack, *input_param, 
+			   *cont_result_x, *cont_result_null, 
+			   *result_slack, *result_param);
+  
+  // Create views of first m columns for result_x, result_null
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
+    cont_result_x->subView(index_input);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
+    cont_result_null->subView(index_input);
 
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
-      input_x->clone(m+2);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
-      input_null->clone(m+2);
-
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
-      result_x->clone(m+2);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
-      result_null->clone(m+2);
-
-    // Set first m+1 columns to input_x
-    cont_input_x->setBlock(*input_x, index_input);
-
-    // Set column m+2 to psi
-    (*cont_input_x)[m+1] = *asymVector;
-
-    // Set first m+1 columns to input_null
-    cont_input_null->setBlock(*input_null, index_input);
-
-    // Initialize column m+2 to 0
-    (*cont_input_null)[m+1].init(0.0);
-
-    // Initialize result multivectors to 0
-    cont_result_x->init(0.0);
-    cont_result_null->init(0.0);
-
-    // Get views of the first m columns of input_slack, result_slack
-    NOX::Abstract::MultiVector::DenseMatrix input_slack_view(Teuchos::View,
-							     *input_slack,
-							     1, m, 0, 0);
-    NOX::Abstract::MultiVector::DenseMatrix result_slack_view(Teuchos::View,
-							     *result_slack,
-							     1, m, 0, 0);
-
-    // Get views of the first m columns of input_param, result_param
-    NOX::Abstract::MultiVector::DenseMatrix input_param_view(Teuchos::View,
-							     *input_param,
-							     1, m, 0, 0);
-    NOX::Abstract::MultiVector::DenseMatrix result_param_view(Teuchos::View,
-							     *result_param,
-							     1, m, 0, 0);
-    
-
-    // Solve
-    status = solveContiguous(params, *cont_input_x, *cont_input_null, 
-			     input_slack_view, input_param_view, 
-			     *cont_result_x, *cont_result_null, 
-			     result_slack_view, result_param_view);
-
-    // Create views of first m+1 columns for result_x, result_null
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
-      cont_result_x->subView(index_input);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
-      cont_result_null->subView(index_input);
-
-    // Copy first m+1 columns back into result_x, result_null
-    *result_x = *cont_result_x_view;
-    *result_null = *cont_result_null_view;
-  }
-  else {
-
-    int m = input.numVectors();
-    vector<int> index_input(m);
-    for (int i=0; i<m; i++)
-      index_input[i] = i;
-
-    // Create new multivectors with m+2 columns
-    // First m columns store input_x, input_null, result_x, result_null
-    // respectively, next column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
-    // respectively, last column stores psi, 0, J^-1 psi, etc...
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
-      input_x->clone(m+2);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
-      input_null->clone(m+2);
-
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
-      result_x->clone(m+2);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
-      result_null->clone(m+2);
-
-    // Set first m columns to input_x
-    cont_input_x->setBlock(*input_x, index_input);
-
-    // Set column m+1 to dfdp
-    (*cont_input_x)[m] = *dfdp;
-
-    // Set column m+2 to psi
-    (*cont_input_x)[m+1] = *asymVector;
-
-    // Set first m columns to input_null
-    cont_input_null->setBlock(*input_null, index_input);
-
-    // Set column m+1 to dJndp
-    (*cont_input_null)[m] = *dJndp;
-
-    // Set column m+2 to 0
-    (*cont_input_null)[m+1].init(0.0);
-
-    // Initialize result multivectors to 0
-    cont_result_x->init(0.0);
-    cont_result_null->init(0.0);
-
-    // Solve
-    status = solveContiguous(params, *cont_input_x, *cont_input_null, 
-			     *input_slack, *input_param, 
-			     *cont_result_x, *cont_result_null, 
-			     *result_slack, *result_param);
-
-    // Create views of first m columns for result_x, result_null
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
-      cont_result_x->subView(index_input);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
-      cont_result_null->subView(index_input);
-
-    // Copy first m columns back into result_x, result_null
-    *result_x = *cont_result_x_view;
-    *result_null = *cont_result_null_view;
-  }
+  // Copy first m columns back into result_x, result_null
+  *result_x = *cont_result_x_view;
+  *result_null = *cont_result_null_view;
 
    return status;
 }

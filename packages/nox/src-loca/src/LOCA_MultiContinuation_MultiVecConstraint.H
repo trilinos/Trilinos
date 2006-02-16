@@ -31,7 +31,7 @@
 //@HEADER
 
 #ifndef LOCA_MULTICONTINUATION_MULTIVECCONSTRAINT_H
-#define LOCA_MULTICONTINUATION_MULTIVECHCONSTRAINT_H
+#define LOCA_MULTICONTINUATION_MULTIVECCONSTRAINT_H
 
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H" // base class
 #include "NOX_Abstract_MultiVector.H"                   // for dense matrix
@@ -131,6 +131,12 @@ namespace LOCA {
        * derivatives is zero
        */
       virtual bool isDXZero() const;
+
+      //! Notify constraint that the continuation step is completed
+      /*!
+       * Here we do nothing
+       */
+      virtual void notifyCompletedStep();
 
       //@}
 

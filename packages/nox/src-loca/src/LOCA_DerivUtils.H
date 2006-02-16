@@ -36,12 +36,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "NOX_Abstract_Group.H" // For CopyType
-
-namespace NOX {
-  namespace Abstract {
-    class MultiVector;
-  }
-}
+#include "NOX_Abstract_MultiVector.H" // For DenseMatrix
 
 namespace LOCA {
   class GlobalData;
@@ -119,6 +114,22 @@ public:
 		const NOX::Abstract::MultiVector& aVector,
 		const NOX::Abstract::Vector& JnVector,
 		NOX::Abstract::MultiVector& result) const;
+
+  //! Compute derivative of w^TJn with respect to particular parameter param_id
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDwtJnDp(LOCA::MultiContinuation::AbstractGroup& grp,
+		 const vector<int>& paramIDs, 
+		 const NOX::Abstract::Vector& w,
+		 const NOX::Abstract::Vector& nullVector,
+		 NOX::Abstract::MultiVector::DenseMatrix& result,
+		 bool isValid) const;
+
+  //! Compute vector (w^TJn)_{x}
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
+		 const NOX::Abstract::Vector& w,
+		 const NOX::Abstract::Vector& nullVector,
+		 NOX::Abstract::Vector& result) const;
 
 //   //! Compute derivative of (J+iwB)(y+iz) with respect to particular 
 //   //! parameter param_id

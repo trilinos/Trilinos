@@ -41,7 +41,7 @@
 #include "LOCA_MultiContinuation_Factory.H"
 #include "LOCA_Bifurcation_Factory.H"
 #include "LOCA_StepSize_Factory.H"
-#include "LOCA_BorderedSystem_Factory.H"
+#include "LOCA_BorderedSolver_Factory.H"
 #include "LOCA_Eigensolver_Factory.H"
 #include "LOCA_EigenvalueSort_Factory.H"
 #include "LOCA_SaveEigenData_Factory.H"
@@ -166,11 +166,11 @@ namespace LOCA {
     /*!
      * Instantiates an bordered system solver strategy based on the 
      * "Bordered Solver Method" parameter
-     * of the "Linear Solver" sublist.  See LOCA::BorderedSystem::Factory for 
+     * of the "Linear Solver" sublist.  See LOCA::BorderedSolver::Factory for 
      * a description of available strategies.
      */
-    Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>
-    createBorderedSystemStrategy(
+    Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
+    createBorderedSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
 
@@ -280,7 +280,7 @@ namespace LOCA {
     LOCA::StepSize::Factory stepsizeFactory;
 
     //! Bordered system factory
-    LOCA::BorderedSystem::Factory borderedFactory;
+    LOCA::BorderedSolver::Factory borderedFactory;
 
     //! Eigensolver factory
     LOCA::Eigensolver::Factory eigensolverFactory;

@@ -30,12 +30,12 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_BorderedSystem_AbstractStrategy.H"
+#include "LOCA_BorderedSolver_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_MultiVecConstraint.H"
 
 void
-LOCA::BorderedSystem::AbstractStrategy::setMatrixBlocksMultiVecConstraint(
-	  const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
+LOCA::BorderedSolver::AbstractStrategy::setMatrixBlocksMultiVecConstraint(
+          const Teuchos::RefCountPtr<const NOX::Abstract::Group>& group,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC)

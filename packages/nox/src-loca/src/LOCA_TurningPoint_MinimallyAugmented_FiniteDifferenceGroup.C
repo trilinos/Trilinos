@@ -1,3 +1,6 @@
+// $Id$
+// $Source$
+
 //@HEADER
 // ************************************************************************
 // 
@@ -27,41 +30,46 @@
 // ************************************************************************
 //@HEADER
 
-// This file should include ALL objects that the user
-// is required to instantiate to call LOCA!
+#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
 
-#include "Teuchos_RefCountPtr.hpp"
-#include "NOX.H"
+LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
+FiniteDifferenceGroup(const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
+{
+}
 
-// Primary LOCA Objects
-#include "LOCA_GlobalData.H"
-#include "LOCA_Factory.H"
-#include "LOCA_ErrorCheck.H"
-#include "LOCA_NewStepper.H"
-#include "LOCA_Parameter_Vector.H"
-#include "LOCA_Parameter_Library.H"
+LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
+FiniteDifferenceGroup(
+  const LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup& source, 
+  NOX::CopyType type)
+  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type)
+{
+}
 
-#include "LOCA_MultiContinuation_AbstractGroup.H"
-#include "LOCA_MultiContinuation_ConstraintInterface.H"
-#include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 
-#include "LOCA_Abstract_TransposeSolveGroup.H"
+LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
+~FiniteDifferenceGroup() 
+{
+}
 
-// Bifurcation groups
-#include "LOCA_TimeDependent_AbstractGroup.H"
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
+computeDwtJnDp(const vector<int>& paramIDs, 
+	       const NOX::Abstract::Vector& w,
+	       const NOX::Abstract::Vector& nullVector,
+	       NOX::Abstract::MultiVector::DenseMatrix& result,
+	       bool isValid)
+{
+  return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
+    computeDwtJnDp(*this, paramIDs, w, nullVector, result, isValid);
+}
 
-// Homotopy group
-// #include "LOCA_Homotopy_Group.H"
-
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Abstract_Factory.H"
-
-// Status tests
-// #include "LOCA_StatusTest_Wrapper.H"
-// #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
-// #include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-// #include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H"
-// #include "LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.H"
-// #include "LOCA_Bifurcation_PitchforkBord_ParameterUpdateNorm.H"
-// #include "LOCA_Bifurcation_PitchforkBord_SlackUpdateNorm.H"
-// #include "LOCA_Bifurcation_PitchforkBord_NullVectorNormWRMS.H"
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
+computeDwtJnDx(const NOX::Abstract::Vector& w,
+	       const NOX::Abstract::Vector& nullVector,
+	       NOX::Abstract::Vector& result)
+{
+  return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
+    computeDwtJnDx(*this, w, nullVector, result);
+}

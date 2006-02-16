@@ -184,3 +184,8 @@ LOCA::MultiContinuation::MultiVecConstraint::isDXZero() const
 {
   return false;
 }
+
+void
+LOCA::MultiContinuation::MultiVecConstraint::notifyCompletedStep()
+{
+}

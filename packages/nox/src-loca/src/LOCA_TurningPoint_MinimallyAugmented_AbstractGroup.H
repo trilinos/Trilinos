@@ -30,41 +30,42 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_TURNINGPOINT_MOORESPENCE_ABSTRACTGROUP_H
-#define LOCA_TURNINGPOINT_MOORESPENCE_ABSTRACTGROUP_H
+#ifndef LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_ABSTRACTGROUP_H
+#define LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_ABSTRACTGROUP_H
 
-#include "LOCA_MultiContinuation_AbstractGroup.H"    // base class
+#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"    // base class
 
 namespace LOCA { 
   
-  //! Groups and vectors for turning point bifurcations
   namespace TurningPoint { 
 
     /*! 
      * \brief Groups and vectors for locating turning point bifurcations
-     * using the Moore-Spence formulation.
+     * using the minimally augmented turning point formulation.
      */
-    namespace MooreSpence {
+    namespace MinimallyAugmented {
 
       /*! 
        * \brief Interface to underlying groups for turning point calculations
-       * using the Moore-Spence formulation.
+       * using the minimally augmented formulation.
        */
       /*!
        * This abstract class provides the required interface for underlying
-       * groups to locate turning points using the bordering
-       * algorithm for the Moore-Spence turning point formulation (see 
-       * LOCA::TurningPoint::MooreSpence::ExtendedGroup for a description of 
-       * the governing equations).  
+       * groups to locate turning points using the minimally augmented turning 
+       * point formulation (see 
+       * LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup for a 
+       * description of the governing equations).  
        *
-       * This class is derived from the LOCA::MultiContinuation::AbstractGroup 
+       * This class is derived from the 
+       * LOCA::TurningPoint::MooreSpence::AbstractGroup 
        * and declares several pure virtual methods compute various 
-       * derivatives of \f$Jn\f$ for a given \f$n\f$.  Default implementations
-       * for the derivatives using finite differencing are implemented in the 
-       * LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup.
+       * derivatives of \f$w^TJn\f$ for a given \f$w\f$ and \f$n\f$.  Default 
+       * implementations for the derivatives using finite differencing are 
+       * implemented in the 
+       * LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup.
        */
       class AbstractGroup : 
-	public virtual LOCA::MultiContinuation::AbstractGroup {
+	public virtual LOCA::TurningPoint::MooreSpence::AbstractGroup {
 
       public:
   
@@ -81,34 +82,23 @@ namespace LOCA {
 	//@{
 
 	/*! 
-	 * \brief Computes the derivative \f$\partial Jn/\partial p\f$ 
+	 * \brief Computes the derivative \f$\partial w^TJn/\partial p\f$ 
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDJnDpMulti(const vector<int>& paramIDs, 
-			  const NOX::Abstract::Vector& nullVector,
-			  NOX::Abstract::MultiVector& result,
-			  bool isValid) = 0;
+	computeDwtJnDp(const vector<int>& paramIDs, 
+		       const NOX::Abstract::Vector& w,
+		       const NOX::Abstract::Vector& nullVector,
+		       NOX::Abstract::MultiVector::DenseMatrix& result,
+		       bool isValid) = 0;
 
 	/*! 
-	 * \brief Computes the directional derivative 
-	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
-	 * \f$a\f$. 
+	 * \brief Computes the derivative 
+	 * \f$\frac{\partial w^TJn}{\partial x}\f$. 
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
-	computeDJnDxaMulti(const NOX::Abstract::Vector& nullVector,
-			   const NOX::Abstract::MultiVector& aVector,
-			   NOX::Abstract::MultiVector& result) = 0;
-
-	/*! 
-	 * \brief Computes the directional derivative 
-	 * \f$\frac{\partial Jn}{\partial x} a\f$ for the given direction 
-	 * \f$a\f$. 
-	 */
-	virtual NOX::Abstract::Group::ReturnType 
-	computeDJnDxaMulti(const NOX::Abstract::Vector& nullVector,
-			   const NOX::Abstract::Vector& JnVector,
-			   const NOX::Abstract::MultiVector& aVector,
-			   NOX::Abstract::MultiVector& result) = 0;
+	computeDwtJnDx(const NOX::Abstract::Vector& w,
+		       const NOX::Abstract::Vector& nullVector,
+		       NOX::Abstract::Vector& result) = 0;
 
 	//@}
 
@@ -117,7 +107,7 @@ namespace LOCA {
 
       }; // class AbstractGroup
 
-    } // namespace MooreSpence
+    } // namespace MinimallyAugmented
 
   } // namespace TurningPoint
 

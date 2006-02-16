@@ -52,9 +52,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     parsedParams(topParams),
     turningPointParams(tpParams),
     grpPtr(g),
-    xMultiVec(globalData, g->getX(), 2),
+    xMultiVec(globalData, g->getX(), 1),
     fMultiVec(globalData, g->getX(), 2),
-    newtonMultiVec(globalData, g->getX(), 2),
+    newtonMultiVec(globalData, g->getX(), 1),
     lengthMultiVec(),
     xVec(),
     fVec(),
@@ -286,7 +286,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeJacobian()
 				     *(xVec->getNullVec()), 
 				     *fMultiVec.getNullMultiVec(), 
 				     isValidF);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
 
+  // Compute underlying Jacobian
+  status = grpPtr->computeJacobian();
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
@@ -344,12 +349,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton(
   newtonMultiVec.init(0.0);
 
   // solve using contiguous
-  status = solverStrategy->solve(params, fMultiVec, newtonMultiVec, true);
+  status = solverStrategy->solve(params, *ffMultiVec, newtonMultiVec);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
-  newtonVec->scale(-1.0);
+  newtonMultiVec.scale(-1.0);
 
   isValidNewton = true;
 
@@ -533,7 +538,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverseMultiVector(
   LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& tp_result = 
     dynamic_cast<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector&>(result);
   
-  return solverStrategy->solve(params, tp_input, tp_result, false);
+  return solverStrategy->solve(params, tp_input, tp_result);
 }
 
 bool
@@ -828,6 +833,13 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
       globalData->locaUtils->sciformat(tp_x.getBifParam()) << std::endl;
   }
   grpPtr->printSolution(*tp_x.getNullVec(), tp_x.getBifParam());
+}
+
+void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::notifyCompletedStep()
+{
+  // Notify underlying group that the step is completed
+  grpPtr->notifyCompletedStep();
 }
 
 double

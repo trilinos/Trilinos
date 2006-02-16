@@ -58,16 +58,36 @@ namespace LOCA {
     //! Factory for creating bifurcation strategy objects
     /*!
      * The parameters passed to the create() through the \c bifurcationParams
-     * argument method should specify the "Method" as described 
-     * below, as well as any additional parameters for the particular strategy.
+     * argument method should specify the "Type" and "Formulation" as 
+     * described below, as well as any additional parameters for the 
+     * particular strategy.
      * <ul>
-     * <li> "Method" - Name of the bifurcation method. Valid 
+     * <li> "Type" - Name of the bifurcation type. Valid choices are
+     *      <ul>
+     *      <li> "None" - No bifurcation [Default]
+     *      <li> "Turning Point" Turning point bifurations
+     *      <li> "Pitchfork" Pitchfork bifurcations
+     *      <li> "User-Defined" User defined bifurcation.  Set 
+     *           "User-Defined Name" to be the parameter list name containing
+     *           user-defined strategy, which must be of type
+     *           Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>.
+     *      </ul>
+     * <li> "Formulation" - Name of the bifurcation formulation. Valid 
      *      choices are
-     *   <ul>
-     *   <li> "None" - No bifurcation [Default]
-     *   <li> "Turning Point:  Moore-Spence" (LOCA::TurningPoint::MooreSpence::ExtendedGroup)
-     *   <li> "Pitchfork:  Moore-Spence" (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
-     *   </ul>
+     *      <ul> 
+     *      <li> For turning point bifurcations:
+     *          <ul>
+     *          <li> "Moore-Spence" [Default]
+     *               (LOCA::TurningPoint::MooreSpence::ExtendedGroup)
+     *          <li> "Minimally Augmented" 
+     *               (LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup)
+     *          </ul>
+     *      <li> For pitchfork bifurcations:
+     *           <ul>
+     *           <li> "Moore-Spence" [Default]
+     *                (LOCA::Pitchfork::MooreSpence::ExtendedGroup)
+     *           </ul>
+     *      </ul>
      * </ul>
      */
     class Factory {
@@ -93,7 +113,7 @@ namespace LOCA {
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
 
       //! Return strategy name given by \c bifurcationParams
-      const string& 
+      string 
       strategyName(NOX::Parameter::List& bifurcationParams) const;
 
     private:

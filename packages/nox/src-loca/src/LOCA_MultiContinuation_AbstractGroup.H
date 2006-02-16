@@ -110,6 +110,9 @@ namespace LOCA {
 		       NOX::Abstract::MultiVector& dfdp, 
 		       bool isValidF) = 0;
 
+      //! Notify group that the continuation step is completed
+      virtual void notifyCompletedStep() = 0;
+
       //@}
 
       

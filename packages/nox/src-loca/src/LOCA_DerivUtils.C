@@ -262,6 +262,131 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
   return finalStatus;
 }
 
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDwtJnDp(
+			      LOCA::MultiContinuation::AbstractGroup& grp, 
+			      const vector<int>& paramIDs,
+			      const NOX::Abstract::Vector& w,
+			      const NOX::Abstract::Vector& nullVector,
+			      NOX::Abstract::MultiVector::DenseMatrix& result,
+			      bool isValid) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDwtJnDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  // Vector to store J*n
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> Jn = 
+    w.clone(NOX::ShapeCopy);
+  double base_wtJn;
+
+  // Compute base w^T*J*n
+  if (!isValid) {
+
+    // Compute J
+    finalStatus = grp.computeJacobian();
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+
+    // Compute J*n
+    status = grp.applyJacobian(nullVector, *Jn);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Compute w^T*J*n
+    base_wtJn = w.innerProduct(*Jn);
+    result(0,0) = base_wtJn;
+  }
+  else
+    finalStatus = NOX::Abstract::Group::Ok;
+
+  double param;
+  double eps;
+  double perturb_wtJn;
+
+  // Loop over each parameter
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+
+    // Perturb single parameter in this group, and return perturbation, eps
+    eps = perturbParam(grp, param, paramIDs[i]);
+
+    // Compute perturbed J
+    status = grp.computeJacobian();
+    finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+    // Compute perturbed J*n
+    status = grp.applyJacobian(nullVector, *Jn);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Compute perturbed w^T*J*n
+    perturb_wtJn = w.innerProduct(*Jn);
+
+    // Difference perturbed and base values
+    result(0,i+1) = (perturb_wtJn - base_wtJn) / eps;
+    
+    // Restore original parameter value
+    grp.setParam(paramIDs[i], param);
+
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
+				 const NOX::Abstract::Vector& w,
+				 const NOX::Abstract::Vector& nullVector,
+				 NOX::Abstract::Vector& result) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDwtJnDx()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  // Vector to store w^T*J
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> wtJ = 
+    w.clone(NOX::ShapeCopy);
+  
+  // Compute base w^T*J
+  finalStatus = grp.computeJacobian();
+  globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+
+  status = grp.applyJacobianTranspose(w, *wtJ);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+  
+  // Copy original solution vector
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> Xvec = 
+    grp.getX().clone(NOX::DeepCopy);
+
+  // Perturb solution vector in direction of nullVector, return perturbation
+  double eps = perturbXVec(grp, *Xvec, nullVector);
+
+  // Fill perturbed w^T*J vector
+  finalStatus = grp.computeJacobian();
+  globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+    
+  status = grp.applyJacobianTranspose(w, result);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							   finalStatus,
+							   callingFunction);
+
+    // Difference perturbed and base vector 
+    result.update(-1.0, *wtJ, 1.0);
+    result.scale(1.0/eps);
+  
+  // Restore original solution vector
+  grp.setX(*Xvec);
+
+  return finalStatus;
+}
+
 // NOX::Abstract::Group::ReturnType 
 // LOCA::DerivUtils::computeDCeDp(
 // 			   LOCA::Bifurcation::HopfBord::AbstractGroup& grp,

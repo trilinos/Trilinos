@@ -153,6 +153,12 @@ namespace LOCA {
        */
       virtual bool isDXZero() const;
 
+      //! Notify constraint that the continuation step is completed
+	/*!
+	 * Here we do nothing.
+	 */
+      virtual void notifyCompletedStep();
+
       //@}
 
     private:

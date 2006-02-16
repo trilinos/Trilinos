@@ -30,99 +30,142 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDGROUP_H
-#define LOCA_TURNINGPOINT_MOORESPENCE_EXTENDEDGROUP_H
+#ifndef LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
+#define LOCA_TURNINGPOINT_MINIMALLYAUGMENTED_EXTENDEDGROUP_H
 
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"         // base class
 #include "LOCA_Extended_MultiAbstractGroup.H"             // base class
-#include "LOCA_TurningPoint_MooreSpence_ExtendedVector.H" // class data element
-#include "LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.H" // class data element
+#include "LOCA_BorderedSystem_AbstractGroup.H"          // base class
 
 namespace LOCA {
-  class ParameterVector;
   class GlobalData;
   namespace Parameter {
     class SublistParser;
   }
-
   namespace TurningPoint {
-    namespace MooreSpence {
+    namespace MinimallyAugmented {
       class AbstractGroup;
-      class SolverStrategy;
+      class Constraint;
     }
+  }
+  namespace MultiContinuation {
+    class ConstrainedGroup;
   }
 }
 namespace LOCA { 
 
   namespace TurningPoint { 
     
-    namespace MooreSpence {
+    namespace MinimallyAugmented {
 
       /*! 
-       * \brief A group representing the Moore-Spence turning point equations. 
+       * \brief A group representing the minimally augemented turning point 
+       * equations. 
        */
       /*!
-       The LOCA::TurningPoint::MooreSpence::ExtendedGroup is a concrete 
-       implementation of 
-       the NOX::Abstract::Group, LOCA::MultiContinuation::AbstractGroup and 
-       LOCA::Extended::MultiAbstractGroup that defines the following extended 
-       set of equations that are regular at a generic turning point:
-	  \f[
-	      G(z) = \left[
-	      \begin{array}{c}
-	         F(x,p) \\
-	         Jn \\
-	         l^Tn-1
-	      \end{array}
-	      \right] = 0
-	   \f]
-       where \f$z = [x, n, p]\in\Re^{2n+1}\f$, \f$x\f$ is the solution vector,
-       \f$n\f$ is the null vector, \f$l\f$ is the length normalization vector
-       and \f$J\f$ is the Jacobian of F.
-
-       The group stores an underlying group of type 
-       LOCA::TurningPoint::MooreSpence AbstractGroup to represent the equations
-       \f$F(x,p) = 0\f$ and to manipulate the underlying Jacobian \f$J\f$.
-       Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
-       memory, rather a block-elimination algorithm (bordering algorithm) is
-       used to compute linear solves of the extended Jacobian (see 
-       LOCA::TurningPoint::MooreSpence::SolverFactory() for more details).
-
-       This class implements all of the NOX::Abstract::Group, 
-       LOCA::MultiContinuation::AbstractGroup, and 
-       LOCA::Extended::MultiAbstractGroup 
-       methods for this extended set of equations and therefore is a complete
-       group which can be passed to most %NOX solvers to locate a single 
-       turning point or to the LOCA::NewStepper to compute a family of turning 
-       points in a second parameter.
-
-       However, Jacobian-tranpose operations and gradient calculations cannot 
-       be implemented efficiently and therefore gradient-base nonlinear solvers
-       such as steepest descent and Trust region methods cannot be used to 
-       solve the extended turning point equations.
-
-       The class is intialized via the \c tpParams parameter list argument to 
-       the constructor.  The parameters this class recognizes are:
-       <ul>
-       <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of the bifurcation parameter \f$p\f$
-       <li> "Length Normalization Vector" -- 
-            [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) 
-            Vector storing length normalization vector \f$l\f$
-       <li> "Initial Null Vector"  -- 
-            [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) - 
-            Vector storing initial guess for the null vector \f$n\f$
-       <li> "Perturb Initial Solution" -- [bool] (default: false) Flag 
-            indicating whether to perturb the initial solution
-       <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) 
-            Relative perturbation size if perturbing the initial solution
-       </ul>
+       * The LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup is a 
+       * concrete implementation of the NOX::Abstract::Group, 
+       * LOCA::MultiContinuation::AbstractGroup and 
+       * LOCA::Extended::MultiAbstractGroup that defines the following 
+       * extended set of equations that are regular at a generic turning point:
+       * \f[
+       *     G(z) = \left[
+       *      \begin{array}{c}
+       *         F(x,p) \\
+       *         \sigma
+       *      \end{array}
+       *      \right] = 0
+       *   \f]
+       * where \f$z = [x, p]\in\Re^{n+1}\f$, \f$x\f$ is the solution vector,
+       * \f$p\f$ is the bifurcation parameter, \f$J\f$ is the Jacobian of 
+       * \f$F\f$, and \f$\sigma\in\Re\f$ is a measure of the singularity of 
+       * \f$F\f$ and is defined via
+       * \f[
+       *     \begin{bmatrix}
+       *       J   & a \\
+       *       b^T & 0 
+       *     \end{bmatrix}
+       *     \begin{bmatrix}
+       *       v \\
+       *       \sigma_1
+       *     \end{bmatrix} = 
+       *     \begin{bmatrix}
+       *       0 \\
+       *       1
+       *     \end{bmatrix},
+       * \f]
+       * \f[
+       *     \begin{bmatrix}
+       *       J^T & b \\
+       *       a^T & 0 
+       *     \end{bmatrix}
+       *     \begin{bmatrix}
+       *       w \\
+       *       \sigma_2
+       *     \end{bmatrix} = 
+       *     \begin{bmatrix}
+       *       0 \\
+       *       1
+       *     \end{bmatrix},
+       * \f]
+       * \f[
+       *     \sigma = w^T J v
+       * \f]
+       * for any vectors \f$a\f$ and \f$b\f$ in \f$\Re^n\f$.  Using these
+       * relationships, it is easy to show
+       * \f[
+       *     \begin{split}
+       *        \sigma_x &= (w^T J v)_x = w^T J_x v\\
+       *        \sigma_p &= (w^T J v)_p = w^T J_p v
+       *     \end{split}
+       * \f]
+       *
+       * The group stores an underlying group of type 
+       * LOCA::TurningPoint::MinimallyAugmented AbstractGroup to represent 
+       * the equations \f$F(x,p) = 0\f$ and to manipulate the underlying 
+       * Jacobian \f$J\f$.  This interface defines methods for computing
+       * the derivatives \f$(w^T J v)_x\f$ and \f$(w^T J v)_p\f$ as well.
+       *
+       * This class implements all of the NOX::Abstract::Group, 
+       * LOCA::MultiContinuation::AbstractGroup, and 
+       * LOCA::Extended::MultiAbstractGroup 
+       * methods for this extended set of equations and therefore is a complete
+       * group which can be passed to most %NOX solvers to locate a single 
+       * turning point or to the LOCA::NewStepper to compute a family of 
+       * turning points in a second parameter.
+       *
+       * The class is intialized via the \c tpParams parameter list argument 
+       * to the constructor.  The parameters this class recognizes are:
+       * <ul>
+       * <li> "Bifurcation Parameter" -- [string] (Must be supplied) - 
+       *    Name of the bifurcation parameter \f$p\f$
+       * <li> "Symmetric Jacobian"  -- [bool] (default: false) - 
+       *    Flag indicating whether Jacobian matrix \f$J\f$ is symmetric,
+       *    in which case we force \f$a = b\f$ and therefore the second
+       *    tranpose solve for \f$w\f$ is unnecessary
+       * <li> "Initial A Vector"  -- 
+       *    [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) - 
+       *    Vector storing initial value for \f$a\f$ vector
+       * <li> "Initial B Vector"  -- 
+       *    [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *    (Must be supplied for nonsymmetric Jacobians) - 
+       *    Vector storing initial value for \f$b\f$ vector
+       * <li> "Update Null Vectors Every Continuation Step"  -- 
+       *    [bool] (default: true) - 
+       *    Flag indicating whether to update \f$a\f$ and \f$b\$ vectors via
+       *    \f$a = w\f$ and \f$b = v\f$ every continuation step
+       * <li> "Update Null Vectors Every Nonlinear Iteration"  -- 
+       *    [bool] (default: false) - 
+       *    Flag indicating whether to update \f$a\f$ and \f$b\$ vectors via
+       *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
+       * </ul>
        */
-
       class ExtendedGroup 
 	: public virtual LOCA::Extended::MultiAbstractGroup,
-	  public virtual LOCA::MultiContinuation::AbstractGroup {
+	  public virtual LOCA::MultiContinuation::AbstractGroup,
+	  public virtual LOCA::BorderedSystem::AbstractGroup {
 
       public:
 
@@ -133,7 +176,7 @@ namespace LOCA {
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
          const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
-	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g);
+	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
 
 	//! Copy constructor.
 	ExtendedGroup(const ExtendedGroup& source, 
@@ -165,40 +208,30 @@ namespace LOCA {
 
 	//! Compute the turning point equation residual \f$G\f$.
 	/*!
-	  This method fills the extended residual
-	  \f[
-	      G(z) = \left[
-	      \begin{array}{c}
-	         F(x,p) \\
-	         Jn \\
-	         l^Tn-1
-	      \end{array}
-	      \right].
-	  \f]
-	  The solution component residual \f$F(x,p)\f$ and the null-vector 
-	  residual \f$Jn\f$ are calculated via the computeF and applyJacobian 
-	  methods of the underlying group.
-	*/
+	 * This method fills the extended residual
+	 * \f[
+	 *     G(z) = \left[
+	 *     \begin{array}{c}
+	 *        F(x,p) \\
+	 *       \sigma
+	 *    \end{array}
+	 *     \right].
+	 * \f]
+	 */
 	virtual NOX::Abstract::Group::ReturnType computeF();
 
 	//! Compute the blocks of the Jacobian derivative of \f$G\f$
 	/*!
-	  This method computes the \f$J\f$, \f$\partial F/\partial p\f$, and
-	  \f$\partial Jn/\partial p\f$ blocks of the extended Jacobian:
-	  \f[
-	      D_z G(z) = 
-	      \begin{bmatrix}
-	         J & 0 & \frac{\partial F}{\partial p} \\
-		 \frac{\partial Jn}{\partial x} & J & \frac{\partial Jn}{\partial p} \\
-		 0 & l^T & 0
-	      \end{bmatrix}
-	  \f]
-	  by calling the computeJacobian, computeDfDp, and computeDJnDp
-	  methods of the underlying group.  The second derivative matrix
-	  \f$\partial Jn/\partial x\f$ is not calculated since only its
-	  action on vectors is needed for linear solves using the bordering
-	  algorithm.
-	*/
+	 * This method computes the \f$J\f$, \f$F_pf$, \f$\sigma_x\f$ and 
+	 * \f$\sigma_p\f$ blocks of the extended Jacobian:
+	 * \f[
+	 *    D_z G(z) = 
+	 *    \begin{bmatrix}
+	 *       J        & F_p \\
+	 *       \sigma_x & \sigma_p
+	 *    \end{bmatrix}
+	 * \f]
+	 */
 	virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
 	//! Gradient computation is not defined for this group
@@ -209,50 +242,16 @@ namespace LOCA {
 	computeNewton(NOX::Parameter::List& params);
   
 	//! Computes the extended Jacobian vector product
-	/*! 
-	  This method computes the extended Jacobian vector product
-	  \f[
-	      \begin{bmatrix}
-	         J & 0 & \frac{\partial F}{\partial p} \\
-		 \frac{\partial Jn}{\partial x} & J & \frac{\partial Jn}{\partial p} \\
-		 0 & l^T & 0
-	      \end{bmatrix}
-	      \begin{bmatrix}
-	         a \\
-		 b \\
-		 c
-	      \end{bmatrix}
-	      = 
-	      \begin{bmatrix}
-	         Ja + \frac{\partial F}{\partial p}c \\
-		 \frac{\partial Jn}{\partial x}a + Jb + \frac{\partial Jn}{\partial p}c \\
-		 l^T b
-	      \end{bmatrix}
-	  \f]
-	  using the applyJacobian and computeDJnDxa methods of the underlying
-	  group where \f$a\f$, \f$b\f$, and \f$c\f$ are the solution, 
-	  null-vector, and paramter components of the given vector \em input.
-	  Vectors \em input and \em result must be of type 
-	  LOCA::TurningPoint::MooreSpence::ExtendedVector, otherwise an error 
-	  is thrown.
-	*/
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobian(const NOX::Abstract::Vector& input, 
 		      NOX::Abstract::Vector& result) const;
 
-	//! Jacobian transpose product is not defined by this group
+	//! Computes the extended Jacobian transpose vector product
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianTranspose(const NOX::Abstract::Vector& input, 
 			       NOX::Abstract::Vector& result) const;
 
-	/*! 
-	 * \brief Applies the inverse of the extended Jacobian matrix using 
-	 * the bordering algorithm.
-	 */
-	/*!
-	 * This method is a special case of applyJacobianInverseMultiVector() 
-	 * for a single right-hand-side.
-	 */
+	//! Applies the inverse of the extended Jacobian matrix 
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianInverse(NOX::Parameter::List& params, 
 			     const NOX::Abstract::Vector& input, 
@@ -263,18 +262,13 @@ namespace LOCA {
 	applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
 				 NOX::Abstract::MultiVector& result) const;
 
-	//! Jacobian transpose not defined for this system
+	//! Jacobian transpose for extended system
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianTransposeMultiVector(
 				     const NOX::Abstract::MultiVector& input, 
 				     NOX::Abstract::MultiVector& result) const;
 
 	//! Applies Jacobian inverse for extended system
-	/*!
-	 * Uses a LOCA::TurningPoint::MooreSpence::SolverStrategy instantiated
-	 * by the LOCA::TurningPoint::MooreSpence::SolverFactory to 
-	 * implement the solve.
-	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianInverseMultiVector(
 				    NOX::Parameter::List& params, 
@@ -407,29 +401,84 @@ namespace LOCA {
 	//! Notify group that the continuation step is completed
 	virtual void notifyCompletedStep();
 
+	//@}
+
+	/*! 
+	 * @name Implementation of 
+	 * LOCA::BorderedSystem::AbstractGroup virtual methods 
+	 */
+	//@{
+	
+	//! Return the total width of the bordered rows/columns
+	virtual int getBorderedWidth() const;
+	
+	//! Get bottom-level unbordered group
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+	getUnborderedGroup() const;
+	
+	//! Indicates whether combined A block is zero
+	virtual bool isCombinedAZero() const;
+	
+	//! Indicates whether combined B block is zero
+	virtual bool isCombinedBZero() const;
+	
+	//! Indicates whether combined C block is zero
+	virtual bool isCombinedCZero() const;
+	
+	/*!
+	 * Given the vector \c v, extract the underlying solution component
+	 * corresponding to the unbordered group.
+	 */
+	virtual void
+	extractSolutionComponent(const NOX::Abstract::MultiVector& v,
+				 NOX::Abstract::MultiVector& v_x) const;
+
+	/*!
+	 * Given the vector \c v, extract the parameter components of all
+	 * of the nested subvectors in \c v down to the solution component
+	 * for the unbordered group.
+	 */
+	virtual void 
+	extractParameterComponent(
+			   bool use_transpose,
+                           const NOX::Abstract::MultiVector& v,
+                           NOX::Abstract::MultiVector::DenseMatrix& v_p) const;
+
+	/*!
+	 * Given the solution component \c v_x and combined parameter
+	 * components \c v_p, distribute these components through the nested
+	 * sub-vectors in \c v.
+	 */
+	virtual void
+	loadNestedComponents(
+			  const NOX::Abstract::MultiVector& v_x,
+			  const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+			  NOX::Abstract::MultiVector& v) const;
+
+	//! Fill the combined A block as described above
+	virtual void fillA(NOX::Abstract::MultiVector& A) const;
+	
+	//! Fill the combined B block as described above
+	virtual void fillB(NOX::Abstract::MultiVector& B) const;
+	
+	//! Fill the combined C block as described above
+	virtual void fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const;
+	
+	//@}
+
 	//! Get bifurcation parameter
 	double getBifParam() const;
-
-	//! Defines null vector normalization \f$l^Tn\f$ equation
-	double lTransNorm(const NOX::Abstract::Vector& n) const;
-
-	//! null vector normalization for multivectors
-	/*!
-	 * Note:  result should have 1 row and n.numVectors() columns.
-	 */
-	void lTransNorm(const NOX::Abstract::MultiVector& n,
-			NOX::Abstract::MultiVector::DenseMatrix& result) const;
 
       protected:
 
 	//! Set bifurcation parameter
 	void setBifParam(double param);
 
-	//! Sets up multivector views
-	void setupViews();
-
-	//! Initializes group
-	void init(bool perturbSoln = false, double perturbSize = 0.0);
+	//! Computes initial "a" and "b" vectors
+	void getInitialVectors(
+			 Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
+			 Teuchos::RefCountPtr<NOX::Abstract::Vector>& bVecPtr,
+			 bool isSymmetric);
 
       private:
 
@@ -448,62 +497,20 @@ namespace LOCA {
 	Teuchos::RefCountPtr<NOX::Parameter::List> turningPointParams;
 
 	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup> grpPtr;
+	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> grpPtr;
 
-	//! Stores the extended solution vector
-	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector xMultiVec;
-	
-	//! Stores the extended residual vector and df/dp
-	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector fMultiVec;
-	
-	//! Stores the extended Newton vector
-	LOCA::TurningPoint::MooreSpence::ExtendedMultiVector newtonMultiVec;
+	//! Pointer to the constraint equation
+	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::Constraint> constraint;
 
-	//! Stores the length normalization vector
-	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> lengthMultiVec;
-	
-	//! Stores view of first column of xMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> xVec;
-	
-	//! Stores view of first column of fMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> fVec;
-	
-	//! Stores view of first column of fMultiVec as a multivec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> ffMultiVec;
-
-	//! Stores view of df/dp columns of fMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
-
-	//! Stores view of first column of newtonMultiVec
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::ExtendedVector> newtonVec;
-
-	//! Stores view of first column of lengthMultiVec
-	Teuchos::RefCountPtr<NOX::Abstract::Vector> lengthVec;
-
-	//! Stores bordering strategy
-	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy> solverStrategy;
-
-	//! Stores indices for getting f part of fMultiVec
-	vector<int> index_f;
-
-	//! Stores indices for getting df/dp part of fMultiVec
-	vector<int> index_dfdp;
+	//! Pointer to constrained group implementation
+	Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstrainedGroup> conGroup;
 
 	//! Stores the bifurcation parameter index
-	vector<int> bifParamID;
-
-	//! Is residual vector valid
-	bool isValidF;
-
-	//! Is Jacobian matrix valid
-	bool isValidJacobian;
-
-	//! Is Newton vector valid
-	bool isValidNewton;
+	int bifParamID;
 
       }; // class ExtendedGroup
 
-    } // namespace MooreSpence
+    } // namespace MinimallyAugmented
 
   } // namespace TurningPoint
 

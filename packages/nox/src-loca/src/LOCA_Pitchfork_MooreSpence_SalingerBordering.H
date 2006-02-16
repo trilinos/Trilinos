@@ -143,8 +143,7 @@ namespace LOCA {
 	solve(
 	     NOX::Parameter::List& params,
              const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
-             LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result,
-	     bool isContiguous) const;
+             LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const;
 
       protected:
 

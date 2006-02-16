@@ -37,6 +37,8 @@
 #include "LOCA_Bifurcation_Factory.H"
 #include "LOCA_TurningPoint_MooreSpence_ExtendedGroup.H"
 #include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Pitchfork_MooreSpence_ExtendedGroup.H"
 #include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
 
@@ -84,6 +86,25 @@ LOCA::Bifurcation::Factory::create(
 							   bifurcationParams,
 							   msg));
   }
+  else if (name == "Turning Point:  Minimally Augmented") {
+
+    // Cast group to MinimallyAugmented group
+    Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> mag = 
+      Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>(grp);
+    if (mag.get() == NULL)
+      globalData->locaErrorCheck->throwError(
+	    methodName,
+	    string("Underlying group must be derived from ") + 
+	    string("LOCA::TurningPoint::MinimallyAugmented::AbstractGroup ") +
+	    string("for minimally augmented turning point continuation!"));
+
+    strategy = 
+      Teuchos::rcp(new LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup(
+							   globalData,
+							   topParams,
+							   bifurcationParams,
+							   mag));
+  }
   else if (name == "Pitchfork:  Moore-Spence") {
 
     // Cast group to MooreSpence group
@@ -128,9 +149,19 @@ LOCA::Bifurcation::Factory::create(
   return strategy;
 }
 
-const string&
+string
 LOCA::Bifurcation::Factory::strategyName(
 				NOX::Parameter::List& bifurcationParams) const
 {
-  return bifurcationParams.getParameter("Method", "None");
+  // Get bifurcation type
+  string bif_type =  bifurcationParams.getParameter("Type", "None");
+
+  // Get the formulation
+  if (bif_type == "Turning Point" || bif_type == "Pitchfork") {
+    string formulation = 
+      bifurcationParams.getParameter("Formulation", "Moore-Spence");
+    bif_type += ":  " + formulation;
+  }
+
+  return bif_type;
 }

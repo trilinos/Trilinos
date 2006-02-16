@@ -384,6 +384,13 @@ LOCA::MultiContinuation::CompositeConstraint::isDXZero() const
 }
 
 void
+LOCA::MultiContinuation::CompositeConstraint::notifyCompletedStep()
+{
+  for (int i=0; i<numConstraintObjects; i++)
+    constraintPtrs[i]->notifyCompletedStep();
+}
+
+void
 LOCA::MultiContinuation::CompositeConstraint::init(
     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
     const vector< Teuchos::RefCountPtr<

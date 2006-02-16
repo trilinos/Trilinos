@@ -196,20 +196,20 @@ LOCA::Factory::createStepSizeStrategy(
   return strategy;
 }
 
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>
-LOCA::Factory::createBorderedSystemStrategy(
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
+LOCA::Factory::createBorderedSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
 {
-  string methodName = "LOCA::Factory::createBorderedSystemStrategy()";
-  Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> strategy;
+  string methodName = "LOCA::Factory::createBorderedSolverStrategy()";
+  Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> strategy;
 
   // If we have a user-provided factory, first try creating the strategy
   // using it
   if (haveFactory) {
     const string& strategyName = 
       borderedFactory.strategyName(*solverParams);
-    bool created = factory->createBorderedSystemStrategy(strategyName,
+    bool created = factory->createBorderedSolverStrategy(strategyName,
 							 topParams,
 							 solverParams,
 							 strategy);

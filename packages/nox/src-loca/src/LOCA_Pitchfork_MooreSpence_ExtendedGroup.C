@@ -52,9 +52,9 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
     parsedParams(topParams),
     pitchforkParams(tpParams),
     grpPtr(g),
-    xMultiVec(globalData, g->getX(), 2),
+    xMultiVec(globalData, g->getX(), 1),
     fMultiVec(globalData, g->getX(), 2),
-    newtonMultiVec(globalData, g->getX(), 2),
+    newtonMultiVec(globalData, g->getX(), 1),
     asymMultiVec(),
     lengthMultiVec(),
     xVec(),
@@ -317,6 +317,12 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeJacobian()
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 						 callingFunction);
 
+  // Compute underlying Jacobian
+  status = grpPtr->computeJacobian();
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+						 callingFunction);
+
   solverStrategy->setBlocks(
 		  grpPtr, 
 		  Teuchos::rcp(this, false),
@@ -371,12 +377,12 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeNewton(
   newtonMultiVec.init(0.0);
 
   // solve using contiguous
-  status = solverStrategy->solve(params, fMultiVec, newtonMultiVec, true);
+  status = solverStrategy->solve(params, *ffMultiVec, newtonMultiVec);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
 							   callingFunction);
 
-  newtonVec->scale(-1.0);
+  newtonMultiVec.scale(-1.0);
 
   isValidNewton = true;
 
@@ -569,7 +575,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianInverseMultiVector(
   LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& pf_result = 
     dynamic_cast<LOCA::Pitchfork::MooreSpence::ExtendedMultiVector&>(result);
   
-  NOX::Abstract::Group::ReturnType res = solverStrategy->solve(params, pf_input, pf_result, false);
+  NOX::Abstract::Group::ReturnType res = solverStrategy->solve(params, pf_input, pf_result);
 
   return res;
 }
@@ -887,6 +893,13 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::printSolution(
       globalData->locaUtils->sciformat(pf_x.getBifParam()) << std::endl;
   }
   grpPtr->printSolution(*pf_x.getNullVec(), pf_x.getBifParam());
+}
+
+void
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::notifyCompletedStep()
+{
+  // Notify underlying group that the step is completed
+  grpPtr->notifyCompletedStep();
 }
 
 double

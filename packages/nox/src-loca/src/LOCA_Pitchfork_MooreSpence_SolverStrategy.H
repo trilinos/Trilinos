@@ -124,10 +124,9 @@ namespace LOCA {
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	solve(
-	     NOX::Parameter::List& params,
-             const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
-             LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result,
-	     bool isContiguous) const = 0;
+	  NOX::Parameter::List& params,
+	  const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
+          LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const = 0;
 
       private:
 

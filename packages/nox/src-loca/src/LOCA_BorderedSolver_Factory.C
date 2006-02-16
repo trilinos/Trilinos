@@ -34,45 +34,52 @@
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
-#include "LOCA_BorderedSystem_Factory.H"
-#include "LOCA_BorderedSystem_AbstractStrategy.H"
-#include "LOCA_BorderedSystem_Bordering.H"
+#include "LOCA_BorderedSolver_Factory.H"
+#include "LOCA_BorderedSolver_AbstractStrategy.H"
+#include "LOCA_BorderedSolver_Bordering.H"
+#include "LOCA_BorderedSolver_Nested.H"
 
-LOCA::BorderedSystem::Factory::Factory(
+LOCA::BorderedSolver::Factory::Factory(
 	        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data) : 
   globalData(global_data)
 {
 }
 
-LOCA::BorderedSystem::Factory::~Factory()
+LOCA::BorderedSolver::Factory::~Factory()
 {
 }
 
-Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>
-LOCA::BorderedSystem::Factory::create(
+Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
+LOCA::BorderedSolver::Factory::create(
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
        const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
 {
-  string methodName = "LOCA::BorderedSystem::Factory::create()";
-  Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> strategy;
+  string methodName = "LOCA::BorderedSolver::Factory::create()";
+  Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> strategy;
 
   // Get name of strategy
   const string& name = strategyName(*solverParams);
 
   if (name == "Bordering")
     strategy = 
-      Teuchos::rcp(new LOCA::BorderedSystem::Bordering(globalData,
+      Teuchos::rcp(new LOCA::BorderedSolver::Bordering(globalData,
 						       topParams,
 						       solverParams));
+
+  else if (name == "Nested")
+    strategy = 
+      Teuchos::rcp(new LOCA::BorderedSolver::Nested(globalData,
+						    topParams,
+						    solverParams));
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
     string userDefinedName = solverParams->getParameter("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isParameterRcp<LOCA::BorderedSystem::AbstractStrategy>(userDefinedName))
+	isParameterRcp<LOCA::BorderedSolver::AbstractStrategy>(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::BorderedSystem::AbstractStrategy>(userDefinedName);
+	getRcpParameter<LOCA::BorderedSolver::AbstractStrategy>(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,
@@ -89,7 +96,7 @@ LOCA::BorderedSystem::Factory::create(
 }
 
 const string&
-LOCA::BorderedSystem::Factory::strategyName(
+LOCA::BorderedSolver::Factory::strategyName(
 				  NOX::Parameter::List& solverParams) const
 {
   return solverParams.getParameter("Bordered Solver Method", "Bordering");

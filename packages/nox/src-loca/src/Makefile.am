@@ -83,6 +83,7 @@ LOCA_OLD = \
 
 LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
+	$(srcdir)/LOCA_Abstract_TransposeSolveGroup.H \
 	$(srcdir)/LOCA_Abstract_Iterator.H \
 	$(srcdir)/LOCA_Abstract_Factory.H
 
@@ -101,15 +102,24 @@ LOCA_EXTENDED = \
 	$(srcdir)/LOCA_Extended_MultiVector.C \
 	$(srcdir)/LOCA_Extended_MultiAbstractGroup.C
 
-LOCA_BORDERED_SYSTEM_H = \
-	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.H \
-	$(srcdir)/LOCA_BorderedSystem_Bordering.H \
-	$(srcdir)/LOCA_BorderedSystem_Factory.H
+LOCA_BORDERED_SOLVER_H = \
+	$(srcdir)/LOCA_BorderedSolver_AbstractStrategy.H \
+	$(srcdir)/LOCA_BorderedSolver_LowerTriangularBlockElimination.H \
+	$(srcdir)/LOCA_BorderedSolver_UpperTriangularBlockElimination.H \
+	$(srcdir)/LOCA_BorderedSolver_Bordering.H \
+	$(srcdir)/LOCA_BorderedSolver_HouseholderQR.H \
+	$(srcdir)/LOCA_BorderedSystem_AbstractGroup.H \
+	$(srcdir)/LOCA_BorderedSolver_Nested.H \
+	$(srcdir)/LOCA_BorderedSolver_Factory.H
 
-LOCA_BORDERED_SYSTEM = \
-	$(srcdir)/LOCA_BorderedSystem_Bordering.C \
-	$(srcdir)/LOCA_BorderedSystem_AbstractStrategy.C \
-	$(srcdir)/LOCA_BorderedSystem_Factory.C
+LOCA_BORDERED_SOLVER = \
+	$(srcdir)/LOCA_BorderedSolver_LowerTriangularBlockElimination.C \
+	$(srcdir)/LOCA_BorderedSolver_UpperTriangularBlockElimination.C \
+	$(srcdir)/LOCA_BorderedSolver_AbstractStrategy.C \
+	$(srcdir)/LOCA_BorderedSolver_Bordering.C \
+	$(srcdir)/LOCA_BorderedSolver_HouseholderQR.C \
+	$(srcdir)/LOCA_BorderedSolver_Nested.C \
+	$(srcdir)/LOCA_BorderedSolver_Factory.C
 
 LOCA_CONTINUATION_H =
 
@@ -166,6 +176,10 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.H \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H\
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_AbstractGroup.H \
@@ -185,6 +199,9 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SalingerBordering.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_PhippsBordering.C \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.C\
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedGroup.C \
@@ -328,7 +345,7 @@ endif
 LOCA_H = \
         $(srcdir)/LOCA.H \
 	$(LOCA_EXTENDED_H) \
-	$(LOCA_BORDERED_SYSTEM_H) \
+	$(LOCA_BORDERED_SOLVER_H) \
 	$(LOCA_MULTICONTINUATION_H) \
 	$(LOCA_ANASAZI_H) \
 	$(LOCA_SINGULARSOLVE_H) \
@@ -347,7 +364,7 @@ LOCA_H = \
 
 LOCA = \
 	$(LOCA_EXTENDED) \
-	$(LOCA_BORDERED_SYSTEM) \
+	$(LOCA_BORDERED_SOLVER) \
 	$(LOCA_MULTICONTINUATION) \
 	$(LOCA_ANASAZI) \
 	$(LOCA_SINGULARSOLVE) \

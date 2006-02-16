@@ -419,8 +419,11 @@ namespace LOCA {
 	 * components of the extended solution vector using the printSolution
 	 * method of the underlying group.
 	 */
-	 virtual void printSolution(const NOX::Abstract::Vector& x_,
+	virtual void printSolution(const NOX::Abstract::Vector& x_,
 				    const double conParam) const;
+
+	//! Notify group that the continuation step is completed
+	virtual void notifyCompletedStep();
 
 	//! Get bifurcation parameter
 	double getBifParam() const;

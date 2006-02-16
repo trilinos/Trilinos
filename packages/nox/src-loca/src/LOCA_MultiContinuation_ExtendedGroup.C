@@ -288,6 +288,7 @@ LOCA::MultiContinuation::ExtendedGroup::getNumParams() const
 void
 LOCA::MultiContinuation::ExtendedGroup::notifyCompletedStep()
 {
+  conGroup->notifyCompletedStep();
   isValidPredictor = false;
   baseOnSecant = true;
 }
@@ -477,6 +478,83 @@ LOCA::MultiContinuation::ExtendedGroup::projectToDraw(
   grpPtr->projectToDraw(*x.getXVec(), px+numParams);
 }
 
+int
+LOCA::MultiContinuation::ExtendedGroup::getBorderedWidth() const
+{
+  return conGroup->getBorderedWidth();
+}
+
+Teuchos::RefCountPtr<const NOX::Abstract::Group>
+LOCA::MultiContinuation::ExtendedGroup::getUnborderedGroup() const
+{
+  return conGroup->getUnborderedGroup();
+}
+
+bool
+LOCA::MultiContinuation::ExtendedGroup::isCombinedAZero() const
+{
+  return conGroup->isCombinedAZero();
+}
+
+bool
+LOCA::MultiContinuation::ExtendedGroup::isCombinedBZero() const
+{
+  return conGroup->isCombinedBZero();
+}
+
+bool
+LOCA::MultiContinuation::ExtendedGroup::isCombinedCZero() const
+{
+  return conGroup->isCombinedCZero();
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::extractSolutionComponent(
+			                const NOX::Abstract::MultiVector& v,
+                                        NOX::Abstract::MultiVector& v_x) const
+{
+  conGroup->extractSolutionComponent(v, v_x);
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::extractParameterComponent(
+			   bool use_transpose,
+                           const NOX::Abstract::MultiVector& v,
+                           NOX::Abstract::MultiVector::DenseMatrix& v_p) const
+{
+  conGroup->extractParameterComponent(use_transpose, v, v_p);
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::loadNestedComponents(
+			   const NOX::Abstract::MultiVector& v_x,
+			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+			   NOX::Abstract::MultiVector& v) const
+{
+  conGroup->loadNestedComponents(v_x, v_p, v);
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::fillA(
+	                                 NOX::Abstract::MultiVector& A) const
+{
+  conGroup->fillA(A);
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::fillB(
+	                                 NOX::Abstract::MultiVector& B) const
+{
+  conGroup->fillB(B);
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::fillC(
+	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
+{
+  conGroup->fillC(C);
+}
+
 LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
@@ -507,79 +585,10 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
 void
 LOCA::MultiContinuation::ExtendedGroup::setConstraints(const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints)
 {
-//   bool is_con_ug = false;
-//   Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstrainedGroup> con_ug;
-
-//   con_ug = 
-//     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstrainedGroup>(
-// 								       grpPtr);
-//   if (con_ug.get() != NULL)
-//     is_con_ug = true;
-
-//   if (is_con_ug) {
-
-//     // Get constraints of underlying group
-//     Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> con_ug_constraints = con_ug->getConstraints();
-
-//     Teuchos::RefCountPtr<LOCA::MultiContinuation::CompositeConstraint> composite_constraint;
-
-//     // Check if constraints are all MVDX
-//     Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = 
-//       Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraints);
-//     Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> con_ug_constraints_mvdx = 
-//       Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ConstraintInterfaceMVDX>(con_ug_constraints);
-
-//     if (constraints_mvdx.get() != NULL && con_ug_constraints_mvdx.get() != NULL) {
-
-//       // Form composite constraint array
-//       vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterfaceMVDX> > composite_constraint_ptrs(2);
-//       composite_constraint_ptrs[0] = con_ug_constraints_mvdx;
-//       composite_constraint_ptrs[1] = constraints_mvdx;
-
-//       // Form composite constraint
-//       composite_constraint =
-// 	Teuchos::rcp(new LOCA::MultiContinuation::CompositeConstraintMVDX(
-// 						   globalData,
-// 						   composite_constraint_ptrs));
-      
-//     }
-//     else {
-
-//       // Form composite constraint array
-//       vector< Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> > composite_constraint_ptrs(2);
-//       composite_constraint_ptrs[0] = con_ug_constraints;
-//       composite_constraint_ptrs[1] = constraints;
-
-//       // Form composite constraint
-//       composite_constraint =
-// 	Teuchos::rcp(new LOCA::MultiContinuation::CompositeConstraint(
-// 						   globalData,
-// 						   composite_constraint_ptrs));
-//     }
-
-//     // Form composite constraint paramIDs
-//     const vector<int>& con_ug_paramIDs = con_ug->getConstraintParamIDs();
-//     vector<int> composite_paramIDs(con_ug_paramIDs.size() + 
-// 				   conParamIDs.size());
-//     copy(con_ug_paramIDs.begin(), con_ug_paramIDs.end(), 
-// 	 composite_paramIDs.begin());
-//     copy(conParamIDs.begin(), conParamIDs.end(), 
-// 	 composite_paramIDs.begin()+con_ug_paramIDs.size());
-    
-//     // Form constrained group using composite constraint
-//     conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
-// 						 continuationParams,
-// 						 con_ug->getUnderlyingGroup(), 
-// 						 composite_constraint,
-// 						 composite_paramIDs));
-//   }
-//   else {
-
-    // Form constrained group using original group and continuation constraints
-    conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
-						 continuationParams,
-						 grpPtr, constraints,
-						 conParamIDs));
-//   }
+  // Form constrained group using original group and continuation constraints
+  conGroup = Teuchos::rcp(new ConstrainedGroup(globalData, parsedParams,
+					       continuationParams,
+					       grpPtr, constraints,
+					       conParamIDs));
   grpPtr = conGroup->getGroup();
 }

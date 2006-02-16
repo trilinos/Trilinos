@@ -30,10 +30,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BORDEREDSYSTEM_BORDERING_H
-#define LOCA_BORDEREDSYSTEM_BORDERING_H
+#ifndef LOCA_BORDEREDSOLVER_BORDERING_H
+#define LOCA_BORDEREDSOLVER_BORDERING_H
 
-#include "LOCA_BorderedSystem_AbstractStrategy.H"  // base class
+#include "LOCA_BorderedSolver_AbstractStrategy.H"  // base class
 
 // forward declarations
 namespace LOCA {
@@ -41,11 +41,14 @@ namespace LOCA {
   namespace Parameter {
     class SublistParser;
   }
+  namespace Abstract {
+    class TransposeSolveGroup;
+  }
 }
 
 namespace LOCA {
 
-  namespace BorderedSystem {
+  namespace BorderedSolver {
     
     //! Bordered system solver strategy based on bordering
     /*! 
@@ -75,10 +78,17 @@ namespace LOCA {
      * \f]
      * It takes advantage of any of the matrix blocks being zero and
      * concatenates \f$F\f$ and \f$A\f$ into a contiguous multivector
-     * (if they are not already) to compute \f$X_1\f$ and \f$X_2\f$ in
-     * one block solve.
+     * to compute \f$X_1\f$ and \f$X_2\f$ in one block solve.
+     *
+     * To solve the transpose of the system, a similar bordering algorithm
+     * is implemented.  Note however that for the transpose, the constraint
+     * object representing \f$B\f$ must implement the 
+     * LOCA::MultiContinuation::ConstraintInterfaceMVDX since \f$B\f$ 
+     * appears on the right-hand-side of a linear system, and the group
+     * must implement the LOCA::Abstract::TransposeSolveGroup interface
+     * to solve the Jacobian transpose system.
     */
-    class Bordering : public LOCA::BorderedSystem::AbstractStrategy {
+    class Bordering : public LOCA::BorderedSolver::AbstractStrategy {
 
     public:
 
@@ -97,12 +107,6 @@ namespace LOCA {
       //! Destructor
       virtual ~Bordering();
 
-      /*! 
-       * \brief Set flag indicating whether F and A are stored in a 
-       * continguous multivector.
-       */
-      virtual void setIsContiguous(bool flag);
-
       //! Set blocks
       /*!
        * The \c blockA or \c blockC pointer may be null if either is zero.
@@ -114,6 +118,22 @@ namespace LOCA {
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector>& blockA,
 	  const Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
 	  const Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+
+       //! Intialize solver for a solve
+      /*!
+       * This should be called after setMatrixBlocks(), but before 
+       * applyInverse().
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      initForSolve();
+
+      //! Intialize solver for a transpose solve
+      /*!
+       * This should be called after setMatrixBlocks(), but before 
+       * applyInverseTranspose().
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      initForTransposeSolve();
   
       /*! 
        * \brief Computed extended matrix-multivector product
@@ -190,31 +210,26 @@ namespace LOCA {
 		   NOX::Abstract::MultiVector& X,
 		   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
+      /*! 
+       * \brief Solves the transpose of the extended system as defined above 
+       * using bordering
+       */
+      /*!
+       * The \em params argument is the linear solver parameters. If
+       * \em isZeroF or \em isZeroG is true, than the corresponding
+       * \em F or \em G pointers may be NULL.  Note that for the transpose
+       * solve B must be of type 
+       * LOCA::MultiContinuation::ConstraintInterfaceMVDX and the group
+       * must implement LOCA::Abstract::TransposeSolveGroup.
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      applyInverseTranspose(NOX::Parameter::List& params,
+			    const NOX::Abstract::MultiVector* F,
+			    const NOX::Abstract::MultiVector::DenseMatrix* G,
+			    NOX::Abstract::MultiVector& X,
+			    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
     protected:
-
-      /*! 
-       * \brief Solves the extended system when B = 0
-       */
-      NOX::Abstract::Group::ReturnType  
-      solveBZero(NOX::Parameter::List& params,
-		 const NOX::Abstract::MultiVector* AA,
-		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		 const NOX::Abstract::MultiVector* F,
-		 const NOX::Abstract::MultiVector::DenseMatrix* G,
-		 NOX::Abstract::MultiVector& X,
-		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
-
-      /*! 
-       * \brief Solves the extended system when A = 0
-       */
-      NOX::Abstract::Group::ReturnType  
-      solveAZero(NOX::Parameter::List& params,
-		 const LOCA::MultiContinuation::ConstraintInterface* BB,
-		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
-		 const NOX::Abstract::MultiVector* F,
-		 const NOX::Abstract::MultiVector::DenseMatrix* G,
-		 NOX::Abstract::MultiVector& X,
-		 NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
       /*! 
        * \brief Solves the extended system when F = 0
@@ -243,6 +258,35 @@ namespace LOCA {
 		      NOX::Abstract::MultiVector& X,
 		      NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
+      /*! 
+       * \brief Solves the transpose of the extended system when F = 0
+       */
+      NOX::Abstract::Group::ReturnType  
+      solveFZeroTrans(NOX::Parameter::List& params,
+		      const NOX::Abstract::MultiVector* AA,
+		      const NOX::Abstract::MultiVector* BB,
+		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		      const NOX::Abstract::MultiVector::DenseMatrix* G,
+		      NOX::Abstract::MultiVector& X,
+		      NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
+      /*! 
+       * \brief Solves the transpose of the extended system when F and B are 
+       * contiguous
+       */
+      NOX::Abstract::Group::ReturnType  
+      solveContiguousTrans(
+		      NOX::Parameter::List& params,
+		      const NOX::Abstract::MultiVector* AA,
+		      const NOX::Abstract::MultiVector* BB,
+		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
+		      vector<int>& indexF,
+		      vector<int>& indexA,
+		      const NOX::Abstract::MultiVector* F,
+		      const NOX::Abstract::MultiVector::DenseMatrix* G,
+		      NOX::Abstract::MultiVector& X,
+		      NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
     private:
 
       //! Private to prohibit copying
@@ -261,6 +305,9 @@ namespace LOCA {
 
       //! Pointer to group storing J
       Teuchos::RefCountPtr<const NOX::Abstract::Group> grp;
+
+      //! Pointer to group with transpose-solve interface
+      Teuchos::RefCountPtr<const LOCA::Abstract::TransposeSolveGroup> ts_grp;
 
       //! Pointer to A block
       Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> A;
@@ -286,11 +333,8 @@ namespace LOCA {
       //! flag indicating whether G block is zero
       mutable bool isZeroG;
 
-      //! flag indicating whether F and A are contiguous
-      bool isContiguous;
-
     };
-  } // namespace BorderedSystem
+  } // namespace BorderedSolver
 } // namespace LOCA
 
 #endif

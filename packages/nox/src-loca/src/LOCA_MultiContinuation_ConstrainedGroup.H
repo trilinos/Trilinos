@@ -37,6 +37,7 @@
 
 #include "LOCA_Extended_MultiAbstractGroup.H"           // base class
 #include "LOCA_MultiContinuation_AbstractGroup.H"       // base class
+#include "LOCA_BorderedSystem_AbstractGroup.H"          // base class
 #include "LOCA_MultiContinuation_ExtendedVector.H"      // class data element
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H" // class data element
 
@@ -54,7 +55,7 @@ namespace LOCA {
   namespace MultiContinuation {
     class ConstraintInterface;
   }
-  namespace BorderedSystem {
+  namespace BorderedSolver {
     class AbstractStrategy;
   }
 }
@@ -80,12 +81,13 @@ namespace LOCA {
      * is a constraint represented by a 
      * LOCA::MultiContinuation::ConstraintInterface object.  Newton steps
      * for this system are computed via some 
-     * LOCA::BorderedSystem::AbstractStrategy which is specified via   
+     * LOCA::BorderedSolver::AbstractStrategy which is specified via   
      * the \c constraintParams argument to the constructor.
      */
     class ConstrainedGroup : 
       public virtual LOCA::Extended::MultiAbstractGroup,
-      public virtual LOCA::MultiContinuation::AbstractGroup {
+      public virtual LOCA::MultiContinuation::AbstractGroup,
+      public virtual LOCA::BorderedSystem::AbstractGroup {
 
     public:
 
@@ -119,15 +121,6 @@ namespace LOCA {
 
       //! Get constraint parameter \c i 
       virtual double getConstraintParameter(int i) const;
-
-      //! Get group
-      virtual Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
-      getGroup() const;
-
-      //! Get constraints
-      virtual 
-      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
-      getConstraints() const;
 
       //! Get constraint parameter IDs
       virtual const vector<int>&
@@ -320,13 +313,83 @@ namespace LOCA {
       virtual void
       scaleVector(NOX::Abstract::Vector& x) const;
 
+      //! Notify group that the continuation step is completed
+      virtual void notifyCompletedStep();
+
       //@}
 
-    protected:
+      /*! 
+       * @name Implementation of 
+       * LOCA::BorderedSystem::AbstractGroup virtual methods 
+       */
+      //@{
 
-      //! applyJacobianInverseMultiVector specialized to Newton solves
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianInverseNewton(NOX::Parameter::List& params);
+      //! Return the total width of the bordered rows/columns
+      virtual int getBorderedWidth() const;
+
+      //! Get bottom-level unbordered group
+      virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+      getUnborderedGroup() const;
+
+      //! Indicates whether combined A block is zero
+      virtual bool isCombinedAZero() const;
+
+      //! Indicates whether combined B block is zero
+      virtual bool isCombinedBZero() const;
+
+      //! Indicates whether combined C block is zero
+      virtual bool isCombinedCZero() const;
+
+      /*!
+       * Given the vector \c v, extract the underlying solution component
+       * corresponding to the unbordered group.
+       */
+      virtual void
+      extractSolutionComponent(const NOX::Abstract::MultiVector& v,
+			       NOX::Abstract::MultiVector& v_x) const;
+
+      /*!
+       * Given the vector \c v, extract the parameter components of all
+       * of the nested subvectors in \c v down to the solution component
+       * for the unbordered group.
+       */
+      virtual void 
+      extractParameterComponent(
+			   bool use_transpose,
+                           const NOX::Abstract::MultiVector& v,
+                           NOX::Abstract::MultiVector::DenseMatrix& v_p) const;
+
+      /*!
+       * Given the solution component \c v_x and combined parameter
+       * components \c v_p, distribute these components through the nested
+       * sub-vectors in \c v.
+       */
+      virtual void
+      loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
+			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+			   NOX::Abstract::MultiVector& v) const;
+
+      //! Fill the combined A block as described above
+      virtual void fillA(NOX::Abstract::MultiVector& A) const;
+
+      //! Fill the combined B block as described above
+      virtual void fillB(NOX::Abstract::MultiVector& B) const;
+
+      //! Fill the combined C block as described above
+      virtual void fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const;
+
+      //@}
+
+      //! Get group
+      virtual Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+      getGroup();
+
+      //! Get constraints
+      virtual 
+      Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+      getConstraints();
+
+    protected:
 
       //! Resets all isValid flags to false
       virtual void resetIsValid();
@@ -353,13 +416,16 @@ namespace LOCA {
       //! Pointer to base group that defines \f$F\f$
       Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grpPtr;
 
+      //! Pointer to base group as a bordered group
+      Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractGroup> bordered_grp;
+
       //! Pointer to constraint object
       Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface> constraintsPtr;
 
       //! Number of parameters
       int numParams;
 
-      //! Stores the extended solution vector and J^-1 df/dp
+      //! Stores the extended solution vector
       LOCA::MultiContinuation::ExtendedMultiVector xMultiVec;
 
       //! Stores the extended residual vector and df/dp
@@ -390,7 +456,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> gradientVec;
 
       //! Stores bordered solver strategy
-      Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> borderedSolver;
+      Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
       //! Stores indices for getting f part of fMultiVec
       vector<int> index_f;
@@ -412,6 +478,9 @@ namespace LOCA {
 
       //! Is Gradient vector valid
       bool isValidGradient;
+
+      //! Flag that indicates whether underlying group is a bordered group
+      bool isBordered;
 
     }; // Class ConstrainedGroup
 

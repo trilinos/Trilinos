@@ -77,11 +77,11 @@ LOCA::Abstract::Factory::createStepSizeStrategy(
 }
 
 bool
-LOCA::Abstract::Factory::createBorderedSystemStrategy(
+LOCA::Abstract::Factory::createBorderedSolverStrategy(
         const string& strategyName,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
 	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
-	Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy>& strategy)
+	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy)
 {
   return false;
 }

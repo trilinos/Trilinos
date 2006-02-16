@@ -36,6 +36,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "LOCA_MultiContinuation_AbstractStrategy.H"    // base class
+#include "LOCA_BorderedSystem_AbstractGroup.H"          // base class
 #include "LOCA_MultiContinuation_ExtendedVector.H"      // class data element
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H" // class data element
 
@@ -101,7 +102,8 @@ namespace LOCA {
      * public constructor.
      */
     class ExtendedGroup : 
-      public virtual LOCA::MultiContinuation::AbstractStrategy {
+      public virtual LOCA::MultiContinuation::AbstractStrategy,
+      public virtual LOCA::BorderedSystem::AbstractGroup {
 
     public:
 
@@ -322,6 +324,68 @@ namespace LOCA {
       virtual void projectToDraw(
 			    const LOCA::MultiContinuation::ExtendedVector& x, 
 			    double *px) const;
+
+      //@}
+
+      /*! 
+       * @name Implementation of 
+       * LOCA::BorderedSystem::AbstractGroup virtual methods 
+       */
+      //@{
+
+      //! Return the total width of the bordered rows/columns
+      virtual int getBorderedWidth() const;
+
+      //! Get bottom-level unbordered group
+      virtual Teuchos::RefCountPtr<const NOX::Abstract::Group>
+      getUnborderedGroup() const;
+
+      //! Indicates whether combined A block is zero
+      virtual bool isCombinedAZero() const;
+
+      //! Indicates whether combined B block is zero
+      virtual bool isCombinedBZero() const;
+
+      //! Indicates whether combined C block is zero
+      virtual bool isCombinedCZero() const;
+
+      /*!
+       * Given the vector \c v, extract the underlying solution component
+       * corresponding to the unbordered group.
+       */
+      virtual void
+      extractSolutionComponent(const NOX::Abstract::MultiVector& v,
+			       NOX::Abstract::MultiVector& v_x) const;
+      
+      /*!
+       * Given the vector \c v, extract the parameter components of all
+       * of the nested subvectors in \c v down to the solution component
+       * for the unbordered group.
+       */
+      virtual void 
+      extractParameterComponent(
+			   bool use_transpose,
+                           const NOX::Abstract::MultiVector& v,
+                           NOX::Abstract::MultiVector::DenseMatrix& v_p) const;
+
+      /*!
+       * Given the solution component \c v_x and combined parameter
+       * components \c v_p, distribute these components through the nested
+       * sub-vectors in \c v.
+       */
+      virtual void
+      loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
+			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+			   NOX::Abstract::MultiVector& v) const;
+
+      //! Fill the combined A block as described above
+      virtual void fillA(NOX::Abstract::MultiVector& A) const;
+
+      //! Fill the combined B block as described above
+      virtual void fillB(NOX::Abstract::MultiVector& B) const;
+
+      //! Fill the combined C block as described above
+      virtual void fillC(NOX::Abstract::MultiVector::DenseMatrix& C) const;
 
       //@}
 

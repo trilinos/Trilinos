@@ -131,10 +131,9 @@ namespace LOCA {
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	solve(
-	     NOX::Parameter::List& params,
-             const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
-             LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result,
-	     bool isContiguous) const;
+	   NOX::Parameter::List& params,
+	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
+	   LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const;
 
       protected:
 

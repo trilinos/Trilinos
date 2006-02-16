@@ -215,3 +215,7 @@ LOCA::MultiContinuation::NaturalConstraint::isDXZero() const
   return true;
 }
 
+void
+LOCA::MultiContinuation::NaturalConstraint::notifyCompletedStep()
+{
+}

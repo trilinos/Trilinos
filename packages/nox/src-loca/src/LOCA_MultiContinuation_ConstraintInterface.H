@@ -166,6 +166,9 @@ namespace LOCA {
        */
       virtual bool isDXZero() const = 0;
 
+      //! Notify constraint that the continuation step is completed
+      virtual void notifyCompletedStep() = 0;
+
     }; // Class ConstraintInterface
 
   } // Namespace MultiContinuation

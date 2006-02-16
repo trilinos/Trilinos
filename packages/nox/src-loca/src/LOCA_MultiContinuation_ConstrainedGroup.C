@@ -33,11 +33,12 @@
 #include "NOX_Parameter_List.H"
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
+#include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
-#include "LOCA_BorderedSystem_AbstractStrategy.H"
+#include "LOCA_BorderedSolver_AbstractStrategy.H"
 #include "LOCA_ErrorCheck.H"
 #include "NOX_Utils.H"
 #include "LOCA_Parameter_Vector.H"
@@ -53,12 +54,12 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     parsedParams(topParams),
     constraintParams(conParams),
     grpPtr(g),
+    bordered_grp(),
     constraintsPtr(constraints),
     numParams(paramIDs.size()),
-    xMultiVec(globalData, g->getX(), numParams+1, numParams, NOX::DeepCopy),
+    xMultiVec(globalData, g->getX(), 1, numParams, NOX::DeepCopy),
     fMultiVec(globalData, g->getX(), numParams+1, numParams, NOX::ShapeCopy),
-    newtonMultiVec(globalData, g->getX(), numParams+1, numParams, 
-		   NOX::ShapeCopy),
+    newtonMultiVec(globalData, g->getX(), 1, numParams, NOX::ShapeCopy),
     gradientMultiVec(globalData, g->getX(), 1, numParams, NOX::ShapeCopy),
     xVec(),
     fVec(),
@@ -73,7 +74,8 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     isValidF(false),
     isValidJacobian(false),
     isValidNewton(false),
-    isValidGradient(false)
+    isValidGradient(false),
+    isBordered(false)
 {
   // Set up multi-vector views
   setupViews(); 
@@ -87,9 +89,14 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
   constraintsPtr->setX(*(xVec->getXVec()));
 
   // Instantiate bordered solver
-  borderedSolver = globalData->locaFactory->createBorderedSystemStrategy(
+  borderedSolver = globalData->locaFactory->createBorderedSolverStrategy(
 				   parsedParams,
 				   constraintParams);
+
+  // Determine if underlying group is bordered
+  bordered_grp = 
+    Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
+  isBordered = (bordered_grp != Teuchos::null);
 }
 
 LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
@@ -99,6 +106,7 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     parsedParams(source.parsedParams),
     constraintParams(source.constraintParams),
     grpPtr(Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractGroup>(source.grpPtr->clone(type))),
+    bordered_grp(),
     constraintsPtr(source.constraintsPtr->clone(type)),
     numParams(source.numParams),
     xMultiVec(source.xMultiVec, type),
@@ -118,13 +126,14 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton),
-    isValidGradient(source.isValidGradient)
+    isValidGradient(source.isValidGradient),
+    isBordered(false)
 {
   // Set up multi-vector views
   setupViews();
 
   // Instantiate bordered solver
-  borderedSolver = globalData->locaFactory->createBorderedSystemStrategy(
+  borderedSolver = globalData->locaFactory->createBorderedSolverStrategy(
 				   parsedParams,
 				   constraintParams);
 
@@ -134,6 +143,11 @@ LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
     isValidNewton = false;
     isValidGradient = false;
   }
+
+  // Determine if underlying group is bordered
+  bordered_grp = 
+    Teuchos::rcp_dynamic_cast<LOCA::BorderedSystem::AbstractGroup>(grpPtr);
+  isBordered = (bordered_grp != Teuchos::null);
 }
 
 
@@ -156,18 +170,6 @@ double
 LOCA::MultiContinuation::ConstrainedGroup::getConstraintParameter(int i) const
 {
   return grpPtr->getParam(constraintParamIDs[i]);
-}
-
-Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
-LOCA::MultiContinuation::ConstrainedGroup::getGroup() const
-{
-  return grpPtr;
-}
-
-Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
-LOCA::MultiContinuation::ConstrainedGroup::getConstraints() const
-{
-  return constraintsPtr;
 }
 
 const vector<int>&
@@ -275,17 +277,12 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
 				    isValidF);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							    finalStatus,
-							    callingFunction);
+							   finalStatus,
+							   callingFunction);
 
-  // Compute underlying Jacobian
-  if (!grpPtr->isJacobian()) {
-    status = grpPtr->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							      finalStatus,
-							      callingFunction);
-  }
+  // We need to compute the constraint derivatives before computing the
+  // Jacobian, because the constraint derivatives might involve derivatives
+  // of the Jacobian, and finite differencing may invalidate the Jacobian
 
   // Compute constraint derivatives
   if (!constraintsPtr->isDX()) {
@@ -304,12 +301,25 @@ LOCA::MultiContinuation::ConstrainedGroup::computeJacobian()
 							    finalStatus,
 							    callingFunction);
 
+  // Compute underlying Jacobian
+  if (!grpPtr->isJacobian()) {
+    status = grpPtr->computeJacobian();
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+
   // Set blocks in bordered solver
-  borderedSolver->setMatrixBlocks(
-			 grpPtr, 
-			 dfdpMultiVec->getXMultiVec(), 
-			 constraintsPtr,
-			 dfdpMultiVec->getScalars());
+  borderedSolver->setMatrixBlocks(grpPtr, 
+				  dfdpMultiVec->getXMultiVec(), 
+				  constraintsPtr,
+				  dfdpMultiVec->getScalars());
+  status = borderedSolver->initForSolve();
+  finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
 
   isValidJacobian = true;
 
@@ -409,15 +419,16 @@ LOCA::MultiContinuation::ConstrainedGroup::computeNewton(
   }
 
   // zero out newton vec -- used as initial guess for some linear solvers
-  newtonVec->init(0.0);
+  newtonMultiVec.init(0.0);
 
-  status = applyJacobianInverseNewton(params);
+  status = applyJacobianInverseMultiVector(params, *ffMultiVec, 
+					   newtonMultiVec);
   finalStatus = 
     globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							    finalStatus,
-							    callingFunction);
+							   finalStatus,
+							   callingFunction);
 
-  newtonVec->scale(-1.0);
+  newtonMultiVec.scale(-1.0);
 
   isValidNewton = true;
 
@@ -595,7 +606,6 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
     c_result.getScalars();
 
   // Call bordered solver applyInverse method
-  borderedSolver->setIsContiguous(false);
   NOX::Abstract::Group::ReturnType status = 
     borderedSolver->applyInverse(params, input_x.get(), input_param.get(), 
 				 *result_x, *result_param);
@@ -684,44 +694,6 @@ LOCA::MultiContinuation::ConstrainedGroup::getUnderlyingGroup()
   return grpPtr;
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseNewton(
-						NOX::Parameter::List& params) 
-{
-  // This method is specialized to the Newton solve where the right-hand-side
-  // is f.  We take advantage of the fact that f and df/dp are in a 
-  // contiguous multivector
-
-  string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseNewton()";
-  
-  if (!isJacobian()) {
-    globalData->locaErrorCheck->throwError(callingFunction,
-					    "Called with invalid Jacobian!");
-  }
-
-  // Get x, param components of f vector (we only want the parameter 
-  // components of f, not df/dp)
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> f_x = 
-    fMultiVec.getXMultiVec();
-  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> f_p = 
-    ffMultiVec->getScalars();
-
-  // Get references to x, param components of newton vector
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> newton_x = 
-    newtonMultiVec.getXMultiVec();
-  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> newton_p = 
-    newtonVec->getScalars();
-
-  // Call bordered solver applyInverse method
-  borderedSolver->setIsContiguous(true);
-  NOX::Abstract::Group::ReturnType status = 
-    borderedSolver->applyInverse(params, f_x.get(), f_p.get(), *newton_x, 
-				 *newton_p);
-
-  return status;
-}
-
 void
 LOCA::MultiContinuation::ConstrainedGroup::copy(
 					      const NOX::Abstract::Group& src) 
@@ -755,7 +727,7 @@ LOCA::MultiContinuation::ConstrainedGroup::copy(
 
     // Instantiate bordered solver
     borderedSolver = 
-      globalData->locaFactory->createBorderedSystemStrategy(
+      globalData->locaFactory->createBorderedSolverStrategy(
 				   parsedParams,
 				   constraintParams);
   }
@@ -940,6 +912,474 @@ LOCA::MultiContinuation::ConstrainedGroup::scaleVector(
     dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(x);
 
   grpPtr->scaleVector(*mx.getXVec());
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::notifyCompletedStep()
+{
+  // Notify underlying group and constraint the step is completed
+  grpPtr->notifyCompletedStep();
+  constraintsPtr->notifyCompletedStep();
+}
+
+int
+LOCA::MultiContinuation::ConstrainedGroup::getBorderedWidth() const
+{
+  int my_width = numParams;
+  if (isBordered)
+    return my_width + bordered_grp->getBorderedWidth();
+  else
+    return my_width;
+}
+
+Teuchos::RefCountPtr<const NOX::Abstract::Group>
+LOCA::MultiContinuation::ConstrainedGroup::getUnborderedGroup() const
+{
+  if (isBordered)
+    return bordered_grp->getUnborderedGroup();
+  else
+    return grpPtr;
+}
+
+bool
+LOCA::MultiContinuation::ConstrainedGroup::isCombinedAZero() const
+{
+  return false;  // A is always considered non-zero (A = df/dp)
+}
+
+bool
+LOCA::MultiContinuation::ConstrainedGroup::isCombinedBZero() const
+{
+  if (isBordered)
+    return constraintsPtr->isDXZero() && bordered_grp->isCombinedBZero();
+  else
+    return constraintsPtr->isDXZero();
+}
+
+bool
+LOCA::MultiContinuation::ConstrainedGroup::isCombinedCZero() const
+{
+  return false;  // C is always considered non-zero (C = dg/dp)
+}
+
+// void
+// LOCA::MultiContinuation::ConstrainedGroup::decomposeMultiVec(
+// 			   bool use_transpose,
+//                            const NOX::Abstract::MultiVector& v,
+//                            NOX::Abstract::MultiVector& v_x,
+//                            NOX::Abstract::MultiVector::DenseMatrix& v_p) const
+// {
+//   // cast v to an extended multi-vec
+//   const LOCA::MultiContinuation::ExtendedMultiVec& mc_v = 
+//     dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVec&>(v);
+  
+//   // break mc_v into solution and parameter components
+//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> mc_v_x =
+//     mc_v.getXMultiVec();
+//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
+//     mc_v.getScalars();
+
+//   // If the underlying system isn't bordered, we're done
+//   if (!isBordered) {
+//     v_x = *mc_v_x;
+//     if (!use_transpose)
+//       v_p.assign(*mc_v_p);
+//     else
+//       for (int j=0; j<v_p.numCols(); j++)
+// 	for (int i=0; i<v_p.numRows(); i++)
+// 	  v_p(i,j) = (*mc_v_p)(j,i);
+//     return;
+//   }
+
+//   int w = bordered_grp->getBorderedWidth();
+//   if (!use_transpose) {
+//     // Split v_p into 2 block rows, the top to store mc_v_x_p and the bottom
+//     // to store mc_v_p
+    
+//     int num_cols = v_p.numCols();
+//     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
+// 						  w, num_cols, 0, 0);
+//     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
+// 						  numParams, num_cols, w, 0);
+
+//     // Decompose mc_v_x
+//     bordered_grp->decomposeMultiVec(use_transpose,*mc_v_x, v_x, v_p_1);
+//     v_p_2.assign(*mc_v_p);
+//   }
+//   else {
+//     // Split v_p into 2 block columns, the first to store mc_v_x_p^t and the 
+//     // the second to store mc_v_p^T
+//     int num_rows = v_p.numRows();
+//     NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
+// 						  num_rows, w, 0, 0);
+//     NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
+// 						  num_rows, numParams, 0, w);
+
+//     // Decompose mc_v_x
+//     bordered_grp->decomposeMultiVec(use_transpose,*mc_v_x, v_x, v_p_1);
+//     for (int j=0; j<numParams; j++)
+//       for (int i=0; i<num_rows; i++)
+// 	v_p_2(i,j) = (*mc_v_p)(j,i);
+//   }
+// }
+
+// void
+// LOCA::MultiContinuation::ConstrainedGroup::combineBlocks(
+// 	                     NOX::Abstract::MultiVector& A,
+// 			     NOX::Abstract::MultiVector& B,
+// 	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
+// {
+//   string callingFunction = 
+//     "LOCA::MultiContinuation::ConstrainedGroup::combineBlocks";
+
+//   Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraints);
+//   if (constraints_mvdx == Teuchos::null)
+//     global_data.locaErrorCheck->throwError(
+// 				callingFunction,
+// 				string("Constraints object must be of type") +
+// 				string("ConstraintInterfaceMVDX"));
+
+//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
+//     dfdpMultiVec->getXMultiVec();
+//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B = 
+//     Teuchos::rcp(constraints_mvdx->getDX(),false);
+//   Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
+//     dfdpMultiVec->getScalars();
+
+//   // If the underlying system isn't bordered, we're done
+//   if (!isBordered) {
+//     A = *my_A;
+//     B = *my_B;
+//     C = *my_C;
+//     return;
+//   }
+
+//   // Create views for underlying group
+//   int w = bordered_grp->getBorderedWidth();
+//   std::vector<int> idx1(w);
+//   for (int i=0; i<w; i++)
+//     idx1[i] = i;
+//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingA = 
+//     A.subView(idx1);
+//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingB = 
+//     B.subView(idx1);
+//   NOX::Abstract::MultiVector::DenseMatrix underlyingC(Teuchos::View, C,
+// 						      w, w, 0, 0);
+
+//   // Combine blocks in underlying group
+//   bordered_grp->combineBlocks(underlyingA, underlyingB, underlyingC);
+
+//   // Create views for my blocks
+//   std::vector<int> idx2(numParams);
+//   for (int i=0; i<numParams; i++)
+//     idx2[i] = w+i;
+//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_A_x = 
+//     A.subView(idx2);
+//   Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_B_x = 
+//     B.subView(idx2);
+//   NOX::Abstract::MultiVector::DenseMatrix my_A_p(Teuchos::View, C,
+// 						 w, numParams, 0, w);
+//   NOX::Abstract::MultiVector::DenseMatrix my_B_p(Teuchos::View, C,
+// 						 numParams, w, w, 0);
+//   NOX::Abstract::MultiVector::DenseMatrix my_CC(Teuchos::View, C,
+// 						numParams, numParams, w, w);
+
+//   // Split my A into solution and parameter components
+//   bordered_grp->decomposeMultiVec(false, my_A, my_A_x, my_A_p);
+
+//   // Split my B into solution and parameter components
+//   bordered_grp->decomposeMultiVec(true, my_B, my_B_x, my_B_p);
+
+//   // Copy in my_C
+//   my_CC.assign(*my_C);
+// }
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::extractSolutionComponent(
+			                const NOX::Abstract::MultiVector& v,
+                                        NOX::Abstract::MultiVector& v_x) const
+{
+  // cast v to an extended multi-vec
+  const LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
+    dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(v);
+  
+  // get solution component
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> mc_v_x =
+    mc_v.getXMultiVec();
+
+  // If the underlying system isn't bordered, we're done
+  if (!isBordered) {
+    v_x = *mc_v_x;
+    return;
+  }
+
+  // Extract solution component from mc_v_x
+  bordered_grp->extractSolutionComponent(*mc_v_x, v_x);
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::extractParameterComponent(
+			   bool use_transpose,
+                           const NOX::Abstract::MultiVector& v,
+                           NOX::Abstract::MultiVector::DenseMatrix& v_p) const
+{
+  // cast v to an extended multi-vec
+  const LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
+    dynamic_cast<const LOCA::MultiContinuation::ExtendedMultiVector&>(v);
+  
+  // get solution and parameter components
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> mc_v_x =
+    mc_v.getXMultiVec();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
+    mc_v.getScalars();
+
+  // If the underlying system isn't bordered, we're done
+  if (!isBordered) {
+    if (!use_transpose)
+      v_p.assign(*mc_v_p);
+    else
+      for (int j=0; j<v_p.numCols(); j++)
+	for (int i=0; i<v_p.numRows(); i++)
+	  v_p(i,j) = (*mc_v_p)(j,i);
+    return;
+  }
+
+  int w = bordered_grp->getBorderedWidth();
+  if (!use_transpose) {
+    // Split v_p into 2 block rows, the top to store mc_v_x_p and the bottom
+    // to store mc_v_p
+    int num_cols = v_p.numCols();
+    NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
+						  w, num_cols, 0, 0);
+    NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
+						  numParams, num_cols, w, 0);
+
+    // Decompose mc_v_x
+    bordered_grp->extractParameterComponent(use_transpose,*mc_v_x, v_p_1);
+    v_p_2.assign(*mc_v_p);
+  }
+  else {
+    // Split v_p into 2 block columns, the first to store mc_v_x_p^t and the 
+    // the second to store mc_v_p^T
+    int num_rows = v_p.numRows();
+    NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
+						  num_rows, w, 0, 0);
+    NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
+						  num_rows, numParams, 0, w);
+
+    // Decompose mc_v_x
+    bordered_grp->extractParameterComponent(use_transpose,*mc_v_x, v_p_1);
+    for (int j=0; j<numParams; j++)
+      for (int i=0; i<num_rows; i++)
+	v_p_2(i,j) = (*mc_v_p)(j,i);
+  }
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::loadNestedComponents(
+			   const NOX::Abstract::MultiVector& v_x,
+			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+			   NOX::Abstract::MultiVector& v) const
+{
+  // cast X to an extended multi-vec
+  LOCA::MultiContinuation::ExtendedMultiVector& mc_v = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(v);
+
+  // get solution and parameter components
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> mc_v_x =
+    mc_v.getXMultiVec();
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector::DenseMatrix> mc_v_p =
+    mc_v.getScalars();
+
+  // If the underlying system isn't bordered, we're done
+  if (!isBordered) {
+    *mc_v_x = v_x;
+    mc_v_p->assign(v_p);
+    return;
+  }
+
+  // split v_p
+  int num_cols = v_p.numCols();
+  int w = bordered_grp->getBorderedWidth();
+  NOX::Abstract::MultiVector::DenseMatrix v_p_1(Teuchos::View, v_p,
+						w, num_cols, 0, 0);
+  NOX::Abstract::MultiVector::DenseMatrix v_p_2(Teuchos::View, v_p,
+						numParams, num_cols, w, 0);
+
+  // load v_x, v_p_1 into mc_v_x
+  bordered_grp->loadNestedComponents(v_x, v_p_1, *mc_v_x);
+
+  // load v_p_2 into mc_v_p
+  mc_v_p->assign(v_p_2);
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::fillA(
+	                                 NOX::Abstract::MultiVector& A) const
+{
+  string callingFunction = 
+    "LOCA::MultiContinuation::ConstrainedGroup::fillA";
+
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
+    dfdpMultiVec->getXMultiVec();
+
+  // If the underlying system isn't bordered, we're done
+  if (!isBordered) {
+    A = *my_A;
+    return;
+  }
+
+  // Create views for underlying group
+  int w = bordered_grp->getBorderedWidth();
+  std::vector<int> idx1(w);
+  for (int i=0; i<w; i++)
+    idx1[i] = i;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingA = 
+    A.subView(idx1);
+
+  // Fill A block in underlying group
+  bordered_grp->fillA(*underlyingA);
+
+  // Create views for my blocks
+  std::vector<int> idx2(numParams);
+  for (int i=0; i<numParams; i++)
+    idx2[i] = w+i;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_A_x = 
+    A.subView(idx2);
+
+  // Extract solution component from my_A and store in A
+  bordered_grp->extractSolutionComponent(*my_A, *my_A_x);
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::fillB(
+	                                  NOX::Abstract::MultiVector& B) const
+{
+  string callingFunction = 
+    "LOCA::MultiContinuation::ConstrainedGroup::fillB";
+
+  bool isZeroB = constraintsPtr->isDXZero();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B;
+
+  if (!isZeroB) {
+    Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraintsPtr);
+    if (constraints_mvdx == Teuchos::null)
+      globalData->locaErrorCheck->throwError(
+				callingFunction,
+				string("Constraints object must be of type") +
+				string("ConstraintInterfaceMVDX"));
+
+    my_B = Teuchos::rcp(constraints_mvdx->getDX(),false);
+  }
+
+  // If the underlying system isn't bordered, we're done
+  if (!isBordered) {
+    if (isZeroB)
+      B.init(0.0);
+    else
+      B = *my_B;
+    return;
+  }
+
+  // Create views for underlying group
+  int w = bordered_grp->getBorderedWidth();
+  std::vector<int> idx1(w);
+  for (int i=0; i<w; i++)
+    idx1[i] = i;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> underlyingB = 
+    B.subView(idx1);
+
+  // Combine blocks in underlying group
+  bordered_grp->fillB(*underlyingB);
+
+  // Create views for my blocks
+  std::vector<int> idx2(numParams);
+  for (int i=0; i<numParams; i++)
+    idx2[i] = w+i;
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> my_B_x = 
+    B.subView(idx2);
+
+  // Extract solution component from my_B and store in B
+  if (isZeroB)
+    my_B_x->init(0.0);
+  else
+    bordered_grp->extractSolutionComponent(*my_B, *my_B_x);
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::fillC(
+	                     NOX::Abstract::MultiVector::DenseMatrix& C) const
+{
+  string callingFunction = 
+    "LOCA::MultiContinuation::ConstrainedGroup::fillC";
+
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector::DenseMatrix> my_C = 
+    dfdpMultiVec->getScalars();
+
+  // If the underlying system isn't bordered, we're done
+  if (!isBordered) {
+    C.assign(*my_C);
+    return;
+  }
+
+  bool isZeroB = constraintsPtr->isDXZero();
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_B;
+
+  if (!isZeroB) {
+    Teuchos::RefCountPtr<const LOCA::MultiContinuation::ConstraintInterfaceMVDX> constraints_mvdx = Teuchos::rcp_dynamic_cast<const LOCA::MultiContinuation::ConstraintInterfaceMVDX>(constraintsPtr);
+    if (constraints_mvdx == Teuchos::null)
+      globalData->locaErrorCheck->throwError(
+				callingFunction,
+				string("Constraints object must be of type") +
+				string("ConstraintInterfaceMVDX"));
+
+    my_B = Teuchos::rcp(constraints_mvdx->getDX(),false);
+  }
+
+  Teuchos::RefCountPtr<const NOX::Abstract::MultiVector> my_A = 
+    dfdpMultiVec->getXMultiVec();
+  
+  // Create views for underlying group
+  int w = bordered_grp->getBorderedWidth();
+  NOX::Abstract::MultiVector::DenseMatrix underlyingC(Teuchos::View, C,
+						      w, w, 0, 0);
+
+  // Combine blocks in underlying group
+  bordered_grp->fillC(underlyingC);
+
+  // Create views for my blocks
+  NOX::Abstract::MultiVector::DenseMatrix my_A_p(Teuchos::View, C,
+						 w, numParams, 0, w);
+  NOX::Abstract::MultiVector::DenseMatrix my_B_p(Teuchos::View, C,
+						 numParams, w, w, 0);
+  NOX::Abstract::MultiVector::DenseMatrix my_CC(Teuchos::View, C,
+						numParams, numParams, w, w);
+
+  // Extract solution component from my_A and store in my_A_p
+  bordered_grp->extractParameterComponent(false, *my_A, my_A_p);
+
+  // Extract solution component from my_B and store in my_B_p
+  if (isZeroB)
+    my_B_p.putScalar(0.0);
+  else
+    bordered_grp->extractParameterComponent(true, *my_B, my_B_p);
+
+  // Copy in my_C
+  my_CC.assign(*my_C);
+}
+
+
+
+Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
+LOCA::MultiContinuation::ConstrainedGroup::getGroup()
+{
+  return grpPtr;
+}
+
+Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>
+LOCA::MultiContinuation::ConstrainedGroup::getConstraints()
+{
+  return constraintsPtr;
 }
 
 void

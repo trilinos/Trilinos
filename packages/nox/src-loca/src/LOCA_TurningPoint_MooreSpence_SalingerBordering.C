@@ -76,8 +76,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
 	   NOX::Parameter::List& params,
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
-           LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result,
-	   bool isContiguous) const
+           LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const
 {
   string callingFunction = 
     "LOCA::TurningPoint::MooreSpence::SalingerBordering::solve()";
@@ -100,72 +99,54 @@ LOCA::TurningPoint::MooreSpence::SalingerBordering::solve(
 
   int m = input.numVectors();
 
-  if (isContiguous) {
+  vector<int> index_input(m);
+  for (int i=0; i<m; i++)
+    index_input[i] = i;
+  
+  // Create new multivectors with m+1 columns
+  // First m columns store input_x, input_null, result_x, result_null
+  // respectively, last column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
+  // respectively
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
+    input_x->clone(m+1);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
+    input_null->clone(m+1);
+  
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
+    result_x->clone(m+1);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
+    result_null->clone(m+1);
+  
+  // Set first m columns to input_x
+  cont_input_x->setBlock(*input_x, index_input);
 
-    // Get views of the first m-1 columns of input_param, result_param
-    NOX::Abstract::MultiVector::DenseMatrix input_param_view(Teuchos::View,
-							     *input_param,
-							     1, m-1, 0, 0);
-    NOX::Abstract::MultiVector::DenseMatrix result_param_view(Teuchos::View,
-							     *result_param,
-							     1, m-1, 0, 0);
-    
-
-    // Solve
-    status = solveContiguous(params, *input_x, *input_null, input_param_view,
-			     *result_x, *result_null, result_param_view);
-  }
-  else {
-
-    vector<int> index_input(m);
-    for (int i=0; i<m; i++)
-      index_input[i] = i;
-
-    // Create new multivectors with m+1 columns
-    // First m columns store input_x, input_null, result_x, result_null
-    // respectively, last column stores dfdp, dJndp, J^-1 dfdp, J^-1 dJndp
-    // respectively
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_x = 
-      input_x->clone(m+1);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_input_null = 
-      input_null->clone(m+1);
-
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x = 
-      result_x->clone(m+1);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null = 
-      result_null->clone(m+1);
-
-    // Set first m columns to input_x
-    cont_input_x->setBlock(*input_x, index_input);
-
-    // Set last column to dfdp
-    (*cont_input_x)[m] = *dfdp;
-
+  // Set last column to dfdp
+  (*cont_input_x)[m] = *dfdp;
+  
     // Set first m columns to input_null
-    cont_input_null->setBlock(*input_null, index_input);
-
-    // Set last column to dJndp
-    (*cont_input_null)[m] = *dJndp;
-
-    // Initialize result multivectors to 0
-    cont_result_x->init(0.0);
-    cont_result_null->init(0.0);
-
-    // Solve
-    status = solveContiguous(params, *cont_input_x, *cont_input_null, 
-			     *input_param, *cont_result_x, *cont_result_null, 
-			     *result_param);
-
-    // Create views of first m columns for result_x, result_null
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
-      cont_result_x->subView(index_input);
-    Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
-      cont_result_null->subView(index_input);
-
-    // Copy first m columns back into result_x, result_null
-    *result_x = *cont_result_x_view;
-    *result_null = *cont_result_null_view;
-  }
+  cont_input_null->setBlock(*input_null, index_input);
+  
+  // Set last column to dJndp
+  (*cont_input_null)[m] = *dJndp;
+  
+  // Initialize result multivectors to 0
+  cont_result_x->init(0.0);
+  cont_result_null->init(0.0);
+    
+  // Solve
+  status = solveContiguous(params, *cont_input_x, *cont_input_null, 
+			   *input_param, *cont_result_x, *cont_result_null, 
+			   *result_param);
+  
+  // Create views of first m columns for result_x, result_null
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_x_view = 
+    cont_result_x->subView(index_input);
+  Teuchos::RefCountPtr<NOX::Abstract::MultiVector> cont_result_null_view = 
+    cont_result_null->subView(index_input);
+  
+  // Copy first m columns back into result_x, result_null
+  *result_x = *cont_result_x_view;
+  *result_null = *cont_result_null_view;
 
    return status;
 }

@@ -42,7 +42,7 @@ namespace LOCA {
   namespace Parameter {
     class SublistParser;
   }
-  namespace BorderedSystem {
+  namespace BorderedSolver {
     class AbstractStrategy;
   }
 }
@@ -130,7 +130,7 @@ namespace LOCA {
        *    \end{split}
        *   \f]
        * where \f$\sigma = \|J v\|\f$ and \f$u = J v/\sigma\f$.  Each bordered 
-       * solve is implemented by a LOCA::BorderedSystem::AbstractStrategy 
+       * solve is implemented by a LOCA::BorderedSolver::AbstractStrategy 
        * strategy object.
        */
       class PhippsBordering : 
@@ -144,7 +144,7 @@ namespace LOCA {
 	 * \param topParams [in] Parsed top-level parameter list 
 	 * \param solverParams [in] Bordered solver parameters.  Instantiates 
 	 *        a bordered solver for solving the bordeded systems 
-	 *        described above.  See LOCA::BorderedSystem::Factory for a
+	 *        described above.  See LOCA::BorderedSolver::Factory for a
 	 *        description of available solvers.
 	 */
 	PhippsBordering(
@@ -186,8 +186,7 @@ namespace LOCA {
 	solve(
 	     NOX::Parameter::List& params,
              const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
-             LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result,
-	     bool isContiguous) const;
+             LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const;
 
       protected:
 
@@ -245,7 +244,7 @@ namespace LOCA {
 	Teuchos::RefCountPtr<const NOX::Abstract::Vector> dJndp;
 
 	//! Bordered solver for solving (n+1)x(n+1) sets of equations
-	Teuchos::RefCountPtr<LOCA::BorderedSystem::AbstractStrategy> borderedSolver;
+	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
 
 	//! Null vector as a multivector
 	Teuchos::RefCountPtr<NOX::Abstract::MultiVector> nullMultiVector;

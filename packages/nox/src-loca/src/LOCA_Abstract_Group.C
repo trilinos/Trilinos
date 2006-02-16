@@ -37,7 +37,7 @@
 
 LOCA::Abstract::Group::Group(
 		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(Teuchos::rcp(new LOCA::DerivUtils(global_data))),
+  : LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(Teuchos::rcp(new LOCA::DerivUtils(global_data))),
     globalData(global_data)
 {
 }
@@ -45,7 +45,7 @@ LOCA::Abstract::Group::Group(
 LOCA::Abstract::Group::Group(
 		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 		     const Teuchos::RefCountPtr<LOCA::DerivUtils>& d)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d),
+  : LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(d),
     globalData(global_data)
 {
 }
@@ -57,8 +57,8 @@ LOCA::Abstract::Group::Group(
 // }
 
 LOCA::Abstract::Group::Group(const LOCA::Abstract::Group& source, 
-			     NOX::CopyType type)
-  : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(source, type),
+			     NOX::CopyType type) : 
+  LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup(source, type),
     globalData(source.globalData)
 {
 }
@@ -108,7 +108,7 @@ LOCA::Abstract::Group::copy(const NOX::Abstract::Group& src)
     dynamic_cast<const LOCA::Abstract::Group&>(src);
 
   // Copy parent classes
-  LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup::copy(src);
+  LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::copy(src);
   globalData = source.globalData;
 }
 
@@ -118,6 +118,11 @@ LOCA::Abstract::Group::setParamsMulti(const vector<int>& paramIDs,
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
     setParam(paramIDs[i], vals(i,0));
+}
+
+void
+LOCA::Abstract::Group::notifyCompletedStep()
+{
 }
 
 NOX::Abstract::Group&
