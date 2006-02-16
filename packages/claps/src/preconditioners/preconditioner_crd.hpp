@@ -47,10 +47,11 @@ public: // functions
   preconditioner_crd() { };
   virtual ~preconditioner_crd() { };
   virtual double norm2(double a[], int n)=0;
-  virtual void sum_vectors(double a[], int n, double a_sum[])=0;
-  virtual void A_times_x(double x[] , double Ax[])=0;
-  virtual void apply_preconditioner(const double r[], double z[])=0;
   virtual double dotprod(double a[], double b[], int n)=0;
+  virtual void sum_vectors(double a[], int n, double a_sum[])=0;
+  virtual int initialize_solve(double u[], double r[])=0;
+  virtual void apply_preconditioner(const double r[], double z[])=0;
+  virtual void A_times_x(double x[] , double Ax[])=0;
 private:
 protected:
   

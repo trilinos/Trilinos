@@ -36,7 +36,6 @@
 //#include "CLIP_sub.hpp"
 #include "CLOP_constraint.hpp"
 #include "CRD_utils.hpp"
-#include "sparse_lu2.hpp"
 //#include "../include/sort_prototypes.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_MpiComm.h"
@@ -55,9 +54,11 @@
 #include "EpetraExtCD_MatrixMatrix.hpp"
 #include "CRS_serial.hpp"
 #include "preconditioner_crd.hpp"
+#include "krylov_crd.hpp"
+#include "sparse_lu2.hpp"
 
 //class CLIP_solver2 : public preconditioner_crd
-class CLIP_solver2
+class CLIP_solver2 : public preconditioner_crd
 {
  public: // functions
 CLIP_solver2::CLIP_solver2(
@@ -66,22 +67,13 @@ CLIP_solver2::CLIP_solver2(
 	  const Epetra_Map* OwnMap_,   // unique owner map
 	  const double* clip_params_); // array of solver parameters
   ~CLIP_solver2();
-  void solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
-	     int & num_iter, int & solver_status, int & max_added_cor);
-  void mpcforces(Epetra_Vector* uLocal, Epetra_Import* ImporterStLam2Loc);
-  void tie_down_coarse(int n, int rowbeg[], int colidx[], 
-		       double vals[], int ne, CLAPS_sparse_lu* & AA,
-		       double* & Xvecs);
+  double norm2(double a[], int n);
+  double dotprod(double a[], double b[], int n);
+  void sum_vectors(double a[], int n, double a_sum[]);
+  int initialize_solve(double u[], double r[]);
+  void apply_preconditioner(const double r[], double z[]);
+  void A_times_x(double* x, double* Ax);
  private: // functions
-  void copy_map(const Epetra_Map A, 
-		Epetra_Map* & B);
-  void copy_multivector(const Epetra_MultiVector* A,
-			const Epetra_Map RowMap,
-			Epetra_MultiVector* & B);
-  void copy_intvector(const Epetra_IntVector* A,
-		      const Epetra_Map RowMap,
-		      Epetra_IntVector* & B);
-  void construct_transpose(Epetra_CrsMatrix* & A, Epetra_CrsMatrix* & AT);
   void determine_components();
   void determine_components(int A1[], int A2[], int N, 
 			    int* & comp1, int* & comp2, int & ncomp);
@@ -91,13 +83,21 @@ CLIP_solver2::CLIP_solver2(
   void modify_dof_sets();
   void factor_sub_matrices();
   void calculate_coarse();
-  void pcg_init();
+  void allocate_vectors();
+  void static_correction1();
+  void static_correction2();
+  void coarse_correction();
+  void substructure_correction();
+  void weight_scale(Epetra_MultiVector* Mvec);
+  void A_times_x_sub(double* x, double* Ax);
+  void A_times_x_sub(double* x, double* Ax, int* rows, int n);
   void get_matrix_diag(CRS_serial* AA, double* & diag);
   int determine_shell(int node);
   bool find_sub(int dof, int sub);
   void check_two_dofs(int ii, int* adof, bool* adof_flag);
   void check_three_dofs(int ii, int* adof, bool* adof_flag);
-  void get_adof(int ii, int* adof, int & nadof, bool* adof_flag);
+  void get_adof(int ii, int* aa, int nn, int* adof, int & nadof, 
+		bool* adof_flag, int tflag=0);
   bool contains(int ii, int dof2);
   int find_dof1(int* adof, int nadof);
   void find_farthest1(int* adof, int nadof, int dof1, int & dof2);
@@ -107,31 +107,6 @@ CLIP_solver2::CLIP_solver2(
   void gen_matrix(CRS_serial* A, int na, int adof[], 
 		  int* & rowbeg, int* & colidx, double* &vals);
   void zero_pointers();
-  void construct_subdomains();
-  int initialize_subdomains();
-  void calculate_coarse_stiff();
-  void gather_coarse_stiff();
-  void factor_coarse_stiff();
-  void pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
-		 int & num_iter, int & pcg_status);
-  void gmres_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand, 
-		   int & num_iter, int & gmres_status);
-  double stat_cond();
-  void remove_orthog_null(Epetra_Vector *vec);
-  double initial_update();
-  void apply_preconditioner();
-  void final_update(Epetra_Vector* uB, Epetra_Vector* rB);
-  void remove_search(Epetra_Vector* v);
-  void determine_AxB(Epetra_Vector* x, Epetra_Vector* b);
-  void store_search(double pAp);
-  void calculate_u_St();
-  void calculate_Au(Epetra_Vector *a_St, Epetra_Vector *b_St);
-  void calculate_AuStand(Epetra_Vector *u, Epetra_Vector *Au);
-  void calculate_condition(int miter);
-  void two_steps_CGS(int gmres_iter, Epetra_Vector* r);
-  void hessenberg_qr(int gmres_iter);
-  void gmres_givens(double a, double b, double & c, double & s);
-  void construct_solution(int gmres_iter, double normb);
   void spmat_datfile(const Epetra_CrsMatrix & A, char fname[], int opt);
 
  private: // variables
@@ -154,31 +129,20 @@ CLIP_solver2::CLIP_solver2(
   Epetra_Export *Exporter, *ExporterC, *ExporterB;
   Epetra_Map *SubMapC, *SubMapB;
   Epetra_Map *OwnMapC, *OwnMapB;
+  Epetra_MultiVector *rOwn, *rSub, *rOwnB, *rSubB, *rOwnC, *rSubC;
+  Epetra_MultiVector *uOwn, *uSub, *uOwnB, *uSubB, *uOwnC, *uSubC;
   int MyPID, NumProc, ndof_sub, ndof_global, print_flag;
   int *comp1, *comp2, ncomp, ncomp_sum, *sub1, *sub2, *dset1, *dset2;
-  int ndof_set, *corner_flag, *dof2node, *local_sub;
+  int ndof_set, *corner_flag, *dof2node, *local_sub, init_flag;
   bool *owner_flag, *sub_flag;
   double *PhiB;
+  double *weight, *ARinvCT, *CARinvCT, *lambda_r;
 
   // old stuff
-  Epetra_Import *ImporterSt2B, *Importer_Kc;
-  Epetra_Export *Exporter_lam, *Exporter_Kc;
-  Epetra_Import *ImporterStand;
-  Epetra_Export *ExporterStand;
-  Epetra_Vector *Lambda, *Lambda_local, *ConError, *ApB_Sub, *ApB_St;
-  Epetra_Vector *pB_Sub, *pB_St, *zB_Sub, *zB_St, *uB_St, *u_St, *vStand;
-  Epetra_Vector *r_St, *r_Sub, *rB_St, *rB_Sub, *work_Sub, *work_Kc;
-  Epetra_Vector *rBSub, *workB_St, *work_St, *work_St2, *vec_PhiB, *prod_PhiB;
-  Epetra_Vector *vec1_ASub, *vec2_ASub, *wStand, *Rhs_null;
-  Epetra_Map *RowMapMyCon, *MapB_Sub, *MapB_St;
-  Epetra_CrsMatrix *CtT, *Tran, *Block_Stiff;
-  Epetra_MultiVector *Phir_St;
-  Epetra_IntVector *NodalDofs_red;
   solver_crd *AR, *AI, *AKc;
   int *mycdof, nmycon, cg_iter, n_orthog_used, ncon_global, max_added_corner;
-  int nI, nB, nC, nR, nB_own, *dofI, *dofB, *dofC, *dofR, sub_begin;
+  int nI, nB, nC, nR, nB_own, nBB, *dofI, *dofB, *dofC, *dofR, *dofBB, sub_begin;
   int num_tied_down, *tied_down;
-  double *lambda, *lambda_local, *weight, *ARinvCT, *CARinvCT, *lambda_r;
   double *RHS_cg, *SOL_cg, *TEMP_cg, *SOL_Kc, *TEMP_Kc;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
   double *P_ortho, *AP_ortho, *orth1, *orth2, *PhirTPhir;

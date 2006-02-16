@@ -56,17 +56,20 @@ krylov_crd::krylov_crd(preconditioner_crd* pptr_,
 		       double solver_tol_,
 		       int max_search_dirs_,
 		       int vector_length_,
-		       int print_flag_)
+		       int print_flag_,
+		       int MyPID_)
   : pptr(pptr_), krylov_method(krylov_method_), max_iter(max_iter_), 
     solver_tol(solver_tol_), max_search_dirs(max_search_dirs_),
     vector_length(vector_length_), print_flag(print_flag_)
 {
+  MyPID = MyPID_;
+  if (MyPID != 0) print_flag = 0;
   zero_pointers();
   num_search_used = 0;
   //
   // allocate memory
   //
-  if (krylov_method == 1) {
+  if (krylov_method == 0) {
     rcurra          = new double[max_iter+1];
     rhoa            = new double[max_iter+1];
     betaa           = new double[max_iter+1];
@@ -104,9 +107,16 @@ void krylov_crd::zero_pointers()
   PAP_matrix_sum = 0;
 }
 
-int krylov_crd::solve(double u [], const double f [])
+int krylov_crd::solve(double u [], const double f[])
 {
-  int i, sod, num_search_orig;
+  int solver_status;
+  if (krylov_method == 0) solver_status = solve_pcg(u, f);
+  return solver_status;
+}
+
+int krylov_crd::solve_pcg(double u [], const double f [])
+{
+  int i, sod, num_search_orig, init_val;
   double rorig, rcurr, dprod, beta, roldzold, alpha, pAp, ractual;
 
   sod = sizeof(double);
@@ -114,7 +124,13 @@ int krylov_crd::solve(double u [], const double f [])
   myzero(u, vector_length);
   rorig = pptr->norm2(r, vector_length);
   rcurr = rorig;
-  if (print_flag == 1) cout << "initial residual = " << rorig << endl;
+  if (print_flag != 0) cout << "initial residual = " << rorig << endl;
+  init_val = pptr->initialize_solve(u, r);
+  if (init_val == 1) {
+    pptr->A_times_x(u, z);
+    for (i=0; i<vector_length; i++) r[i] = r[i] - z[i];
+    rcurr = pptr->norm2(r, vector_length);
+  }
   //
   // initial correction
   //
@@ -124,14 +140,14 @@ int krylov_crd::solve(double u [], const double f [])
     pptr->A_times_x(u, z);
     for (i=0; i<vector_length; i++) r[i] -= z[i];
     rcurr = pptr->norm2(r, vector_length);
-    if (print_flag == 1) {
+    if (print_flag != 0) {
       cout << "number of search dirs used       = " << num_search_orig << endl;
       cout << "residual after using search dirs = " << rcurr << endl;
     }
   }
   if (rcurr/rorig < solver_tol) return 0;
   for (int iter=0; iter<max_iter; iter++) {
-    if (print_flag == 1)
+    if (print_flag != 0)
       cout << "iteration " << iter+1 << " of maxiter = " << max_iter << endl;
     //
     // calculate preconditioned residual
@@ -146,7 +162,7 @@ int krylov_crd::solve(double u [], const double f [])
     // standard pcg stuff
     //
     dprod = pptr->dotprod(r, z, vector_length);
-    assert(dprod >= 0);
+    //    assert(dprod >= 0);
     rhoa[iter] = sqrt(fabs(dprod));
     if (iter == 0) {
       beta = 0;
@@ -162,8 +178,10 @@ int krylov_crd::solve(double u [], const double f [])
     pAp = pptr->dotprod(p, z, vector_length);
     pApa[iter] = pAp;
     alpha = dprod/pAp;
-    //    cout << "dprod, pAp, alpha, beta = " << dprod << " " << pAp 
-    //    	 << " " << alpha << " " << beta << endl;
+    if (print_flag == -1) {
+      cout << "dprod, pAp, alpha, beta = " << dprod << " " << pAp 
+	   << " " << alpha << " " << beta << endl;
+    }
     for (i=0; i<vector_length; i++) {
       u[i] += alpha*p[i];
       r[i] -= alpha*z[i];
@@ -175,7 +193,6 @@ int krylov_crd::solve(double u [], const double f [])
     // store search direction
     //
     store_search_dir(pAp, p, z);
-    //    cout << "num_iter, rcurr = " << num_iter << " " << rcurr << endl;
     if (rcurr/rorig <= solver_tol) break;
   }
   //
@@ -186,30 +203,34 @@ int krylov_crd::solve(double u [], const double f [])
   memcpy(r, f, vector_length*sod);
   for (i=0; i<vector_length; i++) r[i] -= z[i];
   ractual = pptr->norm2(r, vector_length);
-  cout << "num_iter = " << num_iter << endl;
-  if (num_iter > 0) {
-    cout << "rcurr(recursive)      = " << rcurr << endl;
-    cout << "rcurr(actual)         = " << ractual << endl;
-    cout << "number of iterations  = " << num_iter << endl;
-    cout << "solver tolerance      = " << solver_tol << endl;
-    cout << "condition # estimate      relative residual" 
-	 << "   iteration" << endl;
-    calculate_condition(num_iter);
-    cout << setiosflags(ios::scientific | ios::uppercase);
-    for (i=0; i<num_iter; i++) {
-      double ee = 0;
-      ee = econa[i]; 
-      cout << " " 
-	   << setw(17) << setprecision(10) << ee 
-	   << "       " 
-	   << setw(17) << setprecision(10) << rcurra[i+1]/rorig
-	   << "        " 
-	   << i+1 << endl;
+  if (print_flag != 0) {
+    cout << "num_iter = " << num_iter << endl;
+    if (num_iter > 0) {
+      cout << "rcurr(recursive)      = " << rcurr << endl;
+      cout << "rcurr(actual)         = " << ractual << endl;
+      cout << "number of iterations  = " << num_iter << endl;
+      cout << "solver tolerance      = " << solver_tol << endl;
+      cout << "condition # estimate      relative residual" 
+	   << "   iteration" << endl;
+      calculate_condition(num_iter);
+      cout << setiosflags(ios::scientific | ios::uppercase);
+      for (i=0; i<num_iter; i++) {
+	double ee = 0;
+	ee = econa[i]; 
+	cout << " " 
+	     << setw(17) << setprecision(10) << ee 
+	     << "       " 
+	     << setw(17) << setprecision(10) << rcurra[i+1]/rorig
+	     << "        " 
+	     << i+1 << endl;
+      }
     }
+    cout << resetiosflags(ios::scientific);
+    cout << resetiosflags(ios::uppercase);
+    cout << setprecision(6);
   }
-  cout << resetiosflags(ios::scientific);
-  cout << resetiosflags(ios::uppercase);
-  cout << setprecision(6);
+  if (rcurr/rorig <= solver_tol) return 0;
+  else return 1;
 }
 
 void krylov_crd::search_dir_correction(double rhs [], double sol [] , int nn)
@@ -254,8 +275,10 @@ void krylov_crd::calculate_condition(int miter)
     }
     econa[i] = Dtri[i]/Dtri[0];
   }
-  cout << "eigenvalue estimates = " << endl;
-  for (i=0; i<miter; i++) cout << Dtri[i] << endl;
+  if (print_flag == 2) {
+    cout << "eigenvalue estimates = " << endl;
+    for (i=0; i<miter; i++) cout << Dtri[i] << endl;
+  }
 }
 
 void krylov_crd::store_search_dir(const double pAp, double pvec [],
@@ -265,7 +288,7 @@ void krylov_crd::store_search_dir(const double pAp, double pvec [],
   double sfac;
   if (num_search_used < max_search_dirs) {
     ibeg = vector_length*num_search_used;
-    double sfac = 1/sqrt(pAp);
+    sfac = 1/sqrt(pAp);
     for (i=0; i<vector_length; i++) {
       P_matrix[ ibeg+i] = sfac*pvec[i];
       AP_matrix[ibeg+i] = sfac*Apvec[i];
@@ -278,7 +301,7 @@ void krylov_crd::factor_matrix(const int num_search_orig)
 {
   char TRANSA('T'), TRANSB('N'), UPLO('U');
   double ALPHA(1), BETA(0);
-  int i, M, N, K, INFO;
+  int M, N, K, INFO;
   if ((num_search_used > 0) && (num_search_used != num_search_orig)) {
     //
     // calculate P^T * A * P

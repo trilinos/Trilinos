@@ -51,7 +51,8 @@ public: // functions
 	     double solver_tol_,
 	     int num_search_dirs_,
 	     int vector_length_,
-	     int print_flag);
+	     int print_flag_,
+	     int MyPID_=0);
   ~krylov_crd();
   int solve(double u [], const double f []);
 private:
@@ -60,11 +61,12 @@ private:
   void calculate_condition(int miter);
   void store_search_dir(const double pAp, double pvec [], double Apvec []);
   void factor_matrix(const int num_search_orig);
+  int solve_pcg(double u [], const double f []);
   
   preconditioner_crd *pptr;
   int krylov_method, max_iter, max_search_dirs, vector_length, print_flag;
   const double solver_tol;
-  int num_search_used, num_iter;
+  int num_search_used, num_iter, MyPID;
   double *rcurra, *rhoa, *betaa, *pApa, *Dtri, *Etri, *econa;
   double *AP_matrix, *P_matrix, *p, *r, *z, *rwork, *PAP_matrix;
   double *work_search, *work_search_sum, *PAP_matrix_sum;
