@@ -79,3 +79,47 @@ public:
 
 #endif
 
+#ifndef Matlab_Interface_H
+#define Matlab_Interface_H
+//-----------------------------------------------------------------------------
+
+#include "EpetraExt_MatlabEngine.h"
+
+// the following deal with matlab provided headers:
+#include "engine.h"
+#include "mex.h"
+#undef printf  // matlab has its own printf that we don't want to use
+
+#define BUFSIZE 200
+#define MATLABBUF 1024 * 16
+
+// This is a new class that may evantually get moved into NOX.  For now,
+// this is simply used as a testbed for driving NOX using Matlab
+
+class Matlab_Interface 
+{
+public:
+  Matlab_Interface(NOX::Solver::Manager & solver);
+
+  ~Matlab_Interface();
+
+  // Begin an interactive session
+  void interact();
+
+private:
+
+  // A needed communicator - can be replaced later by initialization argument
+  Epetra_SerialComm comm;
+
+  void doCommand( std::string & );
+
+  EpetraExt::EpetraExt_MatlabEngine * enginePtr;
+
+  EpetraExt::EpetraExt_MatlabEngine & engine;
+
+  NOX::Epetra::Group * groupPtr;
+
+  Epetra_Vector * solnPtr;
+};
+
+#endif

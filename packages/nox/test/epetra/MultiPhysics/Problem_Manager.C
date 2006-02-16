@@ -1323,6 +1323,14 @@ bool Problem_Manager::solveMF()
   grp->computeF();
 
   NOX::Solver::Manager solver(grp, statusTest, nlParams);
+
+  // Just a test to see if the Matlab engine is working - RWH
+  {
+    Matlab_Interface testMatlab(solver);
+   
+    testMatlab.interact();
+  }
+
   NOX::StatusTest::StatusType status = solver.solve();
   if( status != NOX::StatusTest::Converged )
   { 
@@ -1563,8 +1571,6 @@ void Problem_Manager::generateGraph()
 #ifdef DEBUG_PROBLEM_MANAGER
 	offGraph.Print(cout);
 #endif
-	cout << "Problem_Manager::generateGraph() - offGraph : " << endl;
-	offGraph.Print(cout);
         // A new graph is created within the OffBlock_Manager; so we delete our temporary 
         OffBlock_ManagersVec.push_back( new OffBlock_Manager(*this, offGraph,
                                                         probId, dependId) );
