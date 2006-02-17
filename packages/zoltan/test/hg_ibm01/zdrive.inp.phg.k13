@@ -1,0 +1,6 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = NUM_GLOBAL_PARTITIONS = 13 
+File Type		= matrixmarket+
+File Name		= ibm01
+Parallel Disk Info	= number=0

@@ -1,0 +1,6 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = SEED = 9876543210
+File Type		= matrixmarket+
+File Name		= ibm01
+Parallel Disk Info	= number=0

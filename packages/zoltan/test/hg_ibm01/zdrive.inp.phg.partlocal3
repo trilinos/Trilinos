@@ -1,0 +1,6 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+File Type		= matrixmarket+
+File Name		= ibm01
+test local partitions   = 3
+Parallel Disk Info	= number=0

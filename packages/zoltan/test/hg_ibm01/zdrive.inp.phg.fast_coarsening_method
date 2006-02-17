@@ -1,0 +1,7 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = PHG_COARSENING_METHOD = a-ipm
+Zoltan Parameters       = PHG_COARSENING_METHOD_FAST = c-ipm
+File Type		= matrixmarket+
+File Name		= ibm01
+Parallel Disk Info	= number=0
