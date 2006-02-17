@@ -99,6 +99,9 @@ public:
 class Matlab_Interface 
 {
 public:
+
+  static map< NOX::Abstract::Group::ReturnType, string > returnMsg;
+
   Matlab_Interface(NOX::Solver::Manager & solver);
 
   ~Matlab_Interface();
@@ -116,6 +119,8 @@ private:
   EpetraExt::EpetraExt_MatlabEngine * enginePtr;
 
   EpetraExt::EpetraExt_MatlabEngine & engine;
+
+  NOX::Solver::Manager & solver;
 
   NOX::Epetra::Group * groupPtr;
 

@@ -74,10 +74,12 @@
 
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
                                  bool doOffBlocks_,
-                                 int numGlobalElements) :
+                                 int numGlobalElements,
+                                 bool useMatlab_ ) :
   GenericEpetraProblem(comm, numGlobalElements),
   problemCount(0),
   doOffBlocks(doOffBlocks_),
+  useMatlab(useMatlab_),
   compositeMap(0)
 {
   // Unset doOffBlocks flag if this build does not include the required 
@@ -1325,6 +1327,7 @@ bool Problem_Manager::solveMF()
   NOX::Solver::Manager solver(grp, statusTest, nlParams);
 
   // Just a test to see if the Matlab engine is working - RWH
+  if( useMatlab )
   {
     Matlab_Interface testMatlab(solver);
    

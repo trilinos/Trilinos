@@ -69,10 +69,20 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x,
 // This is a new class that may evantually get moved into NOX.  For now,
 // this is simply used as a testbed for driving NOX using Matlab
 
-Matlab_Interface::Matlab_Interface(NOX::Solver::Manager & solver) :
+// Declare and define a static data member
+map< NOX::Abstract::Group::ReturnType, string > Matlab_Interface::returnMsg;
+  
+Matlab_Interface::Matlab_Interface(NOX::Solver::Manager &  noxSolver) :
+  solver(noxSolver),
   enginePtr( new EpetraExt::EpetraExt_MatlabEngine(comm) ),
   engine(*enginePtr)
 {
+  returnMsg[ NOX::Abstract::Group::Ok ]            = "Ok"            ;
+  returnMsg[ NOX::Abstract::Group::NotDefined ]    = "NotDefined"    ;
+  returnMsg[ NOX::Abstract::Group::BadDependency ] = "BadDependency" ;
+  returnMsg[ NOX::Abstract::Group::NotConverged ]  = "NotConverged"  ;
+  returnMsg[ NOX::Abstract::Group::Failed ]        = "Failed"        ;
+
   cout << "matlab started\n";
 
   // Verify we are using an Epetra concrete implemntation
@@ -88,11 +98,13 @@ Matlab_Interface::Matlab_Interface(NOX::Solver::Manager & solver) :
 
 }
 
+//-----------------------------------------------------------------------------
 Matlab_Interface::~Matlab_Interface()
 {
   delete enginePtr;
 }
 
+//-----------------------------------------------------------------------------
 void Matlab_Interface::interact()
 {
   char s [BUFSIZE] ;
@@ -137,28 +149,199 @@ void Matlab_Interface::interact()
   return;
 }
 
+//-----------------------------------------------------------------------------
 void Matlab_Interface::doCommand( std::string & command )
 {
+
+  NOX::Abstract::Group::ReturnType returnStatus;
+
   cout << "NOX: " << command << endl;
 
-  map<string, int> commands;
-  commands["getX"] = 1;
-
-  cout << "Trying \"" << command << "\" (" << (command=="getX") << ")" << endl;
-
-  if( commands[command] == 1 )
+  try 
   {
-    cout << "Doing " << command << endl;
-    engine.PutMultiVector( *solnPtr, "X" );
-    return;
+    // Query methods
+
+    if( command.find("isF") != string::npos )
+    {
+      std::string isValid = (groupPtr->isF() ? "True" : "False" );
+      cout << " --> " << isValid << endl;
+      return;
+    }
+
+    if( command.find("isJacobian") != string::npos )
+    {
+      std::string isValid = (groupPtr->isJacobian() ? "True" : "False" );
+      cout << " --> " << isValid << endl;
+      return;
+    }
+
+    if( command.find("isGradient") != string::npos )
+    {
+      std::string isValid = (groupPtr->isGradient() ? "True" : "False" );
+      cout << " --> " << isValid << endl;
+      return;
+    }
+      
+    if( command.find("isNewton") != string::npos )
+    {
+      std::string isValid = (groupPtr->isNewton() ? "True" : "False" );
+      cout << " --> " << isValid << endl;
+      return;
+    }
+      
+    if( command.find("isNormNewtonSolveResidual") != string::npos )
+    {
+      std::string isValid = (groupPtr->isNormNewtonSolveResidual() ? "True" : "False" );
+      cout << " --> " << isValid << endl;
+      return;
+    }
+      
+    if( command.find("isPreconditioner") != string::npos )
+    {
+      std::string isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
+      cout << " --> " << isValid << endl;
+      return;
+    }
+      
+    if( command.find("isConditionNumber") != string::npos )
+    {
+      std::string isValid = (groupPtr->isConditionNumber() ? "True" : "False" );
+      cout << " --> " << isValid << endl;
+      return;
+    }
+      
+    if( command.find("showValid") != string::npos )
+    {
+      std::string isValid = (groupPtr->isF() ? "True" : "False" );
+      cout << " isF              --> " << isValid << endl;
+      isValid = (groupPtr->isJacobian() ? "True" : "False" );
+      cout << " isJacobian       --> " << isValid << endl;
+      isValid = (groupPtr->isGradient() ? "True" : "False" );
+      cout << " isGradient       --> " << isValid << endl;
+      isValid = (groupPtr->isNewton() ? "True" : "False" );
+      cout << " isNewton         --> " << isValid << endl;
+      isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
+      cout << " isPreconditioner --> " << isValid << endl;
+      return;
+    }
+
+    // Scalar value query methods
+
+    if( command.find("getJacobianConditionNumber") != string::npos )
+    {
+      cout << groupPtr->getJacobianConditionNumber() << endl;
+      return;
+    }
+      
+    if( command.find("getNormF") != string::npos )
+    {
+      cout << groupPtr->getNormF() << endl;
+      return;
+    }
+      
+    // Compute methods
+
+    if( command.find("setX") != string::npos )
+    {
+      command.replace( command.find("setX"), 5, ""); 
+      engine.GetMultiVector( command.c_str(), *solnPtr );
+      groupPtr->setX(*solnPtr);
+      return;
+    }
+
+    if( command.find("computeF") != string::npos )
+    {
+      returnStatus = groupPtr->computeF();
+      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+      return;
+    }
+
+    if( command.find("computeJacobian") != string::npos )
+    {
+      returnStatus = groupPtr->computeJacobian();
+      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+      return;
+    }
+
+    if( command.find("computeGradient") != string::npos )
+    {
+      returnStatus = groupPtr->computeGradient();
+      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+      return;
+    }
+
+    if( command.find("computeNewton") != string::npos )
+    {
+      const NOX::Parameter::List & const_lsParams = solver.getParameterList().
+                                                           sublist("Direction").
+                                                           sublist("Newton").
+                                                           sublist("Linear Solver");
+      NOX::Parameter::List & lsParams = const_cast<NOX::Parameter::List &>(const_lsParams);
+      returnStatus = groupPtr->computeNewton(lsParams);
+      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+      return;
+    }
+
+    // Jacobian operations
+
+    // Get operations
+
+    if( command.find("getX") != string::npos )
+    {
+      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                         (groupPtr->getX()).getEpetraVector());
+      engine.PutMultiVector( *tmpVec, "X" );
+      return;
+    }
+
+    if( command.find("getF") != string::npos )
+    {
+      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                         (groupPtr->getF()).getEpetraVector());
+      engine.PutMultiVector( *tmpVec, "F" );
+      return;
+    }
+
+    if( command.find("getGradient") != string::npos )
+    {
+      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                         (groupPtr->getGradient()).getEpetraVector());
+      engine.PutMultiVector( *tmpVec, "Gradient" );
+      return;
+    }
+
+    if( command.find("getNewton") != string::npos )
+    {
+      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                         (groupPtr->getNewton()).getEpetraVector());
+      engine.PutMultiVector( *tmpVec, "Newton" );
+      return;
+    }
+
+    if( command.find("getJacobian") != string::npos )
+    {
+      Epetra_Operator * jacOp = (groupPtr->getLinearSystem()->getJacobianOperator().get());
+      Epetra_RowMatrix * rowMatrix = dynamic_cast<Epetra_RowMatrix *>(jacOp);
+      if( rowMatrix )
+      {
+        engine.PutRowMatrix( *rowMatrix, "Jacobian", false );
+        return;
+      }
+      NOX::Epetra::FiniteDifference * fdOp = dynamic_cast<NOX::Epetra::FiniteDifference *>(jacOp);
+      if( fdOp )
+      {
+        engine.PutRowMatrix( fdOp->getUnderlyingMatrix(), "Jacobian", false );
+        return; 
+      }
+
+      cout << "Could not get a valid matrix." << endl;
+      return;
+    }
   }
-  if( command.find("setX") != string::npos )
+  catch( const char * msg )
   {
-    cout << "Doing " << command << endl;
-    command.replace( command.find("setX"), 5, ""); 
-
-    engine.GetMultiVector( command.c_str(), *solnPtr );
-    cout << "New solution vector :\n" << *solnPtr << endl;
+    cout << msg << endl;
+    return;
   }
 
   return;

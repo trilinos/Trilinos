@@ -123,6 +123,15 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  // Make sure we have a valid candidate command line
+  if (argc < 2) 
+  {
+    cout << "Usage: " << argv[0] 
+         << " -n number_of_elements [ -matlab -offBlocks ]" 
+         << endl;
+    exit(1);
+  }
+
   // Create and reset the Timer
   Epetra_Time myTimer(Comm);
   double startWallTime = myTimer.WallTime();
@@ -131,12 +140,50 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
-  // Get the number of elements from the command line
-  if (argc!=2) { 
-    cout << "Usage: " << argv[0] << " number_of_elements" << endl;
-    exit(1);
+  // Default run-time options that can be changed from the command line
+  bool useMatlab   = false ;
+  bool doOffBlocks = false ;
+  
+  string inConcat("");
+
+  // Dump out the command line args
+  for( int i = 1; i < argc; ++i )
+  {
+    cout << "arg [" << i << "] = " << argv[i] << endl;
+    inConcat += argv[i];
+    inConcat += " ";
   }
-  int NumGlobalNodes = atoi(argv[1]) + 1;
+  
+  inConcat.erase( inConcat.size(), 1 );
+
+  cout << "ECHO = " << inConcat << endl;
+
+  string option = "-matlab";
+  if( inConcat.find(option) != string::npos )
+  {
+    useMatlab = true;
+    inConcat.replace( inConcat.find(option), option.size()+1, "");
+    //cout << "Using matlab.\n" << "Remaining command line :\n " << inConcat << endl;
+  }
+
+  option = "-offBlocks";
+  if( inConcat.find(option) != string::npos )
+  {
+    doOffBlocks = true;
+    inConcat.replace( inConcat.find(option), option.size()+1, "");
+    //cout << "Using offBlocks.\n" << "Remaining command line :\n " << inConcat << endl;
+  }
+
+  option = "-n";
+  if( inConcat.find(option) != string::npos )
+  {
+    inConcat.replace( inConcat.find(option), option.size()+1, "");
+    //cout << "Found number of elements.\n" << "Remaining command line :\n " << inConcat << endl;
+  }
+
+  int NumGlobalNodes = atoi(inConcat.c_str()) + 1;
+
+  //cout << "\nI'm using " << NumGlobalNodes << " global nodes." << endl;
 
   // The number of unknowns must be at least equal to the 
   // number of processors.
@@ -279,12 +326,8 @@ int main(int argc, char *argv[])
   combo->addStatusTest(maxiters);
   combo->addStatusTest(finiteValue);
 
-  // Make this explicit
-  bool doOffBlocks = true;
-  //bool doOffBlocks = false;
-
   // Create the Problem Manager
-  Problem_Manager problemManager(Comm, doOffBlocks);
+  Problem_Manager problemManager(Comm, doOffBlocks, 0, useMatlab);
 
   // Note that each problem could contain its own nlParams list as well as
   // its own convergence test(s). 

@@ -53,7 +53,7 @@ public:
 
   // Constructor
   Problem_Manager(Epetra_Comm& Comm, bool doOffBlocks = false,
-                  int NumGlobalElements = 0);
+                  int NumGlobalElements = 0, bool useMatlab = false);
 
   // Destructor
   virtual ~Problem_Manager();
@@ -189,6 +189,7 @@ private:
   int problemCount;                         // Number of registered Problems
   bool doOffBlocks;	// Flag to specify whether or not to compute
 			// off-diagonal composite Jacobian blocks via FDC
+  bool useMatlab;	// Flag to specify whether or not to use a Matlab interactive session
 
   Epetra_Map* compositeMap;	// Composite map for all registered problems
   Teuchos::RefCountPtr<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
