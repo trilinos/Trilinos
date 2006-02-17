@@ -1,6 +1,8 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-File Type		= matrixmarket
-File Name		= FluidDFT
+Zoltan Parameters	= ADD_OBJ_WEIGHT=none
+File Type		= matrixmarket+
+Zoltan Parameters       = PHG_COARSENING_METHOD = c-ipm
+File Name		= ibm03
 Parallel Disk Info	= number=0

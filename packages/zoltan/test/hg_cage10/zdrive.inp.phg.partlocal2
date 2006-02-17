@@ -2,5 +2,6 @@ Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 File Type		= matrixmarket
-File Name		= FluidDFT
+File Name		= cage10
+test local partitions   = 2
 Parallel Disk Info	= number=0
