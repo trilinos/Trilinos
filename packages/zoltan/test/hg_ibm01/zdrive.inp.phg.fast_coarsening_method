@@ -1,4 +1,5 @@
 Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters       = PHG_COARSENING_METHOD = a-ipm
 Zoltan Parameters       = PHG_COARSENING_METHOD_FAST = c-ipm

@@ -1,4 +1,5 @@
 Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters       = phg_edge_size_threshold = 1.0
 File Type		= matrixmarket+

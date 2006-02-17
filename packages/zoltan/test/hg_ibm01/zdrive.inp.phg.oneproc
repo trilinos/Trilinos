@@ -1,4 +1,5 @@
 Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 File Type		= matrixmarket+, initial procs = 1
 File Name		= ibm01
