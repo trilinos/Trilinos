@@ -857,7 +857,6 @@ if (! $no_hg) then
     phg.addobjwgt \
     phg.bal_tol_adjustment1.0 \
     phg.check_hypergraph1 \
-    phg.coarsening_limit1 \
     phg.coarsening_limit200 \
     phg.coarsening_method_cipm \
     phg.coarsening_method_lipm \
@@ -878,19 +877,27 @@ if (! $no_hg) then
     phg.initial_distribution.file \
     phg.initial_distribution.rows \
     phg.initial_distribution.serial \
+    phg.k13 \
+    phg.k2 \
+    phg.k63 \
     phg.k64 \
     phg.nproc_edge1 \
     phg.nproc_edge2 \
     phg.nproc_vertex1 \
     phg.nproc_vertex2 \
-    phg.num_global_partitions2 \
+    phg.oneproc \
     phg.output_level0 \
     phg.output_level4 \
+    phg.partlocal1 \
+    phg.partlocal2 \
+    phg.partlocal3 \
+    phg.partlocal4 \
     phg.random \
     phg.randomize_input \
     phg.refinement_loop_limit20 \
     phg.refinement_max_neg_move50 \
     phg.refinement_method_none \
+    phg.refinement_quality3 \
     phg.remap0 \
     phg.seed \
     phg.use_timers1 \
@@ -903,7 +910,7 @@ if (! $no_hg) then
     phg.vertex_visit_order2 \
     phg.vertex_visit_order3 \
     phg.vertex_visit_order4 \
-    )
+  )
 
 
   @ nprob = $#hg_name
