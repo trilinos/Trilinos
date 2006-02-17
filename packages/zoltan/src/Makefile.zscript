@@ -14,7 +14,7 @@
 
 include ./Utilities/Config/Config.$(ZOLTAN_ARCH)
 
-TARGET = zdrive
+ZTARGET = zdrive
 LIB_NAME = libzoltan.a
 LIB_TARGET = zoltan
 SUBDIRS	= driver ch zz all lb par rcb oct parmetis params timer ha reftree bsfc hsfc 
@@ -37,7 +37,8 @@ zoltan:
 	  '$(AR)' \
 	  '$(RANLIB)' \
 	  '$(ZOLTAN_ARCH)' \
-	  '$(ZOLTAN_LIB_DIR)' ;\
+	  '$(ZOLTAN_LIB_DIR)' \
+	  '$(MPI_INCPATH)' ;\
 	cd ..;\
 	sh -x zoltan_script \
 	  '$(DEFS)' \
@@ -52,21 +53,22 @@ zoltan:
 	  '$(AR)' \
 	  '$(RANLIB)' \
 	  '$(ZOLTAN_ARCH)' \
-	  '$(ZOLTAN_LIB_DIR)' ;\
+	  '$(ZOLTAN_LIB_DIR)' \
+	  '$(MPI_INCPATH)' ;\
 	 fi;
 
 clean:
 	@for a in $(SUBDIRS); do \
 	  cd $$a; \
 	    echo "cleaning in $$a"; \
-	    $(RM) -f *.o *.d *.d@ $(TARGET) $(TARGET).pure $(LIB_NAME); \
+	    $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
 	  cd ..; \
 	done;
 	@cd Utilities; \
 	for a in $(UTIL_SUBDIRS); do \
 	  cd $$a; \
 	    echo "cleaning in $$a"; \
-	    $(RM) -f *.o *.d *.d@ $(TARGET) $(TARGET).pure $(LIB_NAME); \
+	    $(RM) -f *.o *.d *.d@ $(ZTARGET) $(ZTARGET).pure $(LIB_NAME); \
 	  cd ..; \
 	done; \
 	cd ..;

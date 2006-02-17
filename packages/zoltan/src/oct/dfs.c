@@ -21,27 +21,22 @@ extern "C" {
 #include "migtags_const.h"
 #include "oct_util_const.h"
 
-static int CLOSE = 0;        /* determines criterion for visiting octants */
-static int DFS_Part_Count;   /* count of num of times Zoltan_Oct_dfs_partition
-				was called */
-static int partition;        /* Partition number we are working on */
-static float total;          /* Cost of all complete partitions so far */
-static float pcost;          /* Current partition cost */
-static float optcost;        /* Optimal partition cost */
-static float pmass;          /* octant volume for partition */
+static int DFS_Part_Count;      /* count of number of times Zoltan_Oct_dfs_partition
+                                   was called */
+static int partition;              /* Partition number we are working on */
+static float total;                /* Cost of all complete partitions so far */
+static float pcost;                /* Current partition cost */
+static float optcost;              /* Optimal partition cost */
+static float pmass;                /* octant volume for partition */
 static float globalcost;
-static double pcoord[3];     /* Sum of octant position-volume products */
+static double pcoord[3];           /* Sum of octant position-volume products */
 static float tmpcost;
 static float optsize;
 
 static void Zoltan_Oct_visit(ZZ *zz,pOctant octant, float *part_sizes);
 static void Zoltan_Oct_visit_all_subtrees(ZZ *zz, float *part_sizes);
-static void Zoltan_Oct_tag_subtree(OCT_Global_Info *OCT_info, pOctant octant,
-				   int part);
-static void Zoltan_Oct_visit_by_dist(ZZ *zz, pOctant octant, 
-				     pOctant children[8]);
-static int Zoltan_Oct_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct,
-				 int nprevoct);
+static void Zoltan_Oct_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part);
+static int Zoltan_Oct_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int nprevoct);
 
 
 
@@ -241,15 +236,9 @@ static void Zoltan_Oct_visit(ZZ *zz, pOctant octant, float *part_sizes) {
     Zoltan_Oct_modify_newpid(octant, partition);                 /* Nonterm */
     Zoltan_Oct_children(octant,children);
 
-    /* currently CLOSE is defined to be 0, a functionality not used */
-    if (CLOSE) {
-      i=0;
-      Zoltan_Oct_visit_by_dist(zz, octant, children);
-    }
-    else
-      for (i=0; i<8; i++)                   /* Simple - just visit in order */
-	if(children[i] && Zoltan_Oct_POct_local(OCT_info, octant,i))
-	  Zoltan_Oct_visit(zz, children[i], part_sizes);
+    for (i=0; i<8; i++)                    /* Simple - just visit in order */
+      if(children[i] && Zoltan_Oct_POct_local(OCT_info, octant,i))
+        Zoltan_Oct_visit(zz,children[i],part_sizes);
     return;
   }
   
@@ -385,73 +374,6 @@ void Zoltan_Oct_dfs_migrate(ZZ *zz, int *nsentags,
 
   ZOLTAN_FREE(&docts);
   ZOLTAN_FREE(&dpids);
-}
-
-/*****************************************************************************/
-/*
- * void Zoltan_Oct_visit_by_dist()
- *
- * tries to find the closest child to add to the partition 
- */
-static void Zoltan_Oct_visit_by_dist(ZZ *zz,pOctant octant, pOctant children[8])
-{
-  COORD min,                   /* min bounds of the octant */
-        max;                   /* max bounds of the octant */
-  COORD cmin[8],               /* array of min bounds for octant's children */
-        cmax[8];               /* array of max bounds for octant's children */
-  COORD origin;                /* the origin of the octant */
-  COORD corigin[8];            /* array of origin pnts of octant's children */
-  COORD pcentroid;             /* centroid of the octant */
-  int i;                       /* index counter */
-  int minchild;                /* lowest numbered child */
-  double dist;                 /* distance */
-  double mindist;              /* lowest distance */
-  int visited[8];              /* flag showing which child has been visited */
-  float *part_sizes;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
-
-  /* initializing data */
-  mindist=0;
-  pcentroid[0] = pcentroid[1] = pcentroid[2] = 0;
-
-  /* get the bounds of the octant */
-  Zoltan_Oct_bounds(octant,min,max);
-
-  /* use bounds to find octant's origin */
-  Zoltan_Oct_bounds_to_origin(min,max,origin);
-
-  /* get bounds, and origin for each of the children */
-  for (i=0; i<8; i++) {
-    visited[i]=0;
-    Zoltan_Oct_child_bounds(min,max,origin,i,cmin[i],cmax[i]);
-    Zoltan_Oct_bounds_to_origin(cmin[i],cmax[i],corigin[i]);
-  }
-  
-  /* Visit child closest to centroid */
-  for(minchild=0; minchild>=0; ) {      
-    minchild= -1;
-    
-    if (pmass>0)
-      vector_divc(pcentroid,pcoord,pmass);
-    
-    /* for each of the child, find the one with the closest distance */
-    for (i=0; i<8; i++)
-      /* if ((Zoltan_Oct_POct_local(children[i])) && (!visited[i])) { */
-      if(Zoltan_Oct_POct_local(OCT_info, octant, i) && !visited[i]) {
-	dist=vector_dist(pcentroid,corigin[i]);
-	if (pmass==0 || minchild<0 || dist<mindist) {
-	  mindist=dist;
-	  minchild=i;
-	}
-      }
-
-    if (minchild>=0) {
-      /* visit that child, so that it can be pu into the partition */
-      Zoltan_Oct_visit(zz, children[minchild], part_sizes);
-      /* mark the child as having been visited */
-      visited[minchild]=1;        
-    }
-  }
 }
 
 #ifdef __cplusplus

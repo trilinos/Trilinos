@@ -58,7 +58,7 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
   char *yo = "Zoltan_LB_Set_Part_Sizes";
   int i, j, maxlen=0;
   int error = ZOLTAN_OK;
-  const int INIT_NUM_PART = 16; /* Initial allocation for Part_Info array. */
+  const int INIT_NUM_PART = 64; /* Initial allocation for Part_Info array. */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -77,12 +77,12 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
 
   /* Do we need more space? */
   if ((!zz->LB.Part_Info) || (zz->LB.Part_Info_Max_Len==0)){
-    maxlen = INIT_NUM_PART;           /* Start with space for 16 elements */
+    maxlen = INIT_NUM_PART;          /* Start with space for INIT_NUM_PART */
     zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_MALLOC(maxlen *
       sizeof(struct Zoltan_part_info));
   }
-  else if (zz->LB.Part_Info_Len + len > zz->LB.Part_Info_Max_Len){
-    maxlen = 3*(zz->LB.Part_Info_Len + len)/2;  /* Increase by 50% */
+  if (zz->LB.Part_Info_Len + len > zz->LB.Part_Info_Max_Len){
+    maxlen = 2*(zz->LB.Part_Info_Len + len);  /* Double the length */
     zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_REALLOC(
       zz->LB.Part_Info, maxlen * sizeof(struct Zoltan_part_info));
   }

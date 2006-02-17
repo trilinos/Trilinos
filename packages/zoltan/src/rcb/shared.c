@@ -224,6 +224,8 @@ int Zoltan_RB_Send_Outgoing(
   int *proc_list = NULL;            /* list of processors to send dots to */
   int i, ierr = ZOLTAN_OK;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
   /* outgoing = number of dots to ship to partner */
   /* dottop = number of dots that have never migrated */
   /* Also, update partition assignments. */
@@ -317,6 +319,7 @@ int proc = zz->Proc;
 int tmp;
 int num_gid = zz->Num_GID;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   if (zz->LB.PartDist == NULL)
     return ierr;  /* Check is not needed for uniform k == p */
   
@@ -352,6 +355,7 @@ int num_gid = zz->Num_GID;
 
 End:
   ZOLTAN_FREE(&proc_list);
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return(ierr);
 }
 
@@ -404,6 +408,7 @@ int Zoltan_RB_Send_Dots(
   int num_lid_entries = zz->Num_LID;
   int i, ierr = ZOLTAN_OK;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   incoming = 0;
   ierr = Zoltan_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
                         &incoming);
@@ -714,6 +719,7 @@ int ierr = ZOLTAN_OK;
 int num_gid_entries = zz->Num_GID;
 int num_lid_entries = zz->Num_LID;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   /* Compute number of objects to import.  Include those that change only
      partition but not processor. */
 
@@ -758,18 +764,18 @@ int num_lid_entries = zz->Num_LID;
 
 
 End:
-   if (ierr < 0) {
-     Zoltan_Special_Free(zz, (void **)import_global_ids,
-                         ZOLTAN_SPECIAL_MALLOC_GID);
-     Zoltan_Special_Free(zz, (void **)import_local_ids,
-                         ZOLTAN_SPECIAL_MALLOC_LID);
-     Zoltan_Special_Free(zz, (void **)import_procs,
-                         ZOLTAN_SPECIAL_MALLOC_INT);
-     Zoltan_Special_Free(zz, (void **)import_to_part,
-                         ZOLTAN_SPECIAL_MALLOC_INT);
-   }
-   ZOLTAN_TRACE_EXIT(zz, yo);
-   return(ierr);
+  if (ierr < 0) {
+    Zoltan_Special_Free(zz, (void **)import_global_ids,
+                        ZOLTAN_SPECIAL_MALLOC_GID);
+    Zoltan_Special_Free(zz, (void **)import_local_ids,
+                        ZOLTAN_SPECIAL_MALLOC_LID);
+    Zoltan_Special_Free(zz, (void **)import_procs,
+                        ZOLTAN_SPECIAL_MALLOC_INT);
+    Zoltan_Special_Free(zz, (void **)import_to_part,
+                        ZOLTAN_SPECIAL_MALLOC_INT);
+  }
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return(ierr);
 }
 
 /*****************************************************************************/
@@ -902,6 +908,7 @@ int Zoltan_RB_check_geom_output(
   int ngp = zz->LB.Num_Global_Parts;
   double *wtpp = NULL;
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
   MPI_Comm_rank(zz->Communicator,&proc);
   MPI_Comm_size(zz->Communicator,&nprocs);
 
@@ -962,6 +969,7 @@ int Zoltan_RB_check_geom_output(
     }
   }
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return(ierr);
 }
 

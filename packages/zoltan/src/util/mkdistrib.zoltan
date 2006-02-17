@@ -11,10 +11,11 @@ CURDIR="`pwd`"
 #
 # Get rid of space when day of the month is a single digit
 ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
-rm -rf Zoltan ParMETIS3_1
+rm -rf Zoltan ParMETIS3_1 siMPI
 rm -f zoltan_distrib.tar.gz
 cvs checkout -P Zoltan
 cvs checkout -P ParMETIS3_1
+cvs checkout -P siMPI
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
 find . -name '.cvsignore' -exec rm -f {} \;
@@ -68,10 +69,11 @@ done;
 #
 # Build tarball.
 chmod -R ogu+r *
-tar cvf zoltan_distrib.tar Zoltan ParMETIS3_1
+tar cvf zoltan_distrib.tar Zoltan ParMETIS3_1 siMPI
 gzip zoltan_distrib.tar
 #
 # Tag repository.
 cvs rtag ${ACT_TAG} Zoltan 
 cvs rtag ${ACT_TAG} ParMETIS3_1
+cvs rtag ${ACT_TAG} siMPI
 exit 0

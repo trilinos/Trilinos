@@ -32,8 +32,7 @@ typedef void ZOLTAN_VOID_FN(void);
 extern "C" {
 #endif
 
-#define ZOLTAN_VERSION_NUMBER   1.55
-#define BETA_VERSION_2
+#define ZOLTAN_VERSION_NUMBER   2.0
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the

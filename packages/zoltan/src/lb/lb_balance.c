@@ -863,7 +863,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
       /* Compute number of parts not specified by NUM_LOCAL_PARTITIONS */
       /* In MPI_Allreduce above, processors not specifying NUM_LOCAL_PARTITIONS
-       * specified contributed one partition to sum_local_parts.  */
+       * specified contributed zero partitions to sum_local_parts.  */
 
       remaining_procs = num_proc - local_parts_set;
       avail_local_parts = max_global_parts - sum_local_parts;

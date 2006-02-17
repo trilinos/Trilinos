@@ -224,11 +224,13 @@ int *HEwgt = NULL;            /* Array of HE weights.  Initially includes
 
     Zoltan_LB_Proc_To_Part(zz, my_proc, &np, &fp);
     HEwgt_size = np * old_size;
-    HEwgt = (int *) ZOLTAN_CALLOC(HEwgt_size, sizeof(int));
-    if (HEwgt_size && !HEwgt) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-      ierr = ZOLTAN_MEMERR;
-      goto End;
+    if (HEwgt_size > 0) {
+      HEwgt = (int *) ZOLTAN_CALLOC(HEwgt_size, sizeof(int));
+      if (!HEwgt) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+        ierr = ZOLTAN_MEMERR;
+        goto End;
+      }
     }
 
     for (i = 0; i < nobj; i++) {

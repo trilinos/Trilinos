@@ -328,8 +328,9 @@ endif
 #  Architecture-independent definitions
 ##############################################################################
 
-ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(THIRD_PARTY_INCPATH)
-ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) \
+ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(MPI_INCPATH) \
+		  $(THIRD_PARTY_INCPATH)
+ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(COLOR_CSRC) $(PAR_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
 		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
@@ -343,6 +344,7 @@ ZDRIVE_LIBS	= -L. -l$(LIB_TARGET) \
 	          $(THIRD_PARTY_LIBPATH) $(THIRD_PARTY_LIBS) \
 		  $(MPI_LIBPATH) $(MPI_LIB) -lm 
 #		  -lzoltan_comm -lzoltan_mem -lzoltan_dd \
+
 ZDRIVE_DEPS	= libzoltan_comm.a libzoltan_mem.a libzoltan_dd.a
 
 ZCPPDRIVE_CSRC 	= $(DR_CPP_SRC) $(DR_BOTH_SRC) $(CH_CSRC)
@@ -583,7 +585,8 @@ zscript:
 	@echo RANLIB='"$$2"' >> zoltan_script
 	@echo ZOLTAN_ARCH='"$${3:-generic}"' >> zoltan_script
 	@echo ZOLTAN_LIB_DIR='"$$4"' >> zoltan_script
-	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$PARMETIS_INCPATH $$JOSTLE_INCPATH"' >> zoltan_script
+	@echo MPI_INCPATH='"$$5"' >> zoltan_script
+	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$MPI_INCPATH $$PARMETIS_INCPATH $$JOSTLE_INCPATH"' >> zoltan_script
 	@echo GDEFINES='"$$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
 	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
 	@echo 'if [ ! -d $$ZOLTAN_OBJ_DIR ]; ' >> zoltan_script

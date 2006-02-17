@@ -131,10 +131,12 @@ FARG      		= farg_typical
 # algorithms are desired, either ParMETIS or Jostle.
 ##############################################################################
 
-# MPI Libraries (prefix all libraries with -l) and paths to the 
-# libraries (prefix all paths with -L).
+# MPI Libraries (prefix all libraries with -l) 
 MPI_LIB			= 
+# Paths to the MPI libraries (prefix all paths with -L).
 MPI_LIBPATH		=
+# Paths to the MPI include files (prefix all paths with -I).
+MPI_INCPATH		=
 
 # For graph-partitioning, Zoltan includes an interface to the
 # ParMETIS graph-partitioning library of G. Karypis, K. Schloegel,

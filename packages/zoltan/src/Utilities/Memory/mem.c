@@ -265,7 +265,7 @@ double *Zoltan_Calloc (int num, int size, char *filename, int lineno)
 {
 double *p ;
   p = Zoltan_Malloc (num*size, filename, lineno) ;
-  memset ((void *) p, '\0', num*size) ;
+  if (p) memset ((void *) p, '\0', num*size) ;
   return p ;
 }
 

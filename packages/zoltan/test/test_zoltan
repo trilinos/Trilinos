@@ -169,11 +169,14 @@ if (! $?run ) then
     case sgi64:
       set run = "/Net/local/mpi/build/solaris/ch_p4/bin/mpirun -np"
       breaksw
+    case mac_simpi:
+      set run = "/Users/kddevin/code/siMPI/Obj_mac_simpi/mpirun -np"
+      breaksw
     case bandito:
       set run = "/opt/mpich-intel/bin/mpirun -np"
       breaksw
-    case siMPIgcc:
-      set run = "/home/u/kddevin/code/siMPI/current/mpirun -np "
+    case gcc_siMPI:
+      set run = "../../../siMPI/Obj_gcc_siMPI/mpirun -np "
       breaksw
     case mpi125:
       set run = "/Net/local/proj/zoltan/arch/solaris-mpi125/mpich-1.2.5/bin/mpirun -np"
@@ -363,10 +366,16 @@ if ( $yes_fortran ) then
           partkway-partless-v$pmversion partkway-partmore-v$pmversion \
           partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
           partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
-          adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-          adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+          adaptive-partlocal1-v$pmversion \
           adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
           adaptive-partlocal5-v$pmversion )
+          if (! $yes_serial) then
+            # These tests do not run correctly in serial, due to assumption
+            # in ParMETIS that at least two processors are used.
+            set ch_methods = ( $ch_methods \
+              adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+              adaptive-partlocal2-v$pmversion )
+          endif
         if (! $no_order) then
           set ch_methods = ( $ch_methods order-metis-v$pmversion  \
             order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
@@ -470,8 +479,11 @@ else
       set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
       set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
       set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
-      set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
       set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
+      if (! $yes_serial) then
+        # These tests assume six or more processors are used.
+        set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
+      endif
     endif
     set nem_methods = ( $nem_methods hsfc )
     if (! $old_interface) then
@@ -508,10 +520,16 @@ else
           partkway-partless-v$pmversion partkway-partmore-v$pmversion \
           partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
           partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
-          adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-          adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+          adaptive-partlocal1-v$pmversion \
           adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
           adaptive-partlocal5-v$pmversion )
+          if (! $yes_serial) then
+            # These tests do not run correctly in serial, due to assumption
+            # in ParMETIS that at least two processors are used.
+            set ch_methods = ( $ch_methods \
+              adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+              adaptive-partlocal2-v$pmversion )
+          endif
         set nem_methods = ( $nem_methods \
           partkway-partless-v$pmversion partkway-partmore-v$pmversion \
           partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \

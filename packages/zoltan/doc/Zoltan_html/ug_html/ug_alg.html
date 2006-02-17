@@ -95,7 +95,8 @@ Integer values greater than zero are accepted. Not valid for
 
 <td>The number of partitions to be generated on this processor by a call
 to <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>.
-Integer values greater than zero are accepted. Not valid for <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.&nbsp;</td>
+Integer values greater than or equal to zero are accepted. Not valid for <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.&nbsp;</td>  If any processor sets this parameter, NUM_LOCAL_PARTITIONS is assumed to be
+zero on processors not setting this parameter.  
 </tr>
 
 <tr VALIGN=TOP NOSAVE>

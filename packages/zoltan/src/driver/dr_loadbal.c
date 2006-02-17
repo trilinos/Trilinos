@@ -224,6 +224,21 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       error_report(Proc);
     }
   }
+  else if (Test.Local_Partitions == 8) {
+    int nparts=100;
+    /* Variable partition sizes. Assume at most 100 global partitions. */
+    /* Realloc arrays. */
+    safe_free((void **) &psize);
+    safe_free((void **) &partid);
+    psize = (float *) malloc(nparts*sizeof(float));
+    partid = (int *) malloc(nparts*sizeof(int));
+    for (i=0; i<nparts; i++){
+      partid[i] = i;
+      psize[i] = (float) i;
+    }
+    /* Set partition sizes using global numbers. */
+    Zoltan_LB_Set_Part_Sizes(zz, 1, nparts, partid, NULL, psize);
+  }
 
   /* Free temporary arrays for partition sizes. */
   safe_free((void **) &psize);
