@@ -60,6 +60,7 @@
 // mrtr includes
 #include "mrtr_segment.H"
 #include "mrtr_node.H"
+#include "mrtr_projector.H"
 
 using namespace std;
 
@@ -720,7 +721,7 @@ public:
   
   \return True if successful, false otherwise
   */
-  bool Mortar_Integrate(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M);
+  bool Mortar_Integrate_2D();
   
   /*!
   \brief Integrate the mortar integrals on this interface (2D interface)
@@ -873,11 +874,13 @@ private:
   bool ProjectNodes_SlavetoMaster_Orthogonal();
   
   // control routine of the integration of the master/slave side in 2D
-  bool Integrate_2D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+  //bool Integrate_2D(Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+  bool Integrate_2D();
   
   // integrate the overlap of 2 segments in 2D (master/slave contribution)
-  bool Integrate_2D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg,
-                            Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+//  bool Integrate_2D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg,
+//                            Epetra_CrsMatrix& M,Epetra_CrsMatrix& D);
+  bool Integrate_2D_Section(MOERTEL::Segment& sseg,MOERTEL::Segment& mseg);
 
   // control routine of the integration of the master/slave side in 3D
   bool Integrate_3D();

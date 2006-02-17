@@ -88,19 +88,10 @@ bool MOERTEL::Interface::Mortar_Assemble(Epetra_CrsMatrix& D,
 
   //-------------------------------------------------------------------
   // call assembly of 2D and 3D problems
-  if (IsOneDimensional())
-  {
-    if (gcomm_.MyPID()==0)
-      cout << "***ERR*** MOERTEL::Interface::Mortar_Assemble:\n"
-           << "***ERR*** Mortar_Assemble for 2D problem not implemented\n"
-           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
-  }
-  else
-    return Assemble_3D(D,M);
-  return true;
+  return Assemble_3D(D,M);
 }
 
+#if 0 // old version
 /*----------------------------------------------------------------------*
  |  make mortar integration of this interface (2D problem)              |
  *----------------------------------------------------------------------*/
@@ -193,7 +184,165 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
   }
   return true;
 }
+#endif
 
+/*----------------------------------------------------------------------*
+ |  make mortar integration of this interface (2D problem)              |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::Mortar_Integrate_2D()
+{ 
+  bool ok = false;
+  
+  //-------------------------------------------------------------------
+  // time this process
+  Epetra_Time time(*lComm());
+  time.ResetStartTime();
+
+  //-------------------------------------------------------------------
+  if (!IsOneDimensional())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** This is not a 2D problem, we're in the wrong method here!!!\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+
+  //-------------------------------------------------------------------
+  // interface needs to be complete
+  if (!IsComplete())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** Complete() not called on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // send all procs not member of this interface's intra-comm out of here
+  if (!lComm()) return true;
+
+  //-------------------------------------------------------------------
+  // interface needs to have a mortar side assigned
+  if (MortarSide()==-1)
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** mortar side was not assigned on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  //-------------------------------------------------------------------
+  // interface segments need to have at least one function on the mortar side
+  // and two functions on the slave side
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  for (scurr=seg_[mside].begin(); scurr!=seg_[mside].end(); ++scurr)
+    if (scurr->second->Nfunctions() < 1)
+    {
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** interface " << Id_ << ", mortar side\n"
+           << "***ERR*** segment " << scurr->second->Id() << " needs at least 1 function set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  for (scurr=seg_[sside].begin(); scurr!=seg_[sside].end(); ++scurr)
+    if (scurr->second->Nfunctions() < 2)
+    {
+      cout << "***ERR*** MOERTEL::Interface::Mortar_Integrate:\n"
+           << "***ERR*** interface " << Id_ << ", slave side\n"
+           << "***ERR*** segment " << scurr->second->Id() << " needs at least 2 function set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    
+  //-------------------------------------------------------------------
+  // do the integration of the master and slave side
+  ok = Integrate_2D();
+  if (!ok) return false;
+
+  //-------------------------------------------------------------------
+  // set the flag that this interface has been successfully integrated
+  isIntegrated_ = true;
+  
+  //-------------------------------------------------------------------
+  // time this process
+  if (OutLevel()>5)
+  {
+    cout << "MOERTEL::Interface " << Id() << ": Integration on proc " << gComm().MyPID()
+         << " finished in " << time.ElapsedTime() << " sec\n"; fflush(stdout);
+  }
+  return true;
+}
+
+/*----------------------------------------------------------------------*
+ |  make mortar integration of master/slave side in 2D (1D interface)   |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::Integrate_2D()
+{ 
+  if (!IsComplete())
+  {
+    if (gcomm_.MyPID()==0)
+      cout << "***ERR*** MOERTEL::Interface::Integrate_2D:\n"
+           << "***ERR*** Complete() not called on interface " << Id_ << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (!lComm()) return true;
+
+  // get the sides
+  int mside = MortarSide();
+  int sside = OtherSide(mside);
+
+  
+  // loop over all segments of slave side
+  map<int,RefCountPtr<MOERTEL::Segment> >::iterator scurr;
+  for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
+  {
+    // the segment to be integrated
+    RefCountPtr<MOERTEL::Segment> actsseg = scurr->second;
+
+#if 0
+    cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
+#endif
+
+    // check whether I own at least one of the nodes on this slave segment
+    int nnode = actsseg->Nnode();
+    MOERTEL::Node** nodes = actsseg->Nodes();
+    bool foundone = false;
+    for (int i=0; i<nnode; ++i)
+      if (NodePID(nodes[i]->Id()) == lComm()->MyPID())
+      {
+        foundone = true;
+        break;
+      }
+    // if none of the nodes belongs to me, do nothing on this segment
+    if (!foundone) continue;
+    
+    // loop over all segments on the master side
+    map<int,RefCountPtr<MOERTEL::Segment> >::iterator mcurr;
+    for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
+    {
+      RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
+      
+#if 0
+    cout << "Active mseg id " << actmseg->Id() << endl;
+#endif
+      // if there is an overlap, integrate the pair
+      // (whether there is an overlap or not will be checked inside)
+      Integrate_2D_Section(*actsseg,*actmseg);
+      
+    } // for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)  
+  } // for (scurr=rseg_[sside].begin(); scurr!=rseg_[sside].end(); ++scurr)
+
+  return true;
+}
+
+
+#if 0 // old version
 /*----------------------------------------------------------------------*
  |  make mortar integration of master/slave side in 2D (1D interface)   |
  *----------------------------------------------------------------------*/
@@ -257,8 +406,320 @@ bool MOERTEL::Interface::Integrate_2D(Epetra_CrsMatrix& M,
 
   return true;
 }
+#endif
+
+/*----------------------------------------------------------------------*
+ | integrate the master/slave side's contribution from the overlap      |
+ | of 2 segments (2D version) IF there is an overlap                    |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg, 
+                                              MOERTEL::Segment& mseg)
+{ 
+  // if one of the segments is quadratic, we have to do something here
+  if (sseg.Type()!=MOERTEL::Segment::seg_Linear1D || mseg.Type()!=MOERTEL::Segment::seg_Linear1D)
+  {
+    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+         << "***ERR*** Integration of other then linear segments not yet implemented\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+
+#if 0
+  cout << "\n\nSlave Segment:\n";
+  cout << sseg;
+  cout << "Master Segment:\n";
+  cout << mseg;
+#endif
+
+  // there is several cases on how these 2 segments can overlap
+  // handle all of them, including the ones that they don't overlap 
+  // at all
+  
+  // get slave and master's projections of the end points
+  MOERTEL::Node** snodes = sseg.Nodes();
+  MOERTEL::Node** mnodes = mseg.Nodes();
+  
+  // determine the overlap of the 2 segments if there is any
+  MOERTEL::Projector projector(IsOneDimensional(),OutLevel());
+  // project master nodes onto slave segment
+  vector<double> mxi(mseg.Nnode());
+  for (int i=0; i<mseg.Nnode(); ++i)
+    projector.ProjectNodetoSegment_SegmentNormal(*mnodes[i],sseg,&mxi[i]);
+  //cout << mxi[0] << " " << mxi[1] << endl;
+
+  // project slave nodes onto master segment
+  vector<double> sxi(sseg.Nnode());
+  for (int i=0; i<sseg.Nnode(); ++i)
+    projector.ProjectNodetoSegment_NodalNormal(*snodes[i],mseg,&sxi[i]);
+  //cout << sxi[0] << " " << sxi[1] << endl;
+  
+  // Depending on mxi and sxi decide on the overlap
+  bool snode0 = false;
+  bool snode1 = false;
+  bool mnode0 = false;
+  bool mnode1 = false;
+  RefCountPtr<MOERTEL::ProjectedNode> is_spnode0 = null;
+  RefCountPtr<MOERTEL::ProjectedNode> is_spnode1 = null;
+  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode0 = null;
+  RefCountPtr<MOERTEL::ProjectedNode> is_mpnode1 = null;
+  double xi[2]; xi[0] = xi[1] = 0.0;
+  if ( -1.05 <= mxi[0] && mxi[0] <= 1.05) 
+  {
+    mnode0 = true;
+    xi[0] = mxi[0];
+    is_mpnode0 = rcp(new MOERTEL::ProjectedNode(*mnodes[0],xi,&sseg));
+  }
+  if ( -1.05 <= mxi[1] && mxi[1] <= 1.05) 
+  {
+    mnode1 = true;
+    xi[0] = mxi[1];
+    is_mpnode1 = rcp(new MOERTEL::ProjectedNode(*mnodes[1],xi,&sseg));
+  }
+  if ( -1.05 <= sxi[0] && sxi[0] <= 1.05) 
+  {
+    snode0 = true;
+    xi[0] = sxi[0];
+    is_spnode0 = rcp(new MOERTEL::ProjectedNode(*snodes[0],xi,&mseg));
+  }
+  if ( -1.05 <= sxi[1] && sxi[1] <= 1.05) 
+  {
+    snode1 = true;
+    xi[0] = sxi[1];
+    is_spnode1 = rcp(new MOERTEL::ProjectedNode(*snodes[1],xi,&mseg));
+  }
+  //cout << mnode0 << "  " << mnode1 << "  " << snode0 << "  " << snode1 << endl;
+  
+  // Make decision upon overlap
+  bool overlap = false;
+  RefCountPtr<MOERTEL::ProjectedNode> nstart = null;
+  RefCountPtr<MOERTEL::ProjectedNode> nend   = null;
+  double sxia=999.0,sxib=999.0;
+  double mxia=999.0,mxib=999.0;
+  
+  // no overlap
+  if (!snode0 && !snode1 && !mnode0 && !mnode1);
+  // no overlap
+  else if (snode0 && !snode1 && !mnode0 && !mnode1)
+  {
+    if (sxi[0]>-0.95)
+      cout << "***WRN*** Significant overlap ignored\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+  }
+  // no overlap
+  else if (!snode0 && !snode1 && mnode0 && !mnode1)
+  {
+    if (mxi[0]>-0.95)
+      cout << "MOERTEL: ***WRN*** Significant overlap ignored\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+  }
+  else if (!snode0 && !snode1 && !mnode0 && mnode1)
+  {
+    if (mxi[1]<0.95)
+      cout << "MOERTEL: ***WRN*** Significant overlap ignored\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+  }
+  else if (!snode0 && snode1 && !mnode0 && !mnode1)
+  {
+    if (sxi[1]<0.95)
+      cout << "***WRN*** Significant overlap ignored\n"
+           << "***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+  }
+  else if (mnode0 && mnode1)
+  {
+    overlap = true;
+    nstart = is_mpnode0;
+    nend   = is_mpnode1;
+    sxia = nend->Xi()[0];
+    sxib = nstart->Xi()[0];
+    mxia = -1.0;
+    mxib = 1.0;
+  }
+  else if (snode0 && snode1)
+  {
+    overlap = true;
+    nstart = is_spnode0;
+    nend   = is_spnode1;
+    sxia = -1.0;
+    sxib =  1.0;
+    mxia = nend->Xi()[0];
+    mxib = nstart->Xi()[0];
+  }
+  else if (snode0 && !snode1 && mnode0 && !mnode1)
+  {
+    overlap = true;
+    nstart = is_spnode0;
+    nend   = is_mpnode0;
+    sxia = -1.0;
+    sxib = nend->Xi()[0];
+    mxia = -1.0;
+    mxib = nstart->Xi()[0];
+  }
+  else if (snode1 && !snode0 && mnode1 && !mnode0)
+  {
+    overlap = true;
+    nstart = is_mpnode1;
+    nend   = is_spnode1;
+    sxia = nstart->Xi()[0];
+    sxib = 1.0;
+    mxia = nend->Xi()[0];
+    mxib = 1.0;
+  }
+  else
+  {
+    cout << "***ERR*** MOERTEL::Interface::Integrate_2D_Section:\n"
+         << "***ERR*** Unknown overlap case found\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!overlap)
+    return true;
+
+#if 0  
+  cout << "slave  xi range " << sxia << " - " << sxib << endl;
+  cout << "master xi range " << mxia << " - " << mxib << endl;
+#endif
+
+  // create an integrator instance of some given order
+  MOERTEL::Integrator integrator(5,IsOneDimensional(),OutLevel());
+
+  // do the integration of the master side
+  Epetra_SerialDenseMatrix* Mdense = 
+                            integrator.Integrate(sseg,sxia,sxib,mseg,mxia,mxib);
+  
+  // do the integration of the slave side
+  Epetra_SerialDenseMatrix* Ddense = integrator.Integrate(sseg,sxia,sxib);
+
+  // Assemble contributions Mdense into nodes (scalar only)
+  integrator.Assemble(*this,sseg,mseg,*Mdense);
+
+  // Assemble contributions Ddense into nodes (scalar only)
+  integrator.Assemble(*this,sseg,*Ddense);
+
+#if 0 // modification for curved interfaces from paper by B. Wohlmuth
+
+  if (sseg.Type() == MOERTEL::Segment::seg_Linear1D && 
+      mseg.Type() == MOERTEL::Segment::seg_Linear1D)
+  if (sseg.FunctionType(1) == MOERTEL::Function::func_DualLinear1D)
+  if (mnodes[0]->Ndof() == mnodes[1]->Ndof() &&
+      mnodes[0]->Ndof() == 2)
+  {
+    Epetra_SerialDenseMatrix* Mmod = NULL;
+    
+    // get the normal at slave nodes
+    const double* n0 = snodes[0]->N();
+    const double* n1 = snodes[1]->N();
+
+    // build the tangential orthogonal to the normal
+    double t[2][2];
+    t[0][0] = -n0[1]; t[1][0] = -n1[1];
+    t[0][1] =  n0[0]; t[1][1] =  n1[0];
+    double n[2][2];
+    n[0][0] =  n0[0]; n[1][0] =  n1[0]; 
+    n[0][1] =  n0[1]; n[1][1] =  n1[1]; 
+    
+    // build delta values of normal and tangential
+    double dn[2]; double dt[2];
+    dn[0] = n0[0] - n1[0];  
+    dn[1] = n0[1] - n1[1];  
+    dt[0] = t[0][0] - t[1][0];
+    dt[1] = t[0][1] - t[1][1];
+    
+    // build norm of dn. If it's zero, don't do anything
+    bool doit = true;
+//    double delta = dn[0]*dn[0]+dn[1]*dn[1];
+//    if (abs(delta)>1.0e-11) doit = true;
+
+    if (doit)
+    {
+      // do the integration of the modification of the master side
+      // integral ( -0.5 * psi_12 * phi_k ) k=1,...,nnode_master 
+      Epetra_SerialDenseMatrix* Mmod_scalar =
+                        integrator.Integrate_2D_Mmod(sseg,sxia,sxib,mseg,mxia,mxib);
+
+      // create an Epetra_SerialDenseMatrix of dimension (nsnode x nlmdof , nmnode x nmdof)
+      int nsnode = sseg.Nnode();
+      int nsdof  = snodes[0]->Ndof();
+      int nmnode = mseg.Nnode();
+      int nmdof  = mnodes[0]->Ndof();
+      Mmod =  new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+
+      // add modification values to Mmod
+      for (int snode=0; snode<nsnode; ++snode)
+        for (int sdof=0; sdof<nsdof; ++sdof)
+        {
+          double nt[2];
+          nt[0] = n[snode][sdof] * dn[0] + t[snode][sdof] * dt[0];
+          nt[1] = n[snode][sdof] * dn[1] + t[snode][sdof] * dt[1];
+          for (int mnode=0; mnode<nmnode; ++mnode)
+            for (int mdof=0; mdof<nmdof; ++mdof)
+            {
+              double val = nt[mdof] * (*Mmod_scalar)(mnode,0);
+              (*Mmod)(snode*nsdof+sdof,mnode*nmdof+mdof) = val;
+            }
+        } // for (int sdof=0; sdof<nsdof; ++sdof)
+
+#if 0  // verification of the expression by expressions given in paper
+      Epetra_SerialDenseMatrix* Mmod2 = new Epetra_SerialDenseMatrix(nsnode*nsdof,nmnode*nmdof);
+      // n1 dot n2
+      double n1n2 = 0.0;
+      for (int i=0; i<2; ++i) n1n2 += n[0][i]*n[1][i];
+      // third row of n1 x n2
+      double n1xn2 = n[0][0]*n[1][1] - n[0][1]*n[1][0];
+      
+      // slave 0 sdof 0 master 0 mdof 0 
+      (*Mmod2)(0,0) = (*Mmod_scalar)(0,0) * (1.0-n1n2);
+      // slave 0 sdof 0 master 0 mdof 1
+      (*Mmod2)(0,1) = - (*Mmod_scalar)(0,0) * n1xn2;
+      // slave 0 sdof 0 master 1 mdof 0
+      (*Mmod2)(0,2) = (*Mmod_scalar)(1,0) * (1.0-n1n2);
+      // slave 0 sdof 0 master 1 mdof 1
+      (*Mmod2)(0,3) = - (*Mmod_scalar)(1,0) * n1xn2;
+      // slave 0 sdof 1 master 0 mdof 0 
+      (*Mmod2)(1,0) = (*Mmod_scalar)(0,0) * n1xn2;
+      // slave 0 sdof 1 master 0 mdof 1
+      (*Mmod2)(1,1) = (*Mmod_scalar)(0,0) * (1.0-n1n2);
+      // slave 0 sdof 1 master 1 mdof 0
+      (*Mmod2)(1,2) = (*Mmod_scalar)(1,0) * n1xn2;
+      // slave 0 sdof 1 master 1 mdof 1
+      (*Mmod2)(1,3) = (*Mmod_scalar)(1,0) * (1.0-n1n2);
+      // slave 1 sdof 0 master 0 mdof 0
+      (*Mmod2)(2,0) = (*Mmod_scalar)(0,0) * (n1n2-1.0);
+      // slave 1 sdof 0 master 0 mdof 1
+      (*Mmod2)(2,1) = - (*Mmod_scalar)(0,0) * n1xn2;
+      // slave 1 sdof 0 master 1 mdof 0
+      (*Mmod2)(2,2) = (*Mmod_scalar)(1,0) * (n1n2-1.0);
+      // slave 1 sdof 0 master 1 mdof 1
+      (*Mmod2)(2,3) = - (*Mmod_scalar)(1,0) * n1xn2;
+      // slave 1 sdof 1 master 0 mdof 0
+      (*Mmod2)(3,0) = (*Mmod_scalar)(0,0) * n1xn2;
+      // slave 1 sdof 1 master 0 mdof 1
+      (*Mmod2)(3,1) = (*Mmod_scalar)(0,0) * (n1n2-1.0);
+      // slave 1 sdof 1 master 1 mdof 0
+      (*Mmod2)(3,2) = (*Mmod_scalar)(1,0) * n1xn2;
+      // slave 1 sdof 1 master 1 mdof 1
+      (*Mmod2)(3,3) = (*Mmod_scalar)(1,0) * (n1n2-1.0);
+      //cout << *Mmod2;
+      //delete Mmod2; Mmod2 = NULL;
+#endif
+
+      //  assemble -Mmod into M
+      integrator.Assemble_2D_Mod(*this,sseg,mseg,*Mmod);
+      
+      // tidy up 
+      if (Mmod)        delete Mmod;        Mmod = NULL;
+      if (Mmod_scalar) delete Mmod_scalar; Mmod_scalar = NULL;
+    } // if (doit)
+  } // if modification
+  
+
+#endif
+
+  return true;
+}
 
 
+
+#if 0 // old version
 /*----------------------------------------------------------------------*
  | integrate the master/slave side's contribution from the overlap      |
  | of 2 segments (2D version) IF there is an overlap                    |
@@ -759,3 +1220,4 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
 
   return true;
 }
+#endif

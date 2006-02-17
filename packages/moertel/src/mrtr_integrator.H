@@ -238,8 +238,12 @@ public:
   \param M : global sparse matrix 'M'
   \param Mmod : local dense matrix from integration of modification on overlap between sseg and mseg
   */
+#if 0
   bool Assemble_2D_Mod(MOERTEL::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
-                Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mmod);
+                       Epetra_CrsMatrix& M, Epetra_SerialDenseMatrix& Mmod);
+#endif
+  bool Assemble_2D_Mod(MOERTEL::Interface& inter, MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
+                       Epetra_SerialDenseMatrix& Mmod);
 
 
   /*!

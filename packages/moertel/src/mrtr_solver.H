@@ -102,7 +102,7 @@ Use at least the following lines in the configure of Trilinos:<br>
 
 namespace MOERTEL
 {
-class Manager;
+class MOERTEL::Manager;
 
 /*!
 \class Solver
@@ -202,6 +202,7 @@ private:
   RefCountPtr<MOERTEL::ConstrainedPreconditioner>   moertelprec_;   // the constrained mlpreconditioner
   RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
 
+  RefCountPtr<Epetra_CrsMatrix>                     origmatrix_;
   RefCountPtr<Epetra_CrsMatrix>                     WT_;
   RefCountPtr<Epetra_CrsMatrix>                     B_;
   RefCountPtr<Epetra_CrsMatrix>                     I_;  

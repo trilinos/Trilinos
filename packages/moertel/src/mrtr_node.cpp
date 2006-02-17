@@ -44,7 +44,8 @@ outputlevel_(out),
 iscorner_(false),
 isonboundary_(isonboundary),
 Drow_(null),
-Mrow_(null)
+Mrow_(null),
+Mmodrow_(null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -74,7 +75,8 @@ outputlevel_(out),
 iscorner_(false),
 isonboundary_(false),
 Drow_(null),
-Mrow_(null)
+Mrow_(null),
+Mmodrow_(null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -238,6 +240,7 @@ MOERTEL::Node::~Node()
   pnode_.clear();
   Drow_ = null;
   Mrow_ = null;
+  Mmodrow_ = null;
   supportedby_.clear();
 }
 
@@ -478,6 +481,24 @@ void MOERTEL::Node::AddMValue(double val, int col)
   map<int,double>* Mmap = Mrow_.get();
   
   (*Mmap)[col] += val;
+
+  return;
+}
+
+/*----------------------------------------------------------------------*
+ |  add a value to the Drow_ map                             mwgee 02/06|
+ *----------------------------------------------------------------------*/
+void MOERTEL::Node::AddMmodValue(int row, double val, int col)
+{ 
+  if (Mmodrow_ == null)
+    Mmodrow_ = rcp(new vector<map<int,double> >(Ndof()));
+
+  if ((int)Mmodrow_->size() <= row)
+    Mmodrow_->resize(row+1);
+    
+  map<int,double>& Mmap = (*Mmodrow_)[row];
+  
+  Mmap[col] += val;
 
   return;
 }

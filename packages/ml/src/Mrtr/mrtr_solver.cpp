@@ -51,6 +51,7 @@ amesossolver_(null),
 mlprec_(null),
 moertelprec_(null),
 aztecsolver_(null),
+origmatrix_(null),
 WT_(null),
 B_(null),
 I_(null)
@@ -88,16 +89,10 @@ bool MOERTEL::Solver::Solve(RefCountPtr<Teuchos::ParameterList> params,
 {
   SetParameters(params.get());
   SetSystem(matrix,x,b);
-  if (manager.spdrhs_ == null)
-  {
-    cout << "***ERR*** MOERTEL::Solver::Solve:\n"
-         << "***ERR*** condensed mortar system is NULL\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    return false;
-  }
-  WT_     = manager.WT_;     
-  B_      = manager.B_;      
-  I_      = manager.I_;      
+  origmatrix_ = manager.inputmatrix_;
+  WT_         = manager.WT_;     
+  B_          = manager.B_;      
+  I_          = manager.I_;      
   return Solve();
 }
 
@@ -294,16 +289,16 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
     return false;
   }
   // make initial guess x satisfy constraints: x = (I-WBT)x
-  Epetra_Vector* xtmp = new Epetra_Vector(x_->Map(),false);
-  B_->Multiply(true,*x_,*xtmp);
-  WT_->Multiply(true,*xtmp,*xtmp);
-  x_->Update(-1.0,*xtmp,1.0);
-
+  Epetra_Vector xtmp(B_->DomainMap(),false);
+  B_->Multiply(true,*x_,xtmp);
+  Epetra_Vector xtmp2(x_->Map(),false);
+  WT_->Multiply(true,xtmp,xtmp2);
+  x_->Update(-1.0,xtmp2,1.0);
+  
   // make rhs satisfy constraints
-  WT_->Multiply(false,*b_,*xtmp);
-  B_->Multiply(false,*xtmp,*xtmp);
-  b_->Update(-1.0,*xtmp,1.0);
-  delete xtmp; xtmp = NULL;
+  WT_->Multiply(false,*b_,xtmp);
+  B_->Multiply(false,xtmp,xtmp2);
+  b_->Update(-1.0,xtmp2,1.0);
   
   if (preconditioner=="AZ_user_precond")
     if (mlprec_==null || matrixisnew_);
@@ -325,10 +320,19 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   int maxnnz=0;
   double cputime;
   ML_Operator2EpetraCrsMatrix(&(ml->Pmat[1]),P,maxnnz,false,cputime);
+  Epetra_CrsMatrix* P2;
+  ML_Operator2EpetraCrsMatrix(&(ml->Pmat[2]),P2,maxnnz,false,cputime);
   //cout << *P;
-  //MOERTEL::Print_Matrix("Ifine",*I_,0);
-  //MOERTEL::Print_Matrix("P",*P,0);
-
+  MOERTEL::Print_Matrix("zzz_Ifine",*I_,1);
+  MOERTEL::Print_Matrix("zzz_Psmooth",*P,1);
+  MOERTEL::Print_Matrix("zzz_PPsmooth",*P2,1);
+  MOERTEL::Print_Matrix("zzz_B",*B_,1);
+  MOERTEL::Print_Matrix("zzz_WT",*WT_,1);
+  MOERTEL::Print_Matrix("zzz_Atilde",*matrix_,1);
+  MOERTEL::Print_Matrix("zzz_A",*origmatrix_,1);
+  MOERTEL::Print_Vector("zzz_x",*x_,1);
+  MOERTEL::Print_Vector("zzz_b",*b_,1);
+  exit(0);
   // test BT x = 0 <-- this is correct
   //Epetra_Vector* BTx = new Epetra_Vector(B_->DomainMap(),true);
   //B_->Multiply(true,*x_,*BTx);
@@ -499,7 +503,7 @@ exit(0);
   aztecsolver_->Iterate(maxiter,tol);
   matrixisnew_ = false;
   const double* azstatus = aztecsolver_->GetAztecStatus();
-
+  cout << *x_;
   if (azstatus[AZ_why] == AZ_normal)
     return true;
   else if (azstatus[AZ_why] == AZ_breakdown)

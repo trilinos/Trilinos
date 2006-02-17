@@ -202,6 +202,7 @@ private:
   RefCountPtr<MOERTEL::ConstrainedPreconditioner>   moertelprec_;   // the constrained mlpreconditioner
   RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
 
+  RefCountPtr<Epetra_CrsMatrix>                     origmatrix_;
   RefCountPtr<Epetra_CrsMatrix>                     WT_;
   RefCountPtr<Epetra_CrsMatrix>                     B_;
   RefCountPtr<Epetra_CrsMatrix>                     I_;  

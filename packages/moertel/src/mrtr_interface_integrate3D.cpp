@@ -46,7 +46,7 @@
 #include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*
- |  make mortar integration of this interface (3D problem)              |
+ |  make mortar integration of this interface (2D/3D problem)           |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Interface::Mortar_Integrate()
 { 
@@ -298,10 +298,10 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
       continue;
     
     // get maps D and M from node
-    RefCountPtr<map<int,double> > Drow = curr->second->GetD();
-    RefCountPtr<map<int,double> > Mrow = curr->second->GetM();
-    
-    // if there's no D there's nothing to do
+    RefCountPtr<map<int,double> >          Drow = curr->second->GetD();
+    RefCountPtr<map<int,double> >          Mrow = curr->second->GetM();
+    RefCountPtr<vector<map<int,double> > > Mmod = curr->second->GetMmod();
+    // if there's no D or M there's nothing to do
     if (Drow==null && Mrow==null)
       continue;
     
@@ -433,18 +433,63 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
         } // for (int i=0; i<snlmdof; ++i)
       } // for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
     }
+    
+    
+    // assemble the Mmod block if there is any
+    if (Mmod != null)
+    {
+      // loop over he rows of the Mmod block
+      for (int lrow=0; lrow<(int)Mmod->size(); ++lrow)
+      {
+        map<int,double>& Mmodrow = (*Mmod)[lrow];
+        int row = slmdof[lrow];
+        
+        // loop over the columns in that row
+        for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
+        {
+          int col = rowcurr->first;
+          double val = rowcurr->second;
+          if (abs(val)<1.0e-11)
+            continue;
+          
+          //cout << "Inserting M row/col:" << row << "/" << col << " val " << val << endl;
+          int err = M.SumIntoGlobalValues(row,1,&val,&col);
+          if (err)
+            err = M.InsertGlobalValues(row,1,&val,&col);
+          if (err<0)
+          {
+            cout << "***ERR*** MOERTEL::Interface::Assemble_3D:\n"
+                 << "***ERR*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+                 << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+            return false;
+          }
+          if (err && OutLevel()>0)
+          {
+            cout << "MOERTEL: ***WRN*** MOERTEL::Interface::Assemble_3D:\n"
+                 << "MOERTEL: ***WRN*** interface " << Id_ << ": Epetra_CrsMatrix::InsertGlobalValues returned " << err << "\n"
+                 << "MOERTEL: ***WRN*** indicating that initial guess for memory of M too small\n"
+                 << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+          } 
+          
+        
+        } // for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
+        
+      } // for (int lrow=0; lrow<(int)Mmod->size(); ++lrow)
+    }
 
   } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
 
   //-------------------------------------------------------------------
   //-------------------------------------------------------------------
   // In case this interface was parallel we might have missed something upto 
-  // here. In 3D boundary terms of D are assembled non-local (that is to
+  // here. Boundary terms of D and M, Mmod are assembled non-local (that is to
   // close inner-interface nodes). If these inner-interface nodes belong
   // to a different proc values were not assembled.
   // Loop snodes again an check and communicate these entries
   if (lComm()->NumProc()!=1)
   {
+      // note that we miss the communication of Mmod yet
+      
       // allocate a sendbuffer for D and M
       int countD=0;
       int countM=0;

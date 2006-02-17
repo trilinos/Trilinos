@@ -356,6 +356,18 @@ public:
   void AddMValue(double val, int col);
 
   /*!
+  \brief Add a value to the 'M' map of this node
+  
+  The 'M' map is later assembled to the M matrix.
+  Note that Mmod here is a vector
+  
+  \params row : Local LM id to add to (rowwise)
+  \params val : Value to be added
+  \params col : nodal column id of the value added
+  */
+  void AddMmodValue(int row, double val, int col);
+
+  /*!
   \brief Get view of the 'D' map of this node
   
   */
@@ -367,6 +379,11 @@ public:
   */
   inline RefCountPtr<map<int,double> > GetM() { return Mrow_; }
 
+  /*!
+  \brief Get view of the 'Mmod' map of this node
+  
+  */
+  inline RefCountPtr<vector<map<int,double> > > GetMmod() { return Mmodrow_; }
   /*!
   \brief Set the flag indicating that node is corner node of 1D interface
   
@@ -444,6 +461,7 @@ protected:
 
   RefCountPtr<map<int,double> > Drow_;    // a nodal block row of D
   RefCountPtr<map<int,double> > Mrow_;    // a nodal block row of D
+  RefCountPtr<vector<map<int,double> > > Mmodrow_; // scalar rows of Mmod
 
   vector< RefCountPtr<MOERTEL::ProjectedNode> > pnode_;    // the projected node on some segment
 

@@ -1135,6 +1135,108 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
     int mside = MortarSide();
     int sside = OtherSide(mside);
     
+    // create redundant flags
+    vector<int> lhavelm(rnode_[sside].size());
+    vector<int> ghavelm(rnode_[sside].size());
+    for (int i=0; i<(int)rnode_[sside].size(); ++i) lhavelm[i] = 0;
+    
+    // loop through redundant nodes and add my flags
+    int count=0;
+    map<int,RefCountPtr<MOERTEL::Node> >::iterator curr;
+    for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    {
+      if (NodePID(curr->second->Id()) != lComm()->MyPID())
+      {
+        ++count;
+        continue;
+      }
+      RefCountPtr<map<int,double> > D = curr->second->GetD();
+      if (D==null)
+      {
+        if (curr->second->GetM() != null)
+          cout << *curr->second << "has no D but has M!!!\n";
+        ++count;
+        continue;
+      }
+      lhavelm[count] = 1;
+      ++count;
+    }
+    if (count != (int)rnode_[sside].size())
+    {
+      cout << "***ERR*** MOERTEL::Interface::SetLMDofs:\n"
+           << "***ERR*** number of redundant nodes wrong\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return (0);
+    }
+
+    // make the flags redundant
+    lComm()->MaxAll(&lhavelm[0],&ghavelm[0],lhavelm.size());
+    lhavelm.clear();
+
+    // loop through nodes again and set lm dofs according to ghavelm
+    count=0;
+    for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
+    {
+      if (!ghavelm[count])
+      {
+        ++count;
+        continue;
+      }
+
+      // get number of dofs on this node to choose the same number of dofs
+      // for the LM
+      int ndof = curr->second->Ndof();
+      
+      // set LM dofs to this node and it's projection
+      for (int i=0; i<ndof; ++i)
+      {
+        curr->second->SetLagrangeMultiplierId(minLMGID+i);
+        RefCountPtr<MOERTEL::ProjectedNode> pnode = curr->second->GetProjectedNode();
+        if (pnode!=null)
+          pnode->SetLagrangeMultiplierId(minLMGID+i);
+      }
+      minLMGID += ndof;
+      ++count;
+    }
+      ghavelm.clear();
+  } // if (lComm())
+  
+  // broadcast minLMGID to all procs including those not in intra-comm
+  int lbcaster = 0;
+  int gbcaster = 0;
+  if (lComm())
+    if (lComm()->MyPID()==0)
+      lbcaster = gcomm_.MyPID();
+  gcomm_.MaxAll(&lbcaster,&gbcaster,1);
+  gcomm_.Broadcast(&minLMGID,1,gbcaster);
+  return(minLMGID);
+}
+
+
+
+#if 0
+/*----------------------------------------------------------------------*
+ | set lagrange multiplier dofs starting from minLMGID                  |
+ | to all slave nodes or segments that have a projection                |
+ | On exit, return maxLMGID+1, where maxLMGID is the last LM dof number |
+ | used here                                                            |
+ | Note that this is collective for ALL procs                           |
+ *----------------------------------------------------------------------*/
+int MOERTEL::Interface::SetLMDofs(int minLMGID)
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MOERTEL::Interface::SetLMDofs:\n"
+         << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return (0);
+  }
+
+  if (lComm())
+  {
+    int mside = MortarSide();
+    int sside = OtherSide(mside);
+    
     if (IsOneDimensional())
     {
       // loop nodes on slave side and set LMdofs for those who have a projection
@@ -1179,6 +1281,8 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
         RefCountPtr<map<int,double> > D = curr->second->GetD();
         if (D==null)
         {
+          if (curr->second->GetM() != null)
+            cout << *curr->second << "has no D but has M!!!\n";
           ++count;
           continue;
         }
@@ -1236,7 +1340,7 @@ int MOERTEL::Interface::SetLMDofs(int minLMGID)
   gcomm_.Broadcast(&minLMGID,1,gbcaster);
   return(minLMGID);
 }
-
+#endif
 
 /*----------------------------------------------------------------------*
  | retrieve a vector containing a list of lm ids owned by this processor|
@@ -1311,6 +1415,7 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder()
   return false;
 }
 
+#if 0 // old version
 /*----------------------------------------------------------------------*
  | detect end segments and reduce the order of the lm shape functions   |
  | on these end segments                                                |
@@ -1389,6 +1494,66 @@ bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D()
   } // for (curr=rnode_[sside].begin(); curr!=rnode_[sside].end(); ++curr)
   return true;
 }
+#endif
+
+/*----------------------------------------------------------------------*
+ | detect end segments and reduce the order of the lm shape functions   |
+ | on these end segments                                                |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D()
+{ 
+  if (!IsComplete())
+  {
+    cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder:\n"
+         << "***ERR*** Complete() was not called on interface " << Id_ << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  if (!lComm()) return true;
+
+  if (!IsOneDimensional())
+    return false;
+
+  int mside = MortarSide();
+  if (mside != 1 && mside != 0)
+  {
+    cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D:\n"
+         << "***ERR*** Mortar side not set on interface " << Id() << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  int sside = OtherSide(mside);
+
+  // A node attached to only one element AND on the boundary is
+  // considered a corner node and is member of ONE support set
+  // It is in the modified support psi tilde of the closest internal node
+  map<int,RefCountPtr<MOERTEL::Node> >::iterator ncurr;
+  for (ncurr=rnode_[sside].begin(); ncurr != rnode_[sside].end(); ++ncurr)
+  {
+    if (!(ncurr->second->IsOnBoundary())) continue;
+    MOERTEL::Segment** seg   = ncurr->second->Segments();
+    MOERTEL::Node**    nodes = seg[0]->Nodes();
+    // find the supporting node for this potential corner node on same element
+    for (int i=0; i<seg[0]->Nnode(); ++i)
+    {
+      if (nodes[i]->Id() == ncurr->second->Id()) continue;
+      if (!nodes[i]->IsOnBoundary())
+      {
+        //cout << "Supporting neighbor node on same element is \n" << *nodes[i];
+        ncurr->second->AddSupportedByNode(nodes[i]);
+      }
+    }
+    if (!ncurr->second->NSupportSet())
+    {
+      cout << "***ERR*** MOERTEL::Interface::DetectEndSegmentsandReduceOrder_2D:\n"
+           << "***ERR*** Cannot find a supporting internal node for corner node " << ncurr->second->Id() << "\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+  }
+  return true;
+}
+
 
 /*----------------------------------------------------------------------*
   // prepare the boundary modification for 3D interfaces

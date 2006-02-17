@@ -168,7 +168,7 @@ bool MOERTEL::Overlap::build_lines_m()
 bool MOERTEL::Overlap::build_mxi()
 {
   // project the master segment's nodes onto the slave segment
-               nnode_ = mseg_.Nnode();
+  nnode_ = mseg_.Nnode();
   MOERTEL::Node** mnode  = mseg_.Nodes();
   MOERTEL::Projector projector(inter_.IsOneDimensional(),OutLevel());
   for (int i=0; i<nnode_; ++i)

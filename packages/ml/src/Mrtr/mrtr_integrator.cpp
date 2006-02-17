@@ -536,7 +536,7 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate_2D_Mmod(
   return Mmod;
 }
 
-
+#if 0 // old version
 /*----------------------------------------------------------------------*
  |  assemble the modification -Mmod into M (public)          mwgee 08/05|
  *----------------------------------------------------------------------*/
@@ -602,6 +602,85 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
   } // for (int slave=0; slave<sseg.Nnode(); ++slave)
   return true;
 }
+#endif
+
+
+/*----------------------------------------------------------------------*
+ |  assemble the modification -Mmod into slave nodes (public)mwgee 08/05|
+ |  Note that this is not scalar as the other assemble routines         |
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter, 
+                                          MOERTEL::Segment& sseg, 
+                                          MOERTEL::Segment& mseg, 
+                                          Epetra_SerialDenseMatrix& Mmod)
+{
+  MOERTEL::Node** snodes = sseg.Nodes();
+  MOERTEL::Node** mnodes = mseg.Nodes();
+  
+  for (int slave=0; slave<sseg.Nnode(); ++slave)
+  {
+    // only do slave node rows that belong to this proc
+    if (inter.NodePID(snodes[slave]->Id()) != inter.lComm()->MyPID())
+      continue;
+    
+    // we want to add the row Mdense(slave,...) to the rows lmdof[sdof] 
+    // and                row Ddense(slave,...) to the rows lmdof[sdof] 
+    // get the dofs of slave node snodes[slave];
+    
+    // what we would like to do is
+    //int        snlmdof = snodes[slave]->Nlmdof();
+    //const int* slmdof  = snodes[slave]->LMDof();
+
+    // what we temporarily do is
+    int        snlmdof = snodes[slave]->Ndof();
+    // as we don't know the LMdofs yet, we just know that their number is
+    // equal to that of the primary dofs
+    
+    // this slave node might not have a projection, then the number
+    // of lagrange multipliers snlmdof of it is zero
+    // in this case, do nothing
+    //if (!snlmdof) continue;
+    // this has to be decided later on
+    
+    // loop lm dofs on node slave
+    for (int sdof=0; sdof<snlmdof; ++sdof)
+    {
+      // loop nodes on master segment
+      for (int master=0; master<mseg.Nnode(); ++master)
+      {
+        int mndof = mnodes[master]->Ndof();
+        const int* mdofs = mnodes[master]->Dof();
+        
+        // dofs on node master
+        for (int mdof=0; mdof<mndof; ++mdof)
+        {
+          int col = mdofs[mdof];
+          
+          // do not add a zero from (*Mdense)(slave,master)
+          double val = -(Mmod(slave*snlmdof+sdof,master*mndof+mdof));
+          if (abs(val)<1.e-9) continue;
+          
+          // standard assembly for internal nodes
+          if (!snodes[slave]->IsOnBoundary())
+            snodes[slave]->AddMmodValue(sdof,val,col);
+          // if slave node is on boundary
+          else
+          {
+            map<int,MOERTEL::Node*>& suppnodes = snodes[slave]->GetSupportedByNode();
+            double w = 1./(double)(snodes[slave]->NSupportSet());
+            map<int,MOERTEL::Node*>::iterator curr;
+            for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
+              curr->second->AddMmodValue(sdof,w*val,col);
+          }
+          
+        } // for (int mdof=0; mdof<mndof; ++mdof)
+      } // for (int master=0; master<mseg.Nnode(); ++master)
+    } // for (int sdof=0; sdof<snlmdof; ++sdof)
+  } // for (int slave=0; slave<sseg.Nnode(); ++slave)
+  return true;
+}
+
+
 
 /*----------------------------------------------------------------------*
  |  integrate a 2D triangle overlap segment (public)         mwgee 11/05|
