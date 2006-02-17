@@ -346,15 +346,15 @@ int lenLID = zz->Num_LID;
 int ierr = ZOLTAN_OK;
 int ew_dim = zz->Edge_Weight_Dim;
 int i, j, maxEdges, nedges, npins, update_lists, pin_change;
-int *rptr;
-ZOLTAN_ID_PTR egid, eptr, elidptr, vptr, inbuf;
+int *rptr=NULL;
+ZOLTAN_ID_PTR egid=NULL, eptr=NULL, elidptr=NULL, vptr=NULL, inbuf=NULL;
 struct _egidNode {
   ZOLTAN_ID_PTR egidBuf;
   int idx;
   ZOLTAN_ID_PTR pins;
   char pinsAreCopies;
   struct _egidNode *next;
-} *egidNode, *en;
+} *egidNode=NULL, *en=NULL;
 struct _egidNode **ht=NULL;  /* hash table for my pin edges */
 int l0, l1, lLen, myL, left;
 int r0, r1, rLen, myR;
@@ -625,9 +625,11 @@ float *in_weights=NULL, *out_weights=NULL, *wptr=NULL;
 
 End:
 
-  for (i=0; i< egid[0]; i++) {
-    if (egidNode[i].pinsAreCopies){
-      ZOLTAN_FREE(&egidNode[i].pins);
+  if (egid) {
+    for (i=0; i< egid[0]; i++) {
+      if (egidNode[i].pinsAreCopies){
+        ZOLTAN_FREE(&egidNode[i].pins);
+      }
     }
   }
   ZOLTAN_FREE(&egidNode);
