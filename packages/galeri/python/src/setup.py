@@ -97,8 +97,16 @@ for option in options:
     else:
         extra_link_args.append(option)
 
+# An additional include directory
+epetraPythonSrcDir = os.path.normpath(os.path.join(top_srcdir,"..","epetra","python","src"))
+include_dirs.append(epetraPythonSrcDir)
+
 # Define the strings that refer to the required local source files
-GaleriWrap = "Galeri_wrap.cpp"
+galeriWrap             = "Galeri_wrap.cpp"
+epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,
+                                                       "Epetra_NumPyMultiVector.cpp"))
+epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
+                                                       "Epetra_NumPyVector.cpp"     ))
 
 # Compiler and linker
 sysconfig.get_config_vars()
@@ -107,7 +115,7 @@ sysconfig._config_vars["CXX"] = CXX
 
 # _Galeri extension module
 _Galeri = Extension("PyTrilinos._Galeri",
-                         [GaleriWrap],
+                         [galeriWrap, epetraNumPyMultiVector, epetraNumPyVector],
                          define_macros      = [("HAVE_CONFIG_H", "1")],
                          include_dirs       = include_dirs,
                          library_dirs       = library_dirs,
