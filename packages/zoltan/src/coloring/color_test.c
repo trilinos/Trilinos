@@ -89,7 +89,7 @@ int Zoltan_Color_Test(
   Zoltan_Assign_Param_Vals(zz->Params, Color_params, zz->Debug_Level, zz->Proc,
                            zz->Debug_Proc);
 
-  /* Check validity of parameters */
+  /* Check validity of parameters - they should be consistent with Zoltan_Color */
   if (distance != 1 && distance != 2) {
       distance = 1;
   }
@@ -158,9 +158,6 @@ int Zoltan_Color_Test(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
-
-  if (distance != 1) 
-          ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 coloring. Skipping verification.");
  
   /* Exchange global color information */
   color = (int *) ZOLTAN_MALLOC(vtxdist[zz->Num_Proc] * sizeof(int));
@@ -170,6 +167,9 @@ int Zoltan_Color_Test(
   if (!color || !sreqs || !rreqs || !stats)
       MEMORY_ERROR;
 
+  if (distance != 1) 
+      ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 coloring. Skipping verification.");
+  
   for (i=0; i<zz->Num_Proc; i++) 
       if (i != zz->Proc) 
           MPI_Irecv(color+vtxdist[i], vtxdist[i+1]-vtxdist[i], MPI_INT, i, colortag, zz->Communicator, &rreqs[rreqcnt++]);
@@ -201,6 +201,8 @@ int Zoltan_Color_Test(
       if (ierr == ZOLTAN_FATAL)
           break;
   }
+
+ End:  
   if (ierr == ZOLTAN_FATAL) {
       ierr = 1;
       MPI_Allreduce(&ierr, &ferr, 1, MPI_INT, MPI_MAX, zz->Communicator);
@@ -213,7 +215,6 @@ int Zoltan_Color_Test(
   else
       ierr = ZOLTAN_OK;
   
- End:  
   Zoltan_Multifree(__FILE__,__LINE__, 9, &vtxdist, &xadj, &adjncy, &input_parts, &adjproc, &color, &rreqs, &sreqs, &stats);
   
   return ierr;
