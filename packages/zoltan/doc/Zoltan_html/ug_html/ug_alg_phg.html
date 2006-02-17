@@ -62,7 +62,7 @@ Zoltan-PHG is a fully parallel multilevel hypergraph partitioner. For
 further technical description, see <a
  href="ug_refs.html#hypergraph-ipdps06">[Devine et al, 2006]</a>.<br>
 </p>
-<p>Planned features currently not supported:<br>
+<p>Planned future features (currently not supported):<br>
 </p>
 <ul>
   <li>Adaptive (diffusive) repartitioning</li>
@@ -112,9 +112,11 @@ debugging.)<br>
       <td valign="top"><i>&nbsp;&nbsp;&nbsp; PHG_COARSENING_METHOD</i></td>
       <td>The method to use in the matching/coarsening phase:<br>
       <span style="font-style: italic;">ipm</span> - inner product
-matching (a.k.a. heavy connectivity matching) <br>
+matching (a.k.a. heavy connectivity matching); gives best quality.<br>
       <span style="font-style: italic;">l-ipm </span>-&nbsp; local ipm
-on each processor. Faster but often gives poor quality. <br>
+on each processor. Faster but usually gives poorer quality. <br>
+      <span style="font-style: italic;">a-ipm</span> - alternate
+between ipm and l-ipm. (A compromise between speed and quality.)<br>
       <span style="font-style: italic;">none -&nbsp; </span>no
 coarsening<i><br>
       </i></td>
@@ -129,7 +131,8 @@ assignment of the vertices (ordered by the user query function)<br>
       <span style="font-style: italic;">greedy</span> - greedy method
 based on minimizing cuts<br>
       <span style="font-style: italic;">auto</span> -&nbsp;
-automatically select from the above methods<br>
+automatically select from the above methods (in parallel, the processes
+will do different methods)<br>
       </td>
     </tr>
     <tr>
@@ -146,7 +149,8 @@ Fiduccia-Mattheyses (FM)<br>
       <td>&nbsp;&nbsp;&nbsp; <i>PHG_REFINEMENT_QUALITY</i></td>
       <td>Knob to control the trade-off between run time and quality. 1
 is the recommended (default) setting, &gt;1 gives more refinement
-(higher quality partitions), while &lt;1 gives less refinement (and
+(higher quality partitions but longer run time), while &lt;1 gives less
+refinement (and
 poorer quality).<br>
       </td>
     </tr>
@@ -155,7 +159,8 @@ poorer quality).<br>
  style="font-style: italic;">PHG_RANDOMIZE_INPUT</span><br>
       </td>
       <td style="vertical-align: top;">Randomize layout of vertices and
-hyperedges in internal parallel 2D layout? (0/1)<br>
+hyperedges in internal parallel 2D layout? <br>
+Setting this parameter to 1 often reduces Zoltan-PHG execution time.<br>
       </td>
     </tr>
     <tr>
@@ -187,7 +192,9 @@ number of vertices.<br>
       <td style="vertical-align: top;">Add implicit vertex (object)
 weight. This will be in addition to the user-defined weights. (Note:
 Multi-weight partitioning is not yet supported, so currently only use
-this option with obj_weight_dim=0.) Valid values:<br>
+this option with <a href="ug_param.html#General_Parameters">
+obj_weight_dim</a>=0.)
+Valid values:<br>
 "none"<br>
 "unit" or "vertices"<br>
 "pins" or "nonzeros" or "vertex degree"<br>
@@ -207,7 +214,7 @@ this option with obj_weight_dim=0.) Valid values:<br>
     <tr>
       <td style="vertical-align: top;"><br>
       </td>
-      <td style="vertical-align: top;"><span style="font-style: italic;">CHECK_GRAPH=0</span><br>
+      <td style="vertical-align: top;"><span style="font-style: italic;">CHECK_HYPERGRAPH=0</span><br>
       </td>
     </tr>
     <tr>
@@ -302,7 +309,7 @@ pair</td>
 It is possible to provide the graph query functions instead of the
 hypergraph queries, though this is not recommended. If only graph query
 functions are registered, Zoltan will automatically create a hypergraph
-from the graph, but some information (specifically, edge weights) will
+from the graph, but some information (in particular, edge weights) will
 be lost. </p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
  href="ug_alg_jostle.html">Next:&nbsp;
