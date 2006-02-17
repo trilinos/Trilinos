@@ -46,6 +46,10 @@
 #include "Epetra_MapColoring.h"
 
 // Local includes
+#include "Epetra_DArray.h"
+#include "Epetra_IArray.h"
+
+// PyTrilinos includes
 #include "FileStream.h"
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
@@ -87,6 +91,8 @@
 %rename(Time         ) Epetra_Time;
 %rename(Util         ) Epetra_Util;
 %rename(MapColoring  ) Epetra_MapColoring;
+%rename(DArray       ) Epetra_DArray;
+%rename(IArray       ) Epetra_IArray;
 
 // Include directives
 %include "Epetra_Version.h"
@@ -102,6 +108,8 @@
 %include "Epetra_Time.h"
 %include "Epetra_Util.h"
 %include "Epetra_MapColoring.h"
+%include "Epetra_DArray.h"
+%include "Epetra_IArray.h"
 
 // Extensions
 %extend Epetra_Object {
