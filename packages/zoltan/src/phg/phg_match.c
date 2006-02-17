@@ -830,7 +830,6 @@ static int pmatching_ipm (ZZ *zz,
         else  {           /* psum message doesn't fit into buffer */
           for (i = 0; i < count; i++)              
             sums[aux[i]] = 0.0;
-          k--;   /* since couldn't actually fit kth message into this buffer */
           break;   
         }  
       }                  /* DONE: loop over k */                    
