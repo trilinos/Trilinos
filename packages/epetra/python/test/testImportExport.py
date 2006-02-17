@@ -48,13 +48,13 @@ import unittest
 
 ##########################################################################
 
-class EpetraImportExportTestCase(unittest.TestCase):
-    "TestCase for Epetra_Import and Epetra_Export objects"
+class EpetraImportTestCase(unittest.TestCase):
+    "TestCase for Epetra_Import objects"
 
-    # This test case tests Import and Export objects for a transpose problem.
-    # The global problem is defined by a naturally-ordered NxN grid, where N =
-    # n*(# of processors) and n=2.  The source map is a column-wise 1D
-    # decomposition, and the target map is a row-wise 1D decomposition.
+    # This test case tests Import objects for a transpose problem.  The global
+    # problem is defined by a naturally-ordered NxN grid, where N = 2 * (# of
+    # processors).  The source map is a column-wise 1D decomposition, and the
+    # target map is a row-wise 1D decomposition.
 
     def setUp(self):
         self.comm       = Epetra.PyComm()
@@ -70,7 +70,6 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.trgMap     = Epetra.Map(-1,self.gids[:,self.start:self.end],0,self.comm)
         self.srcMap     = Epetra.Map(-1,self.gids[self.start:self.end,:],0,self.comm)
         self.importer   = Epetra.Import(self.trgMap, self.srcMap)
-        self.exporter   = Epetra.Export(self.srcMap, self.trgMap)
         self.numSameIDs = 0
         if self.myPID   == 0: self.numSameIDs = self.myN
         if self.numProc == 1: self.numSameIDs = self.myN * self.myN
@@ -80,44 +79,35 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.comm.Barrier()
 
     def testConstructors1(self):
-        "Test Epetra.Import/Export constructors"
-        source1 = self.importer.SourceMap()
-        source2 = self.exporter.SourceMap()
-        target1 = self.importer.TargetMap()
-        target2 = self.exporter.TargetMap()
-        self.assertEqual(source1.SameAs(source2), True)
-        self.assertEqual(target1.SameAs(target2), True)
+        "Test Epetra.Import constructor"
+        source = self.importer.SourceMap()
+        target = self.importer.TargetMap()
+        self.assertEqual(source.SameAs(self.srcMap), True)
+        self.assertEqual(target.SameAs(self.trgMap), True)
         if self.numProc > 1:
-            self.assertEqual(target1.SameAs(source1), False)
-            self.assertEqual(target2.SameAs(source2), False)
+            self.assertEqual(target.SameAs(source), False)
 
     def testConstructors2(self):
-        "Test Epetra.Import/Export copy constructors"
+        "Test Epetra.Import copy constructor"
         importer = Epetra.Import(self.importer)
-        exporter = Epetra.Export(self.exporter)
-        source1  = importer.SourceMap()
-        source2  = exporter.SourceMap()
-        target1  = importer.TargetMap()
-        target2  = exporter.TargetMap()
-        self.assertEqual(source1.SameAs(source2), True)
-        self.assertEqual(target1.SameAs(target2), True)
+        source   = importer.SourceMap()
+        target   = importer.TargetMap()
+        self.assertEqual(source.SameAs(self.srcMap), True)
+        self.assertEqual(target.SameAs(self.trgMap), True)
         if self.numProc > 1:
-            self.assertEqual(target1.SameAs(source1), False)
-            self.assertEqual(target2.SameAs(source2), False)
+            self.assertEqual(target.SameAs(source), False)
 
     def testNumSameIDs(self):
-        "Test Epetra.Import/Export NumSameIDs method"
+        "Test Epetra.Import NumSameIDs method"
         self.assertEqual(self.importer.NumSameIDs(), self.numSameIDs)
-        self.assertEqual(self.exporter.NumSameIDs(), self.numSameIDs)
 
     def testNumPermuteIDs(self):
-        "Test Epetra.Import/Export NumPermuteIDs method"
+        "Test Epetra.Import NumPermuteIDs method"
         numPermuteIDs = self.myN * self.myN - self.numSameIDs
         self.assertEqual(self.importer.NumPermuteIDs(), numPermuteIDs)
-        self.assertEqual(self.exporter.NumPermuteIDs(), numPermuteIDs)
 
     def testPermuteFromLIDs(self):
-        "Test Epetra.Import/Export PermuteFromLIDs method"
+        "Test Epetra.Import PermuteFromLIDs method"
         permuteFromGIDs = self.gids[self.start:self.end,self.start:self.end]
         if self.myPID == 0:
             permuteFromGIDs = permuteFromGIDs[1:,:]
@@ -130,13 +120,9 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.assertEqual(len(result), len(permuteFromLIDs))
         for i in range(len(result)):
             self.assertEqual(result[i],permuteFromLIDs[i])
-        result = self.exporter.PermuteFromLIDs()
-        self.assertEqual(len(result), len(permuteFromLIDs))
-        for i in range(len(result)):
-            self.assertEqual(result[i],permuteFromLIDs[i])
 
     def testPermuteToLIDs(self):
-        "Test Epetra.Import/Export PermuteToLIDs method"
+        "Test Epetra.Import PermuteToLIDs method"
         permuteToGIDs = self.gids[self.start:self.end,self.start:self.end]
         if self.myPID == 0:
             permuteToGIDs = permuteToGIDs[1:,:]
@@ -149,19 +135,14 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.assertEqual(len(result), len(permuteToLIDs))
         for i in range(len(result)):
             self.assertEqual(result[i],permuteToLIDs[i])
-        result = self.exporter.PermuteToLIDs()
-        self.assertEqual(len(result), len(permuteToLIDs))
-        for i in range(len(result)):
-            self.assertEqual(result[i],permuteToLIDs[i])
 
     def testNumRemoteIDs(self):
-        "Test Epetra.Import/Export NumRemoteIDs method"
+        "Test Epetra.Import NumRemoteIDs method"
         numRemoteIDs  = self.myN * (self.globalN - self.myN)
         self.assertEqual(self.importer.NumRemoteIDs(), numRemoteIDs)
-        self.assertEqual(self.exporter.NumRemoteIDs(), numRemoteIDs)
 
     def testRemoteLIDs(self):
-        "Test Epetra.Import/Export RemoteLIDs method"
+        "Test Epetra.Import RemoteLIDs method"
         remoteGIDs = []
         for p in range(self.numProc):
             if p!= self.myPID:
@@ -176,19 +157,14 @@ class EpetraImportExportTestCase(unittest.TestCase):
         # same way that I built the GID list
         for i in range(len(result)):
             self.assertEqual(result[i] in remoteLIDs, True)
-        result = self.exporter.RemoteLIDs()
-        self.assertEqual(len(result), len(remoteLIDs))
-        for i in range(len(result)):
-            self.assertEqual(result[i] in remoteLIDs, True)
 
     def testNumExportIDs(self):
-        "Test Epetra.Import/Export NumExportIDs method"
+        "Test Epetra.Import NumExportIDs method"
         numExportIDs  = self.myN * (self.globalN - self.myN)
         self.assertEqual(self.importer.NumExportIDs(), numExportIDs)
-        self.assertEqual(self.exporter.NumExportIDs(), numExportIDs)
 
     def testExportLIDs(self):
-        "Test Epetra.Import/Export ExportLIDs method"
+        "Test Epetra.Import ExportLIDs method"
         exportGIDs = []
         for p in range(self.numProc):
             if p != self.myPID:
@@ -203,7 +179,7 @@ class EpetraImportExportTestCase(unittest.TestCase):
             self.assertEqual(result[i], exportLIDs[i])
 
     def testExportPIDs(self):
-        "Test Epetra.Import/Export ExportPIDs method"
+        "Test Epetra.Import ExportPIDs method"
         exportGIDs = []
         for p in range(self.numProc):
             if p != self.myPID:
@@ -218,33 +194,27 @@ class EpetraImportExportTestCase(unittest.TestCase):
             self.assertEqual(result[i], exportPIDs[i])
 
     def testNumSend(self):
-        "Test Epetra.Import/Export NumSend method"
+        "Test Epetra.Import NumSend method"
         numSend  = self.myN * (self.globalN - self.myN)
-        self.assertEqual(self.importer.NumSend(), 0      )
-        self.assertEqual(self.exporter.NumSend(), numSend)
+        self.assertEqual(self.importer.NumSend(), 0)
 
     def testNumRecv(self):
-        "Test Epetra.Import/Export NumRecv method"
+        "Test Epetra.Import NumRecv method"
         numRecv  = self.myN * (self.globalN - self.myN)
         self.assertEqual(self.importer.NumRecv(), numRecv)
-        self.assertEqual(self.exporter.NumRecv(), numRecv)
 
     def testSourceMap(self):
-        "Test Epetra.Import/Export SourceMap method"
-        source1 = self.importer.SourceMap()
-        source2 = self.exporter.SourceMap()
-        self.assertEqual(source1.SameAs(self.srcMap), True)
-        self.assertEqual(source2.SameAs(self.srcMap), True)
+        "Test Epetra.Import SourceMap method"
+        source = self.importer.SourceMap()
+        self.assertEqual(source.SameAs(self.srcMap), True)
 
     def testTargetMap(self):
-        "Test Epetra.Import/Export TargetMap method"
-        target1 = self.importer.TargetMap()
-        target2 = self.exporter.TargetMap()
-        self.assertEqual(target1.SameAs(self.trgMap), True)
-        self.assertEqual(target2.SameAs(self.trgMap), True)
+        "Test Epetra.Import TargetMap method"
+        target = self.importer.TargetMap()
+        self.assertEqual(target.SameAs(self.trgMap), True)
 
     def testPrint(self):
-        "Test Epetra.Import/Export Print method"
+        "Test Epetra.Import Print method"
         filename = "testImportExport%d.dat" % self.myPID
         f = open(filename,"w")
         self.importer.Print(f)
@@ -256,7 +226,197 @@ class EpetraImportExportTestCase(unittest.TestCase):
         self.assertEquals(len(s),lines)
 
     def testStr(self):
-        "Test Epetra.Import/Export __str__ method"
+        "Test Epetra.Import __str__ method"
+        s = str(self.importer)
+        s = s.splitlines()
+        lines = 42 + 2*self.myN*self.myN*self.numProc
+        if self.myPID == 0: lines += 14
+        if self.numProc == 1: lines -= 10
+        self.assertEquals(len(s),lines)
+
+##########################################################################
+
+class EpetraExportTestCase(unittest.TestCase):
+    "TestCase for Epetra_Export objects"
+
+    # This test case tests Export objects for a transpose problem.  The global
+    # problem is defined by a naturally-ordered NxN grid, where N = 2 * (# of
+    # processors).  The source map is a column-wise 1D decomposition, and the
+    # target map is a row-wise 1D decomposition.
+
+    def setUp(self):
+        self.comm       = Epetra.PyComm()
+        self.numProc    = self.comm.NumProc()
+        self.myPID      = self.comm.MyPID()
+        self.myN        = 2
+        self.globalN    = self.myN * self.numProc
+        self.globalSize = self.globalN*self.globalN
+        self.gids       = arange(self.globalSize)
+        self.gids.shape = (self.globalN,self.globalN)
+        self.start      = self.myN * self.myPID
+        self.end        = self.start + self.myN
+        self.trgMap     = Epetra.Map(-1,self.gids[:,self.start:self.end],0,self.comm)
+        self.srcMap     = Epetra.Map(-1,self.gids[self.start:self.end,:],0,self.comm)
+        self.exporter   = Epetra.Export(self.srcMap, self.trgMap)
+        self.numSameIDs = 0
+        if self.myPID   == 0: self.numSameIDs = self.myN
+        if self.numProc == 1: self.numSameIDs = self.myN * self.myN
+        self.comm.Barrier()
+
+    def tearDown(self):
+        self.comm.Barrier()
+
+    def testConstructors1(self):
+        "Test Epetra.Export constructor"
+        source = self.exporter.SourceMap()
+        target = self.exporter.TargetMap()
+        self.assertEqual(source.SameAs(self.srcMap), True)
+        self.assertEqual(target.SameAs(self.trgMap), True)
+        if self.numProc > 1:
+            self.assertEqual(target.SameAs(source), False)
+
+    def testConstructors2(self):
+        "Test Epetra.Export copy constructor"
+        exporter = Epetra.Export(self.exporter)
+        source   = exporter.SourceMap()
+        target   = exporter.TargetMap()
+        self.assertEqual(source.SameAs(self.srcMap), True)
+        self.assertEqual(target.SameAs(self.trgMap), True)
+        if self.numProc > 1:
+            self.assertEqual(target.SameAs(source), False)
+
+    def testNumSameIDs(self):
+        "Test Epetra.Export NumSameIDs method"
+        self.assertEqual(self.exporter.NumSameIDs(), self.numSameIDs)
+
+    def testNumPermuteIDs(self):
+        "Test Epetra.Export NumPermuteIDs method"
+        numPermuteIDs = self.myN * self.myN - self.numSameIDs
+        self.assertEqual(self.exporter.NumPermuteIDs(), numPermuteIDs)
+
+    def testPermuteFromLIDs(self):
+        "Test Epetra.Export PermuteFromLIDs method"
+        permuteFromGIDs = self.gids[self.start:self.end,self.start:self.end]
+        if self.myPID == 0:
+            permuteFromGIDs = permuteFromGIDs[1:,:]
+        if self.numProc == 1:
+            permuteFromGIDs = zeros((0,))
+        permuteFromGIDs = ravel(permuteFromGIDs)
+        lists           = self.srcMap.RemoteIDList(permuteFromGIDs)
+        permuteFromLIDs = lists[1]
+        result = self.exporter.PermuteFromLIDs()
+        self.assertEqual(len(result), len(permuteFromLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i],permuteFromLIDs[i])
+
+    def testPermuteToLIDs(self):
+        "Test Epetra.Export PermuteToLIDs method"
+        permuteToGIDs = self.gids[self.start:self.end,self.start:self.end]
+        if self.myPID == 0:
+            permuteToGIDs = permuteToGIDs[1:,:]
+        if self.numProc == 1:
+            permuteToGIDs = zeros((0,))
+        permuteToGIDs = ravel(permuteToGIDs)
+        lists         = self.trgMap.RemoteIDList(permuteToGIDs)
+        permuteToLIDs = lists[1]
+        result = self.exporter.PermuteToLIDs()
+        self.assertEqual(len(result), len(permuteToLIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i],permuteToLIDs[i])
+
+    def testNumRemoteIDs(self):
+        "Test Epetra.Export NumRemoteIDs method"
+        numRemoteIDs  = self.myN * (self.globalN - self.myN)
+        self.assertEqual(self.exporter.NumRemoteIDs(), numRemoteIDs)
+
+    def testRemoteLIDs(self):
+        "Test Epetra.Export RemoteLIDs method"
+        remoteGIDs = []
+        for p in range(self.numProc):
+            if p!= self.myPID:
+                start = p * self.myN
+                end   = start + self.myN
+                remoteGIDs.extend(ravel(self.gids[start:end,self.start:self.end]))
+        lists      = self.trgMap.RemoteIDList(remoteGIDs)
+        remoteLIDs = lists[1]
+        result = self.exporter.RemoteLIDs()
+        self.assertEqual(len(result), len(remoteLIDs))
+        # I've run into some situations where the result IDs are not ordered the
+        # same way that I built the GID list
+        for i in range(len(result)):
+            self.assertEqual(result[i] in remoteLIDs, True)
+
+    def testNumExportIDs(self):
+        "Test Epetra.Export NumExportIDs method"
+        numExportIDs  = self.myN * (self.globalN - self.myN)
+        self.assertEqual(self.exporter.NumExportIDs(), numExportIDs)
+
+    def testExportLIDs(self):
+        "Test Epetra.Export ExportLIDs method"
+        exportGIDs = []
+        for p in range(self.numProc):
+            if p != self.myPID:
+                start = p * self.myN
+                end   = start + self.myN
+                exportGIDs.extend(ravel(self.gids[self.start:self.end,start:end]))
+        lists      = self.srcMap.RemoteIDList(exportGIDs)
+        exportLIDs = lists[1]
+        result     = self.exporter.ExportLIDs()
+        self.assertEqual(len(result), len(exportLIDs))
+        # I've run into some situations where the result IDs are not ordered the
+        # same way that I built the GID list
+        for i in range(len(result)):
+            self.assertEqual(result[i] in exportLIDs, True)
+
+    def testExportPIDs(self):
+        "Test Epetra.Export ExportPIDs method"
+        exportGIDs = []
+        for p in range(self.numProc):
+            if p != self.myPID:
+                start = p * self.myN
+                end   = start + self.myN
+                exportGIDs.extend(ravel(self.gids[self.start:self.end,start:end]))
+        lists      = self.trgMap.RemoteIDList(exportGIDs)
+        exportPIDs = lists[0]
+        result     = self.exporter.ExportPIDs()
+        self.assertEqual(len(result), len(exportPIDs))
+        for i in range(len(result)):
+            self.assertEqual(result[i], exportPIDs[i])
+
+    def testNumSend(self):
+        "Test Epetra.Export NumSend method"
+        numSend  = self.myN * (self.globalN - self.myN)
+        self.assertEqual(self.exporter.NumSend(), numSend)
+
+    def testNumRecv(self):
+        "Test Epetra.Export NumRecv method"
+        numRecv  = self.myN * (self.globalN - self.myN)
+        self.assertEqual(self.exporter.NumRecv(), numRecv)
+
+    def testSourceMap(self):
+        "Test Epetra.Export SourceMap method"
+        source = self.exporter.SourceMap()
+        self.assertEqual(source.SameAs(self.srcMap), True)
+
+    def testTargetMap(self):
+        "Test Epetra.Export TargetMap method"
+        target = self.exporter.TargetMap()
+        self.assertEqual(target.SameAs(self.trgMap), True)
+
+    def testPrint(self):
+        "Test Epetra.Export Print method"
+        filename = "testImportExport%d.dat" % self.myPID
+        f = open(filename,"w")
+        self.exporter.Print(f)
+        f.close()
+        s = open(filename,"r").readlines()
+        lines = 41 + 2*self.myN*self.myN*self.numProc
+        if self.myPID == 0: lines += 14
+        if self.numProc == 1: lines -= 10
+        self.assertEquals(len(s),lines)
+
+    def testStr(self):
+        "Test Epetra.Export __str__ method"
         s = str(self.exporter)
         s = s.splitlines()
         lines = 41 + 2*self.myN*self.myN*self.numProc
@@ -272,7 +432,8 @@ if __name__ == "__main__":
     suite = unittest.TestSuite()
 
     # Add the test cases to the test suite
-    suite.addTest(unittest.makeSuite(EpetraImportExportTestCase))
+    suite.addTest(unittest.makeSuite(EpetraImportTestCase))
+    suite.addTest(unittest.makeSuite(EpetraExportTestCase))
 
     # Create a communicator
     comm    = Epetra.PyComm()
