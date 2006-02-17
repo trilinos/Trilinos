@@ -83,10 +83,15 @@ for option in options:
         extra_link_args.append(option)
 
 # An additional include directory
-include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
+epetraPythonSrcDir = os.path.normpath(os.path.join(top_srcdir,"..","epetra","python","src"))
+include_dirs.append(epetraPythonSrcDir)
 
 # Define the strings that refer to the required local source files
-aztecooWrap = "AztecOO_wrap.cpp"
+aztecooWrap            = "AztecOO_wrap.cpp"
+epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,
+                                                       "Epetra_NumPyMultiVector.cpp"))
+epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
+                                                       "Epetra_NumPyVector.cpp"     ))
 
 # Compiler and linker
 sysconfig.get_config_vars()
@@ -95,7 +100,7 @@ sysconfig._config_vars["CXX"] = CXX
 
 # _AztecOO extension module
 _AztecOO = Extension("PyTrilinos._AztecOO",
-                     [aztecooWrap],
+                     [aztecooWrap, epetraNumPyMultiVector, epetraNumPyVector],
                      define_macros      = [("HAVE_CONFIG_H", "1")],
                      include_dirs       = include_dirs,
                      library_dirs       = library_dirs,
