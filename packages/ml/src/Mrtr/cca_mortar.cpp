@@ -171,8 +171,10 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     int ngnode2 = 0;
     GNODE** gnode1 = NULL; // needs to be deleted
     GNODE** gnode2 = NULL; // needs to be deleted
-    ngnode1 = cca_mrtr_2D_find_gnodes_on_dline(&gnode1,dline1,actdis);
-    ngnode2 = cca_mrtr_2D_find_gnodes_on_dline(&gnode2,dline2,actdis);
+    bool*   boundary1 = NULL;
+    bool*   boundary2 = NULL;
+    ngnode1 = cca_mrtr_2D_find_gnodes_on_dline(&gnode1,&boundary1,dline1,actdis);
+    ngnode2 = cca_mrtr_2D_find_gnodes_on_dline(&gnode2,&boundary2,dline2,actdis);
     
     // side 0 of interface
     for (int i=0; i<ngnode1; ++i)
@@ -181,7 +183,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode1[i]->node->proc != MyPID) continue;
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode1[i]->Id,gnode1[i]->node->x,
-                       2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof,false,outlevel);
+                       2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof,boundary1[i],outlevel);
       bool ok = interface->AddNode(*node,0);
       delete node; node = NULL;
     }
@@ -193,7 +195,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       if (gnode2[i]->node->proc != MyPID) continue;
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode2[i]->Id,gnode2[i]->node->x,
-                       2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof,false,outlevel);
+                       2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof,boundary2[i],outlevel);
       bool ok = interface->AddNode(*node,1);
       delete node; node = NULL;
     }
@@ -264,6 +266,8 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     if (gline2) delete [] gline2;
     if (gnode1) delete [] gnode1;
     if (gnode2) delete [] gnode2;
+    if (boundary1) delete [] boundary1;
+    if (boundary2) delete [] boundary2;
     if (interface) delete interface; interface = NULL;
     
   //-------------------------------------------------------------------
@@ -442,7 +446,6 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
     // set type of projection to be used on this interface
 
     interface->SetProjectionType(MOERTEL::Interface::proj_continousnormalfield);    
-    //interface->SetProjectionType(MOERTEL::Interface::proj_orthogonal);    
     
     //-----------------------------------------------------------------
     // Complete interface 
@@ -681,6 +684,7 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   // create Epetra_Vectors from rhs and sol
   Epetra_Map* rowmap = mrtr_manager->ProblemMap();  
   Epetra_Vector esol(*rowmap,true);
+  esol.Random();
   Epetra_Vector erhs(*rowmap,false);
   for (int i=0; i<erhs.MyLength(); ++i)
     erhs[i] = rhs->vec.a.dv[i];
@@ -714,29 +718,29 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   // argument sublist for ml
   Teuchos::ParameterList& mlparams = params.sublist("ML");
   ML_Epetra::SetDefaults("SA",mlparams);
-  mlparams.set("output",6);
+  mlparams.set("output",10);
   mlparams.set("print unused",1/*-2*/);
   mlparams.set("increasing or decreasing","increasing");
-  mlparams.set("PDE equations",3);
-  mlparams.set("max levels",10);
+  mlparams.set("PDE equations",2);
+  mlparams.set("max levels",3);
   mlparams.set("aggregation: type","Uncoupled");
-  mlparams.set("aggregation: damping factor",0.0);
-  mlparams.set("coarse: max size",128);
+  mlparams.set("aggregation: damping factor",1.333);
+  mlparams.set("coarse: max size",14);
   mlparams.set("coarse: type","Amesos-KLU");
-  mlparams.set("smoother: type","symmetric Gauss-Seidel"); /* MLS symmetric Gauss-Seidel */
-  mlparams.set("smoother: MLS polynomial order",1);
+  mlparams.set("smoother: type","MLS"); /* MLS symmetric Gauss-Seidel */
+  mlparams.set("smoother: MLS polynomial order",3);
   mlparams.set("smoother: sweeps",1);
   mlparams.set("smoother: pre or post","both");
   mlparams.set("null space: type","pre-computed");
   mlparams.set("null space: add default vectors",false);
-  int dimnullspace = 6;
+  int dimnullspace = 3;
   int nummyrows = mrtr_manager->ProblemMap()->NumMyElements();
   int numglobalrows = mrtr_manager->ProblemMap()->NumGlobalElements();
   int* update       = mrtr_manager->ProblemMap()->MyGlobalElements();
   int dimnsp        = dimnullspace*nummyrows;
   double* nsp   = new double[dimnsp];
   int numdf = 0;
-  ccarat_nox_nullspace(nsp,dimnsp,update,1,NULL,nummyrows,numglobalrows,&numdf);
+  solver_ml_nullspace(nsp,dimnsp,update,1,NULL,nummyrows,numglobalrows,&numdf);
   mlparams.set("null space: dimension",dimnullspace);
   mlparams.set("null space: vectors",nsp);
 

@@ -65,13 +65,18 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
     return -1;
   }
   
-  // make X (residual) satisfy constraints 
+#if 0
   Epetra_Vector x(View,X,0);
-  Epetra_Vector xtmp(x.Map(),false);
+  Epetra_Vector xtmp(B_->DomainMap(),false);
+  Epetra_Vector xtmp2(x.Map(),false);
+
+  // make X (residual) satisfy constraints 
+  // do X = (I-BW^T)X
   WT_->Multiply(false,x,xtmp);
-  B_->Multiply(false,xtmp,xtmp);
-  x.Update(-1.0,xtmp,1.0);
-  
+  B_->Multiply(false,xtmp,xtmp2);
+  x.Update(-1.0,xtmp2,1.0);
+#endif
+
   // Apply ML
   int err = mlprec_->ApplyInverse(X,Y);
   if (err)
@@ -82,11 +87,12 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
   }
   
   // make Y (search direction) satisfy constraints
+  // do Y = (I-WB^T)Y
+#if 0
   Epetra_Vector y(View,Y,0);
-  Epetra_Vector& ytmp = xtmp;
-  B_->Multiply(true,y,ytmp);
-  WT_->Multiply(true,ytmp,ytmp);
-  y.Update(-1.0,ytmp,1.0);
-  
+  B_->Multiply(true,y,xtmp);
+  WT_->Multiply(true,xtmp,xtmp2);
+  y.Update(-1.0,xtmp2,1.0);
+#endif
   return err;
 }

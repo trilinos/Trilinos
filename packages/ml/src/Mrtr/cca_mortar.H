@@ -23,12 +23,14 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs);
 void ccarat_nox_nullspace(double *nullspace, int length, int *update, 
                            int shift, int *bins, int dim, int dim_total, 
                            int *numdf);
+void solver_ml_nullspace(double *nullspace, int length, int *update, 
+                        int shift, int *bins, int dim, int dim_total, int *numdf);
 }
 
 int  cca_mrtr_2D_numinterfaces(int **iids, DESIGN* design);
 bool cca_mrtr_2D_finddlines(int id, DLINE** dline1, DLINE** dline2, DESIGN* design);
 int  cca_mrtr_2D_find_glines_on_dline(GLINE*** gline, DLINE* dline, DISCRET* actdis);
-int  cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, DLINE* dline, DISCRET* actdis);
+int  cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, bool** boundary, DLINE* dline, DISCRET* actdis);
 int cca_mrtr_2D_prepare_gline_data(GLINE* gline, int** nodeIds,
                                    MOERTEL::Segment::SegmentType* typ);
 

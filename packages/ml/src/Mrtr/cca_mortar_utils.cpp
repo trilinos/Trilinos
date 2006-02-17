@@ -451,11 +451,12 @@ bool findnode(int ngnode, int* gsurfids, int eleid)
 /*----------------------------------------------------------------------*
  |  find gnodes for given dline                              m.gee 06/05|
  *----------------------------------------------------------------------*/
-int cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, DLINE* dline, DISCRET* actdis)
+int cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, bool** boundary, DLINE* dline, DISCRET* actdis)
 {
   int size   = 50;
   int ngnode = 0;
   *gnode = new (GNODE*)[size];
+  *boundary = new bool[size];
 
   // find the gnodes that are on this line
   for (int i=0; i<actdis->ngnode; ++i)
@@ -465,12 +466,19 @@ int cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, DLINE* dline, DISCRET* actd
     {
       size += 50;
       GNODE** tmp = new (GNODE*)[size];
+      bool* boundtmp = new bool[size];
       for (int j=0; j<ngnode; ++j)
+      {
         tmp[j] = (*gnode)[j];
+        boundtmp[j] = (*boundary)[j];
+      }
       delete [] (*gnode);
+      delete [] (*boundary);
       *gnode = tmp;
+      *boundary = boundtmp;
     }
     (*gnode)[ngnode] = &(actdis->gnode[i]);
+    (*boundary)[ngnode] = false;
     ++ngnode;
   }
   
@@ -488,12 +496,19 @@ int cca_mrtr_2D_find_gnodes_on_dline(GNODE*** gnode, DLINE* dline, DISCRET* actd
       {
         size += 50;
         GNODE** tmp = new (GNODE*)[size];
+        bool* boundtmp = new bool[size];
         for (int j=0; j<ngnode; ++j)
+        {
           tmp[j] = (*gnode)[j];
+          boundtmp[j] = (*boundary)[j];
+        }
         delete [] (*gnode);
+        delete [] (*boundary);
         *gnode = tmp;
+        *boundary = boundtmp;
       }
       (*gnode)[ngnode] = &(actdis->gnode[j]);
+      (*boundary)[ngnode] = true;
       ++ngnode;
       break;
     }
