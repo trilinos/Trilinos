@@ -30,6 +30,7 @@
 #define THYRA_EUCLIDEAN_SCALAR_PROD_HPP
 
 #include "Thyra_EuclideanScalarProdDecl.hpp"
+#include "Thyra_ScalarProdBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_EuclideanLinearOpBase.hpp"
 

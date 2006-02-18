@@ -29,7 +29,7 @@
 #ifndef THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP
 #define THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP
 
-#include "Thyra_ScalarProdBase.hpp"
+#include "Thyra_ScalarProdBaseDecl.hpp"
 
 namespace Thyra {
 

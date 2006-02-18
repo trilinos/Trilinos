@@ -30,6 +30,7 @@
 #define THYRA_MPI_VECTOR_BASE_HPP
 
 #include "Thyra_MPIVectorBaseDecl.hpp"
+#include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_MPIVectorSpaceBase.hpp"
 #include "RTOp_parallel_helpers.h"
 #include "RTOpPack_MPI_apply_op.hpp"

@@ -30,6 +30,7 @@
 #define THYRA_VECTOR_SERIAL_BASE_HPP
 
 #include "Thyra_SerialVectorBaseDecl.hpp"
+#include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_apply_op_helper.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TestForException.hpp"

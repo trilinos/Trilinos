@@ -29,7 +29,7 @@
 #ifndef THYRA_SERIAL_VECTOR_SPACE_FACTORY_STD_DECL_HPP
 #define THYRA_SERIAL_VECTOR_SPACE_FACTORY_STD_DECL_HPP
 
-#include "Thyra_VectorSpaceFactoryBase.hpp"
+#include "Thyra_VectorSpaceFactoryBaseDecl.hpp"
 
 namespace Thyra {
 

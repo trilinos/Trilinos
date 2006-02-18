@@ -29,7 +29,7 @@
 #ifndef THYRA_MPI_VECTOR_BASE_DECL_HPP
 #define THYRA_MPI_VECTOR_BASE_DECL_HPP
 
-#include "Thyra_VectorDefaultBase.hpp"
+#include "Thyra_VectorDefaultBaseDecl.hpp"
 #include "Thyra_MPIVectorSpaceBaseDecl.hpp"
 
 namespace Thyra {

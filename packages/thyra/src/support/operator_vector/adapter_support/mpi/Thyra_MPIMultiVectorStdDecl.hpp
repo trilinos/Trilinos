@@ -29,7 +29,7 @@
 #ifndef THYRA_MPI_MULTI_VECTOR_STD_DECL_HPP
 #define THYRA_MPI_MULTI_VECTOR_STD_DECL_HPP
 
-#include "Thyra_MPIMultiVectorBase.hpp"
+#include "Thyra_MPIMultiVectorBaseDecl.hpp"
 
 namespace Thyra {
 

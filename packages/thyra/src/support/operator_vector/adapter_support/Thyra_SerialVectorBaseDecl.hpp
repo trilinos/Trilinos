@@ -29,7 +29,7 @@
 #ifndef THYRA_VECTOR_SERIAL_BASE_DECL_HPP
 #define THYRA_VECTOR_SERIAL_BASE_DECL_HPP
 
-#include "Thyra_VectorDefaultBase.hpp"
+#include "Thyra_VectorDefaultBaseDecl.hpp"
 
 namespace Thyra {
 

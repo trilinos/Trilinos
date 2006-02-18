@@ -33,8 +33,8 @@
 //#define THYRA_MPI_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
 
 #include "Thyra_MPIMultiVectorStdDecl.hpp"
+#include "Thyra_MPIMultiVectorBase.hpp"
 #include "Thyra_MPIVectorStd.hpp"
-//#include "Thyra_VectorMultiVector.hpp"
 
 namespace Thyra {
 
