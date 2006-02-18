@@ -494,7 +494,7 @@ public:
   /** @name Pure virtual public functions that must be overridden in subclasses */
   //@{
 
-  /** \brief Check that a <tt>LinearOpBase</tt> objects is compatible with
+  /** \brief Check that a <tt>LinearOpBase</tt> object is compatible with
    * <tt>*this</tt> factory object.
    */
   virtual bool isCompatible( const LinearOpBase<RangeScalar,DomainScalar> &fwdOp ) const = 0;
