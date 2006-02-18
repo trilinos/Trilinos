@@ -119,6 +119,7 @@ public:
 	 * </ul>
 	 *
 	 * Postconditions:<ul>
+   * <li> <tt>this->epetra_op().get() == op.get()</tt>
 	 * <li> [<tt>mpiRange.get() != NULL</tt>] <tt>this->mpiRange().get() == mpiRange.get()</tt>
 	 * <li> [<tt>mpiDomain.get() != NULL</tt>] <tt>this->mpiDomain().get() == mpiDomain.get()</tt>
 	 * <li> [<tt>mpiRange.get() == NULL</tt>] <tt>this->mpiRange().get() != NULL</tt>
