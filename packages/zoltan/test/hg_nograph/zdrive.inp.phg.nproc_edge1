@@ -1,6 +1,8 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       =  
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-File Type		= hypergraph
+Zoltan Parameters	= ADD_OBJ_WEIGHT=none
+Zoltan Parameters       = PHG_NPROC_EDGE = 1
+File Type		= matrixmarket
 File Name		= nograph
 Parallel Disk Info	= number=0
