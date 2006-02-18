@@ -144,21 +144,23 @@ CLIP_solver2::CLIP_solver2(CRS_serial* A_,
 
 CLIP_solver2::~CLIP_solver2()
 {
-  delete Importer; delete ImporterB;
-  delete Exporter; delete ExporterB;
-  delete OwnMap; delete SubMap; 
-  delete PhiB; 
+  delete Importer; delete ImporterB; delete ImporterC;
+  delete Exporter; delete ExporterB; delete ExporterC;
+  delete SubMapB; delete SubMapC; delete OwnMapB; delete OwnMapC;
+  delete [] PhiB; 
   delete AR; delete AI; 
   delete AKc; delete [] comp1; delete [] comp2; delete [] sub1; delete [] sub2;
   delete [] dset1; delete [] dset2; delete [] corner_flag; 
   delete [] dofI; delete [] dofB; delete [] dofC; delete [] dofR;
-  delete [] dofBB; delete [] weight; 
+  delete [] dofBB; delete [] weight; delete [] dof2node;
   delete [] ARinvCT; delete [] CARinvCT; delete [] lambda_r; delete [] RHS_cg; 
   delete [] SOL_cg; delete [] TEMP_cg; delete [] SOL_Kc; delete [] TEMP_Kc;
   delete [] amg_matR; delete [] amg_A1R; delete [] amg_A2R; delete [] amg_xR;
   delete [] amg_yR; delete [] amg_zR; delete [] amg_nodebegR; delete [] amg_local_dofR;
   delete [] amg_matI; delete [] amg_A1I; delete [] amg_A2I; delete [] amg_xI;
   delete [] amg_yI; delete [] amg_zI; delete [] amg_nodebegI; delete [] amg_local_dofI;
+  delete rSub; delete uSub ; delete rOwn; delete uOwn; delete rSubB; delete uSubB;
+  delete rOwnB; delete uOwnB; delete rSubC; delete uSubC; delete rOwnC; delete uOwnC;
   zero_pointers();
 }
 
@@ -435,7 +437,7 @@ void CLIP_solver2::determine_corner_dofs()
     }
   }
   delete [] adof; delete [] adof_flag; delete [] sub_flag; sub_flag = 0;
-  delete [] anode; delete [] anode_flag;
+  delete [] anode; delete [] anode_flag; delete [] local_sub;
   //
   // share corner dofs between subdomains
   //
@@ -773,7 +775,7 @@ void CLIP_solver2::calculate_coarse()
     for (j=0; j<ncon; j++) dvec[j] = Kc_sub[i+j*ncon];
     Kc_loc.InsertMyValues(i, ncon, dvec, ivec);
   }
-  delete [] dvec; delete [] ivec;
+  delete [] dvec; delete [] ivec; delete [] Kc_sub;
   Kc_loc.FillComplete();
   //  cout << Kc_loc << endl;
   Kc.Export(Kc_loc, *ExporterC, Add);
@@ -821,7 +823,7 @@ void CLIP_solver2::calculate_coarse()
   }
   SubMapB = new Epetra_Map(-1, nB, gdofB, 0, Comm);
   OwnMapB = new Epetra_Map(-1, nB_own, gdofB_own, 0, Comm);
-  delete [] gdofB; delete [] gdofB_own;
+  delete [] gdofB; delete [] gdofB_own; delete [] owner_flag;
   ImporterB = new Epetra_Import(*SubMapB, *OwnMapB);
   ExporterB = new Epetra_Export(*SubMapB, *OwnMapB);
 }
