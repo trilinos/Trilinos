@@ -120,9 +120,11 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
+	$(srcdir)/Teuchos_StringToIntMap.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp $(srcdir)/Teuchos_TimeMonitor.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
@@ -152,8 +154,11 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_Flops.$(OBJEXT) Teuchos_GlobalMPISession.$(OBJEXT) \
 	Teuchos_MPIReductionOpBase.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
 	Teuchos_ParameterEntry.$(OBJEXT) \
-	Teuchos_ParameterList.$(OBJEXT) Teuchos_Range1D.$(OBJEXT) \
-	Teuchos_RefCountPtr.$(OBJEXT) Teuchos_ScalarTraits.$(OBJEXT) \
+	Teuchos_ParameterList.$(OBJEXT) \
+	Teuchos_ParameterListAcceptor.$(OBJEXT) \
+	Teuchos_Range1D.$(OBJEXT) Teuchos_RefCountPtr.$(OBJEXT) \
+	Teuchos_ScalarTraits.$(OBJEXT) \
+	Teuchos_StringToIntMap.$(OBJEXT) \
 	Teuchos_TestForException.$(OBJEXT) Teuchos_Time.$(OBJEXT) \
 	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_Utils.$(OBJEXT) \
 	Teuchos_VerboseObject.$(OBJEXT) Teuchos_Workspace.$(OBJEXT)
@@ -198,6 +203,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Object.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterEntry.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterList.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterListAcceptor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterXMLFileReader.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Range1D.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_RefCountPtr.Po \
@@ -205,6 +211,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StrUtils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StringInputSource.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StringInputStream.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_StringToIntMap.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_TestForException.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Time.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_TimeMonitor.Po \
@@ -254,6 +261,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
@@ -271,6 +279,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
 	$(srcdir)/Teuchos_StandardCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
+	$(srcdir)/Teuchos_StringToIntMap.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp $(srcdir)/Teuchos_TimeMonitor.hpp \
 	$(srcdir)/Teuchos_Utils.hpp \
@@ -487,6 +496,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
@@ -504,6 +514,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
 	$(srcdir)/Teuchos_StandardCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
+	$(srcdir)/Teuchos_StringToIntMap.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
@@ -525,9 +536,11 @@ CORE = \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
+	$(srcdir)/Teuchos_StringToIntMap.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
@@ -814,6 +827,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterEntry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterList.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListAcceptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterXMLFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Range1D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_RefCountPtr.Po@am__quote@
@@ -821,6 +835,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StrUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StringInputSource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StringInputStream.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StringToIntMap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TestForException.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_TimeMonitor.Po@am__quote@
@@ -1045,6 +1060,22 @@ Teuchos_ParameterList.obj: $(srcdir)/Teuchos_ParameterList.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterList.obj `if test -f '$(srcdir)/Teuchos_ParameterList.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterList.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterList.cpp'; fi`
 
+Teuchos_ParameterListAcceptor.o: $(srcdir)/Teuchos_ParameterListAcceptor.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListAcceptor.o -MD -MP -MF "$(DEPDIR)/Teuchos_ParameterListAcceptor.Tpo" -c -o Teuchos_ParameterListAcceptor.o `test -f '$(srcdir)/Teuchos_ParameterListAcceptor.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListAcceptor.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_ParameterListAcceptor.Tpo" "$(DEPDIR)/Teuchos_ParameterListAcceptor.Po"; else rm -f "$(DEPDIR)/Teuchos_ParameterListAcceptor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptor.cpp' object='Teuchos_ParameterListAcceptor.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_ParameterListAcceptor.Po' tmpdepfile='$(DEPDIR)/Teuchos_ParameterListAcceptor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptor.o `test -f '$(srcdir)/Teuchos_ParameterListAcceptor.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListAcceptor.cpp
+
+Teuchos_ParameterListAcceptor.obj: $(srcdir)/Teuchos_ParameterListAcceptor.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListAcceptor.obj -MD -MP -MF "$(DEPDIR)/Teuchos_ParameterListAcceptor.Tpo" -c -o Teuchos_ParameterListAcceptor.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_ParameterListAcceptor.Tpo" "$(DEPDIR)/Teuchos_ParameterListAcceptor.Po"; else rm -f "$(DEPDIR)/Teuchos_ParameterListAcceptor.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptor.cpp' object='Teuchos_ParameterListAcceptor.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_ParameterListAcceptor.Po' tmpdepfile='$(DEPDIR)/Teuchos_ParameterListAcceptor.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptor.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptor.cpp'; fi`
+
 Teuchos_Range1D.o: $(srcdir)/Teuchos_Range1D.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_Range1D.o -MD -MP -MF "$(DEPDIR)/Teuchos_Range1D.Tpo" -c -o Teuchos_Range1D.o `test -f '$(srcdir)/Teuchos_Range1D.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_Range1D.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_Range1D.Tpo" "$(DEPDIR)/Teuchos_Range1D.Po"; else rm -f "$(DEPDIR)/Teuchos_Range1D.Tpo"; exit 1; fi
@@ -1092,6 +1123,22 @@ Teuchos_ScalarTraits.obj: $(srcdir)/Teuchos_ScalarTraits.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_ScalarTraits.Po' tmpdepfile='$(DEPDIR)/Teuchos_ScalarTraits.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ScalarTraits.obj `if test -f '$(srcdir)/Teuchos_ScalarTraits.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ScalarTraits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ScalarTraits.cpp'; fi`
+
+Teuchos_StringToIntMap.o: $(srcdir)/Teuchos_StringToIntMap.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StringToIntMap.o -MD -MP -MF "$(DEPDIR)/Teuchos_StringToIntMap.Tpo" -c -o Teuchos_StringToIntMap.o `test -f '$(srcdir)/Teuchos_StringToIntMap.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_StringToIntMap.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_StringToIntMap.Tpo" "$(DEPDIR)/Teuchos_StringToIntMap.Po"; else rm -f "$(DEPDIR)/Teuchos_StringToIntMap.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_StringToIntMap.cpp' object='Teuchos_StringToIntMap.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_StringToIntMap.Po' tmpdepfile='$(DEPDIR)/Teuchos_StringToIntMap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StringToIntMap.o `test -f '$(srcdir)/Teuchos_StringToIntMap.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_StringToIntMap.cpp
+
+Teuchos_StringToIntMap.obj: $(srcdir)/Teuchos_StringToIntMap.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_StringToIntMap.obj -MD -MP -MF "$(DEPDIR)/Teuchos_StringToIntMap.Tpo" -c -o Teuchos_StringToIntMap.obj `if test -f '$(srcdir)/Teuchos_StringToIntMap.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_StringToIntMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_StringToIntMap.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_StringToIntMap.Tpo" "$(DEPDIR)/Teuchos_StringToIntMap.Po"; else rm -f "$(DEPDIR)/Teuchos_StringToIntMap.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_StringToIntMap.cpp' object='Teuchos_StringToIntMap.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_StringToIntMap.Po' tmpdepfile='$(DEPDIR)/Teuchos_StringToIntMap.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_StringToIntMap.obj `if test -f '$(srcdir)/Teuchos_StringToIntMap.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_StringToIntMap.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_StringToIntMap.cpp'; fi`
 
 Teuchos_TestForException.o: $(srcdir)/Teuchos_TestForException.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_TestForException.o -MD -MP -MF "$(DEPDIR)/Teuchos_TestForException.Tpo" -c -o Teuchos_TestForException.o `test -f '$(srcdir)/Teuchos_TestForException.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_TestForException.cpp; \

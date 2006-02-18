@@ -81,6 +81,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
@@ -98,6 +99,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
 	$(srcdir)/Teuchos_StandardCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
+	$(srcdir)/Teuchos_StringToIntMap.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
@@ -119,9 +121,11 @@ CORE = \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
+	$(srcdir)/Teuchos_StringToIntMap.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
