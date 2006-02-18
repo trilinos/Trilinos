@@ -62,7 +62,7 @@ CLIP_solver2::CLIP_solver2(CRS_serial* A_,
     amg_params(amg_params_), Comm(SubMap->Comm())
 {
 
-  //  zero_pointers();
+  zero_pointers();
 
   cdof_option         = int(clip_params[0]); 
   solver_tol          = clip_params[1];
@@ -148,8 +148,8 @@ CLIP_solver2::~CLIP_solver2()
   delete Exporter; delete ExporterB; delete ExporterC;
   delete SubMapB; delete SubMapC; delete OwnMapB; delete OwnMapC;
   delete [] PhiB; 
-  delete AR; delete AI; 
-  delete AKc; delete [] comp1; delete [] comp2; delete [] sub1; delete [] sub2;
+  delete AR; delete AI; delete AKc;
+  delete [] comp1; delete [] comp2; delete [] sub1; delete [] sub2;
   delete [] dset1; delete [] dset2; delete [] corner_flag; 
   delete [] dofI; delete [] dofB; delete [] dofC; delete [] dofR;
   delete [] dofBB; delete [] weight; delete [] dof2node;
@@ -159,9 +159,10 @@ CLIP_solver2::~CLIP_solver2()
   delete [] amg_yR; delete [] amg_zR; delete [] amg_nodebegR; delete [] amg_local_dofR;
   delete [] amg_matI; delete [] amg_A1I; delete [] amg_A2I; delete [] amg_xI;
   delete [] amg_yI; delete [] amg_zI; delete [] amg_nodebegI; delete [] amg_local_dofI;
+  delete [] amg_matC; delete [] amg_A1C; delete [] amg_A2C; delete [] amg_xC;
+  delete [] amg_yC; delete [] amg_zC; delete [] amg_nodebegC; delete [] amg_local_dofC;
   delete rSub; delete uSub ; delete rOwn; delete uOwn; delete rSubB; delete uSubB;
   delete rOwnB; delete uOwnB; delete rSubC; delete uSubC; delete rOwnC; delete uOwnC;
-  zero_pointers();
 }
 
 void CLIP_solver2::determine_components()
@@ -1430,10 +1431,13 @@ void CLIP_solver2::determine_components(int A1[], int A2[], int N,
 
 void CLIP_solver2::zero_pointers()
 {
+  AKc = 0; SOL_Kc = 0; TEMP_Kc = 0;
   amg_matR = 0; amg_A1R = 0; amg_A2R = 0; amg_xR = 0;
   amg_yR = 0; amg_zR = 0; amg_nodebegR = 0; amg_local_dofR = 0;
   amg_matI = 0; amg_A1I = 0; amg_A2I = 0; amg_xI = 0;
   amg_yI = 0; amg_zI = 0; amg_nodebegI = 0; amg_local_dofI = 0;
+  amg_matC = 0; amg_A1C = 0; amg_A2C = 0; amg_xC = 0;
+  amg_yC = 0; amg_zC = 0; amg_nodebegC = 0; amg_local_dofC = 0;
 }
 
 

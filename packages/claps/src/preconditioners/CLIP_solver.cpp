@@ -1789,6 +1789,9 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     // apply BDDC preconditioner
     //
     apply_preconditioner();
+    double aaa;
+    zB_St->Norm2(&aaa);
+    if (MyPID == 0) cout << "norm zB_St = " << aaa << endl;
     //
     // augment standard BDDC preconditioner with stored vectors if in
     // standard pcg mode
@@ -1824,6 +1827,9 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     // determine ABB * pB
     //
     determine_AxB(pB_St, ApB_St);
+    double aa;
+    ApB_St->Norm2(&aa);
+    if (MyPID == 0) cout << "norm ApB_st = " << aa << endl;
     pB_St->Dot(*ApB_St, &pAp);
     if (cg_iter >= 0) {
       pApa[cg_iter] = pAp;
@@ -1843,9 +1849,10 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
     rcurr = sqrt(rcurr);
     rcurra[iter+1] = rcurr;
     num_iter = iter+1;
+    if (MyPID == 0) cout << "rcurr at bottom = " << rcurr << endl;
     if (MyPID == -1) cout << "n_orthog_used, cg_iter = " << n_orthog_used
 			 << " " << cg_iter << endl;
-    if (MyPID == -1) cout << "alpha, dprod, rtol = " << alpha << " " 
+    if (MyPID == 0) cout << "alpha, dprod, rtol = " << alpha << " " 
     			 << dprod << " " << rcurr/rorig << endl;
     if ((iflag > 0) && (rcurr/rorig <= solver_tol)) {
       pcg_status = 0;

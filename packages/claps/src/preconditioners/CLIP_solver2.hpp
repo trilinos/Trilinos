@@ -152,6 +152,8 @@ CLIP_solver2::CLIP_solver2(
   double *amg_xR, *amg_yR, *amg_zR, *amg_matR;
   int *amg_A1I, *amg_A2I, *amg_nodebegI, *amg_local_dofI, amg_nnodeI;
   double *amg_xI, *amg_yI, *amg_zI, *amg_matI;
+  int *amg_A1C, *amg_A2C, *amg_nodebegC, *amg_local_dofC, amg_nnodeC;
+  double *amg_xC, *amg_yC, *amg_zC, *amg_matC;
 
   // old stuff
   solver_crd *AR, *AI, *AKc;
