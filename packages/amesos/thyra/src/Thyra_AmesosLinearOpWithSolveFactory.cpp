@@ -33,7 +33,6 @@
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
-#include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
 #ifdef HAVE_AMESOS_KLU
