@@ -1,6 +1,6 @@
 #!/bin/csh -f
 
-setenv PATH=/bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb
+setenv PATH /bin:/usr/bin:/usr/sbin:/sbin:/usr/ucb/bin:/usr/ucb
 
 if ( $#argv < 2 ) then
   echo "usage: $0 srcdir destdir oldpat1 newpat1 oldpat2 newpat2 ..."
