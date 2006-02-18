@@ -54,8 +54,8 @@
 #include "EpetraExtCD_MatrixMatrix.hpp"
 #include "CRS_serial.hpp"
 #include "preconditioner_crd.hpp"
-#include "krylov_crd.hpp"
 #include "sparse_lu2.hpp"
+#include "amg_solve.hpp"
 
 //class CLIP_solver2 : public preconditioner_crd
 class CLIP_solver2 : public preconditioner_crd
@@ -65,7 +65,8 @@ CLIP_solver2::CLIP_solver2(
 	  CRS_serial* A_,              // problem data
 	  const Epetra_Map* SubMap_,   // subdomain map
 	  const Epetra_Map* OwnMap_,   // unique owner map
-	  const double* clip_params_); // array of solver parameters
+	  const double* clip_params_,  // array of solver parameters
+	  const double* amg_params_);  // array of amg parameters
   ~CLIP_solver2();
   double norm2(double a[], int n);
   double dotprod(double a[], double b[], int n);
@@ -94,25 +95,34 @@ CLIP_solver2::CLIP_solver2(
   void get_matrix_diag(CRS_serial* AA, double* & diag);
   int determine_shell(int node);
   bool find_sub(int dof, int sub);
-  void check_two_dofs(int ii, int* adof, bool* adof_flag);
-  void check_three_dofs(int ii, int* adof, bool* adof_flag);
+  void check_two_nodes(int ii, int* adof, bool* adof_flag,
+		       int* anode, bool* anode_flag);
+  void check_three_nodes(int ii, int* adof, bool* adof_flag,
+			 int* anode, bool* anode_flag);
   void get_adof(int ii, int* aa, int nn, int* adof, int & nadof, 
 		bool* adof_flag, int tflag=0);
   bool contains(int ii, int dof2);
-  int find_dof1(int* adof, int nadof);
-  void find_farthest1(int* adof, int nadof, int dof1, int & dof2);
-  void find_farthest2(int* adof, int nadof, int & dof1, int & dof2);
-  void find_dof1_dof2(int* adof, int nadof, int & dof1, int & dof2);
-  int find_max_area(int* adof, int nadof, int dof1, int dof2);
+  void get_anode(int* adof, int nadof, int* anode, 
+		 bool* anode_flag, int & nanode);
+  void set_corner_flag(int node);
+  int find_node1(int* anode, int nanode);
+  void find_farthest1(int* anode, int nanode, int node1, int & node2);
+  void find_farthest2(int* anode, int nanode, int & node1, int & node2);
+  void find_node1_node2(int* anode, int nanode, int & node1, int & node2);
+  int find_max_area(int* anode, int nanode, int node1, int node2);
   void gen_matrix(CRS_serial* A, int na, int adof[], 
 		  int* & rowbeg, int* & colidx, double* &vals);
   void zero_pointers();
   void spmat_datfile(const Epetra_CrsMatrix & A, char fname[], int opt);
+  void gen_amg_data(int n, int* dofa, double* & amg_mat, int* & amg_A1,
+		    int* & amg_A2, double* & amg_x, double* & amg_y,
+		    double* & amg_z, int* & amg_nodebeg,
+		    int* & amg_local_dof, int & amg_nnode);
 
  private: // variables
   CRS_serial *A;
   const Epetra_Map *SubMap, *OwnMap;
-  const double* clip_params;
+  const double *clip_params, *amg_params;
   const Epetra_Comm & Comm;
 
   int cdof_option, maxiter, atype, ndim, local_solver, prt_debug, prt_summary;
@@ -133,10 +143,15 @@ CLIP_solver2::CLIP_solver2(
   Epetra_MultiVector *uOwn, *uSub, *uOwnB, *uSubB, *uOwnC, *uSubC;
   int MyPID, NumProc, ndof_sub, ndof_global, print_flag;
   int *comp1, *comp2, ncomp, ncomp_sum, *sub1, *sub2, *dset1, *dset2;
-  int ndof_set, *corner_flag, *dof2node, *local_sub, init_flag;
+  int ndof_set, *corner_flag, *dof2node, *local_sub;
   bool *owner_flag, *sub_flag;
   double *PhiB;
   double *weight, *ARinvCT, *CARinvCT, *lambda_r;
+
+  int *amg_A1R, *amg_A2R, *amg_nodebegR, *amg_local_dofR, amg_nnodeR;
+  double *amg_xR, *amg_yR, *amg_zR, *amg_matR;
+  int *amg_A1I, *amg_A2I, *amg_nodebegI, *amg_local_dofI, amg_nnodeI;
+  double *amg_xI, *amg_yI, *amg_zI, *amg_matI;
 
   // old stuff
   solver_crd *AR, *AI, *AKc;

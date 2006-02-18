@@ -56,9 +56,10 @@ extern "C"{
 CLIP_solver2::CLIP_solver2(CRS_serial* A_,
 			   const Epetra_Map* SubMap_,
 			   const Epetra_Map* OwnMap_,
-			   const double* clip_params_)
+			   const double* clip_params_,
+			   const double* amg_params_)
   : A(A_), SubMap(SubMap_), OwnMap(OwnMap_), clip_params(clip_params_),
-    Comm(SubMap->Comm())
+    amg_params(amg_params_), Comm(SubMap->Comm())
 {
 
   //  zero_pointers();
@@ -153,7 +154,11 @@ CLIP_solver2::~CLIP_solver2()
   delete [] dofI; delete [] dofB; delete [] dofC; delete [] dofR;
   delete [] dofBB; delete [] weight; 
   delete [] ARinvCT; delete [] CARinvCT; delete [] lambda_r; delete [] RHS_cg; 
-  delete [] SOL_cg; delete [] TEMP_cg; delete [] SOL_Kc; delete [] TEMP_Kc; 
+  delete [] SOL_cg; delete [] TEMP_cg; delete [] SOL_Kc; delete [] TEMP_Kc;
+  delete [] amg_matR; delete [] amg_A1R; delete [] amg_A2R; delete [] amg_xR;
+  delete [] amg_yR; delete [] amg_zR; delete [] amg_nodebegR; delete [] amg_local_dofR;
+  delete [] amg_matI; delete [] amg_A1I; delete [] amg_A2I; delete [] amg_xI;
+  delete [] amg_yI; delete [] amg_zI; delete [] amg_nodebegI; delete [] amg_local_dofI;
   zero_pointers();
 }
 
@@ -175,6 +180,14 @@ void CLIP_solver2::determine_dof_sets()
   int i, j, k, NumEntries, *Indices, dof, dof2, *loc_dofs;
   int ScanSums;
   loc_dofs = A->get_localdof();
+  //
+  // dof2node[i] = local node number for dof i
+  //
+  dof2node = new int[ndof_sub];
+  int* nodebeg = A->get_nodebeg();
+  int nnode = A->get_nnode();
+  for (i=0; i<nnode; i++)
+    for (j=nodebeg[i]; j<nodebeg[i+1]; j++) dof2node[j] = i;
   //
   // each subdomain component is now treated and numbered as an
   // individual subdomain
@@ -291,6 +304,17 @@ void CLIP_solver2::determine_dof_sets()
     icount[ival[i]]++;
   }
   delete [] ival; delete [] icount;
+  if (MyPID == -1) {
+    double* x = A->get_xcoord();
+    double* y = A->get_ycoord();
+    for (i=0; i<ndof_set; i++) {
+      cout << "dset " << i << endl;
+      for (j=dset2[i]; j<dset2[i+1]; j++) {
+	cout << x[dof2node[dset1[j]]] << " " << y[dof2node[dset1[j]]] << "; "
+	     << loc_dofs[dset1[j]] << " " << dset1[j] << endl;
+      }
+    }
+  }
   //
   // check
   //
@@ -298,6 +322,7 @@ void CLIP_solver2::determine_dof_sets()
     dof = dset1[dset2[i]];
     for (j=dset2[i]+1; j<dset2[i+1]; j++) {
       dof2 = dset1[j];
+      assert(loc_dofs[dof] == loc_dofs[dof2]);
       assert((sub2[dof2+1]-sub2[dof2]) == (sub2[dof+1]-sub2[dof]));
       for (k=0; k<(sub2[dof+1]-sub2[dof]); k++) {
 	assert(sub1[sub2[dof]+k] == sub1[sub2[dof2]+k]);
@@ -319,7 +344,7 @@ void CLIP_solver2::determine_dof_sets()
     assert (local_sub[i] >= 0);
   }
   //
-  // determine internal and boundary dofs and factor AI
+  // determine internal and boundary dofs
   //
   nI = 0; nB = 0;
   for (i=0; i<ndof_sub; i++) {
@@ -348,23 +373,20 @@ void CLIP_solver2::determine_dof_sets()
 
 void CLIP_solver2::determine_corner_dofs()
 {
-  int i, j, num_entries, num_sub, dof, rot_flag, *gdofs, nadof;
+  int i, j, num_entries, num_sub, dof, rot_flag, *gdofs, nadof, node;
   gdofs = SubMap->MyGlobalElements();
-  dof2node = new int[ndof_sub];
-  int* nodebeg = A->get_nodebeg();
-  int nnode = A->get_nnode();
-  //
-  // dof2node[i] = local node number for dof i
-  //
-  for (i=0; i<nnode; i++)
-    for (j=nodebeg[i]; j<nodebeg[i+1]; j++) dof2node[j] = i;
   //
   // dofBB[1:nBB] = dofs adjacent to boundary dofs
   //  (used later for static condensation corrections)
   //
+  int nnode = A->get_nnode();
+  int* nodebeg = A->get_nodebeg();
   int *adof = new int[ndof_sub];
   bool *adof_flag = new bool[ndof_sub];
   for (i=0; i<ndof_sub; i++) adof_flag[i] = false;
+  int *anode = new int[nnode];
+  bool *anode_flag = new bool[nnode];
+  for (i=0; i<nnode; i++) anode_flag[i] = false;
   get_adof(-1, dofB, nB, adof, nadof, adof_flag, 1);
   nBB = nadof - nB;
   dofBB = new int[nBB];
@@ -376,12 +398,15 @@ void CLIP_solver2::determine_corner_dofs()
   for (i=0; i<ndof_set; i++) {
     num_entries = dset2[i+1] - dset2[i];
     dof = dset1[dset2[i]];
-    if (num_entries == 1) corner_flag[dof] = 1;
+    if (num_entries == 1) {
+      corner_flag[dof] = 1;
+      node = dof2node[dof];
+      for (j=nodebeg[node]; j<nodebeg[node+1]; j++) corner_flag[j] = 1;
+    }
   }
   //
   // next pick corner dofs for "edges"
   //
-  
   for (i=0; i<ncomp; i++) {
     for (j=0; j<ndof_set; j++) {
       dof = dset1[dset2[j]];
@@ -389,7 +414,7 @@ void CLIP_solver2::determine_corner_dofs()
       num_sub = sub2[dof+1] - sub2[dof];
       if ((find_sub(dof, local_sub[i]) == true) && (num_sub > 1)) {
 	if ((num_sub > 2) || (ndim == 2) || (rot_flag == 1)) {
-	  check_two_dofs(j, adof, adof_flag);
+	  check_two_nodes(j, adof, adof_flag, anode, anode_flag);
 	}
       }
     }
@@ -404,12 +429,13 @@ void CLIP_solver2::determine_corner_dofs()
       num_sub = sub2[dof+1] - sub2[dof];
       if ((find_sub(dof, local_sub[i]) == true) && (num_sub > 1)) {
 	if (!(num_sub > 2) && !(ndim == 2) && !(rot_flag == 1)) {
-	  check_three_dofs(j, adof, adof_flag);
+	  check_three_nodes(j, adof, adof_flag, anode, anode_flag);
 	}
       }
     }
   }
   delete [] adof; delete [] adof_flag; delete [] sub_flag; sub_flag = 0;
+  delete [] anode; delete [] anode_flag;
   //
   // share corner dofs between subdomains
   //
@@ -531,39 +557,36 @@ void CLIP_solver2::factor_sub_matrices()
       nC++;
     }
   }
+  //  cout << "MyPID, atype, nC = " << MyPID << " " << atype << " " << nC << endl;
   assert ((nR + nC) == (nI + nB));
-  gen_matrix(A, nR, dofR, rowbeg, colidx, vals);
   if (sub_solver == 1) {
+    gen_matrix(A, nR, dofR, rowbeg, colidx, vals);
     AR = new CLAPS_sparse_lu2();
     AR->factor(vals, rowbeg, colidx, nR, scale_option);
     delete [] rowbeg; delete [] colidx; delete [] vals;
   }
+  if (sub_solver == 2) {
+    gen_amg_data(nR, dofR, amg_matR, amg_A1R, amg_A2R, amg_xR,
+		 amg_yR, amg_zR, amg_nodebegR, amg_local_dofR,
+		 amg_nnodeR);
+    AR = new amg_solve(amg_matR, amg_A1R, amg_A2R, amg_xR, amg_yR, amg_zR,
+		       amg_nodebegR, amg_local_dofR, amg_nnodeR, amg_params);
+  }
   //
   // factor AI
   //
-  nI = 0; nB = 0;
-  for (i=0; i<ndof_sub; i++) {
-    if ((sub2[i+1]-sub2[i]) == 1) nI++;
-    else nB++;
-  }
-  dofI = new int[nI]; dofB = new int[nB];
-  nI = 0; nB = 0;
-  for (i=0; i<ndof_sub; i++) {
-    if ((sub2[i+1]-sub2[i]) == 1) {
-      dofI[nI] = i;
-      nI++;
-    }
-    else {
-      dofB[nB] = i;
-      nB++;
-    }
-  }
-  assert ((nR + nC) == (nI + nB));
-  gen_matrix(A, nI, dofI, rowbeg, colidx, vals);
   if (sub_solver == 1) {
+    gen_matrix(A, nI, dofI, rowbeg, colidx, vals);
     AI = new CLAPS_sparse_lu2();
     AI->factor(vals, rowbeg, colidx, nI, scale_option);
     delete [] rowbeg; delete [] colidx; delete [] vals;
+  }
+  if (sub_solver == 2) {
+    gen_amg_data(nI, dofI, amg_matI, amg_A1I, amg_A2I, amg_xI,
+		 amg_yI, amg_zI, amg_nodebegI, amg_local_dofI,
+		 amg_nnodeI);
+    AI = new amg_solve(amg_matI, amg_A1I, amg_A2I, amg_xI, amg_yI, amg_zI,
+		       amg_nodebegI, amg_local_dofI, amg_nnodeI, amg_params);
   }
 }
 
@@ -740,7 +763,7 @@ void CLIP_solver2::calculate_coarse()
   OwnMapC = new Epetra_Map(-1, ngather, gcdof, 0, Comm);
   delete [] gcdof;
   Epetra_CrsMatrix Kc(Copy, *OwnMapC, 0);
-  Epetra_CrsMatrix Kc_loc(Copy, *SubMapC, *SubMapC, ncon, true);
+  Epetra_CrsMatrix Kc_loc(Copy, *SubMapC, *SubMapC, ncon);
   ImporterC = new Epetra_Import(*SubMapC, *OwnMapC);
   ExporterC = new Epetra_Export(*SubMapC, *OwnMapC);
   double *dvec = new double[ncon];
@@ -752,9 +775,11 @@ void CLIP_solver2::calculate_coarse()
   }
   delete [] dvec; delete [] ivec;
   Kc_loc.FillComplete();
+  //  cout << Kc_loc << endl;
   Kc.Export(Kc_loc, *ExporterC, Add);
   Kc.FillComplete(*OwnMapC, *OwnMapC);
   Kc.OptimizeStorage();
+  //  cout << Kc << endl;
   //  spmat_datfile(Kc, "Kc.dat", 1);
   //
   // factor coarse stiffness matrix
@@ -762,6 +787,7 @@ void CLIP_solver2::calculate_coarse()
   if (MyPID == 0) {
     int nrow, nn;
     nrow = Kc.NumGlobalRows();
+    cout << "coarse problem dimension = " << nrow << endl;
     if (coarse_solver == 1) {
       rowbeg = new int[nrow+1]; rowbeg[0] =0;
       for (i=0; i<nrow; i++) {
@@ -840,10 +866,8 @@ void CLIP_solver2::sum_vectors(double a[], int n, double a_sum[])
 
 int CLIP_solver2::initialize_solve(double u[], double r[])
 {
-  int i;
-  init_flag = 0;
   if (sub_solver <= 1) {
-    init_flag = 1;
+    int i;
     int MyLDA;
     double *rOwn_ptr, *rSub_ptr, *uOwn_ptr, *uSub_ptr;
     rOwn->ExtractView(&rOwn_ptr, &MyLDA);
@@ -878,10 +902,7 @@ void CLIP_solver2::apply_preconditioner(const double r[], double z[])
   //
   // initial static condensation correction
   //
-  if (init_flag == 0) {
-    static_correction1();
-    init_flag = 1;
-  }
+  if (sub_solver >= 1) static_correction1();
   //
   // scale residual
   //
@@ -1130,64 +1151,78 @@ bool CLIP_solver2::find_sub(int dof, int sub)
   return answer;
 }
 
-void CLIP_solver2::check_two_dofs(int ii, int* adof, bool* adof_flag)
+void CLIP_solver2::check_two_nodes(int ii, int* adof, bool* adof_flag,
+				   int* anode, bool* anode_flag)
 {
-  int i, dof1, dof2, check(0), nadof;
+  int i, node1, node2, check(0), nadof, nanode;
+  int* nodebeg = A->get_nodebeg();
+  double* x = A->get_xcoord();
+  double* y = A->get_ycoord();
   int* aa = &dset1[dset2[ii]];
   int  nn = dset2[ii+1] - dset2[ii];
   get_adof(ii, aa, nn, adof, nadof, adof_flag);
-  //  if (MyPID == 0) cout << "nadof = " << nadof << endl;
-  if (nadof <= 2) {
-    for (i=0; i<nadof; i++) corner_flag[adof[i]] = 1;
+  get_anode(adof, nadof, anode, anode_flag, nanode);
+  if (nanode <= 2) {
+    for (i=0; i<nanode; i++) set_corner_flag(anode[i]);
     return;
   }
-  for (i=0; i<nadof; i++)
-    if (corner_flag[adof[i]] == 1) check++;
+  for (i=0; i<nanode; i++)
+    if (corner_flag[nodebeg[anode[i]]] == 1) check++;
   //  if (MyPID == 0) cout << "check = " << check << endl;
   if (check >= 2) return;
   if (check == 1) {
-    dof1 = find_dof1(adof, nadof);
-    find_farthest1(adof, nadof, dof1, dof2);
-    corner_flag[dof2] = 1;
+    node1 = find_node1(anode, nanode);
+    find_farthest1(anode, nanode, node1, node2);
+    set_corner_flag(node2);
     return;
   }
   if (check == 0) {
-    find_farthest2(adof, nadof, dof1, dof2);
-    corner_flag[dof1] = 1; corner_flag[dof2] = 1;
+    find_farthest2(anode, nanode, node1, node2);
+    set_corner_flag(node1);
+    set_corner_flag(node2);
   }
 }
     
-void CLIP_solver2::check_three_dofs(int ii, int* adof, bool* adof_flag)
+void CLIP_solver2::set_corner_flag(int node)
 {
-  int i, dof1, dof2, dof3, check(0), nadof;
+  int* nodebeg = A->get_nodebeg();
+  for (int i=nodebeg[node]; i<nodebeg[node+1]; i++) corner_flag[i] = 1;
+}
+
+void CLIP_solver2::check_three_nodes(int ii, int* adof, bool* adof_flag,
+				    int* anode, bool* anode_flag)
+{
+  int i, node1, node2, node3, check(0), nadof, nanode;
+  int* nodebeg = A->get_nodebeg();
   int* aa = &dset1[dset2[ii]];
   int  nn = dset2[ii+1] - dset2[ii];
   get_adof(ii, aa, nn, adof, nadof, adof_flag);
-  //  if (MyPID == 0) cout << "nadof = " << nadof << endl;
-  if (nadof <= 3) {
-    for (i=0; i<nadof; i++) corner_flag[adof[i]] = 1;
+  get_anode(adof, nadof, anode, anode_flag, nanode);
+  //  if (MyPID == 0) cout << "nanode = " << nanode << endl;
+  if (nanode <= 3) {
+    for (i=0; i<nanode; i++) set_corner_flag(anode[i]);
     return;
   }
-  for (i=0; i<nadof; i++)
-    if (corner_flag[adof[i]] == 1) check++;
+  for (i=0; i<nanode; i++)
+    if (corner_flag[nodebeg[anode[i]]] == 1) check++;
   if (check >= 3) return;
   if (check == 2) {
-    find_dof1_dof2(adof, nadof, dof1, dof2);
-    dof3 = find_max_area(adof, nadof, dof1, dof2);
-    corner_flag[dof3] = 1;
+    find_node1_node2(anode, nanode, node1, node2);
+    node3 = find_max_area(anode, nanode, node1, node2);
+    set_corner_flag(node3);
     return;
   }
   if (check == 1) {
-    dof1 = find_dof1(adof, nadof);
-    find_farthest1(adof, nadof, dof1, dof2);
-    dof3 = find_max_area(adof, nadof, dof1, dof2);
-    corner_flag[dof2] = 1; corner_flag[dof3] = 1;
+    node1 = find_node1(anode, nanode);
+    find_farthest1(anode, nanode, node1, node2);
+    node3 = find_max_area(anode, nanode, node1, node2);
+    set_corner_flag(node2); set_corner_flag(node3);
     return;
   }
   if (check == 0) {
-    find_farthest2(adof, nadof, dof1, dof2);
-    dof3 = find_max_area(adof, nadof, dof1, dof2);
-    corner_flag[dof1] = 1; corner_flag[dof2] = 1; corner_flag[dof3] = 1;
+    find_farthest2(anode, nanode, node1, node2);
+    node3 = find_max_area(anode, nanode, node1, node2);
+    set_corner_flag(node1); set_corner_flag(node2); set_corner_flag(node3);
     return;
   }
 }
@@ -1237,116 +1272,137 @@ bool CLIP_solver2::contains(int ii, int dof2)
   else return false;
 }
 
-int CLIP_solver2::find_dof1(int* adof, int nadof)
+void CLIP_solver2::get_anode(int* adof, int nadof, int* anode, 
+			     bool* anode_flag, int & nanode)
 {
-  int i, check(0), dof, dof1;
+  int i, node;
+  nanode = 0;
   for (i=0; i<nadof; i++) {
-    dof = adof[i];
-    if (corner_flag[dof] == 1) {
-      dof1 = dof;
+    node = dof2node[adof[i]];
+    if (anode_flag[node] == false) {
+      anode[nanode] = node;
+      anode_flag[node] = true;
+      nanode++;
+    }
+  }
+  for (i=0; i<nanode; i++) anode_flag[anode[i]] = false;
+}
+
+int CLIP_solver2::find_node1(int* anode, int nanode)
+{
+  int i, check(0), node, node1;
+  int* nodebeg = A->get_nodebeg();
+  for (i=0; i<nanode; i++) {
+    node = anode[i];
+    if (corner_flag[nodebeg[node]] == 1) {
+      node1 = node;
       check++;
     }
   }
   assert(check == 1);
-  return dof1;
+  return node1;
 }
 
-void CLIP_solver2::find_farthest1(int* adof, int nadof, int dof1, int & dof2)
+void CLIP_solver2::find_farthest1(int* anode, int nanode, int node1, int & node2)
 {
-  int i, dof;
+  int i, node;
+  int* nodebeg = A->get_nodebeg();
   double* x = A->get_xcoord();
   double* y = A->get_ycoord();
   double* z = A->get_zcoord();
   double dist2, max_dist2(-1), dx, dy, dz;
-  dof2 = -1;
-  for (i=0; i<nadof; i++) {
-    dof = adof[i];
-    if ((corner_flag[dof] == 0) && (dof != dof1)) {
-      dx = x[dof2node[dof]] - x[dof2node[dof1]];
-      dy = y[dof2node[dof]] - y[dof2node[dof1]];
-      dz = z[dof2node[dof]] - z[dof2node[dof1]];
+  node2 = -1;
+  for (i=0; i<nanode; i++) {
+    node = anode[i];
+    if ((corner_flag[nodebeg[node]] == 0) && (node != node1)) {
+      dx = x[node] - x[node1];
+      dy = y[node] - y[node1];
+      dz = z[node] - z[node1];
       dist2 = dx*dx + dy*dy + dz*dz;
       if (dist2 > max_dist2) {
-	dof2 = dof;
+	node2 = node;
 	max_dist2 = dist2;
       }
     }
   }
-  assert(dof2 != -1);
+  assert(node2 != -1);
 }
 
-void CLIP_solver2::find_farthest2(int* adof, int nadof, int & dof1, int & dof2)
+void CLIP_solver2::find_farthest2(int* anode, int nanode, int & node1, int & node2)
 {
-  int i, j, dofc1, dofc2;
+  int i, j, nodec1, nodec2;
+  int* nodebeg = A->get_nodebeg();
   double* x = A->get_xcoord();
   double* y = A->get_ycoord();
   double* z = A->get_zcoord();
   double dist2, max_dist2(-1), dx, dy, dz;
-  dof1 = -1;
-  for (i=0; i<nadof; i++) {
-    dofc1 = adof[i];
-    if (corner_flag[dofc1] == 0) {
-      for (j=1; j<nadof; j++) {
-	dofc2 = adof[j];
-	if (corner_flag[dofc2] == 0) {
-	  dx = x[dof2node[dofc2]] - x[dof2node[dofc1]];
-	  dy = y[dof2node[dofc2]] - y[dof2node[dofc1]];
-	  dz = z[dof2node[dofc2]] - z[dof2node[dofc1]];
+  node1 = -1;
+  for (i=0; i<nanode; i++) {
+    nodec1 = anode[i];
+    if (corner_flag[nodebeg[nodec1]] == 0) {
+      for (j=1; j<nanode; j++) {
+	nodec2 = anode[j];
+	if (corner_flag[nodebeg[nodec2]] == 0) {
+	  dx = x[nodec2] - x[nodec1];
+	  dy = y[nodec2] - y[nodec1];
+	  dz = z[nodec2] - z[nodec1];
 	  dist2 = dx*dx + dy*dy + dz*dz;
 	  if (dist2 > max_dist2) {
-	    dof1 = dofc1;
-	    dof2 = dofc2;
+	    node1 = nodec1;
+	    node2 = nodec2;
 	    max_dist2 = dist2;
 	  }
 	}
       }
     }
   }
-  assert(dof1 != -1);
+  assert(node1 != -1);
 }
 
-void CLIP_solver2::find_dof1_dof2(int* adof, int nadof, int & dof1, int & dof2)
+void CLIP_solver2::find_node1_node2(int* anode, int nanode, int & node1, int & node2)
 {
-  int i, check(0), dof;
-  for (i=0; i<nadof; i++) {
-    dof = adof[i];
-    if (corner_flag[dof] == 1) {
+  int i, check(0), node;
+  int* nodebeg = A->get_nodebeg();
+  for (i=0; i<nanode; i++) {
+    node = anode[i];
+    if (corner_flag[nodebeg[node]] == 1) {
       check++;
-      if (check == 1) dof1 = dof;
-      if (check == 2) dof2 = dof;
+      if (check == 1) node1 = node;
+      if (check == 2) node2 = node;
     }
   }
   assert(check == 2);
 }
 
-int CLIP_solver2::find_max_area(int* adof, int nadof, int dof1, int dof2)
+int CLIP_solver2::find_max_area(int* anode, int nanode, int node1, int node2)
 {
-  int i, dof, dof3(-1);
+  int i, node, node3(-1);
+  int* nodebeg = A->get_nodebeg();;
   double* x = A->get_xcoord();
   double* y = A->get_ycoord();
   double* z = A->get_zcoord();
   double area2, max_area2(-1), dx1, dy1, dz1, dx2, dy2, dz2, cx, cy, cz;
-  dx1 = x[dof2node[dof2]] - x[dof2node[dof1]];
-  dy1 = y[dof2node[dof2]] - y[dof2node[dof1]];
-  dz1 = z[dof2node[dof2]] - z[dof2node[dof1]];
-  for (i=0; i<nadof; i++) {
-    dof = adof[i];
-    if (corner_flag[dof] == 0) {
-      dx2 = x[dof2node[dof]] - x[dof2node[dof1]];
-      dy2 = y[dof2node[dof]] - y[dof2node[dof1]];
-      dz2 = z[dof2node[dof]] - z[dof2node[dof1]];
+  dx1 = x[node2] - x[node1];
+  dy1 = y[node2] - y[node1];
+  dz1 = z[node2] - z[node1];
+  for (i=0; i<nanode; i++) {
+    node = anode[i];
+    if (corner_flag[nodebeg[node]] == 0) {
+      dx2 = x[node] - x[node1];
+      dy2 = y[node] - y[node1];
+      dz2 = z[node] - z[node1];
       cx = dy1*dz2 - dz1*dy2;
       cy = dz1*dx2 - dx1*dz2;
       cz = dx1*dy2 - dy1*dx2;
       area2 = cx*cx + cy*cy + cz*cz;
       if (area2 > max_area2) {
 	max_area2 = area2;
-	dof3 = dof;
+	node3 = node;
       }
     }
   }
-  assert(dof3 != -1);
-  return dof3;
+  assert(node3 != -1);
+  return node3;
 }
 
 void CLIP_solver2::determine_components(int A1[], int A2[], int N, 
@@ -1372,6 +1428,10 @@ void CLIP_solver2::determine_components(int A1[], int A2[], int N,
 
 void CLIP_solver2::zero_pointers()
 {
+  amg_matR = 0; amg_A1R = 0; amg_A2R = 0; amg_xR = 0;
+  amg_yR = 0; amg_zR = 0; amg_nodebegR = 0; amg_local_dofR = 0;
+  amg_matI = 0; amg_A1I = 0; amg_A2I = 0; amg_xI = 0;
+  amg_yI = 0; amg_zI = 0; amg_nodebegI = 0; amg_local_dofI = 0;
 }
 
 
@@ -1402,4 +1462,181 @@ void CLIP_solver2::spmat_datfile(const Epetra_CrsMatrix & AA, char fname[],
     }
     AA.Comm().Barrier();
   }
+}
+
+void CLIP_solver2::gen_amg_data(int n, int* dofa, double* & amg_mat, int* & amg_A1,
+				int* & amg_A2, double* & amg_x, double* & amg_y,
+				double* & amg_z, int* & amg_nodebeg,
+				int* & amg_local_dof, int & amg_nnode)
+{
+  int i, j, k, node, prev_node(-1);
+  int* local_dof = A->get_localdof();
+  double *x = A->get_xcoord();
+  double *y = A->get_ycoord();
+  double *z = A->get_zcoord();
+  int nnode = A->get_nnode();
+  int* rowbeg = A->get_rowbeg();
+  int* colidx = A->get_colidx();
+  double* vals = A->get_vals();
+  amg_local_dof = new int[n];
+  amg_nnode = 0;
+  for (i=0; i<n; i++) {
+    amg_local_dof[i] = local_dof[dofa[i]];
+    node = dof2node[dofa[i]];
+    if (node != prev_node) {
+      amg_nnode++;
+      prev_node = node;
+    }
+  }
+  amg_nodebeg = new int[amg_nnode+1];
+  amg_x = new double[amg_nnode];
+  amg_y = new double[amg_nnode];
+  amg_z = new double[amg_nnode];
+  amg_nnode = 0; 
+  prev_node = -1;
+  for (i=0; i<n; i++) {
+    node = dof2node[dofa[i]];
+    if (node != prev_node) {
+      amg_nodebeg[amg_nnode] = i;
+      amg_x[amg_nnode] = x[node];
+      amg_y[amg_nnode] = y[node];
+      amg_z[amg_nnode] = z[node];
+      amg_nnode++;
+      prev_node = node;
+    }
+  }
+  amg_nodebeg[amg_nnode] = n;
+  int* imap = new int[nnode];
+  for (i=0; i<nnode; i++) imap[i] = -1;
+  amg_nnode = 0;
+  prev_node = -1;
+  for (i=0; i<n; i++) {
+    node = dof2node[dofa[i]];
+    if (node != prev_node) {
+      imap[node] = amg_nnode;
+      amg_nnode++;
+      prev_node = node;
+    }
+  }
+  amg_A2 = new int[amg_nnode+1]; amg_A2[0] = 0;
+  int* anode = new int[amg_nnode];
+  bool* flag = new bool[amg_nnode];
+  for (i=0; i<amg_nnode; i++) flag[i] = false;
+  int nanode, dof1, dof2, amg_node;
+  //
+  // pass 1 to determine amg_A2
+  //
+  for (i=0; i<amg_nnode; i++) {
+    nanode = 0;
+    for (j=amg_nodebeg[i]; j<amg_nodebeg[i+1]; j++) {
+      dof1 = dofa[j];
+      for (k=rowbeg[dof1]; k<rowbeg[dof1+1]; k++) {
+	dof2 = colidx[k];
+	node = dof2node[dof2];
+	amg_node = imap[node];
+	if (amg_node != -1) {
+	  if (flag[amg_node] == false) {
+	    anode[nanode] = amg_node;
+	    flag[amg_node] = true;
+	    nanode++;
+	  }
+	}
+      }
+    }
+    amg_A2[i+1] = amg_A2[i] + nanode;
+    for (j=0; j<nanode; j++) flag[anode[j]] = false;
+  }
+  //
+  // pass 2 to determine amg_A1 and amg_A1_beg
+  //
+  amg_A1 = new int[amg_A2[amg_nnode]];
+  int *amg_A1_beg = new int[amg_A2[amg_nnode]+1]; amg_A1_beg[0] = 0;
+  int nnz(0), ndofpn1, ndofpn2;
+  for (i=0; i<amg_nnode; i++) {
+    ndofpn1 = amg_nodebeg[i+1] - amg_nodebeg[i];
+    nanode = 0;
+    for (j=amg_nodebeg[i]; j<amg_nodebeg[i+1]; j++) {
+      dof1 = dofa[j];
+      for (k=rowbeg[dof1]; k<rowbeg[dof1+1]; k++) {
+	dof2 = colidx[k];
+	node = dof2node[dof2];
+	amg_node = imap[node];
+	if (amg_node != -1) {
+	  if (flag[amg_node] == false) {
+	    anode[nanode] = amg_node;
+	    flag[amg_node] = true;
+	    amg_A1[amg_A2[i]+nanode] = amg_node;
+	    ndofpn2 = amg_nodebeg[amg_node+1] - amg_nodebeg[amg_node];
+	    nnz += ndofpn1*ndofpn2;
+	    amg_A1_beg[amg_A2[i]+nanode+1] = nnz;
+	    nanode++;
+	  }
+	}
+      }
+    }
+    for (j=0; j<nanode; j++) flag[anode[j]] = false;
+  }
+  //
+  // pass 3 to determine amg_mat
+  //
+  if (MyPID == -1) {
+    cout << "amg_A1 = " << endl;
+    for (i=0; i<amg_nnode; i++) {
+      for (j=amg_A2[i]; j<amg_A2[i+1]; j++) cout << amg_A1[j] << " ";
+      cout << endl;
+    }
+    //    cout << "amg_A1_beg = " << endl;
+    //    for (i=0; i<amg_nnode; i++) {
+    //      for (j=amg_A2[i]; j<amg_A2[i+1]; j++) cout << amg_A1_beg[j] << " ";
+    //      cout << endl;
+    //    }
+    //    cout << amg_A1_beg[amg_A2[amg_nnode]] << endl;
+  }
+  int ldof, m, loc_col, jj;
+  amg_mat = new double[nnz]; myzero(amg_mat, nnz);
+  for (i=0; i<amg_nnode; i++) anode[i] = -1;
+  for (i=0; i<amg_nnode; i++) {
+    for (j=amg_A2[i]; j<amg_A2[i+1]; j++) anode[amg_A1[j]] = j - amg_A2[i];
+    for (j=amg_nodebeg[i]; j<amg_nodebeg[i+1]; j++) {
+      jj = j - amg_nodebeg[i];
+      dof1 = dofa[j];
+      for (k=rowbeg[dof1]; k<rowbeg[dof1+1]; k++) {
+	dof2 = colidx[k];
+	node = dof2node[dof2];
+	amg_node = imap[node];
+	if (amg_node != -1) {
+	  loc_col = anode[amg_node];
+	  assert (loc_col != -1);
+	  ldof = -1;
+	  for (m=amg_nodebeg[amg_node]; m<amg_nodebeg[amg_node+1]; m++) {
+	    if (amg_local_dof[m] == local_dof[dof2]) {
+	      ldof = m - amg_nodebeg[amg_node];
+	      break;
+	    }
+	  }
+	  if (ldof != -1) {
+	    amg_mat[amg_A1_beg[amg_A2[i] + loc_col] + ndofpn1*ldof + jj] = vals[k];
+	  }
+	}
+      }
+    }
+    for (j=amg_A2[i]; j<amg_A2[i+1]; j++) anode[amg_A1[j]] = -1;
+  }
+  if (MyPID == -1) {
+    cout << "amg_mat = " << endl;
+    for (i=0; i<amg_nnode; i++) {
+      ndofpn1 = amg_nodebeg[i+1] - amg_nodebeg[i];
+      for (m=0; m<ndofpn1; m++) {
+	for (j=amg_A2[i]; j<amg_A2[i+1]; j++) {
+	  node = amg_A1[j];
+	  ndofpn2 = amg_nodebeg[node+1] - amg_nodebeg[node];
+	  for (int mm=0; mm<ndofpn2; mm++) {
+	    cout << amg_mat[amg_A1_beg[j]+m+ndofpn1*mm] << " ";
+	  }
+	}
+	cout << endl;
+      }
+    }
+  }
+  delete [] imap; delete [] anode; delete [] flag; delete [] amg_A1_beg;
 }
