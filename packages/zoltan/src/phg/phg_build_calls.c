@@ -1536,61 +1536,59 @@ float *gewgts = NULL;     /* Graph-edge weights */
     for (i = 0; i < *nedges; i++)
       *npins += (*esizes)[i];
 
-    if (*npins) {
-      *pins = ZOLTAN_MALLOC_GID_ARRAY(zz, (*npins + *nedges));
-      *pin_procs = (int *) ZOLTAN_MALLOC((*npins + *nedges) * sizeof(int));
-      if (ewgtdim)
-        gewgts = (float *) ZOLTAN_MALLOC(*npins * ewgtdim * sizeof(float));
+    *pins = ZOLTAN_MALLOC_GID_ARRAY(zz, (*npins + *nedges));
+    *pin_procs = (int *) ZOLTAN_MALLOC((*npins + *nedges) * sizeof(int));
+    if (ewgtdim)
+      gewgts = (float *) ZOLTAN_MALLOC(*npins * ewgtdim * sizeof(float));
 
-      if (!*pins || !*pin_procs || (ewgtdim && !gewgts)) MEMORY_ERROR;
+    if (!*pins || !*pin_procs || (ewgtdim && !gewgts)) MEMORY_ERROR;
 
-      if (zz->Get_Edge_List_Multi)
-        zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data,
-                                num_gid_entries, num_lid_entries, *nedges, 
-                                *egids, *elids, *esizes, *pins, 
-                                *pin_procs, ewgtdim, gewgts, &ierr);
-      else {
-        cnt = 0;
-        for (i = 0; i < *nedges; i++) {
-          lid = (num_lid_entries ? &((*elids)[i*num_lid_entries]) : NULL);
-          zz->Get_Edge_List(zz->Get_Edge_List_Data,
-                            num_gid_entries, num_lid_entries, 
-                            &((*egids)[i*num_gid_entries]), lid, 
-                            &((*pins)[cnt]), &((*pin_procs)[cnt]), 
-                            ewgtdim, &(gewgts[cnt*ewgtdim]), 
-                            &ierr);
-          cnt += (*esizes)[i];
-        }
+    if (zz->Get_Edge_List_Multi)
+      zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data,
+                              num_gid_entries, num_lid_entries, *nedges, 
+                              *egids, *elids, *esizes, *pins, 
+                              *pin_procs, ewgtdim, gewgts, &ierr);
+    else {
+      cnt = 0;
+      for (i = 0; i < *nedges; i++) {
+        lid = (num_lid_entries ? &((*elids)[i*num_lid_entries]) : NULL);
+        zz->Get_Edge_List(zz->Get_Edge_List_Data,
+                          num_gid_entries, num_lid_entries, 
+                          &((*egids)[i*num_gid_entries]), lid, 
+                          &((*pins)[cnt]), &((*pin_procs)[cnt]), 
+                          ewgtdim, &(gewgts[cnt*ewgtdim]), 
+                          &ierr);
+        cnt += (*esizes)[i];
       }
-
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                           "Error returned from getting Edge_Lists");
-        goto End;
-      }
-
-      /* Post-process edges to add vgid[i] to hedge i. */
-      cnt = *npins;
-      *npins += *nedges;  /* Will add vgid[i] to hedge i */
-      ncnt = *npins;
-      for (i = *nedges-1; i >= 0; i--) {
-        /* Copy the existing pins for the edge */
-        for (j = 0; j < (*esizes)[i]; j++) {
-          cnt--;
-          ncnt--;
-          ZOLTAN_SET_GID(zz, &((*pins)[ncnt]), &((*pins)[cnt]));
-          (*pin_procs)[ncnt] = (*pin_procs)[cnt];
-          for (k = 0; k < ewgtdim; k++)   /* sum the graph-edge wgts? */
-            (*ewgts)[i*ewgtdim + k] += gewgts[cnt*ewgtdim + k];
-        }
-        /* Add egid[i] */
-        ncnt--;
-        ZOLTAN_SET_GID(zz, &((*pins)[ncnt]), &((*egids)[i*num_gid_entries]));
-        (*pin_procs)[ncnt] = zz->Proc;
-        (*esizes)[i]++;
-      }
-      ZOLTAN_FREE(&gewgts);
     }
+
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
+                         "Error returned from getting Edge_Lists");
+      goto End;
+    }
+
+    /* Post-process edges to add vgid[i] to hedge i. */
+    cnt = *npins;
+    *npins += *nedges;  /* Will add vgid[i] to hedge i */
+    ncnt = *npins;
+    for (i = *nedges-1; i >= 0; i--) {
+      /* Copy the existing pins for the edge */
+      for (j = 0; j < (*esizes)[i]; j++) {
+        cnt--;
+        ncnt--;
+        ZOLTAN_SET_GID(zz, &((*pins)[ncnt]), &((*pins)[cnt]));
+        (*pin_procs)[ncnt] = (*pin_procs)[cnt];
+        for (k = 0; k < ewgtdim; k++)   /* sum the graph-edge wgts? */
+          (*ewgts)[i*ewgtdim + k] += gewgts[cnt*ewgtdim + k];
+      }
+      /* Add egid[i] */
+      ncnt--;
+      ZOLTAN_SET_GID(zz, &((*pins)[ncnt]), &((*egids)[i*num_gid_entries]));
+      (*pin_procs)[ncnt] = zz->Proc;
+      (*esizes)[i]++;
+    }
+    ZOLTAN_FREE(&gewgts);
   }
   
 End:
