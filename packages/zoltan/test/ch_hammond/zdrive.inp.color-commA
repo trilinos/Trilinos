@@ -8,3 +8,4 @@ File Type = Chaco
 File Name = hammond
 Parallel Disk Info = number=0
 zdrive action = 5
+zdrive debug level = 1
