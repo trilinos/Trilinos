@@ -331,14 +331,14 @@ static int pmatching_alt_ipm(
 
   strcpy(redm_orig, hgp->redm_str); /* save original parameter string */
 
-  if (hg->nVtx > old_nvtx){
+  if (hg->dist_x[hg->comm->nProc_x] > old_nvtx){
     /* larger hgraph; must have started new bisection v-cycle */
     level= 0;
   }
 
   /* first level is 0 */
   if ((level&1) == 0)  /* alternate even-odd levels */
-    strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is typically c-ipm */
+    strcpy(hgp->redm_str, hgp->redm_fast); /* fast method is typically l-ipm */
   else
     strcpy(hgp->redm_str, "ipm");  
 
@@ -347,7 +347,7 @@ static int pmatching_alt_ipm(
   hgp->matching = pmatching_alt_ipm;  /* reset function pointer */
 
   ++level;  /* we don't have access to level data, so keep track this way */
-  old_nvtx = hg->nVtx;
+  old_nvtx = hg->dist_x[hg->comm->nProc_x];
 
   /* set redm parameter back to original */
   strcpy(hgp->redm_str, redm_orig);
