@@ -681,9 +681,9 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       }
 
       if (have_pin_callbacks && (maxpart+1 == nparts)) {
-        printf("%s  Hyperedge (k-1)-connectivity cut: %8.0f\n", yo, 
+        printf("%s  Hyperedge (k-1)-connectivity cut:     %8.0f\n", yo, 
                 hgraph_global_sum[0]);
-        printf("%s  No. cut hyperedges:               %8.0f\n\n", yo,
+        printf("%s  No. cut hyperedges:                   %8.0f\n\n", yo,
                 hgraph_global_sum[1]);
       }
       
