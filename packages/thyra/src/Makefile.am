@@ -77,6 +77,7 @@ INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveFactoryBase.hpp\
+  $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_PreconditionerFactoryBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_SolveSupportTypes.hpp
 
 SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
