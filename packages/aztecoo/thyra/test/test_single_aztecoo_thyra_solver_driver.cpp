@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
   bool success = true;
   bool verbose = true;
 
-  std::ostream &out = std::cout;
+  Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
 
 	try {
 

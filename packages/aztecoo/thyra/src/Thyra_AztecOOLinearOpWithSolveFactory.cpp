@@ -343,6 +343,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     if(
       epetra_epetraFwdOpAdjointSupport==EPETRA_OP_ADJOINT_SUPPORTED
       && localPrecType!=PT_AZTEC_FROM_OP && localPrecType!=PT_AZTEC_FROM_PREC_MATRIX
+      //&& (epetra_epetraPrecOp.get()==NULL ||epetra_epetraPrecOpAdjointSupport==EPETRA_OP_ADJOINT_SUPPORTED)
       )
     {
       aztecAdjSolver = rcp(new AztecOO());

@@ -39,8 +39,7 @@
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"
 #ifdef HAVE_AZTECOO_IFPACK
-#  include "Ifpack_CrsRiluk.h"
-#  include "Ifpack_PreconditionerFactory.hpp"
+#  include "Thyra_IfpackPreconditionerFactory.hpp"
 #endif
 
 #endif // __sun
@@ -57,9 +56,10 @@ bool Thyra::test_single_aztecoo_thyra_solver(
   ,const bool                             dumpAll
   ,Teuchos::ParameterList                 *fwdSolveParamList
   ,Teuchos::ParameterList                 *adjSolveParamList
-  ,std::ostream                           *out
+  ,Teuchos::FancyOStream                  *out
   )
 {
+  using Teuchos::rcp;
   bool result, success = true;
 
   try {
@@ -232,14 +232,47 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       }
       
       if(out) *out << "\nJ) Create an ifpack preconditioner precA for A ...\n";
-      
-      Ifpack::PreconditionerFactory ifpackPrecFactory;
-      ifpackPrecFactory.calcCondEst(true);
-      Teuchos::RefCountPtr<Epetra_Operator> epetra_precA;
-      ifpackPrecFactory.setupPrec(*epetra_A,&epetra_precA,out,indentSpacer,indentSpacer);
-      Teuchos::RefCountPtr<EpetraLinearOp>
-        precA = Teuchos::rcp(new EpetraLinearOp(epetra_precA,NOTRANS,EPETRA_OP_APPLY_APPLY_INVERSE));
-      
+
+      Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+        precFactory = Teuchos::rcp(new IfpackPreconditionerFactory());
+
+      if(out) {
+        *out << "\nprecFactory.description() = " << precFactory->description() << std::endl;
+        *out << "\nprecFactory.getValidParameters() =\n";
+        if(1) {
+          Teuchos::OSTab tab(Teuchos::rcp(out,false));
+          precFactory->getValidParameters()->print(*out,0,true);
+        }
+      }
+
+      Teuchos::RefCountPtr<Teuchos::ParameterList>
+        ifpackPFPL = Teuchos::rcp(new Teuchos::ParameterList("IfpackPreconditionerFactory"));
+      ifpackPFPL->set("Prec Type","ILUT");
+      ifpackPFPL->set("Overlap",int(1));
+      if(out) {
+        *out << "\nifpackPFPL before setting parameters =\n";
+        if(1) {
+          Teuchos::OSTab tab(Teuchos::rcp(out,false));
+          ifpackPFPL->print(*out,0,true);
+        }
+      }
+
+      precFactory->setParameterList(ifpackPFPL);
+
+      Teuchos::RefCountPtr<LinearOpBase<double> >
+        precA = precFactory->createPrecOp();
+      precFactory->initializePrecOp(A,&*precA);
+
+      if(out) {
+        *out << "\nifpackPFPL after setting parameters =\n";
+        if(1) {
+          Teuchos::OSTab tab(Teuchos::rcp(out,false));
+          ifpackPFPL->print(*out,0,true);
+        }
+        *out << "\nprecFactory.description() = " << precFactory->description() << std::endl;
+      }
+
+      if(out) *out << "\nprecA.description() = " << precA->description() << std::endl;
       if(out && dumpAll) *out << "\ndescribe(precA) =\n" << describe(*precA,Teuchos::VERB_EXTREME,indentSpacer,indentSpacer);
       
       if(out) *out << "\nK) Reinitialize (A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";

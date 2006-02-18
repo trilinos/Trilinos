@@ -67,7 +67,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 @ENABLE_AZTECOO_IFPACK_TRUE@am__append_1 = $(srcdir)/Ifpack_PreconditionerFactory.cpp
-@ENABLE_AZTECOO_IFPACK_TRUE@am__append_2 = $(top_builddir)/../ifpack/src/libifpack.a
+@ENABLE_AZTECOO_IFPACK_TRUE@am__append_2 = $(top_builddir)/../ifpack/thyra/src/libifpackthyra.a 
 subdir = thyra/test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -649,7 +649,7 @@ include $(top_builddir)/Makefile.export.aztecoo
 # If we are using IFPACK, then we must include ifpack's makefile.export file which
 # may or may not already include aztecoo's makefile.export file.
 @ENABLE_AZTECOO_IFPACK_TRUE@include $(top_builddir)/../ifpack/Makefile.export.ifpack
-@ENABLE_AZTECOO_IFPACK_TRUE@$(top_builddir)/../ifpack/src/libifpack.a :
+@ENABLE_AZTECOO_IFPACK_TRUE@$(top_builddir)/../ifpack/thyra/src/libifpackthyra.a :
 @ENABLE_AZTECOO_IFPACK_TRUE@	cd $(top_builddir)/../ifpack; $(MAKE) all-libs
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

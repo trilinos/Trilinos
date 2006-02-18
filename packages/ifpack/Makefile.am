@@ -85,7 +85,6 @@ all-local:
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-#SUBDIRS = src example test doc
 
 if BUILD_TESTS
 TEST_SUBDIR=test
@@ -99,13 +98,22 @@ if PYTHON_USE
 PYTHON_SUBDIR=python
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+if ENABLE_IFPACK_THYRA
+THYRA_SUBDIR=thyra
+else
+THYRA_SUBDIR=
+endif
+
+SUBDIRS = src $(THYRA_SUBDIR) $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
+# Note, thyra/src must be built before the examples and tests because -lifpackthyra.a
+# needs to be found!
 
 ## #######################################################################
 ## Target for circular dependencies
 ## #######################################################################
 all-libs:
 	cd src ; $(MAKE) all-libs
+	cd thyra/src ; $(MAKE) all-libs
 
 ## #######################################################################
 ## Export Makefile Installation
@@ -159,7 +167,7 @@ run-examples:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(ML_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
@@ -177,7 +185,7 @@ run-tests:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(ML_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
@@ -195,7 +203,7 @@ run-pytests:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(ML_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \
@@ -213,7 +221,7 @@ run-pyexamples:
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo
 	@$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
-  	--trilinos-dir=$(TRILINOS_HOME_DIR) \
+	--trilinos-dir=$(TRILINOS_HOME_DIR) \
 	--comm=$(ML_CHECK_COMM) \
 	--mpi-go="$(TRILINOS_MPI_GO)" \
 	--build-dir=$(TRILINOS_BUILD_DIR) \

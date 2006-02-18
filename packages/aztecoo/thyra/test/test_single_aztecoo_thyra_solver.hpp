@@ -32,6 +32,7 @@
 
 #include "AztecOO_config.h"
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 namespace Teuchos { class ParameterList; }
 
@@ -52,7 +53,7 @@ bool test_single_aztecoo_thyra_solver(
   ,const bool                             dumpAll
   ,Teuchos::ParameterList                 *fwdSolveParamList
   ,Teuchos::ParameterList                 *adjSolveParamList
-  ,std::ostream                           *out
+  ,Teuchos::FancyOStream                  *out
   );
 
 } // namespace Thyra

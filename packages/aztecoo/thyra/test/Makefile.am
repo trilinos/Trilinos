@@ -73,8 +73,8 @@ if ENABLE_AZTECOO_IFPACK
 # may or may not already include aztecoo's makefile.export file.
 include $(top_builddir)/../ifpack/Makefile.export.ifpack
 common_sources += $(srcdir)/Ifpack_PreconditionerFactory.cpp
-common_dependencies += $(top_builddir)/../ifpack/src/libifpack.a
-$(top_builddir)/../ifpack/src/libifpack.a :
+common_dependencies += $(top_builddir)/../ifpack/thyra/src/libifpackthyra.a 
+$(top_builddir)/../ifpack/thyra/src/libifpackthyra.a :
 	cd $(top_builddir)/../ifpack; $(MAKE) all-libs
 endif
 

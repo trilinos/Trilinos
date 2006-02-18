@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
   bool result, success = true;
   bool verbose = true;
 
-  std::ostream &out = std::cout;
+  Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
 
 	try {
 
@@ -175,11 +175,12 @@ int main(int argc, char* argv[])
           maxSlackErrorFrac = mtp.maxPrecSlackErrorFrac;
         }
         std::ostringstream oss;
+        Teuchos::FancyOStream fancy_oss(Teuchos::rcp(&oss,false));
         result =
           Thyra::test_single_aztecoo_thyra_solver(
             matrixDir+"/"+mtp.matrixFile,testTranspose,numRandomVectors
             ,mtp.maxFwdError,maxIters,maxResid,maxSolutionError
-            ,showAllTestsDetails,dumpAll,&fwdSolveParamList,&adjSolveParamList,&oss
+            ,showAllTestsDetails,dumpAll,&fwdSolveParamList,&adjSolveParamList,&fancy_oss
             );
         if(!result) success = false;
         if(verbose) {
