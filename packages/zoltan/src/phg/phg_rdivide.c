@@ -191,7 +191,7 @@ int Zoltan_PHG_rdivide(
           goto End;
       if (!left->dist_x[hgc->nProc_x]) { /* left is empty */
           Zoltan_HG_HGraph_Free (left);
-          left = NULL;
+          ZOLTAN_FREE(&left);
       }          
   } else {
       for (i = 0; i < hg->nVtx; ++i)
@@ -208,7 +208,7 @@ int Zoltan_PHG_rdivide(
           goto End;
       if (!right->dist_x[hgc->nProc_x]) { /* right is empty */
           Zoltan_HG_HGraph_Free (right);
-          right = NULL;
+          ZOLTAN_FREE(&right);
       }
   } else {
       for (i = 0; i < hg->nVtx; ++i)
