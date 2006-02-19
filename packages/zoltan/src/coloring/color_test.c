@@ -70,8 +70,9 @@ int Zoltan_Color_Test(
   int i, j;
   int ierr = ZOLTAN_OK;
   int ferr = ZOLTAN_OK;             /* final error signal */
-  int distance;                     /* distance for coloring. This test is only implemeted for distance=1 */
-  int ss, comm_pattern, color_order, color_method;  
+  int distance=1;                   /* distance for coloring. This test is only implemeted for distance=1 */
+  int ss=100;
+  char comm_pattern='S', color_order='I', color_method='F';  
   int comm[2],gcomm[2];
   int *color;
   int colortag = COLORTAG;
