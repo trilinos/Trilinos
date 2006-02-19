@@ -59,7 +59,6 @@
 //
 int main(int argc, char *argv[])
 {
-
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
@@ -132,6 +131,34 @@ int main(int argc, char *argv[])
   cout << *Prec;
   delete Prec;
 
+  Prec = Factory.Create("IC stand-alone", A);
+  assert (Prec != 0);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+  delete Prec;
+
+  Prec = Factory.Create("ICT stand-alone", A);
+  assert (Prec != 0);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+  delete Prec;
+
+  Prec = Factory.Create("ILU stand-alone", A);
+  assert (Prec != 0);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+  delete Prec;
+
+  Prec = Factory.Create("ILUT stand-alone", A);
+  assert (Prec != 0);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+  delete Prec;
+
 #ifdef HAVE_IFPACK_AMESOS
   Prec = Factory.Create("Amesos", A);
   assert (Prec != 0);
@@ -148,14 +175,15 @@ int main(int argc, char *argv[])
   delete Prec;
 #endif
   
-#ifdef HAVE_MPI
-  MPI_Finalize() ; 
-#endif
-
   delete A;
   delete Map;
 
   if (Comm.MyPID() == 0)
     cout << "Test `PrecondititonerFactory.exe' passed!" << endl;
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ; 
+#endif
+
   return(EXIT_SUCCESS);
 }

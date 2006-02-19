@@ -274,6 +274,7 @@ SUBDIRS = IlukGraph               \
           Relaxation              \
           ILU                     \
           IC                      \
+	  UseTranspose            \
 	  TestAll
 
 # CrsRiluk             
@@ -284,6 +285,7 @@ SUBDIRS = IlukGraph               \
 @HAVE_IFPACK_AZTECOO_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@IFPACK_RELAXATION_TEST = Relaxation/TestRelaxation.exe
 @HAVE_IFPACK_AMESOS_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@IFPACK_ILU_TEST = ILU/TestILU.exe
 @HAVE_IFPACK_AMESOS_TRUE@@HAVE_IFPACK_TEUCHOS_TRUE@IFPACK_IC_TEST = IC/TestIC.exe
+@HAVE_IFPACK_TEUCHOS_TRUE@IFPACK_TRANSPOSE_TEST = UseTranspose/TestUseTranspose.exe
 TESTS = \
 CrsRiluk/CrsRiluk_test.exe \
 IlukGraph/IlukGraph_test.exe \
@@ -294,7 +296,8 @@ $(IFPACK_OVERLAPPING_ROW_MATRIX_TEST) \
 $(IFPACK_PRECONDITIONER_FACTORY_TEST) \
 $(IFPACK_RELAXATION_TEST) \
 $(IFPACK_ILU_TEST) \
-$(IFPACK_IC_TEST)
+$(IFPACK_IC_TEST) \
+$(IFPACK_TRANSPOSE_TEST)
 
 EXTRA_DIST = definition
 all: all-recursive
