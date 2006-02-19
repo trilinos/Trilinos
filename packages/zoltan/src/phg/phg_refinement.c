@@ -585,15 +585,19 @@ static int refine_fm2 (ZZ *zz,
     max_weight[0] = total_weight * bal_tol * part_sizes[0];
     max_weight[1] = total_weight * bal_tol * part_sizes[1]; /* should be (1 - part_sizes[0]) */
 
-    if (weights[0]==0.0) 
-        ltargetw0 = lmax_weight[0] = 0.0;
-    else {
+    if (weights[0]==0.0) {
+        ltargetw0 = targetw0 / hgc->nProc_x;
+        lmax_weight[0] = max_weight[0] / hgc->nProc_x;
+    } else {
         lmax_weight[0] = lweights[0] +
             (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
         ltargetw0 = targetw0 * ( lweights[0] / weights[0] ); /* local target weight */
     }
-    lmax_weight[1] = (weights[1]==0.0) ? 0.0 : lweights[1] +
-        (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
+    if (weights[1]==0.0)
+        lmax_weight[1] = max_weight[1] / hgc->nProc_x;
+    else
+        lmax_weight[1] = (weights[1]==0.0) ? 0.0 : lweights[1] +
+            (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
 
 
     /* Our strategy is to stay close to the current local weight balance.
@@ -786,7 +790,7 @@ static int refine_fm2 (ZZ *zz,
                 ZOLTAN_TIMER_STOP(zz->ZTime, timer_heap, hgc->Communicator);
                 ZOLTAN_TIMER_START(zz->ZTime, timer_pass, hgc->Communicator);
             }
-            
+
             while ((neggaincnt < maxneggain) && ((lweights[to]+minvw) <= lmax_weight[to]) ) {
                 if (Zoltan_Heap_Empty(&heap[from])) /* too bad it is empty */
                     break;
