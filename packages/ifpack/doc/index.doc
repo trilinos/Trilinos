@@ -496,7 +496,9 @@ algorithm (division by zero, out-of-bounds, ...)</td>
 \section ifp_bugs Known Bugs and Future Developments
 
 - IFPACK does not support Epetra matrices whose OperatorDomainMap() is different from the  OperatorRangeMap() and from RowMatrixRowMap(). Handling of this particular case is under development for class Ifpack_AdditiveSchwarz only.
-- IFPACK does not work correctly when \c UseTranspose() \c == true.
+- not all IFPACK preconditioners work correctly when \c UseTranspose() \c ==
+  true. Ifpack_PointRelaxation and Ifpack_BlockRelaxation do not support \c
+  UseTranspose, while Ifpack_ILU, Ifpack_ILUT and Ifpack_Amesos do.
 
 
 \section ifp_copyright Copyright
