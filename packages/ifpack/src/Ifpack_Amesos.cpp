@@ -197,7 +197,9 @@ int Ifpack_Amesos::Compute()
 //==============================================================================
 int Ifpack_Amesos::SetUseTranspose(bool UseTranspose)
 {
-  IFPACK_CHK_ERR(-99); // not implemented
+  if (Solver_ == 0)
+    IFPACK_CHK_ERR(-1); // call Initialize() first
+  IFPACK_RETURN(Solver_->SetUseTranspose(UseTranspose));
 }
 
 //==============================================================================

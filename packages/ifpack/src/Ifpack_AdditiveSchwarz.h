@@ -347,6 +347,8 @@ protected:
   bool IsComputed_;
   //! Pointer to the local solver.
   T* Inverse_;
+  //! If \c true, solve with the transpose (not supported by all solvers).
+  bool UseTranspose_;
   //! If true, overlapping is used
   bool IsOverlapping_;
   //! Level of overlap among the processors.
@@ -405,6 +407,7 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   IsInitialized_(false),
   IsComputed_(false),
   Inverse_(0),
+  UseTranspose_(false),
   IsOverlapping_(false),
   OverlapLevel_(OverlapLevel),
   CombineMode_(Zero),
@@ -564,7 +567,6 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
 template<typename T>
 int Ifpack_AdditiveSchwarz<T>::Initialize()
 {
-
   IsInitialized_ = false;
   IsComputed_ = false; // values required
   Condest_ = -1.0; // zero-out condest
@@ -592,11 +594,15 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   if (LocalizedMatrix_ == 0)
     IFPACK_CHK_ERR(-5);
 
+  IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose()));
   IFPACK_CHK_ERR(Inverse_->SetParameters(List_));
   IFPACK_CHK_ERR(Inverse_->Initialize());
 
   // Label is for Aztec-like solvers
-  Label_ = "Ifpack_AdditiveSchwarz, ov = " + Ifpack_toString(OverlapLevel_)
+  Label_ = "Ifpack_AdditiveSchwarz, ";
+  if (UseTranspose())
+    Label_ += ", transp";
+  Label_ += ", ov = " + Ifpack_toString(OverlapLevel_)
     + ", local solver = \n\t\t***** `" + string(Inverse_->Label()) + "'";
 
   IsInitialized_ = true;
@@ -659,7 +665,13 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
 template<typename T>
 int Ifpack_AdditiveSchwarz<T>::SetUseTranspose(bool UseTranspose)
 {
-  IFPACK_CHK_ERR(-99); // not implemented
+  // store the flag -- it will be set in Initialize() if Inverse_ does not
+  // exist.
+  UseTranspose_ = UseTranspose;
+
+  // If Inverse_ exists, pass it right now.
+  if (Inverse_)
+    IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose));
 }
 
 //==============================================================================
@@ -689,7 +701,7 @@ const char * Ifpack_AdditiveSchwarz<T>::Label() const
 template<typename T>
 bool Ifpack_AdditiveSchwarz<T>::UseTranspose() const
 {
-  return(false);
+  return(UseTranspose_);
 }
 
 //==============================================================================

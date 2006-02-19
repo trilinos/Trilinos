@@ -455,7 +455,6 @@ int Ifpack_ILUT::Compute()
 int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X, 
 			     Epetra_MultiVector& Y) const
 {
-
   if (!IsComputed())
     IFPACK_CHK_ERR(-2); // compute preconditioner first
 
@@ -476,8 +475,18 @@ int Ifpack_ILUT::ApplyInverse(const Epetra_MultiVector& X,
   else
     Xcopy = &X;
 
-  EPETRA_CHK_ERR(L_->Solve(false,false,false,*Xcopy,Y));
-  EPETRA_CHK_ERR(U_->Solve(true,false,false,Y,Y));
+  if (!UseTranspose_)
+  {
+    // solves LU Y = X 
+    IFPACK_CHK_ERR(L_->Solve(false,false,false,*Xcopy,Y));
+    IFPACK_CHK_ERR(U_->Solve(true,false,false,Y,Y));
+  }
+  else
+  {
+    // solves U(trans) L(trans) Y = X
+    IFPACK_CHK_ERR(U_->Solve(true,true,false,*Xcopy,Y));
+    IFPACK_CHK_ERR(L_->Solve(false,true,false,Y,Y));
+  }
 
   if (Xcopy != &X)
     delete Xcopy;
