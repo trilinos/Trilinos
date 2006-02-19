@@ -31,9 +31,16 @@ Please submit IFPACK bugs at software.sandia.gov/buzgilla.
 
 ------------------------------------------------------------------------------
 	
+Feb 2006:
+
+*) Added support for UseTranspose(true) in Ifpack_AdditiveSchwarz,
+   Ifpack_ILUT and Ifpack_Amesos. A simple test has been added.
+
+------------------------------------------------------------------------------
+	
 Oct 2005:
 
-*) Added support for the Galeri package. Now matrices are no longer created
+*) Added support for the Galeri package. Matrices are no longer created
    using Triutils' matrix gallery, but with the improved Galeri one. Also
    fixed minor bugs.
 

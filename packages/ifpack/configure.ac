@@ -428,6 +428,7 @@ AC_CONFIG_FILES([
 		test/CompareWithAztecOO/Makefile
 		test/ILU/Makefile
 		test/IC/Makefile
+		test/UseTranspose/Makefile
 		python/Makefile
 		python/src/Makefile
 		python/src/TRILINOS_HOME_DIR
