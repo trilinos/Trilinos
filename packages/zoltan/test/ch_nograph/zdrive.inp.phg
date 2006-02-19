@@ -1,0 +1,6 @@
+Decomposition Method 	= phg
+zoltan parameters	= phg_coarsening_limit=2
+zoltan parameters	= final_output=1
+File Type		= Chaco, initial procs=1
+File Name		= nograph
+Parallel Disk Info	= number=0

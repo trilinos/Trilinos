@@ -138,8 +138,8 @@ int read_cmd_file (
         }
         else if (strcmp(value, "matrixmarket+") == 0){
           pio_info->file_type       = MATRIXMARKET_PLUS_FILE;
-          pio_info->init_dist_type  = INITIAL_FILE;
-          pio_info->init_dist_pins  = INITIAL_FILE;
+          pio_info->init_dist_type  = INITIAL_LINEAR;
+          pio_info->init_dist_pins  = INITIAL_ROW;
         }
 
         pio_info->init_dist_procs = -1;

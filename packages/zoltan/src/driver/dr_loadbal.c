@@ -690,6 +690,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       if (Zoltan_Color(zz, &num_gid_entries, &num_lid_entries,
                        mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
           Gen_Error(0, "fatal:  error returned from Zoltan_Color()\n");
+          safe_free((void **) &color);
+          safe_free((void **) &gids);
+          safe_free((void **) &lids);
           return 0;
       }
 
@@ -700,6 +703,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
           if (Zoltan_Color_Test(zz, &num_gid_entries, &num_lid_entries,
                                 mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
               Gen_Error(0, "fatal:  error returned from Zoltan_Color_Test()\n");
+              safe_free((void **) &color);
+              safe_free((void **) &gids);
+              safe_free((void **) &lids);
               return 0;
           }
       }
@@ -714,7 +720,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       safe_free((void **) &color);
       safe_free((void **) &gids);
       safe_free((void **) &lids);
-    }
+  }
 
   
   DEBUG_TRACE_END(Proc, yo);

@@ -39,7 +39,7 @@ void initialize_element(ELEM_INFO *elem)
  */
   elem->globalID = -1;
   elem->border = 0;
-  elem->elem_blk = -1;
+  elem->elem_blk = 0;
   elem->my_part = -1;
   elem->perm_value = -1;
   elem->invperm_value = -1;

@@ -1,9 +1,0 @@
-Decomposition Method 	= rib
-Zoltan Parameters	= remap=0
-Zoltan Parameters	= tflops_special = 1
-Zoltan Parameters	= 
-Zoltan Parameters       = debug_level=10
-File Type		= Chaco
-File Name		= nograph
-Parallel Disk Info	= number=0
-test local partitions	= 3

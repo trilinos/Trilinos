@@ -921,14 +921,9 @@ char cmesg[160];
             &vdim, &numew, &edim);
 
   if (rc != 7){
-    snprintf(cmesg, 160,"%s\nFirst line should have 6 values in it\n",linestr);
+    snprintf(cmesg, 160,"%s\nFirst line should have 7 values in it\n",linestr);
     Gen_Error(0, cmesg);
     return 0;
-  }
-
-  if (!nedges || !nvtxs || !npins){
-    free(linestr);
-    return 1;
   }
 
   myminPin = mymaxPin = -1;
@@ -1015,7 +1010,10 @@ char cmesg[160];
     }
   }
 
-  numeids = maxeid - mineid + 1;
+  if (npins)
+    numeids = maxeid - mineid + 1;
+  else
+    numeids = nedges;
 
   for (i=0; i<nvtxs; i++){        /* VERTICES and possibly WEIGHTS */
     line = next_line(line, fsize, linestr);
@@ -1040,8 +1038,12 @@ char cmesg[160];
 
     vid -= 1;
 
-    if (vid < minvid) minvid = vid;
-    if (vid > maxvid) maxvid = vid;
+    if (i) {
+      if (vid < minvid) minvid = vid;
+      if (vid > maxvid) maxvid = vid;
+    }
+    else 
+      minvid = maxvid = vid;
 
     mine = my_vtx(proc, i, myminVtx, mymaxVtx, myrank, nDistProcs, pio_info);
 
@@ -1093,7 +1095,11 @@ char cmesg[160];
     }
   }
 
-  numeids = maxeid - mineid + 1;
+  if (numew)
+    numeids = maxeid - mineid + 1;
+  else
+    numeids = nedges;
+    
   rc = 1;
 
   if (numeids != nedges){
