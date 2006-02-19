@@ -230,7 +230,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   hg = &zoltan_hg->HG;
   nVtx = hg->nVtx;
   p = zz->LB.Num_Global_Parts;  
-  zoltan_hg->HG.redl = hgp.redl;     /* redl needs to be dynamic */
+  zoltan_hg->HG.redl = MAX(hgp.redl,p);     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
  
@@ -290,9 +290,10 @@ int **exp_to_part )         /* list of partitions to which exported objs
         if (do_timing) 
           ZOLTAN_TIMER_START(zz->ZTime, timer_setupvmap, zz->Communicator);
         /* vmap associates original vertices to sub hypergraphs */
-        if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
+        if (hg->nVtx && 
+            !(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
           err = ZOLTAN_MEMERR;
-          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
           goto End;
         }
         for (i = 0; i < hg->nVtx; ++i)
@@ -840,7 +841,7 @@ int *outparts         = zhg->Output_Parts;
         Zoltan_Special_Free(zz,(void**)exp_lids,   ZOLTAN_SPECIAL_MALLOC_LID);
         Zoltan_Special_Free(zz,(void**)exp_procs,  ZOLTAN_SPECIAL_MALLOC_INT);
         Zoltan_Special_Free(zz,(void**)exp_to_part,ZOLTAN_SPECIAL_MALLOC_INT);
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
         ierr = ZOLTAN_MEMERR;
         goto End;
      }
