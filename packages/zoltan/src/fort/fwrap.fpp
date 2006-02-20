@@ -89,7 +89,11 @@ public :: &
    ZOLTAN_CHILD_WEIGHT_FN_TYPE, &
    ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE, &
    ZOLTAN_PACK_OBJ_MULTI_FN_TYPE, &
-   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE
+   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE, &
+   ZOLTAN_HG_SIZE_CS_FN_TYPE, &
+   ZOLTAN_HG_CS_FN_TYPE, &
+   ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE, &
+   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE
 
 public :: &
    ZOLTAN_OTHER_REF, &
@@ -152,7 +156,9 @@ public :: &
    Zoltan_Set_Pre_Migrate_Fn, Zoltan_Set_Mid_Migrate_Fn, &
    Zoltan_Set_Post_Migrate_Fn, &
    Zoltan_Set_Obj_Size_Multi_Fn, &
-   Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn 
+   Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn, &
+   Zoltan_Set_HG_Size_CS_Fn, Zoltan_Set_HG_CS_Fn, &
+   Zoltan_Set_HG_Size_Edge_Weights_Fn, Zoltan_Set_HG_Edge_Weights_Fn 
 
 public :: &
    Zoltan_Get_Child_Order
@@ -234,7 +240,11 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(31_Zoltan_INT), &
    ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(32_Zoltan_INT), &
    ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(33_Zoltan_INT), &
-   ZOLTAN_PARTITION_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(35_Zoltan_INT)
+   ZOLTAN_PARTITION_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(35_Zoltan_INT), &
+   ZOLTAN_HG_SIZE_CS_FN_TYPE       = ZOLTAN_FN_TYPES(36_Zoltan_INT), &
+   ZOLTAN_HG_CS_FN_TYPE            = ZOLTAN_FN_TYPES(37_Zoltan_INT), &
+   ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE = ZOLTAN_FN_TYPES(38_Zoltan_INT), &
+   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE      = ZOLTAN_FN_TYPES(39_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
@@ -1229,6 +1239,10 @@ end interface
 #include "set_numchild.if"
 #include "set_childlist.if"
 #include "set_childweight.if"
+#include "set_hgsizecs.if"
+#include "set_hgsizeedgeweights.if"
+#include "set_hgcs.if"
+#include "set_hgedgeweights.if"
 
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.
@@ -2423,6 +2437,10 @@ end subroutine Zf90_Reftree_Get_Child_Order
 #include "set_numchild.fn"
 #include "set_childlist.fn"
 #include "set_childweight.fn"
+#include "set_hgsizecs.fn"
+#include "set_hgsizeedgeweights.fn"
+#include "set_hgcs.fn"
+#include "set_hgedgeweights.fn"
 
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.

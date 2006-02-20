@@ -791,6 +791,40 @@ void Zoltan_Coarse_Obj_List_Fort_Wrapper(void *data,
 }
 
 /*****************************************************************************/
+void Zoltan_HG_Size_CS_Fort_Wrapper(void *data, 
+  int *num_lists, int *num_pins, int *format, int *ierr)
+{
+   Zoltan_Current->Get_HG_Size_CS_Fort(data, num_lists, num_pins, format,
+                                           ierr);
+}
+/*****************************************************************************/
+void Zoltan_HG_Size_Edge_Weights_Fort_Wrapper(void *data, int *num_edges, int *ierr)
+{
+   Zoltan_Current->Get_HG_Size_Edge_Weights_Fort(data, num_edges, ierr);
+}
+/*****************************************************************************/
+void Zoltan_HG_CS_Fort_Wrapper(void *data, 
+  int num_gid_entries, int nrowcol, int npins, int format,
+  ZOLTAN_ID_PTR rowcol_GID, int *rowcol_ptr, ZOLTAN_ID_PTR pin_GID,
+  int *ierr)
+{
+   Zoltan_Current->Get_HG_CS_Fort(data,
+                       &num_gid_entries, &nrowcol, &npins, &format,
+                       rowcol_GID, rowcol_ptr, pin_GID, ierr);
+}
+/*****************************************************************************/
+void Zoltan_HG_Edge_Weights_Fort_Wrapper(void *data,
+  int num_gid_entries, int num_lid_entries, int nedges, int edge_weight_dim,
+  ZOLTAN_ID_PTR edge_GID, ZOLTAN_ID_PTR edge_LID, float *edge_weight,
+  int *ierr)
+
+{
+   Zoltan_Current->Get_HG_Edge_Weights_Fort(data,
+       &num_gid_entries, &num_lid_entries, &nedges, &edge_weight_dim,
+        edge_GID, edge_LID, edge_weight, ierr);
+}
+
+/*****************************************************************************/
 int Zoltan_First_Coarse_Obj_Fort_Wrapper(void *data, 
   int num_gid_entries, int num_lid_entries, 
   ZOLTAN_ID_PTR global_id,
@@ -1157,6 +1191,26 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
       lb->Get_Child_Weight_Fort = (ZOLTAN_CHILD_WEIGHT_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Child_Weight_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_HG_SIZE_CS_FN_TYPE:
+      lb->Get_HG_Size_CS_Fort = (ZOLTAN_HG_SIZE_CS_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_HG_Size_CS_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE:
+      lb->Get_HG_Size_Edge_Weights_Fort = (ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_HG_Size_Edge_Weights_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_HG_CS_FN_TYPE:
+      lb->Get_HG_CS_Fort = (ZOLTAN_HG_CS_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_HG_CS_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE:
+      lb->Get_HG_Edge_Weights_Fort = (ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_HG_Edge_Weights_Fort_Wrapper, data);
       break;
 
    default:

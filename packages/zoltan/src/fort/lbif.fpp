@@ -90,7 +90,7 @@ public :: &
    LB_Set_First_Coarse_Obj_Fn, LB_Set_Next_Coarse_Obj_Fn, &
    LB_Set_Num_Child_Fn, LB_Set_Child_List_Fn, LB_Set_Child_Weight_Fn, &
    LB_Set_Pre_Migrate_Fn, LB_Set_Mid_Migrate_Fn, LB_Set_Post_Migrate_Fn, &
-   LB_Set_Obj_Size_Fn, LB_Set_Pack_Obj_Fn, LB_Set_Unpack_Obj_Fn 
+   LB_Set_Obj_Size_Fn, LB_Set_Pack_Obj_Fn, LB_Set_Unpack_Obj_Fn
 
 public :: &
    LB_Get_Child_Order
