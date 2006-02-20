@@ -259,6 +259,10 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Partition_Fort = NULL;
   zz->Get_Num_Edges_Fort = NULL;
   zz->Get_Edge_List_Fort = NULL;
+  zz->Get_HG_Size_CS_Fort = NULL;
+  zz->Get_HG_CS_Fort = NULL;
+  zz->Get_HG_Size_Edge_Weights_Fort = NULL;
+  zz->Get_HG_Edge_Weights_Fort = NULL;
   zz->Get_Num_Geom_Fort = NULL;
   zz->Get_Geom_Multi_Fort = NULL;
   zz->Get_Geom_Fort = NULL;
