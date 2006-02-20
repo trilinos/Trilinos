@@ -197,3 +197,19 @@ run-pyexamples: all-am
 	@if [ -d packages/ml          ]; then cd packages/ml;          $(MAKE) run-pyexamples; fi
 	@if [ -d packages/nox         ]; then cd packages/nox;         $(MAKE) run-pyexamples; fi
 	@if [ -d packages/new_package ]; then cd packages/new_package; $(MAKE) run-pyexamples; fi
+
+clean-python: all-am
+	@if [ -d packages/PyTrilinos         ]; then cd packages/PyTrilinos;         $(MAKE) clean; fi
+	@if [ -d packages/thyra/python       ]; then cd packages/thyra/python;       $(MAKE) clean; fi
+	@if [ -d packages/epetra/python      ]; then cd packages/epetra/python;      $(MAKE) clean; fi
+	@if [ -d packages/triutils/python    ]; then cd packages/triutils/python;    $(MAKE) clean; fi
+	@if [ -d packages/epetraext/python   ]; then cd packages/epetraext/python;   $(MAKE) clean; fi
+	@if [ -d packages/aztecoo/python     ]; then cd packages/aztecoo/python;     $(MAKE) clean; fi
+	@if [ -d packages/galeri/python      ]; then cd packages/galeri/python;      $(MAKE) clean; fi
+	@if [ -d packages/amesos/python      ]; then cd packages/amesos/python;      $(MAKE) clean; fi
+	@if [ -d packages/ifpack/python      ]; then cd packages/ifpack/python;      $(MAKE) clean; fi
+	@if [ -d packages/anasazi/python     ]; then cd packages/anasazi/python;     $(MAKE) clean; fi
+	@if [ -d packages/ml/python          ]; then cd packages/ml/python;          $(MAKE) clean; fi
+	@if [ -d packages/nox/python         ]; then cd packages/nox/python;         $(MAKE) clean; fi
+	@if [ -d packages/new_package/python ]; then cd packages/new_package/python; $(MAKE) clean; fi
+
