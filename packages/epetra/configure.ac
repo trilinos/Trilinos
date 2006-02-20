@@ -270,6 +270,9 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( epetra, python, [Build Epetra Python wrappers (requires --enable-python, which is NOT set by default)], EPETRA_PYTHON, yes)
+AM_CONDITIONAL(BUILD_EPETRA_PYTHON, test "X$ac_cv_use_epetra_python" != "Xno")
+
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------

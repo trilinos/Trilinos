@@ -81,7 +81,9 @@ EXAMPLE_SUBDIR=example
 endif
 
 if PYTHON_USE
+if BUILD_EPETRA_PYTHON
 PYTHON_SUBDIR=python
+endif
 endif
 
 if ENABLE_EPETRA_THYRA
