@@ -940,8 +940,11 @@ static int pmatching_ipm (ZZ *zz,
           }
          
           /* For hybrid ipm, keep matches that are above average in c-ipm */
-          ipsum += bestsum;
-          num_matches_considered++;        
+          if (bestsum>0){
+             /* ipsum is cumulative sum of best inner products (bestsum) */
+             ipsum += bestsum;
+             num_matches_considered++;        
+          }
           if (cFLAG && bestsum > MAX(TSUM_THRESHOLD, 
               hgp->hybrid_keep_factor*ipsum/num_matches_considered))  {            
             cmatch[bestlno] = -1;                   
