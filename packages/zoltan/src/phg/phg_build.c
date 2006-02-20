@@ -1392,6 +1392,7 @@ MPI_Status status;
 int ierr=ZOLTAN_OK;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
   /*  
    * First, determine whether there are any removed pins.  For
    * these, we only need to know which process owns the vertex.
@@ -1459,7 +1460,7 @@ int ierr=ZOLTAN_OK;
    * and update pinIdx to map them to the arrays.
    */
 
-  unSet = apply_new_gnos(zz, sndBufGids, pinIdx, NULL, pin_gno, 
+  ngids = unSet = apply_new_gnos(zz, sndBufGids, pinIdx, NULL, pin_gno, 
                          pin_procs, zhg->Remove_Pin_Procs, nPins, 0);
 
   rc = MPI_Allreduce(&unSet, &maxUnSet, 1, MPI_INT, MPI_MAX, zz->Communicator);
@@ -1470,6 +1471,9 @@ int ierr=ZOLTAN_OK;
     ZOLTAN_FREE(&sndBufGids);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_OK;    /* all processes have all global numbers */
+  }
+  else if (nprocs == 1){
+    goto End;    /* error - I should have all global numbers */
   }
 
   /* Exchange lists of vertex GIDS with other processes, each of
