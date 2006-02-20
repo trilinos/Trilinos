@@ -80,8 +80,6 @@ struct ijv *mat;
 *      when reading doubles, otherwise errors will occur.
 */
 
-
-
     if (mm_read_banner(f, &matcode) != 0)
     {
         printf("Could not process Matrix Market banner.\n");

@@ -15,8 +15,10 @@
 
 #ifdef TFLOP
 #include <iostream.h>
+#include <ostream.h>
 #else
 #include <iostream>
+#include <ostream>
 using namespace std;
 #endif
 
@@ -41,8 +43,9 @@ struct Output_Flags Output;
 double Total_Partition_Time = 0.0;  /* Total over Number_Iterations */
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
-static void print_input_info(int Num_Proc, PROB_INFO_PTR prob);
 static void initialize_mesh(MESH_INFO_PTR);
+static void print_input_info(ostream &os, int Num_Proc, PROB_INFO_PTR prob, 
+PARIO_INFO_PTR pio, float zoltan_version);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -74,10 +77,12 @@ int main(int argc, char *argv[])
   Test.DDirectory = 0;
   Test.Local_Partitions = 0;
   Test.Drops = 0;
+  Test.RCB_Box = 0;
   Test.Multi_Callbacks = 0;
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
 
+  Output.Text = 1;
   Output.Gnuplot = 0;
   Output.Nemesis = 0;
   Output.Plot_Partitions = 0;
@@ -148,6 +153,7 @@ int main(int argc, char *argv[])
   pio_info.init_size		= -1;
   pio_info.init_dim 		= -1;
   pio_info.init_vwgt_dim 	= -1;
+  pio_info.init_dist_pins       = -1;
   pio_info.pdsk_root[0]		= '\0';
   pio_info.pdsk_subdir[0]	= '\0';
   pio_info.pexo_fname[0]	= '\0';
@@ -177,7 +183,7 @@ int main(int argc, char *argv[])
       error = 1;
     }
 
-    print_input_info(Num_Proc, &prob);
+    print_input_info(cout, Num_Proc, &prob, &pio_info, version);
   }
 
   MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
@@ -188,6 +194,7 @@ int main(int argc, char *argv[])
   brdcst_cmd_info(Proc, &prob, &pio_info, &mesh);
 
   zz->Set_Param("DEBUG_MEMORY", "1");
+  print_output = Output.Text;
 
   if (!setup_zoltan(*zz, Proc, &prob, &mesh)) {
     Gen_Error(0, "fatal: Error returned from setup_zoltan\n");
@@ -260,15 +267,10 @@ int main(int argc, char *argv[])
       goto End;
     }
 
-    if (iteration == 1){
-      Zoltan zz2 = *zz;    /* test copy constructor */
-      Zoltan zz3;          /* default constructor */
-      zz3 = *zz;                  /* test copy operator  */
-    }
-
     /* Reset the mesh data structure for next iteration. */
     if (iteration < Number_Iterations) {
       float twiddle = 0.01;
+      char str[4];
       /* Perturb coordinates of mesh */
       if (mesh.data_type == ZOLTAN_GRAPH)
         for (int i = 0; i < mesh.num_elems; i++) {
@@ -279,6 +281,9 @@ int main(int argc, char *argv[])
             mesh.elements[i].avg_coord[j] = mesh.elements[i].coord[0][j];
           }
         }
+      /* change the ParMETIS Seed */
+      sprintf(str, "%d", iteration%10000);
+      zz->Set_Param("PARMETIS_SEED", str);
     }
 
   } /* End of loop over read and balance */
@@ -371,9 +376,9 @@ static int read_mesh(
     }
   }
   else if (pio_info->file_type == MATRIXMARKET_PLUS_FILE) {
-    if (!read_mtxp_file(Proc, Num_Proc, prob, pio_info, mesh)) {
-        Gen_Error(0, "fatal: Error returned from read_mm_file\n");
-        return 0;
+    if (!read_mtxplus_file(Proc, Num_Proc, prob, pio_info, mesh)) {
+        Gen_Error(0, "fatal: Error returned from read_mtxplus_file\n");
+        
     }
   }
 #endif
@@ -392,20 +397,68 @@ static int read_mesh(
 
 /*****************************************************************************/
 /*****************************************************************************/
-static void print_input_info(int Num_Proc, PROB_INFO_PTR prob)
+static void print_input_info(ostream &os, int Num_Proc, PROB_INFO_PTR prob, 
+PARIO_INFO_PTR pio, float zoltan_version)
 {
 int i;
 
-  cout << "Input values:" << endl;
-  cout << "  " << DRIVER_NAME << " version " << VER_STR << endl;
-  cout << "  Total number of Processors = " << Num_Proc << endl << endl;
+  os << "Input values: " << endl;
+  os << "  Zoltan version " << zoltan_version << endl;
+  os << DRIVER_NAME << " version " <<  VER_STR << endl;
+  os << "  Total number of Processors = " << Num_Proc << endl;
 
-  cout << "\n  Performing load balance using " << prob->method << endl;
-  cout << "\tParameters:" << endl;
+  os << endl << "  Performing load balance using " << prob->method << endl;
+  os << "\tParameters:\n" ;
   for (i = 0; i < prob->num_params; i++)
-    cout << "\t\t" <<  prob->params[i].Name << " " << prob->params[i].Val << endl;
+    os << "\t\t" << prob->params[i].Name << " " << prob->params[i].Val << endl;
 
-  cout << "##########################################################" << endl;
+  if ((pio->init_dist_procs > 0) && (pio->init_dist_procs != Num_Proc)){
+    os << "\n  Distribute input objects to only " << pio->init_dist_procs;
+    os << " processes initially.\n";
+  }
+  if (pio->init_dist_type >= 0){
+    os << "\n  Initially distribute input objects" ;
+    switch (pio->init_dist_type){
+      case INITIAL_FILE:
+      case INITIAL_OWNER:
+        os << " according to assignments in file.";
+        break;
+      case INITIAL_LINEAR:
+        os << " in linear fashion (first n/p to process 0, etc).";
+        break;
+      case INITIAL_CYCLIC:
+        os << " in cyclic (round robin) fashion.";
+        break;
+    }
+    os << endl;
+  }
+  if (pio->init_dist_pins >= 0){
+    os << "\n  Distribute pins";
+    switch (pio->init_dist_pins){
+      case INITIAL_FILE:
+        os << " according to assignments in file.";
+        break;
+      case INITIAL_LINEAR:
+        os << " in linear fashion (first n/p to process 0, etc).";
+        break;
+      case INITIAL_CYCLIC:
+        os << " in cyclic (round robin) fashion.";
+        break;
+      case INITIAL_ROW:
+        os << " so each process gets full rows.";
+        break;
+      case INITIAL_COL:
+        os << " so each process gets full columns.";
+        break;
+      case INITIAL_ZERO:
+        os << " all to process zero.";
+        break;
+    }
+    os << endl;
+  }
+
+
+  os << "##########################################################" << endl;
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -422,6 +475,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
                   = mesh->num_side_sets
                   = mesh->necmap
                   = mesh->elem_array_len
+                  = mesh->gnhedges
                   = mesh->nhedges
                   = mesh->vwgt_dim
                   = mesh->ewgt_dim
@@ -438,6 +492,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_sideids  = NULL;
   mesh->ecmap_neighids = NULL;
   mesh->elements       = NULL;
+  mesh->format         = ZOLTAN_COMPRESSED_ROWS;
   mesh->hgid           = NULL;
   mesh->hindex         = NULL;
   mesh->hvertex        = NULL;

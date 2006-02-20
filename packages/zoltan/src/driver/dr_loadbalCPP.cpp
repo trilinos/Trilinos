@@ -77,6 +77,11 @@ ZOLTAN_NEXT_COARSE_OBJ_FN get_next_coarse_element;
 ZOLTAN_PARTITION_MULTI_FN get_partition_multi;
 ZOLTAN_PARTITION_FN get_partition;
 
+ZOLTAN_HG_SIZE_CS_FN get_hg_size_compressed_pin_storage;
+ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN get_hg_size_edge_weights;
+ZOLTAN_HG_CS_FN get_hg_compressed_pin_storage;
+ZOLTAN_HG_EDGE_WEIGHTS_FN get_hg_edge_weights;
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -87,6 +92,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
 /* Local declarations. */
   const char *yo = "setup_zoltan";
   int ierr;                      /* Error code */
+  int i;
   char errmsg[128];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
@@ -218,6 +224,23 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
                     "on six or more processors.\n");
       error_report(Proc);
     }
+  }
+  else if (Test.Local_Partitions == 8) {
+    int nparts=100;
+    /* Variable partition sizes. Assume at most 100 global partitions. */
+    /* Realloc arrays. */
+    delete [] psize;
+    delete [] partid;
+
+    psize = new float [nparts];
+    partid = new int [nparts];
+
+    for (i=0; i<nparts; i++){
+      partid[i] = i;
+      psize[i] = (float) i;
+    }
+    /* Set partition sizes using global numbers. */
+    zz.LB_Set_Part_Sizes(1, nparts, partid, NULL, psize);
   }
 
   /* Free temporary arrays for partition sizes. */
@@ -533,6 +556,15 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       cout << "DRIVER:  Total migration time = " << maxtime << endl;
+
+    /*
+     * Test copy function
+     */
+    Zoltan *zz_copy = new Zoltan(zz);
+
+    zz = *zz_copy;
+
+    delete(zz_copy);
   
     /* Evaluate the new balance */
     if (Debug_Driver > 0) {
@@ -570,12 +602,26 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
   }
 
   if (Driver_Action & 2){
-    /* Only do ordering if this was specified in the driver input file */
+      /* Only do ordering if this was specified in the driver input file */
+      
+      int *order = NULL;		/* Ordering vector(s) */
+      ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
+      ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
 
-    int *order = new int [2*(mesh->num_elems)];
-    ZOLTAN_ID_PTR order_gids = new ZOLTAN_ID_TYPE [mesh->num_elems];
-    ZOLTAN_ID_PTR order_lids = new ZOLTAN_ID_TYPE [mesh->num_elems];
+      order = new int [2*(mesh->num_elems)];
+      order_gids = new ZOLTAN_ID_TYPE [mesh->num_elems];
+      order_lids = new ZOLTAN_ID_TYPE [mesh->num_elems];
 
+      if (!order || !order_gids || !order_lids) {
+          /* Free order data */
+          if (order) delete [] order;
+          if (order_gids) delete [] order;
+          if (order_lids) delete [] order;
+          Gen_Error(0, "memory alloc failed for Zoltan_Order\n");
+          return 0;
+      }
+          
+          
     /* Evaluate the old ordering */
     if (Debug_Driver > 0) {
       if (Proc == 0) cout << "\nBEFORE ordering" << endl;
@@ -611,6 +657,62 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     delete [] order_lids;
   }
 
+
+  if (Driver_Action & 4) {
+      int *color = NULL;          /* Color vector */
+      ZOLTAN_ID_PTR gids = NULL;  /* List of all gids for ordering */
+      ZOLTAN_ID_PTR lids = NULL;  /* List of all lids for ordering */
+
+      color = new int [mesh->num_elems];
+      gids = new ZOLTAN_ID_TYPE[mesh->num_elems];
+      lids = new ZOLTAN_ID_TYPE[mesh->num_elems];
+
+      if (!color || !gids || !lids) {
+          if (color) delete [] color;
+          if (gids) delete [] gids;
+          if (lids) delete [] lids;
+          Gen_Error(0, "memory alloc failed for Zoltan_Color\n");
+          return 0;
+      }
+      
+      /* Only do coloring if it is specified in the driver input file */
+      /* Do coloring after load balancing */        
+      if (zz.Color(num_gid_entries, num_lid_entries,
+                       mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
+          Gen_Error(0, "fatal:  error returned from Zoltan_Color()\n");
+          delete [] color;
+          delete [] gids;
+          delete [] lids;
+          return 0;
+      }
+
+      /* Verify coloring */
+      if (Debug_Driver > 0) {
+          if (Proc == 0)
+              cout << "\nVerifying coloring result\n" << endl;
+          if (zz.Color_Test(num_gid_entries, num_lid_entries,
+                    mesh->num_elems, gids, lids, color) == ZOLTAN_FATAL) {
+              Gen_Error(0, "fatal:  error returned from Zoltan_Color_Test()\n");
+              delete [] color;
+              delete [] gids;
+              delete [] lids;
+              return 0;
+          }
+      }
+
+      /* Copy color info as "perm" into mesh structure */
+      for (int i = 0; i < mesh->num_elems; i++){
+          int lid = lids[num_lid_entries * i + (num_lid_entries - 1)];
+          mesh->elements[lid].perm_value = color[i];
+      }
+      
+      /* Free color data */
+      delete [] color;
+      delete [] gids;
+      delete [] lids;
+  }
+
+  
   DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
@@ -664,10 +766,12 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   elem = mesh->elements;
   for (i = 0; i < mesh->num_elems; i++) {
     current_elem = &elem[i];
+    for (j = 0; j < gid; j++) global_id[i*num_gid_entries+j]=0;
     global_id[i*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
-    if (num_lid_entries) 
+    if (num_lid_entries) {
+      for (j = 0; j < lid; j++) local_id[i*num_lid_entries+j]=0;
       local_id[i*num_lid_entries+lid] = i;
-
+    }
     if (wdim>0) {
       for (j=0; j<wdim; j++) {
         wgt[i*wdim+j] = current_elem->cpu_wgt[j];
@@ -709,7 +813,11 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
 
   elem = mesh->elements;
   current_elem = &elem[0];
-  if (num_lid_entries) local_id[lid] = 0;
+  if (num_lid_entries) {
+    for (int j = 0; j < lid; j++) local_id[j]=0;
+    local_id[lid] = 0;
+  }
+  for (int j = 0; j < gid; j++) global_id[j]=0;
   global_id[gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
 
   if (wdim>0){
@@ -761,8 +869,12 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
 
   if (idx+1 < mesh->num_elems) { 
     found = 1;
-    if (num_lid_entries) next_local_id[lid] = idx + 1;
+    if (num_lid_entries) {
+      for (int j = 0; j < lid; j++) next_local_id[j]=0;
+      next_local_id[lid] = idx + 1;
+    }
     next_elem = &elem[idx+1];
+    for (int j = 0; j < gid; j++) next_global_id[j]=0;
     next_global_id[gid] = next_elem->globalID;
 
     if (wdim>0){
@@ -1136,8 +1248,10 @@ int ok;
     *assigned = 1;
     *in_order = 0;
     *num_vert = mesh->eb_nnodes[current_elem->elem_blk];
-    for (i = 0; i < *num_vert; i++)
+    for (i = 0; i < *num_vert; i++) {
+      for (int j = 0; j < gid; j++) vertices[i*num_gid_entries + j] = 0;
       vertices[i*num_gid_entries + gid] = current_elem->connect[i];
+    }
   }
 
   STOP_CALLBACK_TIMER;
@@ -1194,8 +1308,10 @@ int ok;
 
     *assigned = 1;
     *num_vert = mesh->eb_nnodes[current_elem->elem_blk];
-    for (i = 0; i < *num_vert; i++)
+    for (i = 0; i < *num_vert; i++) {
+      for (int j = 0; j < gid; j++) vertices[i*num_gid_entries + j] = 0;
       vertices[i*num_gid_entries + gid] = current_elem->connect[i];
+    }
   }
 
   STOP_CALLBACK_TIMER;
@@ -1305,44 +1421,45 @@ int get_partition(void *data, int num_gid_entries, int num_lid_entries,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_hg_size_compressed_pin_storage(
+void get_hg_size_compressed_pin_storage(
   void *data,
   int *num_lists,
   int *num_pins,
-  int *format)
+  int *format, int *ierr)
 {
-  int npins, i;
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
 
   if (data == NULL) {
-    return ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
+     return;
   }
 
   mesh = (MESH_INFO_PTR) data;
 
   *num_lists = mesh->nhedges;
-  *format = ZOLTAN_COMPRESSED_ROWS;
+  *format = mesh->format;
   *num_pins = mesh->hindex[mesh->nhedges];
 
   STOP_CALLBACK_TIMER;
 
-  return ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 }
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_hg_size_edge_weights(
+void get_hg_size_edge_weights(
   void *data,
-  int *num_edge)
+  int *num_edge, int *ierr)
 {
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
 
   if (data == NULL) {
-    return ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
+    return;
   }
 
   mesh = (MESH_INFO_PTR) data;
@@ -1351,12 +1468,12 @@ int get_hg_size_edge_weights(
 
   STOP_CALLBACK_TIMER;
 
-  return ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 }
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-int get_hg_compressed_pin_storage(
+void get_hg_compressed_pin_storage(
   void *data,
   int num_gid_entries,
   int nrowcol,
@@ -1364,18 +1481,23 @@ int get_hg_compressed_pin_storage(
   int format,
   ZOLTAN_ID_PTR rowcol_GID,
   int *rowcol_ptr,
-  ZOLTAN_ID_PTR pin_GID)
+  ZOLTAN_ID_PTR pin_GID, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ZOLTAN_ID_PTR edg_GID, vtx_GID;
   int *row_ptr;
   int nedges;
-  int ierr = ZOLTAN_OK;
 
   START_CALLBACK_TIMER;
 
-  if (format != ZOLTAN_COMPRESSED_ROWS){
-    ierr = ZOLTAN_FATAL;
+  mesh = (MESH_INFO_PTR) data;
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  if (format != mesh->format){
+    *ierr = ZOLTAN_FATAL;
     goto End;
   }
 
@@ -1383,29 +1505,21 @@ int get_hg_compressed_pin_storage(
   vtx_GID = pin_GID;
   row_ptr = rowcol_ptr;
   nedges = nrowcol;
- 
-  if (data == NULL) {
-    ierr = ZOLTAN_FATAL;
-    goto End;
-  }
-  
-  mesh = (MESH_INFO_PTR) data;
-   
+    
   memcpy(edg_GID, mesh->hgid, sizeof(int) * num_gid_entries * nedges);
   memcpy(vtx_GID, mesh->hvertex,
           sizeof(int) * num_gid_entries * npins);
   memcpy(row_ptr, mesh->hindex, sizeof(int) * nedges);
-
+ 
 End:
 
   STOP_CALLBACK_TIMER;
-  return ierr;
 } 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
   
-int get_hg_edge_weights(
+void get_hg_edge_weights(
   void *data, 
   int num_gid_entries,
   int num_lid_entries,
@@ -1413,31 +1527,32 @@ int get_hg_edge_weights(
   int ewgt_dim, 
   ZOLTAN_ID_PTR edge_gids,
   ZOLTAN_ID_PTR edge_lids,
-  float *edge_weights
-) 
-{ 
+  float *edge_weights, int *ierr
+)
+{
   MESH_INFO_PTR mesh;
-  int i, ierr = ZOLTAN_OK;
+  int i; 
+  *ierr = ZOLTAN_OK;
 
   START_CALLBACK_TIMER;
 
   if (data == NULL){
-    ierr = ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
     goto End;
   }
 
   mesh = (MESH_INFO_PTR) data;
 
   if (nedges > mesh->heNumWgts){
-    ierr = ZOLTAN_FATAL;
+    *ierr = ZOLTAN_FATAL;
     goto End;
   }
 
   if (mesh->heWgtId){
-    memcpy(edge_gids, mesh->heWgtId,sizeof(int) * num_gid_entries * nedges);
+    memcpy(edge_gids, mesh->heWgtId,sizeof(int) * num_gid_entries * nedges); 
   }
   else{
-    memcpy(edge_gids, mesh->hgid,sizeof(int) * num_gid_entries * nedges);
+    memcpy(edge_gids, mesh->hgid,sizeof(int) * num_gid_entries * nedges); 
   }
   memset(edge_lids, 0, sizeof(int) * num_lid_entries * nedges);
 
@@ -1450,9 +1565,8 @@ int get_hg_edge_weights(
 End:
 
   STOP_CALLBACK_TIMER;
-  return ierr;
+  return; 
 }
-
 
 
 /*****************************************************************************/

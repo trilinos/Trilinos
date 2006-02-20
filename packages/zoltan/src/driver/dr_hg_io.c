@@ -1394,7 +1394,7 @@ int *pins, *count, *start, *eidList, *match, *idx;
   }
 
   for (i = 0; i<nMyPins; i++){
-    match = bsearch((const void *)(myPinI + i), (const void *)eidList,
+    match = (int *)bsearch((const void *)(myPinI + i), (const void *)eidList,
                     nedges, sizeof(int), _zoltan_sortFunc);
 
     if (!match){
