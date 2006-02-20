@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
   prob.params			= NULL;
 
   /* Read in the ascii input file */
-  error = 0;
+  error = gerror = 0;
   if (Proc == 0) {
     printf("\n\nReading the command file, %s\n", cmd_file);
     if (!read_cmd_file(cmd_file, &prob, &pio_info, NULL)) {
