@@ -1,0 +1,17 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters	= OBJ_WEIGHT_DIM=0
+Zoltan Parameters	= EDGE_WEIGHT_DIM=0
+Zoltan Parameters	= ADD_OBJ_WEIGHT=pins
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+File Type		= matrixmarket+, initial distribution=linear, initial pins=cols
+File Name		= simple
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+3	0	-1	-1
+4	0	-1	-1
+8	0	-1	-1
+9	0	-1	-1
+13	0	-1	-1
+14	0	-1	-1
