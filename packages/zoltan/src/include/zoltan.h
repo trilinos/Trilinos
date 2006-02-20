@@ -1720,6 +1720,14 @@ typedef void ZOLTAN_HG_SIZE_CS_FN(
   int *ierr
 );
 
+typedef void ZOLTAN_HG_SIZE_CS_FORT_FN(
+  void *data,
+  int *num_lists,
+  int *num_pins,
+  int *format,
+  int *ierr
+);
+
 /*****************************************************************************/
 /*
  *  Function to return the non-zeroes of a hypergraph in
@@ -1762,13 +1770,14 @@ typedef void ZOLTAN_HG_CS_FN(
 
 typedef int ZOLTAN_HG_CS_FORT_FN(
   void *data,
-  int num_gid_entries,
-  int nrowcol,
-  int npins,
-  int format,
+  int *num_gid_entries,
+  int *nrowcol,
+  int *npins,
+  int *format,
   ZOLTAN_ID_PTR rowcol_GID,
   int *rowcol_ptr,
-  ZOLTAN_ID_PTR pin_GID
+  ZOLTAN_ID_PTR pin_GID,
+  int *ierr
 );
 /*****************************************************************************/
 /*
@@ -1783,6 +1792,12 @@ typedef int ZOLTAN_HG_CS_FORT_FN(
  */
 
 typedef void ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN(
+  void *data,
+  int *num_edges,
+  int *ierr
+);
+
+typedef void ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN(
   void *data,
   int *num_edges,
   int *ierr
@@ -1814,6 +1829,18 @@ typedef void ZOLTAN_HG_EDGE_WEIGHTS_FN(
   int num_lid_entries,
   int nedges,
   int edge_weight_dim,
+  ZOLTAN_ID_PTR edge_GID,
+  ZOLTAN_ID_PTR edge_LID,
+  float *edge_weight,
+  int *ierr
+);
+
+typedef void ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN(
+  void *data,
+  int *num_gid_entries,
+  int *num_lid_entries,
+  int *nedges,
+  int *edge_weight_dim,
   ZOLTAN_ID_PTR edge_GID,
   ZOLTAN_ID_PTR edge_LID,
   float *edge_weight,
