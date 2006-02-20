@@ -145,7 +145,9 @@ public:
 
   virtual int SetUseTranspose(bool UseTranspose)
   {
-    IFPACK_CHK_ERR(-98); // FIXME: can I work with the transpose?
+    if (UseTranspose)
+      IFPACK_CHK_ERR(-98); // FIXME: can I work with the transpose?
+    return(0);
   }
 
   virtual const char* Label() const;
