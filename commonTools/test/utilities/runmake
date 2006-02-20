@@ -28,6 +28,7 @@ my $makeCmd;            # make command              (default: make)
 my $outputDir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
 my $logVerbosity;       # log file verbosity level  (default: 0)
+my $startTime;          # start time                (supplied by runbuild)
 
 my $resultsDir;         # absolute path to results directory
 
@@ -39,42 +40,6 @@ my $v0 = "0";           # quiet
 my $v1 = "1";           # normal verbosity
 my $v2 = "2";           # level 2 verbosity
 my $v3 = "4";           # level 3 verbosity
-
-# Package failure exit status codes.  These are needed when you are combining
-# runconfigure and runmake (as in runbuild) and you want to be able to recover
-# from make failures because runmake can't recover from a make failure by
-# itself--it needs to communicate the broken package to runconfigure to that
-# runconfigure can remove its directory and its configure flags.
-my %failureCode = ();
-$failureCode{'amesos'} = 10;
-$failureCode{'anasazi'} = 11;
-$failureCode{'aztecoo'} = 12;
-$failureCode{'belos'} = 13;
-$failureCode{'capo'} = 14;
-$failureCode{'claps'} = 15;
-$failureCode{'cmmlib'} = 16;
-$failureCode{'didasko'} = 17;
-$failureCode{'epetra'} = 18;
-$failureCode{'epetraext'} = 19;
-$failureCode{'ifpack'} = 20;
-$failureCode{'jpetra'} = 21;
-$failureCode{'kokkos'} = 22;
-$failureCode{'komplex'} = 23;
-$failureCode{'meros'} = 24;
-$failureCode{'ml'} = 25;
-$failureCode{'new_package'} = 26;
-$failureCode{'nox'} = 27;
-$failureCode{'pliris'} = 28;
-$failureCode{'pytrilinos'} = 29;
-$failureCode{'rythmos'} = 30;
-$failureCode{'teuchos'} = 31;
-$failureCode{'thyra'} = 32;
-$failureCode{'tpetra'} = 33;
-$failureCode{'triutils'} = 34;
-$failureCode{'tsf'} = 35;
-$failureCode{'tsfcore'} = 36;
-$failureCode{'tsfcoreutils'} = 37;
-$failureCode{'tsfextended'} = 38;
         
 ################################################################################
 # Execution ####################################################################
@@ -115,6 +80,7 @@ exit $exitStatus;
                     "output-dir=s" => \$outputDir,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
+                    "start-time=s" => \$startTime,
                     "quiet" => \$quiet,
                     "help" => \$help );
         
@@ -222,17 +188,26 @@ exit $exitStatus;
     #
 
     sub init {
-    
-        # Capture and format make start time.
-        (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
-        $yr = sprintf("%02d", $yr % 100);
-        $mo = sprintf("%02d", $mo+1);
-        $da = sprintf("%02d", $da);
-        $hr = sprintf("%02d", $hr);
-        $mn = sprintf("%02d", $mn);
-        $se = sprintf("%02d", $se);
-        $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
-        $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        
+        # We've been passed the --start-time= command line argument by
+        # runbuild, so use that instead of capturing our own.
+        if ($startTime) {
+            $runStartTimeForFilename = $startTime;
+            $runStartTime = $runStartTimeForFilename;
+            $runStartTime =~ s/_/ /;
+            $runStartTime =~ s/\./:/g;
+        } else {    
+            # Capture and format make start time.
+            (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
+            $yr = sprintf("%02d", $yr % 100);
+            $mo = sprintf("%02d", $mo+1);
+            $da = sprintf("%02d", $da);
+            $hr = sprintf("%02d", $hr);
+            $mn = sprintf("%02d", $mn);
+            $se = sprintf("%02d", $se);
+            $runStartTime = $yr."-".$mo."-".$da." ".$hr.":".$mn.":".$se;
+            $runStartTimeForFilename = $yr."-".$mo."-".$da."_".$hr.".".$mn.".".$se;
+        }
         
         # Print list of variables for debugging.
         my $message = "";
@@ -263,19 +238,19 @@ exit $exitStatus;
         
         # cd to packages directory in build directory.
         chdir $buildDir or die "cannot chdir to $buildDir, died";
-            
+        
         # Print progress message.
         my $message = "Compiling Trilinos...";
-        $message = sprintf("%-30s", $message);
+        $message = sprintf("%-25s", $message);
         printMessage($message, $v1+$v2+$v3);
         
         # Capture start time.
         my $startSeconds = time();
-    
+        
         # Run make.      
         my $makeOutput = `$makeCmd 2>&1`;
         my $makeExitStatus = $?;
-    
+        
         # Capture and format make stop time.
         (my $se, my $mn, my $hr, my $da, my $mo, my $yr) = (localtime)[0..5];
         $yr = sprintf("%02d", $yr % 100);
@@ -290,39 +265,40 @@ exit $exitStatus;
         
         # Detect broken package.
         my $brokenPackage = "NONE";
+        my $brokenSubdir = "NONE";
         my $madePackages = detectMadePackages($makeOutput);
         if ($makeExitStatus) {
-            $brokenPackage = detectBrokenPackage($makeOutput);
-            $message = sprintf("%-25s", " broken: $brokenPackage ");
+            ($brokenPackage, $brokenSubdir) = detectBrokenPackage($makeOutput);
+            $message = sprintf("%-30s", " broken: $brokenPackage/$brokenSubdir ");
             printMessage($message, $v1+$v2+$v3);
             $message = "! FAILED ";
             printMessage($message, $v1+$v2+$v3);
         } else {
-            $message = sprintf("%-25s", "");
+            $message = sprintf("%-30s", "");
             printMessage($message, $v1+$v2+$v3);
             $message = "  passed ";
             printMessage($message, $v1+$v2+$v3);
         }
         
         # Trim $makeOutput.
-        $makeOutput = substr ($makeOutput, -1000000);
-                            
+        $makeOutput = substr ($makeOutput, -800000);
+        
         # Finish printing pass/fail message.
         $message = ($runSeconds==0?"<1":$runSeconds);
         $message = sprintf("%6s", $message);
         printMessage($message, $v1+$v2+$v3);
         $message = " second".($runSeconds>1?"s":"")."\n";
         printMessage($message, $v1+$v2+$v3);
-                                                
+        
         # Grab general information values for inclusion in machine info file. 
-        my $hostName = "";          my $dnsName = "";           my $ipAddress = "";     
+        my $hostName = "";          my $dnsName = "";           my $ipAddress = "";
         my $operatingSystem = "";   my $kernelName = "";        my $kernelRelease = "";
         my $kernelVersion = "";     my $processor = "";         my $machineHardware = "";
-        my $hardwarePlatform = "";  my $badCmd = 0;          
+        my $hardwarePlatform = "";  my $badCmd = 0;
         $badCmd = system('hostname -s > /dev/null 2>&1');
-        if (!$badCmd) { 
-            chomp($hostName=`hostname -s`); 
-        } else { 
+        if (!$badCmd) {
+            chomp($hostName=`hostname -s`);
+        } else {
             $badCmd = system('uname -n > /dev/null 2>&1');
             if (!$badCmd) { chomp($hostName=`uname -n`); }
         }
@@ -364,7 +340,7 @@ exit $exitStatus;
         my $resultsFile = "$resultsDir/$runStartTimeForFilename-make.txt";
         open (RESULTS, ">$resultsFile") 
             or die "can't open make result file $resultsFile for writing, died";
-            
+        
         my $resultsString = "";
         
         $resultsString .= "HOST_NAME            = $hostName\n";
@@ -393,6 +369,7 @@ exit $exitStatus;
         $resultsString .= "RESULT               = ".($makeExitStatus==0?"pass":"fail")."\n";
         $resultsString .= "\n";
         $resultsString .= "BROKEN_PACKAGE       = $brokenPackage\n";
+        $resultsString .= "BROKEN_SUBDIR        = $brokenSubdir\n";
         $resultsString .= "\n";
         $resultsString .= "MADE_PACKAGES {{{\n\n$madePackages\n\n}}}\n";
         $resultsString .= "\n";
@@ -403,7 +380,7 @@ exit $exitStatus;
         close RESULTS;
         
         if ($makeExitStatus) {
-            return $failureCode{"$brokenPackage"};
+            return 6;
         } else {
             return 0;
         }
@@ -423,36 +400,73 @@ exit $exitStatus;
     sub detectBrokenPackage {
         my $makeOutput = $_[0];
         
-        # Initialize $lastSuccessfulPackage to some placeholder for the
-        # beginning of the list.  Grab the last instance of "built
-        # successfully" output string.
-        my $lastSuccessfulPackage = "first";
-        $makeOutput =~ m/.*Trilinos package (\w*?) built successfully/ms;        
-        if ($1) { $lastSuccessfulPackage = $1; }
+        # Grab the last instance of package-level "built successfully" banner.
+        my $foundPackageBanner = 0;
+        my $lastSuccessfulPackage = "";
+        my $packageBannerPosition = 0;
+        if ($makeOutput =~ m/(.*)Trilinos package (\w*?) built successfully/ms) {
+            $foundPackageBanner = 1;
+            $packageBannerPosition = length($1);
+            $lastSuccessfulPackage = $2;        
+            $lastSuccessfulPackage = lc($lastSuccessfulPackage);
+        }
         
-        # Convert package name to the format found in subdir list.
-        $lastSuccessfulPackage = uc($lastSuccessfulPackage);
-        $lastSuccessfulPackage = "$lastSuccessfulPackage"."_SUBDIR";
+        # Grab the last instance of subdir-level "built successfully" banner.
+        my $foundSubdirBanner = 0;
+        my $lastSuccessfulSubdirPackage = "";
+        my $lastSuccessfulSubdir = "";
+        my $subdirBannerPosition = 0;
+        if ($makeOutput =~ m/(.*)Trilinos package (\w*?) subdirectory (\w*?) built successfully/ms) {
+            $foundSubdirBanner = 1;
+            $subdirBannerPosition = length($1);
+            $lastSuccessfulSubdirPackage = $2;
+            $lastSuccessfulSubdirPackage = lc($lastSuccessfulSubdirPackage);
+            $lastSuccessfulSubdir = $3;
+            $lastSuccessfulSubdir = lc($lastSuccessfulSubdir);
+        }
         
-        my @enabledPackageSubdirs = ();
+        ########################################################################
+        # Between the package banners and the subdir banners, there are four
+        # possible situations:
+        #        
+        # 1. no subdir banner, no package banner:
+        #                       first enabled package, first enabled subdir
+        #
+        # 2. subdir banner(s), no package banner:
+        #                       subdir banner package, subsequent enabled subdir
+        #
+        # 3. subdir banner(s), package banner(s), package banner last:
+        #                       subsequent enabled package, first enabled subdir
+        #
+        # 4. subdir banner(s), package banners(s), subdir banner last :
+        #                       subdir banner package, subsequent enabled subdir
+        #
         
-        # Parse package/Makefile, compiling a list of enabled packages.
+        # If there was no subdir banner, or if a package banner was the last
+        # banner seen, we'll need information from the packages-level Makefile,
+        # so parse packages-level Makefile, extracting the list of enabled
+        # packages and the package-subdir order.  We could gather this
+        # information only in these two cases, but it seems harmless enough
+        # to just obtain it regardless.
+        
+        my @enabledPackages = ();
+        my @packageOrder = ();
+        
+        # Parse packages/Makefile, compiling a list of enabled packages.
         my $packagesMakefile = "$buildDir/packages/Makefile";
-        open (PACKAGES_MAKEFILE, "<$packagesMakefile")
-            or die "can't open $packagesMakefile";
-        while (my $line = <PACKAGES_MAKEFILE>) {
-            $line =~ s/^\s*//;  # trim leading spaces
-            $line =~ s/\s*$//;  # trim trailing spaces
-            if ($line =~ m/^(\w*?_SUBDIR) = \w*$/) {
-                push (@enabledPackageSubdirs, $1);
-            }                
-        } # while ($line)
+        open (PACKAGES_MAKEFILE, "<$packagesMakefile") or die "can't open $packagesMakefile";
+        undef $/;                       # undefine input record separator
+        my $file=<PACKAGES_MAKEFILE>;   # copy entire file
+        $/ = "\n";                      # restore it to default newline
         close PACKAGES_MAKEFILE;
         
-        my @subdirList = ();
-        push (@subdirList, "FIRST_SUBDIR");
+        @enabledPackages = $file =~ m/^(\w+)_SUBDIR = /gm;
         
-        # Parse package/Makefile, extracting subdir list.
+        for (my $i=0; $i<scalar(@enabledPackages); $i++) {
+            $enabledPackages[$i] = lc($enabledPackages[$i]);
+        }
+        
+        # Parse packages/Makefile, extracting subdir list.
         open (PACKAGES_MAKEFILE, "<$packagesMakefile")
             or die "can't open $packagesMakefile";
         my $continue = 0;
@@ -461,13 +475,16 @@ exit $exitStatus;
             $line =~ s/\s*$//;  # trim trailing spaces
             if ($line =~ m/^SUBDIRS = .*?$/) {
                 $continue = 1;
-            }                
+            }
             if ($continue) {
                 while ($line =~ m/\$\((\w*?)\)/) {
-                    push (@subdirList, $1);
-                    $line =~ s/\$\($1\)//;                      
+                    my $package = $1;
+                    $line =~ s/\$\($package\)//;    
+                    $package =~ s/_SUBDIR//;
+                    $package = lc($package);
+                    push (@packageOrder, $package);
                 }
-            }                
+            }
             if ($continue && $line =~ m/^.*?\\$/) {
                 $continue = 1;
             } else {
@@ -476,40 +493,199 @@ exit $exitStatus;
         } # while ($line)
         close PACKAGES_MAKEFILE;
         
-        # Find position of last successfully built package in subdir list.
-        my $i;
-        for ($i=0; $i<$#{@subdirList}+1; $i++) {
-            if ($subdirList[$i] eq $lastSuccessfulPackage) {
-                last;   # equivalent to break 
-            }
+        ########################################################################
+        # At this point, we have all the information we need to determine which
+        # package the failure occurred in.  From there we will then proceed
+        # to determine which subdir within that package the failure occurred.
+        
+        my $brokenPackage = "UNKNOWN";
+        
+        #=======================================================================
+        # Case 1:
+        if (!$foundSubdirBanner && !$foundPackageBanner) {
+            # Step through the packageOrder array, looking for the first
+            # enabled package.
+            my $foundBrokenPackage = 0;
+            my $i = 0;
+            while ($i < scalar(@packageOrder) && !$foundBrokenPackage) {
+                if (!$foundBrokenPackage) {
+                    foreach my $enabledPackage (@enabledPackages) {
+                        if ($packageOrder[$i] eq $enabledPackage) {                        
+                            $foundBrokenPackage = 1;
+                            $brokenPackage = $enabledPackage;
+                            last;
+                        }
+                    } # foreach
+                } else {
+                    last;
+                }
+                $i++;
+            } # while ()
         }
         
-        $i++;
-        my $potentialMatch = $subdirList[$i];
-        my $foundBrokenPackage = 0;
-        my $brokenPackage;        
+        #=======================================================================
+        # Case 2 or Case 4:
+        if (($foundSubdirBanner && !$foundPackageBanner) ||
+            ($foundSubdirBanner && $foundPackageBanner && $subdirBannerPosition > $packageBannerPosition)) {
+            $brokenPackage = $lastSuccessfulSubdirPackage;
+        }
         
-        # Find next enabled package in subdir list--without fail, this should
-        # be the broken package.
-        while ($i < $#{@subdirList}+1 && !$foundBrokenPackage) {
-            foreach my $entry (@enabledPackageSubdirs) {
-                if ($entry eq $potentialMatch) {
-                    $foundBrokenPackage = 1;
-                    $brokenPackage = $potentialMatch;
-                    last;   # equivalent to break;
+        #=======================================================================
+        # Case 3:
+        if ($foundSubdirBanner && $foundPackageBanner && $packageBannerPosition > $subdirBannerPosition) {
+            # Step through the packageOrder array, looking for the last
+            # successfully-built package.  Once we find it, then we continue
+            # stepping through the packageOrder array, now looking for the next
+            # package that is enabled.    
+            my $foundLastSuccessfulPackage = 0;
+            my $foundBrokenPackage = 0;
+            my $i = 0;
+            while ($i < scalar(@packageOrder) && !$foundBrokenPackage) {
+                if (!$foundLastSuccessfulPackage) {
+                    if ($packageOrder[$i] eq $lastSuccessfulPackage) {
+                        $foundLastSuccessfulPackage = 1;
+                    }
+                } else {
+                    if (!$foundBrokenPackage) {
+                        foreach my $enabledPackage (@enabledPackages) {
+                            if ($packageOrder[$i] eq $enabledPackage) {                        
+                                $foundBrokenPackage = 1;
+                                $brokenPackage = $enabledPackage;
+                                last;
+                            }
+                        } # foreach
+                    } else {
+                        last;
+                    }
+                } # else
+                $i++;
+            } # while ()
+        }
+        
+        ########################################################################
+        # Now we know the package in which the failure occurred, regardless
+        # which of the four cases it is.  Now all we need to do is find the
+        # subdirectory within that package in which the failure occurred.
+        # To do so, we'll need the list of enabled subdirectories and their
+        # build order.
+        
+        my @enabledSubdirs = ();
+        my @subdirOrder = ();
+         
+        # Parse packages/BROKEN_PACKAGE/Makefile, compiling a list of enabled subdirs.
+        my $packageMakefile = "$buildDir/packages/".getDirName($brokenPackage)."/Makefile";
+        open (PACKAGE_MAKEFILE, "<$packageMakefile") or die "can't open $packageMakefile";
+        undef $/;                       # undefine input record separator
+        $file=<PACKAGE_MAKEFILE>;       # copy entire file
+        $/ = "\n";                      # restore it to default newline
+        close PACKAGE_MAKEFILE;
+        
+        @enabledSubdirs = $file =~ m/^(\w+?)_SUBDIR = \w*$/gm;
+        for (my $i=0; $i<scalar(@enabledSubdirs); $i++) {
+            $enabledSubdirs[$i] = lc($enabledSubdirs[$i]);
+        }
+        
+        # Parse packages/BROKEN_PACKAGE/Makefile, extracting subdir list.
+        open (PACKAGE_MAKEFILE, "<$packageMakefile")
+            or die "can't open $packageMakefile";
+        $continue = 0;
+        while (my $line = <PACKAGE_MAKEFILE>) {
+            $line =~ s/^\s*//;  # trim leading spaces
+            $line =~ s/\s*$//;  # trim trailing spaces
+            if ($line =~ m/^SUBDIRS = .+?$/) {
+                $continue = 1;
+            }
+            if ($continue) {
+                $line =~ s/SUBDIRS = //;
+                while ($line =~ m/((?:\w|\$|\(|\))+)/) {
+                    my $subdir = $1;
+                    if ($subdir =~ m/\$\((\w+_SUBDIR)\)/) {
+                        $subdir = $1;
+                        $line =~ s/\$\($subdir\)//;
+                        $subdir =~ s/_SUBDIR//;
+                    } else {
+                        $line =~ s/$subdir//;                        
+                    }
+                    $subdir = lc($subdir);
+                    push (@subdirOrder, $subdir);
                 }
             }
-            $i++;
-            $potentialMatch = $subdirList[$i];
+            if ($continue && $line =~ m/^.*?\\$/) {
+                $continue = 1;
+            } else {
+                $continue = 0;
+            }
+        } # while ($line)
+        close PACKAGE_MAKEFILE;
+        
+        ########################################################################
+        # Now that we know which subdirectories were enabled and their build
+        # order, we can figure out in which subdirectory the failure occurred
+        # for each case.
+        
+        my $brokenSubdir = "UNKNOWN";
+        
+        #=======================================================================
+        # Case 1 or Case 3:
+        if ((!$foundSubdirBanner && !$foundPackageBanner) ||
+            ($foundSubdirBanner && $foundPackageBanner && $packageBannerPosition > $subdirBannerPosition)) {
+            # Step through the subdirOrder array, looking for the first
+            # enabled subdir.
+            my $foundBrokenSubdir = 0;        
+            my $i = 0;
+            while ($i < scalar(@subdirOrder) && !$foundBrokenSubdir) {
+                if (!$foundBrokenSubdir) {              
+                    foreach my $enabledSubdir (@enabledSubdirs) {
+                        if ($subdirOrder[$i] eq $enabledSubdir) {                        
+                            $foundBrokenSubdir = 1;
+                            $brokenSubdir = $enabledSubdir;
+                            last;                        
+                        }
+                    } # foreach
+                } else {
+                    last;
+                }
+                $i++;            
+            } # while ()                    
         }
         
-        # Standardize package name.
-        if ($foundBrokenPackage) {
-            $brokenPackage =~ s/_SUBDIR//;
-            $brokenPackage = lc($brokenPackage);
+        #=======================================================================
+        # Case 2 or Case 4:
+        if (($foundSubdirBanner && !$foundPackageBanner) ||
+            ($foundSubdirBanner && $foundPackageBanner && $subdirBannerPosition > $packageBannerPosition)) {
+            # Step through the subdirOrder array, looking for the last
+            # successfully-built subdir.  Once we find it, then we continue
+            # stepping through the subdirOrder array, now looking for the next
+            # subdir that is enabled.    
+            my $foundLastSuccessfulSubdir = 0;
+            my $foundBrokenSubdir = 0;        
+            my $i = 0;
+            while ($i < scalar(@subdirOrder) && !$foundBrokenSubdir) {            
+                if (!$foundLastSuccessfulSubdir) {
+                    if ($subdirOrder[$i] eq $lastSuccessfulSubdir) {
+                        $foundLastSuccessfulSubdir = 1;
+                    }
+                } else {
+                    if (!$foundBrokenSubdir) {              
+                        foreach my $enabledSubdir (@enabledSubdirs) {                        
+                            if ($subdirOrder[$i] eq $enabledSubdir) {                        
+                                $foundBrokenSubdir = 1;
+                                $brokenSubdir = $enabledSubdir;
+                                last;                        
+                            }
+                        } # foreach
+                    } else {
+                        last;
+                    }
+                } # else
+                $i++;            
+            } # while ()
         }
         
-        return $brokenPackage;
+        ########################################################################
+        # Return the broken package and subdirectory
+        
+        return ($brokenPackage, $brokenSubdir);
            
     } # detectBrokenPackage()
     
@@ -526,25 +702,99 @@ exit $exitStatus;
     sub detectMadePackages {
         my $makeOutput = $_[0];
         
-        my $madePackages = "";
+        my @madeSubdirOrder = ();
+        my %madeSubdirsHoA = ();
         
         # Compile list of all "Trilinos package PACKAGE built successfully" strings.        
-        my @builtStrings = $makeOutput =~ m/(Trilinos package \w*? built successfully)/g;        
+        my @builtStrings = $makeOutput =~ m/(Trilinos package \w+? built successfully)/g;        
         foreach my $builtString (@builtStrings) {
                             
-            # Grab package name.
+            # Grab package name
             my $package = "";
-            if ($builtString =~ m/Trilinos package (\w*?) built successfully/) {
-                $package = $1;
-                $package = lc($package);
-                $madePackages .= "$package; ";
+            if ($builtString && $builtString =~ m/Trilinos package (\w+?) built successfully/) {
+                $package = lc($1);
+                push (@madeSubdirOrder, $package);
+                if (!exists $madeSubdirsHoA{$package}) {
+                    $madeSubdirsHoA{$package} = ();
+                }
             }
             
         }
         
+        # Compile list of all "Trilinos package PACKAGE subdirectory SUBDIR built successfully" strings. 
+        my @subdirBuiltStrings = $makeOutput =~ m/(Trilinos package \w+? subdirectory \w+? built successfully)/g;
+        foreach my $subdirBuiltString (@subdirBuiltStrings) {
+        
+            # Grab package name
+            my $package = "";
+            my $subdir = "";
+            if ($subdirBuiltString =~ m/Trilinos package (\w+?) subdirectory (\w+?) built successfully/) {
+                $package = lc($1);
+                $subdir = lc($2);
+                if (exists $madeSubdirsHoA{$package}) {
+                    push (@{$madeSubdirsHoA{$package}}, $subdir);
+                }
+            }
+        
+        }
+        
+        # Create list of made packages and subdirs
+        my $madePackages = ""; 
+        foreach my $package (@madeSubdirOrder) {
+            my @subdirs = ();
+            foreach my $subdir (@{$madeSubdirsHoA{$package}}) {
+                if ($subdir eq "python") { push (@subdirs, "p"); }
+                if ($subdir eq "thyra") { push (@subdirs, "t"); }
+            }
+            my $subdirsString = join(",", @subdirs);                
+            $madePackages .= "$package($subdirsString); ";
+        }  
+        
         return $madePackages;
            
     } # detectMadePackages()
+    
+    ############################################################################
+    # getDirName()
+    #
+    # Given the standardized name of a package, return the directory name.
+    #
+    #   - args:     $packageName    (standardized package name)
+    #
+    #   - returns:                  (directory name)
+    #
+
+    sub getDirName {
+        my $packageName = $_[0];       
+        
+        my $filename = "$trilinosDir/commonTools/test/utilities/packages";        
+        open (IN_FILE, "<$filename") or die "can't open $filename";
+        
+        # Read definition file into one string.
+        undef $/;               # undefine input record separator
+        my $file=<IN_FILE>;     # copy entire file
+        $/ = "\n";              # restore it to default newline
+        close IN_FILE;
+        
+        # Clean up file.
+        $file =~ s/#.*$//mg;        # remove everything after any #
+        $file =~ s/\n\s*\n/\n/g;    # remove any blank lines
+        $file =~ s/^\s*//mg;        # remove leading spaces
+        $file =~ s/\s*$//mg;        # remove trailing spaces
+        
+        # break packages file into groups
+        my %dirNames = $file =~ m/STD_NAME:\s*(\w+),\s*DIR_NAME:\s*(\w+)/gs;
+        
+        print "\n\n\%dirNames:\n";
+        foreach my $stdName (keys %dirNames) {        
+            print "  $stdName:  ".$dirNames{$stdName}."\n";        
+        }        
+        print "\n\$packageName:  $packageName\n";
+        print "\$dirNames{\$packageName}:  ".$dirNames{$packageName}."\n\n";
+        
+        return $dirNames{$packageName}
+                           
+    } # getDirName()
     
     ############################################################################
     # cleanUp()

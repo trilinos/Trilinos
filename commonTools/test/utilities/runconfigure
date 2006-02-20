@@ -29,14 +29,15 @@ my $trilinosDir;        # Trilinos directory        (required argument)
 my $buildDir;           # build directory           (required argument) 
 my $invokeConfigure;    # complete invoke-configure (required argument)
 my $recover;            # recover mode?
-my $makeFailure;        # return code from runmake
+my $makeBrokenPackage;  # package the failed to make
+my $makeBrokenSubdir;   # package subdirectory in which make failed
 
 my $outputDir;          # output directory          (default: .)
 my $verbosity;          # verbosity level           (default: 1)
 my $logVerbosity;       # log file verbosity level  (default: 0)
 
 my $resultsDir;         # absolute path to results directory
-my %dependencies;       # package dependencies
+my %dependencies;       # package dependencies HoHoA
 
 my $runStartTime;
 my $runStartTimeForFilename;
@@ -46,43 +47,6 @@ my $v0 = "0";           # quiet
 my $v1 = "1";           # normal verbosity
 my $v2 = "2";           # level 2 verbosity
 my $v3 = "4";           # level 3 verbosity
-
-# Package failure exit status codes.  These are needed when you are combining
-# runconfigure and runmake (as in runbuild) and you want to be able to recover
-# from make failures because runmake can't recover from a make failure by
-# itself--it needs to communicate the broken package to runconfigure to that
-# runconfigure can remove its directory and its configure flags.
-my %failureCode = ();
-$failureCode{'amesos'} = 10;
-$failureCode{'anasazi'} = 11;
-$failureCode{'aztecoo'} = 12;
-$failureCode{'belos'} = 13;
-$failureCode{'capo'} = 14;
-$failureCode{'claps'} = 15;
-$failureCode{'cmmlib'} = 16;
-$failureCode{'didasko'} = 17;
-$failureCode{'epetra'} = 18;
-$failureCode{'epetraext'} = 19;
-$failureCode{'ifpack'} = 20;
-$failureCode{'jpetra'} = 21;
-$failureCode{'kokkos'} = 22;
-$failureCode{'komplex'} = 23;
-$failureCode{'meros'} = 24;
-$failureCode{'ml'} = 25;
-$failureCode{'new_package'} = 26;
-$failureCode{'nox'} = 27;
-$failureCode{'pliris'} = 28;
-$failureCode{'pytrilinos'} = 29;
-$failureCode{'rythmos'} = 30;
-$failureCode{'teuchos'} = 31;
-$failureCode{'thyra'} = 32;
-$failureCode{'tpetra'} = 33;
-$failureCode{'triutils'} = 34;
-$failureCode{'tsf'} = 35;
-$failureCode{'tsfcore'} = 36;
-$failureCode{'tsfcoreutils'} = 37;
-$failureCode{'tsfextended'} = 38;
-my %failedPackage = reverse(%failureCode);
         
 ################################################################################
 # Execution ####################################################################
@@ -122,7 +86,8 @@ exit $exitStatus;
                     "build-dir=s" => \$buildDir,
                     "invoke-configure=s" => \$invokeConfigure,
                     "recover" => \$recover,
-                    "make-failure=s" => \$makeFailure,
+                    "make-broken-package=s" => \$makeBrokenPackage,
+                    "make-broken-subdir=s" => \$makeBrokenSubdir,
                     "output-dir=s" => \$outputDir,
                     "verbosity=i" => \$verbosity,
                     "log-verbosity=i" => \$logVerbosity,
@@ -155,7 +120,7 @@ exit $exitStatus;
             if ($buildDir !~ m/^\//) {
                 $buildDir = "$trilinosDir/$buildDir";
             }
-            if (!$makeFailure) {
+            if (!$makeBrokenPackage) {
                 system ("rm -rf $buildDir");
                 system("mkdir $buildDir") == 0 or die "cannot create build-dir: $buildDir\n";
             }
@@ -257,7 +222,9 @@ exit $exitStatus;
         $message .= "init():\n";
         $message .= "  \$trilinosDir = $trilinosDir\n";
         $message .= "  \$buildDir = $buildDir\n";     
-        $message .= "  \$invokeConfigure = $invokeConfigure\n";      
+        $message .= "  \$invokeConfigure = $invokeConfigure\n";        
+        $message .= "  \$makeBrokenPackage = ".($makeBrokenPackage?$makeBrokenPackage:"")."\n";      
+        $message .= "  \$makeBrokenSubdir = ".($makeBrokenSubdir?$makeBrokenSubdir:"")."\n"; 
         $message .= "  \$recover = $recover\n";
         $message .= "  \$outputDir = $outputDir\n";
         $message .= "  \$verbosity = $verbosity\n";
@@ -281,11 +248,10 @@ exit $exitStatus;
     sub run {
         
         # Copy invoke-configure
-        if (!$makeFailure) {
+        if (!$makeBrokenPackage) {
             system("cp $invokeConfigure $buildDir/invoke-configure") == 0
                 or die "cannot copy invoke-configure, died";
-        } else {
-                
+        } else {                
             # Move aside current, broken invoke-configure.  Serialize
             # broken invoke-configures so that all are preserved.
             my $icBrokenNumber = "00";
@@ -294,9 +260,10 @@ exit $exitStatus;
             }
             system("cp $buildDir/invoke-configure $buildDir/invoke-configure-broken-$icBrokenNumber") == 0
                 or die "can't copy invoke-configure, died";
-                    
-            removeBrokenPackage($failedPackage{$makeFailure});
-            my $result = cleanInvokeConfigure($failedPackage{$makeFailure});
+            
+            my $packageDir  = "$buildDir/packages/".getDirName($makeBrokenPackage);        
+            system("rm -rf $packageDir");
+            my $result = cleanInvokeConfigure($makeBrokenPackage, $makeBrokenSubdir);
             if ($result == 86) { return 86; }
         }
         
@@ -331,7 +298,7 @@ exit $exitStatus;
             
             # Print progress message.
             my $message = "Configuring Trilinos...";
-            $message = sprintf("%-30s", $message);
+            $message = sprintf("%-25s", $message);
             printMessage($message, $v1+$v2+$v3);
             
             # Capture start time.
@@ -380,16 +347,18 @@ exit $exitStatus;
                     close CONFIG_LOG;
                 }
                 
-                removeBrokenPackage($brokenPackage);
+            
+                my $packageDir  = "$buildDir/packages/".getDirName($brokenPackage);        
+                system("rm -rf $packageDir");
                 my $result = cleanInvokeConfigure($brokenPackage);
                 if ($result == 86) { $eightySix = 1; }
                 
-                $message = sprintf("%-25s", " broken: $brokenPackage ");
+                $message = sprintf("%-30s", " broken: $brokenPackage ");
                 printMessage($message, $v1+$v2+$v3);
                 $message = "! FAILED ";
                 printMessage($message, $v1+$v2+$v3);
             } else {
-                $message = sprintf("%-25s", "");
+                $message = sprintf("%-30s", "");
                 printMessage($message, $v1+$v2+$v3);
                 $message = "  passed ";
                 printMessage($message, $v1+$v2+$v3);
@@ -519,7 +488,7 @@ exit $exitStatus;
                 system("mv $buildInfoFile $resultsDir/build.txt.tmp2 > /dev/null 2>&1");
             }
                 
-            if (!$recover && $configureExitStatus) { return $failureCode{"$brokenPackage"}; }
+            if (!$recover && $configureExitStatus) { return 1; }
                 
             if ($eightySix) { return 86; }
             
@@ -585,7 +554,7 @@ exit $exitStatus;
                             
             # Grab package name.
             my $package = "";
-            if ($finishedString =~ m/Finished( Running)? (.*?) Configure Script/) {
+            if ($finishedString && $finishedString =~ m/Finished( Running)? (.*?) Configure Script/) {
                 $package = $2;
                 $package = lc($package);
                 $configuredPackages .= "$package; ";
@@ -609,6 +578,7 @@ exit $exitStatus;
 
     sub cleanInvokeConfigure {
         my $brokenPackage = $_[0];
+        my $brokenSubdir = $_[1];
         
         # Open invoke-configure for reading.
         open (INVOKE_CONFIGURE, "<$buildDir/invoke-configure")
@@ -622,20 +592,24 @@ exit $exitStatus;
             $line =~ s/\s*$//;  # trim trailing spaces
             
             # Compare lines to package dependencies.
-            my $dropLine = 0;
-            my $lastElementIndex = $#{$dependencies{$brokenPackage}};
+            my $dropLine = 0;            
+            
+            # If there isn't a list of actions for this subdirectory, then
+            # use the default package-level recovery actions
+            if (!exists $dependencies{$brokenPackage}{$brokenSubdir}) {
+                $brokenSubdir = "default";
+            }
+            
+            my $lastElementIndex = $#{$dependencies{$brokenPackage}{$brokenSubdir}};
             for (my $i=0; $i<=$lastElementIndex; $i++) { 
-                if ($line =~ m/$dependencies{$brokenPackage}[$i]\b/i) {
-                    $dropLine = 1;   
-                    
-                    # SPECIAL CASE # Nox / LOCA dependency issue
-                    # removing --enable-loca is not enough, 
-                    # we need to also manually add --disable-loca
-                    if ($dependencies{$brokenPackage}[$i] =~ m/--enable-loca/) {
-                        $newInvokeConfigure .= "--disable-loca \\\n";
-                    }
-                    
-                }   
+                
+                if ($dependencies{$brokenPackage}{$brokenSubdir}[$i] =~ m/REMOVE ((\w|-)+)/) {
+                    my $flag = $1;            
+                    if ($line =~ m/$flag\b/i) {
+                        $dropLine = 1;
+                    }                    
+                }
+                
             }    
             
             # Write line if it isn't a dependency.
@@ -644,9 +618,27 @@ exit $exitStatus;
             } else {
                 $changeMade = 1;
             }
-        } # while ($line)        
+        } # while ($line)   
         
-        close INVOKE_CONFIGURE;
+        close INVOKE_CONFIGURE;     
+        
+        # Look for INSERT commands
+        my @flagsToInsert = ();
+        my $lastElementIndex = $#{$dependencies{$brokenPackage}{$brokenSubdir}};
+        for (my $i=0; $i<=$lastElementIndex; $i++) { 
+            
+            if ($dependencies{$brokenPackage}{$brokenSubdir}[$i] =~ m/INSERT (.+)/) {
+                my $flag = $1;
+                push (@flagsToInsert, $flag);
+                $changeMade = 1;
+            }
+            
+        } 
+        
+        # Append all INSERTed flags
+        foreach my $flagToInsert (@flagsToInsert) {
+            $newInvokeConfigure .= "$flagToInsert \\\n";
+        }
         
         if (!$changeMade) {
             my $message = "error fixing invoke-configure--no changes made ($brokenPackage broke)\n";
@@ -655,8 +647,14 @@ exit $exitStatus;
         }
         
         # Prepare new invoke-configure.
-        $newInvokeConfigure =~ s/(.*)\\$/$1/s;  # remove last line-continuation
-        chomp ($newInvokeConfigure);            # remove last newline 
+        $newInvokeConfigure =~ s/\n\s*\n/\n/g;      # remove any blank lines
+        $newInvokeConfigure =~ s/^\s*//mg;          # remove leading spaces
+        $newInvokeConfigure =~ s/\s*$//mg;          # remove trailing spaces  
+        $newInvokeConfigure =~ s/\\$//mg;           # remove line-continuation chars 
+        $newInvokeConfigure =~ s/\s*$//mg;          # remove trailing spaces  
+        $newInvokeConfigure =~ s/$/ \\/mg;          # insert line-continuation chars  
+        $newInvokeConfigure =~ s/(.*)\\$/$1/s;      # remove last line-continuation
+        chomp ($newInvokeConfigure);                # remove last newline 
         
         # Open invoke-configure for writing.
         open (INVOKE_CONFIGURE, ">$buildDir/invoke-configure")
@@ -669,63 +667,19 @@ exit $exitStatus;
     } # cleanInvokeConfigure()
     
     ############################################################################
-    # removeBrokenPackage()
-    #
-    # Blow away the given broken package.
-    #
-    #   - args:     $brokenPackage      (package to prune)
-    #
-    #   - returns:  NONE
-    #
-
-    sub removeBrokenPackage {
-        my $brokenPackage = $_[0];
-        
-        # Standardized name to package directory name conversions.
-        my %dirName = ();
-        $dirName{'amesos'} = "amesos";
-        $dirName{'anasazi'} = "anasazi";
-        $dirName{'aztecoo'} = "aztecoo";
-        $dirName{'belos'} = "belos";
-        $dirName{'capo'} = "capo";
-        $dirName{'claps'} = "claps";
-        $dirName{'cmmlib'} = "cmmlib";
-        $dirName{'didasko'} = "didasko";
-        $dirName{'epetra'} = "epetra";
-        $dirName{'epetraext'} = "epetraext";
-        $dirName{'ifpack'} = "ifpack";
-        $dirName{'jpetra'} = "jpetra";
-        $dirName{'kokkos'} = "kokkos";
-        $dirName{'komplex'} = "komplex";
-        $dirName{'meros'} = "meros";
-        $dirName{'ml'} = "ml";
-        $dirName{'new_package'} = "new_package";
-        $dirName{'nox'} = "nox";
-        $dirName{'pliris'} = "pliris";
-        $dirName{'pytrilinos'} = "PyTrilinos";
-        $dirName{'rythmos'} = "rythmos";
-        $dirName{'teuchos'} = "teuchos";
-        $dirName{'thyra'} = "thyra";
-        $dirName{'tpetra'} = "tpetra";
-        $dirName{'triutils'} = "triutils";
-        $dirName{'tsf'} = "TSF";
-        $dirName{'tsfcore'} = "TSFCore";
-        $dirName{'tsfcoreutils'} = "TSFCoreUtils";
-        $dirName{'tsfextended'} = "TSFExtended";
-        
-        my $packageDir = "";
-        
-        $packageDir  = "$buildDir/packages/";
-        $packageDir .= $dirName{"$brokenPackage"};        
-        system("rm -rf $packageDir");
-           
-    } # removeBrokenPackage()
-    
-    ############################################################################
     # parseDependencies()
     #
-    # Parses testharness/dependencies and fills global hash of arrays of the 
-    # form ({PACKAGE_A, [optionA1, optionA2, ...]}, {PACKAGE_B, [optionB1, ...]})
+    # Parses testharness/dependencies and fills global hash of hash of arrays
+    # of the form:
+    #
+    #   ({PACKAGE_A,
+    #       {SUBDIR_X,
+    #           [optionAX1, optionAX2, ...]}},
+    #       {SUBDIR_Y,
+    #           [optionAY1, optionAY2, ...]}},
+    #   {PACKAGE_B, 
+    #       {SUBDIR_X,
+    #           [optionB1, ...]}})
     #
     #   - args:     NONE
     #
@@ -733,67 +687,111 @@ exit $exitStatus;
     #
 
     sub parseDependencies {
-        my $filename = "$trilinosDir/commonTools/test/utilities/dependencies";
+        my $filename = "$trilinosDir/commonTools/test/utilities/dependencies";        
+        open (IN_FILE, "<$filename") or die "can't open $filename";
         
-        open (IN_FILE, "<$filename")
-            or die "can't open $filename";
-            
-        my $line;
-        my $name;
-        my $value;
-        my $continue;
-        while ($line = <IN_FILE>) {
-            $line =~ s/^\s*//;      # trim leading spaces
-            $line =~ s/\s*$//;      # trim trailing spaces
-            
-            if (!$line || $line =~ m/^[# ]/) {
-                # skip comments and blank lines
-            } else {
-                if ($continue) {    # previous line ended with a (\) continuation char
-                    $line =~ m/^((\S*?\s*?|".*?"\s*?)*)\s*?(\\?)$/;
-                    $value = $1;
-                    $continue = $3;                    
-                    # print "\$value: $value\n\n"; # debugging   
-                                     
-                } else {            # expecting a $name [+]= $value [$value ...] pair
-                    $line =~ m/^(\S+)\s*?\+?=\s*((\S*?\s*?|".*?"\s*?)*)\s*?(\\?)$/;
-                    $name = $1;
-                    $value = $2;
-                    $continue = $4;                    
-                    # print "\$name: $name, \$value: $value\n\n"; # debugging
-                }
-                
-                if (!exists $dependencies{$name}) {  # if there isn't an option with this $name...
-                    $dependencies{$name} = ();       # add a new one
-                }
-                
-                while ($value) {
-                    $value =~ s/^\s*//;  # trim leading spaces
-                    $value =~ s/\s*$//;  # trim trailing spaces
-                    # print "\$value: $value\n"; # debugging
-                    
-                    $value =~ m/^(".*?"|\S+)/;          # grab leftmost value
-                    my $v = $1;                         # store temporarily in $v
-                    $value =~ s/^$v//;                  # remove $v from remaining list 
-                    $v =~ s/"//g;                       # remove any quotes from $v
-                    push (@{$dependencies{$name}}, $v); # add $v to %options{$name}     
-                }
-            } # else (non-comment/blank)
-        } # while ($line)
-        
+        # Read definition file into one string.
+        undef $/;               # undefine input record separator
+        my $file=<IN_FILE>;     # copy entire file
+        $/ = "\n";              # restore it to default newline
         close IN_FILE;
+        
+        # Clean up file.
+        $file =~ s/#.*$//mg;        # remove everything after any #
+        $file =~ s/\n\s*\n/\n/g;    # remove any blank lines
+        $file =~ s/^\s*//mg;        # remove leading spaces
+        $file =~ s/\s*$//mg;        # remove trailing spaces
+        
+        # break dependencies file into groups
+        my @groups = $file =~ m/(IF PACKAGE .*? THEN.*?DONE)/gs;
+        
+        # process each group
+        foreach my $group (@groups) {
+        
+            if ($group =~ m/IF PACKAGE (\w+)( SUBDIRECTORY (\w+))? THEN(.*?)DONE/s) {
+        
+                my $package = $1;
+                my $subdir = $3;        if (!$subdir) { $subdir = "default"; }
+                my $actionsString = $4;               
+        
+                # initialize hash for this package
+                if (!exists $dependencies{$package}) {
+                    $dependencies{$package} = ();
+                }
+                
+                # initialize array for this subdir
+                if (!exists $dependencies{$package}{$subdir}) {
+                    $dependencies{$package}{$subdir} = ();
+                }
+                
+                # break actions list into individual actions
+                my @actions = $actionsString =~ m/((?:INSERT|REMOVE) .*?$)/mg;
+                
+                # push each action onto the list for this package/subdir
+                foreach my $action (@actions) {                
+                    push (@{$dependencies{$package}{$subdir}}, $action);                
+                }
+                
+            }
+        
+        }
         
         # print the dependencies hash of arrays for debugging
         printMessage("\n\%dependencies:\n\n", $v3);
-        for my $name (keys %dependencies) {
-            my $lastElementIndex = $#{$dependencies{$name}};
-            printMessage("  $name (".($lastElementIndex+1)."): \n", $v3);
-            for my $i (0 .. $lastElementIndex) {
-                printMessage("    $i = $dependencies{$name}[$i]\n", $v3);
+        for my $package (keys %dependencies) {
+            my %packageHash = %{$dependencies{$package}};
+            for my $subdir (keys %packageHash) {
+                my $lastElementIndex = $#{$packageHash{$subdir}};
+                printMessage("  $package / $subdir (".($lastElementIndex+1)."): \n", $v3);
+                for my $i (0 .. $lastElementIndex) {
+                    printMessage("    $i = ".$packageHash{$subdir}[$i]."\n", $v3);
+                }
             }
         }            
         
     } # parseDependencies()
+    
+    ############################################################################
+    # getDirName()
+    #
+    # Given the standardized name of a package, return the directory name.
+    #
+    #   - args:     $packageName    (standardized package name)
+    #
+    #   - returns:                  (directory name)
+    #
+
+    sub getDirName {
+        my $packageName = $_[0];       
+        
+        my $filename = "$trilinosDir/commonTools/test/utilities/packages";        
+        open (IN_FILE, "<$filename") or die "can't open $filename";
+        
+        # Read definition file into one string.
+        undef $/;               # undefine input record separator
+        my $file=<IN_FILE>;     # copy entire file
+        $/ = "\n";              # restore it to default newline
+        close IN_FILE;
+        
+        # Clean up file.
+        $file =~ s/#.*$//mg;        # remove everything after any #
+        $file =~ s/\n\s*\n/\n/g;    # remove any blank lines
+        $file =~ s/^\s*//mg;        # remove leading spaces
+        $file =~ s/\s*$//mg;        # remove trailing spaces
+        
+        # break packages file into groups
+        my %dirNames = $file =~ m/STD_NAME:\s*(\w+),\s*DIR_NAME:\s*(\w+)/gs;
+        
+        print "\n\n\%dirNames:\n";
+        foreach my $stdName (keys %dirNames) {        
+            print "  $stdName:  ".$dirNames{$stdName}."\n";        
+        }        
+        print "\n\$packageName:  $packageName\n";
+        print "\$dirNames{\$packageName}:  ".$dirNames{$packageName}."\n\n";
+        
+        return $dirNames{$packageName}
+                           
+    } # getDirName()
     
     ############################################################################
     # cleanUp()

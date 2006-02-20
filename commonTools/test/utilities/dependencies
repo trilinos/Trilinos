@@ -1,177 +1,326 @@
-amesos = \
---enable-amesos \
---with-ml_amesos \
---enable-moertel 
+################################################################################
+#
+# dependencies
+#
+# This file describes what configure flags to insert or remove in order for the
+# test harness to recover from a configure or make failure.
+#
+# Each group can be thought of as reading as follows:
+#
+# IF CONFIGURE OR MAKE FAILS IN PACKAGE package [SUBDIRECTORY subdir] THEN...
+#
+################################################################################
 
-anasazi = \
---enable-anasazi \
---with-loca-anasazi
+# Amesos -----------------------------------------------------------------------
+IF PACKAGE amesos THEN
+REMOVE --enable-amesos
+REMOVE --with-ml_amesos
+REMOVE --enable-moertel
+DONE
 
-aztecoo = \
---enable-aztecoo \
---enable-komplex \
---enable-ml_aztecoo \
---enable-nox-epetra \
---enable-nox-epetra-examples \
---enable-tsfcore-aztecoo
+IF PACKAGE amesos SUBDIRECTORY thyra THEN
+INSERT --disable-amesos-thyra
+DONE
 
-belos = \
---enable-belos
+IF PACKAGE amesos SUBDIRECTORY python THEN
+INSERT --disable-amesos-python
+DONE
 
-capo = \
---enable-capo
+# Anasazi ----------------------------------------------------------------------
+IF PACKAGE anasazi THEN
+REMOVE --enable-anasazi
+REMOVE --with-loca-anasazi
+DONE
 
-claps = \
---enable-claps
+IF PACKAGE anasazi SUBDIRECTORY thyra THEN
+INSERT --disable-anasazi-thyra
+DONE
 
-didasko = \
---enable-didasko
+IF PACKAGE anasazi SUBDIRECTORY python THEN
+INSERT --disable-anasazi-python
+DONE
 
-epetra = \
---enable-epetra \
---enable-amesos \
---enable-anasazi \
---with-loca-anasazi \
---enable-aztecoo \
---enable-belos \
---enable-claps \
---enable-epetraext \
---enable-galeri \
---enable-ifpack \
---enable-komplex \
---enable-meros \
---enable-ml_epetra \
---enable-ml_aztecoo \
---enable-ml_multiple_rhs \
---enable-moertel \
---enable-new_package \
---enable-nox-epetra \
---enable-nox-epetra-examples \
---enable-triutils \
---enable-tsfcore-aztecoo \
---enable-tsfcore-epetra \
---enable-tsfextended 
+# AztecOO ----------------------------------------------------------------------
+IF PACKAGE aztecoo THEN
+REMOVE --enable-aztecoo
+REMOVE --enable-komplex
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
+REMOVE --enable-tsfcore-aztecoo
+DONE
 
-epetraext = \
---enable-epetraext \
---enable-moertel \
---enable-thyra
+IF PACKAGE aztecoo SUBDIRECTORY thyra THEN
+INSERT --disable-aztecoo-thyra
+DONE
 
-galeri = \
---enable-galeri
+IF PACKAGE aztecoo SUBDIRECTORY python THEN
+INSERT --disable-aztecoo-python
+DONE
 
-ifpack = \
---enable-ifpack \
---enable-nox-epetra \
---enable-nox-epetra-examples \
---with-ml_ifpack
+# Belos ------------------------------------------------------------------------
+IF PACKAGE belos THEN
+REMOVE --enable-belos
+DONE
 
-kokkos = \
---enable-kokkos \
---enable-tpetra
+IF PACKAGE belos SUBDIRECTORY thyra THEN
+INSERT --disable-belos-thyra
+DONE
 
-komplex = \
---enable-komplex
+# Capo -------------------------------------------------------------------------
+IF PACKAGE capo THEN
+REMOVE --enable-capo
+DONE
 
-meros = \
---enable-meros
+# Claps ------------------------------------------------------------------------
+IF PACKAGE claps THEN
+REMOVE --enable-claps
+DONE
 
-ml = \
---enable-ml \
---enable-moertel \
---enable-nox \
---enable-loca
+# Didasko ----------------------------------------------------------------------
+IF PACKAGE didasko THEN
+REMOVE --enable-didasko
+DONE
 
-moertel = \
---enable-moertel
+# Epetra -----------------------------------------------------------------------
+IF PACKAGE epetra THEN
+REMOVE --enable-epetra
+REMOVE --enable-amesos
+REMOVE --enable-anasazi
+REMOVE --with-loca-anasazi
+REMOVE --enable-aztecoo
+REMOVE --enable-belos
+REMOVE --enable-claps
+REMOVE --enable-epetraext
+REMOVE --enable-galeri
+REMOVE --enable-ifpack
+REMOVE --enable-komplex
+REMOVE --enable-meros
+REMOVE --enable-ml_epetra
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-moertel
+REMOVE --enable-new_package
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
+REMOVE --enable-triutils
+REMOVE --enable-tsfcore-aztecoo
+REMOVE --enable-tsfcore-epetra
+REMOVE --enable-tsfextended 
+DONE
 
-moocho = \
---enable-moocho
+IF PACKAGE epetra SUBDIRECTORY thyra THEN
+INSERT --disable-epetra-thyra
+DONE
 
-new_package = \
---enable-new_package
+IF PACKAGE epetra SUBDIRECTORY python THEN
+INSERT --disable-epetra-python
+DONE
 
-nox = \
---enable-nox \
---enable-loca \
---enable-ml
+# EpetraExt --------------------------------------------------------------------
+IF PACKAGE epetraext THEN
+REMOVE --enable-epetraext
+REMOVE --enable-moertel
+REMOVE --enable-thyra
+DONE
 
-nox/loca = \
---enable-nox \
---enable-loca \
---enable-ml
+IF PACKAGE epetraext SUBDIRECTORY thyra THEN
+INSERT --disable-epetraext-thyra
+DONE
 
-loca = \
---enable-loca
+IF PACKAGE epetraext SUBDIRECTORY python THEN
+INSERT --disable-epetraext-python
+DONE
 
-pliris = \
---enable-pliris
+# Galeri -----------------------------------------------------------------------
+IF PACKAGE galeri THEN
+REMOVE --enable-galeri
+DONE
 
-pytrilinos = \
---enable-pytrilinos
+IF PACKAGE galeri SUBDIRECTORY python THEN
+INSERT --disable-galeri-python
+DONE
 
-rtop = \
---enable-thyra \
---enable-moocho
+# Ifpack -----------------------------------------------------------------------
+IF PACKAGE ifpack THEN
+REMOVE --enable-ifpack
+REMOVE --enable-nox-epetra
+REMOVE --enable-nox-epetra-examples
+REMOVE --with-ml_ifpack
+DONE
 
-rythmos = \
---enable-rythmos
+IF PACKAGE ifpack SUBDIRECTORY thyra THEN
+INSERT --disable-ifpack-thyra
+DONE
 
-superludist = \
---enable-superludist
+IF PACKAGE ifpack SUBDIRECTORY python THEN
+INSERT --disable-ifpack-python
+DONE
 
-teuchos = \
---enable-teuchos \
---with-ml_teuchos \
---enable-tpetra \
---enable-tsfcoreutils \
---enable-tsfcore \
---enable-tsfextended \
---enable-loca \
---enable-belos \
---enable-amesos \
---with-ml_amesos \
---enable-moertel \
---enable-moocho \
---enable-anasazi \
---with-loca-anasazi \
---enable-capo \
---enable-galeri \
---enable-rtop \
---enable-rythmos \
---enable-thyra
+# Isorropia --------------------------------------------------------------------
+IF PACKAGE isorropia THEN
+REMOVE --enable-isorropia
+DONE
 
-tpetra = \
---enable-tpetra
+# Kokkos -----------------------------------------------------------------------
+IF PACKAGE kokkos THEN
+REMOVE --enable-kokkos
+REMOVE --enable-tpetra
+DONE
 
-thyra = \
---enable-thyra \
---enable-epetra-thyra \
---enable-capo \
---enable-rythmos
+# Komplex ----------------------------------------------------------------------
+IF PACKAGE komplex THEN
+REMOVE --enable-komplex
+DONE
 
-triutils = \
---enable-triutils \
---enable-aztecoo \
---enable-komplex \
---enable-ml_aztecoo \
---enable-tsfcore-aztecoo \
---enable-belos \
---enable-amesos \
---with-ml_amesos 
+# Meros ------------------------------------------------------------------------
+IF PACKAGE meros THEN
+REMOVE --enable-meros
+DONE
 
-tsf = \
---enable-tsf \
---enable-meros
+# ML ---------------------------------------------------------------------------
+IF PACKAGE ml THEN
+REMOVE --enable-ml
+REMOVE --enable-moertel
+REMOVE --enable-nox
+REMOVE --enable-loca
+INSERT --disable-loca
+DONE
 
-tsfcore = \
---enable-tsfcore \
---enable-tsfextended
+IF PACKAGE ml SUBDIRECTORY python THEN
+INSERT --disable-ml-python
+DONE
 
-tsfcoreutils = \
---enable-tsfcoreutils \
---enable-tsfcore \
---enable-tsfextended
+# Moertel ----------------------------------------------------------------------
+IF PACKAGE moertel THEN
+REMOVE --enable-moertel
+DONE
 
-tsfextended = \
---enable-tsfextended
+# MOOCHO -----------------------------------------------------------------------
+IF PACKAGE moocho THEN
+REMOVE --enable-moocho
+DONE
+
+IF PACKAGE moocho SUBDIRECTORY thyra THEN
+INSERT --disable-moocho-thyra
+DONE
+
+# New_Package ------------------------------------------------------------------
+IF PACKAGE new_package THEN
+REMOVE --enable-new_package
+DONE
+
+IF PACKAGE new_package SUBDIRECTORY python THEN
+INSERT --disable-new_package-python
+DONE
+
+# NOX --------------------------------------------------------------------------
+IF PACKAGE nox THEN
+REMOVE --enable-nox
+REMOVE --enable-loca
+INSERT --disable-loca
+REMOVE --enable-ml
+DONE
+
+IF PACKAGE nox SUBDIRECTORY python THEN
+INSERT --disable-nox-python
+DONE
+
+# Pliris -----------------------------------------------------------------------
+IF PACKAGE pliris THEN
+REMOVE --enable-pliris
+DONE
+
+# PyTrilinos -------------------------------------------------------------------
+IF PACKAGE pytrilinos THEN
+REMOVE --enable-pytrilinos
+DONE
+
+# RTOp -------------------------------------------------------------------------
+IF PACKAGE rtop THEN
+REMOVE --enable-rtop
+DONE
+
+# Rythmos ----------------------------------------------------------------------
+IF PACKAGE rythmos THEN
+REMOVE --enable-rythmos
+DONE
+
+# Teuchos ----------------------------------------------------------------------
+IF PACKAGE teuchos THEN
+REMOVE --enable-teuchos
+REMOVE --with-ml_teuchos
+REMOVE --enable-tpetra
+REMOVE --enable-tsfcoreutils
+REMOVE --enable-tsfcore
+REMOVE --enable-tsfextended
+REMOVE --enable-loca
+INSERT --disable-loca
+REMOVE --enable-belos
+REMOVE --enable-amesos
+REMOVE --with-ml_amesos
+REMOVE --enable-moertel
+REMOVE --enable-anasazi
+REMOVE --with-loca-anasazi
+REMOVE --enable-capo
+REMOVE --enable-galeri
+REMOVE --enable-rythmos
+REMOVE --enable-thyra
+DONE
+
+# Tpetra -----------------------------------------------------------------------
+IF PACKAGE tpetra THEN
+REMOVE --enable-tpetra
+DONE
+
+# Thyra ------------------------------------------------------------------------
+IF PACKAGE thyra THEN
+REMOVE --enable-thyra
+REMOVE --enable-epetra-thyra
+REMOVE --enable-capo
+REMOVE --enable-rythmos
+REMOVE --enable-moocho
+DONE
+
+IF PACKAGE thyra SUBDIRECTORY python THEN
+INSERT --disable-thyra-python
+DONE
+
+# TriUtils ---------------------------------------------------------------------
+IF PACKAGE triutils THEN
+REMOVE --enable-triutils
+REMOVE --enable-aztecoo
+REMOVE --enable-komplex
+REMOVE --enable-ml_aztecoo
+REMOVE --enable-tsfcore-aztecoo
+REMOVE --enable-belos
+REMOVE --enable-amesos
+REMOVE --with-ml_amesos 
+DONE
+
+IF PACKAGE triutils SUBDIRECTORY python THEN
+INSERT --disable-triutils-python
+DONE
+
+# TSF --------------------------------------------------------------------------
+IF PACKAGE tsf THEN
+REMOVE --enable-tsf
+REMOVE --enable-meros
+DONE
+
+# TSFCore ----------------------------------------------------------------------
+IF PACKAGE tsfcore THEN
+REMOVE --enable-tsfcore
+REMOVE --enable-tsfextended
+DONE
+
+# TSFCoreUtils -----------------------------------------------------------------
+IF PACKAGE tsfcoreutils THEN
+REMOVE --enable-tsfcoreutils
+REMOVE --enable-tsfcore
+REMOVE --enable-tsfextended
+DONE
+
+# TSFExtended ------------------------------------------------------------------
+IF PACKAGE tsfextended THEN
+REMOVE --enable-tsfextended
+DONE
