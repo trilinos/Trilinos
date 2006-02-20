@@ -148,7 +148,27 @@ public:
                          num_objs, global_ids, local_ids,
                          rank, iperm, NULL );
   }
-
+  int Color (int &num_gid_entries,
+             int &num_lid_entries,
+             const int &num_objs,
+             ZOLTAN_ID_PTR global_ids,
+             ZOLTAN_ID_PTR local_ids,
+             int *color_exp )
+  {
+    return Zoltan_Color(ZZ_Ptr, &num_gid_entries, &num_lid_entries,
+      num_objs, global_ids, local_ids, color_exp);
+  }
+  int Color_Test (int &num_gid_entries,
+             int &num_lid_entries,
+             const int &num_objs,
+             ZOLTAN_ID_PTR global_ids,
+             ZOLTAN_ID_PTR local_ids,
+             int *color_exp )
+  {
+    return Zoltan_Color_Test(ZZ_Ptr, &num_gid_entries, &num_lid_entries,
+      num_objs, global_ids, local_ids, color_exp);
+  }
+ 
   int LB_Eval( const int &print_stats,
                 int & num_objects,
                 float * const object_weights,
