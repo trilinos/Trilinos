@@ -1,5 +1,5 @@
 Decomposition Method 	= hypergraph
-Zoltan Parameters       = obj_weight_dim = 1
+Zoltan Parameters       = obj_weight_dim = 0
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters	= ADD_OBJ_WEIGHT=pins
 File Type		= matrixmarket
