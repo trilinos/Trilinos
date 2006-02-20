@@ -294,6 +294,8 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   ReturnType BasicEigenproblem<ScalarType, MV, OP>::SetProblem() 
   {
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+
     //----------------------------------------------------------------
     // Sanity Checks
     //----------------------------------------------------------------
@@ -316,15 +318,19 @@ namespace Anasazi {
       //
       // If the size of the old eigenproblem is larger than the new one, then
       // make sure all the storage required for the eigenproblem exists (check symmetry)
-      //
+      // Initialize memory.
       if ( _isSym ) {
 	if ( _nev <= old_nev ) {
           _isSet=true;
+	  MVT::MvInit( *_Evecs, zero );
+	  _Evals->assign( _Evals->size(), zero );
        	  return Ok;
         }
       } else {
 	if ( 2*_nev <= old_nev ) {
           _isSet=true;
+	  MVT::MvInit( *_Evecs, zero );
+	  _Evals->assign( _Evals->size(), zero );
 	  return Ok;
         }
       }
