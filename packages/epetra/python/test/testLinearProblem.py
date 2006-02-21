@@ -76,6 +76,7 @@ class EpetraLinearProblemTestCase(unittest.TestCase):
             self.assertEqual(isinstance(lhs,Epetra.NumPyMultiVectorPtr), True)
         else:
             self.assertEqual(isinstance(lhs,Epetra.MultiVector), True)
+            self.assertEqual(lhs[0], self.x[0])
 
 ##########################################################################
 

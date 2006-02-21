@@ -29,7 +29,8 @@
 // @HEADER
 
 %define EPETRA_DOCSTRING
-"Epetra is a module under the PyTrilinos package.  PyTrilinos is a
+"""
+Epetra is a module under the PyTrilinos package.  PyTrilinos is a
 python interface to select components of the Trilinos set of solver
 packages developed at Sandia National Laboratories.  Documentation for
 Trilinos can be found in the source directory or online at
@@ -72,7 +73,8 @@ certain Epetra classes represent contiguous blocks of homogeneous
 data.  These classes have been given the attributes of Numeric arrays
 using multiple inheritance, and include the Vector, MultiVector,
 IntVector, SerialDenseVector, SerialDenseMatrix, IntSerialDenseVector
-and IntSerialDenseMatrix classes."
+and IntSerialDenseMatrix classes.
+"""
 %enddef
 
 %module(package="PyTrilinos", directors="1", docstring=EPETRA_DOCSTRING) Epetra

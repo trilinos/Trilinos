@@ -115,10 +115,18 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
       	__init__(self, SerialDenseMatrix source) -> SerialDenseMatrix
       	"""
         NumPySerialDenseMatrix.__init__(self, *args)
+        self.__initArray__()
+    def __initArray__(self):
         UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
         self.__protected = True
     def __str__(self):
         return str(self.array)
+    def __getattr__(self, key):
+        # This should get called when the SerialDenseMatrix is accessed after
+        # not properly being initialized
+        if not 'array' in self.__dict__:
+            self.__initArray__()
+        return self.__dict__[key]
     def __setattr__(self, key, value):
         "Protect the 'array' and 'shape' attributes"
         if key in self.__dict__:
@@ -155,10 +163,18 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
       	"""
         NumPySerialDenseVector.__init__(self, *args)
         self.CheckForError()
+        self.__initArray__()
+    def __initArray__(self):
         UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
         self.__protected = True
     def __str__(self):
         return str(self.array)
+    def __getattr__(self, key):
+        # This should get called when the SerialDenseVector is accessed after
+        # not properly being initialized
+        if not 'array' in self.__dict__:
+            self.__initArray__()
+        return self.__dict__[key]
     def __setattr__(self, key, value):
         "Protect the 'array' attribute"
         if key in self.__dict__:
@@ -193,10 +209,18 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
       	"""
         NumPyIntSerialDenseVector.__init__(self, *args)
         self.CheckForError()
+        self.__initArray__()
+    def __initArray__(self):
         UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
         self.__protected = True
     def __str__(self):
         return str(self.array)
+    def __getattr__(self, key):
+        # This should get called when the IntSerialDenseVector is accessed after
+        # not properly being initialized
+        if not 'array' in self.__dict__:
+            self.__initArray__()
+        return self.__dict__[key]
     def __setattr__(self, key, value):
         "Protect the 'array' attribute"
         if key in self.__dict__:
@@ -222,69 +246,6 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
 _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 
 %}
-
-// Extend directives
-// %extend Epetra_SerialDenseMatrix {
-
-//   double * __getitem__(int i) {
-//     return self->operator[](i);
-//   }
-
-//   PyObject * __getitem__(PyObject * args) {
-//     int i, j;
-//     if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-//       PyErr_SetString(PyExc_IndexError, "Invalid index");
-//       return NULL;
-//     }
-//     double * column = self->operator[](j);
-//     return PyFloat_FromDouble(column[i]);
-//   }
-
-//   PyObject * __setitem__(PyObject * args, double val) {
-//     int i, j;
-//     if (!PyArg_ParseTuple(args, "ii", &i, &j)) {
-//       PyErr_SetString(PyExc_IndexError, "Invalid index");
-//       return NULL;
-//     }
-//     double * column = self->operator[](j);
-//     column[i] = val;
-//     Py_INCREF(Py_None);
-//     return Py_None;
-//   }
-
-// }
-
-// %extend Epetra_SerialDenseVector {
-
-//   double __call__(int i) {
-//     return self->operator()(i);
-//   }
-
-//   double __getitem__(int i) {
-//     return self->operator[](i);
-//   }
-
-//   void __setitem__(int i, const double val) {
-//     double * column = self->Values();
-//     column[i] = val;
-//   }
-// }
-
-%extend Epetra_IntSerialDenseVector {
-
-  int __call__(int i) {
-    return self->operator()(i);
-  }
-
-  int __getitem__(int i) {
-    return self->operator[](i);
-  }
-
-  void __setitem__(int i, const int val) {
-    int * column = self->Values();
-    column[i] = val;
-  }
-}
 
 // Epetra_SerialSpdDenseSolver is apparently not built
 //#include "Epetra_SerialSpdDenseSolver.h"

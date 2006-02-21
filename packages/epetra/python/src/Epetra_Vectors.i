@@ -134,9 +134,17 @@ class MultiVector(UserArray,NumPyMultiVector):
         """
         NumPyMultiVector.__init__(self, *args)
         self.CheckForError()
+        self.__initArray__()
+    def __initArray__(self):
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)
+    def __getattr__(self, key):
+        # This should get called when the MultiVector is accessed after not
+        # properly being initialized
+        if not 'array' in self.__dict__:
+            self.__initArray__()
+        return self.__dict__[key]
     def __setattr__(self, key, value):
         "Protect the 'array' and 'shape' attributes"
         if key == "array":
@@ -161,16 +169,24 @@ class Vector(UserArray,NumPyVector):
         """
         NumPyVector.__init__(self, *args)
         self.CheckForError()
+        self.__initArray__()
+    def __initArray__(self):
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)
+    def __getattr__(self, key):
+        # This should get called when the Vector is accessed after not properly
+        # being initialized
+        if not 'array' in self.__dict__:
+            self.__initArray__()
+        return self.__dict__[key]
     def __setattr__(self, key, value):
         "Protect the 'array' attribute"
         if key == "array":
             if key in self.__dict__:
                 raise AttributeError, "Cannot change Epetra.Vector array attribute"
         UserArray.__setattr__(self, key, value)
-_Epetra.NumPyVector_swigregister(          Vector)
+_Epetra.NumPyVector_swigregister(Vector)
 
 class IntVector(UserArray,NumPyIntVector):
     def __init__(self, *args):
@@ -182,15 +198,23 @@ class IntVector(UserArray,NumPyIntVector):
         """
         NumPyIntVector.__init__(self, *args)
         self.CheckForError()
+        self.__initArray__()
+    def __initArray__(self):
         UserArray.__init__(self,self.ExtractView(),'i',copy=False,savespace=True)
     def __str__(self):
         return str(self.array)
+    def __getattr__(self, key):
+        # This should get called when the IntVector is accessed after not
+        # properly being initialized
+        if not 'array' in self.__dict__:
+            self.__initArray__()
+        return self.__dict__[key]
     def __setattr__(self, key, value):
         "Protect the 'array' attribute"
         if key == "array":
             if key in self.__dict__:
                 raise AttributeError, "Cannot change Epetra.IntVector array attribute"
         UserArray.__setattr__(self, key, value)
-_Epetra.NumPyIntVector_swigregister(    IntVector)
+_Epetra.NumPyIntVector_swigregister(IntVector)
 
 %}
