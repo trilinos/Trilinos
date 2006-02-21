@@ -56,6 +56,9 @@
 /* Define if want to build epetraext-examples */
 #undef HAVE_EPETRAEXT_EXAMPLES
 
+/* Define if want to build epetraext-python */
+#undef HAVE_EPETRAEXT_PYTHON
+
 /* Define if want to build epetraext-tests */
 #undef HAVE_EPETRAEXT_TESTS
 

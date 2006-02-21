@@ -364,6 +364,8 @@ AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_epetraext_experimental" != 
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, python, [Build EpetraExt Python wrappers (requires --enable-python, which is NOT set by default)], EPETRAEXT_PYTHON, yes)
+AM_CONDITIONAL(BUILD_EPETRAEXT_PYTHON, test "X$ac_cv_use_epetraext_python" != "Xno")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
