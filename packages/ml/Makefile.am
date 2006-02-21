@@ -116,7 +116,9 @@ EXAMPLE_SUBDIR=examples
 endif
 
 if PYTHON_USE
+if BUILD_ML_PYTHON
 PYTHON_SUBDIR=python
+endif
 endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
