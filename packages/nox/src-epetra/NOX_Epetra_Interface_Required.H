@@ -80,6 +80,8 @@ public:
     FD_Res,
     //! The fill context is from a MF approximation
     MF_Res, 
+    //! The fill context is from a MF computeJacobian() approximation
+    MF_Jac, 
     //! A user defined estimation is being performed.
     User
   };

@@ -265,7 +265,7 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   bool ok = false;
   if (!useGroupForComputeF)
     ok = interface->computeF(x, fo.getEpetraVector(), 
-			     NOX::Epetra::Interface::Required::MF_Res);
+			     NOX::Epetra::Interface::Required::MF_Jac);
   else {
     groupPtr->setX(currentX);
     groupPtr->computeF();
