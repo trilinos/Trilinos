@@ -298,6 +298,8 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( new_package, python, [Build New_Package ML wrappers (requires --enable-python, which is NOT set by default)], NEW_PACKAGE_PYTHON, yes)
+AM_CONDITIONAL(BUILD_NEW_PACKAGE_PYTHON, test "X$ac_cv_use_new_package_python" != "Xno")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
