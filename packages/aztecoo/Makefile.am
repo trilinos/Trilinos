@@ -87,7 +87,9 @@ endif
 endif
 
 if PYTHON_USE
+if BUILD_AZTECOO_PYTHON
 PYTHON_SUBDIR=python
+endif
 endif
 
 if ENABLE_AZTECOO_THYRA
