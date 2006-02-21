@@ -190,6 +190,8 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_thyra_examples" != "Xno")
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( thyra, python, [Build Thyra Python wrappers (requires --enable-python, which is NOT set by default)], THYRA_PYTHON, yes)
+AM_CONDITIONAL(BUILD_THYRA_PYTHON, test "X$ac_cv_use_thyra_python" != "Xno")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------

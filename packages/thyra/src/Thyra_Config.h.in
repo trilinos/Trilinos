@@ -45,6 +45,9 @@
 /* Define if want to build thyra-examples */
 #undef HAVE_THYRA_EXAMPLES
 
+/* Define if want to build thyra-python */
+#undef HAVE_THYRA_PYTHON
+
 /* Define if want to build thyra-tests */
 #undef HAVE_THYRA_TESTS
 
