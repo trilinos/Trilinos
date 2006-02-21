@@ -905,7 +905,7 @@ Optional Features:
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
   --enable-new_package-python
-                          Build New_Package ML wrappers (requires
+                          Build New_Package Python wrappers (requires
                           --enable-python, which is NOT set by default)
                           (default is yes)
   --enable-python[=PYTHON]

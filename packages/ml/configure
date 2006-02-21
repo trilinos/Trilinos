@@ -987,7 +987,7 @@ Optional Features:
   --enable-libcheck       Check for some third-party libraries including BLAS
                           and LAPACK. (Cannot be disabled unless tests and
                           examples are also disabled.) (default is yes)
-  --enable-ml-python      Build Ifpack ML wrappers (requires --enable-python,
+  --enable-ml-python      Build ML Python wrappers (requires --enable-python,
                           which is NOT set by default) (default is yes)
   --enable-python[=PYTHON]
                           absolute path name of Python executable
