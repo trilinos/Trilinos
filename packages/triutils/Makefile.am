@@ -70,7 +70,9 @@ TEST_SUBDIR=test
 endif
 
 if PYTHON_USE
+if BUILD_TRIUTILS_PYTHON
 PYTHON_SUBDIR=python
+endif
 endif
 
 SUBDIRS = src $(TEST_SUBDIR) $(PYTHON_SUBDIR)

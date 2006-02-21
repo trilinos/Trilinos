@@ -213,6 +213,8 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( triutils, python, [Build TriUtils Python wrappers (requires --enable-python, which is NOT set by default)], TRIUTILS_PYTHON, yes)
+AM_CONDITIONAL(BUILD_TRIUTILS_PYTHON, test "X$ac_cv_use_triutils_python" != "Xno")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
