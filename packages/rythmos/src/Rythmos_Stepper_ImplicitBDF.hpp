@@ -86,10 +86,9 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     void obtainPredictor();
     void obtainResidual();
     void obtainJacobian();
-    void interpolateSolution(Scalar time);
+    bool interpolateSolution(Scalar time);
     void updateHistory();
     void restoreHistory();
-    int getMaxOrder();
     void updateCoeffs();
     void initialize();
     void checkReduceOrder();
@@ -106,51 +105,52 @@ class ImplicitBDFStepper : public Stepper<Scalar>
 
     Thyra::SingleResidSSDAEModelEvaluator<Scalar>   neModel_;
 
-    // Magic Numbers
-    currentOrder_; // Current order of integration
-    oldOrder_;     // previous order of integration
-    maxOrder_;     // maximum order = min(5,user option maxord) - see below.
-    usedOrder_;    // order used in current step (used after currentOrder_ is updated)
-    alphas_;    // $\alpha_s$ fixed-leading coefficient of this BDF method
-    alpha_;    // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
+    int currentOrder_; // Current order of integration
+    int oldOrder_;     // previous order of integration
+    int maxOrder_;     // maximum order = min(5,user option maxord) - see below.
+    int usedOrder_;    // order used in current step (used after currentOrder_ is updated)
+    Scalar alphas_;    // $\alpha_s$ fixed-leading coefficient of this BDF method
+    vector<Scalar> alpha_;    // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
                       // note:   $h_n$ = current step size, n = current time step
-    alpha0_;     // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
-    cj_ ;        // $-\alpha_s/h_n$ coefficient used in local error test
-    ck_ ;        // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
-    gamma_;    // calculate time derivative of history array for predictor 
-    beta_;     // coefficients used to evaluate predictor from history array
-    psi_;      // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
+    Scalar alpha0_;     // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
+    Scalar cj_ ;        // $-\alpha_s/h_n$ coefficient used in local error test
+    Scalar ck_ ;        // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
+    vector<Scalar> gamma_;    // calculate time derivative of history array for predictor 
+    vector>Scalar> beta_;     // coefficients used to evaluate predictor from history array
+    vector>Scalar> psi_;      // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
                       // compute $\beta_j(n)$
-    sigma_;    // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
-    numberOfSteps_;// number of total time integration steps taken
-    nef_;
-    usedStep_;
-    nscsco_;
-    Ek_;
-    Ekm1_;
-    Ekm2_;
-    Ekp1_;
-    Est_;
-    Tk_;
-    Tkm1_;
-    Tkm2_;
-    Tkp1_;
-    newOrder_;
-    initialPhase_;
-    h0_safety_;
-    h0_max_factor_;
-    h_phase0_incr_;
-    h_max_inv_;
-    Tkm1_Tk_safety_;
-    Tkp1_Tk_safety_;
-    r_factor_;
-    r_safety_;
-    r_fudge_;
-    r_min_;
-    r_max_;
-    r_hincr_test_;
-    r_hincr_;
-    max_LET_fail_;
+    vector<Scalar> sigma_;    // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
+    int numberOfSteps_;// number of total time integration steps taken
+    int  nef_;
+    Scalar usedStep_;
+    int nscsco_;
+    Scalar Ek_;
+    Scalar Ekm1_;
+    Scalar Ekm2_;
+    Scalar Ekp1_;
+    Scalar Est_;
+    Scalar Tk_;
+    Scalar Tkm1_;
+    Scalar Tkm2_;
+    Scalar Tkp1_;
+    int newOrder_;
+    bool initialPhase_;
+    Scalar h0_safety_;
+    Scalar h0_max_factor_;
+    Scalar h_phase0_incr_;
+    Scalar h_max_inv_;
+    Scalar Tkm1_Tk_safety_;
+    Scalar Tkp1_Tk_safety_;
+    Scalar r_factor_;
+    Scalar r_safety_;
+    Scalar r_fudge_;
+    Scalar r_min_;
+    Scalar r_max_;
+    Scalar r_hincr_test_;
+    Scalar r_hincr_;
+    int max_LET_fail_;
+
+    enum actionFlag { TIAAction_UNSET, TIAAction_LOWER, TIAAction_MAINTAIN, TIAAction_RAISE };
 
 };
 
@@ -165,76 +165,60 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
 {
   setModel(model);
   setSolver(solver);
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   // Magic Number Defaults:
-  currentOrder=1; // Current order of integration
-  oldOrder=1; // previous order of integration
-  maxOrder=5;  // maximum order = min(5,user option maxord) - see below.
-  usedOrder=1;  // order used in current step (used after currentOrder_ is updated)
-  alphas=-1.0;  // $\alpha_s$ fixed-leading coefficient of this BDF method
-  alpha=[0]=0.0;  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
+  currentOrder_=1; // Current order of integration
+  oldOrder_=1; // previous order of integration
+  maxOrder_=5;  // maximum order = min(5,user option maxord) - see below.
+  usedOrder_=1;  // order used in current step (used after currentOrder_ is updated)
+  alphas_=Scalar(-ST::one());  // $\alpha_s$ fixed-leading coefficient of this BDF method
+  alpha_.reserve(maxOrder_+1);  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
                   // note:   $h_n$ = current step size, n = current time step
-  alpha=[1]=0.0;
-  alpha=[2]=0.0;
-  alpha=[3]=0.0;
-  alpha=[4]=0.0;
-  alpha=[5]=0.0;
-  alpha0=0.0;   // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
-  cj=0.0;      // $-\alpha_s/h_n$ coefficient used in local error test
-  ck=0.0;      // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
-  gamma=[0]=0.0;  // calculate time derivative of history array for predictor 
-  gamma=[1]=0.0;
-  gamma=[2]=0.0;
-  gamma=[3]=0.0;
-  gamma=[4]=0.0;
-  gamma=[5]=0.0;
-  beta=[0]=0.0;   // coefficients used to evaluate predictor from history array
-  beta=[1]=0.0;
-  beta=[2]=0.0;
-  beta=[3]=0.0;
-  beta=[4]=0.0;
-  beta=[5]=0.0;
-  psi=[0]=0.0;    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
+  gamma_.reserve(maxOrder_+1);  // calculate time derivative of history array for predictor 
+  beta_.reserve(maxOrder_+1);   // coefficients used to evaluate predictor from history array
+  psi_.reserve(maxOrder_+1);    // $\psi_j(n) = t_n-t_{n-j}$ intermediary variable used to 
                   // compute $\beta_j(n;$
-  psi=[1]=0.0;
-  psi=[2]=0.0;
-  psi=[3]=0.0;
-  psi=[4]=0.0;
-  psi=[5]=0.0;
-  sigma=[0]=0.0;  // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
-  sigma=[1]=0.0;
-  sigma=[2]=0.0;
-  sigma=[3]=0.0;
-  sigma=[4]=0.0;
-  sigma=[5]=0.0;
-  numberOfSteps=0;   // number of total time integration steps taken
-  nef=0;
-  usedStep=0.0;
-  nscsco=0;
-  Ek=0.0;
-  Ekm1=0.0;
-  Ekm2=0.0;
-  Ekp1=0.0;
-  Est=0.0;
-  Tk=0.0;
-  Tkm1=0.0;
-  Tkm2=0.0;
-  Tkp1=0.0;
-  newOrder=1;
-  initialPhase=true;
-  h0_safety=2.0;
-  h0_max_factor=0.0001;
-  h_phase0_incr=2.0;
-  h_max_inv=0.0;
-  Tkm1_Tk_safety=2.0;
-  Tkp1_Tk_safety=0.5;
-  r_factor=0.9;
-  r_safety=2.0;
-  r_fudge=0.0001;
-  r_min=0.125;
-  r_max=0.9;
-  r_hincr_test=2.0;
-  r_hincr=2.0;
-  max_LET_fail=15;
+  sigma_.reserve(maxOrder_+1);  // $\sigma_j(n) = \frac{h_n^j(j-1)!}{\psi_1(n)*\cdots *\psi_j(n)}$
+  for (int i=0 ; i<maxOrder_ ; ++i)
+  {
+    alpha_.push_back(ST::zero());
+    beta_.push_back(ST::zero());
+    gamma_.push_back(ST::zero());
+    psi_.push_back(ST::zero());
+    sigma_.push_back(ST::zero());
+  }
+  alpha0_=ST::zero();   // $-\sum_{j=1}^k \alpha_j(n)$ coefficient used in local error test
+  cj_=ST::zero();      // $-\alpha_s/h_n$ coefficient used in local error test
+  ck_=ST::zero();      // local error coefficient gamma_[0] = 0; // $\gamma_j(n)=\sum_{l=1}^{j-1}1/\psi_l(n)$ coefficient used to
+  numberOfSteps_=0;   // number of total time integration steps taken
+  nef_=0;
+  usedStep_=ST::zero();
+  nscsco_=0;
+  Ek_=ST::zero();
+  Ekm1_=ST::zero();
+  Ekm2_=ST::zero();
+  Ekp1_=ST::zero();
+  Est_=ST::zero();
+  Tk_=ST::zero();
+  Tkm1_=ST::zero();
+  Tkm2_=ST::zero();
+  Tkp1_=ST::zero();
+  newOrder_=1;
+  initialPhase_=true;
+  h0_safety_=Scalar(2.0);
+  h0_max_factor_=Scalar(0.0001);
+  h_phase0_incr_=Scalar(2.0);
+  h_max_inv_=ST::zero();
+  Tkm1_Tk_safety_=Scalar(2.0);
+  Tkp_Tk_safety_=Scalar(0.5);
+  r_factor_=Scalar(0.9);
+  r_safety_=Scalar(2.0);
+  r_fudge_=Scalar(0.0001);
+  r_min_=Scalar(0.125);
+  r_max_=Scalar(0.9);
+  r_hincr_test_=Scalar(2.0);
+  r_hincr_=Scalar(2.0);
+  max_LET_fail_=Scalar(15);
 }
 
 template<class Scalar>
@@ -259,8 +243,11 @@ void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<const Thyr
 template<class Scalar>
 Scalar ImplicitBDFStepper<Scalar>::TakeStep()
 {
-  // print something out about this method not supporting automatic variable step-size
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  obtainPredictor();
+  neModel_.initialize(model_,Scalar(ST::one()/dt),scaled_x_old_,ST::one(),Teuchos::null,t_old_+dt,Teuchos::null);
+  solver_->solve( neModel_, &*x_ ); // Note that x in input is x_old!
+
   return(-ST::one());
 }
 
@@ -353,8 +340,8 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor()
   *dsDae.xn0Ptr = dsDae.xHistory[0];
   *dsDae.qn0Ptr = dsDae.qHistory[0];
   *dsDae.sn0Ptr = dsDae.sHistory[0];
-  dsDae.qpn0Ptr->putScalar(0.0);
-  dsDae.spn0Ptr->putScalar(0.0);
+  dsDae.qpn0Ptr->putScalar(ST::zero());
+  dsDae.spn0Ptr->putScalar(ST::zero());
   for (int i=1;i<=currentOrder_;++i)
   {
     dsDae.xn0Ptr->linearCombo(1.0,dsDae.xHistory[i],1.0,*dsDae.xn0Ptr);
@@ -580,11 +567,11 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution(double timepoint,
   double hh = sec.currentTimeStep;
   double hused = usedStep_;
   int kused = usedOrder_;
-  double uround = 0.0;  // unit round-off (set to zero for now)
+  double uround = ST::zero();  // unit round-off (set to zero for now)
 
   tfuzz = 100 * uround * (tn + hh);
   tp = tn - hused - tfuzz;
-  if ( (timepoint - tp)*hh < 0.0 ) 
+  if ( (timepoint - tp)*hh < ST::zero() ) 
     return false;
 
   *tmpSolVectorPtr = dsDae.xHistory[0];
@@ -755,12 +742,6 @@ void ImplicitBDFStepper<Scalar>::restoreHistory()
 } 
 
 template<class Scalar>
-int ImplicitBDFStepper<Scalar>::getMaxOrder()
-{
-  return maxOrder_;
-}
-
-template<class Scalar>
 void ImplicitBDFStepper<Scalar>::updateCoeffs()
 {
   // synchronize with Step Error Control
@@ -802,7 +783,7 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs()
     alpha_[0] = 1.0;
     double temp1 = sec.currentTimeStep;
     sigma_[0] = 1.0;
-    gamma_[0] = 0.0;
+    gamma_[0] = ST::zero();
     for (int i=1;i<=currentOrder_;++i)
     {
       double temp2 = psi_[i-1];
@@ -814,8 +795,8 @@ void ImplicitBDFStepper<Scalar>::updateCoeffs()
       gamma_[i] = gamma_[i-1]+alpha_[i-1]/(sec.currentTimeStep);
     }
     psi_[currentOrder_] = temp1;
-    alphas_ = 0.0;
-    alpha0_ = 0.0;
+    alphas_ = ST::zero();
+    alpha0_ = ST::zero();
     for (int i=0;i<currentOrder_;++i)
     {
       alphas_ = alphas_ - 1.0/(i+1.0);
@@ -914,7 +895,7 @@ void ImplicitBDFStepper<Scalar>::initialize()
   {
     // compute an initial step-size based on rate of change in the solution initially
     double dnorm_q = *(dsDae.qHistory[1].wRMSNorm(*dsDae.qErrWtVecPtr));
-    if (dnorm_q > 0.0)  // time-dependent DAE
+    if (dnorm_q > ST::zero())  // time-dependent DAE
     {
       currentTimeStep = Xycemin(h0_max_factor_*abs(time_to_stop),sqrt(2.0)/(h0_safety_*dnorm_q));
     } 
@@ -923,7 +904,7 @@ void ImplicitBDFStepper<Scalar>::initialize()
       currentTimeStep = h0_max_factor_*abs(time_to_stop);
     }
     // choose min of user specified value and our value:
-    if (tiaParams.startingTimeStep > 0.0)
+    if (tiaParams.startingTimeStep > ST::zero())
       currentTimeStep = Xycemin(tiaParams.startingTimeStep, currentTimeStep);
     // check for maximum step-size:
     double rh = abs(currentTimeStep)*h_max_inv_; 
@@ -947,7 +928,7 @@ void ImplicitBDFStepper<Scalar>::initialize()
 
   // x history
   dsDae.xHistory[0] = *(dsDae.currSolutionPtr);
-  dsDae.xHistory[1].putScalar(0.0); // no need to multiply by dt here
+  dsDae.xHistory[1].putScalar(ST::zero()); // no need to multiply by dt here
 
   // q history
   dsDae.qHistory[0] = *(dsDae.daeQVectorPtr);
@@ -956,7 +937,7 @@ void ImplicitBDFStepper<Scalar>::initialize()
 
   // state history
   dsDae.sHistory[0] = *(dsDae.nextStatePtr);
-  dsDae.sHistory[1].putScalar(0.0); 
+  dsDae.sHistory[1].putScalar(ST::zero()); 
 
   // Coefficient initialization 
   numberOfSteps_ = 0;    // number of total time integration steps taken
