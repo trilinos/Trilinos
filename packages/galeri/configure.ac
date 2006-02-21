@@ -245,6 +245,8 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( galeri, python, [Build Galeri Python wrappers (requires --enable-python, which is NOT set by default)], GALERI_PYTHON, yes)
+AM_CONDITIONAL(BUILD_GALERI_PYTHON, test "X$ac_cv_use_galeri_python" != "Xno")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
