@@ -4,6 +4,6 @@ Zoltan Parameters	= phg_coarsening_method=none
 Zoltan Parameters	= phg_coarsepartition_method=random
 Zoltan Parameters	= phg_refinement_method=none
 Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
-File Type		= matrixmarket
+File Type		= matrixmarket+
 File Name		= ewgt
 Parallel Disk Info	= number=0
