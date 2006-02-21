@@ -328,6 +328,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(anasazi, tpetra, ANASAZI_TPETRA, BUILD_ANASAZI_TP
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( anasazi, python, [Build Anasazi Python wrappers (requires --enable-python, which is NOT set by default)], ANASAZI_PYTHON, yes)
+AM_CONDITIONAL(BUILD_ANASAZI_PYTHON, test "X$ac_cv_use_anasazi_python" != "Xno")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
