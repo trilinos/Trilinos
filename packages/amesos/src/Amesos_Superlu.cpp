@@ -190,7 +190,7 @@ int Amesos_Superlu::ConvertToSerial()
     // MS // Set zero element if not present, possibly add
     // MS // something to the diagonal
     double AddToDiag = 0.0;
-    // FIXME??
+    // FIXME??      bug #1371
 #if 0
     if (iam_ == 0)
     {
@@ -645,7 +645,7 @@ void Amesos_Superlu::PrintStatus() const
   cout << p << "Nonzero elements per row = "
        << 1.0 *  nnz / n << endl;
   cout << p << "Percentage of nonzero elements = "
-       << 100.0 * nnz /(pow(n,2.0)) << endl;
+       << 100.0 * nnz /(pow(double(n),double(2.0))) << endl;
   cout << p << "Use transpose = " << UseTranspose_ << endl;
 
   PrintLine();
