@@ -603,11 +603,14 @@ exit $exitStatus;
                         $subdir = $1;
                         $line =~ s/\$\($subdir\)//;
                         $subdir =~ s/_SUBDIR//;
+                        $subdir = lc($subdir);
+                        push (@subdirOrder, $subdir);
                     } else {
-                        $line =~ s/$subdir//;                        
+                        $line =~ s/$subdir//; 
+                        $subdir = lc($subdir);
+                        push (@enabledSubdirs, $subdir);
+                        push (@subdirOrder, $subdir);                                               
                     }
-                    $subdir = lc($subdir);
-                    push (@subdirOrder, $subdir);
                 }
             }
             if ($continue && $line =~ m/^.*?\\$/) {
@@ -784,13 +787,6 @@ exit $exitStatus;
         
         # break packages file into groups
         my %dirNames = $file =~ m/STD_NAME:\s*(\w+),\s*DIR_NAME:\s*(\w+)/gs;
-        
-        print "\n\n\%dirNames:\n";
-        foreach my $stdName (keys %dirNames) {        
-            print "  $stdName:  ".$dirNames{$stdName}."\n";        
-        }        
-        print "\n\$packageName:  $packageName\n";
-        print "\$dirNames{\$packageName}:  ".$dirNames{$packageName}."\n\n";
         
         return $dirNames{$packageName}
                            
