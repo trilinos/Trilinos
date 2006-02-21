@@ -327,6 +327,8 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 # ------------------------------------------------------------------------
 # Enable optional python wrappers
 # ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, python, [Build Amesos Python wrappers (requires --enable-python, which is NOT set by default)], AMESOS_PYTHON, yes)
+AM_CONDITIONAL(BUILD_AMESOS_PYTHON, test "X$ac_cv_use_amesos_python" != "Xno")
 TAC_ENABLE_PYTHON
 
 # ------------------------------------------------------------------------
