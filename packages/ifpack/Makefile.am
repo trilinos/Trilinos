@@ -95,7 +95,9 @@ EXAMPLE_SUBDIR=example
 endif 
 
 if PYTHON_USE
+if BUILD_IFPACK_PYTHON
 PYTHON_SUBDIR=python
+endif
 endif
 
 if ENABLE_IFPACK_THYRA
