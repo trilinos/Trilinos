@@ -26,6 +26,11 @@
 # ************************************************************************
 # @HEADER
 
+all-local:
+	@echo ""
+	@echo "Trilinos package ifpack subdirectory thyra built successfully."
+	@echo ""
+
 #if BUILD_TESTS
 #TEST_SUBDIR=test
 #endif
