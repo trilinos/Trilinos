@@ -650,9 +650,13 @@ exit $exitStatus;
         }
         
         if (!$changeMade) {
-            my $message = "error fixing invoke-configure--no changes made ($brokenPackage broke)\n";
-            printMessage($message, $v1+$v2+$v3);
-            return 86;
+            if ($brokenSubdir eq "default") {
+                my $message = "error fixing invoke-configure--no changes made ($brokenPackage broke)\n";
+                printMessage($message, $v1+$v2+$v3);
+                return 86;
+            } else {
+                return cleanInvokeConfigure($brokenPackage, "default");
+            }
         }
         
         # Prepare new invoke-configure.
@@ -672,6 +676,8 @@ exit $exitStatus;
         # Write new invoke configure.
         print INVOKE_CONFIGURE $newInvokeConfigure;
         close INVOKE_CONFIGURE; 
+           
+        return 0;
            
     } # cleanInvokeConfigure()
     
