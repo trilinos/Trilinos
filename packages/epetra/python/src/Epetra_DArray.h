@@ -30,36 +30,46 @@
 
 class DArray
 {
-  public:
-    DArray(int size)
-    {
-      ptr_ = new double[size];
-      size_ = size;
-      ownership_ = true;
-    }
+public:
+  DArray(int size)
+  {
+    ptr_ = new double[size];
+    size_ = size;
+    ownership_ = true;
+  }
 
-    DArray(double* ptr, int size)
-    {
-      ptr_ = ptr;
-      size_ = size;
-      ownership_ = false;
-    }
+  DArray(double* ptr, int size)
+  {
+    ptr_ = ptr;
+    size_ = size;
+    ownership_ = false;
+  }
 
-    ~DArray()
-    {
-      if (ownership_)
-        delete[] ptr_;
-    }
+  ~DArray()
+  {
+    if (ownership_)
+      delete[] ptr_;
+  }
 
-    double& operator[](int i)
-    {
-      return(ptr_[i]);
-    }
+  double& operator[](int i)
+  {
+    return(ptr_[i]);
+  }
 
-    double* Values()
-    {
-      return(ptr_);
-    }
+  double* Values()
+  {
+    return(ptr_);
+  }
+
+  void __setitem__(int i, double val)
+  {
+    ptr_[i] = val;
+  }
+
+  double __getitem__(int i)
+  {
+    return ptr_[i];
+  }
 
   private:
     double* ptr_;

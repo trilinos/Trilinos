@@ -45,7 +45,9 @@
 %}
 
 // Feature directives
+%feature("director") Epetra_Operator;
 %feature("director") PyOperator;
+%feature("director") Epetra_RowMatrix;
 %feature("director") PyRowMatrix;
 
 // Ignore directives
@@ -65,6 +67,8 @@
 %rename(LinearProblem        ) Epetra_LinearProblem;
 
 // Include directives
+%warnfilter(473) Epetra_Operator;
+%warnfilter(473) Epetra_RowMatrix;
 %include "Epetra_Operator.h"
 %include "Epetra_RowMatrix.h"
 %include "Epetra_CrsMatrix.h"

@@ -30,36 +30,46 @@
 
 class IArray
 {
-  public:
-    IArray(int size)
-    {
-      ptr_ = new int[size];
-      size_ = size;
-      ownership_ = true;
-    }
+public:
+  IArray(int size)
+  {
+    ptr_ = new int[size];
+    size_ = size;
+    ownership_ = true;
+  }
 
-    IArray(int* ptr, int size)
-    {
-      ptr_ = ptr;
-      size_ = size;
-      ownership_ = false;
-    }
+  IArray(int* ptr, int size)
+  {
+    ptr_ = ptr;
+    size_ = size;
+    ownership_ = false;
+  }
 
-    ~IArray()
-    {
-      if (ownership_)
-        delete[] ptr_;
-    }
+  ~IArray()
+  {
+    if (ownership_)
+      delete[] ptr_;
+  }
 
-    int& operator[](int i)
-    {
-      return(ptr_[i]);
-    }
+  int& operator[](int i)
+  {
+    return(ptr_[i]);
+  }
 
-    int* Values()
-    {
-      return(ptr_);
-    }
+  int* Values()
+  {
+    return(ptr_);
+  }
+
+  void __setitem__(int i, int val)
+  {
+    ptr_[i] = val;
+  }
+
+  int __getitem__(int i)
+  {
+    return ptr_[i];
+  }
 
   private:
     int* ptr_;
