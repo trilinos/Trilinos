@@ -10,9 +10,10 @@
 # AztecOO and no preconditioning. This example is only serial, but it 
 # can be easily extended to parallel.
 #
-# \author Marzio Sala, 9214
+# \authors Marzio Sala, 9214
+#          Bill Spotz,  1433
 #
-# \date Last updated on 31-Jul-05
+# \date Last updated on 22 Feb 2006
 
 try:
   import setpath
@@ -22,73 +23,77 @@ except:
   from PyTrilinos import Epetra, AztecOO
   print "Using installed versions of Epetra, AztecOO"
 
+############################################################
+
 class MyOperator(Epetra.PyOperator):
-  def __init__(self, Map):
-    Epetra.PyOperator.__init__(self, Map.Comm())
-    self.Map_ = Map
+
+  def __init__(self, map):
+    Epetra.PyOperator.__init__(self, map.Comm())
+    self.__map   = map
+    self.__label = "1D Laplace"
 
   def __str__(self):
-    return "MyPyOperator"
+    return self.__label
 
-  def Apply(*args):
-    LHS = Epetra.Vector(Epetra.View,args[1],0)
-    RHS = Epetra.Vector(Epetra.View,args[2],0)
-    n = RHS.MyLength()
-    if LHS.NumVectors() != 1:
-      print "this Apply() function has been implemented for a single vector"
-      return -1
+  def Label(self):
+    return self.__label
 
-    RHS[0] = 2.0 * LHS[0] - LHS[1]
-    RHS[n - 1] = 2.0 * LHS[n - 1] - LHS[n - 2]
-    for i in xrange(1, n - 1):
-      RHS[i] = 2.0 * LHS[i] - LHS[i - 1] - LHS[i + 1]
+  def Apply(self,x,y):
+    # Arguments x and y will be Epetra.Epetra_MultiVectors, i.e. raw wrappers to
+    # the C++ class.  In order to have nice python indexing, we need to convert
+    # them to Epetra.MultiVectors (or, in this case, Epetra.Vectors).
+    lhs = Epetra.Vector(Epetra.View,x,0)
+    rhs = Epetra.Vector(Epetra.View,y,0)
+    n   = rhs.MyLength()
+    rhs[ 0 ] = 2.0 * lhs[ 0 ] - lhs[ 1 ]
+    rhs[n-1] = 2.0 * lhs[n-1] - lhs[n-2]
+    for i in xrange(1, n-1):
+      rhs[i] = 2.0 * lhs[i] - lhs[i-1] - lhs[i+1]
     return 0
 
-  def ApplyInverse(*args):
+  def ApplyInverse(self):
     return -1
 
-  def OperatorDomainMap(*args):
-    self = args[0]
-    return self.Map_
+  def OperatorDomainMap(self):
+    return self.__map
 
-  def OperatorRangeMap(*args):
-    self = args[0]
-    return self.Map_
+  def OperatorRangeMap(self):
+    return self.__map
 
-  def Map(*args):
-    self = args[0]
-    return self.Map_
+  def Map(self):
+    return self.__map
 
-  def HasNormInf(*args):
+  def HasNormInf(self):
     return True
 
-  def NormInf(*args):
+  def NormInf(self):
     return 0
+
+############################################################
 
 def main():
 
-  n = 100
-  Comm = Epetra.PyComm()
-  if Comm.NumProc() != 1:
+  n    = 100
+  comm = Epetra.Pycomm()
+  if comm.NumProc() != 1:
     print "This example is only serial, sorry"
     return
-  Map = Epetra.Map(n, 0, Comm)
-  Op = MyOperator(Map)
+  map = Epetra.Map(n, 0, comm)
+  op  = MyOperator(map)
 
-  print Op.Label()
-  LHS = Epetra.Vector(Map)
-  RHS = Epetra.Vector(Map)
+  print op.Label()
+  lhs = Epetra.Vector(map)
+  rhs = Epetra.Vector(map)
   
-  RHS.PutScalar(1.0)
-  LHS.PutScalar(0.0)
+  rhs.PutScalar(1.0)
+  lhs.PutScalar(0.0)
   
-  Problem = Epetra.LinearProblem(Op, LHS, RHS)
-  Solver = AztecOO.AztecOO(Problem)
+  Problem = Epetra.LinearProblem(op, lhs, rhs)
+  Solver  = AztecOO.AztecOO(Problem)
   
   Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
   Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
   Solver.SetAztecOption(AztecOO.AZ_output, 16)
-  print "Initialization done"
   Solver.Iterate(1550, 1e-5)
   
 # This is a standard Python construct.  Put the code to be executed in a
