@@ -24,51 +24,46 @@ except:
 
 class MyOperator(Epetra.PyOperator):
   def __init__(self, Map):
-    Epetra.PyOperator.__init__(self, Map.Comm());
+    Epetra.PyOperator.__init__(self, Map.Comm())
     self.Map_ = Map
 
   def __str__(self):
-    return("MyPyOperator")
+    return "MyPyOperator"
 
   def Apply(*args):
-    LHS = args[1]
-    RHS = args[2]
+    LHS = Epetra.Vector(Epetra.View,args[1],0)
+    RHS = Epetra.Vector(Epetra.View,args[2],0)
     n = RHS.MyLength()
     if LHS.NumVectors() != 1:
       print "this Apply() function has been implemented for a single vector"
-      return(-1)
+      return -1
 
-    LHS_V = Epetra.DArray(LHS.Values(), n)
-    RHS_V = Epetra.DArray(RHS.Values(), n)
-
-    # I don't undestand why, but if I use the bracket operator the
-    # code crashes...
-    RHS_V[0] = 2.0 * LHS_V[0] - LHS_V[1]
-    RHS_V[n - 1] = 2.0 * LHS_V[n - 1] - LHS_V[n - 2]
+    RHS[0] = 2.0 * LHS[0] - LHS[1]
+    RHS[n - 1] = 2.0 * LHS[n - 1] - LHS[n - 2]
     for i in xrange(1, n - 1):
-      RHS_V[i] = 2.0 * LHS_V[i] - LHS_V[i - 1] - LHS_V[i + 1]
-    return(0)
+      RHS[i] = 2.0 * LHS[i] - LHS[i - 1] - LHS[i + 1]
+    return 0
 
   def ApplyInverse(*args):
-    return(-1)
+    return -1
 
   def OperatorDomainMap(*args):
     self = args[0]
-    return(self.Map_)
+    return self.Map_
 
   def OperatorRangeMap(*args):
     self = args[0]
-    return(self.Map_)
+    return self.Map_
 
   def Map(*args):
     self = args[0]
-    return(self.Map_)
+    return self.Map_
 
   def HasNormInf(*args):
-    return(True);
+    return True
 
   def NormInf(*args):
-    return(0)
+    return 0
 
 def main():
 
@@ -84,8 +79,8 @@ def main():
   LHS = Epetra.Vector(Map)
   RHS = Epetra.Vector(Map)
   
-  RHS.PutScalar(1.0);
-  LHS.PutScalar(0.0);
+  RHS.PutScalar(1.0)
+  LHS.PutScalar(0.0)
   
   Problem = Epetra.LinearProblem(Op, LHS, RHS)
   Solver = AztecOO.AztecOO(Problem)
@@ -93,6 +88,7 @@ def main():
   Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
   Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
   Solver.SetAztecOption(AztecOO.AZ_output, 16)
+  print "Initialization done"
   Solver.Iterate(1550, 1e-5)
   
 # This is a standard Python construct.  Put the code to be executed in a
