@@ -625,19 +625,28 @@ exit $exitStatus;
         # Look for INSERT commands
         my @flagsToInsert = ();
         my $lastElementIndex = $#{$dependencies{$brokenPackage}{$brokenSubdir}};
-        for (my $i=0; $i<=$lastElementIndex; $i++) { 
-            
+        for (my $i=0; $i<=$lastElementIndex; $i++) {             
             if ($dependencies{$brokenPackage}{$brokenSubdir}[$i] =~ m/INSERT (.+)/) {
                 my $flag = $1;
                 push (@flagsToInsert, $flag);
-                $changeMade = 1;
-            }
-            
+            }            
         } 
         
+        # Open invoke-configure so we can check to see that we don't add a flag
+        # that is already present.  Otherwise, the invoke-configure would 
+        # perpetually continue to change, but not change functionally at all.
+        open (INVOKE_CONFIGURE, "<$buildDir/invoke-configure") or die "can't open invoke-configure, died";
+        undef $/;                       # undefine input record separator
+        my $file=<INVOKE_CONFIGURE>;    # copy entire file
+        $/ = "\n";                      # restore it to default newline
+        close INVOKE_CONFIGURE;
+        
         # Append all INSERTed flags
-        foreach my $flagToInsert (@flagsToInsert) {
-            $newInvokeConfigure .= "$flagToInsert \\\n";
+        foreach my $flagToInsert (@flagsToInsert) {        
+            if ($file !~ m/$flagToInsert/) {
+                $newInvokeConfigure .= "$flagToInsert \\\n";
+                $changeMade = 1;
+            }            
         }
         
         if (!$changeMade) {
