@@ -1,0 +1,37 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       = obj_weight_dim = 1
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters       = NUM_GLOBAL_PARTITIONS = 13 
+File Type		= matrixmarket+
+File Name		= ibm01
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1809	0	-1	-1
+2586	0	-1	-1
+2855	0	-1	-1
+4591	0	-1	-1
+6908	0	-1	-1
+7092	0	-1	-1
+7943	0	-1	-1
+8419	0	-1	-1
+8628	0	-1	-1
+8629	0	-1	-1
+9163	0	-1	-1
+9435	0	-1	-1
+9468	0	-1	-1
+9641	0	-1	-1
+9908	0	-1	-1
+10286	0	-1	-1
+10491	0	-1	-1
+10519	0	-1	-1
+10529	0	-1	-1
+10998	0	-1	-1
+11131	0	-1	-1
+11153	0	-1	-1
+12324	0	-1	-1
+12529	0	-1	-1
+12591	0	-1	-1
+12594	0	-1	-1
+12718	0	-1	-1
+12751	0	-1	-1
