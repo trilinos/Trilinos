@@ -117,7 +117,6 @@ structure of thyra</a>.
     interface to preconditioners, linear solvers
     (<tt>Thyra::LinearOpWithSolveBase</tt>) and factories for these (i.e.
     <tt>Thyra::LinearOpWithSolveBase</tt> and <tt>Thyra::PreconditionerFactoryBase</tt>)
-    
 
   </ul>
 
@@ -127,6 +126,8 @@ structure of thyra</a>.
 
   <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
     Fundamental ANA Model Evaluator Interfaces</a></b><a name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
+
+    \image html ModelEvaluator75.gif "(Note: above graphic is not hyper-linked!)"
 
     Contained here are interfaces for nonlinear models such as <tt>Thyra::ModelEvaluator</tt>.
 
