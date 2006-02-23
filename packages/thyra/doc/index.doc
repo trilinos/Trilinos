@@ -82,7 +82,7 @@ structure of thyra</a>.
   <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
     Fundamental ANA Operator/Vector Interfaces</a></b>  <a name="interfaces_operator_vector_ana_fundamental"></a>
 
-    \image html ThyraOperatorVectorSimple.gif "Fundamental Thyra ANA operator/vector interfaces (Note: above graphic is not hyper-linked!)"
+    \image html ThyraOperatorVectorSimple.gif
 
     These are minimal stripped-down abstract
     interface classes for basic finite-dimensional vectors, vector spaces and linear operators.
@@ -111,7 +111,7 @@ structure of thyra</a>.
   <li> <b><a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
     Fundamental ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_fundamental"></a>
 
-    \image html LinearOpWithSolveBase75.gif "(Note: above graphic is not hyper-linked!)"
+    \image html LinearOpWithSolveAndFactory75.jpg
 
     These are interfaces that provide a high-level
     interface to preconditioners, linear solvers
@@ -127,7 +127,7 @@ structure of thyra</a>.
   <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
     Fundamental ANA Model Evaluator Interfaces</a></b><a name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
 
-    \image html ModelEvaluator75.gif "(Note: above graphic is not hyper-linked!)"
+    \image html ModelEvaluator75.gif
 
     Contained here are interfaces for nonlinear models such as <tt>Thyra::ModelEvaluator</tt>.
 
