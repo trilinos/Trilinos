@@ -11,19 +11,16 @@
 
 \section thyra_src_interfaces_operator_vector_ana_fundamental_intro_sec Introduction
 
-The foundation for all of the interoperability interfaces related to Abstract
-Numerical Algorithms (ANAs) provied in the %Thyra package is the minimal set
-of basic operator/vector interfaces described here.  All other
-interoperability interfaces for ANAs build upon these simple interfaces.
+This minimal set of basic operator/vector interfaces described here forms the
+foundation for all of the interoperability interfaces related to Abstract
+Numerical Algorithms (ANAs) provided in the %Thyra package.
 
 \section thyra_src_interfaces_operator_vector_ana_fundamental_software_sec Software
 
 \image html ThyraOperatorVector.gif "Fundamental Thyra ANA Operator/Vector interfaces (Note: above graphic is not hyper-linked!)"
 
-The above UML class diagram is a more detailed version of the UML
-class diagram shown in the \ref index "introduction" for the
-foundational operator/vector interface classes.  The fundamental interface classes
-shown in the above UML class diagram are described below:
+The fundamental interface classes shown in the above UML class diagram are
+described below:
 
 <ul>
 <li><tt>Thyra::VectorSpaceFactoryBase</tt> is basic factory interface for creating

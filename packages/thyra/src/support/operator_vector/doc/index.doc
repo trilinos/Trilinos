@@ -38,7 +38,7 @@ the %Thyra Operator/Vector Interfaces.
 
 \section Thyra_Op_Vec_foundational_interfaces_sec Foundational Thyra Operator/Vector Interfaces
 
-\image html ThyraOperatorVectorSimple.gif "Foundational Thyra operator/vector interfaces (Note: above graphic is not hyper-linked!)"
+\image html ThyraOperatorVectorSimple.gif "Fundamental Thyra ANA operator/vector interfaces (Note: above graphic is not hyper-linked!)"
 
 The most fundamental abstract interfaces contained in the %Thyra package
 (and shown in the above UML class diagram) are:
