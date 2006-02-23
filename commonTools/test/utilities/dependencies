@@ -238,6 +238,8 @@ DONE
 # RTOp -------------------------------------------------------------------------
 IF PACKAGE rtop THEN
 REMOVE --enable-rtop
+REMOVE --enable-thyra
+REMOVE --enable-moocho
 DONE
 
 # Rythmos ----------------------------------------------------------------------
@@ -264,6 +266,7 @@ REMOVE --with-loca-anasazi
 REMOVE --enable-capo
 REMOVE --enable-galeri
 REMOVE --enable-rythmos
+REMOVE --enable-rtop
 REMOVE --enable-thyra
 DONE
 
@@ -278,7 +281,6 @@ REMOVE --enable-thyra
 REMOVE --enable-epetra-thyra
 REMOVE --enable-capo
 REMOVE --enable-rythmos
-REMOVE --enable-moocho
 DONE
 
 IF PACKAGE thyra SUBDIRECTORY python THEN
