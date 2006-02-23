@@ -111,6 +111,8 @@ structure of thyra</a>.
   <li> <b><a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
     Fundamental ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_fundamental"></a>
 
+    \image html LinearOpWithSolveBase75.gif "(Note: above graphic is not hyper-linked!)"
+
     These are interfaces that provide a high-level
     interface to preconditioners, linear solvers
     (<tt>Thyra::LinearOpWithSolveBase</tt>) and factories for these (i.e.

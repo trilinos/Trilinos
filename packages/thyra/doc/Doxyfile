@@ -29,7 +29,7 @@ EXTERNAL_GROUPS        = YES
 #
 @INCLUDE_PATH          = $(TRILINOS_HOME)/packages
 @INCLUDE               = common/Doxyfile
-IMAGE_PATH             = ../src/support/operator_vector/doc/images
+IMAGE_PATH             = ./images ../src/support/operator_vector/doc/images
 #
 # Package options
 #
