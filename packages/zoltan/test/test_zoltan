@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/csh -f
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
@@ -34,7 +34,7 @@ set nem_pdisk = (1 2 2) # parallel disk info
 # Hypergraph problems, methods and sizes.  If you add tests here, you
 # may also want to update the hg_* values in the "yes_serial" case.
 set hg_name  = (simple vwgt ewgt nograph felix diag500_4 ibm01 ibm03 cage10 FluidDFT)
-set hg_nproc = (  4      4    4    3       5       4       7     9     11     8)
+set hg_nproc = ( 4      4    4    3       5       4       7     9     11     8)
 
 # Set default options
 set out_tag = out
@@ -922,7 +922,7 @@ if (! $no_hg) then
     @ np = $hg_nproc[1]
 
     if ( $np > 0 ) then
-      echo "Running test case ${hg_name[1]} on ${hg_nproc[1]} procs" | tee -a ../$logfile
+      echo "Running test case ${hg_name[1]} on $np procs" | tee -a ../$logfile
   
       # Check output directories 
       if (! -d $outdir ) mkdir $outdir
@@ -941,32 +941,38 @@ if (! $no_hg) then
         # Run zdrive and check the output against stored answer
   
         if (-e zdrive.inp.${mtd} ) then
+	  find ${outdir} -name "${hg_name[1]}.$mtd.$np.*" | xargs /bin/rm
           /bin/cp zdrive.inp.${mtd} zdrive.inp
-          if (-e ${outdir}/${hg_name[1]}.$mtd.$np.0 ) then
-            /bin/rm ${outdir}/${hg_name[1]}.$mtd.$np.*
-          endif
   
           # Run the driver
           $run $np ../$zdrive
           sleep 1 # Make sure all processes have time to write to disk
       
           # Save and compare output files 
+
+	  #   the following awk deals with processor numbers with leading zeros
+	  #   which creates output files like foo.out.11.08 instead of foo.out.11.8
+	  @ procnos = $np - 1
+	  set fw=`echo -n $procnos | wc -c`  # log10 (procs-1)
           @ i = 0
           while ( $i < $np )
-            /bin/mv ${hg_name[1]}.$out_tag.$np.$i  ${outdir}/${hg_name[1]}.$mtd.$np.$i
-            if (-e ${answers}/${hg_name[1]}.$mtd.$np.$i.$suffix ) then
-       	      set answerfile = ${answers}/${hg_name[1]}.$mtd.$np.$i.$suffix
+	    set awkarg='BEGIN {printf "%0'"$fw"'d", '"$i"'}'
+	    set field=`awk "$awkarg"` < /dev/null
+	    set outfile=${hg_name[1]}.$mtd.$np.$field
+            /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
+            if (-e ${answers}/${outfile}.$suffix ) then
+       	      set answerfile = ${answers}/${outfile}.$suffix
             else
-              set answerfile = ${answers}/${hg_name[1]}.$mtd.$np.$i
+              set answerfile = ${answers}/${outfile}
             endif
-            diff -ciw ${outdir}/${hg_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+            diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
             if ( $status ) then 
               @ fail = 1
             endif
-  
+
             @ i = $i + 1
           end
-    
+
           # Report success or failure 
           if ( $fail ) then
             @ nfailed = $nfailed + 1
@@ -980,7 +986,7 @@ if (! $no_hg) then
       # Restore zdrive.inp
       if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
 
-    endif  # np is more than zerof
+    endif  # np > 0
 
     # Shift arguments and return to original directory
     shift hg_name
