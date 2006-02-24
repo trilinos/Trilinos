@@ -4,6 +4,6 @@ Zoltan Parameters       = hypergraph_package=phg
 Zoltan Parameters	= phg_coarsening_method=none
 Zoltan Parameters	= phg_coarsepartition_method=random
 Zoltan Parameters	= phg_refinement_method=none
-File Type		= matrixmarket
+File Type		= matrixmarket+
 File Name		= ibm03
 Parallel Disk Info	= number=0
