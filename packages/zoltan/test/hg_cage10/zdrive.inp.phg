@@ -1,6 +1,6 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 0
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-File Type		= hypergraph
+File Type		= matrixmarket
 File Name		= cage10
 Parallel Disk Info	= number=0
