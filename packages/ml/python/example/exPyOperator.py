@@ -29,13 +29,11 @@ class MyOperator(Epetra.PyOperator):
 
   def __init__(self, map):
     Epetra.PyOperator.__init__(self, map.Comm())
+    self.__comm  = map.Comm()
     self.__map   = map
     self.__label = "1D Laplace"
 
   def __str__(self):
-    return self.__label
-
-  def Label(self):
     return self.__label
 
   def Apply(self,x,y):
@@ -74,7 +72,7 @@ class MyOperator(Epetra.PyOperator):
 def main():
 
   n    = 100
-  comm = Epetra.Pycomm()
+  comm = Epetra.PyComm()
   if comm.NumProc() != 1:
     print "This example is only serial, sorry"
     return
@@ -82,6 +80,7 @@ def main():
   op  = MyOperator(map)
 
   print op.Label()
+  print op.__class__.__bases__
   lhs = Epetra.Vector(map)
   rhs = Epetra.Vector(map)
   
@@ -104,4 +103,3 @@ def main():
 # debugger and main() called from there.
 if __name__ == "__main__":
   main()
-
