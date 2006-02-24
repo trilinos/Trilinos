@@ -1,6 +1,0 @@
-Decomposition Method 	= hypergraph
-Zoltan Parameters       =  
-Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-File Type		= matrixmarket, initial procs = 1
-File Name		= diag500_4
-Parallel Disk Info	= number=0
