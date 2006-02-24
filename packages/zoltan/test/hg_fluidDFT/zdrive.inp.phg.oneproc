@@ -1,6 +1,0 @@
-Decomposition Method 	= hypergraph
-Zoltan Parameters       = obj_weight_dim = 0
-Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-File Type		= matrixmarket, initial procs = 1
-File Name		= FluidDFT
-Parallel Disk Info	= number=0
