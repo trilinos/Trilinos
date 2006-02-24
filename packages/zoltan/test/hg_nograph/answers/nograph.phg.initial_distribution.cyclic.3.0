@@ -1,0 +1,19 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       =  
+Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
+Zoltan Parameters	= OBJ_WEIGHT_DIM=0
+Zoltan Parameters	= EDGE_WEIGHT_DIM=0
+Zoltan Parameters	= ADD_OBJ_WEIGHT=none
+File Type		= matrixmarket, initial distribution=cyclic, initial pins=cyclic
+File Name		= nograph
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+1	0	-1	-1
+4	0	-1	-1
+7	0	-1	-1
+10	0	-1	-1
+13	0	-1	-1
+16	0	-1	-1
+22	0	-1	-1
+25	0	-1	-1

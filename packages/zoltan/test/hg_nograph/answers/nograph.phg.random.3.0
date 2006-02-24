@@ -1,0 +1,19 @@
+Decomposition Method 	= hypergraph
+Zoltan Parameters       =  
+Zoltan Parameters       = hypergraph_package=phg
+Zoltan Parameters	= phg_coarsening_method=none
+Zoltan Parameters	= phg_coarsepartition_method=random
+Zoltan Parameters	= phg_refinement_method=none
+File Type		= matrixmarket
+File Name		= nograph
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+GID	Part	Perm	IPerm
+3	0	-1	-1
+4	0	-1	-1
+6	0	-1	-1
+8	0	-1	-1
+11	0	-1	-1
+14	0	-1	-1
+23	0	-1	-1
+24	0	-1	-1
