@@ -164,7 +164,7 @@ class Vector(UserArray,NumPyVector):
         __init__(self, BlockMap map, bool zeroOut=True) -> Vector
         __init__(self, Vector source) -> Vector
         __init__(self, BlockMap map, PyObject array) -> Vector
-        __init__(self, DataAccess CV, MultiVector source, PyObject range) -> Vector
+        __init__(self, DataAccess CV, MultiVector source, PyObject index) -> Vector
         __init__(self, PyObject array) -> Vector
         """
         NumPyVector.__init__(self, *args)

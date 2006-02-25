@@ -255,7 +255,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   Epetra_MultiVector(CV, (const Epetra_MultiVector &) source, getRange(range),
 		     getRangeLen(range))
 {
-  // Store the local map
+  // Store the Epetra_NumPyMultiVector's map
   map = new Epetra_BlockMap(source.Map());
 
   // Inintialize the local Numeric array
@@ -272,6 +272,31 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(nd,dims,PyArray_DOUBLE,
+						    (char *)v[0]);
+
+  // We're done with the tmp_range array
+  Py_XDECREF(tmp_range);
+  tmp_range = NULL;
+
+  // Error message
+  error_msg = tmp_error;
+  tmp_error = NULL;
+}
+
+// =============================================================================
+Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
+						 const Epetra_MultiVector & source,
+						 PyObject * range):
+  Epetra_MultiVector(CV, source, getRange(range), getRangeLen(range))
+{
+  // Store the local map
+  map = new Epetra_BlockMap(source.Map());
+
+  // Wrap the Epetra_MultiVector
+  int dims[ ] = { NumVectors(), MyLength() };
+  double **v  = NULL;
+  Epetra_MultiVector::ExtractView(&v);
+  array = (PyArrayObject *) PyArray_FromDimsAndData(2,dims,PyArray_DOUBLE,
 						    (char *)v[0]);
 
   // We're done with the tmp_range array

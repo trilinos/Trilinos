@@ -56,15 +56,15 @@
 				Epetra_Vector const&, Epetra_Vector&) const;
 
 // Rename directives
-%rename(Operator             ) Epetra_Operator;
-%rename(RowMatrix            ) Epetra_RowMatrix;
-%rename(CrsMatrix            ) Epetra_CrsMatrix;
-%rename(FECrsMatrix          ) Epetra_FECrsMatrix;
-%rename(CrsSingletonFilter   ) Epetra_CrsSingletonFilter;
-%rename(VbrMatrix            ) Epetra_VbrMatrix;
-%rename(FEVbrMatrix          ) Epetra_FEVbrMatrix;
-%rename(JadOperator          ) Epetra_JadOperator;
-%rename(LinearProblem        ) Epetra_LinearProblem;
+%rename(Operator          ) Epetra_Operator;
+%rename(RowMatrix         ) Epetra_RowMatrix;
+%rename(CrsMatrix         ) Epetra_CrsMatrix;
+%rename(FECrsMatrix       ) Epetra_FECrsMatrix;
+%rename(CrsSingletonFilter) Epetra_CrsSingletonFilter;
+%rename(VbrMatrix         ) Epetra_VbrMatrix;
+%rename(FEVbrMatrix       ) Epetra_FEVbrMatrix;
+%rename(JadOperator       ) Epetra_JadOperator;
+%rename(LinearProblem     ) Epetra_LinearProblem;
 
 // Include directives
 %warnfilter(473) Epetra_Operator;

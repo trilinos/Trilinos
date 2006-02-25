@@ -47,6 +47,8 @@ public:
   Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMap, PyObject * pyObject);
   Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_NumPyMultiVector & source,
 			  PyObject * range);
+  Epetra_NumPyMultiVector(Epetra_DataAccess CV, const Epetra_MultiVector & source,
+			  PyObject * range);
   Epetra_NumPyMultiVector(PyObject * pyObject);
 
   // Destructor

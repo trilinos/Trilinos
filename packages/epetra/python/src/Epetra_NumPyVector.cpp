@@ -192,7 +192,10 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV, const Epetra_MultiV
 				       int index):
   Epetra_Vector(CV,source,index)
 {
+  // Store the Epetra_MultiVector's map
   map = new Epetra_BlockMap(source.Map());
+
+  // Wrap the Epetra_MultiVector
   int dims[ ] = { map->NumMyElements() };
   double *v = NULL;
   Epetra_Vector::ExtractView(&v);
