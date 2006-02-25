@@ -47,37 +47,30 @@ elezgaray_DEPENDENCIES = $(top_builddir)/src/libcapo.a \
 
 #np# One CXXFLAGS primary can be defined for each exe listed above.  Include 
 #np# any -I's necessary for building the exe.
-elezgaray_CXXFLAGS = -I$(top_srcdir)/src -I$(srcdir)/.. \
-	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../epetra/thyra/src \
-	-I$(top_builddir)/../epetra/thyra/src \
-	-I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
+elezgaray_CXXFLAGS = \
+        -I$(srcdir)/.. \
+        -I$(top_srcdir)/src \
+	-I$(top_srcdir)/../thyra/src \
 	-I$(top_srcdir)/../thyra/src/utils \
+	-I$(top_srcdir)/../thyra/src/interfaces/operator_vector/ana/fundamental \
+	-I$(top_srcdir)/../thyra/src/support/operator_vector/client_support \
+	-I$(top_srcdir)/../thyra/src/support/operator_vector/adapter_support \
+	-I$(top_srcdir)/../thyra/src/support/operator_vector/adapter_support/mpi \
+	-I$(top_srcdir)/../rtop/src \
+	-I$(top_srcdir)/../rtop/src/ops_lib \
+	-I$(top_srcdir)/../rtop/src/support \
+	-I$(top_srcdir)/../rtop/src/interfaces \
 	-I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
+	-I$(top_srcdir)/../epetra/src \
+	-I$(top_srcdir)/../epetra/thyra/src \
+	-I$(top_builddir)/../thyra/src \
 	-I$(top_builddir)/../thyra/src/utils \
+	-I$(top_builddir)/../thyra/src/interfaces/operator_vector/ana/fundamental \
+	-I$(top_builddir)/../rtop/src \
 	-I$(top_builddir)/../teuchos/src \
 	-I$(top_builddir)/../epetra/thyra/src \
 	-I$(top_builddir)/../epetra/src \
-	-I$(top_srcdir)/../thyra/src			
+	-I$(top_builddir)/../epetra/thyra/src
 
 #np# One LDADD primary can be defined for each exe listed above.  Include any
 #np# LDFLAGS  necessary for building the exe.
@@ -85,5 +78,6 @@ elezgaray_LDADD = $(top_builddir)/src/libcapo.a \
 	$(top_builddir)/../epetra/thyra/src/libepetrathyra.a \
 	$(top_builddir)/../thyra/src/libthyra.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../rtop/src/librtop.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LIBS) $(BLAS_LIBS) $(FLIBS)

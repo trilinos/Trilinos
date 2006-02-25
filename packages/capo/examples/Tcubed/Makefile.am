@@ -56,17 +56,16 @@ common_dependencies = \
 include $(top_builddir)/Makefile.export.capo
 
 if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(CAPO_EXTRA_LIBS) $(CAPO_LIBS))
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES) $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES) $(TEUCHOS_INCLUDES) )
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(EPETRA_LIBS) $(CAPO_EXTRA_LIBS) $(CAPO_LIBS) $(TEUCHOS_LIBS) $(THYRA_LIBS) $(NOX_LIBS) )
 else
-EXPORT_INCLUDES = $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES)
-EXPORT_LIBS = $(CAPO_EXTRA_LIBS) $(CAPO_LIBS)
+EXPORT_INCLUDES = $(EPETRA_INCLUDES) $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES) $(TEUCHOS_INCLUDES)
+EXPORT_LIBS = $(EPETRA_LIBS) $(CAPO_EXTRA_LIBS) $(CAPO_LIBS) $(TEUCHOS_LIBS) $(THYRA_LIBS) $(NOX_LIBS)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_INCLUDES) $(CAPO_EXTRA_INCLUDES) $(CAPO_INCLUDES) $(TEUCHOS_INCLUDES) -I$(srcdir)/../../src
+AM_CPPFLAGS = $(EXPORT_INCLUDES) -I$(srcdir)/../../src
 
 
-common_ldadd = $(EXPORT_LIBS) $(EPETRA_LIBS) $(CAPO_EXTRA_LIBS) $(CAPO_LIBS) $(TEUCHOS_LIBS) $(THYRA_LIBS) $(NOX_LIBS)
-
+common_ldadd = $(EXPORT_LIBS) 
 # This is already added part of CAPO_LIBS and therefore automake does not need to add this again!
 LIBS =

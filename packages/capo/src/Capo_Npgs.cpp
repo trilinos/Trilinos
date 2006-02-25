@@ -36,6 +36,7 @@ Author:    Joseph Simonis
 
 /**** Includes ****/
 #include "Thyra_VectorBase.hpp"
+#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Capo_Integrator.hpp"
 #include "Capo_Parameter_List.hpp"
@@ -618,6 +619,9 @@ void Npgs::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
      function SELECT which is called in when ordering the 
      eigenvalues along the diagonal.
   */
+
+  Teuchos::LAPACK<int,double> Tlapack;
+
   int m = Se->domain()->dim();
   
   double *se = new double[m*m];
@@ -650,8 +654,8 @@ void Npgs::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
   
   pt2Select = &Select;
 
-  dgees_(cn, cs, pt2Select, &m, se, &LDA, &sdim, 
-	 wr, wi, re, &LDA, work, &lwork, bwork, &info);
+  Tlapack.GEES(*cn, *cs, pt2Select, m, se, LDA, &sdim, 
+	 wr, wi, re, LDA, work, lwork, bwork, &info);
 
   /* On output the array re contains the schur vectors which I want
      in the matrix Se.
@@ -1053,17 +1057,19 @@ bool Npgs::dphi_dt(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f)
 //------------------------------------------------------------------
 bool Npgs::Solve_Linear(double *Mat, double *rhs, bool resolve, int m, int nrhs)
 {
+  Teuchos::LAPACK<int,double> Tlapack;
+
   int info=0, l=m;
   char *cc="N";
   int *ipiv;
   ipiv = new int[l];
 
   if (!resolve) {
-    (void) dgetrf_(&m, &m, Mat, &l, ipiv, &info);
+    Tlapack.GETRF(m, m, Mat, l, ipiv, &info);
     if (info < 0) cout << "ERROR dgetrf "<<info<<endl;
   }
 
-  (void) dgetrs_(cc, &m, &nrhs, Mat, &l, ipiv, rhs, &m, &info);
+  Tlapack.GETRS(*cc, m, nrhs, Mat, l, ipiv, rhs, m, &info);
   if (info < 0) cout << "ERROR dgetrs "<<info<<endl;
   
   

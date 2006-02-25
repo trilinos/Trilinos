@@ -36,6 +36,7 @@ Author:    Joseph Simonis
 
 /**** Includes ****/
 #include "Thyra_VectorBase.hpp"
+#include "Teuchos_LAPACK.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Capo_Integrator.hpp"
 #include "Capo_Parameter_List.hpp"
@@ -576,6 +577,9 @@ bool Unp::InnerIteration()
 //------------------------------------------------------------------
 void Unp::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se,const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re)
 {
+
+  Teuchos::LAPACK<int,double> Tlapack;
+
   /* This function performs a Schur Decomposition.
      On return Mat contains the Upper Triangular matrix with 
      eigenvalues on the diagonal, and V contains the basis
@@ -615,8 +619,8 @@ void Unp::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> 
   
   pt2Select = &Select;
 
-  dgees_(cn, cs, pt2Select, &m, se, &LDA, &sdim, 
-	 wr, wi, re, &LDA, work, &lwork, bwork, &info);
+  Tlapack.GEES(*cn, *cs, pt2Select, m, se, LDA, &sdim, 
+	 wr, wi, re, LDA, work, lwork, bwork, &info);
 
   /* On output the array re contains the schur vectors which I want
      in the matrix Se.
@@ -1009,6 +1013,9 @@ bool Unp::dphi_dt(const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >& f)
 //------------------------------------------------------------------
 bool Unp::Solve_Linear(double *Mat, double *rhs, bool resolve, int m, int n, int nrhs)
 {  
+
+  Teuchos::LAPACK<int,double> Tlapack;
+
   if ( SolveParameters->Arc_Length() )
     {
       char *TRANS="N";
@@ -1018,6 +1025,8 @@ bool Unp::Solve_Linear(double *Mat, double *rhs, bool resolve, int m, int n, int
       double *work = new double [LWORK];
       int info=0;
 
+      // Can't get this wrapper to compile - RWH
+      //Tlapack.GELS(*TRANS, m, n, nrhs, Mat, LDA, rhs, LDB, work, LWORK, &info);
       (void) dgels_(TRANS, &m, &n, &nrhs, Mat, &LDA, rhs, &LDB, work, &LWORK, &info);
 
       delete [] work;
@@ -1031,11 +1040,11 @@ bool Unp::Solve_Linear(double *Mat, double *rhs, bool resolve, int m, int n, int
       ipiv = new int[l];
       
       if (!resolve) {
-	(void) dgetrf_(&m, &m, Mat, &l, ipiv, &info);
+	Tlapack.GETRF(m, m, Mat, l, ipiv, &info);
 	if (info < 0) cout << "ERROR dgetrf "<<info<<endl;
       }
       
-      (void) dgetrs_(cc, &m, &nrhs, Mat, &l, ipiv, rhs, &m, &info);
+      Tlapack.GETRS(*cc, m, nrhs, Mat, l, ipiv, rhs, m, &info);
       if (info < 0) cout << "ERROR dgetrs "<<info<<endl;
 
       //delete cc;

@@ -251,7 +251,7 @@ namespace CAPO {
     bool Solve_Linear(double *Mat,double *rhs, bool resolve, int m, int nrhs);
 
     /*!
-      Perform a Schur Decomposition.  This uses the lapack routine dgees.
+      Perform a Schur Decomposition.  This uses the Teuchos wrapped lapack routine dgees.
     */
     void SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Se, 
 		     const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >& Re);

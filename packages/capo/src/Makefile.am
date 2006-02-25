@@ -110,30 +110,22 @@ COMP =
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
 #  
-AM_CPPFLAGS = -I$(top_srcdir)/../thyra/src -I$(top_builddir)/../thyra/src \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_srcdir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_srcdir)/../thyra/src/ana/rtop \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_srcdir)/../thyra/src/ana/rtop/base \
+AM_CPPFLAGS = \
+        -I$(top_srcdir)/../thyra/src \
+	-I$(top_srcdir)/../thyra/src/interfaces/operator_vector/ana/fundamental \
+	-I$(top_srcdir)/../thyra/src/interfaces/operator_vector/ana/fundamental \
+	-I$(top_srcdir)/../thyra/src/support/operator_vector/client_support \
 	-I$(top_srcdir)/../thyra/src/utils \
+	-I$(top_srcdir)/../rtop/src \
+	-I$(top_srcdir)/../rtop/src/ops_lib \
+	-I$(top_srcdir)/../rtop/src/support \
+	-I$(top_srcdir)/../rtop/src/interfaces \
 	-I$(top_srcdir)/../teuchos/src \
 	-I$(top_srcdir)/../epetra/thyra/src \
 	-I$(top_srcdir)/../epetra/src \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/extended_interfaces \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/ana_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/mpi \
-	-I$(top_builddir)/../thyra/src/ana/operator_vector/adapter_support/serial \
-	-I$(top_builddir)/../thyra/src/ana/rtop \
-	-I$(top_builddir)/../thyra/src/ana/rtop/ops_lib \
-	-I$(top_builddir)/../thyra/src/ana/rtop/base \
+        -I$(top_builddir)/../thyra/src \
 	-I$(top_builddir)/../thyra/src/utils \
+	-I$(top_builddir)/../rtop/src \
 	-I$(top_builddir)/../teuchos/src \
 	-I$(top_builddir)/../epetra/thyra/src \
 	-I$(top_builddir)/../epetra/src 

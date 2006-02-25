@@ -156,6 +156,11 @@ TAC_ARG_WITH_AR
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
 
+# ------------------------------------------------------------------------
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
 #  #np# - Customize the checks for headers needed in package being added.
 #NOTE: This section still needs to be updated for new_package, it is still 
 # code from Epetra
