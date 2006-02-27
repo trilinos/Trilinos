@@ -175,19 +175,21 @@ int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
   }
   else if (hgp->vtx_scaling==3){  /* scale by sqrt vertex weights */
     if (hg->vwgt)
-      for (i=0; i<hg->nVtx; i++)
+      for (i=0; i<hg->nVtx; i++)  {
          if (hg->vwgt[i] == 0)
             hgp->vtx_scal[i] = 1.0;
          else      
              hgp->vtx_scal[i] = 1. / sqrt((double)hg->vwgt[i]);
+      }
   }
   else if (hgp->vtx_scaling==4){  /* scale by vertex weights */
     if (hg->vwgt)
-      for (i=0; i<hg->nVtx; i++)
+      for (i=0; i<hg->nVtx; i++)  {
          if (hg->vwgt[i] == 0)
             hgp->vtx_scal[i] = 1.0;
          else            
             hgp->vtx_scal[i] = 1. / hg->vwgt[i];
+      }
   }
 
   ZOLTAN_FREE(&ldegree);
