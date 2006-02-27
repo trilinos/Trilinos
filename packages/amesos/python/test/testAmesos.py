@@ -36,12 +36,12 @@
 # build module.
 import sys
 
-try:
-    import setpath
-    import Epetra, Amesos
-except ImportError:
-    from PyTrilinos import Epetra, Amesos
-    print >>sys.stderr, "Using system-installed Epetra, Amesos"
+#try:
+import setpath
+import Epetra, Amesos
+#except ImportError:
+#    from PyTrilinos import Epetra, Amesos
+#    print >>sys.stderr, "Using system-installed Epetra, Amesos"
 
 import unittest
 
