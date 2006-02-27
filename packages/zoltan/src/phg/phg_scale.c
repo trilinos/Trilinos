@@ -161,21 +161,33 @@ int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
   /* Compute scale factor from degrees. */
   if (hgp->vtx_scaling==1){ /* cosine metric, scale by sqrt of degree */
     for (i=0; i<hg->nVtx; i++)
-      hgp->vtx_scal[i] = 1. / sqrt((double)gdegree[i]);
+      if (gdegree[i] == 0)
+         hgp->vtx_scal[i] = 1.0;
+      else
+         hgp->vtx_scal[i] = 1. / sqrt((double)gdegree[i]);
   }
   else if (hgp->vtx_scaling==2){  /* scale by degree */
     for (i=0; i<hg->nVtx; i++)
-      hgp->vtx_scal[i] = 1. / gdegree[i];
+      if (gdegree[i] == 0)
+         hgp->vtx_scal[i] = 1.0;
+      else    
+         hgp->vtx_scal[i] = 1. / gdegree[i];
   }
   else if (hgp->vtx_scaling==3){  /* scale by sqrt vertex weights */
     if (hg->vwgt)
       for (i=0; i<hg->nVtx; i++)
-        hgp->vtx_scal[i] = 1. / sqrt((double)hg->vwgt[i]);
+         if (hg->vwgt[i] == 0)
+            hgp->vtx_scal[i] = 1.0;
+         else      
+             hgp->vtx_scal[i] = 1. / sqrt((double)hg->vwgt[i]);
   }
   else if (hgp->vtx_scaling==4){  /* scale by vertex weights */
     if (hg->vwgt)
       for (i=0; i<hg->nVtx; i++)
-        hgp->vtx_scal[i] = 1. / hg->vwgt[i];
+         if (hg->vwgt[i] == 0)
+            hgp->vtx_scal[i] = 1.0;
+         else            
+            hgp->vtx_scal[i] = 1. / hg->vwgt[i];
   }
 
   ZOLTAN_FREE(&ldegree);
