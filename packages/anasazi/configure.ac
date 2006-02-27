@@ -449,16 +449,11 @@ AC_CONFIG_FILES([
 		example/MVOPTester/Makefile
 		test/Makefile
 		test/ModalSolverUtils/Makefile
-        test/ARPACKExamples/Makefile
+		test/ARPACKExamples/Makefile
 		test/BlockDavidson/Makefile
-		test/BlockDavidsonComplex/Makefile
 		test/BlockKrylovSchur/Makefile
-        test/BlockKrylovSchurComplex/Makefile
 		test/MVOPTester/Makefile
-		test/MVOPComplex/Makefile
 		test/LOBPCG/Makefile
-		test/LOBPCGComplex/Makefile
-		test/MVOPTpetra/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile

@@ -68,8 +68,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = ARPACKEx_cdriver$(EXEEXT) ARPACKEx_zdriver$(EXEEXT) \
-	ARPACKEx_sdriver$(EXEEXT) ARPACKEx_ddriver$(EXEEXT)
+noinst_PROGRAMS = ARPACKEx_sdriver$(EXEEXT) ARPACKEx_ddriver$(EXEEXT) \
+	$(am__EXEEXT_1)
 subdir = test/ARPACKExamples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -104,6 +104,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_TEUCHOS_COMPLEX_TRUE@am__EXEEXT_1 = ARPACKEx_cdriver$(EXEEXT) \
+@BUILD_TEUCHOS_COMPLEX_TRUE@	ARPACKEx_zdriver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_ARPACKEx_cdriver_OBJECTS = ARPACKEx_cdriver-cdriver.$(OBJEXT)
 ARPACKEx_cdriver_OBJECTS = $(am_ARPACKEx_cdriver_OBJECTS)
@@ -308,6 +310,7 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
+@BUILD_TEUCHOS_COMPLEX_TRUE@COMPLEX_ARPACK_TESTS = ARPACKEx_cdriver ARPACKEx_zdriver
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
@@ -342,10 +345,10 @@ ARPACKEx_zdriver_DEPENDENCIES = \
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-ARPACKEx_sdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
-ARPACKEx_ddriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
-ARPACKEx_cdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
-ARPACKEx_zdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
+ARPACKEx_sdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+ARPACKEx_ddriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+ARPACKEx_cdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+ARPACKEx_zdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.

@@ -33,25 +33,7 @@ all-local:
 	@echo "Trilinos package anasazi subdirectory test built successfully."
 	@echo ""
 
-if BUILD_TEUCHOS_COMPLEX
-if BUILD_TRIUTILS
-COMPLEX_SUBDIR = ARPACKExamples MVOPComplex LOBPCGComplex BlockDavidsonComplex BlockKrylovSchurComplex 
-else
-COMPLEX_SUBDIR = ARPACKExamples
-endif
-endif
-
-if BUILD_ANASAZI_TPETRA
-if BUILD_ANASAZI_EXPERIMENTAL
-TPETRA_SUBDIR = MVOPTpetra
-else
-TPETRA_SUBDIR =
-endif
-else
-TPETRA_SUBDIR =
-endif
-
-SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(COMPLEX_SUBDIR) $(TPETRA_SUBDIR) scripts
+SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester ARPACKExamples scripts
 
 EXTRA_DIST = definition
  

@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for BlockDavidson solving a standard (Ax=xl) complex Hermitian
+// This test is for LOBPCG solving a standard (Ax=xl) complex Hermitian
 // eigenvalue problem.
 //
 // The matrix used is from MatrixMarket:
@@ -39,15 +39,13 @@
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBlockDavidson.hpp"
+#include "AnasaziLOBPCG.hpp"
 #include "AnasaziBasicSort.hpp"
+#include "AnasaziMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
+#ifdef HAVE_MPI
 #include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
 #endif
 
 // I/O for Harwell-Boeing files
@@ -64,21 +62,18 @@ using namespace Teuchos;
 int main(int argc, char *argv[]) 
 {
   int info = 0;
+  int MyPID = 0;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
+  MPI_Comm_rank( MPI_COMM_WORLD, &MyPID );
 #endif
-
-  int MyPID = Comm.MyPID();
 
   bool testFailed;
   bool verbose = 0;
-  std::string which("SR");
   std::string filename("mhd1280b.cua");
+  std::string which("SR");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -100,9 +95,7 @@ int main(int argc, char *argv[])
   // no complex. quit with failure.
   if (verbose && MyPID == 0) {
     cout << "Not compiled with complex support." << endl;
-    if (MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;
-    }
+    cout << "End Result: TEST FAILED" << endl;
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
@@ -127,16 +120,16 @@ int main(int argc, char *argv[])
     MyOM->SetVerbosity( Anasazi::Warning + Anasazi::FinalSummary + Anasazi::TimingDetails );
   }
 
-  if (MyOM->doPrint()) {
+  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
     cout << Anasazi::Anasazi_Version() << endl << endl;
   }
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
-  if (MyOM->doPrint()) {
+  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
     cout << "End Result: TEST FAILED" << endl;	
   }
   return -1;
@@ -157,16 +150,14 @@ int main(int argc, char *argv[])
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,
                               &colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
       cout << "Error reading '" << filename << "'" << endl;
-      if (MyOM->doPrint()) {
-        cout << "End Result: TEST FAILED" << endl;
-      }
-#ifdef HAVE_MPI
-      MPI_Finalize();
-#endif
-      return -1;
+      cout << "End Result: TEST FAILED" << endl;
     }
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+    return -1;
   }
   // Convert interleaved doubles to complex values
   cvals = new ST[nnz];
@@ -180,14 +171,12 @@ int main(int argc, char *argv[])
   // Eigensolver parameters
   int nev = 4;
   int blockSize = 5;
-  int maxBlocks = 8;
   int maxIters = 500;
   MT tol = 1.0e-6;
 
   // Create parameter list to pass into solver
   ParameterList MyPL;
   MyPL.set( "Block Size", blockSize );
-  MyPL.set( "Max Blocks", maxBlocks );
   MyPL.set( "Max Iters", maxIters );
   MyPL.set( "Tol", tol );
 
@@ -208,18 +197,18 @@ int main(int argc, char *argv[])
   // Inform the eigenproblem that you are done passing it information
   info = MyProblem->SetProblem();
   if (info) {
-    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-#ifdef EPETRA_MPI
-    MPI_Finalize() ;
-#endif
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
+      cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
       cout << "End Result: TEST FAILED" << endl;	
     }
+#ifdef HAVE_MPI
+    MPI_Finalize() ;
+#endif
     return -1;
   }
 
   // Create the eigensolver 
-  Anasazi::BlockDavidson<ST,MV,OP> MySolver(MyProblem, MySM, MyOM, MyPL);
+  Anasazi::LOBPCG<ST,MV,OP> MySolver(MyProblem, MySM, MyOM, MyPL);
 
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
@@ -251,12 +240,12 @@ int main(int argc, char *argv[])
   }
 
   // Exit
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
   if (testFailed) {
-    if (MyOM->doPrint()) {
+    if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
       cout << "End Result: TEST FAILED" << endl;	
     }
     return -1;
@@ -264,7 +253,7 @@ int main(int argc, char *argv[])
   //
   // Default return value
   //
-  if (MyOM->doPrint()) {
+  if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
     cout << "End Result: TEST PASSED" << endl;
   }
   return 0;

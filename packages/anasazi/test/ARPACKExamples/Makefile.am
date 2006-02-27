@@ -43,8 +43,12 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
+if BUILD_TEUCHOS_COMPLEX
+COMPLEX_ARPACK_TESTS = ARPACKEx_cdriver ARPACKEx_zdriver
+endif
+
 #np# List all executable names here
-noinst_PROGRAMS = ARPACKEx_cdriver ARPACKEx_zdriver ARPACKEx_sdriver ARPACKEx_ddriver 
+noinst_PROGRAMS = ARPACKEx_sdriver ARPACKEx_ddriver $(COMPLEX_ARPACK_TESTS)
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
@@ -75,10 +79,10 @@ ARPACKEx_zdriver_DEPENDENCIES = \
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-ARPACKEx_sdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
-ARPACKEx_ddriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
-ARPACKEx_cdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
-ARPACKEx_zdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPComplex
+ARPACKEx_sdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+ARPACKEx_ddriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+ARPACKEx_cdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+ARPACKEx_zdriver_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.

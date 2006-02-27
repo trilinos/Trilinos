@@ -108,8 +108,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG \
-	MVOPTester ARPACKExamples MVOPTpetra scripts
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -272,12 +271,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_FALSE@COMPLEX_SUBDIR = ARPACKExamples
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@COMPLEX_SUBDIR = ARPACKExamples MVOPComplex LOBPCGComplex BlockDavidsonComplex BlockKrylovSchurComplex 
-@BUILD_ANASAZI_EXPERIMENTAL_FALSE@@BUILD_ANASAZI_TPETRA_TRUE@TPETRA_SUBDIR = 
-@BUILD_ANASAZI_EXPERIMENTAL_TRUE@@BUILD_ANASAZI_TPETRA_TRUE@TPETRA_SUBDIR = MVOPTpetra
-@BUILD_ANASAZI_TPETRA_FALSE@TPETRA_SUBDIR = 
-SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester $(COMPLEX_SUBDIR) $(TPETRA_SUBDIR) scripts
+SUBDIRS = ModalSolverUtils BlockDavidson BlockKrylovSchur LOBPCG MVOPTester ARPACKExamples scripts
 EXTRA_DIST = definition
 all: all-recursive
 
@@ -456,7 +450,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || mkdir "$(distdir)/$$subdir" \

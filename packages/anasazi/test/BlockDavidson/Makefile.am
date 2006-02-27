@@ -43,13 +43,26 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
+if BUILD_TEUCHOS_COMPLEX
+if BUILD_TRIUTILS
+BLOCK_DAVIDSON_COMPLEX_TEST = BlockDavidsonComplex_test Dummy
+endif
+endif
+
 #np# List all executable names here
-noinst_PROGRAMS = BlockDavidson_test
+noinst_PROGRAMS = BlockDavidson_test $(BLOCK_DAVIDSON_COMPLEX_TEST)
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 BlockDavidson_test_SOURCES = $(srcdir)/cxx_main.cpp
+
+BlockDavidsonComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
+
+Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
@@ -59,14 +72,25 @@ BlockDavidson_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
+BlockDavidsonComplex_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
 BlockDavidson_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/util/ModeLaplace
+
+BlockDavidsonComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 BlockDavidson_test_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+BlockDavidsonComplex_test_LDADD = \
 	$(EXPORT_LIBS) 
 
 # Dummy for new export makefiles

@@ -45,11 +45,8 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
+#ifdef HAVE_MPI
 #include <mpi.h>
-#else
-#include "Epetra_SerialComm.h"
 #endif
 
 // I/O for Harwell-Boeing files
@@ -66,16 +63,14 @@ using namespace Teuchos;
 int main(int argc, char *argv[]) 
 {
   int info = 0;
+  int MyPID = 0;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
+  MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
 #endif
 
-  int MyPID = Comm.MyPID();
 
   bool testFailed;
   bool verbose = 0;
@@ -131,7 +126,7 @@ int main(int argc, char *argv[])
 
 #ifndef HAVE_ANASAZI_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
   if (MyOM->isVerbosityAndPrint(Anasazi::Warning)) {
@@ -210,7 +205,7 @@ int main(int argc, char *argv[])
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
       cout << "End Result: TEST FAILED" << endl;	
     }
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
     MPI_Finalize() ;
 #endif
     return -1;
@@ -228,7 +223,7 @@ int main(int argc, char *argv[])
 
   // Get the eigenvalues and eigenvectors from the eigenproblem
   RefCountPtr<std::vector<ST> > evals = MyProblem->GetEvals();
-  RefCountPtr<MV > evecs = MyProblem->GetEvecs();
+  RefCountPtr<MV> evecs = MyProblem->GetEvecs();
   int nevecs = MVT::GetNumberVecs(*evecs);
 
   // Compute the direct residual
@@ -249,7 +244,7 @@ int main(int argc, char *argv[])
   }
 
   // Exit
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 

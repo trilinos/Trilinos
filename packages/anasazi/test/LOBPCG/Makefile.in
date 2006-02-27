@@ -45,7 +45,7 @@
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
-SOURCES = $(LOBPCG_test_SOURCES)
+SOURCES = $(Dummy_SOURCES) $(LOBPCGComplex_test_SOURCES) $(LOBPCG_test_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,7 +68,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = LOBPCG_test$(EXEEXT)
+noinst_PROGRAMS = LOBPCG_test$(EXEEXT) $(am__EXEEXT_1)
 subdir = test/LOBPCG
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -103,24 +103,39 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = LOBPCGComplex_test$(EXEEXT) \
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_LOBPCG_test_OBJECTS = LOBPCG_test-cxx_main.$(OBJEXT)
-LOBPCG_test_OBJECTS = $(am_LOBPCG_test_OBJECTS)
+am_Dummy_OBJECTS =
+Dummy_OBJECTS = $(am_Dummy_OBJECTS)
+Dummy_LDADD = $(LDADD)
+am_LOBPCGComplex_test_OBJECTS =  \
+	LOBPCGComplex_test-cxx_main_complex.$(OBJEXT)
+LOBPCGComplex_test_OBJECTS = $(am_LOBPCGComplex_test_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
+am_LOBPCG_test_OBJECTS = LOBPCG_test-cxx_main.$(OBJEXT)
+LOBPCG_test_OBJECTS = $(am_LOBPCG_test_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOBPCG_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/LOBPCG_test-cxx_main.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(LOBPCG_test_SOURCES)
-DIST_SOURCES = $(LOBPCG_test_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(Dummy_SOURCES) $(LOBPCGComplex_test_SOURCES) \
+	$(LOBPCG_test_SOURCES)
+DIST_SOURCES = $(Dummy_SOURCES) $(LOBPCGComplex_test_SOURCES) \
+	$(LOBPCG_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -292,11 +307,14 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(ANASAZI_TEST_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
 AM_CPPFLAGS = -I$(top_srcdir)/util/ModeLaplace $(EXPORT_INC_PATH)
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@LOBPCG_COMPLEX_TEST = LOBPCGComplex_test Dummy
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 LOBPCG_test_SOURCES = $(srcdir)/cxx_main.cpp
+LOBPCGComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
+Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
@@ -306,15 +324,25 @@ LOBPCG_test_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
+LOBPCGComplex_test_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
 LOBPCG_test_CXXFLAGS = -I$(top_srcdir)/src
+LOBPCGComplex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
 LOBPCG_test_LDADD = \
 	$(top_builddir)/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) 
+
+LOBPCGComplex_test_LDADD = \
 	$(EXPORT_LIBS) 
 
 all: all-am
@@ -353,6 +381,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+LOBPCGComplex_test$(EXEEXT): $(LOBPCGComplex_test_OBJECTS) $(LOBPCGComplex_test_DEPENDENCIES) 
+	@rm -f LOBPCGComplex_test$(EXEEXT)
+	$(CXXLINK) $(LOBPCGComplex_test_LDFLAGS) $(LOBPCGComplex_test_OBJECTS) $(LOBPCGComplex_test_LDADD) $(LIBS)
 LOBPCG_test$(EXEEXT): $(LOBPCG_test_OBJECTS) $(LOBPCG_test_DEPENDENCIES) 
 	@rm -f LOBPCG_test$(EXEEXT)
 	$(CXXLINK) $(LOBPCG_test_LDFLAGS) $(LOBPCG_test_OBJECTS) $(LOBPCG_test_LDADD) $(LIBS)
@@ -363,6 +394,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOBPCG_test-cxx_main.Po@am__quote@
 
 .cpp.o:
@@ -380,6 +412,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+LOBPCGComplex_test-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGComplex_test_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGComplex_test-cxx_main_complex.o -MD -MP -MF "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Tpo" -c -o LOBPCGComplex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Tpo" "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po"; else rm -f "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='LOBPCGComplex_test-cxx_main_complex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po' tmpdepfile='$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGComplex_test_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGComplex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
+
+LOBPCGComplex_test-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGComplex_test_CXXFLAGS) $(CXXFLAGS) -MT LOBPCGComplex_test-cxx_main_complex.obj -MD -MP -MF "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Tpo" -c -o LOBPCGComplex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Tpo" "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po"; else rm -f "$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='LOBPCGComplex_test-cxx_main_complex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.Po' tmpdepfile='$(DEPDIR)/LOBPCGComplex_test-cxx_main_complex.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCGComplex_test_CXXFLAGS) $(CXXFLAGS) -c -o LOBPCGComplex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
 
 LOBPCG_test-cxx_main.o: $(srcdir)/cxx_main.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(LOBPCG_test_CXXFLAGS) $(CXXFLAGS) -MT LOBPCG_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/LOBPCG_test-cxx_main.Tpo" -c -o LOBPCG_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
@@ -561,6 +609,9 @@ uninstall-am: uninstall-info-am
 
 
 include $(top_builddir)/Makefile.export.anasazi
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
