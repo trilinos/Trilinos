@@ -700,11 +700,12 @@ double Zoltan_PHG_Compute_Balance (
   for (i = 0; i < p; i++) 
       tot_w += size_w[i];
   if (tot_w) {
-      for (i = 0; i < p; i++) {
-          double ib= (size_w[i]-part_sizes[i]*tot_w)/(part_sizes[i]*tot_w);
-          if (ib>max_imbal)
-              max_imbal = ib;
-      }
+      for (i = 0; i < p; i++)
+          if (part_sizes[i]) {
+              double ib= (size_w[i]-part_sizes[i]*tot_w)/(part_sizes[i]*tot_w);
+              if (ib>max_imbal)
+                  max_imbal = ib;
+          }
   }
 
   ZOLTAN_FREE (&lsize_w);
