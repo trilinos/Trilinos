@@ -1,5 +1,33 @@
 #! /usr/bin/env python
 
+# @header
+# ************************************************************************
+#
+#           PyTrilinos.EpetraExt: Python interface to EpetraExt
+#                   Copyright (2005) Sandia Corporation
+#
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# license, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# without any warranty; without even the implied warranty of
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Michael A. Heroux (maherou@sandia.gov)
+#
+# ************************************************************************
+# @header
+
 import sys
 
 try:
@@ -9,16 +37,20 @@ except ImportError:
     from PyTrilinos import Epetra, EpetraExt
     print >>sys.stderr, "Using system-installed Epetra, EptraExt"
 
+# Build a global communicator
+comm    = Epetra.PyComm()
+numProc = comm.NumProc()
+iAmRoot = comm.MyPID() == 0
+
 def main():
 
-  failures = 0
+  failures  = 0
   tolerance = 1.0e-12
 
   # Construct a vector x and populate with random values
-  comm = Epetra.PyComm()
-  n    = 10 * comm.NumProc()
-  map  = Epetra.Map(n, 0, comm)
-  x    = Epetra.Vector(map)
+  n       = 10 * numProc
+  map     = Epetra.Map(n, 0, comm)
+  x       = Epetra.Vector(map)
   x.Random()
 
   # ==================================================== #
@@ -27,15 +59,15 @@ def main():
   # map.                                                 #
   # ==================================================== #
 
-  if comm.MyPID() == 0: print "I/O for BlockMap ... ",
+  if iAmRoot: print "I/O for BlockMap ... ",
   EpetraExt.BlockMapToMatrixMarketFile("map.mm", map)
   (ierr, map2) = EpetraExt.MatrixMarketFileToBlockMap("map.mm", comm)
   print "ierr =", ierr
   print "map2 =", map2
   if map2.SameAs(map):
-    if comm.MyPID() == 0: print "ok"
+    if iAmRoot: print "ok"
   else:
-    if comm.MyPID() == 0: print "FAILED"
+    if iAmRoot: print "FAILED"
     failures += 1
 
   # ===================================================== #
@@ -43,16 +75,16 @@ def main():
   # read "x.mm" into y, then check that y equals x        #
   # ===================================================== #
 
-  if comm.MyPID() == 0: print "I/O for MultiVector ... ",
+  if iAmRoot: print "I/O for MultiVector ... ",
   EpetraExt.MultiVectorToMatrixMarketFile("x.mm", x)
   (ierr, y) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", map)
   y.Update(1.0, x, -1.0)
   norm = y.Norm2()
 
   if abs(norm) < tolerance:
-    if comm.MyPID() == 0: print "ok"
+    if iAmRoot: print "ok"
   else:
-    if comm.MyPID() == 0: print "FAILED"
+    if iAmRoot: print "FAILED"
     failures += 1
 
   # ===================================================== #
@@ -61,7 +93,7 @@ def main():
   # read "A.mm" into B, then check that B equals A        #
   # ===================================================== #
 
-  if comm.MyPID() == 0: print "I/O for CrsMatrix ... ",
+  if iAmRoot: print "I/O for CrsMatrix ... ",
   A       = Epetra.CrsMatrix(Epetra.Copy, map, 0)
   Indices = Epetra.IntSerialDenseVector(1)
   Values  = Epetra.SerialDenseVector(1)
@@ -77,9 +109,9 @@ def main():
   norm = B.NormInf()
 
   if abs(norm) < tolerance:
-    if comm.MyPID() == 0: print "ok"
+    if iAmRoot: print "ok"
   else:
-    if comm.MyPID() == 0: print "FAILED"
+    if iAmRoot: print "FAILED"
     failures += 1
 
   return failures
@@ -88,4 +120,6 @@ def main():
 
 if __name__ == "__main__":
   failures = main()
+  failures = comm.SumAll(failures)[0]
+  if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
   sys.exit(failures)
