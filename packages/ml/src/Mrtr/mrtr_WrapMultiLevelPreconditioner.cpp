@@ -43,9 +43,9 @@ MOERTEL::ConstrainedPreconditioner::ConstrainedPreconditioner(
                           RefCountPtr<Epetra_CrsMatrix> WT,
                           RefCountPtr<Epetra_CrsMatrix> B) :
 mlprec_(mlprec),
-I_(I),
 WT_(WT),
-B_(B)                          
+B_(B),                          
+I_(I)
 {
   label_  = "MOERTEL::ConstrainedPreconditioner";
   return;
@@ -65,11 +65,11 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
     return -1;
   }
   
-#if 0
   Epetra_Vector x(View,X,0);
   Epetra_Vector xtmp(B_->DomainMap(),false);
   Epetra_Vector xtmp2(x.Map(),false);
 
+#if 0
   // make X (residual) satisfy constraints 
   // do X = (I-BW^T)X
   WT_->Multiply(false,x,xtmp);
@@ -88,7 +88,7 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
   
   // make Y (search direction) satisfy constraints
   // do Y = (I-WB^T)Y
-#if 0
+#if 1
   Epetra_Vector y(View,Y,0);
   B_->Multiply(true,y,xtmp);
   WT_->Multiply(true,xtmp,xtmp2);

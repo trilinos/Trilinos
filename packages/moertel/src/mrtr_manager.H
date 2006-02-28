@@ -91,7 +91,7 @@ Use at least the following lines in the configure of Trilinos:<br>
 */
 namespace MOERTEL
 {
-  class MOERTEL::Solver;
+  class Solver;
 
 /*!
 \class Manager

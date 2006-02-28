@@ -503,7 +503,6 @@ exit(0);
   aztecsolver_->Iterate(maxiter,tol);
   matrixisnew_ = false;
   const double* azstatus = aztecsolver_->GetAztecStatus();
-  cout << *x_;
   if (azstatus[AZ_why] == AZ_normal)
     return true;
   else if (azstatus[AZ_why] == AZ_breakdown)

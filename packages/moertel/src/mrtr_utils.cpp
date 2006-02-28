@@ -39,6 +39,7 @@
 #include "mrtr_node.H"
 
 #include <Epetra_Time.h>
+#include <Epetra_Map.h>
 #include <EpetraExt_Transpose_RowMatrix.h>
 #include <EpetraExt_MatrixMatrix.h>
 

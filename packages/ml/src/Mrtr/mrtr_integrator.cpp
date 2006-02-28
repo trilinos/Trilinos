@@ -254,11 +254,11 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
     double weight = wgt*dxideta*dxdsxi;
     
     // evaluate function 1 of the slave side (supposed to be the LM function)
-    double sval[sseg.Nnode()];
+    double sval[4];
     sseg.EvaluateFunction(1,&sxi,sval,sseg.Nnode(),NULL);
     
     // evaluate function 0 of the master side (supposed to be the trace function)
-    double mval[mseg.Nnode()];
+    double mval[4];
     mseg.EvaluateFunction(0,&mxi,mval,mseg.Nnode(),NULL);
     
     // loop over nodes of the slave side
@@ -449,11 +449,11 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate(MOERTEL::Segment& sseg,
     double weight = wgt*dxideta*dxdsxi;
 
     // evaluate function 1 (supposed to be the LM function)
-    double lmval[sseg.Nnode()];
+    double lmval[4];
     sseg.EvaluateFunction(1,&sxi,lmval,sseg.Nnode(),NULL);
     
     // evaluate function 0 (supposed to be the trace space function)
-    double val[sseg.Nnode()];
+    double val[4];
     sseg.EvaluateFunction(0,&sxi,val,sseg.Nnode(),NULL);    
     
     // loop over all nodes (lm loop)
@@ -511,14 +511,14 @@ Epetra_SerialDenseMatrix* MOERTEL::Integrator::Integrate_2D_Mmod(
     double weight = wgt*dxideta*dxdsxi;
     
     // evaluate function 0 of the slave side (supposed to be the trace function)
-    double sval[sseg.Nnode()];
+    double sval[4];
     sseg.EvaluateFunction(0,&sxi,sval,sseg.Nnode(),NULL);
     
     // make the delta function phi12 = phi1 - phi2
     double val = sval[0] - sval[1];
     
     // evaluate function 0 of the master side (supposed to be the trace function)
-    double mval[mseg.Nnode()];
+    double mval[4];
     mseg.EvaluateFunction(0,&mxi,mval,mseg.Nnode(),NULL);
     
     // loop over nodes of the master side
@@ -759,14 +759,14 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
     
     
     // evaluate the linear function 0 of the actseg at gaussian point
-    double val[np];
+    double val[20];
     actseg->EvaluateFunction(0,eta,val,actseg->Nnode(),NULL);
 
     // interpolate shape function 0 from sseg
     // interpolate shape function 1 from sseg
-    double val_sfunc0[np];
-    double val_sfunc1[np];
-    double val_mfunc0[np];
+    double val_sfunc0[20];
+    double val_sfunc1[20];
+    double val_mfunc0[20];
     for (int i=0; i<np; ++i) 
     {
       val_sfunc0[i] = 0.0;
