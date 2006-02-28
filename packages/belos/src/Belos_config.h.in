@@ -17,6 +17,9 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* Define if want to build belos-experimental */
+#undef HAVE_BELOS_EXPERIMENTAL
+
 /* Define if want to build with belos enabled */
 #undef HAVE_BELOS_IFPACK
 

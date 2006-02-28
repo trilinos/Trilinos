@@ -426,6 +426,12 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
   _new_blk = 1;
   for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) {
     //
+    // Print current solver status if necessary.
+    //
+    if (_om->doOutput( 0 )) {
+      _stest->Print(*_os);
+    }  
+    //
     //----------------Compute the new blocks of iterates and residuals------------------
     //
     // Get views of the previous blocks of residuals, direction vectors, etc.

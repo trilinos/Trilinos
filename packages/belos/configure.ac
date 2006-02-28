@@ -224,6 +224,9 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including
 TAC_ARG_ENABLE_FEATURE_SUB(teuchos, complex, [Build examples/tests which use complex scalar type], TEUCHOS_COMPLEX, yes)
 AM_CONDITIONAL(BUILD_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE_SUB(belos, experimental, [Build examples/tests which use experimental code], BELOS_EXPERIMENTAL, no)
+AM_CONDITIONAL(BUILD_BELOS_EXPERIMENTAL, [test "X$ac_cv_use_belos_experimental" != "Xno"])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, yes, [Build tests that use Triutils. Can be overridden with --disable-belos-triutils.], [Build tests that use Triutils.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.], [Build tests that use Ifpack.])

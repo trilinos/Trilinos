@@ -267,6 +267,12 @@ namespace Belos {
       for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
 	{
 	  //
+	  // Print out solver status.
+	  //
+	  if (_om->doOutput( 0 )) {
+	    _stest->Print(*_os);
+	  }
+	  //
 	  // Multiply the current direction vector by A and store in _Ap
 	  //       _Ap = A*_p 
 	  //
@@ -279,7 +285,7 @@ namespace Belos {
 	  //
 	  // Check that alpha is a positive number!
 	  //
-	  if ( SCT::magnitude(alpha(0,0)) <= zero ) {
+	  if ( SCT::real(alpha(0,0)) <= zero ) {
 	    if (_om->doOutput( 0 )) {
 	      *_os << " Exiting CG iteration " << endl;
 	      *_os << " Reason: Non-positive value for p^T*A*p ("<< alpha(0,0) <<") !!! "<< endl;

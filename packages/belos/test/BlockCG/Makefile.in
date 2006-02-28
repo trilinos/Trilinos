@@ -132,6 +132,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_BELOS_EXPERIMENTAL_FALSE = @BUILD_BELOS_EXPERIMENTAL_FALSE@
+BUILD_BELOS_EXPERIMENTAL_TRUE = @BUILD_BELOS_EXPERIMENTAL_TRUE@
 BUILD_BELOS_THYRA_FALSE = @BUILD_BELOS_THYRA_FALSE@
 BUILD_BELOS_THYRA_TRUE = @BUILD_BELOS_THYRA_TRUE@
 BUILD_EPETRA_THYRA_FALSE = @BUILD_EPETRA_THYRA_FALSE@
@@ -274,7 +276,8 @@ bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
+bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
+			$(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
