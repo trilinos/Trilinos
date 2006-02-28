@@ -420,10 +420,10 @@ exit $exitStatus;
                 $cmd .= "--max-proc=".$buildOptions{'MAX-PROC'}." ";   
             }
             if ($buildOptions{'MPI-START'}) {   
-                $cmd .= "--mpi-start=".$buildOptions{'MPI-START'}." ";       
+                $cmd .= "--mpi-start=\"".$buildOptions{'MPI-START'}."\" ";       
             }
             if ($buildOptions{'MPI-STOP'}) {   
-                $cmd .= "--mpi-stop=".$buildOptions{'MPI-STOP'}." ";       
+                $cmd .= "--mpi-stop=\"".$buildOptions{'MPI-STOP'}."\" ";       
             }
             if ($buildOptions{'MPI-GO'}) {   
                 $cmd .= "--mpi-go=\"".$buildOptions{'MPI-GO'}."\" ";       

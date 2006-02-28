@@ -169,7 +169,7 @@ cleanUp();
             my $mpiStartProg = $1;
             `which $mpiStartProg`;
             if ($?) {
-                die "cannot find mpi-start command: $mpiStart\n";
+                die "cannot find mpi-start command: $mpiStartProg\n";
             }
         } else {
             $mpiStart = ""; 
@@ -181,7 +181,7 @@ cleanUp();
             my $mpiStopProg = $1;
             `which $mpiStopProg`;
             if ($?) {
-                die "cannot find mpi-stop command: $mpiStop\n";
+                die "cannot find mpi-stop command: $mpiStopProg\n";
             }
         } else {
             $mpiStop = ""; 
@@ -192,9 +192,8 @@ cleanUp();
             $mpiGo = "mpirun -np "; 
         }
         if ($comm eq "mpi") {
-            my @mpiGoArray = split(" ",$mpiGo);
-            my $mpiGoProg = $mpiGoArray[0];
-            #print "mpiGoProg =\"$mpiGoProg\"\n";
+            $mpiGo =~ m/^(\w*)/;
+            my $mpiGoProg = $1;
             `which $mpiGoProg`;
             if ($?) {
                 die "cannot find mpi-go command: $mpiGoProg\n";

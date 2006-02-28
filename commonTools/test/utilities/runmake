@@ -120,7 +120,7 @@ exit $exitStatus;
             my $testMakeCommand = $1;
             `which $testMakeCommand`;
             if ($?) {
-                die "cannot find make-cmd command: $makeCmd\n";
+                die "cannot find make-cmd command: $testMakeCommand\n";
             }
         } else {
             $makeCmd = "make"; 
