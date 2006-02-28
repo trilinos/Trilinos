@@ -81,6 +81,14 @@ namespace Belos {
 template <class ScalarType, class MV, class OP>
 class BlockCG : public IterativeSolver<ScalarType,MV,OP> { 
 public:
+  //
+  // Convenience typedefs
+  //
+  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef OperatorTraits<ScalarType,MV,OP> OPT;
+  typedef Teuchos::ScalarTraits<ScalarType> SCT;
+  typedef typename SCT::magnitudeType MagnitudeType;
+
   //@{ \name Constructor/Destructor.
   //! %Belos::BlockCG constructor.
   BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
@@ -103,7 +111,7 @@ public:
   /*! 
       \note The memory for the residual MultiVec must be handled by the calling routine.
    */
-  RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const;
+  RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
   
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -163,9 +171,8 @@ private:
   int _blocksize, _iter, _new_blk;
 
   //! Numerical breakdown tolerances.
-  ScalarType _prec, _dep_tol;
-
-  typedef MultiVecTraits<ScalarType,MV> MVT;
+  MagnitudeType _prec, _dep_tol;
+  
 };
 
 //
@@ -183,8 +190,8 @@ BlockCG<ScalarType,MV,OP>::BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV
   _blocksize(0), 
   _iter(0),
   _new_blk(1),
-  _prec(5.0e-15), 
-  _dep_tol(0.75)
+  _prec(1.0), 
+  _dep_tol(1.0)
 { 
   //
   // Set the block orthogonality tolerances
@@ -200,17 +207,15 @@ BlockCG<ScalarType,MV,OP>::~BlockCG()
 template <class ScalarType, class MV, class OP>
 void BlockCG<ScalarType,MV,OP>::SetCGBlkTols() 
 {
-  const ScalarType two = 2.0;
-  ScalarType eps;
-  char precision = 'P';
-  Teuchos::LAPACK<int,ScalarType> lapack;
-  eps = lapack.LAMCH(precision);
+  typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
+  const MagnitudeType two = 2.0;
+  const MagnitudeType eps = SCT::eps();
   _prec = eps;
-  _dep_tol = 1/sqrt(two);
+  _dep_tol = MGT::one()/MGT::squareroot(two);
 }
 
 template <class ScalarType, class MV, class OP>
-RefCountPtr<const MV> BlockCG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<ScalarType> *normvec ) const 
+RefCountPtr<const MV> BlockCG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
 {
   int i;
   std::vector<int> index( _blocksize );
@@ -287,8 +292,8 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
   //
   RefCountPtr<MV> _basisvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
   RefCountPtr<MV> temp_blk = MVT::Clone( *_cur_block_sol, _blocksize );
-  std::vector<ScalarType> _cur_resid_norms( _blocksize );
-  std::vector<ScalarType> _init_resid_norms( _blocksize );
+  std::vector<MagnitudeType> _cur_resid_norms( _blocksize );
+  std::vector<MagnitudeType> _init_resid_norms( _blocksize );
   _residvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
   //
   ind_blksz = _blocksize;
@@ -690,8 +695,8 @@ bool BlockCG<ScalarType,MV,OP>::QRFactorDef (MV& VecIn,
   Teuchos::SerialDenseVector<int,ScalarType> rj;
   const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-  std::vector<ScalarType> NormVecIn( nb );
-  std::vector<ScalarType> qNorm( 1 );
+  std::vector<MagnitudeType> NormVecIn( nb );
+  std::vector<MagnitudeType> qNorm( 1 );
   //
   // Zero out the array that will contain the Fourier coefficients.
   // 
@@ -765,7 +770,7 @@ bool BlockCG<ScalarType,MV,OP>::QRFactorDef (MV& VecIn,
     MVT::MvNorm( *qj, &qNorm );
     FourierR(j,j) = qNorm[0];
     //
-    if ( NormVecIn[j] > _prec && FourierR(j,j) > (_prec * NormVecIn[j]) ) {
+    if ( NormVecIn[j] > _prec && SCT::magnitude(FourierR(j,j)) > (_prec * NormVecIn[j]) ) {
       //
       // Normalize qj to make it into a unit vector.
       //

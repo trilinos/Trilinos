@@ -147,4 +147,11 @@ using namespace std;
 #define BELOS_MIN(x,y) (( (x) < (y) ) ? (x)  : (y) )     /* min function  */
 #define BELOS_SGN(x)   (( (x) < 0.0 ) ? -1.0 : 1.0 )     /* sign function */
 
+/*
+ * Belos_Version() method
+ */
+namespace Belos {
+  string Belos_Version();
+}
+
 #endif /* BELOS_CONFIGDEFS_HPP */

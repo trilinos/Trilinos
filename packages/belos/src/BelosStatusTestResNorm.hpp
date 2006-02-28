@@ -67,6 +67,11 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
  public:
 
+  // Convenience typedefs
+  typedef Teuchos::ScalarTraits<ScalarType> SCT;
+  typedef typename SCT::magnitudeType MagnitudeType;
+  typedef MultiVecTraits<ScalarType,MV>  MVT;
+
   //@{ \name Enums.
   /*! 
     \brief Select how the residual vector is produced.
@@ -100,7 +105,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     either because left scaling or preconditioning was used, or because round-off error has 
     introduced significant error, or both.
   */
-  StatusTestResNorm( ScalarType Tolerance );
+  StatusTestResNorm( MagnitudeType Tolerance );
 
   //! Destructor
   virtual ~StatusTestResNorm();
@@ -139,13 +144,13 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     </ul>
     </ol>
   */
-  int DefineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, ScalarType ScaleValue = 1.0);
+  int DefineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, MagnitudeType ScaleValue = Teuchos::ScalarTraits<MagnitudeType>::one());
 
   //! Reset the value of the tolerance
   /*! We allow the tolerance to be reset for cases where, in the process of testing the residual, 
     we find that the initial tolerance was too tight or too lax.
   */
-  int ResetTolerance(ScalarType Tolerance) {tolerance_ = Tolerance; return(0);};
+  int ResetTolerance(MagnitudeType Tolerance) {tolerance_ = Tolerance; return(0);};
   //@}
 
   //@{ \name Status methods
@@ -193,16 +198,16 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //@{ \name Methods to access data members.
 
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
-  ScalarType GetTolerance() const {return(tolerance_);};
+  MagnitudeType GetTolerance() const {return(tolerance_);};
   
   //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
-  std::vector<ScalarType>* GetTestValue() const {return(&testvector_);};
+  std::vector<MagnitudeType>* GetTestValue() const {return(&testvector_);};
 
   //! Returns the residual norm value, \f$ \|r\| \f$, computed in most recent call to CheckStatus.
-  std::vector<ScalarType>* GetResNormValue() const {return(&resvector_);};
+  std::vector<MagnitudeType>* GetResNormValue() const {return(&resvector_);};
 
   //! Returns the scaled norm value, \f$ \sigma \f$.
-  std::vector<ScalarType>* GetScaledNormValue() const {return(&scalevector_);};
+  std::vector<MagnitudeType>* GetScaledNormValue() const {return(&scalevector_);};
 
   //@}
 
@@ -213,7 +218,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //@{ \name Private data members.
   
   //! Tolerance used to determine convergence
-  ScalarType tolerance_;
+  MagnitudeType tolerance_;
  
   //! Type of residual to use (explicit or implicit)
   ResType restype_;
@@ -228,16 +233,16 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   NormType scalenormtype_;
 
   //! Scaling value.
-  ScalarType scalevalue_;
+  MagnitudeType scalevalue_;
 
   //! Scaling vector.
-  std::vector<ScalarType> scalevector_;
+  std::vector<MagnitudeType> scalevector_;
   
   //! Residual norm vector.
-  std::vector<ScalarType> resvector_;
+  std::vector<MagnitudeType> resvector_;
 
   //! Test vector = resvector_ / scalevector_
-  std::vector<ScalarType> testvector_;
+  std::vector<MagnitudeType> testvector_;
   
   //! Status
   StatusType status_;
@@ -265,12 +270,11 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   //@}
 
-  typedef MultiVecTraits<ScalarType,MV>  MVT;
 };
 
 
   template <class ScalarType, class MV, class OP>
-  StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( ScalarType Tolerance )
+  StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance )
     : tolerance_(Tolerance),
       restype_(Implicit),
       resnormtype_(TwoNorm),	
@@ -323,7 +327,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
   template <class ScalarType, class MV, class OP> 
   int StatusTestResNorm<ScalarType,MV,OP>::DefineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
-					       ScalarType ScaleValue )
+					       MagnitudeType ScaleValue )
   {
     
     assert( firstcallDefineScaleForm_ );
@@ -340,8 +344,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   StatusType StatusTestResNorm<ScalarType,MV,OP>::CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver )
   {
   int i;
-  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-  ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+  MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
   LinearProblem<ScalarType,MV,OP>& lp = iSolver->GetLinearProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
@@ -411,10 +415,10 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
-    std::vector<ScalarType> tmp_resvector( cur_blksz_ );
+    std::vector<MagnitudeType> tmp_resvector( cur_blksz_ );
     RefCountPtr<const MV> residMV = iSolver->GetNativeResiduals( &tmp_resvector );     
     if ( residMV.get() != NULL ) { 
-      std::vector<ScalarType> tmp_resvector( MVT::GetNumberVecs( *residMV ) );
+      std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *residMV ) );
       MVT::MvNorm( *residMV, &tmp_resvector, resnormtype_ );    
       for (i=0; i<MVT::GetNumberVecs( *residMV ); i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i]; 
@@ -432,14 +436,14 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     //
     if ( lp.IsSolutionUpdated() ) {
       const MV &cur_res = lp.GetCurrResVec();
-      std::vector<ScalarType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
+      std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
       MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
       for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i];
     } else {
       RefCountPtr<const MV> cur_soln = iSolver->GetCurrentSoln();
       const MV &cur_res = lp.GetCurrResVec( &*cur_soln );
-      std::vector<ScalarType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
+      std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
       MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
       for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i];      

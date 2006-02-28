@@ -36,6 +36,7 @@
 
 #include "BelosLinearProblem.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ScalarTraits.hpp"
 
 using Teuchos::RefCountPtr;
 using Teuchos::ParameterList;
@@ -53,6 +54,9 @@ namespace Belos {
 
 template <class ScalarType, class MV, class OP>
 class IterativeSolver {
+ 
+  typedef Teuchos::ScalarTraits<ScalarType> SCT;
+  typedef typename SCT::magnitudeType MagnitudeType;
     
   public:
 
@@ -90,7 +94,7 @@ class IterativeSolver {
       by the calling routine.
     </ol>
   */
-  virtual RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const = 0;
+  virtual RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const = 0;
 
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear

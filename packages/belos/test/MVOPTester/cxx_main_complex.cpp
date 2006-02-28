@@ -32,7 +32,6 @@
 //
 
 #include "BelosConfigDefs.hpp"
-//#include "BelosEpetraAdapter.hpp"
 #include "BelosMVOPTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
@@ -116,7 +115,7 @@ int main(int argc, char *argv[])
 
 #ifndef HAVE_BELOS_TRIUTILS
   cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
   if (verbose && MyPID==0) {

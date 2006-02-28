@@ -69,6 +69,14 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   class CG : public IterativeSolver<ScalarType,MV,OP> { 
   public:
+    //
+    // Convenience typedefs
+    //
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
+    
     //@{ \name Constructor/Destructor.
     //! %Belos::CG constructor.
     CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
@@ -91,7 +99,7 @@ namespace Belos {
     /*! 
       \note The memory for the residual MultiVec must be handled by the calling routine.
     */
-    RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const;
+    RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
     
     //! Get the actual residual vector for the current linear system.
     /*! This may force the solver to compute a current residual for its linear
@@ -145,7 +153,7 @@ namespace Belos {
     int _iter;
     
     //! Numerical breakdown tolerances.
-    ScalarType _prec, _dep_tol;
+    MagnitudeType _prec, _dep_tol;
     
     typedef MultiVecTraits<ScalarType,MV> MVT;
   };
@@ -163,8 +171,8 @@ namespace Belos {
     _om(om),
     _os(&om->GetOStream()),
     _iter(0),
-    _prec(5.0e-15), 
-    _dep_tol(0.75)
+    _prec(1.0), 
+    _dep_tol(1.0)
   { 
     //
     // Set the block orthogonality tolerances
@@ -175,17 +183,15 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void CG<ScalarType,MV,OP>::SetCGBlkTols() 
   {
-    const ScalarType two = 2.0;
-    ScalarType eps;
-    char precision = 'P';
-    Teuchos::LAPACK<int,ScalarType> lapack;
-    eps = lapack.LAMCH(precision);
+    typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
+    const MagnitudeType two = 2.0;
+    const MagnitudeType eps = SCT::eps();
     _prec = eps;
-    _dep_tol = 1/sqrt(two);
+    _dep_tol = MGT::one()/MGT::squareroot(two);
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<const MV> CG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<ScalarType> *normvec ) const 
+  RefCountPtr<const MV> CG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     std::vector<int> index( 1 );
     index[0] = 0;
@@ -199,8 +205,7 @@ namespace Belos {
     //
     bool exit_flg = false;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    Teuchos::LAPACK<int,ScalarType> lapack;
+    const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> temp_sdm( 1, 1 );
@@ -274,7 +279,7 @@ namespace Belos {
 	  //
 	  // Check that alpha is a positive number!
 	  //
-	  if ( alpha(0,0) <= zero ) {
+	  if ( SCT::magnitude(alpha(0,0)) <= zero ) {
 	    if (_om->doOutput( 0 )) {
 	      *_os << " Exiting CG iteration " << endl;
 	      *_os << " Reason: Non-positive value for p^T*A*p ("<< alpha(0,0) <<") !!! "<< endl;
