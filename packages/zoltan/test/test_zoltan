@@ -205,6 +205,7 @@ if (! $?run ) then
     case linux:
     case mac:
     case purecov:
+    case pure:
       set run = "mpirun -np"
       breaksw
     case qed:
@@ -943,6 +944,7 @@ if (! $no_hg) then
         if (-e zdrive.inp.${mtd} ) then
 	  find ${outdir} -name "${hg_name[1]}.$mtd.$np.*" | xargs /bin/rm
           /bin/cp zdrive.inp.${mtd} zdrive.inp
+          setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
   
           # Run the driver
           $run $np ../$zdrive
