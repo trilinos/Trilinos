@@ -163,7 +163,5 @@ void ReadHB(char* data_file, const Epetra_Comm& comm,
 }
 
 %pythoncode %{
-
-  __version__ = Galeri_Version().split()[2]
-
+__version__ = Galeri_Version().split()[2]
 %}

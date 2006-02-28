@@ -5,12 +5,14 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
+import sys
+
 try:
   import setpath
   import Epetra, Galeri
 except ImportError:
   from PyTrilinos import Epetra, Galeri
-  print "Using system-installed Epetra, Galeri"
+  print >>sys.stderr, "Using system-installed Epetra, Galeri"
 
 # Creates a communicator, which is an Epetra_MpiComm if Trilinos was
 # configured with MPI support, serial otherwise.
@@ -20,11 +22,17 @@ Comm = Epetra.PyComm()
 # the MatrixMarket web site. Use the try/except block to
 # catch the integer exception that is thrown if the matrix file
 # cannot be opened
+failures = 0
 try:
   Map, Matrix, X, B, Xexact = Galeri.ReadHB("gre__115.rua", Comm);
 except:
+  failures += 1
   print "Problems reading matrix file, perhaps you are in"
   print "the wrong directory"
 
 # at this point you can use the objects in any PyTrilinos module,
 # for example AztecOO, Amesos, IFPACK, ML, and so on. 
+
+failures = Comm.SumAll(failures)[0]
+if failures == 0 and Comm.MyPID() == 0: print "End Result: TEST PASSED"
+sys.exit(failures)
