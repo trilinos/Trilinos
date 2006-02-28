@@ -84,9 +84,15 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   class BlockGmres : public IterativeSolver<ScalarType,MV,OP> { 
   public:
-
-    typedef Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-
+    
+    //
+    // Convenience typedefs
+    //
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
+    typedef Teuchos::ScalarTraits<ScalarType> SCT;
+    typedef typename SCT::magnitudeType MagnitudeType;
+    
     //@{ \name Constructor/Destructor.
     //! %Belos::BlockGmres constructor.
     BlockGmres(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
