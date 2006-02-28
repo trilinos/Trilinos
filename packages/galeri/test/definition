@@ -16,6 +16,7 @@
 
 (FRAMEWORK, INSTALL, GaleriPyExamples) {
         DIRS = ../python/example;
+	DESCEND_DIRS = YES;
 	EXIT-STATUS = STRING-COMPARISON;
         COMM = SERIAL, MPI(1-4);
 }
