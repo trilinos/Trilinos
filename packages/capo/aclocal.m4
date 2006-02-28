@@ -394,30 +394,6 @@ AC_DEFUN([AM_OUTPUT_DEPENDENCY_COMMANDS],
      [AMDEP_TRUE="$AMDEP_TRUE" ac_aux_dir="$ac_aux_dir"])
 ])
 
-# Like AC_CONFIG_HEADER, but automatically create stamp file. -*- Autoconf -*-
-
-# Copyright (C) 1996, 1997, 2000, 2001, 2003 Free Software Foundation, Inc.
-
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2, or (at your option)
-# any later version.
-
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
-# 02111-1307, USA.
-
-# serial 7
-
-# AM_CONFIG_HEADER is obsolete.  It has been replaced by AC_CONFIG_HEADERS.
-AU_DEFUN([AM_CONFIG_HEADER], [AC_CONFIG_HEADERS($@)])
-
 # Do all the work for Automake.                            -*- Autoconf -*-
 
 # This macro actually does too much some checks are only needed if
@@ -960,21 +936,21 @@ m4_include([config/ac_cxx_have_stl.m4])
 m4_include([config/ac_cxx_mutable.m4])
 m4_include([config/ac_cxx_namespaces.m4])
 m4_include([config/ac_cxx_new_for_scoping.m4])
-m4_include([config/ac_cxx_numeric_limits.m4])
-m4_include([config/ac_cxx_std_ios_base_fmtflags.m4])
 m4_include([config/ac_cxx_std_sprintf.m4])
-m4_include([config/ac_cxx_template_qualifier.m4])
+m4_include([config/ac_pkg_swig.m4])
+m4_include([config/ac_python_module.m4])
 m4_include([config/acx_blas.m4])
-m4_include([config/acx_lapack.m4])
+m4_include([config/az_python.m4])
 m4_include([config/tac_arg_check_mpi.m4])
 m4_include([config/tac_arg_config_mpi.m4])
 m4_include([config/tac_arg_enable_export-makefiles.m4])
 m4_include([config/tac_arg_enable_feature.m4])
-m4_include([config/tac_arg_enable_feature_sub.m4])
 m4_include([config/tac_arg_enable_feature_sub_check.m4])
 m4_include([config/tac_arg_with_ar.m4])
+m4_include([config/tac_arg_with_blaslib.m4])
 m4_include([config/tac_arg_with_flags.m4])
 m4_include([config/tac_arg_with_incdirs.m4])
 m4_include([config/tac_arg_with_libdirs.m4])
 m4_include([config/tac_arg_with_libs.m4])
 m4_include([config/tac_arg_with_perl.m4])
+m4_include([config/tac_enable_python.m4])
