@@ -3,27 +3,27 @@
 # @header
 # ************************************************************************
 #
-#              pytrilinos.amesos: python interface to amesos
-#                   copyright (2005) sandia corporation
+#              PyTrilinos.Amesos: Python interface to Amesos
+#                   Copyright (2005) Sandia Corporation
 #
-# under terms of contract de-ac04-94al85000, there is a non-exclusive
-# license for use of this work by or on behalf of the u.s. government.
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
 #
-# this library is free software; you can redistribute it and/or modify
-# it under the terms of the gnu lesser general public license as
-# published by the free software foundation; either version 2.1 of the
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
 # license, or (at your option) any later version.
 #
-# this library is distributed in the hope that it will be useful, but
+# This library is distributed in the hope that it will be useful, but
 # without any warranty; without even the implied warranty of
-# merchantability or fitness for a particular purpose.  see the gnu
-# lesser general public license for more details.
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
 #
-# you should have received a copy of the gnu lesser general public
-# license along with this library; if not, write to the free software
-# foundation, inc., 59 temple place, suite 330, boston, ma 02111-1307
-# usa
-# questions? contact michael a. heroux (maherou@sandia.gov)
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Michael A. Heroux (maherou@sandia.gov)
 #
 # ************************************************************************
 # @header
@@ -38,19 +38,23 @@
 # Author Marzio Sala, SNL 9214
 
 # PyTrilinos imports
-try:
-  import setpath
-except ImportError:
-  from PyTrilinos import Epetra
-  from PyTrilinos import Amesos
-  print "Using system-installed Epetra, Amesos"
-else:
-  import Epetra
-  import Amesos
+#try:
+import setpath
+#except ImportError:
+#  from PyTrilinos import Epetra
+#  from PyTrilinos import Amesos
+#  print "Using system-installed Epetra, Amesos"
+#else:
+import Epetra
+import Amesos
+
+import sys
 
 # dimension of the problem
 NumGlobalRows = 10
 Comm = Epetra.PyComm()
+numProc = Comm.NumProc()
+iAmRoot = Comm.MyPID() == 0
 Map = Epetra.Map(NumGlobalRows, 0, Comm)
 LHS_exact = Epetra.Vector(Map)
 LHS = Epetra.Vector(Map)
@@ -111,5 +115,10 @@ del Solver
 error = 0.0;
 for i in range(0, NumLocalRows):
   error = error + abs(LHS[i] - i);
-if Comm.MyPID() == 0:
+if iAmRoot:
   print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
+
+# Exit with a code that indicates the total number of successes
+successes = Comm.SumAll(1)[0]
+if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
+sys.exit(numProc-successes)

@@ -3,27 +3,27 @@
 # @header
 # ************************************************************************
 #
-#              pytrilinos.amesos: python interface to amesos
-#                   copyright (2005) sandia corporation
+#              PyTrilinos.Amesos: Python interface to Amesos
+#                   Copyright (2005) Sandia Corporation
 #
-# under terms of contract de-ac04-94al85000, there is a non-exclusive
-# license for use of this work by or on behalf of the u.s. government.
+# Under terms of contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
 #
-# this library is free software; you can redistribute it and/or modify
-# it under the terms of the gnu lesser general public license as
-# published by the free software foundation; either version 2.1 of the
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
 # license, or (at your option) any later version.
 #
-# this library is distributed in the hope that it will be useful, but
+# This library is distributed in the hope that it will be useful, but
 # without any warranty; without even the implied warranty of
-# merchantability or fitness for a particular purpose.  see the gnu
-# lesser general public license for more details.
+# merchantability or fitness for a particular purpose.  See the GNU
+# Lesser General Public License for more details.
 #
-# you should have received a copy of the gnu lesser general public
-# license along with this library; if not, write to the free software
-# foundation, inc., 59 temple place, suite 330, boston, ma 02111-1307
-# usa
-# questions? contact michael a. heroux (maherou@sandia.gov)
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? contact Michael A. Heroux (maherou@sandia.gov)
 #
 # ************************************************************************
 # @header
@@ -44,17 +44,19 @@ Usage is: ./exSolvers.py <solver-type>
 import sys
 
 # PyTrilinos imports
-try:
-  import setpath
-except ImportError:
-  from PyTrilinos import Epetra, Amesos
-  print "Using system-installed Epetra, Amesos"
-else:
-  import Epetra
-  import Amesos
+#try:
+import setpath
+#except ImportError:
+#  from PyTrilinos import Epetra, Amesos
+#  print "Using system-installed Epetra, Amesos"
+#else:
+import Epetra
+import Amesos
 
 def main():
   Comm = Epetra.PyComm()
+  numProc = Comm.NumProc()
+  iAmRoot = Comm.MyPID() == 0
 
   args = sys.argv[1:]
   if len(args) == 0:
@@ -135,6 +137,11 @@ def main():
   if Comm.MyPID() == 0:
     print "   Solver.Solve() return code = ", ierr
   del Solver
+
+  # Exit with a code that indicates the total number of successes
+  successes = Comm.SumAll(1)[0]
+  if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
+  sys.exit(numProc-successes)
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
