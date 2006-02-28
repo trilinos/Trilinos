@@ -21,13 +21,13 @@
 #
 # \date Last updated on 04-Dec-05
 
-try:
-  import setpath
-  import Epetra
-  import AztecOO
-except:
-  from PyTrilinos import Epetra, AztecOO
-  print "Using installed version of Epetra, AztecOO"
+#try:
+import setpath
+import Epetra
+import AztecOO
+#except:
+#  from PyTrilinos import Epetra, AztecOO
+#  print "Using installed version of Epetra, AztecOO"
 
 class Laplace1D(Epetra.PyRowMatrix):
   def __init__(self, n, Comm):

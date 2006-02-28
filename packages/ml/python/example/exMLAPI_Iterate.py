@@ -15,11 +15,11 @@
 # \date Last updated on 03-Aug-05
 # --------------------------------------------------------------------------- #
 
-try:
-  import setpath
-  import Epetra, ML
-except:
-  from PyTrilinos import Epetra, ML
+#try:
+import setpath
+import Epetra, ML
+#except:
+#  from PyTrilinos import Epetra, ML
 
 class MultiLevel(ML.BaseOperator):
   def Reshape(self, Matrix, MaxLevels):

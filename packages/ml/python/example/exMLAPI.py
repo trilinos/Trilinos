@@ -16,12 +16,12 @@
 # \date Last updated on 05-Aug-05
 # --------------------------------------------------------------------------- #
 
-try:
-  import setpath
-  import Epetra, ML
-except ImportError:
-  from PyTrilinos import Epetra, ML
-  print "Using system-installed Epetra, ML"
+#try:
+import setpath
+import Epetra, ML
+#except ImportError:
+#  from PyTrilinos import Epetra, ML
+#  print "Using system-installed Epetra, ML"
 
 class MultiLevel:
   def __init__(self, A, MaxLevels):

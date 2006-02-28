@@ -15,11 +15,11 @@
 # \date Last updated on 05-Aug-05
 # -------------------------------------------------------------------------- #
 
-try:
-  import setpath
-  import Epetra, ML
-except:
-  from PyTrilinos import Epetra, ML
+#try:
+import setpath
+import Epetra, ML
+#except:
+#  from PyTrilinos import Epetra, ML
 
 # ----------------------- #
 # User's Defined Smoother #

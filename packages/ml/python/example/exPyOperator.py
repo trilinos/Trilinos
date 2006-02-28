@@ -15,13 +15,13 @@
 #
 # \date Last updated on 22 Feb 2006
 
-try:
-  import setpath
-  import Epetra
-  import AztecOO
-except:
-  from PyTrilinos import Epetra, AztecOO
-  print "Using installed versions of Epetra, AztecOO"
+#try:
+import setpath
+import Epetra
+import AztecOO
+#except:
+#  from PyTrilinos import Epetra, AztecOO
+#  print "Using installed versions of Epetra, AztecOO"
 
 ############################################################
 

@@ -1,15 +1,15 @@
 #! /usr/bin/env python
 import sys
 
-try:
-  import setpath
-  import Epetra
-  import Galeri
-  import AztecOO
-  import ML
-except ImportError:
-  from PyTrilinos import Epetra, Galeri, AztecOO, ML
-  print "Using installed versions of Epetra, Galeri, AztecOO, ML"
+#try:
+import setpath
+import Epetra
+import Galeri
+import AztecOO
+import ML
+#except ImportError:
+#  from PyTrilinos import Epetra, Galeri, AztecOO, ML
+#  print "Using installed versions of Epetra, Galeri, AztecOO, ML"
 
 def main():
 

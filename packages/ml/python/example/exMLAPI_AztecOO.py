@@ -15,15 +15,15 @@
 # \date Last updated on 03-Aug-05
 # --------------------------------------------------------------------------- #
 
-try:
-  import setpath
-except:
-  from PyTrilinos import Epetra, ML, AztecOO
-  print "Using installed versions of Epetra, ML, AztecOO"
-else:
-  import Epetra
-  import ML
-  import AztecOO
+#try:
+import setpath
+#except:
+#  from PyTrilinos import Epetra, ML, AztecOO
+#  print "Using installed versions of Epetra, ML, AztecOO"
+#else:
+import Epetra
+import ML
+import AztecOO
 
 class MultiLevel(ML.BaseOperator):
   def Compute(self, A, MaxLevels):
