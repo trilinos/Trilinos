@@ -308,7 +308,8 @@ ForwardSolveEpetraModelEval2DSim_SOURCES = \
 ForwardSolveEpetraModelEval2DSim_DEPENDENCIES = $(common_dependencies)
 ForwardSolveEpetraModelEval2DSim_LDADD = $(common_ldadd)
 common_dependencies = \
-  $(top_builddir)/../amesos/src/libamesos.a
+  $(top_builddir)/../amesos/src/libamesos.a \
+  $(top_builddir)/../amesos/thyra/src/libamesosthyra.a
 
 AM_CPPFLAGS = $(AMESOS_INCLUDES) -I$(top_srcdir)/example/model_evaluator
 common_ldadd = $(AMESOS_LIBS)
@@ -593,6 +594,9 @@ include $(top_builddir)/../amesos/Makefile.export.amesos # Includes epetraext al
 
 $(top_builddir)/../amesos/src/libamesos.a:
 	cd $(top_builddir)/../amesos ; make all-libs
+
+$(top_builddir)/../amesos/thyra/src/libamesosthyra.a:
+	cd $(top_builddir)/../amesos/thyra/src ; make
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

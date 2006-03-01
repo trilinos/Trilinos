@@ -38,7 +38,8 @@ ForwardSolveEpetraModelEval2DSim_DEPENDENCIES = $(common_dependencies)
 ForwardSolveEpetraModelEval2DSim_LDADD = $(common_ldadd)
 
 common_dependencies = \
-  $(top_builddir)/../amesos/src/libamesos.a
+  $(top_builddir)/../amesos/src/libamesos.a \
+  $(top_builddir)/../amesos/thyra/src/libamesosthyra.a
 
 include $(top_builddir)/../amesos/Makefile.export.amesos # Includes epetraext also!
 
@@ -52,3 +53,6 @@ AM_CPPFLAGS += -I$(top_srcdir)/example/model_evaluator
 
 $(top_builddir)/../amesos/src/libamesos.a:
 	cd $(top_builddir)/../amesos ; make all-libs
+
+$(top_builddir)/../amesos/thyra/src/libamesosthyra.a:
+	cd $(top_builddir)/../amesos/thyra/src ; make
