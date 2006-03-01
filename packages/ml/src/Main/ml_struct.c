@@ -25,14 +25,6 @@
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
-extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
-                                               ML_Smoother* Smoother,
-					       int MaxIters, double Tolerance,
-					       int IsProblemSymmetric,
-					       int UseDiagonalScaling,
-					       double * LambdaMax );
-#endif
 
 
 /* ************************************************************************* *
@@ -2186,34 +2178,7 @@ int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
      kdata = ML_Krylov_Create( Amat->comm );
      if (scale_by_diag == 0) ML_Krylov_Set_DiagScaling_Eig(kdata, 0);
      if (matrix_is_nonsymmetric && (symmetrize_matrix == 0)) {
-#if defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_ANASAZI)
-       printf("rst: I am turning off Anasazi for now and using the old power\n");
-       printf("     I am concerned about this interface to anasazi as it \n");
-       printf("     looks like the power method is called anyway. Further.\n");
-       printf("     ML_Anasazi_Get_SpectralNorm_Anasazi() requires a getrow\n");
-       printf("     function (i.e. an epetra row matrix).\n");
-#endif
-#if defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRA) && defined(HAVE_MUL_ANASAZI)
-       /* Ray, this is how the function is organized:
-	  - 10 is the maximum number of iterations
-	  - 1e10 a tolerance
-	  - ML_FALSE because the problem is non-symmetric
-	  - ML_TRUE because you want diagonal scaling
-	  (the function is in ml_anasazi.cpp)
-       */
-       /* rst: Marzio I'm changing this for the diagonal */
-       /* scaling. Tell me if I'm doing something wrong  */
-       if (scale_by_diag == 0) 
-           ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,0,10,1e-10,
-                                           ML_FALSE, ML_FALSE,
-                                           &(Amat->lambda_max) );
-       else
-           ML_Anasazi_Get_SpectralNorm_Anasazi(Amat,0,10,1e-10,
-                                           ML_FALSE, ML_TRUE,
-                                           &(Amat->lambda_max) );
-#else
        ML_Krylov_Set_ComputeNonSymEigenvalues( kdata );
-#endif
      }
      else 
        ML_Krylov_Set_ComputeEigenvalues( kdata );
