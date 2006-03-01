@@ -55,7 +55,10 @@
 #include "CRS_serial.hpp"
 #include "preconditioner_crd.hpp"
 #include "sparse_lu2.hpp"
-#include "amg_solve.hpp"
+#if defined(AMG_CRD)
+  #include "amg_solve.hpp"
+#endif
+
 
 //class CLIP_solver2 : public preconditioner_crd
 class CLIP_solver2 : public preconditioner_crd

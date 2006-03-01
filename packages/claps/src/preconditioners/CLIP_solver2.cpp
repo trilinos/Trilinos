@@ -568,6 +568,7 @@ void CLIP_solver2::factor_sub_matrices()
     AR->factor(vals, rowbeg, colidx, nR, scale_option);
     delete [] rowbeg; delete [] colidx; delete [] vals;
   }
+#if defined(AMG_CRD)
   if (sub_solver == 2) {
     gen_amg_data(nR, dofR, amg_matR, amg_A1R, amg_A2R, amg_xR,
 		 amg_yR, amg_zR, amg_nodebegR, amg_local_dofR,
@@ -575,6 +576,7 @@ void CLIP_solver2::factor_sub_matrices()
     AR = new amg_solve(amg_matR, amg_A1R, amg_A2R, amg_xR, amg_yR, amg_zR,
 		       amg_nodebegR, amg_local_dofR, amg_nnodeR, amg_params);
   }
+#endif
   //
   // factor AI
   //
@@ -584,6 +586,7 @@ void CLIP_solver2::factor_sub_matrices()
     AI->factor(vals, rowbeg, colidx, nI, scale_option);
     delete [] rowbeg; delete [] colidx; delete [] vals;
   }
+#if defined(AMG_CRD)
   if (sub_solver == 2) {
     gen_amg_data(nI, dofI, amg_matI, amg_A1I, amg_A2I, amg_xI,
 		 amg_yI, amg_zI, amg_nodebegI, amg_local_dofI,
@@ -591,6 +594,7 @@ void CLIP_solver2::factor_sub_matrices()
     AI = new amg_solve(amg_matI, amg_A1I, amg_A2I, amg_xI, amg_yI, amg_zI,
 		       amg_nodebegI, amg_local_dofI, amg_nnodeI, amg_params);
   }
+#endif
 }
 
 void CLIP_solver2::calculate_coarse()
