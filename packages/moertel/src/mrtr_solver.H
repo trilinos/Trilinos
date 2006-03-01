@@ -74,7 +74,7 @@
 
 #include "AztecOO.h"
 
-#include "mrtr_manager.H"
+//#include "mrtr_manager.H"
 #include "mrtr_utils.H"
 #include "mrtr_WrapMultiLevelPreconditioner.H"
 
@@ -99,8 +99,10 @@ Use at least the following lines in the configure of Trilinos:<br>
 
 */
 
+
 namespace MOERTEL
 {
+// forward declarations
 class Manager;
 
 /*!

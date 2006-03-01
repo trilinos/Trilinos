@@ -32,6 +32,7 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "mrtr_solver.H"
+#include "mrtr_manager.H"
 #include "mrtr_utils.H"
 #include "Epetra_Time.h"
 #include <EpetraExt_Transpose_RowMatrix.h>
@@ -301,13 +302,14 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   b_->Update(-1.0,xtmp2,1.0);
   
   if (preconditioner=="AZ_user_precond")
+  {
     if (mlprec_==null || matrixisnew_);
     {
-      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams),true);
+      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*origmatrix_,mlparams),true);
       // create a constrained mortar-ml-preconditioner
       moertelprec_ = rcp(new MOERTEL::ConstrainedPreconditioner(mlprec_,I_,WT_,B_));
     }  
-  
+  }
   
 #if 0
   
@@ -322,17 +324,16 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   ML_Operator2EpetraCrsMatrix(&(ml->Pmat[1]),P,maxnnz,false,cputime);
   Epetra_CrsMatrix* P2;
   ML_Operator2EpetraCrsMatrix(&(ml->Pmat[2]),P2,maxnnz,false,cputime);
-  //cout << *P;
-  MOERTEL::Print_Matrix("zzz_Ifine",*I_,1);
-  MOERTEL::Print_Matrix("zzz_Psmooth",*P,1);
-  MOERTEL::Print_Matrix("zzz_PPsmooth",*P2,1);
-  MOERTEL::Print_Matrix("zzz_B",*B_,1);
-  MOERTEL::Print_Matrix("zzz_WT",*WT_,1);
-  MOERTEL::Print_Matrix("zzz_Atilde",*matrix_,1);
-  MOERTEL::Print_Matrix("zzz_A",*origmatrix_,1);
-  MOERTEL::Print_Vector("zzz_x",*x_,1);
-  MOERTEL::Print_Vector("zzz_b",*b_,1);
-  exit(0);
+  //MOERTEL::Print_Matrix("zzz_Ifine",*I_,1);
+  //MOERTEL::Print_Matrix("zzz_Psmooth",*P,1);
+  //MOERTEL::Print_Matrix("zzz_PPsmooth",*P2,1);
+  //MOERTEL::Print_Matrix("zzz_B",*B_,1);
+  //MOERTEL::Print_Matrix("zzz_WT",*WT_,1);
+  //MOERTEL::Print_Matrix("zzz_Atilde",*matrix_,1);
+  //MOERTEL::Print_Matrix("zzz_A",*origmatrix_,1);
+  //MOERTEL::Print_Vector("zzz_x",*x_,1);
+  //MOERTEL::Print_Vector("zzz_b",*b_,1);
+  //exit(0);
   // test BT x = 0 <-- this is correct
   //Epetra_Vector* BTx = new Epetra_Vector(B_->DomainMap(),true);
   //B_->Multiply(true,*x_,*BTx);
@@ -350,11 +351,20 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   //cout << *ImBWT;
   
   //-------------------------------------------------------------- form coarse I
+  /*
   Epetra_CrsMatrix* RI      = MOERTEL::MatMatMult(*P,true,*I_,false,OutLevel());  
   Epetra_CrsMatrix* tmp     = MOERTEL::MatMatMult(*RI,false,*P,false,OutLevel());  
   delete RI; RI = NULL;
   Epetra_CrsMatrix* Icoarse = MOERTEL::StripZeros(*tmp,1.0e-12);
   delete tmp; tmp = NULL;
+  */
+  Epetra_CrsMatrix* Icoarse = new Epetra_CrsMatrix(Copy,P->DomainMap(),10,false);
+  for (int i=0; i<Icoarse->NumMyRows(); ++i)
+  {
+    double one = 1.0;
+    Icoarse->InsertGlobalValues(i,1,&one,&i);
+  }
+  Icoarse->FillComplete();
   //cout << *Icoarse; // correct
 
 #if 1 //-------------------------------------------------------- to get WTcoarse
@@ -369,7 +379,6 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   }
   MOERTEL::MatrixMatrixAdd(*WT_,false,1.0,*WTsquare,0.0);
   WTsquare->FillComplete(I_->OperatorDomainMap(),I_->OperatorRangeMap());
-  //MOERTEL::Print_Matrix("WTfine",*WTsquare,0);
   //cout << *WT_;
   //cout << *WTsquare;
   
@@ -420,7 +429,7 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   matrix_->Multiply(false,*x_,*r);
   r->Update(1.0,*b_,-1.0);
   //cout << *r;
-  //MOERTEL::Print_Vector("r",*r,0);
+  //MOERTEL::Print_Vector("zzz_r",*r,0);
 
   //---------------------------------------- make sure WT * r is zero <-- correct!
   //Epetra_Vector* WTr = new Epetra_Vector(WT_->RangeMap(),true);
@@ -436,15 +445,15 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   Epetra_CrsMatrix* tmp2 = MOERTEL::MatMatMult(*ImBWTcoarse,false,*tmp1,false,OutLevel());
   delete tmp1; tmp1 = NULL;
   
-  Epetra_CrsMatrix* tmp3 = MOERTEL::MatMatMult(*P,true,*BWT,false,OutLevel());
-  Epetra_CrsMatrix* tmp4 = MOERTEL::MatMatMult(*BWTcoarse,false,*tmp3,false,OutLevel());
-  delete tmp3; tmp3 = NULL;
+  //Epetra_CrsMatrix* tmp3 = MOERTEL::MatMatMult(*P,true,*BWT,false,OutLevel());
+  //Epetra_CrsMatrix* tmp4 = MOERTEL::MatMatMult(*BWTcoarse,false,*tmp3,false,OutLevel());
+  //delete tmp3; tmp3 = NULL;
 
   Epetra_CrsMatrix* Pmod = new Epetra_CrsMatrix(Copy,P->OperatorRangeMap(),10,false);  
   MOERTEL::MatrixMatrixAdd(*tmp2,true,1.0,*Pmod,0.0);
-  MOERTEL::MatrixMatrixAdd(*tmp4,true,1.0,*Pmod,1.0);
+  //MOERTEL::MatrixMatrixAdd(*tmp4,true,1.0,*Pmod,1.0);
   delete tmp2; tmp2 = NULL;
-  delete tmp4; tmp4 = NULL;
+  //delete tmp4; tmp4 = NULL;
   Pmod->FillComplete(P->OperatorDomainMap(),P->OperatorRangeMap());    
   Pmod->Multiply(true,*r,*rcoarse);
   //cout << *rcoarse;  
@@ -483,7 +492,7 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   WTcoarse->Multiply(false,*rcoarse,*WTcoarse_rcoarse);
   cout << *WTcoarse_rcoarse;
 
-exit(0);
+  exit(0);
 
 #endif
 

@@ -668,8 +668,7 @@ bool MOERTEL::Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase)
   }
   
   // write global and local dimensions of this operator
-  fprintf(out,"%d %d\n",A.RangeMap().NumGlobalElements(),A.DomainMap().NumGlobalElements());
-  fprintf(out,"%d %d\n",A.RowMap().NumMyElements(),A.ColMap().NumMyElements());
+  fprintf(out,"%d %d 0\n",A.RangeMap().NumGlobalElements(),A.DomainMap().NumGlobalElements());
   for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
   {
     int grow = A.GRID(lrow); 
@@ -725,7 +724,7 @@ bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  fprintf(out,"%d %d\n",v.GlobalLength(),v.MyLength());
+  //fprintf(out,"%d %d\n",v.GlobalLength(),v.MyLength());
   for (int lrow=0; lrow<v.MyLength(); ++lrow)
   {
     int grow = v.Map().GID(lrow); 
@@ -736,7 +735,8 @@ bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-    fprintf(out," %d   %20.10e\n",grow+ibase,v[lrow]);
+    //fprintf(out," %d   %20.10e\n",grow+ibase,v[lrow]);
+    fprintf(out,"  %20.10e\n",v[lrow]);
   }
   fflush(out);
   fclose(out);

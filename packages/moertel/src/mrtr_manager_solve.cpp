@@ -34,7 +34,7 @@
 #include "mrtr_manager.H"
 #include "mrtr_utils.H"
 #include "EpetraExt_MatrixMatrix.h"  // for adding matrices
-#include <EpetraExt_Transpose_RowMatrix.h>
+#include "EpetraExt_Transpose_RowMatrix.h"
 #include "Epetra_Time.h"
 
 /*----------------------------------------------------------------------*

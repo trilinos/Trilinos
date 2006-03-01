@@ -89,9 +89,11 @@ Use at least the following lines in the configure of Trilinos:<br>
 \endcode
 
 */
+
 namespace MOERTEL
 {
-  class Solver;
+// forward declarations
+class Solver;
 
 /*!
 \class Manager
