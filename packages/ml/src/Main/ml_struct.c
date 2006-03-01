@@ -1066,8 +1066,13 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
       Amat = &(ml->Amat[i]);
 
      if (omega == ML_DEFAULT) 
+     {
        ML_Smoother_ComputeOmegaViaSpectralradius(Amat, ML_Smoother_GaussSeidel,
                                                NULL, &spectral_radius, &tomega);
+       if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
+         printf("Optimal SGS damping parameter = %e\n", tomega);
+     }
+
      fun  = ML_Smoother_SGS;
 
       if (Amat->getrow->func_ptr == MSR_getrows){
@@ -1381,9 +1386,13 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 	 ml->pre_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_pre%d",i);
      	 if (omega == ML_DEFAULT) 
+         {
        	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
 					 ML_Smoother_BlockGS,(void *) data, 
-					 &spectral_radius, &tomega);
+                                         &spectral_radius, &tomega);
+           if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
+             printf("Optimal SGS damping parameter = %e\n", tomega);
+         }
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
 		                 (void *) data, fun, ntimes, tomega, str);
 #ifdef ML_TIMING
@@ -1404,9 +1413,13 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 	 ml->post_smoother[i].data_destroy = ML_Smoother_Clean_BGS_Data;
          sprintf(str,"BGS_post%d",i);
      	 if (omega == ML_DEFAULT) 
+         {
        	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
 					 ML_Smoother_BlockGS,(void *) data, 
 					 &spectral_radius, &tomega);
+           if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
+             printf("Optimal SGS damping parameter = %e\n", tomega);
+         }
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
 			      (void *) data, fun, ntimes, tomega, str);
 #ifdef ML_TIMING
@@ -1425,9 +1438,13 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 
          sprintf(str,"BGS_pre%d",i);
      	 if (omega == ML_DEFAULT) 
+         {
        	   ML_Smoother_ComputeOmegaViaSpectralradius(&(ml->Amat[i]), 
 					 ML_Smoother_BlockGS,(void *) data, 
 					 &spectral_radius, &tomega);
+           if (ML_Get_PrintLevel() > 8 && ml->comm->ML_mypid == 0)
+             printf("Optimal SGS damping parameter = %e\n", tomega);
+         }
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
 		                 (void *) data, fun, ntimes, tomega, str);
 #ifdef ML_TIMING

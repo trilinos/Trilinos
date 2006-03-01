@@ -73,7 +73,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   //      on. We can either get rid of this or set the default omega
   //      to 1 in another spot or add some new string (e.g. "compute omega").
   //
-  if (omega == ML_DDEFAULT) omega = 1.0;
+  //MS//if (omega == ML_DDEFAULT) omega = 1.0;
 
   int pre_or_post = 0;
   string PreOrPostSmoother = List_.get("smoother: pre or post","both");

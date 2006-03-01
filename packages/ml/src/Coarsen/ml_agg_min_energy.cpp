@@ -295,7 +295,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   if (Amat->getrow->pre_comm != 0)
     Nghost = Amat->getrow->pre_comm->total_rcv_length;
   ML_Operator *UnscaledAmat = NULL;
-  if (Amat->num_PDEs == 1) {
+  if (Amat->num_PDEs == 1 || ag->block_scaled_SA == 0) {
 
     // Use point scaling here instead of block scaling. Incorporate the 
     // point scaling automatically in Amat so we don't need to worry about
@@ -332,7 +332,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
   // only a need to scale explicitly if solving a PDE system.    
   // rst: This may not work in parallel?                         
 
-  if (Amat->num_PDEs != 1) {
+  if (Amat->num_PDEs != 1 && ag->block_scaled_SA == 1) {
     DinvAmat = ML_Operator_ImplicitlyBlockDinvScale(Amat);
     ML_Operator_ExplicitDinvA(Amat->num_PDEs,(MLSthing *)DinvAmat->data,
 			      DinvAP0);
@@ -404,7 +404,7 @@ int ML_AGG_Gen_Prolongator_MinEnergy(ML *ml,int level, int clevel, void *data)
     // Scale result. Note: if Amat corresponds to a scalar PDE, the 
     // point scaling is already incorporated into Amat so there is  
     // only a need to scale explicitly if solving a PDE system.     
-    if (Amat->num_PDEs != 1) 
+    if (Amat->num_PDEs != 1 && ag->block_scaled_SA == 1) 
       ML_Operator_ExplicitDinvA(Amat->num_PDEs,(MLSthing *)DinvAmat->data,
 				DinvADinvAP0);  
 
@@ -703,7 +703,7 @@ int ML_AGG_Gen_Restriction_MinEnergy(ML *ml,int level, int clevel, void *data)
 
     ML_Operator_Transpose_byrow(P0, P0_trans);
 
-    if (Amat->num_PDEs == 1)
+    if (Amat->num_PDEs == 1 || ag->block_scaled_SA == 0)
     {
       if (Amat->getrow->pre_comm != NULL) 
       {

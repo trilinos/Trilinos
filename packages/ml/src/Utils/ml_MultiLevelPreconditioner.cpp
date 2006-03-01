@@ -834,6 +834,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // set the number of nonzeros
     ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumGlobalNonzeros();
 
+    // ============ //
+    // fix diagonal //
+    // ============ //
+
+    if (false) // ?? MS ?? what the hell I did here?
+    {
+      cout << "Setting diagonal..." << endl;
+      double* diagonal = (double*)ML_allocate(sizeof(double) * NumMyRows);
+      Epetra_Vector Diagonal(View, RowMatrix_->RowMatrixRowMap(), diagonal);
+      RowMatrix_->ExtractDiagonalCopy(Diagonal);
+
+      ML_Operator_Set_Diag(&(ml_->Amat[LevelID_[0]]), NumMyRows, diagonal);
+    }
+
     ML_Epetra::FilterType FT;
     FT = List_.get("filter: type", ML_Epetra::ML_NO_FILTER);
 
@@ -1264,6 +1278,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
       agg_->minimizing_energy = -1;
     }
 
+    // Added on Feb-28
+    if (List_.get("aggregation: block scaling", false) && NumPDEEqns_ != 1)
+    {
+      if (verbose_) 
+        cout << PrintMsg_ << "Using block scaling for D^{-1}A" << endl;
+      agg_->block_scaled_SA = 1;
+    }
+    else
+      agg_->block_scaled_SA = 0;
+
     // energy minimization
     if (List_.get("energy minimization: enable", false))
     {
@@ -1273,6 +1297,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
         cout << "Warning: Option `energy minimization' is safer when used with" << endl;
         cout << "Warning: Uncoupled aggregation scheme. Other aggregation schemes" << endl;
         cout << "Warning: may crash the code." << endl;
+        cout << "Warning: Remember also use block scaling for vector problem" << endl;
+        cout << "Warning: by setting `aggregation: block scaling' = true" << endl;
+        cout << "Warning: Parallel block scaling may crash..." << endl;
+        cout << "Warning: Usually, the `2' norm gives the best results, but" << endl;
+        cout << "Warning: sometimes `1' can perform nicely as well." << endl;
         cout << endl;
       }
       agg_->minimizing_energy = List_.get("energy minimization: type", 2);
