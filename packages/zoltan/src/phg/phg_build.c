@@ -1398,6 +1398,8 @@ int ierr=ZOLTAN_OK;
    * these, we only need to know which process owns the vertex.
    */
 
+  nprocs = zz->Num_Proc;
+
   nRemovePins = 0;
   for (i=0; i<zhg->nRemove; i++){
     nRemovePins += zhg->Remove_Esize[i];
