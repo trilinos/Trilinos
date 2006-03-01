@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#         PyTrilinos.IFPACK: Python Interface to IFPACK
+#              PyTrilinos.IFPACK: Python Interface to IFPACK
 #                   Copyright (2005) Sandia Corporation
 #
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -36,12 +36,12 @@
 # build module.
 import sys
 
-try:
-    import setpath
-    import Epetra, IFPACK
-except ImportError:
-    from PyTrilinos import Epetra, IFPACK
-    print >>sys.stderr, "Using system-installed Epetra, IFPACK"
+#try:
+import setpath
+import Epetra, IFPACK
+#except ImportError:
+#    from PyTrilinos import Epetra, IFPACK
+#    print >>sys.stderr, "Using system-installed Epetra, IFPACK"
 
 import unittest
 
