@@ -91,10 +91,31 @@ int multiply_list(int * list, int n) {
 		  int                 elementSize,
 		  int                 indexBase,
 		  const Epetra_Comm & comm                ) {
-    // The wrapper for this constructor cannot be called from python
-    // because (under the SWIG-generated logic) it is masked by the
-    // next constructor; However, it does serve a documentation
-    // purpose [via %feature("autodoc")], so I keep it as a shell.
+    // Declarations
+    int              numMyElements;
+    int             *myGlobalElements = NULL;
+    PyObject        *elementArray     = NULL;
+    Epetra_BlockMap *returnBlockMap   = NULL;
+    // Check for integer PyObjects in the argument list
+    if (PyInt_Check(myGlobalElementArray)) {
+      numMyElements   = (int) PyInt_AsLong(myGlobalElementArray);
+      // Constructor for user-defined, linear distribution of constant-size elements
+      returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,elementSize,
+					   indexBase,comm);
+    } else {
+      elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
+      if (elementArray == NULL) goto fail;
+      numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
+				       ((PyArrayObject*)elementArray)->nd);
+      myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
+      // Constructor for user-defined, arbitrary distribution of constant-size elements
+      returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
+					   elementSize,indexBase,comm);
+      Py_DECREF(elementArray);
+    }
+    return returnBlockMap;
+  fail:
+    Py_XDECREF(elementArray);
     return NULL;
   }
 

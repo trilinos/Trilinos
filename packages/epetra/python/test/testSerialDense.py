@@ -59,6 +59,17 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         self.array = [[0.1, 2.3, 4.5],
                       [6.7, 8.9, 0.1],
                       [2.3, 4.5, 6.7]]
+        # Query whether Copy objects are actually Copy objects.  For older
+        # versions of SWIG, they are View objects, but newer versions of SWIG
+        # get it right
+        sdm = Epetra.SerialDenseMatrix(False)
+        self.CV = sdm.CV()
+        if self.CV == Epetra.View:
+            self.CVStr = "View"
+            self.YNStr = "no"
+        else:
+            self.CVStr = "Copy"
+            self.YNStr = "yes"
 
     def tearDown(self):
         self.comm.Barrier()
@@ -73,14 +84,14 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testMatrixConstructor1(self):
         "Test Epetra.SerialDenseMatrix bool constructor"
         sdm = Epetra.SerialDenseMatrix(False)
-        self.assertEqual(sdm.CV(), Epetra.View)
+        self.assertEqual(sdm.CV(), self.CV)
         self.assertEqual(sdm.M(), 0)
         self.assertEqual(sdm.N(), 0)
 
     def testMatrixConstructor2(self):
         "Test Epetra.SerialDenseMatrix sized constructor"
         sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
-        self.assertEqual(sdm.CV(), Epetra.View)
+        self.assertEqual(sdm.CV(), self.CV)
         self.assertEqual(sdm.M(), self.rows)
         self.assertEqual(sdm.N(), self.cols)
 
@@ -123,7 +134,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         "Test Epetra.SerialDenseMatrix copy constructor"
         sdm1 = Epetra.SerialDenseMatrix(self.rows,self.cols)
         sdm2 = Epetra.SerialDenseMatrix(sdm1)
-        self.assertEqual(sdm2.CV(), Epetra.View)
+        self.assertEqual(sdm2.CV(), self.CV)
         self.assertEqual(sdm1.M(), sdm2.M())
         self.assertEqual(sdm1.N(), sdm2.N())
 
@@ -206,8 +217,8 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         f = open(filename, "w")
         sdm.Print(f)
         f.close()
-        out = "\nData access mode: View\nA_Copied: no\nRows(M): %d\nColumns(N): %d\nLDA: %d\n" \
-              % (n,n,n) + (n * "0 " + "\n") * n
+        out = "\nData access mode: %s\nA_Copied: %s\nRows(M): %d\nColumns(N): %d\nLDA: %d\n" \
+              % (self.CVStr,self.YNStr,n,n,n) + (n * "0 " + "\n") * n
         f = open(filename, "r")
         self.assertEqual(f.read(), out)
         f.close()
@@ -330,6 +341,17 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         self.rows = 2
         self.cols = 4
         self.list = [0.0, -1, 2.17, -3.14]
+        # Query whether Copy objects are actually Copy objects.  For older
+        # versions of SWIG, they are View objects, but newer versions of SWIG
+        # get it right
+        sdv = Epetra.SerialDenseVector(self.size)
+        self.CV = sdv.CV()
+        if self.CV == Epetra.View:
+            self.CVStr = "View"
+            self.YNStr = "no"
+        else:
+            self.CVStr = "Copy"
+            self.YNStr = "yes"
 
     def tearDown(self):
         self.comm.Barrier()
@@ -343,7 +365,7 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
     def testVectorConstructor1(self):
         "Test Epetra.SerialDenseVector sized constructor"
         sdv = Epetra.SerialDenseVector(self.size)
-        self.assertEqual(sdv.CV(), Epetra.View)
+        self.assertEqual(sdv.CV(), self.CV)
         self.assertEqual(sdv.Length(), self.size)
 
     def testVectorConstructor2(self):
@@ -368,7 +390,7 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         "Test Epetra.SerialDenseVector copy constructor"
         sdv1 = Epetra.SerialDenseVector(self.size)
         sdv2 = Epetra.SerialDenseVector(sdv1)
-        self.assertEqual(sdv2.CV(), Epetra.View)
+        self.assertEqual(sdv2.CV(), self.CV)
         self.assertEqual(sdv1.Length(), sdv2.Length())
 
     def testVectorConstructor5(self):
@@ -383,8 +405,8 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         f = open(filename, "w")
         sdv.Print(f)
         f.close()
-        out = "Data access mode: View\nA_Copied: no\nLength(M): %d\n" % \
-              self.size + self.size * "0 " + "\n"
+        out = "Data access mode: %s\nA_Copied: %s\nLength(M): %d\n" % \
+              (self.CVStr,self.YNStr,self.size) + self.size * "0 " + "\n"
         f = open(filename, "r")
         self.assertEqual(f.read(), out)
         f.close()
@@ -556,6 +578,17 @@ class EpetraIntSerialDenseVectorTestCase(unittest.TestCase):
         self.rows = 2
         self.cols = 4
         self.list = [0, -1, 2, -3]
+        # Query whether Copy objects are actually Copy objects.  For older
+        # versions of SWIG, they are View objects, but newer versions of SWIG
+        # get it right
+        isdv = Epetra.IntSerialDenseVector(self.size)
+        self.CV = isdv.CV()
+        if self.CV == Epetra.View:
+            self.CVStr = "View"
+            self.YNStr = "no"
+        else:
+            self.CVStr = "Copy"
+            self.YNStr = "yes"
 
     def tearDown(self):
         self.comm.Barrier()
@@ -569,7 +602,7 @@ class EpetraIntSerialDenseVectorTestCase(unittest.TestCase):
     def testVectorConstructor1(self):
         "Test Epetra.IntSerialDenseVector sized constructor"
         isdv = Epetra.IntSerialDenseVector(self.size)
-        self.assertEqual(isdv.CV(), Epetra.View)
+        self.assertEqual(isdv.CV(), self.CV)
         self.assertEqual(isdv.Length(), self.size)
 
     def testVectorConstructor2(self):
@@ -594,7 +627,7 @@ class EpetraIntSerialDenseVectorTestCase(unittest.TestCase):
         "Test Epetra.IntSerialDenseVector copy constructor"
         isdv1 = Epetra.IntSerialDenseVector(self.size)
         isdv2 = Epetra.IntSerialDenseVector(isdv1)
-        self.assertEqual(isdv2.CV(), Epetra.View)
+        self.assertEqual(isdv2.CV(), self.CV)
         self.assertEqual(isdv1.Length(), isdv2.Length())
 
     def testVectorConstructor5(self):
@@ -609,8 +642,8 @@ class EpetraIntSerialDenseVectorTestCase(unittest.TestCase):
         f = open(filename, "w")
         isdv.Print(f)
         f.close()
-        out = "Data access mode: View\nA_Copied: no\nLength(M): %d\n" % \
-              self.size + self.size * "0 " + "\n"
+        out = "Data access mode: %s\nA_Copied: %s\nLength(M): %d\n" % \
+              (self.CVStr,self.YNStr,self.size) + self.size * "0 " + "\n"
         f = open(filename, "r")
         self.assertEqual(f.read(), out)
         f.close()

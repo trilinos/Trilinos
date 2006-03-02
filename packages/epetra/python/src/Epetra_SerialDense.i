@@ -226,7 +226,8 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
         if key in self.__dict__:
             if self.__protected:
                 if key == "array":
-                    raise AttributeError, "Cannot change Epetra.IntSerialDenseVector array attribute"
+                    raise AttributeError, "Cannot change Epetra.IntSerialDenseVector array" + \
+		      " attribute"
         UserArray.__setattr__(self, key, value)
     def __call__(self,i):
         "__call__(self, int i) -> int"
