@@ -617,6 +617,10 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
              }
              diag[i] = 1.;
            }
+           /* MS * added on 01-Mar-06 */
+           else
+             diag[i] = 1.0 / diag[i];
+#if 0
            else if ( diag[i] < 0.0 ) {
              if (ML_Get_PrintLevel() > 0) {
                if (level != -1) 
@@ -627,6 +631,7 @@ int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
            }
            else
              diag[i] = 1.0 / (ML_dabs(diag[i]));
+#endif
         } /*if ( sum == 0.0) */
      } /*for ( i = 0; i < length; i++ )*/
    }
