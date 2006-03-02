@@ -63,7 +63,7 @@ class ColoringTestCase(unittest.TestCase):
             if   grid == 0  : indices = [0,1]
             elif grid == n-1: indices = [n-2,n-1]
             else            : indices = [grid-1,grid,grid+1]
-            self.crsg.InsertGlobalIndices(grid,len(indices),indices)
+            self.crsg.InsertGlobalIndices(grid,indices)
         self.crsg.FillComplete()
 
     def testMapColoring(self):
