@@ -1102,7 +1102,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // If present, fix the finest-level coordinates in the hierarchy          //
   // ====================================================================== //
   
-  ML_CHK_ERR(SetupCoordinates());
+  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0))
+    ML_CHK_ERR(SetupCoordinates());
 
   // ====================================================================== //
   // pick up coarsening strategy. METIS and ParMETIS requires additional    //
