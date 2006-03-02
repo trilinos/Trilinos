@@ -114,7 +114,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   
   // may need to clean up after visualization and statistics
-  if (List_.get("viz: enable", false))
+  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0))
   {
     ML_Aggregate_VizAndStats_Clean(ml_);
     if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
@@ -1090,7 +1090,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // visualize aggregate shape and other statistics.                        //
   // ====================================================================== //
   
-  if (List_.get("viz: enable", false))
+  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0))
   { 
     if (SolvingMaxwell_) {
       ML_Aggregate_VizAndStats_Setup(ml_nodes_);
