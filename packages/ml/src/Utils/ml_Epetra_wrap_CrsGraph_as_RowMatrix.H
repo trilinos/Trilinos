@@ -358,7 +358,7 @@ class CrsGraphWrapper: public virtual Epetra_RowMatrix
     
     const Epetra_CrsGraph& graph_;
     bool                   usetranspose_;
-    char*                  name_;
+    const char*            name_;
     Epetra_Map             DomainMap_;
     Epetra_Map             RangeMap_;
     const Epetra_Comm&     comm_;
