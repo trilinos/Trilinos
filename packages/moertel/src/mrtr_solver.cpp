@@ -305,7 +305,7 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   {
     if (mlprec_==null || matrixisnew_);
     {
-      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*origmatrix_,mlparams),true);
+      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams),true);
       // create a constrained mortar-ml-preconditioner
       moertelprec_ = rcp(new MOERTEL::ConstrainedPreconditioner(mlprec_,I_,WT_,B_));
     }  

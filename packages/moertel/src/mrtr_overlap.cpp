@@ -621,7 +621,7 @@ bool MOERTEL::Overlap::Triangulation()
   {
     double x[3]; x[0] = x[1] = x[2] = 0.0;
     double n[3]; n[0] = n[1] = n[2] = 0.0;
-    double val[sseg_.Nnode()];
+    double val[20];
     sseg_.EvaluateFunction(0,points[i]->Xi(),val,sseg_.Nnode(),NULL);
     MOERTEL::Node** snodes = sseg_.Nodes();
     for (int j=0; j<sseg_.Nnode(); ++j)

@@ -69,7 +69,7 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
   Epetra_Vector xtmp(B_->DomainMap(),false);
   Epetra_Vector xtmp2(x.Map(),false);
 
-#if 1
+#if 0
   // make X (residual) satisfy constraints 
   // do X = (I-BW^T)X
   WT_->Multiply(false,x,xtmp);
@@ -88,7 +88,7 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
   
   // make Y (search direction) satisfy constraints
   // do Y = (I-WB^T)Y
-#if 1
+#if 0
   Epetra_Vector y(View,Y,0);
   B_->Multiply(true,y,xtmp);
   WT_->Multiply(true,xtmp,xtmp2);
