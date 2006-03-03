@@ -129,11 +129,13 @@
             ../python/example/exMLAPI_Smoother.py,
             ../python/example/exPyOperator.py,
             ../python/example/exPyRowMatrix.py;
+    EXIT-STATUS = STRING-COMPARISON;
     COMM  = SERIAL;
 }
 
 (FRAMEWORK, INSTALL, MLPyTests) {
     DIRS = ../python/test;
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
 

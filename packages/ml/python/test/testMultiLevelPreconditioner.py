@@ -39,3 +39,5 @@ Solver.SetPrecOperator(Prec)
 Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
+
+if Comm.MyPID() == 0: print "End Result: TEST PASSED"
