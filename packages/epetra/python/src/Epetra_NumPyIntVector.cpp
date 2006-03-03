@@ -39,7 +39,6 @@ using namespace std;
 const Epetra_SerialComm   Epetra_NumPyIntVector::defaultComm = Epetra_SerialComm();
 PyArrayObject           * Epetra_NumPyIntVector::tmp_array   = NULL               ;
 Epetra_Map              * Epetra_NumPyIntVector::tmp_map     = NULL               ;
-char                    * Epetra_NumPyIntVector::tmp_error   = NULL               ;
 
 // Static helper functions
 // =============================================================================
@@ -48,10 +47,9 @@ int * Epetra_NumPyIntVector::getArray(PyObject * pyObject)
   // Try to build a contiguous PyArrayObject from the pyObject
   if (!tmp_array) tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'i',0,0);
   
-  // If this fails, indicate an error by setting tmp_error, but build
-  // a vector with length zero to prevent a Bus Error
+  // If this fails, build a vector with length zero to prevent a Bus
+  // Error
   if (!tmp_array) {
-    tmp_error = "Error converting argument to an array";
     int dimensions[ ] = { 0 };
     tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
   }
@@ -73,7 +71,6 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
     if PyBool_Check(pyObject) {
       tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
       if (tmp_array == NULL) {
-	tmp_error = "Error creating array";
 	defaultDims[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
       }
@@ -84,7 +81,6 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
 
       // If this fails, build a single vector with zero length
       if (tmp_array == NULL) {
-	tmp_error = "Error converting argument to an array";
 	defaultDims[0] = 0;
 	tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
 
@@ -137,10 +133,6 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap, b
 
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
-
-  // Error message
-  error_msg = tmp_error;
-  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -153,10 +145,6 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_IntVector & source):
   Epetra_IntVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_INT,
 						    (char *)v);
-
-  // Error message
-  error_msg = tmp_error;
-  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -171,10 +159,6 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap,
 
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
-
-  // Error message
-  error_msg = tmp_error;
-  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -190,10 +174,6 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(PyObject * pyObject):
   assert(NULL != tmp_array);
   array     = tmp_array;
   tmp_array = NULL;
-
-  // Error message
-  error_msg = tmp_error;
-  tmp_error = NULL;
 }
 
 // =============================================================================
@@ -202,14 +182,6 @@ Epetra_NumPyIntVector::~Epetra_NumPyIntVector()
 {
   Py_XDECREF(array);
   delete map;
-}
-
-// =============================================================================
-PyObject * Epetra_NumPyIntVector::CheckForError() const
-{
-  if (error_msg == NULL) return Py_BuildValue("");
-  PyErr_SetString(PyExc_ValueError,error_msg);
-  return NULL;
 }
 
 // =============================================================================

@@ -89,7 +89,22 @@
   struct IntVector   { };
 }
 
+// Exceptions.  The NumPy class constructors raise python exceptions,
+// but swig must be told explicitely to look for them.
+%define CONSTRUCTOR_EXCEPTION(classname)
+%exception classname::classname {
+  $action
+  if (PyErr_Occurred()) SWIG_fail;
+}
+%enddef
+CONSTRUCTOR_EXCEPTION(Epetra_NumPyMultiVector)
+CONSTRUCTOR_EXCEPTION(Epetra_NumPyVector     )
+CONSTRUCTOR_EXCEPTION(Epetra_NumPyIntVector  )
+
 // Typemaps
+// When a method returns an Epetra_*Vector, this typemap converts it
+// to an Epetra_NumPy*Vector.  There is additional magic in the python
+// code to convert the Epetra_NumPy*Vector to an Epetra.*Vector.
 %define TYPEMAP_OUT(vector,numPyVector)
 %typemap(out) vector * {
   numPyVector * vec = new numPyVector(*$1);
@@ -97,7 +112,6 @@
   $result = SWIG_NewPointerObj(vec, ty, 1);
 }
 %enddef
-
 TYPEMAP_OUT(Epetra_MultiVector,Epetra_NumPyMultiVector)
 TYPEMAP_OUT(Epetra_Vector,     Epetra_NumPyVector     )
 TYPEMAP_OUT(Epetra_IntVector,  Epetra_NumPyIntVector  )
@@ -133,7 +147,7 @@ class MultiVector(UserArray,NumPyMultiVector):
         __init__(self, PyObject array) -> MultiVector
         """
         NumPyMultiVector.__init__(self, *args)
-        self.CheckForError()
+        #self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
@@ -168,7 +182,7 @@ class Vector(UserArray,NumPyVector):
         __init__(self, PyObject array) -> Vector
         """
         NumPyVector.__init__(self, *args)
-        self.CheckForError()
+        #self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
         UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
@@ -197,7 +211,7 @@ class IntVector(UserArray,NumPyIntVector):
         __init__(self, PyObject array) -> IntVector
         """
         NumPyIntVector.__init__(self, *args)
-        self.CheckForError()
+        #self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
         UserArray.__init__(self,self.ExtractView(),'i',copy=False,savespace=True)

@@ -79,7 +79,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
     def testConstructor03(self):
         "Test Epetra.MultiVector (BlockMap,bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        self.assertRaises(ValueError, Epetra.MultiVector, self.map, list)
+        self.assertRaises(TypeError, Epetra.MultiVector, self.map, list)
 
     def testConstructor04(self):
         "Test Epetra.MultiVector (BlockMap,1D-small-list) constructor"
@@ -224,7 +224,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
     def testConstructor16(self):
         "Test Epetra.MultiVector (bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        self.assertRaises(ValueError, Epetra.MultiVector, list)
+        self.assertRaises(TypeError, Epetra.MultiVector, list)
 
     def testConstructor17(self):
         "Test Epetra.MultiVector (Copy,MultiVector,range-of-1) constructor"
@@ -275,17 +275,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         multiArray = [squareArray] * 8
         emv1  = Epetra.MultiVector(self.map,multiArray)
         indexes = [0, 1.0, "e", "pi"]
-        emv2  = Epetra.MultiVector(Epetra.Copy,emv1,indexes)
-        # This is to compensate for a bug I do not understand
-        shape = list(emv1.shape)
-        shape[0] = emv2.shape[0]
-        emv2.shape = tuple(shape)
-        # Done with the shape-shifting
-        self.assertEquals(emv2.NumVectors(),len(indexes))
-        self.assertEquals(emv2.MyLength(),self.length)
-        self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
-        for i in range(emv2.shape[0]):
-            self.assertEquals(emv2[i], emv1[i])
+        self.assertRaises(TypeError, Epetra.MultiVector, Epetra.Copy, emv1, indexes)
 
     def testConstructor21(self):
         "Test Epetra.MultiVector (View,MultiVector,range-of-1) constructor"
@@ -336,17 +326,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         multiArray = [squareArray] * 8
         emv1  = Epetra.MultiVector(self.map,multiArray)
         indexes = [0, 1.0, "e", "pi"]
-        emv2  = Epetra.MultiVector(Epetra.View,emv1,indexes)
-        # This is to compensate for a bug I do not understand
-        shape = list(emv1.shape)
-        shape[0] = emv2.shape[0]
-        emv2.shape = tuple(shape)
-        # Done with the shape-shifting
-        self.assertEquals(emv2.NumVectors(),len(indexes))
-        self.assertEquals(emv2.MyLength(),self.length)
-        self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
-        for i in range(emv2.shape[0]):
-            self.assertEquals(emv2[i], emv1[i])
+        self.assertRaises(TypeError, Epetra.MultiVector, Epetra.View, emv1, indexes)
 
     def testConstructor25(self):
         "Test Epetra.MultiVector copy constructor"

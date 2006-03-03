@@ -137,12 +137,17 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         self.assertEqual(crsg2.NumMyRows(), self.mySize   )
         self.assertEqual(crsg2.IndexBase(), self.indexBase)
 
-    # Constructor exceptions not yet working
-    #def testConstructor10(self):
-    #    "Test Epetra.CrsGraph constructor with too-short array"
-    #    crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, self.nipr[1:-1])
-    #    self.assertRaises(ValueError, Epetra.CrsGraph, Epetra.Copy, self.rowMap,
-    #                      self.nipr[1:-1])
+    def testConstructor10(self):
+        "Test Epetra.CrsGraph constructor with too-short array"
+        self.assertRaises(ValueError, Epetra.CrsGraph, Epetra.Copy, self.rowMap,
+                          self.nipr[1:-1])
+
+    def testConstructor11(self):
+        "Test Epetra.CrsGraph constructor with too-long array"
+        nipr = list(self.nipr)
+        nipr.append(1)
+        self.assertRaises(ValueError, Epetra.CrsGraph, Epetra.Copy, self.rowMap,
+                          nipr)
 
     def testInsertGlobalIndices(self):
         "Test Epetra.CrsGraph InsertGlobalIndices method"
@@ -160,6 +165,16 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
         grid = crsg.GRID(0)
         self.assertRaises(ValueError, crsg.InsertGlobalIndices, grid, [0,"e","pi"])
+
+    #def testRemoveGlobalIndices(self):
+    #    "Test Epetra.CrsGraph RemoveGlobalIndices method"
+    #    crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+    #    self.fillGraph(crsg)
+    #    grid = crsg.GRID(0)
+    #    indices = crsg.ExtractGlobalRowCopy(grid)
+    #    print indices
+    #    crsg.RemoveGlobalIndices(grid,indices[1:])
+    #    self.assertEqual(crsg.NumMyIndices(0), 1)
 
     #def testInsertMyIndices(self):
     #    "Test Epetra.CrsGraph InsertMyIndices method"

@@ -49,17 +49,32 @@
 %ignore Epetra_CrsGraph::ExtractGlobalRowCopy(int, int, int&, int*) const;
 %ignore Epetra_CrsGraph::ExtractMyRowCopy(int, int, int&, int*) const;
 
+// Exception directive: tell swig how to handle exceptions thrown by a
+// new constructor
+%exception Epetra_CrsGraph::Epetra_CrsGraph {
+  $action
+  if (PyErr_Occurred()) SWIG_fail;
+}
+
 // Rename directives
 %rename(CrsGraph   ) Epetra_CrsGraph;
 %rename(OffsetIndex) Epetra_OffsetIndex;
 
 // Typemap directives
-%typemap(in,numinputs=1) (int NumIndices, int * Indices)
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int NumIndices, int * Indices) {
+  $1 = ($input != 0);
+}
+
+%typemap(in) (int NumIndices, int * Indices)
 {
   PyArrayObject * array = (PyArrayObject*) PyArray_ContiguousFromObject($input, 'i', 0, 0);
   if (array == NULL) SWIG_exception(SWIG_ValueError,"Invalid sequence of indices");
   $1 = _PyArray_multiply_list(array->dimensions,array->nd);
   $2 = (int *) (array->data);
+}
+
+%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int & NumIndices, int * Indices) {
+  $1 = ($input != 0);
 }
 
 %typemap(in,numinputs=0) (int & NumIndices, int * Indices) { }
