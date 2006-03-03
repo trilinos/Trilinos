@@ -61,24 +61,28 @@
 %rename(OffsetIndex) Epetra_OffsetIndex;
 
 // Typemap directives
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int NumIndices, int * Indices) {
+
+// Begin input typemap collection for (int NumIndices, int * Indices)
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int NumIndices, int * Indices) {
   $1 = ($input != 0);
 }
-
-%typemap(in) (int NumIndices, int * Indices)
+%typemap(in) (int NumIndices, int * Indices) (PyArrayObject * array = NULL)
 {
-  PyArrayObject * array = (PyArrayObject*) PyArray_ContiguousFromObject($input, 'i', 0, 0);
+  array = (PyArrayObject*) PyArray_ContiguousFromObject($input, 'i', 0, 0);
   if (array == NULL) SWIG_exception(SWIG_ValueError,"Invalid sequence of indices");
   $1 = _PyArray_multiply_list(array->dimensions,array->nd);
   $2 = (int *) (array->data);
 }
+%typemap(freearg) (int NumIndices, int * Indices) {
+  Py_XDECREF(array$argnum);
+}
+// End input typemap collection for (int NumIndices, int * Indices)
 
-%typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int & NumIndices, int * Indices) {
+// Begin argout typemap collection for (int & NumIndices, int * Indices)
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int & NumIndices, int * Indices) {
   $1 = ($input != 0);
 }
-
 %typemap(in,numinputs=0) (int & NumIndices, int * Indices) { }
-
 %typemap(argout)         (int & NumIndices, int * Indices)
 {
   Py_XDECREF($result);
@@ -89,6 +93,7 @@
   int * data = (int*) (((PyArrayObject *) $result)->data);
   for (int i=0; i<*$1; ++i) data[i] = $2[i];
 }
+// End argout typemap collection for (int & NumIndices, int * Indices)
 
 // Include directives
 %include "Epetra_CrsGraph.h"
