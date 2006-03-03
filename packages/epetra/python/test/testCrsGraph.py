@@ -354,6 +354,199 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, self.colMap, 3, False)
         self.assertEqual(crsg.HaveColMap(), True)
 
+    def testNumMyRows(self):
+        "Test Epetra.CrsGraph NumMyRows method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.NumMyRows(), self.mySize)
+
+    def testNumGlobalRows(self):
+        "Test Epetra.CrsGraph NumGlobalRows method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.NumGlobalRows(), self.size)
+
+    def testNumMyCols(self):
+        "Test Epetra.CrsGraph NumMyCols method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        numMyCols = self.mySize
+        if not crsg.MyGlobalRow(0          ): numMyCols += 1
+        if not crsg.MyGlobalRow(self.size-1): numMyCols += 1
+        self.assertEqual(crsg.NumMyCols(), numMyCols)
+
+    def testNumGlobalCols(self):
+        "Test Epetra.CrsGraph NumGlobalCols method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumGlobalCols(), self.size)
+
+    def testNumGlobalNonzeros(self):
+        "Test Epetra.CrsGraph NumGlobalNonzeros method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumGlobalNonzeros(), self.size*3-2)
+
+    def testNumGlobalDiagonals(self):
+        "Test Epetra.CrsGraph NumGlobalDiagonals method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumGlobalDiagonals(), self.size)
+
+    def testNumMyDiagonals(self):
+        "Test Epetra.CrsGraph NumMyDiagonals method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumMyDiagonals(), self.mySize)
+
+    def testNumMyBlockRows(self):
+        "Test Epetra.CrsGraph NumMyBlockRows method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumMyBlockRows(), self.mySize)
+
+    def testNumGlobalBlockRows(self):
+        "Test Epetra.CrsGraph NumGlobalBlockRows method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumGlobalBlockRows(), self.size)
+
+    def testNumMyBlockCols(self):
+        "Test Epetra.CrsGraph NumMyBlockCols method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        numMyCols = self.mySize
+        if not crsg.MyGlobalRow(0          ): numMyCols += 1
+        if not crsg.MyGlobalRow(self.size-1): numMyCols += 1
+        self.assertEqual(crsg.NumMyBlockCols(), numMyCols)
+
+    def testNumGlobalBlockCols(self):
+        "Test Epetra.CrsGraph NumGlobalBlockCols method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumGlobalBlockCols(), self.size)
+
+    def testNumMyBlockDiagonals(self):
+        "Test Epetra.CrsGraph NumMyBlockDiagonals method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumMyBlockDiagonals(), self.mySize)
+
+    def testNumGlobalBlockDiagonals(self):
+        "Test Epetra.CrsGraph NumGlobalBlockDiagonals method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumGlobalBlockDiagonals(), self.size)
+
+    def testNumGlobalEntries(self):
+        "Test Epetra.CrsGraph NumGlobalEntries method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NumGlobalEntries(), self.size*3-2)
+
+    def testNumMyEntries(self):
+        "Test Epetra.CrsGraph NumMyEntries method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        numMyEntries = self.mySize * 3
+        if crsg.MyGlobalRow(0          ): numMyEntries -= 1
+        if crsg.MyGlobalRow(self.size-1): numMyEntries -= 1
+        self.assertEqual(crsg.NumMyEntries(), numMyEntries)
+
+    def testMaxRowDim(self):
+        "Test Epetra.CrsGraph MaxRowDim method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.MaxRowDim(), 1)
+
+    def testGlobalMaxRowDim(self):
+        "Test Epetra.CrsGraph GlobalMaxRowDim method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.GlobalMaxRowDim(), 1)
+
+    def testMaxColDim(self):
+        "Test Epetra.CrsGraph MaxColDim method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.MaxColDim(), 1)
+
+    def testGlobalMaxColDim(self):
+        "Test Epetra.CrsGraph GlobalMaxColDim method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.GlobalMaxColDim(), 1)
+
+    def testNumMyNonzeros(self):
+        "Test Epetra.CrsGraph NumMyNonzeros method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        numMyNonzeros = self.mySize * 3
+        if crsg.MyGlobalRow(0          ): numMyNonzeros -= 1
+        if crsg.MyGlobalRow(self.size-1): numMyNonzeros -= 1
+        self.assertEqual(crsg.NumMyNonzeros(), numMyNonzeros)
+
+    def testNumGlobalIndices(self):
+        "Test Epetra.CrsGraph NumGlobalIndices method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for grid in self.rowMap.MyGlobalElements():
+            numGlobalIndices = 3
+            if grid in (0,self.size-1): numGlobalIndices -= 1
+            self.assertEqual(crsg.NumGlobalIndices(grid), numGlobalIndices)
+
+    def testNumAllocatedGlobalIndices(self):
+        "Test Epetra.CrsGraph NumAllocatedGlobalIndices method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for grid in self.rowMap.MyGlobalElements():
+            self.assertEqual(crsg.NumAllocatedGlobalIndices(grid), 3)
+
+    def testMaxNumIndices(self):
+        "Test Epetra.CrsGraph MaxNumIndices method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.MaxNumIndices(), 3)
+
+    def testGlobalMaxNumIndices(self):
+        "Test Epetra.CrsGraph GlobalMaxNumIndices method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.GlobalMaxNumIndices(), 3)
+
+    def testMaxNumNonzeros(self):
+        "Test Epetra.CrsGraph MaxNumNonzeros method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.MaxNumNonzeros(), 3)
+
+    def testGlobalMaxNumNonzeros(self):
+        "Test Epetra.CrsGraph GlobalMaxNumNonzeros method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.GlobalMaxNumNonzeros(), 3)
+
+    def testNumMyIndices(self):
+        "Test Epetra.CrsGraph NumMyIndices method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for grid in self.rowMap.MyGlobalElements():
+            numMyIndices = 3
+            if grid in (0,self.size-1): numMyIndices -= 1
+            lrid = crsg.LRID(grid)
+            self.assertEqual(crsg.NumMyIndices(lrid), numMyIndices)
+
+    def testNumAllocatedMyIndices(self):
+        "Test Epetra.CrsGraph NumAllocatedMyIndices method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for lrid in range(self.mySize):
+            self.assertEqual(crsg.NumAllocatedMyIndices(lrid), 3)
+
+    def testIndexBase(self):
+        "Test Epetra.CrsGraph IndexBase method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.IndexBase(), self.indexBase)
+
 ##########################################################################
 
 if __name__ == "__main__":
