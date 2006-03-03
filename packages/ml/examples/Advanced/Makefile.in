@@ -16,7 +16,7 @@
 
 #@HEADER
 
-SOURCES = $(ml_analyze_SOURCES) $(ml_filtering_SOURCES) $(ml_user_aggr_SOURCES)
+SOURCES = $(ml_analyze_SOURCES) $(ml_filtering_SOURCES) $(ml_user_aggr_SOURCES) $(ml_with_ifpack_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,7 +40,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = ml_user_aggr$(EXEEXT) ml_filtering$(EXEEXT) \
-	ml_analyze$(EXEEXT)
+	ml_analyze$(EXEEXT) ml_with_ifpack$(EXEEXT)
 subdir = examples/Advanced
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -87,21 +87,24 @@ am_ml_filtering_OBJECTS = ml_filtering-ml_filtering.$(OBJEXT)
 ml_filtering_OBJECTS = $(am_ml_filtering_OBJECTS)
 am_ml_user_aggr_OBJECTS = ml_user_aggr-ml_user_aggr.$(OBJEXT)
 ml_user_aggr_OBJECTS = $(am_ml_user_aggr_OBJECTS)
+am_ml_with_ifpack_OBJECTS = ml_with_ifpack-ml_with_ifpack.$(OBJEXT)
+ml_with_ifpack_OBJECTS = $(am_ml_with_ifpack_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_analyze-ml_analyze.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_filtering-ml_filtering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po
+@AMDEP_TRUE@	./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(ml_analyze_SOURCES) $(ml_filtering_SOURCES) \
-	$(ml_user_aggr_SOURCES)
+	$(ml_user_aggr_SOURCES) $(ml_with_ifpack_SOURCES)
 DIST_SOURCES = $(ml_analyze_SOURCES) $(ml_filtering_SOURCES) \
-	$(ml_user_aggr_SOURCES)
+	$(ml_user_aggr_SOURCES) $(ml_with_ifpack_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -285,6 +288,10 @@ ml_analyze_SOURCES = $(srcdir)/ml_analyze.cpp
 ml_analyze_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_analyze_CXXFLAGS = $(EXAMPLE_INCLUDES)
 ml_analyze_LDADD = $(EXAMPLE_LIBS)
+ml_with_ifpack_SOURCES = $(srcdir)/ml_with_ifpack.cpp
+ml_with_ifpack_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_with_ifpack_CXXFLAGS = $(EXAMPLE_INCLUDES)
+ml_with_ifpack_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -330,6 +337,9 @@ ml_filtering$(EXEEXT): $(ml_filtering_OBJECTS) $(ml_filtering_DEPENDENCIES)
 ml_user_aggr$(EXEEXT): $(ml_user_aggr_OBJECTS) $(ml_user_aggr_DEPENDENCIES) 
 	@rm -f ml_user_aggr$(EXEEXT)
 	$(CXXLINK) $(ml_user_aggr_LDFLAGS) $(ml_user_aggr_OBJECTS) $(ml_user_aggr_LDADD) $(LIBS)
+ml_with_ifpack$(EXEEXT): $(ml_with_ifpack_OBJECTS) $(ml_with_ifpack_DEPENDENCIES) 
+	@rm -f ml_with_ifpack$(EXEEXT)
+	$(CXXLINK) $(ml_with_ifpack_LDFLAGS) $(ml_with_ifpack_OBJECTS) $(ml_with_ifpack_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -340,6 +350,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_analyze-ml_analyze.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_filtering-ml_filtering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -404,6 +415,22 @@ ml_user_aggr-ml_user_aggr.obj: $(srcdir)/ml_user_aggr.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr-ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`
+
+ml_with_ifpack-ml_with_ifpack.o: $(srcdir)/ml_with_ifpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_with_ifpack_CXXFLAGS) $(CXXFLAGS) -MT ml_with_ifpack-ml_with_ifpack.o -MD -MP -MF "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Tpo" -c -o ml_with_ifpack-ml_with_ifpack.o `test -f '$(srcdir)/ml_with_ifpack.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_with_ifpack.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Tpo" "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Po"; else rm -f "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_with_ifpack.cpp' object='ml_with_ifpack-ml_with_ifpack.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Po' tmpdepfile='$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_with_ifpack_CXXFLAGS) $(CXXFLAGS) -c -o ml_with_ifpack-ml_with_ifpack.o `test -f '$(srcdir)/ml_with_ifpack.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_with_ifpack.cpp
+
+ml_with_ifpack-ml_with_ifpack.obj: $(srcdir)/ml_with_ifpack.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_with_ifpack_CXXFLAGS) $(CXXFLAGS) -MT ml_with_ifpack-ml_with_ifpack.obj -MD -MP -MF "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Tpo" -c -o ml_with_ifpack-ml_with_ifpack.obj `if test -f '$(srcdir)/ml_with_ifpack.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_with_ifpack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_with_ifpack.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Tpo" "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Po"; else rm -f "$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_with_ifpack.cpp' object='ml_with_ifpack-ml_with_ifpack.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.Po' tmpdepfile='$(DEPDIR)/ml_with_ifpack-ml_with_ifpack.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_with_ifpack_CXXFLAGS) $(CXXFLAGS) -c -o ml_with_ifpack-ml_with_ifpack.obj `if test -f '$(srcdir)/ml_with_ifpack.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_with_ifpack.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_with_ifpack.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

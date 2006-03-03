@@ -14,7 +14,8 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = ml_user_aggr \
                   ml_filtering \
-                  ml_analyze 
+                  ml_analyze   \
+		  ml_with_ifpack
 
 ml_user_aggr_SOURCES      = $(srcdir)/ml_user_aggr.cpp
 ml_user_aggr_DEPENDENCIES = $(top_builddir)/src/libml.a
@@ -30,3 +31,8 @@ ml_analyze_SOURCES      = $(srcdir)/ml_analyze.cpp
 ml_analyze_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_analyze_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 ml_analyze_LDADD        = $(EXAMPLE_LIBS)
+
+ml_with_ifpack_SOURCES      = $(srcdir)/ml_with_ifpack.cpp
+ml_with_ifpack_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_with_ifpack_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+ml_with_ifpack_LDADD        = $(EXAMPLE_LIBS)
