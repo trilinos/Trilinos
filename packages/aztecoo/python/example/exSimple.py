@@ -31,3 +31,5 @@ Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
 Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
+
+if Comm.MyPID() == 0: print "End Result: TEST PASSED"
