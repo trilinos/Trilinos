@@ -344,6 +344,8 @@ private:
   bool IsInitialized_;
   //! If true, the preconditioner has been successfully computed.
   bool IsComputed_;
+  //! If true, the preconditioner solves for the transpose of the matrix.
+  bool UseTranspose_;
 
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;

@@ -22,6 +22,7 @@ Ifpack_Amesos::Ifpack_Amesos(Epetra_RowMatrix* Matrix) :
   Label_("Amesos_Klu"),
   IsInitialized_(false),
   IsComputed_(false),
+  UseTranspose_(false),
   NumInitialize_(0),
   NumCompute_(0),
   NumApplyInverse_(0),
@@ -161,9 +162,11 @@ int Ifpack_Amesos::Initialize()
     }
     Solver_ = Factory.Create("Amesos_Lapack",*Problem_);
   }
+  // if empty, give up.
   if (Solver_ == 0)
     IFPACK_CHK_ERR(-1);
 
+  IFPACK_CHK_ERR(Solver_->SetUseTranspose(UseTranspose_));
   Solver_->SetParameters(List_);
   IFPACK_CHK_ERR(Solver_->SymbolicFactorization());
 
@@ -197,9 +200,13 @@ int Ifpack_Amesos::Compute()
 //==============================================================================
 int Ifpack_Amesos::SetUseTranspose(bool UseTranspose)
 {
-  if (Solver_ == 0)
-    IFPACK_CHK_ERR(-1); // call Initialize() first
-  IFPACK_RETURN(Solver_->SetUseTranspose(UseTranspose));
+  // store the value in UseTranspose_. If we have the solver, we pass to it
+  // right away, otherwise we wait till when it is created.
+  UseTranspose_ = UseTranspose;
+  if (Solver_ != 0)
+    IFPACK_CHK_ERR(Solver_->SetUseTranspose(UseTranspose));
+
+  return(0);
 }
 
 //==============================================================================
@@ -260,7 +267,7 @@ const char* Ifpack_Amesos::Label() const
 //==============================================================================
 bool Ifpack_Amesos::UseTranspose() const
 {
-  return(false);
+  return(UseTranspose_);
 }
 
 //==============================================================================
