@@ -89,12 +89,15 @@
   struct IntVector   { };
 }
 
-// Exceptions.  The NumPy class constructors raise python exceptions,
-// but swig must be told explicitely to look for them.
+// Exceptions.  The NumPy class constructors can raise python
+// exceptions, but swig must be told explicitely to look for them.
 %define CONSTRUCTOR_EXCEPTION(classname)
 %exception classname::classname {
   $action
-  if (PyErr_Occurred()) SWIG_fail;
+  if (PyErr_Occurred()) {
+    classname::cleanup();
+    SWIG_fail;
+  }
 }
 %enddef
 CONSTRUCTOR_EXCEPTION(Epetra_NumPyMultiVector)

@@ -71,6 +71,10 @@ public:
   int        SumIntoMyValues(PyObject * values, PyObject * indices);
   int        SumIntoMyValues(int blockOffset, PyObject * values, PyObject * indices);
 
+  // Static cleanup function, to be called when python exceptions are
+  // encountered
+  static void cleanup();
+
 private:
 
   // Private method thus not callable

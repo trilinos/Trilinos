@@ -188,6 +188,23 @@ int Epetra_NumPyMultiVector::getVectorSize(PyObject * pyObject)
 }
 
 // =============================================================================
+void Epetra_NumPyMultiVector::cleanup()
+{
+  if (tmp_array) {
+    Py_DECREF(tmp_array);
+    tmp_array = NULL;
+  }
+  if (tmp_map) {
+    delete tmp_map;
+    tmp_map = NULL;
+  }
+  if (tmp_range) {
+    Py_DECREF(tmp_range);
+    tmp_range = NULL;
+  }
+}
+
+// =============================================================================
 
 // Constructors
 // =============================================================================

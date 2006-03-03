@@ -66,6 +66,10 @@ public:
   PyObject * MaxValue() const;
   PyObject * MeanValue() const;
 
+  // Static cleanup function, to be called when python exceptions are
+  // encountered
+  static void cleanup();
+
 private:
 
   // Private method thus not callable

@@ -55,6 +55,10 @@ public:
   PyObject * ExtractView() const;
   PyObject * Values() const;
 
+  // Static cleanup function, to be called when python exceptions are
+  // encountered
+  static void cleanup();
+
 private:
 
   // Private method thus not callable

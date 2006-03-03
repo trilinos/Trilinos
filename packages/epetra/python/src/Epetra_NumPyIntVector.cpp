@@ -118,6 +118,19 @@ Epetra_Map & Epetra_NumPyIntVector::getMap(PyObject * pyObject)
 }
 
 // =============================================================================
+void Epetra_NumPyIntVector::cleanup()
+{
+  if (tmp_array) {
+    Py_DECREF(tmp_array);
+    tmp_array = NULL;
+  }
+  if (tmp_map) {
+    delete tmp_map;
+    tmp_map = NULL;
+  }
+}
+
+// =============================================================================
 
 // Constructors
 // =============================================================================
