@@ -48,6 +48,9 @@
 					 bool);
 %ignore Epetra_CrsGraph::ExtractGlobalRowCopy(int, int, int&, int*) const;
 %ignore Epetra_CrsGraph::ExtractMyRowCopy(int, int, int&, int*) const;
+// The following methods are dangerous and I have disabled them for now
+%ignore Epetra_CrsGraph::ExtractGlobalRowView(int, int&, int*&) const;
+%ignore Epetra_CrsGraph::ExtractMyRowView(int, int&, int*&) const;
 
 // Exception directive: tell swig how to handle exceptions thrown by a
 // new constructor
@@ -78,20 +81,19 @@
 }
 // End input typemap collection for (int NumIndices, int * Indices)
 
-// Begin argout typemap collection for (int & NumIndices, int * Indices)
-%typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int & NumIndices, int * Indices) {
+// Begin argout typemap collection for (int & NumIndices, int *& Indices)
+%typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int & NumIndices, int *& Indices) {
   $1 = ($input != 0);
 }
-%typemap(in,numinputs=0) (int & NumIndices, int * Indices) { }
-%typemap(argout)         (int & NumIndices, int * Indices)
+%typemap(in,numinputs=0) (int & NumIndices, int *& Indices) { }
+%typemap(argout)         (int & NumIndices, int *& Indices)
 {
   Py_XDECREF($result);
   if (result == -1) SWIG_exception(SWIG_ValueError,   "Invalid row index"  );
   if (result == -2) SWIG_exception(SWIG_RuntimeError, "Graph not completed");
-  int dimensions[ ] = { *$1 };
-  $result = PyArray_FromDims(1,dimensions,'i');
-  int * data = (int*) (((PyArrayObject *) $result)->data);
-  for (int i=0; i<*$1; ++i) data[i] = $2[i];
+  int dims[ ] = { *$1 };
+  $result = PyArray_FromDimsAndData(1,dims,'i',(char*)(*$2));
+  if ($result == NULL) SWIG_exception(SWIG_RuntimeError, "Error creating integer array");
 }
 // End argout typemap collection for (int & NumIndices, int * Indices)
 

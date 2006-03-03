@@ -289,6 +289,71 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         self.fillGraphGlobal(crsg)
         self.assertRaises(ValueError, crsg.ExtractMyRowCopy, self.mySize)
 
+    def testFilled(self):
+        "Test Epetra.CrsGraph Filled method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.Filled(), False)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.Filled(), True)
+
+    def testStorageOptimized(self):
+        "Test Epetra.CrsGraph StorageOptimized method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.StorageOptimized(), False)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.StorageOptimized(), False)
+        crsg.OptimizeStorage()
+        self.assertEqual(crsg.StorageOptimized(), True)
+
+    def testIndicesAreGlobal(self):
+        "Test Epetra.CrsGraph IndicesAreGlobal method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.IndicesAreGlobal(), False)
+        self.fillGraphGlobal(crsg,False)
+        self.assertEqual(crsg.IndicesAreGlobal(), True)
+
+    def testIndicesAreLocal(self):
+        "Test Epetra.CrsGraph IndicesAreLocal method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, self.colMap, 3, False)
+        self.assertEqual(crsg.IndicesAreLocal(), False)
+        self.fillGraphLocal(crsg)
+        self.assertEqual(crsg.IndicesAreLocal(), True)
+
+    def testLowerTriangular(self):
+        "Test Epetra.CrsGraph LowerTriangular method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.LowerTriangular(), True)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.LowerTriangular(), False)
+
+    def testUpperTriangular(self):
+        "Test Epetra.CrsGraph UpperTriangular method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.UpperTriangular(), True)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.UpperTriangular(), False)
+
+    def testNoDiagonal(self):
+        "Test Epetra.CrsGraph NoDiagonal method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.NoDiagonal(), True)
+        self.fillGraphGlobal(crsg)
+        self.assertEqual(crsg.NoDiagonal(), False)
+
+    def testMyGlobalRow(self):
+        "Test Epetra.CrsGraph MyGlobalRow method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        myRows = self.rowMap.MyGlobalElements()
+        for grid in range(self.size):
+            self.assertEqual(crsg.MyGlobalRow(grid), grid in myRows)
+
+    def testHaveColMap(self):
+        "Test Epetra.CrsGraph HaveColMap method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.HaveColMap(), False)
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, self.colMap, 3, False)
+        self.assertEqual(crsg.HaveColMap(), True)
+
 ##########################################################################
 
 if __name__ == "__main__":
