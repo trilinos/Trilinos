@@ -21,6 +21,8 @@ import Epetra, ML
 #except:
 #  from PyTrilinos import Epetra, ML
 
+################################################################################
+
 # ----------------------- #
 # User's Defined Smoother #
 # ----------------------- #
@@ -70,6 +72,8 @@ class MyJacobiSmoother(ML.BaseOperator):
     self.Apply(rhs, res)
     return(res)
 
+################################################################################
+
 # -------------------------------------- #
 # Function to apply the multilevel cycle #
 # to vector b_f, and return the result.  #
@@ -91,6 +95,8 @@ def MultiLevelCycle(A, P, R, S, b_f, level, MaxLevels):
   # apply post-smoother
   S[level].Apply(b_f, x_f)
   return(x_f)
+
+################################################################################
 
 # ----------- #
 # Main driver #
@@ -179,12 +185,9 @@ def main():
     norm = diff * (A[0] * diff)
     if Comm.MyPID() == 0:
       print "iter ", i, " ||x - x_exact||_A = ", norm
+      print "End Result: TEST PASSED"
 
-# This is a standard Python construct.  Put the code to be executed in a
-# function [typically main()] and then use the following logic to call the
-# function if the script has been called as an executable from the UNIX
-# command
-# line.  This also allows, for example, this file to be imported from a python
-# debugger and main() called from there.
+################################################################################
+
 if __name__ == "__main__":
   main()

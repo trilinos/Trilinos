@@ -117,8 +117,19 @@
 }
 
 (FRAMEWORK, INSTALL, MLPyExamples) {
-    DIRS = ../python/example;
-    COMM = SERIAL, MPI(1-4);
+    TESTS = ../python/example/exSimple.py,
+            ../python/example/exMLAPI_PyMatrix.py;
+    COMM  = SERIAL, MPI(1-4);
+}
+
+(FRAMEWORK, INSTALL, MLPyExamples) {
+    TESTS = ../python/example/exMLAPI.py,
+            ../python/example/exMLAPI_AztecOO.py,
+            ../python/example/exMLAPI_Iterate.py,
+            ../python/example/exMLAPI_Smoother.py,
+            ../python/example/exPyOperator.py,
+            ../python/example/exPyRowMatrix.py;
+    COMM  = SERIAL;
 }
 
 (FRAMEWORK, INSTALL, MLPyTests) {

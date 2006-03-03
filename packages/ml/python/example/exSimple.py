@@ -11,22 +11,21 @@ import ML
 #  from PyTrilinos import Epetra, Galeri, AztecOO, ML
 #  print "Using installed versions of Epetra, Galeri, AztecOO, ML"
 
-def main():
+def main(comm):
 
   # builds the linear system matrix and sets up starting solution and
   # right-hand side
-  Comm = Epetra.PyComm()
   nx = 100
-  ny = 100 * Comm.NumProc()
+  ny = 100 * comm.NumProc()
 
   List = {
     "nx": nx,               # number of nodes in the X-direction
     "ny": ny,               # number of nodes in the Y-directioN
     "mx": 1,                # number of processors in the X-direction
-    "my": Comm.NumProc()    # number of processors in the Y-direction
+    "my": comm.NumProc()    # number of processors in the Y-direction
   }
 
-  Map = Galeri.CreateMap("Cartesian2D", Comm, List)
+  Map = Galeri.CreateMap("Cartesian2D", comm, List)
   Matrix = Galeri.CreateCrsMatrix("Laplace2D", Map, List)
 
   LHS = Epetra.Vector(Map); LHS.Random()
@@ -51,8 +50,13 @@ def main():
   Solver.SetPrecOperator(Prec)
   Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
   Solver.SetAztecOption(AztecOO.AZ_output, 16);
-  Solver.Iterate(1550, 1e-5)
+  err = Solver.Iterate(1550, 1e-5)
 
+  return err
 
 if __name__ == "__main__":
-  main()
+  comm = Epetra.PyComm()
+  err = main(comm)
+  errs = comm.SumAll(err)[0]
+  if errs == 0 and comm.MyPID() == 0: print "End Result: TEST PASSED"
+  sys.exit(errs)

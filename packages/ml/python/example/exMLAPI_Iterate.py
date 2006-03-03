@@ -21,6 +21,8 @@ import Epetra, ML
 #except:
 #  from PyTrilinos import Epetra, ML
 
+################################################################################
+
 class MultiLevel(ML.BaseOperator):
   def Reshape(self, Matrix, MaxLevels):
     
@@ -142,6 +144,8 @@ class MultiLevel(ML.BaseOperator):
     self.Apply(rhs, res)
     return(res)
 
+################################################################################
+
 # -------------------------------------------------------------------------- #
 # Main driver.
 # -------------------------------------------------------------------------- #
@@ -149,6 +153,9 @@ class MultiLevel(ML.BaseOperator):
 def main():
 
   # Creates a matrix corresponding to a 1D Laplacian.
+  comm = Epetra.PyComm()
+  if comm.NumProc() > 1: return
+
   n = 1000
   FineSpace = ML.Space(n)
   
@@ -179,11 +186,9 @@ def main():
   }
   ML.Iterate(Matrix, LHS, RHS, Prec, List)
 
-# This is a standard Python construct.  Put the code to be executed in a
-# function [typically main()] and then use the following logic to call the
-# function if the script has been called as an executable from the UNIX
-# command
-# line.  This also allows, for example, this file to be imported from a python
-# debugger and main() called from there.
+  if comm.MyPID() == 0: print "End Result: TEST PASSED"
+
+################################################################################
+
 if __name__ == "__main__":
   main()

@@ -23,7 +23,7 @@ import AztecOO
 #  from PyTrilinos import Epetra, AztecOO
 #  print "Using installed versions of Epetra, AztecOO"
 
-############################################################
+################################################################################
 
 class MyOperator(Epetra.PyOperator):
 
@@ -67,7 +67,7 @@ class MyOperator(Epetra.PyOperator):
   def NormInf(self):
     return 0
 
-############################################################
+################################################################################
 
 def main():
 
@@ -94,12 +94,10 @@ def main():
   Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_none)
   Solver.SetAztecOption(AztecOO.AZ_output, 16)
   Solver.Iterate(1550, 1e-5)
-  
-# This is a standard Python construct.  Put the code to be executed in a
-# function [typically main()] and then use the following logic to call the
-# function if the script has been called as an executable from the UNIX
-# command line.  
-# This also allows, for example, this file to be imported from a python
-# debugger and main() called from there.
+
+  if comm.MyPID() == 0: print "End Result: TEST PASSED"
+
+################################################################################
+
 if __name__ == "__main__":
   main()

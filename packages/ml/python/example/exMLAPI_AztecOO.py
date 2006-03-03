@@ -25,6 +25,8 @@ import Epetra
 import ML
 import AztecOO
 
+################################################################################
+
 class MultiLevel(ML.BaseOperator):
   def Compute(self, A, MaxLevels):
     
@@ -134,6 +136,8 @@ class MultiLevel(ML.BaseOperator):
     self.Apply(rhs, res)
     return(res)
 
+################################################################################
+
 # -------------------------------------------------------------------------- #
 # Main driver.
 #
@@ -151,6 +155,8 @@ def main():
   # Defines a communicator (serial or parallel, depending on how Trilinos
   # was configured), and creates a matrix corresponding to a 1D Laplacian.
   Comm = Epetra.PyComm()
+  if Comm.NumProc() > 1: return
+
   n = 1000
   Space = ML.Space(n)
   MyGlobalElements = Space.GetMyGlobalElements()
@@ -184,11 +190,9 @@ def main():
   Solver.SetPrecOperator(PrecWrap)
   Solver.Iterate(10, 1e-5)
 
-# This is a standard Python construct.  Put the code to be executed in a
-# function [typically main()] and then use the following logic to call the
-# function if the script has been called as an executable from the UNIX
-# command
-# line.  This also allows, for example, this file to be imported from a python
-# debugger and main() called from there.
+  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+
+################################################################################
+
 if __name__ == "__main__":
   main()

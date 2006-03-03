@@ -29,6 +29,8 @@ import AztecOO
 #  from PyTrilinos import Epetra, AztecOO
 #  print "Using installed version of Epetra, AztecOO"
 
+################################################################################
+
 class Laplace1D(Epetra.PyRowMatrix):
   def __init__(self, n, Comm):
     Epetra.PyRowMatrix.__init__(self, Comm)
@@ -215,6 +217,8 @@ class Laplace1D(Epetra.PyRowMatrix):
     Importer = Epetra.Import(self.RowMap_, self.RowMap_)
     return(Importer)
 
+################################################################################
+
 def main():
 
   n = 10
@@ -238,11 +242,9 @@ def main():
   
   del Matrix
 
-# This is a standard Python construct.  Put the code to be executed in a
-# function [typically main()] and then use the following logic to call the
-# function if the script has been called as an executable from the UNIX
-# command
-# line.  This also allows, for example, this file to be imported from a python
-# debugger and main() called from there.
+  if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+
+################################################################################
+
 if __name__ == "__main__":
   main()

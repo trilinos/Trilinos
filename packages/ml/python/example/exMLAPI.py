@@ -23,6 +23,8 @@ import Epetra, ML
 #  from PyTrilinos import Epetra, ML
 #  print "Using system-installed Epetra, ML"
 
+################################################################################
+
 class MultiLevel:
   def __init__(self, A, MaxLevels):
     
@@ -105,11 +107,15 @@ class MultiLevel:
   
     return(x_f)
 
+################################################################################
+
 def main():
   # Defines a communicator (serial or parallel, depending on how Trilinos
   # was configured), and creates a matrix corresponding to a 1D Laplacian.
   # AT THIS MOMENT THE EXAMPLE IS ONLY SERIAL
   comm  = Epetra.PyComm()
+  if comm.NumProc() > 1: return
+
   n     = 1000
   Space = ML.Space(n)
 
@@ -150,6 +156,7 @@ def main():
     norm = diff * diff  # or use diff * (Matrix * diff)
     if comm.MyPID() == 0:
       print "iter ", i, " ||x - x_exact||_2 = ", norm
+      print "End Result: TEST PASSED"
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
