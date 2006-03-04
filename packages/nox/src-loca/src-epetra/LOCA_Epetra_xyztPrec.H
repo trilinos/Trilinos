@@ -136,6 +136,7 @@ private:
   Epetra_Vector *splitVecOld; //tmp space
   NOX::Epetra::Vector *splitRes_NEV; //view of splitRes
   NOX::Epetra::Vector *splitVec_NEV; //view of splitVec
+  bool  isPeriodic;
 
   //! Label for this operator
   string label;

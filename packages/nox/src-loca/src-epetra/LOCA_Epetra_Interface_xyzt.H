@@ -156,6 +156,7 @@ private:
   LOCA::Epetra::xyztPrec* preconditioner;
   Epetra_CrsMatrix* splitJacCrs;
   Epetra_CrsMatrix* splitMassCrs;
+  bool  isPeriodic;
 
 };
 } // namespace Interface

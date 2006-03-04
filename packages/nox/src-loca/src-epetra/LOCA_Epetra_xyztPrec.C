@@ -60,7 +60,8 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   globalComm(globalComm_),
   linSys(std::vector<NOX::Epetra::LinearSystemAztecOO*>(globalComm_->NumTimeStepsOnDomain())),
   jacobianBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
-  massBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain()))
+  massBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
+    isPeriodic(precLSParams_.getParameter("Periodic",false))
 {
 
   string prec = lsParams.getParameter("XYZTPreconditioner","None");
@@ -120,7 +121,6 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
         massBlock[i] = Teuchos::rcp(new Epetra_CrsMatrix(splitMass));
         massBlock[i]->PutScalar(0.0);
       }
-      //jacobian.ExtractBlock(*jacobianBlock[i], 0, 0);
       linSys[i] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
 			iReq, iJac, jacobianBlock[i], solution);
     }
@@ -232,6 +232,7 @@ ApplyInverse(const Epetra_MultiVector& input,
 	  if (!isFirstGlobalTimeStep)  {
 	    // update RHS with mass matrix * solution from previous time step 
 	    // (which will be from previous time domain if i==0)
+	    //   NOTE:  "- 1" can be changed to jacobian.Stencil(i)[0]  
 	    if (i==0) 
 	      solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
 	    else      
@@ -317,8 +318,9 @@ ApplyInverse(const Epetra_MultiVector& input,
       // This serves as a barrier as well.
       if (isd>0) solutionOverlap.Import(solution, overlapImporter, Insert);
       
-      //Work only on active time domain, and skip the last domain
-      if ( isd == globalComm->SubDomainRank() && (isd != globalComm->NumSubDomains()-1)) {
+      //Work only on active time domain, and skip the last domain if not periodic
+      if ( isd == globalComm->SubDomainRank() && 
+           ((isd != globalComm->NumSubDomains()-1) && !isPeriodic)) {
 	
 	  // Get extra matrix for 1 big time step per time domain
 	  linSys[N]->setJacobianOperatorForSolve(jacobianBlock[N]);
@@ -327,7 +329,9 @@ ApplyInverse(const Epetra_MultiVector& input,
 	  residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(N-1));
 
 	  if (isd > 0)  {
-	    // Get solution vector from end of previous time domain
+	    // Get solution vector from end of previous time domain,
+	    // Don't do this for first domain, even if periodic, because 
+	    //   we are doing a xssequential sweep
 	    solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(0) - 1));
 	    massBlock[N]->Multiply(false, *splitVecOld, *splitVec);
 	    splitRes->Update(-1.0, *splitVec, 1.0);
@@ -353,11 +357,15 @@ ApplyInverse(const Epetra_MultiVector& input,
       residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
 
       bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
-      if (!isFirstGlobalTimeStep)  {
+      if (!isFirstGlobalTimeStep || isPeriodic)  {
         // update RHS with mass matrix * solution from previous time step 
         // (which will be from previous time domain if i==0)
-        if (i==0) 
-          solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+        if (i==0) {
+          //solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	  int offsetToPrevSolution = jacobian.Stencil(i)[0];
+cout << "In Parareal, OFFSET  " << offsetToPrevSolution << " for time domain " <<  globalComm->SubDomainRank() << endl;
+          solutionOverlap.ExtractBlockValues(*splitVecOld, jacobian.RowIndex(i) + offsetToPrevSolution);
+	}
         else      
           solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
         massBlock[i]->Multiply(false, *splitVecOld, *splitVec);
@@ -458,7 +466,7 @@ computePreconditioner(const Epetra_Vector& x,
   else if (prec == "Sequential"  || prec == "Parallel" ||
            prec == "BlockDiagonal" || prec == "Parareal") {
     for (int i=0; i< globalComm->NumTimeStepsOnDomain(); i++ ) {
-      if (globalComm->FirstTimeStepOnDomain() + i == 0)
+      if (globalComm->FirstTimeStepOnDomain() + i == 0 && !isPeriodic)
         jacobian.ExtractBlock(*jacobianBlock[i], 0, 0);
       else {
         jacobian.ExtractBlock(*jacobianBlock[i], i, 1);

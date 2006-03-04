@@ -61,15 +61,20 @@ namespace LOCA {
          *  */
         virtual bool computeMassMatrix(const Epetra_Vector& x) = 0;
 
-        /*! Routine to reset the old solution, the one from the previous
-	 * time step. Different routine for first step, where the old
-	 * solution is set by the user and not part of the solution vector.
-	 * These routines are used by space-time (xyzt) problems, where the
-	 * MassMatrix is calculated as a function of a different solution
-	 * vector then the Jacobian (that is, the previous time step).
+        /*! Routines used in XYZT to set the old solution, the one from the
+	 * previous time step. There is a different routine for first step,
+	 * where the old solution is set by the user and not part of the 
+	 * solution vector. These routines are used by space-time (xyzt) 
+	 * problems, where the residual vector is a function of the previous
+	 * solution, which is also being solved for, and where the MassMatrix 
+	 * is calculated as a function of a different solution vector then 
+	 * the Jacobian (that is, the previous time step).
+	 * The  timeStep  argument is sent so the use can set the global time,
+	 * for cases when computeF, computeJacobian, computeMassMatrix fills
+	 * are functions of time (nonautonomous systems).
          */
-        virtual void setOldSolution(const Epetra_Vector& x) { cout <<
-           "WARNING: LOCA::Epetra::Interface::MassMatrix::setOldSolution"
+        virtual void setOldSolution(const Epetra_Vector& x, const int timeStep) {
+           cout << "WARNING: LOCA::Epetra::Interface::MassMatrix::setOldSolution"
            << "\n\tempty default implementation not overloaded!" << endl;
 	};
 	//! See above

@@ -65,7 +65,8 @@ xyzt::xyzt(
   timeDomain(globalComm_->SubDomainRank()), 
   conStep(0),
   precPrintParams(precPrintParams_), 
-  precLSParams(precLSParams_)
+  precLSParams(precLSParams_),
+  isPeriodic(precLSParams_->getParameter("Periodic",false))
 {
    if (globalComm->MyPID()==0) 
      cout  << "--------------XYZT Partition Info---------------"
@@ -84,6 +85,7 @@ xyzt::xyzt(
    rowIndex = new std::vector<int>;
    for (int i=0; i < timeStepsOnTimeDomain; i++) {
      if (timeDomain!=0 || i!=0)  (*rowStencil)[i].push_back(-1);
+     else if (isPeriodic)   (*rowStencil)[i].push_back(globalComm->NumTimeSteps()-1);
      (*rowStencil)[i].push_back(0);
      (*rowIndex).push_back(i + globalComm->FirstTimeStepOnDomain());
    }
@@ -150,13 +152,13 @@ bool xyzt::computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fil
 
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
 
-    int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
-    if (blockRowOld >= 0)  {
-      solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass->setOldSolution(splitVecOld);
-    }
-    else { //First time step gets static Xold, not part of block solution vector
+    if (i==0 && timeDomain==0 && !isPeriodic) {
       iMass->setOldSolutionFirstStep();
+    }
+    else {
+      int blockRowOld = (*rowIndex)[i] + (*rowStencil)[i][0];
+      solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
+      iMass->setOldSolution(splitVecOld, i + globalComm->FirstTimeStepOnDomain());
     }
 
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
@@ -185,31 +187,30 @@ bool xyzt::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 
   for (int i=0; i < timeStepsOnTimeDomain; i++) {
 
-    int blockRowOld = (*rowIndex)[i] - 1;  //Hardwired for -1 in stencil
-    if (blockRowOld >= 0)  {
-      solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
-      iMass->setOldSolution(splitVecOld);
-    }
-    else {
+    if (i==0 && timeDomain==0 && !isPeriodic) {
       //First time step gets static Xold, not part of block solution vector
       iMass->setOldSolutionFirstStep();
+    }
+    else {
+      int blockRowOld = (*rowIndex)[i] + (*rowStencil)[i][0];
+      solutionOverlap->ExtractBlockValues(splitVecOld, blockRowOld);
+      iMass->setOldSolution(splitVecOld, i + globalComm->FirstTimeStepOnDomain());
     }
   
     solution->ExtractBlockValues(splitVec, (*rowIndex)[i]);
     stat =  stat && iJac->computeJacobian( splitVec, Jac );
 
     // Hardwired for -1 0 stencil meaning [M J]
-    if (blockRowOld >= 0) {
+    if (i==0 && timeDomain==0 && !isPeriodic) {
+      jacobian->LoadBlock(*splitJac, i, 0);
+    }
+    else {
       jacobian->LoadBlock(*splitJac, i, 1);
       stat = stat && iMass->computeMassMatrix( splitVecOld );
       jacobian->LoadBlock(*splitMass, i, 0);
     }
-    else {
-      jacobian->LoadBlock(*splitJac, i, 0);
-    }
   }
 
-//cout << " XYZT::computeJacobian:  jacobian= " << *jacobian ;
   return stat;
 }
 
