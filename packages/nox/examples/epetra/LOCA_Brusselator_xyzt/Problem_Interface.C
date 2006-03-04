@@ -135,16 +135,18 @@ bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x)
   return true;
 }
 
-void Problem_Interface::setOldSolution(const Epetra_Vector& xOld)
+void Problem_Interface::setOldSolution(const Epetra_Vector& xOld,
+		                       const int timeStep)
 {
   problem.reset(xOld);
+  // Can set time as a function of timeStep for nonautonomous systems
 }
 
 void Problem_Interface::setOldSolutionFirstStep()
 {
   // Grab previous solution of first time step
 
-  setOldSolution(oldSolnOrig);
+  setOldSolution(oldSolnOrig, 0);
 }
 //-----------------------------------------------------------------------------
 

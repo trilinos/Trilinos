@@ -86,7 +86,7 @@ public:
   bool computeMassMatrix(const Epetra_Vector& x);
 
   //! Set the old solution, the one from the preious time step (LOCA::Epetra::Interface::MassMatrix)
-  void setOldSolution(const Epetra_Vector& xOld);
+  void setOldSolution(const Epetra_Vector& xOld, const int timeStep);
   void setOldSolutionFirstStep();
 
   //! Application Operator: Object that points to the user's evaluation routines.
