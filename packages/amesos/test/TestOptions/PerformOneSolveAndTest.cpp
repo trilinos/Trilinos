@@ -61,6 +61,17 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 //  Note that since Levels 2 and 3 use the same A, there is no need to 
 //  call NumericFactorization() between the second and third call to Solve. 
 //   
+//  On testing AddToDiag
+//  ====================
+//
+//  When this code was written, our intent was to have AddToDiag add a constant 
+//  value to the diagonal even for non-existent diagonal elements.  For now, we have
+//  backed off of that.  If we decide to go back to the earlier semantics for 
+//  AddToDiag (i.e. that it would force all diagonal elements to exist in the 
+//  matrix, this can be tested by setting AddToAllDiagonalElements to true ; 
+//
+//  See bug #1928 for further discussion.
+
 
 int PerformOneSolveAndTest( const char* AmesosClass,
 			    int EpetraMatrixType,
@@ -74,6 +85,9 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 			    double& relerror,
 			    double& relresidual )
 {
+
+  bool AddToAllDiagonalElements =  ParamList.get( "AddZeroToDiag", false );
+
 
   bool TrustMe = ParamList.get( "TrustMe", false );
 
@@ -112,19 +126,27 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, verbose, 
 					ParamList, MatPtr, Rcond ) );
   } else {
-    if (MyVerbose) cout << " AC = "  << AC << " not tested in Partial Factorization" <<endl ; 
+    if (MyVerbose) cout << " AC = "  << AC << " not tested in Partial Factorization" <<endl ;   // bug #1915
   }
 
-
   if (ParamList.isParameter("AddToDiag")) { 
+      int oldtracebackmode = InMat->GetTracebackMode( ) ;   
+
     //
     //  If AddToDiag is set, create a matrix which is numerically identical, but structurally 
     //  has no missing diagaonal entries.   In other words, every diagonal element in MyMayWithDiag 
     //  has an entry in the matrix, though that entry will be zero if InMat has no entry for that
     //  particular diagonal element.  
     //
-    MyMatWithDiag = NewMatNewMap( *InMat, 2, 0, 0, 0, 0 );  //  Ensure that all diagonal entries exist ;
-
+    //  It turns out that this does not actually make sure that all diagonal entries exist because it 
+    //  does not deal with maps that are missing the diagonal element.
+    //
+    if ( AddToAllDiagonalElements ) { 
+      MyMatWithDiag = NewMatNewMap( *InMat, 2, 0, 0, 0, 0 );  //  Ensure that all diagonal entries exist ;
+    } else { 
+      InMat->SetTracebackMode( EPETRA_MIN(oldtracebackmode,1) ) ;   // If the matrix is mimssing diagonal elements, the call to ReplaceDiagonalElements will return 1 indicating missing diagonal elements
+      MyMatWithDiag = NewMatNewMap( *InMat, 0, 0, 0, 0, 0 );  //  Leave the matrix unchanged structurally 
+    }
     //
     //  Now add AddToDiag to each diagonal element.  
     //
@@ -132,13 +154,16 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     Epetra_Vector Diag( MyMatWithDiag->RowMap() );
     Epetra_Vector AddConstVecToDiag( MyMatWithDiag->RowMap() );
     AddConstVecToDiag.PutScalar( AddToDiag );
+
     assert( MyMatWithDiag->ExtractDiagonalCopy( Diag ) == 0 );
     Diag.Update( 1.0, AddConstVecToDiag, 1.0 ) ; 
-    assert(MyMatWithDiag->ReplaceDiagonalValues( Diag ) == 0 ) ; 
+    assert(MyMatWithDiag->ReplaceDiagonalValues( Diag ) >= 0 ) ;   // This may return 1 indicating that structurally non-zero elements were left untouched. 
+
+      InMat->SetTracebackMode( oldtracebackmode ) ;   
+
   } else { 
     MyMatWithDiag = rcp( new Epetra_CrsMatrix( *InMat ) ); 
   }
-  //  Epetra_CrsMatrix*& Amat = &*MyMat ; 
 
   if ( MyVerbose ) cout << " Partial Factorization complete " << endl ; 
 
@@ -284,7 +309,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
     OUR_CHK_ERR( Abase->Solve(  ) ); 
     if ( TrustMe ) sAAx = FixedLHS ; 
-    if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
     if ( Levels >= 2 ) 
       {
@@ -305,7 +329,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	//	OUR_CHK_ERR( Abase->SetParameters( *NullList ) );   // Make sure we handle null lists 
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
 	if ( TrustMe ) sAx = FixedLHS ; 
-	if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 	
       }
     else
@@ -323,7 +346,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	}
 	OUR_CHK_ERR( Abase->Solve(  ) ); 
 	if ( TrustMe ) x = FixedLHS ;
-	if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
       }
     else
       {
@@ -375,12 +397,11 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	kAAx = kAx ; 
       }
 
-    if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
     MyMatWithDiag->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
-    if ( MyVerbose ) cerr << __FILE__ << "::" << __LINE__ << endl ; 
 
-    if ( MyVerbose ) cout << " Levels =  " << Levels << endl ; 
-    if ( MyVerbose ) cout << " Rcond =  " << Rcond << endl ; 
+    if ( MyVerbose ) cout  << __FILE__ << "::" << __LINE__ 
+			   << " Levels =  " << Levels 
+			   << " Rcond =  " << Rcond << endl ; 
 
     double norm_diff ;
     double norm_one ;
@@ -388,44 +409,74 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     DomainDiff.Update( 1.0, sAAx, -1.0, cAAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout << " norm( sAAx - cAAx ) / norm(sAAx ) = " 
-		      << norm_diff /norm_one << endl ; 
+    if (MyVerbose) cout << __FILE__ << "::" << __LINE__ 
+			<< " norm( sAAx - cAAx ) / norm(sAAx ) = " 
+			<< norm_diff /norm_one << endl ; 
 
+#if 0
+   cout << endl << " sAx = " ;
+    sAx.Print ( cout ) ; 
+
+    cout << endl << " cAx = " ;
+    cAx.Print ( cout ) ; 
+
+    cout << endl << " xexact = " ;
+    xexact.Print ( cout ) ; 
+
+    cout << endl << " b = " ;
+    b.Print ( cout ) ; 
+
+    cout << endl << " MyMatWithDiag = " ;
+    MyMatWithDiag->Print ( cout ) ; 
+    cout << endl << " ParamList = " << ParamList << endl ; 
+#endif
+
+    
 
     DomainDiff.Update( 1.0, sAx, -1.0, cAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout << " norm( sAx - cAx ) / norm(sAx ) = " 
+    if (MyVerbose) cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " norm( sAx - cAx ) / norm(sAx ) = " 
 		      << norm_diff /norm_one << endl ; 
 
 
     DomainDiff.Update( 1.0, x, -1.0, xexact, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     x.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout << " norm( x - xexact ) / norm(x) = " 
-		      << norm_diff /norm_one << endl ; 
+    if (MyVerbose) cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " norm( x - xexact ) / norm(x) = " 
+      << norm_diff /norm_one << endl ; 
 
     relerror = norm_diff / norm_one ; 
 
     DomainDiff.Update( 1.0, sAx, -1.0, kAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout << " norm( sAx - kAx ) / norm(sAx ) = " 
-		      << norm_diff /norm_one << endl ; 
+    if (MyVerbose) cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " norm( sAx - kAx ) / norm(sAx ) = " 
+      << norm_diff /norm_one << endl ; 
 
 
     DomainDiff.Update( 1.0, sAAx, -1.0, kAAx, 0.0 ) ;
     DomainDiff.Norm2( &norm_diff ) ; 
     sAAx.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout << " norm( sAAx - kAAx ) / norm(sAAx ) = " 
-		      << norm_diff /norm_one << endl ; 
+    if (MyVerbose) cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " norm( sAAx - kAAx ) / norm(sAAx ) = " 
+      << norm_diff /norm_one << endl ; 
 
 
     RangeDiff.Update( 1.0, bcheck, -1.0, b, 0.0 ) ;
     RangeDiff.Norm2( &norm_diff ) ; 
     bcheck.Norm2( &norm_one ) ; 
-    if (MyVerbose) cout << " norm( bcheck - b ) / norm(bcheck ) = " 
-		      << norm_diff /norm_one << endl ; 
+    if (MyVerbose) cout 
+      << __FILE__ << "::" << __LINE__ 
+      << " norm( bcheck - b ) / norm(bcheck ) = " 
+      << norm_diff /norm_one << endl ; 
 
     relresidual = norm_diff / norm_one ; 
 
@@ -433,9 +484,10 @@ int PerformOneSolveAndTest( const char* AmesosClass,
       if ( relresidual * Rcond < 1e-16 ) {
 	if (MyVerbose) cout << " Test 1 Passed " << endl ;
       } else {
-	cout <<  __FILE__ << "::"  << __LINE__ << 
+      cout <<  __FILE__ << "::"  << __LINE__ << 
 	  " relresidual = " << relresidual <<
-	  " TEST 1 FAILED " << endl ;
+	  " TEST FAILED " <<
+	  " ParamList = " << ParamList << endl ; 
 	errors += 1 ; 
       }
     }
@@ -444,7 +496,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   }
 
   return errors;
-  
+
 }
 
 

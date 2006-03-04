@@ -46,7 +46,8 @@ endif
 EXEEXT = .exe
 
 if HAVE_AMESOS_PARAKLETE
-PARAKLETE_TEST = run_pk
+# PARAKLETE_TEST = run_pk
+PARAKLETE_TEST = 
 else
 PARAKLETE_TEST = 
 endif
@@ -99,10 +100,10 @@ example_MC64_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 example_MC64_CXXFLAGS     = $(EXAMPLE_INCLUDES)
 example_MC64_LDADD        = $(EXAMPLE_LIBS)
 
-run_pk_SOURCES      = $(srcdir)/run_pk.c
-run_pk_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
-run_pk_CXXFLAGS     = $(EXAMPLE_INCLUDES)
-run_pk_LDADD        = $(EXAMPLE_LIBS)
+# run_p[k_SOURCES      = $(srcdir)/run_pk.c
+# run_p[k_DEPENDENCIES = $(top_builddir)/src/libamesos.a 
+# run_p[k_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+# run_p[k_LDADD        = $(EXAMPLE_LIBS)
 
 a_trivial_mpi_test_SOURCES      = $(srcdir)/a_trivial_mpi_test.cpp
 a_trivial_mpi_test_CXXFLAGS     = 

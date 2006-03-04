@@ -102,13 +102,13 @@ Amesos_Paraklete::~Amesos_Paraklete(void) {
 //=============================================================================
 int Amesos_Paraklete::ExportToSerial() 
 {
-  if ( numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
+  if (  AddZeroToDiag_==0 && numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
     cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
     AMESOS_CHK_ERR( -2 );
   }
   if ( UseDataInPlace_ == 0 ) {
     assert ( RowMatrixA_ != 0 ) ; 
-    if ( numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
+    if (  AddZeroToDiag_==0 && numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
       cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
       AMESOS_CHK_ERR( -2 );
     }
@@ -116,10 +116,25 @@ int Amesos_Paraklete::ExportToSerial()
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
 
+    if (AddZeroToDiag_ ) { 
+      int OriginalTracebackMode = SerialCrsMatrixA_->GetTracebackMode() ; 
+      SerialCrsMatrixA_->SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) ) ; // ExportToSerial is called both by PerformSymbolicFactorization() and PerformNumericFactorization().  When called by the latter, the call to insertglobalvalues is both unnecessary and illegal.  Fortunately, Epetra allows us to ignore the error message by setting the traceback mode to 0.
+
+      //
+      //  Add 0.0 to each diagonal entry to avoid empty diagonal entries;
+      //
+      double zero = 0.0;
+      for ( int i = 0 ; i < SerialMap_->NumGlobalElements(); i++ ) 
+	if ( SerialCrsMatrixA_->LRID(i) >= 0 ) 
+	  SerialCrsMatrixA_->InsertGlobalValues( i, 1, &zero, &i ) ;
+      SerialCrsMatrixA_->SetTracebackMode( OriginalTracebackMode ) ; 
+    }
+
     AMESOS_CHK_ERR(SerialCrsMatrixA_->FillComplete());
     AMESOS_CHK_ERR(SerialCrsMatrixA_->OptimizeStorage());
 
-    if( numentries_ != SerialMatrix_->NumGlobalNonzeros()) {
+
+    if( !AddZeroToDiag_ && numentries_ != SerialMatrix_->NumGlobalNonzeros()) {
       cerr << " Amesos_Paraklete cannot handle this matrix.  " ;
       if ( Reindex_ ) {
 	cerr << "Unknown error" << endl ; 
@@ -180,6 +195,7 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
 	       OriginalMatrixMap.NumGlobalElements() )?1:0;
   if ( ! OriginalRangeMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
   if ( ! OriginalDomainMap.SameAs( OriginalMatrixMap ) ) UseDataInPlace_ = 0 ; 
+  if ( AddZeroToDiag_ ) UseDataInPlace_ = 0 ; 
   Comm().Broadcast( &UseDataInPlace_, 1, 0 ) ;
 
   UseDataInPlace_ = 0 ; // bug - remove this someday.
@@ -272,7 +288,11 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
     assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
 
-    assert( numentries_ == SerialMatrix_->NumGlobalNonzeros()) ;
+    if ( ! AddZeroToDiag_ ) {
+      assert( numentries_ == SerialMatrix_->NumGlobalNonzeros()) ;
+    } else {
+      numentries_ = SerialMatrix_->NumGlobalNonzeros() ;
+    }
 
     Epetra_CrsMatrix *CrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(SerialMatrix_);
     bool StorageOptimized = ( CrsMatrix != 0 && CrsMatrix->StorageOptimized() );
@@ -599,7 +619,8 @@ int Amesos_Paraklete::NumericFactorization()
     if ( CrsMatrixA == 0 )   // hack to get around Bug #1502 
       AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
     assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
-    assert( numentries_ == RowMatrixA_->NumGlobalNonzeros() );
+    if ( AddZeroToDiag_ == 0 ) 
+      assert( numentries_ == RowMatrixA_->NumGlobalNonzeros() );
 
     AMESOS_CHK_ERR( ExportToSerial() );
     

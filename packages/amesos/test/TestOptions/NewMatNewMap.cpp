@@ -207,6 +207,7 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 	  }
 	}
 	if ( MissingDiagonal ) {
+	  MyPermutedGlobalColElements.resize(NumMyColElements+1);
 	  MyPermutedGlobalColElements[NumMyColElementsOut] = MyGlobalRowElements[i];
 	  NumMyColElementsOut++;
 	}
@@ -281,10 +282,29 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
 	    MissingDiagonal = false ; 
 	  }
 	}
+#if 0
+	cout  << __FILE__ << "::" << __LINE__ 
+	      << " i = " << i 
+	      << " MyPermutedGlobalRowElements[i]  = " << MyPermutedGlobalRowElements[i] 
+	      <<   " MissingDiagonal = " << MissingDiagonal << endl ; 
+#endif
+
       }
       if ( MissingDiagonal ) { 
+	ThisRowValues.resize(NumIndicesThisRow+1) ; 
 	ThisRowValues[NumIndicesThisRow] = 0.0;
+	PermutedGlobalColIndices.resize(NumIndicesThisRow+1);
 	PermutedGlobalColIndices[NumIndicesThisRow] = MyPermutedGlobalRowElements[i] ;
+	
+#if 0
+	cout  << __FILE__ << "::" << __LINE__ 
+	      << " i = " << i 
+	      << "NumIndicesThisRow = " << NumIndicesThisRow 
+	      << "ThisRowValues[NumIndicesThisRow = " << ThisRowValues[NumIndicesThisRow] 
+	      << " PermutedGlobalColIndices[NumIndcesThisRow] = " << PermutedGlobalColIndices[NumIndicesThisRow] 
+	      << endl ; 
+#endif
+
 	NumIndicesThisRow++  ;
 
       } 
@@ -336,6 +356,10 @@ RefCountPtr<Epetra_CrsMatrix> NewMatNewMap(Epetra_CrsMatrix& In,
   assert(Out->FillComplete( *OutDomainMap, *OutRangeMap )==0);
 #endif
 
+#if 0
+  cout << __FILE__ << "::" << __LINE__ << endl ;
+  Out->Print( cout ) ; 
+#endif
 
   return Out;
 }

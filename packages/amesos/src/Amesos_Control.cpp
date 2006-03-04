@@ -30,11 +30,12 @@
 void Amesos_Control::SetControlParameters( const Teuchos::ParameterList &ParameterList) {
 
   // add zero to diagonal if diagonal element is not present
-  // - some solvers choke on matrices with zero elements on the diagonal
-  if( ParameterList.isParameter("AddZeroToDiag") )
+  // - not supported for matrices which are missing elements from the diagonal.  See bug #1928 for discussion
+  if( ParameterList.isParameter("AddZeroToDiag") ) 
     AddZeroToDiag_ = ParameterList.get<bool>("AddZeroToDiag");
 
-  // add this value to diagonal
+  // add this value to all diagonal elements which are structurally non-zero
+  // no change is made to non-zero structure of the matrix.
   if( ParameterList.isParameter("AddToDiag") )
     AddToDiag_ = ParameterList.get<double>("AddToDiag");
 

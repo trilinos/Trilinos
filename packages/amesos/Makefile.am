@@ -207,7 +207,7 @@ run-tests:
 	@echo "Running the Amesos tests..."
 	@echo "==========================="
 	@echo
-	@echo "None of these tests should take more than a minute to execute on a typical computer"
+	@echo "None of these tests should take more than a minute or two to execute on a multi-processor computer"
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"
 	@echo "make run-full-tests perform a more complete set of tests"
 	@echo

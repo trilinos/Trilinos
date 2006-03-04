@@ -35,7 +35,6 @@
     DIRS = Test_Epetra_RowMatrix,
            Test_Epetra_CrsMatrix,
            Test_Detailed,
-           Test_MultipleSolves,
            Test_KLU,
            Test_SuperLU,
            Test_SuperLU_DIST,
@@ -50,11 +49,31 @@
 #  TestOptions can't find ../Test_Basic/Diagonal.mtx even though TestOptions works fine 
 #  when run from within TestAmesos and TestQuietAmesos  Bug #1960  
 #
-(FRAMEWORK, INSTALL ) {   
+#
+#  The install test should take less than a minute or two.
+#
+(INSTALL ) {   
+    DIRS = TestOptions;
+    ARGS = -s; 
+    X-HOST = atlantis;
+    COMM = SERIAL, MPI(1-4); 
+}
+
+(FRAMEWORK ) {   
     DIRS = TestOptions;
     X-HOST = atlantis;
     COMM = SERIAL, MPI(1-4); 
 }
+
+#
+#  Bug 1988 - Test_MultipleSolves fails on s858352
+#
+(FRAMEWORK, INSTALL ) {   
+    DIRS = Test_MultipleSolves;
+    X-HOST = s858352;
+    COMM = SERIAL, MPI(1-4); 
+}
+
 
 (FRAMEWORK, INSTALL, AmesosPyTests) {
     DIRS = ../python/test;

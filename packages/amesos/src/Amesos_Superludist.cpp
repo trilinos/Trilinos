@@ -267,9 +267,28 @@ int Amesos_Superludist::RedistributeA()
   Importer_         = rcp(new Epetra_Import(*UniformMap_, OriginalMap));
 
   CrsUniformMatrix_->Import(*RowMatrixA_, Importer(), Add); 
+  //  int TracebackMode = Comm().GetTracebackMode();
+  //  UniformMatrix_->SetTracebackMode(0);
+  if (AddZeroToDiag_ ) { 
+     //
+     //  Add 0.0 to each diagonal entry to avoid empty diagonal entries;
+     //
+      int OriginalTracebackMode = CrsUniformMatrix_->GetTracebackMode() ; 
+      CrsUniformMatrix_->SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) ) ;
+     double zero = 0.0;
+     for ( int i = 0 ; i < UniformMap_->NumGlobalElements(); i++ ) 
+       if ( CrsUniformMatrix_->LRID(i) >= 0 ) 
+ 	CrsUniformMatrix_->InsertGlobalValues( i, 1, &zero, &i ) ;
+     CrsUniformMatrix_->SetTracebackMode( OriginalTracebackMode ) ; 
+   }
+  //  UniformMatrix_->SetTracebackMode(TracebackMode);
+
+
   CrsUniformMatrix_->FillComplete(); 
 
   AddTime("matrix conversion", 0);
+
+
   
   return(0);
 }

@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
   Amesos Factory;  
   
   vector<string> SolverType;
-  SolverType.push_back("Amesos_Lapack");
+  //  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Pardiso");
@@ -127,11 +127,16 @@ int main(int argc, char *argv[]) {
 
   for (unsigned int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
+        cout  << Solver << " next  " << endl;
     if (Factory.Query((char*)Solver.c_str())) {
       if (Comm.MyPID() == 0)
         cout << "Testing " << Solver << endl;
-      if(TestAmesos((char*)Solver.c_str(), *A, NumVectors) == false)
+      if(TestAmesos((char*)Solver.c_str(), *A, NumVectors) == false) {
+        cout  << Solver << " Failed " << endl;
 	TestPassed = false;
+      } else { 
+        cout  << Solver << " Passed " << endl;
+      } 
     } else
       if (Comm.MyPID() == 0) {
 	cerr << endl;

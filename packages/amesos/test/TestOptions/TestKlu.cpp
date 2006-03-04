@@ -26,10 +26,12 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	     const double Rcond,
 	     Teuchos::ParameterList ParamList,
 	     bool RowMapEqualsColMap, 
+             bool TestAddZeroToDiag,
 	     double &maxrelerror, 
 	     double &maxrelresidual,
 	     int &NumTests ) {
   
+
   int NumErrors = 0 ;
   maxrelerror = 0.0;
   maxrelresidual = 0.0;
@@ -43,6 +45,10 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       
     double relerror;
     double relresidual;
+      
+    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      << " InternalParamList = " <<
+		     InternalParamList <<  endl ; 
       
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
@@ -94,6 +100,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       
     double relerror;
     double relresidual;
+    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+			 << " InternalParamList = " <<
+		     InternalParamList <<  endl ; 
       
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,
@@ -144,6 +153,10 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     Teuchos::ParameterList InternalParamList = ParamList ; 
 
     InternalParamList.set( "TrustMe", true );
+
+    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      << " InternalParamList = " <<
+		     InternalParamList <<  endl ; 
       
     double relerror;
     double relresidual;
@@ -187,15 +200,130 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	(transpose?"true":"false") << endl ;  
     }
   }
+  
   //
   //     2A)  AddToDiag 
   if (RowMapEqualsColMap ) {
     Teuchos::ParameterList InternalParamList = ParamList ; 
     InternalParamList.set( "Refactorize", true );
-    InternalParamList.set( "AddToDiag", 1e-2 );
+    //    InternalParamList.set( "AddZeroToDiag", true );
+    InternalParamList.set( "AddToDiag", 1e2 );
 
     double relerror;
     double relresidual;
+      
+    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      << " InternalParamList = " <<
+		     InternalParamList <<  endl ; 
+      
+    int Errors = PerformOneSolveAndTest("Amesos_Klu",
+					EpetraMatrixType,
+					Comm, 
+					transpose, 
+					verbose,
+					InternalParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+      
+    if (  Amat->Comm().MyPID() == 0 && Errors ) {
+      cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      }
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
+    } else {
+      NumErrors += Errors ; 
+	
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+    }
+    if (verbose)  cout << " TestKlu NumErrors = " 
+		       << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
+    if ( Comm.MyPID() == 0 && Errors > 0 ) {
+      cout << "Amesos_Klu" 
+	   << __FILE__ << "::"  << __LINE__ 
+	   << " Errors = " <<  Errors 
+	   << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+  }
+
+  //
+  //     2B)  AddToDiag with AddZeroToDiag
+  if (RowMapEqualsColMap && TestAddZeroToDiag ) {
+    Teuchos::ParameterList InternalParamList = ParamList ; 
+    InternalParamList.set( "Refactorize", true );
+    InternalParamList.set( "AddZeroToDiag", true );
+    InternalParamList.set( "AddToDiag", 1e2 );
+
+    double relerror;
+    double relresidual;
+      
+    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      << " InternalParamList = " <<
+		     InternalParamList <<  endl ; 
+      
+    int Errors = PerformOneSolveAndTest("Amesos_Klu",
+					EpetraMatrixType,
+					Comm, 
+					transpose, 
+					verbose,
+					InternalParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+      
+    if (  Amat->Comm().MyPID() == 0 && Errors ) {
+      cout << __FILE__ << "::"  << __LINE__ 
+	   << "Amesos_Klu failed with error code " << Errors<< endl ; 
+      }
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
+    } else {
+      NumErrors += Errors ; 
+	
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+    }
+    if (verbose)  cout << " TestKlu NumErrors = " 
+		       << NumErrors << " "
+		       << __FILE__ << "::" << __LINE__ 
+		       << endl ; 
+    if ( Comm.MyPID() == 0 && Errors > 0 ) {
+      cout << "Amesos_Klu" 
+	   << __FILE__ << "::"  << __LINE__ 
+	   << " Errors = " <<  Errors 
+	   << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+  }
+
+  //
+  //     2C)   AddZeroToDiag without AddToDiag 
+  if (RowMapEqualsColMap  ) {
+    Teuchos::ParameterList InternalParamList = ParamList ; 
+    InternalParamList.set( "Refactorize", true );
+    InternalParamList.set( "AddZeroToDiag", true );
+
+    double relerror;
+    double relresidual;
+      
+    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      << " InternalParamList = " <<
+		     InternalParamList <<  endl ; 
       
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					EpetraMatrixType,

@@ -9,6 +9,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	     const double Rcond,
 	     Teuchos::ParameterList ParamList, 
 	     bool RowMapEqualsColMap, 
+             bool TestAddZeroToDiag,
 	     double &maxrelerror, 
 	     double &maxrelresidual,
 	     int &NumTests ) ;

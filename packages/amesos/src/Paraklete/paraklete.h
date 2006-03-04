@@ -402,15 +402,15 @@ void paraklete_free_numeric
 
 extern int my_tries ;
 
-#ifndef NDEBUG
+// #ifndef NDEBUG
 
-#define PR0(params) { (void) fprintf params ; fflush (cm->file) ; }
-#define PR1(params) { if (Common->dump >= 1) (void) fprintf params ; fflush (cm->file) ; }
-#define PR2(params) { if (Common->dump >= 2) (void) fprintf params ; fflush (cm->file) ; }
-#define PR3(params) { if (Common->dump >= 3) (void) fprintf params ; fflush (cm->file) ; }
-#define DEBUG(statement) statement
+// #define PR0(params) { (void) fprintf params ; fflush (cm->file) ; }
+// #define PR1(params) { if (Common->dump >= 1) (void) fprintf params ; fflush (cm->file) ; }
+// #define PR2(params) { if (Common->dump >= 2) (void) fprintf params ; fflush (cm->file) ; }
+// #define PR3(params) { if (Common->dump >= 3) (void) fprintf params ; fflush (cm->file) ; }
+// #define DEBUG(statement) statement
 
-#else
+// #else
 
 #define PR0(params)
 #define PR1(params)
@@ -418,4 +418,4 @@ extern int my_tries ;
 #define PR3(params)
 #define DEBUG(statement)
 
-#endif
+// #endif

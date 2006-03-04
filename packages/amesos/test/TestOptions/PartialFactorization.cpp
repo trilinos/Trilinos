@@ -97,7 +97,15 @@ int PartialFactorizationOneStep( const char* AmesosClass,
 	double Value = 1.0 ;
 	
 	Amat->Multiply( transpose, xexact, b ) ;  //  b = A x2 = A A' A'' xexact
-	
+
+#if 0 
+	cout << __FILE__ << "::"  << __LINE__ << "b = " << endl ; 
+	b.Print( cout ) ; 
+	cout << __FILE__ << "::"  << __LINE__ << "xexact = " << endl ; 
+	xexact.Print( cout ) ; 
+	cout << __FILE__ << "::"  << __LINE__ << "x = " << endl ; 
+	x.Print( cout ) ; 
+#endif
 	//
 	//  Phase 2:  Solve A' A' A x = b 
 	//

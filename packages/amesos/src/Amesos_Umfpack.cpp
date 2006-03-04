@@ -86,6 +86,9 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
 
   IsLocal_ = ( OriginalMap.NumMyElements() == 
 	       OriginalMap.NumGlobalElements() )?1:0;
+
+  //  if ( AddZeroToDiag_ ) IsLocal_ = 0 ;   // bug #  Umfpack does not support AddZeroToDiag_
+
   Comm().Broadcast( &IsLocal_, 1, 0 ) ; 
 
   //  Convert Original Matrix to Serial (if it is not already) 
@@ -116,9 +119,30 @@ int Amesos_Umfpack::ConvertToSerial(const bool FirstTime)
 
     SerialCrsMatrix().Import(*Matrix(), Importer(),Insert); 
     
+#if 0 
+
+    I was not able to make this work - 11 Feb 2006
+
+    if (AddZeroToDiag_ ) { 
+      int OriginalTracebackMode = SerialCrsMatrix().GetTracebackMode() ; 
+      SerialCrsMatrix().SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) ) ; // ExportToSerial is called both by PerformSymbolicFactorization() and PerformNumericFactorization().  When called by the latter, the call to insertglobalvalues is both unnecessary and illegal.  Fortunately, Epetra allows us to ignore the error message by setting the traceback mode to 0.
+
+      //
+      //  Add 0.0 to each diagonal entry to avoid empty diagonal entries;
+      //
+      double zero = 0.0;
+      for ( int i = 0 ; i < SerialMap_->NumGlobalElements(); i++ ) 
+	if ( SerialCrsMatrix().LRID(i) >= 0 ) 
+	  SerialCrsMatrix().InsertGlobalValues( i, 1, &zero, &i ) ;
+      SerialCrsMatrix().SetTracebackMode( OriginalTracebackMode ) ; 
+    }
+#endif
     SerialCrsMatrix().FillComplete(); 
     SerialMatrix_ = &SerialCrsMatrix();
+    assert( numentries_ == SerialMatrix_->NumGlobalNonzeros());  // This should be set to an assignment if AddToZeroDiag is non -zero
   }
+
+
 
   AddTime("matrix redistribution", 0);
   AddTime("overhead", 1);
@@ -158,6 +182,17 @@ int Amesos_Umfpack::ConvertToUmfpackCRS()
       if (ierr)
 	AMESOS_CHK_ERR(-1);
 
+#if 1
+      // MS // added on 15-Mar-05 and KSS restored 8-Feb-06
+      if (AddToDiag_ != 0.0) {
+        for (int i = 0 ; i < NumEntriesThisRow ; ++i) {
+          if (Ai[Ai_index+i] == MyRow) {
+            Aval[Ai_index+i] += AddToDiag_;
+            break;
+          }
+        }
+      }
+#endif
       Ai_index += NumEntriesThisRow;
     }
 

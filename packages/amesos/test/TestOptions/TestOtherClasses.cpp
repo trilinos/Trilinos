@@ -16,9 +16,11 @@ int TestOtherClasses( const char* AmesosClass,
 		      const int Levels,
 		      const double Rcond,
 		      bool RowMapEqualsColMap, 
+		      bool TestAddZeroToDiag,
 		      double &maxrelerror, 
 		      double &maxrelresidual,
 		      int &NumTests ) {
+
 
   int iam = Amat->Comm().MyPID() ;  
   int NumErrors = 0 ;
@@ -28,9 +30,10 @@ int TestOtherClasses( const char* AmesosClass,
 
   {
     Teuchos::ParameterList ParamList ;
+
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     ParamList.set( "Redistribute", true );
-    ParamList.set( "AddZeroToDiag", true );
+    ParamList.set( "AddZeroToDiag", false );
     ParamList.set( "MaxProcs", 100000 );
     //  ParamList.print( cerr, 10 ) ; 
 
@@ -82,18 +85,56 @@ int TestOtherClasses( const char* AmesosClass,
   }
 
   string AC = AmesosClass ; 
-  bool dscpack = (AC.find("scpack") < AC.find("wont_find_this_xzd") );  // Bug #1929 - AddToDiag is not supported in Amesos_Dscpack 
-  if ( RowMapEqualsColMap && ! dscpack ) {
+
+  bool superlu = ( AC ==  "Amesos_Superlu" );
+  bool superludist = ( AC ==  "Amesos_Superludist" );
+  bool taucs = ( AC ==  "Amesos_Taucs" );
+  bool umfpack = ( AC ==  "Amesos_Umfpack" );
+  bool klu = ( AC ==  "Amesos_Klu" );
+  bool paraklete = ( AC ==  "Amesos_Paraklete" );
+  bool pardiso = ( AC ==  "Amesos_Pardiso" );
+  bool dscpack = ( AC ==  "Amesos_Dscpack" );       
+  bool mumps = ( AC ==  "Amesos_Mumps" );
+  bool pastix = ( AC ==  "Amesos_Pastix" );
+  bool scalapack = ( AC ==  "Amesos_Scalapack" ) ;
+  bool lapack = ( AC ==  "Amesos_Lapack" );
+
+
+  //
+  //  Testing AddZeroToDiag and AddToDiag 
+  //  When AddZeroToDiag is true, the value of AddToDiag is added to every diagonal element whether or not 
+  //    that element exists in the structure of the matrix.
+  //  When AddZeroToDiag is false, the value of AddToDiag is added only to those diagonal elements 
+  //    which are structually non-zero.
+  //  Support for these two flags varies
+  //
+  //
+  //  klu, superludist and parakalete support AddToDiag with or without AddZeroToDiag 
+  //  scalapack and lapack, being dense codes, support AddToDiag, but only when AddZeroToDiag is set 
+  //
+  //  pardiso does not support AddToDiag - bug #1993 
+  bool supports_AddToDiag_with_AddZeroToDiag = ( klu || paraklete || scalapack || lapack ) ; 
+  bool supports_AddToDiag_with_when_AddZeroTo_Diag_is_false = ( klu  || paraklete  || mumps || taucs || lapack ) ; 
+
+
+  if ( RowMapEqualsColMap && supports_AddToDiag_with_AddZeroToDiag && TestAddZeroToDiag ) {
     Teuchos::ParameterList ParamList ;
     ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
     ParamList.set( "Redistribute", false );
-    ParamList.set( "AddToDiag", 1e-3 );
+    ParamList.set( "AddZeroToDiag", true );
+    ParamList.set( "AddToDiag", 1.3e2 );
 
     //  ParamList.print( cerr, 10 ) ; 
 
     double relerror;
     double relresidual;
    
+    if (verbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+		      << " ParamList = " << ParamList 
+		      << " transpose = " << transpose 
+		      << " Levels = " << Levels 
+		      << endl ; 
+
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
 					Comm, 
@@ -116,7 +157,8 @@ int TestOtherClasses( const char* AmesosClass,
       NumErrors++;
       NumTests++ ; 
       if ( verbose ) {
-	cout << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
+	cout  << __FILE__ << "::" << __LINE__ 
+	  << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
       }
     } else { 
       NumErrors += Errors ; 
@@ -135,6 +177,66 @@ int TestOtherClasses( const char* AmesosClass,
 
 
   }
+  if ( RowMapEqualsColMap && supports_AddToDiag_with_when_AddZeroTo_Diag_is_false ) {
+    Teuchos::ParameterList ParamList ;
+    ParamList.set( "NoDestroy", true );    // Only affects Amesos_Mumps
+    ParamList.set( "Redistribute", false );
+    ParamList.set( "AddToDiag", 1e2 );
+
+    //  ParamList.print( cerr, 10 ) ; 
+
+    double relerror;
+    double relresidual;
+   
+    if (verbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+		      << " ParamList = " << ParamList 
+		      << " transpose = " << transpose 
+		      << " Levels = " << Levels 
+		      << endl ; 
+
+    int Errors = PerformOneSolveAndTest(AmesosClass,
+					EpetraMatrixType,
+					Comm, 
+					transpose, 
+					verbose,
+					ParamList, 
+					Amat, 
+					Levels,
+					Rcond, 
+					relerror, 
+					relresidual ) ; 
+
+
+    if (verbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
+				  << " AmesosClass= " << AmesosClass 
+				  << " Errors = " << Errors 
+				  << endl ; 
+
+    if ( Errors < 0 ) {
+      NumErrors++;
+      NumTests++ ; 
+      if ( verbose ) {
+	cout  << __FILE__ << "::" << __LINE__ 
+	  << AmesosClass << " failed with error code " << Errors << " " << __FILE__ << "::" << __LINE__ << endl ; 
+      }
+    } else { 
+      NumErrors += Errors ; 
+
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+
+    }
+    if (verbose)  cout << " TestOtherClasses " << AmesosClass << "" << "::" << __LINE__ << " NumErrors = " << NumErrors << endl ; 
+    if ( verbose && Errors ) {
+      cout << AmesosClass << " failed with transpose = " << 
+	(transpose?"true":"false") << endl ;  
+    }
+
+
+
+  }
+
   //
   //     2)  Refactorize = true 
   {
@@ -145,6 +247,12 @@ int TestOtherClasses( const char* AmesosClass,
     double relerror;
     double relresidual;
       
+    if (verbose) cout << __FILE__ << "::" << __LINE__ << " AmesosClass= " << AmesosClass 
+		      << " ParamList = " << ParamList 
+		      << " transpose = " << transpose 
+		      << " Levels = " << Levels 
+		      << endl ; 
+
     int Errors = PerformOneSolveAndTest(AmesosClass,
 					EpetraMatrixType,
 					Comm, 

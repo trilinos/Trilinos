@@ -107,16 +107,12 @@ public:
 
   bool MatrixShapeOK() const;
 
-  //!  Amesos_Taucs does not support transpose at this time.
-  /*!  returns 0 if UseTranspose is set to false, else 1 (failure)
+  //!  Amesos_Taucs supports only symmetric matrices, hence transpose is irrelevant, but harmless
+  /*!  
    */
-  int SetUseTranspose(bool UseTranspose) { return( UseTranspose?1:0 );};
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
-  //! Returns the current UseTranspose setting.
-  bool UseTranspose() const 
-  {
-    return(true);
-  }
+  bool UseTranspose() const {return(UseTranspose_);};
 
   const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
@@ -183,6 +179,9 @@ private:
 
   // @}
   
+  //! If \c true, the transpose of A is used.
+  bool UseTranspose_;
+
   Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
   Teuchos::RefCountPtr<Epetra_CrsMatrix> SerialCrsMatrix_;
   Teuchos::RefCountPtr<Epetra_RowMatrix> SerialMatrix_;

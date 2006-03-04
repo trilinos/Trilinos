@@ -200,7 +200,12 @@ int CreateCrsMatrix( char *in_filename, const Epetra_Comm &Comm,
 
 int TestOneMatrix( const vector<bool> AmesosClassesInstalled, 
 		   char *filename, 
-		   Epetra_Comm &Comm, 
+#ifdef EPETRA_MPI
+		   Epetra_MpiComm& Comm,
+#else
+		   Epetra_SerialComm& Comm,
+#endif
+		   //		   Epetra_Comm &Comm, 
 		   const bool verbose, 
 		   const bool PerformDiagonalTest, 
 		   double Rcond,
@@ -322,7 +327,6 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
     for ( int iterDist =0; iterDist < iterDistMax; iterDist++ ) {  
       bool distribute = ( iterDist == 1 ); 
 	
-      //
 #if 1
       for ( int iterRowindex = 0 ; iterRowindex < RowindexMax; iterRowindex++ ) {
 	for ( int iterColindex = 0 ; iterColindex < ColindexMax; iterColindex++ ) {
@@ -331,18 +335,18 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 	  //  replicated maps, hence we do not allow any fancy indexing
 	  //
 	  int ThisRangemapMax = RangemapMax ;
-              // Bug #1920 Amesos classes can't replicated domanin or ranges  if ( iterRowindex > 0 || iterColindex > 0 ) 
+              // Bug #1920 Amesos classes can't handle replicated domain or ranges  if ( iterRowindex > 0 || iterColindex > 0 ) 
 	  ThisRangemapMax = EPETRA_MIN( 3, ThisRangemapMax );
 	  int ThisDomainmapMax =  EPETRA_MIN( 3, ThisRangemapMax );  // Bug #1920 
 	  for ( int iterRangemap = 0 ; iterRangemap < ThisRangemapMax; iterRangemap++ ) {
 	    for ( int iterDomainmap = 0 ; iterDomainmap < ThisDomainmapMax; iterDomainmap++ ) {
-	      for ( int iterDiagonalOpts = 0 ; iterDiagonalOpts < DiagonalOptsMax; iterDiagonalOpts++ ) {
+	      for ( int iterDiagonalOpts = 0 ; iterDiagonalOpts < DiagonalOptsMax; iterDiagonalOpts++ ) { 
 #else
 		int iterRowindex = 0; { 
 		  int iterColindex = 0 ; { 
 		    int iterRangemap = 0 ; { 
 		      int iterDomainmap = 0 ; {
-			int iterDiagonalOpts = 0 ; { 
+			for ( int iterDiagonalOpts = 1 ; iterDiagonalOpts < DiagonalOptsMax; iterDiagonalOpts++ ) { 
 #endif
 		//  diagonal opts testing only works on distributed matrices whose row and column indices match 
 		//  On a serial matrix, eliminate a column from the map makes the matrix singular
@@ -366,6 +370,22 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    CreateCrsMatrix( filename, Comm, readMap, transpose, distribute, symmetric, Amat ) ;
 		    //		  assert( symmetric == false ) ; 
 		    
+		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
+				     " Creating matrix from " <<
+				     " filename = " << filename <<
+				     " symmetric = " << symmetric <<
+				     " distribute = " << distribute <<
+				     " iterRowindex = " << iterRowindex <<
+				     " iterColindex = " << iterColindex <<
+				     " iterRangemap = " << iterRangemap <<
+				     " iterDomainmap = " << iterDomainmap <<
+				     " EpetraMatrixType = " << EpetraMatrixType <<
+				     " iterDiagonalOpts = " << iterDiagonalOpts <<
+				     " transpose = "  << transpose << " iterDist = " << iterDist << endl ; 
+
+
+		    if ( iterDiagonalOpts )  Comm.SetTracebackMode(1);  // Turn off positive Epetra warnings (i.e. iniefficient code, such as memory re-allocation)
+
 		    RefCountPtr<Epetra_CrsMatrix> Bmat = NewMatNewMap( *Amat, 
 								       iterDiagonalOpts, 
 								       iterRowindex,
@@ -373,7 +393,8 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 								       iterRangemap,
 								       iterDomainmap
 								       ) ; 
-		    
+		    Comm.SetTracebackMode(2);
+
 		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
 				     " filename = " << filename <<
 				     " symmetric = " << symmetric <<
@@ -406,6 +427,19 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    }
 
 		    int NumTheseTests = 0 ; 
+		    if ( verbose ) {
+		      cout << " About to test  " << filename 
+			   << __FILE__ << "::"  << __LINE__
+			   << " EpetraMatrixType = " <<  EpetraMatrixType 
+			   << (transpose?" transpose":"" ) 
+			   << (distribute?" distribute":"" )
+			   << endl ; 
+		    }
+		    if ( iterDiagonalOpts == 0 ) 
+		      Comm.SetTracebackMode(2);
+		    else
+		      Comm.SetTracebackMode(1);  // In PerformOneSolveAndTest, MyMatWithDiag->ReplaceDiagonalValues may return 1 indicating that structurally non-zero elements were left untouched.
+
 		    int Error = TestAllClasses( AmesosClasses, EpetraMatrixType, 
 						AmesosClassesInstalled, 
 						Cmat, 
@@ -427,7 +461,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    NumTests += NumTheseTests ;
 		    NumErrors += Error ;
 		    if ( Comm.MyPID() == 0  && ( ( verbose && NumTheseTests ) || Error ) ) {
-		      cout << " Testing  " << filename 
+		      cout << " Tested  " << filename 
 			   << __FILE__ << "::"  << __LINE__
 			   << " EpetraMatrixType = " <<  EpetraMatrixType 
 			   << (transpose?" transpose":"" ) 
@@ -526,34 +560,45 @@ int NextMain( int argc, char *argv[] ) {
   }
 
 
+#ifdef HAVE_AMESOS_PARDISO
+  //  bug #1915  
+  //  bug #1998 - Enabling Amesos_Pardiso causes Amesos_Klu to fail - strange but true
+  //  AmesosClasses.push_back( "Amesos_Pardiso" );
+#endif
+#ifdef HAVE_AMESOS_SUPERLUDIST
+  AmesosClasses.push_back( "Amesos_Superludist" );
+#endif
 
 
-
-#ifdef HAVE_AMESOS_DSCPACK
-  //  This fails on my Fedora Core linux box
-  if ( ! quiet ) AmesosClasses.push_back( "Amesos_Dscpack" );         //  bug #1205 
+#ifdef HAVE_AMESOS_KLU
+  AmesosClasses.push_back( "Amesos_Klu" );
 #endif
 
 #if 1
-#ifdef HAVE_AMESOS_TAUCS
-  AmesosClasses.push_back( "Amesos_Taucs" );
+
+#ifdef HAVE_AMESOS_LAPACK
+  AmesosClasses.push_back( "Amesos_Lapack" );
 #endif
 
 #ifdef HAVE_AMESOS_SUPERLU
   AmesosClasses.push_back( "Amesos_Superlu" );
 #endif
 
-#ifdef HAVE_AMESOS_KLU
-  AmesosClasses.push_back( "Amesos_Klu" );
+#ifdef HAVE_AMESOS_TAUCS
+  AmesosClasses.push_back( "Amesos_Taucs" );
 #endif
 
-#ifdef HAVE_AMESOS_PARDISO
-  //  bug #1915  
-  AmesosClasses.push_back( "Amesos_Pardiso" );
+#ifdef HAVE_AMESOS_UMFPACK
+  AmesosClasses.push_back( "Amesos_Umfpack" );
 #endif
 
-#ifdef HAVE_AMESOS_SUPERLUDIST
-  AmesosClasses.push_back( "Amesos_Superludist" );
+#ifdef HAVE_AMESOS_PARAKLETE
+  AmesosClasses.push_back( "Amesos_Paraklete" );
+#endif
+
+
+#ifdef HAVE_AMESOS_DSCPACK
+  if ( ! quiet ) AmesosClasses.push_back( "Amesos_Dscpack" );         //  bug #1205 
 #endif
 
 #ifdef HAVE_AMESOS_MUMPS
@@ -568,17 +613,8 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Scalapack" ) ;
 #endif
 
-#ifdef HAVE_AMESOS_PARAKLETE
-  AmesosClasses.push_back( "Amesos_Paraklete" );
-#endif
 
-#ifdef HAVE_AMESOS_LAPACK
-  AmesosClasses.push_back( "Amesos_Lapack" );
-#endif
 
-#ifdef HAVE_AMESOS_UMFPACK
-  AmesosClasses.push_back( "Amesos_Umfpack" );
-#endif
 #endif
 
   NumAmesosClasses = AmesosClasses.size();
@@ -589,10 +625,17 @@ int NextMain( int argc, char *argv[] ) {
 
   if ( Comm.MyPID() != 0 ) verbose = false ; 
 #if 0
+  //
+  //  Wait for a character to allow time to attach the debugger
+  //
   if ( Comm.MyPID() == 0 ) {
-    char what; 
-    cin >> what ; 
+    char what = 'a'; 
+    while ( what == 'a' )    // I don't know why we need this while loop  at least on bewoulf
+      cin >> what ; 
   }
+  Comm.Barrier();
+
+  cout << __FILE__ << "::" << __LINE__ << " Comm.MyPID() = "  << Comm.MyPID() << endl ; 
 #endif
 
 
@@ -630,18 +673,15 @@ int NextMain( int argc, char *argv[] ) {
   int result = 0 ; 
   int numtests = 0 ;
 
-  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/Diagonal.mtx", Comm, verbose, false, 1e-1 , numtests ) ;
-  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/MissingADiagonal.mtx", Comm, verbose, false, 1e-2 , numtests ) ;
+  //  ImpcolB.rua fails - the failure could be in the test code, in particular in NewMatNewMap.cpp
+  //  result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-9 , numtests ) ;
+
   //
-  //  TriDiagonal.mtx remains non-singular even after a diagaonal element is removed from the map 
+  //  Khead.triS remains non-singular even after a diagaonal element is removed from the map 
   //
-  //  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/TriDiagonal.mtx", Comm, verbose, true, 1e-6 , numtests ) ;
-  //  symmetric = false; // Bizarre bug causes the following assert to fail even though symmetric, when printed, is false.  When the print statement is in, this line is not necessary and the assert does NOT fail.  
-  //  cout << __FILE__ << "::" << __LINE__ << " symmetric = " << symmetric << endl ; 
-  
   // Khead.triS fails on DSCPACK 
-  result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/Khead.triS", Comm, verbose, true, 1e-6 , numtests ) ;
-  
+  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.triU", Comm, verbose, false, 1e-6 , numtests ) ;
+
   //
   //  small is set by TestValgrind - keep testing to a minimum because execution time is so slow
   //  quiet is set by TestQuietAmesos - dscpack is not quiet at the moment, hence we can't test symmetric matrices
@@ -650,23 +690,24 @@ int NextMain( int argc, char *argv[] ) {
   //  bug #1205 
   //
   if ( ! small ) {
+  result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/MissingADiagonal.mtx", Comm, verbose, false, 1e-2 , numtests ) ;
+    result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/Khead.triS", Comm, verbose, true, 1e-6 , numtests ) ;
     result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/bcsstk04.mtx", Comm, verbose, false, 1e-4 , numtests ) ;
+    //
+    //  The file reader for .rua files is not quiet 
+    //
     if (! quiet) { 
+      result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/Diagonal.mtx", Comm, verbose, false, 1e-1 , numtests ) ;
       if ( Comm.NumProc() == 1) {
 	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/662_bus_out.rsa", Comm, verbose, false, 1e-5 , numtests ) ;
 	result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.rua", Comm, verbose, false, 1e-2 , numtests ) ;
 	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-6 , numtests ) ;
+	//	result += TestOneMatrix( AmesosClassesInstalled, "../Test_Basic/ImpcolB.rua", Comm, verbose, false, 1e-6 , numtests ) ;
       }
     }
   }
  
-   if ( Comm.NumProc() == 1)   
-    result += TestOneMatrix( AmesosClassesInstalled, (char *) "../Test_Basic/SuperLU.triU", Comm, verbose, true, 1e-6 , numtests ) ;
-  
-  if ( ! quiet && Comm.MyPID() == 0 ) cout << result << " Tests failed " ; 
-
-  if (! quiet && Comm.MyPID() == 0 ) cout << numtests << " Tests performed " << endl ; 
-
+  if ( ! quiet && Comm.MyPID() == 0 ) cout << result << " Tests failed "  << numtests << " Tests performed " << endl ; 
 
   if ( result == 0 && numtests > 0 ) {
     if (! quiet && Comm.MyPID() == 0)

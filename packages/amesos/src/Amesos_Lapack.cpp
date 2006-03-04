@@ -287,13 +287,23 @@ int Amesos_Lapack::SerialToDense()
                                                &Values[0], &Indices[0]);
     AMESOS_CHK_ERR(ierr);
 
-    for (int k = 0 ; k < NumEntries ; ++k) {
-      //      if (fabs(Values[k]) >= Threshold_)       Threshold not used yet - no consistent definition 
-      //      Lapack would not be the first routine to use a threshold, as it confers no performance
-      //      advantage
-      DenseMatrix_(j,Indices[k]) = Values[k];
-      if (Indices[k] == j)
-	DenseMatrix_(j,j) = Values[k] + AddToDiag_;
+    if ( AddZeroToDiag_ ) { 
+      for (int k = 0 ; k < NumEntries ; ++k) {
+	DenseMatrix_(j,Indices[k]) = Values[k];
+      }
+      DenseMatrix_(j,j) += AddToDiag_;
+    } else { 
+      for (int k = 0 ; k < NumEntries ; ++k) {
+	//      if (fabs(Values[k]) >= Threshold_)       Threshold not used yet - no consistent definition 
+	//      Lapack would not be the first routine to use a threshold, as it confers no performance
+	//      advantage
+	DenseMatrix_(j,Indices[k]) = Values[k];
+
+	//	cout << __FILE__ << "::"<<__LINE__ << " j = " << j << " k = " << k << " Values[k = " << Values[k] << " AddToDiag_ = " << AddToDiag_  << endl ; 
+	if (Indices[k] == j) {
+	  DenseMatrix_(j,j) = Values[k] + AddToDiag_;
+	}
+      }
     }
   }
 
