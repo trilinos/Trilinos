@@ -575,6 +575,13 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         exporter = crsg.Exporter()
         self.assertEqual(isinstance(exporter, type(None)), True)
 
+    def testComm(self):
+        "Test Epetra.CrsGraph Comm method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        comm = crsg.Comm()
+        self.assertEqual(comm.NumProc(), self.numProc)
+        self.assertEqual(comm.MyPID()  , self.myPID  )
+
     def testLRID(self):
         "Test Epetra.CrsGraph LRID method"
         crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
