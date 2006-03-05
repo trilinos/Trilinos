@@ -547,6 +547,128 @@ class EpetraCrsGraphTestCase(unittest.TestCase):
         self.fillGraphGlobal(crsg)
         self.assertEqual(crsg.IndexBase(), self.indexBase)
 
+    def testRowMap(self):
+        "Test Epetra.CrsGraph RowMap method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.RowMap().SameAs(self.rowMap), True)
+
+    def testColMap(self):
+        "Test Epetra.CrsGraph ColMap method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.assertEqual(crsg.ColMap().SameAs(self.rowMap), True)
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, self.colMap, 3, False)
+        self.assertEqual(crsg.ColMap().SameAs(self.colMap), True)
+
+    def testImporter(self):
+        "Test Epetra.CrSGraph Importer method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        importer = crsg.Importer()
+        if self.numProc == 1: importerType = type(None)
+        else                : importerType = Epetra.Import
+        self.assertEqual(isinstance(importer, importerType), True)
+
+    def testExporter(self):
+        "Test Epetra.CrSGraph Exporter method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        exporter = crsg.Exporter()
+        self.assertEqual(isinstance(exporter, type(None)), True)
+
+    def testLRID(self):
+        "Test Epetra.CrsGraph LRID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for grid in range(self.size):
+            if   grid <  self.mySize* self.myPID   : lrid = -1
+            elif grid >= self.mySize*(self.myPID+1): lrid = -1
+            else: lrid = grid - self.mySize*self.myPID
+            self.assertEqual(crsg.LRID(grid), lrid)
+
+    def testGRID(self):
+        "Test Epetra.CrsGraph GRID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for lrid in range(self.mySize):
+            grid = lrid + self.mySize*self.myPID
+            self.assertEqual(crsg.GRID(lrid), grid)
+        self.assertEqual(crsg.GRID(self.mySize), -1)
+
+    def testLCID(self):
+        "Test Epetra.CrsGraph LCID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        start = self.mySize* self.myPID
+        end   = self.mySize*(self.myPID+1)-1
+        ghost1 = self.mySize
+        if self.myPID == 0: ghost1 -= 1
+        ghost2 = ghost1 + 1
+        for gcid in range(self.size):
+            if   gcid <  start-1: lcid = -1
+            elif gcid == start-1: lcid = ghost1
+            elif gcid == end+1  : lcid = ghost2
+            elif gcid >  end+1  : lcid = -1
+            else: lcid = gcid - start
+            self.assertEqual(crsg.LCID(gcid), lcid)
+
+    def testGCID(self):
+        "Test Epetra.CrsGraph GCID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        size = self.mySize+2
+        if self.myPID == 0             : size -= 1
+        if self.myPID == self.numProc-1: size -= 1
+        ghost = 0
+        for lcid in range(size):
+            if lcid == self.mySize:
+                if self.myPID == 0: gcid = lcid
+                else              : gcid = self.mySize*self.myPID-1
+            elif lcid == self.mySize+1: gcid = lcid + self.mySize*self.myPID-1
+            else                      : gcid = lcid + self.mySize*self.myPID
+            self.assertEqual(crsg.GCID(lcid), gcid)
+        self.assertEqual(crsg.GCID(self.mySize+2), -1)
+
+    def testMyGRID(self):
+        "Test Epetra.CrsGraph MyGRID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for grid in range(self.size):
+            if   grid <  self.mySize* self.myPID   : mine = False
+            elif grid >= self.mySize*(self.myPID+1): mine = False
+            else                                   : mine = True
+            self.assertEqual(crsg.MyGRID(grid), mine)
+
+    def testMyLRID(self):
+        "Test Epetra.CrsGraph MyLRID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        for lrid in range(self.mySize):
+            self.assertEqual(crsg.MyLRID(lrid), True)
+        self.assertEqual(crsg.MyLRID(self.mySize), False)
+
+    def testMyGCID(self):
+        "Test Epetra.CrsGraph MyGCID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        start = self.mySize*self.myPID-1
+        end = self.mySize*(self.myPID+1)
+        for gcid in range(self.size):
+            if   gcid < start: mine = False
+            elif gcid > end  : mine = False
+            else             : mine = True
+            self.assertEqual(crsg.MyGCID(gcid), mine)
+
+    def testMyLCID(self):
+        "Test Epetra.CrsGraph MyLCID method"
+        crsg = Epetra.CrsGraph(Epetra.Copy, self.rowMap, 3)
+        self.fillGraphGlobal(crsg)
+        size = self.mySize
+        if self.myPID > 0             : size += 1
+        if self.myPID < self.numProc-1: size += 1
+        for lcid in range(size):
+            self.assertEqual(crsg.MyLCID(lcid), True)
+        self.assertEqual(crsg.MyLCID(size+1), False)
+
 ##########################################################################
 
 if __name__ == "__main__":
