@@ -57,20 +57,20 @@ int TestAllClasses( const vector<string> AmesosClasses,
       if ( Amat->Comm().MyPID() == 0 ) {
 	if ( verbose  &&  ( ! ReIndex ) ) { 
 	
-	  cout << __FILE__ << "::"  << __LINE__
+	  cout << "TestAllClasses.cpp::"  << __LINE__
 	       << " Perhaps about to test " 
 	       << AmesosClasses[i] << " "  
-	       << " EpetraMatrixType = " <<  EpetraMatrixType 
-	       << " transpose = " <<  transpose 
-	       << " symmetric = " <<  symmetric 
-	       << " Levels = " <<  Levels 
-	       << " Diagonal = " <<  Diagonal 
-	       << " ReindexRowMap = " <<  ReindexRowMap 
-	       << " ReindexColMap = " <<  ReindexColMap 
-	       << " DomainMapType = " <<  DomainMapType 
-	       << " RangeMapType = " <<  RangeMapType 
-	       << " distribute = " <<  distribute 
-	       << " filename = " <<  filename 
+	       << " EMT=" <<  EpetraMatrixType 
+	       << " tr=" <<  transpose 
+	       << " sym=" <<  symmetric 
+	       << " L=" <<  Levels 
+	       << " D=" <<  Diagonal 
+	       << " RRM= " <<  ReindexRowMap 
+	       << " RCM= " <<  ReindexColMap 
+	       << " DMT= " <<  DomainMapType 
+	       << " RMT= " <<  RangeMapType 
+	       << " d=" <<  distribute 
+	       << " fn= " <<  filename 
 	       << endl ;  
 	}
       }
@@ -494,21 +494,20 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	    cout << " NO FAILURE in " ; 
 	  }
 	
-	  cout << __FILE__ << "::"  << __LINE__
-	       << " " << AmesosClasses[i] << " "  
-	       << " EpetraMatrixType = " <<  EpetraMatrixType 
-	       << " transpose = " <<  transpose 
-	       << " symmetric = " <<  symmetric 
-	       << " Levels = " <<  Levels 
-	       << " Diagonal = " <<  Diagonal 
-	       << " ReindexRowMap = " <<  ReindexRowMap 
-	       << " ReindexColMap = " <<  ReindexColMap 
-	       << " DomainMapType = " <<  DomainMapType 
-	       << " RangeMapType = " <<  RangeMapType 
-	       << " distribute = " <<  distribute 
-	       << " filename = " <<  filename 
-	       << " NumTheseTests = " <<  NumTheseTests 
-	       << " Errors = " <<  Errors << endl ;  
+	  cout << "TestAllClasses.cpp::"  << __LINE__
+	       << AmesosClasses[i] << " "  
+	       << " EMT=" <<  EpetraMatrixType 
+	       << " tr=" <<  transpose 
+	       << " sym=" <<  symmetric 
+	       << " L=" <<  Levels 
+	       << " D=" <<  Diagonal 
+	       << " RRM= " <<  ReindexRowMap 
+	       << " RCM= " <<  ReindexColMap 
+	       << " DMT= " <<  DomainMapType 
+	       << " RMT= " <<  RangeMapType 
+	       << " d=" <<  distribute 
+	       << " fn= " <<  filename 
+	       << endl ;  
 	}
       }
       errors += Errors ;
