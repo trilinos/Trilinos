@@ -14,7 +14,6 @@ FFLAGS=-O3 \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2" \
---enable-valgrind \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
