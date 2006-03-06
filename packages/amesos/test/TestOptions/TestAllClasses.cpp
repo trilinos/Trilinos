@@ -48,14 +48,13 @@ int TestAllClasses( const vector<string> AmesosClasses,
   if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && EpetraMatrixType == 1 ) 
     return 0 ;   //  Can't reindex a RowMatrix because we don't know the indices up front 
 
-  if ( verbose ) cout << __FILE__ << "::"  << __LINE__ << " NumTests = " << NumTests << endl ; 
-
   for (int i=0; i < NumAmesosClasses; i++ ) {
     if ( AmesosClassesInstalled[i] ) { 
       int Errors = 0 ; 
       int NumTheseTests = 0 ; 
       if ( Amat->Comm().MyPID() == 0 ) {
-	if ( ( verbose ) ) { 
+	bool ReIndex = ReindexRowMap || ReindexColMap ; 
+	if ( ( verbose  &&  ( ! ReIndex ) ) { 
 	
 	  cout << __FILE__ << "::"  << __LINE__
 	       << " Perhaps about to test " 
@@ -117,6 +116,25 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Klu" ) {
 	bool RunKluTest = true;
+	//  We only test reindexing on klu and paraklete
+	if ( ( verbose  &&  ( ReIndex ) ) { 
+	  
+	  cout << __FILE__ << "::"  << __LINE__
+	       << " Perhaps about to test " 
+	       << AmesosClasses[i] << " "  
+	       << " EpetraMatrixType = " <<  EpetraMatrixType 
+	       << " transpose = " <<  transpose 
+	       << " symmetric = " <<  symmetric 
+	       << " Levels = " <<  Levels 
+	       << " Diagonal = " <<  Diagonal 
+	       << " ReindexRowMap = " <<  ReindexRowMap 
+	       << " ReindexColMap = " <<  ReindexColMap 
+	       << " DomainMapType = " <<  DomainMapType 
+	       << " RangeMapType = " <<  RangeMapType 
+	       << " distribute = " <<  distribute 
+	       << " filename = " <<  filename 
+	       << endl ;  
+	}
 	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
 	  RunKluTest = false ;   //  Bug #969
 	if ( (   ReindexColMap != 0  ) )  //  Bug #969
@@ -226,6 +244,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	  RunMumpsTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunMumpsTest = false ;   //  Bug #1403
 	if ( MissingADiagonal ) RunMumpsTest = false ; // Bug #1435
+	if ( distribute )  RunMumpsTest = false ; // Bug #
 	if (  RunMumpsTest && verbose) cout << " Testing MUMPS " << endl ; 
 
 	if ( RunMumpsTest ) Errors = TestOtherClasses("Amesos_Mumps",
@@ -258,8 +277,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 #endif
 	if ( ImpcolB ) RunKluTest = false ;   // See bug #1928 
 
-
-	if ( verbose ) cout << __FILE__ << "::"  << __LINE__ << " NumTheseTests = " << NumTheseTests << endl ; 
 	if ( RunKluTest && verbose) cout << " Testing KLU " << endl ; 
 
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
@@ -303,7 +320,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( a662_bus_out && transpose ) RunSuperluTest = false ;  // Bug #1927 
 	if ( Khead ) RunSuperluTest= false ;  // Bug #1927 
 
-  if ( verbose ) cout << __FILE__ << "::"  << __LINE__ << " NumTheseTests = " << NumTheseTests << endl ; 
 	if ( RunSuperluTest ) {
 	  if ( verbose) cout << " Testing SUPERLU " << endl ; 
 	  Errors = TestOtherClasses("Amesos_Superlu",
@@ -319,7 +335,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				     maxrelresidual, 
 				     NumTheseTests ) ;
 	}
-  if ( verbose ) cout << __FILE__ << "::"  << __LINE__ << " NumTheseTests = " << NumTheseTests << endl ; 
 	if ( Amat->Comm().MyPID() == 0 && Errors ) 
 	  cout << " FAILURE in " 
 	       << __FILE__ << "::"  << __LINE__
@@ -363,6 +378,25 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Paraklete" ) {
 
+	//  We only test reindexing on klu and paraklete
+	if ( ( verbose  &&  ( ReIndex ) ) { 
+	  
+	  cout << __FILE__ << "::"  << __LINE__
+	       << " Perhaps about to test " 
+	       << AmesosClasses[i] << " "  
+	       << " EpetraMatrixType = " <<  EpetraMatrixType 
+	       << " transpose = " <<  transpose 
+	       << " symmetric = " <<  symmetric 
+	       << " Levels = " <<  Levels 
+	       << " Diagonal = " <<  Diagonal 
+	       << " ReindexRowMap = " <<  ReindexRowMap 
+	       << " ReindexColMap = " <<  ReindexColMap 
+	       << " DomainMapType = " <<  DomainMapType 
+	       << " RangeMapType = " <<  RangeMapType 
+	       << " distribute = " <<  distribute 
+	       << " filename = " <<  filename 
+	       << endl ;  
+	}
 	bool RunParakleteTest = true;
 	if ( (   ReindexColMap != 0  ) )  //  Bug #969
 	  RunParakleteTest = false ;   //  Bug #969
@@ -438,7 +472,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunSuperludistTest = false ;   //  Bug #1403
 	//	if ( MissingADiagonal ) RunSuperludistTest = false ; // Bug #1404 NOT
 	if ( Khead ) RunSuperludistTest= false ;  // Bug #368
-        if ( verbose ) cout << __FILE__ << "::"  << __LINE__ << " NumTheseTests = " << NumTheseTests << endl ; 
 	if ( RunSuperludistTest ) { 
 	  if ( verbose) cout << " Testing Superludist " << endl ; 
   
@@ -453,7 +486,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				    NumTheseTests ) ;
 	}
       }
-  if ( verbose ) cout << __FILE__ << "::"  << __LINE__ << " NumTheseTests = " << NumTheseTests << endl ; 
       if ( Amat->Comm().MyPID() == 0 ) {
 	if ( Errors || ( verbose && NumTheseTests > 0 ) ) { 
 	  if ( Errors ) { 

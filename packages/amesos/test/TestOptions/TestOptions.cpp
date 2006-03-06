@@ -370,7 +370,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    CreateCrsMatrix( filename, Comm, readMap, transpose, distribute, symmetric, Amat ) ;
 		    //		  assert( symmetric == false ) ; 
 		    
-		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
+		    if ( false && verbose ) cout << __FILE__ << "::" << __LINE__ << 
 				     " Creating matrix from " <<
 				     " filename = " << filename <<
 				     " symmetric = " << symmetric <<
@@ -395,7 +395,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 								       ) ; 
 		    Comm.SetTracebackMode(2);
 
-		    if ( verbose ) cout << __FILE__ << "::" << __LINE__ << 
+		    if ( false && verbose ) cout << __FILE__ << "::" << __LINE__ << 
 				     " filename = " << filename <<
 				     " symmetric = " << symmetric <<
 				     " distribute = " << distribute <<

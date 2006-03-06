@@ -91,7 +91,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
   bool TrustMe = ParamList.get( "TrustMe", false );
 
-  bool MyVerbose = verbose ; 
+  bool MyVerbose = false ; //  setting this equal to verbose produces too much output and exceeds the test harnesses 1 Megabyte limit
 
   RefCountPtr<Epetra_CrsMatrix> MyMat ; 
   RefCountPtr<Epetra_CrsMatrix> MyMatWithDiag ; 
@@ -123,7 +123,7 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 
   const string AC = AmesosClass ;
   if ( AC != "Amesos_Pardiso" ) {
-    OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, verbose, 
+    OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, MyVerbose, 
 					ParamList, MatPtr, Rcond ) );
   } else {
     if (MyVerbose) cout << " AC = "  << AC << " not tested in Partial Factorization" <<endl ;   // bug #1915
@@ -398,10 +398,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
       }
 
     MyMatWithDiag->Multiply( transpose, kAAx, bcheck ) ; //  temp = A" x2
-
-    if ( MyVerbose ) cout  << __FILE__ << "::" << __LINE__ 
-			   << " Levels =  " << Levels 
-			   << " Rcond =  " << Rcond << endl ; 
 
     double norm_diff ;
     double norm_one ;
