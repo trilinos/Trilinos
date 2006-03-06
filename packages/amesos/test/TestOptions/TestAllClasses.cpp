@@ -48,13 +48,14 @@ int TestAllClasses( const vector<string> AmesosClasses,
   if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && EpetraMatrixType == 1 ) 
     return 0 ;   //  Can't reindex a RowMatrix because we don't know the indices up front 
 
+  bool ReIndex = ReindexRowMap || ReindexColMap ; 
+
   for (int i=0; i < NumAmesosClasses; i++ ) {
     if ( AmesosClassesInstalled[i] ) { 
       int Errors = 0 ; 
       int NumTheseTests = 0 ; 
       if ( Amat->Comm().MyPID() == 0 ) {
-	bool ReIndex = ReindexRowMap || ReindexColMap ; 
-	if ( ( verbose  &&  ( ! ReIndex ) ) { 
+	if ( verbose  &&  ( ! ReIndex ) ) { 
 	
 	  cout << __FILE__ << "::"  << __LINE__
 	       << " Perhaps about to test " 
@@ -379,7 +380,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
       } else if ( AmesosClasses[i] == "Amesos_Paraklete" ) {
 
 	//  We only test reindexing on klu and paraklete
-	if ( ( verbose  &&  ( ReIndex ) ) { 
+	if ( verbose  &&  ( ReIndex ) ) { 
 	  
 	  cout << __FILE__ << "::"  << __LINE__
 	       << " Perhaps about to test " 
