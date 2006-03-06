@@ -34,7 +34,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
   string StringFilename = filename ; 
   bool bcsstk04 = ( StringFilename.find("bcsstk04") < StringFilename.find("xdz_notaname_garbage") );
   bool Khead = ( StringFilename.find("Khead") < StringFilename.find("xdz_notaname_garbage") );
-  bool Superlu_rua = ( StringFilename.find("Superlu_rua") < StringFilename.find("xdz_notaname_garbage") );
+  bool Superlu_rua = ( StringFilename.find("Superlu") < StringFilename.find("xdz_notaname_garbage") );
   bool ImpcolB = ( StringFilename.find("ImpcolB") < StringFilename.find("xdz_notaname_garbage") );
   bool a662_bus_out = ( StringFilename.find("662_bus_out") < StringFilename.find("xdz_notaname_garbage") );
   bool MissingADiagonal = ( StringFilename.find("MissingADiagonal") < StringFilename.find("xdz_notaname_garbage") ) ||
