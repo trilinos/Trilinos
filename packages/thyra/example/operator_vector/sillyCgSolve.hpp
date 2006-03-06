@@ -31,6 +31,7 @@
 
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_AssertOp.hpp"
 
 /** \brief Silly little example unpreconditioned CG solver.
  *

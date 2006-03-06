@@ -76,10 +76,33 @@ public:
   /** \brief . */
   using MultiVectorDefaultBase<Scalar>::col;
 
+
   /** @name Public functions overridden from Teuchos::Describable */
   //@{
-  /** \brief Overridden to call <tt>LinearOpDefaultBase::describe()</tt> to
-   * disambiguate the call.
+
+  /** \brief Generates a default outputting for all vectors.
+   *
+   * Calls on the <tt>this->describe(void)</tt> function for the name of the
+   * class (and possibly its instance name) and then if <tt>verbLevel >=
+   * VERB_HIGH</tt>, then the vector elements themselves are printed as well.
+   * The format of the output is is shown below:
+   
+   \verbatim
+
+   type = 'this->description()', size = n
+     0:x1
+     1:x2
+     .
+     .
+     .
+     n-1:xn
+   \endverbatim
+   *
+   * Before <tt>type = 'this->description()'</tt> is printed and after
+   * each newline, <tt>leadingIndent</tt> is output.  The
+   * <tt>index:value</tt> lines are offset an additional
+   * <tt>indentSpacer</tt> amount.  A newline is printed after the
+   * last <tt>n-1:xn</tt> entry.
    */
   std::ostream& describe(
     std::ostream                         &out
@@ -87,6 +110,7 @@ public:
     ,const std::string                   leadingIndent
     ,const std::string                   indentSpacer
     ) const;
+
   //@}
 
   /** @name Overridden from LinearOpBase (should never need to be overridden in subclasses) */
@@ -127,6 +151,68 @@ public:
     );
   /// Implemented in terms of <tt>this->commitSubVector()</tt>
   void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  //@}
+
+  /** \name Overridden from VectorBase */
+  //@{
+
+  /// Simply creates a new vector and copies the contents from <tt>*this</tt>.
+  Teuchos::RefCountPtr<VectorBase<Scalar> > clone_v() const;
+  /** \brief .
+   *
+   * This implementation is based on a vector reduction operator class (see
+   * <tt>RTOpPack::ROpGetSubVector</tt>) and calls <tt>applyOp()</tt>.  Note
+   * that the footprint of the reduction object (both internal and external
+   * state) will be O(<tt>rng.size()</tt>).  For serial applications this is
+   * fairly reasonable and will not be a major performance penalty.  For
+   * parallel applications, however, this is a terrible implementation and
+   * must be overridden if <tt>rng.size()</tt> is large at all.  Although,
+   * this function should not even be used in case where the vector is very
+   * large.  If a subclass does override this function, it must also override
+   * <tt>freeSubVector()</tt> which has a implementation which is a companion
+   * to this function's implementation.
+   */
+  virtual void getSubVector( const Range1D& rng, RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  /** \brief .
+   *
+   * This implementation is a companion to the implementation for the
+   * non-<tt>const</tt> version of <tt>getSubVector()</tt>.  If
+   * <tt>getSubVector()</tt> is overridden by a subclass then this function
+   * must be overridden also!
+   */
+  virtual void freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  /** \brief .
+   *
+   * This implementation is based on a vector reduction operator class (see
+   * <tt>RTOpPack::ROpGetSubVector</tt>) and calls <tt>applyOp()</tt>.  Note
+   * that the footprint of the reduction object (both internal and external
+   * state) will be O(<tt>rng.size()</tt>).  For serial applications this is
+   * fairly reasonable and will not be a major performance penalty.  For
+   * parallel applications, this will be a terrible thing to do and must be
+   * overridden if <tt>rng.size()</tt> is large at all.  If a subclass does
+   * override this function, it must also override <tt>commitSubVector()</tt>
+   * which has a implementation which is a companion to this function's
+   * implementation.
+   */
+  virtual void getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  /** \brief .
+   *
+   * This function has an implementation which is a companion to the
+   * implementation for <tt>getSubVector()</tt>.  If <tt>getSubVector()</tt>
+   * is overridden by a subclass then this function must be overridden also!
+   */
+  virtual void commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  /** \brief .
+   *
+   * This implementation uses a transformation operator class (see
+   * <tt>RTOpPack::TOpSetSubVector</tt>) and calls <tt>applyOp()</tt>.  Be
+   * forewarned however, that the operator objects state data (both internal
+   * and external) will be order O(<tt>sub_vec.subNz()</tt>).  For serial
+   * applications, this is entirely adequate.  For parallel applications this
+   * may be bad!
+   */
+  virtual void setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec );
+
   //@}
 
 protected:

@@ -103,16 +103,16 @@ void ProductVectorSpace<Scalar>::getVecSpcPoss(
   // Validate the preconditions
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    i < 1 || this->dim() < i, std::out_of_range
+    !(0 <= i && i < this->dim()), std::out_of_range
     ,"VectorSpaceBlocked::get_vector_space_position(...): Error, i = "
-    << i << " is not in range [1,"<<this->dim()<<"]"
+    << i << " is not in range [0,"<<(this->dim()-1)<<"]"
     );
 #endif
   *kth_vector_space  = 0;
   *kth_global_offset = 0;
   while( *kth_vector_space < numBlocks_ ) {
     const Index off_kp1 = (*vecSpacesOffsets_)[*kth_vector_space+1];
-    if( off_kp1 + 1 > i ) {
+    if( off_kp1 > i ) {
       *kth_global_offset = (*vecSpacesOffsets_)[*kth_vector_space];
       break;
     }

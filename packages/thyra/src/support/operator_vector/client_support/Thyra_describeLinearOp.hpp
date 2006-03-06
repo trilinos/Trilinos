@@ -60,19 +60,19 @@ std::ostream& Thyra::describeLinearOp(
       cs = 1,         // stride for columns or rows 
       rs = dimRange;  // stride for rows or columns
     Index i, j;
-    for( j = 1; j <= dimDomain; ++j ) {
+    for( j = 0; j < dimDomain; ++j ) {
       Thyra::assign( e_j.get(), DST::zero() );
       Thyra::set_ele( j, DST::one(), e_j.get() );
       apply(A,NONCONJ_ELE,*e_j,t.get());  // extract the ith column or row
       t->getSubVector(Range1D(),&sv);
-      for( i = 1; i <= dimRange; ++i ) Md[ (i-1)*cs + (j-1)*rs ] = sv(i);
+      for( i = 0; i < dimRange; ++i ) Md[ i*cs + j*rs ] = sv(i);
       t->freeSubVector(&sv);
     }
     // Print the matrix
-    for( i = 1; i <= dimRange; ++i ) {
+    for( i = 0; i < dimRange; ++i ) {
       out << leadingIndent << indentSpacer << indentSpacer;
-      for( j = 1; j <= dimDomain; ++j )
-        out << " " << i << ":" << j << ":" << Md[ (i-1) + (j-1)*dimRange ];
+      for( j = 0; j < dimDomain; ++j )
+        out << " " << i << ":" << j << ":" << Md[ i + j*dimRange ];
       out << std::endl;
     }
   }

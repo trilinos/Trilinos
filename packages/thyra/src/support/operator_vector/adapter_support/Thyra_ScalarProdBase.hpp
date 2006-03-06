@@ -31,7 +31,6 @@
 
 #include "Thyra_ScalarProdBaseDecl.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Thyra_MultiVectorCols.hpp"
 
 namespace Thyra {
 
@@ -39,18 +38,7 @@ template<class Scalar>
 Scalar ScalarProdBase<Scalar>::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const
 {
   Scalar scalar_prods[1];
-#ifdef THYRA_VECTOR_DERIVE_FROM_MULTI_VECTOR
-  this->scalarProds(
-    static_cast<const MultiVectorBase<Scalar>&>(x)
-    ,static_cast<const MultiVectorBase<Scalar>&>(y)
-    ,scalar_prods
-    );
-#else
-  const MultiVectorCols<Scalar>
-    X( Teuchos::rcp( const_cast<VectorBase<Scalar>*>(&x), false ) ),
-    Y( Teuchos::rcp( const_cast<VectorBase<Scalar>*>(&y), false ) );
-  this->scalarProds(X,Y,scalar_prods);
-#endif
+  this->scalarProds(x,y,scalar_prods);
   return scalar_prods[0];
 }
 

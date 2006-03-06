@@ -61,7 +61,7 @@ public:
   const Scalar*     values()       const { return smv_.values();  }
   /** \brief . */
   Teuchos_Index   leadingDim()   const { return smv_.leadingDim();  }
-  /// One-based indexing: Preconditions: <tt>values()!=NULL && (1<=i<=subDim()) && (1<=j<=numSubCols())</tt>
+  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j<numSubCols())</tt>
   const Scalar& operator()(Teuchos_Index i,Teuchos_Index j) const { return smv_(i,j); }
 private:
   const MultiVectorBase<Scalar>          &mv_;
@@ -100,10 +100,10 @@ public:
   Scalar*           values()       const { return smv_.values();  }
   /** \brief . */
   Teuchos_Index   leadingDim()   const { return smv_.leadingDim();  }
-  /// One-based indexing: Preconditions: <tt>values()!=NULL && (1<=i<=subDim()) && (1<=j<=numSubCols())</tt>
+  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j<numSubCols())</tt>
   Scalar& operator()(Teuchos_Index i,Teuchos_Index j) { return smv_(i,j); }
 private:
-  MultiVectorBase<Scalar>                       &mv_;
+  MultiVectorBase<Scalar>                   &mv_;
   RTOpPack::MutableSubMultiVectorT<Scalar>  smv_;
   // Not defined and not to be called
   ExplicitMutableMultiVectorView();

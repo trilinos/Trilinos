@@ -65,7 +65,8 @@ namespace Belos {
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
   public:
 
-    //@{ \name Creation methods
+    /** \name Creation methods */
+    //@{
 
     /*! \brief Creates a new empty MultiVectorBase containing \c numvecs columns.
       
@@ -99,16 +100,10 @@ namespace Belos {
     static Teuchos::RefCountPtr<TMVB> CloneCopy( const TMVB& mv, const std::vector<int>& index )
     { 
       int numvecs = index.size();
-      std::vector<int> index_plus(index);
-      // Belos::MultiVecTraits uses [0,numvecs-1] indexing, 
-      // while Thyra uses [1,numvecs] indexing
-      for (int i=0; i<numvecs; i++) {
-        index_plus[i]++;
-      }
       // create the new multivector
       Teuchos::RefCountPtr< TMVB > cc = Thyra::createMembers( mv.range(), numvecs );
       // create a view to the relevant part of the source multivector
-      Teuchos::RefCountPtr< const TMVB > view = mv.subView( numvecs, &(index_plus[0]) );
+      Teuchos::RefCountPtr< const TMVB > view = mv.subView( numvecs, &(index[0]) );
       // copy the data from the relevant view to the new multivector
       Thyra::assign(&*cc, *view);
       return cc;
@@ -122,7 +117,6 @@ namespace Belos {
     static Teuchos::RefCountPtr<TMVB> CloneView( TMVB& mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
-      std::vector<int> index_plus(index);
 
       // We do not assume that the indices are sorted, nor do we check that
       // index.size() > 0. This code is fail-safe, in the sense that a zero
@@ -135,29 +129,25 @@ namespace Belos {
       // computations performed with/against the created view.
       // We will therefore check to see if the given indices are contiguous, and
       // if so, we will use the contiguous view creation method.
-      
-      // Belos::MultiVecTraits uses 0-indexing, while Thyra uses 1-indexing. 
-      // Increment the indices as we check for contiguity.
-      int lb = index_plus[0]+1;
+
+      int lb = index[0];
       bool contig = true;
       for (int i=0; i<numvecs; i++) {
-        index_plus[i]++;
-        if (lb+i != index_plus[i]) contig = false;
+        if (lb+i != index[i]) contig = false;
       }
 
       Teuchos::RefCountPtr< TMVB > cc;
       if (contig) {
-        Thyra::Range1D rng(lb,lb+numvecs-1);
+        const Thyra::Range1D rng(lb,lb+numvecs-1);
         // create a contiguous view to the relevant part of the source multivector
         cc = mv.subView(rng);
       }
       else {
         // create an indexed view to the relevant part of the source multivector
-        cc = mv.subView( numvecs, &(index_plus[0]) );
+        cc = mv.subView( numvecs, &(index[0]) );
       }
       return cc;
     }
-
 
     /*! \brief Creates a new const MultiVectorBase that shares the selected contents of \c mv (shallow copy).
 
@@ -167,7 +157,6 @@ namespace Belos {
     static Teuchos::RefCountPtr<const TMVB> CloneView( const TMVB& mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
-      std::vector<int> index_plus(index);
 
       // We do not assume that the indices are sorted, nor do we check that
       // index.size() > 0. This code is fail-safe, in the sense that a zero
@@ -180,32 +169,30 @@ namespace Belos {
       // computations performed with/against the created view.
       // We will therefore check to see if the given indices are contiguous, and
       // if so, we will use the contiguous view creation method.
-      
-      // Belos::MultiVecTraits uses 0-indexing, while Thyra uses 1-indexing. 
-      // Increment the indices as we check for contiguity.
-      int lb = index_plus[0]+1;
+
+      int lb = index[0];
       bool contig = true;
       for (int i=0; i<numvecs; i++) {
-        index_plus[i]++;
-        if (lb+i != index_plus[i]) contig = false;
+        if (lb+i != index[i]) contig = false;
       }
 
       Teuchos::RefCountPtr< const TMVB > cc;
       if (contig) {
-        Thyra::Range1D rng(lb,lb+numvecs-1);
+        const Thyra::Range1D rng(lb,lb+numvecs-1);
         // create a contiguous view to the relevant part of the source multivector
         cc = mv.subView(rng);
       }
       else {
         // create an indexed view to the relevant part of the source multivector
-        cc = mv.subView( numvecs, &(index_plus[0]) );
+        cc = mv.subView( numvecs, &(index[0]) );
       }
       return cc;
     }
 
     //@}
 
-    //@{ \name Attribute methods
+    /** \name Attribute methods */
+    //@{
 
     //! Obtain the vector length of \c mv.
     static int GetVecLength( const TMVB& mv )
@@ -214,10 +201,11 @@ namespace Belos {
     //! Obtain the number of vectors in \c mv
     static int GetNumberVecs( const TMVB& mv )
     { return mv.domain()->dim(); }
+
     //@}
 
-
-    //@{ \name Update methods
+    /** \name Update methods */
+    //@{
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
@@ -277,7 +265,9 @@ namespace Belos {
     { Thyra::dots(mv,A,&((*b)[0])); }
 
     //@}
-    //@{ \name Norm method
+
+    /** \name Norm method */
+    //@{
 
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
@@ -287,20 +277,19 @@ namespace Belos {
 
     //@}
 
-    //@{ \name Initialization methods
+    /** \name Initialization methods */
+    //@{
+
     /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
      */
     static void SetBlock( const TMVB& A, const std::vector<int>& index, TMVB& mv )
     { 
       // Extract the "numvecs" columns of mv indicated by the index vector.
       int numvecs = index.size();
-      std::vector<int> index_plus(index), indexA(numvecs);
+      std::vector<int> indexA(numvecs);
       int numAcols = A.domain()->dim();
-      // Belos::MultiVecTraits uses [0,numvecs-1] indexing, 
-      // while Thyra uses [1,numvecs] indexing
       for (int i=0; i<numvecs; i++) {
-        index_plus[i]++;
-        indexA[i] = i+1;
+        indexA[i] = i;
       }
       // Thyra::assign requires that both arguments have the same number of 
       // vectors. Enforce this, by shrinking one to match the other.
@@ -308,7 +297,6 @@ namespace Belos {
         // A does not have enough columns to satisfy index_plus. Shrink
         // index_plus.
         numvecs = numAcols;
-        index_plus.resize( numvecs );
       }
       else if ( numAcols > numvecs ) {
         numAcols = numvecs;
@@ -317,7 +305,7 @@ namespace Belos {
       // create a view to the relevant part of the source multivector
       Teuchos::RefCountPtr< const TMVB > relsource = A.subView( numAcols, &(indexA[0]) );
       // create a view to the relevant part of the destination multivector
-      Teuchos::RefCountPtr< TMVB > reldest = mv.subView( numvecs, &(index_plus[0]) );
+      Teuchos::RefCountPtr< TMVB > reldest = mv.subView( numvecs, &(index[0]) );
       // copy the data to the destination multivector subview
       Thyra::assign(&*reldest, *relsource);
     }
@@ -340,14 +328,16 @@ namespace Belos {
 
     //@}
 
-    //@{ \name Print method
+    /** \name Print method */
+    //@{
 
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */
     static void MvPrint( const TMVB& mv, ostream& os )
-    { }
+      { os << describe(mv,Teuchos::VERB_EXTREME); }
 
     //@}
+
   };        
 
   ///////////////////////////////////////////////////////////////////////// 

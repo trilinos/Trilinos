@@ -107,7 +107,7 @@ int main( int argc, char* argv[] ) {
   bool verbose = true;
   bool dumpAll = false;
 
-  std::ostream &out = std::cout;
+  std::ostream &out = std::cerr;
 
   try {
 

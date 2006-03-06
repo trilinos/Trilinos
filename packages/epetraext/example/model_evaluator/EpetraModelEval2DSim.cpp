@@ -102,7 +102,7 @@ void EpetraModelEval2DSim::evalModel( const InArgs& inArgs, const OutArgs& outAr
   Epetra_Vector       *f_out = outArgs.get_f().get();
   Epetra_Operator     *W_out = outArgs.get_W().get();
   if(showGetInvalidArg_) {
-    Epetra_Vector *g_out = outArgs.get_g(1).get();
+    Epetra_Vector *g_out = outArgs.get_g(0).get();
   }
   //
   // Compute the functions
@@ -110,7 +110,6 @@ void EpetraModelEval2DSim::evalModel( const InArgs& inArgs, const OutArgs& outAr
   const Epetra_Vector &p = *p_;
   if(f_out) {
     Epetra_Vector &f = *f_out;
-    // zero-based indexing for Epetra!
     f[0] =        x[0]      + x[1]*x[1] - p[0];
     f[1] = d_ * ( x[0]*x[0] - x[1]      - p[1] );
   }

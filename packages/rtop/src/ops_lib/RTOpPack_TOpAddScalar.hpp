@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Add a scalar to a vector transformation operator: <tt>z0[i] += alpha, i=1...n</tt>.
+/** \brief Add a scalar to a vector transformation operator: <tt>z0[i] += alpha, i=0...n-1</tt>.
  */
 template<class Scalar>
 class TOpAddScalar : public ROpScalarTransformationBase<Scalar> {

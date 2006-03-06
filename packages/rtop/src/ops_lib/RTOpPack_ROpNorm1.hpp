@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief One norm reduction operator: <tt>result = max( |v0[i]|, i=1...n )</tt>.
+/** \brief One norm reduction operator: <tt>result = max( |v0[i]|, i=0...n-1 )</tt>.
  */
 template<class Scalar>
 class ROpNorm1 : public ROpScalarReductionBase<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> {

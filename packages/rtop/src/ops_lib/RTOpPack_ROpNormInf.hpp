@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Infinity norm reduction operator: <tt>result = sum( |v0[i]|, i=1...n )</tt>.
+/** \brief Infinity norm reduction operator: <tt>result = sum( |v0[i]|, i=0...n-1 )</tt>.
  */
 template<class Scalar>
 class ROpNormInf : public ROpScalarReductionBase<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> {

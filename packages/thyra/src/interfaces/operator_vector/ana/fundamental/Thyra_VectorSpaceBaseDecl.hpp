@@ -271,8 +271,8 @@ public:
    * @param  X            [in] Multi-vector.
    * @param  Y            [in] Multi-vector.
    * @param  scalar_prod  [out] Array (length <tt>X.domain()->dim()</tt>) containing the
-   *                      scalar products <tt>scalar_prod[j-1] = this->scalarProd(*X.col(j),*Y.col(j))</tt>,
-   *                      for <tt>j = 1 ... X.domain()->dim()</tt>.
+   *                      scalar products <tt>scalar_prod[j] = this->scalarProd(*X.col(j),*Y.col(j))</tt>,
+   *                      for <tt>j = 0 ... X.domain()->dim()-1</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>X.range()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
@@ -281,7 +281,7 @@ public:
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li><tt>scalar_prod[j-1] = this->scalarProd(*X.col(j),*Y.col(j))</tt>, for <tt>j = 1 ... X.domain()->dim()</tt>
+   * <li><tt>scalar_prod[j] = this->scalarProd(*X.col(j),*Y.col(j))</tt>, for <tt>j = 0 ... X.domain()->dim()-1</tt>
    * </ul>
    */
   virtual void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const = 0;

@@ -571,9 +571,9 @@ int main( int argc, char* argv[] )
 
 		if(verbose) out << "\n*** (B.9) Testing Multi-vector views with Epetra operator\n";
 
-		const Thyra::Range1D col_rng(1,2);
+		const Thyra::Range1D col_rng(0,1);
 		const int numCols = 2;
-		const int cols[] = { 3, 4 };
+		const int cols[] = { 2, 3 };
 
 		RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
 			eV1_v1  = rcp_static_cast<const Thyra::MultiVectorBase<Scalar> >(eV1)->subView(col_rng),

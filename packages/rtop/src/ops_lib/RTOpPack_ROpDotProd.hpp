@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Dot product reduction operator: <tt>result = sum( conj(v0[i])*v1[i], i=1...n )</tt>.
+/** \brief Dot product reduction operator: <tt>result = sum( conj(v0[i])*v1[i], i=0...n-1 )</tt>.
  */
 template<class Scalar>
 class ROpDotProd : public ROpScalarReductionBase<Scalar> {

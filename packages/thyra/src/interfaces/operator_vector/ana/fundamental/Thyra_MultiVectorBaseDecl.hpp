@@ -92,7 +92,7 @@ namespace Thyra {
     ,Thyra::MultiVectorBase<Scalar>        *Y
     )
   {
-    for( int j = 1; j <= X.domain()->dim(); ++j )
+    for( int j = =; j < X.domain()->dim(); ++j )
       assign( &*Y->col(j), *X.col(j) );
   } 
 
@@ -129,7 +129,7 @@ namespace Thyra {
    )
  {
    const int m = Y->domain()->dim();
-   assign( &*Y->subView(Range1D(m-2,m)), *X.subView(Range1D(1,3)) );
+   assign( &*Y->subView(Range1D(m-3,m-1)), *X.subView(Range1D(0,2)) );
  }
 
  \endcode
@@ -138,7 +138,7 @@ namespace Thyra {
  * as <tt>X</tt>.
  *
  * <b>Note:</b> In the above example <tt>*Y</tt> is not guaranteed to be
- * updated until the view returned from <tt>Y->subView(Range1D(m-2,m)</tt> is
+ * updated until the view returned from <tt>Y->subView(Range1D(m-3,m-1)</tt> is
  * destroyed (which occurs at the end of the statement in which it occurs in
  * this case).
  *
@@ -208,7 +208,7 @@ namespace Thyra {
   {
     // Create the view
     Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
-      X_view = X->subView(Teuchos::Range1D(1,1));
+      X_view = X->subView(Teuchos::Range1D(0,0));
     // Change the parent while the view is still active
     Teuchos::assign( X, Teuchos::ScalarTraits<Scalar>::one() );
     // Above, changing the parent multi-vector may or may not change the subview
@@ -236,7 +236,7 @@ namespace Thyra {
   {
     // Create the view
     Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
-      X_view = X->subView(Teuchos::Range1D(1,1));
+      X_view = X->subView(Teuchos::Range1D(0,0));
     // Change the view
     Teuchos::assign( *&X_view, Teuchos::ScalarTraits<Scalar>::one() );
     // Above, changing the view may or may not immediately update the parent multi-vector
@@ -263,8 +263,8 @@ namespace Thyra {
   {
     // Create two overlapping views
     Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
-      X_view1 = X->subView(Teuchos::Range1D(1,1)),
-      X_view2 = X->subView(Teuchos::Range1D(1,1));
+      X_view1 = X->subView(Teuchos::Range1D(0,0)),
+      X_view2 = X->subView(Teuchos::Range1D(0,0));
     // Change one of the views but not the other
     Teuchos::assign( *&X_view2, Teuchos::ScalarTraits<Scalar>::one() );
     // When the RCPs X_view1 and X_view2 go out of scope here,
@@ -304,8 +304,8 @@ namespace Thyra {
   {
     // Create two non-overlapping views
     Teuchos::RefCountPtr< Thyra::MultiVectorBase<Scalar> >
-      X_view1 = X->subView(Teuchos::Range1D(1,1)),
-      X_view2 = X->subView(Teuchos::Range1D(2,2));
+      X_view1 = X->subView(Teuchos::Range1D(0,0)),
+      X_view2 = X->subView(Teuchos::Range1D(1,1));
     // Change the two views
     Teuchos::assign( *&X_view1, Teuchos::ScalarTraits<Scalar>::zero() );
     Teuchos::assign( *&X_view2, Teuchos::ScalarTraits<Scalar>::one() );
@@ -490,11 +490,11 @@ public:
 
   /** \brief Return a non-changeable view of a constituent column vector.
    *
-   * \param  j  [in] One-based index of the column to return a view for
+   * \param  j  [in] zero-based index of the column to return a view for
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>1 <= j && j <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>0 <= j && j < this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
    * </ul>
    *
    * <b>Postconditions:</b><ul>
@@ -513,11 +513,11 @@ public:
 
   /** \brief Return a changeable view of a constituent column vector.
    *
-   * \param  j  [in] One-based index of the column to return a view for
+   * \param  j  [in] zero-based index of the column to return a view for
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>1 <= j && j <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>0 <= j && j < this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
    * </ul>
    *
    * <b>Postconditions:</b><ul>
@@ -542,20 +542,20 @@ public:
    *
    * \anchor Thyra_MVB_subView_contiguous_const
    *
-   * @param  colRng  [in] One-based range of columns to create a view of.  Note that it is valid for
+   * @param  colRng  [in] zero-based range of columns to create a view of.  Note that it is valid for
    *                  <tt>colRng.full_range()==true</tt> in which case the view of the entire
    *                  multi-vector is taken.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() < this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>this->range()->isCompatible(*return->range()) == true</tt>
-   * <li> <tt>return->domain()->dim() == Teuchos::full_range(colRng,1,this->domain()->dim()).size()</tt>
-   * <li> <tt>*return->col(1+k)</tt> represents the same column vector as <tt>this->col(colRng.lbound()+k)</tt>,
-   *      for <tt>k=0...Teuchos::full_range(colRng,1,this->domain()->dim()).ubound()-1</tt>
+   * <li> <tt>return->domain()->dim() == Teuchos::full_range(colRng,0,this->domain()->dim()-1).size()</tt>
+   * <li> <tt>*return->col(k)</tt> represents the same column vector as <tt>this->col(colRng.lbound()+k)</tt>,
+   *      for <tt>k=0...Teuchos::full_range(colRng,0,this->domain()->dim()).ubound()-1</tt>
    * </ul>
    *
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
@@ -568,20 +568,20 @@ public:
    *
    * \anchor Thyra_MVB_subView_contiguous_nonconst
    *
-   * @param  colRng  [in] One-based range of columns to create a view of.  Note that it is valid for
+   * @param  colRng  [in] zero-based range of columns to create a view of.  Note that it is valid for
    *                  <tt>colRng.full_range()==true</tt> in which case the view of the entire
    *                  multi-vector is taken.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() < this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>this->range()->isCompatible(*return->range()) == true</tt>
-   * <li> <tt>return->domain()->dim() == Teuchos::full_range(colRng,1,this->domain()->dim()).size()</tt>
-   * <li> <tt>*return->col(1+k)</tt> represents the same column vector as <tt>this->col(colRng.lbound()+k)</tt>,
-   *      for <tt>k=0...Teuchos::full_range(colRng,1,this->domain()->dim()).ubound()-1</tt>
+   * <li> <tt>return->domain()->dim() == Teuchos::full_range(colRng,0,this->domain()->dim()-1).size()</tt>
+   * <li> <tt>*return->col(k)</tt> represents the same column vector as <tt>this->col(colRng.lbound()+k)</tt>,
+   *      for <tt>k=0...Teuchos::full_range(colRng,0,this->domain()->dim()).ubound()-1</tt>
    * </ul>
    *
    * See \ref Thyra_MVB_subviews_sec and \ref Thyra_MVB_view_behavior_sec for
@@ -594,20 +594,20 @@ public:
    * \anchor Thyra_MVB_subView_noncontiguous_const
    *
    * @param  numCols  [in] The number of columns to extract a view for.
-   * @param  cols     [in] Array (length <tt>numCols</tt>) of the 1-based column indexes to use in the
+   * @param  cols     [in] Array (length <tt>numCols</tt>) of the zero-based column indexes to use in the
    *                  returned view.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>numCols <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
-   * <li> <tt>1 <= cols[k] <= this->domain()->dim()</tt>, for <tt>k=0...numCols-1</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>0 <= cols[k] < this->domain()->dim()</tt>, for <tt>k=0...numCols-1</tt> (throw <tt>std::invalid_argument</tt>)
    * <li> <tt>col[k1] != col[k2]</tt>, for all <tt>k1 != k2</tt> in the range <tt>[0,numCols-1]</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>this->range()->isCompatible(*return->range()) == true</tt>
    * <li> <tt>return->domain()->dim() == numCols</tt>
-   * <li> <tt>*return->col(k+1)</tt> represents the same column vector as <tt>this->col(cols[k])</tt>,
+   * <li> <tt>*return->col(k)</tt> represents the same column vector as <tt>this->col(cols[k])</tt>,
    *      for <tt>k=0...numCols-1</tt>
    * </ul>
    *
@@ -621,20 +621,20 @@ public:
    * \anchor Thyra_MVB_subView_noncontiguous_nonconst
    *
    * @param  numCols  [in] The number of columns to extract a view for.
-   * @param  cols     [in] Array (length <tt>numCols</tt>) of the 1-based column indexes to use in the
+   * @param  cols     [in] Array (length <tt>numCols</tt>) of the zero-based column indexes to use in the
    *                  returned view.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->domain().get()!=NULL && this->range().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>1 <= numCols <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
-   * <li> <tt>1 <= cols[k] <= this->domain()->dim()</tt>, for <tt>k=0...numCols-1</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>numCols <= this->domain()->dim()</tt> (throw <tt>std::invalid_argument</tt>)
+   * <li> <tt>0 <= cols[k] < this->domain()->dim()</tt>, for <tt>k=0...numCols-1</tt> (throw <tt>std::invalid_argument</tt>)
    * <li> <tt>col[k1] != col[k2]</tt>, for all <tt>k1 != k2</tt> in the range <tt>[0,numCols-1]</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>this->range()->isCompatible(*return->range()) == true</tt>
    * <li> <tt>return->domain()->dim() == numCols</tt>
-   * <li> <tt>*return->col(k+1)</tt> represents the same column vector as <tt>this->col(cols[k])</tt>,
+   * <li> <tt>*return->col(k)</tt> represents the same column vector as <tt>this->col(cols[k])</tt>,
    *      for <tt>k=0...numCols-1</tt>
    * </ul>
    *
@@ -666,8 +666,8 @@ public:
    * objects in <tt>multi_vecs[]</tt> or <tt>targ_multi_vecs[]</tt>.
    *
    * The default implementation calls <tt>VectorBase::applyOp()</tt> on
-   * each column <tt>this->col(j)</tt> for <tt>j = 1
-   * ... this->range()->dim()</tt>.
+   * each column <tt>this->col(j)</tt> for <tt>j = 0
+   * ... this->range()->dim()-1</tt>.
    */
   virtual void applyOp(
     const RTOpPack::RTOpT<Scalar>   &primary_op
@@ -676,12 +676,12 @@ public:
     ,const int                      num_targ_multi_vecs
     ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
     ,RTOpPack::ReductTarget*        reduct_objs[]
-    ,const Index                    primary_first_ele
+    ,const Index                    primary_first_ele_offset
     ,const Index                    primary_sub_dim
     ,const Index                    primary_global_offset
-    ,const Index                    secondary_first_ele
+    ,const Index                    secondary_first_ele_offset
     ,const Index                    secondary_sub_dim
-    ) const;
+    ) const = 0;
 
   /** \brief Apply a reduction/transformation operator column by column and
    * reduce the intermediate reduction objects into a single reduction object.
@@ -711,12 +711,12 @@ public:
     ,const int                      num_targ_multi_vecs
     ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
     ,RTOpPack::ReductTarget         *reduct_obj
-    ,const Index                    primary_first_ele
+    ,const Index                    primary_first_ele_offset
     ,const Index                    primary_sub_dim
     ,const Index                    primary_global_offset
-    ,const Index                    secondary_first_ele
+    ,const Index                    secondary_first_ele_offset
     ,const Index                    secondary_sub_dim
-    ) const;
+    ) const = 0;
 
   //@}
 
@@ -734,16 +734,16 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!rowRng.full_range()</tt>] <tt>rowRng.ubound() <= this->range()->dim()</tt>
+   * <li> [<tt>!rowRng.full_range()</tt>] <tt>rowRng.ubound() < this->range()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
-   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() <= this->domain()->dim()</tt>
+   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() < this->domain()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_mv</tt> contains an explicit non-changeable view to the elements
-   *      in the row and column ranges <tt>Teuchos::full_range(rowRng,1,this->range()->dim())</tt>
-   *      and <tt>Teuchos::full_range(colRng,1,this->domain()->dim())</tt> respectively.
+   *      in the row and column ranges <tt>Teuchos::full_range(rowRng,0,this->range()->dim()-1)</tt>
+   *      and <tt>Teuchos::full_range(colRng,0,this->domain()->dim()-1)</tt> respectively.
    * </ul>
    *
    * <b>Note:</b> This view is to be used immediately and then released with a
@@ -786,7 +786,7 @@ public:
     const Range1D                       &rowRng
     ,const Range1D                      &colRng
     ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
-    ) const;
+    ) const = 0;
 
   /** \brief Free a non-changeable explicit view of a sub-multi-vector.
    *
@@ -813,7 +813,7 @@ public:
    * <tt>getSubMultiVector()</tt> is overridden by a subclass then this
    * function must be overridden also!
    */
-  virtual void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const;
+  virtual void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const = 0;
 
   /** \brief Get a changeable explicit view of a sub-multi-vector.
    *
@@ -827,16 +827,16 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!rowRng.full_range()</tt>] <tt>rowRng.ubound() <= this->range()->dim()</tt>
+   * <li> [<tt>!rowRng.full_range()</tt>] <tt>rowRng.ubound() < this->range()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
-   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() <= this->domain()->dim()</tt>
+   * <li> [<tt>!colRng.full_range()</tt>] <tt>colRng.ubound() < this->domain()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
     *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_mv</tt> contains an explicit changeable view to the elements
-   *      in the row and column ranges <tt>full_range(rowRng,1,this->range()->dim())</tt>
-   *      and <tt>full_range(colRng,1,this->domain()->dim())</tt> respectively.
+   *      in the row and column ranges <tt>full_range(rowRng,0,this->range()->dim()-1)</tt>
+   *      and <tt>full_range(colRng,0,this->domain()->dim()-1)</tt> respectively.
    * </ul>
    *
    *
@@ -888,7 +888,7 @@ public:
     const Range1D                                &rowRng
     ,const Range1D                               &colRng
     ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
-    );
+    ) = 0;
 
   /** \brief Commit changes for a changeable explicit view of a sub-multi-vector.
    *
@@ -918,7 +918,7 @@ public:
    * <tt>getSubMultiVector()</tt> is overridden by a subclass then this
    * function must be overridden also!
    */
-  virtual void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  virtual void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv ) = 0;
 
   //@}
 
@@ -933,7 +933,7 @@ public:
    * this function if it can do something more sophisticated
    * (i.e. lazy evaluation) but in general, this is not needed.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > clone_mv() const;
+  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > clone_mv() const = 0;
 
   //@}
 
@@ -977,9 +977,9 @@ void applyOp(
   ,const int                      num_targ_multi_vecs
   ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
   ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    primary_first_ele
+  ,const Index                    primary_first_ele_offset
 #ifndef __sun
-                                                         = 1
+                                                         = 0
 #endif
   ,const Index                    primary_sub_dim
 #ifndef __sun
@@ -989,9 +989,9 @@ void applyOp(
 #ifndef __sun
                                                          = 0
 #endif
-  ,const Index                    secondary_first_ele
+  ,const Index                    secondary_first_ele_offset
 #ifndef __sun
-                                                         = 1
+                                                         = 0
 #endif
   ,const Index                    secondary_sub_dim
 #ifndef __sun
@@ -1003,15 +1003,15 @@ void applyOp(
     multi_vecs[0]->applyOp(
       primary_op
       ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_objs,primary_first_ele,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele,secondary_sub_dim
+      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
       );
   else if(num_targ_multi_vecs)
     targ_multi_vecs[0]->applyOp(
       primary_op
       ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_objs,primary_first_ele,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele,secondary_sub_dim
+      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
       );
 }
 
@@ -1030,7 +1030,7 @@ void applyOp(
   applyOp(
           primary_op
           ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-          ,reduct_objs,1,0,0,1,0
+          ,reduct_objs,0,0,0,0,0
           );
 }
 #endif
@@ -1050,9 +1050,9 @@ void applyOp(
   ,const int                      num_targ_multi_vecs
   ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    primary_first_ele
+  ,const Index                    primary_first_ele_offset
 #ifndef __sun
-                                                         = 1
+                                                         = 0
 #endif
   ,const Index                    primary_sub_dim
 #ifndef __sun
@@ -1062,9 +1062,9 @@ void applyOp(
 #ifndef __sun
                                                          = 0
 #endif
-  ,const Index                    secondary_first_ele
+  ,const Index                    secondary_first_ele_offset
 #ifndef __sun
-                                                         = 1
+                                                         = 0
 #endif
   ,const Index                    secondary_sub_dim
 #ifndef __sun
@@ -1076,15 +1076,15 @@ void applyOp(
     multi_vecs[0]->applyOp(
       primary_op,secondary_op
       ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_obj,primary_first_ele,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele,secondary_sub_dim
+      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
       );
   else if(num_targ_multi_vecs)
     targ_multi_vecs[0]->applyOp(
       primary_op,secondary_op
       ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_obj,primary_first_ele,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele,secondary_sub_dim
+      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
+      ,secondary_first_ele_offset,secondary_sub_dim
       );
 }
 
@@ -1105,7 +1105,7 @@ void applyOp(
   applyOp(
       primary_op,secondary_op
       ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_obj,1,0,0,1,0
+      ,reduct_obj,0,0,0,0,0
       );
 }
 

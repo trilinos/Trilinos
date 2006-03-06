@@ -30,6 +30,7 @@
 #define RTOPPACK_TYPES_HPP
 
 #include "RTOp_ConfigDefs.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_TestForException.hpp"
 
 namespace RTOpPack {
@@ -75,7 +76,7 @@ class IncompatibleVecs : public std::logic_error
  *	in the global vector <tt>x(j)</tt> (one based) are as follows:
  \verbatim
 
-  x( vec.globalOffset() + k ) = v.(k), for k = 1,...,vec.subDim()
+  x( vec.globalOffset() + k ) = v(k), for k = 0,...,vec.subDim()-1
   \endverbatim
  * The stride <tt>vec.stride()</tt> may be positive (>0), negative (<0)
  * or even zero (0).  A negative stride <tt>vec.stride() < 0</tt> allows a
@@ -83,7 +84,7 @@ class IncompatibleVecs : public std::logic_error
  * <tt>vec.stride()</tt> allows a sub-vector with all the elements the same.
  *
  * The raw pointer to the start of the memory can be obtained as
- * <tt>&vec(1)</tt>.
+ * <tt>&vec(0)</tt>.
  *
  * Warning! the default copy constructor and assignment operators are
  * allowed which results in only pointer copy, not deep copy!  You
@@ -118,15 +119,24 @@ public:
   const Scalar*     values()       const { return values_;  }
   /** \brief . */
   ptrdiff_t         stride()       const { return stride_;  }
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i <= subDim()-1)</tt>)
-  const Scalar& operator[](Teuchos_Index i) const { return values_[ stride_*i ]; }
-  /// One-based indexing (Preconditions: <tt>values()!=NULL && (1 <= i <= subDim())</tt>)
-  const Scalar& operator()(Teuchos_Index i) const { return values_[ stride_*(i-1) ]; }
+  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
+  const Scalar& operator[](Teuchos_Index i) const
+    {
+#ifdef _DEBUG
+      TEST_FOR_EXCEPTION(
+        !( 0 <= i && i < subDim_ ), std::logic_error
+        ,"Error, index i="<<i<<" does not fall in the range [0,"<<(subDim_-1)<<"]!"
+        );
+#endif
+      return values_[ stride_*i ];
+    }
+  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
+  const Scalar& operator()(Teuchos_Index i) const { return (*this)[i]; }
 private:
   Teuchos_Index     globalOffset_;
   Teuchos_Index     subDim_;
-  const Scalar        *values_;
-  ptrdiff_t           stride_;
+  const Scalar      *values_;
+  ptrdiff_t         stride_;
 };
 
 /** \brief Class for a mutable sub-vector.
@@ -162,17 +172,17 @@ public:
     { SubVectorT<Scalar>::set_uninitialized(); }
   /** \brief . */
   Scalar* values() const { return const_cast<Scalar*>(SubVectorT<Scalar>::values());  }
-  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i <= subDim()-1)</tt>)
-  Scalar& operator[](Teuchos_Index i) const { return const_cast<Scalar&>(SubVectorT<Scalar>::operator[](i)); }
-  /// One-based indexing (Preconditions: <tt>values()!=NULL && (1 <= i <= subDim())</tt>)
-  Scalar& operator()(Teuchos_Index i) const { return const_cast<Scalar&>(SubVectorT<Scalar>::operator()(i)); }
+  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
+  Scalar& operator[](Teuchos_Index i) const { return const_cast<Scalar&>(SubVectorT<Scalar>::operator[](i)); } // Is range changed in subclass!
+  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
+  Scalar& operator()(Teuchos_Index i) const { return (*this)[i]; }
 };
 
 /** \brief Class for a (sparse or dense) sub-vector.
  *
  *	Sparse and dense local vectors are supported as follows:
   *
-  *	A dense vector <tt>vec</tt> is identified by <tt>vec.subDim() == vec.sub_nz</tt>
+  *	A dense vector <tt>vec</tt> is identified by <tt>vec.subDim() == vec.subNz()</tt>
   * and <tt>vec.indices() == NULL</tt> in which case
   *	<tt>vec.indicesStride()</tt>, <tt>vec.localOffset()</tt> and <tt>vec.isSorted()</tt>
   * are ignored.  For a dense sub-vector <tt>vec</tt>, the corresponding entries
@@ -180,29 +190,29 @@ public:
  \verbatim
 
   x( vec.globalOffset() + k )
-    = vec.values()[ vec.valueStride() * (k-1) ]
+    = vec.values()[ vec.valueStride() * k ]
 
-  for k = 1,...,vec.subDim()
+  for k = 0,...,vec.subDim()-1
  \endverbatim
- * The stride member <tt>vec.valueStride()()</tt> may be positive (>0), negative (<0)
+ * The stride member <tt>vec.valueStride()</tt> may be positive (>0), negative (<0)
  * or even zero (0).  A negative stride <tt>vec.valueStride() < 0</tt> allows a
  * reverse traversal of the elements in <tt>vec.values()[]</tt>.  A zero stride
- * <tt>vec.valueStride()() == 0</tt> allows a vector with all the elements the same.
+ * <tt>vec.valueStride() == 0</tt> allows a vector with all the elements the same.
  *
- *	A sparse vector is identified by <tt>vec.subDim() > vec.sub_nz()</tt>
+ *	A sparse vector is identified by <tt>vec.subDim() > vec.subNz()</tt>
  * or <tt>vec.indices() != NULL</tt>
  * in which case all the fields in the structure are meaningful.
  *	The corresponding elements in the global vector <tt>x(j)</tt>
  * defined as:
  \verbatim
 
-  x( vec.globalOffset() + vec.localOffset() + vec.indices()[vec.indicesStride()*(k-1)] )
-    = vec.values[vec.valueStride()*(k-1)]
+  x( vec.globalOffset() + vec.localOffset() + vec.indices()[vec.indicesStride()*k] )
+    = vec.values[vec.valueStride()*k]
 
-  for k = 1,...,vec.sub_nz
+  for k = 0,...,vec.subNz()-1
  \endverbatim
- * If <tt>vec.sub_nz == 0</tt> then it is allowed for <tt>vec.indices() == NULL</tt>.
- * If <tt>vec.subDim() > vec.sub_nz > 0</tt> then <tt>vec.indices() != NULL</tt> must be true.
+ * If <tt>vec.subNz() == 0</tt> then it is allowed for <tt>vec.indices() == NULL</tt>.
+ * If <tt>vec.subDim() > vec.subNz() > 0</tt> then <tt>vec.indices() != NULL</tt> must be true.
  *
   * A sparse sub-vector may be sorted (<tt>vec.isSorted()!=0</tt>) or
   * unsorted (<tt>vec.isSorted()==0</tt>) but the indices <tt>vec.indices()[k]</tt>
@@ -210,28 +220,28 @@ public:
   * the indices are in ascending order:
   \verbatim
 
-  vec.indices()[vec.indicesStride()*(k-1)] < vec.indices()[vec.indicesStride()*(k)]
+  vec.indices()[vec.indicesStride()*k] < vec.indices()[vec.indicesStride()*k]
 
-  for k = 1,...,vec.sub_nz-1
+  for k = 0,...,vec.subNz()-1
  \endverbatim
  * The member <tt>vec.localOffset()</tt> is used to shift the values in <tt>vec.indices()[]</tt>
  * to be in range of the local sub-vector.  In other words:
  \verbatim
   
-  1 <= vec.localOffset() + vec.indices()[vec.indicesStride()*(k-1)] <= vec.sub_nz
+  0 <= vec.localOffset() + vec.indices()[vec.indicesStride()*k] <= vec.subNz()
 
-  for k = 1...vec.sub_nz
+  for k = 0...vec.subNz()-1
  \endverbatim
  * The member <tt>vec.valueStride()</tt> may be positive (>0), negative (<0) or zero (0).
  * However, the member <tt>vec.indicesStride()</tt> may be may be positive (>0)
  * or negative (<0) but not zero (0).  Allowing <tt>vec.indicesStride() == 0</tt>
- * would mean that a vector would have <tt>vec.sub_nz</tt> nonzero elements with
+ * would mean that a vector would have <tt>vec.subNz()</tt> nonzero elements with
  * all the same value and all the same indexes and non-unique indices are
  * not allowed.  Allowing non-unique indexes would make some operations
  * (e.g. dot product) very difficult to implement and therefore can not
  * be allowed.  A sparse vector where <tt>vec.valueStride() == 0</tt> is one
  * where all of the non-zeros have the value <tt>vec.values[0]</tt>.  If
- * <tt>vec.sub_nz == 0</tt> for a sparse vector then it is allowed for
+ * <tt>vec.subNz() == 0</tt> for a sparse vector then it is allowed for
  * <tt>vec.values == NULL</tt> and <tt>vec.indices() == NULL</tt>.
  *
  *	This specification allows a lot of flexibility in determining
@@ -340,7 +350,6 @@ private:
   int                              isSorted_;
 };
 
-
 template<class Scalar>
 void assign_entries( const MutableSubVectorT<Scalar> *msv, const SubVectorT<Scalar> &sv )
 {
@@ -348,7 +357,7 @@ void assign_entries( const MutableSubVectorT<Scalar> *msv, const SubVectorT<Scal
   TEST_FOR_EXCEPT(msv==NULL);
   TEST_FOR_EXCEPT(msv->subDim() != sv.subDim());
 #endif
-  for( int i = 1; i <= sv.subDim(); ++i ) {
+  for( int i = 0; i < sv.subDim(); ++i ) {
     (*msv)(i) = sv(i);
   }
 }
@@ -363,7 +372,7 @@ void assign_entries( const MutableSubVectorT<Scalar> *msv, const SubVectorT<Scal
  *	in the global multi-vector <tt>X(j)</tt> (one based) are as follows:
  \verbatim
 
-  X(mv.globalOffset()+k1,mv.colOffset()+k2) = mv(k1,k2), for k1=1...mv.subDim(), k2=1...mv.numSubCols()
+  X(mv.globalOffset()+k1,mv.colOffset()+k2) = mv(k1,k2), for k1=0...mv.subDim()-1, k2=0...mv.numSubCols()-1
  \endverbatim
  * Unlike vectors, there can only be a unit stride between vector elements
  * in a particular column and there is a Fortran-like leading dimension
@@ -426,12 +435,32 @@ public:
   const Scalar*     values()         const { return values_; }
   /** \brief . */
   Teuchos_Index   leadingDim()     const { return leadingDim_;  }
-  /// One-based indexing (Preconditions: <tt>values()!=NULL && (1<=i<=subDim()) && (1<=j<= numSubCols()</tt>)
+  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0<=i<subDim()) && (0<=j< numSubCols()</tt>)
   const Scalar& operator()(Teuchos_Index i, Teuchos_Index j) const
-    { return values_[ (i-1) + leadingDim_*(j-1) ]; }
-  /// Return a <tt>SubVectorT</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && (1<=i<=subDim()) && (1<=j<= numSubCols()</tt>)
+    {
+#ifdef _DEBUG
+      TEST_FOR_EXCEPTION(
+        !( 0 <= i && i < subDim_ ), std::logic_error
+        ,"Error, index i="<<i<<" does not fall in the range [0,"<<(subDim_-1)<<"]!"
+        );
+      TEST_FOR_EXCEPTION(
+        !( 0 <= j && j < numSubCols_ ), std::logic_error
+        ,"Error, index j="<<j<<" does not fall in the range [0,"<<(numSubCols_-1)<<"]!"
+        );
+#endif
+      return values_[ i + leadingDim_*j ];
+    }
+  /// Return a <tt>SubVectorT</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && (0<=j<numSubCols()</tt>)
   SubVectorT<Scalar> col( const Teuchos_Index j ) const
-    { return SubVectorT<Scalar>(globalOffset(),subDim(),values()+(j-1)*leadingDim(),1); }
+    {
+#ifdef _DEBUG
+      TEST_FOR_EXCEPTION(
+        !( 0 <= j && j < numSubCols_ ), std::logic_error
+        ,"Error, index j="<<j<<" does not fall in the range [0,"<<(numSubCols_-1)<<"]!"
+        );
+#endif
+      return SubVectorT<Scalar>(globalOffset(),subDim(),values()+j*leadingDim(),1);
+    }
 private:
   Teuchos_Index     globalOffset_;
   Teuchos_Index     subDim_;
@@ -482,12 +511,20 @@ public:
     { SubMultiVectorT<Scalar>::set_uninitialized(); }
   /** \brief . */
   Scalar* values() const { return const_cast<Scalar*>(SubMultiVectorT<Scalar>::values());  }
-  /// One-based indexing (Preconditions: <tt>values()!=NULL && (1 <= i <= subDim()) && (1<= j <= numSubCols()</tt>)
+  /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0<=i< subDim()) && (0<=j<numSubCols()</tt>)
   Scalar& operator()(Teuchos_Index i, Teuchos_Index j) const
-    { return const_cast<Scalar&>(SubMultiVectorT<Scalar>::operator()(i,j)); }
-  /// Return a <tt>MutableSubVectorT</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && (1<=i<=subDim()) && (1<=j<= numSubCols()</tt>)
+    { return const_cast<Scalar&>(SubMultiVectorT<Scalar>::operator()(i,j)); } // Is range checked in subclass
+  /// Return a <tt>MutableSubVectorT</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && && (0<=j<numSubCols()</tt>)
   MutableSubVectorT<Scalar> col( const Teuchos_Index j ) const
-    { return MutableSubVectorT<Scalar>(SubMultiVectorT<Scalar>::globalOffset(),SubMultiVectorT<Scalar>::subDim(),values()+(j-1)*SubMultiVectorT<Scalar>::leadingDim(),1); }
+    {
+#ifdef _DEBUG
+      TEST_FOR_EXCEPTION(
+        !( 0 <= j && j < this->numSubCols() ), std::logic_error
+        ,"Error, index j="<<j<<" does not fall in the range [0,"<<(this->numSubCols()-1)<<"]!"
+        );
+#endif
+      return MutableSubVectorT<Scalar>(this->globalOffset(),this->subDim(),values()+j*this->leadingDim(),1);
+    }
 };
 
 template<class Scalar>
@@ -498,8 +535,8 @@ void assign_entries( const MutableSubMultiVectorT<Scalar> *msmv, const SubMultiV
   TEST_FOR_EXCEPT(msmv->subDim() != smv.subDim());
   TEST_FOR_EXCEPT(msmv->numSubCols() != smv.numSubCols());
 #endif
-  for( Teuchos_Index j = 1; j <= smv.numSubCols(); ++j ) {
-    for( Teuchos_Index i = 1; i <= smv.subDim(); ++i ) {
+  for( Teuchos_Index j = 0; j < smv.numSubCols(); ++j ) {
+    for( Teuchos_Index i = 0; i < smv.subDim(); ++i ) {
       (*msmv)(i,j) = smv(i,j);
     }
   }

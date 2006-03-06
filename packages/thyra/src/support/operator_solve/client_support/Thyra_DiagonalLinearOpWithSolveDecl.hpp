@@ -55,7 +55,7 @@ namespace Thyra {
  
  =>
 
- y(i) = (alpha*gamma)*diag(i)*x(i) + beta*y(i), for i = 1 ... n
+ y(i) = (alpha*gamma)*diag(i)*x(i) + beta*y(i), for i = 0 ... n-1
  \endverbatim
  *
  * where <tt>n = this->domain()->dim()</tt>.
@@ -68,7 +68,7 @@ namespace Thyra {
  
  =>
 
- x(i) = (1/gamma)*b(i)/diag(i), for i = 1 ... n
+ x(i) = (1/gamma)*b(i)/diag(i), for i = 0 ... n-1
  \endverbatim
  *
  * where <tt>n = this->domain()->dim()</tt>.

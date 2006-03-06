@@ -2,7 +2,7 @@
 # FRAMEWORK group
 #
 
-(FRAMEWORK) {
+(FRAMEWORK,INSTALL) {
     TESTS = BlockCG/bl_cg_hb.exe,
             BlockCG/bl_pcg_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
@@ -10,7 +10,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK,INSTALL) {
     TESTS = BlockGmres/bl_gmres_hb.exe,
             BlockGmres/bl_pgmres_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
@@ -18,22 +18,29 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK,INSTALL) {
     TESTS = MVOPTester/MVOPTester_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK,INSTALL) {
     TESTS = MVOPTester/MVOPComplexTester_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/belos/test/MVOPTester/mhd1280b.cua;
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK) {
+(FRAMEWORK,INSTALL) {
     TESTS = BlockGmres/bl_gmres_diag.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = ../thyra/test/MVOPTester/MVOPTesterThyra_test.exe;
+    ARGS = -v;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI;
 }

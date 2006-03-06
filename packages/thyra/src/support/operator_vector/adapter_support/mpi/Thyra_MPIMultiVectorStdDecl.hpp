@@ -84,9 +84,9 @@ public:
    *                   [in] Smart pointer to beginning of Fortran-style column-major
    *                   array that defines the local localValues in the multi-vector.
    *                   This array must be at least of dimension <tt>mpiRangeSpace->localSubDim()*domainSpace->dim()</tt>
-   *                   and <tt>(&*localValues)[ (i-1) + (j-1)*leadingDim ]</tt> gives the local value
-   *                   of the one-based entry <tt>(i,j)</tt> where <tt>i=1...mpiSpace()->localSubDim()</tt>
-   *                   and <tt>j=1...domainSpace->dim()</tt>.
+   *                   and <tt>(&*localValues)[ i + j*leadingDim ]</tt> gives the local value
+   *                   of the zero-based entry <tt>(i,j)</tt> where <tt>i=0...mpiSpace()->localSubDim()-1</tt>
+   *                   and <tt>j=0...domainSpace->dim()-1</tt>.
    * @param  leadingDim
    *                   [in] The leading dimension of the multi-vector.
    *

@@ -33,7 +33,8 @@
 
 namespace RTOpPack {
 
-/** \brief Generate a random vector in the range [l,u]: <tt>z0[i] = 0.5*((u-l)*Teuchos::ScalarTraits<Scalar>::random()+(u+l)), i=1...n</tt>.
+/** \brief Generate a random vector in the range [l,u]: <tt>z0[i] =
+ * 0.5*((u-l)*Teuchos::ScalarTraits<Scalar>::random()+(u+l)), i=0...n-1</tt>.
  *
  * The seed for the random number generator can be set by:
  \code

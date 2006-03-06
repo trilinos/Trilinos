@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Transformation operator that takes absolute values of elements: <tt>z0[i] = abs(v0[i]), i=1...n</tt>.
+/** \brief Transformation operator that takes absolute values of elements: <tt>z0[i] = abs(v0[i]), i=0...n-1</tt>.
  */
 template<class Scalar>
 class TOpAbs : public RTOpT<Scalar> {

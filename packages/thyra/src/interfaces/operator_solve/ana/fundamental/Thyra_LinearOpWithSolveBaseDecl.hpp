@@ -138,22 +138,22 @@ namespace Thyra {
  * for the block systems:
    
  \f[
-   op(A) \left[ \begin{array}{ccccc} X_{(:,1:i_1)} & X_{(:,i_1+1:i_2)} & \ldots & X_{(:,i_{N-1}+1:i_N)} \end{array} \right]
-   = \left[ \begin{array}{ccccc} B_{(:,1:i_1)} & B_{(:,i_1+1:i_2)} & \ldots & B_{(:,i_{N-1}+1:i_N)} \end{array} \right]
+   op(A) \left[ \begin{array}{ccccc} X_{(:,0:i_1)} & X_{(:,i_1+1:i_2)} & \ldots & X_{(:,i_{N-1}+1:i_N)} \end{array} \right]
+   = \left[ \begin{array}{ccccc} B_{(:,0:i_1)} & B_{(:,i_1+1:i_2)} & \ldots & B_{(:,i_{N-1}+1:i_N)} \end{array} \right]
  \f]
 
- * where the column indexes are given by \f$i_j = \left( \sum_{k=1}^{j}
- * \mbox{blockSolveCriteria[k-1].numRhs} \right)\f$, for \f$j = 1 \ldots N\f$.
+ * where the column indexes are given by \f$i_j = \left( \sum_{k=0}^{j}
+ * \mbox{blockSolveCriteria[k].numRhs} \right)\f$, for \f$j = 0 \ldots N-1\f$.
  *
  * The solve criteria for the \f$j^{\mbox{th}}\f$ block system
    
  \f[
-   op(A)  X_{(:,i_{j-1}+1:i_j)} = B_{(:,i_{j-1}+1:i_j)} 
+   op(A)  X_{(:,i_{j}+1:i_j)} = B_{(:,i_{j}+1:i_j)} 
  \f]
 
- * is given by <tt>blockSolveCriteria[j-1]</tt> (if
+ * is given by <tt>blockSolveCriteria[j]</tt> (if
  * <tt>blockSolveCriteria!=NULL</tt>) and the solution status after return is
- * given by <tt>blockSolveStatus[j-1]</tt> (if
+ * given by <tt>blockSolveStatus[j]</tt> (if
  * <tt>blockSolveStatus!=NULL</tt>).
  *
  * By specifying solution criteria in blocks and then only requesting basic
@@ -200,7 +200,7 @@ namespace Thyra {
      \frac{|| op(A) X_{(:,i)} - B_{(:,i)} ||}{ ||B_{(:,i)}||} \le \mu_r,
   \f]
 
- * for \f$i=1 {}\ldots m\f$, where \f$\mu_r =\f$
+ * for \f$i=0 {}\ldots m-1\f$, where \f$\mu_r =\f$
  * <tt>solveCriteria.requestedTol</tt> and where the norm \f$||.||\f$ is
  * given by the natural norm defined by the range space of \f$op(A)\f$ and
  * computed from <tt>Thyra::norm()</tt>.  Many linear solvers should be able
@@ -217,7 +217,7 @@ namespace Thyra {
     \frac{|| X^*_{(:,i)} - X_{(:,i)} ||}{ ||X^*_{(:,i)}||} \le \mu_e,
   \f]
  
- * for \f$i=1 {}\ldots m\f$, where \f$||.||\f$, where \f$\mu_e =\f$
+ * for \f$i=0 {}\ldots m-1\f$, where \f$||.||\f$, where \f$\mu_e =\f$
  * <tt>solveCriteria.requestedTol</tt> is the natural norm defined by the
  * domain space of \f$op(A)\f$ computed using <tt>Thyra::norm()</tt> and
  * \f$X^*\f$ is the true solution of the set of linear systems.  This is a
@@ -236,7 +236,7 @@ namespace Thyra {
  * of linear systems
   
   \f[
-    A  X_{(:,i_{j-1}+1:i_j)} = B_{(:,i_{j-1}+1:i_j)} 
+    A  X_{(:,i_{j}+1:i_j)} = B_{(:,i_{j}+1:i_j)} 
   \f]
 
  * whose solution criteria is specified by a <tt>SolveCriteria</tt> object, a

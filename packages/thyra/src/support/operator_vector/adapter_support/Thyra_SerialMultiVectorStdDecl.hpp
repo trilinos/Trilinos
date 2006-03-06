@@ -105,9 +105,9 @@ public:
    * @param  values    [in] Smart pointer to beginning of Fortran-style column-major
    *                   array that defines the local values in the multi-vector.
    *                   This array must be at least of dimension <tt>leadingDim*domain->dim()</tt>
-   *                   and <tt>(&*values)[ (i-1) + (j-1)*leadingDim ]</tt> gives the local value
-   *                   of the one-based <tt>(i,j)</tt> entry where <tt>i=1...range()->dim()</tt>
-   *                   and <tt>j=1...domain->dim()</tt>.
+   *                   and <tt>(&*values)[ i + j*leadingDim ]</tt> gives the local value
+   *                   of the zero-based <tt>(i,j)</tt> entry where <tt>i=0...range()->dim()-1</tt>
+   *                   and <tt>j=0...domain->dim()-1</tt>.
    * @param  leadingDim
    *                   [in] The leading dimension of the multi-vector.
    *

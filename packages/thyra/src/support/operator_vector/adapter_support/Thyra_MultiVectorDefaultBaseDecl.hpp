@@ -77,6 +77,106 @@ public:
   Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
   /** \brief . */
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
+  /** \brief .
+   *
+   * This implementation calls <tt>VectorBase::applyOp()</tt> on each column
+   * <tt>this->col(j)</tt> for <tt>j = 0 ... this->range()->dim()-1</tt>.
+   */
+  virtual void applyOp(
+    const RTOpPack::RTOpT<Scalar>   &primary_op
+    ,const int                      num_multi_vecs
+    ,const MultiVectorBase<Scalar>* multi_vecs[]
+    ,const int                      num_targ_multi_vecs
+    ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
+    ,RTOpPack::ReductTarget*        reduct_objs[]
+    ,const Index                    primary_first_ele_offset
+    ,const Index                    primary_sub_dim
+    ,const Index                    primary_global_offset
+    ,const Index                    secondary_first_ele_offset
+    ,const Index                    secondary_sub_dim
+    ) const;
+  /** \brief .
+   *
+   * This implementation calls <tt>applyOp()</tt> where an array of reduction
+   * objects is taken.
+   */
+  virtual void applyOp(
+    const RTOpPack::RTOpT<Scalar>   &primary_op
+    ,const RTOpPack::RTOpT<Scalar>  &secondary_op
+    ,const int                      num_multi_vecs
+    ,const MultiVectorBase<Scalar>* multi_vecs[]
+    ,const int                      num_targ_multi_vecs
+    ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
+    ,RTOpPack::ReductTarget         *reduct_obj
+    ,const Index                    primary_first_ele_offset
+    ,const Index                    primary_sub_dim
+    ,const Index                    primary_global_offset
+    ,const Index                    secondary_first_ele_offset
+    ,const Index                    secondary_sub_dim
+    ) const;
+  /** \brief .
+   *
+   * This implementation is based on the vector operation
+   * <tt>VectorBase::getSubVector()</tt> called on the non-changeable vector
+   * objects returned from <tt>col()</tt>.  Note that the footprint of the
+   * reduction object (both internal and external state) will be
+   * O(<tt>rowRng.size()*colRng.size()</tt>).  For serial applications this is
+   * fairly reasonable and will not be a major performance penalty.  For
+   * parallel applications, however, this is a terrible implementation and
+   * must be overridden if <tt>rowRng.size()</tt> is large at all.  Although,
+   * this function should not even be used in cases where the multi-vector is
+   * very large.  If a subclass does override this function, it must also
+   * override <tt>freeSubMultiVector()</tt> which has an implementation
+   * which is a companion to this function's implementation.
+   */
+  virtual void getSubMultiVector(
+    const Range1D                       &rowRng
+    ,const Range1D                      &colRng
+    ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+    ) const;
+  /** \brief .
+   *
+   * This implementation is a companion to the implementation for
+   * <tt>getSubMultiVector()</tt>.  If <tt>getSubMultiVector()</tt> is
+   * overridden by a subclass then this function must be overridden also!
+   */
+  virtual void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const;
+  /** \brief .
+   *
+   * This implementation is based on the vector operation
+   * <tt>VectorBase::getSubVector()</tt> called on the changeable vector
+   * objects returned from <tt>col()</tt>.  Note that the footprint of the
+   * reduction object (both internal and external state) will be
+   * O(<tt>rowRng.size()*colRng.size()</tt>).  For serial applications this is
+   * fairly reasonable and will not be a major performance penalty.  For
+   * parallel applications, however, this is a terrible implementation and
+   * must be overridden if <tt>rowRng.size()</tt> is large at all.  Although,
+   * this function should not even be used in case where the multi-vector is
+   * very large.  If a subclass does override this function, it must also
+   * override <tt>commitSubMultiVector()</tt> which has an implementation
+   * which is a companion to this function's implementation.
+   */
+  virtual void getSubMultiVector(
+    const Range1D                                &rowRng
+    ,const Range1D                               &colRng
+    ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+    );
+  /** \brief .
+   *
+   * This implementation is a companion to the default implementation for
+   * <tt>getSubMultiVector()</tt>.  If <tt>getSubMultiVector()</tt> is
+   * overridden by a subclass then this function must be overridden also!
+   */
+  virtual void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  /** \brief .
+   *
+   * This implementation uses the vector space to create a new multi-vector
+   * object and then uses a transformation operator to assign the vector
+   * elements.  A subclass should only override this function if it can do
+   * something more sophisticated (i.e. lazy evaluation) but in general, this
+   * is not needed.
+   */
+  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > clone_mv() const;
   //@}
 
 };

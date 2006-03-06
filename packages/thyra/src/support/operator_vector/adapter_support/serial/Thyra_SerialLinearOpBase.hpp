@@ -118,7 +118,7 @@ void SerialLinearOpBase<Scalar>::euclideanApply(
   ,const Scalar                                     beta
   ) const
 {
-  for(Index j = 1; j <= X.numSubCols(); ++j ) {
+  for(Index j = 0; j < X.numSubCols(); ++j ) {
     const RTOpPack::SubVectorT<Scalar>         X_j = X.col(j);
     const RTOpPack::MutableSubVectorT<Scalar>  Y_j = Y->col(j);
     this->euclideanApply(M_trans,X_j,&Y_j,alpha,beta);

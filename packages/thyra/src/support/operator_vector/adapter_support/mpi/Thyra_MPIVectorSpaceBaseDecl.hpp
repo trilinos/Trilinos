@@ -76,10 +76,10 @@ namespace Thyra {
  * contiguous chunks of dense subvectors.  To spell this out, let
  * <tt>v</tt> be the local vector that is sorted on this processor and
  * let <tt>g</tt> be the global vector.  Then these two vectors are
- * related (using one-based indexing) as:
+ * related (using zero-based indexing) as:
 
  \verbatim
-    v(k) == g(k + this->localOffset()), for k = 1...this->localSubDim()
+    v(k) == g(this->localOffset() + k), for k = 0...this->localSubDim()-1
 
  \endverbatim
 

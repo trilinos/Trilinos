@@ -90,11 +90,6 @@ namespace Thyra {
  * where getting explicit access to the coefficients of a vector is a very
  * reasonable and efficient thing to do (i.e. for vectors in the domain of a
  * multi-vector for instance) and therefore this functionality is supported.
- * The default implementation of these functions use sophisticated RTOps with
- * <tt>applyOp()</tt> in order to extract and set the needed elements and
- * therefore all <tt>%VectorBase</tt> subclasses automatically support these
- * functions (even if it is a bad idea to use them in general).  This feature
- * is very useful for debugging small problems however.
  *
  * \section Thyra_VB_expl_access_utils_sec Explicit vector coefficient access utilities
  *
@@ -122,11 +117,9 @@ namespace Thyra {
  *
  * \section Thyra_VB_dev_notes_sec Notes for subclass developers
  *
- * This is a fairly bare-bones interface class without much in the way of
- * default function implementations.  The subclass <tt>VectorDefaultBase</tt>
- * uses a default multi-vector implementation to provide overrides of many of
- * the functions and should the the first choice for subclasses
- * implementations.
+ * The support subclass <tt>VectorDefaultBase</tt> provides default
+ * implementations for as many functions as possible and should be considered
+ * a first choice for creating concrete subclasses.
  *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
@@ -191,7 +184,7 @@ public:
     ,const int                       num_targ_vecs
     ,VectorBase<Scalar>*             targ_vecs[]
     ,RTOpPack::ReductTarget          *reduct_obj
-    ,const Index                     first_ele
+    ,const Index                     first_ele_offset
     ,const Index                     sub_dim
     ,const Index                     global_offset
     ) const = 0;
@@ -208,16 +201,14 @@ public:
    * <tt>clone_mv()</tt> which creates a <tt>MultiVectorBase</tt> object.
    * However, this function is not really necessary because this capability is
    * already present by using the <tt>VectorSpaceBase</tt> returned from
-   * <tt>this->space()</tt>.  The default implementation of this function
-   * simply creates a new vector using <tt>createMember(this->space())</tt>
-   * and then assigns the contents from <tt>*this</tt>.
+   * <tt>this->space()</tt>.
    *
    * Subclasses should only consider overriding this function if there they
    * want to be very sophisticated and implement some form of lazy evaluation
    * in case the created object might not actually be modified before it is
    * destroyed.  However, this is not advised.
    */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > clone_v() const;
+  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > clone_v() const = 0;
 
   //@}
 
@@ -234,13 +225,13 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!rng.full_range()</tt>] <tt>(rng.ubound() <= this->dim()) == true</tt>
+   * <li> [<tt>!rng.full_range()</tt>] <tt>(rng.ubound() < this->dim()) == true</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_vec</tt> contains an explicit non-mutable view to the elements
-   *      in the range <tt>full_range(rng,1,this->dim())</tt>
+   *      in the range <tt>full_range(rng,0,this->dim()-1)</tt>
    * </ul>
    *
    * This is only a transient view of a sub-vector that is to be immediately
@@ -263,22 +254,8 @@ public:
    * <tt>this->freeSubVector(sub_vec)</tt> to finally clean up all of the
    * memory.  Of course, the same <tt>sub_vec</tt> object must be passed to
    * the same vector object for this to work correctly.
-   *
-   * This function has a default implementation based on a vector
-   * reduction operator class (see <tt>RTOpPack::ROpGetSubVector</tt>)
-   * and calls <tt>applyOp()</tt>.  Note that the footprint of the reduction
-   * object (both internal and external state) will be
-   * O(<tt>rng.size()</tt>).  For serial applications this is fairly
-   * reasonable and will not be a major performance penalty.  For
-   * parallel applications, however, this is a terrible
-   * implementation and must be overridden if <tt>rng.size()</tt> is
-   * large at all.  Although, this function should not even be used in
-   * case where the vector is very large.  If a subclass does
-   * override this function, it must also override
-   * <tt>freeSubVector()</tt> which has a default implementation
-   * which is a companion to this function's default implementation.
    */
-  virtual void getSubVector( const Range1D& rng, RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  virtual void getSubVector( const Range1D& rng, RTOpPack::SubVectorT<Scalar>* sub_vec ) const = 0;
 
   /** \brief Free an explicit view of a sub-vector.
    *
@@ -298,14 +275,8 @@ public:
    * </ul>
    *
    * The sub-vector view must have been allocated by <tt>this->getSubVector()</tt> first.
-   *
-   * This function has a default implementation which is a companion
-   * to the default implementation for the non-<tt>const</tt>
-   * version of <tt>getSubVector()</tt>.  If <tt>getSubVector()</tt>
-   * is overridden by a subclass then this function must be overridden
-   * also!
    */
-  virtual void freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  virtual void freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const = 0;
 
   /** \brief Get a mutable explicit view of a sub-vector.
    *
@@ -319,13 +290,13 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!rng.full_range()</tt>] <tt>rng.ubound() <= this->dim()</tt>
+   * <li> [<tt>!rng.full_range()</tt>] <tt>rng.ubound() < this->dim()</tt>
    *      (throw <tt>std::out_of_range</tt>)
    * </ul>
     *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_vec</tt> contains an explicit mutable view to the elements
-   *      in the range <tt>\ref Thyra::full_range() "full_range"(rng,1,this->dim())</tt>
+   *      in the range <tt>\ref Thyra::full_range() "full_range"(rng,0,this->dim()-1)</tt>
    * </ul>
    *
    * This is only a transient view of a sub-vector that is to be immediately
@@ -353,19 +324,8 @@ public:
    * Changes to the underlying sub-vector are not guaranteed to become
    * permanent until <tt>this->getSubVector(...,sub_vec)</tt> is called again,
    * or <tt>this->commitSubVector(sub_vec)</tt> is called.
-   *
-   * This function has a default implementation based on a vector reduction
-   * operator class (see <tt>RTOpPack::ROpGetSubVector</tt>) and calls
-   * <tt>applyOp()</tt>.  Note that the footprint of the reduction object
-   * (both internal and external state) will be O(<tt>rng.size()</tt>).  For
-   * serial applications this is fairly reasonable and will not be a major
-   * performance penalty.  For parallel applications, this will be a terrible
-   * thing to do and must be overridden if <tt>rng.size()</tt> is large at
-   * all.  If a subclass does override this function, it must also override
-   * <tt>commitSubVector()</tt> which has a default implementation which is a
-   * companion to this function's default implementation.
    */
-  virtual void getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  virtual void getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec ) = 0;
 
   /** \brief Commit changes for a mutable explicit view of a sub-vector.
    *
@@ -389,13 +349,8 @@ public:
    *
    * The sub-vector view must have been allocated by
    * <tt>this->getSubVector()</tt> first.
-   *
-   * This function has a default implementation which is a companion to the
-   * default implementation for <tt>getSubVector()</tt>.  If
-   * <tt>getSubVector()</tt> is overridden by a subclass then this function
-   * must be overridden also!
    */
-  virtual void commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  virtual void commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec ) = 0;
 
   /** \brief Set a specific sub-vector.
    *
@@ -403,67 +358,24 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>sub_vec.global_offset + sub_vec.sub_dim <= this->dim()</tt>
+   * <li> <tt>sub_vec.global_offset + sub_vec.sub_dim < this->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
     *
    * <b>Postconditions:</b><ul>
    * <li> All of the elements in the range
-   *      <tt>[sub_vec.global_offset+1,sub_vec.global_offset+sub_vec.sub_dim]</tt>
+   *      <tt>[sub_vec.global_offset,sub_vec.global_offset+sub_vec.sub_dim-1]</tt>
    *      in <tt>*this</tt> are set to 0.0 except for those that have that
    *      have entries in <tt>sub_vec</tt> which are set to the values specified
-   *      by <tt>(*this)(sub_vec.global_offset+vec.local_offset+sub_vec.indices[sub_vec.indices_stride*(k-1)])
-   *      = vec.values[vec.value_stride*(k-1)]</tt>, for <tt>k = 1..sub_vec.sub_nz</tt>
+   *      by <tt>(*this)(sub_vec.global_offset+vec.local_offset+sub_vec.indices[sub_vec.indices_stride*k])
+   *      = vec.values[vec.value_stride*k]</tt>, for <tt>k = 0..sub_vec.subNz()-1</tt>
    * </ul>
    *
    * After this function returns, the corresponding elements in <tt>*this</tt>
    * vector object will be set equal to those in the input view
    * <tt>sub_vec</tt>.
-   *
-   * The default implementation of this function uses a transformation
-   * operator class (see <tt>RTOpPack::TOpSetSubVector</tt>) and calls
-   * <tt>applyOp()</tt>.  Be forewarned however, that the operator objects
-   * state data (both internal and external) will be order
-   * O(<tt>sub_vec.subNz()</tt>).  For serial applications, this is entirely
-   * adequate.  For parallel applications this may be bad!
    */
-  virtual void setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec );
-
-  //@}
-
-  /** @name Public functions overridden from Teuchos::Describable */
-  //@{
-
-  /** \brief Generates a default outputting for all vectors.
-   *
-   * Calls on the <tt>this->describe(void)</tt> function for the name of the
-   * class (and possibly its instance name) and then if <tt>verbLevel >=
-   * VERB_HIGH</tt>, then the vector elements themselves are printed as well.
-   * The format of the output is is shown below:
-   
-   \verbatim
-
-   type = 'this->description()', size = n
-     1:x1
-     2:x2
-     .
-     .
-     .
-     n:xn
-   \endverbatim
-   *
-   * Before <tt>type = 'this->description()'</tt> is printed and after
-   * each newline, <tt>leadingIndent</tt> is output.  The
-   * <tt>index:value</tt> lines are offset an additional
-   * <tt>indentSpacer</tt> amount.  A newline is printed after the
-   * last <tt>n:xn</tt> entry.
-   */
-  std::ostream& describe(
-    std::ostream                         &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
-    ) const;
+  virtual void setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec ) = 0;
 
   //@}
 
@@ -511,8 +423,8 @@ in simpler use cases.
  *              composite vectors for instance.  If <tt>op.get_reduct_type_num_entries(...)</tt> returns
  *              <tt>num_values == 0</tt>, <tt>num_indexes == 0</tt> and <tt>num_chars == 0</tt> then
  *              <tt>reduct_obj</tt> should be set to <tt>RTOp_REDUCT_OBJ_NULL</tt> and no reduction will be performed.
- * @param  first_ele
- *				[in] (default = 1) The index of the first element in <tt>this</tt> to be included.
+ * @param  first_ele_offset
+ *				[in] (default = 0) The index of the first element in <tt>this</tt> to be included.
  * @param  sub_dim
  *              [in] (default = 0) The number of elements in these vectors to include in the reduction/transformation
  *              operation.  The value of <tt>sub_dim == 0</tt> means to include all available elements.
@@ -528,9 +440,9 @@ in simpler use cases.
  * <li> [<tt>num_targ_vecs > 0</tt>] The vectors pointed to by <tt>targ_vecs[k]</tt>, for
  *      <tt>k = 0...num_targ_vecs-1</tt> must not alias each other or any of the vectors
  *      <tt>vecs[k]</tt>, for <tt>k = 0...num_vecs-1</tt>.  <b>You have be warned!!!!</b>
- * <li> <tt>1 <= first_ele <= this->dim()</tt> (throw <tt>std::out_of_range</tt>)
+ * <li> <tt>0 <= first_ele_offset < this->dim()</tt> (throw <tt>std::out_of_range</tt>)
  * <li> <tt>global_offset >= 0</tt> (throw <tt>std::invalid_argument</tt>)
- * <li> <tt>sub_dim - (first_ele - 1) <= this->dim()</tt> (throw <tt>std::length_error</tt>).
+ * <li> <tt>sub_dim - first_ele_offset <= this->dim()</tt> (throw <tt>std::length_error</tt>).
  * </ul>
  *
  * <b>Postconditions:</b><ul>
@@ -545,14 +457,14 @@ in simpler use cases.
 
  \verbatim
 
- v(k + global_offset) = this->get_ele(first_ele + k - 1)
- , for k = 1 ... sub_dim
+ v(k + global_offset) = this->get_ele(first_ele_offset + k)
+ , for k = 0 ... sub_dim-1
  \endverbatim
  
  * where <tt>v</tt> represents any one of the input or input/output vectors.
- * The situation where <tt>first_ele == 1</tt> and <tt>global_offset > 1</tt>
+ * The situation where <tt>first_ele_offset == 0</tt> and <tt>global_offset > 1</tt>
  * corresponds to the case where the vectors represent constituent vectors in
- * a larger aggregate vector.  The situation where <tt>first_ele > 1</tt> and
+ * a larger aggregate vector.  The situation where <tt>first_ele_offset > 0</tt> and
  * <tt>global_offset == 0</tt> is for when a sub-view of the vectors are being
  * treated as full vectors.  Other combinations of these arguments are also
  * possible.
@@ -566,9 +478,9 @@ void applyOp(
   ,const int                      num_targ_vecs
   ,VectorBase<Scalar>*            targ_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    first_ele
+  ,const Index                    first_ele_offset
 #ifndef __sun
-                                                = 1
+                                                = 0
 #endif
   ,const Index                    sub_dim
 #ifndef __sun
@@ -581,9 +493,9 @@ void applyOp(
   )
 {
   if(num_vecs)
-    vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele,sub_dim,global_offset);
+    vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_offset,sub_dim,global_offset);
   else if (num_targ_vecs)
-    targ_vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele,sub_dim,global_offset);
+    targ_vecs[0]->applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_offset,sub_dim,global_offset);
 }
 
 #ifdef __sun
@@ -598,7 +510,7 @@ void applyOp(
   ,RTOpPack::ReductTarget         *reduct_obj
   )
 {
-  applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,1,0,0);
+  applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,0,0,0);
 }
 #endif
 

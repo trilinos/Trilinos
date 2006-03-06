@@ -46,7 +46,7 @@ namespace Thyra {
  *
  * @param  V     [in]
  * @param  norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of the natural norms
- *               <tt>dot[j-1] = sqrt(scalarProd(*V.col(j),*V.col(j)))</tt>, for <tt>j=1...m</tt>,
+ *               <tt>dot[j] = sqrt(scalarProd(*V.col(j),*V.col(j)))</tt>, for <tt>j=0...m-1</tt>,
  *               computed using a single reduction.
  */
 template<class Scalar>
@@ -59,7 +59,7 @@ void norms( const MultiVectorBase<Scalar>& V, Scalar norms[] );
  *                 <tt>RTOpPack::ROpScalarReductionBase</tt> that defines the
  *                 norm operation.
  * @param  norms   [out] Array (size <tt>m = V1->domain()->dim()</tt>) of one-norms
- *                 <tt>dot[j-1] = {some norm}(*V.col(j))</tt>, for <tt>j=1..</tt>, computed using
+ *                 <tt>dot[j] = {some norm}(*V.col(j))</tt>, for <tt>j=0...m-1</tt>, computed using
  *                 a single reduction.
  */
 template<class Scalar, class NormOp>
@@ -69,7 +69,7 @@ void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op, Scalar norm
  *
  * @param  V     [in]
  * @param  norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of one-norms
- *               <tt>dot[j-1] = norm_1(*V.col(j))</tt>, for <tt>j=1...m</tt>, computed using
+ *               <tt>dot[j] = norm_1(*V.col(j))</tt>, for <tt>j=0...m-1</tt>, computed using
  *               a single reduction.
  *
  * This function simply calls <tt>reductions()</tt> using <tt>RTOpPack::ROpNorm1</tt>.
@@ -81,7 +81,7 @@ void norms_1( const MultiVectorBase<Scalar>& V, Scalar norms[] );
  *
  * @param  V     [in]
  * @param  norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of one-norms
- *               <tt>dot[j-1] = norm_2(*V.col(j))</tt>, for <tt>j=1...m</tt>, computed using
+ *               <tt>dot[j] = norm_2(*V.col(j))</tt>, for <tt>j=0...m-1</tt>, computed using
  *               a single reduction.
  *
  * This function simply calls <tt>reductions()</tt> using <tt>RTOpPack::ROpNorm2</tt>.
@@ -93,7 +93,7 @@ void norms_2( const MultiVectorBase<Scalar>& V, Scalar norms[] );
  *
  * @param  V     [in]
  * @param  norms [out] Array (size <tt>m = V1->domain()->dim()</tt>) of one-norms
- *               <tt>dot[j-1] = norm_inf(*V.col(j))</tt>, for <tt>j=1...m</tt>,
+ *               <tt>dot[j] = norm_inf(*V.col(j))</tt>, for <tt>j=0...m-1</tt>,
  *               computed using a single reduction.
  *
  * This function simply calls <tt>reductions()</tt> using <tt>RTOpPack::ROpNormInf</tt>.
@@ -106,7 +106,7 @@ void norms_inf( const MultiVectorBase<Scalar>& V, Scalar norms[] );
  * @param  V1   [in]
  * @param  V2   [in]
  * @param  dots [out] Array (size <tt>m = V1->domain()->dim()</tt>) of the dot products
- *              <tt>dot[j-1] = dot(*V1.col(j),*V2.col(j))</tt>, for <tt>j=1...m</tt>,
+ *              <tt>dot[j] = dot(*V1.col(j),*V2.col(j))</tt>, for <tt>j=0...m-1</tt>,
  *              computed using a single reduction.
  */
 template<class Scalar>
@@ -149,18 +149,18 @@ void assign( MultiVectorBase<Scalar>* V, const MultiVectorBase<Scalar>& U );
 template<class Scalar>
 void update( Scalar alpha, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V );
 
-/** \brief alpha[j-1]*beta*U(j) + V(j) - > V(j), for j = 1 ... U.domain()->dim()
+/** \brief alpha[j-1]*beta*U(j) + V(j) - > V(j), for j = 0 ... U.domain()->dim()-1
  */
 template<class Scalar>
 void update( Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V );
 
-/** \brief U(j) + alpha[j-1]*beta*V(j) - > V(j), for j = 1 ... U.domain()->dim()
+/** \brief U(j) + alpha[j-1]*beta*V(j) - > V(j), for j = 0 ... U.domain()->dim()-1
  */
 template<class Scalar>
 void update( const MultiVectorBase<Scalar>& U, Scalar alpha[], Scalar beta, MultiVectorBase<Scalar>* V );
 
 /** \brief <tt>Y.col(j)(i) = beta*Y.col(j)(i) + sum( alpha[k]*X[k].col(j)(i), k=0...m-1 )</tt>,
- * for <tt>i = 1...Y->range()->dim()</tt>, <tt>j = 1...Y->domain()->dim()</tt>.
+ * for <tt>i = 0...Y->range()->dim()-1</tt>, <tt>j = 0...Y->domain()->dim()-1</tt>.
  *
  * @param  m          [in] Number of multi-vectors in X[]
  * @param  alpha      [in] Array (length <tt>m</tt>) of input scalars.
@@ -173,8 +173,8 @@ void update( const MultiVectorBase<Scalar>& U, Scalar alpha[], Scalar beta, Mult
  Y.col(j)(i) = beta*Y.col(j)(i) + alpha[0]*X[0].col(j)(i) + alpha[1]*X[1].col(j)(i) + ... + alpha[m-1]*X[m-1].col(j)(i)
 
     for:
-        i = 1...y->space()->dim()
-        j = 1...y->domain()->dim()
+        i = 0...y->space()->dim()-1
+        j = 0...y->domain()->dim()-1
 
  \endverbatim
  * and does so on a single call to <tt>MultiVectorBase::applyOp()</tt>.
@@ -191,7 +191,7 @@ void linear_combination(
 /** \brief Generate a random multi-vector with elements uniformly distributed
  * elements.
  * 
- * The elements <tt>V->col(j)-getEle(i)</tt> are randomly generated between
+ * The elements <tt>get_ele(*V->col(j))</tt> are randomly generated between
  * <tt>[l,u]</tt>.
  *
  * The seed is set using <tt>seed_randomize()</tt>

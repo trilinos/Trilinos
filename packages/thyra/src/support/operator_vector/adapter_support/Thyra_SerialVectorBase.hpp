@@ -93,20 +93,20 @@ template<class Scalar>
 void SerialVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVectorT<Scalar>* sub_vec ) const
 {
   const Index   this_dim = this->space()->dim(); // ToDo: Cache this!
-  const Range1D rng      = Teuchos::full_range(rng_in,1,this_dim);
+  const Range1D rng      = Teuchos::full_range(rng_in,0,this_dim-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    rng.ubound() > this_dim, std::out_of_range
+    !( rng.ubound() < this_dim ), std::out_of_range
     ,"SerialVectorBase<Scalar>::getSubVector(...) : Error, "
     "rng = ["<<rng.lbound()<<","<<rng.ubound()<<"] "
-    "is not in the range [1,this->dim()] = [1," << this_dim << "]!" );
+    "is not in the range [0,this->dim()-1] = [0," << (this_dim-1) << "]!" );
 #endif
   const Scalar *values = NULL; Index stride = 0;
   this->getData(&values,&stride);
   sub_vec->initialize(
-    rng.lbound()-1                   // globalOffset
+    rng.lbound()                     // globalOffset
     ,rng.size()                      // subDim
-    ,values+stride*(rng.lbound()-1)  // values
+    ,values+stride*rng.lbound()      // values
     ,stride                          // stride
     );
 }
@@ -121,20 +121,20 @@ template<class Scalar>
 void SerialVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::MutableSubVectorT<Scalar>* sub_vec )
 {
   const Index   this_dim = this->space()->dim(); // ToDo: Cache this!
-  const Range1D rng      = Teuchos::full_range(rng_in,1,this_dim);
+  const Range1D rng      = Teuchos::full_range(rng_in,0,this_dim-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    rng.ubound() > this_dim, std::out_of_range
+    !( rng.ubound() < this_dim ), std::out_of_range
     ,"SerialVectorBase<Scalar>::getSubVector(...) : Error, "
     "rng = ["<<rng.lbound()<<","<<rng.ubound()<<"] "
-    "is not in the range [1,this->dim()] = [1," << this_dim << "]!" );
+    "is not in the range [0,this->dim()-1] = [0," << (this_dim-1) << "]!" );
 #endif
   Scalar *values = NULL; Index stride = 0;
   this->getData(&values,&stride);
   sub_vec->initialize(
-    rng.lbound()-1                   // globalOffset
+    rng.lbound()                     // globalOffset
     ,rng.size()                      // subDim
-    ,values+stride*(rng.lbound()-1)  // values
+    ,values+stride*rng.lbound()      // values
     ,stride                          // stride
     );
 }
@@ -148,7 +148,7 @@ void SerialVectorBase<Scalar>::commitSubVector( RTOpPack::MutableSubVectorT<Scal
 template<class Scalar>
 void SerialVectorBase<Scalar>::setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec )
 {
-  VectorBase<Scalar>::setSubVector(sub_vec);  // This implementation is okay
+  VectorDefaultBase<Scalar>::setSubVector(sub_vec);  // This implementation is okay
 }
 
 } // end namespace Thyra

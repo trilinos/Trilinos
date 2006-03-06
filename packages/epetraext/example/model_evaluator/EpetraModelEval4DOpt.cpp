@@ -80,14 +80,14 @@ EpetraModelEval4DOpt::get_f_map() const
 Teuchos::RefCountPtr<const Epetra_Map>
 EpetraModelEval4DOpt::get_p_map(int l) const
 {
-  TEST_FOR_EXCEPT(l!=1);
+  TEST_FOR_EXCEPT(l!=0);
   return map_p_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Map>
 EpetraModelEval4DOpt::get_g_map(int j) const
 {
-  TEST_FOR_EXCEPT(j!=1);
+  TEST_FOR_EXCEPT(j!=0);
   return map_g_;
 }
 
@@ -100,7 +100,7 @@ EpetraModelEval4DOpt::get_x_init() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPT(l!=1);
+  TEST_FOR_EXCEPT(l!=0);
   return p0_;
 }
 
@@ -119,14 +119,14 @@ EpetraModelEval4DOpt::get_x_upper_bounds() const
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_lower_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(l!=1);
+  TEST_FOR_EXCEPT(l!=0);
   return pL_;
 }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
 EpetraModelEval4DOpt::get_p_upper_bounds(int l) const
 {
-  TEST_FOR_EXCEPT(l!=1);
+  TEST_FOR_EXCEPT(l!=0);
   return pU_;
 }
 
@@ -161,25 +161,25 @@ EpetraModelEval4DOpt::createOutArgs() const
       ,true // supportsAdjoint
       )
     );
-  outArgs.setSupports(OUT_ARG_DfDp,1,DERIV_MV_BY_COL);
+  outArgs.setSupports(OUT_ARG_DfDp,0,DERIV_MV_BY_COL);
   outArgs.set_DfDp_properties(
-    1,DerivativeProperties(
+    0,DerivativeProperties(
       DERIV_LINEARITY_CONST
       ,DERIV_RANK_DEFICIENT
       ,true // supportsAdjoint
       )
     );
-  outArgs.setSupports(OUT_ARG_DgDx,1,DERIV_TRANS_MV_BY_ROW);
+  outArgs.setSupports(OUT_ARG_DgDx,0,DERIV_TRANS_MV_BY_ROW);
   outArgs.set_DgDx_properties(
-    1,DerivativeProperties(
+    0,DerivativeProperties(
       DERIV_LINEARITY_NONCONST
       ,DERIV_RANK_DEFICIENT
       ,true // supportsAdjoint
       )
     );
-  outArgs.setSupports(OUT_ARG_DgDp,1,1,DERIV_TRANS_MV_BY_ROW);
+  outArgs.setSupports(OUT_ARG_DgDp,0,0,DERIV_TRANS_MV_BY_ROW);
   outArgs.set_DgDp_properties(
-    1,1,DerivativeProperties(
+    0,0,DerivativeProperties(
       DERIV_LINEARITY_NONCONST
       ,DERIV_RANK_DEFICIENT
       ,true // supportsAdjoint
@@ -195,18 +195,18 @@ void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outAr
   //
   // Get the input arguments
   //
-  Teuchos::RefCountPtr<const Epetra_Vector> p_in = inArgs.get_p(1);
+  Teuchos::RefCountPtr<const Epetra_Vector> p_in = inArgs.get_p(0);
   const Epetra_Vector &p = (p_in.get() ? *p_in : *p0_);
   const Epetra_Vector &x = *inArgs.get_x();
   //
   // Get the output arguments
   //
   Epetra_Vector       *f_out = outArgs.get_f().get();
-  Epetra_Vector       *g_out = outArgs.get_g(1).get();
+  Epetra_Vector       *g_out = outArgs.get_g(0).get();
   Epetra_Operator     *W_out = outArgs.get_W().get();
-  Epetra_MultiVector  *DfDp_out = get_DfDp_mv(1,outArgs).get();
-  Epetra_MultiVector  *DgDx_trans_out = get_DgDx_mv(1,outArgs,DERIV_TRANS_MV_BY_ROW).get();
-  Epetra_MultiVector  *DgDp_trans_out = get_DgDp_mv(1,1,outArgs,DERIV_TRANS_MV_BY_ROW).get();
+  Epetra_MultiVector  *DfDp_out = get_DfDp_mv(0,outArgs).get();
+  Epetra_MultiVector  *DgDx_trans_out = get_DgDx_mv(0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
+  Epetra_MultiVector  *DgDp_trans_out = get_DgDp_mv(0,0,outArgs,DERIV_TRANS_MV_BY_ROW).get();
   //
   // Compute the functions
   //
@@ -218,7 +218,6 @@ void EpetraModelEval4DOpt::evalModel( const InArgs& inArgs, const OutArgs& outAr
   }
   if(g_out) {
     Epetra_Vector &g = *g_out;
-    // zero-based indexing for Epetra, 1-based indexing for Thyra!
     g[0] = 0.5 * ( sqr(x[0]-xt0_) + sqr(x[1]-xt1_) + sqr(p[0]-pt0_) + sqr(p[1]-pt1_) );
   }
   if(W_out) {

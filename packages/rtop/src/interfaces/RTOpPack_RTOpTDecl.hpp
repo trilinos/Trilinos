@@ -82,7 +82,7 @@ public:
  *
  \verbatim
 
- op(v[0](i)...v[*](i),z[0](i)...z[*](i)) -> z[0](i)...z[*](i), for i = 1...n
+ op(v[0](i)...v[*](i),z[0](i)...z[*](i)) -> z[0](i)...z[*](i), for i = 0...n-1
  \endverbatim
  *
  * Operators can also be defined that perform reduction and
@@ -95,7 +95,7 @@ public:
  *
  \verbatim
 
- min{ |x(i)|, i = 1...n } -> [ x(j_min), j_min ]
+ min{ |x(i)|, i = 0...n-1 } -> [ x(j_min), j_min ]
  \endverbatim
  *
  * or it could perform several reductions at once and store
@@ -103,7 +103,7 @@ public:
  *
  \verbatim
 
- min_max_sum{ x(i), i = 1...n } -> [ x(j_min), j_min, x(j_max), j_max, x_sum ]
+ min_max_sum{ x(i), i = 0...n-1 } -> [ x(j_min), j_min, x(j_max), j_max, x_sum ]
  \endverbatim
  *
  * Transformation operations are much simpler to think about and to
@@ -112,11 +112,11 @@ public:
  *
  \verbatim
 
- max{ |x(i)|, |y(i)| } + |z(i)| -> z(i), for i = 1...n
+ max{ |x(i)|, |y(i)| } + |z(i)| -> z(i), for i = 0...n-1
  
- alpha * |z(i)| / x(i) -> z(i), for i = 1...n
+ alpha * |z(i)| / x(i) -> z(i), for i = 0...n-1
  
- alpha * x(i) * y(i) + beta * z(i) -> z(i), for i = 1...n
+ alpha * x(i) * y(i) + beta * z(i) -> z(i), for i = 0...n-1
  \endverbatim
  *
  * Reduction operations present the more difficult technical
@@ -128,7 +128,7 @@ public:
  \verbatim
 
    op(v[0](i)...v[*](i),z[0](i)...z[*](i)) -> z[0](i)...z[*](i),reduct_obj
-      , for i = 1...n
+      , for i = 0...n-1
  \endverbatim
  *
  * This design is based on a few assumptions about the reduction and
@@ -145,7 +145,7 @@ public:
  *
  \verbatim
 
- op( x(i), y(i), z(i) ) -> z(i), for i = 1...n
+ op( x(i), y(i), z(i) ) -> z(i), for i = 0...n-1
  \endverbatim
  *
  * where <tt>x</tt>, <tt>y</tt>, and <tt>z</tt> are distributed
@@ -371,14 +371,14 @@ public:
    *             [in] Array (length <tt>num_vecs</tt>) of non-mutable vectors to apply the
    *             operator over.  The ordering of these sub-vectors
    *             <tt>sub_vecs[k], for k = 0...num_vecs-1</tt>, is significant to the this operator object.
-   *             If <tt>num_vecs == 0</tt> then <tt>sub_vecs</tt> can be <tt>NULL</tt>.
+   *             If <tt>num_vecs==0</tt> then <tt>sub_vecs</tt> can be <tt>NULL</tt>.
    *	@param	num_targ_vecs
    *             [in] Number of mutable sub-vectors in <tt>targ_sub_vec[]</tt>.
    *	@param	targ_sub_vecs
    *             [in/out] Array (length <tt>num_targ_vecs</tt>) of mutable vectors to apply the
    *             operator over and be mutated.  The ordering of these sub-vectors
    *             <tt>targ_sub_vecs[k], for k = 0...num_targ_vecs-1</tt>, is significant to this
-   *             operator object.  If <tt>num_targ_vecs == 0</tt> then <tt>targ_sub_vecs</tt> can be <tt>NULL</tt>.
+   *             operator object.  If <tt>num_targ_vecs==0</tt> then <tt>targ_sub_vecs</tt> can be <tt>NULL</tt>.
    *	@param	reduct_obj
    *             [in/out] This reduction object must have been created by
    *              a <tt>this->reduct_obj_create()</tt> call and it may have

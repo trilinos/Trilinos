@@ -90,10 +90,10 @@ void MPIMultiVectorBase<Scalar>::applyOp(
   ,const int                      num_targ_multi_vecs
   ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
   ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    pri_first_ele_in
+  ,const Index                    pri_first_ele_offset_in
   ,const Index                    pri_sub_dim_in
   ,const Index                    pri_global_offset_in
-  ,const Index                    sec_first_ele_in
+  ,const Index                    sec_first_ele_offset_in
   ,const Index                    sec_sub_dim_in
   ) const
 {
@@ -112,8 +112,8 @@ void MPIMultiVectorBase<Scalar>::applyOp(
   apply_op_validate_input(
     "MPIMultiVectorBase<>::applyOp(...)", *this->domain(), *this->range()
     ,pri_op,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-    ,reduct_objs,pri_first_ele_in,pri_sub_dim_in,pri_global_offset_in
-    ,sec_first_ele_in,sec_sub_dim_in
+    ,reduct_objs,pri_first_ele_offset_in,pri_sub_dim_in,pri_global_offset_in
+    ,sec_first_ele_offset_in,sec_sub_dim_in
     );
 #endif
   // Flag that we are in applyOp()
@@ -122,28 +122,28 @@ void MPIMultiVectorBase<Scalar>::applyOp(
   // we treat this as a local operation only.
   const bool locallyReplicated = (localSubDim_ == globalDim_);
   // Get the overlap in the current process with the input logical sub-vector
-  // from (first_ele_in,sub_dim_in,global_offset_in)
-  Teuchos_Index  overlap_first_local_ele  = 0;
-  Teuchos_Index  overalap_local_sub_dim   = 0;
-  Teuchos_Index  overlap_global_offset    = 0;
+  // from (first_ele_offset_in,sub_dim_in,global_offset_in)
+  Teuchos_Index  overlap_first_local_ele_off  = 0;
+  Teuchos_Index  overalap_local_sub_dim       = 0;
+  Teuchos_Index  overlap_global_offset        = 0;
   RTOp_parallel_calc_overlap(
-    globalDim_, localSubDim_, localOffset_, pri_first_ele_in, pri_sub_dim_in, pri_global_offset_in
-    ,&overlap_first_local_ele, &overalap_local_sub_dim, &overlap_global_offset
+    globalDim_, localSubDim_, localOffset_, pri_first_ele_offset_in, pri_sub_dim_in, pri_global_offset_in
+    ,&overlap_first_local_ele_off, &overalap_local_sub_dim, &overlap_global_offset
     );
   const Range1D
     local_rng = (
-      overlap_first_local_ele!=0
-      ? Range1D( localOffset_ + overlap_first_local_ele, localOffset_ + overlap_first_local_ele + overalap_local_sub_dim - 1 )
+      overlap_first_local_ele_off>=0
+      ? Range1D( localOffset_+overlap_first_local_ele_off, localOffset_+overlap_first_local_ele_off+overalap_local_sub_dim-1 )
       : Range1D::Invalid
       ),
     col_rng(
-      sec_first_ele_in
-      ,sec_sub_dim_in ? sec_first_ele_in + sec_sub_dim_in - 1 : numCols
+      sec_first_ele_offset_in
+      ,sec_sub_dim_in ? sec_first_ele_offset_in+sec_sub_dim_in-1 : numCols-1
       );
   // Create sub-vector views of all of the *participating* local data
   Workspace<RTOpPack::SubMultiVectorT<Scalar> > sub_multi_vecs(wss,num_multi_vecs);
   Workspace<RTOpPack::MutableSubMultiVectorT<Scalar> > targ_sub_multi_vecs(wss,num_targ_multi_vecs);
-  if( overlap_first_local_ele != 0 ) {
+  if( overlap_first_local_ele_off >= 0 ) {
     for(int k = 0; k < num_multi_vecs; ++k ) {
       multi_vecs[k]->getSubMultiVector( local_rng, col_rng, &sub_multi_vecs[k] );
       sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
@@ -160,19 +160,19 @@ void MPIMultiVectorBase<Scalar>::applyOp(
     ,-1                                                                                // root_rank (perform an all-reduce)
     ,col_rng.size()                                                                    // num_cols
     ,num_multi_vecs                                                                    // num_multi_vecs
-    ,num_multi_vecs && overlap_first_local_ele ? &sub_multi_vecs[0] : NULL             // sub_multi_vecs
+    ,num_multi_vecs && overlap_first_local_ele_off>=0 ? &sub_multi_vecs[0] : NULL      // sub_multi_vecs
     ,num_targ_multi_vecs                                                               // num_targ_multi_vecs
-    ,num_targ_multi_vecs && overlap_first_local_ele ? &targ_sub_multi_vecs[0] : NULL   // targ_sub_multi_vecs
+    ,num_targ_multi_vecs && overlap_first_local_ele_off>=0 ? &targ_sub_multi_vecs[0] : NULL// targ_sub_multi_vecs
     ,reduct_objs                                                                       // reduct_objs
     );
   // Free and commit the local data
-  if( overlap_first_local_ele != 0 ) {
+  if( overlap_first_local_ele_off >= 0 ) {
     for(int k = 0; k < num_multi_vecs; ++k ) {
-      sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
       multi_vecs[k]->freeSubMultiVector( &sub_multi_vecs[k] );
     }
     for(int k = 0; k < num_targ_multi_vecs; ++k ) {
-      targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
       targ_multi_vecs[k]->commitSubMultiVector( &targ_sub_multi_vecs[k] );
     }
   }
@@ -189,9 +189,9 @@ void MPIMultiVectorBase<Scalar>::getSubMultiVector(
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
   const Range1D colRng = validateColRange(colRng_in);
-  if( rowRng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rowRng.ubound() ) {
+  if( rowRng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rowRng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    MultiVectorBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
+    MultiVectorDefaultBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
     return;
   }
   // rng consists of all local data so get it!
@@ -199,13 +199,13 @@ void MPIMultiVectorBase<Scalar>::getSubMultiVector(
   int leadingDim = 0;
   this->getLocalData(&localValues,&leadingDim);
   sub_mv->initialize(
-    rowRng.lbound()-1                             // globalOffset
+    rowRng.lbound()                               // globalOffset
     ,rowRng.size()                                // subDim
-    ,colRng.lbound()-1                            // colOffset
+    ,colRng.lbound()                              // colOffset
     ,colRng.size()                                // numSubCols
     ,localValues
-    +(rowRng.lbound()-localOffset_-1)
-    +(colRng.lbound()-1)*leadingDim               // values
+    +(rowRng.lbound()-localOffset_)
+    +colRng.lbound()*leadingDim                   // values
     ,leadingDim                                   // leadingDim
     );
 }
@@ -217,7 +217,7 @@ void MPIMultiVectorBase<Scalar>::freeSubMultiVector(
 {
   if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
     // Let the default implementation handle it!
-    MultiVectorBase<Scalar>::freeSubMultiVector(sub_mv);
+    MultiVectorDefaultBase<Scalar>::freeSubMultiVector(sub_mv);
     return;
   }
   freeLocalData( sub_mv->values() );
@@ -233,9 +233,9 @@ void MPIMultiVectorBase<Scalar>::getSubMultiVector(
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
   const Range1D colRng = validateColRange(colRng_in);
-  if( rowRng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rowRng.ubound() ) {
+  if( rowRng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rowRng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    MultiVectorBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
+    MultiVectorDefaultBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
     return;
   }
   // rng consists of all local data so get it!
@@ -243,13 +243,13 @@ void MPIMultiVectorBase<Scalar>::getSubMultiVector(
   int leadingDim = 0;
   this->getLocalData(&localValues,&leadingDim);
   sub_mv->initialize(
-    rowRng.lbound()-1                             // globalOffset
+    rowRng.lbound()                               // globalOffset
     ,rowRng.size()                                // subDim
-    ,colRng.lbound()-1                            // colOffset
+    ,colRng.lbound()                              // colOffset
     ,colRng.size()                                // numSubCols
     ,localValues
-    +(rowRng.lbound()-localOffset_-1)
-    +(colRng.lbound()-1)*leadingDim               // values
+    +(rowRng.lbound()-localOffset_)
+    +colRng.lbound()*leadingDim                   // values
     ,leadingDim                                   // leadingDim
     );
 }
@@ -261,7 +261,7 @@ void MPIMultiVectorBase<Scalar>::commitSubMultiVector(
 {
   if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
     // Let the default implementation handle it!
-    MultiVectorBase<Scalar>::commitSubMultiVector(sub_mv);
+    MultiVectorDefaultBase<Scalar>::commitSubMultiVector(sub_mv);
     return;
   }
   commitLocalData( sub_mv->values() );
@@ -351,19 +351,19 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
   ExplicitMutableMultiVectorView<Scalar>
     Y_local(
       *Y
-      ,real_trans(M_trans)==NOTRANS ? Range1D(localOffset_+1,localOffset_+localSubDim_) : Range1D()
+      ,real_trans(M_trans)==NOTRANS ? Range1D(localOffset_,localOffset_+localSubDim_-1) : Range1D()
       ,Range1D()
       );
   ExplicitMultiVectorView<Scalar>
     M_local(
       *this
-      ,Range1D(localOffset_+1,localOffset_+localSubDim_)
+      ,Range1D(localOffset_,localOffset_+localSubDim_-1)
       ,Range1D()
       );
   ExplicitMultiVectorView<Scalar>
     X_local(
       X
-      ,real_trans(M_trans)==NOTRANS ? Range1D() : Range1D(localOffset_+1,localOffset_+localSubDim_)
+      ,real_trans(M_trans)==NOTRANS ? Range1D() : Range1D(localOffset_,localOffset_+localSubDim_-1)
       ,Range1D()
       );
 #ifdef THYRA_MPI_MULTI_VECTOR_BASE_PRINT_TIMES
@@ -573,13 +573,13 @@ void MPIMultiVectorBase<Scalar>::updateMpiSpace()
 template<class Scalar>
 Range1D MPIMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in ) const
 {
-  const Range1D rowRng = Teuchos::full_range(rowRng_in,1,globalDim_);
+  const Range1D rowRng = Teuchos::full_range(rowRng_in,0,globalDim_-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    rowRng.lbound() < 1 || globalDim_ < rowRng.ubound(), std::invalid_argument
+    !( 0 <= rowRng.lbound() && rowRng.ubound() < globalDim_ ), std::invalid_argument
     ,"MPIMultiVectorBase<Scalar>::validateRowRange(rowRng): Error, the range rowRng = ["
     <<rowRng.lbound()<<","<<rowRng.ubound()<<"] is not "
-    "in the range [1,"<<globalDim_<<"]!"
+    "in the range [0,"<<(globalDim_-1)<<"]!"
     );
 #endif
   return rowRng;
@@ -588,13 +588,13 @@ Range1D MPIMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in )
 template<class Scalar>
 Range1D MPIMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in ) const
 {
-  const Range1D colRng = Teuchos::full_range(colRng_in,1,numCols_);
+  const Range1D colRng = Teuchos::full_range(colRng_in,0,numCols_-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    colRng.lbound() < 1 || numCols_ < colRng.ubound(), std::invalid_argument
+    !(0 <= colRng.lbound() && colRng.ubound() < numCols_), std::invalid_argument
     ,"MPIMultiVectorBase<Scalar>::validateColRange(colRng): Error, the range colRng = ["
     <<colRng.lbound()<<","<<colRng.ubound()<<"] is not "
-    "in the range [1,"<<numCols_<<"]!"
+    "in the range [0,"<<(numCols_-1)<<"]!"
     );
 #endif
   return colRng;

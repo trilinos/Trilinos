@@ -34,7 +34,8 @@
 
 namespace RTOpPack {
 
-/** \brief Linear combination transformation operator: <tt>z0[i] = beta*z0[i] + sum( alpha[k]*v[k][i], k=0...num_vecs-1 ), i=1...n</tt>.
+/** \brief Linear combination transformation operator: <tt>z0[i] = beta*z0[i]
+ * + sum( alpha[k]*v[k][i], k=0...num_vecs-1 ), i=0...n-1</tt>.
  *
  * This transformation operator only accepts <tt>num_targ_vec==1</tt>
  * but accepts any <tt>num_vecs > 0</tt>.
@@ -341,7 +342,7 @@ public:
     }
   //@}
 private:
-  Scalar               beta_;
+  Scalar                  beta_;
   std::vector<Scalar>  alpha_;
 }; // class TOpLinearCombination
 

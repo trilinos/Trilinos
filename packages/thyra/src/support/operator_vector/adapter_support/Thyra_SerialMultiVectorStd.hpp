@@ -64,7 +64,7 @@ public:
       for( int k = 0; k < numCols; ++k ) {
         const int col_k = cols_[k];
         const Scalar *lvv_k  = lvv + dim_*k;
-        Scalar       *lv_k   = lv + leadingDim_*(col_k-1);
+        Scalar       *lv_k   = lv + leadingDim_*col_k;
         //std::cout << "\nlvv_k = ["; for( int j = 0; j < dim_; ++j ) std::cout << lvv_k[j] << ","; std::cout << "]\n";
         std::copy( lvv_k, lvv_k + dim_, lv_k );
         //std::cout << "\nlv_k = ["; for( int j = 0; j < dim_; ++j ) std::cout << lv_k[j] << ","; std::cout << "]\n";
@@ -214,12 +214,12 @@ SerialMultiVectorStd<Scalar>::col(Index j)
 {
   using Teuchos::rcp;
 #ifdef _DEBUG
-  TEST_FOR_EXCEPT( j < 1 || numCols_ < j );
+  TEST_FOR_EXCEPT( !( 0 <= j && j < numCols_ ) );
 #endif
 #ifdef THYRA_SERIAL_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nSerialMultiVectorStd<Scalar>::col() called!\n";
 #endif
-  return rcp(new SerialVectorStd<Scalar>(rcp((&*values_)+(j-1)*leadingDim_,false),1,numRows_,range_));
+  return rcp(new SerialVectorStd<Scalar>(rcp((&*values_)+j*leadingDim_,false),1,numRows_,range_));
 }
 
 template<class Scalar>
@@ -234,7 +234,7 @@ SerialMultiVectorStd<Scalar>::subView( const Range1D& col_rng_in )
     new SerialMultiVectorStd<Scalar>(
       range_
       ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(range_->smallVecSpcFcty()->createVecSpc(colRng.size()),true)
-      ,Teuchos::rcp( (&*values_) + (colRng.lbound()-1)*leadingDim_, false )
+      ,Teuchos::rcp( (&*values_) + colRng.lbound()*leadingDim_, false )
       ,leadingDim_
       )
     );
@@ -350,7 +350,7 @@ SerialMultiVectorStd<Scalar>::createContiguousCopy( const int numCols, const int
       ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"
       );
 #endif
-    const Scalar *lv_k   = lv + leadingDim_*(col_k-1);
+    const Scalar *lv_k   = lv + leadingDim_*col_k;
     Scalar       *lvv_k  = lvv + dim*k;
     std::copy( lv_k, lv_k + dim, lvv_k );
   }

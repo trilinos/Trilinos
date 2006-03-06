@@ -99,7 +99,7 @@ public:
    * Postconditions:<ul>
    * <tt> <tt>this->range().get() == col_vec.space().get()</tt>
    * <tt> <tt>this->domain()->dim() == 1</tt>
-   * <li> <tt>this->col(1).get() == col_vec.get()</tt>
+   * <li> <tt>this->col(0).get() == col_vec.get()</tt>
    * </ul>
    */
   void initialize(
@@ -127,15 +127,15 @@ public:
    * <li> <tt>range->dim() > 0</tt> (throw <tt>std::invalid_argument</tt>)
    * <li> <tt>domain->dim() > 0</tt> (throw <tt>std::invalid_argument</tt>)
    * <li> [<tt>col_vecs != NULL</tt>]
-   *      <tt>col_vecs[j-1].get() != NULL && col_vecs[j-1]->space()->is_compatible(*range) == true</tt>,
-   *      for <tt>j=1..domain->dim()</tt>
+   *      <tt>col_vecs[j].get() != NULL && col_vecs[j]->space()->is_compatible(*range) == true</tt>,
+   *      for <tt>j=0..domain->dim()-1</tt>
    * </ul>
    *
    * Postconditions:<ul>
    * <tt> <tt>this->range().get() == range.get()</tt>
    * <tt> <tt>this->domain().get() == domain.get()</tt>
-   * <li> [<tt>col_vecs != NULL</tt>] <tt>this->col(j).get() == col_vecs[j-1].get()</tt>,
-   *      for <tt>j=1..domain->dim()</tt>
+   * <li> [<tt>col_vecs != NULL</tt>] <tt>this->col(j).get() == col_vecs[j].get()</tt>,
+   *      for <tt>j=0..domain->dim()-1</tt>
    * </ul>
    */
   void initialize(

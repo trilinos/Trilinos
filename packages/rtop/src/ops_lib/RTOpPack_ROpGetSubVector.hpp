@@ -36,7 +36,8 @@ namespace RTOpPack {
 /** \brief . */
 template<class Scalar> class ReductTargetSubVectorT;
 
-/** \brief Reduction operator that extracts a sub-vector in the range of global indexes [l,u].
+/** \brief Reduction operator that extracts a sub-vector in the range of
+ * global zero-based indexes [l,u].
  *
  * ToDo: Finish documentation!
  */
@@ -82,7 +83,7 @@ public:
     ,int                      num_values
     ,primitive_value_type     value_data[]
     ,int                      num_indexes
-    ,Teuchos_Index          index_data[]
+    ,Teuchos_Index            index_data[]
     ,int                      num_chars
     ,::RTOpPack::char_type           char_data[]
     ) const;
@@ -91,7 +92,7 @@ public:
     int                            num_values
     ,const primitive_value_type    value_data[]
     ,int                           num_indexes
-    ,const Teuchos_Index         index_data[]
+    ,const Teuchos_Index           index_data[]
     ,int                           num_chars
     ,const ::RTOpPack::char_type          char_data[]
     ,ReductTarget                  *reduct_obj
@@ -107,7 +108,7 @@ public:
     int                             num_values
     ,primitive_value_type           value_data[]
     ,int                            num_indexes
-    ,Teuchos_Index                index_data[]
+    ,Teuchos_Index                  index_data[]
     ,int                            num_chars
     ,::RTOpPack::char_type                 char_data[]
     ) const;
@@ -116,7 +117,7 @@ public:
     int                           num_values
     ,const primitive_value_type   value_data[]
     ,int                          num_indexes
-    ,const Teuchos_Index        index_data[]
+    ,const Teuchos_Index          index_data[]
     ,int                          num_chars
     ,const ::RTOpPack::char_type         char_data[]
     );
@@ -149,7 +150,7 @@ public:
       try {
         const int subDim = u-l+1;
         sub_vec.initialize(
-          l-1                  // global_offset
+          l                    // global_offset
           ,subDim              // subDim
           ,new Scalar[subDim]  // values
           ,1                   // stride
@@ -374,18 +375,18 @@ void ROpGetSubVector<Scalar>::apply_op(
   RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
   const index_type globalOffset = sub_vecs[0].globalOffset();
 
-  if( u_ < globalOffset + 1 || globalOffset + subDim < l_ )
-    return; // None of the sub-vector that we are looking for is not in this vector chunk!
+  if( u_ < globalOffset || globalOffset + subDim - 1 < l_ )
+    return; // None of the sub-vector elements that we are looking for is in this vector chunk!
   
   index_type
-    i_l = ( l_ <= ( globalOffset + 1 )       ? 1        : l_ - globalOffset  ),
-    i_u = ( u_ >= ( globalOffset + subDim )  ? subDim   : u_ - globalOffset  );
+    i_l = ( l_ <= globalOffset           ? 0          : l_ - globalOffset  ),
+    i_u = ( u_ >= globalOffset+subDim-1  ? subDim-1   : u_ - globalOffset  );
 
   SubVectorT<Scalar> &sub_vec_targ = dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
   Scalar *svt_values = const_cast<Scalar*>(sub_vec_targ.values());
 
   for( index_type i = i_l; i <= i_u; ++i )
-    svt_values[i-1+(globalOffset-(l_-1))] = v0_val[(i-1)*v0_s];
+    svt_values[i+(globalOffset-l_)] = v0_val[i*v0_s];
 
 }
 

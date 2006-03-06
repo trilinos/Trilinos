@@ -104,7 +104,7 @@ namespace Thyra {
  }
 
  //
- // Copy using possibly non-unit stride with one-based overloaded function operator()()
+ // Copy using possibly non-unit stride with zero-based overloaded function operator()()
  //
  template<class Scalar>
  void copyToArrayOneBasedOperator(
@@ -115,7 +115,7 @@ namespace Thyra {
  {
     Thyra::ExplicitVectorView<Scalar> v_ev(v,rng);       // Allow non-unit stride 
     for( int k = 0; k < rng.size(); ++k )                // For each element in view:
-      x[k] = v_ev(k+1);                                  //   Copy elements using operator()()
+      x[k] = v_ev(k);                                    //   Copy elements using operator()()
     // When this function returns then v_ev will be destroyed and the view will be freed
  }
 
@@ -142,12 +142,12 @@ public:
    *               [in] If <tt>true</tt> then the view will have unit stride.
    *
    * Preconditions:<ul>
-   * <li>[<tt>rng.full_range()==false</tt>] <tt>rng.ubound() <= v.space()->dim()</tt>
+   * <li>[<tt>rng.full_range()==false</tt>] <tt>rng.ubound() < v.space()->dim()</tt>
    * </ul>
    *
    * Postconditions:<ul>
    * <li><tt>this->sv()</tt> returns the created view
-   * <li><tt>this->globalOffset()==rng.lbound()-1</tt>
+   * <li><tt>this->globalOffset()==rng.lbound()</tt>
    * <li><tt>this->subDim()==rng.size()</tt>
    * <li><tt>this->values()</tt> returns a pointer to a <tt>Scalar</tt> array
    * <li><tt>this->stride()</tt> returns the stride between the elements pointed it in <tt>this->values()</tt>
@@ -186,12 +186,12 @@ public:
   const Scalar*     values()       const { return sv_.values();  }
   /// Return the stride between elements in the array returned from <tt>this->values()</tt>
   ptrdiff_t         stride()       const { return sv_.stride();  }
-  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i <= subDim()-1)</tt>
+  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   const Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
-  /// One-based indexing: Preconditions: <tt>values()!=NULL && (1 <= i <= subDim())</tt>
+  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   const Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
 private:
-  const VectorBase<Scalar>          &v_;
+  const VectorBase<Scalar>      &v_;
   RTOpPack::SubVectorT<Scalar>  sv_s_;
   RTOpPack::SubVectorT<Scalar>  sv_;
   // Not defined and not to be called
@@ -272,7 +272,7 @@ private:
  }
 
  //
- // Add-to using possibly non-unit stride with one-based overloaded function operator()()
+ // Add-to using possibly non-unit stride with zero-based overloaded function operator()()
  //
  template<class Scalar>
  void addToArrayOneBasedOperator(
@@ -283,7 +283,7 @@ private:
  {
     Thyra::ExplicitMutableVectorView<Scalar> v_ev(rng,*v); // Allow non-unit stride 
     for( int k = 0; k < rng.size(); ++k )                  // For each element in view:
-      v_ev(k+1) += x[k];                                   //   Add-to elements using operator()()
+      v_ev(k) += x[k];                                     //   Add-to elements using operator()()
     // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
  }
 
@@ -310,12 +310,12 @@ public:
    *               [in] If <tt>true</tt> then the view will have unit stride.
    *
    * Preconditions:<ul>
-   * <li>[<tt>rng.full_range()==false</tt>] <tt>rng.ubound() <= v.space()->dim()</tt>
+   * <li>[<tt>rng.full_range()==false</tt>] <tt>rng.ubound() < v.space()->dim()</tt>
    * </ul>
    *
    * Postconditions:<ul>
    * <li><tt>this->sv()</tt> returns the created view
-   * <li><tt>this->globalOffset()==rng.lbound()-1</tt>
+   * <li><tt>this->globalOffset()==rng.lbound()</tt>
    * <li><tt>this->subDim()==rng.size()</tt>
    * <li><tt>this->values()</tt> returns a pointer to a <tt>Scalar</tt> array
    * <li><tt>this->stride()</tt> returns the stride between the elements pointed it in <tt>this->values()</tt>
@@ -358,12 +358,12 @@ public:
   Scalar*           values()       const { return sv_.values();  }
   /// Return the stride between elements in the array returned from <tt>this->values()</tt>
   ptrdiff_t         stride()       const { return sv_.stride();  }
-  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i <= subDim()-1)</tt>
+  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
-  /// One-based indexing: Preconditions: <tt>values()!=NULL && (1 <= i <= subDim())</tt>
+  /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
 private:
-  VectorBase<Scalar>                       &v_;
+  VectorBase<Scalar>                   &v_;
   RTOpPack::MutableSubVectorT<Scalar>  sv_s_;
   RTOpPack::MutableSubVectorT<Scalar>  sv_;
   // Not defined and not to be called

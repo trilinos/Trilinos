@@ -143,6 +143,16 @@ public:
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all )
 
+  /** \brief Enable or disable all tests.
+   *
+   * Postconditions:<ul>
+   * <li><tt>this->check_linear_properties()==enable_all_tests</tt>
+   * <li><tt>this->check_adjoint()==enable_all_tests</tt>
+   * <li><tt>this->check_for_symmetry()==enable_all_tests</tt>
+   * </ul>
+   */
+  void enable_all_tests( const bool enable_all_tests );
+
   /** \brief Set all the warning tolerances to the same value.
    *
    * Postconditions:<ul>

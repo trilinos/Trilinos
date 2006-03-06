@@ -101,12 +101,12 @@ void MultiVectorCols<Scalar>::initialize(
   num_cols_ = domain->dim();
   col_vecs_.resize(num_cols_);
   if(col_vecs) {
-    for( Index j = 1; j <= num_cols_; ++j )
-      col_vecs_[j-1] = col_vecs[j-1];
+    for( Index j = 0; j < num_cols_; ++j )
+      col_vecs_[j] = col_vecs[j];
   }
   else {
-    for( Index j = 1; j <= num_cols_; ++j )
-      col_vecs_[j-1] = createMember(range_);
+    for( Index j = 0; j < num_cols_; ++j )
+      col_vecs_[j] = createMember(range_);
   }
 }
 
@@ -161,29 +161,29 @@ void MultiVectorCols<Scalar>::apply(
   // y += alpha*op(M)*x
   if(M_trans == NOTRANS) {
     //
-    // y += alpha*M*x = alpha*M.col(1)*x(1) + ... + alpha*M.col(nc)*x(nc)
+    // y += alpha*M*x = alpha*M.col(0)*x(0) + ... + alpha*M.col(nc-1)*x(nc-1)
     //
     // Extract an explicit view of x
     RTOpPack::SubVectorT<Scalar> x_sub_vec;               
     x.getSubVector(Range1D(),&x_sub_vec);
     // Loop through and add the multiple of each column
-    for(Index j = 1; j <= nc; ++j )
+    for(Index j = 0; j < nc; ++j )
       Vp_StV( y, Scalar(alpha*x_sub_vec(j)), *this->col(j) );
     // Release the view of x
     x.freeSubVector(&x_sub_vec);
   }
   else {
     //
-    //                   [ alpha*dot(M.col(1),x)  ]
-    // y += alpha*M'*x = [ alpha*dot(M.col(2),x)  ]
-    //                   [ ...                    ]
-    //                   [ alpha*dot(M.col(nc),x) ]
+    //                   [ alpha*dot(M.col(0),x)    ]
+    // y += alpha*M'*x = [ alpha*dot(M.col(1),x)    ]
+    //                   [ ...                      ]
+    //                   [ alpha*dot(M.col(nc-1),x) ]
     //
     // Extract an explicit view of y
     RTOpPack::MutableSubVectorT<Scalar> y_sub_vec;               
     y->getSubVector(Range1D(),&y_sub_vec);
     // Loop through and add to each element in y
-    for(Index j = 1; j <= nc; ++j )
+    for(Index j = 0; j < nc; ++j )
       y_sub_vec(j) += alpha*dot(*this->col(j),x);
     // Commit explicit view of y
     y->commitSubVector(&y_sub_vec);
@@ -197,30 +197,32 @@ Teuchos::RefCountPtr<VectorBase<Scalar> >
 MultiVectorCols<Scalar>::col(Index j)
 {
   TEST_FOR_EXCEPTION(
-    !(  1 <= j  && j <= num_cols_ ), std::logic_error
-    ,"Error, j = " << j << " does not fall in the range [1,"<<num_cols_<< "]!"
+    !(  0 <= j  && j < num_cols_ ), std::logic_error
+    ,"Error, j = " << j << " does not fall in the range [0,"<<(num_cols_-1)<< "]!"
     );
-  return col_vecs_[j-1];
+  return col_vecs_[j];
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
 MultiVectorCols<Scalar>::subView( const Range1D& col_rng_in )
 {
-  const Index cols = domain_->dim();
-  const Range1D col_rng = Teuchos::full_range(col_rng_in,1,cols);
+  const Index numCols = domain_->dim();
+  const Range1D col_rng = Teuchos::full_range(col_rng_in,0,numCols-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    !( col_rng.ubound() <= cols )
-    ,std::logic_error
+    !( col_rng.ubound() < numCols ), std::logic_error
     ,"MultiVectorCols<Scalar>::subView(col_rng): Error, the input range col_rng = ["<<col_rng.lbound()<<","<<col_rng.ubound()<<"] "
-    "is not in the range [1,"<<cols<<"]!"
+    "is not in the range [0,"<<(numCols-1)<<"]!"
     );
 #endif
   return Teuchos::rcp(
     new MultiVectorCols<Scalar>(
-      range_,domain_->smallVecSpcFcty()->createVecSpc(col_rng.size()),&col_vecs_[col_rng.lbound()-1]
-      ) );
+      range_
+      ,domain_->smallVecSpcFcty()->createVecSpc(col_rng.size())
+      ,&col_vecs_[col_rng.lbound()]
+      )
+    );
 }
   
 } // end namespace Thyra

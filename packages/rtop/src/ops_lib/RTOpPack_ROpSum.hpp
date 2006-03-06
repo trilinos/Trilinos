@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Summation reduction operator: <tt>result = sum( v0[i], i=1...n )</tt>.
+/** \brief Summation reduction operator: <tt>result = sum( v0[i], i=0...n-1 )</tt>.
  */
 template<class Scalar>
 class ROpSum : public ROpScalarReductionBase<Scalar> {

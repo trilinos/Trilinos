@@ -276,7 +276,7 @@ void RTOpPack::MPI_apply_op(
     for( off = 0, j = 0; j < num_cols; ++j ) {
       for( k = 0; k < num_multi_vecs; ++k ) {
         const SubMultiVectorT<Scalar> &mv = sub_multi_vecs[k];
-        c_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(1,j+1),1);
+        c_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(0,j),1);
       }
     }
   }
@@ -285,7 +285,7 @@ void RTOpPack::MPI_apply_op(
     for( off = 0, j = 0; j < num_cols; ++j ) {
       for( k = 0; k < num_targ_multi_vecs; ++k ) {
         const MutableSubMultiVectorT<Scalar> &mv = targ_sub_multi_vecs[k];
-        c_targ_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(1,j+1),1);
+        c_targ_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(0,j),1);
       }
     }
   }

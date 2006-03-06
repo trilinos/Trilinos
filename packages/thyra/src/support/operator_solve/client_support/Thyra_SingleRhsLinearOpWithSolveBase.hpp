@@ -54,7 +54,7 @@ void SingleRhsLinearOpWithSolveBase<Scalar>::solve(
   const Index num_mv_cols = space_mv_rows.dim();
   if(numBlocks) {
     // There is client-requested solve criteria so we need to keep track of this
-    Index j = 1;
+    Index j = 0;
     for( int block_i = 0; block_i < numBlocks; ++block_i ) {
       const BlockSolveCriteria<Scalar> &solveCriteria = blockSolveCriteria[block_i];
       SolveStatus<Scalar> overallSolveStatus;
@@ -71,7 +71,7 @@ void SingleRhsLinearOpWithSolveBase<Scalar>::solve(
   else {
     // There is not client-requested solve criteria so just solve the systems
     // with the default tolerenaces.
-    for( Index j = 1; j <= num_mv_cols; ++j )
+    for( Index j = 0; j < num_mv_cols; ++j )
       this->solve(M_trans,*B.col(j),&*X->col(j),NULL);
   }
 }

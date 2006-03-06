@@ -15,7 +15,7 @@ FLIBS="-lg2c" \
 --enable-export-makefiles \
 --with-gnumake \
 --disable-default-packages \
---enable-teuchos --enable-teuchos-extended --enable-teuchos-boost \
+--enable-teuchos --enable-teuchos-extended --enable-teuchos-abc --enable-teuchos-boost \
 --enable-thyra \
 --enable-epetra \
 --enable-epetraext \
@@ -24,7 +24,7 @@ FLIBS="-lg2c" \
 --enable-ifpack \
 --enable-anasazi \
 --enable-rythmos \
+--enable-capo \
 --enable-moocho --enable-moocho-ma28 \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.3/serial/debug
 
-#--enable-capo

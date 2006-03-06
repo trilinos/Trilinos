@@ -92,17 +92,17 @@ public:
       if(out) *out << "\nassign(&*z,"<<scalarMedium<<");\n";
       assign(&*z,Scalar(scalarMedium));
       if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(1,"<<scalarSmall<<",&*z);\n";
-      set_ele(1,scalarSmall,&*z);
+      if(out) *out << "\nset_ele(0,"<<scalarSmall<<",&*z);\n";
+      set_ele(0,scalarSmall,&*z);
       if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(2,"<<scalarLarge<<",&*z);\n";
-      set_ele(2,scalarLarge,&*z);
+      if(out) *out << "\nset_ele(1,"<<scalarLarge<<",&*z);\n";
+      set_ele(1,scalarLarge,&*z);
       if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(vecSpc.dim()-1,"<<scalarSmall<<",&*z);\n";
-      set_ele(vecSpc.dim()-1,scalarSmall,&*z);
+      if(out) *out << "\nset_ele(vecSpc.dim()-2,"<<scalarSmall<<",&*z);\n";
+      set_ele(vecSpc.dim()-2,scalarSmall,&*z);
       if(out && dumpAll) *out << "\nz =\n" << *z;
-      if(out) *out << "\nset_ele(vecSpc.dim(),"<<scalarLarge<<",&*z);\n";
-      set_ele(vecSpc.dim(),scalarLarge,&*z);
+      if(out) *out << "\nset_ele(vecSpc.dim()-1,"<<scalarLarge<<",&*z);\n";
+      set_ele(vecSpc.dim()-1,scalarLarge,&*z);
       if(out && dumpAll) *out << "\nz =\n" << *z;
 
       Scalar minEle; Index minIndex;
@@ -122,8 +122,8 @@ public:
            ,"error_tol",error_tol,"warning_tol",warning_tol,out
            )
         ) success=false;
-      result = minIndex == 1;
-      if(out) *out << "\nminIndex = " << minIndex << " == 1 ? " << passfail(result) << std::endl;
+      result = minIndex == 0;
+      if(out) *out << "\nminIndex = " << minIndex << " == 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
       if(out) *out << "\nminGreaterThanBound(*z,"<<scalarMedium<<",&minEle,&minIndex);\n";
@@ -134,8 +134,8 @@ public:
            ,"error_tol",error_tol,"warning_tol",warning_tol,out
            )
         ) success=false;
-      result = minIndex == 2;
-      if(out) *out << "\nminIndex = " << minIndex << " == 2 ? " << passfail(result) << std::endl;
+      result = minIndex == 1;
+      if(out) *out << "\nminIndex = " << minIndex << " == 1 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
       if(out) *out << "\nminGreaterThanBound(*z,"<<scalarLarge<<",&minEle,&minIndex);\n";
@@ -157,8 +157,8 @@ public:
            "maxEle",maxEle,"scalarLarge",scalarLarge
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
-      result = maxIndex == 2;
-      if(out) *out << "\nmaxIndex = " << maxIndex << " == 2 ? " << passfail(result) << std::endl;
+      result = maxIndex == 1;
+      if(out) *out << "\nmaxIndex = " << maxIndex << " == 1 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
       if(out) *out << "\nmaxLessThanBound(*z,"<<scalarMedium<<",&maxEle,&maxIndex);\n";
@@ -168,8 +168,8 @@ public:
            "maxEle",maxEle,"scalarSmall",scalarSmall
            ,"error_tol",error_tol,"warning_tol",warning_tol,out)
         ) success=false;
-      result = maxIndex == 1;
-      if(out) *out << "\nmaxIndex = " << maxIndex << " == 1 ? " << passfail(result) << std::endl;
+      result = maxIndex == 0;
+      if(out) *out << "\nmaxIndex = " << maxIndex << " == 0 ? " << passfail(result) << std::endl;
       if(!result) success = false;
 
       if(out) *out << "\nmaxLessThanBound(*z,"<<scalarSmall<<",&maxEle,&maxIndex);\n";

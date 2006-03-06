@@ -108,35 +108,35 @@ void MPIVectorBase<Scalar>::applyOp(
   const bool locallyReplicated = (localSubDim_ == globalDim_);
   // Get the overlap in the current process with the input logical sub-vector
   // from (first_ele_in,sub_dim_in,global_offset_in)
-  Teuchos_Index  overlap_first_local_ele  = 0;
-  Teuchos_Index  overalap_local_sub_dim   = 0;
-  Teuchos_Index  overlap_global_offset    = 0;
+  Teuchos_Index  overlap_first_local_ele_off  = 0;
+  Teuchos_Index  overalap_local_sub_dim       = 0;
+  Teuchos_Index  overlap_global_off           = 0;
   if(localSubDim_) {
     RTOp_parallel_calc_overlap(
       globalDim_, localSubDim_, localOffset_, first_ele_in, sub_dim_in, global_offset_in
-      ,&overlap_first_local_ele, &overalap_local_sub_dim, &overlap_global_offset
+      ,&overlap_first_local_ele_off, &overalap_local_sub_dim, &overlap_global_off
       );
   }
   const Range1D local_rng = (
-    overlap_first_local_ele!=0
-    ? Range1D( localOffset_ + overlap_first_local_ele, localOffset_ + overlap_first_local_ele + overalap_local_sub_dim - 1 )
+    overlap_first_local_ele_off>=0
+    ? Range1D( localOffset_ + overlap_first_local_ele_off, localOffset_ + overlap_first_local_ele_off + overalap_local_sub_dim - 1 )
     : Range1D::Invalid
     );
   // Create sub-vector views of all of the *participating* local data
   Workspace<RTOpPack::SubVectorT<Scalar> > sub_vecs(wss,num_vecs);
   Workspace<RTOpPack::MutableSubVectorT<Scalar> > sub_targ_vecs(wss,num_targ_vecs);
-  if( overlap_first_local_ele != 0 ) {
+  if( overlap_first_local_ele_off >= 0 ) {
     if(1){for(int k = 0; k < num_vecs; ++k ) {
       vecs[k]->getSubVector( local_rng, &sub_vecs[k] );
-      sub_vecs[k].setGlobalOffset( overlap_global_offset );
+      sub_vecs[k].setGlobalOffset( overlap_global_off );
     }}
     if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
       targ_vecs[k]->getSubVector( local_rng, &sub_targ_vecs[k] );
-      sub_targ_vecs[k].setGlobalOffset( overlap_global_offset );
+      sub_targ_vecs[k].setGlobalOffset( overlap_global_off );
     }}
   }
   // Apply the RTOp operator object (all processors must participate)
-  const bool validSubVecs = ( localSubDim_ > 0 && overlap_first_local_ele );
+  const bool validSubVecs = ( localSubDim_ > 0 && overlap_first_local_ele_off >= 0 );
   RTOpPack::MPI_apply_op(
     locallyReplicated ? MPI_COMM_NULL : mpiSpc.mpiComm()        // comm
     ,op                                                         // op
@@ -148,13 +148,13 @@ void MPIVectorBase<Scalar>::applyOp(
     ,reduct_obj                                                 // reduct_obj
     );
   // Free and commit the local data
-  if( overlap_first_local_ele != 0 ) {
+  if( overlap_first_local_ele_off >= 0 ) {
     if(1){for(int k = 0; k < num_vecs; ++k ) {
-      sub_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      sub_vecs[k].setGlobalOffset(local_rng.lbound());
       vecs[k]->freeSubVector( &sub_vecs[k] );
     }}
     if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
-      sub_targ_vecs[k].setGlobalOffset(local_rng.lbound()-1);
+      sub_targ_vecs[k].setGlobalOffset(local_rng.lbound());
       targ_vecs[k]->commitSubVector( &sub_targ_vecs[k] );
     }}
   }
@@ -168,7 +168,7 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVe
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
     sub_vec->initialize(
-      rng_in.lbound()-1  // globalOffset
+      rng_in.lbound()    // globalOffset
       ,0                 // subDim
       ,0                 // values
       ,1                 // stride
@@ -176,9 +176,9 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVe
     return;
   }
   const Range1D rng = validateRange(rng_in);
-  if( rng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rng.ubound() ) {
+  if( rng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    VectorBase<Scalar>::getSubVector(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::getSubVector(rng_in,sub_vec);
     return;
   }
   // rng consists of all local data so get it!
@@ -186,9 +186,9 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVe
   Index stride = 0;
   this->getLocalData(&localValues,&stride);
   sub_vec->initialize(
-    rng.lbound()-1                             // globalOffset
+    rng.lbound()                               // globalOffset
     ,rng.size()                                // subDim
-    ,localValues+(rng.lbound()-localOffset_-1) // values
+    ,localValues+(rng.lbound()-localOffset_)   // values
     ,stride                                    // stride
     );
 }
@@ -205,7 +205,7 @@ void MPIVectorBase<Scalar>::freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec
 #endif
   if( sub_vec->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim() ) {
     // Let the default implementation handle it!
-    VectorBase<Scalar>::freeSubVector(sub_vec);
+    VectorDefaultBase<Scalar>::freeSubVector(sub_vec);
     return;
   }
   // Nothing to deallocate!
@@ -218,7 +218,7 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::Mutab
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
     sub_vec->initialize(
-      rng_in.lbound()-1  // globalOffset
+      rng_in.lbound()    // globalOffset
       ,0                 // subDim
       ,0                 // values
       ,1                 // stride
@@ -226,9 +226,9 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::Mutab
     return;
   }
   const Range1D rng = validateRange(rng_in);
-  if( rng.lbound() < localOffset_+1 || localOffset_+localSubDim_ < rng.ubound() ) {
+  if( rng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    VectorBase<Scalar>::getSubVector(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::getSubVector(rng_in,sub_vec);
     return;
   }
   // rng consists of all local data so get it!
@@ -236,9 +236,9 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::Mutab
   Index stride = 0;
   this->getLocalData(&localValues,&stride);
   sub_vec->initialize(
-    rng.lbound()-1                             // globalOffset
+    rng.lbound()                               // globalOffset
     ,rng.size()                                // subDim
-    ,localValues+(rng.lbound()-localOffset_-1) // values
+    ,localValues+(rng.lbound()-localOffset_)   // values
     ,stride                                    // stride
     );
 }
@@ -255,7 +255,7 @@ void MPIVectorBase<Scalar>::commitSubVector( RTOpPack::MutableSubVectorT<Scalar>
 #endif
   if( sub_vec->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim() ) {
     // Let the default implementation handle it!
-    VectorBase<Scalar>::commitSubVector(sub_vec);
+    VectorDefaultBase<Scalar>::commitSubVector(sub_vec);
     return;
   }
   sub_vec->set_uninitialized();  // Nothing to deallocate!
@@ -286,13 +286,13 @@ void MPIVectorBase<Scalar>::updateMpiSpace()
 template<class Scalar>
 Range1D MPIVectorBase<Scalar>::validateRange( const Range1D &rng_in ) const
 {
-  const Range1D rng = Teuchos::full_range(rng_in,1,globalDim_);
+  const Range1D rng = Teuchos::full_range(rng_in,0,globalDim_-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    rng.lbound() < 1 || globalDim_ < rng.ubound(), std::invalid_argument
+    !(0 <= rng.lbound() && rng.ubound() < globalDim_), std::invalid_argument
     ,"MPIVectorBase<Scalar>::validateRange(...): Error, the range ["
     <<rng.lbound()<<","<<rng.ubound()<<"] is not "
-    "in the range [1,"<<globalDim_<<"]!"
+    "in the range [0,"<<(globalDim_-1)<<"]!"
     );
 #endif
   return rng;

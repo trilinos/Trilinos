@@ -59,13 +59,13 @@ void EpetraModelEvaluator::initialize(
   //
   EpetraExt::ModelEvaluator::InArgs inArgs = epetraModel_->createInArgs();
   p_map_.resize(inArgs.Np()); p_space_.resize(inArgs.Np());
-  for( int l = 1; l <= static_cast<int>(p_space_.size()); ++l )
-    p_space_[l-1] = create_MPIVectorSpaceBase( p_map_[l-1] = epetraModel_->get_p_map(l) );
+  for( int l = 0; l < static_cast<int>(p_space_.size()); ++l )
+    p_space_[l] = create_MPIVectorSpaceBase( p_map_[l] = epetraModel_->get_p_map(l) );
   //
   EpetraExt::ModelEvaluator::OutArgs outArgs = epetraModel_->createOutArgs();
   g_map_.resize(outArgs.Ng()); g_space_.resize(outArgs.Ng());
-  for( int j = 1; j <= static_cast<int>(g_space_.size()); ++j )
-    g_space_[j-1] = create_MPIVectorSpaceBase( g_map_[j-1] = epetraModel_->get_g_map(j) );
+  for( int j = 0; j < static_cast<int>(g_space_.size()); ++j )
+    g_space_[j] = create_MPIVectorSpaceBase( g_map_[j] = epetraModel_->get_g_map(j) );
 }
 
 Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> EpetraModelEvaluator::getEpetraModel() const
@@ -111,15 +111,15 @@ EpetraModelEvaluator::get_f_space() const
 Teuchos::RefCountPtr<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_p_space(int l) const
 {
-  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
-  return p_space_[l-1];
+  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
+  return p_space_[l];
 }
 
 Teuchos::RefCountPtr<const VectorSpaceBase<double> >
 EpetraModelEvaluator::get_g_space(int j) const
 {
-  TEST_FOR_EXCEPT( ! ( 1 <= j && j <= this->Ng() ) );
-  return g_space_[j-1];
+  TEST_FOR_EXCEPT( ! ( 0 <= j && j < this->Ng() ) );
+  return g_space_[j];
 }
 
 Teuchos::RefCountPtr<const VectorBase<double> >
@@ -131,8 +131,8 @@ EpetraModelEvaluator::get_x_init() const
 Teuchos::RefCountPtr<const VectorBase<double> >
 EpetraModelEvaluator::get_p_init(int l) const
 {
-  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
-  return create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l-1] );
+  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
+  return create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l] );
 }
 
 double EpetraModelEvaluator::get_t_init() const
@@ -155,15 +155,15 @@ EpetraModelEvaluator::get_x_upper_bounds() const
 Teuchos::RefCountPtr<const VectorBase<double> >
 EpetraModelEvaluator::get_p_lower_bounds(int l) const
 {
-  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
-  return create_MPIVectorBase( epetraModel_->get_p_lower_bounds(l), p_space_[l-1] );
+  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
+  return create_MPIVectorBase( epetraModel_->get_p_lower_bounds(l), p_space_[l] );
 }
 
 Teuchos::RefCountPtr<const VectorBase<double> >
 EpetraModelEvaluator::get_p_upper_bounds(int l) const
 {
-  TEST_FOR_EXCEPT( ! ( 1 <= l && l <= this->Np() ) );
-  return create_MPIVectorBase( epetraModel_->get_p_upper_bounds(l), p_space_[l-1] );
+  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
+  return create_MPIVectorBase( epetraModel_->get_p_upper_bounds(l), p_space_[l] );
 }
 
 double EpetraModelEvaluator::get_t_lower_bound() const
@@ -200,11 +200,11 @@ EpetraModelEvaluator::create_DfDp_mv(int l, EDerivativeMultiVectorOrientation or
   return DerivativeMultiVector<double>(
     orientation == DERIV_MV_BY_COL
     ?create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*f_map_,p_map_[l-1]->NumGlobalElements()))
-      ,f_space_,p_space_[l-1] )
+      Teuchos::rcp(new Epetra_MultiVector(*f_map_,p_map_[l]->NumGlobalElements()))
+      ,f_space_,p_space_[l] )
     :create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l-1],f_map_->NumGlobalElements()))
-      ,p_space_[l-1],f_space_ )
+      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l],f_map_->NumGlobalElements()))
+      ,p_space_[l],f_space_ )
     ,orientation
     );
 }
@@ -222,11 +222,11 @@ EpetraModelEvaluator::create_DgDx_mv(int j, EDerivativeMultiVectorOrientation or
   return DerivativeMultiVector<double>(
     orientation == DERIV_MV_BY_COL
     ?create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j-1],x_map_->NumGlobalElements()))
-      ,g_space_[j-1],x_space_ )
+      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j],x_map_->NumGlobalElements()))
+      ,g_space_[j],x_space_ )
     :create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*x_map_,g_map_[j-1]->NumGlobalElements()))
-      ,x_space_,g_space_[j-1] )
+      Teuchos::rcp(new Epetra_MultiVector(*x_map_,g_map_[j]->NumGlobalElements()))
+      ,x_space_,g_space_[j] )
     ,orientation
     );
 }
@@ -244,11 +244,11 @@ EpetraModelEvaluator::create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrient
   return DerivativeMultiVector<double>(
     orientation == DERIV_MV_BY_COL
     ?create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j-1],p_map_[l-1]->NumGlobalElements()))
-      ,g_space_[j-1],p_space_[l-1] )
+      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j],p_map_[l]->NumGlobalElements()))
+      ,g_space_[j],p_space_[l] )
     :create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l-1],g_map_[j-1]->NumGlobalElements()))
-      ,p_space_[l-1],g_space_[j-1] )
+      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l],g_map_[j]->NumGlobalElements()))
+      ,p_space_[l],g_space_[j] )
     ,orientation
     );
 }
@@ -285,15 +285,15 @@ EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() cons
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W));
   outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
-  for(int l=1; l<=Np; ++l) {
+  for(int l=0; l<Np; ++l) {
     outArgs.setSupports(OUT_ARG_DfDp,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp,l)));
     outArgs.set_DfDp_properties(l,convert(epetraOutArgs.get_DfDp_properties(l)));
   }
-  for(int j=1; j<=Ng; ++j) {
+  for(int j=0; j<Ng; ++j) {
     outArgs.setSupports(OUT_ARG_DgDx,j,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx,j)));
     outArgs.set_DgDx_properties(j,convert(epetraOutArgs.get_DgDx_properties(j)));
   }
-  for(int j=1; j<=Ng; ++j) for(int l=1; l<=Np; ++l) {
+  for(int j=0; j<Ng; ++j) for(int l=0; l<Np; ++l) {
     outArgs.setSupports(OUT_ARG_DgDp,j,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l)));
     outArgs.set_DgDp_properties(j,l,convert(epetraOutArgs.get_DgDp_properties(j,l)));
   }
@@ -323,9 +323,9 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 
   if(1) {
     RefCountPtr<const VectorBase<double> > p_l;
-    for(int l = 1;  l <= outArgs.Np(); ++l ) {
+    for(int l = 0;  l < outArgs.Np(); ++l ) {
       p_l = inArgs.get_p(l);
-      if(p_l.get()) epetraInArgs.set_p(l,get_Epetra_Vector(*p_map_[l-1],p_l));
+      if(p_l.get()) epetraInArgs.set_p(l,get_Epetra_Vector(*p_map_[l],p_l));
     }
   }
 
@@ -375,9 +375,9 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 
   if(1){
     Teuchos::RefCountPtr<VectorBase<double> > g_j;
-    for(int j = 1;  j <= outArgs.Ng(); ++j ) {
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
       g_j = outArgs.get_g(j);
-      if(g_j.get()) epetraOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j-1],g_j));
+      if(g_j.get()) epetraOutArgs.set_g(j,get_Epetra_Vector(*g_map_[j],g_j));
     }
   }
   
@@ -397,26 +397,26 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 
   if(1){
     Derivative<double> DfDp_l;
-    for(int l = 1;  l <= outArgs.Np(); ++l ) {
+    for(int l = 0;  l < outArgs.Np(); ++l ) {
       if( !outArgs.supports(OUT_ARG_DfDp,l).none() && !(DfDp_l = outArgs.get_DfDp(l)).isEmpty() )
-        epetraOutArgs.set_DfDp(l,convert(DfDp_l,f_map_,p_map_[l-1]));
+        epetraOutArgs.set_DfDp(l,convert(DfDp_l,f_map_,p_map_[l]));
     }
   }
 
   if(1){
     Derivative<double> DgDx_j;
-    for(int j = 1;  j <= outArgs.Ng(); ++j ) {
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
       if( !outArgs.supports(OUT_ARG_DgDx,j).none() && !(DgDx_j = outArgs.get_DgDx(j)).isEmpty() )
-        epetraOutArgs.set_DgDx(j,convert(DgDx_j,g_map_[j-1],x_map_));
+        epetraOutArgs.set_DgDx(j,convert(DgDx_j,g_map_[j],x_map_));
     }
   }
 
   if(1){
     Derivative<double> DgDp_j_l;
-    for(int j = 1;  j <= outArgs.Ng(); ++j ) {
-      for(int l = 1;  l <= outArgs.Np(); ++l ) {
+    for(int j = 0;  j < outArgs.Ng(); ++j ) {
+      for(int l = 0;  l < outArgs.Np(); ++l ) {
         if( !outArgs.supports(OUT_ARG_DgDp,j,l).none() && !(DgDp_j_l = outArgs.get_DgDp(j,l)).isEmpty() )
-          epetraOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j-1],p_map_[l-1]));
+          epetraOutArgs.set_DgDp(j,l,convert(DgDp_j_l,g_map_[j],p_map_[l]));
       }
     }
   }

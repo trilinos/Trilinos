@@ -313,11 +313,11 @@ public:
     int Ng() const;
     /** \brief .  */
     bool supports(EOutArgsMembers arg) const;
-    /** \brief <tt>1 <= l && l <= Np()</tt>.  */
+    /** \brief <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDfDp arg, int l) const;
-    /** \brief <tt>1 <= j && j <= Ng()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx arg, int j) const;
-    /** \brief <tt>1 <= j && j <= Ng()</tt> and <tt>1 <= l && l <= Np()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
     /** \brief .  */
     void set_f( const Teuchos::RefCountPtr<VectorBase<Scalar> > &f );
@@ -506,7 +506,7 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  *
  * <tt>(x_dot,x,{p(l)},t}) -> g(j)</tt>,
  *
- * for <tt>j=1...Ng</tt>
+ * for <tt>j=0...Ng-1</tt>
  *
  * </ul>
  *
@@ -526,7 +526,7 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  *
  * <tt>p(l)</tt>,
  *
- * for <tt>l=1...Np</tt>
+ * for <tt>l=0...Np-1</tt>
  *
  * <li>Time point (or some other independent variable):
  *
@@ -535,7 +535,7 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  * </ul>
  *
  * Above, the notation <tt>{p(l)}</tt> is shorthand for the set of parameter
- * vectors <tt>{ p(1), p(2), ..., p(Np) }</tt>.
+ * vectors <tt>{ p(0), p(1), ..., p(Np-1) }</tt>.
  *
  * All of the above variables/parameters and functions are represented as
  * abstract <tt>Thyra::VectorBase</tt> objects.  The vector spaces associated
@@ -615,7 +615,7 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
 
  * where the objective function <tt>g(x,{p(l)})</tt> is some aggregated
  * function built from some subset of the the auxiliary response functions
- * <tt>g(j)(x,{p(l)})</tt>, for <tt>j=1...Ng</tt>.
+ * <tt>g(j)(x,{p(l)})</tt>, for <tt>j=0...Ng-1</tt>.
  *
  * \subsection Thyra_ME_general_constrained_optimization_sec Equality constrained optimization
  
@@ -635,7 +635,7 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  * equality <tt>r(x,{p(l)})</tt> and inequality <tt>h(x,{p(l)})</tt>
  * constraint functions are aggregated functions built from some subset of the
  * the auxiliary response functions <tt>g(j)(x,{p(l)})</tt>, for
- * <tt>j=1...Ng</tt>.  The auxiliary response functions for a particualar
+ * <tt>j=0...Ng-1</tt>.  The auxiliary response functions for a particualar
  * model can be interpreted in a wide variety of ways and can be mapped into a
  * number of different optimization problems.
  *
@@ -704,7 +704,7 @@ std::string toString(ModelEvaluatorBase::EOutArgsMembers);
  *     
  *     <li><b>Auxiliary parameter derivatives</b>
  *
- *     <tt>DfDp(l) = D(f)/D(p(l))</tt>, for <tt>l=1...Np</tt>
+ *     <tt>DfDp(l) = D(f)/D(p(l))</tt>, for <tt>l=0...Np-1</tt>
  *
  *     These are derivative objects that represent the derivative of the state
  *     function <tt>f</tt> with respect to the auxiliary parameters
@@ -774,7 +774,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * <li><tt>0 <= l < this->Np()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -791,7 +791,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Ng() > 0</tt>
-	 * <li><tt>1 <= j <= this->Ng()</tt>
+	 * <li><tt>0 <= j < this->Ng()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -820,7 +820,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= l && l <= this->Np()</tt>
+	 * <li><tt>0 <= l && l < this->Np()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -863,7 +863,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * <li><tt>0 <= l < this->Np()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -876,7 +876,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * <li><tt>0 <= l < this->Np()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
@@ -915,7 +915,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * <li><tt>0 <= l < this->Np()</tt>
    * <li><tt>outArgs.supports_DfDp(l).supports(DERIV_LINEAR_OP)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
 	 * </ul>
@@ -930,7 +930,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * <li><tt>0 <= l < this->Np()</tt>
    * <li><tt>outArgs.supports_DfDp(l).supports(orientation)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
 	 * </ul>
@@ -947,7 +947,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Ng() > 0</tt>
-	 * <li><tt>1 <= j <= this->Ng()</tt>
+	 * <li><tt>0 <= j < this->Ng()</tt>
    * <li><tt>outArgs.supports_DgDx(j).supports(DERIV_LINEAR_OP)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
 	 * </ul>
@@ -962,7 +962,7 @@ public:
 	 *
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Ng() > 0</tt>
-	 * <li><tt>1 <= j <= this->Ng()</tt>
+	 * <li><tt>0 <= j < this->Ng()</tt>
    * <li><tt>outArgs.supports_DgDx(j).supports(orientation)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
 	 * </ul>
@@ -978,8 +978,8 @@ public:
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Ng() > 0</tt>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= j <= this->Ng()</tt>
-	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * <li><tt>0 <= j < this->Ng()</tt>
+	 * <li><tt>0 <= l < this->Np()</tt>
    * <li><tt>outArgs.supports_DgDp(j,l).supports(DERIV_LINEAR_OP)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
 	 * </ul>
@@ -995,8 +995,8 @@ public:
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->Ng() > 0</tt>
 	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>1 <= j <= this->Ng()</tt>
-	 * <li><tt>1 <= l <= this->Np()</tt>
+	 * <li><tt>0 <= j < this->Ng()</tt>
+	 * <li><tt>0 <= l < this->Np()</tt>
    * <li><tt>outArgs.supports_DgDp(j,l).supports(orientation)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
 	 * </ul>
@@ -1341,12 +1341,12 @@ ModelEvaluatorBase::InArgs<Scalar>::get_x_poly() const
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_p( int l, const Teuchos::RefCountPtr<const VectorBase<Scalar> > &p_l )
-{ assert_l(l); p_[l-1] = p_l; }
+{ assert_l(l); p_[l] = p_l; }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 ModelEvaluatorBase::InArgs<Scalar>::get_p(int l) const
-{ assert_l(l); return p_[l-1]; }
+{ assert_l(l); return p_[l]; }
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_t( ScalarMag t )
@@ -1417,10 +1417,10 @@ template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
-    !( 1 <= l && l <= Np() ), std::logic_error
+    !( 0 <= l && l < Np() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::InArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
     " model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The parameter l = " << l << " is not in the range [1,"<<Np()<<"]!"
+    "The parameter l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
     );
 }
 
@@ -1455,7 +1455,7 @@ const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDfDp arg, int l) const
 {
   assert_l(l);
-  return supports_DfDp_[l-1];
+  return supports_DfDp_[l];
 }
 
 template<class Scalar>
@@ -1463,7 +1463,7 @@ const ModelEvaluatorBase::DerivativeSupport&
 ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDx arg, int j) const
 {
   assert_j(j);
-  return supports_DgDx_[j-1];
+  return supports_DgDx_[j];
 }
 
 template<class Scalar>
@@ -1472,7 +1472,7 @@ ModelEvaluatorBase::OutArgs<Scalar>::supports(EOutArgsDgDp arg, int j, int l) co
 {
   assert_j(j);
   assert_l(l);
-  return supports_DgDp_[ (j-1)*Np() + (l-1) ];
+  return supports_DgDp_[ j*Np() + l ];
 }
 
 template<class Scalar>
@@ -1494,7 +1494,7 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_g( int j, const Teuchos::RefCountPtr<VectorBase<Scalar> > &g_j )
 {
   assert_j(j);
-  g_[j-1] = g_j;
+  g_[j] = g_j;
 }
 
 template<class Scalar>
@@ -1502,7 +1502,7 @@ Teuchos::RefCountPtr<VectorBase<Scalar> >
 ModelEvaluatorBase::OutArgs<Scalar>::get_g(int j) const
 { 
   assert_j(j);
-  return g_[j-1];
+  return g_[j];
 }
 
 template<class Scalar>
@@ -1531,7 +1531,7 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_DfDp( int l, const Derivative<Scalar> &DfDp_l )
 {
   assert_supports(OUT_ARG_DfDp,l);
-  DfDp_[l-1] = DfDp_l;
+  DfDp_[l] = DfDp_l;
 }
 
 template<class Scalar>
@@ -1539,7 +1539,7 @@ ModelEvaluatorBase::Derivative<Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::get_DfDp(int l) const
 {
   assert_supports(OUT_ARG_DfDp,l);
-  return DfDp_[l-1];
+  return DfDp_[l];
 }
 
 template<class Scalar>
@@ -1547,14 +1547,14 @@ ModelEvaluatorBase::DerivativeProperties
 ModelEvaluatorBase::OutArgs<Scalar>::get_DfDp_properties(int l) const
 {
   assert_supports(OUT_ARG_DfDp,l);
-  return DfDp_properties_[l-1];
+  return DfDp_properties_[l];
 }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDx( int j, const Derivative<Scalar> &DgDx_j )
 {
   assert_supports(OUT_ARG_DgDx,j);
-  DgDx_[j-1] = DgDx_j;
+  DgDx_[j] = DgDx_j;
 }
 
 template<class Scalar>
@@ -1562,7 +1562,7 @@ ModelEvaluatorBase::Derivative<Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::get_DgDx(int j) const
 {
   assert_supports(OUT_ARG_DgDx,j);
-  return DgDx_[j-1];
+  return DgDx_[j];
 }
 
 template<class Scalar>
@@ -1570,14 +1570,14 @@ ModelEvaluatorBase::DerivativeProperties
 ModelEvaluatorBase::OutArgs<Scalar>::get_DgDx_properties(int j) const
 {
   assert_supports(OUT_ARG_DgDx,j);
-  return DgDx_properties_[j-1];
+  return DgDx_properties_[j];
 }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_DgDp( int j, int l, const Derivative<Scalar> &DgDp_j_l )
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  DgDp_[ (j-1)*Np() + (l-1) ] = DgDp_j_l;
+  DgDp_[ j*Np() + l ] = DgDp_j_l;
 }
 
 template<class Scalar>
@@ -1585,7 +1585,7 @@ ModelEvaluatorBase::Derivative<Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  return DgDp_[ (j-1)*Np() + (l-1) ];
+  return DgDp_[ j*Np() + l ];
 }
 
 template<class Scalar>
@@ -1593,7 +1593,7 @@ ModelEvaluatorBase::DerivativeProperties
 ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_properties(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  return DgDp_properties_[ (j-1)*Np() + (l-1) ];
+  return DgDp_properties_[ j*Np() + l ];
 }
 
 template<class Scalar>
@@ -1647,14 +1647,14 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& supports )
 {
   assert_l(l);
-  supports_DfDp_[l-1] = supports;
+  supports_DfDp_[l] = supports;
 }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& supports )
 {
   assert_j(j);
-  supports_DgDx_[j-1] = supports;
+  supports_DgDx_[j] = supports;
 }
 
 template<class Scalar>
@@ -1662,7 +1662,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( EOutArgsDgDp arg, int j,
 {
   assert_j(j);
   assert_l(l);
-  supports_DgDp_[ (j-1)*Np() + (l-1) ] = supports;
+  supports_DgDp_[ j*Np()+ l ] = supports;
 }
 
 template<class Scalar>
@@ -1675,21 +1675,21 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_set_DfDp_properties( int l, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DfDp,l);
-  DfDp_properties_[l-1] = properties;
+  DfDp_properties_[l] = properties;
 }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDx_properties( int j, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DgDx,j);
-  DgDx_properties_[j-1] = properties;
+  DgDx_properties_[j] = properties;
 }
 
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  DgDp_properties_[ (j-1)*Np() + (l-1) ] = properties;
+  DgDp_properties_[ j*Np()+ l ] = properties;
 }
 
 // private
@@ -1710,7 +1710,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDfDp arg, int 
 {
   assert_l(l);
   TEST_FOR_EXCEPTION(
-    supports_DfDp_[l-1].none(), std::logic_error
+    supports_DfDp_[l].none(), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DfDp,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DfDp(l) with index l = " << l << " is not supported!"
@@ -1722,7 +1722,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDgDx arg, int 
 {
   assert_j(j);
   TEST_FOR_EXCEPTION(
-    supports_DgDx_[j-1].none(), std::logic_error
+    supports_DgDx_[j].none(), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DgDx,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx(j) with index j = " << j << " is not supported!"
@@ -1734,7 +1734,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::assert_supports(EOutArgsDgDp arg, int 
 {
   assert_j(j);
   TEST_FOR_EXCEPTION(
-    supports_DgDx_[ (j-1)*Np() + (l-1) ].none(), std::logic_error
+    supports_DgDx_[ j*Np()+ l ].none(), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_supports(OUT_ARG_DgDp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
@@ -1745,10 +1745,10 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
-    !( 1 <= l && l <= Np() ), std::logic_error
+    !( 0 <= l && l < Np() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_l(l): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The parameter subvector p(l) index l = " << l << " is not in the range [1,"<<Np()<<"]!"
+    "The parameter subvector p(l) index l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
     );
 }
 
@@ -1756,10 +1756,10 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::assert_j(int j) const
 {
   TEST_FOR_EXCEPTION(
-    !( 1 <= j && j <= Ng() ), std::logic_error
+    !( 0 <= j && j < Ng() ), std::logic_error
     ,"Thyra::ModelEvaluatorBase::OutArgs<" << Teuchos::ScalarTraits<Scalar>::name() <<">::assert_j(j): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The auxiliary function g(j) index j = " << j << " is not in the range [1,"<<Ng()<<"]!"
+    "The auxiliary function g(j) index j = " << j << " is not in the range [0,"<<Ng()-1<<"]!"
     );
 }
 

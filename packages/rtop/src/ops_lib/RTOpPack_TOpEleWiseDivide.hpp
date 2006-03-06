@@ -33,7 +33,8 @@
 
 namespace RTOpPack {
 
-/** \brief Element-wise division transformation operator: <tt>z0[i] += alpha*v0[i]/v1[i], i=1...n</tt>.
+/** \brief Element-wise division transformation operator: <tt>z0[i] +=
+ * alpha*v0[i]/v1[i], i=0...n-1</tt>.
  */
 template<class Scalar>
 class TOpEleWiseDivide : public ROpScalarTransformationBase<Scalar> {

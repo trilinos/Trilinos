@@ -185,6 +185,14 @@ LinearOpTester<RangeScalar,DomainScalar>::LinearOpTester(
 {}
 
 template<class RangeScalar, class DomainScalar>
+void LinearOpTester<RangeScalar,DomainScalar>::enable_all_tests( const bool enable_all_tests )
+{
+  check_linear_properties_ = enable_all_tests;
+  check_adjoint_           = enable_all_tests;
+  check_for_symmetry_      = enable_all_tests;
+}
+
+template<class RangeScalar, class DomainScalar>
 void LinearOpTester<RangeScalar,DomainScalar>::set_all_warning_tol( const ScalarMag warning_tol )
 {
   linear_properties_warning_tol_  = warning_tol;

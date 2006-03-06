@@ -51,7 +51,7 @@ void apply_op_validate_input(
   ,const int                      num_targ_vecs
   ,VectorBase<Scalar>*            targ_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    first_ele
+  ,const Index                    first_ele_offset
   ,const Index                    sub_dim
   ,const Index                    global_offset
   );
@@ -74,10 +74,10 @@ void apply_op_validate_input(
   ,const int                      num_targ_multi_vecs
   ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
   ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    primary_first_ele
+  ,const Index                    primary_first_ele_offset
   ,const Index                    primary_sub_dim
   ,const Index                    primary_global_offset
-  ,const Index                    secondary_first_ele
+  ,const Index                    secondary_first_ele_offset
   ,const Index                    secondary_sub_dim
   );
 
@@ -100,7 +100,7 @@ void apply_op_serial(
   ,const int                     num_targ_vecs
   ,VectorBase<Scalar>*           targ_vecs[]
   ,RTOpPack::ReductTarget        *reduct_obj
-  ,const Index                   first_ele
+  ,const Index                   first_ele_offset
   ,const Index                   sub_dim
   ,const Index                   global_offset
   );
@@ -125,10 +125,10 @@ void apply_op_serial(
   ,const int                      num_targ_multi_vecs
   ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
   ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    primary_first_ele
+  ,const Index                    primary_first_ele_offset
   ,const Index                    primary_sub_dim
   ,const Index                    primary_global_offset
-  ,const Index                    secondary_first_ele
+  ,const Index                    secondary_first_ele_offset
   ,const Index                    secondary_sub_dim
   );
 

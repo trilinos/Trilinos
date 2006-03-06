@@ -90,6 +90,8 @@ bool runCgSolveExample(
   // (A.2) Testing the linear operator constructed linear operator
   if(verbose) std::cout << "\nTesting the constructed linear operator A ...\n";
   Thyra::LinearOpTester<Scalar> linearOpTester;
+  linearOpTester.enable_all_tests(false);            // DEBUG ONLY
+  linearOpTester.check_linear_properties(true);      // DEBUG ONLY
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(ScalarMag(ScalarMag(1e-2)*tolerance));
   linearOpTester.show_all_tests(showAllTests);

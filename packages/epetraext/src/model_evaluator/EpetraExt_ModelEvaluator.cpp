@@ -117,9 +117,9 @@ void ModelEvaluator::InArgs::assert_supports(EInArgsMembers arg) const
 void ModelEvaluator::InArgs::assert_l(int l) const
 {
   TEST_FOR_EXCEPTION(
-    !( 1 <= l && l <= Np() ), std::logic_error
+    !( 0 <= l && l < Np() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::InArgs::assert_l(l): model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The parameter l = " << l << " is not in the range [1,"<<Np()<<"]!"
+    "The parameter l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
     );
 }
 
@@ -145,14 +145,14 @@ const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDfDp arg, int l) const
 {
   assert_l(l);
-  return supports_DfDp_[l-1];
+  return supports_DfDp_[l];
 }
 
 const ModelEvaluator::DerivativeSupport&
 ModelEvaluator::OutArgs::supports(EOutArgsDgDx arg, int j) const
 {
   assert_j(j);
-  return supports_DgDx_[j-1];
+  return supports_DgDx_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
@@ -160,7 +160,7 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDp arg, int j, int l) const
 {
   assert_j(j);
   assert_l(l);
-  return supports_DgDp_[ (j-1)*Np() + (l-1) ];
+  return supports_DgDp_[ j*Np() + l ];
 }
 
 void ModelEvaluator::OutArgs::_setModelEvalDescription( const std::string &modelEvalDescription )
@@ -201,20 +201,20 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& supports )
 {
   assert_l(l);
-  supports_DfDp_[l-1] = supports;
+  supports_DfDp_[l] = supports;
 }
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& supports )
 {
   assert_j(j);
-  supports_DgDx_[j-1] = supports;
+  supports_DgDx_[j] = supports;
 }
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports )
 {
   assert_j(j);
   assert_l(l);
-  supports_DgDp_[ (j-1)*Np() + (l-1) ] = supports;
+  supports_DgDp_[ j*Np() + l ] = supports;
 }
 
 void ModelEvaluator::OutArgs::_set_W_properties( const DerivativeProperties &W_properties )
@@ -225,19 +225,19 @@ void ModelEvaluator::OutArgs::_set_W_properties( const DerivativeProperties &W_p
 void ModelEvaluator::OutArgs::_set_DfDp_properties( int l, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DfDp,l);
-  DfDp_properties_[l-1] = properties;
+  DfDp_properties_[l] = properties;
 }
 
 void ModelEvaluator::OutArgs::_set_DgDx_properties( int j, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DgDx,j);
-  DgDx_properties_[j-1] = properties;
+  DgDx_properties_[j] = properties;
 }
 
 void ModelEvaluator::OutArgs::_set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  DgDp_properties_[ (j-1)*Np() + (l-1) ] = properties;
+  DgDp_properties_[ j*Np() + l ] = properties;
 }
 
 void ModelEvaluator::OutArgs::assert_supports(EOutArgsMembers arg) const
@@ -254,7 +254,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp arg, int l) const
 {
   assert_l(l);
   TEST_FOR_EXCEPTION(
-    supports_DfDp_[l-1].none(), std::logic_error
+    supports_DfDp_[l].none(), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DfDp(l) with index l = " << l << " is not supported!"
@@ -265,7 +265,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx arg, int j) const
 {
   assert_j(j);
   TEST_FOR_EXCEPTION(
-    supports_DgDx_[j-1].none(), std::logic_error
+    supports_DgDx_[j].none(), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx,j): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDx(j) with index j = " << j << " is not supported!"
@@ -276,7 +276,7 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
 {
   assert_j(j);
   TEST_FOR_EXCEPTION(
-    supports_DgDx_[ (j-1)*Np() + (l-1) ].none(), std::logic_error
+    supports_DgDx_[ j*Np() + l ].none(), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
@@ -291,10 +291,10 @@ void ModelEvaluator::OutArgs::assert_l(int l) const
     "no auxiliary parameters subvectors p(l) are supported!!"
     );
   TEST_FOR_EXCEPTION(
-    !( 1 <= l && l <= Np() ), std::logic_error
+    !( 0 <= l && l < Np() ), std::logic_error
     ,"Thyra::ModelEvaluator::OutArgs::assert_l(l): "
     "model = \'"<<modelEvalDescription_<<"\': Error, "
-    "The parameter subvector p(l) index l = " << l << " is not in the range [1,"<<Np()<<"]!"
+    "The parameter subvector p(l) index l = " << l << " is not in the range [0,"<<Np()-1<<"]!"
     );
 }
 
@@ -306,9 +306,9 @@ void ModelEvaluator::OutArgs::assert_j(int j) const
     "no auxiliary functions g(j) are supported!!"
     );
   TEST_FOR_EXCEPTION(
-    !( 1 <= j && j <= Ng() ), std::logic_error
+    !( 0 <= j && j < Ng() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
-    "The auxiliary function g(j) index j = " << j << " is not in the range [1,"<<Ng()<<"]!"
+    "The auxiliary function g(j) index j = " << j << " is not in the range [0,"<<Ng()-1<<"]!"
     );
 }
 

@@ -46,7 +46,7 @@ void Thyra::apply_op_validate_input(
   ,const int                      num_targ_vecs
   ,VectorBase<Scalar>*            targ_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    first_ele_in
+  ,const Index                    first_ele_offset_in
   ,const Index                    sub_dim_in
   ,const Index                    global_offset_in
   )
@@ -59,13 +59,13 @@ void Thyra::apply_op_validate_input(
     ,func_name << " : Error!  global_offset_in = "
     <<global_offset_in<<" is not valid" );
   TEST_FOR_EXCEPTION(
-    first_ele_in > dim, std::logic_error
-    ,func_name << " : Error!  first_ele_in = "
-    <<first_ele_in<<" is not compatible with space.dim() = " << dim );
+    first_ele_offset_in+1 > dim, std::logic_error
+    ,func_name << " : Error!  first_ele_offset_in = "
+    <<first_ele_offset_in<<" is not compatible with space.dim() = " << dim );
   TEST_FOR_EXCEPTION(
-    sub_dim_in < 0 || (sub_dim_in > 0 && sub_dim_in > dim-(first_ele_in-1)), std::logic_error
-    ,func_name << " : Error!  first_ele_in = "
-    <<first_ele_in<<" and sub_dim_in = "<<sub_dim_in
+    sub_dim_in < 0 || (sub_dim_in > 0 && sub_dim_in > dim-first_ele_offset_in), std::logic_error
+    ,func_name << " : Error!  first_ele_offset_in = "
+    <<first_ele_offset_in<<" and sub_dim_in = "<<sub_dim_in
     <<" is not compatible with space.dim() = " << dim );
   for(k = 0; k < num_vecs; ++k)
     THYRA_ASSERT_VEC_SPACES(func_name,space,*vecs[k]->space());
@@ -84,10 +84,10 @@ void Thyra::apply_op_validate_input(
   ,const int                      num_targ_multi_vecs
   ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
   ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    primary_first_ele_in
+  ,const Index                    primary_first_ele_offset_in
   ,const Index                    primary_sub_dim_in
   ,const Index                    primary_global_offset_in
-  ,const Index                    secondary_first_ele_in
+  ,const Index                    secondary_first_ele_offset_in
   ,const Index                    secondary_sub_dim_in
   )
 {
@@ -100,27 +100,27 @@ void Thyra::apply_op_validate_input(
     ,func_name << " : Error!  primary_global_offset_in = "
     <<primary_global_offset_in<<" is not valid" );
   TEST_FOR_EXCEPTION(
-    primary_first_ele_in <= 0 || range_dim < primary_first_ele_in, std::logic_error
-    ,func_name << " : Error!  primary_first_ele_in = "
-    <<primary_first_ele_in<<" is not compatible with range.dim() = " << range_dim );
+    primary_first_ele_offset_in < 0 || range_dim < primary_first_ele_offset_in+1, std::logic_error
+    ,func_name << " : Error!  primary_first_ele_offset_in = "
+    <<primary_first_ele_offset_in<<" is not compatible with range.dim() = " << range_dim );
   TEST_FOR_EXCEPTION(
-    primary_sub_dim_in < 0 || (primary_sub_dim_in > 0 && primary_sub_dim_in > range_dim-(primary_first_ele_in-1))
+    primary_sub_dim_in < 0 || (primary_sub_dim_in > 0 && primary_sub_dim_in > range_dim-primary_first_ele_offset_in)
     , std::logic_error
-    ,func_name << " : Error!  primary_first_ele_in = "
-    <<primary_first_ele_in<<" and primary_sub_dim_in = "<<primary_sub_dim_in
+    ,func_name << " : Error!  primary_first_ele_offset_in = "
+    <<primary_first_ele_offset_in<<" and primary_sub_dim_in = "<<primary_sub_dim_in
     <<" are not compatible with range.dim() = " << range_dim );
   // Validate secondary domain arguments
   const Index
     domain_dim = domain.dim();
   TEST_FOR_EXCEPTION(
-    secondary_first_ele_in <= 0 || domain_dim < secondary_first_ele_in, std::logic_error
-    ,func_name << " : Error!  secondary_first_ele_in = "
-    <<secondary_first_ele_in<<" is not compatible with domain.dim() = " << domain_dim );
+    secondary_first_ele_offset_in < 0 || domain_dim < secondary_first_ele_offset_in+1, std::logic_error
+    ,func_name << " : Error!  secondary_first_ele_offset_in = "
+    <<secondary_first_ele_offset_in<<" is not compatible with domain.dim() = " << domain_dim );
   TEST_FOR_EXCEPTION(
-    secondary_sub_dim_in < 0 || (secondary_sub_dim_in > 0 && secondary_sub_dim_in > domain_dim-(secondary_first_ele_in-1))
+    secondary_sub_dim_in < 0 || (secondary_sub_dim_in > 0 && secondary_sub_dim_in > domain_dim-secondary_first_ele_offset_in)
     , std::logic_error
-    ,func_name << " : Error!  secondary_first_ele_in = "
-    <<secondary_first_ele_in<<" and secondary_sub_dim_in = "<<secondary_sub_dim_in
+    ,func_name << " : Error!  secondary_first_ele_offset_in = "
+    <<secondary_first_ele_offset_in<<" and secondary_sub_dim_in = "<<secondary_sub_dim_in
     <<" are not compatible with domain.dim() = " << domain_dim );
   // Validate spaces
   for(k = 0; k < num_multi_vecs; ++k) {
@@ -142,7 +142,7 @@ void Thyra::apply_op_serial(
   ,const int                     num_targ_vecs
   ,VectorBase<Scalar>*           targ_vecs[]
   ,RTOpPack::ReductTarget        *reduct_obj
-  ,const Index                   first_ele_in
+  ,const Index                   first_ele_offset_in
   ,const Index                   sub_dim_in
   ,const Index                   global_offset_in
   )
@@ -153,9 +153,9 @@ void Thyra::apply_op_serial(
   // Dimension of global sub-vector
   const Index
     full_dim       = space.dim(),
-    global_sub_dim = sub_dim_in ? sub_dim_in : full_dim - (first_ele_in-1);
+    global_sub_dim = sub_dim_in ? sub_dim_in : full_dim - first_ele_offset_in;
   const Range1D
-    global_sub_rng = Range1D(first_ele_in,(first_ele_in-1)+global_sub_dim);
+    global_sub_rng = Range1D(first_ele_offset_in,first_ele_offset_in+global_sub_dim-1);
 
   //
   // Get explicit views of the vector elements
@@ -192,12 +192,12 @@ void Thyra::apply_op_serial(
 
   for(k = 0; k < num_vecs; ++k) {
     RTOpPack::SubVectorT<Scalar> &v = local_vecs[k];
-    v.setGlobalOffset( global_sub_rng.lbound() - 1);
+    v.setGlobalOffset(global_sub_rng.lbound());
     vecs[k]->freeSubVector(&v);
   }
   for(k = 0; k < num_targ_vecs; ++k) {
     RTOpPack::MutableSubVectorT<Scalar> &v = local_targ_vecs[k];
-    v.setGlobalOffset( global_sub_rng.lbound() - 1);
+    v.setGlobalOffset(global_sub_rng.lbound());
     targ_vecs[k]->commitSubVector(&v);
   }
 
@@ -213,10 +213,10 @@ void Thyra::apply_op_serial(
   ,const int                      num_targ_multi_vecs
   ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
   ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    pri_first_ele_in
+  ,const Index                    pri_first_ele_offset_in
   ,const Index                    pri_sub_dim_in
   ,const Index                    pri_global_offset_in
-  ,const Index                    sec_first_ele_in
+  ,const Index                    sec_first_ele_offset_in
   ,const Index                    sec_sub_dim_in
   )
 {
@@ -227,15 +227,15 @@ void Thyra::apply_op_serial(
   // Primary range global sub-vector
   const Index
     range_dim          = range.dim(),
-    pri_global_sub_dim = pri_sub_dim_in ? pri_sub_dim_in : range_dim - (pri_first_ele_in-1);
+    pri_global_sub_dim = pri_sub_dim_in ? pri_sub_dim_in : range_dim - pri_first_ele_offset_in;
   const Range1D
-    pri_global_sub_rng = Range1D(pri_first_ele_in,(pri_first_ele_in-1)+pri_global_sub_dim);
+    pri_global_sub_rng = Range1D(pri_first_ele_offset_in,pri_first_ele_offset_in+pri_global_sub_dim-1);
   // Secondary domain
   const Index
     domain_dim         = domain.dim(),
-    sec_global_sub_dim = sec_sub_dim_in ? sec_sub_dim_in : domain_dim - (sec_first_ele_in-1);
+    sec_global_sub_dim = sec_sub_dim_in ? sec_sub_dim_in : domain_dim - sec_first_ele_offset_in;
   const Range1D
-    sec_global_sub_rng = Range1D(sec_first_ele_in,(sec_first_ele_in-1)+sec_global_sub_dim);
+    sec_global_sub_rng = Range1D(sec_first_ele_offset_in,sec_first_ele_offset_in+sec_global_sub_dim-1);
 
   //
   // Get explicit views of the multi-vector elements
@@ -263,8 +263,8 @@ void Thyra::apply_op_serial(
   Workspace<RTOpPack::MutableSubVectorT<Scalar> >  local_targ_vecs(wss,num_targ_multi_vecs);
 
   for(int j = 0; j < sec_global_sub_dim; ++j ) {
-    for(k = 0; k < num_multi_vecs; ++k)       local_vecs[k]      = local_multi_vecs[k].col(j+1);
-    for(k = 0; k < num_targ_multi_vecs; ++k)  local_targ_vecs[k] = local_targ_multi_vecs[k].col(j+1);
+    for(k = 0; k < num_multi_vecs; ++k)       local_vecs[k]      = local_multi_vecs[k].col(j);
+    for(k = 0; k < num_targ_multi_vecs; ++k)  local_targ_vecs[k] = local_targ_multi_vecs[k].col(j);
     pri_op.apply_op(
       num_multi_vecs,       num_multi_vecs      ? &local_vecs[0]      : NULL
       ,num_targ_multi_vecs, num_targ_multi_vecs ? &local_targ_vecs[0] : NULL
@@ -279,12 +279,12 @@ void Thyra::apply_op_serial(
 
   for(k = 0; k < num_multi_vecs; ++k) {
     RTOpPack::SubMultiVectorT<Scalar> &mv = local_multi_vecs[k];
-    mv.setGlobalOffset( pri_global_sub_rng.lbound() - 1);
+    mv.setGlobalOffset(pri_global_sub_rng.lbound());
     multi_vecs[k]->freeSubMultiVector(&mv);
   }
   for(k = 0; k < num_targ_multi_vecs; ++k) {
     RTOpPack::MutableSubMultiVectorT<Scalar> &mv = local_targ_multi_vecs[k];
-    mv.setGlobalOffset( pri_global_sub_rng.lbound() - 1);
+    mv.setGlobalOffset(pri_global_sub_rng.lbound());
     targ_multi_vecs[k]->commitSubMultiVector(&mv);
   }
 

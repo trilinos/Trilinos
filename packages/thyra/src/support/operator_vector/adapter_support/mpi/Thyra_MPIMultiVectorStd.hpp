@@ -64,7 +64,7 @@ public:
       for( int k = 0; k < numCols; ++k ) {
         const int col_k = cols_[k];
         const Scalar *lvv_k  = lvv + localSubDim_*k;
-        Scalar       *lv_k   = lv + leadingDim_*(col_k-1);
+        Scalar       *lv_k   = lv + leadingDim_*col_k;
         //std::cout << "\nlvv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lvv_k[j] << ","; std::cout << "]\n";
         std::copy( lvv_k, lvv_k + localSubDim_, lv_k );
         //std::cout << "\nlv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lv_k[j] << ","; std::cout << "]\n";
@@ -177,12 +177,12 @@ MPIMultiVectorStd<Scalar>::col(Index j)
   std::cerr << "\nMPIMultiVectorStd<Scalar>::col() called!\n";
 #endif
 #ifdef _DEBUG
-  TEST_FOR_EXCEPT( j < 1 || this->domain()->dim() < j );
+  TEST_FOR_EXCEPT( !( 0 <= j && j < this->domain()->dim() ) );
 #endif
   return Teuchos::rcp(
     new MPIVectorStd<Scalar>(
       mpiRangeSpace_
-      ,Teuchos::rcp( (&*localValues_) + (j-1)*leadingDim_, false )
+      ,Teuchos::rcp( (&*localValues_) + j*leadingDim_, false )
       ,1
       )
     );
@@ -202,8 +202,9 @@ MPIMultiVectorStd<Scalar>::subView( const Range1D& col_rng_in )
       mpiRangeSpace_
       ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         mpiRangeSpace_->smallVecSpcFcty()->createVecSpc(colRng.size())
-        ,true)
-      ,Teuchos::rcp( (&*localValues_) + (colRng.lbound()-1)*leadingDim_, false )
+        ,true
+        )
+      ,Teuchos::rcp( (&*localValues_) + colRng.lbound()*leadingDim_, false )
       ,leadingDim_
       )
     );
@@ -341,11 +342,11 @@ MPIMultiVectorStd<Scalar>::createContiguousCopy( const int numCols, const int co
     const int col_k = cols[k];
 #ifdef _DEBUG
     TEST_FOR_EXCEPTION(
-      col_k < 1 || dimDomain < col_k, std::invalid_argument
-      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"
+      !( 0<= col_k && col_k < dimDomain ), std::invalid_argument
+      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"
       );
 #endif
-    const Scalar *lv_k   = lv + leadingDim_*(col_k-1);
+    const Scalar *lv_k   = lv + leadingDim_*col_k;
     Scalar       *lvv_k  = lvv + localSubDim*k;
     std::copy( lv_k, lv_k + localSubDim, lvv_k );
   }

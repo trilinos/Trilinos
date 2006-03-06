@@ -35,7 +35,7 @@ namespace RTOpPack {
 
 /** \brief Returns the maximum element and its index:
  * <tt>result.scalar = x(k)</tt> and <tt>result.index = k</tt> such
- * that <tt>x(k) >= x(i)</tt> for <tt>i=1...n</tt> and <tt>k</tt> is
+ * that <tt>x(k) >= x(i)</tt> for <tt>i=0...n-1</tt> and <tt>k</tt> is
  * the minimum index to break ties.
  */
 template<class Scalar>
@@ -73,14 +73,14 @@ public:
       const Index globalOffset = sub_vecs[0].globalOffset();
       ScalarIndex<Scalar> maxEle = this->getRawVal(*reduct_obj);
       if( v0_s == 1 ) {
-        for( Teuchos_Index i = 1; i <= subDim; ++i ) {
+        for( Teuchos_Index i = 0; i < subDim; ++i ) {
           const Scalar &v0_i = *v0_val++;
           if( v0_i > maxEle.scalar || ( v0_i == maxEle.scalar && globalOffset + i < maxEle.index ) )
             maxEle = ScalarIndex<Scalar>(v0_i,globalOffset+i);
         }
       }
       else {
-        for( Teuchos_Index i = 1; i <= subDim; ++i, v0_val += v0_s ) {
+        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s ) {
           const Scalar &v0_i = *v0_val;
           if( v0_i > maxEle.scalar || ( v0_i == maxEle.scalar && globalOffset + i < maxEle.index ) )
             maxEle = ScalarIndex<Scalar>(v0_i,globalOffset+i);

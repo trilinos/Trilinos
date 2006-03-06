@@ -232,7 +232,7 @@ Thyra::get_Epetra_Vector(
 		emvv = Teuchos::rcp(
 			new ExplicitMutableMultiVectorView<double>(
 				*v
-				,Range1D(localOffset+1,localOffset+localSubDim)
+				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
 			);
 	// Create a temporary Epetra_Vector object and give it
@@ -291,7 +291,7 @@ Thyra::get_Epetra_Vector(
 		evv = Teuchos::rcp(
 			new ExplicitVectorView<double>(
 				*v
-				,Range1D(localOffset+1,localOffset+localSubDim)
+				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
 			);
 	// Create a temporary Epetra_Vector object and give it
@@ -360,7 +360,7 @@ Thyra::get_Epetra_MultiVector(
 		emmvv = Teuchos::rcp(
 			new ExplicitMutableMultiVectorView<double>(
 				*mv
-				,Range1D(localOffset+1,localOffset+localSubDim)
+				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
 			);
 	// Create a temporary Epetra_MultiVector object and give it
@@ -421,7 +421,7 @@ Thyra::get_Epetra_MultiVector(
 		emvv = Teuchos::rcp(
 			new ExplicitMultiVectorView<double>(
 				*mv
-				,Range1D(localOffset+1,localOffset+localSubDim)
+				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
 			);
 	// Create a temporary Epetra_MultiVector object and give it

@@ -100,6 +100,38 @@ all-libs:
 	cd src ; $(MAKE) all-libs
 
 ## #######################################################################
+## The below targets allow you to use the new
+## testharness to run the test suite as make targets
+## #######################################################################
+
+TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
+TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
+TRILINOS_MPI_MAX_PROC=4
+TRILINOS_TEST_CATEGORY=INSTALL
+
+runtests-serial :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=serial \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=belos
+
+runtests-mpi :
+	$(PERL_EXE) $(TRILINOS_HOME_DIR)/commonTools/test/utilities/runtests \
+  --trilinos-dir=$(TRILINOS_HOME_DIR) \
+  --comm=mpi \
+  --mpi-go=$(TRILINOS_MPI_GO) \
+  --build-dir=$(TRILINOS_BUILD_DIR) \
+  --max-proc=$(TRILINOS_MPI_MAX_PROC) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
+  --output-dir=@abs_top_builddir@/test/runtests-results \
+  --verbosity=1 \
+  --packages=belos
+
+## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################
 if USING_EXPORT_MAKEFILES

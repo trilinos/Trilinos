@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief VectorBase assignment transformation operator: <tt>z0[i] = v0[i], i=1...n</tt>.
+/** \brief VectorBase assignment transformation operator: <tt>z0[i] = v0[i], i=0...n-1</tt>.
  */
 template<class Scalar>
 class TOpAssignVectors : public RTOpT<Scalar> {

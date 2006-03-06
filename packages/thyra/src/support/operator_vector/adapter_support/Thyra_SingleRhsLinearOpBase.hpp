@@ -48,7 +48,7 @@ void SingleRhsLinearOpBase<Scalar>::apply(
 {
   const VectorSpaceBase<Scalar> &space_mv_rows = *Y->domain();
   const Index num_mv_cols    = space_mv_rows.dim();
-  for( Index j = 1; j <= num_mv_cols; ++j )
+  for( Index j = 0; j < num_mv_cols; ++j )
     this->apply(M_trans,*X.col(j),Y->col(j).get(),alpha,beta);
 }
 

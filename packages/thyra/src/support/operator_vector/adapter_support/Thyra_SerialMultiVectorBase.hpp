@@ -124,13 +124,13 @@ void SerialMultiVectorBase<Scalar>::getSubMultiVector(
   const Scalar *localValues = NULL; int leadingDim = 0;
   this->getData(&localValues,&leadingDim);
   sub_mv->initialize(
-    rowRng.lbound()-1                             // globalOffset
+    rowRng.lbound()                               // globalOffset
     ,rowRng.size()                                // subDim
-    ,colRng.lbound()-1                            // colOffset
+    ,colRng.lbound()                              // colOffset
     ,colRng.size()                                // numSubCols
     ,localValues
-    +(rowRng.lbound()-1)
-    +(colRng.lbound()-1)*leadingDim               // values
+    +rowRng.lbound()
+    +colRng.lbound()*leadingDim                   // values
     ,leadingDim                                   // leadingDim
     );
 }
@@ -156,13 +156,13 @@ void SerialMultiVectorBase<Scalar>::getSubMultiVector(
   Scalar *localValues = NULL; int leadingDim = 0;
   this->getData(&localValues,&leadingDim);
   sub_mv->initialize(
-    rowRng.lbound()-1                             // globalOffset
+    rowRng.lbound()                               // globalOffset
     ,rowRng.size()                                // subDim
-    ,colRng.lbound()-1                            // colOffset
+    ,colRng.lbound()                              // colOffset
     ,colRng.size()                                // numSubCols
     ,localValues
-    +(rowRng.lbound()-1)
-    +(colRng.lbound()-1)*leadingDim               // values
+    +rowRng.lbound()
+    +colRng.lbound()*leadingDim                   // values
     ,leadingDim                                   // leadingDim
     );
 }
@@ -313,13 +313,13 @@ void SerialMultiVectorBase<Scalar>::updateSpace()
 template<class Scalar>
 Range1D SerialMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in ) const
 {
-  const Range1D rowRng = Teuchos::full_range(rowRng_in,1,numRows_);
+  const Range1D rowRng = Teuchos::full_range(rowRng_in,0,numRows_-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    rowRng.lbound() < 1 || numRows_ < rowRng.ubound(), std::invalid_argument
+    !(0 <= rowRng.lbound() && rowRng.ubound() < numRows_), std::invalid_argument
     ,"SerialMultiVectorBase<Scalar>::validateRowRange(rowRng): Error, the range rowRng = ["
     <<rowRng.lbound()<<","<<rowRng.ubound()<<"] is not "
-    "in the range [1,"<<numRows_<<"]!"
+    "in the range [0,"<<(numRows_-1)<<"]!"
     );
 #endif
   return rowRng;
@@ -328,13 +328,13 @@ Range1D SerialMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_i
 template<class Scalar>
 Range1D SerialMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in ) const
 {
-  const Range1D colRng = Teuchos::full_range(colRng_in,1,numCols_);
+  const Range1D colRng = Teuchos::full_range(colRng_in,0,numCols_-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    colRng.lbound() < 1 || numCols_ < colRng.ubound(), std::invalid_argument
+    !(0 <= colRng.lbound() && colRng.ubound() < numCols_), std::invalid_argument
     ,"SerialMultiVectorBase<Scalar>::validateColRange(colRng): Error, the range colRng = ["
     <<colRng.lbound()<<","<<colRng.ubound()<<"] is not "
-    "in the range [1,"<<numCols_<<"]!"
+    "in the range [0,"<<(numCols_-1)<<"]!"
     );
 #endif
   return colRng;

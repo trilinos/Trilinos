@@ -167,7 +167,7 @@ void ComplexFFTLinearOp<RealScalar>::apply(
   }
   // Call the FFT rountine
   serial_1D_FFT(
-    &data[0]-1                                            // This function is 1 based!
+    &data[0]-1                                            // This function is 1-based of all things!
     ,x_ev.subDim()                                        // 1/2 length of data[]
     ,Thyra::real_trans(M_trans)==Thyra::NOTRANS ? +1 : -1 // +1 = fwd, -1 = adjoint
     );

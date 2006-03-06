@@ -55,19 +55,19 @@ void MultiVectorSerialization<Scalar>::serialize( const MultiVectorBase<Scalar>&
     const Index
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
-    const Range1D localRng( localOffset+1, localOffset+localSubDim ); 
+    const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
     ExplicitMultiVectorView<Scalar> local_mv(mv,localRng,Range1D());
     out << localSubDim << " " << local_mv.numSubCols() << std::endl;
     if( binaryMode() ) {
       // Write column-wise for better cache performance
-      for( Index j = 1; j <= local_mv.numSubCols(); ++j )
-        out.write( reinterpret_cast<const char*>(&local_mv(1,j)), sizeof(Scalar)*localSubDim );
+      for( Index j = 0; j < local_mv.numSubCols(); ++j )
+        out.write( reinterpret_cast<const char*>(&local_mv(0,j)), sizeof(Scalar)*localSubDim );
     }
     else {
       // Write row-wise for better readability
-      for( Index i = 1; i <= localSubDim; ++i ) {
+      for( Index i = 0; i < localSubDim; ++i ) {
         out << " " << i;
-        for( Index j = 1; j <= local_mv.numSubCols(); ++j ) {
+        for( Index j = 0; j < local_mv.numSubCols(); ++j ) {
           out << " " << local_mv(i,j);
         }
         out << std::endl;
@@ -92,7 +92,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
     const Index
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
-    const Range1D localRng( localOffset+1, localOffset+localSubDim ); 
+    const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
     ExplicitMutableMultiVectorView<Scalar> local_mv(*mv,localRng,Range1D());
 #ifdef _DEBUG
     TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
@@ -120,12 +120,12 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
     // Get the elements
     if( binaryMode() ) {
       // Column-wise
-      for( Index j = 1; j <= local_mv.numSubCols(); ++j )
-        in.read( reinterpret_cast<char*>(&local_mv(1,j)), sizeof(Scalar)*localSubDim );
+      for( Index j = 0; j < local_mv.numSubCols(); ++j )
+        in.read( reinterpret_cast<char*>(&local_mv(0,j)), sizeof(Scalar)*localSubDim );
     }
     else {
       // Row-wise
-      for( Index i = 1; i <= localSubDim; ++i ) {
+      for( Index i = 0; i < localSubDim; ++i ) {
 #ifdef _DEBUG
         TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif
@@ -138,7 +138,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
           "i_in = "<<i_in<<"!"
           );
 #endif
-        for( Index j = 1; j <= local_mv.numSubCols(); ++j ) {
+        for( Index j = 0; j < local_mv.numSubCols(); ++j ) {
 #ifdef _DEBUG
           TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif

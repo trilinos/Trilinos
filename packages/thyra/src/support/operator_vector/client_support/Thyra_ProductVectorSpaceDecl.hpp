@@ -104,8 +104,8 @@ namespace Thyra {
  * gives the offset of each constituent vector in the overall
  * composite product vector.  For example, the (zero-based)
  * <tt>kth</tt> vector space <tt>this->%vecSpaces()[k]</tt> owns the
- * element indexes <tt>this->%vecSpacesOffsets()[k]+1</tt> to
- * <tt>this->%vecSpacesOffsets()[k+1]</tt>.  Determining which
+ * element indexes <tt>this->%vecSpacesOffsets()[k]</tt> to
+ * <tt>this->%vecSpacesOffsets()[k+1]-1</tt>.  Determining which
  * constituent vector space owns a particular element index can be
  * found out by calling <tt>getVecSpcPoss()</tt>.
  *
@@ -227,15 +227,15 @@ public:
    * composite vector.
    *
    * Preconditions:<ul>
-   * <li> <tt>1 <= i <= this->dim()</tt>
+   * <li> <tt>0 <= i < this->dim()</tt>
    * </ul>
    *
    * Postconditions:<ul>
    * <li> <tt>kth_global_offset == this->vecSpacesoffsets()[kth_vector-space]</tt>
-   * <li> <tt>kth_global_offset + 1 <= i <= kth_global_offset + this->vecSpaces()[kth_vector_space]->dim()</tt>
+   * <li> <tt>kth_global_offset <= i <= kth_global_offset + this->vecSpaces()[kth_vector_space]->dim() - 1</tt>
    * </ul>
    *
-   * @param  i    [in] The index of the element to find the vector space object for.
+   * @param  i    [in] The index offset of the element to find the vector space object for.
    * @param  kth_vector_space
    *              [out] The index for <tt>this->vectorSpaces()[kth_vector_space]</tt> that owns the element <tt>i</tt>.
    * @param  kth_global_offset

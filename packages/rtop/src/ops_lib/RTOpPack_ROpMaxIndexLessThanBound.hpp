@@ -85,14 +85,14 @@ public:
       const Index globalOffset = sub_vecs[0].globalOffset();
       ScalarIndex<Scalar> maxEle = this->getRawVal(*reduct_obj);
       if( v0_s == 1 ) {
-        for( Teuchos_Index i = 1; i <= subDim; ++i ) {
+        for( Teuchos_Index i = 0; i < subDim; ++i ) {
           const Scalar &v0_i = *v0_val++;
           if( v0_i < bound() && (v0_i > maxEle.scalar || ( v0_i == maxEle.scalar && globalOffset + i < maxEle.index ) ) )
             maxEle = ScalarIndex<Scalar>(v0_i,globalOffset+i);
         }
       }
       else {
-        for( Teuchos_Index i = 1; i <= subDim; ++i, v0_val += v0_s ) {
+        for( Teuchos_Index i = 0; i < subDim; ++i, v0_val += v0_s ) {
           const Scalar &v0_i = *v0_val;
           if( v0_i < bound() && (v0_i > maxEle.scalar || ( v0_i == maxEle.scalar && globalOffset + i < maxEle.index ) ) )
             maxEle = ScalarIndex<Scalar>(v0_i,globalOffset+i);

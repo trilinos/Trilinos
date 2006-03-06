@@ -147,7 +147,7 @@ void Thyra::scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scal
     ,"update(...), Error, U.domain().isCompatible(V->domain())==false ");
 #endif
   const int m = U.domain()->dim();
-  for( int j = 1; j <= m; ++j ) {
+  for( int j = 0; j < m; ++j ) {
     ele_wise_prod( Scalar(1.0), a, *U.col(j), &*V->col(j) ); 
   }
 }
@@ -208,8 +208,8 @@ void Thyra::update( Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& 
     ,"update(...), Error, U.domain().isCompatible(V->domain())==false ");
 #endif
   const int m = U.domain()->dim();
-  for( int j = 1; j <= m; ++j )
-    Vp_StV( V->col(j).get(), alpha[j-1]*beta, *U.col(j) );
+  for( int j = 0; j < m; ++j )
+    Vp_StV( V->col(j).get(), alpha[j]*beta, *U.col(j) );
 }
 
 
@@ -228,8 +228,8 @@ void Thyra::update( const MultiVectorBase<Scalar>& U, Scalar alpha[], Scalar bet
     ,"update(...), Error, U.domain().isCompatible(V->domain())==false ");
 #endif
   const int m = U.domain()->dim();
-  for( int j = 1; j <= m; ++j ) {
-    Vt_S( V->col(j).get(), alpha[j-1]*beta );
+  for( int j = 0; j < m; ++j ) {
+    Vt_S( V->col(j).get(), alpha[j]*beta );
     Vp_StV( V->col(j).get(), 1.0, *U.col(j) );
   }
 }
@@ -266,7 +266,7 @@ void Thyra::randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V )
     TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"randomize(...), Error!");
 #endif
   const int m = V->domain()->dim();
-  for( int j = 1; j <= m; ++j ) {
+  for( int j = 0; j < m; ++j ) {
     randomize( l, u, V->col(j).get() ); // Todo: call applyOp(...) directly!
   }
 }

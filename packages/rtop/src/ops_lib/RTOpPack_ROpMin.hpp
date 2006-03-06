@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Returns the minimum element: <tt>result = min{ v0[i], i=1...n }</tt>.
+/** \brief Returns the minimum element: <tt>result = min{ v0[i], i=0...n-1 }</tt>.
  */
 template<class Scalar>
 class ROpMin : public ROpScalarReductionBase<Scalar> {

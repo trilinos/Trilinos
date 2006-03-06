@@ -75,8 +75,8 @@ public:
    * @param  localValues
    *                   [in] Smart pointer to beginning of local strided vector data.
    *                   This array must be at least of dimension <tt>mpiRangeSpace->localDim()*stride</tt>
-   *                   and <tt>(&*localValues)[ (i-1)*stride ]</tt> gives the local value
-   *                   of the one-based entry <tt>(i)</tt> where <tt>i=1...mpiSpace()->localSubDim()</tt>.
+   *                   and <tt>(&*localValues)[ i*stride ]</tt> gives the local value
+   *                   of the zero-based entry <tt>(i)</tt> where <tt>i=0...mpiSpace()->localSubDim()-1</tt>.
    * @param  stride   [in] Stride between local vector elements.
    *
    * Preconditions:<ul>

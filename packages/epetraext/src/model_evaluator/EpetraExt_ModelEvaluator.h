@@ -346,19 +346,19 @@ public:
     int Ng() const;
     /** \brief. */
     bool supports(EOutArgsMembers arg) const;
-    /** \brief <tt>1 <= l && l <= Np()</tt>.  */
+    /** \brief <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDfDp arg, int l) const;
-    /** \brief <tt>1 <= j && j <= Ng()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDx arg, int j) const;
-    /** \brief <tt>1 <= j && j <= Ng()</tt> and <tt>1 <= l && l <= Np()</tt>.  */
+    /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
     /** \brief. */
     void set_f( const Evaluation<Epetra_Vector> &f );
     /** \brief. */
     Evaluation<Epetra_Vector> get_f() const;
-    /** \brief Set <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
+    /** \brief Set <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */
     void set_g( int j, const Evaluation<Epetra_Vector> &g_j );
-    /** \brief Get <tt>g(j)</tt> where <tt>1 <= j && j <= this->Ng()</tt>.  */
+    /** \brief Get <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */
     Evaluation<Epetra_Vector> get_g(int j) const;
     /** \brief. */
     void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
@@ -676,11 +676,11 @@ ModelEvaluator::InArgs::get_x_poly() const
 
 inline
 void ModelEvaluator::InArgs::set_p( int l, const Teuchos::RefCountPtr<const Epetra_Vector> &p_l )
-{ assert_l(l); p_[l-1] = p_l; }
+{ assert_l(l); p_[l] = p_l; }
 
 inline
 Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_p(int l) const
-{ assert_l(l); return p_[l-1]; }
+{ assert_l(l); return p_[l]; }
 
 inline
 void ModelEvaluator::InArgs::set_t( double t )
@@ -749,7 +749,7 @@ inline
 void ModelEvaluator::OutArgs::set_g( int j, const Evaluation<Epetra_Vector> &g_j )
 {
   assert_j(j);
-  g_[j-1] = g_j;
+  g_[j] = g_j;
 }
 
 inline
@@ -757,7 +757,7 @@ ModelEvaluator::Evaluation<Epetra_Vector>
 ModelEvaluator::OutArgs::get_g(int j) const
 {
   assert_j(j);
-  return g_[j-1];
+  return g_[j];
 }
 
 inline
@@ -776,7 +776,7 @@ inline
 void ModelEvaluator::OutArgs::set_DfDp( int l, const Derivative &DfDp_l )
 {
   assert_supports(OUT_ARG_DfDp,l);
-  DfDp_[l-1] = DfDp_l;
+  DfDp_[l] = DfDp_l;
 }
 
 inline
@@ -784,7 +784,7 @@ ModelEvaluator::Derivative
 ModelEvaluator::OutArgs::get_DfDp(int l) const
 {
   assert_supports(OUT_ARG_DfDp,l);
-  return DfDp_[l-1];
+  return DfDp_[l];
 }
 
 inline
@@ -792,14 +792,14 @@ ModelEvaluator::DerivativeProperties
 ModelEvaluator::OutArgs::get_DfDp_properties(int l) const
 {
   assert_supports(OUT_ARG_DfDp,l);
-  return DfDp_properties_[l-1];
+  return DfDp_properties_[l];
 }
 
 inline
 void ModelEvaluator::OutArgs::set_DgDx( int j, const Derivative &DgDx_j )
 {
   assert_supports(OUT_ARG_DgDx,j);
-  DgDx_[j-1] = DgDx_j;
+  DgDx_[j] = DgDx_j;
 }
 
 inline
@@ -807,7 +807,7 @@ ModelEvaluator::Derivative
 ModelEvaluator::OutArgs::get_DgDx(int j) const
 {
   assert_supports(OUT_ARG_DgDx,j);
-  return DgDx_[j-1];
+  return DgDx_[j];
 }
 
 inline
@@ -815,14 +815,14 @@ ModelEvaluator::DerivativeProperties
 ModelEvaluator::OutArgs::get_DgDx_properties(int j) const
 {
   assert_supports(OUT_ARG_DgDx,j);
-  return DgDx_properties_[j-1];
+  return DgDx_properties_[j];
 }
 
 inline
 void ModelEvaluator::OutArgs::set_DgDp( int j, int l, const Derivative &DgDp_j_l )
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  DgDp_[ (j-1)*Np() + (l-1) ] = DgDp_j_l;
+  DgDp_[ j*Np() + l ] = DgDp_j_l;
 }
 
 inline
@@ -830,7 +830,7 @@ ModelEvaluator::Derivative
 ModelEvaluator::OutArgs::get_DgDp(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  return DgDp_[ (j-1)*Np() + (l-1) ];
+  return DgDp_[ j*Np() + l ];
 }
 
 inline
@@ -838,7 +838,7 @@ ModelEvaluator::DerivativeProperties
 ModelEvaluator::OutArgs::get_DgDp_properties(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp,j,l);
-  return DgDp_properties_[ (j-1)*Np() + (l-1) ];
+  return DgDp_properties_[ j*Np() + l ];
 }
 
 inline

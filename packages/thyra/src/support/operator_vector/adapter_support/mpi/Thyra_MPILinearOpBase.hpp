@@ -73,8 +73,8 @@ void MPILinearOpBase<Scalar>::euclideanApply(
     localDimRange     = Op_range->localSubDim(),
     localOffsetDomain = Op_domain->localOffset(), 
     localDimDomain    = Op_domain->localSubDim(); 
-  const ExplicitMultiVectorView<Scalar>         local_X_ev(X,Range1D(localOffsetDomain+1,localOffsetDomain+localDimDomain));
-  const ExplicitMutableMultiVectorView<Scalar>  local_Y_ev(*Y,Range1D(localOffsetRange+1,localOffsetRange+localDimRange));
+  const ExplicitMultiVectorView<Scalar>         local_X_ev(X,Range1D(localOffsetDomain,localOffsetDomain+localDimDomain-1));
+  const ExplicitMutableMultiVectorView<Scalar>  local_Y_ev(*Y,Range1D(localOffsetRange,localOffsetRange+localDimRange-1));
   this->euclideanApply(M_trans,local_X_ev.smv(),&local_Y_ev.smv(),alpha,beta);
 }
 
@@ -127,7 +127,7 @@ void MPILinearOpBase<Scalar>::euclideanApply(
   ,const Scalar                                     beta
   ) const
 {
-  for(Index j = 1; j <= local_X.numSubCols(); ++j ) {
+  for(Index j = 0; j < local_X.numSubCols(); ++j ) {
     const RTOpPack::SubVectorT<Scalar>         local_X_j = local_X.col(j);
     const RTOpPack::MutableSubVectorT<Scalar>  local_Y_j = local_Y->col(j);
     this->euclideanApply(M_trans,local_X_j,&local_Y_j,alpha,beta);

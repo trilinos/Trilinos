@@ -126,7 +126,7 @@ void ProductVector<Scalar>::applyOp(
   ,const int                       num_targ_vecs
   ,VectorBase<Scalar>*             targ_vecs[]
   ,RTOpPack::ReductTarget          *reduct_obj
-  ,const Index                     first_ele_in
+  ,const Index                     first_ele_offset_in
   ,const Index                     sub_dim_in
   ,const Index                     global_offset_in
   ) const
@@ -138,9 +138,9 @@ void ProductVector<Scalar>::applyOp(
   // Validate the compatibility of the vectors!
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    !(1 <= first_ele_in && first_ele_in <= n), std::out_of_range
+    !(0 <= first_ele_offset_in && first_ele_offset_in+1 <= n), std::out_of_range
     ,"ProductVector::applyOp(...): Error, "
-    "first_ele_in = " << first_ele_in << " is not in range [1,"<<n<<"]" );
+    "first_ele_offset_in = " << first_ele_offset_in << " is not in range [0,"<<(n-1)<<"]" );
   TEST_FOR_EXCEPTION(
     sub_dim_in < 0, std::invalid_argument
     ,"ProductVector::applyOp(...): Error, "
@@ -150,10 +150,10 @@ void ProductVector<Scalar>::applyOp(
     ,"ProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << " is not acceptable" );
   TEST_FOR_EXCEPTION(
-    sub_dim_in > 0 && sub_dim_in - (first_ele_in - 1) > n, std::length_error
+    sub_dim_in > 0 && sub_dim_in - first_ele_offset_in > n, std::length_error
     ,"ProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << ", sub_dim_in = " << sub_dim_in
-    << "first_ele_in = " << first_ele_in << " and n = " << n
+    << "first_ele_offset_in = " << first_ele_offset_in << " and n = " << n
     << " are not compatible" );
   bool test_failed;
   for(int k = 0; k < num_vecs; ++k) {
@@ -220,21 +220,21 @@ void ProductVector<Scalar>::applyOp(
   if( incore_vec_k >= 0 ) {
     vecs[incore_vec_k]->applyOp(
       op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj
-      ,first_ele_in,sub_dim_in,global_offset_in
+      ,first_ele_offset_in,sub_dim_in,global_offset_in
       );
     return;
   }
   else if ( incore_targ_vec_k >= 0 ) {
     targ_vecs[incore_targ_vec_k]->applyOp(
       op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj
-      ,first_ele_in,sub_dim_in,global_offset_in
+      ,first_ele_offset_in,sub_dim_in,global_offset_in
       );
     return;
   }
   // Perform the reduction on each vector segment at a time.
   const Index this_dim = n;
   const Index sub_dim  = ( sub_dim_in == 0
-                           ? this_dim - (first_ele_in - 1)
+                           ? this_dim - first_ele_offset_in
                            : sub_dim_in );
   Index num_elements_remaining = sub_dim;
   const int  numBlocks = productSpace_->numBlocks();
@@ -242,7 +242,7 @@ void ProductVector<Scalar>::applyOp(
     sub_vecs(wss,num_vecs,false);
   Workspace<VectorBase<Scalar>*>
     sub_targ_vecs(wss,num_targ_vecs,false);
-  Index g_off = -first_ele_in + 1;
+  Index g_off = -first_ele_offset_in;
   for(int k = 0; k < numBlocks; ++k) {
     const Index local_dim = productSpace_->getBlock(k)->dim();
     if( g_off < 0 && -g_off > local_dim ) {
@@ -264,7 +264,7 @@ void ProductVector<Scalar>::applyOp(
       ,num_vecs,num_vecs?&sub_vecs[0]:NULL
       ,num_targ_vecs,num_targ_vecs?&sub_targ_vecs[0]:NULL
       ,reduct_obj
-      ,g_off < 0 ? -g_off + 1 : 1                                // first_ele
+      ,g_off < 0 ? -g_off : 0                                    // first_ele_offset
       ,local_sub_dim                                             // sub_dim
       ,g_off < 0 ? global_offset_in : global_offset_in + g_off   // global_offset
       );
@@ -280,14 +280,14 @@ void ProductVector<Scalar>::getSubVector(
   ) const
 {
   const Range1D
-    rng = rng_in.full_range() ? Range1D( 1, productSpace_->dim()) : rng_in;
+    rng = rng_in.full_range() ? Range1D(0,productSpace_->dim()-1) : rng_in;
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
-  if( rng.lbound() + rng.size() <= kth_global_offset + 1 + vecs_[kth_vector_space]->space()->dim() ) {
+  if( rng.lbound() + rng.size() <= kth_global_offset + vecs_[kth_vector_space]->space()->dim() ) {
     // This involves only one sub-vector so just return it.
     const_cast<const VectorBase<Scalar>*>(&*vecs_[kth_vector_space])->getSubVector(
       rng - kth_global_offset, sub_vec );
@@ -299,7 +299,7 @@ void ProductVector<Scalar>::getSubVector(
     // two or more constituent vectors but this would be a lot of work.
     // However, this would require the use of temporary memory but
     // so what.
-    VectorBase<Scalar>::getSubVector(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::getSubVector(rng_in,sub_vec);
   }
 }
 
@@ -322,7 +322,7 @@ void ProductVector<Scalar>::freeSubVector(
   }
   else {
     // This sub_vec was created by the default implementation!
-    VectorBase<Scalar>::freeSubVector(sub_vec);
+    VectorDefaultBase<Scalar>::freeSubVector(sub_vec);
   }
 }
 
@@ -332,14 +332,14 @@ void ProductVector<Scalar>::getSubVector(
   )
 {
   const Range1D
-    rng = rng_in.full_range() ? Range1D( 1, productSpace_->dim()) : rng_in;
+    rng = rng_in.full_range() ? Range1D(0,productSpace_->dim()-1) : rng_in;
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
-  if( rng.lbound() + rng.size() <= kth_global_offset + 1 + vecs_[kth_vector_space]->space()->dim() ) {
+  if( rng.lbound() + rng.size() <= kth_global_offset + vecs_[kth_vector_space]->space()->dim() ) {
     // This involves only one sub-vector so just return it.
     vecs_[kth_vector_space]->getSubVector(
       rng - kth_global_offset, sub_vec );
@@ -351,7 +351,7 @@ void ProductVector<Scalar>::getSubVector(
     // two or more constituent vectors but this would be a lot of work.
     // However, this would require the use of temporary memory but
     // so what.
-    VectorBase<Scalar>::getSubVector(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::getSubVector(rng_in,sub_vec);
   }
 }
 
@@ -374,7 +374,7 @@ void ProductVector<Scalar>::commitSubVector(
   }
   else {
     // This sub_vec was created by the default implementation!
-    VectorBase<Scalar>::commitSubVector(sub_vec);
+    VectorDefaultBase<Scalar>::commitSubVector(sub_vec);
   }
 }
 
@@ -399,7 +399,7 @@ void ProductVector<Scalar>::setSubVector(
     // Let the default implementation take care of this.  ToDo: In the future
     // it would be possible to manually set the relevant constituent
     // vectors with no temp memory allocations.
-    VectorBase<Scalar>::setSubVector(sub_vec);
+    VectorDefaultBase<Scalar>::setSubVector(sub_vec);
   }
 }
 

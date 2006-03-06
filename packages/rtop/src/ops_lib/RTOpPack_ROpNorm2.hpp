@@ -33,7 +33,7 @@
 
 namespace RTOpPack {
 
-/** \brief Two (Euclidean) norm reduction operator: <tt>result = sqrt( sum( conj(v0[i])*v0[i], i=1...n ) )</tt>.
+/** \brief Two (Euclidean) norm reduction operator: <tt>result = sqrt( sum( conj(v0[i])*v0[i], i=0...n-1 ) )</tt>.
  */
 template<class Scalar>
 class ROpNorm2 : public ROpScalarReductionBase<Scalar> {

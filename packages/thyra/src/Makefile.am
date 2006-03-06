@@ -120,10 +120,6 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_OperatorVectorAdapterSupportTypes.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleRhsLinearOpWithSolveBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpWithSolveBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.hpp\
@@ -200,10 +196,14 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerializationDecl.hpp
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
-  $(srcdir)/support/operator_vector/client_support/Thyra_DiagonalLinearOpWithSolve.hpp\
-  $(srcdir)/support/operator_vector/client_support/Thyra_DiagonalLinearOpWithSolveDecl.hpp\
-  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpWithSolveTester.hpp \
-  $(srcdir)/support/operator_vector/client_support/Thyra_LinearOpWithSolveTesterDecl.hpp
+  $(srcdir)/support/operator_solve/client_support/Thyra_DiagonalLinearOpWithSolve.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DiagonalLinearOpWithSolveDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBase.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBase.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTester.hpp \
+  $(srcdir)/support/operator_solve/client_support/Thyra_LinearOpWithSolveTesterDecl.hpp
 
 INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluator.hpp
