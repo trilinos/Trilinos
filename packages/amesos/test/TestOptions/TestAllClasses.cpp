@@ -113,7 +113,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 							 NumTheseTests ) ;
 #if 0
 
-	This ought to work, but it crashes
+	Calling TestOtherClasses to test Amesos_Klu, ought to work, but it crashes
 
       } else if ( AmesosClasses[i] == "Amesos_Klu" ) {
 	bool RunKluTest = true;
@@ -277,6 +277,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	  RunKluTest = false ;  
 #endif
 	if ( ImpcolB ) RunKluTest = false ;   // See bug #1928 
+	if ( ( RangeMapType ==2 && DomainMapType == 1 && distribute == 1 && EpetraMatrixType == 2 && transpose == 0 && Superlu_rua ) ) RunKluTest = false ;   //  Bug #2000
 
 	if ( RunKluTest && verbose) cout << " Testing KLU " << endl ; 
 
@@ -403,8 +404,6 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	  RunParakleteTest = false ;   //  Bug #969
 
 	//	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunParakleteTest = false ;   //  Bug #1403
-	if ( RunParakleteTest && verbose) cout << " Testing PARAKLETE " << endl ; 
-
 	Teuchos::ParameterList ParamList;
 	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
 	if ( ( RangeMapType != 0 || DomainMapType != 0 || distribute ) ) 

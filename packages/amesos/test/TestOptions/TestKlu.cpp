@@ -31,6 +31,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	     double &maxrelresidual,
 	     int &NumTests ) {
   
+  bool MyVerbose = false ; //  if set equal to verbose, we exceed thee test harness 1 Megabyte limit
 
   int NumErrors = 0 ;
   maxrelerror = 0.0;
@@ -46,7 +47,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
       << " InternalParamList = " <<
 		     InternalParamList <<  endl ; 
       
@@ -54,7 +55,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					EpetraMatrixType,
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					InternalParamList, 
 					Amat, 
 					Levels,
@@ -78,7 +79,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
 		       << endl ; 
@@ -100,7 +101,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       
     double relerror;
     double relresidual;
-    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			 << " InternalParamList = " <<
 		     InternalParamList <<  endl ; 
       
@@ -108,7 +109,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					EpetraMatrixType,
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					InternalParamList, 
 					Amat, 
 					Levels,
@@ -131,7 +132,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
 		       << endl ; 
@@ -154,7 +155,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 
     InternalParamList.set( "TrustMe", true );
 
-    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
       << " InternalParamList = " <<
 		     InternalParamList <<  endl ; 
       
@@ -165,7 +166,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					EpetraMatrixType,
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					InternalParamList, 
 					Amat, 
 					Levels,
@@ -188,7 +189,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
 		       << endl ; 
@@ -212,7 +213,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
       << " InternalParamList = " <<
 		     InternalParamList <<  endl ; 
       
@@ -220,7 +221,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					EpetraMatrixType,
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					InternalParamList, 
 					Amat, 
 					Levels,
@@ -243,7 +244,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
 		       << endl ; 
@@ -267,7 +268,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
       << " InternalParamList = " <<
 		     InternalParamList <<  endl ; 
       
@@ -275,7 +276,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					EpetraMatrixType,
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					InternalParamList, 
 					Amat, 
 					Levels,
@@ -298,7 +299,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
 		       << endl ; 
@@ -321,7 +322,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     double relerror;
     double relresidual;
       
-    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
       << " InternalParamList = " <<
 		     InternalParamList <<  endl ; 
       
@@ -329,7 +330,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					EpetraMatrixType,
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					InternalParamList, 
 					Amat, 
 					Levels,
@@ -352,7 +353,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
 		       << endl ; 
@@ -375,7 +376,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
     int Errors = PerformOneSolveAndTest("Amesos_Klu",
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					InternalParamList, 
 					Amat, 
 					Levels,
@@ -384,7 +385,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
       
     if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
+      if (MyVerbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -394,11 +395,11 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " 
 		       << NumErrors << " "
 		       << __FILE__ << "::" << __LINE__ 
 		       << endl ; 
-    if ( verbose && Errors > 0 ) {
+    if ( MyVerbose && Errors > 0 ) {
       cout << "Amesos_Klu" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }
@@ -422,7 +423,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					EpetraMatrixType,
 					Comm, 
 					transpose, 
-					verbose,
+					MyVerbose,
 					ParamList, 
 					Amat, 
 					Levels,
@@ -431,7 +432,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 					relresidual ) ; 
       
     if (Errors < 0 ) {
-      if (verbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
+      if (MyVerbose ) cout << "Amesos_Klu" << " not built in this executable " << endl ; 
       return 0 ; 
     } else { 
       NumErrors += Errors ; 
@@ -441,9 +442,9 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
       NumTests++ ; 
 
     }
-    if (verbose)  cout << " TestKlu NumErrors = " << NumErrors 
+    if (MyVerbose)  cout << " TestKlu NumErrors = " << NumErrors 
 		       << " " << __FILE__ << "::" << __LINE__ << endl ; 
-    if ( verbose && Errors > 0 ) {
+    if ( MyVerbose && Errors > 0 ) {
       cout << "Amesos_Klu" << " failed with transpose = " << 
 	(transpose?"true":"false") << endl ;  
     }

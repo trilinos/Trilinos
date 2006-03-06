@@ -55,6 +55,8 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
    
 
   {
+    bool MyVerbose = false ; // if set to verbose - we exceed the test harness 1 Megabyte limit
+
     //
     //  Bug #1990 - AddToDiag fails in Amesos_Superludist 
     //
@@ -73,7 +75,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -84,7 +86,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       if ( Errors < 0 ) {
 	NumErrors++;
 	NumTests++ ; 
-	if ( verbose ) {
+	if ( MyVerbose ) {
 	  cout << "Amesos_Superludist failed with error code " << Errors<< endl ; 
 	}
       } else { 
@@ -111,7 +113,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -122,7 +124,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       if ( Errors < 0 ) {
 	NumErrors++;
 	NumTests++ ; 
-	if ( verbose ) {
+	if ( MyVerbose ) {
 	  cout << "Amesos_Superludist failed with error code " << Errors<< endl ; 
 	}
       } else { 
@@ -145,7 +147,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
 	
-    if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+    if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
       << " ParamList = " <<
 		     ParamList <<  endl ; 
       
@@ -153,7 +155,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -175,7 +177,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -183,7 +185,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -206,7 +208,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -214,7 +216,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -242,7 +244,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -266,7 +268,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -274,7 +276,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -298,7 +300,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -306,7 +308,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -330,7 +332,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -338,7 +340,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -362,7 +364,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -370,7 +372,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -397,7 +399,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 	ParamList.set( "Redistribute", false );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -405,7 +407,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -431,7 +433,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -439,7 +441,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -466,7 +468,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -474,7 +476,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -501,7 +503,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -509,7 +511,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -536,7 +538,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -544,7 +546,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -571,7 +573,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -579,7 +581,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -606,7 +608,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 1 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -614,7 +616,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
@@ -641,7 +643,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
-      if ( verbose ) cout  << __FILE__ << "::"  << __LINE__ 
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
 			   << " ParamList = " <<
 		       ParamList <<  endl ; 
       
@@ -649,7 +651,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  EpetraMatrixType,
 					  Comm, 
 					  transpose, 
-					  verbose,
+					  MyVerbose,
 					  ParamList, 
 					  Amat, 
 					  Levels,
