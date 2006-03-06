@@ -138,7 +138,7 @@ std::ostream& MultiplicativeLinearOp<Scalar>::describe(
   return out;
 }
 
-// Overridden from OpBase
+// Overridden from LinearOpBase
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
@@ -157,6 +157,15 @@ MultiplicativeLinearOp<Scalar>::domain() const
 }
 
 template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+MultiplicativeLinearOp<Scalar>::clone() const
+{
+  return Teuchos::null; // Not supported yet but could be!
+}
+
+// Overridden from SingleScalarLinearOpBase
+
+template<class Scalar>
 bool MultiplicativeLinearOp<Scalar>::opSupported(ETransp M_trans) const
 {
   bool opSupported = true;
@@ -165,8 +174,6 @@ bool MultiplicativeLinearOp<Scalar>::opSupported(ETransp M_trans) const
   return opSupported;
   // ToDo: Cache these?
 }
-
-// Overridden from LinearOpBase
 
 template<class Scalar>
 void MultiplicativeLinearOp<Scalar>::apply(
@@ -219,13 +226,6 @@ void MultiplicativeLinearOp<Scalar>::apply(
       T_km1 = T_k;
     }
   }
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
-MultiplicativeLinearOp<Scalar>::clone() const
-{
-  return Teuchos::null; // Not supported yet but could be
 }
 
 }	// end namespace Thyra

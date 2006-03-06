@@ -98,7 +98,10 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class MultiplicativeLinearOp : virtual public SingleScalarLinearOpBase<Scalar> {
+class MultiplicativeLinearOp
+  : virtual public LinearOpBase<Scalar>                  // Public interface
+  , virtual protected SingleScalarLinearOpBase<Scalar>   // Implementation detail
+{
 public:
 
   /** \brief . */
@@ -220,7 +223,7 @@ public:
 
   //@}
 
-  /** @name Overridden from OpBase */
+  /** @name Overridden from LinearOpBase */
   //@{
   /** \brief Returns <tt>this->getOp(0).range()</tt>.
    *
@@ -236,15 +239,19 @@ public:
    * </ul>
    */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  //@}
+
+protected:
+
+  /** @name Overridden from SingleScalarLinearOpBase */
+  //@{
   /** \brief Returns <tt>true</tt> only if all constituent operators support
    * <tt>M_trans</tt>.
    */
+  /** \brief . */
   bool opSupported(ETransp M_trans) const;
-  //@}
-
-  /** @name Overridden from LinearOpBase */
-  //@{
-
   /** \brief . */
   void apply(
     const ETransp                     M_trans
@@ -253,9 +260,6 @@ public:
     ,const Scalar                     alpha
     ,const Scalar                     beta
     ) const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
-
   //@}
 
 private:
