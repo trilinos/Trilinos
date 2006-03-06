@@ -197,7 +197,8 @@ int main(int argc, char *argv[])
   {
     // non-symmetric matrix, test only A
     vector<string> SolverType;
-    SolverType.push_back("Amesos_Pardiso");
+    //  
+    //    SolverType.push_back("Amesos_Pardiso");    bug #1994
     SolverType.push_back("Amesos_Superludist");
     driver(Comm, false, false, SolverType);
   }
