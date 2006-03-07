@@ -87,9 +87,9 @@ public:
     void set_x_dot_poly( const Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
     /** \brief .  */
     Teuchos::RefCountPtr<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
-    /** \brief Set <tt>p(l)</tt> where <tt>1 <= l && l <= this->Np()</tt>.  */
+    /** \brief Set <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
     void set_p( int l, const Teuchos::RefCountPtr<const VectorBase<Scalar> > &p_l );
-    /** \brief Get <tt>p(l)</tt> where <tt>1 <= l && l <= this->Np()</tt>.  */
+    /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
     Teuchos::RefCountPtr<const VectorBase<Scalar> > get_p(int l) const;
     /** \brief .  */
     void set_t( ScalarMag t );
