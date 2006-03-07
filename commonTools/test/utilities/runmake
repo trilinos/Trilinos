@@ -115,8 +115,8 @@ exit $exitStatus;
         }
         
         # Check for valid make-cmd.
-        if ($makeCmd) { 
-            $makeCmd =~ m/^(\w*)/;
+        if ($makeCmd) {
+            $makeCmd =~ m/^(\S+)/;
             my $testMakeCommand = $1;
             `which $testMakeCommand`;
             if ($?) {

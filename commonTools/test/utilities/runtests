@@ -165,7 +165,7 @@ cleanUp();
         
         # Check for valid mpi-start command.
         if ($mpiStart) { 
-            $mpiStart =~ m/^(\w*)/;
+            $mpiStart =~ m/^(\S+)/;
             my $mpiStartProg = $1;
             `which $mpiStartProg`;
             if ($?) {
@@ -177,7 +177,7 @@ cleanUp();
         
         # Check for valid mpi-stop command.
         if ($mpiStop) {
-            $mpiStop =~ m/^(\w*)/;
+            $mpiStop =~ m/^(\S+)/;
             my $mpiStopProg = $1;
             `which $mpiStopProg`;
             if ($?) {
@@ -192,7 +192,7 @@ cleanUp();
             $mpiGo = "mpirun -np "; 
         }
         if ($comm eq "mpi") {
-            $mpiGo =~ m/^(\w*)/;
+            $mpiGo =~ m/^(\S+)/;
             my $mpiGoProg = $1;
             `which $mpiGoProg`;
             if ($?) {
