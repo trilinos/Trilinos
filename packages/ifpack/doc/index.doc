@@ -13,6 +13,7 @@
 - \ref ifp_error 
 - \ref ifp_bugs
 - \ref ifp_copyright
+- \ref ifp_browser
 
 \section ifp_intro Introduction
 
@@ -522,6 +523,14 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
 \endverbatim
+
+\section ifp_browser Browse all of Ifpack as a single doxygen collection
+
+You can browse all of Ifpack as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Ifpack software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of ifpack</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 */
 
