@@ -267,9 +267,11 @@ would be hard to diagnose otherwise.
 The %Thyra code described here is dependent on the following Trilinos packages:
 
 <ul>
-<li><b><a href="../../../teuchos/doc/html/index.html">Teuchos</a></b>: This package supplies basic utility classes such
+<li><b><a href="../../../teuchos/doc/html/index.html">teuchos</a></b>: This package supplies basic utility classes such
 as <tt>Teuchos::RefCountPtr</tt> and <tt>Teuchos::BLAS</tt> that
 %Thyra software is dependent on.
+<li><b><a href="../../../rtop/doc/html/index.html">rtop</a></b>: This package supplies the basic interfaces for
+vector reduction/transformation operators as well as support code and a library of pre-written RTOp subclasses.
 </ul>
 
 \section thyra_configuration_sec Configuration of the Thyra Package
