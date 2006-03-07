@@ -330,12 +330,18 @@ fi
 #AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 
 # ------------------------------------------------------------------------
-# Checks for library functions
+# Checks for 3-party functions
 # ------------------------------------------------------------------------
 
-# ------------------------------------------------------------------------
-# Checks for system services
-# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_FEATURE_SUB(galeri, hdf5, 
+                           [Enable Galeri interface support for HDF5], 
+                           GALERI_HDF5, no)
+
+if test "X$ac_cv_use_galeri_hdf5" != "Xno" ; then
+  AM_CONDITIONAL(HAVE_GALERI_HDF5, true ) 
+else
+  AM_CONDITIONAL(HAVE_GALERI_HDF5, false ) 
+fi
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
