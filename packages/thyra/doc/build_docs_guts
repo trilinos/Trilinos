@@ -74,7 +74,6 @@ echo
 
 doxygen ../browser/doc/Doxyfile
 
-
 echo
 echo "Generating main documentation page for thyra ..."
 echo
