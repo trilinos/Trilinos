@@ -164,9 +164,9 @@ int lenLID = zz->Num_LID;
   need_weights = max_need_weights = 0;
   edg_LID = ZOLTAN_MALLOC_LID_ARRAY(zz, num_lists);
 
-  if (num_lists && !edg_LID) MEMORY_ERROR;
+  if (num_lists && lenLID && !edg_LID) MEMORY_ERROR;
 
-  if (num_lists){
+  if (num_lists && lenLID){
     memset(edg_LID, 0, num_lists * lenLID * sizeof(int));
   }
 
@@ -579,7 +579,7 @@ float *in_weights=NULL, *out_weights=NULL, *wptr=NULL;
       vptr = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
       wptr = (float *)ZOLTAN_MALLOC(sizeof(float) * nedges * ew_dim);
 
-      if (!eptr || !rptr || !elidptr || !vptr || (ew_dim && !wptr)){
+      if (!eptr || !rptr || (lenLID && !elidptr)  || !vptr || (ew_dim && !wptr)){
         Zoltan_Multifree(__FILE__, __LINE__, 5,
           &eptr, &rptr, &elidptr, &vptr, &wptr);
         MEMORY_ERROR;
@@ -1675,7 +1675,7 @@ ZOLTAN_ID_PTR keep_pins, remove_pins, in_pins;
                          = (float *) ZOLTAN_CALLOC(nremove * ewgtdim,
                                                    sizeof(float));
 
-      zhg->Remove_Pin_GIDs = ZOLTAN_MALLOC_LID_ARRAY(zz, nremove_size);
+      zhg->Remove_Pin_GIDs = ZOLTAN_MALLOC_GID_ARRAY(zz, nremove_size);
 
       if (!remove_egids || (num_lid_entries && !remove_elids) 
           || (nremove_size && !zhg->Remove_Pin_GIDs)
