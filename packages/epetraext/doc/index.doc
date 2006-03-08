@@ -88,4 +88,12 @@ terms of %EpetraExt code.
 
 </ul>
 
+\section EpetraExt_browser Browse all of Epetraext as a single doxygen collection
+
+You can browse all of EpetraExt as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about EpetraExt software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of epetraext</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
 */

@@ -52,4 +52,12 @@ Adapters</a> take <tt>Thyra::LinearOpBase</tt> objects that wrap
 <tt>Thyra::LinearOpWithSolveBase</tt> objects which can then be used to solve
 linear systems using the <tt>AztecOO</tt> class.
 
+\section AztecOO_browser Browse all of AztecOO as a single doxygen collection
+
+You can browse all of AztecOO as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about AztecOO software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of aztecoo</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
 */

@@ -8,13 +8,13 @@ else
 fi
 
 echo
-echo "Generating doxygen browser documentation for all of ifpack ..."
-echo
-
-doxygen ../browser/doc/Doxyfile
-
-echo
 echo "Generating main ifpack doxygen documentation ..."
 echo
 
 doxygen DoxyfileWeb
+
+echo
+echo "Generating doxygen browser documentation for all of ifpack ..."
+echo
+
+doxygen ../browser/doc/Doxyfile

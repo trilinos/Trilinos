@@ -2,8 +2,7 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE=amesos/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-@INCLUDE=aztecoo/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
+@INCLUDE = epetraext/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
 #
 # Override some options from Doxyfile.options
 #
@@ -14,7 +13,7 @@ EXTRACT_LOCAL_CLASSES  = YES
 #
 # Package options
 #
-PROJECT_NAME           = "Ifpack Package Browser (Single Doxygen Collection)"
+PROJECT_NAME           = "Amesos Package Browser (Single Doxygen Collection)"
 OUTPUT_DIRECTORY       = ../browser/doc
 #
 # What and how documentation is extracted
@@ -39,5 +38,5 @@ IGNORE_PREFIX          =
 #
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
-GENERATE_TAGFILE       = ../../common/tag_files/ifpackBrowser.tag
+GENERATE_TAGFILE       = ../../common/tag_files/amesosBrowser.tag
 #

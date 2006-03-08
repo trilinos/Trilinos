@@ -18,3 +18,9 @@ echo "Generating amesos/thyra doxygen documentation ..."
 echo
 
 doxygen ../thyra/doc/Doxyfile
+
+echo
+echo "Generating doxygen browser documentation for all of amesos ..."
+echo
+
+doxygen ../browser/doc/Doxyfile

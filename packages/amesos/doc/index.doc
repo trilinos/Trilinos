@@ -8,10 +8,6 @@ DEC/Alpha MPI - stratus
 Sun OS - Paunchy - hopefully soon to be replaced
 MAC OSX - s3858352 
 
-
-
-
-
   These are listed here so that they will not show up in the document itself.
 */
 /*! \mainpage Amesos: An Interface to Serial and Parallel Direct Sparse Solver Packages.
@@ -38,6 +34,7 @@ The main page of the Doxygen documentation is organized as follows:
 - \ref am_change_log
 - \ref am_python
 - \ref am_thyra
+- \ref am_browser
 - \ref am_future
 - \ref am_final
 
@@ -684,6 +681,14 @@ are still defined with the same \c Epetra_Map.
   solvers;
 - \ref am_hb details how to read a Harwell/Boeing matrix
 
+\section am_browser Browse all of Amesos as a single doxygen collection
+
+You can browse all of Amesos as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Amesos software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of amesos</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
+
 \section am_python Python support
 
 Amesos has an interface to PyTrilinos, and therefore all the enabled
@@ -712,7 +717,6 @@ Depending on the version of SuperLU and SuperLU_DIST, you may or may not
 configure Amesos with support for both. This is due to conflicts in the header
 files of SuperLU/SuperLU_DIST.  
 
-
 \subsection known_bugs bugs
 
     <p> Amesos_Dscpack has memory leaks, prints to standard out and may 
@@ -728,7 +732,6 @@ which differ from the matrix map
     <p> Superludist fails on some matrices
     <p> Error handling on singular and near singular matrices is 
 inconsistent
-
 
 \section am_final Final Remarks
 
