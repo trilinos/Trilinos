@@ -39,40 +39,58 @@ int main (int argc, char **argv)
   Galeri::HDF5 HDF5(Comm);
 
   Teuchos::ParameterList GaleriList;
-  int nx = 5 * Comm.NumProc();
-  int ny = 5 * Comm.NumProc();
+  int nx = 10 * Comm.NumProc();
+  int ny = 10 * Comm.NumProc();
   GaleriList.set("nx", nx);
   GaleriList.set("ny", ny);
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
 
+  Epetra_Map* Map;
+  Epetra_CrsMatrix* Matrix;
+  Epetra_Vector* x = 0,* readb = 0,* readxexact = 0;
+  Galeri::ReadHB(ProblemType.c_str(), Comm, Map, Matrix, x, readb, readxexact);
 
+#if 0
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* Matrix   = CreateCrsMatrix("Biharmonic2D", Map, GaleriList);
   Epetra_Vector x(Matrix->RowMatrixRowMap());
-  Epetra_MultiVector x2(Matrix->RowMatrixRowMap(), 2);
   x.Random();
-  x2.Random();
+  Teuchos::ParameterList NewList;
+#endif
 
-  HDF5.Open("myfile.h5");       // opens the file
-  HDF5.Write("map", *Map);        // writes the map 
+  HDF5.Create("myfile.h5");       // opens the file
+  HDF5.Write("map-" + toString(Comm.NumProc()), *Map);        // writes the map 
   HDF5.Write("matrix", *Matrix);  // writes the matrix...
   HDF5.Write("x", x);             // and a vector
-  HDF5.Write("x2", x2);             // and a vector
-  HDF5.Write("nx", nx);
   HDF5.Write("GaleriList", GaleriList);
-  Teuchos::ParameterList NewList;
+
+#if 0
+  cout << HDF5.IsDataSet("nx") << endl;
+  cout << HDF5.IsDataSet("n") << endl;
+
+  vector<double> array(10);
+  for (int i = 0; i < 10; ++i)
+    array[i] = 1000.0;
+  HDF5.Write("/array", H5T_NATIVE_DOUBLE, 10, &array[0]);
 
   HDF5.Read("GaleriList", NewList);
   cout << NewList;
 
-  Epetra_MultiVector* x3;
   Epetra_Map* NewMap;
+  if (HDF5.IsDataSet("map-" + toString(Comm.NumProc())))
+  {
+    HDF5.Read("map-" + toString(Comm.NumProc()), NewMap);
+    cout << *NewMap;
+  }
   Epetra_CrsMatrix* NewMatrix;
-  HDF5.Read("map", NewMap);
-  HDF5.Read("x2", *NewMap, x3);
-  HDF5.Read("matrix", *NewMap, NewMatrix);
-  cout << *NewMatrix;
+  Epetra_Vector* NewX;
+  HDF5.Read("x", NewX);
+ // cout << *NewX;
+  //HDF5.Read("x", *NewMap, NewX);
+  HDF5.Read("matrix", NewMatrix);
+//  cout << *NewMatrix;
+#endif
 
   HDF5.Close();
 
