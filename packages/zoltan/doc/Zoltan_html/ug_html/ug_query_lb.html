@@ -1712,24 +1712,34 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 </table>
 
-<hr WIDTH="100%">A hypergraph, expressed as a sparse matrix,
+<hr WIDTH="100%">A hypergraph (which may alternatively be viewed
+as a sparse matrix) 
 can be supplied to the Zoltan library in
-one of two compressed storage formats.  In compressed row format 
-(<b>ZOLTAN_COMPRESSED_ROWS</b>)
-a list of global row, or hyperedge, IDs is provided.  Then a single
-list of the hypergraph pins, or non-zeroes, is provided.  This list
-of pin IDs is ordered by row and within row by pin.  The pin ID is the 
-global ID of the column (vertex) containing the pin.  The other format
-is compressed columns (<b>ZOLTAN_COMPRESSED_COLS</b>).  In this
-format a list of column (vertex) global IDs is provided.  Then a
-list of pins ordered by column and within column by pin is provided.
+one of two compressed storage formats.  In compressed hyperedge format 
+(<b>ZOLTAN_COMPRESSED_EDGE</b>)
+a list of global hyperedge IDs is provided.  Then a single
+list of the hypergraph pins, is provided.  
+A pin is the connection between a vertex and a hyperedge
+(corresponds to a nonzero in a sparse matrix).
+Pins do no not have separate IDs but are rather
+identified by the
+global ID of the vertex containing the pin, and implicitly also
+by the hyperedge ID.  An example is provided below.
+<p>
+The other format
+is compressed vertex (<b>ZOLTAN_COMPRESSED_VERTEX</b>).  In this
+format a list of vertex global IDs is provided.  Then a
+list of pins ordered by vertex and then by hyperedge is provided.
 The pin ID in this case is the global ID of the row (or hyperedge) in which the
 pin appears.  In both formats, an array must be provided pointing to
 the start in the list of pins where each row or column begins.
-<br> <br>
+Sparse matrix users may think of these two formats as CSR
+(compressed sparse row) and CSC (compressed sparse column) format,
+respectively.
+<p> 
 The point of this query function is to tell Zoltan in which format the
-application will supply the sparse matrix, how many rows or columns
-there will be, and how many pins.  The actual sparse matrix is supplied
+application will supply the hypergraph, how many vertices and hyperedges
+there will be, and how many pins.  The actual hypergraph is supplied
 with a query function of the type
 <b><a href="#ZOLTAN_HG_CS_FN">ZOLTAN_HG_CS_FN_TYPE</a></b>.
 <br> <br>
@@ -1767,15 +1777,15 @@ the application process.</td>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_pins</i></td>
-<td>Upon return, the number of pins (hypergraph non-zeroes) that will be
+<td>Upon return, the number of pins (matrix non-zeroes) that will be
 supplied to Zoltan by the application process.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>format</i></td>
 <td>Upon return, the format in which the application process will provide the
-hypergraph (as a sparse matrix) to Zoltan.  The options are
-<b>ZOLTAN_COMPRESSED_ROWS</b> and <b>ZOLTAN_COMPRESSED_COLS</b>.
+hypergraph to Zoltan.  The options are
+<b>ZOLTAN_COMPRESSED_EDGE</b> and <b>ZOLTAN_COMPRESSED_VERTEX</b>.
 </tr>
 
 
@@ -1801,8 +1811,8 @@ int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_row_or_col</i>,
 int&nbsp;<i>num_pins</i>,
 int&nbsp;<i>format</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>rowcol_GID</i>,
-int&nbsp;*<i>rowcol_ptr</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>vtxedge_GID</i>,
+int&nbsp;*<i>vtxedge_ptr</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>pin_GID</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -1810,14 +1820,14 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </table>
 
 <hr WIDTH="100%">A <b>ZOLTAN_HG_CS_FN</b> returns 
-a hypergraph, represented as a sparse matrix.  The size and format
+a hypergraph, in a sparse matrix-like style.  The size and format
 of the data to be returned must have been supplied to Zoltan using a
 <b><a href="#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN_TYPE</a></b>
 function.
 <br> <br>
 When a hypergraph is distributed across multiple processes, Zoltan
 expects that all processes share a consistent global numbering
-scheme for hyperedges (rows) and vertices (columns).  Also, no two
+scheme for hyperedges and vertices. Also, no two
 processes should return the same pin (matrix non-zero) in this
 query function.
 <br> <br>
@@ -1855,9 +1865,9 @@ the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
 </tr>
 
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_row_or_col</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_vtx_edge</i></td>
 <td>The number of global IDs
-that is expected to appear on return in <i>rowcol_GID</i>.</td>
+that is expected to appear on return in <i>vtxedge_GID</i>.</td>
 </tr>
 
 <tr NOSAVE>
@@ -1868,26 +1878,26 @@ that is expected to appear on return in <i>pin_GID</i>.</td>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>format</i></td>
-<td>If <i>format</i> is <b>ZOLTAN_COMPRESSED_ROWS</b>, Zoltan expects
-that row (hyperedge) global IDs will be returned in <i>rowcol_GID</i>,
+<td>If <i>format</i> is <b>ZOLTAN_COMPRESSED_EDGE</b>, Zoltan expects
+that row (hyperedge) global IDs will be returned in <i>vtxedge_GID</i>,
 and that column (vertex) global IDs will be returned in
-<i>pin_GIDs</i>.  If it is <b>ZOLTAN_COMPRESSED_COLS</b>, then
-column global IDs are expected to be returned in <i>rowcol_GID</i> and row
+<i>pin_GIDs</i>.  If it is <b>ZOLTAN_COMPRESSED_VERTEX</b>, then
+column global IDs are expected to be returned in <i>vtxedge_GID</i> and row
 global IDs are expected to be returned in <i>pin_GIDs</i>.
 </tr>
 
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>rowcol_GID</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_GID</i></td>
 <td>Upon return, a list of <i>num_row_or_col</i> global IDs.  
 </tr>
 
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>rowcol_ptr</i></td>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>vtxedge_ptr</i></td>
 <td>Upon return, this array contains <i>num_row_or_col</i> integers.
 The integer in the <i>i'th</i> array element is the index in
 array <i>pin_GID</i> where the pins for the <i>i'th</i> row
-(if format is <b>ZOLTAN_COMPRESSED_ROWS</b>) or <i>i'th</i> column
-(if format is <b>ZOLTAN_COMPRESSED_COLS</b>) begins.  Array indices
+(if format is <b>ZOLTAN_COMPRESSED_EDGE</b>) or <i>i'th</i> column
+(if format is <b>ZOLTAN_COMPRESSED_VERTEX</b>) begins.  Array indices
 begin at zero.
 </td>
 </tr>
@@ -1896,7 +1906,7 @@ begin at zero.
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>pin_GID</i></td>
 <td>Upon return, a list of <i>num_pins</i> global IDs.  This is the list
 of the pins (or matrix non-zeros) contained in the rows or columns
-listed in <i>rowcol_GID</i>.
+listed in <i>vtxedge_GID</i>.
 </tr>
 
 <tr>
@@ -1931,13 +1941,13 @@ listed in <i>rowcol_GID</i>.
   </table>
 </td>
 <td>
-  Compressed row storage:<br><br>
-  rowcol_GID = {1, 2, 3}<br>
-  rowcol_ptr = {0, 2, 4}<br>
+  Compressed hyperedge storage:<br><br>
+  vtxedge_GID = {1, 2, 3}<br>
+  vtxedge_ptr = {0, 2, 4}<br>
   pin_GID = {30, 40, 20, 30, 10, 50}<br><br>
-  Compressed column storage:<br><br>
-  rowcol_GID = {10, 20, 30, 40, 50}<br>
-  rowcol_ptr = {0, 1, 2, 4, 5}<br>
+  Compressed vertex storage:<br><br>
+  vtxedge_GID = {10, 20, 30, 40, 50}<br>
+  vtxedge_ptr = {0, 1, 2, 4, 5}<br>
   pin_GID = {3, 2, 1, 2, 1, 3}
 </td>
 </tr>
