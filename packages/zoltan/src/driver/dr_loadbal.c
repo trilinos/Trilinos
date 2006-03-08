@@ -1499,7 +1499,9 @@ void get_hg_compressed_pin_storage(
   ZOLTAN_ID_PTR edg_GID, vtx_GID;
   int *row_ptr;
   int nedges;
+  int gid = num_gid_entries - 1;
   *ierr = ZOLTAN_OK;
+  int i, k;
 
   START_CALLBACK_TIMER;
 
@@ -1518,10 +1520,21 @@ void get_hg_compressed_pin_storage(
   vtx_GID = pin_GID;
   row_ptr = rowcol_ptr;
   nedges = nrowcol;
+
+  for (i=0; i<nedges; i++){
+    for (k=0; k<gid; k++){
+      *edg_GID++ = 0;
+    }
+    *edg_GID++ = mesh->hgid[i];
+  }
     
-  memcpy(edg_GID, mesh->hgid, sizeof(int) * num_gid_entries * nedges);
-  memcpy(vtx_GID, mesh->hvertex,
-          sizeof(int) * num_gid_entries * npins);
+  for (i=0; i<npins; i++){
+    for (k=0; k<gid; k++){
+      *vtx_GID++ = 0;
+    }
+    *vtx_GID++ = mesh->hvertex[i];
+  }
+    
   memcpy(row_ptr, mesh->hindex, sizeof(int) * nedges);
  
 End:
@@ -1544,7 +1557,9 @@ void get_hg_edge_weights(
 )
 {
   MESH_INFO_PTR mesh;
-  int i; 
+  int *id=NULL;
+  int i, k; 
+  int gid = num_gid_entries-1;
   *ierr = ZOLTAN_OK;
 
   START_CALLBACK_TIMER;
@@ -1562,18 +1577,29 @@ void get_hg_edge_weights(
   }
 
   if (mesh->heWgtId){
-    memcpy(edge_gids, mesh->heWgtId,sizeof(int) * num_gid_entries * nedges); 
+    id = mesh->heWgtId;
   }
   else{
-    memcpy(edge_gids, mesh->hgid,sizeof(int) * num_gid_entries * nedges); 
+    id = mesh->hgid;
   }
-  memset(edge_lids, 0, sizeof(int) * num_lid_entries * nedges);
-
+  
   for (i=0; i<nedges; i++){
-    edge_lids[i*num_lid_entries] = i;
+    for (k=0; k<gid; k++){
+      *edge_gids++ = 0;
+    }
+    *edge_gids++ = id[i];
   }
-
+    
   memcpy(edge_weights, mesh->hewgts, sizeof(float) * ewgt_dim * nedges);
+
+  if (num_lid_entries > 0){
+    for (i=0; i<nedges; i++){
+      for (k=0; k<gid; k++){
+        *edge_lids++ = 0;
+      }
+      *edge_lids++ = i;
+    }
+  }
 
 End:
 
