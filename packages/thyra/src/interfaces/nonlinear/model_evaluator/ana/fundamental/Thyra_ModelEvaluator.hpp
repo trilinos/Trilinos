@@ -938,7 +938,7 @@ public:
    * The default implementation returns <tt>return.getMultiVector().get()==NULL</tt>
    * (i.e. no sensitivities are supported by default).
    */
-  virtual DerivativeMultiVector<Scalar> create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const;
+  virtual ModelEvaluatorBase::DerivativeMultiVector<Scalar> create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const;
 
   // ToDo: Add functions for creating D(g(j))/D(x_dot) if needed!
 
@@ -970,7 +970,7 @@ public:
    * The default implementation returns <tt>return.getMultiVector().get()==NULL</tt>
    * (i.e. no sensitivities are supported by default).
    */
-  virtual DerivativeMultiVector<Scalar> create_DgDx_mv(int j, EDerivativeMultiVectorOrientation orientation) const;
+  virtual ModelEvaluatorBase::DerivativeMultiVector<Scalar> create_DgDx_mv(int j, EDerivativeMultiVectorOrientation orientation) const;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(g(j))/D(p(l))</tt>.
@@ -1004,7 +1004,7 @@ public:
    * The default implementation returns <tt>return.getMultiVector().get()==NULL</tt>
    * (i.e. no sensitivities are supported by default).
    */
-  virtual DerivativeMultiVector<Scalar> create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const;
+  virtual ModelEvaluatorBase::DerivativeMultiVector<Scalar> create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const;
   
   //@}
 
