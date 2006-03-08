@@ -492,7 +492,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_sideids  = NULL;
   mesh->ecmap_neighids = NULL;
   mesh->elements       = NULL;
-  mesh->format         = ZOLTAN_COMPRESSED_ROWS;
+  mesh->format         = ZOLTAN_COMPRESSED_EDGE;
   mesh->hgid           = NULL;
   mesh->hindex         = NULL;
   mesh->hvertex        = NULL;
