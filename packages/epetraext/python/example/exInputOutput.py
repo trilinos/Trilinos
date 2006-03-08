@@ -59,9 +59,9 @@ def main():
   # map.                                                 #
   # ==================================================== #
 
-  if iAmRoot: print "I/O for BlockMap ... ",
+  if iAmRoot: print "I/O for Map ... ",
   EpetraExt.BlockMapToMatrixMarketFile("map.mm", map)
-  (ierr, map2) = EpetraExt.MatrixMarketFileToBlockMap("map.mm", comm)
+  (ierr, map2) = EpetraExt.MatrixMarketFileToMap("map.mm", comm)
   print "ierr =", ierr
   print "map2 =", map2
   if map2.SameAs(map):
@@ -77,7 +77,7 @@ def main():
 
   if iAmRoot: print "I/O for MultiVector ... ",
   EpetraExt.MultiVectorToMatrixMarketFile("x.mm", x)
-  (ierr, y) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", map)
+  (ierr, y) = EpetraExt.MatrixMarketFileToMultiVector("x.mm", map2)
   y.Update(1.0, x, -1.0)
   norm = y.Norm2()
 
@@ -94,7 +94,7 @@ def main():
   # ===================================================== #
 
   if iAmRoot: print "I/O for CrsMatrix ... ",
-  A       = Epetra.CrsMatrix(Epetra.Copy, map, 0)
+  A       = Epetra.CrsMatrix(Epetra.Copy, map2, 0)
   Indices = Epetra.IntSerialDenseVector(1)
   Values  = Epetra.SerialDenseVector(1)
   for lrid in range(A.NumMyRows()):
@@ -104,7 +104,7 @@ def main():
     A.InsertGlobalValues(grid, 1, Values, Indices)
   A.FillComplete()
   EpetraExt.RowMatrixToMatrixMarketFile("A.mm", A)
-  (ierr, B) = EpetraExt.MatrixMarketFileToCrsMatrix("A.mm", map)
+  (ierr, B) = EpetraExt.MatrixMarketFileToCrsMatrix("A.mm", map2)
   EpetraExt.Add(A, False, 1.0, B, -1.0)
   norm = B.NormInf()
 

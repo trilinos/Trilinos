@@ -44,6 +44,7 @@ The most important classes of the EpetraExt module are:
    - BlockMapToMatrixMarketFile()
    - MatrixMarketFileToMultiVector()
    - MatrixMarketFileToBlockMap()
+   - MatrixMarketFileToMap()
    - MatrixMarketFileToCrsMatrix()
 *) Output functions:
    - BlockMapToMatrixMarketFile()
@@ -145,6 +146,21 @@ using namespace std;
   $1 = &_BlockMap;
 }
 
+%typemap(argout) Epetra_Map*& OutMap {
+  PyObject *o1, *oMap;
+  oMap = SWIG_NewPointerObj((void*)(*$1), SWIGTYPE_p_Epetra_Map, 1);
+  if (!PyTuple_Check($result)) $result = Py_BuildValue("(O)", $result);
+  if (result >= 0)
+    o1 = Py_BuildValue("(O)", oMap);
+  else
+    o1 = Py_BuildValue("(i)", 0);
+  $result = PySequence_Concat($result,o1);
+}
+
+%typemap(in,numinputs=0) Epetra_Map *&OutMap(Epetra_Map* _Map) {
+  $1 = &_Map;
+}
+
 %typemap(argout) Epetra_MultiVector*& OutVector {
   PyObject *o1, *oVector;
   Epetra_NumPyMultiVector * npmv;
@@ -235,6 +251,9 @@ namespace EpetraExt
 
   int MatrixMarketFileToBlockMap(const char *filename, const Epetra_Comm &
                                  comm, Epetra_BlockMap * & OutBlockMap);
+
+  int MatrixMarketFileToMap(const char *filename, const Epetra_Comm &
+                                 comm, Epetra_Map * & OutMap);
 
   int MatrixMarketFileToMultiVector(const char *filename, const Epetra_BlockMap & map, 
                                Epetra_MultiVector * & OutVector);
