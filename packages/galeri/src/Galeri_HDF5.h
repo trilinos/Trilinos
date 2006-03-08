@@ -20,97 +20,180 @@ namespace Galeri
 class HDF5 
 {
   public: 
+    // @{ \name Constructor and destructor.
+    //! ctor
     HDF5(const Epetra_Comm& Comm) :
-      Comm_(Comm)
+      Comm_(Comm),
+      IsOpen_(false)
     {}
 
-    ~HDF5() {}
-
-    void Create(const string FileName);
-
-    void Open(const string FileName, int AccessType = H5F_ACC_RDWR);
-
-    bool IsDataSet(const string Name);
-
-    // OLD
-    void Write(const string& Name, int what);
-
-    void Write(const string& GroupName, const string& DataSetName, int what);
-
-    void Write(const string& GroupName, const string& DataSetName, double what);
-
-    void Write(const string& Name, double what);
-
-    void Write(const string& Name, string Comment)
+    //! dtor
+    ~HDF5() 
     {
-      H5Gset_comment(file_id, Name.c_str(), Comment.c_str());
+      if (IsOpen())
+        Close();
     }
 
-    void Write(const string& Name, const int type, const int Length, void* data);
+    // @}
+    // @{ \name Basic operations
+    
+    //! Creates a new file.
+    void Create(const string FileName);
 
-    void Write(const string& Name, const Epetra_Map& Map);
+    //! Opens specified file with given access type.
+    void Open(const string FileName, int AccessType = H5F_ACC_RDWR);
 
-    void Write(const string& Name, const Epetra_Vector& x);
+    //! Closes the file.
+    void Close()
+    {
+      H5Pclose(plist_id_);
+      H5Fclose(file_id_);
+      IsOpen_ = false;
+    }
 
-    void Write(const string& Name, const Epetra_RowMatrix& Matrix);
+    //! Returns \c true is a file has already been open using Open()/Create()
+    bool IsOpen() const
+    {
+      return(IsOpen_);
+    }
 
-    void Write(const string& Name, int MySize, int GlobalSize, int type, const void* data);
+    //! Creates group \c GroupName.
+    void CreateGroup(const string& GroupName)
+    {
+      hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), 0);
+      H5Gclose(group_id);
+    }
 
-    void Write(const string& GroupName, const string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
-    void Write(const string& Name, const Teuchos::ParameterList& List);
+    //! Returns \c true is \c Name is contained in the database.
+    bool IsContained(const string Name);
 
+    // @}
+    // @{ \name basic non-distributed data types
+    
+    //! Writes an integer. FIXME
+    void Write(const string& Name, int data);
+
+    //! Writes an double. FIXME
+    void Write(const string& Name, double data);
+
+    //! Writes an integer in group \c GroupName using intentified \c DataSetName.
+    void Write(const string& GroupName, const string& DataSetName, int data);
+
+    //! Writes a double in group \c GroupName using intentified \c DataSetName.
+    void Write(const string& GroupName, const string& DataSetName, double data);
+
+    //! Associates string \c Comment with group \c GroupName.
+    void Write(const string& GroupName, string Comment)
+    {
+      H5Gset_comment(file_id_, GroupName.c_str(), Comment.c_str());
+    }
+
+    //! Reads the string associated with group \c GroupName.
+    void Read(const string& GroupName, string& Comment)
+    {
+      char comment[128];
+      H5Gget_comment(file_id_, GroupName.c_str(), 128, comment);
+      Comment = comment;
+    }
+
+    // Writes serial array \c data, of length \c Length and type \c type, to \c Name.
+    void Write(const string& Name, const int type, const int Length, void* data)
+    {
+      cout << "TO BE DONE " << endl;
+    
+    }
+
+    // Reads serial array \c data, of length \c Length and type \c type, from \c Name.
+    void Read(const string& Name, const int type, const int Length, void* data);
+
+    //! Reads an integer from group \c /GroupName/DataSetName
     void Read(const string& GroupName, const string& DataSetName, int& data);
 
+    //! Reads a double from group \c /GroupName/DataSetName
     void Read(const string& GroupName, const string& DataSetName, double& data);
 
-    void Read(const string& Name, Teuchos::ParameterList& List);
+    //! Reads serial array \c data, of type \c type, from group \c GroupNameusing dataset name \c DataSetName
+    void Read(const string& GroupName, const string& DataSetName,
+              const int type, const int Length, void* data);
 
-    void Read(const string& Name, Epetra_Map*& Map);
+    //! Writes serial array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
+    void Write(const string& GroupName, const string& DataSetName,
+                         const int type, const int Length, 
+                         void* data);
 
-    void Read(const string& Name, Epetra_Vector*& X);
-
-    void Read(const string& Name, const Epetra_Map& Map, Epetra_Vector*& X);
-
-    void Read(const string& Name, Epetra_CrsMatrix*& A);
-
-    void Read(const string& Name, const Epetra_Map& DomainMap, 
-              const Epetra_Map& RangeMap, Epetra_CrsMatrix*& A);
-
+    // @}
+    // @{ \name Epetra_Map
+    
+    //! Reads distributed array \c data, of type \c type, from group \c GroupNameusing dataset name \c DataSetName
     void Read(const string& GroupName, const string& DataSetName,
               int MySize, int GlobalSize,
               const int type, void* data);
 
-    void Close()
-    {
-      H5Pclose(plist_id);
-      H5Fclose(file_id);
-    }
+    //! Writes distributed array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
+    void Write(const string& GroupName, const string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
 
-    void CreateGroup(const string& Name)
-    {
-      group_id = H5Gcreate(file_id, Name.c_str(), 0);
-      H5Gclose(group_id);
-    }
+    // @}
+    // @{ \name Epetra_Map
 
-    void Read(const string& Name, string& Comment)
-    {
-      char comment[128];
-      H5Gget_comment(file_id, Name.c_str(), 128, comment);
-      Comment = comment;
-    }
+    //! Reads a map from \c GroupName.
+    void Read(const string& GroupName, Epetra_Map*& Map);
+
+    //! Writes a distributed Map to group \c GroupName.
+    void Write(const string& GroupName, const Epetra_Map& Map);
+
+    // @}
+    // @{ \name Epetra_Vector
+
+    //! Reads a vector from group \c GroupName, assumes linear distribution.
+    void Read(const string& GroupName, Epetra_Vector*& X);
+
+    //! Reads a vector from group \c GroupName using given map.
+    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_Vector*& X);
+
+    //! Writes a distributed vector to group \c GroupName.
+    void Write(const string& GroupName, const Epetra_Vector& x);
+
+    // @}
+    // @{ \name Epetra_RowMatrix/Epetra_CrsMatrix
+
+    //! Writes a distributed RowMatrix to group \c GroupName.
+    void Write(const string& GroupName, const Epetra_RowMatrix& Matrix);
+
+    //! Reads a square matrix from group \c GroupName, assumes linear distribution.
+    void Read(const string& GroupName, Epetra_CrsMatrix*& A);
+
+    //! Reads a matrix from group \c GroupName with given range and domain maps.
+    void Read(const string& GroupName, 
+              const Epetra_Map& DomainMap, 
+              const Epetra_Map& RangeMap, 
+              Epetra_CrsMatrix*& A);
+
+    // @}
+    // @{ \name Teuchos::ParameterList
+
+    //! Writes a parameter list to group \c GroupName.
+    void Write(const string& GroupName, const Teuchos::ParameterList& List);
+
+    //! Reads a parameter list from group \c GroupName.
+    void Read(const string& GroupName, Teuchos::ParameterList& List);
 
   private:
+    // @{
+    // @} \name Private Data
+
+    const Epetra_Comm& Comm() const
+    {
+      return(Comm_);
+    }
+
     const Epetra_Comm& Comm_;
     string FileName_;
 
-    hid_t       file_id, dset_id;         /* file and dataset identifiers */
-    hid_t       filespace, memspace;      /* file and memory dataspace identifiers */
-    hsize_t	count;	          /* hyperslab selection parameters */
-    hsize_t	offset;
-    hid_t	plist_id;                 /* property list identifier */
-    int         i;
+    hid_t       file_id_;
+    hid_t	plist_id_;
     herr_t	status;
-    hid_t       group_id;
+    bool IsOpen_;
+    // @}
 };
 };
 

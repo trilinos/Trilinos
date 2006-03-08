@@ -8,14 +8,31 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include <vector>
+#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_Time.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
 #include "Galeri_HDF5.h"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Galeri_Utils.h"
+#include "EpetraExt_BlockMapIn.h"
+#include "EpetraExt_BlockMapOut.h"
+#include "EpetraExt_MultiVectorIn.h"
+#include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_CrsMatrixIn.h"
+
 using namespace Galeri;
+
+// Showing the usage of HDF5 I/O.
+// This example can be run with any number of processors.
+//
+// \author Marzio Sala, D-INFK/ETHZ.
+//
+// \date Last modified on 09-Mar-06.
 
 int main (int argc, char **argv)
 {
@@ -26,18 +43,7 @@ int main (int argc, char **argv)
   Epetra_SerialComm Comm;
 #endif
 
-  int MySize = 1 + 2 * Comm.MyPID();
-  int GlobalSize;
-  Comm.SumAll(&MySize, &GlobalSize, 1);
-
-  // Initialize data buffer 
-  vector<int> data(MySize);
-  for (int i=0; i < MySize; i++) {
-    data[i] = Comm.MyPID() + 10;
-  }
-
-  Galeri::HDF5 HDF5(Comm);
-
+  // create a map, two vectors, a matrix using Galeri
   Teuchos::ParameterList GaleriList;
   int nx = 10 * Comm.NumProc();
   int ny = 10 * Comm.NumProc();
@@ -46,53 +52,84 @@ int main (int argc, char **argv)
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
 
-  Epetra_Map* Map;
-  Epetra_CrsMatrix* Matrix;
-  Epetra_Vector* x = 0,* readb = 0,* readxexact = 0;
-  Galeri::ReadHB(ProblemType.c_str(), Comm, Map, Matrix, x, readb, readxexact);
-
-#if 0
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_CrsMatrix* Matrix   = CreateCrsMatrix("Biharmonic2D", Map, GaleriList);
+  Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Biharmonic2D", Map, GaleriList);
   Epetra_Vector x(Matrix->RowMatrixRowMap());
+  Epetra_Vector b(Matrix->RowMatrixRowMap());
   x.Random();
-  Teuchos::ParameterList NewList;
-#endif
+  b.Random();
 
-  HDF5.Create("myfile.h5");       // opens the file
-  HDF5.Write("map-" + toString(Comm.NumProc()), *Map);        // writes the map 
-  HDF5.Write("matrix", *Matrix);  // writes the matrix...
-  HDF5.Write("x", x);             // and a vector
+  // Creates the HDF5 file manager
+  Galeri::HDF5 HDF5(Comm);
+
+  HDF5.Create("myfile.h5");
+
+  // =========================== //
+  // P A R T   I:  W R I T I N G //
+  // =========================== //
+  
+  // We first write the map, whose name contains the number of processors
+  HDF5.Write("map-" + toString(Comm.NumProc()), *Map);
+  // Then we write the matrix...
+  HDF5.Write("matrix", *Matrix);
+  // ... and the x, b vectors
+  HDF5.Write("x", x);
+  HDF5.Write("b", b);
+  // Now we write the parameter list we have used to create the matrix
   HDF5.Write("GaleriList", GaleriList);
+  // We can also write integers/doubles/arrays. All these quantities are
+  // supposed to have the same value on all processors.
+  int IntFlag = 12;
+  HDF5.Write("IntFlag", IntFlag);
 
-#if 0
-  cout << HDF5.IsDataSet("nx") << endl;
-  cout << HDF5.IsDataSet("n") << endl;
+  double DoubleFlag = 13.0;
+  HDF5.Write("IntFlag", IntFlag);
 
-  vector<double> array(10);
-  for (int i = 0; i < 10; ++i)
-    array[i] = 1000.0;
-  HDF5.Write("/array", H5T_NATIVE_DOUBLE, 10, &array[0]);
+  vector<int> IntArray(3); 
+  IntArray[0] = 0, IntArray[1] = 1; IntArray[2] = 2;
+  HDF5.Write("IntArray", H5T_NATIVE_INT, 3, &IntArray[0]);
 
-  HDF5.Read("GaleriList", NewList);
-  cout << NewList;
+  vector<double> DoubleArray(3);
+  DoubleArray[0] = 0, DoubleArray[1] = 1; DoubleArray[2] = 2;
+  HDF5.Write("DoubleArray", H5T_NATIVE_DOUBLE, 3, &DoubleArray[0]);
+  
+  // To analyze the content of the file, one can use 
+  // "h5dump filename.h5" or "h5dump filename.h5 -H" o
 
-  Epetra_Map* NewMap;
-  if (HDF5.IsDataSet("map-" + toString(Comm.NumProc())))
+  // ============================ //
+  // P A R T   II:  R E A D I N G //
+  // ============================ //
+  
+  Epetra_Map* NewMap = 0;
+  Epetra_CrsMatrix* NewMatrix = 0;
+
+  // Check if the map is there (in this case it is). If it is, read the
+  // matrix using the map, otherwise read the matrix with a linear map.
+  if (HDF5.IsContained("map-" + toString(Comm.NumProc())))
   {
     HDF5.Read("map-" + toString(Comm.NumProc()), NewMap);
-    cout << *NewMap;
+    HDF5.Read("matrix", *NewMap, *NewMap, NewMatrix);
   }
-  Epetra_CrsMatrix* NewMatrix;
-  Epetra_Vector* NewX;
-  HDF5.Read("x", NewX);
- // cout << *NewX;
-  //HDF5.Read("x", *NewMap, NewX);
-  HDF5.Read("matrix", NewMatrix);
-//  cout << *NewMatrix;
-#endif
+  else
+    HDF5.Read("matrix", *NewMap, *NewMap, NewMatrix);
 
+  // read the number of nonzeros from file, compare them with the
+  // actual number of NewMatrix
+  int NewNumGlobalNonzeros;
+  HDF5.Read("matrix", "NumGlobalNonzeros", NewNumGlobalNonzeros);
+
+  cout << Matrix->NumGlobalNonzeros() << " vs. " << NewNumGlobalNonzeros << endl;
+
+  // We finally close the file. Better to close it before calling
+  // MPI_Finalize() to avoid MPI-related errors, since Close() might call MPI
+  // functions.
   HDF5.Close();
+
+  // delete memory
+  delete Matrix;
+  delete Map;
+  if (NewMap) delete NewMap;
+  if (NewMatrix) delete NewMatrix;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

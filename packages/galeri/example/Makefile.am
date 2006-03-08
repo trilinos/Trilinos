@@ -38,11 +38,16 @@ include $(top_builddir)/Makefile.export
 EXEEXT = .exe
 
 if HAVE_GALERI_HDF5
+if HAVE_GALERI_EPETRAEXT
+HDF5_EPETRAEXT_EXAMPLE = HDF5Converter
+endif
 HDF5_EXAMPLE = HDF5
 endif
+
 noinst_PROGRAMS = Map CrsMatrix VbrMatrix LinearProblem \
 		  Grid Laplacian3D AdvDiff2D \
-		  $(HDF5_EXAMPLE)
+		  $(HDF5_EXAMPLE) \
+		  $(HDF5_EPETRAEXT_EXAMPLE)
 
 Map_SOURCES      = $(srcdir)/Map.cpp
 Map_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
@@ -83,3 +88,8 @@ HDF5_SOURCES      = $(srcdir)/HDF5.cpp
 HDF5_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 HDF5_CXXFLAGS     = $(GALERI_INCLUDES)
 HDF5_LDADD        = $(GALERI_LIBS)
+
+HDF5Converter_SOURCES      = $(srcdir)/HDF5Converter.cpp
+HDF5Converter_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
+HDF5Converter_CXXFLAGS     = $(GALERI_INCLUDES)
+HDF5Converter_LDADD        = $(GALERI_LIBS)

@@ -333,6 +333,16 @@ fi
 # Checks for 3-party functions
 # ------------------------------------------------------------------------
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(galeri, epetraext, GALERI_EPETRAEXT, 
+                               HAVE_GALERI_EPETRAEXT, yes, 
+                               [Enable EpetraExt support.])
+
+if test "X$ac_cv_use_galeri_epetraext" != "Xno" ; then
+  AM_CONDITIONAL(HAVE_GALERI_EPETRAEXT, true ) 
+else
+  AM_CONDITIONAL(HAVE_GALERI_EPETRAEXT, false ) 
+fi
+
 TAC_ARG_ENABLE_FEATURE_SUB(galeri, hdf5, 
                            [Enable Galeri interface support for HDF5], 
                            GALERI_HDF5, no)

@@ -1,6 +1,14 @@
-GALERI_LIBS = $(top_builddir)/src/libgaleri.a                  \
-	      $(top_builddir)/../epetra/src/libepetra.a        \
-	      $(top_builddir)/../teuchos/src/libteuchos.a      \
+@HAVE_GALERI_EPETRAEXT_TRUE@EPETRAEXT_INCLUDE = \
+	-I$(top_builddir)/../epetraext/src      \
+	-I$(top_srcdir)/../epetraext/src        \
+	-I$(top_srcdir)/../epetraext/src/inout
+@HAVE_GALERI_EPETRAEXT_TRUE@EPETRAEXT_LIBS =    \
+	-L$(top_builddir)/../epetraext/src -lepetraext
+
+GALERI_LIBS = $(top_builddir)/src/libgaleri.a                    \
+	      $(EPETRAEXT_LIBS)                                  \
+	      $(top_builddir)/../epetra/src/libepetra.a          \
+	      $(top_builddir)/../teuchos/src/libteuchos.a        \
               @LDFLAGS@ @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ \
               @LAPACK_LIBS@ @BLAS_LIBS@
 
@@ -9,4 +17,5 @@ GALERI_INCLUDES = -I$(top_builddir)/src/             \
 		  -I$(top_builddir)/../epetra/src    \
 		  -I$(top_srcdir)/../epetra/src      \
 		  -I$(top_builddir)/../teuchos/src   \
-		  -I$(top_srcdir)/../teuchos/src 
+		  -I$(top_srcdir)/../teuchos/src     \
+		  $(EPETRAEXT_INCLUDE)
