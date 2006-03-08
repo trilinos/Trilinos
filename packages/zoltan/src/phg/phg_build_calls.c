@@ -1190,7 +1190,7 @@ int *rptr, *cptr;
 
   zz->Get_HG_Size_CS(zz->Get_HG_Size_CS_Data, &nl, &np, &format, &ierr);
 
-  if ((format != ZOLTAN_COMPRESSED_ROWS)&&(format != ZOLTAN_COMPRESSED_COLS)){
+  if ((format != ZOLTAN_COMPRESSED_EDGE)&&(format != ZOLTAN_COMPRESSED_VERTEX)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
       "Invalid compression format returned in Get_HG_Size_CS");
     ZOLTAN_TRACE_EXIT(zz, yo);
@@ -1199,7 +1199,7 @@ int *rptr, *cptr;
   ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_Size_CS");
 
   have_pins = ((nl > 0) && (np > 0));
-  row_storage = (format == ZOLTAN_COMPRESSED_ROWS);
+  row_storage = (format == ZOLTAN_COMPRESSED_EDGE);
 
   /* Get the hypergraph pins in compressed storage format */
 
