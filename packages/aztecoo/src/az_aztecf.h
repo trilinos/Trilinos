@@ -396,7 +396,7 @@
       parameter (AZ_EVERYBODY_BUT_CLEAR = 7)
       parameter (AZ_EMPTY = 8)
       parameter (AZ_LOOKFOR_PRINT = 9)
-      parameter (AZ_SYS = -14901)
+      parameter (AZ_SYS = -914901)
       parameter (AZ_OLD_ADDRESS = 0)
       parameter (AZ_NEW_ADDRESS = 1)
       parameter (AZ_SPECIAL = 13)
