@@ -103,8 +103,8 @@ void *exSetHGDivisions(
     printf("bad who has edge weights\n");
     return NULL;
   } 
-  if ((format != ZOLTAN_COMPRESSED_ROWS) &&
-      (format != ZOLTAN_COMPRESSED_COLS)){
+  if ((format != ZOLTAN_COMPRESSED_EDGE) &&
+      (format != ZOLTAN_COMPRESSED_VERTEX)){
     printf("bad format\n");
     return NULL;
   }
@@ -278,7 +278,7 @@ int r, c;
     }
   }
 
-  if (div->format == ZOLTAN_COMPRESSED_ROWS){
+  if (div->format == ZOLTAN_COMPRESSED_EDGE){
     *num_lists = nedges;
   }
   else{
@@ -302,7 +302,7 @@ void exGetHg(void *data,  int num_gid_entries,
   div = (struct _division *)data;
 
   if (npins > 0){
-    if (format == ZOLTAN_COMPRESSED_ROWS){
+    if (format == ZOLTAN_COMPRESSED_EDGE){
       for (i=0, e=div->row0, j=0; e <= div->row1; i++, e++){
         if (i == nrowcol) break;
         rowcol_ptr[i] = j;
@@ -390,7 +390,7 @@ void exGetHgEdgeWeights(void *data,  int num_gid_entries,
     }
   }
 
-  *ierr ZOLTAN_OK;
+  *ierr = ZOLTAN_OK;
 }
 int exGetHgNumVertices(void *data, int *ierr)
 {

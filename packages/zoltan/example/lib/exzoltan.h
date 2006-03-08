@@ -31,7 +31,10 @@ void exGetObject(void *userDefinedData, int numGlobalIds, int numLids,
   int numObjs, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids, int numDim, 
   double *pts, int *err);
 
-/* hypergraph options */
+/* hypergraph options 
+ *    In our application ROWS are hyperedges and
+ *                       COLS are vertices
+ */
 
 #define COMPLETE_ROWS   1
 #define COMPLETE_COLS   2

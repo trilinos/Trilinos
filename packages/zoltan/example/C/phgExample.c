@@ -10,6 +10,7 @@
 **   each returns an arbitrary set of pins                (use BLOCKS)
 **   some processes return no pins    (run on odd number of processes)
 **
+** (Note: "rows" are hyperedges, "columns" are vertices.)
 ** Zoltan_* functions are functions in the Zoltan library.
 **
 ** ex* functions are functions in the example library, a library
@@ -67,7 +68,7 @@ int main(int argc, char *argv[])
       BLOCKS,          /* each process has some rows of hg */
       ALL_HAVE_EDGE_WEIGHTS,  /* each process has some of the edge weights */ 
       1,                  /* do edge weights supplied by processes overlap */ 
-      ZOLTAN_COMPRESSED_ROWS); /* compressed pin format for query function */
+      ZOLTAN_COMPRESSED_EDGE); /* compressed pin format for query function */
 
   if (!phgHandle){
     printf("error in initializing example library\n");
