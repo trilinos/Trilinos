@@ -132,7 +132,7 @@ ELEM_INFO_PTR current_elem;
 
   printf("\nHyperedges\n");
   printf("Number of global hyperedges:  %d\n", mesh->gnhedges);
-  if (mesh->format == ZOLTAN_COMPRESSED_ROWS){
+  if (mesh->format == ZOLTAN_COMPRESSED_EDGE){
     printf("Number of rows (edges):   %d\n", mesh->nhedges);
   }
   else{

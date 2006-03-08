@@ -74,7 +74,7 @@ char **pstring2) 		/* cleaned string to return */
 
 char *Zoltan_Strdup(const char *str)
 {
-  char *yo = "Zoltan_Strdup";
+  /* char *yo = "Zoltan_Strdup"; */
   char *c = NULL;
   if (!str){
     return c;

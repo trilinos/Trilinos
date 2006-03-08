@@ -1700,15 +1700,15 @@ typedef void ZOLTAN_CHILD_WEIGHT_FORT_FN(
 
 /*****************************************************************************/
 /*
- *  Function to return the type of compressed storage format (row or
- *  column) and the size of the data to be returned by Get_HG_CS().
+ *  Function to return the type of compressed storage format (edge or
+ *  vertex) and the size of the data to be returned by Get_HG_CS().
  *
  *  Input:
  *    data                --  pointer to user defined data structure
  *  Output:
- *    num_lists           --  number of rows (vertices) or columns (edges)
- *    num_pins            --  total non-zeroes in rows or columns
- *    format              --  ZOLTAN_COMPRESSED_ROWS or ZOLTAN_COMPRESSED_COLS
+ *    num_lists           --  number of vertices or hyperedges
+ *    num_pins            --  total pins in hypergraph
+ *    format              --  ZOLTAN_COMPRESSED_EDGE or ZOLTAN_COMPRESSED_VERTEX
  *    ierr                --  error code
  */
 
@@ -1730,40 +1730,39 @@ typedef void ZOLTAN_HG_SIZE_CS_FORT_FN(
 
 /*****************************************************************************/
 /*
- *  Function to return the non-zeroes of a hypergraph in
- *  compressed column or compressed row storage format.  Columns are
- *  vertices, rows are edges in the hypergraph's matrix storage format.
+ *  Function to return the pins (non-zeroes) of a hypergraph in
+ *  compressed vertex or compressed hyperedge storage format.  
  *
  *  Input:
  *    data                --  pointer to user defined data structure
  *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
  *                            in a global ID
- *    nrowcol             --  number of rows or columns expected in output
+ *    nvtxedge            --  number of vertices or edges expected in output
  *    npins               --  number of pins expected in output
- *    format              --  ZOLTAN_COMPRESSED_ROWS or ZOLTAN_COMPRESSED_COLS
+ *    format              --  ZOLTAN_COMPRESSED_VERTEX or ZOLTAN_COMPRESSED_EDGE
  *
  *  Output:
- *    rowcol_GID --  if ZOLTAN_COMPRESSED_ROWS: global edge ID for each row
- *                   if ZOLTAN_COMPRESSED_COLS: global vertex ID for each column
- *    rowcol_ptr --  if ZOLTAN_COMPRESSED_ROWS: pointer into pin_GID list for
- *                     the start of each row
- *                   if ZOLTAN_COMPRESSED_COLS: pointer into pin_GID list for
- *                     the start of each column
- *    pin_GID    --  if ZOLTAN_COMPRESSED_ROWS: global vertex ID for each
- *                     non-zero in each row
- *                   if ZOLTAN_COMPRESSED_COLS: global edge ID for each
- *                     non-zero in each column
+ *    vtxedge_GID --  if ZOLTAN_COMPRESSED_EDGE: global edge ID for each edge
+ *                   if ZOLTAN_COMPRESSED_VERTEX: global vertex ID for each vertex
+ *    vtxedge_ptr --  if ZOLTAN_COMPRESSED_EDGE: pointer into pin_GID list for
+ *                     the start of each edge
+ *                   if ZOLTAN_COMPRESSED_VERTEX: pointer into pin_GID list for
+ *                     the start of each vertex
+ *    pin_GID    --  if ZOLTAN_COMPRESSED_EDGE: global vertex ID for each
+ *                     pin (non-zero) in each edge
+ *                   if ZOLTAN_COMPRESSED_VERTEX: global edge ID for each
+ *                     pin (non-zero) in each vertex
  *    ierr       --  error code
  */
 
 typedef void ZOLTAN_HG_CS_FN(
   void *data,
   int num_gid_entries,
-  int nrowcol,
+  int nvtxedge,
   int npins,
   int format,
-  ZOLTAN_ID_PTR rowcol_GID,
-  int *rowcol_ptr,
+  ZOLTAN_ID_PTR vtxedge_GID,
+  int *vtxedge_ptr,
   ZOLTAN_ID_PTR pin_GID,
   int *ierr
 );
@@ -1771,11 +1770,11 @@ typedef void ZOLTAN_HG_CS_FN(
 typedef int ZOLTAN_HG_CS_FORT_FN(
   void *data,
   int *num_gid_entries,
-  int *nrowcol,
+  int *nvtxedge,
   int *npins,
   int *format,
-  ZOLTAN_ID_PTR rowcol_GID,
-  int *rowcol_ptr,
+  ZOLTAN_ID_PTR vtxedge_GID,
+  int *vtxedge_ptr,
   ZOLTAN_ID_PTR pin_GID,
   int *ierr
 );

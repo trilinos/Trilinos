@@ -751,7 +751,7 @@ int read_mtxplus_file(
   if (pio_info->init_dist_pins != INITIAL_COL){       /* CRS */
     rc = create_edge_lists(nMyPins, myPinI, myPinJ, 
             &numHEdges, &edgeGno, &edgeIdx, &pinGno);
-    mesh->format = ZOLTAN_COMPRESSED_ROWS;
+    mesh->format = ZOLTAN_COMPRESSED_EDGE;
   }
   else{                                               /* CCS */
     /* actually creating vertex lists, since we switched
@@ -759,7 +759,7 @@ int read_mtxplus_file(
      */
     rc = create_edge_lists(nMyPins, myPinJ, myPinI, 
             &numHEdges, &edgeGno, &edgeIdx, &pinGno);
-    mesh->format = ZOLTAN_COMPRESSED_COLS;
+    mesh->format = ZOLTAN_COMPRESSED_VERTEX;
   }
 
   MPI_Allreduce(&rc, &status, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);

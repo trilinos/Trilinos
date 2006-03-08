@@ -52,8 +52,8 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 /* Hypergraph query function types 
  */
 /*****************************************************************************/
-#define ZOLTAN_COMPRESSED_ROWS 1
-#define ZOLTAN_COMPRESSED_COLS 2
+#define ZOLTAN_COMPRESSED_EDGE   1
+#define ZOLTAN_COMPRESSED_VERTEX 2
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

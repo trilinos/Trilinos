@@ -420,7 +420,7 @@ static int read_mesh(
   MPI_Reduce(&he, &the, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   MPI_Reduce(&verts, &tverts, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
   if (Proc == 0){
-    if (mesh->format == ZOLTAN_COMPRESSED_ROWS){
+    if (mesh->format == ZOLTAN_COMPRESSED_EDGE){
       printf("Total pins %d, total vertices %d, total rows %d\n",
                  tpins, tverts, the);
     }
@@ -530,7 +530,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
   mesh->ecmap_sideids  = NULL;
   mesh->ecmap_neighids = NULL;
   mesh->elements       = NULL;
-  mesh->format         = ZOLTAN_COMPRESSED_ROWS;
+  mesh->format         = ZOLTAN_COMPRESSED_EDGE;
   mesh->hgid           = NULL;
   mesh->hindex         = NULL;
   mesh->hvertex        = NULL;
@@ -544,7 +544,7 @@ static void print_mesh(MESH_INFO_PTR m, int *tp, int *the, int *tv)
 {
   int i, j;
   printf("Global number of hyperedges %d\n",m->gnhedges);
-  if (m->format == ZOLTAN_COMPRESSED_ROWS){
+  if (m->format == ZOLTAN_COMPRESSED_EDGE){
     printf("Pins: %d edges\n",m->nhedges);
   }
   else{
