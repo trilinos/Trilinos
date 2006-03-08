@@ -1,6 +1,4 @@
 #include "Galeri_ConfigDefs.h"
-#include "hdf5.h"
-#include <iostream>
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -8,22 +6,13 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include <vector>
-#include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
-#include "Epetra_Time.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Import.h"
 #include "Galeri_HDF5.h"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Galeri_Utils.h"
-#include "EpetraExt_BlockMapIn.h"
-#include "EpetraExt_BlockMapOut.h"
-#include "EpetraExt_MultiVectorIn.h"
-#include "EpetraExt_MultiVectorOut.h"
-#include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_CrsMatrixIn.h"
 
 using namespace Galeri;
 
