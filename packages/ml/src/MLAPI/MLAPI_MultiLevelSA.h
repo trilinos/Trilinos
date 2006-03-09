@@ -1,6 +1,16 @@
 #ifndef MLAPI_MULTILEVEL_H
 #define MLAPI_MULTILEVEL_H
 
+/*!
+\file MLAPI_MultiLevelSA.h
+
+\brief Standard smoothed aggregation multilevel preconditioner.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 #include "ml_agg_genP.h"
 #include "MLAPI_Error.h"

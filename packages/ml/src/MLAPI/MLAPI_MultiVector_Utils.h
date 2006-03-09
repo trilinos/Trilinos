@@ -1,6 +1,16 @@
 #ifndef MLAPI_DOUBLEVECTOR_UTILS_H
 #define MLAPI_DOUBLEVECTOR_UTILS_H
 
+/*!
+\file MLAPI_Operator_Utils.h
+
+\brief Suite of utilities for MLAPI::Operator objects.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "MLAPI_Error.h"
 #include "MLAPI_MultiVector.h"
 

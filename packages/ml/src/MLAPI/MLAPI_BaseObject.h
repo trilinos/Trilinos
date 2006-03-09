@@ -1,6 +1,16 @@
 #ifndef MLAPI_BASEOBJECT_H
 #define MLAPI_BASEOBJECT_H
 
+/*!
+\file MLAPI_BaseObject.h
+
+\brief Base MLAPI object.
+
+\author Marzio Sala, SNL 9214.
+
+\date Last updated on Mar-06.
+*/
+
 #include <iostream>
 using namespace std;
 #include "MLAPI_Workspace.h"
@@ -13,7 +23,7 @@ namespace MLAPI {
  * \brief Basic class for MLAPI objects
  *
  * BaseObject is the basic class for all MLAPI objects. Currently, it 
- * contains the label of the object.
+ * contains the label of the object and method Print().
  *
  * \author Marzio Sala, SNL 9214
  *

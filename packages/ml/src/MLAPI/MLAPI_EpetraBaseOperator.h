@@ -1,6 +1,16 @@
 #ifndef MLAPI_EPETRAPRECONDITIONER_H
 #define MLAPI_EPETRAPRECONDITIONER_H
 
+/*!
+\file MLAPI_EpetraBaseOperator.h
+
+\brief Basic class to wrap MLAPI::InverseOperator into Epetra_Operator.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 
 #include "Epetra_Operator.h"

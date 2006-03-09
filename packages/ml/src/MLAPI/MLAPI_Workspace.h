@@ -1,6 +1,16 @@
 #ifndef MLAPI_WORKSPACE_H
 #define MLAPI_WORKSPACE_H
 
+/*!
+\file MLAPI_Workspace.h
+
+\brief Collection of utilities for workspace.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_include.h"
 #include "Epetra_Comm.h"
 #ifdef HAVE_MPI

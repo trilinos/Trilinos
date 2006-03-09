@@ -1,6 +1,16 @@
 #ifndef MLAPI_KRYLOV
 #define MLAPI_KRYLOV
 
+/*!
+\file MLAPI_Krylov.h
+
+\brief MLAPI interface to AztecOO's solvers.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 
 namespace Teuchos {

@@ -1,6 +1,16 @@
 #ifndef MLAPI_MULTILEVELADAPTIVESA_H
 #define MLAPI_MULTILEVELADAPTIVESA_H
 
+/*!
+\file MLAPI_MultiLevelAdaptiveSA.h
+
+\brief Adaptive smoothed aggregation preconditioner.
+
+\author Marzio Sala, Ray Tuminaro, Jonathan Hu, Michael Gee, Marian Brezina.
+
+\date Last updated on Feb-05.
+*/
+
 #include "ml_common.h"
 #include "ml_agg_genP.h"
 #include "MLAPI_Error.h"

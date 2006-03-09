@@ -1,6 +1,16 @@
 #ifndef MLAPI_MATLABSTREAM_H
 #define MLAPI_MATLABSTREAM_H
 
+/*!
+\file MLAPI_MATLABStream.h
+
+\brief Basic stream to save in a MATLAB-compatible file MLAPI objects.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 
 #include "MLAPI_Error.h"

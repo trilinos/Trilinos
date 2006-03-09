@@ -1,6 +1,16 @@
 #ifndef MLAPI_COMPOBJECT_H
 #define MLAPI_COMPOBJECT_H
 
+/*!
+\file MLAPI_CompObject.h
+
+\brief Class to count flops.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 namespace MLAPI {
 
 /*!

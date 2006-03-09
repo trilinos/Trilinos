@@ -1,6 +1,16 @@
 #ifndef ML_INVERSEOPERATOR_H
 #define ML_INVERSEOPERATOR_H
 
+/*!
+\file MLAPI_InverseOperator.h
+
+\brief Base class for smoothers and coarse solvers.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 #include "MLAPI_BaseOperator.h"
 #include "MLAPI_CompObject.h"
@@ -25,15 +35,14 @@ class MultiLevel;
  * \brief InverseOperator: basic class to define smoother and coarse solvers.
  *
  *
- * \author Marzio Sala, SNL 9214
+ * \author Marzio Sala, D-INFK/ETHZ.
  *
- * \date Last updated on Feb-05.
+ * \date Last updated on Mar-06.
  */
 
 class InverseOperator : public BaseOperator, public CompObject, public TimeObject {
 
 public:
-
   // @{ \name Constructors and destructors.
 
   //! Empty constructor.
@@ -121,10 +130,11 @@ public:
   //! Prints out basic information about \c this object.
   ostream& Print(std::ostream& os, const bool verbose = true) const;
 
-  // @}
-  
 private:
 
+  // @}
+  // @{ \name Private data and methods
+  
   void Destroy();
 
   //! Operator of which \c this object define the inverse.

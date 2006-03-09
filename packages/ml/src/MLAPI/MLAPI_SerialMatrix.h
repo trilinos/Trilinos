@@ -1,6 +1,16 @@
 #ifndef MLAPI_SERIALMATRIX_H
 #define MLAPI_SERIALMATRIX_H
 
+/*!
+\file MLAPI_SerialMatrix.h
+
+\brief MATLAB-like serial matrix.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 
 #include "ml_include.h"

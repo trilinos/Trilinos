@@ -1,6 +1,16 @@
 #ifndef MLAPI_PRECONDITIONER_H
 #define MLAPI_PRECONDITIONER_H
 
+/*!
+\file MLAPI_BaseOperator.h
+
+\brief Base MLAPI operator.
+
+\author Marzio Sala, SNL 9214.
+
+\date Last updated on Mar-06.
+*/
+
 #include "MLAPI_BaseObject.h"
 
 namespace MLAPI {

@@ -1,6 +1,16 @@
 #ifndef ML_LINEARCOMBINATION_H
 #define ML_LINEARCOMBINATION_H
 
+/*!
+\file MLAPI_LinearCombination.h
+
+\brief Concrete implementations of BaseLinearCombination.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "MLAPI_BaseLinearCombination.h"
 
 namespace MLAPI {

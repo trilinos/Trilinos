@@ -1,6 +1,16 @@
 #ifndef MLAPI_OPERATOR_BOX_H
 #define MLAPI_OPERATOR_BOX_H
 
+/*!
+\file MLAPI_Operator_Box.h
+
+\brief Wrapper for ML_Operator to make it suitable for RefCountPtr.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_operator.h"
 
 namespace MLAPI {

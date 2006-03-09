@@ -1,6 +1,15 @@
 #ifndef ML_OPERATOR_H
 #define ML_OPERATOR_H
 
+/*!
+\file MLAPI_Operator.h
+
+\brief Basic class to define operators within MLAPI.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
 #include "ml_common.h"
 #include <iostream>
 #include "ml_operator.h"

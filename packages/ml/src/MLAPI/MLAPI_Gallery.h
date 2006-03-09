@@ -1,6 +1,16 @@
 #ifndef MLAPI_GALLERY_H
 #define MLAPI_GALLERY_H
 
+/*!
+\file MLAPI_Gallery.h
+
+\brief MLAPI interface to the Galeri package.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 
 #include "ml_include.h"

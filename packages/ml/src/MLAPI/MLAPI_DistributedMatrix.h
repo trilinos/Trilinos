@@ -1,6 +1,16 @@
 #ifndef MLAPI_DISTRIBUTEDMATRIX_H
 #define MLAPI_DISTRIBUTEDMATRIX_H
 
+/*!
+\file MLAPI_DistributedMatrix.h
+
+\brief MLAPI wrapper for Epetra_FECrsMatrix, which allows MATLAB-like syntax.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 
 #include "MLAPI_Error.h"

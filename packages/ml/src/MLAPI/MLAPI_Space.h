@@ -1,6 +1,16 @@
 #ifndef ML_SPACE_H
 #define ML_SPACE_H
 
+/*!
+\file MLAPI_Space.h
+
+\brief Class to specify the number and distribution among processes of elements.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 #include "ml_comm.h"
 #include "MLAPI_Error.h"
@@ -65,7 +75,7 @@ public:
   /*! 
     \param NumGlobalElements - (In) number of global elements. Set to
                                -1 to compute it automatically.
-    \param NumMyElement - (In) number of local elements. Cannot be set
+    \param NumMyElements - (In) number of local elements. Cannot be set
                           to -1.
     \param MyGlobalElements - (In) contains the global ID of each local node.
 

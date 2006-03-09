@@ -1,6 +1,16 @@
 #ifndef MLAPI_DEFAULTS_H
 #define MLAPI_DEFAULTS_H
 
+/*!
+\file MLAPI_Defaults.h
+
+\brief Function to set default values in a  parameter list.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "MLAPI_Error.h"
 #include "Teuchos_ParameterList.hpp"
 

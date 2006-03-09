@@ -1,6 +1,16 @@
 #ifndef ML_MULTIVECTOR_H
 #define ML_MULTIVECTOR_H
 
+/*!
+\file MLAPI_MultiVector.h
+
+\brief MLAPI wrapper for double vectors.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 //#include "ml_lapack.h"
 #include "MLAPI_Error.h"
 #include "MLAPI_BaseObject.h"

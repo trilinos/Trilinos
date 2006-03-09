@@ -1,6 +1,16 @@
 #ifndef MLAPI_EIG_H
 #define MLAPI_EIG_H
 
+/*!
+\file MLAPI_Eig.h
+
+\brief MLAPI interfaces to eigensolvers.
+
+\author Marzio Sala, D-INFK/ETHZ.
+
+\date Last updated on Mar-06.
+*/
+
 #include "ml_common.h"
 
 namespace MLAPI {
