@@ -23,15 +23,18 @@
 </head>
 <body bgcolor="#ffffff">
 <div align="right"><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
-|&nbsp; <a href="ug_alg_oct.html">Next</a>&nbsp; |&nbsp; <a
+|&nbsp; <a href="ug_alg_phg.html">Next</a>&nbsp; |&nbsp; <a
  href="ug_alg_phg.html">Previous</a></i></b></div>
 <h2>
 <a name="Graph vs Hypergraph Partitioning">
 </a>Graph vs Hypergraph Partitioning</h2>
-Graph partitioning has long been used in scientific computing. 
+
+Graph partitioning has proven quite useful in scientific computing. 
 Hypergraph  partitioning is a more recent improvement
 that uses a hypergraph model, which is
-often more accurate than the graph model for scientific computing. 
+often a more accurate model than the graph model for scientific computing. 
+(Hypergraphs contain hyperedges which connect two <i>or more</i>
+vertices.)
 See <a href="ug_refs.html#catalyurek99">[Catalyurek & Aykanat]</a> and
 <a href="ug_refs.html#hendrickson-kolda">[Hendrickson & Kolda]</a> 
 for further details. 
@@ -45,8 +48,8 @@ of higher quality than graph partitioning, which may reduce
 communication time in parallel applications (up to 30-40%
 reduction has been reported). However, hypergraph
 partitioning takes longer time to compute. </li>
-<li> The graph model is mostly restricted to symmetric data dependencies. 
-If you have a non-symmetric problem, we strongly recommend hypergraph 
+<li> The graph model is restricted to symmetric data dependencies. 
+If you have a non-symmetric problem, we recommend hypergraph 
 partitioning. </li>
 </ul>
 
@@ -68,8 +71,9 @@ application.
 </ol>
 
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
- href="ug_alg_oct.html">Next:&nbsp;
-Octree</a>&nbsp; |&nbsp; <a href="ug_alg_phg.html">Previous:&nbsp;
+ href="ug_alg_phg.html">Next:&nbsp;
+Hypergraph Partitioning</a>&nbsp; |&nbsp; 
+<a href="ug_alg_phg.html">Previous:&nbsp;
 Hypergraph Partitioning</a>]
 </body>
 </html>
