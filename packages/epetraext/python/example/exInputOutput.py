@@ -119,7 +119,10 @@ def main():
 ################################################################
 
 if __name__ == "__main__":
-  failures = main()
+  if numProc == 1:
+    failures = main() # not all I/O works in parallel
+  else
+    failure = 0
   failures = comm.SumAll(failures)[0]
   if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
   sys.exit(failures)
