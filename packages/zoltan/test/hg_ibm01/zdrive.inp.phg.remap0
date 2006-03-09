@@ -2,6 +2,8 @@ Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters       = REMAP = 0
+Zoltan Parameters       = NUM_GID_ENTRIES = 2
+Zoltan Parameters       = NUM_LID_ENTRIES = 2
 File Type		= matrixmarket+
 File Name		= ibm01
 Parallel Disk Info	= number=0
