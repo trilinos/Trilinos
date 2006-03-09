@@ -10,13 +10,34 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include <vector>
-#include "Epetra_RowMatrix.h"
-#include "Epetra_Vector.h"
 #include "Galeri_Utils.h"
-#include "Teuchos_ParameterList.hpp"
+class Epetra_IntVector;
+class Epetra_MultiVector;
+class Epetra_CrsGraph;
+class Epetra_RowMatrix;
+class Epetra_CrsMatrix;
+class Epetra_VbrMatrix;
+namespace Teuchos {
+  class ParameterList;
+}
 
 namespace Galeri 
 {
+/*! \brief class HDF5: A class for storing Epetra objects in parallel binary files
+ *
+ * \todo all distributed objects are assumed in local state, this is not
+ * necessary (just easier)
+ *
+ * \todo MultiVector's are not read correctly. Both MV and IntVectors are
+ * always redistributed to match a linear distribution, even if the target one
+ * is linear. (Easy fix.)
+ *
+ * \todo Epetra_VbrMatrix has to be done
+ *
+ * \author Marzio Sala, D-INFK/ETHZ
+ *
+ * \date Last updated on Mar-06.
+ */
 class HDF5 
 {
   public: 
@@ -122,36 +143,92 @@ class HDF5
                          void* data);
 
     // @}
-    // @{ \name Epetra_Map
+    // @{ \name Distributed arrays
     
+    //! Writes distributed array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
+    void Write(const string& GroupName, const string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
+
     //! Reads distributed array \c data, of type \c type, from group \c GroupNameusing dataset name \c DataSetName
     void Read(const string& GroupName, const string& DataSetName,
               int MySize, int GlobalSize,
               const int type, void* data);
 
-    //! Writes distributed array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
-    void Write(const string& GroupName, const string& DataSetName, int MySize, int GlobalSize, int type, const void* data);
-
     // @}
-    // @{ \name Epetra_Map
+    // @{ \name Epetra_Map/Epetra_BlockMap
+
+    //! Writes a Map to group \c GroupName.
+    void Write(const string& GroupName, const Epetra_Map& Map);
 
     //! Reads a map from \c GroupName.
     void Read(const string& GroupName, Epetra_Map*& Map);
 
-    //! Writes a distributed Map to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_Map& Map);
+    //! Reads basic properties of specified map.
+    void ReadMapProperties(const string& GroupName, 
+                           int& NumGlobalElements,
+                           int& IndexBase,
+                           int& NumProc);
+
+    //! Reads a block map from \c GroupName.
+    void Read(const string& GroupName, Epetra_BlockMap*& Map);
+
+    //! Writes a block map to group \c GroupName.
+    void Write(const string& GroupName, const Epetra_BlockMap& Map);
+
+    void ReadBlockMapProperties(const string& GroupName, 
+                                int& NumGlobalElements,
+                                int& NumGlobalPoints,
+                                int& IndexBase,
+                                int& NumProc);
 
     // @}
-    // @{ \name Epetra_Vector
+    // @{ \name Epetra_CrsGraph
 
     //! Reads a vector from group \c GroupName, assumes linear distribution.
-    void Read(const string& GroupName, Epetra_Vector*& X);
+    void Read(const string& GroupName, Epetra_CrsGraph*& Graph);
 
     //! Reads a vector from group \c GroupName using given map.
-    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_Vector*& X);
+    void Read(const string& GroupName, const Epetra_Map& DomainMap, 
+              const Epetra_Map& RangeMap, Epetra_CrsGraph*& Graph);
 
     //! Writes a distributed vector to group \c GroupName.
-    void Write(const string& GroupName, const Epetra_Vector& x);
+    void Write(const string& GroupName, const Epetra_CrsGraph& Graph);
+
+    void ReadCrsGraphProperties(const string& GroupName, 
+                                int& NumGlobalRows,
+                                int& NumGlobalCols,
+                                int& NumGlobalNonzeros,
+                                int& NumGlobalDiagonals,
+                                int& MaxNumIndices);
+
+    // @}
+    // @{ \name Epetra_IntVector
+
+    //! Writes a distributed vector to group \c GroupName.
+    void Write(const string& GroupName, const Epetra_IntVector& x);
+
+    //! Reads a vector from group \c GroupName, assumes linear distribution.
+    void Read(const string& GroupName, Epetra_IntVector*& X);
+
+    //! Reads a vector from group \c GroupName using given map.
+    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_IntVector*& X);
+
+    void ReadIntVectorProperties(const string& GroupName, int& GlobalLength);
+
+    // @}
+    // @{ \name Epetra_MultiVector
+
+    //! Writes a distributed vector to group \c GroupName.
+    void Write(const string& GroupName, const Epetra_MultiVector& x);
+
+    //! Reads a vector from group \c GroupName, assumes linear distribution.
+    void Read(const string& GroupName, Epetra_MultiVector*& X);
+
+    //! Reads a vector from group \c GroupName using given map.
+    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_MultiVector*& X);
+
+    void ReadMultiVectorProperties(const string& GroupName, 
+                                   int& GlobalLength,
+                                   int& NumVectors);
 
     // @}
     // @{ \name Epetra_RowMatrix/Epetra_CrsMatrix
@@ -167,6 +244,15 @@ class HDF5
               const Epetra_Map& DomainMap, 
               const Epetra_Map& RangeMap, 
               Epetra_CrsMatrix*& A);
+
+    void ReadCrsMatrixProperties(const string& GroupName, 
+                                 int& NumGlobalRows,
+                                 int& NumGlobalCols,
+                                 int& NumNonzeros,
+                                 int& NumGlobalDiagonals,
+                                 int& MaxNumEntries,
+                                 double& NormOne,
+                                 double& NormInf);
 
     // @}
     // @{ \name Teuchos::ParameterList
