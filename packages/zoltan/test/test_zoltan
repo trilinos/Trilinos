@@ -33,8 +33,11 @@ set nem_pdisk = (1 2 2) # parallel disk info
 
 # Hypergraph problems, methods and sizes.  If you add tests here, you
 # may also want to update the hg_* values in the "yes_serial" case.
-set hg_name  = (simple vwgt ewgt nograph felix diag500_4 ibm01 ibm03 cage10 FluidDFT)
-set hg_nproc = ( 4      4    4    3       5       4       7     9     11     8)
+#set hg_name  = (simple vwgt ewgt nograph felix diag500_4 ibm01 ibm03 cage10 FluidDFT)
+#set hg_nproc = ( 4      4    4    3       5       4       7     9     11     8)
+
+set hg_name = (ibm01)
+set hg_nproc = (7)
 
 # Set default options
 set out_tag = out
@@ -859,6 +862,7 @@ if (! $no_hg) then
     phg.bal_tol_adjustment1.0 \
     phg.check_hypergraph1 \
     phg.coarsening_limit200 \
+    phg.coarsening_limit1   \
     phg.coarsening_method_cipm \
     phg.coarsening_method_lipm \
     phg.coarsening_method_none \
