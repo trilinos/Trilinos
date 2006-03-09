@@ -126,8 +126,8 @@ int Ifpack_ICT::Initialize()
 
   Time_.ResetStartTime();
 
-  // matrix must be square
-  if (Matrix().NumMyRows() != Matrix().NumMyCols())
+  // matrix must be square. Check only on one processor
+  if (Comm().NumProc() == 1 && Matrix().NumMyRows() != Matrix().NumMyCols())
     IFPACK_CHK_ERR(-2);
     
   NumMyRows_ = Matrix().NumMyRows();

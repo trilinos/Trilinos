@@ -128,7 +128,8 @@ int Ifpack_ILUT::Initialize()
 
   Time_.ResetStartTime();
 
-  if (Matrix().NumMyRows() != Matrix().NumMyCols())
+  // check only in serial
+  if (Comm().NumProc() == 1 && Matrix().NumMyRows() != Matrix().NumMyCols())
     IFPACK_CHK_ERR(-2);
     
   NumMyRows_ = Matrix().NumMyRows();
