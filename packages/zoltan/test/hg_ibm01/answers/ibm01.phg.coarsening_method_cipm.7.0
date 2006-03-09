@@ -2,6 +2,8 @@ Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters	= ADD_OBJ_WEIGHT=none
+Zoltan Parameters       = NUM_GID_ENTRIES = 1
+Zoltan Parameters       = NUM_LID_ENTRIES = 0
 File Type		= matrixmarket+
 Zoltan Parameters       = PHG_COARSENING_METHOD = c-ipm
 File Name		= ibm01
