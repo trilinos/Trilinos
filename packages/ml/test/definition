@@ -118,13 +118,8 @@
 
 (FRAMEWORK, INSTALL, MLPyExamples) {
     TESTS = ../python/example/exSimple.py,
-            ../python/example/exMLAPI_PyMatrix.py;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM  = SERIAL, MPI(1-4);
-}
-
-(FRAMEWORK, INSTALL, MLPyExamples) {
-    TESTS = ../python/example/exMLAPI.py,
+            ../python/example/exMLAPI_PyMatrix.py,
+            ../python/example/exMLAPI.py,
             ../python/example/exMLAPI_AztecOO.py,
             ../python/example/exMLAPI_Iterate.py,
             ../python/example/exMLAPI_Smoother.py,
