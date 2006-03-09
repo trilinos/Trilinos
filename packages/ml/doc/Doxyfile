@@ -251,7 +251,6 @@ INPUT                 += ../src/Coarsen
 INPUT                 += ../src/Main
 INPUT                 += ../src/MLAPI
 INPUT                 += ../src/NonlinML
-INPUT                 += ../examples/FiniteElements
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
@@ -315,7 +314,6 @@ EXAMPLE_PATH          += ../examples/MLAPI
 EXAMPLE_PATH          += ../examples/MatrixReading
 EXAMPLE_PATH          += ../examples/StandAlone
 EXAMPLE_PATH          += ../examples/MLAPI
-EXAMPLE_PATH          += ../examples/FiniteElements
 EXAMPLE_PATH          += ../
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the 

@@ -49,7 +49,6 @@ INPUT                 += ../src/Coarsen
 INPUT                 += ../src/Main
 INPUT                 += ../src/MLAPI
 INPUT                 += ../src/NonlinML
-INPUT                 += ../examples/FiniteElements
 
 FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
 FILE_PATTERNS         += ml_epetra_utils.h 
@@ -83,7 +82,6 @@ EXAMPLE_PATH          += ../examples/Maxwell
 EXAMPLE_PATH          += ../examples/MatrixReading 
 EXAMPLE_PATH          += ../examples/StandAlone
 EXAMPLE_PATH          += ../examples/MLAPI
-EXAMPLE_PATH          += ../examples/FiniteElements
 EXAMPLE_PATH          += ../
 
 IMAGE_PATH             = .
