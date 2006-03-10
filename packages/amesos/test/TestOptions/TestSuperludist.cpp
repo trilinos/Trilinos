@@ -15,24 +15,31 @@
 //
 //  TestSuperludist performs the following tests:
 //                         Redistribute   AddZeroToDiag   SUB:  ReuseSymbolic MaxProcesses
-//                            true           true                   true           2
-//                            true           true                   false          2
-//                            true           true                   false          2
-//                            true           true                   true           1
-//                            true           true                   false          1
-//                            true           true                   false          2
-//                            true           false                  true           1
-//                            true           false                  true           2
-//                            true           false                  false          1
-//                            true           false                  false          2
-//                            false/true     true                   true           1
-//                            false          true                   true           2
-//                            false          true                   false          1
-//                            false          true                   false          2
-//                            false          false                  true           1
-//                            false          false                  true           2
-//                            false          false                  false          1
-//                            false          false                  false          2
+//  Test number:
+//   1 disabled AddToDiag=100 true           true                   true           2
+//   2 disabled AddToDiag=100 true           false                  true           2
+//   3                        true           true                   false          2
+//   4                        true           true                   true           1
+//   5                        true           true                   false          1
+//   6                        true           true                   false          10
+//   7                        true           false                  true           -1
+//   8                        true           false                  true           -2
+//   9                        true           false                  true           -3
+//   10                       true           false                  false          4  
+//   11                       false/true     true                   true           4
+//   12                       false/true     true                   true           2
+//     Test #12 appears to duplicate test #11 and perhaps #4 
+//   13                       false/true     true                   false          1
+//   14                       false/true     true                   false          2
+//   15                       false/true     false                  true           1
+//   16                       false/true     false                  true           2
+//   17 SamePattern           true           false                  true           10
+//   18 RowPerm - NATURAL     true           false                  false          10
+//   19 RowPerm - LargeDiag   true           false                  false          10
+//   20 RowPerm - NATURAL     true           false                  false          10
+//   21 RowPerm - LargeDiag   true           false                  false          10
+//   22 RowPerm - TinyPivot=t true           false                  false          10
+//   23 RowPerm - TinyPivot=f true           false                  false          10
 //   
 
 
@@ -44,8 +51,11 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 		     const double Rcond,
 		     double &maxrelerror, 
 		     double &maxrelresidual,
+		     char *filename,
 		     int &NumTests ) {
 
+  string StringFilename = filename ; 
+  bool ImpcolB = ( StringFilename.find("ImpcolB") < StringFilename.find("xdz_notaname_garbage") );
   int NumErrors = 0 ;
   maxrelerror = 0.0;
   maxrelresidual = 0.0;
@@ -56,11 +66,13 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 
   {
     bool MyVerbose = false ; // if set to verbose - we exceed the test harness 1 Megabyte limit
+    //  bool MyVerbose = verbose ; // if set to verbose - we exceed the test harness 1 Megabyte limit
 
     //
     //  Bug #1990 - AddToDiag fails in Amesos_Superludist 
     //
 #if 0 
+    //  Test #1 - disabled - bug #1990
     {
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
@@ -100,6 +112,8 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       }
     }
     {
+
+      // Test #2 - disabled -  bug #1990 - AddToDiag fails 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
@@ -139,6 +153,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     }
 #endif     
     {
+      // test #3 - 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
@@ -169,6 +184,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     }
       
     {
+      //  test #4 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
@@ -200,6 +216,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     }
 
     {
+      //  test #5
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
@@ -232,12 +249,14 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+
+      //  test #6 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
-      SuperludistParams.set( "MaxProcesses", 2 );
+      SuperludistParams.set( "MaxProcesses", 10 );
       //  ParamList.print( cerr, 10 ) ; 
    
       NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
@@ -260,12 +279,13 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      //  Test #7 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
-      SuperludistParams.set( "MaxProcesses", 1 );
+      SuperludistParams.set( "MaxProcesses", -1 );
       //  ParamList.print( cerr, 10 ) ; 
    
       if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
@@ -292,12 +312,13 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      //  Test #8 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
-      SuperludistParams.set( "MaxProcesses", 2 );
+      SuperludistParams.set( "MaxProcesses", -2 );
       //  ParamList.print( cerr, 10 ) ; 
    
       if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
@@ -324,12 +345,13 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      //  Test #9 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
-      SuperludistParams.set( "MaxProcesses", 1 );
+      SuperludistParams.set( "MaxProcesses", -3 );
       //  ParamList.print( cerr, 10 ) ; 
    
       if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
@@ -356,12 +378,13 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      //  Test #10
       Teuchos::ParameterList ParamList ;
       ParamList.set( "Redistribute", true );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", false );
-      SuperludistParams.set( "MaxProcesses", 2 );
+      SuperludistParams.set( "MaxProcesses", 4 );
       //  ParamList.print( cerr, 10 ) ; 
    
       if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
@@ -388,11 +411,12 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
 
     {
+      //  Test #11 
       Teuchos::ParameterList ParamList ;
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
-      SuperludistParams.set( "MaxProcesses", 1 );
+      SuperludistParams.set( "MaxProcesses", 4 );
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
       else
@@ -422,6 +446,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
     }
   
     {
+      //  Test #12 
       Teuchos::ParameterList ParamList ;
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
@@ -430,7 +455,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       ParamList.set( "AddZeroToDiag", true );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
       SuperludistParams.set( "ReuseSymbolic", true );
-      SuperludistParams.set( "MaxProcesses", 2 );
+      SuperludistParams.set( "MaxProcesses", 4 );
       //  ParamList.print( cerr, 10 ) ; 
    
       if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
@@ -457,6 +482,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      //  Test #13 
       Teuchos::ParameterList ParamList ;
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
@@ -492,6 +518,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      // Test #14 
       Teuchos::ParameterList ParamList ;
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
@@ -527,6 +554,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      //  Test #15 
       Teuchos::ParameterList ParamList ;
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
@@ -562,6 +590,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
   
   
     {
+      //  Test #16 
       Teuchos::ParameterList ParamList ;
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
@@ -594,9 +623,8 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 	
       //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
-  
-  
     {
+      //  Test #17 
       Teuchos::ParameterList ParamList ;
       if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
 	ParamList.set( "Redistribute", true );
@@ -604,42 +632,8 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 	ParamList.set( "Redistribute", false );
       ParamList.set( "AddZeroToDiag", false );
       Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-      SuperludistParams.set( "ReuseSymbolic", false );
-      SuperludistParams.set( "MaxProcesses", 1 );
-      //  ParamList.print( cerr, 10 ) ; 
-   
-      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
-			   << " ParamList = " <<
-		       ParamList <<  endl ; 
-      
-      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
-					  EpetraMatrixType,
-					  Comm, 
-					  transpose, 
-					  MyVerbose,
-					  ParamList, 
-					  Amat, 
-					  Levels,
-					  Rcond, 
-					  relerror, 
-					  relresidual ) ; 
-      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
-      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
-      NumTests++ ; 
-	
-      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
-    }
-  
-  
-    {
-      Teuchos::ParameterList ParamList ;
-      if ( Amat->RowMatrixRowMap().LinearMap() == false )   // bug #1408
-	ParamList.set( "Redistribute", true );
-      else
-	ParamList.set( "Redistribute", false );
-      ParamList.set( "AddZeroToDiag", false );
-      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
-      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "Fact", "SamePattern" );
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
    
@@ -665,6 +659,211 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
     }
   
+    if (!ImpcolB )   // ImpcolB fails if the NATURAL order - i.e. no pivoting - is chosen  
+    {
+      //  Test #18 
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "RowPerm", "NATURAL" );
+      SuperludistParams.set( "MaxProcesses", 10 );
+      //  ParamList.print( cerr, 10 ) ; 
+   
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+			   << " ParamList = " <<
+		       ParamList <<  endl ; 
+      
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  MyVerbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
+  
+  
+    {
+      //  Test #19 
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", false );
+      SuperludistParams.set( "RowPerm", "LargeDiag" );
+      SuperludistParams.set( "MaxProcesses", 10 );
+      //  ParamList.print( cerr, 10 ) ; 
+   
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+			   << " ParamList = " <<
+		       ParamList <<  endl ; 
+      
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  MyVerbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
+  
+  
+    if (!ImpcolB )   // ImpcolB fails if the NATURAL order - i.e. no pivoting - is chosen  
+    {
+      //  Test #20 
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "RowPerm", "NATURAL" );
+      SuperludistParams.set( "MaxProcesses", 10 );
+      //  ParamList.print( cerr, 10 ) ; 
+   
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+			   << " ParamList = " <<
+		       ParamList <<  endl ; 
+      
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  MyVerbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
+  
+  
+    {
+      //  Test #21
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "RowPerm", "LargeDiag" );
+      SuperludistParams.set( "MaxProcesses", 10 );
+      //  ParamList.print( cerr, 10 ) ; 
+   
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+			   << " ParamList = " <<
+		       ParamList <<  endl ; 
+      
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  MyVerbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
+  
+    {
+      //  Test #22
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "ReplaceTinyPivot", true );
+      SuperludistParams.set( "MaxProcesses", 10 );
+      //  ParamList.print( cerr, 10 ) ; 
+   
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+			   << " ParamList = " <<
+		       ParamList <<  endl ; 
+      
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  MyVerbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
+  
+    {
+      //  Test #23
+      Teuchos::ParameterList ParamList ;
+      ParamList.set( "Redistribute", true );
+      ParamList.set( "AddZeroToDiag", false );
+      Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
+      SuperludistParams.set( "ReuseSymbolic", true );
+      SuperludistParams.set( "ReplaceTinyPivot", false );
+      SuperludistParams.set( "MaxProcesses", 10 );
+      //  ParamList.print( cerr, 10 ) ; 
+   
+      if ( MyVerbose ) cout  << __FILE__ << "::"  << __LINE__ 
+			   << " ParamList = " <<
+		       ParamList <<  endl ; 
+      
+      NumErrors += PerformOneSolveAndTest("Amesos_Superludist",
+					  EpetraMatrixType,
+					  Comm, 
+					  transpose, 
+					  MyVerbose,
+					  ParamList, 
+					  Amat, 
+					  Levels,
+					  Rcond, 
+					  relerror, 
+					  relresidual ) ; 
+      maxrelerror = EPETRA_MAX( relerror, maxrelerror ) ; 
+      maxrelresidual = EPETRA_MAX( relresidual, maxrelresidual ) ; 
+      NumTests++ ; 
+	
+      //      NumErrors += PerformOneSolveAndTest( Comm, ParamList ) ; 
+    }
+  
+  
+
     return NumErrors; 
   }
 

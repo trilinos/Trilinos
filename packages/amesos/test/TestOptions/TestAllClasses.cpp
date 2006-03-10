@@ -31,6 +31,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
   bool RowMapEqualsColMap = ( ReindexColMap == 0 ) ; 
 
+
   string StringFilename = filename ; 
   bool bcsstk04 = ( StringFilename.find("bcsstk04") < StringFilename.find("xdz_notaname_garbage") );
   bool Khead = ( StringFilename.find("Khead") < StringFilename.find("xdz_notaname_garbage") );
@@ -483,6 +484,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				    Rcond, 
 				    maxrelerror, 
 				    maxrelresidual, 
+				    filename,
 				    NumTheseTests ) ;
 	}
       }

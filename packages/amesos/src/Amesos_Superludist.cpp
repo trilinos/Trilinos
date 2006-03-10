@@ -186,7 +186,7 @@ int Amesos_Superludist::SetParameters( const Teuchos::ParameterList &ParameterLi
     string FactOption = "NotSet";
 
     if( SuperludistParams.isParameter("Fact") )
-      FactOption = SuperludistParams.get<bool>("Fact");
+      FactOption = SuperludistParams.get<string>("Fact");
 
     if( FactOption == "SamePattern_SameRowPerm" ) PrivateSuperluData_->FactOption_ = SamePattern_SameRowPerm;
     else if( FactOption == "SamePattern" ) PrivateSuperluData_->FactOption_ = SamePattern;
@@ -204,7 +204,7 @@ int Amesos_Superludist::SetParameters( const Teuchos::ParameterList &ParameterLi
         perm_c_ = SuperludistParams.get<int*>("perm_c");
 
     if (SuperludistParams.isParameter("RowPerm"))
-      RowPerm_ = SuperludistParams.get<int>("RowPerm");
+      RowPerm_ = SuperludistParams.get<string>("RowPerm");
     if( RowPerm_ == "MY_PERMR" ) {
       if (SuperludistParams.isParameter("perm_r"))
         perm_r_ = SuperludistParams.get<int*>("perm_r");
@@ -239,9 +239,6 @@ int Amesos_Superludist::RedistributeA()
     AMESOS_CHK_ERR(-1); // something has changed
 
   int iam = Comm().MyPID();
-  int NumberOfProcesses = Comm().NumProc();
-  if (MaxProcesses_ > NumberOfProcesses)
-    MaxProcesses_ = NumberOfProcesses;
 
   SetMaxProcesses(MaxProcesses_, *RowMatrixA_);
   SetNPRowAndCol(MaxProcesses_, nprow_, npcol_);
@@ -476,6 +473,7 @@ int Amesos_Superludist::Factor()
 
     //  Without the following two lines, SuperLU_DIST cannot be made
     //  quiet.
+
     if (PrintNonzeros_) PrivateSuperluData_->options_.PrintStat = (yes_no_t)YES;
     else                PrivateSuperluData_->options_.PrintStat = (yes_no_t)NO;
     
@@ -595,7 +593,13 @@ int Amesos_Superludist::ReFactor( )
 
   if (Comm().MyPID() < nprow_ * npcol_) {
 
-    set_default_options_dist(&PrivateSuperluData_->options_);
+
+    //  If we reuse the same options, the code fails on multiprocess runs
+    set_default_options_dist(&PrivateSuperluData_->options_);   
+
+    if (PrintNonzeros_) PrivateSuperluData_->options_.PrintStat = (yes_no_t)YES;
+    else                PrivateSuperluData_->options_.PrintStat = (yes_no_t)NO;
+    
 
     PrivateSuperluData_->options_.Fact = PrivateSuperluData_->FactOption_;
     SuperLUStat_t stat;
@@ -642,7 +646,7 @@ int Amesos_Superludist::NumericFactorization()
     AMESOS_CHK_ERR(-1); // Linear problem does not contain Epetra_RowMatrix
 
   // reset factorization
-  FactorizationOK_ = false; 
+  //  FactorizationOK_ = false; 
 
   if (!MatrixShapeOK())
     AMESOS_CHK_ERR(-1); // matrix not square

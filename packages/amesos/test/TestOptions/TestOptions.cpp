@@ -570,11 +570,11 @@ int NextMain( int argc, char *argv[] ) {
 #endif
 
 
+#if 1
+
 #ifdef HAVE_AMESOS_KLU
   AmesosClasses.push_back( "Amesos_Klu" );
 #endif
-
-#if 1
 
 #ifdef HAVE_AMESOS_LAPACK
   AmesosClasses.push_back( "Amesos_Lapack" );

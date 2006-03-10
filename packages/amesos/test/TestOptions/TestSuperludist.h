@@ -8,5 +8,6 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 		     const double Rcond,
 		     double &maxrelerror, 
 		     double &maxrelresidual,
+		     char *filename,
 		     int &NumTests) ;
 

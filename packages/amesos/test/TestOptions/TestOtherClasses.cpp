@@ -29,6 +29,8 @@ int TestOtherClasses( const char* AmesosClass,
   const Epetra_Comm& Comm = Amat->Comm();
 
   bool MyVerbose = false ; // if set equal to verbose, we exceed the test harness 1 Megabyte limit
+  string StringAmesosClass = AmesosClass ; 
+  if ( AmesosClass ) MyVerbose = verbose ;    // Turn this on temporarily to debug Mumps on atlantis
   {
     Teuchos::ParameterList ParamList ;
 
