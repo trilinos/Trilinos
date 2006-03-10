@@ -2,15 +2,7 @@
 #ifdef HAVE_GALERI_HDF5
 
 #include "hdf5.h"
-#include <iostream>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include <vector>
-#include "Galeri_Utils.h"
+class Epetra_Comm;
 class Epetra_IntVector;
 class Epetra_MultiVector;
 class Epetra_CrsGraph;
@@ -23,30 +15,216 @@ namespace Teuchos {
 
 namespace Galeri 
 {
-/*! \brief class HDF5: A class for storing Epetra objects in parallel binary files
- *
- * \todo all distributed objects are assumed in local state, this is not
- * necessary (just easier)
- *
- * \todo MultiVector's are not read correctly. Both MV and IntVectors are
- * always redistributed to match a linear distribution, even if the target one
- * is linear. (Easy fix.)
- *
- * \todo Epetra_VbrMatrix has to be done
- *
- * \author Marzio Sala, D-INFK/ETHZ
- *
- * \date Last updated on Mar-06.
- */
+/*! 
+\brief class HDF5: A class for storing Epetra objects in parallel binary files
+
+<P><B>Introduction</B>
+
+<P>Class HDF5 allows to read and write using the HDF5 parallel binary data
+format. HDF5 has the following advantages:
+- the file format is binary and portable. Being binary, its size is very compact;
+- the file format can be read and written in parallel;
+- MATLAB contains a built-in HDF5 data reader, making it easy to interface Trilinos
+  application with MATLAB, and vice-versa;
+- the library is easy to build: just download the tarball from the official NCSA HDF5 
+  web page, configure/make/make install, and everything should work. While building
+  Trilinos, then you just have to specify the location of the header files using
+  --with-incdirs, the location of the library using --with-ldflags, and the HDF5 library 
+  using --with-libs. Note that you might need to add "-lz" to the list of libraries; 
+  this library is typically already installed on your system;
+- HDF5 are like a file system, and they can contain directories and files. This means
+  that more data can be stored in the same file. Besides, one can append new data to
+  an existing file, or read only one data set;
+- It is very easy to add "meta-data" to your data; for example a string containing
+  information about the machine where the code was executed, the parameter list used
+  for the preconditioner or the nonlinear solver, the convergence history, and so on;
+- The number of processors reading a given data does not have to coincide with that
+  used to write the data.
+
+The class supports I/O for the following distributed Epetra objects:
+- Epetra_Map (I/O);
+- Epetra_BlockMap (I/O);
+- Epetra_CrsGraph (I/O);
+- Epetra_RowMatrix (O);
+- Epetra_CrsMatrix (I/O);
+- Epetra_IntVector (I/O);
+- Epetra_MultiVector (I/O).
+
+The class also supports some non-distributed types:
+- Teuchos::ParameterList (I/O);
+- basic data types like scalar int and double variables (I/O);
+- and arrays of arbitrary data type are supported (I/O).
+It is meant that the non-distributed data types have the same value on all processors.
+
+Some utility methods are provided:
+- CreateGroup() creates the specified group in the file;
+- IsContained() returns \c true is the specified group is already contained in the file;
+- WriteComment() allows to write any string as comment for a group;
+- a method to write and read a distributed array of arbitrary type is provided. 
+
+By using these methods, as well as the other methods to write non-distributed types, one 
+can read and write any serial or distributed object.
+
+<P><B>Data Model</B>
+
+The HDF5 library itself can be used to define very general data formats; this class, 
+instead, is only structured around the concept of \e groups. A \e group is an entity,
+like for example a scalar value, an Epetra_Map, or a Teuchos::ParameterList. Within each
+group, different datasets describe the content of the group. For example, an 
+Epetra_MultiVector is specified by datasets \c NumVectors and \c Values, which contain 
+the number of vectors, and the numerical values, respectively. The \c comment of each group 
+is a character string that must match the class name.
+
+The HDF5 class has the following limitations:
+- Objects stored in a file cannot be deleted; if you want to do that, you should read the 
+  content of the file, then create a new file and store on it the information to keep;
+- it is not possible to overwrite distributed objects.
+
+
+<P><B>Errors</B>
+
+When an error occurs, a Galeri::Exception is thrown. Method Print() of the Exception class
+gives a description of what went wrong.
+
+
+<P><B>Example of usage</B>
+
+First, one has to create an HDF5 class, then either Open() or Create() the file:
+\code
+Galeri::HDF5 HDF5(Comm);
+HDF5.Create("myfile.h5");
+\endcode
+
+Writing commands might be as follows:
+\code
+Epetra_Map* Map = <create map here>
+Epetra_Map* BlockMap = <create block map here>
+Epetra_RowMatrix* Matrix = <create matrix here>
+Epetra_MultiVector* LHS = <...>
+Epetra_MultiVector* RHS = <...>
+
+// write a map, whose group name contains the number of processors
+HDF5.Write("map-" + toString(Comm.NumProc()), *Map);
+HDF5.Write("matrix", *Matrix);
+HDF5.Write("LHS", LHS);
+HDF5.Write("RHS", RHS);
+\endcode
+
+To write a Teuchos::ParameterList, simply do
+\code
+HDF5.Write("GaleriList", GaleriList);
+
+\endcode
+The file can contain meta-data as well. Each meta-data is defined by a group,
+and a dataset name. A group can contain more than one dataset, and can be a new group
+or an already existing group. For example, to specify the numerical quadrature formula
+used to assemble the matrix, one can do as follows:
+\code
+HDF5.Write("matrix", "quadrature order", 3);
+\endcode
+Alternatively, datasets can be assigned to a new group, let's say \c "my parameters":
+\code
+HDF5.Write("my parameters", "latitude", 12);
+HDF5.Write("my parameters", "longitude", 67);
+HDF5.Write("my parameters", "angle", 12.3);
+
+vector<int> iarray(3); 
+iarray[0] = 0, iarray[1] = 1; iarray[2] = 2;
+HDF5.Write("my parameters", "int array", H5T_NATIVE_INT, 3, &iarray[0]);
+
+vector<double> darray(3); 
+darray[0] = 0.1, darray[1] = 1.1; darray[2] = 2.1;
+HDF5.Write("my parameters", "double array", H5T_NATIVE_DOUBLE, 3, &darray[0]);
+\endcode
+
+Note that all non-distributed datasets are supposed to have the same value
+on all processors.
+
+Reading data is a easy as writing. Let us consider how to read an Epetra_CrsMatrix, 
+other Epetra objects having a similar bejavior. Method ReadCrsMatrixProperties()
+can be used to query for some matrix properties, without reading the whole matrix:
+\code
+int NumGlobalRows, NumGlobalCols, NumGlobalNonzeros;
+int NumGlobalDiagonals, MaxNumEntries;
+double NormOne, NormInf;
+
+ReadCrsMatrixProperties(GroupName, NumGlobalRows, NumGlobalCols,
+                        NumGlobalNonzeros, NumGlobalDiagonals, MaxNumEntries,
+                        NormOne, NormInf);
+\endcode
+
+The above call is not required, and can be skipped. The actual reading is:
+\code
+Epetra_CrsMatrix* NewMatrix = 0;
+HDF5.Read("matrix", NewMatrix);
+\endcode
+
+In this case, \c NewMatrix is based on a linear map. If the DomainMap() and RangeMap() are
+known and non-trivial, one can use
+\code
+HDF5.Read("matrix", DomainMap, RangeMap, NewMatrix);
+\endcode
+
+Reading meta-data looks like:
+\code
+HDF5.Read("my parameters", "latitude", new_latitude);
+HDF5.Read("my parameters", "longitude", new_longitude);
+HDF5.Read("my parameters", "int array", H5T_NATIVE_INT, 3, &new_iarray[0]);
+HDF5.Read("my parameters", "double array", H5T_NATIVE_DOUBLE, 3, &new_darray[0]);
+\endcode
+
+To analyze the content of the file, one can use 
+\c "h5dump filename.h5" or "h5dump filename.h5 -H".
+
+
+<P><B>MATLAB Interface</B>
+
+Reading HDF5 files from MATLAB is very, since the built-in functions 
+\c hdf5read, \c hdf5write, \c hdf5info. For example, to read the above \c Matrix from
+MATLAB, one can do:
+\code
+>> NumGlobalRows = double(hdf5read('myfile.h5', '/matrix/NumGlobalRows/'));
+>> NumGlobalCols = double(hdf5read('myfile.h5', '/matrix/NumGlobalCols/'));
+>> ROW = double(hdf5read('myfile.h5', '/matrix/ROW/'));
+>> COL = double(hdf5read('myfile.h5', '/matrix/COL/'));
+>> VAL = hdf5read('myfile.h5', '/matrix/VAL/');
+>> A = sparse(ROW + 1, COL + 1, VAL, NumGlobalRows, NumGlobalCols);
+\endcode
+The use of \c double() is required by \c sparse, which does not accept \c int32 data.
+
+To dump on file \c matlab.h5 a MATLAB matrix (in this case, \c A), one can proceed as 
+follows:
+\code
+>> n = 10;
+>> A = speye(n, n);
+>> [ROW,COL,VAL] = find(A);
+>> hdf5write('matlab.h5', '/speye/NumGlobalRows',      int32(n));
+>> hdf5write('matlab.h5', '/speye/NumGlobalCols',      int32(n), 'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/NumGlobalNonzeros',  int32(n), 'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/NumGlobalDiagonals', int32(n), 'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/MaxNumEntries',      1,        'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/NormOne',            1.0,      'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/NormInf',            1.0,      'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/ROW', int32(ROW - 1), 'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/COL', int32(COL - 1), 'WriteMode', 'append');
+>> hdf5write('matlab.h5', '/speye/VAL', VAL,            'WriteMode', 'append');
+\endcode
+
+\author Marzio Sala, D-INFK/ETHZ
+
+\date Last updated on Mar-06.
+
+\todo 
+- all distributed objects are assumed in local state, this is not necessary (just easier)
+- Epetra_VbrMatrix has to be done
+
+*/
 class HDF5 
 {
   public: 
     // @{ \name Constructor and destructor.
     //! ctor
-    HDF5(const Epetra_Comm& Comm) :
-      Comm_(Comm),
-      IsOpen_(false)
-    {}
+    HDF5(const Epetra_Comm& Comm); 
 
     //! dtor
     ~HDF5() 
@@ -91,12 +269,6 @@ class HDF5
     // @}
     // @{ \name basic non-distributed data types
     
-    //! Writes an integer. FIXME
-    void Write(const string& Name, int data);
-
-    //! Writes an double. FIXME
-    void Write(const string& Name, double data);
-
     //! Writes an integer in group \c GroupName using intentified \c DataSetName.
     void Write(const string& GroupName, const string& DataSetName, int data);
 
@@ -104,27 +276,26 @@ class HDF5
     void Write(const string& GroupName, const string& DataSetName, double data);
 
     //! Associates string \c Comment with group \c GroupName.
-    void Write(const string& GroupName, string Comment)
+    void WriteComment(const string& GroupName, string Comment)
     {
       H5Gset_comment(file_id_, GroupName.c_str(), Comment.c_str());
     }
 
     //! Reads the string associated with group \c GroupName.
-    void Read(const string& GroupName, string& Comment)
+    void ReadComment(const string& GroupName, string& Comment)
     {
       char comment[128];
       H5Gget_comment(file_id_, GroupName.c_str(), 128, comment);
       Comment = comment;
     }
 
+#if 0
     // Writes serial array \c data, of length \c Length and type \c type, to \c Name.
-    void Write(const string& Name, const int type, const int Length, void* data)
-    {
-      cout << "TO BE DONE " << endl;
-    }
+    void Write(const string& Name, const int type, const int Length, void* data);
 
     // Reads serial array \c data, of length \c Length and type \c type, from \c Name.
     void Read(const string& Name, const int type, const int Length, void* data);
+#endif
 
     //! Reads an integer from group \c /GroupName/DataSetName
     void Read(const string& GroupName, const string& DataSetName, int& data);
@@ -161,7 +332,7 @@ class HDF5
     //! Reads a map from \c GroupName.
     void Read(const string& GroupName, Epetra_Map*& Map);
 
-    //! Reads basic properties of specified map.
+    //! Reads basic properties of specified Epetra_Map.
     void ReadMapProperties(const string& GroupName, 
                            int& NumGlobalElements,
                            int& IndexBase,
@@ -173,6 +344,7 @@ class HDF5
     //! Writes a block map to group \c GroupName.
     void Write(const string& GroupName, const Epetra_BlockMap& Map);
 
+    //! Reads basic properties of specified Epetra_BlockMap.
     void ReadBlockMapProperties(const string& GroupName, 
                                 int& NumGlobalElements,
                                 int& NumGlobalPoints,
@@ -192,6 +364,7 @@ class HDF5
     //! Writes a distributed vector to group \c GroupName.
     void Write(const string& GroupName, const Epetra_CrsGraph& Graph);
 
+    //! Reads basic properties of specified Epetra_CrsGraph.
     void ReadCrsGraphProperties(const string& GroupName, 
                                 int& NumGlobalRows,
                                 int& NumGlobalCols,
@@ -211,6 +384,7 @@ class HDF5
     //! Reads a vector from group \c GroupName using given map.
     void Read(const string& GroupName, const Epetra_Map& Map, Epetra_IntVector*& X);
 
+    //! Reads basic properties of specified Epetra_IntVector.
     void ReadIntVectorProperties(const string& GroupName, int& GlobalLength);
 
     // @}
@@ -225,6 +399,7 @@ class HDF5
     //! Reads a vector from group \c GroupName using given map.
     void Read(const string& GroupName, const Epetra_Map& Map, Epetra_MultiVector*& X);
 
+    //! Reads basic properties of specified Epetra_MultiVector.
     void ReadMultiVectorProperties(const string& GroupName, 
                                    int& GlobalLength,
                                    int& NumVectors);
@@ -244,6 +419,7 @@ class HDF5
               const Epetra_Map& RangeMap, 
               Epetra_CrsMatrix*& A);
 
+    //! Reads basic properties of specified Epetra_CrsMatrix.
     void ReadCrsMatrixProperties(const string& GroupName, 
                                  int& NumGlobalRows,
                                  int& NumGlobalCols,
@@ -266,18 +442,24 @@ class HDF5
     // @{
     // @} \name Private Data
 
+    //! Returns a reference to the communicator of \c this object.
     const Epetra_Comm& Comm() const
     {
       return(Comm_);
     }
 
-    const Epetra_Comm& Comm_;
+    //! Communicator of this object.
+    const Epetra_Comm& Comm_; 
+    //! FileName currently open.
     string FileName_;
+    //! If \c true, a file is currently open.
+    bool IsOpen_;
 
+    //! file ID for HDF5.
     hid_t       file_id_;
     hid_t	plist_id_;
     herr_t	status;
-    bool IsOpen_;
+
     // @}
 };
 };

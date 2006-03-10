@@ -1,5 +1,11 @@
 #include "Galeri_ConfigDefs.h"
 #ifdef HAVE_GALERI_HDF5
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#include "mpi.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
@@ -12,6 +18,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
 #include "Galeri_Exception.h"
+#include "Galeri_Utils.h"
 #include "Galeri_HDF5.h"
 
 // ==========================================================================
@@ -183,6 +190,12 @@ static herr_t f_operator(hid_t loc_id, const char *name, void *opdata)
 }
 
 // ==========================================================================
+Galeri::HDF5::HDF5(const Epetra_Comm& Comm) :
+  Comm_(Comm),
+  IsOpen_(false)
+{}
+
+// ==========================================================================
 void Galeri::HDF5::Create(const string FileName)
 {
   if (IsOpen())
@@ -242,6 +255,9 @@ void Galeri::HDF5::Open(const string FileName, int AccessType)
 // ==========================================================================
 bool Galeri::HDF5::IsContained(string Name)
 {
+  if (!IsOpen())
+    throw(Exception(__FILE__, __LINE__, "no file open yet"));
+
   FindDataset_t data;
   data.name = Name;
   data.found = false;
@@ -251,121 +267,9 @@ bool Galeri::HDF5::IsContained(string Name)
   return(data.found);
 }
 
-// ==========================================================================
-void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
-                         const int type, const int Length, 
-                         void* data)
-{
-  hsize_t dimsf = Length;
-
-  if (!IsContained(GroupName))
-    CreateGroup(GroupName.c_str());
-
-  hid_t filespace_id = H5Screate_simple(1, &dimsf, NULL);
-
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-
-  //dset_id = H5Dopen(file_id_, Name.c_str());
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, 
-                            filespace_id, H5P_DEFAULT);
-
-  herr_t status = H5Dwrite(dset_id, type, H5S_ALL, H5S_ALL,
-                           H5P_DEFAULT, data);
-
-  // Close/release resources.
-  H5Dclose(dset_id);
-  H5Gclose(group_id);
-  H5Sclose(filespace_id);
-}
-
-// ==========================================================================
-// NEW ONE
-void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
-                         int what)
-{
-  hid_t filespace_id = H5Screate(H5S_SCALAR);
-  if (!IsContained(GroupName))
-    CreateGroup(GroupName);
-
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_INT, 
-                      filespace_id, H5P_DEFAULT);
-
-  herr_t status = H5Dwrite(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
-                           H5P_DEFAULT, &what);
-
-  // Close/release resources.
-  H5Dclose(dset_id);
-  H5Gclose(group_id);
-  H5Sclose(filespace_id);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
-                         double what)
-{
-  hid_t filespace_id = H5Screate(H5S_SCALAR);
-  if (!IsContained(GroupName))
-    CreateGroup(GroupName);
-
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_DOUBLE, 
-                            filespace_id, H5P_DEFAULT);
-
-  herr_t status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, 
-                           filespace_id, H5P_DEFAULT, &what);
-
-  // Close/release resources.
-  H5Dclose(dset_id);
-  H5Gclose(group_id);
-  H5Sclose(filespace_id);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Write(const string& Name, int what)
-{
-  bool flag = IsContained(Name);
-
-  hid_t dset_id;
-  hid_t filespace_id = H5Screate(H5S_SCALAR);
-  if (flag)
-  {
-    dset_id = H5Dopen(file_id_, Name.c_str());
-  }
-  else
-    dset_id = H5Dcreate(file_id_, Name.c_str(), H5T_NATIVE_INT, filespace_id,
-                        H5P_DEFAULT);
-
-  herr_t status = H5Dwrite(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
-                           H5P_DEFAULT, &what);
-
-  // Close/release resources.
-  H5Dclose(dset_id);
-  H5Sclose(filespace_id);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Write(const string& Name, double data)
-{
-  bool flag = IsContained(Name);
-
-  hid_t dset_id;
-  hid_t filespace_id = H5Screate(H5S_SCALAR);
-  if (flag)
-  {
-    dset_id = H5Dopen(file_id_, Name.c_str());
-  }
-  else
-    dset_id = H5Dcreate(file_id_, Name.c_str(), H5T_NATIVE_DOUBLE, 
-                        filespace_id, H5P_DEFAULT);
-
-  status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, filespace_id,
-                    H5P_DEFAULT, &data);
-
-  // Close/release resources.
-  H5Dclose(dset_id);
-  H5Sclose(filespace_id);
-}
+// ============================ //
+// Epetra_BlockMap / Epetra_Map //
+// ============================ //
 
 // ==========================================================================
 void Galeri::HDF5::Write(const string& Name, const Epetra_BlockMap& BlockMap)
@@ -389,11 +293,13 @@ void Galeri::HDF5::Write(const string& Name, const Epetra_BlockMap& BlockMap)
         H5T_NATIVE_INT, ElementSizeList);
   Write(Name, "NumMyPoints", H5T_NATIVE_INT, Comm_.NumProc(), &NumMyPoints_v[0]);
 
+  // need to know how many processors currently host this map
+  Write(Name, "NumProc", Comm_.NumProc());
+  // write few more data about this map
   Write(Name, "NumGlobalPoints", 1, Comm_.NumProc(), H5T_NATIVE_INT, &NumGlobalPoints);
   Write(Name, "NumGlobalElements", 1, Comm_.NumProc(), H5T_NATIVE_INT, &NumGlobalElements);
-  Write(Name, "NumProc", Comm_.NumProc());
   Write(Name, "IndexBase", BlockMap.IndexBase());
-  Write(Name, "Epetra_BlockMap");
+  WriteComment(Name, "Epetra_BlockMap");
 }
 
 // ==========================================================================
@@ -439,15 +345,12 @@ void Galeri::HDF5::ReadBlockMapProperties(const string& GroupName,
                                           int& IndexBase,
                                           int& NumProc)
 {
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  Read(GroupName, Label);
+  ReadComment(GroupName, Label);
 
   if (Label != "Epetra_BlockMap")
     throw(Exception(__FILE__, __LINE__,
@@ -475,7 +378,7 @@ void Galeri::HDF5::Write(const string& Name, const Epetra_Map& Map)
   Write(Name, "NumGlobalElements", 1, Comm_.NumProc(), H5T_NATIVE_INT, &GlobalSize);
   Write(Name, "NumProc", Comm_.NumProc());
   Write(Name, "IndexBase", Map.IndexBase());
-  Write(Name, "Epetra_Map");
+  WriteComment(Name, "Epetra_Map");
 }
 
 // ==========================================================================
@@ -510,15 +413,12 @@ void Galeri::HDF5::ReadMapProperties(const string& GroupName,
                                      int& IndexBase,
                                      int& NumProc)
 {
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  Read(GroupName, Label);
+  ReadComment(GroupName, Label);
 
   if (Label != "Epetra_Map")
     throw(Exception(__FILE__, __LINE__,
@@ -536,25 +436,38 @@ void Galeri::HDF5::ReadMapProperties(const string& GroupName,
 // ==========================================================================
 void Galeri::HDF5::Write(const string& Name, const Epetra_IntVector& x)
 {
-  const Epetra_BlockMap& OriginalMap = x.Map();
-  Epetra_Map LinearMap(OriginalMap.NumGlobalElements(), OriginalMap.IndexBase(), Comm_);
-  Epetra_Import Importer(LinearMap, OriginalMap);
+  if (x.Map().LinearMap())
+  {
+    Write(Name, "GlobalLength", x.GlobalLength());
+    Write(Name, "Values", x.Map().NumMyElements(), x.Map().NumGlobalElements(),
+          H5T_NATIVE_INT, x.Values());
+  }
+  else
+  {
+    // need to build a linear map first, the import data, then
+    // finally write them 
+    const Epetra_BlockMap& OriginalMap = x.Map();
+    Epetra_Map LinearMap(OriginalMap.NumGlobalElements(), OriginalMap.IndexBase(), Comm_);
+    Epetra_Import Importer(LinearMap, OriginalMap);
 
-  // FIXME: To do only if the map is not already linear
-  Epetra_IntVector LinearVector(LinearMap);
-  LinearVector.Import(x, Importer, Insert);
+    Epetra_IntVector LinearX(LinearMap);
+    LinearX.Import(x, Importer, Insert);
 
-  Write(Name, "GlobalLength", x.GlobalLength());
-  Write(Name, "Values", LinearMap.NumMyElements(), LinearMap.NumGlobalElements(),
-        H5T_NATIVE_INT, x.Values());
-  Write(Name, "Epetra_IntVector");
+    Write(Name, "GlobalLength", x.GlobalLength());
+    Write(Name, "Values", LinearMap.NumMyElements(), LinearMap.NumGlobalElements(),
+          H5T_NATIVE_INT, LinearX.Values());
+  }
+  WriteComment(Name, "Epetra_IntVector");
 }
 
 // ==========================================================================
 void Galeri::HDF5::Read(const string& GroupName, Epetra_IntVector*& X)
 {
+  // gets the length of the vector
   int GlobalLength;
-   
+  ReadIntVectorProperties(GroupName, GlobalLength);
+
+  // creates a new linear map and use it to read data
   Epetra_Map LinearMap(GlobalLength, 0, Comm_);
   X = new Epetra_IntVector(LinearMap);
 
@@ -566,34 +479,45 @@ void Galeri::HDF5::Read(const string& GroupName, Epetra_IntVector*& X)
 void Galeri::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
                         Epetra_IntVector*& X)
 {
+  // gets the length of the vector
   int GlobalLength;
   ReadIntVectorProperties(GroupName, GlobalLength);
 
-  Epetra_Map LinearMap(GlobalLength, 0, Comm_);
-  Epetra_IntVector LinearX(LinearMap);
+  if (Map.LinearMap())
+  {
+    X = new Epetra_IntVector(Map);
+    // simply read stuff and go home
+    Read(GroupName, "Values", Map.NumMyElements(), Map.NumGlobalElements(),
+         H5T_NATIVE_INT, X->Values());
 
-  Read(GroupName, "Values", LinearMap.NumMyElements(), 
-       LinearMap.NumGlobalElements(),
-       H5T_NATIVE_INT, LinearX.Values());
+  }
+  else
+  {
+    // we need to first create a linear map, read the vector,
+    // then import it to the actual nonlinear map
+    Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+    Epetra_IntVector LinearX(LinearMap);
 
-  Epetra_Import Importer(Map, LinearMap);
-  X = new Epetra_IntVector(Map);
-  X->Import(LinearX, Importer, Insert);
+    Read(GroupName, "Values", LinearMap.NumMyElements(), 
+         LinearMap.NumGlobalElements(),
+         H5T_NATIVE_INT, LinearX.Values());
+
+    Epetra_Import Importer(Map, LinearMap);
+    X = new Epetra_IntVector(Map);
+    X->Import(LinearX, Importer, Insert);
+  }
 }
 
 // ==========================================================================
 void Galeri::HDF5::ReadIntVectorProperties(const string& GroupName, 
                                            int& GlobalLength)
 {
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  Read(GroupName, Label);
+  ReadComment(GroupName, Label);
 
   if (Label != "Epetra_IntVector")
     throw(Exception(__FILE__, __LINE__,
@@ -609,6 +533,10 @@ void Galeri::HDF5::ReadIntVectorProperties(const string& GroupName,
 // ==========================================================================
 void Galeri::HDF5::Write(const string& Name, const Epetra_CrsGraph& Graph)
 {
+  if (!Graph.Filled())
+    throw(Exception(__FILE__, __LINE__,
+                    "input Epetra_CrsGraph is not FillComplete()'d"));
+
   // like RowMatrix, only without values
   int MySize = Graph.NumMyNonzeros();
   int GlobalSize = Graph.NumGlobalNonzeros();
@@ -637,7 +565,7 @@ void Galeri::HDF5::Write(const string& Name, const Epetra_CrsGraph& Graph)
   Write(Name, "NumGlobalCols", Graph.NumGlobalCols());
   Write(Name, "NumGlobalNonzeros", Graph.NumGlobalNonzeros());
   Write(Name, "NumGlobalDiagonals", Graph.NumGlobalDiagonals());
-  Write(Name, "Epetra_CrsGraph");
+  WriteComment(Name, "Epetra_CrsGraph");
 }
 
 // ==========================================================================
@@ -664,15 +592,12 @@ void Galeri::HDF5::ReadCrsGraphProperties(const string& GroupName,
                                           int& NumGlobalDiagonals,
                                           int& MaxNumIndices)
 {
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  Read(GroupName, Label);
+  ReadComment(GroupName, Label);
 
   if (Label != "Epetra_CrsGraph")
     throw(Exception(__FILE__, __LINE__,
@@ -686,15 +611,12 @@ void Galeri::HDF5::ReadCrsGraphProperties(const string& GroupName,
 void Galeri::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap, 
                         const Epetra_Map& RangeMap, Epetra_CrsGraph*& Graph)
 {
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found in database"));
 
   string Label;
-  Read(GroupName, Label);
+  ReadComment(GroupName, Label);
 
   if (Label != "Epetra_CrsGraph")
     throw(Exception(__FILE__, __LINE__,
@@ -740,6 +662,10 @@ void Galeri::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap,
 // ==========================================================================
 void Galeri::HDF5::Write(const string& Name, const Epetra_RowMatrix& Matrix)
 {
+  if (!Matrix.Filled())
+    throw(Exception(__FILE__, __LINE__,
+                    "input Epetra_RowMatrix is not FillComplete()'d"));
+
   int MySize = Matrix.NumMyNonzeros();
   int GlobalSize = Matrix.NumGlobalNonzeros();
   vector<int> ROW(MySize);
@@ -771,9 +697,10 @@ void Galeri::HDF5::Write(const string& Name, const Epetra_RowMatrix& Matrix)
   Write(Name, "NumGlobalCols", Matrix.NumGlobalCols());
   Write(Name, "NumGlobalNonzeros", Matrix.NumGlobalNonzeros());
   Write(Name, "NumGlobalDiagonals", Matrix.NumGlobalDiagonals());
+  Write(Name, "MaxNumEntries", Matrix.MaxNumEntries());
   Write(Name, "NormOne", Matrix.NormOne());
   Write(Name, "NormInf", Matrix.NormInf());
-  Write(Name, "Epetra_RowMatrix");
+  WriteComment(Name, "Epetra_RowMatrix");
 }
 
 // ==========================================================================
@@ -787,6 +714,7 @@ void Galeri::HDF5::Read(const string& GroupName, Epetra_CrsMatrix*& A)
                           NumGlobalNonzeros, NumGlobalDiagonals, MaxNumEntries,
                           NormOne, NormInf);
 
+  // build simple linear maps for domain and range space
   Epetra_Map RangeMap(NumGlobalRows, 0, Comm_);
   Epetra_Map DomainMap(NumGlobalCols, 0, Comm_);
 
@@ -845,15 +773,12 @@ void Galeri::HDF5::ReadCrsMatrixProperties(const string& GroupName,
                                            double& NormOne,
                                            double& NormInf)
 {
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  Read(GroupName, Label);
+  ReadComment(GroupName, Label);
 
   if (Label != "Epetra_RowMatrix")
     throw(Exception(__FILE__, __LINE__,
@@ -868,156 +793,48 @@ void Galeri::HDF5::ReadCrsMatrixProperties(const string& GroupName,
   Read(GroupName, "NormInf", NormInf);
 }
 
+// ============= //
+// ParameterList //
+// ============= //
 
 // ==========================================================================
-void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
-                         int MySize, int GlobalSize, int type, const void* data)
+void Galeri::HDF5::Write(const string& GroupName, const Teuchos::ParameterList& params)
 {
-  int Offset;
-  Comm_.ScanSum(&MySize, &Offset, 1);
-  Offset -= MySize;
+  if (!IsOpen())
+    throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
-  hsize_t MySize_t = MySize;
-  hsize_t GlobalSize_t = GlobalSize;
-  hsize_t Offset_t = Offset;
-
-  hid_t filespace_id = H5Screate_simple(1, &GlobalSize_t, NULL); 
-
-  // Create the dataset with default properties and close filespace.
-  if (!IsContained(GroupName))
-    CreateGroup(GroupName);
-
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, filespace_id, 
-                            H5P_DEFAULT);
-
-  H5Sclose(filespace_id);
-
-  // Each process defines dataset in memory and writes it to the hyperslab
-  // in the file.
-
-  hid_t memspace_id = H5Screate_simple(1, &MySize_t, NULL);
-
-  // Select hyperslab in the file.
-  filespace_id = H5Dget_space(dset_id);
-  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, &Offset_t, NULL, &MySize_t, NULL);
-
-  status = H5Dwrite(dset_id, type, memspace_id, filespace_id,
-                    plist_id_, data);
-
-  // Close/release resources.
-  H5Dclose(dset_id);
-  H5Gclose(group_id);
-  H5Sclose(filespace_id);
-  H5Sclose(memspace_id);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Write(const string& Name, const Teuchos::ParameterList& params)
-{
-  hid_t group_id = H5Gcreate(file_id_, Name.c_str(), 0);
+  hid_t group_id = H5Gcreate(file_id_, GroupName.c_str(), 0);
 
   // Iterate through parameter list 
   WriteParameterListRecursive(params, group_id);
 
   // Finalize hdf5 file
   status = H5Gclose(group_id);
+
+  WriteComment(GroupName, "Teuchos::ParameterList");
 }
 
 // ==========================================================================
-void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName,
-                        const int type, const int Length, 
-                        void* data)
+void Galeri::HDF5::Read(const string& GroupName, Teuchos::ParameterList& params) 
 {
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
-  hsize_t dimsf = Length;
-
-  if (!IsContained(GroupName))
+  string comment;
+  ReadComment(GroupName, comment);
+  if (comment != "Teuchos::ParameterList")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " not found"));
-
-  hid_t filespace_id = H5Screate_simple(1, &dimsf, NULL);
-
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-
-  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
-
-  herr_t status = H5Dread(dset_id, type, H5S_ALL, filespace_id,
-                          H5P_DEFAULT, data);
-
-  // Close/release resources.
-  H5Dclose(dset_id);
-  H5Gclose(group_id);
-  H5Sclose(filespace_id);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, int& data)
-{
-  // FIXME: GET COMMENTS
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
-  if (!IsContained(GroupName))
-    throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " not found"));
-
-  // Create group in the root group using absolute name.
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-
-  hid_t filespace_id = H5Screate(H5S_SCALAR);
-  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
-
-  herr_t status = H5Dread(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
-                    H5P_DEFAULT, &data);
-
-  H5Sclose(filespace_id);
-  H5Dclose(dset_id);
-  H5Gclose(group_id);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, double& data)
-{
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
-  if (!IsContained(GroupName))
-    throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " not found"));
-
-  // Create group in the root group using absolute name.
-  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
-
-  hid_t filespace_id = H5Screate(H5S_SCALAR);
-  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
-
-  herr_t status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, filespace_id,
-                    H5P_DEFAULT, &data);
-
-  H5Sclose(filespace_id);
-  H5Dclose(dset_id);
-  H5Gclose(group_id);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Read(const string& Name, Teuchos::ParameterList& params) 
-{
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
+                    "requested group " + GroupName + " is not a Teuchos::ParameterList"));
 
   // Open hdf5 file
   hid_t       group_id;  /* identifiers */
   herr_t      status;
 
   // Create group in the root group using absolute name.
-  group_id = H5Gopen(file_id_, Name.c_str());
+  group_id = H5Gopen(file_id_, GroupName.c_str());
 
   // Iterate through parameter list 
-  string FullName = "/" + Name;
-  status = H5Giterate(group_id, FullName.c_str() , NULL, f_operator, &params);
+  status = H5Giterate(group_id, GroupName.c_str() , NULL, f_operator, &params);
 
   // Finalize hdf5 file
   status = H5Gclose(group_id);
@@ -1091,7 +908,7 @@ void Galeri::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X)
 
   Write(GroupName, "GlobalLength", GlobalLength);
   Write(GroupName, "NumVectors", NumVectors);
-  Write(GroupName, "Epetra_MultiVector");
+  WriteComment(GroupName, "Epetra_MultiVector");
 }
 
 // ==========================================================================
@@ -1118,9 +935,6 @@ void Galeri::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX)
 
   ReadMultiVectorProperties(GroupName, GlobalLength, NumVectors);
 
-  cout << "GlobalLength = " << GlobalLength << endl;
-  cout << "NumVectors = " << NumVectors << endl;
-
   hid_t group_id, dataset_id, space_id;
   hsize_t dims[2];
   herr_t status;
@@ -1135,7 +949,6 @@ void Galeri::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX)
 
   // FIXME: this works, but I don't like it...
   status = H5Sget_simple_extent_dims(space_id, dims, NULL);
-  cout << dims[0] << "   " << dims[1] << endl;
   if (dims[0] != NumVectors)
     throw(Exception(__FILE__, __LINE__,
                     "internal error, NumVectors does not match"));
@@ -1146,8 +959,6 @@ void Galeri::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX)
   H5Sclose(space_id);  
   H5Dclose(dataset_id);  
   H5Gclose(group_id);
-
-  cout << "======================" << endl;
 }
 
 // ==========================================================================
@@ -1155,17 +966,14 @@ void Galeri::HDF5::ReadMultiVectorProperties(const string& GroupName,
                                              int& GlobalLength,
                                              int& NumVectors)
 {
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string Label;
-  Read(GroupName, Label);
+  string comment;
+  ReadComment(GroupName, comment);
 
-  if (Label != "Epetra_MultiVector")
+  if (comment != "Epetra_MultiVector")
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " is not an Epetra_MultiVector"));
 
@@ -1173,9 +981,196 @@ void Galeri::HDF5::ReadMultiVectorProperties(const string& GroupName,
   Read(GroupName, "NumVectors", NumVectors);
 }
 
-// ============ //
-// general data //
-// ============ //
+// ======================= //
+// basic serial data types //
+// ======================= //
+
+// ==========================================================================
+void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
+                         int what)
+{
+  if (!IsContained(GroupName))
+    CreateGroup(GroupName);
+
+  hid_t filespace_id = H5Screate(H5S_SCALAR);
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_INT, 
+                      filespace_id, H5P_DEFAULT);
+
+  herr_t status = H5Dwrite(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
+                           H5P_DEFAULT, &what);
+
+  // Close/release resources.
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
+  H5Sclose(filespace_id);
+}
+
+// ==========================================================================
+void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
+                         double what)
+{
+  if (!IsContained(GroupName))
+    CreateGroup(GroupName);
+
+  hid_t filespace_id = H5Screate(H5S_SCALAR);
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_NATIVE_DOUBLE, 
+                            filespace_id, H5P_DEFAULT);
+
+  herr_t status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, 
+                           filespace_id, H5P_DEFAULT, &what);
+
+  // Close/release resources.
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
+  H5Sclose(filespace_id);
+}
+
+// ==========================================================================
+void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, int& data)
+{
+  if (!IsContained(GroupName))
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
+
+  // Create group in the root group using absolute name.
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  hid_t filespace_id = H5Screate(H5S_SCALAR);
+  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
+
+  herr_t status = H5Dread(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
+                    H5P_DEFAULT, &data);
+
+  H5Sclose(filespace_id);
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
+}
+
+// ==========================================================================
+void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, double& data)
+{
+  if (!IsContained(GroupName))
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
+
+  // Create group in the root group using absolute name.
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  hid_t filespace_id = H5Screate(H5S_SCALAR);
+  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
+
+  herr_t status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, filespace_id,
+                    H5P_DEFAULT, &data);
+
+  H5Sclose(filespace_id);
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
+}
+
+// ============= //
+// serial arrays //
+// ============= //
+
+// ==========================================================================
+void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
+                         const int type, const int Length, 
+                         void* data)
+{
+  if (!IsContained(GroupName))
+    CreateGroup(GroupName);
+
+  hsize_t dimsf = Length;
+
+  hid_t filespace_id = H5Screate_simple(1, &dimsf, NULL);
+
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, 
+                            filespace_id, H5P_DEFAULT);
+
+  herr_t status = H5Dwrite(dset_id, type, H5S_ALL, H5S_ALL,
+                           H5P_DEFAULT, data);
+
+  // Close/release resources.
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
+  H5Sclose(filespace_id);
+}
+
+// ==========================================================================
+void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName,
+                        const int type, const int Length, 
+                        void* data)
+{
+  if (!IsContained(GroupName))
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
+
+  hsize_t dimsf = Length;
+
+  hid_t filespace_id = H5Screate_simple(1, &dimsf, NULL);
+
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
+
+  herr_t status = H5Dread(dset_id, type, H5S_ALL, filespace_id,
+                          H5P_DEFAULT, data);
+
+  // Close/release resources.
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
+  H5Sclose(filespace_id);
+}
+
+// ================== //
+// distributed arrays //
+// ================== //
+
+// ==========================================================================
+void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
+                         int MySize, int GlobalSize, int type, const void* data)
+{
+  int Offset;
+  Comm_.ScanSum(&MySize, &Offset, 1);
+  Offset -= MySize;
+
+  hsize_t MySize_t = MySize;
+  hsize_t GlobalSize_t = GlobalSize;
+  hsize_t Offset_t = Offset;
+
+  hid_t filespace_id = H5Screate_simple(1, &GlobalSize_t, NULL); 
+
+  // Create the dataset with default properties and close filespace.
+  if (!IsContained(GroupName))
+    CreateGroup(GroupName);
+
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t dset_id = H5Dcreate(group_id, DataSetName.c_str(), type, filespace_id, 
+                            H5P_DEFAULT);
+
+  H5Sclose(filespace_id);
+
+  // Each process defines dataset in memory and writes it to the hyperslab
+  // in the file.
+
+  hid_t memspace_id = H5Screate_simple(1, &MySize_t, NULL);
+
+  // Select hyperslab in the file.
+  filespace_id = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, &Offset_t, NULL, &MySize_t, NULL);
+
+  status = H5Dwrite(dset_id, type, memspace_id, filespace_id,
+                    plist_id_, data);
+
+  // Close/release resources.
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
+  H5Sclose(filespace_id);
+  H5Sclose(memspace_id);
+}
 
 // ==========================================================================
 void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName,
