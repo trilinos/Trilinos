@@ -872,6 +872,7 @@ if (! $no_hg) then
     phg.edge_scaling2 \
     phg.edge_size_threshold1.0 \
     phg.fast_coarsening_method \
+    phg.fast_coarsening_method_aipm \
     phg.final_output2 \
     phg.imbalance_tol1.02 \
     phg.initial_distribution.cols \
