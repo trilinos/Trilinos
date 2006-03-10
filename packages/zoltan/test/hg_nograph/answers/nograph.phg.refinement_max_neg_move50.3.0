@@ -1,5 +1,5 @@
 Decomposition Method 	= hypergraph
-Zoltan Parameters       =  
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1 
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 Zoltan Parameters	= ADD_OBJ_WEIGHT=none
 Zoltan Parameters       = PHG_REFINEMENT_MAX_NEG_MOVE = 50

@@ -1,5 +1,5 @@
 Decomposition Method 	= hypergraph
-Zoltan Parameters       =  
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1 
 Zoltan Parameters       = hypergraph_package=phg
 Zoltan Parameters	= phg_coarsening_method=none
 Zoltan Parameters	= phg_coarsepartition_method=random
