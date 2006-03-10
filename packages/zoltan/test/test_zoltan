@@ -878,7 +878,6 @@ if (! $no_hg) then
     phg.initial_distribution.cyclic \
     phg.initial_distribution.file \
     phg.initial_distribution.rows \
-    phg.initial_distribution.serial \
     phg.k13 \
     phg.k2 \
     phg.k63 \
