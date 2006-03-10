@@ -137,7 +137,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       
       delete [] nodeIds;
       
-      bool ok = interface->AddSegment(*seg,0);
+      interface->AddSegment(*seg,0);
       delete seg; seg = NULL;
     }
 
@@ -160,7 +160,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       
       delete [] nodeIds;
 
-      bool ok = interface->AddSegment(*seg,1);
+      interface->AddSegment(*seg,1);
       delete seg; seg = NULL;
     }
     
@@ -184,7 +184,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode1[i]->Id,gnode1[i]->node->x,
                        2/*gnode1[i]->node->numdf*/,gnode1[i]->node->dof,boundary1[i],outlevel);
-      bool ok = interface->AddNode(*node,0);
+      interface->AddNode(*node,0);
       delete node; node = NULL;
     }
     
@@ -196,7 +196,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       MOERTEL::Node* node = 
         new MOERTEL::Node(gnode2[i]->Id,gnode2[i]->node->x,
                        2/*gnode2[i]->node->numdf*/,gnode2[i]->node->dof,boundary2[i],outlevel);
-      bool ok = interface->AddNode(*node,1);
+      interface->AddNode(*node,1);
       delete node; node = NULL;
     }
     
@@ -335,7 +335,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       else
         dserror("Unknown type of 2D element"); 
       delete [] nodeIds;
-      bool ok = interface->AddSegment(*seg,0); 
+      interface->AddSegment(*seg,0); 
       delete seg; seg = NULL;      
     }
     
@@ -358,7 +358,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
       else
         dserror("Unknown type of 2D element"); 
       delete [] nodeIds;
-      bool ok = interface->AddSegment(*seg,1); 
+      interface->AddSegment(*seg,1); 
       delete seg; seg = NULL;      
     }
   
@@ -384,7 +384,7 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
         new MOERTEL::Node(gnode1[i]->node->Id,gnode1[i]->node->x,
                        gnode1[i]->node->numdf,gnode1[i]->node->dof,
                        boundary1[i],outlevel);
-      bool ok = interface->AddNode(*node,0);
+      interface->AddNode(*node,0);
       delete node; node = NULL;
     }
   
@@ -398,14 +398,14 @@ int create_mortar(FIELD *actfield, PARTITION *actpart,
                        gnode2[i]->node->numdf,gnode2[i]->node->dof,
                        boundary2[i],outlevel);
                        
-      bool ok = interface->AddNode(*node,1);
+      interface->AddNode(*node,1);
       delete node; node = NULL;
     }
   
     //-----------------------------------------------------------------
     // manually choose mortar (master side)
     // mortar side is either 0 or 1 or -2 for automatic
-    interface->SetMortarSide(-2);
+    interface->SetMortarSide(0);
 
     //-----------------------------------------------------------------
     // set linear shape functions on both sides, 
@@ -712,7 +712,7 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   aztecparams.set("AZ_precond","AZ_user_precond");
   aztecparams.set("AZ_max_iter",1200);
   aztecparams.set("AZ_output",100);
-  aztecparams.set("AZ_tol",1.0e-11);
+  aztecparams.set("AZ_tol",1.0e-7);
   aztecparams.set("AZ_scaling","AZ_none");
 
   // argument sublist for ml
@@ -721,19 +721,19 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   mlparams.set("output",10);
   mlparams.set("print unused",1/*-2*/);
   mlparams.set("increasing or decreasing","increasing");
-  mlparams.set("PDE equations",2);
+  mlparams.set("PDE equations",3);
   mlparams.set("max levels",3);
   mlparams.set("aggregation: type","Uncoupled");
-  mlparams.set("aggregation: damping factor",1.333);
-  mlparams.set("coarse: max size",14);
-  mlparams.set("coarse: type","Amesos-KLU");
+  mlparams.set("aggregation: damping factor",1.33);
+  mlparams.set("coarse: max size",10);
+  mlparams.set("coarse: type","Amesos-KLU"); // Amesos-KLU MLS
   mlparams.set("smoother: type","MLS"); /* MLS symmetric Gauss-Seidel */
   mlparams.set("smoother: MLS polynomial order",3);
   mlparams.set("smoother: sweeps",1);
   mlparams.set("smoother: pre or post","both");
   mlparams.set("null space: type","pre-computed");
   mlparams.set("null space: add default vectors",false);
-  int dimnullspace = 3;
+  int dimnullspace = 6;
   int nummyrows = mrtr_manager->ProblemMap()->NumMyElements();
   int numglobalrows = mrtr_manager->ProblemMap()->NumGlobalElements();
   int* update       = mrtr_manager->ProblemMap()->MyGlobalElements();
