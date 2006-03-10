@@ -109,6 +109,7 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
                           H5P_DEFAULT, &value);
         status = H5Dclose(dataset_id);
         status = H5Sclose(dataspace_id);
+        found = true;
       } 
 
       if (!found)
@@ -955,6 +956,7 @@ void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName,
 // ==========================================================================
 void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, int& data)
 {
+  // FIXME: GET COMMENTS
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
@@ -982,7 +984,22 @@ void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, doub
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
-  cout << "FIXMEEEEE" << endl;
+  if (!IsContained(GroupName))
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
+
+  // Create group in the root group using absolute name.
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  hid_t filespace_id = H5Screate(H5S_SCALAR);
+  hid_t dset_id = H5Dopen(group_id, DataSetName.c_str());
+
+  herr_t status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, filespace_id,
+                    H5P_DEFAULT, &data);
+
+  H5Sclose(filespace_id);
+  H5Dclose(dset_id);
+  H5Gclose(group_id);
 }
 
 // ==========================================================================
@@ -1017,12 +1034,8 @@ void Galeri::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X)
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
   hid_t       group_id, dset_id;
-  hid_t       filespace, memspace; // FIXME: _id
+  hid_t       filespace_id, memspace_id;
   herr_t      status;
-
-  if (!IsContained(GroupName))
-    throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " not found"));
 
   // need a linear distribution to use hyperslabs
   Epetra_Map LinearMap(X.GlobalLength(), 0, Comm_);
@@ -1035,15 +1048,15 @@ void Galeri::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X)
 
   // Create the dataspace for the dataset.
   hsize_t q_dimsf[] = {NumVectors, GlobalLength};
-  filespace = H5Screate_simple(2, q_dimsf, NULL);
+  filespace_id = H5Screate_simple(2, q_dimsf, NULL);
 
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
 
   group_id = H5Gopen(file_id_, GroupName.c_str());
 
-  // Create the dataset with default properties and close filespace.
-  dset_id = H5Dcreate(group_id, "Values", H5T_NATIVE_DOUBLE, filespace, H5P_DEFAULT);
+  // Create the dataset with default properties and close filespace_id.
+  dset_id = H5Dcreate(group_id, "Values", H5T_NATIVE_DOUBLE, filespace_id, H5P_DEFAULT);
 
 #if 0
   // Create property list for collective dataset write.
@@ -1056,18 +1069,20 @@ void Galeri::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X)
   hsize_t stride[] = {1, 1};
   hsize_t count[] = {NumVectors, 1};
   hsize_t block[] = {1, LinearX.MyLength()};
-  filespace = H5Dget_space(dset_id);
-  H5Sselect_hyperslab(filespace, H5S_SELECT_SET, offset, stride, count, block);
+  filespace_id = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride, 
+                      count, block);
 
   // Each process defines dataset in memory and writes it to the hyperslab in the file.
   hsize_t dimsm[] = {NumVectors * LinearX.MyLength()};
-  memspace = H5Screate_simple(1, dimsm, NULL);
+  memspace_id = H5Screate_simple(1, dimsm, NULL);
 
   // Write hyperslab
-  status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace, filespace, plist_id_, LinearX.Values());
+  status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
+                    plist_id_, LinearX.Values());
   H5Gclose(group_id);
-  H5Sclose(memspace);
-  H5Sclose(filespace);
+  H5Sclose(memspace_id);
+  H5Sclose(filespace_id);
   H5Dclose(dset_id);
 
 #if 0
@@ -1080,17 +1095,59 @@ void Galeri::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X)
 }
 
 // ==========================================================================
-void Galeri::HDF5::Read(const string& GroupName, Epetra_MultiVector*& X)
+void Galeri::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
+                        Epetra_MultiVector*& X)
+{
+  // first read it with linear distribution
+  Epetra_MultiVector* LinearX;
+  Read(GroupName, LinearX);
+  
+  // now build the importer to the actual one
+  Epetra_Import Importer(Map, X->Map());
+  X = new Epetra_MultiVector(Map, LinearX->NumVectors());
+  X->Import(*LinearX, Importer, Insert);
+
+  // delete memory
+  delete LinearX;
+}
+
+// ==========================================================================
+void Galeri::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX)
 {
   int GlobalLength, NumVectors;
-   
-  Epetra_Map LinearMap(GlobalLength, 0, Comm_);
-  X = new Epetra_MultiVector(LinearMap, NumVectors);
 
-  cout << "FIXMEEEEEEEEEEEEEEEEEEE" << endl;
-  Read(GroupName, "Values", LinearMap.NumMyElements(), 
-       LinearMap.NumGlobalElements(),
-       H5T_NATIVE_DOUBLE, X->Values());
+  ReadMultiVectorProperties(GroupName, GlobalLength, NumVectors);
+
+  cout << "GlobalLength = " << GlobalLength << endl;
+  cout << "NumVectors = " << NumVectors << endl;
+
+  hid_t group_id, dataset_id, space_id;
+  hsize_t dims[2];
+  herr_t status;
+
+  group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  dataset_id = H5Dopen(group_id, "Values");
+  space_id = H5Dget_space(dataset_id);
+  if (H5Sget_simple_extent_ndims(space_id) != 2)
+    throw(Exception(__FILE__, __LINE__,
+                    "internal error, dimensions do not match"));
+
+  // FIXME: this works, but I don't like it...
+  status = H5Sget_simple_extent_dims(space_id, dims, NULL);
+  cout << dims[0] << "   " << dims[1] << endl;
+  if (dims[0] != NumVectors)
+    throw(Exception(__FILE__, __LINE__,
+                    "internal error, NumVectors does not match"));
+  Epetra_Map LinearMap(-1, dims[1], 0, Comm());
+  LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
+  status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
+                   H5P_DEFAULT, LinearX->Values());
+  H5Sclose(space_id);  
+  H5Dclose(dataset_id);  
+  H5Gclose(group_id);
+
+  cout << "======================" << endl;
 }
 
 // ==========================================================================
@@ -1114,45 +1171,6 @@ void Galeri::HDF5::ReadMultiVectorProperties(const string& GroupName,
 
   Read(GroupName, "GlobalLength", GlobalLength);
   Read(GroupName, "NumVectors", NumVectors);
-}
-
-// ==========================================================================
-void Galeri::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
-                        Epetra_MultiVector*& X)
-{
-  if (!IsOpen())
-    throw(Exception(__FILE__, __LINE__, "no file open yet"));
-
-  hid_t dataset_id, space_id;
-  hsize_t num_eigenpairs, dims[2];
-  herr_t status;
-
-  if (!IsContained(GroupName))
-    throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " not found"));
-
-  string Label;
-  Read(GroupName, Label);
-
-  if (Label != "Epetra_MultiVector")
-    throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_MultiVector"));
-
-  int GlobalLength, NumVectors;
-  Read(GroupName, "GlobalLength", GlobalLength);
-  Read(GroupName, "NumVectors", NumVectors);
-
-  Epetra_Map LinearMap(GlobalLength, 0, Comm_);
-  Epetra_MultiVector LinearX(LinearMap, NumVectors);
-
-  cout << " FIXMEEEEEEEEEEEEEEEEEEEEEE" << endl;
-  Read(GroupName, "Values", LinearMap.NumMyElements(), 
-       LinearMap.NumGlobalElements(),
-       H5T_NATIVE_DOUBLE, LinearX.Values());
-
-  Epetra_Import Importer(Map, LinearMap);
-  X = new Epetra_MultiVector(Map, NumVectors);
-  X->Import(LinearX, Importer, Insert);
 }
 
 // ============ //

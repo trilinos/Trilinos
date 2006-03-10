@@ -121,7 +121,6 @@ class HDF5
     void Write(const string& Name, const int type, const int Length, void* data)
     {
       cout << "TO BE DONE " << endl;
-    
     }
 
     // Reads serial array \c data, of length \c Length and type \c type, from \c Name.

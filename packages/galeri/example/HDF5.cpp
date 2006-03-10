@@ -8,7 +8,7 @@
 #include <vector>
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
-#include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Galeri_HDF5.h"
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
@@ -32,10 +32,12 @@ int main (int argc, char **argv)
   Epetra_SerialComm Comm;
 #endif
 
+  try {
+
   // create a map, two vectors, a matrix using Galeri
   Teuchos::ParameterList GaleriList;
-  int nx = 10 * Comm.NumProc();
-  int ny = 10 * Comm.NumProc();
+  int nx = 2;
+  int ny = 2 * Comm.NumProc();
   GaleriList.set("nx", nx);
   GaleriList.set("ny", ny);
   GaleriList.set("mx", 1);
@@ -43,8 +45,8 @@ int main (int argc, char **argv)
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Biharmonic2D", Map, GaleriList);
-  Epetra_Vector x(Matrix->RowMatrixRowMap());
-  Epetra_Vector b(Matrix->RowMatrixRowMap());
+  Epetra_MultiVector x(Matrix->RowMatrixRowMap(), 2);
+  Epetra_MultiVector b(Matrix->RowMatrixRowMap(), 2);
   x.Random();
   b.Random();
 
@@ -64,6 +66,7 @@ int main (int argc, char **argv)
   // ... and the x, b vectors
   HDF5.Write("x", x);
   HDF5.Write("b", b);
+
   // Now we write the parameter list we have used to create the matrix
   HDF5.Write("GaleriList", GaleriList);
   // We can also write integers/doubles/arrays. All these quantities are
@@ -91,6 +94,7 @@ int main (int argc, char **argv)
   
   Epetra_Map* NewMap = 0;
   Epetra_CrsMatrix* NewMatrix = 0;
+  Epetra_MultiVector* NewX,* NewB;
 
   // Check if the map is there (in this case it is). If it is, read the
   // matrix using the map, otherwise read the matrix with a linear map.
@@ -109,6 +113,10 @@ int main (int argc, char **argv)
 
   cout << Matrix->NumGlobalNonzeros() << " vs. " << NewNumGlobalNonzeros << endl;
 
+  // Now read the MultiVector's
+  HDF5.Read("x", NewX);
+  HDF5.Read("b", NewB);
+
   // We finally close the file. Better to close it before calling
   // MPI_Finalize() to avoid MPI-related errors, since Close() might call MPI
   // functions.
@@ -119,6 +127,16 @@ int main (int argc, char **argv)
   delete Map;
   if (NewMap) delete NewMap;
   if (NewMatrix) delete NewMatrix;
+
+  } 
+  catch(Exception& rhs) 
+  {
+    rhs.Print();
+  }
+  catch (...) {
+    cerr << "Caught generic exception" << endl;
+  }
+
 
 #ifdef HAVE_MPI
   MPI_Finalize();
