@@ -3,3 +3,5 @@ Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 File Type		= matrixmarket+
 File Name		= simple
 Parallel Disk Info	= number=0
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+
