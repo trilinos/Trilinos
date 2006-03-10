@@ -245,8 +245,7 @@ double* MOERTEL::Segment_Linear1D::BuildNormal(double* xi)
 { 
   // build the metric vectors at this local coordinates xi
   double g[3]; for (int i=0; i<3; ++i) g[i] = 0.0;
-  double dl;
-  dl = Metric(xi,g,NULL);
+  Metric(xi,g,NULL);
   
   // in 3D, the outward normal is g1 cross g2, in 2D, the normal is
   // n1 = g2 and n2 = -g1

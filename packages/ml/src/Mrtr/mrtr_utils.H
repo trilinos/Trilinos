@@ -246,8 +246,8 @@ The user is responsible for freeing the returned result.
 \param transB : flag indicating whether B*T shall be used
 \return Result upon success and NULL upon failure
 */
-Epetra_CrsMatrix* MatMatMult(Epetra_CrsMatrix& A, bool transA, 
-                             Epetra_CrsMatrix& B, bool transB,
+Epetra_CrsMatrix* MatMatMult(const Epetra_CrsMatrix& A, bool transA, 
+                             const Epetra_CrsMatrix& B, bool transB,
                              int outlevel);
 
 /*!

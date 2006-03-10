@@ -74,9 +74,9 @@
 
 #include "AztecOO.h"
 
-#include "mrtr_manager.H"
+//#include "mrtr_manager.H"
 #include "mrtr_utils.H"
-#include "mrtr_WrapMultiLevelPreconditioner.H"
+#include "mrtr_ml_preconditioner.H"
 
 using namespace std;
 using namespace Teuchos;
@@ -99,8 +99,10 @@ Use at least the following lines in the configure of Trilinos:<br>
 
 */
 
+
 namespace MOERTEL
 {
+// forward declarations
 class Manager;
 
 /*!
@@ -197,8 +199,8 @@ private:
   
   RefCountPtr<Epetra_LinearProblem>                 linearproblem_; // the linear system
   RefCountPtr<Amesos_BaseSolver>                    amesossolver_;  // the amesos solver
-  RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
-  RefCountPtr<MOERTEL::ConstrainedPreconditioner>   moertelprec_;   // the constrained mlpreconditioner
+  RefCountPtr<MOERTEL::Mortar_ML_Preconditioner>    mlprec_;        // the ml preconditioner
+  //RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  mlprec_;        // the ml preconditioner
   RefCountPtr<AztecOO>                              aztecsolver_;   // the aztec solver
 
   RefCountPtr<Epetra_CrsMatrix>                     origmatrix_;
