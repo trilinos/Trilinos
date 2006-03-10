@@ -50,7 +50,6 @@ b_(null),
 linearproblem_(null),
 amesossolver_(null),
 mlprec_(null),
-moertelprec_(null),
 aztecsolver_(null),
 origmatrix_(null),
 WT_(null),
@@ -289,34 +288,38 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-  // make initial guess x satisfy constraints: x = (I-WBT)x
+  // make initial guess x satisfy constraints: x = (I - W * B^T) x
   Epetra_Vector xtmp(B_->DomainMap(),false);
-  B_->Multiply(true,*x_,xtmp);
   Epetra_Vector xtmp2(x_->Map(),false);
+ 
+  B_->Multiply(true,*x_,xtmp);
   WT_->Multiply(true,xtmp,xtmp2);
   x_->Update(-1.0,xtmp2,1.0);
   
-  // make rhs satisfy constraints
+  // make rhs satisfy constraints: b = (I - B * W^T) b
   WT_->Multiply(false,*b_,xtmp);
   B_->Multiply(false,xtmp,xtmp2);
   b_->Update(-1.0,xtmp2,1.0);
   
   if (preconditioner=="AZ_user_precond")
-  {
     if (mlprec_==null || matrixisnew_);
-    {
-      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams),true);
-      // create a constrained mortar-ml-preconditioner
-      moertelprec_ = rcp(new MOERTEL::ConstrainedPreconditioner(mlprec_,I_,WT_,B_));
-    }  
-  }
+#if 1
+      mlprec_ = rcp(new MOERTEL::Mortar_ML_Preconditioner(matrix_,
+                                                          origmatrix_,
+                                                          WT_,B_,
+                                                          mlparams));
+#else // change mlprec_ in mrtr_solver.H as well to test black box ML
+      mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams,true));
+#endif
   
-#if 0
+#if 0 // this is all testing trash
   
   // serial and on 1 level only
   // in parallel the gids of range and domain map of P are not ok as
   // ML creates a linear map
-  const ML* ml = mlprec_->GetML();
+  ML_Epetra::MultiLevelPreconditioner* MLtmp 
+    = new ML_Epetra::MultiLevelPreconditioner(*origmatrix_,mlparams,true);
+  const ML* ml = MLtmp->GetML();
   int nlevel = ml->ML_num_actual_levels; 
   Epetra_CrsMatrix* P;
   int maxnnz=0;
@@ -503,8 +506,8 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   aztecsolver_->SetAztecDefaults();
   aztecsolver_->SetProblem(*linearproblem_);
   aztecsolver_->SetParameters(aztecparams,true);
-  if (mlprec_ != null && moertelprec_ != null)
-    aztecsolver_->SetPrecOperator(moertelprec_.get());
+  if (mlprec_ != null)
+    aztecsolver_->SetPrecOperator(mlprec_.get());
   
   // solve it
   double tol  = aztecparams.get("AZ_tol",1.0e-05);
