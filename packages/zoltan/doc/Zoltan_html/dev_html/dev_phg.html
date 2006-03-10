@@ -79,12 +79,12 @@ good scalability on large number of processors.<br>
 The hypergraph is the most important data structure. This is stored as
 a compressed sparse matrix. Note that in parallel, each processor owns
 a local part of the global hypergraph
-(a submatrix of the whlole matrix).
+(a submatrix of the whole matrix).
 The hypergraph data type is <i>struct HGraph</i>, and contains
 information like number of vertices, hyperedges, pins, compressed
 storage of all pins, optional vertex and edge weights, pointers
-to relevant communicators, and more. One particularly cryptic notation
-is worth mentioning. The arrays <i>hindex, hvertex</i> are used to
+to relevant communicators, and more. One cryptic notation needs an
+explanation: The arrays <i>hindex, hvertex</i> are used to
 look up vertex info given a hyperedge, and <i>vindex, vedge</i> are
 used to look up hyperedge info given a vertex. Essentially,
 we store the hypergraph as a sparse matrix in both CSR and CSC formats.
@@ -92,9 +92,11 @@ This doubles the memory cost but gives better performance.
 <h4>Parameters:</h4>
 In the User's Guide, only the most eessential parameters have been
 documented. There are several other parameters, intended for developers
-and possibly expert "power" users. We give a complete list of all
+and perhaps expert "power" users. We give a complete list of all
 parameters below. Note that these parameters <span
- style="font-style: italic;">may change in future versions!</span><br>
+ style="font-style: italic;">may change in future versions!<br>
+<br>
+</span>
 <table nosave="" width="100%">
   <tbody>
     <tr>
@@ -225,18 +227,12 @@ different methods)<br>
       </td>
     </tr>
     <tr>
-      <td>&nbsp;&nbsp;&nbsp; <i>PHG_COARSE_ITERATIONS</i></td>
-      <td>Number of times to do coarse partitioning on each processor.
-The best is selected.<br>
-      </td>
-    </tr>
-    <tr>
       <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
  style="font-style: italic;">PHG_REFINEMENT_METHOD</span><br>
       </td>
       <td style="vertical-align: top;">Refinement algorithm:<br>
-&nbsp;<span style="font-style: italic;">fm</span>- two-way FM
-(approximate)<br>
+&nbsp;<span style="font-style: italic;">fm </span>- two-way
+approximate&nbsp; FM<br>
       <span style="font-style: italic;">none</span> - no refinement<br>
       </td>
     </tr>
@@ -346,11 +342,6 @@ number of vertices.<br>
       <td style="vertical-align: top;"><br>
       </td>
       <td style="vertical-align: top;"><i>PHG_COARSEPARTITION_METHOD=greedy</i></td>
-    </tr>
-    <tr>
-      <td style="vertical-align: top;"><br>
-      </td>
-      <td style="vertical-align: top;"><i>PHG_COARSE_ITERATIONS=10</i></td>
     </tr>
     <tr>
       <td style="vertical-align: top;"><br>
