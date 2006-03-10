@@ -78,7 +78,7 @@ views of %Thyra objects.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >
+Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >
 create_MPIVectorSpaceBase(
 	const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
 	);

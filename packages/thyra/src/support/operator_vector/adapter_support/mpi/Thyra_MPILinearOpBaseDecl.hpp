@@ -320,6 +320,8 @@ private:
 
   Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    range_;
   Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    domain_;
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    sp_range_;
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    sp_domain_;
 
 };	// end class LinearOpBase
 

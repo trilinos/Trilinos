@@ -31,7 +31,7 @@
 
 #include "Thyra_MPIVectorBaseDecl.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
+#include "Thyra_MPIVectorSpaceDefaultBase.hpp"
 #include "RTOp_parallel_helpers.h"
 #include "RTOpPack_MPI_apply_op.hpp"
 #include "Teuchos_Workspace.hpp"

@@ -43,7 +43,7 @@ namespace Thyra {
  * this subclass is to create locally replicated vector spaces for the
  * domain space of <tt>MPIMultiVectorStd</tt>.  In addition, an object
  * of this type is also returned from
- * <tt>MPIVectorSpaceBase::smallVecSpcFtcy()</tt>.
+ * <tt>MPIVectorSpaceDefaultBase::smallVecSpcFtcy()</tt>.
  *
  * Note that the default constructor is not allowed to avoid mistakes in using
  * this class.

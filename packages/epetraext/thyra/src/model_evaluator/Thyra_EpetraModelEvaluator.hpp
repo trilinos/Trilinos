@@ -145,22 +145,22 @@ private:
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
 
-  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> > > p_space_t;
-  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> > > g_space_t;
+  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> > > p_space_t;
+  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> > > g_space_t;
 
   // ////////////////////
   // Private data mebers
 
   Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>              epetraModel_;
   Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  W_factory_;
-  Teuchos::RefCountPtr<const Epetra_Map>                    x_map_;
-  p_map_t                                                   p_map_;
-  g_map_t                                                   g_map_;
-  Teuchos::RefCountPtr<const Epetra_Map>                    f_map_;
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   x_space_;
-  p_space_t                                                 p_space_;
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >   f_space_;
-  g_space_t                                                 g_space_;
+  Teuchos::RefCountPtr<const Epetra_Map>                             x_map_;
+  p_map_t                                                            p_map_;
+  g_map_t                                                            g_map_;
+  Teuchos::RefCountPtr<const Epetra_Map>                             f_map_;
+  Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >     x_space_;
+  p_space_t                                                          p_space_;
+  Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >     f_space_;
+  g_space_t                                                          g_space_;
   
 };
 

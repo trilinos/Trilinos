@@ -64,16 +64,32 @@ void EpetraLinearOp::initialize(
 	,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain
 	)
 {
+  // Validate input, allocate spaces, validate ...
 	namespace mmp = MemMngPack;
 #ifdef _DEBUG
 	TEST_FOR_EXCEPTION( op.get()==NULL, std::invalid_argument, "EpetraLinearOp::initialize(...): Error!" );
 #endif
+	Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > range, domain;
+  if(mpiRange.get())
+    range = mpiRange;
+  else
+    range = ( applyAs==EPETRA_OP_APPLY_APPLY ? allocateRange(op,opTrans)  : allocateDomain(op,opTrans) );
+  if(mpiDomain.get())
+    domain = mpiDomain;
+  else
+    domain  = ( applyAs==EPETRA_OP_APPLY_APPLY ? allocateDomain(op,opTrans) : allocateRange(op,opTrans)  );
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >
+    sp_range = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >(range),
+    sp_domain = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >(domain);
+  // Set data (no exceptions should be thrown now)
 	op_      = op;
 	opTrans_ = opTrans;
 	applyAs_ = applyAs;
 	adjointSupport_ = adjointSupport;
-	domain_  = ( applyAs==EPETRA_OP_APPLY_APPLY ? allocateDomain(op,opTrans) : allocateRange(op,opTrans)  );
-	range_   = ( applyAs==EPETRA_OP_APPLY_APPLY ? allocateRange(op,opTrans)  : allocateDomain(op,opTrans) );
+  range_ = range;
+  domain_ = domain;
+  sp_range_ = sp_range;
+  sp_domain_ = sp_domain;
 }
 
 void EpetraLinearOp::uninitialize(
@@ -97,8 +113,10 @@ void EpetraLinearOp::uninitialize(
 	opTrans_ = NOTRANS;
 	applyAs_ = EPETRA_OP_APPLY_APPLY;
 	adjointSupport_ = EPETRA_OP_ADJOINT_SUPPORTED;
-	domain_  = Teuchos::null;
 	range_   = Teuchos::null;
+	domain_  = Teuchos::null;
+	sp_range_   = Teuchos::null;
+	sp_domain_  = Teuchos::null;
 
 }
 
@@ -178,13 +196,13 @@ bool EpetraLinearOp::opSupported(ETransp M_trans) const
 Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >
 EpetraLinearOp::rangeScalarProdVecSpc() const
 {
-	return range_;
+	return sp_range_;
 }
 
 Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >
 EpetraLinearOp::domainScalarProdVecSpc() const
 {
-	return domain_;
+	return sp_domain_;
 }
 
 void EpetraLinearOp::euclideanApply(

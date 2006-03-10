@@ -66,7 +66,7 @@ public:
 
   /// Calls <tt>initialize()</tt>
   MPIMultiVectorStd(
-    const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >           &mpiRangeSpace
+    const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >       &mpiRangeSpace
     ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   &domainSpace
     ,const Teuchos::RefCountPtr<Scalar>                                     &localValues
     ,const Index                                                            leadingDim
@@ -98,7 +98,7 @@ public:
    * </ul>
    */
   void initialize(
-    const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >          &mpiRangeSpace
+    const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >      &mpiRangeSpace
     ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
     ,const Teuchos::RefCountPtr<Scalar>                                    &localValues
     ,const Index                                                           leadingDim
@@ -110,7 +110,7 @@ public:
    * <li><tt>this->mpiSpace().get() == NULL</tt>.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >                  *mpiRangeSpace = NULL
+    Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >              *mpiRangeSpace = NULL
     ,Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >          *domainSpace   = NULL
     ,Teuchos::RefCountPtr<Scalar>                                            *localValues   = NULL
     ,Index                                                                   *leadingDim    = NULL
@@ -162,7 +162,7 @@ private:
   // ///////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >          mpiRangeSpace_;
+  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >      mpiRangeSpace_;
   Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   domainSpace_;
   Teuchos::RefCountPtr<Scalar>                                     localValues_;
   Index                                                            leadingDim_;

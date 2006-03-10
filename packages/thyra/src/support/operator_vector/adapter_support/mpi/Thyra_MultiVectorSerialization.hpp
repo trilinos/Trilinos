@@ -30,7 +30,7 @@
 #define THYRA_MULTI_VECTOR_SERIALIZATION_HPP
 
 #include "Thyra_MultiVectorSerializationDecl.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
+#include "Thyra_MPIVectorSpaceDefaultBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_ExplicitMultiVectorView.hpp"
 

@@ -31,7 +31,7 @@
 
 #include "Thyra_MPIVectorStdDecl.hpp"
 #include "Thyra_MPIVectorBase.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
+#include "Thyra_MPIVectorSpaceDefaultBase.hpp"
 
 namespace Thyra {
 
@@ -45,8 +45,8 @@ MPIVectorStd<Scalar>::MPIVectorStd()
 template<class Scalar>
 MPIVectorStd<Scalar>::MPIVectorStd(
   const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    &mpiSpace
-  ,const Teuchos::RefCountPtr<Scalar>                              &localValues
-  ,const Index                                                     stride
+  ,const Teuchos::RefCountPtr<Scalar>                                  &localValues
+  ,const Index                                                         stride
   )
 {
   initialize(mpiSpace,localValues,stride);
@@ -55,8 +55,8 @@ MPIVectorStd<Scalar>::MPIVectorStd(
 template<class Scalar>
 void MPIVectorStd<Scalar>::initialize(
   const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    &mpiSpace
-  ,const Teuchos::RefCountPtr<Scalar>                              &localValues
-  ,const Index                                                     stride
+  ,const Teuchos::RefCountPtr<Scalar>                                  &localValues
+  ,const Index                                                         stride
   )
 {
 #ifdef _DEBUG
@@ -73,8 +73,8 @@ void MPIVectorStd<Scalar>::initialize(
 template<class Scalar>
 void MPIVectorStd<Scalar>::uninitialize(
   Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    *mpiSpace
-  ,Teuchos::RefCountPtr<Scalar>                              *localValues
-  ,Index                                                     *stride
+  ,Teuchos::RefCountPtr<Scalar>                                  *localValues
+  ,Index                                                         *stride
   )
 {
   if(mpiSpace)      *mpiSpace       = mpiSpace_;

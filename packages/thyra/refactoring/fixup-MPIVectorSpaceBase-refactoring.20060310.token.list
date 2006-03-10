@@ -1,0 +1,6 @@
+MPIVectorSpaceBase                  MPIVectorSpaceDefaultBase
+Thyra_MPIVectorSpaceBase            Thyra_MPIVectorSpaceDefaultBase
+Thyra_MPIVectorSpaceBaseDecl        Thyra_MPIVectorSpaceDefaultBaseDecl
+MPIVectorSpaceBaseBase              MPIVectorSpaceBase
+Thyra_MPIVectorSpaceBaseBase        Thyra_MPIVectorSpaceBase
+Thyra_MPIVectorSpaceBaseBaseDecl    Thyra_MPIVectorSpaceBaseDecl

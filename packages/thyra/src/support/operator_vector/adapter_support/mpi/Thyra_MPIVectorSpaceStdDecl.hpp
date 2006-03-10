@@ -29,7 +29,7 @@
 #ifndef THYRA_MPI_VECTOR_SPACE_STD_DECL_HPP
 #define THYRA_MPI_VECTOR_SPACE_STD_DECL_HPP
 
-#include "Thyra_MPIVectorSpaceBaseDecl.hpp"
+#include "Thyra_MPIVectorSpaceDefaultBaseDecl.hpp"
 
 namespace Thyra {
 
@@ -47,7 +47,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_adapters_MPI_concrete_std_grp
  */
 template<class Scalar>
-class MPIVectorSpaceStd : public MPIVectorSpaceBase<Scalar> {
+class MPIVectorSpaceStd : public MPIVectorSpaceDefaultBase<Scalar> {
 public:
 
   /** @name Constructors and initializers */
@@ -150,7 +150,7 @@ protected:
 
 public:
 
-  /** @name Public overridden from MPIVectorSpaceBase */
+  /** @name Public overridden from MPIVectorSpaceDefaultBase */
   //@{
 
   /** \brief . */

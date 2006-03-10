@@ -529,7 +529,7 @@ multi-vectors that are described here.
 
 The UML class diagram below shows the subclasses described here:
 
-\image html MPIVectorSpaceBase.gif "Support base subclasses for MPI SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
+\image html MPIVectorSpaceDefaultBase.gif "Support base subclasses for MPI SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
 
 The base subclasses described here provide support for a simple, yet
 general, category of MPI-based SPMD vectors, multi-vectors and vector
@@ -537,7 +537,7 @@ spaces.
 
 <ul>
 
-<li><tt>Thyra::MPIVectorSpaceBase</tt> abstracts the the types of
+<li><tt>Thyra::MPIVectorSpaceDefaultBase</tt> abstracts the the types of
 SPMD distributed-memory data distributions supported by these base
 subclasses.  This vector space base class assumes a unique
 partitioning of vector and multi-vector elements to a set of
@@ -612,7 +612,7 @@ The concrete subclasses described here derive directly from the \ref
 creates locally replicated <tt>%Thyra::%MPIVectorSpaceStd</tt> objects
 given their dimension.  This class is meant to create domain spaces for
 any MPI-based SPMD multi-vector object it is is used as such (for
-example, see <tt>Thyra::MPIVectorSpaceBase::smallVecSpcFcty()</tt>).
+example, see <tt>Thyra::MPIVectorSpaceDefaultBase::smallVecSpcFcty()</tt>).
 
 <li><tt>Thyra::MPIVectorSpaceStd</tt> is a general
 <tt>%Thyra::%VectorSpaceBase</tt> subclass implementation for MPI-based

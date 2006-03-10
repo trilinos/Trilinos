@@ -30,7 +30,7 @@
 #define THYRA_MPI_VECTOR_SPACE_STD_HPP
 
 #include "Thyra_MPIVectorSpaceStdDecl.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
+#include "Thyra_MPIVectorSpaceDefaultBase.hpp"
 #include "Thyra_MPIMultiVectorStd.hpp"
 #include "Thyra_MPIVectorStd.hpp"
 
@@ -195,7 +195,7 @@ MPIVectorSpaceStd<Scalar>::clone() const
   return Teuchos::rcp(new MPIVectorSpaceStd<Scalar>(mpiComm_,localSubDim_,this->dim()));
 }
 
-// Overridden from MPIVectorSpaceBase
+// Overridden from MPIVectorSpaceDefaultBase
 
 template<class Scalar>
 MPI_Comm MPIVectorSpaceStd<Scalar>::mpiComm() const

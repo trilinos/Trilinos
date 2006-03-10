@@ -73,6 +73,10 @@ INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ScaledAdjointLinearOpBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_PolynomialVectorTraits.hpp
 
+INTERFACES_OPERATOR_VECTOR_APP_H = \
+  $(srcdir)/interfaces/operator_vector/app/Thyra_MPIVectorSpaceBase.hpp\
+  $(srcdir)/interfaces/operator_vector/app/Thyra_MPIVectorSpaceBaseDecl.hpp
+
 INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBaseDecl.hpp\
@@ -184,8 +188,8 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIMultiVectorStdDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceDefaultBase.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceDefaultBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceFactoryStd.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceFactoryStdDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceStd.hpp\

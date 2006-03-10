@@ -42,7 +42,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
-Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> >
+Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceDefaultBase<double> >
 Thyra::create_MPIVectorSpaceBase(
 	const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
 	)

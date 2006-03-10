@@ -32,7 +32,7 @@
 #include "Thyra_MPIMultiVectorBaseDecl.hpp"
 #include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_EuclideanLinearOpBase.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
+#include "Thyra_MPIVectorSpaceDefaultBase.hpp"
 #include "Thyra_ExplicitMultiVectorView.hpp"
 #include "RTOpPack_MPI_apply_op.hpp"
 #include "RTOp_parallel_helpers.h"
@@ -63,7 +63,7 @@ template<class Scalar>
 Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
 MPIMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
 {
-  return mpiSpace();
+  return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(mpiSpace(),true);
 }
 
 // Overridden from LinearOpBase

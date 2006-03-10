@@ -96,7 +96,7 @@ MPIMultiVectorStd<Scalar>::MPIMultiVectorStd()
 
 template<class Scalar>
 MPIMultiVectorStd<Scalar>::MPIMultiVectorStd(
-  const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >          &mpiRangeSpace
+  const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >      &mpiRangeSpace
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
   ,const Teuchos::RefCountPtr<Scalar>                                    &localValues
   ,const Index                                                           leadingDim
@@ -107,7 +107,7 @@ MPIMultiVectorStd<Scalar>::MPIMultiVectorStd(
 
 template<class Scalar>
 void MPIMultiVectorStd<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >          &mpiRangeSpace
+  const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >      &mpiRangeSpace
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
   ,const Teuchos::RefCountPtr<Scalar>                                    &localValues
   ,const Index                                                           leadingDim
@@ -128,7 +128,7 @@ void MPIMultiVectorStd<Scalar>::initialize(
 
 template<class Scalar>
 void MPIMultiVectorStd<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >          *mpiRangeSpace
+  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >      *mpiRangeSpace
   ,Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  *domainSpace
   ,Teuchos::RefCountPtr<Scalar>                                    *localValues
   ,Index                                                           *leadingDim

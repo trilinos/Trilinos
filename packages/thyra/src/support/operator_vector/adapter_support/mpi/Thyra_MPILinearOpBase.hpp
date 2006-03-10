@@ -43,14 +43,14 @@ template<class Scalar>
 Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
 MPILinearOpBase<Scalar>::rangeScalarProdVecSpc() const
 {
-  return range_;
+  return sp_range_;
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >
 MPILinearOpBase<Scalar>::domainScalarProdVecSpc() const
 {
-  return domain_;
+  return sp_domain_;
 }
 
 template<class Scalar>
@@ -93,12 +93,19 @@ void MPILinearOpBase<Scalar>::setSpaces(
   ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    &domain
   )
 {
+  // Validate input
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
+  Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >
+    sp_range = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(range,true),
+    sp_domain = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(domain,true);
+  // Set state
   range_  = range;
   domain_ = domain;
+  sp_range_  = sp_range;
+  sp_domain_ = sp_domain;
 }
 
 template<class Scalar>
@@ -112,8 +119,13 @@ void MPILinearOpBase<Scalar>::setLocalDimensions(
   TEST_FOR_EXCEPT( localDimRange <= 0 );
   TEST_FOR_EXCEPT( localDimDomain <= 0 );
 #endif
-  range_  = Teuchos::rcp(new MPIVectorSpaceStd<Scalar>(mpiComm,localDimRange,-1));
-  domain_ = Teuchos::rcp(new MPIVectorSpaceStd<Scalar>(mpiComm,localDimDomain,-1));
+  Teuchos::RefCountPtr<const MPIVectorSpaceStd<Scalar> >
+    range  = Teuchos::rcp(new MPIVectorSpaceStd<Scalar>(mpiComm,localDimRange,-1)),
+    domain = Teuchos::rcp(new MPIVectorSpaceStd<Scalar>(mpiComm,localDimDomain,-1));
+  range_  = range;
+  domain_ = domain;
+  sp_range_  = range;
+  sp_domain_ = domain;
 }
 
 // Virtual functions to be overridden by subclasses

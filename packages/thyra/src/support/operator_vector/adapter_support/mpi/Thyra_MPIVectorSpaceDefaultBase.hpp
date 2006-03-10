@@ -29,7 +29,7 @@
 #ifndef THYRA_MPI_VECTOR_SPACE_BASE_HPP
 #define THYRA_MPI_VECTOR_SPACE_BASE_HPP
 
-#include "Thyra_MPIVectorSpaceBaseDecl.hpp"
+#include "Thyra_MPIVectorSpaceDefaultBaseDecl.hpp"
 #include "Thyra_ScalarProdVectorSpaceBase.hpp"
 #include "Thyra_MPIVectorSpaceFactoryStd.hpp"
 #ifdef RTOp_USE_MPI
@@ -40,20 +40,20 @@ namespace Thyra {
 
 /** \brief . */
 template<class Scalar>
-MPIVectorSpaceBase<Scalar>::MPIVectorSpaceBase()
+MPIVectorSpaceDefaultBase<Scalar>::MPIVectorSpaceDefaultBase()
   :mapCode_(-1),isInCore_(false),defaultLocalOffset_(-1),defaultGlobalDim_(-1)
 {}
 
 // Virtual methods with default implementations
 
 template<class Scalar>
-Index MPIVectorSpaceBase<Scalar>::localOffset() const
+Index MPIVectorSpaceDefaultBase<Scalar>::localOffset() const
 {
   return defaultLocalOffset_;
 }
 
 template<class Scalar>
-Index MPIVectorSpaceBase<Scalar>::mapCode() const
+Index MPIVectorSpaceDefaultBase<Scalar>::mapCode() const
 {
   return mapCode_;
 }
@@ -61,31 +61,31 @@ Index MPIVectorSpaceBase<Scalar>::mapCode() const
 // Overridden from VectorSpaceBase
 
 template<class Scalar>
-Index MPIVectorSpaceBase<Scalar>::dim() const
+Index MPIVectorSpaceDefaultBase<Scalar>::dim() const
 {
   return defaultGlobalDim_;
 }
 
 template<class Scalar>
-bool MPIVectorSpaceBase<Scalar>::isInCore() const
+bool MPIVectorSpaceDefaultBase<Scalar>::isInCore() const
 {
   return isInCore_;
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >
-MPIVectorSpaceBase<Scalar>::smallVecSpcFcty() const
+MPIVectorSpaceDefaultBase<Scalar>::smallVecSpcFcty() const
 {
   return smallVecSpcFcty_;
 }
 
 template<class Scalar>
-bool MPIVectorSpaceBase<Scalar>::isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const
+bool MPIVectorSpaceDefaultBase<Scalar>::isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const
 {
   if( isInCore() && vecSpc.isInCore() )
     return this->dim() == vecSpc.dim();
-  const MPIVectorSpaceBase<Scalar>
-    *mpiVecSpc = dynamic_cast<const MPIVectorSpaceBase<Scalar>*>(&vecSpc);
+  const MPIVectorSpaceDefaultBase<Scalar>
+    *mpiVecSpc = dynamic_cast<const MPIVectorSpaceDefaultBase<Scalar>*>(&vecSpc);
   if(mpiVecSpc)
     return mapCode() == mpiVecSpc->mapCode();
   return false;
@@ -94,7 +94,7 @@ bool MPIVectorSpaceBase<Scalar>::isCompatible( const VectorSpaceBase<Scalar>& ve
 // protected
 
 template<class Scalar>
-void MPIVectorSpaceBase<Scalar>::updateState( const Index globalDim )
+void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
 {
   const Index localSubDim = this->localSubDim(); 
   const MPI_Comm mpiComm  = MPI_COMM_NULL;
