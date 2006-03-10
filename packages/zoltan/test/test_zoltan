@@ -860,6 +860,7 @@ if (! $no_hg) then
     phg.check_hypergraph1 \
     phg.coarsening_limit200 \
     phg.coarsening_limit1   \
+    phg.coarsening_method_aipm \
     phg.coarsening_method_cipm \
     phg.coarsening_method_lipm \
     phg.coarsening_method_none \
@@ -872,7 +873,6 @@ if (! $no_hg) then
     phg.edge_scaling2 \
     phg.edge_size_threshold1.0 \
     phg.fast_coarsening_method \
-    phg.fast_coarsening_method_aipm \
     phg.final_output2 \
     phg.imbalance_tol1.02 \
     phg.initial_distribution.cols \
