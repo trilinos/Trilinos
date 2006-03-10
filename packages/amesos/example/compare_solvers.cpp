@@ -265,7 +265,7 @@ int main(int argc, char *argv[])
   char junk ; 
   //  if ( Comm.MyPID() == 0 ) cin >> junk; 
   Comm.Barrier() ; 
-#if 0
+#if 1
   SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Pardiso");
