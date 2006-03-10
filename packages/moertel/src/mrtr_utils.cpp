@@ -554,8 +554,8 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
 /*----------------------------------------------------------------------*
  | Multiply matrices A*B                                     mwgee 01/06|
  *----------------------------------------------------------------------*/
-Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA, 
-                                      Epetra_CrsMatrix& B, bool transB,
+Epetra_CrsMatrix* MOERTEL::MatMatMult(const Epetra_CrsMatrix& A, bool transA, 
+                                      const Epetra_CrsMatrix& B, bool transB,
                                       int outlevel)
 {
   // make sure FillComplete was called on the matrices

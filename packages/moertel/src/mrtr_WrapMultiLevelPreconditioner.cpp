@@ -68,7 +68,6 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
   Epetra_Vector x(View,X,0);
   Epetra_Vector xtmp(B_->DomainMap(),false);
   Epetra_Vector xtmp2(x.Map(),false);
-
 #if 0
   // make X (residual) satisfy constraints 
   // do X = (I-BW^T)X
@@ -86,9 +85,9 @@ int MOERTEL::ConstrainedPreconditioner::ApplyInverse(
          << "MOERTEL: ***WRN*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
   }
   
+#if 0
   // make Y (search direction) satisfy constraints
   // do Y = (I-WB^T)Y
-#if 0
   Epetra_Vector y(View,Y,0);
   B_->Multiply(true,y,xtmp);
   WT_->Multiply(true,xtmp,xtmp2);
