@@ -49,6 +49,8 @@ public:
   /** @name Overridden from ScalarProdBase */
   //@{
 
+  /// Returns <tt>true</tt>
+  bool isEuclidean() const;
   /// Simply calls <tt>dots(X,Y,scalar_prods)</tt>
   void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
   /// Simply calls <tt>M.euclideanApply(M_trans,X,Y,alpha,beta)</tt>

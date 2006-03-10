@@ -105,7 +105,6 @@ public:
    */
   virtual void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const = 0;
 
-
   /** \brief Modify the application of a Euclidean linear operator by
    * inserting the vector space's scalar product.
    *
@@ -143,6 +142,14 @@ public:
 
   /** @name Public virtual functions with default implementations */
   //@{
+
+  /** \brief Return if this is a Euclidean (identity) scalar product is the
+   * same as the dot product.
+   *
+   * The default implementation returns <tt>false</tt> (evenn though on average
+   * the truth is most likely <tt>true</tt>).
+   */
+  virtual bool isEuclidean() const;
 
   /** \brief Return the scalar product of two vectors in the vector space.
    *

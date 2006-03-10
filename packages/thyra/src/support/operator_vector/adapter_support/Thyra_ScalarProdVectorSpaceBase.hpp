@@ -67,6 +67,12 @@ ScalarProdVectorSpaceBase<Scalar>::getScalarProd() const
 // Overridden from VectorSpaceBase
 
 template<class Scalar>
+bool ScalarProdVectorSpaceBase<Scalar>::isEuclidean() const
+{
+  return scalarProd_->isEuclidean();
+}
+
+template<class Scalar>
 Scalar ScalarProdVectorSpaceBase<Scalar>::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const
 {
 #ifdef _DEBUG

@@ -291,6 +291,14 @@ public:
   /** @name Public virtual functions with default implementations */
   //@{
 
+  /** \brief Return if this vector space has a Euclidean (identity) basis in
+   * which case the scalar product is the same as the dot product.
+   *
+   * The default implementation returns <tt>false</tt> (evenn though on average
+   * the truth is most likely <tt>true</tt>).
+   */
+  virtual bool isEuclidean() const;
+
   /** \brief Returns if all of the vector elements are cheaply accessible
    * on this processor.
    *

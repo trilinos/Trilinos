@@ -119,9 +119,10 @@ public:
   /** @name Overridden from VectorSpaceBase */
   //@{
   
-  /// Calls <tt>getScalarProd()->scalarProd(x,y)</tt>
+  /// Returns <tt>getScalarProd()->isEuclidean()</tt>
+  bool isEuclidean() const;
+  /// Returns <tt>getScalarProd()->scalarProd(x,y)</tt>
   Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
-  
   /// Calls <tt>getScalarProd()->scalarProds(X,Y,scalar_prods)</tt>
   void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
   

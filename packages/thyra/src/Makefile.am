@@ -64,6 +64,8 @@ INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBaseDecl.hpp
 
 INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MPIVectorSpaceBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MPIVectorSpaceBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MultiVectorRandomizerBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_VectorSpaceConverterBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ProductMultiVectorBase.hpp\
@@ -72,10 +74,6 @@ INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ScaledAdjointLinearOpBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ScaledAdjointLinearOpBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_PolynomialVectorTraits.hpp
-
-INTERFACES_OPERATOR_VECTOR_APP_H = \
-  $(srcdir)/interfaces/operator_vector/app/Thyra_MPIVectorSpaceBase.hpp\
-  $(srcdir)/interfaces/operator_vector/app/Thyra_MPIVectorSpaceBaseDecl.hpp
 
 INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\
@@ -121,6 +119,9 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorTesterDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_ListedMultiVectorRandomizer.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_UniversalMultiVectorRandomizer.hpp
+
+SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT = \
+  $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_OperatorVectorAdapterSupportTypes.hpp\
@@ -255,7 +256,8 @@ THYRA_H = \
   $(INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H)\
   $(SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H)
 
-libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp
+libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
+	$(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT)
 
 #We need the following to support separate build directories
 

@@ -56,6 +56,7 @@ bool run_scalar_product_tests(
 {
 
   using Thyra::relErr;
+  using Thyra::testBoolExpr;
   typedef Teuchos::ScalarTraits<Scalar>    ST;
   typedef typename ST::magnitudeType       ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
@@ -63,7 +64,7 @@ bool run_scalar_product_tests(
   using Teuchos::rcp;
   using Teuchos::rcp_implicit_cast;
 
-  if(out) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n";
+  if(out) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n" << std::boolalpha;
 
   bool success = true, result;
 
@@ -104,6 +105,10 @@ bool run_scalar_product_tests(
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
   if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out);
+  if(!result) success = false;
+  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out);
+  if(!result) success = false;
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
  
@@ -120,6 +125,10 @@ bool run_scalar_product_tests(
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
   if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out);
+  if(!result) success = false;
+  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out);
+  if(!result) success = false;
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
   
@@ -136,6 +145,10 @@ bool run_scalar_product_tests(
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
   if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out);
+  if(!result) success = false;
+  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out);
+  if(!result) success = false;
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
   
@@ -158,6 +171,10 @@ bool run_scalar_product_tests(
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
   if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out);
+  if(!result) success = false;
+  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out);
+  if(!result) success = false;
   result = linearOpTester.check(*op,out);
   if(!result) success = false;
 

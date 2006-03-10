@@ -102,12 +102,14 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_libthyra_a_OBJECTS = Thyra_Version.$(OBJEXT)
+am__objects_1 = Thyra_TestingTools.$(OBJEXT)
+am_libthyra_a_OBJECTS = Thyra_Version.$(OBJEXT) $(am__objects_1)
 libthyra_a_OBJECTS = $(am_libthyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Thyra_Version.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Thyra_TestingTools.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Thyra_Version.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -291,6 +293,8 @@ INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBaseDecl.hpp
 
 INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MPIVectorSpaceBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MPIVectorSpaceBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MultiVectorRandomizerBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_VectorSpaceConverterBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ProductMultiVectorBase.hpp\
@@ -299,10 +303,6 @@ INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ScaledAdjointLinearOpBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ScaledAdjointLinearOpBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_PolynomialVectorTraits.hpp
-
-INTERFACES_OPERATOR_VECTOR_APP_H = \
-  $(srcdir)/interfaces/operator_vector/app/Thyra_MPIVectorSpaceBase.hpp\
-  $(srcdir)/interfaces/operator_vector/app/Thyra_MPIVectorSpaceBaseDecl.hpp
 
 INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\
@@ -348,6 +348,9 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorTesterDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_ListedMultiVectorRandomizer.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_UniversalMultiVectorRandomizer.hpp
+
+SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT = \
+  $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_OperatorVectorAdapterSupportTypes.hpp\
@@ -472,7 +475,9 @@ THYRA_H = \
   $(INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H)\
   $(SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H)
 
-libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp
+libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
+	$(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT)
+
 @USE_ALTERNATE_AR_FALSE@libthyra_a_AR = $(AR) cru
 
 #We need the following to support separate build directories
@@ -611,6 +616,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_TestingTools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_Version.Po@am__quote@
 
 .cpp.o:
@@ -644,6 +650,22 @@ Thyra_Version.obj: $(srcdir)/Thyra_Version.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_Version.Po' tmpdepfile='$(DEPDIR)/Thyra_Version.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_Version.obj `if test -f '$(srcdir)/Thyra_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_Version.cpp'; fi`
+
+Thyra_TestingTools.o: $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_TestingTools.o -MD -MP -MF "$(DEPDIR)/Thyra_TestingTools.Tpo" -c -o Thyra_TestingTools.o `test -f '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_TestingTools.Tpo" "$(DEPDIR)/Thyra_TestingTools.Po"; else rm -f "$(DEPDIR)/Thyra_TestingTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp' object='Thyra_TestingTools.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_TestingTools.Po' tmpdepfile='$(DEPDIR)/Thyra_TestingTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_TestingTools.o `test -f '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp
+
+Thyra_TestingTools.obj: $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_TestingTools.obj -MD -MP -MF "$(DEPDIR)/Thyra_TestingTools.Tpo" -c -o Thyra_TestingTools.obj `if test -f '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_TestingTools.Tpo" "$(DEPDIR)/Thyra_TestingTools.Po"; else rm -f "$(DEPDIR)/Thyra_TestingTools.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp' object='Thyra_TestingTools.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_TestingTools.Po' tmpdepfile='$(DEPDIR)/Thyra_TestingTools.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_TestingTools.obj `if test -f '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

@@ -39,6 +39,12 @@ namespace Thyra {
 // Virtual functions with default implementations
 
 template<class Scalar>
+bool VectorSpaceBase<Scalar>::isEuclidean() const
+{
+  return false;
+}
+
+template<class Scalar>
 bool VectorSpaceBase<Scalar>::isInCore() const
 {
   return false;

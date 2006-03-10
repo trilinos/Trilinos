@@ -65,7 +65,7 @@ namespace Thyra {
 template<class Scalar>
 class SerialMultiVectorBase
   : virtual public MultiVectorDefaultBase<Scalar>
-  , virtual protected SingleScalarEuclideanLinearOpBase<Scalar>
+  , virtual public SingleScalarEuclideanLinearOpBase<Scalar>
 {
 public:
 

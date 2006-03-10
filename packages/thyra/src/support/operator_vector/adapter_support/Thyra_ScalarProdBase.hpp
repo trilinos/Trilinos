@@ -35,6 +35,12 @@
 namespace Thyra {
 
 template<class Scalar>
+bool ScalarProdBase<Scalar>::isEuclidean() const
+{
+  return false;
+}
+
+template<class Scalar>
 Scalar ScalarProdBase<Scalar>::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const
 {
   Scalar scalar_prods[1];

@@ -97,6 +97,20 @@ bool testMaxErr(
   ,const std::string                                            &leadingIndent = std::string("")
   );
 
+/** \brief Check a boolean result against expected result.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ */
+bool testBoolExpr(
+  const std::string    &boolExprName
+  ,const bool          &boolExpr
+  ,const bool          &boolExpected
+  ,std::ostream        *out
+  ,const std::string   &leadingIndent = std::string("")
+  );
+
 /** \brief Print summary outputting for a test or just <tt>passed</tt> or
  * <tt>failed</tt>.
  *
@@ -115,7 +129,7 @@ bool testMaxErr(
  * <li><tt>*success==false</tt> if <tt>result==false</tt>
  * </ul>
  * 
- * Just the the definition of this function to see what it does.
+ * Just look at the definition of this function to see what it does.
  */
 void printTestResults(
   const bool              result

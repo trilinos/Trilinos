@@ -26,44 +26,22 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_EUCLIDEAN_SCALAR_PROD_HPP
-#define THYRA_EUCLIDEAN_SCALAR_PROD_HPP
+#include "Thyra_TestingTools.hpp"
 
-#include "Thyra_EuclideanScalarProdDecl.hpp"
-#include "Thyra_ScalarProdBase.hpp"
-#include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
-
-namespace Thyra {
-
-template<class Scalar>
-bool EuclideanScalarProd<Scalar>::isEuclidean() const
+bool Thyra::testBoolExpr(
+  const std::string    &boolExprName
+  ,const bool          &boolExpr
+  ,const bool          &boolExpected
+  ,std::ostream        *out
+  ,const std::string   &li
+  )
 {
-  return true;
+  const bool success = ( boolExpr == boolExpected );
+  if(out) {
+    *out
+      << std::endl
+      << li << "Check: " << boolExprName << " = " << boolExpr << " == " << boolExpected
+      << " : " << passfail(success) << std::endl;
+  }
+  return success;
 }
-
-template<class Scalar>
-void EuclideanScalarProd<Scalar>::scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const
-{
-  dots(X,Y,scalar_prods);
-}
-
-template<class Scalar>
-void EuclideanScalarProd<Scalar>::apply(
-  const EuclideanLinearOpBase<Scalar>   &M
-  ,const ETransp                        M_trans
-  ,const MultiVectorBase<Scalar>        &X
-  ,MultiVectorBase<Scalar>              *Y
-  ,const Scalar                         alpha
-  ,const Scalar                         beta
-  ) const
-{
-  if(real_trans(M_trans)==NOTRANS)
-    M.euclideanApply(transToConj(M_trans),X,Y,alpha,beta);
-  else
-    M.euclideanApplyTranspose(transToConj(M_trans),X,Y,alpha,beta);
-}
-
-} // end namespace Thyra
-
-#endif  // THYRA_EUCLIDEAN_SCALAR_PROD_HPP
