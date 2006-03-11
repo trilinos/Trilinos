@@ -15,6 +15,14 @@ we are going to get anywhere.
 
 /** \dir src/interfaces/operator_vector/ana/fundamental Fundamental interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms */
 
+/** \dir src/interfaces/operator_vector/ana/extended Extended interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms
+These interfaces are based on the Fundamental Thyra ANA Operator/Vector Interfaces.
+*/
+
+/** \dir src/interfaces/operator_vector/app Base directory for interoperability interfaces for operators (i.e. matrices) and vectors and applications and linear algebra libraries
+The interfaces in this directory are completely independent from the ANA interoperability interfaces.
+*/
+
 /** \dir src/interfaces/operator_solve Base directory for interoperability interfaces for linear (operator) solvers */
 
 /** \dir src/interfaces/operator_solve/ana Base directory for interoperability interfaces for linear (operator) solvers and abstract numerical algorithms */
