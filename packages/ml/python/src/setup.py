@@ -83,6 +83,14 @@ for option in options:
 # An additional include directory
 include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
 
+# Alter the order of the libraries to ensure proper linking.  This seems to be
+# necessary SuperLU_DIST is enabled for an MPI build and the g2c library is
+# required.
+g2c = "g2c"
+if g2c in libraries:
+    libraries.remove(g2c)
+    libraries.append(g2c)        
+
 # Define the strings that refer to the required local source files
 mlWrap = "ML_wrap.cpp"
 
