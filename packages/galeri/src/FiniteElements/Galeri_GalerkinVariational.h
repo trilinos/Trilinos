@@ -38,12 +38,14 @@ public:
                       double (*diff)(const double&, const double&, const double&),
                       double (*source)(const double&, const double&, const double&),
                       double (*force)(const double&, const double&, const double&),
-                      double (*bc)(const double&, const double&, const double&, const int&)) :
+                      double (*bc)(const double&, const double&, const double&, const int&),
+                      int (*bc_type)(const int&)):
     T(NumQuadratureNodes),
     diff_(diff),
     source_(source),
     force_(force),
-    bc_(bc)
+    bc_(bc),
+    bc_type_(bc_type)
   {}
 
   //! Destructor.  
@@ -237,13 +239,13 @@ public:
   //! Returns the boundary condition type of the specified patch.
   int BC(const int PatchID) const
   {
-    return(GALERI_DIRICHLET);
+    return(bc_type_(PatchID));
   }
 
   //! Returns the value of the boundary condition at point (x, y, z).
-  double BC(const double x, const double y, const double z, const int Patch) const
+  double BC(const double x, const double y, const double z, const int PatchID) const
   {
-    return(bc_(x, y, z, Patch));
+    return(bc_(x, y, z, PatchID));
   }
 
 private:
@@ -251,6 +253,7 @@ private:
   double (*source_)(const double& x, const double& y, const double& z);
   double (*force_)(const double& x, const double& y, const double& z);
   double (*bc_)(const double& x, const double& y, const double& z, const int& Patch);
+  int (*bc_type_)(const int& Patch);
 };
 
 } // namespace FiniteElements

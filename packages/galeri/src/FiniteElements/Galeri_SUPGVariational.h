@@ -39,7 +39,8 @@ public:
                   double (*bz)(const double&, const double&, const double&),
                   double (*source)(const double&, const double&, const double&),
                   double (*force)(const double&, const double&, const double&),
-                  double (*bc)(const double&, const double&, const double&, const int&)) :
+                  double (*bc)(const double&, const double&, const double&, const int&),
+                  int (*bc_type)(const int&)) :
   T(NumQuadratureNodes),
   diff_(diff),
   source_(source),
@@ -47,7 +48,8 @@ public:
   conv_y_(by),
   conv_z_(bz),
   force_(force),
-  bc_(bc)
+  bc_(bc),
+  bc_type_(bc_type)
   {}
 
   //! Destructor.
@@ -280,7 +282,7 @@ public:
 
   int BC(const int PatchID) const
   {
-    return(GALERI_DIRICHLET);
+    return(bc_type_(PatchID));
   }
 
   double BC(const double x, const double y, const double z, const int Patch) const
@@ -305,6 +307,7 @@ private:
   double (*conv_z_)(const double& x, const double& y, const double& z);
   double (*force_)(const double& x, const double& y, const double& z);
   double (*bc_)(const double& x, const double& y, const double& z, const int& Patch);
+  int (*bc_type_)(const int& Patch);
   mutable double tau_;
 };
 

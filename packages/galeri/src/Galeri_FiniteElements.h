@@ -1,5 +1,6 @@
 #include "Galeri_ConfigDefs.h"
 #include "Galeri_Exception.h"
+#include "FiniteElements/Galeri_Workspace.h"
 // Finite element includes:
 // - abstract files
 #include "FiniteElements/Galeri_AbstractGrid.h"
