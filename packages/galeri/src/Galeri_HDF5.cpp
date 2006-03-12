@@ -21,6 +21,11 @@
 #include "Galeri_Utils.h"
 #include "Galeri_HDF5.h"
 
+#define CHECK_STATUS(status) \
+  { if (status < 0) \
+    throw(Galeri::Exception(__FILE__, __LINE__, \
+                    "function H5Giterater returned a negative value")); }
+
 // ==========================================================================
 // data container and iterators to find a dataset with a given name
 struct FindDataset_t
@@ -77,8 +82,11 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_C_S1, dataspace_id, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_C_S1, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, value.c_str());
+        CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
+        CHECK_STATUS(status);
         status = H5Sclose(dataspace_id);
+        CHECK_STATUS(status);
         found = true;
       } 
 
@@ -90,8 +98,11 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_USHORT, dataspace_id, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_NATIVE_USHORT, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, &value);
+        CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
+        CHECK_STATUS(status);
         status = H5Sclose(dataspace_id);
+        CHECK_STATUS(status);
         found = true;
       } 
       
@@ -102,8 +113,11 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_INT, dataspace_id, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, &value);
+        CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
+        CHECK_STATUS(status);
         status = H5Sclose(dataspace_id);
+        CHECK_STATUS(status);
         found = true;
       } 
 
@@ -114,8 +128,11 @@ static void WriteParameterListRecursive(const Teuchos::ParameterList& params,
         dataset_id = H5Dcreate(group_id, key.c_str(), H5T_NATIVE_DOUBLE, dataspace_id, H5P_DEFAULT);
         status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
                           H5P_DEFAULT, &value);
+        CHECK_STATUS(status);
         status = H5Dclose(dataset_id);
+        CHECK_STATUS(status);
         status = H5Sclose(dataspace_id);
+        CHECK_STATUS(status);
         found = true;
       } 
 
@@ -810,6 +827,7 @@ void Galeri::HDF5::Write(const string& GroupName, const Teuchos::ParameterList& 
 
   // Finalize hdf5 file
   status = H5Gclose(group_id);
+  CHECK_STATUS(status);
 
   WriteComment(GroupName, "Teuchos::ParameterList");
 }
@@ -835,9 +853,11 @@ void Galeri::HDF5::Read(const string& GroupName, Teuchos::ParameterList& params)
 
   // Iterate through parameter list 
   status = H5Giterate(group_id, GroupName.c_str() , NULL, f_operator, &params);
+  CHECK_STATUS(status);
 
   // Finalize hdf5 file
   status = H5Gclose(group_id);
+  CHECK_STATUS(status);
 }
 
 // ================== //
@@ -897,6 +917,7 @@ void Galeri::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X)
   // Write hyperslab
   status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
                     plist_id_, LinearX.Values());
+  CHECK_STATUS(status);
   H5Gclose(group_id);
   H5Sclose(memspace_id);
   H5Sclose(filespace_id);
@@ -949,6 +970,8 @@ void Galeri::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX)
 
   // FIXME: this works, but I don't like it...
   status = H5Sget_simple_extent_dims(space_id, dims, NULL);
+  CHECK_STATUS(status);
+
   if (dims[0] != NumVectors)
     throw(Exception(__FILE__, __LINE__,
                     "internal error, NumVectors does not match"));
@@ -956,6 +979,7 @@ void Galeri::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX)
   LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
   status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
                    H5P_DEFAULT, LinearX->Values());
+  CHECK_STATUS(status);
   H5Sclose(space_id);  
   H5Dclose(dataset_id);  
   H5Gclose(group_id);
@@ -999,6 +1023,7 @@ void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
 
   herr_t status = H5Dwrite(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
                            H5P_DEFAULT, &what);
+  CHECK_STATUS(status);
 
   // Close/release resources.
   H5Dclose(dset_id);
@@ -1020,6 +1045,7 @@ void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
 
   herr_t status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, 
                            filespace_id, H5P_DEFAULT, &what);
+  CHECK_STATUS(status);
 
   // Close/release resources.
   H5Dclose(dset_id);
@@ -1042,6 +1068,7 @@ void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, int&
 
   herr_t status = H5Dread(dset_id, H5T_NATIVE_INT, H5S_ALL, filespace_id,
                     H5P_DEFAULT, &data);
+  CHECK_STATUS(status);
 
   H5Sclose(filespace_id);
   H5Dclose(dset_id);
@@ -1063,6 +1090,7 @@ void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName, doub
 
   herr_t status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, H5S_ALL, filespace_id,
                     H5P_DEFAULT, &data);
+  CHECK_STATUS(status);
 
   H5Sclose(filespace_id);
   H5Dclose(dset_id);
@@ -1092,6 +1120,7 @@ void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
 
   herr_t status = H5Dwrite(dset_id, type, H5S_ALL, H5S_ALL,
                            H5P_DEFAULT, data);
+  CHECK_STATUS(status);
 
   // Close/release resources.
   H5Dclose(dset_id);
@@ -1118,6 +1147,7 @@ void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName,
 
   herr_t status = H5Dread(dset_id, type, H5S_ALL, filespace_id,
                           H5P_DEFAULT, data);
+  CHECK_STATUS(status);
 
   // Close/release resources.
   H5Dclose(dset_id);
@@ -1164,6 +1194,7 @@ void Galeri::HDF5::Write(const string& GroupName, const string& DataSetName,
 
   status = H5Dwrite(dset_id, type, memspace_id, filespace_id,
                     plist_id_, data);
+  CHECK_STATUS(status);
 
   // Close/release resources.
   H5Dclose(dset_id);
@@ -1180,9 +1211,7 @@ void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName,
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
-  // global size of the data to be read
   hsize_t MySize_t = MySize;
-  hsize_t GlobalSize_t = GlobalSize;
 
   // offset
   int itmp;
@@ -1202,6 +1231,7 @@ void Galeri::HDF5::Read(const string& GroupName, const string& DataSetName,
 
   herr_t status = H5Dread(dataset_id, type, mem_dataspace, filespace_id, 
                           H5P_DEFAULT, data);
+  CHECK_STATUS(status);
 
   H5Sclose(mem_dataspace);
   H5Gclose(group_id);  
