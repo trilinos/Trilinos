@@ -16,8 +16,9 @@ namespace FiniteElements
   const int GALERI_FRONT    = -5;
   const int GALERI_REAR     = -6;
 
-  const int GALERI_DIRICHLET = 1000;
-  const int GALERI_NEUMANN   = 1001;
+  const int GALERI_DIRICHLET  = 1000;
+  const int GALERI_NEUMANN    = 1001;
+  const int GALERI_DO_NOTHING = 1009;
 
   //! Returns the distance between two points in space.
   inline double Length(const double x1, const double y1, const double z1,

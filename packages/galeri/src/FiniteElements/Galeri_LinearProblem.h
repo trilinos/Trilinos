@@ -178,6 +178,10 @@ public:
         throw(-1);
 
       }
+      else if (BCType == GALERI_DO_NOTHING)
+      {
+        // do nothing here..
+      }
       else
       {
         cerr << "Type of boundary condition not recognized" << endl;
