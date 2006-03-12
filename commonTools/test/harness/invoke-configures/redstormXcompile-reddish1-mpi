@@ -3,6 +3,7 @@
 source /opt/modules/default/init/bash
 module load PrgEnv-pgi
 ../configure --cache-file=config.cache --host=i686-intel-linux \
+--with-gnumake \
 --enable-nox-epetra \
 --enable-aztecoo-azlu \
 --enable-aztecoo \
