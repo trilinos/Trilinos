@@ -61,6 +61,15 @@
 #include "Ifpack_CrsRiluk.h"
 #include "Teuchos_ParameterList.hpp"
 
+// EpetraExt includes for dumping a matrix
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+#include "EpetraExt_BlockMapOut.h"
+#include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+#endif
+#endif
+
 #ifdef HAVE_NOX_ML_EPETRA
 #include "Teuchos_ParameterList.hpp"
 #endif
@@ -301,6 +310,13 @@ reset(NOX::Parameter::List& linearSolverParams)
 
   maxAgeOfPrec = linearSolverParams.getParameter("Max Age Of Prec", 1);
   precQueryCounter = 0;
+
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+  linearSolveCount = 0;
+#endif
+#endif
+
 }
 
 //***********************************************************************
@@ -580,6 +596,51 @@ applyJacobianInverse(Parameter::List &p,
     }
   }
   // ************* End linear system scaling *******************
+
+  // Use EpetraExt to dump linear system if debuggging
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+
+  ++linearSolveCount;
+
+  if (p.getParameter("Write Linear System", false)) {
+    
+    std::ostringstream iterationNumber;
+    iterationNumber << linearSolveCount;
+    
+    std::string prefixName = p.getParameter("Write Linear System File Prefix", 
+					    "NOX_LinSys");
+    std::string postfixName = iterationNumber.str();
+    postfixName += ".mm";
+
+    std::string mapFileName = prefixName + "_Map_" + postfixName;
+    std::string jacFileName = prefixName + "_Jacobian_" + postfixName;    
+    std::string rhsFileName = prefixName + "_LHS_" + postfixName;
+    std::string lhsFileName = prefixName + "_RHS_" + postfixName;
+
+    Epetra_RowMatrix* printMatrix = NULL;
+    printMatrix = dynamic_cast<Epetra_RowMatrix*>(solveJacOpPtr.get()); 
+
+    if (printMatrix == NULL) {
+      cout << "Error: NOX::Epetra::LinearSystemAztecOO::applyJacobianInverse() - "
+	   << "Could not cast the Jacobian operator to an Epetra_RowMatrix!"
+	   << "Please set the \"Write Linear System\" parameter to false."
+	   << endl;
+      throw "NOX Error";
+    }
+
+    EpetraExt::BlockMapToMatrixMarketFile(mapFileName.c_str(), 
+					  printMatrix->RowMatrixRowMap()); 
+    EpetraExt::RowMatrixToMatrixMarketFile(jacFileName.c_str(), *printMatrix, 
+					   "test matrix", "Jacobian XXX");
+    EpetraExt::MultiVectorToMatrixMarketFile(lhsFileName.c_str(), 
+					     result.getEpetraVector());
+    EpetraExt::MultiVectorToMatrixMarketFile(rhsFileName.c_str(), 
+					     nonConstInput.getEpetraVector());
+
+  }
+#endif
+#endif
 
   // Compute and set the Preconditioner in AztecOO if needed
   if (!isPrecConstructed && (precAlgorithm != None_)) {

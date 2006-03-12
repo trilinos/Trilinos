@@ -179,6 +179,14 @@ int main(int argc, char *argv[])
   if( verbose )
     lsParams.setParameter("Output Frequency", 1);    
 
+  // Debugging output
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+  lsParams.setParameter("Write Linear System", true);
+  lsParams.setParameter("Write Linear System File Prefix", "LinSys_Output_Test");
+#endif
+#endif
+
   // Create the interface between the test problem and the nonlinear solver
   Teuchos::RefCountPtr<Problem_Interface> interface = 
     Teuchos::rcp(new Problem_Interface(Problem));

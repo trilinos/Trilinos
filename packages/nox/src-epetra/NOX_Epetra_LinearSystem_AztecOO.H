@@ -259,6 +259,10 @@ options are valid:
 
 <li> "Output %Solver Details" - (boolean) Write the output sublist below to the parameter list after each linear solve. default is true.
 
+<li> "Write Linear System" - (boolean) If set to true, the linear system (Epetra_Map, Jacobian, LHS and RHS) is printed to a set of files in matrix market format.  This option requires building nox with the flag --enable-nox-debug and building the EpetraExt library.
+
+<li> "Write Linear System File Prefix" - (string) If writing of the linear system is enabled (see above parameter) users can change the name of the output file prefix.  The default is "NOX_LinSys".  This option requires building nox with the flag --enable-nox-debug and building the EpetraExt library.
+
 </ul>
 
 <B>"Output" sublist</B>
@@ -616,6 +620,12 @@ protected:
 
   //! Override the Preconditioner operator that will be used in solves.
   Teuchos::RefCountPtr<Epetra_Operator> solvePrecOpPtr;
+
+#ifdef HAVE_NOX_DEBUG
+#ifdef HAVE_NOX_EPETRAEXT
+  mutable int linearSolveCount;
+#endif
+#endif
 
 };
 

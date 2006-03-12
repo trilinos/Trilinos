@@ -271,6 +271,23 @@ AC_CXX_INVALID_TEMPLATE_QUALIFIER
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for third-party (non-Trilinos) libraries including BLAS. LAPACK, and math library.  If tests or examples are enabled, this flag will be overriden and libchecks enabled.], LIBCHECK, no)
 
 # ------------------------------------------------------------------------
+# Enable nox debugging
+# ------------------------------------------------------------------------
+AC_ARG_ENABLE(nox-debug,
+[AC_HELP_STRING([--enable-nox-debug],[Build NOX in debug mode - FOR DEVELOPERS ONLY!])],
+[NOX_DEBUG_MODE=yes],
+[NOX_DEBUG_MODE=no]
+)
+
+AC_MSG_CHECKING(whether nox is being built in debug mode)
+if test "X$NOX_DEBUG_MODE" != "Xno"; then
+  AC_DEFINE([HAVE_NOX_DEBUG],1,[Define to build NOX in debug mode.])
+  AC_MSG_RESULT(no)
+else
+  AC_MSG_RESULT(no)
+fi
+
+# ------------------------------------------------------------------------
 # Determine if nox is being built as part of Trilinos or as a stand-alone
 # package.  This will affect the default settings such as building loca.
 # ------------------------------------------------------------------------
