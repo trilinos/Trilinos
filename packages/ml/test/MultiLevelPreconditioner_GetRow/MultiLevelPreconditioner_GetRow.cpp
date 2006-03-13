@@ -64,7 +64,14 @@ int solve(Epetra_RowMatrix&A, Epetra_MultiVector& X, Epetra_MultiVector& B)
 
   ParameterList MLList;
   ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("aggregation: damping factor", 0.0);
   MLList.set("output", 0);
+
+  // Use IFPACK smoothers, because they can take advantage of the
+  // underlying Epetra matrix. The "fast" SGS is used for Epetra_CrsMatrix.
+  MLList.set("smoother: type","IFPACK");
+  MLList.set("smoother: ifpack type", "point relaxation stand-alone");
+  MLList.sublist("smoother: ifpack list").set("relaxation: type", "symmetric Gauss-Seidel");
 
   Epetra_Time Time(A.Comm());
   Time.ResetStartTime();
@@ -95,8 +102,8 @@ int main(int argc, char *argv[])
 #endif
 
   ParameterList GaleriList;
-  GaleriList.set("nx", 100);
-  GaleriList.set("ny", 100 * Comm.NumProc());
+  GaleriList.set("nx", 30);
+  GaleriList.set("ny", 30 * Comm.NumProc());
   GaleriList.set("mx", 1);
   GaleriList.set("my", 1 * Comm.NumProc());
 
