@@ -41,7 +41,7 @@ namespace Thyra {
  *
  * This node subclass provides as many default implementations as possible for
  * virtual functions based on the default multi-vector implementation
- * <tt>MultiVectorCols</tt>.
+ * <tt>DefaultColumnwiseMultiVector</tt>.
  *
  * <b>Notes for subclass developers</b>
  *
@@ -117,7 +117,7 @@ public:
   //@{
   /// Returns <tt>this->space()</tt>
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
-  /// Returns a <tt>SerialVectorSpaceStd</tt> object with dimension 1.
+  /// Returns a <tt>DefaultSerialVectorSpace</tt> object with dimension 1.
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
   //@}
 
@@ -135,22 +135,22 @@ public:
   Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] ) const;
   /// Returns <tt>Teuchos::rcp(this,false)</tt>
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> > subView( const int numCols, const int cols[] );
-  /// Implemented in terms of <tt>this->getSubVector()</tt>
-  void getSubMultiVector(
+  /// Implemented in terms of <tt>this->acquireDetachedView()</tt>
+  void acquireDetachedView(
     const Range1D                       &rowRng
     ,const Range1D                      &colRng
-    ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
     ) const;
-  /// Implemented in terms of <tt>this->freeSubVector()</tt>
-  void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const;
-  /// Implemented in terms of <tt>this->getSubVector()</tt>
-  void getSubMultiVector(
+  /// Implemented in terms of <tt>this->releaseDetachedView()</tt>
+  void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
+  /// Implemented in terms of <tt>this->acquireDetachedView()</tt>
+  void acquireDetachedView(
     const Range1D                                &rowRng
     ,const Range1D                               &colRng
-    ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
     );
-  /// Implemented in terms of <tt>this->commitSubVector()</tt>
-  void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  /// Implemented in terms of <tt>this->commitDetachedView()</tt>
+  void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
   //@}
 
   /** \name Overridden from VectorBase */
@@ -169,18 +169,18 @@ public:
    * must be overridden if <tt>rng.size()</tt> is large at all.  Although,
    * this function should not even be used in case where the vector is very
    * large.  If a subclass does override this function, it must also override
-   * <tt>freeSubVector()</tt> which has a implementation which is a companion
+   * <tt>releaseDetachedView()</tt> which has a implementation which is a companion
    * to this function's implementation.
    */
-  virtual void getSubVector( const Range1D& rng, RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
   /** \brief .
    *
    * This implementation is a companion to the implementation for the
-   * non-<tt>const</tt> version of <tt>getSubVector()</tt>.  If
-   * <tt>getSubVector()</tt> is overridden by a subclass then this function
+   * non-<tt>const</tt> version of <tt>acquireDetachedView()</tt>.  If
+   * <tt>acquireDetachedView()</tt> is overridden by a subclass then this function
    * must be overridden also!
    */
-  virtual void freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  virtual void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
   /** \brief .
    *
    * This implementation is based on a vector reduction operator class (see
@@ -190,18 +190,18 @@ public:
    * fairly reasonable and will not be a major performance penalty.  For
    * parallel applications, this will be a terrible thing to do and must be
    * overridden if <tt>rng.size()</tt> is large at all.  If a subclass does
-   * override this function, it must also override <tt>commitSubVector()</tt>
+   * override this function, it must also override <tt>commitDetachedView()</tt>
    * which has a implementation which is a companion to this function's
    * implementation.
    */
-  virtual void getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec );
   /** \brief .
    *
    * This function has an implementation which is a companion to the
-   * implementation for <tt>getSubVector()</tt>.  If <tt>getSubVector()</tt>
+   * implementation for <tt>acquireDetachedView()</tt>.  If <tt>acquireDetachedView()</tt>
    * is overridden by a subclass then this function must be overridden also!
    */
-  virtual void commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  virtual void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec );
   /** \brief .
    *
    * This implementation uses a transformation operator class (see

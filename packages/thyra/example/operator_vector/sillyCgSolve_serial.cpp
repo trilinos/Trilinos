@@ -28,8 +28,8 @@
 
 #include "SerialTridiagLinearOp.hpp"
 #include "sillyCgSolve.hpp"
-#include "Thyra_ScaledAdjointLinearOp.hpp"
-#include "Thyra_MultiplicativeLinearOp.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"

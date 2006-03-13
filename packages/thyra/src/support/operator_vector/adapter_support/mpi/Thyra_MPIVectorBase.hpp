@@ -93,7 +93,7 @@ void MPIVectorBase<Scalar>::applyOp(
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
     ,"MPIVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
-    "clear sign that one of the methods getSubVector(...), freeSubVector(...) or commitSubVector(...) "
+    "clear sign that one of the methods acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...) "
     "was not implemented properly!"
     );
   Thyra::apply_op_validate_input(
@@ -123,15 +123,15 @@ void MPIVectorBase<Scalar>::applyOp(
     : Range1D::Invalid
     );
   // Create sub-vector views of all of the *participating* local data
-  Workspace<RTOpPack::SubVectorT<Scalar> > sub_vecs(wss,num_vecs);
-  Workspace<RTOpPack::MutableSubVectorT<Scalar> > sub_targ_vecs(wss,num_targ_vecs);
+  Workspace<RTOpPack::ConstSubVectorView<Scalar> > sub_vecs(wss,num_vecs);
+  Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss,num_targ_vecs);
   if( overlap_first_local_ele_off >= 0 ) {
     if(1){for(int k = 0; k < num_vecs; ++k ) {
-      vecs[k]->getSubVector( local_rng, &sub_vecs[k] );
+      vecs[k]->acquireDetachedView( local_rng, &sub_vecs[k] );
       sub_vecs[k].setGlobalOffset( overlap_global_off );
     }}
     if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
-      targ_vecs[k]->getSubVector( local_rng, &sub_targ_vecs[k] );
+      targ_vecs[k]->acquireDetachedView( local_rng, &sub_targ_vecs[k] );
       sub_targ_vecs[k].setGlobalOffset( overlap_global_off );
     }}
   }
@@ -151,11 +151,11 @@ void MPIVectorBase<Scalar>::applyOp(
   if( overlap_first_local_ele_off >= 0 ) {
     if(1){for(int k = 0; k < num_vecs; ++k ) {
       sub_vecs[k].setGlobalOffset(local_rng.lbound());
-      vecs[k]->freeSubVector( &sub_vecs[k] );
+      vecs[k]->releaseDetachedView( &sub_vecs[k] );
     }}
     if(1){for(int k = 0; k < num_targ_vecs; ++k ) {
       sub_targ_vecs[k].setGlobalOffset(local_rng.lbound());
-      targ_vecs[k]->commitSubVector( &sub_targ_vecs[k] );
+      targ_vecs[k]->commitDetachedView( &sub_targ_vecs[k] );
     }}
   }
   // Flag that we are leaving applyOp()
@@ -163,7 +163,7 @@ void MPIVectorBase<Scalar>::applyOp(
 }
 
 template<class Scalar>
-void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVectorT<Scalar>* sub_vec ) const
+void MPIVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
 {
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
@@ -178,7 +178,7 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVe
   const Range1D rng = validateRange(rng_in);
   if( rng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    VectorDefaultBase<Scalar>::getSubVector(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::acquireDetachedView(rng_in,sub_vec);
     return;
   }
   // rng consists of all local data so get it!
@@ -194,18 +194,18 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVe
 }
 
 template<class Scalar>
-void MPIVectorBase<Scalar>::freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const
+void MPIVectorBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
     sub_vec==NULL || sub_vec->globalOffset() < 0 || sub_vec->globalOffset() + sub_vec->subDim() > globalDim_
     ,std::logic_error
-    ,"MPIVectorBase<Scalar>::freeSubVector(...) : Error, this sub vector was not gotten from getSubVector(...)!"
+    ,"MPIVectorBase<Scalar>::releaseDetachedView(...) : Error, this sub vector was not gotten from acquireDetachedView(...)!"
     );
 #endif
   if( sub_vec->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim() ) {
     // Let the default implementation handle it!
-    VectorDefaultBase<Scalar>::freeSubVector(sub_vec);
+    VectorDefaultBase<Scalar>::releaseDetachedView(sub_vec);
     return;
   }
   // Nothing to deallocate!
@@ -213,7 +213,7 @@ void MPIVectorBase<Scalar>::freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec
 }
 
 template<class Scalar>
-void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::MutableSubVectorT<Scalar>* sub_vec )
+void MPIVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec )
 {
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
@@ -228,7 +228,7 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::Mutab
   const Range1D rng = validateRange(rng_in);
   if( rng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    VectorDefaultBase<Scalar>::getSubVector(rng_in,sub_vec);
+    VectorDefaultBase<Scalar>::acquireDetachedView(rng_in,sub_vec);
     return;
   }
   // rng consists of all local data so get it!
@@ -244,18 +244,18 @@ void MPIVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::Mutab
 }
 
 template<class Scalar>
-void MPIVectorBase<Scalar>::commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec )
+void MPIVectorBase<Scalar>::commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec )
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
     sub_vec==NULL || sub_vec->globalOffset() < 0 || sub_vec->globalOffset() + sub_vec->subDim() > globalDim_
     ,std::logic_error
-    ,"MPIVectorBase<Scalar>::commitSubVector(...) : Error, this sub vector was not gotten from getSubVector(...)!"
+    ,"MPIVectorBase<Scalar>::commitDetachedView(...) : Error, this sub vector was not gotten from acquireDetachedView(...)!"
     );
 #endif
   if( sub_vec->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_vec->globalOffset()+sub_vec->subDim() ) {
     // Let the default implementation handle it!
-    VectorDefaultBase<Scalar>::commitSubVector(sub_vec);
+    VectorDefaultBase<Scalar>::commitDetachedView(sub_vec);
     return;
   }
   sub_vec->set_uninitialized();  // Nothing to deallocate!

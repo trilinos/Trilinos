@@ -30,17 +30,17 @@
 
 #ifndef __sun
 
-#include "Thyra_SerialVectorSpaceStd.hpp"
-#include "Thyra_SerialMultiVectorStd.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultSerialMultiVector.hpp"
 #include "Thyra_LinearOpScalarProd.hpp"
 #include "Thyra_EuclideanScalarProd.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_DiagonalLinearOp.hpp"
-#include "Thyra_SerialVectorSpaceConverterStd.hpp"
-#include "Thyra_ScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_DefaultSerialVectorSpaceConverter.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
 
@@ -69,16 +69,30 @@ bool run_scalar_product_tests(
   bool success = true, result;
 
   RefCountPtr<Thyra::ScalarProdVectorSpaceBase<Scalar> >
-    domain = rcp(new Thyra::SerialVectorSpaceStd<Scalar>(n/2)),
-    range  = rcp(new Thyra::SerialVectorSpaceStd<Scalar>(n));
-  RefCountPtr<Thyra::SerialMultiVectorStd<Scalar> >
-    op_coeff = rcp(new Thyra::SerialMultiVectorStd<Scalar>(range,domain)),
-    op       = rcp(new Thyra::SerialMultiVectorStd<Scalar>(range,domain));
+    domain = rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n/2)),
+    range  = rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
+
+  RefCountPtr<Thyra::DefaultSerialMultiVector<Scalar> >
+    op_coeff = rcp(new Thyra::DefaultSerialMultiVector<Scalar>(range,domain)),
+    op       = rcp(new Thyra::DefaultSerialMultiVector<Scalar>(range,domain));
+
+  RefCountPtr<Thyra::DefaultDiagonalLinearOp<Scalar> >
+    domainScalarProdOp = rcp(
+      new Thyra::DefaultDiagonalLinearOp<Scalar>(
+        rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)
+        )
+      ),
+    rangeScalarProdOp = rcp(
+      new Thyra::DefaultDiagonalLinearOp<Scalar>(
+        rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(range)
+        )
+      );
+
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*op_coeff );
   if(out && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
   RefCountPtr<const Thyra::VectorSpaceConverterBase<ScalarMag,Scalar> >
-    vecSpcConverterFromMag = rcp(new Thyra::SerialVectorSpaceConverterStd<ScalarMag,Scalar>());
+    vecSpcConverterFromMag = rcp(new Thyra::DefaultSerialVectorSpaceConverter<ScalarMag,Scalar>());
   RefCountPtr<const Thyra::VectorSpaceBase<ScalarMag> >
     magDomain = vecSpcConverterFromMag->createVectorSpaceFrom(*rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)),
     magRange  = vecSpcConverterFromMag->createVectorSpaceFrom(*rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(range));
@@ -87,11 +101,14 @@ bool run_scalar_product_tests(
     _rangeScalarProdDiag  = createMember(*magRange);
   Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), &*_domainScalarProdDiag );
   Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), &*_rangeScalarProdDiag );
-  RefCountPtr<Thyra::VectorBase<Scalar> >
-    domainScalarProdDiag  = createMember(rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(domain)),
-    rangeScalarProdDiag   = createMember(rcp_implicit_cast<const Thyra::VectorSpaceBase<Scalar> >(range));
-  vecSpcConverterFromMag->convert( *_domainScalarProdDiag, &*domainScalarProdDiag );
-  vecSpcConverterFromMag->convert( *_rangeScalarProdDiag, &*rangeScalarProdDiag );
+  vecSpcConverterFromMag->convert( *_domainScalarProdDiag, &*domainScalarProdOp->getNonconstDiag() );
+  vecSpcConverterFromMag->convert( *_rangeScalarProdDiag, &*rangeScalarProdOp->getNonconstDiag() );
+
+  RefCountPtr<const Thyra::EuclideanScalarProd<Scalar> >
+    euclideanScalarProd = rcp(new Thyra::EuclideanScalarProd<Scalar>());
+  RefCountPtr<const Thyra::LinearOpScalarProd<Scalar> >
+    domainScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(domainScalarProdOp)),
+    rangeScalarProd = rcp(new Thyra::LinearOpScalarProd<Scalar>(rangeScalarProdOp));
 
   const ScalarMag warning_tol = ScalarMag(1e-2)*tol, error_tol = tol;
   Thyra::LinearOpTester<Scalar> linearOpTester;
@@ -113,14 +130,8 @@ bool run_scalar_product_tests(
   if(!result) success = false;
  
   if(out) *out << "\nTesting LinearOpBase with non-Euclidean domain and Euclidean range scalar products ...\n";
-  range->setScalarProd(rcp(new Thyra::EuclideanScalarProd<Scalar>()));
-  domain->setScalarProd(
-    rcp(
-      new Thyra::LinearOpScalarProd<Scalar>(
-        rcp(new Thyra::DiagonalLinearOp<Scalar>(domainScalarProdDiag))
-        )
-      )
-    );
+  range->setScalarProd(euclideanScalarProd);
+  domain->setScalarProd(domainScalarProd);
   op->initialize(range,domain);
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
@@ -133,14 +144,8 @@ bool run_scalar_product_tests(
   if(!result) success = false;
   
   if(out) *out << "\nTesting LinearOpBase with Euclidean domain and non-Euclidean range scalar products ...\n";
-  range->setScalarProd(
-    rcp(
-      new Thyra::LinearOpScalarProd<Scalar>(
-        rcp(new Thyra::DiagonalLinearOp<Scalar>(rangeScalarProdDiag))
-        )
-      )
-    );
-  domain->setScalarProd(rcp(new Thyra::EuclideanScalarProd<Scalar>()));
+  range->setScalarProd(rangeScalarProd);
+  domain->setScalarProd(euclideanScalarProd);
   op->initialize(range,domain);
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;
@@ -153,20 +158,8 @@ bool run_scalar_product_tests(
   if(!result) success = false;
   
   if(out) *out << "\nTesting LinearOpBase with non-Euclidean domain and non-Euclidean range scalar products ...\n";
-  range->setScalarProd(
-    rcp(
-      new Thyra::LinearOpScalarProd<Scalar>(
-        rcp(new Thyra::DiagonalLinearOp<Scalar>(rangeScalarProdDiag))
-        )
-      )
-    );
-  domain->setScalarProd(
-    rcp(
-      new Thyra::LinearOpScalarProd<Scalar>(
-        rcp(new Thyra::DiagonalLinearOp<Scalar>(domainScalarProdDiag))
-        )
-      )
-    );
+  range->setScalarProd(rangeScalarProd);
+  domain->setScalarProd(domainScalarProd);
   op->initialize(range,domain);
   Thyra::assign( &*op, *op_coeff );
   if(out && dumpAll) *out << "\nop =\n" << *op;

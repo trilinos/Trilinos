@@ -214,8 +214,8 @@ int main( int argc, char* argv[] )
 			epetra_map = rcp(new Epetra_Map(-1,local_dim,0,*epetra_comm));
 			epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
 			// Non-Epetra vector space
-      if(verbose) out << "\nCreating Thyra::MPIVectorSpaceStd ...\n";
-      non_epetra_vs = rcp(new Thyra::MPIVectorSpaceStd<Scalar>(mpiComm,local_dim,-1));
+      if(verbose) out << "\nCreating Thyra::DefaultMPIVectorSpace ...\n";
+      non_epetra_vs = rcp(new Thyra::DefaultMPIVectorSpace<Scalar>(mpiComm,local_dim,-1));
 		}
 		else {
 #endif
@@ -228,8 +228,8 @@ int main( int argc, char* argv[] )
 			epetra_map = rcp(new Epetra_LocalMap(local_dim,0,*epetra_comm));
 			epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
 			// Non-Epetra vector space
-      if(verbose) out << "\nCreating Thyra::MPIVectorSpaceStd ...\n";
-      non_epetra_vs = rcp(new Thyra::MPIVectorSpaceStd<Scalar>(MPI_COMM_NULL,local_dim,-1));
+      if(verbose) out << "\nCreating Thyra::DefaultMPIVectorSpace ...\n";
+      non_epetra_vs = rcp(new Thyra::DefaultMPIVectorSpace<Scalar>(MPI_COMM_NULL,local_dim,-1));
 #ifdef RTOp_USE_MPI
 		}
 #endif // end create vector spacdes [Doxygen looks for this!]
@@ -643,11 +643,11 @@ int main( int argc, char* argv[] )
       const Scalar s = fabs(scalar)*num_mv_cols;
 
       std::vector<Scalar>  t_raw_values( num_mv_cols );
-      RTOpPack::MutableSubVectorT<Scalar> t_raw( 0, num_mv_cols, &t_raw_values[0], 1 );
+      RTOpPack::SubVectorView<Scalar> t_raw( 0, num_mv_cols, &t_raw_values[0], 1 );
 
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
 			Thyra::assign( &*createMemberView(T->range(),t_raw), scalar );
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > t_view = createMemberView(T->range(),static_cast<RTOpPack::SubVectorT<Scalar>&>(t_raw));
+      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > t_view = createMemberView(T->range(),static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
       Scalar t_nrm = Thyra::norm_1(*t_view);
       if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
       if(verbose && dumpAll) out << "\nt_view =\n" << *t_view;
@@ -656,7 +656,7 @@ int main( int argc, char* argv[] )
 #ifndef __sun // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
       Thyra::assign( &*T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(t_raw), scalar );
-      t_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(static_cast<RTOpPack::SubVectorT<Scalar>&>(t_raw));
+      t_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
       t_nrm = Thyra::norm_1(*t_view);
       if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
       if(verbose && dumpAll) out << "\nt_view =\n" << *t_view;
@@ -664,12 +664,12 @@ int main( int argc, char* argv[] )
 */
 
       std::vector<Scalar>  T_raw_values( num_mv_cols * num_mv_cols );
-      RTOpPack::MutableSubMultiVectorT<Scalar> T_raw( 0, num_mv_cols, 0, num_mv_cols, &T_raw_values[0], num_mv_cols );
+      RTOpPack::SubMultiVectorView<Scalar> T_raw( 0, num_mv_cols, 0, num_mv_cols, &T_raw_values[0], num_mv_cols );
 
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
       Thyra::assign( &*createMembersView(T->range(),T_raw), scalar );
       Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
-				T_view = createMembersView(T->range(),static_cast<RTOpPack::SubMultiVectorT<Scalar>&>(T_raw));
+				T_view = createMembersView(T->range(),static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
       Scalar T_nrm = Thyra::norm_1(*T_view);
       if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
       if(verbose && dumpAll) out << "\nT_view =\n" << *T_view;
@@ -678,7 +678,7 @@ int main( int argc, char* argv[] )
 #ifndef __sun // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
       Thyra::assign( &*T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(T_raw), scalar );
-      T_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(static_cast<RTOpPack::SubMultiVectorT<Scalar>&>(T_raw));
+      T_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
       T_nrm = Thyra::norm_1(*T_view);
       if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&out:NULL)) success=false;
       if(verbose && dumpAll) out << "\nT_view =\n" << *T_view;

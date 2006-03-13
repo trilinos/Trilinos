@@ -6,8 +6,8 @@ href="../../../../thyra/src/interfaces/operator_vector/ana/fundamental/doc/html/
 Operator/Vector Interfaces</a>.
 
 These wrappers use a minimal amount of code by making heavy use of the
-standard implementations <tt>Thyra::MPIVectorSpaceStd</tt>,
-<tt>Thyra::MPIVectorStd</tt>, and <tt>Thyra::MPIMultiVectorStd</tt>.
+standard implementations <tt>Thyra::DefaultMPIVectorSpace</tt>,
+<tt>Thyra::DefaultMPIVector</tt>, and <tt>Thyra::DefaultMPIMultiVector</tt>.
 
 Click on the links below to browse adapter code and examples:
 

@@ -27,11 +27,11 @@
 // @HEADER
 
 #include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_MPIVectorSpaceStd.hpp"
-#include "Thyra_MPIMultiVectorStd.hpp"
-#include "Thyra_MPIVectorStd.hpp"
-#include "Thyra_ExplicitVectorView.hpp"
-#include "Thyra_ExplicitMultiVectorView.hpp"
+#include "Thyra_DefaultMPIVectorSpace.hpp"
+#include "Thyra_DefaultMPIMultiVector.hpp"
+#include "Thyra_DefaultMPIVector.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
 #include "Epetra_Map.h"
@@ -75,9 +75,9 @@ Thyra::create_MPIVectorSpaceBase(
 	mpiComm = MPI_COMM_NULL;
 #endif // RTOp_USE_MPI
 	const Index localSubDim = epetra_map->NumMyElements();
-	Teuchos::RefCountPtr<MPIVectorSpaceStd<double> >
+	Teuchos::RefCountPtr<DefaultMPIVectorSpace<double> >
 		vs = Teuchos::rcp(
-			new MPIVectorSpaceStd<double>(
+			new DefaultMPIVectorSpace<double>(
 				mpiComm
 				,localSubDim
 				,epetra_map->NumGlobalElements()
@@ -109,7 +109,7 @@ Thyra::create_MPIVectorBase(
   epetra_v->ExtractView( &localValues );
   // Build the Vector
 	Teuchos::RefCountPtr<MPIVectorBase<double> >
-    v = Teuchos::rcp(new MPIVectorStd<double>(space,Teuchos::rcp(localValues,false),1));
+    v = Teuchos::rcp(new DefaultMPIVector<double>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( epetra_v, "Epetra_Vector", &v );
   return v;
 }
@@ -129,7 +129,7 @@ Thyra::create_MPIVectorBase(
   epetra_v->ExtractView( &localValues );
   // Build the Vector
 	Teuchos::RefCountPtr<const MPIVectorBase<double> >
-    v = Teuchos::rcp(new MPIVectorStd<double>(space,Teuchos::rcp(localValues,false),1));
+    v = Teuchos::rcp(new DefaultMPIVector<double>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( epetra_v, "Epetra_Vector", &v );
   return v;
 }
@@ -156,7 +156,7 @@ Thyra::create_MPIMultiVectorBase(
 	}
   // Build the MultiVector
 	Teuchos::RefCountPtr<MPIMultiVectorBase<double> >
-    mv = Teuchos::rcp(new MPIMultiVectorStd<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
+    mv = Teuchos::rcp(new DefaultMPIMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
   Teuchos::set_extra_data( epetra_mv, "Epetra_MultiVector", &mv );
   return mv;
 }
@@ -183,7 +183,7 @@ Thyra::create_MPIMultiVectorBase(
 	}
   // Build the MultiVector
 	Teuchos::RefCountPtr<const MPIMultiVectorBase<double> >
-    mv = Teuchos::rcp(new MPIMultiVectorStd<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
+    mv = Teuchos::rcp(new DefaultMPIMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
   Teuchos::set_extra_data( epetra_mv, "Epetra_MultiVector", &mv );
   return mv;
 }
@@ -228,9 +228,9 @@ Thyra::get_Epetra_Vector(
 	// the RefCountPtr that is returned.  As a result, this view will be relased
 	// when the returned Epetra_Vector is released.
 	//
-	Teuchos::RefCountPtr<ExplicitMutableMultiVectorView<double> >
+	Teuchos::RefCountPtr<DetachedMultiVectorView<double> >
 		emvv = Teuchos::rcp(
-			new ExplicitMutableMultiVectorView<double>(
+			new DetachedMultiVectorView<double>(
 				*v
 				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
@@ -287,9 +287,9 @@ Thyra::get_Epetra_Vector(
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
 	// Get an explicit *non-mutable* view of all of the elements in
 	// the multi vector.
-	Teuchos::RefCountPtr<ExplicitVectorView<double> >
+	Teuchos::RefCountPtr<ConstDetachedVectorView<double> >
 		evv = Teuchos::rcp(
-			new ExplicitVectorView<double>(
+			new ConstDetachedVectorView<double>(
 				*v
 				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
@@ -306,7 +306,7 @@ Thyra::get_Epetra_Vector(
 			);
 	// This next statement will cause the destructor to free the view if
 	// needed (see above function).  Since this view is non-mutable,
-	// only a freeSubVector(...) and not a commit will be called.
+	// only a releaseDetachedView(...) and not a commit will be called.
 	// This is the whole reason there is a seperate implementation for
 	// the const and non-const cases.
 	Teuchos::set_extra_data( evv, "evv", &epetra_v, Teuchos::PRE_DESTROY );
@@ -356,9 +356,9 @@ Thyra::get_Epetra_MultiVector(
 	// the RefCountPtr that is returned.  As a result, this view will be relased
 	// when the returned Epetra_MultiVector is released.
 	//
-	Teuchos::RefCountPtr<ExplicitMutableMultiVectorView<double> >
+	Teuchos::RefCountPtr<DetachedMultiVectorView<double> >
 		emmvv = Teuchos::rcp(
-			new ExplicitMutableMultiVectorView<double>(
+			new DetachedMultiVectorView<double>(
 				*mv
 				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
@@ -417,9 +417,9 @@ Thyra::get_Epetra_MultiVector(
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
 	// Get an explicit *non-mutable* view of all of the elements in
 	// the multi vector.
-	Teuchos::RefCountPtr<ExplicitMultiVectorView<double> >
+	Teuchos::RefCountPtr<ConstDetachedMultiVectorView<double> >
 		emvv = Teuchos::rcp(
-			new ExplicitMultiVectorView<double>(
+			new ConstDetachedMultiVectorView<double>(
 				*mv
 				,Range1D(localOffset,localOffset+localSubDim-1)
 				)
@@ -438,7 +438,7 @@ Thyra::get_Epetra_MultiVector(
 			);
 	// This next statement will cause the destructor to free the view if
 	// needed (see above function).  Since this view is non-mutable,
-	// only a freeSubMultiVector(...) and not a commit will be called.
+	// only a releaseDetachedView(...) and not a commit will be called.
 	// This is the whole reason there is a seperate implementation for
 	// the const and non-const cases.
 	Teuchos::set_extra_data( emvv, "emvv", &epetra_mv, Teuchos::PRE_DESTROY );

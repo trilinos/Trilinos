@@ -35,7 +35,7 @@
 namespace Thyra {
 
 template<class Scalar>
-bool SerialVectorSpaceBase<Scalar>::isInCore() const
+bool SerialVectorSpaceBase<Scalar>::hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const
 {
   return true;
 }
@@ -43,7 +43,7 @@ bool SerialVectorSpaceBase<Scalar>::isInCore() const
 template<class Scalar>
 bool SerialVectorSpaceBase<Scalar>::isCompatible(const VectorSpaceBase<Scalar>& aVecSpc ) const
 {
-  return this->dim() == aVecSpc.dim();
+  return ( aVecSpc.hasInCoreView() && this->dim() == aVecSpc.dim() );
 }
 
 } // end namespace Thyra

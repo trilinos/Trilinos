@@ -29,7 +29,7 @@
 #include "createTridiagEpetraLinearOp.hpp"
 #include "sillyCgSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_MPIVectorSpaceStd.hpp"
+#include "Thyra_DefaultMPIVectorSpace.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
@@ -121,8 +121,8 @@ int main(int argc, char *argv[])
 			// Create a new vector space for RHS vector b that is different the operator range space but compatible
 			RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > 
 				A_range = Teuchos::rcp_dynamic_cast<const Thyra::MPIVectorSpaceBase<double> >(A->range(),true); // Throw if fail!
-			b_space = Teuchos::rcp(new Thyra::MPIVectorSpaceStd<double>(A_range->mpiComm(),A_range->localSubDim(),-1));
-			// Note, this new vector space will create vectors of concrete type Thyra::MPIVectorStd which are
+			b_space = Teuchos::rcp(new Thyra::DefaultMPIVectorSpace<double>(A_range->mpiComm(),A_range->localSubDim(),-1));
+			// Note, this new vector space will create vectors of concrete type Thyra::DefaultMPIVector which are
 			// compatible but not the same as the concrete type Thyra::EpetraVector created by EpetraVectorSpace
 		}
 		else {

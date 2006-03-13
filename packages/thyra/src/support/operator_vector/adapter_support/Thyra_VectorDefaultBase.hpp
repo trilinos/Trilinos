@@ -38,7 +38,7 @@
 #include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Thyra_SerialVectorSpaceStd.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "RTOpPack_ROpGetSubVector.hpp"
 #include "RTOpPack_TOpSetSubVector.hpp"
@@ -59,11 +59,11 @@ std::ostream& VectorDefaultBase<Scalar>::describe(
   out << leadingIndent << indentSpacer << "type = \'" << this->description()
       << "\', size = " << this->space()->dim() << "\n";
   if(verbLevel >= Teuchos::VERB_HIGH) {
-    RTOpPack::SubVectorT<Scalar> sv;
-    this->getSubVector(Range1D(),&sv);
+    RTOpPack::ConstSubVectorView<Scalar> sv;
+    this->acquireDetachedView(Range1D(),&sv);
     for( Index i = 0; i < sv.subDim(); ++i )
       out << leadingIndent << indentSpacer << indentSpacer << i << ":" << sv(i) << std::endl;
-    this->freeSubVector(&sv);
+    this->releaseDetachedView(&sv);
   }
   return out;
 }
@@ -88,7 +88,7 @@ VectorDefaultBase<Scalar>::domain() const
   std::cerr << "\nVector<Scalar>::domain() called!\n";
 #endif
   if(!domain_.get())
-    const_cast<VectorDefaultBase<Scalar>*>(this)->domain_ = Teuchos::rcp(new SerialVectorSpaceStd<Scalar>(1));
+    const_cast<VectorDefaultBase<Scalar>*>(this)->domain_ = Teuchos::rcp(new DefaultSerialVectorSpace<Scalar>(1));
   return domain_;
 }
 
@@ -236,21 +236,21 @@ VectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::getSubMultiVector(
+void VectorDefaultBase<Scalar>::acquireDetachedView(
   const Range1D                       &rowRng
   ,const Range1D                      &colRng
-  ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+  ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
   ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::getSubMultiVector() const called!\n";
+  std::cerr << "\nVector<Scalar>::acquireDetachedView() const called!\n";
 #endif
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
   validateColRng(colRng);
-  RTOpPack::SubVectorT<Scalar> sv;
-  getSubVector(rowRng,&sv);
+  RTOpPack::ConstSubVectorView<Scalar> sv;
+  acquireDetachedView(rowRng,&sv);
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( sv.stride() != 1 ); // Can't handle non-unit stride yet but we could
 #endif
@@ -258,35 +258,35 @@ void VectorDefaultBase<Scalar>::getSubMultiVector(
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const
+void VectorDefaultBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::freeSubMultiVector() const called!\n";
+  std::cerr << "\nVector<Scalar>::releaseDetachedView() const called!\n";
 #endif
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
-  RTOpPack::SubVectorT<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
-  freeSubVector(&sv);
+  RTOpPack::ConstSubVectorView<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
+  releaseDetachedView(&sv);
   sub_mv->set_uninitialized();
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::getSubMultiVector(
+void VectorDefaultBase<Scalar>::acquireDetachedView(
   const Range1D                                &rowRng
   ,const Range1D                               &colRng
-  ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+  ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
   )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::getSubMultiVector() called!\n";
+  std::cerr << "\nVector<Scalar>::acquireDetachedView() called!\n";
 #endif
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
   validateColRng(colRng);
-  RTOpPack::MutableSubVectorT<Scalar> sv;
-  getSubVector(rowRng,&sv);
+  RTOpPack::SubVectorView<Scalar> sv;
+  acquireDetachedView(rowRng,&sv);
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( sv.stride() != 1 ); // Can't handle non-unit stride yet but we could
 #endif
@@ -294,16 +294,16 @@ void VectorDefaultBase<Scalar>::getSubMultiVector(
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv )
+void VectorDefaultBase<Scalar>::commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv )
 {
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nVector<Scalar>::commitSubMultiVector() called!\n";
+  std::cerr << "\nVector<Scalar>::commitDetachedView() called!\n";
 #endif
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
-  RTOpPack::MutableSubVectorT<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
-  commitSubVector(&sv);
+  RTOpPack::SubVectorView<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
+  commitDetachedView(&sv);
   sub_mv->set_uninitialized();
 }
 
@@ -322,14 +322,14 @@ VectorDefaultBase<Scalar>::clone_v() const
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVectorT<Scalar>* sub_vec_inout ) const
+void VectorDefaultBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec_inout ) const
 {
   using Teuchos::dyn_cast;
   const Range1D rng = rng_in.full_range() ? Range1D(0,this->space()->dim()-1) : rng_in;
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
     !(rng.ubound() < this->space()->dim()), std::out_of_range
-    ,"VectorDefaultBase<Scalar>::getSubVector(rng,...): Error, rng = ["<<rng.lbound()<<","<<rng.ubound()
+    ,"VectorDefaultBase<Scalar>::acquireDetachedView(rng,...): Error, rng = ["<<rng.lbound()<<","<<rng.ubound()
     <<"] is not in range = [0,"<<(this->space()->dim()-1)<<"]" );
 #endif
   // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
@@ -340,7 +340,7 @@ void VectorDefaultBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::S
   RTOpPack::ROpGetSubVector<Scalar> get_sub_vector_op(rng.lbound(),rng.ubound());
   // Create the reduction object (another sub_vec)
   Teuchos::RefCountPtr<RTOpPack::ReductTarget>
-    reduct_obj = get_sub_vector_op.reduct_obj_create(); // This is really of type RTOpPack::SubVectorT<Scalar>!
+    reduct_obj = get_sub_vector_op.reduct_obj_create(); // This is really of type RTOpPack::ConstSubVectorView<Scalar>!
   // Perform the reduction (get the sub-vector requested)
   const VectorBase<Scalar>* sub_vecs[] = { this };
   ::Thyra::applyOp<Scalar>(
@@ -355,40 +355,40 @@ void VectorDefaultBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::S
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const
+void VectorDefaultBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
 {
   // Free sub_vec if needed (note this is dependent on the implementation of this operator class!)
   RTOpPack::ReductTargetSubVectorT<Scalar>::free(sub_vec);
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec_inout )
+void VectorDefaultBase<Scalar>::acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec_inout )
 {
   //
   // Here we get a copy of the data for the sub-vector that the
   // client will modify.  We must later commit these changes to the
-  // actual vector when the client calls commitSubVector(...).
+  // actual vector when the client calls commitDetachedView(...).
   // Note, this implementation is very dependent on the behavior of
   // the default implementation of constant version of
-  // VectorDefaultBase<Scalar>::getSubVector(...) and the implementation of
+  // VectorDefaultBase<Scalar>::acquireDetachedView(...) and the implementation of
   // VectorDefaultBase<Scalar>::setSubVector(...)!
   //
-  RTOpPack::SubVectorT<Scalar> sub_vec;
-  VectorDefaultBase<Scalar>::getSubVector( rng, &sub_vec );
+  RTOpPack::ConstSubVectorView<Scalar> sub_vec;
+  VectorDefaultBase<Scalar>::acquireDetachedView( rng, &sub_vec );
   sub_vec_inout->initialize(
     sub_vec.globalOffset(),sub_vec.subDim(),const_cast<Scalar*>(sub_vec.values()),sub_vec.stride());
 }
 
 template<class Scalar>
-void VectorDefaultBase<Scalar>::commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec_inout )
+void VectorDefaultBase<Scalar>::commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec_inout )
 {
   RTOpPack::SparseSubVectorT<Scalar> spc_sub_vec(
     sub_vec_inout->globalOffset(), sub_vec_inout->subDim()
     ,sub_vec_inout->values(), sub_vec_inout->stride()
     );
   VectorDefaultBase<Scalar>::setSubVector( spc_sub_vec );       // Commit the changes!
-  RTOpPack::SubVectorT<Scalar> sub_vec(*sub_vec_inout);
-  VectorDefaultBase<Scalar>::freeSubVector( &sub_vec );         // Free the memory!
+  RTOpPack::ConstSubVectorView<Scalar> sub_vec(*sub_vec_inout);
+  VectorDefaultBase<Scalar>::releaseDetachedView( &sub_vec );         // Free the memory!
   sub_vec_inout->set_uninitialized();                    // Make null as promised!
 }
 

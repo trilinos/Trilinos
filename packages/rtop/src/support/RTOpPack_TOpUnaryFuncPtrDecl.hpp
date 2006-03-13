@@ -93,8 +93,8 @@ public:
   const char* op_name() const;
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const SubVectorT<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const MutableSubVectorT<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
     ,ReductTarget *reduct_obj
     ) const;
 

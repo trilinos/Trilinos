@@ -434,9 +434,9 @@ namespace Thyra {
  * \section Thyra_MVB_expl_access_sec Explicit multi-vector coefficient access
  * 
  * This interface also allows a client to extract a sub-set of elements in an
- * explicit form as non-changeable <tt>RTOpPack::SubMultiVectorT</tt> objects or
- * changeable <tt>RTOpPack::MutableSubMultiVectorT</tt> objects using the
- * <tt>getSubMultiVector()</tt> functions.  In general, this is a very bad
+ * explicit form as non-changeable <tt>RTOpPack::ConstSubMultiVectorView</tt> objects or
+ * changeable <tt>RTOpPack::SubMultiVectorView</tt> objects using the
+ * <tt>acquireDetachedView()</tt> functions.  In general, this is a very bad
  * thing to do and should be avoided.  However, there are some situations
  * where this is needed, just as is the case for vectors (see \ref
  * Thyra_VB_expl_access_sec).  The default implementation of these explicit
@@ -450,8 +450,8 @@ namespace Thyra {
  * 
  * Client code in general should not directly call the above described
  * explicit sub-multi-vector access functions but should instead use the
- * utility classes <tt>ExplicitMultiVectorView</tt> and
- * <tt>ExplicitMutableMultiVectorView</tt> since these are easier to use and
+ * utility classes <tt>ConstDetachedMultiVectorView</tt> and
+ * <tt>DetachedMultiVectorView</tt> since these are easier to use and
  * safer in the event that an exception is thrown.
  * 
  * \section Thyra_MVB_dev_notes_sec Notes for subclass developers
@@ -730,7 +730,7 @@ public:
    * @param  sub_mv   [in/out] View of the sub-multi_vector.  Prior to the
    *                  first call to this function, <tt>sub_mv->set_uninitialized()</tt> must be called.
    *                  Technically <tt>*sub_mv</tt> owns the memory but this memory can be freed
-   *                  only by calling <tt>this->freeSubMultiVector(sub_mv)</tt>.
+   *                  only by calling <tt>this->releaseDetachedView(sub_mv)</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -747,30 +747,30 @@ public:
    * </ul>
    *
    * <b>Note:</b> This view is to be used immediately and then released with a
-   * call to <tt>freeSubMultiVector()</tt>.
+   * call to <tt>releaseDetachedView()</tt>.
    *
    * Note that calling this operation might require some dynamic memory
    * allocations and temporary memory.  Therefore, it is critical that
-   * <tt>this->freeSubMultiVector(sub_mv)</tt> be called by client in order to
+   * <tt>this->releaseDetachedView(sub_mv)</tt> be called by client in order to
    * clean up memory and avoid memory leaks after the sub-multi-vector view is
    * finished being used.
    *
    * <b>Heads Up!</b> Note that client code in general should not directly
    * call this function but should instead use the utility class
-   * <tt>ExplicitMultiVectorView</tt> which will also take care of calling
-   * <tt>freeSubMultiVector()</tt>.
+   * <tt>ConstDetachedMultiVectorView</tt> which will also take care of calling
+   * <tt>releaseDetachedView()</tt>.
    *
-   * If <tt>this->getSubMultiVector(...,sub_mv)</tt> was previously
+   * If <tt>this->acquireDetachedView(...,sub_mv)</tt> was previously
    * called on <tt>sub_mv</tt> then it may be possible to reuse this
    * memory if it is sufficiently sized.  The user is encouraged to
    * make multiple calls to
-   * <tt>this->getSubMultiVector(...,sub_mv)</tt> before
-   * <tt>this->freeSubMultiVector(sub_mv)</tt> to finally clean up all of
+   * <tt>this->acquireDetachedView(...,sub_mv)</tt> before
+   * <tt>this->releaseDetachedView(sub_mv)</tt> to finally clean up all of
    * the memory.  Of course, the same <tt>sub_mv</tt> object must be
    * passed to the same multi-vector object for this to work correctly.
    *
    * This function has a default implementation based on the vector operation
-   * <tt>VectorBase::getSubVector()</tt> called on the non-changeable vector
+   * <tt>VectorBase::acquireDetachedView()</tt> called on the non-changeable vector
    * objects returned from <tt>col()</tt>.  Note that the footprint of the
    * reduction object (both internal and external state) will be
    * O(<tt>rowRng.size()*colRng.size()</tt>).  For serial applications this is
@@ -779,13 +779,13 @@ public:
    * must be overridden if <tt>rowRng.size()</tt> is large at all.  Although,
    * this function should not even be used in cases where the multi-vector is
    * very large.  If a subclass does override this function, it must also
-   * override <tt>freeSubMultiVector()</tt> which has a default implementation
+   * override <tt>releaseDetachedView()</tt> which has a default implementation
    * which is a companion to this function's default implementation.
    */
-  virtual void getSubMultiVector(
+  virtual void acquireDetachedView(
     const Range1D                       &rowRng
     ,const Range1D                      &colRng
-    ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
     ) const = 0;
 
   /** \brief Free a non-changeable explicit view of a sub-multi-vector.
@@ -798,22 +798,22 @@ public:
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>sub_mv</tt> must have been passed through a call to 
-   *      <tt>this->getSubMultiVector(...,sub_mv)</tt>
+   *      <tt>this->acquireDetachedView(...,sub_mv)</tt>
    * </ul>
     *
    * <b>Postconditions:</b><ul>
-   * <li> See <tt>RTOpPack::SubMultiVectorT::set_uninitialized()</tt> for <tt>sub_mv</tt>
+   * <li> See <tt>RTOpPack::ConstSubMultiVectorView::set_uninitialized()</tt> for <tt>sub_mv</tt>
    * </ul>
    *
    * The sub-multi-vector view must have been allocated by
-   * <tt>this->getSubMultiVector()</tt> first.
+   * <tt>this->acquireDetachedView()</tt> first.
    *
    * This function has a default implementation which is a companion
-   * to the default implementation for <tt>getSubMultiVector()</tt>.  If
-   * <tt>getSubMultiVector()</tt> is overridden by a subclass then this
+   * to the default implementation for <tt>acquireDetachedView()</tt>.  If
+   * <tt>acquireDetachedView()</tt> is overridden by a subclass then this
    * function must be overridden also!
    */
-  virtual void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const = 0;
+  virtual void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const = 0;
 
   /** \brief Get a changeable explicit view of a sub-multi-vector.
    *
@@ -823,7 +823,7 @@ public:
    *                  first call <tt>sub_mv->set_uninitialized()</tt> must
    *                  have been called for the correct behavior.  Technically
    *                  <tt>*sub_mv</tt> owns the memory but this memory must be committed
-   *                  and freed only by calling <tt>this->commitSubMultiVector(sub_mv)</tt>.
+   *                  and freed only by calling <tt>this->commitDetachedView(sub_mv)</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -841,36 +841,36 @@ public:
    *
    *
    * <b>Note:</b> This view is to be used immediately and then committed back
-   * with a call to <tt>commitSubMultiVector()</tt>.
+   * with a call to <tt>commitDetachedView()</tt>.
    *
    * Note that calling this operation might require some internal allocations
    * and temporary memory.  Therefore, it is critical that
-   * <tt>this->commitSubMultiVector(sub_mv)</tt> is called to commit the
+   * <tt>this->commitDetachedView(sub_mv)</tt> is called to commit the
    * changed entries and clean up memory and avoid memory leaks after the
    * sub-multi-vector is modified.
    *
    * <b>Heads Up!</b> Note that client code in general should not directly
    * call this function but should instead use the utility class
-   * <tt>ExplicitMutableMultiVectorView</tt> which will also take care of
-   * calling <tt>commitSubMultiVector</tt>.
+   * <tt>DetachedMultiVectorView</tt> which will also take care of
+   * calling <tt>commitDetachedView</tt>.
    *
-   * If <tt>this->getSubMultiVector(...,sub_mv)</tt> was previously
+   * If <tt>this->acquireDetachedView(...,sub_mv)</tt> was previously
    * called on <tt>sub_mv</tt> then it may be possible to reuse this
    * memory if it is sufficiently sized.  The user is encouraged to
    * make multiple calls to
-   * <tt>this->getSubMultiVector(...,sub_mv)</tt> before
-   * <tt>this->commitSubMultiVector(sub_mv)</tt> to finally clean up
+   * <tt>this->acquireDetachedView(...,sub_mv)</tt> before
+   * <tt>this->commitDetachedView(sub_mv)</tt> to finally clean up
    * all of the memory.  Of course the same <tt>sub_mv</tt> object
    * must be passed to the same multi-vector object for this to work
    * correctly.
    *
    * Changes to the underlying sub-multi-vector are not guaranteed to
-   * become permanent until <tt>this->getSubMultiVector(...,sub_mv)</tt>
-   * is called again, or <tt>this->commitSubMultiVector(sub_mv)</tt> is
+   * become permanent until <tt>this->acquireDetachedView(...,sub_mv)</tt>
+   * is called again, or <tt>this->commitDetachedView(sub_mv)</tt> is
    * called.
    *
    * This function has a default implementation based on the vector
-   * operation <tt>VectorBase::getSubVector()</tt> called on the changeable
+   * operation <tt>VectorBase::acquireDetachedView()</tt> called on the changeable
    * vector objects returned from <tt>col()</tt>.  Note that the
    * footprint of the reduction object (both internal and external
    * state) will be O(<tt>rowRng.size()*colRng.size()</tt>).  For
@@ -880,14 +880,14 @@ public:
    * <tt>rowRng.size()</tt> is large at all.  Although, this function
    * should not even be used in case where the multi-vector is very
    * large.  If a subclass does override this function, it must also
-   * override <tt>commitSubMultiVector()</tt> which has a default
+   * override <tt>commitDetachedView()</tt> which has a default
    * implementation which is a companion to this function's default
    * implementation.
    */
-  virtual void getSubMultiVector(
+  virtual void acquireDetachedView(
     const Range1D                                &rowRng
     ,const Range1D                               &colRng
-    ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
     ) = 0;
 
   /** \brief Commit changes for a changeable explicit view of a sub-multi-vector.
@@ -902,23 +902,23 @@ public:
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->range().get()!=NULL && this->domain().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>sub_mv</tt> must have been passed through a call to 
-   *      <tt>this->getSubMultiVector(...,sub_mv)</tt>
+   *      <tt>this->acquireDetachedView(...,sub_mv)</tt>
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li> See <tt>RTOpPack::MutableSubMultiVectorT::set_uninitialized()</tt> for <tt>sub_mv</tt>
+   * <li> See <tt>RTOpPack::SubMultiVectorView::set_uninitialized()</tt> for <tt>sub_mv</tt>
    * <li> <tt>*this</tt> will be updated according the the changes made to <tt>sub_mv</tt>
    * </ul>
    *
    * The sub-multi-vector view must have been allocated by
-   * <tt>this->getSubMultiVector()</tt> first.
+   * <tt>this->acquireDetachedView()</tt> first.
    *
    * This function has a default implementation which is a companion
-   * to the default implementation for <tt>getSubMultiVector()</tt>.  If
-   * <tt>getSubMultiVector()</tt> is overridden by a subclass then this
+   * to the default implementation for <tt>acquireDetachedView()</tt>.  If
+   * <tt>acquireDetachedView()</tt> is overridden by a subclass then this
    * function must be overridden also!
    */
-  virtual void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv ) = 0;
+  virtual void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv ) = 0;
 
   //@}
 

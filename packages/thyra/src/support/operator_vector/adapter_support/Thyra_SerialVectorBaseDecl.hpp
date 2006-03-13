@@ -37,10 +37,10 @@ namespace Thyra {
  *
  * This base subclass contains the an implementation of
  * <tt>applyOp()</tt> that relies on implementations of the methods
- * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt> and
- * <tt>commitSubVector()</tt>.  This class also contains default
- * implementations of <tt>getSubVector()</tt>,
- * <tt>freeSubVector()</tt> and <tt>commitSubVector()</tt>.
+ * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and
+ * <tt>commitDetachedView()</tt>.  This class also contains default
+ * implementations of <tt>acquireDetachedView()</tt>,
+ * <tt>releaseDetachedView()</tt> and <tt>commitDetachedView()</tt>.
  *
  * <b>Notes to subclass developers</b>
  *
@@ -176,13 +176,13 @@ public:
   //@{
 
   /** \brief Implements this method through the methods
-   * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt> and
-   * <tt>commitSubVector()</tt>.
+   * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and
+   * <tt>commitDetachedView()</tt>.
    *
    * Note that if this method is entered again before a call has
    * been completed, then this is an indication that the methods
-   * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt> and/or
-   * <tt>commitSubVector()</tt> have not been overridden properly.
+   * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and/or
+   * <tt>commitDetachedView()</tt> have not been overridden properly.
    */
   void applyOp(
     const RTOpPack::RTOpT<Scalar>   &op
@@ -196,13 +196,13 @@ public:
     ,const Index                    global_offset
     ) const;
   /// 
-  void getSubVector( const Range1D& rng, RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
   /** \brief . */
-  void freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
   /** \brief . */
-  void getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec );
   /** \brief . */
-  void commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec );
   /** \brief . */
   void setSubVector( const RTOpPack::SparseSubVectorT<Scalar>& sub_vec );
 

@@ -54,7 +54,7 @@ std::ostream& Thyra::describeLinearOp(
     // Copy into dense matrix by column
     Teuchos::RefCountPtr<VectorBase<DomainScalar> > e_j = createMember(A.domain());
     Teuchos::RefCountPtr<VectorBase<RangeScalar> >  t   = createMember(A.range()); // temp column
-    RTOpPack::SubVectorT<RangeScalar> sv;
+    RTOpPack::ConstSubVectorView<RangeScalar> sv;
     std::vector<RangeScalar>  Md( dimRange * dimDomain ); // Column major
     const Index
       cs = 1,         // stride for columns or rows 
@@ -64,9 +64,9 @@ std::ostream& Thyra::describeLinearOp(
       Thyra::assign( e_j.get(), DST::zero() );
       Thyra::set_ele( j, DST::one(), e_j.get() );
       apply(A,NONCONJ_ELE,*e_j,t.get());  // extract the ith column or row
-      t->getSubVector(Range1D(),&sv);
+      t->acquireDetachedView(Range1D(),&sv);
       for( i = 0; i < dimRange; ++i ) Md[ i*cs + j*rs ] = sv(i);
-      t->freeSubVector(&sv);
+      t->releaseDetachedView(&sv);
     }
     // Print the matrix
     for( i = 0; i < dimRange; ++i ) {

@@ -23,7 +23,7 @@ Thyra Nonlinear Solvers Interfaces</a>.
 <tt>Thyra::NonlinearSolverBase</tt> that solves a set of linear
 equations represented by a <tt>Thyra::ModelEvaluator</tt> object.
 
-<li><tt>Thyra::NewtonNonlinearSolver</tt> is a subclass of
+<li><tt>Thyra::TimeStepNewtonNonlinearSolver</tt> is a subclass of
 <tt>Thyra::NonlinearSolverBase</tt> that implements a very simple Newton
 method for solving a general set of nonlinear equations represented by a
 <tt>Thyra::ModelEvaluator</tt> object.

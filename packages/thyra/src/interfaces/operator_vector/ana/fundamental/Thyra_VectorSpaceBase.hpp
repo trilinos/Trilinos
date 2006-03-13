@@ -45,7 +45,7 @@ bool VectorSpaceBase<Scalar>::isEuclidean() const
 }
 
 template<class Scalar>
-bool VectorSpaceBase<Scalar>::isInCore() const
+bool VectorSpaceBase<Scalar>::hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const
 {
   return false;
 }
@@ -115,7 +115,7 @@ Thyra::createMembers( const VectorSpaceBase<Scalar> &vs, int numMembers )
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
-Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubVectorT<Scalar> &raw_v )
+Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorView<Scalar> &raw_v )
 {
   Teuchos::RefCountPtr<VectorBase<Scalar> > v = vs->createMemberView(raw_v);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
@@ -124,14 +124,14 @@ Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
-Thyra::createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSubVectorT<Scalar> &raw_v )
+Thyra::createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorView<Scalar> &raw_v )
 {
   return createMemberView(Teuchos::rcp(&vs,false),raw_v);
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
-Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorT<Scalar> &raw_v )
+Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v )
 {
   Teuchos::RefCountPtr<const VectorBase<Scalar> > v = vs->createMemberView(raw_v);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &v );
@@ -140,14 +140,14 @@ Thyra::createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar
 
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
-Thyra::createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorT<Scalar> &raw_v )
+Thyra::createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v )
 {
   return createMemberView(Teuchos::rcp(&vs,false),raw_v);
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
-Thyra::createMembersView(  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv )
+Thyra::createMembersView(  const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv )
 {
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> > mv = vs->createMembersView(raw_mv);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
@@ -156,14 +156,14 @@ Thyra::createMembersView(  const Teuchos::RefCountPtr<const VectorSpaceBase<Scal
 
 template<class Scalar>
 Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
-Thyra::createMembersView(  const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv )
+Thyra::createMembersView(  const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv )
 {
   return createMembersView(Teuchos::rcp(&vs,false),raw_mv);
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
-Thyra::createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorT<Scalar> &raw_mv )
+Thyra::createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv )
 {
   Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > mv = vs->createMembersView(raw_mv);
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase", &mv );
@@ -172,7 +172,7 @@ Thyra::createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scala
 
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
-Thyra::createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVectorT<Scalar> &raw_mv )
+Thyra::createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv )
 {
   return createMembersView(Teuchos::rcp(&vs,false),raw_mv);
 }

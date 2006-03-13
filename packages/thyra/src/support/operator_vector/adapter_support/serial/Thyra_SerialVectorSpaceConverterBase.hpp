@@ -31,7 +31,7 @@
 
 #include "Thyra_SerialVectorSpaceConverterBaseDecl.hpp"
 #include "Thyra_MultiVectorBase.hpp"
-#include "Thyra_ExplicitMultiVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TestForException.hpp"
 
@@ -46,8 +46,8 @@ void SerialVectorSpaceConverterBase<ScalarFrom,ScalarTo>::convert(
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(mv_to==NULL);
 #endif
-  ExplicitMultiVectorView<ScalarFrom>       emv_from(mv_from);
-  ExplicitMutableMultiVectorView<ScalarTo>  emv_to(*mv_to);
+  ConstDetachedMultiVectorView<ScalarFrom>       emv_from(mv_from);
+  DetachedMultiVectorView<ScalarTo>  emv_to(*mv_to);
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(emv_from.subDim() != emv_to.subDim());
   TEST_FOR_EXCEPT(emv_from.numSubCols() != emv_to.numSubCols());

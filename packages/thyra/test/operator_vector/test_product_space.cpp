@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_ProductVectorSpace.hpp"
-#include "Thyra_SerialVectorSpaceStd.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -66,7 +66,7 @@ bool run_product_space_tests(
   std::vector<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
-    spaceBlock = Teuchos::rcp(new Thyra::SerialVectorSpaceStd<Scalar>(n));
+    spaceBlock = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
 
@@ -74,7 +74,7 @@ bool run_product_space_tests(
 
   if(out) *out << "\nCreating a product space ps with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
-  Thyra::ProductVectorSpace<Scalar> ps(numBlocks,&vecSpaces[0]);
+  Thyra::DefaultProductVectorSpace<Scalar> ps(numBlocks,&vecSpaces[0]);
 
   if(out) *out << "\nps.numBlocks()=";
   result = ps.numBlocks() == numBlocks;
@@ -107,7 +107,7 @@ bool run_product_space_tests(
 
   if(out) *out << "\nCreating a serial vector space ss with numBlocks*n=" << numBlocks*n << " vector elements ...\n";
 
-  Thyra::SerialVectorSpaceStd<Scalar> ss(numBlocks*n);
+  Thyra::DefaultSerialVectorSpace<Scalar> ss(numBlocks*n);
 
   if(out) *out << "\nTesting the serial space ss ...\n";
   result = vectorSpaceTester.check(ss,out,is,is);

@@ -50,11 +50,11 @@ template<class Scalar> class MPIVectorSpaceBase;
  *
  * This base class contains an implementation of <tt>applyOp()</tt>
  * that relies on implementations of the methods (<tt>const</tt>)
- * <tt>getSubMultiVector()</tt>, <tt>freeSubMultiVector()</tt>,
- * (non-<tt>const</tt>) <tt>getSubMultiVector()</tt> and
- * <tt>commitSubMultiVector()</tt> (which all have default
+ * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt>,
+ * (non-<tt>const</tt>) <tt>acquireDetachedView()</tt> and
+ * <tt>commitDetachedView()</tt> (which all have default
  * implementations in this subclass).  In essence, this implementation
- * will only call the <tt>getSubMultiVector()</tt> methods using a
+ * will only call the <tt>acquireDetachedView()</tt> methods using a
  * range of (global) indexes for elements that exist on the local
  * processor.  As long as the number of local elements on each
  * processor is fairly large, the virtual function call overhead will
@@ -70,13 +70,13 @@ template<class Scalar> class MPIVectorSpaceBase;
  * the <tt>mpiSpace()</tt> function requires implementing or using a
  * pre-implemented concrete <tt>MPIVectorSpace</tt> object.
  *
- * If the <tt>getSubMultiVector()</tt> methods are ever called with
+ * If the <tt>acquireDetachedView()</tt> methods are ever called with
  * index ranges outside of those of the local processor, then the
  * default implementations in <tt>MultiVectorBase</tt> of all of the
- * methods (<tt>const</tt>) <tt>MultiVectorBase::getSubMultiVector()</tt>,
- * <tt>MultiVectorBase::freeSubMultiVector()</tt>, (non-<tt>const</tt>)
- * <tt>MultiVectorBase::getSubMultiVector()</tt> and
- * <tt>MultiVectorBase::commitSubMultiVector()</tt> are called in instead.
+ * methods (<tt>const</tt>) <tt>MultiVectorBase::acquireDetachedView()</tt>,
+ * <tt>MultiVectorBase::releaseDetachedView()</tt>, (non-<tt>const</tt>)
+ * <tt>MultiVectorBase::acquireDetachedView()</tt> and
+ * <tt>MultiVectorBase::commitDetachedView()</tt> are called in instead.
  * Alternatively, a subclass could provide more specialized
  * implementations of these methods (for more efficient gather/scatter
  * operations) if desired but this should not be needed for most use
@@ -249,21 +249,21 @@ public:
     ,const Index                    secondary_sub_dim
     ) const;
   /** \brief . */
-  void getSubMultiVector(
+  void acquireDetachedView(
     const Range1D                       &rowRng
     ,const Range1D                      &colRng
-    ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
     ) const;
   /** \brief . */
-  void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const;
+  void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
   /** \brief . */
-  void getSubMultiVector(
+  void acquireDetachedView(
     const Range1D                                &rowRng
     ,const Range1D                               &colRng
-    ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
     );
   /** \brief . */
-  void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
   //@}
 
 protected:

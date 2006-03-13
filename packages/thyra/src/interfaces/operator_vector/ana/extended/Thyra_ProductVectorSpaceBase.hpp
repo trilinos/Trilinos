@@ -70,7 +70,7 @@ namespace Thyra {
  *
  * This class is only an interface.  A standard implementation of this
  * interface that should be sufficient for 99% or so of use cases is
- * provided in the concrete subclass <tt>ProductVectorSpace</tt>.
+ * provided in the concrete subclass <tt>DefaultProductVectorSpace</tt>.
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */

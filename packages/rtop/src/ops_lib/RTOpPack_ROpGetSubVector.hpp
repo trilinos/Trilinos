@@ -125,8 +125,8 @@ public:
   bool coord_invariant() const;
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const SubVectorT<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const MutableSubVectorT<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
     ,ReductTarget *reduct_obj
     ) const;
 
@@ -172,20 +172,20 @@ public:
       std::fill_n( const_cast<Scalar*>(sub_vec.values()), sub_vec.subDim(), Teuchos::ScalarTraits<Scalar>::zero() );
     }
   /** \brief . */
-  void transfer( SubVectorT<Scalar> *sub_vec_out )
+  void transfer( ConstSubVectorView<Scalar> *sub_vec_out )
     {
       sub_vec_out->initialize(sub_vec.globalOffset(),sub_vec.subDim(),sub_vec.values(),sub_vec.stride());
       sub_vec.set_uninitialized();
     }
   /** \brief . */
-  static void free( SubVectorT<Scalar> *sub_vec )
+  static void free( ConstSubVectorView<Scalar> *sub_vec )
     {
       if(sub_vec->values())
         delete [] const_cast<Scalar*>(sub_vec->values());
       sub_vec->set_uninitialized();
     }
   /** \brief . */
-  SubVectorT<Scalar>  sub_vec;
+  ConstSubVectorView<Scalar>  sub_vec;
 private:
   // Not defined and not to be called!
   ReductTargetSubVectorT();
@@ -252,8 +252,8 @@ void ROpGetSubVector<Scalar>::reduce_reduct_objs(
   ) const
 {
   using Teuchos::dyn_cast;
-  const SubVectorT<Scalar> &sub_vec_in = dyn_cast<const ReductTargetSubVectorT<Scalar> >(in_reduct_obj).sub_vec;
-  SubVectorT<Scalar> &sub_vec_inout = dyn_cast<ReductTargetSubVectorT<Scalar> >(*inout_reduct_obj).sub_vec;
+  const ConstSubVectorView<Scalar> &sub_vec_in = dyn_cast<const ReductTargetSubVectorT<Scalar> >(in_reduct_obj).sub_vec;
+  ConstSubVectorView<Scalar> &sub_vec_inout = dyn_cast<ReductTargetSubVectorT<Scalar> >(*inout_reduct_obj).sub_vec;
   TEST_FOR_EXCEPT(
     sub_vec_in.subDim()!=sub_vec_inout.subDim()||sub_vec_in.globalOffset()!=sub_vec_inout.globalOffset()
     ||!sub_vec_in.values()||!sub_vec_inout.values()
@@ -285,7 +285,7 @@ void ROpGetSubVector<Scalar>::extract_reduct_obj_state(
   using Teuchos::dyn_cast;
   typedef Teuchos::PrimitiveTypeTraits<Scalar> PTT;
   const int num_prim_objs_per_scalar = PTT::numPrimitiveObjs();
-  const SubVectorT<Scalar> &sub_vec = dyn_cast<const ReductTargetSubVectorT<Scalar> >(reduct_obj).sub_vec;
+  const ConstSubVectorView<Scalar> &sub_vec = dyn_cast<const ReductTargetSubVectorT<Scalar> >(reduct_obj).sub_vec;
   int value_data_off = 0;
   for( int k = 0; k < sub_vec.subDim(); ++k, value_data_off += num_prim_objs_per_scalar )
     PTT::extractPrimitiveObjs( sub_vec[k], num_prim_objs_per_scalar, value_data+value_data_off );
@@ -305,7 +305,7 @@ void ROpGetSubVector<Scalar>::load_reduct_obj_state(
   using Teuchos::dyn_cast;
   typedef Teuchos::PrimitiveTypeTraits<Scalar> PTT;
   const int num_prim_objs_per_scalar = PTT::numPrimitiveObjs();
-  SubVectorT<Scalar> &sub_vec = dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
+  ConstSubVectorView<Scalar> &sub_vec = dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
   Scalar *sv_values = const_cast<Scalar*>(sub_vec.values()); 
   int value_data_off = 0;
   for( int k = 0; k < sub_vec.subDim(); ++k, value_data_off += num_prim_objs_per_scalar )
@@ -365,8 +365,8 @@ bool ROpGetSubVector<Scalar>::coord_invariant() const
 
 template<class Scalar>
 void ROpGetSubVector<Scalar>::apply_op(
-  const int   num_vecs,       const SubVectorT<Scalar>         sub_vecs[]
-  ,const int  num_targ_vecs,  const MutableSubVectorT<Scalar>  targ_sub_vecs[]
+  const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
+  ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
   ,ReductTarget *reduct_obj
   ) const
 {
@@ -382,7 +382,7 @@ void ROpGetSubVector<Scalar>::apply_op(
     i_l = ( l_ <= globalOffset           ? 0          : l_ - globalOffset  ),
     i_u = ( u_ >= globalOffset+subDim-1  ? subDim-1   : u_ - globalOffset  );
 
-  SubVectorT<Scalar> &sub_vec_targ = dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
+  ConstSubVectorView<Scalar> &sub_vec_targ = dyn_cast<ReductTargetSubVectorT<Scalar> >(*reduct_obj).sub_vec;
   Scalar *svt_values = const_cast<Scalar*>(sub_vec_targ.values());
 
   for( index_type i = i_l; i <= i_u; ++i )

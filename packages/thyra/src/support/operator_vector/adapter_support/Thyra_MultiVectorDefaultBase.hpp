@@ -36,7 +36,7 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Thyra_MultiVectorCols.hpp"
+#include "Thyra_DefaultColumnwiseMultiVector.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TestForException.hpp"
 
@@ -198,10 +198,10 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
 // Explicit sub-multi-vector access
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::getSubMultiVector(
+void MultiVectorDefaultBase<Scalar>::acquireDetachedView(
   const Range1D                       &rowRng_in
   ,const Range1D                      &colRng_in
-  ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+  ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
   ) const
 {
   const Index
@@ -213,13 +213,13 @@ void MultiVectorDefaultBase<Scalar>::getSubMultiVector(
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
     !(rowRng.ubound() < rangeDim), std::out_of_range
-    ,"MultiVectorDefaultBase<Scalar>::getSubMultiVector(...): Error, rowRng = ["
+    ,"MultiVectorDefaultBase<Scalar>::acquireDetachedView(...): Error, rowRng = ["
     <<rowRng.lbound()<<","<<rowRng.ubound()<<"] is not in the range = [0,"
     <<(rangeDim-1)<<"]!"
     );
   TEST_FOR_EXCEPTION(
     !(colRng.ubound() < domainDim), std::out_of_range
-    ,"MultiVectorDefaultBase<Scalar>::getSubMultiVector(...): Error, colRng = ["
+    ,"MultiVectorDefaultBase<Scalar>::acquireDetachedView(...): Error, colRng = ["
     <<colRng.lbound()<<","<<colRng.ubound()<<"] is not in the range = [0,"
     <<(domainDim-1)<<"]!"
     );
@@ -227,13 +227,13 @@ void MultiVectorDefaultBase<Scalar>::getSubMultiVector(
   // Allocate storage for the multi-vector (stored column-major)
   Scalar *values = new Scalar[ rowRng.size() * colRng.size() ];
   // Extract multi-vector values column by column
-  RTOpPack::SubVectorT<Scalar> sv; // uninitialized by default
+  RTOpPack::ConstSubVectorView<Scalar> sv; // uninitialized by default
   for( int k = colRng.lbound(); k <= colRng.ubound(); ++k ) {
     Teuchos::RefCountPtr<const VectorBase<Scalar> > col_k = this->col(k);
-    col_k->getSubVector( rowRng, &sv );
+    col_k->acquireDetachedView( rowRng, &sv );
     for( int i = 0; i < rowRng.size(); ++i )
       values[ i + k*rowRng.size() ] = sv[i];
-    col_k->freeSubVector( &sv );
+    col_k->releaseDetachedView( &sv );
   }
   // Initialize the multi-vector view object
   sub_mv->initialize(
@@ -247,8 +247,8 @@ void MultiVectorDefaultBase<Scalar>::getSubMultiVector(
 }
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::freeSubMultiVector(
-  RTOpPack::SubMultiVectorT<Scalar>* sub_mv
+void MultiVectorDefaultBase<Scalar>::releaseDetachedView(
+  RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
   ) const
 {
   // Here we just need to free the view and that is it!
@@ -257,43 +257,43 @@ void MultiVectorDefaultBase<Scalar>::freeSubMultiVector(
 }
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::getSubMultiVector(
+void MultiVectorDefaultBase<Scalar>::acquireDetachedView(
   const Range1D                                &rowRng
   ,const Range1D                               &colRng
-  ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+  ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
   )
 {
   // Use the non-const implementation since it does exactly the
   // correct thing in this case also!
-  MultiVectorDefaultBase<Scalar>::getSubMultiVector(
+  MultiVectorDefaultBase<Scalar>::acquireDetachedView(
     rowRng, colRng
-    ,static_cast<RTOpPack::SubMultiVectorT<Scalar>*>(sub_mv)
-    // This cast will work as long as MutableSubMultiVectorT
-    // maintains no extra state over SubMultiVectorT (which it
+    ,static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>*>(sub_mv)
+    // This cast will work as long as SubMultiVectorView
+    // maintains no extra state over ConstSubMultiVectorView (which it
     // currently does not) but this is something that I should
     // technically check for some how.
     );
 }
 
 template<class Scalar>
-void MultiVectorDefaultBase<Scalar>::commitSubMultiVector(
-  RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv
+void MultiVectorDefaultBase<Scalar>::commitDetachedView(
+  RTOpPack::SubMultiVectorView<Scalar>* sub_mv
   )
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
-    sub_mv==NULL, std::logic_error, "MultiVectorDefaultBase<Scalar>::commitSubMultiVector(...): Error!"
+    sub_mv==NULL, std::logic_error, "MultiVectorDefaultBase<Scalar>::commitDetachedView(...): Error!"
     );
 #endif
   // Set back the multi-vector values column by column
   const Range1D rowRng(sub_mv->globalOffset(),sub_mv->globalOffset()+sub_mv->subDim()-1);
-  RTOpPack::MutableSubVectorT<Scalar> msv; // uninitialized by default
+  RTOpPack::SubVectorView<Scalar> msv; // uninitialized by default
   for( int k = sub_mv->colOffset(); k < sub_mv->numSubCols(); ++k ) {
     Teuchos::RefCountPtr<VectorBase<Scalar> > col_k = this->col(k);
-    col_k->getSubVector( rowRng, &msv );
+    col_k->acquireDetachedView( rowRng, &msv );
     for( int i = 0; i < rowRng.size(); ++i )
       msv[i] = sub_mv->values()[ i + k*rowRng.size() ];
-    col_k->commitSubVector( &msv );
+    col_k->commitDetachedView( &msv );
   }
   // Free the memory
   delete [] const_cast<Scalar*>(sub_mv->values());
@@ -320,7 +320,7 @@ MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in ) const
     Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
     for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
       col_vecs[j-colRng.lbound()] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(j));
-    return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
+    return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
   }
   return Teuchos::null; // There was an empty set in colRng_in!
 }
@@ -342,7 +342,7 @@ MultiVectorDefaultBase<Scalar>::subView( const Range1D& colRng_in )
     Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > >  col_vecs(wss,colRng.size());
     for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
       col_vecs[j-colRng.lbound()] = this->col(j);
-    return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
+    return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),&col_vecs[0]));
   }
   return Teuchos::null; // There was an empty set in colRng_in!
 }
@@ -372,7 +372,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) c
 #endif
     col_vecs[k] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(col_k));
   }
-  return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(numCols),&col_vecs[0]));
+  return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(numCols),&col_vecs[0]));
 }
 
 template<class Scalar>
@@ -400,7 +400,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
 #endif
     col_vecs[k] = this->col(col_k);
   }
-  return Teuchos::rcp(new MultiVectorCols<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(numCols),&col_vecs[0]));
+  return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar>(this->range(),range.smallVecSpcFcty()->createVecSpc(numCols),&col_vecs[0]));
 }
 
 } // end namespace Thyra

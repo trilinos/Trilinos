@@ -18,10 +18,10 @@ There is very little code that makes up these fundamental RTOp interfaces:
   <li> Strided contiguous chunks for vector and multi-vector data
 
     <ul>
-    <li> <tt>RTOpPack::SubVectorT</tt>
-    <li> <tt>RTOpPack::MutableSubVectorT</tt>
-    <li> <tt>RTOpPack::SubMultiVectorT</tt>
-    <li> <tt>RTOpPack::MutableSubMultiVectorT</tt>
+    <li> <tt>RTOpPack::ConstSubVectorView</tt>
+    <li> <tt>RTOpPack::SubVectorView</tt>
+    <li> <tt>RTOpPack::ConstSubMultiVectorView</tt>
+    <li> <tt>RTOpPack::SubMultiVectorView</tt>
     </ul>
 
   <li> Exception types:

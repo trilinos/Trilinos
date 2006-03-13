@@ -48,13 +48,14 @@ public:
   //@{
 
   /// Returns true.
-  virtual bool isInCore() const;
+  virtual bool hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
   /** \brief Returns true if <tt>vecSpc.dim() == this->dim()</tt>.
    *
-   * The assumption here is that <tt>VectorBase::getSubVector()</tt>,
-   * <tt>VectorBase::freeSubVector()</tt> and <tt>VectorBase::commitSubVector()</tt>
-   * can be used to implement all of the methods on an SMP machine in an
-   * efficient manner.
+   * The assumption here is that <tt>VectorBase::acquireDetachedView()</tt>,
+   * <tt>VectorBase::releaseDetachedView()</tt> and
+   * <tt>VectorBase::commitDetachedView()</tt> can be used to implement all of
+   * the methods on an SMP machine in an efficient manner.  Note that this
+   * might involve copies of data.
    */
    bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
 

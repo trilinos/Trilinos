@@ -44,9 +44,9 @@ namespace Thyra {
  *
  * This base class contains implementations of <tt>applyOp()</tt> and
  * <tt>apply()</tt> that rely on implementations of the methods
- * (<tt>const</tt>) <tt>getSubMultiVector()</tt>,
- * <tt>freeSubMultiVector()</tt>, (non-<tt>const</tt>)
- * <tt>getSubMultiVector()</tt> and <tt>commitSubMultiVector()</tt>
+ * (<tt>const</tt>) <tt>acquireDetachedView()</tt>,
+ * <tt>releaseDetachedView()</tt>, (non-<tt>const</tt>)
+ * <tt>acquireDetachedView()</tt> and <tt>commitDetachedView()</tt>
  * (which all have default implementations in this subclass).  As long
  * as the number of elements is fairly large, the virtual function
  * call overhead will be minimal and this will result in a near
@@ -159,21 +159,21 @@ public:
     ,const Index                    secondary_sub_dim
     ) const;
   /** \brief . */
-  void getSubMultiVector(
+  void acquireDetachedView(
     const Range1D                       &rowRng
     ,const Range1D                      &colRng
-    ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
     ) const;
   /** \brief . */
-  void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const;
+  void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
   /** \brief . */
-  void getSubMultiVector(
+  void acquireDetachedView(
     const Range1D                                &rowRng
     ,const Range1D                               &colRng
-    ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
     );
   /** \brief . */
-  void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
   //@}
 
 protected:

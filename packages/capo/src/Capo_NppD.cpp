@@ -700,8 +700,8 @@ void NppD::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
   double *se = new double[m*m];
   double *re = new double[m*m];
 
-  RTOpPack::SubMultiVectorT<Scalar> sub_mv;
-  Se->getSubMultiVector( Thyra::Range1D(1,m) , Thyra::Range1D(1,m),&sub_mv);
+  RTOpPack::ConstSubMultiVectorView<Scalar> sub_mv;
+  Se->acquireDetachedView( Thyra::Range1D(1,m) , Thyra::Range1D(1,m),&sub_mv);
   for (int j=0;j<sub_mv.numSubCols();j++)
     {
       for (int i=0;i<sub_mv.subDim();i++)
@@ -710,7 +710,7 @@ void NppD::SchurDecomp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar>
 	  re[i+j*m] = 0;
 	}
     }
-  Se->freeSubMultiVector(&sub_mv);
+  Se->releaseDetachedView(&sub_mv);
   int lwork = 10*m+10;
   char *cn="V";
   char *cs="S"; //Sort the eigenvalues using the SELECT function.
@@ -979,11 +979,11 @@ bool NppD::ComputeVp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> > Yp;
   Yp = createMembers(Vp->domain(),Unstable_Basis_Size);
  
-  RTOpPack::SubMultiVectorT<Scalar> sub_se;
-  RTOpPack::MutableSubMultiVectorT<Scalar> sub_yp;
+  RTOpPack::ConstSubMultiVectorView<Scalar> sub_se;
+  RTOpPack::SubMultiVectorView<Scalar> sub_yp;
   
-  Se->getSubMultiVector(Thyra::Range1D(1,Unstable_Basis_Size),Thyra::Range1D(1,Unstable_Basis_Size),&sub_se);
-  Yp->getSubMultiVector(Thyra::Range1D(1,Unstable_Basis_Size),Thyra::Range1D(1,Unstable_Basis_Size),&sub_yp);
+  Se->acquireDetachedView(Thyra::Range1D(1,Unstable_Basis_Size),Thyra::Range1D(1,Unstable_Basis_Size),&sub_se);
+  Yp->acquireDetachedView(Thyra::Range1D(1,Unstable_Basis_Size),Thyra::Range1D(1,Unstable_Basis_Size),&sub_yp);
   
   for (int j=0;j<sub_se.numSubCols();j++)
     {
@@ -993,8 +993,8 @@ bool NppD::ComputeVp(const Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
 	    sub_se.values()[i+j*sub_se.leadingDim()];
 	}
     }
-  Se->freeSubMultiVector(&sub_se);
-  Yp->commitSubMultiVector(&sub_yp);
+  Se->releaseDetachedView(&sub_se);
+  Yp->commitDetachedView(&sub_yp);
 
   Thyra::apply(*Ve_p,Thyra::NOTRANS,*Yp,&*Vp); //Vp=Ve*Se[1..p,1..p]
   return true;

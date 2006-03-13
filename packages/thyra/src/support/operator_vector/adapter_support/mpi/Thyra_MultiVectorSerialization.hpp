@@ -32,7 +32,7 @@
 #include "Thyra_MultiVectorSerializationDecl.hpp"
 #include "Thyra_MPIVectorSpaceDefaultBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
-#include "Thyra_ExplicitMultiVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 
 namespace Thyra {
 
@@ -56,7 +56,7 @@ void MultiVectorSerialization<Scalar>::serialize( const MultiVectorBase<Scalar>&
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
     const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
-    ExplicitMultiVectorView<Scalar> local_mv(mv,localRng,Range1D());
+    ConstDetachedMultiVectorView<Scalar> local_mv(mv,localRng,Range1D());
     out << localSubDim << " " << local_mv.numSubCols() << std::endl;
     if( binaryMode() ) {
       // Write column-wise for better cache performance
@@ -93,7 +93,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
     const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
-    ExplicitMutableMultiVectorView<Scalar> local_mv(*mv,localRng,Range1D());
+    DetachedMultiVectorView<Scalar> local_mv(*mv,localRng,Range1D());
 #ifdef _DEBUG
     TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif

@@ -98,14 +98,14 @@ createMembers( const VectorSpaceBase<Scalar> &vs, int numMembers );
  */
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubVectorT<Scalar> &raw_v );
+createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorView<Scalar> &raw_v );
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  *
  */
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSubVectorT<Scalar> &raw_v );
+createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorView<Scalar> &raw_v );
 
 /** \brief Create a vector member that is a <tt>const</tt> view of raw data.
  *
@@ -115,13 +115,13 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSubV
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
-createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorT<Scalar> &raw_v );
+createMemberView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v );
 
 /** \brief Calls <tt>createMemberView(Teuchos::rcp(&vs,false),raw_v)</tt>.
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
-createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorT<Scalar> &raw_v );
+createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v );
 
 /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw data.
  *
@@ -131,14 +131,14 @@ createMemberView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubVectorT<
  */
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv );
+createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv );
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
  */
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv );
+createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv );
 
 /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw data.
  *
@@ -148,14 +148,14 @@ createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::MutableSub
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorT<Scalar> &raw_mv );
+createMembersView( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv );
 
 /** \brief Calls <tt>createMembersView(Teuchos::rcp(&vs,false),raw_mv)</tt>.
  *
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::SubMultiVectorT<Scalar> &raw_mv );
+createMembersView( const VectorSpaceBase<Scalar> &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv );
 
 //@}
 
@@ -299,16 +299,48 @@ public:
    */
   virtual bool isEuclidean() const;
 
-  /** \brief Returns if all of the vector elements are cheaply accessible
-   * on this processor.
+  /** \brief Returns <tt>true</tt> if <tt>this->acquireDetachedView(rng,...)</tt> returns
+   * a direct view of the range of data requested.
+   *
+   * \param  rng  [in] The range of elements for the view (see <tt>acquireDetachedView()</tt>).
+   *              The default value is <tt>Range1D()</tt> (i.e. All of the elements in the vector).
+   * \param  hasDirectView
+   *              [in] If <tt>true</tt> then the view must be a direct view of data.
+   *              The default value is <tt>false</tt>.
+   * \param  isContiguous
+   *              [in] If <tt>true</tt> then requires the view must also have contiguous elements
+   *              with stride one.  This argument is meaningless if <tt>hasDirectView==false</tt.
+   *              The default value is <tt>false</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->dim() > 0</tt>
+   * <li><tt>full_range(rng,0,this->dim()-1).ubound < this->dim()</tt>
    * </ul>
    *
-   * The default implementation returns <tt>false</tt>.
+   * There are three different questions about the behavior of the <tt>acquireDetachedView()</tt>
+   * that this query function can answer:
+   *
+   * <ul>
+   * <li>The elements in <tt>rng</tt> are fairly cheaply accessble
+   *     in local (i.e. in core) memory if <tt>this->hasInCoreView(rng)==true</tt>.
+   *     Note that this also allows for detached temporary copies of data. 
+   * <li>A direct view of the elements in <tt>rng</tt> is available
+   *     in local (i.e. in core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT)==true</tt>.
+   *     No copy of data is allowed here.
+   * <li>A direct view of the elements in <tt>rng</tt> with unit stride is available in
+   *     local (i.e. in core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT,STRIDE_TYPE_UNIT)==true</tt>
+   *     No copy of data is allowed here.
+   * </ul>
+   *
+   * The default implementation returns <tt>false</tt> (i.e. by default we
+   * assume that direct and/or contiguous views of any range of data is not
+   * provided).
    */
-  virtual bool isInCore() const;
+  virtual bool hasInCoreView(
+    const Range1D       &rng            = Range1D()
+    ,const EViewType    viewType        = VIEW_TYPE_DETACHED
+    ,const EStrideType  strideType      = STRIDE_TYPE_NONUNIT
+    ) const;
 
   /** \brief Clone this object (if supported).
    *
@@ -339,16 +371,16 @@ public:
   createMembers<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, int numMembers );
 
   friend Teuchos::RefCountPtr<VectorBase<Scalar> >
-  createMemberView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubVectorT<Scalar> &raw_v );
+  createMemberView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorView<Scalar> &raw_v );
 
   friend Teuchos::RefCountPtr<const VectorBase<Scalar> >
-  createMemberView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubVectorT<Scalar> &raw_v );
+  createMemberView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubVectorView<Scalar> &raw_v );
 
   friend Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-  createMembersView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv );
+  createMembersView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorView<Scalar> &raw_mv );
 
   friend Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-  createMembersView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::SubMultiVectorT<Scalar> &raw_mv );
+  createMembersView<>( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv );
 
   //@}
 
@@ -432,7 +464,7 @@ protected:
    * that temporarily copies data into and out of a <tt>VectorBase</tt> object
    * using explicit vector access.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > createMemberView( const RTOpPack::MutableSubVectorT<Scalar> &raw_v ) const = 0;
+  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const = 0;
 
   /** \brief Create a vector member that is a <tt>const</tt> view of raw vector data.
    *
@@ -442,19 +474,19 @@ protected:
    *                valid until the returned <tt>VectorBase</tt> object is destroyed.
    *
    * This function works exactly the same as the previous version that takes a
-   * <tt>RTOpPack::MutableSubVectorT</tt> object except that this version
-   * takes a <tt>RTOpPack::SubVectorT</tt> and returns a smart pointer to a
+   * <tt>RTOpPack::SubVectorView</tt> object except that this version
+   * takes a <tt>RTOpPack::ConstSubVectorView</tt> and returns a smart pointer to a
    * <tt>const</tt> <tt>VectorBase</tt> object.
    *
    * <b>Preconditions:</b><ul>
-   * <li>See the previous <tt>RTOpPack::MutableSubVectorT</tt> version of this function.
+   * <li>See the previous <tt>RTOpPack::SubVectorView</tt> version of this function.
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li>See <tt>this->createMember()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > createMemberView( const RTOpPack::SubVectorT<Scalar> &raw_v ) const = 0;
+  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const = 0;
 
   /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw multi-vector data.
    *
@@ -479,7 +511,7 @@ protected:
    * implementation that temporarily copies data into and out of a
    * <tt>MultiVectorBase</tt> object using explicit vector access.
    */
-  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembersView( const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv ) const = 0;
+  virtual Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const = 0;
 
   /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw multi-vector data.
    *
@@ -489,19 +521,19 @@ protected:
    *                 valid until the returned <tt>MultiVectorBase</tt> object is destroyed.
    *
    * This function works exactly the same as the previous version that takes a
-   * <tt>RTOpPack::MutableSubMultiVectorT</tt> object except that this version
-   * takes a <tt>RTOpPack::SubMultiVectorT</tt> object and returns a smart
+   * <tt>RTOpPack::SubMultiVectorView</tt> object except that this version
+   * takes a <tt>RTOpPack::ConstSubMultiVectorView</tt> object and returns a smart
    * pointer to a <tt>const</tt> <tt>MultiVectorBase</tt> object.
    *
    * <b>Preconditions:</b><ul>
-   * <li>See the previous <tt>RTOpPack::MutableSubMultiVectorT</tt> version of this function.
+   * <li>See the previous <tt>RTOpPack::SubMultiVectorView</tt> version of this function.
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li>See <tt>this->createMember()</tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > createMembersView( const RTOpPack::SubMultiVectorT<Scalar> &raw_mv ) const = 0;
+  virtual Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const = 0;
 
   //@}
 

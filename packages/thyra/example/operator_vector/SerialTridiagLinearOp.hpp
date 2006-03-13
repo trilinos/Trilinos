@@ -134,8 +134,8 @@ protected:
 
   void euclideanApply(
     const Thyra::ETransp                         M_trans
-    ,const RTOpPack::SubVectorT<Scalar>          &x_in
-    ,const RTOpPack::MutableSubVectorT<Scalar>   *y_out
+    ,const RTOpPack::ConstSubVectorView<Scalar>          &x_in
+    ,const RTOpPack::SubVectorView<Scalar>   *y_out
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const

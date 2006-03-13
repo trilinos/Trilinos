@@ -83,7 +83,7 @@ bool VectorSpaceTester<Scalar>::check(
     *out
       <<endl<<li<< "A) Calling basic query functions ...\n"
       <<endl<<li<< "vs.dim() = " << vs.dim()
-      <<endl<<li<< "vs.isInCore() = " << vs.isInCore() << std::endl;
+      <<endl<<li<< "vs.hasInCoreView() = " << vs.hasInCoreView() << std::endl;
 
   if(out) *out <<endl<<li<< "B) Checking that vs is compatible with itself ...\n";
 

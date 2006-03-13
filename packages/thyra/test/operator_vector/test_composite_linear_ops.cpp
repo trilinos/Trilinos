@@ -26,13 +26,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_SerialVectorSpaceStd.hpp"
-#include "Thyra_MPIVectorSpaceStd.hpp"
-#include "Thyra_ScaledAdjointLinearOp.hpp"
-#include "Thyra_MultiplicativeLinearOp.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultMPIVectorSpace.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_DiagonalLinearOp.hpp"
+#include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -78,8 +78,8 @@ bool run_composite_linear_ops_tests(
   symLinearOpTester.symmetry_error_tol(STM::squareroot(error_tol));
 
   RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > space;
-  if(useMpi) space = rcp(new Thyra::MPIVectorSpaceStd<Scalar>(mpiComm,n,-1));
-  else       space = rcp(new Thyra::SerialVectorSpaceStd<Scalar>(n));
+  if(useMpi) space = rcp(new Thyra::DefaultMPIVectorSpace<Scalar>(mpiComm,n,-1));
+  else       space = rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
   
   if(out) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";
   RefCountPtr<Thyra::MultiVectorBase<Scalar> >
@@ -107,7 +107,7 @@ bool run_composite_linear_ops_tests(
 
   if(out) *out << "\nTesting that A1.getOp() == origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*dyn_cast<const Thyra::ScaledAdjointLinearOp<Scalar> >(*A1).getOp(),*origA,out);
+  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A1).getOp(),*origA,out);
   if(!result) success = false;
 
   if(1) {
@@ -174,7 +174,7 @@ bool run_composite_linear_ops_tests(
 
   if(out) *out << "\nTesting that A2.getOp() == A1 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*dyn_cast<const Thyra::ScaledAdjointLinearOp<Scalar> >(*A2).getOp(),*A1,out);
+  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A2).getOp(),*A1,out);
   if(!result) success = false;
   
   if(out) *out << "\nCreating implicit scaled, adjoined linear operator A3 = adjoint(scale(2.0,(A2)) ...\n";

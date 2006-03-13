@@ -109,7 +109,7 @@ implementations for as many virtual functions as reasonable:
 class of almost every <tt>Thyra::VectorSpaceBase</tt> subclass.  This node
 subclass provides the default implementation
 <tt>Thyra::VectorSpaceDefaultBase::createMembers()</tt> using
-<tt>Thyra::MultiVectorCols</tt>.  Therefore, a subclass need only provide a
+<tt>Thyra::DefaultColumnwiseMultiVector</tt>.  Therefore, a subclass need only provide a
 <tt>VectorBase</tt> implementation and override
 <tt>Thyra::VectorSpaceBase::createMember()</tt> and related functions.
 
@@ -421,40 +421,40 @@ linear operators.
 
 The UML class diagram below shows the subclasses described here:
 
-\image html SerialVectorSpaceStd.gif "Concrete subclasses for serial shared-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
+\image html DefaultSerialVectorSpace.gif "Concrete subclasses for serial shared-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
 
 <ul>
 
-<li><tt>Thyra::SerialVectorSpaceFactoryStd</tt> is a general concrete
+<li><tt>Thyra::DefaultSerialVectorSpaceFactory</tt> is a general concrete
 implementation of a factory for serial vector spaces that creates
-<tt>%Thyra::%SerialVectorSpaceStd</tt> objects of any given dimension.  This
+<tt>%Thyra::%DefaultSerialVectorSpace</tt> objects of any given dimension.  This
 subclass is used to provide the default implementation of
 <tt>%Thyra::VectorSpaceDefaultBase::smallVecSpcFcty()</tt>.  As a result,
-<tt>%Thyra::%SerialVectorSpaceStd</tt> is the default implementation of the
+<tt>%Thyra::%DefaultSerialVectorSpace</tt> is the default implementation of the
 domain space of the default multi-vectors returned from
 <tt>%Thyra::%VectorSpaceDefaultBase::%createMembers()</tt>.
 
-<li><tt>Thyra::SerialVectorSpaceStd</tt> is a general concrete implementation
-for serial vector spaces that creates <tt>%Thyra::SerialVectorStd</tt> and
-<tt>%Thyra::SerialMultiVectorStd</tt> objects.  All this subclass really does
+<li><tt>Thyra::DefaultSerialVectorSpace</tt> is a general concrete implementation
+for serial vector spaces that creates <tt>%Thyra::DefaultSerialVector</tt> and
+<tt>%Thyra::DefaultSerialMultiVector</tt> objects.  All this subclass really does
 is provide trivial implementations for the factory methods
 <tt>%Thyra::%VectorSpaceBase::%createMember()</tt> and
 <tt>%Thyra::%VectorSpaceBase::%createMembers()</tt>.
 
-<li><tt>Thyra::SerialVectorStd</tt> is an efficient general concrete
+<li><tt>Thyra::DefaultSerialVector</tt> is an efficient general concrete
 implementation for serial vectors.  All this subclass does is provide storage
 for a serial vector and return pointers to that storage to the
 <tt>%Thyra::SerialVectorBase</tt> base class through the overridden
-<tt>%Thyra::SerialVectorStd::getData()</tt> functions.  This concrete subclass
+<tt>%Thyra::DefaultSerialVector::getData()</tt> functions.  This concrete subclass
 has constructors that accept arbitrary strided data and can trivially handle
 any underlying data storage format due to the magic of
 <tt>%Teuchos::RefCountPtr</tt>.
 
-<li><tt>Thyra::SerialMultiVectorStd</tt> is an efficient general concrete
+<li><tt>Thyra::DefaultSerialMultiVector</tt> is an efficient general concrete
 implementation for serial multi-vectors.  All this subclass does is provide
 storage for a serial multi-vector and return pointers to that storage (and
 leading dimension) to the <tt>%Thyra::SerialMultiVectorBase</tt> base class
-through the overridden <tt>%Thyra::SerialMultiVectorStd::getData()</tt>
+through the overridden <tt>%Thyra::DefaultSerialMultiVector::getData()</tt>
 functions.  This concrete subclass has constructors that accept column-major
 data and can trivially handle any underlying data storage format due to the
 magic of <tt>%Teuchos::RefCountPtr</tt>.
@@ -546,8 +546,8 @@ processors where there exists no ghost elements.
 <li><tt>Thyra::MPIVectorBase</tt> is a base subclass for MPI-based
 SPMD <tt>%Thyra::%VectorBase</tt> objects.  This class defines concrete
 implementations for the <tt>%Thyra::%VectorBase</tt> virtual functions
-<tt>%applyOp()</tt>, <tt>%getSubVector() const</tt>, <tt>%freeSubVector()
-const</tt>, <tt>%getSubVector()</tt> and <tt>%commitSubVector()</tt>.
+<tt>%applyOp()</tt>, <tt>%acquireDetachedView() const</tt>, <tt>%releaseDetachedView()
+const</tt>, <tt>%acquireDetachedView()</tt> and <tt>%commitDetachedView()</tt>.
 These functions are implemented given explicit access to local processor
 elements as returned by the <tt>getLocalData()</tt> functions overridden
 in a subclass object.
@@ -556,9 +556,9 @@ in a subclass object.
 MPI-based SPMD <tt>%Thyra::%MultiVectorBase</tt> objects.  This class
 defines concrete implementations for the
 <tt>%Thyra::%MultiVectorBase</tt> virtual functions <tt>%applyOp()</tt>,
-<tt>%getSubMultiVector() const</tt>, <tt>%freeSubMultiVector()
-const</tt>, <tt>%getSubMultiVector()</tt> and
-<tt>%commitSubMultiVector()</tt>.  These functions are implemented
+<tt>%acquireDetachedView() const</tt>, <tt>%releaseDetachedView()
+const</tt>, <tt>%acquireDetachedView()</tt> and
+<tt>%commitDetachedView()</tt>.  These functions are implemented
 given explicit access to local processor elements as returned by the
 <tt>getLocalData()</tt> functions overridden in a subclass object.  In
 addition, this subclass derives from
@@ -598,7 +598,7 @@ vector data.  </ul>
 implementations of MPI-based vector space, vector and multi-vector
 subclasses.
 
-\image html MPIVectorSpaceStd.gif "Concrete subclasses for MPI-based SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
+\image html DefaultMPIVectorSpace.gif "Concrete subclasses for MPI-based SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
 
 \section Thyra_Op_Vec_adapters_MPI_concrete_std_classes_grp Concrete MPI-based SPMD Subclasses
 
@@ -607,25 +607,25 @@ The concrete subclasses described here derive directly from the \ref
 
 <ul>
 
-<li><tt>Thyra::MPIVectorSpaceFactoryStd</tt> is a concrete
+<li><tt>Thyra::DefaultMPIVectorSpaceFactory</tt> is a concrete
 <tt>%Thyra::%VectorSpaceFactoryBase</tt> subclass implementation that
-creates locally replicated <tt>%Thyra::%MPIVectorSpaceStd</tt> objects
+creates locally replicated <tt>%Thyra::%DefaultMPIVectorSpace</tt> objects
 given their dimension.  This class is meant to create domain spaces for
 any MPI-based SPMD multi-vector object it is is used as such (for
 example, see <tt>Thyra::MPIVectorSpaceDefaultBase::smallVecSpcFcty()</tt>).
 
-<li><tt>Thyra::MPIVectorSpaceStd</tt> is a general
+<li><tt>Thyra::DefaultMPIVectorSpace</tt> is a general
 <tt>%Thyra::%VectorSpaceBase</tt> subclass implementation for MPI-based
-SPMD vector spaces which creates <tt>%Thyra::%MPIVectorStd</tt> and
-<tt>%Thyra::%MPIMultiVectorStd</tt> objects.
+SPMD vector spaces which creates <tt>%Thyra::%DefaultMPIVector</tt> and
+<tt>%Thyra::%DefaultMPIMultiVector</tt> objects.
 
-<li><tt>Thyra::MPIVectorStd</tt> is a very general, highly
+<li><tt>Thyra::DefaultMPIVector</tt> is a very general, highly
 efficient <tt>%Thyra::%VectorBase</tt> subclass implementation for
 MPI-based SPMD vectors.  Objects of this type can be constructed
 from a variety of data sources due to the magic of
 <tt>%Teuchos::%RefCountPtr</tt>.
 
-<li><tt>Thyra::MPIMultiVectorStd</tt> is a very general, highly
+<li><tt>Thyra::DefaultMPIMultiVector</tt> is a very general, highly
 efficient <tt>%Thyra::%MultiVectorBase</tt> subclass implementation for
 MPI-based SPMD multi-vectors.  Objects of this type can be constructed
 from a variety of data sources due to the magic of
@@ -698,13 +698,13 @@ multi-vector).  The following utility classes streamline creating and
 using explicit views.
 
 <ul>
-<li><tt>Thyra::ExplicitVectorView</tt> creates a (<tt>const</tt>) non-mutable explicit view of a <tt>const %Thyra::%VectorBase</tt> object,
+<li><tt>Thyra::ConstDetachedVectorView</tt> creates a (<tt>const</tt>) non-mutable explicit view of a <tt>const %Thyra::%VectorBase</tt> object,
     allows direct access to vector elements and then frees the view in the destructor.
-<li><tt>Thyra::ExplicitMutableVectorView</tt> creates a (non-<tt>const</tt>) mutable explicit view of a <tt>%Thyra::%VectorBase</tt> object,
+<li><tt>Thyra::DetachedVectorView</tt> creates a (non-<tt>const</tt>) mutable explicit view of a <tt>%Thyra::%VectorBase</tt> object,
     allows direct access to vector elements and then frees the view in the destructor.
-<li><tt>Thyra::ExplicitMultiVectorView</tt> creates a (<tt>const</tt>) non-mutable explicit view of a <tt>const %Thyra::%MultiVectorBase</tt> object,
+<li><tt>Thyra::ConstDetachedMultiVectorView</tt> creates a (<tt>const</tt>) non-mutable explicit view of a <tt>const %Thyra::%MultiVectorBase</tt> object,
     allows direct access to multi-vector elements and then frees the view in the destructor.
-<li><tt>Thyra::ExplicitMutableMultiVectorView</tt> creates a (non-<tt>const</tt>) mutable explicit view of a <tt>%Thyra::%MultiVectorBase</tt> object,
+<li><tt>Thyra::DetachedMultiVectorView</tt> creates a (non-<tt>const</tt>) mutable explicit view of a <tt>%Thyra::%MultiVectorBase</tt> object,
     allows direct access to multi-vector elements and then frees the view in the destructor.
 </ul>
 
@@ -752,9 +752,9 @@ Thyra_Op_Vec_Interoperability_Extended_Interfaces_sec "here" are provided and
 are shown below:
 
 <ul>
-<li><tt>Thyra::ProductVectorSpace</tt> is a general concrete implementation of <tt>Thyra::ProductVectorSpaceBase</tt>
+<li><tt>Thyra::DefaultProductVectorSpace</tt> is a general concrete implementation of <tt>Thyra::ProductVectorSpaceBase</tt>
     that should be sufficient for most use cases.
-<li><tt>Thyra::ProductVector</tt> is a general concrete implementation of <tt>Thyra::ProductVectorBase</tt>
+<li><tt>Thyra::DefaultProductVector</tt> is a general concrete implementation of <tt>Thyra::ProductVectorBase</tt>
     that should be sufficient for most use cases.
 <li><tt>Thyra::ProductMultiVector</tt> is a general concrete implementation of <tt>Thyra::ProductMultiVectorBase</tt>
     that should be sufficient for most use cases. (ToDo: This needs to be implemented!)
@@ -765,11 +765,11 @@ but not all, possible use cases for such composite objects.
 
 When using product vector spaces, product vectors and product
 multi-vectors it is generally the case where a concrete
-<tt>Thyra::ProductVectorSpace</tt> object is first created and then
-<tt>Thyra::ProductVector</tt> and
+<tt>Thyra::DefaultProductVectorSpace</tt> object is first created and then
+<tt>Thyra::DefaultProductVector</tt> and
 <tt>Thyra::ProductMultiVector</tt> objects are created by the
-functions <tt>Thyra::ProductVectorSpace::createMember()</tt> and
-<tt>Thyra::ProductVectorSpace::createMembers()</tt>.  See
+functions <tt>Thyra::DefaultProductVectorSpace::createMember()</tt> and
+<tt>Thyra::DefaultProductVectorSpace::createMembers()</tt>.  See
 \ref Thyra_Op_Vec_product_vec_spc_prg_grp "this example"
 of how product vector spaces are used.
 
@@ -780,12 +780,12 @@ There are several different types of useful composite
 useful composite linear operator subclasses are shown below:
 
 <ul>
-<li><tt>Thyra::DiagonalLinearOp</tt> is a simple concrete subclass that defines a diagonal <tt>Thyra::LinearOpBase</tt>
+<li><tt>Thyra::DefaultDiagonalLinearOp</tt> is a simple concrete subclass that defines a diagonal <tt>Thyra::LinearOpBase</tt>
     \f$M = \gamma \; \mbox{diag}(d) \in \Re^{n \times n}\f$
     out of any <tt>Thyra::VectorBase</tt> object for the diagonal \f$d \in \Re^n\f$.
-<li><tt>Thyra::ScaledAdjointLinearOp</tt> is a simple concrete decorator subclass that defines an
+<li><tt>Thyra::DefaultScaledAdjointLinearOp</tt> is a simple concrete decorator subclass that defines an
     implicit scaled and/or adjoined (or transposed) linear operator \f$M = \gamma \; op(A)\f$.
-<li><tt>Thyra::MultiplicativeLinearOp</tt> is a simple concrete composite subclass that defines a composite multiplicative
+<li><tt>Thyra::DefaultMultipliedLinearOp</tt> is a simple concrete composite subclass that defines a composite multiplicative
     <tt>Thyra::LinearOpBase</tt> of the form \f$M = \gamma \; A_1 A_2 \ldots A_m}\f$ composed out of one or more
     constituent linear operators \f$A_1, A_2 \ldots A_m\f$.
 </ul>
@@ -1567,10 +1567,10 @@ describe A:
   type = 'SerialTridiagLinearOp<float>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<float>', size = 500
+  type = 'DefaultSerialVector<float>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<float>', size = 500
+  type = 'DefaultSerialVector<float>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 31, ||b-A*x||/||b-A*x0|| = 2.812529e-01
@@ -1753,10 +1753,10 @@ describe A:
   type = 'SerialTridiagLinearOp<double>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<double>', size = 500
+  type = 'DefaultSerialVector<double>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<double>', size = 500
+  type = 'DefaultSerialVector<double>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 31, ||b-A*x||/||b-A*x0|| = 2.812612e-01
@@ -1945,10 +1945,10 @@ describe A:
   type = 'SerialTridiagLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<std::complex<float>>', size = 500
+  type = 'DefaultSerialVector<std::complex<float>>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<std::complex<float>>', size = 500
+  type = 'DefaultSerialVector<std::complex<float>>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 31, ||b-A*x||/||b-A*x0|| = 2.721108e-01
@@ -2131,10 +2131,10 @@ describe A:
   type = 'SerialTridiagLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<std::complex<double>>', size = 500
+  type = 'DefaultSerialVector<std::complex<double>>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<std::complex<double>>', size = 500
+  type = 'DefaultSerialVector<std::complex<double>>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 31, ||b-A*x||/||b-A*x0|| = 2.721187e-01
@@ -2317,10 +2317,10 @@ describe A:
   type = 'SerialTridiagLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<mpf_class>', size = 500
+  type = 'DefaultSerialVector<mpf_class>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<mpf_class>', size = 500
+  type = 'DefaultSerialVector<mpf_class>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 31, ||b-A*x||/||b-A*x0|| = 7.662633e-01
@@ -2452,11 +2452,11 @@ Testing the linear operator used with the solve ...
 *** Entering LinearOpTester<float>::check(op,...) ...
 
 describe op:
-  type = 'MultiplicativeLinearOp<float>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<float>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<float>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<float>', rangeDim = 500, domainDim = 500
           overallScalar=1
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -2552,11 +2552,11 @@ Check: rel_err(<v4,v1>,<v2,v3>)
 Starting CG solver ...
 
 describe A:
-  type = 'MultiplicativeLinearOp<float>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<float>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<float>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<float>', rangeDim = 500, domainDim = 500
           overallScalar=1.000000e+00
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -2567,10 +2567,10 @@ describe A:
         type = 'SerialTridiagLinearOp<float>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<float>', size = 500
+  type = 'DefaultSerialVector<float>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<float>', size = 500
+  type = 'DefaultSerialVector<float>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 3, ||b-A*x||/||b-A*x0|| = 6.660668e-03
@@ -2659,11 +2659,11 @@ Testing the linear operator used with the solve ...
 *** Entering LinearOpTester<double>::check(op,...) ...
 
 describe op:
-  type = 'MultiplicativeLinearOp<double>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<double>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<double>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<double>', rangeDim = 500, domainDim = 500
           overallScalar=1.000000e+00
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -2759,11 +2759,11 @@ Check: rel_err(<v4,v1>,<v2,v3>)
 Starting CG solver ...
 
 describe A:
-  type = 'MultiplicativeLinearOp<double>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<double>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<double>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<double>', rangeDim = 500, domainDim = 500
           overallScalar=1.000000e+00
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -2774,10 +2774,10 @@ describe A:
         type = 'SerialTridiagLinearOp<double>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<double>', size = 500
+  type = 'DefaultSerialVector<double>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<double>', size = 500
+  type = 'DefaultSerialVector<double>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 3, ||b-A*x||/||b-A*x0|| = 1.233805e-01
@@ -2870,11 +2870,11 @@ Testing the linear operator used with the solve ...
 *** Entering LinearOpTester<std::complex<float>>::check(op,...) ...
 
 describe op:
-  type = 'MultiplicativeLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
           overallScalar=(1.000000e+00,0.000000e+00)
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -2970,11 +2970,11 @@ Check: rel_err(<v4,v1>,<v2,v3>)
 Starting CG solver ...
 
 describe A:
-  type = 'MultiplicativeLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
           overallScalar=(1.000000e+00,0.000000e+00)
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -2985,10 +2985,10 @@ describe A:
         type = 'SerialTridiagLinearOp<std::complex<float>>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<std::complex<float>>', size = 500
+  type = 'DefaultSerialVector<std::complex<float>>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<std::complex<float>>', size = 500
+  type = 'DefaultSerialVector<std::complex<float>>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 3, ||b-A*x||/||b-A*x0|| = 1.431026e-01
@@ -3080,11 +3080,11 @@ Testing the linear operator used with the solve ...
 *** Entering LinearOpTester<std::complex<double>>::check(op,...) ...
 
 describe op:
-  type = 'MultiplicativeLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
           overallScalar=(1.000000e+00,0.000000e+00)
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -3180,11 +3180,11 @@ Check: rel_err(<v4,v1>,<v2,v3>)
 Starting CG solver ...
 
 describe A:
-  type = 'MultiplicativeLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
           overallScalar=(1.000000e+00,0.000000e+00)
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -3195,10 +3195,10 @@ describe A:
         type = 'SerialTridiagLinearOp<std::complex<double>>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<std::complex<double>>', size = 500
+  type = 'DefaultSerialVector<std::complex<double>>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<std::complex<double>>', size = 500
+  type = 'DefaultSerialVector<std::complex<double>>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 3, ||b-A*x||/||b-A*x0|| = 2.153769e-02
@@ -3288,11 +3288,11 @@ Testing the linear operator used with the solve ...
 *** Entering LinearOpTester<mpf_class>::check(op,...) ...
 
 describe op:
-  type = 'MultiplicativeLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
           overallScalar=1.000000e+00
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -3388,11 +3388,11 @@ Check: rel_err(<v4,v1>,<v2,v3>)
 Starting CG solver ...
 
 describe A:
-  type = 'MultiplicativeLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
+  type = 'DefaultMultipliedLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
     numOps=2
     Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:
       Op[0] =
-        type = 'ScaledAdjointLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
+        type = 'DefaultScaledAdjointLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
           overallScalar=1.000000e+00
           overallTransp=CONJTRANS
           Constituent transformations:
@@ -3403,10 +3403,10 @@ describe A:
         type = 'SerialTridiagLinearOp<mpf_class>', rangeDim = 500, domainDim = 500
 
 describe b:
-  type = 'SerialVectorStd<mpf_class>', size = 500
+  type = 'DefaultSerialVector<mpf_class>', size = 500
 
 describe x:
-  type = 'SerialVectorStd<mpf_class>', size = 500
+  type = 'DefaultSerialVector<mpf_class>', size = 500
 
 Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
 Iter = 3, ||b-A*x||/||b-A*x0|| = 2.692000e-01
@@ -3427,7 +3427,7 @@ Note in the above example how the normal operator \f$A^H A\f$ is described.
 This aggregate operator is created by the function calls
 <tt>Thyra::scale()</tt> and <tt>Thyra::multiply()</tt> which create implicit
 <tt>Thyra::ScaledAdjointedLinearOp</tt> and
-<tt>Thyra::MultiplicativeLinearOp</tt> objects.
+<tt>Thyra::DefaultMultipliedLinearOp</tt> objects.
 
 To see the full listing of this example program click: <a
 href="sillyCgSolve__serial_8cpp-example.html">

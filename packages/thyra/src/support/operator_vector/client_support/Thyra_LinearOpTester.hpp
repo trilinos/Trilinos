@@ -31,7 +31,7 @@
 
 #include "Thyra_LinearOpTesterDecl.hpp"
 #include "Thyra_LinearOpBase.hpp"
-#include "Thyra_ScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_describeLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"

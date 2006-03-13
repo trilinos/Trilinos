@@ -1,0 +1,6 @@
+getSubVector                      acquireDetachedView
+freeSubVector                     releaseDetachedView
+commitSubVector                   commitDetachedView
+getSubMultiVector                 acquireDetachedView
+freeSubMultiVector                releaseDetachedView
+commitSubMultiVector              commitDetachedView

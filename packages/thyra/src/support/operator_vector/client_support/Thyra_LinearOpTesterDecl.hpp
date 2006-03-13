@@ -208,7 +208,7 @@ public:
    *     wants to check the linear properties of the adjoint then the client
    *     should first create an implicit adjoint using <tt>adjoint()</tt>
    *     (or transpose using <tt>transpose()</tt>) which wraps the operation in
-   *     a <tt>ScaledAdjointLinearOp</tt>.  Using this method a client can check
+   *     a <tt>DefaultScaledAdjointLinearOp</tt>.  Using this method a client can check
    *     all the various values of the enum <tt>ETransp</tt>.
    *
    * <li>If <tt>this->check_adjoint()==true</tt> then, checks that the non-transposed

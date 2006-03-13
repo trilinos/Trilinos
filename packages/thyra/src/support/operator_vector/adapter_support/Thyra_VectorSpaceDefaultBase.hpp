@@ -31,10 +31,10 @@
 
 #include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
-#include "Thyra_SerialVectorSpaceFactoryStd.hpp"
+#include "Thyra_DefaultSerialVectorSpaceFactory.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_MultiVectorCols.hpp"
+#include "Thyra_DefaultColumnwiseMultiVector.hpp"
 
 namespace Thyra {
 
@@ -43,37 +43,37 @@ namespace Thyra {
 template<class Scalar>
 class CopyVectorViewBack {
 public:
-  CopyVectorViewBack( const VectorBase<Scalar> *v, const RTOpPack::MutableSubVectorT<Scalar>  &raw_v )
+  CopyVectorViewBack( const VectorBase<Scalar> *v, const RTOpPack::SubVectorView<Scalar>  &raw_v )
     :v_(v), raw_v_(raw_v)
     {}
   ~CopyVectorViewBack()
     {
-      RTOpPack::SubVectorT<Scalar> sv;
-      v_->getSubVector(Range1D(),&sv);
+      RTOpPack::ConstSubVectorView<Scalar> sv;
+      v_->acquireDetachedView(Range1D(),&sv);
       RTOpPack::assign_entries( &raw_v_, sv );
-      v_->freeSubVector(&sv);
+      v_->releaseDetachedView(&sv);
     }
 private:
   const VectorBase<Scalar>                   *v_;
-  const RTOpPack::MutableSubVectorT<Scalar>  raw_v_;
+  const RTOpPack::SubVectorView<Scalar>  raw_v_;
 };
 
 template<class Scalar>
 class CopyMultiVectorViewBack {
 public:
-  CopyMultiVectorViewBack( const MultiVectorBase<Scalar> *mv, const RTOpPack::MutableSubMultiVectorT<Scalar>  &raw_mv )
+  CopyMultiVectorViewBack( const MultiVectorBase<Scalar> *mv, const RTOpPack::SubMultiVectorView<Scalar>  &raw_mv )
     :mv_(mv), raw_mv_(raw_mv)
     {}
   ~CopyMultiVectorViewBack()
     {
-      RTOpPack::SubMultiVectorT<Scalar> smv;
-      mv_->getSubMultiVector(Range1D(),Range1D(),&smv);
+      RTOpPack::ConstSubMultiVectorView<Scalar> smv;
+      mv_->acquireDetachedView(Range1D(),Range1D(),&smv);
       RTOpPack::assign_entries( &raw_mv_, smv );
-      mv_->freeSubMultiVector(&smv);
+      mv_->releaseDetachedView(&smv);
     }
 private:
   const MultiVectorBase<Scalar>                       *mv_;
-  const RTOpPack::MutableSubMultiVectorT<Scalar>  raw_mv_;
+  const RTOpPack::SubMultiVectorView<Scalar>  raw_mv_;
 };
 
 // Overridden from VectorSpaceBase
@@ -82,19 +82,19 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceFactoryBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::smallVecSpcFcty() const
 {
-  return Teuchos::rcp(new SerialVectorSpaceFactoryStd<Scalar>());
+  return Teuchos::rcp(new DefaultSerialVectorSpaceFactory<Scalar>());
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> > 
 VectorSpaceDefaultBase<Scalar>::createMembers(int numMembers) const
 {
-  return Teuchos::rcp(new MultiVectorCols<Scalar> (Teuchos::rcp(this,false),this->smallVecSpcFcty()->createVecSpc(numMembers)));
+  return Teuchos::rcp(new DefaultColumnwiseMultiVector<Scalar> (Teuchos::rcp(this,false),this->smallVecSpcFcty()->createVecSpc(numMembers)));
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::MutableSubVectorT<Scalar> &raw_v ) const
+VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
@@ -102,10 +102,10 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::MutableSubVect
   // Create a vector
   Teuchos::RefCountPtr<VectorBase<Scalar> > v = this->createMember();
   // Copy initial values in raw_v into vector
-  RTOpPack::MutableSubVectorT<Scalar> sv;
-  v->getSubVector(Range1D(),&sv);
+  RTOpPack::SubVectorView<Scalar> sv;
+  v->acquireDetachedView(Range1D(),&sv);
   RTOpPack::assign_entries( &sv, raw_v );
-  v->commitSubVector(&sv);
+  v->commitDetachedView(&sv);
   // Setup smart pointer to vector to copy view back out just before vector is destroyed
   Teuchos::set_extra_data(
     Teuchos::rcp(new CopyVectorViewBack<Scalar>(&*v,raw_v))
@@ -118,7 +118,7 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::MutableSubVect
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
-VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorT<Scalar> &raw_v ) const
+VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
@@ -126,16 +126,16 @@ VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorT<Sca
   // Create a vector
   Teuchos::RefCountPtr<VectorBase<Scalar> > v = this->createMember();
   // Copy initial values in raw_v into vector
-  RTOpPack::MutableSubVectorT<Scalar> sv;
-  v->getSubVector(Range1D(),&sv);
+  RTOpPack::SubVectorView<Scalar> sv;
+  v->acquireDetachedView(Range1D(),&sv);
   RTOpPack::assign_entries( &sv, raw_v );
-  v->commitSubVector(&sv);
+  v->commitDetachedView(&sv);
   return v;
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv ) const
+VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
@@ -143,10 +143,10 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::MutableSubMul
   // Create a multi-vector
   Teuchos::RefCountPtr< MultiVectorBase<Scalar> > mv = this->createMembers(raw_mv.numSubCols());
   // Copy initial values in raw_mv into multi-vector
-  RTOpPack::MutableSubMultiVectorT<Scalar> smv;
-  mv->getSubMultiVector(Range1D(),Range1D(),&smv);
+  RTOpPack::SubMultiVectorView<Scalar> smv;
+  mv->acquireDetachedView(Range1D(),Range1D(),&smv);
   RTOpPack::assign_entries( &smv, raw_mv );
-  mv->commitSubMultiVector(&smv);
+  mv->commitDetachedView(&smv);
   // Setup smart pointer to multi-vector to copy view back out just before multi-vector is destroyed
   Teuchos::set_extra_data(
     Teuchos::rcp(new CopyMultiVectorViewBack<Scalar>(&*mv,raw_mv))
@@ -159,7 +159,7 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::MutableSubMul
 
 template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVectorT<Scalar> &raw_mv ) const
+VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
@@ -167,10 +167,10 @@ VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVecto
   // Create a multi-vector
   Teuchos::RefCountPtr< MultiVectorBase<Scalar> > mv = this->createMembers(raw_mv.numSubCols());
   // Copy values in raw_mv into multi-vector
-  RTOpPack::MutableSubMultiVectorT<Scalar> smv;
-  mv->getSubMultiVector(Range1D(),Range1D(),&smv);
+  RTOpPack::SubMultiVectorView<Scalar> smv;
+  mv->acquireDetachedView(Range1D(),Range1D(),&smv);
   RTOpPack::assign_entries( &smv, raw_mv );
-  mv->commitSubMultiVector(&smv);
+  mv->commitDetachedView(&smv);
   return mv;
 }
 

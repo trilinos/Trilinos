@@ -72,7 +72,14 @@ public:
    */
   virtual ETransp overallTransp() const = 0;
 
-  /** \brief Return the original linear operator <tt>origOp</tt>.
+  /** \brief Return the non-const original linear operator <tt>origOp</tt>.
+   *
+   * Note that <tt>*this</tt> is only guaranteed to be fully modified once the
+   * returned RCP goes away.
+   */
+  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > getOrigOp() = 0;
+
+  /** \brief Return the const original linear operator <tt>origOp</tt>.
    */
   virtual Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOrigOp() const = 0;
 

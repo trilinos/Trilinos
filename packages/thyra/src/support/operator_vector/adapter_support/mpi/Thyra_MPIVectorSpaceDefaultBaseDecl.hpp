@@ -59,10 +59,10 @@ namespace Thyra {
  *
  * This class defines a very general default implementation for
  * <tt>smallVecSpcFcty()</tt> that returns a
- * <tt>MPIVectorSpaceFactoryStd</tt> object.  This returned object
- * creates <tt>MPIVectorSpaceStd</tt>
- * objects. <tt>MPIVectorSpaceStd</tt> creates <tt>MPIVectorStd</tt>
- * and <tt>MPIMultiVectorStd</tt>.  This implementation is very
+ * <tt>DefaultMPIVectorSpaceFactory</tt> object.  This returned object
+ * creates <tt>DefaultMPIVectorSpace</tt>
+ * objects. <tt>DefaultMPIVectorSpace</tt> creates <tt>DefaultMPIVector</tt>
+ * and <tt>DefaultMPIMultiVector</tt>.  This implementation is very
  * general should be very appropriate for many different concrete
  * implementations.
  *
@@ -139,15 +139,7 @@ public:
    */
   Index dim() const;
 
-  /** \brief Returns true if all of the elements are stored on one processor.
-   *
-   * Postconditions:<ul>
-   * <li> <tt>return == (dim()==localSubDim())</tt>.
-   * </ul>
-   */
-   bool isInCore() const;
-
-  /** \brief Returns a <tt>MPIVectorSpaceFactoryStd</tt> object that has been given <tt>mpiComm()</tt>.
+  /** \brief Returns a <tt>DefaultMPIVectorSpaceFactory</tt> object that has been given <tt>mpiComm()</tt>.
    */
   Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
 
@@ -161,8 +153,8 @@ public:
    * mapping of elements to processors.
    *
    * Postconditions:<ul>
-   * <li> <tt>return = ( this->isInCore() &&
-   *      vecSpc->isInCore() ) || ( (mpiVecSpc = dynamic_cast<const
+   * <li> <tt>return = ( this->hasInCoreView() &&
+   *      vecSpc->hasInCoreView() ) || ( (mpiVecSpc = dynamic_cast<const
    *      MPIVectorSpaceDefaultBase<Scalar>*>(&vecSpc)) && this->mpiComm() ==
    *      mpiVecSpc->mpiComm() && this->mapCode() ==
    *      mpiVecSpc->mpiComm())</tt>.
@@ -207,9 +199,9 @@ private:
   // Private data members
 
   Index     mapCode_;    // < 0 is a flag that everything needs initialized
-  bool      isInCore_;
   Index     defaultLocalOffset_;
   Index     defaultGlobalDim_;
+  Index     localSubDim_;
 
   Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >  smallVecSpcFcty_;
   

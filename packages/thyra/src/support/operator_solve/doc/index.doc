@@ -24,7 +24,7 @@ Thyra ANA Operator Solve Interfaces</a>.
 
   <ul>
 
-  <li><tt>Thyra::DiagonalLinearOpWithSolve</tt> implements the
+  <li><tt>Thyra::DefaultDiagonalLinearOpWithSolve</tt> implements the
   <tt>Thyra::LinearOpWithSolveBase</tt> interface for diagonal linear
   operators.
 

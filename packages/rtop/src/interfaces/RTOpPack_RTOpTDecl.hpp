@@ -136,7 +136,7 @@ public:
  * First, we will assume that vectors are stored and manipulated as
  * chunks of sub-vectors (of dimension <tt>subDim</tt>) where each
  * sub-vector is sufficiently large.  This design supports dense
- * strided sub-vectors (see <tt>SubVectorT</tt> and <tt>MutableSubVectorT</tt>)
+ * strided sub-vectors (see <tt>ConstSubVectorView</tt> and <tt>SubVectorView</tt>)
  * and is relatively flexible.
  *
  * It is strictly the responsibilities of the vector implementations
@@ -424,8 +424,8 @@ public:
    * IncompatibleVecs is thrown.
    */
   virtual void apply_op(
-    const int   num_vecs,       const SubVectorT<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const MutableSubVectorT<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
     ,ReductTarget *reduct_obj
     ) const = 0;
 

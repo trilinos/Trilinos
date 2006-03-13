@@ -161,17 +161,17 @@ void Thyra::apply_op_serial(
   // Get explicit views of the vector elements
   //
 
-  Workspace<RTOpPack::SubVectorT<Scalar> >         local_vecs(wss,num_vecs);
-  Workspace<RTOpPack::MutableSubVectorT<Scalar> >  local_targ_vecs(wss,num_targ_vecs);
+  Workspace<RTOpPack::ConstSubVectorView<Scalar> >         local_vecs(wss,num_vecs);
+  Workspace<RTOpPack::SubVectorView<Scalar> >  local_targ_vecs(wss,num_targ_vecs);
   int k;
   for(k = 0; k < num_vecs; ++k) {
-    RTOpPack::SubVectorT<Scalar> &v = local_vecs[k];
-    vecs[k]->getSubVector( global_sub_rng, &v );
+    RTOpPack::ConstSubVectorView<Scalar> &v = local_vecs[k];
+    vecs[k]->acquireDetachedView( global_sub_rng, &v );
     v.setGlobalOffset( global_offset_in );
   }
   for(k = 0; k < num_targ_vecs; ++k) {
-    RTOpPack::MutableSubVectorT<Scalar> &v = local_targ_vecs[k];
-    targ_vecs[k]->getSubVector( global_sub_rng, &v );
+    RTOpPack::SubVectorView<Scalar> &v = local_targ_vecs[k];
+    targ_vecs[k]->acquireDetachedView( global_sub_rng, &v );
     v.setGlobalOffset( global_offset_in );
   }
 
@@ -191,14 +191,14 @@ void Thyra::apply_op_serial(
   //
 
   for(k = 0; k < num_vecs; ++k) {
-    RTOpPack::SubVectorT<Scalar> &v = local_vecs[k];
+    RTOpPack::ConstSubVectorView<Scalar> &v = local_vecs[k];
     v.setGlobalOffset(global_sub_rng.lbound());
-    vecs[k]->freeSubVector(&v);
+    vecs[k]->releaseDetachedView(&v);
   }
   for(k = 0; k < num_targ_vecs; ++k) {
-    RTOpPack::MutableSubVectorT<Scalar> &v = local_targ_vecs[k];
+    RTOpPack::SubVectorView<Scalar> &v = local_targ_vecs[k];
     v.setGlobalOffset(global_sub_rng.lbound());
-    targ_vecs[k]->commitSubVector(&v);
+    targ_vecs[k]->commitDetachedView(&v);
   }
 
 }
@@ -241,17 +241,17 @@ void Thyra::apply_op_serial(
   // Get explicit views of the multi-vector elements
   //
 
-  Workspace<RTOpPack::SubMultiVectorT<Scalar> >         local_multi_vecs(wss,num_multi_vecs);
-  Workspace<RTOpPack::MutableSubMultiVectorT<Scalar> >  local_targ_multi_vecs(wss,num_targ_multi_vecs);
+  Workspace<RTOpPack::ConstSubMultiVectorView<Scalar> >         local_multi_vecs(wss,num_multi_vecs);
+  Workspace<RTOpPack::SubMultiVectorView<Scalar> >  local_targ_multi_vecs(wss,num_targ_multi_vecs);
   int k;
   for(k = 0; k < num_multi_vecs; ++k) {
-    RTOpPack::SubMultiVectorT<Scalar> &mv = local_multi_vecs[k];
-    multi_vecs[k]->getSubMultiVector( pri_global_sub_rng, sec_global_sub_rng, &mv );
+    RTOpPack::ConstSubMultiVectorView<Scalar> &mv = local_multi_vecs[k];
+    multi_vecs[k]->acquireDetachedView( pri_global_sub_rng, sec_global_sub_rng, &mv );
     mv.setGlobalOffset( pri_global_offset_in );
   }
   for(k = 0; k < num_targ_multi_vecs; ++k) {
-    RTOpPack::MutableSubMultiVectorT<Scalar> &mv = local_targ_multi_vecs[k];
-    targ_multi_vecs[k]->getSubMultiVector( pri_global_sub_rng, sec_global_sub_rng, &mv );
+    RTOpPack::SubMultiVectorView<Scalar> &mv = local_targ_multi_vecs[k];
+    targ_multi_vecs[k]->acquireDetachedView( pri_global_sub_rng, sec_global_sub_rng, &mv );
     mv.setGlobalOffset( pri_global_offset_in );
   }
 
@@ -259,8 +259,8 @@ void Thyra::apply_op_serial(
   // Apply the reduction/transformation operator one column at a time
   //
 
-  Workspace<RTOpPack::SubVectorT<Scalar> >         local_vecs(wss,num_multi_vecs);
-  Workspace<RTOpPack::MutableSubVectorT<Scalar> >  local_targ_vecs(wss,num_targ_multi_vecs);
+  Workspace<RTOpPack::ConstSubVectorView<Scalar> >         local_vecs(wss,num_multi_vecs);
+  Workspace<RTOpPack::SubVectorView<Scalar> >  local_targ_vecs(wss,num_targ_multi_vecs);
 
   for(int j = 0; j < sec_global_sub_dim; ++j ) {
     for(k = 0; k < num_multi_vecs; ++k)       local_vecs[k]      = local_multi_vecs[k].col(j);
@@ -278,14 +278,14 @@ void Thyra::apply_op_serial(
   //
 
   for(k = 0; k < num_multi_vecs; ++k) {
-    RTOpPack::SubMultiVectorT<Scalar> &mv = local_multi_vecs[k];
+    RTOpPack::ConstSubMultiVectorView<Scalar> &mv = local_multi_vecs[k];
     mv.setGlobalOffset(pri_global_sub_rng.lbound());
-    multi_vecs[k]->freeSubMultiVector(&mv);
+    multi_vecs[k]->releaseDetachedView(&mv);
   }
   for(k = 0; k < num_targ_multi_vecs; ++k) {
-    RTOpPack::MutableSubMultiVectorT<Scalar> &mv = local_targ_multi_vecs[k];
+    RTOpPack::SubMultiVectorView<Scalar> &mv = local_targ_multi_vecs[k];
     mv.setGlobalOffset(pri_global_sub_rng.lbound());
-    targ_multi_vecs[k]->commitSubMultiVector(&mv);
+    targ_multi_vecs[k]->commitDetachedView(&mv);
   }
 
 }

@@ -111,7 +111,7 @@ public:
 	 * @param  mpiDomain
 	 *                  [in] Smart pointer to the domain space for the <tt>Epetra_Operator</tt>.  The default
    *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
-	 *                  a new <tt>MPIVectorSpaceStd</tt> given map from <tt>op</tt>.  A client may only bother
+	 *                  a new <tt>DefaultMPIVectorSpace</tt> given map from <tt>op</tt>.  A client may only bother
 	 *                  to specify this space if one wants to override the defintion of the scalar product.
 	 *
 	 * Preconditions:<ul>

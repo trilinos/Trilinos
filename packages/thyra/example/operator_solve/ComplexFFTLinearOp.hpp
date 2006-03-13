@@ -31,8 +31,8 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
-#include "Thyra_SerialVectorSpaceStd.hpp"
-#include "Thyra_ExplicitVectorView.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DetachedVectorView.hpp"
 #include "serial_1D_FFT.hpp"
 
 /** \brief Simple concrete subclass for a serial complex-to-complex FFT.
@@ -113,7 +113,7 @@ private:
 template<class RealScalar>
 ComplexFFTLinearOp<RealScalar>::ComplexFFTLinearOp( const int N )
 {
-  space_ = Teuchos::rcp(new Thyra::SerialVectorSpaceStd< std::complex<RealScalar> >(int(std::pow(double(2),N))));
+  space_ = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace< std::complex<RealScalar> >(int(std::pow(double(2),N))));
 }
 
 // Overridden from LinearOpBase
@@ -159,7 +159,7 @@ void ComplexFFTLinearOp<RealScalar>::apply(
   Thyra::Vt_S( y, beta );
   // Translate from input x into one long array with data[] that will be
   // passed to and from the FFT routine
-  const Thyra::ExplicitVectorView<Scalar>  x_ev(x);
+  const Thyra::ConstDetachedVectorView<Scalar>  x_ev(x);
   std::vector<RealScalar> data(2*x_ev.subDim());
   for( int k = 0; k < x_ev.subDim(); ++k ) {
     data[2*k]   = x_ev[k].real();
@@ -172,7 +172,7 @@ void ComplexFFTLinearOp<RealScalar>::apply(
     ,Thyra::real_trans(M_trans)==Thyra::NOTRANS ? +1 : -1 // +1 = fwd, -1 = adjoint
     );
   // Add the scaled result into y
-  const Thyra::ExplicitMutableVectorView<Scalar>  y_ev(*y);
+  const Thyra::DetachedVectorView<Scalar>  y_ev(*y);
   const Scalar scalar = alpha * Scalar(1)/ST::squareroot(x_ev.subDim()); // needed to make adjoint == inverse!
   for( int k = 0; k < y_ev.subDim(); ++k ) {
     y_ev[k] += ( scalar * Scalar(data[2*k],data[2*k+1]) );

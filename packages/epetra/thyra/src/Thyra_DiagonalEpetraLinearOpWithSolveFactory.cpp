@@ -29,7 +29,7 @@
 #ifndef __sun
 
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
-#include "Thyra_DiagonalLinearOpWithSolve.hpp"
+#include "Thyra_DefaultDiagonalLinearOpWithSolve.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -60,7 +60,7 @@ bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
 Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
 DiagonalEpetraLinearOpWithSolveFactory::createOp() const
 {
-  return Teuchos::rcp(new DiagonalLinearOpWithSolve<double>());
+  return Teuchos::rcp(new DefaultDiagonalLinearOpWithSolve<double>());
 }
 
 void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
@@ -88,7 +88,10 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   Teuchos::set_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
     fwdOp, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp", &diag
     );
-  Teuchos::dyn_cast< DiagonalLinearOpWithSolve<double> >(*Op).initialize(diag);
+  Teuchos::dyn_cast< DefaultDiagonalLinearOpWithSolve<double> >(*Op).initialize(
+    Teuchos::rcp_implicit_cast<const VectorBase<double> >(diag)
+    );
+  // Above cast is questionable but should be okay based on use.
 }
 
 void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
@@ -101,8 +104,8 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
 {
   using Teuchos::get_extra_data;
   TEST_FOR_EXCEPT(Op==NULL);
-  DiagonalLinearOpWithSolve<double> &diagOp = Teuchos::dyn_cast<DiagonalLinearOpWithSolve<double> >(*Op);
-  Teuchos::RefCountPtr< const VectorBase<double> > diag = diagOp.diag();
+  DefaultDiagonalLinearOpWithSolve<double> &diagOp = Teuchos::dyn_cast<DefaultDiagonalLinearOpWithSolve<double> >(*Op);
+  Teuchos::RefCountPtr< const VectorBase<double> > diag = diagOp.getDiag();
   if( fwdOp ) {
     if(diag.get()) {
       *fwdOp =

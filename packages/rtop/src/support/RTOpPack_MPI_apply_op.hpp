@@ -241,9 +241,9 @@ void RTOpPack::MPI_apply_op(
   ,const RTOpT<Scalar>                          &op
   ,const int                                    root_rank
   ,const int                                    num_vecs
-  ,const RTOpPack::SubVectorT<Scalar>           sub_vecs[]
+  ,const RTOpPack::ConstSubVectorView<Scalar>           sub_vecs[]
   ,const int                                    num_targ_vecs
-  ,const RTOpPack::MutableSubVectorT<Scalar>    targ_sub_vecs[]
+  ,const RTOpPack::SubVectorView<Scalar>    targ_sub_vecs[]
   ,ReductTarget                                 *reduct_obj
   )
 {
@@ -262,29 +262,29 @@ void RTOpPack::MPI_apply_op(
   ,const int                                         root_rank
   ,const int                                         num_cols
   ,const int                                         num_multi_vecs
-  ,const RTOpPack::SubMultiVectorT<Scalar>           sub_multi_vecs[]
+  ,const RTOpPack::ConstSubMultiVectorView<Scalar>           sub_multi_vecs[]
   ,const int                                         num_targ_multi_vecs
-  ,const RTOpPack::MutableSubMultiVectorT<Scalar>    targ_sub_multi_vecs[]
+  ,const RTOpPack::SubMultiVectorView<Scalar>    targ_sub_multi_vecs[]
   ,RTOpPack::ReductTarget*                           reduct_objs[]
   )
 {
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   int k, j, off;
-  Workspace<SubVectorT<Scalar> > c_sub_vecs(wss,num_multi_vecs*num_cols);
+  Workspace<ConstSubVectorView<Scalar> > c_sub_vecs(wss,num_multi_vecs*num_cols);
   if(sub_multi_vecs) {
     for( off = 0, j = 0; j < num_cols; ++j ) {
       for( k = 0; k < num_multi_vecs; ++k ) {
-        const SubMultiVectorT<Scalar> &mv = sub_multi_vecs[k];
+        const ConstSubMultiVectorView<Scalar> &mv = sub_multi_vecs[k];
         c_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(0,j),1);
       }
     }
   }
-  Workspace<MutableSubVectorT<Scalar> > c_targ_sub_vecs(wss,num_targ_multi_vecs*num_cols);
+  Workspace<SubVectorView<Scalar> > c_targ_sub_vecs(wss,num_targ_multi_vecs*num_cols);
   if(targ_sub_multi_vecs) {
     for( off = 0, j = 0; j < num_cols; ++j ) {
       for( k = 0; k < num_targ_multi_vecs; ++k ) {
-        const MutableSubMultiVectorT<Scalar> &mv = targ_sub_multi_vecs[k];
+        const SubMultiVectorView<Scalar> &mv = targ_sub_multi_vecs[k];
         c_targ_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(0,j),1);
       }
     }
@@ -439,9 +439,9 @@ void RTOpPack::MPI_apply_op(
   ,const int                                root_rank
   ,const int                                num_cols
   ,const int                                num_vecs
-  ,const SubVectorT<Scalar>                 sub_vecs[]
+  ,const ConstSubVectorView<Scalar>                 sub_vecs[]
   ,const int                                num_targ_vecs
-  ,const MutableSubVectorT<Scalar>          sub_targ_vecs[]
+  ,const SubVectorView<Scalar>          sub_targ_vecs[]
   ,ReductTarget*                            reduct_objs[]
   )
 {

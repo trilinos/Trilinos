@@ -152,7 +152,7 @@ namespace Thyra {
  
  * In the above example, the functions <tt>adjoint()</tt> and <tt>scale()</tt>
  * create an implicitly scaled and adjoint operator of type
- * <tt>ScaledAdjointLinearOp</tt> which is then unwrapped by the
+ * <tt>DefaultScaledAdjointLinearOp</tt> which is then unwrapped by the
  * <tt>opFactory</tt> implementation.  The idea is that any operation that
  * works with a particular forward operator <tt>A</tt> should automatically
  * work with an implicitly scaled and/or adjoint view of that forward

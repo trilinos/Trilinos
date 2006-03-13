@@ -91,16 +91,16 @@ class IncompatibleVecs : public std::logic_error
  * have been warned!
  */
 template<class Scalar>
-class SubVectorT {
+class ConstSubVectorView {
 public:
   /** \brief . */
-  SubVectorT() : globalOffset_(0), subDim_(0), values_(NULL), stride_(0) {}
+  ConstSubVectorView() : globalOffset_(0), subDim_(0), values_(NULL), stride_(0) {}
   /** \brief . */
-  SubVectorT(Teuchos_Index globalOffset, Teuchos_Index subDim, const Scalar *values, ptrdiff_t stride)
+  ConstSubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim, const Scalar *values, ptrdiff_t stride)
     :globalOffset_(globalOffset), subDim_(subDim), values_(values), stride_(stride) 
     {}
   /** \brief . */
-  SubVectorT( const SubVectorT<Scalar>& sv )
+  ConstSubVectorView( const ConstSubVectorView<Scalar>& sv )
     :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()), values_(sv.values()), stride_(sv.stride()) 
     {}
   /** \brief . */
@@ -141,8 +141,8 @@ private:
 
 /** \brief Class for a mutable sub-vector.
  *
- * This class derives from <tt>SubVectorT</tt> and adds methods to
- * mutate the data.  Note, a <tt>const MutableSubVectorT</tt> object
+ * This class derives from <tt>ConstSubVectorView</tt> and adds methods to
+ * mutate the data.  Note, a <tt>const SubVectorView</tt> object
  * allows clients to change the values in the underlying subvector.
  * The meaning of <tt>const</tt> in this context is that the
  * view of the data can not change.
@@ -152,28 +152,28 @@ private:
  * have been warned!
  */
 template<class Scalar>
-class MutableSubVectorT : public SubVectorT<Scalar> {
+class SubVectorView : public ConstSubVectorView<Scalar> {
 public:
   /** \brief . */
-  MutableSubVectorT() {}
+  SubVectorView() {}
   /** \brief . */
-  MutableSubVectorT(Teuchos_Index globalOffset, Teuchos_Index subDim, Scalar *values, ptrdiff_t stride)
-    :SubVectorT<Scalar>(globalOffset, subDim, values, stride)
+  SubVectorView(Teuchos_Index globalOffset, Teuchos_Index subDim, Scalar *values, ptrdiff_t stride)
+    :ConstSubVectorView<Scalar>(globalOffset, subDim, values, stride)
     {}
   /** \brief . */
-  MutableSubVectorT( const MutableSubVectorT<Scalar> & sv)
-    :SubVectorT<Scalar>(sv)
+  SubVectorView( const SubVectorView<Scalar> & sv)
+    :ConstSubVectorView<Scalar>(sv)
     {}
   /** \brief . */
   void initialize(Teuchos_Index globalOffset, Teuchos_Index subDim, Scalar *values, ptrdiff_t stride)
-    { SubVectorT<Scalar>::initialize(globalOffset, subDim, values, stride); }
+    { ConstSubVectorView<Scalar>::initialize(globalOffset, subDim, values, stride); }
   /** \brief . */
   void set_uninitialized()
-    { SubVectorT<Scalar>::set_uninitialized(); }
+    { ConstSubVectorView<Scalar>::set_uninitialized(); }
   /** \brief . */
-  Scalar* values() const { return const_cast<Scalar*>(SubVectorT<Scalar>::values());  }
+  Scalar* values() const { return const_cast<Scalar*>(ConstSubVectorView<Scalar>::values());  }
   /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
-  Scalar& operator[](Teuchos_Index i) const { return const_cast<Scalar&>(SubVectorT<Scalar>::operator[](i)); } // Is range changed in subclass!
+  Scalar& operator[](Teuchos_Index i) const { return const_cast<Scalar&>(ConstSubVectorView<Scalar>::operator[](i)); } // Is range changed in subclass!
   /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0 <= i < subDim())</tt>)
   Scalar& operator()(Teuchos_Index i) const { return (*this)[i]; }
 };
@@ -283,7 +283,7 @@ public:
     ,indicesStride_(0),localOffset_(0),isSorted_(0)
     {}
   /** \brief . */
-  SparseSubVectorT( const SubVectorT<Scalar>& sv )
+  SparseSubVectorT( const ConstSubVectorView<Scalar>& sv )
     :globalOffset_(sv.globalOffset()), subDim_(sv.subDim()), subNz_(sv.subDim()), values_(sv.values())
     ,valuesStride_(sv.stride()), indices_(NULL),indicesStride_(0),localOffset_(0),isSorted_(0)
     {}
@@ -351,7 +351,7 @@ private:
 };
 
 template<class Scalar>
-void assign_entries( const MutableSubVectorT<Scalar> *msv, const SubVectorT<Scalar> &sv )
+void assign_entries( const SubVectorView<Scalar> *msv, const ConstSubVectorView<Scalar> &sv )
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(msv==NULL);
@@ -387,15 +387,15 @@ void assign_entries( const MutableSubVectorT<Scalar> *msv, const SubVectorT<Scal
  * have been warned!
  */
 template<class Scalar>
-class SubMultiVectorT {
+class ConstSubMultiVectorView {
 public:
   /** \brief . */
-  SubMultiVectorT()
+  ConstSubMultiVectorView()
     :globalOffset_(0), subDim_(0), colOffset_(0), numSubCols_(0)
     ,values_(NULL), leadingDim_(0)
     {}
   /** \brief . */
-  SubMultiVectorT(
+  ConstSubMultiVectorView(
     Teuchos_Index globalOffset, Teuchos_Index subDim
     ,Teuchos_Index colOffset, Teuchos_Index numSubCols
     ,const Scalar *values, Teuchos_Index leadingDim
@@ -405,7 +405,7 @@ public:
     ,values_(values), leadingDim_(leadingDim)
     {}
   /** \brief . */
-  SubMultiVectorT( const SubMultiVectorT<Scalar>& smv )
+  ConstSubMultiVectorView( const ConstSubMultiVectorView<Scalar>& smv )
     :globalOffset_(smv.globalOffset()), subDim_(smv.subDim())
     ,colOffset_(smv.colOffset()), numSubCols_(smv.numSubCols())
     ,values_(smv.values()), leadingDim_(smv.leadingDim())
@@ -450,8 +450,8 @@ public:
 #endif
       return values_[ i + leadingDim_*j ];
     }
-  /// Return a <tt>SubVectorT</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && (0<=j<numSubCols()</tt>)
-  SubVectorT<Scalar> col( const Teuchos_Index j ) const
+  /// Return a <tt>ConstSubVectorView</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && (0<=j<numSubCols()</tt>)
+  ConstSubVectorView<Scalar> col( const Teuchos_Index j ) const
     {
 #ifdef _DEBUG
       TEST_FOR_EXCEPTION(
@@ -459,7 +459,7 @@ public:
         ,"Error, index j="<<j<<" does not fall in the range [0,"<<(numSubCols_-1)<<"]!"
         );
 #endif
-      return SubVectorT<Scalar>(globalOffset(),subDim(),values()+j*leadingDim(),1);
+      return ConstSubVectorView<Scalar>(globalOffset(),subDim(),values()+j*leadingDim(),1);
     }
 private:
   Teuchos_Index     globalOffset_;
@@ -472,8 +472,8 @@ private:
 
 /** \brief Class for a mutable sub-vector.
  *
- * This class derives from <tt>SubVectorT</tt> and adds methods to
- * mutate the data.  Note, a <tt>const MutableSubVectorT</tt> object
+ * This class derives from <tt>ConstSubVectorView</tt> and adds methods to
+ * mutate the data.  Note, a <tt>const SubVectorView</tt> object
  * allows clients to change the values in the underlying subvector.
  * The meaning of <tt>const</tt> in this context is that the
  * view of the data can not change.
@@ -483,21 +483,21 @@ private:
  * have been warned!
  */
 template<class Scalar>
-class MutableSubMultiVectorT : public SubMultiVectorT<Scalar> {
+class SubMultiVectorView : public ConstSubMultiVectorView<Scalar> {
 public:
   /** \brief . */
-  MutableSubMultiVectorT() {}
+  SubMultiVectorView() {}
   /** \brief . */
-  MutableSubMultiVectorT(
+  SubMultiVectorView(
     Teuchos_Index globalOffset, Teuchos_Index subDim
     ,Teuchos_Index colOffset, Teuchos_Index numSubCols
     ,const Scalar *values, Teuchos_Index leadingDim
     )
-    :SubMultiVectorT<Scalar>(globalOffset,subDim,colOffset,numSubCols,values,leadingDim)
+    :ConstSubMultiVectorView<Scalar>(globalOffset,subDim,colOffset,numSubCols,values,leadingDim)
     {}
   /** \brief . */
-  MutableSubMultiVectorT( const MutableSubMultiVectorT<Scalar> & smv)
-    :SubMultiVectorT<Scalar>(smv)
+  SubMultiVectorView( const SubMultiVectorView<Scalar> & smv)
+    :ConstSubMultiVectorView<Scalar>(smv)
     {}
   /** \brief . */
   void initialize(
@@ -505,17 +505,17 @@ public:
     ,Teuchos_Index colOffset, Teuchos_Index numSubCols
     ,const Scalar *values, Teuchos_Index leadingDim
     )
-    { SubMultiVectorT<Scalar>::initialize(globalOffset,subDim,colOffset,numSubCols,values,leadingDim); }
+    { ConstSubMultiVectorView<Scalar>::initialize(globalOffset,subDim,colOffset,numSubCols,values,leadingDim); }
   /** \brief . */
   void set_uninitialized()
-    { SubMultiVectorT<Scalar>::set_uninitialized(); }
+    { ConstSubMultiVectorView<Scalar>::set_uninitialized(); }
   /** \brief . */
-  Scalar* values() const { return const_cast<Scalar*>(SubMultiVectorT<Scalar>::values());  }
+  Scalar* values() const { return const_cast<Scalar*>(ConstSubMultiVectorView<Scalar>::values());  }
   /// Zero-based indexing (Preconditions: <tt>values()!=NULL && (0<=i< subDim()) && (0<=j<numSubCols()</tt>)
   Scalar& operator()(Teuchos_Index i, Teuchos_Index j) const
-    { return const_cast<Scalar&>(SubMultiVectorT<Scalar>::operator()(i,j)); } // Is range checked in subclass
-  /// Return a <tt>MutableSubVectorT</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && && (0<=j<numSubCols()</tt>)
-  MutableSubVectorT<Scalar> col( const Teuchos_Index j ) const
+    { return const_cast<Scalar&>(ConstSubMultiVectorView<Scalar>::operator()(i,j)); } // Is range checked in subclass
+  /// Return a <tt>SubVectorView</tt> view of the jth sub-column (Preconditions: <tt>values()!=NULL && && (0<=j<numSubCols()</tt>)
+  SubVectorView<Scalar> col( const Teuchos_Index j ) const
     {
 #ifdef _DEBUG
       TEST_FOR_EXCEPTION(
@@ -523,12 +523,12 @@ public:
         ,"Error, index j="<<j<<" does not fall in the range [0,"<<(this->numSubCols()-1)<<"]!"
         );
 #endif
-      return MutableSubVectorT<Scalar>(this->globalOffset(),this->subDim(),values()+j*this->leadingDim(),1);
+      return SubVectorView<Scalar>(this->globalOffset(),this->subDim(),values()+j*this->leadingDim(),1);
     }
 };
 
 template<class Scalar>
-void assign_entries( const MutableSubMultiVectorT<Scalar> *msmv, const SubMultiVectorT<Scalar> &smv )
+void assign_entries( const SubMultiVectorView<Scalar> *msmv, const ConstSubMultiVectorView<Scalar> &smv )
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(msmv==NULL);

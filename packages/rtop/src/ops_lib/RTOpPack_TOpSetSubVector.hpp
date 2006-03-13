@@ -82,8 +82,8 @@ public:
   bool coord_invariant() const;
   /** \brief . */
   void apply_op(
-    const int   num_vecs,       const SubVectorT<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const MutableSubVectorT<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
     ,ReductTarget *reduct_obj
     ) const;
 
@@ -247,8 +247,8 @@ bool TOpSetSubVector<Scalar>::coord_invariant() const
 
 template<class Scalar>
 void TOpSetSubVector<Scalar>::apply_op(
-  const int   num_vecs,       const SubVectorT<Scalar>         sub_vecs[]
-  ,const int  num_targ_vecs,  const MutableSubVectorT<Scalar>  targ_sub_vecs[]
+  const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
+  ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
   ,ReductTarget *reduct_obj
   ) const
 {

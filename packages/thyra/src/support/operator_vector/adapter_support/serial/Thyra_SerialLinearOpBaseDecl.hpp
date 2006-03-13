@@ -54,8 +54,8 @@ namespace Thyra {
  * This function is called on the subclass implementation passing in
  * views of explicit data.  The raw pointers to the input and
  * input/output arrays are passed in simple templated classes
- * <tt>RTOpPack::SubVectorT</tt> and
- * <tt>RTOpPack::MutableSubVectorT</tt>.  Getting raw pointers out of
+ * <tt>RTOpPack::ConstSubVectorView</tt> and
+ * <tt>RTOpPack::SubVectorView</tt>.  Getting raw pointers out of
  * these objects is easy.
  *
  * It is very easy to create concrete subclasses of
@@ -76,8 +76,8 @@ protected:
   // Override of the version of euclideanApply() that takes explicit vector data
   void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::SubVectorT<Scalar>          &x_in
-    ,const RTOpPack::MutableSubVectorT<Scalar>   *y_out
+    ,const RTOpPack::ConstSubVectorView<Scalar>          &x_in
+    ,const RTOpPack::SubVectorView<Scalar>   *y_out
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const
@@ -116,8 +116,8 @@ protected:
   // Override of the version of euclideanApply() that takes explicit vector data
   void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::SubVectorT<double>          &x_in
-    ,const RTOpPack::MutableSubVectorT<double>   *y_out
+    ,const RTOpPack::ConstSubVectorView<double>          &x_in
+    ,const RTOpPack::SubVectorView<double>   *y_out
     ,const double                                alpha
     ,const double                                beta
     ) const
@@ -229,7 +229,7 @@ protected:
     ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >     &domain
     );
 
-  /** \brief Initialize vector spaces given dimensions (uses <tt>SerialVectorSpaceStd</tt>).
+  /** \brief Initialize vector spaces given dimensions (uses <tt>DefaultSerialVectorSpace</tt>).
    *
    * @param  dimRange   [in] The dimension of the serial range space
    * @param  dimDomain  [in] The dimension of the serial domain space
@@ -242,8 +242,8 @@ protected:
    * <b>Postconditions:</b><ul>
    * <li><tt>this->range()->dim()  == dimRange</tt>
    * <li><tt>this->domain()->dim() == dimDomain</tt>
-   * <li><tt>dynamic_cast<const SerialVectorSpaceStd<Scalar>*>(this->range().get())  != NULL</tt>
-   * <li><tt>dynamic_cast<const SerialVectorSpaceStd<Scalar>*>(this->domain().get()) != NULL</tt>
+   * <li><tt>dynamic_cast<const DefaultSerialVectorSpace<Scalar>*>(this->range().get())  != NULL</tt>
+   * <li><tt>dynamic_cast<const DefaultSerialVectorSpace<Scalar>*>(this->domain().get()) != NULL</tt>
    * </ul>
    */
   virtual void setDimensions(
@@ -270,8 +270,8 @@ protected:
    */
   virtual void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::SubVectorT<Scalar>          &x
-    ,const RTOpPack::MutableSubVectorT<Scalar>   *y
+    ,const RTOpPack::ConstSubVectorView<Scalar>          &x
+    ,const RTOpPack::SubVectorView<Scalar>   *y
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const = 0;
@@ -298,8 +298,8 @@ protected:
    */
   virtual void euclideanApply(
     const ETransp                                     M_trans
-    ,const RTOpPack::SubMultiVectorT<Scalar>          &X
-    ,const RTOpPack::MutableSubMultiVectorT<Scalar>   *Y
+    ,const RTOpPack::ConstSubMultiVectorView<Scalar>          &X
+    ,const RTOpPack::SubMultiVectorView<Scalar>   *Y
     ,const Scalar                                     alpha
     ,const Scalar                                     beta
     ) const;

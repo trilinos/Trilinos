@@ -38,7 +38,7 @@
 #include "AnasaziOperatorTraits.hpp"
 #include "AnasaziConfigDefs.hpp"
 
-#include <Thyra_ExplicitMultiVectorView.hpp>
+#include <Thyra_DetachedMultiVectorView.hpp>
 #include <Thyra_MultiVectorBaseDecl.hpp>
 
 namespace Anasazi {
@@ -218,7 +218,7 @@ namespace Anasazi {
       Teuchos::RefCountPtr< const TMVB >
         B_thyra = Thyra::createMembersView(
           A.domain()
-          ,RTOpPack::SubMultiVectorT<ScalarType>(0,m,0,n,&B(0,0),B.stride())
+          ,RTOpPack::ConstSubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
           );
       // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
       A.apply(Thyra::NONCONJ_ELE,*B_thyra,&mv,alpha,beta);
@@ -252,7 +252,7 @@ namespace Anasazi {
       Teuchos::RefCountPtr< TMVB >
         B_thyra = Thyra::createMembersView(
           A.domain()
-          ,RTOpPack::MutableSubMultiVectorT<ScalarType>(0,m,0,n,&B(0,0),B.stride())
+          ,RTOpPack::SubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
           );
       A.applyTranspose(Thyra::CONJ_ELE,mv,&*B_thyra,alpha,Teuchos::ScalarTraits<ScalarType>::zero());
     }

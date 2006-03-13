@@ -58,8 +58,8 @@ template<class Scalar> class MPIVectorSpaceBase;
  * This function is called on the subclass implementation passing in
  * views of explicit data.  The raw pointers to the local input and
  * input/output arrays are passed in simple templated classes
- * <tt>RTOpPack::SubVectorT</tt> and
- * <tt>RTOpPack::MutableSubVectorT</tt>.  Getting raw pointers out of
+ * <tt>RTOpPack::ConstSubVectorView</tt> and
+ * <tt>RTOpPack::SubVectorView</tt>.  Getting raw pointers out of
  * these objects is easy.
  *
  * It is very easy to create concrete subclasses of
@@ -80,8 +80,8 @@ protected:
   // Override the version of euclideanApply() that takes explicit data
   void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::SubVectorT<Scalar>          &local_x_in
-    ,const RTOpPack::MutableSubVectorT<Scalar>   *local_y_out
+    ,const RTOpPack::ConstSubVectorView<Scalar>          &local_x_in
+    ,const RTOpPack::SubVectorView<Scalar>   *local_y_out
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const
@@ -125,8 +125,8 @@ protected:
   // Override the version of euclideanApply() that takes explicit data
   void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::SubVectorT<double>          &local_x_in
-    ,const RTOpPack::MutableSubVectorT<double>   *local_y_out
+    ,const RTOpPack::ConstSubVectorView<double>          &local_x_in
+    ,const RTOpPack::SubVectorView<double>   *local_y_out
     ,const double                                alpha
     ,const double                                beta
     ) const
@@ -237,7 +237,7 @@ protected:
     ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >     &domain
     );
 
-  /** \brief Initialize vector spaces given local dimensions (uses <tt>MPIVectorSpaceStd</tt>).
+  /** \brief Initialize vector spaces given local dimensions (uses <tt>DefaultMPIVectorSpace</tt>).
    *
    * @param  mpiComm         [in] MPI Communicator
    * @param  localDimRange   [in] The local number of vector elements in the domain space.
@@ -251,8 +251,8 @@ protected:
    * Postcondition:<ul>
    * <li><tt>dynamic_cast<MPIVectorSpace<Scalar>&>(*this->range()).localSubDim() == localDimRange</tt>
    * <li><tt>dynamic_cast<MPIVectorSpace<Scalar>&>(*this->domain()).localSubDim() == localDimDomain</tt>
-   * <li><tt>dynamic_cast<const MPIVectorSpaceStd<Scalar>*>(this->range().get())  != NULL</tt>
-   * <li><tt>dynamic_cast<const MPIVectorSpaceStd<Scalar>*>(this->domain().get()) != NULL</tt>
+   * <li><tt>dynamic_cast<const DefaultMPIVectorSpace<Scalar>*>(this->range().get())  != NULL</tt>
+   * <li><tt>dynamic_cast<const DefaultMPIVectorSpace<Scalar>*>(this->domain().get()) != NULL</tt>
    * </ul>
    */
   virtual void setLocalDimensions(
@@ -280,8 +280,8 @@ protected:
    */
   virtual void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::SubVectorT<Scalar>          &local_x
-    ,const RTOpPack::MutableSubVectorT<Scalar>   *local_y
+    ,const RTOpPack::ConstSubVectorView<Scalar>          &local_x
+    ,const RTOpPack::SubVectorView<Scalar>   *local_y
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const = 0;
@@ -308,8 +308,8 @@ protected:
    */
   virtual void euclideanApply(
     const ETransp                                     M_trans
-    ,const RTOpPack::SubMultiVectorT<Scalar>          &local_X
-    ,const RTOpPack::MutableSubMultiVectorT<Scalar>   *local_Y
+    ,const RTOpPack::ConstSubMultiVectorView<Scalar>          &local_X
+    ,const RTOpPack::SubMultiVectorView<Scalar>   *local_Y
     ,const Scalar                                     alpha
     ,const Scalar                                     beta
     ) const;

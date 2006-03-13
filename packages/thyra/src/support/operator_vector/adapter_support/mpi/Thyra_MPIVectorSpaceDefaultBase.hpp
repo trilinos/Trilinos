@@ -31,7 +31,7 @@
 
 #include "Thyra_MPIVectorSpaceDefaultBaseDecl.hpp"
 #include "Thyra_ScalarProdVectorSpaceBase.hpp"
-#include "Thyra_MPIVectorSpaceFactoryStd.hpp"
+#include "Thyra_DefaultMPIVectorSpaceFactory.hpp"
 #ifdef RTOp_USE_MPI
 #  include "Teuchos_RawMPITraits.hpp"
 #endif
@@ -41,7 +41,7 @@ namespace Thyra {
 /** \brief . */
 template<class Scalar>
 MPIVectorSpaceDefaultBase<Scalar>::MPIVectorSpaceDefaultBase()
-  :mapCode_(-1),isInCore_(false),defaultLocalOffset_(-1),defaultGlobalDim_(-1)
+  :mapCode_(-1),defaultLocalOffset_(-1),defaultGlobalDim_(-1),localSubDim_(-1)
 {}
 
 // Virtual methods with default implementations
@@ -67,12 +67,6 @@ Index MPIVectorSpaceDefaultBase<Scalar>::dim() const
 }
 
 template<class Scalar>
-bool MPIVectorSpaceDefaultBase<Scalar>::isInCore() const
-{
-  return isInCore_;
-}
-
-template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >
 MPIVectorSpaceDefaultBase<Scalar>::smallVecSpcFcty() const
 {
@@ -82,7 +76,7 @@ MPIVectorSpaceDefaultBase<Scalar>::smallVecSpcFcty() const
 template<class Scalar>
 bool MPIVectorSpaceDefaultBase<Scalar>::isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const
 {
-  if( isInCore() && vecSpc.isInCore() )
+  if( this->hasInCoreView() && vecSpc.hasInCoreView() )
     return this->dim() == vecSpc.dim();
   const MPIVectorSpaceDefaultBase<Scalar>
     *mpiVecSpc = dynamic_cast<const MPIVectorSpaceDefaultBase<Scalar>*>(&vecSpc);
@@ -96,9 +90,9 @@ bool MPIVectorSpaceDefaultBase<Scalar>::isCompatible( const VectorSpaceBase<Scal
 template<class Scalar>
 void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
 {
-  const Index localSubDim = this->localSubDim(); 
+  localSubDim_ = this->localSubDim(); 
   const MPI_Comm mpiComm  = MPI_COMM_NULL;
-  if( localSubDim >= 0 ) {
+  if( localSubDim_ >= 0 ) {
 #ifdef RTOp_USE_MPI
     typedef Teuchos::RawMPITraits<Index> IRMT;
     MPI_Comm mpiComm = this->mpiComm();
@@ -108,7 +102,7 @@ void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
       MPI_Comm_size( mpiComm, &numProc );
       MPI_Comm_rank( mpiComm, &procRank );
     }
-    if( numProc > 1 && (localSubDim < globalDim || globalDim < 0) ) {
+    if( numProc > 1 && (localSubDim_ < globalDim || globalDim < 0) ) {
       //
       // Here we will make a map code out of just the local
       // sub-dimension on each processor.  If each processor
@@ -118,7 +112,7 @@ void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
       // coordinate invariant.  I will work on this issue
       // if it becomes a problem.
       //
-      Index localCode = localSubDim % (procRank+1) + localSubDim;
+      Index localCode = localSubDim_ % (procRank+1) + localSubDim_;
       MPI_Allreduce(
         &localCode                              // sendbuf
         ,&mapCode_                              // recvbuf
@@ -128,7 +122,7 @@ void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
         ,mpiComm                                // comm
         );
       // Set the default localOffset automatically
-      Index localOffset = localSubDim;
+      Index localOffset = localSubDim_;
       MPI_Scan(
         &localOffset                            // sendbuf
         ,&defaultLocalOffset_                   // recvbuf
@@ -137,15 +131,14 @@ void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
         ,IRMT::sumOp()                          // op
         ,mpiComm                                // comm
         );
-      defaultLocalOffset_ -= localSubDim;
+      defaultLocalOffset_ -= localSubDim_;
       //int procRank; MPI_Comm_rank( mpiComm, &procRank );
       //std::cout << "\nMPIVectorSpaceBase<Scalar>::updateState(): procRank = " << procRank << ", defaultLocalOffset = " << defaultLocalOffset_ << std::endl;
       // 
-      isInCore_ = false;  // This is not an inCore vector
       // Determine the global dimension
       if( globalDim < 0 ) {
         MPI_Allreduce(
-          (void*)&localSubDim                     // sendbuf
+          (void*)&localSubDim_                    // sendbuf
           ,&defaultGlobalDim_                     // recvbuf
           ,IRMT::adjustCount(1)                   // count
           ,IRMT::type()                           // datatype
@@ -162,21 +155,19 @@ void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
 #endif // RTOp_USE_MPI
       // This is a serial or a locally-replicated parallel
       // vector space.
-      mapCode_ = localSubDim;
-      isInCore_ = true;
+      mapCode_ = localSubDim_;
       defaultLocalOffset_ = 0;
-      defaultGlobalDim_ = localSubDim;
+      defaultGlobalDim_ = localSubDim_;
 #ifdef RTOp_USE_MPI
     }
 #endif
   }
   else {
     mapCode_  = -1;     // Uninitialized!
-    isInCore_ = false;
     defaultLocalOffset_ = -1;
     defaultGlobalDim_ = -1;
   }
-  smallVecSpcFcty_ = Teuchos::rcp(new MPIVectorSpaceFactoryStd<Scalar>(mpiComm));
+  smallVecSpcFcty_ = Teuchos::rcp(new DefaultMPIVectorSpaceFactory<Scalar>(mpiComm));
 }
   
 } // end namespace Thyra

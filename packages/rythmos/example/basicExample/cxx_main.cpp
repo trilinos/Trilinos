@@ -51,7 +51,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_LinearNonlinearSolver.hpp"
-#include "Thyra_NewtonNonlinearSolver.hpp"
+#include "Thyra_TimeStepNewtonNonlinearSolver.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_TestingTools.hpp"
 
@@ -172,8 +172,8 @@ int main(int argc, char *argv[])
       Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
 //    nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
-      Teuchos::RefCountPtr<Thyra::NewtonNonlinearSolver<double> >
-        _nonlinearSolver = Teuchos::rcp(new Thyra::NewtonNonlinearSolver<double>());
+      Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
+        _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
       _nonlinearSolver->defaultTol(1e-3*maxError);
       nonlinearSolver = _nonlinearSolver;
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));

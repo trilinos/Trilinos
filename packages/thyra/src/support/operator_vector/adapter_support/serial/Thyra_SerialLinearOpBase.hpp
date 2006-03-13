@@ -31,9 +31,9 @@
 
 #include "Thyra_SerialLinearOpBaseDecl.hpp"
 #include "Thyra_EuclideanLinearOpBase.hpp"
-#include "Thyra_SerialVectorSpaceStd.hpp"
-#include "Thyra_ExplicitVectorView.hpp"
-#include "Thyra_ExplicitMultiVectorView.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 
 namespace Thyra {
 
@@ -65,8 +65,8 @@ void SerialLinearOpBase<Scalar>::euclideanApply(
 #ifdef _DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("SerialLinearOpBase<Scalar>::apply()",*this,M_trans,X,Y);
 #endif
-  const ExplicitMultiVectorView<Scalar>         X_ev(X);
-  const ExplicitMutableMultiVectorView<Scalar>  Y_ev(*Y);
+  const ConstDetachedMultiVectorView<Scalar>         X_ev(X);
+  const DetachedMultiVectorView<Scalar>  Y_ev(*Y);
   this->euclideanApply(M_trans,X_ev.smv(),&Y_ev.smv(),alpha,beta);
 }
 
@@ -103,8 +103,8 @@ void SerialLinearOpBase<Scalar>::setDimensions(
   TEST_FOR_EXCEPT( dimRange <= 0 );
   TEST_FOR_EXCEPT( dimDomain <= 0 );
 #endif
-  range_  = Teuchos::rcp(new SerialVectorSpaceStd<Scalar>(dimRange));
-  domain_ = Teuchos::rcp(new SerialVectorSpaceStd<Scalar>(dimDomain));
+  range_  = Teuchos::rcp(new DefaultSerialVectorSpace<Scalar>(dimRange));
+  domain_ = Teuchos::rcp(new DefaultSerialVectorSpace<Scalar>(dimDomain));
 }
 
 // Virtual functions to be overridden by subclasses
@@ -112,15 +112,15 @@ void SerialLinearOpBase<Scalar>::setDimensions(
 template<class Scalar>
 void SerialLinearOpBase<Scalar>::euclideanApply(
   const ETransp                                     M_trans
-  ,const RTOpPack::SubMultiVectorT<Scalar>          &X
-  ,const RTOpPack::MutableSubMultiVectorT<Scalar>   *Y
+  ,const RTOpPack::ConstSubMultiVectorView<Scalar>          &X
+  ,const RTOpPack::SubMultiVectorView<Scalar>   *Y
   ,const Scalar                                     alpha
   ,const Scalar                                     beta
   ) const
 {
   for(Index j = 0; j < X.numSubCols(); ++j ) {
-    const RTOpPack::SubVectorT<Scalar>         X_j = X.col(j);
-    const RTOpPack::MutableSubVectorT<Scalar>  Y_j = Y->col(j);
+    const RTOpPack::ConstSubVectorView<Scalar>         X_j = X.col(j);
+    const RTOpPack::SubVectorView<Scalar>  Y_j = Y->col(j);
     this->euclideanApply(M_trans,X_j,&Y_j,alpha,beta);
   }
 }

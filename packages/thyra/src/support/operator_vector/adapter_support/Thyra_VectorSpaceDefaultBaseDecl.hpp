@@ -86,7 +86,7 @@ protected:
   /** \brief .
    *
    * The default implementation returns <tt>dynamic_cast<
-   * MultiVectorCols<Scalar> >(return.get())!=NULL</tt>.
+   * DefaultColumnwiseMultiVector<Scalar> >(return.get())!=NULL</tt>.
    */
   Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
 
@@ -98,7 +98,7 @@ protected:
    * vector is destroyed is the data copied out of the vector and back into
    * the elements pointed to by <tt>raw_v.values()</tt>.
    */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > createMemberView( const RTOpPack::MutableSubVectorT<Scalar> &raw_v ) const;
+  Teuchos::RefCountPtr<VectorBase<Scalar> > createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const;
 
   /** \brief .
    *
@@ -107,7 +107,7 @@ protected:
    * element access functions to set the elements from
    * <tt>raw_v.values()</tt>.
    */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > createMemberView( const RTOpPack::SubVectorT<Scalar> &raw_v ) const;
+  Teuchos::RefCountPtr<const VectorBase<Scalar> > createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const;
 
   /** \brief .
    *
@@ -118,7 +118,7 @@ protected:
    * copied out of the multi-vector and back into the elements pointed to by
    * <tt>raw_mv.values()</tt>.
    */
-  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembersView( const RTOpPack::MutableSubMultiVectorT<Scalar> &raw_mv ) const;
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> > createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const;
 
   /** \brief .
    *
@@ -126,7 +126,7 @@ protected:
    * <tt>this->createMembers()</tt> to create a multi-vector then uses the
    * explicit element access functions to set the elements.
    */
-  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > createMembersView( const RTOpPack::SubMultiVectorT<Scalar> &raw_mv ) const;
+  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const;
 
   //@}
 

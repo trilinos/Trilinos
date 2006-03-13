@@ -117,7 +117,7 @@ public:
   /** \brief .
    *
    * This implementation is based on the vector operation
-   * <tt>VectorBase::getSubVector()</tt> called on the non-changeable vector
+   * <tt>VectorBase::acquireDetachedView()</tt> called on the non-changeable vector
    * objects returned from <tt>col()</tt>.  Note that the footprint of the
    * reduction object (both internal and external state) will be
    * O(<tt>rowRng.size()*colRng.size()</tt>).  For serial applications this is
@@ -126,25 +126,25 @@ public:
    * must be overridden if <tt>rowRng.size()</tt> is large at all.  Although,
    * this function should not even be used in cases where the multi-vector is
    * very large.  If a subclass does override this function, it must also
-   * override <tt>freeSubMultiVector()</tt> which has an implementation
+   * override <tt>releaseDetachedView()</tt> which has an implementation
    * which is a companion to this function's implementation.
    */
-  virtual void getSubMultiVector(
+  virtual void acquireDetachedView(
     const Range1D                       &rowRng
     ,const Range1D                      &colRng
-    ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+    ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
     ) const;
   /** \brief .
    *
    * This implementation is a companion to the implementation for
-   * <tt>getSubMultiVector()</tt>.  If <tt>getSubMultiVector()</tt> is
+   * <tt>acquireDetachedView()</tt>.  If <tt>acquireDetachedView()</tt> is
    * overridden by a subclass then this function must be overridden also!
    */
-  virtual void freeSubMultiVector( RTOpPack::SubMultiVectorT<Scalar>* sub_mv ) const;
+  virtual void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
   /** \brief .
    *
    * This implementation is based on the vector operation
-   * <tt>VectorBase::getSubVector()</tt> called on the changeable vector
+   * <tt>VectorBase::acquireDetachedView()</tt> called on the changeable vector
    * objects returned from <tt>col()</tt>.  Note that the footprint of the
    * reduction object (both internal and external state) will be
    * O(<tt>rowRng.size()*colRng.size()</tt>).  For serial applications this is
@@ -153,21 +153,21 @@ public:
    * must be overridden if <tt>rowRng.size()</tt> is large at all.  Although,
    * this function should not even be used in case where the multi-vector is
    * very large.  If a subclass does override this function, it must also
-   * override <tt>commitSubMultiVector()</tt> which has an implementation
+   * override <tt>commitDetachedView()</tt> which has an implementation
    * which is a companion to this function's implementation.
    */
-  virtual void getSubMultiVector(
+  virtual void acquireDetachedView(
     const Range1D                                &rowRng
     ,const Range1D                               &colRng
-    ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
     );
   /** \brief .
    *
    * This implementation is a companion to the default implementation for
-   * <tt>getSubMultiVector()</tt>.  If <tt>getSubMultiVector()</tt> is
+   * <tt>acquireDetachedView()</tt>.  If <tt>acquireDetachedView()</tt> is
    * overridden by a subclass then this function must be overridden also!
    */
-  virtual void commitSubMultiVector( RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv );
+  virtual void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
   /** \brief .
    *
    * This implementation uses the vector space to create a new multi-vector

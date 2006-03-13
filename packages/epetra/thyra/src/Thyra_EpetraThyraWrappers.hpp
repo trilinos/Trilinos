@@ -63,7 +63,7 @@ views of %Thyra objects.
  * </ul>
  *
  * This uses an <tt>Epetra_Map</tt> object to initialize a compatible
- * <tt>MPIVectorSpaceStd</tt> object.
+ * <tt>DefaultMPIVectorSpace</tt> object.
  *
  * The fact that this function only accepts an <tt>Epetra_Map</tt> object
  * means that only maps that have elements of size one can be used to define a

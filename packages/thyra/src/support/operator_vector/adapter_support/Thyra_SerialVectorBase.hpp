@@ -90,14 +90,14 @@ void SerialVectorBase<Scalar>::applyOp(
 }
 
 template<class Scalar>
-void SerialVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::SubVectorT<Scalar>* sub_vec ) const
+void SerialVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
 {
   const Index   this_dim = this->space()->dim(); // ToDo: Cache this!
   const Range1D rng      = Teuchos::full_range(rng_in,0,this_dim-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
     !( rng.ubound() < this_dim ), std::out_of_range
-    ,"SerialVectorBase<Scalar>::getSubVector(...) : Error, "
+    ,"SerialVectorBase<Scalar>::acquireDetachedView(...) : Error, "
     "rng = ["<<rng.lbound()<<","<<rng.ubound()<<"] "
     "is not in the range [0,this->dim()-1] = [0," << (this_dim-1) << "]!" );
 #endif
@@ -112,20 +112,20 @@ void SerialVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::Su
 }
 
 template<class Scalar>
-void SerialVectorBase<Scalar>::freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const
+void SerialVectorBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
 {
   sub_vec->set_uninitialized();  // Nothing to deallocate!
 }
 
 template<class Scalar>
-void SerialVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::MutableSubVectorT<Scalar>* sub_vec )
+void SerialVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec )
 {
   const Index   this_dim = this->space()->dim(); // ToDo: Cache this!
   const Range1D rng      = Teuchos::full_range(rng_in,0,this_dim-1);
 #ifdef _DEBUG
   TEST_FOR_EXCEPTION(
     !( rng.ubound() < this_dim ), std::out_of_range
-    ,"SerialVectorBase<Scalar>::getSubVector(...) : Error, "
+    ,"SerialVectorBase<Scalar>::acquireDetachedView(...) : Error, "
     "rng = ["<<rng.lbound()<<","<<rng.ubound()<<"] "
     "is not in the range [0,this->dim()-1] = [0," << (this_dim-1) << "]!" );
 #endif
@@ -140,7 +140,7 @@ void SerialVectorBase<Scalar>::getSubVector( const Range1D& rng_in, RTOpPack::Mu
 }
 
 template<class Scalar>
-void SerialVectorBase<Scalar>::commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec )
+void SerialVectorBase<Scalar>::commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec )
 {
   sub_vec->set_uninitialized();  // Nothing to deallocate!
 }

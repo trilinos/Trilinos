@@ -45,10 +45,10 @@ namespace Thyra {
  *
  * This base class contains an implementation of <tt>applyOp()</tt> that
  * relies on implementations of the methods (<tt>const</tt>)
- * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>, (non-<tt>const</tt>)
- * <tt>getSubVector()</tt> and <tt>commitSubVector()</tt> (which all have
+ * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt>, (non-<tt>const</tt>)
+ * <tt>acquireDetachedView()</tt> and <tt>commitDetachedView()</tt> (which all have
  * default implementations in this subclass).  In essence, this implementation
- * will only call the <tt>getSubVector()</tt> methods using a range of
+ * will only call the <tt>acquireDetachedView()</tt> methods using a range of
  * (global) indexes for elements that exist on the local processor.  As long
  * as the number of local elements on each processor is fairly large, the
  * virtual function call overhead will be minimal and this will result in a
@@ -71,11 +71,11 @@ namespace Thyra {
  * constructor or any other function that changes the state of the vector
  * space.
  *
- * If the <tt>getSubVector()</tt> methods are ever called with index ranges
+ * If the <tt>acquireDetachedView()</tt> methods are ever called with index ranges
  * outside of those of the local processor, then the default implementations
  * in <tt>VectorBase</tt> of all of the methods (<tt>const</tt>)
- * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt>, (non-<tt>const</tt>)
- * <tt>getSubVector()</tt> and <tt>commitSubVector()</tt> are called instead.
+ * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt>, (non-<tt>const</tt>)
+ * <tt>acquireDetachedView()</tt> and <tt>commitDetachedView()</tt> are called instead.
  * Alternatively, a subclass could provide more specialized implementations of
  * these methods (for more efficient gather/scatter operations) if desired but
  * this should not be needed for most use cases.
@@ -216,13 +216,13 @@ public:
   /// Returns <tt>this->mpiSpace()</tt>
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > space() const;
   /** \brief Implements the <tt>%applyOp()</tt> method through the
-   * methods <tt>getSubVector()</tt>, <tt>freeSubVector()</tt> and
-   * <tt>commitSubVector()</tt> as described above.
+   * methods <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and
+   * <tt>commitDetachedView()</tt> as described above.
    *
    * Note that if this method is entered again before a call has
    * been completed, then this is an indication that the methods
-   * <tt>getSubVector()</tt>, <tt>freeSubVector()</tt> and/or
-   * <tt>commitSubVector()</tt> have not been overridden properly
+   * <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and/or
+   * <tt>commitDetachedView()</tt> have not been overridden properly
    * and this method will then throw an exception.
    */
   void applyOp(
@@ -237,13 +237,13 @@ public:
     ,const Index                    global_offset
     ) const;
   /// Implemented through <tt>this->getLocalData()</tt>
-  void getSubVector( const Range1D& rng, RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
   /// Implemented through <tt>this->freeLocalData()</tt>
-  void freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const;
+  void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const;
   /// Implemented through <tt>this->getLocalData()</tt>
-  void getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec );
   /// Implemented through <tt>this->commitLocalData()</tt>
-  void commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec );
+  void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec );
 
   //@}
 

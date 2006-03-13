@@ -187,6 +187,20 @@ ETransp applyTransposeConjToTrans( EConj conj ) {
   return NOTRANS; // Will never be called!
 }
 
+/** \brief Determines if a view is a direct view of data or a detached copy of
+ * data.
+ */
+enum EViewType {
+  VIEW_TYPE_DIRECT   ///< The view is a direct view of data and no copies are made.
+  ,VIEW_TYPE_DETACHED  ///< The view is a detached copy of the data.
+};
+
+/** \brief Determine if data is unit stride or non-unit stride. */
+enum EStrideType {
+  STRIDE_TYPE_UNIT      ///< The stride between elements in an array is one.
+  ,STRIDE_TYPE_NONUNIT   ///< The stride between elements in an array is greater than or equal to one.
+};
+
 //@}
 
 namespace Exceptions {

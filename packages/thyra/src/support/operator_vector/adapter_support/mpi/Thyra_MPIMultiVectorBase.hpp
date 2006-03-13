@@ -33,7 +33,7 @@
 #include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_EuclideanLinearOpBase.hpp"
 #include "Thyra_MPIVectorSpaceDefaultBase.hpp"
-#include "Thyra_ExplicitMultiVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 #include "RTOpPack_MPI_apply_op.hpp"
 #include "RTOp_parallel_helpers.h"
 #include "Teuchos_Workspace.hpp"
@@ -106,7 +106,7 @@ void MPIMultiVectorBase<Scalar>::applyOp(
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
     ,"MPIMultiVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
-    "clear sign that one of the methods getSubMultiVector(...), freeSubMultiVector(...) or commitSubMultiVector(...) "
+    "clear sign that one of the methods acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...) "
     "was not implemented properly!"
     );
   apply_op_validate_input(
@@ -141,15 +141,15 @@ void MPIMultiVectorBase<Scalar>::applyOp(
       ,sec_sub_dim_in ? sec_first_ele_offset_in+sec_sub_dim_in-1 : numCols-1
       );
   // Create sub-vector views of all of the *participating* local data
-  Workspace<RTOpPack::SubMultiVectorT<Scalar> > sub_multi_vecs(wss,num_multi_vecs);
-  Workspace<RTOpPack::MutableSubMultiVectorT<Scalar> > targ_sub_multi_vecs(wss,num_targ_multi_vecs);
+  Workspace<RTOpPack::ConstSubMultiVectorView<Scalar> > sub_multi_vecs(wss,num_multi_vecs);
+  Workspace<RTOpPack::SubMultiVectorView<Scalar> > targ_sub_multi_vecs(wss,num_targ_multi_vecs);
   if( overlap_first_local_ele_off >= 0 ) {
     for(int k = 0; k < num_multi_vecs; ++k ) {
-      multi_vecs[k]->getSubMultiVector( local_rng, col_rng, &sub_multi_vecs[k] );
+      multi_vecs[k]->acquireDetachedView( local_rng, col_rng, &sub_multi_vecs[k] );
       sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
     }
     for(int k = 0; k < num_targ_multi_vecs; ++k ) {
-      targ_multi_vecs[k]->getSubMultiVector( local_rng, col_rng, &targ_sub_multi_vecs[k] );
+      targ_multi_vecs[k]->acquireDetachedView( local_rng, col_rng, &targ_sub_multi_vecs[k] );
       targ_sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
     }
   }
@@ -169,11 +169,11 @@ void MPIMultiVectorBase<Scalar>::applyOp(
   if( overlap_first_local_ele_off >= 0 ) {
     for(int k = 0; k < num_multi_vecs; ++k ) {
       sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
-      multi_vecs[k]->freeSubMultiVector( &sub_multi_vecs[k] );
+      multi_vecs[k]->releaseDetachedView( &sub_multi_vecs[k] );
     }
     for(int k = 0; k < num_targ_multi_vecs; ++k ) {
       targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
-      targ_multi_vecs[k]->commitSubMultiVector( &targ_sub_multi_vecs[k] );
+      targ_multi_vecs[k]->commitDetachedView( &targ_sub_multi_vecs[k] );
     }
   }
   // Flag that we are leaving applyOp()
@@ -181,17 +181,17 @@ void MPIMultiVectorBase<Scalar>::applyOp(
 }
 
 template<class Scalar>
-void MPIMultiVectorBase<Scalar>::getSubMultiVector(
+void MPIMultiVectorBase<Scalar>::acquireDetachedView(
   const Range1D                       &rowRng_in
   ,const Range1D                      &colRng_in
-  ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+  ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
   ) const
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
   const Range1D colRng = validateColRange(colRng_in);
   if( rowRng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rowRng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    MultiVectorDefaultBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
+    MultiVectorDefaultBase<Scalar>::acquireDetachedView(rowRng_in,colRng_in,sub_mv);
     return;
   }
   // rng consists of all local data so get it!
@@ -211,13 +211,13 @@ void MPIMultiVectorBase<Scalar>::getSubMultiVector(
 }
 
 template<class Scalar>
-void MPIMultiVectorBase<Scalar>::freeSubMultiVector(
-  RTOpPack::SubMultiVectorT<Scalar>* sub_mv
+void MPIMultiVectorBase<Scalar>::releaseDetachedView(
+  RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
   ) const
 {
   if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
     // Let the default implementation handle it!
-    MultiVectorDefaultBase<Scalar>::freeSubMultiVector(sub_mv);
+    MultiVectorDefaultBase<Scalar>::releaseDetachedView(sub_mv);
     return;
   }
   freeLocalData( sub_mv->values() );
@@ -225,17 +225,17 @@ void MPIMultiVectorBase<Scalar>::freeSubMultiVector(
 }
 
 template<class Scalar>
-void MPIMultiVectorBase<Scalar>::getSubMultiVector(
+void MPIMultiVectorBase<Scalar>::acquireDetachedView(
   const Range1D                                &rowRng_in
   ,const Range1D                               &colRng_in
-  ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+  ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
   )
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
   const Range1D colRng = validateColRange(colRng_in);
   if( rowRng.lbound() < localOffset_ || localOffset_+localSubDim_-1 < rowRng.ubound() ) {
     // rng consists of off-processor elements so use the default implementation!
-    MultiVectorDefaultBase<Scalar>::getSubMultiVector(rowRng_in,colRng_in,sub_mv);
+    MultiVectorDefaultBase<Scalar>::acquireDetachedView(rowRng_in,colRng_in,sub_mv);
     return;
   }
   // rng consists of all local data so get it!
@@ -255,13 +255,13 @@ void MPIMultiVectorBase<Scalar>::getSubMultiVector(
 }
 
 template<class Scalar>
-void MPIMultiVectorBase<Scalar>::commitSubMultiVector(
-  RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv
+void MPIMultiVectorBase<Scalar>::commitDetachedView(
+  RTOpPack::SubMultiVectorView<Scalar>* sub_mv
   )
 {
   if( sub_mv->globalOffset() < localOffset_ || localOffset_+localSubDim_ < sub_mv->globalOffset()+sub_mv->subDim() ) {
     // Let the default implementation handle it!
-    MultiVectorDefaultBase<Scalar>::commitSubMultiVector(sub_mv);
+    MultiVectorDefaultBase<Scalar>::commitDetachedView(sub_mv);
     return;
   }
   commitLocalData( sub_mv->values() );
@@ -348,19 +348,19 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
   timer.start();
 #endif
     
-  ExplicitMutableMultiVectorView<Scalar>
+  DetachedMultiVectorView<Scalar>
     Y_local(
       *Y
       ,real_trans(M_trans)==NOTRANS ? Range1D(localOffset_,localOffset_+localSubDim_-1) : Range1D()
       ,Range1D()
       );
-  ExplicitMultiVectorView<Scalar>
+  ConstDetachedMultiVectorView<Scalar>
     M_local(
       *this
       ,Range1D(localOffset_,localOffset_+localSubDim_-1)
       ,Range1D()
       );
-  ExplicitMultiVectorView<Scalar>
+  ConstDetachedMultiVectorView<Scalar>
     X_local(
       X
       ,real_trans(M_trans)==NOTRANS ? Range1D() : Range1D(localOffset_,localOffset_+localSubDim_-1)
@@ -413,7 +413,7 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
 #endif
     
   Workspace<Scalar> Y_local_tmp_store(wss,Y_local.subDim()*Y_local.numSubCols(),false);
-  RTOpPack::MutableSubMultiVectorT<Scalar> Y_local_tmp;
+  RTOpPack::SubMultiVectorView<Scalar> Y_local_tmp;
   Scalar localBeta;
   if( real_trans(M_trans) == TRANS && globalDim_ > localSubDim_ ) {
     // Nonlocal

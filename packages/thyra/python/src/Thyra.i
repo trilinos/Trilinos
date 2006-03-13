@@ -92,10 +92,10 @@ using namespace std;
 
 %ignore Thyra::VectorSpaceBase<type>::createMember() const;
 %ignore Thyra::VectorSpaceBase<type>::createMembers(int) const;
-%ignore Thyra::VectorSpaceBase<type>::createMemberView(const RTOpPack::MutableSubVectorT<type> &raw_v) const;
-%ignore Thyra::VectorSpaceBase<type>::createMemberView(const RTOpPack::SubVectorT<type> &raw_v) const;
-%ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::MutableSubMultiVectorT<type> &raw_mv) const;
-%ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::SubMultiVectorT<type> &raw_mv) const;
+%ignore Thyra::VectorSpaceBase<type>::createMemberView(const RTOpPack::SubVectorView<type> &raw_v) const;
+%ignore Thyra::VectorSpaceBase<type>::createMemberView(const RTOpPack::ConstSubVectorView<type> &raw_v) const;
+%ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::SubMultiVectorView<type> &raw_mv) const;
+%ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::ConstSubMultiVectorView<type> &raw_mv) const;
 
 // This is the start of a typemap for converting RefCountPtr's for a
 // VectorBase<double> to a raw pointer

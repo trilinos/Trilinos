@@ -33,7 +33,7 @@
 #include "Thyra_MultiVectorDefaultBase.hpp"
 #include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
 #include "Thyra_SerialVectorSpaceBase.hpp"
-#include "Thyra_ExplicitMultiVectorView.hpp"
+#include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_apply_op_helper.hpp"
 #include "RTOp_parallel_helpers.h"
 #include "Teuchos_Workspace.hpp"
@@ -92,7 +92,7 @@ void SerialMultiVectorBase<Scalar>::applyOp(
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
     ,"SerialMultiVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
-    "clear sign that one of the methods getSubMultiVector(...), freeSubMultiVector(...) or commitSubMultiVector(...) "
+    "clear sign that one of the methods acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...) "
     "was not implemented properly!"
     );
   apply_op_validate_input(
@@ -113,10 +113,10 @@ void SerialMultiVectorBase<Scalar>::applyOp(
 }
 
 template<class Scalar>
-void SerialMultiVectorBase<Scalar>::getSubMultiVector(
+void SerialMultiVectorBase<Scalar>::acquireDetachedView(
   const Range1D                       &rowRng_in
   ,const Range1D                      &colRng_in
-  ,RTOpPack::SubMultiVectorT<Scalar>  *sub_mv
+  ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
   ) const
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
@@ -136,8 +136,8 @@ void SerialMultiVectorBase<Scalar>::getSubMultiVector(
 }
 
 template<class Scalar>
-void SerialMultiVectorBase<Scalar>::freeSubMultiVector(
-  RTOpPack::SubMultiVectorT<Scalar>* sub_mv
+void SerialMultiVectorBase<Scalar>::releaseDetachedView(
+  RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
   ) const
 {
   freeData( sub_mv->values() );
@@ -145,10 +145,10 @@ void SerialMultiVectorBase<Scalar>::freeSubMultiVector(
 }
 
 template<class Scalar>
-void SerialMultiVectorBase<Scalar>::getSubMultiVector(
+void SerialMultiVectorBase<Scalar>::acquireDetachedView(
   const Range1D                                &rowRng_in
   ,const Range1D                               &colRng_in
-  ,RTOpPack::MutableSubMultiVectorT<Scalar>    *sub_mv
+  ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
   )
 {
   const Range1D rowRng = validateRowRange(rowRng_in);
@@ -168,8 +168,8 @@ void SerialMultiVectorBase<Scalar>::getSubMultiVector(
 }
 
 template<class Scalar>
-void SerialMultiVectorBase<Scalar>::commitSubMultiVector(
-  RTOpPack::MutableSubMultiVectorT<Scalar>* sub_mv
+void SerialMultiVectorBase<Scalar>::commitDetachedView(
+  RTOpPack::SubMultiVectorView<Scalar>* sub_mv
   )
 {
   commitData( sub_mv->values() );
@@ -228,9 +228,9 @@ void SerialMultiVectorBase<Scalar>::euclideanApply(
 #ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.start();
 #endif
-  ExplicitMutableMultiVectorView<Scalar>  Y_local(*Y);
-  ExplicitMultiVectorView<Scalar>         M_local(*this);
-  ExplicitMultiVectorView<Scalar>         X_local(X);
+  DetachedMultiVectorView<Scalar>  Y_local(*Y);
+  ConstDetachedMultiVectorView<Scalar>         M_local(*this);
+  ConstDetachedMultiVectorView<Scalar>         X_local(X);
 #ifdef THYRA_SERIAL_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
   std::cout << "\nSerialMultiVectorBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";

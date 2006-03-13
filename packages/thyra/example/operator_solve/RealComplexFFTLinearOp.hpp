@@ -30,9 +30,9 @@
 #define THYRA_REAL_COMPLEX_FFT_LINEAR_OP_HPP
 
 #include "ComplexFFTLinearOp.hpp"
-#include "Thyra_SerialVectorSpaceStd.hpp"
-#include "Thyra_ExplicitVectorView.hpp"
-#include "Thyra_SerialVectorSpaceConverterStd.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DefaultSerialVectorSpaceConverter.hpp"
 #include "serial_1D_FFT.hpp"
 
 /** \brief Simple example concrete subclass for a serial real-to-complex FFT.
@@ -121,7 +121,7 @@ public:
 
 private:
 
-  Thyra::SerialVectorSpaceConverterStd<DomainScalar,RangeScalar>          realToComplexConverter_;
+  Thyra::DefaultSerialVectorSpaceConverter<DomainScalar,RangeScalar>          realToComplexConverter_;
   ComplexFFTLinearOp<RealScalar>                                          complexFFTOp_;
   Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< RealScalar > >      domain_;
   
@@ -271,8 +271,8 @@ void RealComplexFFTLinearOp<RealScalar>::updateReal(
   TEST_FOR_EXCEPT( V==NULL );
 #endif  
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::ExplicitMultiVectorView<RangeScalar>           ev_V_complex(V_complex);
-  Thyra::ExplicitMutableMultiVectorView<DomainScalar>   ev_V(*V);
+  Thyra::ConstDetachedMultiVectorView<RangeScalar>           ev_V_complex(V_complex);
+  Thyra::DetachedMultiVectorView<DomainScalar>   ev_V(*V);
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( ev_V_complex.subDim() != ev_V.subDim() || ev_V_complex.numSubCols() != ev_V.numSubCols() );
 #endif  

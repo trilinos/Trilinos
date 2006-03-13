@@ -35,7 +35,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 #include "Thyra_ListedMultiVectorRandomizer.hpp"
-#include "Thyra_SerialVectorSpaceConverterStd.hpp"
+#include "Thyra_DefaultSerialVectorSpaceConverter.hpp"
 #include "Teuchos_arrayArg.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -52,7 +52,7 @@ public:
 
   bool isCompatible( const Thyra::VectorSpaceBase<Scalar> &space ) const
     {
-      return space.isInCore();
+      return space.hasInCoreView();
     }
 
   void randomize( Thyra::MultiVectorBase<Scalar> *mv )
@@ -62,7 +62,7 @@ public:
       TEST_FOR_EXCEPT( mv == NULL );
       TEST_FOR_EXCEPT( mv->range()->dim() % 2 != 0 );
 #     endif
-      Thyra::ExplicitMutableMultiVectorView<Scalar> ev_mv(*mv);
+      Thyra::DetachedMultiVectorView<Scalar> ev_mv(*mv);
       const Thyra::Index n = ev_mv.subDim();
       for( Thyra::Index j = 1; j <= ev_mv.numSubCols(); ++j ) {
         for( Thyra::Index i = 1; i <= n/2; ++i ) {
@@ -108,7 +108,7 @@ bool run1DFFTExample(
     C = Teuchos::rcp( new ComplexFFTLinearOp<RealScalar>(N) );
 
   if(verbose) std::cout << "\nConstructing as set of simple known vectors to be used as random domain and range vectors ...\n";
-  Thyra::SerialVectorSpaceConverterStd<RealScalar,ComplexScalar>
+  Thyra::DefaultSerialVectorSpaceConverter<RealScalar,ComplexScalar>
     realToComplexConverter;
   RefCountPtr<const Thyra::VectorSpaceBase<RealScalar> >
     realDomainVecSpc = realToComplexConverter.createVectorSpaceFrom(*C->domain());

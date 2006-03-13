@@ -83,9 +83,9 @@ namespace Thyra {
  *
  * This interface also allows a client to extract a sub-set of vector
  * coefficients in an explicit form as non-mutable
- * <tt>RTOpPack::SubVectorT</tt> or mutable
- * <tt>RTOpPack::MutableSubVectorT</tt> objects using the
- * <tt>getSubVector()</tt> functions.  In general, this is a very inefficient
+ * <tt>RTOpPack::ConstSubVectorView</tt> or mutable
+ * <tt>RTOpPack::SubVectorView</tt> objects using the
+ * <tt>acquireDetachedView()</tt> functions.  In general, this is a very inefficient
  * thing to do and should be avoided.  However, there are some situations
  * where getting explicit access to the coefficients of a vector is a very
  * reasonable and efficient thing to do (i.e. for vectors in the domain of a
@@ -95,7 +95,7 @@ namespace Thyra {
  *
  * Note that client code in general should not directly call the above
  * explicit sub-vector access functions but should use the utility classes
- * <tt>ExplicitVectorView</tt> and <tt>ExplicitMutableVectorView</tt> instead
+ * <tt>ConstDetachedVectorView</tt> and <tt>DetachedVectorView</tt> instead
  * since these are easier an safer in the event that an exception is thrown.
  *
  * \section Thyra_VB_expl_access_assign_sec Explicit vector coefficient assignment
@@ -221,41 +221,41 @@ public:
    * @param  sub_vec  [in/out] View of the sub-vector.  Prior to the
    *                  first call to this function, <tt>sub_vec->set_uninitialized()</tt> must be called.
    *                  Technically <tt>*sub_vec</tt> owns the memory but this memory can be freed
-   *                  only by calling <tt>this->freeSubVector(sub_vec)</tt>.
+   *                  only by calling <tt>this->releaseDetachedView(sub_vec)</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!rng.full_range()</tt>] <tt>(rng.ubound() < this->dim()) == true</tt>
+   * <li> [<tt>!rng.full_range()</tt>] <tt>(rng.ubound() < this->space()->dim()) == true</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
    *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_vec</tt> contains an explicit non-mutable view to the elements
-   *      in the range <tt>full_range(rng,0,this->dim()-1)</tt>
+   *      in the range <tt>full_range(rng,0,this->space()->dim()-1)</tt>
    * </ul>
    *
    * This is only a transient view of a sub-vector that is to be immediately
-   * used and then released with a call to <tt>freeSubVector()</tt>.
+   * used and then released with a call to <tt>releaseDetachedView()</tt>.
    *
    * Note that calling this function might require some dynamic memory
    * allocations and temporary memory.  Therefore, it is critical that
-   * <tt>this->freeSubVector(sub_vec)</tt> is called to clean up memory and
+   * <tt>this->releaseDetachedView(sub_vec)</tt> is called to clean up memory and
    * avoid memory leaks after the sub-vector is used.
    *
    * <b>Heads Up!</b> Note that client code in general should not directly
    * call this function but should instead use the utility class
-   * <tt>ExplicitVectorView</tt> which will also take care of calling
-   * <tt>freeSubVector()</tt>.
+   * <tt>ConstDetachedVectorView</tt> which will also take care of calling
+   * <tt>releaseDetachedView()</tt>.
    *
-   * If <tt>this->getSubVector(...,sub_vec)</tt> was previously called on
+   * If <tt>this->acquireDetachedView(...,sub_vec)</tt> was previously called on
    * <tt>sub_vec</tt> then it may be possible to reuse this memory if it is
    * sufficiently sized.  The user is encouraged to make multiple calls to
-   * <tt>this->getSubVector(...,sub_vec)</tt> before
-   * <tt>this->freeSubVector(sub_vec)</tt> to finally clean up all of the
+   * <tt>this->acquireDetachedView(...,sub_vec)</tt> before
+   * <tt>this->releaseDetachedView(sub_vec)</tt> to finally clean up all of the
    * memory.  Of course, the same <tt>sub_vec</tt> object must be passed to
    * the same vector object for this to work correctly.
    */
-  virtual void getSubVector( const Range1D& rng, RTOpPack::SubVectorT<Scalar>* sub_vec ) const = 0;
+  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const = 0;
 
   /** \brief Free an explicit view of a sub-vector.
    *
@@ -267,16 +267,16 @@ public:
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>sub_vec</tt> must have been passed through a call to 
-   *      <tt>this->getSubVector(...,sub_vec)</tt>
+   *      <tt>this->acquireDetachedView(...,sub_vec)</tt>
    * </ul>
     *
    * <b>Postconditions:</b><ul>
-   * <li> See <tt>RTOpPack::SubVectorT::set_uninitialized()</tt> for <tt>sub_vec</tt>
+   * <li> See <tt>RTOpPack::ConstSubVectorView::set_uninitialized()</tt> for <tt>sub_vec</tt>
    * </ul>
    *
-   * The sub-vector view must have been allocated by <tt>this->getSubVector()</tt> first.
+   * The sub-vector view must have been allocated by <tt>this->acquireDetachedView()</tt> first.
    */
-  virtual void freeSubVector( RTOpPack::SubVectorT<Scalar>* sub_vec ) const = 0;
+  virtual void releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const = 0;
 
   /** \brief Get a mutable explicit view of a sub-vector.
    *
@@ -285,47 +285,47 @@ public:
    *                  first call to this function <tt>sub_vec->set_uninitialized()</tt> must
    *                  have been called for the correct behavior.  Technically
    *                  <tt>*sub_vec</tt> owns the memory but this memory must be committed
-   *                  and freed by calling <tt>this->commitSubVector(sub_vec)</tt> after
+   *                  and freed by calling <tt>this->commitDetachedView(sub_vec)</tt> after
    *                  the client is finished modifying the view.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> [<tt>!rng.full_range()</tt>] <tt>rng.ubound() < this->dim()</tt>
+   * <li> [<tt>!rng.full_range()</tt>] <tt>rng.ubound() < this->space()->dim()</tt>
    *      (throw <tt>std::out_of_range</tt>)
    * </ul>
     *
    * <b>Postconditions:</b><ul>
    * <li> <tt>*sub_vec</tt> contains an explicit mutable view to the elements
-   *      in the range <tt>\ref Thyra::full_range() "full_range"(rng,0,this->dim()-1)</tt>
+   *      in the range <tt>\ref Thyra::full_range() "full_range"(rng,0,this->space()->dim()-1)</tt>
    * </ul>
    *
    * This is only a transient view of a sub-vector that is to be immediately
-   * used and then committed back with a call to <tt>commitSubVector()</tt>.
+   * used and then committed back with a call to <tt>commitDetachedView()</tt>.
    *
    * Note that calling this function might require some internal allocations
    * and temporary memory.  Therefore, it is critical that
-   * <tt>this->commitSubVector(sub_vec)</tt> is called to commit the changed
+   * <tt>this->commitDetachedView(sub_vec)</tt> is called to commit the changed
    * entries, clean up memory, and avoid memory leaks after the sub-vector is
    * modified.
    *
    * <b>Heads Up!</b> Note that client code in general should not directly
    * call this function but should instead use the utility class
-   * <tt>ExplicitMutableVectorView</tt> which will also take care of calling
-   * <tt>commitSubVector()</tt>.
+   * <tt>DetachedVectorView</tt> which will also take care of calling
+   * <tt>commitDetachedView()</tt>.
    *
-   * If <tt>this->getSubVector(...,sub_vec)</tt> was previously called on
+   * If <tt>this->acquireDetachedView(...,sub_vec)</tt> was previously called on
    * <tt>sub_vec</tt> then it may be possible to reuse this memory if it is
    * sufficiently sized.  The user is encouraged to make multiple calls to
-   * <tt>this->getSubVector(...,sub_vec)</tt> before
-   * <tt>this->commitSubVector(sub_vec)</tt> is called to finally clean up all
+   * <tt>this->acquireDetachedView(...,sub_vec)</tt> before
+   * <tt>this->commitDetachedView(sub_vec)</tt> is called to finally clean up all
    * of the memory.  Of course the same <tt>sub_vec</tt> object must be passed
    * to the same vector object for this to work correctly.
    *
    * Changes to the underlying sub-vector are not guaranteed to become
-   * permanent until <tt>this->getSubVector(...,sub_vec)</tt> is called again,
-   * or <tt>this->commitSubVector(sub_vec)</tt> is called.
+   * permanent until <tt>this->acquireDetachedView(...,sub_vec)</tt> is called again,
+   * or <tt>this->commitDetachedView(sub_vec)</tt> is called.
    */
-  virtual void getSubVector( const Range1D& rng, RTOpPack::MutableSubVectorT<Scalar>* sub_vec ) = 0;
+  virtual void acquireDetachedView( const Range1D& rng, RTOpPack::SubVectorView<Scalar>* sub_vec ) = 0;
 
   /** \brief Commit changes for a mutable explicit view of a sub-vector.
    *
@@ -339,18 +339,18 @@ public:
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
    * <li> <tt>sub_vec</tt> must have been passed through a call to 
-   *      <tt>this->getSubVector(...,sub_vec)</tt>
+   *      <tt>this->acquireDetachedView(...,sub_vec)</tt>
    * </ul>
     *
    * <b>Postconditions:</b><ul>
-   * <li> See <tt>RTOpPack::MutableSubVectorT::set_uninitialized()</tt> for <tt>sub_vec</tt>
+   * <li> See <tt>RTOpPack::SubVectorView::set_uninitialized()</tt> for <tt>sub_vec</tt>
    * <li> <tt>*this</tt> will be updated according the the changes made to <tt>sub_vec</tt>
    * </ul>
    *
    * The sub-vector view must have been allocated by
-   * <tt>this->getSubVector()</tt> first.
+   * <tt>this->acquireDetachedView()</tt> first.
    */
-  virtual void commitSubVector( RTOpPack::MutableSubVectorT<Scalar>* sub_vec ) = 0;
+  virtual void commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec ) = 0;
 
   /** \brief Set a specific sub-vector.
    *
@@ -358,7 +358,7 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>sub_vec.global_offset + sub_vec.sub_dim < this->dim()</tt>
+   * <li> <tt>sub_vec.global_offset + sub_vec.sub_dim < this->space()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
     *
@@ -440,9 +440,9 @@ in simpler use cases.
  * <li> [<tt>num_targ_vecs > 0</tt>] The vectors pointed to by <tt>targ_vecs[k]</tt>, for
  *      <tt>k = 0...num_targ_vecs-1</tt> must not alias each other or any of the vectors
  *      <tt>vecs[k]</tt>, for <tt>k = 0...num_vecs-1</tt>.  <b>You have be warned!!!!</b>
- * <li> <tt>0 <= first_ele_offset < this->dim()</tt> (throw <tt>std::out_of_range</tt>)
+ * <li> <tt>0 <= first_ele_offset < this->space()->dim()</tt> (throw <tt>std::out_of_range</tt>)
  * <li> <tt>global_offset >= 0</tt> (throw <tt>std::invalid_argument</tt>)
- * <li> <tt>sub_dim - first_ele_offset <= this->dim()</tt> (throw <tt>std::length_error</tt>).
+ * <li> <tt>sub_dim - first_ele_offset <= this->space()->dim()</tt> (throw <tt>std::length_error</tt>).
  * </ul>
  *
  * <b>Postconditions:</b><ul>

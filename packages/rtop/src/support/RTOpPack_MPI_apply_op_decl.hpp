@@ -114,9 +114,9 @@ void MPI_apply_op(
   ,const RTOpT<Scalar>                &op
   ,const int                          root_rank
   ,const int                          num_vecs
-  ,const SubVectorT<Scalar>           sub_vecs[]
+  ,const ConstSubVectorView<Scalar>           sub_vecs[]
   ,const int                          num_targ_vecs
-  ,const MutableSubVectorT<Scalar>    targ_sub_vecs[]
+  ,const SubVectorView<Scalar>    targ_sub_vecs[]
   ,ReductTarget                       *reduct_obj
   );
 
@@ -134,9 +134,9 @@ void MPI_apply_op(
   ,const int                               root_rank
   ,const int                               num_cols
   ,const int                               num_multi_vecs
-  ,const SubMultiVectorT<Scalar>           sub_multi_vecs[]
+  ,const ConstSubMultiVectorView<Scalar>           sub_multi_vecs[]
   ,const int                               num_targ_multi_vecs
-  ,const MutableSubMultiVectorT<Scalar>    targ_sub_multi_vecs[]
+  ,const SubMultiVectorView<Scalar>    targ_sub_multi_vecs[]
   ,ReductTarget*                           reduct_objs[]
   );
 
@@ -184,9 +184,9 @@ void  MPI_apply_op(
   ,const int                                root_rank
   ,const int                                num_cols
   ,const int                                num_vecs
-  ,const SubVectorT<Scalar>                 sub_vecs[]
+  ,const ConstSubVectorView<Scalar>                 sub_vecs[]
   ,const int                                num_targ_vecs
-  ,const MutableSubVectorT<Scalar>          sub_targ_vecs[]
+  ,const SubVectorView<Scalar>          sub_targ_vecs[]
   ,ReductTarget*                            reduct_objs[]
   );
 
