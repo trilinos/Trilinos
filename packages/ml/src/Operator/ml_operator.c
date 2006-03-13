@@ -93,6 +93,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->N_total_cols_est    = -1;
    mat->subspace            = NULL;
    ML_Aux_Data_Create(&(mat->aux_data));
+   mat->type                = ML_TYPE_UNKNOWN;
 
    return 0;
 }

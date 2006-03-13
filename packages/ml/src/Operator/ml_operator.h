@@ -100,6 +100,11 @@ void ML_Aux_Data_Destroy(ML_Aux_Data** ptr);
 
 ML_Aux_Data* ML_Aux_Data_Clone(ML_Aux_Data* original);
 
+#define ML_TYPE_UNKNOWN 0
+#define ML_TYPE_ROW_MATRIX 1
+#define ML_TYPE_CRS_MATRIX 2
+#define ML_TYPE_VBR_MATRIX 3
+
 /* -------------------------------------------------------------------- */
 /** This data structure defines an enriched operator class for the       
     specification of the discretization matrix, the restriction and the  
@@ -137,6 +142,17 @@ struct ML_Operator_Struct {
                    Krylov method. */
    ML_Aux_Data   *aux_data;     
                  /*!< General container for auxiliary matrix */
+   int           type; /* simple ID that specifies the actual storage
+                          used in data. It can be:
+                          - ML_TYPE_UNKNOWN (default)
+                          - ML_TYPE_ROW_MATRIX
+                          - ML_TYPE_CRS_MATRIX
+                          - ML_TYPE_VBR_MATRIX
+                          By using this, we can same some wrapping, at least
+                          for the finest-level operator.
+
+                        */
+                    
 };
 
 

@@ -826,11 +826,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
     const Epetra_CrsMatrix *Acrs =
               dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
     if (Avbr)
+    {
       ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Avbr);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_VBR_MATRIX;
+    }
     else if (Acrs)
+    {
       ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Acrs);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
+    }
     else
+    {
       ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows,(void *) RowMatrix_);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
+    }
     // set the number of nonzeros
     ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumGlobalNonzeros();
 
@@ -921,6 +930,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
       //*Avbr = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
       //*Acrs = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
       if (Avbr) {
+        // check that the number of PDEs is constant
+        if( Avbr->NumMyRows() % Avbr->NumMyBlockRows() != 0 ){
+          cerr << "Error : NumPDEEqns does not seem to be constant" << endl;
+          ML_CHK_ERR(-1);
+        }
         ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_VbrMatrix_getrow,
                               ML_Epetra_VbrMatrix_comm_wrapper,
                               NumMyRows+N_ghost);
