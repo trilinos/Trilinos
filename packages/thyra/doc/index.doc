@@ -155,9 +155,9 @@ structure of thyra</a>.
   adapter support software based on the operator/vector
   interfaces.  For example, you will find things as unit testing classes
   (e.g. <tt>Thyra::LinearOpTester</tt>), and concrete product spaces/vectors/multi-vectors
-  (e.g. <tt>Thyra::ProductVectorSpace</tt>).  Also included is adapter support
+  (e.g. <tt>Thyra::DefaultProductVectorSpace</tt>).  Also included is adapter support
   and concrete implementations for serial and MPI-based space/vector/multi-vector implementations
-  (e.g. <tt>Thyra::SerialVectorSpaceStd</tt> and <tt>Thyra::MPIVectorSpaceStd</tt>).
+  (e.g. <tt>Thyra::DefaultSerialVectorSpace</tt> and <tt>Thyra::DefaultMPIVectorSpace</tt>).
   Several examples are also included including once for CG and the Power Method .  This collection
   of software is really too vast to give a full sense of what it contains
   in this short description.
@@ -167,7 +167,7 @@ structure of thyra</a>.
 
   This collection contains support software for the operator/solve interfaces.
   Examples include testing software like <tt>Thyra::LinearOpWithSolveTester</tt>
-  and <em>decorator</em> subclasses like <tt>Thyra::DiagonalLinearOpWithSolve</tt>.
+  and <em>decorator</em> subclasses like <tt>Thyra::DefaultDiagonalLinearOpWithSolve</tt>.
 
 <li> <b><a href="../../src/support/nonlinear/model_evaluator/doc/html/index.html">
   Nonlinear Model Evaluator Support</a></b><a name="support_nonlinear_model_evaluator"></a>
