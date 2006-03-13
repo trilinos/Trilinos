@@ -204,17 +204,17 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 //==============================================================================
 ML_Epetra::RowMatrix::~RowMatrix()
 {
+  if (ColMap_)
+    if (ColMap_ != DomainMap_) {
+      delete ColMap_;
+      ColMap_ = 0;
+    }
+
   // the one that is always allocated is RangeMap_;
   if (DomainMap_) 
     if (DomainMap_ != RangeMap_) {
       delete DomainMap_;
       DomainMap_ = 0;
-    }
-
-  if (ColMap_)
-    if (ColMap_ != DomainMap_) {
-      delete ColMap_;
-      ColMap_ = 0;
     }
 
   if (RangeMap_) {
@@ -232,7 +232,6 @@ ML_Epetra::RowMatrix::~RowMatrix()
     delete Importer_;
   
   return;
-
 }
 
 //==============================================================================
