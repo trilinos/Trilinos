@@ -358,7 +358,7 @@ private:
   //! Number of nonzero global diagonal elements.
   int NumGlobalDiagonals_;
   //! Importer.
-  Epetra_Import* Importer_;
+  mutable Epetra_Import* Importer_;
   //! Label of \c this object.
   char* Label_;
 

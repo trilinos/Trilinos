@@ -13,7 +13,7 @@
 //==============================================================================
 ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
                                 const Epetra_Comm* UserComm,
-                                const bool cheap,
+                                const bool cheap, 
                                 const USR_COMM comm) :
   Op_(0),
   FreeCommObject_(false),
@@ -29,7 +29,8 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   NumMyNonzeros_(0),
   NumGlobalNonzeros_(0),
   NumMyDiagonals_(0),
-  NumGlobalDiagonals_(0)
+  NumGlobalDiagonals_(0),
+  Importer_(0)
 {
  
   if (UserComm) {
@@ -52,15 +53,15 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   Label_ = new char[80];
   sprintf(Label_,"ML_Epetra::RowMatrix");
 
-  NumMyRows_ = Op->outvec_leng;
-  NumMyCols_ = Op->invec_leng;
+  NumMyRows_ = Op->outvec_leng; 
+  NumMyCols_ = Op->invec_leng;  // this is fixed at the end of this method 
  
   // create a row map based on linear distribution
   // I need this map because often codes use the RowMatrixRowMap.
   // Also, I need to check that the map of the input vector
   // and of the output vector are consistent with what I have here
   RangeMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm());
-  if (NumMyCols_ == NumMyRows_)
+  if (NumMyCols_ == NumMyRows_) // FIXME: not necessarily true for global values
     DomainMap_ = RangeMap_;
   else
     DomainMap_ = new Epetra_Map(-1,NumMyCols_,0,Comm());
@@ -73,8 +74,8 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
   int MaxMyNumEntries;
 
-  if (cheap) 
-  {
+  if (cheap) {
+
     NumMyNonzeros_ = Op_->N_nonzeros;
     MaxMyNumEntries = Op_->max_nz_per_row;
     Allocated_ = MaxMyNumEntries;
@@ -82,9 +83,9 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
     Values_.resize(Allocated_);
     NumMyDiagonals_ = NumMyRows_;
     Diagonal_.resize(0);
+
   }
-  else 
-  {
+  else {
     NumMyRowEntries_.resize(NumMyRows());
 
     Diagonal_.resize(NumMyRows()); 
@@ -148,7 +149,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   // build a list of global indices for columns
 
   if (Comm().NumProc() == 1) {
-    ColMap_ = RangeMap_;
+    ColMap_ = DomainMap_; 
   }
   else {
 
@@ -194,7 +195,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
     ColMap_ = new Epetra_Map(-1,Ncols + Nghost,
                              &global_col_id_as_int[0],0,Comm());
-
+    NumMyCols_ = ColMap_->NumMyElements();
   }
 
   return;
@@ -211,7 +212,7 @@ ML_Epetra::RowMatrix::~RowMatrix()
     }
 
   if (ColMap_)
-    if (ColMap_ != RangeMap_) {
+    if (ColMap_ != DomainMap_) {
       delete ColMap_;
       ColMap_ = 0;
     }
@@ -227,6 +228,9 @@ ML_Epetra::RowMatrix::~RowMatrix()
   if (FreeCommObject_)
     delete Comm_;
 
+  if (Importer_)
+    delete Importer_;
+  
   return;
 
 }
@@ -234,14 +238,15 @@ ML_Epetra::RowMatrix::~RowMatrix()
 //==============================================================================
 int ML_Epetra::RowMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const
 {
-  
+  if (NumMyRowEntries_.size() == 0)
+    ML_CHK_ERR(-2); // prec was built as "cheap"
+    
   if (MyRow < 0 || MyRow >= NumMyRows())
     ML_CHK_ERR(-1); // out of range
 
   NumEntries = NumMyRowEntries_[MyRow];
 
   return(0);
-
 }
 
 //==============================================================================
@@ -419,7 +424,8 @@ const Epetra_Map& ML_Epetra::RowMatrix::RowMatrixColMap() const
 //==============================================================================
 const Epetra_Import* ML_Epetra::RowMatrix::RowMatrixImporter() const
 {
-
+  if (!Importer_)
+    Importer_ = new Epetra_Import(RowMatrixColMap(),RowMatrixRowMap());
   return(Importer_);
 }
 
