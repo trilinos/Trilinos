@@ -3,6 +3,7 @@ Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 File Type		= hypergraph
 File Name		= ewgt 
 Parallel Disk Info	= number=0
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
 3	0	-1	-1
