@@ -12,6 +12,7 @@
 */
 
 #include "ml_common.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "MLAPI_BaseOperator.h"
 #include "MLAPI_CompObject.h"
 #include "MLAPI_TimeObject.h"
@@ -109,7 +110,13 @@ public:
   Teuchos::RefCountPtr<Ifpack_Preconditioner>& GetRCPData();
 
   //! Returns a pointer to the internally stored IFPACK preconditioner.
+  Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>& GetRCPMLPrec();
+
+  //! Returns a pointer to the internally stored IFPACK preconditioner.
   const Teuchos::RefCountPtr<Ifpack_Preconditioner>& GetRCPData() const;
+
+  //! Returns a pointer to the internally stored ML preconditioner.
+  const Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>& GetRCPMLPrec() const;
 
   // @}
   // @{ Mathematical methods
@@ -143,7 +150,8 @@ private:
   Teuchos::RefCountPtr<ML_Epetra::RowMatrix> RCPRowMatrix_;
   //! IFPACK preconditioner.
   Teuchos::RefCountPtr<Ifpack_Preconditioner> RCPData_;
-
+  //! ML preconditioner
+  Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>  RCPMLPrec_;
   // @}
   
 }; // InverseOperator

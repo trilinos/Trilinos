@@ -40,6 +40,7 @@ InverseOperator::InverseOperator(const InverseOperator& RHS)
   Op_           = RHS.GetOperator();
   RCPRowMatrix_ = RHS.RCPRowMatrix();
   RCPData_      = RHS.GetRCPData();
+  RCPMLPrec_    = RHS.GetRCPMLPrec();
   SetLabel(RHS.GetLabel());
 }
 
@@ -51,6 +52,7 @@ InverseOperator& InverseOperator::operator=(const InverseOperator& RHS)
   Op_           = RHS.GetOperator();
   RCPRowMatrix_ = RHS.RCPRowMatrix();
   RCPData_      = RHS.GetRCPData();
+  RCPMLPrec_    = RHS.GetRCPMLPrec();
 
   SetLabel(RHS.GetLabel());
   return(*this);
@@ -76,7 +78,7 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
   Op_ = Op;
 
   RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetML_Operator(),
-                                                        &GetEpetra_Comm()));
+                                                        &GetEpetra_Comm(),false));
 
   // FIXME: to add overlap and level-of-fill
   int NumSweeps   = List.get("smoother: sweeps", 1);
@@ -95,7 +97,10 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
 
   bool verbose = false; //(GetMyPID() == 0 && GetPrintLevel() > 5);
 
-  Ifpack_Preconditioner* Prec;
+  // the ML smoother
+  RCPMLPrec_ = Teuchos::null;
+  // The Ifpack smoother
+  Ifpack_Preconditioner* Prec = NULL;
 
   if (Type == "Jacobi") {
     if (verbose) {
@@ -170,19 +175,54 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
     }
     Prec = new Ifpack_Amesos(RowMatrix());
   }
+  else if (Type == "MLS" || Type == "ML MLS" || 
+           Type == "ML symmetric Gauss-Seidel" ||
+           Type == "ML Gauss-Seidel") 
+  {
+    if (verbose) {
+      cout << "ML's MLS smoother" << endl;
+      cout << endl;
+      }
+    Teuchos::ParameterList mlparams;
+    ML_Epetra::SetDefaults("SA",mlparams);
+    int output = List.get("output",-1);
+    if (output != -1) mlparams.set("output",output);
+    mlparams.set("max levels",1);
+    int sweeps = List.get("smoother: sweeps",1);
+    mlparams.set("coarse: sweeps",sweeps);
+    double damp = List.get("smoother: damping factor",0.67);
+    mlparams.set("coarse: damping factor",damp);
+    mlparams.set("zero starting solution", false);
+    if (Type == "MLS" || Type == "ML MLS")
+    {
+      mlparams.set("coarse: type","MLS"); // MLS symmetric Gauss-Seidel Amesos-KLU
+      int poly = List.get("smoother: MLS polynomial order",3);
+      mlparams.set("coarse: MLS polynomial order",poly);
+    }
+    else if (Type == "ML symmetric Gauss-Seidel")
+      mlparams.set("coarse: type","symmetric Gauss-Seidel"); // MLS symmetric Gauss-Seidel Amesos-KLU
+    else if (Type == "ML Gauss-Seidel")
+      mlparams.set("coarse: type","Gauss-Seidel");
+    else
+      ML_THROW("Requested type (" + Type + ") not recognized", -1);
+    RCPMLPrec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*RowMatrix(),mlparams,true));
+  }
   else
     ML_THROW("Requested type (" + Type + ") not recognized", -1);
 
-  RCPData_ = Teuchos::rcp(Prec);
-
-  RCPData_->SetParameters(IFPACKList);
-  RCPData_->Initialize();
-  RCPData_->Compute();
-
+  if (Prec)
+  {
+    RCPData_ = Teuchos::rcp(Prec);
+    RCPData_->SetParameters(IFPACKList);
+    RCPData_->Initialize();
+    RCPData_->Compute();
+    UpdateFlops(RCPData_->InitializeFlops());
+    UpdateFlops(RCPData_->ComputeFlops());
+  }
+  else 
+    RCPData_ = Teuchos::null;
+    
   StackPop();
-
-  UpdateFlops(RCPData_->InitializeFlops());
-  UpdateFlops(RCPData_->ComputeFlops());
   UpdateTime();
 
 }
@@ -229,6 +269,17 @@ InverseOperator::GetRCPData() const
   return(RCPData_);
 }
 
+Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>& InverseOperator::GetRCPMLPrec() 
+{
+  return(RCPMLPrec_);
+}
+
+const Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>& 
+InverseOperator::GetRCPMLPrec() const
+{
+  return(RCPMLPrec_);
+}
+
 int 
 InverseOperator::Apply(const MultiVector& x, MultiVector& y) const
 {
@@ -243,7 +294,9 @@ InverseOperator::Apply(const MultiVector& x, MultiVector& y) const
 
   int x_nv = x.GetNumVectors();
   int y_nv = y.GetNumVectors();
-  double FL = RCPData_->ComputeFlops();
+  double FL = 0.0;
+  if (RCPData_ != Teuchos::null)
+    FL = RCPData_->ComputeFlops();
 
   if (x_nv != y_nv)
     ML_THROW("Number of vectors of x and y differ (" +
@@ -256,12 +309,17 @@ InverseOperator::Apply(const MultiVector& x, MultiVector& y) const
     Epetra_Vector y_Epetra(View,RowMatrix()->OperatorRangeMap(),
                            (double*)&(y(0,v)));
 
-    RCPData_->ApplyInverse(x_Epetra,y_Epetra);
+    if (RCPData_ != Teuchos::null)
+      RCPData_->ApplyInverse(x_Epetra,y_Epetra);
+    else if (RCPMLPrec_ != Teuchos::null)
+      RCPMLPrec_->ApplyInverse(x_Epetra,y_Epetra);
+    else
+      ML_THROW("Neither Ifpack nor ML smoother is properly set up", -1);
   }
 
   StackPop();
-
-  UpdateFlops(RCPData_->ComputeFlops() - FL);
+  if (RCPData_ != Teuchos::null)
+    UpdateFlops(RCPData_->ComputeFlops() - FL);
   UpdateTime();
 
   return(0);
@@ -321,6 +379,7 @@ void InverseOperator::Destroy()
   Op_.Reshape();
   RCPRowMatrix_ = Teuchos::null;
   RCPData_      = Teuchos::null;
+  RCPMLPrec_    = Teuchos::null;
 }
 
 } // namespace MLAPI
