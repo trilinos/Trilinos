@@ -48,6 +48,8 @@ extern "C" {
  */
 int ML_Epetra_matvec(ML_Operator *data, int in, double *p,
                                         int out, double *ap);
+int ML_Epetra_RowMatrix_matvec(ML_Operator *data, int in, double *p,
+                                                  int out, double *ap);
 int ML_Epetra_CrsMatrix_matvec(ML_Operator *data, int in, double *p,
                                                   int out, double *ap);
 int ML_Epetra_VbrMatrix_matvec(ML_Operator *data, int in, double *p,
@@ -90,6 +92,11 @@ int ML_Epetra_matvec_WKC(ML_Operator *data, int in, double *p, int out,
 int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows,
                  int requested_rows[], int allocated_space, int columns[],
                  double values[], int row_lengths[]);
+
+int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows, 
+                               int requested_rows[], int allocated_space, 
+                               int columns[], double values[],
+                               int row_lengths[]);
 
 int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
             int requested_rows[], 

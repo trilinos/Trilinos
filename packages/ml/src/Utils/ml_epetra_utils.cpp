@@ -191,6 +191,10 @@ int ML_Epetra_matvec_Filter(ML_Operator *mat_in, int in, double *p,
 
 // ====================================================================== 
 // General getrow for Epetra matrix classes.
+// This function is deprecated, use one of the following instead:
+// - ML_Epetra_RowMatrix_getrow
+// - ML_Epetra_CrsMatrix_getrow
+// - ML_Epetra_VbrMatrix_getrow
 // ====================================================================== 
 
 int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows[], 
@@ -318,6 +322,50 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
 }
 
 // ====================================================================== 
+// Getrow for RowMatrix that are not Epetra_CrsMatrix or Epetra_VbrMatrix
+// ====================================================================== 
+
+int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows, 
+                               int requested_rows[], int allocated_space, 
+                               int columns[], double values[],
+                               int row_lengths[])
+{
+  int nz_ptr = 0;
+  int NumEntries;
+  int MaxPerRow = 0;
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+
+  Epetra_RowMatrix* A = (Epetra_RowMatrix *) ML_Get_MyGetrowData(mat_in);
+  
+  for (int i = 0; i < N_requested_rows; i++)
+  {
+    int ierr;
+    int LocalRow = requested_rows[i];
+    int NumEntries;
+    A->NumMyRowEntries(LocalRow, NumEntries);
+    if (allocated_space < NumEntries)
+      return(0); // to avoid Epetra print something on cout
+    ierr = A->ExtractMyRowCopy(LocalRow, allocated_space, NumEntries,
+                               values + nz_ptr, columns + nz_ptr);
+    if (ierr) 
+      return(0); //JJH I think this is the correct thing to return if
+                 //    A->ExtractMyRowCopy returns something nonzero ..
+
+    row_lengths[i] = NumEntries;
+    // increase count of already used space...
+    nz_ptr += NumEntries;
+    // and decrease amount of available space
+    allocated_space -= NumEntries;
+    if (allocated_space < 0)
+      return(0); // something was wrong here
+  }
+
+  return(1);
+}
+
+// ====================================================================== 
 // Specialized getrow for Epetra_CrsMatrix class.
 // ====================================================================== 
 
@@ -363,10 +411,10 @@ int ML_Epetra_CrsMatrix_getrow(ML_Operator *data, int N_requested_rows,
 // Specialized getrow for Epetra_VbrMatrix class.
 // ====================================================================== 
 
-int ML_Epetra_VbrMatrix_getrow(ML_Operator *data,
-            int N_requested_rows, int requested_rows[], 
-		    int allocated_space, int columns[], double values[],
-		    int row_lengths[])
+int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows, 
+                               int requested_rows[], int allocated_space, 
+                               int columns[], double values[],
+                               int row_lengths[])
 {
   int nz_ptr = 0;
   int NumEntries;

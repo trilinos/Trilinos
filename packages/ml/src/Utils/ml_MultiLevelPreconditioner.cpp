@@ -935,7 +935,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
         ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
       }
       else {
-        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow,
+        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_RowMatrix_getrow,
                               ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
 
         ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
