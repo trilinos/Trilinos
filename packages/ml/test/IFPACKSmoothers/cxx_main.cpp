@@ -73,105 +73,124 @@ int main(int argc, char *argv[]) {
   TestList.push_back("Gauss-Seidel");
   TestList.push_back("symmetric Gauss-Seidel");
 
-  double Damping = 0.67;
+  vector<string> PreOrPost;
+  PreOrPost.push_back("pre");
+  PreOrPost.push_back("post");
+  PreOrPost.push_back("both");
 
-  for (int sweeps = 1 ; sweeps < 5 ; sweeps += 2) {
+  vector<double> Damping;
+  Damping.push_back(0.67);
+  Damping.push_back(1.00);
 
-    for (unsigned int i = 0 ; i < TestList.size() ; ++i) {
+  for (int sweeps = 1 ; sweeps < 5 ; sweeps += 2) 
+  {
+    for (unsigned int i = 0; i < TestList.size(); ++i) 
+    {
+      for (unsigned int j = 0; j < PreOrPost.size(); ++j) 
+      {
+        for (unsigned int k = 0; k < Damping.size(); ++k) 
+        {
+          if (Comm.MyPID() == 0)
+          {
+            PrintLine();
+            cout << "### Testing " << TestList[i] << endl;
+            cout << "### sweeps = " << sweeps << endl;
+            cout << "### pre or post = " << PreOrPost[j] << endl;
+            cout << "### damping = " << Damping[k] << endl;
+            cout << endl;
+          }
 
-      PrintLine();
-      cout << "### Testing " << TestList[i] << endl;
-      cout << "### sweeps = " << sweeps << endl;
-      cout << "### damping = " << Damping << endl;
-      PrintLine();
+          // ========================= //
+          // build ML with ML smoother //
+          // ========================= //
 
-      // ========================= //
-      // build ML with ML smoother //
-      // ========================= //
+          ParameterList MLList;
+          SetDefaults("SA",MLList);
+          MLList.set("smoother: type", TestList[i]);
+          MLList.set("smoother: pre or post", PreOrPost[j]);
+          MLList.set("smoother: type", TestList[i]);
+          MLList.set("smoother: sweeps", sweeps);
+          MLList.set("smoother: damping factor", Damping[k]);
 
-      ParameterList MLList;
-      SetDefaults("SA",MLList);
-      MLList.set("smoother: type", TestList[i]);
-      MLList.set("smoother: pre or post", "both");
-             MLList.set("smoother: type", TestList[i]);
-      MLList.set("smoother: sweeps", sweeps);
-      MLList.set("smoother: damping factor", Damping);
+          MLList.set("output", 0);
 
-      MLList.set("output", 0);
+          Epetra_Time Time(Comm);
 
-      Epetra_Time Time(Comm);
+          MultiLevelPreconditioner* MLPrec = 
+            new MultiLevelPreconditioner(*A, MLList);
 
-      MultiLevelPreconditioner* MLPrec = 
-        new MultiLevelPreconditioner(*A, MLList);
+          // tell AztecOO to use this preconditioner, then solve
+          solver.SetPrecOperator(MLPrec);
 
-      // tell AztecOO to use this preconditioner, then solve
-      solver.SetPrecOperator(MLPrec);
+          solver.SetAztecOption(AZ_solver, AZ_gmres);
+          solver.SetAztecOption(AZ_output, AZ_none);
 
-      solver.SetAztecOption(AZ_solver, AZ_gmres);
-      solver.SetAztecOption(AZ_output, 32);
+          LHS.PutScalar(0.0);
+          RHS.PutScalar(1.0);
 
-      LHS.PutScalar(0.0);
-      RHS.PutScalar(1.0);
+          solver.Iterate(1550, 1e-12);
 
-      solver.Iterate(1550, 1e-12);
+          delete MLPrec;
+          MLPrec = 0;
 
-      delete MLPrec;
-      MLPrec = 0;
+          int MLIters = solver.NumIters();
+          double MLTime = Time.ElapsedTime();
 
-      int MLIters = solver.NumIters();
-      double MLTime = Time.ElapsedTime();
+          // ============================= //
+          // build ML with IFPACK smoother //
+          // ============================= //
 
-      // ============================= //
-      // build ML with IFPACK smoother //
-      // ============================= //
+          // reset the options, and stick IFPACK parameters list as 
+          // needed by ML
+          SetDefaults("SA",MLList);
+          MLList.set("smoother: pre or post", PreOrPost[j]);
+          MLList.set("smoother: type", "IFPACK");
+          MLList.set("smoother: ifpack type", "point relaxation stand-alone");
+          ParameterList& IFPACKList = MLList.sublist("smoother: ifpack list");;
+          IFPACKList.set("relaxation: type", TestList[i]);
+          IFPACKList.set("relaxation: sweeps", sweeps);
+          IFPACKList.set("relaxation: damping factor", Damping[k]);
+          // MS // The following is no longer required, I changed ml_ifpack.c
+          // MS // to compute the residual in ML.
+          //IFPACKList.set("relaxation: zero starting solution", true);
 
-      // reset the options, and stick IFPACK parameters list as 
-      // needed by ML
-      SetDefaults("SA",MLList);
-      MLList.set("smoother: pre or post", "both");
-      MLList.set("smoother: type", "IFPACK");
-      MLList.set("smoother: ifpack type", "point relaxation stand-alone");
-      ParameterList& IFPACKList = MLList.sublist("smoother: ifpack list");;
-      IFPACKList.set("relaxation: type", TestList[i]);
-      IFPACKList.set("relaxation: sweeps", sweeps);
-      IFPACKList.set("relaxation: damping factor", Damping);
-      // MS // The following is no longer required, I changed ml_ifpack.c
-      // MS // to compute the residual in ML.
-      //IFPACKList.set("relaxation: zero starting solution", true);
+          MLList.set("output", 0);
+          Time.ResetStartTime();
 
-      MLList.set("output", 0);
-      Time.ResetStartTime();
+          MLPrec = new MultiLevelPreconditioner(*A, MLList);
 
-      MLPrec = new MultiLevelPreconditioner(*A, MLList);
+          // tell AztecOO to use this preconditioner, then solve
+          solver.SetPrecOperator(MLPrec);
 
-      // tell AztecOO to use this preconditioner, then solve
-      solver.SetPrecOperator(MLPrec);
+          solver.SetAztecOption(AZ_solver, AZ_gmres);
+          solver.SetAztecOption(AZ_output, AZ_none);
 
-      solver.SetAztecOption(AZ_solver, AZ_gmres);
-      solver.SetAztecOption(AZ_output, 32);
+          LHS.PutScalar(0.0);
+          RHS.PutScalar(1.0);
 
-      LHS.PutScalar(0.0);
-      RHS.PutScalar(1.0);
+          solver.Iterate(1550, 1e-12);
 
-      solver.Iterate(1550, 1e-12);
+          delete MLPrec;
 
-      delete MLPrec;
+          int IFPACKIters = solver.NumIters();
+          double IFPACKTime = Time.ElapsedTime();
+          Time.ResetStartTime();
 
-      int IFPACKIters = solver.NumIters();
-      double IFPACKTime = Time.ElapsedTime();
-      Time.ResetStartTime();
+          // check whether we get the same results or not,
+          // and also compare the CPU time for both
+          if (MLIters != IFPACKIters) {
+            cout << "TEST FAILED: ML converged in " << MLIters << ", while" << endl;
+            cout << "IFPACK converged in " << IFPACKIters << " iterations." << endl;
+            TestPassed = false;
+          }
 
-      // check whether we get the same results or not,
-      // and also compare the CPU time for both
-      if (MLIters != IFPACKIters) {
-        cout << "TEST FAILED: ML converged in " << MLIters << ", while" << endl;
-        cout << "IFPACK converged in " << IFPACKIters << " iterations." << endl;
-        TestPassed = false;
-      }
-
-      if (Comm.MyPID() == 0) {
-        cout << "ML time     = " << MLTime << " (s)" << endl;
-        cout << "IFPACK time = " << IFPACKTime << " (s)" << endl;
+          if (Comm.MyPID() == 0) {
+            cout << "ML iters     = " << MLIters << endl;
+            cout << "IFPACK iters = " << IFPACKIters << endl;
+            cout << "ML time      = " << MLTime << " (s)" << endl;
+            cout << "IFPACK time  = " << IFPACKTime << " (s)" << endl;
+          }
+        }
       }
     }
   }
