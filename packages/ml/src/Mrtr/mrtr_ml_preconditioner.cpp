@@ -169,6 +169,7 @@ int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
  *----------------------------------------------------------------------*/
 bool MOERTEL::Mortar_ML_Preconditioner::Compute()
 {
+
   iscomputed_ = false;
   
   MLAPI::Init();
@@ -256,11 +257,14 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   int level;
   for (level=0; level<maxlevels-1; ++level)
   {
+    // this level's operator
     mlapiAtilde = mlapiAtilde_[level];
-  
+
+    // build smoother
+    S.Reshape(mlapiAtilde,smoothertype,mlparams_);
+    
     if (level) mlparams_.set("PDE equations", NS.GetNumVectors());
     
-    mlparams_.set("workspace: current level",level);
   
     if (Comm().MyPID()==0)
     {
@@ -269,8 +273,11 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
       ML_print_line("-", 80);
       fflush(stdout);
     }
+
+    mlparams_.set("workspace: current level",level);
     GetPtent(mlapiA,mlparams_,NS,Ptent,NextNS);
     NS = NextNS;
+    fflush(stdout);
     
     if (damping)
     {
@@ -321,9 +328,6 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     // make final coarse grid operator
     C = GetRAP(Rmod,mlapiAtilde,Pmod);
     
-    // build smoother
-    S.Reshape(mlapiAtilde,smoothertype,mlparams_);
-    
     // store values
     mlapiImBWT_[level]    = ImBWTfine;
     mlapiImBWT_[level+1]  = ImBWTcoarse;
@@ -333,7 +337,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     mlapiPmod_[level]     = Pmod;
     mlapiAtilde_[level+1] = C;
     mlapiS_[level]        = S;
-    
+
     // prepare for next level
     mlapiBWT = mlapiBWTcoarse;
     

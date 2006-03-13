@@ -725,10 +725,11 @@ int solve_mortar(struct _DIST_VECTOR *sol, struct _DIST_VECTOR *rhs)
   mlparams.set("max levels",3);
   mlparams.set("aggregation: type","Uncoupled");
   mlparams.set("aggregation: damping factor",1.33);
-  mlparams.set("coarse: max size",10);
+  mlparams.set("coarse: max size",15);
   mlparams.set("coarse: type","Amesos-KLU"); // Amesos-KLU MLS
-  mlparams.set("smoother: type","MLS"); /* MLS symmetric Gauss-Seidel */
+  mlparams.set("smoother: type","ML MLS"); /* MLS ML symmetric Gauss-Seidel ML Gauss-Seidel*/
   mlparams.set("smoother: MLS polynomial order",3);
+  mlparams.set("smoother: damping factor",0.67);
   mlparams.set("smoother: sweeps",1);
   mlparams.set("smoother: pre or post","both");
   mlparams.set("null space: type","pre-computed");
