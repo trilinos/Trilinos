@@ -418,7 +418,6 @@ int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
 {
   int nz_ptr = 0;
   int NumEntries;
-  int NumPDEEqns=1;
   int * BlockIndices;
   Epetra_SerialDenseMatrix ** Entries;
   ML_Operator *mat_in;
@@ -426,12 +425,15 @@ int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
   mat_in = (ML_Operator *) data;
   Epetra_VbrMatrix * Avbr = (Epetra_VbrMatrix *) ML_Get_MyGetrowData(mat_in);
 
+  /* moved into MultiLevelPreconditioner
   // for Vbr we need to know the number of PDE for each row
   if( Avbr->NumMyRows() % Avbr->NumMyBlockRows() != 0 ){
     cerr << "Error : NumPDEEqns does not seem to be constant\n";
     exit( EXIT_FAILURE );
   }
-  NumPDEEqns = (Avbr->NumMyRows())/(Avbr->NumMyBlockRows());
+  */
+  int NumPDEEqns = mat_in->num_PDEs;
+    //(Avbr->NumMyRows())/(Avbr->NumMyBlockRows());
 
   for (int i = 0; i < N_requested_rows; i++)
   {

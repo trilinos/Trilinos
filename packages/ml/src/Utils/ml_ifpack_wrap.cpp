@@ -12,6 +12,7 @@
 #include "Epetra_Map.h" 
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h" 
+#include "Epetra_VbrMatrix.h" 
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
@@ -22,6 +23,8 @@
 #include "Ifpack.h"
 
 using namespace ML_Epetra;
+
+static map<void*, bool> MemoryManager;
 
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
                   Teuchos::ParameterList& List, 
@@ -87,13 +90,37 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
                   const Epetra_Comm& Comm, 
                   void ** Ifpack_Handle)
 {
-
   ML_Operator *Ke = &(ml->Amat[curr_level]);
 
-  // creates the wrapper from ML_Operator to Epetra_RowMatrix
-  // (ML_Epetra::RowMatrix). This is a cheap conversion
-  RowMatrix* Ifpack_Matrix = new RowMatrix(Ke, &Comm);
-  assert (Ifpack_Matrix != 0);
+  Epetra_RowMatrix* Ifpack_Matrix;
+
+  if (Ke->type == ML_TYPE_ROW_MATRIX)
+  {
+    Ifpack_Matrix = (Epetra_RowMatrix*) Ke->data;
+    // I have to remember not to delete this guy
+    MemoryManager[(void*)Ifpack_Matrix] = false;
+  }
+  else if(Ke->type == ML_TYPE_CRS_MATRIX)
+  {
+    Ifpack_Matrix = (Epetra_CrsMatrix*) Ke->data;
+    // I have to remember not to delete this guy
+    MemoryManager[(void*)Ifpack_Matrix] = false;
+  }
+  else if(Ke->type == ML_TYPE_VBR_MATRIX)
+  {
+    Ifpack_Matrix = (Epetra_VbrMatrix*) Ke->data;
+    // I have to remember not to delete this guy
+    MemoryManager[(void*)Ifpack_Matrix] = false;
+  }
+  else
+  {
+    // creates the wrapper from ML_Operator to Epetra_RowMatrix
+    // (ML_Epetra::RowMatrix). This is a cheap conversion
+    Ifpack_Matrix = new RowMatrix(Ke, &Comm);
+    assert (Ifpack_Matrix != 0);
+    // this guy has to be deleted
+    MemoryManager[(void*)Ifpack_Matrix] = true;
+  }
 
   // we enter the IFPACK world through the factory only
   Ifpack Factory;
@@ -137,7 +164,11 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle)
   if (ML_Get_PrintLevel() > 8)
     cout << *Prec;
 
-  delete &(Prec->Matrix());
+  if (MemoryManager[(void*)(&(Prec->Matrix()))])
+  {
+    delete &(Prec->Matrix());
+    MemoryManager[(void*)(&(Prec->Matrix()))] = false;
+  }
   delete Prec;
 
 } /* ML_Ifpack_Destroy */
