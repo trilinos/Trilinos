@@ -899,6 +899,8 @@ linear operators.
 
 <li>\ref Thyra_Op_Vec_product_vec_spc_prg_grp
 
+<li>\ref Thyra_Op_Vec_test_scalar_product_prg_grp
+
 </ol>
 
 */
@@ -4016,5 +4018,22 @@ test_std_ops.cpp </a>.
 */
 
 /** \example test_std_ops.cpp
+
+*/
+
+/** \defgroup Thyra_Op_Vec_test_scalar_product_prg_grp Testing Program for non-Euclidean Scalar Products
+
+\ingroup Thyra_Op_Vec_examples_grp
+
+To see the full listing of this click: <a
+href="test__scalar__product_8cpp-example.html">
+test_scalar_product.cpp </a>.
+
+*/
+
+/** \example test_scalar_product.cpp
+
+Click \ref Thyra_Op_Vec_test_scalar_product_prg_grp "here" for a more
+detailed discussion of this example/test program.
 
 */
