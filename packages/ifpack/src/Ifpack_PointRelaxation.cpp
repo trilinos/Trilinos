@@ -3,6 +3,7 @@
 #include <iomanip>
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
@@ -239,7 +240,7 @@ ostream& Ifpack_PointRelaxation::Print(ostream & os) const
     os << "================================================================================" << endl;
     os << "Ifpack_PointRelaxation" << endl;
     os << "Sweeps         = " << NumSweeps_ << endl;
-    os << "damping factor = " << DampingFactor_;
+    os << "damping factor = " << DampingFactor_ << endl;
     if (PrecType_ == IFPACK_JACOBI)
       os << "Type           = Jacobi" << endl;
     else if (PrecType_ == IFPACK_GS)
@@ -403,7 +404,6 @@ ApplyInverseJacobi(const Epetra_MultiVector& RHS, Epetra_MultiVector& LHS) const
   ApplyInverseFlops_ += NumVectors * (6 * NumGlobalRows_ + 2 * NumGlobalNonzeros_);
 
   return(0);
-
 }
 
 //==============================================================================
@@ -507,7 +507,24 @@ ApplyInverseGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 int Ifpack_PointRelaxation::
 ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
+  const Epetra_CrsMatrix* CrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(Matrix_);
+  // try to pick the best option; performances may be improved
+  // if several sweeps are used.
+  if (CrsMatrix != 0)
+  {
+    if (CrsMatrix->StorageOptimized())
+      return(ApplyInverseSGS_FastCrsMatrix(CrsMatrix, X, Y));
+    else
+      return(ApplyInverseSGS_CrsMatrix(CrsMatrix, X, Y));
+  }
+  else
+    return(ApplyInverseSGS_RowMatrix(X, Y));
+}
 
+//==============================================================================
+int Ifpack_PointRelaxation::
+ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
   int NumVectors = X.NumVectors();
   int Length = Matrix().MaxNumEntries();
   vector<int> Indices(Length);
@@ -568,6 +585,180 @@ ApplyInverseSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
         double dtemp = 0.0;
         for (int k = 0 ; k < NumEntries ; ++k) {
+
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+
+      }
+    }
+
+    if (IsParallel_)
+      for (int m = 0 ; m < NumVectors ; ++m) 
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y_ptr[m][i] = y2_ptr[m][i];
+  }
+
+  if (IsParallel_)
+    delete Y2;
+
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  return(0);
+}
+
+//==============================================================================
+int Ifpack_PointRelaxation::
+ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  int NumVectors = X.NumVectors();
+  int Length = Matrix().MaxNumEntries();
+
+  int* Indices;
+  double* Values;
+
+  Epetra_MultiVector* Y2;
+  if (IsParallel_) {
+    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+  }
+  else
+    Y2 = &Y;
+
+  double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
+  X.ExtractView(&x_ptr);
+  Y.ExtractView(&y_ptr);
+  Y2->ExtractView(&y2_ptr);
+  Diagonal_->ExtractView(&d_ptr);
+  
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
+
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+
+      int NumEntries;
+      int col;
+      double diag = d_ptr[i];
+
+      IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+
+      for (int m = 0 ; m < NumVectors ; ++m) {
+
+        double dtemp = 0.0;
+
+        for (int k = 0; k < NumEntries; ++k) {
+
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+      }
+    }
+
+    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+      int NumEntries;
+      int col;
+      double diag = d_ptr[i];
+
+      IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+
+      for (int m = 0 ; m < NumVectors ; ++m) {
+
+        double dtemp = 0.0;
+        for (int k = 0; k < NumEntries; ++k) {
+
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+
+      }
+    }
+
+    if (IsParallel_)
+      for (int m = 0 ; m < NumVectors ; ++m) 
+        for (int i = 0 ; i < NumMyRows_ ; ++i)
+          y_ptr[m][i] = y2_ptr[m][i];
+  }
+
+  if (IsParallel_)
+    delete Y2;
+
+  ApplyInverseFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
+  return(0);
+}
+
+//==============================================================================
+// this requires Epetra_CrsMatrix + OptimizeStorage()
+int Ifpack_PointRelaxation::
+ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+  int* IndexOffset;
+  int* Indices;
+  double* Values;
+  IFPACK_CHK_ERR(A->ExtractCrsDataPointers(IndexOffset, Indices, Values));
+
+  int NumVectors = X.NumVectors();
+
+  Epetra_MultiVector* Y2;
+  if (IsParallel_) {
+    Y2 = new Epetra_MultiVector(Importer_->TargetMap(), NumVectors);
+  }
+  else
+    Y2 = &Y;
+
+  double** y_ptr, ** y2_ptr, ** x_ptr, *d_ptr;
+  X.ExtractView(&x_ptr);
+  Y.ExtractView(&y_ptr);
+  Y2->ExtractView(&y2_ptr);
+  Diagonal_->ExtractView(&d_ptr);
+  
+  for (int iter = 0 ; iter < NumSweeps_ ; ++iter) {
+    
+    // only one data exchange per sweep
+    if (IsParallel_)
+      IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
+
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+
+      int NumEntries;
+      int col;
+      double diag = d_ptr[i];
+
+      //IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+
+      for (int m = 0 ; m < NumVectors ; ++m) {
+
+        double dtemp = 0.0;
+
+        for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
+
+          col = Indices[k];
+          dtemp += Values[k] * y2_ptr[m][col];
+        }
+
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+      }
+    }
+
+    for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
+
+      int NumEntries;
+      int col;
+      double diag = d_ptr[i];
+
+      //IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
+
+      for (int m = 0 ; m < NumVectors ; ++m) {
+
+        double dtemp = 0.0;
+        for (int k = IndexOffset[i] ; k < IndexOffset[i + 1] ; ++k) {
 
           col = Indices[k];
           dtemp += Values[k] * y2_ptr[m][col];

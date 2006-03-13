@@ -14,6 +14,7 @@ class Epetra_Comm;
 class Epetra_Time;
 class Epetra_Vector;
 class Epetra_RowMatrix;
+class Epetra_CrsMatrix;
 class Epetra_Import;
 
 //! Ifpack_PointRelaxation: a class to define point relaxation preconditioners of for Epetra_RowMatrix's.
@@ -293,6 +294,16 @@ private:
   virtual int ApplyInverseSGS(const Epetra_MultiVector& X, 
                               Epetra_MultiVector& Y) const;
 
+  virtual int ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, 
+                                        Epetra_MultiVector& Y) const;
+
+  virtual int ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A,
+                                        const Epetra_MultiVector& X, 
+                                        Epetra_MultiVector& Y) const;
+
+  virtual int ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A,
+                                            const Epetra_MultiVector& X, 
+                                            Epetra_MultiVector& Y) const;
   //@}
 
 private:
