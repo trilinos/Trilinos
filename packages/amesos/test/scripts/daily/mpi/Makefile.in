@@ -78,7 +78,7 @@
 #
 #
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) $(TestParaklete_SOURCES) $(TestPardiso_SOURCES) $(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperlu_SOURCES) $(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestCoverage_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) $(TestParaklete_SOURCES) $(TestPardiso_SOURCES) $(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) $(TestScalapack_SOURCES) $(TestSuperlu_SOURCES) $(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) $(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -102,12 +102,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = TestAmesos$(EXEEXT) TestQuietAmesos$(EXEEXT) \
-	TestBasic$(EXEEXT) TestExamples$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4) \
-	$(am__EXEEXT_5) $(am__EXEEXT_6) $(am__EXEEXT_7) \
-	$(am__EXEEXT_8) $(am__EXEEXT_9) $(am__EXEEXT_10) \
-	$(am__EXEEXT_11) $(am__EXEEXT_12) $(am__EXEEXT_13) \
-	$(am__EXEEXT_14)
+	TestExamples$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5) \
+	$(am__EXEEXT_6) $(am__EXEEXT_7) $(am__EXEEXT_8) \
+	$(am__EXEEXT_9) $(am__EXEEXT_10) $(am__EXEEXT_11) \
+	$(am__EXEEXT_12) $(am__EXEEXT_13) $(am__EXEEXT_14)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -166,10 +165,6 @@ am__TestAmesos_SOURCES_DIST = $(srcdir)/TestAmesos.sh
 am_TestAmesos_OBJECTS =
 TestAmesos_OBJECTS = $(am_TestAmesos_OBJECTS)
 TestAmesos_LDADD = $(LDADD)
-am__TestBasic_SOURCES_DIST = $(srcdir)/TestBasic.sh
-am_TestBasic_OBJECTS =
-TestBasic_OBJECTS = $(am_TestBasic_OBJECTS)
-TestBasic_LDADD = $(LDADD)
 am__TestCoverage_SOURCES_DIST = $(srcdir)/TestCoverage
 am_TestCoverage_OBJECTS =
 TestCoverage_OBJECTS = $(am_TestCoverage_OBJECTS)
@@ -239,17 +234,16 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
-	$(TestCoverage_SOURCES) $(TestDscpack_SOURCES) \
-	$(TestExamples_SOURCES) $(TestKlu_SOURCES) \
-	$(TestLapack_SOURCES) $(TestMumps_SOURCES) \
+SOURCES = $(TestAmesos_SOURCES) $(TestCoverage_SOURCES) \
+	$(TestDscpack_SOURCES) $(TestExamples_SOURCES) \
+	$(TestKlu_SOURCES) $(TestLapack_SOURCES) $(TestMumps_SOURCES) \
 	$(TestParaklete_SOURCES) $(TestPardiso_SOURCES) \
 	$(TestPastix_SOURCES) $(TestQuietAmesos_SOURCES) \
 	$(TestScalapack_SOURCES) $(TestSuperlu_SOURCES) \
 	$(TestSuperludist_SOURCES) $(TestTaucs_SOURCES) \
 	$(TestUmfpack_SOURCES) $(TestValgrind_SOURCES)
 DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
-	$(am__TestBasic_SOURCES_DIST) $(am__TestCoverage_SOURCES_DIST) \
+	$(am__TestCoverage_SOURCES_DIST) \
 	$(am__TestDscpack_SOURCES_DIST) \
 	$(am__TestExamples_SOURCES_DIST) $(am__TestKlu_SOURCES_DIST) \
 	$(am__TestLapack_SOURCES_DIST) $(am__TestMumps_SOURCES_DIST) \
@@ -455,7 +449,6 @@ target_vendor = @target_vendor@
 # Nothing should be done for a serial build
 @HAVE_MPI_TRUE@TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
 @HAVE_MPI_TRUE@TestQuietAmesos_SOURCES = $(srcdir)/TestQuietAmesos.sh
-@HAVE_MPI_TRUE@TestBasic_SOURCES = $(srcdir)/TestBasic.sh
 @HAVE_MPI_TRUE@TestExamples_SOURCES = $(srcdir)/TestExamples.sh
 @HAVE_AMESOS_DSCPACK_FALSE@DSCPACK_TEST = 
 @HAVE_AMESOS_DSCPACK_TRUE@DSCPACK_TEST = TestDscpack
@@ -537,9 +530,6 @@ clean-noinstPROGRAMS:
 @HAVE_MPI_FALSE@TestAmesos$(EXEEXT): $(TestAmesos_OBJECTS) $(TestAmesos_DEPENDENCIES) 
 @HAVE_MPI_FALSE@	@rm -f TestAmesos$(EXEEXT)
 @HAVE_MPI_FALSE@	$(LINK) $(TestAmesos_LDFLAGS) $(TestAmesos_OBJECTS) $(TestAmesos_LDADD) $(LIBS)
-@HAVE_MPI_FALSE@TestBasic$(EXEEXT): $(TestBasic_OBJECTS) $(TestBasic_DEPENDENCIES) 
-@HAVE_MPI_FALSE@	@rm -f TestBasic$(EXEEXT)
-@HAVE_MPI_FALSE@	$(LINK) $(TestBasic_LDFLAGS) $(TestBasic_OBJECTS) $(TestBasic_LDADD) $(LIBS)
 @HAVE_COVERAGE_FALSE@TestCoverage$(EXEEXT): $(TestCoverage_OBJECTS) $(TestCoverage_DEPENDENCIES) 
 @HAVE_COVERAGE_FALSE@	@rm -f TestCoverage$(EXEEXT)
 @HAVE_COVERAGE_FALSE@	$(LINK) $(TestCoverage_LDFLAGS) $(TestCoverage_OBJECTS) $(TestCoverage_LDADD) $(LIBS)
@@ -717,8 +707,6 @@ uninstall-am: uninstall-info-am
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestAmesos.sh TestAmesos$(EXEEXT) 
 @HAVE_MPI_TRUE@TestQuietAmesos$(EXEEXT): ${TestQuietAmesos_SOURCES}
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestQuietAmesos.sh TestQuietAmesos$(EXEEXT) 
-@HAVE_MPI_TRUE@TestBasic$(EXEEXT): ${TestBasic_SOURCES}
-@HAVE_MPI_TRUE@	cp $(srcdir)/TestBasic.sh TestBasic$(EXEEXT) 
 @HAVE_MPI_TRUE@TestExamples$(EXEEXT): ${TestExamples_SOURCES}
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestExamples.sh TestExamples$(EXEEXT) 
 

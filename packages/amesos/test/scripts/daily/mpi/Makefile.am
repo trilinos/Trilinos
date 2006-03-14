@@ -75,10 +75,6 @@ TestQuietAmesos_SOURCES = $(srcdir)/TestQuietAmesos.sh
 TestQuietAmesos$(EXEEXT): ${TestQuietAmesos_SOURCES}
 	cp $(srcdir)/TestQuietAmesos.sh TestQuietAmesos$(EXEEXT) 
 
-TestBasic_SOURCES = $(srcdir)/TestBasic.sh
-TestBasic$(EXEEXT): ${TestBasic_SOURCES}
-	cp $(srcdir)/TestBasic.sh TestBasic$(EXEEXT) 
-
 TestExamples_SOURCES = $(srcdir)/TestExamples.sh
 TestExamples$(EXEEXT): ${TestExamples_SOURCES}
 	cp $(srcdir)/TestExamples.sh TestExamples$(EXEEXT) 
@@ -251,7 +247,7 @@ endif
 #
 #  Note:  COVERAGE_TEST must be listed last so that it will execute last
 #
-noinst_PROGRAMS = TestAmesos TestQuietAmesos TestBasic TestExamples $(DSCPACK_TEST) \
+noinst_PROGRAMS = TestAmesos TestQuietAmesos TestExamples $(DSCPACK_TEST) \
 	$(SCALAPACK_TEST) $(LAPACK_TEST) $(UMFPACK_TEST) \
 	$(TAUCS_TEST) $(PARDISO_TEST) $(PASTIX_TEST) \
 	$(MUMPS_TEST) $(PARAKLETE_TEST) $(KLU_TEST)  $(SUPERLU_TEST) \
