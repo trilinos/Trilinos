@@ -232,15 +232,13 @@ namespace Belos {
       }	
       //
       _residvec = MVT::Clone( *_cur_block_sol, 1 );
-      _p = MVT::Clone( *_cur_block_sol, 1 );
+      _p = MVT::CloneCopy( *_cur_block_sol );
       _Ap = MVT::Clone( *_cur_block_sol, 1 ); 
       _z = MVT::Clone( *_cur_block_sol, 1 ); 
       //
       // ************ Compute the initial residual ********************************
       //
       // p0 = r0 = cur_block_rhs - A * cur_block_sol 
-      //
-      MVT::MvAddMv(one, *_cur_block_sol, zero, *_cur_block_sol, *_p);
       //
       // Multiply the current solution by A and store in _Ap
       //       _Ap = A*_p 

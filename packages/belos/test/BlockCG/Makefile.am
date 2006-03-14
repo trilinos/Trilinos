@@ -37,7 +37,7 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 Dummy_SOURCES = Dummy
 
 ComplexDummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
+	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
 
 ComplexDummy_SOURCES = Dummy
 

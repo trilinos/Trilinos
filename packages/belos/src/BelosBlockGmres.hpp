@@ -117,7 +117,7 @@ namespace Belos {
     /*! For GMRES this is not the same as the actual residual of the linear system and the
 	residual is not in MultiVec form, so the normvec will be populated with the residual norm.
      */
-    RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const;
+    RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
 
     //! Get the true residuals for the current block of linear systems.
     /*! For GMRES this will force the solver to compute a current residual for its linear 
@@ -206,7 +206,7 @@ namespace Belos {
     int _blocksize;
     int _restartiter, _totaliter, _iter;
     bool _flexible;
-    ScalarType _dep_tol, _blk_tol, _sing_tol;
+    MagnitudeType _dep_tol, _blk_tol, _sing_tol;
     Teuchos::SerialDenseVector<int,ScalarType> beta, cs, sn;
 
     typedef MultiVecTraits<ScalarType, MV> MVT;
@@ -247,18 +247,16 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void BlockGmres<ScalarType,MV,OP>::SetGmresBlkTols() 
   {
-    const ScalarType two = 2.0;
-    ScalarType eps;
-    char precision = 'P';
-    Teuchos::LAPACK<int,ScalarType> lapack;
-    eps = lapack.LAMCH(precision);
-    _dep_tol = 1/sqrt(two);
+    typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
+    const MagnitudeType two = 2.0;
+    const MagnitudeType eps = SCT::eps();
+    _dep_tol = MGT::one()/MGT::squareroot(two);
     _blk_tol = 10*sqrt(eps);
     _sing_tol = 10 * eps;
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<const MV> BlockGmres<ScalarType,MV,OP>::GetNativeResiduals( std::vector<ScalarType> *normvec ) const 
+  RefCountPtr<const MV> BlockGmres<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     //
     // If this is the first iteration for a new right-hand side return the
@@ -592,8 +590,8 @@ namespace Belos {
     const int max_num_orth = 2;
     int i, k, row_offset, col_offset;
     std::vector<int> index( _blocksize );
-    std::vector<ScalarType> norm1( _blocksize );
-    std::vector<ScalarType> norm2( _blocksize );
+    std::vector<MagnitudeType> norm1( _blocksize );
+    std::vector<MagnitudeType> norm2( _blocksize );
     //
     // Initialize index vector.
     //
@@ -718,8 +716,8 @@ namespace Belos {
     int i, k, num_orth;
     std::vector<int> index( _blocksize );
     std::vector<int> index2( IntOne );
-    std::vector<ScalarType> nm1(IntOne);
-    std::vector<ScalarType> nm2(IntOne);
+    std::vector<MagnitudeType> nm1(IntOne);
+    std::vector<MagnitudeType> nm2(IntOne);
     //
     // Initialize index vector.
     //
@@ -915,8 +913,8 @@ namespace Belos {
     bool flg = false;
     //
     std::vector<int> index, index2( IntOne );
-    std::vector<ScalarType> norm1( IntOne );
-    std::vector<ScalarType> norm2( IntOne );
+    std::vector<MagnitudeType> norm1( IntOne );
+    std::vector<MagnitudeType> norm2( IntOne );
     Teuchos::SerialDenseVector<int,ScalarType> rj; 
     RefCountPtr<const MV> Qj;
     RefCountPtr<MV> qj, tptr;
@@ -1056,7 +1054,7 @@ namespace Belos {
       // If we have not exited, compute the norm of column j of
       // VecIn (qj), then normalize qj to make it into a unit vector
       //
-      std::vector<ScalarType> normq(IntOne);
+      std::vector<MagnitudeType> normq(IntOne);
       MVT::MvNorm( *qj, &normq );
       //
       ScalarType rjj = one / normq[0];
@@ -1151,7 +1149,7 @@ namespace Belos {
 	    beta[_iter*_blocksize + j] = zero;
 	  } else {
 	    mu = sqrt(R(_iter*_blocksize+j,_iter*_blocksize+j)*R(_iter*_blocksize+j,_iter*_blocksize+j)+sigma);
-	    if ( R(_iter*_blocksize+j,_iter*_blocksize+j) < zero ) {
+	    if ( Teuchos::ScalarTraits<ScalarType>::real(R(_iter*_blocksize+j,_iter*_blocksize+j)) < Teuchos::ScalarTraits<MagnitudeType>::zero() ) {
 	      vscale = R(_iter*_blocksize+j,_iter*_blocksize+j) - mu;
 	    } else {
 	      vscale = -sigma / (R(_iter*_blocksize+j,_iter*_blocksize+j) + mu);
@@ -1186,7 +1184,7 @@ namespace Belos {
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::SerialDenseMatrix<int,ScalarType> VTV; VTV.shape(m,m);
     std::vector<int> index(_blocksize);
-    std::vector<ScalarType> ptr_norms(_blocksize);
+    std::vector<MagnitudeType> ptr_norms(_blocksize);
     
     for ( i=0; i<_blocksize; i++ ) {
       index[i] = m+i;

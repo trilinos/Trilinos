@@ -49,6 +49,7 @@
 
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
+#include "MyOperator.hpp"
 
 using namespace Teuchos;
 
@@ -152,6 +153,8 @@ int main(int argc, char *argv[]) {
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ST> > A 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
+//  RefCountPtr< MyOperator<ST> > A 
+//    = rcp( new MyOperator<ST>(dim,colptr,nnz,rowind,cvals) );
 
   //
   // ********Other information used by block solver***********
@@ -168,8 +171,17 @@ int main(int argc, char *argv[]) {
   //
   RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,blockSize) );
   RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,blockSize) );
-  MVT::MvInit( *soln, SCT::one() );
+  MVT::MvRandom( *soln );
   OPT::Apply( *A, *soln, *rhs );
+  Teuchos::SerialDenseMatrix<int,ST> temp_sdm(1,1);
+  MVT::MvTransMv( SCT::one(), *rhs, *soln, temp_sdm );
+  cout << "rhs^H*soln = "<< temp_sdm(0,0) << endl;
+  MVT::MvTransMv( SCT::one(), *soln, *rhs, temp_sdm );
+  cout << "soln^H*rhs = "<< temp_sdm(0,0) << endl;
+  MVT::MvTransMv( SCT::one(), *soln, *soln, temp_sdm );
+  cout << "soln^H*soln = "<< temp_sdm(0,0) << endl;
+  MVT::MvTransMv( SCT::one(), *rhs, *rhs, temp_sdm );
+  cout << "rhs^H*rhs = "<< temp_sdm(0,0) << endl;
   MVT::MvInit( *soln, SCT::zero() );
   //
   //  Construct an unpreconditioned linear problem instance.
