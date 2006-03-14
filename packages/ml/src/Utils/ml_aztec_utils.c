@@ -2358,9 +2358,30 @@ void ML_find_local_indices(int N_update, int bindx[], int update[],
 *******************************************************************************/
 int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
                              int num_dirichlet_rows)
+#ifndef ML_CORRECT_BCS_FOR_GRAD
 {
-   int *rows, i, j, bcrow;    struct ML_CSR_MSRdata *data;
-   double *vals;    int *cols;
+   int *rows, i, j, bcrow;
+   double *vals;
+   struct ML_CSR_MSRdata *data;
+
+   data = (struct ML_CSR_MSRdata *) ((*Tmat)->data);
+   rows = data->rowptr;
+   vals = data->values;
+
+   for (i=0;i<num_dirichlet_rows;i++) {
+      bcrow = dirichlet_rows[i];
+      for (j = rows[bcrow]; j< rows[bcrow+1]; j++) {
+         vals[j] = 0.0;
+      }
+   }
+   return 0;
+} /*ML_Tmat_applyDirichletBC*/
+#else
+{
+   int *rows, i, j, bcrow;
+   struct ML_CSR_MSRdata *data;
+   double *vals;
+   int *cols;
    int Nloc, Nghosts;
    double *dtemp;
 
@@ -2397,8 +2418,8 @@ int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
    ML_exchange_bdry(dtemp,(*Tmat)->getrow->pre_comm,
                     Nloc, (*Tmat)->comm, ML_OVERWRITE,NULL);
 
-   /* If a node is the endpoint of a Dirichlet edge, the corresponding */
-   /*       column of T should be completely zeroed out. */
+   /* If a node is the endpoint of a Dirichlet edge, the corresponding
+            column of T should be completely zeroed out. */
    for (i=0;i<(*Tmat)->outvec_leng;i++) {
       for (j = rows[i]; j< rows[i+1]; j++) {
          if ( dtemp[cols[j]] == -1.0 )
@@ -2410,6 +2431,7 @@ int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
 
    return 0;
 } /*ML_Tmat_applyDirichletBC*/
+#endif
 
 /****************************************************************************/
 
