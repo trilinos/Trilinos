@@ -279,6 +279,17 @@ public:
     return(List_.get("adapt: iters fine", 15));
   }
 
+  //! Returns the multigrid preconditioner operator complexity.
+  double GetComplexity()
+  {
+    double nnzFine = A_[0].GetNumGlobalNonzeros();
+    double nnzTotal = nnzFine;
+    for (int i = 1; i < GetMaxLevels(); i++) {
+      nnzTotal += A_[i].GetNumGlobalNonzeros();
+    }
+    return nnzTotal / nnzFine;
+  }
+
 
   // @}
   // @{ \name Hierarchy construction methods
