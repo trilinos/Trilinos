@@ -22,7 +22,7 @@ _BELOS_INCLUDES = \
   $(BELOS_THYRA_INCLUDES) \
   $(TEUCHOS_INCLUDES)
 
-_BELOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
+_BELOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@BELOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_BELOS_INCLUDES))
 @USING_GNUMAKE_TRUE@BELOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_BELOS_LIBS))
@@ -42,7 +42,7 @@ _BELOS_TEST_INCLUDES = \
         $(TRIUTILS_INCLUDES) \
         $(TEUCHOS_INCLUDES)
 
-_BELOS_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(IFPACK_LIBS) $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
+_BELOS_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(EPETRAEXT_LIBS) $(IFPACK_LIBS) $(EPETRA_LIBS) $(TRIUTILS_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@
 
 @USING_GNUMAKE_TRUE@BELOS_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_BELOS_TEST_INCLUDES))
 @USING_GNUMAKE_TRUE@BELOS_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_BELOS_TEST_LIBS))

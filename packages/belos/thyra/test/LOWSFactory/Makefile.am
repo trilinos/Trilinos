@@ -1,3 +1,14 @@
+include $(top_builddir)/Makefile.export.belos
+
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
+else
+EXPORT_LIBS = $(BELOS_TEST_LIBS)
+EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 EXEEXT = .exe
 
@@ -5,8 +16,10 @@ EXEEXT = .exe
 # Actual programs
 #
 
+if BUILD_EPETRAEXT
 TEST_SINGLE_BELOS_THYRA_SOLVER_DRIVER = test_single_belos_thyra_solver_driver
 #TEST_BELOS_THYRA_DRIVER = test_belos_thyra_driver
+endif
 
 noinst_PROGRAMS = $(TEST_SINGLE_BELOS_THYRA_SOLVER_DRIVER) $(TEST_BELOS_THYRA_DRIVER)
 
@@ -38,23 +51,6 @@ matrices:
 common_sources = $(srcdir)/test_single_belos_thyra_solver.cpp
 
 common_dependencies = $(top_builddir)/src/libbelos.a
-
-include $(top_builddir)/Makefile.export.belos
-
-# Here we have to include the belos stuff explicitly since ifpack may have been 
-# configured with --disable-ifpack-belos.  Either way, this will work just fine!
-_EXPORT_INCLUDES = $(BELOS_EXTRA_INCLUDES) $(IFPACK_INCLUDES) $(BELOS_INCLUDES)
-_EXPORT_LIBS =  $(BELOS_EXTRA_LIBS) $(IFPACK_LIBS) $(BELOS_LIBS)
-
-if USING_GNUMAKE
-EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
-EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
-else
-EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
-EXPORT_LIBS = $(_EXPORT_LIBS)
-endif
-
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 

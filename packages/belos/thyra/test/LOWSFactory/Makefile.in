@@ -68,7 +68,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-am__EXEEXT_1 = test_single_belos_thyra_solver_driver$(EXEEXT)
+@BUILD_EPETRAEXT_TRUE@am__EXEEXT_1 = test_single_belos_thyra_solver_driver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__objects_1 = test_single_belos_thyra_solver.$(OBJEXT)
 am_test_single_belos_thyra_solver_driver_OBJECTS =  \
@@ -77,10 +77,9 @@ am_test_single_belos_thyra_solver_driver_OBJECTS =  \
 test_single_belos_thyra_solver_driver_OBJECTS =  \
 	$(am_test_single_belos_thyra_solver_driver_OBJECTS)
 am__DEPENDENCIES_1 =
-@USING_GNUMAKE_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
+@USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -232,11 +231,16 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_TEST_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
+@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 #
 # Actual programs
 #
-TEST_SINGLE_BELOS_THYRA_SOLVER_DRIVER = test_single_belos_thyra_solver_driver
+@BUILD_EPETRAEXT_TRUE@TEST_SINGLE_BELOS_THYRA_SOLVER_DRIVER = test_single_belos_thyra_solver_driver
 test_single_belos_thyra_solver_driver_SOURCES = $(srcdir)/test_single_belos_thyra_solver_driver.cpp $(common_sources)
 test_single_belos_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_belos_thyra_solver_driver_LDADD = $(common_ldadd)
@@ -246,16 +250,6 @@ test_single_belos_thyra_solver_driver_LDADD = $(common_ldadd)
 #
 common_sources = $(srcdir)/test_single_belos_thyra_solver.cpp
 common_dependencies = $(top_builddir)/src/libbelos.a
-
-# Here we have to include the belos stuff explicitly since ifpack may have been 
-# configured with --disable-ifpack-belos.  Either way, this will work just fine!
-_EXPORT_INCLUDES = $(BELOS_EXTRA_INCLUDES) $(IFPACK_INCLUDES) $(BELOS_INCLUDES)
-_EXPORT_LIBS = $(BELOS_EXTRA_LIBS) $(IFPACK_LIBS) $(BELOS_LIBS)
-@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(_EXPORT_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
 EXTRA_DIST = $(srcdir)/test_single_belos_thyra_solver.hpp 
 all: all-am
@@ -518,6 +512,7 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+include $(top_builddir)/Makefile.export.belos
 
 #test_belos_thyra_driver_SOURCES = $(srcdir)/test_belos_thyra_driver.cpp $(common_sources)
 #test_belos_thyra_driver_DEPENDENCIES = $(common_dependencies) matrices
@@ -535,8 +530,6 @@ matrices:
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadK.mtx KheadK.mtx                                  
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadSorted.mtx  KheadSorted.mtx
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Khead.triS Khead.triS  
-
-include $(top_builddir)/Makefile.export.belos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
