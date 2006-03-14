@@ -170,7 +170,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   //
   // Solve the linear system
   //
-  iterativeSolver_->GetStatusTest().Reset(); // ToDo: This should return a RCP!
+  iterativeSolver_->GetStatusTest()->Reset(); 
   iterativeSolver_->Reset();
   iterativeSolver_->Solve();
   //

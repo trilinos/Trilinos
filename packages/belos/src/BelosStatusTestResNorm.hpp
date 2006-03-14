@@ -346,18 +346,18 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   int i;
   MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
   MagnitudeType one = Teuchos::ScalarTraits<MagnitudeType>::one();
-  LinearProblem<ScalarType,MV,OP>& lp = iSolver->GetLinearProblem();
+  RefCountPtr<LinearProblem<ScalarType,MV,OP> > lp = iSolver->GetLinearProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
     //
     // Get some current solver information.
     //
     firstcallCheckStatus_ = false;
-    cur_rhs_num_ = lp.GetRHSIndex();
-    cur_blksz_ = lp.GetNumToSolve();
+    cur_rhs_num_ = lp->GetRHSIndex();
+    cur_blksz_ = lp->GetNumToSolve();
     //
     if (scaletype_== NormOfRHS) {
-      const MV& rhs = *lp.GetRHS();
+      const MV& rhs = *(lp->GetRHS());
       numrhs_ = MVT::GetNumberVecs( rhs );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
@@ -365,7 +365,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
       MVT::MvNorm( rhs, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      const MV &init_res = lp.GetInitResVec();
+      const MV &init_res = lp->GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
@@ -373,13 +373,13 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
       MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
-      const MV& init_res = lp.GetInitResVec();
+      const MV& init_res = lp->GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_.resize( numrhs_ );
       resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_.resize( numrhs_ );
       RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
-      if (lp.ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
+      if (lp->ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
           MVT::MvNorm( *prec_init_res, &scalevector_, scalenormtype_ );
       else 
           MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
@@ -397,12 +397,12 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //
   // This section computes the norm of the residual vector
   //
-  if ( cur_rhs_num_ != lp.GetRHSIndex() || cur_blksz_ != lp.GetNumToSolve() ) {
+  if ( cur_rhs_num_ != lp->GetRHSIndex() || cur_blksz_ != lp->GetNumToSolve() ) {
     //
     // We have moved on to the next rhs block
     //
-    cur_rhs_num_ = lp.GetRHSIndex();
-    cur_blksz_ = lp.GetNumToSolve();
+    cur_rhs_num_ = lp->GetRHSIndex();
+    cur_blksz_ = lp->GetNumToSolve();
   } else {
     //
     // We are in the same rhs block, return if we are converged
@@ -434,15 +434,15 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     // asking for the true residual from the solver.
     //
     //
-    if ( lp.IsSolutionUpdated() ) {
-      const MV &cur_res = lp.GetCurrResVec();
+    if ( lp->IsSolutionUpdated() ) {
+      const MV &cur_res = lp->GetCurrResVec();
       std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
       MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
       for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i];
     } else {
       RefCountPtr<const MV> cur_soln = iSolver->GetCurrentSoln();
-      const MV &cur_res = lp.GetCurrResVec( &*cur_soln );
+      const MV &cur_res = lp->GetCurrResVec( &*cur_soln );
       std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
       MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
       for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)

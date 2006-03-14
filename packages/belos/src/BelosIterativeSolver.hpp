@@ -34,7 +34,6 @@
     \brief Pure virtual base class which describes the basic interface to the iterative solver.
 */
 
-#include "BelosLinearProblem.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
@@ -54,6 +53,9 @@ namespace Belos {
 
 template <class ScalarType, class MV, class OP>
 class StatusTest;
+
+template <class ScalarType, class MV, class OP>
+class LinearProblem;
 
 template <class ScalarType, class MV, class OP>
 class IterativeSolver {
@@ -113,9 +115,9 @@ class IterativeSolver {
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.
   */
-  virtual LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const = 0;
+  virtual RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const = 0;
 
-  virtual StatusTest<ScalarType,MV,OP>& GetStatusTest() const = 0;
+  virtual RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const = 0;
 
   //@}
   //@{ \name Reset methods
@@ -129,7 +131,7 @@ class IterativeSolver {
      \note This method can ONLY be expected to reset the solver object's state, 
      the LinearProblem and StatusTest need to be reset separately.
   */
-  virtual int Reset( const RefCountPtr<ParameterList>& pl = null ) { return 0; }
+  virtual int Reset( const RefCountPtr<ParameterList>& pl = Teuchos::null ) { return 0; }
     
   //@}
 

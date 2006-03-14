@@ -111,9 +111,9 @@ namespace Belos {
     //! Get a constant reference to the current linear problem.  
     /*! This may include a current solution, if the solver has recently restarted or completed.
      */
-    LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const { return( *_lp ); }
+    RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
     
-    StatusTest<ScalarType,MV,OP>& GetStatusTest() const { return( *_stest ); }
+    RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
 
     //@} 
     
