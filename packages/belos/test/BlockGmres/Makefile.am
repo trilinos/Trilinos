@@ -25,10 +25,9 @@ BELOS_BGMRES_EX = bl_gmres_diag
 
 if BUILD_TRIUTILS
 if BUILD_TEUCHOS_COMPLEX
-#BELOS_BGMRES_COMPLEX_EX = bl_gmres_complex_hb ComplexDummy
+BELOS_BGMRES_COMPLEX_EX = bl_gmres_complex_hb ComplexDummy
 endif
 endif
-# RAB: Heidi forgot to check in the file test_bl_gmres_complex_hb.cpp so I disable this for now.
 
 
 noinst_PROGRAMS = $(BELOS_BGMRES_EX) $(BELOS_BGMRES_IFPACK_EX) $(BELOS_BGMRES_NOPREC_EX) $(BELOS_BGMRES_COMPLEX_EX)
