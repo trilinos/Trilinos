@@ -672,6 +672,7 @@ int Ifpack_AdditiveSchwarz<T>::SetUseTranspose(bool UseTranspose)
   // If Inverse_ exists, pass it right now.
   if (Inverse_)
     IFPACK_CHK_ERR(Inverse_->SetUseTranspose(UseTranspose));
+  return(0);
 }
 
 //==============================================================================
