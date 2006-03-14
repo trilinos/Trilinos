@@ -113,6 +113,8 @@ namespace Belos {
      */
     LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const { return( *_lp ); }
     
+    StatusTest<ScalarType,MV,OP>& GetStatusTest() const { return( *_stest ); }
+
     //@} 
     
     //@{ \name Solver application method.

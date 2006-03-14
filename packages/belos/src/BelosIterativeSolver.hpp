@@ -53,6 +53,9 @@ using Teuchos::ParameterList;
 namespace Belos {
 
 template <class ScalarType, class MV, class OP>
+class StatusTest;
+
+template <class ScalarType, class MV, class OP>
 class IterativeSolver {
  
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
@@ -111,6 +114,8 @@ class IterativeSolver {
     	which may include a current solution.
   */
   virtual LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const = 0;
+
+  virtual StatusTest<ScalarType,MV,OP>& GetStatusTest() const = 0;
 
   //@}
   //@{ \name Reset methods

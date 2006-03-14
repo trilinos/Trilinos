@@ -14,35 +14,7 @@
 
 @SET_MAKE@
 
-#@HEADER
-# ************************************************************************
-# 
-#                 Belos: Block Linear Solvers Package
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
-#@HEADER
-
-SOURCES = $(Dummy_SOURCES) $(MVOPComplexTester_test_SOURCES) $(MVOPTester_test_SOURCES)
+SOURCES = $(test_single_belos_thyra_solver_driver_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -50,7 +22,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ../../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -65,8 +37,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = MVOPTester_test$(EXEEXT) $(am__EXEEXT_1)
-subdir = test/MVOPTester
+noinst_PROGRAMS = $(am__EXEEXT_1)
+subdir = thyra/test/LOWSFactory
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -96,39 +68,32 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = MVOPComplexTester_test$(EXEEXT) \
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
+am__EXEEXT_1 = test_single_belos_thyra_solver_driver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_Dummy_OBJECTS =
-Dummy_OBJECTS = $(am_Dummy_OBJECTS)
-Dummy_LDADD = $(LDADD)
-am_MVOPComplexTester_test_OBJECTS =  \
-	MVOPComplexTester_test-cxx_main_complex.$(OBJEXT)
-MVOPComplexTester_test_OBJECTS = $(am_MVOPComplexTester_test_OBJECTS)
+am__objects_1 = test_single_belos_thyra_solver.$(OBJEXT)
+am_test_single_belos_thyra_solver_driver_OBJECTS =  \
+	test_single_belos_thyra_solver_driver.$(OBJEXT) \
+	$(am__objects_1)
+test_single_belos_thyra_solver_driver_OBJECTS =  \
+	$(am_test_single_belos_thyra_solver_driver_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_FALSE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
-@USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
-am_MVOPTester_test_OBJECTS = MVOPTester_test-cxx_main.$(OBJEXT)
-MVOPTester_test_OBJECTS = $(am_MVOPTester_test_OBJECTS)
+@USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/MVOPTester_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test_single_belos_thyra_solver.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/test_single_belos_thyra_solver_driver.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(Dummy_SOURCES) $(MVOPComplexTester_test_SOURCES) \
-	$(MVOPTester_test_SOURCES)
-DIST_SOURCES = $(Dummy_SOURCES) $(MVOPComplexTester_test_SOURCES) \
-	$(MVOPTester_test_SOURCES)
+SOURCES = $(test_single_belos_thyra_solver_driver_SOURCES)
+DIST_SOURCES = $(test_single_belos_thyra_solver_driver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -188,7 +153,7 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 
-# Dummy for new export makefiles
+# This is already added part of BELOS_LIBS and therefore automake does not need to add this again!
 LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -267,42 +232,32 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(BELOS_TEST_LIBS)
-@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(BELOS_TEST_LIBS))
-@USING_GNUMAKE_FALSE@EXPORT_INC_PATH = $(BELOS_TEST_INCLUDES)
-@USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
-AM_CPPFLAGS = $(EXPORT_INC_PATH)
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_COMPLEX_TEST = MVOPComplexTester_test Dummy
 
-#np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
-#np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
-#np# files needed to compile the exe.
-MVOPTester_test_SOURCES = $(srcdir)/cxx_main.cpp
-MVOPComplexTester_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
-Dummy_SOURCES = Dummy
+#
+# Actual programs
+#
+TEST_SINGLE_BELOS_THYRA_SOLVER_DRIVER = test_single_belos_thyra_solver_driver
+test_single_belos_thyra_solver_driver_SOURCES = $(srcdir)/test_single_belos_thyra_solver_driver.cpp $(common_sources)
+test_single_belos_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
+test_single_belos_thyra_solver_driver_LDADD = $(common_ldadd)
 
-#np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
-#np# exe depends on.  (This primary is not absolutely essential.)
-MVOPTester_test_DEPENDENCIES = \
-	$(top_builddir)/src/libbelos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
+#
+# Common stuff
+#
+common_sources = $(srcdir)/test_single_belos_thyra_solver.cpp
+common_dependencies = $(top_builddir)/src/libbelos.a
 
-MVOPComplexTester_test_DEPENDENCIES = \
-	$(top_builddir)/src/libbelos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-
-#np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
-#np# building the exe.
-MVOPTester_test_CXXFLAGS = -I$(top_srcdir)/src
-MVOPComplexTester_test_CXXFLAGS = -I$(top_srcdir)/src
-
-#np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
-#np# building the exe.
-MVOPTester_test_LDADD = $(EXPORT_LIBS) 
-MVOPComplexTester_test_LDADD = $(EXPORT_LIBS) 
+# Here we have to include the belos stuff explicitly since ifpack may have been 
+# configured with --disable-ifpack-belos.  Either way, this will work just fine!
+_EXPORT_INCLUDES = $(BELOS_EXTRA_INCLUDES) $(IFPACK_INCLUDES) $(BELOS_INCLUDES)
+_EXPORT_LIBS = $(BELOS_EXTRA_LIBS) $(IFPACK_LIBS) $(BELOS_LIBS)
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(_EXPORT_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(_EXPORT_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
+EXTRA_DIST = $(srcdir)/test_single_belos_thyra_solver.hpp 
 all: all-am
 
 .SUFFIXES:
@@ -316,9 +271,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/MVOPTester/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  thyra/test/LOWSFactory/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/MVOPTester/Makefile
+	  $(AUTOMAKE) --foreign  thyra/test/LOWSFactory/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -339,12 +294,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-MVOPComplexTester_test$(EXEEXT): $(MVOPComplexTester_test_OBJECTS) $(MVOPComplexTester_test_DEPENDENCIES) 
-	@rm -f MVOPComplexTester_test$(EXEEXT)
-	$(CXXLINK) $(MVOPComplexTester_test_LDFLAGS) $(MVOPComplexTester_test_OBJECTS) $(MVOPComplexTester_test_LDADD) $(LIBS)
-MVOPTester_test$(EXEEXT): $(MVOPTester_test_OBJECTS) $(MVOPTester_test_DEPENDENCIES) 
-	@rm -f MVOPTester_test$(EXEEXT)
-	$(CXXLINK) $(MVOPTester_test_LDFLAGS) $(MVOPTester_test_OBJECTS) $(MVOPTester_test_LDADD) $(LIBS)
+test_single_belos_thyra_solver_driver$(EXEEXT): $(test_single_belos_thyra_solver_driver_OBJECTS) $(test_single_belos_thyra_solver_driver_DEPENDENCIES) 
+	@rm -f test_single_belos_thyra_solver_driver$(EXEEXT)
+	$(CXXLINK) $(test_single_belos_thyra_solver_driver_LDFLAGS) $(test_single_belos_thyra_solver_driver_OBJECTS) $(test_single_belos_thyra_solver_driver_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -352,8 +304,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPTester_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_belos_thyra_solver.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_belos_thyra_solver_driver.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -371,37 +323,37 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-MVOPComplexTester_test-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPComplexTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPComplexTester_test-cxx_main_complex.o -MD -MP -MF "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Tpo" -c -o MVOPComplexTester_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Tpo" "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Po"; else rm -f "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='MVOPComplexTester_test-cxx_main_complex.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Po' tmpdepfile='$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.TPo' @AMDEPBACKSLASH@
+test_single_belos_thyra_solver_driver.o: $(srcdir)/test_single_belos_thyra_solver_driver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_belos_thyra_solver_driver.o -MD -MP -MF "$(DEPDIR)/test_single_belos_thyra_solver_driver.Tpo" -c -o test_single_belos_thyra_solver_driver.o `test -f '$(srcdir)/test_single_belos_thyra_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_belos_thyra_solver_driver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_belos_thyra_solver_driver.Tpo" "$(DEPDIR)/test_single_belos_thyra_solver_driver.Po"; else rm -f "$(DEPDIR)/test_single_belos_thyra_solver_driver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_belos_thyra_solver_driver.cpp' object='test_single_belos_thyra_solver_driver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_belos_thyra_solver_driver.Po' tmpdepfile='$(DEPDIR)/test_single_belos_thyra_solver_driver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPComplexTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPComplexTester_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_belos_thyra_solver_driver.o `test -f '$(srcdir)/test_single_belos_thyra_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_belos_thyra_solver_driver.cpp
 
-MVOPComplexTester_test-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPComplexTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPComplexTester_test-cxx_main_complex.obj -MD -MP -MF "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Tpo" -c -o MVOPComplexTester_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Tpo" "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Po"; else rm -f "$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='MVOPComplexTester_test-cxx_main_complex.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.Po' tmpdepfile='$(DEPDIR)/MVOPComplexTester_test-cxx_main_complex.TPo' @AMDEPBACKSLASH@
+test_single_belos_thyra_solver_driver.obj: $(srcdir)/test_single_belos_thyra_solver_driver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_belos_thyra_solver_driver.obj -MD -MP -MF "$(DEPDIR)/test_single_belos_thyra_solver_driver.Tpo" -c -o test_single_belos_thyra_solver_driver.obj `if test -f '$(srcdir)/test_single_belos_thyra_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_belos_thyra_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_belos_thyra_solver_driver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_belos_thyra_solver_driver.Tpo" "$(DEPDIR)/test_single_belos_thyra_solver_driver.Po"; else rm -f "$(DEPDIR)/test_single_belos_thyra_solver_driver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_belos_thyra_solver_driver.cpp' object='test_single_belos_thyra_solver_driver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_belos_thyra_solver_driver.Po' tmpdepfile='$(DEPDIR)/test_single_belos_thyra_solver_driver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPComplexTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPComplexTester_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_belos_thyra_solver_driver.obj `if test -f '$(srcdir)/test_single_belos_thyra_solver_driver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_belos_thyra_solver_driver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_belos_thyra_solver_driver.cpp'; fi`
 
-MVOPTester_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" "$(DEPDIR)/MVOPTester_test-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTester_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTester_test-cxx_main.TPo' @AMDEPBACKSLASH@
+test_single_belos_thyra_solver.o: $(srcdir)/test_single_belos_thyra_solver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_belos_thyra_solver.o -MD -MP -MF "$(DEPDIR)/test_single_belos_thyra_solver.Tpo" -c -o test_single_belos_thyra_solver.o `test -f '$(srcdir)/test_single_belos_thyra_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_belos_thyra_solver.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_belos_thyra_solver.Tpo" "$(DEPDIR)/test_single_belos_thyra_solver.Po"; else rm -f "$(DEPDIR)/test_single_belos_thyra_solver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_belos_thyra_solver.cpp' object='test_single_belos_thyra_solver.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_belos_thyra_solver.Po' tmpdepfile='$(DEPDIR)/test_single_belos_thyra_solver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_belos_thyra_solver.o `test -f '$(srcdir)/test_single_belos_thyra_solver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_belos_thyra_solver.cpp
 
-MVOPTester_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTester_test-cxx_main.obj -MD -MP -MF "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo" "$(DEPDIR)/MVOPTester_test-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTester_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTester_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTester_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTester_test-cxx_main.TPo' @AMDEPBACKSLASH@
+test_single_belos_thyra_solver.obj: $(srcdir)/test_single_belos_thyra_solver.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_belos_thyra_solver.obj -MD -MP -MF "$(DEPDIR)/test_single_belos_thyra_solver.Tpo" -c -o test_single_belos_thyra_solver.obj `if test -f '$(srcdir)/test_single_belos_thyra_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_belos_thyra_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_belos_thyra_solver.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test_single_belos_thyra_solver.Tpo" "$(DEPDIR)/test_single_belos_thyra_solver.Po"; else rm -f "$(DEPDIR)/test_single_belos_thyra_solver.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_single_belos_thyra_solver.cpp' object='test_single_belos_thyra_solver.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_belos_thyra_solver.Po' tmpdepfile='$(DEPDIR)/test_single_belos_thyra_solver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTester_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTester_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_belos_thyra_solver.obj `if test -f '$(srcdir)/test_single_belos_thyra_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_belos_thyra_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_belos_thyra_solver.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -451,6 +403,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -566,10 +519,24 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-include $(top_builddir)/Makefile.export.belos
+#test_belos_thyra_driver_SOURCES = $(srcdir)/test_belos_thyra_driver.cpp $(common_sources)
+#test_belos_thyra_driver_DEPENDENCIES = $(common_dependencies) matrices
+#test_belos_thyra_driver_LDADD = $(common_ldadd)
 
-Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/mhd1280b.cua mhd1280b.cua
+matrices:
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk02.mtx bcsstk02.mtx                              
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk04.mtx bcsstk04.mtx                              
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos1.mtx nos1.mtx                                      
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_nos5.mtx nos5.mtx                                      
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_FourByFour.mtx FourByFour.mtx                          
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Diagonal.mtx Diagonal.mtx                              
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_MissingADiagonal.mtx MissingADiagonal.mtx                              
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadK.mtx KheadK.mtx                                  
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_KheadSorted.mtx  KheadSorted.mtx
+	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_Khead.triS Khead.triS  
+
+include $(top_builddir)/Makefile.export.belos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -17,7 +17,7 @@
 #@HEADER
 # ************************************************************************
 # 
-#         	Anasazi: Block Eigensolvers Package
+#         Belos: Block Linear Solvers Package
 #	        Copyright (2001) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -118,6 +118,8 @@ BUILD_BELOS_EXPERIMENTAL_FALSE = @BUILD_BELOS_EXPERIMENTAL_FALSE@
 BUILD_BELOS_EXPERIMENTAL_TRUE = @BUILD_BELOS_EXPERIMENTAL_TRUE@
 BUILD_BELOS_THYRA_FALSE = @BUILD_BELOS_THYRA_FALSE@
 BUILD_BELOS_THYRA_TRUE = @BUILD_BELOS_THYRA_TRUE@
+BUILD_EPETRAEXT_FALSE = @BUILD_EPETRAEXT_FALSE@
+BUILD_EPETRAEXT_TRUE = @BUILD_EPETRAEXT_TRUE@
 BUILD_EPETRA_THYRA_FALSE = @BUILD_EPETRA_THYRA_FALSE@
 BUILD_EPETRA_THYRA_TRUE = @BUILD_EPETRA_THYRA_TRUE@
 BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
@@ -235,7 +237,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = MVOPTester 
+SUBDIRS = MVOPTester LOWSFactory
 all: all-recursive
 
 .SUFFIXES:

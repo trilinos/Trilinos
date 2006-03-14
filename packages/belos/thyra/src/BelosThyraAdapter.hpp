@@ -63,6 +63,8 @@ namespace Belos {
   {
   private:
     typedef Thyra::MultiVectorBase<ScalarType> TMVB;
+    typedef Teuchos::ScalarTraits<ScalarType> ST;
+    typedef typename ST::magnitudeType magType;
   public:
 
     /** \name Creation methods */
@@ -272,7 +274,7 @@ namespace Belos {
     /*! \brief Compute the 2-norm of each individual vector of \c mv.  
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
-    static void MvNorm( const TMVB& mv, std::vector<ScalarType>* normvec )
+    static void MvNorm( const TMVB& mv, std::vector<magType>* normvec, NormType type = TwoNorm )
     { Thyra::norms_2(mv,&((*normvec)[0])); }
 
     //@}

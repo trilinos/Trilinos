@@ -231,6 +231,8 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, triutils, BELOS_TRIUTILS, BUILD_TRIUTILS, 
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, ifpack, BELOS_IFPACK, BUILD_IFPACK, yes, [Build tests that use Ifpack. Can be overridden with --disable-belos-ifpack.], [Build tests that use Ifpack.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetraext, BELOS_EPETRAEXT, BUILD_EPETRAEXT, yes, [Build tests that use EpetraExt. Can be overridden with --disable-belos-epetraext.], [Build tests that use EpetraExt.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, thyra, BELOS_THYRA, BUILD_BELOS_THYRA, yes, [Build source code and tests that use Thyra. Can be overridden with --disable-belos-thyra.], [Build source code and tests that use Thyra.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build source code and tests that use Epetra-Thyra wrappers. Can be overridden with --disable-epetra-thyra.], [Build source code and tests that use Epetra-Thyra wrappers.])
@@ -341,6 +343,7 @@ AC_CONFIG_FILES([
 		thyra/src/Makefile
 		thyra/test/Makefile
 		thyra/test/MVOPTester/Makefile
+		thyra/test/LOWSFactory/Makefile
 		])
 
 AC_OUTPUT()

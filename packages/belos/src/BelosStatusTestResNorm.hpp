@@ -201,13 +201,13 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   MagnitudeType GetTolerance() const {return(tolerance_);};
   
   //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
-  std::vector<MagnitudeType>* GetTestValue() const {return(&testvector_);};
+  const std::vector<MagnitudeType>* GetTestValue() const {return(&testvector_);};
 
   //! Returns the residual norm value, \f$ \|r\| \f$, computed in most recent call to CheckStatus.
-  std::vector<MagnitudeType>* GetResNormValue() const {return(&resvector_);};
+  const std::vector<MagnitudeType>* GetResNormValue() const {return(&resvector_);};
 
   //! Returns the scaled norm value, \f$ \sigma \f$.
-  std::vector<MagnitudeType>* GetScaledNormValue() const {return(&scalevector_);};
+  const std::vector<MagnitudeType>* GetScaledNormValue() const {return(&scalevector_);};
 
   //@}
 

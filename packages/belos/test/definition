@@ -45,3 +45,8 @@
     COMM = SERIAL, MPI;
 }
 
+(FRAMEWORK,INSTALL) {
+    TESTS = ../thyra/test/LOWSFactory/test_single_belos_thyra_solver_driver.exe;
+    ARGS = --show-all-tests --no-test-transpose  --matrix-file=../../aztecoo/thyra/test/FourByFour.mtx;
+    COMM = SERIAL;
+}

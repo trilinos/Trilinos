@@ -2,17 +2,25 @@
 include @abs_top_builddir@/../epetra/Makefile.export.epetra
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 
-# Optional dependence on triutils, ifpack and tsfcore
+# Optional dependence on triutils and ifpack
 @BUILD_IFPACK_TRUE@include @abs_top_builddir@/../ifpack/Makefile.export.ifpack
 @BUILD_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
-# TSFCore doesn't have new makefile export support so we ignore this for now.
-##@BUILD_TSFCORE_EPETRA_TRUE@include @abs_top_builddir@/../tsfcore/Makefile.export.tsfcore
+
+# Optional dependancy on thyra and epetraext
+
+@BUILD_BELOS_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra
+@BUILD_EPETRAEXT_TRUE@include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+@BUILD_BELOS_THYRA_TRUE@BELOS_THYRA_INCLUDES = \
+@BUILD_BELOS_THYRA_TRUE@	-I@abs_top_srcdir@/thyra/src \
+@BUILD_BELOS_THYRA_TRUE@	$(EPETRAEXT_INCLUDES) $(THYRA_INCLUDES)
 
 _BELOS_INCLUDES = \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_builddir@/src \
-        $(EPETRA_INCLUDES) \
-	$(TEUCHOS_INCLUDES)
+  $(EPETRA_INCLUDES) \
+  $(BELOS_THYRA_INCLUDES) \
+  $(TEUCHOS_INCLUDES)
 
 _BELOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lbelos $(EPETRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
 
@@ -30,6 +38,7 @@ _BELOS_TEST_INCLUDES = \
         -I@abs_top_builddir@/src \
         $(IFPACK_INCLUDES) \
         $(EPETRA_INCLUDES) \
+        $(BELOS_THYRA_INCLUDES) \
         $(TRIUTILS_INCLUDES) \
         $(TEUCHOS_INCLUDES)
 
