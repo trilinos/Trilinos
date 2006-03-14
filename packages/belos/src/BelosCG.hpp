@@ -279,6 +279,7 @@ namespace Belos {
 	  // Compute alpha := <_residvec, _z> / <_p, _Ap >
 	  //
 	  MVT::MvTransMv( one, *_p, *_Ap, temp_sdm );
+	  *_os << "temp_sdm = " << temp_sdm(0,0) << endl;
 	  MVT::MvTransMv( one/temp_sdm(0,0), *_residvec, *_z, alpha );
 	  //
 	  // Check that alpha is a positive number!
@@ -286,7 +287,7 @@ namespace Belos {
 	  if ( SCT::real(alpha(0,0)) <= zero ) {
 	    if (_om->doOutput( 0 )) {
 	      *_os << " Exiting CG iteration " << endl;
-	      *_os << " Reason: Non-positive value for p^T*A*p ("<< alpha(0,0) <<") !!! "<< endl;
+	      *_os << " Reason: Non-positive value for p^H*A*p ("<< SCT::real(alpha(0,0)) <<") !!! "<< endl;
 	    }
 	    break; // Get out from this solve.
 	  }
