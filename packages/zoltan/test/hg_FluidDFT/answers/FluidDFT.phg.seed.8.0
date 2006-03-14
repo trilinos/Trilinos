@@ -1,13 +1,13 @@
 Decomposition Method 	= hypergraph
 Zoltan Parameters       = obj_weight_dim = 1
 Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
-Zoltan Parameters       = SEED = 9876543210
+Zoltan Parameters       = SEED = 987654321
 File Type		= matrixmarket
 File Name		= FluidDFT
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-21	0	-1	-1
+7	0	-1	-1
 208	0	-1	-1
 209	0	-1	-1
 210	0	-1	-1
