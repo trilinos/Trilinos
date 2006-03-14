@@ -2,9 +2,8 @@
 CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
---with-libs="/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05/libsuperlu_darwin.a /Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1/libsuperludist_darwin.a /Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libumfpack_darwin.a /Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libamd_darwin.a" \
---with-incdirs="-I/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ -I/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05/ -I/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1/     " \
---with-ldflags="-framework veclib" \
+--with-libs="-lsuperlu -lumfpack -lamd -lg2c" \
+--with-ldflags="-framework veclib -bind_at_load" \
 --cache-file=config.cache \
 --with-gnumake \
 --disable-default-packages \
