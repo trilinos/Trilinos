@@ -566,7 +566,8 @@ public:
       else if (alpha == 0.0 && beta == 1.0)
       {
         // do nothing here
-        int dummy = 1;
+        if (false)
+          cout << "blablablaaaaa" << endl;
       }
       else if (alpha == 1.0 && beta == -1.0)
       {

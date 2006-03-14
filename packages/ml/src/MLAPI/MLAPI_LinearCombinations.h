@@ -112,7 +112,7 @@ public:
     return(vector_);
   }
 
-  const double GetScalar() const
+  double GetScalar() const
   {
     return(alpha_);
   }
@@ -147,7 +147,7 @@ public:
     return(x_);
   }
 
-  inline const double GetLeftScalar() const
+  inline double GetLeftScalar() const
   {
     return(alpha_);
   }
@@ -157,7 +157,7 @@ public:
     return(y_);
   }
 
-  inline const double GetRightScalar() const
+  inline double GetRightScalar() const
   {
     return(beta_);
   }
