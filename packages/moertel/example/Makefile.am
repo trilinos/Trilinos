@@ -28,3 +28,24 @@
 
 SUBDIRS =
 
+# The following line helps the test harness recover from build errors.
+
+all-local:
+	@echo ""
+	@echo "Trilinos package moertel subdirectory example built successfully."
+	@echo ""
+
+include $(top_builddir)/Makefile.export.moertel
+include $(top_builddir)/../galeri/Makefile.export.galeri
+
+EXEEXT = .exe
+
+noinst_PROGRAMS = TwoSquares
+
+EXTRA_DIST = TwoSquares.grid
+
+TwoSquares_SOURCES      = $(srcdir)/TwoSquares.cpp
+TwoSquares_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
+TwoSquares_CXXFLAGS     = $(MOERTEL_INCLUDES) $(GALERI_INCLUDES)
+TwoSquares_LDADD        = $(MOERTEL_LIBS) $(GALERI_LIBS)
+

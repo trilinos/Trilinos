@@ -32,7 +32,7 @@
 # in their compile/link targets rather than explicit -I and -L directives.
 # The advantage of this is that if Moertel acquires sub-dependencies, i.e., needs
 # to add new directives for header paths or libraries, those can be added here
-# and any packages that depend on Epetra will not need to make changes in their
+# and any packages that depend on Moertel will not need to make changes in their
 # Makefiles.
 
 MOERTEL_SOURCE_DIRECTORY = @abs_srcdir@

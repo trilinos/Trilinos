@@ -89,7 +89,11 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
-	@echo "Trilinos package Moertel built successfully"
+	@cp -f $(srcdir)/example/TwoSquares.grid $(top_builddir)/example/TwoSquares.grid
+	@cp -f $(srcdir)/example/TwoSquares.m $(top_builddir)/example/TwoSquares.m
+	@echo "        +----------------------------------------------------+"
+	@echo "        |    Trilinos package Moertel built successfully     |"
+	@echo "        +----------------------------------------------------+"
 
 ## #######################################################################
 ## Target for circular dependencies
