@@ -127,36 +127,23 @@ void Equation_A::initializeSolution()
 
 // Matrix and Residual Fills
 bool Equation_A::evaluate(
-                    NOX::Epetra::Interface::Required::FillType flag,
+                    NOX::Epetra::Interface::Required::FillType fillType,
 		    const Epetra_Vector* soln, 
-		    Epetra_Vector* tmp_rhs)
+		    Epetra_Vector* rhs)
 {
-  // Determine what to fill (F or Jacobian)
-  bool fillF = false;
-  bool fillMatrix = false;
-  if (tmp_rhs != 0) {
-    fillF = true;
-    rhs = tmp_rhs;
-  }
-  else {
-    fillMatrix = true;
-  }
-  
-  // "flag" can be used to determine how accurate your fill of F should be
-  // depending on why we are calling evaluate (Could be using computeF to
-  // populate a Jacobian or Preconditioner).
-  if (flag == NOX::Epetra::Interface::Required::Residual) {
-    // Do nothing for now
-  }
-  else if (flag == NOX::Epetra::Interface::Required::Jac) {
-    // Do nothing for now
-  }
-  else if (flag == NOX::Epetra::Interface::Required::Prec) {
-    // Do nothing for now
-  }
-  else if (flag == NOX::Epetra::Interface::Required::User) {
-    // Do nothing for now
-  }
+  bool fillRes = false;
+  bool fillJac = false;
+
+  // We currently make no provision for combined Residual and Jacobian fills
+  // i.e. it is either or
+
+  if( NOX::Epetra::Interface::Required::Jac == fillType )
+    fillJac = true;
+   else
+   {
+    fillRes = true;
+    assert( NULL != rhs );
+   }
 
   int numDep = depProblems.size();
 
@@ -177,21 +164,17 @@ bool Equation_A::evaluate(
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
-  {
-    dep[i]->Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
-                   *Importer, Insert);
-    //cout << "depSoln[" << i << "] :" << dep[i] << endl;
-  }
+    dep[i]->Import(*( (*(depSolutions.find(depProblems[i]))).second ), *Importer, Insert);
+
   xvec.Import(*xptr, *Importer, Insert);
-  if( flag == NOX::Epetra::Interface::Required::FD_Res)
+
+  if( NOX::Epetra::Interface::Required::FD_Res == fillType )
     // Overlap vector for solution received from FD coloring, so simply reorder
     // on processor
     u.Export(*soln, *ColumnToOverlapImporter, Insert);
   else // Communication to Overlap vector is needed
     u.Import(*soln, *Importer, Insert);
 
-  // Declare required variables
-  int j,ierr;
   int OverlapNumMyNodes = OverlapMap->NumMyElements();
 
   int OverlapMinMyNodeGID;
@@ -238,8 +221,8 @@ bool Equation_A::evaluate(
     //
   
   // Zero out the objects that will be filled
-  if ( fillMatrix ) A->PutScalar(0.0);
-  if ( fillF ) rhs->PutScalar(0.0);
+  if ( fillJac ) A->PutScalar(0.0);
+  if ( fillRes ) rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
@@ -264,7 +247,7 @@ bool Equation_A::evaluate(
       for (int i=0; i< 2; i++) {
 	row=OverlapMap->GID(ne+i);
 	if (StandardMap->MyGID(row)) {
-	  if ( fillF ) {
+	  if ( fillRes ) {
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
 	      +basis.wt*basis.dx
 	      *((basis.uu - basis.uuold)/dt * basis.phi[i] 
@@ -275,9 +258,11 @@ bool Equation_A::evaluate(
 	  }
 	}
 	// Loop over Trial Functions
-	if ( fillMatrix ) {
-	  for(j=0;j < 2; j++) {
-	    if (StandardMap->MyGID(row)) {
+	if ( fillJac ) {
+	  for( int j = 0; j < 2; ++j ) 
+          {
+	    if (StandardMap->MyGID(row)) 
+            {
 	      column=OverlapMap->GID(ne+j);
 	      jac=basis.wt*basis.dx*(
                       basis.phi[j]/dt*basis.phi[i] 
@@ -285,7 +270,7 @@ bool Equation_A::evaluate(
                                                         basis.dphide[i]
                       + basis.phi[i] * ( (beta+1.0)*basis.phi[j]
                       - 2.0*basis.uu*basis.phi[j]*basis.ddep[id_spec]) );  
-	      ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+	      A->SumIntoGlobalValues(row, 1, &jac, &column);
 	    }
 	  }
 	}
@@ -296,9 +281,9 @@ bool Equation_A::evaluate(
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(0)=1
   if (MyPID==0) {
-    if ( fillF )
+    if ( fillRes )
       (*rhs)[0]= (*soln)[0] - alpha;
-    if ( fillMatrix ) {
+    if ( fillJac ) {
       int column=0;
       double jac=1.0;
       A->ReplaceGlobalValues(0, 1, &jac, &column);
@@ -310,9 +295,9 @@ bool Equation_A::evaluate(
   // U(1)=1
   if ( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) {
     int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
-    if ( fillF )
+    if ( fillRes )
       (*rhs)[lastDof] = (*soln)[lastDof] - alpha;
-    if ( fillMatrix ) {
+    if ( fillJac ) {
       int row=StandardMap->MaxAllGID();
       int column = row;
       double jac = 1.0;
@@ -331,10 +316,10 @@ bool Equation_A::evaluate(
 #ifdef DEBUG
   A->Print(cout);
 
-  if( fillF )
+  if( fillRes )
     cout << "For residual fill :" << endl << *rhs << endl;
 
-  if( fillMatrix ) {
+  if( fillJac ) {
     cout << "For jacobian fill :" << endl;
     A->Print(cout);
   }
@@ -380,11 +365,10 @@ void Equation_A::generateGraph()
         row=OverlapMap->GID(ne+i);
 
         // Loop over supporting nodes
-        for(j=0; j<2; j++) {
-
+        for( int j = 0; j < 2; ++j) 
+        {
           // Loop over unknowns at supporting nodes
           column=OverlapMap->GID(ne+j);
-          //printf("\t\tWould like to insert -> (%d, %d)\n",row,column);
           AA->InsertGlobalIndices(row, 1, &column);
         }
       }

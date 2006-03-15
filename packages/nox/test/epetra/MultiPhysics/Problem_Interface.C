@@ -33,6 +33,7 @@
 
 // ----------   User Defined Includes   ----------
 #include "GenericEpetraProblem.H"
+#include "Problem_Manager.H"
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(GenericEpetraProblem& Problem) :
@@ -111,13 +112,15 @@ void Matlab_Interface::interact()
   char matlabBuffer [MATLABBUF];
 
   int err;
+
   while(1) 
   {
       // Prompt the user and get a string
       printf(">> ");
-      if (fgets(s, BUFSIZE, stdin) == NULL) {
-          printf("Bye\n");
-          break ;
+      if (fgets(s, BUFSIZE, stdin) == NULL) 
+      {
+        printf("Bye\n");
+        break ;
       }
       printf ("command :%s:\n", s) ;
 
@@ -136,9 +139,10 @@ void Matlab_Interface::interact()
         // Send the command to MATLAB
         // output goes to stdout
         err = engine.EvalString(s, matlabBuffer, MATLABBUF);
-        if (err != 0) {
+        if (err != 0) 
+        {
             printf("there was an error: %d", err);
-                    err = 0;
+            err = 0;
         }
         else {
             printf("Matlab Output:\n%s", matlabBuffer);
@@ -150,64 +154,120 @@ void Matlab_Interface::interact()
 }
 
 //-----------------------------------------------------------------------------
-void Matlab_Interface::doCommand( std::string & command )
+bool Matlab_Interface::doCommand( std::string & command )
 {
 
   NOX::Abstract::Group::ReturnType returnStatus;
 
   cout << "NOX: " << command << endl;
 
+  // Give precedence to mapped commands
+  if( userMaps.end() != userMaps.find(command) )
+    command = userMaps[command];
+
   try 
   {
+
+    // Convenience methods
+
+    if( command.find("?") != string::npos )
+    {
+      cout << "\n\tCommand Summary:\n" << endl;
+
+      cout << "\t\t?\t\tShow commands" << endl;
+      cout << "\t\t#map [arg1] [arg2] \tMap a command" << endl;
+      cout << "\t\t#isF" << endl;
+      cout << "\t\t#isJacobian" << endl;
+      cout << "\t\t#isGradient" << endl;
+      cout << "\t\t#isNewton" << endl;
+      cout << "\t\t#isNormNewtonSolveResidual" << endl;
+      cout << "\t\t#showValid" << endl;
+      cout << "\t\t#isPreconditioner" << endl;
+      cout << "\t\t#isConditionNumber" << endl;
+      cout << "\t\t#computeF" << endl;
+      cout << "\t\t#computeJacobian" << endl;
+      cout << "\t\t#computeGradient" << endl;
+      cout << "\t\t#computeNewton" << endl;
+      cout << "\t\t#setX" << endl;
+      cout << "\t\t#getNormF" << endl;
+
+      if( !userMaps.empty() )
+      {
+        cout << "\n\tUser Defined (Mapped) Command Summary:\n" << endl;
+
+        for( std::map<string, string>::const_iterator iter = userMaps.begin(); iter != userMaps.end(); ++iter )
+          cout << "\t\t#" << (*iter).first << " --> " << (*iter).second << endl;
+      }
+
+      return true;
+    }
+
+    if( command.find("map") != string::npos )
+    {
+      command.replace( command.find("map "), 4, ""); 
+      std::string::size_type loc = command.find(" ");
+      if( std::string::npos == loc )
+      {
+        cout << "Could not get two valid arguments." << endl;
+        return false;
+      }
+      std::string arg1 = command.substr(0, loc);
+      command.replace( 0, loc+1, ""); 
+      std::string arg2 = command;
+      cout << "Mapping \"" << arg1 << "\" to \"" << arg2 << "\"" << endl;
+      userMaps[ arg1 ] = arg2;
+      return true;
+    }
+
     // Query methods
 
     if( command.find("isF") != string::npos )
     {
       std::string isValid = (groupPtr->isF() ? "True" : "False" );
       cout << " --> " << isValid << endl;
-      return;
+      return true;
     }
 
     if( command.find("isJacobian") != string::npos )
     {
       std::string isValid = (groupPtr->isJacobian() ? "True" : "False" );
       cout << " --> " << isValid << endl;
-      return;
+      return true;
     }
 
     if( command.find("isGradient") != string::npos )
     {
       std::string isValid = (groupPtr->isGradient() ? "True" : "False" );
       cout << " --> " << isValid << endl;
-      return;
+      return true;
     }
       
     if( command.find("isNewton") != string::npos )
     {
       std::string isValid = (groupPtr->isNewton() ? "True" : "False" );
       cout << " --> " << isValid << endl;
-      return;
+      return true;
     }
       
     if( command.find("isNormNewtonSolveResidual") != string::npos )
     {
       std::string isValid = (groupPtr->isNormNewtonSolveResidual() ? "True" : "False" );
       cout << " --> " << isValid << endl;
-      return;
+      return true;
     }
       
     if( command.find("isPreconditioner") != string::npos )
     {
       std::string isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
       cout << " --> " << isValid << endl;
-      return;
+      return true;
     }
       
     if( command.find("isConditionNumber") != string::npos )
     {
       std::string isValid = (groupPtr->isConditionNumber() ? "True" : "False" );
       cout << " --> " << isValid << endl;
-      return;
+      return true;
     }
       
     if( command.find("showValid") != string::npos )
@@ -222,7 +282,7 @@ void Matlab_Interface::doCommand( std::string & command )
       cout << " isNewton         --> " << isValid << endl;
       isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
       cout << " isPreconditioner --> " << isValid << endl;
-      return;
+      return true;
     }
 
     // Scalar value query methods
@@ -230,13 +290,13 @@ void Matlab_Interface::doCommand( std::string & command )
     if( command.find("getJacobianConditionNumber") != string::npos )
     {
       cout << groupPtr->getJacobianConditionNumber() << endl;
-      return;
+      return true;
     }
       
     if( command.find("getNormF") != string::npos )
     {
       cout << groupPtr->getNormF() << endl;
-      return;
+      return true;
     }
       
     // Compute methods
@@ -246,28 +306,28 @@ void Matlab_Interface::doCommand( std::string & command )
       command.replace( command.find("setX"), 5, ""); 
       engine.GetMultiVector( command.c_str(), *solnPtr );
       groupPtr->setX(*solnPtr);
-      return;
+      return true;
     }
 
     if( command.find("computeF") != string::npos )
     {
       returnStatus = groupPtr->computeF();
       cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return;
+      return true;
     }
 
     if( command.find("computeJacobian") != string::npos )
     {
       returnStatus = groupPtr->computeJacobian();
       cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return;
+      return true;
     }
 
     if( command.find("computeGradient") != string::npos )
     {
       returnStatus = groupPtr->computeGradient();
       cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return;
+      return true;
     }
 
     if( command.find("computeNewton") != string::npos )
@@ -279,7 +339,7 @@ void Matlab_Interface::doCommand( std::string & command )
       NOX::Parameter::List & lsParams = const_cast<NOX::Parameter::List &>(const_lsParams);
       returnStatus = groupPtr->computeNewton(lsParams);
       cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return;
+      return true;
     }
 
     // Jacobian operations
@@ -291,7 +351,7 @@ void Matlab_Interface::doCommand( std::string & command )
       const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
                          (groupPtr->getX()).getEpetraVector());
       engine.PutMultiVector( *tmpVec, "X" );
-      return;
+      return true;
     }
 
     if( command.find("getF") != string::npos )
@@ -299,7 +359,7 @@ void Matlab_Interface::doCommand( std::string & command )
       const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
                          (groupPtr->getF()).getEpetraVector());
       engine.PutMultiVector( *tmpVec, "F" );
-      return;
+      return true;
     }
 
     if( command.find("getGradient") != string::npos )
@@ -307,7 +367,7 @@ void Matlab_Interface::doCommand( std::string & command )
       const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
                          (groupPtr->getGradient()).getEpetraVector());
       engine.PutMultiVector( *tmpVec, "Gradient" );
-      return;
+      return true;
     }
 
     if( command.find("getNewton") != string::npos )
@@ -315,7 +375,7 @@ void Matlab_Interface::doCommand( std::string & command )
       const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
                          (groupPtr->getNewton()).getEpetraVector());
       engine.PutMultiVector( *tmpVec, "Newton" );
-      return;
+      return true;
     }
 
     if( command.find("getJacobian") != string::npos )
@@ -325,24 +385,240 @@ void Matlab_Interface::doCommand( std::string & command )
       if( rowMatrix )
       {
         engine.PutRowMatrix( *rowMatrix, "Jacobian", false );
-        return;
+        return true;
       }
       NOX::Epetra::FiniteDifference * fdOp = dynamic_cast<NOX::Epetra::FiniteDifference *>(jacOp);
       if( fdOp )
       {
         engine.PutRowMatrix( fdOp->getUnderlyingMatrix(), "Jacobian", false );
-        return; 
+        return true; 
       }
 
       cout << "Could not get a valid matrix." << endl;
-      return;
+      return false;
     }
+
   }
   catch( const char * msg )
   {
     cout << msg << endl;
-    return;
+    return false;
   }
 
-  return;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+Coupling_Matlab_Interface::Coupling_Matlab_Interface(Problem_Manager &  manager_) :
+  Matlab_Interface( *(manager_.getCompositeSolver()) ),
+  problemManager(manager_)
+{
+}
+
+//-----------------------------------------------------------------------------
+bool Coupling_Matlab_Interface::doCommand( std::string & command )
+{
+  NOX::Abstract::Group::ReturnType returnStatus;
+
+  cout << "Cpl_NOX: " << command << endl;
+
+  // Give precedence to mapped commands
+  if( userMaps.end() != userMaps.find(command) )
+    command = userMaps[command];
+
+  try 
+  {
+
+    // Give priority to mapping method
+
+    if( command.find("map") != string::npos )
+      return Matlab_Interface::doCommand( command );
+
+    // Convenience methods
+
+    if( command.find("?") != string::npos )
+    {
+      cout << "\n\tCoupling Command Summary:\n" << endl;
+
+      cout << "\t\t#pSummary \t Show coupled problems summary" << endl;
+      cout << "\t\t#cJ[i j] \t Compute i,j block Jacobian" << endl;
+      cout << "\t\t#cF[i] \t Compute i Residual" << endl;
+      cout << "\t\t#getF[i j] \t Get i Residual" << endl;
+      cout << "\t\t#getJ[i j] \t Get i,j block Jacobian" << endl;
+      cout << "\t\t#getAllF \t Get all Residuals" << endl;
+      cout << "\t\t#getAllJ \t Get all block Jacobians" << endl;
+
+      return Matlab_Interface::doCommand( command );
+    }
+
+    // Query methods
+
+    if( command.find("pSummary") != string::npos )
+    {
+      problemManager.outputStatus();
+      return true;
+    }
+
+    // Compute methods
+
+    if( command.find("cJ[" ) != string::npos )
+    {
+      command.replace( command.find("cJ["), 3, ""); 
+      std::string::size_type loc = command.find(" ");
+      if( std::string::npos == loc )
+      {
+        cout << "Could not get two valid arguments." << endl;
+        return false;
+      }
+      std::string arg1 = command.substr(0, loc);
+      command.replace( 0, loc+1, ""); 
+      loc = command.find("]");
+      std::string arg2 = command.substr(0, loc);
+      int probId = atoi( arg1.c_str()) ,
+          depID =  atoi( arg2.c_str()) ;
+
+      cout << "Computing Jacobian Block " << probId << "," << depID << endl;
+
+      problemManager.computeBlockJacobian( probId, depID );
+
+      return true;
+    }
+
+    if( command.find("cF[" ) != string::npos )
+    {
+      command.replace( command.find("cR["), 3, ""); 
+      std::string::size_type loc = command.find("]");
+      if( std::string::npos == loc )
+      {
+        cout << "Could not get a valid argument." << endl;
+        return false;
+      }
+      std::string arg1 = command.substr(0, loc);
+      int probId = atoi( arg1.c_str()) ;
+
+      cout << "Computing Residual for Problem " << probId << endl;
+
+      problemManager.computeGroupF( probId );
+
+      return true;
+    }
+
+    // Get methods
+
+    if( command.find("getJ[") != string::npos )
+    {
+      command.replace( command.find("getJ["), 5, ""); 
+      std::string::size_type loc = command.find(" ");
+      if( std::string::npos == loc )
+      {
+        cout << "Could not get two valid arguments." << endl;
+        return false;
+      }
+      std::string arg1 = command.substr(0, loc);
+      command.replace( 0, loc+1, ""); 
+      loc = command.find("]");
+      std::string arg2 = command.substr(0, loc);
+      int probId = atoi( arg1.c_str()) ,
+          depID =  atoi( arg2.c_str()) ;
+
+      Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depID );
+      if( rowMatrix )
+      {
+        std::string name = "BJac_" + arg1 + "_" + arg2;
+        engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
+        cout << "Stored Block Jacobian (" << probId << "," << depID << ") in \""
+             << name << "\"" << endl;
+        return true;
+      }
+
+      cout << "Could not get a valid matrix." << endl;
+      return false;
+    }
+
+    if( command.find("getAllJ") != string::npos )
+    {
+      map<int, GenericEpetraProblem*>::iterator problemIter = problemManager.getProblems().begin();
+      map<int, GenericEpetraProblem*>::iterator problemLast = problemManager.getProblems().end();
+
+      // Do diagonal blocks
+      for( ; problemLast != problemIter; ++problemIter )
+      {
+
+        GenericEpetraProblem & problem = *(*problemIter).second;
+        int                    probId  = (*problemIter).first;
+
+        Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId );
+
+        if( rowMatrix )
+        {
+          ostringstream sval1, sval2;
+          sval1 << probId << flush;
+          std::string name = "BJac_" + sval1.str() + "_" + sval1.str();
+          engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
+          cout << "Stored Block Jacobian (" << probId << "," << probId << ") in \""
+               << name << "\"" << endl;
+        }
+
+        // Do off-diagoanl blocks if appropriate
+        if( problemManager.useOffBlocks() ) 
+        {
+#ifdef HAVE_NOX_EPETRAEXT
+          for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k) 
+          {
+            int depId = problem.getDependentProblems()[k];
+
+            Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depId );
+
+            if( rowMatrix )
+            {
+              ostringstream sval1, sval2;
+              sval1 << probId << flush;
+              sval2 << depId  << flush;
+              std::string name = "BJac_" + sval1.str() + "_" + sval2.str();
+              engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
+              cout << "Stored Block Jacobian (" << probId << "," << depId << ") in \""
+                   << name << "\"" << endl;
+            }
+          }
+#endif
+        }
+      }
+      return true;
+    }
+
+    if( command.find("getAllF") != string::npos )
+    {
+      map<int, GenericEpetraProblem*>::iterator problemIter = problemManager.getProblems().begin();
+      map<int, GenericEpetraProblem*>::iterator problemLast = problemManager.getProblems().end();
+
+      // Do diagonal blocks
+      for( ; problemLast != problemIter; ++problemIter )
+      {
+        GenericEpetraProblem & problem = *(*problemIter).second;
+        int                    probId  = (*problemIter).first;
+
+        const Epetra_Vector * resVec = problemManager.getResidual( probId );
+
+        if( resVec )
+        {
+          ostringstream sval1;
+          sval1 << probId << flush;
+          std::string name = "F_" + sval1.str();
+          engine.PutMultiVector( *resVec, name.c_str() );
+          cout << "Stored Residual (" << probId << ") in \"" << name << "\"" << endl;
+        }
+      }
+      return true;
+    }
+
+  }
+  catch( const char * msg )
+  {
+    cout << msg << endl;
+    return false;
+  }
+
+  // If no coupling commands found, fall through to nonlinear solver commands
+  return Matlab_Interface::doCommand( command );
 }

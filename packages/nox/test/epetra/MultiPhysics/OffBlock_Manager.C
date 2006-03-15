@@ -72,6 +72,8 @@
   #define DEBUG_BLOCKGRAPH(a)
 #endif 
 
+int OffBlock_Manager::idToFind = -1;
+
 OffBlock_Manager::OffBlock_Manager(Problem_Manager& problemMan_, 
 		Epetra_CrsGraph& graph_, int probEqId, int probVarId) :
   GenericEpetraProblem(graph_.Comm(), 0),

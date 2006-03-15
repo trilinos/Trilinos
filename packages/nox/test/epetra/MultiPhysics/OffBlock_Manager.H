@@ -56,6 +56,8 @@ public:
 
   enum VectorType { SOLUTION, GROUP_F };
 
+  static int idToFind;
+
   // Constructor
   OffBlock_Manager(Problem_Manager& problemMan_, Epetra_CrsGraph& graph_,
                    int probEqId, int probVarsId);
@@ -88,6 +90,14 @@ public:
   bool evaluate(NOX::Epetra::Interface::Required::FillType type,
                const Epetra_Vector *solnVector,
                Epetra_Vector *rhsVector);
+
+  // A helper needed to set a target for a predicate
+  void setIDtoFind( int id )
+  { idToFind = id; }
+
+  // And here is the predicate
+  bool isMember()
+  { return problemVarId == idToFind; }
 
 private:
 

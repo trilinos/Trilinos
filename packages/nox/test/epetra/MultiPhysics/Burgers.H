@@ -108,7 +108,6 @@ protected:
   double dx; 
   double dt; 
 
-  FillType flag;
   Epetra_Import *ColumnToOverlapImporter;
   Epetra_Vector *oldSolution;
   Epetra_Vector *rhs;

@@ -54,9 +54,8 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   xptr = new Epetra_Vector(*StandardMap);
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
-  for ( int i = 0; i < NumMyNodes; ++i ) {
+  for ( int i = 0; i < NumMyNodes; ++i ) 
     (*xptr)[i] = xmin + dx*((double) StandardMap->MinMyGID()+i);
-  }
 
   // Create extra vector needed for this transient problem
   oldSolution = new Epetra_Vector(*StandardMap);
@@ -109,7 +108,8 @@ bool Burgers::initializeSoln()
 
   double pi = 4.0*atan(1.0);
   double arg;
-  for(int i=0; i<NumMyNodes; i++) {
+  for( int i = 0; i < NumMyNodes; ++i) 
+  {
     arg = ( 20.0 * x[i] - 10.0 ) / xFactor;
     (*initialSolution)[i] = (1.0 - ( exp(arg) - exp(-arg) ) /
                                    ( exp(arg) + exp(-arg) )) - 1.0;
@@ -125,14 +125,21 @@ bool Burgers::initializeSoln()
 bool Burgers::evaluate(
              NOX::Epetra::Interface::Required::FillType fillType,
              const Epetra_Vector* soln, 
-             Epetra_Vector* tmp_rhs) 
+             Epetra_Vector* rhs) 
 {
-  flag = MATRIX_ONLY;
+  bool fillRes = false;
+  bool fillJac = false;
 
-  if ( tmp_rhs ) {
-    flag = F_ONLY;
-    rhs = tmp_rhs;
-  } 
+  // We currently make no provision for combined Residual and Jacobian fills
+  // i.e. it is either or
+
+  if( NOX::Epetra::Interface::Required::Jac == fillType )
+    fillJac = true;
+   else
+   {
+    fillRes = true;
+    assert( NULL != rhs );
+   }
 
   int numDep = depProblems.size();
 
@@ -140,7 +147,7 @@ bool Burgers::evaluate(
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
   vector<Epetra_Vector*> dep(numDep);
-  for( int i = 0; i<numDep; i++)
+  for( int i = 0; i < numDep; ++i)
     dep[i] = new Epetra_Vector(*OverlapMap);
   Epetra_Vector xvec(*OverlapMap);
 
@@ -152,22 +159,20 @@ bool Burgers::evaluate(
   // treatment for the current soution vector arises from use of
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
-  for( int i = 0; i<numDep; i++ )
+  for( int i = 0; i < numDep; ++i )
   {
     dep[i]->Import(*( (*(depSolutions.find(depProblems[i]))).second ), 
                    *Importer, Insert);
     //cout << "depSoln[" << i << "] :" << dep[i] << endl;
   }
   xvec.Import(*xptr, *Importer, Insert);
-  if( flag == NOX::Epetra::Interface::Required::FD_Res)
+  if( NOX::Epetra::Interface::Required::FD_Res == fillType )
     // Overlap vector for solution received from FD coloring, so simply reorder
     // on processor
     u.Export(*soln, *ColumnToOverlapImporter, Insert);
   else // Communication to Overlap vector is needed
     u.Import(*soln, *Importer, Insert);
 
-  // Declare required variables
-  int i,j,ierr;
   int OverlapNumMyNodes = OverlapMap->NumMyElements();
 
   int OverlapMinMyNodeGID;
@@ -198,8 +203,10 @@ bool Burgers::evaluate(
     //
 
   // Zero out the objects that will be filled
-  if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
-  if ((flag == F_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
+  if( fillJac ) 
+    A->PutScalar(0.0);
+  if( fillRes ) 
+    rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
@@ -213,7 +220,8 @@ bool Burgers::evaluate(
       uu[1]=u[ne+1];
       uuold[0]=uold[ne];
       uuold[1]=uold[ne+1];
-      for( int i = 0; i<numDep; i++ ) {
+      for( int i = 0; i<numDep; i++ ) 
+      {
         ddep[i][0] = (*dep[i])[ne];
         ddep[i][1] = (*dep[i])[ne+1];
       }
@@ -221,12 +229,14 @@ bool Burgers::evaluate(
       basis.getBasis(gp, xx, uu, uuold, ddep);
 	            
       // Loop over Nodes in Element
-      for (i=0; i< 2; i++) {
+      for ( int i = 0; i < 2; ++i ) 
+      {
 	row=OverlapMap->GID(ne+i);
 	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
 	//     MyPID, row, ne+i,StandardMap.MyGID(row));
 	if (StandardMap->MyGID(row)) {
-	  if ((flag == F_ONLY)    || (flag == ALL)) {
+	  if ( fillRes ) 
+          {
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
               +basis.wt*basis.dx*(
                 (basis.uu-basis.uuold)/dt*basis.phi[i] +
@@ -237,8 +247,10 @@ bool Burgers::evaluate(
 	  }
 	}
 	// Loop over Trial Functions
-	if ((flag == MATRIX_ONLY) || (flag == ALL)) {
-	  for(j=0;j < 2; j++) {
+	if ( fillRes ) 
+        {
+	  for(int j = 0; j < 2; ++j) 
+          {
 	    if (StandardMap->MyGID(row)) {
 	      column=OverlapMap->GID(ne+j);
               jac=basis.wt*basis.dx*(
@@ -248,7 +260,7 @@ bool Burgers::evaluate(
                             8.0/xFactor/xFactor*
                              (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                              basis.phi[j]*basis.phi[i]);
-	      ierr=A->SumIntoGlobalValues(row, 1, &jac, &column);
+	      A->SumIntoGlobalValues(row, 1, &jac, &column);
 	    }
 	  }
 	}
@@ -258,10 +270,12 @@ bool Burgers::evaluate(
 
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(xmin)=1
-  if (MyPID==0) {
-    if ((flag == F_ONLY)    || (flag == ALL)) 
+  if( MyPID == 0 ) 
+  {
+    if( fillRes ) 
       (*rhs)[0]= (*soln)[0] - 1.0;
-    if ((flag == MATRIX_ONLY) || (flag == ALL)) {
+    if( fillJac ) 
+    {
       column=0;
       jac=1.0;
       A->ReplaceGlobalValues(0, 1, &jac, &column);
@@ -272,10 +286,12 @@ bool Burgers::evaluate(
   }
   // Insert Boundary Conditions and modify Jacobian and function (F)
   // U(xmax)=0
-  if (MyPID==NumProc-1) {
-    if ((flag == F_ONLY)    || (flag == ALL)) 
+  if( MyPID == NumProc-1 ) 
+  {
+    if ( fillRes ) 
       (*rhs)[NumMyNodes-1]= (*soln)[OverlapNumMyNodes-1] - (-1.0);
-    if ((flag == MATRIX_ONLY) || (flag == ALL)) {
+    if( fillJac ) 
+    {
       row=NumGlobalNodes-1;
       column=row;
       jac=1.0;
@@ -289,11 +305,11 @@ bool Burgers::evaluate(
   // Sync up processors to be safe
   Comm->Barrier();
  
-  if ((flag == MATRIX_ONLY) || (flag == ALL))
+  if ( fillJac )
     A->FillComplete();
 
   // Cleanup
-  for( int i = 0; i<numDep; i++)
+  for( int i = 0; i < numDep; ++i )
   {
     delete [] ddep[i];
     delete    dep[i];
@@ -341,10 +357,11 @@ void Burgers::generateGraph()
       row=OverlapMap->GID(ne+i);
       
       // Loop over Trial Functions
-      for(j=0;j < 2; j++) {
-	
+      for( int j = 0; j < 2; ++j ) 
+      {
 	// If this row is owned by current processor, add the index
-	if (StandardMap->MyGID(row)) {
+	if (StandardMap->MyGID(row)) 
+        {
 	  column=OverlapMap->GID(ne+j);
 	  AA->InsertGlobalIndices(row, 1, &column);
 	}

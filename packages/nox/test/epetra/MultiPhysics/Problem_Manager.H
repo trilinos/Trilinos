@@ -61,6 +61,9 @@ public:
   // Add a problem to the Manager
   void addProblem(GenericEpetraProblem& problem);
 
+  // Return my Problems container
+  map<int, GenericEpetraProblem*> & getProblems() { return Problems; }
+
   // Get a problem given its unique id
   GenericEpetraProblem& getProblem(int id);
 
@@ -72,6 +75,10 @@ public:
 
   // Get the compositeSoln vector
   Teuchos::RefCountPtr<Epetra_Vector> getCompositeSoln();
+
+  // Get the composite NOX solver
+  NOX::Solver::Manager * getCompositeSolver()
+  {  return compositeSolver; }
 
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(string nameA, string nameB);
@@ -122,6 +129,17 @@ public:
   // Compute Jacobian in solution groups for all registered problems
   void computeAllJacobian();
 
+  // Compute an individual block Jacobian given an integer pairing of problem and
+  // the problem variables on which it depends
+  void computeBlockJacobian(int i, int j = -1);
+
+  // Get an individual residual vector given an integer problem id
+  const Epetra_Vector * getResidual(int i);
+
+  // Get an individual block Jacobian given an integer pairing of problem and
+  // the problem variables on which it depends
+  Epetra_CrsMatrix * getBlockJacobianMatrix(int i, int j = -1);
+
   // Compute sum of norms of each problem residual
   double getNormSum();
 
@@ -161,12 +179,15 @@ public:
   // Print status of Problem Manager, problems and dependencies
   void outputStatus();
 
+  // Query whether or not offBlocks ar used
+  bool useOffBlocks()
+  { return doOffBlocks; }
+
   // Return my name
   string getName() { return GenericEpetraProblem::getName(); };
 
   // Return the problem name queries
   string getName(int id) { return (*(Names.find(id))).second; };
-
 
   // These allow inheritance from GenericEpetraProblem base class
 
@@ -193,6 +214,7 @@ private:
 
   Epetra_Map* compositeMap;	// Composite map for all registered problems
   Teuchos::RefCountPtr<Epetra_Vector> compositeSoln;	// Composite map for all registered problems
+  NOX::Epetra::Vector * compositeNOXSoln;	// A NOX version of the composite solution vecotr
 
   map<int, GenericEpetraProblem*> Problems; // Problem container
   map<int, string> Names;                   // Problem names
@@ -207,6 +229,9 @@ private:
 
   Problem_Interface *compositeProblemInterface; // A problem interface to 
   // the composite problem manager.  Needed for off-diagonal FDC blocks
+
+  Teuchos::RefCountPtr<NOX::Epetra::Group> compositeGroup  ; // The composite solution group
+  NOX::Solver::Manager                   * compositeSolver ; // The composite solver
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring

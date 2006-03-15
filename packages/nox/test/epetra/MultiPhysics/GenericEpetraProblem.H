@@ -157,6 +157,10 @@ public:
   // Provide for transient inherited problems
   virtual double getdt() const;
 
+  // Accessor for container of dependent problems
+  virtual vector<int> & getDependentProblems()
+  { return depProblems; }
+
 protected:
 
   // inserts the global column indices into the Graph

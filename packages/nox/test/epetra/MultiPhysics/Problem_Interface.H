@@ -93,6 +93,9 @@ public:
 #define BUFSIZE 200
 #define MATLABBUF 1024 * 16
 
+// Forward declarations
+class Problem_Manager;
+
 // This is a new class that may evantually get moved into NOX.  For now,
 // this is simply used as a testbed for driving NOX using Matlab
 
@@ -104,17 +107,21 @@ public:
 
   Matlab_Interface(NOX::Solver::Manager & solver);
 
-  ~Matlab_Interface();
+  virtual ~Matlab_Interface();
 
   // Begin an interactive session
-  void interact();
+  virtual void interact();
 
-private:
+protected:
+
+  // Methods
+
+  virtual bool doCommand( std::string & );
+
+  // Data 
 
   // A needed communicator - can be replaced later by initialization argument
   Epetra_SerialComm comm;
-
-  void doCommand( std::string & );
 
   EpetraExt::EpetraExt_MatlabEngine * enginePtr;
 
@@ -125,6 +132,27 @@ private:
   NOX::Epetra::Group * groupPtr;
 
   Epetra_Vector * solnPtr;
+
+  std::map< std::string, std::string > userMaps;
+};
+
+class Coupling_Matlab_Interface : public Matlab_Interface
+{
+public:
+
+  Coupling_Matlab_Interface(Problem_Manager & manager);
+
+  virtual ~Coupling_Matlab_Interface() { };
+
+protected:
+
+  // Methods
+
+  virtual bool doCommand( std::string & );
+
+  // Data 
+
+  Problem_Manager & problemManager;
 };
 
 #endif
