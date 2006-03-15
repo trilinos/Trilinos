@@ -7655,7 +7655,7 @@ fi
 # Check whether --enable-nox-debug or --disable-nox-debug was given.
 if test "${enable_nox_debug+set}" = set; then
   enableval="$enable_nox_debug"
-  NOX_DEBUG_MODE=yes
+  NOX_DEBUG_MODE=$enableval
 else
   NOX_DEBUG_MODE=no
 
@@ -7669,8 +7669,8 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_NOX_DEBUG 1
 _ACEOF
 
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
 else
   echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6

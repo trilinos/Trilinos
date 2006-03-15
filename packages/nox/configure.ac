@@ -275,14 +275,14 @@ TAC_ARG_ENABLE_FEATURE(libcheck, [Check for third-party (non-Trilinos) libraries
 # ------------------------------------------------------------------------
 AC_ARG_ENABLE(nox-debug,
 [AC_HELP_STRING([--enable-nox-debug],[Build NOX in debug mode - FOR DEVELOPERS ONLY!])],
-[NOX_DEBUG_MODE=yes],
+[NOX_DEBUG_MODE=$enableval],
 [NOX_DEBUG_MODE=no]
 )
 
 AC_MSG_CHECKING(whether nox is being built in debug mode)
 if test "X$NOX_DEBUG_MODE" != "Xno"; then
   AC_DEFINE([HAVE_NOX_DEBUG],1,[Define to build NOX in debug mode.])
-  AC_MSG_RESULT(no)
+  AC_MSG_RESULT(yes)
 else
   AC_MSG_RESULT(no)
 fi
