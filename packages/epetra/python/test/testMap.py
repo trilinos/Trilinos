@@ -106,6 +106,12 @@ class EpetraMapTestCase(unittest.TestCase):
         self.assertEqual(self.map3.IndexBase(),         self.indexBase  )
 
     def testConstructor4(self):
+        "Test Epetra.Map nonuniform, arbitrary constructor, bad list"
+        self.myGlobalEls[-1] = "pi"
+        self.assertRaises(TypeError, Epetra.Map, self.numGlobalEl,
+                          self.myGlobalEls, self.indexBase, self.comm)
+
+    def testConstructor5(self):
         "Test Epetra.Map copy constructor"
         map1 = Epetra.Map(self.map1)
         map2 = Epetra.Map(self.map2)

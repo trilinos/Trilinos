@@ -116,6 +116,13 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map3.IndexBase(),         self.indexBase  )
 
     def testConstructor4(self):
+        "Test Epetra.BlockMap nonuniform, arbitrary, same-size element constructor, bad list"
+        self.myGlobalEls[-1] = "pi"
+        self.assertRaises(TypeError, Epetra.BlockMap, self.numGlobalEl,
+                          self.myGlobalEls, self.elSizeConst, self.indexBase,
+                          self.comm)
+
+    def testConstructor5(self):
         "Test Epetra.BlockMap nonuniform, arbitrary, variable-size element constructor"
         self.assertEqual(self.map4.NumGlobalElements(),   self.numGlobalEl    )
         self.assertEqual(self.map4.NumMyElements(),       self.numMyEl        )
@@ -123,7 +130,7 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map4.NumMyPoints(),         sum(self.elSizeList))
         self.assertEqual(self.map4.IndexBase(),           self.indexBase      )
 
-    def testConstructor5(self):
+    def testConstructor6(self):
         "Test Epetra.BlockMap copy constructor"
         map1 = Epetra.BlockMap(self.map1)
         map2 = Epetra.BlockMap(self.map2)
