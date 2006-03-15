@@ -53,17 +53,14 @@ bool MOERTEL::Manager::SetProblemMap(const Epetra_Map* map)
 bool MOERTEL::Manager::SetInputMatrix(Epetra_CrsMatrix* inputmatrix, bool DeepCopy)
 {
   if (DeepCopy)
-  {
     inputmatrix_ = rcp(new Epetra_CrsMatrix(*inputmatrix));
-    return true;
-  }
   else
   {
     inputmatrix_ = rcp(inputmatrix);
     inputmatrix_.release();
-    return true;
   }
-  return false;
+  ResetSolver();
+  return true;
 }
 
 
@@ -613,6 +610,9 @@ void MOERTEL::Manager::ResetSolver()
   saddlematrix_ = null;
   spdmatrix_ = null;
   spdrhs_ = null;
+  I_ = null;
+  WT_ = null;
+  B_ = null;
   return;
 }
 
