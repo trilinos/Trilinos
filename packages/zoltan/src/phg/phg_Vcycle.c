@@ -232,8 +232,8 @@ int Zoltan_PHG_Partition (
   /****** Coarsening ******/    
 #define COARSEN_FRACTION_LIMIT 0.9  /* Stop if we don't make much progress */
   while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > hg->redl)
-    && ((hg->dist_x[hgc->nProc_x] < COARSEN_FRACTION_LIMIT * prevVcnt)
-     || (hg->dist_y[hgc->nProc_y] < COARSEN_FRACTION_LIMIT * prevVedgecnt))
+    && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5))
+     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5)))
     && hg->dist_y[hgc->nProc_y] && hgp->matching) {
       int *match = NULL;
       VCycle *coarser=NULL;
