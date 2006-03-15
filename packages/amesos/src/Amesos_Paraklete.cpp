@@ -361,8 +361,8 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
 	  Ap[MyRow] = Ai_index ;
 	  for ( int j = 0; j < NumEntriesThisRow; j++ ) {
 	    VecAi[Ai_index] = ColIndices[j] ;
-	    //	  assert( VecAi[Ai_index] == Ai[Ai_index] ) ; 
-	    VecAval[Ai_index] = RowValues[j] ;      //  We have to do this because of the hacks to get around bug #1502 
+	    assert( VecAi[Ai_index] == Ai[Ai_index] ) ; 
+	    //  VecAval[Ai_index] = RowValues[j] ;      //  We have to do this because of the hacks to get around bug #1502 
 	    if (ColIndices[j] == MyRow) {
 	      VecAval[Ai_index] += AddToDiag_;    
 	    }
@@ -389,7 +389,12 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
   cs_A.p = &Ap[0] ;
   cs_A.i = Ai ;
   cs_A.nz = 0; 
-  cs_A.x = Aval ; 
+  if ( firsttime ) { 
+    cs_A.x = 0 ; 
+  }
+  else
+    cs_A.x = Aval ; 
+
   cs_A.z = 0 ; 
   cs_A.stype = 0 ; //  symmetric 
   cs_A.itype = CHOLMOD_INT ; 
@@ -441,8 +446,8 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
 {
   ResetTime(0);
 
-  if (MyPID_ == 0) {
-  }
+  assert( PrivateParakleteData_->cs_A_.x == 0 ) ; 
+  assert( PrivateParakleteData_->cs_A_.z == 0 ) ; 
 
 #if USE_REF_COUNT_PTR
     PrivateParakleteData_->LUsymbolic_ =
@@ -616,7 +621,7 @@ int Amesos_Paraklete::NumericFactorization()
     ResetTime(1); // "overhead" time
 
     Epetra_CrsMatrix *CrsMatrixA = dynamic_cast<Epetra_CrsMatrix *>(RowMatrixA_);
-    if ( CrsMatrixA == 0 )   // hack to get around Bug #1502 
+    if ( false && CrsMatrixA == 0 )   // hack to get around Bug #1502 
       AMESOS_CHK_ERR( CreateLocalMatrixAndExporters() ) ;
     assert( NumGlobalElements_ == RowMatrixA_->NumGlobalCols() );
     if ( AddZeroToDiag_ == 0 ) 
@@ -624,7 +629,7 @@ int Amesos_Paraklete::NumericFactorization()
 
     AMESOS_CHK_ERR( ExportToSerial() );
     
-    if ( CrsMatrixA == 0 ) {  // continuation of hack to avoid bug #1502
+    if (  false && CrsMatrixA == 0 ) {  // continuation of hack to avoid bug #1502
       AMESOS_CHK_ERR( ConvertToParakleteCRS(true) );
     }  else {
       AMESOS_CHK_ERR( ConvertToParakleteCRS(false) );
