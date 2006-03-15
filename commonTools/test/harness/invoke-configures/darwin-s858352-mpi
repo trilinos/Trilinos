@@ -2,9 +2,9 @@
 CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
---with-incdirs="-I/usr/local/include" \
---with-libs="-L/usr/local/lib -libsuperlu -lsuperludist -lumfpack -lamd -lg2c" \
---with-ldflags="-framework veclib -bind_at_load" \
+--with-libs="/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0/libsuperlu_s858352.a /Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1/libsuperludist_s858352.a /Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libumfpack_s858352.a /Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libamd_s858352.a" \
+--with-incdirs="-I/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ -I/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0/ -I/Users/mnpheno/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1/     " \
+--with-ldflags="-framework veclib -L/usr/lib/ -lSystemStubs -lg2c -bind_at_load" \
 --enable-mpi \
 --with-mpi-compilers \
 --cache-file=config.cache \
