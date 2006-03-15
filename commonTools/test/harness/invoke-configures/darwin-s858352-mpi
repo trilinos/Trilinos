@@ -2,7 +2,8 @@
 CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
---with-libs="-libsuperlu -lsuperludist -lumfpack -lamd -lg2c" \
+--with-incdirs="-I/usr/local/include" \
+--with-libs="-L/usr/local/lib -libsuperlu -lsuperludist -lumfpack -lamd -lg2c" \
 --with-ldflags="-framework veclib -bind_at_load" \
 --enable-mpi \
 --with-mpi-compilers \

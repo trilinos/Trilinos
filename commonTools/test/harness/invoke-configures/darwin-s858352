@@ -2,7 +2,8 @@
 CXX=c++ \
 F77=g77 \
 RANLIB="ranlib -s" \
---with-libs="-lsuperlu -lumfpack -lamd -lg2c" \
+--with-incdirs="-I/usr/local/include" \
+--with-libs="-L/usr/local/lib -lsuperlu -lumfpack -lamd -lg2c" \
 --with-ldflags="-framework veclib -bind_at_load" \
 --cache-file=config.cache \
 --with-gnumake \
