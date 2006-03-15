@@ -47,9 +47,6 @@ public:
   // Destructor
   ~Epetra_NumPyIntSerialDenseVector();
 
-  // Error reporting (should be checked after constructor is called)
-  PyObject * CheckForError() const;
-
   // Overridden Epetra_IntSerialDenseVector methods.  These are
   // overriden for one of two reasons: (1) to provide a more
   // python-like signature, or (2) to maintain synchronization between
@@ -58,6 +55,10 @@ public:
   int        Resize(int length);
   PyObject * Values() const;
 
+  // Static cleanup function, to be called when python exceptions are
+  // encountered
+  static void cleanup();
+
 private:
 
   // This private static pointer is for use with constructors only.
@@ -65,7 +66,6 @@ private:
   // set by the static helper functions below, and when a constructor
   // sets this pointer, it should reset it to NULL when done.
   static PyArrayObject * tmp_array;
-  static char          * tmp_error;
 
   // Static helper functions.  These are intended to be called from
   // the constructors, specifically to compute arguments in the
@@ -82,7 +82,6 @@ private:
 
   // Private data
   PyArrayObject * array;
-  char          * error_msg;
 
 };
 

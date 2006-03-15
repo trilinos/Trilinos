@@ -111,6 +111,41 @@
 %include "Epetra_DArray.h"
 %include "Epetra_IArray.h"
 
+// Exceptions.
+
+// Define macro for handling exceptions thrown by Epetra methods and
+// constructors
+%define EXCEPTION_HANDLER(className,methodName)
+%exception className::methodName {
+  try {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  } catch(int errCode) {
+    char s[50];
+    sprintf(s, "Epetra Error Code: %d\nSee stderr for details", errCode);
+    SWIG_exception(SWIG_ValueError, s);
+  }
+}
+%enddef
+
+// Define macro for handling exceptions thrown by Epetra_NumPy
+// constructors
+%define NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(className)
+%exception className::className {
+  try {
+    $action
+    if (PyErr_Occurred()) {
+      className::cleanup();
+      SWIG_fail;
+    }
+  } catch (int errCode) {
+    char s[50];
+    sprintf(s, "Epetra Error Code: %d\nSee stderr for details", errCode);
+    SWIG_exception(SWIG_ValueError, s);
+  }
+}
+%enddef
+
 // Extensions
 %extend Epetra_Object {
 

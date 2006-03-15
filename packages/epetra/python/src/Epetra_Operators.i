@@ -66,6 +66,11 @@
 %rename(JadOperator       ) Epetra_JadOperator;
 %rename(LinearProblem     ) Epetra_LinearProblem;
 
+// Exceptions
+EXCEPTION_HANDLER(Epetra_CrsMatrix    ,OptimizeStorage   )
+EXCEPTION_HANDLER(Epetra_FastCrsMatrix,FastCrsMatrix     )
+EXCEPTION_HANDLER(Epetra_JadOperator  ,Epetra_JadOperator)
+
 // Include directives
 %warnfilter(473) Epetra_Operator;
 %warnfilter(473) Epetra_RowMatrix;

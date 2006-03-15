@@ -74,16 +74,15 @@ int multiply_list(int * list, int n) {
 %rename(Import        ) Epetra_Import;
 %rename(Export        ) Epetra_Export;
 
-// Exceptions.  The NumPy class constructors can raise python
-// exceptions, but swig must be told explicitely to look for them.
-%define MAP_CONSTRUCTOR_EXCEPTION(classname)
-%exception classname::classname {
-  $action
-  if (PyErr_Occurred()) SWIG_fail;
-}
-%enddef
-MAP_CONSTRUCTOR_EXCEPTION(Epetra_BlockMap)
-MAP_CONSTRUCTOR_EXCEPTION(Epetra_Map     )
+// Exceptions
+EXCEPTION_HANDLER(Epetra_BlockMap,Epetra_BlockMap )
+EXCEPTION_HANDLER(Epetra_BlockMap,MyGlobalElements)
+EXCEPTION_HANDLER(Epetra_Map     ,Epetra_Map      )
+EXCEPTION_HANDLER(Epetra_Map     ,MyGlobalElements)
+EXCEPTION_HANDLER(Epetra_LocalMap,Epetra_LocalMap )
+EXCEPTION_HANDLER(Epetra_LocalMap,MyGlobalElements)
+EXCEPTION_HANDLER(Epetra_Export  ,Epetra_Export   )
+EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
 
 // Include directives
 %include "Epetra_BlockMap.h"

@@ -86,6 +86,12 @@ TYPEMAP_OUT(Epetra_SerialDenseMatrix,   Epetra_NumPySerialDenseMatrix   )
 TYPEMAP_OUT(Epetra_SerialDenseVector,   Epetra_NumPySerialDenseVector   )
 TYPEMAP_OUT(Epetra_IntSerialDenseVector,Epetra_NumPyIntSerialDenseVector)
 
+// Exceptions
+//NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyIntSerialDenseMatrix)
+NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyIntSerialDenseVector)
+NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPySerialDenseMatrix   )
+NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPySerialDenseVector   )
+
 // Epetra include directives
 %include "Epetra_IntSerialDenseMatrix.h"
 %include "Epetra_IntSerialDenseVector.h"
@@ -162,7 +168,6 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
       	__init__(self, SerialDenseVector source) -> SerialDenseVector
       	"""
         NumPySerialDenseVector.__init__(self, *args)
-        self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
         UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
@@ -208,7 +213,6 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
       	__init__(self, IntSerialDenseVector source) -> IntSerialDenseVector
       	"""
         NumPyIntSerialDenseVector.__init__(self, *args)
-        self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
         UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)

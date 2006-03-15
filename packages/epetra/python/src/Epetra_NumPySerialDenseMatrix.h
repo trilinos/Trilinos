@@ -56,6 +56,10 @@ public:
   PyObject * A() const;
   PyObject * A();
 
+  // Static cleanup function, to be called when python exceptions are
+  // encountered
+  static void cleanup();
+
 private:
 
   // These private static pointers are for use with constructors only.

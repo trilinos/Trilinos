@@ -109,6 +109,15 @@ bool Epetra_NumPySerialDenseMatrix::getBool(PyObject * pyObject, int set_object_
   return tmp_bool;
 }
 
+// =============================================================================
+void Epetra_NumPySerialDenseMatrix::cleanup()
+{
+  if (tmp_array) {
+    Py_DECREF(tmp_array);
+    tmp_array = NULL;
+  }
+}
+
 // Constructors
 // =============================================================================
 Epetra_NumPySerialDenseMatrix::Epetra_NumPySerialDenseMatrix(int set_object_label):

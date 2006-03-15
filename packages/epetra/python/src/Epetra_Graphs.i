@@ -52,12 +52,9 @@
 %ignore Epetra_CrsGraph::ExtractGlobalRowView(int, int&, int*&) const;
 %ignore Epetra_CrsGraph::ExtractMyRowView(int, int&, int*&) const;
 
-// Exception directive: tell swig how to handle exceptions thrown by a
-// new constructor
-%exception Epetra_CrsGraph::Epetra_CrsGraph {
-  $action
-  if (PyErr_Occurred()) SWIG_fail;
-}
+// Exceptions
+EXCEPTION_HANDLER(Epetra_CrsGraph,Epetra_CrsGraph)
+EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
 
 // Rename directives
 %rename(CrsGraph   ) Epetra_CrsGraph;
