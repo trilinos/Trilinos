@@ -59,7 +59,9 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 
 </ol>
 
-<li> InOut: I/O operations for Epetra objects based on the Matrix Market format.
+<li> InOut: I/O operations for Epetra objects based on the Matrix Market
+format. A binary reader based on HDF5 is available when EpetraExt is
+configured with --enable-epetraext-hdf5.
 
 <li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
 

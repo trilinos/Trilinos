@@ -50,6 +50,8 @@ The most important classes of the EpetraExt module are:
    - BlockMapToMatrixMarketFile()
    - RowMatrixToMatrixMarketFile()
    - MultiVectorToMatrixMarketFile()
+*) Input/Output classes:
+   - HDF5
 *) Matrix-Matrix functions:
    - Add()
    - Multiply()
@@ -92,6 +94,8 @@ The most important classes of the EpetraExt module are:
 #include "EpetraExt_MultiVectorIn.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_MatrixMatrix.h"
+
+#include "EpetraExt_HDF5.h" // FIXME: memory management still scary...
 
 namespace EpetraExt {
   int MatrixMarketFileToCrsMatrix(const char *filename, Epetra_CrsMatrix* A)
@@ -223,6 +227,7 @@ using namespace std;
 
 %include "EpetraExt_MapColoring.h"
 %include "EpetraExt_MapColoringIndex.h"
+%include "EpetraExt_HDF5.h"
 
 namespace EpetraExt 
 {

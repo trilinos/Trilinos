@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(inout_example_SOURCES)
+SOURCES = $(HDF5Converter_SOURCES) $(HDF5_IO_SOURCES) $(MatrixMarket_IO_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = inout_example$(EXEEXT)
+noinst_PROGRAMS = MatrixMarket_IO$(EXEEXT) $(am__EXEEXT_1)
 subdir = example/inout
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,21 +105,32 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
 CONFIG_CLEAN_FILES =
+@HAVE_EPETRAEXT_HDF5_TRUE@@HAVE_EPETRAEXT_TEUCHOS_TRUE@am__EXEEXT_1 = HDF5_IO$(EXEEXT) \
+@HAVE_EPETRAEXT_HDF5_TRUE@@HAVE_EPETRAEXT_TEUCHOS_TRUE@	HDF5Converter$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_inout_example_OBJECTS = inout_example-cxx_main.$(OBJEXT)
-inout_example_OBJECTS = $(am_inout_example_OBJECTS)
+am_HDF5Converter_OBJECTS = HDF5Converter-HDF5Converter.$(OBJEXT)
+HDF5Converter_OBJECTS = $(am_HDF5Converter_OBJECTS)
 am__DEPENDENCIES_1 =
+am_HDF5_IO_OBJECTS = HDF5_IO-HDF5_IO.$(OBJEXT)
+HDF5_IO_OBJECTS = $(am_HDF5_IO_OBJECTS)
+am_MatrixMarket_IO_OBJECTS =  \
+	MatrixMarket_IO-MatrixMarket_IO.$(OBJEXT)
+MatrixMarket_IO_OBJECTS = $(am_MatrixMarket_IO_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/inout_example-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/HDF5Converter-HDF5Converter.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/HDF5_IO-HDF5_IO.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(inout_example_SOURCES)
-DIST_SOURCES = $(inout_example_SOURCES)
+SOURCES = $(HDF5Converter_SOURCES) $(HDF5_IO_SOURCES) \
+	$(MatrixMarket_IO_SOURCES)
+DIST_SOURCES = $(HDF5Converter_SOURCES) $(HDF5_IO_SOURCES) \
+	$(MatrixMarket_IO_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -155,6 +166,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TEUCHOS_FALSE = @BUILD_TEUCHOS_FALSE@
+BUILD_TEUCHOS_TRUE = @BUILD_TEUCHOS_TRUE@
 BUILD_TRANSFORM_FALSE = @BUILD_TRANSFORM_FALSE@
 BUILD_TRANSFORM_TRUE = @BUILD_TRANSFORM_TRUE@
 BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
@@ -187,6 +200,10 @@ F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
+HAVE_EPETRAEXT_HDF5_FALSE = @HAVE_EPETRAEXT_HDF5_FALSE@
+HAVE_EPETRAEXT_HDF5_TRUE = @HAVE_EPETRAEXT_HDF5_TRUE@
+HAVE_EPETRAEXT_TEUCHOS_FALSE = @HAVE_EPETRAEXT_TEUCHOS_FALSE@
+HAVE_EPETRAEXT_TEUCHOS_TRUE = @HAVE_EPETRAEXT_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -293,28 +310,73 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-inout_example_SOURCES = \
-  $(srcdir)/cxx_main.cpp
+@HAVE_EPETRAEXT_HDF5_FALSE@HDF5Files = 
+@HAVE_EPETRAEXT_HDF5_TRUE@@HAVE_EPETRAEXT_TEUCHOS_FALSE@HDF5Files = 
+@HAVE_EPETRAEXT_HDF5_TRUE@@HAVE_EPETRAEXT_TEUCHOS_TRUE@HDF5Files = HDF5_IO HDF5Converter
+@HAVE_EPETRAEXT_HDF5_FALSE@TEUCHOS_LIBS = 
+@HAVE_EPETRAEXT_HDF5_TRUE@@HAVE_EPETRAEXT_TEUCHOS_FALSE@TEUCHOS_LIBS = 
+@HAVE_EPETRAEXT_HDF5_FALSE@TEUCHOS_INCLUDES = 
+@HAVE_EPETRAEXT_HDF5_TRUE@@HAVE_EPETRAEXT_TEUCHOS_FALSE@TEUCHOS_INCLUDES = 
+MatrixMarket_IO_SOURCES = $(srcdir)/MatrixMarket_IO.cpp
+MatrixMarket_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
+				  $(top_builddir)/../epetra/src/libepetra.a
 
-inout_example_DEPENDENCIES = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a
+MatrixMarket_IO_CXXFLAGS = -I$(top_srcdir)/src/inout \
+			      -I$(top_srcdir)/src \
+			      -I$(top_builddir)/src \
+			      -I$(top_srcdir)/../epetra/src \
+			      -I$(top_builddir)/../epetra/src \
+			      -I$(top_srcdir)/../triutils/src \
+			      -I$(top_builddir)/../triutils/src
 
-inout_example_CXXFLAGS = -I$(top_srcdir)/src/inout \
+MatrixMarket_IO_LDADD = $(top_builddir)/src/libepetraext.a \
+			   $(top_builddir)/../epetra/src/libepetra.a \
+			   $(top_builddir)/../triutils/src/libtriutils.a \
+			   $(LIBS) \
+			   $(BLAS_LIBS) \
+			   $(FLIBS)
+
+HDF5_IO_SOURCES = $(srcdir)/HDF5_IO.cpp
+HDF5_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
+			  $(top_builddir)/../epetra/src/libepetra.a
+
+HDF5_IO_CXXFLAGS = -I$(top_srcdir)/src/inout \
+		      -I$(top_srcdir)/src \
+		      -I$(top_builddir)/src \
+		      -I$(top_srcdir)/../epetra/src \
+		      -I$(top_builddir)/../epetra/src \
+		      -I$(top_srcdir)/../triutils/src \
+		      -I$(top_builddir)/../triutils/src \
+		      $(TEUCHOS_INCLUDES) 
+
+HDF5_IO_LDADD = $(top_builddir)/src/libepetraext.a \
+		   $(top_builddir)/../epetra/src/libepetra.a \
+		   $(top_builddir)/../triutils/src/libtriutils.a \
+		   $(TEUCHOS_LIBS) \
+		   $(LIBS) \
+		   $(BLAS_LIBS) \
+		   $(FLIBS)
+
+HDF5Converter_SOURCES = $(srcdir)/HDF5Converter.cpp
+HDF5Converter_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
+			     $(top_builddir)/../epetra/src/libepetra.a
+
+HDF5Converter_CXXFLAGS = -I$(top_srcdir)/src/inout \
 			 -I$(top_srcdir)/src \
-                         -I$(top_builddir)/src \
-                         -I$(top_srcdir)/../epetra/src \
-                         -I$(top_builddir)/../epetra/src \
-                         -I$(top_srcdir)/../triutils/src \
-                         -I$(top_builddir)/../triutils/src
+			 -I$(top_builddir)/src \
+			 -I$(top_srcdir)/../epetra/src \
+			 -I$(top_builddir)/../epetra/src \
+			 -I$(top_srcdir)/../triutils/src \
+			 -I$(top_builddir)/../triutils/src \
+			 $(TEUCHOS_INCLUDES) 
 
-inout_example_LDADD = \
-  $(top_builddir)/src/libepetraext.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
-  $(top_builddir)/../triutils/src/libtriutils.a \
-  $(LIBS) \
-  $(BLAS_LIBS) \
-  $(FLIBS)
+HDF5Converter_LDADD = $(top_builddir)/src/libepetraext.a \
+		      $(top_builddir)/../epetra/src/libepetra.a \
+		      $(top_builddir)/../triutils/src/libtriutils.a \
+		      $(TEUCHOS_LIBS) \
+		      $(LIBS) \
+		      $(BLAS_LIBS) \
+		      $(FLIBS)
 
 all: all-am
 
@@ -352,9 +414,15 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-inout_example$(EXEEXT): $(inout_example_OBJECTS) $(inout_example_DEPENDENCIES) 
-	@rm -f inout_example$(EXEEXT)
-	$(CXXLINK) $(inout_example_LDFLAGS) $(inout_example_OBJECTS) $(inout_example_LDADD) $(LIBS)
+HDF5Converter$(EXEEXT): $(HDF5Converter_OBJECTS) $(HDF5Converter_DEPENDENCIES) 
+	@rm -f HDF5Converter$(EXEEXT)
+	$(CXXLINK) $(HDF5Converter_LDFLAGS) $(HDF5Converter_OBJECTS) $(HDF5Converter_LDADD) $(LIBS)
+HDF5_IO$(EXEEXT): $(HDF5_IO_OBJECTS) $(HDF5_IO_DEPENDENCIES) 
+	@rm -f HDF5_IO$(EXEEXT)
+	$(CXXLINK) $(HDF5_IO_LDFLAGS) $(HDF5_IO_OBJECTS) $(HDF5_IO_LDADD) $(LIBS)
+MatrixMarket_IO$(EXEEXT): $(MatrixMarket_IO_OBJECTS) $(MatrixMarket_IO_DEPENDENCIES) 
+	@rm -f MatrixMarket_IO$(EXEEXT)
+	$(CXXLINK) $(MatrixMarket_IO_LDFLAGS) $(MatrixMarket_IO_OBJECTS) $(MatrixMarket_IO_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -362,7 +430,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inout_example-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDF5Converter-HDF5Converter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDF5_IO-HDF5_IO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -380,21 +450,53 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-inout_example-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_example_CXXFLAGS) $(CXXFLAGS) -MT inout_example-cxx_main.o -MD -MP -MF "$(DEPDIR)/inout_example-cxx_main.Tpo" -c -o inout_example-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_example-cxx_main.Tpo" "$(DEPDIR)/inout_example-cxx_main.Po"; else rm -f "$(DEPDIR)/inout_example-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='inout_example-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_example-cxx_main.Po' tmpdepfile='$(DEPDIR)/inout_example-cxx_main.TPo' @AMDEPBACKSLASH@
+HDF5Converter-HDF5Converter.o: $(srcdir)/HDF5Converter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -MT HDF5Converter-HDF5Converter.o -MD -MP -MF "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" -c -o HDF5Converter-HDF5Converter.o `test -f '$(srcdir)/HDF5Converter.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5Converter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" "$(DEPDIR)/HDF5Converter-HDF5Converter.Po"; else rm -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5Converter.cpp' object='HDF5Converter-HDF5Converter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5Converter-HDF5Converter.Po' tmpdepfile='$(DEPDIR)/HDF5Converter-HDF5Converter.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_example_CXXFLAGS) $(CXXFLAGS) -c -o inout_example-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -c -o HDF5Converter-HDF5Converter.o `test -f '$(srcdir)/HDF5Converter.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5Converter.cpp
 
-inout_example-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_example_CXXFLAGS) $(CXXFLAGS) -MT inout_example-cxx_main.obj -MD -MP -MF "$(DEPDIR)/inout_example-cxx_main.Tpo" -c -o inout_example-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/inout_example-cxx_main.Tpo" "$(DEPDIR)/inout_example-cxx_main.Po"; else rm -f "$(DEPDIR)/inout_example-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='inout_example-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/inout_example-cxx_main.Po' tmpdepfile='$(DEPDIR)/inout_example-cxx_main.TPo' @AMDEPBACKSLASH@
+HDF5Converter-HDF5Converter.obj: $(srcdir)/HDF5Converter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -MT HDF5Converter-HDF5Converter.obj -MD -MP -MF "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" -c -o HDF5Converter-HDF5Converter.obj `if test -f '$(srcdir)/HDF5Converter.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5Converter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5Converter.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" "$(DEPDIR)/HDF5Converter-HDF5Converter.Po"; else rm -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5Converter.cpp' object='HDF5Converter-HDF5Converter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5Converter-HDF5Converter.Po' tmpdepfile='$(DEPDIR)/HDF5Converter-HDF5Converter.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(inout_example_CXXFLAGS) $(CXXFLAGS) -c -o inout_example-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -c -o HDF5Converter-HDF5Converter.obj `if test -f '$(srcdir)/HDF5Converter.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5Converter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5Converter.cpp'; fi`
+
+HDF5_IO-HDF5_IO.o: $(srcdir)/HDF5_IO.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_IO_CXXFLAGS) $(CXXFLAGS) -MT HDF5_IO-HDF5_IO.o -MD -MP -MF "$(DEPDIR)/HDF5_IO-HDF5_IO.Tpo" -c -o HDF5_IO-HDF5_IO.o `test -f '$(srcdir)/HDF5_IO.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5_IO.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5_IO-HDF5_IO.Tpo" "$(DEPDIR)/HDF5_IO-HDF5_IO.Po"; else rm -f "$(DEPDIR)/HDF5_IO-HDF5_IO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5_IO.cpp' object='HDF5_IO-HDF5_IO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5_IO-HDF5_IO.Po' tmpdepfile='$(DEPDIR)/HDF5_IO-HDF5_IO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_IO_CXXFLAGS) $(CXXFLAGS) -c -o HDF5_IO-HDF5_IO.o `test -f '$(srcdir)/HDF5_IO.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5_IO.cpp
+
+HDF5_IO-HDF5_IO.obj: $(srcdir)/HDF5_IO.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_IO_CXXFLAGS) $(CXXFLAGS) -MT HDF5_IO-HDF5_IO.obj -MD -MP -MF "$(DEPDIR)/HDF5_IO-HDF5_IO.Tpo" -c -o HDF5_IO-HDF5_IO.obj `if test -f '$(srcdir)/HDF5_IO.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5_IO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5_IO.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5_IO-HDF5_IO.Tpo" "$(DEPDIR)/HDF5_IO-HDF5_IO.Po"; else rm -f "$(DEPDIR)/HDF5_IO-HDF5_IO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5_IO.cpp' object='HDF5_IO-HDF5_IO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5_IO-HDF5_IO.Po' tmpdepfile='$(DEPDIR)/HDF5_IO-HDF5_IO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_IO_CXXFLAGS) $(CXXFLAGS) -c -o HDF5_IO-HDF5_IO.obj `if test -f '$(srcdir)/HDF5_IO.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5_IO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5_IO.cpp'; fi`
+
+MatrixMarket_IO-MatrixMarket_IO.o: $(srcdir)/MatrixMarket_IO.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MatrixMarket_IO_CXXFLAGS) $(CXXFLAGS) -MT MatrixMarket_IO-MatrixMarket_IO.o -MD -MP -MF "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Tpo" -c -o MatrixMarket_IO-MatrixMarket_IO.o `test -f '$(srcdir)/MatrixMarket_IO.cpp' || echo '$(srcdir)/'`$(srcdir)/MatrixMarket_IO.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Tpo" "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po"; else rm -f "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MatrixMarket_IO.cpp' object='MatrixMarket_IO-MatrixMarket_IO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po' tmpdepfile='$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MatrixMarket_IO_CXXFLAGS) $(CXXFLAGS) -c -o MatrixMarket_IO-MatrixMarket_IO.o `test -f '$(srcdir)/MatrixMarket_IO.cpp' || echo '$(srcdir)/'`$(srcdir)/MatrixMarket_IO.cpp
+
+MatrixMarket_IO-MatrixMarket_IO.obj: $(srcdir)/MatrixMarket_IO.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MatrixMarket_IO_CXXFLAGS) $(CXXFLAGS) -MT MatrixMarket_IO-MatrixMarket_IO.obj -MD -MP -MF "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Tpo" -c -o MatrixMarket_IO-MatrixMarket_IO.obj `if test -f '$(srcdir)/MatrixMarket_IO.cpp'; then $(CYGPATH_W) '$(srcdir)/MatrixMarket_IO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MatrixMarket_IO.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Tpo" "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po"; else rm -f "$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MatrixMarket_IO.cpp' object='MatrixMarket_IO-MatrixMarket_IO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po' tmpdepfile='$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MatrixMarket_IO_CXXFLAGS) $(CXXFLAGS) -c -o MatrixMarket_IO-MatrixMarket_IO.obj `if test -f '$(srcdir)/MatrixMarket_IO.cpp'; then $(CYGPATH_W) '$(srcdir)/MatrixMarket_IO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MatrixMarket_IO.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -558,6 +660,7 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+@HAVE_EPETRAEXT_HDF5_TRUE@@HAVE_EPETRAEXT_TEUCHOS_TRUE@include $(top_builddir)/../teuchos/Makefile.export.teuchos
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

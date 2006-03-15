@@ -49,3 +49,5 @@ EXAMPLE_PATH           = ../example ../example/matlab/cxx_main.cpp matlab.README
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
 
 GENERATE_TAGFILE       = ../../common/tag_files/epetraext.tag
+
+PREDEFINED             += HAVE_EPETRAEXT_HDF5
