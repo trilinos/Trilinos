@@ -298,7 +298,7 @@ public:
   \sa Mortar_Integrate()
   
   */
-  bool SetProblemMap(Epetra_Map* map);
+  bool SetProblemMap(const Epetra_Map* map);
   
   /*!
   \brief Return view of row map of the uncoupled problem

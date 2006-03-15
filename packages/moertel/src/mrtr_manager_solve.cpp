@@ -40,7 +40,7 @@
 /*----------------------------------------------------------------------*
  |  Store the rowmap of the underlying matrix from the application 07/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Manager::SetProblemMap(Epetra_Map* map)
+bool MOERTEL::Manager::SetProblemMap(const Epetra_Map* map)
 {
   problemmap_ = rcp(new Epetra_Map(*map));
   return true;

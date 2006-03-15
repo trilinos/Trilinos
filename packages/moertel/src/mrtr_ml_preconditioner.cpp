@@ -271,7 +271,6 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
       ML_print_line("-", 80);
       cout << "MOERTEL/ML : creating level " << level+1 << endl;
       ML_print_line("-", 80);
-      fflush(stdout);
     }
 
     mlparams_.set("workspace: current level",level);
@@ -317,7 +316,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     ImBWTcoarse = ImBWTcoarse - mlapiBWTcoarse;
     
     // make modified restriction/prolongation
-    Rmod = ImBWTcoarse * R * ImBWTfine;
+    Rmod = ImBWTcoarse * ( R * ImBWTfine );
     //Rmod = R * ImBWTfine; 
     //Rmod = R; 
     Pmod = GetTranspose(Rmod);

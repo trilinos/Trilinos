@@ -50,7 +50,7 @@ isIntegrated_(false),
 gcomm_(comm),
 lcomm_(null),
 mortarside_(-1),
-ptype_(MOERTEL::Interface::proj_none),
+ptype_(MOERTEL::Interface::proj_continousnormalfield),
 primal_(MOERTEL::Function::func_none),
 dual_(MOERTEL::Function::func_none)
 {

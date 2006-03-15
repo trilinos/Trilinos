@@ -324,7 +324,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
       int nseg             = curr->second->GlobalNsegment();
       MOERTEL::Segment** segs = curr->second->GetSegmentView();
       for (int i=0; i<nseg; ++i)
-        if (segs[i]->Nfunctions() < 1)
+        if (segs[i]->Nfunctions() < 2)
         {
           foundit = false;
           break;
@@ -501,7 +501,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
       int nseg             = curr->second->GlobalNsegment();
       MOERTEL::Segment** segs = curr->second->GetSegmentView();
       for (int i=0; i<nseg; ++i)
-        if (segs[i]->Nfunctions() < 1)
+        if (segs[i]->Nfunctions() < 2)
         {
           foundit = false;
           break;
@@ -699,7 +699,7 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
       const int nseg          = curr->second->GlobalNsegment();
       MOERTEL::Segment** segs = curr->second->GetSegmentView();
       for (int i=0; i<nseg; ++i)
-        if (segs[i]->Nfunctions() < 1)
+        if (segs[i]->Nfunctions() < 2)
         {
           foundit = false;
           break;
