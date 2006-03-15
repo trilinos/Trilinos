@@ -52,6 +52,7 @@ CORE = \
 	$(srcdir)/mrtr_segment_linear1D.cpp \
 	$(srcdir)/mrtr_manager_solve.cpp \
 	$(srcdir)/mrtr_solver.cpp \
+	$(srcdir)/mrtr_ml_preconditioner.cpp \
 	$(srcdir)/mrtr_node.cpp \
 	$(srcdir)/mrtr_overlap.cpp \
 	$(srcdir)/mrtr_overlap_utils.cpp \
@@ -72,6 +73,7 @@ CORE_H = \
 	$(srcdir)/mrtr_manager.H \
 	$(srcdir)/mrtr_segment_linear1D.H \
 	$(srcdir)/mrtr_solver.H \
+	$(srcdir)/mrtr_ml_preconditioner.H \
 	$(srcdir)/mrtr_node.H \
 	$(srcdir)/mrtr_overlap.H
 
