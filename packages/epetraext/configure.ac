@@ -321,9 +321,25 @@ AM_CONDITIONAL(BUILD_BLOCK, [test "X$ac_cv_use_epetraext_block" != "Xno"])
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, modelevaluator, [Enable EpetraExt Model Evaluator subpkg], MODEL_EVALUATOR, yes)
 AM_CONDITIONAL(BUILD_MODEL_EVALUATOR, [test "X$ac_cv_use_epetraext_modelevaluator" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE_SUB(epetraext, hdf5, 
+[Enable EpetraExt interface support for HDF5. This interface requires an
+ already installed HDF5 library; the include, the library path and the library
+ name must be specified using --with-incdirs, --with-ldflags and --with-libs,
+ respectively.], 
+                           EPETRAEXT_HDF5, no)
+
+if test "X$ac_cv_use_epetraext_hdf5" != "Xno" ; then
+  AM_CONDITIONAL(HAVE_EPETRAEXT_HDF5, true ) 
+else
+  AM_CONDITIONAL(HAVE_EPETRAEXT_HDF5, false ) 
+fi
+
 # ------------------------------------------------------------------------
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, teuchos, EPETRAEXT_TEUCHOS, BUILD_TEUCHOS, yes, [Build teuchos support in epetraext, which is required in some examples.], [Build teuchos support in epetraext.  Can be overridden with --disable-epetraext-teuchos.])
+AM_CONDITIONAL(HAVE_EPETRAEXT_TEUCHOS, [test "X$ac_cv_use_epetraext_teuchos" != "Xyes"])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, triutils, EPETRAEXT_TRIUTILS, BUILD_TRIUTILS, yes, [Build triutils support in epetraext.], [Build triutils support in epetraext. Can be overridden with --disable-epetraext-triutils.])
 
