@@ -371,12 +371,21 @@ int main(int argc, char *argv[])
     // Pass input matrix to Moertel, 
     // Moertel does NOT take ownership of A!
     // ------------------------------------------------------------- //
-    manager.SetInputMatrix(&A,true);
+    manager.SetInputMatrix(&A,false);
     
     // ============================================================= //
     // Solve
     // ============================================================= //
     manager.Solve(list,LHS,RHS);
+
+    // ------------------------------------------------------------- //
+    // One can reset the solver, change parameters and/or matrix and
+    // solve again
+    // ------------------------------------------------------------- //
+    //manager.ResetSolver();
+    //LHS.PutScalar(0.0);
+    //manager.SetInputMatrix(&A,false);
+    //manager.Solve(list,LHS,RHS);
 
     // ================== //
     // Output using MEDIT //
