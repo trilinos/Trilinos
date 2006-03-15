@@ -57,6 +57,7 @@ int main(int argc, char *argv[]) {
   //
   int info = 0;
   int MyPID = 0;
+  bool norm_failure = false;
 
 #ifdef HAVE_MPI	
   // Initialize MPI	
@@ -96,13 +97,14 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 #endif
-  typedef ScalarTraits<ST>                   SCT;
-  typedef SCT::magnitudeType                  MT;
+  typedef ScalarTraits<ST>                 SCT;
+  typedef SCT::magnitudeType                MT;
   typedef Belos::MultiVec<ST>               MV;
   typedef Belos::Operator<ST>               OP;
   typedef Belos::MultiVecTraits<ST,MV>     MVT;
   typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
+  ST one  = SCT::one();
+  ST zero = SCT::zero();	
 
   // Create default output manager 
   RefCountPtr<Belos::OutputManager<ST> > MyOM 
@@ -129,7 +131,7 @@ int main(int argc, char *argv[]) {
 
   // Get the data from the HB file
   int dim,dim2,nnz;
-  double *dvals;
+  MT *dvals;
   int *colptr,*rowind;
   ST *cvals;
   nnz = -1;
@@ -153,8 +155,6 @@ int main(int argc, char *argv[]) {
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ST> > A 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
-//  RefCountPtr< MyOperator<ST> > A 
-//    = rcp( new MyOperator<ST>(dim,colptr,nnz,rowind,cvals) );
 
   //
   // ********Other information used by block solver***********
@@ -163,49 +163,43 @@ int main(int argc, char *argv[]) {
   int numrhs = 1;  // total number of right-hand sides to solve for
   int blockSize = 1;  // blocksize used by solver
   int maxits = dim/blockSize; // maximum number of iterations to run
-  MT tol = 1.0e-5;  // relative residual tolerance
+  MT tol = 1.0e-7;  // relative residual tolerance
   //
-  ParameterList My_PL;
-  My_PL.set( "Length", maxits );  // Maximum number of blocks in Krylov factorization
+  RefCountPtr<ParameterList> My_PL = rcp( new ParameterList() );
+  My_PL->set( "Length", maxits );  // Maximum number of blocks in Krylov factorization
   //
   // Construct the right-hand side and solution multivectors.
   // NOTE:  The right-hand side will be constructed such that the solution is
   // a vectors of one.
   //
-  RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,blockSize) );
-  RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,blockSize) );
+  RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,numrhs) );
+  RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,numrhs) );
   MVT::MvRandom( *soln );
   OPT::Apply( *A, *soln, *rhs );
-  Teuchos::SerialDenseMatrix<int,ST> temp_sdm(1,1);
-  MVT::MvTransMv( SCT::one(), *rhs, *soln, temp_sdm );
-  cout << "rhs^H*soln = "<< temp_sdm(0,0) << endl;
-  MVT::MvTransMv( SCT::one(), *soln, *rhs, temp_sdm );
-  cout << "soln^H*rhs = "<< temp_sdm(0,0) << endl;
-  MVT::MvTransMv( SCT::one(), *soln, *soln, temp_sdm );
-  cout << "soln^H*soln = "<< temp_sdm(0,0) << endl;
-  MVT::MvTransMv( SCT::one(), *rhs, *rhs, temp_sdm );
-  cout << "rhs^H*rhs = "<< temp_sdm(0,0) << endl;
-  MVT::MvInit( *soln, SCT::zero() );
+  MVT::MvInit( *soln, zero );
   //
   //  Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblem<ST,MV,OP> My_LP( A, soln, rhs );
-  My_LP.SetBlockSize( blockSize );
+  RefCountPtr<Belos::LinearProblem<ST,MV,OP> > My_LP = 
+    rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
+  My_LP->SetBlockSize( blockSize );
   //
   // *******************************************************************
-  // *************Start the block CG iteration*************************
+  // *************Start the block Gmres iteration***********************
   // *******************************************************************
   //
   Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
   Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
-  Belos::StatusTestCombo<ST,MV,OP> My_Test( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 );
+  RefCountPtr<Belos::StatusTestCombo<ST,MV,OP> > My_Test =
+    rcp( new Belos::StatusTestCombo<ST,MV,OP>( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 ) );
   //
-  Belos::OutputManager<ST> My_OM( MyPID );
+  RefCountPtr<Belos::OutputManager<ST> > My_OM = 
+    rcp( new Belos::OutputManager<ST>( MyPID ) );
   if (verbose)
-    My_OM.SetVerbosity( 2 );	
+    My_OM->SetVerbosity( 2 );	
   //
   Belos::BlockGmres<ST,MV,OP>
-    MyBlockGmres(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false) );
+    MyBlockGmres( My_LP, My_Test, My_OM, My_PL );
   //
   // **********Print out information about problem*******************
   //
@@ -231,15 +225,39 @@ int main(int argc, char *argv[]) {
   timer.start(true);
   MyBlockGmres.Solve();
   timer.stop();
-  
+
+  RefCountPtr<MyMultiVec<ST> > temp = rcp( new MyMultiVec<ST>(dim,numrhs) );
+  OPT::Apply( *A, *soln, *temp );
+  MVT::MvAddMv( one, *rhs, -one, *temp, *temp );
+  std::vector<MT> norm_num(numrhs), norm_denom(numrhs);
+  MVT::MvNorm( *temp, &norm_num );
+  MVT::MvNorm( *rhs, &norm_denom );
+  for (int i=0; i<numrhs; ++i) {
+    if (verbose) 
+      cout << "Relative residual "<<i<<" : " << norm_num[i] / norm_denom[i] << endl;
+    if ( norm_num[i] / norm_denom[i] > tol ) {
+      norm_failure == true;
+      break;
+    }
+  }
   if (verbose) {
     cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
   }
   
-  if (My_Test.GetStatus()!=Belos::Converged) {
-	if (verbose)
-      		cout << "End Result: TEST FAILED" << endl;	
-	return -1;
+  // Clean up.
+  delete [] dvals;
+  delete [] colptr;
+  delete [] rowind;
+  delete [] cvals;
+
+#ifdef HAVE_MPI
+    MPI_Finalize();
+#endif
+
+  if ( My_Test->GetStatus()!=Belos::Converged || norm_failure ) {
+    if (verbose)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
   }
   //
   // Default return value
