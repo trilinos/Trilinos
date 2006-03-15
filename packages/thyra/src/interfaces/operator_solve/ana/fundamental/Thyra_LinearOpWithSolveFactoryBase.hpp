@@ -620,39 +620,6 @@ public:
   /** @name Virtual public functions with default implementations */
   //@{
 
-  /** \brief Return if <tt>solve()</tt> supports the argument <tt>conj</tt>.
-   *
-   * The default implementation returns <tt>true</tt> for real valued scalar types
-   * or when <tt>conj==NONCONJ_ELE</tt> for complex valued types.
-   */
-  virtual bool solveSupportsConj(EConj conj) const;
-
-  /** \brief Return if <tt>solveTranspose()</tt> supports the argument <tt>conj</tt>.
-   *
-   * The default implementation returns <tt>false</tt>.
-   */
-  virtual bool solveTransposeSupportsConj(EConj conj) const;
-
-  /** \brief Return if <tt>solve()</tt> supports the solve tolerance type
-   * <tt>ESolveTolType</tt>.
-   *
-   * The default implementation returns <tt>true</tt> for
-   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
-   * assumed by default that the solver implementation will only be able to
-   * check for and enforce a tolerance on the residual.
-   */
-  virtual bool solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
-
-  /** \brief Return if <tt>solveTranspose()</tt> supports the solve tolerance
-   * type <tt>ESolveTolType</tt>.
-   *
-   * The default implementation returns <tt>true</tt> for
-   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
-   * assumed by default that the solver implementation will only be able to
-   * check for and enforce a tolerance on the residual.
-   */
-  virtual bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
-
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object but allow for reuse of
    * any preprocessing that is in <tt>*Op</tt>..
@@ -840,30 +807,6 @@ createAndInitializeLinearOpWithSolve(
 
 // /////////////////////////
 // Implementations
-
-template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveSupportsConj(EConj conj) const
-{
-  return true;
-}
-
-template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveTransposeSupportsConj(EConj conj) const
-{
-  return false;
-}
-
-template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
-{
-  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
-}
-
-template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
-{
-  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
-}
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseOp(

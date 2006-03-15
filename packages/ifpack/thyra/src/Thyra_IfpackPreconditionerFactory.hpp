@@ -72,16 +72,16 @@ public:
   /** \brief . */
   bool applyTransposeSupportsConj(EConj conj) const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<double> > createPrecOp() const;
+  Teuchos::RefCountPtr<PreconditionerBase<double> > createPrec() const;
   /** \brief . */
-  void initializePrecOp(
+  void initializePrec(
     const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-    ,LinearOpBase<double>                                      *precOp
+    ,PreconditionerBase<double>                                *prec
     ,const ESupportSolveUse                                    supportSolveUse
     ) const;
   /** \brief . */
-  void uninitializePrecOp(
-    LinearOpBase<double>                                *precOp
+  void uninitializePrec(
+    PreconditionerBase<double>                          *prec
     ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
     ,ESupportSolveUse                                   *supportSolveUse
     ) const;

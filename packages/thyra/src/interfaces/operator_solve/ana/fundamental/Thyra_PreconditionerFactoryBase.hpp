@@ -30,10 +30,9 @@
 #define THYRA_PRECONDITIONER_FACTORY_BASE_DECL_HPP
 
 #include "Thyra_SolveSupportTypes.hpp"
+#include "Thyra_PreconditionerBase.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
-
-namespace Teuchos { class ParameterList; }
 
 namespace Thyra {
 
@@ -66,7 +65,7 @@ public:
    * output operator object is not guaranteed to be fully initialized until
    * after it is passed through <tt>this->initializePrecOp()</tt>.
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<DomainScalar,RangeScalar> > createPrecOp() const = 0;
+  virtual Teuchos::RefCountPtr<PreconditionerBase<DomainScalar,RangeScalar> > createPrec() const = 0;
 
   /** \brief Initialize a pre-created <tt>LinearOpBase</tt> preconditioner
    * object given a "compatible" <tt>LinearOpBase</tt> object.
@@ -74,21 +73,22 @@ public:
    * \param  fwdOp  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpBase</tt> preconditioner object.
    *                Note that this object is remembered by the <tt>*Op</tt> object on output.
-   * \param  precOp [in/out] The output <tt>LinearOpBase</tt> preconditioner object.  This object must have
-   *                be created first by <tt>this->createPrecOp()</tt>.  The object may have also
+   * \param  prec   [in/out] The output <tt>PreconditionerBase</tt> preconditioner object.  This object must have
+   *                be created first by <tt>this->createPrec()</tt>.  The object may have also
    *                already been passed through this function several times.  Note that subclasses
    *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
    *                before attempting to dynamic cast the object.
    * \param  supportSolveUse
-   *                [in] Determines if <tt>precOp->apply()</tt> and/or <tt>precOp->applyTranspose()</tt> will
-   *                be called.  This allows <tt>*this</tt> factory object determine how to best initialae
-   *                the <tt>*precOp</tt> object.  Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
+   *                [in] Determines if <tt>apply()</tt> and/or <tt>applyTranspose()</tt> will
+   *                be called on the initialized preconditioner operators.  This allows <tt>*this</tt>
+   *                factory object determine how to best initialize the <tt>*prec</tt> object.
+   *                Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
    * <li><tt>this->isCompatible(*fwdOp)==true</tt>
-   * <li><tt>precOp!=NULL</tt>
-   * <li><tt>*precOp</tt> must have been created by <tt>this->createPrecOp()</tt> prior to calling
+   * <li><tt>prec!=NULL</tt>
+   * <li><tt>*prec</tt> must have been created by <tt>this->createPrec()</tt> prior to calling
    *     this function.
    * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_FORWARD_ONLY<tt>]
    *     <tt>this->applySupportsConj(conj)==true</tt> for any value of <tt>conj</tt>
@@ -108,21 +108,21 @@ public:
    * <li><t>precOp->applyTransposeSupportsConj(conj)==this->applyTransposeSupportsConj(conj)</tt>
    * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
-   *     be remembered by the <tt>*precOp</tt> object.  The client must be careful
+   *     be remembered by the <tt>*prec</tt> object.  The client must be careful
    *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*precOp</tt> object may also
    *     be modified and become invalid.
    * </ul>
    */
-  virtual void initializePrecOp(
+  virtual void initializePrec(
     const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
-    ,LinearOpBase<DomainScalar,RangeScalar>                                      *precOp
+    ,PreconditionerBase<DomainScalar,RangeScalar>                                *precOp
     ,const ESupportSolveUse                                                      supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const = 0;
 
   /** \brief Uninitialize a <tt>LinearOpBase</tt> preconditioner object and
    * return its remembered forward linear operator.
    *
-   * \param  precOp [in/out] On input, <tt>*precOp</tt> is an initialized or uninitialized
+   * \param  prec   [in/out] On input, <tt>*precOp</tt> is an initialized or uninitialized
    *                object and on output is uninitialized.  Note that "uninitialized"
    *                does not mean that <tt>precOp</tt> is completely stateless.  It may still
    *                remember some aspect of the matrix <tt>fwdOp</tt> that will allow
@@ -155,8 +155,8 @@ public:
    * <tt>this->initializePrecOp()</tt> is modified.  Otherwise, <tt>*this</tt>
    * could be left in an inconsistent state.  However, this is not required.
    */
-  virtual void uninitializePrecOp(
-    LinearOpBase<DomainScalar,RangeScalar>                                *precOp
+  virtual void uninitializePrec(
+    PreconditionerBase<DomainScalar,RangeScalar>                          *prec
     ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp           = NULL
     ,ESupportSolveUse                                                     *supportSolveUse = NULL
     ) const = 0;

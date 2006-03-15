@@ -31,6 +31,7 @@
 
 #include "Thyra_DiagonalLinearOpBase.hpp"
 #include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
+#include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 namespace Thyra {
 
@@ -145,7 +146,7 @@ public:
    * </ul>
    *
    * Postconditions:<ul>
-   * <li><tt>this->getNonconstDiag().get()==NULL</tt>
+   * <li><tt>this->getNonconstDiag()</tt> with throw an exception if called
    * <li><tt>this->getDiag().get()==diag.get()</tt>
    * <li><tt>this->this->domain().get() == diag->space().get()</tt>
    * <li><tt>this->this->range().get() == diag->space().get()</tt>
@@ -155,7 +156,7 @@ public:
     const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
     );
 
-  /** \brief Uninitialize and return non-const diagonal vector.
+  /** \brief Uninitialize.
    *
    * Postconditions:<ul>
    * <li><tt>this->getNonconstDiag().get()==NULL</tt>
@@ -163,29 +164,21 @@ public:
    * <li><tt>this->this->domain().get()==NULL</tt>
    * <li><tt>this->this->range().get()==NULL</tt>
    * </ul>
-   */
-  void uninitialize(
-    Teuchos::RefCountPtr<VectorBase<Scalar> >   *diag = NULL
-    );
-
-  /** \brief Uninitialize and return const diagonal vector.
    *
-   * Postconditions:<ul>
-   * <li><tt>this->getNonconstDiag().get()==NULL</tt>
-   * <li><tt>this->getDiag().get()==NULL</tt>
-   * <li><tt>this->this->domain().get()==NULL</tt>
-   * <li><tt>this->this->range().get()==NULL</tt>
-   * </ul>
+   * <b>Note:</b> If the client wants to hold on to the underlying wrapped
+   * diagonal vector then they had better grab it using
+   * <tt>this->getDiag()</tt> or <tt>this->getNonconstDiag()</tt> before
+   * calling this function!
    */
-  void uninitialize(
-    Teuchos::RefCountPtr<const VectorBase<Scalar> >   *diag = NULL
-    );
+  void uninitialize();
 
   //@}
 
   /** @name Overridden from DiagonalLinearOpBase */
   //@{
 
+  /** \brief . */
+  bool isDiagConst() const;
   /** \brief . */
   Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstDiag();
   /** \brief . */
@@ -235,66 +228,10 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<VectorBase<Scalar> >         nonconstDiag_;
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >   diag_;
-
-  void assertInitialized() const;
-
-  // Not defined and not to be called
-  DefaultDiagonalLinearOp(const DefaultDiagonalLinearOp<Scalar>&);
-  DefaultDiagonalLinearOp<Scalar>& operator=(const DefaultDiagonalLinearOp<Scalar>&);
+  Teuchos::ConstNonconstObjectContainer<VectorBase<Scalar> > diag_;
 
 };
 
-/** \brief Create a non-const diagonal linear operator from a non-const vector.
- *
- * \relates DefaultDiagonalLinearOp
- */
-template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> > diagonalLinearOp( const Teuchos::RefCountPtr<VectorBase<Scalar> > &diag );
-
-/** \brief Create a const diagonal linear operator from a const vector.
- *
- * \relates DefaultDiagonalLinearOp
- */
-template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> > diagonalLinearOp( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &diag );
-
-// /////////////////////////////////
-// Inline functions
-
-template<class Scalar>
-inline
-void DefaultDiagonalLinearOp<Scalar>::assertInitialized() const
-{
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT( diag_.get() == NULL );
-#endif
-}
-
 }	// end namespace Thyra
-
-template<class Scalar>
-inline
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::diagonalLinearOp( const Teuchos::RefCountPtr<VectorBase<Scalar> > &diag )
-{
-  return Teuchos::rcp(new DefaultDiagonalLinearOp<Scalar>(diag));
-}
-
-template<class Scalar>
-inline
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-Thyra::diagonalLinearOp( const Teuchos::RefCountPtr<const VectorBase<Scalar> > &diag )
-{
-  return Teuchos::rcp(
-    new DefaultDiagonalLinearOp<Scalar>(
-      Teuchos::rcp_const_cast<VectorBase<Scalar> >(diag)
-      )
-    );
-  // Note that the above cast is perfectly safe because we immediately return
-  // a const DefaultDiagonalLinearOp object which will then protect the
-  // constantness of the diagonal vector object.
-}
 
 #endif	// THYRA_DIAGONAL_LINEAR_OP_DECL_HPP

@@ -73,7 +73,7 @@ void DefaultDiagonalLinearOp<Scalar>::initialize(
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(space.get()==NULL);
 #endif
-  initialize(createMember(space));
+  initialize(createMember(space)); // Note that the space is guaranteed to be remembered here!
 }
 
 template<class Scalar>
@@ -81,11 +81,7 @@ void DefaultDiagonalLinearOp<Scalar>::initialize(
   const Teuchos::RefCountPtr<VectorBase<Scalar> >   &diag
   )
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT(diag.get()==NULL);
-#endif
-  nonconstDiag_ = diag;
-  diag_         = diag;
+  diag_.initialize(diag);
 }
 
 template<class Scalar>
@@ -93,49 +89,35 @@ void DefaultDiagonalLinearOp<Scalar>::initialize(
   const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &diag
   )
 {
-#ifdef _DEBUG
-  TEST_FOR_EXCEPT(diag.get()==NULL);
-#endif
-  nonconstDiag_ = Teuchos::null;
-  diag_         = diag;
+  diag_.initialize(diag);
 }
 
 template<class Scalar>
-void DefaultDiagonalLinearOp<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<VectorBase<Scalar> >   *diag
-  )
+void DefaultDiagonalLinearOp<Scalar>::uninitialize()
 {
-  if(diag) *diag = nonconstDiag_;
-  nonconstDiag_ = Teuchos::null;
-  diag_         = Teuchos::null;
-}
-
-template<class Scalar>
-void DefaultDiagonalLinearOp<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >   *diag
-  )
-{
-  if(diag) *diag = diag_;
-  nonconstDiag_ = Teuchos::null;
-  diag_         = Teuchos::null;
+  diag_.uninitialize();
 }
 
 // Overridden from DiagonalLinearOpBase
 
 template<class Scalar>
+bool DefaultDiagonalLinearOp<Scalar>::isDiagConst() const
+{
+  return diag_.isConst();
+}
+
+template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >  
 DefaultDiagonalLinearOp<Scalar>::getNonconstDiag()
 {
-  if(diag_.get())
-    return nonconstDiag_.assert_not_null();
-  return nonconstDiag_;
+  return diag_.getNonconstObj();
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >  
 DefaultDiagonalLinearOp<Scalar>::getDiag() const
 {
-  return diag_;
+  return diag_.getConstObj();
 }
 
 // Overridden from LinearOpBase
@@ -144,21 +126,21 @@ template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 DefaultDiagonalLinearOp<Scalar>::range() const
 {
-  return diag_->space();
+  return diag_.getConstObj()->space();
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
 DefaultDiagonalLinearOp<Scalar>::domain() const
 {
-  return diag_->space();
+  return diag_.getConstObj()->space();
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 DefaultDiagonalLinearOp<Scalar>::clone() const
 {
-  return Teuchos::null; // Not supported yet but could be
+  return Teuchos::rcp(new DefaultDiagonalLinearOp<Scalar>(diag_.getConstObj()->clone_v()));
 }
 
 // protected
@@ -168,7 +150,11 @@ DefaultDiagonalLinearOp<Scalar>::clone() const
 template<class Scalar>
 bool DefaultDiagonalLinearOp<Scalar>::opSupported(ETransp M_trans) const
 {
-  return true; // ToDo: Update this!
+  return
+    ( Teuchos::ScalarTraits<Scalar>::isComplex
+      ? ( M_trans==NOTRANS || M_trans==TRANS )
+      : true
+      );
 }
 
 // Overridden from SingleRhsLinearOpBase
@@ -182,11 +168,11 @@ void DefaultDiagonalLinearOp<Scalar>::apply(
   ,const Scalar                beta
   ) const
 {
-  // RAB: 4/16/2005: Warning! this does not work if Scalar is a complex type
-  // and M_trans==CONJTRANS!
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  TEST_FOR_EXCEPT( ST::isComplex && !(M_trans==NOTRANS||M_trans==TRANS) );
   typedef Teuchos::ScalarTraits<Scalar> ST;
   if( beta != ST::one() ) Vt_S( y, beta );
-  ele_wise_prod( alpha, x, *diag_, y );
+  ele_wise_prod( alpha, x, *diag_.getConstObj(), y );
 }
 
 }	// end namespace Thyra

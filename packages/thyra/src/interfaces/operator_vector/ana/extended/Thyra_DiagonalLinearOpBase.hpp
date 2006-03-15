@@ -65,10 +65,13 @@ public:
   /** @name Pure virtual functions that must be overridden in subclass */
   //@{
 
+  /** \brief Returns true if the diagonal vector is const-only. */
+  virtual bool isDiagConst() const = 0;
+
   /** \brief Returns the non-const diagonal vector <tt>diag</tt>.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>this->getDiag().get()!=NULL</tt>
+   * <li>[<tt>getDiag().get()!=NULL</tt>] <tt>isDiagConst()==false</tt>
    * </ul>
    *
    * Note that <tt>*this</tt> is not guaranteed to be fully modified until the

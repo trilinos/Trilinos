@@ -30,6 +30,7 @@
 #include "Thyra_IfpackPreconditionerFactory.hpp"
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_DefaultPreconditioner.hpp"
 #include "Ifpack_ValidParameters.h"
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack.h"
@@ -74,15 +75,15 @@ bool IfpackPreconditionerFactory::applyTransposeSupportsConj(EConj conj) const
   return false; // See comment below
 }
 
-Teuchos::RefCountPtr<LinearOpBase<double> >
-IfpackPreconditionerFactory::createPrecOp() const
+Teuchos::RefCountPtr<PreconditionerBase<double> >
+IfpackPreconditionerFactory::createPrec() const
 {
-  return Teuchos::rcp(new Thyra::EpetraLinearOp);
+  return Teuchos::rcp(new DefaultPreconditioner<double>());
 }
 
-void IfpackPreconditionerFactory::initializePrecOp(
+void IfpackPreconditionerFactory::initializePrec(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
-  ,LinearOpBase<double>                                      *precOp
+  ,PreconditionerBase<double>                                *prec
   ,const ESupportSolveUse                                    supportSolveUse
   ) const
 {
@@ -96,7 +97,7 @@ void IfpackPreconditionerFactory::initializePrecOp(
   using Teuchos::get_optional_extra_data;
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
-  TEST_FOR_EXCEPT(precOp==NULL);
+  TEST_FOR_EXCEPT(prec==NULL);
 #endif
   //
   // Unwrap and get the forward Epetra_Operator object
@@ -117,18 +118,24 @@ void IfpackPreconditionerFactory::initializePrecOp(
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
     );
   //
-  // Get the EpetraLinearOp object that is used to implement precOp
+  // Get the concrete precondtioner object
   //
-  EpetraLinearOp
-    *epetra_precOp = &Teuchos::dyn_cast<EpetraLinearOp>(*precOp);
+  DefaultPreconditioner<double>
+    *defaultPrec = &Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
+  //
+  // Get the EpetraLinearOp object that is used to implement prec. linear op
+  //
+  RefCountPtr<EpetraLinearOp>
+    epetra_precOp;
+  if(defaultPrec)
+    epetra_precOp = rcp_dynamic_cast<EpetraLinearOp>(defaultPrec->getNonconstUnspecifiedPrecOp(),true);
   //
   // Get the embedded Ifpack_Preconditioner object if it exists
   //
   Teuchos::RefCountPtr<Ifpack_Preconditioner>
-    ifpack_precOp = rcp_dynamic_cast<Ifpack_Preconditioner>(
-      epetra_precOp->epetra_op()
-      ,true
-      );
+    ifpack_precOp;
+  if(epetra_precOp.get())
+    ifpack_precOp = rcp_dynamic_cast<Ifpack_Preconditioner>(epetra_precOp->epetra_op(),true);
   //
   // Get the attached forward operator if it exists
   //
@@ -185,22 +192,27 @@ void IfpackPreconditionerFactory::initializePrecOp(
   //
   set_extra_data(fwdOp,"IFPF::fwdOp",&ifpack_precOp,Teuchos::POST_DESTROY,false);
   //
-  // Initialize the output EpetraLinearOp if this is the first time
+  // Initialize the output EpetraLinearOp
   //
   if(startingOver) {
-    epetra_precOp->initialize(
-      ifpack_precOp
-      ,epetraFwdOpTransp
-      ,EPETRA_OP_APPLY_APPLY_INVERSE
-      ,EPETRA_OP_ADJOINT_UNSUPPORTED
-      );
-    // RAB: Above, I mark that adjoints are not supported since at least the
-    // "ILU" option does not support them (see Ifpack bug 1978).
+    epetra_precOp = rcp(new EpetraLinearOp);
   }
+  epetra_precOp->initialize(
+    ifpack_precOp
+    ,epetraFwdOpTransp
+    ,EPETRA_OP_APPLY_APPLY_INVERSE
+    ,EPETRA_OP_ADJOINT_UNSUPPORTED  // ToDo: Look into adjoints again.
+    );
+  //
+  // Initialize the preconditioner
+  //
+  defaultPrec->initializeUnspecified(
+    Teuchos::rcp_implicit_cast<LinearOpBase<double> >(epetra_precOp)
+    );
 }
 
-void IfpackPreconditionerFactory::uninitializePrecOp(
-  LinearOpBase<double>                                *precOp
+void IfpackPreconditionerFactory::uninitializePrec(
+  PreconditionerBase<double>                          *prec
   ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
   ,ESupportSolveUse                                   *supportSolveUse
   ) const

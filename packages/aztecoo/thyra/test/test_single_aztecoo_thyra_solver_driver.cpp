@@ -62,7 +62,7 @@ int main(int argc, char* argv[])
     std::string     aztecSubdomainSolve    = "ilu";
 
     CommandLineProcessor  clp(false); // Don't throw exceptions
-    clp.setOption( "matrix-file", &matrixFile, "Matrix iput file [Required]." );
+    clp.setOption( "matrix-file", &matrixFile, "Matrix input file [Required]." );
     clp.setOption( "test-transpose", "no-test-transpose", &testTranspose, "Test the transpose solve or not." );
     clp.setOption( "num-random-vectors", &numRandomVectors, "Number of times a test is performed with different random vectors." );
     clp.setOption( "max-fwd-error", &maxFwdError, "The maximum relative error in the forward operator." );

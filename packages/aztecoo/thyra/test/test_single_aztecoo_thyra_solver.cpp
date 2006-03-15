@@ -259,9 +259,9 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
       precFactory->setParameterList(ifpackPFPL);
 
-      Teuchos::RefCountPtr<LinearOpBase<double> >
-        precA = precFactory->createPrecOp();
-      precFactory->initializePrecOp(A,&*precA);
+      Teuchos::RefCountPtr<PreconditionerBase<double> >
+        precA = precFactory->createPrec();
+      precFactory->initializePrec(A,&*precA);
 
       if(out) {
         *out << "\nifpackPFPL after setting parameters =\n";
@@ -275,9 +275,9 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out) *out << "\nprecA.description() = " << precA->description() << std::endl;
       if(out && dumpAll) *out << "\ndescribe(precA) =\n" << describe(*precA,Teuchos::VERB_EXTREME,indentSpacer,indentSpacer);
       
-      if(out) *out << "\nK) Reinitialize (A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
+      if(out) *out << "\nK) Reinitialize (A,precA->getUnspecifiedPrecOp(),PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
       
-      opFactory->initializePreconditionedOp(A,precA,PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*nsA);
+      opFactory->initializePreconditionedOp(A,precA->getUnspecifiedPrecOp(),PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*nsA);
       
       if(out) *out << "\nL) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       

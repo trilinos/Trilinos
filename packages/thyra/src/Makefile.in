@@ -308,6 +308,7 @@ INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveFactoryBase.hpp\
+  $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_PreconditionerBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_PreconditionerFactoryBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_SolveSupportTypes.hpp
 
@@ -432,6 +433,8 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolveDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBase.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBase.hpp\
