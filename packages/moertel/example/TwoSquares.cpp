@@ -379,8 +379,10 @@ int main(int argc, char *argv[])
     manager.Solve(list,LHS,RHS);
 
     // ------------------------------------------------------------- //
-    // One can reset the solver, change parameters and/or matrix and
-    // solve again
+    // One can reset the solver, change parameters and/or matrix (with the
+    // same rowmap) and solve again if needed.
+    // If no ResetSolver() is called, the same matrix and preconditioner
+    // will be used to solve for multiple rhs
     // ------------------------------------------------------------- //
     //manager.ResetSolver();
     //LHS.PutScalar(0.0);
