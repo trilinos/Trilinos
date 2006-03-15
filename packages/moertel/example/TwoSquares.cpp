@@ -39,8 +39,8 @@ double Source(const double& x, const double& y, const double& z)
 
 double Force(const double& x, const double& y, const double& z)
 {
-  if (y < 0.5)
-    return(2.0);
+  if (y < 0.8)
+    return(1.0);
   else
     return(0.0);
 }
