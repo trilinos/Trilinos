@@ -20,6 +20,7 @@ FFLAGS=-O3 \
 --disable-default-packages \
 --enable-amesos \
 --enable-amesos-klu \
+--enable-amesos-paraklete \
 --enable-amesos-umfpack \
 --enable-amesos-dscpack \
 --enable-amesos-pardiso \
