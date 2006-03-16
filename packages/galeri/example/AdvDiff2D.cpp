@@ -7,6 +7,9 @@
 #include "Epetra_SerialComm.h"
 #endif
 
+using namespace Galeri;
+using namespace Galeri::FiniteElements;
+
 // ==========================================================
 // This file solves the scalar problem
 //
@@ -67,8 +70,10 @@ double BoundaryValue(const double& x, const double& y,
     return (0.0);
 }
 
-using namespace Galeri;
-using namespace Galeri::FiniteElements;
+int BoundaryType(const int& Patch)
+{
+  return(GALERI_DIRICHLET);
+}
 
 // =========== //
 // main driver //
@@ -115,8 +120,8 @@ int main(int argc, char *argv[])
     int NumQuadratureNodes = 3;
 
     SUPGVariational<TriangleQuadrature>
-      AdvDiff(NumQuadratureNodes, Diffusion, ConvX, 
-              ConvY, ConvZ, Source, Force, BoundaryValue);
+      AdvDiff(NumQuadratureNodes, Diffusion, ConvX, ConvY, ConvZ, 
+              Source, Force, BoundaryValue, BoundaryType);
 
     LinearProblem FiniteElementProblem(Grid, AdvDiff, A, LHS, RHS); 
     FiniteElementProblem.Compute();

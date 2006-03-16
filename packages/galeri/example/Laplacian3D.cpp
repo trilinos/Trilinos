@@ -45,9 +45,15 @@ double Force(const double& x, const double& y, const double& z)
 
 // Specifies the boundary condition.
 double BoundaryValue(const double& x, const double& y, 
-                     const double& z, const int& Patch)
+                     const double& z, const int& PatchID)
 {
   return(x * x + y * y + z * z);
+}
+
+// Specifies the boundary condition.
+int BoundaryType(const int& PatchID)
+{
+  return(Galeri::FiniteElements::GALERI_DIRICHLET);
 }
 
 // Returns the value of the exact solution and its first
@@ -112,7 +118,7 @@ int main(int argc, char *argv[])
 
     GalerkinVariational<HexQuadrature>
       Laplacian(NumQuadratureNodes, Diffusion, Source, Force, 
-                BoundaryValue);
+                BoundaryValue, BoundaryType);
 
     LinearProblem FiniteElementProblem(Grid, Laplacian, A, LHS, RHS); 
     FiniteElementProblem.Compute();
