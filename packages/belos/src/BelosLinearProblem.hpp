@@ -37,6 +37,11 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
+using Teuchos::null;
+using Teuchos::rcp_const_cast;
+
 /*! \class Belos::LinearProblem  
   \brief The Belos::LinearProblem class is a wrapper that encapsulates the 
   general information needed for solving a linear system of equations.  
@@ -48,7 +53,7 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   class LinearProblem {
-    
+   
   public:
     
     //@{ \name Constructors/Destructor.

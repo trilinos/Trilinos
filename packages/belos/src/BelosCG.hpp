@@ -226,7 +226,7 @@ namespace Belos {
       //
       if ( _lp->GetBlockSize() > 1 ) return;
       //
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( IterationDetails )) {
 	*_os << endl;
 	*_os << "===================================================" << endl;
 	*_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
@@ -262,14 +262,14 @@ namespace Belos {
       // ************************Main CG Loop***************************************
       // ***************************************************************************
       // 
-      if (_om->doOutput( 2 )) *_os << "Entering main CG loop" << endl << endl;
+      if (_om->isVerbosityAndPrint( IterationDetails )) *_os << "Entering main CG loop" << endl << endl;
       //
       for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
 	{
 	  //
 	  // Print out solver status.
 	  //
-	  if (_om->doOutput( 0 )) {
+	  if (_om->isVerbosityAndPrint( IterationDetails )) {
 	    _stest->Print(*_os);
 	  }
 	  //
@@ -281,15 +281,15 @@ namespace Belos {
 	  // Compute alpha := <_residvec, _z> / <_p, _Ap >
 	  //
 	  MVT::MvTransMv( one, *_p, *_Ap, temp_sdm );
-	  *_os << "temp_sdm = " << temp_sdm(0,0) << endl;
+	  //*_os << "temp_sdm = " << temp_sdm(0,0) << endl;
 	  MVT::MvTransMv( one/temp_sdm(0,0), *_residvec, *_z, alpha );
 	  //
 	  // Check that alpha is a positive number!
 	  //
 	  if ( SCT::real(alpha(0,0)) <= zero ) {
-	    if (_om->doOutput( 0 )) {
+	    if (_om->isVerbosityAndPrint( Errors )) {
 	      *_os << " Exiting CG iteration " << endl;
-	      *_os << " Reason: Non-positive value for p^H*A*p ("<< SCT::real(alpha(0,0)) <<") !!! "<< endl;
+	      *_os << " ERROR: Non-positive value for p^H*A*p ("<< SCT::real(alpha(0,0)) <<") !!! "<< endl;
 	    }
 	    break; // Get out from this solve.
 	  }
@@ -329,7 +329,7 @@ namespace Belos {
       //
       // Print out solver status.
       //
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( FinalSummary )) {
 	_stest->Print(*_os);
       }
       //

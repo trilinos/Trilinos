@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
   // Create an output manager to handle the I/O from the solver
   Teuchos::RefCountPtr<Belos::OutputManager<double> > MyOM = Teuchos::rcp( new Belos::OutputManager<double>( MyPID ) );
   if (verbose) {
-    MyOM->SetVerbosity( 1 );
+    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings );
   }
 
   // test the Epetra adapter multivector

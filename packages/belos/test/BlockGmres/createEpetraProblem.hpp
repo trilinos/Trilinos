@@ -26,10 +26,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "BelosTypes.hpp"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #endif
+
+#include "Teuchos_RefCountPtr.hpp"
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
 
 class Epetra_Map;
 class Epetra_CrsMatrix;

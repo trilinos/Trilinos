@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
   nnz = -1;
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    if (MyOM->doOutput( 0 )) {
+    if (MyOM->isVerbosityAndPrint( Belos::Errors )) {
       cout << "Error reading '" << filename << "'" << endl;
       cout << "End Result: TEST FAILED" << endl;
     }

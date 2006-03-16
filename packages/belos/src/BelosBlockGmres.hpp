@@ -209,7 +209,8 @@ namespace Belos {
     int _restartiter, _totaliter, _iter;
     bool _flexible;
     MagnitudeType _dep_tol, _blk_tol, _sing_tol;
-    Teuchos::SerialDenseVector<int,ScalarType> beta, cs, sn;
+    Teuchos::SerialDenseVector<int,ScalarType> beta, sn;
+    Teuchos::SerialDenseVector<int,ScalarType> cs;
 
     typedef MultiVecTraits<ScalarType, MV> MVT;
   };
@@ -346,7 +347,7 @@ namespace Belos {
     //
     while ( _cur_block_sol.get() && _cur_block_sol.get() ) {
       //
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( IterationDetails )) {
         *_os << endl;
         *_os << "===================================================" << endl;
         *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
@@ -391,11 +392,11 @@ namespace Belos {
 	exit_flg = QRFactorAug( *U_vec, G10, true );
 	//
 	if (exit_flg){
-	  if (_om->doOutput( 0 )){
+	  if (_om->isVerbosityAndPrint( Errors )){
 	    *_os << "Exiting Block GMRES" << endl;
 	    *_os << "  Restart iteration# " << _restartiter
 		 << "  Iteration# " << _iter << endl;
-	    *_os << "  Reason: Failed to compute initial block of orthonormal basis vectors"
+	    *_os << "  ERROR: Failed to compute initial block of orthonormal basis vectors"
 		 << endl << endl;
 	  }
 	}
@@ -474,11 +475,11 @@ namespace Belos {
 	//
 	// Print out solver status
 	// 
-	if (_om->doOutput( 0 )) {
+	if (_om->isVerbosityAndPrint( FinalSummary )) {
 	  _stest->Print(*_os);
 	  if (exit_flg && _stest->GetStatus()!=Converged) {
 	    *_os << " Exiting Block GMRES --- " << endl;
-	    *_os << "  Reason: Failed to compute new block of orthonormal basis vectors" << endl;
+	    *_os << "  ERROR: Failed to compute new block of orthonormal basis vectors" << endl;
 	    *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
 	  }
 	} 
@@ -667,7 +668,7 @@ namespace Belos {
     for (i=0; i<_blocksize; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
 	flg = true;
-	if (_om->doOutput( 3 )){
+	if (_om->isVerbosityAndPrint( OrthoDetails )){
 	  *_os << "Col " << num_prev+i << " is dependent on previous "
 	       << "Arnoldi vectors in V_prev" << endl;
 	  *_os << endl;
@@ -675,9 +676,9 @@ namespace Belos {
       }
     } // end for (i=0;...)
       //
-    if (_om->doOutput( 2 )) {
-      *_os << "Checking Orthogonality after BlkOrth()"
-	  << " Iteration: " << _iter << endl;
+    if (_om->isVerbosity( OrthoDetails )) {
+      if(_om->doPrint()) { *_os << "Checking Orthogonality after BlkOrth()"
+	  << " Iteration: " << _iter << endl; }
       CheckKrylovOrth(_iter);
     }
     //
@@ -831,7 +832,7 @@ namespace Belos {
       }
       else { 
 	//
-	if (_om->doOutput( 3 )) {
+	if (_om->isVerbosityAndPrint( OrthoDetails )) {
 	  *_os << "Column " << num_prev << " of _basisvecs is dependent" << endl;
 	  *_os << endl;
 	}
@@ -888,10 +889,10 @@ namespace Belos {
 	//
     } // end for (iter=0;...)
       //
-    if (_om->doOutput( 2 )){
-      *_os << endl;
+    if (_om->isVerbosity( OrthoDetails )){
+      if(_om->doPrint()) { *_os << endl;
       *_os << "Checking Orthogonality after BlkOrthSing()"
-	  << " Iteration: " << _iter << endl;
+	  << " Iteration: " << _iter << endl; }
       CheckKrylovOrth(_iter);
     }
     //
@@ -1009,7 +1010,7 @@ namespace Belos {
 	  // 
 	  //
 	  if (norm2[0] < norm1[0] * _blk_tol) {
-	    if (_om->doOutput( 3 )) {
+	    if (_om->isVerbosityAndPrint( OrthoDetails )) {
 	      *_os << "Column " << j << " of current block is dependent" << endl;
 	    }
 	    flg = true;  
@@ -1081,6 +1082,7 @@ namespace Belos {
   void BlockGmres<ScalarType,MV,OP>::UpdateLSQR( Teuchos::SerialDenseMatrix<int,ScalarType>& R, 
 				     Teuchos::SerialDenseMatrix<int,ScalarType>& z )
   {
+    //R.print( cout );
     int i, j, maxidx;
     ScalarType sigma, mu, vscale, maxelem, temp;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1110,7 +1112,10 @@ namespace Belos {
 	//
 	// Calculate new Givens rotation
 	//
+	//blas.ROTG( &R(_iter,_iter), &R(_iter+1,_iter), &cs[_iter], &sn[_iter] );
+	//cout << cs[_iter] << "\t" << sn[_iter] << "\t" << R(_iter,_iter) << endl;
 	givens_rot( R(_iter,_iter), R(_iter+1,_iter), cs[_iter], sn[_iter], temp );
+	//cout << cs[_iter] << "\t" << sn[_iter] << "\t" << temp << endl;
 	R(_iter,_iter) = temp;
 	R(_iter+1,_iter) = zero;
 	//

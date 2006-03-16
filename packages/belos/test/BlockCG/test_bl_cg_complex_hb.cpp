@@ -109,10 +109,10 @@ int main(int argc, char *argv[]) {
     = rcp( new Belos::OutputManager<ST>( MyPID ) );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( 2 );
+    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
   }
 
-  if (MyOM->doOutput( 2 )) {
+  if (verbose && MyPID==0) {
     cout << Belos::Belos_Version() << endl << endl;
   }
 

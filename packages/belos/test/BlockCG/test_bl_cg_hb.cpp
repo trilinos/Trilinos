@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   //
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
-    My_OM.SetVerbosity( 2 );	
+    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );	
   //
   Belos::BlockCG<double,MV,OP>
     MyBlockCG(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false) );

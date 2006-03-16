@@ -310,7 +310,7 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     cols[i] = i;
   }
   //
-  if (_om->doOutput( 0 )) {
+  if (_om->isVerbosityAndPrint( IterationDetails )) {
     *_os << endl;
     *_os << "===================================================" << endl;
     *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
@@ -385,14 +385,14 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     num_ind = cols.size();
     //
     if ( exit_flg ) {
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( Errors )) {
 	*_os << " Exiting Block CG iteration " << endl; 
-	*_os << " Reason: No independent initial direction vectors" << endl;
+	*_os << " ERROR: No independent initial direction vectors" << endl;
       }
     }		
     if (num_ind < ind_blksz) {
       // The initial block of direction vectors are linearly dependent
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( Warnings )) {
 	*_os << " Initial direction vectors are dependent" << endl;
 	*_os << " Adjusting blocks and indices for iteration" << endl;
       }
@@ -411,7 +411,7 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
   }  // end if (ind_blksz > 0)
   //		
   else {  // all initial residuals have converged
-    if (_om->doOutput( 0 )) {
+    if (_om->isVerbosityAndPrint( Warnings )) {
       *_os << " Exiting Block CG iteration " 
 	     << " -- Iteration# " << _iter << endl;
       *_os << "Reason: All initial residuals have converged" << endl;
@@ -423,14 +423,14 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
   // ************************Main CG Loop***************************************
   // ***************************************************************************
   // 
-  if (_om->doOutput( 2 )) *_os << "Entering main CG loop" << endl << endl;
+  if (_om->isVerbosityAndPrint( IterationDetails )) *_os << "Entering main CG loop" << endl << endl;
   //
   _new_blk = 1;
   for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) {
     //
     // Print current solver status if necessary.
     //
-    if (_om->doOutput( 0 )) {
+    if (_om->isVerbosityAndPrint( IterationDetails )) {
       _stest->Print(*_os);
     }  
     //
@@ -486,10 +486,10 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     // 2)
     lapack.POTRF(UPLO, ind_blksz, T2.values(), ind_blksz, &info);
     if (info != 0) {
-      if(_om->doOutput( 0 )){
+      if(_om->isVerbosityAndPrint( Errors )){
 	*_os << " Exiting Block CG iteration "
 	     << " -- Iteration# " << _iter << endl;
-	*_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
+	*_os << " ERROR: Cannot compute coefficient matrix alpha" << endl;
 	*_os << " P_prev'* A*P_prev is singular" << endl;
 	*_os << " Solution will be updated upon exiting loop" << endl;
       }
@@ -499,10 +499,10 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     lapack.POTRS(UPLO, ind_blksz, _blocksize, T2.values(), ind_blksz, alpha.values(), ind_blksz, &info);
     // Note: solution returned in alpha
     if (info != 0) {
-      if(_om->doOutput( 0 )){
+      if(_om->isVerbosityAndPrint( Errors  )){
 	*_os << " Exiting Block CG iteration "
 	     << " -- Iteration# " << _iter << endl;
-	*_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
+	*_os << " ERROR: Cannot compute coefficient matrix alpha" << endl;
 	*_os << " Solution will be updated upon exiting loop" << endl;
       }
       break;
@@ -543,17 +543,17 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     //
     // ****************Print iteration information*****************************
     //
-    if (_om->doOutput( 2 )) {
+    if (_om->isVerbosity( IterationDetails )) {
       PrintCGIterInfo( ind_idx );
     }
     //
     // ****************Test for breakdown*************************************
     //
     if (ind_blksz <= 0){
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( Errors )) {
 	*_os << " Exiting Block CG iteration " 
 	    << " -- Iteration# " << _iter << endl;
-	*_os << " Reason: No more independent direction vectors" << endl;
+	*_os << " ERROR: No more independent direction vectors" << endl;
 	*_os << " Solution will be updated upon exiting loop" << endl;
       }
       break;
@@ -599,10 +599,10 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, T2.values(), prev_ind_blksz, beta.values(), prev_ind_blksz, &info);
     // Note: Solution returned in beta
     if (info != 0) {
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( Errors )) {
 	*_os << " Exiting Block CG iteration " 
 	    << " -- Iteration# " << _iter << endl;
-	*_os << "Reason: Cannot compute coefficient matrix beta" << endl;
+	*_os << "ERROR: Cannot compute coefficient matrix beta" << endl;
 	*_os << "Solution will be updated upon exiting loop" << endl;
       }
       break;
@@ -614,8 +614,8 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     //
     // Check A-orthogonality of new and previous blocks of direction vectors
     //
-    if (_om->doOutput( 2 )) {
-      *_os << "Orthogonality check" << endl;
+    if (_om->isVerbosity( OrthoDetails )) {
+      if (_om->doPrint()) *_os << "Orthogonality check" << endl;
       CheckAOrthogonality(*P_prev, *P_new);   
     }
     //
@@ -631,10 +631,10 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     num_ind = cols.size();
     if ( exit_flg ) {
       ind_blksz = num_ind;
-      if (_om->doOutput( 0 )) {
+      if (_om->isVerbosityAndPrint( Errors )) {
 	*_os  << " Exiting Block CG iteration "  
 	     << " -- Iteration# " << _iter << endl;
-	*_os << "Reason: No more linearly independent direction vectors" << endl;
+	*_os << " ERROR: No more linearly independent direction vectors" << endl;
 	*_os << " Solution will be updated upon exiting loop" << endl;
       }
       break;
@@ -643,7 +643,7 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     // Check if the new block of direction vectors are linearly dependent
     //
     if (num_ind < ind_blksz) {
-      if (_om->doOutput( 2 )) {
+      if (_om->isVerbosityAndPrint( OrthoDetails )) {
 	*_os << "The new block of direction vectors are dependent " << endl;
 	*_os << "# independent direction vectors: " << num_ind << endl;
 	*_os << " Independent indices: " << endl;
@@ -662,8 +662,8 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
     //
     // Check A-orthogonality after orthonormalization
     //
-    if (_om->doOutput( 2 )) {
-      *_os << "Orthogonality check after orthonormalization " << endl; 
+    if (_om->isVerbosity( OrthoDetails )) {
+      if (_om->doPrint())  *_os << "Orthogonality check after orthonormalization " << endl; 
       CheckAOrthogonality(*P_prev, *P_new);
     }
     // 
@@ -682,7 +682,7 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
   //
   // Print out solver status.
   //
-  if (_om->doOutput( 0 )) {
+  if (_om->isVerbosityAndPrint( FinalSummary )) {
     _stest->Print(*_os);
   }  
   //
@@ -788,7 +788,7 @@ bool BlockCG<ScalarType,MV,OP>::QRFactorDef (MV& VecIn,
     }
     else {
       // 
-      if (_om->doOutput( 2 )){
+      if (_om->isVerbosityAndPrint( OrthoDetails )){
 	*_os << "Rank deficiency at column index: " << j << endl;
       }
       //

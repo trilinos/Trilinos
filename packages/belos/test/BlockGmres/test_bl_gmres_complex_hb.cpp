@@ -106,15 +106,7 @@ int main(int argc, char *argv[]) {
   ST one  = SCT::one();
   ST zero = SCT::zero();	
 
-  // Create default output manager 
-  RefCountPtr<Belos::OutputManager<ST> > MyOM 
-    = rcp( new Belos::OutputManager<ST>( MyPID ) );
-  // Set verbosity level
-  if (verbose) {
-    MyOM->SetVerbosity( 2 );
-  }
-
-  if (MyOM->doOutput( 2 )) {
+  if (verbose && MyPID==0) {
     cout << Belos::Belos_Version() << endl << endl;
   }
 
@@ -155,13 +147,13 @@ int main(int argc, char *argv[]) {
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ST> > A 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
-
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
   int numrhs = 1;  // total number of right-hand sides to solve for
   int blockSize = 1;  // blocksize used by solver
+  //int maxits = 20; // maximum number of iterations to run
   int maxits = dim/blockSize; // maximum number of iterations to run
   MT tol = 1.0e-7;  // relative residual tolerance
   //
@@ -174,6 +166,7 @@ int main(int argc, char *argv[]) {
   //
   RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,numrhs) );
   RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,numrhs) );
+  //MVT::MvInit( *soln, one );
   MVT::MvRandom( *soln );
   OPT::Apply( *A, *soln, *rhs );
   MVT::MvInit( *soln, zero );
@@ -196,7 +189,7 @@ int main(int argc, char *argv[]) {
   RefCountPtr<Belos::OutputManager<ST> > My_OM = 
     rcp( new Belos::OutputManager<ST>( MyPID ) );
   if (verbose)
-    My_OM->SetVerbosity( 2 );	
+    My_OM->SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );	
   //
   Belos::BlockGmres<ST,MV,OP>
     MyBlockGmres( My_LP, My_Test, My_OM, My_PL );
@@ -236,8 +229,7 @@ int main(int argc, char *argv[]) {
     if (verbose) 
       cout << "Relative residual "<<i<<" : " << norm_num[i] / norm_denom[i] << endl;
     if ( norm_num[i] / norm_denom[i] > tol ) {
-      norm_failure == true;
-      break;
+      norm_failure = true;
     }
   }
   if (verbose) {

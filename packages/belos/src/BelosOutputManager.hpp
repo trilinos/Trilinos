@@ -41,7 +41,7 @@
 	to the appropriate output stream.
 
 	This output manager will remove the need for the solver or linear problem to know any information
-	about the required output.  Calling <tt>doOutput( int vbLevel )</tt> will inform the solver if
+	about the required output.  Calling <tt>doPrint( int vbLevel )</tt> will inform the solver if
 	it is supposed to output the information corresponding to the verbosity level (\c vbLevel ).
 
 	\author Michael Heroux and Heidi Thornquist
@@ -49,88 +49,114 @@
 
 namespace Belos {
 
-template <class ScalarType>
-class OutputManager {
-
-	public:
-
-	//@{ \name Constructors/Destructor.
-
-	//! Default constructor
-	OutputManager();
-
-	//! Copy constructor.
-	OutputManager( const OutputManager<ScalarType>& OM );
-
-	//! Basic constructor.
-	OutputManager( int myID, int vbLevel = 0, int printID = 0, ostream& os = cout );
-
-	//! Destructor.
-	virtual ~OutputManager() {};
-	//@}
-	
-	//@{ \name Set methods.
-
-	//! Set the output stream for this manager.
-	void SetOStream( ostream& os ) { myOS_ = os; };
-
-	//! Set the verbosity level for this manager.
-	void SetVerbosity( int vbLevel ) { vbLevel_ = vbLevel; }; 
-
-	//@}
-
-	//@{ \name Get methods.
-
-	//! Get the output stream for this manager.
-	ostream& GetOStream() { return myOS_; };
-
-	//@}
-
-	//@{ \name Query methods.
-
-	//! Find out whether we need to print out information for this verbosity level.
-	bool doOutput( int vbLevel ) { return (( IPrint_ && vbLevel_ > vbLevel ) ? true : false ); }; 
-
-	//@}
-
-	private:
-
-	int myID_, printID_;
-	int vbLevel_;
-	bool IPrint_;
-	ostream& myOS_;	
-};
-
-template<class ScalarType>
-OutputManager<ScalarType>::OutputManager() :
-	myID_(0),
-	printID_(0),
-	vbLevel_(0),
-	IPrint_(true),
-	myOS_(cout)
-{
-}
-
-template<class ScalarType>
-OutputManager<ScalarType>::OutputManager( const OutputManager<ScalarType>& OM ) :
-	myID_(OM.myID_),
-	printID_(OM.printID_),
-	vbLevel_(OM.vbLevel_),
-	IPrint_(OM.IPrint_),
-	myOS_(OM.myOS_)
-{
-}	 
-
-template<class ScalarType>
-OutputManager<ScalarType>::OutputManager( int myID, int vbLevel, int printID, ostream& os ) :
-	myID_(myID),
-	printID_(printID),
-	vbLevel_(vbLevel),
-	IPrint_(myID == printID),
-	myOS_(os)
-{
-}
-
+  /*! \enum MsgType
+    \brief Enumerated list of available message types recognized by the linear solvers.
+  */
+  
+  enum MsgType 
+    {
+      Errors= 0,                  /*!< Errors [ always printed ] */
+      Warnings = 0x1,             /*!< Internal warnings */
+      IterationDetails = 0x2,     /*!< Approximate/exact residuals */
+      OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
+      FinalSummary = 0x8,         /*!< Final computational summary */
+      TimingDetails = 0x10,       /*!< Timing details */
+      Debug = 0x20                /*!< Debugging information */
+    };
+  
+  template <class ScalarType>
+  class OutputManager {
+    
+  public:
+    
+    //@{ \name Constructors/Destructor.
+    
+    //! Default constructor
+    OutputManager();
+    
+    //! Basic constructor.
+    OutputManager( int myID, int vbLevel = Belos::Errors, int printID = 0, ostream& os = std::cout );
+    
+    //! Destructor.
+    virtual ~OutputManager() {};
+    //@}
+    
+    //@{ \name Set methods.
+    
+    //! Set the output stream for this manager.
+    void SetOStream( ostream& os ) { myOS_ = os; };
+    
+    //! Set the verbosity level for this manager.
+    void SetVerbosity( int vbLevel ) { vbLevel_ = vbLevel; }; 
+    
+    //@}
+    
+    //@{ \name Get methods.
+    
+    //! Get the output stream for this manager.
+    ostream& GetOStream() { return myOS_; };
+    
+    //@}
+    
+    //@{ \name Query methods.
+    
+    //! Find out whether we need to print out information for this message type.
+    /*! This method is used by the solver to determine whether computations are
+      necessary for this message type.
+    */
+    bool isVerbosity( MsgType type ) { return (( type == Belos::Errors ) || ( vbLevel_ & type )); }; 
+    
+    //! Find out whether this processor needs to print out information for this message type.
+    /*! This method is used by the solver to determine whether this output stream has been
+      selected to output the information for this message type.
+    */
+    bool isVerbosityAndPrint( MsgType type ) { return ( iPrint_ && isVerbosity( type )); }; 
+    
+    //! Find out whether information can be outputted through this output stream.
+    bool doPrint( void ) { return (iPrint_); };
+    
+    //@}
+    
+  private:
+    
+    //@{ \name Undefined methods.
+    
+    //! Copy constructor.
+    OutputManager( const OutputManager<ScalarType>& OM );
+    
+    //! Assignment operator.
+    OutputManager<ScalarType>& operator=( const OutputManager<ScalarType>& OM );
+    
+    //@}
+    
+    int myID_, printID_;
+    int vbLevel_;
+    bool iPrint_;
+    ostream& myOS_;	
+  };
+  
+  template<class ScalarType>
+  OutputManager<ScalarType>::OutputManager() :
+    myID_(0),
+    printID_(0),
+    vbLevel_(0),
+    iPrint_(true),
+    myOS_(std::cout)
+  {
+  }
+  
+  template<class ScalarType>
+  OutputManager<ScalarType>::OutputManager( int myID, int vbLevel, int printID, ostream& os ) :
+    myID_(myID),
+    printID_(printID),
+    vbLevel_(vbLevel),
+    iPrint_(myID == printID),
+    myOS_(os)
+  {
+  }
+  
 } // end Belos namespace
+
 #endif
+
 // end of file BelosOutputManager.hpp

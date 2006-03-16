@@ -26,7 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-#include "BelosTypes.hpp"
 #ifdef EPETRA_MPI
 #include "mpi.h"
 #endif
@@ -34,6 +33,10 @@
 class Epetra_Map;
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
+
+#include "Teuchos_RefCountPtr.hpp"
+using Teuchos::RefCountPtr;
+using Teuchos::rcp;
 
 namespace Belos {
 
