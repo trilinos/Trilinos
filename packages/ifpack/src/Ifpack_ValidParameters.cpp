@@ -1,5 +1,4 @@
 #include "Ifpack_ValidParameters.h"
-#include "Epetra_CombineMode.h"
 
 Teuchos::ParameterList Ifpack_GetValidParameters()
 {
@@ -61,8 +60,9 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
   List.set("fact: sparskit: mbloc", (int)(-1));
   List.set("fact: sparskit: type", ("ILUT"));
 
+  // Additive Schwarz preconditioner
   List.set("schwarz: compute condest", true);
-  List.set("schwarz: combine mode", (Epetra_CombineMode)Zero);
+  List.set("schwarz: combine mode", "Zero"); // use string mode for this
   List.set("schwarz: reordering type", "none");
   List.set("schwarz: filter singletons", false);
 

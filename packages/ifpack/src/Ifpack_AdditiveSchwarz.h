@@ -544,7 +544,28 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
   // compute the condition number each time Compute() is invoked.
   ComputeCondest_ = List.get("schwarz: compute condest", ComputeCondest_);
   // combine mode
-  CombineMode_ = List.get("schwarz: combine mode", CombineMode_);
+  if (Teuchos::isParameterType<string>(List, "schwarz: combine mode"))
+  {
+    string mode = List.get<string>("schwarz: combine mode");
+    if (mode == "Add")
+      CombineMode_ = Add;
+    else if (mode == "Zero")
+      CombineMode_ = Zero;
+    else if (mode == "Insert")
+      CombineMode_ = Insert;
+    else if (mode == "InsertAdd")
+      CombineMode_ = InsertAdd;
+    else if (mode == "Average")
+      CombineMode_ = Average;
+    else if (mode == "AbsMax")
+      CombineMode_ = AbsMax;
+    else
+    {
+      IFPACK_CHK_ERR(-1); // parameter not correct
+    }
+  }
+  else
+    CombineMode_ = List.get("schwarz: combine mode", CombineMode_);
   // type of reordering
   ReorderingType_ = List.get("schwarz: reordering type", ReorderingType_);
   if (ReorderingType_ == "none")
