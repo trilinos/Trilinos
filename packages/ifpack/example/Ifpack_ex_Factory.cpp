@@ -85,7 +85,10 @@ int main(int argc, char *argv[])
   // specify parameters for ILU
   List.set("fact: drop tolerance", 1e-9);
   List.set("fact: level-of-fill", 1);
-
+  // the combine mode is on the following:
+  // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
+  // Their meaning is as defined in file Epetra_CombineMode.h   
+  List.set("schwarz: combine mode", "Add");
   // sets the parameters
   IFPACK_CHK_ERR(Prec->SetParameters(List));
 
