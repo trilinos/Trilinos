@@ -46,8 +46,12 @@ int main (int argc, char **argv)
     }
     Matrix.FillComplete();
 
-    // create a Teuchos::ParameterList
+    // create a Teuchos::ParameterList and populate it
     Teuchos::ParameterList List;
+    List.set("bool type", true);
+    List.set("int type", 2);
+    List.set("double type", 3.0);
+    List.set("string type", "a string");
 
     // This is the HDF5 file manager
     EpetraExt::HDF5 HDF5(Comm);
@@ -60,7 +64,7 @@ int main (int argc, char **argv)
     // =========================== //
 
     if (Comm.MyPID() == 0)
-      cout << "Writing objects to HDF5 file myfile.h5..." << endl;
+      cout << "Writing objects to HDF5 file myfile.h5..." << endl << endl;
 
     // We first write the map, whose name contains the number of processors
     HDF5.Write("map-" + EpetraExt::toString(Comm.NumProc()), Map);
@@ -72,6 +76,9 @@ int main (int argc, char **argv)
     // we can associate basic data types with a given group, for example:
     HDF5.Write("matrix", "integration order", 1);
     HDF5.Write("matrix", "numerical drop", 0.1);
+    HDF5.Write("matrix", "package name", "EpetraExt");
+    HDF5.Write("matrix", "author", "Marzio Sala");
+    HDF5.Write("matrix", "institution", "ETHZ/D-INFK");
     // or put them in a new group
     HDF5.Write("my parameters", "latitude", 12);
     HDF5.Write("my parameters", "longitude", 67);
@@ -96,7 +103,7 @@ int main (int argc, char **argv)
     // ============================ //
 
     if (Comm.MyPID() == 0)
-      cout << "Reading objects from HDF5 file myfile.h5..." << endl;
+      cout << "Reading objects from HDF5 file myfile.h5..." << endl << endl;
 
     Epetra_Map* NewMap = 0;
     Epetra_CrsMatrix* NewMatrix = 0;
@@ -122,8 +129,7 @@ int main (int argc, char **argv)
     int NewNumGlobalNonzeros;
     HDF5.Read("matrix", "NumGlobalNonzeros", NewNumGlobalNonzeros);
 
-    if (Comm.MyPID() == 0)
-      cout << Matrix.NumGlobalNonzeros() << " should be " << NewNumGlobalNonzeros << endl;
+    assert (Matrix.NumGlobalNonzeros() == NewNumGlobalNonzeros);
 
     // Now read the MultiVector's
     HDF5.Read("x", NewX);
@@ -137,10 +143,23 @@ int main (int argc, char **argv)
     HDF5.Read("my parameters", "longitude", new_longitude);
     HDF5.Read("my parameters", "int array", H5T_NATIVE_INT, 3, &new_iarray[0]);
     HDF5.Read("my parameters", "double array", H5T_NATIVE_DOUBLE, 3, &new_darray[0]);
+    // and the string values associated with group "matrix", recordered
+    // with dataset "package name".
+    string PackageName;
+    HDF5.Read("matrix", "package name", PackageName);
 
+    Teuchos::ParameterList newList;
+    HDF5.Read("List", newList);
     if (Comm.MyPID() == 0)
     {
-      cout << "checking read and written data..." << endl;
+      cout << "New list as read from file is:" << endl;
+      cout << "bool type = " << newList.get("bool type", false) << endl;
+      cout << "int type = " << newList.get("int type", -1) << endl;
+      cout << "double type = " << newList.get("double type", -1.0) << endl;
+      cout << "string type = " << newList.get("string type", "not-set") << endl;
+      cout << endl;
+
+      cout << "Checking some read and written data..." << endl;
       for (int i = 0; i < 3; ++i)
         cout << "iarray[" << i << "] = " << iarray[i] << " should be " << new_iarray[i] << endl;
       for (int i = 0; i < 3; ++i)

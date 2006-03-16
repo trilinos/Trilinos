@@ -21,6 +21,11 @@
 #include "EpetraExt_Utils.h"
 #include "EpetraExt_HDF5.h"
 
+#define CHECK_HID(hid_t) \
+  { if (hid_t < 0) \
+    throw(EpetraExt::Exception(__FILE__, __LINE__, \
+                    "hid_t is negative")); }
+
 #define CHECK_STATUS(status) \
   { if (status < 0) \
     throw(EpetraExt::Exception(__FILE__, __LINE__, \
@@ -160,6 +165,9 @@ static herr_t f_operator(hid_t loc_id, const char *name, void *opdata)
    * the Library. Some magic :-)
    */
   H5Gget_objinfo(loc_id, name, 0, &statbuf);
+  if (strcmp(name, "__type__") == 0)
+    return(0); // skip list identifier
+
   switch (statbuf.type) {
   case H5G_GROUP:
     sublist = &params->sublist(name);
@@ -316,7 +324,7 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_BlockMap& BlockMap)
   Write(Name, "NumGlobalPoints", 1, Comm_.NumProc(), H5T_NATIVE_INT, &NumGlobalPoints);
   Write(Name, "NumGlobalElements", 1, Comm_.NumProc(), H5T_NATIVE_INT, &NumGlobalElements);
   Write(Name, "IndexBase", BlockMap.IndexBase());
-  WriteComment(Name, "Epetra_BlockMap");
+  Write(Name, "__type__", "Epetra_BlockMap");
 }
 
 // ==========================================================================
@@ -367,11 +375,12 @@ void EpetraExt::HDF5::ReadBlockMapProperties(const string& GroupName,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  ReadComment(GroupName, Label);
+  Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_BlockMap")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_BlockMap"));
+                    "requested group " + GroupName + " is not an Epetra_BlockMap",
+                    "__type__ = " + Label));
 
   Read(GroupName, "NumGlobalElements", NumGlobalElements);
   Read(GroupName, "NumGlobalPoints", NumGlobalPoints);
@@ -395,7 +404,7 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_Map& Map)
   Write(Name, "NumGlobalElements", 1, Comm_.NumProc(), H5T_NATIVE_INT, &GlobalSize);
   Write(Name, "NumProc", Comm_.NumProc());
   Write(Name, "IndexBase", Map.IndexBase());
-  WriteComment(Name, "Epetra_Map");
+  Write(Name, "__type__", "Epetra_Map");
 }
 
 // ==========================================================================
@@ -435,11 +444,12 @@ void EpetraExt::HDF5::ReadMapProperties(const string& GroupName,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  ReadComment(GroupName, Label);
+  Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_Map")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_Map"));
+                    "requested group " + GroupName + " is not an Epetra_Map",
+                    "__type__ = " + Label));
 
   Read(GroupName, "NumGlobalElements", NumGlobalElements);
   Read(GroupName, "IndexBase", IndexBase);
@@ -474,7 +484,7 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_IntVector& x)
     Write(Name, "Values", LinearMap.NumMyElements(), LinearMap.NumGlobalElements(),
           H5T_NATIVE_INT, LinearX.Values());
   }
-  WriteComment(Name, "Epetra_IntVector");
+  Write(Name, "__type__", "Epetra_IntVector");
 }
 
 // ==========================================================================
@@ -534,11 +544,12 @@ void EpetraExt::HDF5::ReadIntVectorProperties(const string& GroupName,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  ReadComment(GroupName, Label);
+  Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_IntVector")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_IntVector"));
+                    "requested group " + GroupName + " is not an Epetra_IntVector",
+                    "__type__ = " + Label));
 
   Read(GroupName, "GlobalLength", GlobalLength);
 }
@@ -582,7 +593,7 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_CrsGraph& Graph)
   Write(Name, "NumGlobalCols", Graph.NumGlobalCols());
   Write(Name, "NumGlobalNonzeros", Graph.NumGlobalNonzeros());
   Write(Name, "NumGlobalDiagonals", Graph.NumGlobalDiagonals());
-  WriteComment(Name, "Epetra_CrsGraph");
+  Write(Name, "__type__", "Epetra_CrsGraph");
 }
 
 // ==========================================================================
@@ -614,14 +625,18 @@ void EpetraExt::HDF5::ReadCrsGraphProperties(const string& GroupName,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  ReadComment(GroupName, Label);
+  Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_CrsGraph")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_CrsGraph"));
+                    "requested group " + GroupName + " is not an Epetra_CrsGraph",
+                    "__type__ = " + Label));
 
-  Read(GroupName, "NumGlobalRows", NumGlobalRows);
-  Read(GroupName, "NumGlobalCols", NumGlobalCols);
+  Read(GroupName, "NumGlobalRows",      NumGlobalRows);
+  Read(GroupName, "NumGlobalCols",      NumGlobalCols);
+  Read(GroupName, "NumGlobalNonzeros",  NumGlobalNonzeros);
+  Read(GroupName, "NumGlobalDiagonals", NumGlobalDiagonals);
+  Read(GroupName, "MaxNumIndices",      MaxNumIndices);
 }
 
 // ==========================================================================
@@ -633,11 +648,12 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& DomainMap,
                     "requested group " + GroupName + " not found in database"));
 
   string Label;
-  ReadComment(GroupName, Label);
+  Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_CrsGraph")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_CrsGraph"));
+                    "requested group " + GroupName + " is not an Epetra_CrsGraph",
+                    "__type__ = " + Label));
 
   int NumGlobalRows, NumGlobalCols, NumGlobalNonzeros;
   Read(GroupName, "NumGlobalNonzeros", NumGlobalNonzeros);
@@ -717,7 +733,7 @@ void EpetraExt::HDF5::Write(const string& Name, const Epetra_RowMatrix& Matrix)
   Write(Name, "MaxNumEntries", Matrix.MaxNumEntries());
   Write(Name, "NormOne", Matrix.NormOne());
   Write(Name, "NormInf", Matrix.NormInf());
-  WriteComment(Name, "Epetra_RowMatrix");
+  Write(Name, "__type__", "Epetra_RowMatrix");
 }
 
 // ==========================================================================
@@ -795,11 +811,12 @@ void EpetraExt::HDF5::ReadCrsMatrixProperties(const string& GroupName,
                     "requested group " + GroupName + " not found"));
 
   string Label;
-  ReadComment(GroupName, Label);
+  Read(GroupName, "__type__", Label);
 
   if (Label != "Epetra_RowMatrix")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_RowMatrix"));
+                    "requested group " + GroupName + " is not an Epetra_RowMatrix",
+                    "__type__ = " + Label));
 
   Read(GroupName, "NumGlobalRows", NumGlobalRows);
   Read(GroupName, "NumGlobalCols", NumGlobalCols);
@@ -829,7 +846,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Teuchos::ParameterLis
   status = H5Gclose(group_id);
   CHECK_STATUS(status);
 
-  WriteComment(GroupName, "Teuchos::ParameterList");
+  Write(GroupName, "__type__", "Teuchos::ParameterList");
 }
 
 // ==========================================================================
@@ -838,21 +855,25 @@ void EpetraExt::HDF5::Read(const string& GroupName, Teuchos::ParameterList& para
   if (!IsOpen())
     throw(Exception(__FILE__, __LINE__, "no file open yet"));
 
-  string comment;
-  ReadComment(GroupName, comment);
-  if (comment != "Teuchos::ParameterList")
+  string Label;
+  Read(GroupName, "__type__", Label);
+
+  if (Label != "Teuchos::ParameterList")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not a Teuchos::ParameterList"));
+                    "requested group " + GroupName + " is not a Teuchos::ParameterList",
+                    "__type__ = " + Label));
 
   // Open hdf5 file
   hid_t       group_id;  /* identifiers */
   herr_t      status;
 
-  // Create group in the root group using absolute name.
+  // open group in the root group using absolute name.
   group_id = H5Gopen(file_id_, GroupName.c_str());
+  CHECK_HID(group_id);
 
   // Iterate through parameter list 
-  status = H5Giterate(group_id, GroupName.c_str() , NULL, f_operator, &params);
+  string xxx = "/" + GroupName;
+  status = H5Giterate(group_id, xxx.c_str() , NULL, f_operator, &params);
   CHECK_STATUS(status);
 
   // Finalize hdf5 file
@@ -929,7 +950,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X
 
   Write(GroupName, "GlobalLength", GlobalLength);
   Write(GroupName, "NumVectors", NumVectors);
-  WriteComment(GroupName, "Epetra_MultiVector");
+  Write(GroupName, "__type__", "Epetra_MultiVector");
 }
 
 // ==========================================================================
@@ -964,25 +985,135 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX
 
   dataset_id = H5Dopen(group_id, "Values");
   space_id = H5Dget_space(dataset_id);
-  if (H5Sget_simple_extent_ndims(space_id) != 2)
+
+  // Create the dataspace for the dataset.
+  hsize_t q_dimsf[] = {NumVectors, GlobalLength};
+  hid_t filespace_id = H5Screate_simple(2, q_dimsf, NULL);
+
+  if (!IsContained(GroupName))
+    exit(-1);
+
+  group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  // Create the dataset with default properties and close filespace_id.
+  hid_t dset_id = H5Dopen(group_id, "Values");
+
+#if 0
+  // Create property list for collective dataset write.
+  plist_id_ = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
+#endif
+
+  Epetra_Map LinearMap(GlobalLength, 0, Comm());
+  LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
+
+  // Select hyperslab in the file.
+  hsize_t offset[] = {0, LinearMap.GID(0)};
+  hsize_t stride[] = {1, 1};
+  hsize_t count[] = {NumVectors, 1};
+  hsize_t block[] = {1, LinearX->MyLength()};
+  filespace_id = H5Dget_space(dset_id);
+  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride, 
+                      count, block);
+
+  // Each process defines dataset in memory and writes it to the hyperslab in the file.
+  hsize_t dimsm[] = {NumVectors * LinearX->MyLength()};
+  hid_t memspace_id = H5Screate_simple(1, dimsm, NULL);
+
+  // Write hyperslab
+  status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
+                   H5P_DEFAULT, LinearX->Values());
+  CHECK_STATUS(status);
+
+  H5Gclose(group_id);
+  H5Sclose(memspace_id);
+  H5Sclose(filespace_id);
+  H5Dclose(dset_id);
+
+  return;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
+  int ndims = H5Sget_simple_extent_ndims(space_id);
+  if (ndims > 2 || (ndims == 1 && NumVectors != 1))
     throw(Exception(__FILE__, __LINE__,
-                    "internal error, dimensions do not match"));
+                    "internal error, dimensions do not match",
+                    "ndims = " + toString(ndims),
+                    "NumVectors = " + toString(NumVectors)));
 
   // FIXME: this works, but I don't like it...
   status = H5Sget_simple_extent_dims(space_id, dims, NULL);
   CHECK_STATUS(status);
 
-  if (dims[0] != NumVectors)
+  cout << dims[0] << "  " << dims[1] << endl;
+  int NewGlobalLength;
+  if (NumVectors != 1)
+  {
+    if (dims[0] != NumVectors) throw(Exception(__FILE__, __LINE__,
+                      "internal error, NumVectors does not match",
+                      "dims[0] = " + toString((int)(dims[0])),
+                      "NumVectors = " + toString(NumVectors)));
+    NewGlobalLength = dims[1];
+  }
+  else
+  {
+    NewGlobalLength = dims[0];
+  }
+
+  if (NewGlobalLength != GlobalLength) 
     throw(Exception(__FILE__, __LINE__,
-                    "internal error, NumVectors does not match"));
-  Epetra_Map LinearMap(-1, dims[1], 0, Comm());
+                    "GlobalLength of vector does not match",
+                      "input = " + toString(GlobalLength),
+                      "ndims = " + toString(NewGlobalLength)));
+
+  hsize_t Offset_t[2];
+
+  Epetra_Map LinearMap(GlobalLength, 0, Comm());
   LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
+
+  hsize_t MySize_t = LinearMap.MyLength();
+
+  hid_t space_id = H5Screate_simple(1, &Offset_t, 0);
+  hid_t filespace_id = H5Dget_space(dataset_id);
+  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, &Offset_t, NULL, 
+                      &MySize_t, NULL);
+
+
+  hid_t mem_dataspace = H5Screate_simple (1, &MySize_t, NULL);
+
+  herr_t status = H5Dread(dataset_id, type, mem_dataspace, filespace_id, 
+                          H5P_DEFAULT, data);
+  CHECK_STATUS(status);
+
+  H5Sclose(mem_dataspace);
+  H5Gclose(group_id);  
+  //H5Sclose(space_id);  
+  H5Dclose(dataset_id);  
+//  H5Dclose(filespace_id);  
+
+
   status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
                    H5P_DEFAULT, LinearX->Values());
   CHECK_STATUS(status);
   H5Sclose(space_id);  
   H5Dclose(dataset_id);  
   H5Gclose(group_id);
+#endif
 }
 
 // ==========================================================================
@@ -994,12 +1125,13 @@ void EpetraExt::HDF5::ReadMultiVectorProperties(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  string comment;
-  ReadComment(GroupName, comment);
+  string Label;
+  Read(GroupName, "__type__", Label);
 
-  if (comment != "Epetra_MultiVector")
+  if (Label != "Epetra_MultiVector")
     throw(Exception(__FILE__, __LINE__,
-                    "requested group " + GroupName + " is not an Epetra_MultiVector"));
+                    "requested group " + GroupName + " is not an Epetra_MultiVector",
+                    "__type__ = " + Label));
 
   Read(GroupName, "GlobalLength", GlobalLength);
   Read(GroupName, "NumVectors", NumVectors);
@@ -1095,6 +1227,64 @@ void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName, d
   H5Sclose(filespace_id);
   H5Dclose(dset_id);
   H5Gclose(group_id);
+}
+
+// ==========================================================================
+void EpetraExt::HDF5::Write(const string& GroupName, 
+                            const string& DataSetName, 
+                            const string& data)
+{
+  if (!IsContained(GroupName))
+    CreateGroup(GroupName);
+
+  hsize_t len = data.size() + 1;
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+  hid_t dataspace_id = H5Screate_simple(1, &len, NULL);
+  hid_t dataset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_STRING, 
+                         dataspace_id, H5P_DEFAULT);
+  status = H5Dwrite(dataset_id, H5T_STRING, H5S_ALL, H5S_ALL, 
+                    H5P_DEFAULT, data.c_str());
+  CHECK_STATUS(status);
+  status = H5Dclose(dataset_id);
+  CHECK_STATUS(status);
+  status = H5Sclose(dataspace_id);
+  CHECK_STATUS(status);
+  status = H5Gclose(group_id);
+  CHECK_STATUS(status);
+}
+
+// ==========================================================================
+void EpetraExt::HDF5::Read(const string& GroupName, 
+                           const string& DataSetName, 
+                           string& data)
+{
+  if (!IsContained(GroupName))
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
+
+  hsize_t len;
+  hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+
+  hid_t dataset_id = H5Dopen(group_id, DataSetName.c_str());
+
+  hid_t space_id = H5Dget_space(dataset_id);
+
+  hid_t datatype_id = H5Dget_type(dataset_id);
+  size_t typesize_id = H5Tget_size(datatype_id);
+  H5T_class_t typeclass_id = H5Tget_class(datatype_id);
+
+  if(typeclass_id == H5T_STRING) 
+  {
+    char* data2 = new char[typesize_id];
+    herr_t status = H5Dread(dataset_id, datatype_id, space_id, space_id, 
+                            H5P_DEFAULT, data2);
+    CHECK_STATUS(status);
+    data = data2;
+  }
+
+  H5Sclose(space_id);  
+  H5Dclose(dataset_id);  
+  H5Gclose(group_id);  
 }
 
 // ============= //
@@ -1239,5 +1429,4 @@ void EpetraExt::HDF5::Read(const string& GroupName, const string& DataSetName,
   H5Dclose(dataset_id);  
 //  H5Dclose(filespace_id);  
 }
-
 #endif

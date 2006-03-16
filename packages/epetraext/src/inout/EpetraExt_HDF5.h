@@ -183,36 +183,64 @@ Reading HDF5 files from MATLAB is very, since the built-in functions
 \c hdf5read, \c hdf5write, \c hdf5info. For example, to read the above \c Matrix from
 MATLAB, one can do:
 \code
->> NumGlobalRows = double(hdf5read('myfile.h5', '/matrix/NumGlobalRows/'));
->> NumGlobalCols = double(hdf5read('myfile.h5', '/matrix/NumGlobalCols/'));
->> ROW = double(hdf5read('myfile.h5', '/matrix/ROW/'));
->> COL = double(hdf5read('myfile.h5', '/matrix/COL/'));
->> VAL = hdf5read('myfile.h5', '/matrix/VAL/');
->> A = sparse(ROW + 1, COL + 1, VAL, NumGlobalRows, NumGlobalCols);
+NumGlobalRows = double(hdf5read('myfile.h5', '/matrix/NumGlobalRows/'));
+NumGlobalCols = double(hdf5read('myfile.h5', '/matrix/NumGlobalCols/'));
+ROW = double(hdf5read('myfile.h5', '/matrix/ROW/'));
+COL = double(hdf5read('myfile.h5', '/matrix/COL/'));
+VAL = hdf5read('myfile.h5', '/matrix/VAL/');
+A = sparse(ROW + 1, COL + 1, VAL, NumGlobalRows, NumGlobalCols);
 \endcode
 The use of \c double() is required by \c sparse, which does not accept \c int32 data.
 
 To dump on file \c matlab.h5 a MATLAB matrix (in this case, \c A), one can proceed as 
 follows:
 \code
->> n = 10;
->> A = speye(n, n);
->> [ROW,COL,VAL] = find(A);
->> hdf5write('matlab.h5', '/speye/NumGlobalRows',      int32(n));
->> hdf5write('matlab.h5', '/speye/NumGlobalCols',      int32(n), 'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/NumGlobalNonzeros',  int32(n), 'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/NumGlobalDiagonals', int32(n), 'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/MaxNumEntries',      1,        'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/NormOne',            1.0,      'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/NormInf',            1.0,      'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/ROW', int32(ROW - 1), 'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/COL', int32(COL - 1), 'WriteMode', 'append');
->> hdf5write('matlab.h5', '/speye/VAL', VAL,            'WriteMode', 'append');
+n = 10;
+A = speye(n, n);
+[ROW,COL,VAL] = find(A);
+hdf5write('matlab.h5', '/speye/__type__',           'Epetra_RowMatrix');
+hdf5write('matlab.h5', '/speye/NumGlobalRows',      int32(n), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/NumGlobalCols',      int32(n), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/NumGlobalNonzeros',  int32(n), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/NumGlobalDiagonals', int32(n), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/MaxNumEntries',      int32(1), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/NormOne',            1.0,      'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/NormInf',            1.0,      'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/ROW', int32(ROW - 1), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/COL', int32(COL - 1), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/speye/VAL', VAL,            'WriteMode', 'append');
 \endcode
+Note that \c __type__ specification, that must reflect the Epetra class name.
+
+To dump on file \c matlab.h5 a MATLAB dense array (in this case, \c x), one can proceed as follows:
+\code
+n = 10;
+x = [zeros(n,1), rand(n, 1)]';
+hdf5write('matlab.h5', '/x/__type__',    'Epetra_MultiVector');
+hdf5write('matlab.h5', '/x/GlobalLength',int32(n), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/x/NumVectors',  int32(2), 'WriteMode', 'append');
+hdf5write('matlab.h5', '/x/Values',      x,        'WriteMode', 'append');
+\endcode
+Note that MATLAB vectors must be stored as \e row vectors.  
+
+To write a Map from MATLAB follows a very similar pattern. The following example shows how to define a map that can be used with two processors:
+\code
+IndexBase = 0;
+NumMyElements = [5 5];
+n = 10;
+MyGlobalElements = [5 6 7 8 9 0 1 2 3 4];
+hdf5write('matlab.h5', '/map-2/__type__',          'Epetra_Map');
+hdf5write('matlab.h5', '/map-2/NumGlobalElements', int32(n),                'WriteMode', 'append');
+hdf5write('matlab.h5', '/map-2/IndexBase',         int32(IndexBase),        'WriteMode', 'append');
+hdf5write('matlab.h5', '/map-2/NumProc',           int32(2),                'WriteMode', 'append');
+hdf5write('matlab.h5', '/map-2/NumMyElements',     int32(NumMyElements),    'WriteMode', 'append');
+hdf5write('matlab.h5', '/map-2/MyGlobalElements',  int32(MyGlobalElements), 'WriteMode', 'append');
+\endcode
+
 
 \author Marzio Sala, D-INFK/ETHZ
 
-\date Last updated on Mar-06.
+\date Last updated on 16-Mar-06.
 
 \todo 
 - all distributed objects are assumed in local state, this is not necessary (just easier)
@@ -272,8 +300,29 @@ class HDF5
     //! Writes an integer in group \c GroupName using intentified \c DataSetName.
     void Write(const string& GroupName, const string& DataSetName, int data);
 
+    //! Reads an integer from group \c /GroupName/DataSetName
+    void Read(const string& GroupName, const string& DataSetName, int& data);
+
     //! Writes a double in group \c GroupName using intentified \c DataSetName.
     void Write(const string& GroupName, const string& DataSetName, double data);
+
+    //! Reads a double from group \c /GroupName/DataSetName
+    void Read(const string& GroupName, const string& DataSetName, double& data);
+
+    //! Writes a string in group \c GroupName using intentified \c DataSetName.
+    void Write(const string& GroupName, const string& DataSetName, const string& data);
+
+    //! Reads a string from group \c /GroupName/DataSetName
+    void Read(const string& GroupName, const string& DataSetName, string& data);
+
+    //! Reads serial array \c data, of type \c type, from group \c GroupNameusing dataset name \c DataSetName
+    void Read(const string& GroupName, const string& DataSetName,
+              const int type, const int Length, void* data);
+
+    //! Writes serial array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
+    void Write(const string& GroupName, const string& DataSetName,
+                         const int type, const int Length, 
+                         void* data);
 
     //! Associates string \c Comment with group \c GroupName.
     void WriteComment(const string& GroupName, string Comment)
@@ -288,29 +337,6 @@ class HDF5
       H5Gget_comment(file_id_, GroupName.c_str(), 128, comment);
       Comment = comment;
     }
-
-#if 0
-    // Writes serial array \c data, of length \c Length and type \c type, to \c Name.
-    void Write(const string& Name, const int type, const int Length, void* data);
-
-    // Reads serial array \c data, of length \c Length and type \c type, from \c Name.
-    void Read(const string& Name, const int type, const int Length, void* data);
-#endif
-
-    //! Reads an integer from group \c /GroupName/DataSetName
-    void Read(const string& GroupName, const string& DataSetName, int& data);
-
-    //! Reads a double from group \c /GroupName/DataSetName
-    void Read(const string& GroupName, const string& DataSetName, double& data);
-
-    //! Reads serial array \c data, of type \c type, from group \c GroupNameusing dataset name \c DataSetName
-    void Read(const string& GroupName, const string& DataSetName,
-              const int type, const int Length, void* data);
-
-    //! Writes serial array \c data, of type \c type, to group \c GroupNameusing dataset name \c DataSetName
-    void Write(const string& GroupName, const string& DataSetName,
-                         const int type, const int Length, 
-                         void* data);
 
     // @}
     // @{ \name Distributed arrays
