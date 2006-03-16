@@ -12,7 +12,7 @@ E_MAIL =
 
 A_FILE = aMatrix.mm
 X_FILE = 
-#B_FILE = rhs.txt
+B_FILE = rhs.txt
 
 STRUCTURE = 
 PROPERTIES = 

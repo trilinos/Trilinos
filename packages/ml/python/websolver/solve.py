@@ -43,8 +43,12 @@ def main():
   comm = Epetra.PyComm()
   
   #=== Map ===#
+  
+  # These two lines work correctly...
   n = 19881
   map = Epetra.Map(n, 0, comm)
+  
+  # ...this doesn't...but we'd like to create the map directly from the file...
   #(ierr, map) = EpetraExt.MatrixMarketFileToMap(config['A_FILE'], comm)
   
   #=== Matrix ===#
@@ -56,6 +60,7 @@ def main():
     fileContents = file.read()  
     pattern = re.compile(r"\s*\d+\s+\d+\s+((?:-|\d|.)+)\s*$", re.M)
     values = pattern.findall(fileContents)
+    values = [float(v) for v in values]
     lhs = Epetra.Vector(map, Numeric.array(values))
   else:
     lhs = Epetra.Vector(map); lhs.Random()
@@ -66,6 +71,7 @@ def main():
     fileContents = file.read()  
     pattern = re.compile(r"\s*\d+\s+\d+\s+((?:-|\d|.)+)\s*$", re.M)
     values = pattern.findall(fileContents)
+    values = [float(v) for v in values]
     rhs = Epetra.Vector(map, Numeric.array(values))
   else:
     rhs = Epetra.Vector(map); rhs.PutScalar(0.0)
