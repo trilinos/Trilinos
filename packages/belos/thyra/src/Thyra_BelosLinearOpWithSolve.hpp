@@ -19,9 +19,10 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+  ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
   )
 {
-  initialize(lp,resNormST,iterativeSolver);
+  initialize(lp,resNormST,iterativeSolver,outputManager);
 }
 
 template<class Scalar>
@@ -29,12 +30,14 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+  ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
   )
 {
   // ToDo: Validate input
   lp_ = lp;
   resNormST_ = resNormST;
   iterativeSolver_ = iterativeSolver;
+  outputManager_ = outputManager;
   defaultTol_ = resNormST_->GetTolerance(); // We need to remember this!
 }
 
@@ -136,6 +139,11 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   typedef typename ST::magnitudeType ScalarMag;
   
   TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = this->getOStream();
+  outputManager_->SetOStream(out);
+  if(out.get()) *out << std::endl;
   
   //
   // Set RHS and LHS

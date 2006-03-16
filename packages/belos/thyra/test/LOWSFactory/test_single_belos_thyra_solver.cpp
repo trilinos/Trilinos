@@ -21,13 +21,11 @@ bool Thyra::test_single_belos_thyra_solver(
   ,const bool                             testTranspose
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
-  ,const int                              maxIterations
   ,const double                           maxResid
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *fwdSolveParamList
-  ,Teuchos::ParameterList                 *adjSolveParamList
+  ,Teuchos::ParameterList                 *solveParamList
   ,Teuchos::FancyOStream                  *out
   )
 {
@@ -47,7 +45,6 @@ bool Thyra::test_single_belos_thyra_solver(
            << "\n  testTranspose          = " << testTranspose
            << "\n  numRandomVectors       = " << numRandomVectors
            << "\n  maxFwdError            = " << maxFwdError
-           << "\n  maxIterations          = " << maxIterations
            << "\n  maxResid               = " << maxResid
            << "\n  showAllTests           = " << showAllTests
            << "\n  dumpAll                = " << dumpAll
@@ -68,19 +65,14 @@ bool Thyra::test_single_belos_thyra_solver(
 
     if(out) *out << "\nB) Creating a BelosLinearOpWithSolveFactory object opFactory ...\n";
 
-    Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >
+    Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
       opFactory;
     if(1) {
       Teuchos::RefCountPtr<BelosLinearOpWithSolveFactory<double> >
         belosOpFactory = Teuchos::rcp(new BelosLinearOpWithSolveFactory<double>());
-      //belosOpFactory->fwdDefaultMaxIterations(maxIterations);
-      //belosOpFactory->fwdDefaultTol(maxResid);
-      //belosOpFactory->adjDefaultMaxIterations(maxIterations);
-      //belosOpFactory->adjDefaultTol(maxResid);
-      //if(fwdSolveParamList) belosOpFactory->setFwdBelosSolveParameters(Teuchos::rcp(fwdSolveParamList,false),true);
-      //if(adjSolveParamList) belosOpFactory->setAdjBelosSolveParameters(Teuchos::rcp(adjSolveParamList,false),true);
       opFactory = belosOpFactory;
     }
+    opFactory->setParameterList(Teuchos::rcp(solveParamList,false));
 
     if(out) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
 

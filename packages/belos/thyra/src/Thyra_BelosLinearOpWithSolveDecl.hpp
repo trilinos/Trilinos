@@ -5,6 +5,7 @@
 #include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
 #include "BelosIterativeSolver.hpp"
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosOutputManager.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 
 namespace Thyra {
@@ -44,6 +45,7 @@ public:
     const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
     ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
     ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+    ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
     );
 
   /** \brief Initializes given precreated solver objects ...
@@ -53,6 +55,7 @@ public:
     const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
     ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
     ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
+    ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
     );
 
   //@}
@@ -71,6 +74,22 @@ public:
   //@{
   /** \brief . */
   std::string description() const;
+  //@}
+
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+
   //@}
 
 protected:
@@ -115,6 +134,7 @@ private:
   Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >           lp_;
   Teuchos::RefCountPtr<StatusTestResNorm_t>                               resNormST_;
   Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >         iterativeSolver_;
+  Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                     outputManager_;
 
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType                   defaultTol_;
                                                      

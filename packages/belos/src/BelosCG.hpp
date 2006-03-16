@@ -149,7 +149,7 @@ namespace Belos {
     RefCountPtr<MV> _residvec;
     
     //! Output stream.
-    ostream* _os;
+    RefCountPtr<ostream> _os;
     
     //! Current blocksize, iteration number, and basis pointer.
     int _iter;
@@ -171,7 +171,7 @@ namespace Belos {
     _lp(lp), 
     _stest(stest),
     _om(om),
-    _os(&om->GetOStream()),
+    _os(om->GetOStream()),
     _iter(0),
     _prec(1.0), 
     _dep_tol(1.0)

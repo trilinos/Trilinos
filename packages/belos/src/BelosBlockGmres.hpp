@@ -202,7 +202,7 @@ namespace Belos {
     Teuchos::SerialDenseMatrix<int,ScalarType> _z;
 
     //! The output stream for sending solver information.
-    ostream *_os;
+    RefCountPtr<ostream> _os;
 
     int _length;
     int _blocksize;
@@ -228,7 +228,7 @@ namespace Belos {
     _stest(stest),
     _om(om),
     _pl(pl),
-    _os(&om->GetOStream()),
+    _os(om->GetOStream()),
     _length(_pl->get("Length",25)),
     _blocksize(0), 
     _restartiter(0), 

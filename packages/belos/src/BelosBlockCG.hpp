@@ -167,7 +167,7 @@ private:
   RefCountPtr<MV> _residvecs;
 
   //! Output stream.
-  ostream* _os;
+  RefCountPtr<ostream> _os;
 
   //! Current blocksize, iteration number, and basis pointer.
   int _blocksize, _iter, _new_blk;
@@ -188,7 +188,7 @@ BlockCG<ScalarType,MV,OP>::BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV
   _lp(lp), 
   _stest(stest),
   _om(om),
-  _os(&om->GetOStream()),
+  _os(om->GetOStream()),
   _blocksize(0), 
   _iter(0),
   _new_blk(1),

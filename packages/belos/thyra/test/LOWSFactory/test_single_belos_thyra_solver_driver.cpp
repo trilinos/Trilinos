@@ -24,6 +24,9 @@ int main(int argc, char* argv[])
     int             numRandomVectors       = 1;
     double          maxFwdError            = 1e-14;
     int             maxIterations          = 400;
+    int             maxRestarts            = 25;
+    int             gmresKrylovLength      = 25;
+    int             blockSize              = 1;
     double          maxResid               = 1e-6;
     double          maxSolutionError       = 1e-6;
     bool            showAllTests           = false;
@@ -35,6 +38,9 @@ int main(int argc, char* argv[])
     clp.setOption( "num-random-vectors", &numRandomVectors, "Number of times a test is performed with different random vectors." );
     clp.setOption( "max-fwd-error", &maxFwdError, "The maximum relative error in the forward operator." );
     clp.setOption( "max-iters", &maxIterations, "The maximum number of linear solver iterations to take." );
+    clp.setOption( "max-restarts", &maxRestarts, "???." );
+    clp.setOption( "gmres-krylov-length", &gmresKrylovLength, "???." );
+    clp.setOption( "block-size", &blockSize, "???." );
     clp.setOption( "max-resid", &maxResid, "The maximum relative error in the residual." );
     clp.setOption( "max-solution-error", &maxSolutionError, "The maximum relative error in the solution of the linear system." );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
@@ -45,13 +51,19 @@ int main(int argc, char* argv[])
 
     TEST_FOR_EXCEPT( matrixFile == "" );
 
-    Teuchos::ParameterList fwdSolveParamList, adjSolveParamList;
+    Teuchos::ParameterList solveParamList;
+
+    solveParamList.set("Solver Type","GMRES");
+    solveParamList.set("Max Iters",int(maxIterations));
+    solveParamList.set("Max Restarts",int(maxRestarts));
+    solveParamList.set("Block Size",int(blockSize));
+    solveParamList.sublist("GMRES").set("Length",int(gmresKrylovLength));
 
     success
       = Thyra::test_single_belos_thyra_solver(
         matrixFile,testTranspose,numRandomVectors
-        ,maxFwdError,maxIterations,maxResid,maxSolutionError,showAllTests,dumpAll
-        ,&fwdSolveParamList,&adjSolveParamList
+        ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
+        ,&solveParamList
         ,verbose?&out:0
         );
 

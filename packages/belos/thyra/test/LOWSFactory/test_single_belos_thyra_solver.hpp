@@ -17,13 +17,11 @@ bool test_single_belos_thyra_solver(
   ,const bool                             testTranspose
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
-  ,const int                              maxIterations
   ,const double                           maxResid
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *fwdSolveParamList
-  ,Teuchos::ParameterList                 *adjSolveParamList
+  ,Teuchos::ParameterList                 *solveParamList
   ,Teuchos::FancyOStream                  *out
   );
 

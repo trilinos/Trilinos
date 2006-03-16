@@ -72,14 +72,41 @@ public:
 
   //@}
 
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+
+  //@}
+
+  /** \name Public functions overridden from Teuchos::Describable. */
+  //@{
+
+  /** \brief . */
+  std::string description() const;
+
+  //@}
 
 private:
 
   // /////////////////////////
   // Private data members
 
+  Teuchos::RefCountPtr<Teuchos::ParameterList>       paramList_;
+
   // /////////////////////////
   // Private member functions
+
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
 
 };
 

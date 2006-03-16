@@ -143,7 +143,7 @@ namespace Belos {
 
     int i,j;
     std::vector<int> ind(numvecs_2);
-    std::ostream &out(om->GetOStream());
+    std::ostream &out = *om->GetOStream();
 
     /* Initialize indices for selected copies/views
        The MVT specialization should not assume that 
@@ -1434,7 +1434,7 @@ namespace Belos {
     std::vector<MagType> normsB1(numvecs), normsB2(numvecs),
                          normsC1(numvecs), normsC2(numvecs);
     ReturnType ret;
-    std::ostream &out(om->GetOStream());
+    std::ostream &out = *om->GetOStream();
     bool NonDeterministicWarning;
     int i;
 

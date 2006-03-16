@@ -75,7 +75,7 @@ namespace Belos {
     OutputManager();
     
     //! Basic constructor.
-    OutputManager( int myID, int vbLevel = Belos::Errors, int printID = 0, ostream& os = std::cout );
+    OutputManager( int myID, int vbLevel = Belos::Errors, int printID = 0, const Teuchos::RefCountPtr<ostream> &os = Teuchos::rcp(&std::cout,false) );
     
     //! Destructor.
     virtual ~OutputManager() {};
@@ -84,7 +84,7 @@ namespace Belos {
     //@{ \name Set methods.
     
     //! Set the output stream for this manager.
-    void SetOStream( ostream& os ) { myOS_ = os; };
+    void SetOStream( const Teuchos::RefCountPtr<ostream> &os ) { myOS_ = os; };
     
     //! Set the verbosity level for this manager.
     void SetVerbosity( int vbLevel ) { vbLevel_ = vbLevel; }; 
@@ -94,7 +94,7 @@ namespace Belos {
     //@{ \name Get methods.
     
     //! Get the output stream for this manager.
-    ostream& GetOStream() { return myOS_; };
+    Teuchos::RefCountPtr<ostream> GetOStream() { return myOS_; };
     
     //@}
     
@@ -104,16 +104,16 @@ namespace Belos {
     /*! This method is used by the solver to determine whether computations are
       necessary for this message type.
     */
-    bool isVerbosity( MsgType type ) { return (( type == Belos::Errors ) || ( vbLevel_ & type )); }; 
+    bool isVerbosity( MsgType type ) const { return (( type == Belos::Errors ) || ( vbLevel_ & type )); }; 
     
     //! Find out whether this processor needs to print out information for this message type.
     /*! This method is used by the solver to determine whether this output stream has been
       selected to output the information for this message type.
     */
-    bool isVerbosityAndPrint( MsgType type ) { return ( iPrint_ && isVerbosity( type )); }; 
+    bool isVerbosityAndPrint( MsgType type ) const { return ( iPrint_ && isVerbosity( type )); }; 
     
     //! Find out whether information can be outputted through this output stream.
-    bool doPrint( void ) { return (iPrint_); };
+    bool doPrint( void ) const { return (iPrint_); };
     
     //@}
     
@@ -132,7 +132,7 @@ namespace Belos {
     int myID_, printID_;
     int vbLevel_;
     bool iPrint_;
-    ostream& myOS_;	
+    Teuchos::RefCountPtr<ostream> myOS_;	
   };
   
   template<class ScalarType>
@@ -146,7 +146,7 @@ namespace Belos {
   }
   
   template<class ScalarType>
-  OutputManager<ScalarType>::OutputManager( int myID, int vbLevel, int printID, ostream& os ) :
+  OutputManager<ScalarType>::OutputManager( int myID, int vbLevel, int printID, const Teuchos::RefCountPtr<ostream> &os ) :
     myID_(myID),
     printID_(printID),
     vbLevel_(vbLevel),
