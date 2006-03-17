@@ -21,7 +21,11 @@ ac_cv_xyce_have_finite_number,
 #ifndef _XOPEN_SOURCE_EXTENDED
  #define _XOPEN_SOURCE_EXTENDED 1
 #endif
-#include <math.h>],[double x = 1.0; 
+#ifdef HAVE_CMATH
+#include <cmath>
+#else
+#include <math.h>
+#endif],[double x = 1.0; 
 isnan(x); isinf(x);
 return 0;],
  ac_cv_xyce_have_finite_number=yes, ac_cv_xyce_have_finite_number=no)
