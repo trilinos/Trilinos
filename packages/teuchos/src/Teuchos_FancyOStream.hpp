@@ -429,11 +429,13 @@ public:
   /** \brief. */
   ~basic_OSTab()
     {
-      if(tabs_==DISABLE_TABBING)
-        fancyOStream_->popDisableTabbing();
-      else
-        fancyOStream_->popTab();
-      if(linePrefix_.length()) fancyOStream_->popLinePrefix();
+      if(fancyOStream_.get()) {
+        if(tabs_==DISABLE_TABBING)
+          fancyOStream_->popDisableTabbing();
+        else
+          fancyOStream_->popTab();
+        if(linePrefix_.length()) fancyOStream_->popLinePrefix();
+      }
     }
   /** \brief. */
   basic_OSTab<CharT,Traits>& operator=( const basic_OSTab &osTab )
@@ -442,6 +444,11 @@ public:
       tabs_ = osTab.tabs_;
       updateState();
       return *this;
+    }
+  /** \brief. */
+  RefCountPtr<basic_FancyOStream<CharT,Traits> > getOStream() const
+    {
+      return fancyOStream_;
     }
   
 private:
@@ -452,11 +459,13 @@ private:
 
   void updateState()
     {
-      if(tabs_==DISABLE_TABBING)
-        fancyOStream_->pushDisableTabbing();
-      else
-        fancyOStream_->pushTab(tabs_);
-      if(linePrefix_.length()) fancyOStream_->pushLinePrefix(linePrefix_);
+      if(fancyOStream_.get()) {
+        if(tabs_==DISABLE_TABBING)
+          fancyOStream_->pushDisableTabbing();
+        else
+          fancyOStream_->pushTab(tabs_);
+        if(linePrefix_.length()) fancyOStream_->pushLinePrefix(linePrefix_);
+      }
     }
   
 };
