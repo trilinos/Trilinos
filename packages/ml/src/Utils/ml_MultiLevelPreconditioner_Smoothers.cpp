@@ -111,6 +111,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   double ParaSailsLB = List_.get("smoother: ParaSails load balancing",0.0);
   int ParaSailsFactorized = List_.get("smoother: ParaSails factorized",0);
 
+  string IfpackType = List_.get("smoother: ifpack type", "Amesos");
+  int IfpackOverlap = List_.get("smoother: ifpack overlap",0);
+
   string SubSmootherType;
   int nodal_its, edge_its;
   if (SolvingMaxwell_ == true) {
@@ -354,9 +357,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ====== //
 
 #ifdef HAVE_ML_IFPACK
-      string IfpackType = List_.get("smoother: ifpack type", "Amesos");
-      int IfpackOverlap = List_.get("smoother: ifpack overlap",0);
-      
+      sprintf(parameter,"smoother: ifpack type (level %d)", LevelID_[level]);
+      IfpackType = List_.get(parameter, IfpackType);
+      sprintf(parameter,"smoother: ifpack overlap (level %d)", LevelID_[level]);
+      IfpackOverlap = List_.get(parameter, IfpackOverlap);
+
       if( verbose_ ) {
 	cout << msg << "IFPACK, type = `" << IfpackType << "', " << endl
 	     << msg << PreOrPostSmoother
