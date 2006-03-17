@@ -864,7 +864,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
                      else above */
   FILE* fp = NULL;
   int NumMyRows;
-  int NumMyCols;
+  //int NumMyCols;
   int NumGlobalRows;
   int NumGlobalCols;
   int MyPID;
@@ -890,7 +890,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
   NumProc = Comm.NumProc();
 
   NumMyRows = A.NumMyRows();
-  NumMyCols = A.NumMyCols();
+  //NumMyCols = A.NumMyCols();
 
   NumGlobalRows = A.NumGlobalRows();
   NumGlobalCols = A.NumGlobalCols();

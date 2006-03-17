@@ -727,10 +727,10 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
 
     for (int i = 0 ; i < NumMyRows_ ; ++i) {
 
-      int NumEntries;
       int col;
       double diag = d_ptr[i];
 
+      // no need to extract row i
       //IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
 
       for (int m = 0 ; m < NumVectors ; ++m) {
@@ -749,10 +749,10 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
 
     for (int i = NumMyRows_  - 1 ; i > -1 ; --i) {
 
-      int NumEntries;
       int col;
       double diag = d_ptr[i];
 
+      // no need to extract row i
       //IFPACK_CHK_ERR(A->ExtractMyRowView(i, NumEntries, Values, Indices));
 
       for (int m = 0 ; m < NumVectors ; ++m) {

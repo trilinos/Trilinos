@@ -178,6 +178,7 @@ int Ifpack_METISPartitioner::ComputePartitions()
 			     &edgecut, &Partition_[0]);
       }
 #else
+      numflag = numflag * 2; // avoid warning for unused variable
       if (Graph_->Comm().MyPID() == 0) {
 	cerr << "METIS was not linked; now I put all" << endl;
 	cerr << "the local nodes in the same partition." << endl;
