@@ -43,12 +43,7 @@ TEUCHOS_LIBS =
 TEUCHOS_INCLUDES =
 endif
 
-noinst_PROGRAMS = MatrixMarket_IO $(HDF5Files) HDF5Files
-
-HDF5Files_SOURCES = $(srcdir)/matlab.h5
-
-HDF5Files: $(srcdir)/matlab.h5 
-	cp -f $(srcdir)/matlab.h5 .
+noinst_PROGRAMS = MatrixMarket_IO $(HDF5Files) 
 
 MatrixMarket_IO_SOURCES = $(srcdir)/MatrixMarket_IO.cpp
 MatrixMarket_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
@@ -88,8 +83,7 @@ HDF5_IO_LDADD = $(top_builddir)/src/libepetraext.a \
 
 HDF5_MATLAB_SOURCES = $(srcdir)/HDF5_MATLAB.cpp
 HDF5_MATLAB_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
-			   $(top_builddir)/../epetra/src/libepetra.a \
-			   copy_this
+			   $(top_builddir)/../epetra/src/libepetra.a
 HDF5_MATLAB_CXXFLAGS = -I$(top_srcdir)/src/inout \
 		       -I$(top_srcdir)/src \
 		       -I$(top_builddir)/src \

@@ -82,7 +82,7 @@ int main (int argc, char **argv)
     if (Comm.MyPID() == 0)
     {
       cout << endl;
-      cout << "Reading Epetra_MultiVector from HDF5 file matlab.h5..." << endl;
+      cout << "*) Reading Epetra_MultiVector from HDF5 file matlab.h5..." << endl;
       cout << endl;
     }
 
@@ -95,7 +95,7 @@ int main (int argc, char **argv)
       if (Comm.MyPID() == 0)
       {
         cout << endl;
-        cout << "Reading Epetra_Map from HDF5 file matlab.h5..." << endl;
+        cout << "*) Reading Epetra_Map from HDF5 file matlab.h5..." << endl;
         cout << endl;
       }
 

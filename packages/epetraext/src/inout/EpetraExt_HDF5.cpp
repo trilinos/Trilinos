@@ -977,21 +977,17 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX
 
   ReadMultiVectorProperties(GroupName, GlobalLength, NumVectors);
 
-  hid_t group_id, dataset_id, space_id;
+  hid_t group_id, space_id;
   hsize_t dims[2];
   herr_t status;
-
-  group_id = H5Gopen(file_id_, GroupName.c_str());
-
-  dataset_id = H5Dopen(group_id, "Values");
-  space_id = H5Dget_space(dataset_id);
 
   // Create the dataspace for the dataset.
   hsize_t q_dimsf[] = {NumVectors, GlobalLength};
   hid_t filespace_id = H5Screate_simple(2, q_dimsf, NULL);
 
   if (!IsContained(GroupName))
-    exit(-1);
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
 
   group_id = H5Gopen(file_id_, GroupName.c_str());
 
@@ -1012,6 +1008,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX
   hsize_t stride[] = {1, 1};
   hsize_t count[] = {NumVectors, 1};
   hsize_t block[] = {1, LinearX->MyLength()};
+
   filespace_id = H5Dget_space(dset_id);
   H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride, 
                       count, block);
@@ -1021,99 +1018,13 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX
   hid_t memspace_id = H5Screate_simple(1, dimsm, NULL);
 
   // Write hyperslab
-  status = H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
-                   H5P_DEFAULT, LinearX->Values());
-  CHECK_STATUS(status);
+  CHECK_STATUS(H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
+                       H5P_DEFAULT, LinearX->Values()));
 
-  H5Gclose(group_id);
-  H5Sclose(memspace_id);
-  H5Sclose(filespace_id);
-  H5Dclose(dset_id);
-
-  return;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-  int ndims = H5Sget_simple_extent_ndims(space_id);
-  if (ndims > 2 || (ndims == 1 && NumVectors != 1))
-    throw(Exception(__FILE__, __LINE__,
-                    "internal error, dimensions do not match",
-                    "ndims = " + toString(ndims),
-                    "NumVectors = " + toString(NumVectors)));
-
-  // FIXME: this works, but I don't like it...
-  status = H5Sget_simple_extent_dims(space_id, dims, NULL);
-  CHECK_STATUS(status);
-
-  cout << dims[0] << "  " << dims[1] << endl;
-  int NewGlobalLength;
-  if (NumVectors != 1)
-  {
-    if (dims[0] != NumVectors) throw(Exception(__FILE__, __LINE__,
-                      "internal error, NumVectors does not match",
-                      "dims[0] = " + toString((int)(dims[0])),
-                      "NumVectors = " + toString(NumVectors)));
-    NewGlobalLength = dims[1];
-  }
-  else
-  {
-    NewGlobalLength = dims[0];
-  }
-
-  if (NewGlobalLength != GlobalLength) 
-    throw(Exception(__FILE__, __LINE__,
-                    "GlobalLength of vector does not match",
-                      "input = " + toString(GlobalLength),
-                      "ndims = " + toString(NewGlobalLength)));
-
-  hsize_t Offset_t[2];
-
-  Epetra_Map LinearMap(GlobalLength, 0, Comm());
-  LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
-
-  hsize_t MySize_t = LinearMap.MyLength();
-
-  hid_t space_id = H5Screate_simple(1, &Offset_t, 0);
-  hid_t filespace_id = H5Dget_space(dataset_id);
-  H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, &Offset_t, NULL, 
-                      &MySize_t, NULL);
-
-
-  hid_t mem_dataspace = H5Screate_simple (1, &MySize_t, NULL);
-
-  herr_t status = H5Dread(dataset_id, type, mem_dataspace, filespace_id, 
-                          H5P_DEFAULT, data);
-  CHECK_STATUS(status);
-
-  H5Sclose(mem_dataspace);
-  H5Gclose(group_id);  
-  //H5Sclose(space_id);  
-  H5Dclose(dataset_id);  
-//  H5Dclose(filespace_id);  
-
-
-  status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, 
-                   H5P_DEFAULT, LinearX->Values());
-  CHECK_STATUS(status);
-  H5Sclose(space_id);  
-  H5Dclose(dataset_id);  
-  H5Gclose(group_id);
-#endif
+  CHECK_STATUS(H5Gclose(group_id));
+  CHECK_STATUS(H5Sclose(memspace_id));
+  CHECK_STATUS(H5Sclose(filespace_id));
+  CHECK_STATUS(H5Dclose(dset_id));
 }
 
 // ==========================================================================
@@ -1237,20 +1148,27 @@ void EpetraExt::HDF5::Write(const string& GroupName,
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
 
-  hsize_t len = data.size() + 1;
+  hsize_t len = 1;
+
   hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
+
   hid_t dataspace_id = H5Screate_simple(1, &len, NULL);
-  hid_t dataset_id = H5Dcreate(group_id, DataSetName.c_str(), H5T_STRING, 
-                         dataspace_id, H5P_DEFAULT);
-  status = H5Dwrite(dataset_id, H5T_STRING, H5S_ALL, H5S_ALL, 
-                    H5P_DEFAULT, data.c_str());
-  CHECK_STATUS(status);
-  status = H5Dclose(dataset_id);
-  CHECK_STATUS(status);
-  status = H5Sclose(dataspace_id);
-  CHECK_STATUS(status);
-  status = H5Gclose(group_id);
-  CHECK_STATUS(status);
+
+  hid_t atype = H5Tcopy(H5T_C_S1);
+  H5Tset_size(atype, data.size() + 1);
+
+  hid_t dataset_id = H5Dcreate(group_id, DataSetName.c_str(), atype, 
+                               dataspace_id, H5P_DEFAULT);
+  CHECK_STATUS(H5Dwrite(dataset_id, atype, H5S_ALL, H5S_ALL, 
+                        H5P_DEFAULT, data.c_str()));
+
+  CHECK_STATUS(H5Tclose(atype));
+
+  CHECK_STATUS(H5Dclose(dataset_id));
+
+  CHECK_STATUS(H5Sclose(dataspace_id));
+
+  CHECK_STATUS(H5Gclose(group_id));
 }
 
 // ==========================================================================
@@ -1267,22 +1185,18 @@ void EpetraExt::HDF5::Read(const string& GroupName,
 
   hid_t dataset_id = H5Dopen(group_id, DataSetName.c_str());
 
-  hid_t space_id = H5Dget_space(dataset_id);
-
   hid_t datatype_id = H5Dget_type(dataset_id);
   size_t typesize_id = H5Tget_size(datatype_id);
   H5T_class_t typeclass_id = H5Tget_class(datatype_id);
 
-  if(typeclass_id == H5T_STRING) 
-  {
-    char* data2 = new char[typesize_id];
-    herr_t status = H5Dread(dataset_id, datatype_id, space_id, space_id, 
-                            H5P_DEFAULT, data2);
-    CHECK_STATUS(status);
-    data = data2;
-  }
+  if(typeclass_id != H5T_STRING) 
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " is not a string"));
+  char data2[160];
+  CHECK_STATUS(H5Dread(dataset_id, datatype_id, H5S_ALL, H5S_ALL,
+                       H5P_DEFAULT, data2));
+  data = data2;
 
-  H5Sclose(space_id);  
   H5Dclose(dataset_id);  
   H5Gclose(group_id);  
 }
