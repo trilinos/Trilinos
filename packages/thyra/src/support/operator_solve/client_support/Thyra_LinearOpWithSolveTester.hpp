@@ -165,7 +165,16 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   bool success = true, result;
   const std::string &li = leadingIndent, &is = indentSpacer;
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
-  
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    fancyOut = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(out,false),"  "));
+  Teuchos::OSTab(fancyOut,10);
+  Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+    lowsTempState(
+      Teuchos::rcp(const_cast<LinearOpWithSolveBase<RangeScalar,DomainScalar>*>(&op),false)
+      ,fancyOut,verbLevel
+      );
+
   if(out) {
     *out <<endl<<li<< "*** Entering LinearOpWithSolveTester<"<<ST::name()<<">::check(op,...) ...\n";
     if(show_all_tests()) {

@@ -30,6 +30,8 @@
 #define THYRA_LINEAR_OP_WITH_SOLVE_FACTORY_BASE_DECL_HPP
 
 #include "Thyra_LinearOpWithSolveBaseDecl.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 namespace Thyra {
 
@@ -465,6 +467,11 @@ namespace Thyra {
  * <tt>initializeAndReuseOp()</tt> can be called to reuse the internal
  * preconditioner but this is implementation defined.
  * 
+ * \section LOWSFB_verbosity_level_sec 
+ *
+ * <b>TODO:</b> Provide some guidance on how clients and subclasses should
+ * interpret Teuchos::EVerbLevel.
+ * 
  * \section LOWSFB_developer_notes_sec Notes to subclass developers
  *
  * This interface assumes a minimal default set of functionality that is
@@ -488,7 +495,11 @@ namespace Thyra {
  * <tt>supportsPreconditionerInputType()</tt>.
  */
 template <class RangeScalar, class DomainScalar = RangeScalar>
-class LinearOpWithSolveFactoryBase : virtual public Teuchos::Describable {
+class LinearOpWithSolveFactoryBase
+  : virtual public Teuchos::Describable
+  , virtual public Teuchos::ParameterListAcceptor
+  , virtual public Teuchos::VerboseObject<LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar> >
+{
 public:
 
   /** @name Pure virtual public functions that must be overridden in subclasses */

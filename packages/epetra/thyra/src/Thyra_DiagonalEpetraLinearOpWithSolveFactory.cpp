@@ -121,6 +121,35 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   if(precOpType) *precOpType = PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Just to not have junk!
 }
 
+// Overridden from ParameterListAcceptor
+
+void DiagonalEpetraLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{}
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+DiagonalEpetraLinearOpWithSolveFactory::getParameterList()
+{
+  return Teuchos::null;
+}
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+DiagonalEpetraLinearOpWithSolveFactory::unsetParameterList()
+{
+  return Teuchos::null;
+}
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+DiagonalEpetraLinearOpWithSolveFactory::getParameterList() const
+{
+  return Teuchos::null;
+}
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+DiagonalEpetraLinearOpWithSolveFactory::getValidParameters() const
+{
+  return Teuchos::null;
+}
+
 } // namespace Thyra
 
 #endif // __sun

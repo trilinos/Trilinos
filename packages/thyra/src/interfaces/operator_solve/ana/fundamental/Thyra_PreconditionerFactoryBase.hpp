@@ -33,6 +33,7 @@
 #include "Thyra_PreconditionerBase.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 namespace Thyra {
 
@@ -45,6 +46,7 @@ template <class RangeScalar, class DomainScalar = RangeScalar>
 class PreconditionerFactoryBase
   : virtual public Teuchos::Describable
   , virtual public Teuchos::ParameterListAcceptor
+  , virtual public Teuchos::VerboseObject<PreconditionerFactoryBase<RangeScalar,DomainScalar> >
 {
 public:
 

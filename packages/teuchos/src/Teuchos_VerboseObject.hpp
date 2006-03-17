@@ -202,11 +202,47 @@ public:
 private:
 
   EVerbosityLevel         thisVerbLevel_;
-
+  
   static EVerbosityLevel&  privateDefaultVerbLevel();
 
 
 };
+
+/** \brief Set and release a stream and verbosity level.
+ *
+ */
+template<class ObjectType>
+class VerboseObjectTempState {
+public:
+  /** \brief . */
+  VerboseObjectTempState(
+    const RefCountPtr<VerboseObject<ObjectType> >    &verboseObject
+    ,const RefCountPtr<FancyOStream>                 &newOStream
+    ,const EVerbosityLevel                           newVerbLevel
+    )
+    :verboseObject_(verboseObject)
+    ,oldOStream_(verboseObject->getOStream())
+    ,oldVerbLevel_(verboseObject->getVerbLevel())
+    {
+      verboseObject_->setOStream(newOStream);
+      verboseObject_->setVerbLevel(newVerbLevel);
+    }
+  /** \brief . */
+  ~VerboseObjectTempState()
+    {
+      verboseObject_->setOStream(oldOStream_);
+      verboseObject_->setVerbLevel(oldVerbLevel_);
+    }
+private:
+  RefCountPtr<VerboseObject<ObjectType> >    verboseObject_;
+  RefCountPtr<FancyOStream>                  oldOStream_;
+  EVerbosityLevel                            oldVerbLevel_;
+  // Not defined and not to be called
+  VerboseObjectTempState();
+  VerboseObjectTempState(const VerboseObjectTempState&);
+  VerboseObjectTempState& operator=(const VerboseObjectTempState&);
+};
+
 
 // //////////////////////////////////
 // Template defintions

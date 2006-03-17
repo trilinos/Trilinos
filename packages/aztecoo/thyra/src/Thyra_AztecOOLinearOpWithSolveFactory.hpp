@@ -175,21 +175,49 @@ public:
 
   //@}
 
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+
+  //@}
+
+  /** \name Public functions overridden from Teuchos::Describable. */
+  //@{
+
+  /** \brief . */
+  std::string description() const;
+
+  //@}
 
 private:
 
   // /////////////////////////
   // Private data members
 
+  // ToDo: Get rid of these and just use paramList_!!!
   Teuchos::RefCountPtr<Teuchos::ParameterList>     fwdSolveParamlist_;
   bool                                             fwd_cerr_warning_if_unused_;
   Teuchos::RefCountPtr<Teuchos::ParameterList>     adjSolveParamlist_;
   bool                                             adj_cerr_warning_if_unused_;
 
+  Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
+
   bool useAztecPrec_;
 
   // /////////////////////////
   // Private member functions
+
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
 
   void initializeOp_impl(
     const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp

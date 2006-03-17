@@ -172,7 +172,63 @@ void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   // the forward and adjoint solvers!  This is needed to make this totally stateless
 }
 
+// Overridden from ParameterListAcceptor
+
+void AztecOOLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  paramList->validateParameters(*this->getValidParameters(),1);
+  TEST_FOR_EXCEPT(true); // ToDo: Read the parameters!
+  paramList_ = paramList;
+}
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+AztecOOLinearOpWithSolveFactory::getParameterList()
+{
+  return paramList_;
+}
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+AztecOOLinearOpWithSolveFactory::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  paramList_ = Teuchos::null;
+  return _paramList;
+}
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AztecOOLinearOpWithSolveFactory::getParameterList() const
+{
+  return paramList_;
+}
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AztecOOLinearOpWithSolveFactory::getValidParameters() const
+{
+  return generateAndGetValidParameters();
+}
+
+// Public functions overridden from Teuchos::Describable
+
+std::string AztecOOLinearOpWithSolveFactory::description() const
+{
+  std::ostringstream oss;
+  oss << "Thyra::AztecOOLinearOpWithSolveFactory";
+  return oss.str();
+}
+
 // private
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AztecOOLinearOpWithSolveFactory::generateAndGetValidParameters()
+{
+  static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
+  if(validParamList.get()==NULL) {
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::AztecOOLinearOpWithSolveFactory"));
+    TEST_FOR_EXCEPT(true);
+  }
+  return validParamList;
+}
 
 void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp

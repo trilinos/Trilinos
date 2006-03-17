@@ -209,7 +209,6 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   TEST_FOR_EXCEPT(true);
 }
 
-
 // Overridden from ParameterListAcceptor
 
 template<class Scalar>

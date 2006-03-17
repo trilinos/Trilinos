@@ -52,6 +52,8 @@ namespace Thyra {
  * simultaneously and for <tt>*this</tt> factory object to be destroyed
  * without affecting the created <tt>%AmesosLinearOpWithSolve</tt> objects.
  *
+ * ToDo: Mention parameter list usage.
+ *
  * <b>Development notes:</b> This class has been designed to allow for "smart"
  * <tt>EpetraLinearOpBase</tt> subclasses that can create an
  * <tt>Epetra_Operator</tt> view on command where the underlying storage may
@@ -98,20 +100,6 @@ public:
    * to <tt>this->initializeOp()</tt>).
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( Amesos::ERefactorizationPolicy, refactorizationPolicy )
-
-  /** \brief Set the parameter list that will be used to control the solver.
-   *
-   * See Amesos documentation for what these options are.
-   *
-   * <b>Developers note:</b> From what I can tell of the documenatation and
-   * looking at some source code, this parameter list will not be modified but
-   * its use is very confused. I think that this should be changed to a
-   * constant parameter list but I don't want to do this because I don't want
-   * to be held accountable in case it is changed.  If users needs to
-   * guarantee that their parameter list will not change, then a copy should
-   * be made before calling this function.
-   */
-  STANDARD_NONCONST_COMPOSITION_MEMBERS( Teuchos::ParameterList, paramList )
 
   /** \brief Set if an exception is thrown when <tt>this->initializePreconditionedOp()</tt>
    * is called or not.
@@ -174,6 +162,22 @@ public:
 
   //@}
 
+  /** @name Overridden from ParameterListAcceptor */
+  //@{
+
+  /** \brief . */
+  void setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList);
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> getParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<Teuchos::ParameterList> unsetParameterList();
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getParameterList() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidParameters() const;
+
+  //@}
+
   /** \name Public functions overridden from Teuchos::Describable. */
   //@{
 
@@ -181,6 +185,18 @@ public:
   std::string description() const;
 
   //@}
+
+private:
+
+  // /////////////////////////
+  // Private data members
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
+
+  // /////////////////////////
+  // Private member functions
+
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
 
 };
 

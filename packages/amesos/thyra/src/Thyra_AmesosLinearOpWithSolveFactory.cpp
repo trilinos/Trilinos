@@ -88,9 +88,9 @@ AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
     )
   :solverType_(solverType)
   ,refactorizationPolicy_(refactorizationPolicy)
-  ,paramList_(paramList)
   ,throwOnPrecInput_(throwOnPrecInput)
   ,epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
+  ,paramList_(paramList)
 {}
 
 // Overridden from LinearOpWithSolveFactoryBase
@@ -321,6 +321,42 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   if(precOpType) *precOpType = PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Just to not have junk!
 }
 
+// Overridden from ParameterListAcceptor
+
+void AmesosLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+{
+  TEST_FOR_EXCEPT(paramList.get()==NULL);
+  paramList->validateParameters(*this->getValidParameters(),1);
+  TEST_FOR_EXCEPT(true); // ToDo: Read the parameters!
+  paramList_ = paramList;
+}
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+AmesosLinearOpWithSolveFactory::getParameterList()
+{
+  return paramList_;
+}
+
+Teuchos::RefCountPtr<Teuchos::ParameterList>
+AmesosLinearOpWithSolveFactory::unsetParameterList()
+{
+  Teuchos::RefCountPtr<Teuchos::ParameterList> _paramList = paramList_;
+  paramList_ = Teuchos::null;
+  return _paramList;
+}
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AmesosLinearOpWithSolveFactory::getParameterList() const
+{
+  return paramList_;
+}
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AmesosLinearOpWithSolveFactory::getValidParameters() const
+{
+  return generateAndGetValidParameters();
+}
+
 // Public functions overridden from Teuchos::Describable
 
 std::string AmesosLinearOpWithSolveFactory::description() const
@@ -330,6 +366,19 @@ std::string AmesosLinearOpWithSolveFactory::description() const
   oss << "solverType=" << toString(solverType_);
   oss << "}";
   return oss.str();
+}
+
+// private
+
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
+{
+  static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
+  if(validParamList.get()==NULL) {
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::AmesosLinearOpWithSolveFactory"));
+    TEST_FOR_EXCEPT(true);
+  }
+  return validParamList;
 }
 
 } // namespace Thyra

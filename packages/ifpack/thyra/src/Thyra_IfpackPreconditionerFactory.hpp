@@ -115,16 +115,16 @@ public:
 private:
 
   // ////////////////////////////////
-  // Private member functions
-
-  static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
-
-  // ////////////////////////////////
   // Private data members
 
   Ifpack::EPrecType                                  precType_;
   int                                                overlap_;
   Teuchos::RefCountPtr<Teuchos::ParameterList>       paramList_;
+
+  // ////////////////////////////////
+  // Private member functions
+
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
 
 };
 

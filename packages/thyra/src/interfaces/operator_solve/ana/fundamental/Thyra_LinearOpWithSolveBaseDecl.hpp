@@ -31,6 +31,7 @@
 
 #include "Thyra_LinearOpBaseDecl.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 namespace Thyra {
 
@@ -351,7 +352,10 @@ namespace Thyra {
  * other virtual functions must be overridden to define a concrete subclass.
  */
 template <class RangeScalar, class DomainScalar = RangeScalar>
-class LinearOpWithSolveBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
+class LinearOpWithSolveBase
+  : virtual public LinearOpBase<RangeScalar,DomainScalar>
+  , virtual public Teuchos::VerboseObject<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+{
 public:
 
   /** \brief Local typedef for promoted scalar type.*/
