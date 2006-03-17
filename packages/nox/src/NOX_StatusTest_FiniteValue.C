@@ -139,10 +139,10 @@ int NOX::StatusTest::FiniteValue::finiteNumberTest(double x) const
 {
 #ifdef HAVE_NAN_INF_SUPPORT
 
-  if (std::isnan(x))
+  if (isnan(x))
     return -1;
 
-  if (std::isinf(x))
+  if (isinf(x))
     return -2;
 
 #else
