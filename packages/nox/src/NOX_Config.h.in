@@ -104,6 +104,9 @@
 /* define if the compiler implements namespaces */
 #undef HAVE_NAMESPACES
 
+/* define if the compiler supports isnan and isinf checks */
+#undef HAVE_NAN_INF_SUPPORT
+
 /* define that Belos is activated in nox */
 #undef HAVE_NOX_BELOS
 

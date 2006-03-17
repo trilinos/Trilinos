@@ -271,6 +271,11 @@ AC_CXX_INVALID_TEMPLATE_QUALIFIER
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for third-party (non-Trilinos) libraries including BLAS. LAPACK, and math library.  If tests or examples are enabled, this flag will be overriden and libchecks enabled.], LIBCHECK, no)
 
 # ------------------------------------------------------------------------
+# Check if the compiler supports NaN and inf checking 
+# ------------------------------------------------------------------------
+TAC_ARG_FINITE_NUMBER_CHECK
+
+# ------------------------------------------------------------------------
 # Enable nox debugging
 # ------------------------------------------------------------------------
 AC_ARG_ENABLE(nox-debug,

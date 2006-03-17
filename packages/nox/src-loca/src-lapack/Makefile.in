@@ -91,6 +91,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_nox_interface.m4 \
+	$(top_srcdir)/config/tac_arg_finite_number_check.m4 \
 	$(top_srcdir)/config/tac_arg_trilinos_header_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \

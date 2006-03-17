@@ -137,6 +137,24 @@ ostream& NOX::StatusTest::FiniteValue::print(ostream& stream, int indent) const
 
 int NOX::StatusTest::FiniteValue::finiteNumberTest(double x) const
 {
+#ifdef HAVE_NAN_INF_SUPPORT
+
+  if (std::isnan(x))
+    return -1;
+
+  if (std::isinf(x))
+    return -2;
+
+#else
+
+  // These should work if the compiler is IEEE 748 compliant.  Many
+  // are not.  Another recommended test is:
+
+  //If x is a floating point variable, then (x != x) will be TRUE if
+  //and only if x has the value NaN. Some C++ implementations claim to
+  //be IEEE 748 conformant, but if you try the (x!=x) test above with
+  //x being a NaN, you'll find that they aren't.
+
   // Can pretty much use any number here
   double tol = 1.0e-6;
 
@@ -149,6 +167,8 @@ int NOX::StatusTest::FiniteValue::finiteNumberTest(double x) const
   double z = 0.0 * x;
   if (!(z <= tol) && !(z > tol)) 
     return -2;
+
+#endif
 
   return 0;
 }
