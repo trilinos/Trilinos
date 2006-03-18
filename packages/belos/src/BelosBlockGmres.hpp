@@ -326,8 +326,9 @@ namespace Belos {
   }
     
   template <class ScalarType, class MV, class OP>
-  void BlockGmres<ScalarType,MV,OP>::Solve () 
+  void BlockGmres<ScalarType,MV,OP>::Solve() 
   {
+    _os = _om->GetOStream();
     int i=0;
     std::vector<int> index;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();

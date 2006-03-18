@@ -232,6 +232,7 @@ RefCountPtr<const MV> BlockCG<ScalarType,MV,OP>::GetNativeResiduals( std::vector
 template <class ScalarType, class MV, class OP>
 void BlockCG<ScalarType,MV,OP>::Solve () 
 {
+  _os = _om->GetOStream();
   //
   // Retrieve the first linear system to be solved.
   //

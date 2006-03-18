@@ -204,6 +204,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void CG<ScalarType,MV,OP>::Solve () 
   {
+    _os = _om->GetOStream();
     //
     bool exit_flg = false;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
