@@ -36,6 +36,7 @@
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
@@ -48,7 +49,7 @@ bool run_composite_linear_ops_tests(
   ,const bool                                                   useMpi
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &tol
   ,const bool                                                   dumpAll
-  ,std::ostream                                                 *out
+  ,Teuchos::FancyOStream                                        *out_arg
   )
 {
 
@@ -60,8 +61,12 @@ bool run_composite_linear_ops_tests(
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
   using Teuchos::dyn_cast;
+  using Teuchos::OSTab;
 
-  if(out) *out << "\n*** Entering run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
+  RefCountPtr<Teuchos::FancyOStream>
+    out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
+
+  if(out.get()) *out << "\n*** Entering run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
 
   bool success = true, result;
 
@@ -81,118 +86,118 @@ bool run_composite_linear_ops_tests(
   if(useMpi) space = rcp(new Thyra::DefaultMPIVectorSpace<Scalar>(mpiComm,n,-1));
   else       space = rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
   
-  if(out) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";
+  if(out.get()) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";
   RefCountPtr<Thyra::MultiVectorBase<Scalar> >
     mvOrigA = createMembers(space,n/2);
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*mvOrigA );
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     origA = mvOrigA;
-  if(out) *out << "\norigA =\n" << describe(*origA,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\norigA =\n" << describe(*origA,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
 
-  if(out) *out << "\nTesting origA ...\n";
+  if(out.get()) *out << "\nTesting origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*origA,out);
+  result = linearOpTester.check(*origA,OSTab(out).getOStream().get());
   if(!result) success = false;
   
-  if(out) *out << "\nCreating implicit scaled linear operator A1 = scale(0.5,origA) ...\n";
+  if(out.get()) *out << "\nCreating implicit scaled linear operator A1 = scale(0.5,origA) ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A1 = scale(Scalar(0.5),origA);
-  if(out) *out << "\nA1 =\n" << describe(*A1,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA1 =\n" << describe(*A1,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
 
-  if(out) *out << "\nTesting A1 ...\n";
+  if(out.get()) *out << "\nTesting A1 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A1,out);
+  result = linearOpTester.check(*A1,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\nTesting that A1.getOp() == origA ...\n";
+  if(out.get()) *out << "\nTesting that A1.getOp() == origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A1).getOp(),*origA,out);
+  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A1).getOp(),*origA,OSTab(out).getOStream().get());
   if(!result) success = false;
 
   if(1) {
 
-    if(out) *out << "\nUnwrapping origA to get non-persisting pointer to origA_1, scalar and transp ...\n";
+    if(out.get()) *out << "\nUnwrapping origA to get non-persisting pointer to origA_1, scalar and transp ...\n";
     Scalar  scalar;
     Thyra::ETransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_1 = NULL;
     unwrap( *origA, &scalar, &transp, &origA_1 );
     TEST_FOR_EXCEPT( origA_1 == NULL );
 
-    if(out) *out << "\nscalar = " << scalar << " == 1 ? ";
+    if(out.get()) *out << "\nscalar = " << scalar << " == 1 ? ";
     result = (scalar == ST::one());
     if(!result) success = false;
-    if(out)	*out << passfail(result) << std::endl;
+    if(out.get())	*out << passfail(result) << std::endl;
 
-    if(out) *out << "\ntransp = " << toString(transp) << " == NOTRANS ? ";
+    if(out.get()) *out << "\ntransp = " << toString(transp) << " == NOTRANS ? ";
     result = (transp == Thyra::NOTRANS);
     if(!result) success = false;
-    if(out)	*out << passfail(result) << std::endl;
+    if(out.get())	*out << passfail(result) << std::endl;
     
-    if(out) *out << "\nTesting that origA_1 == origA ...\n";
+    if(out.get()) *out << "\nTesting that origA_1 == origA ...\n";
     Thyra::seed_randomize<Scalar>(0);
-    result = linearOpTester.compare(*origA_1,*origA,out);
+    result = linearOpTester.compare(*origA_1,*origA,OSTab(out).getOStream().get());
     if(!result) success = false;
     
   }
 
   if(1) {
 
-    if(out) *out << "\nUnwrapping A1 to get non-persisting pointer to origA_2 ...\n";
+    if(out.get()) *out << "\nUnwrapping A1 to get non-persisting pointer to origA_2 ...\n";
     Scalar  scalar;
     Thyra::ETransp transp;
     const Thyra::LinearOpBase<Scalar> *origA_2 = NULL;
     unwrap( *A1, &scalar, &transp, &origA_2 );
     TEST_FOR_EXCEPT( origA_2 == NULL );
 
-    if(out) *out << "\nscalar = " << scalar << " == 0.5 ? ";
+    if(out.get()) *out << "\nscalar = " << scalar << " == 0.5 ? ";
     result = (scalar == Scalar(0.5));
     if(!result) success = false;
-    if(out)	*out << passfail(result) << std::endl;
+    if(out.get())	*out << passfail(result) << std::endl;
 
-    if(out) *out << "\ntransp = " << toString(transp) << " == NOTRANS ? ";
+    if(out.get()) *out << "\ntransp = " << toString(transp) << " == NOTRANS ? ";
     result = (transp == Thyra::NOTRANS);
     if(!result) success = false;
-    if(out)	*out << passfail(result) << std::endl;
+    if(out.get())	*out << passfail(result) << std::endl;
 
-    if(out) *out << "\nTesting that origA_2 == origA ...\n";
+    if(out.get()) *out << "\nTesting that origA_2 == origA ...\n";
     Thyra::seed_randomize<Scalar>(0);
-    result = linearOpTester.compare(*origA_2,*origA,out);
+    result = linearOpTester.compare(*origA_2,*origA,OSTab(out).getOStream().get());
     if(!result) success = false;
 
   }
   
-  if(out) *out << "\nCreating implicit scaled linear operator A2 = adjoint(A1) ...\n";
+  if(out.get()) *out << "\nCreating implicit scaled linear operator A2 = adjoint(A1) ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A2 = adjoint(A1);
-  if(out) *out << "\nA2 =\n" << describe(*A2,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA2 =\n" << describe(*A2,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
 
-  if(out) *out << "\nTesting A2 ...\n";
+  if(out.get()) *out << "\nTesting A2 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A2,out);
+  result = linearOpTester.check(*A2,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\nTesting that A2.getOp() == A1 ...\n";
+  if(out.get()) *out << "\nTesting that A2.getOp() == A1 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A2).getOp(),*A1,out);
+  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A2).getOp(),*A1,OSTab(out).getOStream().get());
   if(!result) success = false;
   
-  if(out) *out << "\nCreating implicit scaled, adjoined linear operator A3 = adjoint(scale(2.0,(A2)) ...\n";
+  if(out.get()) *out << "\nCreating implicit scaled, adjoined linear operator A3 = adjoint(scale(2.0,(A2)) ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A3 = adjoint(scale(Scalar(2.0),A2));
-  if(out) *out << "\nA3 =\n" << describe(*A3,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA3 =\n" << describe(*A3,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
 
-  if(out) *out << "\nTesting A3 ...\n";
+  if(out.get()) *out << "\nTesting A3 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A3,out);
+  result = linearOpTester.check(*A3,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\nTesting that A3 == origA ...\n";
+  if(out.get()) *out << "\nTesting that A3 == origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*A3,*origA,out);
+  result = linearOpTester.compare(*A3,*origA,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\nCalling all of the rest of the functions for non-const just to test them ...\n";
+  if(out.get()) *out << "\nCalling all of the rest of the functions for non-const just to test them ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A4 = scale(
       Scalar(0.25)
@@ -209,14 +214,14 @@ bool run_composite_linear_ops_tests(
         )
       );
   if(!ST::isComplex) A4 = transpose(adjoint(A4)); // Should result in CONJ
-  if(out) *out << "\nA4 =\n" << describe(*A4,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA4 =\n" << describe(*A4,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
 
-  if(out) *out << "\nTesting A4 ...\n";
+  if(out.get()) *out << "\nTesting A4 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A4,out);
+  result = linearOpTester.check(*A4,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\nCalling all of the rest of the functions for const just to test them ...\n";
+  if(out.get()) *out << "\nCalling all of the rest of the functions for const just to test them ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A5 = scale(
       Scalar(0.25)
@@ -233,24 +238,24 @@ bool run_composite_linear_ops_tests(
         )
       );
   if(!ST::isComplex) A5 = transpose(adjoint(A5)); // Should result in CONJ
-  if(out) *out << "\nA5 =\n" << describe(*A5,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA5 =\n" << describe(*A5,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
 
-  if(out) *out << "\nTesting A5 ...\n";
+  if(out.get()) *out << "\nTesting A5 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A5,out);
+  result = linearOpTester.check(*A5,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\nCreating a multiplicative operator A6 = origA^H*A1 ...\n";
+  if(out.get()) *out << "\nCreating a multiplicative operator A6 = origA^H*A1 ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A6 = multiply(adjoint(origA),A1);
-  if(out) *out << "\nA6 =\n" << describe(*A6,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA6 =\n" << describe(*A6,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
 
-  if(out) *out << "\nTesting A6 ...\n";
+  if(out.get()) *out << "\nTesting A6 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = symLinearOpTester.check(*A6,out);
+  result = symLinearOpTester.check(*A6,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
+  if(out.get()) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
 
   return success;
 
@@ -270,10 +275,14 @@ int main( int argc, char* argv[] ) {
   MPI_Comm_size( mpiComm, &numProc );
   MPI_Comm_rank( mpiComm, &procRank );
 
+/*
   // Setup the output stream (do output only on root process!)
   Teuchos::oblackholestream black_hole_out;
   std::ostream &out = ( procRank == 0 ? std::cout : black_hole_out );
-
+*/
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  
   try {
 
     //
@@ -296,31 +305,31 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-    if( !run_composite_linear_ops_tests<float>(mpiComm,n,useMpi,float(1e-5),dumpAll,verbose?&out:NULL) ) success = false;
-    if( !run_composite_linear_ops_tests<double>(mpiComm,n,useMpi,double(1e-14),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<float>(mpiComm,n,useMpi,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<double>(mpiComm,n,useMpi,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-    if( !run_composite_linear_ops_tests<std::complex<float> >(mpiComm,n,useMpi,float(1e-5),dumpAll,verbose?&out:NULL) ) success = false;
-    if( !run_composite_linear_ops_tests<std::complex<double> >(mpiComm,n,useMpi,double(1e-14),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<std::complex<float> >(mpiComm,n,useMpi,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<std::complex<double> >(mpiComm,n,useMpi,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #if defined(HAVE_TEUCHOS_GNU_MP) && !defined(RTOp_USE_MPI) // mpf_class can not be used with MPI yet!
-    if( !run_composite_linear_ops_tests<mpf_class>(mpiComm,n,useMpi,mpf_class(1e-14),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<mpf_class>(mpiComm,n,useMpi,mpf_class(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 
   } // end try
   catch( const std::exception &excpt ) {
     if(verbose)
-      std::cerr << "*** Caught a standard exception : " << excpt.what() << std::endl;
+      std::cerr << "p="<<procRank<<": *** Caught a standard exception : " << excpt.what() << std::endl;
     success = false;
   }
   catch( ... ) {
     if(verbose)
-      std::cerr << "*** Caught an unknown exception!\n";
+      std::cerr << "p="<<procRank<<": *** Caught an unknown exception!\n";
     success = false;
   }
 
   if( verbose && procRank==0 ) {
-    if(success) out << "\nAll of the tests seem to have run successfully!\n";
-    else        out << "\nOh no! at least one of the tests failed!\n";	
+    if(success) *out << "\nAll of the tests seem to have run successfully!\n";
+    else        *out << "\nOh no! at least one of the tests failed!\n";	
   }
 
   MPI_Finalize();

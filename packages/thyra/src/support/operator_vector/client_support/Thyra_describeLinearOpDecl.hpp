@@ -30,6 +30,7 @@
 #define THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 namespace Thyra {
 
@@ -38,12 +39,10 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Developmnet_support_code_grp
  */
 template<class RangeScalar, class DomainScalar>
-std::ostream& describeLinearOp(
+void describeLinearOp(
   const LinearOpBase<RangeScalar,DomainScalar>   &A
-  ,std::ostream                                  &out
+  ,Teuchos::FancyOStream                         &out
   ,const Teuchos::EVerbosityLevel                verbLevel
-  ,const std::string                             leadingIndent
-  ,const std::string                             indentSpacer
   );
 
 }	// end namespace Thyra

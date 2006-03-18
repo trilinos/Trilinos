@@ -32,23 +32,17 @@ namespace Teuchos {
 
 const EVerbosityLevel Describable::verbLevel_default      = VERB_DEFAULT;
 
-const std::string     Describable::leadingIndent_default  = "";
-
-const std::string     Describable::indentSpacer_default   = "  ";
-
 std::string Describable::description() const
 {
 	return typeid(*this).name();
 }
 
-std::ostream& Describable::describe(
-	std::ostream                &out
+void Describable::describe(
+	FancyOStream                &out
 	,const EVerbosityLevel      verbLevel
-	,const std::string          leadingIndent
-	,const std::string          indentSpacer
 	) const
 {
-	return out << leadingIndent << indentSpacer << this->description() << std::endl;
+	out << this->description() << std::endl;
 }
 
 } // namespace Teuchos

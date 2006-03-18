@@ -30,6 +30,7 @@
 
 #include "test_single_amesos_thyra_solver.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 struct MatrixTestPacket {
   MatrixTestPacket(std::string  _matrixFile, bool _unsymmetric, double _maxFwdError, double _maxError, double _maxResid)
@@ -45,11 +46,14 @@ int main(int argc, char* argv[])
 {
   
   using Teuchos::CommandLineProcessor;
+  using Teuchos::OSTab;
 
   bool result, success = true;
   bool verbose = true;
 
-  std::ostream &out = std::cout;
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
 	try {
 
@@ -112,16 +116,16 @@ int main(int argc, char* argv[])
         const Thyra::Amesos::ESolverType
           solverType = Thyra::Amesos::solverTypeValues[solver_i];
 
-	//  bug 1902 - Amesos_Superlu fails on bcsstk01.mtx
-	//  bug 1903 - Amesos_Superlu fails on four matrices,
-	//             when called from the thyra test
-	//
-	bool BadMatrixForSuperlu = 
-	  mtp.matrixFile == "bcsstk01.mtx" // bug 1902 
-	  || mtp.matrixFile == "bcsstk04.mtx" // bug 1903 
-	  || mtp.matrixFile == "KheadK.mtx" // bug 1903 
-	  || mtp.matrixFile == "KheadSorted.mtx" // bug 1903 
-	  || mtp.matrixFile == "nos1.mtx" ; // bug 1903 
+        //  bug 1902 - Amesos_Superlu fails on bcsstk01.mtx
+        //  bug 1903 - Amesos_Superlu fails on four matrices,
+        //             when called from the thyra test
+        //
+        bool BadMatrixForSuperlu = 
+          mtp.matrixFile == "bcsstk01.mtx" // bug 1902 
+          || mtp.matrixFile == "bcsstk04.mtx" // bug 1903 
+          || mtp.matrixFile == "KheadK.mtx" // bug 1903 
+          || mtp.matrixFile == "KheadSorted.mtx" // bug 1903 
+          || mtp.matrixFile == "nos1.mtx" ; // bug 1903 
         //
         // Toggle the refactorization options
         //
@@ -129,41 +133,47 @@ int main(int argc, char* argv[])
           const Thyra::Amesos::ERefactorizationPolicy
             refactorizationPolicy = Thyra::Amesos::refactorizationPolicyValues[factorizationPolicy_i];
           if(verbose)
-            out << std::endl<<matrix_i<<"."<<solver_i<<"."<<factorizationPolicy_i<<": "
-                << "Testing, matrixFile=\'"<<mtp.matrixFile<<"\', solverType=\'"<<toString(solverType)<<"\', refactorizationPolicy=\'"<<toString(refactorizationPolicy)<<"\' ..."; 
+            *out
+              << std::endl<<matrix_i<<"."<<solver_i<<"."<<factorizationPolicy_i<<": "
+              << "Testing, matrixFile=\'"<<mtp.matrixFile<<"\', solverType=\'"<<toString(solverType)<<"\', refactorizationPolicy=\'"<<toString(refactorizationPolicy)<<"\' ..."; 
           if( mtp.unsymmetric && !Thyra::Amesos::supportsUnsymmetric[solver_i] ) {
-            out << " : Skipping since unsymmetric and not supported!\n";
+            *out << " : Skipping since unsymmetric and not supported!\n";
           }
           else {
-	    //  bug 1902 and bug 1903  
-	    string StrSolverType = toString(solverType) ; 
-	    string StrSuperlu = "Superlu";
-	    if ( StrSolverType==StrSuperlu && BadMatrixForSuperlu ) {
-	      out << " : Skipping since Superlu fails on this matrix!\n";
-	    }
-	    else {
-	      std::ostringstream oss;
-	      result =
-		Thyra::test_single_amesos_thyra_solver(
-						       matrixDir+"/"+mtp.matrixFile,solverType,refactorizationPolicy,testTranspose,numRandomVectors
-						       ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,&oss
-						       );
-	      if(!result) success = false;
-	      if(verbose) {
-		if(result) {
-		  if(showAllTests)
-		    out << std::endl << oss.str();
-		  else
-		    out << " : passed!\n";
-		}
-		else {
-		  if(showAllTests)
-		    out << std::endl << oss.str();
-		  else
-		    out << " : failed!\n";
-		}
-	      }
-	    }
+            //  bug 1902 and bug 1903  
+            string StrSolverType = toString(solverType) ; 
+            string StrSuperlu = "Superlu";
+            if ( StrSolverType==StrSuperlu && BadMatrixForSuperlu ) {
+              *out << " : Skipping since Superlu fails on this matrix!\n";
+            }
+            else {
+              std::ostringstream ossStore;
+              Teuchos::RefCountPtr<Teuchos::FancyOStream>
+                oss = Teuchos::rcp(new Teuchos::FancyOStream(Teuchos::rcp(&ossStore,false)));
+              Teuchos::ParameterList amesosLOWSFPL;
+              amesosLOWSFPL.set("Solver Type",toString(solverType));
+              amesosLOWSFPL.set("Refactorization Policy",toString(refactorizationPolicy));
+              result =
+                Thyra::test_single_amesos_thyra_solver(
+                  matrixDir+"/"+mtp.matrixFile,&amesosLOWSFPL,testTranspose,numRandomVectors
+                  ,mtp.maxFwdError,mtp.maxError,mtp.maxResid,showAllTestsDetails,dumpAll,OSTab(oss).getOStream().get()
+                  );
+              if(!result) success = false;
+              if(verbose) {
+                if(result) {
+                  if(showAllTests)
+                    *out << std::endl << ossStore.str();
+                  else
+                    *out << " : passed!\n";
+                }
+                else {
+                  if(showAllTests)
+                    *out << std::endl << ossStore.str();
+                  else
+                    *out << " : failed!\n";
+                }
+              }
+            }
           }
         }
       }
@@ -180,8 +190,8 @@ int main(int argc, char* argv[])
 	}
 	
 	if (verbose) {
-		if(success)  out << "\nCongratulations! All of the tests checked out!\n";
-		else         out << "\nOh no! At least one of the tests failed!\n";
+		if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
+		else         *out << "\nOh no! At least one of the tests failed!\n";
 	}
 
   return ( success ? 0 : 1 );

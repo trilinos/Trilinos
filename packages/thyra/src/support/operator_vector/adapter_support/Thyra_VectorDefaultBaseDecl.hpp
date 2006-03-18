@@ -83,9 +83,9 @@ public:
   /** \brief Generates a default outputting for all vectors.
    *
    * Calls on the <tt>this->describe(void)</tt> function for the name of the
-   * class (and possibly its instance name) and then if <tt>verbLevel >=
-   * VERB_HIGH</tt>, then the vector elements themselves are printed as well.
-   * The format of the output is is shown below:
+   * class (and possibly its instance name) and then if
+   * <tt>verbLevel>=VERB_HIGH</tt>, then the vector elements themselves are
+   * printed as well.  The format of the output is is shown below:
    
    \verbatim
 
@@ -98,17 +98,13 @@ public:
      n-1:xn
    \endverbatim
    *
-   * Before <tt>type = 'this->description()'</tt> is printed and after
-   * each newline, <tt>leadingIndent</tt> is output.  The
-   * <tt>index:value</tt> lines are offset an additional
-   * <tt>indentSpacer</tt> amount.  A newline is printed after the
-   * last <tt>n-1:xn</tt> entry.
+   * The <tt>index:value</tt> lines are offset an additional
+   * <tt>Teuchos::OSTab</tt> amount.  A newline is printed after the last
+   * <tt>n-1:xn</tt> entry.
    */
-  std::ostream& describe(
-    std::ostream                         &out
+  void describe(
+    Teuchos::FancyOStream                &out
     ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
     ) const;
 
   //@}

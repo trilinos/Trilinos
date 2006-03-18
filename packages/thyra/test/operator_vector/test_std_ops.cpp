@@ -26,17 +26,14 @@
 // ***********************************************************************
 // @HEADER
 
-// ///////////////////////////////
-// cxx_main.cpp
-
 #include "Thyra_DefaultSerialVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
 #include "Thyra_MultiVectorStdOpsTester.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_arrayArg.hpp"
-//#include "Thyra_SimpleMPIVectorSpace.hpp"
 
 namespace Thyra {
 
@@ -47,12 +44,18 @@ bool run_std_ops_tests(
   const int                                                       n
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType    max_rel_err
   ,const bool                                                     dumpAll
-  ,std::ostream                                                   *out
+  ,Teuchos::FancyOStream                                          *out_arg
   )
 {
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Teuchos::OSTab;
+
+  RefCountPtr<Teuchos::FancyOStream>
+    out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
   VectorStdOpsTester<Scalar> vectorStdOpsTester;
   vectorStdOpsTester.warning_tol(ScalarMag(0.1)*max_rel_err);
@@ -61,22 +64,22 @@ bool run_std_ops_tests(
   multiVectorStdOpsTester.warning_tol(ScalarMag(0.1)*max_rel_err);
   multiVectorStdOpsTester.error_tol(max_rel_err);
 
-  if(out) *out << "\n*** Entering run_std_ops_tests<"<<ST::name()<<">(...) ...\n";
+  if(out.get()) *out << "\n*** Entering run_std_ops_tests<"<<ST::name()<<">(...) ...\n";
 
   bool success = true;
 
-  if(out) *out << "\nCreating a serial vector space svs with n="<<n<<" vector elements ...\n";
+  if(out.get()) *out << "\nCreating a serial vector space svs with n="<<n<<" vector elements ...\n";
   const DefaultSerialVectorSpace<Scalar>  svs(n);
 
-  if(out) *out << "\nTesting standard vector ops with svs ...\n";
-  if(!vectorStdOpsTester.checkStdOps(svs,out,dumpAll)) success = false;
+  if(out.get()) *out << "\nTesting standard vector ops with svs ...\n";
+  if(!vectorStdOpsTester.checkStdOps(svs,OSTab(out).getOStream().get(),dumpAll)) success = false;
 
-  if(out) *out << "\nTesting standard multi-vector ops with svs ...\n";
-  if(!multiVectorStdOpsTester.checkStdOps(svs,out,dumpAll)) success = false;
+  if(out.get()) *out << "\nTesting standard multi-vector ops with svs ...\n";
+  if(!multiVectorStdOpsTester.checkStdOps(svs,OSTab(out).getOStream().get(),dumpAll)) success = false;
 
   const int numBlocks = 2;
 
-  if(out) *out << "\nCreating a product space pvs with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
+  if(out.get()) *out << "\nCreating a product space pvs with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
   std::vector<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
@@ -87,11 +90,11 @@ bool run_std_ops_tests(
 
   Thyra::DefaultProductVectorSpace<Scalar> pvs(numBlocks,&vecSpaces[0]);
 
-  if(out) *out << "\nTesting standard vector ops with pvs ...\n";
-  if(!vectorStdOpsTester.checkStdOps(pvs,out,dumpAll)) success = false;
+  if(out.get()) *out << "\nTesting standard vector ops with pvs ...\n";
+  if(!vectorStdOpsTester.checkStdOps(pvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
 
-  if(out) *out << "\nTesting standard multi-vector ops with pvs ...\n";
-  if(!multiVectorStdOpsTester.checkStdOps(pvs,out,dumpAll)) success = false;
+  if(out.get()) *out << "\nTesting standard multi-vector ops with pvs ...\n";
+  if(!multiVectorStdOpsTester.checkStdOps(pvs,OSTab(out).getOStream().get(),dumpAll)) success = false;
 
   return success;
 
@@ -107,7 +110,8 @@ int main( int argc, char* argv[] ) {
   bool verbose = true;
   bool dumpAll = false;
 
-  std::ostream &out = std::cerr;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
 
@@ -127,14 +131,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-    if( !Thyra::run_std_ops_tests<float>(local_dim,float(10.0*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&out:NULL) ) success = false;
-    if( !Thyra::run_std_ops_tests<double>(local_dim,double(100.0*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<float>(local_dim,float(10.0*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<double>(local_dim,double(100.0*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-    if( !Thyra::run_std_ops_tests<std::complex<float> >(local_dim,float(10.0*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&out:NULL) ) success = false;
-    if( !Thyra::run_std_ops_tests<std::complex<double> >(local_dim,double(100.0*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<std::complex<float> >(local_dim,float(10.0*Teuchos::ScalarTraits<float>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !Thyra::run_std_ops_tests<std::complex<double> >(local_dim,double(100.0*Teuchos::ScalarTraits<double>::eps()),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP
-    //if( !Thyra::run_std_ops_tests<mpf_class>(local_dim,mpf_class(max_rel_err),dumpAll,verbose?&out:NULL) ) success = false;
+    //if( !Thyra::run_std_ops_tests<mpf_class>(local_dim,mpf_class(max_rel_err),dumpAll,verbose?&*out:NULL) ) success = false;
     // RAB: 4/16/2005: We can not instantiate the above since rmax() is not supported by this types ScalarTraits class
     // and it is needed by the class RTOpPack::ROpMaxIndexLessThanBound.  This can be fixed using a template
     // conditional but I have not done this yet.
@@ -154,9 +158,9 @@ int main( int argc, char* argv[] ) {
 
   if(verbose) {
     if(success)
-      out << "\nAll of the tests seem to have run successfully!\n";
+      *out << "\nAll of the tests seem to have run successfully!\n";
     else
-      out << "\nOh no! at least one of the test failed!\n";	
+      *out << "\nOh no! at least one of the test failed!\n";	
   }
   
   return success ? 0 : 1;

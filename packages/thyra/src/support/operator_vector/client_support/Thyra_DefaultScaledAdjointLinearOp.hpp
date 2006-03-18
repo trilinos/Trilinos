@@ -133,52 +133,54 @@ std::string DefaultScaledAdjointLinearOp<Scalar>::description() const
 }
 
 template<class Scalar>
-std::ostream& DefaultScaledAdjointLinearOp<Scalar>::describe(
-  std::ostream                         &out
+void DefaultScaledAdjointLinearOp<Scalar>::describe(
+  Teuchos::FancyOStream                &out_arg
   ,const Teuchos::EVerbosityLevel      verbLevel
-  ,const std::string                   li
-  ,const std::string                   is
   ) const
 {
-  assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  assertInitialized();
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
-      out << this->description() << std::endl;
+      *out << this->description() << std::endl;
       break;
     case Teuchos::VERB_MEDIUM:
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME:
     {
-      out << li << is << "type = \'DefaultScaledAdjointLinearOp<" << ST::name() << ">\', "
-          << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl
-          << li << is << is << "overallScalar="<< overallScalar() << std::endl
-          << li << is << is << "overallTransp="<<toString(overallTransp()) << std::endl
-          << li << is << is << "Constituent transformations:\n";
+      *out
+        << "type = \'DefaultScaledAdjointLinearOp<" << ST::name() << ">\', "
+        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+      OSTab tab(out);
+      *out
+        <<  "overallScalar="<< overallScalar() << std::endl
+        <<  "overallTransp="<<toString(overallTransp()) << std::endl
+        <<  "Constituent transformations:\n";
       for( int i = 0; i <= my_index_; ++i ) {
         const ScalarETransp<Scalar> &scalar_transp = (*allScalarETransp_)[my_index_-i];
-        out << li << is << is;
-        for( int j = 0; j <= i; ++j ) out << is;
+        OSTab tab(out,i+1);
         if(scalar_transp.scalar != ST::one() && scalar_transp.transp != NOTRANS)
-          out << "scalar="<<scalar_transp.scalar<<",transp="<<toString(scalar_transp.transp)<<std::endl;
+          *out << "scalar="<<scalar_transp.scalar<<",transp="<<toString(scalar_transp.transp)<<std::endl;
         else if(scalar_transp.scalar != ST::one())
-          out << "scalar="<<scalar_transp.scalar<<std::endl;
+          *out << "scalar="<<scalar_transp.scalar<<std::endl;
         else if( scalar_transp.transp != NOTRANS )
-          out << "transp="<<toString(scalar_transp.transp)<<std::endl;
+          *out << "transp="<<toString(scalar_transp.transp)<<std::endl;
         else
-          out << "no-transformation\n";
+          *out << "no-transformation\n";
       }
-      std::ostringstream new_indent;
-      new_indent << li << is << is << is;
-      for( int i = 0; i <= my_index_; ++i ) new_indent << is;
-      out << new_indent.str() << "origOp =\n" << Teuchos::describe(*origOp_,verbLevel,new_indent.str(),is);
+      tab.incrTab(my_index_+2);
+      *out << "origOp =\n" << Teuchos::describe(*origOp_,verbLevel);
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true);
+      TEST_FOR_EXCEPT(true); // Should never be called!
   }
-  return out;
 }
 
 // Overridden from OpBase

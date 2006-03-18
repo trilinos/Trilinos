@@ -142,8 +142,6 @@ void BelosLinearOpWithSolve<Scalar>::solve(
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = this->getOStream();
-  outputManager_->SetOStream(out);
-  if(out.get()) *out << std::endl;
   
   //
   // Set RHS and LHS
@@ -180,7 +178,12 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   //
   iterativeSolver_->GetStatusTest()->Reset(); 
   iterativeSolver_->Reset();
-  iterativeSolver_->Solve();
+  if(1){
+    outputManager_->SetOStream(out);
+    if(out.get()) *out << "\n\n";
+    Teuchos::OSTab tab(out);
+    iterativeSolver_->Solve();
+  }
   //
   // Get the solve status
   //

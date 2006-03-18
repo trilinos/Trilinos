@@ -76,11 +76,9 @@ public:
    * <tt>indentSpacer</tt> amount.  A newline is printed after the
    * last <tt>m:n:amn</tt> entry.
    */
-  std::ostream& describe(
-    std::ostream                         &out
+  void describe(
+    Teuchos::FancyOStream                &out
     ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
     ) const;
 
   //@}

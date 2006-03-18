@@ -98,39 +98,44 @@ std::string DefaultMultipliedLinearOp<Scalar>::description() const
 }
 
 template<class Scalar>
-std::ostream& DefaultMultipliedLinearOp<Scalar>::describe(
-  std::ostream                         &out
+void DefaultMultipliedLinearOp<Scalar>::describe(
+  Teuchos::FancyOStream                &out_arg
   ,const Teuchos::EVerbosityLevel      verbLevel
-  ,const std::string                   li
-  ,const std::string                   is
   ) const
 {
-  assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  assertInitialized();
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
   const int numOps = Ops_.size();
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
-      out << this->description() << std::endl;
+      *out << this->description() << std::endl;
       break;
     case Teuchos::VERB_MEDIUM:
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME:
     {
-      out << li << is << "type = \'DefaultMultipliedLinearOp<" << ST::name() << ">\', "
-          << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl
-          << li << is << is << "numOps="<< numOps << std::endl
-          << li << is << is << "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
-      const std::string new_li = li+is+is+is;
+      *out
+        << "type = \'DefaultMultipliedLinearOp<" << ST::name() << ">\', "
+        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+      OSTab tab(out);
+      *out
+        <<  "numOps="<< numOps << std::endl
+        <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
+      tab.incrTab();
       for( int k = 0; k < numOps; ++k ) {
-        out << new_li << "Op["<<k<<"] =\n" << Teuchos::describe(*getOp(k),verbLevel,new_li,is);
+        *out << "Op["<<k<<"] =\n" << Teuchos::describe(*getOp(k),verbLevel);
       }
       break;
     }
     default:
-      TEST_FOR_EXCEPT(true);
+      TEST_FOR_EXCEPT(true); // Should never get here!
   }
-  return out;
 }
 
 // Overridden form MultipliedLinearOpBase

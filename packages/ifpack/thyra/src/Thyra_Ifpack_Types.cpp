@@ -124,7 +124,7 @@ Ifpack::EPrecType Ifpack::precTypeNameToEnum(
   ,const std::string& paramName
   )
 {
-  return static_cast<EPrecType>(precTypeNameToIntMap(precTypeName));
+  return precTypeNameToIntMap.get<EPrecType>(precTypeName);
 }
 
 } // namespace Thyra

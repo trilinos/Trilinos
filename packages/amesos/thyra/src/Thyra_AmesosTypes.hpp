@@ -32,13 +32,13 @@
 #define THYRA_AMESOS_TYPES_HPP
 
 #include "Amesos_ConfigDefs.h"
+#include "Teuchos_StringToIntMap.hpp"
 
 namespace Thyra {
 
 namespace Amesos {
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 enum ESolverType {
@@ -79,7 +79,6 @@ enum ESolverType {
 }; 
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 const int numSolverTypes = 1 // LAPACK 
@@ -119,32 +118,32 @@ const int numSolverTypes = 1 // LAPACK
 ;
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 extern const ESolverType solverTypeValues[numSolverTypes];
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 extern const char* solverTypeNames[numSolverTypes];
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 extern const bool supportsUnsymmetric[numSolverTypes];
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 inline const char* toString(const ESolverType solverType)
 { return solverTypeNames[solverType]; }
 
-/** \brief The policy used on refactoring a matrix.
+/** \brief .
+\ingroup Amesos_Thyra_adapters_grp
+*/
+extern Teuchos::StringToIntMap solverTypeNameToEnumMap;
 
+/** \brief The policy used on refactoring a matrix.
 \ingroup Amesos_Thyra_adapters_grp
 */
 enum ERefactorizationPolicy {
@@ -153,13 +152,11 @@ enum ERefactorizationPolicy {
 };
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 const int numRefactorizationPolices = 2;
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 extern const ERefactorizationPolicy refactorizationPolicyValues[numRefactorizationPolices];
@@ -168,11 +165,15 @@ extern const ERefactorizationPolicy refactorizationPolicyValues[numRefactorizati
 extern const char* refactorizationPolicyNames[numRefactorizationPolices];
 
 /** \brief .
-
 \ingroup Amesos_Thyra_adapters_grp
 */
 inline const char* toString(const ERefactorizationPolicy refactorizationPolicy)
 { return refactorizationPolicyNames[refactorizationPolicy]; }
+
+/** \brief .
+\ingroup Amesos_Thyra_adapters_grp
+*/
+extern Teuchos::StringToIntMap refactorizationPolicyNameToEnumMap;
 
 } // namespace Amesos
 

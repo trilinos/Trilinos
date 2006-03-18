@@ -30,6 +30,7 @@
 
 #include "test_single_amesos_thyra_solver.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -39,7 +40,8 @@ int main(int argc, char* argv[])
   bool success = true;
   bool verbose = true;
 
-  std::ostream &out = std::cout;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
 	try {
 
@@ -88,10 +90,14 @@ int main(int argc, char* argv[])
 
     TEST_FOR_EXCEPT( matrixFile == "" );
 
+    Teuchos::ParameterList amesosLOWSFPL;
+    amesosLOWSFPL.set("Solver Type",toString(solverType));
+    amesosLOWSFPL.set("Refactorization Policy",toString(refactorizationPolicy));
+
     success
       = Thyra::test_single_amesos_thyra_solver(
-        matrixFile,solverType,refactorizationPolicy,testTranspose,numRandomVectors
-        ,maxFwdError,maxError,maxResid,showAllTests,dumpAll,verbose?&out:0
+        matrixFile,&amesosLOWSFPL,testTranspose,numRandomVectors
+        ,maxFwdError,maxError,maxResid,showAllTests,dumpAll,verbose?&*out:0
         );
 
 	}
@@ -105,8 +111,8 @@ int main(int argc, char* argv[])
 	}
 	
 	if (verbose) {
-		if(success)  out << "\nCongratulations! All of the tests checked out!\n";
-		else         out << "\nOh no! At least one of the tests failed!\n";
+		if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
+		else         *out << "\nOh no! At least one of the tests failed!\n";
 	}
 
   return ( success ? 0 : 1 );

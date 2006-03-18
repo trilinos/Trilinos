@@ -67,7 +67,7 @@ void VerboseObjectBase::initializeVerboseObjectBase(
   thisOStream_ = oStream;
 }
 
-VerboseObjectBase& VerboseObjectBase::setOStream(const RefCountPtr<FancyOStream> &oStream)
+const VerboseObjectBase& VerboseObjectBase::setOStream(const RefCountPtr<FancyOStream> &oStream) const
 {
   thisOStream_ = oStream;
   return *this;

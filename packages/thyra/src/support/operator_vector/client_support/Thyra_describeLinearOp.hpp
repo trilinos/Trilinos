@@ -37,17 +37,20 @@
 #include "Thyra_AssertOp.hpp"
 
 template<class RangeScalar, class DomainScalar>
-std::ostream& Thyra::describeLinearOp(
+void Thyra::describeLinearOp(
   const LinearOpBase<RangeScalar,DomainScalar>   &A
-  ,std::ostream                                  &out
+  ,Teuchos::FancyOStream                         &out_arg
   ,const Teuchos::EVerbosityLevel                verbLevel
-  ,const std::string                             leadingIndent
-  ,const std::string                             indentSpacer
   )
 {
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
   const Index dimDomain = A.domain()->dim(), dimRange = A.range()->dim();
-  out << leadingIndent << indentSpacer << "type = \'" << A.description()
+  *out << "type = \'" << A.description()
       << "\', rangeDim = " << dimRange
       << ", domainDim = " << dimDomain << "\n";
   if(verbLevel >= Teuchos::VERB_EXTREME) {
@@ -60,6 +63,7 @@ std::ostream& Thyra::describeLinearOp(
       cs = 1,         // stride for columns or rows 
       rs = dimRange;  // stride for rows or columns
     Index i, j;
+    OSTab tab(out);
     for( j = 0; j < dimDomain; ++j ) {
       Thyra::assign( e_j.get(), DST::zero() );
       Thyra::set_ele( j, DST::one(), e_j.get() );
@@ -70,13 +74,11 @@ std::ostream& Thyra::describeLinearOp(
     }
     // Print the matrix
     for( i = 0; i < dimRange; ++i ) {
-      out << leadingIndent << indentSpacer << indentSpacer;
       for( j = 0; j < dimDomain; ++j )
-        out << " " << i << ":" << j << ":" << Md[ i + j*dimRange ];
-      out << std::endl;
+        *out << " " << i << ":" << j << ":" << Md[ i + j*dimRange ];
+      *out << std::endl;
     }
   }
-  return out;
 }
 
 #endif // THYRA_DESCRIBE_LINEAR_OP_HPP

@@ -38,14 +38,12 @@ namespace Thyra {
 // Overridden from Teuchos::Describable
 
 template<class RangeScalar, class DomainScalar>
-std::ostream& LinearOpDefaultBase<RangeScalar,DomainScalar>::describe(
-    std::ostream                         &out
-    ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
-    ) const
+void LinearOpDefaultBase<RangeScalar,DomainScalar>::describe(
+  Teuchos::FancyOStream                &out
+  ,const Teuchos::EVerbosityLevel      verbLevel
+  ) const
 {
-  return describeLinearOp(*this,out,verbLevel,leadingIndent,indentSpacer);
+  describeLinearOp(*this,out,verbLevel);
 }
 
 }	// end namespace Thyra

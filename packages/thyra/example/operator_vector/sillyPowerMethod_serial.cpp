@@ -30,6 +30,7 @@
 #include "SerialTridiagLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 //
 // This example function is meant to show how easy it is to create
@@ -48,14 +49,18 @@ bool runPowerMethodExample(
   )
 {
 
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
   
   bool success = true;
   bool result;
 
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
+
   if(verbose)
-    std::cout << "\n***\n*** Running power method example using scalar type = \'" << ST::name() << "\' ...\n***\n" << std::scientific;
+    *out << "\n***\n*** Running power method example using scalar type = \'" << ST::name() << "\' ...\n***\n" << std::scientific;
 
   //
   // (1) Setup the initial tridiagonal operator
@@ -66,7 +71,7 @@ bool runPowerMethodExample(
   //       [          -1  2  -1 ]
   //       [             -1   2 ]
   //
-  if(verbose) std::cout << "\n(1) Constructing tridiagonal matrix A of dimension = " << dim << " ...\n";
+  if(verbose) *out << "\n(1) Constructing tridiagonal matrix A of dimension = " << dim << " ...\n";
   std::vector<Scalar> lower(dim-1), diag(dim), upper(dim-1);
   const Scalar one = ST::one(), two = Scalar(2)*one;
   int k = 0;
@@ -77,33 +82,39 @@ bool runPowerMethodExample(
   lower[k-1] = -one; diag[k] = two;                      //  Last row
   Teuchos::RefCountPtr<SerialTridiagLinearOp<Scalar> >
     A = Teuchos::rcp( new SerialTridiagLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]) );
-  if( verbose && dumpAll ) std::cout << "\nA =\n" << *A;
+  if( verbose && dumpAll ) *out << "\nA =\n" << *A;
 
   //
   // (2) Run the power method ANA
   //
-  if(verbose) std::cout << "\n(2) Running the power method on matrix A ...\n";
+  if(verbose) *out << "\n(2) Running the power method on matrix A ...\n";
   Scalar     lambda      = ST::zero();
   ScalarMag  tolerance   = ScalarMag(1e-3)*Teuchos::ScalarTraits<ScalarMag>::one();
-  result = sillyPowerMethod(*A,maxNumIters,tolerance,&lambda,(verbose?&std::cout:NULL));
-  if(!result) success = false;
-  if(verbose) std::cout << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
+  if(1){
+    OSTab tab(out);
+    result = sillyPowerMethod(*A,maxNumIters,tolerance,&lambda,out.get());
+    if(!result) success = false;
+    if(verbose) *out << "\nEstimate of dominate eigenvalue lambda = " << lambda << std::endl;
+  }
 
   //
   // (3) Increase dominance of first eigenvalue
   //
-  if(verbose) std::cout << "\n(3) Increasing first diagonal entry by factor of 10 ...\n";
+  if(verbose) *out << "\n(3) Increasing first diagonal entry by factor of 10 ...\n";
   diag[0] *= 10;
   A->initialize(dim,&lower[0],&diag[0],&upper[0]);
-  if( verbose && dumpAll ) std::cout << "A =\n" << *A;
+  if( verbose && dumpAll ) *out << "A =\n" << *A;
 
   //
   // (4) Run the power method ANA
   //
-  if(verbose) std::cout << "\n(4) Running the power method again on matrix A ...\n";
-  result = sillyPowerMethod(*A,maxNumIters,tolerance,&lambda,(verbose?&std::cout:NULL));
-  if(!result) success = false;
-  if(verbose) std::cout << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
+  if(verbose) *out << "\n(4) Running the power method again on matrix A ...\n";
+  if(1){
+    OSTab tab(out);
+    result = sillyPowerMethod(*A,maxNumIters,tolerance,&lambda,out.get());
+    if(!result) success = false;
+    if(verbose) *out << "\nEstimate of dominate eigenvalue lambda = " << lambda << std::endl;
+  }
   
   return success;
 
@@ -123,6 +134,9 @@ int main(int argc, char *argv[])
   bool success = true;
   bool verbose = true;
   bool result;
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
 
@@ -193,8 +207,8 @@ int main(int argc, char *argv[])
   }
   
   if (verbose) {
-    if(success)  std::cout << "\nCongratulations! All of the tests checked out!\n";
-    else         std::cout << "\nOh no! At least one of the tests failed!\n";
+    if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
+    else         *out << "\nOh no! At least one of the tests failed!\n";
   }
   
   return success ? 0 : 1;

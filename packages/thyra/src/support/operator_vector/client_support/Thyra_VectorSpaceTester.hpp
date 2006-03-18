@@ -60,59 +60,59 @@ VectorSpaceTester<Scalar>::VectorSpaceTester(
 template <class Scalar>
 bool VectorSpaceTester<Scalar>::check(
   const VectorSpaceBase<Scalar>  &vs
-  ,std::ostream                  *out
-  ,const std::string             &leadingIndent
-  ,const std::string             &indentSpacer
+  ,Teuchos::FancyOStream         *out_arg
   ) const
 {
   using std::endl;
   using Teuchos::describe;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  const std::string &li = leadingIndent, &is = indentSpacer;
+  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   bool result, success = true;
 
-  if(out) *out <<endl<<li<< "*** Entering Thyra::VectorSpaceTester<"<<ST::name()<<">::check(vs,...) ...\n";
+  if(out.get()) *out <<endl<< "*** Entering Thyra::VectorSpaceTester<"<<ST::name()<<">::check(vs,...) ...\n";
 
-  if(out) *out <<endl<<li<< "Testing a vector space vs described as:\n" << describe(vs,verbLevel,li,is);
+  if(out.get()) *out <<endl<< "Testing a vector space vs described as:\n" << describe(vs,verbLevel);
 
-  if(out)
+  if(out.get())
     *out
-      <<endl<<li<< "A) Calling basic query functions ...\n"
-      <<endl<<li<< "vs.dim() = " << vs.dim()
-      <<endl<<li<< "vs.hasInCoreView() = " << vs.hasInCoreView() << std::endl;
+      <<endl<< "A) Calling basic query functions ...\n"
+      <<endl<< "vs.dim() = " << vs.dim()
+      <<endl<< "vs.hasInCoreView() = " << vs.hasInCoreView() << std::endl;
 
-  if(out) *out <<endl<<li<< "B) Checking that vs is compatible with itself ...\n";
+  if(out.get()) *out <<endl<< "B) Checking that vs is compatible with itself ...\n";
 
-  if(out) *out <<endl<<li<< "vs.isCompatible(vs)=";
+  if(out.get()) *out <<endl<< "vs.isCompatible(vs)=";
   result = vs.isCompatible(vs);
   if(!result) success = false;
-  if(out) *out << result << " == true : " << passfail(result) << std::endl;
+  if(out.get()) *out << result << " == true : " << passfail(result) << std::endl;
 
-  if(out) *out <<endl<<li<< "C) Creating a randomized vector member v ...\n";
+  if(out.get()) *out <<endl<< "C) Creating a randomized vector member v ...\n";
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
     v = createMember(vs);
   randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*v);
 
-  if(out) *out <<endl<<li<< "D) Testing the VectorBase interface of v ...\n";
+  if(out.get()) *out <<endl<< "D) Testing the VectorBase interface of v ...\n";
 
-  result = vectorTester_.check(*v,out,li+is,is);
+  result = vectorTester_.check(*v,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out <<endl<<li<< "C) Creating a randomized MultiVector member mv ...\n";
+  if(out.get()) *out <<endl<< "C) Creating a randomized MultiVector member mv ...\n";
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
     mv = createMembers(vs,num_mv_cols());
   randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*mv);
 
-  if(out) *out <<endl<<li<< "D) Testing the MultiVectorBase interface of mv ...\n";
+  if(out.get()) *out <<endl<< "D) Testing the MultiVectorBase interface of mv ...\n";
 
-  result = vectorTester_.multiVectorTester().check(*mv,out,li+is,is);
+  result = vectorTester_.multiVectorTester().check(*mv,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out <<endl<<li<< "*** Leaving Thyra::VectorSpaceTester<"<<ST::name()<<">::check(vs,...) ...\n";
+  if(out.get()) *out <<endl<< "*** Leaving Thyra::VectorSpaceTester<"<<ST::name()<<">::check(vs,...) ...\n";
   
   return success;
 

@@ -151,10 +151,6 @@ public:
 	 *
 	 * @param  mv     [in] The multi-vector object to test.
 	 * @param  out    [in/out] If <tt>out != NULL</tt> then output will be sent to <tt>*out</tt>.
-   * @param  leadingIndent [in] All output to <tt>*out</tt> will insert this spacer
-   *                      before each new line is printed.  Default value <tt>""</tt>.
-   * @param  indentSpacer [in] All output to <tt>*out</tt> that is further indented
-   8                      will use this indentation.  Default value <tt>"  "</tt>.
 	 *
 	 * The behavior of this function greatly depends on a number of options (see
 	 * <tt>MultiVectorTester()</tt> for the default values for these options):
@@ -184,9 +180,7 @@ public:
    */
   bool check(
     const MultiVectorBase<Scalar>  &mv
-    ,std::ostream                  *out
-    ,const std::string             &leadingIndent  = ""
-    ,const std::string             &indentSpacer   = "  "
+    ,Teuchos::FancyOStream         *out
     ) const;
 
 private:

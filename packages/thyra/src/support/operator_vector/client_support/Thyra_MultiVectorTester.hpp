@@ -57,33 +57,33 @@ MultiVectorTester<Scalar>::MultiVectorTester(
 template<class Scalar>
 bool MultiVectorTester<Scalar>::check(
   const MultiVectorBase<Scalar>  &mv
-  ,std::ostream                  *out
-  ,const std::string             &leadingIndent
-  ,const std::string             &indentSpacer
+  ,Teuchos::FancyOStream         *out_arg
   ) const
 {
 
   using std::endl;
   using Teuchos::describe;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  const std::string &li = leadingIndent, &is = indentSpacer;
+  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   bool result, success = true;
 
-  if(out) *out <<endl<<li<< "*** Entering Thyra::MultiVectorTester<"<<ST::name()<<">::check(mv,...) ...\n";
+  if(out.get()) *out <<endl<< "*** Entering Thyra::MultiVectorTester<"<<ST::name()<<">::check(mv,...) ...\n";
 
-  if(out) *out <<endl<<li<< "Testing a MultiVectorBase object mv described as:\n" << describe(mv,verbLevel,li,is);
-
+  if(out.get()) *out <<endl<< "Testing a MultiVectorBase object mv described as:\n" << describe(mv,verbLevel);
+  
   // ToDo: Test the specific VectorBase interface
-
-  if(out) *out <<endl<<li<< "Checking the LinearOpBase interface of mv ...\n";
-  result =linearOpTester_.check(mv,out,li+is,is);
+  
+  if(out.get()) *out <<endl<< "Checking the LinearOpBase interface of mv ...\n";
+  result =linearOpTester_.check(mv,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out <<endl<<li<< "*** Leaving Thyra::MultiVectorTester<"<<ST::name()<<">::check(mv,...) ...\n";
+  if(out.get()) *out <<endl<< "*** Leaving Thyra::MultiVectorTester<"<<ST::name()<<">::check(mv,...) ...\n";
   
   return success;
 

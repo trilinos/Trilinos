@@ -146,6 +146,13 @@ const bool Amesos::supportsUnsymmetric[Amesos::numSolverTypes] =
 #endif
 };
 
+Teuchos::StringToIntMap
+Amesos::solverTypeNameToEnumMap(
+  "Amesos::SolverType"
+  ,Amesos::numSolverTypes
+  ,Amesos::solverTypeNames
+  );
+
 const Amesos::ERefactorizationPolicy Amesos::refactorizationPolicyValues[Amesos::numRefactorizationPolices] =
 {
   REPIVOT_ON_REFACTORIZATION
@@ -157,5 +164,12 @@ const char* Amesos::refactorizationPolicyNames[Amesos::numRefactorizationPolices
   "RepivotOnRefactorization"
   ,"NoPivotOnRefactorization"
 };
+
+Teuchos::StringToIntMap
+Amesos::refactorizationPolicyNameToEnumMap(
+  "Amesos::RefactorizationPolices"
+  ,Amesos::numRefactorizationPolices
+  ,Amesos::refactorizationPolicyNames
+  );
 
 } // namespace Thyra

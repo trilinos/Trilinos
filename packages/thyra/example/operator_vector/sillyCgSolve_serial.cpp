@@ -34,6 +34,7 @@
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Time.hpp"
 
 //
@@ -56,14 +57,16 @@ bool runCgSolveExample(
   )
 {
   using Teuchos::RefCountPtr; using Teuchos::rcp;
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::multiply; using Thyra::scale;
   typedef typename ST::magnitudeType    ScalarMag;
-  const std::string is = "  ";
   bool success = true;
   bool result;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
   if(verbose)
-    std::cout << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
+    *out << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
   Teuchos::Time timer("");
   timer.start(true);
   //
@@ -76,7 +79,7 @@ bool runCgSolveExample(
   //       [                      -r(n-1)   a*2 ]
   //
   // (A.1) Create the tridiagonal matrix operator
-  if(verbose) std::cout << "\nConstructing tridiagonal matrix A of dimension = " << dim << " and diagonal multiplier = " << diagScale << " ...\n";
+  if(verbose) *out << "\nConstructing tridiagonal matrix A of dimension = " << dim << " and diagonal multiplier = " << diagScale << " ...\n";
   std::vector<Scalar> lower(dim-1), diag(dim), upper(dim-1);
   const Scalar up = -ST::one(), diagTerm = Scalar(2)*diagScale*ST::one(), low = -(symOp?ST::one():ST::random());
   int k = 0;
@@ -88,14 +91,14 @@ bool runCgSolveExample(
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A = rcp(new SerialTridiagLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]));
   // (A.2) Testing the linear operator constructed linear operator
-  if(verbose) std::cout << "\nTesting the constructed linear operator A ...\n";
+  if(verbose) *out << "\nTesting the constructed linear operator A ...\n";
   Thyra::LinearOpTester<Scalar> linearOpTester;
   linearOpTester.enable_all_tests(false);            // DEBUG ONLY
   linearOpTester.check_linear_properties(true);      // DEBUG ONLY
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(ScalarMag(ScalarMag(1e-2)*tolerance));
   linearOpTester.show_all_tests(showAllTests);
-  result = linearOpTester.check(*A,verbose?&std::cout:0,is,is);
+  result = linearOpTester.check(*A,OSTab(out).getOStream().get());
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
   RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());
@@ -106,7 +109,7 @@ bool runCgSolveExample(
   Thyra::assign( &*x, ST::zero() );
   // (A.5) Create the final linear system
   if(!symOp) {
-    if(verbose) std::cout << "\nSetting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...\n";
+    if(verbose) *out << "\nSetting up normal equations for unsymmetric system A^H*(A*x-b) => new A*x = b ...\n";
     RefCountPtr<const Thyra::LinearOpBase<Scalar> > AtA = multiply(adjoint(A),A);      // A^H*A
     RefCountPtr<Thyra::VectorBase<Scalar> >         nb = createMember(AtA->range());   // A^H*b
     Thyra::apply(*A,Thyra::CONJTRANS,*b,&*nb);
@@ -114,14 +117,15 @@ bool runCgSolveExample(
     b = nb;
   }
   // (A.6) Testing the linear operator used with the solve
-  if(verbose) std::cout << "\nTesting the linear operator used with the solve ...\n";
+  if(verbose) *out << "\nTesting the linear operator used with the solve ...\n";
   linearOpTester.check_for_symmetry(true);
-  result = linearOpTester.check(*A,verbose?&std::cout:0,is,is);
+  result = linearOpTester.check(*A,OSTab(out).getOStream().get());
   if(!result) success = false;
   //
   // (B) Solve the linear system with the silly CG solver
   //
-  result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,verbose?&std::cout:0);
+  if(verbose) *out << "\nSolving the linear system with sillyCgSolve(...) ...\n";
+  result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).getOStream().get());
   if(!result) success = false;
   //
   // (C) Check that the linear system was solved to the specified tolerance
@@ -133,12 +137,17 @@ bool runCgSolveExample(
   const ScalarMag rel_err = r_nrm/b_nrm, relaxTol = ScalarMag(10.0)*tolerance;
   result = rel_err <= relaxTol;
   if(!result) success = false;
-  if(verbose)
-    std::cout
-      << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")
-      <<"10.0*tolerance = "<<relaxTol<<": "<<(result?"passed":"failed")<<std::endl;
+  if(verbose) {
+    *out << "\nChecking the residual ourselves ...\n";
+    if(1){
+      OSTab tab(out);
+      *out
+        << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")
+        <<"10.0*tolerance = "<<relaxTol<<": "<<(result?"passed":"failed")<<std::endl;
+    }
+  }
   timer.stop();
-  if(verbose) std::cout << "\nTotal time = " << timer.totalElapsedTime() << " sec\n";
+  if(verbose) *out << "\nTotal time = " << timer.totalElapsedTime() << " sec\n";
 
   return success;
 } // end runCgSolveExample()
@@ -154,6 +163,9 @@ int main(int argc, char *argv[])
   bool success = true;
   bool verbose = true;
   bool result;
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
 
@@ -231,8 +243,8 @@ int main(int argc, char *argv[])
   }
 
   if (verbose) {
-    if(success)   std::cout << "\nCongratulations! All of the tests checked out!\n";
-    else          std::cout << "\nOh no! At least one of the tests failed!\n";
+    if(success)   *out << "\nCongratulations! All of the tests checked out!\n";
+    else          *out << "\nOh no! At least one of the tests failed!\n";
   }
   
   return success ? 0 : 1;

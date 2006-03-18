@@ -356,14 +356,13 @@ public:
    *              are checked against those in <tt>validParamList</tt>.  Default:
    *              <tt>validateDefaults = VALIDATE_DEFAULTS_ENABLED</tt>.
    *
-   * If a parameter in <tt>*this</tt> is not found in
-   * <tt>validParamList</tt> then an exception of type
-   * <tt>Exceptions::InvalidParameter</tt> will be thrown which contains an
-   * excellent error message returned by <tt>excpt.what()</tt>.
+   * If a parameter in <tt>*this</tt> is not found in <tt>validParamList</tt>
+   * then an exception of type <tt>Exceptions::InvalidParameter</tt> will be
+   * thrown which will contain an excellent error message returned by
+   * <tt>excpt.what()</tt>.
    *
-   * A depth-first search is performed to validate parameters since this is
-   * the most effiicent way to perform the validation.  This could be changed
-   * to a breath-first search but it would take more work.
+   * A breath-first search is performed to validate all of the parameters in
+   * one sublist before moving into nested subslist.
    */
   void validateParameters(
     const ParameterList        &validParamList

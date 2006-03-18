@@ -26,17 +26,20 @@ bool Thyra::test_single_belos_thyra_solver(
   ,const bool                             showAllTests
   ,const bool                             dumpAll
   ,Teuchos::ParameterList                 *solveParamList
-  ,Teuchos::FancyOStream                  *out
+  ,Teuchos::FancyOStream                  *out_arg
   )
 {
   using Teuchos::rcp;
+  using Teuchos::OSTab;
   bool result, success = true;
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::rcp(out_arg,false);
 
   try {
 
 #ifndef __sun
 
-    if(out) {
+    if(out.get()) {
       *out << "\n***"
            << "\n*** Testing Thyra::BelosLinearOpWithSolveFactory (and Thyra::BelosLinearOpWithSolve)"
            << "\n***\n"
@@ -51,9 +54,7 @@ bool Thyra::test_single_belos_thyra_solver(
            << std::endl;
     }
 
-    if(out) *out << "\nA) Reading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
-  
-    const std::string indentSpacer = "  ";
+    if(out.get()) *out << "\nA) Reading in an epetra matrix A from the file \'"<<matrixFile<<"\' ...\n";
   
     Epetra_SerialComm comm;
     Teuchos::RefCountPtr<Epetra_CrsMatrix> epetra_A;
@@ -61,9 +62,9 @@ bool Thyra::test_single_belos_thyra_solver(
 
     Teuchos::RefCountPtr<LinearOpBase<double> > A = Teuchos::rcp(new EpetraLinearOp(epetra_A));
 
-    if(out && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME,indentSpacer,indentSpacer);
+    if(out.get() && dumpAll) *out << "\ndescribe(A) =\n" << describe(*A,Teuchos::VERB_EXTREME);
 
-    if(out) *out << "\nB) Creating a BelosLinearOpWithSolveFactory object opFactory ...\n";
+    if(out.get()) *out << "\nB) Creating a BelosLinearOpWithSolveFactory object opFactory ...\n";
 
     Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
       opFactory;
@@ -74,14 +75,14 @@ bool Thyra::test_single_belos_thyra_solver(
     }
     opFactory->setParameterList(Teuchos::rcp(solveParamList,false));
 
-    if(out) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
+    if(out.get()) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
 
     Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
       nsA = opFactory->createOp();
 
     opFactory->initializeOp( A, &*nsA );
 
-    if(out) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
+    if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 
     LinearOpTester<double> linearOpTester;
     linearOpTester.check_adjoint(testTranspose);
@@ -91,10 +92,10 @@ bool Thyra::test_single_belos_thyra_solver(
     linearOpTester.show_all_tests(showAllTests);
     linearOpTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpTester.check(*nsA,out,indentSpacer,indentSpacer);
+    result = linearOpTester.check(*nsA,OSTab(out).getOStream().get());
     if(!result) success = false;
 
-    if(out) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
+    if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
     LinearOpWithSolveTester<double> linearOpWithSolveTester;
     linearOpWithSolveTester.turn_off_all_tests();
@@ -118,20 +119,20 @@ bool Thyra::test_single_belos_thyra_solver(
     linearOpWithSolveTester.show_all_tests(showAllTests);
     linearOpWithSolveTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpWithSolveTester.check(*nsA,out,indentSpacer,indentSpacer);
+    result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
     if(!result) success = false;
 
     
 #else // __sun
 		
-		if(out) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+		if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
 		success = false;
 
 #endif // __sun
 
   }
 	catch( const std::exception &excpt ) {
-    if(out) *out << std::flush;
+    if(out.get()) *out << std::flush;
 		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
 		success = false;
 	}

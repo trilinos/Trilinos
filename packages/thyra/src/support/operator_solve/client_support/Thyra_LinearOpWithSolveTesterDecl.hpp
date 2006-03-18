@@ -31,6 +31,7 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 namespace Thyra {
 
@@ -256,9 +257,7 @@ public:
    */
   bool check(
     const LinearOpWithSolveBase<RangeScalar,DomainScalar>   &op
-    ,std::ostream                                           *out
-    ,const std::string                                      &leadingIndent  = ""
-    ,const std::string                                      &indentSpacer   = "  "
+    ,Teuchos::FancyOStream                                  *out
     ) const;
 
 

@@ -31,6 +31,7 @@
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 /** \brief Main test driver function for composite product spaces
  */
@@ -41,18 +42,20 @@ bool run_product_space_tests(
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &tol
   ,const bool                                                   showAllTests
   ,const bool                                                   dumpAll
-  ,std::ostream                                                 *out
+  ,Teuchos::FancyOStream                                        *out_arg
   )
 {
 
   using Thyra::relErr;
+  using Teuchos::OSTab;
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  const std::string is = " ";
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
-  if(out) *out << "\n*** Entering run_product_space_tests<"<<ST::name()<<">(...) ...\n";
+  if(out.get()) *out << "\n*** Entering run_product_space_tests<"<<ST::name()<<">(...) ...\n";
 
   bool success = true, result;
   Scalar sresult1, sresult2;
@@ -70,33 +73,33 @@ bool run_product_space_tests(
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
 
-  if(out) *out << "\nA)Performing basic tests on product vectors with serial constituent vectors ...\n";
+  if(out.get()) *out << "\nA)Performing basic tests on product vectors with serial constituent vectors ...\n";
 
-  if(out) *out << "\nCreating a product space ps with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
+  if(out.get()) *out << "\nCreating a product space ps with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
   Thyra::DefaultProductVectorSpace<Scalar> ps(numBlocks,&vecSpaces[0]);
 
-  if(out) *out << "\nps.numBlocks()=";
+  if(out.get()) *out << "\nps.numBlocks()=";
   result = ps.numBlocks() == numBlocks;
   if(!result) success = false;
-  if(out) *out
+  if(out.get()) *out
     << ps.numBlocks() << " == numBlocks=" << numBlocks
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
 
-  if(out) *out << "\nTesting the product space ps ...\n";
+  if(out.get()) *out << "\nTesting the product space ps ...\n";
 
-  if(out) *out << "\nps.dim()=";
+  if(out.get()) *out << "\nps.dim()=";
   result = ps.dim() == n*numBlocks;
   if(!result) success = false;
-  if(out) *out
+  if(out.get()) *out
     << ps.dim() << " == n*numBlocks=" << n*numBlocks
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
 
-  if(out) *out << "\nTesting the VectorSpaceBase interface of ps ...\n";
-  result = vectorSpaceTester.check(ps,out,is,is);
+  if(out.get()) *out << "\nTesting the VectorSpaceBase interface of ps ...\n";
+  result = vectorSpaceTester.check(ps,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out
+  if(out.get()) *out
     << "\nB) Test the compatibility of serial vectors and product vectors with serial blocks."
     << "\n   These tests demonstrate the principle of how all in-core vectors are compatible ...\n";
 
@@ -105,65 +108,65 @@ bool run_product_space_tests(
     two   = Scalar(2)*one,
     three = Scalar(3)*one;
 
-  if(out) *out << "\nCreating a serial vector space ss with numBlocks*n=" << numBlocks*n << " vector elements ...\n";
+  if(out.get()) *out << "\nCreating a serial vector space ss with numBlocks*n=" << numBlocks*n << " vector elements ...\n";
 
   Thyra::DefaultSerialVectorSpace<Scalar> ss(numBlocks*n);
 
-  if(out) *out << "\nTesting the serial space ss ...\n";
-  result = vectorSpaceTester.check(ss,out,is,is);
+  if(out.get()) *out << "\nTesting the serial space ss ...\n";
+  result = vectorSpaceTester.check(ss,OSTab(out).getOStream().get());
   if(!result) success = false;
 
-  if(out) *out << "\nCreating product vectors; pv1, pv2 ...\n";
+  if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
     pv1 = createMember(ps),
     pv2 = createMember(ps);
 
-  if(out) *out << "\nassign(&pv1,2.0) ...\n";
+  if(out.get()) *out << "\nassign(&pv1,2.0) ...\n";
   Thyra::assign( &*pv1, two );
 
-  if(out) *out << "\nassign(&pv1,3.0) ...\n";
+  if(out.get()) *out << "\nassign(&pv1,3.0) ...\n";
   Thyra::assign( &*pv2, three );
 
-  if(out) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
+  if(out.get()) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
     sv1 = createMember(ss),
     sv2 = createMember(ss);
 
-  if(out) *out << "\nassign(&sv1,*pv1) ...\n";
+  if(out.get()) *out << "\nassign(&sv1,*pv1) ...\n";
   Thyra::assign( &*sv1, *pv1 );
 
-  if(out) *out << "\nsum(sv1)=";
+  if(out.get()) *out << "\nsum(sv1)=";
   sresult1 = Thyra::sum(*sv1);
   sresult2 = two*Scalar(ps.dim());
   result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
              < ST::magnitude( tol ) );
   if(!result) success = false;
-  if(out) *out
+  if(out.get()) *out
     << sresult1 << " == 2*ps.dim()=" << sresult2
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
   
-  if(out && dumpAll) *out
+  if(out.get() && dumpAll) *out
     << "\nsv1 =\n" << *sv1;
 
-  if(out) *out << "\nassign(&pv2,*sv1) ...\n";
+  if(out.get()) *out << "\nassign(&pv2,*sv1) ...\n";
   Thyra::assign( &*pv2, *sv1 );
 
-  if(out) *out << "\nsum(pv2)=";
+  if(out.get()) *out << "\nsum(pv2)=";
   sresult1 = Thyra::sum(*pv2);
   sresult2 = two*Scalar(ps.dim());
   result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
              < ST::magnitude( tol ) );
   if(!result) success = false;
-  if(out) *out
+  if(out.get()) *out
     << sresult1 << " == 2*ps.dim()=" << sresult2
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
   
-  if(out && dumpAll) *out
+  if(out.get() && dumpAll) *out
     << "\npv2 =\n" << *pv2;
 
   // ToDo: Finish tests!
 
-  if(out) *out
+  if(out.get()) *out
     << "\n*** Leaving run_product_space_tests<"<<ST::name()<<">(...) ...\n";
 
   return success;
@@ -177,7 +180,8 @@ int main( int argc, char* argv[] ) {
   bool success = true;
   bool verbose = true;
 
-  std::ostream &out = std::cout;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
 
@@ -203,14 +207,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-    if( !run_product_space_tests<float>(n,numBlocks,float(1e-5),showAllTests,dumpAll,verbose?&out:NULL) ) success = false;
-    if( !run_product_space_tests<double>(n,numBlocks,double(1e-13),showAllTests,dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_product_space_tests<float>(n,numBlocks,float(1e-5),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_product_space_tests<double>(n,numBlocks,double(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-    if( !run_product_space_tests<std::complex<float> >(n,numBlocks,float(1e-5),showAllTests,dumpAll,verbose?&out:NULL) ) success = false;
-    if( !run_product_space_tests<std::complex<double> >(n,numBlocks,double(1e-13),showAllTests,dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_product_space_tests<std::complex<float> >(n,numBlocks,float(1e-5),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_product_space_tests<std::complex<double> >(n,numBlocks,double(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP
-    //if( !run_product_space_tests<mpf_class>(n,numBlocks,mpf_class(1e-13),showAllTests,dumpAll,verbose?&out:NULL) ) success = false;
+    //if( !run_product_space_tests<mpf_class>(n,numBlocks,mpf_class(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
     // Above commented out code will not compile because its ScalarTraits specialization does not support eps()
 #endif
 
@@ -228,9 +232,9 @@ int main( int argc, char* argv[] ) {
 
   if(verbose) {
     if(success)
-      out << "\nAll of the tests seem to have run successfully!\n";
+      *out << "\nAll of the tests seem to have run successfully!\n";
     else
-      out << "\nOh no! at least one of the test failed!\n";	
+      *out << "\nOh no! at least one of the test failed!\n";	
   }
   
   return success ? 0 : 1;

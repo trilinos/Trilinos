@@ -44,12 +44,12 @@ StringToIntMap::StringToIntMap(  const std::string& defaultGroupName, int n, con
 	}
 }
 
-int StringToIntMap::operator()( const std::string& option, const std::string& groupName ) const
+int StringToIntMap::get( const std::string& option, const std::string& groupName ) const
 {
 	map_t::const_iterator itr = map_.find( option );
 	TEST_FOR_EXCEPTION(
 		itr == map_.end(), DoesNotExist
-		,"Teuchos::StringToIntMap::operator(...): "
+		,"Teuchos::StringToIntMap:::get("<<option<<","<<groupName<<"): "
 		<< "Error, the string \"" << option << "\" is not recongnised for "
 		<< ( groupName.length() ? groupName : defaultGroupName_ ) );
 	return (*itr).second;	

@@ -51,7 +51,7 @@ bool run_scalar_product_tests(
   const int                                                     n
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &tol
   ,const bool                                                   dumpAll
-  ,std::ostream                                                 *out
+  ,Teuchos::FancyOStream                                        *out_arg
   )
 {
 
@@ -63,8 +63,12 @@ bool run_scalar_product_tests(
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
   using Teuchos::rcp_implicit_cast;
+  using Teuchos::OSTab;
 
-  if(out) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n" << std::boolalpha;
+  RefCountPtr<Teuchos::FancyOStream>
+    out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
+
+  if(out.get()) *out << "\n*** Entering run_scalar_product_tests<"<<ST::name()<<">(...) ...\n" << std::boolalpha;
 
   bool success = true, result;
 
@@ -90,7 +94,7 @@ bool run_scalar_product_tests(
 
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*op_coeff );
-  if(out && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
+  if(out.get() && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
   RefCountPtr<const Thyra::VectorSpaceConverterBase<ScalarMag,Scalar> >
     vecSpcConverterFromMag = rcp(new Thyra::DefaultSerialVectorSpaceConverter<ScalarMag,Scalar>());
   RefCountPtr<const Thyra::VectorSpaceBase<ScalarMag> >
@@ -118,60 +122,72 @@ bool run_scalar_product_tests(
   linearOpTester.adjoint_error_tol(error_tol);
   linearOpTester.show_all_tests(true);
 
-  if(out) *out << "\nTesting LinearOpBase with Euclidean domain and range scalar products ...\n";
-  Thyra::assign( &*op, *op_coeff );
-  if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out);
-  if(!result) success = false;
-  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out);
-  if(!result) success = false;
-  result = linearOpTester.check(*op,out);
-  if(!result) success = false;
+  if(out.get()) *out << "\nTesting LinearOpBase with Euclidean domain and range scalar products ...\n";
+  if(1) {
+    OSTab tab(out);
+    Thyra::assign( &*op, *op_coeff );
+    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
+    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out.get());
+    if(!result) success = false;
+    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out.get());
+    if(!result) success = false;
+    result = linearOpTester.check(*op,out.get());
+    if(!result) success = false;
+  }
  
-  if(out) *out << "\nTesting LinearOpBase with non-Euclidean domain and Euclidean range scalar products ...\n";
-  range->setScalarProd(euclideanScalarProd);
-  domain->setScalarProd(domainScalarProd);
-  op->initialize(range,domain);
-  Thyra::assign( &*op, *op_coeff );
-  if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out);
-  if(!result) success = false;
-  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out);
-  if(!result) success = false;
-  result = linearOpTester.check(*op,out);
-  if(!result) success = false;
-  
-  if(out) *out << "\nTesting LinearOpBase with Euclidean domain and non-Euclidean range scalar products ...\n";
-  range->setScalarProd(rangeScalarProd);
-  domain->setScalarProd(euclideanScalarProd);
-  op->initialize(range,domain);
-  Thyra::assign( &*op, *op_coeff );
-  if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out);
-  if(!result) success = false;
-  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out);
-  if(!result) success = false;
-  result = linearOpTester.check(*op,out);
-  if(!result) success = false;
-  
-  if(out) *out << "\nTesting LinearOpBase with non-Euclidean domain and non-Euclidean range scalar products ...\n";
-  range->setScalarProd(rangeScalarProd);
-  domain->setScalarProd(domainScalarProd);
-  op->initialize(range,domain);
-  Thyra::assign( &*op, *op_coeff );
-  if(out && dumpAll) *out << "\nop =\n" << *op;
-  if(out && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
-  result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out);
-  if(!result) success = false;
-  result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out);
-  if(!result) success = false;
-  result = linearOpTester.check(*op,out);
-  if(!result) success = false;
-
-  if(out) *out << "\n*** Leaving run_scalar_product_tests<"<<ST::name()<<">(...) ...\n";
+  if(out.get()) *out << "\nTesting LinearOpBase with non-Euclidean domain and Euclidean range scalar products ...\n";
+  if(1) {
+    OSTab tab(out);
+    range->setScalarProd(euclideanScalarProd);
+    domain->setScalarProd(domainScalarProd);
+    op->initialize(range,domain);
+    Thyra::assign( &*op, *op_coeff );
+    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
+    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out.get());
+    if(!result) success = false;
+    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),true,out.get());
+    if(!result) success = false;
+    result = linearOpTester.check(*op,out.get());
+    if(!result) success = false;
+  }
+    
+  if(out.get()) *out << "\nTesting LinearOpBase with Euclidean domain and non-Euclidean range scalar products ...\n";
+  if(1) {
+    OSTab tab(out);
+    range->setScalarProd(rangeScalarProd);
+    domain->setScalarProd(euclideanScalarProd);
+    op->initialize(range,domain);
+    Thyra::assign( &*op, *op_coeff );
+    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
+    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),true,out.get());
+    if(!result) success = false;
+    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out.get());
+    if(!result) success = false;
+    result = linearOpTester.check(*op,out.get());
+    if(!result) success = false;
+  }
+    
+  if(out.get()) *out << "\nTesting LinearOpBase with non-Euclidean domain and non-Euclidean range scalar products ...\n";
+  if(1) {
+    OSTab tab(out);
+    range->setScalarProd(rangeScalarProd);
+    domain->setScalarProd(domainScalarProd);
+    op->initialize(range,domain);
+    Thyra::assign( &*op, *op_coeff );
+    if(out.get() && dumpAll) *out << "\nop =\n" << *op;
+    if(out.get() && dumpAll) *out << "\nop' =\n" << *Thyra::adjoint(Teuchos::rcp_implicit_cast<const Thyra::LinearOpBase<Scalar> >(op));
+    result = testBoolExpr("op->domain()->isEuclidean()",op->domain()->isEuclidean(),false,out.get());
+    if(!result) success = false;
+    result = testBoolExpr("op->range()->isEuclidean()",op->range()->isEuclidean(),false,out.get());
+    if(!result) success = false;
+    result = linearOpTester.check(*op,out.get());
+    if(!result) success = false;
+  }
+    
+  if(out.get()) *out << "\n*** Leaving run_scalar_product_tests<"<<ST::name()<<">(...) ...\n";
 
   return success;
 
@@ -186,7 +202,8 @@ int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
 
-  std::ostream &out = std::cout;
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
 
@@ -210,14 +227,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-    if( !run_scalar_product_tests<float>(n,float(1e-5),dumpAll,verbose?&out:NULL) ) success = false;
-    if( !run_scalar_product_tests<double>(n,double(1e-14),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_scalar_product_tests<float>(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_scalar_product_tests<double>(n,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-    if( !run_scalar_product_tests<std::complex<float> >(n,float(1e-5),dumpAll,verbose?&out:NULL) ) success = false;
-    if( !run_scalar_product_tests<std::complex<double> >(n,double(1e-14),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_scalar_product_tests<std::complex<float> >(n,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_scalar_product_tests<std::complex<double> >(n,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #ifdef HAVE_TEUCHOS_GNU_MP
-    if( !run_scalar_product_tests<mpf_class>(n,mpf_class(1e-14),dumpAll,verbose?&out:NULL) ) success = false;
+    if( !run_scalar_product_tests<mpf_class>(n,mpf_class(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 
 #endif // ifndef __sun
@@ -238,9 +255,9 @@ int main( int argc, char* argv[] ) {
 
   if(verbose) {
     if(success)
-      out << "\nAll of the tests seem to have run successfully!\n";
+      *out << "\nAll of the tests seem to have run successfully!\n";
     else
-      out << "\nOh no! at least one of the test failed!\n";	
+      *out << "\nOh no! at least one of the test failed!\n";	
   }
   
   return success ? 0 : 1;
@@ -248,7 +265,7 @@ int main( int argc, char* argv[] ) {
 #else // ifndef __sun
 
   if (verbose) {
-    std::cout << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
+    std::c*out << "\nError, the test was never run since __sun was defined and this test does not build on the Sun compiler!\n";
   }
   
   return 1;

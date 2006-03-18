@@ -32,6 +32,8 @@
 #define TEST_SINGLE_AMESOS_THYRA_SOLVER_HPP
 
 #include "Thyra_AmesosTypes.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 namespace Thyra {
 
@@ -40,8 +42,7 @@ namespace Thyra {
  */
 bool test_single_amesos_thyra_solver(
   const std::string                       matrixFile
-  ,const Amesos::ESolverType              solverType
-  ,const Amesos::ERefactorizationPolicy   refactorizationPolicy
+  ,Teuchos::ParameterList                 *amesosLOWSFPL
   ,const bool                             testTranspose
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
@@ -49,7 +50,7 @@ bool test_single_amesos_thyra_solver(
   ,const double                           maxResid
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,std::ostream                           *out
+  ,Teuchos::FancyOStream                  *out
   );
 
 } // namespace Thyra

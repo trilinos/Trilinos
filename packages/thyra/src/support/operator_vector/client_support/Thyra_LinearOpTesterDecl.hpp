@@ -33,6 +33,7 @@
 #include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 namespace Thyra {
 
@@ -186,10 +187,6 @@ public:
    *               [in] Randomizer strategy object for creating random vectors in the
    *               domain of the operator <tt>op</tt>.  If <tt>NULL</tt> then
    *               <tt>UniveralMultiVectorRandomizer</tt> is used intead.
-   * @param  leadingIndent [in] All output to <tt>*out</tt> will insert this spacer
-   *                      before each new line is printed.  Default value <tt>""</tt>.
-   * @param  indentSpacer [in] All output to <tt>*out</tt> that is further indented
-   *                      will use this indentation.  Default value <tt>"  "</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li>[<tt>rangeRandomizer!=NULL</tt>] <tt>rangeRandomizer->isCompatible(*op.range())==true</tt>
@@ -249,19 +246,14 @@ public:
     const LinearOpBase<RangeScalar,DomainScalar>  &op
     ,MultiVectorRandomizerBase<RangeScalar>       *rangeRandomizer
     ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
-    ,std::ostream                                 *out
-    ,const std::string                            &leadingIndent  = ""
-    ,const std::string                            &indentSpacer   = "  "
+    ,Teuchos::FancyOStream                        *out
     ) const;
 
   /** \brief Calls <tt>this->check(op,NULL,NULL,out,leadingIndent,indentSpacer)</tt> */
   bool check(
     const LinearOpBase<RangeScalar,DomainScalar>  &op
-    ,std::ostream                                 *out
-    ,const std::string                            &leadingIndent  = ""
-    ,const std::string                            &indentSpacer   = "  "
+    ,Teuchos::FancyOStream                        *out
     ) const;
-
 
   /** \brief Check if two linear operators are the same or not.
    *
@@ -301,18 +293,14 @@ public:
     const LinearOpBase<RangeScalar,DomainScalar>  &op1
     ,const LinearOpBase<RangeScalar,DomainScalar> &op2
     ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
-    ,std::ostream                                 *out
-    ,const std::string                            &leadingIndent  = ""
-    ,const std::string                            &indentSpacer   = "  "
+    ,Teuchos::FancyOStream                        *out
     ) const;
   
   /** \brief Calls <tt>this->compare(op1,op2,NULL,out,leadingIndent,indentSpacer)</tt>. */
   bool compare(
     const LinearOpBase<RangeScalar,DomainScalar>  &op1
     ,const LinearOpBase<RangeScalar,DomainScalar> &op2
-    ,std::ostream                                 *out
-    ,const std::string                            &leadingIndent  = ""
-    ,const std::string                            &indentSpacer   = "  "
+    ,Teuchos::FancyOStream                        *out
     ) const;
 
 }; // class LinearOpTester

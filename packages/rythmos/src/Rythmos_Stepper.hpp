@@ -54,18 +54,6 @@ class Stepper : virtual public Teuchos::Describable
 
     /// Get solution vector
     virtual Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > get_solution() const = 0;
-
-    /// description stub
-    virtual std::string description() const = 0;
-
-    /// describe stub
-    virtual std::ostream& describe(
-      std::ostream                &out
-      ,const Teuchos::EVerbosityLevel      verbLevel
-      ,const std::string          leadingIndent
-      ,const std::string          indentSpacer
-      ) const = 0;
-
     
 };
 

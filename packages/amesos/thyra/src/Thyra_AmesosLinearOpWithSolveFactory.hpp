@@ -69,6 +69,20 @@ namespace Thyra {
 class AmesosLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
 public:
 
+  /** \name Parameter names for Paramter List */
+  //@{
+
+  /** \brief . */
+  static const std::string SolverType_name;
+  /** \brief . */
+  static const std::string RefactorizationPolicy_name;
+  /** \brief . */
+  static const std::string ThrowOnPreconditionerInput_name;
+  /** \brief . */
+  static const std::string AMESOS_name;
+
+  //@}
+
   /** \name Constructors/initializers/accessors */
   //@{
 
@@ -82,7 +96,6 @@ public:
                                                                                 = Amesos::LAPACK
 #endif
     ,const Amesos::ERefactorizationPolicy                refactorizationPolicy  = Amesos::REPIVOT_ON_REFACTORIZATION
-    ,const Teuchos::RefCountPtr<Teuchos::ParameterList>  &paramList             = Teuchos::null
     ,const bool                                          throwOnPrecInput       = true
     );
 

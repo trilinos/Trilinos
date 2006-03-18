@@ -49,9 +49,7 @@ public:
   static void checkSymmetry(
     const LinearOpBase<RangeScalar,DomainScalar>  &op
     ,MultiVectorRandomizerBase<DomainScalar>      *dRand
-    ,std::ostream                                 &oss
-    ,const std::string                            &li
-    ,const std::string                            &is
+    ,Teuchos::FancyOStream                        &oss
     ,const int                                    num_random_vectors
     ,const Teuchos::EVerbosityLevel               verbLevel
     ,const bool                                   dump_all
@@ -63,7 +61,7 @@ public:
       using std::endl;
       typedef Teuchos::ScalarTraits<RangeScalar>  RST;
       typedef Teuchos::ScalarTraits<DomainScalar> DST;
-      oss <<endl<<li<<li<< "RangeScalar = "<<RST::name()<<" == DomainScalar = "<<DST::name()<<": failed, the opeator can not be symmetric!\n";
+      oss << endl << "RangeScalar = "<<RST::name()<<" == DomainScalar = "<<DST::name()<<": failed, the opeator can not be symmetric!\n";
       *these_results = false;
     }
 };
@@ -75,9 +73,7 @@ public:
   static void checkSymmetry(
     const LinearOpBase<Scalar>                    &op
     ,MultiVectorRandomizerBase<Scalar>            *dRand
-    ,std::ostream                                 &oss
-    ,const std::string                            &li
-    ,const std::string                            &is
+    ,Teuchos::FancyOStream                        &oss
     ,const int                                    num_random_vectors
     ,const Teuchos::EVerbosityLevel               verbLevel
     ,const bool                                   dump_all
@@ -88,11 +84,12 @@ public:
     {
 
       bool result;
+      using Teuchos::OSTab;
       typedef Teuchos::ScalarTraits<Scalar> ST;
       const Scalar half = Scalar(0.4)*ST::one();
       Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > domain = op.domain();
       
-      oss <<endl<<li<<is<< "op.domain()->isCompatible(*op.range()) == true : ";
+      oss << endl << "op.domain()->isCompatible(*op.range()) == true : ";
       result = op.domain()->isCompatible(*op.range());
       if(!result) *these_results = false;
       oss << passfail(result) << endl;
@@ -100,37 +97,39 @@ public:
       if(result) {
         
         oss
-          <<endl<<li<<is<< "Checking that the operator is symmetric as:\n"
-          <<endl<<li<<is<< "  <0.5*op*v2,v1> == <v2,0.5*op*v1>"
-          <<endl<<li<<is<< "   \\_______/            \\_______/"
-          <<endl<<li<<is<< "      v4                    v3"
-          <<endl<<li<<is<< ""
-          <<endl<<li<<is<< "         <v4,v1> == <v2,v3>"
+          << endl << "Checking that the operator is symmetric as:\n"
+          << endl << "  <0.5*op*v2,v1> == <v2,0.5*op*v1>"
+          << endl << "   \\_______/            \\_______/"
+          << endl << "      v4                    v3"
+          << endl << ""
+          << endl << "         <v4,v1> == <v2,v3>"
           << endl;
         
         for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors; ++rand_vec_i ) {
           
-          oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
+          oss << endl << "Random vector tests = " << rand_vec_i << endl;
+
+          OSTab tab(Teuchos::rcp(&oss,false));
           
-          if(dump_all) oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
+          if(dump_all) oss << endl << "v1 = randomize(-1,+1); ...\n" ;
           Teuchos::RefCountPtr<VectorBase<Scalar> > v1 = createMember(domain);
           dRand->randomize(&*v1);
-          if(dump_all) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
+          if(dump_all) oss << endl << "v1 =\n" << describe(*v1,verbLevel);
           
-          if(dump_all) oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
+          if(dump_all) oss << endl << "v2 = randomize(-1,+1); ...\n" ;
           Teuchos::RefCountPtr<VectorBase<Scalar> > v2 = createMember(domain);
           dRand->randomize(&*v2);
-          if(dump_all) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
+          if(dump_all) oss << endl << "v2 =\n" << describe(*v2,verbLevel);
           
-          if(dump_all) oss <<endl<<li<<is<< "v3 = 0.5*op*v1 ...\n" ;
+          if(dump_all) oss << endl << "v3 = 0.5*op*v1 ...\n" ;
           Teuchos::RefCountPtr<VectorBase<Scalar> > v3 = createMember(domain);
           apply( op, NONCONJ_ELE, *v1, &*v3, half );
-         if(dump_all) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
+         if(dump_all) oss << endl << "v3 =\n" << describe(*v3,verbLevel);
           
-          if(dump_all) oss <<endl<<li<<is<< "v4 = 0.5*op*v2 ...\n" ;
+          if(dump_all) oss << endl << "v4 = 0.5*op*v2 ...\n" ;
           Teuchos::RefCountPtr<VectorBase<Scalar> > v4 = createMember(domain);
           apply( op, NONCONJ_ELE, *v2, &*v4, half );
-          if(dump_all) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
+          if(dump_all) oss << endl << "v4 =\n" << describe(*v4,verbLevel);
           
           const Scalar
             prod1 = domain->scalarProd(*v4,*v1),
@@ -141,14 +140,14 @@ public:
             ,"<v2,v3>", prod2
             ,"symmetry_error_tol()", symmetry_error_tol
             ,"symmetry_warning_tol()", symmetry_warning_tol
-            ,&oss,li+is
+            ,&oss
             );
           if(!result) *these_results = false;
         
         }
       }
       else {
-        oss <<endl<<li<<is<< "Range and domain spaces are different, skipping check!\n";
+        oss << endl << "Range and domain spaces are different, skipping check!\n";
       }
     }
 };
@@ -213,13 +212,13 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   const LinearOpBase<RangeScalar,DomainScalar>  &op
   ,MultiVectorRandomizerBase<RangeScalar>       *rangeRandomizer
   ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
-  ,std::ostream                                 *out
-  ,const std::string                            &leadingIndent
-  ,const std::string                            &indentSpacer
+  ,Teuchos::FancyOStream                        *out_arg
   ) const
 {
 
   using std::endl;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<RangeScalar>  RST;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
@@ -227,25 +226,25 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   const DomainScalar d_one  = DST::one();
   const RangeScalar  r_half = RangeScalar(0.5)*r_one;
   const DomainScalar d_half = DomainScalar(0.5)*d_one;
-  const std::string &li = leadingIndent, &is = indentSpacer;
+  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   // ToDo 04/28/2005:
   // * Test the MultiVectorBase apply() function and output to the VectorBase apply() function!
 
-  if(out) {
-    *out <<endl<<li<< "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(op,...) ...\n";
+  if(out.get()) {
+    *out << endl << "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(op,...) ...\n";
     if(show_all_tests()) {
-      *out <<endl<<li<< "describe op:\n" << Teuchos::describe(op,verbLevel,li,is);
+      *out << endl << "describe op:\n" << Teuchos::describe(op,verbLevel);
 /*
       if(op.applyTransposeSupports(CONJ_ELE) && verbLevel==Teuchos::VERB_EXTREME) {
-        *out <<endl<<li<< "describe adjoint op:\n";
-        describeLinearOp(*adjoint(Teuchos::rcp(&op,false)),*out,verbLevel,li,is);
+        *out << endl << "describe adjoint op:\n";
+        describeLinearOp(*adjoint(Teuchos::rcp(&op,false)),*out,verbLevel);
       }
 */
     }
     else {
-      *out <<endl<<li<< "describe op: " << op.description() << endl;
+      *out << endl << "describe op: " << op.description() << endl;
     }
   }
 
@@ -256,90 +255,94 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   if(domainRandomizer)  dRand = Teuchos::rcp(domainRandomizer,false);
   else                  dRand = Teuchos::rcp(new UniversalMultiVectorRandomizer<DomainScalar>());
   
-  if(out)
-    *out <<endl<<li << "Checking the domain and range spaces ... ";
+  if(out.get())
+    *out << endl << "Checking the domain and range spaces ... ";
 
   Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >  range  = op.range();
   Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> > domain = op.domain();
   
   if(1) {
 
-    std::ostringstream oss;
-    if(out) oss.copyfmt(*out);
+    std::ostringstream ossStore;
+    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
-    oss <<endl<<li<<is<< "op.domain().get() != NULL ? ";
+    *oss << endl << "op.domain().get() != NULL ? ";
     result = domain.get() != NULL;
     if(!result) these_results = false;
-    oss << passfail(result) << endl;
+    *oss << passfail(result) << endl;
     
-    oss <<endl<<li<<is<< "op.range().get() != NULL ? ";
+    *oss << endl << "op.range().get() != NULL ? ";
     result = range.get() != NULL;
     if(!result) these_results = false;
-    oss << passfail(result) << endl;
+    *oss << passfail(result) << endl;
 
-    printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
 
   }
 
   if( check_linear_properties() ) {
 
-    if(out)	*out <<endl<<li<< "this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... ";
+    if(out.get())	*out << endl << "this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... ";
 
-    std::ostringstream oss;
-    if(out) oss.copyfmt(*out);
+    std::ostringstream ossStore;
+    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
-    oss <<endl<<li<<is<< "op.applySupports(NONCONJ_ELE) == true ? ";
+    *oss << endl << "op.applySupports(NONCONJ_ELE) == true ? ";
     result = op.applySupports(NONCONJ_ELE);
     if(!result) these_results = false;
-    oss << passfail(result) << endl;
+    *oss << passfail(result) << endl;
 
     if(result) {
     
-      oss
-        <<endl<<li<<is<< "Checking that the forward operator is truly linear:\n"
-        <<endl<<li<<is<< "  0.5*op*(v1 + v2) == 0.5*op*v1 + 0.5*op*v2"
-        <<endl<<li<<is<< "          \\_____/         \\___/"
-        <<endl<<li<<is<< "             v3            v5"
-        <<endl<<li<<is<< "  \\_____________/     \\___________________/"
-        <<endl<<li<<is<< "         v4                    v5"
-        <<endl<<li<<is<< ""
-        <<endl<<li<<is<< "           sum(v4) == sum(v5)"
+      *oss
+        << endl << "Checking that the forward operator is truly linear:\n"
+        << endl << "  0.5*op*(v1 + v2) == 0.5*op*v1 + 0.5*op*v2"
+        << endl << "          \\_____/         \\___/"
+        << endl << "             v3            v5"
+        << endl << "  \\_____________/     \\___________________/"
+        << endl << "         v4                    v5"
+        << endl << ""
+        << endl << "           sum(v4) == sum(v5)"
         << endl;
       
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
         
-        oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
+        *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+
+        OSTab tab(oss);
         
-        oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
+        *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
         dRand->randomize(&*v1);
-        if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
-        oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
+        *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v2 = createMember(domain);
         dRand->randomize(&*v2);
-        if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
-        oss <<endl<<li<<is<< "v3 = v1 + v2 ...\n" ;
+        *oss << endl << "v3 = v1 + v2 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v3 = createMember(domain);
         V_VpV(&*v3,*v1,*v2);
-        if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
-        oss <<endl<<li<<is<< "v4 = 0.5*op*v3 ...\n" ;
+        *oss << endl << "v4 = 0.5*op*v3 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<RangeScalar> > v4 = createMember(range);
         apply( op, NONCONJ_ELE, *v3, &*v4, r_half );
-        if(dump_all()) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
-        oss <<endl<<li<<is<< "v5 = op*v1 ...\n" ;
+        *oss << endl << "v5 = op*v1 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<RangeScalar> > v5 = createMember(range);
         apply( op, NONCONJ_ELE, *v1, &*v5 );
-        if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
-        oss <<endl<<li<<is<< "v5 = 0.5*op*v2 + 0.5*v5 ...\n" ;
+        *oss << endl << "v5 = 0.5*op*v2 + 0.5*v5 ...\n" ;
         apply( op, NONCONJ_ELE, *v2, &*v5, r_half, r_half );
-        if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
         const Scalar
           sum_v4 = sum(*v4),
@@ -350,81 +353,84 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
           ,"sum(v5)", sum_v5
           ,"linear_properties_error_tol()", linear_properties_error_tol()
           ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-          ,&oss,li+is
+          ,&*oss
           );
         if(!result) these_results = false;
         
       }
     }
     else {
-      oss <<endl<<li<<is<< "Forward operator not supported, skipping check!\n";
+      *oss << endl << "Forward operator not supported, skipping check!\n";
     }
-      
-    printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
+
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
 
   }
   else {
-    if(out) *out <<endl<<li<< "this->check_linear_properties()==false: Skipping the check of the linear properties of the forward operator!\n";
+    if(out.get()) *out << endl << "this->check_linear_properties()==false: Skipping the check of the linear properties of the forward operator!\n";
   }
 
   if( check_linear_properties() && check_adjoint() ) {
 
-    if(out)	*out <<endl<<li<< "(this->check_linear_properties()&&this->check_adjoint())==true: Checking the linear properties of the adjoint operator ... ";
+    if(out.get())	*out << endl << "(this->check_linear_properties()&&this->check_adjoint())==true: Checking the linear properties of the adjoint operator ... ";
 
-    std::ostringstream oss;
-    if(out) oss.copyfmt(*out);
+    std::ostringstream ossStore;
+    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
-    oss <<endl<<li<<is<< "op.applyTransposeSupports(CONJ_ELE) == true ? ";
+    *oss << endl << "op.applyTransposeSupports(CONJ_ELE) == true ? ";
     result = op.applyTransposeSupports(CONJ_ELE);
     if(!result) these_results = false;
-    oss << passfail(result) << endl;
+    *oss << passfail(result) << endl;
 
     if(result) {
     
-      oss
-        <<endl<<li<<is<< "Checking that the adjoint operator is truly linear:\n"
-        <<endl<<li<<is<< "  0.5*op'*(v1 + v2) == 0.5*op'*v1 + 0.5*op'*v2"
-        <<endl<<li<<is<< "           \\_____/         \\____/"
-        <<endl<<li<<is<< "              v3             v5"
-        <<endl<<li<<is<< "  \\_______________/    \\_____________________/"
-        <<endl<<li<<is<< "         v4                      v5"
-        <<endl<<li<<is<< ""
-        <<endl<<li<<is<< "           sum(v4) == sum(v5)"
+      *oss
+        << endl << "Checking that the adjoint operator is truly linear:\n"
+        << endl << "  0.5*op'*(v1 + v2) == 0.5*op'*v1 + 0.5*op'*v2"
+        << endl << "           \\_____/         \\____/"
+        << endl << "              v3             v5"
+        << endl << "  \\_______________/    \\_____________________/"
+        << endl << "         v4                      v5"
+        << endl << ""
+        << endl << "           sum(v4) == sum(v5)"
         << endl;
       
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
         
-        oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
+        *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+
+        OSTab tab(oss);
         
-        oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
+        *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
         Teuchos::RefCountPtr<VectorBase<RangeScalar> > v1 = createMember(range);
         rRand->randomize(&*v1);
-        if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
-        oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
+        *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
         Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
         rRand->randomize(&*v2);
-        if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
-        oss <<endl<<li<<is<< "v3 = v1 + v2 ...\n" ;
+        *oss << endl << "v3 = v1 + v2 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
         V_VpV(&*v3,*v1,*v2);
-        if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
-        oss <<endl<<li<<is<< "v4 = 0.5*op'*v3 ...\n" ;
+        *oss << endl << "v4 = 0.5*op'*v3 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(domain);
         applyTranspose( op, CONJ_ELE, *v3, &*v4, d_half );
-        if(dump_all()) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
-        oss <<endl<<li<<is<< "v5 = op'*v1 ...\n" ;
+        *oss << endl << "v5 = op'*v1 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v5 = createMember(domain);
         applyTranspose( op, CONJ_ELE, *v1, &*v5 );
-        if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
-        oss <<endl<<li<<is<< "v5 = 0.5*op'*v2 + 0.5*v5 ...\n" ;
+        *oss << endl << "v5 = 0.5*op'*v2 + 0.5*v5 ...\n" ;
         applyTranspose( op, CONJ_ELE, *v2, &*v5, d_half, d_half );
-        if(dump_all()) oss <<endl<<li<<is<< "v5 =\n" << describe(*v5,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
         const Scalar
           sum_v4 = sum(*v4),
@@ -435,70 +441,73 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
           ,"sum(v5)", sum_v5
           ,"linear_properties_error_tol()", linear_properties_error_tol()
           ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-          ,&oss,li+is
+          ,&*oss
           );
         if(!result) these_results = false;
         
       }
     }
     else {
-      oss <<endl<<li<<is<< "Adjoint operator not supported, skipping check!\n";
+      *oss << endl << "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
 
   }
   else {
-    if(out) *out <<endl<<li<< "(this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!\n";
+    if(out.get()) *out << endl << "(this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!\n";
   }
   
   if( check_adjoint() ) {
 
-    if(out)	*out <<endl<<li<< "this->check_adjoint()==true: Checking the agreement of the adjoint and forward operators ... ";
+    if(out.get())	*out << endl << "this->check_adjoint()==true: Checking the agreement of the adjoint and forward operators ... ";
 
-    std::ostringstream oss;
-    if(out) oss.copyfmt(*out);
+    std::ostringstream ossStore;
+    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
     
-    oss <<endl<<li<<is<< "op.applyTransposeSupports(CONJ_ELE) == true ? ";
+    *oss << endl << "op.applyTransposeSupports(CONJ_ELE) == true ? ";
     result = op.applyTransposeSupports(CONJ_ELE);
     if(!result) these_results = false;
-    oss << passfail(result) << endl;
+    *oss << passfail(result) << endl;
 
     if(result) {
     
-      oss
-        <<endl<<li<<is<< "Checking that the adjoint agrees with the non-adjoint operator as:\n"
-        <<endl<<li<<is<< "  <0.5*op'*v2,v1> == <v2,0.5*op*v1>"
-        <<endl<<li<<is<< "   \\________/            \\_______/"
-        <<endl<<li<<is<< "       v4                   v3"
-        <<endl<<li<<is<< ""
-        <<endl<<li<<is<< "         <v4,v1>  == <v2,v3>"
+      *oss
+        << endl << "Checking that the adjoint agrees with the non-adjoint operator as:\n"
+        << endl << "  <0.5*op'*v2,v1> == <v2,0.5*op*v1>"
+        << endl << "   \\________/            \\_______/"
+        << endl << "       v4                   v3"
+        << endl << ""
+        << endl << "         <v4,v1>  == <v2,v3>"
         << endl;
     
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
       
-        oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
+        *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+
+        OSTab tab(oss);
       
-        oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
+        *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
         dRand->randomize(&*v1);
-        if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << describe(*v1,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
       
-        oss <<endl<<li<<is<< "v2 = randomize(-1,+1); ...\n" ;
+        *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
         Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
         rRand->randomize(&*v2);
-        if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << describe(*v2,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
       
-        oss <<endl<<li<<is<< "v3 = 0.5*op*v1 ...\n" ;
+        *oss << endl << "v3 = 0.5*op*v1 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
         apply( op, NONCONJ_ELE, *v1, &*v3, r_half );
-        if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << describe(*v3,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
       
-        oss <<endl<<li<<is<< "v4 = 0.5*op'*v2 ...\n" ;
+        *oss << endl << "v4 = 0.5*op'*v2 ...\n" ;
         Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(domain);
         applyTranspose( op, CONJ_ELE, *v2, &*v4, d_half );
-        if(dump_all()) oss <<endl<<li<<is<< "v4 =\n" << describe(*v4,verbLevel,li,is);
+        if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
       
         const Scalar
           prod1 = domain->scalarProd(*v4,*v1),
@@ -509,48 +518,50 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
           ,"<v2,v3>", prod2
           ,"adjoint_error_tol()", adjoint_error_tol()
           ,"adjoint_warning_tol()", adjoint_warning_tol()
-          ,&oss,li+is
+          ,&*oss
           );
         if(!result) these_results = false;
 
       }
     }
     else {
-      oss <<endl<<li<<is<< "Adjoint operator not supported, skipping check!\n";
+      *oss << endl << "Adjoint operator not supported, skipping check!\n";
     }
 
-    printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
 
   }
   else {
-    if(out)	*out <<endl<<li<< "this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!\n";
+    if(out.get())	*out << endl << "this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!\n";
   }
 
   if( check_for_symmetry() ) {
 
-    if(out) *out <<endl<<li<< "this->check_for_symmetry()==true: Performing check of symmetry ... ";
+    if(out.get()) *out << endl << "this->check_for_symmetry()==true: Performing check of symmetry ... ";
 
-    std::ostringstream oss;
-    if(out) oss.copyfmt(*out);
+
+    std::ostringstream ossStore;
+    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
     SymmetricLinearOpTester<RangeScalar,DomainScalar>::checkSymmetry(
-      op,&*dRand,oss,li,is,num_random_vectors(),verbLevel,dump_all(),symmetry_error_tol(),symmetry_warning_tol(),&these_results
+      op,&*dRand,*oss,num_random_vectors(),verbLevel,dump_all(),symmetry_error_tol(),symmetry_warning_tol(),&these_results
       );
     
-    printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
     
   }
   else {
-    if(out) *out <<endl<<li<< "this->check_for_symmetry()==false: Skipping check of symmetry ...\n";
+    if(out.get()) *out << endl << "this->check_for_symmetry()==false: Skipping check of symmetry ...\n";
   }
   
-  if(out) {
+  if(out.get()) {
     if(success)
-      *out <<endl<<li<<"Congratulations, this LinearOpBase object seems to check out!\n";
+      *out << endl <<"Congratulations, this LinearOpBase object seems to check out!\n";
     else
-      *out <<endl<<li<<"Oh no, at least one of the tests performed with this LinearOpBase object failed (see above failures)!\n";
-    *out <<endl<<li<< "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(...)\n";
+      *out << endl <<"Oh no, at least one of the tests performed with this LinearOpBase object failed (see above failures)!\n";
+    *out << endl << "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::check(...)\n";
   }
 
   return success;
@@ -560,12 +571,10 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
 template<class RangeScalar, class DomainScalar>
 bool LinearOpTester<RangeScalar,DomainScalar>::check(
   const LinearOpBase<RangeScalar,DomainScalar>  &op
-  ,std::ostream                                 *out
-  ,const std::string                            &leadingIndent
-  ,const std::string                            &indentSpacer
+  ,Teuchos::FancyOStream                        *out
   ) const
 {
-  return check(op,NULL,NULL,out,leadingIndent,indentSpacer);
+  return check(op,NULL,NULL,out);
 }
 
 template<class RangeScalar, class DomainScalar>
@@ -573,32 +582,32 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
   const LinearOpBase<RangeScalar,DomainScalar>  &op1
   ,const LinearOpBase<RangeScalar,DomainScalar> &op2
   ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
-  ,std::ostream                                 *out
-  ,const std::string                            &leadingIndent
-  ,const std::string                            &indentSpacer
+  ,Teuchos::FancyOStream                        *out_arg
   ) const
 {
 
   using std::endl;
   using Teuchos::arrayArg;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<RangeScalar>  RST;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
   const RangeScalar  r_half = RangeScalar(0.5)*RST::one();
-  const std::string &li = leadingIndent, &is = indentSpacer;
+  Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
-  if(out) {
+  if(out.get()) {
     *out
-      <<endl<<li<< "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(op1,op2,...) ...\n";
+      << endl << "*** Entering LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(op1,op2,...) ...\n";
     if(show_all_tests())
-      *out <<endl<<li<< "describe op1:\n" << Teuchos::describe(op1,verbLevel,li,is);
+      *out << endl << "describe op1:\n" << Teuchos::describe(op1,verbLevel);
     else
-      *out <<endl<<li<< "describe op1: " << op1.description() << endl;
+      *out << endl << "describe op1: " << op1.description() << endl;
     if(show_all_tests())
-      *out <<endl<<li<< "describe op2:\n" << Teuchos::describe(op2,verbLevel,li,is);
+      *out << endl << "describe op2:\n" << Teuchos::describe(op2,verbLevel);
     else
-      *out <<endl<<li<< "describe op2: " << op2.description() << endl;
+      *out << endl << "describe op2: " << op2.description() << endl;
   }
 
   Teuchos::RefCountPtr< MultiVectorRandomizerBase<DomainScalar> > dRand;
@@ -608,68 +617,72 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
   Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >  range  = op1.range();
   Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> > domain = op1.domain();
 
-  if(out) *out <<endl<<li<< "Checking that range and domain spaces are compatible ... ";
+  if(out.get()) *out << endl << "Checking that range and domain spaces are compatible ... ";
 
   if(1) {
 
-    std::ostringstream oss;
-    if(out) oss.copyfmt(*out);
+    std::ostringstream ossStore;
+    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
-    oss <<endl<<li<<is<< "op1.domain()->isCompatible(*op2.domain()) ? ";
+    *oss << endl << "op1.domain()->isCompatible(*op2.domain()) ? ";
     result = op1.domain()->isCompatible(*op2.domain());
     if(!result) these_results = false;
-    oss << passfail(result) << endl;
+    *oss << passfail(result) << endl;
     
-    oss <<endl<<li<<is<< "op1.range()->isCompatible(*op2.range()) ? ";
+    *oss << endl << "op1.range()->isCompatible(*op2.range()) ? ";
     result = op1.range()->isCompatible(*op2.range());
     if(!result) these_results = false;
-    oss << passfail(result) << endl;
+    *oss << passfail(result) << endl;
 
-    printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
 
   }
 
   if(!success) {
-    if(out) *out <<endl<<li<< "Skipping further checks since operators are not compatible!\n";
+    if(out.get()) *out << endl << "Skipping further checks since operators are not compatible!\n";
     return success;
   }
 
-  if(out) *out <<endl<<li<< "Checking that op1 == op2 ... ";
+  if(out.get()) *out << endl << "Checking that op1 == op2 ... ";
 
   if(1) {
 
-    std::ostringstream oss;
-    if(out) oss.copyfmt(*out);
+    std::ostringstream ossStore;
+    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
-    oss
-      <<endl<<li<<is<< "Checking that op1 and op2 produce the same results:\n"
-      <<endl<<li<<is<< "  0.5*op1*v1 == 0.5*op2*v1"
-      <<endl<<li<<is<< "  \\________/    \\________/"
-      <<endl<<li<<is<< "      v2            v3"
-      <<endl<<li<<is<< ""
-      <<endl<<li<<is<< "   |sum(v2)| == |sum(v3)|"
+    *oss
+      << endl << "Checking that op1 and op2 produce the same results:\n"
+      << endl << "  0.5*op1*v1 == 0.5*op2*v1"
+      << endl << "  \\________/    \\________/"
+      << endl << "      v2            v3"
+      << endl << ""
+      << endl << "   |sum(v2)| == |sum(v3)|"
       << endl;
 
     for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
       
-      oss <<endl<<li<<is<< "Random vector tests = " << rand_vec_i << endl;
+      *oss << endl << "Random vector tests = " << rand_vec_i << endl;
+
+      OSTab tab(oss);
       
-      if(dump_all()) oss <<endl<<li<<is<< "v1 = randomize(-1,+1); ...\n" ;
+      if(dump_all()) *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
       Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
       dRand->randomize(&*v1);
-      if(dump_all()) oss <<endl<<li<<is<< "v1 =\n" << *v1;
+      if(dump_all()) *oss << endl << "v1 =\n" << *v1;
       
-      if(dump_all()) oss <<endl<<li<<is<< "v2 = 0.5*op1*v1 ...\n" ;
+      if(dump_all()) *oss << endl << "v2 = 0.5*op1*v1 ...\n" ;
       Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
       apply( op1, NONCONJ_ELE, *v1, &*v2, r_half );
-      if(dump_all()) oss <<endl<<li<<is<< "v2 =\n" << *v2;
+      if(dump_all()) *oss << endl << "v2 =\n" << *v2;
       
-      if(dump_all()) oss <<endl<<li<<is<< "v3 = 0.5*op2*v1 ...\n" ;
+      if(dump_all()) *oss << endl << "v3 = 0.5*op2*v1 ...\n" ;
       Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
       apply( op2, NONCONJ_ELE, *v1, &*v3, r_half );
-      if(dump_all()) oss <<endl<<li<<is<< "v3 =\n" << *v3;
+      if(dump_all()) *oss << endl << "v3 =\n" << *v3;
       
       const Scalar
         sum_v2 = sum(*v2),
@@ -680,23 +693,22 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
         ,"sum(v3)", sum_v3
         ,"linear_properties_error_tol()", linear_properties_error_tol()
         ,"linear_properties_warning_tol()", linear_properties_warning_tol()
-        ,&oss,li+is
+        ,&*oss
         );
       if(!result) these_results = false;
       
     }
 
-    printTestResults(these_results,oss.str(),show_all_tests(),&success,out);
+    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
 
   }
-
   
-  if(out) {
+  if(out.get()) {
     if(success)
-      *out <<endl<<li<<"Congratulations, these two LinearOpBase objects seem to be the same!\n";
+      *out << endl <<"Congratulations, these two LinearOpBase objects seem to be the same!\n";
     else
-      *out <<endl<<li<<"Oh no, these two LinearOpBase objects seem to be different (see above failures)!\n";
-    *out <<endl<<li<< "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(...)\n";
+      *out << endl <<"Oh no, these two LinearOpBase objects seem to be different (see above failures)!\n";
+    *out << endl << "*** Leaving LinearOpTester<"<<RST::name()<<","<<DST::name()<<">::compare(...)\n";
   }
 
   return success;
@@ -707,12 +719,10 @@ template<class RangeScalar, class DomainScalar>
 bool LinearOpTester<RangeScalar,DomainScalar>::compare(
   const LinearOpBase<RangeScalar,DomainScalar>  &op1
   ,const LinearOpBase<RangeScalar,DomainScalar> &op2
-  ,std::ostream                                 *out
-  ,const std::string                            &leadingIndent
-  ,const std::string                            &indentSpacer
+  ,Teuchos::FancyOStream                        *out
   ) const
 {
-  return compare(op1,op2,NULL,out,leadingIndent,indentSpacer);
+  return compare(op1,op2,NULL,out);
 }
 
 } // namespace Thyra

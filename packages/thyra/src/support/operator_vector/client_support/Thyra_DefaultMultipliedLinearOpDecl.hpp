@@ -200,11 +200,9 @@ public:
    *
    * ToDo: Finish documentation!
    */
-  std::ostream& describe(
-    std::ostream                         &out
+  void describe(
+    Teuchos::FancyOStream                &out
     ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
     ) const;
 
   //@}

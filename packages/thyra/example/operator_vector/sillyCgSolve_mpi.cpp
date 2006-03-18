@@ -33,6 +33,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_oblackholestream.hpp"
 
@@ -51,6 +52,7 @@ bool runCgSolveExample(
   ,const int                                                     numProc
   ,const int                                                     localDim
   ,const Scalar                                                  diagScale
+  ,const bool                                                    showAllTests
   ,const bool                                                    verbose
   ,const bool                                                    dumpAll
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType   tolerance
@@ -59,15 +61,21 @@ bool runCgSolveExample(
 {
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
   bool success = true;
   bool result;
+/*
   // Setup the output stream (do output only on root process!)
   Teuchos::oblackholestream black_hole_out;
   std::ostream &out = ( procRank == 0 ? std::cout : black_hole_out );
+*/
+  // ToDo: Get VerboseObjectBase to automatically setup for parallel
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
   if(verbose)
-    out << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
+    *out << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
   Teuchos::Time timer("");
   timer.start(true);
   //
@@ -80,8 +88,9 @@ bool runCgSolveExample(
   //       [                 -1   a*2 ]
   //
   // (A.1) Create the tridiagonal matrix operator
-  if(verbose) out << "\nConstructing tridiagonal matrix A of local dimension = " << localDim
-                        << " and diagonal multiplier = " << diagScale << " ...\n";
+  if(verbose)
+    *out << "\nConstructing tridiagonal matrix A of local dimension = " << localDim
+         << " and diagonal multiplier = " << diagScale << " ...\n";
   const Thyra::Index
     lowerDim = ( procRank == 0         ? localDim - 1 : localDim ),
     upperDim = ( procRank == numProc-1 ? localDim - 1 : localDim );
@@ -95,9 +104,9 @@ bool runCgSolveExample(
   lower[kl] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one;     // Last local row
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A = rcp(new MPITridiagLinearOp<Scalar>(mpiComm,localDim,&lower[0],&diag[0],&upper[0]));
-  if(verbose) out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
+  if(verbose) *out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
   // (A.2) Testing the linear operator constructed linear operator
-  if(verbose) out << "\nTesting the constructed linear operator A ...\n";
+  if(verbose) *out << "\nTesting the constructed linear operator A ...\n";
   Thyra::LinearOpTester<Scalar> linearOpTester;
   linearOpTester.dump_all(dumpAll);
   linearOpTester.set_all_error_tol(tolerance);
@@ -105,7 +114,8 @@ bool runCgSolveExample(
   linearOpTester.show_all_tests(true);
   linearOpTester.check_adjoint(false);
   linearOpTester.check_for_symmetry(true);
-  result = linearOpTester.check(*A,verbose?&out:0);
+  linearOpTester.show_all_tests(showAllTests);
+  result = linearOpTester.check(*A,OSTab(out).getOStream().get());
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
   RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());
@@ -117,7 +127,8 @@ bool runCgSolveExample(
   //
   // (B) Solve the linear system with the silly CG solver
   //
-  result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,verbose?&out:0);
+  if(verbose) *out << "\nSolving the linear system with sillyCgSolve(...) ...\n";
+  result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).getOStream().get());
   if(!result) success = false;
   //
   // (C) Check that the linear system was solved to the specified tolerance
@@ -129,12 +140,17 @@ bool runCgSolveExample(
   const ScalarMag rel_err = r_nrm/b_nrm, relaxTol = ScalarMag(10.0)*tolerance;
   result = rel_err <= relaxTol;
   if(!result) success = false;
-  if(verbose)
-    out
-      << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")
-      <<"10.0*tolerance = "<<relaxTol<<": "<<(result?"passed":"failed")<<std::endl;
+  if(verbose) {
+    *out << "\nChecking the residual ourselves ...\n";
+    if(1){
+      OSTab tab(out);
+      *out
+        << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")
+        <<"10.0*tolerance = "<<relaxTol<<": "<<(result?"passed":"failed")<<std::endl;
+    }
+  }
   timer.stop();
-  if(verbose) out << "\nTotal time = " << timer.totalElapsedTime() << " sec\n";
+  if(verbose) *out << "\nTotal time = " << timer.totalElapsedTime() << " sec\n";
 
   return success;
 } // end runCgSolveExample()
@@ -151,11 +167,13 @@ int main(int argc, char *argv[])
   bool verbose = true;
   bool result;
 
-
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   const int procRank = Teuchos::GlobalMPISession::getRank();
   const int numProc = Teuchos::GlobalMPISession::getNProc();
   MPI_Comm mpiComm = MPI_COMM_WORLD;
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {
 
@@ -166,6 +184,7 @@ int main(int argc, char *argv[])
     int    localDim    = 500;
     double diagScale   = 1.001;
     double tolerance   = 1e-4;
+    bool   showAllTests = false;
     int    maxNumIters = 300;
     bool   dumpAll     = false;
 
@@ -174,6 +193,7 @@ int main(int argc, char *argv[])
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
     clp.setOption( "local-dim", &localDim, "Local dimension of the linear system." );
     clp.setOption( "diag-scale", &diagScale, "Scaling of the diagonal to improve conditioning." );
+    clp.setOption( "show-all-tests", "show-summary-only", &showAllTests, "Show all LinearOpTester tests or not" );
     clp.setOption( "tol", &tolerance, "Relative tolerance for linear system solve." );
     clp.setOption( "max-num-iters", &maxNumIters, "Maximum of CG iterations." );
     clp.setOption( "dump-all", "no-dump-all", &dumpAll, "Determines if vectors are printed or not." );
@@ -184,21 +204,21 @@ int main(int argc, char *argv[])
     TEST_FOR_EXCEPTION( localDim < 2, std::logic_error, "Error, localDim=" << localDim << " < 2 is not allowed!" );
 
     // Run using float
-    result = runCgSolveExample<float>(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<float>(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using double
-    result = runCgSolveExample<double>(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<double>(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
     // Run using std::complex<float>
-    result = runCgSolveExample<std::complex<float> >(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<float> >(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using std::complex<double>
-    result = runCgSolveExample<std::complex<double> >(mpiComm,procRank,numProc,localDim,diagScale,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<double> >(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
 #endif		
@@ -214,8 +234,8 @@ int main(int argc, char *argv[])
   }
 
   if( verbose && procRank==0 ) {
-    if(success) std::cout << "\nAll of the tests seem to have run successfully!\n";
-    else        std::cout << "\nOh no! at least one of the tests failed!\n";	
+    if(success) *out << "\nAll of the tests seem to have run successfully!\n";
+    else        *out << "\nOh no! at least one of the tests failed!\n";	
   }
   
   return success ? 0 : 1;

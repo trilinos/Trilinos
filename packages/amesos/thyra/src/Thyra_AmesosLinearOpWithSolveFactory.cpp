@@ -78,19 +78,28 @@ const std::string epetraFwdOp_str = "epetraFwdOp";
 
 namespace Thyra {
 
+
+// Parameter names for Paramter List
+
+const std::string AmesosLinearOpWithSolveFactory::SolverType_name = "Solver Type";
+
+const std::string AmesosLinearOpWithSolveFactory::RefactorizationPolicy_name = "Refactorization Policy";
+
+const std::string AmesosLinearOpWithSolveFactory::ThrowOnPreconditionerInput_name = "Throw on Preconditioner Input";
+
+const std::string AmesosLinearOpWithSolveFactory::AMESOS_name = "AMESOS";
+
 // Constructors/initializers/accessors
 
 AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
   const Amesos::ESolverType                            solverType
   ,const Amesos::ERefactorizationPolicy                refactorizationPolicy
-  ,const Teuchos::RefCountPtr<Teuchos::ParameterList>  &paramList
   ,const bool                                          throwOnPrecInput
     )
   :solverType_(solverType)
   ,refactorizationPolicy_(refactorizationPolicy)
   ,throwOnPrecInput_(throwOnPrecInput)
   ,epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
-  ,paramList_(paramList)
 {}
 
 // Overridden from LinearOpWithSolveFactoryBase
@@ -239,7 +248,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
           );
     }
     // Set the parameters
-    if(paramList_.get()) amesosSolver->SetParameters(*paramList_);
+    if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist("AMESOS"));
     // Do the initial factorization
     amesosSolver->SymbolicFactorization();
     amesosSolver->NumericFactorization();
@@ -261,7 +270,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     epetraLP->SetOperator(const_cast<Epetra_Operator*>(&*epetraFwdOp));
     Teuchos::get_extra_data< Teuchos::RefCountPtr<const Epetra_Operator> >(epetraLP,epetraFwdOp_str) = epetraFwdOp;
     // Reset the parameters
-    if(paramList_.get()) amesosSolver->SetParameters(*paramList_);
+    if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist(AMESOS_name));
     // Repivot if asked
     if(refactorizationPolicy()==Amesos::REPIVOT_ON_REFACTORIZATION)
       amesosSolver->SymbolicFactorization();
@@ -326,9 +335,27 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
 void AmesosLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParameters(*this->getValidParameters(),1);
-  TEST_FOR_EXCEPT(true); // ToDo: Read the parameters!
+  paramList->validateParameters(*this->getValidParameters(),0); // Only validate this level for now!
   paramList_ = paramList;
+  solverType(
+    Amesos::solverTypeNameToEnumMap.get<Amesos::ESolverType>(
+      paramList_->get(
+        SolverType_name
+        ,Amesos::toString(solverType())
+        )
+      ,paramList_->name()+SolverType_name
+      )
+    );
+  refactorizationPolicy(
+    Amesos::refactorizationPolicyNameToEnumMap.get<Amesos::ERefactorizationPolicy>(
+      paramList_->get(
+        RefactorizationPolicy_name
+        ,Amesos::toString(refactorizationPolicy())
+        )
+      ,paramList_->name()+RefactorizationPolicy_name
+      )
+    );
+  throwOnPrecInput(paramList_->get(ThrowOnPreconditionerInput_name,throwOnPrecInput()));
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -376,7 +403,17 @@ AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::AmesosLinearOpWithSolveFactory"));
-    TEST_FOR_EXCEPT(true);
+    validParamList->set(
+      SolverType_name
+#ifdef HAVE_AMESOS_KLU
+      ,Amesos::toString(Amesos::KLU)
+#else
+      ,Amesos::toString(Amesos::LAPACK)
+#endif
+      );
+    validParamList->set(RefactorizationPolicy_name,Amesos::toString(Amesos::REPIVOT_ON_REFACTORIZATION));
+    validParamList->set(ThrowOnPreconditionerInput_name,bool(true));
+    validParamList->sublist(AMESOS_name);
   }
   return validParamList;
 }

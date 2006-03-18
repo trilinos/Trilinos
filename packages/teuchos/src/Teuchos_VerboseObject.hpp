@@ -86,7 +86,7 @@ public:
     );
 
   /** \brief Override the output stream for <tt>*this</tt> object */
-  virtual VerboseObjectBase& setOStream(const RefCountPtr<FancyOStream> &oStream);
+  virtual const VerboseObjectBase& setOStream(const RefCountPtr<FancyOStream> &oStream) const;
 
   /** \brief Set line prefix name for this object */
   virtual VerboseObjectBase& setLinePrefix(const std::string &linePrefix);
@@ -129,8 +129,8 @@ public:
   
 private:
 
-  RefCountPtr<FancyOStream>   thisOStream_;
-  std::string                 thisLinePrefix_;
+  mutable RefCountPtr<FancyOStream>   thisOStream_;
+  std::string                         thisLinePrefix_;
 
   static RefCountPtr<FancyOStream>& privateDefaultOStream();
 
@@ -149,6 +149,12 @@ private:
  *
  * The output stream type is <tt>FancyOStream</tt> which allows for automated
  * indentation (using the <tt>OSTab</tt> class) and has other useful features.
+ *
+ * Note that <tt>setOStream()</tt> and <tt>setVerbLevel()</tt> are actually
+ * decalared as <tt>const</tt> functions.  This is to allow a client to
+ * temporarily change the stream and verbosity level.  To do this saftely, use
+ * the class <tt>VerboseObjectTempState</tt> which will revert the output
+ * state after it is destroyed.
  */
 template<class ObjectType>
 class VerboseObject : virtual public VerboseObjectBase {
@@ -187,7 +193,7 @@ public:
     );
 
   /** \brief Override the verbosity level for <tt>*this</tt> object */
-  virtual VerboseObject& setVerbLevel(const EVerbosityLevel verbLevel);
+  virtual const VerboseObject& setVerbLevel(const EVerbosityLevel verbLevel) const;
 
   //@}
 
@@ -200,11 +206,10 @@ public:
   //@}
   
 private:
-
-  EVerbosityLevel         thisVerbLevel_;
+  
+  mutable EVerbosityLevel   thisVerbLevel_;
   
   static EVerbosityLevel&  privateDefaultVerbLevel();
-
 
 };
 
@@ -216,9 +221,9 @@ class VerboseObjectTempState {
 public:
   /** \brief . */
   VerboseObjectTempState(
-    const RefCountPtr<VerboseObject<ObjectType> >    &verboseObject
-    ,const RefCountPtr<FancyOStream>                 &newOStream
-    ,const EVerbosityLevel                           newVerbLevel
+    const RefCountPtr<const VerboseObject<ObjectType> >    &verboseObject
+    ,const RefCountPtr<FancyOStream>                       &newOStream
+    ,const EVerbosityLevel                                 newVerbLevel
     )
     :verboseObject_(verboseObject)
     ,oldOStream_(verboseObject->getOStream())
@@ -234,9 +239,9 @@ public:
       verboseObject_->setVerbLevel(oldVerbLevel_);
     }
 private:
-  RefCountPtr<VerboseObject<ObjectType> >    verboseObject_;
-  RefCountPtr<FancyOStream>                  oldOStream_;
-  EVerbosityLevel                            oldVerbLevel_;
+  RefCountPtr<const VerboseObject<ObjectType> >    verboseObject_;
+  RefCountPtr<FancyOStream>                        oldOStream_;
+  EVerbosityLevel                                  oldVerbLevel_;
   // Not defined and not to be called
   VerboseObjectTempState();
   VerboseObjectTempState(const VerboseObjectTempState&);
@@ -287,8 +292,8 @@ void VerboseObject<ObjectType>::initializeVerboseObject(
 }
 
 template<class ObjectType>
-VerboseObject<ObjectType>&
-VerboseObject<ObjectType>::setVerbLevel(const EVerbosityLevel verbLevel)
+const VerboseObject<ObjectType>&
+VerboseObject<ObjectType>::setVerbLevel(const EVerbosityLevel verbLevel) const
 {
   thisVerbLevel_ = verbLevel;
   return *this;

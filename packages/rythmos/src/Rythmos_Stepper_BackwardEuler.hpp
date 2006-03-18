@@ -73,11 +73,9 @@ class BackwardEulerStepper : public Stepper<Scalar>
     std::string description() const;
 
     /** \brief . */
-    std::ostream& describe(
-      std::ostream                &out
+    void describe(
+      Teuchos::FancyOStream                &out
       ,const Teuchos::EVerbosityLevel      verbLevel
-      ,const std::string          leadingIndent
-      ,const std::string          indentSpacer
       ) const;
 
 
@@ -179,32 +177,30 @@ std::string BackwardEulerStepper<Scalar>::description() const
 }
 
 template<class Scalar>
-std::ostream& BackwardEulerStepper<Scalar>::describe(
-      std::ostream                &out
+void BackwardEulerStepper<Scalar>::describe(
+      Teuchos::FancyOStream                &out
       ,const Teuchos::EVerbosityLevel      verbLevel
-      ,const std::string          leadingIndent
-      ,const std::string          indentSpacer
       ) const
 {
   if (verbLevel == Teuchos::VERB_EXTREME)
   {
-    out << description() << "::describe" << std::endl;
-    out << "model_ = " << std::endl;
-    out << model_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "solver_ = " << std::endl;
-    out << solver_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "x_ = " << std::endl;
-    out << x_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "scaled_x_old_ = " << std::endl;
-    out << scaled_x_old_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "f_ = " << std::endl;
-    out << f_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
-    out << "t_ = " << t_ << std::endl;
-    out << "t_old_ = " << t_old_ << std::endl;
+    out << description() << "::describe:";
+    out << "\nmodel_ = " << std::endl;
+    model_->describe(out,verbLevel);
+    out << "\nsolver_ = " << std::endl;
+    solver_->describe(out,verbLevel);
+    out << "\nx_ = " << std::endl;
+    x_->describe(out,verbLevel);
+    out << "\nscaled_x_old_ = " << std::endl;
+    scaled_x_old_->describe(out,verbLevel);
+    out << "\nf_ = " << std::endl;
+    f_->describe(out,verbLevel);
+    out << "\nt_ = " << t_;
+    out << "\nt_old_ = " << t_old_;
+    out << std::endl;
 //    out << "neModel_ = " << std::endl;
-//    out << neModel_->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+//    out << neModel_->describe(out,verbLevel) << std::endl;
   }
-  return(out);
 }
 
 } // namespace Rythmos

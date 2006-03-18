@@ -49,23 +49,27 @@ namespace Thyra {
 // Overridden from Teuchos::Describable
 
 template<class Scalar>
-std::ostream& VectorDefaultBase<Scalar>::describe(
-    std::ostream                         &out
+void VectorDefaultBase<Scalar>::describe(
+    Teuchos::FancyOStream                &out_arg
     ,const Teuchos::EVerbosityLevel      verbLevel
-    ,const std::string                   leadingIndent
-    ,const std::string                   indentSpacer
     ) const
 {
-  out << leadingIndent << indentSpacer << "type = \'" << this->description()
-      << "\', size = " << this->space()->dim() << "\n";
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  *out
+    << "type = \'" << this->description()
+    << "\', size = " << this->space()->dim() << "\n";
+  tab.incrTab();
   if(verbLevel >= Teuchos::VERB_HIGH) {
     RTOpPack::ConstSubVectorView<Scalar> sv;
     this->acquireDetachedView(Range1D(),&sv);
     for( Index i = 0; i < sv.subDim(); ++i )
-      out << leadingIndent << indentSpacer << indentSpacer << i << ":" << sv(i) << std::endl;
+      *out << i << ":" << sv(i) << std::endl;
     this->releaseDetachedView(&sv);
   }
-  return out;
 }
 
 // Overridden from LinearOpBase
