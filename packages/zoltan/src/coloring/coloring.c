@@ -364,13 +364,15 @@ static int D1coloring(
         ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-#if 0  
-    printf("After reordering: nvtx:%d Proc:%d\n", nvtx, zz->Proc);
+#if 0
+    printf("After reordering: nvtx:%d lastlno=%d Proc:%d\n", nvtx, lastlno, zz->Proc);
     for (i=0; i < nvtx; i++) {
-        int j;
-        printf("%d ::", i);
-        for (j=xadj[i]; j < xadj[i+1]; j++)
-            printf("%d ", adj[j]);
+        printf("%d (%d) :: ", Zoltan_G2LHash_L2G(hash, i), i);
+        for (j=xadj[i]; j < xadj[i+1]; j++) {
+            if (j == xbadj[i])
+                printf(" | ");
+            printf("%d (%d) ", Zoltan_G2LHash_L2G(hash, adj[j]), adj[j]);
+        }
         printf("\n");
     }
 #endif
@@ -623,11 +625,14 @@ static int D2coloring(
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
 #if 0
-    printf("After reordering: nvtx:%d Proc:%d\n", nvtx, zz->Proc);
+    printf("After reordering: nvtx:%d lastlno=%d Proc:%d\n", nvtx, lastlno, zz->Proc);
     for (i=0; i < nvtx; i++) {
-        printf("%d :: ", i);
-        for (j=xadj[i]; j < xadj[i+1]; j++)
-            printf("%d ", adj[j]);
+        printf("%d (%d) :: ", Zoltan_G2LHash_L2G(hash, i), i);
+        for (j=xadj[i]; j < xadj[i+1]; j++) {
+            if (j == xbadj[i])
+                printf(" | ");
+            printf("%d (%d) ", Zoltan_G2LHash_L2G(hash, adj[j]), adj[j]);
+        }
         printf("\n");
     }
 #endif
@@ -1692,7 +1697,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
 
     for (i=0; i<zz->Num_Proc; ++i)
         if (i != zz->Proc)
-            srp[i] = rcrecbuf[i];
+            srp[i] = rcsendbuf[i];
         else
             srp[i] = conflicts;
 
@@ -1700,7 +1705,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     for (rreqcntC=p=0; p<zz->Num_Proc; ++p)
         if (p != zz->Proc) {
             rreqfromC[rreqcntC] = p;
-            MPI_Irecv(rcsendbuf[p], rcsendsize[p], MPI_INT, p, RECOLORTAG, zz->Communicator, &rreqsC[rreqcntC++]);
+            MPI_Irecv(rcrecbuf[p], rcrecsize[p], MPI_INT, p, RECOLORTAG, zz->Communicator, &rreqsC[rreqcntC++]);
         }
 
     /*** Detect conflicts and mark vertices to be recolored ***/
@@ -1748,14 +1753,14 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     for (p = 0; p < zz->Num_Proc; p++) 
         if (p != zz->Proc) {
             *srp[p]++ = -1;
-            if ((srp[p] - rcrecbuf[p]) > rcrecsize[p])
+            if ((srp[p] - rcsendbuf[p]) > rcsendsize[p])
                 ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Insufficient memory allocation, use larger sized buffers.");
-            MPI_Isend(rcrecbuf[p], srp[p] - rcrecbuf[p] , MPI_INT, p, RECOLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
-            for (q = rcrecbuf[p]; *q!=-1; ++q) {
+            MPI_Isend(rcsendbuf[p], srp[p] - rcsendbuf[p] , MPI_INT, p, RECOLORTAG, zz->Communicator, &sreqsC[sreqcntC++]);
+            for (q = rcsendbuf[p]; *q!=-1; ++q) {
                 int u = Zoltan_G2LHash_G2L(hash, *q);
                 vmark[u] = 0;
             }
-            *q = 0;
+            /* *q = 0; UVC: BUGBUG CHECK */
         }
 
     /*** Build the local vertices to be recolored ***/                    
@@ -1763,8 +1768,8 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     for (p = 0; p < zz->Num_Proc; p++)
         if (p != zz->Proc) {
             j = 0;
-            while (rcsendbuf[p][j] != -1) {
-                int gu = rcsendbuf[p][j++], u;
+            while (rcrecbuf[p][j] != -1) {
+                int gu = rcrecbuf[p][j++], u;
                 u = Zoltan_G2LHash_G2L(hash, gu);
                 if (!vmark[u]) {
                     *srp[zz->Proc]++ = gu;
@@ -1778,7 +1783,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
         *q = Zoltan_G2LHash_G2L(hash, *q);
         vmark[*q] = 0;
     }
-    *q = 0;
+    /* *q = 0; UVC: this is OK to keep but it is useless; therefore it is commented out*/
     MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all recolor info to be sent */
     
  End:
