@@ -22,7 +22,7 @@
 
 # NOX Epetra tests
 (FRAMEWORK,INSTALL) {
-    DIRS = #epetra/1Dfem,
+    DIRS = epetra/1Dfem,
            epetra/NOX_Group,
            epetra/NOX_NewTest,
            epetra/NOX_Vector,
