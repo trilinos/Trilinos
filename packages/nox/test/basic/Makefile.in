@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(NOXPrintUtils_SOURCES) $(NOXSharedObjectTemplate_SOURCES)
+SOURCES = $(NOXFiniteValue_SOURCES) $(NOXPrintUtils_SOURCES) $(NOXSharedObjectTemplate_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 @BUILD_NOX_TESTS_TRUE@noinst_PROGRAMS = NOXPrintUtils$(EXEEXT) \
-@BUILD_NOX_TESTS_TRUE@	NOXSharedObjectTemplate$(EXEEXT)
+@BUILD_NOX_TESTS_TRUE@	NOXSharedObjectTemplate$(EXEEXT) \
+@BUILD_NOX_TESTS_TRUE@	NOXFiniteValue$(EXEEXT)
 subdir = test/basic
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -100,12 +101,14 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_NOXPrintUtils_OBJECTS = NOXPrintUtils.$(OBJEXT)
-NOXPrintUtils_OBJECTS = $(am_NOXPrintUtils_OBJECTS)
+am_NOXFiniteValue_OBJECTS = NOXFiniteValue.$(OBJEXT)
+NOXFiniteValue_OBJECTS = $(am_NOXFiniteValue_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(NOX_TEST_LIBS))
+am_NOXPrintUtils_OBJECTS = NOXPrintUtils.$(OBJEXT)
+NOXPrintUtils_OBJECTS = $(am_NOXPrintUtils_OBJECTS)
 am_NOXSharedObjectTemplate_OBJECTS =  \
 	NOXSharedObjectTemplate.$(OBJEXT)
 NOXSharedObjectTemplate_OBJECTS =  \
@@ -113,15 +116,17 @@ NOXSharedObjectTemplate_OBJECTS =  \
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NOXPrintUtils.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/NOXFiniteValue.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOXPrintUtils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOXSharedObjectTemplate.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(NOXPrintUtils_SOURCES) $(NOXSharedObjectTemplate_SOURCES)
-DIST_SOURCES = $(NOXPrintUtils_SOURCES) \
+SOURCES = $(NOXFiniteValue_SOURCES) $(NOXPrintUtils_SOURCES) \
+	$(NOXSharedObjectTemplate_SOURCES)
+DIST_SOURCES = $(NOXFiniteValue_SOURCES) $(NOXPrintUtils_SOURCES) \
 	$(NOXSharedObjectTemplate_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -349,6 +354,11 @@ NOXSharedObjectTemplate_DEPENDENCIES = \
                      $(top_builddir)/src/libnox.a
 
 NOXSharedObjectTemplate_LDADD = $(TEST_LIBS)
+NOXFiniteValue_SOURCES = $(srcdir)/NOXFiniteValue.C
+NOXFiniteValue_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a
+
+NOXFiniteValue_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -385,6 +395,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+NOXFiniteValue$(EXEEXT): $(NOXFiniteValue_OBJECTS) $(NOXFiniteValue_DEPENDENCIES) 
+	@rm -f NOXFiniteValue$(EXEEXT)
+	$(CXXLINK) $(NOXFiniteValue_LDFLAGS) $(NOXFiniteValue_OBJECTS) $(NOXFiniteValue_LDADD) $(LIBS)
 NOXPrintUtils$(EXEEXT): $(NOXPrintUtils_OBJECTS) $(NOXPrintUtils_DEPENDENCIES) 
 	@rm -f NOXPrintUtils$(EXEEXT)
 	$(CXXLINK) $(NOXPrintUtils_LDFLAGS) $(NOXPrintUtils_OBJECTS) $(NOXPrintUtils_LDADD) $(LIBS)
@@ -398,6 +411,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOXFiniteValue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOXPrintUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOXSharedObjectTemplate.Po@am__quote@
 
@@ -416,6 +430,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+NOXFiniteValue.o: $(srcdir)/NOXFiniteValue.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOXFiniteValue.o -MD -MP -MF "$(DEPDIR)/NOXFiniteValue.Tpo" -c -o NOXFiniteValue.o `test -f '$(srcdir)/NOXFiniteValue.C' || echo '$(srcdir)/'`$(srcdir)/NOXFiniteValue.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOXFiniteValue.Tpo" "$(DEPDIR)/NOXFiniteValue.Po"; else rm -f "$(DEPDIR)/NOXFiniteValue.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOXFiniteValue.C' object='NOXFiniteValue.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOXFiniteValue.Po' tmpdepfile='$(DEPDIR)/NOXFiniteValue.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOXFiniteValue.o `test -f '$(srcdir)/NOXFiniteValue.C' || echo '$(srcdir)/'`$(srcdir)/NOXFiniteValue.C
+
+NOXFiniteValue.obj: $(srcdir)/NOXFiniteValue.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOXFiniteValue.obj -MD -MP -MF "$(DEPDIR)/NOXFiniteValue.Tpo" -c -o NOXFiniteValue.obj `if test -f '$(srcdir)/NOXFiniteValue.C'; then $(CYGPATH_W) '$(srcdir)/NOXFiniteValue.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOXFiniteValue.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOXFiniteValue.Tpo" "$(DEPDIR)/NOXFiniteValue.Po"; else rm -f "$(DEPDIR)/NOXFiniteValue.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOXFiniteValue.C' object='NOXFiniteValue.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOXFiniteValue.Po' tmpdepfile='$(DEPDIR)/NOXFiniteValue.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOXFiniteValue.obj `if test -f '$(srcdir)/NOXFiniteValue.C'; then $(CYGPATH_W) '$(srcdir)/NOXFiniteValue.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOXFiniteValue.C'; fi`
 
 NOXPrintUtils.o: $(srcdir)/NOXPrintUtils.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOXPrintUtils.o -MD -MP -MF "$(DEPDIR)/NOXPrintUtils.Tpo" -c -o NOXPrintUtils.o `test -f '$(srcdir)/NOXPrintUtils.C' || echo '$(srcdir)/'`$(srcdir)/NOXPrintUtils.C; \

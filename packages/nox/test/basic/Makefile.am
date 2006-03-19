@@ -42,7 +42,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 EXEEXT = .exe
 
 if BUILD_NOX_TESTS
-noinst_PROGRAMS = NOXPrintUtils NOXSharedObjectTemplate
+noinst_PROGRAMS = NOXPrintUtils NOXSharedObjectTemplate NOXFiniteValue
 endif
 
 NOXPrintUtils_SOURCES = $(srcdir)/NOXPrintUtils.C
@@ -58,3 +58,10 @@ NOXSharedObjectTemplate_DEPENDENCIES = \
                      $(top_builddir)/src/libnox.a
 
 NOXSharedObjectTemplate_LDADD = $(TEST_LIBS)
+
+NOXFiniteValue_SOURCES = $(srcdir)/NOXFiniteValue.C
+
+NOXFiniteValue_DEPENDENCIES = \
+                     $(top_builddir)/src/libnox.a
+
+NOXFiniteValue_LDADD = $(TEST_LIBS)
