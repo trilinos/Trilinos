@@ -51,7 +51,6 @@ FiniteDifference::FiniteDifference(
     double beta_,
     double alpha_) :
   utils(printingParams),
-  map(x.getEpetraVector().Map()),
   interface(i),
   x_perturb(x.getEpetraVector()),
   fo(x.getEpetraVector()),
@@ -76,7 +75,6 @@ FiniteDifference(
     const Teuchos::RefCountPtr<const Epetra_Vector>& beta_,
     double alpha_) :
   utils(printingParams),
-  map(x.getEpetraVector().Map()),
   interface(i),
   x_perturb(x.getEpetraVector()),
   fo(x.getEpetraVector()),
@@ -102,7 +100,6 @@ FiniteDifference::FiniteDifference(
     double beta_,
     double alpha_) :
   utils(printingParams),
-  map(x.getEpetraVector().Map()),
   graph(userGraph),
   interface(i),
   x_perturb(x.getEpetraVector()),
@@ -130,7 +127,6 @@ FiniteDifference::FiniteDifference(
     const Teuchos::RefCountPtr<const Epetra_Vector>& beta_,
     double alpha_) :
   utils(printingParams),
-  map(x.getEpetraVector().Map()),
   graph(userGraph),
   interface(i),
   x_perturb(x.getEpetraVector()),
@@ -352,6 +348,8 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     throw "NOX Error";
   }
 
+  const Epetra_BlockMap& map = fo.Map();
+
   // We need the Epetra_CrsMatrix inside the FiniteDifference object
   // for the correct insertion commands.
   Epetra_CrsMatrix& jac = *testMatrix->jacobian;
@@ -454,6 +452,8 @@ bool FiniteDifference::computePreconditioner(const Epetra_Vector& x,
 Teuchos::RefCountPtr<Epetra_CrsMatrix> FiniteDifference::
 createGraphAndJacobian(Interface::Required& i, const Epetra_Vector& x)
 {
+
+  const Epetra_BlockMap& map = fo.Map();
 
   double eta = 0.0;  // Value to perturb the solution vector
 

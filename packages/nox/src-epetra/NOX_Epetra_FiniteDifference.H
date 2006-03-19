@@ -265,9 +265,6 @@ protected:
   //! Printing Utilities object
   const NOX::Utils utils;
 
-  //! Map that contains element distribution data
-  const Epetra_BlockMap& map;
-
   //! Pointer to the Jacobian graph.
   Teuchos::RefCountPtr<Epetra_CrsGraph> graph;
 

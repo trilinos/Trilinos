@@ -107,7 +107,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
   mappedColorVect(new Epetra_Vector(rawGraph_->ColMap())),
   xCol_perturb(new Epetra_Vector(rawGraph_->ColMap())),
   columnMap(&(rawGraph_->ColMap())),
-  rowColImporter(new Epetra_Import(*columnMap, map))
+  rowColImporter(new Epetra_Import(*columnMap, fo.Map()))
 {
   label = "NOX::FiniteDifferenceColoring Jacobian";
 
@@ -145,6 +145,8 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
          << endl;
     throw "NOX Error";
   }
+
+  const Epetra_BlockMap& map = fo.Map();
 
   // Create a timer for performance
   Epetra_Time fillTimer(x.Comm());
