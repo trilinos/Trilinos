@@ -150,6 +150,11 @@ by MOERTEL::Manager::Mortar_Integrate().<br>
 After integration, the Manager instance supplies a variety of access and solution methods
 to the user, as e.g. full support interfaces to the solution packages Amesos, AztecOO and ML.<br>
 
+\subsection Examples Examples
+
+A simple serial example demonstrating usage of Moertel and its interfaces to
+other Trilinos packages is given in \ref TwoSquares.cpp .
+
 \subsection Documentation Documentation
 
 For more detailed documentation please browse the Moertel website and the
@@ -174,7 +179,7 @@ for large deformations", CMAME, Vol 193, pp. 4891-4913.
 Domain Decomposition", Springer Press.
 
 <li> Yang, B., Laursen, T.A., Meng, X. (2005): "Two dimensional mortar contact
-methods for larged deformation frictional sliding", IJNME, Vol. 62, pp. 1183-1225.
+methods for large deformation frictional sliding", IJNME, Vol. 62, pp. 1183-1225.
 </ul> 
 
 \subsection author Author and Acknowledgements

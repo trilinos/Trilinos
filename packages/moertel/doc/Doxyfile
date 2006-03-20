@@ -44,6 +44,7 @@ PROJECT_NAME           = Moertel
 
 INPUT                  = index.doc 
 INPUT                 += ../src 
+INPUT                 += ../example 
 
 FILE_PATTERNS          = *.H *.cpp *.tag
 
