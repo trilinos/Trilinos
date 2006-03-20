@@ -44,7 +44,7 @@
 
 # The following line helps the test harness recover from build errors.
 
-SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) $(HDF5_SOURCES) $(HDF5Converter_SOURCES) $(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
+SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) $(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -69,7 +69,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = Map$(EXEEXT) CrsMatrix$(EXEEXT) VbrMatrix$(EXEEXT) \
 	LinearProblem$(EXEEXT) Grid$(EXEEXT) Laplacian3D$(EXEEXT) \
-	AdvDiff2D$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2)
+	AdvDiff2D$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,8 +105,6 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Galeri_config.h
 CONFIG_CLEAN_FILES =
-@HAVE_GALERI_HDF5_TRUE@am__EXEEXT_1 = HDF5$(EXEEXT)
-@HAVE_GALERI_EPETRAEXT_TRUE@@HAVE_GALERI_HDF5_TRUE@am__EXEEXT_2 = HDF5Converter$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_AdvDiff2D_OBJECTS = AdvDiff2D-AdvDiff2D.$(OBJEXT)
 AdvDiff2D_OBJECTS = $(am_AdvDiff2D_OBJECTS)
@@ -114,10 +112,6 @@ am_CrsMatrix_OBJECTS = CrsMatrix-CrsMatrix.$(OBJEXT)
 CrsMatrix_OBJECTS = $(am_CrsMatrix_OBJECTS)
 am_Grid_OBJECTS = Grid-Grid.$(OBJEXT)
 Grid_OBJECTS = $(am_Grid_OBJECTS)
-am_HDF5_OBJECTS = HDF5-HDF5.$(OBJEXT)
-HDF5_OBJECTS = $(am_HDF5_OBJECTS)
-am_HDF5Converter_OBJECTS = HDF5Converter-HDF5Converter.$(OBJEXT)
-HDF5Converter_OBJECTS = $(am_HDF5Converter_OBJECTS)
 am_Laplacian3D_OBJECTS = Laplacian3D-Laplacian3D.$(OBJEXT)
 Laplacian3D_OBJECTS = $(am_Laplacian3D_OBJECTS)
 am_LinearProblem_OBJECTS = LinearProblem-LinearProblem.$(OBJEXT)
@@ -131,8 +125,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/CrsMatrix-CrsMatrix.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Grid-Grid.Po ./$(DEPDIR)/HDF5-HDF5.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/HDF5Converter-HDF5Converter.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Grid-Grid.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Laplacian3D-Laplacian3D.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/LinearProblem-LinearProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Map-Map.Po \
@@ -143,13 +136,11 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) $(Grid_SOURCES) \
-	$(HDF5_SOURCES) $(HDF5Converter_SOURCES) \
 	$(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) \
 	$(VbrMatrix_SOURCES)
 DIST_SOURCES = $(AdvDiff2D_SOURCES) $(CrsMatrix_SOURCES) \
-	$(Grid_SOURCES) $(HDF5_SOURCES) $(HDF5Converter_SOURCES) \
-	$(Laplacian3D_SOURCES) $(LinearProblem_SOURCES) $(Map_SOURCES) \
-	$(VbrMatrix_SOURCES)
+	$(Grid_SOURCES) $(Laplacian3D_SOURCES) \
+	$(LinearProblem_SOURCES) $(Map_SOURCES) $(VbrMatrix_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -193,8 +184,6 @@ FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_GALERI_EPETRAEXT_FALSE = @HAVE_GALERI_EPETRAEXT_FALSE@
 HAVE_GALERI_EPETRAEXT_TRUE = @HAVE_GALERI_EPETRAEXT_TRUE@
-HAVE_GALERI_HDF5_FALSE = @HAVE_GALERI_HDF5_FALSE@
-HAVE_GALERI_HDF5_TRUE = @HAVE_GALERI_HDF5_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -297,8 +286,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_GALERI_EPETRAEXT_TRUE@@HAVE_GALERI_HDF5_TRUE@HDF5_EPETRAEXT_EXAMPLE = HDF5Converter
-@HAVE_GALERI_HDF5_TRUE@HDF5_EXAMPLE = HDF5
 Map_SOURCES = $(srcdir)/Map.cpp
 Map_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 Map_CXXFLAGS = $(GALERI_INCLUDES)
@@ -327,14 +314,6 @@ AdvDiff2D_SOURCES = $(srcdir)/AdvDiff2D.cpp
 AdvDiff2D_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 AdvDiff2D_CXXFLAGS = $(GALERI_INCLUDES)
 AdvDiff2D_LDADD = $(GALERI_LIBS)
-HDF5_SOURCES = $(srcdir)/HDF5.cpp
-HDF5_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-HDF5_CXXFLAGS = $(GALERI_INCLUDES)
-HDF5_LDADD = $(GALERI_LIBS)
-HDF5Converter_SOURCES = $(srcdir)/HDF5Converter.cpp
-HDF5Converter_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-HDF5Converter_CXXFLAGS = $(GALERI_INCLUDES)
-HDF5Converter_LDADD = $(GALERI_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -380,12 +359,6 @@ CrsMatrix$(EXEEXT): $(CrsMatrix_OBJECTS) $(CrsMatrix_DEPENDENCIES)
 Grid$(EXEEXT): $(Grid_OBJECTS) $(Grid_DEPENDENCIES) 
 	@rm -f Grid$(EXEEXT)
 	$(CXXLINK) $(Grid_LDFLAGS) $(Grid_OBJECTS) $(Grid_LDADD) $(LIBS)
-HDF5$(EXEEXT): $(HDF5_OBJECTS) $(HDF5_DEPENDENCIES) 
-	@rm -f HDF5$(EXEEXT)
-	$(CXXLINK) $(HDF5_LDFLAGS) $(HDF5_OBJECTS) $(HDF5_LDADD) $(LIBS)
-HDF5Converter$(EXEEXT): $(HDF5Converter_OBJECTS) $(HDF5Converter_DEPENDENCIES) 
-	@rm -f HDF5Converter$(EXEEXT)
-	$(CXXLINK) $(HDF5Converter_LDFLAGS) $(HDF5Converter_OBJECTS) $(HDF5Converter_LDADD) $(LIBS)
 Laplacian3D$(EXEEXT): $(Laplacian3D_OBJECTS) $(Laplacian3D_DEPENDENCIES) 
 	@rm -f Laplacian3D$(EXEEXT)
 	$(CXXLINK) $(Laplacian3D_LDFLAGS) $(Laplacian3D_OBJECTS) $(Laplacian3D_LDADD) $(LIBS)
@@ -408,8 +381,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdvDiff2D-AdvDiff2D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CrsMatrix-CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Grid-Grid.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDF5-HDF5.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDF5Converter-HDF5Converter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Laplacian3D-Laplacian3D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearProblem-LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Map-Map.Po@am__quote@
@@ -478,38 +449,6 @@ Grid-Grid.obj: $(srcdir)/Grid.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Grid-Grid.Po' tmpdepfile='$(DEPDIR)/Grid-Grid.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Grid_CXXFLAGS) $(CXXFLAGS) -c -o Grid-Grid.obj `if test -f '$(srcdir)/Grid.cpp'; then $(CYGPATH_W) '$(srcdir)/Grid.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Grid.cpp'; fi`
-
-HDF5-HDF5.o: $(srcdir)/HDF5.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_CXXFLAGS) $(CXXFLAGS) -MT HDF5-HDF5.o -MD -MP -MF "$(DEPDIR)/HDF5-HDF5.Tpo" -c -o HDF5-HDF5.o `test -f '$(srcdir)/HDF5.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5-HDF5.Tpo" "$(DEPDIR)/HDF5-HDF5.Po"; else rm -f "$(DEPDIR)/HDF5-HDF5.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5.cpp' object='HDF5-HDF5.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5-HDF5.Po' tmpdepfile='$(DEPDIR)/HDF5-HDF5.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_CXXFLAGS) $(CXXFLAGS) -c -o HDF5-HDF5.o `test -f '$(srcdir)/HDF5.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5.cpp
-
-HDF5-HDF5.obj: $(srcdir)/HDF5.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_CXXFLAGS) $(CXXFLAGS) -MT HDF5-HDF5.obj -MD -MP -MF "$(DEPDIR)/HDF5-HDF5.Tpo" -c -o HDF5-HDF5.obj `if test -f '$(srcdir)/HDF5.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5-HDF5.Tpo" "$(DEPDIR)/HDF5-HDF5.Po"; else rm -f "$(DEPDIR)/HDF5-HDF5.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5.cpp' object='HDF5-HDF5.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5-HDF5.Po' tmpdepfile='$(DEPDIR)/HDF5-HDF5.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5_CXXFLAGS) $(CXXFLAGS) -c -o HDF5-HDF5.obj `if test -f '$(srcdir)/HDF5.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5.cpp'; fi`
-
-HDF5Converter-HDF5Converter.o: $(srcdir)/HDF5Converter.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -MT HDF5Converter-HDF5Converter.o -MD -MP -MF "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" -c -o HDF5Converter-HDF5Converter.o `test -f '$(srcdir)/HDF5Converter.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5Converter.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" "$(DEPDIR)/HDF5Converter-HDF5Converter.Po"; else rm -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5Converter.cpp' object='HDF5Converter-HDF5Converter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5Converter-HDF5Converter.Po' tmpdepfile='$(DEPDIR)/HDF5Converter-HDF5Converter.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -c -o HDF5Converter-HDF5Converter.o `test -f '$(srcdir)/HDF5Converter.cpp' || echo '$(srcdir)/'`$(srcdir)/HDF5Converter.cpp
-
-HDF5Converter-HDF5Converter.obj: $(srcdir)/HDF5Converter.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -MT HDF5Converter-HDF5Converter.obj -MD -MP -MF "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" -c -o HDF5Converter-HDF5Converter.obj `if test -f '$(srcdir)/HDF5Converter.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5Converter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5Converter.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo" "$(DEPDIR)/HDF5Converter-HDF5Converter.Po"; else rm -f "$(DEPDIR)/HDF5Converter-HDF5Converter.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/HDF5Converter.cpp' object='HDF5Converter-HDF5Converter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HDF5Converter-HDF5Converter.Po' tmpdepfile='$(DEPDIR)/HDF5Converter-HDF5Converter.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(HDF5Converter_CXXFLAGS) $(CXXFLAGS) -c -o HDF5Converter-HDF5Converter.obj `if test -f '$(srcdir)/HDF5Converter.cpp'; then $(CYGPATH_W) '$(srcdir)/HDF5Converter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HDF5Converter.cpp'; fi`
 
 Laplacian3D-Laplacian3D.o: $(srcdir)/Laplacian3D.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Laplacian3D_CXXFLAGS) $(CXXFLAGS) -MT Laplacian3D-Laplacian3D.o -MD -MP -MF "$(DEPDIR)/Laplacian3D-Laplacian3D.Tpo" -c -o Laplacian3D-Laplacian3D.o `test -f '$(srcdir)/Laplacian3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Laplacian3D.cpp; \

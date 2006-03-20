@@ -41,7 +41,6 @@ CORE_H = $(srcdir)/Galeri_Version.h                    \
          $(srcdir)/Galeri_Exception.h                  \
 	 $(srcdir)/Galeri_Utils.h                      \
 	 $(srcdir)/Galeri_ReadHB.h                     \
-	 $(srcdir)/Galeri_HDF5.h                       \
 	 $(srcdir)/iohb.h                              \
 	 $(srcdir)/Maps/Galeri_Linear.h                \
 	 $(srcdir)/Maps/Galeri_Interlaced.h            \
@@ -98,7 +97,6 @@ CORE = $(srcdir)/Galeri_Maps.cpp        \
        $(srcdir)/Galeri_VbrMatrices.cpp \
        $(srcdir)/Galeri_Utils.cpp       \
        $(srcdir)/Galeri_ReadHB.cpp      \
-       $(srcdir)/Galeri_HDF5.cpp        \
        $(srcdir)/iohb.cpp
 
 AM_CPPFLAGS = -I$(srcdir)                      \
