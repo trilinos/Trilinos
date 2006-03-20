@@ -51,19 +51,23 @@ int main (int argc, char **argv)
 
   string MapFileName    = "not-set";
   string XFileName      = "not-set";
+  string BFileName      = "not-set";
   string MatrixFileName = "not-set";
   string HDF5FileName   = "myfile.f5";
   string MapHDF5Name    = "map";
   string XHDF5Name      = "X";
+  string BHDF5Name      = "B";
   string MatrixHDF5Name = "matrix";
 
   CLP.setOption("in-map",    &MapFileName,    "map file name");
   CLP.setOption("in-matrix", &MatrixFileName, "matrix file name");
-  CLP.setOption("in-vector", &XFileName,      "vector file name");
+  CLP.setOption("in-x",      &XFileName,      "x vector file name");
+  CLP.setOption("in-b",      &BFileName,      "b vector file name");
   CLP.setOption("output",    &HDF5FileName,   "name of HDF5 file");
   CLP.setOption("out-map",    &MapHDF5Name,    "map name in HDF5 file");
   CLP.setOption("out-matrix", &MatrixHDF5Name, "matrix name in HDF5 file");
-  CLP.setOption("out-vector", &XHDF5Name,      "vector name in HDF5 file");
+  CLP.setOption("out-x",      &XHDF5Name,      "x vector name in HDF5 file");
+  CLP.setOption("out-b",      &BHDF5Name,      "b vector name in HDF5 file");
 
   CLP.throwExceptions(false);
   CLP.parse(argc,argv);
@@ -71,6 +75,7 @@ int main (int argc, char **argv)
   Epetra_Map* Map = 0;
   Epetra_CrsMatrix* Matrix = 0;
   Epetra_MultiVector* X = 0;
+  Epetra_MultiVector* B = 0;
 
   if (MapFileName != "not-set")
   {
@@ -96,6 +101,14 @@ int main (int argc, char **argv)
     EpetraExt::MatrixMarketFileToMultiVector(XFileName.c_str(), *Map, X);
   }
 
+  if (BFileName != "not-set")
+  {
+    if (Comm.MyPID() == 0)
+      cout << "Reading vector from " << BFileName << endl;
+
+    EpetraExt::MatrixMarketFileToMultiVector(BFileName.c_str(), *Map, B);
+  }
+
   if (MatrixFileName != "not-set")
   {
     if (Comm.MyPID() == 0)
@@ -113,12 +126,19 @@ int main (int argc, char **argv)
   HDF5.Create(HDF5FileName);
 
   if (Map)
-    HDF5.Write("map-" + EpetraExt::toString(Comm.NumProc()), *Map);
+    HDF5.Write(MapHDF5Name + EpetraExt::toString(Comm.NumProc()), *Map);
   if (Matrix)
-    HDF5.Write("matrix", *Matrix);
+    HDF5.Write(MatrixHDF5Name, *Matrix);
   if (X)
-    HDF5.Write("X", *(*X)(0));
+    HDF5.Write(XHDF5Name, *X);
+  if (B)
+    HDF5.Write(BHDF5Name, *B);
   HDF5.Close();
+
+  if (Map) delete Map;
+  if (Matrix) delete Matrix;
+  if (X) delete X;
+  if (B) delete B;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
