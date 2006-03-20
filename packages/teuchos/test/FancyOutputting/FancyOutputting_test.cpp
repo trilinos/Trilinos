@@ -19,6 +19,26 @@ void someDumbFunction( std::ostream &out, const std::string &indentSpacer )
   // Note that this output will be indented correctly even through it knows nothing of FancyOStream
 }
 
+// This is a function who's interface was written before there was a
+// FancyOStream and therefore is written in terms of std::ostream.  However,
+// in this case the implementation has been modifed to use FancyOStream as
+// shown.
+void someLessDumbFunction( std::ostream &out_arg )
+{
+  using Teuchos::OSTab;
+  // Get a FancyOStream from out_arg or create a new one ...
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::getFancyOStream(Teuchos::rcp(&out_arg,false));
+  // Do our tab indent and our name.
+  OSTab tab(out,1,"LDUMBALGO");
+  *out << "\nEntering someLessDumbFunction(...)\n";
+  if(1) {
+    OSTab tab(out);
+    *out << std::endl << "I am less \"dumb\" code that knows about FancyOStream but my interface does not support it directly! ...\n";
+  }
+  *out << "\nLeaving someLessDumbFunction(...)\n";
+}
+
 // This is a typical numerical class that derives from VerboseObject and does
 // outputting.  Note that the use of the OSTab class requires initialization
 // using VerboseObject::getOSTab(...) which takes care of the hassles and is
@@ -67,7 +87,7 @@ public:
           // falls in this category.  The first thing I do is manually indent
           // the stream one tab and set a line prefix for the dumb code since
           // it may not do this itself.
-          OSTab tab = this->getOSTab(1,"DUMB_ALGO");
+          OSTab tab = this->getOSTab(1,"DUMBALGO");
           // Now a Pass in the updated FancyOStream object, which is properly
           // indented now, through the std::ostream interface.  I also pass in
           // the string that is being used for creating tabs.  The output from
@@ -75,6 +95,11 @@ public:
           // knowing it!
           someDumbFunction(*out,out->getTabIndentStr());
         }
+        // Here I am calling a less dumb piece of code who's interface does
+        // not support FancyOStream but the implementation does.  Note that
+        // this function also follows the convention of doing an initial
+        // indent.
+        someLessDumbFunction(*out);
       }
       if(out.get() && verbLevel!=Teuchos::VERB_NONE)
         *out << "\nLeaving AlgorithmA::doAlgorithm()\n";
