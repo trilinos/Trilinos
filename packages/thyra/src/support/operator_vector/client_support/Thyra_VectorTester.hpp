@@ -71,6 +71,8 @@ bool VectorTester<Scalar>::check(
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
+  OSTab tab(out,1,"THYRA");
+
   bool result, success = true;
 
   if(out.get()) *out <<endl<< "*** Entering Thyra::VectorTester<"<<ST::name()<<">::check(v,...) ...\n";
@@ -131,7 +133,7 @@ bool VectorTester<Scalar>::check(
   // ToDo: Test the rest of the specific VectorBase interface on v1
 
   if(out.get()) *out <<endl<< "C) Checking the MultiVectorBase interface of v ...\n";
-  result = multiVectorTester_.check(v,OSTab(out).getOStream().get());
+  result = multiVectorTester_.check(v,out.get());
   if(!result) success = false;
 
   if(out.get()) *out <<endl<< "*** Leaving Thyra::VectorTester<"<<ST::name()<<">::check(v,...) ...\n";

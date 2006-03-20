@@ -54,18 +54,39 @@ namespace Teuchos {
  * and set user-defined options.  This class can also work in a number of modes.
  * This processor can require that all options be recognized or not.
  *
-*/
+ * This class object will also setup the behavior of
+ * <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt> if
+ * <tt>this->addOutputSetupOptions()==true</tt>
+ *
+ */
 class CommandLineProcessor {
 public:
 
+	/** \name Public types */
+  //@{
+
+	/// Thrown if a parse exception occurs and  throwExceptions==true
+	class ParseError : public std::logic_error
+	{public: ParseError(const std::string& what_arg) : std::logic_error(what_arg) {}};
+
+	/// Thrown if --help was specified and throwExceptions==true
+	class HelpPrinted : public ParseError
+	{public: HelpPrinted(const std::string& what_arg) : ParseError(what_arg) {}};
+
+	/// Thrown if an unrecognized option was found and throwExceptions==true
+	class UnrecognizedOption : public ParseError
+	{public: UnrecognizedOption(const std::string& what_arg) : ParseError(what_arg) {}};
+
 	/** \enum EParseCommandLineReturn
-            \brief Return value for <tt>CommandLineProcessor::parse()</tt>.
+      \brief Return value for <tt>CommandLineProcessor::parse()</tt>.
 	 */
 	enum EParseCommandLineReturn {
 		PARSE_SUCCESSFUL              =  0 /*!< Parsing the command line was successful. */
 		,PARSE_HELP_PRINTED            =  1 /*!< The help statement was printed for the command line parser. */
 		,PARSE_UNRECOGNIZED_OPTION     = -1 /*!< The command line parser encountered an unrecognized option. */
 	};
+  
+  //@}
 
 	/** \name Constructors */
   //@{
@@ -78,11 +99,38 @@ public:
 	 * @param  recogniseAllOptions
 	 *               [in] If <tt>true</tt> then <tt>this->parse()</tt> with simply
 	 *               ignore options that it does not recognize.
+   * @param  addOutputSetupOptions
+   *               [in] If <tt>true</tt> then options will be automatically added
+   *               to setup <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt>.
 	 */
 	CommandLineProcessor(
-		bool    throwExceptions      = true
-		,bool   recogniseAllOptions  = true
+		bool    throwExceptions       = true
+		,bool   recogniseAllOptions   = true
+    ,bool   addOutputSetupOptions = true
 		);
+
+	//@}
+
+	/** \name Behavior modes */
+  //@{
+
+	/// Set if an exception is thrown, there is a parse error, or help is printed.
+	void throwExceptions( const bool & throwExceptions );
+	
+	/// Returns true if an exception is thrown, there is a parse error, or help is printed.
+	bool throwExceptions() const;
+
+	/// Set if all options must be recognized or not.
+	void recogniseAllOptions( const bool & recogniseAllOptions );
+
+	/// Returns true if all options are being recognized by the parser.
+	bool recogniseAllOptions() const;
+
+	/// Set if options will be automatically added to setup <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt>.
+	void addOutputSetupOptions( const bool &addOutputSetupOptions );
+
+	/// Returns true options will be automatically added to setup <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt>.
+	bool addOutputSetupOptions() const;
 
 	//@}
 
@@ -199,7 +247,7 @@ public:
 	
 	//@}
 
-	/** \name Parse methods */
+	/** \name Parse */
   //@{
 
 	/** \brief Parse a command line.
@@ -254,6 +302,12 @@ public:
 	 * execution resumes.  Note that the stream <tt>*errout</tt> is not
 	 * used for this output/input but instead <tt>std::cerr</tt> is
 	 * directly used.
+   *
+   * If <tt>Teuchos::VerboseObjectBase::getDefaultOStream().get()!=NULL</tt>
+   * and <tt>this->addOutputSetupOptions()</tt>, then any of the default setup
+   * options for <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt> that
+   * are set on the commandline will be set on
+   * <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt>.
 	 */
 	EParseCommandLineReturn  parse(
 		int             argc
@@ -263,7 +317,7 @@ public:
 
 	//@}
 
-	/** \name Miscellaneous method */
+	/** \name Miscellaneous */
   //@{
 
 	/** \brief Print the help message.
@@ -275,40 +329,6 @@ public:
 	 * user-supplied documentation about each option.
 	 */
  	void printHelpMessage( const char program_name[], std::ostream &out ) const;
-
-	//@}
-
-	/** \name Behavior modes */
-  //@{
-
-	/// Set if an exception is thrown, there is a parse error, or help is printed.
-	void throwExceptions ( const bool & throwExceptions ) { throwExceptions_ = throwExceptions; };
-	
-	/// Return true if an exception is thrown, there is a parse error, or help is printed.
-	const bool& throwExceptions() const { return throwExceptions_; };
-
-	/// Set if all options must be recognized or not.
-	void recogniseAllOptions ( const bool & recogniseAllOptions ) { recogniseAllOptions_ = recogniseAllOptions; };
-
-	/// Return true if all options are being recognized by the parser.
-	const bool& recogniseAllOptions() const { return recogniseAllOptions_; };
-
-	//@}
-
-	/** \name Exception classes */
-  //@{
-
-	/// Thrown if a parse exception occurs and  throwExceptions==true
-	class ParseError : public std::logic_error
-	{public: ParseError(const std::string& what_arg) : std::logic_error(what_arg) {}};
-
-	/// Thrown if --help was specified and throwExceptions==true
-	class HelpPrinted : public ParseError
-	{public: HelpPrinted(const std::string& what_arg) : ParseError(what_arg) {}};
-
-	/// Thrown if an unrecognized option was found and throwExceptions==true
-	class UnrecognizedOption : public ParseError
-	{public: UnrecognizedOption(const std::string& what_arg) : ParseError(what_arg) {}};
 
 	//@}
 
@@ -396,13 +416,32 @@ private:
 
 	bool 				                     throwExceptions_;
 	bool				                     recogniseAllOptions_;
+	bool				                     addOutputSetupOptions_;
   std::string                      doc_string_;
 	options_list_t                   options_list_;
 	options_documentation_list_t     options_documentation_list_;
 	enum_opt_data_list_t             enum_opt_data_list_;
 
+  bool  output_all_front_matter_;
+  bool  output_show_line_prefix_;
+  bool  output_show_tab_count_;
+  bool  output_show_proc_rank_;
+  int   output_to_root_rank_only_;
+
+  bool  added_extra_output_setup_options_;
+  bool  in_add_extra_output_setup_options_;
+
+  static const bool  output_all_front_matter_default_;
+  static const bool  output_show_line_prefix_default_;
+  static const bool  output_show_tab_count_default_;
+  static const bool  output_show_proc_rank_default_;
+  static const int   output_to_root_rank_only_default_;
+
 	// /////////////////////////////////
 	// Private member functions
+
+  // Set the extra output setup options
+  void add_extra_output_setup_options() const;
 
 	// Set an integer enumeration option
 	void setEnumOption(
@@ -467,6 +506,32 @@ private:
 
 // /////////////////////////
 // Inline members
+
+// Behavior modes
+
+inline
+void CommandLineProcessor::throwExceptions( const bool & throwExceptions )
+{ throwExceptions_ = throwExceptions; }
+
+inline
+bool CommandLineProcessor::throwExceptions() const
+{ return throwExceptions_; }
+
+inline
+void CommandLineProcessor::recogniseAllOptions( const bool & recogniseAllOptions )
+{ recogniseAllOptions_ = recogniseAllOptions; }
+
+inline
+bool CommandLineProcessor::recogniseAllOptions() const
+{ return recogniseAllOptions_; }
+
+inline
+void CommandLineProcessor::addOutputSetupOptions( const bool &addOutputSetupOptions )
+{ addOutputSetupOptions_ = addOutputSetupOptions; }
+
+inline
+bool CommandLineProcessor::addOutputSetupOptions() const
+{ return addOutputSetupOptions_; }
 
 template <class EType>
 inline

@@ -30,11 +30,9 @@
 // Teuchos_CommandLineProcessor.cpp
 
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_TestForException.hpp"
-
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
 
 namespace {
 
@@ -58,12 +56,27 @@ std::string add_quotes( const std::string& str )
 
 namespace Teuchos {
 
+const bool  CommandLineProcessor::output_all_front_matter_default_(false);
+const bool  CommandLineProcessor::output_show_line_prefix_default_(false);
+const bool  CommandLineProcessor::output_show_tab_count_default_(false);
+const bool  CommandLineProcessor::output_show_proc_rank_default_(false);
+const int   CommandLineProcessor::output_to_root_rank_only_default_(0);
+
 CommandLineProcessor::CommandLineProcessor(
 	bool   throwExceptions
 	,bool  recogniseAllOptions
+  ,bool  addOutputSetupOptions
 	)
 	:throwExceptions_(throwExceptions)
 	,recogniseAllOptions_(recogniseAllOptions)
+  ,addOutputSetupOptions_(addOutputSetupOptions)
+  ,output_all_front_matter_(output_all_front_matter_default_)
+  ,output_show_line_prefix_(output_show_line_prefix_default_)
+  ,output_show_tab_count_(output_show_tab_count_default_)
+  ,output_show_proc_rank_(output_show_proc_rank_default_)
+  ,output_to_root_rank_only_(output_to_root_rank_only_default_)
+  ,added_extra_output_setup_options_(false)
+  ,in_add_extra_output_setup_options_(false)
 {}
 
 // Set up options
@@ -80,6 +93,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
+  add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_true)]
 		= opt_val_val_t(OPT_BOOL_TRUE,option_val);
@@ -95,6 +109,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
+  add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_name)]
 		= opt_val_val_t(OPT_INT,option_val);
@@ -108,6 +123,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
+  add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_name)]
 		= opt_val_val_t(OPT_DOUBLE,option_val);
@@ -121,6 +137,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
+  add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_name)]
 		= opt_val_val_t(OPT_STRING,option_val);
@@ -137,22 +154,19 @@ CommandLineProcessor::parse(
 	,std::ostream   *errout
 	) const
 {
+  add_extra_output_setup_options();
 	std::string        opt_name;
 	std::string        opt_val_str;
 	const std::string  help_opt = "help";
 	const std::string  pause_opt = "pause-for-debugging";
-#ifdef HAVE_MPI
-	int procRank = -1;
-#endif
+	int procRank = GlobalMPISession::getRank();
 	for( int i = 1; i < argc; ++i ) {
 		bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
 		if( !gov_return ) {
 			if(recogniseAllOptions()) {
-#ifdef HAVE_MPI
-			if (procRank == 0) 
-#endif
-				print_bad_opt(i,argv,errout);
-				return PARSE_UNRECOGNIZED_OPTION;
+        if(procRank == 0) 
+          print_bad_opt(i,argv,errout);
+        return PARSE_UNRECOGNIZED_OPTION;
 			}
 			else {
 				continue;
@@ -163,15 +177,12 @@ CommandLineProcessor::parse(
 			return PARSE_HELP_PRINTED;
 		}
 		if( opt_name == pause_opt ) {
-#ifdef HAVE_MPI
-			if(procRank < 0 ) MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 			if(procRank == 0) {
-#endif
 				std::cerr << "\nType 0 and press enter to continue : ";
 				int dummy_int = 0;
 				std::cin >> dummy_int;
-#ifdef HAVE_MPI
 			}
+#ifdef HAVE_MPI
 			MPI_Barrier(MPI_COMM_WORLD);
 #endif
 			continue;
@@ -179,10 +190,8 @@ CommandLineProcessor::parse(
 		// Lookup the option (we had better find it!)
 		options_list_t::const_iterator  itr = options_list_.find(opt_name);
 		if( itr == options_list_.end() ) {
-#ifdef HAVE_MPI
 			if(procRank == 0)
-#endif
- 			print_bad_opt(i,argv,errout);
+        print_bad_opt(i,argv,errout);
 			if( recogniseAllOptions() )
 				return PARSE_UNRECOGNIZED_OPTION;
 			else
@@ -215,145 +224,194 @@ CommandLineProcessor::parse(
 				TEST_FOR_EXCEPT(true); // Local programming error only
 		}
 	}
+  // Set the options of a default stream exists and if we are asked to
+  RefCountPtr<FancyOStream>
+    defaultOut = VerboseObjectBase::getDefaultOStream();
+  if( defaultOut.get() && addOutputSetupOptions_ ) {
+    if( output_all_front_matter_ != output_all_front_matter_default_ )
+      defaultOut->setShowAllFrontMatter(output_all_front_matter_);
+    if( output_show_line_prefix_ != output_show_line_prefix_default_ )
+      defaultOut->setShowLinePrefix(output_show_line_prefix_);
+    if( output_show_tab_count_ != output_show_tab_count_default_ )
+      defaultOut->setShowTabCount(output_show_tab_count_);
+    if( output_show_proc_rank_ != output_show_proc_rank_default_ )
+      defaultOut->setShowProcRank(output_show_proc_rank_);
+    if( output_to_root_rank_only_ != output_to_root_rank_only_default_ )
+      defaultOut->setOutputToRootOnly(output_to_root_rank_only_);
+  }
 	return PARSE_SUCCESSFUL;
 }
 
 void CommandLineProcessor::printHelpMessage( const char program_name[], std::ostream &out ) const
 {
-#ifdef HAVE_MPI
-	int procRank = 0;
-	int mpiInitialized;
-	MPI_Initialized(&mpiInitialized);
-	if(mpiInitialized) MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+  add_extra_output_setup_options();
+	int procRank = GlobalMPISession::getRank();
 	if (procRank == 0) {
-#endif
-	using std::setw;
-	using std::endl;
-
-	const int opt_type_w = 8;
-	const char spc_chars[] = "  ";
-
-	// Get the maximum length of an option name
-	int opt_name_w = 19; // For the 'pause-for-debugging' option
-	options_documentation_list_t::const_iterator itr;
-	for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
-		opt_name_w = my_max(opt_name_w,itr->opt_name.length());
-		if( itr->opt_type )
-			opt_name_w = my_max(opt_name_w,itr->opt_name_false.length());
-	}
-	opt_name_w += 2;
-
-	// Print the help message
-	out
-		<< "Usage: " << program_name << " [options]\n"
-		<< spc_chars << "options:\n"
-		<< spc_chars
-		<< "--"
+    using std::setw;
+    using std::endl;
+    
+    const int opt_type_w = 8;
+    const char spc_chars[] = "  ";
+    
+    // Get the maximum length of an option name
+    int opt_name_w = 19; // For the 'pause-for-debugging' option
+    options_documentation_list_t::const_iterator itr;
+    for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
+      opt_name_w = my_max(opt_name_w,itr->opt_name.length());
+      if( itr->opt_type )
+        opt_name_w = my_max(opt_name_w,itr->opt_name_false.length());
+    }
+    opt_name_w += 2;
+    
+    // Print the help message
+    out
+      << "Usage: " << program_name << " [options]\n"
+      << spc_chars << "options:\n"
+      << spc_chars
+      << "--"
 #ifdef HAVE_STD_IOS_BASE_FMTFLAGS
-		<< std::left << setw(opt_name_w) << "help"
-		<< std::left << setw(opt_type_w) << " "
+      << std::left << setw(opt_name_w) << "help"
+      << std::left << setw(opt_type_w) << " "
 #else
-	        << std::setiosflags(std::ios::left) << setw(opt_name_w) << "help"
-	        << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
+      << std::setiosflags(std::ios::left) << setw(opt_name_w) << "help"
+      << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
 #endif
-		<< "Prints this help message"
-		<< endl
-		<< spc_chars
-		<< "--"
+      << "Prints this help message"
+      << endl
+      << spc_chars
+      << "--"
 #ifdef HAVE_STD_IOS_BASE_FMTFLAGS
-		<< std::left << setw(opt_name_w) << "pause-for-debugging"
-		<< std::left << setw(opt_type_w) << " "
+      << std::left << setw(opt_name_w) << "pause-for-debugging"
+      << std::left << setw(opt_type_w) << " "
 #else
-	        << std::setiosflags(std::ios::left) << setw(opt_name_w) << "pause-for-debugging"
-	        << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
+      << std::setiosflags(std::ios::left) << setw(opt_name_w) << "pause-for-debugging"
+      << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
 #endif
-		<< "Pauses for user input to allow attaching a debugger"
-		<< endl;
-	for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
-		// print top line with option name, type and short documentation string
-		out
-			<< spc_chars
-			<< "--"
+      << "Pauses for user input to allow attaching a debugger"
+      << endl;
+    for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
+      // print top line with option name, type and short documentation string
+      out
+        << spc_chars
+        << "--"
 #ifdef HAVE_STD_IOS_BASE_FMTFLAGS
-			<< std::left << setw(opt_name_w) << itr->opt_name
-			<< std::left << setw(opt_type_w) << opt_type_str(itr->opt_type)
+        << std::left << setw(opt_name_w) << itr->opt_name
+        << std::left << setw(opt_type_w) << opt_type_str(itr->opt_type)
 #else
-			<< std::setiosflags(std::ios::left) << setw(opt_name_w) << itr->opt_name
-			<< std::setiosflags(std::ios::left) << setw(opt_type_w) << opt_type_str(itr->opt_type)
+        << std::setiosflags(std::ios::left) << setw(opt_name_w) << itr->opt_name
+        << std::setiosflags(std::ios::left) << setw(opt_type_w) << opt_type_str(itr->opt_type)
 #endif
-			<< ( itr->documentation.length() ? itr->documentation.c_str() : "No documentation" )
-			<< endl;
-		// If an enumeration option then the next line is the value options
-		if( itr->opt_type == OPT_ENUM_INT ) {
-			out
-				<< spc_chars
-				<< "  "
-				<< setw(opt_name_w) << ""
-				<< setw(opt_type_w) << "";
-			print_enum_opt_names( any_cast<int>(itr->default_val), out );
-			out
-				<< endl;
-		}
-		// Now print the line that contains the default values
-		if( itr->opt_type == OPT_BOOL_TRUE ) {
-			out
-				<< spc_chars
-				<< "--"
-				<< setw(opt_name_w) << itr->opt_name_false;
-		}
-		else {
-			out
-				<< spc_chars
-				<< "  "
-				<< setw(opt_name_w) << " ";
-		}
-		out
-			<< setw(opt_type_w) << " "
-			<< "(default: ";
-		switch( itr->opt_type ) {
-			case OPT_BOOL_TRUE:
-				out << "--" << ( (*(any_cast<bool*>(itr->default_val))) ? itr->opt_name : itr->opt_name_false );
-				break;
-			case OPT_INT:
-			case OPT_DOUBLE:
-			case OPT_STRING:
-			case OPT_ENUM_INT:
-				out << "--" << itr->opt_name;
-				break;
-			default:
-				TEST_FOR_EXCEPT(true); // Local programming error only
-		}
-		switch( itr->opt_type ) {
-			case OPT_BOOL_TRUE:
-				break;
-			case OPT_INT:
-				out << "=" << (*(any_cast<int*>(itr->default_val)));
-				break;
-			case OPT_DOUBLE:
-				out <<  "=" << (*(any_cast<double*>(itr->default_val)));
-				break;
-			case OPT_STRING:
-				out <<  "=" << add_quotes(*(any_cast<std::string*>(itr->default_val)));
-				break;
-			case OPT_ENUM_INT:
-				out <<  "=" << add_quotes(enum_opt_default_val_name(itr->opt_name,any_cast<int>(itr->default_val),&out));
-				break;
-			default:
-				TEST_FOR_EXCEPT(true); // Local programming error only
-		}
-		out << ")\n";
+        << ( itr->documentation.length() ? itr->documentation.c_str() : "No documentation" )
+        << endl;
+      // If an enumeration option then the next line is the value options
+      if( itr->opt_type == OPT_ENUM_INT ) {
+        out
+          << spc_chars
+          << "  "
+          << setw(opt_name_w) << ""
+          << setw(opt_type_w) << "";
+        print_enum_opt_names( any_cast<int>(itr->default_val), out );
+        out
+          << endl;
+      }
+      // Now print the line that contains the default values
+      if( itr->opt_type == OPT_BOOL_TRUE ) {
+        out
+          << spc_chars
+          << "--"
+          << setw(opt_name_w) << itr->opt_name_false;
+      }
+      else {
+        out
+          << spc_chars
+          << "  "
+          << setw(opt_name_w) << " ";
+      }
+      out
+        << setw(opt_type_w) << " "
+        << "(default: ";
+      switch( itr->opt_type ) {
+        case OPT_BOOL_TRUE:
+          out << "--" << ( (*(any_cast<bool*>(itr->default_val))) ? itr->opt_name : itr->opt_name_false );
+          break;
+        case OPT_INT:
+        case OPT_DOUBLE:
+        case OPT_STRING:
+        case OPT_ENUM_INT:
+          out << "--" << itr->opt_name;
+          break;
+        default:
+          TEST_FOR_EXCEPT(true); // Local programming error only
+      }
+      switch( itr->opt_type ) {
+        case OPT_BOOL_TRUE:
+          break;
+        case OPT_INT:
+          out << "=" << (*(any_cast<int*>(itr->default_val)));
+          break;
+        case OPT_DOUBLE:
+          out <<  "=" << (*(any_cast<double*>(itr->default_val)));
+          break;
+        case OPT_STRING:
+          out <<  "=" << add_quotes(*(any_cast<std::string*>(itr->default_val)));
+          break;
+        case OPT_ENUM_INT:
+          out <<  "=" << add_quotes(enum_opt_default_val_name(itr->opt_name,any_cast<int>(itr->default_val),&out));
+          break;
+        default:
+          TEST_FOR_EXCEPT(true); // Local programming error only
+      }
+      out << ")\n";
+    }
+    if(doc_string_.length()) {
+      out << "\nDETAILED DOCUMENTATION:\n\n" << doc_string_ << std::endl;
+    }
+    if(throwExceptions_)
+      TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
 	}
-  if(doc_string_.length()) {
-    out << "\nDETAILED DOCUMENTATION:\n\n" << doc_string_ << std::endl;
-  }
-	if(throwExceptions_)
-		TEST_FOR_EXCEPTION( true, HelpPrinted, "Help message was printed" );
-#ifdef HAVE_MPI
-	}
-#endif
 }
 
 // private
+
+void CommandLineProcessor::add_extra_output_setup_options() const
+{
+  if(
+    in_add_extra_output_setup_options_ // Are we in this function already and calling it recursively?
+    ||
+    added_extra_output_setup_options_  // Have we already setup these options?
+    ||
+    !addOutputSetupOptions_            // Are we not supposed to setup these options?
+    )
+  {
+    return; // If any of the above is true, we need to return right away!
+  }
+  // Set the commandline options for this ...
+  CommandLineProcessor
+    *clp = const_cast<CommandLineProcessor*>(this);
+  clp->in_add_extra_output_setup_options_ = true;
+  clp->setOption(
+    "output-all-front-matter","output-no-front-matter",&clp->output_all_front_matter_
+    ,"Set if all front matter is printed to the default FancyOStream or not"
+    );
+  clp->setOption(
+    "output-show-line-prefix","output-no-show-line-prefix",&clp->output_show_line_prefix_
+    ,"Set if the line prefix matter is printed to the default FancyOStream or not"
+    );
+  clp->setOption(
+    "output-show-tab-count","output-no-show-tab-count",&clp->output_show_tab_count_
+    ,"Set if the tab count is printed to the default FancyOStream or not"
+    );
+  clp->setOption(
+    "output-show-proc-rank","output-no-show-proc-rank",&clp->output_show_proc_rank_
+    ,"Set if the processor rank is printed to the default FancyOStream or not"
+    );
+  clp->setOption(
+    "output-to-root-rank-only",&clp->output_to_root_rank_only_
+    ,"Set which processor (the root) gets the output.  If < 0, then all processors get output."
+    );
+  clp->added_extra_output_setup_options_ = true;
+  clp->in_add_extra_output_setup_options_ = false;
+}
 
 void CommandLineProcessor::setEnumOption(
 	const char    enum_option_name[]
@@ -364,6 +422,8 @@ void CommandLineProcessor::setEnumOption(
 	,const char   documentation[]
 	)
 {
+  add_extra_output_setup_options();
+
 	TEST_FOR_EXCEPT(enum_option_val==NULL);
 	TEST_FOR_EXCEPT(num_enum_opt_values<=0);
 	TEST_FOR_EXCEPT(enum_opt_values==NULL);

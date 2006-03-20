@@ -139,7 +139,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     linearOpTester.show_all_tests(showAllTests);
     linearOpTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpTester.check(*nsA,OSTab(out).getOStream().get());
+    result = linearOpTester.check(*nsA,out.get());
     if(!result) success = false;
 
     if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -166,7 +166,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     linearOpWithSolveTester.show_all_tests(showAllTests);
     linearOpWithSolveTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+    result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
 
     if(out.get()) *out << "\nF) Uninitialize nsA, create precondtioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
@@ -194,7 +194,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     if(out.get()) *out << "\nG) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
     Thyra::seed_randomize<double>(0);
-    result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+    result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
 
     if(useAztecPrec) {
@@ -206,7 +206,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out.get()) *out << "\nI) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
       Thyra::seed_randomize<double>(0);
-      result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+      result = linearOpWithSolveTester.check(*nsA,out.get());
       if(!result) success = false;
 
       if(testTranspose && useAztecPrec) {
@@ -276,7 +276,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out.get()) *out << "\nL) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
       Thyra::seed_randomize<double>(0);
-      result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+      result = linearOpWithSolveTester.check(*nsA,out.get());
       if(!result) success = false;
 
       if(testTranspose && useAztecPrec) {
@@ -311,7 +311,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     if(out.get()) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
     Thyra::seed_randomize<double>(0);
-    result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+    result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
 
     if(out.get()) *out << "\nO) Create a scaled (by 2.5) copy epetra_A2 of epetra_A, and then reinitialize nsA with epetra_A2 ...\n";
@@ -329,7 +329,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     if(out.get()) *out << "\nP) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
     Thyra::seed_randomize<double>(0);
-    result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+    result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
 
     if(!useAztecPrec) {
@@ -344,14 +344,14 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out.get()) *out << "\nR) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
     
       Thyra::seed_randomize<double>(0);
-      result = linearOpWithSolveTester.check(*nsA2,OSTab(out).getOStream().get());
+      result = linearOpWithSolveTester.check(*nsA2,out.get());
       if(!result) success = false;
     
       if(out.get()) *out << "\nS) Testing that LinearOpBase interfaces of transpose(nsA) == nsA2 ...\n";
     
       result = linearOpTester.compare(
         *transpose(Teuchos::rcp_implicit_cast<const LinearOpBase<double> >(nsA)),*nsA2
-        ,OSTab(out).getOStream().get()
+        ,out.get()
         );
       if(!result) success = false;
       

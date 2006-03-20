@@ -98,7 +98,7 @@ bool runCgSolveExample(
   linearOpTester.set_all_error_tol(tolerance);
   linearOpTester.set_all_warning_tol(ScalarMag(ScalarMag(1e-2)*tolerance));
   linearOpTester.show_all_tests(showAllTests);
-  result = linearOpTester.check(*A,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A,out.get());
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
   RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());
@@ -119,7 +119,7 @@ bool runCgSolveExample(
   // (A.6) Testing the linear operator used with the solve
   if(verbose) *out << "\nTesting the linear operator used with the solve ...\n";
   linearOpTester.check_for_symmetry(true);
-  result = linearOpTester.check(*A,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A,out.get());
   if(!result) success = false;
   //
   // (B) Solve the linear system with the silly CG solver

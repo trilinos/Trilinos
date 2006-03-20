@@ -86,7 +86,7 @@ public:
    * called so it is safe to use no matter how <tt>MPI_Init()</tt> got called
    * (but it must have been called somewhere).
    */
-  static int getRank() {return rank_;}
+  static int getRank() { initialize(&std::cerr); return rank_;}
 
   /** \brief Returns the number of processors relative to
    * <tt>MPI_COMM_WORLD</tt>
@@ -97,14 +97,18 @@ public:
    * called so it is safe to use no matter how <tt>MPI_Init()</tt> got called
    * (but it must have been called somewhere).
    */
-  static int getNProc() {return nProc_;}
+  static int getNProc() {initialize(&std::cerr); return nProc_;}
   
   //@}
   
 private:
   
+  static bool haveMPIState_;
   static int rank_;
   static int nProc_;
+
+  static void initialize( std::ostream *out );
+
 };
 
 } // namespace Teuchos

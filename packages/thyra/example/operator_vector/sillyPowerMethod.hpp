@@ -31,6 +31,7 @@
 
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_TestingTools.hpp" // DEBUG STUFF
 
 /** \brief Silly little example power method abstract numerical algorithm (ANA).
  *
@@ -52,6 +53,7 @@ bool sillyPowerMethod(
   ,std::ostream                                                  *out          = NULL
   )
 {
+  if(out) *out << std::setprecision(16); // DEBUG STUFF
   // Create some typedefs and some other stuff to make the code cleaner
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
   const Scalar one = ST::one(); using Thyra::NOTRANS;
@@ -62,14 +64,21 @@ bool sillyPowerMethod(
   VectorPtr q = createMember(A.domain()), z = createMember(A.range()), r = createMember(A.range());
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(-one), Scalar(+one), &*z );
+  if(out) *out << "z=\n" << *z; // DEBUG STUFF
   // Perform iterations
   for( int iter = 0; iter < maxNumIters; ++iter ) {
+    if(out) *out << "itrer="<<iter<<"\n"; // DEBUG STUFF
     const ScalarMag z_nrm = norm(*z);       // Compute natural norm of z
+    if(out) *out << "||z||="<<z_nrm<<"\n"; // DEBUG STUFF
     V_StV( &*q, Scalar(one/z_nrm), *z );    // q = (1/||z}*z 
+    if(out) *out << "q=\n" << *q; // DEBUG STUFF
     apply( A, NOTRANS , *q, &*z );          // z = A*q
+    if(out) *out << "z=\n" << *z; // DEBUG STUFF
     *lambda = scalarProd(*q,*z);            // lambda = <q,z>    : Approximate maximum absolute eigenvalue
+    if(out) *out << "lambda="<<*lambda<<"\n"; // DEBUG STUFF
     if( iter%(maxNumIters/10) == 0 || iter+1 == maxNumIters ) {
       V_StVpV(&*r,Scalar(-*lambda),*q,*z);  // r = -lambda*q + z : Compute residual of eigenvalue equation
+      if(out) *out << "r=\n" << *r; // DEBUG STUFF
       const ScalarMag r_nrm = norm(*r);     // Compute natural norm of r
       if(out) *out << "Iter = " << iter << ", lambda = " << (*lambda) << ", ||A*q-lambda*q|| = " << r_nrm << std::endl;
       if( r_nrm < tolerance ) return true;  // Success!

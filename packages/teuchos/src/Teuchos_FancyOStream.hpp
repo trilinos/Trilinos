@@ -31,6 +31,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_oblackholestream.hpp"
 
 namespace Teuchos {
 
@@ -101,6 +102,9 @@ public:
 
   /** \brief .*/
   void setProcRankAndSize( const int procRank, const int numProcs );
+
+  /** \brief . */
+  void setOutputToRootOnly( const int rootRank );
 
   /** \brief . */
   void pushTab(const int tabs);
@@ -221,6 +225,7 @@ private:
   // ////////////////////////
   // Private data members
 
+  RefCountPtr<std::basic_ostream<char_type,traits_type> >  oStreamSet_;
   RefCountPtr<std::basic_ostream<char_type,traits_type> >  oStream_;
   std::basic_string<char_type,traits_type>                 tabIndentStr_;
   bool                                                     showLinePrefix_;
@@ -354,6 +359,9 @@ public:
 
   /** \brief . */
   basic_FancyOStream& setProcRankAndSize( const int procRank, const int numProcs );
+
+  /** \brief . */
+  basic_FancyOStream& setOutputToRootOnly( const int rootRank );
 
   //@}
 
@@ -544,6 +552,7 @@ void basic_FancyOStream_buf<CharT,Traits>::initialize(
   ,const bool                                                    showProcRank
   )
 {
+  oStreamSet_ = oStream;
   oStream_ = oStream;
   tabIndentStr_ = tabIndentStr;
   showLinePrefix_ = showLinePrefix;
@@ -564,7 +573,7 @@ template<typename CharT, typename Traits>
 RefCountPtr<std::basic_ostream<CharT,Traits> >
 basic_FancyOStream_buf<CharT,Traits>::getOStream()
 {
-  return oStream_;
+  return oStreamSet_;
 }
 
 template<typename CharT, typename Traits>
@@ -604,6 +613,20 @@ void basic_FancyOStream_buf<CharT,Traits>::setProcRankAndSize( const int procRan
 {
   procRank_ = procRank;
   numProcs_ = numProcs;
+}
+
+template<typename CharT, typename Traits>
+void basic_FancyOStream_buf<CharT,Traits>::setOutputToRootOnly( const int rootRank  )
+{
+  if(rootRank >= 0) {
+    if(rootRank == procRank_)
+      oStream_ = oStreamSet_;
+    else
+      oStream_ = Teuchos::rcp(new oblackholestream());
+  }
+  else {
+    oStream_ = oStreamSet_;
+  }
 }
 
 template<typename CharT, typename Traits>
@@ -853,6 +876,14 @@ basic_FancyOStream<CharT,Traits>&
 basic_FancyOStream<CharT,Traits>::setProcRankAndSize( const int procRank, const int numProcs )
 {
   streambuf_.setProcRankAndSize(procRank,numProcs);
+  return *this;
+}
+
+template<typename CharT, typename Traits>
+basic_FancyOStream<CharT,Traits>&
+basic_FancyOStream<CharT,Traits>::setOutputToRootOnly( const int rootRank )
+{
+  streambuf_.setOutputToRootOnly(rootRank);
   return *this;
 }
 

@@ -33,6 +33,7 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
   )
 {
+  this->setLinePrefix("BELOS/T");
   // ToDo: Validate input
   lp_ = lp;
   resNormST_ = resNormST;
@@ -135,6 +136,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
+  using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
   
@@ -142,6 +144,8 @@ void BelosLinearOpWithSolve<Scalar>::solve(
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = this->getOStream();
+
+  OSTab tab = this->getOSTab();
   
   //
   // Set RHS and LHS
@@ -181,7 +185,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   if(1){
     outputManager_->SetOStream(out);
     if(out.get()) *out << "\n\n";
-    Teuchos::OSTab tab(out);
+    Teuchos::OSTab tab(out,1,"BELOS");
     iterativeSolver_->Solve();
   }
   //

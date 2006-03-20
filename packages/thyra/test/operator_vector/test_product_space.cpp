@@ -96,7 +96,7 @@ bool run_product_space_tests(
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
 
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of ps ...\n";
-  result = vectorSpaceTester.check(ps,OSTab(out).getOStream().get());
+  result = vectorSpaceTester.check(ps,out.get());
   if(!result) success = false;
 
   if(out.get()) *out
@@ -113,7 +113,7 @@ bool run_product_space_tests(
   Thyra::DefaultSerialVectorSpace<Scalar> ss(numBlocks*n);
 
   if(out.get()) *out << "\nTesting the serial space ss ...\n";
-  result = vectorSpaceTester.check(ss,OSTab(out).getOStream().get());
+  result = vectorSpaceTester.check(ss,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";

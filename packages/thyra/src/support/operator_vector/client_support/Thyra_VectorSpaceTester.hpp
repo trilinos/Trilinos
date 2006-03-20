@@ -73,6 +73,8 @@ bool VectorSpaceTester<Scalar>::check(
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
+  OSTab tab(out,1,"THYRA");
+
   bool result, success = true;
 
   if(out.get()) *out <<endl<< "*** Entering Thyra::VectorSpaceTester<"<<ST::name()<<">::check(vs,...) ...\n";
@@ -99,7 +101,7 @@ bool VectorSpaceTester<Scalar>::check(
 
   if(out.get()) *out <<endl<< "D) Testing the VectorBase interface of v ...\n";
 
-  result = vectorTester_.check(*v,OSTab(out).getOStream().get());
+  result = vectorTester_.check(*v,out.get());
   if(!result) success = false;
 
   if(out.get()) *out <<endl<< "C) Creating a randomized MultiVector member mv ...\n";
@@ -109,7 +111,7 @@ bool VectorSpaceTester<Scalar>::check(
 
   if(out.get()) *out <<endl<< "D) Testing the MultiVectorBase interface of mv ...\n";
 
-  result = vectorTester_.multiVectorTester().check(*mv,OSTab(out).getOStream().get());
+  result = vectorTester_.multiVectorTester().check(*mv,out.get());
   if(!result) success = false;
 
   if(out.get()) *out <<endl<< "*** Leaving Thyra::VectorSpaceTester<"<<ST::name()<<">::check(vs,...) ...\n";

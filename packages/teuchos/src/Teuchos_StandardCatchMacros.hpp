@@ -29,7 +29,7 @@
 #ifndef TEUCHOS_STANDARD_CATCH_MACROS_HPP
 #define TEUCHOS_STANDARD_CATCH_MACROS_HPP
 
-#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 /** \brief Simple macro that catches and reports standard exceptions and other exceptions.
  *
@@ -55,12 +55,14 @@
 #define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
 	catch( const std::exception &excpt ) { \
 		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught standard exception of type \'"<<typeid(excpt).name()<<"\' : " << excpt.what() << std::endl; \
+			(ERR_STREAM) \
+        << "p="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard exception of type \'" \
+        <<typeid(excpt).name()<<"\' : " << excpt.what() << std::endl; \
     (SUCCESS_FLAG) = false; \
 	} \
 	catch( ... ) { \
 		if((VERBOSE)) \
-			(ERR_STREAM) << "*** Caught an unknown exception\n"; \
+			(ERR_STREAM) << "p="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown exception\n"; \
     (SUCCESS_FLAG) = false; \
 	}
 

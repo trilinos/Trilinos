@@ -31,6 +31,7 @@
 
 namespace Teuchos {
 
+bool GlobalMPISession::haveMPIState_ = false;
 int GlobalMPISession::rank_ = 0 ;
 int GlobalMPISession::nProc_ = 1 ;
 
@@ -52,20 +53,8 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
     ,"Error code=" << mpierr << " detected in GlobalMPISession::GlobalMPISession(argc,argv)"
     ,out
     );
-	
-	mpierr = ::MPI_Comm_rank (MPI_COMM_WORLD, &rank_);
-	TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Comm_rank()"
-    ,out
-    );
-  
-	mpierr = ::MPI_Comm_size (MPI_COMM_WORLD, &nProc_);
-	TEST_FOR_EXCEPTION_PRINT(
-    mpierr != 0, runtime_error
-    ,"Error code=" << mpierr << " detected in MPI_Comm_size()"
-    ,out
-    );
+
+  initialize(out); // Get NProc_ and rank_
   
   int nameLen;
 	char procName[MPI_MAX_PROCESSOR_NAME];
@@ -79,11 +68,12 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   if(out)
     *out << "Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name "
          << procName << " and rank " << rank_ << "!" << endl;
-  
+
 #else
   if(out)
     *out << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run" << endl;
 #endif
+
 }
 
 GlobalMPISession::~GlobalMPISession()
@@ -96,6 +86,47 @@ GlobalMPISession::~GlobalMPISession()
     ,&std::cerr
     );
 #endif
+}
+
+// private
+
+void GlobalMPISession::initialize( std::ostream *out )
+{
+#ifdef HAVE_MPI
+
+  if(haveMPIState_)
+    return; // We already have what we need!
+
+  // We don't have the state of MPI so the constructor for this class must not
+  // have been called.  However, if MPI has been called in another way we
+  // can still get the state of MPI_COMM_WORLD here.
+
+	int mpiHasBeenStarted = 0, mpierr = 0;
+	MPI_Initialized(&mpiHasBeenStarted);
+  
+  if(!mpiHasBeenStarted)
+    return;  // We have to give up and just leave NProc_ and rank_ at the default values.
+
+  // Get the state of MPI
+	
+  mpierr = ::MPI_Comm_rank( MPI_COMM_WORLD, &rank_ );
+  TEST_FOR_EXCEPTION_PRINT(
+    mpierr != 0, runtime_error
+    ,"Error code=" << mpierr << " detected in MPI_Comm_rank()"
+    ,out
+    );
+  
+  mpierr = ::MPI_Comm_size( MPI_COMM_WORLD, &nProc_ );
+  TEST_FOR_EXCEPTION_PRINT(
+    mpierr != 0, runtime_error
+    ,"Error code=" << mpierr << " detected in MPI_Comm_size()"
+    ,out
+    );
+
+  haveMPIState_ = true;
+
+#endif // HAVE_MPI
+  
 }
 
 } // namespace Teuchos

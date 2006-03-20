@@ -71,6 +71,8 @@ bool MultiVectorTester<Scalar>::check(
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
+  OSTab tab(out,1,"THYRA");
+
   bool result, success = true;
 
   if(out.get()) *out <<endl<< "*** Entering Thyra::MultiVectorTester<"<<ST::name()<<">::check(mv,...) ...\n";
@@ -80,7 +82,7 @@ bool MultiVectorTester<Scalar>::check(
   // ToDo: Test the specific VectorBase interface
   
   if(out.get()) *out <<endl<< "Checking the LinearOpBase interface of mv ...\n";
-  result =linearOpTester_.check(mv,OSTab(out).getOStream().get());
+  result =linearOpTester_.check(mv,out.get());
   if(!result) success = false;
 
   if(out.get()) *out <<endl<< "*** Leaving Thyra::MultiVectorTester<"<<ST::name()<<">::check(mv,...) ...\n";

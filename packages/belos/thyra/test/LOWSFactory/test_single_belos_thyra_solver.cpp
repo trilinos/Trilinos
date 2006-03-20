@@ -92,7 +92,7 @@ bool Thyra::test_single_belos_thyra_solver(
     linearOpTester.show_all_tests(showAllTests);
     linearOpTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpTester.check(*nsA,OSTab(out).getOStream().get());
+    result = linearOpTester.check(*nsA,out.get());
     if(!result) success = false;
 
     if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -119,9 +119,8 @@ bool Thyra::test_single_belos_thyra_solver(
     linearOpWithSolveTester.show_all_tests(showAllTests);
     linearOpWithSolveTester.dump_all(dumpAll);
     Thyra::seed_randomize<double>(0);
-    result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+    result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
-
     
 #else // __sun
 		

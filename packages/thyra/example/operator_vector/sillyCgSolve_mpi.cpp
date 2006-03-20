@@ -115,7 +115,7 @@ bool runCgSolveExample(
   linearOpTester.check_adjoint(false);
   linearOpTester.check_for_symmetry(true);
   linearOpTester.show_all_tests(showAllTests);
-  result = linearOpTester.check(*A,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A,out.get());
   if(!result) success = false;
   // (A.3) Create RHS vector b and set to a random value
   RefCountPtr<Thyra::VectorBase<Scalar> > b = createMember(A->range());

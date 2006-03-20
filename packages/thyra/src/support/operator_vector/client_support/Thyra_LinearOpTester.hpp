@@ -229,6 +229,8 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
+  OSTab tab(out,1,"THYRA");
+
   // ToDo 04/28/2005:
   // * Test the MultiVectorBase apply() function and output to the VectorBase apply() function!
 
@@ -596,6 +598,8 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
   const RangeScalar  r_half = RangeScalar(0.5)*RST::one();
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
+
+  OSTab tab(out,1,"THYRA");
 
   if(out.get()) {
     *out

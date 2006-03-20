@@ -97,7 +97,7 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nTesting origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*origA,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*origA,out.get());
   if(!result) success = false;
   
   if(out.get()) *out << "\nCreating implicit scaled linear operator A1 = scale(0.5,origA) ...\n";
@@ -107,12 +107,12 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nTesting A1 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A1,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A1,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nTesting that A1.getOp() == origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A1).getOp(),*origA,OSTab(out).getOStream().get());
+  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A1).getOp(),*origA,out.get());
   if(!result) success = false;
 
   if(1) {
@@ -136,7 +136,7 @@ bool run_composite_linear_ops_tests(
     
     if(out.get()) *out << "\nTesting that origA_1 == origA ...\n";
     Thyra::seed_randomize<Scalar>(0);
-    result = linearOpTester.compare(*origA_1,*origA,OSTab(out).getOStream().get());
+    result = linearOpTester.compare(*origA_1,*origA,out.get());
     if(!result) success = false;
     
   }
@@ -162,7 +162,7 @@ bool run_composite_linear_ops_tests(
 
     if(out.get()) *out << "\nTesting that origA_2 == origA ...\n";
     Thyra::seed_randomize<Scalar>(0);
-    result = linearOpTester.compare(*origA_2,*origA,OSTab(out).getOStream().get());
+    result = linearOpTester.compare(*origA_2,*origA,out.get());
     if(!result) success = false;
 
   }
@@ -174,12 +174,12 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nTesting A2 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A2,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A2,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nTesting that A2.getOp() == A1 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A2).getOp(),*A1,OSTab(out).getOStream().get());
+  result = linearOpTester.compare(*dyn_cast<const Thyra::DefaultScaledAdjointLinearOp<Scalar> >(*A2).getOp(),*A1,out.get());
   if(!result) success = false;
   
   if(out.get()) *out << "\nCreating implicit scaled, adjoined linear operator A3 = adjoint(scale(2.0,(A2)) ...\n";
@@ -189,12 +189,12 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nTesting A3 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A3,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A3,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nTesting that A3 == origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.compare(*A3,*origA,OSTab(out).getOStream().get());
+  result = linearOpTester.compare(*A3,*origA,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nCalling all of the rest of the functions for non-const just to test them ...\n";
@@ -218,7 +218,7 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nTesting A4 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A4,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A4,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nCalling all of the rest of the functions for const just to test them ...\n";
@@ -242,7 +242,7 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nTesting A5 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A5,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*A5,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a multiplicative operator A6 = origA^H*A1 ...\n";
@@ -252,7 +252,7 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nTesting A6 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = symLinearOpTester.check(*A6,OSTab(out).getOStream().get());
+  result = symLinearOpTester.check(*A6,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";

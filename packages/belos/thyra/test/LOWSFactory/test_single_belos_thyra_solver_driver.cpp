@@ -2,6 +2,7 @@
 #include "test_single_belos_thyra_solver.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -11,7 +12,8 @@ int main(int argc, char* argv[])
   bool success = true;
   bool verbose = true;
 
-  Teuchos::FancyOStream out(Teuchos::rcp(&std::cout,false));
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
 	try {
 
@@ -64,7 +66,7 @@ int main(int argc, char* argv[])
         matrixFile,testTranspose,numRandomVectors
         ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
         ,&solveParamList
-        ,verbose?&out:0
+        ,verbose?&*out:0
         );
 
 	}
@@ -78,8 +80,8 @@ int main(int argc, char* argv[])
 	}
 	
 	if (verbose) {
-		if(success)  out << "\nCongratulations! All of the tests checked out!\n";
-		else         out << "\nOh no! At least one of the tests failed!\n";
+		if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
+		else         *out << "\nOh no! At least one of the tests failed!\n";
 	}
 
   return ( success ? 0 : 1 );

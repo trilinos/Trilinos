@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 namespace Teuchos {
 
@@ -34,7 +35,12 @@ namespace Teuchos {
 
 RefCountPtr<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
 {
-  static RefCountPtr<FancyOStream> defaultOStream = rcp(new FancyOStream(rcp(&std::cout,false)));
+  static RefCountPtr<FancyOStream> defaultOStream;
+  if(defaultOStream.get()==NULL) {
+    defaultOStream = rcp(new FancyOStream(rcp(&std::cout,false)));
+    defaultOStream->setOutputToRootOnly(0);
+    //defaultOStream->setShowProcRank(false);
+  }
   return defaultOStream;
 }
 

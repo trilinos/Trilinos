@@ -2,7 +2,6 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_Version.hpp"
 
@@ -40,11 +39,10 @@ public:
       // Here I grab the stream that I will use for outputting.  It is a good
       // idea to grab the RCP to this object just to be safe.
       Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
-      // Here I make sure that my line prefix is set but I do not what to
-      // indent since I might assume that the caller will do the indentation.
-      // I am not sure who should be responsible for this but we just need to
-      // come up with a convention
-      OSTab tab = this->getOSTab(0); // This sets the line prefix but does not change the indent!
+      // Here I set my line prefix and a single indent.  The convention will
+      // be that a called function will set its own indent.  This convention makes
+      // the most sense.
+      OSTab tab = this->getOSTab(); // This sets the line prefix and adds one tab
       if(out.get() && verbLevel!=Teuchos::VERB_NONE)
         *out << "\nEntering AlgorithmA::doAlgorithm()\n";
       if(1) {
@@ -95,7 +93,6 @@ void doAlgorithmStuff()
   // by calling algoA.setOStream(...).
   
   // Now I call the algorithm which will print to its default output stream
-  Teuchos::OSTab tab = algoA.getOSTab();
   algoA.doAlgorithm();
   
   *algoA.getOStream() << std::endl;
@@ -148,21 +145,8 @@ int main(int argc, char* argv[])
 
     // Get some commandline options
     CommandLineProcessor clp(false); // Don't throw exceptions
-    bool printOnAllProcs = true;
-    clp.setOption( "print-on-all-procs", "print-on-root-proc", &printOnAllProcs, "Print on all processors or just the root processor?" );
-    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
-
-    // Here we setup a stream to print to on this processor
-    Teuchos::oblackholestream black_hole_out;
-    std::ostream &this_proc_out = ( procRank==0 || printOnAllProcs ? std::cerr : black_hole_out );
-    // Note that we print to std::cerr instead of std::cout so that data
-    // printed in parallel have a better chance of ending up together.  Also,
-    // note how easily we have turned off output on slave processors if asked!
-
-    // Start by setting up a defualt FancyOStream with a new indent string.
-    // This output stream object will be used by default for all VerboseObject outputting
-    VerboseObjectBase::setDefaultOStream(rcp(new FancyOStream(rcp(&this_proc_out,false),"  ")));
 
     // Here I am just grabbing the default output stream
     RefCountPtr<FancyOStream>
@@ -171,7 +155,6 @@ int main(int argc, char* argv[])
     // std::ostream objects.  This is important to the design and very
     // resonable I think.
 
-    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl << std::endl;
 
     //
@@ -179,8 +162,10 @@ int main(int argc, char* argv[])
     // show the different kinds of line prefix options
     //
   
-    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n***\n*** Testing VerboseObject base class use\n***\n";
+  
+    *out << "\n*** Algorithm output with default formatting\n\n";
+    doAlgorithmStuff();
   
     out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1);
     *out << "\n*** Algorithm output with no front matter\n\n";
@@ -237,7 +222,7 @@ int main(int argc, char* argv[])
     // correctly
     //
 
-   out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1).setShowTabCount(true);
+    out->setShowAllFrontMatter(false).setShowProcRank(numProcs>1).setShowTabCount(true);
     out->setProcRankAndSize(mpiSession.getRank(),mpiSession.getNProc());
     
     *out << "\n***\n*** Testing basic FancyOStream and OSTab classes\n***\n\n";

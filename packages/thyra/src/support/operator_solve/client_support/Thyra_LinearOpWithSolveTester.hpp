@@ -166,6 +166,8 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
+  OSTab tab(out,1,"THYRA");
+
   Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
     lowsTempState(Teuchos::rcp(&op,false),out,verbLevel);
 

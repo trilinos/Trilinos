@@ -141,7 +141,7 @@ bool run1DFFTExample(
   linearOpTester.set_all_warning_tol(RealScalar(RealScalar(1e-2)*tolerance));
   linearOpTester.show_all_tests(true);
   linearOpTester.dump_all(dumpAll);
-  result = linearOpTester.check(*C,&complexRangeRand,&complexDomainRand,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*C,&complexRangeRand,&complexDomainRand,out.get());
   if(!result) success = false;
 
   if(verbose) *out << "\nTesting the LinearOpWithSolveBase interface of the constructed linear operator C ...\n";
@@ -152,7 +152,7 @@ bool run1DFFTExample(
   linearOpWithSolveTester.set_all_slack_warning_tol(tolerance);
   linearOpWithSolveTester.show_all_tests(true);
   linearOpWithSolveTester.dump_all(dumpAll);
-  result = linearOpWithSolveTester.check(*C,OSTab(out).getOStream().get());
+  result = linearOpWithSolveTester.check(*C,out.get());
   if(!result) success = false;
 
   if(verbose) *out << "\nConstructing a 1D real-to-complex FFT linear operator R ...\n";
@@ -167,7 +167,7 @@ bool run1DFFTExample(
   RlinearOpTester.set_all_warning_tol(RealScalar(RealScalar(1e-2)*tolerance));
   RlinearOpTester.show_all_tests(true);
   RlinearOpTester.dump_all(dumpAll);
-  result = RlinearOpTester.check(*R,&complexRangeRand,&realDomainRand,OSTab(out).getOStream().get());
+  result = RlinearOpTester.check(*R,&complexRangeRand,&realDomainRand,out.get());
   if(!result) success = false;
 
   timer.stop();

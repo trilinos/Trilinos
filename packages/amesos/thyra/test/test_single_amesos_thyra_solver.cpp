@@ -120,7 +120,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   linearOpTester.set_all_warning_tol(1e-2*maxFwdError);
   linearOpTester.show_all_tests(showAllTests);
   linearOpTester.dump_all(dumpAll);
-  result = linearOpTester.check(*nsA,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*nsA,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
@@ -154,7 +154,7 @@ bool Thyra::test_single_amesos_thyra_solver(
   linearOpWithSolveTester.num_random_vectors(numRandomVectors);
   linearOpWithSolveTester.show_all_tests(showAllTests);
   linearOpWithSolveTester.dump_all(dumpAll);
-  result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+  result = linearOpWithSolveTester.check(*nsA,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nF) Uninitialize the matrix object nsA, scale the epetra_A object by 2.5, and then refactor nsA with epetra_A ...\n";
@@ -167,12 +167,12 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*nsA,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nH) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
-  result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+  result = linearOpWithSolveTester.check(*nsA,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nI) Uninitialize the matrix object nsA, create a scaled (by 2.5) copy  epetra_A2 of epetra_A, and then refactor nsA with epetra_A2 ...\n";
@@ -188,12 +188,12 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*nsA,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nK) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
-  result = linearOpWithSolveTester.check(*nsA,OSTab(out).getOStream().get());
+  result = linearOpWithSolveTester.check(*nsA,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nL) Create an implicitly scaled (by 2.5) and transposed matrix A3 = scale(2.5,transpose(A)) and initialize nsA2 ...\n";
@@ -207,19 +207,19 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   Thyra::seed_randomize<double>(0);
 
-  result = linearOpTester.check(*nsA2,OSTab(out).getOStream().get());
+  result = linearOpTester.check(*nsA2,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
     
-  result = linearOpWithSolveTester.check(*nsA2,OSTab(out).getOStream().get());
+  result = linearOpWithSolveTester.check(*nsA2,out.get());
   if(!result) success = false;
   
   if(out.get()) *out << "\nO) Testing that LinearOpBase interfaces of transpose(nsA) == nsA2 ...\n";
 
   result = linearOpTester.compare(
     *transpose(Teuchos::rcp_implicit_cast<const LinearOpBase<double> >(nsA)),*nsA2
-    ,OSTab(out).getOStream().get()
+    ,out.get()
     );
   if(!result) success = false;
 
