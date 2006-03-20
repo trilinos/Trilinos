@@ -20,6 +20,7 @@
 #include "EpetraExt_Exception.h"
 #include "EpetraExt_Utils.h"
 #include "EpetraExt_HDF5.h"
+#include "EpetraExt_DistArray.h"
 
 #define CHECK_HID(hid_t) \
   { if (hid_t < 0) \
@@ -1046,6 +1047,108 @@ void EpetraExt::HDF5::ReadMultiVectorProperties(const string& GroupName,
 
   Read(GroupName, "GlobalLength", GlobalLength);
   Read(GroupName, "NumVectors", NumVectors);
+}
+
+// ========================= //
+// EpetraExt::DistArray<int> //
+// ========================= //
+
+// ==========================================================================
+void EpetraExt::HDF5::Write(const string& GroupName, const DistArray<int>& x)
+{
+  if (x.Map().LinearMap())
+  {
+    Write(GroupName, "Values", x.Map().NumMyElements() * x.RowSize(), 
+          x.Map().NumGlobalElements() * x.RowSize(),
+          H5T_NATIVE_INT, x.Values());
+  }
+  else
+  {
+    // need to build a linear map first, the import data, then
+    // finally write them 
+    const Epetra_BlockMap& OriginalMap = x.Map();
+    Epetra_Map LinearMap(OriginalMap.NumGlobalElements(), OriginalMap.IndexBase(), Comm_);
+    Epetra_Import Importer(LinearMap, OriginalMap);
+
+    EpetraExt::DistArray<int> LinearX(LinearMap, x.RowSize());
+    LinearX.Import(x, Importer, Insert);
+
+    Write(GroupName, "Values", LinearMap.NumMyElements() * x.RowSize(), 
+          LinearMap.NumGlobalElements() * x.RowSize(),
+          H5T_NATIVE_INT, LinearX.Values());
+  }
+
+  Write(GroupName, "__type__", "EpetraExt::DistArray<int>");
+  Write(GroupName, "GlobalLength", x.GlobalLength());
+  Write(GroupName, "RowSize", x.RowSize());
+}
+
+// ==========================================================================
+void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
+                           DistArray<int>*& X)
+{
+  // gets the length of the vector
+  int GlobalLength, RowSize;
+  ReadIntDistArrayProperties(GroupName, GlobalLength, RowSize);
+
+  if (Map.LinearMap())
+  {
+    X = new EpetraExt::DistArray<int>(Map, RowSize);
+    // simply read stuff and go home
+    Read(GroupName, "Values", Map.NumMyElements() * RowSize, 
+         Map.NumGlobalElements() * RowSize, H5T_NATIVE_INT, X->Values());
+  }
+  else
+  {
+    // we need to first create a linear map, read the vector,
+    // then import it to the actual nonlinear map
+    Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+    EpetraExt::DistArray<int> LinearX(LinearMap, RowSize);
+
+    Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+         LinearMap.NumGlobalElements() * RowSize,
+         H5T_NATIVE_INT, LinearX.Values());
+
+    Epetra_Import Importer(Map, LinearMap);
+    X = new EpetraExt::DistArray<int>(Map, RowSize);
+    X->Import(LinearX, Importer, Insert);
+  }
+}
+
+// ==========================================================================
+void EpetraExt::HDF5::Read(const string& GroupName, DistArray<int>*& X)
+{
+  // gets the length of the vector
+  int GlobalLength, RowSize;
+  ReadIntDistArrayProperties(GroupName, GlobalLength, RowSize);
+
+  // creates a new linear map and use it to read data
+  Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+  X = new EpetraExt::DistArray<int>(LinearMap, RowSize);
+
+  Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+       LinearMap.NumGlobalElements() * RowSize, H5T_NATIVE_INT, X->Values());
+}
+
+// ==========================================================================
+void EpetraExt::HDF5::ReadIntDistArrayProperties(const string& GroupName, 
+                                                 int& GlobalLength,
+                                                 int& RowSize)
+{
+  if (!IsContained(GroupName))
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
+
+  string Label;
+  Read(GroupName, "__type__", Label);
+
+  if (Label != "EpetraExt::DistArray<int>")
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " is not an EpetraExt::DistArray<int>",
+                    "__type__ = " + Label));
+
+  Read(GroupName, "GlobalLength", GlobalLength);
+  Read(GroupName, "RowSize", RowSize);
 }
 
 // ======================= //

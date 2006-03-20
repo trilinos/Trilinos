@@ -1,3 +1,6 @@
+#ifndef EPETRAEXT_HDF5_H
+#define EPETRAEXT_HDF5_H
+
 #include "EpetraExt_ConfigDefs.h"
 #ifdef HAVE_EPETRAEXT_HDF5
 
@@ -11,6 +14,11 @@ class Epetra_CrsMatrix;
 class Epetra_VbrMatrix;
 namespace Teuchos {
   class ParameterList;
+}
+namespace EpetraExt {
+  class Handle;
+  template<class T>
+  class DistArray;
 }
 
 namespace EpetraExt 
@@ -244,7 +252,7 @@ hdf5write('matlab.h5', '/map-2/MyGlobalElements',  int32(MyGlobalElements), 'Wri
 
 \todo 
 - all distributed objects are assumed in local state, this is not necessary (just easier)
-- Epetra_VbrMatrix has to be done
+- Epetra_VbrMatrix input has to be done, now it is considered as an Epetra_RowMatrix
 
 */
 class HDF5 
@@ -464,9 +472,41 @@ class HDF5
     //! Reads a parameter list from group \c GroupName.
     void Read(const string& GroupName, Teuchos::ParameterList& List);
 
+    // @}
+    // @{ \name EpetraExt::DistArray<int>
+
+    //! Writes an EpetraExt::DistArray<int> to group \c GroupName.
+    void Write(const string& GroupName, const DistArray<int>& array);
+
+    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    void Read(const string& GroupName, DistArray<int>*& array);
+
+    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    void Read(const string& GroupName, const Epetra_Map& Map, DistArray<int>*& array);
+
+    //! Reads the global number of elements and type for a generic handle object
+    void ReadIntDistArrayProperties(const string& GroupName, 
+                                    int& GlobalLength,
+                                    int& RowSize);
+
+    // @}
+    // @}
+    // @{ \name Generic distributed object
+
+    //! Writes an Epetra_DistObject to group \c GroupName.
+    void Write(const string& GroupName, const Handle& List);
+
+    //! Reads an Epetra_DistObject from group \c GroupName.
+    void Read(const string& GroupName, Handle& List);
+
+    //! Reads the global number of elements and type for a generic handle object
+    void ReadHandleProperties(const string& GroupName, 
+                              string& Type,
+                              int& NumGlobalElements);
+
+    // @}
   private:
-    // @{
-    // @} \name Private Data
+    // @{ \name Private Data
 
     //! Returns a reference to the communicator of \c this object.
     const Epetra_Comm& Comm() const
@@ -489,5 +529,5 @@ class HDF5
     // @}
 };
 };
-
+#endif
 #endif
