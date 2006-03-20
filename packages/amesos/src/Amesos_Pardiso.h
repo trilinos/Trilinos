@@ -89,13 +89,13 @@ public:
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem* GetProblem() const { return(Problem_); };
 
-  //! Returns true if KLU can handle this matrix shape 
-  /*! Returns true if the matrix shape is one that KLU can
-    handle. KLU only works with square matrices.  
+  //! Returns true if PARDISO can handle this matrix shape 
+  /*! Returns true if the matrix shape is one that PARDISO can
+    handle. PARDISO only works with square matrices.  
   */
   bool MatrixShapeOK() const;
 
-  //! SetUseTranpose(true) is more efficient in Amesos_Klu
+  //! SetUseTranpose()
   /*! 
     If SetUseTranspose() is set to true, 
     \f$A^T X = B\f$ is computed.
