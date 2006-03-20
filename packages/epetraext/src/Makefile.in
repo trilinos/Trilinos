@@ -158,6 +158,7 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
 	$(srcdir)/inout/EpetraExt_Utils.cpp \
 	$(srcdir)/inout/EpetraExt_HDF5.cpp \
+	$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp \
 	$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp \
 	$(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp \
 	$(srcdir)/zoltan/EpetraExt_ZoltanQuery.cpp \
@@ -219,7 +220,8 @@ am__objects_7 = EpetraExt_mmio.$(OBJEXT) \
 	EpetraExt_BlockMapIn.$(OBJEXT) EpetraExt_CrsMatrixIn.$(OBJEXT) \
 	EpetraExt_MultiVectorIn.$(OBJEXT) EpetraExt_VectorIn.$(OBJEXT) \
 	EpetraExt_readEpetraLinearSystem.$(OBJEXT) \
-	EpetraExt_Utils.$(OBJEXT) EpetraExt_HDF5.$(OBJEXT)
+	EpetraExt_Utils.$(OBJEXT) EpetraExt_HDF5.$(OBJEXT) \
+	EpetraExt_HDF5_DistObject.$(OBJEXT)
 @BUILD_INOUT_TRUE@am__objects_8 = $(am__objects_7)
 am__objects_9 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
 	EpetraExt_ZoltanOrder_CrsGraph.$(OBJEXT) \
@@ -274,6 +276,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_CrsMatrixIn.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_CrsSingletonFilter_LinearProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_HDF5.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_HDF5_DistObject.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_LPTrans_From_GraphTrans.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_LPTrans_From_MatrixTrans.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MapColoring.Po \
@@ -369,6 +372,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/inout/EpetraExt_Exception.h \
 	$(srcdir)/inout/EpetraExt_Utils.h \
 	$(srcdir)/inout/EpetraExt_HDF5.h \
+	$(srcdir)/inout/EpetraExt_HDF5_Handle.h \
+	$(srcdir)/inout/EpetraExt_DistArray.h \
 	$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.h \
 	$(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.h \
 	$(srcdir)/zoltan/EpetraExt_ZoltanQuery.h \
@@ -696,7 +701,9 @@ EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
      $(srcdir)/inout/EpetraExt_Exception.h \
      $(srcdir)/inout/EpetraExt_Utils.h \
-     $(srcdir)/inout/EpetraExt_HDF5.h
+     $(srcdir)/inout/EpetraExt_HDF5.h \
+     $(srcdir)/inout/EpetraExt_HDF5_Handle.h \
+     $(srcdir)/inout/EpetraExt_DistArray.h
 
 EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_mmio.cpp \
@@ -710,7 +717,8 @@ EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_VectorIn.cpp\
      $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
      $(srcdir)/inout/EpetraExt_Utils.cpp \
-     $(srcdir)/inout/EpetraExt_HDF5.cpp
+     $(srcdir)/inout/EpetraExt_HDF5.cpp \
+     $(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
 
 @BUILD_INOUT_FALSE@INOUT_H = 
 @BUILD_INOUT_TRUE@INOUT_H = \
@@ -1049,6 +1057,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_CrsMatrixIn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_CrsSingletonFilter_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_HDF5.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_HDF5_DistObject.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_LPTrans_From_GraphTrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_LPTrans_From_MatrixTrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MapColoring.Po@am__quote@
@@ -1685,6 +1694,22 @@ EpetraExt_HDF5.obj: $(srcdir)/inout/EpetraExt_HDF5.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_HDF5.Po' tmpdepfile='$(DEPDIR)/EpetraExt_HDF5.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_HDF5.obj `if test -f '$(srcdir)/inout/EpetraExt_HDF5.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_HDF5.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_HDF5.cpp'; fi`
+
+EpetraExt_HDF5_DistObject.o: $(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_HDF5_DistObject.o -MD -MP -MF "$(DEPDIR)/EpetraExt_HDF5_DistObject.Tpo" -c -o EpetraExt_HDF5_DistObject.o `test -f '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_HDF5_DistObject.Tpo" "$(DEPDIR)/EpetraExt_HDF5_DistObject.Po"; else rm -f "$(DEPDIR)/EpetraExt_HDF5_DistObject.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp' object='EpetraExt_HDF5_DistObject.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_HDF5_DistObject.Po' tmpdepfile='$(DEPDIR)/EpetraExt_HDF5_DistObject.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_HDF5_DistObject.o `test -f '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
+
+EpetraExt_HDF5_DistObject.obj: $(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_HDF5_DistObject.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_HDF5_DistObject.Tpo" -c -o EpetraExt_HDF5_DistObject.obj `if test -f '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_HDF5_DistObject.Tpo" "$(DEPDIR)/EpetraExt_HDF5_DistObject.Po"; else rm -f "$(DEPDIR)/EpetraExt_HDF5_DistObject.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp' object='EpetraExt_HDF5_DistObject.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_HDF5_DistObject.Po' tmpdepfile='$(DEPDIR)/EpetraExt_HDF5_DistObject.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_HDF5_DistObject.obj `if test -f '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; fi`
 
 EpetraExt_Zoltan_CrsGraph.o: $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_Zoltan_CrsGraph.o -MD -MP -MF "$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Tpo" -c -o EpetraExt_Zoltan_CrsGraph.o `test -f '$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp; \

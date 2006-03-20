@@ -177,7 +177,9 @@ EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
      $(srcdir)/inout/EpetraExt_Exception.h \
      $(srcdir)/inout/EpetraExt_Utils.h \
-     $(srcdir)/inout/EpetraExt_HDF5.h
+     $(srcdir)/inout/EpetraExt_HDF5.h \
+     $(srcdir)/inout/EpetraExt_HDF5_Handle.h \
+     $(srcdir)/inout/EpetraExt_DistArray.h
 
 EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_mmio.cpp \
@@ -191,7 +193,8 @@ EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_VectorIn.cpp\
      $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
      $(srcdir)/inout/EpetraExt_Utils.cpp \
-     $(srcdir)/inout/EpetraExt_HDF5.cpp
+     $(srcdir)/inout/EpetraExt_HDF5.cpp \
+     $(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
 
 if BUILD_INOUT
 
