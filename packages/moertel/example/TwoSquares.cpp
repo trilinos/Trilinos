@@ -1,6 +1,41 @@
-#include "Galeri_Utils.h"
-#include "Galeri_FiniteElements.h"
-#ifdef HAVE_MPI
+/*
+#@HEADER
+# ************************************************************************
+#
+#                          Moertel FE Package
+#                 Copyright (2006) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Michael Gee (mwgee@sandia.gov)
+#
+# ************************************************************************
+#@HEADER
+*/
+/*!
+ * \file TwoSquares.cpp
+ *
+ * \brief Simple serial example showing Moertel usage and solver interfaces
+ *
+ * \date Last update do Doxygen: 20-March-06
+ *
+ */
+#ifdef EPETRA_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
 #else
@@ -10,6 +45,10 @@
 // MOERTEL headers
 #include "mrtr_manager.H"
 #include "mrtr_segment_linear1D.H"
+
+// Galeri headers
+#include "Galeri_Utils.h"
+#include "Galeri_FiniteElements.h"
 
 using namespace Galeri;
 using namespace Galeri::FiniteElements;
@@ -23,7 +62,7 @@ using namespace Galeri::FiniteElements;
 // where \Omega is a 2D rectangle, divided into triangles.
 // The input grid should be generated using similar 
 // conventions of file galeri/data/TwoSquares.m:
-// - the bc ID of 10 and 20 are for the mortar faces
+// - the bc ID of 10 and 20 are for the mortar interface
 // - the bc ID of 0 is for the external domain.
 // ==========================================================
 
@@ -84,7 +123,17 @@ int main(int argc, char *argv[])
     // this example is in serial only
     if (Comm.NumProc()>1) exit(0);
 
-    // read grid from file, also see TwoSquares.m used to generate the grids
+    // read grid from file, see also TwoSquares.m used to generate the grids
+    /*
+    %  +------+
+    %  |  S2  |
+    %  +------+ <- edge has tag 20 and 9 elements
+    %  +------+ <- edge has tag 10 and 10 elements
+    %  |  S1  |
+    %  +------+
+    %
+    % where S1 = (-1,1) x (-1,1) and S2 = (-1, 1) x (1, 3).
+    */
     FileGrid Grid(Comm, "TwoSquares.grid");
     
     
@@ -242,6 +291,7 @@ int main(int argc, char *argv[])
     // ============================================================= //
     // Here we are done with the construction phase of the interface
     // so we can integrate the mortar integrals
+    // (Note we have not yet evaluated the PDE at all!)
     // ============================================================= //
     manager.Mortar_Integrate();
     
@@ -273,13 +323,13 @@ int main(int argc, char *argv[])
 
     // ============================================================= //
     // this is Galeri's dense solve method if you'd like to see how
-    // the uncoupled solution look like
+    // the uncoupled solution looks like
     // ============================================================= //
     //Solve(&A, &LHS, &RHS);
 
     // ============================================================= //
     // Since we now have all the pieces together, let's use the 
-    // MOERTEL interface to other Trilinos packages to solve this
+    // MOERTEL interface to other Trilinos packages to solve the
     // problem
     // ============================================================= //
     
@@ -320,7 +370,9 @@ int main(int argc, char *argv[])
     // AztecOO parameters
     Teuchos::ParameterList& aztecparams = list.sublist("Aztec");
     aztecparams.set("AZ_solver","AZ_cg");
-    aztecparams.set("AZ_precond","AZ_user_precond");// <- will use ML as preconditioner
+    // This will involve ML as preconditioner
+    // See the AztecOO manual for other options
+    aztecparams.set("AZ_precond","AZ_user_precond");
     aztecparams.set("AZ_max_iter",1200);
     aztecparams.set("AZ_output",100);
     aztecparams.set("AZ_tol",1.0e-7);
@@ -329,8 +381,8 @@ int main(int argc, char *argv[])
     // ML parameters
     // As Moertel comes with his own special mortar multigrid hierachy
     // based on ML's smoothed aggregation, not all ML parameters are recognized
-    // It basically recognizes everything that is hooked up in ML's MLAPI
-    // (ML application programming interface), see MLAPI documentation
+    // It basically recognizes everything that recognized by ML's MLAPI
+    // (ML Application Programming Interface), see MLAPI documentation
     Teuchos::ParameterList& mlparams = list.sublist("ML");
     ML_Epetra::SetDefaults("SA",mlparams);
     mlparams.set("output",10);
