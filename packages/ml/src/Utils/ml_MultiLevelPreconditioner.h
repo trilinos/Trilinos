@@ -218,7 +218,7 @@ public:
   //! Constructs an MultiLevelPreconditioner with default values.
 
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-                           const bool ComputePrec);
+                           const bool ComputePrec = true);
 
   //! Constructs an MultiLevelPreconditioner. Retrives parameters from \c List.
   
@@ -525,6 +525,9 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
 
   //! Visualizes the effect of the ML cycle on a random vector.
   int VisualizeCycle(int NumCycles = 1);
+
+  //! Reads a parameter list from an XML file.
+  int ReadXML(const string& FileName);
 
 //@}
 

@@ -72,6 +72,15 @@ use the old/low level multigrid interface to set up a preconditioner.
 A hidden file '.data' is included which correspond to a simple finite
 element model of a Laplacian.
 
+*) ml_XML.cpp:
+
+The goal of this example is to show how to modify the parameter list 
+that is stored within the MultiLevelPreconditioner class without 
+recompiling the application. A set of parameters to be added is stored
+in a file, called ml_ParameterList.xml, located in the working
+directory. This file is parsed, and its content is used to build
+the preconditioner.
+
 ===============================================================================
 
 files in ml/examples/MatrixReading/

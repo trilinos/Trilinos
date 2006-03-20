@@ -103,10 +103,13 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
   Teuchos::ParameterList AmesosList;
 
+#if 0
+  // MS // I don't like this output any more 
   if( ML_Get_PrintLevel() > 8 ) {
     AmesosList.set("PrintTiming",true);
     AmesosList.set("PrintStatus",true);
   }
+#endif
   AmesosList.set("MaxProcs",MaxProcs);
   AmesosList.set("AddToDiag", AddToDiag);
 

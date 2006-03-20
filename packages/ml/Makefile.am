@@ -81,6 +81,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #The following line helps the test harness recover from build errors.
                                                                                 
 all-local:
+	@cp $(top_srcdir)/examples/BasicExamples/ml_ParameterList.xml $(top_builddir)/examples/BasicExamples
 	@echo "Trilinos package ml built successfully"
 	@echo 
 	@echo "        +----------------------------------------------------+"

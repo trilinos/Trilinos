@@ -655,6 +655,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if( verbose_ ) 
     ML_print_line("-",78);
   
+  // check for an XML input file
+  ReadXML("ml_ParameterList.xml");
+
   FirstApplication_ = true;
 
   int call1 = 0, call2 = 0; 

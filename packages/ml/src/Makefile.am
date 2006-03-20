@@ -236,6 +236,7 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_Adapt.cpp       \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp     \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp        \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Aux.cpp         \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner_XML.cpp         \
 $(srcdir)/Utils/ml_anasazi.cpp                              \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp                   \
 $(srcdir)/Utils/ml_RowMatrix.cpp                            \

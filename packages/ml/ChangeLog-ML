@@ -32,6 +32,24 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
+Mar 2006
+
+        * Improved the ML/Epetra wrappers: if the ML_Operator is a wrapper of
+          an Epetra object, then ML automatically takes the Epetra pointer
+          stored in the data field of the ML_operator, and avoid an additional
+          RowMatrix wrapper. This makes the IFPACK relaxation smoothers 
+          competitive with ML's internal ones for the finest-level matrix.
+        * Minor fixes to ml_RowMatrix: NumMyCols() was not correct.
+
+------------------------------------------------------------------------------
+	
+Feb 2006
+
+        * Several fixes to the energy minimization procedures. The code is
+          now several times faster and more memory effective.
+
+------------------------------------------------------------------------------
+	
 Dec 2005
 
         * Added support for additional prolongator smoother sweeps (higher
