@@ -490,6 +490,22 @@ class HDF5
                                     int& RowSize);
 
     // @}
+    // @{ \name EpetraExt::DistArray<double>
+
+    //! Writes an EpetraExt::DistArray<int> to group \c GroupName.
+    void Write(const string& GroupName, const DistArray<double>& array);
+
+    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    void Read(const string& GroupName, DistArray<double>*& array);
+
+    //! Reads an EpetraExt::DistArray<int> from group \c GroupName.
+    void Read(const string& GroupName, const Epetra_Map& Map, DistArray<double>*& array);
+
+    //! Reads the global number of elements and type for a generic handle object
+    void ReadDoubleDistArrayProperties(const string& GroupName, 
+                                       int& GlobalLength,
+                                       int& RowSize);
+    // @}
     // @}
     // @{ \name Generic distributed object
 

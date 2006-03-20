@@ -1151,13 +1151,115 @@ void EpetraExt::HDF5::ReadIntDistArrayProperties(const string& GroupName,
   Read(GroupName, "RowSize", RowSize);
 }
 
+// ============================ //
+// EpetraExt::DistArray<double> //
+// ============================ //
+
+// ==========================================================================
+void EpetraExt::HDF5::Write(const string& GroupName, const DistArray<double>& x)
+{
+  if (x.Map().LinearMap())
+  {
+    Write(GroupName, "Values", x.Map().NumMyElements() * x.RowSize(), 
+          x.Map().NumGlobalElements() * x.RowSize(),
+          H5T_NATIVE_DOUBLE, x.Values());
+  }
+  else
+  {
+    // need to build a linear map first, the import data, then
+    // finally write them 
+    const Epetra_BlockMap& OriginalMap = x.Map();
+    Epetra_Map LinearMap(OriginalMap.NumGlobalElements(), OriginalMap.IndexBase(), Comm_);
+    Epetra_Import Importer(LinearMap, OriginalMap);
+
+    EpetraExt::DistArray<double> LinearX(LinearMap, x.RowSize());
+    LinearX.Import(x, Importer, Insert);
+
+    Write(GroupName, "Values", LinearMap.NumMyElements() * x.RowSize(), 
+          LinearMap.NumGlobalElements() * x.RowSize(),
+          H5T_NATIVE_DOUBLE, LinearX.Values());
+  }
+
+  Write(GroupName, "__type__", "EpetraExt::DistArray<double>");
+  Write(GroupName, "GlobalLength", x.GlobalLength());
+  Write(GroupName, "RowSize", x.RowSize());
+}
+
+// ==========================================================================
+void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
+                           DistArray<double>*& X)
+{
+  // gets the length of the vector
+  double GlobalLength, RowSize;
+  ReadDoubleDistArrayProperties(GroupName, GlobalLength, RowSize);
+
+  if (Map.LinearMap())
+  {
+    X = new EpetraExt::DistArray<double>(Map, RowSize);
+    // simply read stuff and go home
+    Read(GroupName, "Values", Map.NumMyElements() * RowSize, 
+         Map.NumGlobalElements() * RowSize, H5T_NATIVE_DOUBLE, X->Values());
+  }
+  else
+  {
+    // we need to first create a linear map, read the vector,
+    // then import it to the actual nonlinear map
+    Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+    EpetraExt::DistArray<double> LinearX(LinearMap, RowSize);
+
+    Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+         LinearMap.NumGlobalElements() * RowSize,
+         H5T_NATIVE_DOUBLE, LinearX.Values());
+
+    Epetra_Import Importer(Map, LinearMap);
+    X = new EpetraExt::DistArray<double>(Map, RowSize);
+    X->Import(LinearX, Importer, Insert);
+  }
+}
+
+// ==========================================================================
+void EpetraExt::HDF5::Read(const string& GroupName, DistArray<double>*& X)
+{
+  // gets the length of the vector
+  double GlobalLength, RowSize;
+  ReadDoubleDistArrayProperties(GroupName, GlobalLength, RowSize);
+
+  // creates a new linear map and use it to read data
+  Epetra_Map LinearMap(GlobalLength, 0, Comm_);
+  X = new EpetraExt::DistArray<double>(LinearMap, RowSize);
+
+  Read(GroupName, "Values", LinearMap.NumMyElements() * RowSize, 
+       LinearMap.NumGlobalElements() * RowSize, H5T_NATIVE_DOUBLE, X->Values());
+}
+//
+// ==========================================================================
+void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const string& GroupName, 
+                                                    double& GlobalLength,
+                                                    double& RowSize)
+{
+  if (!IsContained(GroupName))
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " not found"));
+
+  string Label;
+  Read(GroupName, "__type__", Label);
+
+  if (Label != "EpetraExt::DistArray<double>")
+    throw(Exception(__FILE__, __LINE__,
+                    "requested group " + GroupName + " is not an EpetraExt::DistArray<double>",
+                    "__type__ = " + Label));
+
+  Read(GroupName, "GlobalLength", GlobalLength);
+  Read(GroupName, "RowSize", RowSize);
+}
+
 // ======================= //
 // basic serial data types //
 // ======================= //
 
 // ==========================================================================
 void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
-                         int what)
+                            double what)
 {
   if (!IsContained(GroupName))
     CreateGroup(GroupName);

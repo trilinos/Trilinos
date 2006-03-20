@@ -8,10 +8,43 @@
 
 namespace EpetraExt 
 {
+/*! 
+\brief DistArray<T>: A class to store row-oriented multivectors of type T
+
+Class DistArray allows the construction and usage of multivectors. These 
+vectors contain element of type T, and the storage is row-oriented, and not
+column-oriented as in class Epetra_MultiVector. As such, this class should
+be used as a container for data, on which no BLAS-like operations are
+performed. 
+
+DistArray objects are indentified by an \c Epetra_Map and a \c RowSize. The 
+map specifies the distribution of the elements across the processors and
+therefore the number of local elements, while the RowSize gives the
+total number of data assigned to each node. RowSize is constant for all
+elements.
+
+DistArray is derived from Epetra_DistObject, and it can therefore be
+redistributed using Import/Export instructions.
+
+The typical usage of this class is as follows:
+\code
+EpetraExt::DistArray<double> COO(VertexMap, NumDimensions);
+
+// set the value of the j-th dimension of the i-th local node i:
+COO(i, j) = 1.24
+\endcode
+
+\author Marzio Sala, ETHZ/D-INFK.
+
+\date Last updated on Mar-06.
+*/
   template<class T>
   class DistArray : public Epetra_DistObject
   {
     public:
+      // @{ \name Constructors and Destructors
+
+      //! Constructor for a given \c Map and \c RowSize.
       DistArray(const Epetra_Map& Map, const int RowSize) :
         Epetra_DistObject(Map)
       {
@@ -30,21 +63,28 @@ namespace EpetraExt
         values_.resize(MyLength_ * RowSize_);
       }
 
+      // @}
+      // @{ \name Query methods
+
+      //! Returns the length of the locally owned array.
       inline int MyLength() const
       {
         return(MyLength_);
       }
 
+      //! Returns the global length of the array.
       inline int GlobalLength() const
       {
         return(GlobalLength_);
       }
 
+      //! Returns the row size, that is, the amount of data associated with each element.
       inline int RowSize() const
       {
         return(RowSize_);
       }
 
+      //! Returns a reference to the \c ID component of the \c LEID local element.
       inline T& operator()(const int LEID, const int ID)
       {
         assert (ID <= RowSize_);
@@ -59,6 +99,7 @@ namespace EpetraExt
         return(values_[LEID * RowSize_ + ID]);
       }
 
+      //! Prints the array on the specified stream.
       void Print(ostream& os) const
       {
         os << "DistArray object, label   = " << this->Label() << endl;
@@ -104,22 +145,27 @@ namespace EpetraExt
         return(Map().GID(0));
       }
 
+      //! Extracts a view of the array.
       const vector<T>& ExtractView() const
       {
         return(values_);
       }
 
+      //! Returns a pointer to the internally stored data (non-const version).
       T* Values() 
       {
         return(&values_[0]);
       }
 
+      //! Returns a pointer to the internally stored data (const version).
       const T* Values() const
       {
         return(&values_[0]);
       }
 
+      // @}
     private:
+      // @{ \name Epetra_DistObject methods
 
       virtual int CheckSizes(const Epetra_SrcDistObject& Source)
       {
@@ -245,13 +291,20 @@ namespace EpetraExt
         return(0);
       }
 
+      // @}
+      // @{ \name Private data
+      
+      //! Container of local data
       vector<T> values_;
+      //! Length of the locally owned array.
       int MyLength_;
+      //! Length of the global array.
       int GlobalLength_;
+      //! Amount of data associated with each element.
       int RowSize_;
       int count_;
       int last_;
-
+      // @}
   };
 
 } // namespace EpetraExt
