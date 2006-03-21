@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
     // Test C,G = 0
     testName = "Testing C,G=0";
     ierr += testSolve(false, false, true, false, true,
-		      reltol, abstol, testName);
+		      10*reltol, abstol, testName);
 
     // Test F,G = 0
     testName = "Testing F,G=0";
