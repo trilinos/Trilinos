@@ -171,13 +171,12 @@ int agg_offset, vertex_offset;
     /*= the following two lines are for the solution of elasticity
      problems on fine grid */
 
-   diff_level = ml_ag->max_levels - ml_ag->cur_level - 1;
    /* MS * Added the following to support AdaptiveSA. In MLAPI_Aggregate.cpp
     * MS * we create a new ML_Aggregate object, and diff_level turns out
     * MS * to be different from 0 for all MLAPI levels. */
    if (ml_ag->max_levels != -7)
    {
-     if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
+     if ( ml_ag->cur_level != ml_ag->begin_level ) num_PDE_eqns = nullspace_dim;
    }
 
    /* ============================================================= */
