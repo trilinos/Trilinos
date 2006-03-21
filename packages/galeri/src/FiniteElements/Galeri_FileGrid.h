@@ -275,12 +275,21 @@ public:
     }
     else if (ElementType_ == "GALERI_TET")
     {
-      throw(Exception(__FILE__, __LINE__, "not yet implemented"));
-
+      for (int ie = 0 ; ie < NumMyElements_ ; ++ie)
+      {
+        ElementMaxLength_[ie] = -1.;
+        ElementMinLength_[ie] = -1.;
+        ElementVolume_[ie] = -1;
+      }
     }
     else if (ElementType_ == "GALERI_HEX")
     {
-      throw(Exception(__FILE__, __LINE__, "not yet implemented"));
+      for (int ie = 0 ; ie < NumMyElements_ ; ++ie)
+      {
+        ElementMaxLength_[ie] = -1.;
+        ElementMinLength_[ie] = -1.;
+        ElementVolume_[ie] = -1.;
+      }
     }
   }
 
