@@ -45,7 +45,10 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
   xmax(1.0),
-  dt(1.0e-3)
+  dt(1.0e-3),
+  id_spec(-1),// Index for needed dependent Species vector
+  id_vel(-1), // Index for auxilliary dependent velocity vector
+  useConvection(false)
 {
 
   // Create mesh and solution vectors
@@ -55,9 +58,8 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
   xptr = new Epetra_Vector(*StandardMap);
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
-  for (int i=0; i < NumMyNodes; i++) {
+  for (int i=0; i < NumMyNodes; i++)
     (*xptr)[i]=xmin + dx*((double) StandardMap->MinMyGID()+i);
-  }
 
   // Create extra vector needed for this transient problem
   oldSolution = new Epetra_Vector(*StandardMap);
@@ -65,7 +67,6 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
   // Next we create and initialize the solution vector
   initialSolution = Teuchos::rcp(new Epetra_Vector(*StandardMap));
   initializeSolution();
-//  initialSolution->PutScalar(0.0);
 
   // Allocate the memory for a matrix dynamically (i.e. the graph is dynamic).
   AA = new Epetra_CrsGraph(Copy, *StandardMap, 0);
@@ -85,6 +86,8 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
   ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
 }
 
+//-----------------------------------------------------------------------------
+
 // Destructor
 Equation_A::~Equation_A()
 {
@@ -94,11 +97,52 @@ Equation_A::~Equation_A()
   delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }
 
+//-----------------------------------------------------------------------------
+
+// Initialize based on registrations
+void Equation_A::initialize()
+{
+  // Get id of required Species problem
+  map<string, int>::iterator id_ptr = nameToMyIndex.find("Species");
+  if( id_ptr == nameToMyIndex.end() ) 
+  {
+    std::string msg = "ERROR: Equation_A (\"" + myName + "\") could not get "
+         + "vector for problem \"Species\" !!";
+    throw msg;
+  }
+  else
+    id_spec = (*id_ptr).second;
+  
+  // Check for dependence on velocity (convection)
+
+  // Rather than merely existing, we should change this to search the
+  // dependent problems vector
+  id_ptr = nameToMyIndex.find("Burgers");
+  if( id_ptr == nameToMyIndex.end() ) 
+  {
+    cout << "WARNING: Equation_A (\"" << myName << "\") could not get "
+         << "vector for problem \"Burgers\". Omitting convection." << endl;
+
+    useConvection = false;
+  }
+  else
+  {
+    id_vel = (*id_ptr).second;
+    useConvection = true;
+  }
+  
+  return;
+}
+
+//-----------------------------------------------------------------------------
+
 // Reset function
 void Equation_A::reset(const Epetra_Vector& x)
 {
   *oldSolution = x;
 }
+
+//-----------------------------------------------------------------------------
 
 // Empty Reset function
 void Equation_A::reset()
@@ -106,6 +150,8 @@ void Equation_A::reset()
   cout << "WARNING: reset called without passing any update vector !!" 
        << endl;
 }
+
+//-----------------------------------------------------------------------------
 
 // Set initialSolution to desired initial condition
 void Equation_A::initializeSolution()
@@ -124,6 +170,8 @@ void Equation_A::initializeSolution()
   
   *oldSolution = soln;
 } 
+
+//-----------------------------------------------------------------------------
 
 // Matrix and Residual Fills
 bool Equation_A::evaluate(
@@ -194,41 +242,19 @@ bool Equation_A::evaluate(
     ddep[i] = new double[2];
   Basis basis;
 
-  int id_spec; // Index for needed dependent Species vector
-  int id_vel;  // Index for needed dependent velocity vector
+  double convection = 0.0;
 
-  map<string, int>::iterator id_ptr = nameToMyIndex.find("Species");
-  if( id_ptr == nameToMyIndex.end() ) {
-    cout << "WARNING: Equation_A (\"" << myName << "\") could not get "
-         << "vector for problem \"Species\" !!" << endl;
-    cout << "Using dependent vectors in order of dependence registration."
-         << endl;
-    //myManager->outputStatus();
-    id_spec = 0; // First dependent field
-  }
-  else
-    id_spec = (*id_ptr).second;
-  
-  //
-  id_ptr = nameToMyIndex.find("Burgers");
-  if( id_ptr == nameToMyIndex.end() ) {
-    cout << "WARNING: Equation_A (\"" << myName << "\") could not get "
-         << "vector for problem \"Burgers\" !!" << endl;
-    throw "Equation_A (Species) ERROR";
-  }
-  else
-    id_vel = (*id_ptr).second;
-    //
-  
   // Zero out the objects that will be filled
   if ( fillJac ) A->PutScalar(0.0);
   if ( fillRes ) rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
-  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
+  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) 
+  {
     
     // Loop Over Gauss Points
-    for(int gp=0; gp < 2; gp++) {
+    for(int gp=0; gp < 2; gp++) 
+    {
       // Get the solution and coordinates at the nodes 
       xx[0]=xvec[ne];
       xx[1]=xvec[ne+1];
@@ -236,7 +262,8 @@ bool Equation_A::evaluate(
       uu[1] = u[ne+1];
       uuold[0] = uold[ne];
       uuold[1] = uold[ne+1];
-      for( int i = 0; i<numDep; i++ ) {
+      for( int i = 0; i<numDep; i++ ) 
+      {
         ddep[i][0] = (*dep[i])[ne];
         ddep[i][1] = (*dep[i])[ne+1];
       }
@@ -244,21 +271,29 @@ bool Equation_A::evaluate(
       basis.getBasis(gp, xx, uu, uuold, ddep);
 
       // Loop over Nodes in Element
-      for (int i=0; i< 2; i++) {
+      for (int i=0; i< 2; i++) 
+      {
 	row=OverlapMap->GID(ne+i);
-	if (StandardMap->MyGID(row)) {
-	  if ( fillRes ) {
+	if (StandardMap->MyGID(row)) 
+        {
+	  if ( fillRes ) 
+          {
+            convection = 0.0;
+            if( useConvection )
+              convection = basis.ddep[id_vel]*basis.duu/basis.dx;
+
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
-	      +basis.wt*basis.dx
-	      *((basis.uu - basis.uuold)/dt * basis.phi[i] 
-	      +basis.ddep[id_vel]*basis.duu/basis.dx * basis.phi[i] 
-              +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
+	      + basis.wt*basis.dx
+	      * ((basis.uu - basis.uuold)/dt * basis.phi[i] 
+	      + convection * basis.phi[i] 
+              + (1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
               + basis.phi[i] * ( -alpha + (beta+1.0)*basis.uu
                 - basis.uu*basis.uu*basis.ddep[id_spec]) );
 	  }
 	}
 	// Loop over Trial Functions
-	if ( fillJac ) {
+	if ( fillJac ) 
+        {
 	  for( int j = 0; j < 2; ++j ) 
           {
 	    if (StandardMap->MyGID(row)) 
@@ -336,11 +371,15 @@ bool Equation_A::evaluate(
   return true;
 }
 
+//-----------------------------------------------------------------------------
+
 Epetra_Vector& Equation_A::getOldSoln()
 {
   return *oldSolution;
 } 
   
+//-----------------------------------------------------------------------------
+
 void Equation_A::generateGraph()
 {
   

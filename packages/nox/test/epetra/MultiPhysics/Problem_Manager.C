@@ -280,20 +280,26 @@ void Problem_Manager::registerComplete()
     throw "Problem_Manager ERROR";
   }
 
+  // Make sure everything is starting clean
+  assert(Groups.empty() && Interfaces.empty() && Solvers.empty()
+         && ProblemToCompositeIndices.empty());
+
   // Iterate over each problem and construct the necessary objects
 
   map<int, GenericEpetraProblem*>::iterator iter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator last = Problems.end();
 
-  // Make sure everything is starting clean
-  assert(Groups.empty() && Interfaces.empty() && Solvers.empty()
-         && ProblemToCompositeIndices.empty());
+  // First give each problem a chance to initialize based on registrations
+  for( ; last != iter; ++iter )
+    (*iter).second->initialize();
+
+  iter = Problems.begin();
 
   int icount = 0; // Problem counter
   int runningProblemNodeCount = 0;
   int runningMaxGlobalId = 0; // Accruing max index used for establishing
                   // each problem's mapping into the composite problem
-  //
+  
   // Create an index array for use in constructing a composite Epetra_Map
   int* compositeGlobalNodes = new int[NumMyNodes];
 
@@ -660,7 +666,8 @@ void Problem_Manager::resetProblems()
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
   // Loop over each problem and copy its solution into its old solution
-  for( ; problemIter != problemLast; problemIter++) {
+  for( ; problemIter != problemLast; problemIter++) 
+  {
     GenericEpetraProblem& problem = *(*problemIter).second;
     problem.reset( *problem.getSolution() );
   }

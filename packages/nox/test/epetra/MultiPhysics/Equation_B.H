@@ -66,6 +66,9 @@ public:
   // Set initial condition for solution vector
   void initializeSolution();
 
+  // Initialize based on registrations
+  void initialize();
+
   // Evaluates the function (F) and/or the Jacobian using the solution 
   // values in solnVector.
   bool evaluate( NOX::Epetra::Interface::Required::FillType fill,
@@ -98,9 +101,9 @@ protected:
   Epetra_Vector *oldSolution;
   Epetra_Vector *rhs;
 
+  int id_temp ;
+  int id_vel  ;
+
+  bool useConvection;
 };
 #endif
-
-
-
-

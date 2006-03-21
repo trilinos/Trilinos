@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   if (argc < 2) 
   {
     cout << "Usage: " << argv[0] 
-         << " -n number_of_elements [ -matlab -offBlocks ]" 
+         << " -n number_of_elements [ -matlab -offBlocks -noFlow ]" 
          << endl;
     exit(1);
   }
@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
   // Default run-time options that can be changed from the command line
   bool useMatlab   = false ;
   bool doOffBlocks = false ;
+  bool noFlow      = false ;
   
   string inConcat("");
 
@@ -163,7 +164,6 @@ int main(int argc, char *argv[])
   {
     useMatlab = true;
     inConcat.replace( inConcat.find(option), option.size()+1, "");
-    //cout << "Using matlab.\n" << "Remaining command line :\n " << inConcat << endl;
   }
 
   option = "-offBlocks";
@@ -171,7 +171,13 @@ int main(int argc, char *argv[])
   {
     doOffBlocks = true;
     inConcat.replace( inConcat.find(option), option.size()+1, "");
-    //cout << "Using offBlocks.\n" << "Remaining command line :\n " << inConcat << endl;
+  }
+
+  option = "-noFlow";
+  if( inConcat.find(option) != string::npos )
+  {
+    noFlow = true;
+    inConcat.replace( inConcat.find(option), option.size()+1, "");
   }
 
   option = "-n";
@@ -183,11 +189,9 @@ int main(int argc, char *argv[])
 
   int NumGlobalNodes = atoi(inConcat.c_str()) + 1;
 
-  //cout << "\nI'm using " << NumGlobalNodes << " global nodes." << endl;
-
-  // The number of unknowns must be at least equal to the 
-  // number of processors.
-  if (NumGlobalNodes < NumProc) {
+  // The number of unknowns must be at least equal to the number of processors.
+  if (NumGlobalNodes < NumProc) 
+  {
     cout << "numGlobalNodes = " << NumGlobalNodes 
 	 << " cannot be < number of processors = " << NumProc << endl;
     exit(1);
@@ -340,14 +344,9 @@ int main(int argc, char *argv[])
   if( doBrusselator ) 
   {
     // Create each part of the Brusselator problem class.  
-    Equation_A ProblemA(Comm, NumGlobalNodes, "Temperature");
-  //  Equation_A ProblemA2(Comm, 11);
-  //  Equation_A ProblemA3(Comm, 501);
-  //  Equation_B ProblemB(Comm, 4, "Species");
-    Equation_B ProblemB(Comm, NumGlobalNodes, "Species");
-  //  Equation_B ProblemB2(Comm, 11);
-  //  Equation_B ProblemB3(Comm, 501);
-    Burgers burgers(Comm, 1*NumGlobalNodes, "Burgers");
+    Equation_A ProblemA(Comm, NumGlobalNodes, "Temperature" );
+    Equation_B ProblemB(Comm, NumGlobalNodes, "Species"     );
+    Burgers  burgers   (Comm, NumGlobalNodes, "Burgers"     );
   
     // An interesting note: the order of solving each problem is based on the
     // order of adding.  For this decoupled problem, problem B is linear
@@ -356,24 +355,20 @@ int main(int argc, char *argv[])
     // of convergence of the decoupled Brusselator.  Solving problem A first
     // dramatically reduces the number of total iterations.
     problemManager.addProblem(ProblemA);
-  //  problemManager.addProblem(ProblemA2);
-  //  problemManager.addProblem(ProblemA3);
     problemManager.addProblem(ProblemB);
-  //  problemManager.addProblem(ProblemB2);
-  //  problemManager.addProblem(ProblemB3);
-    problemManager.addProblem(burgers);
+    if( !noFlow )
+      problemManager.addProblem(burgers);
   
   //  problemManager.createDependency("Temperature", "Species");
     problemManager.createDependency(ProblemA, ProblemB);
-    problemManager.createDependency(ProblemA, burgers);
-//    problemManager.createDependency(ProblemA, burgers);
-  //  problemManager.createDependency(ProblemA2, ProblemB3);
     problemManager.createDependency(ProblemB, ProblemA);
-    problemManager.createDependency(ProblemB, burgers);
-  //  problemManager.createDependency(ProblemB2, ProblemA);
-  //  problemManager.createDependency(ProblemB3, ProblemA2);
 
-    problemManager.createDependency(burgers, ProblemA);
+    if( !noFlow )
+    {
+      problemManager.createDependency(ProblemA, burgers);
+      problemManager.createDependency(ProblemB, burgers);
+      problemManager.createDependency(burgers, ProblemA);
+    }
   
     problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
   

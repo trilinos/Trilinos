@@ -120,6 +120,8 @@ public:
   // transfer operations
   virtual void createDependentVectors(); 
 
+  virtual void initialize() { return; } //  default no-op
+
   // Create Standard and Overlap (ghost) maps
   virtual void createMaps(); 
 

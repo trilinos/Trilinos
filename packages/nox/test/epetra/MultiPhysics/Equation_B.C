@@ -45,7 +45,10 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
   xmax(1.0),
-  dt(1.0e-3)
+  dt(1.0e-3),
+  id_temp(-1),// Index for needed dependent Temperature vector
+  id_vel(-1), // Index for auxilliary velocity vector
+  useConvection(false)
 {
 
   // Create mesh and solution vectors
@@ -55,9 +58,8 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
   xptr = new Epetra_Vector(*StandardMap);
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
-  for (int i=0; i < NumMyNodes; i++) {
+  for (int i=0; i < NumMyNodes; i++)
     (*xptr)[i]=xmin + dx*((double) StandardMap->MinMyGID()+i);
-  }
 
   // Create extra vector needed for this transient problem
   oldSolution = new Epetra_Vector(*StandardMap);
@@ -85,6 +87,8 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
   ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
 }
 
+//-----------------------------------------------------------------------------
+
 // Destructor
 Equation_B::~Equation_B()
 {
@@ -94,11 +98,52 @@ Equation_B::~Equation_B()
   delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }
 
+//-----------------------------------------------------------------------------
+
 // Reset function
 void Equation_B::reset(const Epetra_Vector& x)
 {
   *oldSolution = x;
 }
+
+//-----------------------------------------------------------------------------
+
+// Initialize based on registrations
+void Equation_B::initialize()
+{
+  // Get id of required Species problem
+  map<string, int>::iterator id_ptr = nameToMyIndex.find("Temperature");
+  if( id_ptr == nameToMyIndex.end() ) 
+  {
+    std::string msg = "ERROR: Equation_B (\"" + myName + "\") could not get "
+         + "vector for problem \"Temperature\" !!";
+    throw msg;
+  }
+  else
+    id_temp = (*id_ptr).second;
+  
+  // Check for dependence on velocity (convection)
+
+  // Rather than merely existing, we should change this to search the
+  // dependent problems vector
+  id_ptr = nameToMyIndex.find("Burgers");
+  if( id_ptr == nameToMyIndex.end() ) 
+  {
+    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
+         << "vector for problem \"Burgers\". Omitting convection." << endl;
+
+    useConvection = false;
+  }
+  else
+  {
+    id_vel = (*id_ptr).second;
+    useConvection = true;
+  }
+  
+  return;
+}
+
+//-----------------------------------------------------------------------------
 
 // Empty Reset function
 void Equation_B::reset()
@@ -106,6 +151,8 @@ void Equation_B::reset()
   cout << "WARNING: reset called without passing any update vector !!" 
        << endl;
 }
+
+//-----------------------------------------------------------------------------
 
 // Set initialSolution to desired initial condition
 void Equation_B::initializeSolution()
@@ -124,6 +171,8 @@ void Equation_B::initializeSolution()
   
   *oldSolution = soln;
 } 
+
+//-----------------------------------------------------------------------------
 
 // Matrix and Residual Fills
 bool Equation_B::evaluate(
@@ -194,31 +243,7 @@ bool Equation_B::evaluate(
     ddep[i] = new double[2];
   Basis basis;
   
-  int id_temp; // Index for needed dependent Species vector
-  int id_vel;  // Index for needed dependent velocity vector
-
-  map<string, int>::iterator id_ptr = nameToMyIndex.find("Temperature");
-  if( id_ptr == nameToMyIndex.end() ) {
-    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
-         << "vector for problem \"Temperature\" !!" << endl;
-    cout << "Using dependent vectors in order of dependence registration."
-         << endl;
-    //myManager->outputStatus();
-    id_temp = 0; // First dependent field
-  }
-  else
-    id_temp = (*id_ptr).second;
-
-  //
-  id_ptr = nameToMyIndex.find("Burgers");
-  if( id_ptr == nameToMyIndex.end() ) {
-    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
-         << "vector for problem \"Burgers\" !!" << endl;
-    throw "Equation_A (Species) ERROR";
-  }
-  else
-    id_vel = (*id_ptr).second;
-    //
+  double convection = 0.0;
 
   // Zero out the objects that will be filled
   if ( fillJac ) A->PutScalar(0.0);
@@ -237,7 +262,8 @@ bool Equation_B::evaluate(
       uu[1] = u[ne+1];
       uuold[0] = uold[ne];
       uuold[1] = uold[ne+1];
-      for( int i = 0; i<numDep; i++ ) {
+      for( int i = 0; i<numDep; i++ ) 
+      {
         ddep[i][0] = (*dep[i])[ne];
         ddep[i][1] = (*dep[i])[ne+1];
       }
@@ -252,11 +278,15 @@ bool Equation_B::evaluate(
         {
 	  if ( fillRes ) 
           {
+            convection = 0.0;
+            if( useConvection )
+              convection = basis.ddep[id_vel]*basis.duu/basis.dx;
+
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
-	      +basis.wt*basis.dx
-	      *((basis.uu - basis.uuold)/dt * basis.phi[i] 
-	      +basis.ddep[id_vel]*basis.duu/basis.dx * basis.phi[i] 
-	      +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
+	      + basis.wt*basis.dx
+	      * ((basis.uu - basis.uuold)/dt * basis.phi[i] 
+	      + convection * basis.phi[i] 
+	      + (1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
               + basis.phi[i] * ( -beta*basis.ddep[id_temp]
                  + basis.ddep[id_temp]*basis.ddep[id_temp]*basis.uu) );
 	  }
@@ -344,11 +374,15 @@ bool Equation_B::evaluate(
   return true;
 }
 
+//-----------------------------------------------------------------------------
+
 Epetra_Vector& Equation_B::getOldSoln()
 {
   return *oldSolution;
 } 
   
+//-----------------------------------------------------------------------------
+
 void Equation_B::generateGraph()
 {
   

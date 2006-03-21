@@ -70,20 +70,15 @@ bool Problem_Interface::computePreconditioner(const Epetra_Vector& x,
 // This is a new class that may evantually get moved into NOX.  For now,
 // this is simply used as a testbed for driving NOX using Matlab
 
-// Declare and define a static data member
-map< NOX::Abstract::Group::ReturnType, string > Matlab_Interface::returnMsg;
+// Declare and define static data member
+map< NOX::Abstract::Group::ReturnType, string > CommandBase::returnMsg;
+std::istream * CMD_newMacro::is = &(std::cin);
   
 Matlab_Interface::Matlab_Interface(NOX::Solver::Manager &  noxSolver) :
   solver(noxSolver),
   enginePtr( new EpetraExt::EpetraExt_MatlabEngine(comm) ),
   engine(*enginePtr)
 {
-  returnMsg[ NOX::Abstract::Group::Ok ]            = "Ok"            ;
-  returnMsg[ NOX::Abstract::Group::NotDefined ]    = "NotDefined"    ;
-  returnMsg[ NOX::Abstract::Group::BadDependency ] = "BadDependency" ;
-  returnMsg[ NOX::Abstract::Group::NotConverged ]  = "NotConverged"  ;
-  returnMsg[ NOX::Abstract::Group::Failed ]        = "Failed"        ;
-
   cout << "matlab started\n";
 
   // Verify we are using an Epetra concrete implemntation
@@ -97,6 +92,46 @@ Matlab_Interface::Matlab_Interface(NOX::Solver::Manager &  noxSolver) :
 
   solnPtr = const_cast<Epetra_Vector*>(&(dynamic_cast<const NOX::Epetra::Vector&>(groupPtr->getX()).getEpetraVector()));
 
+  // Pack our list of supported commands
+  mapHandler = new CMD_map( engine, solver )  ;
+  commands.push_back( mapHandler );
+
+  CMD_read  * reader = new CMD_read                         ( engine, solver );
+  reader->registerDriver( this );
+  commands.push_back( reader );
+
+  CMD_write * writer = new CMD_write                        ( engine, solver );
+  writer->registerDriver( this );
+  commands.push_back( writer );
+
+  CMD_newMacro * newMacro = new CMD_newMacro                ( engine, solver );
+  newMacro->registerDriver( this );
+  commands.push_back( newMacro );
+
+  CMD_showStack * showStack = new CMD_showStack             ( engine, solver );
+  showStack->registerDriver( this );
+  commands.push_back( showStack );
+
+  commands.push_back( new CMD_isF                           ( engine, solver ) );
+  commands.push_back( new CMD_isJacobian                    ( engine, solver ) );
+  commands.push_back( new CMD_isGradient                    ( engine, solver ) );
+  commands.push_back( new CMD_isNewton                      ( engine, solver ) );
+  commands.push_back( new CMD_isNormNewtonSolveResidual     ( engine, solver ) );
+  commands.push_back( new CMD_isPreconditioner              ( engine, solver ) );
+  commands.push_back( new CMD_isConditionNumber             ( engine, solver ) );
+  commands.push_back( new CMD_showValid                     ( engine, solver ) );
+  commands.push_back( new CMD_getJacobianConditionNumber    ( engine, solver ) );
+  commands.push_back( new CMD_getNormF                      ( engine, solver ) );
+  commands.push_back( new CMD_setX                          ( engine, solver ) );
+  commands.push_back( new CMD_computeF                      ( engine, solver ) );
+  commands.push_back( new CMD_computeJacobian               ( engine, solver ) );
+  commands.push_back( new CMD_computeGradient               ( engine, solver ) );
+  commands.push_back( new CMD_computeNewton                 ( engine, solver ) );
+  commands.push_back( new CMD_getX                          ( engine, solver ) );
+  commands.push_back( new CMD_getF                          ( engine, solver ) );
+  commands.push_back( new CMD_getGradient                   ( engine, solver ) );
+  commands.push_back( new CMD_getNewton                     ( engine, solver ) );
+  commands.push_back( new CMD_getJacobian                   ( engine, solver ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -111,59 +146,88 @@ void Matlab_Interface::interact()
   char s [BUFSIZE] ;
   char matlabBuffer [MATLABBUF];
 
-  int err;
+  bool status;
 
   while(1) 
   {
-      // Prompt the user and get a string
-      printf(">> ");
-      if (fgets(s, BUFSIZE, stdin) == NULL) 
-      {
-        printf("Bye\n");
-        break ;
-      }
-      printf ("command :%s:\n", s) ;
+    // Prompt the user and get a string
+    printf(">> ");
+    if (fgets(s, BUFSIZE, stdin) == NULL) 
+    {
+      printf("Bye\n");
+      break ;
+    }
+    printf ("command :%s:\n", s) ;
 
-      // Parse for NOX commands
-      std::string inStr(s);
-      if( inStr[0] == '#' )
-      {
-        inStr.erase(0,1);
-        // Remove any carriage returns
-        inStr.replace( inStr.find('\n'), 1, "");
+    std::string inStr(s);
+    status = doCommand( inStr );
 
-        doCommand( inStr );
-      }
-      else
-      {
-        // Send the command to MATLAB
-        // output goes to stdout
-        err = engine.EvalString(s, matlabBuffer, MATLABBUF);
-        if (err != 0) 
-        {
-            printf("there was an error: %d", err);
-            err = 0;
-        }
-        else {
-            printf("Matlab Output:\n%s", matlabBuffer);
-        }
-      }
+    if( status )
+      commandStack.push_back( inStr );
   }
 
   return;
 }
 
 //-----------------------------------------------------------------------------
+
 bool Matlab_Interface::doCommand( std::string & command )
+{
+  char matlabBuffer [MATLABBUF];
+
+  bool status;
+
+  // Parse for NOX commands
+  if( command[0] == '#' )
+  {
+    command.erase(0,1);
+    // Remove any carriage returns
+    if( command.find('\n') != string::npos )
+      command.replace( command.find('\n'), 1, "");
+
+    status = doNOXCommand( command );
+
+    if( status )
+      command.insert(0, "#");
+  }
+  else
+  {
+    // Send the command to MATLAB
+    // output goes to stdout
+    char * c_comm = const_cast<char *>(command.c_str());
+    int err = engine.EvalString(c_comm, matlabBuffer, MATLABBUF);
+    if (err != 0) 
+    {
+      printf("there was an error: %d", err);
+      status = false;
+    }
+    else 
+    {
+      printf("Matlab Output:\n%s", matlabBuffer);
+      status = true;
+    }
+  }
+  
+  return status;
+}
+
+//-----------------------------------------------------------------------------
+
+bool Matlab_Interface::doNOXCommand( std::string & command )
 {
 
   NOX::Abstract::Group::ReturnType returnStatus;
 
-  cout << "NOX: " << command << endl;
+  cout << "NOX     : " << command << endl;
 
-  // Give precedence to mapped commands
-  if( userMaps.end() != userMaps.find(command) )
-    command = userMaps[command];
+  // Allow for "#" no-op
+  if( '#' == command[0] )
+    return true;
+
+  // Give priority to mapped commands
+
+  if( mapHandler->getUserMaps().end() != mapHandler->getUserMaps().find(command) )
+    command = mapHandler->getUserMaps()[command];
 
   try 
   {
@@ -174,229 +238,32 @@ bool Matlab_Interface::doCommand( std::string & command )
     {
       cout << "\n\tCommand Summary:\n" << endl;
 
-      cout << "\t\t?\t\tShow commands" << endl;
-      cout << "\t\t#map [arg1] [arg2] \tMap a command" << endl;
-      cout << "\t\t#isF" << endl;
-      cout << "\t\t#isJacobian" << endl;
-      cout << "\t\t#isGradient" << endl;
-      cout << "\t\t#isNewton" << endl;
-      cout << "\t\t#isNormNewtonSolveResidual" << endl;
-      cout << "\t\t#showValid" << endl;
-      cout << "\t\t#isPreconditioner" << endl;
-      cout << "\t\t#isConditionNumber" << endl;
-      cout << "\t\t#computeF" << endl;
-      cout << "\t\t#computeJacobian" << endl;
-      cout << "\t\t#computeGradient" << endl;
-      cout << "\t\t#computeNewton" << endl;
-      cout << "\t\t#setX" << endl;
-      cout << "\t\t#getNormF" << endl;
+      std::list<CommandBase *>::const_iterator iter = commands.begin() ,
+                                           iter_end = commands.end()   ;
+      for(  ; iter_end != iter; ++iter )
+        if( NULL == (*iter)->getCoupler() )
+          (*iter)->describe();
 
-      if( !userMaps.empty() )
+      if( !mapHandler->getUserMaps().empty() )
       {
         cout << "\n\tUser Defined (Mapped) Command Summary:\n" << endl;
 
-        for( std::map<string, string>::const_iterator iter = userMaps.begin(); iter != userMaps.end(); ++iter )
-          cout << "\t\t#" << (*iter).first << " --> " << (*iter).second << endl;
+        for( std::map<string, string>::const_iterator iter = 
+            mapHandler->getUserMaps().begin(); iter != mapHandler->getUserMaps().end(); ++iter )
+          cout << "\t\t" << (*iter).first << " --> " << (*iter).second << endl;
       }
 
       return true;
     }
 
-    if( command.find("map") != string::npos )
-    {
-      command.replace( command.find("map "), 4, ""); 
-      std::string::size_type loc = command.find(" ");
-      if( std::string::npos == loc )
-      {
-        cout << "Could not get two valid arguments." << endl;
-        return false;
-      }
-      std::string arg1 = command.substr(0, loc);
-      command.replace( 0, loc+1, ""); 
-      std::string arg2 = command;
-      cout << "Mapping \"" << arg1 << "\" to \"" << arg2 << "\"" << endl;
-      userMaps[ arg1 ] = arg2;
-      return true;
-    }
+    std::list<CommandBase *>::const_iterator iter = commands.begin() ,
+                                         iter_end = commands.end()   ;
+    for(  ; iter_end != iter; ++iter )
+      if( string::npos != command.find((*iter)->getCommand()) )
+        return (*iter)->doCommand(command);
 
-    // Query methods
-
-    if( command.find("isF") != string::npos )
-    {
-      std::string isValid = (groupPtr->isF() ? "True" : "False" );
-      cout << " --> " << isValid << endl;
-      return true;
-    }
-
-    if( command.find("isJacobian") != string::npos )
-    {
-      std::string isValid = (groupPtr->isJacobian() ? "True" : "False" );
-      cout << " --> " << isValid << endl;
-      return true;
-    }
-
-    if( command.find("isGradient") != string::npos )
-    {
-      std::string isValid = (groupPtr->isGradient() ? "True" : "False" );
-      cout << " --> " << isValid << endl;
-      return true;
-    }
-      
-    if( command.find("isNewton") != string::npos )
-    {
-      std::string isValid = (groupPtr->isNewton() ? "True" : "False" );
-      cout << " --> " << isValid << endl;
-      return true;
-    }
-      
-    if( command.find("isNormNewtonSolveResidual") != string::npos )
-    {
-      std::string isValid = (groupPtr->isNormNewtonSolveResidual() ? "True" : "False" );
-      cout << " --> " << isValid << endl;
-      return true;
-    }
-      
-    if( command.find("isPreconditioner") != string::npos )
-    {
-      std::string isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
-      cout << " --> " << isValid << endl;
-      return true;
-    }
-      
-    if( command.find("isConditionNumber") != string::npos )
-    {
-      std::string isValid = (groupPtr->isConditionNumber() ? "True" : "False" );
-      cout << " --> " << isValid << endl;
-      return true;
-    }
-      
-    if( command.find("showValid") != string::npos )
-    {
-      std::string isValid = (groupPtr->isF() ? "True" : "False" );
-      cout << " isF              --> " << isValid << endl;
-      isValid = (groupPtr->isJacobian() ? "True" : "False" );
-      cout << " isJacobian       --> " << isValid << endl;
-      isValid = (groupPtr->isGradient() ? "True" : "False" );
-      cout << " isGradient       --> " << isValid << endl;
-      isValid = (groupPtr->isNewton() ? "True" : "False" );
-      cout << " isNewton         --> " << isValid << endl;
-      isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
-      cout << " isPreconditioner --> " << isValid << endl;
-      return true;
-    }
-
-    // Scalar value query methods
-
-    if( command.find("getJacobianConditionNumber") != string::npos )
-    {
-      cout << groupPtr->getJacobianConditionNumber() << endl;
-      return true;
-    }
-      
-    if( command.find("getNormF") != string::npos )
-    {
-      cout << groupPtr->getNormF() << endl;
-      return true;
-    }
-      
-    // Compute methods
-
-    if( command.find("setX") != string::npos )
-    {
-      command.replace( command.find("setX"), 5, ""); 
-      engine.GetMultiVector( command.c_str(), *solnPtr );
-      groupPtr->setX(*solnPtr);
-      return true;
-    }
-
-    if( command.find("computeF") != string::npos )
-    {
-      returnStatus = groupPtr->computeF();
-      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return true;
-    }
-
-    if( command.find("computeJacobian") != string::npos )
-    {
-      returnStatus = groupPtr->computeJacobian();
-      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return true;
-    }
-
-    if( command.find("computeGradient") != string::npos )
-    {
-      returnStatus = groupPtr->computeGradient();
-      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return true;
-    }
-
-    if( command.find("computeNewton") != string::npos )
-    {
-      const NOX::Parameter::List & const_lsParams = solver.getParameterList().
-                                                           sublist("Direction").
-                                                           sublist("Newton").
-                                                           sublist("Linear Solver");
-      NOX::Parameter::List & lsParams = const_cast<NOX::Parameter::List &>(const_lsParams);
-      returnStatus = groupPtr->computeNewton(lsParams);
-      cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
-      return true;
-    }
-
-    // Jacobian operations
-
-    // Get operations
-
-    if( command.find("getX") != string::npos )
-    {
-      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
-                         (groupPtr->getX()).getEpetraVector());
-      engine.PutMultiVector( *tmpVec, "X" );
-      return true;
-    }
-
-    if( command.find("getF") != string::npos )
-    {
-      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
-                         (groupPtr->getF()).getEpetraVector());
-      engine.PutMultiVector( *tmpVec, "F" );
-      return true;
-    }
-
-    if( command.find("getGradient") != string::npos )
-    {
-      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
-                         (groupPtr->getGradient()).getEpetraVector());
-      engine.PutMultiVector( *tmpVec, "Gradient" );
-      return true;
-    }
-
-    if( command.find("getNewton") != string::npos )
-    {
-      const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
-                         (groupPtr->getNewton()).getEpetraVector());
-      engine.PutMultiVector( *tmpVec, "Newton" );
-      return true;
-    }
-
-    if( command.find("getJacobian") != string::npos )
-    {
-      Epetra_Operator * jacOp = (groupPtr->getLinearSystem()->getJacobianOperator().get());
-      Epetra_RowMatrix * rowMatrix = dynamic_cast<Epetra_RowMatrix *>(jacOp);
-      if( rowMatrix )
-      {
-        engine.PutRowMatrix( *rowMatrix, "Jacobian", false );
-        return true;
-      }
-      NOX::Epetra::FiniteDifference * fdOp = dynamic_cast<NOX::Epetra::FiniteDifference *>(jacOp);
-      if( fdOp )
-      {
-        engine.PutRowMatrix( fdOp->getUnderlyingMatrix(), "Jacobian", false );
-        return true; 
-      }
-
-      cout << "Could not get a valid matrix." << endl;
-      return false;
-    }
+    cout << "\n" << command << " : Not found." << endl;
+    return false;
 
   }
   catch( const char * msg )
@@ -414,6 +281,15 @@ Coupling_Matlab_Interface::Coupling_Matlab_Interface(Problem_Manager &  manager_
   Matlab_Interface( *(manager_.getCompositeSolver()) ),
   problemManager(manager_)
 {
+
+  commands.push_back( new CMD_problemSummary             ( engine, problemManager ) );
+  commands.push_back( new CMD_compJac                    ( engine, problemManager ) );
+  commands.push_back( new CMD_compRes                    ( engine, problemManager ) );
+  commands.push_back( new CMD_doXfers                    ( engine, problemManager ) );
+  commands.push_back( new CMD_getJac                     ( engine, problemManager ) );
+  commands.push_back( new CMD_getRes                     ( engine, problemManager ) );
+  commands.push_back( new CMD_getAllJac                  ( engine, problemManager ) );
+  commands.push_back( new CMD_getAllRes                  ( engine, problemManager ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -421,197 +297,40 @@ bool Coupling_Matlab_Interface::doCommand( std::string & command )
 {
   NOX::Abstract::Group::ReturnType returnStatus;
 
-  cout << "Cpl_NOX: " << command << endl;
+  cout << "Cpl_NOX : " << command << endl;
 
   // Give precedence to mapped commands
-  if( userMaps.end() != userMaps.find(command) )
-    command = userMaps[command];
+
+  std::map< std::string, std::string >::const_iterator iter = mapHandler->getUserMaps().begin(),
+                                                   iter_end = mapHandler->getUserMaps().end()  ;
+
+  for( ; iter_end != iter; ++iter )
+  {
+    std::string mKey = (*iter).first;
+    if( command.find(mKey) != string::npos )
+    {
+      command.replace( command.find(mKey), mKey.size(), (*iter).second );
+      break;
+    }
+  }
 
   try 
   {
-
-    // Give priority to mapping method
-
-    if( command.find("map") != string::npos )
-      return Matlab_Interface::doCommand( command );
-
     // Convenience methods
 
     if( command.find("?") != string::npos )
     {
       cout << "\n\tCoupling Command Summary:\n" << endl;
 
-      cout << "\t\t#pSummary \t Show coupled problems summary" << endl;
-      cout << "\t\t#cJ[i j] \t Compute i,j block Jacobian" << endl;
-      cout << "\t\t#cF[i] \t Compute i Residual" << endl;
-      cout << "\t\t#getF[i j] \t Get i Residual" << endl;
-      cout << "\t\t#getJ[i j] \t Get i,j block Jacobian" << endl;
-      cout << "\t\t#getAllF \t Get all Residuals" << endl;
-      cout << "\t\t#getAllJ \t Get all block Jacobians" << endl;
+      std::list<CommandBase *>::const_iterator iter = commands.begin() ,
+                                           iter_end = commands.end()   ;
+      for(  ; iter_end != iter; ++iter )
+        if( NULL != (*iter)->getCoupler() )
+          (*iter)->describe();
 
-      return Matlab_Interface::doCommand( command );
     }
 
-    // Query methods
-
-    if( command.find("pSummary") != string::npos )
-    {
-      problemManager.outputStatus();
-      return true;
-    }
-
-    // Compute methods
-
-    if( command.find("cJ[" ) != string::npos )
-    {
-      command.replace( command.find("cJ["), 3, ""); 
-      std::string::size_type loc = command.find(" ");
-      if( std::string::npos == loc )
-      {
-        cout << "Could not get two valid arguments." << endl;
-        return false;
-      }
-      std::string arg1 = command.substr(0, loc);
-      command.replace( 0, loc+1, ""); 
-      loc = command.find("]");
-      std::string arg2 = command.substr(0, loc);
-      int probId = atoi( arg1.c_str()) ,
-          depID =  atoi( arg2.c_str()) ;
-
-      cout << "Computing Jacobian Block " << probId << "," << depID << endl;
-
-      problemManager.computeBlockJacobian( probId, depID );
-
-      return true;
-    }
-
-    if( command.find("cF[" ) != string::npos )
-    {
-      command.replace( command.find("cR["), 3, ""); 
-      std::string::size_type loc = command.find("]");
-      if( std::string::npos == loc )
-      {
-        cout << "Could not get a valid argument." << endl;
-        return false;
-      }
-      std::string arg1 = command.substr(0, loc);
-      int probId = atoi( arg1.c_str()) ;
-
-      cout << "Computing Residual for Problem " << probId << endl;
-
-      problemManager.computeGroupF( probId );
-
-      return true;
-    }
-
-    // Get methods
-
-    if( command.find("getJ[") != string::npos )
-    {
-      command.replace( command.find("getJ["), 5, ""); 
-      std::string::size_type loc = command.find(" ");
-      if( std::string::npos == loc )
-      {
-        cout << "Could not get two valid arguments." << endl;
-        return false;
-      }
-      std::string arg1 = command.substr(0, loc);
-      command.replace( 0, loc+1, ""); 
-      loc = command.find("]");
-      std::string arg2 = command.substr(0, loc);
-      int probId = atoi( arg1.c_str()) ,
-          depID =  atoi( arg2.c_str()) ;
-
-      Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depID );
-      if( rowMatrix )
-      {
-        std::string name = "BJac_" + arg1 + "_" + arg2;
-        engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
-        cout << "Stored Block Jacobian (" << probId << "," << depID << ") in \""
-             << name << "\"" << endl;
-        return true;
-      }
-
-      cout << "Could not get a valid matrix." << endl;
-      return false;
-    }
-
-    if( command.find("getAllJ") != string::npos )
-    {
-      map<int, GenericEpetraProblem*>::iterator problemIter = problemManager.getProblems().begin();
-      map<int, GenericEpetraProblem*>::iterator problemLast = problemManager.getProblems().end();
-
-      // Do diagonal blocks
-      for( ; problemLast != problemIter; ++problemIter )
-      {
-
-        GenericEpetraProblem & problem = *(*problemIter).second;
-        int                    probId  = (*problemIter).first;
-
-        Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId );
-
-        if( rowMatrix )
-        {
-          ostringstream sval1, sval2;
-          sval1 << probId << flush;
-          std::string name = "BJac_" + sval1.str() + "_" + sval1.str();
-          engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
-          cout << "Stored Block Jacobian (" << probId << "," << probId << ") in \""
-               << name << "\"" << endl;
-        }
-
-        // Do off-diagoanl blocks if appropriate
-        if( problemManager.useOffBlocks() ) 
-        {
-#ifdef HAVE_NOX_EPETRAEXT
-          for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k) 
-          {
-            int depId = problem.getDependentProblems()[k];
-
-            Epetra_RowMatrix * rowMatrix = problemManager.getBlockJacobianMatrix( probId, depId );
-
-            if( rowMatrix )
-            {
-              ostringstream sval1, sval2;
-              sval1 << probId << flush;
-              sval2 << depId  << flush;
-              std::string name = "BJac_" + sval1.str() + "_" + sval2.str();
-              engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
-              cout << "Stored Block Jacobian (" << probId << "," << depId << ") in \""
-                   << name << "\"" << endl;
-            }
-          }
-#endif
-        }
-      }
-      return true;
-    }
-
-    if( command.find("getAllF") != string::npos )
-    {
-      map<int, GenericEpetraProblem*>::iterator problemIter = problemManager.getProblems().begin();
-      map<int, GenericEpetraProblem*>::iterator problemLast = problemManager.getProblems().end();
-
-      // Do diagonal blocks
-      for( ; problemLast != problemIter; ++problemIter )
-      {
-        GenericEpetraProblem & problem = *(*problemIter).second;
-        int                    probId  = (*problemIter).first;
-
-        const Epetra_Vector * resVec = problemManager.getResidual( probId );
-
-        if( resVec )
-        {
-          ostringstream sval1;
-          sval1 << probId << flush;
-          std::string name = "F_" + sval1.str();
-          engine.PutMultiVector( *resVec, name.c_str() );
-          cout << "Stored Residual (" << probId << ") in \"" << name << "\"" << endl;
-        }
-      }
-      return true;
-    }
-
+    return Matlab_Interface::doCommand( command );
   }
   catch( const char * msg )
   {
@@ -621,4 +340,698 @@ bool Coupling_Matlab_Interface::doCommand( std::string & command )
 
   // If no coupling commands found, fall through to nonlinear solver commands
   return Matlab_Interface::doCommand( command );
+}
+
+//-----------------------------------------------------------------------------
+//----------------------  Commands for NOX solver -----------------------------
+//-----------------------------------------------------------------------------
+
+CommandBase::CommandBase( EpetraExt::EpetraExt_MatlabEngine & engine_, 
+                          NOX::Solver::Manager & solver_ ) :
+  engine(engine_),
+  solver(solver_),
+  problemManager(0),
+  driver(0)
+{
+  initialize();
+}
+
+CommandBase::CommandBase( EpetraExt::EpetraExt_MatlabEngine & engine_, 
+                          Problem_Manager & problemManager_) :
+  engine(engine_),
+  solver( *problemManager_.getCompositeSolver() ),
+  problemManager(&problemManager_),
+  driver(0)
+{
+  initialize();
+}
+
+//-----------------------------------------------------------------------------
+
+void CommandBase::initialize()
+{
+  // Verify we are using an Epetra concrete implemntation
+  const NOX::Epetra::Group * testGroup = &(dynamic_cast<const NOX::Epetra::Group &>(solver.getSolutionGroup()));
+  if( NULL == testGroup )
+  {
+    throw "Matlab_Interface ERROR: NOX solver not using Epetra implementation.";
+  }
+
+  groupPtr = const_cast<NOX::Epetra::Group*>(testGroup);
+
+  solnPtr = const_cast<Epetra_Vector*>(&(dynamic_cast<const NOX::Epetra::Vector&>(groupPtr->getX()).getEpetraVector()));
+
+  returnMsg[ NOX::Abstract::Group::Ok ]            = "Ok"            ;
+  returnMsg[ NOX::Abstract::Group::NotDefined ]    = "NotDefined"    ;
+  returnMsg[ NOX::Abstract::Group::BadDependency ] = "BadDependency" ;
+  returnMsg[ NOX::Abstract::Group::NotConverged ]  = "NotConverged"  ;
+  returnMsg[ NOX::Abstract::Group::Failed ]        = "Failed"        ;
+
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_map::doCommand( std::string commandLine )
+{
+  commandLine.replace( commandLine.find("map "), 4, ""); 
+  std::string::size_type loc = commandLine.find(" ");
+  if( std::string::npos == loc )
+  {
+    cout << "Could not get two valid arguments." << endl;
+    return false;
+  }
+  std::string arg1 = commandLine.substr(0, loc);
+  commandLine.replace( 0, loc+1, ""); 
+  std::string arg2 = commandLine;
+  cout << "Mapping \"" << arg1 << "\" to \"" << arg2 << "\"" << endl;
+  userMaps[ arg1 ] = arg2;
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+
+void CMD_map::writeMaps( std::ofstream & os )
+{
+
+  std::map< std::string, std::string >::const_iterator iter = userMaps.begin() ,
+                                                   iter_end = userMaps.end()   ;
+  for( ; iter_end != iter; ++iter )
+  {
+    std::string cLine = "#map " + (*iter).first + " " + (*iter).second;
+    os << cLine << endl;
+  }
+
+  return;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_showStack::doCommand( std::string commandLine )
+{
+
+  if( 0 == driver )
+  {
+    cout << "ERROR: No valid driver registered with showStack." << endl;
+    return false;
+  }
+
+  // Show the command stack
+  cout << "Command Stack :\n" << endl;
+
+  std::list< std::string >::const_iterator iter = driver->getCommandStack().begin()  ,
+                                       iter_end = driver->getCommandStack().end()    ;
+  for( ; iter_end != iter; ++iter )
+    cout << (*iter) << endl;
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_isF::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isF() ? "True" : "False" );
+  cout << " --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_isJacobian::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isJacobian() ? "True" : "False" );
+  cout << " --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_isGradient::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isGradient() ? "True" : "False" );
+  cout << " --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_isNewton::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isNewton() ? "True" : "False" );
+  cout << " --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_isNormNewtonSolveResidual::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isNormNewtonSolveResidual() ? "True" : "False" );
+  cout << " --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_isPreconditioner::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
+  cout << " --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_isConditionNumber::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isConditionNumber() ? "True" : "False" );
+  cout << " --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_showValid::doCommand( std::string commandLine )
+{
+  std::string isValid = (groupPtr->isF() ? "True" : "False" );
+  cout << " isF              --> " << isValid << endl;
+  isValid = (groupPtr->isJacobian() ? "True" : "False" );
+  cout << " isJacobian       --> " << isValid << endl;
+  isValid = (groupPtr->isGradient() ? "True" : "False" );
+  cout << " isGradient       --> " << isValid << endl;
+  isValid = (groupPtr->isNewton() ? "True" : "False" );
+  cout << " isNewton         --> " << isValid << endl;
+  isValid = (groupPtr->isPreconditioner() ? "True" : "False" );
+  cout << " isPreconditioner --> " << isValid << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getJacobianConditionNumber::doCommand( std::string commandLine )
+{
+  cout << groupPtr->getJacobianConditionNumber() << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getNormF::doCommand( std::string commandLine )
+{
+  cout << groupPtr->getNormF() << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_setX::doCommand( std::string commandLine )
+{
+  commandLine.replace( commandLine.find("setX"), 5, ""); 
+  engine.GetMultiVector( commandLine.c_str(), *solnPtr );
+  groupPtr->setX(*solnPtr);
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_computeF::doCommand( std::string commandLine )
+{
+  NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeF();
+  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_computeJacobian::doCommand( std::string commandLine )
+{
+  NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeJacobian();
+  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_computeGradient::doCommand( std::string commandLine )
+{
+  NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeGradient();
+  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_computeNewton::doCommand( std::string commandLine )
+{
+  const NOX::Parameter::List & const_lsParams = solver.getParameterList().
+                                                       sublist("Direction").
+                                                       sublist("Newton").
+                                                       sublist("Linear Solver");
+  NOX::Parameter::List & lsParams = const_cast<NOX::Parameter::List &>(const_lsParams);
+  NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeNewton(lsParams);
+  cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getX::doCommand( std::string commandLine )
+{
+  const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                     (groupPtr->getX()).getEpetraVector());
+  engine.PutMultiVector( *tmpVec, "X" );
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getF::doCommand( std::string commandLine )
+{
+  const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                     (groupPtr->getF()).getEpetraVector());
+  engine.PutMultiVector( *tmpVec, "F" );
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getGradient::doCommand( std::string commandLine )
+{
+  const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                     (groupPtr->getGradient()).getEpetraVector());
+  engine.PutMultiVector( *tmpVec, "Gradient" );
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getNewton::doCommand( std::string commandLine )
+{
+  const Epetra_Vector * tmpVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                     (groupPtr->getNewton()).getEpetraVector());
+  engine.PutMultiVector( *tmpVec, "Newton" );
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getJacobian::doCommand( std::string commandLine )
+{
+  Epetra_Operator * jacOp = (groupPtr->getLinearSystem()->getJacobianOperator().get());
+  Epetra_RowMatrix * rowMatrix = dynamic_cast<Epetra_RowMatrix *>(jacOp);
+  if( rowMatrix )
+  {
+    engine.PutRowMatrix( *rowMatrix, "Jacobian", false );
+    return true;
+  }
+  NOX::Epetra::FiniteDifference * fdOp = dynamic_cast<NOX::Epetra::FiniteDifference *>(jacOp);
+  if( fdOp )
+  {
+    engine.PutRowMatrix( fdOp->getUnderlyingMatrix(), "Jacobian", false );
+    return true; 
+  }
+
+  cout << "Could not get a valid matrix." << endl;
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_read::doCommand( std::string commandLine )
+{
+
+  if( 0 == driver )
+  {
+    cout << "ERROR: No valid driver registered with reader." << endl;
+    return false;
+  }
+
+  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+
+  ifstream inFile(commandLine.c_str());
+  if( !inFile )
+  {
+    cout << "ERROR: Could not open file \"" << commandLine << "\"" << endl;
+    return false;
+  }
+
+  CMD_newMacro::is = &inFile;
+
+  char cLine[256];
+
+  while( !inFile.eof() )
+  {
+    inFile.getline( cLine, 256 );
+    std::string sLine(cLine);
+    driver->doCommand( sLine );
+  }
+
+  CMD_newMacro::is = &(std::cin);
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_write::doCommand( std::string commandLine )
+{
+
+  if( 0 == driver )
+  {
+    cout << "ERROR: No valid driver registered with reader." << endl;
+    return false;
+  }
+
+  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+
+  ofstream outFile(commandLine.c_str());
+  if( !outFile )
+  {
+    cout << "ERROR: Could not open file \"" << commandLine << "\"" << endl;
+    return false;
+  }
+
+  // First, we write out all maps
+  outFile << "######################" << endl;
+  outFile << "####### Maps #########" << endl;
+  outFile << "######################" << endl;
+  outFile << "##" << endl;
+  driver->getMapHandler()->writeMaps( outFile );
+  outFile << "##" << endl;
+  outFile << "##" << endl;
+
+  // Then we write out all macros
+  outFile << "######################" << endl;
+  outFile << "###### Macros ########" << endl;
+  outFile << "######################" << endl;
+  outFile << "##" << endl;
+  std::map< std::string, CMD_macro * >::const_iterator miter = driver->getUserMacros().begin() ,
+                                                   miter_end = driver->getUserMacros().end()   ;
+  for( ; miter_end != miter; ++miter )
+    (*miter).second->writeMacro( outFile );
+
+  outFile << "##" << endl;
+  outFile << "##" << endl;
+
+  // Now dump the command stack
+  outFile << "######################" << endl;
+  outFile << "### Command Stack ####" << endl;
+  outFile << "######################" << endl;
+  outFile << "##" << endl;
+  std::list< std::string >::const_iterator siter = driver->getCommandStack().begin()  ,
+                                       siter_end = driver->getCommandStack().end()    ;
+  for( ; siter_end != siter; ++siter )
+    outFile << (*siter) << endl;
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_newMacro::doCommand( std::string commandLine )
+{
+  if( 0 == driver )
+  {
+    cout << "ERROR: No valid driver registered with newMacro." << endl;
+    return false;
+  }
+
+  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+
+  cout << "Creating macro \"" << commandLine << "\"" << endl;
+
+  CMD_macro * p_macro = new CMD_macro( engine, solver, commandLine );
+  CMD_macro & macro   = *p_macro;
+  macro.registerDriver( driver );
+
+  std::string sLine;
+
+  do
+  {
+    getline( *is, sLine );
+    macro.addLineCommand( sLine );
+  } 
+  while( sLine != "##" );
+
+  driver->getUserMacros()[commandLine] = p_macro;
+  driver->addCommand( p_macro );
+
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_macro::doCommand( std::string commandLine )
+{
+  if( 0 == driver )
+  {
+    cout << "ERROR: No valid driver registered with macro." << endl;
+    return false;
+  }
+
+  cout << "Doing macro \"" << macroName << "\"" << endl;
+  
+  std::list< std::string >::iterator iter = macroCommands.begin() ,
+                                 iter_end = macroCommands.end()   ;
+
+  for( ; iter_end != iter; ++iter )
+    driver->doCommand( *iter );
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+void CMD_macro::writeMacro( std::ofstream & os )
+{
+
+  std::string cLine = "#newMacro " + macroName;
+  os << cLine << endl;
+
+  std::list< std::string >::const_iterator iter = macroCommands.begin() ,
+                                       iter_end = macroCommands.end()   ;
+  for( ; iter_end != iter; ++iter )
+  {
+    os << (*iter) << endl;
+  }
+
+  return;
+}
+
+//-----------------------------------------------------------------------------
+
+void CMD_macro::describe()
+{
+
+  cout << "\n\tMacro \"" << macroName << "\" :" << endl;
+
+  std::list< std::string >::const_iterator iter = macroCommands.begin() ,
+                                       iter_end = macroCommands.end()   ;
+  for( ; iter_end != iter; ++iter )
+    cout << "\t\t" << (*iter) << endl;
+
+  return;
+}
+
+//-----------------------------------------------------------------------------
+//----------------   Matlab Coupling Interface Commands   ---------------------
+//-----------------------------------------------------------------------------
+
+bool CMD_problemSummary::doCommand( std::string commandLine )
+{
+  problemManager->outputStatus();
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_compJac::doCommand( std::string commandLine )
+{
+  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  std::string::size_type loc = commandLine.find(" ");
+  if( std::string::npos == loc )
+  {
+    cout << "Could not get two valid arguments." << endl;
+    return false;
+  }
+  std::string arg1 = commandLine.substr(0, loc);
+  commandLine.replace( 0, loc+1, ""); 
+  loc = commandLine.find("]");
+  std::string arg2 = commandLine.substr(0, loc);
+  int probId = atoi( arg1.c_str()) ,
+      depID =  atoi( arg2.c_str()) ;
+
+  cout << "Computing Jacobian Block " << probId << "," << depID << endl;
+
+  problemManager->computeBlockJacobian( probId, depID );
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_compRes::doCommand( std::string commandLine )
+{
+  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  std::string::size_type loc = commandLine.find("]");
+  if( std::string::npos == loc )
+  {
+    cout << "Could not get a valid argument." << endl;
+    return false;
+  }
+  std::string arg1 = commandLine.substr(0, loc);
+  int probId = atoi( arg1.c_str()) ;
+
+  cout << "Computing Residual for Problem " << probId << endl;
+
+  problemManager->computeGroupF( probId );
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_doXfers::doCommand( std::string command )
+{
+  problemManager->syncAllProblems();
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getJac::doCommand( std::string commandLine )
+{
+  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  std::string::size_type loc = commandLine.find(" ");
+  if( std::string::npos == loc )
+  {
+    cout << "Could not get two valid arguments." << endl;
+    return false;
+  }
+  std::string arg1 = commandLine.substr(0, loc);
+  commandLine.replace( 0, loc+1, ""); 
+  loc = commandLine.find("]");
+  std::string arg2 = commandLine.substr(0, loc);
+  int probId = atoi( arg1.c_str()) ,
+      depID =  atoi( arg2.c_str()) ;
+
+  Epetra_RowMatrix * rowMatrix = problemManager->getBlockJacobianMatrix( probId, depID );
+  if( rowMatrix )
+  {
+    std::string name = "BJac_" + arg1 + "_" + arg2;
+    engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
+    cout << "Stored Block Jacobian (" << probId << "," << depID << ") in \""
+         << name << "\"" << endl;
+    return true;
+  }
+
+  cout << "Could not get a valid matrix." << endl;
+  return false;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getAllJac::doCommand( std::string commandLine )
+{
+  map<int, GenericEpetraProblem*>::iterator problemIter = problemManager->getProblems().begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = problemManager->getProblems().end();
+
+  // Do diagonal blocks
+  for( ; problemLast != problemIter; ++problemIter )
+  {
+
+    GenericEpetraProblem & problem = *(*problemIter).second;
+    int                    probId  = (*problemIter).first;
+
+    Epetra_RowMatrix * rowMatrix = problemManager->getBlockJacobianMatrix( probId );
+
+    if( rowMatrix )
+    {
+      ostringstream sval1, sval2;
+      sval1 << probId << flush;
+      std::string name = "BJac_" + sval1.str() + "_" + sval1.str();
+      engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
+      cout << "Stored Block Jacobian (" << probId << "," << probId << ") in \""
+           << name << "\"" << endl;
+    }
+
+    // Do off-diagoanl blocks if appropriate
+    if( problemManager->useOffBlocks() ) 
+    {
+#ifdef HAVE_NOX_EPETRAEXT
+      for( unsigned int k = 0; k < problem.getDependentProblems().size(); ++k) 
+      {
+        int depId = problem.getDependentProblems()[k];
+
+        Epetra_RowMatrix * rowMatrix = problemManager->getBlockJacobianMatrix( probId, depId );
+
+        if( rowMatrix )
+        {
+          ostringstream sval1, sval2;
+          sval1 << probId << flush;
+          sval2 << depId  << flush;
+          std::string name = "BJac_" + sval1.str() + "_" + sval2.str();
+          engine.PutRowMatrix( *rowMatrix, name.c_str(), false );
+          cout << "Stored Block Jacobian (" << probId << "," << depId << ") in \""
+               << name << "\"" << endl;
+        }
+      }
+#endif
+    }
+  }
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getRes::doCommand( std::string commandLine )
+{
+  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  std::string::size_type loc = commandLine.find("]");
+  if( std::string::npos == loc )
+  {
+    cout << "Could not get a valid argument." << endl;
+    return false;
+  }
+  std::string arg1 = commandLine.substr(0, loc);
+  int probId = atoi( arg1.c_str()) ;
+
+  const Epetra_Vector * resVec = problemManager->getResidual( probId );
+
+  ostringstream sval1;
+  sval1 << probId << flush;
+  std::string name = "F_" + sval1.str();
+  engine.PutMultiVector( *resVec, name.c_str() );
+  cout << "Stored Residual (" << probId << ") in \"" << name << "\"" << endl;
+
+  problemManager->computeGroupF( probId );
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getAllRes::doCommand( std::string command )
+{
+  map<int, GenericEpetraProblem*>::iterator problemIter = problemManager->getProblems().begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = problemManager->getProblems().end();
+
+  // Do diagonal blocks
+  for( ; problemLast != problemIter; ++problemIter )
+  {
+    GenericEpetraProblem & problem = *(*problemIter).second;
+    int                    probId  = (*problemIter).first;
+
+    const Epetra_Vector * resVec = problemManager->getResidual( probId );
+
+    if( resVec )
+    {
+      ostringstream sval1;
+      sval1 << probId << flush;
+      std::string name = "F_" + sval1.str();
+      engine.PutMultiVector( *resVec, name.c_str() );
+      cout << "Stored Residual (" << probId << ") in \"" << name << "\"" << endl;
+    }
+  }
+  return true;
 }
