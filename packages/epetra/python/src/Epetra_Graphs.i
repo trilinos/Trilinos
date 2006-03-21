@@ -98,6 +98,10 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
 %include "Epetra_CrsGraph.h"
 %include "Epetra_OffsetIndex.h"
 
+// Clear the typemaps
+%clear (int   NumIndices, int *  Indices);
+%clear (int & NumIndices, int *& Indices);
+
 // Extend directives
 %extend Epetra_CrsGraph {
 

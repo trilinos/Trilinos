@@ -71,6 +71,43 @@ EXCEPTION_HANDLER(Epetra_CrsMatrix    ,OptimizeStorage   )
 EXCEPTION_HANDLER(Epetra_FastCrsMatrix,FastCrsMatrix     )
 EXCEPTION_HANDLER(Epetra_JadOperator  ,Epetra_JadOperator)
 
+// Typemap directives
+
+// // Begin input typemap collection for (int NumEntries, double * Values)
+// %typecheck(SWIG_TYPECHECK_DOUBLE_ARRAY) (int NumEntries, double * Values) {
+//   $1 = ($input != 0);
+// }
+// %typemap(in) (int NumEntries, double * Values) %{
+//   int entryLengths = 0;
+//   PyArrayObject * valArray = (PyArrayObject*) PyArray_ContiguousFromObject($input,
+// 									   'd', 0, 0);
+//   if (valArray == NULL) SWIG_exception(SWIG_ValueError,"Invalid sequence of values");
+//   entryLengths = _PyArray_multiply_list(valArray->dimensions,valArray->nd);
+//   $1 = entryLengths;
+//   $2 = (double *) (valArray->data);
+// %}
+// %typemap(freearg) (int NumEntries, double * Values) %{
+//   Py_XDECREF(valArray);
+// %}
+// // End input typemap collection for (int NumEntries, double * Values)
+
+// // Begin input typemap collection for (int * Indices)
+// %typecheck(SWIG_TYPECHECK_INT32_ARRAY) (int * Indices) {
+//   $1 = ($input != 0);
+// }
+// %typemap(in) (int * Indices) %{
+//   PyArrayObject * indArray = (PyArrayObject*) PyArray_ContiguousFromObject($input,
+// 									   'i',0,0);
+//   if (indArray == NULL) SWIG_exception(SWIG_ValueError,"Invalid sequence of indices");
+//   if (_PyArray_multiply_list(indArray-dimensions,indArray->nd) != entryLengths)
+//     SWIG_exception(SWIG_ValueError,"Values and Indices have different lengths");
+//   $1 = (int*) (indArray->data);
+// %}
+// %typemap(freearg) (int * Indices) %{
+//   Py_XDECREF(indArray);
+// %}
+// // End input typemap collection for (int * Indices)
+
 // Include directives
 %warnfilter(473) Epetra_Operator;
 %warnfilter(473) Epetra_RowMatrix;
@@ -84,8 +121,13 @@ EXCEPTION_HANDLER(Epetra_JadOperator  ,Epetra_JadOperator)
 %include "Epetra_JadOperator.h"
 %include "Epetra_LinearProblem.h"
 
+// Clear the typemaps
+%clear (int NumEntries, int * Values);
+%clear (int * Indices);
+
 // Extend directives
 %extend Epetra_CrsMatrix {
+
   void __setitem__(PyObject* args, double val) 
   {
     int Row, Col;

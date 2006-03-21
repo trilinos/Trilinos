@@ -144,23 +144,23 @@ class EpetraBlockMapTestCase(unittest.TestCase):
     def testConstructor6(self):
         "Test Epetra.BlockMap uniform constructor, negative global size"
         size = -2 * self.numProc
-        self.assertRaises(ValueError, Epetra.BlockMap, size, 1, 0, self.comm)
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 1, 0, self.comm)
 
     def testConstructor7(self):
         "Test Epetra.BlockMap uniform constructor, negative element size"
         size = 2 * self.numProc
-        self.assertRaises(ValueError, Epetra.BlockMap, size, -1, 0, self.comm)
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, -1, 0, self.comm)
 
     def testConstructor8(self):
         "Test Epetra.BlockMap uniform linear constructor, negative local size"
         size = self.numProc
-        self.assertRaises(ValueError, Epetra.BlockMap, size, -1, 1, 0, self.comm)
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, -1, 1, 0, self.comm)
 
 #     def testConstructor9(self):
 #         "Test Epetra.BlockMap uniform linear constructor, min GID < index base"
 #         self.myGlobalEls[0] = self.indexBase-1
 #         print self.myGlobalEls
-#         self.assertRaises(ValueError, Epetra.BlockMap, self.numGlobalEl,
+#         self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
 #                           self.myGlobalEls, self.elSizeConst, self.indexBase,
 #                           self.comm)
 

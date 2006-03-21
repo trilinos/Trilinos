@@ -54,6 +54,9 @@
 #include "NumPyArray.h"
 #include "NumPyWrapper.h"
 #include "PyEpetra_Utils.h"  
+
+// Epetra python exception
+static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NULL);
 %}
 
 // Ignore directives
@@ -94,6 +97,42 @@
 %rename(DArray       ) Epetra_DArray;
 %rename(IArray       ) Epetra_IArray;
 
+// Exceptions.
+
+// Define the EpetraError exception
+%constant PyObject * Error = PyExc_EpetraError;  // This steals the reference
+
+// Define macro for handling exceptions thrown by Epetra methods and
+// constructors
+%define EXCEPTION_HANDLER(className,methodName)
+%exception className::methodName {
+  try {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  } catch(int errCode) {
+    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
+    SWIG_fail;
+  }
+}
+%enddef
+
+// Define macro for handling exceptions thrown by Epetra_NumPy
+// constructors
+%define NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(className)
+%exception className::className {
+  try {
+    $action
+    if (PyErr_Occurred()) {
+      className::cleanup();
+      SWIG_fail;
+    }
+  } catch (int errCode) {
+    PyErr_Format(PyExc_EpetraError, "Error code = %d\nSee stderr for details", errCode);
+    SWIG_fail;
+  }
+}
+%enddef
+
 // Include directives
 %include "Epetra_Version.h"
 %include "Epetra_CombineMode.h"
@@ -110,41 +149,6 @@
 %include "Epetra_MapColoring.h"
 %include "Epetra_DArray.h"
 %include "Epetra_IArray.h"
-
-// Exceptions.
-
-// Define macro for handling exceptions thrown by Epetra methods and
-// constructors
-%define EXCEPTION_HANDLER(className,methodName)
-%exception className::methodName {
-  try {
-    $action
-    if (PyErr_Occurred()) SWIG_fail;
-  } catch(int errCode) {
-    char s[50];
-    sprintf(s, "Epetra Error Code: %d\nSee stderr for details", errCode);
-    SWIG_exception(SWIG_ValueError, s);
-  }
-}
-%enddef
-
-// Define macro for handling exceptions thrown by Epetra_NumPy
-// constructors
-%define NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(className)
-%exception className::className {
-  try {
-    $action
-    if (PyErr_Occurred()) {
-      className::cleanup();
-      SWIG_fail;
-    }
-  } catch (int errCode) {
-    char s[50];
-    sprintf(s, "Epetra Error Code: %d\nSee stderr for details", errCode);
-    SWIG_exception(SWIG_ValueError, s);
-  }
-}
-%enddef
 
 // Extensions
 %extend Epetra_Object {
