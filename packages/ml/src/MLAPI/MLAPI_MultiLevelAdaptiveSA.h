@@ -382,27 +382,28 @@ public:
   //! Setup the adaptive multilevel hierarchy.
   /* Computes the multilevel hierarchy as specified by the user.
    *
-   * \param UseDefault - (In) if \c true, the first call to Compute()
-   *                     uses the default null space. Otherwise,
-   *                     one null space component is computed using
-   *                     SetupInitialNullSpace().
+   * \param UseDefaultOrSpecified - (In) if \c true, the first call to Compute()
+   *                     uses either the default null space or the null space
+   *                     that has been set using SetNullSpace().
+   *                     If \c false, then one null space component is 
+   *                     computed using SetupInitialNullSpace().
    *
    * \param AdditionalCandidates - (In) Number of candidates, that is the
    *                     number of null space components that will be
    *                     computed using IncrementNullSpace(). If
-   *                     \c "UseDefault == false", the code computes
+   *                     \c "UseDefaultOrSpecified == false", the code computes
    *                     one additional candidate using
    *                     SetupInitialNullSpace(), and the remaining using
    *                     IncrementNullSpace().
    */
   // time is tracked within each method.
   // ====================================================================== 
-  void AdaptCompute(const bool UseDefault, int AdditionalCandidates)
+  void AdaptCompute(const bool UseDefaultOrSpecified, int AdditionalCandidates)
   {
 
     StackPush();
 
-    if (UseDefault) 
+    if (UseDefaultOrSpecified) 
       Compute();
     else {
       SetupInitialNullSpace();
