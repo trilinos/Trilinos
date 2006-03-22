@@ -551,6 +551,11 @@ else
       set ch_methods = ( $ch_methods color-orderU color-orderB )
     endif
   endif
+  if (! $no_hg) then
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods phg )
+    endif
+  endif
 endif
 
 # Set up log file
