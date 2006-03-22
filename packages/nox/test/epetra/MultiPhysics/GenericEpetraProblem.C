@@ -289,16 +289,19 @@ void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
 void GenericEpetraProblem::doTransfer()
 {
   // Do transfers from each dependent problem to this one
-  for( int i = 0; i < depProblems.size(); ++i) {
+  for( int i = 0; i < depProblems.size(); ++i) 
+  {
     int depId = depProblems[i];
     XferOp* xfer = (*xferOperators.find(depId)).second;
 
-    if( !xfer ) {
+    if( !xfer ) 
+    {
       cout << "ERROR: doTransfer: No valid transfer operator !!" << endl;
       throw "GenericEpetraProblem ERROR";
     }
 
-    else {
+    else 
+    {
       // NOTE that we are transferring (by default) to/from each problem's
       // solution vector which may be different data than in each respective
       // group.

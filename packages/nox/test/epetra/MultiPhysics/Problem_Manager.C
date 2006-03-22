@@ -608,6 +608,29 @@ void Problem_Manager::setGroupX(int probId)
 
 //-----------------------------------------------------------------------------
 
+void Problem_Manager::setGroupX(int probId, Epetra_Vector & vec)
+{
+  GenericEpetraProblem * problem = Problems[probId];
+
+  if( !problem ) 
+  {
+    cout << "ERROR: Could not get requested Problem to use with group.setX " << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  Teuchos::RefCountPtr<NOX::Epetra::Group> grp = Groups[probId];
+
+  if( Teuchos::is_null(grp) ) 
+  {
+    cout << "ERROR: Could not get appropriate group for use in setX !!" << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  grp->setX( vec );
+}
+
+//-----------------------------------------------------------------------------
+
 void Problem_Manager::setAllGroupX()
 {
   if(Problems.empty()) {
@@ -969,12 +992,12 @@ void Problem_Manager::copyCompositeToProblems(
 
   Epetra_Vector* problemVec(0);
 
-  // Loop over each problem being managed and copy into the correct 
-  // problem vector
-  for( ; problemIter != problemLast; problemIter++) {
+  // Loop over each problem being managed and copy into the correct problem vector
+  for( ; problemIter != problemLast; problemIter++) 
+  {
     int probId = (*problemIter).first;
-    switch (vecType) {
-
+    switch (vecType) 
+    {
       case SOLUTION :
         problemVec = ((*problemIter).second->getSolution()).get();
 	break;

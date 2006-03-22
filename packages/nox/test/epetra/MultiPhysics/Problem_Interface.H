@@ -665,6 +665,22 @@ class CMD_compJac : public CommandBase
   virtual bool doCommand( std::string );
 };
 
+class CMD_setXvec : public CommandBase
+{
+
+ public:
+
+  CMD_setXvec( EpetraExt::EpetraExt_MatlabEngine & engine_,
+           Problem_Manager              & problemManager_ ) : 
+    CommandBase( engine_, problemManager_ )
+  {
+    command     = "setSoln["              ;
+    description = " - Set a solution vector of problem i" ;
+  }
+
+  virtual bool doCommand( std::string );
+};
+
 class CMD_compRes : public CommandBase
 {
 
@@ -692,6 +708,22 @@ class CMD_doXfers : public CommandBase
   {
     command     = "doXfers"              ;
     description = " - Do all registered transfers of data" ;
+  }
+
+  virtual bool doCommand( std::string );
+};
+
+class CMD_getAllX : public CommandBase
+{
+
+ public:
+
+  CMD_getAllX( EpetraExt::EpetraExt_MatlabEngine & engine_,
+           Problem_Manager              & problemManager_ ) : 
+    CommandBase( engine_, problemManager_ )
+  {
+    command     = "getAllX"              ;
+    description = " - Get All Problem Solutions" ;
   }
 
   virtual bool doCommand( std::string );

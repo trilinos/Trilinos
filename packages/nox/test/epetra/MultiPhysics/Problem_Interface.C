@@ -283,6 +283,8 @@ Coupling_Matlab_Interface::Coupling_Matlab_Interface(Problem_Manager &  manager_
 {
 
   commands.push_back( new CMD_problemSummary             ( engine, problemManager ) );
+  commands.push_back( new CMD_getAllX                    ( engine, problemManager ) );
+  commands.push_back( new CMD_setXvec                    ( engine, problemManager ) );
   commands.push_back( new CMD_compJac                    ( engine, problemManager ) );
   commands.push_back( new CMD_compRes                    ( engine, problemManager ) );
   commands.push_back( new CMD_doXfers                    ( engine, problemManager ) );
@@ -911,6 +913,36 @@ bool CMD_compJac::doCommand( std::string commandLine )
 
 //-----------------------------------------------------------------------------
 
+bool CMD_setXvec::doCommand( std::string commandLine )
+{
+  commandLine.replace( commandLine.find(command), command.size(), ""); 
+  std::string::size_type loc = commandLine.find("]");
+  if( std::string::npos == loc )
+  {
+    cout << "Could not get a valid argument." << endl;
+    return false;
+  }
+  std::string arg1 = commandLine.substr(0, loc);
+  int probId = atoi( arg1.c_str()) ;
+
+  commandLine.replace( 0, loc+2, ""); 
+
+  cout << "Set solution vector for Problem " << probId << " using \"" 
+       << commandLine << "\"" << endl;
+
+  // Note we set both vectors, the one one in the problem, and the one in 
+  // the corresponding group
+
+  Epetra_Vector * p_soln = problemManager->getProblem(probId).getSolution().get();
+
+  engine.GetMultiVector( commandLine.c_str(), *p_soln );
+  problemManager->getGroup(probId).setX(*p_soln);
+
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
 bool CMD_compRes::doCommand( std::string commandLine )
 {
   commandLine.replace( commandLine.find(command), command.size(), ""); 
@@ -935,6 +967,35 @@ bool CMD_compRes::doCommand( std::string commandLine )
 bool CMD_doXfers::doCommand( std::string command )
 {
   problemManager->syncAllProblems();
+  problemManager->setAllGroupX();
+  return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_getAllX::doCommand( std::string command )
+{
+  map<int, GenericEpetraProblem*>::iterator problemIter = problemManager->getProblems().begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = problemManager->getProblems().end();
+
+  // Do diagonal blocks
+  for( ; problemLast != problemIter; ++problemIter )
+  {
+    GenericEpetraProblem & problem = *(*problemIter).second;
+    int                    probId  = (*problemIter).first;
+
+    const Epetra_Vector * tempVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                       (problemManager->getGroup(probId).getX()).getEpetraVector());
+
+    if( tempVec )
+    {
+      ostringstream sval1;
+      sval1 << probId << flush;
+      std::string name = "X_" + sval1.str();
+      engine.PutMultiVector( *tempVec, name.c_str() );
+      cout << "Stored Solution (" << probId << ") in \"" << name << "\"" << endl;
+    }
+  }
   return true;
 }
 
@@ -1044,8 +1105,6 @@ bool CMD_getRes::doCommand( std::string commandLine )
   std::string name = "F_" + sval1.str();
   engine.PutMultiVector( *resVec, name.c_str() );
   cout << "Stored Residual (" << probId << ") in \"" << name << "\"" << endl;
-
-  problemManager->computeGroupF( probId );
 
   return true;
 }

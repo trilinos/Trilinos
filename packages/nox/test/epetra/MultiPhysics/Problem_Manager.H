@@ -108,6 +108,9 @@ public:
   // in the problem
   void setGroupX(int id);
 
+  // Set the solver group solution using a provided vector
+  void setGroupX(int id, Epetra_Vector &);
+
   // Set all groups with the current solution contained in each problem
   void setAllGroupX();
 
