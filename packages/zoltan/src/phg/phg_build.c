@@ -1091,6 +1091,7 @@ End:
   ZOLTAN_FREE(&sendbuf);
   ZOLTAN_FREE(&pin_requests);
   ZOLTAN_FREE(&request_gno);
+ZOLTAN_FREE (&gtotal);
 
 #ifdef DEBUG_FILL_HYPERGRAPH
   for (i=0; i<zz->Num_Proc; i++){
