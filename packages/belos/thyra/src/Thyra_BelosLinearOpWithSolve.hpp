@@ -213,7 +213,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
         default:
           TEST_FOR_EXCEPT(true); // Should never get here!
       }
-      if(const std::vector<ScalarMag> *resNormValues = resNormST_->GetResNormValue()) {
+      if(const std::vector<ScalarMag>* resNormValues = resNormST_->GetTestValue()) {
         achievedTol = *std::max_element(resNormValues->begin(),resNormValues->end());
       }
     }
