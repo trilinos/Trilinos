@@ -58,6 +58,29 @@ solver_(null)
 }
 
 /*----------------------------------------------------------------------*
+ |  ctor (public)                                            mwgee 03/06|
+ *----------------------------------------------------------------------*/
+MOERTEL::Manager::Manager(Epetra_Comm& comm, 
+                          MOERTEL::Manager::DimensionType dimension, 
+                          int outlevel) :
+outlevel_(outlevel),
+comm_(comm),
+dimensiontype_(dimension),
+problemmap_(null),
+inputmatrix_(null),
+constraintsmap_(null),
+D_(null),
+M_(null),
+saddlemap_(null),
+saddlematrix_(null),
+spdmatrix_(null),
+spdrhs_(null),
+solverparams_(null),
+solver_(null)
+{
+}
+
+/*----------------------------------------------------------------------*
  |  dtor (public)                                            mwgee 06/05|
  *----------------------------------------------------------------------*/
 MOERTEL::Manager::~Manager()

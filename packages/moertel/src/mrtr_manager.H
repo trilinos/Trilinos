@@ -174,10 +174,27 @@ public:
   Epetra_Comm 
   
   \param comm : An Epetra_Comm object
+  \param dimension : Dimension of the problem
+  \param outlevel : The level of output to stdout to be generated ( 0 - 10 )
+  */
+  explicit Manager(Epetra_Comm& comm, 
+                   MOERTEL::Manager::DimensionType dimension, 
+                   int outlevel);
+                   
+  
+  /*!
+  \brief Creates and empty instance of this class
+  
+  Constructs an empty instance of this class that is then filled buy the user with
+  information about the non-conforming interface(s). <br>
+  This is a collective call for all processors associated with the
+  Epetra_Comm 
+  
+  \param comm : An Epetra_Comm object
   \param outlevel : The level of output to stdout to be generated ( 0 - 10 )
   */
   explicit Manager(Epetra_Comm& comm, int outlevel);
-  
+
   /*!
   \brief Destroys an instance of this class
   
