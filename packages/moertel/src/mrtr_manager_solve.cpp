@@ -318,7 +318,10 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
       const int* dof = nodes[i]->Dof();
       const int* lmdof = nodes[i]->LMDof();
       for (int j=0; j<nodes[i]->Nlmdof(); ++j)
+      {
+        //cout << "j " << j << " maps lmdof " << lmdof[j] << " to dof " << dof[j] << endl;
         lm_to_dof[lmdof[j]] = dof[j];
+      }
     }
   }
   
@@ -401,7 +404,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   
   //--------------------------------------------------------------------------
   // 2) create WT
-  Epetra_CrsMatrix* WT = new Epetra_CrsMatrix(Copy,*annmap,1,true); 
+  Epetra_CrsMatrix* WT = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {
     int lmdof = intintcurr->first;
