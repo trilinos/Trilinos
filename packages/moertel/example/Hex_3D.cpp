@@ -68,7 +68,7 @@ using namespace Galeri::FiniteElements;
 
 double Diffusion(const double& x, const double& y, const double& z)
 {
-  return (1.0);
+  return (3.0);
 }
 
 double Source(const double& x, const double& y, const double& z)
@@ -78,7 +78,7 @@ double Source(const double& x, const double& y, const double& z)
 
 double Force(const double& x, const double& y, const double& z)
 {
-  if (x < -8.0 || x > -3.)
+  if (x <-6. || x > 1.)
     return(5.0);
   else
     return(0.0);
@@ -97,13 +97,7 @@ int BoundaryType(const int& Patch)
 double BoundaryValue(const double& x, const double& y, 
                      const double& z, const int& Patch)
 {
-  return 0.0;
-  if (x == -15.0)
-    return(0.0);
-  else if (Patch != 0)
-    return(1.0);
-  else
-    return (0.0);
+  return 0.0; 
 }
 
 // =========== //
@@ -249,10 +243,10 @@ int main(int argc, char *argv[])
 
     // ------------------------------------------------------------- //
     // choose the mortar side of the interface (0 or 1)
-    // here: let the package choose it (-2)
+    // choose the finer side here, which is 0
     // ------------------------------------------------------------- //
     for (int i=0; i<ninter; ++i)
-      interfaces[i]->SetMortarSide(-2);
+      interfaces[i]->SetMortarSide(0);
 
     // ------------------------------------------------------------- //
     // As we do not know the mortar side yet (we decided to le the
