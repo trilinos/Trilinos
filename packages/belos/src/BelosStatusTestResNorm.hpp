@@ -250,8 +250,11 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //! The index of the right-hand side vector at the beginning of the block being solved for.
   int cur_rhs_num_;
 
-  //! The current size of the block being solved for.
+  //! The current blocksize of the linear system being solved.
   int cur_blksz_;
+
+  //! The current number of right-hand sides being solved for.
+  int cur_num_rhs_;
 
   //! The total number of right-hand sides being solved for.
   int numrhs_;
@@ -354,7 +357,8 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     //
     firstcallCheckStatus_ = false;
     cur_rhs_num_ = lp->GetRHSIndex();
-    cur_blksz_ = lp->GetNumToSolve();
+    cur_blksz_ = lp->GetBlockSize();
+    cur_num_rhs_ = lp->GetNumToSolve();
     //
     if (scaletype_== NormOfRHS) {
       const MV& rhs = *(lp->GetRHS());
@@ -397,12 +401,14 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //
   // This section computes the norm of the residual vector
   //
-  if ( cur_rhs_num_ != lp->GetRHSIndex() || cur_blksz_ != lp->GetNumToSolve() ) {
+  if ( cur_rhs_num_ != lp->GetRHSIndex() || cur_blksz_ != lp->GetBlockSize() || cur_num_rhs_ != lp->GetNumToSolve() ) {
     //
     // We have moved on to the next rhs block
     //
     cur_rhs_num_ = lp->GetRHSIndex();
-    cur_blksz_ = lp->GetNumToSolve();
+    cur_blksz_ = lp->GetBlockSize();
+    cur_num_rhs_ = lp->GetNumToSolve();
+    //
   } else {
     //
     // We are in the same rhs block, return if we are converged
@@ -423,7 +429,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
       for (i=0; i<MVT::GetNumberVecs( *residMV ); i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i]; 
     } else {
-      for (i=0; i<cur_blksz_; i++)
+      for (i=0; i<cur_num_rhs_; i++)
         resvector_[i+cur_rhs_num_] = tmp_resvector[i];
     }
   }
@@ -455,7 +461,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   //
   status_ = Converged; // This will be set to unconverged or NaN.
   if ( scalevector_.size() > 0 ) {
-    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
+    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
      
       // Scale the vector accordingly
       if ( scalevector_[i] != zero ) {
@@ -478,7 +484,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     } 
   }
   else {
-    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
+    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
       testvector_[ i ] = resvector_[ i ] / scalevalue_;
       if (testvector_[ i ] > tolerance_)
 	status_ = Unconverged;
