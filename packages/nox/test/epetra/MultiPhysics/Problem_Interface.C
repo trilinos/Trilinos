@@ -112,6 +112,10 @@ Matlab_Interface::Matlab_Interface(NOX::Solver::Manager &  noxSolver) :
   showStack->registerDriver( this );
   commands.push_back( showStack );
 
+  CMD_clearStack * clearStack = new CMD_clearStack          ( engine, solver );
+  clearStack->registerDriver( this );
+  commands.push_back( clearStack );
+
   commands.push_back( new CMD_isF                           ( engine, solver ) );
   commands.push_back( new CMD_isJacobian                    ( engine, solver ) );
   commands.push_back( new CMD_isGradient                    ( engine, solver ) );
@@ -171,7 +175,7 @@ void Matlab_Interface::interact()
 
 //-----------------------------------------------------------------------------
 
-bool Matlab_Interface::doCommand( std::string & command )
+bool Matlab_Interface::doCommand( std::string command )
 {
   char matlabBuffer [MATLABBUF];
 
@@ -186,14 +190,10 @@ bool Matlab_Interface::doCommand( std::string & command )
       command.replace( command.find('\n'), 1, "");
 
     status = doNOXCommand( command );
-
-    if( status )
-      command.insert(0, "#");
   }
   else
   {
-    // Send the command to MATLAB
-    // output goes to stdout
+    // Send the command to MATLAB - output goes to stdout
     char * c_comm = const_cast<char *>(command.c_str());
     int err = engine.EvalString(c_comm, matlabBuffer, MATLABBUF);
     if (err != 0) 
@@ -293,7 +293,7 @@ Coupling_Matlab_Interface::Coupling_Matlab_Interface(Problem_Manager &  manager_
 }
 
 //-----------------------------------------------------------------------------
-bool Coupling_Matlab_Interface::doCommand( std::string & command )
+bool Coupling_Matlab_Interface::doCommand( std::string command )
 {
   NOX::Abstract::Group::ReturnType returnStatus;
 
@@ -444,6 +444,25 @@ bool CMD_showStack::doCommand( std::string commandLine )
     cout << (*iter) << endl;
 
   return true;
+}
+
+//-----------------------------------------------------------------------------
+
+bool CMD_clearStack::doCommand( std::string commandLine )
+{
+
+  if( 0 == driver )
+  {
+    cout << "ERROR: No valid driver registered with clearStack." << endl;
+    return false;
+  }
+
+  // Show the command stack
+  cout << "Command Stack Cleared." << endl;
+
+  driver->getCommandStack().clear();
+
+  return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -758,7 +777,17 @@ bool CMD_newMacro::doCommand( std::string commandLine )
 
   commandLine.replace( commandLine.find(command), command.size()+1, ""); 
 
-  cout << "Creating macro \"" << commandLine << "\"" << endl;
+  std::map< std::string, CMD_macro * > & userMacros = driver->getUserMacros();
+
+  std::map< std::string, CMD_macro * >::iterator iter = userMacros.find(commandLine);
+  if( userMacros.end() != iter )
+  {
+    cout << "Replacing macro \"" << commandLine << "\"" << endl;
+    delete (*iter).second;
+    driver->removeCommand( (*iter).second );
+  }
+  else
+    cout << "Creating macro \"" << commandLine << "\"" << endl;
 
   CMD_macro * p_macro = new CMD_macro( engine, solver, commandLine );
   CMD_macro & macro   = *p_macro;
@@ -773,7 +802,7 @@ bool CMD_newMacro::doCommand( std::string commandLine )
   } 
   while( sLine != "##" );
 
-  driver->getUserMacros()[commandLine] = p_macro;
+  userMacros[commandLine] = p_macro;
   driver->addCommand( p_macro );
 
   return false;
@@ -789,10 +818,22 @@ bool CMD_macro::doCommand( std::string commandLine )
     return false;
   }
 
-  cout << "Doing macro \"" << macroName << "\"" << endl;
+  // I may be the wrong macro.  Nevertheless, I get and invoke the correct one.
+
+  commandLine.replace( commandLine.find(command), command.size()+1, ""); 
+
+  CMD_macro * p_macro = driver->getUserMacros()[commandLine];
+
+  if( !p_macro )
+  {
+    cout << "Macro \"" << commandLine << "\" not found." << endl;
+    return false;
+  }
+
+  cout << "Doing macro \"" << commandLine << "\"" << endl;
   
-  std::list< std::string >::iterator iter = macroCommands.begin() ,
-                                 iter_end = macroCommands.end()   ;
+  std::list< std::string >::iterator iter = p_macro->macroCommands.begin() ,
+                                 iter_end = p_macro->macroCommands.end()   ;
 
   for( ; iter_end != iter; ++iter )
     driver->doCommand( *iter );

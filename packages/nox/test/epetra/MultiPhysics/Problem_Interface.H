@@ -207,6 +207,22 @@ class CMD_showStack : public CommandBase
   virtual bool doCommand( std::string );
 };
 
+class CMD_clearStack : public CommandBase
+{
+
+ public:
+
+  CMD_clearStack( EpetraExt::EpetraExt_MatlabEngine & engine_,
+           NOX::Solver::Manager              & solver_ ) : 
+    CommandBase( engine_, solver_ )
+  {
+    command     = "clearStack"              ;
+    description = " - Clear the command stack" ;
+  }
+
+  virtual bool doCommand( std::string );
+};
+
 class CMD_isF : public CommandBase
 {
 
@@ -759,17 +775,20 @@ public:
   // Begin an interactive session
   virtual void interact();
 
-  virtual bool doCommand( std::string & );
+  virtual bool doCommand( std::string );
 
   virtual bool doNOXCommand( std::string & );
 
   virtual void addCommand( CommandBase * com )
   { commands.push_back( com ); return; }
 
+  virtual void removeCommand( CommandBase * com )
+  { commands.remove( com ); return; }
+
   CMD_map * getMapHandler() 
   { return mapHandler; }
 
-  const std::list< std::string > & getCommandStack()
+  std::list< std::string > & getCommandStack()
   { return commandStack; }
 
   std::map< std::string, CMD_macro * > & getUserMacros()
@@ -814,7 +833,7 @@ protected:
 
   // Methods
 
-  virtual bool doCommand( std::string & );
+  virtual bool doCommand( std::string );
 
   // Data 
 
