@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TwoSquares_SOURCES)
+SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = TwoSquares$(EXEEXT)
+noinst_PROGRAMS = TwoSquares$(EXEEXT) Hex_3D$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -94,6 +94,8 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Moertel_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_Hex_3D_OBJECTS = Hex_3D-Hex_3D.$(OBJEXT)
+Hex_3D_OBJECTS = $(am_Hex_3D_OBJECTS)
 am_TwoSquares_OBJECTS = TwoSquares-TwoSquares.$(OBJEXT)
 TwoSquares_OBJECTS = $(am_TwoSquares_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
@@ -104,8 +106,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(TwoSquares_SOURCES)
-DIST_SOURCES = $(TwoSquares_SOURCES)
+SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES)
+DIST_SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -235,11 +237,15 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 SUBDIRS = 
-EXTRA_DIST = TwoSquares.grid
+EXTRA_DIST = TwoSquares.grid Hex_3D.grid
 TwoSquares_SOURCES = $(srcdir)/TwoSquares.cpp
 TwoSquares_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
 TwoSquares_CXXFLAGS = $(MOERTEL_INCLUDES) $(GALERI_INCLUDES)
 TwoSquares_LDADD = $(MOERTEL_LIBS) $(GALERI_LIBS)
+Hex_3D_SOURCES = $(srcdir)/Hex_3D.cpp
+Hex_3D_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
+Hex_3D_CXXFLAGS = $(MOERTEL_INCLUDES) $(GALERI_INCLUDES)
+Hex_3D_LDADD = $(MOERTEL_LIBS) $(GALERI_LIBS)
 all: all-recursive
 
 .SUFFIXES:
@@ -276,6 +282,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+Hex_3D$(EXEEXT): $(Hex_3D_OBJECTS) $(Hex_3D_DEPENDENCIES) 
+	@rm -f Hex_3D$(EXEEXT)
+	$(CXXLINK) $(Hex_3D_LDFLAGS) $(Hex_3D_OBJECTS) $(Hex_3D_LDADD) $(LIBS)
 TwoSquares$(EXEEXT): $(TwoSquares_OBJECTS) $(TwoSquares_DEPENDENCIES) 
 	@rm -f TwoSquares$(EXEEXT)
 	$(CXXLINK) $(TwoSquares_LDFLAGS) $(TwoSquares_OBJECTS) $(TwoSquares_LDADD) $(LIBS)
@@ -286,6 +295,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Hex_3D-Hex_3D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TwoSquares-TwoSquares.Po@am__quote@
 
 .cpp.o:
@@ -301,6 +311,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+Hex_3D-Hex_3D.o: $(srcdir)/Hex_3D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Hex_3D_CXXFLAGS) $(CXXFLAGS) -MT Hex_3D-Hex_3D.o -MD -MP -MF "$(DEPDIR)/Hex_3D-Hex_3D.Tpo" -c -o Hex_3D-Hex_3D.o `test -f '$(srcdir)/Hex_3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Hex_3D.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Hex_3D-Hex_3D.Tpo" "$(DEPDIR)/Hex_3D-Hex_3D.Po"; else rm -f "$(DEPDIR)/Hex_3D-Hex_3D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Hex_3D.cpp' object='Hex_3D-Hex_3D.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Hex_3D_CXXFLAGS) $(CXXFLAGS) -c -o Hex_3D-Hex_3D.o `test -f '$(srcdir)/Hex_3D.cpp' || echo '$(srcdir)/'`$(srcdir)/Hex_3D.cpp
+
+Hex_3D-Hex_3D.obj: $(srcdir)/Hex_3D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Hex_3D_CXXFLAGS) $(CXXFLAGS) -MT Hex_3D-Hex_3D.obj -MD -MP -MF "$(DEPDIR)/Hex_3D-Hex_3D.Tpo" -c -o Hex_3D-Hex_3D.obj `if test -f '$(srcdir)/Hex_3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Hex_3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Hex_3D.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Hex_3D-Hex_3D.Tpo" "$(DEPDIR)/Hex_3D-Hex_3D.Po"; else rm -f "$(DEPDIR)/Hex_3D-Hex_3D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Hex_3D.cpp' object='Hex_3D-Hex_3D.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Hex_3D_CXXFLAGS) $(CXXFLAGS) -c -o Hex_3D-Hex_3D.obj `if test -f '$(srcdir)/Hex_3D.cpp'; then $(CYGPATH_W) '$(srcdir)/Hex_3D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Hex_3D.cpp'; fi`
 
 TwoSquares-TwoSquares.o: $(srcdir)/TwoSquares.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TwoSquares_CXXFLAGS) $(CXXFLAGS) -MT TwoSquares-TwoSquares.o -MD -MP -MF "$(DEPDIR)/TwoSquares-TwoSquares.Tpo" -c -o TwoSquares-TwoSquares.o `test -f '$(srcdir)/TwoSquares.cpp' || echo '$(srcdir)/'`$(srcdir)/TwoSquares.cpp; \

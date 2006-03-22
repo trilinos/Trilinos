@@ -44,7 +44,7 @@
 
 // MOERTEL headers
 #include "mrtr_manager.H"
-#include "mrtr_segment_linear1D.H"
+#include "mrtr_segment_bilinearquad.H"
 
 // Galeri headers
 #include "Galeri_Utils.h"
@@ -78,8 +78,8 @@ double Source(const double& x, const double& y, const double& z)
 
 double Force(const double& x, const double& y, const double& z)
 {
-  if (y < 0.8)
-    return(1.0);
+  if (x < -8.0 || x > -3.)
+    return(5.0);
   else
     return(0.0);
 }
@@ -87,7 +87,7 @@ double Force(const double& x, const double& y, const double& z)
 // Specifies the boundary condition.
 int BoundaryType(const int& Patch)
 {
-  if (Patch == 10 || Patch == 20)
+  if (Patch != 0)
     return(GALERI_DO_NOTHING);
   else
     return(GALERI_DIRICHLET);
@@ -97,9 +97,10 @@ int BoundaryType(const int& Patch)
 double BoundaryValue(const double& x, const double& y, 
                      const double& z, const int& Patch)
 {
-  if (x == -1.0 || x == 1.0)
+  return 0.0;
+  if (x == -15.0)
     return(0.0);
-  else if (Patch == 10 || Patch == 20)
+  else if (Patch != 0)
     return(1.0);
   else
     return (0.0);
@@ -123,123 +124,135 @@ int main(int argc, char *argv[])
     // this example is in serial only
     if (Comm.NumProc()>1) exit(0);
 
-    // read grid from file, see also TwoSquares.m used to generate the grids
-    /*
-    %  +------+
-    %  |  S2  |
-    %  +------+ <- edge has tag 20 and 9 elements
-    %  +------+ <- edge has tag 10 and 10 elements
-    %  |  S1  |
-    %  +------+
-    %
-    % where S1 = (-1,1) x (-1,1) and S2 = (-1, 1) x (1, 3).
-    */
-    FileGrid Grid(Comm, "TwoSquares.grid");
-    
+    FileGrid Grid(Comm, "Hex_3D.grid");
     
     // create a list of all nodes that are linked to a face
-    // with tag 10 and tag 20
-    map<int,int> nodes10;
-    map<int,int> nodes20;
+    // we have 4 interfaces here with each 2 sides:
+    // with tags 1/2, 11/12, 21/22, 31/32
+    const int ninter = 4;
+    vector<map<int,int> > nodes(ninter*2);
     for (int i=0; i<Grid.NumMyBoundaryFaces(); ++i)
     {
       int tag;
-      int nodeids[2];
+      int nodeids[4];
       Grid.FaceVertices(i,tag,nodeids);
-      if (tag==10)
+      if (tag==1)
       {
-        nodes10[nodeids[0]] = nodeids[0];
-        nodes10[nodeids[1]] = nodeids[1];
+        for (int j=0; j<4; ++j)
+          nodes[0][nodeids[j]] = nodeids[j];
       }
-      else if (tag==20)
+      else if (tag==2)
       {
-        nodes20[nodeids[0]] = nodeids[0];
-        nodes20[nodeids[1]] = nodeids[1];
+        for (int j=0; j<4; ++j)
+          nodes[1][nodeids[j]] = nodeids[j];
+      }
+      else if (tag==11)
+      {
+        for (int j=0; j<4; ++j)
+          nodes[2][nodeids[j]] = nodeids[j];
+      }
+      else if (tag==12)
+      {
+        for (int j=0; j<4; ++j)
+          nodes[3][nodeids[j]] = nodeids[j];
+      }
+      else if (tag==21)
+      {
+        for (int j=0; j<4; ++j)
+          nodes[4][nodeids[j]] = nodeids[j];
+      }
+      else if (tag==22)
+      {
+        for (int j=0; j<4; ++j)
+          nodes[5][nodeids[j]] = nodeids[j];
+      }
+      else if (tag==31)
+      {
+        for (int j=0; j<4; ++j)
+          nodes[6][nodeids[j]] = nodeids[j];
+      }
+      else if (tag==32)
+      {
+        for (int j=0; j<4; ++j)
+          nodes[7][nodeids[j]] = nodeids[j];
       }
       else 
         continue;
     }
-    
+
     // ------------------------------------------------------------- //
-    // create an empty MOERTEL::Interface, in this example just one
+    // create 4 empty MOERTEL::Interface instances
     // ------------------------------------------------------------- //
-    int printlevel = 9; // ( moertel takes values 0 - 10 )
-    MOERTEL::Interface interface(0,true,Comm,printlevel);
-    
+    int printlevel = 8; // ( moertel takes values 0 - 10 )
+    vector<RefCountPtr<MOERTEL::Interface> > interfaces(ninter);
+    for (int i=0; i<ninter; ++i) 
+      interfaces[i] = rcp(new MOERTEL::Interface(i,false,Comm,printlevel));
+
     // ------------------------------------------------------------- //
-    // Add nodes on both sides of interface to interface
-    // loop all nodes in the maps nodes10 and nodes20 and add them
+    // Add nodes on both sides of interface to interfaces
+    // loop all nodes in the maps add them
     // to the interface with unique ids
-    // tag 10 will become interface side 0
-    // tag 20 will become interface side 1
     // ------------------------------------------------------------- //
-    map<int,int>::iterator curr;
-    // do tag==10 or interface side 0
-    for (curr = nodes10.begin(); curr != nodes10.end(); ++curr)
+    for (int i=0; i<ninter; ++i)
     {
-      // get unique node id (here it's equal to the degree of freedom on that node)
-      int nodeid = curr->second;
-      // get node coordinates
-      double coord[3];
-      Grid.VertexCoord(nodeid,coord);
-      // get dirichlet boundary conditions
-      double bou = BoundaryValue(coord[0],coord[1],coord[2],10);
-      bool dboundary = false;
-      if (bou==0.0) 
-        dboundary = true;
-      // create a moertel node
-      MOERTEL::Node node(nodeid,coord,1,&nodeid,dboundary,printlevel);
-      // add node to the interface on side 0
-      interface.AddNode(node,0);
-    }
-    nodes10.clear();
-    
-    // do tag==20 or interface side 1
-    for (curr = nodes20.begin(); curr != nodes20.end(); ++curr)
-    {
-      // get unique node id (here it's equal to the degree of freedom on that node)
-      int nodeid = curr->second;
-      // get node coordinates
-      double coord[3];
-      Grid.VertexCoord(nodeid,coord);
-      // get dirichlet boundary conditions
-      double bou = BoundaryValue(coord[0],coord[1],coord[2],20);
-      bool dboundary = false;
-      if (bou==0.0) 
-        dboundary = true;
-      // create a moertel node
-      MOERTEL::Node node(nodeid,coord,1,&nodeid,dboundary,printlevel);
-      // add node to the interface on side 1
-      interface.AddNode(node,1);
-    }
-    nodes20.clear();
-    
+      map<int,int>::iterator curr;
+      for (int j=0; j<2; ++j)
+        for (curr = nodes[i*2+j].begin(); curr != nodes[i*2+j].end(); ++curr)
+        {
+          // get unique node id
+          int nodeid = curr->second;
+          // get node coordinates
+          double coord[3];
+          Grid.VertexCoord(nodeid,coord);
+          // create a moertel node
+          MOERTEL::Node node(nodeid,coord,1,&nodeid,false,printlevel);
+          // add node to interface i on side j
+          interfaces[i]->AddNode(node,j);
+        }
+    } 
+
     // ------------------------------------------------------------- //
     // add segments on both sides of the interface to the interface
     // ------------------------------------------------------------- //
     for (int i=0; i<Grid.NumMyBoundaryFaces(); ++i)
     {
       int tag;
-      int nodeids[2];
+      int nodeids[4];
       Grid.FaceVertices(i,tag,nodeids);
-      if (tag != 10 && tag != 20)
+      if (tag == 0)
         continue;
       // create a segment (galeri calls it a face)
-      MOERTEL::Segment_Linear1D segment(i,2,nodeids,printlevel);
+      MOERTEL::Segment_BiLinearQuad segment(i,4,nodeids,printlevel);
       
-      // add it to the interface on side 0
-      if (tag==10)
-        interface.AddSegment(segment,0);
-      // add it to the interface on side 1
-      else if (tag==20)
-        interface.AddSegment(segment,1);
+      if (tag==1)
+        interfaces[0]->AddSegment(segment,0);
+      else if (tag==2)
+        interfaces[0]->AddSegment(segment,1);
+      else if (tag==11)
+        interfaces[1]->AddSegment(segment,0);
+      else if (tag==12)
+        interfaces[1]->AddSegment(segment,1);
+      else if (tag==21)
+        interfaces[2]->AddSegment(segment,0);
+      else if (tag==22)
+        interfaces[2]->AddSegment(segment,1);
+      else if (tag==31)
+        interfaces[3]->AddSegment(segment,0);
+      else if (tag==32)
+        interfaces[3]->AddSegment(segment,1);
+      else
+      {
+        cout << "Face with unknown tag " << tag << endl;
+        exit(EXIT_FAILURE);
+      }
     }
 
     // ------------------------------------------------------------- //
     // choose the mortar side of the interface (0 or 1)
     // here: let the package choose it (-2)
     // ------------------------------------------------------------- //
-    interface.SetMortarSide(-2);
+    for (int i=0; i<ninter; ++i)
+      interfaces[i]->SetMortarSide(-2);
 
     // ------------------------------------------------------------- //
     // As we do not know the mortar side yet (we decided to le the
@@ -247,30 +260,32 @@ int main(int argc, char *argv[])
     // as we don't know the side to set it to
     // so we just give orders for the function type
     // ------------------------------------------------------------- //
-    interface.SetFunctionTypes(MOERTEL::Function::func_Linear1D,       // primal trace space
-                               MOERTEL::Function::func_DualLinear1D);  // dual mortar space (recommended)
-                               //MOERTEL::Function::func_Linear1D);    // mortar space (not recommended)
+    for (int i=0; i<ninter; ++i)
+      interfaces[i]->SetFunctionTypes(MOERTEL::Function::func_LinearTri,       // primal trace space
+                                      MOERTEL::Function::func_DualLinearTri);  // dual mortar space (recommended)
+                                      //MOERTEL::Function::func_LinearTri);    // mortar space (not recommended)
 
     // ------------------------------------------------------------- //
-    // complete the interface
+    // complete the interfaces
     // ------------------------------------------------------------- //
-    if (!interface.Complete())
-    {
-       cout << "Interface completion returned false\n";
-       exit(EXIT_FAILURE);
-    }
+    for (int i=0; i<ninter; ++i)
+      if (!interfaces[i]->Complete())
+      {
+         cout << "Interface " << i << " completion returned false\n";
+         exit(EXIT_FAILURE);
+      }
 
     // ------------------------------------------------------------- //
-    // create an empty MOERTEL::Manager for 2D problems
+    // create an empty MOERTEL::Manager for 3D problems
     // It organizes everything from integration to solution
     // ------------------------------------------------------------- //
-    MOERTEL::Manager manager(Comm,printlevel);
-    manager.SetDimension(MOERTEL::Manager::manager_2D);
+    MOERTEL::Manager manager(Comm,MOERTEL::Manager::manager_3D,printlevel);
     
     // ------------------------------------------------------------- //
-    // Add the interface to the manager
+    // Add the interfaces to the manager
     // ------------------------------------------------------------- //
-    manager.AddInterface(interface);
+    for (int i=0; i<ninter; ++i)
+      manager.AddInterface(*(interfaces[i]));
 
     // ------------------------------------------------------------- //
     // for mortar integration, the mortar manager needs to know about
@@ -303,13 +318,13 @@ int main(int argc, char *argv[])
     Epetra_Vector    LHS(Grid.RowMap(),true);
     Epetra_Vector    RHS(Grid.RowMap());
 
-    int NumQuadratureNodes = 3;
+    int NumQuadratureNodes = 8;
 
-    GalerkinVariational<TriangleQuadrature>
-      Laplace2D(NumQuadratureNodes, Diffusion, Source, Force, 
+    GalerkinVariational<HexQuadrature>
+      Laplace3D(NumQuadratureNodes, Diffusion, Source, Force, 
                 BoundaryValue, BoundaryType);
 
-    LinearProblem FiniteElementProblem(Grid, Laplace2D, A, LHS, RHS); 
+    LinearProblem FiniteElementProblem(Grid, Laplace3D, A, LHS, RHS); 
     FiniteElementProblem.Compute();
 
     // ============================================================= //
@@ -378,12 +393,11 @@ int main(int argc, char *argv[])
     ML_Epetra::SetDefaults("SA",mlparams);
     mlparams.set("output",10);
     mlparams.set("print unused",1/*-2*/);
-    mlparams.set("increasing or decreasing","increasing");
     mlparams.set("PDE equations",1);
     mlparams.set("max levels",10);
     mlparams.set("aggregation: type","Uncoupled");
     mlparams.set("aggregation: damping factor",1.33);
-    mlparams.set("coarse: max size",80);
+    mlparams.set("coarse: max size",500);
     // solvers/smoothers currently recognized by the MLAPI_InverseOperator are
     // Ifpack:
     //         "Jacobi" "Gauss-Seidel" "symmetric Gauss-Seidel"
@@ -435,10 +449,8 @@ int main(int argc, char *argv[])
     // ================== //
     // Output using MEDIT //
     // ================== //
-    
     MEDITInterface MEDIT(Comm);
-    MEDIT.Write(Grid, "output", LHS);
-
+    MEDIT.Write(Grid, "hex_output", LHS);
   }
   catch (int e) {
     cerr << "Caught exception, value = " << e << endl;

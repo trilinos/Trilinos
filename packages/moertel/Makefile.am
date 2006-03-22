@@ -91,6 +91,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 all-local:
 	@cp -f $(srcdir)/example/TwoSquares.grid $(top_builddir)/example/TwoSquares.grid
 	@cp -f $(srcdir)/example/TwoSquares.m $(top_builddir)/example/TwoSquares.m
+	@cp -f $(srcdir)/example/Hex_3D.grid $(top_builddir)/example/Hex_3D.grid
 	@echo "        +----------------------------------------------------+"
 	@echo "        |    Trilinos package Moertel built successfully     |"
 	@echo "        +----------------------------------------------------+"

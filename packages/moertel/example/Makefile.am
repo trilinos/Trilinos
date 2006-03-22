@@ -40,12 +40,16 @@ include $(top_builddir)/../galeri/Makefile.export.galeri
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = TwoSquares
+noinst_PROGRAMS = TwoSquares Hex_3D
 
-EXTRA_DIST = TwoSquares.grid
+EXTRA_DIST = TwoSquares.grid Hex_3D.grid
 
 TwoSquares_SOURCES      = $(srcdir)/TwoSquares.cpp
 TwoSquares_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
 TwoSquares_CXXFLAGS     = $(MOERTEL_INCLUDES) $(GALERI_INCLUDES)
 TwoSquares_LDADD        = $(MOERTEL_LIBS) $(GALERI_LIBS)
 
+Hex_3D_SOURCES      = $(srcdir)/Hex_3D.cpp
+Hex_3D_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
+Hex_3D_CXXFLAGS     = $(MOERTEL_INCLUDES) $(GALERI_INCLUDES)
+Hex_3D_LDADD        = $(MOERTEL_LIBS) $(GALERI_LIBS)
