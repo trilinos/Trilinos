@@ -1535,13 +1535,17 @@ float *gewgts = NULL;     /* Graph-edge weights */
     *npins = 0;
     for (i = 0; i < *nedges; i++)
       *npins += (*esizes)[i];
-
-    *pins = ZOLTAN_MALLOC_GID_ARRAY(zz, (*npins + *nedges));
-    *pin_procs = (int *) ZOLTAN_MALLOC((*npins + *nedges) * sizeof(int));
+      
+    if (*npins + *nedges) {
+      *pins = ZOLTAN_MALLOC_GID_ARRAY(zz, (*npins + *nedges));
+      *pin_procs = (int *) ZOLTAN_MALLOC((*npins + *nedges) * sizeof(int));
+      if (!*pins || !*pin_procs)
+        MEMORY_ERROR;
+    }
     if (ewgtdim)
       gewgts = (float *) ZOLTAN_MALLOC(*npins * ewgtdim * sizeof(float));
 
-    if (!*pins || !*pin_procs || (ewgtdim && !gewgts)) MEMORY_ERROR;
+    if (ewgtdim && !gewgts) MEMORY_ERROR;
 
     if (zz->Get_Edge_List_Multi)
       zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data,
