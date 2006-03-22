@@ -559,6 +559,11 @@ int NextMain( int argc, char *argv[] ) {
     exit(-1);
   }
 
+#ifdef HAVE_AMESOS_PARAKLETE
+  AmesosClasses.push_back( "Amesos_Paraklete" );
+#endif
+
+#if 1
 
 #ifdef HAVE_AMESOS_PARDISO
   //  bug #1915  
@@ -570,7 +575,6 @@ int NextMain( int argc, char *argv[] ) {
 #endif
 
 
-#if 1
 
 #ifdef HAVE_AMESOS_KLU
   AmesosClasses.push_back( "Amesos_Klu" );
@@ -592,9 +596,6 @@ int NextMain( int argc, char *argv[] ) {
   AmesosClasses.push_back( "Amesos_Umfpack" );
 #endif
 
-#ifdef HAVE_AMESOS_PARAKLETE
-  AmesosClasses.push_back( "Amesos_Paraklete" );
-#endif
 
 
 #ifdef HAVE_AMESOS_DSCPACK

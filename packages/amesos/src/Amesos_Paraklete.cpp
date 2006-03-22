@@ -446,9 +446,6 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
 {
   ResetTime(0);
 
-  assert( PrivateParakleteData_->cs_A_.x == 0 ) ; 
-  assert( PrivateParakleteData_->cs_A_.z == 0 ) ; 
-
 #if USE_REF_COUNT_PTR
     PrivateParakleteData_->LUsymbolic_ =
 	rcp( paraklete_analyze ( &*PrivateParakleteData_->cs_A_, &PrivateParakleteData_->Common_ ),
