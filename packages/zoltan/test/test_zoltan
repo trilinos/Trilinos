@@ -666,28 +666,28 @@ if (! $no_chaco ) then
             @ i = $i + 1
           end
     
-        else
+          # Report success or failure 
+          if ( $fail ) then
+            @ nfailed = $nfailed + 1
+            echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+          else
+            echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
+          endif
+  
+          # Report failure of drop tests, if any.
+          if ( $droptest ) then
+            if ( $dropfail ) then
+              @ ndropfailed = $ndropfailed + 1
+              echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+            else
+              echo "Test problem ${ch_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
+            endif
+          endif
+
+        else # no such input file 
           echo "Warning: No input file ${ch_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
         endif
   
-  
-        # Report success or failure 
-        if ( $fail ) then
-          @ nfailed = $nfailed + 1
-          echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
-        else
-          echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
-        endif
-
-        # Report failure of drop tests, if any.
-        if ( $droptest ) then
-          if ( $dropfail ) then
-            @ ndropfailed = $ndropfailed + 1
-            echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
-          else
-            echo "Test problem ${ch_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
-          endif
-        endif
 
       endif # !skip
 
@@ -799,27 +799,28 @@ if (! $no_nemesis ) then
                @ pdirno = 1
             endif
           end
-    
-        else
+      
+          # Report success or failure 
+          if ( $fail ) then
+            @ nfailed = $nfailed + 1
+            echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+          else
+            echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
+          endif
+  
+          if ( $droptest ) then
+            if ( $dropfail ) then
+              @ ndropfailed = $ndropfailed + 1
+              echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+            else
+              echo "Test problem ${nem_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile 
+            endif
+          endif
+
+        else # no such input file
           echo "Warning: No input file ${nem_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
         endif
   
-        # Report success or failure 
-        if ( $fail ) then
-          @ nfailed = $nfailed + 1
-          echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
-        else
-          echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
-        endif
-
-        if ( $droptest ) then
-          if ( $dropfail ) then
-            @ ndropfailed = $ndropfailed + 1
-            echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
-          else
-            echo "Test problem ${nem_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile 
-          endif
-        endif
       endif # !skip
 
     end # foreach method
