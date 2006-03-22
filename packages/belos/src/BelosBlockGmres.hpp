@@ -334,7 +334,8 @@ namespace Belos {
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::RefCountPtr<MV> U_vec;
-    bool dep_flg = false, exit_flg = false;
+    bool dep_flg = false, ortho_flg = false;
+    bool restart_flg = true;
     Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
     //
@@ -371,7 +372,7 @@ namespace Belos {
       _z.shape((_length+1)*_blocksize, _blocksize); 
       //
       //
-      for ( _restartiter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; ++_restartiter ) {
+      for ( _restartiter=0; _stest->CheckStatus(this) == Unconverged && restart_flg; ++_restartiter ) {
 	//
 	// Associate the initial block of _basisvecs with U_vec
 	// Reset the index vector (this might have been changed if there was a restart)
@@ -384,15 +385,17 @@ namespace Belos {
 	//
 	_lp->ComputeResVec( &*U_vec, &*_cur_block_sol, &*_cur_block_rhs );
 	//
-	dep_flg = false; exit_flg = false;
+	// Reset orthogonalization failure flags
+	//
+	dep_flg = false; ortho_flg = false;
 	//
 	// Re-initialize RHS of the least squares system and create a view.
 	//
 	_z.putScalar();
 	Teuchos::SerialDenseMatrix<int,ScalarType> G10(Teuchos::View, _z, _blocksize, _blocksize);
-	exit_flg = QRFactorAug( *U_vec, G10, true );
+	ortho_flg = QRFactorAug( *U_vec, G10, true );
 	//
-	if (exit_flg){
+	if (ortho_flg){
 	  if (_om->isVerbosityAndPrint( Errors )){
 	    *_os << "Exiting Block GMRES" << endl;
 	    *_os << "  Restart iteration# " << _restartiter
@@ -409,7 +412,7 @@ namespace Belos {
 	if (U_vec.get()) {U_vec == null;}
 	//
 	//	
-	for (_iter=0; _iter<_length && _stest->CheckStatus(this) == Unconverged && !exit_flg; ++_iter, ++_totaliter) {
+	for (_iter=0; _iter<_length && _stest->CheckStatus(this) == Unconverged && !ortho_flg; ++_iter, ++_totaliter) {
 	  //
 	  // Compute a length _length block Arnoldi Reduction (one step at a time),
 	  // the exit_flg indicates if we cannot extend the Arnoldi Reduction.
@@ -419,8 +422,8 @@ namespace Belos {
 	  // breakdown has occurred, so we should update the least-squares problem.
 	  //
 	  //dep_flg = true;
-	  exit_flg = BlockReduction(dep_flg);
-	  if (exit_flg && _blocksize > 1){ 
+	  ortho_flg = BlockReduction(dep_flg);
+	  if (ortho_flg && _blocksize > 1){ 
 	    break;
 	  }
 	  //
@@ -474,22 +477,27 @@ namespace Belos {
 	  _stest->CheckStatus(this);
 	}
 	//
-	// Print out solver status
-	// 
-	if (_om->isVerbosityAndPrint( FinalSummary )) {
-	  _stest->Print(*_os);
-	  if (exit_flg && _stest->GetStatus()!=Converged) {
-	    *_os << " Exiting Block GMRES --- " << endl;
-	    *_os << "  ERROR: Failed to compute new block of orthonormal basis vectors" << endl;
-	    *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
-	  }
-	} 
+	// Determine if we are going to allow a restart
+	// NOTE:  We will try to restart if we actually computed a subspace of nontrivial dimension (iter!=0)
+	//
+	restart_flg = (_iter!=0 && restart_flg);
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
-        if ( _stest->GetStatus() != Unconverged || exit_flg ) { break; }
+        if ( _stest->GetStatus() != Unconverged || !restart_flg ) { break; }
         //
       } // end for (_restartiter=0;...
+      //
+      // Print out solver status
+      //
+      if (_om->isVerbosityAndPrint( FinalSummary )) {
+	_stest->Print(*_os);
+	if (ortho_flg && _stest->GetStatus()!=Converged) {
+	  *_os << " Exiting Block GMRES --- " << endl;
+	  *_os << "  ERROR: Failed to compute new block of orthonormal basis vectors" << endl;
+	  *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
+	}
+      } 
       //
       // Inform the linear problem that we are finished with this block linear system.
       //	  
