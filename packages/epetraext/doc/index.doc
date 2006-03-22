@@ -61,7 +61,18 @@ EpetraExt contains a number of classes.  They can be categorized as follows:
 
 <li> InOut: I/O operations for Epetra objects based on the Matrix Market
 format. A binary reader based on HDF5 is available when EpetraExt is
-configured with --enable-epetraext-hdf5.
+configured with \c --enable-epetraext-hdf5. Tools are
+EpetraExt::MatrixMarketFileToBlockMap,
+EpetraExt::BlockMapToMatrixMarketFile,
+EpetraExt::MatrixMarketFileToMap,
+EpetraExt::MatrixMarketFileToCrsMatrix,
+EpetraExt::RowMatrixToMatrixMarketFile,
+EpetraExt::MatrixMarketFileToMultiVector,
+EpetraExt::MultiVectorToMatrixMarketFile,
+EpetraExt::MatrixMarketFileToVector,
+EpetraExt::VectorToMatrixMarketFile,
+and class EpetraExt::HDF5.
+
 
 <li> Coloring: Helper tools for generating Finite Differencing Colorings of Linear Problems.
 
