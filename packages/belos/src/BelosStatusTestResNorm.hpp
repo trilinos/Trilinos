@@ -364,7 +364,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
       const MV& rhs = *(lp->GetRHS());
       numrhs_ = MVT::GetNumberVecs( rhs );
       scalevector_.resize( numrhs_ );
-      resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
+      resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
       MVT::MvNorm( rhs, &scalevector_, scalenormtype_ );
     }
@@ -372,7 +372,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
       const MV &init_res = lp->GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_.resize( numrhs_ );
-      resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
+      resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
       MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
     }
@@ -380,7 +380,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
       const MV& init_res = lp->GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_.resize( numrhs_ );
-      resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
+      resvector_.resize( numrhs_ ); 
       testvector_.resize( numrhs_ );
       RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
       if (lp->ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
@@ -424,9 +424,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     std::vector<MagnitudeType> tmp_resvector( cur_blksz_ );
     RefCountPtr<const MV> residMV = iSolver->GetNativeResiduals( &tmp_resvector );     
     if ( residMV.get() != NULL ) { 
-      std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( *residMV ) );
+      tmp_resvector.resize( MVT::GetNumberVecs( *residMV ) );
       MVT::MvNorm( *residMV, &tmp_resvector, resnormtype_ );    
-      for (i=0; i<MVT::GetNumberVecs( *residMV ); i++)
+      for (i=0; i<MVT::GetNumberVecs( *residMV ) && i<cur_num_rhs_; i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i]; 
     } else {
       for (i=0; i<cur_num_rhs_; i++)
@@ -444,14 +444,14 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
       const MV &cur_res = lp->GetCurrResVec();
       std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
       MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
-      for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
+      for (i=0; i<MVT::GetNumberVecs( cur_res ) && i<cur_num_rhs_; i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i];
     } else {
       RefCountPtr<const MV> cur_soln = iSolver->GetCurrentSoln();
       const MV &cur_res = lp->GetCurrResVec( &*cur_soln );
       std::vector<MagnitudeType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
       MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
-      for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
+      for (i=0; i<MVT::GetNumberVecs( cur_res ) && i<cur_num_rhs_; i++)
 	resvector_[i+cur_rhs_num_] = tmp_resvector[i];      
     }
   }
