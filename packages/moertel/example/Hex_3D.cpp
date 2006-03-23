@@ -396,14 +396,15 @@ int main(int argc, char *argv[])
     // Ifpack:
     //         "Jacobi" "Gauss-Seidel" "symmetric Gauss-Seidel"
     //         "ILU" "ILUT" "IC" "ICT" "LU" "Amesos" "Amesos-KLU"
-    //         and accompanying parameters
+    //         and accompanying parameters as listed
     // ML:
     //         "MLS" "ML MLS" "ML symmetric Gauss-Seidel"
-    //         "ML Gauss-Seidel"
-    //         and accompanying parameters
+    //         "ML Gauss-Seidel" "ML Jacobi"
+    //         and accompanying parameters as listed
     mlparams.set("coarse: type","Amesos-KLU"); 
     mlparams.set("smoother: type","ML symmetric Gauss-Seidel"); 
     mlparams.set("smoother: MLS polynomial order",3);
+    mlparams.set("relaxation: min diagonal value",0.01); 
     mlparams.set("smoother: damping factor",0.67);
     mlparams.set("smoother: sweeps",1);
     mlparams.set("smoother: pre or post","both");

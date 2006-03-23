@@ -396,7 +396,8 @@ int main(int argc, char *argv[])
     mlparams.set("coarse: type","Amesos-KLU"); 
     mlparams.set("smoother: type","ML symmetric Gauss-Seidel"); 
     mlparams.set("smoother: MLS polynomial order",3);
-    mlparams.set("smoother: damping factor",0.67);
+    mlparams.set("relaxation: min diagonal value",0.1); 
+    mlparams.set("smoother: damping factor",1.0);
     mlparams.set("smoother: sweeps",1);
     mlparams.set("smoother: pre or post","both");
     // the ns for Laplace is the constant
