@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 #endif
   Epetra_Time Time(Comm);
 
-  int ProblemSize = 10;
+  int ProblemSize = 50;
   if (argc > 1) {
     ProblemSize = atoi(argv[1]);
   }
@@ -204,11 +204,11 @@ int main(int argc, char *argv[])
   MLList.set("smoother: type","IFPACK");
   MLList.set("smoother: ifpack type","point relaxation stand-alone");
   MLList.set("smoother: sweeps",1);
-  MLList.set("smoother: damping factor",1.0);
+  MLList.set("smoother: damping factor",0.67);
   IFPACKList.set("relaxation: sweeps", 1);
-  IFPACKList.set("relaxation: damping factor", 1.0);
+  IFPACKList.set("relaxation: damping factor", 0.67);
   IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
-  IFPACKList.set("relaxation: zero starting solution", false);
+  //IFPACKList.set("relaxation: zero starting solution", false);
   MLList.set("smoother: ifpack list", IFPACKList);
   MLList.set("eigen-analysis: type", "Anorm");
   
@@ -248,7 +248,9 @@ int main(int argc, char *argv[])
   // same, then we compare the CPU time as well.             //
   // ======================================================= //
   
+  SetPrintLevel(0);
   MLList.set("smoother: type", "symmetric Gauss-Seidel");
+  MLList.set("output level", 0);
 
   Time.ResetStartTime();
 
