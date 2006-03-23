@@ -47,27 +47,15 @@ bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupportsConj
 }
 
 template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveSupportsSolveMeasureType(EConj conj, const SolveMeasureType& solveMeasureType) const
 {
-  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
+  return solveMeasureType.useDefault();
 }
 
 template <class RangeScalar, class DomainScalar>
-bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const
+bool LinearOpWithSolveBase<RangeScalar,DomainScalar>::solveTransposeSupportsSolveMeasureType(EConj conj, const SolveMeasureType& solveMeasureType) const
 {
-  return ( solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM );
-}
-
-template <class RangeScalar, class DomainScalar>
-int LinearOpWithSolveBase<RangeScalar,DomainScalar>::defaultSolveMaxIterations(EConj conj, ESolveTolType solveTolType) const
-{
-  return 1;
-}
-
-template <class RangeScalar, class DomainScalar>
-int LinearOpWithSolveBase<RangeScalar,DomainScalar>::defaultSolveTransposeMaxIterations(EConj conj, ESolveTolType solveTolType) const
-{
-  return 1;
+  return solveMeasureType.useDefault();
 }
 
 template <class RangeScalar, class DomainScalar>

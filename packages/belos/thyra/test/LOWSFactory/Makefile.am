@@ -50,7 +50,7 @@ matrices:
 
 common_sources = $(srcdir)/test_single_belos_thyra_solver.cpp
 
-common_dependencies = $(top_builddir)/src/libbelos.a
+common_dependencies = $(top_builddir)/src/libbelos.a matrices
 
 common_ldadd = $(EXPORT_LIBS)
 

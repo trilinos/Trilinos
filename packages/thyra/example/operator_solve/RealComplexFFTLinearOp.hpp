@@ -95,9 +95,9 @@ public:
   /** \brief . */
   bool solveTransposeSupportsConj(Thyra::EConj conj) const;
   /** \brief . */
-  bool solveSupportsSolveTolType(Thyra::EConj conj, Thyra::ESolveTolType solveTolType) const;
+  bool solveSupportsSolveMeasureType(Thyra::EConj conj, const Thyra::SolveMeasureType solveMeasureType) const;
   /** \brief . */
-  bool solveTransposeSupportsSolveTolType(Thyra::EConj conj, Thyra::ESolveTolType solveTolType) const;
+  bool solveTransposeSupportsSolveMeasureType(Thyra::EConj conj, const Thyra::SolveMeasureType solveMeasureType) const;
   /** \brief . */
   void solve(
     const Thyra::EConj                           conj
@@ -215,13 +215,13 @@ bool RealComplexFFTLinearOp<RealScalar>::solveTransposeSupportsConj(Thyra::EConj
 }
 
 template<class RealScalar>
-bool RealComplexFFTLinearOp<RealScalar>::solveSupportsSolveTolType(Thyra::EConj conj, Thyra::ESolveTolType solveTolType) const
+bool RealComplexFFTLinearOp<RealScalar>::solveSupportsSolveMeasureType(Thyra::EConj conj, const Thyra::SolveMeasureType solveMeasureType) const
 {
   return (conj == Thyra::NONCONJ_ELE);
 }
 
 template<class RealScalar>
-bool RealComplexFFTLinearOp<RealScalar>::solveTransposeSupportsSolveTolType(Thyra::EConj conj, Thyra::ESolveTolType solveTolType) const
+bool RealComplexFFTLinearOp<RealScalar>::solveTransposeSupportsSolveMeasureType(Thyra::EConj conj, const Thyra::SolveMeasureType solveMeasureType) const
 {
   return (conj == Thyra::CONJ_ELE);
 }

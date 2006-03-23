@@ -15,13 +15,14 @@ namespace Thyra {
 bool test_single_belos_thyra_solver(
   const std::string                       matrixFile
   ,const bool                             testTranspose
+  ,const int                              numRhs
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
   ,const double                           maxResid
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *solveParamList
+  ,Teuchos::ParameterList                 *belosLOWSFPL
   ,Teuchos::FancyOStream                  *out
   );
 

@@ -105,7 +105,7 @@ protected:
   /** \brief . */
   bool solveSupportsTrans(ETransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const;
+  bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpWithSolveBase */

@@ -79,6 +79,31 @@ bool testRelErr(
   ,const std::string                                            &leadingIndent = std::string("")
   );
 
+/** \brief Compute, check and optionally print the relative errors in two
+ * scalar arays.
+ *
+ * \param v1  [in] Array (length <tt>num_scalars</tt>).
+ * \param v2  [in] Array (length <tt>num_scalars</tt>).
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ */
+template<class Scalar1, class Scalar2, class ScalarMag>
+bool testRelErrors(
+  const int                                                     num_scalars
+  ,const std::string                                            &v1_name
+  ,const Scalar1                                                v1[]
+  ,const std::string                                            &v2_name
+  ,const Scalar2                                                v2[]
+  ,const std::string                                            &maxRelErr_error_name
+  ,const ScalarMag                                              &maxRelErr_error
+  ,const std::string                                            &maxRelErr_warning_name
+  ,const ScalarMag                                              &maxRelErr_warning
+  ,std::ostream                                                 *out
+  ,const std::string                                            &leadingIndent = std::string("")
+  );
+
 /** \brief Check that an error is less than some error tolerence.
  *
  * ToDo: Finish documentation!
@@ -89,6 +114,27 @@ template<class Scalar>
 bool testMaxErr(
   const std::string                                             &error_name
   ,const Scalar                                                 &error
+  ,const std::string                                            &max_error_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_error
+  ,const std::string                                            &max_warning_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_warning
+  ,std::ostream                                                 *out
+  ,const std::string                                            &leadingIndent = std::string("")
+  );
+
+/** \brief Check that an array of errors is less than some error tolerence.
+ *
+ * \param error  [in] Array (length <tt>num_scalars</tt>).
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ */
+template<class Scalar>
+bool testMaxErrors(
+  const int                                                     num_scalars
+  ,const std::string                                            &error_name
+  ,const Scalar                                                 error[]
   ,const std::string                                            &max_error_name
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_error
   ,const std::string                                            &max_warning_name

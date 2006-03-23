@@ -19,6 +19,25 @@
 
 namespace Thyra {
 
+// Parameter names for Paramter List
+
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_name = "Solver Type";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxIters_name = "Max Iters";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxRestarts_name = "Max Restarts";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockSize_name = "Block Size";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_name = "Default Rel Res Norm";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_name = "GMRES";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Length_name = "Length";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Variant_name = "Variant";
+
 // Constructors/initializers/accessors
 
 // Overridden from LinearOpWithSolveFactoryBase
@@ -28,7 +47,6 @@ bool BelosLinearOpWithSolveFactory<Scalar>::isCompatible(
   const LinearOpBase<Scalar> &fwdOp
   ) const
 {
-  //TEST_FOR_EXCEPT(true);
   return true; // Until we build a preconditioner internally
 }
 
@@ -84,20 +102,19 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   int blockSize = 1;
   if(paramList_.get()) {
-    blockSize = paramList_->get("Block Size",blockSize);
+    blockSize = paramList_->get(BlockSize_name,blockSize);
   }
   lp->SetBlockSize(blockSize);
   //
   // Create the default status test
   //
-  // ToDo: Read these from a parameter list!
   int         defaultMaxIterations = 400;
   int         defaultMaxRestarts = 25;
   ScalarMag   defaultResNorm = 1e-6;
   if(paramList_.get()) {
-    defaultMaxIterations = paramList_->get("Max Iters",defaultMaxIterations);
-    defaultMaxRestarts = paramList_->get("Max Restarts",defaultMaxRestarts);
-    defaultResNorm = paramList_->get("Default Rel Res Norm",defaultResNorm);
+    defaultMaxIterations = paramList_->get(MaxIters_name,defaultMaxIterations);
+    defaultMaxRestarts = paramList_->get(MaxRestarts_name,defaultMaxRestarts);
+    defaultResNorm = paramList_->get(DefaultRelResNorm_name,defaultResNorm);
   }
   //
   typedef Belos::StatusTestResNorm<Scalar,MV_t,LO_t>      StatusTestResNorm_t;
@@ -134,8 +151,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   bool useGmres = true;
   if(paramList_.get()) {
-    const std::string &solverType = paramList_->get("Solver Type","GMRES");
-    if(solverType=="GMRES")
+    const std::string &solverType = paramList_->get(SolverType_name,GMRES_name);
+    if(solverType==GMRES_name)
       useGmres = true;
     else if(solverType=="CG")
       useGmres = false;
@@ -152,7 +169,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
     RefCountPtr<Teuchos::ParameterList>
       gmresPL;
     if(paramList_.get()) {
-      gmresPL = Teuchos::rcp(&paramList_->sublist("GMRES"),false);
+      gmresPL = Teuchos::rcp(&paramList_->sublist(GMRES_name),false);
       set_extra_data(paramList_,"topList",&gmresPL);
     }
     iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
@@ -164,6 +181,12 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   // Initialize the LOWS object
   //
   belosOp->initialize(lp,resNormST,iterativeSolver,outputManager);
+#ifdef _DEBUG
+  if(paramList_.get()) {
+    // Make sure we read the list correctly
+    paramList_->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
+  }
+#endif
 }
 
 template<class Scalar>
@@ -215,7 +238,7 @@ template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParameters(*this->getValidParameters(),1);
+  paramList->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
   paramList_ = paramList;
 }
 
@@ -268,19 +291,18 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::BelosLinearOpWithSolveFactory"));
-    validParamList->set("Solver Type","GMRES");
-    validParamList->set("Max Iters",int(400));
-    validParamList->set("Max Restarts",int(25));
-    validParamList->set("Block Size",1);
-    validParamList->set("Default Rel Res Norm",double(1e-6));
+    validParamList->set(SolverType_name,GMRES_name);
+    validParamList->set(MaxIters_name,int(400));
+    validParamList->set(MaxRestarts_name,int(25));
+    validParamList->set(BlockSize_name,1);
+    validParamList->set(DefaultRelResNorm_name,double(1e-6));
     Teuchos::ParameterList
-      &gmresSL = validParamList->sublist("GMRES");
-    gmresSL.set("Length",int(25));
-    gmresSL.set("Variant","Standard");
+      &gmresSL = validParamList->sublist(GMRES_name);
+    gmresSL.set(GMRES_Length_name,int(25));
+    gmresSL.set(GMRES_Variant_name,"Standard");
   }
   return validParamList;
 }
-
 
 } // namespace Thyra
 

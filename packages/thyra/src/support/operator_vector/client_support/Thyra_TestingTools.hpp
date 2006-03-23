@@ -115,6 +115,53 @@ bool Thyra::testRelErr(
   return success;
 }
 
+template<class Scalar1, class Scalar2, class ScalarMag>
+bool Thyra::testRelErrors(
+  const int                                                     num_scalars
+  ,const std::string                                            &v1_name
+  ,const Scalar1                                                v1[]
+  ,const std::string                                            &v2_name
+  ,const Scalar2                                                v2[]
+  ,const std::string                                            &maxRelErr_error_name
+  ,const ScalarMag                                              &maxRelErr_error
+  ,const std::string                                            &maxRelErr_warning_name
+  ,const ScalarMag                                              &maxRelErr_warning
+  ,std::ostream                                                 *out
+  ,const std::string                                            &li
+  )
+{
+  using std::setw;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  typedef typename Teuchos::PromotionTraits<Scalar1,Scalar2>::promote Scalar;
+  if(num_scalars==1) {
+    return testRelErr<Scalar>(
+      v1_name,v1[0],v2_name,v2[0]
+      ,maxRelErr_error_name,maxRelErr_error
+      ,maxRelErr_warning_name,maxRelErr_warning
+      ,out,li
+      );
+  }
+  bool success = true;
+  if(out) *out
+    << std::endl
+    << li << "Check: rel_err(" << v1_name << "," << v2_name << ") <= " << maxRelErr_error_name << " ?\n";
+  for( int i = 0; i < num_scalars; ++i ) {
+    const ScalarMag rel_err = relErr<Scalar>( v1[i], v2[i] );
+    const bool result = ( !SMT::isnaninf(rel_err) && !SMT::isnaninf(maxRelErr_error) && rel_err <= maxRelErr_error );
+    if(!result) success = false;
+    if(out) {
+      *out
+        << li << "  "<<setw(2)<<i<<": rel_err("<<v1[i]<<","<<v2[i]<<") "<<"= "<<rel_err
+        << " <= " << maxRelErr_error << " : " << passfail(result) << std::endl;
+      if( result && rel_err >= maxRelErr_warning ) {
+        *out
+          << li << "      Warning! rel_err(...) >= " << maxRelErr_warning_name << " = " << maxRelErr_warning << "!\n";
+      }
+    }
+  }
+  return success;
+}
+
 template<class Scalar>
 bool Thyra::testMaxErr(
   const std::string                                             &error_name
@@ -141,6 +188,51 @@ bool Thyra::testMaxErr(
       *out
         << li << "Warning! " << error_name << " = " << error_mag
         << " >= " << max_warning_name << " = " << max_warning << "!\n";
+    }
+  }
+  return success;
+}
+
+template<class Scalar>
+bool Thyra::testMaxErrors(
+  const int                                                     num_scalars
+  ,const std::string                                            &error_name
+  ,const Scalar                                                 error[]
+  ,const std::string                                            &max_error_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_error
+  ,const std::string                                            &max_warning_name
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &max_warning
+  ,std::ostream                                                 *out
+  ,const std::string                                            &li
+  )
+{
+  using std::setw;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  if(num_scalars==1) {
+    return testMaxErr(
+      error_name,error[0]
+      ,max_error_name,max_error
+      ,max_warning_name,max_warning
+      ,out,li
+      );
+  }
+  bool success = true;
+  if(out) *out
+    << std::endl
+    << li << "Check: |"<<error_name<<"| <= "<<max_error_name<<" ?\n";
+  for( int i = 0; i < num_scalars; ++i ) {
+    const ScalarMag error_mag = ST::magnitude(error[i]);
+    const bool result = ( !SMT::isnaninf(error_mag) && !SMT::isnaninf(max_error) && error_mag <= max_error );
+    if(!result) success = false;
+    if(out) {
+      *out
+        << li << "  "<<setw(2)<<i<<": |"<<error[i]<<"| = "<<error_mag<<" <= "<<max_error<<" : "<<passfail(success)<<"\n";
+      if( result && error_mag >= max_warning ) {
+        *out
+          << li << "      Warning! |...| >= "<<max_warning_name<<" = "<<max_warning<<"!\n";
+      }
     }
   }
   return success;

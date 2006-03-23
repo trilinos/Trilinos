@@ -83,6 +83,7 @@ public:
     ,const int          num_random_vectors              = 1
     ,const bool         show_all_tests                  = false
     ,const bool         dump_all                        = false
+    ,const int          num_rhs                         = 1
     );
 
   /** \brief Set if to check for linear properties <tt>alpha*op*(x + y) ==
@@ -143,6 +144,10 @@ public:
    * <tt>show_all_tests()==true</tt>).
    */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, dump_all )
+
+  /** \brief Set the number of right-hand-sides in the multivectors
+   */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, num_rhs )
 
   /** \brief Enable or disable all tests.
    *

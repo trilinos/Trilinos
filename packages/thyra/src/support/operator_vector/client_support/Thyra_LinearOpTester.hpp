@@ -39,7 +39,8 @@
 
 namespace Thyra {
 
-// SymmetricLinearOpTester (using partial specialization only test symmetry on operators where RangeScalar and DomainScalar are the same)
+// SymmetricLinearOpTester (using partial specialization only test symmetry on
+// operators where RangeScalar and DomainScalar are the same)
 
 template<class RangeScalar, class DomainScalar>
 class SymmetricLinearOpTester {
@@ -50,6 +51,7 @@ public:
     const LinearOpBase<RangeScalar,DomainScalar>  &op
     ,MultiVectorRandomizerBase<DomainScalar>      *dRand
     ,Teuchos::FancyOStream                        &oss
+    ,const int                                    num_rhs
     ,const int                                    num_random_vectors
     ,const Teuchos::EVerbosityLevel               verbLevel
     ,const bool                                   dump_all
@@ -74,6 +76,7 @@ public:
     const LinearOpBase<Scalar>                    &op
     ,MultiVectorRandomizerBase<Scalar>            *dRand
     ,Teuchos::FancyOStream                        &oss
+    ,const int                                    num_rhs
     ,const int                                    num_random_vectors
     ,const Teuchos::EVerbosityLevel               verbLevel
     ,const bool                                   dump_all
@@ -110,34 +113,35 @@ public:
           oss << endl << "Random vector tests = " << rand_vec_i << endl;
 
           OSTab tab(Teuchos::rcp(&oss,false));
-          
+
           if(dump_all) oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-          Teuchos::RefCountPtr<VectorBase<Scalar> > v1 = createMember(domain);
+          Teuchos::RefCountPtr<MultiVectorBase<Scalar> > v1 = createMembers(domain,num_rhs);
           dRand->randomize(&*v1);
           if(dump_all) oss << endl << "v1 =\n" << describe(*v1,verbLevel);
           
           if(dump_all) oss << endl << "v2 = randomize(-1,+1); ...\n" ;
-          Teuchos::RefCountPtr<VectorBase<Scalar> > v2 = createMember(domain);
+          Teuchos::RefCountPtr<MultiVectorBase<Scalar> > v2 = createMembers(domain,num_rhs);
           dRand->randomize(&*v2);
           if(dump_all) oss << endl << "v2 =\n" << describe(*v2,verbLevel);
           
           if(dump_all) oss << endl << "v3 = 0.5*op*v1 ...\n" ;
-          Teuchos::RefCountPtr<VectorBase<Scalar> > v3 = createMember(domain);
+          Teuchos::RefCountPtr<MultiVectorBase<Scalar> > v3 = createMembers(domain,num_rhs);
           apply( op, NONCONJ_ELE, *v1, &*v3, half );
          if(dump_all) oss << endl << "v3 =\n" << describe(*v3,verbLevel);
           
           if(dump_all) oss << endl << "v4 = 0.5*op*v2 ...\n" ;
-          Teuchos::RefCountPtr<VectorBase<Scalar> > v4 = createMember(domain);
+          Teuchos::RefCountPtr<MultiVectorBase<Scalar> > v4 = createMembers(domain,num_rhs);
           apply( op, NONCONJ_ELE, *v2, &*v4, half );
           if(dump_all) oss << endl << "v4 =\n" << describe(*v4,verbLevel);
+
+          std::vector<Scalar> prod1(num_rhs), prod2(num_rhs);
+          domain->scalarProds(*v4,*v1,&prod1[0]);
+          domain->scalarProds(*v2,*v3,&prod2[0]);
           
-          const Scalar
-            prod1 = domain->scalarProd(*v4,*v1),
-            prod2 = domain->scalarProd(*v2,*v3);
-          
-          result = testRelErr(
-            "<v4,v1>", prod1
-            ,"<v2,v3>", prod2
+          result = testRelErrors(
+            num_rhs
+            ,"<v4,v1>", &prod1[0]
+            ,"<v2,v3>", &prod2[0]
             ,"symmetry_error_tol()", symmetry_error_tol
             ,"symmetry_warning_tol()", symmetry_warning_tol
             ,&oss
@@ -168,6 +172,7 @@ LinearOpTester<RangeScalar,DomainScalar>::LinearOpTester(
   ,const int          num_random_vectors
   ,const bool         show_all_tests
   ,const bool         dump_all
+  ,const int          num_rhs
   )
   :check_linear_properties_(check_linear_properties)
   ,linear_properties_warning_tol_(linear_properties_warning_tol)
@@ -181,6 +186,7 @@ LinearOpTester<RangeScalar,DomainScalar>::LinearOpTester(
   ,num_random_vectors_(num_random_vectors)
   ,show_all_tests_(show_all_tests)
   ,dump_all_(dump_all)
+  ,num_rhs_(num_rhs)
 {}
 
 template<class RangeScalar, class DomainScalar>
@@ -222,6 +228,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   typedef Teuchos::ScalarTraits<RangeScalar>  RST;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
+  const int          num_rhs = this->num_rhs();
   const RangeScalar  r_one  = RST::one();
   const DomainScalar d_one  = DST::one();
   const RangeScalar  r_half = RangeScalar(0.5)*r_one;
@@ -318,41 +325,42 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         OSTab tab(oss);
         
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
         dRand->randomize(&*v1);
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v2 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
         dRand->randomize(&*v2);
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
         *oss << endl << "v3 = v1 + v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v3 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
         V_VpV(&*v3,*v1,*v2);
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
         *oss << endl << "v4 = 0.5*op*v3 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v4 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
         apply( op, NONCONJ_ELE, *v3, &*v4, r_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
         *oss << endl << "v5 = op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v5 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v5 = createMembers(range,num_rhs);
         apply( op, NONCONJ_ELE, *v1, &*v5 );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
         *oss << endl << "v5 = 0.5*op*v2 + 0.5*v5 ...\n" ;
         apply( op, NONCONJ_ELE, *v2, &*v5, r_half, r_half );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
+
+        std::vector<RangeScalar> sum_v4(num_rhs), sum_v5(num_rhs);
+        sums(*v4,&sum_v4[0]);
+        sums(*v5,&sum_v5[0]);
         
-        const Scalar
-          sum_v4 = sum(*v4),
-          sum_v5 = sum(*v5);
-        
-        result = testRelErr(
-          "sum(v4)", sum_v4
-          ,"sum(v5)", sum_v5
+        result = testRelErrors(
+          num_rhs
+          ,"sum(v4)", &sum_v4[0]
+          ,"sum(v5)", &sum_v5[0]
           ,"linear_properties_error_tol()", linear_properties_error_tol()
           ,"linear_properties_warning_tol()", linear_properties_warning_tol()
           ,&*oss
@@ -406,27 +414,27 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         OSTab tab(oss);
         
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v1 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
         rRand->randomize(&*v1);
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
         rRand->randomize(&*v2);
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
         *oss << endl << "v3 = v1 + v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
         V_VpV(&*v3,*v1,*v2);
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
         *oss << endl << "v4 = 0.5*op'*v3 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
         applyTranspose( op, CONJ_ELE, *v3, &*v4, d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
         *oss << endl << "v5 = op'*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v5 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v5 = createMembers(domain,num_rhs);
         applyTranspose( op, CONJ_ELE, *v1, &*v5 );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
@@ -434,13 +442,15 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         applyTranspose( op, CONJ_ELE, *v2, &*v5, d_half, d_half );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
-        const Scalar
-          sum_v4 = sum(*v4),
-          sum_v5 = sum(*v5);
+
+        std::vector<DomainScalar> sum_v4(num_rhs), sum_v5(num_rhs);
+        sums(*v4,&sum_v4[0]);
+        sums(*v5,&sum_v5[0]);
         
-        result = testRelErr(
-          "sum(v4)", sum_v4
-          ,"sum(v5)", sum_v5
+        result = testRelErrors(
+          num_rhs
+          ,"sum(v4)", &sum_v4[0]
+          ,"sum(v5)", &sum_v5[0]
           ,"linear_properties_error_tol()", linear_properties_error_tol()
           ,"linear_properties_warning_tol()", linear_properties_warning_tol()
           ,&*oss
@@ -492,38 +502,41 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         OSTab tab(oss);
       
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
         dRand->randomize(&*v1);
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
       
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
         rRand->randomize(&*v2);
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
       
         *oss << endl << "v3 = 0.5*op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
         apply( op, NONCONJ_ELE, *v1, &*v3, r_half );
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
       
         *oss << endl << "v4 = 0.5*op'*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
         applyTranspose( op, CONJ_ELE, *v2, &*v4, d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
       
-        const Scalar
-          prod1 = domain->scalarProd(*v4,*v1),
-          prod2 = range->scalarProd(*v2,*v3);
 
-        result = testRelErr(
-          "<v4,v1>", prod1
-          ,"<v2,v3>", prod2
+        std::vector<DomainScalar> prod_v4_v1(num_rhs);
+        domain->scalarProds(*v4,*v1,&prod_v4_v1[0]);
+        std::vector<RangeScalar> prod_v2_v3(num_rhs);
+        range->scalarProds(*v2,*v3,&prod_v2_v3[0]);
+        
+        result = testRelErrors(
+          num_rhs
+          ,"<v4,v1>", &prod_v4_v1[0]
+          ,"<v2,v3>", &prod_v2_v3[0]
           ,"adjoint_error_tol()", adjoint_error_tol()
           ,"adjoint_warning_tol()", adjoint_warning_tol()
           ,&*oss
           );
         if(!result) these_results = false;
-
+        
       }
     }
     else {
@@ -548,7 +561,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
     bool these_results = true;
 
     SymmetricLinearOpTester<RangeScalar,DomainScalar>::checkSymmetry(
-      op,&*dRand,*oss,num_random_vectors(),verbLevel,dump_all(),symmetry_error_tol(),symmetry_warning_tol(),&these_results
+      op,&*dRand,*oss,num_rhs,num_random_vectors(),verbLevel,dump_all(),symmetry_error_tol(),symmetry_warning_tol(),&these_results
       );
     
     printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
@@ -595,6 +608,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
   typedef Teuchos::ScalarTraits<RangeScalar>  RST;
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   bool success = true, result;
+  const int num_rhs = this->num_rhs();
   const RangeScalar  r_half = RangeScalar(0.5)*RST::one();
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
@@ -674,27 +688,28 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
       OSTab tab(oss);
       
       if(dump_all()) *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-      Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+      Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
       dRand->randomize(&*v1);
       if(dump_all()) *oss << endl << "v1 =\n" << *v1;
       
       if(dump_all()) *oss << endl << "v2 = 0.5*op1*v1 ...\n" ;
-      Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+      Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
       apply( op1, NONCONJ_ELE, *v1, &*v2, r_half );
       if(dump_all()) *oss << endl << "v2 =\n" << *v2;
       
       if(dump_all()) *oss << endl << "v3 = 0.5*op2*v1 ...\n" ;
-      Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
+      Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
       apply( op2, NONCONJ_ELE, *v1, &*v3, r_half );
       if(dump_all()) *oss << endl << "v3 =\n" << *v3;
       
-      const Scalar
-        sum_v2 = sum(*v2),
-        sum_v3 = sum(*v3);
+      std::vector<RangeScalar> sum_v2(num_rhs), sum_v3(num_rhs);
+      sums(*v2,&sum_v2[0]);
+      sums(*v3,&sum_v3[0]);
       
-      result = testRelErr(
-        "sum(v2)", sum_v2
-        ,"sum(v3)", sum_v3
+      result = testRelErrors(
+        num_rhs
+        ,"sum(v2)", &sum_v2[0]
+        ,"sum(v3)", &sum_v3[0]
         ,"linear_properties_error_tol()", linear_properties_error_tol()
         ,"linear_properties_warning_tol()", linear_properties_warning_tol()
         ,&*oss

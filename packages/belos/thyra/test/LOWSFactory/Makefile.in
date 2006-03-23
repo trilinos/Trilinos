@@ -249,7 +249,7 @@ test_single_belos_thyra_solver_driver_LDADD = $(common_ldadd)
 # Common stuff
 #
 common_sources = $(srcdir)/test_single_belos_thyra_solver.cpp
-common_dependencies = $(top_builddir)/src/libbelos.a
+common_dependencies = $(top_builddir)/src/libbelos.a matrices
 common_ldadd = $(EXPORT_LIBS)
 EXTRA_DIST = $(srcdir)/test_single_belos_thyra_solver.hpp 
 all: all-am

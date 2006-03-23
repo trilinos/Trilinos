@@ -23,6 +23,7 @@ int main(int argc, char* argv[])
     
     std::string     matrixFile             = "";
     bool            testTranspose          = true;
+    int             numRhs                 = 1;
     int             numRandomVectors       = 1;
     double          maxFwdError            = 1e-14;
     int             maxIterations          = 400;
@@ -37,6 +38,7 @@ int main(int argc, char* argv[])
     CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.setOption( "matrix-file", &matrixFile, "Matrix input file [Required]." );
     clp.setOption( "test-transpose", "no-test-transpose", &testTranspose, "Test the transpose solve or not." );
+    clp.setOption( "num-rhs", &numRhs, "Number of RHS in linear solve." );
     clp.setOption( "num-random-vectors", &numRandomVectors, "Number of times a test is performed with different random vectors." );
     clp.setOption( "max-fwd-error", &maxFwdError, "The maximum relative error in the forward operator." );
     clp.setOption( "max-iters", &maxIterations, "The maximum number of linear solver iterations to take." );
@@ -53,19 +55,20 @@ int main(int argc, char* argv[])
 
     TEST_FOR_EXCEPT( matrixFile == "" );
 
-    Teuchos::ParameterList solveParamList;
+    Teuchos::ParameterList belosLOWSFPL;
 
-    solveParamList.set("Solver Type","GMRES");
-    solveParamList.set("Max Iters",int(maxIterations));
-    solveParamList.set("Max Restarts",int(maxRestarts));
-    solveParamList.set("Block Size",int(blockSize));
-    solveParamList.sublist("GMRES").set("Length",int(gmresKrylovLength));
+    belosLOWSFPL.set("Solver Type","GMRES");
+    belosLOWSFPL.set("Max Iters",int(maxIterations));
+    belosLOWSFPL.set("Default Rel Res Norm",double(maxResid));
+    belosLOWSFPL.set("Max Restarts",int(maxRestarts));
+    belosLOWSFPL.set("Block Size",int(blockSize));
+    belosLOWSFPL.sublist("GMRES").set("Length",int(gmresKrylovLength));
 
     success
       = Thyra::test_single_belos_thyra_solver(
-        matrixFile,testTranspose,numRandomVectors
+        matrixFile,testTranspose,numRhs,numRandomVectors
         ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
-        ,&solveParamList
+        ,&belosLOWSFPL
         ,verbose?&*out:0
         );
 

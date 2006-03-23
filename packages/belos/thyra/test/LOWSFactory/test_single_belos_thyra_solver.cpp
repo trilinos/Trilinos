@@ -19,13 +19,14 @@
 bool Thyra::test_single_belos_thyra_solver(
   const std::string                       matrixFile
   ,const bool                             testTranspose
+  ,const int                              numRhs
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
   ,const double                           maxResid
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *solveParamList
+  ,Teuchos::ParameterList                 *belosLOWSFPL
   ,Teuchos::FancyOStream                  *out_arg
   )
 {
@@ -73,7 +74,19 @@ bool Thyra::test_single_belos_thyra_solver(
         belosOpFactory = Teuchos::rcp(new BelosLinearOpWithSolveFactory<double>());
       opFactory = belosOpFactory;
     }
-    opFactory->setParameterList(Teuchos::rcp(solveParamList,false));
+
+    if(out.get()) {
+      *out << "\nopFactory.getValidParameters():\n";
+     opFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
+      *out << "\nbelosLOWSFPL before setting parameters:\n";
+      belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+    }
+    opFactory->setParameterList(Teuchos::rcp(belosLOWSFPL,false));
+
+    if(out.get()) {
+      *out << "\nbelosLOWSFPL after setting parameters:\n";
+      belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+    }
 
     if(out.get()) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
 
@@ -86,6 +99,7 @@ bool Thyra::test_single_belos_thyra_solver(
 
     LinearOpTester<double> linearOpTester;
     linearOpTester.check_adjoint(testTranspose);
+    linearOpTester.num_rhs(numRhs);
     linearOpTester.num_random_vectors(numRandomVectors);
     linearOpTester.set_all_error_tol(maxFwdError);
     linearOpTester.set_all_warning_tol(1e-2*maxFwdError);
@@ -98,6 +112,7 @@ bool Thyra::test_single_belos_thyra_solver(
     if(out.get()) *out << "\nE) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
     LinearOpWithSolveTester<double> linearOpWithSolveTester;
+    linearOpWithSolveTester.num_rhs(numRhs);
     linearOpWithSolveTester.turn_off_all_tests();
     linearOpWithSolveTester.check_forward_default(true);
     linearOpWithSolveTester.check_forward_residual(true);
@@ -121,6 +136,11 @@ bool Thyra::test_single_belos_thyra_solver(
     Thyra::seed_randomize<double>(0);
     result = linearOpWithSolveTester.check(*nsA,out.get());
     if(!result) success = false;
+
+    if(out.get()) {
+      *out << "\nbelosLOWSFPL after solving:\n";
+      belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+    }
     
 #else // __sun
 		

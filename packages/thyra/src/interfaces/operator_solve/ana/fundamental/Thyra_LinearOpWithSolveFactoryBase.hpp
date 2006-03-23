@@ -560,8 +560,6 @@ public:
    *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
    * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
    * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
-   * <li><t>Op->solveSupportsSolveTolType(conj,solveTolType)==this->solveSupportsSolveTolType(conj,solveTolType)</tt>
-   * <li><t>Op->solveTransposeSupportsSolveTolType(conj,solveTolType)==this->solveTransposeSupportsSolveTolType(conj,solveTolType)</tt>
    * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
@@ -661,8 +659,6 @@ public:
    *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
    * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
    * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
-   * <li><t>Op->solveSupportsSolveTolType(conj,solveTolType)==this->solveSupportsSolveTolType(conj,solveTolType)</tt>
-   * <li><t>Op->solveTransposeSupportsSolveTolType(conj,solveTolType)==this->solveTransposeSupportsSolveTolType(conj,solveTolType)</tt>
    * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
@@ -740,8 +736,6 @@ public:
    *     exactly the same as <tt>fwdOp->apply()</tt> and <tt>fwdOp->applyTranspose()</tt>
    * <li><t>Op->solveSupportsConj(conj)==this->solveSupportsConj(conj)</tt>
    * <li><t>Op->solveTransposeSupportsConj(conj)==this->solveTransposeSupportsConj(conj)</tt>
-   * <li><t>Op->solveSupportsSolveTolType(conj,solveTolType)==this->solveSupportsSolveTolType(conj,solveTolType)</tt>
-   * <li><t>Op->solveTransposeSupportsSolveTolType(conj,solveTolType)==this->solveTransposeSupportsSolveTolType(conj,solveTolType)</tt>
    * <li><tt>fwdOp.count()</tt> after output is greater than <tt>fwdOp.count()</tt>
    *     just before this call and therefore the client can assume that the <tt>*fwdOp</tt> object will 
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful

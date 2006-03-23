@@ -103,6 +103,9 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   ) const
 {
   using std::endl;
+  using Teuchos::rcp;
+  using Teuchos::OSTab;
+  using Teuchos::getFancyOStream;
   TEST_FOR_EXCEPT(solveCriteria!=NULL); // ToDo: Pass to linear solver?
   // Initialize storage for algorithm
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > J = model.create_W();
@@ -126,18 +129,16 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
     // Evaluate f and W
     eval_f_W( model, *x_curr, ST::one(), &*f, &*J );
     // Solve the system: J*dx = -f
-    SolveCriteria<Scalar> linearSolveCriteria(SOLVE_TOL_REL_RESIDUAL_NORM,linearTolSafety*tol);
+    SolveCriteria<Scalar> linearSolveCriteria(SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS),linearTolSafety*tol);
     SolveStatus<Scalar>
       linearSolveStatus = Thyra::solve( *J, NOTRANS, *f, &*dx, &linearSolveCriteria );
     Thyra::Vt_S(&*dx,Scalar(-ST::one()));
     // Check the linear solve
     if(linearSolveStatus.solveStatus != SOLVE_STATUS_CONVERGED) {
       warningOut()
-        << "Thyra::TimeStepNewtonNonlinearSolver<Scalar>::solve(...), Warning, linear solve did not converge with solve status:\n"
-        <<endl<< "  solveStatus = " << toString(linearSolveStatus.solveStatus)
-        <<endl<< "  achievedTol = " << SolveStatus<Scalar>::achievedTolToString(linearSolveStatus.achievedTol)
-        <<endl<< "  iterations  = " << linearSolveStatus.iterations
-        <<endl<< "  message     = \"" << linearSolveStatus.message << "\""
+        << "Thyra::TimeStepNewtonNonlinearSolver<Scalar>::solve(...), Warning, linear solve did not converge with solve status:\n\n";
+      *OSTab(getFancyOStream(rcp(&warningOut(),false))).getOStream() << linearSolveStatus;
+      warningOut()
         <<endl<< "Continuing anyway :-)\n";
       // ToDo: Add option to throw exception failure
     }
@@ -161,15 +162,16 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   Thyra::assign(x,*x_curr);
   // Check the status
   SolveStatus<Scalar> solveStatus;
-  solveStatus.iterations = iter;
+  std::ostringstream oss;
   if(converged) {
     solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
-    solveStatus.message = "CVODE status test converged!";
+    oss << "CVODE status test converged!  Iterations = " << iter << ".";
   }
   else {
     solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
-    solveStatus.message = "CVODE status test failed!";
+    oss << "CVODE status test failed!  Iterations = " << iter << ".";
   }
+  solveStatus.message = oss.str();
   //
   return solveStatus;
 }

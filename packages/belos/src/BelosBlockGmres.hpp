@@ -93,7 +93,8 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename SCT::magnitudeType MagnitudeType;
     
-    //@{ \name Constructor/Destructor.
+    /** \name Constructor/Destructor. */
+    //@{
     //! %Belos::BlockGmres constructor.
     BlockGmres(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
 	       const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
@@ -105,7 +106,8 @@ namespace Belos {
     virtual ~BlockGmres();
     //@}
     
-    //@{ \name Accessor methods
+    /** \name Accessor methods */
+    //@{
     
     //! Get the iteration count for the current block of linear systems.
     int GetNumIters() const { return( _totaliter ); }
@@ -115,10 +117,10 @@ namespace Belos {
     
     //! Get the solvers native residuals for the current block of linear systems.
     /*! For GMRES this is not the same as the actual residual of the linear system and the
-	residual is not in MultiVec form, so the normvec will be populated with the residual norm.
-     */
+      residual is not in MultiVec form, so the normvec will be populated with the residual norm.
+    */
     RefCountPtr<const MV> GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const;
-
+    
     //! Get the true residuals for the current block of linear systems.
     /*! For GMRES this will force the solver to compute a current residual for its linear 
       systems, the current solution is not stored. <b> This is an expensive computation, 
@@ -126,24 +128,35 @@ namespace Belos {
       residuals. </b>
     */
     RefCountPtr<MV> GetCurrentSoln();
-
+    
     //! Get a constant reference to the current linear problem.  
     /*! This may include a current solution, if the solver has recently restarted or completed.
      */
     RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
-
+    
     RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
-
+    
     int Reset( const RefCountPtr<ParameterList>& pl = null );
+    
     //@} 
 
-    //@{ \name Solver application method.
+    /** \name Solver application method. */
+    //@{
     
     /*! \brief This method uses the iterative method to compute approximate
       solutions to the original problem.  This method can return unconverged if the
       maximum number of iterations is reached, or numerical breakdown is observed.
     */
     void Solve();
+
+    //@}
+
+    /** \name Overridden from Teuchos::Describable */
+    //@{
+
+    /** \brief . */
+    std::string description() const;
+
     //@}
     
   private:
@@ -214,8 +227,11 @@ namespace Belos {
 
     typedef MultiVecTraits<ScalarType, MV> MVT;
   };
+
   //
   // Implementation
+  //
+
   //
   // Note: I should define a copy constructor and overload = because of the use of new
   //
@@ -1296,6 +1312,19 @@ namespace Belos {
       }
   } // end givens_rot
 
+
+  // Overridden from Teuchos::Describable
+
+  template<class ScalarType, class MV, class OP>
+  std::string BlockGmres<ScalarType,MV,OP>::description() const
+  {
+    std::ostringstream oss;
+    oss << "Belos::BlockGmres<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
+    oss << "{";
+    oss << "Variant=\'"<<(_flexible?"Flexible":"Standard")<<"\'";
+    oss << "}";
+    return oss.str();
+  }
 
 } // end namespace Belos
 

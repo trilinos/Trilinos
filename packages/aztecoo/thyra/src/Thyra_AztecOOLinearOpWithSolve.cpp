@@ -214,18 +214,31 @@ bool AztecOOLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
   return (aztecAdjSolver_.get()!=NULL);
 }
 
-bool AztecOOLinearOpWithSolve::solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const
+bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   if(real_trans(M_trans)==NOTRANS) {
-    return ( solveTolType==SOLVE_TOL_DEFAULT || (solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM && allowInexactFwdSolve_) );
+    return (
+      solveMeasureType.useDefault()
+      ||
+      ( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
+        &&
+        allowInexactFwdSolve_
+        )
+      );
   }
   // TRANS
-  return ( aztecAdjSolver_.get()!=NULL && ( solveTolType==SOLVE_TOL_DEFAULT || (solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM && allowInexactFwdSolve_) ) );
-}
-
-int AztecOOLinearOpWithSolve::defaultSolveMaxIterations(ETransp M_trans, ESolveTolType solveTolType) const
-{
-  return ( real_trans(M_trans) == NOTRANS ? fwdDefaultMaxIterations() : adjDefaultMaxIterations() );
+  return (
+    aztecAdjSolver_.get()!=NULL
+    &&
+    (
+      solveMeasureType.useDefault()
+      ||
+      ( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
+        &&
+        allowInexactAdjSolve_
+        )
+      )
+    );
 }
 
 // Overridden from SingleRhsLinearOpWithSolveBase
@@ -245,7 +258,7 @@ AztecOOLinearOpWithSolve::solve(
   //
 //#ifdef _DEBUG
   TEST_FOR_EXCEPT(!this->solveSupportsTrans(M_trans));
-  TEST_FOR_EXCEPT( solveCriteria && !this->solveSupportsSolveTolType(M_trans,solveCriteria->solveTolType) );
+  TEST_FOR_EXCEPT( solveCriteria && !this->solveSupportsSolveMeasureType(M_trans,solveCriteria->solveMeasureType) );
   TEST_FOR_EXCEPT(x==NULL);
 //#endif
   //
@@ -285,8 +298,6 @@ AztecOOLinearOpWithSolve::solve(
   if( solveCriteria ) {
     if( solveCriteria->requestedTol != SC::unspecifiedTolerance() )
       tol = solveCriteria->requestedTol;
-    if( solveCriteria->maxIterations != SC::unspecifiedMaxIterations() )
-      maxIterations = solveCriteria->maxIterations;
   }
   //
   // Solve the linear system
@@ -310,20 +321,20 @@ AztecOOLinearOpWithSolve::solve(
 	const double *AZ_status   = aztecSolver->GetAztecStatus();
   std::ostringstream oss;
   bool converged = false;
-  if(AZ_status[AZ_why]==AZ_normal)           { oss << "Aztec returned AZ_normal"; converged = true; }
-  else if(AZ_status[AZ_why]==AZ_param)       oss << "Aztec returned AZ_param";
-  else if(AZ_status[AZ_why]==AZ_breakdown)   oss << "Aztec returned AZ_breakdown";
-  else if(AZ_status[AZ_why]==AZ_loss)        oss << "Aztec returned AZ_loss";
-  else if(AZ_status[AZ_why]==AZ_ill_cond)    oss << "Aztec returned AZ_ill_cond";
-  else if(AZ_status[AZ_why]==AZ_maxits)      oss << "Aztec returned AZ_maxits";
+  if(AZ_status[AZ_why]==AZ_normal)           { oss << "Aztec returned AZ_normal."; converged = true; }
+  else if(AZ_status[AZ_why]==AZ_param)       oss << "Aztec returned AZ_param.";
+  else if(AZ_status[AZ_why]==AZ_breakdown)   oss << "Aztec returned AZ_breakdown.";
+  else if(AZ_status[AZ_why]==AZ_loss)        oss << "Aztec returned AZ_loss.";
+  else if(AZ_status[AZ_why]==AZ_ill_cond)    oss << "Aztec returned AZ_ill_cond.";
+  else if(AZ_status[AZ_why]==AZ_maxits)      oss << "Aztec returned AZ_maxits.";
   else                                       oss << "Aztec returned an unknown status?";
+  oss << "  Iterations = " << iterations << ".";
   SolveStatus<double> solveStatus;
   solveStatus.solveStatus = SOLVE_STATUS_UNKNOWN;
   solveStatus.achievedTol = achievedTol;
   // Note, achieveTol may actually be greater than tol due to ill conditioning and roundoff!
-  solveStatus.iterations = iterations;
   solveStatus.message = oss.str();
-  if( solveCriteria && solveCriteria->solveTolType == SOLVE_TOL_REL_RESIDUAL_NORM ) {
+  if( solveCriteria && solveCriteria->solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) {
     // This is for no left preconditioning and no left scaling only!
     solveStatus.solveStatus = ( converged ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNCONVERGED );
   }

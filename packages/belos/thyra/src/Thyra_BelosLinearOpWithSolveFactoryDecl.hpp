@@ -21,6 +21,28 @@ template<class Scalar>
 class BelosLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar> {
 public:
 
+  /** \name Parameter names for Paramter List */
+  //@{
+
+  /** \brief . */
+  static const std::string SolverType_name;
+  /** \brief . */
+  static const std::string MaxIters_name;
+  /** \brief . */
+  static const std::string MaxRestarts_name;
+  /** \brief . */
+  static const std::string BlockSize_name;
+  /** \brief . */
+  static const std::string DefaultRelResNorm_name;
+  /** \brief . */
+  static const std::string GMRES_name;
+  /** \brief . */
+  static const std::string GMRES_Length_name;
+  /** \brief . */
+  static const std::string GMRES_Variant_name;
+
+  //@}
+
   /** @name Constructors/initializers/accessors */
   //@{
 

@@ -475,6 +475,10 @@ public:
   basic_OSTab<CharT,Traits>& incrTab(const int tabs = 1)
     {
       tabs_ += tabs;
+      if(fancyOStream_.get()) {
+        fancyOStream_->popTab();
+        fancyOStream_->pushTab(tabs_);
+      }
       return *this;
     }
   /** \brief. */

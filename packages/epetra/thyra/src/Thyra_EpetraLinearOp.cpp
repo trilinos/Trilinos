@@ -302,6 +302,26 @@ EpetraLinearOp::clone() const
 	return Teuchos::null;
 }
 
+// Overridden from Teuchos::Describable
+
+std::string EpetraLinearOp::description() const
+{
+  std::ostringstream oss;
+  oss << "Thyra::EpetraLinearOp";
+  oss << "{";
+  if(op_.get()) {
+    oss << "op=\'"<<typeid(*op_).name()<<"\'";
+    oss << ",opTrans="<<toString(opTrans_);
+    oss << ",applyAs="<<toString(applyAs_);
+    oss << ",adjointSupport="<<toString(adjointSupport_);
+  }
+  else {
+    oss << "op=NULL";
+  }
+  oss << "}";
+  return oss.str();
+}
+
 // protected
 
 // Allocators for domain and range spaces

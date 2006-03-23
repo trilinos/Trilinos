@@ -113,9 +113,7 @@ protected:
   /** \brief . */
   bool solveSupportsTrans(ETransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const;
-  /** \brief . */
-  int defaultSolveMaxIterations(ETransp M_trans, ESolveTolType solveTolType) const;
+  bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
   /** \brief . */
   void solve(
     const ETransp                         M_trans

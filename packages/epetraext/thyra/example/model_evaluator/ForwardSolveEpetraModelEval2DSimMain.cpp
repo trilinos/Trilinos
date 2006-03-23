@@ -119,9 +119,10 @@ int main( int argc, char* argv[] )
     V_V( &*x, *thyraModel.get_x_init() );
 
     Thyra::SolveCriteria<double> solveCriteria; // Sets defaults
-    solveCriteria.solveTolType = Thyra::SOLVE_TOL_REL_RESIDUAL_NORM;
+    solveCriteria.solveMeasureType.set(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_NORM_RHS);
     solveCriteria.requestedTol = tol;
-    solveCriteria.maxIterations = maxIters;
+    solveCriteria.extraParameters = Teuchos::rcp(new Teuchos::ParameterList("Nonlinear Solve"));
+    solveCriteria.extraParameters->set("Max Iters",int(maxIters));
 
     Thyra::SolveStatus<double>
       solveStatus = newtonSolver.solve(thyraModel,&*x,&solveCriteria);

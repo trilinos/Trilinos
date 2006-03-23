@@ -69,6 +69,7 @@ LinearOpWithSolveTester<RangeScalar,DomainScalar>::LinearOpWithSolveTester(
   ,const int                 num_random_vectors
   ,const bool                show_all_tests
   ,const bool                dump_all
+  ,const int                 num_rhs
   )
   :check_forward_default_(check_forward_default)
   ,forward_default_residual_warning_tol_(forward_default_residual_warning_tol)
@@ -99,6 +100,7 @@ LinearOpWithSolveTester<RangeScalar,DomainScalar>::LinearOpWithSolveTester(
   ,num_random_vectors_(num_random_vectors)
   ,show_all_tests_(show_all_tests)
   ,dump_all_(dump_all)
+  ,num_rhs_(num_rhs)
 {}
 
 template<class RangeScalar, class DomainScalar>
@@ -159,17 +161,16 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   using Teuchos::arrayArg;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
+  typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<RangeScalar,DomainScalar> > VBTS;
   typedef Teuchos::ScalarTraits<Scalar>        ST;
   typedef Teuchos::ScalarTraits<RangeScalar>   DST;
   typedef Teuchos::ScalarTraits<DomainScalar>  RST;
   bool success = true, result;
+  const int num_rhs = this->num_rhs();
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   OSTab tab(out,1,"THYRA");
-
-  Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
-    lowsTempState(Teuchos::rcp(&op,false),out,verbLevel);
 
   if(out.get()) {
     *out <<endl<< "*** Entering LinearOpWithSolveTester<"<<ST::name()<<">::check(op,...) ...\n";
@@ -224,66 +225,78 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
+        OSTab tab(oss);
+
         *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
 
-        OSTab tab(oss);
+        tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
         Thyra::randomize( DomainScalar(-1.0), DomainScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
         op.apply(NONCONJ_ELE,*v1,&*v2);
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v3 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
         assign(&*v3,DST::zero());
-        SolveStatus<Scalar> solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
+        SolveStatus<Scalar> solveStatus;
+        if(1){
+          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
+        }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
         *OSTab(oss).getOStream() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v4 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(domain,num_rhs);
         V_VmV( &*v4, *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
         *oss <<endl<< "v5 = Op*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v5 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v5 = createMembers(range,num_rhs);
         assign( &*v5, *v2 );
         op.apply(NONCONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
-      
-        const DomainScalarMag
-          norm_v1 = norm(*v1),
-          norm_v4 = norm(*v4),
-          norm_v4_norm_v1 = norm_v4/norm_v1;
 
-        result = testMaxErr(
-          "norm(v4)/norm(v1)", norm_v4_norm_v1
+        std::vector<DomainScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
+        norms(*v1,&norms_v1[0]);
+        norms(*v4,&norms_v4[0]);
+        std::transform(
+          norms_v4.begin(),norms_v4.end(),norms_v1.begin(),norms_v4_norms_v1.begin()
+          ,std::divides<DomainScalarMag>()
+          );
+
+        result = testMaxErrors(
+          num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
           ,"forward_default_solution_error_error_tol()", forward_default_solution_error_error_tol()
           ,"forward_default_solution_error_warning_tol()", forward_default_solution_error_warning_tol()
           ,&*oss
           );
         if(!result) these_results = false;
-      
-        const RangeScalarMag
-          norm_v2 = norm(*v2),
-          norm_v5 = norm(*v5),
-          norm_v5_norm_v2 = norm_v5/norm_v2;
 
-        result = testMaxErr(
-          "norm(v5)/norm(v2)", norm_v5_norm_v2
+        std::vector<RangeScalarMag> norms_v2(num_rhs), norms_v5(num_rhs), norms_v5_norms_v2(num_rhs);
+        norms(*v2,&norms_v2[0]);
+        norms(*v5,&norms_v5[0]);
+        std::transform(
+          norms_v5.begin(),norms_v5.end(),norms_v2.begin(),norms_v5_norms_v2.begin()
+          ,std::divides<RangeScalarMag>()
+          );
+
+        result = testMaxErrors(
+          num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
           ,"forward_default_residual_error_tol()", forward_default_residual_error_tol()
           ,"forward_default_residual_warning_tol()", forward_default_residual_warning_tol()
           ,&*oss
           );
         if(!result) these_results = false;
-
+        
       }
     }
     else {
@@ -326,25 +339,34 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
+        OSTab tab(oss);
+
         *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
 
-        OSTab tab(oss);
+        tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
         Thyra::randomize( DomainScalar(-1.0), DomainScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
         op.apply(NONCONJ_ELE,*v1,&*v2);
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v3 = createMember(domain);
-        SolveCriteria<Scalar> solveCriteria(SOLVE_TOL_REL_RESIDUAL_NORM,forward_residual_solve_tol());
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
+        SolveCriteria<Scalar> solveCriteria(
+          SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
+          ,forward_residual_solve_tol()
+          );
         assign(&*v3,DST::zero());
-        SolveStatus<Scalar> solveStatus = solve<RangeScalar,DomainScalar>(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
+        SolveStatus<Scalar> solveStatus;
+        if(1){
+          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          solveStatus = solve<RangeScalar,DomainScalar>(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
+        }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
@@ -354,20 +376,23 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           << passfail(solveStatus.solveStatus==SOLVE_STATUS_CONVERGED)<<endl;
       
         *oss <<endl<< "v4 = Op*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v4 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
         assign( &*v4, *v2 );
         op.apply(NONCONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
-      
-        const RangeScalarMag
-          norm_v2 = norm(*v2),
-          norm_v4 = norm(*v4),
-          norm_v4_norm_v2 = norm_v4/norm_v2;
 
-        result = testMaxErr(
-          "norm(v4)/norm(v2)", norm_v4_norm_v2
-          ,"forward_residual_solve_tol()+forward_residual_slack_error_tol()", RangeScalarMag(forward_residual_solve_tol()+forward_residual_slack_error_tol())
-          ,"forward_residual_solve_tol()_slack_warning_tol()", RangeScalarMag(forward_residual_solve_tol()+forward_residual_slack_warning_tol())
+        std::vector<DomainScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);
+        norms(*v2,&norms_v2[0]);
+        norms(*v4,&norms_v4[0]);
+        std::transform(
+          norms_v4.begin(),norms_v4.end(),norms_v2.begin(),norms_v4_norms_v2.begin()
+          ,std::divides<DomainScalarMag>()
+          );
+
+        result = testMaxErrors(
+          num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0]
+          ,"forward_residual_solve_tol()+forward_residual_slack_error_tol()", DomainScalarMag(forward_residual_solve_tol()+forward_residual_slack_error_tol())
+          ,"forward_residual_solve_tol()_slack_warning_tol()", DomainScalarMag(forward_residual_solve_tol()+forward_residual_slack_warning_tol())
           ,&*oss
           );
         if(!result) these_results = false;
@@ -383,93 +408,6 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   }
   else {
     if(out.get()) *out <<endl<< "this->check_forward_residual()==false: Skipping the check of the forward solve with a tolerance on the residual!\n";
-  }
-  
-  if( check_forward_solution_error() ) {
-
-    if(out.get())	*out <<endl<< "this->check_forward_solution_error()==true: Checking the forward solve with a tolerance on the solution error ... ";
-
-    std::ostringstream ossStore;
-    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
-    if(out.get()) ossStore.copyfmt(*out);
-    bool these_results = true;
-
-    *oss <<endl<< "op.solveSupportsConj(NONCONJ_ELE) == true ? ";
-    result = op.solveSupportsConj(NONCONJ_ELE);
-    if(!result) these_results = false;
-    *oss << passfail(result) << endl;
-
-    if(result) {
-    
-      *oss
-        <<endl<< "Checking that the forward solve matches the forward operator to a solution error tolerance:\n"
-        <<endl<< "  v3 = inv(Op)*Op*v1"
-        <<endl<< "               \\___/"
-        <<endl<< "                 v2"
-        <<endl<< ""
-        <<endl<< "  v4 = v3-v1"
-        <<endl<< ""
-        <<endl<< "  norm(v4)/norm(v1) <= forward_solution_error_solve_tol() + forward_solution_error_slack_error_tol()"
-        <<endl;
-
-      for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
-
-        *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
-
-        OSTab tab(oss);
-      
-        *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v1 = createMember(domain);
-        Thyra::randomize( DomainScalar(-1.0), DomainScalar(+1.0), &*v1 );
-        if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
-      
-        *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v2 = createMember(range);
-        op.apply(NONCONJ_ELE,*v1,&*v2);
-        if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
-
-        *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v3 = createMember(domain);
-        SolveCriteria<Scalar> solveCriteria(SOLVE_TOL_REL_SOLUTION_ERR_NORM,forward_solution_error_solve_tol());
-        assign(&*v3,DST::zero());
-        SolveStatus<Scalar> solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
-        if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
-        *oss
-          <<endl<< "solve status:\n";
-        *OSTab(oss).getOStream() << solveStatus;
-        *oss
-          <<endl<< "check: solveStatus = " << toString(solveStatus.solveStatus) << " == SOLVE_STATUS_CONVERGED : "
-          << passfail(solveStatus.solveStatus==SOLVE_STATUS_CONVERGED)<<endl;
-      
-        *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v4 = createMember(domain);
-        V_VmV( &*v4, *v3, *v1 );
-        if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
-      
-        const RangeScalarMag
-          norm_v1 = norm(*v1),
-          norm_v4 = norm(*v4),
-          norm_v4_norm_v1 = norm_v4/norm_v1;
-
-        result = testMaxErr(
-          "norm(v4)/norm(v1)", norm_v4_norm_v1
-          ,"forward_solution_error_solve_tol()+forward_solution_error_slack_error_tol()", RangeScalarMag(forward_solution_error_solve_tol()+forward_solution_error_slack_error_tol())
-          ,"forward_solution_error_solve_tol()+forward_solution_error_slack_warning_tol()", RangeScalarMag(forward_solution_error_solve_tol()+forward_solution_error_slack_warning_tol())
-          ,&*oss
-          );
-        if(!result) these_results = false;
-
-      }
-    }
-    else {
-      *oss <<endl<< "Forward operator not supported, skipping check!\n";
-    }
-
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
-
-  }
-  else {
-    if(out.get()) *out <<endl<< "this->check_forward_solution_error()==false: Skipping the check of the forward solve with a tolerance on the solution_error!\n";
   }
   
   if( check_adjoint_default() ) {
@@ -505,60 +443,72 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
-        *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
-
         OSTab tab(oss);
+
+        *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
+        
+        tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v1 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
         Thyra::randomize( RangeScalar(-1.0), RangeScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
-        *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v2 = createMember(domain);
-        op.apply(NONCONJ_ELE,*v1,&*v2);
+        *oss <<endl<< "v2 = Op'*v1 ...\n" ;
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
+        op.applyTranspose(CONJ_ELE,*v1,&*v2);
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
-        *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
+        *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
         assign(&*v3,DST::zero());
-        SolveStatus<Scalar> solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
+        SolveStatus<Scalar> solveStatus;
+        if(1){
+          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
+        }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
         *OSTab(oss).getOStream() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
         V_VmV( &*v4, *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
-        *oss <<endl<< "v5 = Op*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v5 = createMember(domain);
+        *oss <<endl<< "v5 = Op'*v3 - v2 ...\n" ;
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v5 = createMembers(domain,num_rhs);
         assign( &*v5, *v2 );
-        op.apply(NONCONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
+        op.applyTranspose(CONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
-      
-        const RangeScalarMag
-          norm_v1 = norm(*v1),
-          norm_v4 = norm(*v4),
-          norm_v4_norm_v1 = norm_v4/norm_v1;
 
-        result = testMaxErr(
-          "norm(v4)/norm(v1)", norm_v4_norm_v1
+        std::vector<RangeScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
+        norms(*v1,&norms_v1[0]);
+        norms(*v4,&norms_v4[0]);
+        std::transform(
+          norms_v4.begin(),norms_v4.end(),norms_v1.begin(),norms_v4_norms_v1.begin()
+          ,std::divides<RangeScalarMag>()
+          );
+
+        result = testMaxErrors(
+          num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
           ,"adjoint_default_solution_error_error_tol()", adjoint_default_solution_error_error_tol()
           ,"adjoint_default_solution_error_warning_tol()", adjoint_default_solution_error_warning_tol()
           ,&*oss
           );
         if(!result) these_results = false;
-      
-        const DomainScalarMag
-          norm_v2 = norm(*v2),
-          norm_v5 = norm(*v5),
-          norm_v5_norm_v2 = norm_v5/norm_v2;
 
-        result = testMaxErr(
-          "norm(v5)/norm(v2)", norm_v5_norm_v2
+        std::vector<DomainScalarMag> norms_v2(num_rhs), norms_v5(num_rhs), norms_v5_norms_v2(num_rhs);
+        norms(*v2,&norms_v2[0]);
+        norms(*v5,&norms_v5[0]);
+        std::transform(
+          norms_v5.begin(),norms_v5.end(),norms_v2.begin(),norms_v5_norms_v2.begin()
+          ,std::divides<DomainScalarMag>()
+          );
+
+        result = testMaxErrors(
+          num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
           ,"adjoint_default_residual_error_tol()", adjoint_default_residual_error_tol()
           ,"adjoint_default_residual_warning_tol()", adjoint_default_residual_warning_tol()
           ,&*oss
@@ -607,25 +557,34 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
+        OSTab tab(oss);
+
         *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
 
-        OSTab tab(oss);
+        tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v1 = createMember(range);
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
         Thyra::randomize( RangeScalar(-1.0), RangeScalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v2 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
         op.applyTranspose(CONJ_ELE,*v1,&*v2);
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
-        SolveCriteria<Scalar> solveCriteria(SOLVE_TOL_REL_RESIDUAL_NORM,adjoint_residual_solve_tol());
+        Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
+        SolveCriteria<Scalar> solveCriteria(
+          SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
+          ,adjoint_residual_solve_tol()
+          );
         assign(&*v3,RST::zero());
-        SolveStatus<Scalar> solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,&solveCriteria);
+        SolveStatus<Scalar> solveStatus;
+        if(1){
+          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,&solveCriteria);
+        }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
           <<endl<< "solve status:\n";
@@ -637,20 +596,23 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
           *oss <<endl<<"achievedTol==unknownTolerance(): Setting achievedTol = adjoint_residual_solve_tol() = "<<adjoint_residual_solve_tol()<<endl;
       
         *oss <<endl<< "v4 = Op'*v3 - v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(domain);
+        Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
         assign( &*v4, *v2 );
         op.applyTranspose(CONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
-      
-        const DomainScalarMag
-          norm_v2 = norm(*v2),
-          norm_v4 = norm(*v4),
-          norm_v4_norm_v2 = norm_v4/norm_v2;
 
-        result = testMaxErr(
-          "norm(v4)/norm(v2)", norm_v4_norm_v2
-          ,"adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()", DomainScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol())
-          ,"adjoint_residual_solve_tol()+adjoint_residual_slack_warning_tol()", DomainScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_warning_tol())
+        std::vector<RangeScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);
+        norms(*v2,&norms_v2[0]);
+        norms(*v4,&norms_v4[0]);
+        std::transform(
+          norms_v4.begin(),norms_v4.end(),norms_v2.begin(),norms_v4_norms_v2.begin()
+          ,std::divides<RangeScalarMag>()
+          );
+
+        result = testMaxErrors(
+          num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0]
+          ,"adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()", RangeScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol())
+          ,"adjoint_residual_solve_tol()_slack_warning_tol()", RangeScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_warning_tol())
           ,&*oss
           );
         if(!result) these_results = false;
@@ -666,95 +628,6 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   }
   else {
     if(out.get()) *out <<endl<< "this->check_adjoint_residual()==false: Skipping the check of the adjoint solve with a tolerance on the residual!\n";
-  }
-  
-  if( check_adjoint_solution_error() ) {
-
-    if(out.get())	*out <<endl<< "this->check_adjoint_solution_error()==true: Checking the adjoint solve with a tolerance on the solution error ... ";
-
-    std::ostringstream ossStore;
-    Teuchos::RefCountPtr<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
-    if(out.get()) ossStore.copyfmt(*out);
-    bool these_results = true;
-
-    *oss <<endl<< "op.solveTransposeSupportsConj(CONJ_ELE) == true ? ";
-    result = op.solveTransposeSupportsConj(CONJ_ELE);
-    if(!result) these_results = false;
-    *oss << passfail(result) << endl;
-
-    if(result) {
-    
-      *oss
-        <<endl<< "Checking that the adjoint solve matches the adjoint operator to a solution error tolerance:\n"
-        <<endl<< "  v3 = inv(Op')*Op'*v1"
-        <<endl<< "                \\____/"
-        <<endl<< "                  v2"
-        <<endl<< ""
-        <<endl<< "  v4 = v3-v1"
-        <<endl<< ""
-        <<endl<< "  norm(v4)/norm(v1) <= adjoint_solution_error_solve_tol() + adjoint_solution_error_slack_error_tol()"
-        <<endl;
-
-      for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
-
-        *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
-
-        OSTab tab(oss);
-      
-        *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v1 = createMember(range);
-        Thyra::randomize( RangeScalar(-1.0), RangeScalar(+1.0), &*v1 );
-        if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
-      
-        *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v2 = createMember(domain);
-        op.applyTranspose(CONJ_ELE,*v1,&*v2);
-        if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
-
-        *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<RangeScalar> > v3 = createMember(range);
-        SolveCriteria<Scalar> solveCriteria(SOLVE_TOL_REL_SOLUTION_ERR_NORM,adjoint_solution_error_solve_tol());
-        assign(&*v3,RST::zero());
-        SolveStatus<Scalar> solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,&solveCriteria);
-        if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
-        *oss
-          <<endl<< "solve status:\n";
-        *OSTab(oss).getOStream() << solveStatus;
-        *oss
-          <<endl<< "check: solveStatus = " << toString(solveStatus.solveStatus) << " == SOLVE_STATUS_CONVERGED : "
-          << passfail(solveStatus.solveStatus==SOLVE_STATUS_CONVERGED)<<endl;
-        if(solveStatus.achievedTol==SolveStatus<DomainScalar>::unknownTolerance())
-          *oss <<endl<<"achievedTol==unknownTolerance(): Setting achievedTol = adjoint_solution_error_solve_tol() = "<<adjoint_solution_error_solve_tol()<<endl;
-      
-        *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RefCountPtr<VectorBase<DomainScalar> > v4 = createMember(range);
-        V_VmV( &*v4, *v3, *v1 );
-        if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
-      
-        const DomainScalarMag
-          norm_v1 = norm(*v1),
-          norm_v4 = norm(*v4),
-          norm_v4_norm_v1 = norm_v4/norm_v1;
-
-        result = testMaxErr(
-          "norm(v4)/norm(v1)", norm_v4_norm_v1
-          ,"adjoint_solution_error_solve_tol()+adjoint_solution_error_slack_error_tol()", DomainScalarMag(adjoint_solution_error_solve_tol()+adjoint_solution_error_slack_error_tol())
-          ,"adjoint_solution_error_solve_tol()+adjoint_solution_error_slack_warning_tol()", DomainScalarMag(adjoint_solution_error_solve_tol()+adjoint_solution_error_slack_warning_tol())
-          ,&*oss
-          );
-        if(!result) these_results = false;
-
-      }
-    }
-    else {
-      *oss <<endl<< "Adjoint operator not supported, skipping check!\n";
-    }
-
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).getOStream().get());
-
-  }
-  else {
-    if(out.get()) *out <<endl<< "this->check_adjoint_solution_error()==false: Skipping the check of the adjoint solve with a tolerance on the solution_error!\n";
   }
   
   if(out.get()) {

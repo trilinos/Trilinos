@@ -89,6 +89,9 @@ public:
 		,const int                maxLineSearchIterations      = 20
 		);
 
+  /** \brief . */
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidSolveCriteriaExtraParameters();
+
   /** @name Overridden from NonlinearSolverBase */
   //@{
 
@@ -118,6 +121,20 @@ DampenedNewtonNonlinearSolver<Scalar>::DampenedNewtonNonlinearSolver(
   ,armijoConstant_(armijoConstant)
   ,maxLineSearchIterations_(maxLineSearchIterations)
 {}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const Teuchos::ParameterList>
+DampenedNewtonNonlinearSolver<Scalar>::getValidSolveCriteriaExtraParameters()
+{
+  static Teuchos::RefCountPtr<const Teuchos::ParameterList> validSolveCriteriaExtraParameters;
+  if(!validSolveCriteriaExtraParameters.get()) {
+    Teuchos::RefCountPtr<Teuchos::ParameterList>
+      paramList = Teuchos::rcp(new Teuchos::ParameterList);
+    paramList->set("Max Iters",int(1000));
+    validSolveCriteriaExtraParameters = paramList;
+  }
+  return validSolveCriteriaExtraParameters;
+}
 
 // Overridden from NonlinearSolverBase
 
@@ -152,13 +169,16 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   // Get convergence criteria
   ScalarMag tol = this->defaultTol();
   int maxIters = this->defaultMaxNewtonIterations();
-  if(solveCriteria && solveCriteria->solveTolType != SOLVE_TOL_DEFAULT) {
+  if(solveCriteria && !solveCriteria->solveMeasureType.useDefault()) {
     TEST_FOR_EXCEPTION(
-      solveCriteria->solveTolType != SOLVE_TOL_REL_RESIDUAL_NORM, CatastrophicSolveFailure
+      !solveCriteria->solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS), CatastrophicSolveFailure
       ,"DampenedNewtonNonlinearSolver<Scalar>::solve(...): Error, can only support resudual-based"
       " convergence criteria!");
     tol = solveCriteria->requestedTol;
-    maxIters = solveCriteria->maxIterations;
+    if(solveCriteria->extraParameters.get()) {
+      solveCriteria->extraParameters->validateParameters(*getValidSolveCriteriaExtraParameters());
+      maxIters = solveCriteria->extraParameters->get("Max Iters",int(maxIters));
+    }
   }
 	// Compute the initial starting point
   eval_f_W( model, *x, &*f, &*J );
@@ -274,7 +294,6 @@ exit:
     solveStatus.message = oss.str();
     if( out.get() && (showNewtonIters || showNewtonDetails)) *out << endl << oss.str() << endl;
   }
-  solveStatus.iterations = newtonIter;
   if(x_inout != x.get()) assign( x_inout, *x ); // Assign the final point
   if(out.get() && showNewtonDetails) *out
     << "\n*** Ending dampended Newton solve." << endl; 

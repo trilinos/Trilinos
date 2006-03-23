@@ -106,10 +106,10 @@ namespace Thyra {
  * linear systems.  This interface tries to allow for mathematically rigorous
  * solution tolerances that are not based only any implementation-dependent
  * features like the number of iterations of some solver algorithm.  This
- * interface, however, allows <tt>*this</tt> operator to exclude support for
- * either or both types of solution tolerances (see the functions
- * <tt>solveSupportsSolveTolType()</tt> and
- * <tt>solveTransposeSupportsSolveTolType()</tt>).  Also, this interface
+ * interface, however, allows <tt>*this</tt> operator to exclude support
+ * certain types of solve measures (see the functions
+ * <tt>solveSupportsSolveMeasureType()</tt> and
+ * <tt>solveTransposeSupportsSolveMeasureType()</tt>).  Also, this interface
  * assumes that all implementations can support a "default" solve criteria
  * that is determined internally to <tt>*this</tt>.
  * 
@@ -181,7 +181,7 @@ namespace Thyra {
  * <ul>
  * 
  * <li> <b>Unspecified (Default) solution criteria type</b> [
- * <tt>solveCriteria.solveTolType==SOLVE_TOL_DEFAULT</tt> ]: In this mode,
+ * <tt>solveCriteria.solveMeasureType.useDefault()==true</tt> ]: In this mode,
  * criteria for the solution tolerance is determined internally by
  * <tt>*this</tt> object.  Usually, it would be assumed that <tt>*this</tt>
  * would solve the linear systems to a sufficient tolerance for the given ANA
@@ -191,8 +191,9 @@ namespace Thyra {
  * manner.  In this case, the value of <tt>solveCriteria.requestedTol</tt> is
  * ignored and no meaningful solve status can be returned to the client.
  * 
- * <li> <b>Residual tolerance solution criteria</b> [
- * <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM &&
+ * <li> <b>Relative residual tolerance solution criteria</b> [
+ * <tt>solveCriteria.solveMeasureType.numerator==SOLVE_MEASURE_NORM_RESIDUAL
+ * && solveCriteria.solveMeasureType.denominator==SOLVE_MEASURE_NORM_RHS &&
  * solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance()</tt> ]:
  * In this mode, the solution algorithm would be requested to solve the block
  * system to the relative residual tolerance of
@@ -207,25 +208,9 @@ namespace Thyra {
  * computed from <tt>Thyra::norm()</tt>.  Many linear solvers should be able
  * to monitor this tolerance and be able to achieve it, or on failure be able
  * to report the actual tolerance achieved.
- * 
- * <li> <b>Solution error tolerance solution criteria</b> [
- * <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_SOLUTION_ERR_NORM &&
- * solveCriteria.requestedTol!=SolveCriteria::unspecifiedTolerance()</tt> ]:
- * In this mode, the solution algorithm would be requested to solve the system
- * to the relative solution error tolerance of
-
-  \f[
-    \frac{|| X^*_{(:,i)} - X_{(:,i)} ||}{ ||X^*_{(:,i)}||} \le \mu_e,
-  \f]
- 
- * for \f$i=0 {}\ldots m-1\f$, where \f$||.||\f$, where \f$\mu_e =\f$
- * <tt>solveCriteria.requestedTol</tt> is the natural norm defined by the
- * domain space of \f$op(A)\f$ computed using <tt>Thyra::norm()</tt> and
- * \f$X^*\f$ is the true solution of the set of linear systems.  This is a
- * more difficult tolerance to monitor and achieve since the true solution in
- * almost never known.  Even in the base case, usually only an
- * order-of-magnitude estimate of this error will be known and can be reported
- * by the linear solver.
+ *
+ * <li> ToDo: Add examples of other types of solve measures when they are
+ * needed!
  * 
  * </ul>
  * 
@@ -272,19 +257,17 @@ namespace Thyra {
  *   maximum tolerance achieved.  An order-of-magnitude (or so) estimate of
  *   the achieved tolerance would likely be known by any iterative linear
  *   solver when
- *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Most
- *   direct linear solvers will not return a known tolerance except for the
- *   case where
- *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt> and
- *   where iterative refinement is used.
+ *   <tt>solveCriteria.solveMeasureType.numerator==SOLVE_MEASURE_NORM_RESIDUAL&&solveCriteria.solveMeasureType.denominator==SOLVE_MEASURE_NORM_RHS</tt>.
+ *   Most direct linear solvers will not return a known tolerance except for
+ *   the case where
+ *   <tt>solveCriteria.solveMeasureType.numerator==SOLVE_MEASURE_NORM_RESIDUAL&&solveCriteria.solveMeasureType.denominator==SOLVE_MEASURE_NORM_RHS</tt>
+ *   and where iterative refinement is used.
 
  *   <li><b>Unknown tolerance</b> [
  *   <tt>solveStatus.achievedTol==SolveStatus::unknownTolerance()</tt> ] : The
  *   linear solver does not know the tolerance that was achieved but the
  *   achieved tolerance should be very close to the requested tolerance.  This
- *   would be the most likely return status for a direct linear solver or for
- *   any linear solver where
- *   <tt>solveCriteria.solveTolType==SOLVE_TOL_REL_SOLUTION_ERR_NORM</tt>.
+ *   would be the most likely return status for a direct linear solver.
  * 
  *   </ul>
  * 
@@ -320,11 +303,11 @@ namespace Thyra {
  * many not be returned.  This may be the return value when there is no
  * reasonable way that the linear solver algorithm can know now to compute or
  * estimate the requested tolerance.  This will also always be the return
- * status when <tt>solveCriteria.solveTolType==SOLVE_TOL_DEFAULT</tt> since
+ * status when <tt>solveCriteria.solveMeasureType.useDefault()==true</tt> since
  * the client would have no way to interpret this tolerance.  The value of
  * <tt>solveStatus.achievedTol!=SolveStatus::unknownTolerance()</tt> in this
  * case should only be returned when
- * <tt>solveCriteria.solveTolType==SOLVE_TOL_DEFAULT</tt> and therefore the
+ * <tt>solveCriteria.solveMeasureType.useDefault()==true</tt> and therefore the
  * client would have no way to interpret this tolerance as a residual or an
  * solution norm.
  * 
@@ -398,7 +381,7 @@ public:
    * <li>[<tt>numBlocks == 0</tt>] <tt>blockSolveCriteria==NULL && blockSolveStatus==NULL</tt>.
    * <li>[<tt>numBlocks > 0</tt>] <tt>blockSolveCriteria!=NULL</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.
-   * <li>[<tt>numBlocks > 0</tt>] <tt>this->solveSupportsSolveTolType(conj,blockSolveCriteria[k].solveTolType)==true</tt>,
+   * <li>[<tt>numBlocks > 0</tt>] <tt>this->solveSupportsSolveMeasureType(conj,blockSolveCriteria[k].solveMeasureType)==true</tt>,
    *     for <tt>k = 0...numBlocks-1</tt>.
    * <li>[<tt>blockSolveStatus!=NULL</tt>] <tt>blockSolveStatus</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.
@@ -446,41 +429,21 @@ public:
    */
   virtual bool solveTransposeSupportsConj(EConj conj) const;
 
-  /** \brief Return if <tt>solve()</tt> supports the solve tolerance type
-   * <tt>ESolveTolType</tt>.
+  /** \brief Return if <tt>solve()</tt> supports the given the solve measure
+   * type.
    *
    * The default implementation returns <tt>true</tt> for
-   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
-   * assumed by default that the solver implementation will only be able to
-   * check for and enforce a tolerance on the residual.
+   * <tt>solveMeasureType.inNone()</tt>.
    */
-  virtual bool solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
+  virtual bool solveSupportsSolveMeasureType(EConj conj, const SolveMeasureType& solveMeasureType) const;
 
-  /** \brief Return if <tt>solveTranspose()</tt> supports the solve tolerance
-   * type <tt>ESolveTolType</tt>.
+  /** \brief Return if <tt>solveTranspose()</tt> supports the given the solve
+   * measure type.
    *
    * The default implementation returns <tt>true</tt> for
-   * <tt>solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM</tt>.  Therefore, it is
-   * assumed by default that the solver implementation will only be able to
-   * check for and enforce a tolerance on the residual.
+   * <tt>solveMeasureType.inNone()</tt>.
    */
-  virtual bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
-
-  /** \brief Return the implementation-defined maximum number of iterations
-   * that a standard forward solve is allowed to take.
-   *
-   * The default implementation returns 1 which would be consistent with a
-   * direct linear solver.
-   */
-  virtual int defaultSolveMaxIterations(EConj conj, ESolveTolType solveTolType) const;
-
-  /** \brief Return the implementation-defined maximum number of iterations
-   * that a standard transpose solve is allowed to take.
-   *
-   * The default implementation returns 1 which would be consistent with a
-   * direct linear solver.
-   */
-  virtual int defaultSolveTransposeMaxIterations(EConj conj, ESolveTolType solveTolType) const;
+  virtual bool solveTransposeSupportsSolveMeasureType(EConj conj, const SolveMeasureType& solveMeasureType) const;
 
   /** \brief Request the transpose (or adjoint) solution of a block system
    * with different targeted solution criteria.
@@ -517,7 +480,7 @@ public:
    * <li>[<tt>numBlocks == 0</tt>] <tt>blockSolveCriteria==NULL && blockSolveStatus==NULL</tt>.
    * <li>[<tt>numBlocks > 0</tt>] <tt>blockSolveCriteria!=NULL</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.
-   * <li>[<tt>numBlocks > 0</tt>] <tt>this->solveTransposeSupportsSolveTolType(conj,blockSolveCriteria[k].solveTolType)==true</tt>,
+   * <li>[<tt>numBlocks > 0</tt>] <tt>this->solveTransposeSupportsSolveMeasureType(conj,blockSolveCriteria[k].solveMeasureType)==true</tt>,
    *     for <tt>k = 0...numBlocks-1</tt>.
    * <li>[<tt>blockSolveStatus!=NULL</tt>] <tt>blockSolveStatus</tt> and points to an array of length
    *     at least <tt>numBlocks</tt>.

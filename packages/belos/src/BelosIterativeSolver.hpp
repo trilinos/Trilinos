@@ -36,6 +36,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_Describable.hpp"
 
 using Teuchos::RefCountPtr;
 using Teuchos::ParameterList;
@@ -58,23 +59,26 @@ template <class ScalarType, class MV, class OP>
 class LinearProblem;
 
 template <class ScalarType, class MV, class OP>
-class IterativeSolver {
+class IterativeSolver : virtual public Teuchos::Describable {
  
   typedef Teuchos::ScalarTraits<ScalarType> SCT;
   typedef typename SCT::magnitudeType MagnitudeType;
-    
+  
   public:
 
-  //@{ \name Constructor/Destructor.
+  /** \name Constructor/Destructor. */
+  //@{
 
   //! Default Constructor.
   IterativeSolver(void) {};
 
   //! Destructor.
   virtual ~IterativeSolver(void) {};
+
   //@}
   
-  //@{ \name Accessor methods
+  /** \name Accessor methods */
+  //@{
 
   //! Get the current iteration count for this block of linear systems.
   virtual int GetNumIters() const = 0;
@@ -120,7 +124,9 @@ class IterativeSolver {
   virtual RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const = 0;
 
   //@}
-  //@{ \name Reset methods
+
+  /** \name Reset methods */
+  //@{
   
   /*! \brief Reset the solver to its initialized state.
      This is not a required method for all solvers, but a method that should be
@@ -135,7 +141,8 @@ class IterativeSolver {
     
   //@}
 
-  //@{ \name Solve method
+  /** \name Solve method */
+  //@{
  
   /*! \brief Use the iterative method prescribed by the solver to compute the solution
       to the linear problem.

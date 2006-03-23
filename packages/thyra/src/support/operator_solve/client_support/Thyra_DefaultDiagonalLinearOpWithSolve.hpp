@@ -62,7 +62,7 @@ bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsTrans(ETransp M_tran
 }
 
 template<class Scalar>
-bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const
+bool DefaultDiagonalLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   return true;
 }
@@ -88,10 +88,9 @@ SolveStatus<Scalar> DefaultDiagonalLinearOpWithSolve<Scalar>::solve(
   ele_wise_divide( ST::one(), b, *this->getDiag(), x );
   SS solveStatus;
   solveStatus.solveStatus
-    = (solveCriteria && solveCriteria->solveTolType!=SOLVE_TOL_DEFAULT
+    = (solveCriteria && !solveCriteria->solveMeasureType.useDefault()
        ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNKNOWN );
   solveStatus.achievedTol = SolveStatus<Scalar>::unknownTolerance();
-  solveStatus.iterations = 1;
   return solveStatus;
 }
 

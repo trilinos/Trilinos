@@ -232,6 +232,14 @@ public:
 	Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
 
 	//@}
+
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+  
+  /** \brief . */
+  std::string description() const;
+  
+  //@}
   
 protected:
 

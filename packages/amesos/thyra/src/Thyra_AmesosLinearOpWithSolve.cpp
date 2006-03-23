@@ -170,7 +170,7 @@ bool AmesosLinearOpWithSolve::solveSupportsTrans(ETransp M_trans) const
   return true; // ToDo: Determine if the solver supports adjoints or not!
 }
 
-bool AmesosLinearOpWithSolve::solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const
+bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   return true; // I am a direct solver so I should be able to do it all!
 }
@@ -240,10 +240,9 @@ void AmesosLinearOpWithSolve::solve(
   if(numBlocks && blockSolveStatus) {
     for( int i = 0; i < numBlocks; ++i ) {
       blockSolveStatus[i].solveStatus
-        = (blockSolveCriteria[i].solveCriteria.solveTolType!=SOLVE_TOL_DEFAULT
-           ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNKNOWN );
+        = (blockSolveCriteria[i].solveCriteria.solveMeasureType.useDefault()
+           ? SOLVE_STATUS_UNKNOWN : SOLVE_STATUS_CONVERGED );
       blockSolveStatus[i].achievedTol = SS::unknownTolerance();
-      blockSolveStatus[i].iterations = 1;
     }
   }
 }

@@ -42,7 +42,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_VectorStdOps_grp
  */
 
-/** \defgroup Thyra_Op_Vec_VectorStdOpsAll_names_grp Vector operations with standard test names.
+/** \defgroup Thyra_Op_Vec_VectorStdOpsAll_names_grp Vector operations with standard text names.
  *
  * \ingroup Thyra_Op_Vec_VectorStdOpsAll_grp
  */
@@ -271,17 +271,17 @@ void V_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
 template<class Scalar>
 void V_S( VectorBase<Scalar>* y, const Scalar& alpha );
 
-/** \brief <tt>z(i) = x(i) + y(i), i = 1...z->space()->dim()</tt>.
+/** \brief <tt>z(i) = x(i) + y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 
-/** \brief <tt>z(i) = x(i) - y(i), i = 1...z->space()->dim()</tt>.
+/** \brief <tt>z(i) = x(i) - y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 
-/** \brief <tt>z(i) = alpha*x(i) + y(i), i = 1...z->space()->dim()</tt>.
+/** \brief <tt>z(i) = alpha*x(i) + y(i), i = 0...z->space()->dim()-1</tt>.
  */
 template<class Scalar>
 void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );

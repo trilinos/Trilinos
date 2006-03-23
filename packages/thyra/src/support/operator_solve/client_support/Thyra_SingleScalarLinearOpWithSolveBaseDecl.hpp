@@ -53,13 +53,9 @@ public:
   /** \brief . */
   bool solveTransposeSupportsConj(EConj conj) const;
   /** \brief . */
-  bool solveSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
+  bool solveSupportsSolveMeasureType(EConj conj, const SolveMeasureType& solveMeasureType) const;
   /** \brief . */
-  bool solveTransposeSupportsSolveTolType(EConj conj, ESolveTolType solveTolType) const;
-  /** \brief . */
-  int defaultSolveMaxIterations(EConj conj, ESolveTolType solveTolType) const;
-  /** \brief . */
-  int defaultSolveTransposeMaxIterations(EConj conj, ESolveTolType solveTolType) const;
+  bool solveTransposeSupportsSolveMeasureType(EConj conj, const SolveMeasureType& solveMeasureType) const;
   /** \brief . */
   void solve(
     const EConj                           conj
@@ -89,7 +85,7 @@ protected:
   /** \brief . */
   virtual bool solveSupportsTrans(ETransp M_trans) const = 0;
   /** \brief . */
-  virtual bool solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const = 0;
+  virtual bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const = 0;
   /** \brief . */
   virtual void solve(
     const ETransp                         M_trans
@@ -99,14 +95,6 @@ protected:
     ,const BlockSolveCriteria<Scalar>     blockSolveCriteria[]
     ,SolveStatus<Scalar>                  blockSolveStatus[]
     ) const = 0;
-
-  //@}
-
-  /** @name Protected virtual functions with default implementations. */
-  //@{
-
-  /** \brief Returns 1 as the default for max iterations. */
-  int defaultSolveMaxIterations(ETransp M_trans, ESolveTolType solveTolType) const;
 
   //@}
 

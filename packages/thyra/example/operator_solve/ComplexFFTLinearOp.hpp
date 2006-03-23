@@ -87,7 +87,7 @@ protected:
   /** \brief . */
   bool solveSupportsTrans(Thyra::ETransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveTolType(Thyra::ETransp M_trans, Thyra::ESolveTolType solveTolType) const;
+  bool solveSupportsSolveMeasureType(Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpWithSolveBase */
@@ -188,7 +188,7 @@ bool ComplexFFTLinearOp<RealScalar>::solveSupportsTrans(Thyra::ETransp M_trans) 
 }
 
 template<class RealScalar>
-bool ComplexFFTLinearOp<RealScalar>::solveSupportsSolveTolType(Thyra::ETransp M_trans, Thyra::ESolveTolType solveTolType) const
+bool ComplexFFTLinearOp<RealScalar>::solveSupportsSolveMeasureType(Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType) const
 {
   return ( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS );
 }
@@ -212,11 +212,8 @@ ComplexFFTLinearOp<RealScalar>::solve(
   typedef Thyra::SolveCriteria< std::complex<RealScalar> >  SC;
   typedef Thyra::SolveStatus< std::complex<RealScalar> >    SS;
   SS solveStatus;
-  solveStatus.solveStatus
-    = (solveCriteria && solveCriteria->solveTolType!=Thyra::SOLVE_TOL_DEFAULT
-       ? Thyra::SOLVE_STATUS_CONVERGED : Thyra::SOLVE_STATUS_UNKNOWN );
+  solveStatus.solveStatus = Thyra::SOLVE_STATUS_CONVERGED;
   solveStatus.achievedTol = SS::unknownTolerance();
-  solveStatus.iterations = 1;
   return solveStatus;
 }
 

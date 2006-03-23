@@ -75,7 +75,7 @@ std::string BelosLinearOpWithSolve<Scalar>::description() const
   if(lp_->GetOperator().get()) {
     oss << "(";
     oss << "fwdOp=\'"<<lp_->GetOperator()->description()<<"\'";
-    oss << "iterativeSolver=\'"<<typeid(*iterativeSolver_).name()<<"\'";
+    oss << ",iterativeSolver=\'"<<iterativeSolver_->description()<<"\'";
     oss << ")";
   }
   // ToDo: Make Belos::IterativeSolver derive from Teuchos::Describable so
@@ -117,10 +117,14 @@ bool BelosLinearOpWithSolve<Scalar>::solveSupportsTrans(ETransp M_trans) const
 }
 
 template<class Scalar>
-bool BelosLinearOpWithSolve<Scalar>::solveSupportsSolveTolType(ETransp M_trans, ESolveTolType solveTolType) const
+bool BelosLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const
 {
   if(real_trans(M_trans)==NOTRANS) {
-    return ( solveTolType==SOLVE_TOL_DEFAULT || (solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM && resNormST_.get()) );
+    return (
+      solveMeasureType.useDefault()
+      ||
+      (solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) && resNormST_.get())
+      );
   }
   // TRANS
   return false; // ToDo: Support adjoint solves!
@@ -154,16 +158,15 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   //
   // Set the solution criteria
   //
-  ESolveTolType solveTolType = SOLVE_TOL_DEFAULT;
+  SolveMeasureType solveMeasureType;
   if(numBlocks==1) {
-    solveTolType = blockSolveCriteria[0].solveCriteria.solveTolType;
+    solveMeasureType = blockSolveCriteria[0].solveCriteria.solveMeasureType;
     const ScalarMag requestedTol = blockSolveCriteria[0].solveCriteria.requestedTol;
-    TEST_FOR_EXCEPT( !( solveTolType==SOLVE_TOL_DEFAULT || solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM ) );
-    //if( requestedTol != SolveCritiera<Scalar>::unspecifiedTolerance() && solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM )
-    if( solveTolType==SOLVE_TOL_DEFAULT ) {
+    TEST_FOR_EXCEPT( !( solveMeasureType.useDefault() || solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) );
+    if( solveMeasureType.useDefault() ) {
         resNormST_->ResetTolerance(defaultTol_);
     }
-    else if( solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM ) {
+    else if( solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) {
       if( requestedTol != SolveCriteria<Scalar>::unspecifiedTolerance() )
         resNormST_->ResetTolerance(requestedTol);
       else
@@ -195,11 +198,11 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   TEST_FOR_EXCEPTION(
     belosSolveStatus==Belos::Failed || belosSolveStatus==Belos::NaN, CatastrophicSolveFailure
     ,"Error, something really bad happened in the Belos solver!"
-    ); // ToDo: Get Belos to return a more informative error mesage to embedd here!
+    ); // ToDo: Get Belos to return a more informative error mesage to embed here!
   if( numBlocks && blockSolveStatus ) {
     ESolveStatus solveStatus = SOLVE_STATUS_UNKNOWN;
     ScalarMag    achievedTol = SolveStatus<Scalar>::unknownTolerance();
-    if(solveTolType==SOLVE_TOL_REL_RESIDUAL_NORM) {
+    if(solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)) {
       switch(belosSolveStatus) {
         case Belos::Unchecked:
           solveStatus = SOLVE_STATUS_UNKNOWN;
@@ -221,21 +224,14 @@ void BelosLinearOpWithSolve<Scalar>::solve(
     // ToDo: Above, get the actual number of total iterations somehow!
     std::ostringstream ossmessage;
     ossmessage
-      << "The Belos solver of type \""<<typeid(*iterativeSolver_).name()<<"\" returned a solve status of "
+      << "The Belos solver of type \""<<iterativeSolver_->description()<<"\" returned a solve status of "
       << toString(solveStatus) << " in " << iterations << " iterations and achieved an approximate tolerance of "
       << SolveStatus<Scalar>::achievedTolToString(achievedTol);
     // ToDo: Construct a message that tells the client what happened
     blockSolveStatus[0].solveStatus = solveStatus;
     blockSolveStatus[0].achievedTol = achievedTol;
-    blockSolveStatus[0].iterations  = iterations;
     blockSolveStatus[0].message     = ossmessage.str();
   }
-}
-
-template<class Scalar>
-int BelosLinearOpWithSolve<Scalar>::defaultSolveMaxIterations(ETransp M_trans, ESolveTolType solveTolType) const
-{
-  return -1;
 }
 
 }	// end namespace Thyra

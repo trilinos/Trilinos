@@ -36,9 +36,20 @@
 
 namespace Thyra {
 
-/** \defgroup Thyra_Op_Vec_MultiVectorStdOps_grp Collection of standard multi-vector operations.
+
+/** \defgroup Thyra_Op_Vec_MultiVectorStdOps_grp Collection of all vector operations
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
+ */
+
+/** \defgroup Thyra_Op_Vec_MultiVectorStdOpsAll_grp Collection of vector operations for all scalar types.
+ *
+ * \ingroup Thyra_Op_Vec_MultiVectorStdOps_grp
+ */
+
+/** \defgroup Thyra_Op_Vec_MultiVectorStdOpsAll_names_grp Collection of standard multi-vector operations with text names.
+ *
+ * \ingroup Thyra_Op_Vec_MultiVectorStdOpsAll_grp
  */
 //@{
 
@@ -50,7 +61,7 @@ namespace Thyra {
  *               computed using a single reduction.
  */
 template<class Scalar>
-void norms( const MultiVectorBase<Scalar>& V, Scalar norms[] );
+void norms( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] );
 
 /** \brief Column-wise multi-vector reductions.
  *
@@ -63,7 +74,7 @@ void norms( const MultiVectorBase<Scalar>& V, Scalar norms[] );
  *                 a single reduction.
  */
 template<class Scalar, class NormOp>
-void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op, Scalar norms[] );
+void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] );
 
 /** \brief Column-wise multi-vector one norm.
  *
@@ -75,7 +86,7 @@ void reductions( const MultiVectorBase<Scalar>& V, const NormOp &op, Scalar norm
  * This function simply calls <tt>reductions()</tt> using <tt>RTOpPack::ROpNorm1</tt>.
  */
 template<class Scalar>
-void norms_1( const MultiVectorBase<Scalar>& V, Scalar norms[] );
+void norms_1( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] );
 
 /** \brief Column-wise multi-vector 2 (Euclidean) norm.
  *
@@ -87,7 +98,7 @@ void norms_1( const MultiVectorBase<Scalar>& V, Scalar norms[] );
  * This function simply calls <tt>reductions()</tt> using <tt>RTOpPack::ROpNorm2</tt>.
  */
 template<class Scalar>
-void norms_2( const MultiVectorBase<Scalar>& V, Scalar norms[] );
+void norms_2( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] );
 
 /** \brief Column-wise multi-vector infinity norm.
  *
@@ -99,7 +110,7 @@ void norms_2( const MultiVectorBase<Scalar>& V, Scalar norms[] );
  * This function simply calls <tt>reductions()</tt> using <tt>RTOpPack::ROpNormInf</tt>.
  */
 template<class Scalar>
-void norms_inf( const MultiVectorBase<Scalar>& V, Scalar norms[] );
+void norms_inf( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] );
 
 /** \brief Multi-vector dot product.
  *
@@ -112,6 +123,16 @@ void norms_inf( const MultiVectorBase<Scalar>& V, Scalar norms[] );
 template<class Scalar>
 void dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2, Scalar dots[] );
 
+/** \brief Multi-vector column sum
+ *
+ * @param  V    [in]
+ * @param  sums [outt] Array (size <tt>m = V->domain()->dim()</tt>) of the sums products
+ *              <tt>sum[j] = sum(*V.col(j))</tt>, for <tt>j=0...m-1</tt>,
+ *              computed using a single reduction.
+ */
+template<class Scalar>
+void sums( const MultiVectorBase<Scalar>& V, Scalar sums[] );
+
 /** \brief Take the induced matrix one norm of a multi-vector.
  *
  * @param V  [in] Input multi-vector
@@ -119,7 +140,7 @@ void dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
  *Returns a scalar.
  */
 template<class Scalar>
-Scalar norm_1( const MultiVectorBase<Scalar>& V );
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm_1( const MultiVectorBase<Scalar>& V );
 
 /** \brief V = alpha*V.
  *
@@ -201,6 +222,31 @@ void randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V );
 
 //@}
 
+/** \defgroup Thyra_Op_Vec_MultiVectorStdOpsAll_LA_names_grp Collection of standard multi-vector operations using linear algebra naming convention.
+ *
+ * These functions a just simpler ways to call the functions defined
+ * \ref Thyra_Op_Vec_MultiVectorStdOpsAll_names_grp "here".
+ *
+ * The convention used here is described in the short note <a
+ * href="./LinearAlgebraFunctionConvention.pdf">A Simple Convention for the
+ * Specification of Linear Algebra Function Prototypes in C++ </a>.
+ *
+ * \ingroup Thyra_Op_Vec_MultiVectorStdOpsAll_grp
+ */
+//@{
+
+/** \brief <tt>Z(i,j) = X(i,j) + Y(i,j), i = 0...Z->range()->dim()-1, j = 0...Z->domain()->dim()-1</tt>.
+ */
+template<class Scalar>
+void V_VpV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
+
+/** \brief <tt>Z(i,j) = X(i,j) - Y(i,j), i = 0...Z->range()->dim()-1, j = 0...Z->domain()->dim()-1</tt>.
+ */
+template<class Scalar>
+void V_VmV( MultiVectorBase<Scalar>* Z, const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y );
+
+//@}
+
 } // end namespace Thyra
 
 // /////////////////////////////////////
@@ -208,24 +254,23 @@ void randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V );
 
 template<class Scalar>
 inline
-void Thyra::norms_1( const MultiVectorBase<Scalar>& V, Scalar norms[] )
+void Thyra::norms_1( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] )
 {
   reductions(V,RTOpPack::ROpNorm1<Scalar>(),norms);
 }
 
 template<class Scalar>
 inline
-void Thyra::norms_2( const MultiVectorBase<Scalar>& V, Scalar norms[] )
+void Thyra::norms_2( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] )
 {
   reductions(V,RTOpPack::ROpNorm2<Scalar>(),norms);
 }
 
 template<class Scalar>
 inline
-void Thyra::norms_inf( const MultiVectorBase<Scalar>& V, Scalar norms[] )
+void Thyra::norms_inf( const MultiVectorBase<Scalar>& V, typename Teuchos::ScalarTraits<Scalar>::magnitudeType norms[] )
 {
   reductions(V,RTOpPack::ROpNormInf<Scalar>(),norms);
 }
-
 
 #endif // THYRA_MULTI_VECTOR_STD_OPS_DECL_HPP

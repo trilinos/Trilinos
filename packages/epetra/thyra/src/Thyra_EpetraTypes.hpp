@@ -56,6 +56,24 @@ enum EAdjointEpetraOp {
 	,EPETRA_OP_ADJOINT_UNSUPPORTED   ///< Adjoint not supported
 };
 
+/** \brief . 
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
+ */
+inline
+const char* toString(const EAdjointEpetraOp adjointEpetraOp)
+{
+  switch(adjointEpetraOp) {
+    case EPETRA_OP_ADJOINT_SUPPORTED:
+      return "EPETRA_OP_ADJOINT_SUPPORTED";
+    case EPETRA_OP_ADJOINT_UNSUPPORTED:
+      return "EPETRA_OP_ADJOINT_UNSUPPORTED";
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return NULL;
+}
+
 /** \brief Determine how the apply an Epetra_Operator as a linear operator
  *
  * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
@@ -64,6 +82,24 @@ enum EApplyEpetraOpAs {
 	EPETRA_OP_APPLY_APPLY            ///< Apply using Epetra_Operator::Apply(...)
 	,EPETRA_OP_APPLY_APPLY_INVERSE   ///< Apply using Epetra_Operator::ApplyInverse(...)
 };
+
+/** \brief .
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
+ */
+inline
+const char* toString(const EApplyEpetraOpAs applyEpetraOpAs)
+{
+  switch(applyEpetraOpAs) {
+    case EPETRA_OP_APPLY_APPLY:
+      return "EPETRA_OP_APPLY_APPLY";
+    case EPETRA_OP_APPLY_APPLY_INVERSE:
+      return "EPETRA_OP_APPLY_APPLY_INVERSE";
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return NULL;
+}
 
 class EpetraLinearOp;
 
