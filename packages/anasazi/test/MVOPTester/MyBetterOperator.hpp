@@ -50,7 +50,10 @@ public:
     MyMultiVec<ScalarType>* MyY;
     MyY = dynamic_cast<MyMultiVec<ScalarType>*>(&Y); 
     assert (MyY != 0);
-    
+   
+    // Initialize output vector to zero.
+    MyY->MvInit( Teuchos::ScalarTraits<ScalarType>::zero() );
+
     assert (X.GetNumberVecs() == Y.GetNumberVecs());
     assert (X.GetVecLength() == Y.GetVecLength());
     
@@ -67,7 +70,7 @@ public:
         ri = _rind[i]-1;
         aval = _vals[i];
         for (v=0; v<nv; v++) {
-          (*MyY)[v][ri] = aval*(*MyX)[v][ri];
+          (*MyY)[v][ri] += aval*(*MyX)[v][j];
         }
       }
     }
