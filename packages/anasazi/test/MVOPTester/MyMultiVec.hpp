@@ -379,15 +379,15 @@ public:
   
   void MvPrint (ostream &os) const
   {
-    cout << "Object MyMultiVec" << endl;
-    cout << "Number of rows = " << Length_ << endl;
-    cout << "Number of vecs = " << NumberVecs_ << endl;
+    os << "Object MyMultiVec" << endl;
+    os << "Number of rows = " << Length_ << endl;
+    os << "Number of vecs = " << NumberVecs_ << endl;
     
     for (int i = 0 ; i < Length_ ; ++i)
       {
         for (int v = 0 ; v < NumberVecs_ ; ++v)
-          cout << (*this)(i, v) << " ";
-        cout << endl;
+          os << (*this)(i, v) << " ";
+        os << endl;
       }
   }
   
