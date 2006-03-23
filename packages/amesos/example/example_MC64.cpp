@@ -37,6 +37,26 @@
 #include "Epetra_Map.h"
 #include "Amesos_MC64.h"
 
+class Ifpack_ReorderOperator 
+{
+ public:
+  Ifpack_ReorderOperator(const int size, int* perm, double* scale) :
+    size_(size),
+    perm_(perm),
+    scale_(scale)
+  { }
+
+  int Apply(double* x, double* y)
+  {
+    for (int i = 0 ; i < size_ ; ++i)
+      y[i] = scale_[i] * x[perm_[i]];
+  }
+ private:
+  const int size_;
+  int* perm_;
+  double* scale_;
+};
+
 // Creates the following matrix:
 //
 // | 3.00  5.00           |
@@ -135,6 +155,10 @@ int main(int argc, char *argv[])
 
   for (int i = 0 ; i < A.NumMyRows() * 2 ; ++i)
     cout << "DW[" << i << "] = " << DW[i] << endl;
+
+
+  Ifpack_ReorderOperator RowPerm(4, MC64.GetRowPerm(), MC64.GetRowScaling());
+  Ifpack_ReorderOperator ColPerm(4, MC64.GetColPerm(), MC64.GetColScaling());
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 

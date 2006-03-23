@@ -233,7 +233,7 @@ public:
         if (l2 < min) min = l2;
 
         ElementMaxLength_[ie] = max;
-        ElementMinLength_[ie] = max;
+        ElementMinLength_[ie] = min;
         ElementVolume_[ie] = AreaOfTriangle(x, y, z);
       }
     }
@@ -269,7 +269,7 @@ public:
         if (l3 < max) max = l3;
 
         ElementMaxLength_[ie] = max;
-        ElementMinLength_[ie] = max;
+        ElementMinLength_[ie] = min;
         ElementVolume_[ie] = AreaOfQuad(x, y, z);
       }
     }
