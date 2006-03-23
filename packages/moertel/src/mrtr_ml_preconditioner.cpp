@@ -135,9 +135,9 @@ int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
     return 0;
   }
   
-  MultiVector r_f(P(level).GetRangeSpace());
-  MultiVector r_c(P(level).GetDomainSpace());
-  MultiVector z_c(P(level).GetDomainSpace());
+  MultiVector r_f(P(level).GetRangeSpace(),1,false);
+  MultiVector r_c(P(level).GetDomainSpace(),1,false);
+  MultiVector z_c(P(level).GetDomainSpace(),1,true);
   
   // pre-smoothing
   x_f = S(level) * b_f;
@@ -260,6 +260,12 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     mlapiAtilde = mlapiAtilde_[level];
 
     // build smoother
+    if (Comm().MyPID()==0)
+    {
+      ML_print_line("-", 78);
+      cout << "MOERTEL/ML : creating smoother level " << level << endl; 
+      fflush(stdout);
+    }
     S.Reshape(mlapiAtilde,smoothertype,mlparams_);
     
     if (level) mlparams_.set("PDE equations", NS.GetNumVectors());
@@ -270,6 +276,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
       ML_print_line("-", 80);
       cout << "MOERTEL/ML : creating level " << level+1 << endl;
       ML_print_line("-", 80);
+      fflush(stdout);
     }
 
     mlparams_.set("workspace: current level",level);
@@ -310,12 +317,12 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     ImBWTfine = ImBWTfine - mlapiBWT;
     
     // compute fine mortar projection operator
-    mlapiBWTcoarse = GetRAP(Rtent,mlapiBWT,Ptent);
+    mlapiBWTcoarse = GetRAP(Rtent,mlapiBWT,Ptent); 
     ImBWTcoarse = GetIdentity(C.GetDomainSpace(),C.GetRangeSpace());
     ImBWTcoarse = ImBWTcoarse - mlapiBWTcoarse;
-    
     // make modified restriction/prolongation
-    Rmod = ImBWTcoarse * ( R * ImBWTfine );
+    Rmod = ImBWTcoarse * ( R * ImBWTfine ) + mlapiBWTcoarse * ( R * mlapiBWT ); 
+    //Rmod = ImBWTcoarse * ( R * ImBWTfine ); 
     //Rmod = R * ImBWTfine; 
     //Rmod = R; 
     Pmod = GetTranspose(Rmod);
@@ -349,6 +356,12 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   } // for (level=0; level<maxlevels-1; ++level)
   
   // set coarse solver
+  if (Comm().MyPID()==0)
+  {
+    ML_print_line("-", 78);
+    cout << "MOERTEL/ML : creating coarse solver level " << level << endl; 
+    fflush(stdout);
+  }
   S.Reshape(mlapiAtilde_[level],coarsetype,mlparams_);
   mlapiS_[level] = S;
   
