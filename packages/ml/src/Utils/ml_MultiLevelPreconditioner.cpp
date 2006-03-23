@@ -2121,7 +2121,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
                 NumSmootherSteps, Omega);
   else if( CoarseSolution == "symmetric Gauss-Seidel" )
       ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[NumLevels_-1],
-                     ML_BOTH, NumSmootherSteps, Omega);
+                     ML_POSTSMOOTHER, NumSmootherSteps, Omega);
   else if( CoarseSolution == "MLS" ) {
       ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], ML_BOTH,
                           MLSalpha, MLSPolynomialOrder);
