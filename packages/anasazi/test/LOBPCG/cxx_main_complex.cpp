@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
   bool testFailed;
   bool verbose = 0;
   std::string filename("mhd1280b.cua");
-  std::string which("SR");
+  std::string which("LR");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");

@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
   bool testFailed;
   bool verbose = 0;
-  std::string which("SR");
+  std::string which("LR");
   std::string filename("mhd1280b.cua");
 
   CommandLineProcessor cmdp(false,true);
