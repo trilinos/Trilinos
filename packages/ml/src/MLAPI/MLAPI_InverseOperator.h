@@ -98,10 +98,10 @@ public:
   const Space GetDomainSpace() const;
 
   //! Returns pointer of the internally stored ML_Epetra::RowMatrix object.
-  const Teuchos::RefCountPtr<ML_Epetra::RowMatrix> RCPRowMatrix() const;
+  const Teuchos::RefCountPtr<Epetra_RowMatrix> RCPRowMatrix() const;
 
   //! Returns pointer of the internally stored ML_Epetra::RowMatrix object.
-  ML_Epetra::RowMatrix* RowMatrix() const;
+  Epetra_RowMatrix* RowMatrix() const;
 
   //! Returns a reference to the Operator of which \c this object defines the inverse.
   const Operator& GetOperator() const;
@@ -147,7 +147,7 @@ private:
   //! Operator of which \c this object define the inverse.
   Operator Op_;
   //! Wrapper for IFPACK
-  Teuchos::RefCountPtr<ML_Epetra::RowMatrix> RCPRowMatrix_;
+  Teuchos::RefCountPtr<Epetra_RowMatrix> RCPRowMatrix_;
   //! IFPACK preconditioner.
   Teuchos::RefCountPtr<Ifpack_Preconditioner> RCPData_;
   //! ML preconditioner

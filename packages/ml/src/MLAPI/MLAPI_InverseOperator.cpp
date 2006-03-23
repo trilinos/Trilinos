@@ -77,8 +77,7 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
 
   Op_ = Op;
 
-  RCPRowMatrix_ = Teuchos::rcp(new ML_Epetra::RowMatrix(Op.GetML_Operator(),
-                                                        &GetEpetra_Comm(),false));
+  RCPRowMatrix_ = Op.GetRCPRowMatrix();
 
   // FIXME: to add overlap and level-of-fill
   int NumSweeps   = List.get("smoother: sweeps", 1);
@@ -127,6 +126,7 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
       cout << endl;
     }
     IFPACKList.set("relaxation: type", "symmetric Gauss-Seidel");
+
     Prec = new Ifpack_PointRelaxation(RowMatrix());
   }
   else if (Type == "ILU") {
@@ -203,6 +203,8 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
       mlparams.set("coarse: type","symmetric Gauss-Seidel"); // MLS symmetric Gauss-Seidel Amesos-KLU
     else if (Type == "ML Gauss-Seidel")
       mlparams.set("coarse: type","Gauss-Seidel");
+    else if (Type == "ML Jacobi")
+      mlparams.set("coarse: type","Jacobi");
     else
       ML_THROW("Requested type (" + Type + ") not recognized", -1);
     RCPMLPrec_ = Teuchos::rcp(new ML_Epetra::MultiLevelPreconditioner(*RowMatrix(),mlparams,true));
@@ -243,12 +245,12 @@ const Space InverseOperator::GetDomainSpace() const {
   return(Op_.GetDomainSpace());
 }
 
-const Teuchos::RefCountPtr<ML_Epetra::RowMatrix> InverseOperator::RCPRowMatrix() const
+const Teuchos::RefCountPtr<Epetra_RowMatrix> InverseOperator::RCPRowMatrix() const
 {
   return(RCPRowMatrix_);
 }
 
-ML_Epetra::RowMatrix* InverseOperator::RowMatrix() const
+Epetra_RowMatrix* InverseOperator::RowMatrix() const
 {
   return(RCPRowMatrix_.get());
 }
