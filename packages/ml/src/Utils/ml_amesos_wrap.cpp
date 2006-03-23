@@ -297,7 +297,7 @@ void ML_Amesos_Destroy(void *Amesos_Handle)
       printf("Amesos (level %d) : no solve\n",Level__);
   }
 #else
-  if( Level__ != -1 ) {
+  if( false && Level__ != -1 ) { // MS // I don't like this output any more 
     cout << endl;
     cout << "Amesos (level " << Level__
 	 << ") : Time for solve = "
