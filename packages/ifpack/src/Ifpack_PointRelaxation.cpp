@@ -187,13 +187,19 @@ int Ifpack_PointRelaxation::Compute()
 
   IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*Diagonal_));
 
-  // check diagonal elements, replace zeros with 1.0
+  // check diagonal elements, store the inverses, and verify that
+  // no zeros are around. If an element is zero, then by default
+  // its inverse is zero as well (that is, the row is ignored).
   for (int i = 0 ; i < NumMyRows_ ; ++i) {
-    double diag = (*Diagonal_)[i];
+    double& diag = (*Diagonal_)[i];
     if (IFPACK_ABS(diag) < MinDiagonalValue_)
-      (*Diagonal_)[i] = MinDiagonalValue_;
+      diag = MinDiagonalValue_;
+    if (diag != 0.0)
+      diag = 1.0 / diag;
   }
+  ComputeFlops_ += NumMyRows_;
 
+#if 0
   // some methods require the inverse of the diagonal, compute it
   // now and store it in `Diagonal_'
   if ((PrecType_ == IFPACK_JACOBI) || (PrecType_ == IFPACK_GS)) {
@@ -201,6 +207,7 @@ int Ifpack_PointRelaxation::Compute()
     // update flops
     ComputeFlops_ += NumMyRows_;
   }
+#endif
 
   // We need to import data from external processors. Here I create an
   // Epetra_Import object because I cannot assume that Matrix_ has one.
@@ -568,7 +575,7 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
       }
     }
 
@@ -590,7 +597,7 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
 
       }
     }
@@ -655,7 +662,7 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
       }
     }
 
@@ -676,7 +683,7 @@ ApplyInverseSGS_CrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVector& X
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
 
       }
     }
@@ -743,7 +750,7 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
       }
     }
 
@@ -764,7 +771,7 @@ ApplyInverseSGS_FastCrsMatrix(const Epetra_CrsMatrix* A, const Epetra_MultiVecto
           dtemp += Values[k] * y2_ptr[m][col];
         }
 
-        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) / diag;
+        y2_ptr[m][i] += DampingFactor_ * (x_ptr[m][i] - dtemp) * diag;
 
       }
     }
