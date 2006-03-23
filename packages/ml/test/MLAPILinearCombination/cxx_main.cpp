@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
     Init();
     int NumGlobalElements = 10;
     Space S(NumGlobalElements);
-    Operator I = Gallery("eye", S);
+    Operator I = Gallery("Diag", S);
 
     MultiVector one(S);   one   = 1.0;
     MultiVector two(S);   two   = 2.0;
@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
   catch (...) 
   {
     cout << "problems here..." << endl;
+    exit(EXIT_FAILURE);
   } 
 
 #ifdef HAVE_MPI
