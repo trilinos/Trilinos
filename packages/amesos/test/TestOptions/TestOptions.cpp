@@ -353,6 +353,11 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		//  If the row and column indices don't match, eliminating a column from the map is, typically, irrelevant
 		if ( ( iterColindex == 0 && distribute ) || iterDiagonalOpts == 0 ) { 
 		  for ( int EpetraMatrixType = 0 ; EpetraMatrixType < EpetraMatrixTypeMax;  EpetraMatrixType++ ) {
+
+		    //  These tests presently take over 7 hours on some platforms.  But, I don't want to eliminate any category of tests
+		    //  The following test will cull 90% of the tests and still cover every type of test and most combinations
+		    Epetra_Util EU;
+		    if ( EU.RandomDouble() > 0.8 ) { 
 		    //
 		    //  We test only one level for different indexing or different Range and Domain maps
 		    //  to avoid hassles of moving data from the domain space to the range space and back
@@ -481,6 +486,7 @@ int TestOneMatrix( const vector<bool> AmesosClassesInstalled,
 		    residuals[(int) AMESOS_SUPERLUDIST] = EPETRA_MAX( residuals[ (int) AMESOS_SUPERLUDIST], residual ) ; 
 		    NumErrors += ( residual > maxresidual ) ; 
 #endif
+		    }
 		  }
 		}
 	      }
