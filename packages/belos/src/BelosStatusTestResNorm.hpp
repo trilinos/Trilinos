@@ -428,7 +428,6 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::CheckStatus( IterativeSolver<Sca
   // Compute the new linear system residuals for testing.
   // (if any of them don't meet the tolerance or are NaN, then we exit with that status)
   //
-  status_ = Converged; // This may be set to unconverged or NaN.
   if ( scalevector_.size() > 0 ) {
     for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
      
@@ -439,32 +438,29 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::CheckStatus( IterativeSolver<Sca
       } else {
         testvector_[ i ] = resvector_[ i ] / scalevalue_;
       }
-
-      // Check if any of the residuals are larger than the tolerance.
-      if (testvector_[ i ] > tolerance_) {
-        status_ = Unconverged;
-        return(status_);
-      } else if (testvector_[ i ] <= tolerance_) { 
-        // do nothing.
-      } else {
-        status_ = NaN;            
-        return(status_); // Return immediately if we detect a NaN.
-      }
-    } 
+    }
   }
   else {
-    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
+    for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++)
       testvector_[ i ] = resvector_[ i ] / scalevalue_;
-      if (testvector_[ i ] > tolerance_)
-        status_ = Unconverged;
-      else if (testvector_[ i ] <= tolerance_) { 
-        // do nothing.
-      } else {
-        status_ = NaN;            
-        return(status_); // Return immediately if we detect a NaN.
-      }
-    } 
   }	
+
+  // Check status of new linear system residuals
+  status_ = Converged; // This may be set to unconverged or NaN.
+  for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_num_rhs_); i++) {
+    // Check if any of the residuals are larger than the tolerance.
+    if (testvector_[ i ] > tolerance_) {
+      status_ = Unconverged;
+      return(status_);
+    } else if (testvector_[ i ] <= tolerance_) { 
+      // do nothing.
+    } else {
+      status_ = NaN;            
+      return(status_); // Return immediately if we detect a NaN.
+    }
+  } 
+  
+  // Return the current status
   return status_;
 }
 

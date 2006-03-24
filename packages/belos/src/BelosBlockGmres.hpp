@@ -499,7 +499,7 @@ namespace Belos {
 	restart_flg = (_iter!=0 && restart_flg);
   if (ortho_flg && restart_flg) {
     if (_om->isVerbosityAndPrint( Warnings )) {
-      *_os << "Orthogonalization failure detected at local iteration "<< _iter<<", total iteration "<<_totaliter<<", restart will be performed!\n";
+      *_os << "WARNING: Orthogonalization failure detected at local iteration "<< _iter<<", total iteration "<<_totaliter<<", restart will be performed!\n";
     }
   } 
 	//
