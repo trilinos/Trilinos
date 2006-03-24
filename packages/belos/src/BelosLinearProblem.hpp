@@ -213,7 +213,7 @@ namespace Belos {
     //! Get the current blocksize of the linear problem manager.
     int GetBlockSize() const { return( blocksize_ ); };
     
-    //! Get the current number of linear system being solved for.
+    //! Get the current number of linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides, 
       it is important to know how many linear systems
       are being solved for when the status is checked.  This is informative for residual
@@ -222,7 +222,7 @@ namespace Belos {
     */
     int GetNumToSolve() const { return( num_to_solve_ ); };
     
-    //! Get the index of the first vector in the current right-hand side block being solved for.
+    //! Get the 0-based index of the first vector in the current right-hand side block being solved for.
     /*! Since the block size is independent of the number of right-hand sides for
       some solvers (GMRES, CG, etc.), it is important to know which right-hand sides
       are being solved for.  That may mean you need to update the information
