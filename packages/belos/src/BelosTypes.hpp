@@ -80,6 +80,29 @@ namespace Belos {
 			NaN = -2         /*!< Result from test contains a NaN value.  Should stop */
 			
   };
+
+  /*!
+    Return a string name for a StatusType object.
+  */
+  inline
+  const char* toString(const StatusType status)
+  {
+    switch(status) {
+      case Unchecked:
+        return "Unchecked";
+      case Unconverged:
+        return "Unconverged";
+      case Converged:
+        return "Converged";
+      case Failed:
+        return "Failed";
+      case NaN:
+        return "NaN";
+      default:
+        TEST_FOR_EXCEPT(true);
+    }
+    return NULL; // Should never be called!
+  }
   
   /*! 
     \enum Belos::ConjType
