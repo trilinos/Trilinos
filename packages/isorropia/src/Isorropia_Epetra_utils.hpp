@@ -62,15 +62,15 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
 */
 Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
 
-/** Return a Epetra_Map with distribution of input_rowmap's elements that
+/** Return a Epetra_Map with distribution of input_map's elements that
   places roughly the same 'weight' on each processor.  The 'weight' quantity
   is the sum of corresponding entries in the 'weights' vector, which must
-  have the same size and distribution as the input_rowmap.
+  have the same size and distribution as the input_map.
   The returned Epetra_Map object is passed by value, utilizing the
   fact that Epetra_Map is a light-weight reference-counted "front-end"
   object with an underlying data-object.
 */
-Epetra_Map create_rowmap_balanced(const Epetra_BlockMap& input_rowmap,
+Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
                                   const Epetra_Vector& weights);
 
 /** Given an Epetra_BlockMap object, fill a vector of length num-procs+1

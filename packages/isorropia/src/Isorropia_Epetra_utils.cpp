@@ -96,23 +96,23 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
   return( weights );
 }
 
-Epetra_Map create_rowmap_balanced(const Epetra_BlockMap& input_rowmap,
-                                  const Epetra_Vector& weights)
+Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
+                               const Epetra_Vector& weights)
 {
   //create a dummy map which will be reassigned to the newly-created
   //balanced rowmap later...
-  const Epetra_Comm& input_comm = input_rowmap.Comm();
+  const Epetra_Comm& input_comm = input_map.Comm();
   Epetra_Map rowmap(10, 0, input_comm);
 
   //next we're going to collect weights onto proc 0.
-  int global_num_rows = input_rowmap.NumGlobalElements();
+  int global_num_rows = input_map.NumGlobalElements();
   int myPID = input_comm.MyPID();
   int numProcs = input_comm.NumProc();
   int local_num_rows = myPID == 0 ? global_num_rows : 0;
   Epetra_BlockMap proc0_rowmap(global_num_rows, local_num_rows, 1,0,input_comm);
   Epetra_Vector proc0_weights(proc0_rowmap);
 
-  Epetra_Import importer(proc0_rowmap, input_rowmap);
+  Epetra_Import importer(proc0_rowmap, input_map);
   proc0_weights.Import(weights, importer, Insert);
 
 #ifdef HAVE_MPI
@@ -130,7 +130,7 @@ Epetra_Map create_rowmap_balanced(const Epetra_BlockMap& input_rowmap,
   weights.Norm1(&total_weight);
 
   std::vector<int> all_proc_old_offsets;
-  Isorropia::Epetra_Utils::gather_all_proc_global_offsets(input_rowmap,
+  Isorropia::Epetra_Utils::gather_all_proc_global_offsets(input_map,
                                                      all_proc_old_offsets);
   std::vector<int> all_proc_new_offsets(numProcs+1);
 
@@ -184,7 +184,7 @@ Epetra_Map create_rowmap_balanced(const Epetra_BlockMap& input_rowmap,
 
   int new_num_local = all_proc_new_offsets[myPID+1]-all_proc_new_offsets[myPID];
 
-  const int* old_gids = input_rowmap.MyGlobalElements();
+  const int* old_gids = input_map.MyGlobalElements();
 
   std::vector<int> new_gids(new_num_local);
 #ifdef HAVE_MPI

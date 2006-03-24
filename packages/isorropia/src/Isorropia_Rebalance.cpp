@@ -92,7 +92,7 @@ Epetra_CrsMatrix* create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   Epetra_Map bal_rowmap(10, 0, comm);
   try {
     Epetra_Map tmp_map =
-      Isorropia::Epetra_Utils::create_rowmap_balanced(input_matrix.RowMap(),
+      Isorropia::Epetra_Utils::create_balanced_map(input_matrix.RowMap(),
                                                       row_weights);
     bal_rowmap = tmp_map;
   }
@@ -162,8 +162,8 @@ Epetra_CrsGraph* create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Epetra_Map bal_rowmap(10, 0, comm);
   try {
     Epetra_Map tmp_map =
-      Isorropia::Epetra_Utils::create_rowmap_balanced(input_graph.RowMap(),
-                                                      row_weights);
+      Isorropia::Epetra_Utils::create_balanced_map(input_graph.RowMap(),
+                                                   row_weights);
     bal_rowmap = tmp_map;
   }
   catch(std::exception& exc) {
