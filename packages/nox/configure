@@ -7652,9 +7652,11 @@ fi
 # ------------------------------------------------------------------------
 # Check if the compiler supports NaN and inf checking
 # ------------------------------------------------------------------------
-echo "$as_me:$LINENO: checking whether the compiler supports isnan and isinf" >&5
-echo $ECHO_N "checking whether the compiler supports isnan and isinf... $ECHO_C" >&6
-if test "${ac_cv_xyce_have_finite_number+set}" = set; then
+
+
+echo "$as_me:$LINENO: checking whether the compiler supports isnan()" >&5
+echo $ECHO_N "checking whether the compiler supports isnan()... $ECHO_C" >&6
+if test "${ac_cv_xyce_have_nan_support+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
 
@@ -7692,7 +7694,7 @@ int
 main ()
 {
 double x = 1.0;
-isnan(x); isinf(x);
+isnan(x);
 return 0;
   ;
   return 0;
@@ -7720,12 +7722,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  ac_cv_xyce_have_finite_number=yes
+  ac_cv_xyce_have_nan_support=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_xyce_have_finite_number=no
+ac_cv_xyce_have_nan_support=no
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
@@ -7737,19 +7739,122 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
 fi
-echo "$as_me:$LINENO: result: $ac_cv_xyce_have_finite_number" >&5
-echo "${ECHO_T}$ac_cv_xyce_have_finite_number" >&6
-if test "$ac_cv_xyce_have_finite_number" = yes; then
+echo "$as_me:$LINENO: result: $ac_cv_xyce_have_nan_support" >&5
+echo "${ECHO_T}$ac_cv_xyce_have_nan_support" >&6
+if test "$ac_cv_xyce_have_nan_support" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NAN_INF_SUPPORT
+#define HAVE_NAN_SUPPORT
 _ACEOF
 
 else
   echo "****************************************************"
-  echo "** Warning: Your compiler doesn't support isnan() and "
-  echo "** isinf().  We will supply a default checker but it "
-  echo "** is *NOT* guaranteed to work on your platform!"
+  echo "** Warning: Your compiler doesn't support isnan()."
+  echo "** We will supply a default checker but it is "
+  echo "** *NOT* guaranteed to work on your platform"
+  echo "** unless your machine is IEEE 748/754 conformant."
+  echo "****************************************************"
+fi
+
+echo "$as_me:$LINENO: checking whether the compiler supports isinf()" >&5
+echo $ECHO_N "checking whether the compiler supports isinf()... $ECHO_C" >&6
+if test "${ac_cv_xyce_have_inf_support+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+
+ ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+ ac_save_LIBS="$LIBS"
+ LIBS="$LIBS -lm"
+ cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifndef _ALL_SOURCE
+ #define _ALL_SOURCE
+#endif
+#ifndef _XOPEN_SOURCE
+ #define _XOPEN_SOURCE
+#endif
+#ifndef _XOPEN_SOURCE_EXTENDED
+ #define _XOPEN_SOURCE_EXTENDED 1
+#endif
+#ifdef HAVE_CMATH
+#include <cmath>
+#else
+#include <math.h>
+#endif
+int
+main ()
+{
+double x = 1.0;
+isinf(x);
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_xyce_have_inf_support=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_xyce_have_inf_support=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+ ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+
+fi
+echo "$as_me:$LINENO: result: $ac_cv_xyce_have_inf_support" >&5
+echo "${ECHO_T}$ac_cv_xyce_have_inf_support" >&6
+if test "$ac_cv_xyce_have_inf_support" = yes; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_INF_SUPPORT
+_ACEOF
+
+else
+  echo "****************************************************"
+  echo "** Warning: Your compiler doesn't support isinf()."
+  echo "** We will supply a default checker but it is "
+  echo "** *NOT* guaranteed to work on your platform"
+  echo "** unless your machine is IEEE 748/754 conformant."
   echo "****************************************************"
 fi
 
@@ -9016,7 +9121,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9019: \"$ac_link\") >&5
+(eval echo $as_me:9124: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9094,7 +9199,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9097: \"$ac_link\") >&5
+(eval echo $as_me:9202: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10096,7 +10201,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10099: \"$ac_link\") >&5
+(eval echo $as_me:10204: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10174,7 +10279,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10177: \"$ac_link\") >&5
+(eval echo $as_me:10282: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

@@ -75,19 +75,35 @@ public:
   virtual NOX::StatusTest::StatusType getStatus() const;
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
+ 
+  /*! \brief The finite number test algorithm. 
 
-  //! The finite number test algorithm.  
-  /*! We made this method public so that other objects (solvers, line
+    Autoconf will test to see if the compiler implements the isnan()
+    and isinf() functions in the cmath or math.h headers.  If so, we
+    will use these.  If not, we supply a default implementation. The
+    default implementation is only guaranteed to work if the code is
+    IEEE 748/754 compliant.  The checks for isnan and isinf are
+    separate because compilers like the old sgi platforms support one
+    but not the other.  See bug 2019 for more details.
+
+    This method is public so that other objects (solvers, line
     searches, and directions) can use this test on their own values.
 
     Return Values:
     - 0 = Finite Number
     - -1 = NaN
     - -2 = Inf
+
   */
   virtual int finiteNumberTest(double x) const;
 
 protected:
+
+  //! NOX's implementation of isnan().
+  bool NOX_isnan(double x) const;
+
+  //! NOX's implementation of isinf().
+  bool NOX_isinf(double x) const;
 
 private:
 

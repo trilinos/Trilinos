@@ -53,6 +53,9 @@
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
+/* define if the compiler supports the isinf() function */
+#undef HAVE_INF_SUPPORT
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -104,8 +107,8 @@
 /* define if the compiler implements namespaces */
 #undef HAVE_NAMESPACES
 
-/* define if the compiler supports isnan and isinf checks */
-#undef HAVE_NAN_INF_SUPPORT
+/* define if the compiler supports the isnan() function */
+#undef HAVE_NAN_SUPPORT
 
 /* define that Belos is activated in nox */
 #undef HAVE_NOX_BELOS
