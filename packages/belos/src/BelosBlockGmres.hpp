@@ -497,6 +497,11 @@ namespace Belos {
 	// NOTE:  We will try to restart if we actually computed a subspace of nontrivial dimension (iter!=0)
 	//
 	restart_flg = (_iter!=0 && restart_flg);
+  if (ortho_flg && restart_flg) {
+    if (_om->isVerbosityAndPrint( Warnings )) {
+      *_os << "Orthogonalization failure detected at iteration "<<  _iter << ", restart will be performed" << endl;
+    }
+  } 
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
