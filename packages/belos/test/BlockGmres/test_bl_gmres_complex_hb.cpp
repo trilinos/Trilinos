@@ -67,13 +67,17 @@ int main(int argc, char *argv[]) {
   //
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos CG");
+  Teuchos::Time timer("Belos Gmres");
 
   bool verbose = 0;
+  int blocksize = 1;
+  int numrhs = 1;
   std::string filename("mhd1280b.cua");
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
@@ -151,10 +155,7 @@ int main(int argc, char *argv[]) {
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
-  int numrhs = 1;  // total number of right-hand sides to solve for
-  int blockSize = 1;  // blocksize used by solver
-  //int maxits = 20; // maximum number of iterations to run
-  int maxits = dim/blockSize; // maximum number of iterations to run
+  int maxits = dim/blocksize; // maximum number of iterations to run
   MT tol = 1.0e-7;  // relative residual tolerance
   //
   RefCountPtr<ParameterList> My_PL = rcp( new ParameterList() );
@@ -175,7 +176,7 @@ int main(int argc, char *argv[]) {
   //
   RefCountPtr<Belos::LinearProblem<ST,MV,OP> > My_LP = 
     rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
-  My_LP->SetBlockSize( blockSize );
+  My_LP->SetBlockSize( blocksize );
   //
   // *******************************************************************
   // *************Start the block Gmres iteration***********************
@@ -200,7 +201,7 @@ int main(int argc, char *argv[]) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << dim << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Block size used by solver: " << blockSize << endl;
+    cout << "Block size used by solver: " << blocksize << endl;
     cout << "Max number of Gmres iterations: " << maxits << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
@@ -210,9 +211,9 @@ int main(int argc, char *argv[]) {
   if (verbose) {
     cout << endl << endl;
     cout << "Running Block Gmres -- please wait" << endl;
-    cout << (numrhs+blockSize-1)/blockSize 
+    cout << (numrhs+blocksize-1)/blocksize 
 	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << blockSize
+    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
 	 << endl << endl;
   }
   timer.start(true);
