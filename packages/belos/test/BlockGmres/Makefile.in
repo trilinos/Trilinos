@@ -700,6 +700,7 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 ComplexDummy$(EXEEXT): $(srcdir)/Dummy
 	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
+	cp  $(top_srcdir)/test/MVOPTester/mhd1280a.cua mhd1280a.cua
 #
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
