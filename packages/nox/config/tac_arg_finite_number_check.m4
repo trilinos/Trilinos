@@ -40,7 +40,7 @@ else
   echo "** Warning: Your compiler doesn't support isnan()."
   echo "** We will supply a default checker but it is "
   echo "** *NOT* guaranteed to work on your platform"
-  echo "** unless your machine is IEEE 748/754 conformant."
+  echo "** unless your machine is IEEE 748/754 compliant."
   echo "****************************************************"
 fi
 
@@ -77,7 +77,7 @@ else
   echo "** Warning: Your compiler doesn't support isinf()."
   echo "** We will supply a default checker but it is "
   echo "** *NOT* guaranteed to work on your platform"
-  echo "** unless your machine is IEEE 748/754 conformant."
+  echo "** unless your machine is IEEE 748/754 compliant."
   echo "****************************************************"
 fi
 
