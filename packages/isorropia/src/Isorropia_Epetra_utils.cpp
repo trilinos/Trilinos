@@ -99,15 +99,12 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
 Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
                                const Epetra_Vector& weights)
 {
-  //create a dummy map which will be reassigned to the newly-created
-  //balanced rowmap later...
   const Epetra_Comm& input_comm = input_map.Comm();
-  Epetra_Map rowmap(10, 0, input_comm);
 
-  //next we're going to collect weights onto proc 0.
-  int global_num_rows = input_map.NumGlobalElements();
+  //first we're going to collect weights onto proc 0.
   int myPID = input_comm.MyPID();
   int numProcs = input_comm.NumProc();
+  int global_num_rows = input_map.NumGlobalElements();
   int local_num_rows = myPID == 0 ? global_num_rows : 0;
   Epetra_BlockMap proc0_rowmap(global_num_rows, local_num_rows, 1,0,input_comm);
   Epetra_Vector proc0_weights(proc0_rowmap);
@@ -115,17 +112,6 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
   Epetra_Import importer(proc0_rowmap, input_map);
   proc0_weights.Import(weights, importer, Insert);
 
-#ifdef HAVE_MPI
-  int tag = 1212121;
-  const Epetra_MpiComm* mpiComm =
-    dynamic_cast<const Epetra_MpiComm*>(&input_comm);
-  if (mpiComm == 0) {
-    throw Isorropia::Exception("dynamic_cast to MpiComm failed.");
-  }
-  MPI_Comm mpicomm = mpiComm->GetMpiComm();
-#endif
-
-  int p;
   double total_weight;
   weights.Norm1(&total_weight);
 
@@ -142,7 +128,7 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
     int weights_length = proc0_weights.MyLength();
 
     int offset = 0;
-    for(p=0; p<numProcs; ++p) {
+    for(int p=0; p<numProcs; ++p) {
       all_proc_new_offsets[p] = offset;
 
       double tmp_weight = 0.0;
@@ -165,15 +151,7 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
 #endif
   }
 
-  //Now all processors have two lists, all_proc_old_offsets and
-  //all_proc_new_offsets.
-  //The map elements that this processor currently holds are
-  //given by the range:
-  //      [all_proc_old_offsets[myPID]...all_proc_old_offsets[myPID+1]-1]
-  //and the map elements that this processor needs to hold are
-  //      [all_proc_new_offsets[myPID]...all_proc_new_offsets[myPID+1]-1]
-  //
-  //So now we need to figure out which elements we need to send/recv
+  //Now we need to figure out which elements we need to send/recv
   //to/from neighboring processors.
 
   std::vector<int> send_info;
@@ -182,17 +160,23 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
                                      all_proc_new_offsets,
                                      send_info, recv_info);
 
+  //Create the list to hold local elements for the new map.
   int new_num_local = all_proc_new_offsets[myPID+1]-all_proc_new_offsets[myPID];
-
-  const int* old_gids = input_map.MyGlobalElements();
-
   std::vector<int> new_gids(new_num_local);
+
 #ifdef HAVE_MPI
+  int tag = 1212121;
+  const Epetra_MpiComm* mpiComm =
+    dynamic_cast<const Epetra_MpiComm*>(&input_comm);
+  if (mpiComm == 0) {
+    throw Isorropia::Exception("dynamic_cast to MpiComm failed.");
+  }
+  int num_reqs = recv_info.size()/3;
+  MPI_Comm mpicomm = mpiComm->GetMpiComm();
+  MPI_Request* reqs = num_reqs > 0 ? new MPI_Request[num_reqs] : 0;
+  MPI_Status* sts = num_reqs > 0 ? new MPI_Status[num_reqs] : 0;
+
   unsigned i=0;
-  MPI_Request* reqs = recv_info.size() > 0 ?
-     new MPI_Request[recv_info.size()/3] : 0;
-  MPI_Status* sts = recv_info.size() > 0 ?
-     new MPI_Status[recv_info.size()/3] : 0;
   while(i<recv_info.size()) {
     int proc = recv_info[i];
     int recv_offset = recv_info[i+1];
@@ -203,6 +187,7 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
     i += 3;
   }
 
+  const int* old_gids = input_map.MyGlobalElements();
   i=0;
   while(i<send_info.size()) {
     int proc = send_info[i];
@@ -216,7 +201,7 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
   }
 #endif
 
-  //now copy any overlapping elements from old_gids into new_gids.
+  //copy any overlapping elements from old_gids into new_gids.
   int old_start = all_proc_old_offsets[myPID];
   int new_start = all_proc_new_offsets[myPID];
   int old_end = all_proc_old_offsets[myPID+1]-1;
@@ -235,7 +220,7 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
   }
 
 #ifdef HAVE_MPI
-  //now make sure the recvs are finished...
+  //make sure the recvs are finished...
   if (recv_info.size() > 0) {
     MPI_Waitall(recv_info.size()/3, reqs, sts);
   }
@@ -243,9 +228,7 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
 
   Epetra_Map tmp_map(global_num_rows, new_num_local, &new_gids[0],
                      0, input_comm);
-  rowmap = tmp_map;
-
-  return(rowmap);
+  return(tmp_map);
 }
 
 void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
