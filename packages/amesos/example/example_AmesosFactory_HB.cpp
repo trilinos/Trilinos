@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   if (argc > 1)
     matrix_file = argv[1]; // read it from command line
   else
-    matrix_file = "matrix.rsa"; // file containing the HB matrix.
+    matrix_file = "662_bus.rsa"; // file containing the HB matrix.
 
   if (argc > 2)
     solver_type = argv[2]; // read it form command line
