@@ -307,7 +307,7 @@ ac_subdirs_all="$ac_subdirs_all packages/tpetra"
 ac_subdirs_all="$ac_subdirs_all packages/didasko"
 ac_subdirs_all="$ac_subdirs_all packages/external"
 ac_subdirs_all="$ac_subdirs_all packages/moocho"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot subdirs BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_RTOP_TRUE BUILD_RTOP_FALSE BUILD_THYRA_TRUE BUILD_THYRA_FALSE BUILD_KOKKOS_TRUE BUILD_KOKKOS_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE BUILD_PLIRIS_TRUE BUILD_PLIRIS_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_GALERI_TRUE BUILD_GALERI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_CLAPS_TRUE BUILD_CLAPS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFEXTENDED_TRUE BUILD_TSFEXTENDED_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_ISORROPIA_TRUE BUILD_ISORROPIA_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_CAPO_TRUE BUILD_CAPO_FALSE BUILD_MOERTEL_TRUE BUILD_MOERTEL_FALSE BUILD_PYTRILINOS_TRUE BUILD_PYTRILINOS_FALSE BUILD_RYTHMOS_TRUE BUILD_RYTHMOS_FALSE BUILD_TPETRA_TRUE BUILD_TPETRA_FALSE BUILD_DIDASKO_TRUE BUILD_DIDASKO_FALSE BUILD_EXTERNAL_TRUE BUILD_EXTERNAL_FALSE BUILD_MOOCHO_TRUE BUILD_MOOCHO_FALSE LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar subdirs BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_RTOP_TRUE BUILD_RTOP_FALSE BUILD_THYRA_TRUE BUILD_THYRA_FALSE BUILD_KOKKOS_TRUE BUILD_KOKKOS_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE BUILD_PLIRIS_TRUE BUILD_PLIRIS_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_GALERI_TRUE BUILD_GALERI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_CLAPS_TRUE BUILD_CLAPS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFEXTENDED_TRUE BUILD_TSFEXTENDED_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_ISORROPIA_TRUE BUILD_ISORROPIA_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_CAPO_TRUE BUILD_CAPO_FALSE BUILD_MOERTEL_TRUE BUILD_MOERTEL_FALSE BUILD_PYTRILINOS_TRUE BUILD_PYTRILINOS_FALSE BUILD_RYTHMOS_TRUE BUILD_RYTHMOS_FALSE BUILD_TPETRA_TRUE BUILD_TPETRA_FALSE BUILD_DIDASKO_TRUE BUILD_DIDASKO_FALSE BUILD_EXTERNAL_TRUE BUILD_EXTERNAL_FALSE BUILD_MOOCHO_TRUE BUILD_MOOCHO_FALSE LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1403,7 +1403,7 @@ fi
 
 # Specify required version of automake.
 
-am__api_version="1.8"
+am__api_version="1.9"
 ac_aux_dir=
 for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
   if test -f $ac_dir/install-sh; then
@@ -1579,20 +1579,28 @@ else
 echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
 fi
 
-if mkdir -p -- . 2>/dev/null; then
-  # Keeping the `.' argument allows $(mkdir_p) to be used without
-  # argument.  Indeed, we sometimes output rules like
+if mkdir -p --version . >/dev/null 2>&1 && test ! -d ./--version; then
+  # We used to keeping the `.' as first argument, in order to
+  # allow $(mkdir_p) to be used without argument.  As in
   #   $(mkdir_p) $(somedir)
-  # where $(somedir) is conditionally defined.
-  # (`test -n '$(somedir)' && $(mkdir_p) $(somedir)' is a more
-  # expensive solution, as it forces Make to start a sub-shell.)
-  mkdir_p='mkdir -p -- .'
+  # where $(somedir) is conditionally defined.  However this is wrong
+  # for two reasons:
+  #  1. if the package is installed by a user who cannot write `.'
+  #     make install will fail,
+  #  2. the above comment should most certainly read
+  #     $(mkdir_p) $(DESTDIR)$(somedir)
+  #     so it does not work when $(somedir) is undefined and
+  #     $(DESTDIR) is not.
+  #  To support the latter case, we have to write
+  #     test -z "$(somedir)" || $(mkdir_p) $(DESTDIR)$(somedir),
+  #  so the `.' trick is pointless.
+  mkdir_p='mkdir -p --'
 else
   # On NextStep and OpenStep, the `mkdir' command does not
   # recognize any option.  It will interpret all options as
   # directories to create, and then abort because `.' already
   # exists.
-  for d in ./-p ./--;
+  for d in ./-p ./--version;
   do
     test -d $d && rmdir $d
   done
@@ -1730,9 +1738,6 @@ AUTOHEADER=${AUTOHEADER-"${am_missing_run}autoheader"}
 
 MAKEINFO=${MAKEINFO-"${am_missing_run}makeinfo"}
 
-
-AMTAR=${AMTAR-"${am_missing_run}tar"}
-
 install_sh=${install_sh-"$am_aux_dir/install-sh"}
 
 # Installed binaries are usually stripped using `strip' when the user
@@ -1825,6 +1830,13 @@ INSTALL_STRIP_PROGRAM="\${SHELL} \$(install_sh) -c -s"
 
 # We need awk for the "check" target.  The system "awk" is bad on
 # some platforms.
+# Always define AMTAR for backward compatibility.
+
+AMTAR=${AMTAR-"${am_missing_run}tar"}
+
+am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'
+
+
 
 
 
@@ -2918,6 +2930,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
 
@@ -4580,7 +4593,6 @@ s,@AUTOCONF@,$AUTOCONF,;t t
 s,@AUTOMAKE@,$AUTOMAKE,;t t
 s,@AUTOHEADER@,$AUTOHEADER,;t t
 s,@MAKEINFO@,$MAKEINFO,;t t
-s,@AMTAR@,$AMTAR,;t t
 s,@install_sh@,$install_sh,;t t
 s,@STRIP@,$STRIP,;t t
 s,@ac_ct_STRIP@,$ac_ct_STRIP,;t t
@@ -4589,6 +4601,9 @@ s,@mkdir_p@,$mkdir_p,;t t
 s,@AWK@,$AWK,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
 s,@am__leading_dot@,$am__leading_dot,;t t
+s,@AMTAR@,$AMTAR,;t t
+s,@am__tar@,$am__tar,;t t
+s,@am__untar@,$am__untar,;t t
 s,@subdirs@,$subdirs,;t t
 s,@BUILD_TEUCHOS_TRUE@,$BUILD_TEUCHOS_TRUE,;t t
 s,@BUILD_TEUCHOS_FALSE@,$BUILD_TEUCHOS_FALSE,;t t

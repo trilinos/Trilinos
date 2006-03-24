@@ -152,6 +152,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
+	test "X$ac_cv_use_isorropia" != "Xno" ||
 	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
