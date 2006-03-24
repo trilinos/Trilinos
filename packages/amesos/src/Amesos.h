@@ -81,6 +81,8 @@ Amesos solver.
 
   //! Queries whether a given interface is avaiable or not.
   bool Query(const string CT);
+
+  Teuchos::ParameterList GetValidParameters(); 
   
 };  // End of  class Amesos  
 #endif /* _AMESOS_FACTORY_H_ */
