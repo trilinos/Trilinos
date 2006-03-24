@@ -293,13 +293,13 @@ namespace Belos {
     } else {
       if (normvec) {
         Teuchos::BLAS<int,ScalarType> blas;
-	for (int j=0; j<_blocksize; j++)
-	  (*normvec)[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
+        for (int j=0; j<_blocksize; j++)
+          (*normvec)[j] = blas.NRM2( _blocksize, &_z(_iter*_blocksize, j ), 1);
       }
     }
     return null;
   }
-  
+
   template <class ScalarType, class MV, class OP>
   RefCountPtr<MV> BlockGmres<ScalarType,MV,OP>::GetCurrentSoln()
   {    
@@ -368,7 +368,7 @@ namespace Belos {
       if (_om->isVerbosityAndPrint( IterationDetails )) {
         *_os << endl;
         *_os << "===================================================" << endl;
-        *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve() << endl;
+        *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve()-1 << endl;
         *_os << endl;
       }
       //
@@ -499,7 +499,7 @@ namespace Belos {
 	restart_flg = (_iter!=0 && restart_flg);
   if (ortho_flg && restart_flg) {
     if (_om->isVerbosityAndPrint( Warnings )) {
-      *_os << "\nOrthogonalization failure detected at local iteration "<< _iter<<", total iteration "<<_totaliter<<", restart will be performed!\n";
+      *_os << "Orthogonalization failure detected at local iteration "<< _iter<<", total iteration "<<_totaliter<<", restart will be performed!\n";
     }
   } 
 	//
