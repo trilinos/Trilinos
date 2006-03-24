@@ -182,7 +182,6 @@ using namespace std;
 %typemap(in) (Teuchos::ParameterList& List)
 {
   $1 = CreateList($input);
-  cout << *($1);
 }
 
 %typemap(freearg) (const MLAPI::Operator& A, Teuchos::ParameterList& List,
