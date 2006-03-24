@@ -13,6 +13,7 @@
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_dyn_cast.hpp"
@@ -37,6 +38,12 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Length_name = "Length";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Variant_name = "Variant";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_name = "Outputter";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputFrequency_name = "Output Frequency";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResOnly_name = "Output Max Res Only";
 
 // Constructors/initializers/accessors
 
@@ -106,20 +113,38 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   }
   lp->SetBlockSize(blockSize);
   //
+  // Create the output manager 
+  //
+  typedef Belos::OutputManager<Scalar> OutputManager_t;
+  //int belosVerbLevel = Belos::Warnings | Belos::FinalSummary;
+  int belosVerbLevel = Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails;
+  // ToDo: Set these from the verbosity level
+  RefCountPtr<Teuchos::FancyOStream>
+    ostream = this->getOStream();
+  RefCountPtr<OutputManager_t>
+    outputManager = rcp(new OutputManager_t(0,belosVerbLevel));
+  // Note: The stream itself will be set in the BelosLinearOpWithSolve object!
+  //
   // Create the default status test
   //
   int         defaultMaxIterations = 400;
   int         defaultMaxRestarts = 25;
   ScalarMag   defaultResNorm = 1e-6;
+  int         outputFrequency = 1; // ToDo: Set from the parameter list!
+  bool        outputMaxResOnly = false; // ToDo: Set from the parameter list!
   if(paramList_.get()) {
     defaultMaxIterations = paramList_->get(MaxIters_name,defaultMaxIterations);
     defaultMaxRestarts = paramList_->get(MaxRestarts_name,defaultMaxRestarts);
     defaultResNorm = paramList_->get(DefaultRelResNorm_name,defaultResNorm);
+    Teuchos::ParameterList &outputterSL = paramList_->sublist(Outputter_name);
+    outputFrequency = outputterSL.get(Outputter_OutputFrequency_name,outputFrequency);
+    outputMaxResOnly = outputterSL.get(Outputter_OutputMaxResOnly_name,outputMaxResOnly);
   }
   //
   typedef Belos::StatusTestResNorm<Scalar,MV_t,LO_t>      StatusTestResNorm_t;
   typedef Belos::StatusTestMaxIters<Scalar,MV_t,LO_t>     StatusTestMaxIters_t;
   typedef Belos::StatusTestMaxRestarts<Scalar,MV_t,LO_t>  StatusTestMaxRestarts_t;
+  typedef Belos::StatusTestOutputter<Scalar,MV_t,LO_t>    StatusTestOutputter_t;
   typedef Belos::StatusTestCombo<Scalar,MV_t,LO_t>        StatusTestCombo_t;
   RefCountPtr<StatusTestMaxIters_t>
     maxItersST = rcp(new StatusTestMaxIters_t(defaultMaxIterations));
@@ -127,25 +152,21 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
     maxRestartsST = rcp(new StatusTestMaxRestarts_t(defaultMaxRestarts));
   RefCountPtr<StatusTestResNorm_t>
     resNormST = rcp(new StatusTestResNorm_t(defaultResNorm));
+  RefCountPtr<StatusTestOutputter_t>
+    outputterResNormST = rcp(new StatusTestOutputter_t());
+  outputterResNormST->outputFrequency(outputFrequency);
+  outputterResNormST->outputMaxResOnly(outputMaxResOnly);
+  outputterResNormST->resString("||A*x-b||/||b||");
+  outputterResNormST->set_resNormStatusTest(resNormST);
+  outputterResNormST->set_outputManager(outputManager);
   RefCountPtr<StatusTestCombo_t>
     maxItersOrRestartsST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersST,*maxRestartsST));
   set_extra_data(maxItersST,"maxItersST",&maxItersOrRestartsST);
   set_extra_data(maxRestartsST,"maxRestartsST",&maxItersOrRestartsST);
   RefCountPtr<StatusTestCombo_t>
-    comboST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersOrRestartsST,*resNormST));
+    comboST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersOrRestartsST,*outputterResNormST));
   set_extra_data(maxItersOrRestartsST,"maxItersOrRestartsST",&comboST);
-  set_extra_data(resNormST,"resNormST",&comboST);
-  //
-  // Create the output manager 
-  //
-  typedef Belos::OutputManager<Scalar> OutputManager_t;
-  int belosVerbLevel = Belos::Warnings | Belos::FinalSummary;
-  // ToDo: Set these from the verbosity level
-  RefCountPtr<Teuchos::FancyOStream>
-    ostream = this->getOStream();
-  RefCountPtr<OutputManager_t>
-    outputManager = rcp(new OutputManager_t(0,belosVerbLevel));
-  // Note: The stream itself will be set in the BelosLinearOpWithSolve object!
+  set_extra_data(outputterResNormST,"resNormST",&comboST);
   //
   // Generate the solver
   //
@@ -300,6 +321,10 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
       &gmresSL = validParamList->sublist(GMRES_name);
     gmresSL.set(GMRES_Length_name,int(25));
     gmresSL.set(GMRES_Variant_name,"Standard");
+    Teuchos::ParameterList
+      &outputterSL = validParamList->sublist(Outputter_name);
+    outputterSL.set(Outputter_OutputFrequency_name,int(0));
+    outputterSL.set(Outputter_OutputMaxResOnly_name,bool(true));
   }
   return validParamList;
 }

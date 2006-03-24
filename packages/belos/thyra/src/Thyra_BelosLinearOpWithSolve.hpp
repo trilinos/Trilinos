@@ -148,8 +148,13 @@ void BelosLinearOpWithSolve<Scalar>::solve(
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = this->getOStream();
+  Teuchos::EVerbosityLevel
+    verbLevel = this->getVerbLevel();
 
   OSTab tab = this->getOSTab();
+
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+    *out << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\" ...\n\n";
   
   //
   // Set RHS and LHS
@@ -187,47 +192,50 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   iterativeSolver_->Reset();
   if(1){
     outputManager_->SetOStream(out);
-    if(out.get()) *out << "\n\n";
     Teuchos::OSTab tab(out,1,"BELOS");
     iterativeSolver_->Solve();
   }
   //
-  // Get the solve status
+  // Report the solve status
   //
   const Belos::StatusType belosSolveStatus = resNormST_->GetStatus();
+  const std::vector<ScalarMag>* resNormValues = resNormST_->GetTestValue();
+  TEST_FOR_EXCEPT(resNormValues==NULL);
+  const ScalarMag belosAchievedTol = *std::max_element(resNormValues->begin(),resNormValues->end());
   TEST_FOR_EXCEPTION(
     belosSolveStatus==Belos::Failed || belosSolveStatus==Belos::NaN, CatastrophicSolveFailure
     ,"Error, something really bad happened in the Belos solver!"
-    ); // ToDo: Get Belos to return a more informative error mesage to embed here!
-  if( numBlocks && blockSolveStatus ) {
-    ESolveStatus solveStatus = SOLVE_STATUS_UNKNOWN;
-    ScalarMag    achievedTol = SolveStatus<Scalar>::unknownTolerance();
-    if(solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)) {
-      switch(belosSolveStatus) {
-        case Belos::Unchecked:
-          solveStatus = SOLVE_STATUS_UNKNOWN;
-          break;
-        case Belos::Unconverged:
-          solveStatus = SOLVE_STATUS_UNCONVERGED;
-          break;
-        case Belos::Converged:
-          solveStatus = SOLVE_STATUS_CONVERGED;
-          break;
-        default:
-          TEST_FOR_EXCEPT(true); // Should never get here!
-      }
-      if(const std::vector<ScalarMag>* resNormValues = resNormST_->GetTestValue()) {
-        achievedTol = *std::max_element(resNormValues->begin(),resNormValues->end());
-      }
+    ); // ToDo: Get Belos to return a more informative error mesage to embed here?
+  //
+  ESolveStatus solveStatus = SOLVE_STATUS_UNKNOWN;
+  ScalarMag    achievedTol = SolveStatus<Scalar>::unknownTolerance();
+  if(solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)) {
+    switch(belosSolveStatus) {
+      case Belos::Unchecked:
+        solveStatus = SOLVE_STATUS_UNKNOWN;
+        break;
+      case Belos::Unconverged:
+        solveStatus = SOLVE_STATUS_UNCONVERGED;
+        break;
+      case Belos::Converged:
+        solveStatus = SOLVE_STATUS_CONVERGED;
+        break;
+      default:
+        TEST_FOR_EXCEPT(true); // Should never get here!
     }
-    const int iterations = iterativeSolver_->GetNumIters();
-    // ToDo: Above, get the actual number of total iterations somehow!
-    std::ostringstream ossmessage;
-    ossmessage
-      << "The Belos solver of type \""<<iterativeSolver_->description()<<"\" returned a solve status of "
-      << toString(solveStatus) << " in " << iterations << " iterations and achieved an approximate tolerance of "
-      << SolveStatus<Scalar>::achievedTolToString(achievedTol);
-    // ToDo: Construct a message that tells the client what happened
+    achievedTol = belosAchievedTol;
+  }
+  const int iterations = iterativeSolver_->GetNumIters();
+  //
+  std::ostringstream ossmessage;
+  ossmessage
+    << "The Belos solver of type \""<<iterativeSolver_->description()<<"\" returned a solve status of \""
+    << toString(belosSolveStatus) << "\" in " << iterations << " iterations and achieved an approximate tolerance of "
+    << SolveStatus<Scalar>::achievedTolToString(achievedTol);
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+    *out << "\n" << ossmessage.str() << "\n";
+  //
+  if( numBlocks && blockSolveStatus ) {
     blockSolveStatus[0].solveStatus = solveStatus;
     blockSolveStatus[0].achievedTol = achievedTol;
     blockSolveStatus[0].message     = ossmessage.str();

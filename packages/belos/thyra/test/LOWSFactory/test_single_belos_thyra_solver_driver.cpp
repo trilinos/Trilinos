@@ -29,6 +29,8 @@ int main(int argc, char* argv[])
     int             maxIterations          = 400;
     int             maxRestarts            = 25;
     int             gmresKrylovLength      = 25;
+    int             outputFrequency        = 10;
+    bool            outputMaxResOnly       = false;
     int             blockSize              = 1;
     double          maxResid               = 1e-6;
     double          maxSolutionError       = 1e-6;
@@ -44,6 +46,8 @@ int main(int argc, char* argv[])
     clp.setOption( "max-iters", &maxIterations, "The maximum number of linear solver iterations to take." );
     clp.setOption( "max-restarts", &maxRestarts, "???." );
     clp.setOption( "gmres-krylov-length", &gmresKrylovLength, "???." );
+    clp.setOption( "output-frequency", &outputFrequency, "Number of linear solver iterations between output" );
+    clp.setOption( "output-max-res-only", "output-all-res", &outputMaxResOnly, "Determines if only the max residual is printed or if all residuals are printed per iteration." );
     clp.setOption( "block-size", &blockSize, "???." );
     clp.setOption( "max-resid", &maxResid, "The maximum relative error in the residual." );
     clp.setOption( "max-solution-error", &maxSolutionError, "The maximum relative error in the solution of the linear system." );
@@ -63,6 +67,8 @@ int main(int argc, char* argv[])
     belosLOWSFPL.set("Max Restarts",int(maxRestarts));
     belosLOWSFPL.set("Block Size",int(blockSize));
     belosLOWSFPL.sublist("GMRES").set("Length",int(gmresKrylovLength));
+    belosLOWSFPL.sublist("Outputter").set("Output Frequency",int(outputFrequency));
+    belosLOWSFPL.sublist("Outputter").set("Output Max Res Only",bool(outputMaxResOnly));
 
     success
       = Thyra::test_single_belos_thyra_solver(

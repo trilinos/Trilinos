@@ -40,6 +40,12 @@ public:
   static const std::string GMRES_Length_name;
   /** \brief . */
   static const std::string GMRES_Variant_name;
+  /** \brief . */
+  static const std::string Outputter_name;
+  /** \brief . */
+  static const std::string Outputter_OutputFrequency_name;
+  /** \brief . */
+  static const std::string Outputter_OutputMaxResOnly_name;
 
   //@}
 
