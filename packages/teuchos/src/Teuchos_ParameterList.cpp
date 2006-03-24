@@ -183,30 +183,37 @@ const ParameterList& ParameterList::sublist(const string& name) const
   
 ostream& ParameterList::print(ostream& os, int indent, bool showTypes) const
 {
-  if (params_.begin() == params_.end()) 
-  {
+  if (params_.begin() == params_.end()) {
     for (int j = 0; j < indent; j ++)
       os << ' ';
     os << "[empty list]" << endl;
   }
-  else 
+  else { 
+    // Print parameters first
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
     {
+      const ParameterEntry &entry_i = entry(i);
+      if(entry_i.isList())
+        continue;
       for (int j = 0; j < indent; j ++)
         os << ' ';
-      if (entry(i).isList()) 
-      {
-        os << name(i) << " -> " << endl;
-        getValue<ParameterList>(entry(i)).print(os, indent + 2, showTypes);
-      }
-      else
-      {
-        os << name(i);
-        if(showTypes)
-          os << " : " << entry(i).getAny().type().name();
-        os << " = " << entry(i) << endl;
-      }
+      os << name(i);
+      if(showTypes)
+        os << " : " << entry_i.getAny().type().name();
+      os << " = " << entry_i << endl;
     }
+    // Print sublists second
+    for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
+    {
+      const ParameterEntry &entry_i = entry(i);
+      if(!entry_i.isList())
+        continue;
+      for (int j = 0; j < indent; j ++)
+        os << ' ';
+      os << name(i) << " -> " << endl;
+      getValue<ParameterList>(entry_i).print(os, indent + 2, showTypes);
+    }
+  }
   return os;
 }
 
