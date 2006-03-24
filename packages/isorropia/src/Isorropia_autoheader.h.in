@@ -1,4 +1,4 @@
-/* src/Ispa_autoheader.h.in.  Generated from configure.ac by autoheader.  */
+/* src/Isorropia_autoheader.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
@@ -31,6 +31,9 @@
 
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
+
+/* Define to 1 if you have the <fstream> header file. */
+#undef HAVE_FSTREAM
 
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
@@ -95,8 +98,14 @@
 /* Define if want to build tests */
 #undef HAVE_TESTS
 
+/* Define if want to build with isorropia enabled */
+#undef HAVE_TEUCHOS
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <vector> header file. */
+#undef HAVE_VECTOR
 
 /* Name of package */
 #undef PACKAGE

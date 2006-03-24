@@ -28,6 +28,7 @@
 //@HEADER
 
 #include <Isorropia_configdefs.hpp>
+#include <ispatest_utils.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -37,20 +38,31 @@
 
 int main(int argc, char** argv) {
 
-  bool verbose = true;
+  int numProcs = 1;
+  int localProc = 0;
 
-  try {
-    run_serial_utests(verbose);
-  }
-  catch(std::exception& exc) {
-    std::cout << "utest main caught exception from run_serial_utests: "
-          << exc.what() << std::endl;
-    return(-1);
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+  bool verbose = ispatest::set_verbose(localProc, argc, argv);
+
+  if (localProc == 0) {
+    try {
+      run_serial_utests(verbose);
+    }
+    catch(std::exception& exc) {
+      std::cout << "utest main caught exception from run_serial_utests: "
+            << exc.what() << std::endl;
+      return(-1);
+    }
   }
 
   if (verbose) {
     std::cout << "utest main: tests passed."<<std::endl;
   }
+
+  MPI_Finalize();
 
   return(0);
 }

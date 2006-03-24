@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(copyfiles_SOURCES) $(utest_SOURCES)
+SOURCES = $(copyfiles_SOURCES) $(rebalance_1d_default_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,8 +68,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = copyfiles$(EXEEXT) utest$(EXEEXT)
-subdir = test/utest
+noinst_PROGRAMS = copyfiles$(EXEEXT) rebalance_1d_default$(EXEEXT)
+subdir = test/rebalance_1d_default
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.include.am \
 	$(srcdir)/Makefile.include.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -110,8 +110,9 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_copyfiles_OBJECTS =
 copyfiles_OBJECTS = $(am_copyfiles_OBJECTS)
 copyfiles_LDADD = $(LDADD)
-am_utest_OBJECTS = utest-utest.$(OBJEXT) utest-utst_serial.$(OBJEXT)
-utest_OBJECTS = $(am_utest_OBJECTS)
+am_rebalance_1d_default_OBJECTS =  \
+	rebalance_1d_default-rebalance_1d_default.$(OBJEXT)
+rebalance_1d_default_OBJECTS = $(am_rebalance_1d_default_OBJECTS)
 am__DEPENDENCIES_1 =
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -124,8 +125,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(copyfiles_SOURCES) $(utest_SOURCES)
-DIST_SOURCES = $(copyfiles_SOURCES) $(utest_SOURCES)
+SOURCES = $(copyfiles_SOURCES) $(rebalance_1d_default_SOURCES)
+DIST_SOURCES = $(copyfiles_SOURCES) $(rebalance_1d_default_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -274,22 +275,21 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-DEFAULT_INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir)
-utest_SOURCES = $(srcdir)/utest.cpp $(srcdir)/utst_serial.cpp $(srcdir)/utst_serial.hpp
-copyfiles_SOURCES = $(top_srcdir)/test/utest/src_utest_dist1
-utest_DEPENDENCIES = \
+DEFAULT_INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
+rebalance_1d_default_SOURCES = $(srcdir)/rebalance_1d_default.cpp
+copyfiles_SOURCES = $(top_srcdir)/test/rebalance_1d_default/src_rebalance_1d_dist.2
+rebalance_1d_default_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a \
 	$(top_builddir)/test/utils/libisorropia_test_utils.a
 
-utest_CXXFLAGS = $(EPETRA_INCLUDES)
-utest_LDADD = -L$(top_builddir)/test/utils -lisorropia_test_utils \
+rebalance_1d_default_CXXFLAGS = $(EPETRA_INCLUDES)
+rebalance_1d_default_LDADD = \
+      -L$(top_builddir)/test/utils -lisorropia_test_utils \
       -L$(top_builddir)/src -lisorropia \
       $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 EXTRA_DIST = \
-	src_utest_dist1 \
-        src_utest_dist2 \
-        src_utest_dist3
+	src_rebalance_1d_dist.2
 
 all: all-am
 
@@ -304,9 +304,9 @@ $(srcdir)/Makefile.include.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.include
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/utest/Makefile.include'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/rebalance_1d_default/Makefile.include'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/utest/Makefile.include
+	  $(AUTOMAKE) --foreign  test/rebalance_1d_default/Makefile.include
 .PRECIOUS: Makefile.include
 Makefile.include: $(srcdir)/Makefile.include.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -329,9 +329,9 @@ Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-utest$(EXEEXT): $(utest_OBJECTS) $(utest_DEPENDENCIES) 
-	@rm -f utest$(EXEEXT)
-	$(CXXLINK) $(utest_LDFLAGS) $(utest_OBJECTS) $(utest_LDADD) $(LIBS)
+rebalance_1d_default$(EXEEXT): $(rebalance_1d_default_OBJECTS) $(rebalance_1d_default_DEPENDENCIES) 
+	@rm -f rebalance_1d_default$(EXEEXT)
+	$(CXXLINK) $(rebalance_1d_default_LDFLAGS) $(rebalance_1d_default_OBJECTS) $(rebalance_1d_default_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -339,8 +339,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utest-utest.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utest-utst_serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -356,33 +355,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-utest-utest.o: $(srcdir)/utest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -MT utest-utest.o -MD -MP -MF "$(DEPDIR)/utest-utest.Tpo" -c -o utest-utest.o `test -f '$(srcdir)/utest.cpp' || echo '$(srcdir)/'`$(srcdir)/utest.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/utest-utest.Tpo" "$(DEPDIR)/utest-utest.Po"; else rm -f "$(DEPDIR)/utest-utest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/utest.cpp' object='utest-utest.o' libtool=no @AMDEPBACKSLASH@
+rebalance_1d_default-rebalance_1d_default.o: $(srcdir)/rebalance_1d_default.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_1d_default_CXXFLAGS) $(CXXFLAGS) -MT rebalance_1d_default-rebalance_1d_default.o -MD -MP -MF "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Tpo" -c -o rebalance_1d_default-rebalance_1d_default.o `test -f '$(srcdir)/rebalance_1d_default.cpp' || echo '$(srcdir)/'`$(srcdir)/rebalance_1d_default.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Tpo" "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Po"; else rm -f "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/rebalance_1d_default.cpp' object='rebalance_1d_default-rebalance_1d_default.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -c -o utest-utest.o `test -f '$(srcdir)/utest.cpp' || echo '$(srcdir)/'`$(srcdir)/utest.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_1d_default_CXXFLAGS) $(CXXFLAGS) -c -o rebalance_1d_default-rebalance_1d_default.o `test -f '$(srcdir)/rebalance_1d_default.cpp' || echo '$(srcdir)/'`$(srcdir)/rebalance_1d_default.cpp
 
-utest-utest.obj: $(srcdir)/utest.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -MT utest-utest.obj -MD -MP -MF "$(DEPDIR)/utest-utest.Tpo" -c -o utest-utest.obj `if test -f '$(srcdir)/utest.cpp'; then $(CYGPATH_W) '$(srcdir)/utest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/utest.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/utest-utest.Tpo" "$(DEPDIR)/utest-utest.Po"; else rm -f "$(DEPDIR)/utest-utest.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/utest.cpp' object='utest-utest.obj' libtool=no @AMDEPBACKSLASH@
+rebalance_1d_default-rebalance_1d_default.obj: $(srcdir)/rebalance_1d_default.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_1d_default_CXXFLAGS) $(CXXFLAGS) -MT rebalance_1d_default-rebalance_1d_default.obj -MD -MP -MF "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Tpo" -c -o rebalance_1d_default-rebalance_1d_default.obj `if test -f '$(srcdir)/rebalance_1d_default.cpp'; then $(CYGPATH_W) '$(srcdir)/rebalance_1d_default.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/rebalance_1d_default.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Tpo" "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Po"; else rm -f "$(DEPDIR)/rebalance_1d_default-rebalance_1d_default.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/rebalance_1d_default.cpp' object='rebalance_1d_default-rebalance_1d_default.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -c -o utest-utest.obj `if test -f '$(srcdir)/utest.cpp'; then $(CYGPATH_W) '$(srcdir)/utest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/utest.cpp'; fi`
-
-utest-utst_serial.o: $(srcdir)/utst_serial.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -MT utest-utst_serial.o -MD -MP -MF "$(DEPDIR)/utest-utst_serial.Tpo" -c -o utest-utst_serial.o `test -f '$(srcdir)/utst_serial.cpp' || echo '$(srcdir)/'`$(srcdir)/utst_serial.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/utest-utst_serial.Tpo" "$(DEPDIR)/utest-utst_serial.Po"; else rm -f "$(DEPDIR)/utest-utst_serial.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/utst_serial.cpp' object='utest-utst_serial.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -c -o utest-utst_serial.o `test -f '$(srcdir)/utst_serial.cpp' || echo '$(srcdir)/'`$(srcdir)/utst_serial.cpp
-
-utest-utst_serial.obj: $(srcdir)/utst_serial.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -MT utest-utst_serial.obj -MD -MP -MF "$(DEPDIR)/utest-utst_serial.Tpo" -c -o utest-utst_serial.obj `if test -f '$(srcdir)/utst_serial.cpp'; then $(CYGPATH_W) '$(srcdir)/utst_serial.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/utst_serial.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/utest-utst_serial.Tpo" "$(DEPDIR)/utest-utst_serial.Po"; else rm -f "$(DEPDIR)/utest-utst_serial.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/utst_serial.cpp' object='utest-utst_serial.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(utest_CXXFLAGS) $(CXXFLAGS) -c -o utest-utst_serial.obj `if test -f '$(srcdir)/utst_serial.cpp'; then $(CYGPATH_W) '$(srcdir)/utst_serial.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/utst_serial.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_1d_default_CXXFLAGS) $(CXXFLAGS) -c -o rebalance_1d_default-rebalance_1d_default.obj `if test -f '$(srcdir)/rebalance_1d_default.cpp'; then $(CYGPATH_W) '$(srcdir)/rebalance_1d_default.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/rebalance_1d_default.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -550,9 +535,7 @@ uninstall-am: uninstall-info-am
 
 
 copyfiles$(EXEEXT):$(copyfiles_SOURCES)
-	cp $(top_srcdir)/test/utest/src_utest_dist1 $(top_builddir)/test/utest/utest_dist1
-	cp $(top_srcdir)/test/utest/src_utest_dist2 $(top_builddir)/test/utest/utest_dist2
-	cp $(top_srcdir)/test/utest/src_utest_dist3 $(top_builddir)/test/utest/utest_dist3
+	cp $(top_srcdir)/test/rebalance_1d_default/src_rebalance_1d_dist.2 $(top_builddir)/test/rebalance_1d_default/rebalance_1d_dist.2
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

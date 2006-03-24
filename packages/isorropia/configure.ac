@@ -54,9 +54,10 @@ AC_CONFIG_SRCDIR(/test/utest/utest.cpp)
 
 AC_CONFIG_AUX_DIR(config)
 
-# Configure should create src/Ispa_autoheader.h from src/Ispa_autoheader.h.in
+# Configure should create src/Isorropia_autoheader.h from
+# src/Isorropia_autoheader.h.in
 
-AM_CONFIG_HEADER(src/Ispa_autoheader.h:src/Ispa_autoheader.h.in)
+AM_CONFIG_HEADER(src/Isorropia_autoheader.h:src/Isorropia_autoheader.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.
@@ -157,7 +158,7 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # ------------------------------------------------------------------------
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([iostream exception],
+AC_CHECK_HEADERS([iostream fstream exception vector],
                  [],[], [#include <stdlib.h>],)
 
 if test "X$ac_cv_header_iostream" != "Xyes"; then
@@ -191,8 +192,10 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 # Optional package dependency
 # ------------------------------------------------------------------------
-# The following section is required to decide if Epetra support
+# The following section is required to decide if Teuchos and/or Epetra support
 # should be built.
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, teuchos, TEUCHOS, HAVE_TEUCHOS, yes, [Build Teuchos support in Isorropia.], [Build Teuchos support in Isorropia.  Can be overridden with --disable-isorropia-teuchos.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetra, EPETRA, HAVE_EPETRA, yes, [Build Epetra support in Isorropia.], [Build Epetra support in Isorropia.  Can be overridden with --disable-isorropia-epetra.])
 
@@ -292,9 +295,15 @@ AC_SUBST(ac_aux_dir)
 #
 AC_CONFIG_FILES([
     Makefile
+    src/Makefile
+    src/Makefile.include
     test/Makefile
+    test/rebalance_1d_default/Makefile
+    test/rebalance_1d_default/Makefile.include
     test/utest/Makefile
     test/utest/Makefile.include
+    test/utils/Makefile
+    test/utils/Makefile.include
     ])
 
 AC_OUTPUT

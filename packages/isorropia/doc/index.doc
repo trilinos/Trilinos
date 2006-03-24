@@ -1,0 +1,17 @@
+/*! \mainpage Isorropia: Partitioning and Rebalancing package
+\htmlonly
+\endhtmlonly
+
+\section isorropia_intro Introduction
+
+\section isorropia_startup Overview of Isorropia.
+
+\subsection isorropia_functions Isorropia Functions
+
+\subsection isorropia_classes Isorropia Classes
+
+\subsection isorropia_epetra Isorropia and Epetra
+
+\subsection isorropia_example Example Codes
+
+*/

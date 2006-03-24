@@ -1,4 +1,3 @@
-
 //@HEADER
 /*
 ************************************************************************
@@ -30,68 +29,26 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_configdefs_hpp_
-#define _Isorropia_configdefs_hpp_
+#include <Isorropia_Exception.hpp>
 
-/*
-   The macros PACKAGE, PACKAGE_NAME, etc, get defined in the automatically-
-   generated header Isorropia_config.h. So we need to undefine them before
-   including that header, in order to avoid warnings in cases where another
-   package's header is also included and has already defined them.
+/** Isorropia is the namespace that contains isorropia's declarations
+  for classes and functions.
 */
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
+namespace Isorropia {
 
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
+Exception::Exception(const char* msg) throw()
+ : smsg_(msg)
+{
+}
 
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
+Exception::Exception(std::string msg) throw()
+ : smsg_(msg)
+{
+}
 
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
+Exception::~Exception() throw()
+{
+}
 
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
-#include <Isorropia_autoheader.h>
-
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#else
-#error "Isorropia must have <iostream>"
-#endif
-
-#ifdef HAVE_FSTREAM
-#include <fstream>
-#else
-#error "Isorropia must have <fstream>"
-#endif
-
-#ifdef HAVE_EXCEPTION
-#include <exception>
-#else
-#error "Isorropia must have <exception>"
-#endif
-
-#ifdef HAVE_VECTOR
-#include <vector>
-#else
-#error "Isorropia must have <vector>"
-#endif
-
-#endif //_Isorropia_configdefs_hpp_
+}//namespace Isorropia
 

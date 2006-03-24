@@ -34,10 +34,14 @@ all-local:
 	@echo "Trilinos package isorropia subdirectory test built successfully."
 	@echo ""
 
-SUBDIRS = utest
+#
+# Note: utils must be built first, before the other subdirs
+#
+SUBDIRS = utils utest rebalance_1d_default
 
 TESTS = \
-utest/utest.exe
+utest/utest.exe \
+rebalance_1d_default/rebalance_1d_default.exe
 
 EXTRA_DIST = definition
 

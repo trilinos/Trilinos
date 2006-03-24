@@ -64,10 +64,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 all-local:
 	@echo ""
 	@echo "Trilinos package isorropia built successfully."
-	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
 	@echo "For more details, please refer to the instructions"
 	@echo "contained in Trilinos/doc/check_installation.txt"
 	@echo ""
+#	@echo "To check the installation, simply type \"$(MAKE) run-examples\"."
 
 ## #######################################################################
 ## Subdirectories to be make'd recursively
@@ -85,7 +85,7 @@ endif
 # PYTHON_SUBDIR=python
 # endif
 
-SUBDIRS = $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 
 ## #######################################################################
 ## The below targets allow you to use the new

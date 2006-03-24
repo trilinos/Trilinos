@@ -1,4 +1,3 @@
-
 //@HEADER
 /*
 ************************************************************************
@@ -30,68 +29,41 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_configdefs_hpp_
-#define _Isorropia_configdefs_hpp_
+#ifndef _Isorropia_Exception_hpp_
+#define _Isorropia_Exception_hpp_
 
-/*
-   The macros PACKAGE, PACKAGE_NAME, etc, get defined in the automatically-
-   generated header Isorropia_config.h. So we need to undefine them before
-   including that header, in order to avoid warnings in cases where another
-   package's header is also included and has already defined them.
+#include <Isorropia_configdefs.hpp>
+
+/** Isorropia is the namespace that contains isorropia's declarations
+  for classes and functions.
 */
-#ifdef PACKAGE
-#undef PACKAGE
+namespace Isorropia {
+
+/** A simple extension of std::exception with constructors
+  that accept a message in the form of a 'const char*' or
+  a 'std::string'.
+*/
+class Exception : public std::exception {
+ public:
+  /** constructor that accepts a const char-ptr */
+  Exception(const char* msg) throw();
+
+  /** constructor that accepts a std::string */
+  Exception(std::string msg) throw();
+
+  /** destructor */
+  virtual ~Exception() throw();
+
+  /** return const char-ptr of exception message */
+  const char* what() const throw();
+ private:
+  std::string smsg_;
+};//class Exception
+
+inline
+const char* Exception::what() const throw() { return( smsg_.c_str() ); }
+
+}//namespace Isorropia
+
 #endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
-#include <Isorropia_autoheader.h>
-
-#ifdef HAVE_IOSTREAM
-#include <iostream>
-#else
-#error "Isorropia must have <iostream>"
-#endif
-
-#ifdef HAVE_FSTREAM
-#include <fstream>
-#else
-#error "Isorropia must have <fstream>"
-#endif
-
-#ifdef HAVE_EXCEPTION
-#include <exception>
-#else
-#error "Isorropia must have <exception>"
-#endif
-
-#ifdef HAVE_VECTOR
-#include <vector>
-#else
-#error "Isorropia must have <vector>"
-#endif
-
-#endif //_Isorropia_configdefs_hpp_
 
