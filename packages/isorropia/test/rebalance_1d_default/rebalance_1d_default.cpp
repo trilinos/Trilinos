@@ -47,11 +47,16 @@
 #endif
 
 #ifdef HAVE_EPETRA
+Epetra_CrsGraph* create_epetra_test_graph_1(int numProcs,
+                                            int localProc,
+                                            bool verbose);
+
 Epetra_CrsMatrix* create_epetra_test_matrix_1(int numProcs,
                                               int localProc,
                                               bool verbose);
 
-bool test_rebalance_epetra(int numProcs, int localProc, bool verbose);
+bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose);
+bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose);
 #endif
 
 int main(int argc, char** argv) {
@@ -80,16 +85,17 @@ int main(int argc, char** argv) {
     verbose = false;
   }
 
-  bool test_passed = false;
+  bool test1_passed = false, test2_passed = false;
 #ifdef HAVE_EPETRA
-  test_passed = test_rebalance_epetra(numProcs, localProc, verbose);
+  test1_passed = test_rebalance_epetra_graph(numProcs, localProc, verbose);
+  test2_passed = test_rebalance_epetra_matrix(numProcs, localProc, verbose);
 #else
   std::cout << "rebalance_1d_default main: currently can only test "
          << "rebalancing with Epetra enabled." << std::endl;
 #endif
 
-  if (test_passed && verbose) {
-    std::cout << "rebalance_1d_default main: test passed."<<std::endl;
+  if (test1_passed && test2_passed && verbose) {
+    std::cout << "rebalance_1d_default main: tests passed."<<std::endl;
   }
 
 #else
@@ -104,7 +110,7 @@ int main(int argc, char** argv) {
 
 #ifdef HAVE_EPETRA
 //-------------------------------------------------------------------
-bool test_rebalance_epetra(int numProcs, int localProc, bool verbose)
+bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose)
 {
   bool test_passed = false;
 #ifndef HAVE_MPI
@@ -162,7 +168,7 @@ bool test_rebalance_epetra(int numProcs, int localProc, bool verbose)
   if (verbose) {
     std::cout << " making sure local num-nonzeros ("<<num_nonzeros
              <<") == global_nnz/numProcs ("<<avg_nnz_per_proc
-              << ") on every proc..." << std::endl;
+              << ") on every proc...\n" << std::endl;
   }
 
   if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
@@ -173,6 +179,86 @@ bool test_rebalance_epetra(int numProcs, int localProc, bool verbose)
 
   delete balanced_matrix;
   delete input_matrix;
+
+  test_passed = global_int_result==1 ? true : false;
+
+  if (!test_passed && verbose) {
+    std::cout << "test FAILED!" << std::endl;
+  }
+
+  return(test_passed);
+}
+
+//-------------------------------------------------------------------
+bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
+{
+  bool test_passed = false;
+#ifndef HAVE_MPI
+  return(test_passed);
+#endif
+
+  Epetra_CrsGraph* input_graph =
+    create_epetra_test_graph_1(numProcs, localProc, verbose);
+
+  //Call the Isorropia rebalance method allowing default behavior. (I.e.,
+  //we won't specify any parameters, weights, etc.) Default behavior should
+  //be to balance the graph so that the number of nonzeros on each processor
+  //is roughly equal. i.e., by default, weights for each row are assumed to
+  //be the number of nonzeros in that row.
+
+  Epetra_CrsGraph* balanced_graph = 0;
+  try {
+    if (verbose) {
+      std::cout << " calling Isorropia::create_balanced_copy(Epetra graph)..."
+                << std::endl;
+    }
+
+    balanced_graph = Isorropia::create_balanced_copy(*input_graph);
+  }
+  catch(std::exception& exc) {
+    std::cout << "caught exception: " << exc.what() << std::endl;
+    return(false);
+  }
+
+  //Now check the result graph and make sure that the number of nonzeros
+  //is indeed equal on each processor. (We constructed the input graph
+  //so that a correct rebalancing would result in the same number of
+  //nonzeros being on each processor.)
+  const Epetra_BlockMap& bal_rowmap = balanced_graph->RowMap();
+  int bal_local_num_rows = bal_rowmap.NumMyElements();
+
+  //count the local nonzeros.
+  if (verbose) {
+    std::cout << " counting local num-nonzeros for balanced graph..."
+              << std::endl;
+  }
+
+  int num_nonzeros = 0;
+  for(int i=0; i<bal_local_num_rows; ++i) {
+    num_nonzeros += balanced_graph->NumMyIndices(i);
+  }
+
+  const Epetra_Comm& comm = input_graph->Comm();
+
+  int global_num_nonzeros;
+  comm.SumAll(&num_nonzeros, &global_num_nonzeros, 1);
+
+  int avg_nnz_per_proc = global_num_nonzeros/numProcs;
+
+  if (verbose) {
+    std::cout << " making sure local num-nonzeros ("<<num_nonzeros
+             <<") == global_nnz/numProcs ("<<avg_nnz_per_proc
+              << ") on every proc...\n" << std::endl;
+  }
+
+  if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
+
+  int local_int_result = test_passed ? 1 : 0;
+  int global_int_result;
+  comm.MinAll(&local_int_result, &global_int_result, 1);
+
+  delete balanced_graph;
+  delete input_graph;
 
   test_passed = global_int_result==1 ? true : false;
 
@@ -234,6 +320,59 @@ Epetra_CrsMatrix* create_epetra_test_matrix_1(int numProcs,
   }
 
   return(input_matrix);
+}
+
+Epetra_CrsGraph* create_epetra_test_graph_1(int numProcs,
+                                              int localProc,
+                                              bool verbose)
+{
+  if (verbose) {
+    std::cout << " creating Epetra_CrsGraph with un-even distribution..."
+            << std::endl;
+  }
+
+  //create an Epetra_CrsGraph with rows spread un-evenly over
+  //processors.
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+  int local_num_rows = 800;
+  int nnz_per_row = local_num_rows/4+1;
+  int global_num_rows = numProcs*local_num_rows;
+
+  int mid_proc = numProcs/2;
+  bool num_procs_even = numProcs%2==0 ? true : false;
+
+  int adjustment = local_num_rows/2;
+
+  //adjust local_num_rows so that it's not equal on all procs.
+  if (localProc < mid_proc) {
+    local_num_rows -= adjustment;
+  }
+  else {
+    local_num_rows += adjustment;
+  }
+
+  //if numProcs is not an even number, undo the local_num_rows adjustment
+  //on one proc so that the total will still be correct.
+  if (localProc == numProcs-1) {
+    if (num_procs_even == false) {
+      local_num_rows -= adjustment;
+    }
+  }
+
+  //now we're ready to create a row-map.
+  Epetra_Map rowmap(global_num_rows, local_num_rows, 0, comm);
+
+  //create a graph
+  Epetra_CrsGraph* input_graph =
+    new Epetra_CrsGraph(Copy, rowmap, nnz_per_row);
+
+  int err = ispatest::fill_graph(*input_graph, nnz_per_row, verbose);
+  if (err != 0) {
+    delete input_graph;
+    return(0);
+  }
+
+  return(input_graph);
 }
 
 #endif //HAVE_EPETRA

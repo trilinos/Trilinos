@@ -36,6 +36,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #ifdef HAVE_EPETRA
 
+class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 
 /** ispatest is the namespace that contains isorropia's test-utilities.
@@ -53,6 +54,14 @@ int fill_matrix(Epetra_CrsMatrix& matrix,
                 int numNonzerosPerRow,
                 bool verbose);
 
+/** Fill a graph with the specified number of nonzeros per row.
+  Call FillComplete on the graph before returning. If any non-zero error
+  code is returned by an Epetra method, that will be the return value
+  of this function.
+*/
+int fill_graph(Epetra_CrsGraph& graph,
+                int numNonzerosPerRow,
+                bool verbose);
 }//namespace ispatest
 
 #endif //HAVE_EPTERA

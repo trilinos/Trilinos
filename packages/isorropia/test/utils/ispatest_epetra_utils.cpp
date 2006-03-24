@@ -35,6 +35,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifdef HAVE_EPETRA
 
 #include <Epetra_Map.h>
+#include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
 
 /** ispatest is the namespace that contains isorropia's test-utilities
@@ -81,6 +82,45 @@ int fill_matrix(Epetra_CrsMatrix& matrix,
   }
 
   err = matrix.FillComplete();
+  return(err);
+}
+
+int fill_graph(Epetra_CrsGraph& graph,
+                int numNonzerosPerRow,
+                bool verbose)
+{
+  int err = 0;
+  const Epetra_BlockMap& rowmap = graph.RowMap();
+  int num_my_rows = rowmap.NumMyElements();
+  int num_global_rows = rowmap.NumGlobalElements();
+
+  std::vector<int> indices(numNonzerosPerRow);
+  std::vector<double> coefs(numNonzerosPerRow);
+
+  for(int i=0; i<num_my_rows; ++i) {
+    int global_row = rowmap.GID(i);
+    int first_col = global_row - numNonzerosPerRow/2;
+
+    if (first_col < 0) {
+      first_col = 0;
+    }
+    else if (first_col > (num_global_rows - numNonzerosPerRow)) {
+      first_col = num_global_rows - numNonzerosPerRow;
+    }
+
+    for(int j=0; j<numNonzerosPerRow; ++j) {
+      indices[j] = first_col + j;
+      coefs[j] = 1.0;
+    }
+
+    err = graph.InsertGlobalIndices(global_row, numNonzerosPerRow,
+                                     &indices[0]);
+    if (err < 0) {
+      return(err);
+    }
+  }
+
+  err = graph.FillComplete();
   return(err);
 }
 

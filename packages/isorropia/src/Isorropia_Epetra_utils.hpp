@@ -39,6 +39,7 @@ class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Vector;
 class Epetra_RowMatrix;
+class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 #endif
 
@@ -55,16 +56,21 @@ namespace Epetra_Utils {
 */
 Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
 
-/** Return a Epetra_Map that describes a row-distribution that would
-  place roughly the same 'weight' on each processor if the
-  input-matrix were imported into that distribution. The 'weight' quantity
+/** Return a vector containing weights that are equal to the number of
+  nonzeros per row in the input_graph. The returned vector will have
+  the same size and distribution as input_graph's row-map.
+*/
+Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
+
+/** Return a Epetra_Map with distribution of input_rowmap's elements that
+  places roughly the same 'weight' on each processor.  The 'weight' quantity
   is the sum of corresponding entries in the 'weights' vector, which must
-  have the same size and distribution as the row-map of 'input_matrix'.
+  have the same size and distribution as the input_rowmap.
   The returned Epetra_Map object is passed by value, utilizing the
   fact that Epetra_Map is a light-weight reference-counted "front-end"
   object with an underlying data-object.
 */
-Epetra_Map create_rowmap_balanced(const Epetra_RowMatrix& input_matrix,
+Epetra_Map create_rowmap_balanced(const Epetra_BlockMap& input_rowmap,
                                   const Epetra_Vector& weights);
 
 /** Given an Epetra_BlockMap object, fill a vector of length num-procs+1
@@ -81,6 +87,13 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
 */
 void import_matrix(const Epetra_CrsMatrix& input_matrix,
                    Epetra_CrsMatrix& target_matrix);
+
+/** Import input_graph into target_graph.
+  On entry to this function, target_graph is assumed to be constructed
+  with the row-map for the desired distribution.
+*/
+void import_graph(const Epetra_CrsGraph& input_graph,
+                   Epetra_CrsGraph& target_graph);
 
 #endif //HAVE_EPETRA
 

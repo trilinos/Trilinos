@@ -79,15 +79,30 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix)
   return( weights );
 }
 
-Epetra_Map create_rowmap_balanced(const Epetra_RowMatrix& input_matrix,
+Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
+{
+  const Epetra_BlockMap& input_rowmap = input_graph.RowMap();
+  Epetra_Vector* weights = new Epetra_Vector(input_rowmap);
+  double* weights_ptr = 0;
+  weights->ExtractView(&weights_ptr);
+  int local_num_rows = input_rowmap.NumMyElements();
+
+  for(int i=0; i<local_num_rows; ++i) {
+    int nnz = input_graph.NumMyIndices(i);
+
+    weights_ptr[i] = 1.0*nnz;
+  }
+
+  return( weights );
+}
+
+Epetra_Map create_rowmap_balanced(const Epetra_BlockMap& input_rowmap,
                                   const Epetra_Vector& weights)
 {
   //create a dummy map which will be reassigned to the newly-created
   //balanced rowmap later...
-  Epetra_Map rowmap(10, 0, input_matrix.Comm());
-
-  const Epetra_BlockMap& input_rowmap = input_matrix.RowMatrixRowMap();
   const Epetra_Comm& input_comm = input_rowmap.Comm();
+  Epetra_Map rowmap(10, 0, input_comm);
 
   //next we're going to collect weights onto proc 0.
   int global_num_rows = input_rowmap.NumGlobalElements();
@@ -265,6 +280,13 @@ void import_matrix(const Epetra_CrsMatrix& input_matrix,
 {
   Epetra_Import importer(target_matrix.RowMap(), input_matrix.RowMap());
   target_matrix.Import(input_matrix, importer, Insert);
+}
+
+void import_graph(const Epetra_CrsGraph& input_graph,
+                   Epetra_CrsGraph& target_graph)
+{
+  Epetra_Import importer(target_graph.RowMap(), input_graph.RowMap());
+  target_graph.Import(input_graph, importer, Insert);
 }
 
 #endif //HAVE_EPETRA
