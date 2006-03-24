@@ -499,7 +499,7 @@ namespace Belos {
 	restart_flg = (_iter!=0 && restart_flg);
   if (ortho_flg && restart_flg) {
     if (_om->isVerbosityAndPrint( Warnings )) {
-      *_os << "Orthogonalization failure detected at iteration "<<  _iter << ", restart will be performed" << endl;
+      *_os << "\nOrthogonalization failure detected at local iteration "<< _iter<<", total iteration "<<_totaliter<<", restart will be performed!\n";
     }
   } 
 	//
@@ -512,12 +512,13 @@ namespace Belos {
       // Print out solver status
       //
       if (_om->isVerbosityAndPrint( FinalSummary )) {
-	_stest->Print(*_os);
-	if (ortho_flg && _stest->GetStatus()!=Converged) {
-	  *_os << " Exiting Block GMRES --- " << endl;
-	  *_os << "  ERROR: Failed to compute new block of orthonormal basis vectors" << endl;
-	  *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
-	}
+        *_os << endl;
+        _stest->Print(*_os);
+        if (ortho_flg && _stest->GetStatus()!=Converged) {
+          *_os << " Exiting Block GMRES --- " << endl;
+          *_os << "  ERROR: Failed to compute new block of orthonormal basis vectors" << endl;
+          *_os << "  ***Solution from previous step will be returned***"<< endl<< endl;
+        }
       } 
       //
       // Inform the linear problem that we are finished with this block linear system.
