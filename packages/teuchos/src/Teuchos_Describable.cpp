@@ -38,11 +38,13 @@ std::string Describable::description() const
 }
 
 void Describable::describe(
-	FancyOStream                &out
+	FancyOStream                &out_arg
 	,const EVerbosityLevel      verbLevel
 	) const
 {
-	out << this->description() << std::endl;
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+	*out << this->description() << std::endl;
 }
 
 } // namespace Teuchos
