@@ -36,6 +36,7 @@
 
 #include "Teuchos_ParameterEntry.hpp" // class data element 
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_map.hpp"
 
@@ -631,6 +632,18 @@ template<typename T>
 bool isParameterType( const ParameterList& l, const string& name )
 {
   return l.isType( name, (T*)NULL );
+}
+
+/*! \relates ParameterList
+  \brief Return a RCP to a sublist in another RCP-ed parameter list.
+*/
+inline
+RefCountPtr<ParameterList> sublist( const RefCountPtr<ParameterList> &paramList, const string& name )
+{
+  RefCountPtr<ParameterList>
+    sublist = Teuchos::rcp(&paramList->sublist(name),false);
+  set_extra_data(paramList,"masterParamList",&sublist);
+  return sublist;
 }
   
 /*! \relates ParameterList
