@@ -55,6 +55,26 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
   //
+#ifdef HAVE_COMPLEX
+  typedef std::complex<double> ST;
+#elif HAVE_COMPLEX_H
+  typedef ::complex<double> ST;
+#else
+  typedef double ST;
+  // no complex. quit with failure.
+  cout << "Not compiled with complex support." << endl;
+  cout << "End Result: TEST FAILED" << endl;
+  return -1;
+  }
+#endif
+  typedef ScalarTraits<ST>                 SCT;
+  typedef SCT::magnitudeType                MT;
+  typedef Belos::MultiVec<ST>               MV;
+  typedef Belos::Operator<ST>               OP;
+  typedef Belos::MultiVecTraits<ST,MV>     MVT;
+  typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
+  ST ONE  = SCT::one();
+
   int info = 0;
   int MyPID = 0;
 
@@ -69,47 +89,22 @@ int main(int argc, char *argv[]) {
   Teuchos::Time timer("Belos CG");
 
   bool verbose = 0;
+  int numrhs = 1;  // total number of right-hand sides to solve for
+  int blockSize = 1;  // blocksize used by solver
   std::string filename("mhd1280b.cua");
+  MT tol = 1.0e-5;  // relative residual tolerance
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
+  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+  cmdp.setOption("block-size",&blockSize,"Block size to be used by CG solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
-  }
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ST;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
-#else
-  typedef double ST;
-  // no complex. quit with failure.
-  if (verbose && MyPID == 0) {
-    cout << "Not compiled with complex support." << endl;
-    cout << "End Result: TEST FAILED" << endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-#endif
-  typedef ScalarTraits<ST>                   SCT;
-  typedef SCT::magnitudeType                  MT;
-  typedef Belos::MultiVec<ST>               MV;
-  typedef Belos::Operator<ST>               OP;
-  typedef Belos::MultiVecTraits<ST,MV>     MVT;
-  typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
-
-  // Create default output manager 
-  RefCountPtr<Belos::OutputManager<ST> > MyOM 
-    = rcp( new Belos::OutputManager<ST>( MyPID ) );
-  // Set verbosity level
-  if (verbose) {
-    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
   }
 
   if (verbose && MyPID==0) {
@@ -153,41 +148,34 @@ int main(int argc, char *argv[]) {
   // Build the problem matrix
   RefCountPtr< MyBetterOperator<ST> > A 
     = rcp( new MyBetterOperator<ST>(dim,colptr,nnz,rowind,cvals) );
-//  RefCountPtr< MyOperator<ST> > A 
-//    = rcp( new MyOperator<ST>(dim,colptr,nnz,rowind,cvals) );
-
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
-  int numrhs = 1;  // total number of right-hand sides to solve for
-  int blockSize = 1;  // blocksize used by solver
   int maxits = dim/blockSize; // maximum number of iterations to run
-  MT tol = 1.0e-5;  // relative residual tolerance
   //
   // Construct the right-hand side and solution multivectors.
   // NOTE:  The right-hand side will be constructed such that the solution is
   // a vectors of one.
   //
-  RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,blockSize) );
-  RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,blockSize) );
-  MVT::MvRandom( *soln );
-  OPT::Apply( *A, *soln, *rhs );
-  Teuchos::SerialDenseMatrix<int,ST> temp_sdm(1,1);
-  MVT::MvTransMv( SCT::one(), *rhs, *soln, temp_sdm );
-  cout << "rhs^H*soln = "<< temp_sdm(0,0) << endl;
-  MVT::MvTransMv( SCT::one(), *soln, *rhs, temp_sdm );
-  cout << "soln^H*rhs = "<< temp_sdm(0,0) << endl;
-  MVT::MvTransMv( SCT::one(), *soln, *soln, temp_sdm );
-  cout << "soln^H*soln = "<< temp_sdm(0,0) << endl;
-  MVT::MvTransMv( SCT::one(), *rhs, *rhs, temp_sdm );
-  cout << "rhs^H*rhs = "<< temp_sdm(0,0) << endl;
-  MVT::MvInit( *soln, SCT::zero() );
+  RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,numrhs) );
+  RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,numrhs) );
+
+  if (numrhs == 1) {
+    MVT::MvInit( *soln, SCT::one() );
+    OPT::Apply( *A, *soln, *rhs );
+    MVT::MvInit( *soln, SCT::zero() );
+  } else {
+    MVT::MvRandom( *soln );
+    OPT::Apply( *A, *soln, *rhs );
+    MVT::MvInit( *soln, SCT::zero() );
+  }
   //
   //  Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblem<ST,MV,OP> My_LP( A, soln, rhs );
-  My_LP.SetBlockSize( blockSize );
+  RefCountPtr<Belos::LinearProblem<ST,MV,OP> > MyLP
+    = rcp( new Belos::LinearProblem<ST,MV,OP>( A, soln, rhs ) );
+  MyLP->SetBlockSize( blockSize );
   //
   // *******************************************************************
   // *************Start the block CG iteration*************************
@@ -195,14 +183,19 @@ int main(int argc, char *argv[]) {
   //
   Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
   Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
-  Belos::StatusTestCombo<ST,MV,OP> My_Test( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 );
+  RefCountPtr<Belos::StatusTestCombo<ST,MV,OP> > MyTest
+    = rcp( new Belos::StatusTestCombo<ST,MV,OP>( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 ) );
   //
-  Belos::OutputManager<ST> My_OM( MyPID );
-  if (verbose)
-    My_OM.SetVerbosity( 2 );	
+  // Create default output manager 
+  RefCountPtr<Belos::OutputManager<ST> > MyOM 
+    = rcp( new Belos::OutputManager<ST>( MyPID ) );
+  // Set verbosity level
+  if (verbose) {
+    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+  }
   //
   Belos::BlockCG<ST,MV,OP>
-    MyBlockCG(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false) );
+    MyBlockCG( MyLP, MyTest, MyOM );
   //
   // **********Print out information about problem*******************
   //
@@ -233,7 +226,7 @@ int main(int argc, char *argv[]) {
     cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
   }
   
-  if (My_Test.GetStatus()!=Belos::Converged) {
+  if (MyTest->GetStatus()!=Belos::Converged) {
 	if (verbose)
       		cout << "End Result: TEST FAILED" << endl;	
 	return -1;
