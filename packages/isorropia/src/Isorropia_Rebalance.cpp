@@ -88,7 +88,7 @@ Epetra_CrsMatrix* create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   //create a Epetra_Map that describes that row-distribution.
   const Epetra_Comm& comm = input_matrix.Comm();
   //construct a dummy map that will be replaced by the result of the
-  //Isorropia function next...
+  //create_balanced_map function...
   Epetra_Map bal_rowmap(10, 0, comm);
   try {
     Epetra_Map tmp_map =
@@ -166,7 +166,7 @@ Epetra_CrsGraph* create_balanced_copy(const Epetra_CrsGraph& input_graph,
   //create a Epetra_Map that describes that row-distribution.
   const Epetra_Comm& comm = input_graph.Comm();
   //construct a dummy map that will be replaced by the result of the
-  //Isorropia function next...
+  //create_balanced_map function...
   Epetra_Map bal_rowmap(10, 0, comm);
   try {
     Epetra_Map tmp_map =

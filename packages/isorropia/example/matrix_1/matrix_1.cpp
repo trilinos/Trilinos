@@ -92,6 +92,10 @@ int main(int argc, char** argv) {
   //Use a try-catch block because Isorropia will throw an exception
   //if it encounters a fatal error.
 
+  if (localProc == 0) {
+    std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
+  }
+
   Epetra_CrsGraph* balanced_graph = 0;
   try {
     balanced_graph = Isorropia::create_balanced_copy(*crsgraph);
@@ -152,6 +156,10 @@ int main(int argc, char** argv) {
           << exc.what() << "' on proc " << localProc << std::endl;
     MPI_Finalize();
     return(-1);
+  }
+
+  if (localProc == 0) {
+    std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
   }
 
   Epetra_CrsMatrix* balanced_matrix = 0;
