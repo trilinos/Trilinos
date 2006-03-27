@@ -50,14 +50,12 @@ public:
 };
 
 int createEpetraProblem(
-			 int                              argc
-			 ,char                            *argv[]
-			 ,RefCountPtr<Epetra_Map>         *rowMap
-			 ,RefCountPtr<Epetra_CrsMatrix>   *A
-			 ,RefCountPtr<Epetra_MultiVector> *B
-			 ,RefCountPtr<Epetra_MultiVector> *X
-			 ,int                             *MyPID
-			 ,bool                            *verbose
-			 );
+			std::string                      &filename
+			,RefCountPtr<Epetra_Map>         *rowMap
+			,RefCountPtr<Epetra_CrsMatrix>   *A
+			,RefCountPtr<Epetra_MultiVector> *B
+			,RefCountPtr<Epetra_MultiVector> *X
+			,int                             *MyPID
+			);
 
 } // namespace Belos

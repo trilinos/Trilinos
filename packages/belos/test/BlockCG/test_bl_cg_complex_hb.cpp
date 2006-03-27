@@ -49,7 +49,6 @@
 
 #include "MyMultiVec.hpp"
 #include "MyBetterOperator.hpp"
-#include "MyOperator.hpp"
 
 using namespace Teuchos;
 

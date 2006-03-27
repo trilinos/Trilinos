@@ -45,6 +45,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 
 int main(int argc, char *argv[]) {
   //
@@ -58,56 +59,75 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
   Teuchos::Time timer("Belos CG");
   //
+  // Get test parameters from command-line processor
+  //  
+  bool verbose = false;
+  int numrhs = 1;  // total number of right-hand sides to solve for
+  int blockSize = 1;  // blocksize used by solver
+  std::string filename("bcsstk14.hb");
+  double tol = 1.0e-5;  // relative residual tolerance
+
+  Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
+  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+  cmdp.setOption("block-size",&blockSize,"Block size to be used by CG solver.");
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    return -1;
+  }
+  //
   // Get the problem
   //
   RefCountPtr<Epetra_CrsMatrix> A;
   RefCountPtr<Epetra_MultiVector> B, X;
   int MyPID;
-  bool verbose;
-  int return_val =Belos::createEpetraProblem(argc,argv,NULL,&A,&B,&X,&MyPID,&verbose);
+  int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
+  const Epetra_Map &Map = A->RowMap();
   //
   // Solve using Belos
   //
-  typedef Belos::Operator<double> OP;
-  typedef Belos::MultiVec<double> MV;
-  //
-  // Construct a Belos::Operator instance through the Petra interface.
-  //
-  Belos::EpetraOp Amat( A );
+  typedef double                          ST;
+  typedef Epetra_Operator                 OP;
+  typedef Epetra_MultiVector              MV;
+  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
+  typedef Belos::MultiVecTraits<ST,MV>    MVT;
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
   const int NumGlobalElements = B->GlobalLength();
-  int numrhs = 1;  // total number of right-hand sides to solve for
-  int block = 1;  // blocksize used by solver
-  int maxits = NumGlobalElements/block; // maximum number of iterations to run
-  double tol = 1.0e-5;  // relative residual tolerance
+  int maxits = NumGlobalElements/blockSize - 1; // maximum number of iterations to run
   //
-  // Construct the right-hand side and solution multivectors.
+  // *****Construct initial guess and random right-hand-sides *****
   //
-  Belos::EpetraMultiVec rhs(*B);
-  Belos::EpetraMultiVec soln(*X);
+  if (numrhs != 1) {
+    X = rcp( new Epetra_MultiVector( Map, numrhs ) );
+    MVT::MvRandom( *X );
+    B = rcp( new Epetra_MultiVector( Map, numrhs ) );
+    OPT::Apply( *A, *X, *B );
+    MVT::MvInit( *X, 0.0 );
+  }
   //
   //  Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblem<double,MV,OP> My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
-  My_LP.SetBlockSize( block );
+  Belos::LinearProblem<ST,MV,OP> My_LP( A, X, B );
+  My_LP.SetBlockSize( blockSize );
   //
   // *******************************************************************
   // *************Start the block CG iteration*************************
   // *******************************************************************
   //
-  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
-  Belos::StatusTestResNorm<double,MV,OP> test2( tol );
-  Belos::StatusTestCombo<double,MV,OP> My_Test( Belos::StatusTestCombo<double,MV,OP>::OR, test1, test2 );
+  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
+  Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
+  Belos::StatusTestCombo<ST,MV,OP> My_Test( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 );
   //
-  Belos::OutputManager<double> My_OM( MyPID );
+  Belos::OutputManager<ST> My_OM( MyPID );
   if (verbose)
     My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );	
   //
-  Belos::BlockCG<double,MV,OP>
+  Belos::BlockCG<ST,MV,OP>
     MyBlockCG(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false) );
   //
   // **********Print out information about problem*******************
@@ -116,7 +136,7 @@ int main(int argc, char *argv[]) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
-    cout << "Block size used by solver: " << block << endl;
+    cout << "Block size used by solver: " << blockSize << endl;
     cout << "Max number of CG iterations: " << maxits << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
@@ -126,9 +146,9 @@ int main(int argc, char *argv[]) {
   if (verbose) {
     cout << endl << endl;
     cout << "Running Block CG -- please wait" << endl;
-    cout << (numrhs+block-1)/block 
+    cout << (numrhs+blockSize-1)/blockSize 
 	 << " pass(es) through the solver required to solve for " << endl; 
-    cout << numrhs << " right-hand side(s) -- using a block size of " << block
+    cout << numrhs << " right-hand side(s) -- using a block size of " << blockSize
 	 << endl << endl;
   }
   timer.start(true);
@@ -140,9 +160,9 @@ int main(int argc, char *argv[]) {
   }
   
   if (My_Test.GetStatus()!=Belos::Converged) {
-	if (verbose)
-      		cout << "End Result: TEST FAILED" << endl;	
-	return -1;
+    if (verbose)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
   }
   //
   // Default return value
