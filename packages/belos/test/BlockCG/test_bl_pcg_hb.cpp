@@ -132,10 +132,11 @@ int main(int argc, char *argv[]) {
   //
   // Solve using Belos
   //
-  typedef Belos::Operator<double> OP;
-  typedef Belos::MultiVec<double> MV;
-  typedef Belos::OperatorTraits<double, MV, OP> OPT;
-  typedef Belos::MultiVecTraits<double, MV> MVT;
+  typedef double                           ST;
+  typedef Belos::Operator<ST>              OP;
+  typedef Belos::MultiVec<ST>              MV;
+  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
+  typedef Belos::MultiVecTraits<ST,MV>    MVT;
   //
   // Construct a Belos::Operator instance through the Epetra interface.
   //
@@ -160,17 +161,17 @@ int main(int argc, char *argv[]) {
   //
   // *****Create Linear Problem for Belos Solver
   //
-  Belos::LinearProblem<double,MV,OP> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
-  My_LP.SetLeftPrec( rcp(&Prec, false) );
+  Belos::LinearProblem<ST,MV,OP> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
+  My_LP.SetLeftPrec( rcp(&Prec,false) );
   My_LP.SetBlockSize( blockSize );
   //
   // *****Create Status Test Class for the Belos Solver
   //
-  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
-  Belos::StatusTestResNorm<double,MV,OP> test2( tol );
-  Belos::StatusTestCombo<double,MV,OP> My_Test( Belos::StatusTestCombo<double,MV,OP>::OR, test1, test2 );
+  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
+  Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
+  Belos::StatusTestCombo<ST,MV,OP> My_Test( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 );
   
-  Belos::OutputManager<double> My_OM( MyPID );
+  Belos::OutputManager<ST> My_OM( MyPID );
   if (verbose)
     My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
   //
@@ -178,7 +179,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block CG iteration*************************
   // *******************************************************************
   //
-  Belos::BlockCG<double, MV, OP > MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
+  Belos::BlockCG<ST,MV,OP> MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
   //
   // **********Print out information about problem*******************
   //
@@ -206,8 +207,8 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
-  std::vector<double> actual_resids( numrhs );
-  std::vector<double> rhs_norm( numrhs );
+  std::vector<ST> actual_resids( numrhs );
+  std::vector<ST> rhs_norm( numrhs );
   Belos::EpetraMultiVec resid( Map, numrhs );
   OPT::Apply( Amat, soln, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
@@ -219,7 +220,7 @@ int main(int argc, char *argv[]) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
   }
-  
+
   if (verbose) {
     cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
