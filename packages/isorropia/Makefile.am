@@ -77,9 +77,9 @@ if BUILD_TESTS
 TEST_SUBDIR=test
 endif
 
-# if BUILD_EXAMPLES
-# EXAMPLE_SUBDIR=example
-# endif
+if BUILD_EXAMPLES
+EXAMPLE_SUBDIR=example
+endif
 
 # if PYTHON_USE
 # PYTHON_SUBDIR=python
@@ -156,7 +156,7 @@ endif
 run-examples:
 	@echo
 	@echo "=============================="
-	@echo "Running the Epetra examples..."
+	@echo "Running the Isorropia examples..."
 	@echo "=============================="
 	@echo
 	@echo "For more details, please refer to Trilinos/doc/check_installation.txt"

@@ -117,6 +117,14 @@ Epetra_CrsMatrix* create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
     throw Isorropia::Exception(str1+str2);
   }
 
+  if (input_matrix.Filled()) {
+    //If input_matrix.Filled(), the call FillComplete() on balanced_matrix.
+    //Potential problem: what if matrix isn't square? Would it be
+    //appropriate to use the domain-map and range-map from input_matrix??
+
+    balanced_matrix->FillComplete();
+  }
+
   return balanced_matrix;
 }
 
@@ -185,6 +193,14 @@ Epetra_CrsGraph* create_balanced_copy(const Epetra_CrsGraph& input_graph,
     std::string str1("create_balanced_copy: caught exception: ");
     std::string str2(exc.what());
     throw Isorropia::Exception(str1+str2);
+  }
+
+  if (input_graph.Filled()) {
+    //If input_graph.Filled(), the call FillComplete() on balanced_graph.
+    //Potential problem: what if graph isn't square? Would it be
+    //appropriate to use the domain-map and range-map from input_graph??
+
+    balanced_graph->FillComplete();
   }
 
   return balanced_graph;

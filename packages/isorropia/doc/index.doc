@@ -8,6 +8,11 @@
 
 \subsection isorropia_functions Isorropia Functions
 
+Currently Isorropia's user interface consists of the
+<a href="namespaceIsorropia.html#a3">create_balanced_copy</a> functions,
+which take an input object (either Epetra_CrsGraph or Epetra_CrsMatrix)
+and return a copy which is balanced across partitions.
+
 \subsection isorropia_classes Isorropia Classes
 
 \subsection isorropia_epetra Isorropia and Epetra

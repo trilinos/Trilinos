@@ -297,6 +297,9 @@ AC_CONFIG_FILES([
     Makefile
     src/Makefile
     src/Makefile.include
+    example/Makefile
+    example/matrix_1/Makefile
+    example/matrix_1/Makefile.include
     test/Makefile
     test/rebalance_1d_default/Makefile
     test/rebalance_1d_default/Makefile.include
