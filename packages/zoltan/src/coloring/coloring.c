@@ -57,7 +57,7 @@ static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p,
 static int waitPtrAndForbiddenColors(ZZ* zz, int rreqcntFx, MPI_Request *rreqsFx, int *rreqfromFx, MPI_Status *stats, int *forbsize, int **xforbidden, int **forbidden, int **xfp, MPI_Request *rreqsF);
 static int D2ParallelColoring (ZZ *zz, int nvtx, int nlvtx, int *visit, int *xadj, int *adj, int *xbadj, int *xadjnl, int *adjnl, int *adjproc, int *isbound, int ss, int *nColor, int *color, int **newcolored, int *mark, int gmaxdeg, G2LHash *hash, int **forbidden, int **xforbidden, int **forbiddenS, int **xforbiddenS, int *forbsize, int *forbsizeS, char color_method, char comm_pattern, int *rreqfromC, int *repliesC, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromF, int *repliesF, MPI_Request *sreqsF, MPI_Request *rreqsF, int *rreqfromFx, int *repliesFx, MPI_Request *sreqsFx, MPI_Request *rreqsFx, MPI_Status *stats, int *confChk, int *ssendsize, int *srecsize, int **ssendbuf, int **srecbuf, int ** ssp, int **srp, int **xfp, int *wset, int *wsize);
 static int D1DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *, G2LHash *);
-static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcrecbuf, int **rcsendbuf, int *rcrecsize, int *rcsendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
+static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcsendbuf, int **rcrecbuf, int *rcsendsize, int *rcrecsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
 static int GenPrime(int stop, int *prime_num);
     
 /*****************************************************************************/
@@ -364,7 +364,7 @@ static int D1coloring(
         ZOLTAN_COLOR_ERROR(ierr, "Error in ReorderGraph");
     if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-#if 0
+#if 0  
     printf("After reordering: nvtx:%d lastlno=%d Proc:%d\n", nvtx, lastlno, zz->Proc);
     for (i=0; i < nvtx; i++) {
         printf("%d (%d) :: ", Zoltan_G2LHash_L2G(hash, i), i);
@@ -604,8 +604,8 @@ static int D2coloring(
     int *srecsize=NULL, *ssendsize=NULL;
     int **ssp, **srp;
     /* vertex recolor info exchange */
-    int **rcrecbuf = NULL, **rcsendbuf=NULL;
-    int *rcrecsize=NULL, *rcsendsize=NULL;
+    int **rcsendbuf = NULL, **rcrecbuf=NULL;
+    int *rcsendsize=NULL, *rcrecsize=NULL;
     
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
@@ -696,9 +696,9 @@ static int D2coloring(
     repliesC = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     srecsize = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     ssendsize = (int *) ZOLTAN_CALLOC(zz->Num_Proc, sizeof(int));
-    rcrecsize = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
-    rcsendsize = (int *) ZOLTAN_CALLOC(zz->Num_Proc, sizeof(int));
-    if (!stats || !repliesC || !rreqsC || !sreqsC || !rreqfromC || !srecsize || !ssendsize || !rcrecsize || !rcsendsize)
+    rcsendsize = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+    rcrecsize = (int *) ZOLTAN_CALLOC(zz->Num_Proc, sizeof(int));
+    if (!stats || !repliesC || !rreqsC || !sreqsC || !rreqfromC || !srecsize || !ssendsize || !rcsendsize || !rcrecsize)
         MEMORY_ERROR;    
     /* Issue async recvs for superstep info size */
     for (rreqcntC=p=0; p<zz->Num_Proc; ++p) 
@@ -771,27 +771,27 @@ static int D2coloring(
     /* Allocate buffers for superstep size and recolor info to be sent and received */
     ssendbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     srecbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
-    rcsendbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     rcrecbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
+    rcsendbuf = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     ssp = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
     srp = (int **) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int *));
-    if (!ssendbuf || !srecbuf || !ssp || !srp || !rcrecbuf || !rcsendbuf)
+    if (!ssendbuf || !srecbuf || !ssp || !srp || !rcsendbuf || !rcrecbuf)
         MEMORY_ERROR;
     for (p=0; p<zz->Num_Proc; p++) 
         if (p != zz->Proc) {
             ssendbuf[p] = (int *) ZOLTAN_MALLOC((ssendsize[p] > 0 ? ssendsize[p] : 1) * sizeof(int));
             srecbuf[p] = (int *) ZOLTAN_MALLOC((srecsize[p] > 0 ? srecsize[p] : 1) * sizeof(int));
-            rcsendsize[p] = 2 * ssendsize[p]; /* recolor info exchange buffer sizes. */ 
-            rcrecsize[p] = 2 * srecsize[p]; /* better estimates or realloc in D2DetectConflicts can be used */
-            rcsendbuf[p] = (int *) ZOLTAN_MALLOC((rcsendsize[p] > 0 ? rcsendsize[p] : 1) * sizeof(int));
+            rcrecsize[p] = 2 * ssendsize[p]; /* recolor info exchange buffer sizes. */ 
+            rcsendsize[p] = 2 * srecsize[p]; /* better estimates or realloc in D2DetectConflicts can be used */
             rcrecbuf[p] = (int *) ZOLTAN_MALLOC((rcrecsize[p] > 0 ? rcrecsize[p] : 1) * sizeof(int));
-            if (!srecbuf[p] || !ssendbuf[p] || !rcrecbuf[p] || !rcsendbuf[p])
+            rcsendbuf[p] = (int *) ZOLTAN_MALLOC((rcsendsize[p] > 0 ? rcsendsize[p] : 1) * sizeof(int));
+            if (!srecbuf[p] || !ssendbuf[p] || !rcsendbuf[p] || !rcrecbuf[p])
                 MEMORY_ERROR;
         } else {
             ssendbuf[p] = NULL;
             srecbuf[p] = NULL;
-            rcsendbuf[p] = NULL;
             rcrecbuf[p] = NULL;
+            rcsendbuf[p] = NULL;
         }
     
     /* Generate random numbers associated with global numbers of the vertices */
@@ -856,7 +856,7 @@ static int D2coloring(
             MPI_Allreduce(&lColor, &nColor, 1, MPI_INT, MPI_MAX, zz->Communicator);        
 
             ierr = D2DetectConflicts(zz, hash, nvtx, wset, wsize, xadj, adj, adjproc, &nColor, color, conflicts, rand_key,
-                              vmark, seen, where, pwhere, rcrecbuf, rcsendbuf, rcrecsize, rcsendsize, srp, sreqsC, rreqsC,
+                              vmark, seen, where, pwhere, rcsendbuf, rcrecbuf, rcsendsize, rcrecsize, srp, sreqsC, rreqsC,
                               rreqfromC, stats, &nConflict);
             if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
                 ZOLTAN_COLOR_ERROR(ierr, "Error in D2DetectConflicts");
@@ -917,14 +917,14 @@ static int D2coloring(
     for (i=0; i<zz->Num_Proc; ++i) 
         Zoltan_Multifree (__FILE__, __LINE__, 9, &newcolored[i], &forbidden[i],
                           &xforbidden[i], &forbiddenS[i], &xforbiddenS[i],
-                          &srecbuf[i], &ssendbuf[i], &rcrecbuf[i], &rcsendbuf[i]);
+                          &srecbuf[i], &ssendbuf[i], &rcsendbuf[i], &rcrecbuf[i]);
 
     Zoltan_Multifree (__FILE__, __LINE__, 46, &isbound, &visit, &conflicts,
                       &mark, &vmark, &newcolored, &repliesF, &repliesC, &repliesFx, &stats,
                       &rreqsC, &rreqsF, &rreqsFx, &sreqsC,
                       &sreqsF, &sreqsFx, &rreqfromC, &rreqfromF,
-                      &rreqfromFx, &xbadj, &srecsize, &ssendsize, &rcrecsize, &rcsendsize,
-                      &srecbuf, &ssendbuf, &rcrecbuf, &rcsendbuf,
+                      &rreqfromFx, &xbadj, &srecsize, &ssendsize, &rcsendsize, &rcrecsize,
+                      &srecbuf, &ssendbuf, &rcsendbuf, &rcrecbuf,
                       &forbidden, &xforbidden, &forbiddenS,
                       &xforbiddenS, &forbsize, &forbsizeS,  &confChk, &seen,
                       &where, &pwhere, &xfp, &rand_key, &wset, &xadjnl, &adjnl, &xadjnltemp, &ssp, &srp);
@@ -1687,7 +1687,7 @@ static int D1DetectConflicts(
 /*****************************************************************************/
 /* Detect D2 conflicts */
 
-static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcrecbuf, int **rcsendbuf, int *rcrecsize, int *rcsendsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict)
+static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcsendbuf, int **rcrecbuf, int *rcsendsize, int *rcrecsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict)
 {
     static char *yo="D2DetectConflicts";
     int w, i, j, p;
@@ -1760,7 +1760,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
                 int u = Zoltan_G2LHash_G2L(hash, *q);
                 vmark[u] = 0;
             }
-            /* *q = 0; UVC: BUGBUG CHECK */
+	    /* *q = 0; UVC: BUGBUG CHECK */
         }
 
     /*** Build the local vertices to be recolored ***/                    
@@ -1783,7 +1783,7 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
         *q = Zoltan_G2LHash_G2L(hash, *q);
         vmark[*q] = 0;
     }
-    /* *q = 0; UVC: this is OK to keep but it is useless; therefore it is commented out*/
+    /* *q = 0; UVC: this is OK to keep but it is useless; therefore it is commented out*/	
     MPI_Waitall(sreqcntC, sreqsC, stats); /* wait all recolor info to be sent */
     
  End:
