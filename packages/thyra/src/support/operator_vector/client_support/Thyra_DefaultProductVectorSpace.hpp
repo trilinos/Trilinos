@@ -183,7 +183,9 @@ Scalar DefaultProductVectorSpace<Scalar>::scalarProd(
   const ProductVectorBase<Scalar>
     &x = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(x_in),
     &y = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(y_in);
+#ifdef _DEBUG
   TEST_FOR_EXCEPT( numBlocks!=x.productSpace()->numBlocks() || numBlocks!=y.productSpace()->numBlocks() );
+#endif
   Scalar scalarProd = Teuchos::ScalarTraits<Scalar>::zero();
   for( int k = 0; k < numBlocks; ++k )
     scalarProd += (*vecSpaces_)[k]->scalarProd(*x.getBlock(k),*y.getBlock(k));
@@ -194,19 +196,29 @@ template<class Scalar>
 void DefaultProductVectorSpace<Scalar>::scalarProds(
   const MultiVectorBase<Scalar>    &X_in
   ,const MultiVectorBase<Scalar>   &Y_in
-  ,Scalar                      scalar_prods[]
+  ,Scalar                          scalar_prods[]
   ) const
 {
-   using Teuchos::Workspace;
+  using Teuchos::Workspace;
+  const VectorSpaceBase<Scalar> &domain = *X_in.domain();
+  const Index m = domain.dim();
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT(scalar_prods==NULL);
+  TEST_FOR_EXCEPT( !domain.isCompatible(*Y_in.domain()) );
+#endif
+  if(m==1) {
+    scalar_prods[0] = this->scalarProd(*X_in.col(0),*Y_in.col(0));
+    return;
+    // ToDo: Remove this if(...) block once we have a DefaultProductMultiVector implementation!
+  }
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   const int numBlocks = this->numBlocks(); 
   const ProductMultiVectorBase<Scalar>
     &X = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in),
     &Y = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(Y_in);
+#ifdef _DEBUG
   TEST_FOR_EXCEPT( numBlocks!=X.productSpace()->numBlocks() || numBlocks!=Y.productSpace()->numBlocks() );
-  const VectorSpaceBase<Scalar> &domain = *X.domain();
-  TEST_FOR_EXCEPT( !domain.isCompatible(*Y.domain()) );
-  const Index m = domain.dim();
+#endif
   Workspace<Scalar> _scalar_prods(wss,m,false);
   std::fill_n( scalar_prods, m, Teuchos::ScalarTraits<Scalar>::zero() );
   for( int k = 0; k < numBlocks; ++k ) {
