@@ -224,8 +224,6 @@ namespace Belos {
     MagnitudeType _dep_tol, _blk_tol, _sing_tol;
     Teuchos::SerialDenseVector<int,ScalarType> beta, sn;
     Teuchos::SerialDenseVector<int,ScalarType> cs;
-
-    typedef MultiVecTraits<ScalarType, MV> MVT;
   };
 
   //

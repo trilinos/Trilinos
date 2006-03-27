@@ -156,8 +156,6 @@ namespace Belos {
     
     //! Numerical breakdown tolerances.
     MagnitudeType _prec, _dep_tol;
-    
-    typedef MultiVecTraits<ScalarType,MV> MVT;
   };
   
   //
