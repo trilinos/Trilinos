@@ -209,7 +209,7 @@ namespace Belos {
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
-    Teuchos::SerialDenseMatrix<int,ScalarType> temp_sdm( 1, 1 );
+    Teuchos::SerialDenseMatrix<int,ScalarType> rHz( 1, 1 ), rHz_old( 1, 1 ), pAp( 1, 1 );
     RefCountPtr<MV> _p, _Ap, _z;
     //
     // Retrieve the first linear system to be solved.
@@ -250,12 +250,19 @@ namespace Belos {
       //     _residvec = cur_block_rhs - _Ap
       //
       MVT::MvAddMv(one, *_cur_block_rhs, -one, *_Ap, *_residvec);
-      MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_p );
       //
       //----------------Compute initial direction vectors--------------------------
       // Initially, they are set to the preconditioned residuals
       //
-      if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { MVT::MvAddMv( one , *_residvec, zero, *_residvec, *_z); }
+      if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { 
+	MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z ); 
+	MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_p );
+      } else
+	MVT::MvAddMv( one, *_z, zero, *_z, *_p );
+      //
+      // Compute first <r,z> a.k.a. rHz
+      // 
+      MVT::MvTransMv( one, *_residvec, *_z, rHz );
       //
       // ***************************************************************************
       // ************************Main CG Loop***************************************
@@ -279,9 +286,9 @@ namespace Belos {
 	  //
 	  // Compute alpha := <_residvec, _z> / <_p, _Ap >
 	  //
-	  MVT::MvTransMv( one, *_p, *_Ap, temp_sdm );
-	  //*_os << "temp_sdm = " << temp_sdm(0,0) << endl;
-	  MVT::MvTransMv( one/temp_sdm(0,0), *_residvec, *_z, alpha );
+	  MVT::MvTransMv( one, *_p, *_Ap, pAp );
+	  //
+	  alpha(0,0) = rHz(0,0) / pAp(0,0);
 	  //
 	  // Check that alpha is a positive number!
 	  //
@@ -298,9 +305,9 @@ namespace Belos {
 	  MVT::MvAddMv( one, *_cur_block_sol, alpha(0,0), *_p, *_cur_block_sol );
 	  _lp->SolutionUpdated();
 	  //
-	  // Compute the denominator of beta before residual is updated [ old <_residvec, _z> ]
+	  // Save the denominator of beta before residual is updated [ old <_residvec, _z> ]
 	  //
-	  MVT::MvTransMv( one, *_residvec, *_z, temp_sdm );
+	  rHz_old(0,0) = rHz(0,0);
 	  //
 	  // Compute the new residual _residvec := _residvec - alpha * _Ap
 	  //
@@ -308,11 +315,13 @@ namespace Belos {
 	  //
 	  // Compute beta := [ new <_residvec, _z> ] / [ old <_residvec, _z> ], and the new direction vector
 	  //
-	  if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z); }
+	  if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z ); }
 	  //
-	  MVT::MvTransMv( one/temp_sdm(0,0), *_residvec, *_z, beta );
+	  MVT::MvTransMv( one, *_residvec, *_z, rHz );
 	  //
-	  MVT::MvAddMv( one, *_residvec, beta(0,0), *_p, *_p );
+	  beta(0,0) = rHz(0,0) / rHz_old(0,0);
+	  //
+	  MVT::MvAddMv( one, *_z, beta(0,0), *_p, *_p );
 	  //
 	} // end of the main CG loop -- for(_iter = 0;...)
       // *******************************************************************************
