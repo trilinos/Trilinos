@@ -95,11 +95,11 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
 }
 
 void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
-  LinearOpWithSolveBase<double>                        *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
-  ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
-  ,EPreconditionerInputType                            *precOpType
-  ,ESupportSolveUse                                    *supportSolveUse
+  LinearOpWithSolveBase<double>                               *Op
+  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+  ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
+  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+  ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
   using Teuchos::get_extra_data;
@@ -117,8 +117,8 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   else {
     *fwdOp = Teuchos::null;
   }
-  if(precOp) *precOp = Teuchos::null; // We never keep a preconditioner!
-  if(precOpType) *precOpType = PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Just to not have junk!
+  if(prec) *prec = Teuchos::null; // We never keep a preconditioner!
+  if(approxFwdOp) *approxFwdOp = Teuchos::null; // We never keep a preconditioner!
 }
 
 // Overridden from ParameterListAcceptor

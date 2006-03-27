@@ -44,10 +44,65 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputFrequency_name = "Output Frequency";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResOnly_name = "Output Max Res Only";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::Preconditioner_name = "Preconditioner";
 
 // Constructors/initializers/accessors
 
+template<class Scalar>
+BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory()
+{
+  updateThisValidParamList();
+}
+
+template<class Scalar>
+BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory(
+  const Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >  &precFactory
+  )
+{
+  this->setPreconditionerFactory(precFactory);
+}
+
 // Overridden from LinearOpWithSolveFactoryBase
+
+template<class Scalar>
+bool BelosLinearOpWithSolveFactory<Scalar>::acceptsPreconditionerFactory() const
+{
+  return true;
+}
+
+template<class Scalar>
+void BelosLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
+  const Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >  &precFactory
+  ,const std::string                                              &precFactoryName
+  )
+{
+  TEST_FOR_EXCEPT(!precFactory.get());
+  TEST_FOR_EXCEPT(!(precFactoryName.length()>0));
+  precFactory_ = precFactory;
+  precFactoryName_ = precFactoryName;
+  updateThisValidParamList();
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >
+BelosLinearOpWithSolveFactory<Scalar>::getPreconditionerFactory() const
+{
+  return precFactory_;
+}
+
+template<class Scalar>
+void BelosLinearOpWithSolveFactory<Scalar>::unsetPreconditionerFactory(
+  Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >  *precFactory
+  ,std::string                                              *precFactoryName
+  )
+{
+  if(precFactory) *precFactory = precFactory_;
+  if(precFactoryName) *precFactoryName = precFactoryName_;
+  precFactory_ = Teuchos::null;
+  precFactoryName_ = "";
+  updateThisValidParamList();
+}
 
 template<class Scalar>
 bool BelosLinearOpWithSolveFactory<Scalar>::isCompatible(
@@ -89,11 +144,22 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   // Get the BelosLinearOpWithSolve interface
   //
-
   TEST_FOR_EXCEPT(Op==NULL);
   BelosLinearOpWithSolve<Scalar>
     *belosOp = &Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
-
+  //
+  // Get/Create the preconditioner
+  //
+  RefCountPtr<PreconditionerBase<Scalar> >         myPrec = Teuchos::null;
+  RefCountPtr<const PreconditionerBase<Scalar> >   prec = Teuchos::null;
+  if(precFactory_.get()) {
+    if(paramList_.get()) {
+      precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
+    }
+    myPrec = precFactory_->createPrec();
+    precFactory_->initializePrec(fwdOp,&*myPrec);
+    prec = myPrec;
+  }
   //
   // Create the Belos linear problem
   //
@@ -104,6 +170,37 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   // Set the operator
   //
   lp->SetOperator(fwdOp);
+  //
+  // Set the preconditioner
+  //
+  if(prec.get()) {
+    RefCountPtr<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
+    RefCountPtr<const LinearOpBase<Scalar> > left        = prec->getLeftPrecOp();
+    RefCountPtr<const LinearOpBase<Scalar> > right       = prec->getRightPrecOp();
+    TEST_FOR_EXCEPTION(
+      !( left.get() || right.get() || unspecified.get() ), std::logic_error
+      ,"Error, at least one preconditoner linear operator objects must be set!"
+      );
+    if(unspecified.get()) {
+      lp->SetRightPrec(unspecified);
+      // ToDo: Allow user to determine whether this should be placed on the
+      // left or on the right through a parameter in the parameter list!
+    }
+    else {
+      // Set a left, right or split preconditioner
+      TEST_FOR_EXCEPTION(
+        left.get(),std::logic_error
+        ,"Error, we can not currently handle a left preconditioner!"
+        );
+      lp->SetRightPrec(right);
+    }
+  }
+  if(myPrec.get()) {
+    set_extra_data<RefCountPtr<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",&lp);
+  }
+  else if(prec.get()) {
+    set_extra_data<RefCountPtr<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",&lp);
+  }
   //
   // Set the block size
   //
@@ -190,8 +287,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
     RefCountPtr<Teuchos::ParameterList>
       gmresPL;
     if(paramList_.get()) {
-      gmresPL = Teuchos::rcp(&paramList_->sublist(GMRES_name),false);
-      set_extra_data(paramList_,"topList",&gmresPL);
+      gmresPL = Teuchos::sublist(paramList_,GMRES_name);
     }
     iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
   }
@@ -228,11 +324,21 @@ bool BelosLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(cons
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >     &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &precOp
-  ,const EPreconditionerInputType                             precOpType
-  ,LinearOpWithSolveBase<Scalar>                              *Op
-  ,const ESupportSolveUse                                     supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >             &fwdOp
+  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >      &prec
+  ,LinearOpWithSolveBase<Scalar>                                      *Op
+  ,const ESupportSolveUse                                             supportSolveUse
+  ) const
+{
+  TEST_FOR_EXCEPT(true);
+}
+
+template<class Scalar>
+void BelosLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >             &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >            &approxFwdOp
+  ,LinearOpWithSolveBase<Scalar>                                      *Op
+  ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPT(true);
@@ -240,11 +346,11 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
 
 template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
-  LinearOpWithSolveBase<Scalar>                       *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >  *fwdOp
-  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >  *precOp
-  ,EPreconditionerInputType                           *precOpType
-  ,ESupportSolveUse                                   *supportSolveUse
+  LinearOpWithSolveBase<Scalar>                               *Op
+  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *fwdOp
+  ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >    *prec
+  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *approxFwdOp
+  ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
 #ifdef _DEBUG
@@ -290,7 +396,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
 BelosLinearOpWithSolveFactory<Scalar>::getValidParameters() const
 {
-  return generateAndGetValidParameters();
+  return thisValidParamList_;
 }
 
 // Public functions overridden from Teuchos::Describable
@@ -327,6 +433,22 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     outputterSL.set(Outputter_OutputMaxResOnly_name,bool(true));
   }
   return validParamList;
+}
+
+template<class Scalar>
+void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
+{
+  thisValidParamList_ = Teuchos::rcp(
+    new Teuchos::ParameterList(*generateAndGetValidParameters())
+    );
+  if(precFactory_.get()) {
+    Teuchos::RefCountPtr<const Teuchos::ParameterList>
+      precFactoryValidParamList = precFactory_->getValidParameters();
+    if(precFactoryValidParamList.get()) {
+      thisValidParamList_->set(Preconditioner_name,precFactoryName_);
+      thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
+    }
+  }
 }
 
 } // namespace Thyra

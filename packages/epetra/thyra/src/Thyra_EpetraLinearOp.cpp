@@ -311,15 +311,53 @@ std::string EpetraLinearOp::description() const
   oss << "{";
   if(op_.get()) {
     oss << "op=\'"<<typeid(*op_).name()<<"\'";
-    oss << ",opTrans="<<toString(opTrans_);
-    oss << ",applyAs="<<toString(applyAs_);
-    oss << ",adjointSupport="<<toString(adjointSupport_);
   }
   else {
     oss << "op=NULL";
   }
   oss << "}";
   return oss.str();
+}
+
+void EpetraLinearOp::describe(
+  Teuchos::FancyOStream                &out_arg
+  ,const Teuchos::EVerbosityLevel      verbLevel
+  ) const
+{
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  using Teuchos::describe;
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      *out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      *out
+        << "type = \'Thyra::EpetraLinearOp<" << ST::name() << ">\', "
+        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+      OSTab tab(out);
+      if(op_.get()) {
+        *out << "op=\'"<<typeid(*op_).name()<<"\'\n";
+        *out << "opTrans="<<toString(opTrans_)<<"\n";
+        *out << "applyAs="<<toString(applyAs_)<<"\n";
+        *out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
+      }
+      else {
+        *out << "op=NULL"<<"\n";
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
 }
 
 // protected

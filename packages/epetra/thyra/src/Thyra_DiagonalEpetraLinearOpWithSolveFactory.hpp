@@ -56,11 +56,11 @@ public:
     ) const;
 
   void uninitializeOp(
-    LinearOpWithSolveBase<double>                        *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
-    ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
-    ,EPreconditionerInputType                            *precOpType
-    ,ESupportSolveUse                                    *supportSolveUse
+    LinearOpWithSolveBase<double>                               *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+    ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+    ,ESupportSolveUse                                           *supportSolveUse
     ) const;
 
   //@}

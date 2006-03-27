@@ -19,6 +19,7 @@
 bool Thyra::test_single_belos_thyra_solver(
   const std::string                       matrixFile
   ,const bool                             testTranspose
+  ,const bool                             usePreconditioner
   ,const int                              numRhs
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
@@ -47,6 +48,8 @@ bool Thyra::test_single_belos_thyra_solver(
            << "\nEchoing input options:"
            << "\n  matrixFile             = " << matrixFile
            << "\n  testTranspose          = " << testTranspose
+           << "\n  usePreconditioner      = " << usePreconditioner
+           << "\n  numRhs                 = " << numRhs
            << "\n  numRandomVectors       = " << numRandomVectors
            << "\n  maxFwdError            = " << maxFwdError
            << "\n  maxResid               = " << maxResid
@@ -68,20 +71,40 @@ bool Thyra::test_single_belos_thyra_solver(
     if(out.get()) *out << "\nB) Creating a BelosLinearOpWithSolveFactory object opFactory ...\n";
 
     Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
-      opFactory;
+      lowsFactory;
     if(1) {
       Teuchos::RefCountPtr<BelosLinearOpWithSolveFactory<double> >
-        belosOpFactory = Teuchos::rcp(new BelosLinearOpWithSolveFactory<double>());
-      opFactory = belosOpFactory;
+        belosLowsFactory = Teuchos::rcp(new BelosLinearOpWithSolveFactory<double>());
+      lowsFactory = belosLowsFactory;
     }
 
     if(out.get()) {
-      *out << "\nopFactory.getValidParameters():\n";
-     opFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
+      *out << "\nlowsFactory.getValidParameters() before setting preconditioner factory:\n";
+      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
+    }
+
+    if(usePreconditioner) {
+#ifdef HAVE_BELOS_IFPACK
+      if(out.get()) {
+        *out << "\nSetting an Ifpack preconditioner factory ...\n";
+      }
+      lowsFactory->setPreconditionerFactory(
+        Teuchos::rcp(new IfpackPreconditionerFactory())
+        ,"IfpackPreconditionerFactory"
+        );
+#else
+      TEST_FOR_EXCEPT(usePreconditioner);
+#endif
+    }
+    
+    if(out.get()) {
+      *out << "\nlowsFactory.getValidParameters() after setting preconditioner factory:\n";
+     lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
       *out << "\nbelosLOWSFPL before setting parameters:\n";
       belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
     }
-    opFactory->setParameterList(Teuchos::rcp(belosLOWSFPL,false));
+
+    lowsFactory->setParameterList(Teuchos::rcp(belosLOWSFPL,false));
 
     if(out.get()) {
       *out << "\nbelosLOWSFPL after setting parameters:\n";
@@ -91,9 +114,9 @@ bool Thyra::test_single_belos_thyra_solver(
     if(out.get()) *out << "\nC) Creating a BelosLinearOpWithSolve object nsA from A ...\n";
 
     Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
-      nsA = opFactory->createOp();
+      nsA = lowsFactory->createOp();
 
-    opFactory->initializeOp( A, &*nsA );
+    lowsFactory->initializeOp( A, &*nsA );
 
     if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 

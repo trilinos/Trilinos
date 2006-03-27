@@ -110,24 +110,6 @@ public:
    */
   STANDARD_COMPOSITION_MEMBERS( EpetraOperatorViewExtractorBase, epetraFwdOpViewExtractor )
 
-  /** \brief Set the parameters that will be used for the forward aztec sovler.
-   *
-   * See <tt>AztecOO::SetParameters()</tt> for what options these are!
-   */
-  void setFwdAztecSolveParameters(
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>     &fwdSolveParamlist
-    ,bool                                                  fwd_cerr_warning_if_unused = false
-    );
-
-  /** \brief Set the parameters that will be used for the adjoint aztec sovler.
-   *
-   * See <tt>AztecOO::SetParameters()</tt> for what options these are!
-   */
-  void setAdjAztecSolveParameters(
-    const Teuchos::RefCountPtr<Teuchos::ParameterList>     &adjSolveParamlist
-    ,bool                                                  adj_cerr_warning_if_unused = false
-    );
-
   //@}
 
   /** @name Overridden public functions from LinearOpWithSolveFactoryBase */
@@ -157,20 +139,27 @@ public:
 
   /** \brief . */
   void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
-    ,const EPreconditionerInputType                             precOpType
-    ,LinearOpWithSolveBase<double>                              *Op
-    ,const ESupportSolveUse                                     supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
+    ,LinearOpWithSolveBase<double>                                      *Op
+    ,const ESupportSolveUse                                             supportSolveUse
+    ) const;
+
+  /** \brief . */
+  void initializeApproxPreconditionedOp(
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+    ,LinearOpWithSolveBase<double>                                      *Op
+    ,const ESupportSolveUse                                             supportSolveUse
     ) const;
 
   /** \brief . */
   void uninitializeOp(
-    LinearOpWithSolveBase<double>                       *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *fwdOp
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >  *precOp
-    ,EPreconditionerInputType                           *precOpType
-    ,ESupportSolveUse                                   *supportSolveUse
+    LinearOpWithSolveBase<double>                               *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+    ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+    ,ESupportSolveUse                                           *supportSolveUse
     ) const;
 
   //@}
@@ -204,12 +193,6 @@ private:
   // /////////////////////////
   // Private data members
 
-  // ToDo: Get rid of these and just use paramList_!!!
-  Teuchos::RefCountPtr<Teuchos::ParameterList>     fwdSolveParamlist_;
-  bool                                             fwd_cerr_warning_if_unused_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList>     adjSolveParamlist_;
-  bool                                             adj_cerr_warning_if_unused_;
-
   Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
 
   bool useAztecPrec_;
@@ -220,11 +203,11 @@ private:
   static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
 
   void initializeOp_impl(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
-    ,const EPreconditionerInputType                             precOpType
-    ,const bool                                                 reusePrec
-    ,LinearOpWithSolveBase<double>                              *Op
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
+    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+    ,const bool                                                         reusePrec
+    ,LinearOpWithSolveBase<double>                                      *Op
     ) const;
 
 };

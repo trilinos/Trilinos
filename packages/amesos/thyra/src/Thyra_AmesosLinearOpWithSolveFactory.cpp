@@ -287,11 +287,25 @@ bool AmesosLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPrec
 }
 
 void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
-  ,const EPreconditionerInputType                             precOpType
-  ,LinearOpWithSolveBase<double>                              *Op
-  ,const ESupportSolveUse                                     supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+  ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
+  ,LinearOpWithSolveBase<double>                                      *Op
+  ,const ESupportSolveUse                                             supportSolveUse
+  ) const
+{
+  TEST_FOR_EXCEPTION(
+    this->throwOnPrecInput(), std::logic_error
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' does not support precondtioners "
+    "and has been configured to throw this exception when the  initializePreconditionedOp(...) function is called!"
+    );
+  this->initializeOp(fwdOp,Op,supportSolveUse); // Ignore the precondtioner!
+}
+
+void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
+  const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+  ,LinearOpWithSolveBase<double>                                      *Op
+  ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPTION(
@@ -303,11 +317,11 @@ void AmesosLinearOpWithSolveFactory::initializePreconditionedOp(
 }
 
 void AmesosLinearOpWithSolveFactory::uninitializeOp(
-  LinearOpWithSolveBase<double>                        *Op
-  ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
-  ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
-  ,EPreconditionerInputType                            *precOpType
-  ,ESupportSolveUse                                    *supportSolveUse
+  LinearOpWithSolveBase<double>                               *Op
+  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+  ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
+  ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+  ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
 #ifdef _DEBUG
@@ -326,8 +340,8 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
     // so you had better not rest this!
   }
   if(fwdOp) *fwdOp = _fwdOp; // It is fine if the client does not want this object back!
-  if(precOp) *precOp = Teuchos::null; // We never keep a preconditioner!
-  if(precOpType) *precOpType = PRECONDITIONER_INPUT_TYPE_AS_OPERATOR; // Just to not have junk!
+  if(prec) *prec = Teuchos::null; // We never keep a preconditioner!
+  if(approxFwdOp) *approxFwdOp = Teuchos::null; // We never keep a preconditioner!
 }
 
 // Overridden from ParameterListAcceptor

@@ -51,8 +51,7 @@ bool test_single_aztecoo_thyra_solver(
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *fwdSolveParamList
-  ,Teuchos::ParameterList                 *adjSolveParamList
+  ,Teuchos::ParameterList                 *paramList
   ,Teuchos::FancyOStream                  *out
   );
 

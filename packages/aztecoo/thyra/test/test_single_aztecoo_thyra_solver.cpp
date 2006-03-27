@@ -54,8 +54,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *fwdSolveParamList
-  ,Teuchos::ParameterList                 *adjSolveParamList
+  ,Teuchos::ParameterList                 *paramList
   ,Teuchos::FancyOStream                  *out_arg
   )
 {
@@ -88,7 +87,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     
     const bool useAztecPrec = ( 
-      fwdSolveParamList && fwdSolveParamList->isParameter("AZ_precond") && fwdSolveParamList->get<std::string>("AZ_precond")!="none"
+      paramList && paramList->sublist("Forward Solve").get("AZ_precond","none")!="none"
       );
 
     if(out.get()) {
@@ -117,8 +116,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       aztecOpFactory->fwdDefaultTol(maxResid);
       aztecOpFactory->adjDefaultMaxIterations(maxIterations);
       aztecOpFactory->adjDefaultTol(maxResid);
-      if(fwdSolveParamList) aztecOpFactory->setFwdAztecSolveParameters(Teuchos::rcp(fwdSolveParamList,false),true);
-      if(adjSolveParamList) aztecOpFactory->setAdjAztecSolveParameters(Teuchos::rcp(adjSolveParamList,false),true);
+      if(paramList) aztecOpFactory->setParameterList(Teuchos::rcp(paramList,false));
       opFactory = aztecOpFactory;
     }
 
@@ -201,7 +199,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
       if(out.get()) *out << "\nH) Reinitialize (A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX) => nsA ...\n";
       
-      opFactory->initializePreconditionedOp(A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX,&*nsA);
+      opFactory->initializeApproxPreconditionedOp(A,A,&*nsA);
 
       if(out.get()) *out << "\nI) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
@@ -271,7 +269,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       
       if(out.get()) *out << "\nK) Reinitialize (A,precA->getUnspecifiedPrecOp(),PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
       
-      opFactory->initializePreconditionedOp(A,precA->getUnspecifiedPrecOp(),PRECONDITIONER_INPUT_TYPE_AS_OPERATOR,&*nsA);
+      opFactory->initializePreconditionedOp(A,precA,&*nsA);
       
       if(out.get()) *out << "\nL) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       

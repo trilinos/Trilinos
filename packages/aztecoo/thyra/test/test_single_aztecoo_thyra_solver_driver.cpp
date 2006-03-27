@@ -81,7 +81,10 @@ int main(int argc, char* argv[])
 
     TEST_FOR_EXCEPT( matrixFile == "" );
 
-    Teuchos::ParameterList fwdSolveParamList, adjSolveParamList;
+    Teuchos::ParameterList paramList;
+    Teuchos::ParameterList
+      &fwdSolveParamList = paramList.sublist("Forward Solve"),
+      &adjSolveParamList = paramList.sublist("Adjoint Solve");
     if( aztecOutputLevel != "freq" ) {
       fwdSolveParamList.set("AZ_output",aztecOutputLevel);
       adjSolveParamList.set("AZ_output",aztecOutputLevel);
@@ -103,7 +106,7 @@ int main(int argc, char* argv[])
       = Thyra::test_single_aztecoo_thyra_solver(
         matrixFile,testTranspose,numRandomVectors
         ,maxFwdError,maxIterations,maxResid,maxSolutionError,showAllTests,dumpAll
-        ,&fwdSolveParamList,&adjSolveParamList
+        ,&paramList
         ,verbose?&out:0
         );
 

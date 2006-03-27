@@ -106,16 +106,6 @@ int main(int argc, char* argv[])
 
     TEST_FOR_EXCEPT( matrixDir == "" );
 
-    Teuchos::ParameterList fwdSolveParamList, adjSolveParamList;
-    if( aztecOutputLevel != "freq" ) {
-      fwdSolveParamList.set("AZ_output",aztecOutputLevel);
-      adjSolveParamList.set("AZ_output",aztecOutputLevel);
-    }
-    else {
-      fwdSolveParamList.set("AZ_output",aztecOutputFreq);
-      adjSolveParamList.set("AZ_output",aztecOutputFreq);
-    }
-
     //
     // Define the test matrices
     //
@@ -155,6 +145,18 @@ int main(int argc, char* argv[])
         double maxResid;
         double maxSolutionError;
         double maxSlackErrorFrac;
+        Teuchos::ParameterList paramList;
+        Teuchos::ParameterList
+          &fwdSolveParamList = paramList.sublist("Forward Solve"),
+          &adjSolveParamList = paramList.sublist("Adjoint Solve");
+        if( aztecOutputLevel != "freq" ) {
+          fwdSolveParamList.set("AZ_output",aztecOutputLevel);
+          adjSolveParamList.set("AZ_output",aztecOutputLevel);
+        }
+        else {
+          fwdSolveParamList.set("AZ_output",aztecOutputFreq);
+          adjSolveParamList.set("AZ_output",aztecOutputFreq);
+        }
         if(prec_i==0) {
           out << "no aztec preconditioning ... ";
           fwdSolveParamList.set("AZ_precond","none");
@@ -180,7 +182,7 @@ int main(int argc, char* argv[])
           Thyra::test_single_aztecoo_thyra_solver(
             matrixDir+"/"+mtp.matrixFile,testTranspose,numRandomVectors
             ,mtp.maxFwdError,maxIters,maxResid,maxSolutionError
-            ,showAllTestsDetails,dumpAll,&fwdSolveParamList,&adjSolveParamList,&fancy_oss
+            ,showAllTestsDetails,dumpAll,&paramList,&fancy_oss
             );
         if(!result) success = false;
         if(verbose) {

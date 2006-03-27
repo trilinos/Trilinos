@@ -15,6 +15,7 @@ namespace Thyra {
 bool test_single_belos_thyra_solver(
   const std::string                       matrixFile
   ,const bool                             testTranspose
+  ,const bool                             usePreconditioner
   ,const int                              numRhs
   ,const int                              numRandomVectors
   ,const double                           maxFwdError

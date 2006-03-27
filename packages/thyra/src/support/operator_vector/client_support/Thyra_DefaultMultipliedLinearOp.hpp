@@ -93,7 +93,7 @@ std::string DefaultMultipliedLinearOp<Scalar>::description() const
   assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
-  oss << "DefaultMultipliedLinearOp<" << ST::name() << ">{numOps = "<<numOps()<<"}";
+  oss << "Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">{numOps = "<<numOps()<<"}";
   return oss.str();
 }
 
@@ -121,7 +121,7 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "type = \'DefaultMultipliedLinearOp<" << ST::name() << ">\', "
+        << "type = \'Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">\', "
         << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
       OSTab tab(out);
       *out

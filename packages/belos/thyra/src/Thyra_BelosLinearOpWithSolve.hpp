@@ -73,17 +73,61 @@ std::string BelosLinearOpWithSolve<Scalar>::description() const
   std::ostringstream oss;
   oss << "Thyra::BelosLinearOpWithSolve<"<<Teuchos::ScalarTraits<Scalar>::name()<<">";
   if(lp_->GetOperator().get()) {
-    oss << "(";
-    oss << "fwdOp=\'"<<lp_->GetOperator()->description()<<"\'";
-    oss << ",iterativeSolver=\'"<<iterativeSolver_->description()<<"\'";
-    oss << ")";
+    oss << "{";
+    oss << "iterativeSolver=\'"<<iterativeSolver_->description()<<"\'";
+    oss << ",fwdOp=\'"<<lp_->GetOperator()->description()<<"\'";
+    if(lp_->GetLeftPrec().get())
+      oss << ",leftPrecOp=\'"<<lp_->GetLeftPrec()->description()<<"\'";
+    if(lp_->GetRightPrec().get())
+      oss << ",rightPrecOp=\'"<<lp_->GetRightPrec()->description()<<"\'";
+    oss << "}";
   }
   // ToDo: Make Belos::IterativeSolver derive from Teuchos::Describable so
   // that we can get better information.
   return oss.str();
 }
 
-// ToDo: Add more detailed describe() function override to show all of the good stuff!
+template<class Scalar>
+void BelosLinearOpWithSolve<Scalar>::describe(
+  Teuchos::FancyOStream                &out_arg
+  ,const Teuchos::EVerbosityLevel      verbLevel
+  ) const
+{
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  using Teuchos::describe;
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      *out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      *out
+        << "type = \'Thyra::BelosLinearOpWithSolve<" << ST::name() << ">\', "
+        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+      if(lp_->GetOperator().get()) {
+        OSTab tab(out);
+        *out
+          << "iterativeSolver:\n"<<describe(*iterativeSolver_,verbLevel)
+          << "fwdOp:\n" << describe(*lp_->GetOperator(),verbLevel);
+        if(lp_->GetLeftPrec().get())
+          *out << "leftPrecOp:\n"<<describe(*lp_->GetLeftPrec(),verbLevel);
+        if(lp_->GetRightPrec().get())
+          *out << "rightPrecOp:\n"<<describe(*lp_->GetRightPrec(),verbLevel);
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
 
 // protected
 

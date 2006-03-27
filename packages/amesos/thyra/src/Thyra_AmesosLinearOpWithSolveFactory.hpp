@@ -153,24 +153,33 @@ public:
   /** \brief Returns <tt>false</tt> . */
   bool supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const;
 
-  /** \brief Throws exception if <tt>this->throwOnPrecInput() == true</tt> and calls
-   * <tt>this->initializeOp(fwdOp,Op)</tt> otherwise
+  /** \brief Throws exception if <tt>this->throwOnPrecInput()==true</tt> and
+   * calls <tt>this->initializeOp(fwdOp,Op)</tt> otherwise
    */
   void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<double> >     &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >    &precOp
-    ,const EPreconditionerInputType                             precOpType
-    ,LinearOpWithSolveBase<double>                              *Op
-    ,const ESupportSolveUse                                      supportSolveUse
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >      &prec
+    ,LinearOpWithSolveBase<double>                                      *Op
+    ,const ESupportSolveUse                                             supportSolveUse
+    ) const;
+
+  /** \brief Throws exception if <tt>this->throwOnPrecInput()==true</tt> and
+   * calls <tt>this->initializeOp(fwdOp,Op)</tt> otherwise
+   */
+  void initializePreconditionedOp(
+    const Teuchos::RefCountPtr<const LinearOpBase<double> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >            &approxFwdOp
+    ,LinearOpWithSolveBase<double>                                      *Op
+    ,const ESupportSolveUse                                             supportSolveUse
     ) const;
 
   /** \brief . */
   void uninitializeOp(
-    LinearOpWithSolveBase<double>                        *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >   *fwdOp
-    ,Teuchos::RefCountPtr<const LinearOpBase<double > >  *precOp
-    ,EPreconditionerInputType                            *precOpType
-    ,ESupportSolveUse                                    *supportSolveUse
+    LinearOpWithSolveBase<double>                               *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *fwdOp
+    ,Teuchos::RefCountPtr<const PreconditionerBase<double> >    *prec
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >          *approxFwdOp
+    ,ESupportSolveUse                                           *supportSolveUse
     ) const;
 
   //@}

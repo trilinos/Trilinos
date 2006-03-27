@@ -32,21 +32,20 @@
 
 #include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_PreconditionerBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "AztecOO.h"
 
 namespace Thyra {
 
-/** \brief Concrete <tt>LinearOpWithSolveBase</tt> subclass in terms of
+/** \brief Concrete <tt>LinearOpWithSolveBase</tt> subclass implemented using
  * <tt>AztecOO</tt>.
  *
  * This subclass is designed to be very flexible and handle a number of
  * different use cases.  It supports forward and optionally adjoint
- * (transpose) solves.  I can support inexact solves based on a residual norm
- * tolerance or just allow for a default (i.e. tight) linear solve tolerance.
- * Currently, this subclass does not support inexact solves by specifying a
- * tolerance on the estimate of the solution error and it is unlikely that
- * this subclass with ever support this mode.
+ * (transpose) solves.  I can support inexact solves based on a relative
+ * residual norm tolerance or just allow for a default (i.e. tight) linear
+ * solve tolerance.
  *
  * This subclass is not designed to be used directly by users but instead by
  * subclasses of <tt>LinearOpWithSolveFactoryBase</tt>.  One standard
@@ -97,13 +96,16 @@ public:
    *                 <tt>LinearOpBase</tt> interface.  This also should be the
    *                 exact same object that is passed in through a <tt>LinearOpWithSolveFactoryBase</tt>
    *                 interface.
-   * \param  precOp  [in] The original abstract preconditioner object that was passed through the
-   *                 <tt>PreconditionedLinearOpWithSolveFactoryBase</tt> interface.  This object
-   *                 is not used for anything and can be set as <tt>precOp.get()==NULL</tt>.
-   * \param  precOpType
-   *                 [in] The original argument passed through the 
-   *                 <tt>PreconditionedLinearOpWithSolveFactoryBase</tt> interface.  This value
-   *                 is not used for anything can be set to any value the client desires.
+   * \param  prec    [in] The original abstract preconditioner object that was passed through the
+   *                 <tt>LinearOpWithSolveFactoryBase</tt> interface.  This object
+   *                 is not used for anything and can be set as <tt>prec==Teuchos::null</tt>.
+   * \param  isExternalPrec
+   *                 [in] True if the precondition was created externally from the <tt>LinearOpWithSolveFactoryBase</tt>
+   *                  object, false otherwise.
+   * \param  approxFwdOp
+   *                 [in] The original abstract approximate forward operator object that was passed through the
+   *                 <tt>LinearOpWithSolveFactoryBase</tt> interface.  This object
+   *                 is not used for anything and can be set as <tt>approxFwdOp==Teuchos::null</tt>.
    * \param  aztecFwdSolver
    *                 [in] The <tt>AztecOO</tt> object used to perform forward solves.  This object must be
    *                 be ready to call <tt>aztecFwdSolver->SetRHS()</tt> and <tt>aztecFwdSolver->SetLHS()</tt>
@@ -136,18 +138,19 @@ public:
    * <li><tt>this->domain() == fwdOp->domain()</tt>
    * <li><tt>this->opSupports(M_trans) == opSupports(*fwdOp,M_trans)</tt>
    * <li><tt>this->solveSupportsTrans(M_trans) == (aztecAdjSolver.get()!=NULL)</tt>
-   * <li><tt>this->solveSupportsSolveTolType([NOTRANS,CONJ],SOLVE_TOL_REL_RESIDUAL_NORM) == allowInexactFwdSolve</tt>
-   * <li><tt>this->solveSupportsSolveTolType([NOTRANS,CONJ],SOLVE_TOL_REL_ERR_NORM) == false</tt>
-   * <li><tt>this->solveSupportsSolveTolType([TRANS,CONJTRANS],SOLVE_TOL_REL_RESIDUAL_NORM) == (aztecAdjSolver.get()!=NULL&&allowInexactAdjSolve)</tt>
-   * <li><tt>this->solveSupportsSolveTolType([TRANS,CONJTRANS],SOLVE_TOL_REL_ERR_NORM) == false</tt>
+   * <li><tt>this->solveSupportsSolveTolType([NOTRANS,CONJ],SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MESURE_NORM_RHS))
+   *         == allowInexactFwdSolve</tt>
+   * <li><tt>this->solveSupportsSolveTolType([TRANS,CONJTRANS],SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MESURE_NORM_RHS))
+   *         == (aztecAdjSolver.get()!=NULL&&allowInexactAdjSolve)</tt>
    * </ul>
    *
    * ToDo: Finish documentation!
 	 */
   void initialize(
     const Teuchos::RefCountPtr<const LinearOpBase<double> >                 &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >                &precOp
-    ,const EPreconditionerInputType                                         precOpType
+    ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >          &prec
+    ,const bool                                                             isExternalPrec
+    ,const Teuchos::RefCountPtr<const LinearOpBase<double> >                &approxFwdOp
     ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecFwdSolver
     ,const bool                                                             allowInexactFwdSolve       = false
     ,const Teuchos::RefCountPtr<AztecOO>                                    &aztecAdjSolver            = Teuchos::null
@@ -156,32 +159,27 @@ public:
     );
 
   /** \brief Extract the forward <tt>LinearOpBase<double></tt> object so that it can be modified.
-   * 
-   * <b>Postconditions:</b><ul>
-   * <li><tt>return.get()</tt> is the same as <tt>this->get_fwdOp().get()</tt> before call.
-   * <li><tt><tt>this->get_fwdOp().get()==NULL</tt>
-   * </ul>
    */
   Teuchos::RefCountPtr<const LinearOpBase<double> > extract_fwdOp();
 
-  /** \brief Extract the original preconditioner.
-   * 
-   * <b>Postconditions:</b><ul>
-   * <li><tt>return.get()</tt> is the same as <tt>this->get_precOp().get()</tt> before call.
-   * <li><tt><tt>this->get_precOp().get()==NULL</tt>
-   * </ul>
+  /** \brief Extract the preconditioner.
    */
-  Teuchos::RefCountPtr<const LinearOpBase<double> > extract_precOp();
+  Teuchos::RefCountPtr<const PreconditionerBase<double> > extract_prec();
 
-  /** \brief Extract the original preconditioner type.
+  /** \brief Determine if the preconditioner was external or not.
    */
-  EPreconditionerInputType extract_precOpType();
+  bool isExternalPrec() const;
+
+  /** \brief Extract the approximate forward <tt>LinearOpBase<double></tt> object used to build the preconditioner.
+   */
+  Teuchos::RefCountPtr<const LinearOpBase<double> > extract_approxFwdOp();
 	
 	/** \brief Uninitialize. */
 	void uninitialize(
     Teuchos::RefCountPtr<const LinearOpBase<double> >                 *fwdOp                     = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<double> >                *precOp                    = NULL
-    ,EPreconditionerInputType                                         *precOpType                = NULL
+    ,Teuchos::RefCountPtr<const PreconditionerBase<double> >          *prec                      = NULL
+    ,bool                                                             *isExternalPrec              = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<double> >                *approxFwdOp               = NULL
     ,Teuchos::RefCountPtr<AztecOO>                                    *aztecFwdSolver            = NULL
     ,bool                                                             *allowInexactFwdSolve      = NULL
     ,Teuchos::RefCountPtr<AztecOO>                                    *aztecAdjSolver            = NULL
@@ -249,8 +247,9 @@ protected:
 private:
   
   Teuchos::RefCountPtr<const LinearOpBase<double> >                fwdOp_;
-  Teuchos::RefCountPtr<const LinearOpBase<double> >                precOp_;
-  EPreconditionerInputType                                         precOpType_;
+  Teuchos::RefCountPtr<const PreconditionerBase<double> >          prec_;
+  bool                                                             isExternalPrec_;
+  Teuchos::RefCountPtr<const LinearOpBase<double> >                approxFwdOp_;
   Teuchos::RefCountPtr<AztecOO>                                    aztecFwdSolver_;
   bool                                                             allowInexactFwdSolve_;
   Teuchos::RefCountPtr<AztecOO>                                    aztecAdjSolver_;

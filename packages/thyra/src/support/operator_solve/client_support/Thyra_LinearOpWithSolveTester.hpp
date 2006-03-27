@@ -35,6 +35,7 @@
 #include "Thyra_describeLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Teuchos_Time.hpp"
 
 namespace Thyra {
 
@@ -169,6 +170,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   const int num_rhs = this->num_rhs();
   Teuchos::RefCountPtr<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
+  Teuchos::Time timer("");
 
   OSTab tab(out,1,"THYRA");
 
@@ -238,7 +240,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
+        timer.start(true);
         op.apply(NONCONJ_ELE,*v1,&*v2);
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
@@ -247,7 +252,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         SolveStatus<Scalar> solveStatus;
         if(1){
           VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          timer.start(true);
           solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
+          timer.stop();
+          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
@@ -262,7 +270,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         *oss <<endl<< "v5 = Op*v3 - v2 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v5 = createMembers(range,num_rhs);
         assign( &*v5, *v2 );
+        timer.start(true);
         op.apply(NONCONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
         std::vector<DomainScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
@@ -352,7 +363,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
+        timer.start(true);
         op.apply(NONCONJ_ELE,*v1,&*v2);
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
@@ -365,7 +379,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         SolveStatus<Scalar> solveStatus;
         if(1){
           VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          timer.start(true);
           solveStatus = solve<RangeScalar,DomainScalar>(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
+          timer.stop();
+          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
@@ -378,7 +395,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         *oss <<endl<< "v4 = Op*v3 - v2 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
         assign( &*v4, *v2 );
+        timer.start(true);
         op.apply(NONCONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
         std::vector<DomainScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);
@@ -456,7 +476,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
+        timer.start(true);
         op.applyTranspose(CONJ_ELE,*v1,&*v2);
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
@@ -465,7 +488,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         SolveStatus<Scalar> solveStatus;
         if(1){
           VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
+          timer.stop();
+          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
@@ -480,7 +506,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         *oss <<endl<< "v5 = Op'*v3 - v2 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v5 = createMembers(domain,num_rhs);
         assign( &*v5, *v2 );
+        timer.start(true);
         op.applyTranspose(CONJ_ELE,*v3,&*v5,Scalar(1.0),Scalar(-1.0));
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
         std::vector<RangeScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
@@ -570,7 +599,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
+        timer.start(true);
         op.applyTranspose(CONJ_ELE,*v1,&*v2);
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
@@ -583,7 +615,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         SolveStatus<Scalar> solveStatus;
         if(1){
           VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,&solveCriteria);
+          timer.stop();
+          *OSTab(oss).getOStream() <<"\n=> Solve time = "<<timer.totalElapsedTime()<<" sec\n";
         }
         if(dump_all()) *oss <<endl<< "v3 =\n" << describe(*v3,verbLevel);
         *oss
@@ -598,7 +633,10 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         *oss <<endl<< "v4 = Op'*v3 - v2 ...\n" ;
         Teuchos::RefCountPtr<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
         assign( &*v4, *v2 );
+        timer.start(true);
         op.applyTranspose(CONJ_ELE,*v3,&*v4,Scalar(1.0),Scalar(-1.0));
+        timer.stop();
+        *OSTab(oss).getOStream() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
         std::vector<RangeScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);

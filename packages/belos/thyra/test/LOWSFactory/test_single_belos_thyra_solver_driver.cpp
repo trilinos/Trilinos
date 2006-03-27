@@ -22,7 +22,8 @@ int main(int argc, char* argv[])
     //
     
     std::string     matrixFile             = "";
-    bool            testTranspose          = true;
+    bool            testTranspose          = false;
+    bool            usePreconditioner      = true;
     int             numRhs                 = 1;
     int             numRandomVectors       = 1;
     double          maxFwdError            = 1e-14;
@@ -30,7 +31,7 @@ int main(int argc, char* argv[])
     int             maxRestarts            = 25;
     int             gmresKrylovLength      = 25;
     int             outputFrequency        = 10;
-    bool            outputMaxResOnly       = false;
+    bool            outputMaxResOnly       = true;
     int             blockSize              = 1;
     double          maxResid               = 1e-6;
     double          maxSolutionError       = 1e-6;
@@ -40,6 +41,7 @@ int main(int argc, char* argv[])
     CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.setOption( "matrix-file", &matrixFile, "Matrix input file [Required]." );
     clp.setOption( "test-transpose", "no-test-transpose", &testTranspose, "Test the transpose solve or not." );
+    clp.setOption( "use-preconditioner", "no-use-preconditioner", &usePreconditioner, "Use the preconditioner or not." );
     clp.setOption( "num-rhs", &numRhs, "Number of RHS in linear solve." );
     clp.setOption( "num-random-vectors", &numRandomVectors, "Number of times a test is performed with different random vectors." );
     clp.setOption( "max-fwd-error", &maxFwdError, "The maximum relative error in the forward operator." );
@@ -67,12 +69,18 @@ int main(int argc, char* argv[])
     belosLOWSFPL.set("Max Restarts",int(maxRestarts));
     belosLOWSFPL.set("Block Size",int(blockSize));
     belosLOWSFPL.sublist("GMRES").set("Length",int(gmresKrylovLength));
-    belosLOWSFPL.sublist("Outputter").set("Output Frequency",int(outputFrequency));
-    belosLOWSFPL.sublist("Outputter").set("Output Max Res Only",bool(outputMaxResOnly));
+    Teuchos::ParameterList &outputterSL = belosLOWSFPL.sublist("Outputter");
+    outputterSL.set("Output Frequency",int(outputFrequency));
+    outputterSL.set("Output Max Res Only",bool(outputMaxResOnly));
+    if(usePreconditioner) {
+      Teuchos::ParameterList &ifpackPFSL = belosLOWSFPL.sublist("IfpackPreconditionerFactory");
+      ifpackPFSL.set("Overlap",int(2));
+      ifpackPFSL.set("Prec Type","ILUT");
+    }
 
     success
       = Thyra::test_single_belos_thyra_solver(
-        matrixFile,testTranspose,numRhs,numRandomVectors
+        matrixFile,testTranspose,usePreconditioner,numRhs,numRandomVectors
         ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
         ,&belosLOWSFPL
         ,verbose?&*out:0

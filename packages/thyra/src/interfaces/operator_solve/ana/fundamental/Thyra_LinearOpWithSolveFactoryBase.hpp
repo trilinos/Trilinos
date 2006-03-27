@@ -30,6 +30,7 @@
 #define THYRA_LINEAR_OP_WITH_SOLVE_FACTORY_BASE_DECL_HPP
 
 #include "Thyra_LinearOpWithSolveBaseDecl.hpp"
+#include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -585,13 +586,11 @@ public:
    *                <tt>this->initializeOp()</tt>.
    * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to the
    *                same forward operator passed into <tt>this->initializeOp()</tt>.
-   * \param  precOp [in/out] If <tt>precOp!=NULL</tt> on input, then on output, this is set to
-   *                same preconditioner operator passed into <tt>this->initializePreconditionedOp()</tt> will be
-   *                returned if the preconditioner was not ignored.
-   * \param  precOpType
-   *                [in/out] If <tt>precOpType!=NULL</tt> on input, then on output this is set to
-   *                same option value passed to <tt>this->initializePreconditionedOp()</tt> will be
-   *                returned if the preconditioner was not ignored.
+   * \param  prec   [in/out] If <tt>prep!=NULL</tt> on input, then on output, this this is set to
+   *                same preconditioner that was passed into <tt>this->initializePreconditionedOp()</tt>.
+   * \param  approxFwdOp
+   *                [in/out] If <tt>approxFwdOp!=NULL</tt> on input, then on output, this is set to
+   *                same approximate forward operator that was passed into <tt>this->initializePreconditionedOp()</tt>.
    * \param  ESupportSolveUse
    *                [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to
    *                same option value passed to <tt>this->initializeOp()</tt>.
@@ -617,11 +616,11 @@ public:
    * could be left in an inconsistent state.  However, this is not required.
    */
   virtual void uninitializeOp(
-    LinearOpWithSolveBase<RangeScalar,DomainScalar>                       *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >  *fwdOp       = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> >  *precOp      = NULL
-    ,EPreconditionerInputType                                             *precOpType  = NULL
-    ,ESupportSolveUse                                                     *supportSolveUse = NULL
+    LinearOpWithSolveBase<RangeScalar,DomainScalar>                               *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *fwdOp           = NULL
+    ,Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >    *prec            = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *approxFwdOp     = NULL
+    ,ESupportSolveUse                                                             *supportSolveUse = NULL
     ) const = 0;
   
   //@}
@@ -652,7 +651,7 @@ public:
    *
    * <b>Postconditions:</b><ul>
    * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
-   *     not be created successfully (do to a factorization failure or some other cause).
+   *     not be created successfully (e.g. due to a factorization failure or some other cause).
    * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
@@ -682,6 +681,50 @@ public:
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
     ) const;
 
+  /** \brief Determines if <tt>*this</tt> accepts external preconditioner factories.
+   *
+   * The default implementation returns <tt>false</tt>.
+   */
+  virtual bool acceptsPreconditionerFactory() const;
+
+  /** \brief Set a preconditioner factory object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>precFactory.get()!=NULL</tt>
+   * <li><tt>precFactoryName.length()>0</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->getPreconditionerFactory().get()==precFactory.get()</tt>
+   * </ul>
+   *
+   * The default implementation thrown an exception which is consistent with
+   * <tt>acceptsPreconditionerFactory()</tt>.
+   */
+  virtual void setPreconditionerFactory(
+    const Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
+    ,const std::string                                                                &precFactoryName
+    );
+
+  /** \brief Get a preconditioner factory object.
+   *
+   * The default implementation returns <tt>Teuchos::null</tt>.
+   */
+  virtual Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> > getPreconditionerFactory() const;
+
+  /** \brief Unset the preconditioner factory (if one is set).
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->getPreconditionerFactory().get()==NULL</tt>
+   * </ul>
+   *
+   * The default implementation returns <tt>Teuchos::null</tt>.
+   */
+  virtual void unsetPreconditionerFactory(
+    Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory      = NULL
+    ,std::string                                                                *precFactoryName  = NULL
+    );
+
   /** \brief Determines if <tt>*this</tt> supports given preconditioner type.
    *
    * The default implementation returns <tt>false</tt>.
@@ -690,14 +733,12 @@ public:
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object and an optional
-   * preconditioner.
+   * <tt>PreconditionBase</tt> object.
    *
    * \param  fwdOp  [in] The forward linear operator that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object.
-   * \param  precOp [in] The preconditioner linear operator that will be used to create
+   * \param  prec   [in] The preconditioner that will be used to create
    *                the output <tt>LinearOpWithSolveBase</tt> object if preconditioners are supported.
-   * \param  precOpType
-   *                [in] The type of the preconditioner being passed in.
    * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
    *                be created first by <tt>this->createOp()</tt>.  The object may have also
    *                already been passed through this function several times.  Note that subclasses
@@ -710,13 +751,13 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
-   * <li><tt>precOp.get()!=NULL</tt>
+   * <li><tt>prec.get()!=NULL</tt>
    * <li><tt>this->isCompatible(*fwdOp)==true</tt>
    * <li><tt>Op!=NULL</tt>
    * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
    *     this function.
    * <li>It is allowed for an implementation to throw an exception if 
-   *     <tt>this->supportsPreconditionerInputType(precOpType)==false</tt> but this is
+   *     <tt>this->supportsPreconditionerInputType(PRECONDITIONER_INPUT_TYPE_AS_OPERATOR)==false</tt> but this is
    *     not required.
    * <li>[<tt>supportSolveUse==SUPPORT_SOLVE_FORWARD_ONLY<tt>]
    *     <tt>this->solveSupportsConj(conj)==true</tt> for any value of <tt>conj</tt>
@@ -729,7 +770,7 @@ public:
    *
    * <b>Postconditions:</b><ul>
    * <li>Throws <tt>CatastrophicSolveFailure</tt> if the underlying linear solver could
-   *     not be created successfully (do to a factorization failure or some other cause).
+   *     not be created successfully (e.g. due to a factorization failure or some other cause).
    * <li><tt>Op->range()->isCompatible(*fwdOp->range())==true</tt>
    * <li><tt>Op->domain()->isCompatible(*fwdOp->domain())==true</tt>
    * <li><tt>Op->apply()</tt> and <tt>Op->applyTranspose()</tt> must behave
@@ -741,25 +782,26 @@ public:
    *     be remembered by the <tt>*Op</tt> object.  The client must be careful
    *     not to modify the <tt>*fwdOp</tt> object or else the <tt>*Op</tt> object may also
    *     be modified.
-   * <li>If <tt>this->supportsPreconditionerInputType(precOpType)==true</tt> then
+   * <li>If <tt>this->supportsPreconditionerInputType(PRECONDITIONER_INPUT_TYPE_AS_OPERATOR)==true</tt> then
    *     <ul>
-   *       <li><tt>precOp.count()</tt> after output is greater than <tt>precOp.count()</tt>
-   *       just before this call and therefore the client can assume that the <tt>*precOp</tt> object will 
+   *       <li><tt>prec.count()</tt> after output is greater than <tt>prec.count()</tt>
+   *       just before this call and therefore the client can assume that the <tt>*prec</tt> object will 
    *       be remembered by the <tt>*Op</tt> object.  The client must be careful
-   *       not to modify the <tt>*precOp</tt> object or else the <tt>*Op</tt> object may also
+   *       not to modify the <tt>*prec</tt> object or else the <tt>*Op</tt> object may also
    *       be modified.
    *     </ul>
    * <li>else if an exception is not thrown then
    *     <ul>
-   *       <li><tt>precOp.count()</tt> after output is equal to <tt>precOp.count()</tt>
-   *       just before this call and therefore the <tt>*precOp</tt> is ignored and is not remembered.
+   *       <li><tt>prec.count()</tt> after output is equal to <tt>prec.count()</tt>
+   *       just before this call and therefore the <tt>*prec</tt> is ignored and is not remembered.
    *     </ul>
    * </ul>
    *
    * <b>Warning!</b> It is allowed for an implementation to throw an exception
-   * if <tt>this->supportsPreconditionerInputType(precOpType)==false</tt> so
-   * therefore a client should not call this function if preconditioners are
-   * not supported!  The mode of silently ignoring preconditioners is
+   * if
+   * <tt>this->supportsPreconditionerInputType(PRECONDITIONER_INPUT_TYPE_AS_OPERATOR)==false</tt>
+   * so therefore a client should not call this function if preconditioners
+   * are not supported!  The mode of silently ignoring preconditioners is
    * acceptable in some cases and is therefore allowed behavior.
    *
    * The default implementation throws an exception which is consistent with
@@ -768,11 +810,37 @@ public:
    * that preconditioners can not be supported..
    */
   virtual void initializePreconditionedOp(
-    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >     &fwdOp
-    ,const Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> >    &precOp
-    ,const EPreconditionerInputType                                               precOpType
-    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
-    ,const ESupportSolveUse                                                       supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
+    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
+    ,const ESupportSolveUse                                                               supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
+    ) const;
+
+  /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
+   * given a "compatible" forward <tt>LinearOpBase</tt> object and an
+   * approximate forward <tt>LinearOpBase</tt> object.
+   *
+   * \param  fwdOp  [in] The forward linear operator that will be used to create
+   *                the output <tt>LinearOpWithSolveBase</tt> object.
+   * \param  approxFwdOp
+   *                [in] Approxiation to <tt>fwdOp</tt> from which a preconditioner will be created for.
+   * \param  Op     [in/out] The output <tt>LinearOpWithSolveBase</tt> object.  This object must have
+   *                be created first by <tt>this->createOp()</tt>.  The object may have also
+   *                already been passed through this function several times.  Note that subclasses
+   *                should always first strip off the transpose and scaling by calling <tt>unwrap()</tt>
+   *                before attempting to dynamic cast the object.
+   * \param  supportSolveUse
+   *                [in] Determines if <tt>Op->solve(...)</tt> or <tt>Op->solveTranspose(...)</tt> will
+   *                be called.  This allows <tt>*this</tt> factory object determine how to best initialae
+   *                the <tt>*Op</tt> object.  Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
+   *
+   * ToDo: finish documetation!
+   */
+  virtual void initializeApproxPreconditionedOp(
+    const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >            &approxFwdOp
+    ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
+    ,const ESupportSolveUse                                                               supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const;
 
   //@}
@@ -823,6 +891,42 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseO
 }
 
 template<class RangeScalar, class DomainScalar>
+bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::acceptsPreconditionerFactory() const
+{
+  return false;
+}
+
+template<class RangeScalar, class DomainScalar>
+void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::setPreconditionerFactory(
+  const Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
+  ,const std::string                                                                &precFactoryName
+  )
+{
+  TEST_FOR_EXCEPTION(
+    true,std::logic_error
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override this "
+    "setPreconditionerFactory(...) function and the default implementation throws this exception!"
+    );
+}
+
+template<class RangeScalar, class DomainScalar>
+Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >
+LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::getPreconditionerFactory() const
+{
+  return Teuchos::null;
+}
+
+template<class RangeScalar, class DomainScalar>
+void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::unsetPreconditionerFactory(
+  Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory
+  ,std::string                                                                *precFactoryName
+  )
+{
+  if(precFactory) *precFactory = Teuchos::null;
+  if(precFactoryName) *precFactoryName = "";
+}
+
+template<class RangeScalar, class DomainScalar>
 bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
 {
   return false;
@@ -830,16 +934,30 @@ bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::supportsPreconditio
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializePreconditionedOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >     &fwdOp
-  ,const Teuchos::RefCountPtr<const LinearOpBase<DomainScalar,RangeScalar> >    &precOp
-  ,const EPreconditionerInputType                                               precOpType
-  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                              *Op
-  ,const ESupportSolveUse                                                       supportSolveUse
+  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
+  ,const Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >      &prec
+  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
+  ,const ESupportSolveUse                                                               supportSolveUse
   ) const
 {
   TEST_FOR_EXCEPTION(
     true,std::logic_error
-    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override the "
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override this "
+    "initializePreconditionedOp(...) function and the default implementation throws this exception!"
+    );
+}
+
+template<class RangeScalar, class DomainScalar>
+void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeApproxPreconditionedOp(
+  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >             &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >            &approxFwdOp
+  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                                      *Op
+  ,const ESupportSolveUse                                                               supportSolveUse
+  ) const
+{
+  TEST_FOR_EXCEPTION(
+    true,std::logic_error
+    ,"Error, the concrete implementation described as \'"<<this->description()<<"\' did not override this "
     "initializePreconditionedOp(...) function and the default implementation throws this exception!"
     );
 }
