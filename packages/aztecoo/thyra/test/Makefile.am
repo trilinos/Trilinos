@@ -72,7 +72,6 @@ if ENABLE_AZTECOO_IFPACK
 # If we are using IFPACK, then we must include ifpack's makefile.export file which
 # may or may not already include aztecoo's makefile.export file.
 include $(top_builddir)/../ifpack/Makefile.export.ifpack
-common_sources += $(srcdir)/Ifpack_PreconditionerFactory.cpp
 common_dependencies += $(top_builddir)/../ifpack/thyra/src/libifpackthyra.a 
 $(top_builddir)/../ifpack/thyra/src/libifpackthyra.a :
 	cd $(top_builddir)/../ifpack; $(MAKE) all-libs
@@ -95,8 +94,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES)
 
 common_ldadd = $(EXPORT_LIBS)
 
-EXTRA_DIST = $(srcdir)/test_single_aztecoo_thyra_solver.hpp \
-	$(srcdir)/Ifpack_PreconditionerFactory.hpp
+EXTRA_DIST = $(srcdir)/test_single_aztecoo_thyra_solver.hpp
 
 # This is already added part of AZTECOO_LIBS and therefore automake does not need to add this again!
 LIBS =

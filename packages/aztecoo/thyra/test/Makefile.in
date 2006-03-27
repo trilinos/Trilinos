@@ -66,8 +66,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
-@ENABLE_AZTECOO_IFPACK_TRUE@am__append_1 = $(srcdir)/Ifpack_PreconditionerFactory.cpp
-@ENABLE_AZTECOO_IFPACK_TRUE@am__append_2 = $(top_builddir)/../ifpack/thyra/src/libifpackthyra.a 
+@ENABLE_AZTECOO_IFPACK_TRUE@am__append_1 = $(top_builddir)/../ifpack/thyra/src/libifpackthyra.a 
 subdir = thyra/test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -108,15 +107,9 @@ CONFIG_CLEAN_FILES =
 am__EXEEXT_1 = test_single_aztecoo_thyra_solver_driver$(EXEEXT)
 am__EXEEXT_2 = test_aztecoo_thyra_driver$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__test_aztecoo_thyra_driver_SOURCES_DIST =  \
-	$(srcdir)/test_aztecoo_thyra_driver.cpp \
-	$(srcdir)/test_single_aztecoo_thyra_solver.cpp \
-	$(srcdir)/Ifpack_PreconditionerFactory.cpp
-@ENABLE_AZTECOO_IFPACK_TRUE@am__objects_1 = Ifpack_PreconditionerFactory.$(OBJEXT)
-am__objects_2 = test_single_aztecoo_thyra_solver.$(OBJEXT) \
-	$(am__objects_1)
+am__objects_1 = test_single_aztecoo_thyra_solver.$(OBJEXT)
 am_test_aztecoo_thyra_driver_OBJECTS =  \
-	test_aztecoo_thyra_driver.$(OBJEXT) $(am__objects_2)
+	test_aztecoo_thyra_driver.$(OBJEXT) $(am__objects_1)
 test_aztecoo_thyra_driver_OBJECTS =  \
 	$(am_test_aztecoo_thyra_driver_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -125,20 +118,15 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(_EXPORT_LIBS))
 am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
-am__test_single_aztecoo_thyra_solver_driver_SOURCES_DIST =  \
-	$(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp \
-	$(srcdir)/test_single_aztecoo_thyra_solver.cpp \
-	$(srcdir)/Ifpack_PreconditionerFactory.cpp
 am_test_single_aztecoo_thyra_solver_driver_OBJECTS =  \
 	test_single_aztecoo_thyra_solver_driver.$(OBJEXT) \
-	$(am__objects_2)
+	$(am__objects_1)
 test_single_aztecoo_thyra_solver_driver_OBJECTS =  \
 	$(am_test_single_aztecoo_thyra_solver_driver_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Ifpack_PreconditionerFactory.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/test_aztecoo_thyra_driver.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/test_aztecoo_thyra_driver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_single_aztecoo_thyra_solver.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/test_single_aztecoo_thyra_solver_driver.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -148,8 +136,8 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(test_aztecoo_thyra_driver_SOURCES) \
 	$(test_single_aztecoo_thyra_solver_driver_SOURCES)
-DIST_SOURCES = $(am__test_aztecoo_thyra_driver_SOURCES_DIST) \
-	$(am__test_single_aztecoo_thyra_solver_driver_SOURCES_DIST)
+DIST_SOURCES = $(test_aztecoo_thyra_driver_SOURCES) \
+	$(test_single_aztecoo_thyra_solver_driver_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -320,8 +308,8 @@ test_aztecoo_thyra_driver_LDADD = $(common_ldadd)
 #
 # Common stuff
 #
-common_sources = $(srcdir)/test_single_aztecoo_thyra_solver.cpp $(am__append_1)
-common_dependencies = $(top_builddir)/thyra/src/libaztecoothyra.a $(top_builddir)/src/libaztecoo.a $(am__append_2)
+common_sources = $(srcdir)/test_single_aztecoo_thyra_solver.cpp
+common_dependencies = $(top_builddir)/thyra/src/libaztecoothyra.a $(top_builddir)/src/libaztecoo.a $(am__append_1)
 
 # Here we have to include the aztecoo stuff explicitly since ifpack may have been 
 # configured with --disable-ifpack-aztecoo.  Either way, this will work just fine!
@@ -333,9 +321,7 @@ _EXPORT_LIBS = $(AZTECOO_EXTRA_LIBS) $(IFPACK_LIBS) $(AZTECOO_LIBS)
 @USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(_EXPORT_LIBS))
 AM_CPPFLAGS = -I$(top_srcdir)/../amesos/thyra/test $(EXPORT_INCLUDES)
 common_ldadd = $(EXPORT_LIBS)
-EXTRA_DIST = $(srcdir)/test_single_aztecoo_thyra_solver.hpp \
-	$(srcdir)/Ifpack_PreconditionerFactory.hpp
-
+EXTRA_DIST = $(srcdir)/test_single_aztecoo_thyra_solver.hpp
 all: all-am
 
 .SUFFIXES:
@@ -385,7 +371,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_PreconditionerFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_aztecoo_thyra_driver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_aztecoo_thyra_solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_single_aztecoo_thyra_solver_driver.Po@am__quote@
@@ -437,22 +422,6 @@ test_single_aztecoo_thyra_solver.obj: $(srcdir)/test_single_aztecoo_thyra_solver
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/test_single_aztecoo_thyra_solver.Po' tmpdepfile='$(DEPDIR)/test_single_aztecoo_thyra_solver.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_single_aztecoo_thyra_solver.obj `if test -f '$(srcdir)/test_single_aztecoo_thyra_solver.cpp'; then $(CYGPATH_W) '$(srcdir)/test_single_aztecoo_thyra_solver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_single_aztecoo_thyra_solver.cpp'; fi`
-
-Ifpack_PreconditionerFactory.o: $(srcdir)/Ifpack_PreconditionerFactory.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_PreconditionerFactory.o -MD -MP -MF "$(DEPDIR)/Ifpack_PreconditionerFactory.Tpo" -c -o Ifpack_PreconditionerFactory.o `test -f '$(srcdir)/Ifpack_PreconditionerFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_PreconditionerFactory.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_PreconditionerFactory.Tpo" "$(DEPDIR)/Ifpack_PreconditionerFactory.Po"; else rm -f "$(DEPDIR)/Ifpack_PreconditionerFactory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_PreconditionerFactory.cpp' object='Ifpack_PreconditionerFactory.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_PreconditionerFactory.Po' tmpdepfile='$(DEPDIR)/Ifpack_PreconditionerFactory.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_PreconditionerFactory.o `test -f '$(srcdir)/Ifpack_PreconditionerFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_PreconditionerFactory.cpp
-
-Ifpack_PreconditionerFactory.obj: $(srcdir)/Ifpack_PreconditionerFactory.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_PreconditionerFactory.obj -MD -MP -MF "$(DEPDIR)/Ifpack_PreconditionerFactory.Tpo" -c -o Ifpack_PreconditionerFactory.obj `if test -f '$(srcdir)/Ifpack_PreconditionerFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_PreconditionerFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_PreconditionerFactory.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_PreconditionerFactory.Tpo" "$(DEPDIR)/Ifpack_PreconditionerFactory.Po"; else rm -f "$(DEPDIR)/Ifpack_PreconditionerFactory.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_PreconditionerFactory.cpp' object='Ifpack_PreconditionerFactory.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_PreconditionerFactory.Po' tmpdepfile='$(DEPDIR)/Ifpack_PreconditionerFactory.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_PreconditionerFactory.obj `if test -f '$(srcdir)/Ifpack_PreconditionerFactory.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_PreconditionerFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_PreconditionerFactory.cpp'; fi`
 
 test_single_aztecoo_thyra_solver_driver.o: $(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_single_aztecoo_thyra_solver_driver.o -MD -MP -MF "$(DEPDIR)/test_single_aztecoo_thyra_solver_driver.Tpo" -c -o test_single_aztecoo_thyra_solver_driver.o `test -f '$(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp' || echo '$(srcdir)/'`$(srcdir)/test_single_aztecoo_thyra_solver_driver.cpp; \
