@@ -103,13 +103,13 @@ template<typename TYPE>
 void PrintMatrix(TYPE* Matrix, int Rows, int Columns, int LDM, string Name, bool Matlab = 0);
 
 template<typename TYPE1, typename TYPE2>
-bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, TYPE2 Tolerance = Teuchos::ScalarTraits<TYPE2>::zero());
+bool CompareScalars(TYPE1 Scalar1, TYPE2 Scalar2, TYPE2 Tolerance ); 
 
 template<typename TYPE1, typename TYPE2>
-bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, TYPE2 Tolerance = Teuchos::ScalarTraits<TYPE2>::zero());
+bool CompareVectors(TYPE1* Vector1, TYPE2* Vector2, int Size, TYPE2 Tolerance ); 
 
 template<typename TYPE1, typename TYPE2>
-bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, TYPE2 Tolerance = Teuchos::ScalarTraits<TYPE2>::zero());
+bool CompareMatrices(TYPE1* Matrix1, TYPE2* Matrix2, int Rows, int Columns, int LDM, TYPE2 Tolerance ); 
 
 // For most types, this function is just a wrapper for static_cast(), but for mp_real/double, it calls mp::dble()
 // The second input parameter is not used; it is only needed to determine what type to convert *to*
