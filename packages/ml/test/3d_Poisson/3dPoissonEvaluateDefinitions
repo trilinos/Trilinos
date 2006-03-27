@@ -8,7 +8,7 @@
 #For good measure test that the phrase "# solves"
 #must exist because it shows program completion.
 
-"# solves" 		required
+#"# solves" 		required
 
 
 #This line defines the element to be evaluated for test 3
