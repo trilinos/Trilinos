@@ -55,6 +55,25 @@ using namespace Teuchos;
 
 int main(int argc, char *argv[]) {
   //
+#ifdef HAVE_COMPLEX
+  typedef std::complex<double> ST;
+#elif HAVE_COMPLEX_H
+  typedef ::complex<double> ST;
+#else
+  cout << "Not compiled with complex support." << endl;
+  cout << "End Result: TEST FAILED" << endl;
+  return -1;
+  }
+#endif
+  typedef ScalarTraits<ST>                 SCT;
+  typedef SCT::magnitudeType                MT;
+  typedef Belos::MultiVec<ST>               MV;
+  typedef Belos::Operator<ST>               OP;
+  typedef Belos::MultiVecTraits<ST,MV>     MVT;
+  typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
+  ST one  = SCT::one();
+  ST zero = SCT::zero();	
+
   int info = 0;
   int MyPID = 0;
   bool norm_failure = false;
@@ -73,42 +92,20 @@ int main(int argc, char *argv[]) {
   int blocksize = 1;
   int numrhs = 1;
   std::string filename("mhd1280b.cua");
+  MT tol = 1.0e-5;  // relative residual tolerance
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
-  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
 #endif
     return -1;
   }
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ST;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
-#else
-  typedef double ST;
-  // no complex. quit with failure.
-  if (verbose && MyPID == 0) {
-    cout << "Not compiled with complex support." << endl;
-    cout << "End Result: TEST FAILED" << endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-#endif
-  typedef ScalarTraits<ST>                 SCT;
-  typedef SCT::magnitudeType                MT;
-  typedef Belos::MultiVec<ST>               MV;
-  typedef Belos::Operator<ST>               OP;
-  typedef Belos::MultiVecTraits<ST,MV>     MVT;
-  typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
-  ST one  = SCT::one();
-  ST zero = SCT::zero();	
 
   if (verbose && MyPID==0) {
     cout << Belos::Belos_Version() << endl << endl;
@@ -156,7 +153,6 @@ int main(int argc, char *argv[]) {
   // *****************(can be user specified)******************
   //
   int maxits = dim/blocksize; // maximum number of iterations to run
-  MT tol = 1.0e-7;  // relative residual tolerance
   //
   RefCountPtr<ParameterList> My_PL = rcp( new ParameterList() );
   My_PL->set( "Length", maxits );  // Maximum number of blocks in Krylov factorization
@@ -167,7 +163,6 @@ int main(int argc, char *argv[]) {
   //
   RefCountPtr<MyMultiVec<ST> > soln = rcp( new MyMultiVec<ST>(dim,numrhs) );
   RefCountPtr<MyMultiVec<ST> > rhs = rcp( new MyMultiVec<ST>(dim,numrhs) );
-  //MVT::MvInit( *soln, one );
   MVT::MvRandom( *soln );
   OPT::Apply( *A, *soln, *rhs );
   MVT::MvInit( *soln, zero );
