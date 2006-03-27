@@ -79,7 +79,17 @@ public:
     return Belos::Ok;
   }
 
-private:
+  void Print( ostream& os ) {
+    for (int j=0; j<_nr; j++) {
+      int IA1 = _cptr[j]-1;
+      int IA2 = _cptr[j+1]-1;
+      for (int i=IA1; i<IA2; i++) {
+        os << "("<<_rind[i]-1<<","<<j<<")\t"<<_vals[i]<< endl;
+      }
+    }	
+  }
+
+  private:
   typedef typename std::vector<ScalarType>::iterator STIter;
   typedef std::vector<int>::iterator        IntIter;
   //! Number of rows and columns
