@@ -29,6 +29,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
+#include <Isorropia_configdefs.hpp>
 #include <Isorropia_Exception.hpp>
 
 /** Isorropia is the namespace that contains isorropia's declarations
@@ -155,6 +156,18 @@ void create_comm_plan(int myPID,
       recv_info.push_back(num_recv);
     }
   }
+}
+
+//----------------------------------------------------------------------------
+double cpu_time()
+{
+  double cpu_seconds = 0.0;
+
+#ifdef HAVE_TIME_H
+  cpu_seconds = (1.0*clock())/CLOCKS_PER_SEC;
+#endif
+
+  return(cpu_seconds);
 }
 
 }//namespace Utils

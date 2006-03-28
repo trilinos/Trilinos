@@ -158,7 +158,7 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # ------------------------------------------------------------------------
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([iostream fstream exception vector],
+AC_CHECK_HEADERS([iostream fstream exception vector time.h],
                  [],[], [#include <stdlib.h>],)
 
 if test "X$ac_cv_header_iostream" != "Xyes"; then
@@ -300,6 +300,8 @@ AC_CONFIG_FILES([
     example/Makefile
     example/matrix_1/Makefile
     example/matrix_1/Makefile.include
+    example/linearsystem/Makefile
+    example/linearsystem/Makefile.include
     test/Makefile
     test/rebalance_1d_default/Makefile
     test/rebalance_1d_default/Makefile.include

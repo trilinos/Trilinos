@@ -35,7 +35,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 /*
    The macros PACKAGE, PACKAGE_NAME, etc, get defined in the automatically-
-   generated header Isorropia_config.h. So we need to undefine them before
+   generated header Isorropia_autoheader.h. So we need to undefine them before
    including that header, in order to avoid warnings in cases where another
    package's header is also included and has already defined them.
 */
@@ -91,6 +91,10 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <vector>
 #else
 #error "Isorropia must have <vector>"
+#endif
+
+#ifdef HAVE_TIME_H
+#include <time.h>
 #endif
 
 #endif //_Isorropia_configdefs_hpp_

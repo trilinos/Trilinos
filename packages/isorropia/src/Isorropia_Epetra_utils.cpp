@@ -224,6 +224,8 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
   if (recv_info.size() > 0) {
     MPI_Waitall(recv_info.size()/3, reqs, sts);
   }
+  delete [] reqs;
+  delete [] sts;
 #endif
 
   Epetra_Map tmp_map(global_num_rows, new_num_local, &new_gids[0],
@@ -256,20 +258,6 @@ void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
     offset += tmp;
   }
   all_proc_offsets[numProcs] = offset;
-}
-
-void import_matrix(const Epetra_CrsMatrix& input_matrix,
-                   Epetra_CrsMatrix& target_matrix)
-{
-  Epetra_Import importer(target_matrix.RowMap(), input_matrix.RowMap());
-  target_matrix.Import(input_matrix, importer, Insert);
-}
-
-void import_graph(const Epetra_CrsGraph& input_graph,
-                   Epetra_CrsGraph& target_graph)
-{
-  Epetra_Import importer(target_graph.RowMap(), input_graph.RowMap());
-  target_graph.Import(input_graph, importer, Insert);
 }
 
 #endif //HAVE_EPETRA

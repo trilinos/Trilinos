@@ -66,6 +66,10 @@ void create_comm_plan(int myPID,
                       std::vector<int>& send_info,
                       std::vector<int>& recv_info);
 
+/** Return CPU time. To measure an elapsed time, take the difference
+    between two returned values.
+*/
+double cpu_time();
 }//namespace Utils
 }//namespace Isorropia
 

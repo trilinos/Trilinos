@@ -70,8 +70,8 @@ host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = matrix_1$(EXEEXT)
 subdir = example/matrix_1
-DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.include.am \
-	$(srcdir)/Makefile.include.in
+DIST_COMMON = README $(srcdir)/Makefile.in \
+	$(srcdir)/Makefile.include.am $(srcdir)/Makefile.include.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \

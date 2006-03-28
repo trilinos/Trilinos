@@ -44,6 +44,8 @@
 #include <Epetra_MpiComm.h>
 #include <Epetra_Map.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_Vector.h>
+#include <Epetra_LinearProblem.h>
 #endif
 
 #ifdef HAVE_EPETRA
@@ -55,7 +57,9 @@ Epetra_CrsMatrix* create_epetra_test_matrix_1(int numProcs,
                                               int localProc,
                                               bool verbose);
 
-bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose);
+bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose);
+bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose);
+bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose);
 bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose);
 #endif
 
@@ -85,16 +89,26 @@ int main(int argc, char** argv) {
     verbose = false;
   }
 
-  bool test1_passed = false, test2_passed = false;
+  bool test_passed = true;
 #ifdef HAVE_EPETRA
-  test1_passed = test_rebalance_epetra_graph(numProcs, localProc, verbose);
-  test2_passed = test_rebalance_epetra_matrix(numProcs, localProc, verbose);
+  test_passed = test_passed &&
+    test_rebalance_epetra_graph(numProcs, localProc, verbose);
+
+  test_passed = test_passed &&
+    test_rebalance_epetra_crsmatrix(numProcs, localProc, verbose);
+
+  test_passed = test_passed &&
+    test_rebalance_epetra_rowmatrix(numProcs, localProc, verbose);
+
+  test_passed = test_passed &&
+    test_rebalance_epetra_linproblem(numProcs, localProc, verbose);
 #else
   std::cout << "rebalance_1d_default main: currently can only test "
          << "rebalancing with Epetra enabled." << std::endl;
+  test_passed = false;
 #endif
 
-  if (test1_passed && test2_passed && verbose) {
+  if (test_passed && verbose) {
     std::cout << "rebalance_1d_default main: tests passed."<<std::endl;
   }
 
@@ -110,7 +124,7 @@ int main(int argc, char** argv) {
 
 #ifdef HAVE_EPETRA
 //-------------------------------------------------------------------
-bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose)
+bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
 {
   bool test_passed = false;
 #ifndef HAVE_MPI
@@ -126,10 +140,10 @@ bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose)
   //is roughly equal. i.e., by default, weights for each row are assumed to
   //be the number of nonzeros in that row.
 
-  Epetra_CrsMatrix* balanced_matrix = 0;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra matrix)..."
+      std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsMatrix)..."
                 << std::endl;
     }
 
@@ -149,8 +163,7 @@ bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose)
 
   //count the local nonzeros.
   if (verbose) {
-    std::cout << " counting local num-nonzeros for balanced matrix..."
-              << std::endl;
+    std::cout << " counting local nnz for balanced matrix..." << std::endl;
   }
 
   int num_nonzeros = 0;
@@ -166,9 +179,8 @@ bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose)
   int avg_nnz_per_proc = global_num_nonzeros/numProcs;
 
   if (verbose) {
-    std::cout << " making sure local num-nonzeros ("<<num_nonzeros
-             <<") == global_nnz/numProcs ("<<avg_nnz_per_proc
-              << ") on every proc...\n" << std::endl;
+    std::cout << " making sure local nnz ("<<num_nonzeros
+             <<") is the same on every proc...\n" << std::endl;
   }
 
   if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
@@ -177,7 +189,6 @@ bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose)
   int global_int_result;
   comm.MinAll(&local_int_result, &global_int_result, 1);
 
-  delete balanced_matrix;
   delete input_matrix;
 
   test_passed = global_int_result==1 ? true : false;
@@ -185,6 +196,174 @@ bool test_rebalance_epetra_matrix(int numProcs, int localProc, bool verbose)
   if (!test_passed && verbose) {
     std::cout << "test FAILED!" << std::endl;
   }
+
+  return(test_passed);
+}
+
+//-------------------------------------------------------------------
+bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
+{
+  bool test_passed = false;
+#ifndef HAVE_MPI
+  return(test_passed);
+#endif
+
+  Epetra_CrsMatrix* input_matrix =
+    create_epetra_test_matrix_1(numProcs, localProc, verbose);
+
+  Epetra_RowMatrix* input_rowmatrix = input_matrix;
+
+  //Call the Isorropia rebalance method allowing default behavior. (I.e.,
+  //we won't specify any parameters, weights, etc.) Default behavior should
+  //be to balance the matrix so that the number of nonzeros on each processor
+  //is roughly equal. i.e., by default, weights for each row are assumed to
+  //be the number of nonzeros in that row.
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
+  try {
+    if (verbose) {
+      std::cout << " calling Isorropia::create_balanced_copy(Epetra_RowMatrix)..."
+                << std::endl;
+    }
+
+    balanced_matrix = Isorropia::create_balanced_copy(*input_rowmatrix);
+  }
+  catch(std::exception& exc) {
+    std::cout << "caught exception: " << exc.what() << std::endl;
+    return(false);
+  }
+
+  //Now check the result matrix and make sure that the number of nonzeros
+  //is indeed equal on each processor. (We constructed the input matrix
+  //so that a correct rebalancing would result in the same number of
+  //nonzeros being on each processor.)
+  const Epetra_Map& bal_rowmap = balanced_matrix->RowMap();
+  int bal_local_num_rows = bal_rowmap.NumMyElements();
+
+  //count the local nonzeros.
+  if (verbose) {
+    std::cout << " counting local nnz for balanced matrix..." << std::endl;
+  }
+
+  int num_nonzeros = 0;
+  for(int i=0; i<bal_local_num_rows; ++i) {
+    num_nonzeros += balanced_matrix->NumMyEntries(i);
+  }
+
+  const Epetra_Comm& comm = input_matrix->Comm();
+
+  int global_num_nonzeros;
+  comm.SumAll(&num_nonzeros, &global_num_nonzeros, 1);
+
+  int avg_nnz_per_proc = global_num_nonzeros/numProcs;
+
+  if (verbose) {
+    std::cout << " making sure local nnz ("<<num_nonzeros
+             <<") is the same on every proc...\n" << std::endl;
+  }
+
+  if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
+
+  int local_int_result = test_passed ? 1 : 0;
+  int global_int_result;
+  comm.MinAll(&local_int_result, &global_int_result, 1);
+
+  delete input_matrix;
+
+  test_passed = global_int_result==1 ? true : false;
+
+  if (!test_passed && verbose) {
+    std::cout << "test FAILED!" << std::endl;
+  }
+
+  return(test_passed);
+}
+
+//-------------------------------------------------------------------
+bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
+{
+  bool test_passed = false;
+#ifndef HAVE_MPI
+  return(test_passed);
+#endif
+
+  Epetra_CrsMatrix* input_matrix =
+    create_epetra_test_matrix_1(numProcs, localProc, verbose);
+
+  Epetra_Vector* x = new Epetra_Vector(input_matrix->RowMap());
+  Epetra_Vector* b = new Epetra_Vector(input_matrix->RowMap());
+  Epetra_LinearProblem problem(input_matrix, x, b);
+
+  //Call the Isorropia rebalance method allowing default behavior. (I.e.,
+  //we won't specify any parameters, weights, etc.) Default behavior should
+  //be to balance the matrix so that the number of nonzeros on each processor
+  //is roughly equal. i.e., by default, weights for each row are assumed to
+  //be the number of nonzeros in that row.
+
+  Teuchos::RefCountPtr<Epetra_LinearProblem> balanced_problem;
+  try {
+    if (verbose) {
+      std::cout << " calling Isorropia::create_balanced_copy(Epetra_LinearProblem)..."
+                << std::endl;
+    }
+
+    balanced_problem = Isorropia::create_balanced_copy(problem);
+  }
+  catch(std::exception& exc) {
+    std::cout << "caught exception: " << exc.what() << std::endl;
+    return(false);
+  }
+
+  //Now check the result matrix and make sure that the number of nonzeros
+  //is indeed equal on each processor. (We constructed the input matrix
+  //so that a correct rebalancing would result in the same number of
+  //nonzeros being on each processor.)
+  const Epetra_Map& bal_rowmap = balanced_problem->GetMatrix()->RowMatrixRowMap();
+  int bal_local_num_rows = bal_rowmap.NumMyElements();
+
+  //count the local nonzeros.
+  if (verbose) {
+    std::cout << " counting local nnz for balanced matrix..." << std::endl;
+  }
+
+  int num_nonzeros = 0;
+  for(int i=0; i<bal_local_num_rows; ++i) {
+    int numrowentries = 0;
+    balanced_problem->GetMatrix()->NumMyRowEntries(i,numrowentries);
+    num_nonzeros += numrowentries;
+  }
+
+  delete balanced_problem->GetMatrix();
+  delete balanced_problem->GetLHS();
+  delete balanced_problem->GetRHS();
+
+  const Epetra_Comm& comm = input_matrix->Comm();
+
+  int global_num_nonzeros;
+  comm.SumAll(&num_nonzeros, &global_num_nonzeros, 1);
+
+  int avg_nnz_per_proc = global_num_nonzeros/numProcs;
+
+  if (verbose) {
+    std::cout << " making sure local nnz ("<<num_nonzeros
+             <<") is the same on every proc...\n" << std::endl;
+  }
+
+  if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
+
+  int local_int_result = test_passed ? 1 : 0;
+  int global_int_result;
+  comm.MinAll(&local_int_result, &global_int_result, 1);
+
+  test_passed = global_int_result==1 ? true : false;
+
+  if (!test_passed && verbose) {
+    std::cout << "test FAILED!" << std::endl;
+  }
+
+  delete input_matrix;
+  delete x;
+  delete b;
 
   return(test_passed);
 }
@@ -206,10 +385,10 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   //is roughly equal. i.e., by default, weights for each row are assumed to
   //be the number of nonzeros in that row.
 
-  Epetra_CrsGraph* balanced_graph = 0;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
     if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra graph)..."
+      std::cout << " calling Isorropia::create_balanced_copy(Epetra_CrsGraph)..."
                 << std::endl;
     }
 
@@ -229,8 +408,7 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
 
   //count the local nonzeros.
   if (verbose) {
-    std::cout << " counting local num-nonzeros for balanced graph..."
-              << std::endl;
+    std::cout << " counting local nnz for balanced graph..." << std::endl;
   }
 
   int num_nonzeros = 0;
@@ -246,9 +424,8 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   int avg_nnz_per_proc = global_num_nonzeros/numProcs;
 
   if (verbose) {
-    std::cout << " making sure local num-nonzeros ("<<num_nonzeros
-             <<") == global_nnz/numProcs ("<<avg_nnz_per_proc
-              << ") on every proc...\n" << std::endl;
+    std::cout << " making sure local nnz ("<<num_nonzeros
+             <<") is the same on every proc...\n" << std::endl;
   }
 
   if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
@@ -257,7 +434,6 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   int global_int_result;
   comm.MinAll(&local_int_result, &global_int_result, 1);
 
-  delete balanced_graph;
   delete input_graph;
 
   test_passed = global_int_result==1 ? true : false;

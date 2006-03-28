@@ -27,14 +27,19 @@
 # ************************************************************************
 #@HEADER
 
-all-local:
-	@echo ""
-	@echo "Trilinos/Isorropia subdirectory example built successfully."
-	@echo ""
+EXEEXT = .exe
 
-SUBDIRS = matrix_1 linearsystem
+DEFAULT_INCLUDES= -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
 
-EXAMPLES = \
-matrix_1/matrix_1.exe \
-linearsystem/linsys.exe
+noinst_PROGRAMS = linsys
+
+linsys_SOURCES = $(srcdir)/linsys.cpp
+
+linsys_DEPENDENCIES = \
+	$(top_builddir)/src/libisorropia.a
+
+linsys_CXXFLAGS = $(EPETRA_INCLUDES)
+linsys_LDADD = \
+      -L$(top_builddir)/src -lisorropia \
+      $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 

@@ -37,6 +37,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifdef HAVE_EPETRA
 class Epetra_Map;
 class Epetra_BlockMap;
+class Epetra_Import;
 class Epetra_Vector;
 class Epetra_RowMatrix;
 class Epetra_CrsGraph;
@@ -71,29 +72,15 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
   object with an underlying data-object.
 */
 Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
-                                  const Epetra_Vector& weights);
+                               const Epetra_Vector& weights);
 
-/** Given an Epetra_BlockMap object, fill a vector of length num-procs+1
+/** Given an Epetra_BlockMap object, fill a vector of length numprocs+1
   with each processor's starting offset into the Epetra_BlockMap's global
   set of elements (the last position will contain num-global-elements).
   Gather the vector of offsets onto all processors.
 */
 void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
                                     std::vector<int>& all_proc_offsets);
-
-/** Import input_matrix into target_matrix.
-  On entry to this function, target_matrix is assumed to be constructed
-  with the row-map for the desired distribution.
-*/
-void import_matrix(const Epetra_CrsMatrix& input_matrix,
-                   Epetra_CrsMatrix& target_matrix);
-
-/** Import input_graph into target_graph.
-  On entry to this function, target_graph is assumed to be constructed
-  with the row-map for the desired distribution.
-*/
-void import_graph(const Epetra_CrsGraph& input_graph,
-                   Epetra_CrsGraph& target_graph);
 
 #endif //HAVE_EPETRA
 

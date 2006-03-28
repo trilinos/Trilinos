@@ -2,6 +2,10 @@
 \htmlonly
 \endhtmlonly
 
+User warning: Isorropia is in the early stages of development. We are still
+going through requirements-prototyping cycles, so everything is still changing
+frequently. (including function-names, file-names, etc.)
+
 \section isorropia_intro Introduction
 
 \section isorropia_startup Overview of Isorropia.
@@ -9,7 +13,7 @@
 \subsection isorropia_functions Isorropia Functions
 
 Currently Isorropia's user interface consists of the
-<a href="namespaceIsorropia.html#a3">create_balanced_copy</a> functions,
+<a href="namespaceIsorropia.html">create_balanced_copy functions</a>,
 which take an input object (either Epetra_CrsGraph or Epetra_CrsMatrix)
 and return a copy which is balanced across partitions.
 

@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
     std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
   }
 
-  Epetra_CrsGraph* balanced_graph = 0;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
     balanced_graph = Isorropia::create_balanced_copy(*crsgraph);
   }
@@ -136,7 +136,6 @@ int main(int argc, char** argv) {
 
   //Finally, delete the pointer objects that we asked to be created.
   delete crsgraph;
-  delete balanced_graph;
 
   if (localProc == 0) {
     std::cout << std::endl;
@@ -162,7 +161,7 @@ int main(int argc, char** argv) {
     std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
   }
 
-  Epetra_CrsMatrix* balanced_matrix = 0;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
     balanced_matrix = Isorropia::create_balanced_copy(*crsmatrix);
   }
@@ -198,12 +197,12 @@ int main(int argc, char** argv) {
   }
 
   delete crsmatrix;
-  delete balanced_matrix;
 
   MPI_Finalize();
 
 #else
-  std::cout << "matrix_1: must have both MPI and EPETRA." << std::endl;
+  std::cout << "matrix_1: must have both MPI and EPETRA. Make sure Trilinos "
+    << "is configured with --enable-mpi and --enable-epetra." << std::endl;
 #endif
 
   return(0);
