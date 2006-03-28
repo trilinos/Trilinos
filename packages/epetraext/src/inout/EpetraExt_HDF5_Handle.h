@@ -149,12 +149,14 @@ class Epetra_Vector_Handle : public Handle
     int Initialize()
     {
       // do nothing here
+      return(0);
     }
 
     //! Performs any finalization procedure \e after unpacking.
     int Finalize()
     {
       // do nothing here
+      return(0);
     }
 
   private:

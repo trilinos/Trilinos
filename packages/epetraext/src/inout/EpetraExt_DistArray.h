@@ -184,11 +184,11 @@ COO(i, j) = 1.24
 
         vector<T>& To = values_;
 
-        int * ToFirstPointInElementList = 0;
-        int * FromFirstPointInElementList = 0;
-        int * FromElementSizeList = 0;
+        //int * ToFirstPointInElementList = 0;
+        //int * FromFirstPointInElementList = 0;
+        //int * FromElementSizeList = 0;
 
-        int j, jj, jjj, k;
+        int j;
 
         int NumSameEntries;
 
@@ -232,8 +232,8 @@ COO(i, j) = 1.24
 
         vector<T> To = values_;
 
-        int * FromFirstPointInElementList = 0;
-        int * FromElementSizeList = 0;
+        //int * FromFirstPointInElementList = 0;
+        //int * FromElementSizeList = 0;
 
         SizeOfPacket = RowSize_ * sizeof(T); 
 
@@ -267,7 +267,7 @@ COO(i, j) = 1.24
                                    Epetra_CombineMode CombineMode,
                                    const Epetra_OffsetIndex * Indexor)
       {
-        int j, jj, k;
+        int j;
 
         if (CombineMode != Insert)
           EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
@@ -276,8 +276,8 @@ COO(i, j) = 1.24
         if (NumImportIDs<=0) return(0);
 
         T* To = &values_[0];
-        int * ToFirstPointInElementList = 0;
-        int * ToElementSizeList = 0;
+        //int * ToFirstPointInElementList = 0;
+        //int * ToElementSizeList = 0;
 
         T* ptr;
         // Unpack it...

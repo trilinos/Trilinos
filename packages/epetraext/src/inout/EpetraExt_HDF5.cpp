@@ -978,9 +978,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX
 
   ReadMultiVectorProperties(GroupName, GlobalLength, NumVectors);
 
-  hid_t group_id, space_id;
-  hsize_t dims[2];
-  herr_t status;
+  hid_t group_id;
 
   // Create the dataspace for the dataset.
   hsize_t q_dimsf[] = {NumVectors, GlobalLength};
@@ -1190,7 +1188,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
                            DistArray<double>*& X)
 {
   // gets the length of the vector
-  double GlobalLength, RowSize;
+  int GlobalLength, RowSize;
   ReadDoubleDistArrayProperties(GroupName, GlobalLength, RowSize);
 
   if (Map.LinearMap())
@@ -1221,7 +1219,7 @@ void EpetraExt::HDF5::Read(const string& GroupName, const Epetra_Map& Map,
 void EpetraExt::HDF5::Read(const string& GroupName, DistArray<double>*& X)
 {
   // gets the length of the vector
-  double GlobalLength, RowSize;
+  int GlobalLength, RowSize;
   ReadDoubleDistArrayProperties(GroupName, GlobalLength, RowSize);
 
   // creates a new linear map and use it to read data
@@ -1234,8 +1232,8 @@ void EpetraExt::HDF5::Read(const string& GroupName, DistArray<double>*& X)
 //
 // ==========================================================================
 void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const string& GroupName, 
-                                                    double& GlobalLength,
-                                                    double& RowSize)
+                                                    int& GlobalLength,
+                                                    int& RowSize)
 {
   if (!IsContained(GroupName))
     throw(Exception(__FILE__, __LINE__,
@@ -1259,7 +1257,7 @@ void EpetraExt::HDF5::ReadDoubleDistArrayProperties(const string& GroupName,
 
 // ==========================================================================
 void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
-                            double what)
+                            int what)
 {
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
@@ -1281,7 +1279,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
 
 // ==========================================================================
 void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
-                         double what)
+                            double what)
 {
   if (!IsContained(GroupName))
     CreateGroup(GroupName);
@@ -1385,7 +1383,6 @@ void EpetraExt::HDF5::Read(const string& GroupName,
     throw(Exception(__FILE__, __LINE__,
                     "requested group " + GroupName + " not found"));
 
-  hsize_t len;
   hid_t group_id = H5Gopen(file_id_, GroupName.c_str());
 
   hid_t dataset_id = H5Dopen(group_id, DataSetName.c_str());
