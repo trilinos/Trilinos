@@ -196,6 +196,20 @@ exit $exitStatus;
                     print "error updating Trilinos3PL";
                 }
             }
+        
+            # If TrilinosData exists in the same directory as TrilinosRELEASE
+            # (in the same directory as the directory containing $trilinosDir)
+            # then update it as well.
+            chdir "$trilinosDir" or die "cannot chdir to $trilinosDir, died";  
+            if (! chdir "../../TrilinosData") {
+                print "can't chdir to \"../../TrilinosData\", skipping update of TrilinosData\n";
+            } else {
+                my $output = `cvs -q update -dP 2>&1`;
+                my $result = $?;
+                if ($result) {
+                    print "error updating TrilinosData";
+                }
+            }
             
             chdir "$trilinosDir" or die "cannot chdir to $trilinosDir, died";  
             my $output = `cvs -q update -dP 2>&1`;
