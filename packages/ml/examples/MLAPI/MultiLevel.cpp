@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     MLList.set("krylov: solver", "gmres");
     MLList.set("krylov: max iterations", 1550);
     MLList.set("krylov: tolerance", 1e-9);
-    MLList.set("krylov: output", 16);
+    MLList.set("krylov: output level", 16);
     Krylov(FineMatrix, LHS, RHS, Prec, MLList);
 
     cout << Prec;

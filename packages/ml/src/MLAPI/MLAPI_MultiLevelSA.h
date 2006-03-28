@@ -189,7 +189,7 @@ public:
         List_.set("PDE equations", ThisNS.GetNumVectors());
 
       if (GetPrintLevel()) {
-      ML_print_line("-", 80);
+        ML_print_line("-", 80);
         cout << "current working level   = " << level << endl;
         cout << "number of global rows   = " << A.GetNumGlobalRows() << endl;
         cout << "number of global nnz    = " << A.GetNumGlobalNonzeros() << endl;
