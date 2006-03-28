@@ -47,7 +47,6 @@ INPUT                 += ../src-loca
 INPUT                 += ../src-epetra
 INPUT                 += ../src-petsc
 INPUT                 += ../src-lapack
-INPUT                 += ../example-lapack
 
 FILE_PATTERNS          = *.H *.C
 
