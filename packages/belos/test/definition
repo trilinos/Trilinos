@@ -1,17 +1,15 @@
 #
 # FRAMEWORK group
 #
-
+# NOTE:  To pass an input file through the command-line, one may have
+# to use this convention:
+#
+# --filename=$ABS_TOP_SRCDIR/packages/belos/test/MVOPTester/mhd1280b.cua;
+#
 (FRAMEWORK,INSTALL) {
     TESTS = BlockCG/bl_cg_hb.exe,
             BlockCG/bl_pcg_hb.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = -v $ABS_TOP_SRCDIR/packages/belos/test/BlockCG/bcsstk14.hb;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL) {
-    TESTS = BlockCG/bl_cg_complex.exe;
+            BlockCG/bl_cg_complex.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
@@ -41,7 +39,7 @@
 (FRAMEWORK,INSTALL) {
     TESTS = MVOPTester/MVOPComplexTester_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/belos/test/MVOPTester/mhd1280b.cua;
+    ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
 
