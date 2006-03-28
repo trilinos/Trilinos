@@ -332,7 +332,6 @@ int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
 {
   int nz_ptr = 0;
   int NumEntries;
-  int MaxPerRow = 0;
   ML_Operator *mat_in;
 
   mat_in = (ML_Operator *) data;
@@ -343,7 +342,6 @@ int ML_Epetra_RowMatrix_getrow(ML_Operator *data, int N_requested_rows,
   {
     int ierr;
     int LocalRow = requested_rows[i];
-    int NumEntries;
     A->NumMyRowEntries(LocalRow, NumEntries);
     if (allocated_space < NumEntries)
       return(0); // to avoid Epetra print something on cout
@@ -502,7 +500,6 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
 
   case ML_Epetra::ML_NO_FILTER:
     return(1);
-
     break;
 
   case ML_Epetra::ML_EQN_FILTER:
