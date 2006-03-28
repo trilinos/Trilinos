@@ -84,6 +84,8 @@
 #define DSYGV_F77   F77_FUNC(ssygv,SSYGV)
 #define DSTEQR_F77  F77_FUNC(ssteqr,SSTEQR)
 #define DLAPY2_F77  F77_FUNC(slapy2,SLAPY2)
+#define DLARTG_F77  F77_FUNC(slartg,SLARTG)
+#define DLARFG_F77  F77_FUNC(slarfg,SLARFG)
 #define DLARND_F77  F77_FUNC(slarnd,SLARND)
 #define DLARNV_F77  F77_FUNC(slarnv,SLARNV)
 #define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
@@ -123,6 +125,8 @@
 #define ZSTEQR_F77  F77_FUNC(csteqr,CSTEQR)
 #define ZHEEV_F77   F77_FUNC(cheev,CHEEV)
 #define ZHEGV_F77   F77_FUNC(chegv,CHEGV)
+#define ZLARTG_F77  F77_FUNC(clartg,cLARTG)
+#define ZLARFG_F77  F77_FUNC(clarfg,cLARFG)
 #define ZLARND_F77  F77_FUNC(clarnd,CLARND)
 #define ZLARNV_F77  F77_FUNC(clarnv,CLARNV)
 
@@ -173,6 +177,8 @@
 #define DSYGV_F77   F77_FUNC(dsygv,DSYGV)
 #define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
+#define DLARTG_F77  F77_FUNC(dlartg,DLARTG)
+#define DLARFG_F77  F77_FUNC(dlarfg,DLARFG)
 #define DLARND_F77  F77_FUNC(dlarnd,DLARND)
 #define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
 #define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
@@ -212,6 +218,8 @@
 #define ZSTEQR_F77  F77_FUNC(zsteqr,ZSTEQR)
 #define ZHEEV_F77   F77_FUNC(zheev,ZHEEV)
 #define ZHEGV_F77   F77_FUNC(zhegv,ZHEGV)
+#define ZLARTG_F77  F77_FUNC(zlartg,ZLARTG)
+#define ZLARFG_F77  F77_FUNC(zlarfg,ZLARFG)
 #define ZLARND_F77  F77_FUNC(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_FUNC(zlarnv,ZLARNV)
 
@@ -262,6 +270,8 @@
 #define DSYGV_F77   F77_FUNC(dsygv,DSYGV)
 #define DSTEQR_F77  F77_FUNC(dsteqr,DSTEQR)
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
+#define DLARTG_F77  F77_FUNC(dlartg,DLARTG)
+#define DLARFG_F77  F77_FUNC(dlarfg,DLARFG)
 #define DLARND_F77  F77_FUNC(dlarnd,DLARND)
 #define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
 #define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
@@ -301,6 +311,8 @@
 #define ZSTEQR_F77  F77_FUNC(zsteqr,ZSTEQR)
 #define ZHEEV_F77   F77_FUNC(zheev,ZHEEV)
 #define ZHEGV_F77   F77_FUNC(zhegv,ZHEGV)
+#define ZLARTG_F77  F77_FUNC(zlartg,ZLARTG)
+#define ZLARFG_F77  F77_FUNC(zlarfg,ZLARFG)
 #define ZLARND_F77  F77_FUNC(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_FUNC(zlarnv,ZLARNV)
 
@@ -379,6 +391,8 @@
 #define DLAPY2_F77  F77_FUNC(dlapy2,DLAPY2)
 #define DLARND_F77  F77_FUNC(dlarnd,DLARND)
 #define DLARNV_F77  F77_FUNC(dlarnv,DLARNV)
+#define DLARTG_F77  F77_FUNC(dlartg,DLARTG)
+#define DLARFG_F77  F77_FUNC(dlarfg,DLARFG)
 #define ILAENV_F77  F77_FUNC(ilaenv,ILAENV)
 
 #ifdef HAVE_TEUCHOS_COMPLEX
@@ -416,6 +430,8 @@
 #define ZSTEQR_F77  F77_FUNC(zsteqr,ZSTEQR)
 #define ZHEEV_F77   F77_FUNC(zheev,ZHEEV)
 #define ZHEGV_F77   F77_FUNC(zhegv,ZHEGV)
+#define ZLARTG_F77  F77_FUNC(zlartg,ZLARTG)
+#define ZLARFG_F77  F77_FUNC(zlarfg,ZLARFG)
 #define ZLARND_F77  F77_FUNC(zlarnd,ZLARND)
 #define ZLARNV_F77  F77_FUNC(zlarnv,ZLARNV)
 
@@ -463,6 +479,8 @@
 #define SSYGV_F77   F77_FUNC(ssygv,SSYGV)
 #define SSTEQR_F77  F77_FUNC(ssteqr,SSTEQR)
 #define SLAPY2_F77  F77_FUNC(slapy2,SLAPY2)
+#define SLARTG_F77  F77_FUNC(slartg,SLARTG)
+#define SLARFG_F77  F77_FUNC(slarfg,SLARFG)
 #define SLARND_F77  F77_FUNC(slarnd,SLARND)
 #define SLARNV_F77  F77_FUNC(slarnv,SLARNV)
 
@@ -501,6 +519,8 @@
 #define CSTEQR_F77  F77_FUNC(csteqr,CSTEQR)
 #define CHEEV_F77   F77_FUNC(cheev,CHEEV)
 #define CHEGV_F77   F77_FUNC(chegv,CHEGV)
+#define CLARTG_F77  F77_FUNC(clartg,CLARTG)
+#define CLARFG_F77  F77_FUNC(clarfg,CLARFG)
 #define CLARND_F77  F77_FUNC(clarnd,CLARND)
 #define CLARNV_F77  F77_FUNC(clarnv,CLARNV)
 
@@ -596,6 +616,12 @@ void PREFIX SORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, con
 void PREFIX STREVC_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(float*,float*), const int* n, const float* t, const int* ldt, float* vl, const int* ldvl, float* vr, const int* ldvr, const int* mm, int* m, float* work, int* info); 
 void PREFIX STREXC_F77(Teuchos_fcd, const int* n, float* t, const int* ldt, float* q, const int* ldq, int* ifst, int* ilst, float* work, int* info);
 
+void PREFIX SLARTG_F77(const float* f, const float* g, float* c, float* s, float* r);
+void PREFIX DLARTG_F77(const double* f, const double* g, double* c, double* s, double* r);
+
+void PREFIX SLARFG_F77(const int* n, float* alpha, float* x, const int* incx, float* tau);
+void PREFIX DLARFG_F77(const int* n, double* alpha, double* x, const int* incx, double* tau);
+
 float PREFIX SLARND_F77(const int* idist, int* seed);
 double PREFIX DLARND_F77(const int* idist, int* seed);
 
@@ -689,6 +715,12 @@ void PREFIX CHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* il
 void PREFIX CGEES_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(complex<float>*), const int* n, complex<float>* a, const int* lda, int* sdim, complex<float>* w, complex<float>* vs, const int* ldvs, complex<float>* work, const int* lwork, float* rwork, int* bwork, int* info);
 void PREFIX CTREVC_F77(Teuchos_fcd, Teuchos_fcd, int (*ptr2func)(complex<float>*), const int* n, const complex<float>* t, const int* ldt, complex<float>* vl, const int* ldvl, complex<float>* vr, const int* ldvr, const int* mm, int* m, complex<float>* work, float* rwork, int* info); 
 void PREFIX CTREXC_F77(Teuchos_fcd, const int* n, complex<float>* t, const int* ldt, complex<float>* q, const int* ldq, int* ifst, int* ilst, int* info);
+
+void PREFIX CLARTG_F77(const complex<float>* f, const complex<float>* g, float* c, complex<float>* s, complex<float>* r);
+void PREFIX ZLARTG_F77(const complex<double>* f, const complex<double>* g, double* c, complex<double>* s, complex<double>* r);
+
+void PREFIX CLARFG_F77(const int* n, complex<float>* alpha, complex<float>* x, const int* incx, complex<float>* tau);
+void PREFIX ZLARFG_F77(const int* n, complex<double>* alpha, complex<double>* x, const int* incx, complex<double>* tau);
 
 complex<float> PREFIX CLARND_F77(const int* idist, int* seed);
 complex<double> PREFIX ZLARND_F77(const int* idist, int* seed);
