@@ -44,13 +44,18 @@ Epetra_LinearProblem::Epetra_LinearProblem(void)
     LeftScaled_(false),
     RightScaled_(false),
     LeftScaleVector_(0),
-    RightScaleVector_(0)
+    RightScaleVector_(0),
+    Op_ownership_(false),
+    A_ownership_(false),
+    X_ownership_(false),
+    B_ownership_(false)
 {
 }
 //=============================================================================
 Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix * A, 
 					       Epetra_MultiVector * X,
-					       Epetra_MultiVector * B) 
+					       Epetra_MultiVector * B,
+                                           bool take_ownership) 
   : Operator_(0),
     A_(A),
     X_(X),
@@ -60,14 +65,19 @@ Epetra_LinearProblem::Epetra_LinearProblem(Epetra_RowMatrix * A,
     LeftScaled_(false),
     RightScaled_(false),
     LeftScaleVector_(0),
-    RightScaleVector_(0)
+    RightScaleVector_(0),
+    Op_ownership_(false),
+    A_ownership_(take_ownership),
+    X_ownership_(take_ownership),
+    B_ownership_(take_ownership)
 {
   Operator_ = dynamic_cast<Epetra_Operator *>(A_); // Try to make matrix an operator
 }
 //=============================================================================
 Epetra_LinearProblem::Epetra_LinearProblem(Epetra_Operator * A, 
 					       Epetra_MultiVector * X,
-					       Epetra_MultiVector * B) 
+					       Epetra_MultiVector * B,
+                                           bool take_ownership) 
   : Operator_(A),
     A_(0),
     X_(X),
@@ -77,7 +87,11 @@ Epetra_LinearProblem::Epetra_LinearProblem(Epetra_Operator * A,
     LeftScaled_(false),
     RightScaled_(false),
     LeftScaleVector_(0),
-    RightScaleVector_(0)
+    RightScaleVector_(0),
+    Op_ownership_(take_ownership),
+    A_ownership_(false),
+    X_ownership_(take_ownership),
+    B_ownership_(take_ownership)
 {
   A_ = dynamic_cast<Epetra_RowMatrix *>(Operator_); // Try to make operator a matrix
 }
@@ -92,12 +106,20 @@ Epetra_LinearProblem::Epetra_LinearProblem(const Epetra_LinearProblem& Problem)
     LeftScaled_(Problem.LeftScaled_),
     RightScaled_(Problem.RightScaled_),
     LeftScaleVector_(Problem.LeftScaleVector_),
-    RightScaleVector_(Problem.RightScaleVector_)
+    RightScaleVector_(Problem.RightScaleVector_),
+    Op_ownership_(false),
+    A_ownership_(false),
+    X_ownership_(false),
+    B_ownership_(false)
 {
 }
 //=============================================================================
 Epetra_LinearProblem::~Epetra_LinearProblem(void)  
 {
+  if (Op_ownership_) delete Operator_;
+  if (A_ownership_) delete A_;
+  if (X_ownership_) delete X_;
+  if (B_ownership_) delete B_;
 }
 //=============================================================================
 int Epetra_LinearProblem::LeftScale(const Epetra_Vector & D)
@@ -135,3 +157,22 @@ int Epetra_LinearProblem::CheckInput() const {
   return(0);
 
 }
+//=============================================================================
+void Epetra_LinearProblem::SetLHS(Epetra_MultiVector * X,
+                                  bool take_ownership)
+{
+  if (X_ownership_) {delete X_; X_ownership_ = false;}
+  X_ = X;
+  X_ownership_ = take_ownership;
+}
+
+//=============================================================================
+void Epetra_LinearProblem::SetRHS(Epetra_MultiVector * B,
+                                  bool take_ownership)
+{
+  if (B_ownership_) {delete B_; B_ownership_ = false;}
+  B_ = B;
+  B_ownership_ = take_ownership;
+}
+
+//=============================================================================

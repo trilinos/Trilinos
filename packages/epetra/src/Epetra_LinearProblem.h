@@ -60,15 +60,23 @@ class Epetra_LinearProblem {
 
   //!  Epetra_LinearProblem Constructor to pass in an operator as a matrix.
   /*! Creates a Epetra_LinearProblem instance where the operator is passed in as a matrix. 
+    Optional fourth argument 'bool take_ownership' defaults to false. If
+    specified as true, then the matrix and vector arguments will be deleted
+    when this Epetra_LinearProblem object is deleted.
   */
   Epetra_LinearProblem(Epetra_RowMatrix * A, Epetra_MultiVector * X,
-			 Epetra_MultiVector * B);
+			 Epetra_MultiVector * B,
+                       bool take_ownership=false);
 
   //!  Epetra_LinearProblem Constructor to pass in a basic Epetra_Operator.
   /*! Creates a Epetra_LinearProblem instance for the case where an operator is not necessarily a matrix. 
+    Optional fourth argument 'bool take_ownership' defaults to false. If
+    specified as true, then the matrix and vector arguments will be deleted
+    when this Epetra_LinearProblem object is deleted.
   */
   Epetra_LinearProblem(Epetra_Operator * A, Epetra_MultiVector * X,
-			 Epetra_MultiVector * B);
+                       Epetra_MultiVector * B,
+                       bool take_ownership=false);
   //! Epetra_LinearProblem Copy Constructor.
   /*! Makes copy of an existing Epetra_LinearProblem instance.
   */
@@ -106,22 +114,40 @@ class Epetra_LinearProblem {
   //! Set Operator A of linear problem AX = B using an Epetra_RowMatrix.
   /*! Sets a pointer to a Epetra_RowMatrix.  No copy of the operator is made.
   */
-  void SetOperator(Epetra_RowMatrix * A) {A_ = A; Operator_ = A;};
+  void SetOperator(Epetra_RowMatrix * A,
+                   bool take_ownership=false)
+    {
+      if (Op_ownership_) {delete Operator_; Op_ownership_ = false;}
+      if (A_ownership_) {delete A_; A_ownership_ = false;}
+      A_ = A; Operator_ = A;
+      Op_ownership_ = false;
+      A_ownership_ = take_ownership;
+    }
 
   //! Set Operator A of linear problem AX = B using an Epetra_Operator.
   /*! Sets a pointer to a Epetra_Operator.  No copy of the operator is made.
   */
-  void SetOperator(Epetra_Operator * A) {A_ = dynamic_cast<Epetra_RowMatrix *>(A); Operator_ = A;};
+  void SetOperator(Epetra_Operator * A,
+                   bool take_ownership=false)
+    {
+      if (Op_ownership_) {delete Operator_; Op_ownership_ = false;}
+      if (A_ownership_) {delete A_; A_ownership_ = false;}
+      A_ = dynamic_cast<Epetra_RowMatrix *>(A); Operator_ = A;
+      A_ownership_ = false;
+      Op_ownership_ = take_ownership;
+    }
 
   //! Set left-hand-side X of linear problem AX = B.
   /*! Sets a pointer to a Epetra_MultiVector.  No copy of the object is made.
   */
-  void SetLHS(Epetra_MultiVector * X) {X_ = X;};
+  void SetLHS(Epetra_MultiVector * X,
+              bool take_ownership=false);
 
   //! Set right-hand-side B of linear problem AX = B.
   /*! Sets a pointer to a Epetra_MultiVector.  No copy of the object is made.
   */
-  void SetRHS(Epetra_MultiVector * B) {B_ = B;};
+  void SetRHS(Epetra_MultiVector * B,
+              bool take_ownership=false);
   //@}
   
   //@{ \name Computational methods.
@@ -178,7 +204,10 @@ class Epetra_LinearProblem {
   Epetra_Vector * LeftScaleVector_;
   Epetra_Vector * RightScaleVector_;
   Epetra_LinearProblem & operator=(const Epetra_LinearProblem& Problem);
-    
+  bool Op_ownership_;    
+  bool A_ownership_;    
+  bool X_ownership_;    
+  bool B_ownership_;    
 };
 
 #endif /* EPETRA_LINEARPROBLEM_H */
