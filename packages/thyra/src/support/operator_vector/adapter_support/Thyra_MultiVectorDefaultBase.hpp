@@ -366,8 +366,8 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) c
     const int col_k = cols[k];
 #ifdef _DEBUG
     TEST_FOR_EXCEPTION(
-      col_k < 1 || dimDomain < col_k, std::invalid_argument
-      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"
+      !( 0 <= col_k && col_k < dimDomain ), std::invalid_argument
+      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"
       );
 #endif
     col_vecs[k] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(col_k));
@@ -394,8 +394,8 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
     const int col_k = cols[k];
 #ifdef _DEBUG
     TEST_FOR_EXCEPTION(
-      col_k < 1 || dimDomain < col_k, std::invalid_argument
-      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"
+      !( 0 <= col_k && col_k < dimDomain ), std::invalid_argument
+      ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"
       );
 #endif
     col_vecs[k] = this->col(col_k);
