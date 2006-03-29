@@ -212,6 +212,11 @@ if (! $?run ) then
       set run = "mpiexec -comm mpich-p4 -n "
       set suffix = "linux"
       breaksw
+    case liberty:
+    case icc:
+      set run = "mpiexec -n "
+      set suffix = "linux"
+      breaksw
     default:
       echo "Unknown arch type. Please use -cmd to specify the run command."
       exit -2
@@ -956,7 +961,6 @@ if (! $no_hg) then
   
           # Run the driver
           $run $np ../$zdrive
-          sleep 1 # Make sure all processes have time to write to disk
       
           # Save and compare output files 
 
@@ -969,6 +973,17 @@ if (! $no_hg) then
 	    set awkarg='BEGIN {printf "%0'"$fw"'d", '"$i"'}'
 	    set field=`awk "$awkarg"` < /dev/null
 	    set outfile=${hg_name[1]}.$mtd.$np.$field
+
+	    # wait up to 30 sec for files
+	    if (! -e ${hg_name[1]}.$out_tag.$np.$field ) then
+	      @ poll = 30
+	      while (! -e ${hg_name[1]}.$out_tag.$np.$field )
+		sleep 1
+		@ poll--
+		if ( ! $poll ) break
+	      end
+	    endif
+
             /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
             if (-e ${answers}/${outfile}.$suffix ) then
        	      set answerfile = ${answers}/${outfile}.$suffix
