@@ -129,13 +129,15 @@ namespace Belos {
     */
     RefCountPtr<MV> GetCurrentSoln();
     
-    //! Get a constant reference to the current linear problem.  
+    //! Get a pointer to the current linear problem.  
     /*! This may include a current solution, if the solver has recently restarted or completed.
      */
     RefCountPtr<LinearProblem<ScalarType,MV,OP> > GetLinearProblem() const { return( _lp ); }
     
+    //! Get a pointer to the current status test.
     RefCountPtr<StatusTest<ScalarType,MV,OP> > GetStatusTest() const { return( _stest ); }
-    
+
+    //! Reset the solver, can pass in a new parameter list to change solver parameters.
     int Reset( const RefCountPtr<ParameterList>& pl = null );
     
     //@} 
@@ -339,7 +341,6 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void BlockGmres<ScalarType,MV,OP>::Solve() 
   {
-    _os = _om->GetOStream();
     int i=0;
     std::vector<int> index;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -350,6 +351,10 @@ namespace Belos {
     Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
     //
+    // Obtain the output stream from the OutputManager.
+    //
+    _os = _om->GetOStream();
+    //
     // Obtain the first block linear system form the linear problem manager.
     //
     _cur_block_sol = _lp->GetCurrLHSVec();
@@ -358,7 +363,7 @@ namespace Belos {
     //
     //  Start executable statements. 
     //
-    while ( _cur_block_sol.get() && _cur_block_sol.get() ) {
+    while ( _cur_block_rhs.get() && _cur_block_sol.get() ) {
       //
       if (_om->isVerbosityAndPrint( IterationDetails )) {
         *_os << endl;
@@ -543,7 +548,9 @@ namespace Belos {
     _restartiter = 0; 
     _totaliter = 0;
     _iter = 0;
+    //
     // If there is a "Variant" parameter in the list, check to see if it's "Flexible" (i.e. flexible GMRES)
+    //
     if (_pl->isParameter("Variant"))
       _flexible = (Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible");
     return 0;
