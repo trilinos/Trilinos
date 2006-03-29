@@ -281,7 +281,7 @@ IfpackPreconditionerFactory::generateAndGetValidParameters()
 {
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
-    validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::IfpackPreconditionerFactory"));
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList("IfpackPreconditionerFactory"));
     validParamList->set("Prec Type","ILU");
     validParamList->set("Overlap",0);
     validParamList->sublist("Ifpack").setParameters(Ifpack_GetValidParameters());
