@@ -119,9 +119,12 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   class BLAS
   {    
+
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    
   public:
     //@{ \name Constructor/Destructor.
-
+    
     //! Default constructor.
     inline BLAS(void) {};
 
@@ -135,7 +138,10 @@ namespace Teuchos
     //@{ \name Level 1 BLAS Routines.
 
     //! Computes a Givens plane rotation.
-    void ROTG(ScalarType* da, ScalarType* db, ScalarType* c, ScalarType* s) const;
+    void ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const;
+
+    //! Applies a Givens plane rotation.
+    void ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const;
 
     //! Scale the vector \c x by the constant \c alpha.
     void SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx) const;
@@ -198,7 +204,7 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
     
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, ScalarType* c, ScalarType* s) const
+  void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const
   {
     ScalarType roe, scale, r;
     ScalarType zero = ScalarTraits<ScalarType>::zero();
@@ -224,6 +230,12 @@ namespace Teuchos
     }
   } /* end ROTG */
       
+  template<typename OrdinalType, typename ScalarType>
+  void BLAS<OrdinalType,ScalarType>::ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const
+  {
+    // ToDo:  Implement this.
+  }
+
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx) const
   {
@@ -1481,6 +1493,7 @@ namespace Teuchos
     inline BLAS(const BLAS<OrdinalType, float>& BLAS_source) {};
     inline virtual ~BLAS(void) {};
     void ROTG(float* da, float* db, float* c, float* s) const;
+    void ROT(const OrdinalType n, float* dx, const OrdinalType incx, float* dy, const OrdinalType incy, float* c, float* s) const;
     float ASUM(const OrdinalType n, const float* x, const OrdinalType incx) const;
     void AXPY(const OrdinalType n, const float alpha, const float* x, const OrdinalType incx, float* y, const OrdinalType incy) const;
     void COPY(const OrdinalType n, const float* x, const OrdinalType incx, float* y, const OrdinalType incy) const;
@@ -1500,6 +1513,10 @@ namespace Teuchos
   template<typename OrdinalType>
   void BLAS<OrdinalType, float>::ROTG(float* da, float* db, float* c, float* s) const
   { SROTG_F77(da, db, c, s ); }
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, float>::ROT(const OrdinalType n, float* dx, const OrdinalType incx, float* dy, const OrdinalType incy, float* c, float* s) const
+  { SROT_F77(&n, dx, &incx, dy, &incy, c, s); }
 
   template<typename OrdinalType>
   float BLAS<OrdinalType, float>::ASUM(const OrdinalType n, const float* x, const OrdinalType incx) const
@@ -1566,6 +1583,7 @@ namespace Teuchos
     inline BLAS(const BLAS<OrdinalType, double>& BLAS_source) {};
     inline virtual ~BLAS(void) {};
     void ROTG(double* da, double* db, double* c, double* s) const;
+    void ROT(const OrdinalType n, double* dx, const OrdinalType incx, double* dy, const OrdinalType incy, double* c, double* s) const;
     double ASUM(const OrdinalType n, const double* x, const OrdinalType incx) const;
     void AXPY(const OrdinalType n, const double alpha, const double* x, const OrdinalType incx, double* y, const OrdinalType incy) const;
     void COPY(const OrdinalType n, const double* x, const OrdinalType incx, double* y, const OrdinalType incy) const;
@@ -1585,6 +1603,10 @@ namespace Teuchos
   template<typename OrdinalType>
   void BLAS<OrdinalType, double>::ROTG(double* da, double* db, double* c, double* s) const
   { DROTG_F77(da, db, c, s); }
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, double>::ROT(const OrdinalType n, double* dx, const OrdinalType incx, double* dy, const OrdinalType incy, double* c, double* s) const
+  { DROT_F77(&n, dx, &incx, dy, &incy, c, s); }
 
   template<typename OrdinalType>
   double BLAS<OrdinalType, double>::ASUM(const OrdinalType n, const double* x, const OrdinalType incx) const
@@ -1652,6 +1674,7 @@ namespace Teuchos
     inline BLAS(const BLAS<OrdinalType, complex<float> >& BLAS_source) {};
     inline virtual ~BLAS(void) {};
     void ROTG(complex<float>* da, complex<float>* db, float* c, complex<float>* s) const;
+    void ROT(const OrdinalType n, complex<float>* dx, const OrdinalType incx, complex<float>* dy, const OrdinalType incy, float* c, complex<float>* s) const;
     float ASUM(const OrdinalType n, const complex<float>* x, const OrdinalType incx) const;
     void AXPY(const OrdinalType n, const complex<float> alpha, const complex<float>* x, const OrdinalType incx, complex<float>* y, const OrdinalType incy) const;
     void COPY(const OrdinalType n, const complex<float>* x, const OrdinalType incx, complex<float>* y, const OrdinalType incy) const;
@@ -1671,6 +1694,10 @@ namespace Teuchos
   template<typename OrdinalType>
   void BLAS<OrdinalType, complex<float> >::ROTG(complex<float>* da, complex<float>* db, float* c, complex<float>* s) const
   { CROTG_F77(da, db, c, s ); }
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<float> >::ROT(const OrdinalType n, complex<float>* dx, const OrdinalType incx, complex<float>* dy, const OrdinalType incy, float* c, complex<float>* s) const
+  { CROT_F77(&n, dx, &incx, dy, &incy, c, s); }
 
   template<typename OrdinalType>
   float BLAS<OrdinalType, complex<float> >::ASUM(const OrdinalType n, const complex<float>* x, const OrdinalType incx) const
@@ -1737,6 +1764,7 @@ namespace Teuchos
     inline BLAS(const BLAS<OrdinalType, complex<double> >& BLAS_source) {};
     inline virtual ~BLAS(void) {};
     void ROTG(complex<double>* da, complex<double>* db, double* c, complex<double>* s) const;
+    void ROT(const OrdinalType n, complex<double>* dx, const OrdinalType incx, complex<double>* dy, const OrdinalType incy, double* c, complex<double>* s) const;
     double ASUM(const OrdinalType n, const complex<double>* x, const OrdinalType incx) const;
     void AXPY(const OrdinalType n, const complex<double> alpha, const complex<double>* x, const OrdinalType incx, complex<double>* y, const OrdinalType incy) const;
     void COPY(const OrdinalType n, const complex<double>* x, const OrdinalType incx, complex<double>* y, const OrdinalType incy) const;
@@ -1756,6 +1784,10 @@ namespace Teuchos
   template<typename OrdinalType>
   void BLAS<OrdinalType, complex<double> >::ROTG(complex<double>* da, complex<double>* db, double* c, complex<double>* s) const
   { ZROTG_F77(da, db, c, s); }
+
+  template<typename OrdinalType>
+  void BLAS<OrdinalType, complex<double> >::ROT(const OrdinalType n, complex<double>* dx, const OrdinalType incx, complex<double>* dy, const OrdinalType incy, double* c, complex<double>* s) const
+  { ZROT_F77(&n, dx, &incx, dy, &incy, c, s); }
 
   template<typename OrdinalType>
   double BLAS<OrdinalType, complex<double> >::ASUM(const OrdinalType n, const complex<double>* x, const OrdinalType incx) const

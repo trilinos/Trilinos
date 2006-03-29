@@ -50,6 +50,7 @@
 #define Teuchos_fcd fcd 
 
 #define DROTG_F77   F77_FUNC(srotg,SROTG)
+#define DROT_F77    F77_FUNC(srot,SROT)
 #define DASUM_F77   F77_FUNC(sasum,SASUM) 
 #define DAXPY_F77   F77_FUNC(saxpy,SAXPY)
 #define DCOPY_F77   F77_FUNC(scopy,SCOPY)
@@ -68,6 +69,7 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(crotg,CROTG)
+#define ZROT_F77    F77_FUNC(crot,CROT)
 #define ZASUM_F77   F77_FUNC(scasum,SCASUM) 
 #define ZAXPY_F77   F77_FUNC(caxpy,CAXPY)
 #define ZCOPY_F77   F77_FUNC(ccopy,CCOPY)
@@ -91,6 +93,7 @@
 #define Teuchos_fcd const char *, unsigned int 
 
 #define DROTG_F77   F77_FUNC(drotg,DROTG)
+#define DROT_F77    F77_FUNC(drot,DROT)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
@@ -109,6 +112,7 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
+#define ZROT_F77    F77_FUNC(zrot,ZROT)
 #define ZASUM_F77   F77_FUNC(dzasum,DZASUM)
 #define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
 #define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
@@ -132,6 +136,7 @@
 #define Teuchos_fcd const char *
 
 #define DROTG_F77   F77_FUNC(drotg,DROTG)
+#define DROT_F77    F77_FUNC(drot,DROT)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
@@ -150,6 +155,7 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
+#define ZROT_F77    F77_FUNC(zrot,ZROT)
 #define ZASUM_F77   F77_FUNC(dzasum,DZASUM)
 #define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
 #define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
@@ -202,6 +208,7 @@
 #endif /* HAVE_CONFIG_H */
 
 #define DROTG_F77   F77_FUNC(drotg,DROTG)
+#define DROT_F77    F77_FUNC(drot,DROT)
 #define DASUM_F77   F77_FUNC(dasum,DASUM)
 #define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
 #define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
@@ -220,6 +227,7 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define ZROTG_F77   F77_FUNC(zrotg,ZROTG)
+#define ZROT_F77    F77_FUNC(zrot,ZROT)
 #define ZASUM_F77   F77_FUNC(dzasum,DZASUM)
 #define ZAXPY_F77   F77_FUNC(zaxpy,ZAXPY)
 #define ZCOPY_F77   F77_FUNC(zcopy,ZCOPY)
@@ -243,6 +251,7 @@
 /* Explicitly define each F77 name for all BLAS kernels */
 
 #define SROTG_F77   F77_FUNC(srotg,SROTG)
+#define SROT_F77    F77_FUNC(srot,SROT)
 #define SSCAL_F77   F77_FUNC(sscal,SSCAL) 
 #define SCOPY_F77   F77_FUNC(scopy,SCOPY)
 #define SAXPY_F77   F77_FUNC(saxpy,SAXPY)
@@ -262,6 +271,7 @@
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #define CROTG_F77   F77_FUNC(crotg,CROTG)
+#define CROT_F77    F77_FUNC(crot,CROT)
 #define CASUM_F77   F77_FUNC(scasum,SCASUM) 
 #define CAXPY_F77   F77_FUNC(caxpy,CAXPY)
 #define CCOPY_F77   F77_FUNC(ccopy,CCOPY)
@@ -286,6 +296,7 @@ extern "C" {
 
 /* Double precision BLAS 1 */
 void PREFIX DROTG_F77(double* da, double* db, double* c, double* s);
+void PREFIX DROT_F77(const int* n, double* dx, const int* incx, double* dy, const int* incy, double* c, double* s);
 double PREFIX DASUM_F77(const int* n, const double x[], const int* incx);
 void PREFIX DAXPY_F77(const int* n, const double* alpha, const double x[], const int* incx, double y[], const int* incy);
 void PREFIX DCOPY_F77(const int* n, const double *x, const int* incx, double *y, const int* incy);
@@ -298,6 +309,7 @@ int PREFIX IDAMAX_F77(const int* n, const double *x, const int* incx);
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 void PREFIX ZROTG_F77(complex<double>* da, complex<double>* db, double* c, complex<double>* s);
+void PREFIX ZROT_F77(const int* n, complex<double>* dx, const int* incx, complex<double>* dy, const int* incy, double* c, complex<double>* s);
 double PREFIX ZASUM_F77(const int* n, const complex<double> x[], const int* incx);
 void PREFIX ZAXPY_F77(const int* n, const complex<double>* alpha, const complex<double> x[], const int* incx, complex<double> y[], const int* incy);
 void PREFIX ZCOPY_F77(const int* n, const complex<double> *x, const int* incx, complex<double> *y, const int* incy);
@@ -310,6 +322,7 @@ int PREFIX IZAMAX_F77(const int* n, const complex<double> *x, const int* incx);
 
 /* Single precision BLAS 1 */ 
 void PREFIX SROTG_F77(float* da, float* db, float* c, float* s);
+void PREFIX SROT_F77(const int* n, float* dx, const int* incx, float* dy, const int* incy, float* c, float* s);
 float PREFIX SASUM_F77(const int* n, const float x[], const int* incx);
 void PREFIX SAXPY_F77(const int* n, const float* alpha, const float x[], const int* incx, float y[], const int* incy);
 void PREFIX SCOPY_F77(const int* n, const float *x, const int* incx, float *y, const int* incy);
@@ -322,6 +335,7 @@ int PREFIX ISAMAX_F77(const int* n, const float *x, const int* incx);
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 void PREFIX CROTG_F77(complex<float>* da, complex<float>* db, float* c, complex<float>* s);
+void PREFIX CROT_F77(const int* n, complex<float>* dx, const int* incx, complex<float>* dy, const int* incy, float* c, complex<float>* s);
 float PREFIX CASUM_F77(const int* n, const complex<float> x[], const int* incx);
 void PREFIX CAXPY_F77(const int* n, const complex<float>* alpha, const complex<float> x[], const int* incx, complex<float> y[], const int* incy);
 void PREFIX CCOPY_F77(const int* n, const complex<float> *x, const int* incx, complex<float> *y, const int* incy);
