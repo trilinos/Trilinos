@@ -363,7 +363,9 @@ namespace Belos {
       if (_om->isVerbosityAndPrint( IterationDetails )) {
         *_os << endl;
         *_os << "===================================================" << endl;
-        *_os << "Solving linear system(s):  " << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve()-1 << endl;
+        *_os << "Solving linear system(s):  "
+             << _lp->GetRHSIndex() << " through " << _lp->GetRHSIndex()+_lp->GetNumToSolve()-1
+             << "  [block size = " << _blocksize << "]\n";
         *_os << endl;
       }
       //
