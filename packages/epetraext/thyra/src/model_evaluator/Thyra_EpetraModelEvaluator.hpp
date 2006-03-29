@@ -49,14 +49,14 @@ public:
 
   /** \brief . */
   EpetraModelEvaluator(
-    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               &epetraModel
-    ,const Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  &W_factory
+    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         &epetraModel
+    ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  &W_factory
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               &epetraModel
-    ,const Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  &W_factory
+    const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         &epetraModel
+    ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  &W_factory
     );
 
   /** \brief . */
@@ -64,8 +64,8 @@ public:
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               *epetraModel = NULL
-    ,Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  *W_factory   = NULL
+    Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         *epetraModel = NULL
+    ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  *W_factory   = NULL
     );
 
   //@}
@@ -152,7 +152,7 @@ private:
   // Private data mebers
 
   Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>              epetraModel_;
-  Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  W_factory_;
+  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >        W_factory_;
   Teuchos::RefCountPtr<const Epetra_Map>                             x_map_;
   p_map_t                                                            p_map_;
   g_map_t                                                            g_map_;

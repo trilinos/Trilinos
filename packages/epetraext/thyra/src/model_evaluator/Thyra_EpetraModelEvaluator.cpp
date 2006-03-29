@@ -38,16 +38,16 @@ EpetraModelEvaluator::EpetraModelEvaluator()
 {}
 
 EpetraModelEvaluator::EpetraModelEvaluator(
-  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               &epetraModel
-  ,const Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  &W_factory
+  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         &epetraModel
+  ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  &W_factory
   )
 {
   initialize(epetraModel,W_factory);
 }
 
 void EpetraModelEvaluator::initialize(
-  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               &epetraModel
-  ,const Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  &W_factory
+  const Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         &epetraModel
+  ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  &W_factory
   )
 {
   epetraModel_ = epetraModel;
@@ -74,14 +74,17 @@ Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> EpetraModelEvaluator::getE
 }
 
 void EpetraModelEvaluator::uninitialize(
-  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>               *epetraModel
-  ,Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >  *W_factory
+  Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         *epetraModel
+  ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  *W_factory
   )
 {
   if(epetraModel) *epetraModel = epetraModel_;
   if(W_factory) *W_factory = W_factory_;
   epetraModel_ = Teuchos::null;
   W_factory_ = Teuchos::null;
+  if(W_factory_.get()) {
+    W_factory_->setOStream(this->getOStream());
+  }
 }
 
 // Overridden from ModelEvaulator.
@@ -184,6 +187,7 @@ EpetraModelEvaluator::create_W() const
     ,"Thyra::EpetraModelEvaluator::create_W(): Error, the client did not set a LinearOpWithSolveFactoryBase"
     " object for W!"
     );
+  W_factory_->setOStream(this->getOStream());
   return W_factory_->createOp();
 }
 
@@ -446,8 +450,9 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
       fwdW = Teuchos::rcp(new EpetraLinearOp(eW));
     }
     W_factory_->initializeOp(fwdW,&*W);
+    W->setOStream(this->getOStream());
   }
-
+  
 }
 
 // Public functions overridden from Teuchos::Describable
