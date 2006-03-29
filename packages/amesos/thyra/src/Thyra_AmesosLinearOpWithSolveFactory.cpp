@@ -357,7 +357,7 @@ void AmesosLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuch
         SolverType_name
         ,Amesos::toString(solverType())
         )
-      ,paramList_->name()+SolverType_name
+      ,paramList_->name()+"->"+SolverType_name
       )
     );
   refactorizationPolicy(
@@ -366,7 +366,7 @@ void AmesosLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuch
         RefactorizationPolicy_name
         ,Amesos::toString(refactorizationPolicy())
         )
-      ,paramList_->name()+RefactorizationPolicy_name
+      ,paramList_->name()+"->"+RefactorizationPolicy_name
       )
     );
   throwOnPrecInput(paramList_->get(ThrowOnPreconditionerInput_name,throwOnPrecInput()));
@@ -416,7 +416,7 @@ AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
 {
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
-    validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::AmesosLinearOpWithSolveFactory"));
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList("AmesosLinearOpWithSolveFactory"));
     validParamList->set(
       SolverType_name
 #ifdef HAVE_AMESOS_KLU
