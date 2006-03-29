@@ -83,12 +83,12 @@ void BelosLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
   Teuchos::RefCountPtr<const Teuchos::ParameterList>
     precFactoryValidPL = precFactory->getValidParameters();
   const std::string _precFactoryName =
-    ( precFactoryName.length()
+    ( precFactoryName != ""
       ? precFactoryName
       : ( precFactoryValidPL.get() ? precFactoryValidPL->name() : "GENERIC PRECONDITIONER FACTORY" )
       );
   precFactory_ = precFactory;
-  precFactoryName_ = precFactoryName; // Remember what the user actually passed in!
+  precFactoryName_ = _precFactoryName;
   updateThisValidParamList();
 }
 
