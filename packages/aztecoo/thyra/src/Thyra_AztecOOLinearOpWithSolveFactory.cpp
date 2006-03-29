@@ -222,7 +222,7 @@ AztecOOLinearOpWithSolveFactory::generateAndGetValidParameters()
 {
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
-    validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::AztecOOLinearOpWithSolveFactory"));
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList("AztecOOLinearOpWithSolveFactory"));
     Teuchos::ParameterList
       fwdSolvePL = validParamList->sublist("Forward Solve");
     // ToDo: Figure out how to add parameters for this!
@@ -632,7 +632,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   aztecOp->adjDefaultMaxIterations(adjDefaultMaxIterations());
   aztecOp->adjDefaultTol(adjDefaultTol());
 #ifdef _DEBUG
-  paramList_->validateParameters(*this->getValidParameters(),0); // Only validate very top level for now!
+  if(paramList_.get())
+    paramList_->validateParameters(*this->getValidParameters(),0); // Only validate very top level for now!
 #endif
 }
 
