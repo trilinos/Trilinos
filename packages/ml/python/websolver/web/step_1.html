@@ -1,0 +1,113 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setFilename('input.html');
+  setTitle('Trilinos - WebSolver - Matrix Generator Page');
+  setDir('./');
+  include 'common/header.html';
+  include 'step_util.php';
+
+  $ProblemIDs = $_POST['ProblemIDs'];
+  $Labels = $_POST['Labels'];
+
+  if ($_POST['type'] == "" || $_POST['MyLabel'] == "")
+  {
+    echo "<font color=red>You need to specify a label for each problem to be solved.</font> A label";
+    echo " is a group of character you use to identify a problem.<br>";
+  }
+  else if ($_POST['state'] == "add")
+  {
+    $ProblemIDs .= ":" . $_POST['type'];
+    $Labels .= ":" . $_POST['MyLabel'];
+    foreach (split(" ", $_POST['parameters']) as $value)
+    { 
+      if ($value == "") continue;
+      $ProblemIDs .= '_' . $value . '=' . $_POST[$value];
+    }
+  }
+
+  print_header();
+
+  print_problem($Labels, 1);
+
+  print_form();
+
+  step_list();
+
+  include 'common/footer.html';
+
+  function print_form() { ?>
+
+  <p class="heading">Problems currently available:</p>
+ 
+  <ol>
+  <li> MISSING THE UPLOAD HERE...
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+  Problem bcsstk13.rsa from MatrixMarket.<br>
+  MyLabel = <input type="text" name=MyLabel size=10>
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo
+  $ProblemIDs; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="">
+  <input type="hidden" name=type value="MM_bcsstk13.rsa">
+  <input type=submit value="add to cart"><br></form>
+
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+  2D Laplace on a 
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="inx iny">
+  <input type="hidden" name=type value="Laplace2D">
+  <input type="text" name="inx" value=100 size=5> x
+  <input type="text" name="iny" value=100 size=5> grid.<br>
+  MyLabel = <input type="text" name=MyLabel size=10>
+
+  <input type=submit value="add to cart"><br></form>
+
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+  3D Laplace on a 
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="inx iny inz">
+  <input type="hidden" name=type value="Laplace3D">
+  <input type="text" name="inx" value=10 size=5> x
+  <input type="text" name="iny" value=10 size=5> x
+  <input type="text" name="inz" value=10 size=5> grid.<br>
+  MyLabel = <input type="text" name=MyLabel size=10>.
+
+  <input type=submit value="add to cart"><br></form>
+
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+  2D advection-diffuction with recirculating flow, on a 
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="inx iny dconv ddiff">
+  <input type="hidden" name=type value="Recirc2D">
+  <input type="text" name="inx" value=100 size=5> x
+  <input type="text" name="iny" value=100 size=5> grid.
+  conv = <input type="text" name="dconv" value=1 size=5>,
+  diff = <input type="text" name="ddiff" value=1e-5 size=5>.<br>
+  MyLabel = <input type="text" name=MyLabel size=10>.
+
+  <input type=submit value="add to cart"><br></form>
+  </ol>
+
+  <p>
+  <form action="step_2.html" enctype="multipart/form-data" method="post" name="inputForm">
+  <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+  <input type=hidden name=Labels value="<? global $Labels; echo $Labels; ?>">
+  <input type=submit value="go to Step 2" ></form>
+
+<? } ?>

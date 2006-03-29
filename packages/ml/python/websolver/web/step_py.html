@@ -1,0 +1,131 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setFilename('input.html');
+  setTitle('Trilinos - WebSolver - Matrix Generator Page');
+  setDir('./');
+  include 'common/header.html';
+  include 'step_util.php';
+
+  $CodeID = $_GET['CodeID'];
+  if ($_POST['problemID'] != "")
+    $CodeID = $_POST['CodeID'];
+
+  //print_form();
+
+  //if ($_POST['stage'] == 'process_py') {
+     process_py();
+  //}
+
+  comment();
+
+  step_list();
+
+  include 'common/footer.html'; 
+
+  function print_form() { ?>
+
+  <p class="heading">Trilinos WebSover - Matrix Generator Page</p>
+        
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+    <p class="subheading">General Settings:</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+
+      <tr>
+        <td>Code ID: </td>
+        <td><input type="text" name="codeID" value="<? global $CodeID; echo $CodeID; ?>" />
+      </tr>
+    </table>
+
+    <p class="subheading">Krylov Accelerator</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>Solver type: </td>
+        <td><input type="text" name="solver" value="gmres" />
+      </tr>
+      <tr>
+        <td>Maximum iterations: </td>
+        <td><input type="text" name="iters" value="1550" />
+      </tr>
+      <tr>
+        <td>Tolerance: </td>
+        <td><input type="text" name="tol" value="1e-9" />
+      </tr>
+    </table><br />
+
+    <p class="subheading">Aggregation</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? customParameter("aggregation: damping factor", "double", "1.333"); ?>
+    <? customParameter("aggregation: type", "string", "Uncoupled-MIS"); ?>
+    <? customParameter("aggregation: nodes per aggregate", "int", "512"); ?>
+    </table><br />
+
+
+    <p class="subheading">Smoothers</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+
+    <? customParameter("smoother: type", "string", "symmetric Gauss-Seidel"); ?>
+    <? customParameter("smoother: damping factor", "double", "0.67"); ?>
+    <? customParameter("smoother: sweeps", "int", "1"); ?>
+    <? customParameter("smoother: pre or post", "string", "both"); ?>
+    <? customParameter("", "", ""); ?>
+    </table><br />
+
+    <p class="subheading">Coarse Solver</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? customParameter("coarse: type", "string", "Amesos-KLU"); ?>
+    <? customParameter("coarse: max size", "int", "512"); ?>
+    </table><br />
+
+    <p class="subheading">Miscellanous</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? customParameter("aggregation: non-smoothed restriction", "bool", "false"); ?>
+    </table><br />
+
+    <!-- php marker for stage in form process -->
+    <input type="hidden" name="stage" value="process_iterative">
+    <input type="hidden" name="counter" value="<? global $counter; echo $counter; ?>">
+  
+    <table cellspacing="0" cellpadding="0"><tr>
+      <td style="width: 30%; padding: 5px;">
+        <input type="submit" name="processitButton" value="process" style="width: 100%;" /></td>
+    </tr></table>
+  </form>
+ 
+<? }
+
+function process_py() 
+{
+  $scriptString = "a = 12" . "\n";
+  $scriptString .= "print a" . "\n";
+
+  $timestamp = date("y-m-d_H.i.s", time());
+  mkdir("runs/$timestamp");
+  chmod("runs/$timestamp", 0775);
+
+  $scriptFile = fopen("runs/$timestamp/script.py", 'w')
+    or die("can't open runs/$timestamp/script.py: $php_errormsg");
+  if (-1 == fwrite($scriptFile, $scriptString)) {
+    die("can't write to runs/$timestamp/script.py: $php_errormsg"); }
+  fclose($scriptFile)
+    or die("can't close runs/$timestamp/script.py: $php_errormsg");
+  chmod("runs/$timestamp/config", 0664);
+
+  chdir("runs/$timestamp/config");
+
+  echo "<div class=\"outputBox\"><pre>";
+  $command .= "export LD_LIBRARY_PATH=/people_old/trilinos_www/shared-lib:\$LD_LIBRARY_PATH 2>&1 ; ";
+  $command .= "python /people_old/trilinos_www/htdocs/runs/$timestamp/script.py 2>&1";
+
+  passthru($command);
+  echo "&nbsp;<pre></div>";
+  chdir("/people_old/trilinos_www/htdocs/");
+} ?>

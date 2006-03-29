@@ -1,0 +1,201 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setFilename('input.html');
+  setTitle('Trilinos - WebSolver - Input Page');
+  setDir('./');
+  include 'common/header.html';
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos WebSover - Input Page</p>
+        
+  <!-- print form or process form? -->
+  <?php if ($_POST['stage'] != 'processInput') {
+    printInputForm();
+  } else {
+    processInputForm();
+  } ?>
+
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>
+
+<!-- ####################################################################### -->
+<!-- PHP Functions
+<!-- ####################################################################### -->
+
+<!-- ####################################################################### -->
+<!-- printInputForm() -->
+<!-- ####################################################################### -->
+
+<?php function printInputForm() { ?>
+  
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+    <p class="subheading">Variables:</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr><td>         
+        <label for="fileA">A</label>
+      </td><td>         
+        <input type="file" name="fileA" size="40" />
+      </td></tr>
+      
+      <tr><td>         
+        <label for="fileX">x (optional)</label>
+      </td><td>         
+        <input type="file" name="fileX" size="40" />
+      </td></tr>
+      
+      <tr><td>         
+        <label for="fileB">b (optional)</label>
+      </td><td>         
+        <input type="file" name="fileB" size="40" />
+      </td></tr>
+    </table><br />
+
+    <p class="subheading">Structure:</p>
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr><td>         
+        <input type="radio" name="structure" value="symmetric" />
+      </td><td>         
+        symmetric (a<sub>ij</sub> = a<sub>ji</sub> for all entries a<sub>ij</sub> in A)
+      </td></tr>
+      
+      <tr><td>         
+        <input type="radio" name="structure" value="non_symmetric" />
+      </td><td>         
+        non-symmetric
+      </td></tr>
+    </table><br />
+        
+    <p class="subheading">Properties:</p>
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr><td>         
+        <input type="radio" name="properties" value="positive_definite" />
+      </td><td>         
+        positive definite
+      </td></tr>
+      
+      <tr><td>         
+        <input type="radio" name="properties" value="semidefinite" />
+      </td><td>         
+        semidefinite
+      </td></tr>
+      
+      <tr><td>         
+        <input type="radio" name="properties" value="indefinite" />
+      </td><td>         
+        indefinite
+      </td></tr>
+      
+      <tr><td>         
+        <input type="radio" name="properties" value="diagonnaly_dominant" />
+      </td><td>         
+        diagonally dominant
+      </td></tr>
+    </table><br />
+    
+    <!-- php marker for stage in form process -->
+    <input type="hidden" name="stage" value="processInput">
+  
+    <table cellspacing="0" cellpadding="0"><tr>
+      <td style="width: 30%; padding: 5px;">
+        <input type="submit" name="solveitButton" value="Solve It" style="width: 100%;" /></td>
+      <td style="width: 30%; padding: 5px;">
+        <input type="submit" name="noviceButton" value="Novice (a few more options)" style="width: 100%;" /></td>
+      <td style="width: 30%; padding: 5px;">
+        <input type="submit" name="expertButton" value="Expert (all options)" style="width: 100%;" /></td>
+    </tr></table>
+
+  </form>
+  
+<?php } ?> <!-- printInputForm() -->
+
+<!-- ####################################################################### -->
+<!-- processInputForm() -->
+<!-- ####################################################################### -->
+
+<?php function processInputForm() {
+
+  $error = 0;
+  $errorText = "";
+  
+  $timestamp = date("y-m-d_H.i.s", time());
+  mkdir("runs/$timestamp");
+  chmod("runs/$timestamp", 0775);
+  
+  if (!is_uploaded_file($_FILES['fileA']['tmp_name'])) {
+    $errorText .= "Error: please supply a matrix file, A.<br />\n";
+    $error++;
+  } if (!$_POST['structure']) {
+    $errorText .= "Error: please select a description of the structure of the problem.<br />\n";
+    $error++;
+  } if (!$_POST['properties']) {
+    $errorText .= "Error: please select a description of the properties of the problem.<br />\n";
+    $error++;
+  }
+  
+  if ($error) {
+    ?>
+    <div class="errorBox">
+      <?php echo $errorText; ?>
+    </div>  
+    <?php
+  
+    $_POST['stage'] = "";
+    printInputForm();
+    return;
+  }
+  
+  $aFilename = "/people_old/trilinos_www/htdocs/runs/$timestamp/a_file";
+  move_uploaded_file($_FILES['fileA']['tmp_name'], $aFilename);
+  chmod($aFilename, 0664);
+  
+  if (is_uploaded_file($files['fileX']['tmp_name'])) {
+    $xFilename = "/people_old/trilinos_www/htdocs/runs/$timestamp/x_file";
+    move_uploaded_file($_FILES['fileX']['tmp_name'], $xFilename);
+    chmod($xFilename, 0664);
+    $xFilePresent = "yes";
+  } else {
+    $xFilePresent = "no";
+  }
+  
+  if (is_uploaded_file($files['fileB']['tmp_name'])) {
+    $bFilename = "/people_old/trilinos_www/htdocs/runs/$timestamp/b_file";
+    move_uploaded_file($_FILES['fileB']['tmp_name'], $bFilename);
+    chmod($bFilename, 0664);
+    $bFilePresent = "yes";
+  } else {
+    $bFilePresent = "no";
+  }
+  
+  $queryString = "?";
+  $queryString .= "timestamp=$timestamp&";
+  $queryString .= "filex=$xFilePresent&";
+  $queryString .= "fileb=$bFilePresent&";
+  $queryString .= "structure=".$_POST['structure']."&";
+  $queryString .= "properties=".$_POST['properties'];
+  
+  if ($_POST['solveitButton']) { ?>
+    <script language="JavaScript" type="text/javascript"> <!--
+      window.location = 'submit.html<?php echo $queryString; ?>';
+    //--> </script>
+  <?php }
+  
+  if ($_POST['noviceButton']) { ?>
+    <script language="JavaScript" type="text/javascript"> <!--
+      window.location = 'novice.html<?php echo $queryString; ?>';
+    //--> </script>
+  <?php }
+  
+  if ($_POST['expertButton']) { ?>
+    <script language="JavaScript" type="text/javascript"> <!--
+      window.location = 'expert.html<?php echo $queryString; ?>';
+    //--> </script>
+  <?php }
+    
+} ?> <!-- processInputForm() -->

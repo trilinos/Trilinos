@@ -1,0 +1,145 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setFilename('input.html');
+  setTitle('Trilinos - WebSolver - Matrix Generator Page');
+  setDir('./');
+  include 'common/header.html';
+  include 'step_util.php';
+
+  $ProblemIDs = $_POST['ProblemIDs'];
+  $Labels = $_POST['Labels'];
+
+  print_problem($Labels);
+
+  print_form();
+
+  step_list();
+
+  include 'common/footer.html'; 
+
+  function print_form() { ?>
+
+  <p>Values are as given in the ML guide. You can specify multiple values,
+  separated by the two characters "; ", for
+  at most <b>two</b> parameters.
+
+  <form action="step_3.html" enctype="multipart/form-data" method="post" name="inputForm">
+
+    <!-- ---------------------------------------------------------- -->
+    <p class="subheading">Linear Object Analysis:</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+
+      <tr>
+        <td>Analyze Matrix Elements: </td>
+        <td><input type="text" name="perform_analysis" value="False">
+      </tr>
+    </table>
+
+    <!-- ---------------------------------------------------------- -->
+    <p class="subheading">Scaling and Reordering:</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("scaling: type", "string", "NOT DONE"); ?>
+    <? fixed_parameter("reordering: type", "string", "NOT DONE"); ?>
+    </table>
+
+    <!-- ---------------------------------------------------------- -->
+    <p class="subheading">Direct Solution Methods</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <tr>
+       <td>Analyze Direct Solvers: </td>
+       <td><input type="text" name="perform_direct" value="False"></td>
+    </tr><tr>
+       <td>Solver type: </td>
+       <td><input type="text" name="solver" value="Amesos_KLU" />
+    </tr>
+    </table><br />
+
+    <!-- ---------------------------------------------------------- -->
+    <p class="subheading">Iterative Solution Methods</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr>
+      <td>Analyze Iterative Solvers: </td>
+      <td><input type="text" name="perform_iterative" value="False">
+      </tr>
+      <tr>
+        <td>Solver type: </td>
+        <td><input type="text" name="solver" value="gmres" />
+      </tr>
+      <tr>
+        <td>Maximum iterations: </td>
+        <td><input type="text" name="iters" value="1550" />
+      </tr>
+      <tr>
+        <td>Tolerance: </td>
+        <td><input type="text" name="tol" value="1e-9" />
+      </tr>
+    </table><br />
+
+    <p class="subheading">Matrix modifcations</p>
+  
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("add to diagonal", "double", "0.0"); ?>
+    </table><br />
+
+
+    <p class="subheading">Aggregation</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("aggregation: damping factor", "double", "1.333"); ?>
+    <? fixed_parameter("aggregation: type", "string", "Uncoupled-MIS"); ?>
+    <? fixed_parameter("aggregation: nodes per aggregate", "int", "512"); ?>
+    </table><br />
+
+
+    <p class="subheading">Smoothers</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+
+    <? fixed_parameter("smoother: type", "string", "symmetric Gauss-Seidel"); ?>
+    <? fixed_parameter("smoother: damping factor", "double", "0.67"); ?>
+    <? fixed_parameter("smoother: sweeps", "int", "1"); ?>
+    <? fixed_parameter("smoother: pre or post", "string", "both"); ?>
+    </table><br />
+
+    <p class="subheading">Coarse Solver</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("coarse: type", "string", "Amesos-KLU"); ?>
+    <? fixed_parameter("coarse: max size", "int", "512"); ?>
+    </table><br />
+
+    <p class="subheading">Miscellanous</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("aggregation: non-smoothed restriction", "bool", "false"); ?>
+    </table><br />
+
+    <p class="subheading">User's Defined Parameters</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    </table><br />
+
+    <!-- php marker for stage in form process -->
+    <input type="hidden" name="stage" value="process_iterative">
+    <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+    <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>">
+    <input type="hidden" name="counter" value="<? global $counter; echo $counter; ?>">
+  
+    <table cellspacing="0" cellpadding="0"><tr>
+      <td style="width: 30%; padding: 5px;">
+        <input type="submit" name="processitButton" value="go to step 3" style="width: 100%;" /></td>
+    </tr></table>
+  </form>
+ 
+<? } ?>

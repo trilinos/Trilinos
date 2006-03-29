@@ -1,0 +1,37 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setFilename('input.html');
+  setTitle('Trilinos - WebSolver - Matrix Generator Page');
+  setDir('./');
+  include 'common/header.html';
+  include 'step_util.php';
+
+  $ProblemIDs = $_POST['ProblemIDs'];
+  $Labels = $_POST['Labels'];
+
+  print_problem($Labels);
+
+  if ($_POST['stage'] == 'process_iterative') {
+    if ($_POST['perform_analysis'] == "True")
+      $analysis = 1;
+    else
+      $analysis = 0;
+    if ($_POST['perform_direct'] == "True")
+      $direct = 1;
+    else
+       $direct = 0;
+    if ($_POST['perform_iterative'] == "True")
+      $iterative = 1;
+    else 
+      $iterative = 0;
+
+     process($analysis, $direct, $iterative);
+  }
+
+  step_list();
+
+  include 'common/footer.html'; 
+
+?>

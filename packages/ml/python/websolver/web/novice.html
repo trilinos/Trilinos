@@ -1,0 +1,131 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setFilename('novice.html');
+  setTitle('Trilinos - WebSolver - Novice Page');
+  setDir('./');
+  include 'common/header.html';
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos WebSover - Novice Page</p>
+        
+  <!-- print form or process form? -->
+  <?php if ($_POST['stage'] != 'processInput') {
+    printInputForm();
+  } else {
+    processInputForm();
+  } ?>
+
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>
+
+<!-- ####################################################################### -->
+<!-- PHP Functions
+<!-- ####################################################################### -->
+
+<!-- ####################################################################### -->
+<!-- printInputForm() -->
+<!-- ####################################################################### -->
+
+<?php function printInputForm() { ?>
+  
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+    <p class="subheading">Smoother:</p>
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr><td>         
+        <input type="checkbox" name="smoother[]" value="symmetric_gauss-seidel" />
+      </td><td>         
+        symmetric Gauss-Seidel
+      </td></tr>
+      
+      <tr><td>         
+        <input type="checkbox" name="smoother[]" value="mls" />
+      </td><td>         
+        MLS
+      </td></tr>
+    </table><br />
+
+    <p class="subheading">Coarse Grid Solver:</p>
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr><td>         
+        <input type="checkbox" name="solver[]" value="KLU" />
+      </td><td>
+        KLU
+      </td></tr>
+      
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr><td>         
+        <input type="checkbox" name="solver[]" value="symmetric_gauss-seidel" />
+      </td><td>         
+        symmetric Gauss-Seidel
+      </td></tr>
+      
+      <tr><td>         
+        <input type="checkbox" name="solver[]" value="mls" />
+      </td><td>         
+        MLS
+      </td></tr>
+    </table><br />
+    
+    <!-- php marker for stage in form process -->
+    <input type="hidden" name="stage" value="processInput">
+  
+    <table cellspacing="0" cellpadding="0"><tr>
+      <td style="width: 30%; padding: 5px;">
+        <input type="submit" name="solveitButton" value="Solve It" style="width: 100%;" /></td>
+    </tr></table>
+
+  </form>
+  
+<?php } ?> <!-- printInputForm() -->
+
+<!-- ####################################################################### -->
+<!-- processInputForm() -->
+<!-- ####################################################################### -->
+
+<?php function processInputForm() {
+
+  $error = 0;
+  $errorText = "";
+  
+  if (!$_POST['smoother']) {
+    $errorText .= "Error: please select at least one smoother.<br />\n";
+    $error++;
+  } if (!$_POST['solver']) {
+    $errorText .= "Error: please select at least one coarse grid solver.<br />\n";
+    $error++;
+  }
+
+  if ($error) {
+    ?>
+    <div class="errorBox">
+      <?php echo $errorText; ?>
+    </div>  
+    <?php
+  
+    $_POST['stage'] = "";
+    printInputForm();
+    return;
+  }
+  
+  $queryString = "?";
+  $queryString .= "timestamp=".$_GET['timestamp']."&";
+  $queryString .= "filex=".$_GET['filex']."&";
+  $queryString .= "fileb=".$_GET['fileb']."&";
+  $queryString .= "structure=".$_GET['structure']."&";
+  $queryString .= "properties=".$_GET['properties']."&";
+  $queryString .= "smoother=".join(",", $_POST['smoother'])."&";
+  $queryString .= "solver=".join(",", $_POST['solver']);
+  
+  ?>
+  <script language="JavaScript" type="text/javascript"> <!--
+    window.location = 'submit.html<?php echo $queryString; ?>';
+  //--> </script>
+  <?php
+    
+} ?> <!-- processInputForm() -->
