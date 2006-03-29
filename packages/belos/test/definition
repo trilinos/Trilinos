@@ -18,8 +18,10 @@
 (FRAMEWORK,INSTALL) {
     TESTS = BlockGmres/bl_gmres_hb.exe,
             BlockGmres/bl_pgmres_hb.exe;
+	    BlockGmres/bl_fgmres_hb.exe;
+            BlockGmres/bl_gmres_complex_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = -v $ABS_TOP_SRCDIR/packages/belos/test/BlockGmres/orsirr1.hb;
+    ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
 

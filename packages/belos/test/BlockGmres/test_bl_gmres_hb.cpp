@@ -44,61 +44,71 @@
 #include "createEpetraProblem.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
+  //
 #ifdef EPETRA_MPI	
   MPI_Init(&argc,&argv);
   Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
 #endif	
   //
+  typedef double                            ST;
+  typedef Teuchos::ScalarTraits<ST>        SCT;
+  typedef SCT::magnitudeType                MT;
+  typedef Epetra_MultiVector                MV;
+  typedef Epetra_Operator                   OP;
+  typedef Belos::MultiVecTraits<ST,MV>     MVT;
+  typedef Belos::OperatorTraits<ST,MV,OP>  OPT;
+
   using Teuchos::ParameterList;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
   Teuchos::Time timer("Belos");	
+
+  bool verbose = 0;
+  int blocksize = 1;
+  int numrhs = 1;
+  int numrestarts = 15; // number of restarts allowed 
+  std::string filename("orsirr1.hb");
+  MT tol = 1.0e-5;  // relative residual tolerance
+
+  Teuchos::CommandLineProcessor cmdp(false,true);
+  cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+  cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for GMRES solver.");
+  cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
+    return -1;
+  }
   //
   // Get the problem
   //
   RefCountPtr<Epetra_CrsMatrix> A;
   RefCountPtr<Epetra_MultiVector> B, X;
   int MyPID;
-  bool verbose;
-  int return_val =Belos::createEpetraProblem(argc,argv,NULL,&A,&B,&X,&MyPID,&verbose);
+  int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
-  //
-  // Solve using Belos
-  //
-  typedef Belos::Operator<double> OP;
-  typedef Belos::MultiVec<double> MV;
-  //
-  // Construct a Belos::Operator instance through the Epetra interface.
-  //
-  Belos::EpetraOp Amat( A );
+  const Epetra_Map &Map = A->RowMap();
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
   const int NumGlobalElements = B->GlobalLength();
-  int numrhs = 1;  // total number of right-hand sides to solve for
-  int block = 1;  // blocksize used by solver
-  int numrestarts = 3; // number of restarts allowed 
-  int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
-  double tol = 1.0e-6;  // relative residual tolerance
+  int maxits = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
   ParameterList My_PL;
   My_PL.set( "Length", maxits );  // Maximum number of blocks in Krylov factorization
   //
-  // Construct the right-hand side and solution multivectors.
-  //
-  Belos::EpetraMultiVec rhs(*B);
-  Belos::EpetraMultiVec soln(*X);
-  //
   // Construct an unpreconditioned linear problem instance.
   //
   Belos::LinearProblem<double,MV,OP>
-	My_LP( rcp(&Amat, false), rcp(&soln,false), rcp(&rhs,false));
-  My_LP.SetBlockSize( block );
+	My_LP( A, X, B );
+  My_LP.SetBlockSize( blocksize );
   //
   // *******************************************************************
   // *************Start the block Gmres iteration*************************
@@ -114,39 +124,59 @@ int main(int argc, char *argv[]) {
   
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
-	My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
   
   Belos::BlockGmres<double,MV,OP>
-	MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
+    MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
   
   //
   // **********Print out information about problem*******************
   //
   if (verbose) {
-	cout << endl << endl;
-	cout << "Dimension of matrix: " << NumGlobalElements << endl;
-	cout << "Number of right-hand sides: " << numrhs << endl;
-	cout << "Block size used by solver: " << block << endl;
-	cout << "Number of restarts allowed: " << numrestarts << endl;
-	cout << "Max number of Gmres iterations per restart cycle: " << maxits << endl; 
-	cout << "Relative residual tolerance: " << tol << endl;
-	cout << endl;
+    cout << endl << endl;
+    cout << "Dimension of matrix: " << NumGlobalElements << endl;
+    cout << "Number of right-hand sides: " << numrhs << endl;
+    cout << "Block size used by solver: " << blocksize << endl;
+    cout << "Number of restarts allowed: " << numrestarts << endl;
+    cout << "Max number of Gmres iterations per restart cycle: " << maxits << endl; 
+    cout << "Relative residual tolerance: " << tol << endl;
+    cout << endl;
   }
   //
   //
   if (verbose) {
-	cout << endl << endl;
-	cout << "Running Block Gmres -- please wait" << endl;
-	cout << (numrhs+block-1)/block 
-		 << " pass(es) through the solver required to solve for " << endl; 
-	cout << numrhs << " right-hand side(s) -- using a block size of " << block
-		 << endl << endl;
-  }
-  
+    cout << endl << endl;
+    cout << "Running Block Gmres -- please wait" << endl;
+    cout << (numrhs+blocksize-1)/blocksize 
+	 << " pass(es) through the solver required to solve for " << endl; 
+    cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
+	 << endl << endl;
+  }  
+
+  //
+  // Perform solve
+  //
   timer.start(true);
   MyBlockGmres.Solve();
-  timer.stop();
- 
+  timer.stop();  
+
+  //
+  // Compute actual residuals.
+  //
+  std::vector<double> actual_resids( numrhs );
+  std::vector<double> rhs_norm( numrhs );
+  Epetra_MultiVector resid(Map, numrhs);
+  OPT::Apply( *A, *X, resid );
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
+  MVT::MvNorm( resid, &actual_resids );
+  MVT::MvNorm( *B, &rhs_norm );
+  if (verbose) {
+    cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
+    for ( int i=0; i<numrhs; i++) {
+      cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
+    }
+  }
+
   if (verbose) {
     cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
