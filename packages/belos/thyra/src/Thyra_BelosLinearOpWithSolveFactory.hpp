@@ -31,6 +31,8 @@ const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxRestarts_name = "Max
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockSize_name = "Block Size";
 template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::AdjustableBlockSize_name = "Adjustable Block Size";
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_name = "Default Rel Res Norm";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_name = "GMRES";
@@ -44,8 +46,8 @@ template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputFrequency_name = "Output Frequency";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResOnly_name = "Output Max Res Only";
-template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::Preconditioner_name = "Preconditioner";
+//template<class Scalar>
+//const std::string BelosLinearOpWithSolveFactory<Scalar>::Preconditioner_name = "Preconditioner";
 
 // Constructors/initializers/accessors
 
@@ -78,9 +80,15 @@ void BelosLinearOpWithSolveFactory<Scalar>::setPreconditionerFactory(
   )
 {
   TEST_FOR_EXCEPT(!precFactory.get());
-  TEST_FOR_EXCEPT(!(precFactoryName.length()>0));
+  Teuchos::RefCountPtr<const Teuchos::ParameterList>
+    precFactoryValidPL = precFactory->getValidParameters();
+  const std::string _precFactoryName =
+    ( precFactoryName.length()
+      ? precFactoryName
+      : ( precFactoryValidPL.get() ? precFactoryValidPL->name() : "GENERIC PRECONDITIONER FACTORY" )
+      );
   precFactory_ = precFactory;
-  precFactoryName_ = precFactoryName;
+  precFactoryName_ = precFactoryName; // Remember what the user actually passed in!
   updateThisValidParamList();
 }
 
@@ -123,7 +131,7 @@ template<class Scalar>
 void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &fwdOp
   ,LinearOpWithSolveBase<Scalar>                             *Op
-  ,const ESupportSolveUse                                     supportSolveUse
+  ,const ESupportSolveUse                                    supportSolveUse
   ) const
 {
 
@@ -289,6 +297,9 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
     if(paramList_.get()) {
       gmresPL = Teuchos::sublist(paramList_,GMRES_name);
     }
+    else {
+      gmresPL = Teuchos::rcp(new Teuchos::ParameterList()); // BlockGmres requires a PL!
+    }
     iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
   }
   else {
@@ -297,7 +308,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   // Initialize the LOWS object
   //
-  belosOp->initialize(lp,resNormST,iterativeSolver,outputManager);
+  const bool adjustableBlockSize = ( paramList_.get() ? paramList_->get(AdjustableBlockSize_name,bool(true)) : true );
+  belosOp->initialize(lp,adjustableBlockSize,resNormST,iterativeSolver,outputManager,prec,false,Teuchos::null,supportSolveUse);
 #ifdef _DEBUG
   if(paramList_.get()) {
     // Make sure we read the list correctly
@@ -356,7 +368,23 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
-  TEST_FOR_EXCEPT(true);
+  BelosLinearOpWithSolve<Scalar>
+    &belosOp = Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > 
+    _fwdOp = belosOp.extract_fwdOp();
+  Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >
+    _prec = ( belosOp.isExternalPrec() ? belosOp.extract_prec() : Teuchos::null );
+  // Note: above we only extract the preconditioner if it was passed in
+  // externally.  Otherwise, we need to hold on to it so that we can reuse it
+  // in the next initialization.
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+    _approxFwdOp = belosOp.extract_approxFwdOp();
+  ESupportSolveUse
+    _supportSolveUse = belosOp.supportSolveUse();
+  if(fwdOp) *fwdOp = _fwdOp;
+  if(prec) *prec = _prec;
+  if(approxFwdOp) *approxFwdOp = _approxFwdOp;
+  if(supportSolveUse) *supportSolveUse = _supportSolveUse;
 }
 
 // Overridden from ParameterListAcceptor
@@ -405,7 +433,10 @@ template<class Scalar>
 std::string BelosLinearOpWithSolveFactory<Scalar>::description() const
 {
   std::ostringstream oss;
-  TEST_FOR_EXCEPT(true);
+  oss << "Thyra::BelosLinearOpWithSolveFactory";
+  oss << "{";
+  // ToDo: Fill this in some!
+  oss << "}";
   return oss.str();
 }
 
@@ -417,11 +448,12 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
 {
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
-    validParamList = Teuchos::rcp(new Teuchos::ParameterList("Thyra::BelosLinearOpWithSolveFactory"));
+    validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
     validParamList->set(SolverType_name,GMRES_name);
     validParamList->set(MaxIters_name,int(400));
     validParamList->set(MaxRestarts_name,int(25));
-    validParamList->set(BlockSize_name,1);
+    validParamList->set(BlockSize_name,int(1));
+    validParamList->set(AdjustableBlockSize_name,bool(true));
     validParamList->set(DefaultRelResNorm_name,double(1e-6));
     Teuchos::ParameterList
       &gmresSL = validParamList->sublist(GMRES_name);
@@ -445,7 +477,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
     Teuchos::RefCountPtr<const Teuchos::ParameterList>
       precFactoryValidParamList = precFactory_->getValidParameters();
     if(precFactoryValidParamList.get()) {
-      thisValidParamList_->set(Preconditioner_name,precFactoryName_);
+      //thisValidParamList_->set(Preconditioner_name,precFactoryName_);
       thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
     }
   }

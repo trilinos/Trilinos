@@ -33,6 +33,8 @@ public:
   /** \brief . */
   static const std::string BlockSize_name;
   /** \brief . */
+  static const std::string AdjustableBlockSize_name;
+  /** \brief . */
   static const std::string DefaultRelResNorm_name;
   /** \brief . */
   static const std::string GMRES_name;
@@ -47,7 +49,7 @@ public:
   /** \brief . */
   static const std::string Outputter_OutputMaxResOnly_name;
   /** \brief . */
-  static const std::string Preconditioner_name;
+  //static const std::string Preconditioner_name;
 
   //@}
 

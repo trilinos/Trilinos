@@ -10,12 +10,12 @@ CXXFLAGS="-g -O0 -ansi -pedantic -Wall" \
 CFLAGS="-g -O0  -ansi -pedantic -Wall -fexceptions" \
 FFLAGS="-g -O0 " \
 FLIBS="-lg2c" \
---with-libs="-L`pwd`/MoochoExtern/HSL -lHSL" \
+--with-libs="-L`pwd`/MoochoExtern/HSL -lHSL -lexpat" \
 --with-incdirs=-I/home/rabartl/PROJECTS/install-dir/gcc-3.4.3/boost-1.32.0/include/boost-1_32 \
 --enable-export-makefiles \
 --with-gnumake \
 --disable-default-packages \
---enable-teuchos --enable-teuchos-extended --enable-teuchos-abc --enable-teuchos-boost \
+--enable-teuchos --enable-teuchos-extended --enable-teuchos-expat --enable-teuchos-abc --enable-teuchos-boost \
 --enable-thyra \
 --enable-epetra \
 --enable-epetraext \

@@ -8,38 +8,141 @@
 
 namespace Thyra {
 
+namespace PrivateUtilities {
+
+template<class LP>
+class BelosLinearProblemTempBlockSizeSetter {
+public:
+  BelosLinearProblemTempBlockSizeSetter( const Teuchos::RefCountPtr<LP> &lp, const int newBlockSize )
+    :lp_(lp), oldBlockSize_(lp->GetBlockSize())
+    {
+      lp_->SetBlockSize(newBlockSize);
+    }
+  ~BelosLinearProblemTempBlockSizeSetter()
+    {
+      lp_->SetBlockSize(oldBlockSize_);
+    }
+private:
+  Teuchos::RefCountPtr<LP> lp_;
+  int                      oldBlockSize_;
+  // Not defined and not to be called
+  BelosLinearProblemTempBlockSizeSetter();
+  BelosLinearProblemTempBlockSizeSetter(const BelosLinearProblemTempBlockSizeSetter&);
+  BelosLinearProblemTempBlockSizeSetter& operator=(const BelosLinearProblemTempBlockSizeSetter&);
+};
+
+}
+
 // Constructors/initializers/accessors
 
 template<class Scalar>
 BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
+  :isExternalPrec_(false)
+  ,supportSolveUse_(SUPPORT_SOLVE_UNSPECIFIED)
+  ,defaultTol_(-1.0)
 {}
 
 template<class Scalar>
 BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
+  ,const bool                                                                 adjustableBlockSize
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
   ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
+  ,const bool                                                                 isExternalPrec
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    &approxFwdOp
+  ,const ESupportSolveUse                                                     &supportSolveUse
   )
 {
-  initialize(lp,resNormST,iterativeSolver,outputManager);
+  initialize(lp,adjustableBlockSize,resNormST,iterativeSolver,outputManager,prec,isExternalPrec,approxFwdOp,supportSolveUse);
 }
 
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::initialize(
   const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
+  ,const bool                                                                 adjustableBlockSize
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
   ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
+  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              &prec
+  ,const bool                                                                 isExternalPrec
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    &approxFwdOp
+  ,const ESupportSolveUse                                                     &supportSolveUse
   )
 {
   this->setLinePrefix("BELOS/T");
   // ToDo: Validate input
   lp_ = lp;
+  adjustableBlockSize_ = adjustableBlockSize;
   resNormST_ = resNormST;
   iterativeSolver_ = iterativeSolver;
   outputManager_ = outputManager;
+  prec_ = prec;
+  isExternalPrec_ = isExternalPrec;
+  approxFwdOp_ = approxFwdOp;
+  supportSolveUse_ = supportSolveUse;
   defaultTol_ = resNormST_->GetTolerance(); // We need to remember this!
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+BelosLinearOpWithSolve<Scalar>::extract_fwdOp()
+{
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > _fwdOp;
+  if(lp_.get()) {
+    _fwdOp = lp_->GetOperator();
+    lp_->SetOperator(Teuchos::null);
+  }
+  return _fwdOp;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >
+BelosLinearOpWithSolve<Scalar>::extract_prec()
+{
+  Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >
+    _prec = prec_;
+  prec_ = Teuchos::null;
+  return _prec;
+}
+
+template<class Scalar>
+bool BelosLinearOpWithSolve<Scalar>::isExternalPrec() const
+{
+  return isExternalPrec_;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+BelosLinearOpWithSolve<Scalar>::extract_approxFwdOp()
+{
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+    _approxFwdOp = approxFwdOp_;
+  approxFwdOp_ = Teuchos::null;
+  return _approxFwdOp;
+}
+
+template<class Scalar>
+ESupportSolveUse BelosLinearOpWithSolve<Scalar>::supportSolveUse() const
+{
+  return supportSolveUse_;
+}
+
+template<class Scalar>
+void BelosLinearOpWithSolve<Scalar>::uninitialize(
+  Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp
+  ,bool                                                                 *adjustableBlockSize
+  ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST
+  ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver
+  ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager
+  ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              *prec
+  ,bool                                                                 *isExternalPrec
+  ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    *approxFwdOp
+  ,ESupportSolveUse                                                     *supportSolveUse
+  )
+{
+  TEST_FOR_EXCEPT(true);
 }
 
 // Overridden from LinearOpBase
@@ -199,7 +302,28 @@ void BelosLinearOpWithSolve<Scalar>::solve(
 
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\" ...\n\n";
-  
+
+  //
+  // Temporarily reset the blocksize if we are allowed to due so
+  //
+  const int numRhs = B.domain()->dim();
+  const int numEquations = B.range()->dim();
+  const int currBlockSize = lp_->GetBlockSize();
+  const int newBlockSize =
+    ( adjustableBlockSize_
+      ? TEUCHOS_MIN(numRhs,TEUCHOS_MIN(currBlockSize,numEquations/2))
+      // Above: Don't add more vectors than are in the RHS and don't add more
+      // vectors than half the number of equations or orthogonalization will
+      // fail on the first iteration!
+      : currBlockSize
+      // Above: Just use the user-set block size
+      );
+  // Note: Above, we may also need to adjust the block size to be an even
+  // multiple of the number of RHS.  Also, it would be good if
+  // Belos::LinearProblem itself allowed for dynamic resizing of the block
+  // size between restarts.
+  PrivateUtilities::BelosLinearProblemTempBlockSizeSetter<Belos::LinearProblem<Scalar,MV_t,LO_t> >
+    tempBlockSizeSetter(lp_,newBlockSize);
   //
   // Set RHS and LHS
   //
