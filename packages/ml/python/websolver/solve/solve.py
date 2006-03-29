@@ -81,7 +81,7 @@ def main():
   # sets up the parameters for ML using a python dictionary
   mlList = {}
   
-  mlList['output'] = 0
+  mlList['output'] = 10
   
   if config.has_key('SMOOTHER_TYPE') and config['SMOOTHER_TYPE']:
     mlList['smoother: type'] = config['SMOOTHER_TYPE']
