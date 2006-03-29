@@ -8,33 +8,39 @@
 #
 (FRAMEWORK,INSTALL) {
     TESTS = BlockCG/bl_cg_hb.exe,
-            BlockCG/bl_pcg_hb.exe,
-            BlockCG/bl_cg_complex.exe;
+            BlockCG/bl_pcg_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose;
+    ARGS = --verbose --filename="./BlockCG/bcsstk14.hb";
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL) {
     TESTS = BlockGmres/bl_gmres_hb.exe,
             BlockGmres/bl_pgmres_hb.exe,
-	          BlockGmres/bl_fgmres_hb.exe,
-            BlockGmres/bl_gmres_complex_hb.exe;
+	    BlockGmres/bl_fgmres_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose;
-    COMM = SERIAL, MPI;
-}
-
-(FRAMEWORK,INSTALL) {
-    TESTS = BlockGmres/bl_gmres_complex_hb.exe;
-    EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename="mhd1280a.cua" --subspace-length=200 --tol=1e-4;
+    ARGS = --verbose --filename="./BlockGmres/orsirr1.hb";
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL) {
     TESTS = BlockGmres/bl_gmres_diag.exe;
     EXIT-STATUS = STRING-COMPARISON;
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockCG/bl_cg_complex_hb.exe,
+            BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockCG/mhd1280b.cua";
+    COMM = SERIAL, MPI;
+}
+
+(FRAMEWORK,INSTALL) {
+    TESTS = BlockGmres/bl_gmres_complex_hb.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --verbose --filename="./BlockGmres/mhd1280a.cua" --subspace-length=200 --tol=1e-4;
     COMM = SERIAL, MPI;
 }
 
@@ -48,7 +54,7 @@
 (FRAMEWORK,INSTALL) {
     TESTS = MVOPTester/MVOPComplexTester_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose;
+    ARGS = --verbose --filename="./MVOPTester/mhd1280b.cua";
     COMM = SERIAL, MPI;
 }
 
