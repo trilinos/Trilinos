@@ -2,6 +2,7 @@
 import os
 import sys
 import re
+import string
 import Numeric
 
 import setpath
@@ -13,29 +14,58 @@ import IFPACK
 import Amesos
 import Galeri
 
+comm = Epetra.PyComm()
+  
+def set_type(List, name, type, value):  
+  if (type == 'int'):
+    List[name] = int(value);
+  elif (type == 'string'):
+    List[name] = value;
+  elif (type == 'double'):
+    List[name] = float(value);
+  elif (type == 'bool'):
+    List[name] = bool(value);
+  elif (type == ''):
+    donothing = ""
+  else:
+    print "Type ", type, " not recognized"
+
 # -------------------------------------------------------------------------
 def generator(problemID, comm):
-  if (problemID == "Laplace2D_100_100"):
-    GaleriList = {
-      "nx": 100,
-      "ny": 100,
-      "mx": 1,
-      "my": 1
-    }
+  GaleriList = {}
+  if problemID[0:3] == "MM_":
+    FileName = "/people_old/trilinos_www/matrices/" + problemID[3:];
+    Map, Matrix, LHS, RHS, ExactSolution = Galeri.ReadHB(FileName, comm);
 
-    Map = Galeri.CreateMap("Cartesian2D", comm, GaleriList);
+  else:
+    parts = string.split(problemID, '_');
+    ProblemType = parts[0];
+    for i in range(1, len(parts)):
+      p2 = string.split(parts[i], '=')
+      type = p2[0][0];
+      name = p2[0][1:]
+      value = p2[1];
+      if (type == "i"):
+        GaleriList[name] = int(value);
+      elif type == "d":
+        GaleriList[name] = float(value);
+      elif type == "s":
+        GaleriList[name] = value;
+    
+    if string.find(ProblemType, '2D') != -1:
+      MapType = "Cartesian2D";
+    elif string.find(ProblemType, '3D') != -1:
+      MapType = "Cartesian3D"
 
-    Matrix = Galeri.CreateCrsMatrix("Laplace2D", Map, GaleriList);
+    Map = Galeri.CreateMap(MapType, comm, GaleriList);
+
+    Matrix = Galeri.CreateCrsMatrix(ProblemType, Map, GaleriList);
 
     LHS = Epetra.Vector(Map);
     RHS = Epetra.Vector(Map);
     ExactSolution = Epetra.Vector(Map); ExactSolution.Random();
     Matrix.Apply(ExactSolution, RHS);
     LHS.PutScalar(0.0);
-
-  elif (problemID == "bcsstk13"):
-    FileName = "/people_old/trilinos_www/matrices/bcsstk13.rsa";
-    Map, Matrix, LHS, RHS, ExactSolution = Galeri.ReadHB(FileName, comm);
 
   return(Map, Matrix, LHS, RHS, ExactSolution);
 
@@ -101,50 +131,86 @@ def main():
   
   List = {}
 
-  problemID = config['PROBLEM_ID'];
-  step = config['STEP'];
+  step = sys.argv[2]
 
-  if step == 'step_2':
+  if step == 'analyze':
     counter = 0;
     donothing = 0;
-  elif step == 'step_3i':
+  elif step == 'iterative':
     counter = int(config['COUNTER']);
     List['solver'] = config['SOLVER'];
     List['iters'] = int(config['ITERS']);
     List['tol'] = float(config['TOL']);
-  elif step == 'step_3d':
+  elif step == 'direct':
     counter = int(config['COUNTER']);
     List['solver'] = config['SOLVER'];
 
+  study_parameter = {}
+
   for i in range(1,counter-1):
-    name = config['__PyTrilinos__name' + str(i)];
-    type = config['__PyTrilinos__type' + str(i)];
+    type_and_name = config['__PyTrilinos__name' + str(i)];
+    type = type_and_name[0:type_and_name.find(':')]
+    name = type_and_name[type_and_name.find(':')+1:]
     value = config['__PyTrilinos__value' + str(i)];
 
-    if (type == 'int'):
-      List[name] = int(value);
-    elif (type == 'string'):
-      List[name] = value;
-    elif (type == 'double'):
-      List[name] = float(value);
-    elif (type == ''):
-      continue;
-    else:
-      print "Type ", type, " not recognized"
+    if len(value.split('; ')) > 1:
+      study_parameter[type_and_name] = value
+    else:  
+      set_type(List, name, type, value)
 
   # Construct the problem =====================================================
 
-  comm = Epetra.PyComm()
+  print '>>> ', config['PROBLEM_ID']
+  problemIDs = config['PROBLEM_ID'].split(":");
   
-  (Map, Matrix, LHS, RHS, ExactSolution) = generator(problemID, comm);
+  for problemID in problemIDs:
+    if problemID == '':
+      continue;
+    print '### PROBLEM ', problemID, ' ###'
+    print problemID
+    (Map, Matrix, LHS, RHS, ExactSolution) = generator(problemID, comm);
 
+    if step == 'analyze':
+      analyze(Map, Matrix, LHS, RHS, ExactSolution);
+    elif step == 'iterative':
+      if len(study_parameter.keys()) == 0:
+        iterative(Map, Matrix, LHS, RHS, ExactSolution, List);
+      elif len(study_parameter.keys()) == 1:
+        type_and_name = study_parameter.keys()[0]
 
-  if step == 'step_2':
-    analyze(Map, Matrix, LHS, RHS, ExactSolution);
-  elif step == 'step_3i':
-    iterative(Map, Matrix, LHS, RHS, ExactSolution, List);
-  elif step == 'step_3d':
-    direct(Map, Matrix, LHS, RHS, ExactSolution, List);
+        type = type_and_name[0:type_and_name.find(':')]
+        name = type_and_name[type_and_name.find(':')+1:]
+        for value in study_parameter[type_and_name].split('; '):
+          print 'KEY = ', name, ' VALUE = ', value
+          set_type(List, name, type, value)
+          print 'ATTENTION: ZERO INITIAL SOL'
+          LHS.PutScalar(0.0)
+          iterative(Map, Matrix, LHS, RHS, ExactSolution, List);
+      elif len(study_parameter.keys()) == 2:
+        type_and_name0 = study_parameter.keys()[0]
+        type_and_name1 = study_parameter.keys()[1]
+
+        type0 = type_and_name0[0:type_and_name0.find(':')]
+        name0 = type_and_name0[type_and_name0.find(':')+1:]
+
+        type1 = type_and_name1[0:type_and_name1.find(':')]
+        name1 = type_and_name1[type_and_name1.find(':')+1:]
+
+        for value0 in study_parameter[type_and_name0].split('; '):
+          for value1 in study_parameter[type_and_name1].split('; '):
+            print 'KEY_0 = ', name0, ' VALUE_0 = ', value0
+            print 'KEY_1 = ', name1, ' VALUE_1 = ', value1
+
+            set_type(List, name0, type0, value0)
+            set_type(List, name1, type1, value1)
+
+            print 'ATTENTION: ZERO INITIAL SOL'
+            LHS.PutScalar(0.0)
+            iterative(Map, Matrix, LHS, RHS, ExactSolution, List);
+      else:
+        print 'THIS IS ONLY ALLOWED WITH ONE or TWO PARAMETER'
+    elif step == 'direct':
+      direct(Map, Matrix, LHS, RHS, ExactSolution, List);
 
 # -------------------------------------------------------------------------
 if __name__ == "__main__":

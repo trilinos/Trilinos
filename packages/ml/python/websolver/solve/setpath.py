@@ -49,6 +49,13 @@ epetraextPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
   "SERIAL", "packages", "epetraext", "python", "src", "build", libDir, "PyTrilinos"))
 aztecooPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
   "SERIAL", "packages", "aztecoo", "python", "src", "build", libDir, "PyTrilinos"))
+galeriPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
+  "SERIAL", "packages", "galeri", "python", "src", "build", libDir, "PyTrilinos"))
+ifpackPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
+  "SERIAL", "packages", "ifpack", "python", "src", "build", libDir, "PyTrilinos"))
+amesosPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
+  "SERIAL", "packages", "amesos", "python", "src", "build", libDir, "PyTrilinos"))
+
 
 # Insert the full path to the build library directory
 # at the beginning of the python search path
@@ -60,3 +67,9 @@ if epetraextPath:
     sys.path.insert(2,epetraextPath)
 if aztecooPath:
     sys.path.insert(3,aztecooPath)
+if galeriPath:
+    sys.path.insert(4,galeriPath)
+if ifpackPath:
+    sys.path.insert(5,ifpackPath)
+if amesosPath:
+    sys.path.insert(6,amesosPath)
