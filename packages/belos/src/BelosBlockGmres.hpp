@@ -1112,7 +1112,6 @@ namespace Belos {
     int i, j, maxidx;
     ScalarType sigma, mu, vscale, maxelem;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    ScalarType temp = zero;
 
     Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
@@ -1134,22 +1133,17 @@ namespace Belos {
 	  //
 	  // Apply previous Givens rotations to new column of Hessenberg matrix
 	  //
-	  temp = cs[i]*R(i,_iter) + sn[i]*R(i+1,_iter);
-	  R(i+1,_iter) = -Teuchos::ScalarTraits<ScalarType>::conjugate(sn[i])*R(i,_iter) 
-	               + cs[i]*R(i+1,_iter);
-	  R(i,_iter) = temp;
+	  blas.ROT( 1, &R(i,_iter), 1, &R(i+1, _iter), 1, &cs[i], &sn[i] );
 	}
 	//
 	// Calculate new Givens rotation
 	//
-	lapack.LARTG( R(_iter,_iter), R(_iter+1,_iter), &cs[_iter], &sn[_iter], &temp );
-	R(_iter,_iter) = temp;
+	blas.ROTG( &R(_iter,_iter), &R(_iter+1,_iter), &cs[_iter], &sn[_iter] );
 	R(_iter+1,_iter) = zero;
 	//
 	// Update RHS w/ new transformation
 	//
-	z(_iter+1,0) = -Teuchos::ScalarTraits<ScalarType>::conjugate(sn[_iter])*z(_iter,0);
-	z(_iter,0) = cs[_iter]*z(_iter,0);
+	blas.ROT( 1, &z(_iter,0), 1, &z(_iter+1,0), 1, &cs[_iter], &sn[_iter] );
       } 
     else
       {
