@@ -70,12 +70,17 @@ B_(B)
 int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
                      const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
 {
-  if (!iscomputed_) ML_THROW("Method Compute() must be called before Apply()", -1);
+  if (!iscomputed_)
+  {
+    MOERTEL::Mortar_ML_Preconditioner& tmp = 
+                       const_cast<MOERTEL::Mortar_ML_Preconditioner&>(*this);
+    tmp.Compute();
+  }
 
+#if 0
   Epetra_Vector x(View,X,0);
   Epetra_Vector xtmp(B_->DomainMap(),false);
   Epetra_Vector xtmp2(x.Map(),false);
-#if 0
   // make X (residual) satisfy constraints 
   // do X = (I-BW^T)X
   WT_->Multiply(false,x,xtmp);
@@ -183,6 +188,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
   string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
   string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  string  ptype         = mlparams_.get("prolongator: type","mod_full");
   
   Space space(A_->RowMatrixRowMap());
   Operator mlapiA(space,space,A_.get(),false);
@@ -321,10 +327,17 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     ImBWTcoarse = GetIdentity(C.GetDomainSpace(),C.GetRangeSpace());
     ImBWTcoarse = ImBWTcoarse - mlapiBWTcoarse;
     // make modified restriction/prolongation
-    Rmod = ImBWTcoarse * ( R * ImBWTfine ) + mlapiBWTcoarse * ( R * mlapiBWT ); 
-    //Rmod = ImBWTcoarse * ( R * ImBWTfine ); 
-    //Rmod = R * ImBWTfine; 
-    //Rmod = R; 
+    if (ptype=="mod_full")
+      Rmod = ImBWTcoarse * ( R * ImBWTfine ) + mlapiBWTcoarse * ( R * mlapiBWT ); 
+    else if (ptype=="mod_middle")
+      Rmod = ImBWTcoarse * ( R * ImBWTfine ); 
+    else if (ptype=="mod_simple")
+      Rmod = R * ImBWTfine; 
+    else if (ptype=="original")
+      Rmod = R; 
+    else
+      ML_THROW("incorrect parameter ( " + ptype + " )", -1);
+    
     Pmod = GetTranspose(Rmod);
     
     // store original matrix for construction of next level

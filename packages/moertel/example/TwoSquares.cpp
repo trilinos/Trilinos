@@ -381,9 +381,16 @@ int main(int argc, char *argv[])
     mlparams.set("increasing or decreasing","increasing");
     mlparams.set("PDE equations",1);
     mlparams.set("max levels",10);
+    mlparams.set("coarse: max size",80);
     mlparams.set("aggregation: type","Uncoupled");
     mlparams.set("aggregation: damping factor",1.33);
-    mlparams.set("coarse: max size",80);
+    
+    // original   : The unmodified ML (smoothed) aggregation prolongator
+    // mod_simple : ( R * (I-B*W^T) )^T
+    // mod_middle : ( (I - R B*W^T*P) * R * (I-B*W^T) )^T
+    // mod_full   : ( (I - R B*W^T*P) * R * (I-B*W^T) )^T + ( R B*W^T*P * R * B*W^T )^T
+    mlparams.set("prolongator: type","mod_middle"); 
+    
     // solvers/smoothers currently recognized by the MLAPI_InverseOperator are
     // Ifpack:
     //         "Jacobi" "Gauss-Seidel" "symmetric Gauss-Seidel"
@@ -394,8 +401,8 @@ int main(int argc, char *argv[])
     //         "ML Gauss-Seidel"
     //         and accompanying parameters
     mlparams.set("coarse: type","Amesos-KLU"); 
-    mlparams.set("smoother: type","ML symmetric Gauss-Seidel"); 
-    mlparams.set("smoother: MLS polynomial order",3);
+    mlparams.set("smoother: type","MLS"); 
+    mlparams.set("smoother: MLS polynomial order",-3);
     mlparams.set("relaxation: min diagonal value",0.1); 
     mlparams.set("smoother: damping factor",1.0);
     mlparams.set("smoother: sweeps",1);
