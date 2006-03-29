@@ -544,28 +544,47 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
   // compute the condition number each time Compute() is invoked.
   ComputeCondest_ = List.get("schwarz: compute condest", ComputeCondest_);
   // combine mode
-  if (Teuchos::isParameterType<string>(List, "schwarz: combine mode"))
+  if( Teuchos::ParameterEntry *combineModeEntry = List.getEntryPtr("schwarz: combine mode") )
   {
-    string mode = List.get<string>("schwarz: combine mode");
-    if (mode == "Add")
-      CombineMode_ = Add;
-    else if (mode == "Zero")
-      CombineMode_ = Zero;
-    else if (mode == "Insert")
-      CombineMode_ = Insert;
-    else if (mode == "InsertAdd")
-      CombineMode_ = InsertAdd;
-    else if (mode == "Average")
-      CombineMode_ = Average;
-    else if (mode == "AbsMax")
-      CombineMode_ = AbsMax;
+    if( typeid(std::string) == combineModeEntry->getAny().type() )
+    {
+      string mode = List.get<string>("schwarz: combine mode");
+      if (mode == "Add")
+        CombineMode_ = Add;
+      else if (mode == "Zero")
+        CombineMode_ = Zero;
+      else if (mode == "Insert")
+        CombineMode_ = Insert;
+      else if (mode == "InsertAdd")
+        CombineMode_ = InsertAdd;
+      else if (mode == "Average")
+        CombineMode_ = Average;
+      else if (mode == "AbsMax")
+        CombineMode_ = AbsMax;
+      else
+      {
+        TEST_FOR_EXCEPTION(
+          true,std::logic_error
+          ,"Error, The (Epetra) combine mode of \""<<mode<<"\" is not valid!  Only the values"
+          " \"Add\", \"Zero\", \"Insert\", \"InsertAdd\", \"Average\", and \"AbsMax\" are accepted!"
+          );
+      }
+    }
+    else if ( typeid(Epetra_CombineMode) == combineModeEntry->getAny().type() )
+    {
+      CombineMode_ = Teuchos::any_cast<Epetra_CombineMode>(combineModeEntry->getAny());
+    }
     else
     {
-      IFPACK_CHK_ERR(-1); // parameter not correct
+      // Throw exception with good error message!
+      Teuchos::getParameter<std::string>(List,"schwarz: combine mode");
     }
   }
   else
-    CombineMode_ = List.get("schwarz: combine mode", CombineMode_);
+  {
+    // Make the default be a string to be consistent with the valid parameters!
+    List.get("schwarz: combine mode","Zero");
+  }
   // type of reordering
   ReorderingType_ = List.get("schwarz: reordering type", ReorderingType_);
   if (ReorderingType_ == "none")
