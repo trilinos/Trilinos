@@ -42,7 +42,10 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  */
-class ModelEvaluatorBase : virtual public Teuchos::Describable {
+class ModelEvaluatorBase
+  : virtual public Teuchos::Describable
+  , virtual public Teuchos::VerboseObject<ModelEvaluatorBase>
+{
 public:
 
   /** \name Public types */
