@@ -63,7 +63,8 @@ public:
   /** \name Constructors/initializers/accessors */
   //@{
 
-	/** \brief Set the number of iterations skipped between outputting. */
+	/** \brief Set the number of iterations skipped between outputting.
+   * A value <tt><=0</tt> means no outputting */
 	STANDARD_MEMBER_COMPOSITION_MEMBERS( int, outputFrequency )
 
 	/** \brief Determine if only max residual is printed or not for active RHS. */
@@ -81,8 +82,8 @@ public:
 
   /** \brief . */
   StatusTestOutputter(
-    const int                        outputFrequency    = 1
-    ,const bool                      outputMaxResOnly   = false
+    const int                        outputFrequency    = -1
+    ,const bool                      outputMaxResOnly   = true
     ,const std::string               &resString         = "||A*x-b||/||b||"
     );
   
@@ -144,7 +145,7 @@ StatusType StatusTestOutputter<ScalarType,MV,OP>::CheckStatus(IterativeSolver<Sc
     lastRestart_ = -1;
   ++callsSinceLastOutput_;
   if(
-    outputFrequency()
+    ( outputFrequency() > 0 )
     &&
     (
       status==Converged
