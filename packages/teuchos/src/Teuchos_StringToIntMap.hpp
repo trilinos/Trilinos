@@ -105,9 +105,12 @@ public:
 	const std::string& defaultGroupName() const;
 
 private:
+
 	typedef std::map< std::string, int > map_t;	// all share implementation.
 	std::string defaultGroupName_;
 	map_t map_;
+
+  std::string validSelections() const;
 
 	// not defined and not to be called.
 	StringToIntMap();

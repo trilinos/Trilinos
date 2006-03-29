@@ -49,10 +49,28 @@ int StringToIntMap::get( const std::string& option, const std::string& groupName
 	map_t::const_iterator itr = map_.find( option );
 	TEST_FOR_EXCEPTION(
 		itr == map_.end(), DoesNotExist
-		,"Teuchos::StringToIntMap:::get("<<option<<","<<groupName<<"): "
+		,"Teuchos::StringToIntMap:::get(\""<<option<<"\",...): "
 		<< "Error, the string \"" << option << "\" is not recongnised for "
-		<< ( groupName.length() ? groupName : defaultGroupName_ ) );
+		<< ( groupName.length() ? groupName : defaultGroupName_ )
+    << "; valid selections include " << this->validSelections() << "."
+    );
 	return (*itr).second;	
+}
+
+// private
+
+std::string StringToIntMap::validSelections() const
+{
+  std::ostringstream oss;
+  oss << "{";
+  map_t::const_iterator itr = map_.begin();
+  for( int i = 0; itr != map_.end(); ++itr, ++i ) {
+    if(i > 0)
+      oss << ",";
+    oss << "\""<<itr->first<<"\":"<<itr->second;
+  }
+  oss << "}";
+  return oss.str();
 }
 
 } // end namespace Teuchos
