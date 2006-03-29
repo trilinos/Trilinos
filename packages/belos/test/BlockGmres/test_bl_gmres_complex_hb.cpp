@@ -36,6 +36,7 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
+#include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosBlockGmres.hpp"
@@ -91,6 +92,8 @@ int main(int argc, char *argv[]) {
   bool verbose = 0;
   int blocksize = 1;
   int numrhs = 1;
+  int numrestarts = 15;
+  int length = 50;
   std::string filename("mhd1280b.cua");
   MT tol = 1.0e-5;  // relative residual tolerance
 
@@ -99,7 +102,9 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
+  cmdp.setOption("num-restarts",&numrestarts,"Number of restarts allowed for the GMRES solver.");
   cmdp.setOption("block-size",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -155,7 +160,7 @@ int main(int argc, char *argv[]) {
   int maxits = dim/blocksize; // maximum number of iterations to run
   //
   RefCountPtr<ParameterList> My_PL = rcp( new ParameterList() );
-  My_PL->set( "Length", maxits );  // Maximum number of blocks in Krylov factorization
+  My_PL->set( "Length", length );  // Maximum number of blocks in Krylov factorization
   //
   // Construct the right-hand side and solution multivectors.
   // NOTE:  The right-hand side will be constructed such that the solution is
@@ -178,9 +183,11 @@ int main(int argc, char *argv[]) {
   // *******************************************************************
   //
   Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
-  Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
+  Belos::StatusTestMaxRestarts<ST,MV,OP> test2( numrestarts );
+  Belos::StatusTestResNorm<ST,MV,OP> test3( tol );
   RefCountPtr<Belos::StatusTestCombo<ST,MV,OP> > My_Test =
     rcp( new Belos::StatusTestCombo<ST,MV,OP>( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 ) );
+  My_Test->AddStatusTest( test3 );
   //
   RefCountPtr<Belos::OutputManager<ST> > My_OM = 
     rcp( new Belos::OutputManager<ST>( MyPID ) );
