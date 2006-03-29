@@ -964,6 +964,9 @@ if (! $no_hg) then
       
           # Save and compare output files 
 
+	  # wait up to 30 sec for files (will poll up to 30 sec for ALL output files)
+	  @ poll = 30
+
 	  #   the following awk deals with processor numbers with leading zeros
 	  #   which creates output files like foo.out.11.08 instead of foo.out.11.8
 	  @ procnos = $np - 1
@@ -974,13 +977,11 @@ if (! $no_hg) then
 	    set field=`awk "$awkarg"` < /dev/null
 	    set outfile=${hg_name[1]}.$mtd.$np.$field
 
-	    # wait up to 30 sec for files
 	    if (! -e ${hg_name[1]}.$out_tag.$np.$field ) then
-	      @ poll = 30
 	      while (! -e ${hg_name[1]}.$out_tag.$np.$field )
+		if ( ! $poll ) break
 		sleep 1
 		@ poll--
-		if ( ! $poll ) break
 	      end
 	    endif
 
