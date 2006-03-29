@@ -184,9 +184,6 @@ namespace Belos {
     //! Method for checking the orthogonality of the Krylov basis.
     void CheckKrylovOrth(const int);
 
-    //! Method for computing Givens rotation
-    void givens_rot(ScalarType&, ScalarType&, ScalarType&, ScalarType&, ScalarType&);
-
     //! Reference to the linear problem being solver for with the solver. [passed in by user]
     RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
 
@@ -223,7 +220,7 @@ namespace Belos {
     bool _flexible;
     MagnitudeType _dep_tol, _blk_tol, _sing_tol;
     Teuchos::SerialDenseVector<int,ScalarType> beta, sn;
-    Teuchos::SerialDenseVector<int,ScalarType> cs;
+    Teuchos::SerialDenseVector<int,MagnitudeType> cs;
   };
 
   //
@@ -1113,8 +1110,11 @@ namespace Belos {
   {
     //R.print( cout );
     int i, j, maxidx;
-    ScalarType sigma, mu, vscale, maxelem, temp;
+    ScalarType sigma, mu, vscale, maxelem;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+    ScalarType temp = zero;
+
+    Teuchos::LAPACK<int, ScalarType> lapack;
     Teuchos::BLAS<int, ScalarType> blas;
     //
     // Apply previous transformations and compute new transformation to reduce upper-Hessenberg
@@ -1135,22 +1135,20 @@ namespace Belos {
 	  // Apply previous Givens rotations to new column of Hessenberg matrix
 	  //
 	  temp = cs[i]*R(i,_iter) + sn[i]*R(i+1,_iter);
-	  R(i+1,_iter) = -sn[i]*R(i,_iter) + cs[i]*R(i+1,_iter);
+	  R(i+1,_iter) = -Teuchos::ScalarTraits<ScalarType>::conjugate(sn[i])*R(i,_iter) 
+	               + cs[i]*R(i+1,_iter);
 	  R(i,_iter) = temp;
 	}
 	//
 	// Calculate new Givens rotation
 	//
-	//blas.ROTG( &R(_iter,_iter), &R(_iter+1,_iter), &cs[_iter], &sn[_iter] );
-	//cout << cs[_iter] << "\t" << sn[_iter] << "\t" << R(_iter,_iter) << endl;
-	givens_rot( R(_iter,_iter), R(_iter+1,_iter), cs[_iter], sn[_iter], temp );
-	//cout << cs[_iter] << "\t" << sn[_iter] << "\t" << temp << endl;
+	lapack.LARTG( R(_iter,_iter), R(_iter+1,_iter), &cs[_iter], &sn[_iter], &temp );
 	R(_iter,_iter) = temp;
 	R(_iter+1,_iter) = zero;
 	//
 	// Update RHS w/ new transformation
 	//
-	z(_iter+1,0) = -sn[_iter]*z(_iter,0);
+	z(_iter+1,0) = -Teuchos::ScalarTraits<ScalarType>::conjugate(sn[_iter])*z(_iter,0);
 	z(_iter,0) = cs[_iter]*z(_iter,0);
       } 
     else
@@ -1274,48 +1272,6 @@ namespace Belos {
     //
   } // end CheckKrylovOrth
     
-
-  template<class ScalarType, class MV, class OP>
-  void BlockGmres<ScalarType,MV,OP>::givens_rot(ScalarType& a, ScalarType& b, ScalarType& c, ScalarType& s, ScalarType& tau)
-  {
-    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    //
-    // Initialize variables
-    //
-    c = zero;
-    s = zero;
-    tau = zero;
-    //
-    // If the second direction is already zero, no transformation is needed.
-    //
-    if (b == zero) {
-      c = one;
-      s = zero;
-      tau = a;
-      return;
-    }
-    //
-    // Compute Givens rotation
-    //
-    if (Teuchos::ScalarTraits<ScalarType>::magnitude(a) > Teuchos::ScalarTraits<ScalarType>::magnitude(b)) 
-      {
-	c = b/a;
-	tau = Teuchos::ScalarTraits<ScalarType>::squareroot( one + c*c );
-	s = c/tau;
-	c = one/tau;
-	tau *= a;
-      }
-    else 
-      {
-	s = a/b;
-	tau = Teuchos::ScalarTraits<ScalarType>::squareroot( one + s*s );
-	c = s/tau;
-	s = one/tau;
-	tau *= b;
-      }
-  } // end givens_rot
-
 
   // Overridden from Teuchos::Describable
 
