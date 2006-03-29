@@ -8,7 +8,7 @@
 #
 (FRAMEWORK,INSTALL) {
     TESTS = BlockCG/bl_cg_hb.exe,
-            BlockCG/bl_pcg_hb.exe;
+            BlockCG/bl_pcg_hb.exe,
             BlockCG/bl_cg_complex.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
@@ -17,8 +17,8 @@
 
 (FRAMEWORK,INSTALL) {
     TESTS = BlockGmres/bl_gmres_hb.exe,
-            BlockGmres/bl_pgmres_hb.exe;
-	    BlockGmres/bl_fgmres_hb.exe;
+            BlockGmres/bl_pgmres_hb.exe,
+	          BlockGmres/bl_fgmres_hb.exe,
             BlockGmres/bl_gmres_complex_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
@@ -104,3 +104,4 @@
             --max-iters=1000 --max-solution-error=1e-6 --matrix-file=../thyra/test/LOWSFactory/nos1.mtx;
     COMM = SERIAL;
 }
+
