@@ -37,7 +37,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK) {
     TESTS = BlockGmres/bl_gmres_complex_hb.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --filename="./BlockGmres/mhd1280a.cua" --subspace-length=200 --tol=1e-4;
