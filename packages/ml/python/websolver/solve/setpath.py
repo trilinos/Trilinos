@@ -42,19 +42,19 @@ libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
 
 # Get the full path to the build directories
 fullPath   = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..", 
-  "SERIAL", "packages", "ml", "python", "src", "build", libDir, "PyTrilinos"))
+  "..", "SERIAL", "packages", "ml", "python", "src", "build", libDir, "PyTrilinos"))
 epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
-  "SERIAL", "packages", "epetra", "python", "src", "build", libDir, "PyTrilinos"))
+  "..", "SERIAL", "packages", "epetra", "python", "src", "build", libDir, "PyTrilinos"))
 epetraextPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
-  "SERIAL", "packages", "epetraext", "python", "src", "build", libDir, "PyTrilinos"))
+  "..", "SERIAL", "packages", "epetraext", "python", "src", "build", libDir, "PyTrilinos"))
 aztecooPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
-  "SERIAL", "packages", "aztecoo", "python", "src", "build", libDir, "PyTrilinos"))
+  "..", "SERIAL", "packages", "aztecoo", "python", "src", "build", libDir, "PyTrilinos"))
 galeriPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
-  "SERIAL", "packages", "galeri", "python", "src", "build", libDir, "PyTrilinos"))
+  "..", "SERIAL", "packages", "galeri", "python", "src", "build", libDir, "PyTrilinos"))
 ifpackPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
-  "SERIAL", "packages", "ifpack", "python", "src", "build", libDir, "PyTrilinos"))
+  "..", "SERIAL", "packages", "ifpack", "python", "src", "build", libDir, "PyTrilinos"))
 amesosPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "..",
-  "SERIAL", "packages", "amesos", "python", "src", "build", libDir, "PyTrilinos"))
+  "..", "SERIAL", "packages", "amesos", "python", "src", "build", libDir, "PyTrilinos"))
 
 
 # Insert the full path to the build library directory

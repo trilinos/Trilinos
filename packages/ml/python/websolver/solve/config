@@ -10,9 +10,9 @@
 SUBMIT_TIME = 
 E_MAIL = 
 
-A_FILE = aMatrix.mm
+A_FILE = ../sample/aMatrix.mm
 X_FILE = 
-B_FILE = rhs.txt
+B_FILE = ../sample/rhs.txt
 
 STRUCTURE = 
 PROPERTIES = 
