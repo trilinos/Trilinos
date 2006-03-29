@@ -308,10 +308,10 @@ namespace Teuchos
     //@{ \name Rotation/Reflection generators
 
     //! Generates a plane rotation that zeros out the second component of the input vector.
-    void LARTG( const ScalarType f, const ScalarType g, MagnitudeType c, ScalarType s, ScalarType r ) const;
+    void LARTG( const ScalarType f, const ScalarType g, MagnitudeType* c, ScalarType* s, ScalarType* r ) const;
 
     //! Generates an elementary reflector of order \c n that zeros out the last \c n-1 components of the input vector.
-    void LARFG( const OrdinalType n, ScalarType alpha, ScalarType* x, const OrdinalType incx, ScalarType tau ) const;
+    void LARFG( const OrdinalType n, ScalarType* alpha, ScalarType* x, const OrdinalType incx, ScalarType* tau ) const;
 
     //@}
 
@@ -638,13 +638,13 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::LARTG( const ScalarType f, const ScalarType g, MagnitudeType c, ScalarType s, ScalarType r ) const
+  void LAPACK<OrdinalType, ScalarType>::LARTG( const ScalarType f, const ScalarType g, MagnitudeType* c, ScalarType* s, ScalarType* r ) const
   {
     return UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void LAPACK<OrdinalType, ScalarType>::LARFG( const OrdinalType n, ScalarType alpha, ScalarType* x, const OrdinalType incx, ScalarType tau ) const
+  void LAPACK<OrdinalType, ScalarType>::LARFG( const OrdinalType n, ScalarType* alpha, ScalarType* x, const OrdinalType incx, ScalarType* tau ) const
   {
     return UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
@@ -733,8 +733,8 @@ namespace Teuchos
     void TREXC(const char COMPQ, const OrdinalType n, float* T, const OrdinalType ldt, float* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, float* WORK, OrdinalType* info) const;
 
     // Rotation/reflection generators
-    void LARTG( const float f, const float g, float c, float s, float r ) const;
-    void LARFG( const OrdinalType n, float alpha, float* x, const OrdinalType incx, float tau ) const;
+    void LARTG( const float f, const float g, float* c, float* s, float* r ) const;
+    void LARFG( const OrdinalType n, float* alpha, float* x, const OrdinalType incx, float* tau ) const;
 
     // Random number generators
     float LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -1016,15 +1016,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::LARTG( const float f, const float g, float c, float s, float r ) const
+  void LAPACK<OrdinalType, float>::LARTG( const float f, const float g, float* c, float* s, float* r ) const
   {
-    SLARTG_F77(&f, &g, &c, &s, &r);
+    SLARTG_F77(&f, &g, c, s, r);
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, float>::LARFG( const OrdinalType n, float alpha, float* x, const OrdinalType incx, float tau ) const
+  void LAPACK<OrdinalType, float>::LARFG( const OrdinalType n, float* alpha, float* x, const OrdinalType incx, float* tau ) const
   {
-    SLARFG_F77(&n, &alpha, x, &incx, &tau);
+    SLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
   template<typename OrdinalType>
@@ -1136,8 +1136,8 @@ namespace Teuchos
     void TREXC(const char COMPQ, const OrdinalType n, double* T, const OrdinalType ldt, double* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, double* WORK, OrdinalType* info) const;
 
     // Rotation/reflection generators
-    void LARTG( const double f, const double g, double c, double s, double r ) const;
-    void LARFG( const OrdinalType n, double alpha, double* x, const OrdinalType incx, double tau ) const;
+    void LARTG( const double f, const double g, double* c, double* s, double* r ) const;
+    void LARFG( const OrdinalType n, double* alpha, double* x, const OrdinalType incx, double* tau ) const;
 
     // Random number generators
     double LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -1419,15 +1419,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::LARTG( const double f, const double g, double c, double s, double r ) const
+  void LAPACK<OrdinalType, double>::LARTG( const double f, const double g, double* c, double* s, double* r ) const
   {
-    DLARTG_F77(&f, &g, &c, &s, &r);
+    DLARTG_F77(&f, &g, c, s, r);
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::LARFG( const OrdinalType n, double alpha, double* x, const OrdinalType incx, double tau ) const
+  void LAPACK<OrdinalType, double>::LARFG( const OrdinalType n, double* alpha, double* x, const OrdinalType incx, double* tau ) const
   {
-    DLARFG_F77(&n, &alpha, x, &incx, &tau);
+    DLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
   template<typename OrdinalType>
@@ -1535,8 +1535,8 @@ namespace Teuchos
     void TREXC(const char COMPQ, const OrdinalType n, complex<float>* T, const OrdinalType ldt, complex<float>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, complex<float>* WORK, OrdinalType* info) const;
 
     // Rotation/reflection generators
-    void LARTG( const complex<float> f, const complex<float> g, float c, complex<float> s, complex<float> r ) const;
-    void LARFG( const OrdinalType n, complex<float> alpha, complex<float>* x, const OrdinalType incx, complex<float> tau ) const;
+    void LARTG( const complex<float> f, const complex<float> g, float* c, complex<float>* s, complex<float>* r ) const;
+    void LARFG( const OrdinalType n, complex<float>* alpha, complex<float>* x, const OrdinalType incx, complex<float>* tau ) const;
 
     // Random number generators
     complex<float> LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -1766,15 +1766,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, complex<float> >::LARTG( const complex<float> f, const complex<float> g, float c, complex<float> s, complex<float> r ) const
+  void LAPACK<OrdinalType, complex<float> >::LARTG( const complex<float> f, const complex<float> g, float* c, complex<float>* s, complex<float>* r ) const
   {
-    CLARTG_F77(&f, &g, &c, &s, &r);
+    CLARTG_F77(&f, &g, c, s, r);
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, complex<float> >::LARFG( const OrdinalType n, complex<float> alpha, complex<float>* x, const OrdinalType incx, complex<float> tau ) const
+  void LAPACK<OrdinalType, complex<float> >::LARFG( const OrdinalType n, complex<float>* alpha, complex<float>* x, const OrdinalType incx, complex<float>* tau ) const
   {
-    CLARFG_F77(&n, &alpha, x, &incx, &tau);
+    CLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
   template<typename OrdinalType>
@@ -1860,8 +1860,8 @@ namespace Teuchos
     void TREXC(const char COMPQ, const OrdinalType n, complex<double>* T, const OrdinalType ldt, complex<double>* Q, const OrdinalType ldq, OrdinalType ifst, OrdinalType ilst, complex<double>* WORK, OrdinalType* info) const;
 
     // Rotation/reflection generators
-    void LARTG( const complex<double> f, const complex<double> g, double c, complex<double> s, complex<double> r ) const;
-    void LARFG( const OrdinalType n, complex<double> alpha, complex<double>* x, const OrdinalType incx, complex<double> tau ) const;
+    void LARTG( const complex<double> f, const complex<double> g, double* c, complex<double>* s, complex<double>* r ) const;
+    void LARFG( const OrdinalType n, complex<double>* alpha, complex<double>* x, const OrdinalType incx, complex<double>* tau ) const;
 
     // Random number generators
     complex<double> LARND( const OrdinalType idist, OrdinalType* seed ) const;
@@ -2091,15 +2091,15 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, complex<double> >::LARTG( const complex<double> f, const complex<double> g, double c, complex<double> s, complex<double> r ) const
+  void LAPACK<OrdinalType, complex<double> >::LARTG( const complex<double> f, const complex<double> g, double* c, complex<double>* s, complex<double>* r ) const
   {
-    ZLARTG_F77(&f, &g, &c, &s, &r);
+    ZLARTG_F77(&f, &g, c, s, r);
   }
 
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, complex<double> >::LARFG( const OrdinalType n, complex<double> alpha, complex<double>* x, const OrdinalType incx, complex<double> tau ) const
+  void LAPACK<OrdinalType, complex<double> >::LARFG( const OrdinalType n, complex<double>* alpha, complex<double>* x, const OrdinalType incx, complex<double>* tau ) const
   {
-    ZLARFG_F77(&n, &alpha, x, &incx, &tau);
+    ZLARFG_F77(&n, alpha, x, &incx, tau);
   }
 
   template<typename OrdinalType>
