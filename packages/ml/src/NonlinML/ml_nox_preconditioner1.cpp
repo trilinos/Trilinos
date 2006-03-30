@@ -85,9 +85,38 @@ interface_(interface),
 //RangeMap_(rm),
 comm_(comm)                                             
 {
+  Initialize();
+  return;
+}
+
+/*----------------------------------------------------------------------*
+ |  Constructor (public)                                      m.gee 3/06|
+ *----------------------------------------------------------------------*/
+ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
+                              ML_NOX::Ml_Nox_Fineinterface& interface,
+                              const Teuchos::ParameterList& mlparams,
+                              const Epetra_Comm&            comm):
+interface_(interface),
+//DomainMap_(dm),
+//RangeMap_(rm),
+comm_(comm)                                             
+{
+  Initialize();
+  params_ = new Teuchos::ParameterList(mlparams);
+  
+  //SetNonlinearMethod(islinearPrec,maxlevel,matrixfree,matfreelev0,false);
+  return;
+}
+
+/*----------------------------------------------------------------------*
+ |  Initialize (private)                                      m.gee 3/06|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::Initialize()
+{
   // label 
   label_         = "ML_Nox_Preconditioner";
-
+  params_        = NULL;
+  
   // some flags
   ismatrixfree_ = true;
   matfreelev0_  = true;
@@ -154,7 +183,7 @@ comm_(comm)
   nsmooth_fine_     = 3;  
   nsmooth_          = 3;       
   nsmooth_coarse_   = 1;
-  return;
+  return true;
 }
 
 /*----------------------------------------------------------------------*
@@ -556,7 +585,7 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
 {
    bool flag = true;
    int offset = getoffset();
-   if (offset)
+   if (offset && ncalls_NewPrec_ != 0)
      if (ncalls_NewPrec_ % offset == 0) // recompute every offset
        setinit(false);
    else if (recompute_newPrec_ != 0) // recompute initially after step recompute_newPrec_
@@ -633,11 +662,9 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   //---------------------------------------------------------------------
   if (ismatrixfree_ == false)
   {
-    // check for valid Jacobian, if not, recompute
-    if (interface_.isnewJacobian()==false)
-       interface_.computeJacobian(x);
-
-    // get the fine grid Jacobian
+    // recompute Jacobian
+    if (fineJac_ && destroyfineJac_) delete fineJac_;
+    interface_.computeJacobian(x);
     fineJac_ = interface_.getJacobian();
     if (fineJac_ == NULL)
     {
@@ -649,7 +676,6 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
     if (fixdiagonal_) 
       fix_MainDiagonal(&fineJac_,0);
     
-    // if (fineJac_ && destroyfineJac_) delete fineJac_;
     fineJac_ = ML_NOX::StripZeros(*fineJac_,1.0e-11);
     destroyfineJac_ = true;
   }
@@ -684,7 +710,7 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   //---------------------------------------------------------------------
   else if (ismatrixfree_ == true && matfreelev0_ == true)
   {
-    // if (fineJac_ && destroyfineJac_) delete fineJac_;
+    if (fineJac_ && destroyfineJac_) delete fineJac_;
     fineJac_ = ML_Nox_computeFineLevelJacobian(x);
     
     // check for zero rows and fix the main diagonal of them
@@ -800,7 +826,10 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   //---------------------------------------------------------------------
   // run adaptive setup phase
   if (adaptns_>0)
+  {
     Ml_Nox_adaptivesetup(&nullsp,fineJac_,ml_numPDE_,ml_dim_nullsp_);
+    ml_dim_nullsp_ += adaptns_;
+  }
   
   //---------------------------------------------------------------------
   if (nullsp)
@@ -881,7 +910,7 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
   
   cout << "**ERR**: ML_Nox_Preconditioner::compPrec:\n";
   cout << "**ERR**: something wrong with the flags ismatrixfree_ and islinearPrec_\n";
-  cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+  cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
   isinit_ = false;
   return(false);
 }
@@ -1069,7 +1098,7 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
                                                   const Epetra_Vector& x)
 {
   // make a copy of the graph
-  Epetra_CrsGraph* graph = ML_NOX::deepcopy_graph(interface_.getGraph());
+  Epetra_CrsGraph* graph = const_cast<Epetra_CrsGraph*>(interface_.getGraph());
   Epetra_CrsGraph* cgraph = const_cast<Epetra_CrsGraph*>(interface_.getModifiedGraph());
   
   // the block size of the graph here
@@ -1166,7 +1195,6 @@ Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian
   delete colorMapIndex;    colorMapIndex = 0;
   colorcolumns->clear();
   delete colorcolumns;     colorcolumns = 0;
-  
   return A;
 }
 
@@ -1312,7 +1340,7 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
   double t0 = GetClock();
   int ncalls0 = interface_.getnumcallscomputeF();
     
-  int err;
+  int err = 0;
   if (islinearPrec_ == true)
      err = ML_Nox_ApplyInverse_Linear(X,Y);
 
@@ -1336,7 +1364,7 @@ int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
   
   cout << "**ERR**: ML_Nox_Preconditioner::ApplyInverse:\n";
   cout << "**ERR**: something wrong with the flag islinearPrec_\n";
-  cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+  cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
   return(-1);
 }
 
@@ -1596,17 +1624,15 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
   Teuchos::ParameterList List;
   List.set("PDE equations", oldnumpde);
   List.set("use default null space", false);
-  List.set("smoother: type", "symmetric Gauss-Seidel"); // or "MLS" and use 
-  //List.set("smoother: type", "MLS"); 
-  //List.set("smoother: MLS polynomial order",5); 
-  List.set("smoother: sweeps", 2);
+  List.set("smoother: type", "symmetric Gauss-Seidel"); 
+  List.set("smoother: sweeps", 1);
   List.set("smoother: damping factor", 1.0);
   List.set("coarse: type", "Amesos-KLU");
   List.set("coarse: max size", ml_maxcoarsesize_);
   List.set("max levels", ml_nlevel_);
-  List.set("adapt: max reduction", 0.1);
-  List.set("adapt: iters fine", 35);
-  List.set("adapt: iters coarse", 20);
+  List.set("adapt: max reduction", 0.05);
+  List.set("adapt: iters fine", 30); // 35
+  List.set("adapt: iters coarse", 25); // 20
   List.set("aggregation: damping", 1.33);
   List.set("aggregation: type", "Uncoupled");  // or "METIS", not "VBMETIS"
   
@@ -1657,6 +1683,20 @@ bool ML_NOX::ML_Nox_Preconditioner::Ml_Nox_adaptivesetup(double** oldns,
     for (int i=0; i<NSnew.GetMyLength(); ++i)
       (*oldns)[v*(NSnew.GetMyLength())+i] = NSnew(i,v);
   
+#if 1
+  // scale new candidates to reasonible size
+  for (int v=ml_dim_nullsp_; v<newdimns; ++v)
+  {
+    double length = 0.;
+    for (int i=0; i<NSnew.GetMyLength(); ++i)
+      length += (*oldns)[v*(NSnew.GetMyLength())+i]*(*oldns)[v*(NSnew.GetMyLength())+i];
+    length = sqrt(length);
+    length /= 10.;
+    for (int i=0; i<NSnew.GetMyLength(); ++i)
+      (*oldns)[v*(NSnew.GetMyLength())+i] /= length;
+  }
+#endif  
+
   // change the dimension of the nullspace
   ml_dim_nullsp_ = newdimns;
   

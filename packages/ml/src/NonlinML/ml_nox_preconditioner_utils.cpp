@@ -343,6 +343,9 @@ Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* cgraph,
   
   Epetra_MapColoring* colorMap = new Epetra_MapColoring(cgraph->ColMap(),col_colors);
   
+  if (myRows) delete [] myRows;
+  if (new_gindices) delete [] new_gindices; 
+  if (new_gindices) delete [] new_gindices; 
   if (node_MapColoring) delete node_MapColoring;
   if (col_colors) delete [] col_colors;
     

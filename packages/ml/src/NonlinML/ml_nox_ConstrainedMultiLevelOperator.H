@@ -183,7 +183,7 @@ private:
   ML_Nox_ConstrainedMultiLevelOperator(ML_Nox_ConstrainedMultiLevelOperator& old);
   ML_Nox_ConstrainedMultiLevelOperator operator = (const ML_Nox_ConstrainedMultiLevelOperator& old);
   
-  char*                                 label_;             // the label of this class
+  const char*             label_;             // the label of this class
   bool                                  usetranspose_;
   const Epetra_Comm&                    comm_;
   ML_NOX::Nox_CoarseProblem_Interface&  coarseinterface_;

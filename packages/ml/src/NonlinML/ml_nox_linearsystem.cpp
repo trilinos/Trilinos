@@ -225,7 +225,6 @@ bool ML_NOX::Ml_Nox_LinearSystem::computeJacobian(Epetra_Vector& x)
       bool status = Jac->computeJacobian(x);
       return status;
    }
-   return false;
 }
 
 /*----------------------------------------------------------------------*
@@ -272,7 +271,6 @@ bool ML_NOX::Ml_Nox_LinearSystem::createPreconditioner(
            << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
       return false;
    }
-   return false;
 }
 
 /*----------------------------------------------------------------------*

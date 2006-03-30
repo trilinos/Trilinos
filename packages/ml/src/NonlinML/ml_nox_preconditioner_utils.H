@@ -16,12 +16,12 @@
 
 namespace ML_NOX
 {
-  Epetra_CrsGraph* ML_NOX::deepcopy_graph(const Epetra_CrsGraph* oldgraph);
-  Epetra_MapColoring* ML_NOX::ML_Nox_collapsedcoloring(Epetra_CrsGraph* cgraph,
+  Epetra_CrsGraph* deepcopy_graph(const Epetra_CrsGraph* oldgraph);
+  Epetra_MapColoring* ML_Nox_collapsedcoloring(Epetra_CrsGraph* cgraph,
                                                      const int bsize,
                                                      bool diagonalonly,
 						     int printlevel);
-  Epetra_MapColoring* ML_NOX::ML_Nox_standardcoloring(Epetra_CrsGraph* graph,
+  Epetra_MapColoring* ML_Nox_standardcoloring(Epetra_CrsGraph* graph,
                                                       bool diagonalonly);
   bool Print_Epetra_CrsMatrix(Epetra_CrsMatrix& matrix);                                                    
   Epetra_CrsMatrix* StripZeros(Epetra_CrsMatrix& in, double eps = 0.0);                                                    

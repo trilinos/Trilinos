@@ -156,6 +156,18 @@ public:
   explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
                                  const Epetra_Comm&            comm);
 
+  //! Constructs an ML_Nox_Preconditioner class with parameter list.
+  /*! 
+   Constructs a ML_Nox_Preconditioner class and sets a set of default values.
+   This constructor does NOT actually create the Multilevel hierarchy and the
+   methods, this is done by a call to computePreconditioner.
+   \param interface (In) : ref to an ML_NOX::Ml_Nox_Fineinterface derived class
+   \param mlparams  (In) : Teuchos parameter list 
+   \param comm      (In) : the Epetra_Comm to be used
+   */
+  explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
+                                 const Teuchos::ParameterList& mlparams,
+                                 const Epetra_Comm&            comm);
   
 
   //! Destroys the preconditioner.
@@ -396,13 +408,13 @@ public:
   /*! 
    check the init-flag of this instant, if false, ApplyInverse will throw an error.
    */
-  const bool isinit() const {return(isinit_);}
+  bool isinit() const {return(isinit_);}
   
   //! Set the initialization flag of the instant of this class
   /*! 
    Set the init-flag of this instant.
    */
-  const bool setinit(bool flag) 
+  bool setinit(bool flag) 
   {isinit_=flag; ncalls_NewPrec_ = 0; return(true);}
 
   //! Get the offset to recompute this preconditioner.
@@ -449,7 +461,7 @@ public:
    */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
   { cout << "ML_Nox_Preconditioner::Apply does not make sense for an ML-Multilevel Operator\n"
-         << "Use ApplyInverse\n";throw -1;return(-1);}
+         << "Use ApplyInverse\n";return(-1);}
     
   //! SetUseTranspose, not implemented.
   /*! 
@@ -480,6 +492,9 @@ private:
   // don't want copy-ctor and = operator
   ML_Nox_Preconditioner(ML_Nox_Preconditioner& old);
   ML_Nox_Preconditioner operator = (const ML_Nox_Preconditioner& old);
+  
+  // Init the preconditioner to default values
+  bool Initialize();
   
   // Compute Preconditioner functions, 
   // depending on type of preconditioner and whether the Jacobian was supplied or not
@@ -517,6 +532,7 @@ private:
 private:
   // ---general data---
   char*                                 label_;             // the label of this class
+  Teuchos::ParameterList*               params_;           // holding the parameters list
   bool                                  usetranspose_;     // use transpose of operator (not supported)
   bool                                  isinit_;           // flag whether preconditioner is valid
   bool                                  ismatrixfree_;     // use Graph or Jacobian in building the preconditioner
