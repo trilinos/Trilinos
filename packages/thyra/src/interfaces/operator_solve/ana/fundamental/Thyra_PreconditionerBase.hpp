@@ -66,7 +66,7 @@ namespace Thyra {
  *   <li><tt>getRightPrecOp().get()==NULL</tt>
  *   <li><tt>getUnspecifiedPrecOp().get()!=NULL</tt>
  *   </ul>
- * <\ul>
+ * </ul>
  */
 template <class RangeScalar, class DomainScalar = RangeScalar>
 class PreconditionerBase : virtual public Teuchos::Describable

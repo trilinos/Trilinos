@@ -21,12 +21,19 @@ to linear equation solvers.
 
 <ul>
 
+<li><tt>Thyra::PreconditionerBase</tt> defines an interface to left, right,
+split left/right, and otherwise general preconditioners.
+
+<li><tt>Thyra::PreconditionerFactoryBase</tt> defines an interface for
+generating or updating a <tt>Thyra::PreconditionerBase</tt> object given a
+forward <tt>Thyra::LinearOpBase</tt> object.
+
 <li><tt>Thyra::LinearOpWithSolveBase</tt> defines a simple interface for
 performing the inverse linear operator application.
 
 <li><tt>Thyra::LinearOpWithSolveFactoryBase</tt> defines an interface for
-generating or updating a <tt>Thyra::LinearOpWithSolveBase</tt> object out of a
-<tt>Thyra::LinearOpBase</tt> object.
+generating or updating a <tt>Thyra::LinearOpWithSolveBase</tt> object given a
+forward <tt>Thyra::LinearOpBase</tt> object.
 
 </ul>
   

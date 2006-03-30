@@ -503,7 +503,56 @@ class LinearOpWithSolveFactoryBase
 {
 public:
 
-  /** @name Pure virtual public functions that must be overridden in subclasses */
+  /** @name Preconditioner Factory Management */
+  //@{
+
+  /** \brief Determines if <tt>*this</tt> accepts external preconditioner factories.
+   *
+   * The default implementation returns <tt>false</tt>.
+   */
+  virtual bool acceptsPreconditionerFactory() const;
+
+  /** \brief Set a preconditioner factory object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>precFactory.get()!=NULL</tt>
+   * <li><tt>precFactoryName.length()>0</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->getPreconditionerFactory().get()==precFactory.get()</tt>
+   * </ul>
+   *
+   * The default implementation thrown an exception which is consistent with
+   * <tt>acceptsPreconditionerFactory()</tt>.
+   */
+  virtual void setPreconditionerFactory(
+    const Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
+    ,const std::string                                                                &precFactoryName
+    );
+
+  /** \brief Get a preconditioner factory object.
+   *
+   * The default implementation returns <tt>Teuchos::null</tt>.
+   */
+  virtual Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> > getPreconditionerFactory() const;
+
+  /** \brief Unset the preconditioner factory (if one is set).
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->getPreconditionerFactory().get()==NULL</tt>
+   * </ul>
+   *
+   * The default implementation returns <tt>Teuchos::null</tt>.
+   */
+  virtual void unsetPreconditionerFactory(
+    Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory      = NULL
+    ,std::string                                                                *precFactoryName  = NULL
+    );
+
+  //@}
+
+  /** @name Creation/Initialization of basic LinearOpWithSolveBase objects */
   //@{
 
   /** \brief Check that a <tt>LinearOpBase</tt> object is compatible with
@@ -534,7 +583,7 @@ public:
    *                before attempting to dynamic cast the object.
    * \param  supportSolveUse
    *                [in] Determines if <tt>Op->solve(...)</tt> or <tt>Op->solveTranspose(...)</tt> will
-   *                be called.  This allows <tt>*this</tt> factory object determine how to best initialae
+   *                be called.  This allows <tt>*this</tt> factory object to determine how to best initialize
    *                the <tt>*Op</tt> object.  Default <tt>supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED</tt>
    *
    * <b>Preconditions:</b><ul>
@@ -573,60 +622,6 @@ public:
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
     ,const ESupportSolveUse                                                      supportSolveUse = SUPPORT_SOLVE_UNSPECIFIED
     ) const = 0;
-
-  /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return
-   * its remembered forward linear operator and potentially also its
-   * externally generated preconditioner.
-   *
-   * \param  Op     [in/out] On input, <tt>*Op</tt> is an initialized or uninitialized
-   *                object and on output is uninitialized.  Note that "uninitialized"
-   *                does not mean that <tt>Op</tt> is completely stateless.  It may still
-   *                remember some aspect of the matrix <tt>fwdOp</tt> that will allow
-   *                for a more efficient initialization next time through
-   *                <tt>this->initializeOp()</tt>.
-   * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to the
-   *                same forward operator passed into <tt>this->initializeOp()</tt>.
-   * \param  prec   [in/out] If <tt>prep!=NULL</tt> on input, then on output, this this is set to
-   *                same preconditioner that was passed into <tt>this->initializePreconditionedOp()</tt>.
-   * \param  approxFwdOp
-   *                [in/out] If <tt>approxFwdOp!=NULL</tt> on input, then on output, this is set to
-   *                same approximate forward operator that was passed into <tt>this->initializePreconditionedOp()</tt>.
-   * \param  ESupportSolveUse
-   *                [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to
-   *                same option value passed to <tt>this->initializeOp()</tt>.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
-   *     this function.
-   * <li><tt>Op</tt> may or may not have been passed through a call to
-   *     <tt>this->initializeOp()</tt> or <tt>this->initializePreconditionedOp()</tt>.
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li>If <tt>*Op</tt> on input was initialized through a call to <tt>this->initializeOp()</tt>
-   *     and if <tt>fwdOp!=NULL</tt> then <tt>(*fwdOp).get()!=NULL</tt>.
-   * <li>If <tt>*Op</tt> was uninitialized on input and <tt>fwdOp!=NULL</tt> then <tt>fwdOp->get()==NULL</tt> out output.
-   * <li>On output, <tt>*Op</tt> can be considered to be uninitialized and
-   *     it is safe to modify the forward operator object <tt>*(*fwdOp)</tt> returned in <tt>fwdOp</tt>.
-   *     The default is <tt>fwdOp==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOp</tt>.
-   * </ul>
-   *
-   * This function should be called before the forward operator passed in to
-   * <tt>this->initializeOp()</tt> is modified.  Otherwise, <tt>*this</tt>
-   * could be left in an inconsistent state.  However, this is not required.
-   */
-  virtual void uninitializeOp(
-    LinearOpWithSolveBase<RangeScalar,DomainScalar>                               *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *fwdOp           = NULL
-    ,Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >    *prec            = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *approxFwdOp     = NULL
-    ,ESupportSolveUse                                                             *supportSolveUse = NULL
-    ) const = 0;
-  
-  //@}
-
-  /** @name Virtual public functions with default implementations */
-  //@{
 
   /** \brief Initialize a pre-created <tt>LinearOpWithSolveBase</tt> object
    * given a "compatible" <tt>LinearOpBase</tt> object but allow for reuse of
@@ -681,49 +676,59 @@ public:
     ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
     ) const;
 
-  /** \brief Determines if <tt>*this</tt> accepts external preconditioner factories.
+  /** \brief Uninitialize a <tt>LinearOpWithSolveBase</tt> object and return
+   * its remembered forward linear operator and potentially also its
+   * externally generated preconditioner.
    *
-   * The default implementation returns <tt>false</tt>.
-   */
-  virtual bool acceptsPreconditionerFactory() const;
-
-  /** \brief Set a preconditioner factory object.
+   * \param  Op     [in/out] On input, <tt>*Op</tt> is an initialized or uninitialized
+   *                object and on output is uninitialized.  Note that "uninitialized"
+   *                does not mean that <tt>Op</tt> is completely stateless.  It may still
+   *                remember some aspect of the matrix <tt>fwdOp</tt> that will allow
+   *                for a more efficient initialization next time through
+   *                <tt>this->initializeOp()</tt>.
+   * \param  fwdOp  [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to the
+   *                same forward operator passed into <tt>this->initializeOp()</tt>.
+   * \param  prec   [in/out] If <tt>prep!=NULL</tt> on input, then on output, this this is set to
+   *                same preconditioner that was passed into <tt>this->initializePreconditionedOp()</tt>.
+   * \param  approxFwdOp
+   *                [in/out] If <tt>approxFwdOp!=NULL</tt> on input, then on output, this is set to
+   *                same approximate forward operator that was passed into <tt>this->initializePreconditionedOp()</tt>.
+   * \param  ESupportSolveUse
+   *                [in/out] If <tt>fwdOp!=NULL</tt> on input, then on output this is set to
+   *                same option value passed to <tt>this->initializeOp()</tt>.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>precFactory.get()!=NULL</tt>
-   * <li><tt>precFactoryName.length()>0</tt>
+   * <li><tt>*Op</tt> must have been created by <tt>this->createOp()</tt> prior to calling
+   *     this function.
+   * <li><tt>Op</tt> may or may not have been passed through a call to
+   *     <tt>this->initializeOp()</tt> or <tt>this->initializePreconditionedOp()</tt>.
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li><tt>this->getPreconditionerFactory().get()==precFactory.get()</tt>
+   * <li>If <tt>*Op</tt> on input was initialized through a call to <tt>this->initializeOp()</tt>
+   *     and if <tt>fwdOp!=NULL</tt> then <tt>(*fwdOp).get()!=NULL</tt>.
+   * <li>If <tt>*Op</tt> was uninitialized on input and <tt>fwdOp!=NULL</tt> then <tt>fwdOp->get()==NULL</tt> out output.
+   * <li>On output, <tt>*Op</tt> can be considered to be uninitialized and
+   *     it is safe to modify the forward operator object <tt>*(*fwdOp)</tt> returned in <tt>fwdOp</tt>.
+   *     The default is <tt>fwdOp==NULL</tt> in which case the forward operator will not be returned in <tt>*fwdOp</tt>.
    * </ul>
    *
-   * The default implementation thrown an exception which is consistent with
-   * <tt>acceptsPreconditionerFactory()</tt>.
+   * This function should be called before the forward operator passed in to
+   * <tt>this->initializeOp()</tt> is modified.  Otherwise, <tt>*this</tt>
+   * could be left in an inconsistent state.  However, this is not required.
    */
-  virtual void setPreconditionerFactory(
-    const Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  &precFactory
-    ,const std::string                                                                &precFactoryName
-    );
+  virtual void uninitializeOp(
+    LinearOpWithSolveBase<RangeScalar,DomainScalar>                               *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *fwdOp           = NULL
+    ,Teuchos::RefCountPtr<const PreconditionerBase<RangeScalar,DomainScalar> >    *prec            = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >          *approxFwdOp     = NULL
+    ,ESupportSolveUse                                                             *supportSolveUse = NULL
+    ) const = 0;
+  
+  //@}
 
-  /** \brief Get a preconditioner factory object.
-   *
-   * The default implementation returns <tt>Teuchos::null</tt>.
-   */
-  virtual Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> > getPreconditionerFactory() const;
-
-  /** \brief Unset the preconditioner factory (if one is set).
-   *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>this->getPreconditionerFactory().get()==NULL</tt>
-   * </ul>
-   *
-   * The default implementation returns <tt>Teuchos::null</tt>.
-   */
-  virtual void unsetPreconditionerFactory(
-    Teuchos::RefCountPtr<PreconditionerFactoryBase<RangeScalar,DomainScalar> >  *precFactory      = NULL
-    ,std::string                                                                *precFactoryName  = NULL
-    );
+  /** @name Creation/Initialization of Preconditioned LinearOpWithSolveBase objects */
+  //@{
 
   /** \brief Determines if <tt>*this</tt> supports given preconditioner type.
    *
@@ -882,15 +887,6 @@ createAndInitializeLinearOpWithSolve(
 // Implementations
 
 template<class RangeScalar, class DomainScalar>
-void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseOp(
-  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
-  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
-  ) const
-{
-  this->initializeOp(fwdOp,Op);
-}
-
-template<class RangeScalar, class DomainScalar>
 bool LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::acceptsPreconditionerFactory() const
 {
   return false;
@@ -924,6 +920,15 @@ void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::unsetPreconditioner
 {
   if(precFactory) *precFactory = Teuchos::null;
   if(precFactoryName) *precFactoryName = "";
+}
+
+template<class RangeScalar, class DomainScalar>
+void LinearOpWithSolveFactoryBase<RangeScalar,DomainScalar>::initializeAndReuseOp(
+  const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >    &fwdOp
+  ,LinearOpWithSolveBase<RangeScalar,DomainScalar>                             *Op
+  ) const
+{
+  this->initializeOp(fwdOp,Op);
 }
 
 template<class RangeScalar, class DomainScalar>
