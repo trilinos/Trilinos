@@ -21,7 +21,7 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA                                                                                
-// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// Questions? Contact Michael Gee (mwgee@sandia.gov) or Roger Pawlowski
 // (rppawlo@sandia.gov), Sandia National Laboratories.
 // 
 // ************************************************************************
@@ -36,7 +36,7 @@
 #include "ml_common.h"
 #if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 #include "ml_include.h"
-#include "ml_nox_fineinterface.H"
+#include "nlnml_finelevelnoxinterface.H"
 // ---------- Standard Includes ----------
 #include <iostream>
 #include "Epetra_Vector.h"
@@ -47,7 +47,7 @@
 // ---------- Forward Declarations ----------
 class FiniteElementProblem;
 
-class  Problem_Interface : public ML_NOX::Ml_Nox_Fineinterface
+class  Problem_Interface : public NLNML::NLNML_FineLevelNoxInterface
 {
 public:
   Problem_Interface(FiniteElementProblem& Problem);
@@ -56,27 +56,8 @@ public:
   //! Compute and return F
   bool computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag);
 
-  //ML_NOX::Ml_Nox_Fineinterface derived method with NOX::EpetraNew interface
-  bool computeJacobian(const Epetra_Vector& x);
-
   //! Compute an explicit Jacobian
   bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
-
-  //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
-  bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
-  
-  //ML_NOX::Ml_Nox_Fineinterface derived method
-  bool computePreconditioner(const Epetra_Vector& x,
-				     NOX::Parameter::List* precParams = 0)
-  {
-     cout << "**ERR** Problem_Interface::computePreconditioner:\n"
-          << "**ERR** this is not supposed to be called!\n";
-     fflush(stdout);
-     throw -1;
-  }
-
-  //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
-  bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M);
 
   // return the Jacobian from the problem
   Epetra_CrsMatrix* getJacobian() 
@@ -104,9 +85,6 @@ public:
   // get block information
   bool getBlockInfo(int *nblocks, int** blocks, int **block_pde)
   { *nblocks = 0; *blocks = 0; *block_pde = 0; return false; }
-
-  // derived from NOX::Parameter::PrePostOperator
-  NOX::Parameter::PrePostOperator* clone() const;
 
   // derived from NOX::Parameter::PrePostOperator
   const std::string& getType() const { return type_; }

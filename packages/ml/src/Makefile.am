@@ -168,13 +168,10 @@ $(srcdir)/Utils/ml_FilterType.h                        \
 $(srcdir)/Utils/ml_DD_prec.h                           \
 $(srcdir)/Utils/ml_Ifpack_ML.h                         \
 $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H \
-$(srcdir)/NonlinML/ml_nox_fineinterface.H    \
-$(srcdir)/NonlinML/ml_nox_coarseinterface.H  \
-$(srcdir)/NonlinML/ml_nox_linearsystem.H     \
-$(srcdir)/NonlinML/ml_nox_matrixfreelevel.H  \
-$(srcdir)/NonlinML/ml_nox_nonlinearlevel.H   \
-$(srcdir)/NonlinML/ml_nox_preconditioner.H   \
-$(srcdir)/NonlinML/ml_nox_preconditioner_utils.H   \
+$(srcdir)/NonlinML/nlnml_finelevelnoxinterface.H       \
+$(srcdir)/NonlinML/nlnml_coarselevelnoxinterface.H     \
+$(srcdir)/NonlinML/nlnml_preconditioner.H              \
+$(srcdir)/NonlinML/nlnml_preconditioner_utils.H        \
 $(srcdir)/MLAPI/MLAPI.h                      \
 $(srcdir)/MLAPI/MLAPI_Aggregation.h          \
 $(srcdir)/MLAPI/MLAPI_BaseObject.h           \
@@ -256,13 +253,9 @@ $(srcdir)/MLAPI/MLAPI_Error.cpp                             \
 $(srcdir)/MLAPI/MLAPI_DistributedMatrix.cpp                 \
 $(srcdir)/MLAPI/MLAPI_SAMIS.cpp                             \
 $(srcdir)/MLAPI/MLAPI_LinearCombinations.cpp                \
-$(srcdir)/NonlinML/ml_nox_coarseinterface.cpp               \
-$(srcdir)/NonlinML/ml_nox_linearsystem.cpp                  \
-$(srcdir)/NonlinML/ml_nox_matrixfreelevel.cpp               \
-$(srcdir)/NonlinML/ml_nox_nonlinearlevel.cpp                \
-$(srcdir)/NonlinML/ml_nox_preconditioner_utils.cpp          \
-$(srcdir)/NonlinML/ml_nox_preconditioner1.cpp               \
-$(srcdir)/NonlinML/ml_nox_preconditioner2.cpp
+$(srcdir)/NonlinML/nlnml_coarselevelnoxinterface.cpp        \
+$(srcdir)/NonlinML/nlnml_preconditioner1.cpp                \
+$(srcdir)/NonlinML/nlnml_preconditioner_utils.cpp
 
 ENUM_H = 
 

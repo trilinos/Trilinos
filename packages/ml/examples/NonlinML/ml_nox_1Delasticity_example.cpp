@@ -61,9 +61,9 @@
 // ml objects
 #include "ml_common.h"
 
-#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 // ml objects
-#include "ml_nox_preconditioner.H"
+#include "nlnml_preconditioner.H"
 
 // NOX Objects
 #include "NOX.H"
@@ -289,11 +289,17 @@ int main(int argc, char *argv[])
    mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",   2);
 
    Epetra_Map map(nlnproblem.getMap());
-
    // create the preconditioner
-   ML_NOX::ML_Nox_Preconditioner Prec(fineinterface,mlparams,Comm);
+   NLNML::NLNML_FineLevelNoxInterface* inter = 
+     dynamic_cast<NLNML::NLNML_FineLevelNoxInterface*>(&fineinterface);
+   
+   NLNML::NLNML_Preconditioner* Prec = 
+     new NLNML::NLNML_Preconditioner(*inter,mlparams,Comm);
+   delete Prec;
+   
 
   // End Preconditioner **************************************
+#if 0
 
 
   // run the preconditioner as a solver **********************
@@ -421,6 +427,7 @@ int main(int argc, char *argv[])
 
 /* end main
 */
+#endif
 return ierr ;
 }
 
