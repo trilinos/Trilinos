@@ -36,13 +36,20 @@
 #include <sstream>
 #include <vector>
 
+// Epetra includes
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
-#include "Trilinos_Util_Version.h"
+
+// Epetra wrapper helper includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+
+// Trilinos utility includes
+#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "Trilinos_Util_Version.h"
 %}
 
 // Auto-documentation feature
