@@ -105,7 +105,7 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
     either because left scaling or preconditioning was used, or because round-off error has 
     introduced significant error, or both.
   */
-  StatusTestResNorm( MagnitudeType Tolerance );
+  StatusTestResNorm( MagnitudeType Tolerance, bool showMaxResNormOnly = false );
 
   //! Destructor
   virtual ~StatusTestResNorm();
@@ -231,6 +231,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
   
   //! Tolerance used to determine convergence
   MagnitudeType tolerance_;
+
+  //! Determines if the entries for all of the residuals are shown or just the max.
+  bool showMaxResNormOnly_;
  
   //! Type of residual to use (explicit or implicit)
   ResType restype_;
@@ -288,8 +291,9 @@ class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 };
 
 template <class ScalarType, class MV, class OP>
-StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance )
+StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( MagnitudeType Tolerance, bool showMaxResNormOnly )
   : tolerance_(Tolerance),
+    showMaxResNormOnly_(showMaxResNormOnly),
     restype_(Implicit),
     resnormtype_(TwoNorm),	
     scaletype_(NormOfInitRes),
@@ -493,11 +497,22 @@ ostream& StatusTestResNorm<ScalarType,MV,OP>::Print(ostream& os, int indent) con
     os << " Unchecked ( tol = " << tolerance_ << " ) "<<endl;
   else {
     os << endl;
-    for ( int i=0; i<numrhs_; i++ ) {
+    if(showMaxResNormOnly_) {
+      const MagnitudeType maxRelRes = *std::max_element(
+        testvector_.begin()+cur_rhs_num_,testvector_.begin()+cur_rhs_num_+cur_num_rhs_
+        );
       for (int j = 0; j < indent + 13; j ++)
         os << ' ';
-      os << "residual [ " << i << " ] = " << testvector_[ i ];
-      os << ((testvector_[i]<tolerance_) ? " < " : (testvector_[i]==tolerance_) ? " == " : (testvector_[i]>tolerance_) ? " > " : " "  ) << tolerance_ << endl;
+      os << "max{residual["<<cur_rhs_num_<<"..."<<cur_rhs_num_+cur_num_rhs_-1<<"]} = " << maxRelRes
+         << ( maxRelRes <= tolerance_ ? " <= " : " > " ) << tolerance_ << endl;
+    }
+    else {
+      for ( int i=0; i<numrhs_; i++ ) {
+        for (int j = 0; j < indent + 13; j ++)
+          os << ' ';
+        os << "residual [ " << i << " ] = " << testvector_[ i ];
+        os << ((testvector_[i]<tolerance_) ? " < " : (testvector_[i]==tolerance_) ? " == " : (testvector_[i]>tolerance_) ? " > " : " "  ) << tolerance_ << endl;
+      }
     }
   }
   os << endl;
