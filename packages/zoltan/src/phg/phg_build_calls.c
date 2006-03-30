@@ -1492,7 +1492,7 @@ float *gewgts = NULL;     /* Graph-edge weights */
     *elids = ZOLTAN_MALLOC_LID_ARRAY(zz, *nedges);
     nwgt = *nedges * ewgtdim;
     if (nwgt) 
-      *ewgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
+      *ewgts = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
     if (!*egids || (num_lid_entries && !*elids) ||
         (nwgt && !*ewgts)) MEMORY_ERROR;
 
