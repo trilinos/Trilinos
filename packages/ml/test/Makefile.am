@@ -48,6 +48,7 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
           3d_Poisson                         \
           Communicator                       \
           SelfSmoother                       \
-          METISCoarsening
+          METISCoarsening                    \
+	  MatrixFree
 
 EXTRA_DIST = definition

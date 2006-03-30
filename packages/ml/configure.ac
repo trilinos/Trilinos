@@ -699,6 +699,7 @@ AC_CONFIG_FILES([
                 test/Communicator/Makefile
                 test/SelfSmoother/Makefile
                 test/METISCoarsening/Makefile
+                test/MatrixFree/Makefile
                 python/Makefile
                 python/src/Makefile
                 python/src/TRILINOS_HOME_DIR
