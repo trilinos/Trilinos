@@ -94,7 +94,7 @@ comm_(comm)
  *----------------------------------------------------------------------*/
 ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
                               ML_NOX::Ml_Nox_Fineinterface& interface,
-                              const Teuchos::ParameterList& mlparams,
+                              Teuchos::ParameterList& mlparams,
                               const Epetra_Comm&            comm):
 interface_(interface),
 //DomainMap_(dm),
@@ -104,7 +104,61 @@ comm_(comm)
   Initialize();
   params_ = new Teuchos::ParameterList(mlparams);
   
-  //SetNonlinearMethod(islinearPrec,maxlevel,matrixfree,matfreelev0,false);
+  ml_printlevel_       = mlparams.get("nlnML output",6); 
+  ml_N_levels_         = mlparams.get("nlnML max levels",10); 
+  ml_maxcoarsesize_    = mlparams.get("nlnML coarse: max size",128); 
+  islinearPrec_        = mlparams.get("nlnML is linear preconditioner",false);
+  ismatrixfree_        = mlparams.get("nlnML is matrixfree",true); 
+  matfreelev0_         = mlparams.get("nlnML finite difference fine level",true);
+  
+  fd_alpha_            = mlparams.get("nlnML finite difference alpha",1.0e-07);    
+  fd_beta_             = mlparams.get("nlnML finite difference beta",1.0e-06);    
+  fd_centered_         = mlparams.get("nlnML finite difference centered",false);     
+
+  FAS_normF_           = mlparams.get("nlnML absolute residual tolerance",1.0e-05);
+  FAS_nupdate_         = FAS_normF_;
+  FAS_maxcycle_        = mlparams.get("nlnML max cycles",250);
+  adaptive_NewPrec_    = mlparams.get("nlnML adaptive recompute",0.0); 
+  offset_newPrec_      = mlparams.get("nlnML offset recompute",0);   
+  adaptns_             = mlparams.get("nlnML additional adaptive nullspace",0);
+  
+  ml_numPDE_           = mlparams.get("nlnML PDE equations",3);
+  ml_dim_nullsp_       = mlparams.get("nlnML null space: dimension",3); 
+  ml_dim_nullsp2_      = ml_dim_nullsp_;
+  ml_spatialDimension_ = mlparams.get("nlnML spatial dimension",3);
+  
+  ml_coarsentype_      = mlparams.get("nlnML coarse: type","Uncoupled"); 
+  ml_nnodeperagg_      = mlparams.get("nlnML nodes per aggregate",27);
+
+  usenlnCG_fine_       = mlparams.get("nlnML use nlncg on fine level",true); 
+  usenlnCG_            = mlparams.get("nlnML use nlncg on medium level",true);    
+  usenlnCG_coarse_     = mlparams.get("nlnML use nlncg on coarsest level",true);    
+  
+  nitersCG_fine_       = mlparams.get("nlnML max iterations newton-krylov fine level",5); 
+  nitersCG_            = mlparams.get("nlnML max iterations newton-krylov medium level" ,5);    
+  nitersCG_coarse_     = mlparams.get("nlnML max iterations newton-krylov coarsest level",5);    
+
+  ml_fsmoothertype_    = mlparams.get("nlnML linear smoother type fine level","SGS"); 
+  ml_smoothertype_     = mlparams.get("nlnML linear smoother type medium level","SGS"); 
+  ml_coarsesolve_      = mlparams.get("nlnML linear smoother type coarsest level","AmesosKLU"); 
+  nsmooth_fine_        = mlparams.get("nlnML linear smoother sweeps fine level",2);
+  nsmooth_             = mlparams.get("nlnML linear smoother sweeps medium level",2);
+  nsmooth_coarse_      = mlparams.get("nlnML linear smoother sweeps coarsest level",1);
+
+  FAS_prefinesmooth_   = mlparams.get("nlnML nonlinear presmoothing sweeps fine level",0);
+  FAS_presmooth_       = mlparams.get("nlnML nonlinear presmoothing sweeps medium level",0);
+  FAS_coarsesmooth_    = mlparams.get("nlnML nonlinear smoothing sweeps coarse level",3);
+  FAS_postsmooth_      = mlparams.get("nlnML nonlinear postsmoothing sweeps medium level",3);
+  FAS_postfinesmooth_  = mlparams.get("nlnML nonlinear postsmoothing sweeps fine level",3);
+  
+  if (ml_printlevel_>5 && Comm().MyPID()==0)
+  {
+    cout << "ML (level 0): Unused parameters (potential misspellings) in parameter list:\n";
+    fflush(stdout);
+    mlparams.unused(cout);
+    fflush(stdout);
+  }
+  
   return;
 }
 

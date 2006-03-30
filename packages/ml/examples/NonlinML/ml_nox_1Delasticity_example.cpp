@@ -245,80 +245,53 @@ int main(int argc, char *argv[])
 
 
   // Begin Preconditioner ************************************
+   Teuchos::ParameterList mlparams;
+   mlparams.set("nlnML output",                                      6          ); // ML-output-level (0-10)
+   mlparams.set("nlnML max levels",                                  10         ); // max. # levels (minimum = 2 !)
+   mlparams.set("nlnML coarse: max size",                            500        ); // the size ML stops generating coarser levels
+   mlparams.set("nlnML is linear preconditioner",                    false      );
+   mlparams.set("nlnML is matrixfree",                               false      ); 
+   mlparams.set("nlnML finite difference fine level",                false      );
+   mlparams.set("nlnML finite difference alpha",                     1.0e-08    );    
+   mlparams.set("nlnML finite difference beta",                      1.0e-07    );    
+   mlparams.set("nlnML finite difference centered",                  false      );     
 
-   int         maxlevel           = 6;           // max. # levels (minimum = 2 !)
-   int         maxcoarsesize      = 5000;           // the size ML stops generating coarser levels
-   bool        islinearPrec       = false;       // preconditioner is linear MG-operator      
-   bool        matrixfree         = true;       // use Finite Diffeencing for operators      
-   bool        matfreelev0        = true;       // use FD on fine level only      
-   double      adaptiverecompute  = 0.0;       // recompute if residual is larger then this value
-   int         recomputestep      = 0;          // the MG hierarchy is recomputed after this iteration step
-   int         offset             = 4000;         // every offset this preconditioner is recomputed             
-   int         adaptns            = 0;           // compute adaptive nullspace (additional kernel vectors)
-   int         ml_printlevel      = 6;           // ML-output-level (0-10)
+   mlparams.set("nlnML absolute residual tolerance",                 1.0e-06    );
+   mlparams.set("nlnML max cycles",                                  500        );
+   mlparams.set("nlnML adaptive recompute",                          0.0        ); // recompute if residual is larger then this value
+   mlparams.set("nlnML offset recompute",                            0          ); // every offset this preconditioner is recomputed     
+   mlparams.set("nlnML additional adaptive nullspace",               0          ); // compute adaptive nullspace (additional kernel vectors)
+   mlparams.set("nlnML PDE equations",                               1          ); // dof per node
+   mlparams.set("nlnML null space: dimension",                       1          ); // dimension of nullspace
+   mlparams.set("nlnML spatial dimension",                           1          );
+   mlparams.set("nlnML coarse: type",                                "Uncoupled"); // Uncoupled METIS VBMETIS
+   mlparams.set("nlnML nodes per aggregate",                         3          ); // # nodes per agg for coarsening METIS and VBMETIS
 
-   int         numPDE             = 1;           // dof per node
-   int         dimNS              = 1;           // dimension of nullspace
-   int         dimension          = 1;           // spatial dimension of problem
-   string      coarsentype        = "Uncoupled"; // Uncoupled METIS VBMETIS
-   int         nnodeperagg        = 3;           // # nodes per agg for coarsening METIS and VBMETIS
-
-   bool        usenlnCG_fine      = false;        // use nlnCG or mod. Newton's method             
-   bool        usenlnCG           = true;
-   bool        usenlnCG_coarse    = true;
-
-   int         nitersCG_fine      = 10;          // # iterations of lin. CG in mod. Newton's method 
-   int         nitersCG           = 0;          
-   int         nitersCG_coarse    = 0;          
+   mlparams.set("nlnML use nlncg on fine level",                     true); // use nlnCG or mod. Newton's method   
+   mlparams.set("nlnML use nlncg on medium level",                   true);    
+   mlparams.set("nlnML use nlncg on coarsest level",                 true);    
    
-   bool        useBroyden         = false;        // in case of Newton's method, use a Broyden update of the Jacobian
+   mlparams.set("nlnML max iterations newton-krylov fine level",     5); // # iterations of lin. CG in mod. Newton's method    
+   mlparams.set("nlnML max iterations newton-krylov medium level" ,  5);    
+   mlparams.set("nlnML max iterations newton-krylov coarsest level", 5);    
 
-   double      fd_alpha           = 1.0e-07;     // FD-parameter alpha (see NOX manual)
-   double      fd_beta            = 1.0e-06;     // FD-parameter beta (see NOX manual)
-   bool        fd_centered        = false;       // use centered or forward finite differencing
+   mlparams.set("nlnML linear smoother type fine level",             "MLS"); // SGS BSGS Jacobi MLS Bcheby AmesosKLU   
+   mlparams.set("nlnML linear smoother type medium level",           "SGS"); 
+   mlparams.set("nlnML linear smoother type coarsest level",         "AmesosKLU"); 
+   mlparams.set("nlnML linear smoother sweeps fine level",           3);
+   mlparams.set("nlnML linear smoother sweeps medium level",         1);
+   mlparams.set("nlnML linear smoother sweeps coarsest level",       1);
 
-   string      fsmoothertype      = "MLS";       // SGS BSGS Jacobi MLS Bcheby AmesosKLU
-   string      smoothertype       = "MLS";       // SGS BSGS Jacobi MLS Bcheby AmesosKLU
-   string      coarsesolve        = "AmesosKLU"; // SGS BSGS Jacobi MLS Bcheby AmesosKLU
-   int         nsmooth_fine       = 5;
-   int         nsmooth            = 3;
-   int         nsmooth_coarse     = 1;
+   mlparams.set("nlnML nonlinear presmoothing sweeps fine level",    1);
+   mlparams.set("nlnML nonlinear presmoothing sweeps medium level",  0);
+   mlparams.set("nlnML nonlinear smoothing sweeps coarse level",     6);
+   mlparams.set("nlnML nonlinear postsmoothing sweeps medium level", 1);
+   mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",   2);
 
-   double      FAS_normF          = 1.0e-06;     // convergence criteria
-   double      FAS_nupdate        = 1.0e-07;     // minimum step size length
-
-   int         FAS_prefinesmooth  = 1;           // # presmooth iterations on fine level
-   int         FAS_presmooth      = 0;           // # presmooth iterations
-   int         FAS_coarsesmooth   = 6;          // # smoothing iterations on coarse level  
-   int         FAS_postsmooth     = 2;           // # postsmooth iterations
-   int         FAS_postfinesmooth = 2;           // # postsmooth iterations on fine level
-
-   int         FAS_maxcycle       = 250;         // max. # of FAS-cycles before we give up
-               
    Epetra_Map map(nlnproblem.getMap());
 
    // create the preconditioner
-   ML_NOX::ML_Nox_Preconditioner Prec(fineinterface,Comm);
-
-   // set parameters
-   Prec.SetNonlinearMethod(islinearPrec,maxlevel,
-                           matrixfree,matfreelev0,false); 
-
-   Prec.SetNonlinearSolvers(usenlnCG_fine,usenlnCG,usenlnCG_coarse,useBroyden,
-                            nitersCG_fine,nitersCG,nitersCG_coarse);
-   
-   Prec.SetPrintLevel(ml_printlevel); 
-
-   Prec.SetCoarsenType(coarsentype,maxlevel,maxcoarsesize,nnodeperagg); 
-   Prec.SetDimensions(dimension,numPDE,dimNS); 
-   Prec.SetSmoothers(fsmoothertype,smoothertype,coarsesolve);  
-   Prec.SetSmootherSweeps(nsmooth_fine,nsmooth,nsmooth_coarse);                  
-   
-   Prec.SetRecomputeOffset(offset,recomputestep,adaptiverecompute,adaptns);
-   //Prec.SetRecomputeOffset(offset);
-   Prec.SetConvergenceCriteria((FAS_normF),FAS_nupdate);
-   Prec.SetFAScycle(FAS_prefinesmooth,FAS_presmooth,FAS_coarsesmooth,FAS_postsmooth,FAS_postfinesmooth,FAS_maxcycle);
-   Prec.SetFiniteDifferencing(fd_centered,fd_alpha,fd_beta);
+   ML_NOX::ML_Nox_Preconditioner Prec(fineinterface,mlparams,Comm);
 
   // End Preconditioner **************************************
 
@@ -366,7 +339,9 @@ int main(int argc, char *argv[])
      iPrec  = &Prec;
      iJac   = B;
      iReq   = &fineinterface;
-     linSys = new ML_NOX::Ml_Nox_LinearSystem(*iJac,*B,*iPrec,Prec,soln,matrixfree,0,ml_printlevel);
+     bool matrixfree    = mlparams.get("nlnML is matrixfree",false);
+     int  ml_printlevel = mlparams.get("nlnML output",6);
+     linSys = new ML_NOX::Ml_Nox_LinearSystem(*iJac,*B,*iPrec,NULL,Prec,soln,matrixfree,0,ml_printlevel);
    }
    else
    {
@@ -393,8 +368,9 @@ int main(int argc, char *argv[])
       grp = new NOX::EpetraNew::Group(printParams, *iReq, initialGuess, *azlinSys); 
 
    // Create the convergence tests
+   double FAS_normF = mlparams.get("nlnML absolute residual tolerance",1.0e-06);
    NOX::StatusTest::NormF absresid(FAS_normF);
-   NOX::StatusTest::NormUpdate nupdate(FAS_nupdate);
+   NOX::StatusTest::NormUpdate nupdate(FAS_normF);
    NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
    converged.addStatusTest(absresid);
    converged.addStatusTest(nupdate);
@@ -410,14 +386,14 @@ int main(int argc, char *argv[])
    NOX::Solver::Manager solver(*grp, combo, nlParams);
    
    // register the solver class in the preconditioner in case of nonlinear preconditioning
-   if (islinearPrec==false) 
-      Prec.set_nox_solver(&solver);
+   Prec.set_nox_solver(&solver);
 
 
    // solve
    double t0 = GetClock();
    NOX::StatusTest::StatusType status = solver.solve();
    double t1 = GetClock();
+   int  ml_printlevel = mlparams.get("nlnML output",6);
    if (ml_printlevel>0 && Comm.MyPID()==0)
       cout << "NOX/ML :============solve time incl. setup : " << (t1-t0) << " sec\n";
    double appltime = fineinterface.getsumtime();

@@ -201,7 +201,7 @@ public:
   
   // Apply constraints
   virtual void ApplyAllConstraints(Epetra_Vector& gradient, int level) 
-  { cout << "fineinterface::ApplyAllConstraints dummy called\n"; return;}
+  { return;}
   
   // get block information
   //! Compute and return the block node information from the application.

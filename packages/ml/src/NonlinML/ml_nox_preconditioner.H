@@ -160,14 +160,64 @@ public:
   /*! 
    Constructs a ML_Nox_Preconditioner class and sets a set of default values.
    This constructor does NOT actually create the Multilevel hierarchy and the
-   methods, this is done by a call to computePreconditioner.
+   methods, this is done by a call to computePreconditioner.<br>
+   
+   <b>Teuchos parameters recognized and there default values:</b>
+   \code
+   Teuchos::ParameterList mlparams;
+   mlparams.set("nlnML output",6);                                        // Level of output to be generated (0-10), 6 recommended
+   mlparams.set("nlnML max levels",10);                                   // Max # of levels to produce
+   mlparams.set("nlnML coarse: max size",128);                            // Size of coarse grid where to stop coarsening
+   mlparams.set("nlnML is linear preconditioner",false);                  // Act as linear preconditioner, else run FAS-cycle as nonlinear preconditioner
+   mlparams.set("nlnML is matrixfree",true);                              // Finite difference for Jacobian
+   mlparams.set("nlnML finite difference fine level",true);               // Finite difference for Jacobian on fine level only
+   
+   mlparams.set("nlnML finite difference alpha",1.0e-07);                 // Finite differencing perturbation parameter
+   mlparams.set("nlnML finite difference beta",1.0e-06);                  // ---"---
+   mlparams.set("nlnML finite difference centered",false);                // Finite differnencing scheme, true=centered, false=forward
+
+   mlparams.set("nlnML absolute residual tolerance",1.0e-05);             // Internal absolute residual tolerance for FAS-cycle
+   mlparams.set("nlnML max cycles",250);                                  // Max. # FAS-cycles before giving up
+   mlparams.set("nlnML adaptive recompute",0.0);                          // Recompute preconditioner when outer residual is above this tolerance
+   mlparams.set("nlnML offset recompute",0);                              // Recompute preconditioner every offset outer iterations
+   mlparams.set("nlnML additional adaptive nullspace",0);                 // # additional adaptive nullspace candidates to compute
+   
+   mlparams.set("nlnML PDE equations",3);                                 // # PDE equations (degrees of freedom per node)
+   mlparams.set("nlnML null space: dimension",3);                         // nullspace dimension
+   mlparams.set("nlnML spatial dimension",3);                             // spatial dimension of problem
+   
+   mlparams.set("nlnML coarse: type","Uncoupled");                        // aggregation scheme: Uncoupled METIS VBMETIS
+   mlparams.set("nlnML nodes per aggregate",27);                          // # nodes per aggregate for aggregation schemes "METIS" / "VBMETIS"
+
+   mlparams.set("nlnML use nlncg on fine level",true);                    // use nonlinear CG as smoother on fine level, else use Newton-Krylov
+   mlparams.set("nlnML use nlncg on medium level",true);                  // use nonlinear CG as smoother, else use Newton-Krylov
+   mlparams.set("nlnML use nlncg on coarsest level",true);                // use nonlinear CG as smoother on coarsest level, else use Newton-Krylov
+   
+   mlparams.set("nlnML max iterations newton-krylov fine level",5);       // # iterations LINEAR CG in Newton-Krylov smoother fine level
+   mlparams.set("nlnML max iterations newton-krylov medium level" ,5);    // # iterations LINEAR CG in Newton-Krylov smoother
+   mlparams.set("nlnML max iterations newton-krylov coarsest level",5);   // # iterations LINEAR CG in Newton-Krylov smoother coarsest level 
+
+   mlparams.set("nlnML linear smoother type fine level","SGS");           // type of linear fine smoother  : SGS BSGS Jacobi MLS Bcheby AmesosKLU
+   mlparams.set("nlnML linear smoother type medium level","SGS");         // type of linear smoother       : SGS BSGS Jacobi MLS Bcheby AmesosKLU
+   mlparams.set("nlnML linear smoother type coarsest level","AmesosKLU"); // type of linear coarse smoother: SGS BSGS Jacobi MLS Bcheby AmesosKLU 
+   mlparams.set("nlnML linear smoother sweeps fine level",2);             // # of linear smoother sweeps/polynomial order for linear fine smoother
+   mlparams.set("nlnML linear smoother sweeps medium level",2);           // # of linear smoother sweeps/polynomial order for linear smoother
+   mlparams.set("nlnML linear smoother sweeps coarsest level",1);         // # of linear smoother sweeps/polynomial order for linear coarse smoother
+
+   mlparams.set("nlnML nonlinear presmoothing sweeps fine level",0);      // # nonlinear presmoothing sweeps in FAS-cycle fine level
+   mlparams.set("nlnML nonlinear presmoothing sweeps medium level",0);    // # nonlinear presmoothing sweeps in FAS-cycle
+   mlparams.set("nlnML nonlinear smoothing sweeps coarse level",3);       // # nonlinear sweeps in FAS-cycle coarsest level
+   mlparams.set("nlnML nonlinear postsmoothing sweeps medium level",3);   // # nonlinear postsmoothing sweeps in FAS-cycle
+   mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",3);     // # nonlinear postsmoothing sweeps in FAS-cycle fine level
+   \endcode
+   
    \param interface (In) : ref to an ML_NOX::Ml_Nox_Fineinterface derived class
    \param mlparams  (In) : Teuchos parameter list 
    \param comm      (In) : the Epetra_Comm to be used
    */
   explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
-                                 const Teuchos::ParameterList& mlparams,
-                                 const Epetra_Comm&            comm);
+                                 Teuchos::ParameterList& mlparams,
+                                 const Epetra_Comm& comm);
   
 
   //! Destroys the preconditioner.
