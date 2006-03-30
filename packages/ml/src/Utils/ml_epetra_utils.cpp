@@ -17,9 +17,11 @@
 
 #ifdef ML_WITH_EPETRA
 #include <vector>
+#include "ml_epetra.h"
 #include "ml_epetra_utils.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+#include "Epetra_CrsGraph.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_SerialDenseMatrix.h"
@@ -703,6 +705,100 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
 
     ML_Operator_Set_ApplyFunc (newMatrix, ML_Epetra_matvec);
   }
+
+  return 0;
+}
+
+// ====================================================================== 
+
+int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
+                              int out, double *ap)
+{
+  cerr << "ML_Epetra_CrsGraph_matvec() not implemented." << endl;
+  ML_EXIT(-1);
+}
+
+// ====================================================================== 
+
+int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
+                              int requested_rows[], int allocated_space, 
+                              int columns[], double values[],
+                              int row_lengths[])
+{
+  int nz_ptr = 0;
+  int NumEntries;
+  ML_Operator *mat_in;
+
+  mat_in = (ML_Operator *) data;
+
+  Epetra_CrsGraph *Graph =  (Epetra_CrsGraph *) ML_Get_MyGetrowData(mat_in);
+  
+  for (int i = 0; i < N_requested_rows; i++)
+  {
+    int LocalRow = requested_rows[i];
+    int *Indices;
+
+    int ierr = Graph->ExtractMyRowView(LocalRow, NumEntries, Indices);
+    if (ierr)
+      return(0); //JJH I think this is the correct thing to return if
+                 //    A->ExtractMyRowCopy returns something nonzero ..
+
+    row_lengths[i] = NumEntries;
+    if (nz_ptr + NumEntries > allocated_space)
+      return(0);
+      
+    for (int j=0; j<NumEntries; j++) {
+      columns[nz_ptr] = Indices[j];
+      values[nz_ptr++] = 1.0; // simply set each entry to 1
+    }
+  }
+
+  return(1);
+} //ML_Epetra_CrsGraph_getrow
+
+// ====================================================================== 
+int ML_Epetra_CrsGraph_comm_wrapper(double vec[], void *data)
+{
+  Epetra_CrsGraph*A = (Epetra_CrsGraph*) data;
+
+  if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
+
+  if( A->Importer() != 0 ) {
+    Epetra_Vector X_target(View, A->Importer()->TargetMap(),
+			   vec); //ghosted
+    Epetra_Vector X_source(View, A->Importer()->SourceMap(),
+			   vec); //loc only
+  
+    X_target.Import(X_source, *(A->Importer()), Insert);
+  }
+  
+  return(1);
+}
+// ======================================================================
+
+int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatrix)
+{
+  int isize, osize;
+
+  osize = Graph->RangeMap().NumMyElements();
+  isize = Graph->DomainMap().NumMyElements();
+  assert (Graph->HaveColMap() == true);
+  int N_ghost = Graph->ColMap().NumMyElements() - isize;
+
+  if (N_ghost < 0) N_ghost = 0;
+
+  ML_Operator_Set_ApplyFuncData(newMatrix, isize, osize,
+                                (void*) Graph, osize,
+                                NULL, 0);
+
+  ML_CommInfoOP_Generate( &(newMatrix->getrow->pre_comm), 
+                         ML_Epetra_CrsGraph_comm_wrapper, (void *) Graph, 
+                         newMatrix->comm, isize, N_ghost);
+
+  ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
+                         ML_Epetra_CrsGraph_getrow);
+
+  ML_Operator_Set_ApplyFunc (newMatrix, ML_Epetra_CrsGraph_matvec);
 
   return 0;
 }

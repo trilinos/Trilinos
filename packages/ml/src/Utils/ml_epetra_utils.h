@@ -19,6 +19,7 @@ class Epetra_Map;
 class Epetra_Vector;
 class Epetra_Import;
 class Epetra_Object;
+class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
@@ -133,6 +134,16 @@ int ML_Epetra_comm_wrapper(double vec[], void *data);
 int ML_Epetra_CrsMatrix_comm_wrapper(double vec[], void *data);
 int ML_Epetra_VbrMatrix_comm_wrapper(double vec[], void *data);
 
+// wrappers for Epetra_CrsGraph
+int ML_Epetra_CrsGraph_comm_wrapper(double vec[], void *data);
+int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
+                              int out, double *ap);
+int ML_Epetra_CrsGraph_getrow(ML_Operator *data, int N_requested_rows,
+                              int requested_rows[], int allocated_space, 
+                              int columns[], double values[],
+                              int row_lengths[]);
+int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatrix);
+
 #ifndef ML_CPP
 }
 #endif
@@ -176,6 +187,14 @@ int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double &);
+
+inline int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
+				CrsMatrix)
+{
+  int MaxNumNonzeros;
+  double CPUTime;
+  return(ML_Operator2EpetraCrsMatrix(Ke, CrsMatrix, MaxNumNonzeros, false, CPUTime));
+}
 
 Epetra_Map* Epetra_ML_readupdatevector(char* filename, Epetra_Comm& comm);
 Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,
