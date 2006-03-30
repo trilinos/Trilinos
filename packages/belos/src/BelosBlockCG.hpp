@@ -232,6 +232,9 @@ RefCountPtr<const MV> BlockCG<ScalarType,MV,OP>::GetNativeResiduals( std::vector
 template <class ScalarType, class MV, class OP>
 void BlockCG<ScalarType,MV,OP>::Solve () 
 {
+  //
+  // Get the current ostream from the OutputManager
+  //
   _os = _om->GetOStream();
   //
   // Retrieve the first linear system to be solved.
@@ -245,7 +248,7 @@ void BlockCG<ScalarType,MV,OP>::Solve ()
     //
     // Get the blocksize for this set of linear systems.
     //
-    _blocksize = _lp->GetBlockSize();
+    _blocksize = _lp->GetCurrBlockSize();
     if (_blocksize == 1 ) {
       //
       // Create single vector CG solver for this linear system.

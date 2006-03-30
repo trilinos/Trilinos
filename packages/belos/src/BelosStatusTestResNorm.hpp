@@ -370,12 +370,12 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::CheckStatus( IterativeSolver<Sca
   //
   // This section computes the norm of the residual vector
   //
-  if ( cur_rhs_num_ != lp->GetRHSIndex() || cur_blksz_ != lp->GetBlockSize() || cur_num_rhs_ != lp->GetNumToSolve() ) {
+  if ( cur_rhs_num_ != lp->GetRHSIndex() || cur_blksz_ != lp->GetCurrBlockSize() || cur_num_rhs_ != lp->GetNumToSolve() ) {
     //
     // We have moved on to the next rhs block
     //
     cur_rhs_num_ = lp->GetRHSIndex();
-    cur_blksz_ = lp->GetBlockSize();
+    cur_blksz_ = lp->GetCurrBlockSize();
     cur_num_rhs_ = lp->GetNumToSolve();
     //
   } else {
@@ -518,7 +518,7 @@ StatusType StatusTestResNorm<ScalarType,MV,OP>::FirstcallCheckStatusSetup( Itera
     //
     firstcallCheckStatus_ = false;
     cur_rhs_num_ = lp->GetRHSIndex();
-    cur_blksz_ = lp->GetBlockSize();
+    cur_blksz_ = lp->GetCurrBlockSize();
     cur_num_rhs_ = lp->GetNumToSolve();
     //
     if (scaletype_== NormOfRHS) {

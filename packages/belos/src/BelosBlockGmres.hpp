@@ -359,11 +359,14 @@ namespace Belos {
     //
     _cur_block_sol = _lp->GetCurrLHSVec();
     _cur_block_rhs = _lp->GetCurrRHSVec();
-    _blocksize = _lp->GetBlockSize();
     //
     //  Start executable statements. 
     //
     while ( _cur_block_rhs.get() && _cur_block_sol.get() ) {
+      //
+      // Get the blocksize from the linear problem
+      //
+      _blocksize = _lp->GetCurrBlockSize();
       //
       if (_om->isVerbosityAndPrint( IterationDetails )) {
         *_os << endl;

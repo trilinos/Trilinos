@@ -36,11 +36,13 @@
 
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
 using Teuchos::null;
 using Teuchos::rcp_const_cast;
+using Teuchos::ParameterList;
 
 /*! \class Belos::LinearProblem  
   \brief The Belos::LinearProblem class is a wrapper that encapsulates the 
@@ -113,8 +115,11 @@ namespace Belos {
      */
     void SetRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; Right_Prec_ = true; };
     
+    //! Set the parameter list for defining the behavior of the linear problem class.
+    void SetParameterList(const RefCountPtr<ParameterList> &PL) { PL_ = PL; };
+
     //! Set the blocksize of the linear problem.  This information is used to set up the linear problem for block solvers.
-    void SetBlockSize(int blocksize) { blocksize_ = blocksize; };
+    void SetBlockSize(int blocksize) { default_blocksize_ = blocksize; blocksize_ = blocksize; };
     
     //! Inform the linear problem that the solver is finished with the current linear system.
     /*! \note This method is to be <b> only </b> used by the solver to inform the linear problem manager that it's
@@ -210,9 +215,19 @@ namespace Belos {
     //! Get a pointer to the right preconditioning operator.
     RefCountPtr<const OP> GetRightPrec() const { return(RP_); };
     
-    //! Get the current blocksize of the linear problem manager.
-    int GetBlockSize() const { return( blocksize_ ); };
+    //! Get a pointer to the parameter list.
+    RefCountPtr<ParameterList> GetParameterList() const { return(PL_); };
+
+    //! Get the default blocksize being used by the linear problem.
+    int GetBlockSize() const { return( default_blocksize_ ); };
     
+    //! Get the current blocksize being used by the linear problem.
+    /*! This may be different from the default blocksize set for the linear problem in the event
+      that the default blocksize doesn't divide evenly into the number of right-hand sides, but
+      it should not be more than the default blocksize.
+    */
+    int GetCurrBlockSize() const { return( blocksize_ ); };
+
     //! Get the current number of linear systems being solved for.
     /*! Since the block size is independent of the number of right-hand sides, 
       it is important to know how many linear systems
@@ -321,9 +336,15 @@ namespace Belos {
     //! Right preconditioning operator of linear system
     RefCountPtr<const OP> RP_;
     
-    //! Block size of linear system.
-    int blocksize_;
+    //! Parameter list for defining the behavior of the linear problem class
+    RefCountPtr<ParameterList> PL_;
+
+    //! Default block size of linear system.
+    int default_blocksize_;
     
+    //! Current block size of linear system.
+    int blocksize_;
+
     //! Number of linear systems that are currently being solver for ( <= blocksize_ )
     int num_to_solve_;
     
@@ -350,6 +371,7 @@ namespace Belos {
   
   template <class ScalarType, class MV, class OP>
   LinearProblem<ScalarType,MV,OP>::LinearProblem(void) : 
+    default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(0),
     rhs_index_(0),  
@@ -372,6 +394,7 @@ namespace Belos {
     A_(A),
     X_(X),
     B_(B),
+    default_blocksize_(1),
     blocksize_(1),
     num_to_solve_(1),
     rhs_index_(0),
@@ -398,6 +421,8 @@ namespace Belos {
     R0_(Problem.R0_),
     LP_(Problem.LP_),
     RP_(Problem.RP_),
+    PL_(Problem.PL_),
+    default_blocksize_(Problem.default_blocksize_),
     blocksize_(Problem.blocksize_),
     num_to_solve_(Problem.num_to_solve_),
     rhs_index_(Problem.rhs_index_),
@@ -439,6 +464,12 @@ namespace Belos {
     std::vector<int> index( num_to_solve_ );
     for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
     //
+/*    if ( num_to_solve_ < default_blocksize_ )
+      blocksize_ = num_to_solve_;
+    else
+      blocksize_ = default_blocksize_;
+*/
+    //
     if ( num_to_solve_ < blocksize_ ) 
       {
 	std::vector<int> index2(num_to_solve_);
@@ -467,7 +498,7 @@ namespace Belos {
 	index.resize( num_to_solve_ );
 	for ( i=0; i<num_to_solve_; i++ ) { index[i] = rhs_index_ + i; }
 	CurX_ = MVT::CloneView( *X_, index );
-	CurB_ = rcp_const_cast< MV>(MVT::CloneView( *B_, index ));
+	CurB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, index ));
 	R_ = MVT::Clone( *X_, num_to_solve_ );
 	//
       }
