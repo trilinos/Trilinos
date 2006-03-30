@@ -385,7 +385,7 @@ namespace Belos {
       //
       _basisvecs = MVT::Clone(*_cur_block_rhs,(_length+1)*_blocksize);
       if (_flexible)
-	_z_basisvecs = MVT::Clone(*_cur_block_rhs, (_length+1)*_blocksize);
+        _z_basisvecs = MVT::Clone(*_cur_block_rhs, (_length+1)*_blocksize);
       //
       // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
       //
