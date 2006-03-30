@@ -48,11 +48,15 @@ in-depth information."
 #include <sstream>
 
 // Thyra includes
-// #include "Thyra_Config.h"
-#include "Thyra_SerialVectorSpaceStd.hpp"
-#include "Thyra_VectorBase.hpp"
+#include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_Range1D.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
+
+using namespace Teuchos;
 %}
 
 // Ignore directives
@@ -68,6 +72,8 @@ in-depth information."
 // Thyra interface imports and includes
 using namespace std;
 #define TEMPLATE_FRIENDS_NOT_SUPPORTED
+%import  "Teuchos_ConfigDefs.hpp"
+%import  "Teuchos_Range1D.hpp"
 %import  "Teuchos_VerbosityLevel.hpp"
 %import  "Teuchos_Describable.hpp"
 %import  "RTOp_MPI_config.h"
@@ -81,7 +87,7 @@ using namespace std;
 %include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 %include "Thyra_ScalarProdVectorSpaceBaseDecl.hpp"
 %include "Thyra_SerialVectorSpaceBaseDecl.hpp"
-%include "Thyra_SerialVectorSpaceStdDecl.hpp"
+%include "Thyra_DefaultSerialVectorSpaceDecl.hpp"
 %include "Thyra_VectorStdOpsDecl.hpp"
 
 // Macro for an interface, templated on type
@@ -97,11 +103,8 @@ using namespace std;
 %ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::SubMultiVectorView<type> &raw_mv) const;
 %ignore Thyra::VectorSpaceBase<type>::createMembersView(const RTOpPack::ConstSubMultiVectorView<type> &raw_mv) const;
 
-// This is the start of a typemap for converting RefCountPtr's for a
-// VectorBase<double> to a raw pointer
-// %typemap(in) Teuchos::RefCountPtr<Thyra::VectorBase<type> >* {
-//   
-// }
+%feature("pythonappend") Teuchos::RefCountPtr<Thyra::VectorBase<type> >::
+  RefCountPtr<Thyra::VectorBase<type> > {print "Hello World!"}
 
 %template (RCPVectorBase_ ## type)      Teuchos::RefCountPtr<Thyra::VectorBase<type> >;
 %template (RCPVectorSpaceBase_ ## type) Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<type> >;
@@ -113,7 +116,7 @@ using namespace std;
 %template (VectorSpaceDefaultBase_ ## type)    Thyra::VectorSpaceDefaultBase<type>;
 %template (ScalarProdVectorSpaceBase_ ## type) Thyra::ScalarProdVectorSpaceBase<type>;
 %template (SerialVectorSpaceBase_ ## type)     Thyra::SerialVectorSpaceBase<type>;
-%template (SerialVectorSpaceStd_ ## type)      Thyra::SerialVectorSpaceStd<type>;
+%template (SerialVectorSpaceStd_ ## type)      Thyra::DefaultSerialVectorSpace<type>;
 %template (createMember_ ## type)              Thyra::createMember<type>;
 %template (V_S_ ## type)                       Thyra::V_S<type>;
 %template (sum_ ## type)                       Thyra::sum<type>;
@@ -125,4 +128,16 @@ INTERFACE(double)
 
 // Extensions.
 
+
+
 // Python code.
+// %pythoncode {
+// def createMember(arg):
+//     rcpvb = createMember_double(arg)
+//     d     = rcpvb.__deref__()
+//     try:
+//         rcpvb.this.append(d)
+//     except SystemError:
+//         rcpvb.this = [rcpvb.this, d]
+//     return rcpvb
+// }
