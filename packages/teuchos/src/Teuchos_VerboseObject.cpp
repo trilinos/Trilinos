@@ -39,7 +39,8 @@ RefCountPtr<FancyOStream>& VerboseObjectBase::privateDefaultOStream()
   if(defaultOStream.get()==NULL) {
     defaultOStream = rcp(new FancyOStream(rcp(&std::cout,false)));
     defaultOStream->setOutputToRootOnly(0);
-    //defaultOStream->setShowProcRank(false);
+    if(GlobalMPISession::getNProc()>1)
+      defaultOStream->setShowProcRank(true);
   }
   return defaultOStream;
 }

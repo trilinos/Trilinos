@@ -312,12 +312,7 @@ public:
     ,const bool                                                    showLinePrefix    = false
     ,const int                                                     maxLenLinePrefix  = 10
     ,const bool                                                    showTabCount      = false
-    ,const bool                                                    showProcRank
-#ifdef HAVE_MPI
-                                                                                     = true
-#else
-                                                                                     = false
-#endif
+    ,const bool                                                    showProcRank      = false
     );
 
   /** \brief . */
@@ -328,12 +323,7 @@ public:
     ,const bool                                                    showLinePrefix    = false
     ,const int                                                     maxLenLinePrefix  = 10
     ,const bool                                                    showTabCount      = false
-    ,const bool                                                    showProcRank
-#ifdef HAVE_MPI
-                                                                                     = true
-#else
-                                                                                     = false
-#endif
+    ,const bool                                                    showProcRank      = false
     );
 
   /** \brief. */
