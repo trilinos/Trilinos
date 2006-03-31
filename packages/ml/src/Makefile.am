@@ -168,6 +168,7 @@ $(srcdir)/Utils/ml_FilterType.h                        \
 $(srcdir)/Utils/ml_DD_prec.h                           \
 $(srcdir)/Utils/ml_Ifpack_ML.h                         \
 $(srcdir)/Utils/ml_Epetra_wrap_CrsGraph_as_RowMatrix.H \
+$(srcdir)/Utils/ml_MatrixFreePreconditioner.h          \
 $(srcdir)/NonlinML/nlnml_finelevelnoxinterface.H       \
 $(srcdir)/NonlinML/nlnml_coarselevelnoxinterface.H     \
 $(srcdir)/NonlinML/nlnml_preconditioner.H              \
@@ -238,6 +239,7 @@ $(srcdir)/Utils/ml_anasazi.cpp                              \
 $(srcdir)/Utils/ml_MultiLevelOperator.cpp                   \
 $(srcdir)/Utils/ml_RowMatrix.cpp                            \
 $(srcdir)/Utils/ml_DD_prec.cpp                              \
+$(srcdir)/Utils/ml_MatrixFreePreconditioner.cpp             \
 $(srcdir)/MLAPI/MLAPI_Defaults.cpp                          \
 $(srcdir)/MLAPI/MLAPI_Gallery.cpp                           \
 $(srcdir)/MLAPI/MLAPI_InverseOperator.cpp                   \

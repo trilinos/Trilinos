@@ -33,7 +33,27 @@ TEST_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
 
 EXEEXT = .exe
 
+if ML_USING_AZTECOO
+if ML_USING_TEUCHOS
+if ML_USING_GALERI
+if ML_USING_EPETRAEXT
+if ML_USING_EPETRA
 noinst_PROGRAMS = MatrixFree 
+else
+noinst_PROGRAMS = 
+endif
+else
+noinst_PROGRAMS = 
+endif
+else
+noinst_PROGRAMS = 
+endif
+else
+noinst_PROGRAMS = 
+endif
+else
+noinst_PROGRAMS = 
+endif
 
 MatrixFree_SOURCES      = $(srcdir)/MatrixFree.cpp
 MatrixFree_DEPENDENCIES = $(top_builddir)/src/libml.a
