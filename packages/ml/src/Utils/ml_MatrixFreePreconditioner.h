@@ -6,9 +6,10 @@
 #include <string>
 #include "ml_epetra.h"
 #include "Epetra_Operator.h"
+#include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
 
-class Epetra_Comm;
+class Epetra_Time;
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_CrsGraph;
@@ -91,7 +92,22 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(Comm_ML_);
     }
 
+    inline int MyPID() const
+    {
+      return(Comm().MyPID());
+    }
+
+    inline int NumProc() const
+    {
+      return(Comm().NumProc());
+    }
+
   private:
+    Epetra_Time& Time()
+    {
+      return(*Time_);
+    }
+
     ML_Comm* Comm_ML_;
 
     //! Computes the preconditioner.
@@ -112,6 +128,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
     Epetra_CrsMatrix* R_;
     Epetra_CrsMatrix* C_;
 
+    Epetra_Time* Time_;
 }; // class MatrixFreePreconditioner
 
 } // namespace ML_Epetra

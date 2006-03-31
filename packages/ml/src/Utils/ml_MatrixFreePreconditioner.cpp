@@ -12,6 +12,7 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
+#include "Epetra_Time.h"
 #include "Teuchos_ParameterList.hpp"
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
@@ -36,10 +37,15 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
   Operator_(Operator),
   Graph_(Graph),
   R_(0),
-  C_(0)
+  C_(0),
+  Time_(0)
 {
+  ML_Set_PrintLevel(10); // FIXME
+
   // ML communicator, here based on MPI_COMM_WORLD
   ML_Comm_Create(&Comm_ML_);
+
+  Time_ = new Epetra_Time(Comm());
 
   ML_CHK_ERRV(Compute(NullSpace));
 }
@@ -48,6 +54,8 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
 ML_Epetra::MatrixFreePreconditioner::
 ~MatrixFreePreconditioner()
 {
+  if (Time_) delete Time_;
+
   ML_Comm_Destroy(&Comm_ML_);
 }
 
@@ -77,6 +85,8 @@ int ML_Epetra::MatrixFreePreconditioner::
 Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P, 
         ML_Operator** R, ML_Operator** C)
 {
+  Time().ResetStartTime();
+
   // Aggregate object, with settings
   ML_Aggregate_Create(MLAggr);
   
@@ -108,6 +118,11 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
     ML_CHK_ERR(-2);
   }
 
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
+    cout << "Coarsening time = " << Time().ElapsedTime() << " (s)" << endl;
+
+  Time().ResetStartTime();
+
   *R = ML_Operator_Create(Comm_ML());
 
   ML_Operator_Transpose_byrow(*P, *R);
@@ -119,6 +134,9 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
   // to use EpetraExt coloring routines.
   ML_rap(*R, A, *P, *C, ML_MSR_MATRIX);
 
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
+    cout << "(block) R, P, C construction time = " << Time().ElapsedTime() << " (s)" << endl;
+
   return(0);
 }
 
@@ -126,6 +144,23 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
 int ML_Epetra::MatrixFreePreconditioner::
 Compute(const Epetra_MultiVector& NullSpace)
 {
+  int OperatorDomainElements =  Operator_.OperatorDomainMap().NumGlobalElements();
+  int OperatorRangeElements =  Operator_.OperatorRangeMap().NumGlobalElements();
+  int GraphRows = Graph_.NumGlobalRows();
+  int GraphNnz = Graph_.NumGlobalNonzeros();
+
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5) 
+  {
+    ML_print_line("-",78);
+    cout << "*** " << endl;
+    cout << "*** ML_Epetra::MatrixFreePreconditioner" << endl;
+    cout << "***" << endl;
+    cout << "The operator domain map has " << OperatorDomainElements;
+    cout << ", the operator range map has "  << OperatorRangeElements << endl;
+    cout << "The graph has " << GraphRows << " rows and " << GraphNnz << endl;
+    cout << "Processors used in computation = " << Comm().NumProc() << endl;
+  }
+
   int    NumPDEEqns  = List_.get("PDE equations", 1);
 
   // ML wrapper for Graph_
@@ -141,8 +176,13 @@ Compute(const Epetra_MultiVector& NullSpace)
   
   ML_Aggregate* MLAggr = 0;
   ML_Operator* BlockPtent_ML = 0, *BlockRtent_ML = 0,* CoarseGraph_ML = 0;
+
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5) cout << endl;
+
   ML_CHK_ERR(Coarsen(Graph_ML, &MLAggr, &BlockPtent_ML, &BlockRtent_ML, 
                      &CoarseGraph_ML));
+
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5) cout << endl;
 
   Epetra_CrsMatrix* BlockPtent,* GraphCoarse;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(BlockPtent_ML, BlockPtent));
@@ -154,6 +194,11 @@ Compute(const Epetra_MultiVector& NullSpace)
   // - number of colors is ColorMap.NumColors().        //
   // ================================================== //
   
+  if (MyPID() == 0)
+    cout << "Coloring with JONES_PLASSMAN..." << endl;
+
+  Time().ResetStartTime();
+
   CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::JONES_PLASSMAN,
                                             0, false, true);
 
@@ -162,10 +207,15 @@ Compute(const Epetra_MultiVector& NullSpace)
   delete GraphCoarse;
   ML_Operator_Destroy(&CoarseGraph_ML);
 
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
+    cout << "Coloring time = " << Time().ElapsedTime() << " (s)" << endl;
+
   // collect aggregate information, and mark all nodes that are
   // connected with each aggregate. These nodes will have a possible
   // nonzero entry after the matrix-matrix product between the Operator_
   // and the tentative prolongator.
+
+  Time().ResetStartTime();
 
   int NumAggregates = BlockPtent_ML->invec_leng;
   vector<vector<int> > aggregates(NumAggregates);
@@ -197,14 +247,15 @@ Compute(const Epetra_MultiVector& NullSpace)
 
   int NumColors = ColorMap.MaxNumColors();
 
-  cout << "# colors on processor " << Comm().MyPID() << " = " 
-       << ColorMap.NumColors() << endl;
-  if (Comm().MyPID() == 0)
+  if (ML_Get_PrintLevel() > 5)
+    cout << "# colors on processor " << Comm().MyPID() << " = "
+        << ColorMap.NumColors() << endl;
+  if (MyPID() == 0)
     cout << "Maximum # of colors = " << NumColors << endl;
 
   int NullSpaceDim = NullSpace.NumVectors();
 
-  // grab map form the operator
+  // grab map from the operator
   const Epetra_Map& FineMap = Operator_.OperatorDomainMap();
   Epetra_Map CoarseMap(-1, NumAggregates * NullSpaceDim, 0, Comm());
   Epetra_Map NodeListMap(-1, NodeList.size(), &NodeList[0], 0, Comm());
@@ -237,6 +288,11 @@ Compute(const Epetra_MultiVector& NullSpace)
   Epetra_Import Importer(NodeListMap, Graph_.RangeMap());
   ExtColoredAP.Import(*ColoredAP, Importer, Insert);
 
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
+    cout << "colored A times P time = " << Time().ElapsedTime() << " (s)" << endl;
+
+  Time().ResetStartTime();
+
   // populate the actual AP operator.
 
   Epetra_FECrsMatrix* AP = new Epetra_FECrsMatrix(Copy, FineMap, 0);
@@ -263,6 +319,9 @@ Compute(const Epetra_MultiVector& NullSpace)
   AP->GlobalAssemble(false);
   AP->FillComplete(CoarseMap, FineMap);
 
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
+    cout << "Construction of final AP time = " << Time().ElapsedTime() << " (s)" << endl;
+
   ML_Operator* AP_ML = ML_Operator_Create(Comm_ML());
   ML_Operator_WrapEpetraMatrix(AP, AP_ML);
 
@@ -286,6 +345,7 @@ Compute(const Epetra_MultiVector& NullSpace)
   ML_Operator_Destroy(&BlockRtent_ML);
   ML_Operator_Destroy(&Graph_ML);
 
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5) ML_print_line("-",78);
   return(0);
 }
 #endif
