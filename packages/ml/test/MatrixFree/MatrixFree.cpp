@@ -28,8 +28,6 @@
 
 #include "ml_include.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
-
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -109,6 +107,9 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix* C;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML, C));
 
+  //cout << *C;
+  //cout << MFP->C();
+
   // compare C * vector using ML and matrix-free
   const Epetra_Map& MapC = C->RowMatrixRowMap();
   Epetra_Vector x(MapC), y(MapC), y_MFP(MapC);
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
   y.Norm2(&norm);
 
   if (Comm.MyPID() == 0)
-    cout << "norm = " << norm << endl;
+    cout << "||(C_ML - C_MFP) * y||_2 = " << norm << endl;
 
   if (norm > 1e-10) exit(EXIT_FAILURE);
 
@@ -159,32 +160,3 @@ int main(int argc, char *argv[])
 
   return(EXIT_SUCCESS);
 }
-
-#else
-
-#include <stdlib.h>
-#include <stdio.h>
-#ifdef HAVE_MPI
-#include "mpi.h"
-#endif
-
-int main(int argc, char *argv[])
-{
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
-
-  puts("Please configure ML with:");
-  puts("--enable-epetra");
-  puts("--enable-teuchos");
-  puts("--enable-aztecoo");
-  puts("--enable-galeri");
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  
-  return(EXIT_SUCCESS);
-}
-
-#endif

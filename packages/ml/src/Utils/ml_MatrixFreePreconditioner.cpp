@@ -9,7 +9,9 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Import.h"
 #include "Teuchos_ParameterList.hpp"
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
@@ -152,7 +154,7 @@ Compute(const Epetra_MultiVector& NullSpace)
   // - number of colors is ColorMap.NumColors().        //
   // ================================================== //
   
-  CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::PSEUDO_PARALLEL,
+  CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::JONES_PLASSMAN,
                                             0, false, true);
 
   Epetra_MapColoring& ColorMap = MapColoringTransform(const_cast<Epetra_CrsGraph&>(GraphCoarse->Graph()));
@@ -167,6 +169,7 @@ Compute(const Epetra_MultiVector& NullSpace)
 
   int NumAggregates = BlockPtent_ML->invec_leng;
   vector<vector<int> > aggregates(NumAggregates);
+  vector<int> NodeList;
 
   for (int i = 0; i < Graph_.NumMyRows(); ++i)
   {
@@ -180,19 +183,31 @@ Compute(const Epetra_MultiVector& NullSpace)
     vector<int>::iterator iter;
     for (int k = 0; k < NumEntries; ++k)
     {
-      iter = find(aggregates[AID].begin(), aggregates[AID].end(), Indices[k]);
+      const int& GCID = Graph_.ColMap().GID(Indices[k]);
+      iter = find(aggregates[AID].begin(), aggregates[AID].end(), GCID);
       if (iter == aggregates[AID].end())
-        aggregates[AID].push_back(Indices[k]);
+        aggregates[AID].push_back(GCID);
+      iter = find(NodeList.begin(), NodeList.end(), GCID);
+      if (iter == NodeList.end())
+        NodeList.push_back(GCID);
     }
   }
   
   ML_Aggregate_Destroy(&MLAggr);
 
-  int NumColors = ColorMap.NumColors();
+  int NumColors = ColorMap.MaxNumColors();
+
+  cout << "# colors on processor " << Comm().MyPID() << " = " 
+       << ColorMap.NumColors() << endl;
+  if (Comm().MyPID() == 0)
+    cout << "Maximum # of colors = " << NumColors << endl;
+
   int NullSpaceDim = NullSpace.NumVectors();
 
-  Epetra_Map FineMap(-1, Graph_.NumMyRows() * NumPDEEqns, 0, Comm());
+  // grab map form the operator
+  const Epetra_Map& FineMap = Operator_.OperatorDomainMap();
   Epetra_Map CoarseMap(-1, NumAggregates * NullSpaceDim, 0, Comm());
+  Epetra_Map NodeListMap(-1, NodeList.size(), &NodeList[0], 0, Comm());
 
   Epetra_MultiVector* ColoredP = new Epetra_MultiVector(FineMap, NumColors * NullSpaceDim);
   ColoredP->PutScalar(0.0);
@@ -218,26 +233,34 @@ Compute(const Epetra_MultiVector& NullSpace)
   Operator_.Apply(*ColoredP, *ColoredAP);
   delete ColoredP;
 
+  Epetra_MultiVector ExtColoredAP(NodeListMap, ColoredAP->NumVectors());
+  Epetra_Import Importer(NodeListMap, Graph_.RangeMap());
+  ExtColoredAP.Import(*ColoredAP, Importer, Insert);
+
   // populate the actual AP operator.
 
-  Epetra_CrsMatrix* AP = new Epetra_CrsMatrix(Copy, FineMap, 0);
+  Epetra_FECrsMatrix* AP = new Epetra_FECrsMatrix(Copy, FineMap, 0);
 
   for (int i = 0; i < NumAggregates; ++i)
   {
     for (int j = 0; j < aggregates[i].size(); ++j)
     {
-      int row = aggregates[i][j];
-      int col = i;
+      int GRID = aggregates[i][j];
+      int LRID = NodeListMap.LID(GRID);
+      assert (LRID != -1);
+      int GCID = CoarseMap.GID(i);
+      assert (GCID != -1);
       int color = ColorMap[i] - 1;
-      double val = (*ColoredAP)[color][row];
+      double val = ExtColoredAP[color][LRID];
       if (val != 0.0)
-        AP->InsertGlobalValues(row, 1, &val, &col);
+        AP->InsertGlobalValues(1, &GRID, 1, &GCID, &val);
     }
   }
 
   aggregates.resize(0);
   delete ColoredAP;
 
+  AP->GlobalAssemble(false);
   AP->FillComplete(CoarseMap, FineMap);
 
   ML_Operator* AP_ML = ML_Operator_Create(Comm_ML());
