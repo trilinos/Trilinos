@@ -78,6 +78,8 @@
 
 // NOX-headers
 #include "NOX_Epetra_Interface_Preconditioner.H"
+#include "NOX_Epetra_Group.H"
+#include "NOX_Solver_Manager.H"
 
 // own headers
 #include "nlnml_preconditioner_utils.H"
@@ -101,9 +103,9 @@ public:
                      ParameterList& mlparams,
                      const Epetra_Comm& comm);
   
-  virtual ~NLNML_Preconditioner();
+  virtual ~NLNML_Preconditioner() {}
   
-  void SetNoxSolver(); 
+  void SetNoxSolver(RefCountPtr<NOX::Solver::Manager> s) { noxsolver_ = s; } 
   
   const char* Label() const {return(&(label_[0]));}
   
@@ -112,6 +114,8 @@ public:
   const Epetra_Map & OperatorDomainMap() const {return interface_->getMap();}
   
   const Epetra_Map & OperatorRangeMap() const {return interface_->getMap();}
+  
+  int OutLevel() { return params_->get("nlnML output",0); } 
   
   bool isinit() const {return(isinit_);}
   
@@ -147,7 +151,7 @@ private:
     
   void Initialize();
   
-  void compPrec();
+  void compPrec(const Epetra_Vector& x);
   void ML_Nox_compute_Jacobian_Linearpreconditioner();      
   void ML_Nox_compute_Jacobian_Nonlinearpreconditioner();   
 
@@ -171,10 +175,10 @@ private:
   bool  isinit_; 
   int   ncalls_NewPrec_;
 
-  const Epetra_Comm& comm_;
+  const Epetra_Comm&                              comm_;
   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface_;
-  RefCountPtr<Teuchos::ParameterList> params_;
-
+  RefCountPtr<Teuchos::ParameterList>             params_;
+  RefCountPtr<NOX::Solver::Manager>               noxsolver_;
 
 }; // class NLNML_Preconditioner
 } // namespace NLNML

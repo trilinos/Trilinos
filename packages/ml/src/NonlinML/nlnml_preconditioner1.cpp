@@ -79,25 +79,6 @@ interface_(interface)
 {
   label_  = "nlnML_Preconditioner";
   params_ = rcp(new Teuchos::ParameterList(mlparams));
-
-  return;
-}
-
-
-/*----------------------------------------------------------------------*
- |  dtor (public)                                             m.gee 3/06|
- *----------------------------------------------------------------------*/
-NLNML::NLNML_Preconditioner::~NLNML_Preconditioner()
-{
-  return;
-}
-
-
-/*----------------------------------------------------------------------*
- |  register outer nox solver                                 m.gee 3/06|
- *----------------------------------------------------------------------*/
-void NLNML::NLNML_Preconditioner::SetNoxSolver()
-{
   return;
 }
 
@@ -110,7 +91,75 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
 				     Epetra_Operator& M,
 				     NOX::Parameter::List* precParams)
 {
-  return true;
+  if (&M != this)
+  {
+    cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
+         << "**ERR**: supplied preconditioner is not this\n"  
+         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+  
+  bool flag = true;
+  int offset = getoffset();
+  
+  if (offset && ncalls_NewPrec_)
+    if (ncalls_NewPrec_ % offset == 0)
+     setinit(false);
+  
+  else if ( params_->get("nlnML adaptive recompute",0.0) &&
+            ncalls_NewPrec_                              &&
+            !params_->get("nlnML is linear preconditioner",true))
+  {
+    if (noxsolver_ == null)
+    {
+      cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
+           << "**ERR**: outer nox solver not registered\n"  
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    const NOX::Epetra::Group& finalGroup =
+      dynamic_cast<const NOX::Epetra::Group&>(noxsolver_->getSolutionGroup());
+    const Epetra_Vector& currentF = 
+      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
+    double norm;
+    currentF.Norm2(&norm);
+    if (norm > params_->get("nlnML adaptive recompute",0.0))
+      setinit(false);    
+  }  
+  
+  if (!isinit())
+  {
+    if (Comm().MyPID() && OutLevel())
+      cout << "ML: NLNML_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
+      
+    // save number of calls to computeF
+    int ncalls = interface_->getnumcallscomputeF();
+    
+    interface_->setnumcallscomputeF(0);
+    
+    double t0 = GetClock();
+    flag = compPrec(x);
+    double t1 = GetClock();
+    
+    if (Comm().MyPID() && OutLevel())
+    {
+      cout << "ML: Setup time for preconditioner: " << (t1-t0) << " sec\n";
+      cout << "ML: Number of calls to fineinterface.computeF() in setup: " 
+           << interface_.getnumcallscomputeF() << endl;
+    }
+    
+    // reset the number of calls to computeF
+    interface_->setnumcallscomputeF(ncalls);
+    
+    if (flag) setinit(true);
+    else
+    {
+      cout << "**ERR**: NLNML::NLNML_Preconditioner::computePreconditioner:\n"
+           << "**ERR**: setup of Preconditioner failed\n"  
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    setinit(true);
+  }
+  ++ncalls_NewPrec_;
+  return flag;  
 }
 
 
@@ -118,7 +167,7 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
 /*----------------------------------------------------------------------*
  |  compute this preconditioner                                 m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_Preconditioner::compPrec()
+void NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
 {
   return ;
 }
