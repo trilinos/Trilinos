@@ -143,7 +143,7 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
     {
       cout << "ML: Setup time for preconditioner: " << (t1-t0) << " sec\n";
       cout << "ML: Number of calls to fineinterface.computeF() in setup: " 
-           << interface_.getnumcallscomputeF() << endl;
+           << interface_->getnumcallscomputeF() << endl;
     }
     
     // reset the number of calls to computeF
@@ -167,9 +167,9 @@ bool NLNML::NLNML_Preconditioner::computePreconditioner(
 /*----------------------------------------------------------------------*
  |  compute this preconditioner                                 m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
+bool NLNML::NLNML_Preconditioner::compPrec(const Epetra_Vector& x)
 {
-  return ;
+  return true;
 }
 
 

@@ -151,7 +151,7 @@ private:
     
   void Initialize();
   
-  void compPrec(const Epetra_Vector& x);
+  bool compPrec(const Epetra_Vector& x);
   void ML_Nox_compute_Jacobian_Linearpreconditioner();      
   void ML_Nox_compute_Jacobian_Nonlinearpreconditioner();   
 
