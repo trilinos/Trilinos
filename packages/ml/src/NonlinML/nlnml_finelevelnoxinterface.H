@@ -40,14 +40,15 @@
  * \date Last update do Doxygen: 31-Mar-05
  *
  */
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
+// ML headers
+#include "ml_common.h"
+#include "ml_include.h"
+
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 #ifndef NLNML_FINELEVELNOXINTERFACE_H
 #define NLNML_FINELEVELNOXINTERFACE_H
 
 #include <iostream>
-// ML headers
-#include "ml_common.h"
-#include "ml_include.h"
 // Epetra headers
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"

@@ -42,6 +42,8 @@
  * \date Last update do Doxygen: 31-Mar-05
  *
  */
+#include "ml_common.h"
+
 #if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 
 // ----------   Includes   ----------
@@ -51,7 +53,6 @@
 #include <string>
 #include <vector>
 
-#include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
 #include "MLAPI_Space.h"
 #include "MLAPI_Operator.h"
@@ -72,22 +73,11 @@ NLNML::NLNML_Preconditioner::NLNML_Preconditioner(
                                 NLNML::NLNML_FineLevelNoxInterface& interface,
                                 Teuchos::ParameterList& mlparams,
                                 const Epetra_Comm& comm) : 
-Epetra_Operator(),
-NOX::Epetra::Interface::Preconditioner(),                                
 interface_(interface),
 comm_(comm)                                
 {
   params_ = Teuchos::rcp(new Teuchos::ParameterList(mlparams));
-  return;
-}
 
-
-/*----------------------------------------------------------------------*
- |  ctor (public)                                             m.gee 3/06|
- *----------------------------------------------------------------------*/
-NLNML::NLNML_Preconditioner::NLNML_Preconditioner(int dummy)
-{
-  cout << "Dummy constructor called\n"; fflush(stdout);
   return;
 }
 
@@ -104,21 +94,21 @@ NLNML::NLNML_Preconditioner::~NLNML_Preconditioner()
 /*----------------------------------------------------------------------*
  |  register outer nox solver                                 m.gee 3/06|
  *----------------------------------------------------------------------*/
-bool NLNML::NLNML_Preconditioner::SetNoxSolver()
+void NLNML::NLNML_Preconditioner::SetNoxSolver()
 {
-  return true;
+  return;
 }
 
 
 /*----------------------------------------------------------------------*
  |  compute this preconditioner (public, derived)             m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_Preconditioner::computePreconditioner(
+bool NLNML::NLNML_Preconditioner::computePreconditioner(
                                      const Epetra_Vector& x, 
 				     Epetra_Operator& M,
 				     NOX::Parameter::List* precParams)
 {
-  return;
+  return true;
 }
 
 

@@ -40,7 +40,7 @@
  * \date Last update do Doxygen: 31-Mar-05
  *
  */
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
+#if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 
 #ifndef NLNML_PRECONDITIONER_H
 #define NLNML_PRECONDITIONER_H
@@ -95,8 +95,6 @@ class NLNML_Preconditioner : public virtual Epetra_Operator,
 {
 public:
 
-  explicit NLNML_Preconditioner(int dummy);
-  
   explicit NLNML_Preconditioner(NLNML::NLNML_FineLevelNoxInterface& interface,
                                 Teuchos::ParameterList& mlparams,
                                 const Epetra_Comm& comm);

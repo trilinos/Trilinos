@@ -62,6 +62,7 @@
 #include "ml_common.h"
 
 #if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
+
 // ml objects
 #include "nlnml_preconditioner.H"
 
@@ -293,9 +294,8 @@ int main(int argc, char *argv[])
    
    NLNML::NLNML_Preconditioner Prec(interface,mlparams,Comm);
    
-
+ 
   // End Preconditioner **************************************
-#if 0
 
 
   // run the preconditioner as a solver **********************
@@ -323,6 +323,7 @@ int main(int argc, char *argv[])
 
 
 
+#if 0
    // for nlnCG:
    NOX::EpetraNew::MatrixFree*                B            = 0;
    Epetra_CrsMatrix*                          A            = 0;
@@ -426,7 +427,6 @@ int main(int argc, char *argv[])
 #endif
 return ierr ;
 }
-
 
 
 
