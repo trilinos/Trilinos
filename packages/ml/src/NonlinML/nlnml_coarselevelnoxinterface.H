@@ -40,6 +40,9 @@
  * \date Last update do Doxygen: 31-Mar-05
  *
  */
+#include "ml_common.h"
+#include "ml_include.h"
+
 #if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 #ifndef NLNML_COARSELEVELNOXINTERFACE_H
 #define NLNML_COARSELEVELNOXINTERFACE_H
@@ -67,7 +70,6 @@
 #include "NOX_Epetra_Interface_Preconditioner.H"
 
 // ML-headers
-#include "ml_include.h"
 #include "ml_epetra_utils.h"
 #include "ml_epetra.h"
 #include "ml_epetra_operator.h"
