@@ -87,6 +87,7 @@
 class NLNML::NLNML_FineLevelNoxInterface;
 
 using namespace std;
+using namespace Teuchos;
 namespace NLNML
 {
 
@@ -95,9 +96,10 @@ class NLNML_Preconditioner : public virtual Epetra_Operator,
 {
 public:
 
-  explicit NLNML_Preconditioner(NLNML::NLNML_FineLevelNoxInterface& interface,
-                                Teuchos::ParameterList& mlparams,
-                                const Epetra_Comm& comm);
+  explicit NLNML_Preconditioner(
+                     RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface,
+                     ParameterList& mlparams,
+                     const Epetra_Comm& comm);
   
   virtual ~NLNML_Preconditioner();
   
@@ -107,9 +109,9 @@ public:
   
   const Epetra_Comm & Comm() const {return(comm_);}
   
-  const Epetra_Map & OperatorDomainMap() const {return interface_.getMap();}
+  const Epetra_Map & OperatorDomainMap() const {return interface_->getMap();}
   
-  const Epetra_Map & OperatorRangeMap() const {return interface_.getMap();}
+  const Epetra_Map & OperatorRangeMap() const {return interface_->getMap();}
   
   bool isinit() const {return(isinit_);}
   
@@ -169,9 +171,9 @@ private:
   bool  isinit_; 
   int   ncalls_NewPrec_;
 
-  NLNML::NLNML_FineLevelNoxInterface& interface_;
   const Epetra_Comm& comm_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList> params_;
+  RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface_;
+  RefCountPtr<Teuchos::ParameterList> params_;
 
 
 }; // class NLNML_Preconditioner

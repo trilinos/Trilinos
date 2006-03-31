@@ -70,13 +70,15 @@
  |  ctor (public)                                             m.gee 3/06|
  *----------------------------------------------------------------------*/
 NLNML::NLNML_Preconditioner::NLNML_Preconditioner(
-                                NLNML::NLNML_FineLevelNoxInterface& interface,
-                                Teuchos::ParameterList& mlparams,
-                                const Epetra_Comm& comm) : 
-interface_(interface),
-comm_(comm)                                
+                  RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface,
+                  ParameterList& mlparams,
+                  const Epetra_Comm& comm) : 
+isinit_(false),
+comm_(comm),                                
+interface_(interface)
 {
-  params_ = Teuchos::rcp(new Teuchos::ParameterList(mlparams));
+  label_  = "nlnML_Preconditioner";
+  params_ = rcp(new Teuchos::ParameterList(mlparams));
 
   return;
 }

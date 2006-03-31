@@ -41,7 +41,14 @@
 #define NLNML_LINEARSYSTEM_H
 
 #include "NOX_Epetra_LinearSystem.H"
+#include "NOX_Epetra_Interface_Required.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
+#include "NOX_Epetra_MatrixFree.H"
 
+#include "nlnml_coarselevelnoxinterface.H"
+
+using namespace std;
+using namespace Teuchos;
 namespace NLNML
 {
 
@@ -50,7 +57,16 @@ class NLNML_LinearSystem : public virtual NOX::Epetra::LinearSystem
 
 public:
 
-  NLNML_LinearSystem();
+  NLNML_LinearSystem(
+              RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac,
+              RefCountPtr<Epetra_Operator> J,
+              RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec,
+              RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
+              RefCountPtr<Epetra_Operator> Prec,
+              const Epetra_Vector& soln,
+              bool ismatrixfree,
+              int level,
+              int printlevel);
 
   virtual ~NLNML_LinearSystem() {}
 
@@ -69,29 +85,39 @@ public:
 				 const NOX::Epetra::Vector& input, 
 				 NOX::Epetra::Vector& result) const;
 
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> getScaling();
+  Teuchos::RefCountPtr<NOX::Epetra::Scaling> getScaling() { return null; }
 
-  void resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s);
+  void resetScaling(const Teuchos::RefCountPtr<NOX::Epetra::Scaling>& s) { return; }
 
   bool computeJacobian(const NOX::Epetra::Vector& x);
 
   bool createPreconditioner(const NOX::Epetra::Vector& x, 
 			    NOX::Parameter::List& p,
-			    bool recomputeGraph);
+			    bool recomputeGraph) const;
 
-  bool destroyPreconditioner();
+  // Because of reuse features I prefer to do this myself
+  bool destroyPreconditioner() const { return true; } 
   
-  bool checkPreconditionerReuse();
+  // Because of reuse features I prefer to do this myself
+  bool checkPreconditionerReuse() { return true; }
 
-  bool isPreconditionerConstructed() const;
+  // Always...
+  bool isPreconditionerConstructed() const { return true; }
   
-  bool hasPreconditioner() const;
+  // Always...
+  bool hasPreconditioner() const { return true; } 
   
-  Teuchos::RefCountPtr<const Epetra_Operator> getJacobianOperator() const;
+  Teuchos::RefCountPtr<const Epetra_Operator> getJacobianOperator() const
+    { return J_; }
   
-  Teuchos::RefCountPtr<const Epetra_Operator> getGeneratedPrecOperator() const;
+  Teuchos::RefCountPtr<Epetra_Operator> getJacobianOperator()
+    { return J_; }
   
-  Teuchos::RefCountPtr<Epetra_Operator> getGeneratedPrecOperator();
+  Teuchos::RefCountPtr<const Epetra_Operator> getGeneratedPrecOperator() const
+    { return Prec_; }
+  
+  Teuchos::RefCountPtr<Epetra_Operator> getGeneratedPrecOperator()
+    { return Prec_; }
   
   void setJacobianOperatorForSolve(
                 const Teuchos::RefCountPtr<const Epetra_Operator>& solveJacOp);
@@ -102,6 +128,15 @@ public:
 
 protected:
 
+RefCountPtr<NOX::Epetra::Interface::Jacobian>       iJac_;
+RefCountPtr<Epetra_Operator>                        J_;
+RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec_;
+RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface>   coarseinterface_;
+RefCountPtr<Epetra_Operator>                        Prec_;
+const Epetra_Vector&                                soln_;
+bool                                                ismatrixfree_;
+int                                                 level_;
+int                                                 printlevel_;
 
 
 } ; // class NLNML_LinearSystem
