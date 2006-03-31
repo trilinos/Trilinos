@@ -40,8 +40,7 @@
 
 //-----------------------------------------------------------------------------
 Problem_Interface::Problem_Interface(FiniteElementProblem& Problem) :
-  NLNML::NLNML_FineLevelNoxInterface(),
-  problem(Problem)
+problem(Problem)
 {
   type_ = "Problem_Interface"; 
   return; 

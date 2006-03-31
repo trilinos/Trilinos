@@ -50,8 +50,9 @@ class FiniteElementProblem;
 class  Problem_Interface : public NLNML::NLNML_FineLevelNoxInterface
 {
 public:
-  Problem_Interface(FiniteElementProblem& Problem);
-  ~Problem_Interface();
+  explicit Problem_Interface(FiniteElementProblem& Problem);
+  
+  virtual ~Problem_Interface();
 
   //! Compute and return F
   bool computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag);

@@ -288,14 +288,10 @@ int main(int argc, char *argv[])
    mlparams.set("nlnML nonlinear postsmoothing sweeps medium level", 1);
    mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",   2);
 
-   Epetra_Map map(nlnproblem.getMap());
-   // create the preconditioner
-   NLNML::NLNML_FineLevelNoxInterface* inter = 
-     dynamic_cast<NLNML::NLNML_FineLevelNoxInterface*>(&fineinterface);
+   NLNML::NLNML_FineLevelNoxInterface& interface = 
+     dynamic_cast<NLNML::NLNML_FineLevelNoxInterface&>(fineinterface);
    
-   NLNML::NLNML_Preconditioner* Prec = 
-     new NLNML::NLNML_Preconditioner(*inter,mlparams,Comm);
-   delete Prec;
+   NLNML::NLNML_Preconditioner Prec(interface,mlparams,Comm);
    
 
   // End Preconditioner **************************************
