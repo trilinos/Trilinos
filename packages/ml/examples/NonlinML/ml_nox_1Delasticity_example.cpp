@@ -65,6 +65,7 @@
 
 // ml objects
 #include "nlnml_preconditioner.H"
+#include "nlnml_linearsystem.H"
 
 // NOX Objects
 #include "NOX.H"
@@ -89,6 +90,7 @@
 #include "FiniteElementProblem.H" // the application            
 
 using namespace std;
+using namespace Teuchos;
 
 int main(int argc, char *argv[])
 {
@@ -147,11 +149,14 @@ int main(int argc, char *argv[])
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
   // Ml_Nox_Fineinterface (which inherits from NOX::EpetraNew:: - interfaces)
-  Problem_Interface fineinterface(nlnproblem);
+  Teuchos::RefCountPtr<Problem_Interface> fineinterface = 
+    rcp(new Problem_Interface(nlnproblem));
 
   // Begin Nonlinear Solver ************************************
    // Create the top level nox parameter list
    NOX::Parameter::List nlParams;
+   RefCountPtr<NOX::Parameter::List> rcpparams = rcp(&nlParams);
+   rcpparams.release();
 
    // Set the printing parameters in the "Printing" sublist
    NOX::Parameter::List& printParams = nlParams.sublist("Printing");
@@ -246,11 +251,11 @@ int main(int argc, char *argv[])
 
 
   // Begin Preconditioner ************************************
-   Teuchos::ParameterList mlparams;
-   mlparams.set("nlnML output",                                      6          ); // ML-output-level (0-10)
+   ParameterList mlparams;
+   mlparams.set("nlnML output",                                      10         ); // ML-output-level (0-10)
    mlparams.set("nlnML max levels",                                  10         ); // max. # levels (minimum = 2 !)
    mlparams.set("nlnML coarse: max size",                            500        ); // the size ML stops generating coarser levels
-   mlparams.set("nlnML is linear preconditioner",                    false      );
+   mlparams.set("nlnML is linear preconditioner",                    true       );
    mlparams.set("nlnML is matrixfree",                               false      ); 
    mlparams.set("nlnML finite difference fine level",                false      );
    mlparams.set("nlnML finite difference alpha",                     1.0e-08    );    
@@ -289,11 +294,8 @@ int main(int argc, char *argv[])
    mlparams.set("nlnML nonlinear postsmoothing sweeps medium level", 1);
    mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",   2);
 
-   NLNML::NLNML_FineLevelNoxInterface& interface = 
-     dynamic_cast<NLNML::NLNML_FineLevelNoxInterface&>(fineinterface);
-   
-   NLNML::NLNML_Preconditioner Prec(interface,mlparams,Comm);
-   
+   RefCountPtr<NLNML::NLNML_Preconditioner> Prec = 
+     rcp(new NLNML::NLNML_Preconditioner(fineinterface,mlparams,Comm));
  
   // End Preconditioner **************************************
 
@@ -323,29 +325,30 @@ int main(int argc, char *argv[])
 
 
 
-#if 0
    // for nlnCG:
-   NOX::EpetraNew::MatrixFree*                B            = 0;
-   Epetra_CrsMatrix*                          A            = 0;
-   ML_NOX::Ml_Nox_LinearSystem*               linSys       = 0;
-   NOX::EpetraNew::Interface::Preconditioner* iPrec        = 0;
-   NOX::EpetraNew::Interface::Jacobian*       iJac         = 0;
-   NOX::EpetraNew::Interface::Required*       iReq         = 0;
+   NOX::Epetra::MatrixFree*                B            = 0;
+   Epetra_CrsMatrix*                       A            = 0;
+   NLNML::NLNML_LinearSystem*              linSys       = 0;
+   NOX::Epetra::Interface::Preconditioner* iPrec        = 0;
+   NOX::Epetra::Interface::Jacobian*       iJac         = 0;
+   NOX::Epetra::Interface::Required*       iReq         = 0;
 
    // for Newton:
-   NOX::EpetraNew::LinearSystemAztecOO*       azlinSys     = 0;
-   Epetra_Vector*                             clone        = 0;
+   NOX::Epetra::LinearSystemAztecOO*       azlinSys     = 0;
+   Epetra_Vector*                          clone        = 0;
 
    if (isnlnCG)
    {
-     B = new NOX::EpetraNew::MatrixFree(fineinterface, soln, false);
-     iPrec  = &Prec;
-     iJac   = B;
-     iReq   = &fineinterface;
+     RefCountPtr<NOX::Epetra::MatrixFree> B = 
+       rcp(new NOX::Epetra::MatrixFree(printParams,fineinterface,soln,false));
+     // iPrec  = &Prec;
+     // iJac   = B;
+     // iReq   = fineinterface.get();
      bool matrixfree    = mlparams.get("nlnML is matrixfree",false);
      int  ml_printlevel = mlparams.get("nlnML output",6);
-     linSys = new ML_NOX::Ml_Nox_LinearSystem(*iJac,*B,*iPrec,NULL,Prec,soln,matrixfree,0,ml_printlevel);
+     linSys = new NLNML::NLNML_LinearSystem(B,B,Prec,null,Prec,soln,matrixfree,0,ml_printlevel);
    }
+#if 0
    else
    {
      A        = fineinterface.getJacobian();
@@ -358,38 +361,49 @@ int main(int argc, char *argv[])
                                                         *iJac,*A,*iPrec,
                                                         Prec,*clone);
    }
-
+#endif
 
    // creat initial guess
-   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
+   NOX::Epetra::Vector initialGuess(soln);
+   
+   RefCountPtr<NLNML::NLNML_LinearSystem> rcplinsys = rcp(linSys);
    
    // Create the Group
-   NOX::EpetraNew::Group* grp = 0;
+   NOX::Epetra::Group* grp = 0;
    if (isnlnCG)
-      grp = new NOX::EpetraNew::Group(printParams, *iReq, initialGuess, *linSys); 
+      grp = new NOX::Epetra::Group(printParams, fineinterface, initialGuess, rcplinsys); 
+#if 0
    else 
       grp = new NOX::EpetraNew::Group(printParams, *iReq, initialGuess, *azlinSys); 
+#endif
+   RefCountPtr<NOX::Epetra::Group> rcpgrp = rcp(grp);
 
    // Create the convergence tests
    double FAS_normF = mlparams.get("nlnML absolute residual tolerance",1.0e-06);
-   NOX::StatusTest::NormF absresid(FAS_normF);
-   NOX::StatusTest::NormUpdate nupdate(FAS_normF);
-   NOX::StatusTest::Combo converged(NOX::StatusTest::Combo::AND);
-   converged.addStatusTest(absresid);
-   converged.addStatusTest(nupdate);
+   RefCountPtr<NOX::StatusTest::NormF> absresid 
+     = rcp(new NOX::StatusTest::NormF(FAS_normF));
+   RefCountPtr<NOX::StatusTest::NormUpdate> nupdate 
+     = rcp(new NOX::StatusTest::NormUpdate(FAS_normF));
+   RefCountPtr<NOX::StatusTest::Combo> converged 
+     = rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND));
+   converged->addStatusTest(absresid);
+   converged->addStatusTest(nupdate);
    
-   NOX::StatusTest::FiniteValue fv;
-   NOX::StatusTest::MaxIters maxiters(30000);
-   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR);
-   combo.addStatusTest(maxiters);
-   combo.addStatusTest(converged);
-   combo.addStatusTest(fv);
+   RefCountPtr<NOX::StatusTest::FiniteValue> fv = 
+     rcp(new NOX::StatusTest::FiniteValue());
+   RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
+     rcp(new NOX::StatusTest::MaxIters(250));
+   RefCountPtr<NOX::StatusTest::Combo> combo = 
+     rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+   combo->addStatusTest(maxiters);
+   combo->addStatusTest(converged);
+   combo->addStatusTest(fv);
 
    // Create the method
-   NOX::Solver::Manager solver(*grp, combo, nlParams);
+   NOX::Solver::Manager solver(rcpgrp, combo, rcpparams);
    
    // register the solver class in the preconditioner in case of nonlinear preconditioning
-   Prec.set_nox_solver(&solver);
+   Prec->SetNoxSolver();
 
 
    // solve
@@ -399,15 +413,15 @@ int main(int argc, char *argv[])
    int  ml_printlevel = mlparams.get("nlnML output",6);
    if (ml_printlevel>0 && Comm.MyPID()==0)
       cout << "NOX/ML :============solve time incl. setup : " << (t1-t0) << " sec\n";
-   double appltime = fineinterface.getsumtime();
+   double appltime = fineinterface->getsumtime();
    if (ml_printlevel>0 && Comm.MyPID()==0)
    {
       cout << "NOX/ML :===========of which time in application : " << appltime << " sec\n";
       cout << "NOX/ML :======number calls to computeF in this solve : " 
-           << fineinterface.getnumcallscomputeF() << "\n\n\n";
+           << fineinterface->getnumcallscomputeF() << "\n\n\n";
    }
-   fineinterface.resetsumtime();
-   fineinterface.setnumcallscomputeF(0);
+   fineinterface->resetsumtime();
+   fineinterface->setnumcallscomputeF(0);
    
    if (status != NOX::StatusTest::Converged) 
    {
@@ -424,7 +438,6 @@ int main(int argc, char *argv[])
 
 /* end main
 */
-#endif
 return ierr ;
 }
 
