@@ -654,7 +654,7 @@ namespace Belos {
     //
     for ( k=0; k<_blocksize; k++ ) {
       for ( i=0; i<n_row ; i++ ) {
-	_hessmatrix(i,_iter*_blocksize+k) = zero;
+        _hessmatrix(i,_iter*_blocksize+k) = zero;
       }
     }
     //
@@ -685,9 +685,9 @@ namespace Belos {
       // column of the Hessenberg matrix.
       //
       for ( k=0; k<_blocksize; k++ ) {
-	for ( i=0; i<num_prev; i++ ) {
-	  _hessmatrix(i,_iter*_blocksize+k) += dense_mat(i,k);
-	}
+        for ( i=0; i<num_prev; i++ ) {
+          _hessmatrix(i,_iter*_blocksize+k) += dense_mat(i,k);
+        }
       }
       //
       // F_vec <- F_vec - V(0:(j+1)*block-1,:) * H(0:num_prev-1,j:num_prev-1)
@@ -778,7 +778,7 @@ namespace Belos {
     //
     for ( k=0; k<_blocksize; k++ ) {
       for ( i=0; i<n_row ; i++ ) {
-	_hessmatrix(i, _iter*_blocksize+k) = zero;
+        _hessmatrix(i, _iter*_blocksize+k) = zero;
       }
     }
     //
@@ -822,7 +822,7 @@ namespace Belos {
       // of the Hessenberg matrix
       //
       for (k=0; k<num_prev; k++){
-	_hessmatrix(k,num_prev-_blocksize) += dense_vec(k);
+        _hessmatrix(k,num_prev-_blocksize) += dense_vec(k);
       }
       // Compute q_vec<- q_vec - Q_vec * dense_vec
       //
@@ -831,114 +831,112 @@ namespace Belos {
       MVT::MvNorm( *q_vec, &nm2 );
       //
       if (nm2[0] < nm1[0] * _dep_tol) {
-	// 
-	// Repeat process with newly computed q_vec
-	//
-	// Compute trans(Q_vec)*q_vec
-	//
-	MVT::MvTransMv( one, *Q_vec, *q_vec, dense_vec );
-	//
-	// Sum results [0:num_prev-1] into column (num_prev-_blocksize)
-	// of the Hessenberg matrix
-	//
-	for (k=0; k<num_prev; k++){
-	  _hessmatrix(k,num_prev-_blocksize) += dense_vec(k);
-	}
-	// Compute q_vec<- q_vec - Q_vec * dense_vec
-	//
-	MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
-	//
-	MVT::MvNorm( *q_vec, &nm2 );
+        // 
+        // Repeat process with newly computed q_vec
+        //
+        // Compute trans(Q_vec)*q_vec
+        //
+        MVT::MvTransMv( one, *Q_vec, *q_vec, dense_vec );
+        //
+        // Sum results [0:num_prev-1] into column (num_prev-_blocksize)
+        // of the Hessenberg matrix
+        //
+        for (k=0; k<num_prev; k++){
+          _hessmatrix(k,num_prev-_blocksize) += dense_vec(k);
+        }
+        // Compute q_vec<- q_vec - Q_vec * dense_vec
+        //
+        MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
+        //
+        MVT::MvNorm( *q_vec, &nm2 );
       }
       //
       // Check for linear dependence
       //
       if (nm2[0] < nm1[0] * _sing_tol) {
-	dep = true;
+        dep = true;
       }
       if (!dep){
-	//
-	// Normalize the new q_vec
-	//
-	ScalarType rjj = one/nm2[0];
-	MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
-	//
-	// Enter norm of q_vec to the [(j+1)*_blocksize + iter] row
-	// in the [(j*_blocksize + iter] column of the Hessenberg matrix
-	// 
-	_hessmatrix( num_prev, num_prev-_blocksize ) = nm2[0];
+        //
+        // Normalize the new q_vec
+        //
+        ScalarType rjj = one/nm2[0];
+        MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
+        //
+        // Enter norm of q_vec to the [(j+1)*_blocksize + iter] row
+        // in the [(j*_blocksize + iter] column of the Hessenberg matrix
+        // 
+        _hessmatrix( num_prev, num_prev-_blocksize ) = nm2[0];
       }
       else { 
-	//
-	if (_om->isVerbosityAndPrint( OrthoDetails )) {
-	  *_os << "Column " << num_prev << " of _basisvecs is dependent" << endl;
-	  *_os << endl;
-	}
-	//
-	// Create a random vector and orthogonalize it against all 
-	// previous cols of _basisvecs
-	// We could try adding a random unit vector instead -- not 
-	// sure if this would make any difference.
-	//
-	MVT::MvRandom( *tptr );
-	MVT::MvNorm( *tptr, &nm1 );
-	//
-	// This code  is automatically doing 2 steps of orthogonalization
-	// after adding a random vector. We could do one step of
-	// orthogonalization with a correction step if needed.
-	//
-	for (num_orth=0; num_orth<2; num_orth++)
-	  {
-	    MVT::MvTransMv(one, *Q_vec, *tptr, dense_vec);
-	    // Note that we don't change the entries of the
-	    // Hessenberg matrix when we orthogonalize a 
-	    // random vector
-	    MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *tptr );
-	  }
-	//
-	MVT::MvNorm( *tptr, &nm2 );
-	//
-	if (nm2[0] >= nm1[0] * _sing_tol){ 
-	  //
-	  // Copy vector into the current column of _basisvecs
-	  //
-	  MVT::MvAddMv( one, *tptr, zero, *tptr, *q_vec );
-	  MVT::MvNorm( *q_vec, &nm2 );
-	  //
-	  // Normalize the new q_vec
-	  //
-	  ScalarType rjj = one/nm2[0];
-	  MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
-	  //
-	  // Enter a zero in the [(j+1)*_blocksize + iter] row in the
-	  // [(j*_blocksize + iter] column of the Hessenberg matrix
-	  //
-	  _hessmatrix( num_prev, num_prev-_blocksize ) = zero;
-	}
-	else {
-	  //
-	  // Can't produce a new orthonormal basis vector
-	  // Return a flag so we can exit this pass of block GMRES
-	  flg = true;
-	  return flg;
-	}
-	//
+        //
+        if (_om->isVerbosityAndPrint( OrthoDetails )) {
+          *_os << "Column " << num_prev << " of _basisvecs is dependent" << endl;
+          *_os << endl;
+        }
+        //
+        // Create a random vector and orthogonalize it against all 
+        // previous cols of _basisvecs
+        // We could try adding a random unit vector instead -- not 
+        // sure if this would make any difference.
+        //
+        MVT::MvRandom( *tptr );
+        MVT::MvNorm( *tptr, &nm1 );
+        //
+        // This code  is automatically doing 2 steps of orthogonalization
+        // after adding a random vector. We could do one step of
+        // orthogonalization with a correction step if needed.
+        //
+        for (num_orth=0; num_orth<2; num_orth++)
+        {
+          MVT::MvTransMv(one, *Q_vec, *tptr, dense_vec);
+          // Note that we don't change the entries of the
+          // Hessenberg matrix when we orthogonalize a 
+          // random vector
+          MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *tptr );
+        }
+        //
+        MVT::MvNorm( *tptr, &nm2 );
+        //
+        if (nm2[0] >= nm1[0] * _sing_tol){ 
+          //
+          // Copy vector into the current column of _basisvecs
+          //
+          MVT::MvAddMv( one, *tptr, zero, *tptr, *q_vec );
+          MVT::MvNorm( *q_vec, &nm2 );
+          //
+          // Normalize the new q_vec
+          //
+          ScalarType rjj = one/nm2[0];
+          MVT::MvAddMv( rjj, *q_vec, zero, *q_vec, *q_vec );
+          //
+          // Enter a zero in the [(j+1)*_blocksize + iter] row in the
+          // [(j*_blocksize + iter] column of the Hessenberg matrix
+          //
+          _hessmatrix( num_prev, num_prev-_blocksize ) = zero;
+        }
+        else {
+          //
+          // Can't produce a new orthonormal basis vector
+          // Return a flag so we can exit this pass of block GMRES
+          flg = true;
+          return flg;
+        }
+        //
       } // end else 
-	//
+      //
     } // end for (iter=0;...)
       //
     if (_om->isVerbosity( OrthoDetails )){
       if(_om->doPrint()) { *_os << endl;
       *_os << "Checking Orthogonality after BlkOrthSing()"
-	  << " Iteration: " << _iter << endl; }
+           << " Iteration: " << _iter << endl; }
       CheckKrylovOrth(_iter);
     }
     //
     return flg;
     //
   } // end BlkOrthSing()
-  
-  
   
   template<class ScalarType, class MV, class OP>
   bool BlockGmres<ScalarType,MV,OP>::QRFactorAug(MV& VecIn, 
