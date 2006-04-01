@@ -1,6 +1,3 @@
-export RC_TRACE_ARCHIVES="1"
-export RC_TRACE_DYLIBS="1"
-export RC_TRACE_PREBINDING_DISABLED="1"
 ../configure \
 CXX=c++ \
 F77=g77 \
