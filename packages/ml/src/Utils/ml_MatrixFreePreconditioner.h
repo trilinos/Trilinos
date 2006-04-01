@@ -15,6 +15,7 @@ class Epetra_BlockMap;
 class Epetra_CrsGraph;
 class Epetra_MultiVector;
 class Epetra_CrsMatrix;
+class Epetra_FECrsMatrix;
 
 namespace ML_Epetra {
 
@@ -25,7 +26,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
     MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
                              Teuchos::ParameterList& List,
-                             const Epetra_MultiVector& NullSpace);
+                             Epetra_MultiVector& NullSpace);
 
     //! destructor
     ~MatrixFreePreconditioner();
@@ -79,13 +80,13 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(*C_);
     }
 
-    const Epetra_CrsMatrix& P() const
+    const Epetra_FECrsMatrix& R() const
     {
-      return(*P_);
+      return(*R_);
     }
 
     int Coarsen(ML_Operator* A, ML_Aggregate** aggr, ML_Operator** P, 
-                ML_Operator** R, ML_Operator** C);
+                ML_Operator** R, ML_Operator** C, int = 1, int = 1, double* = NULL);
 
     ML_Comm* Comm_ML()
     {
@@ -102,6 +103,11 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(Comm().NumProc());
     }
 
+    bool IsComputed() const
+    {
+      return(IsComputed_);
+    }
+
   private:
     Epetra_Time& Time()
     {
@@ -111,8 +117,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
     ML_Comm* Comm_ML_;
 
     //! Computes the preconditioner.
-    int Compute(const Epetra_MultiVector& NullSpace);
+    int Compute(Epetra_MultiVector& NullSpace);
 
+    bool IsComputed_;
     //! Label of this object
     std::string Label_; 
     //! Communicator object
@@ -124,11 +131,14 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! List containing all the parameters
     Teuchos::ParameterList List_;
     //! Prolongator from coarse to fine
-    Epetra_CrsMatrix* P_;
-    Epetra_CrsMatrix* R_;
+    Epetra_CrsMatrix* P_; // FIXME: DELETE ME
+    Epetra_FECrsMatrix* R_;
     Epetra_CrsMatrix* C_;
 
     Epetra_Time* Time_;
+
+    Epetra_MultiVector* NewNullSpace_;
+
 }; // class MatrixFreePreconditioner
 
 } // namespace ML_Epetra

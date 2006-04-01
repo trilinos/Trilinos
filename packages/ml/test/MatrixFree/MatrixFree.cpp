@@ -37,6 +37,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Galeri_Maps.h"
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
   if (argc > 1)
     nx = (int) strtol(argv[1],NULL,10);
   else
-    nx = 8;
+    nx = 4;
   int ny = nx * Comm.NumProc(); // each subdomain is a square
 
   ParameterList GaleriList;
@@ -79,46 +80,91 @@ int main(int argc, char *argv[])
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Recirc2D", Map, GaleriList);
-  Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, 1);
+  int NumPDEEqns = 3;
+  Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, NumPDEEqns);
 
-  Epetra_MultiVector NullSpace(VbrA->Map(), 1);
-  NullSpace.PutScalar(1.0);
+  Epetra_MultiVector NullSpace(VbrA->Map(), 6);
+  NullSpace.Random();
+  Epetra_MultiVector OrigNullSpace(NullSpace);
   Teuchos::ParameterList MLList;
+  MLList.set("PDE equations", NumPDEEqns);
 
   // compute the preconditioner using the matrix-free approach
   MatrixFreePreconditioner* MFP = new
     MatrixFreePreconditioner(*VbrA, VbrA->Graph(), MLList, NullSpace);
 
-  // =========================================== //
-  // CHECK 1:                                    //
-  //                                             //
-  // aggregate and build C using ML on VbrA, and //
-  // check that the coarse operator is the same  //
-  // =========================================== //
+  NullSpace = OrigNullSpace;
+  cout << NullSpace;
+  assert (MFP->IsComputed() == true);
 
+  // =========== //
+  // CHECK START //
+  // =========== //
+  
   // wrap VbrA as an ML_Operator
   ML_Operator* VbrA_ML = ML_Operator_Create(MFP->Comm_ML());
   ML_Operator_WrapEpetraMatrix(VbrA, VbrA_ML);
   // then build P, R and C using ML, based on VbrA and default null space
   ML_Aggregate* Aggregates_ML;
   ML_Operator* P_ML,* R_ML,* C_ML;
-  MFP->Coarsen(VbrA_ML, &Aggregates_ML, &P_ML, &R_ML, &C_ML);
+  MFP->Coarsen(VbrA_ML, &Aggregates_ML, &P_ML, &R_ML, &C_ML, NumPDEEqns,
+               NullSpace.NumVectors(), NullSpace.Values());
+
+  // ========================================== //
+  // CHECK 1: Non-smoothed Restriction Operator //
+  // ========================================== //
+  
+  Epetra_CrsMatrix* R;
+  ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(R_ML, R));
+
+  assert (R->OperatorDomainMap().NumGlobalElements() == 
+          MFP->R().OperatorDomainMap().NumGlobalElements());
+  assert (R->OperatorRangeMap().NumGlobalElements() == 
+          MFP->R().OperatorRangeMap().NumGlobalElements());
+
+  //cout << *R;
+  //cout << MFP->R();
+
+  Epetra_Vector x(R->OperatorDomainMap());
+  Epetra_Vector y(R->OperatorRangeMap());
+  Epetra_Vector z(R->OperatorRangeMap());
+
+  x.Random();
+  R->Apply(x, y);
+  MFP->R().Apply(x, z);
+  y.Update(1.0, z, -1.0);
+  double norm;
+  y.Norm2(&norm);
+
+  if (Comm.MyPID() == 0)
+    cout << "||(R_ML - R_MFP) * y||_2 = " << norm << endl;
+
+  if (norm > 1e-10) exit(EXIT_FAILURE);
+
+  // =========================================== //
+  // CHECK 2: Coarse-level operator.             //
+  // aggregate and build C using ML on VbrA, and //
+  // check that the coarse operator is the same  //
+  // =========================================== //
 
   Epetra_CrsMatrix* C;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML, C));
-
+  
   //cout << *C;
   //cout << MFP->C();
 
-  // compare C * vector using ML and matrix-free
-  const Epetra_Map& MapC = C->RowMatrixRowMap();
-  Epetra_Vector x(MapC), y(MapC), y_MFP(MapC);
-  x.Random();
-  C->Apply(x, y);
-  MFP->C().Apply(x, y_MFP);
-  y.Update(1.0, y_MFP, -1.0);
-  double norm;
-  y.Norm2(&norm);
+  assert (C->OperatorRangeMap().SameAs(MFP->C().OperatorRangeMap()));
+  assert (C->OperatorDomainMap().SameAs(MFP->C().OperatorDomainMap()));
+
+  Epetra_Vector xx(R->OperatorDomainMap());
+  Epetra_Vector yy(R->OperatorRangeMap());
+  Epetra_Vector zz(R->OperatorRangeMap());
+
+  xx.Random();
+  R->Apply(xx, yy);
+  MFP->R().Apply(xx, zz);
+  yy.Update(1.0, zz, -1.0);
+  yy.Norm2(&norm);
 
   if (Comm.MyPID() == 0)
     cout << "||(C_ML - C_MFP) * y||_2 = " << norm << endl;
