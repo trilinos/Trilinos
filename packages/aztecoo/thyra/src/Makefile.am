@@ -27,10 +27,12 @@
 # @HEADER
 
 SOURCE_H = \
+	$(srcdir)/AztecOOParameterList.hpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolve.hpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolveFactory.hpp
 
 SOURCE = \
+	$(srcdir)/AztecOOParameterList.cpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolve.cpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolveFactory.cpp
 

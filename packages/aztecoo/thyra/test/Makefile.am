@@ -42,10 +42,10 @@ test_single_aztecoo_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_aztecoo_thyra_solver_driver_LDADD = $(common_ldadd)
 
 test_aztecoo_thyra_driver_SOURCES = $(srcdir)/test_aztecoo_thyra_driver.cpp $(common_sources)
-test_aztecoo_thyra_driver_DEPENDENCIES = $(common_dependencies) matrices
+test_aztecoo_thyra_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
 test_aztecoo_thyra_driver_LDADD = $(common_ldadd)
 
-matrices:
+FourByFour.mtx:
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk02.mtx bcsstk02.mtx                              
 	cp  $(top_srcdir)/../amesos/test/Test_Basic/In_bcsstk04.mtx bcsstk04.mtx                              

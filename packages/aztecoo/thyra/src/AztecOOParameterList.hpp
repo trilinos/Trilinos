@@ -27,33 +27,26 @@
 //@HEADER
 */
 
-#ifndef TEST_SINGLE_AZTECOO_THYRA_SOLVER_HPP
-#define TEST_SINGLE_AZTECOO_THYRA_SOLVER_HPP
+#ifndef THYRA_SET_AZTECOO_PARAMETER_LIST_HPP
+#define THYRA_SET_AZTECOO_PARAMETER_LIST_HPP
 
-#include "AztecOO_config.h"
-#include "Teuchos_ConfigDefs.hpp"
-#include "Teuchos_FancyOStream.hpp"
+#include "AztecOO.h"
+#include "Teuchos_RefCountPtr.hpp"
 
-namespace Teuchos { class ParameterList; }
-
-namespace Thyra {
-
-/** \brief Testing function for a single aztecoo solver with a single matrix.
+/** \brief Setup an AztecOO solver object with a set of parameters.
  *
+ * ToDo: Finish documentation!
  */
-bool test_single_aztecoo_thyra_solver(
-  const std::string                       matrixFile
-  ,const bool                             testTranspose
-  ,const int                              numRandomVectors
-  ,const double                           maxFwdError
-  ,const double                           maxResid
-  ,const double                           maxSolutionError
-  ,const bool                             showAllTests
-  ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *paramList
-  ,Teuchos::FancyOStream                  *out
+void setAztecOOParameters(
+  Teuchos::ParameterList  *pl
+  ,AztecOO                *solver
   );
 
-} // namespace Thyra
+/** \brief Return the list of all valid AztecOO parameters (to validate
+ * against).
+ *
+ * ToDo: Finish documentation!
+ */
+Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidAztecOOParameters();
 
-#endif // TEST_SINGLE_AZTECOO_THYRA_SOLVER_HPP
+#endif // THYRA_SET_AZTECOO_PARAMETER_LIST_HPP

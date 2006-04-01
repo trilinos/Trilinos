@@ -126,8 +126,8 @@ std::string DefaultScaledAdjointLinearOp<Scalar>::description() const
   assertInitialized();
   typedef Teuchos::ScalarTraits<Scalar>  ST;
   std::ostringstream oss;
-  oss << "DefaultScaledAdjointLinearOp<" << ST::name() << ">{overallScalar="
-      << overallScalar() << ",overallTransp="<<toString(overallTransp())<<",origOp="
+  oss << "DefaultScaledAdjointLinearOp<" << ST::name() << ">{"
+      << overallScalar() << ","<<toString(overallTransp())<<","
       << origOp_->description() << "}";
   return oss.str();
 }

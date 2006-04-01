@@ -2,13 +2,16 @@
 # FRAMEWORK group
 #
 
-# Note, this test will only work if Amesos is enabled!  ToDo: In need to change
-# this so that these matrices are copied to this directory if amesos is not
-# enabled!
+(FRAMEWORK, INSTALL, AztecOOThyraTests) {
+    TESTS = ../thyra/test/test_single_aztecoo_thyra_solver_driver.exe;
+    ARGS = --matrix-file=../thyra/test/FourByFour.mtx --show-all-tests;
+    X-HOST = paunchy;
+    COMM = SERIAL;
+}
+
 (FRAMEWORK, INSTALL, AztecOOThyraTests) {
     TESTS = ../thyra/test/test_aztecoo_thyra_driver.exe;
-    ARGS = --matrix-dir=../../amesos/test/Test_Basic --show-all-tests;
-#    ARGS = --matrix-dir=$ABS_TOP_SRCDIR/packages/amesos/test/Test_Basic --show-all-tests;
+    ARGS = --matrix-dir=../thyra/test --show-all-tests;
     X-HOST = paunchy;
     COMM = SERIAL;
 }

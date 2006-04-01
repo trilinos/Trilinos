@@ -111,14 +111,16 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libaztecoothyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = Thyra_AztecOOLinearOpWithSolve.$(OBJEXT) \
+am__objects_1 = AztecOOParameterList.$(OBJEXT) \
+	Thyra_AztecOOLinearOpWithSolve.$(OBJEXT) \
 	Thyra_AztecOOLinearOpWithSolveFactory.$(OBJEXT)
 am_libaztecoothyra_a_OBJECTS = $(am__objects_1)
 libaztecoothyra_a_OBJECTS = $(am_libaztecoothyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Thyra_AztecOOLinearOpWithSolve.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AztecOOParameterList.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Thyra_AztecOOLinearOpWithSolve.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Thyra_AztecOOLinearOpWithSolveFactory.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -282,10 +284,12 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 SOURCE_H = \
+	$(srcdir)/AztecOOParameterList.hpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolve.hpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolveFactory.hpp
 
 SOURCE = \
+	$(srcdir)/AztecOOParameterList.cpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolve.cpp \
 	$(srcdir)/Thyra_AztecOOLinearOpWithSolveFactory.cpp
 
@@ -417,6 +421,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AztecOOParameterList.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_AztecOOLinearOpWithSolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_AztecOOLinearOpWithSolveFactory.Po@am__quote@
 
@@ -435,6 +440,22 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+AztecOOParameterList.o: $(srcdir)/AztecOOParameterList.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AztecOOParameterList.o -MD -MP -MF "$(DEPDIR)/AztecOOParameterList.Tpo" -c -o AztecOOParameterList.o `test -f '$(srcdir)/AztecOOParameterList.cpp' || echo '$(srcdir)/'`$(srcdir)/AztecOOParameterList.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AztecOOParameterList.Tpo" "$(DEPDIR)/AztecOOParameterList.Po"; else rm -f "$(DEPDIR)/AztecOOParameterList.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AztecOOParameterList.cpp' object='AztecOOParameterList.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AztecOOParameterList.Po' tmpdepfile='$(DEPDIR)/AztecOOParameterList.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOOParameterList.o `test -f '$(srcdir)/AztecOOParameterList.cpp' || echo '$(srcdir)/'`$(srcdir)/AztecOOParameterList.cpp
+
+AztecOOParameterList.obj: $(srcdir)/AztecOOParameterList.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT AztecOOParameterList.obj -MD -MP -MF "$(DEPDIR)/AztecOOParameterList.Tpo" -c -o AztecOOParameterList.obj `if test -f '$(srcdir)/AztecOOParameterList.cpp'; then $(CYGPATH_W) '$(srcdir)/AztecOOParameterList.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecOOParameterList.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AztecOOParameterList.Tpo" "$(DEPDIR)/AztecOOParameterList.Po"; else rm -f "$(DEPDIR)/AztecOOParameterList.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AztecOOParameterList.cpp' object='AztecOOParameterList.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AztecOOParameterList.Po' tmpdepfile='$(DEPDIR)/AztecOOParameterList.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOOParameterList.obj `if test -f '$(srcdir)/AztecOOParameterList.cpp'; then $(CYGPATH_W) '$(srcdir)/AztecOOParameterList.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AztecOOParameterList.cpp'; fi`
 
 Thyra_AztecOOLinearOpWithSolve.o: $(srcdir)/Thyra_AztecOOLinearOpWithSolve.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_AztecOOLinearOpWithSolve.o -MD -MP -MF "$(DEPDIR)/Thyra_AztecOOLinearOpWithSolve.Tpo" -c -o Thyra_AztecOOLinearOpWithSolve.o `test -f '$(srcdir)/Thyra_AztecOOLinearOpWithSolve.cpp' || echo '$(srcdir)/'`$(srcdir)/Thyra_AztecOOLinearOpWithSolve.cpp; \

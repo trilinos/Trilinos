@@ -49,12 +49,11 @@ bool Thyra::test_single_aztecoo_thyra_solver(
   ,const bool                             testTranspose
   ,const int                              numRandomVectors
   ,const double                           maxFwdError
-  ,const int                              maxIterations
   ,const double                           maxResid
   ,const double                           maxSolutionError
   ,const bool                             showAllTests
   ,const bool                             dumpAll
-  ,Teuchos::ParameterList                 *paramList
+  ,Teuchos::ParameterList                 *aztecooLOWSFPL
   ,Teuchos::FancyOStream                  *out_arg
   )
 {
@@ -79,7 +78,6 @@ bool Thyra::test_single_aztecoo_thyra_solver(
         << "\n  testTranspose          = " << testTranspose
         << "\n  numRandomVectors       = " << numRandomVectors
         << "\n  maxFwdError            = " << maxFwdError
-        << "\n  maxIterations          = " << maxIterations
         << "\n  maxResid               = " << maxResid
         << "\n  showAllTests           = " << showAllTests
         << "\n  dumpAll                = " << dumpAll
@@ -87,7 +85,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
     
     const bool useAztecPrec = ( 
-      paramList && paramList->sublist("Forward Solve").get("AZ_precond","none")!="none"
+      aztecooLOWSFPL && aztecooLOWSFPL->sublist("Forward Solve").sublist("AztecOO").get("Aztec Preconditioner","none")!="none"
       );
 
     if(out.get()) {
@@ -107,25 +105,26 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(out.get()) *out << "\nB) Creating a AztecOOLinearOpWithSolveFactory object opFactory ...\n";
 
-    Teuchos::RefCountPtr<const LinearOpWithSolveFactoryBase<double> >
-      opFactory;
-    if(1) {
-      Teuchos::RefCountPtr<AztecOOLinearOpWithSolveFactory>
-        aztecOpFactory = Teuchos::rcp(new AztecOOLinearOpWithSolveFactory());
-      aztecOpFactory->fwdDefaultMaxIterations(maxIterations);
-      aztecOpFactory->fwdDefaultTol(maxResid);
-      aztecOpFactory->adjDefaultMaxIterations(maxIterations);
-      aztecOpFactory->adjDefaultTol(maxResid);
-      if(paramList) aztecOpFactory->setParameterList(Teuchos::rcp(paramList,false));
-      opFactory = aztecOpFactory;
+    Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >
+      lowsFactory = Teuchos::rcp(new AztecOOLinearOpWithSolveFactory());
+    if(out.get()) {
+      *out << "\nlowsFactory.getValidParameters() initially:\n";
+      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
     }
-
+    aztecooLOWSFPL->sublist("Forward Solve").set("Tolerance",maxResid);
+    aztecooLOWSFPL->sublist("Adjoint Solve").set("Tolerance",maxResid);
+    if(out.get()) {
+      *out << "\naztecooLOWSFPL before setting parameters:\n";
+      aztecooLOWSFPL->print(*OSTab(out).getOStream(),0,true);
+    }
+    if(aztecooLOWSFPL) lowsFactory->setParameterList(Teuchos::rcp(aztecooLOWSFPL,false));
+    
     if(out.get()) *out << "\nC) Creating a AztecOOLinearOpWithSolve object nsA from A ...\n";
 
     Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
-      nsA = opFactory->createOp();
+      nsA = lowsFactory->createOp();
 
-    opFactory->initializeOp( A, &*nsA );
+    lowsFactory->initializeOp( A, &*nsA );
 
     if(out.get()) *out << "\nD) Testing the LinearOpBase interface of nsA ...\n";
 
@@ -170,24 +169,24 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     if(out.get()) *out << "\nF) Uninitialize nsA, create precondtioner for diagonal scaled by 0.99 and then reinitialize nsA reusing the old preconditioner ...\n";
 
     // Scale the diagonal of the matrix and then create the preconditioner for it
-    opFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
+    lowsFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
     if(1){
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
       diag.Scale(0.5);
       epetra_A->ReplaceDiagonalValues(diag);
     }
-    opFactory->initializeOp(A,&*nsA);
+    lowsFactory->initializeOp(A,&*nsA);
 
     // Scale the matrix back again and then reuse the preconditioner
-    opFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
+    lowsFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
     if(1){
       Epetra_Vector diag(epetra_A->RowMap());
       epetra_A->ExtractDiagonalCopy(diag);
       diag.Scale(1.0/0.5);
       epetra_A->ReplaceDiagonalValues(diag);
     }
-    opFactory->initializeAndReuseOp(A,&*nsA);
+    lowsFactory->initializeAndReuseOp(A,&*nsA);
 
     if(out.get()) *out << "\nG) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
@@ -199,7 +198,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
       if(out.get()) *out << "\nH) Reinitialize (A,A,PRECONDITIONER_INPUT_TYPE_AS_MATRIX) => nsA ...\n";
       
-      opFactory->initializeApproxPreconditionedOp(A,A,&*nsA);
+      lowsFactory->initializeApproxPreconditionedOp(A,A,&*nsA);
 
       if(out.get()) *out << "\nI) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
@@ -269,7 +268,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       
       if(out.get()) *out << "\nK) Reinitialize (A,precA->getUnspecifiedPrecOp(),PRECONDITIONER_INPUT_TYPE_AS_OPERATOR) => nsA ...\n";
       
-      opFactory->initializePreconditionedOp(A,precA,&*nsA);
+      lowsFactory->initializePreconditionedOp(A,precA,&*nsA);
       
       if(out.get()) *out << "\nL) Testing the LinearOpWithSolveBase interface of nsA ...\n";
       
@@ -302,9 +301,9 @@ bool Thyra::test_single_aztecoo_thyra_solver(
 
     if(out.get()) *out << "\nM) Scale the epetra_A object by 2.5, and then reinitialize nsA with epetra_A ...\n";
 
-    opFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
+    lowsFactory->uninitializeOp(&*nsA); // Not required but a good idea since we are changing the matrix
     epetra_A->Scale(2.5);
-    opFactory->initializeOp(A,&*nsA);
+    lowsFactory->initializeOp(A,&*nsA);
 
     if(out.get()) *out << "\nN) Testing the LinearOpWithSolveBase interface of nsA ...\n";
     
@@ -319,7 +318,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     epetra_A2->Scale(2.5);
     Teuchos::RefCountPtr<LinearOpBase<double> >
       A2 = Teuchos::rcp(new EpetraLinearOp(epetra_A2));
-    opFactory->initializeOp(A2,&*nsA);
+    lowsFactory->initializeOp(A2,&*nsA);
     // Note that it was okay not to uninitialize nsA first here since A, which
     // was used to initialize nsA last, was not changed and therefore the
     // state of nsA was fine throughout
@@ -337,7 +336,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       Teuchos::RefCountPtr<const LinearOpBase<double> >
         A3 = scale(2.5,transpose(A));
       Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
-        nsA2 = createAndInitializeLinearOpWithSolve(*opFactory,A3);
+        nsA2 = createAndInitializeLinearOpWithSolve(*lowsFactory,A3);
     
       if(out.get()) *out << "\nR) Testing the LinearOpWithSolveBase interface of nsA2 ...\n";
     

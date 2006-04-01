@@ -25,29 +25,48 @@ namespace Thyra {
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_name = "Solver Type";
 template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::SolverType_default = "GMRES";
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxIters_name = "Max Iters";
+template<class Scalar>
+const int         BelosLinearOpWithSolveFactory<Scalar>::MaxIters_default = 400;
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::MaxRestarts_name = "Max Restarts";
 template<class Scalar>
+const int         BelosLinearOpWithSolveFactory<Scalar>::MaxRestarts_default = 25;
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockSize_name = "Block Size";
+template<class Scalar>
+const int         BelosLinearOpWithSolveFactory<Scalar>::BlockSize_default = 20; // We be set to 1 if just one RHS
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::AdjustableBlockSize_name = "Adjustable Block Size";
 template<class Scalar>
+const bool        BelosLinearOpWithSolveFactory<Scalar>::AdjustableBlockSize_default = true;
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_name = "Default Rel Res Norm";
+template<class Scalar>
+const typename BelosLinearOpWithSolveFactory<Scalar>::MagnitudeType
+                  BelosLinearOpWithSolveFactory<Scalar>::DefaultRelResNorm_default = 1e-6;
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_name = "GMRES";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Length_name = "Length";
 template<class Scalar>
+const int         BelosLinearOpWithSolveFactory<Scalar>::GMRES_Length_default = 300; // Consistent with NOX::LinearSystemAztecOO
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Variant_name = "Variant";
+template<class Scalar>
+const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Variant_default = "Standard";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_name = "Outputter";
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputFrequency_name = "Output Frequency";
 template<class Scalar>
+const int         BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputFrequency_default = 10;
+template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResOnly_name = "Output Max Res Only";
-//template<class Scalar>
-//const std::string BelosLinearOpWithSolveFactory<Scalar>::Preconditioner_name = "Preconditioner";
+template<class Scalar>
+const bool        BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResOnly_default = true;
 
 // Constructors/initializers/accessors
 
@@ -143,6 +162,15 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   typedef MultiVectorBase<Scalar>    MV_t;
   typedef LinearOpBase<Scalar>       LO_t;
 
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
+  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
+  Teuchos::OSTab tab(out);
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nEntering Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOp(...) ...\n";
+
+  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<double> > VOTSPF;
+  VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
+  
   //
   // Unwrap the forward operator
   //
@@ -164,7 +192,14 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
     if(paramList_.get()) {
       precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
     }
-    myPrec = precFactory_->createPrec();
+    myPrec = Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(belosOp->extract_prec());
+    if(myPrec.get()) {
+      // ToDo: Get the forward operator and validate that it is the same
+      // operator that is used here!
+    }
+    else {
+      myPrec = precFactory_->createPrec();
+    }
     precFactory_->initializePrec(fwdOp,&*myPrec);
     prec = myPrec;
   }
@@ -212,7 +247,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   // Set the block size
   //
-  int blockSize = 1;
+  int blockSize = BlockSize_default;
   if(paramList_.get()) {
     blockSize = paramList_->get(BlockSize_name,blockSize);
   }
@@ -221,22 +256,23 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   // Create the output manager 
   //
   typedef Belos::OutputManager<Scalar> OutputManager_t;
-  //int belosVerbLevel = Belos::Warnings | Belos::FinalSummary;
-  int belosVerbLevel = Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails;
-  // ToDo: Set these from the verbosity level
-  RefCountPtr<Teuchos::FancyOStream>
-    ostream = this->getOStream();
+  const int belosVerbLevel =
+    (
+      verbLevel == Teuchos::VERB_DEFAULT || static_cast<int>(verbLevel)>=static_cast<int>(Teuchos::VERB_LOW)
+      ? Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails
+      : Belos::Errors
+      );
   RefCountPtr<OutputManager_t>
     outputManager = rcp(new OutputManager_t(0,belosVerbLevel));
   // Note: The stream itself will be set in the BelosLinearOpWithSolve object!
   //
   // Create the default status test
   //
-  int         defaultMaxIterations = 400;
-  int         defaultMaxRestarts = 25;
-  ScalarMag   defaultResNorm = 1e-6;
-  int         outputFrequency = 1; // ToDo: Set from the parameter list!
-  bool        outputMaxResOnly = false; // ToDo: Set from the parameter list!
+  int         defaultMaxIterations = MaxIters_default;
+  int         defaultMaxRestarts   = MaxRestarts_default;
+  ScalarMag   defaultResNorm       = DefaultRelResNorm_default;
+  int         outputFrequency      = Outputter_OutputFrequency_default;
+  bool        outputMaxResOnly     = Outputter_OutputMaxResOnly_default;
   if(paramList_.get()) {
     defaultMaxIterations = paramList_->get(MaxIters_name,defaultMaxIterations);
     defaultMaxRestarts = paramList_->get(MaxRestarts_name,defaultMaxRestarts);
@@ -256,7 +292,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   RefCountPtr<StatusTestMaxRestarts_t>
     maxRestartsST = rcp(new StatusTestMaxRestarts_t(defaultMaxRestarts));
   RefCountPtr<StatusTestResNorm_t>
-    resNormST = rcp(new StatusTestResNorm_t(defaultResNorm));
+    resNormST = rcp(new StatusTestResNorm_t(defaultResNorm,outputMaxResOnly));
   RefCountPtr<StatusTestOutputter_t>
     outputterResNormST = rcp(new StatusTestOutputter_t());
   outputterResNormST->outputFrequency(outputFrequency);
@@ -277,7 +313,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   bool useGmres = true;
   if(paramList_.get()) {
-    const std::string &solverType = paramList_->get(SolverType_name,GMRES_name);
+    const std::string &solverType = paramList_->get(SolverType_name,SolverType_default);
     if(solverType==GMRES_name)
       useGmres = true;
     else if(solverType=="CG")
@@ -288,6 +324,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
         ,"Error, \"Solver Type\" = \"" << solverType << "\" is not recognized!"
         "  Valid values are \"GMRES\" and \"CG\""
         );
+    // ToDo: Replace above with Teuchos::StringToIntMap ...
   }
   typedef Belos::IterativeSolver<Scalar,MV_t,LO_t> IterativeSolver_t;
   RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
@@ -308,14 +345,19 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   // Initialize the LOWS object
   //
-  const bool adjustableBlockSize = ( paramList_.get() ? paramList_->get(AdjustableBlockSize_name,bool(true)) : true );
+  const bool adjustableBlockSize =
+    ( paramList_.get() ? paramList_->get(AdjustableBlockSize_name,AdjustableBlockSize_default) : AdjustableBlockSize_default );
   belosOp->initialize(lp,adjustableBlockSize,resNormST,iterativeSolver,outputManager,prec,false,Teuchos::null,supportSolveUse);
+  belosOp->setOStream(out);
+  belosOp->setVerbLevel(verbLevel);
 #ifdef _DEBUG
   if(paramList_.get()) {
     // Make sure we read the list correctly
     paramList_->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
   }
 #endif
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nLeaving Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOp(...) ...\n";
 }
 
 template<class Scalar>
@@ -434,9 +476,9 @@ std::string BelosLinearOpWithSolveFactory<Scalar>::description() const
 {
   std::ostringstream oss;
   oss << "Thyra::BelosLinearOpWithSolveFactory";
-  oss << "{";
+  //oss << "{";
   // ToDo: Fill this in some!
-  oss << "}";
+  //oss << "}";
   return oss.str();
 }
 
@@ -449,20 +491,20 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("BelosLinearOpWithSolveFactory"));
-    validParamList->set(SolverType_name,GMRES_name);
-    validParamList->set(MaxIters_name,int(400));
-    validParamList->set(MaxRestarts_name,int(25));
-    validParamList->set(BlockSize_name,int(1));
-    validParamList->set(AdjustableBlockSize_name,bool(true));
-    validParamList->set(DefaultRelResNorm_name,double(1e-6));
+    validParamList->set(SolverType_name,SolverType_default);
+    validParamList->set(MaxIters_name,MaxIters_default);
+    validParamList->set(MaxRestarts_name,MaxRestarts_default);
+    validParamList->set(BlockSize_name,BlockSize_default);
+    validParamList->set(AdjustableBlockSize_name,AdjustableBlockSize_default);
+    validParamList->set(DefaultRelResNorm_name,DefaultRelResNorm_default);
     Teuchos::ParameterList
       &gmresSL = validParamList->sublist(GMRES_name);
-    gmresSL.set(GMRES_Length_name,int(25));
-    gmresSL.set(GMRES_Variant_name,"Standard");
+    gmresSL.set(GMRES_Length_name,GMRES_Length_default);
+    gmresSL.set(GMRES_Variant_name,GMRES_Variant_default);
     Teuchos::ParameterList
       &outputterSL = validParamList->sublist(Outputter_name);
-    outputterSL.set(Outputter_OutputFrequency_name,int(0));
-    outputterSL.set(Outputter_OutputMaxResOnly_name,bool(true));
+    outputterSL.set(Outputter_OutputFrequency_name,Outputter_OutputFrequency_default);
+    outputterSL.set(Outputter_OutputMaxResOnly_name,Outputter_OutputMaxResOnly_default);
   }
   return validParamList;
 }
@@ -477,7 +519,6 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
     Teuchos::RefCountPtr<const Teuchos::ParameterList>
       precFactoryValidParamList = precFactory_->getValidParameters();
     if(precFactoryValidParamList.get()) {
-      //thisValidParamList_->set(Preconditioner_name,precFactoryName_);
       thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
     }
   }

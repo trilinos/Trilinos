@@ -341,7 +341,7 @@ test_single_amesos_thyra_solver_driver_SOURCES = $(srcdir)/test_single_amesos_th
 test_single_amesos_thyra_solver_driver_DEPENDENCIES = $(common_dependencies)
 test_single_amesos_thyra_solver_driver_LDADD = $(common_ldadd)
 test_amesos_thyra_driver_SOURCES = $(srcdir)/test_amesos_thyra_driver.cpp $(common_sources)
-test_amesos_thyra_driver_DEPENDENCIES = $(common_dependencies) matrices
+test_amesos_thyra_driver_DEPENDENCIES = $(common_dependencies) FourByFour.mtx
 test_amesos_thyra_driver_LDADD = $(common_ldadd)
 
 #
@@ -639,7 +639,7 @@ uninstall-am: uninstall-info-am
 	uninstall-am uninstall-info-am
 
 
-matrices:
+FourByFour.mtx:
 	cp  $(top_srcdir)/test/Test_Basic/In_bcsstk01.mtx bcsstk01.mtx                              
 	cp  $(top_srcdir)/test/Test_Basic/In_bcsstk02.mtx bcsstk02.mtx                              
 	cp  $(top_srcdir)/test/Test_Basic/In_bcsstk04.mtx bcsstk04.mtx                              

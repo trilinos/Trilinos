@@ -87,6 +87,7 @@ void IfpackPreconditionerFactory::initializePrec(
   ,const ESupportSolveUse                                    supportSolveUse
   ) const
 {
+  using Teuchos::OSTab;
   using Teuchos::dyn_cast;
   using Teuchos::RefCountPtr;
   using Teuchos::null;
@@ -95,6 +96,13 @@ void IfpackPreconditionerFactory::initializePrec(
   using Teuchos::rcp_const_cast;
   using Teuchos::set_extra_data;
   using Teuchos::get_optional_extra_data;
+  Teuchos::Time totalTimer(""), timer("");
+  totalTimer.start(true);
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
+  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
+  Teuchos::OSTab tab(out);
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nEntering Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
   TEST_FOR_EXCEPT(prec==NULL);
@@ -123,11 +131,9 @@ void IfpackPreconditionerFactory::initializePrec(
   DefaultPreconditioner<double>
     *defaultPrec = &Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
   //
-  // Get the EpetraLinearOp object that is used to implement prec. linear op
+  // Get the EpetraLinearOp object that is used to implement the preconditoner linear op
   //
   RefCountPtr<EpetraLinearOp>
-    epetra_precOp;
-  if(defaultPrec)
     epetra_precOp = rcp_dynamic_cast<EpetraLinearOp>(defaultPrec->getNonconstUnspecifiedPrecOp(),true);
   //
   // Get the embedded Ifpack_Preconditioner object if it exists
@@ -137,18 +143,22 @@ void IfpackPreconditionerFactory::initializePrec(
   if(epetra_precOp.get())
     ifpack_precOp = rcp_dynamic_cast<Ifpack_Preconditioner>(epetra_precOp->epetra_op(),true);
   //
-  // Get the attached forward operator if it exists
+  // Get the attached forward operator if it exists and make sure that it matches
   //
   if(ifpack_precOp.get()) {
-    TEST_FOR_EXCEPT(true);// ToDo: Implement
+    // ToDo: Get the forward operator and make sure that it matches what is
+    // already being used!
   }
   //
   // Permform initialization if needed
   //
   const bool startingOver = (ifpack_precOp.get() == NULL);
   if(startingOver) {
+    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+      *out << "\nCreating the initial Ifpack_Preconditioner object of type \'"<<toString(precType_)<<"\' ...\n";
+    timer.start(true);
     // Create the initial preconditioner
-    ::Ifpack ifpackFcty; // Should be static!
+    ::Ifpack ifpackFcty; // Should be a static function!
     const std::string &precTypeName = toString(precType_);
     ifpack_precOp = rcp(
       ifpackFcty.Create(
@@ -157,6 +167,9 @@ void IfpackPreconditionerFactory::initializePrec(
         ,overlap_
         )
       );
+    timer.stop();
+    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+      *OSTab(out).getOStream() <<"\n=> Creation time = "<<timer.totalElapsedTime()<<" sec\n";
     // RAB: Above, I am just passing a string to Ifpack::Create(...) in order
     // get this code written.  However, in the future, it would be good to
     // copy the contents of what is in Ifpack::Create(...) into a local
@@ -174,13 +187,19 @@ void IfpackPreconditionerFactory::initializePrec(
     TEST_FOR_EXCEPT(0!=ifpack_precOp->Initialize());
   }
   //
-  // Attach the epetraFwdOp to the ifpack_precOp to guaranteed that it will not go away
+  // Attach the epetraFwdOp to the ifpack_precOp to guarantee that it will not go away
   //
   set_extra_data(epetraFwdOp,"IFPF::epetraFwdOp",&ifpack_precOp,Teuchos::POST_DESTROY,false);
   //
   // Update the factorization
   //
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nComputing the factorization of the preconditioner ...\n";
+  timer.start(true);
   TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
+  timer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *OSTab(out).getOStream() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
   //
   // Compute the conditioner number estimate if asked
   //
@@ -209,6 +228,11 @@ void IfpackPreconditionerFactory::initializePrec(
   defaultPrec->initializeUnspecified(
     Teuchos::rcp_implicit_cast<LinearOpBase<double> >(epetra_precOp)
     );
+  totalTimer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out
+      << "\nTotal time = "<<totalTimer.totalElapsedTime()<<" sec\n"
+      << "\nLeaving Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
 }
 
 void IfpackPreconditionerFactory::uninitializePrec(

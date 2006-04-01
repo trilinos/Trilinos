@@ -37,8 +37,10 @@
 #include "EpetraExt_ProductOperator.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "AztecOOParameterList.hpp"
 
 namespace {
+
 const std::string AOOLOWSF_epetraPrecOp_str = "AOOLOWSF::epetraPrecOp";
 const std::string AOOLOWSF_aztec_epetra_epetraFwdOp_str = "AOOLOWSF::aztec_epetra_epetraFwdOp";
 const std::string AOOLOWSF_aztec_epetra_epetraAdjOp_str = "AOOLOWSF::aztec_epetra_epetraAdjOp";
@@ -48,23 +50,27 @@ const std::string AOOLOWSF_aztec_fwd_epetra_epetraPrecOp_str = "AOOLOWSF::aztec_
 const std::string AOOLOWSF_aztec_adj_epetra_epetraPrecOp_str = "AOOLOWSF::aztec_adj_epetra_epetraPrecOp";
 const std::string AOOLOWSF_setPrecondtionerOperator_str = "AOOLOWSF::setPrecondtionerOperator";
 const std::string AOOLOWSF_constructedAztecPreconditoner_str = "AOOLOWSF::constructedAztecPreconditoner";
+
+const std::string  ForwardSolve_name = "Forward Solve";
+const std::string  AdjointSolve_name = "Adjoint Solve";
+const std::string  MaxIterations_name = "Max Iterations";
+const int          MaxIterations_default = 400;
+const std::string  Tolerance_name = "Tolerance";
+const double       Tolerance_default = 1e-6;
+const std::string  AztecOO_name = "AztecOO";
+
 } // namespace
 
 namespace Thyra {
 
 // Constructors/initializers/accessors
 
-AztecOOLinearOpWithSolveFactory::AztecOOLinearOpWithSolveFactory(
-  const int       fwdDefaultMaxIterations
-  ,const double   fwdDefaultTol
-  ,const int      adjDefaultMaxIterations
-  ,const double   adjDefaultTol
-  )
-  :fwdDefaultMaxIterations_(fwdDefaultMaxIterations)
-  ,fwdDefaultTol_(fwdDefaultTol)
-  ,adjDefaultMaxIterations_(adjDefaultMaxIterations)
-  ,adjDefaultTol_(adjDefaultTol)
-  ,epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
+AztecOOLinearOpWithSolveFactory::AztecOOLinearOpWithSolveFactory()
+  :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
+  ,defaultFwdMaxIterations_(MaxIterations_default)
+  ,defaultFwdTolerance_(Tolerance_default)
+  ,defaultAdjMaxIterations_(MaxIterations_default)
+  ,defaultAdjTolerance_(Tolerance_default)
 {}
 
 // Overridden from LinearOpWithSolveFactoryBase
@@ -102,7 +108,7 @@ void AztecOOLinearOpWithSolveFactory::initializeAndReuseOp(
 bool AztecOOLinearOpWithSolveFactory::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
 {
   const_cast<bool&>(useAztecPrec_) = (
-    paramList_.get() && paramList_->sublist("Forward Solve").get("AZ_precond","none")!="none"
+    paramList_.get() && paramList_->sublist(ForwardSolve_name).sublist(AztecOO_name).get("Aztec Preconditioner","none")!="none"
     );
   switch(precOpType) {
     case PRECONDITIONER_INPUT_TYPE_AS_OPERATOR:
@@ -176,8 +182,24 @@ void AztecOOLinearOpWithSolveFactory::uninitializeOp(
 void AztecOOLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
 {
   TEST_FOR_EXCEPT(paramList.get()==NULL);
-  paramList->validateParameters(*this->getValidParameters(),0); // Only validate very top level for now!
+  paramList->validateParameters(*this->getValidParameters());
   paramList_ = paramList;
+  if(paramList_.get()) {
+    // Foward Solve parameters
+    Teuchos::ParameterList
+      &fwdSolvePL = paramList_->sublist(ForwardSolve_name);
+    defaultFwdMaxIterations_ = fwdSolvePL.get(MaxIterations_name,defaultFwdMaxIterations_);
+    defaultFwdTolerance_ = fwdSolvePL.get(Tolerance_name,defaultFwdTolerance_);
+    // Adjoint Solve parameters
+    if( !paramList_->getPtr<Teuchos::ParameterList>(AdjointSolve_name) ) {
+      // If adjoint solve sublist is not set, then use the forward solve parameters
+      paramList_->sublist(AdjointSolve_name).setParameters(fwdSolvePL);
+    }
+    Teuchos::ParameterList
+      &adjSolvePL = paramList_->sublist(AdjointSolve_name);
+    defaultAdjMaxIterations_ = adjSolvePL.get(MaxIterations_name,defaultAdjMaxIterations_);
+    defaultAdjTolerance_ = adjSolvePL.get(Tolerance_name,defaultAdjTolerance_);
+  }
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -223,12 +245,16 @@ AztecOOLinearOpWithSolveFactory::generateAndGetValidParameters()
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("AztecOOLinearOpWithSolveFactory"));
+    static Teuchos::RefCountPtr<const Teuchos::ParameterList>
+      aztecParamList = getValidAztecOOParameters();
     Teuchos::ParameterList
-      fwdSolvePL = validParamList->sublist("Forward Solve");
-    // ToDo: Figure out how to add parameters for this!
+      &fwdSolvePL = validParamList->sublist(ForwardSolve_name);
+    fwdSolvePL.set(Tolerance_name,Tolerance_default);
+    fwdSolvePL.set(MaxIterations_name,MaxIterations_default);
+    fwdSolvePL.sublist(AztecOO_name).setParameters(*aztecParamList);
     Teuchos::ParameterList
-      adjSolvePL = validParamList->sublist("Adjoint Solve");
-    // ToDo: Figure out how to add parameters for this!
+      &adjSolvePL = validParamList->sublist(AdjointSolve_name);
+    adjSolvePL.setParameters(fwdSolvePL); // Make the adjoint solve have same defaults as forward solve
   }
   return validParamList;
 }
@@ -272,7 +298,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   //
   // Unwrap and get the external preconditioner operator
   //
-  RefCountPtr<const LinearOpBase<double> >     rightPrecOp;
+  RefCountPtr<const LinearOpBase<double> > rightPrecOp;
   if(prec.get()) {
     RefCountPtr<const LinearOpBase<double> > unspecified = prec->getUnspecifiedPrecOp();
     RefCountPtr<const LinearOpBase<double> > left        = prec->getLeftPrecOp();
@@ -434,10 +460,10 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   if(startingOver) {
     // Forward solver
     aztecFwdSolver = rcp(new AztecOO());
-    aztecFwdSolver->SetAztecOption(AZ_output,AZ_none); // Don't mess up output
-    aztecFwdSolver->SetAztecOption(AZ_conv,AZ_rhs);    // Specified by this interface (may change)
+    //aztecFwdSolver->SetAztecOption(AZ_output,AZ_none); // Don't mess up output
+    //aztecFwdSolver->SetAztecOption(AZ_conv,AZ_rhs);    // Specified by this interface (may change)
     aztecFwdSolver->SetAztecOption(AZ_diagnostics,AZ_none); // This was turned off in NOX?
-    aztecFwdSolver->SetAztecOption(AZ_keep_info, 1);
+    aztecFwdSolver->SetAztecOption(AZ_keep_info,1);
     // Adjoint solver (if supported)
     if(
       epetra_epetraFwdOpAdjointSupport==EPETRA_OP_ADJOINT_SUPPORTED
@@ -446,10 +472,10 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       )
     {
       aztecAdjSolver = rcp(new AztecOO());
-      aztecAdjSolver->SetAztecOption(AZ_output,AZ_none);
-      aztecAdjSolver->SetAztecOption(AZ_conv,AZ_rhs);
+      //aztecAdjSolver->SetAztecOption(AZ_output,AZ_none);
+      //aztecAdjSolver->SetAztecOption(AZ_conv,AZ_rhs);
       aztecAdjSolver->SetAztecOption(AZ_diagnostics,AZ_none);
-      //aztecAdjSolver->SetAztecOption(AZ_keep_info, 1);
+      //aztecAdjSolver->SetAztecOption(AZ_keep_info,1);
     }
   }
   //
@@ -457,14 +483,9 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   //
   if( startingOver ) {
     if(paramList_.get())
-      aztecFwdSolver->SetParameters(paramList_->sublist("Forward Solve"),true);
-    if(aztecAdjSolver.get()) {
-      if(paramList_.get())
-        aztecAdjSolver->SetParameters(paramList_->sublist("Adjoint Solve"),true);
-    }
-    // ToDo: Once you can get a full list of valid parameters then change the
-    // above "cerr_warn_if_unused" from true to false since we will compare
-    // against the valid parameter list ahead of time.
+      setAztecOOParameters(&paramList_->sublist(ForwardSolve_name).sublist(AztecOO_name),&*aztecFwdSolver);
+    if(aztecAdjSolver.get() && paramList_.get())
+      setAztecOOParameters(&paramList_->sublist(AdjointSolve_name).sublist(AztecOO_name),&*aztecAdjSolver);
   }
   //
   // Process the forward operator
@@ -627,13 +648,13 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       ,aztecFwdSolver,true,null,false,epetra_epetraFwdOpScalar
       );
   }
-  aztecOp->fwdDefaultMaxIterations(fwdDefaultMaxIterations());
-  aztecOp->fwdDefaultTol(fwdDefaultTol());
-  aztecOp->adjDefaultMaxIterations(adjDefaultMaxIterations());
-  aztecOp->adjDefaultTol(adjDefaultTol());
+  aztecOp->fwdDefaultMaxIterations(defaultFwdMaxIterations_);
+  aztecOp->fwdDefaultTol(defaultFwdTolerance_);
+  aztecOp->adjDefaultMaxIterations(defaultAdjMaxIterations_);
+  aztecOp->adjDefaultTol(defaultAdjTolerance_);
 #ifdef _DEBUG
   if(paramList_.get())
-    paramList_->validateParameters(*this->getValidParameters(),0); // Only validate very top level for now!
+    paramList_->validateParameters(*this->getValidParameters());
 #endif
 }
 

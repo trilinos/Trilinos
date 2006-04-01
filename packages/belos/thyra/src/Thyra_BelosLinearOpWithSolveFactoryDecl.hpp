@@ -21,35 +21,61 @@ template<class Scalar>
 class BelosLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<Scalar> {
 public:
 
+  /** \name Public types */
+  //@{
+  /** \brief . */
+
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType  MagnitudeType;
+
+  //@}
+
   /** \name Parameter names for Paramter List */
   //@{
 
   /** \brief . */
-  static const std::string SolverType_name;
+  static const std::string  SolverType_name;
+  /** \brief . */           
+  static const std::string  SolverType_default;
+  /** \brief . */           
+  static const std::string  MaxIters_name;
+  /** \brief . */           
+  static const int          MaxIters_default;
+  /** \brief . */           
+  static const std::string  MaxRestarts_name;
+  /** \brief . */           
+  static const int          MaxRestarts_default;
+  /** \brief . */           
+  static const std::string  BlockSize_name;
+  /** \brief . */           
+  static const int          BlockSize_default;
+  /** \brief . */           
+  static const std::string  AdjustableBlockSize_name;
+  /** \brief . */           
+  static const bool         AdjustableBlockSize_default;
+  /** \brief . */           
+  static const std::string  DefaultRelResNorm_name;
   /** \brief . */
-  static const std::string MaxIters_name;
+  static const MagnitudeType DefaultRelResNorm_default;
   /** \brief . */
-  static const std::string MaxRestarts_name;
-  /** \brief . */
-  static const std::string BlockSize_name;
-  /** \brief . */
-  static const std::string AdjustableBlockSize_name;
-  /** \brief . */
-  static const std::string DefaultRelResNorm_name;
-  /** \brief . */
-  static const std::string GMRES_name;
-  /** \brief . */
-  static const std::string GMRES_Length_name;
-  /** \brief . */
-  static const std::string GMRES_Variant_name;
-  /** \brief . */
-  static const std::string Outputter_name;
-  /** \brief . */
-  static const std::string Outputter_OutputFrequency_name;
-  /** \brief . */
-  static const std::string Outputter_OutputMaxResOnly_name;
-  /** \brief . */
-  //static const std::string Preconditioner_name;
+  static const std::string  GMRES_name;
+  /** \brief . */           
+  static const std::string  GMRES_Length_name;
+  /** \brief . */           
+  static const int          GMRES_Length_default;
+  /** \brief . */           
+  static const std::string  GMRES_Variant_name;
+  /** \brief . */           
+  static const std::string  GMRES_Variant_default;
+  /** \brief . */           
+  static const std::string  Outputter_name;
+  /** \brief . */           
+  static const std::string  Outputter_OutputFrequency_name;
+  /** \brief . */           
+  static const int          Outputter_OutputFrequency_default;
+  /** \brief . */           
+  static const std::string  Outputter_OutputMaxResOnly_name;
+  /** \brief . */           
+  static const bool         Outputter_OutputMaxResOnly_default;
 
   //@}
 

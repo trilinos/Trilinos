@@ -253,7 +253,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
 */
     }
     else {
-      *out << endl << "describe op: " << op.description() << endl;
+      *out << endl << "describe op:\n" << Teuchos::describe(op,Teuchos::VERB_LOW);
     }
   }
 

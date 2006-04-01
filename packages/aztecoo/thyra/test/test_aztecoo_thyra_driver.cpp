@@ -141,37 +141,41 @@ int main(int argc, char* argv[])
         if(verbose)
           out << std::endl<<matrix_i<<":"<<prec_i<<": Testing, matrixFile=\'"<<mtp.matrixFile<<"\', ";
         bool testTranspose;
-        int    maxIters;
         double maxResid;
         double maxSolutionError;
         double maxSlackErrorFrac;
-        Teuchos::ParameterList paramList;
         Teuchos::ParameterList
-          &fwdSolveParamList = paramList.sublist("Forward Solve"),
-          &adjSolveParamList = paramList.sublist("Adjoint Solve");
+          paramList("AztecOOLinearOpWithSolveFactory");
+        Teuchos::ParameterList
+          &fwdSolvePL = paramList.sublist("Forward Solve"),
+          &adjSolvePL = paramList.sublist("Adjoint Solve");
+        Teuchos::ParameterList
+          &fwdAztecOOPL = fwdSolvePL.sublist("AztecOO"),
+          &adjAztecOOPL = adjSolvePL.sublist("AztecOO");
         if( aztecOutputLevel != "freq" ) {
-          fwdSolveParamList.set("AZ_output",aztecOutputLevel);
-          adjSolveParamList.set("AZ_output",aztecOutputLevel);
+          fwdAztecOOPL.set("Output Frequency",aztecOutputLevel);
+          adjAztecOOPL.set("Output Frequency",aztecOutputLevel);
         }
         else {
-          fwdSolveParamList.set("AZ_output",aztecOutputFreq);
-          adjSolveParamList.set("AZ_output",aztecOutputFreq);
+          fwdAztecOOPL.set("Output Frequency",aztecOutputFreq);
+          adjAztecOOPL.set("Output Frequency",aztecOutputFreq);
         }
         if(prec_i==0) {
           out << "no aztec preconditioning ... ";
-          fwdSolveParamList.set("AZ_precond","none");
+          fwdAztecOOPL.set("Aztec Preconditioner","none");
           testTranspose = true;
-          maxIters = mtp.maxIters;
+          fwdSolvePL.set("Max Iterations",mtp.maxIters);
+          adjSolvePL.set("Max Iterations",mtp.maxIters);
           maxResid = mtp.maxResid;
           maxSolutionError = mtp.maxSolutionError;
           maxSlackErrorFrac = mtp.maxSlackErrorFrac;
         }
         else {
           out << "using aztec preconditioning ... ";
-          fwdSolveParamList.set("AZ_precond","dom_decomp");
-          fwdSolveParamList.set("AZ_subdomain_solve","ilu");
+          fwdAztecOOPL.set("Aztec Preconditioner","ilu");
           testTranspose = false;
-          maxIters = mtp.maxPrecIters;
+          fwdSolvePL.set("Max Iterations",mtp.maxPrecIters);
+          adjSolvePL.set("Max Iterations",mtp.maxPrecIters);
           maxResid = mtp.maxPrecResid;
           maxSolutionError = mtp.maxPrecSolutionError;
           maxSlackErrorFrac = mtp.maxPrecSlackErrorFrac;
@@ -181,7 +185,7 @@ int main(int argc, char* argv[])
         result =
           Thyra::test_single_aztecoo_thyra_solver(
             matrixDir+"/"+mtp.matrixFile,testTranspose,numRandomVectors
-            ,mtp.maxFwdError,maxIters,maxResid,maxSolutionError
+            ,mtp.maxFwdError,maxResid,maxSolutionError
             ,showAllTestsDetails,dumpAll,&paramList,&fancy_oss
             );
         if(!result) success = false;

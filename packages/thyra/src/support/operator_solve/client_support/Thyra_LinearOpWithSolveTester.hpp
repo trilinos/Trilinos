@@ -162,7 +162,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
   using Teuchos::arrayArg;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<RangeScalar,DomainScalar> > VBTS;
+  typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<RangeScalar,DomainScalar> > VOTS;
   typedef Teuchos::ScalarTraits<Scalar>        ST;
   typedef Teuchos::ScalarTraits<RangeScalar>   DST;
   typedef Teuchos::ScalarTraits<DomainScalar>  RST;
@@ -251,7 +251,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
         if(1){
-          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solve(op,NONCONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
           timer.stop();
@@ -378,7 +378,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
         if(1){
-          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solve<RangeScalar,DomainScalar>(op,NONCONJ_ELE,*v2,&*v3,&solveCriteria);
           timer.stop();
@@ -487,7 +487,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         assign(&*v3,DST::zero());
         SolveStatus<Scalar> solveStatus;
         if(1){
-          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,static_cast<const SolveCriteria<Scalar>*>(0));
           timer.stop();
@@ -614,7 +614,7 @@ bool LinearOpWithSolveTester<RangeScalar,DomainScalar>::check(
         assign(&*v3,RST::zero());
         SolveStatus<Scalar> solveStatus;
         if(1){
-          VBTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
+          VOTS lowsTempState(Teuchos::rcp(&op,false),oss,verbLevel);
           timer.start(true);
           solveStatus = solveTranspose(op,CONJ_ELE,*v2,&*v3,&solveCriteria);
           timer.stop();

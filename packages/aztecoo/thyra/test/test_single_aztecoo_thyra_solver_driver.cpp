@@ -81,31 +81,39 @@ int main(int argc, char* argv[])
 
     TEST_FOR_EXCEPT( matrixFile == "" );
 
-    Teuchos::ParameterList paramList;
+    Teuchos::ParameterList
+      paramList("AztecOOLinearOpWithSolve");
     Teuchos::ParameterList
       &fwdSolveParamList = paramList.sublist("Forward Solve"),
       &adjSolveParamList = paramList.sublist("Adjoint Solve");
+    fwdSolveParamList.set("Max Iterations",maxIterations);
+    adjSolveParamList.set("Max Iterations",maxIterations);
+/*
+    Teuchos::ParameterList
+      &fwdAztecOOParamList = fwdSolveParamList.sublist("AztecOO"),
+      &adjAztecOOParamList = fwdSolveParamList.sublist("AztecOO");
     if( aztecOutputLevel != "freq" ) {
-      fwdSolveParamList.set("AZ_output",aztecOutputLevel);
-      adjSolveParamList.set("AZ_output",aztecOutputLevel);
+      fwdAztecOOParamList.set("Output Frequency",aztecOutputLevel);
+      adjAztecOOParamList.set("Output Frequency",aztecOutputLevel);
     }
     else {
-      fwdSolveParamList.set("AZ_output",aztecOutputFreq);
-      adjSolveParamList.set("AZ_output",aztecOutputFreq);
+      fwdAztecOOParamList.set("Output Frequency",aztecOutputFreq);
+      adjAztecOOParamList.set("Output Frequency",aztecOutputFreq);
     }
     if( aztecPrec != "none" ) {
-      fwdSolveParamList.set("AZ_precond",aztecPrec);
-      adjSolveParamList.set("AZ_precond",aztecPrec);
+      fwdAztecOOParamList.set("Aztec Preconditioner",aztecPrec);
+      adjAztecOOParamList.set("Aztec Preconditioner",aztecPrec);
       if(aztecPrec=="dom_decomp") {
-        fwdSolveParamList.set("AZ_subdomain_solve",aztecSubdomainSolve);
-        adjSolveParamList.set("AZ_subdomain_solve",aztecSubdomainSolve);
+        fwdAztecOOParamList.set("AZ_subdomain_solve",aztecSubdomainSolve);
+        adjAztecOOParamList.set("AZ_subdomain_solve",aztecSubdomainSolve);
       }
     }
-
+*/
+    
     success
       = Thyra::test_single_aztecoo_thyra_solver(
         matrixFile,testTranspose,numRandomVectors
-        ,maxFwdError,maxIterations,maxResid,maxSolutionError,showAllTests,dumpAll
+        ,maxFwdError,maxResid,maxSolutionError,showAllTests,dumpAll
         ,&paramList
         ,verbose?&out:0
         );

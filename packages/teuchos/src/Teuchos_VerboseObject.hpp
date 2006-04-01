@@ -226,17 +226,21 @@ public:
     ,const EVerbosityLevel                                 newVerbLevel
     )
     :verboseObject_(verboseObject)
-    ,oldOStream_(verboseObject->getOStream())
-    ,oldVerbLevel_(verboseObject->getVerbLevel())
     {
-      verboseObject_->setOStream(newOStream);
-      verboseObject_->setVerbLevel(newVerbLevel);
+      if(verboseObject_.get()) {
+        oldOStream_ = verboseObject_->getOStream();
+        oldVerbLevel_ = verboseObject_->getVerbLevel();
+        verboseObject_->setOStream(newOStream);
+        verboseObject_->setVerbLevel(newVerbLevel);
+      }
     }
   /** \brief . */
   ~VerboseObjectTempState()
     {
-      verboseObject_->setOStream(oldOStream_);
-      verboseObject_->setVerbLevel(oldVerbLevel_);
+      if(verboseObject_.get()) {
+        verboseObject_->setOStream(oldOStream_);
+        verboseObject_->setVerbLevel(oldVerbLevel_);
+      }
     }
 private:
   RefCountPtr<const VerboseObject<ObjectType> >    verboseObject_;

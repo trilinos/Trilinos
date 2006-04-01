@@ -78,27 +78,8 @@ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
-	/** Construct uninitialized but with default option values.
-	 *
-	 * Note, these defaults where taken from
-	 * NOX::EpetraNew::LinearSystemAztecOO::applyJacobianInverse(...) on
-	 * 2005/08/15.
-	 */
- 	AztecOOLinearOpWithSolveFactory(
-	 	const int       fwdDefaultMaxIterations       = 400
-		,const double   fwdDefaultTol                 = 1e-6
-	 	,const int      adjDefaultMaxIterations       = 400
-		,const double   adjDefaultTol                 = 1e-6
-		);
-
-	/** \brief The default maximum number of iterations for forward solves. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, fwdDefaultMaxIterations )
-  /** \brief The default solution tolerance on the residual for forward solves. */
- 	STANDARD_MEMBER_COMPOSITION_MEMBERS( double, fwdDefaultTol )
-	/** \brief The default maximum number of iterations for adjoint solves. */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, adjDefaultMaxIterations )
-  /** \brief The default solution tolerance on the residual for adjoint solves. */
- 	STANDARD_MEMBER_COMPOSITION_MEMBERS( double, adjDefaultTol )
+	/** \brief Construct uninitialized. */
+ 	AztecOOLinearOpWithSolveFactory();
     
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.
@@ -194,6 +175,11 @@ private:
   // Private data members
 
   Teuchos::RefCountPtr<Teuchos::ParameterList>  paramList_;
+
+  int                                           defaultFwdMaxIterations_;
+  double                                        defaultFwdTolerance_;
+  int                                           defaultAdjMaxIterations_;
+  double                                        defaultAdjTolerance_;
 
   bool useAztecPrec_;
 

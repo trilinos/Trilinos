@@ -310,9 +310,19 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 
   using Thyra::get_Epetra_Vector;
   using Teuchos::RefCountPtr;
+  using Teuchos::OSTab;
 
   typedef EpetraExt::ModelEvaluator EME;
 
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
+  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
+  Teuchos::OSTab tab(out);
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nEntering Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
+
+  typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<double> > VOTSLOWSF;
+  VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
+  
   // InArgs
 
   EME::InArgs epetraInArgs = epetraModel_->createInArgs();
@@ -452,6 +462,9 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
     W_factory_->initializeOp(fwdW,&*W);
     W->setOStream(this->getOStream());
   }
+
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nLeaving Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
   
 }
 

@@ -5,6 +5,7 @@
 #define THYRA_BELOS_LINEAR_OP_WITH_SOLVE_HPP
 
 #include "Thyra_BelosLinearOpWithSolveDecl.hpp"
+#include "Teuchos_Time.hpp"
 
 namespace Thyra {
 
@@ -287,19 +288,21 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+  Teuchos::Time totalTimer(""), timer("");
+  totalTimer.start(true);
   
   TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
+  TEST_FOR_EXCEPT(!this->opSupported(M_trans)); // ToDo: Support adjoint solves later!
 
-  Teuchos::RefCountPtr<Teuchos::FancyOStream>
-    out = this->getOStream();
-  Teuchos::EVerbosityLevel
-    verbLevel = this->getVerbLevel();
-
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
+  Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
-
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\" ...\n\n";
 
@@ -359,8 +362,14 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   iterativeSolver_->GetStatusTest()->Reset(); 
   iterativeSolver_->Reset();
   if(1){
-    outputManager_->SetOStream(out);
-    Teuchos::OSTab tab(out,1,"BELOS");
+    RefCountPtr<FancyOStream>
+      outUsed =
+      ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE)
+        ? out
+        : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
+        );
+    outputManager_->SetOStream(outUsed);
+    Teuchos::OSTab tab(outUsed,1,"BELOS");
     iterativeSolver_->Solve();
   }
   //
@@ -408,6 +417,10 @@ void BelosLinearOpWithSolve<Scalar>::solve(
     blockSolveStatus[0].achievedTol = achievedTol;
     blockSolveStatus[0].message     = ossmessage.str();
   }
+  totalTimer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out
+      << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
 }
 
 }	// end namespace Thyra
