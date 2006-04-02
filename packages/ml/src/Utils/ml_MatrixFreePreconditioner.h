@@ -13,7 +13,9 @@ class Epetra_Time;
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_CrsGraph;
+class Epetra_Vector;
 class Epetra_MultiVector;
+class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
 class Epetra_FECrsMatrix;
 
@@ -28,7 +30,8 @@ class MatrixFreePreconditioner : public Epetra_Operator
     MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
                              Teuchos::ParameterList& List,
-                             Epetra_MultiVector& NullSpace);
+                             Epetra_MultiVector& NullSpace,
+                             const Epetra_Vector& InvDiag_);
 
     //! destructor
     ~MatrixFreePreconditioner();
@@ -77,12 +80,12 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(Operator_.OperatorRangeMap());
     }
 
-    const Epetra_CrsMatrix& C() const
+    const Epetra_RowMatrix& C() const
     {
       return(*C_);
     }
 
-    const Epetra_FECrsMatrix& R() const
+    const Epetra_CrsMatrix& R() const
     {
       return(*R_);
     }
@@ -116,6 +119,11 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(*Time_);
     }
 
+    int ApplyJacobi(Epetra_MultiVector& X, const double omega) const;
+
+    int ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
+                    const double omega, Epetra_MultiVector& tmp) const;
+
     ML_Comm* Comm_ML_;
 
     //! Computes the preconditioner.
@@ -134,12 +142,17 @@ class MatrixFreePreconditioner : public Epetra_Operator
     Teuchos::ParameterList List_;
     //! Prolongator from coarse to fine
     Epetra_CrsMatrix* P_;
-    Epetra_FECrsMatrix* R_;
-    Epetra_CrsMatrix* C_;
+    Epetra_CrsMatrix* R_;
+    Epetra_RowMatrix* C_;
+    ML_Operator* C_ML_;
 
     Epetra_Time* Time_;
 
+    const Epetra_Vector& InvDiag_;
+
     MultiLevelPreconditioner* MLP_;
+    int PrecType_;
+    double omega_;
 
 }; // class MatrixFreePreconditioner
 

@@ -77,6 +77,8 @@ int main(int argc, char *argv[])
   GaleriList.set("ny", ny);
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
+  GaleriList.set("conv", 1e0); // for Recirc2D
+  GaleriList.set("diff", 1e0); // for Recirc2D
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Laplace2D", Map, GaleriList);
@@ -89,14 +91,21 @@ int main(int argc, char *argv[])
   OrigNullSpace.Random();
   Epetra_MultiVector NullSpace(OrigNullSpace);
   Teuchos::ParameterList MLList;
-  MLList.sublist("ML list").set("max levels", 1);
+  MLList.sublist("ML list").set("max levels", 10);
+  MLList.sublist("ML list").set("smoother: type", "Aztec");
+  MLList.sublist("ML list").set("aggregation: damping factor", 0.0);
+  MLList.sublist("ML list").set("smoother: pre or post", "both");
   //MLList.sublist("ML list").set("max levels", 2);
-  //MLList.sublist("ML list").set("coarse: max size", 1);
+  MLList.sublist("ML list").set("coarse: max size", 16);
   //MLList.sublist("ML list").set("cycle applications", 10);
+
+  Epetra_Vector InvDiag(VbrA->RowMap());
+  ML_CHK_ERR(VbrA->ExtractDiagonalCopy(InvDiag));
+  InvDiag.Reciprocal(InvDiag);
 
   // compute the preconditioner using the matrix-free approach
   MatrixFreePreconditioner* MFP = new
-    MatrixFreePreconditioner(*VbrA, VbrA->Graph(), MLList, NullSpace);
+    MatrixFreePreconditioner(*VbrA, VbrA->Graph(), MLList, NullSpace, InvDiag);
 
   NullSpace = OrigNullSpace;
 
@@ -147,7 +156,7 @@ int main(int argc, char *argv[])
     if (Comm.MyPID() == 0)
       cout << "test " << t << ", ||(R_ML - R_MFP) * y||_2 = " << norm << endl;
 
-    if (norm > 1e-10) exit(EXIT_FAILURE);
+    if (norm > 1e-5) exit(EXIT_FAILURE);
   }
 
   // =========================================== //
@@ -156,12 +165,8 @@ int main(int argc, char *argv[])
   // check that the coarse operator is the same  //
   // =========================================== //
 
-  Epetra_CrsMatrix* C;
-  ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML, C));
+  const Epetra_RowMatrix* C = &(MFP->C());
   
-  // cout << *C;
-  // cout << MFP->C();
-
   assert (C->OperatorRangeMap().SameAs(MFP->C().OperatorRangeMap()));
   assert (C->OperatorDomainMap().SameAs(MFP->C().OperatorDomainMap()));
 
@@ -181,7 +186,7 @@ int main(int argc, char *argv[])
     if (Comm.MyPID() == 0)
       cout << "test " << t << ", ||(C_ML - C_MFP) * y||_2 = " << norm << endl;
     
-    if (norm > 1e-10) exit(EXIT_FAILURE);
+    if (norm > 1e-5) exit(EXIT_FAILURE);
   }
 
   // ================= //
@@ -190,12 +195,13 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList MLList2;
   MLList2.set("PDE equations", NumPDEEqns);
-  MLList2.set("max levels", 2);
-  MLList2.set("coarse: max size", 4);
+  MLList2.set("max levels", 10);
+  MLList2.set("coarse: max size", 16);
   MLList2.set("smoother: type", "Jacobi");
-  MLList2.set("prec type", "two-level-additive");
+  MLList2.set("smoother: type (level 1)", "Aztec");
+  //MLList2.set("prec type", "two-level-additive");
   MLList2.set("aggregation: damping factor", 0.0);
-  MLList2.set("smoother: pre or post", "post");
+  MLList2.set("smoother: pre or post", "both");
   MLList2.set("null space: type", "pre-computed");
   MLList2.set("null space: dimension", OrigNullSpace.NumVectors());
   MLList2.set("null space: vectors", OrigNullSpace.Values());

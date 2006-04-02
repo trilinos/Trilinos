@@ -29,12 +29,16 @@
 
 using namespace EpetraExt;
 
+#define ML_MFP_ADDITIVE 0
+#define ML_MFP_HYBRID   1
+
 // ============================================================================ 
 ML_Epetra::MatrixFreePreconditioner::
 MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
                              Teuchos::ParameterList& List,
-                             Epetra_MultiVector& NullSpace) :
+                             Epetra_MultiVector& NullSpace,
+                             const Epetra_Vector& InvDiag) :
   IsComputed_(false),
   Label_("ML matrix-free preconditioner"),
   Comm_(Operator.Comm()),
@@ -42,8 +46,12 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
   Graph_(Graph),
   R_(0),
   C_(0),
+  C_ML_(0),
   Time_(0),
-  MLP_(0)
+  MLP_(0),
+  InvDiag_(InvDiag),
+  PrecType_(ML_MFP_HYBRID),
+  omega_(1.00)
 {
   List_ = List;
 
@@ -69,16 +77,38 @@ ML_Epetra::MatrixFreePreconditioner::
 
   if (C_) delete C_;
 
+  if (C_ML_) ML_Operator_Destroy(&C_ML_);
+
   ML_Comm_Destroy(&Comm_ML_);
 }
 
 // ============================================================================ 
 int ML_Epetra::MatrixFreePreconditioner::
-ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+ApplyJacobi(Epetra_MultiVector& X, const double omega) const
 {
-  // recall:: Y is a view of X for AztecOO
+  X.Multiply(omega, InvDiag_, X, 0.0);
 
-  Epetra_MultiVector Xtmp(X);
+  return(0);
+}
+
+// ============================================================================ 
+int ML_Epetra::MatrixFreePreconditioner::
+ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
+            const double omega, Epetra_MultiVector& tmp) const
+{
+  Operator_.Apply(X, tmp);
+  tmp.Update(1.0, B, -1.0);
+  X.Multiply(omega, InvDiag_, tmp, 1.0);
+
+  return(0);
+}
+
+// ============================================================================ 
+int ML_Epetra::MatrixFreePreconditioner::
+ApplyInverse(const Epetra_MultiVector& Xinput, Epetra_MultiVector& Y) const
+{
+  // recall:: Y is a view of Xinput for AztecOO
+  Epetra_MultiVector X(Xinput);
 
   if (!Y.Map().SameAs(R_->OperatorDomainMap())) ML_CHK_ERR(-1);
   if (X.NumVectors() != Y.NumVectors()) ML_CHK_ERR(-1);
@@ -86,16 +116,43 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Epetra_MultiVector X_c(R_->OperatorRangeMap(), X.NumVectors());
   Epetra_MultiVector Y_c(R_->OperatorRangeMap(), X.NumVectors());
 
-  assert (R_->OperatorRangeMap().SameAs(C_->OperatorDomainMap()));
+  // ================================= //
+  // ADDITIVE TWO-LEVEL PRECONDITIONER //
+  // ================================= //
 
-  R_->Multiply(false, Xtmp, X_c);
+  if (PrecType_ == ML_MFP_ADDITIVE)
+  {
+    ML_CHK_ERR(R_->Multiply(false, X, X_c));
 
-  //Y_c.PutScalar(0.0); // FIXME
-  MLP_->ApplyInverse(X_c, Y_c);
+    ML_CHK_ERR(MLP_->ApplyInverse(X_c, Y_c));
 
-  R_->Multiply(true, Y_c, Y);
+    ML_CHK_ERR(R_->Multiply(true, Y_c, Y));
 
-  Y.Update(0.25, Xtmp, 1.0);
+    ML_CHK_ERR(Y.Multiply(1.0, InvDiag_, X, 1.0));
+  }
+  else if (PrecType_ == ML_MFP_HYBRID)
+  {
+    Epetra_MultiVector Ytmp(X.Map(), X.NumVectors());
+
+    // apply pre-smoother
+    ML_CHK_ERR(ApplyJacobi(X, omega_));
+    // new residual
+    ML_CHK_ERR(Operator_.Apply(X, Ytmp));
+    ML_CHK_ERR(Ytmp.Update(1.0, Y, -1.0));
+    // restrict to coarse
+    ML_CHK_ERR(R_->Multiply(false, Ytmp, X_c));
+    // solve coarse problem
+    ML_CHK_ERR(MLP_->ApplyInverse(X_c, Y_c));
+    // prolongate back
+    ML_CHK_ERR(R_->Multiply(true, Y_c, Ytmp));
+    // add to solution, X now has the correction
+    ML_CHK_ERR(X.Update(1.0, Ytmp, 1.0));
+    // apply post-smoother
+    ML_CHK_ERR(ApplyJacobi(X, Y, omega_, Ytmp));
+    Y = X;
+  }
+  else
+    ML_CHK_ERR(-3); // type not recognized
 
   return(0);
 }
@@ -170,7 +227,8 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
   // FIXME: try to build an Epetra_CrsMatrix directly to save memory
   // Note: I must create an Epetra_CrsMatrix object because I need the graph
   // to use EpetraExt coloring routines.
-  ML_rap(*R, A, *P, *C, ML_CSR_MATRIX);
+  ////ML_rap(*R, A, *P, *C, ML_EpetraCRS_MATRIX);
+  ML_rap(*R, A, *P, *C, ML_MSR_MATRIX);
 
   if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
     cout << "(block) R, P, C construction time = " << Time().ElapsedTime() << " (s)" << endl;
@@ -184,6 +242,19 @@ Compute(Epetra_MultiVector& NullSpace)
 {
   const int NullSpaceDim = NullSpace.NumVectors();
   // get parameters from the list
+  string PrecType = List_.get("prec: type", "hybrid");
+  string ColoringType = List_.get("coloring: type", "JONES_PLASSMAN");
+
+  // ================ //
+  // check parameters //
+  // ================ //
+
+  if (PrecType == "hybrid")
+    PrecType_ = ML_MFP_HYBRID;
+  else if (PrecType == "additive")
+    PrecType_ = ML_MFP_ADDITIVE;
+  else
+    ML_CHK_ERR(-3); // not recognized
 
   // =============================== //
   // basic checkings and some output //
@@ -213,6 +284,8 @@ Compute(Epetra_MultiVector& NullSpace)
     cout << "Processors used in computation = " << Comm().NumProc() << endl;
     cout << "Number of PDE equations = " << NumPDEEqns << endl;
     cout << "Null space dimension = " << NullSpaceDim << endl;
+    cout << "Preconditioner type = " << PrecType << endl;
+    cout << "Coloring type = " << ColoringType << endl;
   }
 
   // ML wrapper for Graph_
@@ -236,13 +309,11 @@ Compute(Epetra_MultiVector& NullSpace)
 
   if (MyPID() == 0 && ML_Get_PrintLevel() > 5) cout << endl;
 
-  Epetra_CrsMatrix* BlockPtent,* GraphCoarse,* BlockRtent;
-  ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(BlockPtent_ML, BlockPtent));
+  Epetra_CrsMatrix* GraphCoarse,* BlockRtent;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(CoarseGraph_ML, GraphCoarse));
 
   int NumAggregates = BlockPtent_ML->invec_leng;
   ML_Operator_Destroy(&BlockRtent_ML);
-  ML_Operator_Destroy(&BlockPtent_ML);
   ML_Operator_Destroy(&CoarseGraph_ML);
 
   // ================================================== //
@@ -251,15 +322,20 @@ Compute(Epetra_MultiVector& NullSpace)
   // - number of colors is ColorMap.NumColors().        //
   // ================================================== //
   
-  if (MyPID() == 0)
-    cout << "Coloring with JONES_PLASSMAN..." << endl;
-
   Time().ResetStartTime();
 
-  CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::JONES_PLASSMAN,
-                                            0, false, true);
+  CrsGraph_MapColoring* MapColoringTransform;
+  
+  if (ColoringType == "JONES_PLASSMAN")
+    MapColoringTransform = new CrsGraph_MapColoring (CrsGraph_MapColoring::JONES_PLASSMAN,
+                                                     0, false, true);
+  else if (ColoringType == "PSEUDO_PARALLEL")
+    MapColoringTransform = new CrsGraph_MapColoring (CrsGraph_MapColoring::PSEUDO_PARALLEL,
+                                                     0, false, true);
+  else 
+    ML_CHK_ERR(-1);
 
-  Epetra_MapColoring& ColorMap = MapColoringTransform(const_cast<Epetra_CrsGraph&>(GraphCoarse->Graph()));
+  Epetra_MapColoring& ColorMap = (*MapColoringTransform)(const_cast<Epetra_CrsGraph&>(GraphCoarse->Graph()));
 
   delete GraphCoarse;
 
@@ -274,7 +350,7 @@ Compute(Epetra_MultiVector& NullSpace)
   Time().ResetStartTime();
 
   vector<vector<int> > aggregates(NumAggregates);
-  vector<int> BlockNodeList;
+  vector<int>* BlockNodeList = new vector<int>;
   vector<int>::iterator iter;
 
   for (int i = 0; i < Graph_.NumMyBlockRows(); ++i)
@@ -295,9 +371,9 @@ Compute(Epetra_MultiVector& NullSpace)
       if (iter == aggregates[AID].end())
         aggregates[AID].push_back(GCID);
 
-      iter = find(BlockNodeList.begin(), BlockNodeList.end(), GCID);
-      if (iter == BlockNodeList.end())
-        BlockNodeList.push_back(GCID);
+      iter = find(BlockNodeList->begin(), BlockNodeList->end(), GCID);
+      if (iter == BlockNodeList->end())
+        BlockNodeList->push_back(GCID);
     }
   }
   
@@ -318,16 +394,16 @@ Compute(Epetra_MultiVector& NullSpace)
 
   const Epetra_Map& FineMap = Operator_.OperatorDomainMap();
   Epetra_Map CoarseMap(-1, NumAggregates * NullSpaceDim, 0, Comm());
-  Epetra_Map BlockNodeListMap(-1, BlockNodeList.size(), &BlockNodeList[0], 0, Comm());
+  Epetra_Map* BlockNodeListMap = new Epetra_Map(-1, BlockNodeList->size(), 
+                                                &(*BlockNodeList)[0], 0, Comm());
 
-  vector<int> NodeList(BlockNodeList.size() * NumPDEEqns);
-  for (int i = 0; i < BlockNodeList.size(); ++i)
+  vector<int> NodeList(BlockNodeList->size() * NumPDEEqns);
+  for (int i = 0; i < BlockNodeList->size(); ++i)
     for (int m = 0; m < NumPDEEqns; ++m)
-      NodeList[i * NumPDEEqns + m] = BlockNodeList[i] * NumPDEEqns + m;
+      NodeList[i * NumPDEEqns + m] = (*BlockNodeList)[i] * NumPDEEqns + m;
   Epetra_Map NodeListMap(-1, NodeList.size(), &NodeList[0], 0, Comm());
 
-  BlockNodeList.resize(0); // FIXME: test with capacity()?
-  // FIXME delete BlockNodeListMap when no longer used
+  delete BlockNodeList;
 
   // ====================== //
   // process the null space //
@@ -409,15 +485,6 @@ Compute(Epetra_MultiVector& NullSpace)
                  &qr_ptr[0], &MyFullSize, &tmp_ptr[0], &work[0], &lwork, &info);
       ML_CHK_ERR(info); // dgeqtr returned a non-zero
 
-#if 0
-         for (int k = 0; k < MyFullSize; ++k)
-         {
-           for (int kk = 0; kk < NullSpaceDim; ++kk)
-             cout << "af3> " << qr_ptr[kk * MyFullSize + k] << "  ";
-           cout << endl;
-         }
-#endif
-
       if (work[0] > lwork) work.resize((int) work[0]);
 
       // insert the Q block into the null space
@@ -443,14 +510,20 @@ Compute(Epetra_MultiVector& NullSpace)
 
   Epetra_MultiVector* ColoredP = new Epetra_MultiVector(FineMap, NumColors * NullSpaceDim);
   ColoredP->PutScalar(0.0);
-  for (int i = 0; i < BlockPtent->NumMyRows(); ++i)
+
+  for (int i = 0; i < BlockPtent_ML->outvec_leng; ++i)
   {
+    int allocated = 1;
     int NumEntries;
-    int* Indices;
-    double* Values;
-    BlockPtent->ExtractMyRowView(i, NumEntries, Values, Indices);
+    int Indices;
+    double Values;
+    int ierr = ML_Operator_Getrow(BlockPtent_ML, 1 ,&i, allocated,
+                                    &Indices,&Values,&NumEntries);
+    if (ierr < 0)
+      ML_CHK_ERR(-1);
+      
     assert (NumEntries == 1); // this is the block P
-    const int& Color = ColorMap[Indices[0]] - 1;
+    const int& Color = ColorMap[Indices] - 1;
 #if 0
     (*ColoredP)[Color][i] = Values[0];
 #else
@@ -462,7 +535,7 @@ Compute(Epetra_MultiVector& NullSpace)
 #endif
   }
 
-  delete BlockPtent;
+  ML_Operator_Destroy(&BlockPtent_ML);
 
   Epetra_MultiVector* ColoredAP = new Epetra_MultiVector(Operator_.OperatorRangeMap(), 
                                                          NumColors * NullSpaceDim);
@@ -477,6 +550,7 @@ Compute(Epetra_MultiVector& NullSpace)
   Importer = new Epetra_Import(NodeListMap, Operator_.OperatorRangeMap());
   ExtColoredAP->Import(*ColoredAP, *Importer, Insert);
   delete Importer;
+  delete ColoredAP;
 
   if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
     cout << "colored A times P time = " << Time().ElapsedTime() << " (s)" << endl;
@@ -492,7 +566,7 @@ Compute(Epetra_MultiVector& NullSpace)
     for (int j = 0; j < aggregates[i].size(); ++j)
     {
       int GRID = aggregates[i][j];
-      int LRID = BlockNodeListMap.LID(GRID); // this is the block ID
+      int LRID = BlockNodeListMap->LID(GRID); // this is the block ID
       assert (LRID != -1); // FIXME
       int GCID = CoarseMap.GID(i * NullSpaceDim);
       assert (GCID != -1); // FIXME
@@ -510,7 +584,8 @@ Compute(Epetra_MultiVector& NullSpace)
           {
             int GRID2 = GRID * NumPDEEqns + k;
             int GCID2 = GCID + j;
-            AP->InsertGlobalValues(1, &GRID2, 1, &GCID2, &val);
+            int ierr = AP->InsertGlobalValues(1, &GRID2, 1, &GCID2, &val);
+            if (ierr < 0) ML_CHK_ERR(ierr);
           }
         }
 #endif
@@ -518,8 +593,9 @@ Compute(Epetra_MultiVector& NullSpace)
   }
 
   aggregates.resize(0);
-  delete ColoredAP;
   delete ExtColoredAP;
+  delete BlockNodeListMap;
+  delete MapColoringTransform;
 
   AP->GlobalAssemble(false);
   AP->FillComplete(CoarseMap, FineMap);
@@ -535,8 +611,15 @@ Compute(Epetra_MultiVector& NullSpace)
   // create R //
   // ======== //
   
-  // FIXME: try to allocate memory at this point?
-  R_ = new Epetra_FECrsMatrix(Copy, CoarseMap, 0);
+  vector<int> REntries(NumAggregates * NullSpaceDim);
+  for (int AID = 0; AID < NumAggregates; ++AID)
+  {
+    for (int m = 0; m < NullSpaceDim; ++m)
+      REntries[AID * NullSpaceDim + m] = NodesOfAggregate[AID].size() * NumPDEEqns;
+  }
+
+  R_ = new Epetra_CrsMatrix(Copy, CoarseMap, &REntries[0], true);
+  REntries.resize(0);
 
   for (int AID = 0; AID < NumAggregates; ++AID)
   {
@@ -555,13 +638,14 @@ Compute(Epetra_MultiVector& NullSpace)
 
           int GRID = CoarseMap.GID(AID * NullSpaceDim + k);
           assert (GRID != -1); // FIXME
-          R_->InsertGlobalValues(1, &GRID, 1, &GCID, &val);
+          int ierr = R_->InsertGlobalValues(GRID, 1, &val, &GCID);
+          if (ierr < 0)
+            ML_CHK_ERR(-1);
         }
   }
 
   NodesOfAggregate.resize(0);
 
-  R_->GlobalAssemble(false);
   R_->FillComplete(FineMap, CoarseMap);
   R_->OptimizeStorage(); // FIXME: TO BE DONE FOR ALL OBJECTS
 
@@ -573,30 +657,21 @@ Compute(Epetra_MultiVector& NullSpace)
   // ======== //
 
 #if 1
-  ML_Operator* C_ML = ML_Operator_Create(Comm_ML());
-  ML_2matmult(R_ML, AP_ML, C_ML, ML_CSR_MATRIX);
+  C_ML_ = ML_Operator_Create(Comm_ML());
+  ML_2matmult(R_ML, AP_ML, C_ML_, ML_MSR_MATRIX);
 #else
-  ML_Operator* C_ML;
-  ML_matmat_mult(R_ML, AP_ML, &C_ML); 
+  ML_matmat_mult(R_ML, AP_ML, &C_ML_); 
 #endif
 
   ML_Operator_Destroy(&AP_ML);
   ML_Operator_Destroy(&R_ML);
   delete AP;
 
-  ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML, C_));
-
-  ML_Operator_Destroy(&C_ML);
-
-  // FIXME: NOT TRUE
-  // At this point I have:
-  // - C_ is the coarse matrix
-  // - P_ is the prolongator operator
-  // - R_ is the restriction operator
-
-#if 0
-  // free memory
-#endif
+  // FIXXXME
+  // the following are to build C_ as an Epetra_CrsMatrix
+  //ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML_, C_));
+  C_ = new ML_Epetra::RowMatrix(C_ML_, &Comm(), false);
+  assert (R_->OperatorRangeMap().SameAs(C_->OperatorDomainMap()));
 
   if (MyPID() == 0 && ML_Get_PrintLevel() > 5) 
   {
