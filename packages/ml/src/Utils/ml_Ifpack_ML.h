@@ -204,9 +204,12 @@ public:
   }
 
   //! Sets the use of transpose 9NOT SUPPORTED)
-  int SetUseTranspose(bool)
+  int SetUseTranspose(bool UseTranspose)
   {
-    ML_CHK_ERR(-1);
+    if (UseTranspose == true)
+      ML_CHK_ERR(-1);
+
+    return(0);
   }
 
   //! Applies the matrix to a vector (NOT SUPPORTED)
