@@ -79,22 +79,27 @@ int main(int argc, char *argv[])
   GaleriList.set("my", Comm.NumProc());
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
-  Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Recirc2D", Map, GaleriList);
-  int NumPDEEqns = 3;
+  Epetra_CrsMatrix* CrsA = CreateCrsMatrix("Laplace2D", Map, GaleriList);
+  int NumPDEEqns = 2;
+  int NullSpaceDim = 3;
   Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, NumPDEEqns);
 
-  Epetra_MultiVector NullSpace(VbrA->Map(), 6);
-  NullSpace.Random();
-  Epetra_MultiVector OrigNullSpace(NullSpace);
+  Epetra_MultiVector OrigNullSpace(VbrA->Map(), NullSpaceDim);
+  //OrigNullSpace.PutScalar(1.0);
+  OrigNullSpace.Random();
+  Epetra_MultiVector NullSpace(OrigNullSpace);
   Teuchos::ParameterList MLList;
-  MLList.set("PDE equations", NumPDEEqns);
+  MLList.sublist("ML list").set("max levels", 1);
+  //MLList.sublist("ML list").set("max levels", 2);
+  //MLList.sublist("ML list").set("coarse: max size", 1);
+  //MLList.sublist("ML list").set("cycle applications", 10);
 
   // compute the preconditioner using the matrix-free approach
   MatrixFreePreconditioner* MFP = new
     MatrixFreePreconditioner(*VbrA, VbrA->Graph(), MLList, NullSpace);
 
   NullSpace = OrigNullSpace;
-  cout << NullSpace;
+
   assert (MFP->IsComputed() == true);
 
   // =========== //
@@ -109,6 +114,7 @@ int main(int argc, char *argv[])
   ML_Operator* P_ML,* R_ML,* C_ML;
   MFP->Coarsen(VbrA_ML, &Aggregates_ML, &P_ML, &R_ML, &C_ML, NumPDEEqns,
                NullSpace.NumVectors(), NullSpace.Values());
+  ML_Aggregate_Destroy(&Aggregates_ML);
 
   // ========================================== //
   // CHECK 1: Non-smoothed Restriction Operator //
@@ -129,17 +135,20 @@ int main(int argc, char *argv[])
   Epetra_Vector y(R->OperatorRangeMap());
   Epetra_Vector z(R->OperatorRangeMap());
 
-  x.Random();
-  R->Apply(x, y);
-  MFP->R().Apply(x, z);
-  y.Update(1.0, z, -1.0);
-  double norm;
-  y.Norm2(&norm);
+  for (int t = 0; t < 3; ++t)
+  {
+    x.Random();
+    R->Apply(x, y);
+    MFP->R().Apply(x, z);
+    y.Update(1.0, z, -1.0);
+    double norm;
+    y.Norm2(&norm);
 
-  if (Comm.MyPID() == 0)
-    cout << "||(R_ML - R_MFP) * y||_2 = " << norm << endl;
+    if (Comm.MyPID() == 0)
+      cout << "test " << t << ", ||(R_ML - R_MFP) * y||_2 = " << norm << endl;
 
-  if (norm > 1e-10) exit(EXIT_FAILURE);
+    if (norm > 1e-10) exit(EXIT_FAILURE);
+  }
 
   // =========================================== //
   // CHECK 2: Coarse-level operator.             //
@@ -150,55 +159,77 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix* C;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML, C));
   
-  //cout << *C;
-  //cout << MFP->C();
+  // cout << *C;
+  // cout << MFP->C();
 
   assert (C->OperatorRangeMap().SameAs(MFP->C().OperatorRangeMap()));
   assert (C->OperatorDomainMap().SameAs(MFP->C().OperatorDomainMap()));
 
-  Epetra_Vector xx(R->OperatorDomainMap());
-  Epetra_Vector yy(R->OperatorRangeMap());
-  Epetra_Vector zz(R->OperatorRangeMap());
+  Epetra_Vector xx(C->OperatorDomainMap());
+  Epetra_Vector yy(C->OperatorRangeMap());
+  Epetra_Vector zz(C->OperatorRangeMap());
 
-  xx.Random();
-  R->Apply(xx, yy);
-  MFP->R().Apply(xx, zz);
-  yy.Update(1.0, zz, -1.0);
-  yy.Norm2(&norm);
+  for (int t = 0; t < 3; ++t)
+  {
+    xx.Random();
+    C->Apply(xx, yy);
+    MFP->C().Apply(xx, zz);
+    yy.Update(1.0, zz, -1.0);
+    double norm;
+    yy.Norm2(&norm);
 
-  if (Comm.MyPID() == 0)
-    cout << "||(C_ML - C_MFP) * y||_2 = " << norm << endl;
-
-  if (norm > 1e-10) exit(EXIT_FAILURE);
-
-#if 0
-  Epetra_LinearProblem Problem(A, &LHS, &RHS);
-  AztecOO solver(Problem);
-
-  solver.SetPrecOperator(MLPrec);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 32);
-  solver.Iterate(500, 1e-12);
-
-  // destroy the preconditioner
-  delete MLPrec;
-  
-  // compute the real residual
-
-  double residual;
-  LHS.Norm2(&residual);
-  
-  if( Comm.MyPID()==0 ) {
-    cout << "||b-Ax||_2 = " << residual << endl;
+    if (Comm.MyPID() == 0)
+      cout << "test " << t << ", ||(C_ML - C_MFP) * y||_2 = " << norm << endl;
+    
+    if (norm > 1e-10) exit(EXIT_FAILURE);
   }
 
-  // for testing purposes
-  if (residual > 1e-5)
-    exit(EXIT_FAILURE);
+  // ================= //
+  // CHECK 3: solution //
+  // ================= //
 
-  delete A;
-  delete Map;
-#endif
+  Teuchos::ParameterList MLList2;
+  MLList2.set("PDE equations", NumPDEEqns);
+  MLList2.set("max levels", 2);
+  MLList2.set("coarse: max size", 4);
+  MLList2.set("smoother: type", "Jacobi");
+  MLList2.set("prec type", "two-level-additive");
+  MLList2.set("aggregation: damping factor", 0.0);
+  MLList2.set("smoother: pre or post", "post");
+  MLList2.set("null space: type", "pre-computed");
+  MLList2.set("null space: dimension", OrigNullSpace.NumVectors());
+  MLList2.set("null space: vectors", OrigNullSpace.Values());
+
+  MultiLevelPreconditioner* MLP = new MultiLevelPreconditioner(*VbrA, MLList2);
+
+  Epetra_Vector LHS(VbrA->OperatorDomainMap()); 
+  Epetra_Vector RHS(VbrA->OperatorRangeMap()); 
+  Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
+  AztecOO solver(Problem);
+
+  LHS.PutScalar(1.0);
+  RHS.PutScalar(0.0);
+
+  solver.SetPrecOperator(MLP);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_output, 32);
+  solver.Iterate(500, 1e-5);
+
+  int MLPIters = solver.NumIters();
+  double MLPResidual = solver.TrueResidual();
+
+  delete MLP;
+
+  LHS.PutScalar(1.0);
+  RHS.PutScalar(0.0);
+
+  solver.SetPrecOperator(MFP);
+  solver.Iterate(500, 1e-5);
+
+  int MFPIters = solver.NumIters();
+  double MFPResidual = solver.TrueResidual();
+
+  //assert (MLPIters == MFPIters);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

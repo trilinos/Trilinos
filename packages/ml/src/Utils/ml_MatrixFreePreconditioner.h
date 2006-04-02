@@ -2,7 +2,7 @@
 #define ML_MATRIX_FREE_PRECONDITIONER
 
 #include "ml_include.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_EPETRAEXT)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
 #include <string>
 #include "ml_epetra.h"
 #include "Epetra_Operator.h"
@@ -18,6 +18,8 @@ class Epetra_CrsMatrix;
 class Epetra_FECrsMatrix;
 
 namespace ML_Epetra {
+
+class MultiLevelPreconditioner;
 
 class MatrixFreePreconditioner : public Epetra_Operator 
 {
@@ -131,13 +133,13 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! List containing all the parameters
     Teuchos::ParameterList List_;
     //! Prolongator from coarse to fine
-    Epetra_CrsMatrix* P_; // FIXME: DELETE ME
+    Epetra_CrsMatrix* P_;
     Epetra_FECrsMatrix* R_;
     Epetra_CrsMatrix* C_;
 
     Epetra_Time* Time_;
 
-    Epetra_MultiVector* NewNullSpace_;
+    MultiLevelPreconditioner* MLP_;
 
 }; // class MatrixFreePreconditioner
 
