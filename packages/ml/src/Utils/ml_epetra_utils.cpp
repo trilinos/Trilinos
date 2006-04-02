@@ -1382,11 +1382,11 @@ void ML_DestroyQt( void )
   return;
   
 } /* ML_DestroyQt */
+#endif
 
 #ifndef ML_CPP
 #ifdef __cplusplus
 } /* extern "C" */
-#endif
 #endif
 #endif
 
