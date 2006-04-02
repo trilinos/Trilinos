@@ -203,6 +203,21 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
 		    int allocated_space, int columns[], double values[],
 		    int row_lengths[])
 {
+
+  cout << "Fuction ML_Epetra_getrow() is no longer supported." << endl;
+  cout << "You should use one of the following instead:" << endl;
+  cout << "- ML_Epetra_RowMatrix_getrow();" << endl;
+  cout << "- ML_Epetra_CrsMatrix_getrow();" << endl;
+  cout << "- ML_Epetra_VbrMatrix_getrow()." << endl;
+  cout << "If you don't know what is your matrix type, then use" << endl;
+  cout << "the generic function for Epetra_RowMatrix's." << endl;
+  cout << "You may need to update your Epetra wrapper and set the" << endl;
+  cout << "appropriete function instead if ML_Epetra_getrow()" << endl;
+
+  ML_EXIT(-1);
+
+#if 0
+
   int nz_ptr = 0;
   int NumEntries;
   int MaxPerRow = 0;
@@ -321,6 +336,7 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
   }
   
   return(1);
+#endif
 }
 
 // ====================================================================== 
@@ -689,6 +705,8 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
                            ML_Epetra_CrsMatrix_getrow);
 
     ML_Operator_Set_ApplyFunc (newMatrix, ML_Epetra_CrsMatrix_matvec);
+
+    newMatrix->type = ML_TYPE_CRS_MATRIX;
   }
   // TODO implement functionality for Epetra_VbrMatrix
   else { // RowMatrix
@@ -701,9 +719,11 @@ int ML_Operator_WrapEpetraMatrix(Epetra_RowMatrix * A, ML_Operator *newMatrix)
                           newMatrix->comm, isize, N_ghost);
 
     ML_Operator_Set_Getrow(newMatrix, newMatrix->outvec_leng,
-                           ML_Epetra_getrow);
+                           ML_Epetra_RowMatrix_getrow);
 
-    ML_Operator_Set_ApplyFunc (newMatrix, ML_Epetra_matvec);
+    ML_Operator_Set_ApplyFunc (newMatrix, ML_Epetra_VbrMatrix_matvec);
+
+    newMatrix->type = ML_TYPE_ROW_MATRIX;
   }
 
   return 0;
@@ -764,12 +784,27 @@ int ML_Epetra_CrsGraph_comm_wrapper(double vec[], void *data)
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
 
   if( A->Importer() != 0 ) {
-    Epetra_Vector X_target(View, A->Importer()->TargetMap(),
+    // this is SLOW
+    const Epetra_BlockMap& RowMap = A->RowMap(); // this is a block map
+    const Epetra_BlockMap& ColMap = A->ColMap(); // this is a block map
+
+    Epetra_Map RowMap2(-1, RowMap.NumMyElements(), RowMap.MyGlobalElements(), ColMap.IndexBase(), RowMap.Comm());
+    Epetra_Map ColMap2(-1, ColMap.NumMyElements(), ColMap.MyGlobalElements(), ColMap.IndexBase(), ColMap.Comm());
+    Epetra_Import Importer(ColMap2, RowMap2);
+
+    Epetra_Vector X_target(View, 
+                           ColMap2,
+                           //A->Importer()->TargetMap(),
 			   vec); //ghosted
-    Epetra_Vector X_source(View, A->Importer()->SourceMap(),
+    Epetra_Vector X_source(View, 
+                           RowMap2, 
+                           //A->Importer()->SourceMap(),
 			   vec); //loc only
   
-    X_target.Import(X_source, *(A->Importer()), Insert);
+    X_target.Import(X_source, 
+                     Importer,
+                    //*(A->Importer()), 
+                    Insert);
   }
   
   return(1);
@@ -783,7 +818,7 @@ int ML_Operator_WrapEpetraCrsGraph(Epetra_CrsGraph* Graph, ML_Operator *newMatri
   osize = Graph->RangeMap().NumMyElements();
   isize = Graph->DomainMap().NumMyElements();
   assert (Graph->HaveColMap() == true);
-  int N_ghost = Graph->ColMap().NumMyElements() - isize;
+  int N_ghost = Graph->NumMyBlockCols() - isize;
 
   if (N_ghost < 0) N_ghost = 0;
 
@@ -817,7 +852,7 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
   ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) A);
-  ML_Set_Amatrix_Getrow(ml_handle, level, ML_Epetra_getrow,
+  ML_Set_Amatrix_Getrow(ml_handle, level, ML_Epetra_RowMatrix_getrow,
                         ML_Epetra_comm_wrapper, isize+N_ghost);
 
   ML_Set_Amatrix_Matvec(ml_handle,  level, ML_Epetra_matvec);
@@ -1202,7 +1237,6 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   if( Reord != NULL ) delete [] Reord;
 
   return ML_Q2;
-
 }
 
 // ======================================================================
@@ -1268,7 +1302,6 @@ int ML_ApplyQ(int StartingNumElements,
   }
 
   return 0;
-
 }
 
 void ML_DestroyQ(void) 
@@ -1281,6 +1314,7 @@ void ML_DestroyQ(void)
   
 } /* ML_DestroyQ */
 
+#if 0
 // NOTE: this works ONLY if NumPDEEqns == 1. To be changed as
 // done with ML_BuildQ for the general case
 
@@ -1354,14 +1388,13 @@ void ML_DestroyQt( void )
 } /* extern "C" */
 #endif
 #endif
-
+#endif
 
 // ======================================================================
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double & CPUTime)
 {
-
   int    isize_offset, osize_offset;
   int Nghost;
   ML_Comm *comm;
@@ -1399,7 +1432,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   vector<double> global_isize; global_isize.resize(isize+Nghost+1);
   vector<int>    global_isize_as_int; global_isize_as_int.resize(isize+Nghost+1);
 
-  vector<double> global_osize(osize);
+  //vector<double> global_osize(osize);
   vector<int>    global_osize_as_int(osize);
   
   for (int i = 0 ; i < isize; i++) {
@@ -1408,7 +1441,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   }
           
   for (int i = 0 ; i < osize; i++) {
-    global_osize[i] = (double) (osize_offset + i);
+    //global_osize[i] = (double) (osize_offset + i);
     global_osize_as_int[i] = osize_offset + i;
   }
   for (int i = 0 ; i < Nghost; i++) global_isize[i+isize] = -1;
@@ -1421,16 +1454,16 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   ML_exchange_bdry(&global_isize[0],Amat->getrow->pre_comm, 
  		 Amat->invec_leng,comm,ML_OVERWRITE,NULL);
 
-  for ( int j = 0; j < isize+Nghost; j++ ) { 
+  for ( int j = isize; j < isize+Nghost; j++ ) { 
     global_isize_as_int[j] = (int) global_isize[j];
   }
 
   // MS // introduced variable allocation for colInd and colVal
   // MS // improved efficiency in InsertGlobalValues
 
-  int allocated = 1;
-  int * colInd = new int[allocated];
-  double * colVal = new double[allocated];
+  int allocated = 128;
+  vector<int> colInd(allocated);
+  vector<double> colVal(allocated);
   int NumNonzeros;
   int ierr;
   int    ncnt;
@@ -1439,16 +1472,21 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   
   for (int i = 0; i < osize; i++)
   {
-    ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+    ierr = ML_Operator_Getrow(Amat,1,&i,allocated,&colInd[0],&colVal[0],&ncnt);
 
     if( ierr == 0 ) {
       do {
-	delete [] colInd;
-	delete [] colVal;
 	allocated *= 2;
-	colInd = new int[allocated];
-	colVal = new double[allocated];
-	ierr = ML_Operator_Getrow(Amat,1,&i,allocated,colInd,colVal,&ncnt);
+        if (allocated > 20000) // would look strange to have such a dense row
+        {
+          cerr << "Row " << i << " on processor " << comm->ML_mypid;
+          cerr << " seems to have more than 20000 nonzeros." << endl;
+          cerr << "This looks suspicious, so now I abort..." << endl;
+          ML_EXIT(-1);
+        }
+        colInd.resize(allocated);
+        colVal.resize(allocated);
+	ierr = ML_Operator_Getrow(Amat,1,&i,allocated,&colInd[0],&colVal[0],&ncnt);
       } while( ierr == 0 );
     }
 
@@ -1476,14 +1514,12 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
     }
     MaxNumNonzeros = EPETRA_MAX(NumNonzeros,MaxNumNonzeros);
     
-    CrsMatrix->InsertGlobalValues( global_osize_as_int[i], NumNonzeros, 
-				   colVal, colInd);
+    CrsMatrix->InsertGlobalValues(global_osize_as_int[i], NumNonzeros, 
+				  &colVal[0], &colInd[0]);
   }
 
-  delete [] colInd;
-  delete [] colVal;
-  
   CrsMatrix->FillComplete(domainmap,rangemap);
+  CrsMatrix->OptimizeStorage();
 
   CPUTime = Time.ElapsedTime();
 
@@ -1491,6 +1527,7 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Amat, Epetra_CrsMatrix * &
   
 } /* ML_Operator2EpetraCrsMatrix for rectangular matrices*/
 
+#if 0
 // FIXME: delete me ???
 int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
@@ -1643,6 +1680,7 @@ int ML_Operator2EpetraCrsMatrix_old(ML_Operator *Ke, Epetra_CrsMatrix * &
   return 0;
   
 } /* ML_Operator2EpetraCrsMatrix */
+#endif
 
 #ifdef WKC
 int ML_Epetra_matvec_WKC (ML_Operator *data, int in, double *p, int out, double *ap)
