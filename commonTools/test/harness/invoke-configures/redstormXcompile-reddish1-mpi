@@ -1,7 +1,7 @@
 #reddish.sandia.gov
 #PGI 6.0 cross for Red Storm:
-source /opt/modules/default/init/bash
-module load PrgEnv-pgi
+source /opt/modules/default/init/bash;
+module load PrgEnv-pgi;
 ../configure --cache-file=config.cache --host=i686-intel-linux \
 --with-gnumake \
 --enable-nox-epetra \

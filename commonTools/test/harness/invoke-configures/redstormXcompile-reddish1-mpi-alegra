@@ -1,7 +1,7 @@
 #reddish.sandia.gov
 #PGI 6.0 cross for Red Storm:
-#module load compilers/pgi PrgEnv
-module load PrgEnv
+source /opt/modules/default/init/bash;
+module load PrgEnv-pgi;
 #  cd /projects/alegra/rrdrake/TPL/trilinos/5.0/build/opt_storm && /projects/alegra/rrdrake/TPL/trilinos/5.0/TrilinosCVS/Trilinos/configure
 ../configure \
         --prefix=/projects/alegra/rrdrake/TPL/trilinos/5.0/build/opt_storm \
