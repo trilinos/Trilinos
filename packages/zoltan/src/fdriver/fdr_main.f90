@@ -37,6 +37,7 @@ use dr_const
 use dr_input
 use dr_chaco_io
 use dr_loadbal
+use dr_mm_io
 implicit none
 
 !/* Local declarations. */
@@ -60,7 +61,7 @@ implicit none
 
 interface
 
-   logical function read_mesh(Proc, Num_Proc, prob, pio_info, elements)
+   logical function read_mesh(Proc, Num_Proc, prob, pio_info)
    use zoltan
    use zoltan_user_data
    use dr_const
@@ -68,7 +69,6 @@ interface
    integer(Zoltan_INT) :: Proc, Num_Proc
    type(PROB_INFO) :: prob
    type(PARIO_INFO) :: pio_info
-   type(ELEM_INFO), pointer :: elements(:)
    end function read_mesh
 
    subroutine print_input_info(fp, Num_Proc, prob)
@@ -135,9 +135,11 @@ end interface
 
   nullify(Mesh%eb_names,Mesh%eb_ids,Mesh%eb_cnts,Mesh%eb_nnodes, &
                Mesh%eb_nattrs,Mesh%ecmap_id,Mesh%ecmap_cnt,Mesh%ecmap_elemids,&
-               Mesh%ecmap_sideids,Mesh%ecmap_neighids,Mesh%elements)
+               Mesh%ecmap_sideids,Mesh%ecmap_neighids,Mesh%elements, &
+               Mesh%hgid,Mesh%hindex,Mesh%hvertex)
   Mesh%necmap = 0
 
+  pio_info%init_dist_pins =  1  !INITIAL_LINEAR
   pio_info%dsk_list_cnt   = -1
   pio_info%num_dsk_ctrlrs = -1
   pio_info%pdsk_add_fact  = -1
@@ -177,7 +179,7 @@ end interface
 !   * This is the only function call to do this. Upon return,
 !   * the mesh struct and the elements array should be filled.
 !   */
-  if (.not. read_mesh(Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
+  if (.not. read_mesh(Proc, Num_Proc, prob, pio_info)) then
       print *, "fatal: Error returned from read_mesh"
       goto 9999
   endif
@@ -206,6 +208,9 @@ end interface
     end do
     deallocate(Mesh%elements)
   endif
+  if (associated(Mesh%hgid)) deallocate(Mesh%hgid)
+  if (associated(Mesh%hindex)) deallocate(Mesh%hindex)
+  if (associated(Mesh%hvertex)) deallocate(Mesh%hvertex)
   if (associated(Mesh)) deallocate(Mesh)
   if (associated(prob%params)) deallocate(prob%params)
   call Zoltan_Memory_Stats()
@@ -221,24 +226,30 @@ end program fdriver
 ! * file is added to the driver, then a section needs to be added for
 ! * it here.
 ! *---------------------------------------------------------------------------*/
-logical function read_mesh(Proc, Num_Proc, prob, pio_info, elements)
+logical function read_mesh(Proc, Num_Proc, prob, pio_info)
 use zoltan
 use zoltan_user_data
 use dr_const
 use dr_input
 use dr_chaco_io
+use dr_mm_io
 implicit none
   integer(Zoltan_INT) :: Proc
   integer(Zoltan_INT) :: Num_Proc
   type(PROB_INFO) :: prob
   type(PARIO_INFO) :: pio_info
-  type(ELEM_INFO), pointer :: elements(:)
 
 !/* local declarations */
 !/*-----------------------------Execution Begins------------------------------*/
   if (pio_info%file_type == CHACO_FILE) then
-    if (.not. read_chaco_mesh(Proc, Num_Proc, prob, pio_info, elements)) then
+    if (.not. read_chaco_mesh(Proc, Num_Proc, prob, pio_info, Mesh%elements)) then
         print *, "fatal: Error returned from read_chaco_mesh"
+        read_mesh = .false.
+        return
+    endif
+  else if (pio_info%file_type == MM_FILE) then
+    if (.not. read_mm_file(Proc, Num_Proc, prob, pio_info)) then
+        print *, "fatal: Error returned from read_mm_file"
         read_mesh = .false.
         return
     endif

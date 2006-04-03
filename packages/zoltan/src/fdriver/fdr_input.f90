@@ -18,7 +18,7 @@ implicit none
 private
 
 public :: read_cmd_file, check_inp, brdcst_cmd_info, gen_par_filename, &
-          PARIO_INFO, NEMESIS_FILE, CHACO_FILE
+          PARIO_INFO, NEMESIS_FILE, CHACO_FILE, MM_FILE
 
 !/*--------------------------------------------------------------------------*/
 !/* Purpose: Determine file types for command files and read in the parallel */
@@ -36,7 +36,8 @@ public :: read_cmd_file, check_inp, brdcst_cmd_info, gen_par_filename, &
 
 
 integer(Zoltan_INT), parameter :: NEMESIS_FILE = 0, &
-                             CHACO_FILE   = 1
+                             CHACO_FILE   = 1, &
+                             MM_FILE = 2
 
 integer(Zoltan_INT), parameter :: MAX_INPUT_STR_LN = 4096 ! maximum string length
                                                      ! for read_string()
@@ -45,6 +46,7 @@ integer(Zoltan_INT), parameter :: MAX_INPUT_STR_LN = 4096 ! maximum string lengt
 
 type PARIO_INFO
    
+  integer(Zoltan_INT) :: init_dist_pins
   integer(Zoltan_INT) :: dsk_list_cnt
   integer(Zoltan_INT), pointer :: dsk_list(:)
   integer(Zoltan_INT) :: rdisk
@@ -176,8 +178,10 @@ type(PARIO_INFO) :: pio_info
 ! assumes there is one blank between "=" and the file type
        if (lowercase(trim(inp_line(index(inp_line,"=")+2:))) == "chaco") then
           pio_info%file_type = CHACO_FILE
+       else if (lowercase(trim(inp_line(index(inp_line,"=")+2:))) == "matrixmarket") then
+          pio_info%file_type = MM_FILE
        else
-          print *, "Error:  zfdrive can read only Chaco format files."  
+          print *, "Error:  zfdrive can read only Chaco or MatrixMarket format files."  
           read_cmd_file = .false.
        endif
     endif
