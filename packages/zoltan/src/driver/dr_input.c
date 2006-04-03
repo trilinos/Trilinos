@@ -216,6 +216,12 @@ int read_cmd_file (
                   return 0;
                 }
                 pio_info->matrix_obj = i;
+                if (pio_info->matrix_obj != COLUMNS && 
+                    pio_info->file_type == MATRIXMARKET_PLUS_FILE) {
+                  Gen_Error(0, "fatal: objects != COLUMNS not supported "
+                               "for MATRIXMARKET_PLUS");
+                  return 0;
+                }
               }
               else {
                 Gen_Error(0, "fatal: unrecognizable file type arguments");
