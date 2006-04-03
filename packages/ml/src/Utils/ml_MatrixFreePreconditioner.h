@@ -161,6 +161,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(IsComputed_);
     }
 
+    //! Returns the total CPU time spent in \c this class.
+    double TotalCPUTime() const;
+
     // @}
     // @{ \name Construction methods.
     

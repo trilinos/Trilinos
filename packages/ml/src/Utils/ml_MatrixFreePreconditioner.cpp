@@ -322,8 +322,12 @@ Compute(Epetra_MultiVector& NullSpace)
   ML_Aggregate* BlockAggr_ML = 0;
   ML_Operator* BlockPtent_ML = 0, *BlockRtent_ML = 0,* CoarseGraph_ML = 0;
 
+  if (ML_Get_PrintLevel() > 5 && MyPID() == 0) cout << endl;
+
   ML_CHK_ERR(Coarsen(Graph_ML, &BlockAggr_ML, &BlockPtent_ML, &BlockRtent_ML, 
                      &CoarseGraph_ML));
+
+  if (ML_Get_PrintLevel() > 5 && MyPID() == 0) cout << endl;
 
   Epetra_CrsMatrix* GraphCoarse;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(CoarseGraph_ML, GraphCoarse));
@@ -521,7 +525,7 @@ Compute(Epetra_MultiVector& NullSpace)
   if (ML_Get_PrintLevel() > 5)
     cout << "# colors on processor " << Comm().MyPID() << " = "
         << ColorMap.NumColors() << endl;
-  if (MyPID() == 0)
+  if (ML_Get_PrintLevel() > 5 && MyPID() == 0)
     cout << "Maximum # of colors = " << NumColors << endl;
 
   Epetra_MultiVector* ColoredP = new Epetra_MultiVector(FineMap, NumColors * NullSpaceDim);
@@ -703,9 +707,27 @@ Compute(Epetra_MultiVector& NullSpace)
 
   if (MyPID() == 0 && ML_Get_PrintLevel() > 5) 
   {
+    cout << endl;
+    cout << "Total CPU time for construction (all included) = ";
+    cout << TotalCPUTime() << endl;
     ML_print_line("=",78);
   }
 
   return(0);
+}
+
+// ============================================================================ 
+double ML_Epetra::MatrixFreePreconditioner::
+TotalCPUTime() const
+{
+  double TotalCPUTime = 0.0;
+  map<string, double>::iterator iter2;
+
+  for (iter2 = TimeTable.begin(); iter2 != TimeTable.end(); ++iter2)
+  {
+    TotalCPUTime += iter2->second;
+  }
+
+  return(TotalCPUTime);
 }
 #endif
