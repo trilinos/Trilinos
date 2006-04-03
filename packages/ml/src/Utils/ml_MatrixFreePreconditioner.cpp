@@ -32,6 +32,29 @@ using namespace EpetraExt;
 #define ML_MFP_ADDITIVE 0
 #define ML_MFP_HYBRID   1
 
+int ML_hash_it2( int new_val, int hash_list[], int hash_length,int *hash_used) {
+
+  int index;
+  int ret_value = 0;
+
+  index = new_val<<1;
+  if (index < 0) index = new_val;
+  index = index%hash_length;
+  while ( hash_list[index] != new_val) {
+    if (hash_list[index] == -1) 
+    { 
+      hash_list[index] = new_val;
+      ret_value = 1;
+      (*hash_used)++; 
+      break;
+    }
+    index++;
+    index = (index)%hash_length;
+  }
+
+  return(ret_value);
+}
+
 // ============================================================================ 
 ML_Epetra::MatrixFreePreconditioner::
 MatrixFreePreconditioner(const Epetra_Operator& Operator,
@@ -39,23 +62,22 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              Teuchos::ParameterList& List,
                              Epetra_MultiVector& NullSpace,
                              const Epetra_Vector& InvDiag) :
-  IsComputed_(false),
-  Label_("ML matrix-free preconditioner"),
+  Comm_ML_(0),
   Comm_(Operator.Comm()),
+  Label_("ML matrix-free preconditioner"),
+  IsComputed_(false),
+  PrecType_(ML_MFP_HYBRID),
+  omega_(1.00),
   Operator_(Operator),
   Graph_(Graph),
+  InvDiag_(InvDiag),
   R_(0),
   C_(0),
   C_ML_(0),
-  Time_(0),
   MLP_(0),
-  InvDiag_(InvDiag),
-  PrecType_(ML_MFP_HYBRID),
-  omega_(1.00)
+  Time_(0)
 {
   List_ = List;
-
-  ML_Set_PrintLevel(10); // FIXME
 
   // ML communicator, here based on MPI_COMM_WORLD
   ML_Comm_Create(&Comm_ML_);
@@ -107,6 +129,8 @@ ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
 int ML_Epetra::MatrixFreePreconditioner::
 ApplyInverse(const Epetra_MultiVector& Xinput, Epetra_MultiVector& Y) const
 {
+  ResetStartTime();
+
   // recall:: Y is a view of Xinput for AztecOO
   Epetra_MultiVector X(Xinput);
 
@@ -154,6 +178,8 @@ ApplyInverse(const Epetra_MultiVector& Xinput, Epetra_MultiVector& Y) const
   else
     ML_CHK_ERR(-3); // type not recognized
 
+  AddAndResetStartTime("ApplyInverse()");
+
   return(0);
 }
 
@@ -177,8 +203,6 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
         ML_Operator** R, ML_Operator** C, int NumPDEEqns, int NullSpaceDim,
         double* NullSpace)
 {
-  Time().ResetStartTime();
-
   // Aggregate object, with settings
   ML_Aggregate_Create(MLAggr);
   
@@ -213,11 +237,6 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
     ML_CHK_ERR(-2);
   }
 
-  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
-    cout << "Coarsening time = " << Time().ElapsedTime() << " (s)" << endl;
-
-  Time().ResetStartTime();
-
   *R = ML_Operator_Create(Comm_ML());
 
   ML_Operator_Transpose_byrow(*P, *R);
@@ -230,9 +249,6 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
   ////ML_rap(*R, A, *P, *C, ML_EpetraCRS_MATRIX);
   ML_rap(*R, A, *P, *C, ML_MSR_MATRIX);
 
-  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
-    cout << "(block) R, P, C construction time = " << Time().ElapsedTime() << " (s)" << endl;
-
   return(0);
 }
 
@@ -240,10 +256,14 @@ Coarsen(ML_Operator*A, ML_Aggregate** MLAggr, ML_Operator** P,
 int ML_Epetra::MatrixFreePreconditioner::
 Compute(Epetra_MultiVector& NullSpace)
 {
+  Epetra_Time TotalTime(Comm());
+
   const int NullSpaceDim = NullSpace.NumVectors();
   // get parameters from the list
   string PrecType = List_.get("prec: type", "hybrid");
   string ColoringType = List_.get("coloring: type", "JONES_PLASSMAN");
+  int OutputLevel = List_.get("output", 10);
+  ML_Set_PrintLevel(OutputLevel);
 
   // ================ //
   // check parameters //
@@ -274,7 +294,7 @@ Compute(Epetra_MultiVector& NullSpace)
 
   if (MyPID() == 0 && ML_Get_PrintLevel() > 5) 
   {
-    ML_print_line("-",78);
+    ML_print_line("=",78);
     cout << "*** " << endl;
     cout << "*** ML_Epetra::MatrixFreePreconditioner" << endl;
     cout << "***" << endl;
@@ -302,14 +322,10 @@ Compute(Epetra_MultiVector& NullSpace)
   ML_Aggregate* BlockAggr_ML = 0;
   ML_Operator* BlockPtent_ML = 0, *BlockRtent_ML = 0,* CoarseGraph_ML = 0;
 
-  if (MyPID() == 0 && ML_Get_PrintLevel() > 5) cout << endl;
-
   ML_CHK_ERR(Coarsen(Graph_ML, &BlockAggr_ML, &BlockPtent_ML, &BlockRtent_ML, 
                      &CoarseGraph_ML));
 
-  if (MyPID() == 0 && ML_Get_PrintLevel() > 5) cout << endl;
-
-  Epetra_CrsMatrix* GraphCoarse,* BlockRtent;
+  Epetra_CrsMatrix* GraphCoarse;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(CoarseGraph_ML, GraphCoarse));
 
   int NumAggregates = BlockPtent_ML->invec_leng;
@@ -322,7 +338,7 @@ Compute(Epetra_MultiVector& NullSpace)
   // - number of colors is ColorMap.NumColors().        //
   // ================================================== //
   
-  Time().ResetStartTime();
+  ResetStartTime();
 
   CrsGraph_MapColoring* MapColoringTransform;
   
@@ -337,21 +353,42 @@ Compute(Epetra_MultiVector& NullSpace)
 
   Epetra_MapColoring& ColorMap = (*MapColoringTransform)(const_cast<Epetra_CrsGraph&>(GraphCoarse->Graph()));
 
+  const int NumColors = ColorMap.MaxNumColors();
+
   delete GraphCoarse;
 
-  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
-    cout << "Coloring time = " << Time().ElapsedTime() << " (s)" << endl;
+  AddAndResetStartTime("coloring", true);
+
+  // get some other information about the aggregates, to be used
+  // in the QR factorization of the null space. NodesOfAggregate
+  // contains the local ID of block rows contained in each aggregate.
+
+  // FIXME: make it faster
+  vector< vector<int> > NodesOfAggregate(NumAggregates);
+
+  for (int i = 0; i < Graph_.NumMyBlockRows(); ++i)
+  {
+    int AID = BlockAggr_ML->aggr_info[0][i];
+    NodesOfAggregate[AID].push_back(i);
+  }
+
+  int MaxAggrSize = 0;
+  for (int i = 0; i < NumAggregates; ++i)
+  {
+    const int& MySize = NodesOfAggregate[i].size();
+    if (MySize > MaxAggrSize) MaxAggrSize = MySize;
+  }
 
   // collect aggregate information, and mark all nodes that are
   // connected with each aggregate. These nodes will have a possible
   // nonzero entry after the matrix-matrix product between the Operator_
   // and the tentative prolongator.
 
-  Time().ResetStartTime();
-
   vector<vector<int> > aggregates(NumAggregates);
-  vector<int>* BlockNodeList = new vector<int>;
   vector<int>::iterator iter;
+
+  for (int i = 0; i < NumAggregates; ++i)
+    aggregates[i].reserve(MaxAggrSize);
 
   for (int i = 0; i < Graph_.NumMyBlockRows(); ++i)
   {
@@ -370,40 +407,26 @@ Compute(Epetra_MultiVector& NullSpace)
       iter = find(aggregates[AID].begin(), aggregates[AID].end(), GCID);
       if (iter == aggregates[AID].end())
         aggregates[AID].push_back(GCID);
-
-      iter = find(BlockNodeList->begin(), BlockNodeList->end(), GCID);
-      if (iter == BlockNodeList->end())
-        BlockNodeList->push_back(GCID);
     }
   }
   
-  // get some other information about the aggregates, to be used
-  // in the QR factorization of the null space. NodesOfAggregate
-  // contains the local ID of block rows contained in each aggregate.
-
-  vector< vector<int> > NodesOfAggregate(NumAggregates);
-
-  for (int i = 0; i < Graph_.NumMyBlockRows(); ++i)
-  {
-    int AID = BlockAggr_ML->aggr_info[0][i];
-    NodesOfAggregate[AID].push_back(i);
-  }
+  int* BlockNodeList = Graph_.ColMap().MyGlobalElements();
 
   // finally get rid of the ML_Aggregate structure.
   ML_Aggregate_Destroy(&BlockAggr_ML);
 
   const Epetra_Map& FineMap = Operator_.OperatorDomainMap();
   Epetra_Map CoarseMap(-1, NumAggregates * NullSpaceDim, 0, Comm());
-  Epetra_Map* BlockNodeListMap = new Epetra_Map(-1, BlockNodeList->size(), 
-                                                &(*BlockNodeList)[0], 0, Comm());
+  Epetra_Map* BlockNodeListMap = new Epetra_Map(-1, Graph_.ColMap().NumMyElements(),
+                                                BlockNodeList, 0, Comm());
 
-  vector<int> NodeList(BlockNodeList->size() * NumPDEEqns);
-  for (int i = 0; i < BlockNodeList->size(); ++i)
+  vector<int> NodeList(Graph_.ColMap().NumMyElements() * NumPDEEqns);
+  for (int i = 0; i < Graph_.ColMap().NumMyElements(); ++i)
     for (int m = 0; m < NumPDEEqns; ++m)
-      NodeList[i * NumPDEEqns + m] = (*BlockNodeList)[i] * NumPDEEqns + m;
+      NodeList[i * NumPDEEqns + m] = BlockNodeList[i] * NumPDEEqns + m;
   Epetra_Map NodeListMap(-1, NodeList.size(), &NodeList[0], 0, Comm());
 
-  delete BlockNodeList;
+  AddAndResetStartTime("data structures", true);
 
   // ====================== //
   // process the null space //
@@ -411,13 +434,6 @@ Compute(Epetra_MultiVector& NullSpace)
 
   Epetra_MultiVector NewNullSpace(NullSpace.Map(), NullSpaceDim);
   NewNullSpace.PutScalar(0.0);
-
-  int MaxAggrSize = 0;
-  for (int i = 0; i < NumAggregates; ++i)
-  {
-    const int& MySize = NodesOfAggregate[i].size();
-    if (MySize > MaxAggrSize) MaxAggrSize = MySize;
-  }
 
   if (NullSpaceDim == 1)
   {
@@ -500,7 +516,7 @@ Compute(Epetra_MultiVector& NullSpace)
     }
   }
 
-  const int NumColors = ColorMap.MaxNumColors();
+  AddAndResetStartTime("null space setup", true);
 
   if (ML_Get_PrintLevel() > 5)
     cout << "# colors on processor " << Comm().MyPID() << " = "
@@ -524,15 +540,11 @@ Compute(Epetra_MultiVector& NullSpace)
       
     assert (NumEntries == 1); // this is the block P
     const int& Color = ColorMap[Indices] - 1;
-#if 0
-    (*ColoredP)[Color][i] = Values[0];
-#else
     const int& MyLength = ColoredP->MyLength();
     for (int k = 0; k < NumPDEEqns; ++k)
       for (int j = 0; j < NullSpaceDim; ++j)
         (*ColoredP)[(Color * NullSpaceDim + j)][i * NumPDEEqns + k] = 
           NullSpace[j][i * NumPDEEqns + k];
-#endif
   }
 
   ML_Operator_Destroy(&BlockPtent_ML);
@@ -552,14 +564,11 @@ Compute(Epetra_MultiVector& NullSpace)
   delete Importer;
   delete ColoredAP;
 
-  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
-    cout << "colored A times P time = " << Time().ElapsedTime() << " (s)" << endl;
+  AddAndResetStartTime("computation of AP", true); 
 
-  Time().ResetStartTime();
+  // populate the actual AP operator, skip some controls to make it faster
 
-  // populate the actual AP operator.
-
-  Epetra_FECrsMatrix* AP = new Epetra_FECrsMatrix(Copy, FineMap, 0);
+  Epetra_FECrsMatrix* AP = new Epetra_FECrsMatrix(Copy, FineMap, MaxAggrSize * NumPDEEqns);
 
   for (int i = 0; i < NumAggregates; ++i)
   {
@@ -567,15 +576,10 @@ Compute(Epetra_MultiVector& NullSpace)
     {
       int GRID = aggregates[i][j];
       int LRID = BlockNodeListMap->LID(GRID); // this is the block ID
-      assert (LRID != -1); // FIXME
+      //assert (LRID != -1);
       int GCID = CoarseMap.GID(i * NullSpaceDim);
-      assert (GCID != -1); // FIXME
+      //assert (GCID != -1); 
       int color = ColorMap[i] - 1;
-#if 0
-      double val = ExtColoredAP[color][LRID];
-      if (val != 0.0)
-        AP->InsertGlobalValues(1, &GRID, 1, &GCID, &val);
-#else
       for (int k = 0; k < NumPDEEqns; ++k)
         for (int j = 0; j < NullSpaceDim; ++j)
         {
@@ -584,11 +588,10 @@ Compute(Epetra_MultiVector& NullSpace)
           {
             int GRID2 = GRID * NumPDEEqns + k;
             int GCID2 = GCID + j;
-            int ierr = AP->InsertGlobalValues(1, &GRID2, 1, &GCID2, &val);
-            if (ierr < 0) ML_CHK_ERR(ierr);
+            AP->InsertGlobalValues(1, &GRID2, 1, &GCID2, &val);
+            //if (ierr < 0) ML_CHK_ERR(ierr);
           }
         }
-#endif
     }
   }
 
@@ -601,8 +604,7 @@ Compute(Epetra_MultiVector& NullSpace)
   AP->FillComplete(CoarseMap, FineMap);
   AP->OptimizeStorage();
 
-  if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
-    cout << "Construction of final AP time = " << Time().ElapsedTime() << " (s)" << endl;
+  AddAndResetStartTime("computation of the final AP", true); 
 
   ML_Operator* AP_ML = ML_Operator_Create(Comm_ML());
   ML_Operator_WrapEpetraMatrix(AP, AP_ML);
@@ -652,6 +654,8 @@ Compute(Epetra_MultiVector& NullSpace)
   ML_Operator* R_ML = ML_Operator_Create(Comm_ML());
   ML_Operator_WrapEpetraMatrix(R_, R_ML);
 
+  AddAndResetStartTime("computation of the R", true); 
+
   // ======== //
   // Create C //
   // ======== //
@@ -673,10 +677,14 @@ Compute(Epetra_MultiVector& NullSpace)
   C_ = new ML_Epetra::RowMatrix(C_ML_, &Comm(), false);
   assert (R_->OperatorRangeMap().SameAs(C_->OperatorDomainMap()));
 
+  double SetupTime = TotalTime.ElapsedTime();
+  TotalTime.ResetStartTime();
+
+  AddAndResetStartTime("computation of the C", true); 
+
   if (MyPID() == 0 && ML_Get_PrintLevel() > 5) 
   {
     cout << "Matrix-free preconditioner built. Now building solver for C..." << endl; 
-    ML_print_line("-",78);
   }
 
   Teuchos::ParameterList& sublist = List_.sublist("ML list");
@@ -687,9 +695,16 @@ Compute(Epetra_MultiVector& NullSpace)
 
   MLP_ = new MultiLevelPreconditioner(*C_, sublist, true);
 
+  IsComputed_ = true;
+
   assert (MLP_ != 0);
 
-  IsComputed_ = true;
+  AddAndResetStartTime("computation of the preconditioner for C", true); 
+
+  if (MyPID() == 0 && ML_Get_PrintLevel() > 5) 
+  {
+    ML_print_line("=",78);
+  }
 
   return(0);
 }

@@ -1,15 +1,29 @@
 #ifndef ML_MATRIX_FREE_PRECONDITIONER
 #define ML_MATRIX_FREE_PRECONDITIONER
 
+/*!
+ * \file ml_MatrixFreePreconditioner.h
+ *
+ * \class MatrixFreePreconditioner
+ *
+ * \brief ML preconditioner for Matrix-Free operators
+ *
+ * \author Marzio Sala, ETHZ/D-INFK
+ *
+ * \date Last update do Doxygen: 01-Apr-06
+ *
+ */
+
 #include "ml_include.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
 #include <string>
 #include "ml_epetra.h"
+#include "Epetra_Time.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
+#include <map>
 
-class Epetra_Time;
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_CrsGraph;
@@ -23,9 +37,27 @@ namespace ML_Epetra {
 
 class MultiLevelPreconditioner;
 
+/*!
+\brief MatrixFreePreconditioner: a class to define preconditioners for Epetra_Operator's
+
+This file requires ML to be configured with the following options:
+- \c --enable-epetra
+- \c --enable-teuchos
+- \c --enable-epetraext
+    
+The following options is suggested:
+- \c --enable-amesos
+- \c --enable-ifpack
+
+This class does not support Maxwell problems.
+
+\author Marzio Sala, ETHZ/D-INFK
+*/  
 class MatrixFreePreconditioner : public Epetra_Operator 
 {
   public:
+    //@{ \name Constructors and destructors.
+    
     //! Constructor
     MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
@@ -36,34 +68,44 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! destructor
     ~MatrixFreePreconditioner();
 
+    // @}
+    // @{ \name Query methods.
+    
+    //! Sets the use of the transpose of the operator (NOT SUPPORTED).
     int SetUseTranspose(bool UseTranspose);
 
+    //! Applies the operator to a vector (NOT SUPPORTED).
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
+    //! Applies the preconditioner to vector \c X, returns the result in \c Y.
     int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
+    //! Returns the infinite norm of the operator (NOT SUPPORTED).
     double NormInf() const
     {
       return(-1.0);
     }
 
+    //! Returns the label of \c this operator.
     const char * Label() const
     {
       return(Label_.c_str());
     }
 
+    //! Returns \c true if the tranpose of the operator is considerd (NOT SUPPORTED).
     bool UseTranspose() const
     {
       return(false);
     }
 
+    //! Returns \c false.
     bool HasNormInf() const
     {
       return(false);
     }
 
     //! Returns a reference to the communicator object.
-    const Epetra_Comm & Comm() const
+    const Epetra_Comm& Comm() const
     {
       return(Comm_);
     }
@@ -80,79 +122,137 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(Operator_.OperatorRangeMap());
     }
 
+    //! Returns the coarser-level operator as an Epetra_RowMatrix.
     const Epetra_RowMatrix& C() const
     {
+      if (!IsComputed())
+        throw(-1); // prec not computed yet
+
       return(*C_);
     }
 
+    //! Returns the restriction operator as an Epetra_CrsMatrix.
     const Epetra_CrsMatrix& R() const
     {
       return(*R_);
     }
 
-    int Coarsen(ML_Operator* A, ML_Aggregate** aggr, ML_Operator** P, 
-                ML_Operator** R, ML_Operator** C, int = 1, int = 1, double* = NULL);
-
+    //! Returns the ML communicator of \c this object.
     ML_Comm* Comm_ML()
     {
       return(Comm_ML_);
     }
 
+    //! Returns the PID of the calling processor.
     inline int MyPID() const
     {
       return(Comm().MyPID());
     }
 
+    //! Returns the number of processors in the communicator. 
     inline int NumProc() const
     {
       return(Comm().NumProc());
     }
 
+    //! Returns \c true if the preconditioner has been successfully computed.
     bool IsComputed() const
     {
       return(IsComputed_);
     }
 
+    // @}
+    // @{ \name Construction methods.
+    
+    //! Performs coarsening for a given operator \c A.
+    int Coarsen(ML_Operator* A, ML_Aggregate** aggr, ML_Operator** P, 
+                ML_Operator** R, ML_Operator** C, int NumPDEEqns = 1, 
+                int NullSpaceDim = 1, double* NullSpace = NULL);
+
   private:
-    Epetra_Time& Time()
-    {
-      return(*Time_);
-    }
-
-    int ApplyJacobi(Epetra_MultiVector& X, const double omega) const;
-
-    int ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
-                    const double omega, Epetra_MultiVector& tmp) const;
-
-    ML_Comm* Comm_ML_;
 
     //! Computes the preconditioner.
     int Compute(Epetra_MultiVector& NullSpace);
 
-    bool IsComputed_;
+    // @}
+    // @{ \name Basic smoothers
+    
+    //! Applies one sweep of Jacobi to vector \c X.
+    int ApplyJacobi(Epetra_MultiVector& X, const double omega) const;
+
+    //! Applies one sweep of Jacobi to vector \c X, using \c X as starting solution.
+    int ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
+                    const double omega, Epetra_MultiVector& tmp) const;
+
+    // @} 
+    // @{ \name Timing
+    
+    inline void ResetStartTime() const
+    {
+      Time_->ResetStartTime();
+    }
+
+    inline void AddAndResetStartTime(const string& Label, const int print = false) const
+    {
+      TimeTable[Label] += Time_->ElapsedTime();
+      Time_->ResetStartTime();
+      if (print)
+      {
+        if (MyPID() == 0 && ML_Get_PrintLevel() > 5)
+          cout << "Time for " << Label << " = " << TimeTable[Label] << " (s)" << endl;
+      }
+    }
+
+    void PrintTimings() const
+    {
+      if (MyPID() == 0)
+      {
+        double Total = 0.0;
+        cout << "Cumulative timing so far:" << endl;
+        cout << "- for coarsening = " << TimeTable["coarsening"] << endl;
+        cout << "- total time     = " << Total << endl;
+      }
+    }
+
+    // @} 
+    // @{ \name Private data
+    
+    //! Communicator for ML.
+    ML_Comm* Comm_ML_;
+    //! Communicator object for Epetra.
+    const Epetra_Comm& Comm_;
+
     //! Label of this object
     std::string Label_; 
-    //! Communicator object
-    const Epetra_Comm& Comm_;
+    //! Set to \c true if the preconditioner has been successfully computed.
+    bool IsComputed_;
+    //! Type of preconditioner (additive or hybrid)
+    int PrecType_;
+    //! Damping parameter for Jacobi.
+    double omega_;
+    //! List containing all the parameters
+    Teuchos::ParameterList List_;
+
     //! Fine-level operator
     const Epetra_Operator& Operator_;
     //! Fine-level graph
     const Epetra_CrsGraph& Graph_;
-    //! List containing all the parameters
-    Teuchos::ParameterList List_;
-    //! Prolongator from coarse to fine
-    Epetra_CrsMatrix* P_;
-    Epetra_CrsMatrix* R_;
-    Epetra_RowMatrix* C_;
-    ML_Operator* C_ML_;
-
-    Epetra_Time* Time_;
-
+    //! Inverse of the diagonal of \c Operator_ as provided by the user.
     const Epetra_Vector& InvDiag_;
 
+    //! Restriction from fine to coarse.
+    Epetra_CrsMatrix* R_;
+    //! Coarser-level operator as an Epetra_RowMatrix (wrapper for C_ML_).
+    Epetra_RowMatrix* C_;
+    //! Coarser-level operator as an ML_Operator.
+    ML_Operator* C_ML_;
+    //! Preconditioner that approximates the inverse of \c C_.
     MultiLevelPreconditioner* MLP_;
-    int PrecType_;
-    double omega_;
+
+    //! Time object.
+    mutable Epetra_Time* Time_;
+    mutable map<string, double> TimeTable;
+    // @} 
 
 }; // class MatrixFreePreconditioner
 

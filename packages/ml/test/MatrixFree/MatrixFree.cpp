@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
   int NumPDEEqns = 2;
   int NullSpaceDim = 3;
   Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, NumPDEEqns);
+  delete CrsA;
 
   Epetra_MultiVector OrigNullSpace(VbrA->Map(), NullSpaceDim);
   //OrigNullSpace.PutScalar(1.0);
@@ -165,8 +166,9 @@ int main(int argc, char *argv[])
   // check that the coarse operator is the same  //
   // =========================================== //
 
-  const Epetra_RowMatrix* C = &(MFP->C());
-  
+  Epetra_CrsMatrix* C;
+  ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML, C));
+
   assert (C->OperatorRangeMap().SameAs(MFP->C().OperatorRangeMap()));
   assert (C->OperatorDomainMap().SameAs(MFP->C().OperatorDomainMap()));
 
@@ -189,9 +191,36 @@ int main(int argc, char *argv[])
     if (norm > 1e-5) exit(EXIT_FAILURE);
   }
 
+  delete C;
+  ML_Operator_Destroy(&P_ML);
+  ML_Operator_Destroy(&R_ML);
+  ML_Operator_Destroy(&C_ML);
+  ML_Operator_Destroy(&VbrA_ML);
+
   // ================= //
   // CHECK 3: solution //
   // ================= //
+
+  Epetra_Vector LHS(VbrA->OperatorDomainMap()); 
+  Epetra_Vector RHS(VbrA->OperatorRangeMap()); 
+  Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
+  AztecOO solver(Problem);
+
+  LHS.PutScalar(1.0);
+  RHS.PutScalar(0.0);
+
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  solver.SetAztecOption(AZ_output, 32);
+  solver.SetPrecOperator(MFP);
+  solver.Iterate(500, 1e-5);
+
+  int MFPIters = solver.NumIters();
+  double MFPResidual = solver.TrueResidual();
+
+  delete MFP;
+
+  LHS.PutScalar(1.0);
+  RHS.PutScalar(0.0);
 
   Teuchos::ParameterList MLList2;
   MLList2.set("PDE equations", NumPDEEqns);
@@ -208,17 +237,7 @@ int main(int argc, char *argv[])
 
   MultiLevelPreconditioner* MLP = new MultiLevelPreconditioner(*VbrA, MLList2);
 
-  Epetra_Vector LHS(VbrA->OperatorDomainMap()); 
-  Epetra_Vector RHS(VbrA->OperatorRangeMap()); 
-  Epetra_LinearProblem Problem(VbrA, &LHS, &RHS);
-  AztecOO solver(Problem);
-
-  LHS.PutScalar(1.0);
-  RHS.PutScalar(0.0);
-
   solver.SetPrecOperator(MLP);
-  solver.SetAztecOption(AZ_solver, AZ_gmres);
-  solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(500, 1e-5);
 
   int MLPIters = solver.NumIters();
@@ -226,16 +245,10 @@ int main(int argc, char *argv[])
 
   delete MLP;
 
-  LHS.PutScalar(1.0);
-  RHS.PutScalar(0.0);
+  assert (MLPIters == MFPIters);
 
-  solver.SetPrecOperator(MFP);
-  solver.Iterate(500, 1e-5);
-
-  int MFPIters = solver.NumIters();
-  double MFPResidual = solver.TrueResidual();
-
-  //assert (MLPIters == MFPIters);
+  delete VbrA;
+  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
