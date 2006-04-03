@@ -440,7 +440,9 @@ c Read through comment lines, ignoring content:
 c
       read (iunit,end=2000,fmt=200) tmp2
  200  format(1a)
-      j = 2
+c KDDKDD Changed max number of comment lines j from 2 to 50, as "do 10" loop
+c KDDKDD wasn't working with j=2
+      j = 50  
       do 10 i=1,j
         if ( tmp2(1:1) .ne. '%' ) then
            go to 20

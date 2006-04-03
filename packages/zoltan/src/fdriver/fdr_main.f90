@@ -57,6 +57,11 @@ implicit none
   integer(Zoltan_INT) :: namelen
   integer(Zoltan_INT) :: alloc_stat
 
+! KDDKDD
+  character(len=32) :: filename
+  character(len=10) :: mystring
+  integer :: i, j, fp
+! KDDKDD
 ! interface blocks for external procedures
 
 interface
@@ -183,6 +188,20 @@ end interface
       print *, "fatal: Error returned from read_mesh"
       goto 9999
   endif
+
+! KDDKDD  TEMPORARY OUTPUT
+  write (mystring, "(i5)" ) Proc
+  filename = "helpme."//mystring
+  open(unit=fp,file=filename,action="write")
+  write(fp,*) "Hyperedges:"
+  do i = 0, Mesh%nhedges
+    write(fp,*) "Edge ", Mesh%hgid(i)
+    do j = Mesh%hindex(i), Mesh%hindex(i+1)
+      write(fp, *) "        ", Mesh%hvertex(j)
+    enddo
+  enddo
+  close(unit=fp)
+! KDDKDD  END TEMPORARY OUTPUT
 
 !  /*
 !   * now run zoltan to get a new load balance and perform

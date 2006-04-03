@@ -1,7 +1,7 @@
 ZOD = ../$(ZOLTAN_OBJ_DIR)
 ZOM = $(F90_MODULE_PREFIX)$(ZOD)
 
-COMPILE = $(F90)
+COMPILE = $(F90) -g
 COMPILE_LIB = -lm
 
 # To use purify with zfdrive (yes, it really works!), replace the COMPILE and 

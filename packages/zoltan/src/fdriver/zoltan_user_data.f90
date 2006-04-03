@@ -103,6 +103,7 @@ type MESH_INFO
                                                ! communication maps.
                                                ! (global numbering)
   type(ELEM_INFO), pointer :: elements(:)      ! array of elements in the mesh.
+  integer(Zoltan_INT) :: nhedges               ! # of hyperedges
   integer(Zoltan_INT), pointer :: hgid(:)      ! gids of hyperedges
   integer(Zoltan_INT), pointer :: hindex(:)    ! index of hyperedges 
   integer(Zoltan_INT), pointer :: hvertex(:)   ! pins of hyperedges 

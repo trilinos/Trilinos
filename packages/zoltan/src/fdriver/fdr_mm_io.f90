@@ -55,7 +55,7 @@ type(PARIO_INFO) :: pio_info
   integer :: mm_nrow, mm_ncol, mm_nnz, mm_max
   integer, pointer :: mm_iidx(:), mm_jidx(:)
   integer, pointer :: mm_ival(:)
-  real, pointer :: mm_rval(:)
+  double precision, pointer :: mm_rval(:)
   complex, pointer :: mm_cval(:)
 
   integer(Zoltan_INT) :: fp, iostat, allocstat, ierr, status
@@ -86,7 +86,10 @@ type(PARIO_INFO) :: pio_info
       return
     endif
 
-    call mminfo(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz)
+! KDDKDD  Switch fields for testing without sort.
+! KDDKDD   call mminfo(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz)
+    call mminfo(fp, mm_rep, mm_field, mm_symm, mm_ncol, mm_nrow, mm_nnz)
+! KDDKDD
 
 !   read the matrix in on processor 0.
     allocate(mm_iidx(0:mm_nnz-1), stat=allocstat)
@@ -94,14 +97,24 @@ type(PARIO_INFO) :: pio_info
     allocate(mm_ival(0:mm_nnz-1), stat=allocstat)
     allocate(mm_rval(0:mm_nnz-1), stat=allocstat)
     allocate(mm_cval(0:mm_nnz-1), stat=allocstat)
+!    allocate(mm_iidx(mm_nnz), stat=allocstat)
+!    allocate(mm_jidx(mm_nnz), stat=allocstat)
+!    allocate(mm_ival(mm_nnz), stat=allocstat)
+!    allocate(mm_rval(mm_nnz), stat=allocstat)
+!    allocate(mm_cval(mm_nnz), stat=allocstat)
     if (allocstat /= 0) then
       print *, "fatal: insufficient memory"
       read_mm_file = .false.
       return
     endif
 
-    call mmread(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz, &
-                mm_max, mm_iidx, mm_jidx, mm_ival, mm_rval, mm_cval)
+    mm_max = mm_nnz
+! KDDKDD  Switch fields for testing without sort.
+! KDDKDD    call mmread(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz, &
+! KDDKDD                mm_max, mm_iidx, mm_jidx, mm_ival, mm_rval, mm_cval)
+    call mmread(fp, mm_rep, mm_field, mm_symm, mm_ncol, mm_nrow, mm_nnz, &
+                mm_max, mm_jidx, mm_iidx, mm_ival, mm_rval, mm_cval)
+! KDDKDD
 
 !   Don't need the numerical values.
     if (associated(mm_ival)) deallocate(mm_ival)
@@ -296,6 +309,7 @@ type(PARIO_INFO) :: pio_info
     if (iidx(i) .ne. prev_edge) nedges = nedges + 1
     prev_edge = iidx(i)
   enddo
+  Mesh%nhedges = nedges
 
 ! Allocate the index and pin arrays.
   allocate(Mesh%hindex(0:nedges),Mesh%hvertex(0:npins-1),stat=allocstat)
