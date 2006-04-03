@@ -64,6 +64,7 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Object.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #ifdef ML_MPI
@@ -80,6 +81,9 @@
 #include "NOX_Epetra_Interface_Preconditioner.H"
 #include "NOX_Epetra_Group.H"
 #include "NOX_Solver_Manager.H"
+#include "NOX_Epetra_FiniteDifferenceColoring.H"
+#include "NOX_Parameter_List.H"
+#include "NOX_Epetra_Vector.H"
 
 // own headers
 #include "nlnml_preconditioner_utils.H"
@@ -103,7 +107,7 @@ public:
                      ParameterList& mlparams,
                      const Epetra_Comm& comm);
   
-  virtual ~NLNML_Preconditioner() {}
+  virtual ~NLNML_Preconditioner();
   
   void SetNoxSolver(RefCountPtr<NOX::Solver::Manager> s) { noxsolver_ = s; } 
   
@@ -115,9 +119,9 @@ public:
   
   const Epetra_Map & OperatorRangeMap() const {return interface_->getMap();}
   
-  int OutLevel() { return params_->get("nlnML output",0); } 
+  inline int OutLevel() const { return params_->get("nlnML output",0); } 
   
-  bool isinit() const {return(isinit_);}
+  inline bool isinit() const {return(isinit_);}
   
   bool setinit(bool flag) 
   {isinit_=flag; ncalls_NewPrec_ = 0; return(true);}
@@ -152,33 +156,49 @@ private:
   void Initialize();
   
   bool compPrec(const Epetra_Vector& x);
-  void ML_Nox_compute_Jacobian_Linearpreconditioner();      
-  void ML_Nox_compute_Jacobian_Nonlinearpreconditioner();   
+  bool Compute_Linearpreconditioner(const Epetra_Vector& x);      
+  bool Compute_Nonlinearpreconditioner(const Epetra_Vector& x);   
 
   void Set_Smoothers();
-  void fix_MainDiagonal();
-  void ML_Nox_computeFineLevelJacobian();
+  void fix_MainDiagonal(RefCountPtr<Epetra_CrsMatrix> A, int level);
+  RefCountPtr<Epetra_CrsMatrix> ComputeFineLevelJacobian(const Epetra_Vector& x);
 
-  void ML_Nox_ApplyInverse_Linear() const;
-  void ML_Nox_ApplyInverse_NonLinear() const;
+  int ApplyInverse_Linear(const Epetra_MultiVector& X, 
+                          Epetra_MultiVector& Y) const;
+  int ApplyInverse_NonLinear(const Epetra_MultiVector& X, 
+                             Epetra_MultiVector& Y) const;
 
   //the FAS-preconditioner
   void ML_Nox_FAS_cycle() const;
   // the FAS-solver
   void ML_Nox_FAS_cycle1() const;
 
-  void Ml_Nox_adaptivesetup();
+  bool Adaptivesetup(double** oldns,Epetra_CrsMatrix* Jac,int oldnumpde,int olddimns);
+  
+  template<typename kind>
+  kind getParameter(string name,kind dvalue) const
+  { return params_->get(name,dvalue); }
+
+  template<typename kind>
+  void setParameter(string name,kind dvalue) const
+  { params_->set(name,dvalue); return; }
 
 private:
 
   char* label_;
   bool  isinit_; 
   int   ncalls_NewPrec_;
-
+  
   const Epetra_Comm&                              comm_;
   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface_;
   RefCountPtr<Teuchos::ParameterList>             params_;
   RefCountPtr<NOX::Solver::Manager>               noxsolver_;
+  RefCountPtr<Epetra_CrsMatrix>                   fineJac_;
+  RefCountPtr<Epetra_Map>                         rowmap_;
+  RefCountPtr<ML_Epetra::MultiLevelOperator>      linPrec_;
+  ML*                                             ml_;
+  ML_Aggregate*                                   ag_;
+
 
 }; // class NLNML_Preconditioner
 } // namespace NLNML

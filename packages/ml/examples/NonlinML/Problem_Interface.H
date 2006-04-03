@@ -81,11 +81,13 @@ public:
 
   // get nullspace
   double* Get_Nullspace(const int nummyrows, const int numpde, const int dim_nullsp)
-  { return NULL; }
+  { 
+    return NULL; 
+  }
   
   // get block information
-  bool getBlockInfo(int *nblocks, int** blocks, int **block_pde)
-  { *nblocks = 0; *blocks = 0; *block_pde = 0; return false; }
+  bool getBlockInfo(int *nblocks, vector<int>& blocks, vector<int>& block_pde)
+  { *nblocks = 0; blocks.clear(); block_pde.clear(); return false; }
 
   // derived from NOX::Parameter::PrePostOperator
   const std::string& getType() const { return type_; }

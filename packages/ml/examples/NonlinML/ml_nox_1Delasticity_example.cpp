@@ -255,12 +255,13 @@ int main(int argc, char *argv[])
    mlparams.set("nlnML output",                                      10         ); // ML-output-level (0-10)
    mlparams.set("nlnML max levels",                                  10         ); // max. # levels (minimum = 2 !)
    mlparams.set("nlnML coarse: max size",                            500        ); // the size ML stops generating coarser levels
-   mlparams.set("nlnML is linear preconditioner",                    true       );
-   mlparams.set("nlnML is matrixfree",                               false      ); 
-   mlparams.set("nlnML finite difference fine level",                false      );
+   mlparams.set("nlnML is linear preconditioner",                    false       );
+   mlparams.set("nlnML is matrixfree",                               true       ); 
+   mlparams.set("nlnML finite difference fine level",                true       );
    mlparams.set("nlnML finite difference alpha",                     1.0e-08    );    
    mlparams.set("nlnML finite difference beta",                      1.0e-07    );    
    mlparams.set("nlnML finite difference centered",                  false      );     
+   mlparams.set("nlnML Jacobian fix diagonal",                       true       );     
 
    mlparams.set("nlnML absolute residual tolerance",                 1.0e-06    );
    mlparams.set("nlnML max cycles",                                  500        );
@@ -401,9 +402,11 @@ int main(int argc, char *argv[])
 
    // Create the method
    NOX::Solver::Manager solver(rcpgrp, combo, rcpparams);
-   
+   RefCountPtr<NOX::Solver::Manager> rcpsolver = 
+     rcp(&solver);
+   rcpsolver.release();
    // register the solver class in the preconditioner in case of nonlinear preconditioning
-   Prec->SetNoxSolver();
+   Prec->SetNoxSolver(rcpsolver);
 
 
    // solve

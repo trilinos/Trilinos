@@ -88,7 +88,7 @@ public:
   virtual double* Get_Nullspace(const int nummyrows, const int numpde, 
                                 const int dim_nullsp) = 0;
 
-  virtual bool getBlockInfo(int *nblocks, int** blocks, int **block_pde) = 0;
+  virtual bool getBlockInfo(int *nblocks, vector<int>& blocks, vector<int>& block_pde) = 0;
 
   virtual void ApplyAllConstraints(Epetra_Vector& gradient, int level) 
   { return;}
