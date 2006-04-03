@@ -73,8 +73,7 @@ $(ZOD)/fdr_mm_io.o: 	fdr_mm_io.f90 $(ZOD)/mmio.o $(ZOD)/mpi_h.o $(ZOD)/fdr_const
 	/bin/mv *.o *.mod $(ZOD)
 
 $(ZOD)/mmio.o: 	mmio.f 
-	$(F90) $(ZOM) -c mmio.f
-	/bin/mv *.o *.mod $(ZOD)
+	$(F90) -o $(ZOD)/mmio.o -c mmio.f
 
 $(ZOD)/fdr_const.o: 	fdr_const.f90 
 	$(F90) $(ZOM) -c fdr_const.f90
