@@ -27,7 +27,7 @@ RANLIB		= ranlib
 AR			= ar r
 
 CC          = /usr/local/mpich-1.2.6-eth/bin/mpicc
-CPPC        = /usr/local/mpich-1.2.6-eth/bin/mpiCC
+CPPC        = /usr/local/mpich-1.2.6-eth/bin/mpicxx
 #CC			= gcc -Wall -fprofile-arcs -ftest-coverage
 #CC			= gcc -Wall
 #CPPC		= g++ -Wall
