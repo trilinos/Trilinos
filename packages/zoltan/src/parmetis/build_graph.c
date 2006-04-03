@@ -301,7 +301,8 @@ int Zoltan_Build_Graph(
 
         ierr = process_edge_list(zz, i, &(global_ids[i*num_gid_entries]), 
                                  edges_per_obj[i], 
-                                 &(nbors_global[sum]), &(nbors_proc[sum]), 
+                                 &(nbors_global[sum*num_gid_entries]), 
+                                 &(nbors_proc[sum]), 
                                  &(tmp_ewgts[sum*edge_wgt_dim]),
                                  hashtab, graph_type, num_gid_entries, 
                                  num_obj, edge_wgt_dim,
