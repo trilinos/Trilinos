@@ -1710,6 +1710,23 @@ int&nbsp;*<i>format</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_Size_CS</i></b>(<i>data, num_lists, num_pins, 
+format, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: num_lists&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: num_pins&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: format&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
 </table>
 
 <hr WIDTH="100%">A hypergraph (which may alternatively be viewed
@@ -1816,6 +1833,26 @@ int&nbsp;*<i>vtxedge_ptr</i>,
 <a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>pin_GID</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_CS</i></b>(<i>data, 
+   num_gid_entries, num_row_or_col, num_pins, format,
+   vtxedge_GID, vtxedge_ptr, pin_GID, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_row_or_col, num_pins, format
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vtxedge_GID
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vtxedge_ptr
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: pin_GID
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
 
 </table>
 
@@ -1968,6 +2005,21 @@ int&nbsp;*<i>num_edges</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_Size_Edge_Weights</i></b>(<i>data, num_edges, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: num_edges&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
+
 </table>
 
 <hr WIDTH="100%">A <b>ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN</b> returns
@@ -2034,6 +2086,25 @@ int&nbsp;<i>edge_weight_dim</i>,
 float &nbsp;*<i>edge_weight</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_HG_Edge_Weights</i></b>(<i>data, num_gid_entries, num_lid_entries, num_edges, edge_weight_dim, edge_GID, edge_LID, edge_weight,
+ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_edges, edge_weight_dim&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: edge_GID&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: edge_LID&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: edge_weight&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+
 
 </table>
 
