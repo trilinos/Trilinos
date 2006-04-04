@@ -86,22 +86,13 @@ type(PARIO_INFO) :: pio_info
       return
     endif
 
-! KDDKDD  Switch fields for testing without sort.
-! KDDKDD   call mminfo(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz)
-    call mminfo(fp, mm_rep, mm_field, mm_symm, mm_ncol, mm_nrow, mm_nnz)
-! KDDKDD
+    call mminfo(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz)
 
 !   read the matrix in on processor 0.
+    nullify(mm_ival, mm_cval)
     allocate(mm_iidx(0:mm_nnz-1), stat=allocstat)
     allocate(mm_jidx(0:mm_nnz-1), stat=allocstat)
-    allocate(mm_ival(0:mm_nnz-1), stat=allocstat)
     allocate(mm_rval(0:mm_nnz-1), stat=allocstat)
-    allocate(mm_cval(0:mm_nnz-1), stat=allocstat)
-!    allocate(mm_iidx(mm_nnz), stat=allocstat)
-!    allocate(mm_jidx(mm_nnz), stat=allocstat)
-!    allocate(mm_ival(mm_nnz), stat=allocstat)
-!    allocate(mm_rval(mm_nnz), stat=allocstat)
-!    allocate(mm_cval(mm_nnz), stat=allocstat)
     if (allocstat /= 0) then
       print *, "fatal: insufficient memory"
       read_mm_file = .false.
@@ -109,17 +100,11 @@ type(PARIO_INFO) :: pio_info
     endif
 
     mm_max = mm_nnz
-! KDDKDD  Switch fields for testing without sort.
-! KDDKDD    call mmread(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz, &
-! KDDKDD                mm_max, mm_iidx, mm_jidx, mm_ival, mm_rval, mm_cval)
-    call mmread(fp, mm_rep, mm_field, mm_symm, mm_ncol, mm_nrow, mm_nnz, &
-                mm_max, mm_jidx, mm_iidx, mm_ival, mm_rval, mm_cval)
-! KDDKDD
+    call mmread(fp, mm_rep, mm_field, mm_symm, mm_nrow, mm_ncol, mm_nnz, &
+                mm_max, mm_iidx, mm_jidx, mm_ival, mm_rval, mm_cval)
 
 !   Don't need the numerical values.
-    if (associated(mm_ival)) deallocate(mm_ival)
     if (associated(mm_rval)) deallocate(mm_rval)
-    if (associated(mm_cval)) deallocate(mm_cval)
 
   endif ! Proc == 0
 
@@ -312,7 +297,8 @@ type(PARIO_INFO) :: pio_info
   Mesh%nhedges = nedges
 
 ! Allocate the index and pin arrays.
-  allocate(Mesh%hindex(0:nedges),Mesh%hvertex(0:npins-1),stat=allocstat)
+  allocate(Mesh%hgid(0:nedges-1),Mesh%hindex(0:nedges), &
+           Mesh%hvertex(0:npins-1),stat=allocstat)
 
 ! Fill the index and pin arrays.
   pincnt = 0
@@ -345,6 +331,7 @@ type(PARIO_INFO) :: pio_info
 integer pin, vid, eid, myrank, nprocs
 integer, pointer ::  pindist(:) 
 integer :: i
+integer :: npins
 
 ! Function to return the processor that will own a pin.
 ! Copied from the C version.  Currently, supporting only INITIAL_LINEAR.
@@ -357,7 +344,8 @@ integer :: i
     getpinproc = modulo(pin, nprocs)
   else if (pio_info%init_dist_pins == INITIAL_LINEAR) then
 !   First process gets first npins/nprocs pins, and so on 
-    i = pin / nprocs
+    npins = pindist(nprocs)
+    i = (pin * nprocs) / npins
     do while (pin < pindist(i))
       i = i - 1
     enddo

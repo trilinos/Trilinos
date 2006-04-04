@@ -190,13 +190,13 @@ end interface
   endif
 
 ! KDDKDD  TEMPORARY OUTPUT
-  write (mystring, "(i5)" ) Proc
+  write (mystring, "(i1)" ) Proc
   filename = "helpme."//mystring
   open(unit=fp,file=filename,action="write")
   write(fp,*) "Hyperedges:"
-  do i = 0, Mesh%nhedges
+  do i = 0, Mesh%nhedges-1
     write(fp,*) "Edge ", Mesh%hgid(i)
-    do j = Mesh%hindex(i), Mesh%hindex(i+1)
+    do j = Mesh%hindex(i), Mesh%hindex(i+1)-1
       write(fp, *) "        ", Mesh%hvertex(j)
     enddo
   enddo
