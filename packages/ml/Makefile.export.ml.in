@@ -26,6 +26,7 @@ _ML_BUILD_LIB_INCLUDES = \
 	    -I@abs_top_srcdir@/src/FEGrid \
 	    -I@abs_top_srcdir@/src/Utils \
 	    -I@abs_top_srcdir@/src/MLAPI \
+	    -I@abs_top_srcdir@/src/MatrixFree \
 	    -I@abs_top_srcdir@/src/Include \
 	    $(EPETRA_INCLUDES) \
 	    $(AMESOS_INCLUDES) \
@@ -48,6 +49,7 @@ _ML_INCLUDES = \
 	    -I@abs_top_srcdir@/src/FEGrid \
 	    -I@abs_top_srcdir@/src/Utils \
 	    -I@abs_top_srcdir@/src/MLAPI \
+	    -I@abs_top_srcdir@/src/MatrixFree \
 	    -I@abs_top_srcdir@/src/Include \
 	    $(EPETRA_INCLUDES) \
 	    $(TEUCHOS_INCLUDES) \

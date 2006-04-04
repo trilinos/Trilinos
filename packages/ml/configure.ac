@@ -673,6 +673,7 @@ AC_CONFIG_FILES([
 		examples/Elasticity/Makefile
                 examples/MatrixFormats/Makefile
                 examples/MatrixReading/Makefile
+                examples/MatrixFree/Makefile
                 examples/StandAlone/Makefile
                 examples/TwoLevelDD/Makefile
                 examples/Maxwell/Makefile

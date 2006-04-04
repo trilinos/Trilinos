@@ -27,19 +27,20 @@ ML_INCLUDES = $(ML_BUILD_LIB_INCLUDES) \
 ML_SOURCE_DIRECTORY = @abs_srcdir@
 ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
 
-ML_BUILD_LIB_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/src/Include  \
-			-I$(ML_SOURCE_DIRECTORY)/src/Coarsen  \
-			-I$(ML_SOURCE_DIRECTORY)/src/Comm     \
-			-I$(ML_SOURCE_DIRECTORY)/src/FEGrid   \
-			-I$(ML_SOURCE_DIRECTORY)/src/Include  \
-			-I$(ML_SOURCE_DIRECTORY)/src/Krylov   \
-			-I$(ML_SOURCE_DIRECTORY)/src/Main     \
-			-I$(ML_SOURCE_DIRECTORY)/src/Operator \
-			-I$(ML_SOURCE_DIRECTORY)/src/Smoother \
-			-I$(ML_SOURCE_DIRECTORY)/src/Utils    \
-			-I$(ML_SOURCE_DIRECTORY)/src/MLAPI    \
-			-I$(ML_SOURCE_DIRECTORY)/src/NonlinML \
-			-I$(ML_SOURCE_DIRECTORY)/src/         \
+ML_BUILD_LIB_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/src/Include    \
+			-I$(ML_SOURCE_DIRECTORY)/src/Coarsen    \
+			-I$(ML_SOURCE_DIRECTORY)/src/Comm       \
+			-I$(ML_SOURCE_DIRECTORY)/src/FEGrid     \
+			-I$(ML_SOURCE_DIRECTORY)/src/Include    \
+			-I$(ML_SOURCE_DIRECTORY)/src/Krylov     \
+			-I$(ML_SOURCE_DIRECTORY)/src/Main       \
+			-I$(ML_SOURCE_DIRECTORY)/src/Operator   \
+			-I$(ML_SOURCE_DIRECTORY)/src/Smoother   \
+			-I$(ML_SOURCE_DIRECTORY)/src/Utils      \
+			-I$(ML_SOURCE_DIRECTORY)/src/MLAPI      \
+			-I$(ML_SOURCE_DIRECTORY)/src/MatrixFree \
+			-I$(ML_SOURCE_DIRECTORY)/src/NonlinML   \
+			-I$(ML_SOURCE_DIRECTORY)/src/           \
 			-I$(ML_BUILD_DIRECTORY)/src
 
 ##########################################################################

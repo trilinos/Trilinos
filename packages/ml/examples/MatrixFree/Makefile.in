@@ -15,9 +15,8 @@
 @SET_MAKE@
 
 #@HEADER
-#@HEADER
 
-SOURCES = $(ml_nox_1Delasticity_example_SOURCES)
+SOURCES = $(ml_1D_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,8 +39,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = ml_nox_1Delasticity_example$(EXEEXT)
-subdir = examples/NonlinML
+noinst_PROGRAMS = ml_1D$(EXEEXT)
+subdir = examples/MatrixFree
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -80,31 +79,20 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_ml_nox_1Delasticity_example_OBJECTS = ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.$(OBJEXT) \
-	ml_nox_1Delasticity_example-Basis.$(OBJEXT) \
-	ml_nox_1Delasticity_example-FiniteElementProblem.$(OBJEXT) \
-	ml_nox_1Delasticity_example-Problem_Interface.$(OBJEXT)
-ml_nox_1Delasticity_example_OBJECTS =  \
-	$(am_ml_nox_1Delasticity_example_OBJECTS)
+am_ml_1D_OBJECTS = ml_1D-ml_1D.$(OBJEXT)
+ml_1D_OBJECTS = $(am_ml_1D_OBJECTS)
+am__DEPENDENCIES_1 =
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES =  \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_1D-ml_1D.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(ml_nox_1Delasticity_example_SOURCES)
-DIST_SOURCES = $(ml_nox_1Delasticity_example_SOURCES)
+SOURCES = $(ml_1D_SOURCES)
+DIST_SOURCES = $(ml_1D_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -274,22 +262,12 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-ml_nox_1Delasticity_example_SOURCES = $(srcdir)/ml_nox_1Delasticity_example.cpp \
-                                      $(srcdir)/Basis.cpp $(srcdir)/Basis.H \
-                                      $(srcdir)/FiniteElementProblem.cpp $(srcdir)/FiniteElementProblem.H \
-                                      $(srcdir)/Problem_Interface.cpp $(srcdir)/Problem_Interface.H
-
-ml_nox_1Delasticity_example_CXXFLAGS = -I$(top_srcdir)/src/NonlinML \
-                                       $(ML_INCLUDES)
-
-ml_nox_1Delasticity_example_LDADD = -L$(ML_BUILD_DIRECTORY)/src -lml \
-                                    $(NOX_LIBS) $(ML_LIBS)
-
-#ml_nox_1Delasticity_example_LINK = ${mllink}
-ml_nox_1Delasticity_example_DEPENDENCIES = $(top_builddir)/src/libml.a \
-                                           $(ML_LIBS) \
-                                           $(top_builddir)/src/libml.a
-
+EXAMPLE_LIBS = $(ML_EXTRA_LIBS)     $(ML_LIBS)
+EXAMPLE_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
+ml_1D_SOURCES = $(srcdir)/ml_1D.cpp
+ml_1D_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_1D_CXXFLAGS = $(EXAMPLE_INCLUDES)
+ml_1D_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -303,9 +281,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/NonlinML/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  examples/MatrixFree/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  examples/NonlinML/Makefile
+	  $(AUTOMAKE) --foreign  examples/MatrixFree/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -326,9 +304,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-ml_nox_1Delasticity_example$(EXEEXT): $(ml_nox_1Delasticity_example_OBJECTS) $(ml_nox_1Delasticity_example_DEPENDENCIES) 
-	@rm -f ml_nox_1Delasticity_example$(EXEEXT)
-	$(CXXLINK) $(ml_nox_1Delasticity_example_LDFLAGS) $(ml_nox_1Delasticity_example_OBJECTS) $(ml_nox_1Delasticity_example_LDADD) $(LIBS)
+ml_1D$(EXEEXT): $(ml_1D_OBJECTS) $(ml_1D_DEPENDENCIES) 
+	@rm -f ml_1D$(EXEEXT)
+	$(CXXLINK) $(ml_1D_LDFLAGS) $(ml_1D_OBJECTS) $(ml_1D_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -336,10 +314,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_1D-ml_1D.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -357,69 +332,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.o: $(srcdir)/ml_nox_1Delasticity_example.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.o -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Tpo" -c -o ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.o `test -f '$(srcdir)/ml_nox_1Delasticity_example.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_nox_1Delasticity_example.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_nox_1Delasticity_example.cpp' object='ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.TPo' @AMDEPBACKSLASH@
+ml_1D-ml_1D.o: $(srcdir)/ml_1D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_1D_CXXFLAGS) $(CXXFLAGS) -MT ml_1D-ml_1D.o -MD -MP -MF "$(DEPDIR)/ml_1D-ml_1D.Tpo" -c -o ml_1D-ml_1D.o `test -f '$(srcdir)/ml_1D.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_1D.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_1D-ml_1D.Tpo" "$(DEPDIR)/ml_1D-ml_1D.Po"; else rm -f "$(DEPDIR)/ml_1D-ml_1D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_1D.cpp' object='ml_1D-ml_1D.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_1D-ml_1D.Po' tmpdepfile='$(DEPDIR)/ml_1D-ml_1D.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.o `test -f '$(srcdir)/ml_nox_1Delasticity_example.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_nox_1Delasticity_example.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_1D_CXXFLAGS) $(CXXFLAGS) -c -o ml_1D-ml_1D.o `test -f '$(srcdir)/ml_1D.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_1D.cpp
 
-ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.obj: $(srcdir)/ml_nox_1Delasticity_example.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.obj -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Tpo" -c -o ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.obj `if test -f '$(srcdir)/ml_nox_1Delasticity_example.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_nox_1Delasticity_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_nox_1Delasticity_example.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_nox_1Delasticity_example.cpp' object='ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.TPo' @AMDEPBACKSLASH@
+ml_1D-ml_1D.obj: $(srcdir)/ml_1D.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_1D_CXXFLAGS) $(CXXFLAGS) -MT ml_1D-ml_1D.obj -MD -MP -MF "$(DEPDIR)/ml_1D-ml_1D.Tpo" -c -o ml_1D-ml_1D.obj `if test -f '$(srcdir)/ml_1D.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_1D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_1D.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_1D-ml_1D.Tpo" "$(DEPDIR)/ml_1D-ml_1D.Po"; else rm -f "$(DEPDIR)/ml_1D-ml_1D.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_1D.cpp' object='ml_1D-ml_1D.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_1D-ml_1D.Po' tmpdepfile='$(DEPDIR)/ml_1D-ml_1D.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-ml_nox_1Delasticity_example.obj `if test -f '$(srcdir)/ml_nox_1Delasticity_example.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_nox_1Delasticity_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_nox_1Delasticity_example.cpp'; fi`
-
-ml_nox_1Delasticity_example-Basis.o: $(srcdir)/Basis.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-Basis.o -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Tpo" -c -o ml_nox_1Delasticity_example-Basis.o `test -f '$(srcdir)/Basis.cpp' || echo '$(srcdir)/'`$(srcdir)/Basis.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.cpp' object='ml_nox_1Delasticity_example-Basis.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-Basis.o `test -f '$(srcdir)/Basis.cpp' || echo '$(srcdir)/'`$(srcdir)/Basis.cpp
-
-ml_nox_1Delasticity_example-Basis.obj: $(srcdir)/Basis.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-Basis.obj -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Tpo" -c -o ml_nox_1Delasticity_example-Basis.obj `if test -f '$(srcdir)/Basis.cpp'; then $(CYGPATH_W) '$(srcdir)/Basis.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Basis.cpp' object='ml_nox_1Delasticity_example-Basis.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-Basis.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-Basis.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-Basis.obj `if test -f '$(srcdir)/Basis.cpp'; then $(CYGPATH_W) '$(srcdir)/Basis.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Basis.cpp'; fi`
-
-ml_nox_1Delasticity_example-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-FiniteElementProblem.o -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Tpo" -c -o ml_nox_1Delasticity_example-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.cpp' object='ml_nox_1Delasticity_example-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-FiniteElementProblem.o `test -f '$(srcdir)/FiniteElementProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/FiniteElementProblem.cpp
-
-ml_nox_1Delasticity_example-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-FiniteElementProblem.obj -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Tpo" -c -o ml_nox_1Delasticity_example-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FiniteElementProblem.cpp' object='ml_nox_1Delasticity_example-FiniteElementProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-FiniteElementProblem.obj `if test -f '$(srcdir)/FiniteElementProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/FiniteElementProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FiniteElementProblem.cpp'; fi`
-
-ml_nox_1Delasticity_example-Problem_Interface.o: $(srcdir)/Problem_Interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-Problem_Interface.o -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Tpo" -c -o ml_nox_1Delasticity_example-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.cpp' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.cpp' object='ml_nox_1Delasticity_example-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.cpp' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.cpp
-
-ml_nox_1Delasticity_example-Problem_Interface.obj: $(srcdir)/Problem_Interface.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -MT ml_nox_1Delasticity_example-Problem_Interface.obj -MD -MP -MF "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Tpo" -c -o ml_nox_1Delasticity_example-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.cpp'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Tpo" "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Po"; else rm -f "$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Problem_Interface.cpp' object='ml_nox_1Delasticity_example-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/ml_nox_1Delasticity_example-Problem_Interface.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_nox_1Delasticity_example_CXXFLAGS) $(CXXFLAGS) -c -o ml_nox_1Delasticity_example-Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.cpp'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_1D_CXXFLAGS) $(CXXFLAGS) -c -o ml_1D-ml_1D.obj `if test -f '$(srcdir)/ml_1D.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_1D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_1D.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -585,6 +512,8 @@ uninstall-am: uninstall-info-am
 
 
 # include definitions of ML_INCLUDES and ML_LIBS
+# ML_EXTRA_LIBS and ML_EXTRA_INCLUDES contain additional libraries and
+# header files required to compile and link some of the ML examples.
 include $(top_builddir)/Makefile.export
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
