@@ -30,7 +30,8 @@
 #ifndef THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_HPP
 
-#include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
+#include "Thyra_SingleScalarLinearOpWithSolveBase.hpp"
+#include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_PreconditionerBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
@@ -60,8 +61,9 @@ namespace Thyra {
  * \ingroup AztecOO_Thyra_adapters_grp
  */
 class AztecOOLinearOpWithSolve
-  : virtual public LinearOpWithSolveBase<double>               // Public interface
-  , virtual protected SingleRhsLinearOpWithSolveBase<double>   // Implementation detail
+  : virtual public LinearOpWithSolveBase<double>                  // Public interface
+  , virtual protected SingleRhsLinearOpBase<double>               // Implementation detail
+  , virtual protected SingleScalarLinearOpWithSolveBase<double>   // Implementation detail
 {
 public:
 
@@ -79,6 +81,7 @@ public:
 		,const double   fwdDefaultTol                 = 1e-6
 	 	,const int      adjDefaultMaxIterations       = 400
 		,const double   adjDefaultTol                 = 1e-6
+    ,const bool     outputEveryRhs                = false
 		);
 
 	/** \brief The default maximum number of iterations for forward solves. */
@@ -89,6 +92,8 @@ public:
   STANDARD_MEMBER_COMPOSITION_MEMBERS( int, adjDefaultMaxIterations )
   /** \brief The default solution tolerance on the residual for adjoint solves. */
  	STANDARD_MEMBER_COMPOSITION_MEMBERS( double, adjDefaultTol )
+  /** \brief Determine if output for every RHS will be printed or not. */
+ 	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputEveryRhs )
 
   /** \brief Sets up this object.
    *
@@ -231,16 +236,14 @@ protected:
   bool solveSupportsTrans(ETransp M_trans) const;
   /** \brief . */
   bool solveSupportsSolveMeasureType(ETransp M_trans, const SolveMeasureType& solveMeasureType) const;
-  //@}
-
-  /** @name Overridden from SingleRhsLinearOpWithSolveBase */
-  //@{
   /** \brief . */
-  SolveStatus<double> solve(
+  void solve(
     const ETransp                         M_trans
-    ,const VectorBase<double>             &b
-    ,VectorBase<double>                   *x
-    ,const SolveCriteria<double>          *solveCriteria
+    ,const MultiVectorBase<double>        &B
+    ,MultiVectorBase<double>              *X
+    ,const int                            numBlocks
+    ,const BlockSolveCriteria<double>     blockSolveCriteria[]
+    ,SolveStatus<double>                  blockSolveStatus[]
     ) const;
   //@}
   

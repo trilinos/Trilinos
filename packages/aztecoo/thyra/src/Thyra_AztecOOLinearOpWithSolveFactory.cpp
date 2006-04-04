@@ -57,6 +57,8 @@ const std::string  MaxIterations_name = "Max Iterations";
 const int          MaxIterations_default = 400;
 const std::string  Tolerance_name = "Tolerance";
 const double       Tolerance_default = 1e-6;
+const std::string  OutputEveryRhs_name = "Output Every RHS";
+const bool         OutputEveryRhs_default = false;
 const std::string  AztecOO_name = "AztecOO";
 
 } // namespace
@@ -71,9 +73,53 @@ AztecOOLinearOpWithSolveFactory::AztecOOLinearOpWithSolveFactory()
   ,defaultFwdTolerance_(Tolerance_default)
   ,defaultAdjMaxIterations_(MaxIterations_default)
   ,defaultAdjTolerance_(Tolerance_default)
-{}
+  ,outputEveryRhs_(OutputEveryRhs_default)
+{
+  updateThisValidParamList();
+}
 
 // Overridden from LinearOpWithSolveFactoryBase
+
+bool AztecOOLinearOpWithSolveFactory::acceptsPreconditionerFactory() const
+{
+  return true;
+}
+
+void AztecOOLinearOpWithSolveFactory::setPreconditionerFactory(
+  const Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >  &precFactory
+  ,const std::string                                              &precFactoryName
+  )
+{
+  TEST_FOR_EXCEPT(!precFactory.get());
+  Teuchos::RefCountPtr<const Teuchos::ParameterList>
+    precFactoryValidPL = precFactory->getValidParameters();
+  const std::string _precFactoryName =
+    ( precFactoryName != ""
+      ? precFactoryName
+      : ( precFactoryValidPL.get() ? precFactoryValidPL->name() : "GENERIC PRECONDITIONER FACTORY" )
+      );
+  precFactory_ = precFactory;
+  precFactoryName_ = _precFactoryName;
+  updateThisValidParamList();
+}
+
+Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >
+AztecOOLinearOpWithSolveFactory::getPreconditionerFactory() const
+{
+  return precFactory_;
+}
+
+void AztecOOLinearOpWithSolveFactory::unsetPreconditionerFactory(
+  Teuchos::RefCountPtr<PreconditionerFactoryBase<double> >  *precFactory
+  ,std::string                                              *precFactoryName
+  )
+{
+  if(precFactory) *precFactory = precFactory_;
+  if(precFactoryName) *precFactoryName = precFactoryName_;
+  precFactory_ = Teuchos::null;
+  precFactoryName_ = "";
+  updateThisValidParamList();
+}
 
 bool AztecOOLinearOpWithSolveFactory::isCompatible(
   const LinearOpBase<double> &fwdOp
@@ -184,22 +230,25 @@ void AztecOOLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuc
   TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters());
   paramList_ = paramList;
-  if(paramList_.get()) {
-    // Foward Solve parameters
-    Teuchos::ParameterList
-      &fwdSolvePL = paramList_->sublist(ForwardSolve_name);
-    defaultFwdMaxIterations_ = fwdSolvePL.get(MaxIterations_name,defaultFwdMaxIterations_);
-    defaultFwdTolerance_ = fwdSolvePL.get(Tolerance_name,defaultFwdTolerance_);
-    // Adjoint Solve parameters
-    if( !paramList_->getPtr<Teuchos::ParameterList>(AdjointSolve_name) ) {
-      // If adjoint solve sublist is not set, then use the forward solve parameters
-      paramList_->sublist(AdjointSolve_name).setParameters(fwdSolvePL);
-    }
-    Teuchos::ParameterList
-      &adjSolvePL = paramList_->sublist(AdjointSolve_name);
-    defaultAdjMaxIterations_ = adjSolvePL.get(MaxIterations_name,defaultAdjMaxIterations_);
-    defaultAdjTolerance_ = adjSolvePL.get(Tolerance_name,defaultAdjTolerance_);
+  //
+  outputEveryRhs_ = paramList_->get(OutputEveryRhs_name,OutputEveryRhs_default);
+  // Foward Solve parameters
+  Teuchos::ParameterList
+    &fwdSolvePL = paramList_->sublist(ForwardSolve_name);
+  defaultFwdMaxIterations_ = fwdSolvePL.get(MaxIterations_name,defaultFwdMaxIterations_);
+  defaultFwdTolerance_ = fwdSolvePL.get(Tolerance_name,defaultFwdTolerance_);
+  // Adjoint Solve parameters
+  if( !paramList_->getPtr<Teuchos::ParameterList>(AdjointSolve_name) ) {
+    // If adjoint solve sublist is not set, then use the forward solve parameters
+    paramList_->sublist(AdjointSolve_name).setParameters(fwdSolvePL);
   }
+  Teuchos::ParameterList
+    &adjSolvePL = paramList_->sublist(AdjointSolve_name);
+  defaultAdjMaxIterations_ = adjSolvePL.get(MaxIterations_name,defaultAdjMaxIterations_);
+  defaultAdjTolerance_ = adjSolvePL.get(Tolerance_name,defaultAdjTolerance_);
+  //
+  if(precFactory_.get())
+    precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
 }
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>
@@ -225,7 +274,7 @@ AztecOOLinearOpWithSolveFactory::getParameterList() const
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
 AztecOOLinearOpWithSolveFactory::getValidParameters() const
 {
-  return generateAndGetValidParameters();
+  return thisValidParamList_;
 }
 
 // Public functions overridden from Teuchos::Describable
@@ -245,6 +294,7 @@ AztecOOLinearOpWithSolveFactory::generateAndGetValidParameters()
   static Teuchos::RefCountPtr<Teuchos::ParameterList> validParamList;
   if(validParamList.get()==NULL) {
     validParamList = Teuchos::rcp(new Teuchos::ParameterList("AztecOOLinearOpWithSolveFactory"));
+    validParamList->set(OutputEveryRhs_name,OutputEveryRhs_default);
     static Teuchos::RefCountPtr<const Teuchos::ParameterList>
       aztecParamList = getValidAztecOOParameters();
     Teuchos::ParameterList
@@ -257,6 +307,20 @@ AztecOOLinearOpWithSolveFactory::generateAndGetValidParameters()
     adjSolvePL.setParameters(fwdSolvePL); // Make the adjoint solve have same defaults as forward solve
   }
   return validParamList;
+}
+
+void AztecOOLinearOpWithSolveFactory::updateThisValidParamList()
+{
+  thisValidParamList_ = Teuchos::rcp(
+    new Teuchos::ParameterList(*generateAndGetValidParameters())
+    );
+  if(precFactory_.get()) {
+    Teuchos::RefCountPtr<const Teuchos::ParameterList>
+      precFactoryValidParamList = precFactory_->getValidParameters();
+    if(precFactoryValidParamList.get()) {
+      thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
+    }
+  }
 }
 
 void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
@@ -275,9 +339,24 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   using Teuchos::set_extra_data;
   using Teuchos::get_optional_extra_data;
   typedef EpetraExt::ProductOperator PO;
+
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
+  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
+  Teuchos::OSTab tab(out);
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nEntering Thyra::AztecOOLinearOpWithSolveFactory::initializeOp_impl(...) ...\n";
+
+  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<double> > VOTSPF;
+  VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
+
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
+  //
+  // Get the AztecOOLinearOpWithSolve object
+  //
+  AztecOOLinearOpWithSolve
+    *aztecOp = &Teuchos::dyn_cast<AztecOOLinearOpWithSolve>(*Op);
   //
   // Unwrap and get the forward operator or matrix
   //
@@ -296,13 +375,39 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     ,"Error, The input fwdOp object must be fully initialized before calling this function!"
     );
   //
-  // Unwrap and get the external preconditioner operator
+  // Get the preconditioner object to use
+  //
+  Teuchos::RefCountPtr<PreconditionerBase<double> >        myPrec;
+  Teuchos::RefCountPtr<const PreconditionerBase<double> >  precUsed;
+  if(prec.get()) {
+    // We will be used the passed in external preconditioner
+    precUsed = prec;
+  }
+  else if(precFactory_.get() ) {
+    // We will be creating our own preconditioner using a preconditioner factory
+    myPrec =
+      ( !aztecOp->isExternalPrec()
+        ? Teuchos::rcp_const_cast<PreconditionerBase<double> >(aztecOp->extract_prec())
+        : Teuchos::null
+        );
+    if(myPrec.get()) {
+      // ToDo: Get the forward operator and validate that it is the same
+      // operator that is used here!
+    }
+    else {
+      myPrec = precFactory_->createPrec();
+    }
+    precFactory_->initializePrec(fwdOp,&*myPrec);
+    precUsed = myPrec;
+  }
+  //
+  // Unwrap and get the preconditioner operator
   //
   RefCountPtr<const LinearOpBase<double> > rightPrecOp;
-  if(prec.get()) {
-    RefCountPtr<const LinearOpBase<double> > unspecified = prec->getUnspecifiedPrecOp();
-    RefCountPtr<const LinearOpBase<double> > left        = prec->getLeftPrecOp();
-    RefCountPtr<const LinearOpBase<double> > right       = prec->getRightPrecOp();
+  if(precUsed.get()) {
+    RefCountPtr<const LinearOpBase<double> > unspecified = precUsed->getUnspecifiedPrecOp();
+    RefCountPtr<const LinearOpBase<double> > left        = precUsed->getLeftPrecOp();
+    RefCountPtr<const LinearOpBase<double> > right       = precUsed->getRightPrecOp();
     TEST_FOR_EXCEPTION(
       !( left.get() || right.get() || unspecified.get() ), std::logic_error
       ,"Error, at least one preconditoner linear operator objects must be set!"
@@ -358,11 +463,6 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       = trans_trans(real_trans(wrappedPrecOpTransp),real_trans(epetra_epetraPrecOpTransp));
   }
   //
-  // Get the AztecOOLinearOpWithSolve object
-  //
-  AztecOOLinearOpWithSolve
-    *aztecOp = &Teuchos::dyn_cast<AztecOOLinearOpWithSolve>(*Op);
-  //
   // Determine if the forward and preconditioner operators are a row matrices or not
   //
   RefCountPtr<const Epetra_RowMatrix>
@@ -374,11 +474,11 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   this->supportsPreconditionerInputType(PRECONDITIONER_INPUT_TYPE_AS_MATRIX); // Updates useAztecPrec_, input value does not matter
   enum ELocalPrecType { PT_NONE, PT_AZTEC_FROM_OP, PT_AZTEC_FROM_APPROX_FWD_MATRIX, PT_FROM_PREC_OP };
   ELocalPrecType localPrecType;
-  if( prec.get()==NULL && approxFwdOp.get()==NULL && !useAztecPrec_ ) {
+  if( precUsed.get()==NULL && approxFwdOp.get()==NULL && !useAztecPrec_ ) {
     // No preconditioning at all!
     localPrecType = PT_NONE;
   }
-  else if( prec.get()==NULL && approxFwdOp.get()==NULL && useAztecPrec_ ) {
+  else if( precUsed.get()==NULL && approxFwdOp.get()==NULL && useAztecPrec_ ) {
     // We are using the forward matrix for the preconditioner using aztec preconditioners
     localPrecType = PT_AZTEC_FROM_OP;
   }
@@ -386,7 +486,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     // The preconditioner comes from the input as a matrix and we are using aztec preconditioners
     localPrecType = PT_AZTEC_FROM_APPROX_FWD_MATRIX;
   }
-  else if( prec.get() ) {
+  else if( precUsed.get() ) {
     // The preconditioner comes as an external operator so let's use it as such
     localPrecType = PT_FROM_PREC_OP;
   }
@@ -638,13 +738,13 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   //
   if(aztecAdjSolver.get()) {
     aztecOp->initialize(
-      fwdOp,prec,true,approxFwdOp
+      fwdOp,precUsed,prec.get()!=NULL,approxFwdOp
       ,aztecFwdSolver,true,aztecAdjSolver,true,epetra_epetraFwdOpScalar
       );
   }
   else {
     aztecOp->initialize(
-      fwdOp,prec,true,approxFwdOp
+      fwdOp,precUsed,prec.get()!=NULL,approxFwdOp
       ,aztecFwdSolver,true,null,false,epetra_epetraFwdOpScalar
       );
   }
@@ -652,10 +752,15 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   aztecOp->fwdDefaultTol(defaultFwdTolerance_);
   aztecOp->adjDefaultMaxIterations(defaultAdjMaxIterations_);
   aztecOp->adjDefaultTol(defaultAdjTolerance_);
+  aztecOp->outputEveryRhs(outputEveryRhs_);
+  aztecOp->setOStream(this->getOStream());
+  aztecOp->setVerbLevel(this->getVerbLevel());
 #ifdef _DEBUG
   if(paramList_.get())
     paramList_->validateParameters(*this->getValidParameters());
 #endif
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nLeaving Thyra::AztecOOLinearOpWithSolveFactory::initializeOp_impl(...) ...\n";
 }
 
 } // namespace Thyra

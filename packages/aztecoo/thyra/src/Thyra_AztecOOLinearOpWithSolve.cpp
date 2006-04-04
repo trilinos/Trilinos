@@ -31,6 +31,7 @@
 
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Teuchos_Time.hpp"
 
 namespace {
 
@@ -62,11 +63,13 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
   ,const double   fwdDefaultTol
   ,const int      adjDefaultMaxIterations
   ,const double   adjDefaultTol
+  ,const bool     outputEveryRhs
   )
   :fwdDefaultMaxIterations_(fwdDefaultMaxIterations)
   ,fwdDefaultTol_(fwdDefaultTol)
   ,adjDefaultMaxIterations_(adjDefaultMaxIterations)
   ,adjDefaultTol_(adjDefaultTol)
+  ,outputEveryRhs_(outputEveryRhs)
   ,isExternalPrec_(false)
   ,allowInexactFwdSolve_(false)
   ,allowInexactAdjSolve_(false)
@@ -189,9 +192,9 @@ std::string AztecOOLinearOpWithSolve::description() const
   std::ostringstream oss;
   oss << "Thyra::AztecOOLinearOpWithSolve";
   if(fwdOp_.get()) {
-    oss << "(";
+    oss << "{";
     oss << "fwdOp=\'"<<fwdOp_->description()<<"\'";
-    oss << ")";
+    oss << "}";
   }
   return oss.str();
 }
@@ -257,23 +260,36 @@ bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(ETransp M_trans, co
 
 // Overridden from SingleRhsLinearOpWithSolveBase
 
-SolveStatus<double>
-AztecOOLinearOpWithSolve::solve(
+void AztecOOLinearOpWithSolve::solve(
   const ETransp                         M_trans
-  ,const VectorBase<double>             &b
-  ,VectorBase<double>                   *x
-  ,const SolveCriteria<double>          *solveCriteria
+  ,const MultiVectorBase<double>        &B
+  ,MultiVectorBase<double>              *X
+  ,const int                            numBlocks
+  ,const BlockSolveCriteria<double>     blockSolveCriteria[]
+  ,SolveStatus<double>                  blockSolveStatus[]
   ) const
 {
+  using Teuchos::OSTab;
   typedef SolveCriteria<double>  SC;
   typedef SolveStatus<double>    SS;
+
+  Teuchos::Time totalTimer(""), timer("");
+  totalTimer.start(true);
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
+  Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
+  OSTab tab = this->getOSTab();
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+    *out << "\nSolving block system using AztecOO ...\n\n";
+
   //
   // Validate input
   //
+  TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
 //#ifdef _DEBUG
   TEST_FOR_EXCEPT(!this->solveSupportsTrans(M_trans));
-  TEST_FOR_EXCEPT( solveCriteria && !this->solveSupportsSolveMeasureType(M_trans,solveCriteria->solveMeasureType) );
-  TEST_FOR_EXCEPT(x==NULL);
+  TEST_FOR_EXCEPT( numBlocks && blockSolveCriteria && !this->solveSupportsSolveMeasureType(M_trans,blockSolveCriteria[0].solveCriteria.solveMeasureType) );
+  TEST_FOR_EXCEPT(X==NULL);
 //#endif
   //
   // Get the transpose argument
@@ -293,66 +309,129 @@ AztecOOLinearOpWithSolve::solve(
     &opRangeMap  = aztecOp->OperatorRangeMap(),
     &opDomainMap = aztecOp->OperatorDomainMap();
   //
-  // Get Epetra_Vector views of b and x
-  //
-  Teuchos::RefCountPtr<const Epetra_Vector>
-    epetra_b = get_Epetra_Vector(opRangeMap,Teuchos::rcp(&b,false));
-  Teuchos::RefCountPtr<Epetra_Vector>
-    epetra_x = get_Epetra_Vector(opDomainMap,Teuchos::rcp(x,false));
-  //
-  // Set the RHS and LHS
-  //
-  aztecSolver->SetRHS( const_cast<Epetra_Vector*>(&*epetra_b) ); // Should be okay?
-  aztecSolver->SetLHS( &*epetra_x );
-  //
   // Get the convergence criteria
   //
   double tol            = ( aztecOpTransp==NOTRANS ? fwdDefaultTol()           : adjDefaultTol()           );
   int    maxIterations  = ( aztecOpTransp==NOTRANS ? fwdDefaultMaxIterations() : adjDefaultMaxIterations() );
-  if( solveCriteria ) {
-    if( solveCriteria->requestedTol != SC::unspecifiedTolerance() )
-      tol = solveCriteria->requestedTol;
+  bool   isDefaultSolveCriteria = true;
+  if( numBlocks && blockSolveCriteria ) {
+    if( blockSolveCriteria[0].solveCriteria.requestedTol != SC::unspecifiedTolerance() ) {
+      tol = blockSolveCriteria[0].solveCriteria.requestedTol;
+      isDefaultSolveCriteria = true;
+    }
   }
   //
-  // Solve the linear system
+  // Get Epetra_MultiVector views of B and X
   //
-	aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
-	//
-	// Scale the solution
-	//
-  if(aztecSolverScalar_ != 1.0)
-    epetra_x->Scale(1.0/aztecSolverScalar_);
+  Teuchos::RefCountPtr<const Epetra_MultiVector>
+    epetra_B = get_Epetra_MultiVector(opRangeMap,Teuchos::rcp(&B,false));
+  Teuchos::RefCountPtr<Epetra_MultiVector>
+    epetra_X = get_Epetra_MultiVector(opDomainMap,Teuchos::rcp(X,false));
   //
-  // Release the Epetra_Vector views of x and b
+  // Use AztecOO to solve each RHS one at a time (which is all that I can do anyway)
   //
-  epetra_x = Teuchos::null;
-  epetra_b = Teuchos::null;
-  //
-  // Set the return solve status
-  //
-	const int     iterations  = aztecSolver->NumIters();
-	const double  achievedTol = aztecSolver->ScaledResidual();
-	const double *AZ_status   = aztecSolver->GetAztecStatus();
-  std::ostringstream oss;
-  bool converged = false;
-  if(AZ_status[AZ_why]==AZ_normal)           { oss << "Aztec returned AZ_normal."; converged = true; }
-  else if(AZ_status[AZ_why]==AZ_param)       oss << "Aztec returned AZ_param.";
-  else if(AZ_status[AZ_why]==AZ_breakdown)   oss << "Aztec returned AZ_breakdown.";
-  else if(AZ_status[AZ_why]==AZ_loss)        oss << "Aztec returned AZ_loss.";
-  else if(AZ_status[AZ_why]==AZ_ill_cond)    oss << "Aztec returned AZ_ill_cond.";
-  else if(AZ_status[AZ_why]==AZ_maxits)      oss << "Aztec returned AZ_maxits.";
-  else                                       oss << "Aztec returned an unknown status?";
-  oss << "  Iterations = " << iterations << ".";
+  int totalIterations = 0;
   SolveStatus<double> solveStatus;
-  solveStatus.solveStatus = SOLVE_STATUS_UNKNOWN;
-  solveStatus.achievedTol = achievedTol;
-  // Note, achieveTol may actually be greater than tol due to ill conditioning and roundoff!
-  solveStatus.message = oss.str();
-  if( solveCriteria && solveCriteria->solveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS) ) {
-    // This is for no left preconditioning and no left scaling only!
-    solveStatus.solveStatus = ( converged ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNCONVERGED );
+  solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
+  solveStatus.achievedTol = -1.0;
+  const int m = epetra_B->NumVectors();
+  for( int j = 0; j < m; ++j ) {
+    //
+    // Get Epetra_Vector views of B(:,j) and X(:,j)
+    //
+    const Epetra_Vector   *epetra_b_j = (*epetra_B)(j);
+    Epetra_Vector         *epetra_x_j = (*epetra_X)(j);
+    TEST_FOR_EXCEPT(!epetra_b_j);
+    TEST_FOR_EXCEPT(!epetra_x_j);
+    //
+    // Set the RHS and LHS
+    //
+    aztecSolver->SetRHS( const_cast<Epetra_Vector*>(epetra_b_j) ); // Should be okay?
+    aztecSolver->SetLHS( epetra_x_j );
+    //
+    // Solve the linear system
+    //
+    timer.start(true);
+    aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
+    timer.stop();
+    //
+    // Set the return solve status
+    //
+    const int     iterations  = aztecSolver->NumIters();
+    const double  achievedTol = aztecSolver->ScaledResidual();
+    const double  *AZ_status  = aztecSolver->GetAztecStatus();
+    std::ostringstream oss;
+    bool converged = false;
+    if(AZ_status[AZ_why]==AZ_normal)           { oss << "Aztec returned AZ_normal."; converged = true; }
+    else if(AZ_status[AZ_why]==AZ_param)       oss << "Aztec returned AZ_param.";
+    else if(AZ_status[AZ_why]==AZ_breakdown)   oss << "Aztec returned AZ_breakdown.";
+    else if(AZ_status[AZ_why]==AZ_loss)        oss << "Aztec returned AZ_loss.";
+    else if(AZ_status[AZ_why]==AZ_ill_cond)    oss << "Aztec returned AZ_ill_cond.";
+    else if(AZ_status[AZ_why]==AZ_maxits)      oss << "Aztec returned AZ_maxits.";
+    else                                       oss << "Aztec returned an unknown status?";
+    oss << "  Iterations = " << iterations << ".";
+    oss << "  Achieved Tolerance = " << achievedTol << ".";
+    oss << "  Total time = " << timer.totalElapsedTime() << " sec.";
+    if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE) && outputEveryRhs())
+      *Teuchos::OSTab(out).getOStream() << "j="<<j<<": " << oss.str() << "\n";
+    //
+    totalIterations += iterations;
+    solveStatus.achievedTol = TEUCHOS_MAX(solveStatus.achievedTol,achievedTol);
+    // Note, achieveTol may actually be greater than tol due to ill conditioning and roundoff!
+    solveStatus.message = oss.str();
+    if( isDefaultSolveCriteria ) {
+      switch(solveStatus.solveStatus) {
+        case SOLVE_STATUS_UNKNOWN:
+          // Leave overall unknown!
+          break;
+        case SOLVE_STATUS_CONVERGED:
+          solveStatus.solveStatus = ( converged ? SOLVE_STATUS_CONVERGED : SOLVE_STATUS_UNCONVERGED );
+          break;
+        case SOLVE_STATUS_UNCONVERGED:
+          // Leave overall unconverged!
+          break;
+        default:
+          TEST_FOR_EXCEPT(true); // Should never get here!
+      }
+    }
   }
-  return solveStatus;
+  //
+  // Update the overall solve criteria
+  //
+  if( numBlocks && blockSolveStatus ) {
+    std::ostringstream oss;
+    oss
+      << "AztecOO solver "
+      << ( solveStatus.solveStatus==SOLVE_STATUS_CONVERGED ? "converged" : "unconverged" )
+      << " on m = "<<m<<" RHSs using " << totalIterations << " cumulative iterations"
+      << " for an average of " << (totalIterations/m) << " iterations/RHS.";
+    blockSolveStatus[0].message     = oss.str();
+    if(isDefaultSolveCriteria) {
+      blockSolveStatus[0].solveStatus = SOLVE_STATUS_UNKNOWN;
+      blockSolveStatus[0].achievedTol = SS::unknownTolerance();
+    }
+    else {
+      blockSolveStatus[0].solveStatus = solveStatus.solveStatus;
+      blockSolveStatus[0].achievedTol = solveStatus.achievedTol;
+    }
+  }
+  //
+  // Scale the solution
+  //
+  if(aztecSolverScalar_ != 1.0)
+    epetra_X->Scale(1.0/aztecSolverScalar_);
+  //
+  // Release the Epetra_MultiVector views of X and B
+  //
+  epetra_X = Teuchos::null;
+  epetra_B = Teuchos::null;
+  //
+  // Report the overall time
+  //
+  totalTimer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out
+      << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
 }
 
 }	// end namespace Thyra
