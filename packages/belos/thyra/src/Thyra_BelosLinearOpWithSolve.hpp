@@ -47,6 +47,8 @@ template<class Scalar>
 BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
   ,const bool                                                                 adjustableBlockSize
+  ,const int                                                                  maxNumberOfKrylovVectors
+  ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
   ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
@@ -56,13 +58,18 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve(
   ,const ESupportSolveUse                                                     &supportSolveUse
   )
 {
-  initialize(lp,adjustableBlockSize,resNormST,iterativeSolver,outputManager,prec,isExternalPrec,approxFwdOp,supportSolveUse);
+  initialize(
+    lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver
+    ,outputManager,prec,isExternalPrec,approxFwdOp,supportSolveUse
+    );
 }
 
 template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::initialize(
   const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
   ,const bool                                                                 adjustableBlockSize
+  ,const int                                                                  maxNumberOfKrylovVectors
+  ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
   ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
   ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
   ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
@@ -76,6 +83,8 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
   // ToDo: Validate input
   lp_ = lp;
   adjustableBlockSize_ = adjustableBlockSize;
+  maxNumberOfKrylovVectors_ = maxNumberOfKrylovVectors;
+  gmresPL_ = gmresPL;
   resNormST_ = resNormST;
   iterativeSolver_ = iterativeSolver;
   outputManager_ = outputManager;
@@ -134,6 +143,8 @@ template<class Scalar>
 void BelosLinearOpWithSolve<Scalar>::uninitialize(
   Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp
   ,bool                                                                 *adjustableBlockSize
+  ,int                                                                  *maxNumberOfKrylovVectors
+  ,Teuchos::RefCountPtr<Teuchos::ParameterList>                         *gmresPL
   ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST
   ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver
   ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager
@@ -304,7 +315,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-    *out << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\" ...\n\n";
+    *out << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\" ...\n";
 
   //
   // Temporarily reset the blocksize if we are allowed to due so
@@ -319,7 +330,8 @@ void BelosLinearOpWithSolve<Scalar>::solve(
       // vectors than half the number of equations or orthogonalization will
       // fail on the first iteration!
       : currBlockSize
-      // Above: Just use the user-set block size
+      // Above: Just use the user-set block size if we are not allowed to
+      // ajust this!
       );
   // Note: Above, we may also need to adjust the block size to be an even
   // multiple of the number of RHS.  Also, it would be good if
@@ -327,6 +339,19 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   // size between restarts.
   PrivateUtilities::BelosLinearProblemTempBlockSizeSetter<Belos::LinearProblem<Scalar,MV_t,LO_t> >
     tempBlockSizeSetter(lp_,newBlockSize);
+  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+    *out << "\nAdjusted block size = " << newBlockSize << "\n";
+  //
+  // Set the number of Krylov blocks if we are using GMRES!
+  //
+  if(gmresPL_.get()) {
+    const int BlockGmres_length = maxNumberOfKrylovVectors_/newBlockSize; 
+    gmresPL_->set("Length",BlockGmres_length);
+    if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+      *out
+        << "\nAdjusted max number of GMRES Krylov basis blocks (maxNumberOfKrylovVectors/blockSize) = ("
+        << maxNumberOfKrylovVectors_ << ")/(" << newBlockSize << ") = " << BlockGmres_length << "\n";
+  }
   //
   // Set RHS and LHS
   //

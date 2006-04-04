@@ -44,6 +44,8 @@ public:
   BelosLinearOpWithSolve(
     const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
     ,const bool                                                                 adjustableBlockSize
+    ,const int                                                                  maxNumberOfKrylovVectors
+    ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
     ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
     ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
     ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
@@ -58,9 +60,14 @@ public:
    *
    * \param lp   [in] The linear problem that was used to initialize the iterative solver.
    *             The RHS and LHS arguments are set on this object to solve a linear system.
-   * \param AdjustableBlockSize
+   * \param adjustableBlockSize
    *             [in] If <tt>true</tt>, then the block size in <tt>*lp</tt> will be adjusted according
    *             to the linear system being solved automatically.
+   * \param maxNumberOfKrylovVectors
+   *             [in] Total number of Krylov vectors that can be stored and manipulated.  This more-or-less
+   *             bounds the total amount of storage that the algorithm can use.
+   * \param gmresPL
+   *             [in] Parameter list that is used for GMRES if GMRES is used.
    * \param resNormST
    *             [in] The residual norm status test that was used to initialize the iterative solver.
    *             This is accessed to set the relative tolerance.
@@ -94,6 +101,8 @@ public:
   void initialize(
     const Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         &lp
     ,const bool                                                                 adjustableBlockSize
+    ,const int                                                                  maxNumberOfKrylovVectors
+    ,const Teuchos::RefCountPtr<Teuchos::ParameterList>                         &gmresPL
     ,const Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    &resNormST
     ,const Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      &iterativeSolver
     ,const Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  &outputManager
@@ -123,15 +132,17 @@ public:
    * ToDo: Finish documentation!
    */
   void uninitialize(
-    Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp                  = NULL
-    ,bool                                                                 *adjustableBlockSize = NULL
-    ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST           = NULL
-    ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver     = NULL
-    ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager       = NULL
-    ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              *prec                = NULL
-    ,bool                                                                 *isExternalPrec      = NULL
-    ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    *approxFwdOp         = NULL
-    ,ESupportSolveUse                                                     *supportSolveUse     = NULL
+    Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >         *lp                        = NULL
+    ,bool                                                                 *adjustableBlockSize       = NULL
+    ,int                                                                  *maxNumberOfKrylovVectors  = NULL
+    ,Teuchos::RefCountPtr<Teuchos::ParameterList>                         *gmresPL                   = NULL
+    ,Teuchos::RefCountPtr<Belos::StatusTestResNorm<Scalar,MV_t,LO_t> >    *resNormST                 = NULL
+    ,Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >      *iterativeSolver           = NULL
+    ,Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                  *outputManager             = NULL
+    ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >              *prec                      = NULL
+    ,bool                                                                 *isExternalPrec            = NULL
+    ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >                    *approxFwdOp               = NULL
+    ,ESupportSolveUse                                                     *supportSolveUse           = NULL
     );
 
   //@}
@@ -215,6 +226,8 @@ private:
 
   Teuchos::RefCountPtr<Belos::LinearProblem<Scalar,MV_t,LO_t> >           lp_;
   bool                                                                    adjustableBlockSize_;
+  int                                                                     maxNumberOfKrylovVectors_;
+  Teuchos::RefCountPtr<Teuchos::ParameterList>                            gmresPL_;
   Teuchos::RefCountPtr<StatusTestResNorm_t>                               resNormST_;
   Teuchos::RefCountPtr<Belos::IterativeSolver<Scalar,MV_t,LO_t> >         iterativeSolver_;
   Teuchos::RefCountPtr<Belos::OutputManager<Scalar> >                     outputManager_;

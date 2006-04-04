@@ -50,9 +50,9 @@ const typename BelosLinearOpWithSolveFactory<Scalar>::MagnitudeType
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_name = "GMRES";
 template<class Scalar>
-const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Length_name = "Length";
+const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_MaxNumberOfKrylovVectors_name = "Max Number of Krylov Vectors";
 template<class Scalar>
-const int         BelosLinearOpWithSolveFactory<Scalar>::GMRES_Length_default = 300; // Consistent with NOX::LinearSystemAztecOO
+const int         BelosLinearOpWithSolveFactory<Scalar>::GMRES_MaxNumberOfKrylovVectors_default = 300; // Consistent with NOX::LinearSystemAztecOO
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::GMRES_Variant_name = "Variant";
 template<class Scalar>
@@ -72,6 +72,7 @@ const bool        BelosLinearOpWithSolveFactory<Scalar>::Outputter_OutputMaxResO
 
 template<class Scalar>
 BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory()
+  :useGmres_(true)
 {
   updateThisValidParamList();
 }
@@ -80,6 +81,7 @@ template<class Scalar>
 BelosLinearOpWithSolveFactory<Scalar>::BelosLinearOpWithSolveFactory(
   const Teuchos::RefCountPtr<PreconditionerFactoryBase<Scalar> >  &precFactory
   )
+  :useGmres_(true)
 {
   this->setPreconditionerFactory(precFactory);
 }
@@ -168,7 +170,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOp(...) ...\n";
 
-  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<double> > VOTSPF;
+  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
   VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
   
   //
@@ -189,10 +191,11 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   RefCountPtr<PreconditionerBase<Scalar> >         myPrec = Teuchos::null;
   RefCountPtr<const PreconditionerBase<Scalar> >   prec = Teuchos::null;
   if(precFactory_.get()) {
-    if(paramList_.get()) {
-      precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
-    }
-    myPrec = Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(belosOp->extract_prec());
+    myPrec =
+      ( !belosOp->isExternalPrec()
+        ? Teuchos::rcp_const_cast<PreconditionerBase<double> >(belosOp->extract_prec())
+        : Teuchos::null
+        );
     if(myPrec.get()) {
       // ToDo: Get the forward operator and validate that it is the same
       // operator that is used here!
@@ -311,32 +314,28 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   // Generate the solver
   //
-  bool useGmres = true;
-  if(paramList_.get()) {
-    const std::string &solverType = paramList_->get(SolverType_name,SolverType_default);
-    if(solverType==GMRES_name)
-      useGmres = true;
-    else if(solverType=="CG")
-      useGmres = false;
-    else
-      TEST_FOR_EXCEPTION(
-        true,std::logic_error
-        ,"Error, \"Solver Type\" = \"" << solverType << "\" is not recognized!"
-        "  Valid values are \"GMRES\" and \"CG\""
-        );
-    // ToDo: Replace above with Teuchos::StringToIntMap ...
-  }
   typedef Belos::IterativeSolver<Scalar,MV_t,LO_t> IterativeSolver_t;
   RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
-  if(useGmres) {
-    RefCountPtr<Teuchos::ParameterList>
-      gmresPL;
+  RefCountPtr<Teuchos::ParameterList> gmresPL;
+  int maxNumberOfKrylovVectors = -1; // Only gets used if getPL.get()!=NULL
+  if(useGmres_) {
+    // Set the PL
+    gmresPL = Teuchos::rcp(new Teuchos::ParameterList());
+    gmresPL->set("Length",1);
+    // Note, the "Length" will be reset based on the number of RHS in the
+    // BelosLOWS::solve(...) function!  This is needed to avoid memory
+    // problems!  Above I just set it to 1 to avoid any memory allocation
+    // problems!
+    maxNumberOfKrylovVectors = GMRES_MaxNumberOfKrylovVectors_default;
+    std::string GMRES_Variant = GMRES_Variant_default;
     if(paramList_.get()) {
-      gmresPL = Teuchos::sublist(paramList_,GMRES_name);
+      Teuchos::ParameterList
+        &_gmresPL = paramList_->sublist(GMRES_name);
+      maxNumberOfKrylovVectors = _gmresPL.get(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
+      GMRES_Variant = _gmresPL.get(GMRES_Variant_name,GMRES_Variant_default);
     }
-    else {
-      gmresPL = Teuchos::rcp(new Teuchos::ParameterList()); // BlockGmres requires a PL!
-    }
+    gmresPL->set(GMRES_Variant_name,GMRES_Variant);
+    // Create the solver!
     iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
   }
   else {
@@ -347,7 +346,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   //
   const bool adjustableBlockSize =
     ( paramList_.get() ? paramList_->get(AdjustableBlockSize_name,AdjustableBlockSize_default) : AdjustableBlockSize_default );
-  belosOp->initialize(lp,adjustableBlockSize,resNormST,iterativeSolver,outputManager,prec,false,Teuchos::null,supportSolveUse);
+  belosOp->initialize(lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver,outputManager,prec,false,Teuchos::null,supportSolveUse);
   belosOp->setOStream(out);
   belosOp->setVerbLevel(verbLevel);
 #ifdef _DEBUG
@@ -437,6 +436,22 @@ void BelosLinearOpWithSolveFactory<Scalar>::setParameterList(Teuchos::RefCountPt
   TEST_FOR_EXCEPT(paramList.get()==NULL);
   paramList->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
   paramList_ = paramList;
+  //
+  if(precFactory_.get())
+    precFactory_->setParameterList(Teuchos::sublist(paramList_,precFactoryName_));
+  //
+  const std::string &solverType = paramList_->get(SolverType_name,SolverType_default);
+  if(solverType==GMRES_name)
+    useGmres_ = true;
+  else if(solverType=="CG")
+    useGmres_ = false;
+  else
+    TEST_FOR_EXCEPTION(
+      true,std::logic_error
+      ,"Error, \"Solver Type\" = \"" << solverType << "\" is not recognized!"
+      "  Valid values are \"GMRES\" and \"CG\""
+      );
+  // ToDo: Replace above with Teuchos::StringToIntMap ...
 }
 
 template<class Scalar>
@@ -499,7 +514,7 @@ BelosLinearOpWithSolveFactory<Scalar>::generateAndGetValidParameters()
     validParamList->set(DefaultRelResNorm_name,DefaultRelResNorm_default);
     Teuchos::ParameterList
       &gmresSL = validParamList->sublist(GMRES_name);
-    gmresSL.set(GMRES_Length_name,GMRES_Length_default);
+    gmresSL.set(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
     gmresSL.set(GMRES_Variant_name,GMRES_Variant_default);
     Teuchos::ParameterList
       &outputterSL = validParamList->sublist(Outputter_name);

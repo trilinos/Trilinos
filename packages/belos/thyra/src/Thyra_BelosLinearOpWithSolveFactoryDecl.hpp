@@ -59,9 +59,9 @@ public:
   /** \brief . */
   static const std::string  GMRES_name;
   /** \brief . */           
-  static const std::string  GMRES_Length_name;
+  static const std::string  GMRES_MaxNumberOfKrylovVectors_name;
   /** \brief . */           
-  static const int          GMRES_Length_default;
+  static const int          GMRES_MaxNumberOfKrylovVectors_default;
   /** \brief . */           
   static const std::string  GMRES_Variant_name;
   /** \brief . */           
@@ -124,6 +124,14 @@ public:
     ,LinearOpWithSolveBase<Scalar>                             *Op
     ) const;
   /** \brief . */
+  void uninitializeOp(
+    LinearOpWithSolveBase<Scalar>                               *Op
+    ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *fwdOp
+    ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >    *prec
+    ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *approxFwdOp
+    ,ESupportSolveUse                                           *supportSolveUse
+    ) const;
+  /** \brief . */
   bool supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const;
   /** \brief . */
   void initializePreconditionedOp(
@@ -138,14 +146,6 @@ public:
     ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >            &approxFwdOp
     ,LinearOpWithSolveBase<Scalar>                                      *Op
     ,const ESupportSolveUse                                             supportSolveUse
-    ) const;
-  /** \brief . */
-  void uninitializeOp(
-    LinearOpWithSolveBase<Scalar>                               *Op
-    ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *fwdOp
-    ,Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >    *prec
-    ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *approxFwdOp
-    ,ESupportSolveUse                                           *supportSolveUse
     ) const;
   //@}
 
@@ -182,6 +182,7 @@ private:
   std::string                                               precFactoryName_;
   Teuchos::RefCountPtr<Teuchos::ParameterList>              thisValidParamList_;
   Teuchos::RefCountPtr<Teuchos::ParameterList>              paramList_;
+  bool                                                      useGmres_;
 
   // /////////////////////////
   // Private member functions

@@ -68,7 +68,8 @@ int main(int argc, char* argv[])
     belosLOWSFPL.set("Default Rel Res Norm",double(maxResid));
     belosLOWSFPL.set("Max Restarts",int(maxRestarts));
     belosLOWSFPL.set("Block Size",int(blockSize));
-    belosLOWSFPL.sublist("GMRES").set("Length",int(gmresKrylovLength));
+    belosLOWSFPL.sublist("GMRES").set("Max Number of Krylov Vectors",int(gmresKrylovLength*blockSize));
+    belosLOWSFPL.sublist("GMRES").set("Variant","Standard");
     Teuchos::ParameterList &outputterSL = belosLOWSFPL.sublist("Outputter");
     outputterSL.set("Output Frequency",int(outputFrequency));
     outputterSL.set("Output Max Res Only",bool(outputMaxResOnly));
@@ -77,7 +78,7 @@ int main(int argc, char* argv[])
       ifpackPFSL.set("Overlap",int(2));
       ifpackPFSL.set("Prec Type","ILUT");
     }
-
+    
     success
       = Thyra::test_single_belos_thyra_solver(
         matrixFile,testTranspose,usePreconditioner,numRhs,numRandomVectors
