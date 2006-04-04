@@ -80,7 +80,6 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
 {
   if (&source == this)
     return *this;
-
   name_ = source.name_;
   params_ = source.params_;
   return *this;
@@ -88,7 +87,16 @@ ParameterList& ParameterList::operator=(const ParameterList& source)
 
 ParameterList& ParameterList::setParameters(const ParameterList& source) 
 {
-  params_ = source.params_;
+  for( ConstIterator i = source.begin(); i != source.end(); ++i ) {
+    const std::string     &name_i  = this->name(i);
+    const ParameterEntry  &entry_i = this->entry(i);
+    if(entry_i.isList()) {
+      this->sublist(name_i).setParameters(getValue<ParameterList>(entry_i));
+    }
+    else {
+      this->setEntry(name_i,entry_i);
+    }
+  }
   this->updateSubListNames();
   return *this;
 }
@@ -340,7 +348,7 @@ void ParameterList::validateParameters(
 
 // private
 
-void ParameterList::updateSubListNames()
+void ParameterList::updateSubListNames(int depth)
 {
   const std::string this_name = this->name();
   Map::iterator itr;
@@ -350,7 +358,8 @@ void ParameterList::updateSubListNames()
     if(entry.isList()) {
       ParameterList &sublist = getValue<ParameterList>(entry);
       sublist.setName(this_name+std::string("->")+entryName);
-      sublist.updateSubListNames();
+      if(depth > 0)
+        sublist.updateSubListNames(depth-1);
     }
   }
 }

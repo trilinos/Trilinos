@@ -140,7 +140,12 @@ public:
    */
   ParameterList& operator=(const ParameterList& source);
   
-  /** Set just the parameters in <tt>source</tt>.
+  /** Set the parameters in <tt>source</tt>.
+   *
+   * Note, this function will set the parameters and sublists from
+   * <tt>source</tt> into <tt>*this</tt> but will not result in parameters
+   * being removed from <tt>*this</tt>.  Parameters in <tt>*this</tt> with the
+   * same names as those in <tt>source</tt> will be overwritten.
    */
   ParameterList& setParameters(const ParameterList& source);
   
@@ -374,7 +379,7 @@ private: // Functions
   template<typename T>
   void validateEntryType( const std::string &funcName, const std::string &name, const ParameterEntry &entry ) const;
   //! Update sublist names recursively
-  void updateSubListNames();
+  void updateSubListNames(int depth = 0);
   
 private: // Data members
 
