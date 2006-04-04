@@ -244,6 +244,12 @@ type(PARIO_INFO) :: pio_info
   nedges = 0
   do i = 0, npins-1
     if (iidx(i) .ne. prev_edge) nedges = nedges + 1
+    if (iidx(i) < prev_edge) then
+!     KDDKDD see note above.
+      print *, "Error in MatrixMarket file.  Entries are not sorted by I index."
+      read_mm_file = .false.
+      return
+    endif
     prev_edge = iidx(i)
   enddo
   Mesh%nhedges = nedges
