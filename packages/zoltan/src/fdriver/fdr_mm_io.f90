@@ -22,11 +22,8 @@ private
 
 public :: read_mm_file
 
-integer(Zoltan_INT), parameter :: INITIAL_ZERO = 0
+! Pin distribution is assumed to be linear always.
 integer(Zoltan_INT), parameter :: INITIAL_LINEAR = 1
-integer(Zoltan_INT), parameter :: INITIAL_CYCLIC = 2
-integer(Zoltan_INT), parameter :: INITIAL_ROW = 3
-integer(Zoltan_INT), parameter :: INITIAL_COL = 4
 
 contains
 
@@ -49,7 +46,6 @@ type(PARIO_INFO) :: pio_info
   character(len=19) :: mm_symm
   integer :: i, rest, cnt, sum, n, share, pin, pinproc, tmp, mynext
   integer :: prev_edge, pincnt, edgecnt
-  integer, pointer :: sizes(:)
 
 ! Values read from matrix market
   integer :: mm_nrow, mm_ncol, mm_nnz, mm_max
@@ -61,9 +57,6 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: fp, iostat, allocstat, ierr, status
   integer(Zoltan_INT), pointer ::  vtxdist(:) ! vertex distribution data
   integer(Zoltan_INT), pointer ::  pindist(:) ! pin distribution data
-  integer(Zoltan_INT), pointer ::  ibuf(:)    ! pin comm buffer
-  integer(Zoltan_INT), pointer ::  jbuf(:)    ! pin comm buffer
-  integer(Zoltan_INT), pointer ::  next(:)    ! counters
 ! Local values
   integer(Zoltan_INT) :: npins, nedges, nvtxs
   integer(Zoltan_INT), pointer ::  iidx(:) ! pin data
@@ -188,106 +181,65 @@ type(PARIO_INFO) :: pio_info
     Mesh%elements(i)%cpu_wgt = 1
     Mesh%elements(i)%mem_wgt = 1
   enddo
+  if (associated(vtxdist)) deallocate(vtxdist)
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !  Calculate pin distribution 
 !  Send pins to owning processor
 
-  allocate(sizes(0:Num_Proc-1))
-  if (Proc == 0) then
-    if (pio_info%init_dist_pins == INITIAL_LINEAR) then
-      allocate(pindist(0:Num_Proc))
-      share = mm_nnz / Num_Proc;
-      rest = mm_nnz - (Num_Proc * share);
-      sum = 0
-      do i = 0, Num_Proc
-        pindist(i) = sum
-        sum = sum + share
-        if (i < rest) sum = sum + 1
-      enddo
-    else
-      print *, "INITIAL_LINEAR IS ONLY DISTRIBUTION SUPPORTED FOR PINS"
-      read_mm_file = .false.
-      return
-    endif
-
-!   Compute number of pins to send to each proc.
-    do i = 0, Num_Proc-1
-      sizes(i) = 0
+  allocate(pindist(0:Num_Proc))
+  if (pio_info%init_dist_pins == INITIAL_LINEAR) then
+    share = mm_nnz / Num_Proc;
+    rest = mm_nnz - (Num_Proc * share);
+    sum = 0
+    do i = 0, Num_Proc
+      pindist(i) = sum
+      sum = sum + share
+      if (i < rest) sum = sum + 1
     enddo
-    do pin = 0, mm_nnz-1
-      pinproc = getpinproc(pio_info, pin, mm_jidx(pin), mm_iidx(pin), &
-                           Proc, Num_Proc, pindist)
-      sizes(pinproc) = sizes(pinproc) + 1
-    enddo
+  else
+    print *, "INITIAL_LINEAR IS ONLY DISTRIBUTION SUPPORTED FOR PINS"
+    read_mm_file = .false.
+    return
   endif
 
-  call MPI_Bcast(sizes, Num_Proc, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-
 ! Allocate arrays to receive pins.
-  npins = sizes(Proc)
+  npins = pindist(Proc+1) - pindist(Proc)
   allocate(iidx(0:npins-1),jidx(0:npins-1),stat=allocstat)
-
-! Compute prefix sum of sizes
-  sum = 0
-  do i = 0, Num_Proc-1
-    tmp = sizes(i)
-    sizes(i) = sum
-    sum = sum + tmp
-  enddo
-  sizes(Num_Proc) = sum
 
   if (Proc == 0) then
 !   Fill communication buffer with pins to be sent.
-    allocate(ibuf(0:mm_nnz-1))
-    allocate(jbuf(0:mm_nnz-1))
-    allocate(next(0:Num_Proc-1))
-    do i = 0, Num_Proc-1
-      next(i) = sizes(i)
-    enddo
-    mynext = 0
-    do pin = 0, mm_nnz-1
-      pinproc = getpinproc(pio_info, pin, mm_jidx(pin), mm_iidx(pin), &
-                           Proc, Num_Proc, pindist)
-      if (pinproc == 0) then
-!       Keep this pin here; local copy.
-        iidx(mynext) = mm_iidx(pin)
-        jidx(mynext) = mm_jidx(pin)
-        mynext = mynext + 1
-      else
-!       Put this pin in buffer for communication.
-        ibuf(next(pinproc)) = mm_iidx(pin)
-        jbuf(next(pinproc)) = mm_jidx(pin)
-        next(pinproc) = next(pinproc) + 1
-      endif
-    enddo
+!   Assume INITIAL_LINEAR pin distribution.
     do i = 1, Num_Proc-1
-      call MPI_Send(ibuf(i), (sizes(i+1)-sizes(i)), MPI_INTEGER, i, 1, &
-                    MPI_COMM_WORLD, ierr)
-      call MPI_Send(jbuf(i), (sizes(i+1)-sizes(i)), MPI_INTEGER, i, 2, &
-                    MPI_COMM_WORLD, ierr)
+      call MPI_Send(mm_iidx(pindist(i)), (pindist(i+1)-pindist(i)), MPI_INTEGER, &
+                    i, 1, MPI_COMM_WORLD, ierr)
+      call MPI_Send(mm_jidx(pindist(i)), (pindist(i+1)-pindist(i)), MPI_INTEGER, &
+                    i, 2, MPI_COMM_WORLD, ierr)
     enddo
-    if (associated(pindist)) deallocate(pindist)
-    if (associated(ibuf)) deallocate(ibuf)
-    if (associated(jbuf)) deallocate(jbuf)
-    if (associated(next)) deallocate(next)
+!   Copy Proc zero's pins.
+    do i = 0, pindist(1)-1
+      iidx(i) = mm_iidx(i)
+      jidx(i) = mm_jidx(i)
+    enddo
   else
     call MPI_Recv(iidx, npins, MPI_INTEGER, 0, 1, MPI_COMM_WORLD, &
                   status, ierr)
     call MPI_Recv(jidx, npins, MPI_INTEGER, 0, 2, MPI_COMM_WORLD, &
                   status, ierr)
   endif
-      
-  if (associated(vtxdist)) deallocate(vtxdist)
-  if (associated(sizes)) deallocate(sizes)
+     
+  if (associated(pindist)) deallocate(pindist)
   if (associated(mm_iidx)) deallocate(mm_iidx)
   if (associated(mm_jidx)) deallocate(mm_jidx)
 
-! Sort the received pins here by edge number.
-! KDDKDD TODO
-! KDDKDD TODO
+! KDDKDD
+! KDDKDD We assume the MatrixMarket file is sorted by row numbers.
+! KDDKDD This condition is true for all our test cases.
+! KDDKDD If this condition were not true, we would have to sort the
+! KDDKDD pins here based on their iidx values.
+! KDDKDD 
 
-! Count number of unique edge IDs.
+! Count number of unique edge IDs on this processor.
   prev_edge = -1
   nedges = 0
   do i = 0, npins-1
@@ -321,46 +273,5 @@ type(PARIO_INFO) :: pio_info
   if (associated(jidx)) deallocate(jidx)
   read_mm_file = .true.
 end function read_mm_file
-
-!/*****************************************************************************/
-!/*****************************************************************************/
-!/*****************************************************************************/
-
-integer function getpinproc(pio_info, pin, vid, eid, myrank, nprocs, pindist)
-type(PARIO_INFO) :: pio_info
-integer pin, vid, eid, myrank, nprocs
-integer, pointer ::  pindist(:) 
-integer :: i
-integer :: npins
-
-! Function to return the processor that will own a pin.
-! Copied from the C version.  Currently, supporting only INITIAL_LINEAR.
-
-  if (pio_info%init_dist_pins == INITIAL_ZERO) then
-!   Node zero initially has all pins.
-    getpinproc = 0
-  else if (pio_info%init_dist_pins == INITIAL_CYCLIC) then
-!   Deal out the pins in a cyclic fashion
-    getpinproc = modulo(pin, nprocs)
-  else if (pio_info%init_dist_pins == INITIAL_LINEAR) then
-!   First process gets first npins/nprocs pins, and so on 
-    npins = pindist(nprocs)
-    i = (pin * nprocs) / npins
-    do while (pin < pindist(i))
-      i = i - 1
-    enddo
-    do while (pin >= pindist(i+1))
-      i = i + 1
-    enddo
-    getpinproc = i
-  else if (pio_info%init_dist_pins == INITIAL_ROW) then
-!   Each process gets entire rows of pins, no row is split across procs 
-    getpinproc = modulo(eid, nprocs)
-  else if (pio_info%init_dist_pins == INITIAL_COL) then
-!   Each process gets entire columns of pins, no column is split across procs 
-    getpinproc = modulo(vid, nprocs)
-  endif
-
-end function getpinproc
 
 end module dr_mm_io

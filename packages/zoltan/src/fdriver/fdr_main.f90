@@ -143,6 +143,7 @@ end interface
                Mesh%ecmap_sideids,Mesh%ecmap_neighids,Mesh%elements, &
                Mesh%hgid,Mesh%hindex,Mesh%hvertex)
   Mesh%necmap = 0
+  Mesh%nhedges = 0
 
   pio_info%init_dist_pins =  1  !INITIAL_LINEAR
   pio_info%dsk_list_cnt   = -1
@@ -190,17 +191,19 @@ end interface
   endif
 
 ! KDDKDD  TEMPORARY OUTPUT
-  write (mystring, "(i1)" ) Proc
-  filename = "helpme."//mystring
-  open(unit=fp,file=filename,action="write")
-  write(fp,*) "Hyperedges:"
-  do i = 0, Mesh%nhedges-1
-    write(fp,*) "Edge ", Mesh%hgid(i)
-    do j = Mesh%hindex(i), Mesh%hindex(i+1)-1
-      write(fp, *) "        ", Mesh%hvertex(j)
+  if (Mesh%nhedges > 0) then
+    write (mystring, "(i1)" ) Proc
+    filename = "helpme."//mystring
+    open(unit=fp,file=filename,action="write")
+    write(fp,*) "Hyperedges:"
+    do i = 0, Mesh%nhedges-1
+      write(fp,*) "Edge ", Mesh%hgid(i)
+      do j = Mesh%hindex(i), Mesh%hindex(i+1)-1
+        write(fp, *) "        ", Mesh%hvertex(j)
+      enddo
     enddo
-  enddo
-  close(unit=fp)
+    close(unit=fp)
+  endif
 ! KDDKDD  END TEMPORARY OUTPUT
 
 !  /*
