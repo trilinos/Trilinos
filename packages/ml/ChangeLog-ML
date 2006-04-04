@@ -32,6 +32,18 @@ report bugs to jhu@sandia.gov.
 
 ------------------------------------------------------------------------------
 	
+Apr 2006
+
+        * Added support for (linear) matrix-free aggregation-based 
+          multilevel preconditioners. Using the new class
+          ML_Epetra::MatrixFreePreconditioner, which depends on Epetra,
+          EpetraExt and Teuchos, one can compute a preconditioner just by
+          applying the operator. The class requires the graph of the operator,
+          and the number of PDE equations, which is supposed to be constant.
+        * Added a direct wrap for Epetra_CrsGraph objects.
+
+------------------------------------------------------------------------------
+	
 Mar 2006
 
         * Improved the ML/Epetra wrappers: if the ML_Operator is a wrapper of
