@@ -31,6 +31,12 @@ Please submit IFPACK bugs at software.sandia.gov/buzgilla.
 
 ------------------------------------------------------------------------------
 	
+Apr 2006:
+
+*) Added Chebyshev preconditioner with diagonal scaling.
+
+------------------------------------------------------------------------------
+	
 Feb 2006:
 
 *) Added support for UseTranspose(true) in Ifpack_AdditiveSchwarz,

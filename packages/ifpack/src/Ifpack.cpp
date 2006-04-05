@@ -16,6 +16,7 @@
 #ifdef HAVE_IFPACK_AMESOS
 #include "Ifpack_Amesos.h"
 #endif
+#include "Ifpack_Chebyshev.h"
 
 //==============================================================================
 Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
@@ -87,6 +88,9 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
     return(new Ifpack_SPARSKIT(Matrix));
   }
 #endif
+  else if (PrecType == "Chebyshev") {
+    return(new Ifpack_Chebyshev(Matrix));
+  }
   else
     // nothing understandable
     return(0);
@@ -98,6 +102,7 @@ int Ifpack::SetParameters(int argc, char* argv[],
                           Teuchos::ParameterList& List, string& PrecType,
                           int& Overlap)
 {
+  // THIS FUNCTION IS VERY INCOMPLETE...
 
   Teuchos::CommandLineProcessor CLP;
 

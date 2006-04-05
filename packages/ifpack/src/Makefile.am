@@ -139,6 +139,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_Reordering.h             \
 	$(srcdir)/Ifpack_RCMReordering.h          \
 	$(srcdir)/Ifpack_SPARSKIT.h               \
+	$(srcdir)/Ifpack_Chebyshev.h              \
 	$(srcdir)/Ifpack_METISReordering.h        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.h   \
 	$(srcdir)/Ifpack_ValidParameters.h
@@ -172,6 +173,7 @@ COMP = \
 	$(srcdir)/Ifpack_Utils.cpp                  \
 	$(srcdir)/Ifpack_HashTable.cpp              \
 	$(srcdir)/Ifpack_Amesos.cpp                 \
+	$(srcdir)/Ifpack_Chebyshev.cpp              \
 	$(srcdir)/Ifpack_OverlappingPartitioner.cpp \
 	$(srcdir)/Ifpack_LinearPartitioner.cpp      \
 	$(srcdir)/Ifpack_GreedyPartitioner.cpp      \
