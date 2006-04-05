@@ -548,7 +548,7 @@ int Ifpack_AdditiveSchwarz<T>::SetParameters(Teuchos::ParameterList& List)
   {
     if( typeid(std::string) == combineModeEntry->getAny().type() )
     {
-      string mode = List.get<string>("schwarz: combine mode");
+      std::string mode = List.get("schwarz: combine mode", "Add");
       if (mode == "Add")
         CombineMode_ = Add;
       else if (mode == "Zero")
