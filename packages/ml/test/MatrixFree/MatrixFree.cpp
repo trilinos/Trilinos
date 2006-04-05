@@ -46,6 +46,7 @@
 #include "AztecOO.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_MatrixFreePreconditioner.h"
+#include "ml_MatrixFree_GetDiagonal.h"
 #include "ml_epetra_utils.h"
 
 using namespace ML_Epetra;
@@ -104,9 +105,14 @@ int main(int argc, char *argv[])
   ML_CHK_ERR(VbrA->ExtractDiagonalCopy(InvDiag));
   InvDiag.Reciprocal(InvDiag);
 
+  Epetra_MultiVector* Diagonal;
+  ML_Epetra::GetBlockDiagonal(*VbrA, VbrA->Graph(), MLList, Diagonal);
+
+
+
   // compute the preconditioner using the matrix-free approach
   MatrixFreePreconditioner* MFP = new
-    MatrixFreePreconditioner(*VbrA, VbrA->Graph(), MLList, NullSpace, InvDiag);
+    MatrixFreePreconditioner(*VbrA, VbrA->Graph(), MLList, NullSpace);
 
   NullSpace = OrigNullSpace;
 

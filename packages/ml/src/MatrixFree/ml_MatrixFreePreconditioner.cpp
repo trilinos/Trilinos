@@ -14,11 +14,12 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_SerialDenseSVD.h"
 #include "Teuchos_ParameterList.hpp"
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 
-#include "EpetraExt_MatrixMatrix.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_IntVector.h"
@@ -32,36 +33,12 @@ using namespace EpetraExt;
 #define ML_MFP_ADDITIVE 0
 #define ML_MFP_HYBRID   1
 
-int ML_hash_it2( int new_val, int hash_list[], int hash_length,int *hash_used) {
-
-  int index;
-  int ret_value = 0;
-
-  index = new_val<<1;
-  if (index < 0) index = new_val;
-  index = index%hash_length;
-  while ( hash_list[index] != new_val) {
-    if (hash_list[index] == -1) 
-    { 
-      hash_list[index] = new_val;
-      ret_value = 1;
-      (*hash_used)++; 
-      break;
-    }
-    index++;
-    index = (index)%hash_length;
-  }
-
-  return(ret_value);
-}
-
 // ============================================================================ 
 ML_Epetra::MatrixFreePreconditioner::
 MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
                              Teuchos::ParameterList& List,
-                             Epetra_MultiVector& NullSpace,
-                             const Epetra_Vector& InvDiag) :
+                             Epetra_MultiVector& NullSpace) :
   Comm_ML_(0),
   Comm_(Operator.Comm()),
   Label_("ML matrix-free preconditioner"),
@@ -70,7 +47,6 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
   omega_(1.00),
   Operator_(Operator),
   Graph_(Graph),
-  InvDiag_(InvDiag),
   R_(0),
   C_(0),
   C_ML_(0),
@@ -108,7 +84,7 @@ ML_Epetra::MatrixFreePreconditioner::
 int ML_Epetra::MatrixFreePreconditioner::
 ApplyJacobi(Epetra_MultiVector& X, const double omega) const
 {
-  X.Multiply(omega, InvDiag_, X, 0.0);
+  ML_CHK_ERR(ApplyInvBlockDiag(omega, X, 0.0, X));
 
   return(0);
 }
@@ -120,7 +96,8 @@ ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
 {
   Operator_.Apply(X, tmp);
   tmp.Update(1.0, B, -1.0);
-  X.Multiply(omega, InvDiag_, tmp, 1.0);
+  ML_CHK_ERR(ApplyInvBlockDiag(omega, X, 1.0, tmp));
+  ///ML_CHK_ERR(X.Multiply('T', 'N', omega, *InvBlockDiag_, tmp, 1.0));
 
   return(0);
 }
@@ -152,7 +129,8 @@ ApplyInverse(const Epetra_MultiVector& Xinput, Epetra_MultiVector& Y) const
 
     ML_CHK_ERR(R_->Multiply(true, Y_c, Y));
 
-    ML_CHK_ERR(Y.Multiply(1.0, InvDiag_, X, 1.0));
+    ML_CHK_ERR(ApplyInvBlockDiag(1.0, X, 1.0, X));
+    ////ML_CHK_ERR(Y.Multiply('T', 'N', 1.0, *InvBlockDiag_, X, 1.0));
   }
   else if (PrecType_ == ML_MFP_HYBRID)
   {
@@ -262,6 +240,7 @@ Compute(Epetra_MultiVector& NullSpace)
   // get parameters from the list
   string PrecType = List_.get("prec: type", "hybrid");
   string ColoringType = List_.get("coloring: type", "JONES_PLASSMAN");
+  string DiagonalColoringType = List_.get("diagonal coloring: type", "JONES_PLASSMAN");
   int OutputLevel = List_.get("output", 10);
   ML_Set_PrintLevel(OutputLevel);
 
@@ -302,11 +281,19 @@ Compute(Epetra_MultiVector& NullSpace)
     cout << " points, the operator range map "  << OperatorRangePoints << endl;
     cout << "The graph has " << GraphBlockRows << " rows and " << GraphNnz << endl;
     cout << "Processors used in computation = " << Comm().NumProc() << endl;
-    cout << "Number of PDE equations = " << NumPDEEqns << endl;
-    cout << "Null space dimension = " << NullSpaceDim << endl;
-    cout << "Preconditioner type = " << PrecType << endl;
-    cout << "Coloring type = " << ColoringType << endl;
+    cout << "Number of PDE equations        = " << NumPDEEqns << endl;
+    cout << "Null space dimension           = " << NullSpaceDim << endl;
+    cout << "Preconditioner type            = " << PrecType << endl;
+    cout << "Coloring type                  = " << ColoringType << endl;
+    cout << "Diagonal coloring type         = " << DiagonalColoringType << endl;
   }
+
+  ResetStartTime();
+
+  // probes for the block diagonal of the matrix.
+  ML_CHK_ERR(GetBlockDiagonal(DiagonalColoringType));
+
+  AddAndResetStartTime("block diagonal construction", true);
 
   // ML wrapper for Graph_
   ML_Operator* Graph_ML = ML_Operator_Create(Comm_ML());
@@ -336,6 +323,9 @@ Compute(Epetra_MultiVector& NullSpace)
   ML_Operator_Destroy(&BlockRtent_ML);
   ML_Operator_Destroy(&CoarseGraph_ML);
 
+  AddAndResetStartTime("construction of block C, R, and P", true);
+  if (ML_Get_PrintLevel() > 5) cout << endl;
+
   // ================================================== //
   // coloring of block graph:                           //
   // - color of block row `i' is given by `ColorMap[i]' //
@@ -361,7 +351,8 @@ Compute(Epetra_MultiVector& NullSpace)
 
   delete GraphCoarse;
 
-  AddAndResetStartTime("coloring", true);
+  AddAndResetStartTime("coarse graph coloring", true);
+  if (ML_Get_PrintLevel() > 5) cout << endl;
 
   // get some other information about the aggregates, to be used
   // in the QR factorization of the null space. NodesOfAggregate
@@ -664,20 +655,13 @@ Compute(Epetra_MultiVector& NullSpace)
   // Create C //
   // ======== //
 
-#if 1
   C_ML_ = ML_Operator_Create(Comm_ML());
   ML_2matmult(R_ML, AP_ML, C_ML_, ML_MSR_MATRIX);
-#else
-  ML_matmat_mult(R_ML, AP_ML, &C_ML_); 
-#endif
 
   ML_Operator_Destroy(&AP_ML);
   ML_Operator_Destroy(&R_ML);
   delete AP;
 
-  // FIXXXME
-  // the following are to build C_ as an Epetra_CrsMatrix
-  //ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(C_ML_, C_));
   C_ = new ML_Epetra::RowMatrix(C_ML_, &Comm(), false);
   assert (R_->OperatorRangeMap().SameAs(C_->OperatorDomainMap()));
 
@@ -730,4 +714,122 @@ TotalCPUTime() const
 
   return(TotalCPUTime);
 }
+
+// ============================================================================ 
+int ML_Epetra::MatrixFreePreconditioner::
+GetBlockDiagonal(string DiagonalColoringType)
+{
+  int OperatorDomainPoints = Operator_.OperatorDomainMap().NumGlobalPoints();
+  int OperatorRangePoints =  Operator_.OperatorRangeMap().NumGlobalPoints();
+  int GraphBlockRows = Graph_.NumGlobalBlockRows();
+  int GraphNnz = Graph_.NumGlobalNonzeros();
+  int NumPDEEqns = OperatorRangePoints / GraphBlockRows;
+
+  CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::JONES_PLASSMAN,
+                                            0, true, true);
+
+  Epetra_MapColoring& ColorMap = MapColoringTransform(const_cast<Epetra_CrsGraph&>(Graph_));
+
+  const int NumColors = ColorMap.MaxNumColors();
+
+  Epetra_MultiVector X(Operator_.OperatorDomainMap(), NumPDEEqns * NumColors);
+  X.PutScalar(0.0);
+
+  for (int i = 0; i < Graph_.NumMyBlockRows(); ++i)
+  {
+    int color = ColorMap[i] - 1;
+    for (int j = 0; j < NumPDEEqns; ++j)
+    {
+      X[color * NumPDEEqns + j][i * NumPDEEqns + j] = 1.0;
+    }
+  }
+
+  Epetra_MultiVector AX(Operator_.OperatorRangeMap(), NumPDEEqns * NumColors);
+
+  Operator_.Apply(X, AX);
+
+  InvBlockDiag_.resize(Operator_.OperatorRangeMap().NumMyElements() * NumPDEEqns);
+  
+  char job = 'A';
+  vector<double> S(NumPDEEqns), U(NumPDEEqns * NumPDEEqns), VT(NumPDEEqns * NumPDEEqns);
+  vector<double> WORK(5 * NumPDEEqns);
+  int LWORK = 5 * NumPDEEqns, INFO;
+
+  // extract the diagonals
+
+  Epetra_SerialDenseMatrix V(NumPDEEqns, NumPDEEqns);
+  Epetra_SerialDenseSVD SVD;
+  SVD.SetMatrix(V);
+
+  for (int i = 0; i < Graph_.NumMyBlockRows(); ++i)
+  {
+    int color = ColorMap[i] - 1;
+    int offset = i * NumPDEEqns * NumPDEEqns;
+
+    // extract the block
+    for (int j = 0; j < NumPDEEqns; ++j)
+    {
+      for (int k = 0; k < NumPDEEqns; ++k)
+      {
+        V(j, k) = AX[color * NumPDEEqns + j][i * NumPDEEqns + k];
+      }
+    }
+
+    // invert the block
+    SVD.Invert();
+    
+    // set the inverted block
+    for (int j = 0; j < NumPDEEqns; ++j)
+    {
+      for (int k = 0; k < NumPDEEqns; ++k)
+      {
+        InvBlockDiag_[offset + j * NumPDEEqns + k] = (*SVD.InvertedMatrix())(j, k);
+      }
+    }
+  }
+
+  /* some possible output for debugging
+  Epetra_MultiVector XXX(Copy, Operator_.OperatorRangeMap(), &InvBlockDiag_[0],
+                         Operator_.OperatorRangeMap().NumMyElements(), NumPDEEqns);
+  */
+  return(0);
+}
+
+// ============================================================================ 
+int ML_Epetra::MatrixFreePreconditioner::
+ApplyInvBlockDiag(const double alpha, Epetra_MultiVector& X,
+                  const double beta, const Epetra_MultiVector& B) const
+{
+  assert (X.NumVectors() == 1); // to be fixed
+  // FIXME
+  int OperatorRangePoints =  Operator_.OperatorRangeMap().NumGlobalPoints();
+  int GraphBlockRows = Graph_.NumGlobalBlockRows();
+  int NumPDEEqns = OperatorRangePoints / GraphBlockRows;
+  int NumPDEEqns2 = NumPDEEqns * NumPDEEqns;
+
+  char trans = 'N';
+  int NumVectorsX = X.NumVectors();
+  vector<double> tmp(NumPDEEqns);
+
+  size_t len = sizeof(double) * NumPDEEqns;
+  for (int i = 0; i < Graph_.NumMyBlockRows(); ++i)
+  {
+    memcpy(&tmp[0], &(B[0][i * NumPDEEqns]), len);
+
+    int offset = i * NumPDEEqns2;
+#if 0
+    cout << InvBlockDiag_[offset] << " " << InvBlockDiag_[offset + 1] << endl;
+    cout << InvBlockDiag_[offset + 2] << " " << InvBlockDiag_[offset + 3] << endl;
+    cout << endl;
+#endif
+
+    DGEMM_F77(&trans, &trans, &NumPDEEqns, &NumVectorsX, &NumPDEEqns,
+              (double*)&alpha, (double*)&InvBlockDiag_[offset], &NumPDEEqns, 
+              &tmp[0], &NumPDEEqns, (double*)&beta, 
+              (double*)&X[0][i * NumPDEEqns], &NumPDEEqns);
+  }
+
+  return(0);
+}
+
 #endif

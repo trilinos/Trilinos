@@ -22,6 +22,7 @@
 #include "Epetra_Operator.h"
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
+#include <vector>
 #include <map>
 
 class Epetra_Map;
@@ -62,8 +63,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
     MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
                              Teuchos::ParameterList& List,
-                             Epetra_MultiVector& NullSpace,
-                             const Epetra_Vector& InvDiag_);
+                             Epetra_MultiVector& NullSpace);
 
     //! destructor
     ~MatrixFreePreconditioner();
@@ -172,6 +172,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
                 ML_Operator** R, ML_Operator** C, int NumPDEEqns = 1, 
                 int NullSpaceDim = 1, double* NullSpace = NULL);
 
+    //! Probes for the block diagonal of the given operator.
+    int GetBlockDiagonal(string DiagonalColoringType);
+
   private:
 
     //! Computes the preconditioner.
@@ -186,6 +189,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Applies one sweep of Jacobi to vector \c X, using \c X as starting solution.
     int ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
                     const double omega, Epetra_MultiVector& tmp) const;
+
+    int ApplyInvBlockDiag(const double alpha, Epetra_MultiVector& X,
+                          const double gamma, const Epetra_MultiVector& B) const;
 
     // @} 
     // @{ \name Timing
@@ -241,7 +247,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Fine-level graph
     const Epetra_CrsGraph& Graph_;
     //! Inverse of the diagonal of \c Operator_ as provided by the user.
-    const Epetra_Vector& InvDiag_;
+    vector<double> InvBlockDiag_;
 
     //! Restriction from fine to coarse.
     Epetra_CrsMatrix* R_;
