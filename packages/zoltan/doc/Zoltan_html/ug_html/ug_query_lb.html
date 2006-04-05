@@ -1716,9 +1716,9 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_HG_Size_CS</i></b>(<i>data, num_lists, num_pins, 
 format, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: num_lists&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: num_pins&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: format&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_lists&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_pins&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: format&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
 <p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
 REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
@@ -2009,9 +2009,9 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>SUBROUTINE <b><i>Get_HG_Size_Edge_Weights</i></b>(<i>data, num_edges, ierr</i>)&nbsp;
-<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: num_edges&nbsp;
-<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_edges
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
 <p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
 REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
