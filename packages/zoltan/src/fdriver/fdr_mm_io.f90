@@ -61,6 +61,8 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: npins, nedges, nvtxs
   integer(Zoltan_INT), pointer ::  iidx(:) ! pin data
   integer(Zoltan_INT), pointer ::  jidx(:) ! pin data
+  integer i, prev, temp
+  logical sorted
 !/***************************** BEGIN EXECUTION ******************************/
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -98,6 +100,31 @@ type(PARIO_INFO) :: pio_info
 
 !   Don't need the numerical values.
     if (associated(mm_rval)) deallocate(mm_rval)
+
+!   EBEB Currently, our f90 version assumes the i indices are in sorted order.
+!   EBEB If the MM input file is not sorted by i index, we transpose the 
+!   EBEB matrix hoping that it was sorted by j index!
+!   EBEB This is a hack to enable testing and should be removed in the future
+!   EBEB when index sorting has been implemented (see KDDKDD).
+    sorted = .true.
+    prev = 0
+    do i = 0, mm_nnz-1
+      if (mm_iidx(i) < prev) then
+        sorted = .false.
+        exit
+      endif
+      prev = mm_iidx(i)
+    enddo
+
+    if (.not. sorted) then
+      print *, 'Warning: Matrix not sorted by i index; transposing matrix!'
+      ! Swap iidx and jidx arrays
+      do i = 0, mm_nnz-1
+        temp = mm_iidx(i)
+        mm_iidx(i) = mm_jidx(i)
+        mm_jidx(i) = temp
+      enddo
+    endif
 
   endif ! Proc == 0
 
