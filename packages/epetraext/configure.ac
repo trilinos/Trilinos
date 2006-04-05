@@ -348,12 +348,12 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   ,[Build the Thyra adapater support in EpetraExt.]
   ,[Build the Thyra adapater support in EpetraExt.  Can be overridden with --disable-epetraext-thyra.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+TAC_ARG_INFORM_SUBPACKAGE_USED(
   epetra, thyra, EPETRA_THYRA, ENABLE_EPETRA_THYRA, yes
   ,[See epetra/configure]
   ,[See epetra/configure])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+TAC_ARG_INFORM_SUBPACKAGE_USED(
   amesos, thyra, AMESOS_THYRA, ENABLE_AMESOS_THYRA, yes
   ,[See amesos/configure]
   ,[See amesos/configure])

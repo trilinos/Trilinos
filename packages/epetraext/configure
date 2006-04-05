@@ -931,8 +931,10 @@ Optional Features:
                           be overridden with --disable-epetraext-thyra.
   --enable-epetraext-thyra
                           Build the Thyra adapater support in EpetraExt.
+  --enable-epetra         See epetra/configure
   --enable-thyra          See epetra/configure
   --enable-epetra-thyra   See epetra/configure
+  --enable-amesos         See amesos/configure
   --enable-thyra          See amesos/configure
   --enable-amesos-thyra   See amesos/configure
   --enable-tests          Build tests for all Trilinos packages (not all
@@ -4264,7 +4266,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4267:" \
+echo "$as_me:4269:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8300,6 +8302,14 @@ fi
 
 
 
+# Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi;
+
 # Check whether --enable-thyra or --disable-thyra was given.
 if test "${enable_thyra+set}" = set; then
   enableval="$enable_thyra"
@@ -8310,7 +8320,11 @@ fi;
 
 if test "Xyes
   " != "Xno"; then
-  ac_cv_epetra_using_thyra_default=$ac_cv_implicit_use_thyra
+  if test "X$ac_cv_implicit_use_epetra" != "Xno"; then
+    ac_cv_epetra_using_thyra_default=$ac_cv_implicit_use_thyra
+  else
+    ac_cv_epetra_using_thyra_default=no
+  fi
 else
   ac_cv_epetra_using_thyra_default=no
 fi
@@ -8354,6 +8368,14 @@ fi
 
 
 
+# Check whether --enable-amesos or --disable-amesos was given.
+if test "${enable_amesos+set}" = set; then
+  enableval="$enable_amesos"
+  ac_cv_implicit_use_amesos=$enableval
+else
+  ac_cv_implicit_use_amesos=no
+fi;
+
 # Check whether --enable-thyra or --disable-thyra was given.
 if test "${enable_thyra+set}" = set; then
   enableval="$enable_thyra"
@@ -8364,7 +8386,11 @@ fi;
 
 if test "Xyes
   " != "Xno"; then
-  ac_cv_amesos_using_thyra_default=$ac_cv_implicit_use_thyra
+  if test "X$ac_cv_implicit_use_amesos" != "Xno"; then
+    ac_cv_amesos_using_thyra_default=$ac_cv_implicit_use_thyra
+  else
+    ac_cv_amesos_using_thyra_default=no
+  fi
 else
   ac_cv_amesos_using_thyra_default=no
 fi
@@ -9703,7 +9729,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9706: \"$ac_link\") >&5
+(eval echo $as_me:9732: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9781,7 +9807,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9784: \"$ac_link\") >&5
+(eval echo $as_me:9810: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13272,7 +13298,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:13275: \"$ac_link\") >&5
+(eval echo $as_me:13301: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13350,7 +13376,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13353: \"$ac_link\") >&5
+(eval echo $as_me:13379: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

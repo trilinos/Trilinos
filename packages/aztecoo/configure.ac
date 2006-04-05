@@ -244,7 +244,10 @@ fi
 # The following section is required to decide if the AztecOO ParameterList
 # interface should be built.
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, teuchos, AZTECOO_TEUCHOS, HAVE_AZTECOO_TEUCHOS, yes, [Build Teuchos ParameterList support in AztecOO.], [Build Teuchos ParameterList support in AztecOO.  Can be overridden with --disable-aztecoo-teuchos.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  aztecoo, teuchos, AZTECOO_TEUCHOS, HAVE_AZTECOO_TEUCHOS, yes,
+  [Build Teuchos ParameterList support in AztecOO.],
+  [Build Teuchos ParameterList support in AztecOO.  Can be overridden with --disable-aztecoo-teuchos.])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -276,7 +279,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   [Build the Thyra operator/vector adapater support in AztecOO (also rquires epetraext).],
   [Build the Thyra operator/vector adapater support in AztecOO (also rquires epetraext).  Can be overridden with --disable-aztecoo-thyra.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+TAC_ARG_INFORM_SUBPACKAGE_USED(
   epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes,
   [],
   [Can be overridden with --disable-epetraext-thyra .])

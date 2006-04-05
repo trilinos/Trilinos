@@ -911,6 +911,8 @@ Optional Features:
   --enable-thyra          Build source code and tests that use Thyra.
   --enable-belos-thyra    Build source code and tests that use Thyra. Can be
                           overridden with --disable-belos-thyra.
+  --enable-epetra         Build source code and tests that use Epetra-Thyra
+                          wrappers.
   --enable-thyra          Build source code and tests that use Epetra-Thyra
                           wrappers.
   --enable-epetra-thyra   Build source code and tests that use Epetra-Thyra
@@ -3826,7 +3828,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3829:" \
+echo "$as_me:3831:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7254,6 +7256,14 @@ fi
 
 
 
+# Check whether --enable-epetra or --disable-epetra was given.
+if test "${enable_epetra+set}" = set; then
+  enableval="$enable_epetra"
+  ac_cv_implicit_use_epetra=$enableval
+else
+  ac_cv_implicit_use_epetra=no
+fi;
+
 # Check whether --enable-thyra or --disable-thyra was given.
 if test "${enable_thyra+set}" = set; then
   enableval="$enable_thyra"
@@ -7263,7 +7273,11 @@ else
 fi;
 
 if test "Xyes" != "Xno"; then
-  ac_cv_epetra_using_thyra_default=$ac_cv_implicit_use_thyra
+  if test "X$ac_cv_implicit_use_epetra" != "Xno"; then
+    ac_cv_epetra_using_thyra_default=$ac_cv_implicit_use_thyra
+  else
+    ac_cv_epetra_using_thyra_default=no
+  fi
 else
   ac_cv_epetra_using_thyra_default=no
 fi
@@ -7403,7 +7417,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7406: \"$ac_link\") >&5
+(eval echo $as_me:7420: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7481,7 +7495,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7484: \"$ac_link\") >&5
+(eval echo $as_me:7498: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10312,7 +10326,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10315: \"$ac_link\") >&5
+(eval echo $as_me:10329: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10390,7 +10404,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10393: \"$ac_link\") >&5
+(eval echo $as_me:10407: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
