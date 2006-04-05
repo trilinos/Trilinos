@@ -44,9 +44,36 @@
 /*----------------------------------------------------------------------*
  |  ctor (public)                                             m.gee 3/06|
  *----------------------------------------------------------------------*/
-NLNML::NLNML_CoarseLevelNoxInterface::NLNML_CoarseLevelNoxInterface()
+NLNML::NLNML_CoarseLevelNoxInterface::NLNML_CoarseLevelNoxInterface(
+                 RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> finterface,
+                 int level,int outlevel,
+                 RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P,
+                 const Epetra_BlockMap& this_bmap,
+                 int maxlevel) :
+level_(level),
+maxlevel_(maxlevel),
+outputlevel_(outlevel),
+isFASmodfied_(false),
+nFcalls_(0),
+fineinterface_(finterface),
+P_(P),
+fbar_(NULL),
+fxbar_(NULL)
 {
-
+  this_bmap_ = rcp(new Epetra_BlockMap(this_bmap));
+  
+  // create a series of working vectors to be used on prolongation/restriction
+  wvec_.clear();
+  if (Level())
+  {
+    wvec_.resize(Level()+1);
+    for (int i=0; i<Level(); ++i)
+      wvec_[i] = rcp(new Epetra_Vector((*P)[i+1]->OperatorRangeMap(),false));
+    wvec_[Level()] = rcp(new Epetra_Vector((*P)[Level()]->OperatorDomainMap(),false));
+  }
+  
+  
+  
   return;
 }
 
@@ -83,9 +110,44 @@ bool NLNML::NLNML_CoarseLevelNoxInterface::computeF(
 /*----------------------------------------------------------------------*
  |  restrict from fine to this level (public)                 m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_CoarseLevelNoxInterface::restrict_fine_to_this()
+Epetra_Vector*  NLNML::NLNML_CoarseLevelNoxInterface::restrict_fine_to_this(
+                                                 const Epetra_Vector& xfine)
 {
-  return;
+  if (!Level())
+  {
+    Epetra_Vector* xcoarse = new Epetra_Vector(xfine);
+    return xcoarse;
+  }
+  else
+  {
+    // Note that the GIDs in xfine match those of the fineinterface and
+    // might be different from those in P_[1]->OperatorRangeMap().
+    // The LIDs and the map match, so we have to copy xfine to xfineP
+    // using LIDs
+    Epetra_Vector* xfineP = wvec_[0].get(); // RangeMap of P_[1]
+    if (xfine.MyLength() != xfineP->MyLength() || xfine.GlobalLength() != xfineP->GlobalLength())
+    {
+        cout << "**ERR**: NLNML::NLNML_CoarseLevelNoxInterface::restrict_fine_to_this:\n"
+             << "**ERR**: mismatch in dimension of xfine and xfineP\n"
+             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    const int mylength = xfine.MyLength();
+    for (int i=0; i<mylength; i++)
+      (*xfineP)[i] = xfine[i];      
+    
+    // loop from the finest level to this level and
+    // apply series of restrictions (that is transposed prolongations)
+    Epetra_Vector* fvec = xfineP;
+    for (int i=0; i<Level()-1; i++)
+    {
+      Epetra_Vector* cvec = wvec_[i+1].get();
+      (*P_)[i+1]->Multiply(true,*fvec,*cvec);
+      fvec = cvec;
+    }
+    Epetra_Vector* out = new Epetra_Vector((*P_)[Level()]->OperatorDomainMap(),false); 
+    (*P_)[Level()]->Multiply(true,*fvec,*out);
+    return out;   
+  }
 }
 
 /*----------------------------------------------------------------------*

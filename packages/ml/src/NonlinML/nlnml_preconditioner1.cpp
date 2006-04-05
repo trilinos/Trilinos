@@ -375,6 +375,90 @@ bool NLNML::NLNML_Preconditioner::Compute_Linearpreconditioner(
 bool NLNML::NLNML_Preconditioner::Compute_Nonlinearpreconditioner(
                                                   const Epetra_Vector& x)
 {
+  // extract the prolongations from the hierachy
+  int maxlevel = getParameter("nlnML max levels",10);
+  
+  RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P = 
+    rcp( new vector< RefCountPtr<Epetra_CrsMatrix> >(maxlevel) );
+    
+  vector< RefCountPtr<Epetra_CrsMatrix> >& Pref = *P;
+  for (int i=0; i<maxlevel; ++i) Pref[i] = null;
+  for (int i=1; i<maxlevel; ++i) // there is not Pmat on level 0
+  {
+    double t1     = GetClock();
+    int    maxnnz = 0;
+    double cputime;
+    Epetra_CrsMatrix* tmp;
+    ML_Operator2EpetraCrsMatrix(&(ml_->Pmat[i]), tmp, maxnnz, 
+                                false, cputime);
+    (*P)[i] = rcp(tmp);
+    (*P)[i]->OptimizeStorage();
+    double t2 = GetClock() - t1;
+    if (OutLevel()>5 && Comm().MyPID()==0)
+      cout << "nlnML (level " << i << "): extraction of P in " << t2 << " sec\n";
+  }
+  
+  // create the vector of nonlinear levels
+  nlnlevel_ = rcp( new vector<RefCountPtr<NLNML::NLNML_NonlinearLevel> >(maxlevel));
+  
+  // loop all levels and allocate the nonlinear level class  
+  for (int i=0; i<maxlevel; ++i)
+  {
+    int spatial = getParameter("nlnML spatial dimension",1);
+    int dimns   = getParameter("nlnML null space: dimension",1);
+    int numpde  = 0;
+    if (i==0) numpde = getParameter("nlnML PDE equations",1);
+    else if (spatial==1)
+      numpde=1;
+    else if (spatial==2)
+      numpde=3;
+    else if (spatial==3)
+      numpde=6;
+    else
+    {
+      cout << "**ERR**: NLNML::NLNML_Preconditioner::Compute_Nonlinearpreconditioner:\n"
+           << "**ERR**: nlnML spatial dimension = " << spatial << " unknown\n"
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    
+    // choose the nonlinear solver
+    bool isnlncg  = true;
+    int  niterscg = 0;
+    if (i==0) // fine
+    {
+      isnlncg  = getParameter("nlnML use nlncg on fine level",true);
+      niterscg = getParameter("nlnML max iterations newton-krylov fine level",40);
+    }
+    else if (i==maxlevel-1) // coarse
+    {
+      isnlncg  = getParameter("nlnML use nlncg on coarsest level",true);
+      niterscg = getParameter("nlnML max iterations newton-krylov coarsest level",40);
+    }
+    else // intermediate
+    {
+      isnlncg  = getParameter("nlnML use nlncg on medium level",true);
+      niterscg = getParameter("nlnML max iterations newton-krylov medium level",40);
+    }
+    
+    // Allocate the nonlinear level class
+    (*nlnlevel_)[i] = rcp( new NLNML::NLNML_NonlinearLevel(i,params_,ml_,ag_,
+                                                           P,interface_,Comm(),
+                                                           fineJac_,
+                                                           x,isnlncg,niterscg,
+                                                           numpde,dimns));
+  } // for (int i=0; i<maxlevel; ++i)
+  
+  // don't need the ag_ and ml_ objects anymore
+  if (ag_)
+  {
+     ML_Aggregate_Destroy(&ag_);
+     ag_ = 0;
+  }
+  if (ml_)
+  {
+     ML_Destroy(&ml_);
+     ml_ = 0;
+  }
   return true;
 }
 
@@ -390,7 +474,8 @@ int NLNML::NLNML_Preconditioner::ApplyInverse(
   if (!isinit())
   {
     Epetra_Vector x(View,X,0);
-    NLNML::NLNML_Preconditioner* tmp = const_cast<NLNML::NLNML_Preconditioner*>(this);
+    NLNML::NLNML_Preconditioner* tmp = 
+                          const_cast<NLNML::NLNML_Preconditioner*>(this);
     tmp->computePreconditioner(x,*tmp);
   } 
   

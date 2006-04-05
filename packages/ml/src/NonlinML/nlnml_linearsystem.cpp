@@ -56,7 +56,7 @@ NLNML::NLNML_LinearSystem::NLNML_LinearSystem(
                RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec,
                RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
                RefCountPtr<Epetra_Operator> Prec,
-               const Epetra_Vector& soln,
+               //const Epetra_Vector& soln,
                bool ismatrixfree,
                int level,
                int printlevel) :
@@ -65,7 +65,7 @@ J_(J),
 iPrec_(iPrec),
 coarseinterface_(coarseinterface),
 Prec_(null),
-soln_(soln),
+//soln_(soln),
 ismatrixfree_(ismatrixfree),
 level_(level),
 printlevel_(printlevel)               

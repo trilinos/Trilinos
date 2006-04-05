@@ -63,7 +63,7 @@ public:
               RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec,
               RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
               RefCountPtr<Epetra_Operator> Prec,
-              const Epetra_Vector& soln,
+              //const Epetra_Vector& soln,
               bool ismatrixfree,
               int level,
               int printlevel);
@@ -133,7 +133,7 @@ RefCountPtr<Epetra_Operator>                        J_;
 RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec_;
 RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface>   coarseinterface_;
 RefCountPtr<Epetra_Operator>                        Prec_;
-const Epetra_Vector&                                soln_;
+//const Epetra_Vector&                                soln_;
 bool                                                ismatrixfree_;
 int                                                 level_;
 int                                                 printlevel_;

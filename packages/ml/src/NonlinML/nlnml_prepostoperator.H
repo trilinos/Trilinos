@@ -31,11 +31,11 @@
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
 /*!
- * \file nlnml_finelevelnoxinterface.H
+ * \file nlnml_prepostoperator.H
  *
- * \class NLNML_finelevelnoxinterface
+ * \class NLNML_PrePostOperator
  *
- * \brief class NLNML_coarselevelnoxinterface used by the nonlinear preconditioner
+ * \brief class NLNML_PrePostOperator used by the nonlinear preconditioner
  *
  * \date Last update do Doxygen: 31-Mar-05
  *
@@ -44,8 +44,8 @@
 #include "ml_include.h"
 
 #if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
-#ifndef NLNML_COARSELEVELNOXINTERFACE_H
-#define NLNML_COARSELEVELNOXINTERFACE_H
+#ifndef NLNML_PREPOSTOPERATOR_H
+#define NLNML_PREPOSTOPERATOR_H
 
 #include <iostream>
 
@@ -65,20 +65,12 @@
 #include "Epetra_Import.h"
 
 // NOX headers
-#include "NOX_Epetra_Interface_Jacobian.H"
-#include "NOX_Epetra_Interface_Required.H"
-#include "NOX_Epetra_Interface_Preconditioner.H"
-
-#include "Teuchos_RefCountPtr.hpp"
-
-// ML-headers
-#include "ml_epetra_utils.h"
-#include "ml_epetra.h"
-#include "ml_epetra_operator.h"
-#include "ml_MultiLevelOperator.h"
+#include "NOX_Abstract_PrePostOperator.H"	
+#include "NOX_Parameter_Arbitrary.H"	
 
 // own headers
 #include "nlnml_finelevelnoxinterface.H"
+#include "nlnml_coarselevelnoxinterface.H"
 
 // forward declarations
 class Epetra_CrsMatrix;
@@ -89,61 +81,39 @@ namespace NLNML
 {
 
 
-class NLNML_CoarseLevelNoxInterface : public virtual NOX::Epetra::Interface::Required
+class NLNML_PrePostOperator : public virtual NOX::Abstract::PrePostOperator,
+                              public virtual NOX::Parameter::Arbitrary
 {
 public:
 
-  NLNML_CoarseLevelNoxInterface(
-                     RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> finterface,
-                     int level,int outlevel,
-                     RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P,
-                     const Epetra_BlockMap& this_bmap,
-                     int maxlevel);
-  void recreate();
+  NLNML_PrePostOperator(
+              RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
+              RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> finterface);
+
+  NLNML_PrePostOperator(const NLNML::NLNML_PrePostOperator& old);
+
+  virtual ~NLNML_PrePostOperator();
   
-  virtual ~NLNML_CoarseLevelNoxInterface();
+  void runPreSolve(const NOX::Solver::Generic& solver);
   
-  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
-			const FillType fillFlag);
-
-  Epetra_Vector* restrict_fine_to_this(const Epetra_Vector& xfine);
-  void prolong_this_to_fine();
-  void restrict_to_next_coarser_level(); 
-  void prolong_to_this_level();                                  
+  Arbitrary* clone() const
+  { NLNML::NLNML_PrePostOperator* A = new NLNML::NLNML_PrePostOperator(*this);
+    return A;}
   
-  void setP();    
-
-  void setModifiedSystem();
-
-  bool isFAS() { return isFASmodfied_; }
-
-  void ApplyAllConstraints();
-
-  int Level() { return level_; }
-
-  void BlockMap();
+  const string& getType() const { return type_; }
 
 private:
-  NLNML_CoarseLevelNoxInterface(NLNML_CoarseLevelNoxInterface& old);
-  NLNML_CoarseLevelNoxInterface operator = (const NLNML_CoarseLevelNoxInterface& old);
 
-  inline int Output() const { return outputlevel_; }
-  inline int Level() const { return level_; }
+  NLNML_PrePostOperator(NLNML_PrePostOperator& old);
+  NLNML_PrePostOperator operator = (const NLNML_PrePostOperator& old);
 
 protected:
 
-  int  level_;
-  int  maxlevel_;
-  int  outputlevel_;
-  bool isFASmodfied_; 
-  int  nFcalls_;
-  RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>        fineinterface_;
-  RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P_;
-  RefCountPtr<Epetra_BlockMap>                           this_bmap_;
-  vector<RefCountPtr<Epetra_Vector> >                    wvec_;
-  Epetra_Vector*                                         fbar_;
-  Epetra_Vector*                                         fxbar_; 
-}; // class NLNML_CoarseLevelNoxInterface
+  string                                            type_;
+  RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>   fineinterface_;
+  RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface_;
+  
+}; // class NLNML_PREPOSTOPERATOR_H
 } // namespace NLNML
 #endif
 #endif

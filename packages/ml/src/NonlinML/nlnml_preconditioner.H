@@ -40,14 +40,15 @@
  * \date Last update do Doxygen: 31-Mar-05
  *
  */
+#include "ml_common.h"
+#include "ml_include.h"
+
 #if defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_AMESOS) && defined(HAVE_ML_EPETRAEXT)
 
 #ifndef NLNML_PRECONDITIONER_H
 #define NLNML_PRECONDITIONER_H
 
 // ML-headers
-#include "ml_common.h"
-#include "ml_include.h"
 #include "ml_epetra_utils.h"
 #include "ml_epetra.h"
 #include "ml_epetra_operator.h"
@@ -88,6 +89,7 @@
 // own headers
 #include "nlnml_preconditioner_utils.H"
 #include "nlnml_finelevelnoxinterface.H"
+#include "nlnml_nonlinearlevel.H"
 
 // ---------- Forward Declarations ----------
 class NLNML::NLNML_FineLevelNoxInterface;
@@ -189,15 +191,16 @@ private:
   bool  isinit_; 
   int   ncalls_NewPrec_;
   
-  const Epetra_Comm&                              comm_;
-  RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface_;
-  RefCountPtr<Teuchos::ParameterList>             params_;
-  RefCountPtr<NOX::Solver::Manager>               noxsolver_;
-  RefCountPtr<Epetra_CrsMatrix>                   fineJac_;
-  RefCountPtr<Epetra_Map>                         rowmap_;
-  RefCountPtr<ML_Epetra::MultiLevelOperator>      linPrec_;
-  ML*                                             ml_;
-  ML_Aggregate*                                   ag_;
+  const Epetra_Comm&                                              comm_;
+  RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>                 interface_;
+  RefCountPtr<Teuchos::ParameterList>                             params_;
+  RefCountPtr<NOX::Solver::Manager>                               noxsolver_;
+  RefCountPtr<Epetra_CrsMatrix>                                   fineJac_;
+  RefCountPtr<Epetra_Map>                                         rowmap_;
+  RefCountPtr<ML_Epetra::MultiLevelOperator>                      linPrec_;
+  RefCountPtr<vector<RefCountPtr<NLNML::NLNML_NonlinearLevel> > > nlnlevel_;
+  ML*                                                             ml_;
+  ML_Aggregate*                                                   ag_;
 
 
 }; // class NLNML_Preconditioner

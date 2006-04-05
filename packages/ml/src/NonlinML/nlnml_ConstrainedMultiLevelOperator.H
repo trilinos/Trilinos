@@ -85,7 +85,7 @@ class NLNML_ConstrainedMultiLevelOperator : public virtual Epetra_Operator
 public:
 
   explicit NLNML_ConstrainedMultiLevelOperator(
-              RefCountPtr<ML_Epetra::MultiLevelOperator> ml_operator,
+              RefCountPtr<ML_Epetra::MultiLevelOperator>        ml_operator,
               RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface);
   
   virtual ~NLNML_ConstrainedMultiLevelOperator() {}
