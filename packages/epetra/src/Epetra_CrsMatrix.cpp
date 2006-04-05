@@ -1365,7 +1365,7 @@ int Epetra_CrsMatrix::InvColMaxs(Epetra_Vector& x) const {
 
   if(needExport) {
     //x.PutScalar(0.0);
-    EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), Insert)); // Fill x with Values from import vector
+    EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), AbsMax)); // Fill x with Values from import vector
     delete x_tmp;
     xp = (double*) x.Values();
   }
