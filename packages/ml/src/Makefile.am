@@ -176,6 +176,8 @@ $(srcdir)/NonlinML/nlnml_coarselevelnoxinterface.H       \
 $(srcdir)/NonlinML/nlnml_preconditioner.H                \
 $(srcdir)/NonlinML/nlnml_preconditioner_utils.H          \
 $(srcdir)/NonlinML/nlnml_linearsystem.H                  \
+$(srcdir)/NonlinML/nlnml_nonlinearlevel.H                \
+$(srcdir)/NonlinML/nlnml_prepostoperator.H               \
 $(srcdir)/MLAPI/MLAPI.h                      \
 $(srcdir)/MLAPI/MLAPI_Aggregation.h          \
 $(srcdir)/MLAPI/MLAPI_BaseObject.h           \
@@ -258,8 +260,10 @@ $(srcdir)/MLAPI/MLAPI_Error.cpp                                  \
 $(srcdir)/MLAPI/MLAPI_DistributedMatrix.cpp                      \
 $(srcdir)/MLAPI/MLAPI_SAMIS.cpp                                  \
 $(srcdir)/MLAPI/MLAPI_LinearCombinations.cpp                     \
+$(srcdir)/NonlinML/nlnml_prepostoperator.cpp                     \
 $(srcdir)/NonlinML/nlnml_ConstrainedMultiLevelOperator.cpp       \
 $(srcdir)/NonlinML/nlnml_linearsystem.cpp                        \
+$(srcdir)/NonlinML/nlnml_nonlinearlevel.cpp                      \
 $(srcdir)/NonlinML/nlnml_coarselevelnoxinterface.cpp             \
 $(srcdir)/NonlinML/nlnml_preconditioner1.cpp                     \
 $(srcdir)/NonlinML/nlnml_preconditioner_utils.cpp

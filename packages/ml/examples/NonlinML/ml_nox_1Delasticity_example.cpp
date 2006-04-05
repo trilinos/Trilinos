@@ -347,7 +347,7 @@ int main(int argc, char *argv[])
      // iReq   = fineinterface.get();
      bool matrixfree    = mlparams.get("nlnML is matrixfree",false);
      int  ml_printlevel = mlparams.get("nlnML output",6);
-     linSys = new NLNML::NLNML_LinearSystem(B,B,Prec,null,Prec,soln,matrixfree,0,ml_printlevel);
+     linSys = new NLNML::NLNML_LinearSystem(B,B,Prec,null,Prec,matrixfree,0,ml_printlevel);
    }
 #if 0
    else
