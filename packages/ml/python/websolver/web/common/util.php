@@ -2,13 +2,18 @@
 
 $counter = 1;
 
-function print_header()
-{
+################################################################################
+
+function print_header() {
+
   echo '<p class="heading">WebSolver</p>';
+  
 }
 
-function print_problem($ProblemIDs, $flag)
-{
+################################################################################
+
+function print_problem($ProblemIDs, $flag) {
+
   echo '<p class="subheading">Current Settings:</p>';
   echo 'Selected problem IDs:';
   echo '<ol>';
@@ -24,10 +29,13 @@ function print_problem($ProblemIDs, $flag)
     echo '<input type=hidden type=ProblemIDs value="">';
     echo '<input type = submit value = "reset ProblemIDs" ></form>';
   }
+  
 }
 
-function fixed_parameter($name, $type, $value)
-{
+################################################################################
+
+function fixed_parameter($name, $type, $value) {
+
   global $counter;
   echo '<tr>';
   $name2 = "__PyTrilinos__name" . $counter;
@@ -37,10 +45,13 @@ function fixed_parameter($name, $type, $value)
   echo "<td><input type=text name=$value2 value=\"$value\" size=50/></td>";
   echo '</tr>';
   $counter = $counter + 1;
+
 }
 
-function custom_parameter($name, $type, $value)
-{
+################################################################################
+
+function custom_parameter($name, $type, $value) {
+
   global $counter;
   echo '<tr>';
   $name2 = "__PyTrilinos__name" . $counter;
@@ -49,10 +60,13 @@ function custom_parameter($name, $type, $value)
   echo "<td><input type=text name=$value2 value=\"$value\" size=30/></td>";
   echo '</tr>';
   $counter = $counter + 1;
+
 }
 
-function process($analyze, $direct, $iterative) 
-{ 
+################################################################################
+
+function process($analyze, $direct, $iterative) { 
+
   $timestamp = date("y-m-d_H.i.s", time());
   mkdir("runs/$timestamp");
   chmod("runs/$timestamp", 0775);
@@ -121,8 +135,10 @@ function process($analyze, $direct, $iterative)
 
 }
 
-function my_footer()
-{
+################################################################################
+
+function my_footer() {
+
   global $ProblemIDs;
 
   echo "<br>";
@@ -134,10 +150,13 @@ function my_footer()
   echo '<tr><td><form action="step_1.html" enctype="multipart/form-data" method="post" name="inputForm">';
   echo '<input type=hidden name=ProblemIDs value="' . $ProblemIDs . '">';
   echo '<input type=submit value="Step 1" ></form></td></tr>';
-} 
 
-function write($what)
-{
+}
+
+################################################################################
+
+function write($what) {
+
   global $ProblemID;
 
   $filename = '/people_old/trilinos_www/matrices/comments.txt';
@@ -145,12 +164,16 @@ function write($what)
   fputs($fp, '<p><b>' . $ProblemID . '</b>');
   fputs($fp, '<p>' . $what);
   fclose($fp);
+
 }
 
-function comment()
-{
+################################################################################
+
+function comment() {
+
   global $ProblemID;
-?>
+  
+  ?>
   <form action="#" enctype="multipart/form-data" method="post" name="writeComment">
 
   <p>Comments to be added to step 4:
@@ -159,7 +182,8 @@ function comment()
   <p><textarea name=comment rows=4 cols=60></textarea>
   <input type=submit value="add to comments">
   </form>
+  <?
+  
+} 
 
-<?
-}
 ?>
