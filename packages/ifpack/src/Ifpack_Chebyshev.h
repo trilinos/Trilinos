@@ -14,6 +14,7 @@ class Epetra_Map;
 class Epetra_Comm;
 class Epetra_Time;
 class Epetra_Vector;
+class Epetra_Operator;
 class Epetra_RowMatrix;
 
 //! Ifpack_Chebyshev: class for preconditioning with Chebyshev polynomials in Ifpack
@@ -58,13 +59,13 @@ class Ifpack_Chebyshev : public Ifpack_Preconditioner {
 public:
 
   //@{ \name Constructors/Destructors
-  //! Ifpack_Chebyshev constructor with given Epetra_RowMatrix.
+  //! Ifpack_Chebyshev constructor with given Epetra_Operator/Epetra_RowMatrix.
   /*! Creates an instance of Ifpack_Chebyshev class.
    *
    * \param
-   * Matrix - (In) Pointer to matrix to precondition.
+   * Matrix - (In) Pointer to operator or matrix to precondition.
    */
-  Ifpack_Chebyshev(const Epetra_RowMatrix* Matrix);
+  Ifpack_Chebyshev(const Epetra_Operator* Matrix);
 
   //! Destructor.
   virtual ~Ifpack_Chebyshev();
@@ -318,8 +319,12 @@ private:
   int NumGlobalRows_;
   //! Number of global nonzeros.
   int NumGlobalNonzeros_;
-  //! Pointers to the matrix to be preconditioned.
+  //! Pointers to the matrix to be preconditioned as an Epetra_Operator.
+  const Epetra_Operator* Operator_;
+  //! Pointers to the matrix to be preconditioned as an Epetra_RowMatrix.
   const Epetra_RowMatrix* Matrix_;
+  //! If \c true, the Operator_ is an Epetra_RowMatrix.
+  bool IsRowMatrix_;
   //! Contains the inverse of diagonal elements of \c Matrix.
   mutable Epetra_Vector* InvDiagonal_;
   //! Time object to track timing.

@@ -15,7 +15,7 @@
 
 //==============================================================================
 Ifpack_Chebyshev::
-Ifpack_Chebyshev(const Epetra_RowMatrix* Matrix) :
+Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   IsInitialized_(false),
   IsComputed_(false),
   NumInitialize_(0),
@@ -39,12 +39,16 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Matrix) :
   NumMyNonzeros_(0),
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
-  Matrix_(Matrix),
   InvDiagonal_(0),
+  Operator_(Operator),
+  Matrix_(0),
+  IsRowMatrix_(false), 
   Time_(0),
   ZeroStartingSolution_(true)
 {
-
+  Matrix_ = dynamic_cast<const Epetra_RowMatrix*>(Operator);
+  if (Matrix_ != 0)
+    IsRowMatrix_ = true;
 }
 
 //==============================================================================
@@ -69,6 +73,11 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
   ZeroStartingSolution_ = List.get("chebyshev: zero starting solution", 
                                    ZeroStartingSolution_);
 
+  Epetra_Vector* ID     = List.get("chebyshev: operator inv diagonal", 
+                                   (Epetra_Vector*)0);
+
+  if (ID != 0) InvDiagonal_ = new Epetra_Vector(*ID);
+
   SetLabel();
 
   return(0);
@@ -77,19 +86,19 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
 //==============================================================================
 const Epetra_Comm& Ifpack_Chebyshev::Comm() const
 {
-  return(Matrix_->Comm());
+  return(Operator_->Comm());
 }
 
 //==============================================================================
 const Epetra_Map& Ifpack_Chebyshev::OperatorDomainMap() const
 {
-  return(Matrix_->OperatorDomainMap());
+  return(Operator_->OperatorDomainMap());
 }
 
 //==============================================================================
 const Epetra_Map& Ifpack_Chebyshev::OperatorRangeMap() const
 {
-  return(Matrix_->OperatorRangeMap());
+  return(Operator_->OperatorRangeMap());
 }
 
 //==============================================================================
@@ -102,7 +111,15 @@ Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-2);
 
-  IFPACK_CHK_ERR(Matrix_->Multiply(UseTranspose(),X,Y));
+  if (IsRowMatrix_)
+  {
+    IFPACK_CHK_ERR(Matrix_->Multiply(UseTranspose(),X,Y));
+  }
+  else
+  {
+    IFPACK_CHK_ERR(Operator_->Apply(X,Y));
+  }
+
   return(0);
 }
 
@@ -111,19 +128,28 @@ int Ifpack_Chebyshev::Initialize()
 {
   IsInitialized_ = false;
 
-  if (Matrix_ == 0)
+  if (Operator_ == 0)
     IFPACK_CHK_ERR(-2);
 
   if (Time_ == 0)
     Time_ = new Epetra_Time(Comm());
 
-  if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
-    IFPACK_CHK_ERR(-2); // only square matrices
+  if (IsRowMatrix_)
+  {
+    if (Matrix().NumGlobalRows() != Matrix().NumGlobalCols())
+      IFPACK_CHK_ERR(-2); // only square matrices
 
-  NumMyRows_ = Matrix_->NumMyRows();
-  NumMyNonzeros_ = Matrix_->NumMyNonzeros();
-  NumGlobalRows_ = Matrix_->NumGlobalRows();
-  NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros();
+    NumMyRows_ = Matrix_->NumMyRows();
+    NumMyNonzeros_ = Matrix_->NumMyNonzeros();
+    NumGlobalRows_ = Matrix_->NumGlobalRows();
+    NumGlobalNonzeros_ = Matrix_->NumGlobalNonzeros();
+  }
+  else
+  {
+    if (Operator_->OperatorDomainMap().NumGlobalElements() !=       
+        Operator_->OperatorRangeMap().NumGlobalElements())
+      IFPACK_CHK_ERR(-2); // only square operators
+  }
 
   ++NumInitialize_;
   InitializeTime_ += Time_->ElapsedTime();
@@ -146,14 +172,18 @@ int Ifpack_Chebyshev::Compute()
   if (PolyDegree_ <= 0)
     IFPACK_CHK_ERR(-2); // at least one application
   
-  if (InvDiagonal_)
-    delete InvDiagonal_;
-  InvDiagonal_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
+  if (IsRowMatrix_)
+  {
+    if (InvDiagonal_)
+      delete InvDiagonal_;
+    InvDiagonal_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
 
-  if (InvDiagonal_ == 0)
-    IFPACK_CHK_ERR(-5);
+    if (InvDiagonal_ == 0)
+      IFPACK_CHK_ERR(-5);
 
-  IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*InvDiagonal_));
+    IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*InvDiagonal_));
+  }
+  // otherwise diagonal has been given by the user
 
   // Inverse diagonal elements
   // Replace zeros with 1.0
@@ -191,17 +221,17 @@ ostream& Ifpack_Chebyshev::Print(ostream & os) const
     os << endl;
     os << "================================================================================" << endl;
     os << "Ifpack_Chebyshev" << endl;
-    os << "Degree of polynomial = " << PolyDegree_ << endl;
-    if (ZeroStartingSolution_) 
-      os << "Using zero starting solution" << endl;
-    else
-      os << "Using input starting solution" << endl;
+    os << "Degree of polynomial      = " << PolyDegree_ << endl;
     os << "Condition number estimate = " << Condest() << endl;
-    os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
+    os << "Global number of rows     = " << Operator_->OperatorRangeMap().NumGlobalElements() << endl;
     if (IsComputed_) {
       os << "Minimum value on stored inverse diagonal = " << MinVal << endl;
       os << "Maximum value on stored inverse diagonal = " << MaxVal << endl;
     }
+    if (ZeroStartingSolution_) 
+      os << "Using zero starting solution" << endl;
+    else
+      os << "Using input starting solution" << endl;
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
@@ -321,7 +351,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
   if (ZeroStartingSolution_ == false) {
-    Matrix_->Apply(Y, V);
+    Operator_->Apply(Y, V);
     // Compute W = invDiag * ( X - V )/ Theta
     if (nVec == 1) {
       double *xPointer = xPtr[0];
@@ -370,7 +400,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (nVec == 1) {
     double *xPointer = xPtr[0];
     for (k = 0; k < degreeMinusOne; ++k) {
-      Matrix_->Apply(Y, V);
+      Operator_->Apply(Y, V);
       rhokp1 = 1.0 / (2.0*s1 - rhok);
       dtemp1 = rhokp1 * rhok;
       dtemp2 = 2.0 * rhokp1 * delta;
@@ -386,7 +416,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
   else {
     for (k = 0; k < degreeMinusOne; ++k) {
-      Matrix_->Apply(Y, V);
+      Operator_->Apply(Y, V);
       rhokp1 = 1.0 / (2.0*s1 - rhok);
       dtemp1 = rhokp1 * rhok;
       dtemp2 = 2.0 * rhokp1 * delta;
