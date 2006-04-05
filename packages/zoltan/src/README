@@ -13,13 +13,13 @@
 ##############################################################################
 Contacts:
 
-  Karen Devine or Bruce Hendrickson
-  Parallel Computing Sciences Department
+  Karen Devine (or Erik Boman)
+  Discrete Algorithms and Math Dept.
   Sandia National Laboratories
   P.O. Box 5800
   Albuquerque, NM  87185-1111
 
-  kddevin@cs.sandia.gov or bahendr@cs.sandia.gov
+  kddevin@sandia.gov (egboman@sandia.gov)
 ##############################################################################
 
 License:
@@ -55,8 +55,11 @@ In order to build Zoltan, you must do the following steps:
 
 1) Go to Utilities/Config and find a configuration file Config.<platform>
    that is similar to your platform, for example, gcc, solaris, dec, or tflop.
-   Edit the paths as appropriate for your system. Use Config.generic if you 
-   can't find anything better. 
+   Edit the paths as appropriate for your system. Zoltan can be
+   configured with several optional third-party libraries,
+   like ParMetis. Simply comment out PARMETIS_LIBPATH if you don't 
+   have or need ParMetis, for example. Use Config.generic if you 
+   can't find anything better, or if you prefer a minimal installation. 
 
 2) Go back to the Zoltan root directory and type
 
