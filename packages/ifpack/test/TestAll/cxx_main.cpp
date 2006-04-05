@@ -40,20 +40,14 @@
 #include "Galeri_CrsMatrices.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_AdditiveSchwarz.h"
-#include "Ifpack_AdditiveSchwarz.h"
 #include "AztecOO.h"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_DenseContainer.h"
 #include "Ifpack_SparseContainer.h"
-#include "Ifpack_Graph.h"
-#include "Ifpack_Graph_Epetra_RowMatrix.h"
 #include "Ifpack_Amesos.h"
 #include "Ifpack_Utils.h"
-#include "Ifpack_Partitioner.h"
-#include "Ifpack_LinearPartitioner.h"
-#include "Ifpack_GreedyPartitioner.h"
-#include "Ifpack_METISPartitioner.h"
+#include "Ifpack_Chebyshev.h"
 
 template <class T>
 bool Test(Epetra_RowMatrix* Matrix, Teuchos::ParameterList& List)
@@ -134,8 +128,13 @@ int main(int argc, char *argv[])
   // test the preconditioner
   int TestPassed = true;
 
+  if (!Test<Ifpack_Chebyshev>(Matrix,List)) 
+  {
+    TestPassed = false;
+  }
 
-  if (!Test<Ifpack_Amesos>(Matrix,List)) {
+  if (!Test<Ifpack_Amesos>(Matrix,List)) 
+  {
     TestPassed = false;
   }
 

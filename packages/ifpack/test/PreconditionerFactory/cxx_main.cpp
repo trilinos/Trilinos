@@ -47,8 +47,6 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack.h"
 #include "AztecOO.h"
-#include "Ifpack_CrsIct.h"
-#include "Ifpack_DropFilter.h"
 #ifdef HAVE_IFPACK_AMESOS
 #include "Amesos_TestRowMatrix.h"
 #endif
@@ -175,6 +173,13 @@ int main(int argc, char *argv[])
   delete Prec;
 #endif
   
+  Prec = Factory.Create("Chebyshev", A);
+  assert (Prec != 0);
+  IFPACK_CHK_ERR(Prec->Initialize());
+  IFPACK_CHK_ERR(Prec->Compute());
+  cout << *Prec;
+
+  delete Prec;
   delete A;
   delete Map;
 
