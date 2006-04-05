@@ -398,11 +398,118 @@ void NLNML::NLNML_NonlinearLevel::create_Nox_Convergencetest(double normf,
 
   fv_ = rcp(new NOX::StatusTest::FiniteValue());
   maxiters_ = rcp(new NOX::StatusTest::MaxIters(maxiter));
-  combo1_   = rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
-  combo1_->addStatusTest(fv_);
-  combo1_->addStatusTest(maxiters_);
-  combo1_->addStatusTest(combo1_);
+  combo2_   = rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
+  combo2_->addStatusTest(fv_);
+  combo2_->addStatusTest(maxiters_);
+  combo2_->addStatusTest(combo1_);
   return;  
+}
+
+/*----------------------------------------------------------------------*
+ |  (private)                                                 m.gee 3/06|
+ *----------------------------------------------------------------------*/
+bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f, 
+                                          Epetra_Vector* x, 
+                                          int numiter, 
+                                          double* norm)
+{
+  if (solver_==null || group_==null || combo2_==null)
+  {
+    cout << "**ERR**: NLNML::NLNML_NonlinearLevel::Iterate:\n"
+         << "**ERR**: group_ || solver_ || combo2_ or even some of them are NULL\n" 
+         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+  
+  // put x into group_ 
+  NOX::Epetra::Vector X(*x,NOX::DeepCopy);
+  group_->setX(X);
+  
+  // recreate the convergence test
+  create_Nox_Convergencetest(*norm,*norm,numiter);
+  
+  // make a soft reset of the NOX solver
+  solver_->reset(group_,combo2_);
+  
+  if (OutLevel() && !Comm().MyPID() && !coarseinterface_->isFAS())
+  {
+    printf("ML (level %d): Entering Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
+    fflush(stdout);
+  }
+  else if (OutLevel() && !Comm().MyPID() && coarseinterface_->isFAS())
+  {
+    printf("ML (level %d): Entering FAS-Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
+    fflush(stdout);
+  }
+  
+  // iterate
+  NOX::StatusTest::StatusType status = solver_->solve();
+  
+  // get # iterations
+  int niter = solver_->getNumIterations();
+  
+  // get solution and F
+  const NOX::Epetra::Group& finalGroup = 
+    dynamic_cast<const NOX::Epetra::Group&>(solver_->getSolutionGroup());
+  const Epetra_Vector& finalSolution = 
+    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();      
+  const Epetra_Vector& finalF = 
+    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
+  
+  bool returnstatus=false;
+  double norm2;
+  finalF.Norm2(&norm2);
+  *norm = norm2;
+  
+  if (status == NOX::StatusTest::Converged)
+  {
+     returnstatus = true;
+     if (OutLevel() > 0 && Comm().MyPID() == 0) {
+        //cout << "ML (level " << level_ << "): NOX: " 
+        //     << niter << " iterations, Norm(F)=" 
+        //     << norm2 << " , Converged\n"; fflush(stdout);
+        printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Converged\n",level_,niter,norm2);
+        fflush(stdout);
+     }
+  }
+  else if (status == NOX::StatusTest::Unconverged)
+  {
+     returnstatus = false;
+     if (OutLevel() > 0 && Comm().MyPID() == 0) {
+        //cout << "ML (level " << level_ << "): NOX: "
+        //     << niter << " iterations, Norm(F)=" 
+        //     << norm2 << ", Unconverged\n"; fflush(stdout);
+        printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Unonverged\n",level_,niter,norm2);
+        fflush(stdout);
+     }
+  }
+  else if (status == NOX::StatusTest::Failed)
+  {
+     returnstatus = false;
+     if (OutLevel() > 0 && Comm().MyPID() == 0) {
+        //cout << "ML (level " << level_ << "): NOX: " 
+        //     << niter << " iterations, Norm(F)=" << norm2 << ", Failed\n"; fflush(stdout);
+        printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Failed\n",level_,niter,norm2);
+        fflush(stdout);
+     }
+  }
+  else
+  {
+     returnstatus = false;
+     if (Comm().MyPID() == 0)
+        //cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)=" 
+        //     << norm2 << "\n"; fflush(stdout);
+        printf("ML (level %d): ***WRN*** NOX: return status unknown, Norm(F)=%12.8e , Failed\n",level_,norm2);
+        fflush(stdout);
+  }
+  
+  // reset number of calls to coarseinterface->computeF
+  coarseinterface_->resetnumcallscomputeF();
+  
+  // update the solution
+  x->Update(1.0,finalSolution,0.0);
+  f->Update(1.0,finalF,0.0);
+  
+  return returnstatus;  
 }
 
 

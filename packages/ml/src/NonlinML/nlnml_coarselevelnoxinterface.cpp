@@ -104,7 +104,34 @@ bool NLNML::NLNML_CoarseLevelNoxInterface::computeF(
                                  const Epetra_Vector& x, Epetra_Vector& F, 
 			         const FillType fillFlag)
 {
-  return true;
+  bool err;
+  if (!Level())
+  {
+    err = fineinterface_->computeF(x,F,fillFlag);
+    if (err==false)
+    {
+      cout << "**ERR**: NLNML::NLNML_CoarseLevelNoxInterface::computeF:\n"
+           << "**ERR**: call to fine-userinterface returned false on level " << level_ << "\n"
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+  }
+  else
+  {
+    RefCountPtr<Epetra_Vector> Ffine = rcp(new Epetra_Vector(fineinterface_->getGraph()->RowMap(),false));
+    RefCountPtr<Epetra_Vector> xfine = rcp(prolong_this_to_fine(x));
+    err = fineinterface_->computeF(*xfine,*Ffine,fillFlag);
+    if (err==false)
+    {
+      cout << "**ERR**: NLNML::NLNML_CoarseLevelNoxInterface::computeF:\n"
+           << "**ERR**: call to fine-userinterface returned false on level " << level_ << "\n"
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    RefCountPtr<Epetra_Vector> Fcoarse = rcp(restrict_fine_to_this(*Ffine));
+    F.Scale(1.0,*Fcoarse);
+  }
+  if (isFAS())
+    F.Update(-1.0,*fxbar_,1.0,*fbar_,1.0);
+  return err;
 }
 
 /*----------------------------------------------------------------------*
@@ -153,9 +180,39 @@ Epetra_Vector*  NLNML::NLNML_CoarseLevelNoxInterface::restrict_fine_to_this(
 /*----------------------------------------------------------------------*
  |  prolongate from this level to fine (public)               m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_CoarseLevelNoxInterface::prolong_this_to_fine()
+Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::prolong_this_to_fine(
+                                                const Epetra_Vector& xcoarse)
 {
-  return;
+  if (!Level())
+    return new Epetra_Vector(xcoarse);
+  else
+  {
+    Epetra_Vector* cvec = const_cast<Epetra_Vector*>(&xcoarse);
+    for (int i=Level(); i>0; i--)
+    {
+       // allocate a vector matching level i-1
+       Epetra_Vector* fvec = wvec_[i-1].get();
+       // multiply
+       (*P_)[i]->Multiply(false,*cvec,*fvec);
+       cvec = fvec;
+    }
+    // Note that the GIDs in cvec do NOT match those of the fineinterface as
+    // they match the P_[1]->RangeMap.
+    // The LIDs match, so we have to copy cvec to xfine_fineinterface
+    // using LIDs
+    Epetra_Vector* xfine_fineinterface = new Epetra_Vector(fineinterface_->getGraph()->RowMap(),false);
+    if (cvec->MyLength() != xfine_fineinterface->MyLength() ||
+        cvec->GlobalLength() != xfine_fineinterface->GlobalLength())
+    {
+        cout << "**ERR**: NLNML::NLNML_CoarseLevelNoxInterface::prolong_this_to_fine:\n"
+             << "**ERR**: mismatch in dimension of cvec and xfine_fineinterface\n"
+             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    const int mylength = cvec->MyLength();
+    for (int i=0; i<mylength; i++)
+       (*xfine_fineinterface)[i] = (*cvec)[i];
+    return xfine_fineinterface;
+  }
 }
 
 /*----------------------------------------------------------------------*
@@ -183,14 +240,6 @@ void NLNML::NLNML_CoarseLevelNoxInterface::setP()
   return;
 }
 
-
-/*----------------------------------------------------------------------*
- |  set modified system (public)                              m.gee 3/06|
- *----------------------------------------------------------------------*/
-void NLNML::NLNML_CoarseLevelNoxInterface::setModifiedSystem()
-{
-  return;
-}
 
 /*----------------------------------------------------------------------*
  |  make application apply all constraints (public)           m.gee 3/06|

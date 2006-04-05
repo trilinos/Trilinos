@@ -531,6 +531,43 @@ int NLNML::NLNML_Preconditioner::ApplyInverse_Linear(const Epetra_MultiVector& X
 int NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear(const Epetra_MultiVector& X, 
                                                         Epetra_MultiVector& Y) const
 {
+  if (noxsolver_==null)
+  {
+    cout << "**ERR**: NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear:\n"
+         << "**ERR**: noxsolver not registered, use SetNoxSolver(solver)!\n"
+         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+  
+  const NOX::Epetra::Group& finalGroup = 
+    dynamic_cast<const NOX::Epetra::Group&>(noxsolver_->getSolutionGroup());
+  const Epetra_Vector& currentSolution = 
+   (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();      
+  const Epetra_Vector& currentF = 
+   (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getF())).getEpetraVector();
+  double norm2;
+   currentF.Norm2(&norm2);
+  
+  // make a copy of currentSolution and currentF
+  RefCountPtr<Epetra_Vector> f = rcp(new Epetra_Vector(View,X,0));
+  RefCountPtr<Epetra_Vector> x = rcp(new Epetra_Vector(Copy,currentSolution,0));
+
+  // call the cycle
+  if (OutLevel() && !Comm().MyPID())
+    cout << "\n\nnlnML :============Entering Nonlinear V-cycle============\n";
+  bool converged = false;
+  double t3 = GetClock();
+  FAS_cycle(f.get(),x.get(),0,&converged,&norm2); 
+  double t4 = GetClock();
+  if (OutLevel() && !Comm().MyPID())
+  {
+    cout << "nlnML :============V-cycle time is : " << (t4-t3) << " sec\n";
+    if (converged)
+      cout << "nlnML :============Nonlinear preconditioner converged====\n";
+  }
+    
+  // copy correction to Y
+  Y.Scale(1.0,*x);
+  
   return 0;
 }
 
@@ -922,9 +959,55 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::NLNML_Preconditioner::ComputeFineLevelJacob
 /*----------------------------------------------------------------------*
  |  FAS-preconditioner                                        m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_Preconditioner::ML_Nox_FAS_cycle() const
+bool NLNML::NLNML_Preconditioner::FAS_cycle(Epetra_Vector* f, 
+                                            Epetra_Vector* x, 
+                                            int level, 
+                                            bool* converged, 
+                                            double* finenorm) const
 {
-  return ;
+  int coarsegrid   = getParameter("nlnML max levels",2);
+  double thisnorm  = *finenorm/10000;
+  double tolerance = getParameter("nlnML absolute residual tolerance",1.0e-06);
+  if (thisnorm < tolerance) thisnorm = tolerance;
+  
+  RefCountPtr<Epetra_Vector> fbar  = null;
+  RefCountPtr<Epetra_Vector> xbar  = null;
+  RefCountPtr<Epetra_Vector> fxbar = null;
+  
+  //=====coarsest grid==================================================
+  if (level==coarsegrid)
+  {
+    ;
+  }
+  
+  //=====setup FAS on this level========================================
+  fbar  = rcp(new Epetra_Vector(Copy,*f,0));
+  xbar  = rcp(new Epetra_Vector(Copy,*x,0));
+  fxbar = rcp(new Epetra_Vector(xbar->Map(),false));
+  (*nlnlevel_)[level]->setModifiedSystem(false,NULL,NULL);
+  (*nlnlevel_)[level]->computeF(*xbar,*fxbar,NOX::Epetra::Interface::Required::Residual);
+  (*nlnlevel_)[level]->setModifiedSystem(true,fbar.get(),fxbar.get());
+  
+  //=====presmoothing on the FAS system=================================
+  double prenorm = thisnorm;
+  int    nsmooth;
+  if (!level) nsmooth = getParameter("nlnML nonlinear presmoothing sweeps fine level",1);
+  else        nsmooth = getParameter("nlnML nonlinear presmoothing sweeps medium level",1);
+  if (nsmooth)
+    *converged = (*nlnlevel_)[level]->Iterate(f,x,nsmooth,&prenorm);
+  if (*converged)
+  {
+    (*nlnlevel_)[level]->setModifiedSystem(false,NULL,NULL);
+    x->Update(-1.0,*xbar,1.0);
+    return true;
+  }
+  
+  
+  
+  
+  
+  
+  return true;
 }
 
 
@@ -932,9 +1015,9 @@ void NLNML::NLNML_Preconditioner::ML_Nox_FAS_cycle() const
 /*----------------------------------------------------------------------*
  |  FAS-solver                                                m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_Preconditioner::ML_Nox_FAS_cycle1() const
+bool NLNML::NLNML_Preconditioner::FAS_cycle_solver() const
 {
-  return ;
+  return true;
 }
 
 

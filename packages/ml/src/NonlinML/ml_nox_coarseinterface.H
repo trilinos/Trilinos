@@ -111,7 +111,7 @@ public:
   Epetra_Vector* restrict_fine_to_this(const Epetra_Vector& xfine);
   
   // prolong a this coarse level vector to the fine level
-  Epetra_Vector* prolong_this_to_fine(const Epetra_Vector& xfine);
+  Epetra_Vector* prolong_this_to_fine(const Epetra_Vector& xcoarse);
 
   // return number of calls to the computeF-member
   int numcallscomputeF() { return nFcalls_; }

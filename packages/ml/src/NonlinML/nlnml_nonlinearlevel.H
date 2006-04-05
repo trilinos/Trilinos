@@ -131,6 +131,16 @@ public:
   
   inline int OutLevel() const { return params_->get("nlnML output",0); } 
   
+  bool setModifiedSystem(bool flag, Epetra_Vector* fbar, Epetra_Vector* fxbar)
+  { return coarseinterface_->setModifiedSystem(flag,fbar,fxbar);}
+
+  // evaluate the nonlinear function on this level
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
+                NOX::Epetra::Interface::Required::FillType fillFlag)
+  { return coarseinterface_->computeF(x,F,fillFlag);}
+
+  bool Iterate(Epetra_Vector* f, Epetra_Vector* x, int numiter, double* norm); 
+
 private:
   
   // don't want copy-ctor and = operator

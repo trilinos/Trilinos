@@ -171,9 +171,9 @@ private:
                              Epetra_MultiVector& Y) const;
 
   //the FAS-preconditioner
-  void ML_Nox_FAS_cycle() const;
+  bool FAS_cycle(Epetra_Vector* f, Epetra_Vector* x, int level, bool* converged, double* finenorm) const;
   // the FAS-solver
-  void ML_Nox_FAS_cycle1() const;
+  bool FAS_cycle_solver() const;
 
   bool Adaptivesetup(double** oldns,Epetra_CrsMatrix* Jac,int oldnumpde,int olddimns);
   

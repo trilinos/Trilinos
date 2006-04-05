@@ -107,13 +107,14 @@ public:
 			const FillType fillFlag);
 
   Epetra_Vector* restrict_fine_to_this(const Epetra_Vector& xfine);
-  void prolong_this_to_fine();
+  Epetra_Vector* prolong_this_to_fine(const Epetra_Vector& xcoarse);
   void restrict_to_next_coarser_level(); 
   void prolong_to_this_level();                                  
   
   void setP();    
 
-  void setModifiedSystem();
+  bool setModifiedSystem(bool flag, Epetra_Vector* fbar, Epetra_Vector* fxbar)
+  { isFASmodfied_ = flag; fbar_ = fbar; fxbar_ = fxbar; return true; }
 
   bool isFAS() { return isFASmodfied_; }
 
@@ -122,6 +123,8 @@ public:
   int Level() { return level_; }
 
   void BlockMap();
+
+  bool resetnumcallscomputeF() { nFcalls_=0; return true;}
 
 private:
   NLNML_CoarseLevelNoxInterface(NLNML_CoarseLevelNoxInterface& old);
@@ -132,11 +135,11 @@ private:
 
 protected:
 
-  int  level_;
-  int  maxlevel_;
-  int  outputlevel_;
-  bool isFASmodfied_; 
-  int  nFcalls_;
+  int                                                    level_;
+  int                                                    maxlevel_;
+  int                                                    outputlevel_;
+  bool                                                   isFASmodfied_; 
+  int                                                    nFcalls_;
   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>        fineinterface_;
   RefCountPtr< vector< RefCountPtr<Epetra_CrsMatrix> > > P_;
   RefCountPtr<Epetra_BlockMap>                           this_bmap_;
