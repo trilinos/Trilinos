@@ -88,6 +88,7 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: ndim, lid
   character(len=FILENAME_MAX+1) :: fname
   real(Zoltan_DOUBLE) :: xmin, ymin, zmin, xmax, ymax, zmax
+  integer ewgt_dim
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -291,6 +292,28 @@ type(PARIO_INFO) :: pio_info
     endif
   endif
 
+!  /* Functions for hypergraph based algorithms */
+! TODO
+  if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins, &
+                mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
+    run_zoltan = .false.
+    goto 9999
+  endif
+
+  if (Zoltan_Set_Hg_Cs_Fn(zz_obj, get_hg_compressed_pins, &
+                mesh_wrapper) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Fn()"
+    run_zoltan = .false.
+    goto 9999
+  endif
+
+  ewgt_dim = 0 ! Set to 1 to test edge weights.
+  if (ewgt_dim > 0) then
+! TODO Register edge weight query functions
+  endif
+
+
   if (Test_Multi_Callbacks .eq. 1) then
     if (Zoltan_Set_Partition_Multi_Fn(zz_obj, get_partition_multi, &
                                       mesh_wrapper) == ZOLTAN_FATAL) then
@@ -445,7 +468,7 @@ type(PARIO_INFO) :: pio_info
 end function run_zoltan
 
 !/*****************************************************************************/
-!/*****************************************************************************/
+!/******* zfdrive query functions below ***************************************/
 !/*****************************************************************************/
 integer(Zoltan_INT) function get_num_elements(data, ierr)
 type(Zoltan_User_Data_2), intent(in) :: data
@@ -988,6 +1011,88 @@ integer(Zoltan_INT) :: sum, i
   enddo
 
 end subroutine get_edge_list_multi
+
+!/*****************************************************************************/
+!/******** Hypergraph query functions *****************************************/
+!/*****************************************************************************/
+
+subroutine get_hg_size_compressed_pins(data, &
+  num_lists, num_pins, fmat, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(out) :: num_lists, num_pins, fmat, ierr
+
+  type(MESH_INFO), pointer :: mesh
+
+  mesh => data%ptr
+
+  if (.not. associated(mesh%hindex)) then
+    ierr = ZOLTAN_FATAL
+    return
+  endif
+
+  num_lists = mesh%nhedges
+  fmat = 1 ! ZOLTAN_COMPRESSED_EDGE 
+  num_pins = mesh%hindex(mesh%nhedges)
+  ierr = ZOLTAN_OK
+
+end subroutine get_hg_size_compressed_pins
+
+subroutine get_hg_compressed_pins(data, num_gid_entries, nedges, &
+  npins, fmat, edge_GID, edge_ptr, pin_GID, ierr) 
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, nedges, npins, fmat
+integer(Zoltan_INT), intent(out), dimension(*) :: edge_GID, edge_ptr, pin_GID
+integer(Zoltan_INT), intent(out) :: ierr
+
+! Local variables
+  type(MESH_INFO), pointer :: mesh
+  integer i, k, q
+
+  mesh => data%ptr
+
+  if (.not. associated(mesh)) then
+    ierr = ZOLTAN_FATAL
+    return
+  endif
+
+  q = 0
+  do i= 0, nedges-1
+    do k= 0, num_gid_entries-1
+      edge_GID(q) = 0
+      q = q+1
+    end do
+    edge_ptr(i) = mesh%hindex(i)
+    edge_GID(q) = mesh%hgid(i)
+    q = q+1
+  end do
+
+  q = 0
+  do i= 0, npins-1
+    do k= 0, num_gid_entries-1
+      pin_GID(q) = 0
+      q = q+1
+    end do
+    pin_GID(q) = mesh%hvertex(i)
+    q = q+1
+  end do
+
+end subroutine get_hg_compressed_pins
+
+!subroutine get_hg_size_edge_weights(data, num_edge, ierr)
+!type(Zoltan_User_Data_2), intent(in) :: data
+!integer(Zoltan_INT), intent(out) :: num_edge, ierr
+!
+!  type(MESH_INFO), pointer :: mesh
+!
+!  mesh => data%ptr
+!  num_edge = mesh%henumwgts ! TODO probably unnecessary?
+!  ierr = ZOLTAN_OK
+!  
+!end subroutine get_hg_size_edge_weights
+
+!subroutine get_hg_edge_weights
+!TODO return all ones just to test functionality
+!end subroutine get_hg_edge_weights
 
 !/*****************************************************************************/
 !/*****************************************************************************/
