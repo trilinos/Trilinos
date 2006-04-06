@@ -108,8 +108,8 @@ public:
 
   Epetra_Vector* restrict_fine_to_this(const Epetra_Vector& xfine);
   Epetra_Vector* prolong_this_to_fine(const Epetra_Vector& xcoarse);
-  void restrict_to_next_coarser_level(); 
-  void prolong_to_this_level();                                  
+  Epetra_Vector* restrict_to_next_coarser_level(Epetra_Vector* thisvec, int current, int next); 
+  Epetra_Vector* prolong_to_this_level(Epetra_Vector* coarsevec, int current, int next);                                  
   
   void setP();    
 

@@ -564,10 +564,8 @@ int NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear(const Epetra_MultiVector
     if (converged)
       cout << "nlnML :============Nonlinear preconditioner converged====\n";
   }
-    
-  // copy correction to Y
+  f = null;  
   Y.Scale(1.0,*x);
-  
   return 0;
 }
 
@@ -965,7 +963,7 @@ bool NLNML::NLNML_Preconditioner::FAS_cycle(Epetra_Vector* f,
                                             bool* converged, 
                                             double* finenorm) const
 {
-  int coarsegrid   = getParameter("nlnML max levels",2);
+  int coarsegrid   = getParameter("nlnML max levels",2)-1;
   double thisnorm  = *finenorm/10000;
   double tolerance = getParameter("nlnML absolute residual tolerance",1.0e-06);
   if (thisnorm < tolerance) thisnorm = tolerance;
@@ -977,7 +975,18 @@ bool NLNML::NLNML_Preconditioner::FAS_cycle(Epetra_Vector* f,
   //=====coarsest grid==================================================
   if (level==coarsegrid)
   {
-    ;
+    fbar  = rcp(new Epetra_Vector(Copy,*f,0));
+    xbar  = rcp(new Epetra_Vector(Copy,*x,0));
+    fxbar = rcp(new Epetra_Vector(xbar->Map(),false));
+    (*nlnlevel_)[level]->setModifiedSystem(false,NULL,NULL);
+    (*nlnlevel_)[level]->computeF(*xbar,*fxbar,NOX::Epetra::Interface::Required::Residual);
+    (*nlnlevel_)[level]->setModifiedSystem(true,fbar.get(),fxbar.get());
+    int nsmooth = getParameter("nlnML nonlinear smoothing sweeps coarse level",2);
+    if (nsmooth)
+      *converged = (*nlnlevel_)[level]->Iterate(f,x,nsmooth,&thisnorm);
+    x->Update(-1.0,*xbar,1.0);
+    (*nlnlevel_)[level]->setModifiedSystem(false,NULL,NULL);
+    return true;
   }
   
   //=====setup FAS on this level========================================
@@ -991,8 +1000,8 @@ bool NLNML::NLNML_Preconditioner::FAS_cycle(Epetra_Vector* f,
   //=====presmoothing on the FAS system=================================
   double prenorm = thisnorm;
   int    nsmooth;
-  if (!level) nsmooth = getParameter("nlnML nonlinear presmoothing sweeps fine level",1);
-  else        nsmooth = getParameter("nlnML nonlinear presmoothing sweeps medium level",1);
+  if (!level) nsmooth = getParameter("nlnML nonlinear presmoothing sweeps fine level",2);
+  else        nsmooth = getParameter("nlnML nonlinear presmoothing sweeps medium level",2);
   if (nsmooth)
     *converged = (*nlnlevel_)[level]->Iterate(f,x,nsmooth,&prenorm);
   if (*converged)
@@ -1002,10 +1011,32 @@ bool NLNML::NLNML_Preconditioner::FAS_cycle(Epetra_Vector* f,
     return true;
   }
   
+  //=====restrict to next coarser level=================================
+  RefCountPtr<Epetra_Vector> xcoarse = rcp((*nlnlevel_)[level]->restrict_to_next_coarser_level(x,level,level+1));
+  RefCountPtr<Epetra_Vector> fcoarse = rcp((*nlnlevel_)[level]->restrict_to_next_coarser_level(f,level,level+1));
   
   
+  //======call cycle on coarser level===================================
+  bool coarseconverged=false;
+  FAS_cycle(fcoarse.get(),xcoarse.get(),level+1,&coarseconverged,&prenorm);
+  fcoarse = null;
   
+  //=====prolongate correction to this level============================
+  RefCountPtr<Epetra_Vector> xcorrect = rcp((*nlnlevel_)[level]->prolong_to_this_level(xcoarse.get(),level,level+1));
+  xcoarse = null;
   
+  //=====apply correction===============================================  
+  x->Update(1.0,*xcorrect,1.0);
+  xcorrect = null;
+  
+  //=====postsmoothing on the FAS system================================
+  double postnorm = thisnorm;
+  if (!level) nsmooth = getParameter("nlnML nonlinear postsmoothing sweeps fine level",2);
+  else        nsmooth = getParameter("nlnML nonlinear postsmoothing sweeps medium level",2);
+  if (nsmooth)
+    *converged = (*nlnlevel_)[level]->Iterate(f,x,nsmooth,&postnorm);
+  (*nlnlevel_)[level]->setModifiedSystem(false,NULL,NULL);
+  x->Update(-1.0,*xbar,1.0);
   
   return true;
 }

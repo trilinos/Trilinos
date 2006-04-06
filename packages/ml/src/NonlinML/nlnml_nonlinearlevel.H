@@ -141,6 +141,14 @@ public:
 
   bool Iterate(Epetra_Vector* f, Epetra_Vector* x, int numiter, double* norm); 
 
+  // restrict vector to next coarser level
+  Epetra_Vector* restrict_to_next_coarser_level(Epetra_Vector* finevec, int current, int next) 
+  { return coarseinterface_->restrict_to_next_coarser_level(finevec,current,next);}                                   
+  
+  // prolong vector from next coarser level to current level
+  Epetra_Vector* prolong_to_this_level(Epetra_Vector* coarsevec, int current, int next) 
+  { return coarseinterface_->prolong_to_this_level(coarsevec,current,next);}                                   
+
 private:
   
   // don't want copy-ctor and = operator

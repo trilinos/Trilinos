@@ -218,18 +218,61 @@ Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::prolong_this_to_fine(
 /*----------------------------------------------------------------------*
  |  restrict from this to next coarser level (public)         m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_CoarseLevelNoxInterface::restrict_to_next_coarser_level()
+Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::restrict_to_next_coarser_level(
+                                                  Epetra_Vector* thisvec, 
+                                                  int current, int next)
 {
-  return;
+  Epetra_Vector* xfineP = 0;
+  if (current==0)
+  {
+    xfineP = new Epetra_Vector((*P_)[1]->RowMap(),false);
+    if (thisvec->MyLength() != xfineP->MyLength() || thisvec->GlobalLength() != xfineP->GlobalLength())
+    {
+      cout << "**ERR**: NLNML::NLNML_CoarseLevelNoxInterface::restrict_to_next_coarser_level:\n"
+           << "**ERR**: mismatch in dimension of thisvec and xfineP\n"
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    const int mylength = thisvec->MyLength();
+    for (int i=0; i<mylength; i++)
+      (*xfineP)[i] = (*thisvec)[i];      
+  }
+  else
+  {
+    xfineP = thisvec;
+  }
+  Epetra_Vector* cvec = new Epetra_Vector((*P_)[next]->OperatorDomainMap(),false);
+  (*P_)[next]->Multiply(true,*xfineP,*cvec);
+  if (current==0) delete xfineP;
+  return cvec;
 }
 
 
 /*----------------------------------------------------------------------*
  |  prolongate from next coarser level to this level (public) m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_CoarseLevelNoxInterface::prolong_to_this_level()
+Epetra_Vector* NLNML::NLNML_CoarseLevelNoxInterface::prolong_to_this_level(
+                                                  Epetra_Vector* coarsevec, 
+                                                  int current, int next)
 {
-  return;
+  Epetra_Vector* fvec = new Epetra_Vector((*P_)[next]->OperatorRangeMap(),false);
+  (*P_)[next]->Multiply(false,*coarsevec,*fvec);
+  if (current==0)
+  {
+    Epetra_Vector* fine = new Epetra_Vector(fineinterface_->getMap(),false);
+    if (fvec->MyLength() != fine->MyLength() || fvec->GlobalLength() != fine->GlobalLength())
+    {
+      cout << "**ERR**: NLNML::NLNML_CoarseLevelNoxInterface::prolong_to_this_level:\n"
+           << "**ERR**: mismatch in dimension of fvec and fine\n"
+           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+    }
+    const int mylength = fvec->MyLength();
+    for (int i=0; i<mylength; ++i)
+      (*fine)[i] = (*fvec)[i];
+    delete fvec;
+    return fine;
+  }
+  else
+    return fvec;
 }
 
 /*----------------------------------------------------------------------*
