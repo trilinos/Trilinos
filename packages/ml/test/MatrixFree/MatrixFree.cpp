@@ -46,7 +46,6 @@
 #include "AztecOO.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_MatrixFreePreconditioner.h"
-#include "ml_MatrixFree_GetDiagonal.h"
 #include "ml_epetra_utils.h"
 
 using namespace ML_Epetra;
@@ -98,17 +97,17 @@ int main(int argc, char *argv[])
   MLList.sublist("ML list").set("aggregation: damping factor", 0.0);
   MLList.sublist("ML list").set("smoother: pre or post", "both");
   //MLList.sublist("ML list").set("max levels", 2);
-  MLList.sublist("ML list").set("coarse: max size", 16);
+  MLList.sublist("ML list").set("coarse: max size", 512);
   //MLList.sublist("ML list").set("cycle applications", 10);
 
+#if 0
   Epetra_Vector InvDiag(VbrA->RowMap());
   ML_CHK_ERR(VbrA->ExtractDiagonalCopy(InvDiag));
   InvDiag.Reciprocal(InvDiag);
 
   Epetra_MultiVector* Diagonal;
   ML_Epetra::GetBlockDiagonal(*VbrA, VbrA->Graph(), MLList, Diagonal);
-
-
+#endif
 
   // compute the preconditioner using the matrix-free approach
   MatrixFreePreconditioner* MFP = new
@@ -151,7 +150,7 @@ int main(int argc, char *argv[])
   Epetra_Vector y(R->OperatorRangeMap());
   Epetra_Vector z(R->OperatorRangeMap());
 
-  for (int t = 0; t < 3; ++t)
+  for (int t = 0; t < 2; ++t)
   {
     x.Random();
     R->Apply(x, y);
@@ -182,7 +181,7 @@ int main(int argc, char *argv[])
   Epetra_Vector yy(C->OperatorRangeMap());
   Epetra_Vector zz(C->OperatorRangeMap());
 
-  for (int t = 0; t < 3; ++t)
+  for (int t = 0; t < 2; ++t)
   {
     xx.Random();
     C->Apply(xx, yy);
@@ -231,7 +230,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList MLList2;
   MLList2.set("PDE equations", NumPDEEqns);
   MLList2.set("max levels", 10);
-  MLList2.set("coarse: max size", 16);
+  MLList2.set("coarse: max size", 512);
   MLList2.set("smoother: type", "Jacobi");
   MLList2.set("smoother: type (level 1)", "Aztec");
   //MLList2.set("prec type", "two-level-additive");
