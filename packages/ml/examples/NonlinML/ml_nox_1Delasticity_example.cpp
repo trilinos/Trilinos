@@ -169,90 +169,90 @@ int main(int argc, char *argv[])
                             );
 
    //----------------- Newton------------------------------
-#if 0
-   bool isnlnCG = false;
-   // Set the nonlinear solver method
-   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-   
-   // Sublist for line search 
-   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-   searchParams.setParameter("Method", "Full Step");
-   
-   // Sublist for direction
-   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-   dirParams.setParameter("Method", "Newton");
-   NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-   newtonParams.setParameter("Forcing Term Method", "Constant");
-   //newtonParams.setParameter("Forcing Term Method", "Type 1");
-   //newtonParams.setParameter("Forcing Term Method", "Type 2");
-   newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-6);
-   newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-   
-   NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
-   lsParams.setParameter("Aztec Solver", "CG"); 
-   lsParams.setParameter("Max Iterations", 100);  
-   lsParams.setParameter("Tolerance", 1e-7);
-   lsParams.setParameter("Output Frequency", 50);   
-
-   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
-   lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
-   lsParams.setParameter("Preconditioner","User Defined");
-
-   lsParams.setParameter("Aztec Preconditioner", "ilu");
-   lsParams.setParameter("Graph Fill", 2);
-   lsParams.setParameter("Fill Factor", 1);
-   //-----------------------------------------------------------
-
-
-
-   //-----------------nonlinearCG------------------------------
-#else
+   NOX::Parameter::List* lsparams = 0;
    bool isnlnCG = true;
-   // Set the nonlinear solver method as line search
-   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+   if (!isnlnCG)
+   {
+     // Set the nonlinear solver method
+     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+     
+     // Sublist for line search 
+     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
+     searchParams.setParameter("Method", "Full Step");
+     
+     // Sublist for direction
+     NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+     dirParams.setParameter("Method", "Newton");
+     NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+     newtonParams.setParameter("Forcing Term Method", "Constant");
+     //newtonParams.setParameter("Forcing Term Method", "Type 1");
+     //newtonParams.setParameter("Forcing Term Method", "Type 2");
+     newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-6);
+     newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
+     
+     NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+     lsParams.setParameter("Aztec Solver", "CG"); 
+     lsParams.setParameter("Max Iterations", 100);  
+     lsParams.setParameter("Tolerance", 1e-7);
+     lsParams.setParameter("Output Frequency", 50);   
+     lsparams = &lsParams;
+     
+     //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
+     lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
+     lsParams.setParameter("Preconditioner","User Defined");
 
-   // get sublist for type of linesearch
-   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-   
-   // set the nonlinearCG method
-   searchParams.setParameter("Method", "NonlinearCG");
+     lsParams.setParameter("Aztec Preconditioner", "ilu");
+     lsParams.setParameter("Graph Fill", 2);
+     lsParams.setParameter("Fill Factor", 1);
+     //-----------------------------------------------------------
+   }
+   else
+   {
+     //-----------------nonlinearCG------------------------------
+     // Set the nonlinear solver method as line search
+     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
 
-   // Sublist for direction
-   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-   dirParams.setParameter("Method", "NonlinearCG");
-   
-   // sublist for nlnCG params
-   NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-   nlcgParams.setParameter("Restart Frequency", 500);
-   //nlcgParams.setParameter("Precondition", "Off");
-   nlcgParams.setParameter("Precondition", "On");
-   nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-   //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
-   nlcgParams.setParameter("Restart Frequency", 25);
-   
-   NOX::Parameter::List& lsParams = nlcgParams.sublist("Linear Solver");
-   lsParams.setParameter("Aztec Solver", "CG"); 
-   lsParams.setParameter("Max Iterations", 1);  
-   lsParams.setParameter("Tolerance", 1e-11);
-   lsParams.setParameter("Output Frequency", 50);   
-   //lsParams.setParameter("Preconditioning", "None");
-   lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
-   
-   // EpetraNew takes this as user supplied preconditioner
-   lsParams.setParameter("Preconditioner","User Defined");
-   
-   //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
-   lsParams.setParameter("Aztec Preconditioner", "ilu");
-   lsParams.setParameter("Graph Fill", 0);
-   lsParams.setParameter("Fill Factor", 1);
-#endif
+     // get sublist for type of linesearch
+     NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
+     
+     // set the nonlinearCG method
+     searchParams.setParameter("Method", "NonlinearCG");
 
+     // Sublist for direction
+     NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
+     dirParams.setParameter("Method", "NonlinearCG");
+     
+     // sublist for nlnCG params
+     NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
+     nlcgParams.setParameter("Restart Frequency", 500);
+     //nlcgParams.setParameter("Precondition", "Off");
+     nlcgParams.setParameter("Precondition", "On");
+     nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
+     //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
+     nlcgParams.setParameter("Restart Frequency", 25);
+     
+     NOX::Parameter::List& lsParams = nlcgParams.sublist("Linear Solver");
+     lsParams.setParameter("Aztec Solver", "CG"); 
+     lsParams.setParameter("Max Iterations", 1);  
+     lsParams.setParameter("Tolerance", 1e-11);
+     lsParams.setParameter("Output Frequency", 50);   
+     //lsParams.setParameter("Preconditioning", "None");
+     lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
+     
+     // EpetraNew takes this as user supplied preconditioner
+     lsParams.setParameter("Preconditioner","User Defined");
+     
+     //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
+     lsParams.setParameter("Aztec Preconditioner", "ilu");
+     lsParams.setParameter("Graph Fill", 0);
+     lsParams.setParameter("Fill Factor", 1);
+   }
   // End Nonlinear Solver ************************************
 
 
   // Begin Preconditioner ************************************
    ParameterList mlparams;
-   mlparams.set("nlnML output",                                      10         ); // ML-output-level (0-10)
+   mlparams.set("nlnML output",                                      6         ); // ML-output-level (0-10)
    mlparams.set("nlnML max levels",                                  10         ); // max. # levels (minimum = 2 !)
    mlparams.set("nlnML coarse: max size",                            500        ); // the size ML stops generating coarser levels
    mlparams.set("nlnML is linear preconditioner",                    false       );
@@ -276,24 +276,24 @@ int main(int argc, char *argv[])
 
    mlparams.set("nlnML use nlncg on fine level",                     true); // use nlnCG or mod. Newton's method   
    mlparams.set("nlnML use nlncg on medium level",                   true);    
-   mlparams.set("nlnML use nlncg on coarsest level",                 true);    
+   mlparams.set("nlnML use nlncg on coarsest level",                 false);    
    
-   mlparams.set("nlnML max iterations newton-krylov fine level",     5); // # iterations of lin. CG in mod. Newton's method    
-   mlparams.set("nlnML max iterations newton-krylov medium level" ,  5);    
+   mlparams.set("nlnML max iterations newton-krylov fine level",     0); // # iterations of lin. CG in mod. Newton's method    
+   mlparams.set("nlnML max iterations newton-krylov medium level" ,  0);    
    mlparams.set("nlnML max iterations newton-krylov coarsest level", 5);    
 
    mlparams.set("nlnML linear smoother type fine level",             "MLS"); // SGS BSGS Jacobi MLS Bcheby AmesosKLU   
    mlparams.set("nlnML linear smoother type medium level",           "SGS"); 
    mlparams.set("nlnML linear smoother type coarsest level",         "AmesosKLU"); 
-   mlparams.set("nlnML linear smoother sweeps fine level",           3);
-   mlparams.set("nlnML linear smoother sweeps medium level",         1);
+   mlparams.set("nlnML linear smoother sweeps fine level",           -3);
+   mlparams.set("nlnML linear smoother sweeps medium level",         3);
    mlparams.set("nlnML linear smoother sweeps coarsest level",       1);
 
    mlparams.set("nlnML nonlinear presmoothing sweeps fine level",    1);
    mlparams.set("nlnML nonlinear presmoothing sweeps medium level",  0);
-   mlparams.set("nlnML nonlinear smoothing sweeps coarse level",     6);
-   mlparams.set("nlnML nonlinear postsmoothing sweeps medium level", 1);
-   mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",   2);
+   mlparams.set("nlnML nonlinear smoothing sweeps coarse level",     3);
+   mlparams.set("nlnML nonlinear postsmoothing sweeps medium level", 2);
+   mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",   3);
 
    RefCountPtr<NLNML::NLNML_Preconditioner> Prec = 
      rcp(new NLNML::NLNML_Preconditioner(fineinterface,mlparams,Comm));
@@ -324,19 +324,13 @@ int main(int argc, char *argv[])
 #endif
   // End run the preconditioner as a solver *******************
 
+   // creat initial guess
+   NOX::Epetra::Vector initialGuess(soln);
 
 
    // for nlnCG:
-   NOX::Epetra::MatrixFree*                B            = 0;
-   Epetra_CrsMatrix*                       A            = 0;
    NLNML::NLNML_LinearSystem*              linSys       = 0;
-   NOX::Epetra::Interface::Preconditioner* iPrec        = 0;
-   NOX::Epetra::Interface::Jacobian*       iJac         = 0;
-   NOX::Epetra::Interface::Required*       iReq         = 0;
-
-   // for Newton:
    NOX::Epetra::LinearSystemAztecOO*       azlinSys     = 0;
-   Epetra_Vector*                          clone        = 0;
 
    if (isnlnCG)
    {
@@ -349,34 +343,27 @@ int main(int argc, char *argv[])
      int  ml_printlevel = mlparams.get("nlnML output",6);
      linSys = new NLNML::NLNML_LinearSystem(B,B,Prec,null,Prec,matrixfree,0,ml_printlevel);
    }
-#if 0
    else
    {
-     A        = fineinterface.getJacobian();
-     iPrec    = &Prec;
-     iJac     = &fineinterface;
-     iReq     = &fineinterface;
-     clone    = new Epetra_Vector(soln); 
-     
-     azlinSys = new NOX::EpetraNew::LinearSystemAztecOO(printParams,lsParams,
-                                                        *iJac,*A,*iPrec,
-                                                        Prec,*clone);
+     // for Newton:
+     RefCountPtr<Epetra_CrsMatrix> A = rcp(fineinterface->getJacobian());
+     A.release();
+     azlinSys = new NOX::Epetra::LinearSystemAztecOO(printParams,*lsparams,
+                                                     fineinterface,A,Prec,
+                                                     Prec,initialGuess);
    }
-#endif
 
-   // creat initial guess
-   NOX::Epetra::Vector initialGuess(soln);
    
    RefCountPtr<NLNML::NLNML_LinearSystem> rcplinsys = rcp(linSys);
+   RefCountPtr<NOX::Epetra::LinearSystemAztecOO> rcpazlinsys = rcp(azlinSys);
    
    // Create the Group
    NOX::Epetra::Group* grp = 0;
    if (isnlnCG)
-      grp = new NOX::Epetra::Group(printParams, fineinterface, initialGuess, rcplinsys); 
-#if 0
+      grp = new NOX::Epetra::Group(printParams,fineinterface,initialGuess,rcplinsys); 
    else 
-      grp = new NOX::EpetraNew::Group(printParams, *iReq, initialGuess, *azlinSys); 
-#endif
+      grp = new NOX::Epetra::Group(printParams,fineinterface,initialGuess,rcpazlinsys); 
+
    RefCountPtr<NOX::Epetra::Group> rcpgrp = rcp(grp);
 
    // Create the convergence tests
