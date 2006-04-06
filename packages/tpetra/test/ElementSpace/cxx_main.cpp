@@ -39,9 +39,9 @@
 template<typename OrdinalType>
 int unitTests(bool verbose, bool debug, int myImageID, int numImages);
 template<typename OrdinalType>
-int esTest(bool verbose, bool debug, int myImageID, int numImages, 
-		   OrdinalType const indexBase, bool const global, bool const contiguous, 
-		   Tpetra::ElementSpace<OrdinalType> const& es);
+int ctrTest(Tpetra::ElementSpace<OrdinalType> const& es, std::vector<OrdinalType> const& myGIDs,
+            OrdinalType const numGlobalElements, OrdinalType const minAllGID, OrdinalType const maxAllGID,
+            OrdinalType const indexBase, bool const global, bool const contiguous);
 template<typename OrdinalType>
 int testLIDGID(Tpetra::ElementSpace<OrdinalType> const& es, OrdinalType nME, 
 			   std::vector<OrdinalType> const& myGIDs);
