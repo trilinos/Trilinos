@@ -86,25 +86,49 @@ public:
   RefCountPtr<std::basic_ostream<char_type,traits_type> > getOStream();
 
   /** \brief . */
-  const std::basic_string<char_type,traits_type>& getTabIndentStr();
+  void setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr);
+
+  /** \brief . */
+  const std::basic_string<char_type,traits_type>& getTabIndentStr() const;
 
   /** \brief .*/
   void setShowLinePrefix(const bool showLinePrefix);
 
   /** \brief .*/
-  void setMaxLenLinePrefix(const bool maxLenLinePrefix);
+  bool getShowLinePrefix() const;
+
+  /** \brief .*/
+  void setMaxLenLinePrefix(const int maxLenLinePrefix);
+
+  /** \brief .*/
+  int getMaxLenLinePrefix() const;
 
   /** \brief . */
   void setShowTabCount(const bool showTabCount);
 
   /** \brief . */
+  bool getShowTabCount() const;
+
+  /** \brief . */
   void setShowProcRank(const bool showProcRank);
+
+  /** \brief . */
+  bool getShowProcRank() const;
 
   /** \brief .*/
   void setProcRankAndSize( const int procRank, const int numProcs );
 
+  /** \brief .*/
+  int getProcRank() const;
+
+  /** \brief .*/
+  int getNumProcs() const;
+
   /** \brief . */
   void setOutputToRootOnly( const int rootRank );
+
+  /** \brief . */
+  int getOutputToRootOnly() const;
 
   /** \brief . */
   void pushTab(const int tabs);
@@ -232,6 +256,7 @@ private:
   int                                                      maxLenLinePrefix_;
   bool                                                     showTabCount_;
   bool                                                     showProcRank_;
+  int                                                      rootRank_;
   int                                                      procRank_;
   int                                                      numProcs_;
   int                                                      rankPrintWidth_;
@@ -249,7 +274,12 @@ private:
   void writeChars( const char_type s[], std::streamsize n );
 
   void writeFrontMatter();
-  
+
+  // Not defined and not to be called
+  basic_FancyOStream_buf();
+  basic_FancyOStream_buf(const basic_FancyOStream_buf<CharT,Traits>&);
+  basic_FancyOStream_buf<CharT,Traits> operator=(const basic_FancyOStream_buf<CharT,Traits>&);
+
 };
 
 /** \brief std::ostream subclass that performs the magic of indenting data
@@ -329,8 +359,11 @@ public:
   /** \brief. */
   RefCountPtr<std::basic_ostream<char_type,traits_type> > getOStream();
 
+  /** \brief . */
+  basic_FancyOStream& setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr);
+
   /** \brief. */
-  const std::basic_string<char_type,traits_type>& getTabIndentStr();
+  const std::basic_string<char_type,traits_type>& getTabIndentStr() const;
 
   /** \brief Set if processor rank, line prefixes, and tab counts are shown or not .*/
   basic_FancyOStream& setShowAllFrontMatter(const bool showAllFrontMatter);
@@ -339,7 +372,7 @@ public:
   basic_FancyOStream& setShowLinePrefix(const bool showLinePrefix);
 
   /** \brief .*/
-  basic_FancyOStream& setMaxLenLinePrefix(const bool maxLenLinePrefix);
+  basic_FancyOStream& setMaxLenLinePrefix(const int maxLenLinePrefix);
 
   /** \brief . */
   basic_FancyOStream& setShowTabCount(const bool showTabCount);
@@ -352,6 +385,9 @@ public:
 
   /** \brief . */
   basic_FancyOStream& setOutputToRootOnly( const int rootRank );
+
+  /** \brief . */
+  void copyAllOutputOptions(const basic_FancyOStream<CharT,Traits> &oStream);
 
   //@}
 
@@ -384,6 +420,11 @@ public:
 private:
 
   streambuf_t	streambuf_;
+
+  // Not defined and not to be called
+  basic_FancyOStream();
+  basic_FancyOStream(const basic_FancyOStream<CharT,Traits>&);
+  basic_FancyOStream<CharT,Traits> operator=(const basic_FancyOStream<CharT,Traits>&);
 
 };
 
@@ -553,6 +594,7 @@ void basic_FancyOStream_buf<CharT,Traits>::initialize(
   maxLenLinePrefix_ = maxLenLinePrefix;
   showTabCount_ = showTabCount;
   showProcRank_ = showProcRank;
+  rootRank_ = -1;
   procRank_ = GlobalMPISession::getRank();
   numProcs_ = GlobalMPISession::getNProc();
   rankPrintWidth_ = int(std::log10(float(numProcs_)))+1;
@@ -571,8 +613,14 @@ basic_FancyOStream_buf<CharT,Traits>::getOStream()
 }
 
 template<typename CharT, typename Traits>
+void basic_FancyOStream_buf<CharT,Traits>::setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr)
+{
+  tabIndentStr_ = tabIndentStr;
+}
+
+template<typename CharT, typename Traits>
 const std::basic_string<CharT,Traits>&
-basic_FancyOStream_buf<CharT,Traits>::getTabIndentStr()
+basic_FancyOStream_buf<CharT,Traits>::getTabIndentStr() const
 {
   return tabIndentStr_;
 }
@@ -584,10 +632,22 @@ void basic_FancyOStream_buf<CharT,Traits>::setShowLinePrefix(const bool showLine
 }
 
 template<typename CharT, typename Traits>
-void basic_FancyOStream_buf<CharT,Traits>::setMaxLenLinePrefix(const bool maxLenLinePrefix)
+bool basic_FancyOStream_buf<CharT,Traits>::getShowLinePrefix() const
 {
-  TEST_FOR_EXCEPT( maxLenLinePrefix >= 5 );
+  return showLinePrefix_;
+}
+
+template<typename CharT, typename Traits>
+void basic_FancyOStream_buf<CharT,Traits>::setMaxLenLinePrefix(const int maxLenLinePrefix)
+{
+  TEST_FOR_EXCEPT( !(maxLenLinePrefix>=5) );
   maxLenLinePrefix_ = maxLenLinePrefix;
+}
+
+template<typename CharT, typename Traits>
+int basic_FancyOStream_buf<CharT,Traits>::getMaxLenLinePrefix() const
+{
+  return maxLenLinePrefix_;
 }
 
 template<typename CharT, typename Traits>
@@ -597,9 +657,21 @@ void basic_FancyOStream_buf<CharT,Traits>::setShowTabCount(const bool showTabCou
 }
 
 template<typename CharT, typename Traits>
+bool basic_FancyOStream_buf<CharT,Traits>::getShowTabCount() const
+{
+  return showTabCount_;
+}
+
+template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::setShowProcRank(const bool showProcRank)
 {
   showProcRank_ = showProcRank;
+}
+
+template<typename CharT, typename Traits>
+bool basic_FancyOStream_buf<CharT,Traits>::getShowProcRank() const
+{
+  return showProcRank_;
 }
 
 template<typename CharT, typename Traits>
@@ -610,8 +682,21 @@ void basic_FancyOStream_buf<CharT,Traits>::setProcRankAndSize( const int procRan
 }
 
 template<typename CharT, typename Traits>
+int basic_FancyOStream_buf<CharT,Traits>::getProcRank() const
+{
+  return procRank_;
+}
+
+template<typename CharT, typename Traits>
+int basic_FancyOStream_buf<CharT,Traits>::getNumProcs() const
+{
+  return numProcs_;
+}
+
+template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::setOutputToRootOnly( const int rootRank  )
 {
+  rootRank_ = rootRank;
   if(rootRank >= 0) {
     if(rootRank == procRank_)
       oStream_ = oStreamSet_;
@@ -621,6 +706,12 @@ void basic_FancyOStream_buf<CharT,Traits>::setOutputToRootOnly( const int rootRa
   else {
     oStream_ = oStreamSet_;
   }
+}
+
+template<typename CharT, typename Traits>
+int basic_FancyOStream_buf<CharT,Traits>::getOutputToRootOnly() const
+{
+  return rootRank_;
 }
 
 template<typename CharT, typename Traits>
@@ -730,6 +821,8 @@ void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std:
     oStream_->write(s+first_p,p-first_p+1);
     if(s[p] == newline) {
       wroteNewline_ = true;
+      if(rootRank_ < 0)
+        oStream_->flush();
     }
     // Update for next search
     if(!done_outputting)
@@ -817,8 +910,16 @@ basic_FancyOStream<CharT,Traits>::getOStream()
 }
 
 template<typename CharT, typename Traits>
+basic_FancyOStream<CharT,Traits>&
+basic_FancyOStream<CharT,Traits>::setTabIndentStr(const std::basic_string<char_type,traits_type> &tabIndentStr)
+{
+  streambuf_.setTabIndentStr(tabIndentStr);
+  return *this;
+}
+
+template<typename CharT, typename Traits>
 const std::basic_string<CharT,Traits>&
-basic_FancyOStream<CharT,Traits>::getTabIndentStr()
+basic_FancyOStream<CharT,Traits>::getTabIndentStr() const
 {
   return streambuf_.getTabIndentStr();
 }
@@ -843,7 +944,7 @@ basic_FancyOStream<CharT,Traits>::setShowLinePrefix(const bool showLinePrefix)
 
 template<typename CharT, typename Traits>
 basic_FancyOStream<CharT,Traits>&
- basic_FancyOStream<CharT,Traits>::setMaxLenLinePrefix(const bool maxLenLinePrefix)
+ basic_FancyOStream<CharT,Traits>::setMaxLenLinePrefix(const int maxLenLinePrefix)
 {
   streambuf_.setMaxLenLinePrefix(maxLenLinePrefix);
   return *this;
@@ -879,6 +980,18 @@ basic_FancyOStream<CharT,Traits>::setOutputToRootOnly( const int rootRank )
 {
   streambuf_.setOutputToRootOnly(rootRank);
   return *this;
+}
+
+template<typename CharT, typename Traits>
+void basic_FancyOStream<CharT,Traits>::copyAllOutputOptions( const basic_FancyOStream<CharT,Traits> &oStream )
+{
+  //streambuf_.setTabIndentStr(oStream.streambuf_.getTabIndentStr());
+  streambuf_.setShowLinePrefix(oStream.streambuf_.getShowLinePrefix());
+  streambuf_.setMaxLenLinePrefix(oStream.streambuf_.getMaxLenLinePrefix());
+  streambuf_.setShowTabCount(oStream.streambuf_.getShowTabCount());
+  streambuf_.setShowProcRank(oStream.streambuf_.getShowProcRank());
+  streambuf_.setProcRankAndSize(oStream.streambuf_.getProcRank(),oStream.streambuf_.getNumProcs());
+  streambuf_.setOutputToRootOnly(oStream.streambuf_.getOutputToRootOnly());
 }
 
 template<typename CharT, typename Traits>
