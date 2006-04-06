@@ -95,34 +95,78 @@ class EpetraBlockMapTestCase(unittest.TestCase):
     def tearDown(self):
         self.comm.Barrier()
 
-    def testConstructor1(self):
-        "Test Epetra.BlockMap uniform, linear, same-size element constructor"
+    def testConstructor01(self):
+        "Test Epetra.BlockMap uniform constructor"
         self.assertEqual(self.map1.NumGlobalElements(), self.numGlobalElConst)
         self.assertEqual(self.map1.ElementSize(),       self.elSizeConst     )
         self.assertEqual(self.map1.IndexBase(),         self.indexBase       )
 
-    def testConstructor2(self):
-        "Test Epetra.BlockMap nonuniform, linear, same-size element constructor"
+    def testConstructor02(self):
+        "Test Epetra.BlockMap uniform constructor, negative global size"
+        size = -2 * self.numProc
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 1, 0, self.comm)
+
+    def testConstructor03(self):
+        "Test Epetra.BlockMap uniform constructor, zero element size"
+        size = 2 * self.numProc
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 0, 0, self.comm)
+
+    def testConstructor04(self):
+        "Test Epetra.BlockMap nonuniform constructor"
         self.assertEqual(self.map2.NumGlobalElements(), self.numGlobalEl)
         self.assertEqual(self.map2.NumMyElements(),     self.numMyEl    )
         self.assertEqual(self.map2.ElementSize(),       self.elSizeConst)
         self.assertEqual(self.map2.IndexBase(),         self.indexBase  )
 
-    def testConstructor3(self):
+    def testConstructor05(self):
+        "Test Epetra.BlockMap nonuniform constructor, negative global size"
+        size = -2 * self.numProc
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 2, 1, 0, self.comm)
+
+    def testConstructor06(self):
+        "Test Epetra.BlockMap nonuniform constructor, negative num my elements"
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl, -2, 1, 0, self.comm)
+
+    def testConstructor07(self):
+        "Test Epetra.BlockMap nonuniform constructor, negative element size"
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
+                          self.numMyEl, -1, 0, self.comm)
+
+    def testConstructor08(self):
         "Test Epetra.BlockMap nonuniform, arbitrary, same-size element constructor"
         self.assertEqual(self.map3.NumGlobalElements(), self.numGlobalEl)
         self.assertEqual(self.map3.NumMyElements(),     self.numMyEl    )
         self.assertEqual(self.map3.ElementSize(),       self.elSizeConst)
         self.assertEqual(self.map3.IndexBase(),         self.indexBase  )
 
-    def testConstructor4(self):
-        "Test Epetra.BlockMap nonuniform, arbitrary, same-size element constructor, bad list"
+    def testConstructor09(self):
+        "Test Epetra.BlockMap nonuniform, arbitrary constructor, bad list"
         self.myGlobalEls[-1] = "pi"
         self.assertRaises(TypeError, Epetra.BlockMap, self.numGlobalEl,
                           self.myGlobalEls, self.elSizeConst, self.indexBase,
                           self.comm)
 
-    def testConstructor5(self):
+    def testConstructor10(self):
+        "Test Epetra.BlockMap nonuniform, arbitrary constructor, negative global size"
+        size = -2 * self.numProc
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, self.myGlobalEls,
+                          1, 0, self.comm)
+
+    def testConstructor11(self):
+        "Test Epetra.BlockMap nonuniform, arbitrary constructor, negative element size"
+        size = -2 * self.numProc
+        self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
+                          self.myGlobalEls, -2, 0, self.comm)
+
+#     def testConstructor12(self):
+#         "Test Epetra.BlockMap uniform linear constructor, min GID < index base"
+#         self.myGlobalEls[0] = self.indexBase-1
+#         print self.myGlobalEls
+#         self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
+#                           self.myGlobalEls, self.elSizeConst, self.indexBase,
+#                           self.comm)
+
+    def testConstructor13(self):
         "Test Epetra.BlockMap nonuniform, arbitrary, variable-size element constructor"
         self.assertEqual(self.map4.NumGlobalElements(),   self.numGlobalEl    )
         self.assertEqual(self.map4.NumMyElements(),       self.numMyEl        )
@@ -130,7 +174,7 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map4.NumMyPoints(),         sum(self.elSizeList))
         self.assertEqual(self.map4.IndexBase(),           self.indexBase      )
 
-    def testConstructor6(self):
+    def testConstructor14(self):
         "Test Epetra.BlockMap copy constructor"
         map1 = Epetra.BlockMap(self.map1)
         map2 = Epetra.BlockMap(self.map2)
@@ -141,28 +185,10 @@ class EpetraBlockMapTestCase(unittest.TestCase):
         self.assertEqual(self.map3.SameAs(map3),True)
         self.assertEqual(self.map4.SameAs(map4),True)
 
-    def testConstructor6(self):
-        "Test Epetra.BlockMap uniform constructor, negative global size"
-        size = -2 * self.numProc
-        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, 1, 0, self.comm)
-
-    def testConstructor7(self):
-        "Test Epetra.BlockMap uniform constructor, negative element size"
-        size = 2 * self.numProc
-        self.assertRaises(Epetra.Error, Epetra.BlockMap, size, -1, 0, self.comm)
-
-    def testConstructor8(self):
+    def testConstructor15(self):
         "Test Epetra.BlockMap uniform linear constructor, negative local size"
         size = self.numProc
         self.assertRaises(Epetra.Error, Epetra.BlockMap, size, -1, 1, 0, self.comm)
-
-#     def testConstructor9(self):
-#         "Test Epetra.BlockMap uniform linear constructor, min GID < index base"
-#         self.myGlobalEls[0] = self.indexBase-1
-#         print self.myGlobalEls
-#         self.assertRaises(Epetra.Error, Epetra.BlockMap, self.numGlobalEl,
-#                           self.myGlobalEls, self.elSizeConst, self.indexBase,
-#                           self.comm)
 
     def testRemoteIDList1(self):
         "Test Epetra.BlockMap RemoteIDList method for constant element size"

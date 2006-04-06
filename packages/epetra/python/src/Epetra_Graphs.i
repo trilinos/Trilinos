@@ -186,7 +186,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
 
     lrid = self->LRID(globalRow);
     if (lrid == -1) {
-      PyErr_SetString(PyExc_ValueError, "Invalid global row index");
+      PyErr_Format(PyExc_ValueError, "Invalid global row index = %d", globalRow);
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(lrid);
@@ -215,7 +215,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
     PyObject * indicesArray  = NULL;
 
     if (localRow < 0 || localRow >= self->NumMyRows()) {
-      PyErr_SetString(PyExc_ValueError, "Invalid local row index");
+      PyErr_Format(PyExc_ValueError, "Invalid local row index = %d", localRow);
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(localRow);

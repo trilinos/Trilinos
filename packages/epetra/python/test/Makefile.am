@@ -45,8 +45,8 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 EXTRA_DIST = \
 	setpath.py testBlockMap.py testComm.py testCompObject.py \
-	testCrsGraph.py testImportExport.py testIntVector.py \
-	testLinearProblem.py testLocalMap.py testMap.py \
+	testCrsGraph.py testCrsMatrix.py testImportExport.py \
+	testIntVector.py testLinearProblem.py testLocalMap.py testMap.py \
 	testMapColoring.py testMultiVector.py testObject.py \
 	testSerialDense.py testVector.py
 
@@ -59,7 +59,7 @@ MAINTAINERCLEANFILES = Makefile.in
 TEST_SUITE = testObject testSerialDense testCompObject testComm \
 	     testBlockMap testMap testLocalMap testImportExport \
 	     testMapColoring testMultiVector testVector testIntVector \
-	     testCrsGraph testLinearProblem
+	     testCrsGraph testCrsMatrix testLinearProblem
 
 SETPATH = setpath.py
 
