@@ -293,7 +293,6 @@ type(PARIO_INFO) :: pio_info
   endif
 
 !  /* Functions for hypergraph based algorithms */
-! TODO
   if (Zoltan_Set_Hg_Size_Cs_Fn(zz_obj, get_hg_size_compressed_pins, &
                 mesh_wrapper) == ZOLTAN_FATAL) then
     print *, "fatal:  error returned from Zoltan_Set_Fn()"
@@ -1050,25 +1049,30 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   mesh => data%ptr
 
+  !print *, "Hello from hypergraph query get_hg_compressed_pins"
+
   if (.not. associated(mesh)) then
     ierr = ZOLTAN_FATAL
     return
   endif
 
+  !print *, "Debug: Copying", nedges, "hyperedges"
   q = 0
   do i= 0, nedges-1
-    do k= 0, num_gid_entries-1
+    do k= 1, num_gid_entries-1
       edge_GID(q) = 0
       q = q+1
     end do
     edge_ptr(i) = mesh%hindex(i)
     edge_GID(q) = mesh%hgid(i)
+    !print *, "Debug: hyperedge ", i, q, " : ", mesh%hgid(i), mesh%hindex(i)
     q = q+1
   end do
 
+  !print *, "Copying", npins, "pins"
   q = 0
   do i= 0, npins-1
-    do k= 0, num_gid_entries-1
+    do k= 1, num_gid_entries-1
       pin_GID(q) = 0
       q = q+1
     end do
