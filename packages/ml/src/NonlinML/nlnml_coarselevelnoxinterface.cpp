@@ -287,8 +287,18 @@ void NLNML::NLNML_CoarseLevelNoxInterface::setP()
 /*----------------------------------------------------------------------*
  |  make application apply all constraints (public)           m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_CoarseLevelNoxInterface::ApplyAllConstraints()
+void NLNML::NLNML_CoarseLevelNoxInterface::ApplyAllConstraints(
+                                                  Epetra_Vector& gradient)
 {
+  if (!Level())
+    fineinterface_->ApplyAllConstraints(gradient,0);
+  else
+  {
+    RefCountPtr<Epetra_Vector> gradientfine = rcp(prolong_this_to_fine(gradient));
+    fineinterface_->ApplyAllConstraints(*gradientfine,Level());
+    RefCountPtr<Epetra_Vector> gradientcoarse = rcp(restrict_fine_to_this(*gradientfine));
+    gradient.Scale(1.0,*gradientcoarse);
+  }
   return;
 }
 

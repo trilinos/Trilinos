@@ -86,7 +86,8 @@ public:
 
   explicit NLNML_ConstrainedMultiLevelOperator(
               RefCountPtr<ML_Epetra::MultiLevelOperator>        ml_operator,
-              RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface);
+              RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
+              bool applyconstraints);
   
   virtual ~NLNML_ConstrainedMultiLevelOperator() {}
   
@@ -165,7 +166,7 @@ private:
   const Epetra_Comm&                                comm_;
   RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface_;
   RefCountPtr<ML_Epetra::MultiLevelOperator>        ml_operator_;
-
+  bool                                              applyconstraints_;
 
 }; // class NLNML_ConstrainedMultiLevelOperator
 } // namespace NLNML

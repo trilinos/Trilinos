@@ -108,8 +108,12 @@ fineJac_(fineJac)
     rcp(new NLNML::NLNML_CoarseLevelNoxInterface(fineinterface_,Level(),outlevel,
                                                  P_,graph->RowMap(),maxlevel));
   
-  // on the fine grid, generate a pre/postoperator
-  if (!Level())
+  // on the fine grid, generate a pre/postoperator to apply constraints
+  bool applyconstraints = false;
+  if (!Level() && getParameter("nlnML apply constraints",false)==true)
+    applyconstraints = true;
+
+  if (!Level() && applyconstraints)
     prepost_ = rcp(new NLNML::NLNML_PrePostOperator(coarseinterface_,
                                                     fineinterface_));
   
@@ -168,7 +172,8 @@ fineJac_(fineJac)
   
   thislevel_prec_ = rcp(new NLNML::NLNML_ConstrainedMultiLevelOperator(
                                                              rcpml_tmp,
-                                                             coarseinterface_));
+                                                             coarseinterface_,
+                                                             applyconstraints));
 
   // ------------------------------------------------------------------------
   // set up NOX on this level   
@@ -188,7 +193,7 @@ fineJac_(fineJac)
   else
     printParams.setParameter("Output Information",0);
   
-  if (!Level())
+  if (!Level() && applyconstraints)
     nlparams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator",*prepost_);
   
   nlparams_->setParameter("Nonlinear Solver", "Line Search Based");    

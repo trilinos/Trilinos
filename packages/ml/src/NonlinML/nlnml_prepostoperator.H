@@ -67,6 +67,8 @@
 // NOX headers
 #include "NOX_Abstract_PrePostOperator.H"	
 #include "NOX_Parameter_Arbitrary.H"	
+#include "NOX_Epetra_Group.H"	
+#include "NOX_Solver_Generic.H"	
 
 // own headers
 #include "nlnml_finelevelnoxinterface.H"

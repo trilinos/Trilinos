@@ -58,10 +58,12 @@
  *----------------------------------------------------------------------*/
 NLNML::NLNML_ConstrainedMultiLevelOperator::NLNML_ConstrainedMultiLevelOperator(
               RefCountPtr<ML_Epetra::MultiLevelOperator> ml_operator,
-              RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface) :
+              RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
+              bool applyconstraints) :
 comm_(ml_operator->Comm()),
 coarseinterface_(coarseinterface),
-ml_operator_(ml_operator)
+ml_operator_(ml_operator),
+applyconstraints_(applyconstraints)
 {
   label_ = "NLNML_ConstrainedMultiLevelOperator";
   return;
@@ -75,10 +77,11 @@ int NLNML::NLNML_ConstrainedMultiLevelOperator::ApplyInverse(
                      const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int err = ml_operator_->ApplyInverse(X,Y);
-#if 0
-  Epetra_Vector tmp(View,Y,0);
-  coarseinterface_.ApplyAllConstraints(tmp);
-#endif
+  if (applyconstraints_)
+  {
+    Epetra_Vector tmp(View,Y,0);
+    coarseinterface_->ApplyAllConstraints(tmp);
+  }
   return err;
 }
 

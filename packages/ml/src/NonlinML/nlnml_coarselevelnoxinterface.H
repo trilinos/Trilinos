@@ -118,7 +118,7 @@ public:
 
   bool isFAS() { return isFASmodfied_; }
 
-  void ApplyAllConstraints();
+  void ApplyAllConstraints(Epetra_Vector& gradient);
 
   int Level() { return level_; }
 

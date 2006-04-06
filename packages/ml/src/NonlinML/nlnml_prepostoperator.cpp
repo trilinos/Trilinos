@@ -82,7 +82,23 @@ NLNML::NLNML_PrePostOperator::~NLNML_PrePostOperator()
  *----------------------------------------------------------------------*/
 void NLNML::NLNML_PrePostOperator::runPreSolve(const NOX::Solver::Generic& solver)
 {
-  cout << "Not impl. yet\n"; fflush(stdout);
+  const NOX::Epetra::Group& solgroup = 
+             dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const NOX::Epetra::Vector* noxsolution = 
+             dynamic_cast<const NOX::Epetra::Vector*>(&solgroup.getX());
+  Epetra_Vector& epetrasolution = 
+             const_cast<Epetra_Vector&>(noxsolution->getEpetraVector());
+  
+  coarseinterface_->ApplyAllConstraints(epetrasolution);
+  
+  // put the vector back into place
+  const NOX::Epetra::Group& solgroup2 = 
+             dynamic_cast<const NOX::Epetra::Group&>(solver.getSolutionGroup());
+  const NOX::Epetra::Vector* noxsolution2 = 
+             dynamic_cast<const NOX::Epetra::Vector*>(&solgroup2.getX());
+  Epetra_Vector& epetrasolution2 = 
+             const_cast<Epetra_Vector&>(noxsolution2->getEpetraVector());
+  epetrasolution2.Scale(1.0,epetrasolution); 
   return;
 }
 
