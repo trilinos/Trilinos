@@ -80,6 +80,7 @@ ml_(NULL),
 ag_(NULL)
 {
   label_    = "nlnML_Preconditioner";
+  CheckInputParameters(mlparams);
   params_   = rcp(new Teuchos::ParameterList(mlparams));
   // we make a backup of the nullspace dimension as it might be
   // overwritten by the adaptive ns procedure
@@ -97,6 +98,112 @@ NLNML::NLNML_Preconditioner::~NLNML_Preconditioner()
   if (ag_) ML_Aggregate_Destroy(&ag_);
   if (ml_) ML_Destroy(&ml_);
   return;
+}
+
+
+/*----------------------------------------------------------------------*
+ |   (private)                                                m.gee 3/06|
+ *----------------------------------------------------------------------*/
+bool NLNML::NLNML_Preconditioner::CheckInputParameters(ParameterList& params)
+{
+  int missing = 0;
+  vector<string> missingparams(38);
+  
+  if (!params.isParameter("nlnML output")) 
+    { missingparams[missing] = "\"nlnML output\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML max levels")) 
+    { missingparams[missing] = "\"nlnML max levels\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML coarse: max size")) 
+    { missingparams[missing] = "\"nlnML coarse: max size\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML is linear preconditioner")) 
+    { missingparams[missing] = "\"nlnML is linear preconditioner\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML apply constraints")) 
+    { missingparams[missing] = "\"nlnML apply constraints\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML is matrixfree")) 
+    { missingparams[missing] = "\"nlnML is matrixfree\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML finite difference fine level")) 
+    { missingparams[missing] = "\"nlnML finite difference fine level\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML finite difference alpha")) 
+    { missingparams[missing] = "\"nlnML finite difference alpha\" [double]"; ++missing; }
+  if (!params.isParameter("nlnML finite difference beta")) 
+    { missingparams[missing] = "\"nlnML finite difference beta\" [double]"; ++missing; }
+  if (!params.isParameter("nlnML finite difference centered")) 
+    { missingparams[missing] = "\"nlnML finite difference centered\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML Jacobian fix diagonal")) 
+    { missingparams[missing] = "\"nlnML Jacobian fix diagonal\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML absolute residual tolerance")) 
+    { missingparams[missing] = "\"nlnML absolute residual tolerance\" [double]"; ++missing; }
+  if (!params.isParameter("nlnML max cycles")) 
+    { missingparams[missing] = "\"nlnML max cycles\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML adaptive recompute")) 
+    { missingparams[missing] = "\"nlnML adaptive recompute\" [double]"; ++missing; }
+  if (!params.isParameter("nlnML offset recompute")) 
+    { missingparams[missing] = "\"nlnML offset recompute\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML additional adaptive nullspace")) 
+    { missingparams[missing] = "\"nlnML additional adaptive nullspace\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML PDE equations")) 
+    { missingparams[missing] = "\"nlnML PDE equations\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML null space: dimension")) 
+    { missingparams[missing] = "\"nlnML null space: dimension\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML spatial dimension")) 
+    { missingparams[missing] = "\"nlnML spatial dimension\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML coarse: type")) 
+    { missingparams[missing] = "\"nlnML coarse: type\" [string]"; ++missing; }
+  if (!params.isParameter("nlnML nodes per aggregate")) 
+    { missingparams[missing] = "\"nlnML nodes per aggregate\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML use nlncg on fine level")) 
+    { missingparams[missing] = "\"nlnML use nlncg on fine level\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML use nlncg on medium level")) 
+    { missingparams[missing] = "\"nlnML use nlncg on medium level\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML use nlncg on coarsest level")) 
+    { missingparams[missing] = "\"nlnML use nlncg on coarsest level\" [bool]"; ++missing; }
+  if (!params.isParameter("nlnML max iterations newton-krylov fine level")) 
+    { missingparams[missing] = "\"nlnML max iterations newton-krylov fine level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML max iterations newton-krylov medium level")) 
+    { missingparams[missing] = "\"nlnML max iterations newton-krylov medium level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML max iterations newton-krylov coarsest level")) 
+    { missingparams[missing] = "\"nlnML max iterations newton-krylov coarsest level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML linear smoother type fine level")) 
+    { missingparams[missing] = "\"nlnML linear smoother type fine level\" [string]"; ++missing; }
+  if (!params.isParameter("nlnML linear smoother type medium level")) 
+    { missingparams[missing] = "\"nlnML linear smoother type medium level\" [string]"; ++missing; }
+  if (!params.isParameter("nlnML linear smoother type coarsest level")) 
+    { missingparams[missing] = "\"nlnML linear smoother type coarsest level\" [string]"; ++missing; }
+  if (!params.isParameter("nlnML linear smoother sweeps fine level")) 
+    { missingparams[missing] = "\"nlnML linear smoother sweeps fine level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML linear smoother sweeps medium level")) 
+    { missingparams[missing] = "\"nlnML linear smoother sweeps medium level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML linear smoother sweeps coarsest level")) 
+    { missingparams[missing] = "\"nlnML linear smoother sweeps coarsest level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML nonlinear presmoothing sweeps fine level")) 
+    { missingparams[missing] = "\"nlnML nonlinear presmoothing sweeps fine level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML nonlinear presmoothing sweeps medium level")) 
+    { missingparams[missing] = "\"nlnML nonlinear presmoothing sweeps medium level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML nonlinear smoothing sweeps coarse level")) 
+    { missingparams[missing] = "\"nlnML nonlinear smoothing sweeps coarse level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML nonlinear postsmoothing sweeps medium level")) 
+    { missingparams[missing] = "\"nlnML nonlinear postsmoothing sweeps medium level\" [int]"; ++missing; }
+  if (!params.isParameter("nlnML nonlinear postsmoothing sweeps fine level")) 
+    { missingparams[missing] = "\"nlnML nonlinear postsmoothing sweeps fine level\" [int]"; ++missing; }
+  // 38 parameters right now
+  
+  
+  if (missing && Comm().MyPID()==0)
+  {
+    cout << "======================================================\n";
+    cout << "nlnML (level 0): missing parameters in parameter list:\n";
+    cout << "------------------------------------------------------\n";
+    for (int i=0; i<missing; ++i)
+      cout << missingparams[i] << endl;
+    cout << "------------------------------------------------------\n";
+    cout << "nlnML (level 0): Note that depending on what method you would like\n"
+         << "                 to run it's ok to miss some while for others\n"
+         << "                 suboptimal default values will be used.\n";
+    cout << "======================================================\n";
+    fflush(stdout);     
+  }
+  
+  return true;
 }
 
 

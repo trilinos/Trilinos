@@ -185,6 +185,8 @@ private:
   void setParameter(string name,kind dvalue) const
   { params_->set(name,dvalue); return; }
 
+  bool CheckInputParameters(ParameterList& params);
+  
 private:
 
   char* label_;
