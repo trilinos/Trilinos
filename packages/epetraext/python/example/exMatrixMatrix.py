@@ -31,11 +31,11 @@
 import sys
 
 try:
-  import setpath
-  import Epetra, EpetraExt
+    import setpath
+    import Epetra, EpetraExt
 except ImportError:
-  from PyTrilinos import Epetra, EpetraExt
-  print >>sys.stderr, "Using system-installed Epetra, EpetraExt"
+    from PyTrilinos import Epetra, EpetraExt
+    print >>sys.stderr, "Using system-installed Epetra, EpetraExt"
 
 # Create a global communicator
 comm    = Epetra.PyComm()
@@ -43,61 +43,47 @@ numProc = comm.NumProc()
 iAmRoot = comm.MyPID() == 0
 
 def main():
-  n   = 10 * numProc
-  map = Epetra.Map(n, 0, comm)
+    n   = 10 * numProc
+    map = Epetra.Map(n, 0, comm)
 
-  # ================================================================= #
-  # Creates two matrices, one is diagonal (A), the other contains the #
-  # first sub- and super-diagonal (B), then sum them (B = A + B).     #
-  # Note that B cannot be FillComplete()'d before calling Add()       #
-  # unless it already contains the structure of A + B.                #
-  # ================================================================= #
+    # ================================================================= #
+    # Creates two matrices, one is diagonal (A), the other contains the #
+    # first sub- and super-diagonal (B), then sum them (B = A + B).     #
+    # Note that B cannot be FillComplete()'d before calling Add()       #
+    # unless it already contains the structure of A + B.                #
+    # ================================================================= #
 
-  Indices = Epetra.IntSerialDenseVector(2)
-  Values  = Epetra.SerialDenseVector(2)
+    A    = Epetra.CrsMatrix(Epetra.Copy, map, 0)
+    rows = map.MyGlobalElements()
+    for i in rows:
+        err = A.InsertGlobalValues(i, 2.0, i)
+        if err < 0:
+            raise RunTimeError, "Processor %d, global row %d of A, error code %d" \
+                  % (comm.MyPID(), i, err)
+    A.FillComplete()
 
-  A = Epetra.CrsMatrix(Epetra.Copy, map, 0)
-  Values[0] = 2.0
+    B = Epetra.CrsMatrix(Epetra.Copy, map, 0)
+    for i in rows:
+        indices = [ ]
+        values  = [ ]
+        if i > 0:
+            indices.append(i-1)
+            values.append(-1)
+        elif i < n - 1:
+            indices.append(i+1)
+            values.append(-1)
+        err = B.InsertGlobalValues(i, values, indices)
+        if err < 0:
+            raise RunTimeError, "Processor %d, global row %d of B, error code %d" \
+                  % (comm.MyPID(), i, err)
 
-  rows = map.MyGlobalElements()
+    EpetraExt.Add(A, False, 1.0, B, 1.0)
+    print B
 
-  for i in rows:
-    Indices[0] = i
-    err = A.InsertGlobalValues(i, 1, Values, Indices)
-    if err < 0:
-      raise RunTimeError, "Processor %d, global row %d of A, error code %d" \
-            % (comm.MyPID(), i, err)
-  A.FillComplete()
-
-  B = Epetra.CrsMatrix(Epetra.Copy, map, 0)
-  Values[0] = -1
-  Values[1] = -1
-
-  for i in rows:
-    if i == 0:
-      NumEntries = 1
-      Indices[0] = i + 1
-    elif i == n - 1:
-      NumEntries = 1
-      Indices[0] = i - 1 
-    else:
-      NumEntries = 2
-      Indices[0] = i - 1 
-      Indices[1] = i + 1 
-    err = B.InsertGlobalValues(i, NumEntries, Values, Indices)
-    if err < 0:
-      raise RunTimeError, "Processor %d, global row %d of B, error code %d" \
-            % (comm.MyPID(), i, err)
-
-  C = B
-
-  EpetraExt.Add(A, False, 1.0, B, 1.0)
-  print B
-
-  return 0
+    return 0
 
 if __name__ == "__main__":
-  failures = main()
-  failures = comm.SumAll(failures)[0]
-  if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
-  sys.exit(failures)
+    failures = main()
+    failures = comm.SumAll(failures)[0]
+    if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(failures)
