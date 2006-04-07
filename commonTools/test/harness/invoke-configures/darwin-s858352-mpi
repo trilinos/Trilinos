@@ -1,10 +1,10 @@
 ../configure \
-CXX=c++ \
+CXX=c++-3.3 \
 F77=g77 \
 RANLIB="ranlib -s" \
 CPPFLAGS=-Wno-long-double \
 MACOSX_DEPLOYMENT_TARGET=10.4 \
---with-ldflags="-L/sw/lib/ -L/usr/local/lib -framework veclib -bind_at_load" \
+--with-ldflags="-L/sw/lib -L/usr/local/lib -framework veclib -bind_at_load" \
 --with-libs="-lsuperlu -lsuperlu_dist -lumfpack -lamd -lg2c" \
 --enable-mpi \
 --with-mpi-compilers \
