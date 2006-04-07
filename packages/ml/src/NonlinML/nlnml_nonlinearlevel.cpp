@@ -437,12 +437,12 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
   
   if (OutLevel() && !Comm().MyPID() && !coarseinterface_->isFAS())
   {
-    printf("ML (level %d): Entering Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
+    printf("nlnML (level %d): Entering Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
     fflush(stdout);
   }
   else if (OutLevel() && !Comm().MyPID() && coarseinterface_->isFAS())
   {
-    printf("ML (level %d): Entering FAS-Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
+    printf("nlnML (level %d): Entering FAS-Nonlinear Smoother, Goal: %12.8e\n",level_,*norm); 
     fflush(stdout);
   }
   
@@ -472,7 +472,7 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
         //cout << "ML (level " << level_ << "): NOX: " 
         //     << niter << " iterations, Norm(F)=" 
         //     << norm2 << " , Converged\n"; fflush(stdout);
-        printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Converged\n",level_,niter,norm2);
+        printf("nlnML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Converged\n",level_,niter,norm2);
         fflush(stdout);
      }
   }
@@ -483,7 +483,7 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
         //cout << "ML (level " << level_ << "): NOX: "
         //     << niter << " iterations, Norm(F)=" 
         //     << norm2 << ", Unconverged\n"; fflush(stdout);
-        printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Unonverged\n",level_,niter,norm2);
+        printf("nlnML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Unonverged\n",level_,niter,norm2);
         fflush(stdout);
      }
   }
@@ -493,7 +493,7 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
      if (OutLevel() > 0 && Comm().MyPID() == 0) {
         //cout << "ML (level " << level_ << "): NOX: " 
         //     << niter << " iterations, Norm(F)=" << norm2 << ", Failed\n"; fflush(stdout);
-        printf("ML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Failed\n",level_,niter,norm2);
+        printf("nlnML (level %d): NOX: %d iterations, Norm(F)=%12.8e , Failed\n",level_,niter,norm2);
         fflush(stdout);
      }
   }
@@ -503,7 +503,7 @@ bool NLNML::NLNML_NonlinearLevel::Iterate(Epetra_Vector* f,
      if (Comm().MyPID() == 0)
         //cout << "ML (level " << level_ << "): ***WRN*** NOX returned unknown status, Norm(F)=" 
         //     << norm2 << "\n"; fflush(stdout);
-        printf("ML (level %d): ***WRN*** NOX: return status unknown, Norm(F)=%12.8e , Failed\n",level_,norm2);
+        printf("nlnML (level %d): ***WRN*** NOX: return status unknown, Norm(F)=%12.8e , Failed\n",level_,norm2);
         fflush(stdout);
   }
   

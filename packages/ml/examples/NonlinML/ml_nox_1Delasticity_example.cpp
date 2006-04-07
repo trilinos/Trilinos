@@ -305,21 +305,18 @@ int main(int argc, char *argv[])
   // run the preconditioner as a solver **********************
 #if 0
    // the preconditioner can also act as a multigrid solver (without outer Krylov method)
-   if (islinearPrec==false)
+   if (mlparams.get("nlnML is linear preconditioner",true)==false)
    {
-      double t0 = GetClock();
-      int notconverged = Prec.solve();
-      double t1 = GetClock();
-      if (ml_printlevel>0 && Comm.MyPID()==0)
-         cout << "NOX/ML :============solve time incl. setup : " << (t1-t0) << " sec\n";
-      double appltime = fineinterface.getsumtime();
-      if (ml_printlevel>0 && Comm.MyPID()==0)
+      int printlevel = mlparams.get("nlnML output",6);
+      int notconverged = Prec->solve();
+      double appltime = fineinterface->getsumtime();
+      if (printlevel>0 && Comm.MyPID()==0)
       {
          cout << "NOX/ML :===========of which time in ccarat : " << appltime << " sec\n";
-         cout << "NOX/ML :======number calls to computeF in this solve : " << fineinterface.getnumcallscomputeF() << "\n\n\n";
+         cout << "NOX/ML :======number calls to computeF in this solve : " << fineinterface->getnumcallscomputeF() << "\n\n\n";
       }
-      fineinterface.resetsumtime();
-      fineinterface.setnumcallscomputeF(0);
+      fineinterface->resetsumtime();
+      fineinterface->setnumcallscomputeF(0);
       return notconverged;
    }
 #endif

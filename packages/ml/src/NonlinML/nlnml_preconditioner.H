@@ -37,7 +37,7 @@
  *
  * \brief ML nonlinear preconditioner and solver
  *
- * \date Last update do Doxygen: 31-Mar-05
+ * \date Last update do Doxygen: 6-April-06
  *
  */
 #include "ml_common.h"
@@ -96,9 +96,41 @@ class NLNML::NLNML_FineLevelNoxInterface;
 
 using namespace std;
 using namespace Teuchos;
+//! NLNML: default namespace for all ML/NOX nonlinear methods
 namespace NLNML
 {
 
+/*!
+ 
+   \brief NLNML_Preconditioner: a class to define a multilevel nonlinear preconditioner and solver
+
+   Class NLNML::NLNML_Preconditioner defines an algebraic nonlinear preconditioner
+   or solver that is based on a full approximation scheme (FAS) approach and
+   is implemented making use of NOX' nonlinear solver capabilities.
+   It operates on Epetra objects and implements an Epetra_Operator to be easily
+   used as a preconditioner to some outer nonlinear iteration.
+   It also implements the NOX::EpetraNew::Interface::Preconditioner from NOX
+   so it can serve as it's own interface (see NOX documentation for details).
+   In this class several methods and options can be chosen, which are described in the
+   parameter set functions
+   
+  
+    To make use of the full functionality of this class it 
+    requires ML to be configured with the following options:
+    - \c --with-ml_nox
+    - \c --enable-epetra
+    - \c --enable-epetraext
+    - \c --enable-nox
+    - \c --enable-nox-epetra
+    - \c --enable-prerelease
+    - \c --enable-aztecoo
+    - \c --enable-amesos
+    
+    \note
+    an example is given in the directory ml/examples/NonlinML
+
+    \author Michael Gee, SNL 9214
+*/  
 class NLNML_Preconditioner : public virtual Epetra_Operator,
                              public virtual NOX::Epetra::Interface::Preconditioner
 {
@@ -136,7 +168,7 @@ public:
   
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
   
-  void solve() const ;
+  int solve() const ;
   
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
   { cout << "ML_Nox_Preconditioner::Apply does not make sense for an ML-Multilevel Operator\n"

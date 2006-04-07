@@ -682,9 +682,101 @@ int NLNML::NLNML_Preconditioner::ApplyInverse_NonLinear(const Epetra_MultiVector
 /*----------------------------------------------------------------------*
  |  run FAS preconditioner as a solver                        m.gee 3/06|
  *----------------------------------------------------------------------*/
-void NLNML::NLNML_Preconditioner::solve() const
+int NLNML::NLNML_Preconditioner::solve() const
 {
-  return ;
+  // get starting solution form the interface
+  const Epetra_Vector* xfine = interface_->getSolution();
+  
+  // compute preconditioner
+  double t5 = GetClock();
+  NLNML::NLNML_Preconditioner* tmp = 
+                          const_cast<NLNML::NLNML_Preconditioner*>(this);
+  tmp->computePreconditioner(*xfine,*tmp);
+  double t6 = GetClock();
+  
+  // check sanity
+  if (!isinit())
+  {
+    cout << "**ERR**: NLNML::NLNML_Preconditioner::solve:\n"
+         << "**ERR**: initflag is false\n"
+         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+  if (getParameter("nlnML is linear preconditioner",true) != false)
+  {
+    cout << "**ERR**: NLNML::NLNML_Preconditioner::solve:\n"
+         << "**ERR**: Preconditioner has to be nonlinear preconditioner to run as solver\n"
+         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+  
+  // compute current residual
+  RefCountPtr<Epetra_Vector> f = rcp(new Epetra_Vector(xfine->Map(),false));
+  RefCountPtr<Epetra_Vector> x = rcp(new Epetra_Vector(Copy,*xfine,0));
+  (*nlnlevel_)[0]->setModifiedSystem(false,NULL,NULL);
+  (*nlnlevel_)[0]->computeF(*x,*f,NOX::Epetra::Interface::Required::Residual);
+  
+  // max cycles
+  int maxcycle = getParameter("nlnML max cycles",10);
+  
+  {
+    double t1 = GetClock();
+    bool   converged = false;
+    for (int i=1; i<=maxcycle; ++i)
+    {
+      if (OutLevel() && Comm().MyPID()==0)
+      {
+        cout << "\n\nnlnML (level 0):============ nonlinear V-cycle # " << i << " ================\n";
+        fflush(stdout);
+      }
+      double t3 = GetClock();
+      double norm = getParameter("nlnML absolute residual tolerance",1.0e-06);
+      
+      //===== presmooth level 0=================================================
+      int nsmooth = getParameter("nlnML nonlinear presmoothing sweeps fine level",2);
+      double prenorm = norm;
+      if (nsmooth)
+        converged = (*nlnlevel_)[0]->Iterate(f.get(),x.get(),nsmooth,&prenorm);
+      if (converged) break;
+      
+      //===== restrict to level 0===============================================
+      RefCountPtr<Epetra_Vector> xcoarse = rcp((*nlnlevel_)[0]->restrict_to_next_coarser_level(x.get(),0,1));
+      RefCountPtr<Epetra_Vector> fcoarse = rcp((*nlnlevel_)[0]->restrict_to_next_coarser_level(f.get(),0,1));
+      
+      //===== call FAS-cycle on level 1=========================================
+      bool coarseconverged=false;
+      FAS_cycle(fcoarse.get(),xcoarse.get(),1,&coarseconverged,&prenorm);
+      fcoarse = null;
+      
+      //===== prolongate correction=============================================
+      RefCountPtr<Epetra_Vector> xcorrect = rcp((*nlnlevel_)[0]->prolong_to_this_level(xcoarse.get(),0,1));
+      xcoarse = null;
+      
+      //=====apply correction===================================================
+      x->Update(1.0,*xcorrect,1.0);
+      xcorrect = null;
+      
+      //=====postsmoothing level 0==============================================
+      nsmooth = getParameter("nlnML nonlinear postsmoothing sweeps fine level",2);
+      double postnorm = norm;
+      if (nsmooth)
+        converged = (*nlnlevel_)[0]->Iterate(f.get(),x.get(),nsmooth,&postnorm);
+      if (converged) break;
+      if (OutLevel() && Comm().MyPID()==0)
+      {
+        double t4 = GetClock();
+        cout << "nlnML (level 0):============ time this cycle: " << t4-t3 << " sec\n";
+        fflush(stdout);
+      }
+    }
+    double t2 = GetClock();
+    if (OutLevel() && Comm().MyPID()==0)
+    {
+      cout << "nlnML (level 0):============solve time incl. setup " 
+           << t2-t1+t6-t5 << " sec\n";
+      fflush(stdout);
+    }
+    if (converged) return 0;
+    else           return -1;
+  }
 }
 
 
