@@ -136,50 +136,188 @@ class NLNML_Preconditioner : public virtual Epetra_Operator,
 {
 public:
 
+  //! Constructs an NLNML_Preconditioner class with given parameters
+  /*! 
+   Constructs a NLNML_Preconditioner class and sets parameters from a parameter list
+   This constructor does NOT actually create the Multilevel hierarchy and the
+   methods, this is done by a call to computePreconditioner.
+   
+   The complete list of parameters is:
+   \code
+   Teuchos::ParameterList mlparams;
+   mlparams.set("nlnML output",                                      6          ); // ML-output-level (0-10)
+   mlparams.set("nlnML max levels",                                  10         ); // max. # levels (minimum = 2 !)
+   mlparams.set("nlnML coarse: max size",                            5000       ); // the size ML stops generating coarser levels
+   mlparams.set("nlnML is linear preconditioner",                    false      ); // linear or nonlinear preconditioner
+   mlparams.set("nlnML apply constraints",                           true       ); // make application apply constraints
+   mlparams.set("nlnML is matrixfree",                               true       ); // create Jacobian yourself or ask application for it
+   mlparams.set("nlnML finite difference fine level",                true       ); // create jacobian on fine grid only
+   mlparams.set("nlnML finite difference alpha",                     1.0e-08    ); // finite differencing perturbation value   
+   mlparams.set("nlnML finite difference beta",                      1.0e-07    ); // finite differencing perturbation value     
+   mlparams.set("nlnML finite difference centered",                  false      ); // use centered or forward finite differencing    
+   mlparams.set("nlnML Jacobian fix diagonal",                       true       ); // check Jacobian for zero diagonal entries and fix them    
+
+   mlparams.set("nlnML absolute residual tolerance",                 1.0e-06    ); // internal tolerance for nonlinear preconditioner
+   mlparams.set("nlnML max cycles",                                  500        ); // max # cycles before we give up
+   mlparams.set("nlnML adaptive recompute",                          0.0        ); // recompute if residual is larger then this value
+   mlparams.set("nlnML offset recompute",                            0          ); // every offset this preconditioner is recomputed     
+   mlparams.set("nlnML additional adaptive nullspace",               0          ); // compute adaptive nullspace (additional kernel vectors)
+   mlparams.set("nlnML PDE equations",                               1          ); // dof per node
+   mlparams.set("nlnML null space: dimension",                       1          ); // dimension of nullspace
+   mlparams.set("nlnML spatial dimension",                           1          ); // spatial dimension of problem: 1, 2, 3
+   mlparams.set("nlnML coarse: type",                                "Uncoupled"); // Uncoupled METIS VBMETIS
+   mlparams.set("nlnML nodes per aggregate",                         3          ); // # nodes per agg for coarsening METIS and VBMETIS
+
+   mlparams.set("nlnML use nlncg on fine level",                     true       ); // use nlnCG or mod. Newton's method   
+   mlparams.set("nlnML use nlncg on medium level",                   true       );    
+   mlparams.set("nlnML use nlncg on coarsest level",                 false      );    
+   
+   mlparams.set("nlnML max iterations newton-krylov fine level",     0          ); // # iterations of lin. CG in mod. Newton's method    
+   mlparams.set("nlnML max iterations newton-krylov medium level" ,  0          );    
+   mlparams.set("nlnML max iterations newton-krylov coarsest level", 5          );    
+
+   mlparams.set("nlnML linear smoother type fine level",             "MLS"      ); // SGS BSGS Jacobi MLS Bcheby AmesosKLU   
+   mlparams.set("nlnML linear smoother type medium level",           "SGS"      ); 
+   mlparams.set("nlnML linear smoother type coarsest level",         "AmesosKLU"); 
+   mlparams.set("nlnML linear smoother sweeps fine level",           -3         ); // number of sweeps or polynomial order
+   mlparams.set("nlnML linear smoother sweeps medium level",         3          );
+   mlparams.set("nlnML linear smoother sweeps coarsest level",       1          );
+
+   mlparams.set("nlnML nonlinear presmoothing sweeps fine level",    1          ); // # nonlinear presmoothing sweeps in FAS-cycle fine level
+   mlparams.set("nlnML nonlinear presmoothing sweeps medium level",  0          );
+   mlparams.set("nlnML nonlinear smoothing sweeps coarse level",     3          );
+   mlparams.set("nlnML nonlinear postsmoothing sweeps medium level", 2          );
+   mlparams.set("nlnML nonlinear postsmoothing sweeps fine level",   3          );
+   \endcode
+   
+   \param interface (In) : rcptr to an NLNML::NLNML_FineLevelNoxInterface derived class
+   \param mlparams  (In) : paramter list
+   \param comm      (In) : the Epetra_Comm to be used
+   */
   explicit NLNML_Preconditioner(
                      RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> interface,
                      ParameterList& mlparams,
                      const Epetra_Comm& comm);
   
+  //! Destroys the preconditioner.
+  /*! 
+   Destroys the NLNML_Preconditioner.
+   */
   virtual ~NLNML_Preconditioner();
   
+  //! Register the outer Nox iterative method with the nonlinear preconditioner.
+  /*! 
+   Register the outer Nox iterative method with the nonlinear preconditioner.
+   This is necessary, because the outer NOX iterative method will provide the
+   nonlinear preconditioner with current solution and residual. Necessary only
+   in the nonlinear preconditioner case and when used as a preconditioner. If used as
+   stand-alone solver, this is not necessary.
+   \param s   (In) : rcptr to the NOX::Solver::Manager of the outer
+                     Nox iterative method.
+  */
   void SetNoxSolver(RefCountPtr<NOX::Solver::Manager> s) { noxsolver_ = s; } 
   
+  //! Returns the label of this class.
+  /*! 
+   Returns the label of this class.
+   */
   const char* Label() const {return(&(label_[0]));}
   
+  //! get Comm of this class
+  /*! 
+   Derived from Epetra_Operator, returns ref to the Epetra_Comm of this class 
+   */
   const Epetra_Comm & Comm() const {return(comm_);}
   
+  //! Get fine level OperatorDomainMap.
+  /*! 
+   Derived from Epetra_Operator, get fine level OperatorDomainMap.
+   */
   const Epetra_Map & OperatorDomainMap() const {return interface_->getMap();}
   
+  //! Get fine level OperatorRangeMap.
+  /*! 
+   Derived from Epetra_Operator, get fine level OperatorRangeMap.
+   */
   const Epetra_Map & OperatorRangeMap() const {return interface_->getMap();}
   
+  //! Returns the level of output to be generated to stdout ( 0 - 10 )
   inline int OutLevel() const { return params_->get("nlnML output",0); } 
   
+  //! Check initialization flag 
+  /*! 
+   check the init-flag, if false, ApplyInverse will call computePreconditioner
+   */
   inline bool isinit() const {return(isinit_);}
   
+  //! Set the initialization flag
   bool setinit(bool flag) 
   {isinit_=flag; ncalls_NewPrec_ = 0; return(true);}
   
+  //! Get the offset to recompute this preconditioner.
   int getoffset() const {return params_->get("nlnML offset recompute",0);} 
   
+  // derived from NOX::Epetra::Interface::Preconditioner
+  //! Construct the preconditioner.
+  /*! 
+   Construct the preconditioner. This is derived from the 
+   NOX::Epetra::Interface::Preconditioner class. Nox will use this to
+   (re)compute the preconditioner.
+   \param x          (In) : Vector of the current solution
+   \param M          (In) : this
+   \param precParams (In) : ignored
+   */
   virtual bool computePreconditioner(const Epetra_Vector& x, 
 				     Epetra_Operator& M,
 				     NOX::Parameter::List* precParams = 0);
   
+  //! ApplyInverse the preconditioner
+  /*! 
+   ApplyInverse the preconditioner. Method is derived from Epetra_Operator. 
+   \param X   (In) : Epetra_MultiVector matching the fine level map of this
+                     preconditioner
+   \param Y (Out)  : Epetra_MultiVector containing the result on output
+   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
   
+  //! Apply the nonlinear multigrid FAS-solver. 
+  /*! 
+   Apply the nonlinear multigrid FAS-solver. 
+   This preconditioner can act as a stand-alone FAS-Solver. Will throw an error,
+   if the preconditioner is set up as a linear preconditioner
+   */
   int solve() const ;
   
+  //! Apply the preconditioner, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
   { cout << "ML_Nox_Preconditioner::Apply does not make sense for an ML-Multilevel Operator\n"
          << "Use ApplyInverse\n";return(-1);}
   
+  //! SetUseTranspose, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   int SetUseTranspose(bool UseTranspose) { return -1; }
 
+  //! NormInf, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   double NormInf() const {return(-1.0);}
   
+  //! UseTranspose, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   bool UseTranspose() const {return false;}
   
+  //! HasNormInf, not implemented.
+  /*! 
+   Derived from Epetra_Operator, always returns false. 
+   */
   bool HasNormInf() const {return(false);}
 
 private:
@@ -221,9 +359,9 @@ private:
   
 private:
 
-  char* label_;
-  bool  isinit_; 
-  int   ncalls_NewPrec_;
+  char*                                                           label_;
+  bool                                                            isinit_; 
+  int                                                             ncalls_NewPrec_;
   
   const Epetra_Comm&                                              comm_;
   RefCountPtr<NLNML::NLNML_FineLevelNoxInterface>                 interface_;
