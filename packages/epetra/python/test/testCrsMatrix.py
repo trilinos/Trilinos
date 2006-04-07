@@ -231,7 +231,7 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
 
     def testScale(self):
         "Test Epetra.CrsMatrix Scale method"
-        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3)
+        crsm = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3, False)
         self.fillMatrixGlobal(crsm)
         crsm.Scale(10)
         for lrid in range(crsm.NumMyRows()):
@@ -795,7 +795,7 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm1 = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         rangeMap1 = crsm1.RangeMap()
         self.failUnless(self.rowMap.SameAs(rangeMap1))
-        crsm2 = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3)
+        crsm2 = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3, False)
         rangeMap2 = crsm2.RangeMap()
         self.failUnless(self.rowMap.SameAs(rangeMap2))
 
@@ -988,7 +988,7 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         crsm1 = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, 3)
         rangeMap1 = crsm1.OperatorRangeMap()
         self.failUnless(self.rowMap.SameAs(rangeMap1))
-        crsm2 = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3)
+        crsm2 = Epetra.CrsMatrix(Epetra.Copy, self.rowMap, self.colMap, 3, False)
         rangeMap2 = crsm2.OperatorRangeMap()
         self.failUnless(self.rowMap.SameAs(rangeMap2))
 
