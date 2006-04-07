@@ -54,94 +54,83 @@ import Epetra
 import Amesos
 
 def main():
-  Comm = Epetra.PyComm()
-  numProc = Comm.NumProc()
-  iAmRoot = Comm.MyPID() == 0
+    Comm = Epetra.PyComm()
+    numProc = Comm.NumProc()
+    iAmRoot = Comm.MyPID() == 0
 
-  args = sys.argv[1:]
-  if len(args) == 0:
-    Type = "Amesos_Lapack"
-  else:
-    Type = args[0]
-
-  NumGlobalRows = 10
-  Map = Epetra.Map(NumGlobalRows, 0, Comm)
-  LHS_exact = Epetra.MultiVector(Map, 1)
-  LHS = Epetra.MultiVector(Map, 1)
-  RHS = Epetra.MultiVector(Map, 1)
-  Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
-  Indices = Epetra.IntSerialDenseVector(3)
-  Values = Epetra.SerialDenseVector(3)
-  Values[0] =  2.0
-  Values[1] = -1.0
-  Values[2] = -1.0
-
-  NumLocalRows = Map.NumMyElements()
-
-  # Builds the matrix (1D Laplacian)
-  for ii in range(0, NumLocalRows):
-    i = Map.GID(ii)
-    Indices[0] = i
-    if i == 0:
-      NumEntries = 2
-      Indices[1] = i + 1
-    elif i == NumGlobalRows - 1:
-      NumEntries = 2
-      Indices[1] = i - 1
+    args = sys.argv[1:]
+    if len(args) == 0:
+        Type = "Amesos_Lapack"
     else:
-      NumEntries = 3
-      Indices[1] = i - 1
-      Indices[2] = i + 1
-    Matrix.InsertGlobalValues(i, NumEntries, Values, Indices)
-  ierr = Matrix.FillComplete()
+        Type = args[0]
 
-  LHS_exact.Random()
-  Matrix.Multiply(False, LHS_exact, RHS)
-  LHS.PutScalar(1.0)
+    NumGlobalRows = 10
+    Map           = Epetra.Map(NumGlobalRows, 0, Comm)
+    LHS_exact     = Epetra.MultiVector(Map, 1)
+    LHS           = Epetra.MultiVector(Map, 1)
+    RHS           = Epetra.MultiVector(Map, 1)
+    Matrix        = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
+    NumLocalRows  = Map.NumMyElements()
 
-  Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
+    # Builds the matrix (1D Laplacian)
+    for ii in range(0, NumLocalRows):
+        i = Map.GID(ii)
+        Indices = [ i ]
+        Values  = [2.0]
+        if i > 0:
+          Indices.append(i-1)
+          Values.append(-1)
+        elif i < NumGlobalRows - 1:
+          Indices.append(i+1)
+          Values.append(-1)
+        Matrix.InsertGlobalValues(i, Values, Indices)
+    ierr = Matrix.FillComplete()
 
-  if Type == "Amesos_Lapack":
-    Solver = Amesos.Lapack(Problem)
-  elif Type == "Amesos_Klu":
-    Solver = Amesos.Klu(Problem)
-  elif Type == "Amesos_Umfpack":
-    Solver = Amesos.Umfpack(Problem)
-  elif Type == "Amesos_Superlu":
-    Solver = Amesos.Superlu(Problem)
-  elif Type == "Amesos_Superludist":
-    Solver = Amesos.Superludist(Problem)
-  elif Type == "Amesos_Dscpack":
-    Solver = Amesos.Dscpack(Problem)
-  elif Type == "Amesos_Mumps":
-    Solver = Amesos.Mumps(Problem)
-  else:
-    print 'Selected solver (%s) not available' % Type
-    print __doc__
-    sys.exit(-2)
-  
-  AmesosList = {
-    "PrintStatus": True,
-    "PrintTiming": True
-  }
-  Solver.SetParameters(AmesosList)
-  if Comm.MyPID() == 0:
-    print "1) Performing symbolic factorizations..."
-  Solver.SymbolicFactorization()
-  if Comm.MyPID() == 0:
-    print "2) Performing numeric factorizations..."
-  Solver.NumericFactorization()
-  if Comm.MyPID() == 0:
-    print "3) Solving the linear system..."
-  ierr = Solver.Solve()
-  if Comm.MyPID() == 0:
-    print "   Solver.Solve() return code = ", ierr
-  del Solver
+    LHS_exact.Random()
+    Matrix.Multiply(False, LHS_exact, RHS)
+    LHS.PutScalar(1.0)
 
-  # Exit with a code that indicates the total number of successes
-  successes = Comm.SumAll(1)[0]
-  if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
-  sys.exit(numProc-successes)
+    Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
+
+    if Type == "Amesos_Lapack":
+        Solver = Amesos.Lapack(Problem)
+    elif Type == "Amesos_Klu":
+        Solver = Amesos.Klu(Problem)
+    elif Type == "Amesos_Umfpack":
+        Solver = Amesos.Umfpack(Problem)
+    elif Type == "Amesos_Superlu":
+        Solver = Amesos.Superlu(Problem)
+    elif Type == "Amesos_Superludist":
+        Solver = Amesos.Superludist(Problem)
+    elif Type == "Amesos_Dscpack":
+        Solver = Amesos.Dscpack(Problem)
+    elif Type == "Amesos_Mumps":
+        Solver = Amesos.Mumps(Problem)
+    else:
+        print 'Selected solver (%s) not available' % Type
+        print __doc__
+        sys.exit(-2)
+
+    AmesosList = {"PrintStatus": True,
+                  "PrintTiming": True  }
+    Solver.SetParameters(AmesosList)
+    if Comm.MyPID() == 0:
+        print "1) Performing symbolic factorizations..."
+    Solver.SymbolicFactorization()
+    if Comm.MyPID() == 0:
+        print "2) Performing numeric factorizations..."
+    Solver.NumericFactorization()
+    if Comm.MyPID() == 0:
+        print "3) Solving the linear system..."
+    ierr = Solver.Solve()
+    if Comm.MyPID() == 0:
+        print "   Solver.Solve() return code = ", ierr
+    del Solver
+
+    # Exit with a code that indicates the total number of successes
+    successes = Comm.SumAll(1)[0]
+    if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
+    sys.exit(numProc-successes)
 
 # This is a standard Python construct.  Put the code to be executed in a
 # function [typically main()] and then use the following logic to call the
