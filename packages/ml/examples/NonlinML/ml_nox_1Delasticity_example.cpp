@@ -254,8 +254,9 @@ int main(int argc, char *argv[])
    ParameterList mlparams;
    mlparams.set("nlnML output",                                      6         ); // ML-output-level (0-10)
    mlparams.set("nlnML max levels",                                  10         ); // max. # levels (minimum = 2 !)
-   mlparams.set("nlnML coarse: max size",                            500        ); // the size ML stops generating coarser levels
+   mlparams.set("nlnML coarse: max size",                            5000        ); // the size ML stops generating coarser levels
    mlparams.set("nlnML is linear preconditioner",                    false       );
+   mlparams.set("nlnML apply constraints",                           true       );
    mlparams.set("nlnML is matrixfree",                               true       ); 
    mlparams.set("nlnML finite difference fine level",                true       );
    mlparams.set("nlnML finite difference alpha",                     1.0e-08    );    
