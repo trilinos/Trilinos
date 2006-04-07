@@ -80,7 +80,7 @@ def main():
   # Prints the nonzero elements of the matrix, row-by-row
   # 
   for i in MyGlobalElements:
-    Indices, Values = Matrix[i]
+    Indices, Values = Matrix.ExtractGlobalRowCopy(i)
     for j in xrange(len(Indices)):
       print "PE%d: Matrix(%d, %d) = %e" % (Comm.MyPID(), i, Indices[j], Values[j])
 
