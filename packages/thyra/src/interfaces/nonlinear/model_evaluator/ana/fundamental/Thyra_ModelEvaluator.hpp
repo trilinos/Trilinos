@@ -1028,6 +1028,22 @@ public:
 
   //@}
 
+  /** \name Reporting functions */
+  //@{
+
+  /** \brief Report the final point and whether the problem was considered
+   * solved or not.
+   *
+   * ToDo: Add a PL to InArgs to allow extra data like Lagrange multipliers to
+   * be passed back as well.
+   */
+  virtual void reportFinalPoint(
+    const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
+    ,const bool                                   wasSolved
+    );
+
+  //@}
+
 };
 
 // //////////////////////////////////
@@ -1958,6 +1974,15 @@ template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
 ModelEvaluator<Scalar>::create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const
 { return DerivativeMultiVector<Scalar>(); }
+
+template<class Scalar>
+void ModelEvaluator<Scalar>::reportFinalPoint(
+  const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
+  ,const bool                                   wasSolved
+  )
+{
+  // This final point is just ignored by default!
+}
 
 } // namespace Thyra
 

@@ -63,10 +63,19 @@ public:
   Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> getEpetraModel() const;
 
   /** \brief . */
+  void setInitialGuess( const ModelEvaluatorBase::InArgs<double>& initialGuess );
+
+  /** \brief . */
   void uninitialize(
     Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator>         *epetraModel = NULL
     ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  *W_factory   = NULL
     );
+
+  /** \brief . */
+  const ModelEvaluatorBase::InArgs<double>& getFinalPoint() const;
+
+  /** \brief . */
+  bool finalPointWasSolved() const;
 
   //@}
 
@@ -126,6 +135,11 @@ public:
     const ModelEvaluatorBase::InArgs<double>    &inArgs
     ,const ModelEvaluatorBase::OutArgs<double>  &outArgs
     ) const;
+  /** \brief . */
+  void reportFinalPoint(
+    const ModelEvaluatorBase::InArgs<double>      &finalPoint
+    ,const bool                                   wasSolved
+    );
 
   //@}
 
@@ -161,6 +175,9 @@ private:
   p_space_t                                                          p_space_;
   Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >     f_space_;
   g_space_t                                                          g_space_;
+  ModelEvaluatorBase::InArgs<double>                                 initialGuess_;
+  ModelEvaluatorBase::InArgs<double>                                 finalPoint_;
+  bool                                                               finalPointWasSolved_;
   
 };
 

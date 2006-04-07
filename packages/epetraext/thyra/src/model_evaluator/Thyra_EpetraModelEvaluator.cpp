@@ -35,6 +35,7 @@ namespace Thyra {
 // Constructors/initializers/accessors.
 
 EpetraModelEvaluator::EpetraModelEvaluator()
+  :finalPointWasSolved_(false)
 {}
 
 EpetraModelEvaluator::EpetraModelEvaluator(
@@ -66,11 +67,19 @@ void EpetraModelEvaluator::initialize(
   g_map_.resize(outArgs.Ng()); g_space_.resize(outArgs.Ng());
   for( int j = 0; j < static_cast<int>(g_space_.size()); ++j )
     g_space_[j] = create_MPIVectorSpaceBase( g_map_[j] = epetraModel_->get_g_map(j) );
+  //
+  initialGuess_ = this->createInArgs();
+  finalPointWasSolved_ = false;
 }
 
 Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> EpetraModelEvaluator::getEpetraModel() const
 {
   return epetraModel_;
+}
+
+void EpetraModelEvaluator::setInitialGuess( const ModelEvaluatorBase::InArgs<double>& initialGuess )
+{
+  initialGuess_ = initialGuess;
 }
 
 void EpetraModelEvaluator::uninitialize(
@@ -85,6 +94,17 @@ void EpetraModelEvaluator::uninitialize(
   if(W_factory_.get()) {
     W_factory_->setOStream(this->getOStream());
   }
+}
+
+const ModelEvaluatorBase::InArgs<double>&
+EpetraModelEvaluator::getFinalPoint() const
+{
+  return finalPoint_;
+}
+
+bool EpetraModelEvaluator::finalPointWasSolved() const
+{
+  return finalPointWasSolved_;
 }
 
 // Overridden from ModelEvaulator.
@@ -128,6 +148,10 @@ EpetraModelEvaluator::get_g_space(int j) const
 Teuchos::RefCountPtr<const VectorBase<double> >
 EpetraModelEvaluator::get_x_init() const
 {
+  Teuchos::RefCountPtr<const VectorBase<double> >
+    x_init = initialGuess_.get_x();
+  if(x_init.get())
+    return x_init;
   return create_MPIVectorBase( epetraModel_->get_x_init(), x_space_ );
 }
 
@@ -135,6 +159,10 @@ Teuchos::RefCountPtr<const VectorBase<double> >
 EpetraModelEvaluator::get_p_init(int l) const
 {
   TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
+  Teuchos::RefCountPtr<const VectorBase<double> >
+    p_l_init = initialGuess_.get_p(l);
+  if(p_l_init.get())
+    return p_l_init;
   return create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l] );
 }
 
@@ -466,6 +494,15 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nLeaving Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
   
+}
+
+void EpetraModelEvaluator::reportFinalPoint(
+  const ModelEvaluatorBase::InArgs<double>      &finalPoint
+  ,const bool                                   wasSolved
+  )
+{
+  finalPoint_ = finalPoint;
+  finalPointWasSolved_ = wasSolved;
 }
 
 // Public functions overridden from Teuchos::Describable
