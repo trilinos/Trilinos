@@ -34,6 +34,10 @@
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess, 
 		  int outputPrecision, 
 		  const Teuchos::RefCountPtr<ostream>& outputStream,
@@ -89,7 +93,17 @@ void NOX::Utils::reset(NOX::Parameter::List& p)
 {
   // Basic info
   printTest = p.getParameter("Output Information", 0xf);
+#ifdef HAVE_MPI
+  if (p.isParameter("MyPID"))
+    myPID = p.getParameter("MyPID", 0);
+  else {
+    MPI_Comm_rank(MPI_COMM_WORLD, &myPID);
+    // Set the default in the parameter list
+    p.getParameter("MyPID", myPID);
+  }
+#else
   myPID = p.getParameter("MyPID", 0);
+#endif
   printProc = p.getParameter("Output Processor", 0);
   precision = p.getParameter("Output Precision", 3);
   

@@ -153,7 +153,11 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID); 
+  
+  // RPP: Commenting this line out.  There is now a default for MPI
+  // specific builds.  We are testing that it works here.
+  // //printParams.setParameter("MyPID", MyPID);
+
   printParams.setParameter("Output Precision", 3);
   printParams.setParameter("Output Processor", 0);
   if (verbose)
