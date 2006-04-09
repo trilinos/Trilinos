@@ -71,11 +71,17 @@ void MPISession::init(int* argc, void*** argv)
                      "Error code=" << mpierr 
                      << " detected in MPI_Get_processor_name()");
 
-  cerr << "Teuchos::MPISession::init() started processor " << procName << endl;
-  
+  if (showStartupMessage())
+    {
+      cerr << "Teuchos::MPISession::init() started processor " 
+           << procName << endl;
+    }
+  else
+    {
 #else
   cerr << "Teuchos::MPISession::init() started serial run" << endl;
 #endif
+    }
 }
 
 void MPISession::finalize()

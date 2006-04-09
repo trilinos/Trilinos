@@ -60,6 +60,10 @@ namespace Teuchos
       //! Finalizer, calls MPI_Finalize() if necessary
       static void finalize();
 
+      /** Set to true if a message should be written by each processor
+       * at startup. */
+      static bool& showStartupMessage() {static bool rtn=false; return rtn;}
+
     private:
 
       static int rank_;
