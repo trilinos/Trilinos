@@ -37,6 +37,9 @@ int GlobalMPISession::nProc_ = 1 ;
 
 GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 {
+  std::ostringstream oss;
+  // Above is used to create all output before sending to *out to avoid
+  // jumbled parallel output between processors
 #ifdef HAVE_MPI
   // initialize MPI
 	int mpiHasBeenStarted = 0, mpierr = 0;
@@ -64,16 +67,17 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
     ,"Error code=" << mpierr << " detected in MPI_Get_processor_name()"
     ,out
     );
-  
-  if(out)
-    *out << "Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name "
-         << procName << " and rank " << rank_ << "!" << endl;
+
+  oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started processor with name "
+      << procName << " and rank " << rank_ << "!" << std::endl;
 
 #else
-  if(out)
-    *out << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run" << endl;
+  oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run" << std::endl;
 #endif
-
+#ifndef TEUCHOS_SUPPRESS_PROC_STARTUP_BANNER
+  if(out)
+    *out << oss.str();
+#endif
 }
 
 GlobalMPISession::~GlobalMPISession()
