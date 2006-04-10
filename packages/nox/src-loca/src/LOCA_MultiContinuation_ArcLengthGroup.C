@@ -52,7 +52,7 @@ LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
     theta(paramIDs.size(), 1.0),
     doArcLengthScaling(true),
     gGoal(0.5),
-    gMax(0.0),
+    gMax(0.8),
     thetaMin(1.0e-3),
     isFirstRescale(true)
 {
@@ -70,7 +70,7 @@ LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
 				     0.5);
   gMax = 
     continuationParams->getParameter("Max Arc Length Parameter Contribution", 
-				     0.0);
+				     0.8);
   thetaMin = continuationParams->getParameter("Min Scale Factor", 1.0e-3);
   
   for (int i=0; i<numParams; i++)
