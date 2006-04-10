@@ -2843,7 +2843,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
     cout << PrintMsg_ << "R and P smoothing : \\omega = " << DampingFactor << "/lambda_max" <<endl;
   }
     
-  string str = List_.get("eigen-analysis: type","Anorm");
+  string str = List_.get("eigen-analysis: type","cg");
   
   if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
   
