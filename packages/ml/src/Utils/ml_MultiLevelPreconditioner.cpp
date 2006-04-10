@@ -1107,7 +1107,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // visualize aggregate shape and other statistics.                        //
   // ====================================================================== //
   
-  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0))
+  if (List_.get("viz: enable", false) ||
+      List_.get("repartition: enable",0) ||
+      List_.get("aggregation: aux: enable", false))
   { 
     if (SolvingMaxwell_) {
       ML_Aggregate_VizAndStats_Setup(ml_nodes_);
@@ -1119,7 +1121,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // If present, fix the finest-level coordinates in the hierarchy          //
   // ====================================================================== //
   
-  if (List_.get("viz: enable", false) || List_.get("repartition: enable",0))
+  if (List_.get("viz: enable", false) || 
+      List_.get("repartition: enable",0) ||
+      List_.get("aggregation: aux: enable", false))
     ML_CHK_ERR(SetupCoordinates());
 
   // ====================================================================== //
