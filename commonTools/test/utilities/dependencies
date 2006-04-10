@@ -261,6 +261,7 @@ REMOVE --enable-belos
 REMOVE --enable-amesos
 REMOVE --with-ml_amesos
 REMOVE --enable-moertel
+REMOVE --enable-moocho
 REMOVE --enable-anasazi
 REMOVE --with-loca-anasazi
 REMOVE --enable-capo
