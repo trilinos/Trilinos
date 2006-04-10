@@ -1040,7 +1040,8 @@ subroutine get_hg_compressed_pins(data, num_gid_entries, nedges, &
   npins, fmat, edge_GID, edge_ptr, pin_GID, ierr) 
 type(Zoltan_User_Data_2), intent(in) :: data
 integer(Zoltan_INT), intent(in) :: num_gid_entries, nedges, npins, fmat
-integer(Zoltan_INT), intent(out), dimension(*) :: edge_GID, edge_ptr, pin_GID
+!integer(Zoltan_INT), intent(out), dimension(*) :: edge_GID, edge_ptr, pin_GID
+integer(Zoltan_INT), intent(out) :: edge_GID(0:*), edge_ptr(0:*), pin_GID(0:*)
 integer(Zoltan_INT), intent(out) :: ierr
 
 ! Local variables
