@@ -795,7 +795,7 @@ void NLNML::NLNML_Preconditioner::Set_Smoothers()
   int    nsmooth     = getParameter("nlnML linear smoother sweeps medium level",1);
   string csmoother   = getParameter("nlnML linear smoother type coarsest level",(string)"AmesosKLU");
   int    ncsmooth    = getParameter("nlnML linear smoother sweeps coarsest level",1);
-  int    coarsegrid  = getParameter("nlnML coarse level",1) - 1;  
+  int    coarsegrid  = maxnlevel - 1;  
   
   // choose fine level smoother
   if (fsmoother=="SGS")
