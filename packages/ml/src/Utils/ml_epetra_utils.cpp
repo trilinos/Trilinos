@@ -448,8 +448,11 @@ int ML_Epetra_VbrMatrix_getrow(ML_Operator *data, int N_requested_rows,
     exit( EXIT_FAILURE );
   }
   */
-  int NumPDEEqns = mat_in->num_PDEs;
-    //(Avbr->NumMyRows())/(Avbr->NumMyBlockRows());
+  // NO! // int NumPDEEqns = mat_in->num_PDEs;
+  // The above expression does not hold because of AmalgamateAndDropWeak,
+  // which changes the value of mat_in->num_PDEs. Therefore we need
+  // to use the one below, which might be slightly slower.
+  int NumPDEEqns = (Avbr->NumMyRows())/(Avbr->NumMyBlockRows());
 
   for (int i = 0; i < N_requested_rows; i++)
   {
