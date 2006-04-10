@@ -29,6 +29,7 @@
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Teuchos_Time.hpp"
 
 namespace Thyra {
 
@@ -342,6 +343,9 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 
   typedef EpetraExt::ModelEvaluator EME;
 
+  Teuchos::Time totalTimer(""), timer("");
+  totalTimer.start(true);
+
   const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
   const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
@@ -352,6 +356,10 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
   
   // InArgs
+  
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nSetting up/creating input arguments ...\n";
+  timer.start(true);
 
   EME::InArgs epetraInArgs = epetraModel_->createInArgs();
 
@@ -407,7 +415,15 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   if( inArgs.supports(IN_ARG_beta) )
     epetraInArgs.set_beta(inArgs.get_beta());
 
+  timer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *OSTab(out).getOStream() << "\nTime to setup InArgs = "<<timer.totalElapsedTime()<<" sec\n";
+
   // OutArgs
+  
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nSetting up/creating output arguments ...\n";
+  timer.start(true);
 
   EME::OutArgs epetraOutArgs = epetraModel_->createOutArgs();
 
@@ -477,11 +493,27 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
     epetraOutArgs.set_f_poly(epetra_f_poly);
   }
 
+  timer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *OSTab(out).getOStream() << "\nTime to setup OutArgs = "<<timer.totalElapsedTime()<<" sec\n";
+
   // Do the evaluation
+  
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nEvaluating the output functions ...\n";
+  timer.start(true);
 
   epetraModel_->evalModel(epetraInArgs,epetraOutArgs);
 
+  timer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *OSTab(out).getOStream() << "\nTime to evaluate output functions = "<<timer.totalElapsedTime()<<" sec\n";
+
   // Postprocess arguments
+  
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nPost processing the output objects ...\n";
+  timer.start(true);
 
   if( W.get() ) {
     if( !fwdW.get() ) {
@@ -491,8 +523,16 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
     W->setOStream(this->getOStream());
   }
 
+  timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nLeaving Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
+    *OSTab(out).getOStream() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
+
+
+  totalTimer.stop();
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out
+      << "\nTotal evaluation time = "<<totalTimer.totalElapsedTime()<<" sec\n"
+      << "\nLeaving Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
   
 }
 
