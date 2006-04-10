@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
     // Initialize the workspace and set the output level
     Init();
 
-    int NumGlobalElements = 10000;
+    int NumGlobalElements = 100;
 
     // define the space for fine level vectors and operators.
     Space FineSpace(NumGlobalElements);
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     // by MLAPI::MultiLevelSA
     
     Teuchos::ParameterList MLList;
-    MLList.set("max levels",3);
+    MLList.set("max levels",2);
     MLList.set("increasing or decreasing","increasing");
     MLList.set("aggregation: type", "Uncoupled");
     MLList.set("aggregation: damping factor", 0.0);
