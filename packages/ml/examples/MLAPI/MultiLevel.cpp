@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
     MultiVector RHS(FineSpace);
 
     LHS = 0.0;
-    RHS.Random();
+    RHS = 1.0;
 
     // set parameters for aggregation and smoothers
     // NOTE: only a limited subset of the parameters accepted by
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
     MLList.set("krylov: solver", "gmres");
     MLList.set("krylov: max iterations", 1550);
     MLList.set("krylov: tolerance", 1e-9);
-    MLList.set("krylov: output level", 16);
+    MLList.set("krylov: output level", 10);
     Krylov(FineMatrix, LHS, RHS, Prec, MLList);
 
     cout << Prec;
