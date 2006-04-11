@@ -37,6 +37,7 @@
 
 #include "NOX_Abstract_Group.H"              // for CopyType, ReturnType
 #include "NOX_Abstract_MultiVector.H"        // for MultiVector, DenseMatrix
+#include "LOCA_Abstract_Iterator.H"          // for StepStatus
 
 // forward declarations
 namespace LOCA {
@@ -166,8 +167,23 @@ namespace LOCA {
        */
       virtual bool isDXZero() const = 0;
 
-      //! Notify constraint that the continuation step is completed
-      virtual void notifyCompletedStep() = 0;
+      //! Perform any preprocessing before a continuation step starts.
+      /*!
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.  The default implementation is empty.
+       */
+      virtual void 
+      preProcessContinuationStep(
+			   LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+	
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.  The default implementation is empty.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			   LOCA::Abstract::Iterator::StepStatus stepStatus) {}
 
     }; // Class ConstraintInterface
 

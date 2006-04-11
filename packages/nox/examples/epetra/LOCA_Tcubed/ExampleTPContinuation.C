@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
   NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
   //locaStepperList.setParameter("Continuation Method", "Natural");
   locaStepperList.setParameter("Continuation Method", "Arc Length");
-  //locaStepperList.setParameter("Bordered Solver Method", "Nested");
+  locaStepperList.setParameter("Bordered Solver Method", "Nested");
   //locaStepperList.setParameter("Bordered Solver Method", "Householder");
   //locaStepperList.setParameter("Continuation Parameter", "Right BC");
   locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
     locaStepperList.sublist("Nested Bordered Solver");
   nestedList.setParameter("Bordered Solver Method", "Householder");
   nestedList.setParameter("Include UV In Preconditioner", true);
-  nestedList.setParameter("Use P For Preconditioner", true);
+  //nestedList.setParameter("Use P For Preconditioner", true);
 
   // Create bifurcation sublist
   NOX::Parameter::List& bifurcationList = 
@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
   bifurcationList.setParameter("Type", "Turning Point");
   //bifurcationList.setParameter("Formulation", "Moore-Spence");
   bifurcationList.setParameter("Formulation", "Minimally Augmented");
+  //bifurcationList.setParameter("Constraint Method", "Modified");
   bifurcationList.setParameter("Solver Method", "Phipps Bordering");
   //bifurcationList.setParameter("Solver Method", "Salinger Bordering");
   bifurcationList.setParameter("Bordered Solver Method", "Householder");
@@ -256,8 +257,8 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Scaling", "Row Sum");  
   lsParams.setParameter("Compute Scaling Manually", false);
   //lsParams.setParameter("Preconditioning", "None");  
-  //lsParams.setParameter("Preconditioner", "Ifpack");
-  lsParams.setParameter("Preconditioner", "New Ifpack");
+  lsParams.setParameter("Preconditioner", "Ifpack");
+  //lsParams.setParameter("Preconditioner", "New Ifpack");
   lsParams.setParameter("Ifpack Preconditioner", "ILU");
   Teuchos::ParameterList ifpackParams;
   ifpackParams.set("fact: level-of-fill", 1);

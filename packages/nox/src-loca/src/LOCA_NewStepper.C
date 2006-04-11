@@ -249,10 +249,19 @@ LOCA::NewStepper::start() {
   NOX::StatusTest::StatusType solverStatus;
   string callingFunction = "LOCA::Stepper::start()";
 
+  // Allow continuation group to preprocess the step
+  curGroupPtr->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
+
   printStartStep();
 
   // Perform solve of initial conditions
   solverStatus = solverPtr->solve();
+
+  // Allow continuation group to postprocess the step
+  if (solverStatus == NOX::StatusTest::Converged)
+    curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
+  else
+    curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Unsuccessful);
 
   // Set up continuation groups
   const LOCA::MultiContinuation::ExtendedGroup& constSolnGrp =
@@ -391,6 +400,9 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     // Take step in predictor direction
     curGroupPtr->computeX(*curGroupPtr, *curPredictorPtr, stepSize);
 
+    // Allow continuation group to preprocess the step
+    curGroupPtr->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
+
     printStartStep();
 
     // Create new solver
@@ -401,10 +413,16 @@ LOCA::NewStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     // Solve step
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
 
+    // Allow continuation group to postprocess the step
+    if (solverStatus == NOX::StatusTest::Converged)
+      curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
+    else
+      curGroupPtr->postProcessContinuationStep(LOCA::Abstract::Iterator::Unsuccessful);
+
     // Get solution
     curGroupPtr->copy(solverPtr->getSolutionGroup());
 
-    if (solverStatus == NOX::StatusTest::Failed) {
+    if (solverStatus != NOX::StatusTest::Converged) {
       printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
       return LOCA::Abstract::Iterator::Failed;
     }
@@ -443,6 +461,9 @@ LOCA::NewStepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Take step in predictor direction
   curGroupPtr->computeX(*prevGroupPtr, *curPredictorPtr, stepSize);
+
+  // Allow continuation group to preprocess the step
+  curGroupPtr->preProcessContinuationStep(stepStatus);
 
   // Reset solver to compute new solution
 //   solverPtr->reset(*curGroupPtr, *statusTestPtr,
@@ -486,11 +507,11 @@ LOCA::NewStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   string callingFunction = "LOCA::Stepper::postprocess()";
 
+  // Allow continuation group to postprocess the step
+  curGroupPtr->postProcessContinuationStep(stepStatus);
+
   if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful)
     return stepStatus;
-
-  // Notify continuation group step is completed
-  curGroupPtr->notifyCompletedStep();
 
   *prevPredictorPtr = *curPredictorPtr;
 

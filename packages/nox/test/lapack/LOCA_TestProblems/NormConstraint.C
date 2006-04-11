@@ -186,8 +186,3 @@ NormConstraint::setIsZeroDX(bool flag)
 {
   isZeroDgDx = flag;
 }
-
-void
-NormConstraint::notifyCompletedStep()
-{
-}

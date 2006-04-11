@@ -384,10 +384,19 @@ LOCA::MultiContinuation::CompositeConstraint::isDXZero() const
 }
 
 void
-LOCA::MultiContinuation::CompositeConstraint::notifyCompletedStep()
+LOCA::MultiContinuation::CompositeConstraint::preProcessContinuationStep(
+			   LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   for (int i=0; i<numConstraintObjects; i++)
-    constraintPtrs[i]->notifyCompletedStep();
+    constraintPtrs[i]->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::MultiContinuation::CompositeConstraint::postProcessContinuationStep(
+			   LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  for (int i=0; i<numConstraintObjects; i++)
+    constraintPtrs[i]->postProcessContinuationStep(stepStatus);
 }
 
 void

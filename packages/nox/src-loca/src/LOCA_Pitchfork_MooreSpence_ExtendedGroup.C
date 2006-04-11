@@ -714,6 +714,57 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParamsMulti(
   }
 }
 
+void
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParams(
+					      const LOCA::ParameterVector& p) 
+{
+  isValidF = false;
+  isValidJacobian = false;
+  isValidNewton = false;
+
+  grpPtr->setParams(p);
+  setBifParam(p[bifParamID[0]]);
+}
+
+void
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(int paramID, 
+						      double val)
+{
+  if (paramID == bifParamID[0])
+    setBifParam(val);
+  else
+    grpPtr->setParam(paramID, val);
+}
+
+void
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(string paramID, 
+						      double val)
+{
+  const LOCA::ParameterVector& pVec = grpPtr->getParams();
+  if (pVec.getIndex(paramID) == bifParamID[0])
+    setBifParam(val);
+  else
+    grpPtr->setParam(paramID, val);
+}
+
+const LOCA::ParameterVector&
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParams() const 
+{
+  return grpPtr->getParams();
+}
+
+double
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(int paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
+double
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(string paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeDfDpMulti(
 					    const vector<int>& paramIDs, 
@@ -765,6 +816,20 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeDfDpMulti(
 }
 
 void
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::preProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::Pitchfork::MooreSpence::ExtendedGroup::postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->postProcessContinuationStep(stepStatus);
+}
+
+void
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::projectToDraw(
 					       const NOX::Abstract::Vector& x,
 					       double *px) const
@@ -780,57 +845,6 @@ int
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::projectToDrawDimension() const
 {
   return grpPtr->projectToDrawDimension() + 1;
-}
-
-void
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParams(
-					      const LOCA::ParameterVector& p) 
-{
-  isValidF = false;
-  isValidJacobian = false;
-  isValidNewton = false;
-
-  grpPtr->setParams(p);
-  setBifParam(p[bifParamID[0]]);
-}
-
-const LOCA::ParameterVector&
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParams() const 
-{
-  return grpPtr->getParams();
-}
-
-void
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(int paramID, 
-						      double val)
-{
-  if (paramID == bifParamID[0])
-    setBifParam(val);
-  else
-    grpPtr->setParam(paramID, val);
-}
-
-double
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(int paramID) const
-{
-  return grpPtr->getParam(paramID);
-}
-
-void
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::setParam(string paramID, 
-						      double val)
-{
-  const LOCA::ParameterVector& pVec = grpPtr->getParams();
-  if (pVec.getIndex(paramID) == bifParamID[0])
-    setBifParam(val);
-  else
-    grpPtr->setParam(paramID, val);
-}
-
-double
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::getParam(string paramID) const
-{
-  return grpPtr->getParam(paramID);
 }
 
 void
@@ -893,13 +907,6 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::printSolution(
       globalData->locaUtils->sciformat(pf_x.getBifParam()) << std::endl;
   }
   grpPtr->printSolution(*pf_x.getNullVec(), pf_x.getBifParam());
-}
-
-void
-LOCA::Pitchfork::MooreSpence::ExtendedGroup::notifyCompletedStep()
-{
-  // Notify underlying group that the step is completed
-  grpPtr->notifyCompletedStep();
 }
 
 double

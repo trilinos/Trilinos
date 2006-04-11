@@ -674,6 +674,57 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParamsMulti(
   }
 }
 
+void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParams(
+					      const LOCA::ParameterVector& p) 
+{
+  isValidF = false;
+  isValidJacobian = false;
+  isValidNewton = false;
+
+  grpPtr->setParams(p);
+  setBifParam(p[bifParamID[0]]);
+}
+
+void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(int paramID, 
+							 double val)
+{
+  if (paramID == bifParamID[0])
+    setBifParam(val);
+  else
+    grpPtr->setParam(paramID, val);
+}
+
+void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(string paramID, 
+							 double val)
+{
+  const LOCA::ParameterVector& pVec = grpPtr->getParams();
+  if (pVec.getIndex(paramID) == bifParamID[0])
+    setBifParam(val);
+  else
+    grpPtr->setParam(paramID, val);
+}
+
+const LOCA::ParameterVector&
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParams() const 
+{
+  return grpPtr->getParams();
+}
+
+double
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(int paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
+double
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(string paramID) const
+{
+  return grpPtr->getParam(paramID);
+}
+
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti(
 					    const vector<int>& paramIDs, 
@@ -713,6 +764,20 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeDfDpMulti(
 }
 
 void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::preProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->postProcessContinuationStep(stepStatus);
+}
+
+void
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::projectToDraw(
 					       const NOX::Abstract::Vector& x,
 					       double *px) const
@@ -728,57 +793,6 @@ int
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::projectToDrawDimension() const
 {
   return grpPtr->projectToDrawDimension() + 1;
-}
-
-void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParams(
-					      const LOCA::ParameterVector& p) 
-{
-  isValidF = false;
-  isValidJacobian = false;
-  isValidNewton = false;
-
-  grpPtr->setParams(p);
-  setBifParam(p[bifParamID[0]]);
-}
-
-const LOCA::ParameterVector&
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParams() const 
-{
-  return grpPtr->getParams();
-}
-
-void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(int paramID, 
-							 double val)
-{
-  if (paramID == bifParamID[0])
-    setBifParam(val);
-  else
-    grpPtr->setParam(paramID, val);
-}
-
-double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(int paramID) const
-{
-  return grpPtr->getParam(paramID);
-}
-
-void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::setParam(string paramID, 
-							 double val)
-{
-  const LOCA::ParameterVector& pVec = grpPtr->getParams();
-  if (pVec.getIndex(paramID) == bifParamID[0])
-    setBifParam(val);
-  else
-    grpPtr->setParam(paramID, val);
-}
-
-double
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::getParam(string paramID) const
-{
-  return grpPtr->getParam(paramID);
 }
 
 void
@@ -833,13 +847,6 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::printSolution(
       globalData->locaUtils->sciformat(tp_x.getBifParam()) << std::endl;
   }
   grpPtr->printSolution(*tp_x.getNullVec(), tp_x.getBifParam());
-}
-
-void
-LOCA::TurningPoint::MooreSpence::ExtendedGroup::notifyCompletedStep()
-{
-  // Notify underlying group that the step is completed
-  grpPtr->notifyCompletedStep();
 }
 
 double

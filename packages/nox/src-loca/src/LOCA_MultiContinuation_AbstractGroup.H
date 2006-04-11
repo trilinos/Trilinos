@@ -35,6 +35,7 @@
 
 #include "NOX_Abstract_Group.H" // base class
 #include "NOX_Abstract_MultiVector.H"
+#include "LOCA_Abstract_Iterator.H"
 
 namespace LOCA {
   class ParameterVector;
@@ -110,9 +111,6 @@ namespace LOCA {
 		       NOX::Abstract::MultiVector& dfdp, 
 		       bool isValidF) = 0;
 
-      //! Notify group that the continuation step is completed
-      virtual void notifyCompletedStep() = 0;
-
       //@}
 
       
@@ -122,6 +120,24 @@ namespace LOCA {
        * if more appropriate/efficient approaches are available.
        */
       //@{
+
+      //! Perform any preprocessing before a continuation step starts.
+      /*!
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.  The default implementation to empty.
+       */
+      virtual void 
+      preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.  The default implementation to empty.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Projects solution to a few scalars for multiparameter continuation
       /*! 

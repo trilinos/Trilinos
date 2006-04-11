@@ -250,8 +250,3 @@ LOCA::MultiContinuation::ArcLengthConstraint::isDXZero() const
 {
   return false;
 }
-
-void
-LOCA::MultiContinuation::ArcLengthConstraint::notifyCompletedStep()
-{
-}

@@ -62,6 +62,8 @@ Constraint(
   sigma_x(a.createMultiVector(1, NOX::ShapeCopy)),
   constraints(1, 1),
   borderedSolver(),
+  dn(static_cast<double>(a_vector->length())),
+  sigma_scale(1.0),
   isSymmetric(is_symmetric),
   isValidConstraints(false),
   isValidDX(false),
@@ -75,6 +77,9 @@ Constraint(
 							  turningPointParams);
   if (!isSymmetric) {
     b_vector = b->createMultiVector(1, NOX::DeepCopy);
+  }
+  else {
+    b_vector = a_vector->clone(NOX::DeepCopy);
   }
 
   // Options
@@ -96,13 +101,15 @@ Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source,
   turningPointParams(source.turningPointParams),
   grpPtr(Teuchos::null),
   a_vector(source.a_vector->clone(type)),
-  b_vector(),
+  b_vector(source.b_vector->clone(type)),
   w_vector(source.w_vector->clone(type)),
   v_vector(source.v_vector->clone(type)),
   Jv_vector(source.Jv_vector->clone(type)),
   sigma_x(source.sigma_x->clone(type)),
   constraints(source.constraints),
   borderedSolver(),
+  dn(source.dn),
+  sigma_scale(source.sigma_scale),
   isSymmetric(source.isSymmetric),
   isValidConstraints(false),
   isValidDX(false),
@@ -119,9 +126,6 @@ Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source,
   borderedSolver = 
     globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
 							  turningPointParams);
-  if (!isSymmetric) {
-    b_vector = source.b_vector->clone(type);
-  }
 
   // We don't explicitly copy the group because the constrained group
   // will do that
@@ -172,11 +176,14 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
     parsedParams = source.parsedParams;
     turningPointParams = source.turningPointParams;
     *a_vector = *(source.a_vector);
+    *b_vector = *(source.b_vector);
     *w_vector = *(source.w_vector);
     *v_vector = *(source.v_vector);
     *Jv_vector = *(source.Jv_vector);
     *sigma_x = *(source.sigma_x);
     constraints.assign(source.constraints);
+    dn = source.dn;
+    sigma_scale = source.sigma_scale;
     isSymmetric = source.isSymmetric;
     isValidConstraints = source.isValidConstraints;
     isValidDX = source.isValidDX;
@@ -191,13 +198,6 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
       globalData->locaFactory->createBorderedSolverStrategy(
 							 parsedParams,
 							 turningPointParams);
-
-    if (!isSymmetric) {
-      if (b_vector == Teuchos::null)
-	b_vector = source.b_vector->clone(NOX::DeepCopy);
-      else
-	*b_vector = *(source.b_vector);
-    }
 
     // We don't explicitly copy the group because the constrained group
     // will do that
@@ -266,22 +266,14 @@ computeConstraints()
 							   callingFunction);
 
   // Set up bordered systems
-  if (isSymmetric) {
-    borderedSolver->setMatrixBlocksMultiVecConstraint(grpPtr, 
-						      a_vector, 
-						      a_vector, 
-						      Teuchos::null);
-  }
-  else {
-    borderedSolver->setMatrixBlocksMultiVecConstraint(grpPtr, 
-						      a_vector, 
-						      b_vector, 
-						      Teuchos::null);
-  }
+  borderedSolver->setMatrixBlocksMultiVecConstraint(grpPtr, 
+						    a_vector, 
+						    b_vector, 
+						    Teuchos::null);
 
   // Create RHS
   NOX::Abstract::MultiVector::DenseMatrix one(1,1);
-  one(0,0) = 1.0;
+  one(0,0) = dn;
 
   // Get linear solver parameters
   Teuchos::RefCountPtr<NOX::Parameter::List> linear_solver_params =
@@ -336,6 +328,13 @@ computeConstraints()
 							   callingFunction);
   Jv_vector->multiply(-1.0, *w_vector, constraints);
 
+  // Scale sigma
+//   double w_norm = (*w_vector)[0].norm();
+//   double v_norm = (*v_vector)[0].norm();
+//   sigma_scale = w_norm*v_norm;
+  sigma_scale = dn;
+  constraints.scale(1.0/sigma_scale);
+
   if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
     globalData->locaUtils->out() << 
       "\n\tEstimate for singularity of Jacobian (sigma1) = " << 
@@ -358,8 +357,10 @@ computeConstraints()
 	std::endl;
     }
     *a_vector = *w_vector;
-    if (!isSymmetric)
-      *b_vector = *v_vector;
+    *b_vector = *v_vector;
+
+    a_vector->scale(std::sqrt(dn) / (*a_vector)[0].norm());
+    b_vector->scale(std::sqrt(dn) / (*b_vector)[0].norm());
   }
 
   return finalStatus;
@@ -393,7 +394,7 @@ computeDX()
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
 							     callingFunction);
-  sigma_x->scale(-1.0);
+  sigma_x->scale(-1.0/sigma_scale);
 
   isValidDX = true;
 
@@ -427,7 +428,7 @@ computeDP(const vector<int>& paramIDs,
       globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
 							     finalStatus,
 							     callingFunction);
-  dgdp.scale(-1.0);
+  dgdp.scale(-1.0/sigma_scale);
 
   // Set the first column of dgdp
   dgdp(0,0) = constraints(0,0);
@@ -472,15 +473,18 @@ isDXZero() const
 
 void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
-notifyCompletedStep()
+postProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  if (updateVectorsEveryContinuationStep) {
+  if (stepStatus == LOCA::Abstract::Iterator::Successful && 
+      updateVectorsEveryContinuationStep) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
       globalData->locaUtils->out() << 
       "\n\tUpdating null vectors for the next continuation step" << std::endl;
     }
     *a_vector = *w_vector;
-    if (!isSymmetric)
-      *b_vector = *v_vector;
+    *b_vector = *v_vector;
+
+    a_vector->scale(std::sqrt(dn) / (*a_vector)[0].norm());
+    b_vector->scale(std::sqrt(dn) / (*b_vector)[0].norm());
   }
 }

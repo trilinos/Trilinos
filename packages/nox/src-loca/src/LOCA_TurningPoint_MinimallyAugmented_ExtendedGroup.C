@@ -38,6 +38,7 @@
 #include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_Constraint.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.H"
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_Abstract_TransposeSolveGroup.H"
@@ -81,8 +82,12 @@ ExtendedGroup(
   getInitialVectors(aVecPtr, bVecPtr, isSymmetric);
 
   // Create constraint equation
-  constraint = 
-    Teuchos::rcp(new LOCA::TurningPoint::MinimallyAugmented::Constraint(
+  string constraintMethod = turningPointParams->getParameter(
+						  "Constraint Method",
+						  "Default");
+  if (constraintMethod == "Default")
+    constraint = 
+      Teuchos::rcp(new LOCA::TurningPoint::MinimallyAugmented::Constraint(
 							       globalData,
 							       parsedParams,
 							       tpParams,
@@ -91,6 +96,21 @@ ExtendedGroup(
 							       *aVecPtr,
 							       bVecPtr.get(),
 							       bifParamID));
+  else if (constraintMethod == "Modified")
+    constraint = 
+      Teuchos::rcp(new LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint(
+							       globalData,
+							       parsedParams,
+							       tpParams,
+							       grpPtr,
+							       isSymmetric,
+							       *aVecPtr,
+							       bVecPtr.get(),
+							       bifParamID));
+  else 
+    globalData->locaErrorCheck->throwError(
+		    func,
+		    string("Unknown constraint method:  ") + constraintMethod);
 
   // Create constrained group
   std::vector<int> bifParamIDs(1);
@@ -159,6 +179,16 @@ computeX(const NOX::Abstract::Group& g,
 {
   const LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup& mg = 
     dynamic_cast<const LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup&>(g);
+
+  // set newton update in constraint
+  Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint> mod_constraint = 
+    Teuchos::rcp_dynamic_cast<LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint>(constraint);
+  if (mod_constraint != Teuchos::null) {
+    const LOCA::MultiContinuation::ExtendedVector& emv_d = 
+      dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(d);
+    mod_constraint->setNewtonUpdates(*(emv_d.getXVec()), emv_d.getScalar(0), 
+				     step);
+  }
 
   conGroup->computeX(*(mg.conGroup), d, step);
 }
@@ -354,6 +384,48 @@ setParamsMulti(const vector<int>& paramIDs,
   conGroup->setParamsMulti(paramIDs, vals);
 }
 
+void
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+setParams(const LOCA::ParameterVector& p)
+{
+  conGroup->setParams(p);
+}
+
+void
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+setParam(int paramID, double val)
+{
+  conGroup->setParam(paramID, val);
+}
+
+void
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+setParam(string paramID, double val)
+{
+  conGroup->setParam(paramID, val);
+}
+
+const LOCA::ParameterVector&
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getParams() const
+{
+  return conGroup->getParams();
+}
+
+double
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getParam(int paramID) const
+{
+  return conGroup->getParam(paramID);
+}
+
+double
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+getParam(string paramID) const
+{
+  return conGroup->getParam(paramID);
+}
+
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
 computeDfDpMulti(const vector<int>& paramIDs, 
@@ -361,6 +433,20 @@ computeDfDpMulti(const vector<int>& paramIDs,
 		 bool isValidF)
 {
   return conGroup->computeDfDpMulti(paramIDs, dfdp, isValidF);
+}
+
+void
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+preProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  conGroup->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
+postProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  conGroup->postProcessContinuationStep(stepStatus);
 }
 
 void
@@ -376,48 +462,6 @@ LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
 projectToDrawDimension() const
 {
   return conGroup->projectToDrawDimension();
-}
-
-void
-LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-setParams(const LOCA::ParameterVector& p)
-{
-  conGroup->setParams(p);
-}
-
-const LOCA::ParameterVector&
-LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-getParams() const
-{
-  return conGroup->getParams();
-}
-
-void
-LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-setParam(int paramID, double val)
-{
-  conGroup->setParam(paramID, val);
-}
-
-double
-LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-getParam(int paramID) const
-{
-  return conGroup->getParam(paramID);
-}
-
-void
-LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-setParam(string paramID, double val)
-{
-  conGroup->setParam(paramID, val);
-}
-
-double
-LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-getParam(string paramID) const
-{
-  return conGroup->getParam(paramID);
 }
 
 void
@@ -486,13 +530,6 @@ printSolution(const NOX::Abstract::Vector& x,
   }
   grpPtr->printSolution(*(constraint->getLeftNullVec()), 
 			constraint->getSigma());
-}
-
-void
-LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-notifyCompletedStep()
-{
-  conGroup->notifyCompletedStep();
 }
 
 int
@@ -665,8 +702,8 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
       *aVecPtr = *bVecPtr;
 
     // Scale a and b to unit norm
-    aVecPtr->scale(static_cast<double>(aVecPtr->length() / aVecPtr->norm()));
-    bVecPtr->scale(static_cast<double>(bVecPtr->length() / bVecPtr->norm()));
+    aVecPtr->scale(std::sqrt(static_cast<double>(aVecPtr->length())) / aVecPtr->norm());
+    bVecPtr->scale(std::sqrt(static_cast<double>(bVecPtr->length())) / bVecPtr->norm());
   }
 
   else {
@@ -690,7 +727,5 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
 	(*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
         getRcpParameter<NOX::Abstract::Vector>("Initial B Vector");
     }
-    else
-      *bVecPtr = *aVecPtr;
   }
 }

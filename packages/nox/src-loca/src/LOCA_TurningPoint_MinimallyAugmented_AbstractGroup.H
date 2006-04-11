@@ -92,6 +92,15 @@ namespace LOCA {
 		       bool isValid) = 0;
 
 	/*! 
+	 * \brief Computes the derivative \f$\partial w^TJ/\partial p\f$ 
+	 */
+	virtual NOX::Abstract::Group::ReturnType 
+	computeDwtJDp(const vector<int>& paramIDs, 
+		      const NOX::Abstract::Vector& w,
+		      NOX::Abstract::MultiVector& result,
+		      bool isValid) = 0;
+
+	/*! 
 	 * \brief Computes the derivative 
 	 * \f$\frac{\partial w^TJn}{\partial x}\f$. 
 	 */

@@ -749,61 +749,6 @@ LOCA::MultiContinuation::ConstrainedGroup::setParamsMulti(
   resetIsValid();
 }
 
-NOX::Abstract::Group::ReturnType
-LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
-					     const vector<int>& paramIDs, 
-					     NOX::Abstract::MultiVector& dfdp, 
-					     bool isValid_F)
-{
-  string callingFunction = 
-    "LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti()";
-  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
-  NOX::Abstract::Group::ReturnType status;
-
-  // Cast result to constraint vector
-  LOCA::MultiContinuation::ExtendedMultiVector& c_dfdp = 
-    dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(dfdp);
-
-  // Compute df/dp
-  status = grpPtr->computeDfDpMulti(paramIDs, *c_dfdp.getXMultiVec(), 
-				    isValid_F);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							    finalStatus,
-							    callingFunction);
-
-  // Compute dg/dp
-  status = constraintsPtr->computeDP(paramIDs, 
-				     *c_dfdp.getScalars(), 
-				     isValid_F);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							    finalStatus,
-							    callingFunction);
-
-  return finalStatus;
-}
-
-void
-LOCA::MultiContinuation::ConstrainedGroup::projectToDraw(
-					      const NOX::Abstract::Vector& x,
-					      double *px) const
-{
-  const LOCA::MultiContinuation::ExtendedVector& mx = 
-    dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
-
-  grpPtr->projectToDraw(*mx.getXVec(), px);
-  for (int i=0; i<numParams; i++) {
-    px[grpPtr->projectToDrawDimension()+i] = mx.getScalar(i);
-  }
-}
-
-int
-LOCA::MultiContinuation::ConstrainedGroup::projectToDrawDimension() const
-{
-  return grpPtr->projectToDrawDimension() + numParams;
-}
-
 void
 LOCA::MultiContinuation::ConstrainedGroup::setParams(
 					       const LOCA::ParameterVector& p)
@@ -854,6 +799,77 @@ double
 LOCA::MultiContinuation::ConstrainedGroup::getParam(string paramID) const
 {
   return grpPtr->getParam(paramID);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti(
+					     const vector<int>& paramIDs, 
+					     NOX::Abstract::MultiVector& dfdp, 
+					     bool isValid_F)
+{
+  string callingFunction = 
+    "LOCA::MultiContinuation::ConstrainedGroup::computeDfDpMulti()";
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  NOX::Abstract::Group::ReturnType status;
+
+  // Cast result to constraint vector
+  LOCA::MultiContinuation::ExtendedMultiVector& c_dfdp = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector&>(dfdp);
+
+  // Compute df/dp
+  status = grpPtr->computeDfDpMulti(paramIDs, *c_dfdp.getXMultiVec(), 
+				    isValid_F);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
+
+  // Compute dg/dp
+  status = constraintsPtr->computeDP(paramIDs, 
+				     *c_dfdp.getScalars(), 
+				     isValid_F);
+  finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							    finalStatus,
+							    callingFunction);
+
+  return finalStatus;
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->preProcessContinuationStep(stepStatus);
+  constraintsPtr->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  grpPtr->postProcessContinuationStep(stepStatus);
+  constraintsPtr->postProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::MultiContinuation::ConstrainedGroup::projectToDraw(
+					      const NOX::Abstract::Vector& x,
+					      double *px) const
+{
+  const LOCA::MultiContinuation::ExtendedVector& mx = 
+    dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
+
+  grpPtr->projectToDraw(*mx.getXVec(), px);
+  for (int i=0; i<numParams; i++) {
+    px[grpPtr->projectToDrawDimension()+i] = mx.getScalar(i);
+  }
+}
+
+int
+LOCA::MultiContinuation::ConstrainedGroup::projectToDrawDimension() const
+{
+  return grpPtr->projectToDrawDimension() + numParams;
 }
 
 double
@@ -912,14 +928,6 @@ LOCA::MultiContinuation::ConstrainedGroup::scaleVector(
     dynamic_cast<LOCA::MultiContinuation::ExtendedVector&>(x);
 
   grpPtr->scaleVector(*mx.getXVec());
-}
-
-void
-LOCA::MultiContinuation::ConstrainedGroup::notifyCompletedStep()
-{
-  // Notify underlying group and constraint the step is completed
-  grpPtr->notifyCompletedStep();
-  constraintsPtr->notifyCompletedStep();
 }
 
 int

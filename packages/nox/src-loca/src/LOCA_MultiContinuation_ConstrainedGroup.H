@@ -261,24 +261,6 @@ namespace LOCA {
 		     const vector<int>& paramIDs, 
 		     const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
-      /*! 
-       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
-       * indexed by paramIDs.  The first column of \em dfdp holds F,
-       * which is valid if \em isValidF is true.  Otherwise F must be
-       * computed.
-       */
-      virtual NOX::Abstract::Group::ReturnType
-      computeDfDpMulti(const vector<int>& paramIDs, 
-		       NOX::Abstract::MultiVector& dfdp, 
-		       bool isValidF);
-
-      //! Projects solution to a few scalars for multiparameter continuation
-      virtual void projectToDraw(const NOX::Abstract::Vector& x,
-				 double *px) const;
-
-      //! Returns the dimension of the project to draw array
-      virtual int projectToDrawDimension() const;
-
       //! Set the parameter vector in the group to p (pVector = p).  
       virtual void setParams(const ParameterVector& p);
 
@@ -297,6 +279,44 @@ namespace LOCA {
       //! Return copy of parameter indexed by (string) paramID
       virtual double getParam(string paramID) const;
 
+      /*! 
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
+       * indexed by paramIDs.  The first column of \em dfdp holds F,
+       * which is valid if \em isValidF is true.  Otherwise F must be
+       * computed.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDpMulti(const vector<int>& paramIDs, 
+		       NOX::Abstract::MultiVector& dfdp, 
+		       bool isValidF);
+
+      //! Perform any preprocessing before a continuation step starts.
+      /*!
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.
+       */
+      virtual void 
+      preProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      virtual int projectToDrawDimension() const;
+
+ 
+
       //! Compute a scaled dot product
       virtual double
       computeScaledDotProduct(const NOX::Abstract::Vector& a,
@@ -312,9 +332,6 @@ namespace LOCA {
       //! Scales a vector using scaling vector
       virtual void
       scaleVector(NOX::Abstract::Vector& x) const;
-
-      //! Notify group that the continuation step is completed
-      virtual void notifyCompletedStep();
 
       //@}
 

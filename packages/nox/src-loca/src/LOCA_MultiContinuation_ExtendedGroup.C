@@ -286,11 +286,21 @@ LOCA::MultiContinuation::ExtendedGroup::getNumParams() const
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::notifyCompletedStep()
+LOCA::MultiContinuation::ExtendedGroup::preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  conGroup->notifyCompletedStep();
-  isValidPredictor = false;
-  baseOnSecant = true;
+  conGroup->preProcessContinuationStep(stepStatus);
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  conGroup->postProcessContinuationStep(stepStatus);
+  if (stepStatus == LOCA::Abstract::Iterator::Successful) {
+    isValidPredictor = false;
+    baseOnSecant = true;
+  }
 }
 
 NOX::Abstract::Group::ReturnType 

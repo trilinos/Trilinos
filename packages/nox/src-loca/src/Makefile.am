@@ -179,6 +179,7 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H\
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.H \
@@ -201,6 +202,7 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.C\
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.C \

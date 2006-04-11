@@ -78,7 +78,7 @@ namespace LOCA {
        *     \end{bmatrix} = 
        *     \begin{bmatrix}
        *       0 \\
-       *       1
+       *       n
        *     \end{bmatrix},
        * \f]
        * \f[
@@ -92,18 +92,18 @@ namespace LOCA {
        *     \end{bmatrix} = 
        *     \begin{bmatrix}
        *       0 \\
-       *       1
+       *       n
        *     \end{bmatrix},
        * \f]
        * \f[
-       *     \sigma = w^T J v
+       *     \sigma = -w^T J v/n
        * \f]
        * for any vectors \f$a\f$ and \f$b\f$ in \f$\Re^n\f$.  Using these
        * relationships, it is easy to show
        * \f[
        *     \begin{split}
-       *        \sigma_x &= (w^T J v)_x = w^T J_x v \\
-       *        \sigma_p &= (w^T J v)_p = w^T J_p v
+       *        \sigma_x &= -(w^T J v)_x/n = -w^T J_x v/n \\
+       *        \sigma_p &= -(w^T J v)_p/n = -w^T J_p v/n
        *     \end{split}
        * \f]
        *
@@ -112,11 +112,11 @@ namespace LOCA {
        * <ul>
        * <li> "Update Null Vectors Every Continuation Step"  -- 
        *    [bool] (default: true) - 
-       *    Flag indicating whether to update \f$a\f$ and \f$b\$ vectors via
+       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
        *    \f$a = w\f$ and \f$b = v\f$ every continuation step
        * <li> "Update Null Vectors Every Nonlinear Iteration"  -- 
        *    [bool] (default: false) - 
-       *    Flag indicating whether to update \f$a\f$ and \f$b\$ vectors via
+       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
        *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
        * </ul>
        */
@@ -141,7 +141,7 @@ namespace LOCA {
 		   NOX::CopyType type = NOX::DeepCopy);
 
 	//! Destructor
-	~Constraint();
+	virtual ~Constraint();
 
 	//! Set the group pointer
 	/*!
@@ -149,18 +149,18 @@ namespace LOCA {
 	 * is copied, since we don't explicitly copy the underlying group
 	 * here.
 	 */
-	void setGroup(const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
+	virtual void setGroup(const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
 
 	//! Returns left null vector w
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector>
 	getLeftNullVec() const;
 
 	//! Returns right null vector v
-	Teuchos::RefCountPtr<const NOX::Abstract::Vector>
+	virtual Teuchos::RefCountPtr<const NOX::Abstract::Vector>
 	getRightNullVec() const;
 
 	//! Returns sigma
-	double getSigma() const;
+	virtual double getSigma() const;
 
 	/*! 
 	 * @name Implementation of LOCA::MultiContinuation::ConstraintInterface
@@ -230,12 +230,15 @@ namespace LOCA {
 	 */
 	virtual bool isDXZero() const;
 
-	//! Notify constraint that the continuation step is completed
+	//! Perform any postprocessing after a continuation step finishes.
 	/*!
-	 * Here we update the \f$a\f$ and \f$b\f$ vectors to \f$w\f$ and
-	 * \f$v\f$ respectively if requested.
+	 * The \c stepStatus argument indicates whether the step was
+	 * successful.  Here we update the \f$a\f$ and \f$b\f$ vectors to 
+	 * \f$w\f$ and \f$v\f$ respectively if requested.
 	 */
-	virtual void notifyCompletedStep();
+	virtual void 
+	postProcessContinuationStep(
+			      LOCA::Abstract::Iterator::StepStatus stepStatus);
 
 	//@}
 
@@ -281,6 +284,12 @@ namespace LOCA {
 
 	//! Stores bordered solver strategy
 	Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> borderedSolver;
+
+	//! Stores vector length as a double
+	double dn;
+
+	//! Stores scale factor on sigma
+	double sigma_scale;
 
 	/*!
 	 * \brief Flag indicating whether Jacobian is symmetric

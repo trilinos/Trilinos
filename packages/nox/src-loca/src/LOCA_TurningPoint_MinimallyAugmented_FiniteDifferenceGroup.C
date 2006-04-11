@@ -66,6 +66,17 @@ computeDwtJnDp(const vector<int>& paramIDs,
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
+computeDwtJDp(const vector<int>& paramIDs, 
+	       const NOX::Abstract::Vector& w,
+	       NOX::Abstract::MultiVector& result,
+	       bool isValid)
+{
+  return LOCA::MultiContinuation::FiniteDifferenceGroup::derivPtr->
+    computeDwtJDp(*this, paramIDs, w, result, isValid);
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup::
 computeDwtJnDx(const NOX::Abstract::Vector& w,
 	       const NOX::Abstract::Vector& nullVector,
 	       NOX::Abstract::Vector& result)

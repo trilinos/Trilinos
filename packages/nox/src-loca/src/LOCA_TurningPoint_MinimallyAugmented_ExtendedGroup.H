@@ -93,7 +93,7 @@ namespace LOCA {
        *     \end{bmatrix} = 
        *     \begin{bmatrix}
        *       0 \\
-       *       1
+       *       n
        *     \end{bmatrix},
        * \f]
        * \f[
@@ -107,18 +107,18 @@ namespace LOCA {
        *     \end{bmatrix} = 
        *     \begin{bmatrix}
        *       0 \\
-       *       1
+       *       n
        *     \end{bmatrix},
        * \f]
        * \f[
-       *     \sigma = w^T J v
+       *     \sigma = w^T J v/n
        * \f]
        * for any vectors \f$a\f$ and \f$b\f$ in \f$\Re^n\f$.  Using these
        * relationships, it is easy to show
        * \f[
        *     \begin{split}
-       *        \sigma_x &= (w^T J v)_x = w^T J_x v\\
-       *        \sigma_p &= (w^T J v)_p = w^T J_p v
+       *        \sigma_x &= (w^T J v)_x/n = w^T J_x v/n \\
+       *        \sigma_p &= (w^T J v)_p/n = w^T J_p v/n
        *     \end{split}
        * \f]
        *
@@ -145,20 +145,45 @@ namespace LOCA {
        *    Flag indicating whether Jacobian matrix \f$J\f$ is symmetric,
        *    in which case we force \f$a = b\f$ and therefore the second
        *    tranpose solve for \f$w\f$ is unnecessary
-       * <li> "Initial A Vector"  -- 
-       *    [Teuchos::RefCountPtr<NOX::Abstract::Vector>] (Must be supplied) - 
-       *    Vector storing initial value for \f$a\f$ vector
-       * <li> "Initial B Vector"  -- 
-       *    [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
-       *    (Must be supplied for nonsymmetric Jacobians) - 
-       *    Vector storing initial value for \f$b\f$ vector
+       * <li> "Constraint Method" -- [string] (default: "Default") -
+       *    Type of constraint method to use.  Valid choices are
+       *    <ul>
+       *    <li> "Default" (LOCA::TurningPoint::MinimallyAugmented::Constraint)
+       *         Default method described above.
+       *    <li> "Modified" 
+       *         (LOCA::TurningPoint::MinimallyAugmented::ModifedConstraint)
+       *          A modified method that computes updates to the null vectors
+       *          every nonlinear interation, instead of directly solving
+       *          for them
+       *    </ul>
+       * <li> "Initial Null Vector Compuation" -- [string] 
+       *      (default: "User Provided") - Method to compute initial \f$a\f$ 
+       *      and \f$b\f$ vectors.  Valid choices are:
+       *      <ul>
+       *      <li> "User Provided" - Initial vectors are provided in the
+       *           parameter list, in which case the following parameters
+       *           are relevant:
+       *           <ul>
+       *           <li> "Initial A Vector"  -- 
+       *                [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                (Must be supplied) - 
+       *                 Vector storing initial value for \f$a\f$ vector
+       *           <li> "Initial B Vector"  -- 
+       *                 [Teuchos::RefCountPtr<NOX::Abstract::Vector>] 
+       *                 (Must be supplied for nonsymmetric Jacobians) - 
+       *                 Vector storing initial value for \f$b\f$ vector
+       *           </ul>
+       *      <li> "Solve df/dp" - Compute \f$a = J^{-T}df/dp\f$ and 
+       *           \f$b = J^{-1} df/dp\f$ where \f$p\f$ is the bifurcation
+       *           parameter.
+       *      </ul>
        * <li> "Update Null Vectors Every Continuation Step"  -- 
        *    [bool] (default: true) - 
-       *    Flag indicating whether to update \f$a\f$ and \f$b\$ vectors via
+       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
        *    \f$a = w\f$ and \f$b = v\f$ every continuation step
        * <li> "Update Null Vectors Every Nonlinear Iteration"  -- 
        *    [bool] (default: false) - 
-       *    Flag indicating whether to update \f$a\f$ and \f$b\$ vectors via
+       *    Flag indicating whether to update \f$a\f$ and \f$b\f$ vectors via
        *    \f$a = w\f$ and \f$b = v\f$ every nonlinear iteration
        * </ul>
        */
@@ -339,6 +364,24 @@ namespace LOCA {
 			  const vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
+	//! Set the parameter vector in the group to p.
+	virtual void setParams(const ParameterVector& p);
+
+	//! Set parameter indexed by paramID
+	virtual void setParam(string paramID, double val);
+
+	//! Set parameter indexed by paramID
+	virtual void setParam(int paramID, double val);
+
+	//! Return a const reference to the paramter vector owned by the group.
+	virtual const ParameterVector& getParams() const;
+
+	//! Return copy of parameter indexed by paramID
+	virtual double getParam(int paramID) const;
+
+	//! Return copy of parameter indexed by paramID
+	virtual double getParam(string paramID) const;
+
 	/*! 
 	 * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
 	 * indexed by paramIDs.  The first column of \em dfdp holds F,
@@ -350,30 +393,30 @@ namespace LOCA {
 			 NOX::Abstract::MultiVector& dfdp, 
 			 bool isValidF);
 
+	//! Perform any preprocessing before a continuation step starts.
+	/*!
+	 * The \c stepStatus argument indicates whether the previous step was
+	 * successful.
+	 */
+	virtual void 
+	preProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+	
+	//! Perform any postprocessing after a continuation step finishes.
+	/*!
+	 * The \c stepStatus argument indicates whether the step was
+	 * successful.
+	 */
+	virtual void 
+	postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+
 	//! Projects solution to a few scalars for multiparameter continuation
 	virtual void projectToDraw(const NOX::Abstract::Vector& x,
 				   double *px) const;
 
 	//! Returns the dimension of the project to draw array
 	virtual int projectToDrawDimension() const;
-
-	//! Set the parameter vector in the group to p.
-	virtual void setParams(const ParameterVector& p);
-
-	//! Return a const reference to the paramter vector owned by the group.
-	virtual const ParameterVector& getParams() const;
-
-	//! Set parameter indexed by paramID
-	virtual void setParam(int paramID, double val);
-
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(int paramID) const;
-
-	//! Set parameter indexed by paramID
-	virtual void setParam(string paramID, double val);
-
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(string paramID) const;
 
 	/*! 
 	 * \brief Function to print out extended solution and continuation 
@@ -397,9 +440,6 @@ namespace LOCA {
 	 */
 	 virtual void printSolution(const NOX::Abstract::Vector& x_,
 				    const double conParam) const;
-
-	//! Notify group that the continuation step is completed
-	virtual void notifyCompletedStep();
 
 	//@}
 

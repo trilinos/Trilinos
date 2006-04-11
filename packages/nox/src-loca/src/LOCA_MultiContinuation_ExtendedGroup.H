@@ -247,8 +247,23 @@ namespace LOCA {
       //! Returns number of parameters
       virtual int getNumParams() const;
 
-      //! Notifies group that continuation step is completed
-      virtual void notifyCompletedStep();
+      //! Perform any preprocessing before a continuation step starts.
+      /*!
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.
+       */
+      virtual void 
+      preProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Compute predictor directions
       virtual NOX::Abstract::Group::ReturnType 

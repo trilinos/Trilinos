@@ -338,6 +338,69 @@ LOCA::DerivUtils::computeDwtJnDp(
 }
 
 NOX::Abstract::Group::ReturnType 
+LOCA::DerivUtils::computeDwtJDp(LOCA::MultiContinuation::AbstractGroup& grp, 
+				const vector<int>& paramIDs, 
+				const NOX::Abstract::Vector& w,
+				NOX::Abstract::MultiVector& result,
+				bool isValid) const
+{
+  string callingFunction = 
+    "LOCA::DerivUtils::computeDwtJDp()";
+  NOX::Abstract::Group::ReturnType status, finalStatus;
+
+  // Views of w^T*J, d(w^T*J)/dp
+  NOX::Abstract::Vector *wtJ = &result[0];
+  NOX::Abstract::Vector *dwtJdp = NULL;
+
+  // Compute base residual w^T*J
+  if (!isValid) {
+    finalStatus = grp.computeJacobian();
+    globalData->locaErrorCheck->checkReturnType(finalStatus, callingFunction);
+
+    status = grp.applyJacobianTranspose(w, *wtJ);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+  else
+    finalStatus = NOX::Abstract::Group::Ok;
+
+  double param;
+  double eps;
+
+  // Loop over each parameter
+  for (unsigned int i=0; i<paramIDs.size(); i++) {
+
+    // Perturb single parameter in this group, and return perturbation, eps
+    eps = perturbParam(grp, param, paramIDs[i]);
+
+    // Fill perturbed w^T*J vector
+    status = grp.computeJacobian();
+    finalStatus = 
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, finalStatus,
+							   callingFunction);
+
+    dwtJdp = &result[i+1];
+    status = grp.applyJacobianTranspose(w, *dwtJdp);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+
+    // Difference perturbed and base vector 
+    dwtJdp->update(-1.0, *wtJ, 1.0);
+    dwtJdp->scale(1.0/eps);
+    
+    // Restore original parameter value
+    grp.setParam(paramIDs[i], param);
+
+  }
+
+  return finalStatus;
+}
+
+NOX::Abstract::Group::ReturnType 
 LOCA::DerivUtils::computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,
 				 const NOX::Abstract::Vector& w,
 				 const NOX::Abstract::Vector& nullVector,

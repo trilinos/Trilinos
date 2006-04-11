@@ -192,11 +192,6 @@ LinearConstraint::isDXZero() const
 }
 
 void
-LinearConstraint::notifyCompletedStep()
-{
-}
-
-void
 LinearConstraint::setDgDx(const NOX::Abstract::MultiVector& A)
 {
   *dgdx = A;

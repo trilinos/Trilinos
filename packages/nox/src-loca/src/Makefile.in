@@ -159,6 +159,7 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.H \
@@ -238,6 +239,7 @@ am__libloca_a_SOURCES_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.C \
@@ -323,6 +325,7 @@ am__objects_7 = libloca_a-LOCA_TimeDependent_AbstractGroup.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MooreSpence_SolverFactory.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.$(OBJEXT) \
+	libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.$(OBJEXT) \
 	libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.$(OBJEXT) \
 	libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.$(OBJEXT) \
@@ -439,6 +442,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.Po \
@@ -504,6 +508,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.H \
@@ -895,6 +900,7 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H\
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.H \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.H \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.H \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.H \
@@ -917,6 +923,7 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_TurningPoint_MooreSpence_SolverFactory.C \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.C\
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.C \
+	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C \
 	$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedVector.C \
 	$(srcdir)/LOCA_Pitchfork_MooreSpence_ExtendedMultiVector.C \
@@ -1277,6 +1284,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedMultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_TurningPoint_MooreSpence_ExtendedVector.Po@am__quote@
@@ -1956,6 +1964,22 @@ libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.obj: $(srcdir)/LOCA_Tu
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_TurningPoint_MinimallyAugmented_Constraint.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_Constraint.C'; fi`
+
+libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.o: $(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Tpo" -c -o libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.o `test -f '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Tpo" "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C' object='libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.o `test -f '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C
+
+libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.obj: $(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Tpo" -c -o libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Tpo" "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C' object='libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.obj `if test -f '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ModifiedConstraint.C'; fi`
 
 libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.o: $(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.Tpo" -c -o libloca_a-LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.o `test -f '$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_TurningPoint_MinimallyAugmented_ExtendedGroup.C; \

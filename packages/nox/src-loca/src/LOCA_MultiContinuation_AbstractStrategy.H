@@ -36,6 +36,7 @@
 #include "Teuchos_RefCountPtr.hpp" 
 
 #include "LOCA_Extended_MultiAbstractGroup.H" // base class
+#include "LOCA_Abstract_Iterator.H" // for StepStatus
 
 // forward declarations
 namespace LOCA {
@@ -73,8 +74,23 @@ namespace LOCA {
       //! Returns number of parameters
       virtual int getNumParams() const = 0;
 
-      //! Notifies group that continuation step is completed
-      virtual void notifyCompletedStep() = 0;
+      //! Perform any preprocessing before a continuation step starts.
+      /*!
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.
+       */
+      virtual void 
+      preProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus) = 0;
+
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus) = 0;
 
       //! Compute predictor directions
       virtual NOX::Abstract::Group::ReturnType 

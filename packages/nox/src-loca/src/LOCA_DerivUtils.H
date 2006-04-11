@@ -124,6 +124,14 @@ public:
 		 NOX::Abstract::MultiVector::DenseMatrix& result,
 		 bool isValid) const;
 
+  //! Compute derivative of w^TJ with respect to particular parameter param_id
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDwtJDp(LOCA::MultiContinuation::AbstractGroup& grp,
+		const vector<int>& paramIDs, 
+		const NOX::Abstract::Vector& w,
+		NOX::Abstract::MultiVector& result,
+		bool isValid) const;
+
   //! Compute vector (w^TJn)_{x}
   virtual NOX::Abstract::Group::ReturnType 
   computeDwtJnDx(LOCA::MultiContinuation::AbstractGroup& grp,

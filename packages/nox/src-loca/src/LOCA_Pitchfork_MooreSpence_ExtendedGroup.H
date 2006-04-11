@@ -363,6 +363,24 @@ namespace LOCA {
 			  const vector<int>& paramIDs, 
 			  const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
+	//! Set the parameter vector in the group to p.
+	virtual void setParams(const ParameterVector& p);
+
+	//! Set parameter indexed by paramID
+	virtual void setParam(int paramID, double val);
+
+	//! Set parameter indexed by paramID
+	virtual void setParam(string paramID, double val);
+
+	//! Return a const reference to the paramter vector owned by the group.
+	virtual const ParameterVector& getParams() const;
+
+	//! Return copy of parameter indexed by paramID
+	virtual double getParam(int paramID) const;
+
+	//! Return copy of parameter indexed by paramID
+	virtual double getParam(string paramID) const;
+
 	/*! 
 	 * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
 	 * indexed by paramIDs.  The first column of \em dfdp holds F,
@@ -374,30 +392,30 @@ namespace LOCA {
 			 NOX::Abstract::MultiVector& dfdp, 
 			 bool isValidF);
 
+	//! Perform any preprocessing before a continuation step starts.
+	/*!
+	 * The \c stepStatus argument indicates whether the previous step was
+	 * successful.
+	 */
+	virtual void 
+	preProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+	
+	//! Perform any postprocessing after a continuation step finishes.
+	/*!
+	 * The \c stepStatus argument indicates whether the step was
+	 * successful.
+	 */
+	virtual void 
+	postProcessContinuationStep(
+			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+
 	//! Projects solution to a few scalars for multiparameter continuation
 	virtual void projectToDraw(const NOX::Abstract::Vector& x,
 				   double *px) const;
 
 	//! Returns the dimension of the project to draw array
 	virtual int projectToDrawDimension() const;
-
-	//! Set the parameter vector in the group to p.
-	virtual void setParams(const ParameterVector& p);
-
-	//! Return a const reference to the paramter vector owned by the group.
-	virtual const ParameterVector& getParams() const;
-
-	//! Set parameter indexed by paramID
-	virtual void setParam(int paramID, double val);
-
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(int paramID) const;
-
-	//! Set parameter indexed by paramID
-	virtual void setParam(string paramID, double val);
-
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(string paramID) const;
 
 	/*! 
 	 * \brief Function to print out extended solution and continuation 
@@ -421,9 +439,6 @@ namespace LOCA {
 	 */
 	virtual void printSolution(const NOX::Abstract::Vector& x_,
 				    const double conParam) const;
-
-	//! Notify group that the continuation step is completed
-	virtual void notifyCompletedStep();
 
 	//! Get bifurcation parameter
 	double getBifParam() const;

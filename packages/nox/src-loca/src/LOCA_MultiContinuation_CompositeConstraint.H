@@ -158,11 +158,23 @@ namespace LOCA {
        */
       virtual bool isDXZero() const;
 
-      //! Notify constraint that the continuation step is completed
+      //! Perform any preprocessing before a continuation step starts.
       /*!
-       * Here we notify each sub-constraint
+       * The \c stepStatus argument indicates whether the previous step was
+       * successful.  The default implementation is empty.
        */
-      virtual void notifyCompletedStep();
+      virtual void 
+      preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+	
+      //! Perform any postprocessing after a continuation step finishes.
+      /*!
+       * The \c stepStatus argument indicates whether the step was
+       * successful.  The default implementation is empty.
+       */
+      virtual void 
+      postProcessContinuationStep(
+			      LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //@}
 

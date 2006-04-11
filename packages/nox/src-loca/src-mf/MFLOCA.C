@@ -175,6 +175,8 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
       << data->globalData->locaUtils->fill(72, '~') << "\n" << std::endl;
   }
 
+  data->grp->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
+
   data->grp->computeF();
   data->solver->reset(data->grp, data->status, 
 		      Teuchos::rcp(&(data->p->sublist("NOX")),false));
@@ -203,6 +205,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
       data->globalData->locaUtils->out() 
 	<< data->globalData->locaUtils->fill(72, '~') << std::endl;
     }
+    data->grp->postProcessContinuationStep(LOCA::Abstract::Iterator::Unsuccessful);
     return 0;
   }
   else {
@@ -211,7 +214,7 @@ int MFProjectLOCA(int n,int k,MFNVector vu0,MFNKMatrix mPhi,MFNVector vu,
     *(Teuchos::rcp_dynamic_cast<NOX::Abstract::Group>(data->grp)) = 
       data->solver->getSolutionGroup();
     *(u_data->u_ptr) = data->grp->getX(); /* overloaded deep copy */
-    data->grp->notifyCompletedStep();
+    data->grp->postProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
     
     if (data->globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
       data->globalData->locaUtils->out() 

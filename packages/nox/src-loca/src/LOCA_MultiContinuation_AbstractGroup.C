@@ -33,6 +33,18 @@
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 
 void
+LOCA::MultiContinuation::AbstractGroup::preProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+}
+
+void
+LOCA::MultiContinuation::AbstractGroup::postProcessContinuationStep(
+			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+}
+
+void
 LOCA::MultiContinuation::AbstractGroup::projectToDraw(
 					      const NOX::Abstract::Vector& x,
 					      double *px) const
