@@ -186,10 +186,318 @@ outputlevel_(outlevel)
         weights_[1] = weights_[0]; 
         weights_[2] = weights_[0]; 
       break;
+      case 6:
+      weights_[0] =  0.05497587 ;
+      weights_[1] =  0.05497587 ;
+      weights_[2] =  0.05497587 ;
+      weights_[3] =  0.1116908  ;
+      weights_[4] =  0.1116908  ;
+      weights_[5] =  0.1116908  ;
+
+      coords_[0 ] =  0.8168476  ;
+      coords_[1 ] =  0.09157621 ;
+      coords_[2 ] =  0.09157621 ;
+      coords_[3 ] =  0.8168476  ;
+      coords_[4 ] =  0.09157621 ;
+      coords_[5 ] =  0.09157621 ;
+      coords_[6 ] =  0.1081030  ;
+      coords_[7 ] =  0.4459485  ;
+      coords_[8 ] =  0.4459485  ;
+      coords_[9 ] =  0.1081030  ;
+      coords_[10] =  0.4459485  ;
+      coords_[11] =  0.4459485  ;
+
+      break;
+      case 12:
+      weights_[0 ]  = 0.05839314 ;
+      weights_[1 ]  = 0.05839314 ;
+      weights_[2 ]  = 0.05839314 ;
+      weights_[3 ]  = 0.02542245 ;
+      weights_[4 ]  = 0.02542245 ;
+      weights_[5 ]  = 0.02542245 ;
+      weights_[6 ]  = 0.04142554 ;
+      weights_[7 ]  = 0.04142554 ;
+      weights_[8 ]  = 0.04142554 ;
+      weights_[9 ]  = 0.04142554 ;
+      weights_[10]  = 0.04142554 ;
+      weights_[11]  = 0.04142554 ;
+
+      coords_[0 ]   = 0.5014265  ;
+      coords_[1 ]   = 0.2492867  ;
+      coords_[2 ]   = 0.2492867  ;
+      coords_[3 ]   = 0.5014265  ;
+      coords_[4 ]   = 0.2492867  ;
+      coords_[5 ]   = 0.2492867  ;
+      coords_[6 ]   = 0.8738220  ;
+      coords_[7 ]   = 0.06308901 ;
+      coords_[8 ]   = 0.06308901 ;
+      coords_[9 ]   = 0.8738220  ;
+      coords_[10]   = 0.06308901 ;
+      coords_[11]   = 0.06308901 ;
+      coords_[12]   = 0.6365025  ;
+      coords_[13]   = 0.05314505 ;
+      coords_[14]   = 0.6365025  ;
+      coords_[15]   = 0.3103525  ;
+      coords_[16]   = 0.05314505 ;
+      coords_[17]   = 0.6365025  ;
+      coords_[18]   = 0.05314505 ;
+      coords_[19]   = 0.3103525  ;
+      coords_[20]   = 0.3103525  ;
+      coords_[21]   = 0.6365025  ;
+      coords_[22]   = 0.3103525  ;
+      coords_[23]   = 0.05314505 ;
+
+
+      break;
+      case 13:
+      weights_[0 ]  =-0.07478502 ;
+      weights_[1 ]  = 0.08780763 ;
+      weights_[2 ]  = 0.08780763 ;
+      weights_[3 ]  = 0.08780763 ;
+      weights_[4 ]  = 0.02667362 ;
+      weights_[5 ]  = 0.02667362 ;
+      weights_[6 ]  = 0.02667362 ;
+      weights_[7 ]  = 0.03855688 ;
+      weights_[8 ]  = 0.03855688 ;
+      weights_[9 ]  = 0.03855688 ;
+      weights_[10]  = 0.03855688 ;
+      weights_[11]  = 0.03855688 ;
+      weights_[12]  = 0.03855688 ;
+                               
+      coords_[0 ]   = 0.3333333  ;
+      coords_[1 ]   = 0.3333333  ;
+      coords_[2 ]   = 0.4793081  ;
+      coords_[3 ]   = 0.2603460  ;
+      coords_[4 ]   = 0.2603460  ;
+      coords_[5 ]   = 0.4793081  ;
+      coords_[6 ]   = 0.2603460  ;
+      coords_[7 ]   = 0.2603460  ;
+      coords_[8 ]   = 0.8697398  ;
+      coords_[9 ]   = 0.06513010 ;
+      coords_[10]   = 0.06513010 ;
+      coords_[11]   = 0.8697398  ;
+      coords_[12]   = 0.06513010 ;
+      coords_[13]   = 0.06513010 ;
+      coords_[14]   = 0.6384442  ;
+      coords_[15]   = 0.04869032 ;
+      coords_[16]   = 0.6384442  ;
+      coords_[17]   = 0.3128655  ;
+      coords_[18]   = 0.04869032 ;
+      coords_[19]   = 0.6384442  ;
+      coords_[20]   = 0.04869032 ;
+      coords_[21]   = 0.3128655  ;
+      coords_[22]   = 0.3128655  ;
+      coords_[23]   = 0.6384442  ;
+      coords_[24]   = 0.3128655  ;
+      coords_[24]   = 0.04869032 ;
+                                        
+                                        
+      break;                            
+      case 16:                          
+      weights_[0 ] = 0.07215780 ;
+      weights_[1 ] = 0.04754582 ;
+      weights_[2 ] = 0.04754582 ;
+      weights_[3 ] = 0.04754582 ;
+      weights_[4 ] = 0.01622925 ;
+      weights_[5 ] = 0.01622925 ;
+      weights_[6 ] = 0.01622925 ;
+      weights_[7 ] = 0.05160869 ;
+      weights_[8 ] = 0.05160869 ;
+      weights_[9 ] = 0.05160869 ;
+      weights_[10] = 0.01361516 ;
+      weights_[11] = 0.01361516 ;
+      weights_[12] = 0.01361516 ;
+      weights_[13] = 0.01361516 ;
+      weights_[14] = 0.01361516 ;
+      weights_[15] = 0.01361516 ;     
+       
+      coords_[0 ]  = 0.3333333  ;
+      coords_[1 ]  = 0.3333333  ;
+      coords_[2 ]  = 0.08141482 ;
+      coords_[3 ]  = 0.4592926  ;
+      coords_[4 ]  = 0.4592926  ;
+      coords_[5 ]  = 0.08141482 ;
+      coords_[6 ]  = 0.4592926  ;
+      coords_[7 ]  = 0.4592926  ;
+      coords_[8 ]  = 0.8989055  ;
+      coords_[9 ]  = 0.05054723 ;
+      coords_[10]  = 0.05054723 ;
+      coords_[11]  = 0.8989055  ;
+      coords_[12]  = 0.05054723 ;
+      coords_[13]  = 0.05054723 ;
+      coords_[14]  = 0.6588614  ;
+      coords_[15]  = 0.1705693  ;
+      coords_[16]  = 0.1705693  ;
+      coords_[17]  = 0.6588614  ;
+      coords_[18]  = 0.1705693  ;
+      coords_[19]  = 0.1705693  ;
+      coords_[20]  = 0.008394777;
+      coords_[21]  = 0.7284924  ;
+      coords_[22]  = 0.008394777;
+      coords_[23]  = 0.2631128  ;
+      coords_[24]  = 0.7284924  ;
+      coords_[25]  = 0.008394777;
+      coords_[26]  = 0.7284924  ;
+      coords_[27]  = 0.2631128  ;
+      coords_[28]  = 0.2631128  ;
+      coords_[29]  = 0.008394777;
+      coords_[30]  = 0.2631128  ;
+      coords_[31]  = 0.7284924  ;
+                                        
+                                        
+      break;                            
+      case 19:                          
+      weights_[0 ] = 0.04856790 ;
+      weights_[1 ] = 0.01566735 ;
+      weights_[2 ] = 0.01566735 ;
+      weights_[3 ] = 0.01566735 ;
+      weights_[4 ] = 0.03891377 ;
+      weights_[5 ] = 0.03891377 ;
+      weights_[6 ] = 0.03891377 ;
+      weights_[7 ] = 0.03982387 ;
+      weights_[8 ] = 0.03982387 ;
+      weights_[9 ] = 0.03982387 ;
+      weights_[10] = 0.01278884 ;
+      weights_[11] = 0.01278884 ;
+      weights_[12] = 0.01278884 ;
+      weights_[13] = 0.02164177 ;
+      weights_[14] = 0.02164177 ;
+      weights_[15] = 0.02164177 ;
+      weights_[16] = 0.02164177 ;
+      weights_[17] = 0.02164177 ;
+      weights_[18] = 0.02164177 ;
+                              
+      coords_[0 ]  = 0.3333333  ;
+      coords_[1 ]  = 0.3333333  ;
+      coords_[2 ]  = 0.02063496 ;
+      coords_[3 ]  = 0.4896825  ;
+      coords_[4 ]  = 0.4896825  ;
+      coords_[5 ]  = 0.02063496 ;
+      coords_[6 ]  = 0.4896825  ;
+      coords_[7 ]  = 0.4896825  ;
+      coords_[8 ]  = 0.1258208  ;
+      coords_[9 ]  = 0.4370896  ;
+      coords_[10]  = 0.4370896  ;
+      coords_[11]  = 0.1258208  ;
+      coords_[12]  = 0.4370896  ;
+      coords_[13]  = 0.4370896  ;
+      coords_[14]  = 0.6235929  ;
+      coords_[15]  = 0.1882035  ;
+      coords_[16]  = 0.1882035  ;
+      coords_[17]  = 0.6235929  ;
+      coords_[18]  = 0.1882035  ;
+      coords_[19]  = 0.1882035  ;
+      coords_[20]  = 0.9105410  ;
+      coords_[21]  = 0.04472951 ;
+      coords_[22]  = 0.04472951 ;
+      coords_[23]  = 0.9105410  ;
+      coords_[24]  = 0.04472951 ;
+      coords_[25]  = 0.04472951 ;
+      coords_[26]  = 0.03683841 ;
+      coords_[27]  = 0.7411986  ;
+      coords_[28]  = 0.03683841 ;
+      coords_[29]  = 0.2219630  ;
+      coords_[30]  = 0.7411986  ;
+      coords_[31]  = 0.03683841 ;
+      coords_[32]  = 0.7411986  ;
+      coords_[33]  = 0.2219630  ;
+      coords_[34]  = 0.2219630  ;
+      coords_[35]  = 0.03683841 ;
+      coords_[36]  = 0.2219630  ;
+      coords_[37]  = 0.7411986  ;
+                                        
+                                        
+      break;
+      case 27:
+      weights_[0 ] = 0.006829866  ;
+      weights_[1 ] = 0.006829866  ;
+      weights_[2 ] = 0.006829866  ;
+      weights_[3 ] = 0.01809227   ;
+      weights_[4 ] = 0.01809227   ;
+      weights_[5 ] = 0.01809227   ;
+      weights_[6 ] = 0.0004635032 ;
+      weights_[7 ] = 0.0004635032 ;
+      weights_[8 ] = 0.0004635032 ;
+      weights_[9 ] = 0.02966149   ;
+      weights_[10] = 0.02966149   ;
+      weights_[11] = 0.02966149   ;
+      weights_[12] = 0.03857477   ;
+      weights_[13] = 0.03857477   ;
+      weights_[14] = 0.03857477   ;
+      weights_[15] = 0.02616856   ;
+      weights_[16] = 0.02616856   ;
+      weights_[17] = 0.02616856   ;
+      weights_[18] = 0.02616856   ;
+      weights_[19] = 0.02616856   ;
+      weights_[20] = 0.02616856   ;
+      weights_[21] = 0.01035383   ;
+      weights_[22] = 0.01035383   ;
+      weights_[23] = 0.01035383   ;
+      weights_[24] = 0.01035383   ;
+      weights_[25] = 0.01035383   ;
+      weights_[26] = 0.01035383   ;
+                                
+      coords_[0 ]  = 0.9352701    ;
+      coords_[1 ]  = 0.03236495   ;
+      coords_[2 ]  = 0.03236495   ;
+      coords_[3 ]  = 0.9352701    ;
+      coords_[4 ]  = 0.03236495   ;
+      coords_[5 ]  = 0.03236495   ;
+      coords_[6 ]  = 0.7612982    ;
+      coords_[7 ]  = 0.1193509    ;
+      coords_[8 ]  = 0.1193509    ;
+      coords_[9 ]  = 0.7612982    ;
+      coords_[10]  = 0.1193509    ;
+      coords_[11]  = 0.1193509    ;
+      coords_[12]  =-0.06922210   ;
+      coords_[13]  = 0.5346110    ;
+      coords_[14]  = 0.5346110    ;
+      coords_[15]  =-0.06922210   ;
+      coords_[16]  = 0.5346110    ;
+      coords_[17]  = 0.5346110    ;
+      coords_[18]  = 0.5933802    ;
+      coords_[19]  = 0.2033099    ;
+      coords_[20]  = 0.2033099   ;
+      coords_[21]  = 0.5933802   ;
+      coords_[22]  = 0.2033099   ;
+      coords_[23]  = 0.2033099   ;
+      coords_[24]  = 0.2020614   ;
+      coords_[25]  = 0.3989693   ;
+      coords_[26]  = 0.3989693   ;
+      coords_[27]  = 0.2020614   ;
+      coords_[28]  = 0.3989693   ;
+      coords_[29]  = 0.3989693   ;
+      coords_[30]  = 0.05017814  ;
+      coords_[31]  = 0.5932012   ;
+      coords_[32]  = 0.05017814  ;
+      coords_[33]  = 0.3566206   ;
+      coords_[34]  = 0.5932012   ;
+      coords_[35]  = 0.05017814  ;
+      coords_[36]  = 0.5932012   ;
+      coords_[37]  = 0.3566206   ;
+      coords_[38]  = 0.3566206   ;
+      coords_[39]  = 0.05017814  ;
+      coords_[40]  = 0.3566206   ;
+      coords_[41]  = 0.5932012   ;
+      coords_[42]  = 0.02102202  ;
+      coords_[43]  = 0.8074890   ;
+      coords_[44]  = 0.02102202  ;
+      coords_[45]  = 0.1714890   ;
+      coords_[46]  = 0.8074890   ;
+      coords_[47]  = 0.02102202  ;
+      coords_[48]  = 0.8074890   ;
+      coords_[49]  = 0.1714890   ;
+      coords_[50]  = 0.1714890   ;
+      coords_[51]  = 0.02102202  ;
+      coords_[52]  = 0.1714890   ;
+      coords_[53]  = 0.8074890   ;   
+                                         
+      break;                             
+
       default:
         cout << "***ERR*** MOERTEL::Integrator::Integrator:\n"
              << "***ERR*** given number of gaussian points " << ngp_ << "does not exist\n"
-             << "***ERR*** use 3 instead\n"
+             << "***ERR*** use 3 6 12 13 16 19 27 instead\n"
              << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
         exit(EXIT_FAILURE);
       break;
@@ -701,14 +1009,6 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
     exit(EXIT_FAILURE);
   }
   
-  if (Ngp() != 3)
-  {
-    cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
-         << "***ERR*** # Gaussian points != 3 in 2D-triangle integration\n"
-         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-    exit(EXIT_FAILURE);
-  }
-  
   // we integrate the scalar function here
   int nrow = sseg.Nnode();
   int ncol = mseg.Nnode();
@@ -747,6 +1047,10 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
       cout << "MOERTEL: ***WRN*** Skipping overlap segment with tiny area " << area << endl;
     return false;  
   }
+
+  // for all integrations other then 3 its dx*dy = 2A dxi*deta
+  if (Ngp()!=3) 
+    area *= 2.0;
 
   *Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
   *Ddense = new Epetra_SerialDenseMatrix(nrow,nrow);

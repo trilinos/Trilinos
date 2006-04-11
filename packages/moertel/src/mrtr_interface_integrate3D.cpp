@@ -241,7 +241,7 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
   overlap.SegmentView(segs);
   
   // integrator object
-  MOERTEL::Integrator integrator(3,IsOneDimensional(),OutLevel());
+  MOERTEL::Integrator integrator(12,IsOneDimensional(),OutLevel());
   
   // loop segments and integrate them
   for (int s=0; s<nseg; ++s)
