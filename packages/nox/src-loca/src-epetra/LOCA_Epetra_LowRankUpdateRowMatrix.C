@@ -183,26 +183,37 @@ int
 LOCA::Epetra::LowRankUpdateRowMatrix::
 InvRowSums(Epetra_Vector& x) const
 {
-  // Compute the inverse row-sums of J
-  int res = J_rowMatrix->InvRowSums(x);
+//   // Compute the inverse row-sums of J
+//   int res = J_rowMatrix->InvRowSums(x);
+
+//   if (!includeUV)
+//     return res;
+
+//   int numMyRows = J_rowMatrix->NumMyRows();
+//   for (int jac_row=0; jac_row<numMyRows; jac_row++) {
+//     int jac_row_gid = row_map.GID(jac_row);
+//     int u_row_lid = U_map.LID(jac_row_gid);
+
+//     int num_v_rows = V->MyLength();
+//     double val = 0.0;
+//     for (int v_row=0; v_row<num_v_rows; v_row++)
+//       val += fabs(computeUV(u_row_lid, v_row));
+
+//     double total_val = 0.0;
+//     J_rowMatrix->Comm().SumAll(&val, &total_val, 1);
+
+//     x[jac_row] = 1.0 / (1.0/x[jac_row] + total_val);
+//   }
+
+  int res;
 
   if (!includeUV)
-    return res;
-
-  int numMyRows = J_rowMatrix->NumMyRows();
-  for (int jac_row=0; jac_row<numMyRows; jac_row++) {
-    int jac_row_gid = row_map.GID(jac_row);
-    int u_row_lid = U_map.LID(jac_row_gid);
-
-    int num_v_rows = V->MyLength();
-    double val = 0.0;
-    for (int v_row=0; v_row<num_v_rows; v_row++)
-      val += fabs(computeUV(u_row_lid, v_row));
-
-    double total_val = 0.0;
-    J_rowMatrix->Comm().SumAll(&val, &total_val, 1);
-
-    x[jac_row] = 1.0 / (1.0/x[jac_row] + val);
+    res = J_rowMatrix->InvRowSums(x);
+  else {
+    Epetra_Vector ones(V_map,false);
+    ones.PutScalar(1.0);
+    res = Multiply(true, ones, x);
+    x.Reciprocal(x);
   }
 
   return res;
@@ -231,26 +242,37 @@ int
 LOCA::Epetra::LowRankUpdateRowMatrix::
 InvColSums(Epetra_Vector& x) const
 {
-  // Compute the inverse column-sums of J
-  int res = J_rowMatrix->InvColSums(x);
+//   // Compute the inverse column-sums of J
+//   int res = J_rowMatrix->InvColSums(x);
+
+//   if (!includeUV)
+//     return res;
+
+//   int numMyCols = x.MyLength();
+//   for (int col=0; col<numMyCols; col++) {
+//     int col_gid = x.Map().GID(col);
+//     int v_row_lid = V_map.LID(col_gid);
+
+//     int num_u_rows = U->MyLength();
+//     double val = 0.0;
+//     for (int u_row=0; u_row<num_u_rows; u_row++)
+//       val += fabs(computeUV(u_row, v_row_lid));
+
+//     double total_val = 0.0;
+//     J_rowMatrix->Comm().SumAll(&val, &total_val, 1);
+
+//     x[col] = 1.0 / (1.0/x[col] + total_val);
+//   }
+
+  int res;
 
   if (!includeUV)
-    return res;
-
-  int numMyCols = x.MyLength();
-  for (int col=0; col<numMyCols; col++) {
-    int col_gid = x.Map().GID(col);
-    int v_row_lid = V_map.LID(col_gid);
-
-    int num_u_rows = U->MyLength();
-    double val = 0.0;
-    for (int u_row=0; u_row<num_u_rows; u_row++)
-      val += fabs(computeUV(u_row, v_row_lid));
-
-    double total_val = 0.0;
-    J_rowMatrix->Comm().SumAll(&val, &total_val, 1);
-
-    x[col] = 1.0 / (1.0/x[col] + val);
+    res = J_rowMatrix->InvColSums(x);
+  else {
+    Epetra_Vector ones(V_map,false);
+    ones.PutScalar(1.0);
+    res = Multiply(false, ones, x);
+    x.Reciprocal(x);
   }
 
   return res;
