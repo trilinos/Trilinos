@@ -591,8 +591,16 @@ bool MOERTEL::Overlap::Triangulation()
   }
   if (np>3) // we have to add a center point
   {
-    double xi[2]; xi[0] = xi[1] = 0.0;
+    double xi[2];
     vector<RefCountPtr<MOERTEL::Point> > points; PointView(points);
+
+#if 1 // compute center point xi as centroid
+    Centroid(xi,points,np);    
+    //cout << "Centroid xi : " << xi[0] << " / " << xi[1] << endl; fflush(stdout);
+#endif
+    
+#if 0 // compute center point as nodal avergage
+    xi[0] = xi[1] = 0.0;
     for (int i=0; i<np; ++i)
     {
       const double* pxi = points[i]->Xi();
@@ -601,6 +609,9 @@ bool MOERTEL::Overlap::Triangulation()
     }
     xi[0] /= np;
     xi[1] /= np;
+    //cout << "Nodal    xi : " << xi[0] << " / " << xi[1] << endl << endl; fflush(stdout);
+#endif
+    
     // create a point -1 as center point and add it to the polygon
     AddPointtoPolygon(-1,xi);
     points.clear();

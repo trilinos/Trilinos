@@ -341,3 +341,32 @@ bool MOERTEL::Overlap::QuickOverlapTest()
 
   return true;
 }
+
+
+/*----------------------------------------------------------------------*
+ |  perform a quick search (protected)                        mwgee 4/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Overlap::Centroid(
+                      double xi[], 
+                      const vector<RefCountPtr<MOERTEL::Point> >& points, 
+                      const int np)
+{
+  xi[0] = xi[1] = 0.0;
+  double A = 0.0;
+  for (int i=0; i<np-1; ++i)
+  {
+    const double* xi_i   = points[i]->Xi();
+    const double* xi_ip1 = points[i+1]->Xi();
+    A     += xi_ip1[0]*xi_i[1] - xi_i[0]*xi_ip1[1];
+    xi[0] += (xi_i[0]+xi_ip1[0])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);
+    xi[1] += (xi_i[1]+xi_ip1[1])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);
+  }
+  const double* xi_i   = points[np-1]->Xi();
+  const double* xi_ip1 = points[0]->Xi();
+  A     += xi_ip1[0]*xi_i[1] - xi_i[0]*xi_ip1[1];
+  xi[0] += (xi_i[0]+xi_ip1[0])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);
+  xi[1] += (xi_i[1]+xi_ip1[1])*(xi_ip1[0]*xi_i[1]-xi_i[0]*xi_ip1[1]);
+  xi[0] /= (3.0*A);
+  xi[1] /= (3.0*A);
+  return true;
+}

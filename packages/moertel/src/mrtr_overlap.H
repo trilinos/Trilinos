@@ -230,6 +230,9 @@ protected:
   void PointView(vector<MOERTEL::Point*>& p,const int* nodeids,const int np);
   // copy a point polygon to another polygon
   bool CopyPointPolygon(map<int,RefCountPtr<MOERTEL::Point> >& from, map<int,RefCountPtr<MOERTEL::Point> >& to);
+  // compute the centroid of a polygon (which is defined anti-clockwise)
+  bool Centroid(double xi[], const vector<RefCountPtr<MOERTEL::Point> >& points, const int np);
+
 
   //@}
 
