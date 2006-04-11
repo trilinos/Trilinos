@@ -229,7 +229,7 @@ bool MOERTEL::Segment::EvaluateFunction(int id, const double* xi, double* val,
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);     
   }
-  curr->second->EvaluateFunction(xi,val,valdim,deriv);
+  curr->second->EvaluateFunction(*this,xi,val,valdim,deriv);
   
   return true;
 }

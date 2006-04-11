@@ -59,7 +59,9 @@ MOERTEL::Function* MOERTEL::Function_Constant1D::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MOERTEL::Function_Constant1D::EvaluateFunction(const double* xi, double* val, 
+bool MOERTEL::Function_Constant1D::EvaluateFunction(
+                                                 const MOERTEL::Segment& seg, 
+                                                 const double* xi, double* val, 
                                                  const int valdim, double* deriv)
 { 
   if (!val && !deriv) return true;
@@ -121,7 +123,8 @@ MOERTEL::Function* MOERTEL::Function_Linear1D::Clone() const
  | deriv  (out) derivatives of functions at xi, if NULL on input,       |
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
-bool MOERTEL::Function_Linear1D::EvaluateFunction(const double* xi, double* val, 
+bool MOERTEL::Function_Linear1D::EvaluateFunction(const MOERTEL::Segment& seg, 
+                                                  const double* xi, double* val, 
                                                   const int valdim, double* deriv)
 { 
   if (!val && !deriv) return true;
@@ -184,6 +187,7 @@ MOERTEL::Function* MOERTEL::Function_DualLinear1D::Clone() const
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
 bool MOERTEL::Function_DualLinear1D::EvaluateFunction(
+                                            const MOERTEL::Segment& seg, 
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
@@ -245,6 +249,7 @@ MOERTEL::Function* MOERTEL::Function_LinearTri::Clone() const
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
 bool MOERTEL::Function_LinearTri::EvaluateFunction(
+                                            const MOERTEL::Segment& seg, 
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
@@ -315,6 +320,7 @@ MOERTEL::Function* MOERTEL::Function_DualLinearTri::Clone() const
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
 bool MOERTEL::Function_DualLinearTri::EvaluateFunction(
+                                            const MOERTEL::Segment& seg, 
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 
@@ -385,6 +391,7 @@ MOERTEL::Function* MOERTEL::Function_ConstantTri::Clone() const
  |              no evaluation                                           | 
  *----------------------------------------------------------------------*/
 bool MOERTEL::Function_ConstantTri::EvaluateFunction(
+                                            const MOERTEL::Segment& seg, 
                                             const double* xi, double* val, 
                                             const int valdim, double* deriv)
 { 

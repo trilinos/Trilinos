@@ -123,7 +123,8 @@ public:
   \param valdim (in) : Dimension of val should be 2
   \param deriv (out) : Derivative of functions at xi, dimension 4, if NULL on input no evaluation
   */
-  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
 
 };
 
@@ -181,7 +182,8 @@ public:
   \param valdim (in) : Dimension of val should be 2
   \param deriv (out) : Derivative of functions at xi, dimension 4, if NULL on input no evaluation
   */
-  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
 
 };
 
@@ -239,7 +241,8 @@ public:
   \param valdim (in) : Dimension of val should be 2
   \param deriv (out) : Derivative of functions at xi, dimension 4, if NULL on input no evaluation
   */
-  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
 
 };
 
@@ -302,7 +305,8 @@ public:
   \param valdim (in) : Dimension of val should be 3
   \param deriv (out) : Derivative of functions at xi, dimension 6, if NULL on input no evaluation
   */
-  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
 };
 
 /*!
@@ -364,7 +368,8 @@ public:
   \param valdim (in) : Dimension of val should be 3
   \param deriv (out) : Derivative of functions at xi, dimension 6, if NULL on input no evaluation
   */
-  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
 
 };
 
@@ -427,7 +432,8 @@ public:
   \param valdim (in) : Dimension of val should be 3
   \param deriv (out) : Derivative of functions at xi, dimension 6, if NULL on input no evaluation
   */
-  bool EvaluateFunction(const double* xi, double* val, const int valdim, double* deriv);
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
 
 };
 

@@ -69,6 +69,7 @@ Use at least the following lines in the configure of Trilinos:<br>
 namespace MOERTEL
 {
 
+class Segment;
 
 /*!
 \class Function
@@ -171,8 +172,8 @@ public:
   \param valdim (in) : Dimension of val
   \param deriv (out) : Derivative of functions at xi
   */
-  virtual bool EvaluateFunction(const double* xi, double* val, const int valdim, 
-                                double* deriv) = 0;
+  virtual bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                                double* val, const int valdim,double* deriv) = 0;
 
   //@}
 

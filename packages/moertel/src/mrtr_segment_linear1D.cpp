@@ -206,7 +206,7 @@ double MOERTEL::Segment_Linear1D::Metric(double* xi, double g[], double G[][3])
   // get shape functions
   double val[2];
   double deriv[2];
-  functions_[0]->EvaluateFunction(xi,val,2,deriv);
+  functions_[0]->EvaluateFunction(*this,xi,val,2,deriv);
 
   double glocal[2];
   double* gl;
