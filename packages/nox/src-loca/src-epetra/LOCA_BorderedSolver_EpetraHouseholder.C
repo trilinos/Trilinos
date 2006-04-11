@@ -465,6 +465,7 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverse(
   
   // Solve for each RHS
   int m = X.numVectors();
+  X.init(0.0);
   for (int i=0; i<m; i++) {
     bool stat = 
       linSys->applyJacobianInverse(
@@ -668,6 +669,7 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose(
   
   // Solve for each RHS
   int m = X.numVectors();
+  X.init(0.0);
   for (int i=0; i<m; i++) {
     bool stat = 
       tls_strategy->applyJacobianTransposeInverse(
