@@ -88,10 +88,11 @@ int main(int argc, char *argv[]) {
   //
   // Get the problem
   //
-  RefCountPtr<Epetra_CrsMatrix> A;
   int MyPID;
+  RefCountPtr<Epetra_CrsMatrix> A;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
   if(return_val != 0) return return_val;
+  verbose &= (MyPID==0); /* Only print on the first processor */
   //
   // *****Select the Preconditioner*****
   //

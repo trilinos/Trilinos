@@ -112,7 +112,8 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  if (verbose && MyPID==0) {
+  verbose &= (MyPID==0);  /* Only print on the zero processor */
+  if (verbose) {
     cout << Belos::Belos_Version() << endl << endl;
   }
 

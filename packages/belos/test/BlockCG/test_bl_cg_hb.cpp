@@ -79,12 +79,13 @@ int main(int argc, char *argv[]) {
   //
   // Get the problem
   //
+  int MyPID;
   RefCountPtr<Epetra_CrsMatrix> A;
   RefCountPtr<Epetra_MultiVector> B, X;
-  int MyPID;
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
+  verbose &= (MyPID==0); /* Only print on the zero processor */
   //
   // Solve using Belos
   //
