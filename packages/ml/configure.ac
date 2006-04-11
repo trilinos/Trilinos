@@ -134,7 +134,7 @@ AC_ARG_ENABLE( ml_multiple_rhs,
              [ac_cv_use_ml_multiple_rhs=${enableval}],
              [ac_cv_use_ml_multiple_rhs=no])
 
-if test "X$ac_cv_use_epetra" == "Xno"; then
+if test "X$ac_cv_use_epetra" == "Xno" && test "X$ac_cv_use_ml_multiple_rhs"; then
  AC_MSG_ERROR([[The use of --enable-ml_multiple_rhs in ML requires Epetra.]])
 # ac_cv_use_ml_multiple_rhs=no;
 fi
