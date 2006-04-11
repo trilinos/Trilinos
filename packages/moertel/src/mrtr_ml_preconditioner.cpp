@@ -145,7 +145,9 @@ int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
   MultiVector z_c(P(level).GetDomainSpace(),1,true);
   
   // pre-smoothing
-  x_f = S(level) * b_f;
+  //x_f = S(level) * b_f;
+  x_f = 0;
+  S(level).Apply(b_f,x_f);
   //x_f = ImWBT(level) * x_f;
   
   // new residual
