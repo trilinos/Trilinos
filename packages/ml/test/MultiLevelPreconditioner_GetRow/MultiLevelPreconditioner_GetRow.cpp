@@ -53,8 +53,11 @@
 using namespace Teuchos;
 using namespace Galeri;
 
-int solve(Epetra_RowMatrix&A, Epetra_MultiVector& X, Epetra_MultiVector& B)
+int solve(Epetra_RowMatrix&A, const bool UseIFPACK = true)
 {
+  Epetra_MultiVector X(A.OperatorDomainMap(), 2);
+  Epetra_MultiVector B(A.OperatorRangeMap(), 2);
+
   X.PutScalar(0.0);
   B.PutScalar(1.0);
 
@@ -67,11 +70,14 @@ int solve(Epetra_RowMatrix&A, Epetra_MultiVector& X, Epetra_MultiVector& B)
   MLList.set("aggregation: damping factor", 0.0);
   MLList.set("output", 0);
 
-  // Use IFPACK smoothers, because they can take advantage of the
-  // underlying Epetra matrix. The "fast" SGS is used for Epetra_CrsMatrix.
-  MLList.set("smoother: type","IFPACK");
-  MLList.set("smoother: ifpack type", "point relaxation stand-alone");
-  MLList.sublist("smoother: ifpack list").set("relaxation: type", "symmetric Gauss-Seidel");
+  if (UseIFPACK)
+  {
+    // Use IFPACK smoothers, because they can take advantage of the
+    // underlying Epetra matrix. The "fast" SGS is used for Epetra_CrsMatrix.
+    MLList.set("smoother: type","IFPACK");
+    MLList.set("smoother: ifpack type", "point relaxation stand-alone");
+    MLList.sublist("smoother: ifpack list").set("relaxation: type", "symmetric Gauss-Seidel");
+  }
 
   Epetra_Time Time(A.Comm());
   Time.ResetStartTime();
@@ -112,16 +118,9 @@ int main(int argc, char *argv[])
   Epetra_VbrMatrix* VbrA = CreateVbrMatrix(CrsA, 1);
   Amesos_TestRowMatrix* RowA = new Amesos_TestRowMatrix(CrsA);
 
-  Epetra_MultiVector LHS(VbrA->Map(), 2);
-  Epetra_MultiVector RHS(VbrA->Map(), 2);
-
-  int RowIters = solve(*RowA, LHS, RHS);
-  int CrsIters = solve(*CrsA, LHS, RHS);
-  int VbrIters = solve(*VbrA, LHS, RHS);
-
-  delete VbrA;
-  delete CrsA;
-  delete Map;
+  int RowIters = solve(*RowA);
+  int CrsIters = solve(*CrsA);
+  int VbrIters = solve(*VbrA);
 
   if (RowIters != CrsIters || RowIters != VbrIters || CrsIters != VbrIters)
   {
@@ -129,6 +128,30 @@ int main(int argc, char *argv[])
       cout << "TEST FAILED!" << endl;
     exit(EXIT_FAILURE);
   }
+
+  if (Comm.NumProc() == 1)
+  {
+    Epetra_VbrMatrix* VbrA2 = CreateVbrMatrix(CrsA, 5);
+    Amesos_TestRowMatrix* RowA2 = new Amesos_TestRowMatrix(VbrA2);
+
+    int VbrIters2 = solve(*VbrA2, false);
+    int RowIters2 = solve(*RowA2, false);
+
+    if (RowIters2 != VbrIters2)
+    {
+      if (Comm.MyPID() == 0)
+        cout << "TEST FAILED!" << endl;
+      exit(EXIT_FAILURE);
+    }
+
+    delete VbrA2;
+    delete RowA2;
+  }
+
+  delete VbrA;
+  delete CrsA;
+  delete RowA;
+  delete Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
