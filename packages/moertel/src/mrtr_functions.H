@@ -438,6 +438,98 @@ public:
 };
 
 
+class Function_BiLinearQuad : public MOERTEL::Function 
+{
+public:
+  
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
+  Function_BiLinearQuad(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_BiLinearQuad)
+  {}
+  
+  /*!
+  \brief Copy-Constructor
+  */
+  Function_BiLinearQuad(const MOERTEL::Function_BiLinearQuad& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
+
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  virtual MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
+  virtual ~Function_BiLinearQuad() {}
+
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function (dimension 2)
+  \param val (out) : Function values at xi, dimension 4, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 4
+  \param deriv (out) : Derivative of functions at xi, dimension 8, if NULL on input no evaluation
+  */
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
+};
+
+
+
+class Function_DualBiLinearQuad : public MOERTEL::Function 
+{
+public:
+  
+  /*!
+  \brief Constructor
+  
+  \param out : Level of output information written to stdout ( 0 - 10 )
+  */
+  Function_DualBiLinearQuad(int out) :
+  MOERTEL::Function(out,MOERTEL::Function::func_DualBiLinearQuad)
+  {}
+  
+  /*!
+  \brief Copy-Constructor
+  */
+  Function_DualBiLinearQuad(const MOERTEL::Function_DualBiLinearQuad& old) :
+  MOERTEL::Function(old.outputlevel_,old.type_)
+  {}
+
+  /*!
+  \brief Clone method
+  
+  Makes a deep copy of this instance and returns a pointer to it.
+  
+  */
+  virtual MOERTEL::Function* Clone() const;
+
+  /*!
+  \brief Destructor
+  */
+  virtual ~Function_DualBiLinearQuad() {}
+
+  /*!
+  \brief Evaluate the function and derivatives at a given local coordinate
+  
+  \param xi (in) : Local coordinate where to evaluate the function (dimension 2)
+  \param val (out) : Function values at xi, dimension 4, if NULL on input no evaluation
+  \param valdim (in) : Dimension of val should be 4
+  \param deriv (out) : Derivative of functions at xi, dimension 8, if NULL on input no evaluation
+  */
+  bool EvaluateFunction(const MOERTEL::Segment& seg, const double* xi, 
+                        double* val, const int valdim, double* deriv);
+};
+
 
 
 

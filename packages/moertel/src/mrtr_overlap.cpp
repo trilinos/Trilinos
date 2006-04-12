@@ -56,10 +56,13 @@ havelines_(false),
 havesxim_(false),
 havelinem_(false)
 {
-  if (sseg.Type()!=MOERTEL::Segment::seg_BiLinearTri || mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri)
+  if ( (sseg.Type()!=MOERTEL::Segment::seg_BiLinearTri &&
+        sseg.Type()!=MOERTEL::Segment::seg_BiLinearQuad    )  || 
+       (mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri && 
+        mseg.Type()!=MOERTEL::Segment::seg_BiLinearQuad    )  )
   {
     cout << "***ERR*** MOERTEL::Overlap::Overlap:\n"
-         << "***ERR*** Overlap of other then bilinear triangles not yet implemented\n"
+         << "***ERR*** Overlap of other then bilinear triangles/quads not yet implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
@@ -91,31 +94,78 @@ bool MOERTEL::Overlap::build_lines_s()
     return false;
   }
 
-  // slave segment, line 0
-  sseg_.LocalCoordinatesOfNode(0,&sline_[0][0]);
-  sseg_.LocalCoordinatesOfNode(1,&sline_[0][2]);
-  // slave segment, line 1
-  sseg_.LocalCoordinatesOfNode(1,&sline_[1][0]);
-  sseg_.LocalCoordinatesOfNode(2,&sline_[1][2]);
-  // slave segment, line 2
-  sseg_.LocalCoordinatesOfNode(2,&sline_[2][0]);
-  sseg_.LocalCoordinatesOfNode(0,&sline_[2][2]);
+  if (sseg_.Nnode()==3)
+  {
+    // slave segment, line 0
+    sseg_.LocalCoordinatesOfNode(0,&sline_[0][0]);
+    sseg_.LocalCoordinatesOfNode(1,&sline_[0][2]);
+    // slave segment, line 1
+    sseg_.LocalCoordinatesOfNode(1,&sline_[1][0]);
+    sseg_.LocalCoordinatesOfNode(2,&sline_[1][2]);
+    // slave segment, line 2
+    sseg_.LocalCoordinatesOfNode(2,&sline_[2][0]);
+    sseg_.LocalCoordinatesOfNode(0,&sline_[2][2]);
+
+    // master segment, line 0
+    mline_[0][0] = mxi_[0][0];
+    mline_[0][1] = mxi_[0][1];
+    mline_[0][2] = mxi_[1][0];
+    mline_[0][3] = mxi_[1][1];
+    // master segment, line 1
+    mline_[1][0] = mxi_[1][0];
+    mline_[1][1] = mxi_[1][1];
+    mline_[1][2] = mxi_[2][0];
+    mline_[1][3] = mxi_[2][1];
+    // master segment, line 2
+    mline_[2][0] = mxi_[2][0];
+    mline_[2][1] = mxi_[2][1];
+    mline_[2][2] = mxi_[0][0];
+    mline_[2][3] = mxi_[0][1];
+  }
+  else if (sseg_.Nnode()==4)
+  {
+    // slave segment, line 0
+    sseg_.LocalCoordinatesOfNode(0,&sline_[0][0]);
+    sseg_.LocalCoordinatesOfNode(1,&sline_[0][2]);
+    // slave segment, line 1
+    sseg_.LocalCoordinatesOfNode(1,&sline_[1][0]);
+    sseg_.LocalCoordinatesOfNode(2,&sline_[1][2]);
+    // slave segment, line 2
+    sseg_.LocalCoordinatesOfNode(2,&sline_[2][0]);
+    sseg_.LocalCoordinatesOfNode(3,&sline_[2][2]);
+    // slave segment, line 3
+    sseg_.LocalCoordinatesOfNode(3,&sline_[3][0]);
+    sseg_.LocalCoordinatesOfNode(0,&sline_[3][2]);
+
+    // master segment, line 0
+    mline_[0][0] = mxi_[0][0];
+    mline_[0][1] = mxi_[0][1];
+    mline_[0][2] = mxi_[1][0];
+    mline_[0][3] = mxi_[1][1];
+    // master segment, line 1
+    mline_[1][0] = mxi_[1][0];
+    mline_[1][1] = mxi_[1][1];
+    mline_[1][2] = mxi_[2][0];
+    mline_[1][3] = mxi_[2][1];
+    // master segment, line 2
+    mline_[2][0] = mxi_[2][0];
+    mline_[2][1] = mxi_[2][1];
+    mline_[2][2] = mxi_[3][0];
+    mline_[2][3] = mxi_[3][1];
+    // master segment, line 3
+    mline_[2][0] = mxi_[3][0];
+    mline_[2][1] = mxi_[3][1];
+    mline_[2][2] = mxi_[0][0];
+    mline_[2][3] = mxi_[0][1];
+  }
+  else
+  {
+    cout << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
+         << "***ERR*** # slave node " << sseg_.Nnode() << " not supported\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
   
-  // master segment, line 0
-  mline_[0][0] = mxi_[0][0];
-  mline_[0][1] = mxi_[0][1];
-  mline_[0][2] = mxi_[1][0];
-  mline_[0][3] = mxi_[1][1];
-  // master segment, line 1
-  mline_[1][0] = mxi_[1][0];
-  mline_[1][1] = mxi_[1][1];
-  mline_[1][2] = mxi_[2][0];
-  mline_[1][3] = mxi_[2][1];
-  // master segment, line 2
-  mline_[2][0] = mxi_[2][0];
-  mline_[2][1] = mxi_[2][1];
-  mline_[2][2] = mxi_[0][0];
-  mline_[2][3] = mxi_[0][1];
 
   return true;
 }
@@ -133,32 +183,45 @@ bool MOERTEL::Overlap::build_lines_m()
     return false;
   }
 
-  // master segment, line 0
-  mseg_.LocalCoordinatesOfNode(0,&mlinem_[0][0]);
-  mseg_.LocalCoordinatesOfNode(1,&mlinem_[0][2]);
-  // master segment, line 1
-  mseg_.LocalCoordinatesOfNode(1,&mlinem_[1][0]);
-  mseg_.LocalCoordinatesOfNode(2,&mlinem_[1][2]);
-  // master segment, line 2
-  mseg_.LocalCoordinatesOfNode(2,&mlinem_[2][0]);
-  mseg_.LocalCoordinatesOfNode(0,&mlinem_[2][2]);
+  if (mseg_.Nnode()==3)
+  {
+    // master segment, line 0
+    mseg_.LocalCoordinatesOfNode(0,&mlinem_[0][0]);
+    mseg_.LocalCoordinatesOfNode(1,&mlinem_[0][2]);
+    // master segment, line 1
+    mseg_.LocalCoordinatesOfNode(1,&mlinem_[1][0]);
+    mseg_.LocalCoordinatesOfNode(2,&mlinem_[1][2]);
+    // master segment, line 2
+    mseg_.LocalCoordinatesOfNode(2,&mlinem_[2][0]);
+    mseg_.LocalCoordinatesOfNode(0,&mlinem_[2][2]);
+    
+    // slave segment, line 0
+    slinem_[0][0] = sxim_[0][0];
+    slinem_[0][1] = sxim_[0][1];
+    slinem_[0][2] = sxim_[1][0];
+    slinem_[0][3] = sxim_[1][1];
+    // slave segment, line 1
+    slinem_[1][0] = sxim_[1][0];
+    slinem_[1][1] = sxim_[1][1];
+    slinem_[1][2] = sxim_[2][0];
+    slinem_[1][3] = sxim_[2][1];
+    // slave segment, line 2
+    slinem_[2][0] = sxim_[2][0];
+    slinem_[2][1] = sxim_[2][1];
+    slinem_[2][2] = sxim_[0][0];
+    slinem_[2][3] = sxim_[0][1];
+  }
+  else if if (mseg_.Nnode()==4)
+  {
+  }
+  else
+  {
+    cout << "***ERR*** MOERTEL::Overlap::build_lines_s:\n"
+         << "***ERR*** # slave node " << mseg_.Nnode() << " not supported\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
   
-  // slave segment, line 0
-  slinem_[0][0] = sxim_[0][0];
-  slinem_[0][1] = sxim_[0][1];
-  slinem_[0][2] = sxim_[1][0];
-  slinem_[0][3] = sxim_[1][1];
-  // slave segment, line 1
-  slinem_[1][0] = sxim_[1][0];
-  slinem_[1][1] = sxim_[1][1];
-  slinem_[1][2] = sxim_[2][0];
-  slinem_[1][3] = sxim_[2][1];
-  // slave segment, line 2
-  slinem_[2][0] = sxim_[2][0];
-  slinem_[2][1] = sxim_[2][1];
-  slinem_[2][2] = sxim_[0][0];
-  slinem_[2][3] = sxim_[0][1];
-
   return true;
 }
 
@@ -168,10 +231,9 @@ bool MOERTEL::Overlap::build_lines_m()
 bool MOERTEL::Overlap::build_mxi()
 {
   // project the master segment's nodes onto the slave segment
-  nnode_ = mseg_.Nnode();
   MOERTEL::Node** mnode  = mseg_.Nodes();
   MOERTEL::Projector projector(inter_.IsOneDimensional(),OutLevel());
-  for (int i=0; i<nnode_; ++i)
+  for (int i=0; i<mseg_.Nnode(); ++i)
   {
     // project node i onto sseg
     projector.ProjectNodetoSegment_SegmentNormal(*mnode[i],sseg_,mxi_[i]);
@@ -192,7 +254,7 @@ bool MOERTEL::Overlap::build_mxi()
  *----------------------------------------------------------------------*/
 bool MOERTEL::Overlap::build_sxim()
 {
-  // project the master segment's nodes onto the slave segment
+  // project the slave segment's nodes onto the master segment
   int nsnode = sseg_.Nnode();
   MOERTEL::Node** snode  = sseg_.Nodes();
   MOERTEL::Projector projector(inter_.IsOneDimensional(),OutLevel());
@@ -218,12 +280,33 @@ bool MOERTEL::Overlap::build_sxim()
 bool MOERTEL::Overlap::build_sxi()
 {
   // this makes coords of snodes on the sseg local coord system
-  sxi_[0][0] = 0.;
-  sxi_[0][1] = 0.;
-  sxi_[1][0] = 1.;
-  sxi_[1][1] = 0.;
-  sxi_[2][0] = 0.;
-  sxi_[2][1] = 1.;
+  if (sseg_.Nnode()==3)
+  {
+    sxi_[0][0] = 0.;
+    sxi_[0][1] = 0.;
+    sxi_[1][0] = 1.;
+    sxi_[1][1] = 0.;
+    sxi_[2][0] = 0.;
+    sxi_[2][1] = 1.;
+  }
+  else if (sseg_.Nnode()==4)
+  {
+    sxi_[0][0] = -1.;
+    sxi_[0][1] = -1.;
+    sxi_[1][0] =  1.;
+    sxi_[1][1] = -1.;
+    sxi_[2][0] =  1.;
+    sxi_[2][1] =  1.;
+    sxi_[3][0] = -1.;
+    sxi_[3][1] =  1.;
+  }
+  else
+  {
+    cout << "***ERR*** MOERTEL::Overlap::build_sxi:\n"
+         << "***ERR*** # slave node " << sseg_.Nnode() << " not supported\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
 
   havesxi_ = true;
   return true;
@@ -234,12 +317,34 @@ bool MOERTEL::Overlap::build_sxi()
  *----------------------------------------------------------------------*/
 bool MOERTEL::Overlap::build_normal()
 {
-  n_[0][0] = 0.;
-  n_[0][1] = -1.;
-  n_[1][0] = 1.;
-  n_[1][1] = 1.;
-  n_[2][0] = -1.;
-  n_[2][1] = 0.;
+  if (sseg_.Nnode()==3)
+  {
+    n_[0][0] = 0.;
+    n_[0][1] = -1.;
+    n_[1][0] = 1.;
+    n_[1][1] = 1.;
+    n_[2][0] = -1.;
+    n_[2][1] = 0.;
+  }
+  else if (sseg_.Nnode()==4)
+  {
+    n_[0][0] = 0.;
+    n_[0][1] = -1.;
+    n_[1][0] = 1.;
+    n_[1][1] = 0.;
+    n_[2][0] = 0.;
+    n_[2][1] = 1.;
+    n_[3][0] = -1.;
+    n_[3][1] = 0.;
+  }
+  else
+  {
+    cout << "***ERR*** MOERTEL::Overlap::build_normal:\n"
+         << "***ERR*** # slave node " << sseg_.Nnode() << " not supported\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
   return true;
 }
 
@@ -250,26 +355,9 @@ bool MOERTEL::Overlap::ComputeOverlap()
 {
   bool ok = false;
 
-#if 0
-  MOERTEL::Node** snodes = sseg_.Nodes();
-  bool foundit = false;
-  for (int i=0; i<sseg_.Nnode(); ++i)
-    if (snodes[i]->Id() == 263 || snodes[i]->Id() == 282)
-    {
-      foundit = true;
-      break;
-    }
-  if (foundit)
-  {  
-    cout << "Slave  Segment\n" << sseg_;
-    cout << "Master Segment\n" << mseg_;
-  }
-#endif
-
   // project master nodes onto slave segment if not already done
   if (!havemxi_)
     havemxi_ = build_mxi();
-
   // perform a quick test
   ok = QuickOverlapTest();
   if (!ok)
@@ -283,7 +371,7 @@ bool MOERTEL::Overlap::ComputeOverlap()
 
   // project slave nodes onto master segment
   havesxim_ = build_sxim();
-
+  
   // build outward normal of edges of sseg (in local coords)
   build_normal();
   
@@ -296,6 +384,7 @@ bool MOERTEL::Overlap::ComputeOverlap()
   // in master triangle coord system
   if (!havelinem_)
     havelinem_ = build_lines_m();
+  exit(0);
 
   // perform clipping algorithm
   ok = Clipelements();

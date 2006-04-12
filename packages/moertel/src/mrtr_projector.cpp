@@ -111,7 +111,11 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
 #endif
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
-    double eta[2]; eta[0] = eta[1] = 1./3.;
+    double eta[2]; 
+    if (seg.Nnode()==3)
+      eta[0] = eta[1] = 1./3.;
+    else
+      eta[0] = eta[1] = 0.;
     double alpha = 0.0;
     int    i=0;
     double F[3], dF[3][3], deta[3];
@@ -320,7 +324,11 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node&
 #endif
     // we do a newton iteration for the projection coordinates xi
     // set starting value to the middle of the segment
-    double eta[2]; eta[0] = eta[1] = 1./3.;
+    double eta[2]; 
+    if (seg.Nnode()==3)         // use center point if triangle as initial guess
+      eta[0] = eta[1] = 1./3.;
+    else                        // use center point of quad as initial guess
+      eta[0] = eta[1] = 0.0;
     double alpha = 0.01;
     int    i=0;
     double F[3], dF[3][3], deta[3];

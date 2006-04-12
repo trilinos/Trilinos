@@ -244,26 +244,25 @@ MOERTEL::Segment&                       mseg_;
 int                                  outputlevel_;
 
 bool                                 overlap_;   // true if segments overlap
-int                                  nnode_;     // # of master nodes
 
 //------------------ data in sseg_'s local coord system
-double                               mxi_[3][2]; // local coords of mnodes projected onto sseg
+double                               mxi_[4][2]; // local coords of mnodes projected onto sseg
 bool                                 havemxi_;   // flag indicating whether mxi_ and min_ have been build
 
-double                               sxi_[3][2]; // local coords of snodes in sseg's coord system
-double                               n_[3][2];   // outward normal to segment's edges in local coords
+double                               sxi_[4][2]; // local coords of snodes in sseg's coord system
+double                               n_[4][2];   // outward normal to segment's edges in local coords
 bool                                 havesxi_;   // flag indicating whether sxi_ and sin_ have been build
 
-double                               sline_[3][4]; // 3 lines of sseg_ in sseg_'s local coords
-double                               mline_[3][4]; // 3 lines of mseg_in sseg_'s local coords
+double                               sline_[4][4]; // 3 lines of sseg_ in sseg_'s local coords
+double                               mline_[4][4]; // 3 lines of mseg_in sseg_'s local coords
 bool                                 havelines_;   // flag indicating whether line info has been build
 
 //------------------ data in mseg_'s local coord system
-double                               sxim_[3][2];  // coords of slave nodes on master segment
+double                               sxim_[4][2];  // coords of slave nodes on master segment
 bool                                 havesxim_;    // flag indicating whether sxim_ was built
 
-double                               slinem_[3][4]; // 3 lines of sseg_ in mseg_'s local coords
-double                               mlinem_[3][4]; // 3 lines of mseg_in mseg_'s local coords
+double                               slinem_[4][4]; // 3 lines of sseg_ in mseg_'s local coords
+double                               mlinem_[4][4]; // 3 lines of mseg_in mseg_'s local coords
 bool                                 havelinem_;   // flag indicating built of line information in master coords
 
 

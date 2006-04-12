@@ -166,7 +166,6 @@ bool MOERTEL::Interface::Project()
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     return false;
   }
-
   return true;
 }
 

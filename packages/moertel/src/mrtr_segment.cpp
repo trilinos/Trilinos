@@ -219,7 +219,7 @@ bool MOERTEL::Segment::SetFunction(int id, RefCountPtr<MOERTEL::Function> func)
  |               no evaluation                                          | 
  *----------------------------------------------------------------------*/
 bool MOERTEL::Segment::EvaluateFunction(int id, const double* xi, double* val, 
-                                     int valdim, double* deriv)
+                                        int valdim, double* deriv)
 { 
   map<int,RefCountPtr<MOERTEL::Function> >::iterator curr = functions_.find(id);
   if (curr == functions_.end())
@@ -278,7 +278,7 @@ double* MOERTEL::Segment::BuildNormalAtNode(int nid)
   double xi[2];
   LocalCoordinatesOfNode(lid,xi);
   
-  // build an outward unit normal at xi
+  // build an outward unit normal at xi and return it
   return BuildNormal(xi);
 }
 

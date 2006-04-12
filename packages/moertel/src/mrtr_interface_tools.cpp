@@ -309,6 +309,7 @@ bool MOERTEL::Interface::AddSegment(MOERTEL::Segment& seg, int side)
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
+#if 1 // splitting the quad into 2 triangles
     // split the quad into 2 triangles
     int ids1[3];
     ids1[0] = seg.NodeIds()[0];
@@ -329,12 +330,20 @@ bool MOERTEL::Interface::AddSegment(MOERTEL::Segment& seg, int side)
     else         s = &(seg_[1]);
     s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp1->Id(),tmp1));    
     s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp2->Id(),tmp2));    
+#else // using a real quad
+    // copy the segment
+    RefCountPtr<MOERTEL::Segment> tmp = rcp( seg.Clone());
+    // add segment
+    map<int,RefCountPtr<MOERTEL::Segment> >* s = 0;
+    if (side==0) s = &(seg_[0]);
+    else         s = &(seg_[1]);
+    s->insert(pair<int,RefCountPtr<MOERTEL::Segment> >(tmp->Id(),tmp));
+#endif
   }
   else // all other types of segments
   {
     // copy the segment
     RefCountPtr<MOERTEL::Segment> tmp = rcp( seg.Clone());
-  
     // add segment
     map<int,RefCountPtr<MOERTEL::Segment> >* s = 0;
     if (side==0) s = &(seg_[0]);
@@ -1725,12 +1734,14 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
   }
   
   // set the primal shape functions
-  MOERTEL::Function_Linear1D*      func1 = NULL;
-  MOERTEL::Function_Constant1D*    func2 = NULL;
-  MOERTEL::Function_DualLinear1D*  func3 = NULL;
-  MOERTEL::Function_LinearTri*     func4 = NULL;
-  MOERTEL::Function_DualLinearTri* func5 = NULL;
-  MOERTEL::Function_ConstantTri*   func6 = NULL;
+  MOERTEL::Function_Linear1D*         func1 = NULL;
+  MOERTEL::Function_Constant1D*       func2 = NULL;
+  MOERTEL::Function_DualLinear1D*     func3 = NULL;
+  MOERTEL::Function_LinearTri*        func4 = NULL;
+  MOERTEL::Function_DualLinearTri*    func5 = NULL;
+  MOERTEL::Function_ConstantTri*      func6 = NULL;
+  MOERTEL::Function_BiLinearQuad*     func7 = NULL;
+  MOERTEL::Function_DualBiLinearQuad* func8 = NULL;
   switch(primal_)
   {
     case MOERTEL::Function::func_Linear1D:
@@ -1758,6 +1769,12 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
       SetFunctionAllSegmentsSide(0,0,func4);
       SetFunctionAllSegmentsSide(1,0,func4);
       delete func4; func4 = NULL;
+    break;
+    case MOERTEL::Function::func_BiLinearQuad:
+      func7 = new MOERTEL::Function_BiLinearQuad(OutLevel());
+      SetFunctionAllSegmentsSide(0,0,func7);
+      SetFunctionAllSegmentsSide(1,0,func7);
+      delete func7; func7 = NULL;
     break;
     case MOERTEL::Function::func_none:
       cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"
@@ -1816,6 +1833,16 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
       func6 = new MOERTEL::Function_ConstantTri(OutLevel());
       SetFunctionAllSegmentsSide(side,1,func6);
       delete func6; func6 = NULL;
+    break;
+    case MOERTEL::Function::func_BiLinearQuad:
+      func7 = new MOERTEL::Function_BiLinearQuad(OutLevel());
+      SetFunctionAllSegmentsSide(side,1,func7);
+      delete func7; func7 = NULL;
+    break;
+    case MOERTEL::Function::func_DualBiLinearQuad:
+      func8 = new MOERTEL::Function_DualBiLinearQuad(OutLevel());
+      SetFunctionAllSegmentsSide(side,1,func8);
+      delete func8; func8 = NULL;
     break;
     case MOERTEL::Function::func_none:
       cout << "***ERR*** MOERTEL::Interface::SetFunctionsFromFunctionTypes:\n"

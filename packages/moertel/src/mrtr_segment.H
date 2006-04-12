@@ -310,12 +310,12 @@ public:
 
 protected:
 
-  int                      Id_;         // this segments unique id
-  int                      outputlevel_;
-  vector<int>              nodeId_;     // vector of unique node ids 
-  vector<MOERTEL::Node*>      nodeptr_;    // vector with ptrs to nodes adj to me
+  int                                       Id_;         // this segments unique id
+  int                                       outputlevel_;
+  vector<int>                               nodeId_;     // vector of unique node ids 
+  vector<MOERTEL::Node*>                    nodeptr_;    // vector with ptrs to nodes adj to me
 
-  SegmentType              stype_;      // segment type
+  SegmentType                               stype_;      // segment type
   map< int,RefCountPtr<MOERTEL::Function> > functions_;  // functions that live on this segment
 
 };

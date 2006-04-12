@@ -54,7 +54,8 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
   // check the type of function on the segment
   // Here, we need a blinear triangle shape function
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MOERTEL::Function::func_LinearTri)
+  if (type != MOERTEL::Function::func_LinearTri &&
+      type != MOERTEL::Function::func_BiLinearQuad)
   {
     cout << "***ERR*** MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"
@@ -127,17 +128,19 @@ bool MOERTEL::Projector::evaluate_FgradF_3D_NodalNormal(double* F,
  | Fi(eta,alpha) = Ni*xi+alpha*Ni*ni - xm = 0                           |
  | and its gradient                                                     |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(double* F,
-                                                       double dF[][3],
-                                                       const MOERTEL::Node& node, 
-                                                       MOERTEL::Segment& seg, 
-	   					       double* eta,
-                                                       double alpha)
+bool MOERTEL::Projector::evaluate_FgradF_3D_SegmentNormal(
+                                                      double* F,
+                                                      double dF[][3],
+                                                      const MOERTEL::Node& node, 
+                                                      MOERTEL::Segment& seg, 
+	   					      double* eta,
+                                                      double alpha)
 {
   // check the type of function on the segment
-  // Here, we need a blinear triangle shape function
+  // Here, we need a bilinear triangle shape function
   MOERTEL::Function::FunctionType type = seg.FunctionType(0);
-  if (type != MOERTEL::Function::func_LinearTri)
+  if (type != MOERTEL::Function::func_LinearTri &&
+      type != MOERTEL::Function::func_BiLinearQuad)
   {
     cout << "***ERR*** MOERTEL::Projector::evaluate_F_3D_NodalNormal:\n"
     	 << "***ERR*** function is of wrong type\n"

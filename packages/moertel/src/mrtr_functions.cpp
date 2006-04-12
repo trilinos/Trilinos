@@ -433,3 +433,111 @@ bool MOERTEL::Function_ConstantTri::EvaluateFunction(
   
   return true;
 }
+
+
+//=======================================================================
+// the bilinear 2D quad shape function
+//=======================================================================
+/*----------------------------------------------------------------------*
+ |  Clone an existing object                                 mwgee 04/06|
+ |  this methods takes the base class ptr MOERTEL::Function*            |
+ |  but actually needs to clone the derived type                        |
+ |  MOERTEL::Function_DualLinear1D*                                     |
+ |  It then returns the derived type                                    |
+ |  Note that this functionality is extremely important, it's not       |
+ |  'just another clone'                                                |
+ *----------------------------------------------------------------------*/
+MOERTEL::Function* MOERTEL::Function_BiLinearQuad::Clone() const
+{
+  MOERTEL::Function_BiLinearQuad* newclass = new MOERTEL::Function_BiLinearQuad(*this);
+  return newclass;
+}
+
+/*----------------------------------------------------------------------*
+ | evaluate the function (2D)                                mwgee 04/06|
+ | xi     (in)  natural coordinates -1/-1<*xi<1/1 where to eval         |
+ | val    (out) function values, if NULL on input, no evaluation        |
+ | valdim (in)  dimension of val                                        |
+ | deriv  (out) derivatives of functions at xi, if NULL on input,       |
+ |              no evaluation                                           | 
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Function_BiLinearQuad::EvaluateFunction(
+                                            const MOERTEL::Segment& seg, 
+                                            const double* xi, double* val, 
+                                            const int valdim, double* deriv)
+{ 
+  if (valdim<4)
+  {
+    cout << "***ERR*** MOERTEL::Function_BiLinearQuad::EvaluateFunction:\n"
+         << "***ERR*** valdim<4 on input\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (!xi)
+  {
+    cout << "***ERR*** MOERTEL::Function_BiLinearQuad::EvaluateFunction:\n"
+         << "***ERR*** xi=NULL on input\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  if (val)
+  {
+    val[0] = .25*(1.-xi[0])*(1.-xi[1]);
+    val[1] = .25*(1.+xi[0])*(1.-xi[1]); 
+    val[2] = .25*(1.+xi[0])*(1.+xi[1]);
+    val[3] = .25*(1.-xi[0])*(1.+xi[1]);
+  }
+  
+  if (deriv)
+  {
+    deriv[0] = -.25*(1.-xi[1]); 
+    deriv[1] = -.25*(1.-xi[0]); 
+    deriv[2] =  .25*(1.-xi[1]); 
+    deriv[3] = -.25*(1.+xi[0]); 
+    deriv[4] =  .25*(1.+xi[1]); 
+    deriv[5] =  .25*(1.+xi[0]); 
+    deriv[6] = -.25*(1.+xi[1]); 
+    deriv[7] =  .25*(1.-xi[0]); 
+  }
+  return true;
+}
+
+
+//=======================================================================
+// the dual bilinear 2D quad shape function
+//=======================================================================
+/*----------------------------------------------------------------------*
+ |  Clone an existing object                                 mwgee 04/06|
+ |  this methods takes the base class ptr MOERTEL::Function*            |
+ |  but actually needs to clone the derived type                        |
+ |  MOERTEL::Function_DualLinear1D*                                     |
+ |  It then returns the derived type                                    |
+ |  Note that this functionality is extremely important, it's not       |
+ |  'just another clone'                                                |
+ *----------------------------------------------------------------------*/
+MOERTEL::Function* MOERTEL::Function_DualBiLinearQuad::Clone() const
+{
+  MOERTEL::Function_DualBiLinearQuad* newclass = new MOERTEL::Function_DualBiLinearQuad(*this);
+  return newclass;
+}
+
+/*----------------------------------------------------------------------*
+ | evaluate the function (2D)                                mwgee 04/06|
+ | xi     (in)  natural coordinates -1/-1<*xi<1/1 where to eval         |
+ | val    (out) function values, if NULL on input, no evaluation        |
+ | valdim (in)  dimension of val                                        |
+ | deriv  (out) derivatives of functions at xi, if NULL on input,       |
+ |              no evaluation                                           | 
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Function_DualBiLinearQuad::EvaluateFunction(
+                                            const MOERTEL::Segment& seg, 
+                                            const double* xi, double* val, 
+                                            const int valdim, double* deriv)
+{ 
+    cout << "***ERR*** MOERTEL::Function_DualBiLinearQuad::EvaluateFunction:\n"
+         << "***ERR*** not yet impl.\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  return true;
+}

@@ -304,7 +304,7 @@ bool MOERTEL::Overlap::QuickOverlapTest()
   double mmin[2]; 
   mmin[0] = mxi_[0][0];
   mmin[1] = mxi_[0][1];
-  for (int point=1; point<3; ++point)
+  for (int point=1; point<mseg_.Nnode(); ++point)
     for (int dim=0; dim<2; ++dim)
     {
       if (mmax[dim] < mxi_[point][dim]) 

@@ -81,11 +81,36 @@ MOERTEL::Segment(old)
  *----------------------------------------------------------------------*/
 int* MOERTEL::Segment_BiLinearQuad::Pack(int* size)
 { 
-  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Pack:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
-  return NULL;
+  // note: first there has to be the size and second there has to be the type
+  // *size = *size  + stype_ + Id_ + nodeId_.size() + nnode*sizeof(int) + Nfunctions() + 2*Nfunctions()*sizeof(int)
+     *size =  1     +	1    +  1  +   1            +	nodeId_.size()  +      1       +      2*Nfunctions();
+  
+  int* pack = new int[*size];
+  int count = 0;
+  
+  pack[count++] = *size;
+  pack[count++] = (int)stype_;
+  pack[count++] = Id_;
+  pack[count++] = nodeId_.size();
+  for (int i=0; i<(int)nodeId_.size(); ++i) 
+    pack[count++] = nodeId_[i];
+  pack[count++] = Nfunctions();
+  map<int,RefCountPtr<MOERTEL::Function> >::iterator curr;
+  for (curr = functions_.begin(); curr != functions_.end(); ++curr)
+  {
+    pack[count++] = curr->first;
+    pack[count++] = curr->second->Type();
+  }
+  
+  if (count != *size)
+  {
+    cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Pack:\n"
+         << "***ERR*** mismatch in packing size\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);     
+  }
+  
+  return pack;
 }
 
 /*----------------------------------------------------------------------*
@@ -93,10 +118,32 @@ int* MOERTEL::Segment_BiLinearQuad::Pack(int* size)
  *----------------------------------------------------------------------*/
 bool MOERTEL::Segment_BiLinearQuad::UnPack(int* pack)
 { 
-  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::UnPack:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
+  // note: first there has to be the size and second there has to be the type
+  int count = 0;
+  int size  = pack[count++];
+  stype_    = (MOERTEL::Segment::SegmentType)pack[count++];
+  Id_       = pack[count++];
+  nodeId_.resize(pack[count++]);
+  for (int i=0; i<(int)nodeId_.size(); ++i)
+    nodeId_[i] = pack[count++];
+  int nfunc = pack[count++];
+  for (int i=0; i<nfunc; ++i)
+  {
+    int id   = pack[count++];
+    int type = pack[count++];
+    MOERTEL::Function* func = MOERTEL::AllocateFunction((MOERTEL::Function::FunctionType)type,OutLevel());
+    RefCountPtr<MOERTEL::Function> rcptrfunc = rcp(func);
+    functions_.insert(pair<int,RefCountPtr<MOERTEL::Function> >(id,rcptrfunc));
+  }
+  
+  if (count != size)
+  {
+    cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::UnPack:\n"
+         << "***ERR*** mismatch in packing size\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);     
+  }
+  
   return true;
 }
 
@@ -131,23 +178,34 @@ ostream& operator << (ostream& os, const MOERTEL::Segment_BiLinearQuad& seg)
  *----------------------------------------------------------------------*/
 bool MOERTEL::Segment_BiLinearQuad::LocalCoordinatesOfNode(int lid, double* xi)
 { 
-  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::LocalCoordinatesOfNode:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
+  if (lid==0)
+  {
+    xi[0] = -1.;
+    xi[1] = -1.;
+  }
+  else if (lid==1)
+  {
+    xi[0] =  1.;
+    xi[1] = -1.;
+  }
+  else if (lid==2)
+  {
+    xi[0] =  1.;
+    xi[1] =  1.;
+  }
+  else if (lid==3)
+  {
+    xi[0] = -1.;
+    xi[1] =  1.;
+  }
+  else
+  {
+    cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::LocalCoordinatesOfNode:\n"
+         << "***ERR*** local node number " << lid << " out of range (0..3)\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);     
+  }
   return true;
-}
-
-/*----------------------------------------------------------------------*
- | build basis vectors and metric at given point xi          mwgee 10/05|
- *----------------------------------------------------------------------*/
-double MOERTEL::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][3])
-{ 
-  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Metric:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
-  return 0.0;
 }
 
 /*----------------------------------------------------------------------*
@@ -156,11 +214,49 @@ double MOERTEL::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][
  *----------------------------------------------------------------------*/
 double* MOERTEL::Segment_BiLinearQuad::BuildNormal(double* xi)
 { 
-  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::BuildNormal:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
-  return NULL;
+  // A bilinear quad in 3D can be warped, so it does matter where
+  // to build the normal
+  double G[3][3];
+  Metric(xi,NULL,G);
+  
+  // the normal is G[2]
+  double* n = new double[3];
+  
+  for (int i=0; i<3; ++i)
+    n[i] = G[2][i];
+  
+  return n;
+}
+
+/*----------------------------------------------------------------------*
+ | build basis vectors and metric at given point xi          mwgee 10/05|
+ *----------------------------------------------------------------------*/
+double MOERTEL::Segment_BiLinearQuad::Metric(double* xi, double g[], double G[][3])
+{ 
+  // get nodal coords;
+  const double* x[4];
+  for (int i=0; i<4; ++i) x[i] = nodeptr_[i]->X();
+  
+  // get shape functions and derivatives at xi
+  double val[4];
+  double deriv[8];
+  EvaluateFunction(0,xi,val,4,deriv);
+  
+  // Build kovariant metric G1 and G2 = partial x / partial theta sup i
+  for (int i=0; i<2; ++i)
+    for (int dim=0; dim<3; ++dim)
+    {
+      G[i][dim] = 0.0;
+      for (int node=0; node<4; ++node)
+        G[i][dim] += deriv[node*2+i] * x[node][dim];
+    }
+  
+  // build G3 as cross product of G1 x G2
+  MOERTEL::cross(G[2],G[0],G[1]);
+  
+  // dA at this point is length of G[3] or |G1 x G2|
+  double dA = MOERTEL::length(G[2],3);  
+  return dA;
 }
 
 /*----------------------------------------------------------------------*
@@ -168,9 +264,23 @@ double* MOERTEL::Segment_BiLinearQuad::BuildNormal(double* xi)
  *----------------------------------------------------------------------*/
 double MOERTEL::Segment_BiLinearQuad::Area()
 { 
-  cout << "***ERR*** MOERTEL::Segment_BiLinearQuad::Area:\n"
-       << "***ERR*** not impl.\n"
-       << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
-  exit(EXIT_FAILURE);     
-  return 0.0;
+  double coord[4][2];
+  double sqrtthreeinv = 1./(sqrt(3.));
+  coord[0][0] = -sqrtthreeinv;
+  coord[0][1] = -sqrtthreeinv;
+  coord[1][0] =  sqrtthreeinv;
+  coord[1][1] = -sqrtthreeinv;
+  coord[2][0] =  sqrtthreeinv;
+  coord[2][1] =  sqrtthreeinv;
+  coord[3][0] = -sqrtthreeinv;
+  coord[3][1] =  sqrtthreeinv;
+  double A = 0.0;
+
+  // create an integrator to get the gaussian points
+  for (int gp=0; gp<4; ++gp)
+  {
+    double G[3][3];
+    A += Metric(coord[gp],NULL,G);
+  }
+  return A;
 }

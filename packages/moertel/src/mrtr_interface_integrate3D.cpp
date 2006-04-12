@@ -166,8 +166,8 @@ bool MOERTEL::Interface::Integrate_3D()
     // the segment to be integrated
     RefCountPtr<MOERTEL::Segment> actsseg = scurr->second;
 
-#if 0
-    cout << "\nActive sseg id " << actsseg->Id() << "\n\n";
+#if 1
+    cout << "\n\nActive sseg id " << actsseg->Id() << "\n";
 #endif
 
     // check whether I own at least one of the nodes on this slave segment
@@ -193,7 +193,7 @@ bool MOERTEL::Interface::Integrate_3D()
     {
       RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
       
-#if 0
+#if 1
     cout << "Active mseg id " << actmseg->Id() << endl;
 #endif
       // if there is an overlap, integrate the pair
@@ -216,15 +216,17 @@ bool MOERTEL::Interface::Integrate_3D()
 bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg, 
                                            MOERTEL::Segment& mseg)
 { 
-  // if one of the segments is quadratic, we have to do something here
-  if (sseg.Type()!=MOERTEL::Segment::seg_BiLinearTri || mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri)
+  if ( (sseg.Type()!=MOERTEL::Segment::seg_BiLinearTri &&
+        sseg.Type()!=MOERTEL::Segment::seg_BiLinearQuad    )  || 
+       (mseg.Type()!=MOERTEL::Segment::seg_BiLinearTri && 
+        mseg.Type()!=MOERTEL::Segment::seg_BiLinearQuad    )  )
   {
     cout << "***ERR*** MOERTEL::Interface::Integrate_3D_Section:\n"
-         << "***ERR*** Integration of other then bilinear triangles not yet implemented\n"
+         << "***ERR*** Integration of other then bilinear triangles/quads not implemented\n"
          << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
     exit(EXIT_FAILURE);
   }
-
+  
   // first determine whether there is an overlap between sseg and mseg
   // for this purpose, the 'overlapper' class is used
   // It also builds a triangulation of the overlap polygon if there is any

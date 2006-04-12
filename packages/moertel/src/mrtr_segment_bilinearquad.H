@@ -174,17 +174,18 @@ public:
   */
   bool UnPack(int* pack);
   
-  /*!
-  \brief not implemented
-  
-  */
-  double* BuildNormal(double* xi);
   
   /*!
   \brief not implemented
   
   */
   double Area();
+
+  /*!
+  \brief not implemented
+  
+  */
+  double* BuildNormal(double* xi);
   
   /*!
   \brief not implemented

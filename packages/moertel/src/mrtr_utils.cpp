@@ -62,6 +62,12 @@ MOERTEL::Segment* MOERTEL::AllocateSegment(int type, int out)
         return tmp;
       }
     break;
+    case MOERTEL::Segment::seg_BiLinearQuad:
+      {
+        MOERTEL::Segment_BiLinearQuad* tmp = new MOERTEL::Segment_BiLinearQuad(out);
+        return tmp;
+      }
+    break;
     case MOERTEL::Segment::seg_none:
       cout << "***ERR*** MOERTEL::AllocateSegment:\n"
            << "***ERR*** type is func_none, cannot allocate.\n"

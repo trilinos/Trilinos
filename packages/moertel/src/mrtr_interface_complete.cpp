@@ -92,7 +92,7 @@ bool MOERTEL::Interface::Complete()
   // this test is expensive and does not scale. It is therefore only performed
   // when user requests a high output level
 #if 1
-  if (OutLevel()>8)
+  if (OutLevel()>9)
   {
     for (int proc=0; proc<gcomm_.NumProc(); ++proc)
     {

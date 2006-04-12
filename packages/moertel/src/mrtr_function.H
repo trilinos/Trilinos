@@ -104,7 +104,9 @@ public:
     func_DualLinear1D,
     func_LinearTri,
     func_DualLinearTri,
-    func_ConstantTri
+    func_ConstantTri,
+    func_BiLinearQuad,
+    func_DualBiLinearQuad
   };
   
   // @{ \name Constructors and destructors
