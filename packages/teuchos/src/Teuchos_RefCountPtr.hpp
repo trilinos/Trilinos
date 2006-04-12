@@ -307,8 +307,12 @@ bool RefCountPtr<T>::has_ownership() const {
 
 template<class T>
 REFCOUNTPTR_INLINE
-bool RefCountPtr<T>::shares_resource(const RefCountPtr<T>& r_ptr) const {
-	return node_ == r_ptr.node_;
+template <class T2>
+bool RefCountPtr<T>::shares_resource(const RefCountPtr<T2>& r_ptr) const {
+	return node_ == r_ptr.access_node();
+  // Note: above, r_ptr is *not* the same class type as *this so we can not
+  // access its node_ member directly!  This is an interesting detail to the
+  // C++ protected/private protection mechanism!
 }
 
 template<class T>

@@ -655,7 +655,8 @@ public:
 	 * It also checks to see if the underlying reference counting machinary is the
 	 * same.
 	 */
-	bool shares_resource(const RefCountPtr<T>& r_ptr) const;
+	template<class T2>
+	bool shares_resource(const RefCountPtr<T2>& r_ptr) const;
 	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
 	const RefCountPtr<T>& assert_not_null() const;
 
