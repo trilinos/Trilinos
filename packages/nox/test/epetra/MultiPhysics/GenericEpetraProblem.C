@@ -137,7 +137,6 @@ void GenericEpetraProblem::createMaps()
 GenericEpetraProblem::~GenericEpetraProblem()
 {
   delete AA; AA = 0;
-  //delete initialSolution; initialSolution = 0;
   delete Importer; Importer = 0;
   delete OverlapMap; OverlapMap = 0;
   delete StandardMap; StandardMap = 0;
@@ -214,7 +213,6 @@ Epetra_Vector& GenericEpetraProblem::getMesh()
 
 Teuchos::RefCountPtr<Epetra_Vector> GenericEpetraProblem::getSolution()
 {
-  //assert( initialSolution != 0 ); // Solution vector had better exist
   return initialSolution;
 }
 
@@ -255,12 +253,14 @@ void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
 void GenericEpetraProblem::createDependentVectors()
 {
   // Create the dependent vectors needed to receive data from other problems
-  if( !initialSolution.get() ) {
+  if( !initialSolution.get() ) 
+  {
     cout << "ERROR: Cannot create dependent data without an existing solution "
          << "vector for this problem !!" << endl;
     throw "GenericEpetraProblem ERROR";
   }
-  for( int i = 0; i<depProblems.size(); i++ ) {
+  for( int i = 0; i<depProblems.size(); i++ ) 
+  {
 #ifdef DEBUG
     cout << "For problem : " << myId << "  Creating DepVec for problem : "
          << depProblems[i] << endl;

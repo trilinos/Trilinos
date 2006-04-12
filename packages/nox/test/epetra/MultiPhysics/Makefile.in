@@ -101,9 +101,10 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_example_OBJECTS = Example.$(OBJEXT) Equation_A.$(OBJEXT) \
 	Equation_B.$(OBJEXT) Burgers.$(OBJEXT) HMX_PDE.$(OBJEXT) \
-	Basis.$(OBJEXT) GenericEpetraProblem.$(OBJEXT) \
-	Problem_Interface.$(OBJEXT) Problem_Manager.$(OBJEXT) \
-	OffBlock_Manager.$(OBJEXT) Xfer_Operator.$(OBJEXT)
+	ConvDiff_PDE.$(OBJEXT) Basis.$(OBJEXT) \
+	GenericEpetraProblem.$(OBJEXT) Problem_Interface.$(OBJEXT) \
+	Problem_Manager.$(OBJEXT) OffBlock_Manager.$(OBJEXT) \
+	Xfer_Operator.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
@@ -113,6 +114,7 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Basis.Po ./$(DEPDIR)/Burgers.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ConvDiff_PDE.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Equation_A.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Equation_B.Po ./$(DEPDIR)/Example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/GenericEpetraProblem.Po \
@@ -353,6 +355,7 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Equation_B.C $(srcdir)/Equation_B.H \
 	$(srcdir)/Burgers.C $(srcdir)/Burgers.H \
 	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \
+	$(srcdir)/ConvDiff_PDE.C $(srcdir)/ConvDiff_PDE.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
@@ -412,6 +415,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Basis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Burgers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ConvDiff_PDE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Equation_A.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Equation_B.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example.Po@am__quote@
@@ -517,6 +521,22 @@ HMX_PDE.obj: $(srcdir)/HMX_PDE.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/HMX_PDE.Po' tmpdepfile='$(DEPDIR)/HMX_PDE.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o HMX_PDE.obj `if test -f '$(srcdir)/HMX_PDE.C'; then $(CYGPATH_W) '$(srcdir)/HMX_PDE.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/HMX_PDE.C'; fi`
+
+ConvDiff_PDE.o: $(srcdir)/ConvDiff_PDE.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ConvDiff_PDE.o -MD -MP -MF "$(DEPDIR)/ConvDiff_PDE.Tpo" -c -o ConvDiff_PDE.o `test -f '$(srcdir)/ConvDiff_PDE.C' || echo '$(srcdir)/'`$(srcdir)/ConvDiff_PDE.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ConvDiff_PDE.Tpo" "$(DEPDIR)/ConvDiff_PDE.Po"; else rm -f "$(DEPDIR)/ConvDiff_PDE.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ConvDiff_PDE.C' object='ConvDiff_PDE.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ConvDiff_PDE.Po' tmpdepfile='$(DEPDIR)/ConvDiff_PDE.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ConvDiff_PDE.o `test -f '$(srcdir)/ConvDiff_PDE.C' || echo '$(srcdir)/'`$(srcdir)/ConvDiff_PDE.C
+
+ConvDiff_PDE.obj: $(srcdir)/ConvDiff_PDE.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ConvDiff_PDE.obj -MD -MP -MF "$(DEPDIR)/ConvDiff_PDE.Tpo" -c -o ConvDiff_PDE.obj `if test -f '$(srcdir)/ConvDiff_PDE.C'; then $(CYGPATH_W) '$(srcdir)/ConvDiff_PDE.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ConvDiff_PDE.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ConvDiff_PDE.Tpo" "$(DEPDIR)/ConvDiff_PDE.Po"; else rm -f "$(DEPDIR)/ConvDiff_PDE.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ConvDiff_PDE.C' object='ConvDiff_PDE.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ConvDiff_PDE.Po' tmpdepfile='$(DEPDIR)/ConvDiff_PDE.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ConvDiff_PDE.obj `if test -f '$(srcdir)/ConvDiff_PDE.C'; then $(CYGPATH_W) '$(srcdir)/ConvDiff_PDE.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ConvDiff_PDE.C'; fi`
 
 Basis.o: $(srcdir)/Basis.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Basis.o -MD -MP -MF "$(DEPDIR)/Basis.Tpo" -c -o Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C; \

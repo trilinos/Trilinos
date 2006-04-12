@@ -52,6 +52,7 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Equation_B.C $(srcdir)/Equation_B.H \
 	$(srcdir)/Burgers.C $(srcdir)/Burgers.H \
 	$(srcdir)/HMX_PDE.C $(srcdir)/HMX_PDE.H \
+	$(srcdir)/ConvDiff_PDE.C $(srcdir)/ConvDiff_PDE.H \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \

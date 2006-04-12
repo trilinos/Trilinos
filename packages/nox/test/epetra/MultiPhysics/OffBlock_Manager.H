@@ -48,7 +48,8 @@
 
 #include <vector>
 
-class OffBlock_Manager : GenericEpetraProblem { 
+class OffBlock_Manager : GenericEpetraProblem 
+{
 
   friend class Problem_Manager;
 

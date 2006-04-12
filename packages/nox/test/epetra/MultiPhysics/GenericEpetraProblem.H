@@ -83,9 +83,9 @@ public:
 
   // Allow a reset capability, eg for time dependent or parameter
   // continuation problems.
-  virtual void reset() {}; 
+  virtual void reset() { /* default no-op */ }; 
 
-  virtual void reset(const Epetra_Vector& x) {};
+  virtual void reset(const Epetra_Vector& x) { /* default no-op */ };
 
   // Set the unique int id for this problem
   virtual void setId(const int id_) { myId = id_; }; 

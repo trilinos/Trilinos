@@ -103,6 +103,8 @@
 
 #include "HMX_PDE.H"              
 
+#include "ConvDiff_PDE.H"              
+
 // Added to allow timings
 #include "Epetra_Time.h"
 
@@ -127,7 +129,7 @@ int main(int argc, char *argv[])
   if (argc < 2) 
   {
     cout << "Usage: " << argv[0] 
-         << " -n number_of_elements [ -matlab -offBlocks -noFlow ]" 
+         << " -n number_of_elements [ -matlab -offBlocks -noFlow -hmx -convdiff ]" 
          << endl;
     exit(1);
   }
@@ -141,9 +143,13 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Default run-time options that can be changed from the command line
-  bool useMatlab   = false ;
-  bool doOffBlocks = false ;
-  bool noFlow      = false ;
+  bool useMatlab     = false ;
+  bool doOffBlocks   = false ;
+  bool noFlow        = false ;
+  bool doBrusselator = true  ;  // default to Brusselator problem
+  bool doHMX         = false ; 
+  bool doConvDiff    = false ; 
+
   
   string inConcat("");
 
@@ -177,6 +183,24 @@ int main(int argc, char *argv[])
   if( inConcat.find(option) != string::npos )
   {
     noFlow = true;
+    inConcat.replace( inConcat.find(option), option.size()+1, "");
+  }
+
+  option = "-hmx";
+  if( inConcat.find(option) != string::npos )
+  {
+    doBrusselator = false;
+    doHMX         = true ;
+    doConvDiff    = false;
+    inConcat.replace( inConcat.find(option), option.size()+1, "");
+  }
+
+  option = "-convdiff";
+  if( inConcat.find(option) != string::npos )
+  {
+    doBrusselator = false;
+    doHMX         = false;
+    doConvDiff    = true ;
     inConcat.replace( inConcat.find(option), option.size()+1, "");
   }
 
@@ -338,8 +362,6 @@ int main(int argc, char *argv[])
   problemManager.registerParameters(nlParamsPtr);
   problemManager.registerStatusTest(combo);
 
-  bool doBrusselator = true; // Hard-coded for now
-
   // Allow one of two supported tests
   if( doBrusselator ) 
   {
@@ -431,7 +453,7 @@ int main(int argc, char *argv[])
            << " sec." << endl << endl;
 
   }
-  else 
+  else if( doHMX )
   { // HMX Cook-off problem
 
     string nameT 		= "Temperature";
@@ -620,6 +642,102 @@ int main(int argc, char *argv[])
            << "\n\tElapsedTime --> " << myTimer.ElapsedTime() 
            << " sec." << endl << endl;
   }
+  else if( doConvDiff )
+  { // Convection-Diffusion coupled problem
+
+    // Create Region 1 PDE
+    string myName 		= "Region_1";
+    double peclet		= 9.0  ;
+    double radiation		= 0.0  ;
+    double kappa		= 1.0  ;
+    double xmin  		= 0.0  ;
+    double xmax  		= 1.0  ;
+    double Tleft  		= 0.98 ;
+    double Tright 		= 1.0  ;
+
+    double T1_analytic          = ( kappa*(1.0-exp(peclet))*Tright - Tleft*peclet*exp(peclet) ) /
+                                  ( kappa*(1.0-exp(peclet)) - peclet*exp(peclet) );
+
+    ConvDiff_PDE Reg1_PDE (
+                    Comm, 
+                    peclet,
+                    radiation,
+		    kappa,
+		    xmin,
+		    xmax, 
+                    Tleft,
+                    T1_analytic,
+		    1*NumGlobalNodes, 
+                    myName  );
+
+    // Override default initialization with values we want
+    Reg1_PDE.initializeSolution(3.0);
+
+    problemManager.addProblem(Reg1_PDE);
+
+
+    // Create Region 2 PDE
+    myName 		        = "Region_2";
+    peclet		        = 0.0  ;
+    radiation		        = 0.0  ;
+    kappa		        = 0.1  ;
+    xmin  		        = 1.0  ;
+    xmax  		        = 2.0  ;
+    Tleft  		        = 0.98 ;
+    Tright 		        = 1.0  ;
+
+    ConvDiff_PDE Reg2_PDE (
+                    Comm, 
+                    peclet,
+                    radiation,
+		    kappa,
+		    xmin,
+		    xmax, 
+                    T1_analytic,
+                    Tright,
+		    1*NumGlobalNodes, 
+                    myName  );
+
+    // Override default initialization with values we want
+    Reg2_PDE.initializeSolution(2.0);
+
+    problemManager.addProblem(Reg2_PDE);
+
+    problemManager.createDependency(Reg1_PDE, Reg2_PDE);
+    problemManager.createDependency(Reg2_PDE, Reg1_PDE);
+  
+    problemManager.registerComplete();
+  
+    problemManager.outputStatus();
+
+    cout << "\n\tAnalytic solution, T_1 = " << T1_analytic << "\n" << endl;
+  
+    // Print initial solution
+    problemManager.outputSolutions(0);
+
+    // Solve decoupled
+    //problemManager.solve(); // Need a status test check here ....
+    // .... OR solve using matrix-free
+    problemManager.solveMF(); // Need a status test check here ....
+  
+    problemManager.outputSolutions(1);
+  
+    // Output timing info
+    if(MyPID==0)
+      cout << "\nTimings :\n\tWallTime --> " << myTimer.WallTime() - startWallTime << " sec."
+           << "\n\tElapsedTime --> " << myTimer.ElapsedTime() << " sec." << endl << endl;
+  }
+  else
+  {
+    if(MyPID==0)
+      cout << "Test failed!" << endl;
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
+
+    return -1;
+  }
 
   // Need to put in a check for convergence
   // Added the following so test actually passes in parallel
@@ -630,5 +748,5 @@ int main(int argc, char *argv[])
   MPI_Finalize() ;
 #endif
 
-return 0 ;
+  return 0 ;
 }

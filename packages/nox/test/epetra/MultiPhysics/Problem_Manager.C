@@ -644,9 +644,9 @@ void Problem_Manager::setAllGroupX()
 
   // Loop over each problem being managed and set the corresponding group
   // solution vector (used by NOX) with the problem's (used by application)
-  for( ; problemIter != problemLast; problemIter++) {
+  for( ; problemIter != problemLast; problemIter++) 
+  {
     int probId = (*problemIter).first;
-
     setGroupX(probId);
   }
 }

@@ -98,6 +98,8 @@ HMX_PDE::HMX_PDE(Epetra_Comm& comm,
   ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
 }
 
+//-----------------------------------------------------------------------------
+
 // Destructor
 HMX_PDE::~HMX_PDE()
 {
@@ -107,21 +109,30 @@ HMX_PDE::~HMX_PDE()
   delete ColumnToOverlapImporter; ColumnToOverlapImporter = 0;
 }
 
+//-----------------------------------------------------------------------------
+
 // Reset function
-void HMX_PDE::reset(const Epetra_Vector& x)
+void 
+HMX_PDE::reset(const Epetra_Vector& x)
 {
   *oldSolution = x;
 }
 
+//-----------------------------------------------------------------------------
+
 // Empty Reset function
-void HMX_PDE::reset()
+void 
+HMX_PDE::reset()
 {
   cout << "WARNING: reset called without passing any update vector !!" 
        << endl;
 }
 
+//-----------------------------------------------------------------------------
+
 // Set initialSolution to desired initial condition
-void HMX_PDE::initializeSolution(double val)
+void 
+HMX_PDE::initializeSolution(double val)
 {
   // Aliases for convenience
   Epetra_Vector& soln = *initialSolution;
@@ -132,8 +143,11 @@ void HMX_PDE::initializeSolution(double val)
   *oldSolution = soln;
 } 
 
+//-----------------------------------------------------------------------------
+
 // Matrix and Residual Fills
-bool HMX_PDE::evaluate(
+bool 
+HMX_PDE::evaluate(
                     NOX::Epetra::Interface::Required::FillType flag,
 		    const Epetra_Vector* soln, 
 		    Epetra_Vector* tmp_rhs)
@@ -263,10 +277,11 @@ bool HMX_PDE::evaluate(
   if ( fillF ) rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
-  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
-    
+  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) 
+  {
     // Loop Over Gauss Points
-    for(int gp=0; gp < 2; gp++) {
+    for(int gp=0; gp < 2; gp++) 
+    {
       // Get the solution and coordinates at the nodes 
       xx[0]=xvec[ne];
       xx[1]=xvec[ne+1];
@@ -331,13 +346,16 @@ bool HMX_PDE::evaluate(
 
   // Apply Dirichlet BC for Temperature problem only (for now); this implies
   // no-flux across domain boundary for all species.
-  if( getName() == tempFieldName ) {
+  if( getName() == tempFieldName ) 
+  {
     // Insert Boundary Conditions and modify Jacobian and function (F)
     // U(0)=1
-    if (MyPID==0) {
+    if (MyPID==0) 
+    {
       if ( fillF )
         (*rhs)[0]= (*soln)[0] - alpha;
-      if ( fillMatrix ) {
+      if ( fillMatrix ) 
+      {
         int column=0;
         double jac=1.0;
         A->ReplaceGlobalValues(0, 1, &jac, &column);
@@ -347,11 +365,13 @@ bool HMX_PDE::evaluate(
       }
     }
     // U(1)=1
-    if ( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) {
+    if ( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) 
+    {
       int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
       if ( fillF )
         (*rhs)[lastDof] = (*soln)[lastDof] - alpha;
-      if ( fillMatrix ) {
+      if ( fillMatrix ) 
+      {
         int row=StandardMap->MaxAllGID();
         int column = row;
         double jac = 1.0;
@@ -374,7 +394,8 @@ bool HMX_PDE::evaluate(
   if( fillF )
     cout << "For residual fill :" << endl << *rhs << endl;
 
-  if( fillMatrix ) {
+  if( fillMatrix ) 
+  {
     cout << "For jacobian fill :" << endl;
     A->Print(cout);
   }
@@ -391,17 +412,26 @@ bool HMX_PDE::evaluate(
   return true;
 }
 
-Epetra_Vector& HMX_PDE::getOldSoln()
+//-----------------------------------------------------------------------------
+
+Epetra_Vector & 
+HMX_PDE::getOldSoln()
 {
   return *oldSolution;
 } 
   
-double HMX_PDE::getdt()
+//-----------------------------------------------------------------------------
+
+double 
+HMX_PDE::getdt()
 {
   return dt;
 }
 
-void HMX_PDE::generateGraph()
+//-----------------------------------------------------------------------------
+
+void 
+HMX_PDE::generateGraph()
 {
   
   // Declare required variables
@@ -413,20 +443,20 @@ void HMX_PDE::generateGraph()
   else OverlapMinMyNodeGID = StandardMap->MinMyGID()-1;
   
   // Loop Over # of Finite Elements on Processor
-  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
-          
+  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) 
+  {
     // Loop over Nodes in Element
-    for (i=0; i<2; i++) {
-
+    for (i=0; i<2; i++) 
+    {
       // If this node is owned by current processor, add indices
-      if (StandardMap->MyGID(OverlapMap->GID(ne+i))) {
-
+      if (StandardMap->MyGID(OverlapMap->GID(ne+i))) 
+      {
         // Loop over unknowns in Node
         row=OverlapMap->GID(ne+i);
 
         // Loop over supporting nodes
-        for(j=0; j<2; j++) {
-
+        for(j=0; j<2; j++) 
+        {
           // Loop over unknowns at supporting nodes
           column=OverlapMap->GID(ne+j);
           //printf("\t\tWould like to insert -> (%d, %d)\n",row,column);
@@ -440,7 +470,10 @@ void HMX_PDE::generateGraph()
   return;
 }
 
-void HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields, 
+//-----------------------------------------------------------------------------
+
+void 
+HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields, 
                                 Epetra_Vector& result)
 {
   // All dependent variables should be in place before now
@@ -450,7 +483,8 @@ void HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
 
   Epetra_Vector *TvecPtr = 0;
   map<string, Epetra_Vector*>::iterator iter = fields.find(tempFieldName);
-  if( iter == fields.end() ) {
+  if( iter == fields.end() ) 
+  {
     cout << "ERROR: Cannot find Temperature field \"" << tempFieldName 
          << "\" for use in computeSourceTerm for problem \""
          << getName() << endl;
@@ -463,12 +497,13 @@ void HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
 
   // If this problem is the temperature equation, don't compute a source
   // term.  This would be where a volumetric heating term would go.
-  if( getName() == tempFieldName ) {
+  if( getName() == tempFieldName ) 
+  {
     result.PutScalar(0.0);
     return;
   }
-  else {
-
+  else 
+  {
     double rateK;
     
     map<string, double>::iterator requiredFieldIter;
@@ -483,10 +518,11 @@ void HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
 
       // Loop over all required fields and contribute to product
       for( requiredFieldIter = SrcTermExponent.begin();
-           requiredFieldIter != requiredFieldEnd; requiredFieldIter++) {
-
+           requiredFieldIter != requiredFieldEnd; requiredFieldIter++) 
+      {
         iter = fields.find( (*requiredFieldIter).first );
-        if( iter == fields.end() ) {
+        if( iter == fields.end() ) 
+        {
           cout << "ERROR: Cannot find required field \"" 
                << (*requiredFieldIter).first 
                << "\" for use in computeSourceTerm for problem \""
@@ -502,7 +538,10 @@ void HMX_PDE::computeSourceTerm(map<string, Epetra_Vector*> fields,
   }
 }
 
-void HMX_PDE::computeSourceTerm(int arraySize, 
+//-----------------------------------------------------------------------------
+
+void 
+HMX_PDE::computeSourceTerm(int arraySize, 
                     map<string, double*> fields, 
                     double*& result)
 {
@@ -565,12 +604,21 @@ void HMX_PDE::computeSourceTerm(int arraySize,
   }
 }
 
-void HMX_PDE::compute_dRdT()
+//-----------------------------------------------------------------------------
+
+void 
+HMX_PDE::compute_dRdT()
 {
   // Compute dependence of Rxn rate on Temperature
 }
 
-void HMX_PDE::compute_dRdN()
+//-----------------------------------------------------------------------------
+
+void 
+HMX_PDE::compute_dRdN()
 {
   // Compute dependence of Rxn rate on Self-Species
 }
+
+//-----------------------------------------------------------------------------
+
