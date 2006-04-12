@@ -126,6 +126,10 @@ type(PARIO_INFO) :: pio_info
       enddo
     endif
 
+    do i = 0, mm_nnz-1    !  Decrement edge IDs to match C version
+      mm_iidx(i) = mm_iidx(i) - 1
+    enddo
+
   endif ! Proc == 0
 
 ! BCast pertinent info to all procs.
@@ -200,7 +204,7 @@ type(PARIO_INFO) :: pio_info
   end do
 
   do i = 0,nvtxs-1
-    Mesh%elements(i)%globalID = vtxdist(Proc) + i
+    Mesh%elements(i)%globalID = 1 + vtxdist(Proc) + i
     Mesh%elements(i)%elem_blk = 0
     Mesh%elements(i)%my_part = Proc
     Mesh%elements(i)%perm_value = -1
