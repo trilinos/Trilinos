@@ -162,7 +162,7 @@ void Epetra_OffsetIndex::GenerateLocalOffsets_( const Epetra_CrsGraph & SourceGr
     int Start = 0;
     for( int j = 0; j < NumSourceIndices; ++j ) {
       Start = Loc;
-      if( TargetGraph.FindGlobalIndexLoc(GID,SourceIndices[j],Start,Loc) )
+      if( TargetGraph.FindGlobalIndexLoc(i,SourceIndices[j],Start,Loc) )
         SameOffsets_[i][j] = Loc;
       else
         SameOffsets_[i][j] = -1;

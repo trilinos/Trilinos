@@ -597,7 +597,8 @@ int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
 
   double* RowValues = Values(Row); 
   for(j=0; j<NumEntries; j++) {
-    RowValues[Offsets[j]] = srcValues[j];
+    if( Offsets[j] != -1 )
+      RowValues[Offsets[j]] = srcValues[j];
   }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
@@ -704,7 +705,8 @@ int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, double * srcV
 
   double* RowValues = Values(Row);
   for (j=0; j<NumEntries; j++) {
-    RowValues[Offsets[j]] += srcValues[j];
+    if( Offsets[j] != -1 )
+      RowValues[Offsets[j]] += srcValues[j];
   }
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
