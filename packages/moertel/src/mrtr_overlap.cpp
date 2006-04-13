@@ -212,7 +212,7 @@ bool MOERTEL::Overlap::build_lines_m()
     slinem_[2][3] = sxim_[0][1];
   }
   else if (mseg_.Nnode()==4)
-  {
+  {;
   }
   else
   {
