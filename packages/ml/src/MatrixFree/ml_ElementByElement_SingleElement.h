@@ -10,6 +10,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_FECrsGraph.h"
+#include <vector>
+#include "ml_epetra.h"
 
 namespace ML_Epetra {
 
