@@ -3078,6 +3078,8 @@ fi
 
 
 if test "X$ac_cv_use_triutils" != "Xno" ||
+	test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_komplex" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno"; then
 
 
@@ -3148,6 +3150,7 @@ fi
 
 
 if test "X$ac_cv_use_aztecoo" != "Xno" ||
+	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
 
 

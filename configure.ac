@@ -240,6 +240,8 @@ fi
 AM_CONDITIONAL(BUILD_PLIRIS, test "X$BUILD_PLIRIS" != "Xno")
                                                                                                     
 if test "X$ac_cv_use_triutils" != "Xno" ||
+	test "X$ac_cv_use_moertel" != "Xno" ||
+	test "X$ac_cv_use_komplex" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno"; then 
   AC_CONFIG_SUBDIRS([packages/triutils])
   BUILD_TRIUTILS=yes
@@ -274,6 +276,7 @@ fi
 AM_CONDITIONAL(BUILD_IFPACK, test "X$BUILD_IFPACK" != "Xno")
 
 if test "X$ac_cv_use_aztecoo" != "Xno" || 
+	test "X$ac_cv_use_moertel" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/aztecoo])
   BUILD_AZTECOO=yes
