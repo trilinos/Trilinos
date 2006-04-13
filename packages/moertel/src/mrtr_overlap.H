@@ -250,7 +250,8 @@ double                               mxi_[4][2]; // local coords of mnodes proje
 bool                                 havemxi_;   // flag indicating whether mxi_ and min_ have been build
 
 double                               sxi_[4][2]; // local coords of snodes in sseg's coord system
-double                               n_[4][2];   // outward normal to segment's edges in local coords
+double                               sn_[4][2];   // outward normal to slave segment's edges in local coords
+double                               mn_[4][2];   // outward normal to master segment's edges in local coords
 bool                                 havesxi_;   // flag indicating whether sxi_ and sin_ have been build
 
 double                               sline_[4][4]; // 3 lines of sseg_ in sseg_'s local coords
