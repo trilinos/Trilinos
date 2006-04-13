@@ -130,6 +130,7 @@ private:
   std::vector<NOX::Epetra::LinearSystemAztecOO *> linSys;
   std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> > jacobianBlock;
   std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> > massBlock;
+  std::vector<Teuchos::RefCountPtr<Epetra_Vector> > diagBlockSubdiag;
   EpetraExt::BlockVector *residual;
   Epetra_Vector *splitVec; //tmp space
   Epetra_Vector *splitRes; //tmp space

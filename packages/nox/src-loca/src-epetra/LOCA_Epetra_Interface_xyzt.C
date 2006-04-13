@@ -68,14 +68,16 @@ xyzt::xyzt(
   precLSParams(precLSParams_),
   isPeriodic(precLSParams_->getParameter("Periodic",false))
 {
-   if (globalComm->MyPID()==0) 
+   if (globalComm->MyPID()==0) {
      cout  << "--------------XYZT Partition Info---------------"
            << "\n\tNumProcs               = " << globalComm->NumProc()
            << "\n\tSpatial Decomposition  = " << splitMultiVec_.Comm().NumProc()
            << "\n\tNumber of Time Domains = " << numTimeDomains
            << "\n\tTime Steps on Domain 0 = " << timeStepsOnTimeDomain
-           << "\n\tNumber of Time Steps   = " << globalComm->NumTimeSteps()
-           << "\n-----------------------------------------------" << endl;
+           << "\n\tNumber of Time Steps   = " << globalComm->NumTimeSteps();
+    if (isPeriodic) cout   << "\n\t-->Solving for a Periodic Orbit!" ;
+    cout   << "\n-----------------------------------------------" << endl;
+    }
 
    // Construct global block matrix graph from split jacobian and stencil
    // Each block has identical sparsity, and assumes mass matrix's sparsity 

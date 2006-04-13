@@ -61,6 +61,7 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   linSys(std::vector<NOX::Epetra::LinearSystemAztecOO*>(globalComm_->NumTimeStepsOnDomain())),
   jacobianBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
   massBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
+  diagBlockSubdiag(std::vector<Teuchos::RefCountPtr<Epetra_Vector> >(globalComm_->NumTimeStepsOnDomain())),
     isPeriodic(precLSParams_.getParameter("Periodic",false))
 {
 
@@ -82,7 +83,7 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
     linSys[0]->setJacobianOperatorForSolve(Teuchos::rcp(&jacobian,false));
   }
   else if ( prec == "Sequential" || prec == "Parallel" ||
-            prec == "BlockDiagonal" || prec == "Parareal") {
+            prec == "BlockDiagonal" || prec == "Parareal" || prec == "BDSDT") {
     if (prec == "Sequential") {
       label = "LOCA::Epetra::xyztPrec::Sequential";
       cout << "LOCA::Epetra::xyztPrec = Sequential" << endl;
@@ -94,6 +95,10 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
     else if (prec == "BlockDiagonal") {
       label = "LOCA::Epetra::xyztPrec::BlockDiagonal";
       cout << "LOCA::Epetra::xyztPrec = BlockDiagonal" << endl;
+    }
+    else if (prec == "BDSDT") {
+      label = "LOCA::Epetra::xyztPrec::BDSDT";
+      cout << "LOCA::Epetra::xyztPrec = BDSDT" << endl;
     }
     else if (prec == "Parareal") {
       label = "LOCA::Epetra::xyztPrec::Parareal";
@@ -123,6 +128,9 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
       }
       linSys[i] = new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams, 
 			iReq, iJac, jacobianBlock[i], solution);
+      if (prec == "BDSDT") {
+        diagBlockSubdiag[i] = Teuchos::rcp(new Epetra_Vector(*splitVec));
+      }
     }
 	
   }
@@ -303,6 +311,68 @@ ApplyInverse(const Epetra_MultiVector& input,
    
     result = solution;
   }    
+  else if (prec == "BDSDT") {
+    
+    // 1. Sequential solve with I on diag blocks and diagonal matrix on subdiagonal
+    
+    // residual needs to be in BlockVector and contain values from input
+    solution.PutScalar(0.0);
+    residual->Epetra_Vector::operator=(*input(0));  // populate with input values
+
+    for (int isd=0; isd < globalComm->NumSubDomains(); isd++) {
+      
+      // Communicate data from other time domains into overlapped vector
+      // This serves as a barrier as well.
+      solutionOverlap.Import(solution, overlapImporter, Insert);
+      
+      //Work only on active time domain
+      if ( isd == globalComm->SubDomainRank() ) {
+	
+	for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
+
+	  bool isFirstGlobalTimeStep = (globalComm->FirstTimeStepOnDomain() + i == 0);
+
+	  // get x and residual (r) corresponding to current block
+	  residual->ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+
+	  if (!isFirstGlobalTimeStep)  {
+	    // update RHS with mass matrix * solution from previous time step 
+	    // (which will be from previous time domain if i==0)
+	    //   NOTE:  "- 1" can be changed to jacobian.Stencil(i)[0]  
+	    if (i==0) 
+	      solutionOverlap.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	    else      
+	      solution.ExtractBlockValues(*splitVecOld, (jacobian.RowIndex(i) - 1));
+	    splitRes->Multiply(-1.0, *diagBlockSubdiag[i], *splitVecOld, 1.0);
+	  }	
+	  
+	  // Update this block of the solution vector
+	  solution.LoadBlockValues(*splitRes, jacobian.RowIndex(i));
+	}
+      }
+    }
+
+    // Move result of first preconditioning step into initial vector of next
+
+    // 2. BlockDiagonal Preconsitioner witrh this modified vector
+    
+    for (int i=0; i < globalComm->NumTimeStepsOnDomain(); i++) {
+    
+      // This line is needed or else Aztec error -11
+      linSys[i]->setJacobianOperatorForSolve(jacobianBlock[i]);
+  
+      // get x and residual (r) corresponding to current block
+      // updated residual in "solution" after first prec step
+      solution.ExtractBlockValues(*splitRes, jacobian.RowIndex(i));
+
+      // solve the problem, and put solution into slution vector
+      splitVec->PutScalar(0.0);
+      bool stat = linSys[i]->applyJacobianInverse(lsParams, *splitRes_NEV, *splitVec_NEV);
+      solution.LoadBlockValues(*splitVec, jacobian.RowIndex(i));
+    }
+   
+    result = solution;
+  }    
   else if (prec == "Parareal") {
     
     // residual needs to be in BlockVector and contain values from input
@@ -464,7 +534,7 @@ computePreconditioner(const Epetra_Vector& x,
     return true;
   }    
   else if (prec == "Sequential"  || prec == "Parallel" ||
-           prec == "BlockDiagonal" || prec == "Parareal") {
+           prec == "BlockDiagonal" || prec == "Parareal" || prec == "BDSDT") {
     for (int i=0; i< globalComm->NumTimeStepsOnDomain(); i++ ) {
       if (globalComm->FirstTimeStepOnDomain() + i == 0 && !isPeriodic)
         jacobian.ExtractBlock(*jacobianBlock[i], 0, 0);
@@ -489,6 +559,17 @@ computePreconditioner(const Epetra_Vector& x,
       linSys[N]->setJacobianOperatorForSolve(jacobianBlock[N]);
       linSys[N]->destroyPreconditioner();
       linSys[N]->createPreconditioner(x, lsParams, false);
+    }
+    if (prec == "BDSDT") {
+      for (int i=0; i< globalComm->NumTimeStepsOnDomain(); i++ ) {
+	int j=i-1;
+        if (globalComm->FirstTimeStepOnDomain() + i != 0) {
+	   if (j<0) j=0; // Jac is from previous block, but don't go off proc to get it
+          (*jacobianBlock[j]).ExtractDiagonalCopy(*splitVec);
+          (*massBlock[i]).ExtractDiagonalCopy(*splitRes);
+	  int ierr = (*diagBlockSubdiag[i]).ReciprocalMultiply(1.0, *splitVec, *splitRes, 0.0);
+	}
+      }
     }
   }
   else {
