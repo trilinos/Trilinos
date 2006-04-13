@@ -40,6 +40,12 @@
 
 (FRAMEWORK, INSTALL, EpetraExtThyraTests) {
   TESTS = ../thyra/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --external-lowsf --max-iters=6;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyraTests) {
+  TESTS = ../thyra/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
   ARGS = --tol=1e-12 --max-iters=7;
   COMM = SERIAL;
 }
@@ -72,6 +78,12 @@
 (FRAMEWORK, INSTALL, EpetraExtThyraTests) {
   TESTS = ../thyra/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
   ARGS = --use-4D-opt --x00=-100 --tol=1e-12 --max-iters=12;
+  COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL, EpetraExtThyraTests) {
+  TESTS = ../thyra/example/model_evaluator/ForwardSolveEpetraModelEval2DSim.exe;
+  ARGS = --external-lowsf --use-4D-opt --x00=-100 --tol=1e-12 --max-iters=12;
   COMM = SERIAL;
 }
 

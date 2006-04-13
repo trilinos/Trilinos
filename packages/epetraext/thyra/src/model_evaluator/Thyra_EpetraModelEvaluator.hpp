@@ -115,6 +115,8 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > create_W() const;
   /** \brief . */
+  Teuchos::RefCountPtr<LinearOpBase<double> > create_W_op() const;
+  /** \brief . */
   Teuchos::RefCountPtr<LinearOpBase<double> > create_DfDp_op(int l) const;
   /** \brief . */
   DerivativeMultiVector<double> create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const;

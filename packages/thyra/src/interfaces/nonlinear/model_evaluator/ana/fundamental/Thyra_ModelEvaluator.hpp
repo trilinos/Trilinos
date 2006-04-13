@@ -108,6 +108,8 @@ public:
     Scalar get_beta() const;
     /** \brief .  */
     bool supports(EInArgsMembers arg) const;
+    /** \brief .  */
+    void setArgs( const InArgs<Scalar>& inArgs, bool ignoreUnsupported = false );
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
@@ -115,6 +117,8 @@ public:
     void _set_Np(int Np);
     /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
+    /** \brief . */
+    void _setSupports( const InArgs<Scalar>& inArgs );
   private:
     // types
     typedef std::vector<Teuchos::RefCountPtr<const VectorBase<Scalar> > > p_t;
@@ -201,6 +205,7 @@ public:
     ,DERIV_LINEARITY_CONST       ///< .
     ,DERIV_LINEARITY_NONCONST    ///< .
   };
+
   /** \brief . */
   enum ERankStatus {
     DERIV_RANK_UNKNOWN       ///< .
@@ -284,10 +289,11 @@ public:
   enum EOutArgsMembers {
     OUT_ARG_f       ///< .
     ,OUT_ARG_W      ///< .
+    ,OUT_ARG_W_op   ///< .
     ,OUT_ARG_f_poly ///< .
   };
   /** \brief .  */
-  static const int NUM_E_OUT_ARGS_MEMBERS=3;
+  static const int NUM_E_OUT_ARGS_MEMBERS=4;
 
   /** \brief . */
   enum EOutArgsDfDp {
@@ -334,6 +340,10 @@ public:
     void set_W( const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &W );
     /** \brief .  */
     Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_W() const;
+    /** \brief .  */
+    void set_W_op( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &W_op );
+    /** \brief .  */
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> > get_W_op() const;
     /** \brief . */
     DerivativeProperties get_W_properties() const;
     /** \brief .  */
@@ -358,6 +368,8 @@ public:
     void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
     /** \brief .  */
     Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
+    /** \brief .  */
+    void setArgs( const OutArgs<Scalar>& outArgs, bool ignoreUnsupported = false );
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
@@ -379,6 +391,8 @@ public:
     void _set_DgDx_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void _set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void _setSupports( const OutArgs<Scalar>& outArgs );
   private:
     // types
     typedef std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > >     g_t;
@@ -394,6 +408,7 @@ public:
     Teuchos::RefCountPtr<VectorBase<Scalar> >             f_;
     g_t                                                   g_;               // Ng
     Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >  W_;
+    Teuchos::RefCountPtr<LinearOpBase<Scalar> >           W_op_;
     DerivativeProperties                                  W_properties_;
     deriv_t                                               DfDp_;            // Np
     deriv_properties_t                                    DfDp_properties_; // Np
@@ -430,6 +445,8 @@ protected:
     void set_Np(int Np);
     /** \brief . */
     void setSupports( EInArgsMembers arg, bool supports = true );
+    /** \brief . */
+    void setSupports( const InArgs<Scalar>& inArgs );
   };
 
   /** \brief . */
@@ -456,6 +473,8 @@ protected:
     void set_DgDx_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void setSupports( const OutArgs<Scalar>& outArgs );
   };
 
   //@}
@@ -912,6 +931,18 @@ public:
    * (i.e. implicit solvers are not supported by default).
    */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
+
+  /** \brief If supported, create a <tt>LinearOpBase</tt> object for
+   * <tt>W</tt> to be evaluated.
+	 *
+	 * <b>Preconditions:</b><ul>
+	 * <li><tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
+	 * </ul>
+   *
+   * The default implementation returns <tt>return.get()==NULL</tt>
+   * (i.e. implicit solvers are not supported by default).
+   */
+  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(f)/D(p(l))</tt>.
@@ -1403,6 +1434,43 @@ bool ModelEvaluatorBase::InArgs<Scalar>::supports(EInArgsMembers arg) const
 }
 
 template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::setArgs( const InArgs<Scalar>& inArgs, bool ignoreUnsupported )
+{
+  if( inArgs.supports(IN_ARG_x_dot) && inArgs.get_x_dot().get() ) {
+    if(supports(IN_ARG_x_dot) || !ignoreUnsupported)
+      set_x_dot(inArgs.get_x_dot());
+  }
+  if( inArgs.supports(IN_ARG_x) && inArgs.get_x().get() ) {
+    if(supports(IN_ARG_x) || !ignoreUnsupported)
+      set_x(inArgs.get_x());
+  }
+  if( inArgs.supports(IN_ARG_x_dot_poly) && inArgs.get_x_dot_poly().get() ) {
+    if(supports(IN_ARG_x_dot_poly) || !ignoreUnsupported)
+      set_x_dot_poly(inArgs.get_x_dot_poly());
+  }
+  if( inArgs.supports(IN_ARG_x_poly) && inArgs.get_x_poly().get() ) {
+    if(supports(IN_ARG_x_poly) || !ignoreUnsupported)
+      set_x_poly(inArgs.get_x_poly());
+  }
+  const int min_Np = TEUCHOS_MIN(this->Np(),inArgs.Np());
+  for( int l = 0; l < min_Np; ++l ) {
+    set_p(l,inArgs.get_p(l));
+  }
+  if( inArgs.supports(IN_ARG_t) ) {
+    if(supports(IN_ARG_t) || !ignoreUnsupported)
+      set_t(inArgs.get_t());
+  }
+  if( inArgs.supports(IN_ARG_alpha) ) {
+    if(supports(IN_ARG_alpha) || !ignoreUnsupported)
+      set_alpha(inArgs.get_alpha());
+  }
+  if( inArgs.supports(IN_ARG_beta) ) {
+    if(supports(IN_ARG_beta) || !ignoreUnsupported)
+      set_beta(inArgs.get_beta());
+  }
+}
+
+template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::_setModelEvalDescription( const std::string &modelEvalDescription )
 { modelEvalDescription_ = modelEvalDescription; }
 
@@ -1419,6 +1487,12 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( EInArgsMembers arg, bool 
     int(arg)>=NUM_E_IN_ARGS_MEMBERS || int(arg) < 0,std::logic_error
     ,"model = \'"<<modelEvalDescription_<<"\': Error, arg="<<toString(arg)<<" is invalid!");
   supports_[arg] = supports;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::InArgs<Scalar>::_setSupports( const InArgs<Scalar>& inArgs )
+{
+  std::copy( &inArgs.supports_[0], &inArgs.supports_[0] + NUM_E_IN_ARGS_MEMBERS, &supports_[0] );
 }
 
 template<class Scalar>
@@ -1540,6 +1614,21 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_W() const
 }
 
 template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::set_W_op( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &W_op )
+{
+  assert_supports(OUT_ARG_W_op);
+  W_op_ = W_op;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+ModelEvaluatorBase::OutArgs<Scalar>::get_W_op() const
+{
+  assert_supports(OUT_ARG_W_op);
+  return W_op_;
+}
+
+template<class Scalar>
 ModelEvaluatorBase::DerivativeProperties
 ModelEvaluatorBase::OutArgs<Scalar>::get_W_properties() const
 {
@@ -1623,6 +1712,45 @@ template<class Scalar>
 Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::OutArgs<Scalar>::get_f_poly() const
 { return f_poly_; }
+
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::setArgs( const OutArgs<Scalar>& outArgs, bool ignoreUnsupported )
+{
+  const int min_Np = TEUCHOS_MIN(this->Np(),outArgs.Np());
+  const int min_Ng = TEUCHOS_MIN(this->Ng(),outArgs.Ng());
+  if( outArgs.supports(OUT_ARG_f) && outArgs.get_f().get() ) {
+    if(supports(OUT_ARG_f) || !ignoreUnsupported)
+      set_f(outArgs.get_f());
+  }
+  for( int j = 0; j < min_Ng; ++j ) {
+    set_g(j,outArgs.get_g(j));
+  }
+  if( outArgs.supports(OUT_ARG_W) && outArgs.get_W().get() ) {
+    if(supports(OUT_ARG_W) || !ignoreUnsupported)
+      set_W(outArgs.get_W());
+  }
+  for( int l = 0; l < min_Np; ++l ) {
+    if( !outArgs.supports(OUT_ARG_DfDp,l).none() && !outArgs.get_DfDp(l).isEmpty() ) {
+      if(!supports(OUT_ARG_DfDp,l).none() || !ignoreUnsupported)
+        set_DfDp(l,outArgs.get_DfDp(l));
+    }
+  }
+  for( int j = 0; j < min_Ng; ++j ) {
+    if( !outArgs.supports(OUT_ARG_DgDx,j).none() && !outArgs.get_DgDx(j).isEmpty() ) {
+      if(!supports(OUT_ARG_DgDx,j).none() || !ignoreUnsupported)
+        set_DgDx(j,outArgs.get_DgDx(j));
+    }
+  }
+  for( int l = 0; l < min_Np; ++l ) {
+    for( int j = 0; j < min_Ng; ++j ) {
+      if( !outArgs.supports(OUT_ARG_DgDp,j,l).none() && !outArgs.get_DgDp(j,l).isEmpty() ) {
+        if(!supports(OUT_ARG_DgDp,j,l).none() || !ignoreUnsupported)
+          set_DgDp(j,l,outArgs.get_DgDp(j,l));
+      }
+    }
+  }
+}
 
 // protected
 
@@ -1709,6 +1837,19 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_set_DgDp_properties( int j, int l, co
 {
   assert_supports(OUT_ARG_DgDp,j,l);
   DgDp_properties_[ j*Np()+ l ] = properties;
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgs<Scalar>::_setSupports( const OutArgs<Scalar>& outArgs )
+{
+  std::copy( &outArgs.supports_[0], &outArgs.supports_[0] + NUM_E_OUT_ARGS_MEMBERS, &supports_[0] );
+  supports_DfDp_ = outArgs.supports_DfDp_;
+  supports_DgDx_ = outArgs.supports_DgDx_;
+  supports_DgDp_ = outArgs.supports_DgDp_;
+  W_properties_ = outArgs.W_properties_;
+  DfDp_properties_ = outArgs.DfDp_properties_;
+  DgDx_properties_ = outArgs.DgDx_properties_;
+  DgDp_properties_ = outArgs.DgDp_properties_;
 }
 
 // private
@@ -1798,6 +1939,10 @@ template<class Scalar>
 void ModelEvaluatorBase::InArgsSetup<Scalar>::setSupports( EInArgsMembers arg, bool supports )
 { this->_setSupports(arg,supports); }
 
+template<class Scalar>
+void ModelEvaluatorBase::InArgsSetup<Scalar>::setSupports( const InArgs<Scalar>& inArgs )
+{ this->_setSupports(inArgs); }
+
 //
 // ModelEvaluatorBase::OutArgsSetup
 //
@@ -1846,6 +1991,12 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgsSetup<Scalar>::set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
 {
   this->_set_DgDp_properties(j,l,properties);
+}
+
+template<class Scalar>
+void ModelEvaluatorBase::OutArgsSetup<Scalar>::setSupports( const OutArgs<Scalar>& outArgs )
+{
+  this->_setSupports(outArgs);
 }
 
 //
@@ -1943,6 +2094,11 @@ ModelEvaluator<Scalar>::get_t_upper_bound() const
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
 ModelEvaluator<Scalar>::create_W() const
+{ return Teuchos::null; }
+
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+ModelEvaluator<Scalar>::create_W_op() const
 { return Teuchos::null; }
 
 template<class Scalar>

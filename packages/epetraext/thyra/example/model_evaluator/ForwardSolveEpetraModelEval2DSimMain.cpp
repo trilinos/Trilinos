@@ -1,6 +1,7 @@
 #include "EpetraModelEval2DSim.hpp"
 #include "EpetraModelEval4DOpt.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
+#include "Thyra_DefaultModelEvaluatorWithSolveFactory.hpp"
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_DampenedNewtonNonlinearSolver.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -60,6 +61,7 @@ int main( int argc, char* argv[] )
     int          maxIters    = 100;
 
     bool         use4DOpt    = false;
+    bool         externalFactory = false;
 
     bool showSetInvalidArg = false;
     bool showGetInvalidArg = false;
@@ -74,6 +76,8 @@ int main( int argc, char* argv[] )
     clp.setOption( "max-iters", &maxIters, "Maximum number of nonlinear iterations" );
     clp.setOption( "use-4D-opt", "use-2D-sim", &use4DOpt
                    ,"Determines if the EpetraModelEval4DOpt or EpetraModelEval2DSim subclasses are used"  );
+    clp.setOption( "external-lowsf", "internal-lowsf", &externalFactory
+                   ,"Determines of the Thyra::LinearOpWithSolveFactory is used externally or internally to the Thyra::EpetraModelEvaluator object"  );
     clp.setOption( "show-set-invalid-arg", "no-show-set-invalid-arg", &showSetInvalidArg
                    ,"Determines if an attempt is made to set an invalid/unsupported ModelEvaluator input argument"  );
     clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg
@@ -98,16 +102,31 @@ int main( int argc, char* argv[] )
       epetraModel = rcp(new EpetraModelEval2DSim(d,p0,p1,x00,x01,showGetInvalidArg));
     }
 
-    Thyra::EpetraModelEvaluator thyraModel; // Sets default options!
-    thyraModel.initialize(
-      epetraModel
-      ,Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory())
-      );
+    Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
+      lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
 
+    Teuchos::RefCountPtr<Thyra::EpetraModelEvaluator>
+      epetraThyraModel = rcp(new Thyra::EpetraModelEvaluator());
+    
+    Teuchos::RefCountPtr<Thyra::ModelEvaluator<double> > thyraModel;
+    if(externalFactory) {
+      epetraThyraModel->initialize(epetraModel,Teuchos::null);
+      thyraModel = Teuchos::rcp(
+        new Thyra::DefaultModelEvaluatorWithSolveFactory<double>(
+          epetraThyraModel
+          ,lowsFactory
+          )
+        );
+    }
+    else {
+      epetraThyraModel->initialize(epetraModel,lowsFactory);
+      thyraModel = epetraThyraModel;
+    }
+    
     if( showSetInvalidArg ) {
       *out << "\nAttempting to set an invalid input argument that throws an exception ...\n\n";
-      Thyra::ModelEvaluatorBase::InArgs<double> inArgs = thyraModel.createInArgs();
-      inArgs.set_x_dot(createMember(thyraModel.get_x_space()));
+      Thyra::ModelEvaluatorBase::InArgs<double> inArgs = thyraModel->createInArgs();
+      inArgs.set_x_dot(createMember(thyraModel->get_x_space()));
     }
     
     *out << "\nCreating the nonlinear solver and solving the equations ...\n\n";
@@ -115,8 +134,8 @@ int main( int argc, char* argv[] )
     Thyra::DampenedNewtonNonlinearSolver<double> newtonSolver; // Set defaults
     newtonSolver.setVerbLevel(verbLevel);
     
-    VectorPtr x = createMember(thyraModel.get_x_space());
-    V_V( &*x, *thyraModel.get_x_init() );
+    VectorPtr x = createMember(thyraModel->get_x_space());
+    V_V( &*x, *thyraModel->get_x_init() );
 
     Thyra::SolveCriteria<double> solveCriteria; // Sets defaults
     solveCriteria.solveMeasureType.set(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_NORM_RHS);
@@ -125,7 +144,7 @@ int main( int argc, char* argv[] )
     solveCriteria.extraParameters->set("Max Iters",int(maxIters));
 
     Thyra::SolveStatus<double>
-      solveStatus = newtonSolver.solve(thyraModel,&*x,&solveCriteria);
+      solveStatus = newtonSolver.solve(*thyraModel,&*x,&solveCriteria);
 
     *out << "\nNonlinear solver return status:\n";
     if(1) {
@@ -133,7 +152,7 @@ int main( int argc, char* argv[] )
       *out << solveStatus;
     }
     *out << "\nFinal solution for x=\n" << *x;
-
+    
 	}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success)
     

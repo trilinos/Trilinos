@@ -92,9 +92,6 @@ void EpetraModelEvaluator::uninitialize(
   if(W_factory) *W_factory = W_factory_;
   epetraModel_ = Teuchos::null;
   W_factory_ = Teuchos::null;
-  if(W_factory_.get()) {
-    W_factory_->setOStream(this->getOStream());
-  }
 }
 
 const ModelEvaluatorBase::InArgs<double>&
@@ -217,7 +214,14 @@ EpetraModelEvaluator::create_W() const
     " object for W!"
     );
   W_factory_->setOStream(this->getOStream());
+  W_factory_->setVerbLevel(this->getVerbLevel());
   return W_factory_->createOp();
+}
+
+Teuchos::RefCountPtr<LinearOpBase<double> >
+EpetraModelEvaluator::create_W_op() const
+{
+  return Teuchos::rcp(new Thyra::EpetraLinearOp());
 }
 
 Teuchos::RefCountPtr<LinearOpBase<double> >
@@ -286,7 +290,7 @@ EpetraModelEvaluator::create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrient
     );
 }
 
-EpetraModelEvaluator::InArgs<double> EpetraModelEvaluator::createInArgs() const
+ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::createInArgs() const
 {
   const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
   InArgsSetup<double> inArgs;
@@ -305,7 +309,7 @@ EpetraModelEvaluator::InArgs<double> EpetraModelEvaluator::createInArgs() const
   return inArgs;
 }
 
-EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
+ModelEvaluatorBase::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
 {
   const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
   OutArgsSetup<double> outArgs;
@@ -316,7 +320,8 @@ EpetraModelEvaluator::OutArgs<double> EpetraModelEvaluator::createOutArgs() cons
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(Np,Ng);
   outArgs.setSupports(OUT_ARG_f,epetraOutArgs.supports(EME::OUT_ARG_f));
-  outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W));
+  outArgs.setSupports(OUT_ARG_W,epetraOutArgs.supports(EME::OUT_ARG_W)&&W_factory_.get()!=NULL);
+  outArgs.setSupports(OUT_ARG_W_op,epetraOutArgs.supports(EME::OUT_ARG_W));
   outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
   for(int l=0; l<Np; ++l) {
     outArgs.setSupports(OUT_ARG_DfDp,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp,l)));
@@ -339,6 +344,8 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
 
   using Thyra::get_Epetra_Vector;
   using Teuchos::RefCountPtr;
+  using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
 
   typedef EpetraExt::ModelEvaluator EME;
@@ -358,7 +365,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   // InArgs
   
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nSetting up/creating input arguments ...\n";
+    *out << "\nSetting-up/creating input arguments ...\n";
   timer.start(true);
 
   EME::InArgs epetraInArgs = epetraModel_->createInArgs();
@@ -422,7 +429,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   // OutArgs
   
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nSetting up/creating output arguments ...\n";
+    *out << "\nSetting-up/creating output arguments ...\n";
   timer.start(true);
 
   EME::OutArgs epetraOutArgs = epetraModel_->createOutArgs();
@@ -440,18 +447,42 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   }
   
   RefCountPtr<LinearOpWithSolveBase<double> > W;
+  RefCountPtr<LinearOpBase<double> >          W_op;
   RefCountPtr<const LinearOpBase<double> >    fwdW;
-  Teuchos::RefCountPtr<Epetra_Operator>       eW;
+  RefCountPtr<EpetraLinearOp>                 efwdW;
   if( outArgs.supports(OUT_ARG_W) && (W = outArgs.get_W()).get() ) {
     W_factory_->uninitializeOp(&*W,&fwdW);
-    if( fwdW.get() ) {
-      eW = const_cast<EpetraLinearOp&>(Teuchos::dyn_cast<const EpetraLinearOp>(*fwdW)).epetra_op();
+    if(fwdW.get()) {
+      efwdW = rcp_const_cast<EpetraLinearOp>(rcp_dynamic_cast<const EpetraLinearOp>(fwdW,true));
     }
     else {
-      eW = epetraModel_->create_W();
+      efwdW = Teuchos::rcp(new EpetraLinearOp());
+      fwdW = efwdW;
     }
+  }
+  if( outArgs.supports(OUT_ARG_W_op) && (W_op = outArgs.get_W_op()).get() ) {
+    if( W_op.get() && !efwdW.get() )
+      efwdW = rcp_const_cast<EpetraLinearOp>(rcp_dynamic_cast<const EpetraLinearOp>(W_op,true));
+  }
+  RefCountPtr<Epetra_Operator> eW;
+  if(efwdW.get()) {
+    eW = efwdW->epetra_op();
+    if(!eW.get())
+      eW = epetraModel_->create_W();
     epetraOutArgs.set_W(eW);
   }
+  // NOTE: Above, if both W and W_op are set and have been through at least
+  // one prior evaluation (and therefore have Epetra_Operator objects embedded
+  // in them), then we will use the Epetra_Operator embedded in W to pass to
+  // the EpetraExt::ModelEvaluator object and ignore the Epetra_Operator
+  // object in W_op.  In the standard use case, these will be the same
+  // Epetra_Operator objects.  However, it is possible that the client could
+  // use this interface in such a way that these would have different
+  // Epetra_Operator objects embedded in them.  In this (very unlikely) case,
+  // the Epetra_Operator embedded in W_op will be discarded!  This might be
+  // surprising to a client but it is very unlikely that this will ever be a
+  // problem, but the issue is duly noted here!  Only dangerous programming
+  // use of this interface would cause any problem.
 
   if(1){
     Derivative<double> DfDp_l;
@@ -515,12 +546,21 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
     *out << "\nPost processing the output objects ...\n";
   timer.start(true);
 
+  if(efwdW.get())
+    efwdW->initialize(eW);  // This will directly update W_op if W.get()==NULL!
+  
   if( W.get() ) {
-    if( !fwdW.get() ) {
-      fwdW = Teuchos::rcp(new EpetraLinearOp(eW));
-    }
     W_factory_->initializeOp(fwdW,&*W);
     W->setOStream(this->getOStream());
+  }
+
+  if( W_op.get() ) {
+    if( W_op.shares_resource(efwdW) ) {
+      // W_op was already updated above since *efwdW is the same object as *W_op
+    }
+    else {
+      rcp_dynamic_cast<EpetraLinearOp>(W_op,true)->initialize(eW);
+    }
   }
 
   timer.stop();

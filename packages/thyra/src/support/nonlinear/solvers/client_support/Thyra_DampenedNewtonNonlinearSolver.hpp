@@ -158,8 +158,8 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   const bool showNewtonDetails = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH));
   const bool dumpAll = (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
-	if(out.get() && showNewtonDetails) *out
-    << "\n*** Beginning dampended Newton solve of model = " << model.description() << endl;
+	if(out.get() && showNewtonIters) *out
+    << "\nBeginning dampended Newton solve of model = " << model.description() << "\n\n";
   // Initialize storage for algorithm
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > J     = model.create_W();
   Teuchos::RefCountPtr<VectorBase<Scalar> >            f     = createMember(model.get_f_space());

@@ -446,6 +446,7 @@ INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluator.hpp
 
 SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H = \
+  $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DefaultModelEvaluatorWithSolveFactory.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_SingleResidSSDAEModelEvaluator.hpp
 
 INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H = \
