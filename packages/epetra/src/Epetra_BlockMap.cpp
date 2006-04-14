@@ -820,7 +820,7 @@ void Epetra_BlockMap::Print(ostream & os) const
     if (MyPID == iproc) {
       if (MyPID == 0) {
 	os <<  "\nNumber of Global Elements  = "; os << NumGlobalElements(); os << endl;
-	os <<    "Number of Global Points = "; os << NumGlobalPoints(); os << endl;
+	os <<    "Number of Global Points    = "; os << NumGlobalPoints(); os << endl;
 	os <<    "Maximum of all GIDs        = "; os << MaxAllGID(); os << endl;
 	os <<    "Minimum of all GIDs        = "; os << MinAllGID(); os << endl;
 	os <<    "Index Base                 = "; os << IndexBase(); os << endl;
