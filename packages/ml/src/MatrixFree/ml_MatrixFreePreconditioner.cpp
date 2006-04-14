@@ -242,6 +242,7 @@ Compute(Epetra_MultiVector& NullSpace)
   string ColoringType = List_.get("coloring: type", "JONES_PLASSMAN");
   string DiagonalColoringType = List_.get("diagonal coloring: type", "JONES_PLASSMAN");
   int OutputLevel = List_.get("output", 10);
+  omega_ = List_.get("smoother: damping", omega_);
   ML_Set_PrintLevel(OutputLevel);
 
   // ================ //
@@ -279,7 +280,7 @@ Compute(Epetra_MultiVector& NullSpace)
     cout << "***" << endl;
     cout << "The operator domain map has " << OperatorDomainPoints;
     cout << " points, the operator range map "  << OperatorRangePoints << endl;
-    cout << "The graph has " << GraphBlockRows << " rows and " << GraphNnz << endl;
+    cout << "The graph has " << GraphBlockRows << " rows and " << GraphNnz << " nonzeros" << endl;
     cout << "Processors used in computation = " << Comm().NumProc() << endl;
     cout << "Number of PDE equations        = " << NumPDEEqns << endl;
     cout << "Null space dimension           = " << NullSpaceDim << endl;
