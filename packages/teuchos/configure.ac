@@ -513,13 +513,17 @@ if test "X$ac_cv_use_teuchos_expat" != "Xno"; then
      AC_LANG_CPLUSPLUS
      AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "expat.h"]], [[XML_Parser parser = XML_ParserCreate(NULL);]]) ],
 	[AC_MSG_RESULT(yes)],
-	[AC_MSG_RESULT(no)
-		 echo "-----"
-	     	 echo "Cannot find Expat library."
-     		 echo "Use --with-ldflags to specify Expat library directory."
-	     	 echo "Use --with-libs to specify Expat library (-lexpat)."
-	     	 echo "-----"
-	     	 AC_MSG_ERROR(Expat test cannot link)])
+	[LIBS="-lexpat $LIBS"
+	 AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "expat.h"]], [[XML_Parser parser = XML_ParserCreate(NULL);]]) ],
+        [AC_MSG_RESULT(yes)],
+        [AC_MSG_RESULT(no)
+                 echo "-----"
+                 echo "Cannot find Expat library."
+                 echo "Use --with-ldflags to specify Expat library directory."
+                 echo "Use --with-libs to specify Expat library (-lexpat)."
+                 echo "-----"
+                 AC_MSG_ERROR(Expat test cannot link)])
+	])
      AC_LANG_RESTORE
 
 fi
