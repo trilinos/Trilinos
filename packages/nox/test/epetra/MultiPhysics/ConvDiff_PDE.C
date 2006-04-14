@@ -209,12 +209,12 @@ ConvDiff_PDE::initialize()
   }
 
   // Do a test for debugging purposes
-  {
-    computeHeatFlux( exactSolution );
-    cout << "\n\n\t\t\t-- ** Test ** --" << endl
-         << "\t\t\tRegion \"" << myName << "\", myFlux = " << myFlux << endl
-         << "    \t\t\t----------------" << endl;
-  }
+  //{
+  //  computeHeatFlux( exactSolution );
+  //  cout << "\n\n\t\t\t-- ** Test ** --" << endl
+  //       << "\t\t\tRegion \"" << myName << "\", myFlux = " << myFlux << endl
+  //       << "    \t\t\t----------------" << endl;
+  //}
 
   delete exactSolution ;
   delete dTdx          ;
@@ -348,14 +348,14 @@ ConvDiff_PDE::evaluate(
     }
   } 
 
-  if( NOX::Epetra::Interface::Required::Residual == flag )
-  {
-    int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
-    cout << "\t\"" << myName << "\" u[0] = " << (*soln)[0] 
-         << "\tu[N] = " << (*soln)[lastDof] << endl;
-    cout << "\t\"" << myName << "\" RHS[0] = " << (*rhs)[0] 
-         << "\tRHS[N] = " << (*rhs)[lastDof] << endl << endl;
-  }
+  //if( NOX::Epetra::Interface::Required::Residual == flag )
+  //{
+  //  int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
+  //  cout << "\t\"" << myName << "\" u[0] = " << (*soln)[0] 
+  //       << "\tu[N] = " << (*soln)[lastDof] << endl;
+  //  cout << "\t\"" << myName << "\" RHS[0] = " << (*rhs)[0] 
+  //       << "\tRHS[N] = " << (*rhs)[lastDof] << endl << endl;
+  //}
 
 
   // Apply BCs
@@ -518,11 +518,11 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   delete [] uu    ;
   delete [] uuold ;
 
-  int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
-  cout << "\t\"" << myName << "\" u[0] = " << u[0] 
-       << "\tu[N] = " << u[lastDof] << endl;
-  cout << u << endl;
-  cout << "\t\"" << myName << "\" myFlux = " << myFlux << endl << endl;
+  //int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
+  //cout << "\t\"" << myName << "\" u[0] = " << u[0] 
+  //     << "\tu[N] = " << u[lastDof] << endl;
+  //cout << u << endl;
+  //cout << "\t\"" << myName << "\" myFlux = " << myFlux << endl << endl;
 
   // Scale domain integration according to interface position
   myFlux *= dirScale;

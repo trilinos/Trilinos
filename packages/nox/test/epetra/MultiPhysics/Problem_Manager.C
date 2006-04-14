@@ -509,24 +509,43 @@ void Problem_Manager::registerComplete()
   //  dynamic_cast<NOX::Epetra::Interface::Required&>(interface);
   compositeNOXSoln = new NOX::Epetra::Vector(*(compositeSoln.get()));
 
-  // Create the Matrix-Free Jacobian Operator
-  //NOX::Epetra::MatrixFree Jac(interface, *compositeSoln);
-  //NOX::Epetra::Interface::Jacobian& jacInt = Jac;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInt = interface;
+  NOX::Parameter::List & printParams = nlParams->sublist("Printing");
+  NOX::Parameter::List & lsParams    = nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precInt = interface;
+  // Setup appropriate operators and their use
 
-  NOX::Parameter::List& lsParams = 
-    nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
+  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem;
+  if( 1 )
+  {
+    // Use Matrix-Free Jacobian Operator with FDC block preconditioner
+    jacOperator = Teuchos::rcp( new NOX::Epetra::MatrixFree( printParams, interface, *compositeSoln) );
+    NOX::Epetra::Interface::Jacobian * p_jacInt = dynamic_cast<NOX::Epetra::MatrixFree*>(jacOperator.get());
+    jacInterface = Teuchos::rcp(p_jacInt, false);
+    precOperator = Teuchos::rcp( A.get(), false );
+    precInterface = interface;
 
-  Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> composite_linearSystem
-    = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
-      nlParams->sublist("Printing"),
-      lsParams,
-      //jacInt, Jac,
-      interface, jacInt, A,
-      //precInt, *A,
-      compositeSoln) );
+    composite_linearSystem = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
+        nlParams->sublist("Printing"),
+        lsParams,
+        jacInterface, jacOperator,
+        precInterface, precOperator,
+        compositeSoln) );
+  }
+
+  if( 0 )
+  {
+    // Use FDC Jacobian and itself as its own preconditioner
+
+    jacOperator = A;
+    jacInterface = interface;
+
+    composite_linearSystem = Teuchos::rcp( new NOX::Epetra::LinearSystemAztecOO(
+        nlParams->sublist("Printing"),
+        lsParams,
+        interface,
+        jacInterface, jacOperator,
+        compositeSoln) );
+  }
 
   //lsParams.setParameter("Preconditioning", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
@@ -560,19 +579,20 @@ void Problem_Manager::syncAllProblems()
     throw "Problem_Manager ERROR";
   }
   
-  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
-  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+  map<int, GenericEpetraProblem*>::iterator problemIter;
+  map<int, GenericEpetraProblem*>::iterator problemBegin = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast  = Problems.end();
 
   // Give each problem an opportunity to do things before transferring data, eg compute fluxes
-  for( ; problemIter != problemLast; problemIter++)
+  for( problemIter = problemBegin ; problemIter != problemLast; ++problemIter )
     (*problemIter).second->prepare_data_for_transfer();
 
   // Loop over each problem being managed and invoke its transfer requests
-  for( ; problemIter != problemLast; problemIter++)
+  for( problemIter = problemBegin ; problemIter != problemLast; ++problemIter )
     (*problemIter).second->doTransfer();
 
   // Give each problem an opportunity to do things after transferring data
-  for( ; problemIter != problemLast; problemIter++)
+  for( problemIter = problemBegin ; problemIter != problemLast; ++problemIter )
     (*problemIter).second->process_transferred_data();
 
 }
@@ -984,18 +1004,16 @@ void Problem_Manager::updateAllWithFinalSolution()
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
-  for( ; problemIter != problemLast; problemIter++) {
+  for( ; problemIter != problemLast; ++problemIter )
+  {
     int probId = (*problemIter).first;
-
     updateWithFinalSolution(probId);
   }
 }
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::copyCompositeToProblems(
-                         const Epetra_Vector& compositeVec, 
-                         Problem_Manager::VectorType vecType)
+void Problem_Manager::copyCompositeToProblems( const Epetra_Vector& compositeVec, Problem_Manager::VectorType vecType )
 {
   // Copy a composite problem vector to each problem's vector
 
@@ -1005,7 +1023,7 @@ void Problem_Manager::copyCompositeToProblems(
   Epetra_Vector* problemVec(0);
 
   // Loop over each problem being managed and copy into the correct problem vector
-  for( ; problemIter != problemLast; problemIter++) 
+  for( ; problemIter != problemLast; ++problemIter ) 
   {
     int probId = (*problemIter).first;
     switch (vecType) 
@@ -1027,9 +1045,7 @@ void Problem_Manager::copyCompositeToProblems(
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::copyProblemsToComposite(
-                         Epetra_Vector& compositeVec,
-                         Problem_Manager::VectorType vecType)
+void Problem_Manager::copyProblemsToComposite( Epetra_Vector& compositeVec, Problem_Manager::VectorType vecType )
 {
   // Copy vectors from each problem into a composite problem vector
 
@@ -1040,7 +1056,8 @@ void Problem_Manager::copyProblemsToComposite(
 
   // Loop over each problem being managed and copy from the correct 
   // problem vector
-  for( ; problemIter != problemLast; problemIter++) {
+  for( ; problemIter != problemLast; ++problemIter ) 
+  {
     int probId = (*problemIter).first;
     switch (vecType) {
 
@@ -1066,29 +1083,25 @@ void Problem_Manager::copyProblemsToComposite(
 //-----------------------------------------------------------------------------
 
 
-void Problem_Manager::copyCompositeToVector(
-                      const Epetra_Vector& compositeVec, int id,
-                      Epetra_Vector& problemVec)
+void Problem_Manager::copyCompositeToVector( const Epetra_Vector& compositeVec, int id, Epetra_Vector& problemVec )
 {
   // Copy part of a composite problem vector to a problem's vector
   Epetra_IntVector& indices = *(ProblemToCompositeIndices[id]);
   // This map is needed to get correct LID of indices
   const Epetra_BlockMap &map = compositeVec.Map();
 
-  for (int i=0; i<problemVec.MyLength(); i++)
+  for( int i = 0; i < problemVec.MyLength(); ++i )
     problemVec[i] = compositeVec[map.LID(indices[i])];
 }
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::copyVectorToComposite(
-                      Epetra_Vector& compositeVec, int id,
-                      const Epetra_Vector& problemVec)
+void Problem_Manager::copyVectorToComposite( Epetra_Vector& compositeVec, int id, const Epetra_Vector& problemVec)
 {
   // Copy a vector from a problem into part of a composite problem vector
   Epetra_IntVector& indices = *(ProblemToCompositeIndices[id]);
 
-  for (int i=0; i<problemVec.MyLength(); i++)
+  for( int i = 0; i < problemVec.MyLength(); ++i )
     compositeVec[indices[i]] = problemVec[i];
 }
 
@@ -1338,8 +1351,8 @@ bool Problem_Manager::solve()
   combo->addStatusTest(maxiters);
   combo->addStatusTest(finiteValue);
 
-//  while( normSum > 2.e-0 ) // Hard-coded convergence criterion for now.
   int nlIter = 0; 
+
   while( nlIter < 100 && normSum > 1.0e-8 ) // Hard-coded convergence criterion for now.
   {
     iter++;
@@ -1373,6 +1386,7 @@ bool Problem_Manager::solve()
 
       outputSolutions(iter);
 
+      // Copy final solution from group into problem solution vector
       updateWithFinalSolution(probId);
     }
 
@@ -1415,11 +1429,8 @@ bool Problem_Manager::solveMF()
 
   NOX::StatusTest::StatusType status = compositeSolver->solve();
   if( status != NOX::StatusTest::Converged )
-  { 
     if (MyPID==0)
       cout << "\nMatrix-Free coupled Problem failed to converge !!"  << endl;
-    exit(0);
-  }
 
   // Update all problem's solutions with final solutions from solvers
   updateAllWithFinalSolution();

@@ -235,6 +235,10 @@ private:
   Problem_Interface *compositeProblemInterface; // A problem interface to 
   // the composite problem manager.  Needed for off-diagonal FDC blocks
 
+  Teuchos::RefCountPtr<Epetra_Operator> jacOperator   ; // The composite Jacobian operator
+  Teuchos::RefCountPtr<Epetra_Operator> precOperator  ; // The composite Preconditioner operator
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> jacInterface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> precInterface;
   Teuchos::RefCountPtr<NOX::Epetra::Group> compositeGroup  ; // The composite solution group
   NOX::Solver::Manager                   * compositeSolver ; // The composite solver
 
