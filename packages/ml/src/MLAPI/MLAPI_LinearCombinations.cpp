@@ -162,6 +162,8 @@ void BaseOperatorTimesMultiVector::Set(MultiVector& v) const
     v.Reshape(A_.GetOperatorRangeSpace(), x_.GetNumVectors());
   }
 
+  v = 0.0;
+
   A_.Apply(x_, v);
 
   StackPop();
