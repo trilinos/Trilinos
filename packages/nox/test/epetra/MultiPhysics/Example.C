@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
   
     problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
   
-    problemManager.outputStatus();
+    problemManager.outputStatus(std::cout);
   
     // Initialize time integration parameters
     int maxTimeSteps = 3;
@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
   
     problemManager.registerComplete();
   
-    problemManager.outputStatus();
+    problemManager.outputStatus(std::cout);
   
     // Initialize time integration parameters
     int maxTimeSteps = 5;
@@ -645,24 +645,35 @@ int main(int argc, char *argv[])
   else if( doConvDiff )
   { // Convection-Diffusion coupled problem
 
-    // Create Region 1 PDE
-    string myName 		= "Region_1";
-    double peclet		= 9.0  ;
-    double radiation		= 0.0  ;
-    double kappa		= 1.0  ;
-    double xmin  		= 0.0  ;
-    double xmax  		= 1.0  ;
-    double Tleft  		= 0.98 ;
-    double Tright 		= 1.0  ;
+    // Coupling parameters
+    double alpha		= 0.4           ;
+    double beta 		= 0.399         ;
 
-    double T1_analytic          = ( kappa*(1.0-exp(peclet))*Tright - Tleft*peclet*exp(peclet) ) /
-                                  ( kappa*(1.0-exp(peclet)) - peclet*exp(peclet) );
+    // Domain boundary temperaures
+    double Tleft  		= 0.98          ;
+    double Tright 		= 1.0           ;
+
+    // Distinguish certain parameters needed for T1_analytic
+    double peclet_1     	= 9.0           ;
+    double peclet_2     	= 0.0           ;
+    double kappa_1      	= 1.0           ;
+    double kappa_2		= 0.1           ;
+
+    double T1_analytic          = ( kappa_2*(1.0-exp(peclet_1))*Tright - Tleft*peclet_1*exp(peclet_1) ) /
+                                  ( kappa_2*(1.0-exp(peclet_1)) - peclet_1*exp(peclet_1) );
+
+    // Create Region 1 PDE
+    string myName 		= "Region_1"    ;
+    double radiation		= 0.0           ;
+    double xmin  		= 0.0           ;
+    double xmax  		= 1.0           ;
 
     ConvDiff_PDE Reg1_PDE (
                     Comm, 
-                    peclet,
+                    peclet_1,
                     radiation,
-		    kappa,
+		    kappa_1,
+		    alpha,
 		    xmin,
 		    xmax, 
                     Tleft,
@@ -671,26 +682,23 @@ int main(int argc, char *argv[])
                     myName  );
 
     // Override default initialization with values we want
-    Reg1_PDE.initializeSolution(3.0);
+    Reg1_PDE.initializeSolution(1.0);
 
     problemManager.addProblem(Reg1_PDE);
 
 
     // Create Region 2 PDE
-    myName 		        = "Region_2";
-    peclet		        = 0.0  ;
-    radiation		        = 0.0  ;
-    kappa		        = 0.1  ;
-    xmin  		        = 1.0  ;
-    xmax  		        = 2.0  ;
-    Tleft  		        = 0.98 ;
-    Tright 		        = 1.0  ;
+    myName 		        = "Region_2"    ;
+    radiation		        = 0.0           ;
+    xmin  		        = 1.0           ;
+    xmax  		        = 2.0           ;
 
     ConvDiff_PDE Reg2_PDE (
                     Comm, 
-                    peclet,
+                    peclet_2,
                     radiation,
-		    kappa,
+		    kappa_2,
+		    beta,
 		    xmin,
 		    xmax, 
                     T1_analytic,
@@ -699,7 +707,7 @@ int main(int argc, char *argv[])
                     myName  );
 
     // Override default initialization with values we want
-    Reg2_PDE.initializeSolution(2.0);
+    Reg2_PDE.initializeSolution(1.0);
 
     problemManager.addProblem(Reg2_PDE);
 
@@ -708,7 +716,7 @@ int main(int argc, char *argv[])
   
     problemManager.registerComplete();
   
-    problemManager.outputStatus();
+    problemManager.outputStatus(std::cout);
 
     cout << "\n\tAnalytic solution, T_1 = " << T1_analytic << "\n" << endl;
   
@@ -716,9 +724,9 @@ int main(int argc, char *argv[])
     problemManager.outputSolutions(0);
 
     // Solve decoupled
-    //problemManager.solve(); // Need a status test check here ....
+    problemManager.solve(); // Need a status test check here ....
     // .... OR solve using matrix-free
-    problemManager.solveMF(); // Need a status test check here ....
+    //problemManager.solveMF(); // Need a status test check here ....
   
     problemManager.outputSolutions(1);
   

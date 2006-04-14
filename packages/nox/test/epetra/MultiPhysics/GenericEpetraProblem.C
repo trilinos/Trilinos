@@ -73,8 +73,27 @@ GenericEpetraProblem::GenericEpetraProblem(const Epetra_Comm& comm,
   // left to the derived problem class.
 }
 
+//-----------------------------------------------------------------------------
 
-void GenericEpetraProblem::createMaps()
+// Destructor
+GenericEpetraProblem::~GenericEpetraProblem()
+{
+  delete AA; AA = 0;
+  delete Importer; Importer = 0;
+  delete OverlapMap; OverlapMap = 0;
+  delete StandardMap; StandardMap = 0;
+  
+  for( map<int, Epetra_Vector*>::iterator iter = depSolutions.begin();
+         iter != depSolutions.end(); delete (*iter).second, ++iter );
+  for( map<int, XferOp*>::iterator iter = xferOperators.begin();
+         iter != xferOperators.end(); delete (*iter).second, ++iter );
+
+}
+
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::createMaps()
 {
 
   if (NumGlobalNodes > 0)
@@ -132,23 +151,10 @@ void GenericEpetraProblem::createMaps()
   return;
 }
 
+//-----------------------------------------------------------------------------
 
-// Destructor
-GenericEpetraProblem::~GenericEpetraProblem()
-{
-  delete AA; AA = 0;
-  delete Importer; Importer = 0;
-  delete OverlapMap; OverlapMap = 0;
-  delete StandardMap; StandardMap = 0;
-  
-  for( map<int, Epetra_Vector*>::iterator iter = depSolutions.begin();
-         iter != depSolutions.end(); delete (*iter).second, ++iter );
-  for( map<int, XferOp*>::iterator iter = xferOperators.begin();
-         iter != xferOperators.end(); delete (*iter).second, ++iter );
-
-}
-
-void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver, 
+void 
+GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver, 
                    NOX::Parameter::List& printParams)
 {
   // Output the parameter list
@@ -178,7 +184,10 @@ void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver,
   fclose(ifp);
 }
 
-void GenericEpetraProblem::outputSolutionStatus( ostream & os ) const
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::outputSolutionStatus( ostream & os ) const
 {
   // Output all solution vectors
   os << "\nProblem Status for " << myName << endl;
@@ -194,29 +203,44 @@ void GenericEpetraProblem::outputSolutionStatus( ostream & os ) const
   }
 }
 
-void GenericEpetraProblem::setdt( double dt )
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::setdt( double dt )
 {
   cout << "No-op : Implement time dependence in inherited problem !!" << endl;
 }
 
-double GenericEpetraProblem::getdt() const
+//-----------------------------------------------------------------------------
+
+double 
+GenericEpetraProblem::getdt() const
 {
   cout << "No-op : Implement time dependence in inherited problem !!" << endl;
   return 0.0;
 }
 
-Epetra_Vector& GenericEpetraProblem::getMesh()
+//-----------------------------------------------------------------------------
+
+Epetra_Vector & 
+GenericEpetraProblem::getMesh()
 {
   assert( xptr != 0 ); // Mesh vector had better exist
   return *xptr;
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> GenericEpetraProblem::getSolution()
+//-----------------------------------------------------------------------------
+
+Teuchos::RefCountPtr<Epetra_Vector> 
+GenericEpetraProblem::getSolution()
 {
   return initialSolution;
 }
 
-Epetra_CrsGraph& GenericEpetraProblem::getGraph()
+//-----------------------------------------------------------------------------
+
+Epetra_CrsGraph & 
+GenericEpetraProblem::getGraph()
 {
   if(AA)
     return *AA;
@@ -227,7 +251,10 @@ Epetra_CrsGraph& GenericEpetraProblem::getGraph()
   }
 }
 
-Teuchos::RefCountPtr<Epetra_CrsMatrix> GenericEpetraProblem::getJacobian()
+//-----------------------------------------------------------------------------
+
+Teuchos::RefCountPtr<Epetra_CrsMatrix> 
+GenericEpetraProblem::getJacobian()
 {
   if(A.get())
     return A;
@@ -238,7 +265,10 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix> GenericEpetraProblem::getJacobian()
   }
 }
 
-void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::setSolution(const Epetra_Vector& data)
 {
   // Ensure that the derived problem class created the solution vector
   if(!initialSolution.get())
@@ -250,7 +280,10 @@ void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
   (*initialSolution.get()) = data;
 }
 
-void GenericEpetraProblem::createDependentVectors()
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::createDependentVectors()
 {
   // Create the dependent vectors needed to receive data from other problems
   if( !initialSolution.get() ) 
@@ -269,8 +302,10 @@ void GenericEpetraProblem::createDependentVectors()
   }
 }
 
-void GenericEpetraProblem::addProblemDependence(
-		const GenericEpetraProblem& problemB)
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::addProblemDependence( const GenericEpetraProblem& problemB )
 {
   // Add a problem to the list of those this one depends on
   depProblems.push_back(problemB.getId());
@@ -280,16 +315,22 @@ void GenericEpetraProblem::addProblemDependence(
                           depProblems.size() - 1) );
 }
 
-void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::addTransferOp( const GenericEpetraProblem& problemB )
 {
   // Add a transfer operator to get fields from another problem
   xferOperators[problemB.getId()] = new XferOp(*this, problemB);
 }
 
-void GenericEpetraProblem::doTransfer()
+//-----------------------------------------------------------------------------
+
+void 
+GenericEpetraProblem::doTransfer()
 {
   // Do transfers from each dependent problem to this one
-  for( int i = 0; i < depProblems.size(); ++i) 
+  for( int i = 0; i < depProblems.size(); ++i)  
   {
     int depId = depProblems[i];
     XferOp* xfer = (*xferOperators.find(depId)).second;
@@ -299,21 +340,22 @@ void GenericEpetraProblem::doTransfer()
       cout << "ERROR: doTransfer: No valid transfer operator !!" << endl;
       throw "GenericEpetraProblem ERROR";
     }
-
     else 
     {
       // NOTE that we are transferring (by default) to/from each problem's
       // solution vector which may be different data than in each respective
       // group.
-      Epetra_Vector& fromVec = *(myManager->getProblem(depId).getSolution());
-      Epetra_Vector& toVec = *( (*(depSolutions.find(depId))).second );
-      xfer->transferField(toVec, fromVec); 
+      Epetra_Vector & fromVec = *(myManager->getProblem(depId).getSolution());
+      Epetra_Vector & toVec = *( (*(depSolutions.find(depId))).second );
+      xfer->transferField( toVec, fromVec ); 
     }  
   }
 }
 
-bool GenericEpetraProblem::computePrecMatrix(const Epetra_Vector& solnVector,
-                               Epetra_RowMatrix& matrix)
+//-----------------------------------------------------------------------------
+
+bool 
+GenericEpetraProblem::computePrecMatrix( const Epetra_Vector& solnVector, Epetra_RowMatrix& matrix )
 {
   cout << "WARNING: computePrecMatrix not implemented for this problem !!"
        << endl;
@@ -321,13 +363,16 @@ bool GenericEpetraProblem::computePrecMatrix(const Epetra_Vector& solnVector,
   return false;
 }
     
-bool GenericEpetraProblem::computePreconditioner(
-                                   const Epetra_Vector& solnVector,
-                                   Epetra_Operator& precOperator)
+//-----------------------------------------------------------------------------
+
+bool 
+GenericEpetraProblem::computePreconditioner( const Epetra_Vector& solnVector, Epetra_Operator& precOperator )
 {
   cout << "WARNING: computePreconditioner not implemented for this problem !!"
        << endl;
 
   return false;
 }
+
+//-----------------------------------------------------------------------------
 

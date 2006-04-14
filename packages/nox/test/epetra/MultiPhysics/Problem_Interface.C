@@ -882,7 +882,7 @@ void CMD_macro::describe()
 
 bool CMD_problemSummary::doCommand( std::string commandLine )
 {
-  problemManager->outputStatus();
+  problemManager->outputStatus(std::cout);
   return true;
 }
 

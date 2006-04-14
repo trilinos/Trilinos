@@ -50,18 +50,24 @@ class ConvDiff_PDE : public GenericEpetraProblem
 
 public:
 
+  enum INTERFACE_LOCATION {
+                                LEFT    ,
+                                RIGHT   
+                          };
+
   // Constructor
   ConvDiff_PDE(
-          Epetra_Comm& Comm, 
-          double peclet,
-          double radiation,
-          double kappa,
-	  double xmin,
-	  double xmax,
-	  double Tleft,
-	  double Tright,
-          int NumGlobalUnknowns = 0,
-          string name = "");
+          Epetra_Comm & Comm                    ,
+          double        peclet                  ,
+          double        radiation               ,
+          double        kappa                   ,
+          double        bcWeight                ,
+	  double        xmin                    ,
+	  double        xmax                    ,
+	  double        Tleft                   ,
+	  double        Tright                  ,
+          int           NumGlobalUnknowns = 0   ,
+          string        name = ""                 ) ;
   
   // Destructor
   ~ConvDiff_PDE();
@@ -78,6 +84,28 @@ public:
                 const Epetra_Vector *solnVector, 
 		Epetra_Vector *rhsVector);
 
+  // Inherited method that allows us to compute fluxes before transferring data
+  void prepare_data_for_transfer();
+
+  // Compute the appropriate end heat flux
+  void computeHeatFlux( const Epetra_Vector * pVec = NULL );
+
+  // Inherited method that allows us to tidy up transferred data
+  void process_transferred_data();
+
+  // Inherited method that allows us to specialize transfers across an interface
+  void doTransfer();
+
+  // Accessor
+  double getHeatFlux()
+  { return myFlux; }
+
+  // Accessor
+  double getInterfaceTemp();
+
+  // Additional status output
+  virtual void outputStatus( ostream & os );
+
 
 protected:
 
@@ -86,18 +114,32 @@ protected:
 
 protected:
 
-  double xmin   ;
-  double xmax   ;
-  double Tleft  ;
-  double Tright ;
-  double dx     ;
+  double xmin                           ;
+  double xmax                           ;
+  double Tleft                          ;
+  double Tright                         ;
+  double dx                             ;
+  double T1_exact                       ;
 
-  double peclet         ;
-  double radiation      ;
-  double kappa          ;
+  double peclet                         ;
+  double radiation                      ;
+  double kappa                          ;
 
-  Epetra_Import *ColumnToOverlapImporter        ;
-  Epetra_Vector *oldSolution                    ;
-  Epetra_Vector *rhs                            ;
+  INTERFACE_LOCATION myInterface        ;
+  double dirScale                       ;
+  double myFlux                         ;
+
+  double bcWeight                       ;
+
+  Epetra_Import * ColumnToOverlapImporter        ;
+  Epetra_Vector * oldSolution                    ;
+  Epetra_Vector * rhs                            ;
+
+  int             interface_elem                 ;
+  int             local_node                     ;
+  int             interface_node                 ;
+  int             opposite_node                  ;
+
+  ConvDiff_PDE *  depProbPtr                     ;
 };
 #endif

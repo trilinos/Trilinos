@@ -154,7 +154,7 @@ GenericEpetraProblem& Problem_Manager::getProblem(int id_)
   {
     cout << "ERROR: Problem with id --> " << id_ << " not registered with "
          << "Problem_Manager !!" << endl;
-    outputStatus();
+    outputStatus(std::cout);
     throw "Problem_Manager ERROR";
   }
   else
@@ -172,7 +172,7 @@ GenericEpetraProblem& Problem_Manager::getProblem(string name)
   {
     cout << "ERROR: Could not find lookup id for Problem --> " << name 
          << endl;
-    outputStatus();
+    outputStatus(std::cout);
     throw "Problem_Manager ERROR";
   }
   else
@@ -210,7 +210,7 @@ Teuchos::RefCountPtr<Epetra_Vector> Problem_Manager::getCompositeSoln()
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::createDependency(string nameA, string nameB)
+void Problem_Manager::createDependency( string nameA, string nameB, bool isInterfacial )
 {
   // Create a dependence of Problem A equations on Problem B variables
   int probId_A = (*(NameLookup.find(nameA))).second;
@@ -226,14 +226,15 @@ void Problem_Manager::createDependency(string nameA, string nameB)
   GenericEpetraProblem &probA = *(*(Problems.find(probId_A))).second,
                        &probB = *(*(Problems.find(probId_B))).second;
 
-  createDependency(probA, probB);
+  return createDependency( probA, probB, isInterfacial );
 }
 
 //-----------------------------------------------------------------------------
 
 
-void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
-                                       GenericEpetraProblem& problemB)
+void Problem_Manager::createDependency( GenericEpetraProblem & problemA,
+                                        GenericEpetraProblem & problemB,
+                                        bool isInterfacial )
 {
   // Ensure that both problems already exist
   if( !problemA.getId() || !problemB.getId() ) {
@@ -243,7 +244,9 @@ void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
     throw "Problem_Manager ERROR";
   }
 
-  problemA.addTransferOp(problemB);
+  if( !isInterfacial )
+    problemA.addTransferOp(problemB);
+
   problemA.addProblemDependence(problemB);
 
 }
@@ -289,10 +292,6 @@ void Problem_Manager::registerComplete()
   map<int, GenericEpetraProblem*>::iterator iter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator last = Problems.end();
 
-  // First give each problem a chance to initialize based on registrations
-  for( ; last != iter; ++iter )
-    (*iter).second->initialize();
-
   iter = Problems.begin();
 
   int icount = 0; // Problem counter
@@ -313,6 +312,9 @@ void Problem_Manager::registerComplete()
 
     // Create dependent vectors for this problem
     problem.createDependentVectors();
+
+    // Give each problem a chance to initialize based on registrations
+    problem.initialize();
 
     // Create index mapping for this problem into the composite problem
     ProblemToCompositeIndices[probId] = new Epetra_IntVector(*problem.StandardMap);
@@ -551,7 +553,8 @@ void Problem_Manager::registerComplete()
 
 void Problem_Manager::syncAllProblems()
 {
-  if(Problems.empty()) {
+  if(Problems.empty()) 
+  {
     cout << "ERROR: No problems registered with Problem_Manager !!"
          << endl;
     throw "Problem_Manager ERROR";
@@ -560,9 +563,18 @@ void Problem_Manager::syncAllProblems()
   map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
+  // Give each problem an opportunity to do things before transferring data, eg compute fluxes
+  for( ; problemIter != problemLast; problemIter++)
+    (*problemIter).second->prepare_data_for_transfer();
+
   // Loop over each problem being managed and invoke its transfer requests
   for( ; problemIter != problemLast; problemIter++)
     (*problemIter).second->doTransfer();
+
+  // Give each problem an opportunity to do things after transferring data
+  for( ; problemIter != problemLast; problemIter++)
+    (*problemIter).second->process_transferred_data();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1317,7 +1329,7 @@ bool Problem_Manager::solve()
   converged->addStatusTest(absresid);
   converged->addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters =
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(15));
   Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo =
@@ -1328,7 +1340,7 @@ bool Problem_Manager::solve()
 
 //  while( normSum > 2.e-0 ) // Hard-coded convergence criterion for now.
   int nlIter = 0; 
-  while( nlIter < 2000 && normSum > 1.0e-8 ) // Hard-coded convergence criterion for now.
+  while( nlIter < 100 && normSum > 1.0e-8 ) // Hard-coded convergence criterion for now.
   {
     iter++;
 
@@ -1345,7 +1357,7 @@ bool Problem_Manager::solve()
       NOX::Solver::Manager & problemSolver = *(Solvers[probId]);
     
       // Sync all dependent data with this problem 
-      //problem.doTransfer();
+      problem.doTransfer();
       // Sync the problem solution with its solver group
       setGroupX(probId);
       // Reset the solver for this problem and solve
@@ -1358,6 +1370,8 @@ bool Problem_Manager::solve()
         if (MyPID==0)
           cout << "\nRegistered Problem ## failed to converge !!"  << endl;
       }
+
+      outputSolutions(iter);
 
       updateWithFinalSolution(probId);
     }
@@ -1689,35 +1703,43 @@ void Problem_Manager::outputSolutions(int timeStep)
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::outputStatus()
+void Problem_Manager::outputStatus( ostream & os ) 
 { 
 
-  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
-  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+  map<int, GenericEpetraProblem*>::const_iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::const_iterator problemLast = Problems.end();
 
-  cout << endl << endl << "\t\t********************************"   << endl;
-  cout                 << "\t\t*******  PROBLEM SUMMARY  ******"   << endl;
-  cout                 << "\t\t********************************"   << endl;
-  cout << endl << endl << "\t\tOff-diagonal contributions are "
+  os << endl << endl << "\t\t********************************"   << endl;
+  os                 << "\t\t*******  PROBLEM SUMMARY  ******"   << endl;
+  os                 << "\t\t********************************"   << endl;
+  os << endl << endl << "\t\tOff-diagonal contributions are "
                        << ( doOffBlocks ? "Enabled" : "Disabled" ) << endl;
-  cout << endl << endl;
+  os << endl << endl;
 
   // Loop over each problem being managed and output its dependencies
   for( ; problemIter != problemLast; problemIter++) 
   {
     GenericEpetraProblem& problem = *(*problemIter).second;
 
-    cout << "\tProblem \"" << problem.getName() << "\" (" << (*problemIter).first
+    os << "\tProblem \"" << problem.getName() << "\" (" << (*problemIter).first
          << ")\t Depends on:" << endl;
     
     for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) 
     {
       GenericEpetraProblem & depProblem = *(Problems[ problem.depProblems[j] ]);
 
-      cout << "\t\t-------------> \t\t\"" << depProblem.getName() 
+      os << "\t\t-------------> \t\t\"" << depProblem.getName() 
            << "\" (" << depProblem.getId() << ")" << endl;
     }
-    cout << endl;
+    os << endl;
+
+    // Allow problems to provide additional info if desired
+    for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) 
+    {
+      GenericEpetraProblem & depProblem = *(Problems[ problem.depProblems[j] ]);
+      problem.outputStatus(os);
+    }
+    os << endl;
   }
 }
 

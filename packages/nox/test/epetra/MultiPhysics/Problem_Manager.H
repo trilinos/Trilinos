@@ -45,7 +45,8 @@ class OffBlock_Manager;
 
 #include <vector>
 
-class Problem_Manager : GenericEpetraProblem { 
+class Problem_Manager : public GenericEpetraProblem 
+{
 
 public:
 
@@ -81,11 +82,12 @@ public:
   {  return compositeSolver; }
 
   // Create a dependence of Problem A equations on Problem B variables
-  void createDependency(string nameA, string nameB);
+  void createDependency(string nameA, string nameB, bool interfacialCoupling = false);
 
   // Create a dependence of Problem A equations on Problem B variables
   void createDependency(GenericEpetraProblem& problemA,
-                        GenericEpetraProblem& problemB);
+                        GenericEpetraProblem& problemB, 
+                        bool interfacialCoupling = false);
 
   // Register NLSolver parameter list
   void registerParameters(const Teuchos::RefCountPtr<NOX::Parameter::List>& List);
@@ -176,11 +178,11 @@ public:
   // Solve problems using matrix-free coupling
   bool solveMF();
 
+  // Output summary of copled problems
+  void outputStatus( ostream & os );
+
   // Solve problems using matrix-free coupling
   void outputSolutions(int timeStep = 0);
-
-  // Print status of Problem Manager, problems and dependencies
-  void outputStatus();
 
   // Query whether or not offBlocks ar used
   bool useOffBlocks()

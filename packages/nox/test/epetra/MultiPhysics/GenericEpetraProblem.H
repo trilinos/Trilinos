@@ -110,8 +110,16 @@ public:
   // Add a transfer operator to get fields from another problem
   virtual void addTransferOp(const GenericEpetraProblem& problemB); 
 
+  // Do pre-transfer stuff, eg compute fluxes
+  virtual void prepare_data_for_transfer()
+  { /* default no-op */ }; 
+
   // Do transfers from each problem to this
   virtual void doTransfer(); 
+
+  // Do post-transfer stuff
+  virtual void process_transferred_data()
+  { /* default no-op */ }; 
 
   // Set the solution vector (initialSolution)
   virtual void setSolution(const Epetra_Vector&); 
@@ -147,8 +155,11 @@ public:
   virtual Epetra_CrsGraph& getGraph();
 
   // Output results 
-  virtual void outputResults(NOX::Solver::Manager& solver, 
-                             NOX::Parameter::List& printParams);
+  virtual void outputResults(NOX::Solver::Manager& solver, NOX::Parameter::List& printParams);
+
+  // Output problem description
+  virtual void outputStatus( ostream & os ) 
+  { return; }
 
   // Output current solution state 
   virtual void outputSolutionStatus( ostream & os ) const;
@@ -170,30 +181,29 @@ protected:
 
 protected:
 
-  int myId;                     // Unique integer id for this Problem
-  string myName;		// String identifier for convenience
-  Problem_Manager * myManager;   // Problem Manager with which this problem interacts
-  Epetra_Map *OverlapMap;
-  Epetra_Import *Importer;
-  Epetra_Vector *xptr;		// Spatial locations of mesh points
-  Teuchos::RefCountPtr<Epetra_Vector> initialSolution;
-  Epetra_CrsGraph *AA;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> A;
-  vector<int> depProblems;      // List of problems that this one depends on
-  map<string, int> nameToMyIndex;
-  map<int, Epetra_Vector*> depSolutions; // Dependent data; solutions from 
-                                  // other Problems needed by this Problem
-  map<int, XferOp*> xferOperators;   // Container of transfer operators
+  int                                           myId            ; // My unique integer id 
+  string                                        myName          ; 
+  Problem_Manager *                             myManager       ; // Problem Manager with which this problem interacts
+  Epetra_Map *                                  OverlapMap      ;
+  Epetra_Import *                               Importer        ;
+  Epetra_Vector *                               xptr            ; // Mesh data
+  Teuchos::RefCountPtr<Epetra_Vector>           initialSolution ;
+  Epetra_CrsGraph *                             AA              ;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix>        A               ;
+  vector<int>                                   depProblems     ; // List of problems that this one depends on
+  map<string, int>                              nameToMyIndex   ;
+  map<int, Epetra_Vector*>                      depSolutions    ; // Solutions from other Problems needed by this Problem
+  map<int, XferOp*>                             xferOperators   ; // Container of transfer operators
 
 public: // for now
 
-  const Epetra_Comm *Comm;
-  Epetra_Map *StandardMap;
-  int MyPID;              // Process number
-  int NumProc;            // Total number of processes
+  const Epetra_Comm *                           Comm            ;
+  Epetra_Map *                                  StandardMap     ;
+  int                                           MyPID           ; // Process number
+  int                                           NumProc         ; // Total number of processes
 
-  int NumMyNodes;         // Number of nodes (dofs) owned by this process
-                          // for this problem
-  int NumGlobalNodes;     // Total Number of nodes (dofs) for this problem
+  int                                           NumMyNodes      ; // Number of nodes (dofs) owned by this process for this problem
+  int                                           NumGlobalNodes  ; // Total Number of nodes (dofs) for this problem
+
 };
 #endif
