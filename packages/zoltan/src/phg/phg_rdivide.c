@@ -56,6 +56,7 @@ int Zoltan_PHG_rdivide(
   HGraph *left=NULL, *right=NULL;
   int    *proclist=NULL, *sendbuf=NULL, *recvbuf=NULL, nsend, msg_tag=7777;
   PHGComm *hgc = hg->comm;
+  int nVtx = hg->nVtx, gnVtx = hg->dist_x[hgc->nProc_x]; 
   double leftw=0.0, rightw=0.0;
   float  bal_tol = hgp->bal_tol;
   float  bisec_part_sizes[2]={0.0,0.0};   /* Target partition sizes; dimension is 2 
@@ -71,7 +72,7 @@ int Zoltan_PHG_rdivide(
   int do_timing = (hgp->use_timers > 1);
   int detail_timing = (hgp->use_timers > 3);
 
-  if (!hg->dist_x[hgc->nProc_x])  /* UVC: no vertex; no need for recursion!? */
+  if (!gnVtx)  /* UVC: no vertex; no need for recursion!? */
       return ierr;
   
   if (do_timing) { 
@@ -216,6 +217,7 @@ int Zoltan_PHG_rdivide(
               final[hg->vmap[i]] = hi;
   }
 
+  
 #ifdef _DEBUG1
   for (i=0; i<hg->nVtx; ++i)
       if (part[i]<0 || part[i]>1)
@@ -233,6 +235,12 @@ int Zoltan_PHG_rdivide(
   }
 #endif
 
+  if (level>0) { /* some output functions in phg depends on hg being exist for
+                    top level hypergraph hence we only free the rest after we split
+                    because in theory we shouldn't need them */      
+      Zoltan_HG_HGraph_Free(hg);
+      hg = NULL;
+  }  
   Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
 
   
@@ -245,7 +253,7 @@ int Zoltan_PHG_rdivide(
       /* redistribute left and right parts */
       leftend = (int)((float) (hgc->nProc-1) 
                     * (float) left->dist_x[hgc->nProc_x] 
-                    / (float) hg->dist_x[hgc->nProc_x]);
+                    / (float) gnVtx);
       if ((leftend+1)>=hgc->nProc) /* just to be sure :) */
           leftend =  hgc->nProc-1;    
       
@@ -265,7 +273,7 @@ int Zoltan_PHG_rdivide(
           rightstart<0 || rightstart>=hgc->nProc)
           errexit("hey hey Proc Number range is [0, %d] leftend=%d rightstart=%d"
                   "for left #pins=%d nPins=%d", hgc->nProc-1, leftend, rightstart,
-                  left->dist_x[hgc->nProc_x] , hg->dist_x[hgc->nProc_x]);
+                  left->dist_x[hgc->nProc_x] , gnVtx);
       uprintf(hgc, "before redistribute for left nProc=%d leftend=%d  rightstart=%d  ---------------\n",
               hgc->nProc, leftend, rightstart);
 #endif
@@ -320,9 +328,9 @@ int Zoltan_PHG_rdivide(
       part = (Partition) ZOLTAN_MALLOC (nsend * sizeof (int));
       proclist = (int *) ZOLTAN_MALLOC (nsend * sizeof (int));
       sendbuf =  (int *) ZOLTAN_MALLOC (nsend * 2 * sizeof (int));
-      recvbuf =  (int *) ZOLTAN_MALLOC (hg->nVtx * 2 * sizeof (int));
+      recvbuf =  (int *) ZOLTAN_MALLOC (nVtx * 2 * sizeof (int));
       if ((nsend && (!proclist || !sendbuf || !part)) ||
-          (hg->nVtx && !recvbuf))
+          (nVtx && !recvbuf))
           MEMORY_ERROR;
       if (hgc->myProc<=leftend) {
           float save_bal_tol=hgp->bal_tol;
@@ -385,8 +393,8 @@ int Zoltan_PHG_rdivide(
 
 #ifdef _DEBUG1
       if (!hgc->myProc_y) {
-          if (i!=hg->nVtx) 
-              errexit("(%d,%d) I should be receiving nVtx(%d) part info but received %d", hgc->myProc_x, hgc->myProc_y, hg->nVtx, i);
+          if (i!=nVtx) 
+              errexit("(%d,%d) I should be receiving nVtx(%d) part info but received %d", hgc->myProc_x, hgc->myProc_y, nVtx, i);
       } else {
           if (i)
               errexit("I'm not in the first row; why I'm receiving %d vertices?", i); 
@@ -397,15 +405,15 @@ int Zoltan_PHG_rdivide(
       Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int),
                      (char *) recvbuf);
 
-      MPI_Bcast(recvbuf, hg->nVtx*2, MPI_INT, 0, hgc->col_comm);
+      MPI_Bcast(recvbuf, nVtx*2, MPI_INT, 0, hgc->col_comm);
 
-      for (i=0; i<hg->nVtx; ++i) {
+      for (i=0; i<nVtx; ++i) {
 #ifdef _DEBUG1
           int p=recvbuf[i*2+1];
           int v=recvbuf[i*2];
 
-          if (v<0 || v>hg->nVtx)
-              errexit("sanity check failed for v=%d nVtx=%d\n", v, hg->nVtx);
+          if (v<0 || v>nVtx)
+              errexit("sanity check failed for v=%d nVtx=%d\n", v, nVtx);
           if (p<lo || p>hi)
               errexit("sanity check failed for v=%d p=%d lo=%d hi=%d\n", v, p, lo, hi);
 #endif
@@ -431,15 +439,14 @@ int Zoltan_PHG_rdivide(
               ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide,
                                 hgc->Communicator);
 
-          ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
+          ierr = Zoltan_PHG_rdivide(lo, mid, final, zz, left, hgp, level+1);
+          /* rdivide call will free "left" */
 
           if (do_timing)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
                                 hgc->Communicator);
 
-          hgp->bal_tol = save_bal_tol;
-                    
-          Zoltan_HG_HGraph_Free (left);
+          hgp->bal_tol = save_bal_tol;                    
       }
       if (right) {
           float save_bal_tol=hgp->bal_tol;
@@ -457,14 +464,13 @@ int Zoltan_PHG_rdivide(
                                 hgc->Communicator);
           
           ierr |= Zoltan_PHG_rdivide(mid+1, hi, final, zz, right, hgp, level+1);
-
+          /* rdivide call will free "right" */
+          
           if (do_timing)  /* Restart timer after recursion */
               ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, 
                                 hgc->Communicator);
 
-          hgp->bal_tol = save_bal_tol;
-          
-          Zoltan_HG_HGraph_Free (right);
+          hgp->bal_tol = save_bal_tol;          
       }
   }
   
@@ -486,7 +492,7 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
                                 int *proclist, int *sendbuf, int *dest,
                                 int *vmap, int *nsend, int timer_rdivide)
 {
-    int      ierr=ZOLTAN_OK, i;
+    int      ierr=ZOLTAN_OK, i, nVtx=hg->nVtx;
     PHGComm  *hgc=hg->comm;
     int do_timing = (timer_rdivide > -1);
 #ifdef _DEBUG1
@@ -497,13 +503,14 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_rdivide, hgc->Communicator);
 
     ierr = Zoltan_PHG_rdivide (lo, hi, final, zz, hg, hgp, level);
-
+    /* rdivide will free the content of "hg" */
+    
     if (do_timing) /* Restart rdivide timer */
         ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hgc->Communicator);
 
     *nsend = 0;
     if (!hgc->myProc_y) { /* only first row sends the part vector */
-        for (i=0; i<hg->nVtx; ++i) {
+        for (i=0; i<nVtx; ++i) {
             proclist[*nsend] = dest[i];
             sendbuf[(*nsend)*2] = vmap[i];
             sendbuf[(*nsend)*2+1] = final[i];
@@ -511,7 +518,6 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
         }
     }
     
-    Zoltan_HG_HGraph_Free (hg);
     ZOLTAN_FREE(&vmap);
     ZOLTAN_FREE(&dest);
 #ifdef _DEBUG1
