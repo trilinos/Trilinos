@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
   if (argc < 2) 
   {
     cout << "Usage: " << argv[0] 
-         << " -n number_of_elements [ -matlab -offBlocks -noFlow -hmx -convdiff ]" 
+         << " -n number_of_elements [ -fixedPt -matlab -offBlocks -noFlow -hmx -convdiff ]" 
          << endl;
     exit(1);
   }
@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   // Default run-time options that can be changed from the command line
+  bool runMF         = true  ;
   bool useMatlab     = false ;
   bool doOffBlocks   = false ;
   bool noFlow        = false ;
@@ -165,7 +166,14 @@ int main(int argc, char *argv[])
 
   cout << "ECHO = " << inConcat << endl;
 
-  string option = "-matlab";
+  string option = "-fixedPt";
+  if( inConcat.find(option) != string::npos )
+  {
+    runMF = false;
+    inConcat.replace( inConcat.find(option), option.size()+1, "");
+  }
+
+  option = "-matlab";
   if( inConcat.find(option) != string::npos )
   {
     useMatlab = true;
@@ -345,7 +353,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(absresid);
   converged->addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(100));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
   Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> finiteValue = 
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
@@ -433,10 +441,11 @@ int main(int argc, char *argv[])
     
       cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
     
-      // Solve decoupled
-      //problemManager.solve(); // Need a status test check here ....
-      // .... OR solve using matrix-free
-      problemManager.solveMF(); // Need a status test check here ....
+      // Solve the coupled problem
+      if( runMF )
+        problemManager.solveMF(); // Need a status test check here ....
+      else
+        problemManager.solve(); // Need a status test check here ....
     
       problemManager.outputSolutions(timeStep);
   
@@ -623,10 +632,11 @@ int main(int argc, char *argv[])
     
       cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
     
-      // Solve decoupled
-      //problemManager.solve(); // Need a status test check here ....
-      // .... OR solve using matrix-free
-      problemManager.solveMF(); // Need a status test check here ....
+      // Solve the coupled problem
+      if( runMF )
+        problemManager.solveMF(); // Need a status test check here ....
+      else
+        problemManager.solve(); // Need a status test check here ....
     
       problemManager.outputSolutions(timeStep);
   
@@ -646,8 +656,8 @@ int main(int argc, char *argv[])
   { // Convection-Diffusion coupled problem
 
     // Coupling parameters
-    double alpha		= 0.4           ;
-    double beta 		= 0.399         ;
+    double alpha		= 0.8           ;
+    double beta 		= 0.2           ;
 
     // Domain boundary temperaures
     double Tleft  		= 0.98          ;
@@ -689,7 +699,7 @@ int main(int argc, char *argv[])
 
     // Create Region 2 PDE
     myName 		        = "Region_2"    ;
-    radiation		        = 0.0           ;
+    radiation		        = 5.67          ;
     xmin  		        = 1.0           ;
     xmax  		        = 2.0           ;
 
@@ -723,11 +733,12 @@ int main(int argc, char *argv[])
     // Print initial solution
     problemManager.outputSolutions(0);
 
-    // Solve decoupled
-    problemManager.solve(); // Need a status test check here ....
-    // .... OR solve using matrix-free
-    //problemManager.solveMF(); // Need a status test check here ....
-  
+    // Solve the coupled problem
+    if( runMF )
+      problemManager.solveMF(); // Need a status test check here ....
+    else
+      problemManager.solve(); // Need a status test check here ....
+    
     problemManager.outputSolutions(1);
   
     // Output timing info
