@@ -298,7 +298,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   if (OperatorRangePoints % NumPDEEqns_ != 0)
     ML_CHK_ERR(-2); // num PDEs seems not constant
 
-  if (verbose_);
+  if (verbose_)
   {
     ML_print_line("=",78);
     cout << "*** " << endl;
