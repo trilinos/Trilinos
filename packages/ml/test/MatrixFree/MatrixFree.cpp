@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   if (argc > 1)
     nx = (int) strtol(argv[1],NULL,10);
   else
-    nx = 4;
+    nx = 8;
   int ny = nx * Comm.NumProc(); // each subdomain is a square
 
   ParameterList GaleriList;
@@ -88,30 +88,23 @@ int main(int argc, char *argv[])
   delete CrsA;
 
   Epetra_MultiVector OrigNullSpace(VbrA->Map(), NullSpaceDim);
-  //OrigNullSpace.PutScalar(1.0);
   OrigNullSpace.Random();
   Epetra_MultiVector NullSpace(OrigNullSpace);
   Teuchos::ParameterList MLList;
+  MLList.set("smoother: type", "Jacobi");
   MLList.sublist("ML list").set("max levels", 10);
   MLList.sublist("ML list").set("smoother: type", "Aztec");
   MLList.sublist("ML list").set("aggregation: damping factor", 0.0);
   MLList.sublist("ML list").set("smoother: pre or post", "both");
-  //MLList.sublist("ML list").set("max levels", 2);
-  MLList.sublist("ML list").set("coarse: max size", 512);
-  //MLList.sublist("ML list").set("cycle applications", 10);
+  MLList.sublist("ML list").set("coarse: max size", 32);
 
-#if 0
-  Epetra_Vector InvDiag(VbrA->RowMap());
-  ML_CHK_ERR(VbrA->ExtractDiagonalCopy(InvDiag));
-  InvDiag.Reciprocal(InvDiag);
-
-  Epetra_MultiVector* Diagonal;
-  ML_Epetra::GetBlockDiagonal(*VbrA, VbrA->Graph(), MLList, Diagonal);
-#endif
+  Epetra_Vector PointDiagonal(VbrA->Map());
+  VbrA->ExtractDiagonalCopy(PointDiagonal);
 
   // compute the preconditioner using the matrix-free approach
   MatrixFreePreconditioner* MFP = new
-    MatrixFreePreconditioner(*VbrA, VbrA->Graph(), MLList, NullSpace);
+    MatrixFreePreconditioner(*VbrA, VbrA->Graph(), NullSpace,
+                             PointDiagonal, MLList);
 
   NullSpace = OrigNullSpace;
 
@@ -230,8 +223,9 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList MLList2;
   MLList2.set("PDE equations", NumPDEEqns);
   MLList2.set("max levels", 10);
-  MLList2.set("coarse: max size", 512);
+  MLList2.set("coarse: max size", 32);
   MLList2.set("smoother: type", "Jacobi");
+  //MLList2.set("smoother: MLS polynomial order", 3);
   MLList2.set("smoother: type (level 1)", "Aztec");
   //MLList2.set("prec type", "two-level-additive");
   MLList2.set("aggregation: damping factor", 0.0);
