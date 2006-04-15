@@ -76,7 +76,11 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
   Epetra_Vector* ID     = List.get("chebyshev: operator inv diagonal", 
                                    (Epetra_Vector*)0);
 
-  if (ID != 0) InvDiagonal_ = new Epetra_Vector(*ID);
+  if (ID != 0) 
+  {
+    if (InvDiagonal_) delete InvDiagonal_;
+    InvDiagonal_ = new Epetra_Vector(*ID);
+  }
 
   SetLabel();
 
@@ -172,28 +176,27 @@ int Ifpack_Chebyshev::Compute()
   if (PolyDegree_ <= 0)
     IFPACK_CHK_ERR(-2); // at least one application
   
-  if (IsRowMatrix_)
+  if (IsRowMatrix_ && InvDiagonal_ == 0)
   {
-    if (InvDiagonal_)
-      delete InvDiagonal_;
-    InvDiagonal_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
+    InvDiagonal_ = new Epetra_Vector(Matrix().Map());
 
     if (InvDiagonal_ == 0)
       IFPACK_CHK_ERR(-5);
 
     IFPACK_CHK_ERR(Matrix().ExtractDiagonalCopy(*InvDiagonal_));
-  }
-  // otherwise diagonal has been given by the user
 
-  // Inverse diagonal elements
-  // Replace zeros with 1.0
-  for (int i = 0 ; i < NumMyRows_ ; ++i) {
-    double diag = (*InvDiagonal_)[i];
-    if (IFPACK_ABS(diag) < MinDiagonalValue_)
-      (*InvDiagonal_)[i] = MinDiagonalValue_;
-    else
-      (*InvDiagonal_)[i] = 1.0 / diag;
+    // Inverse diagonal elements
+    // Replace zeros with 1.0
+    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+      double diag = (*InvDiagonal_)[i];
+      if (IFPACK_ABS(diag) < MinDiagonalValue_)
+        (*InvDiagonal_)[i] = MinDiagonalValue_;
+      else
+        (*InvDiagonal_)[i] = 1.0 / diag;
+    }
   }
+  // otherwise the inverse of the diagonal has been given by the user
+
   ComputeFlops_ += NumMyRows_;
 
   ++NumCompute_;
@@ -279,7 +282,6 @@ Condest(const Ifpack_CondestType CT,
 void Ifpack_Chebyshev::SetLabel()
 {
   Label_ = "IFPACK (Chebyshev polynomial), degree=" + Ifpack_toString(PolyDegree_);
-
 }
 
 //==============================================================================
