@@ -145,7 +145,7 @@ public:
   };
 
   /** \brief . */
-  enum EDerivativeLinearOp { DERIV_LINEAR_OP};
+  enum EDerivativeLinearOp { DERIV_LINEAR_OP };
 
   /** \brief . */
   class DerivativeSupport {
@@ -242,10 +242,13 @@ public:
     DerivativeMultiVector(
       const Teuchos::RefCountPtr<MultiVectorBase<Scalar> >  &mv
       ,const EDerivativeMultiVectorOrientation              orientation = DERIV_MV_BY_COL
-      ) : mv_(mv), orientation_(orientation) {}
+      ) : mv_(mv.assert_not_null()), orientation_(orientation) {}
     /** \brief . */
     void changeOrientation( const EDerivativeMultiVectorOrientation orientation )
       { orientation_ = orientation; };
+    /** \brief . */
+    const DerivativeMultiVector<Scalar>& assert_not_null() const
+      { mv_.assert_not_null(); return *this; }
     /** \brief . */
     Teuchos::RefCountPtr<MultiVectorBase<Scalar> > getMultiVector() const
       { return mv_; }
@@ -267,13 +270,16 @@ public:
     Derivative() {}
     /** \brief . */
     Derivative( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &lo )
-      : lo_(lo) {}
+      : lo_(lo.assert_not_null()) {}
     /** \brief . */
     Derivative( const DerivativeMultiVector<Scalar> &dmv )
       : dmv_(dmv) {}
     /** \brief . */
     bool isEmpty() const
       { return ( lo_.get()==NULL && dmv_.getMultiVector().get()==NULL ); }
+    /** \brief . */
+    const Derivative<Scalar>& assert_not_null() const
+      { dmv_.assert_not_null(); lo_.assert_not_null(); return *this; }
     /** \brief . */
     Teuchos::RefCountPtr<LinearOpBase<Scalar> > getLinearOp() const
       { return lo_; }
@@ -491,6 +497,9 @@ std::string toString(ModelEvaluatorBase::EInArgsMembers);
 
 /** \brief . */
 std::string toString(ModelEvaluatorBase::EOutArgsMembers);
+
+/** \brief . */
+std::string toString(ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation);
 
 //@}
 
@@ -1329,6 +1338,21 @@ std::string Thyra::toString(ModelEvaluatorBase::EOutArgsMembers arg)
   return ""; // Will never be executed!
 }
 
+inline
+std::string Thyra::toString(ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation)
+{
+  switch(orientation) {
+    case ModelEvaluatorBase::DERIV_MV_BY_COL:
+      return "DERIV_MV_BY_COL";
+    case ModelEvaluatorBase::DERIV_TRANS_MV_BY_ROW:
+      return "DERIV_TRANS_MV_BY_ROW";
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+  return ""; // Should never execute this!
+}
+
+
 // //////////////////////////////////
 // Definitions
 
@@ -2094,42 +2118,118 @@ ModelEvaluator<Scalar>::get_t_upper_bound() const
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
 ModelEvaluator<Scalar>::create_W() const
-{ return Teuchos::null; }
+{
+  TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
+    " this function create_W() must be overridden by the subclass to return"
+    " a non-null object!"
+    );
+  return Teuchos::null; // Should never be called!
+}
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 ModelEvaluator<Scalar>::create_W_op() const
-{ return Teuchos::null; }
+{
+  TEST_FOR_EXCEPTION(
+    true, std::logic_error
+    ,"Error, if \'W\' is supported by the ModelEvaluator subclass then"
+    " this function create_W() must be overridden by the subclass "
+    <<this->description()<<" to return a non-null object!"
+    );
+  return Teuchos::null; // Should never be called!
+}
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 ModelEvaluator<Scalar>::create_DfDp_op(int l) const
-{ return Teuchos::null; }
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
+  TEST_FOR_EXCEPTION(
+    outArgs.supports(MEB::OUT_ARG_DfDp,l).supports(DERIV_LINEAR_OP), std::logic_error
+    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
+    " supports the LinearOpBae form of DfDp("<<l<<") (as determined from its OutArgs object created by createOutArgs())"
+    " but this function create_DfDp_op(...) has not been overriden to create such an object!"
+    );
+  return Teuchos::null;
+}
 
 template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
 ModelEvaluator<Scalar>::create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const
-{ return DerivativeMultiVector<Scalar>(); }
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
+  TEST_FOR_EXCEPTION(
+    outArgs.supports(MEB::OUT_ARG_DfDp,l).supports(orientation), std::logic_error
+    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
+    " supports the MultiVectorBase "<<toString(orientation)<<" form of DfDp("<<l<<") (as determined from its OutArgs object created by createOutArgs())"
+    " but this function create_DfDp_mv(...) has not been overriden to create such an object!"
+    );
+  return MEB::DerivativeMultiVector<Scalar>();
+}
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 ModelEvaluator<Scalar>::create_DgDx_op(int j) const
-{ return Teuchos::null; }
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
+  TEST_FOR_EXCEPTION(
+    outArgs.supports(MEB::OUT_ARG_DgDx,j).supports(DERIV_LINEAR_OP), std::logic_error
+    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
+    " supports the LinearOpBae form of DgDx("<<j<<") (as determined from its OutArgs object created by createOutArgs())"
+    " but this function create_DgDx_op(...) has not been overriden to create such an object!"
+    );
+  return Teuchos::null;
+}
 
 template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
 ModelEvaluator<Scalar>::create_DgDx_mv(int j, EDerivativeMultiVectorOrientation orientation) const
-{ return DerivativeMultiVector<Scalar>(); }
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
+  TEST_FOR_EXCEPTION(
+    outArgs.supports(MEB::OUT_ARG_DgDx,j).supports(orientation), std::logic_error
+    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
+    " supports the MultiVectorBase "<<toString(orientation)<<" form of DgDx("<<j<<") (as determined from its OutArgs object created by createOutArgs())"
+    " but this function create_DgDx_mv(...) has not been overriden to create such an object!"
+    );
+  return MEB::DerivativeMultiVector<Scalar>();
+}
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 ModelEvaluator<Scalar>::create_DgDp_op( int j, int l ) const
-{ return Teuchos::null; }
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
+  TEST_FOR_EXCEPTION(
+    outArgs.supports(MEB::OUT_ARG_DgDp,j,l).supports(DERIV_LINEAR_OP), std::logic_error
+    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
+    " supports the LinearOpBae form of DgDp("<<j<<","<<l<<") (as determined from its OutArgs object created by createOutArgs())"
+    " but this function create_DgDp_op(...) has not been overriden to create such an object!"
+    );
+  return Teuchos::null;
+}
 
 template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
 ModelEvaluator<Scalar>::create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const
-{ return DerivativeMultiVector<Scalar>(); }
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::OutArgs<Scalar> outArgs = this->createOutArgs();
+  TEST_FOR_EXCEPTION(
+    outArgs.supports(MEB::OUT_ARG_DgDp,j,l).supports(orientation), std::logic_error
+    ,"Error, The ModelEvaluator subclass "<<this->description()<<" says that it"
+    " supports the MultiVectorBase "<<toString(orientation)<<" form of DgDp("<<j<<","<<l<<") (as determined from its OutArgs object created by createOutArgs())"
+    " but this function create_DgDp_mv(...) has not been overriden to create such an object!"
+    );
+  return MEB::DerivativeMultiVector<Scalar>();
+}
 
 template<class Scalar>
 void ModelEvaluator<Scalar>::reportFinalPoint(
