@@ -260,6 +260,8 @@ private:
   int                                                      procRank_;
   int                                                      numProcs_;
   int                                                      rankPrintWidth_;
+
+  RefCountPtr<std::ostringstream>                          lineOut_;
   
   int                      tabIndent_;
   tabIndentStack_t         tabIndentStack_;
@@ -270,6 +272,8 @@ private:
 
   // ////////////////////////
   // Private member functions
+
+  std::ostream& out();
 
   void writeChars( const char_type s[], std::streamsize n );
 
@@ -385,6 +389,9 @@ public:
 
   /** \brief . */
   basic_FancyOStream& setOutputToRootOnly( const int rootRank );
+
+  /** \brief . */
+  int getOutputToRootOnly() const;
 
   /** \brief . */
   void copyAllOutputOptions(const basic_FancyOStream<CharT,Traits> &oStream);
@@ -701,10 +708,16 @@ void basic_FancyOStream_buf<CharT,Traits>::setOutputToRootOnly( const int rootRa
     if(rootRank == procRank_)
       oStream_ = oStreamSet_;
     else
-      oStream_ = Teuchos::rcp(new oblackholestream());
+      oStream_ = rcp(new oblackholestream());
+    // Only processor is being output to so there is no need for line
+    // batching!
+    lineOut_ = null;
   }
   else {
     oStream_ = oStreamSet_;
+    // Output is being sent to all processors so we need line batching to
+    // insure that each line will be printed all together!
+    lineOut_ = rcp(new std::ostringstream());
   }
 }
 
@@ -790,6 +803,14 @@ basic_FancyOStream_buf<CharT,Traits>::overflow(int_type c)
 // private
 
 template<typename CharT, typename Traits>
+std::ostream& basic_FancyOStream_buf<CharT,Traits>::out()
+{
+  if(lineOut_.get())
+    return *lineOut_;
+  return *oStream_;
+}
+
+template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std::streamsize n )
 {
   if(n == 0) return;
@@ -818,11 +839,13 @@ void basic_FancyOStream_buf<CharT,Traits>::writeChars( const char_type s[], std:
       wroteNewline_ = false;
     }
     // Write up to the newline or the end of the string
-    oStream_->write(s+first_p,p-first_p+1);
+    out().write(s+first_p,p-first_p+1);
     if(s[p] == newline) {
       wroteNewline_ = true;
-      if(rootRank_ < 0)
-        oStream_->flush();
+      if(lineOut_.get()) {
+        *oStream_ << lineOut_->str() << std::flush;
+        lineOut_->str("");
+      }
     }
     // Update for next search
     if(!done_outputting)
@@ -834,37 +857,38 @@ template<typename CharT, typename Traits>
 void basic_FancyOStream_buf<CharT,Traits>::writeFrontMatter()
 {
   bool didOutput = false;
+  std::ostream &out = this->out();
   if(showProcRank_) {
-    *oStream_ << "p=" << std::right << std::setw(rankPrintWidth_) << procRank_;
+    out << "p=" << std::right << std::setw(rankPrintWidth_) << procRank_;
     didOutput = true;
   }
   if(showLinePrefix_) {
     if(didOutput)
-      *oStream_ << ", ";
-    *oStream_ << std::left << std::setw(maxLenLinePrefix_);
+      out << ", ";
+    out << std::left << std::setw(maxLenLinePrefix_);
     if(linePrefixStack_.size()) {
-      *oStream_ << this->getTopLinePrefix();
+      out << this->getTopLinePrefix();
     }
     else {
-      *oStream_ << "";
+      out << "";
     }
     didOutput = true;
   }
   if(showTabCount_) {
     if(didOutput)
-      *oStream_ << ", ";
-    *oStream_ << "tabs=" << std::right << std::setw(2) << tabIndent_;
+      out << ", ";
+    out << "tabs=" << std::right << std::setw(2) << tabIndent_;
     didOutput = true;
   }
   // ToDo: Add the Prefix name if asked
   // ToDo: Add the processor number if asked
   // ToDo: Add the number of indents if asked
   if(didOutput) {
-    *oStream_ << " |" << tabIndentStr_;
+    out << " |" << tabIndentStr_;
   }
   if(enableTabbingStack_==0) {
     for( int i = 0; i < tabIndent_; ++i )
-      *oStream_ << tabIndentStr_;
+      out << tabIndentStr_;
   }
 }
 
@@ -980,6 +1004,12 @@ basic_FancyOStream<CharT,Traits>::setOutputToRootOnly( const int rootRank )
 {
   streambuf_.setOutputToRootOnly(rootRank);
   return *this;
+}
+
+template<typename CharT, typename Traits>
+int basic_FancyOStream<CharT,Traits>::getOutputToRootOnly() const
+{
+  return streambuf_.getOutputToRootOnly();
 }
 
 template<typename CharT, typename Traits>
