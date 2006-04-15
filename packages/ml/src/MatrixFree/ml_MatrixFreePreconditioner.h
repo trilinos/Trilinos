@@ -15,7 +15,7 @@
  */
 
 #include "ml_include.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_IFPACK)
 #include <string>
 #include "ml_epetra.h"
 #include "Epetra_Time.h"
@@ -33,6 +33,7 @@ class Epetra_MultiVector;
 class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
 class Epetra_FECrsMatrix;
+class Ifpack_Chebyshev;
 
 namespace ML_Epetra {
 
@@ -62,8 +63,9 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Constructor
     MatrixFreePreconditioner(const Epetra_Operator& Operator,
                              const Epetra_CrsGraph& Graph,
-                             Teuchos::ParameterList& List,
-                             Epetra_MultiVector& NullSpace);
+                             Epetra_MultiVector& NullSpace,
+                             const Epetra_Vector& PointDiagonal,
+                             Teuchos::ParameterList& List);
 
     //! destructor
     ~MatrixFreePreconditioner();
@@ -173,21 +175,35 @@ class MatrixFreePreconditioner : public Epetra_Operator
                 int NullSpaceDim = 1, double* NullSpace = NULL);
 
     //! Probes for the block diagonal of the given operator.
-    int GetBlockDiagonal(string DiagonalColoringType);
+    int GetBlockDiagonal(const Epetra_CrsGraph& Graph, string DiagonalColoringType);
 
   private:
 
     //! Computes the preconditioner.
-    int Compute(Epetra_MultiVector& NullSpace);
+    int Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace);
 
     // @}
     // @{ \name Basic smoothers
     
+    //! Applies the pre-smoother (using zero starting solution).
+    int ApplyPreSmoother(Epetra_MultiVector& X) const;
+
+    //! Applies the post-smoother (using non-zero starting solution).
+    int ApplyPostSmoother(Epetra_MultiVector& X, const Epetra_MultiVector& Y,
+                          Epetra_MultiVector& tmp) const;
+
     //! Applies one sweep of Jacobi to vector \c X.
     int ApplyJacobi(Epetra_MultiVector& X, const double omega) const;
 
     //! Applies one sweep of Jacobi to vector \c X, using \c X as starting solution.
     int ApplyJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
+                    const double omega, Epetra_MultiVector& tmp) const;
+
+    //! Applies one sweep of block Jacobi to vector \c X.
+    int ApplyBlockJacobi(Epetra_MultiVector& X, const double omega) const;
+
+    //! Applies one sweep of block Jacobi to vector \c X, using \c X as starting solution.
+    int ApplyBlockJacobi(Epetra_MultiVector& X, const Epetra_MultiVector& B,
                     const double omega, Epetra_MultiVector& tmp) const;
 
     int ApplyInvBlockDiag(const double alpha, Epetra_MultiVector& X,
@@ -226,6 +242,8 @@ class MatrixFreePreconditioner : public Epetra_Operator
     // @} 
     // @{ \name Private data
     
+    //! Toggles output level.
+    bool verbose_;
     //! Communicator for ML.
     ML_Comm* Comm_ML_;
     //! Communicator object for Epetra.
@@ -237,6 +255,8 @@ class MatrixFreePreconditioner : public Epetra_Operator
     bool IsComputed_;
     //! Type of preconditioner (additive or hybrid)
     int PrecType_;
+    //! Type of smoother (Jacobi, block Jacobi, or Chebyshev)
+    int SmootherType_;
     //! Damping parameter for Jacobi.
     double omega_;
     //! List containing all the parameters
@@ -244,11 +264,15 @@ class MatrixFreePreconditioner : public Epetra_Operator
 
     //! Fine-level operator
     const Epetra_Operator& Operator_;
-    //! Fine-level graph
-    const Epetra_CrsGraph& Graph_;
+    //! Inverse of the point diagonal of the operator.
+    Epetra_Vector* InvPointDiagonal_;
     //! Inverse of the diagonal of \c Operator_ as provided by the user.
     vector<double> InvBlockDiag_;
 
+    //! Presmoother
+    Ifpack_Chebyshev* PreSmoother_;
+    //! Presmoother
+    Ifpack_Chebyshev* PostSmoother_;
     //! Restriction from fine to coarse.
     Epetra_CrsMatrix* R_;
     //! Coarser-level operator as an Epetra_RowMatrix (wrapper for C_ML_).
@@ -257,6 +281,10 @@ class MatrixFreePreconditioner : public Epetra_Operator
     ML_Operator* C_ML_;
     //! Preconditioner that approximates the inverse of \c C_.
     MultiLevelPreconditioner* MLP_;
+
+    //! Number of PDE equations
+    int NumPDEEqns_;
+    int NumMyBlockRows_;
 
     //! Time object.
     mutable Epetra_Time* Time_;
