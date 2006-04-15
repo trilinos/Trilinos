@@ -358,7 +358,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if (nVec == 1) {
       double *xPointer = xPtr[0];
       for (i = 0; i < len; ++i)
-        wPointer[i] = (xPointer[i] - vPointer[i])*invDiag[i]*oneOverTheta;
+        wPointer[i] = invDiag[i] * (xPointer[i] - vPointer[i]) * oneOverTheta;
     }
     else {
       for (i = 0; i < len; ++i) {
@@ -378,7 +378,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if (nVec == 1) {
       double *xPointer = xPtr[0];
       for (i = 0; i < len; ++i)
-        wPointer[i] = xPointer[i]*invDiag[i]*oneOverTheta;
+        wPointer[i] = invDiag[i] * xPointer[i] * oneOverTheta;
       memcpy(yPtr[0], wPointer, len*sizeof(double));
     }
     else {
@@ -411,7 +411,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       W.Scale(dtemp1);
       // Compute W = W + dtemp2 * invDiag * ( X - V )
       for (i = 0; i < len; ++i)
-        wPointer[i] += dtemp2*(xPointer[i] - vPointer[i])*invDiag[i];
+        wPointer[i] += dtemp2* invDiag[i] * (xPointer[i] - vPointer[i]);
       // Update the vector Y
       Y.Update(1.0, W, 1.0);
     } // for (k = 0; k < degreeMinusOne; ++k)
@@ -447,7 +447,39 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
   return(0);
+}
 
+//==============================================================================
+int Ifpack_Chebyshev::
+PowerMethod(const Epetra_Operator& Operator, 
+            const Epetra_Vector& InvPointDiagonal, 
+            const int MaximumIterations, 
+            double& lambda_max)
+{
+  // this is a simple power method
+  lambda_max = 0.0;
+  double RQ_top, RQ_bottom, norm;
+  Epetra_Vector x(Operator.OperatorDomainMap());
+  Epetra_Vector y(Operator.OperatorRangeMap());
+  x.Random();
+  x.Norm2(&norm);
+  if (norm == 0.0) IFPACK_CHK_ERR(-1);
+
+  x.Scale(1.0 / norm);
+
+  for (int iter = 0; iter < MaximumIterations; ++iter)
+  {
+    Operator.Apply(x, y);
+    IFPACK_CHK_ERR(y.Multiply(1.0, InvPointDiagonal, y, 0.0));
+    IFPACK_CHK_ERR(y.Dot(x, &RQ_top));
+    IFPACK_CHK_ERR(x.Dot(x, &RQ_bottom));
+    lambda_max = RQ_top / RQ_bottom;
+    IFPACK_CHK_ERR(y.Norm2(&norm));
+    if (norm == 0.0) IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(x.Update(1.0 / norm, y, 0.0));
+  }
+
+  return(0);
 }
 
 #endif

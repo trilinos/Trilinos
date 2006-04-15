@@ -249,8 +249,18 @@ public:
   }
 
   // @}
+  // @{ \name Utility methods
+
+  //! Simple power method to compute lambda_max.
+  static int PowerMethod(const Epetra_Operator& Operator,
+                         const Epetra_Vector& InvPointDiagonal,
+                         const int MaximumIterations, 
+                         double& LambdaMax);
 
 private:
+  
+  // @}
+  // @{ \name Private methods
   
   //! Sets the label.
   virtual void SetLabel();
