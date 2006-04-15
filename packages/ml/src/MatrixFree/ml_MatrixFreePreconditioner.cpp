@@ -313,6 +313,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     cout << "Preconditioner type            = " << PrecType << endl;
     cout << "Smoother type                  = " << SmootherType << endl;
     cout << "Coloring type                  = " << ColoringType << endl;
+    cout << "Number of V-cycles for C       = " << List_.sublist("ML list").get("cycle applications", 1) << endl;
   }
 
   ResetStartTime();
@@ -348,35 +349,19 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   }
   else if (SmootherType_ == ML_MFP_CHEBY)
   {
-    // this is a simple power method
     double lambda_max = 0.0;
-    double RQ_top, RQ_bottom, norm;
-    Epetra_Vector x(Operator_.OperatorDomainMap());
-    Epetra_Vector y(Operator_.OperatorRangeMap());
-    x.Random();
-    x.Norm2(&norm);
-    if (norm == 0.0) ML_CHK_ERR(-1); // seems a zero matrix
-    x.Scale(1.0 / norm);
+    Teuchos::ParameterList IFPACKList;
 
-    for (int iter = 0; iter < MaximumIterations; ++iter)
-    {
-      Operator_.Apply(x, y);
-      ML_CHK_ERR(y.Multiply(1.0, *InvPointDiagonal_, y, 0.0));
-      ML_CHK_ERR(y.Dot(x, &RQ_top));
-      ML_CHK_ERR(x.Dot(x, &RQ_bottom));
-      lambda_max = RQ_top / RQ_bottom;
-      ML_CHK_ERR(y.Norm2(&norm));
-      if (norm == 0.0) ML_CHK_ERR(-1);
-      ML_CHK_ERR(x.Update(1.0 / norm, y, 0.0));
-    }
+    ML_CHK_ERR(Ifpack_Chebyshev::PowerMethod(Operator_, *InvPointDiagonal_,
+                                             MaximumIterations, lambda_max));
 
     if (verbose_)
     {
       cout << "Using Chebyshev smoother of degree " << PolynomialDegree << endl;
-      cout << "lambda_max (D^{-1} A) = " << lambda_max << endl;
+      cout << "Maximum eigenalue of D^{-1} A using " << MaximumIterations;
+      cout << " of the power method = " << lambda_max << endl;
     }
 
-    Teuchos::ParameterList IFPACKList;
     IFPACKList.set("chebyshev: min eigenvalue", 0.0);
     IFPACKList.set("chebyshev: max eigenvalue", lambda_max);
     // FIXME: this allocates a new vector inside
@@ -859,11 +844,6 @@ GetBlockDiagonal(const Epetra_CrsGraph& Graph, string DiagonalColoringType)
 
   InvBlockDiag_.resize(Operator_.OperatorRangeMap().NumMyElements() * NumPDEEqns_);
   
-  char job = 'A';
-  vector<double> S(NumPDEEqns_), U(NumPDEEqns_ * NumPDEEqns_), VT(NumPDEEqns_ * NumPDEEqns_);
-  vector<double> WORK(5 * NumPDEEqns_);
-  int LWORK = 5 * NumPDEEqns_, INFO;
-
   // extract the diagonals
 
   Epetra_SerialDenseMatrix V(NumPDEEqns_, NumPDEEqns_);
