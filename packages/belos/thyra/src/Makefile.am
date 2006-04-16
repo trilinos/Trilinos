@@ -43,7 +43,12 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/BelosThyraAdapter.hpp 
+	$(srcdir)/BelosThyraAdapter.hpp \
+	$(srcdir)/Thyra_BelosLinearOpWithSolveDecl.hpp \
+	$(srcdir)/Thyra_BelosLinearOpWithSolveFactoryDecl.hpp \
+	$(srcdir)/Thyra_BelosLinearOpWithSolveFactory.hpp \
+	$(srcdir)/Thyra_BelosLinearOpWithSolve.hpp 
+
 
 CORE = 
 
