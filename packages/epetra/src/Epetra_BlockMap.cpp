@@ -830,7 +830,7 @@ void Epetra_BlockMap::Print(ostream & os) const
       os << endl;
       
       os <<    "Number of Local Elements   = "; os << NumMyElements(); os << endl;
-      os <<    "Number of Local Points  = "; os << NumMyPoints(); os << endl;
+      os <<    "Number of Local Points     = "; os << NumMyPoints(); os << endl;
       os <<    "Maximum of my GIDs         = "; os << MaxMyGID(); os << endl;
       os <<    "Minimum of my GIDs         = "; os << MinMyGID(); os << endl;
       os << endl;
