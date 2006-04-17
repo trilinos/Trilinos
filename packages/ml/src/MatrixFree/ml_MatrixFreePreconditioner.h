@@ -22,6 +22,7 @@
 #include "Epetra_Operator.h"
 #include "Epetra_Comm.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include <vector>
 #include <map>
 
@@ -68,7 +69,7 @@ class MatrixFreePreconditioner : public Epetra_Operator
                              Teuchos::ParameterList& List);
 
     //! destructor
-    ~MatrixFreePreconditioner();
+    virtual ~MatrixFreePreconditioner();
 
     // @}
     // @{ \name Query methods.
@@ -278,29 +279,29 @@ class MatrixFreePreconditioner : public Epetra_Operator
     //! Fine-level operator
     const Epetra_Operator& Operator_;
     //! Inverse of the point diagonal of the operator.
-    Epetra_Vector* InvPointDiagonal_;
+    Teuchos::RefCountPtr<Epetra_Vector> InvPointDiagonal_;
     //! Inverse of the diagonal of \c Operator_ as provided by the user.
     vector<double> InvBlockDiag_;
 
     //! Presmoother
-    Ifpack_Chebyshev* PreSmoother_;
+    Teuchos::RefCountPtr<Ifpack_Chebyshev> PreSmoother_;
     //! Presmoother
-    Ifpack_Chebyshev* PostSmoother_;
+    Teuchos::RefCountPtr<Ifpack_Chebyshev> PostSmoother_;
     //! Restriction from fine to coarse.
-    Epetra_CrsMatrix* R_;
+    Teuchos::RefCountPtr<Epetra_CrsMatrix> R_;
     //! Coarser-level operator as an Epetra_RowMatrix (wrapper for C_ML_).
-    Epetra_RowMatrix* C_;
+    Teuchos::RefCountPtr<Epetra_RowMatrix> C_;
     //! Coarser-level operator as an ML_Operator.
     ML_Operator* C_ML_;
     //! Preconditioner that approximates the inverse of \c C_.
-    MultiLevelPreconditioner* MLP_;
+    Teuchos::RefCountPtr<MultiLevelPreconditioner> MLP_;
 
     //! Number of PDE equations
     int NumPDEEqns_;
     int NumMyBlockRows_;
 
     //! Time object.
-    mutable Epetra_Time* Time_;
+    mutable Teuchos::RefCountPtr<Epetra_Time> Time_;
     mutable map<string, double> TimeTable;
     // @} 
 

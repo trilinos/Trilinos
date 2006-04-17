@@ -10,7 +10,6 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Import.h"
 #include "Epetra_Time.h"
@@ -23,8 +22,6 @@
 #include "Ifpack_Chebyshev.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_MapColoring.h"
-#include "Epetra_LocalMap.h"
-#include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "ml_RowMatrix.h"
 #include "ml_MultiLevelPreconditioner.h"
@@ -58,25 +55,18 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
   SmootherType_(ML_MFP_BLOCK_JACOBI),
   omega_(1.00),
   Operator_(Operator),
-  InvPointDiagonal_(0),
-  PreSmoother_(0),
-  PostSmoother_(0),
-  R_(0),
-  C_(0),
   C_ML_(0),
-  MLP_(0),
   NumPDEEqns_(0),
-  NumMyBlockRows_(0),
-  Time_(0)
+  NumMyBlockRows_(0)
 {
-  InvPointDiagonal_ = new Epetra_Vector(PointDiagonal);
+  InvPointDiagonal_ = rcp(new Epetra_Vector(PointDiagonal));
 
   List_ = List;
 
   // ML communicator, here based on MPI_COMM_WORLD
   ML_Comm_Create(&Comm_ML_);
 
-  Time_ = new Epetra_Time(Comm());
+  Time_ = rcp(new Epetra_Time(Comm()));
 
   ML_CHK_ERRV(Compute(Graph, NullSpace));
 }
@@ -85,20 +75,6 @@ MatrixFreePreconditioner(const Epetra_Operator& Operator,
 ML_Epetra::MatrixFreePreconditioner::
 ~MatrixFreePreconditioner()
 {
-  if (InvPointDiagonal_) delete InvPointDiagonal_;
-
-  if (PreSmoother_) delete PreSmoother_;
-
-  if (PostSmoother_) delete PostSmoother_;
-
-  if (Time_) delete Time_;
-
-  if (R_) delete R_;
-
-  if (MLP_) delete MLP_;
-
-  if (C_) delete C_;
-
   if (C_ML_) ML_Operator_Destroy(&C_ML_);
 
   ML_Comm_Destroy(&Comm_ML_);
@@ -396,19 +372,19 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
     IFPACKList.set("chebyshev: max eigenvalue", lambda_max);
     // FIXME: this allocates a new vector inside
-    IFPACKList.set("chebyshev: operator inv diagonal", InvPointDiagonal_);
+    IFPACKList.set("chebyshev: operator inv diagonal", InvPointDiagonal_.get());
     IFPACKList.set("chebyshev: degree", PolynomialDegree);
 
-    PreSmoother_ = new Ifpack_Chebyshev((Epetra_Operator*)(&Operator_));
-    if (PreSmoother_ == 0) ML_CHK_ERR(-1); // memory error?
+    PreSmoother_ = rcp(new Ifpack_Chebyshev((Epetra_Operator*)(&Operator_)));
+    if (PreSmoother_.get() == 0) ML_CHK_ERR(-1); // memory error?
 
     IFPACKList.set("chebyshev: zero starting solution", true);
     ML_CHK_ERR(PreSmoother_->SetParameters(IFPACKList));
     ML_CHK_ERR(PreSmoother_->Initialize());
     ML_CHK_ERR(PreSmoother_->Compute());
 
-    PostSmoother_ = new Ifpack_Chebyshev((Epetra_Operator*)(&Operator_));
-    if (PostSmoother_ == 0) ML_CHK_ERR(-1); // memory error?
+    PostSmoother_ = rcp(new Ifpack_Chebyshev((Epetra_Operator*)(&Operator_)));
+    if (PostSmoother_.get() == 0) ML_CHK_ERR(-1); // memory error?
 
     IFPACKList.set("chebyshev: zero starting solution", false);
     ML_CHK_ERR(PostSmoother_->SetParameters(IFPACKList));
@@ -545,14 +521,16 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
   const Epetra_Map& FineMap = Operator_.OperatorDomainMap();
   Epetra_Map CoarseMap(-1, NumAggregates * NullSpaceDim, 0, Comm());
-  Epetra_Map* BlockNodeListMap = new Epetra_Map(-1, Graph.ColMap().NumMyElements(),
-                                                BlockNodeList, 0, Comm());
+  RefCountPtr<Epetra_Map> BlockNodeListMap = 
+    rcp(new Epetra_Map(-1, Graph.ColMap().NumMyElements(),
+                       BlockNodeList, 0, Comm()));
 
   vector<int> NodeList(Graph.ColMap().NumMyElements() * NumPDEEqns_);
   for (int i = 0; i < Graph.ColMap().NumMyElements(); ++i)
     for (int m = 0; m < NumPDEEqns_; ++m)
       NodeList[i * NumPDEEqns_ + m] = BlockNodeList[i] * NumPDEEqns_ + m;
-  Epetra_Map* NodeListMap = new Epetra_Map(-1, NodeList.size(), &NodeList[0], 0, Comm());
+  RefCountPtr<Epetra_Map> NodeListMap = 
+    rcp(new Epetra_Map(-1, NodeList.size(), &NodeList[0], 0, Comm()));
 
   AddAndResetStartTime("data structures", true);
 
@@ -653,8 +631,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   if (verbose_)
     cout << "Maximum # of colors = " << NumColors << endl;
 
-  Epetra_FECrsMatrix* AP = 0;
-  AP = new Epetra_FECrsMatrix(Copy, FineMap, NumColors * NullSpaceDim);
+  RefCountPtr<Epetra_FECrsMatrix> AP =
+    rcp(new Epetra_FECrsMatrix(Copy, FineMap, NumColors * NullSpaceDim));
   // FIXME: the above declaration is a bit overestimated
 
   if (!LowMemory)
@@ -834,8 +812,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   }
 
   aggregates.resize(0);
-  delete BlockNodeListMap;
-  delete NodeListMap;
+  BlockNodeListMap = Teuchos::null;
+  NodeListMap = Teuchos::null;
 
   Colors = Teuchos::null;
 
@@ -846,7 +824,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   AddAndResetStartTime("computation of the final AP", true); 
 
   ML_Operator* AP_ML = ML_Operator_Create(Comm_ML());
-  ML_Operator_WrapEpetraMatrix(AP, AP_ML);
+  ML_Operator_WrapEpetraMatrix(AP.get(), AP_ML);
 
   // ======== //
   // create R //
@@ -859,7 +837,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
       REntries[AID * NullSpaceDim + m] = NodesOfAggregate[AID].size() * NumPDEEqns_;
   }
 
-  R_ = new Epetra_CrsMatrix(Copy, CoarseMap, &REntries[0], true);
+  R_ = rcp(new Epetra_CrsMatrix(Copy, CoarseMap, &REntries[0], true));
   REntries.resize(0);
 
   for (int AID = 0; AID < NumAggregates; ++AID)
@@ -891,7 +869,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   R_->OptimizeStorage();
 
   ML_Operator* R_ML = ML_Operator_Create(Comm_ML());
-  ML_Operator_WrapEpetraMatrix(R_, R_ML);
+  ML_Operator_WrapEpetraMatrix(R_.get(), R_ML);
 
   AddAndResetStartTime("computation of the R", true); 
 
@@ -904,9 +882,9 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
   ML_Operator_Destroy(&AP_ML);
   ML_Operator_Destroy(&R_ML);
-  delete AP;
+  AP = Teuchos::null;
 
-  C_ = new ML_Epetra::RowMatrix(C_ML_, &Comm(), false);
+  C_ = rcp(new ML_Epetra::RowMatrix(C_ML_, &Comm(), false));
   assert (R_->OperatorRangeMap().SameAs(C_->OperatorDomainMap()));
 
   double SetupTime = TotalTime.ElapsedTime();
@@ -925,11 +903,11 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   sublist.set("null space: dimension", NewNullSpace.NumVectors());
   sublist.set("null space: vectors", NewNullSpace.Values());
 
-  MLP_ = new MultiLevelPreconditioner(*C_, sublist, true);
+  MLP_ = rcp(new MultiLevelPreconditioner(*C_, sublist, true));
+
+  assert (MLP_.get() != 0);
 
   IsComputed_ = true;
-
-  assert (MLP_ != 0);
 
   AddAndResetStartTime("computation of the preconditioner for C", true); 
 
