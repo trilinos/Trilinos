@@ -259,7 +259,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   //@{ \name Destructor.
 
   //! Destroys the preconditioner.
-  ~MultiLevelPreconditioner() {
+  virtual ~MultiLevelPreconditioner() {
     if (IsComputePreconditionerOK_) 
       DestroyPreconditioner(); 
   }
