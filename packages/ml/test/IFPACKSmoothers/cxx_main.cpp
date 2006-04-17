@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 
           // check whether we get the same results or not,
           // and also compare the CPU time for both
-          if (MLIters != IFPACKIters) {
+          if (abs(MLIters - IFPACKIters) > 2) {
             cout << "TEST FAILED: ML converged in " << MLIters << ", while" << endl;
             cout << "IFPACK converged in " << IFPACKIters << " iterations." << endl;
             TestPassed = false;
@@ -192,6 +192,72 @@ int main(int argc, char *argv[]) {
           }
         }
       }
+    }
+  }
+
+  // test Chebyshev
+
+  for (int degree = 1; degree < 5; ++degree)
+  {
+    if (Comm.MyPID() == 0)
+    {
+      PrintLine();
+      cout << "Testing Chebyshev with degree " << degree << endl;
+    }
+
+    int IFPACKCheby, MLCheby;
+
+    ParameterList MLList;
+    MLList.set("smoother: type", "MLS");
+    MLList.set("smoother: MLS polynomial order", degree);
+    MLList.set("smoother: MLS polynomial order", degree);
+    MLList.set("output", 0);
+
+    MultiLevelPreconditioner* MLPrec = 
+      new MultiLevelPreconditioner(*A, MLList);
+
+    solver.SetPrecOperator(MLPrec);
+
+    solver.SetAztecOption(AZ_solver, AZ_gmres);
+    solver.SetAztecOption(AZ_output, AZ_none);
+
+    LHS.PutScalar(0.0);
+    RHS.PutScalar(1.0);
+
+    solver.Iterate(1550, 1e-12);
+
+    MLCheby = solver.NumIters();
+
+    delete MLPrec; MLPrec = 0;
+
+    MLList.set("smoother: type", "Chebyshev");
+    MLList.set("smoother: polynomial order", degree);
+
+    MLPrec = new MultiLevelPreconditioner(*A, MLList);
+
+    solver.SetPrecOperator(MLPrec);
+
+    LHS.PutScalar(0.0);
+    RHS.PutScalar(1.0);
+
+    solver.Iterate(1550, 1e-12);
+
+    IFPACKCheby = solver.NumIters();
+
+    if (Comm.MyPID() == 0) {
+      cout << "ML iters     = " << MLCheby << endl;
+      cout << "IFPACK iters = " << IFPACKCheby << endl;
+    }
+
+    int diff = MLCheby - IFPACKCheby;
+    if (diff < 0) diff = -diff;
+
+    if (diff > 3)
+    {
+      cout << "TEST FAILED: ML converged in " << MLCheby << ", while" << endl;
+      cout << "IFPACK converged in " << IFPACKCheby << " iterations." << endl;
+      cout << "(for the Chebyshev preconditioner.)" << endl;
+      TestPassed = false;
     }
   }
 

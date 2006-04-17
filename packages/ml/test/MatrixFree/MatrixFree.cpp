@@ -91,7 +91,10 @@ int main(int argc, char *argv[])
   OrigNullSpace.Random();
   Epetra_MultiVector NullSpace(OrigNullSpace);
   Teuchos::ParameterList MLList;
-  MLList.set("smoother: type", "Jacobi");
+  MLList.set("output", 0);
+  MLList.set("prec: type", "hybrid");
+  MLList.set("smoother: type", "Chebyshev");
+  MLList.sublist("ML list").set("output", 0);
   MLList.sublist("ML list").set("max levels", 10);
   MLList.sublist("ML list").set("smoother: type", "Aztec");
   MLList.sublist("ML list").set("aggregation: damping factor", 0.0);
@@ -105,6 +108,13 @@ int main(int argc, char *argv[])
   MatrixFreePreconditioner* MFP = new
     MatrixFreePreconditioner(*VbrA, VbrA->Graph(), NullSpace,
                              PointDiagonal, MLList);
+
+  /* check to verify that all the objects are SPD
+  int NumChecks = 10;
+  MFP->CheckSPD(*VbrA, true, NumChecks);
+  MFP->CheckSPD(MFP->C(), true, NumChecks);
+  MFP->CheckSPD(MFP->MLP(), false, NumChecks);
+  */
 
   NullSpace = OrigNullSpace;
 
@@ -222,10 +232,11 @@ int main(int argc, char *argv[])
 
   Teuchos::ParameterList MLList2;
   MLList2.set("PDE equations", NumPDEEqns);
+  MLList2.set("output", 0);
   MLList2.set("max levels", 10);
   MLList2.set("coarse: max size", 32);
-  MLList2.set("smoother: type", "Jacobi");
-  //MLList2.set("smoother: MLS polynomial order", 3);
+  MLList2.set("smoother: type", "MLS");
+  MLList2.set("smoother: MLS polynomial order", 3);
   MLList2.set("smoother: type (level 1)", "Aztec");
   //MLList2.set("prec type", "two-level-additive");
   MLList2.set("aggregation: damping factor", 0.0);
@@ -248,6 +259,9 @@ int main(int argc, char *argv[])
 
   delete VbrA;
   delete Map;
+
+  if (Comm.MyPID() == 0)
+    cout << "TEST PASSED" << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
