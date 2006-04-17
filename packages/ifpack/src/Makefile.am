@@ -111,6 +111,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_CondestType.h         \
 	$(srcdir)/Ifpack_Condest.h             \
 	$(srcdir)/Ifpack.h                     \
+	$(srcdir)/Ifpack_DiagPreconditioner.h  \
 	$(srcdir)/Ifpack_PointRelaxation.h     \
 	$(srcdir)/Ifpack_BlockRelaxation.h     \
 	$(srcdir)/Ifpack_Container.h           \
@@ -158,6 +159,7 @@ COMP = \
 	$(srcdir)/icrout_cholesky_mex.c             \
 	$(srcdir)/icrout_quicksort.c                \
 	$(srcdir)/ifp_parameters.cpp                \
+	$(srcdir)/Ifpack_DiagPreconditioner.cpp     \
 	$(srcdir)/Ifpack_PointRelaxation.cpp        \
 	$(srcdir)/Ifpack_Condest.cpp                \
 	$(srcdir)/Ifpack.cpp                        \
