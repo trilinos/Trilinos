@@ -34,6 +34,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 #ifdef HAVE_ML_IFPACK
 #include "Ifpack_Preconditioner.h"
+#include "Ifpack_Chebyshev.h"
 #endif
 extern "C" {
 extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
@@ -94,9 +95,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 #endif
 
   int MLSPolynomialOrder = List_.get("smoother: MLS polynomial order",3);
-
   double MLSalpha = List_.get("smoother: MLS alpha",30.0);
   
+  // IFPACK version of Chebyshev (no MLS here)
+  int PolynomialOrder = List_.get("smoother: polynomial order",3);
+  double alpha = List_.get("smoother: alpha", 30.0);
+
   int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
 
   int ParaSailsN = List_.get("smoother: ParaSails levels",0);
@@ -243,7 +247,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       sprintf(parameter,"smoother: MLS polynomial order (level %d)",
               logical_level);
       MLSPolynomialOrder = List_.get(parameter,MLSPolynomialOrder);
-      if( verbose_ ) cout << msg << "MLS," << PreOrPostSmoother << endl;
+      if (verbose_) 
+        if (MLSPolynomialOrder > 0)
+        {
+          cout << msg << "MLS/Chebyshev, polynomial order = " << MLSPolynomialOrder
+               << ", alpha = " << alpha << ", " << PreOrPostSmoother << endl;
+        }
+        else
+        {
+          cout << msg << "MLS, polynomial order = " << -MLSPolynomialOrder
+               << ", alpha = " << alpha << ", " << PreOrPostSmoother << endl;
+        }
 
       sprintf(parameter,"smoother: MLS alpha (level %d)",logical_level);
       MLSalpha = List_.get(parameter,MLSalpha);
@@ -279,6 +293,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       ML_Gen_Smoother_MLS(ml_, LevelID_[level], pre_or_post,
                           MLSalpha, MLSPolynomialOrder);
 
+      if (verbose_) {
+        ML_Operator* this_A = &(ml_->Amat[LevelID_[level]]);
+	cout << msg << "lambda_min = " << this_A->lambda_min
+	     << ", lambda_max = " << this_A->lambda_max << endl;
+      }
     } else if( Smoother == "Aztec" ) {
       
 #ifdef HAVE_ML_AZTECOO
@@ -385,11 +404,49 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
-	   << ErrorMsg_ << "ML must be configure with --enable-ifpack" << endl
+	   << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
 	   << ErrorMsg_ << "to use IFPACK as a smoother" << endl
 	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
 
+    } else if( Smoother == "Chebyshev" ) {
+
+#ifdef HAVE_ML_IFPACK
+      if (SolvingMaxwell_)
+        ML_CHK_ERR(-1); // not supported at this point
+
+      sprintf(parameter,"smoother: polynomial order (level %d)",
+              LevelID_[level]);
+      PolynomialOrder = List_.get(parameter, PolynomialOrder);
+
+      if( verbose_ ) {
+	cout << msg << "IFPACK Chebyshev, order = " << PolynomialOrder
+	     << ", alpha = " << alpha << ", " << PreOrPostSmoother << endl;
+      }
+
+      ML_Operator* this_A = &(ml_->Amat[LevelID_[level]]);
+      ML_Gimmie_Eigenvalues(this_A, ML_DIAGSCALE, ML_SYMMETRIC, 
+                            ml_->symmetrize_matrix);
+
+      Teuchos::ParameterList IFPACKList;
+      IFPACKList.set("chebyshev: ratio eigenvalue", alpha);
+      IFPACKList.set("chebyshev: min eigenvalue", this_A->lambda_min);
+      IFPACKList.set("chebyshev: max eigenvalue", this_A->lambda_max);
+      IFPACKList.set("chebyshev: degree", PolynomialOrder);
+
+      if( verbose_ ) {
+	cout << msg << "lambda_min = " << this_A->lambda_min
+	     << ", lambda_max = " << this_A->lambda_max << endl;
+      }
+
+      ML_Gen_Smoother_Ifpack(ml_, "Chebyshev", 0, LevelID_[level], 
+                             pre_or_post, IFPACKList, *Comm_);
+#else
+      cerr << ErrorMsg_ << "IFPACK not available." << endl
+	   << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
+	   << ErrorMsg_ << "to use IFPACK as a smoother" << endl
+	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
+#endif
     } else if( Smoother == "self" ) {
 
 #ifdef HAVE_ML_IFPACK
@@ -408,7 +465,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
-	   << ErrorMsg_ << "ML must be configure with --enable-ifpack" << endl
+	   << ErrorMsg_ << "ML must be configured with --enable-ifpack" << endl
 	   << ErrorMsg_ << "to use ML as a smoother" << endl
 	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
@@ -456,7 +513,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 				ParaSailsFactorized);
 #else
       cerr << ErrorMsg_ << "ParaSails not available." << endl
-	   << ErrorMsg_ << "ML must be configure with --with-ml_parasails" << endl
+	   << ErrorMsg_ << "ML must be configured with --with-ml_parasails" << endl
 	   << ErrorMsg_ << "to use ParaSails as a smoother" << endl
 	   << ErrorMsg_ << "NO SMOOTHER SET FOR THIS LEVEL" << endl;
 #endif
