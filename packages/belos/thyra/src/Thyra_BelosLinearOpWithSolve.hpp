@@ -311,17 +311,20 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
   TEST_FOR_EXCEPT(!this->opSupported(M_trans)); // ToDo: Support adjoint solves later!
 
+  const int numRhs = B.domain()->dim();
+  const int numEquations = B.range()->dim();
+
   Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
-    *out << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\" ...\n";
+    *out
+      << "\nStarting iterations with Belos solver of type \""<<iterativeSolver_->description()<<"\""
+      << ", #Eqns="<<numEquations<<", #RHSs="<<numRhs<<" ...\n";
 
   //
   // Temporarily reset the blocksize if we are allowed to due so
   //
-  const int numRhs = B.domain()->dim();
-  const int numEquations = B.range()->dim();
   const int currBlockSize = lp_->GetBlockSize();
   const int newBlockSize =
     ( adjustableBlockSize_

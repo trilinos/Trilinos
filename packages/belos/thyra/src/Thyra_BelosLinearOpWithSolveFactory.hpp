@@ -37,7 +37,7 @@ const int         BelosLinearOpWithSolveFactory<Scalar>::MaxRestarts_default = 2
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::BlockSize_name = "Block Size";
 template<class Scalar>
-const int         BelosLinearOpWithSolveFactory<Scalar>::BlockSize_default = 20; // We be set to 1 if just one RHS
+const int         BelosLinearOpWithSolveFactory<Scalar>::BlockSize_default = 1; // ToDo: We need to make Belos robust when BlockSize > 1 !!!
 template<class Scalar>
 const std::string BelosLinearOpWithSolveFactory<Scalar>::AdjustableBlockSize_name = "Adjustable Block Size";
 template<class Scalar>
