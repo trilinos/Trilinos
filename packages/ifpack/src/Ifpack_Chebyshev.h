@@ -257,6 +257,12 @@ public:
                          const int MaximumIterations, 
                          double& LambdaMax);
 
+  //! Uses AztecOO's CG to estimate lambda_min and lambda_max.
+  static int CG(const Epetra_Operator& Operator, 
+                const Epetra_Vector& InvPointDiagonal, 
+                const int MaximumIterations, 
+                double& lambda_min, double& lambda_max);
+
 private:
   
   // @}

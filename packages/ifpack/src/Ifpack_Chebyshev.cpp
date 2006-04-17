@@ -11,7 +11,10 @@
 #include "Ifpack_Chebyshev.h"
 #include "Ifpack_Utils.h"
 #include "Ifpack_Condest.h"
-
+#ifdef HAVE_IFPACK_AZTECOO
+#include "Ifpack_DiagPreconditioner.h"
+#include "AztecOO.h"
+#endif
 
 //==============================================================================
 Ifpack_Chebyshev::
@@ -480,6 +483,44 @@ PowerMethod(const Epetra_Operator& Operator,
   }
 
   return(0);
+}
+
+//==============================================================================
+int Ifpack_Chebyshev::
+CG(const Epetra_Operator& Operator, 
+   const Epetra_Vector& InvPointDiagonal, 
+   const int MaximumIterations, 
+   double& lambda_min, double& lambda_max)
+{
+#ifdef HAVE_IFPACK_AZTECOO
+  Epetra_Vector x(Operator.OperatorDomainMap());
+  Epetra_Vector y(Operator.OperatorRangeMap());
+  x.Random();
+  y.PutScalar(0.0);
+
+  Epetra_LinearProblem LP(const_cast<Epetra_Operator*>(&Operator), &x, &y);
+  AztecOO solver(LP);
+  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  solver.SetAztecOption(AZ_output, AZ_none);
+
+  Ifpack_DiagPreconditioner diag(Operator.OperatorDomainMap(),
+                                 Operator.OperatorRangeMap(),
+                                 InvPointDiagonal);
+  solver.SetPrecOperator(&diag);
+  solver.Iterate(MaximumIterations, 1e-10);
+
+  const double* status = solver.GetAztecStatus();
+
+  lambda_min = status[AZ_lambda_min];
+  lambda_max = status[AZ_lambda_max];
+
+  return(0);
+#else
+  cout << "You need to configure IFPACK with support for AztecOO" << endl;
+  cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
+  cout << "in your configure script." << endl;
+  IFPACK_CHK_ERR(-1);
+#endif
 }
 
 #endif
