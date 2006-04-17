@@ -243,6 +243,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   string DiagonalColoringType = List_.get("diagonal coloring: type", "JONES_PLASSMAN");
   int MaximumIterations = List_.get("eigen-analysis: max iters", 10);
   string EigenType_ = List_.get("eigen-analysis: type", "cg");
+  double boost = List_.get("eigen-analysis: boost for lambda max", 1.0);
   int OutputLevel = List_.get("output", 10);
   omega_ = List_.get("smoother: damping", omega_);
   ML_Set_PrintLevel(OutputLevel);
@@ -297,8 +298,9 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     cout << "*** " << endl;
     cout << "*** ML_Epetra::MatrixFreePreconditioner" << endl;
     cout << "***" << endl;
-    cout << "The operator domain map has " << OperatorDomainPoints;
-    cout << " points, the operator range map "  << OperatorRangePoints << endl;
+    cout << "Number of rows and columns     = " << OperatorDomainPoints << endl;
+    cout << "Number of rows per processor   = " << OperatorDomainPoints / Comm().NumProc()
+         << " (on average)" << endl;
     cout << "The graph has " << GraphBlockRows << " rows and " << GraphNnz << " nonzeros" << endl;
     cout << "Processors used in computation = " << Comm().NumProc() << endl;
     cout << "Number of PDE equations        = " << NumPDEEqns_ << endl;
@@ -370,7 +372,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     }
 
     IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
-    IFPACKList.set("chebyshev: max eigenvalue", lambda_max);
+    IFPACKList.set("chebyshev: max eigenvalue", boost * lambda_max);
     // FIXME: this allocates a new vector inside
     IFPACKList.set("chebyshev: operator inv diagonal", InvPointDiagonal_.get());
     IFPACKList.set("chebyshev: degree", PolynomialDegree);
@@ -626,14 +628,22 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   AddAndResetStartTime("null space setup", true);
 
   if (verbose_)
-    cout << "# colors on processor " << Comm().MyPID() << " = "
+    cout << "Number of colors on processor " << Comm().MyPID() << " = "
         << NumColors << endl;
   if (verbose_)
-    cout << "Maximum # of colors = " << NumColors << endl;
+    cout << "Maximum number of colors = " << NumColors << endl;
 
-  RefCountPtr<Epetra_FECrsMatrix> AP =
-    rcp(new Epetra_FECrsMatrix(Copy, FineMap, NumColors * NullSpaceDim));
-  // FIXME: the above declaration is a bit overestimated
+  RefCountPtr<Epetra_FECrsMatrix> AP;
+  
+  try
+  {
+    AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, NullSpaceDim));
+    if (AP.get() == 0) throw(-1);
+  }
+  catch (...)
+  {
+    AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, 0));
+  }
 
   if (!LowMemory)
   {
@@ -646,8 +656,21 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     // array.                                            //
     // ================================================= //
     
-    Epetra_MultiVector* ColoredP = new Epetra_MultiVector(FineMap, NumColors * NullSpaceDim);
-    vector<double> ColoredAP_ptr(NumColors * NullSpaceDim * NodeListMap->NumMyPoints());
+    Epetra_MultiVector* ColoredP;
+    vector<double> ColoredAP_ptr;
+
+    try
+    {
+      ColoredP = new Epetra_MultiVector(FineMap, NumColors * NullSpaceDim);
+      ColoredAP_ptr.resize(NumColors * NullSpaceDim * NodeListMap->NumMyPoints());
+    }
+    catch (...)
+    {
+      cerr << "Caught generic exception in the allocation of ColoredP" << endl;
+      cout << "and ColoredAP_ptr. Maybe a smaller problem should be run." << endl;
+      ML_CHK_ERR(-1);
+    }
+
     int ColoredP_LDA = FineMap.NumMyPoints();
     int ColoredAP_LDA = NodeListMap->NumMyPoints();
 
@@ -687,10 +710,19 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     Epetra_MultiVector ExtColoredAP(View, *NodeListMap, 
                                  &ColoredAP_ptr[0], ColoredAP_LDA, 
                                  NumColors * NullSpaceDim);
-    Epetra_Import* Importer;
-    Importer = new Epetra_Import(*NodeListMap, Operator_.OperatorRangeMap());
-    ExtColoredAP.Import(*ColoredP, *Importer, Insert);
-    delete Importer;
+
+    try 
+    {
+      Epetra_Import Importer(*NodeListMap, Operator_.OperatorRangeMap());
+      ExtColoredAP.Import(*ColoredP, Importer, Insert);
+    }
+    catch (...)
+    {
+      cerr << "Caught generic exception in the importing of ExtColoredAP." << endl;
+      cout << "Maybe a smaller problem should be run." << endl;
+      ML_CHK_ERR(-1);
+    }
+
     delete ColoredP;
 
     AddAndResetStartTime("computation of AP", true); 
@@ -735,7 +767,18 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
       cout << "Using low-memory computation for AP" << endl;
 
     Epetra_MultiVector ColoredP(FineMap, NullSpaceDim);
-    vector<double> ColoredAP_ptr(NullSpaceDim * NodeListMap->NumMyPoints());
+    vector<double> ColoredAP_ptr;
+    try
+    {
+      ColoredAP_ptr.resize(NullSpaceDim * NodeListMap->NumMyPoints());
+    }
+    catch (...)
+    {
+      cerr << "Caught generic exception in the resize of ColoredAP_ptr." << endl;
+      cout << "Maybe a smaller problem should be run." << endl;
+      ML_CHK_ERR(-1);
+    }
+
     Epetra_MultiVector ColoredAP(View, Operator_.OperatorRangeMap(), 
                                  &ColoredAP_ptr[0], NodeListMap->NumMyPoints(), 
                                  NullSpaceDim);
@@ -819,7 +862,9 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
   AP->GlobalAssemble(false);
   AP->FillComplete(CoarseMap, FineMap);
-  AP->OptimizeStorage();
+  // The following can indeed crash the code because of
+  // memory requirements.
+  // FIXME AP->OptimizeStorage();
 
   AddAndResetStartTime("computation of the final AP", true); 
 
