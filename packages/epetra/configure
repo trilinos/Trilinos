@@ -9655,7 +9655,7 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-BLAS_LIBS=""
+user_spec_blas_failed=yes
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
@@ -9664,6 +9664,12 @@ echo "${ECHO_T}$acx_blas_ok" >&6
 	LIBS="$save_LIBS"
 fi
 fi
+
+# If the user specified a blas library that could not be used we will
+# halt the search process rather than risk finding a blas library that
+# the user did not specify.
+
+if test "x$user_spec_blas_failed" != xyes; then
 
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $acx_blas_ok = no; then
@@ -10962,6 +10968,9 @@ fi
 
 
 
+fi # If the user specified library wasn't found, we skipped the remaining
+   # checks.
+
 LIBS="$acx_blas_save_LIBS"
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
@@ -10978,6 +10987,7 @@ else
 echo "$as_me: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)" >&2;}
    { (exit 1); exit 1; }; }
 fi
+
 
 
 
@@ -11084,7 +11094,7 @@ else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-LAPACK_LIBS=""
+user_spec_lapack_failed=yes
 fi
 rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
@@ -11095,6 +11105,12 @@ echo "${ECHO_T}$acx_lapack_ok" >&6
                 LAPACK_LIBS=""
         fi
 fi
+
+# If the user specified a LAPACK library that could not be used we will
+# halt the search process rather than risk finding a LAPACK library that
+# the user did not specify.
+
+if test "x$user_spec_lapack_failed" != xyes; then
 
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $acx_lapack_ok = no; then
@@ -11292,6 +11308,9 @@ done
 
 
 
+fi # If the user specified library wasn't found, we skipped the remaining
+   # checks.
+
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x"$acx_lapack_ok" = xyes; then
 
@@ -11372,7 +11391,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11375: \"$ac_link\") >&5
+(eval echo $as_me:11394: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11450,7 +11469,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11453: \"$ac_link\") >&5
+(eval echo $as_me:11472: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

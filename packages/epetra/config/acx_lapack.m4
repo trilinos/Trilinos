@@ -33,6 +33,8 @@ dnl edited by Jim Willenbring <jmwille@sandia.gov> to check for sgecon
 dnl rather than cheev because by default (as of 8-13-2002) Trilinos
 dnl does not build the complex portions of the lapack library.  Edited
 dnl again on 5-13-2004 to check for dgecon instead of sgecon.
+dnl Edited by Jim Willenbring on 4-17-2006 to stop looking for LAPACK if 
+dnl a specific LAPACK library specified by a user cannot be used.
 
 AC_DEFUN([ACX_LAPACK], [
 AC_REQUIRE([ACX_BLAS])
@@ -59,13 +61,19 @@ fi
 if test "x$LAPACK_LIBS" != x; then
         save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
         AC_MSG_CHECKING([for $dgecon in $LAPACK_LIBS])
-        AC_TRY_LINK_FUNC($dgecon, [acx_lapack_ok=yes], [LAPACK_LIBS=""])
+        AC_TRY_LINK_FUNC($dgecon, [acx_lapack_ok=yes], [user_spec_lapack_failed=yes])
         AC_MSG_RESULT($acx_lapack_ok)
         LIBS="$save_LIBS"
         if test acx_lapack_ok = no; then
                 LAPACK_LIBS=""
         fi
 fi
+
+# If the user specified a LAPACK library that could not be used we will
+# halt the search process rather than risk finding a LAPACK library that
+# the user did not specify.
+
+if test "x$user_spec_lapack_failed" != xyes; then
 
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $acx_lapack_ok = no; then
@@ -85,6 +93,9 @@ for lapack in lapack lapack_rs6k; do
 done
 
 AC_SUBST(LAPACK_LIBS)
+
+fi # If the user specified library wasn't found, we skipped the remaining
+   # checks.
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x"$acx_lapack_ok" = xyes; then
