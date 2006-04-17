@@ -2127,7 +2127,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       ML_Gen_Smoother_SymGaussSeidel(ml_, LevelID_[NumLevels_-1],
                      ML_POSTSMOOTHER, NumSmootherSteps, Omega);
   else if( CoarseSolution == "MLS" ) {
-      ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], ML_BOTH,
+      ML_Gen_Smoother_MLS(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
                           MLSalpha, MLSPolynomialOrder);
   } else if( CoarseSolution == "Hiptmair" ) {
                                                                                 
