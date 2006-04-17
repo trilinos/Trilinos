@@ -133,6 +133,14 @@ class MatrixFreePreconditioner : public Epetra_Operator
       return(*C_);
     }
 
+    const MultiLevelPreconditioner& MLP() const
+    {
+      if (!IsComputed())
+        throw(-1); // prec not computed yet
+
+      return(*MLP_);
+    }
+    
     //! Returns the restriction operator as an Epetra_CrsMatrix.
     const Epetra_CrsMatrix& R() const
     {
@@ -165,6 +173,11 @@ class MatrixFreePreconditioner : public Epetra_Operator
 
     //! Returns the total CPU time spent in \c this class.
     double TotalCPUTime() const;
+
+    bool CheckSPD(const Epetra_Operator& Op, 
+                  const bool UseApply = true,
+                  const int NumChecks = 1,
+                  const int NumVectors = 1) const;
 
     // @}
     // @{ \name Construction methods.
