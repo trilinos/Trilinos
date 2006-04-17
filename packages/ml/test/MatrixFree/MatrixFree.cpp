@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
   MLList.set("output", 0);
   MLList.set("prec: type", "hybrid");
   MLList.set("smoother: type", "Chebyshev");
+  MLList.set("low memory", true);
   MLList.sublist("ML list").set("output", 0);
   MLList.sublist("ML list").set("max levels", 10);
   MLList.sublist("ML list").set("smoother: type", "Aztec");
@@ -109,16 +110,16 @@ int main(int argc, char *argv[])
     MatrixFreePreconditioner(*VbrA, VbrA->Graph(), NullSpace,
                              PointDiagonal, MLList);
 
+  NullSpace = OrigNullSpace;
+
+  assert (MFP->IsComputed() == true);
+
   /* check to verify that all the objects are SPD
   int NumChecks = 10;
   MFP->CheckSPD(*VbrA, true, NumChecks);
   MFP->CheckSPD(MFP->C(), true, NumChecks);
   MFP->CheckSPD(MFP->MLP(), false, NumChecks);
   */
-
-  NullSpace = OrigNullSpace;
-
-  assert (MFP->IsComputed() == true);
 
   // =========== //
   // CHECK START //
@@ -227,6 +228,31 @@ int main(int argc, char *argv[])
 
   delete MFP;
 
+  // compare with the same stuff without low memory. All 
+  // parameters are exactly as before, except "low memory".
+
+  NullSpace = OrigNullSpace;
+
+  MLList.set("low memory", false);
+  MatrixFreePreconditioner* MFP_noLowMemory = new
+    MatrixFreePreconditioner(*VbrA, VbrA->Graph(), NullSpace,
+                             PointDiagonal, MLList);
+
+  assert (MFP_noLowMemory->IsComputed() == true);
+
+  LHS.PutScalar(1.0);
+  RHS.PutScalar(0.0);
+
+  solver.SetPrecOperator(MFP_noLowMemory);
+  solver.Iterate(500, 1e-5);
+
+  int MFP2Iters = solver.NumIters();
+  double MFP2Residual = solver.TrueResidual();
+
+  assert (MFP2Iters == MFPIters);
+
+  delete MFP_noLowMemory;
+
   LHS.PutScalar(1.0);
   RHS.PutScalar(0.0);
 
@@ -255,7 +281,7 @@ int main(int argc, char *argv[])
 
   delete MLP;
 
-  assert (MLPIters == MFPIters);
+  assert (abs(MLPIters < MFPIters) < 2);
 
   delete VbrA;
   delete Map;
