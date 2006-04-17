@@ -241,9 +241,9 @@ void RTOpPack::MPI_apply_op(
   ,const RTOpT<Scalar>                          &op
   ,const int                                    root_rank
   ,const int                                    num_vecs
-  ,const RTOpPack::ConstSubVectorView<Scalar>           sub_vecs[]
+  ,const RTOpPack::ConstSubVectorView<Scalar>   sub_vecs[]
   ,const int                                    num_targ_vecs
-  ,const RTOpPack::SubVectorView<Scalar>    targ_sub_vecs[]
+  ,const RTOpPack::SubVectorView<Scalar>        targ_sub_vecs[]
   ,ReductTarget                                 *reduct_obj
   )
 {
@@ -262,9 +262,9 @@ void RTOpPack::MPI_apply_op(
   ,const int                                         root_rank
   ,const int                                         num_cols
   ,const int                                         num_multi_vecs
-  ,const RTOpPack::ConstSubMultiVectorView<Scalar>           sub_multi_vecs[]
+  ,const RTOpPack::ConstSubMultiVectorView<Scalar>   sub_multi_vecs[]
   ,const int                                         num_targ_multi_vecs
-  ,const RTOpPack::SubMultiVectorView<Scalar>    targ_sub_multi_vecs[]
+  ,const RTOpPack::SubMultiVectorView<Scalar>        targ_sub_multi_vecs[]
   ,RTOpPack::ReductTarget*                           reduct_objs[]
   )
 {
@@ -439,16 +439,25 @@ void RTOpPack::MPI_apply_op(
   ,const int                                root_rank
   ,const int                                num_cols
   ,const int                                num_vecs
-  ,const ConstSubVectorView<Scalar>                 sub_vecs[]
+  ,const ConstSubVectorView<Scalar>         sub_vecs[]
   ,const int                                num_targ_vecs
-  ,const SubVectorView<Scalar>          sub_targ_vecs[]
+  ,const SubVectorView<Scalar>              sub_targ_vecs[]
   ,ReductTarget*                            reduct_objs[]
   )
 {
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
-  const int localSubDim = ( num_vecs ? sub_vecs[0].subDim() : sub_targ_vecs[0].subDim() );
+  if( reduct_objs == NULL && sub_vecs == NULL && sub_targ_vecs == NULL ) {
+    // This is a transformation operation with no data on this processor.
+    // Therefore, we can just exist!
+    return;
+  }
+  const int localSubDim =
+    ( num_vecs
+      ? ( sub_vecs ? sub_vecs[0].subDim() : 0 )
+      : ( sub_targ_vecs ? sub_targ_vecs[0].subDim() : 0 )
+      );
   // See if we need to do any global communication at all?
   if( comm == MPI_COMM_NULL || reduct_objs == NULL ) {
     if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
@@ -467,7 +476,8 @@ void RTOpPack::MPI_apply_op(
     ,std::logic_error
     ,"MPI_apply_op(...): Error, invalid arguments num_vecs = " << num_vecs
     << ", sub_vecs = " << sub_vecs << ", num_targ_vecs = " << num_targ_vecs
-    << ", sub_targ_vecs = " << sub_targ_vecs );
+    << ", sub_targ_vecs = " << sub_targ_vecs
+    );
   //
   // There is a non-null reduction target object and we are using
   // MPI so we need to reduce it across processors
