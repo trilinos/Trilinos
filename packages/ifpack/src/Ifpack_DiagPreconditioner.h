@@ -39,6 +39,7 @@ class Ifpack_DiagPreconditioner : public Epetra_Operator
     int SetUseTranspose(bool UseTranspose)
     {
       UseTranspose_ = UseTranspose;
+      return(0);
     }
 
     int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
