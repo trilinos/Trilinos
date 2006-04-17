@@ -28,6 +28,8 @@ CreateVbrMatrix(const Epetra_CrsMatrix* CrsMatrix, const int NumPDEs)
   Epetra_VbrMatrix* VbrMatrix = new Epetra_VbrMatrix(Copy, *BlockMap,
                                                      MaxNnzPerRow);
 
+  delete BlockMap;
+
   // size of each VBR block
   int MaxBlockSize = NumPDEs * NumPDEs;
 
