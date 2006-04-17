@@ -17,10 +17,11 @@
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #include "Ifpack_Chebyshev.h"
-
+#include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_MapColoring.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_IntVector.h"
@@ -29,6 +30,7 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_lapack.h"
 
+using namespace Teuchos;
 using namespace EpetraExt;
 
 const int ML_MFP_PRESMOOTHER_ONLY = 0;
@@ -470,11 +472,17 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   else 
     ML_CHK_ERR(-1);
 
-  Epetra_MapColoring& ColorMap = (*MapColoringTransform)(const_cast<Epetra_CrsGraph&>(GraphCoarse->Graph()));
+  Epetra_MapColoring* ColorMap = &(*MapColoringTransform)(const_cast<Epetra_CrsGraph&>(GraphCoarse->Graph()));
 
-  const int NumColors = ColorMap.MaxNumColors();
+  // move the information from ColorMap to vector Colors
+  const int NumColors = ColorMap->MaxNumColors();
+  RefCountPtr<Epetra_IntSerialDenseVector> Colors = rcp(new Epetra_IntSerialDenseVector(GraphCoarse->Graph().NumMyRows()));
+  for (int i = 0; i < GraphCoarse->Graph().NumMyRows(); ++i)
+    (*Colors)[i] = (*ColorMap)[i];
 
+  delete MapColoringTransform;
   delete GraphCoarse;
+  ColorMap = 0;
 
   AddAndResetStartTime("coarse graph coloring", true);
   if (verbose_) cout << endl;
@@ -544,7 +552,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   for (int i = 0; i < Graph.ColMap().NumMyElements(); ++i)
     for (int m = 0; m < NumPDEEqns_; ++m)
       NodeList[i * NumPDEEqns_ + m] = BlockNodeList[i] * NumPDEEqns_ + m;
-  Epetra_Map NodeListMap(-1, NodeList.size(), &NodeList[0], 0, Comm());
+  Epetra_Map* NodeListMap = new Epetra_Map(-1, NodeList.size(), &NodeList[0], 0, Comm());
 
   AddAndResetStartTime("data structures", true);
 
@@ -552,7 +560,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   // process the null space //
   // ====================== //
 
-  Epetra_MultiVector NewNullSpace(NullSpace.Map(), NullSpaceDim);
+  // CHECKME
+  Epetra_MultiVector NewNullSpace(CoarseMap, NullSpaceDim);
   NewNullSpace.PutScalar(0.0);
 
   if (NullSpaceDim == 1)
@@ -640,15 +649,30 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
   if (verbose_)
     cout << "# colors on processor " << Comm().MyPID() << " = "
-        << ColorMap.NumColors() << endl;
+        << NumColors << endl;
   if (verbose_)
     cout << "Maximum # of colors = " << NumColors << endl;
 
   Epetra_FECrsMatrix* AP = 0;
+  AP = new Epetra_FECrsMatrix(Copy, FineMap, NumColors * NullSpaceDim);
+  // FIXME: the above declaration is a bit overestimated
 
   if (!LowMemory)
   {
+    // ================================================= //
+    // allocate one big chunk of memory, and use View    //             
+    // to create Epetra_MultiVectors. Note that          //
+    // NumColors * NullSpace can indeed be a quite large //
+    // value. To reduce the memory consumption, both     //
+    // ColoredAP and ExtColoredAP use the same memory    //
+    // array.                                            //
+    // ================================================= //
+    
     Epetra_MultiVector* ColoredP = new Epetra_MultiVector(FineMap, NumColors * NullSpaceDim);
+    vector<double> ColoredAP_ptr(NumColors * NullSpaceDim * NodeListMap->NumMyPoints());
+    int ColoredP_LDA = FineMap.NumMyPoints();
+    int ColoredAP_LDA = NodeListMap->NumMyPoints();
+
     ColoredP->PutScalar(0.0);
 
     for (int i = 0; i < BlockPtent_ML->outvec_leng; ++i)
@@ -663,7 +687,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
         ML_CHK_ERR(-1);
 
       assert (NumEntries == 1); // this is the block P
-      const int& Color = ColorMap[Indices] - 1;
+      const int& Color = (*Colors)[Indices] - 1;
       const int& MyLength = ColoredP->MyLength();
       for (int k = 0; k < NumPDEEqns_; ++k)
         for (int j = 0; j < NullSpaceDim; ++j)
@@ -673,25 +697,27 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
     ML_Operator_Destroy(&BlockPtent_ML);
 
-    Epetra_MultiVector* ColoredAP = new Epetra_MultiVector(Operator_.OperatorRangeMap(), 
-                                                           NumColors * NullSpaceDim);
-    Operator_.Apply(*ColoredP, *ColoredAP);
-    delete ColoredP;
+    Epetra_MultiVector ColoredAP(View, Operator_.OperatorRangeMap(), 
+                                 &ColoredAP_ptr[0], ColoredAP_LDA, 
+                                 NumColors * NullSpaceDim);
+    // move ColoredAP into ColoredP. This should not be required.
+    // but I prefer to skip strange games with View pointers
+    Operator_.Apply(*ColoredP, ColoredAP);
+    *ColoredP = ColoredAP;
 
     // FIXME: only if NumProc > 1
-    Epetra_MultiVector* ExtColoredAP = 0;
-    ExtColoredAP = new Epetra_MultiVector(NodeListMap, ColoredAP->NumVectors());
+    Epetra_MultiVector ExtColoredAP(View, *NodeListMap, 
+                                 &ColoredAP_ptr[0], ColoredAP_LDA, 
+                                 NumColors * NullSpaceDim);
     Epetra_Import* Importer;
-    Importer = new Epetra_Import(NodeListMap, Operator_.OperatorRangeMap());
-    ExtColoredAP->Import(*ColoredAP, *Importer, Insert);
+    Importer = new Epetra_Import(*NodeListMap, Operator_.OperatorRangeMap());
+    ExtColoredAP.Import(*ColoredP, *Importer, Insert);
     delete Importer;
-    delete ColoredAP;
+    delete ColoredP;
 
     AddAndResetStartTime("computation of AP", true); 
 
     // populate the actual AP operator, skip some controls to make it faster
-
-    AP = new Epetra_FECrsMatrix(Copy, FineMap, MaxAggrSize * NumPDEEqns_);
 
     for (int i = 0; i < NumAggregates; ++i)
     {
@@ -702,11 +728,11 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
         //assert (LRID != -1);
         int GCID = CoarseMap.GID(i * NullSpaceDim);
         //assert (GCID != -1); 
-        int color = ColorMap[i] - 1;
+        int color = (*Colors)[i] - 1;
         for (int k = 0; k < NumPDEEqns_; ++k)
           for (int j = 0; j < NullSpaceDim; ++j)
           {
-            double val = (*ExtColoredAP)[color * NullSpaceDim + j][LRID * NumPDEEqns_ + k];
+            double val = ExtColoredAP[color * NullSpaceDim + j][LRID * NumPDEEqns_ + k];
             if (val != 0.0)
             {
               int GRID2 = GRID * NumPDEEqns_ + k;
@@ -717,26 +743,28 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
           }
       }
     }
-
-    aggregates.resize(0);
-    delete ExtColoredAP;
-    delete BlockNodeListMap;
-    delete MapColoringTransform;
   }
   else
   {
+    // =============================================================== //
+    // apply the operator one color at-a-time. This requires NumColors //
+    // cycles over BlockPtent. However, the memory requirements are    //
+    // drastically reduced. As for low-memory == false, both ColoredAP //
+    // and ExtColoredAP point to the same memory location.             //
+    // =============================================================== //
+    
     if (verbose_)
       cout << "Using low-memory computation for AP" << endl;
 
-    // apply the operator one color at-a-time. This requires NumColors
-    // cycles over BlockPtent
     Epetra_MultiVector ColoredP(FineMap, NullSpaceDim);
-
-    Epetra_MultiVector ColoredAP(Operator_.OperatorRangeMap(), NullSpaceDim);
-    Epetra_MultiVector ExtColoredAP(NodeListMap, ColoredAP.NumVectors());
-    Epetra_Import Importer(NodeListMap, Operator_.OperatorRangeMap());
-
-    AP = new Epetra_FECrsMatrix(Copy, FineMap, MaxAggrSize * NumPDEEqns_);
+    vector<double> ColoredAP_ptr(NullSpaceDim * NodeListMap->NumMyPoints());
+    Epetra_MultiVector ColoredAP(View, Operator_.OperatorRangeMap(), 
+                                 &ColoredAP_ptr[0], NodeListMap->NumMyPoints(), 
+                                 NullSpaceDim);
+    Epetra_MultiVector ExtColoredAP(View, *NodeListMap, 
+                                 &ColoredAP_ptr[0], NodeListMap->NumMyPoints(), 
+                                 NullSpaceDim);
+    Epetra_Import Importer(*NodeListMap, Operator_.OperatorRangeMap());
 
     for (int ic = 0; ic < NumColors; ++ic)
     {
@@ -750,14 +778,16 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
         double Values;
         int ierr = ML_Operator_Getrow(BlockPtent_ML, 1 ,&i, allocated,
                                       &Indices,&Values,&NumEntries);
-        if (ierr < 0)
+        if (ierr < 0 ||  // something strange in getrow
+            NumEntries != 1) // this is the block P
           ML_CHK_ERR(-1);
 
-        assert (NumEntries == 1); // this is the block P
-        const int& Color = ColorMap[Indices] - 1;
-        const int& MyLength = ColoredP.MyLength();
+        const int& Color = (*Colors)[Indices] - 1;
         if (Color != ic)
           continue; // skip this color for this cycle
+
+        const int& MyLength = ColoredP.MyLength();
+
         for (int k = 0; k < NumPDEEqns_; ++k)
           for (int j = 0; j < NullSpaceDim; ++j)
             ColoredP[j][i * NumPDEEqns_ + k] = 
@@ -765,8 +795,9 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
       }
 
       Operator_.Apply(ColoredP, ColoredAP);
+      ColoredP = ColoredAP; // just to be safe
 
-      ExtColoredAP.Import(ColoredAP, Importer, Insert);
+      ExtColoredAP.Import(ColoredP, Importer, Insert);
 
       // populate the actual AP operator, skip some controls to make it faster
 
@@ -779,7 +810,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
           //assert (LRID != -1);
           int GCID = CoarseMap.GID(i * NullSpaceDim);
           //assert (GCID != -1); 
-          int color = ColorMap[i] - 1;
+          int color = (*Colors)[i] - 1;
           if (color != ic)
             continue;
 
@@ -800,10 +831,13 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     }
 
     ML_Operator_Destroy(&BlockPtent_ML);
-    aggregates.resize(0);
-    delete BlockNodeListMap;
-    delete MapColoringTransform;
   }
+
+  aggregates.resize(0);
+  delete BlockNodeListMap;
+  delete NodeListMap;
+
+  Colors = Teuchos::null;
 
   AP->GlobalAssemble(false);
   AP->FillComplete(CoarseMap, FineMap);
