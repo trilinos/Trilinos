@@ -56,6 +56,7 @@ extern int az_iterate_id;
 static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
 					 char prefix[], int options[],
 					 int proc_config[],
+                                         double*, double*, 
 					 double *ConditionNumber );
 
 void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
@@ -137,7 +138,7 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
   double * offdiag_T = NULL;
   int N_lanczos=0;
   double r_z_dot_old2;
-  double smallest, largest;
+  double lambda_min, lambda_max;
   double ConditionNumber;
 
   /**************************** execution begins ******************************/
@@ -295,7 +296,10 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
                                   options, proc_config);
 
 	compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
-				     options, proc_config, &ConditionNumber);
+				     options, proc_config, &lambda_min,
+                                     &lambda_max, &ConditionNumber);
+	status[AZ_lambda_min] = lambda_min;
+	status[AZ_lambda_max] = lambda_max;
 	status[AZ_condnum] = ConditionNumber;
         free((void*)diag_T);     diag_T = NULL;
         free((void*)offdiag_T);  offdiag_T = NULL;
@@ -352,7 +356,10 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
                                 proc_config);
 
       compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
-				   options, proc_config, &ConditionNumber);
+				   options, proc_config, &lambda_min,
+                                   &lambda_max, &ConditionNumber);
+      status[AZ_lambda_min] = lambda_min;
+      status[AZ_lambda_max] = lambda_max;
       status[AZ_condnum] = ConditionNumber;
       free((void*)diag_T);    diag_T = NULL;
       free((void*)offdiag_T); offdiag_T = NULL;
@@ -415,7 +422,10 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 
 	  /* compute the eigenvalues of the Lanczos matrix */
 	  compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
-				       options, proc_config, &ConditionNumber);
+				       options, proc_config, &lambda_min,
+                                       &lambda_max, &ConditionNumber);
+	  status[AZ_lambda_min] = lambda_min;
+	  status[AZ_lambda_max] = lambda_max;
 	  status[AZ_condnum] = ConditionNumber;
 	  free((void*)diag_T);     diag_T = NULL;
 	  free((void*)offdiag_T);  offdiag_T = NULL;
@@ -475,7 +485,10 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
   /* compute the condition number */
   
   compute_condnum_tridiag_sym( N_lanczos-2, diag_T, offdiag_T, prefix,
-			       options, proc_config, &ConditionNumber);
+			       options, proc_config, &lambda_min,
+                               &lambda_max, &ConditionNumber);
+  status[AZ_lambda_min] = lambda_min;
+  status[AZ_lambda_max] = lambda_max;
   status[AZ_condnum] = ConditionNumber;
 	  
   if( diag_T != NULL ) {
@@ -493,6 +506,8 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
 static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
 					 char prefix[], int options[],
 					 int proc_config[],
+                                         double* lambda_min,
+                                         double* lambda_max,
 					 double *ConditionNumber )
 
   /* diag ==      double vector of size N, containing the diagonal
@@ -551,6 +566,8 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
 
   } 
     
+  *lambda_min = smallest;
+  *lambda_max = largest;
   *ConditionNumber = largest/smallest;
   
   free((void *) eigenvalues );

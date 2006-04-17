@@ -565,6 +565,8 @@
 #define AZ_Aztec_version       7     /* This is used to record the current  */
 /* version of Aztec.                   */
 #define AZ_condnum             8
+#define AZ_lambda_min          9
+#define AZ_lambda_max          10
 
 /*******************************************************************************
  *
