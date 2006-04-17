@@ -481,8 +481,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     (*Colors)[i] = (*ColorMap)[i];
 
   delete MapColoringTransform;
+  delete ColorMap; ColorMap = 0;
   delete GraphCoarse;
-  ColorMap = 0;
 
   AddAndResetStartTime("coarse graph coloring", true);
   if (verbose_) cout << endl;
@@ -971,16 +971,16 @@ GetBlockDiagonal(const Epetra_CrsGraph& Graph, string DiagonalColoringType)
   CrsGraph_MapColoring MapColoringTransform(CrsGraph_MapColoring::JONES_PLASSMAN,
                                             0, true, 0);
 
-  Epetra_MapColoring& ColorMap = MapColoringTransform(const_cast<Epetra_CrsGraph&>(Graph));
+  Epetra_MapColoring* ColorMap = &(MapColoringTransform(const_cast<Epetra_CrsGraph&>(Graph)));
 
-  const int NumColors = ColorMap.MaxNumColors();
+  const int NumColors = ColorMap->MaxNumColors();
 
   Epetra_MultiVector X(Operator_.OperatorDomainMap(), NumPDEEqns_ * NumColors);
   X.PutScalar(0.0);
 
   for (int i = 0; i < Graph.NumMyBlockRows(); ++i)
   {
-    int color = ColorMap[i] - 1;
+    int color = (*ColorMap)[i] - 1;
     for (int j = 0; j < NumPDEEqns_; ++j)
     {
       X[color * NumPDEEqns_ + j][i * NumPDEEqns_ + j] = 1.0;
@@ -1001,7 +1001,7 @@ GetBlockDiagonal(const Epetra_CrsGraph& Graph, string DiagonalColoringType)
 
   for (int i = 0; i < Graph.NumMyBlockRows(); ++i)
   {
-    int color = ColorMap[i] - 1;
+    int color = (*ColorMap)[i] - 1;
     int offset = i * NumPDEEqns_ * NumPDEEqns_;
 
     // extract the block
@@ -1025,6 +1025,8 @@ GetBlockDiagonal(const Epetra_CrsGraph& Graph, string DiagonalColoringType)
       }
     }
   }
+
+  delete ColorMap;
 
   /* some possible output for debugging
   Epetra_MultiVector XXX(Copy, Operator_.OperatorRangeMap(), &InvBlockDiag_[0],
