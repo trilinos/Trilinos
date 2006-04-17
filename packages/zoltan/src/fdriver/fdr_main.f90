@@ -38,6 +38,7 @@ use dr_input
 use dr_chaco_io
 use dr_loadbal
 use dr_mm_io
+use dr_sort
 implicit none
 
 !/* Local declarations. */
@@ -326,6 +327,7 @@ use zoltan
 use dr_const
 use dr_input
 use zoltan_user_data
+use dr_sort
 character(len=*) :: cmd_file
 integer(Zoltan_INT) :: Proc, Num_Proc
 type(PROB_INFO) :: prob
@@ -353,12 +355,12 @@ type(ELEM_INFO), pointer :: elements(:)
    integer :: fp
    end subroutine echo_cmd_file
 
-   subroutine sort_index(n, ra, indx)
-   use zoltan
-   integer(Zoltan_INT) :: n
-   integer(Zoltan_INT) :: ra(0:)
-   integer(Zoltan_INT) :: indx(0:)
-   end subroutine sort_index
+!   subroutine sort_index(n, ra, indx)
+!   use zoltan
+!   integer(Zoltan_INT) :: n
+!   integer(Zoltan_INT) :: ra(0:)
+!   integer(Zoltan_INT) :: indx(0:)
+!   end subroutine sort_index
   end interface
 
 !/***************************** BEGIN EXECUTION ******************************/
@@ -406,7 +408,7 @@ type(ELEM_INFO), pointer :: elements(:)
     endif
   end do
 
-  call sort_index(Mesh%num_elems, global_ids, index)
+  call dr_sort_index(Mesh%num_elems, global_ids, index)
 
 !  /* generate the parallel filename for this processor */
   ctemp = pio_info%pexo_fname(1:len_trim(pio_info%pexo_fname))//".fout"
@@ -435,61 +437,61 @@ type(ELEM_INFO), pointer :: elements(:)
 end function output_results
 
 !/*****************************************************************************/
-subroutine sort_index(n, ra, indx)
-use zoltan
-integer(Zoltan_INT) :: n
-integer(Zoltan_INT) :: ra(0:)
-integer(Zoltan_INT) :: indx(0:)
-
-!/*
-!*       Numerical Recipies in C source code
-!*       modified to have first argument an integer array
-!*
-!*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-!*       heapsort algorithm.
-!*
-!*/
-
-  integer(Zoltan_INT) :: l, j, ir, i
-  integer(Zoltan_INT) :: rra, irra
-!  /*
-!   *  No need to sort if one or fewer items.
-!   */
-  if (n <= 1) return
-
-  l=n/2
-  ir=n-1
-  do
-    if (l > 0) then
-      l = l-1
-      rra=ra(indx(l))
-      irra=indx(l)
-    else
-      rra=ra(indx(ir))
-      irra=indx(ir)
-
-      indx(ir)=indx(0)
-      ir = ir-1
-      if (ir == 0) then
-        indx(0)=irra
-        return
-      endif
-    endif
-    i=l
-    j=2*l+1
-    do while (j <= ir)
-      if (j < ir .and. ra(indx(j)) < ra(indx(j+1))) j = j+1
-      if (rra < ra(indx(j))) then
-        indx(i)=indx(j)
-        i = j
-        j = j+i+1
-      else
-        j=ir+1
-      endif
-    end do
-    indx(i)=irra
-  end do
-end subroutine sort_index
+!subroutine sort_index(n, ra, indx)
+!use zoltan
+!integer(Zoltan_INT) :: n
+!integer(Zoltan_INT) :: ra(0:)
+!integer(Zoltan_INT) :: indx(0:)
+!
+!!/*
+!!*       Numerical Recipies in C source code
+!!*       modified to have first argument an integer array
+!!*
+!!*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
+!!*       heapsort algorithm.
+!!*
+!!*/
+!
+!integer(Zoltan_INT) :: l, j, ir, i
+!integer(Zoltan_INT) :: rra, irra
+!!  /*
+!!   *  No need to sort if one or fewer items.
+!!   */
+!if (n <= 1) return
+!
+!l=n/2
+!ir=n-1
+!do
+!    if (l > 0) then
+!      l = l-1
+!      rra=ra(indx(l))
+!      irra=indx(l)
+!    else
+!      rra=ra(indx(ir))
+!      irra=indx(ir)
+!
+!      indx(ir)=indx(0)
+!      ir = ir-1
+!      if (ir == 0) then
+!        indx(0)=irra
+!        return
+!      endif
+!    endif
+!    i=l
+!    j=2*l+1
+!    do while (j <= ir)
+!      if (j < ir .and. ra(indx(j)) < ra(indx(j+1))) j = j+1
+!      if (rra < ra(indx(j))) then
+!        indx(i)=indx(j)
+!        i = j
+!        j = j+i+1
+!      else
+!        j=ir+1
+!      endif
+!    end do
+!    indx(i)=irra
+!  end do
+!end subroutine sort_index
 
 !************************************************************************
 subroutine echo_cmd_file(fp, cmd_file)

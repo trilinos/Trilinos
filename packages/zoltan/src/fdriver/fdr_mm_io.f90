@@ -17,6 +17,7 @@ use mpi_h
 use dr_const
 use dr_input
 use dr_chaco_io
+use dr_sort
 implicit none
 private
 
@@ -59,8 +60,8 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT), pointer ::  pindist(:) ! pin distribution data
 ! Local values
   integer(Zoltan_INT) :: npins, nedges, nvtxs
-  integer(Zoltan_INT), pointer ::  iidx(:) ! pin data
-  integer(Zoltan_INT), pointer ::  jidx(:) ! pin data
+  integer(Zoltan_INT), allocatable ::  iidx(:) ! pin data
+  integer(Zoltan_INT), allocatable ::  jidx(:) ! pin data
   integer i, prev, temp
   logical sorted
 !/***************************** BEGIN EXECUTION ******************************/
@@ -263,6 +264,9 @@ type(PARIO_INFO) :: pio_info
   if (associated(mm_iidx)) deallocate(mm_iidx)
   if (associated(mm_jidx)) deallocate(mm_jidx)
 
+! KDDKDD  DON'T COMMIT THIS BUG!!!!!!!!!!!!
+!  call dr_sort_index(npins, iidx, jidx)
+! KDDKDD  DON'T COMMIT THIS BUG!!!!!!!!!!!!
 ! KDDKDD
 ! KDDKDD We assume the MatrixMarket file is sorted by row numbers.
 ! KDDKDD This condition is true for all our test cases.
@@ -306,8 +310,10 @@ type(PARIO_INFO) :: pio_info
   Mesh%hindex(nedges) = npins
 
 ! Almost done.
-  if (associated(iidx)) deallocate(iidx)
-  if (associated(jidx)) deallocate(jidx)
+!  if (associated(iidx)) deallocate(iidx)
+!  if (associated(jidx)) deallocate(jidx)
+  deallocate(iidx)
+  deallocate(jidx)
   read_mm_file = .true.
 end function read_mm_file
 
