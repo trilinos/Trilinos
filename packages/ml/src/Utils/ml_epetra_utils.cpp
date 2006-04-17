@@ -214,7 +214,7 @@ int ML_Epetra_getrow(ML_Operator *data, int N_requested_rows, int requested_rows
   cout << "You may need to update your Epetra wrapper and set the" << endl;
   cout << "appropriete function instead if ML_Epetra_getrow()" << endl;
 
-  ML_EXIT(-1);
+  ML_RETURN(-1);
 
 #if 0
 
@@ -516,7 +516,7 @@ int ML_Epetra_getrow_Filter(ML_Operator *data, int N_requested_rows,
     cerr << "Only N_requested_rows == 1 currently implemented..." << endl;
     exit(EXIT_FAILURE);
   }
-    
+
   switch (Filter_.Type) {
 
   case ML_Epetra::ML_NO_FILTER:
@@ -738,7 +738,7 @@ int ML_Epetra_CrsGraph_matvec(ML_Operator *data, int in, double *p,
                               int out, double *ap)
 {
   cerr << "ML_Epetra_CrsGraph_matvec() not implemented." << endl;
-  ML_EXIT(-1);
+  ML_RETURN(-1);
 }
 
 // ====================================================================== 
