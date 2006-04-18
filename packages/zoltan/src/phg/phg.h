@@ -185,7 +185,7 @@ extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, HGraph *,
     
 extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
 extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, float *, Partition, 
-                                PHGPartParams*, int);
+                                PHGPartParams*);
 extern double Zoltan_PHG_Compute_NetCut(PHGComm*, HGraph*, Partition, int);
 extern double Zoltan_PHG_Compute_ConCut(PHGComm*, HGraph*, Partition, int, 
                                         int*);    

@@ -74,6 +74,7 @@ void Zoltan_HG_HGraph_Init(
   phg->dist_x  = NULL;
   phg->dist_y  = NULL;
   phg->vmap    = NULL;
+  phg->fixed   = NULL;
 }
 
 
@@ -86,10 +87,10 @@ int Zoltan_HG_HGraph_Free(
 )
 {
   if (hg)
-    Zoltan_Multifree (__FILE__, __LINE__, 10, 
+    Zoltan_Multifree (__FILE__, __LINE__, 11, 
      &hg->coor, &hg->vwgt, &hg->ewgt,
      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->dist_x,
-     &hg->dist_y, &hg->vmap);
+     &hg->dist_y, &hg->vmap, &hg->fixed);
 
   return ZOLTAN_OK;
 }
@@ -131,9 +132,9 @@ int Zoltan_HG_Info (
     printf("Vertex weights   :    %9.2f %9.2f %9.2f %12.2f\n", wgt_min,
      wgt_tot/hg->nVtx, wgt_max, wgt_tot);
 
+    mean = var = 0.0;
     if (hg->nVtx > 1) {
       mean = wgt_tot / hg->nVtx;
-      var = 0.0;
       for (i = 0; i < hg->nVtx; i++) {
         temp = hg->vwgt[i] - mean;
         var += (temp*temp);

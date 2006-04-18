@@ -184,8 +184,7 @@ int Zoltan_PHG_Partition (
   Partition parts,      /* Input:  initial partition #s; aligned with vtx 
                            arrays. 
                            Output:  computed partition #s */
-  PHGPartParams *hgp,   /* Input:  parameters for hgraph partitioning. */
-  int level)
+  PHGPartParams *hgp)   /* Input:  parameters for hgraph partitioning. */
 {
 
   PHGComm *hgc = hg->comm;

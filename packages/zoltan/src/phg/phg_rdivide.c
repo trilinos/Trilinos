@@ -132,8 +132,9 @@ int Zoltan_PHG_rdivide(
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_before, hgc->Communicator);
 
   /*uprintf(hgc, "OLD MAxImbal: %.3f   New MaxImbal: %.3f\n", bal_tol, hgp->bal_tol);*/
-
-  ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp, level);
+  if (hg->fixed)
+      hg->bisec_split = mid+1;
+  ierr = Zoltan_PHG_Partition (zz, hg, 2, bisec_part_sizes, part, hgp);
 
   if (do_timing)  /* Restart rdivide timer */
     ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hgc->Communicator);
@@ -559,8 +560,12 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
       tmap[i] = (part[i] == partid) ? nhg->nVtx++ : -1; 
 
   /* save vertex and edge weights if they exist */
-  if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim)
-    nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim);
+  if (nhg->nVtx && ohg->vwgt && nhg->VtxWeightDim &&
+      !(nhg->vwgt=(float*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(float)*nhg->VtxWeightDim)))
+      MEMORY_ERROR;
+  if (nhg->nVtx && ohg->fixed &&
+      !(nhg->fixed = (int*)ZOLTAN_MALLOC(nhg->nVtx*sizeof(int))))
+      MEMORY_ERROR;
   if (nhg->nVtx && (nhg->vmap = (int*) ZOLTAN_MALLOC (nhg->nVtx * sizeof (int)))==NULL)
       MEMORY_ERROR;
   
@@ -568,6 +573,8 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
       int v=tmap[i];
       if (v!=-1) {
           nhg->vmap[v] = ohg->vmap[i];
+          if (nhg->fixed)
+              nhg->fixed[v] = ohg->fixed[i];
           if (nhg->VtxWeightDim) {
               /* UVC: TODO CHECK we're only using 1st weight! Right now this will be used
                  to compute balance ratio! Check this code when multiconstraint is added!
@@ -595,13 +602,13 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
       }
 
   /* continue allocating memory for dynamic arrays in new HGraph */
-  if (nhg->nEdge && (nhg->hindex  = (int*) ZOLTAN_MALLOC ((nhg->nEdge+1) * sizeof (int)))==NULL)
+  if (nhg->nEdge && !(nhg->hindex  = (int*) ZOLTAN_MALLOC ((nhg->nEdge+1) * sizeof (int))))
       MEMORY_ERROR;
-  if (nhg->nPins && (nhg->hvertex = (int*) ZOLTAN_MALLOC (nhg->nPins * sizeof (int)))==NULL)
+  if (nhg->nPins && !(nhg->hvertex = (int*) ZOLTAN_MALLOC (nhg->nPins * sizeof (int))))
       MEMORY_ERROR;
-  if (ohg->ewgt && nhg->EdgeWeightDim && nhg->nEdge)
-      if ((nhg->ewgt=(float*)ZOLTAN_MALLOC(nhg->nEdge*sizeof(float)*nhg->EdgeWeightDim))==NULL)
-          MEMORY_ERROR;
+  if (ohg->ewgt && nhg->EdgeWeightDim && nhg->nEdge &&
+      !(nhg->ewgt=(float*)ZOLTAN_MALLOC(nhg->nEdge*sizeof(float)*nhg->EdgeWeightDim)))
+      MEMORY_ERROR;
   
   nhg->nEdge = 0;
   nhg->nPins = 0;

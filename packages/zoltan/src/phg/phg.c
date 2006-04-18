@@ -278,7 +278,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
       if (hgp.kway || zz->LB.Num_Global_Parts == 2) {
         /* call main V cycle routine */
         err = Zoltan_PHG_Partition(zz, hg, p,
-                                   hgp.part_sizes, parts, &hgp, 0);
+                                   hgp.part_sizes, parts, &hgp);
         if (err != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
           goto End;
