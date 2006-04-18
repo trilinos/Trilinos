@@ -143,7 +143,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
 {
   ResetTime(0);
 
-  RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
+  RowMatrixA_ = Problem_->GetMatrix(); // MS, 18-Apr-06 //
   if (RowMatrixA_ == 0) AMESOS_CHK_ERR(-1);
 
   const Epetra_Map &OriginalMatrixMap = RowMatrixA_->RowMatrixRowMap() ;
