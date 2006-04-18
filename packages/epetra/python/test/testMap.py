@@ -44,7 +44,7 @@ except ImportError:
     print >>sys.stderr, "Using system-installed Epetra"
 
 import unittest
-from   Numeric    import *
+from   numpy    import *
 
 ##########################################################################
 
@@ -58,7 +58,7 @@ class EpetraMapTestCase(unittest.TestCase):
         self.numMyElConst     = 4
         self.numMyEl          = self.numMyElConst + self.myPID
         self.numGlobalElConst = self.numMyElConst * self.numProc
-        self.numGlobalEl      = self.comm.SumAll(self.numMyEl)[0]
+        self.numGlobalEl      = self.comm.SumAll(self.numMyEl)
         self.elSize           = 1
         self.indexBase        = 0
         globalEls             = range(self.numGlobalEl)
@@ -133,10 +133,9 @@ class EpetraMapTestCase(unittest.TestCase):
             pidList[start:] += 1
             lidList[ start:start+length] = range(length)
         result = self.map3.RemoteIDList(gidList)
-        for id in range(len(gidList)):
-            self.assertEqual(result[0][id], pidList[id] )
-            self.assertEqual(result[1][id], lidList[id] )
-            self.assertEqual(result[2][id], sizeList[id])
+        self.failUnless((result[0] == pidList ).all())
+        self.failUnless((result[1] == lidList ).all())
+        self.failUnless((result[2] == sizeList).all())
 
     def testRemoteIDList2(self):
         "Test Epetra.Map RemoteIDList method for variable element size"
@@ -151,10 +150,9 @@ class EpetraMapTestCase(unittest.TestCase):
             pidList[start:] += 1
             lidList[ start:start+length] = range(length)
         result = self.map3.RemoteIDList(gidList)
-        for id in range(len(gidList)):
-            self.assertEqual(result[0][id], pidList[id] )
-            self.assertEqual(result[1][id], lidList[id] )
-            self.assertEqual(result[2][id], sizeList[id])
+        self.failUnless((result[0] == pidList ).all())
+        self.failUnless((result[1] == lidList ).all())
+        self.failUnless((result[2] == sizeList).all())
 
     def testLID(self):
         "Test Epetra.Map LID method"
@@ -248,7 +246,7 @@ class EpetraMapTestCase(unittest.TestCase):
     def testMyGlobalElements(self):
         "Test Epetra.Map MyGlobalElements method"
         result = self.map3.MyGlobalElements()
-        self.assertEqual(result, self.myGlobalEls)
+        self.failUnless((result == self.myGlobalEls).all())
 
     def testElementSize1(self):
         "Test Epetra.Map ElementSize method"
@@ -356,17 +354,15 @@ class EpetraMapTestCase(unittest.TestCase):
 
     def testFirstPointInElementList(self):
         "Test Epetra.Map FirstPointInElementList method"
-        firstPoints1 = [lid for lid in range(self.numMyElConst)]
-        firstPoints2 = [lid for lid in range(self.numMyEl     )]
+        firstPoints1 = range(self.numMyElConst)
+        firstPoints2 = range(self.numMyEl     )
         firstPoints3 = firstPoints2
         result1      = self.map1.FirstPointInElementList()
         result2      = self.map2.FirstPointInElementList()
         result3      = self.map3.FirstPointInElementList()
-        for lid in range(self.numMyElConst):
-            self.assertEqual(result1[lid], firstPoints1[lid])
-        for lid in range(self.numMyEl):
-            self.assertEqual(result2[lid], firstPoints2[lid])
-            self.assertEqual(result3[lid], firstPoints3[lid])
+        self.failUnless((result1 == firstPoints1).all())
+        self.failUnless((result2 == firstPoints2).all())
+        self.failUnless((result3 == firstPoints3).all())
 
     def testElementSizeList(self):
         "Test Epetra.Map ElementSizeList method"
@@ -376,18 +372,15 @@ class EpetraMapTestCase(unittest.TestCase):
         result1 = self.map1.ElementSizeList()
         result2 = self.map2.ElementSizeList()
         result3 = self.map3.ElementSizeList()
-        for lid in range(self.numMyElConst):
-            self.assertEqual(result1[lid], size1[lid])
-        for lid in range(self.numMyEl):
-            self.assertEqual(result2[lid], size2[lid])
-            self.assertEqual(result3[lid], size3[lid])
+        self.failUnless((result1 == size1).all())
+        self.failUnless((result2 == size2).all())
+        self.failUnless((result3 == size3).all())
 
     def testPointToElementList(self):
         "Test Epetra.Map PointToElementList method"
         elementList = range(self.map3.NumMyElements())
         result      = self.map3.PointToElementList()
-        for pointID in range(len(elementList)):
-            self.assertEqual(result[pointID], elementList[pointID])
+        self.failUnless((result == elementList).all())
 
     def testStr(self):
         "Test Epetra.Map __str__ method"
@@ -439,6 +432,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

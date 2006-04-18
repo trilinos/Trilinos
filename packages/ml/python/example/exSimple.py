@@ -57,6 +57,6 @@ def main(comm):
 if __name__ == "__main__":
   comm = Epetra.PyComm()
   err = main(comm)
-  errs = comm.SumAll(err)[0]
+  errs = comm.SumAll(err)
   if errs == 0 and comm.MyPID() == 0: print "End Result: TEST PASSED"
   sys.exit(errs)

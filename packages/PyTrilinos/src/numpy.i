@@ -1,10 +1,7 @@
 // -*- C -*-  (not really, but good for syntax highlighting)
 %{
-#ifndef SWIG_FILE_WITH_INIT
-#  define NO_IMPORT_ARRAY
-#endif
-#include "stdio.h"
-#include <numpy/arrayobject.h>
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 /* The following code originally appeared in
  * enthought/kiva/agg/src/numeric.i, author unknown.  It was
@@ -41,10 +38,13 @@ char* pytype_string(PyObject* py_obj) {
 /* Given a Numeric typecode, return a string describing the type.
  */
 char* typecode_string(int typecode) {
-  char* type_names[20] = {"char","unsigned byte","byte","short",
-			  "unsigned short","int","unsigned int","long",
-			  "float","double","complex float","complex double",
-			  "object","ntype","unkown"};
+  char* type_names[24] = {"bool", "byte", "unsigned byte", "short",
+			  "unsigned short", "int", "unsigned int", "long",
+			  "unsigned long", "long long", "unsigned long long",
+			  "float", "double", "long double", "complex float",
+			  "complex double", "complex long double", "object",
+			  "string", "unicode", "void", "ntypes", "notype",
+			  "unkown"};
   return type_names[typecode];
 }
 
@@ -55,9 +55,9 @@ int type_match(int actual_type, int desired_type) {
   int match = 1;
   if ( actual_type != desired_type &&
        !(desired_type == PyArray_CHAR  && actual_type == PyArray_SBYTE) &&
-       !(desired_type == PyArray_SBYTE && actual_type == PyArray_CHAR)  &&
-       !(desired_type == PyArray_INT   && actual_type == PyArray_LONG)  &&
-       !(desired_type == PyArray_LONG  && actual_type == PyArray_INT)) 
+       !(desired_type == PyArray_SBYTE && actual_type == PyArray_CHAR ) &&
+       !(desired_type == PyArray_INT   && actual_type == PyArray_LONG ) &&
+       !(desired_type == PyArray_LONG  && actual_type == PyArray_INT  )) 
     match = 0;
   return match;
 }
@@ -69,24 +69,24 @@ int type_match(int actual_type, int desired_type) {
 PyArrayObject* obj_to_array_no_conversion(PyObject* input, int typecode) {
   PyArrayObject* ary = NULL;
   if (is_array(input) && (typecode == PyArray_NOTYPE || array_type(input) == typecode)) {
-        ary = (PyArrayObject*) input;
-    }
-    else if is_array(input) {
-      char* desired_type = typecode_string(typecode);
-      char* actual_type = typecode_string(array_type(input));
-      PyErr_Format(PyExc_TypeError, 
-		   "Array of type '%s' required.  Array of type '%s' given", 
-		   desired_type, actual_type);
-      ary = NULL;
-    }
-    else {
-      char * desired_type = typecode_string(typecode);
-      char * actual_type = pytype_string(input);
-      PyErr_Format(PyExc_TypeError, 
-		   "Array of type '%s' required.  A %s was given", 
-		   desired_type, actual_type);
-      ary = NULL;
-    }
+    ary = (PyArrayObject*) input;
+  }
+  else if is_array(input) {
+    char* desired_type = typecode_string(typecode);
+    char* actual_type  = typecode_string(array_type(input));
+    PyErr_Format(PyExc_TypeError, 
+		 "Array of type '%s' required.  Array of type '%s' given", 
+		 desired_type, actual_type);
+    ary = NULL;
+  }
+  else {
+    char * desired_type = typecode_string(typecode);
+    char * actual_type  = pytype_string(input);
+    PyErr_Format(PyExc_TypeError, 
+		 "Array of type '%s' required.  A %s was given", 
+		 desired_type, actual_type);
+    ary = NULL;
+  }
   return ary;
 }
 

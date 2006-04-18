@@ -30,7 +30,7 @@
 #define EPETRA_NUMPYINTVECTOR_H
 
 #define NO_IMPORT_ARRAY
-#include "numeric_include.h"
+#include "numpy_include.h"
 
 #include "Epetra_SerialComm.h"
 #include "Epetra_BlockMap.h"

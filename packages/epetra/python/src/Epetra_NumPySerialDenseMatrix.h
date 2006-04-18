@@ -30,7 +30,7 @@
 #define EPETRA_NUMPYSERIALDENSEMATRIX_H
 
 #define NO_IMPORT_ARRAY
-#include "numeric_include.h"
+#include "numpy_include.h"
 
 #include "Epetra_SerialDenseMatrix.h"
 
@@ -50,7 +50,7 @@ public:
   // Overridden Epetra_SerialDenseMatrix methods.  These are overriden
   // for one of two reasons: (1) to provide a more python-like
   // signature, or (2) to maintain synchronization between the
-  // Epetra_SerialDenseMatrix and the Numeric array.
+  // Epetra_SerialDenseMatrix and the numpy array.
   int        Shape(  int numRows, int numCols);
   int        Reshape(int numRows, int numCols);
   PyObject * A() const;

@@ -52,7 +52,7 @@ except ImportError:
     from PyTrilinos import Epetra
     print "Using system-installed Epetra"
 
-from Numeric import *
+from numpy import *
 
 def main():
 
@@ -95,7 +95,7 @@ def main():
         source = [0, 0]
 
     #target = Comm.GlobalOp(Epetra.BROADCAST, source, 0)
-    aSource = array(source,typecode='i')
+    aSource = array(source,dtype='i')
     Comm.Broadcast(aSource,0)
     print "PE = ", base, ", BROADCAST = ", aSource
 

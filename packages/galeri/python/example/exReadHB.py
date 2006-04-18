@@ -33,6 +33,6 @@ except:
 # at this point you can use the objects in any PyTrilinos module,
 # for example AztecOO, Amesos, IFPACK, ML, and so on. 
 
-failures = Comm.SumAll(failures)[0]
+failures = Comm.SumAll(failures)
 if failures == 0 and Comm.MyPID() == 0: print "End Result: TEST PASSED"
 sys.exit(failures)

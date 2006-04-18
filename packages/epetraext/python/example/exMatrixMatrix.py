@@ -84,6 +84,6 @@ def main():
 
 if __name__ == "__main__":
     failures = main()
-    failures = comm.SumAll(failures)[0]
+    failures = comm.SumAll(failures)
     if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(failures)

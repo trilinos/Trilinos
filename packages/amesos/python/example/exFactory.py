@@ -119,6 +119,6 @@ if iAmRoot:
   print "Using %s, ||x - x_ex||_1 = %e" % (Type, error);
 
 # Exit with a code that indicates the total number of successes
-successes = Comm.SumAll(1)[0]
+successes = Comm.SumAll(1)
 if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
 sys.exit(numProc-successes)

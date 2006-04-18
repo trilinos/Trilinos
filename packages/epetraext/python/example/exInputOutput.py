@@ -119,6 +119,6 @@ if __name__ == "__main__":
         failures = main()
     else:
         failures = 0    # Not all I/O works in parallel
-    failures = comm.SumAll(failures)[0]
+    failures = comm.SumAll(failures)
     if failures == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(failures)

@@ -36,7 +36,7 @@ all-local:
 CORE_H = \
 	$(srcdir)/Callback.h        \
 	$(srcdir)/FileStream.h      \
-	$(srcdir)/numeric_include.h \
+	$(srcdir)/numpy_include.h \
 	$(srcdir)/NumPyWrapper.h    \
 	$(srcdir)/NumPyArray.h
 
@@ -48,7 +48,7 @@ CORE = \
 
 EXTRA_DIST = PyEpetra_Utils.h  \
 	     PyTeuchos_Utils.h \
-	     numeric.i
+	     numpy.i
 
 EXTRA_MPI_H =
 EXTRA_MPI = 

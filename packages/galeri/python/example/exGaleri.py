@@ -56,6 +56,6 @@ norm = Galeri.ComputeNorm(CrsMatrix, LHS, RHS)
 if iAmRoot: print "||A x - b||_2 = ", norm
 
 # Indicate success
-successes = comm.SumAll(1)[0]
+successes = comm.SumAll(1)
 if successes == numProc and iAmRoot: print "End Result: TEST PASSED"
 sys.exit(numProc-successes)

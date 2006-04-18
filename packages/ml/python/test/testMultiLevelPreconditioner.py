@@ -1,11 +1,11 @@
 #! /usr/bin/env python
 try:
-  import setpath
+    import setpath
 except ImportError:
-  from PyTrilinos import Epetra, AztecOO, Triutils, ML
-  print "Using installed versions of ML, Triutils, AztecOO, Epetra"
+    from PyTrilinos import Epetra, AztecOO, Triutils, ML
+    print "Using installed versions of ML, Triutils, AztecOO, Epetra"
 else:
-  import Epetra, AztecOO, Triutils, ML
+    import Epetra, AztecOO, Triutils, ML
 
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
@@ -20,12 +20,10 @@ LHS = Gallery.GetStartingSolution()
 RHS = Gallery.GetRHS()
 
 # sets up the parameters for ML using a python dictionary
-MLList = {
-  "max levels"        : 3, 
-  "output"            : 10,
-  "smoother: type"    : "symmetric Gauss-Seidel",
-  "aggregation: type" : "Uncoupled"
-}
+MLList = {"max levels"        : 3, 
+          "output"            : 10,
+          "smoother: type"    : "symmetric Gauss-Seidel",
+          "aggregation: type" : "Uncoupled"             }
 
 # creates the preconditioner and computes it
 Prec = ML.MultiLevelPreconditioner(Matrix, False)

@@ -84,7 +84,7 @@ for option in options:
 include_dirs.append(os.path.join(top_srcdir,"..","epetra","python","src"))
 
 # Alter the order of the libraries to ensure proper linking.  This seems to be
-# necessary SuperLU_DIST is enabled for an MPI build and the g2c library is
+# necessary when SuperLU_DIST is enabled for an MPI build and the g2c library is
 # required.
 g2c = "g2c"
 if g2c in libraries:

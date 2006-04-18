@@ -44,7 +44,7 @@ except ImportError:
     print >>sys.stderr, "Using system-installed Epetra"
 
 import unittest
-from   Numeric    import *
+from   numpy    import *
 
 ##########################################################################
 
@@ -105,7 +105,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def testMatrixConstructor4(self):
         "Test Epetra.SerialDenseMatrix 1D list constructor"
         list = self.array[1]
-        self.assertRaises(ValueError, Epetra.SerialDenseMatrix, list)
+        self.assertRaises(TypeError, Epetra.SerialDenseMatrix, list)
 
     def testMatrixConstructor5(self):
         "Test Epetra.SerialDenseMatrix 2D list constructor"
@@ -113,9 +113,10 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         self.assertEqual(sdm.CV(), Epetra.View)
         self.assertEqual(sdm.M(), len(self.array))
         self.assertEqual(sdm.N(), len(self.array[0]))
-        for i in range(sdm.M()):
-            for j in range(sdm.N()):
-                self.assertEquals(sdm[i,j], self.array[i][j])
+        self.failUnless((sdm == self.array).all())
+        #for i in range(sdm.M()):
+        #    for j in range(sdm.N()):
+        #        self.assertEquals(sdm[i,j], self.array[i][j])
 
     def testMatrixConstructor6(self):
         "Test Epetra.SerialDenseMatrix 2D list+bool constructor"
@@ -293,7 +294,7 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         sdm = Epetra.SerialDenseMatrix(self.array)
         self.assertEqual(sdm.ColDim(), sdm.N())
 
-# *** Matrix multiplication will not work until we convert from Numeric ***
+# *** Matrix multiplication will not work until we convert from numpy ***
 # *** to NumPy.  This will allow us to support FORTRAN-order indexing   ***
 
 #     def testMatrixMultiply(self):
@@ -819,6 +820,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

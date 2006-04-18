@@ -44,7 +44,6 @@ except ImportError:
     from PyTrilinos import Epetra, Galeri
     print >>sys.stderr, "Using system-installed Epetra, Galeri"
 
-from   Numeric  import *
 import unittest
 
 ##########################################################################
@@ -122,6 +121,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

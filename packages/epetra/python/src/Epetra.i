@@ -64,16 +64,16 @@ Epetra provides the following user-level classes:
     Utilities: Import, Export, Time, MapColoring
 
 The Epetra module has been designed to use and interoperate with the
-Numeric module, which provides multidimensional array support (note
-that Epetra will soon be upgraded from Numeric to NumPy).  Epetra
+numpy module, which provides multidimensional array support.  Epetra
 class constructors or methods that expect C arrays in C++ can
-typically accept Numeric arrays in python.  Similarly, methods that
-return C arrays in C++ will return Numeric arrays in python.  Also,
-certain Epetra classes represent contiguous blocks of homogeneous
-data.  These classes have been given the attributes of Numeric arrays
-using multiple inheritance, and include the Vector, MultiVector,
-IntVector, SerialDenseVector, SerialDenseMatrix, IntSerialDenseVector
-and IntSerialDenseMatrix classes.
+typically accept numpy arrays in python (or any python sequence that
+numpy can convert to an array).  Similarly, methods that return C
+arrays in C++ will return numpy arrays in python.  Also, certain
+Epetra classes represent contiguous blocks of homogeneous data.  These
+classes have been given the attributes of numpy arrays using multiple
+inheritance, and include the Vector, MultiVector, IntVector,
+SerialDenseVector, SerialDenseMatrix, IntSerialDenseVector and
+IntSerialDenseMatrix classes.
 """
 %enddef
 
@@ -94,6 +94,9 @@ using namespace std;
 %include "std_string.i"
 %include "std_vector.i"
 %include "exception.i"
+
+// Trilinos library include
+%include "numpy.i"
 
 // Epetra interface includes
 %include "Epetra_Base.i"              // Base classes and utility classes

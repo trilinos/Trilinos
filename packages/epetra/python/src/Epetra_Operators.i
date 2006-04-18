@@ -140,7 +140,7 @@ int method(int row, PyObject * values, PyObject * indices) {
 			(int*)indArray->data);
   Py_DECREF(valArray);
   Py_DECREF(indArray);
-  return 0;
+  return result;
  fail:
   Py_XDECREF(valArray);
   Py_XDECREF(indArray);
@@ -246,8 +246,8 @@ int method(int row, PyObject * values, PyObject * indices) {
       goto fail;
     }
     dimensions[0] = self->NumMyEntries(lrid);
-    valuesArray   = PyArray_FromDims(1,dimensions,'d');
-    indicesArray  = PyArray_FromDims(1,dimensions,'i');
+    valuesArray   = PyArray_SimpleNew(1,dimensions,'d');
+    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
     values        = (double *) ((PyArrayObject *)valuesArray )->data;
     indices       = (int    *) ((PyArrayObject *)indicesArray)->data;
     result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numEntries,
@@ -277,8 +277,8 @@ int method(int row, PyObject * values, PyObject * indices) {
       goto fail;
     }
     dimensions[0] = self->NumMyEntries(localRow);
-    valuesArray   = PyArray_FromDims(1,dimensions,'d');
-    indicesArray  = PyArray_FromDims(1,dimensions,'i');
+    valuesArray   = PyArray_SimpleNew(1,dimensions,'d');
+    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
     values        = (double *) ((PyArrayObject *)valuesArray )->data;
     indices       = (int    *) ((PyArrayObject *)indicesArray)->data;
     result        = self->ExtractMyRowCopy(localRow, dimensions[0], numEntries,
@@ -324,9 +324,11 @@ int method(int row, PyObject * values, PyObject * indices) {
     if (PyInt_Check(args)) {
       grid = (int) PyInt_AsLong(args);
       dimensions[0] = self->NumMyCols();
-      returnObj = PyArray_FromDims(1,dimensions,'d');
+      returnObj = PyArray_SimpleNew(1,dimensions,'d');
       if (returnObj == NULL) goto fail;
       data = (double*) ((PyArrayObject*) returnObj)->data;
+      for (int i=0; i<dimensions[0]; ++i) data[i] = 0.0;
+      returnObj = PyArray_Return((PyArrayObject*)returnObj);
 
       // If the matrix is FillComplete()-ed, obtain the local row data
       // and copy it into the data buffer
@@ -455,8 +457,7 @@ int method(int row, PyObject * values, PyObject * indices) {
     else
     {
       PyErr_SetString(PyExc_IndexError, "Input argument not supported");
-      Py_INCREF(Py_None);
-      return Py_None;
+      return Py_BuildValue("");
     }
   }
 

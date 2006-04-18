@@ -44,7 +44,7 @@ except ImportError:
     print >>sys.stderr, "Using system-installed Epetra"
 
 import unittest
-from   Numeric    import *
+from   numpy    import *
 
 ##########################################################################
 
@@ -287,6 +287,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

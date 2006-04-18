@@ -41,10 +41,10 @@ int * Epetra_NumPyIntSerialDenseVector::getArray(PyObject * pyObject)
     // If pyObject is an int, build an array of that length
     if PyInt_Check(pyObject) {
       int dimensions[ ] = {(int) PyInt_AsLong(pyObject)};
-      tmp_array = (PyArrayObject*) PyArray_FromDims(1,dimensions,'i');
+      tmp_array = (PyArrayObject*) PyArray_SimpleNew(1,dimensions,'i');
       if (tmp_array == NULL) {
 	dimensions[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_INT);
+	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_INT);
       }
 
     // Else try to build a contiguous PyArrayObject from the pyObject
@@ -56,7 +56,7 @@ int * Epetra_NumPyIntSerialDenseVector::getArray(PyObject * pyObject)
   // If this fails, build a single vector with zero length
   if (!tmp_array) {
     int dimensions[ ] = { 0 };
-    tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_INT);
+    tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_INT);
   }
 
   return (int*)(tmp_array->data);
@@ -70,8 +70,8 @@ void Epetra_NumPyIntSerialDenseVector::setArray()
     tmp_array = NULL;
   } else {
     int dimensions[ ] = {Length()};
-    array = (PyArrayObject*) PyArray_FromDimsAndData(1,dimensions,'i',
-						     (char*)Epetra_IntSerialDenseVector::Values());
+    array = (PyArrayObject*) PyArray_SimpleNewFromData(1,dimensions,'i',
+						       (void*)Epetra_IntSerialDenseVector::Values());
   }
 }
 

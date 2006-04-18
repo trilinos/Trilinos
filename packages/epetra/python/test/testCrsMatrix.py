@@ -44,7 +44,7 @@ except ImportError:
     print >>sys.stderr, "Using system-installed Epetra"
 
 import unittest
-from   Numeric    import *
+from   numpy    import *
 
 ##########################################################################
 
@@ -60,8 +60,8 @@ class EpetraCrsMatrixTestCase(unittest.TestCase):
         self.indexBase = 0
         self.rowMap    = Epetra.Map(self.size, self.indexBase, self.comm)
         mge            = list(self.rowMap.MyGlobalElements())
-        if self.indexBase not in mge: mge.append(mge[ 0]-1)
-        if self.size-1    not in mge: mge.append(mge[-1]+1)
+        if self.indexBase not in mge: mge.append(min(mge)-1)
+        if self.size-1    not in mge: mge.append(max(mge)+1)
         mge.sort()
         self.colMap    = Epetra.Map(-1, mge, self.indexBase, self.comm)
         self.nipr      = ones(self.mySize)
@@ -1150,6 +1150,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

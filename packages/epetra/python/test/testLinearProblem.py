@@ -43,7 +43,7 @@ except ImportError:
     from PyTrilinos import Epetra
     print >>sys.stderr, "Using system-installed Epetra"
 
-from   Numeric  import *
+from   numpy  import *
 import unittest
 
 ##########################################################################
@@ -75,7 +75,7 @@ class EpetraLinearProblemTestCase(unittest.TestCase):
         if hasattr(Epetra,'NumPyMultiVectorPtr'):
             self.assertEqual(isinstance(lhs,Epetra.NumPyMultiVectorPtr), True)
         else:
-            self.assertEqual(isinstance(lhs,Epetra.MultiVector), True)
+            self.failUnless(isinstance(lhs,Epetra.MultiVector))
             self.assertEqual(lhs[0], self.x[0])
 
 ##########################################################################
@@ -100,6 +100,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

@@ -30,7 +30,7 @@
 #define EPETRA_NUMPYINTSERIALDENSEVECTOR_H
 
 #define NO_IMPORT_ARRAY
-#include "numeric_include.h"
+#include "numpy_include.h"
 
 #include "Epetra_IntSerialDenseVector.h"
 
@@ -50,7 +50,7 @@ public:
   // Overridden Epetra_IntSerialDenseVector methods.  These are
   // overriden for one of two reasons: (1) to provide a more
   // python-like signature, or (2) to maintain synchronization between
-  // the Epetra_SerialDenseVector and the Numeric array.
+  // the Epetra_SerialDenseVector and the numpy array.
   int        Size(int length);
   int        Resize(int length);
   PyObject * Values() const;

@@ -51,7 +51,7 @@ int * Epetra_NumPyIntVector::getArray(PyObject * pyObject)
   // Error
   if (!tmp_array) {
     int dimensions[ ] = { 0 };
-    tmp_array = (PyArrayObject *) PyArray_FromDims(1,dimensions,PyArray_DOUBLE);
+    tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,dimensions,PyArray_INT);
   }
 
   return (int*)(tmp_array->data);
@@ -69,10 +69,10 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
 
     // PyObject argument is a bool
     if PyBool_Check(pyObject) {
-      tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
+      tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
       if (tmp_array == NULL) {
 	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
+	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
       }
 
     // PyObject argument is not a bool ... try to build a contiguous PyArrayObject from it
@@ -82,7 +82,7 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
       // If this fails, build a single vector with zero length
       if (tmp_array == NULL) {
 	defaultDims[0] = 0;
-	tmp_array = (PyArrayObject *) PyArray_FromDims(1,defaultDims,PyArray_DOUBLE);
+	tmp_array = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,PyArray_INT);
 
       // If the contiguous PyArrayObject built successfully, make sure
       // it has the correct number of dimensions
@@ -90,8 +90,8 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
 	int nd = tmp_array->nd;
 	int arraySize = _PyArray_multiply_list(tmp_array->dimensions,nd);
 	if (arraySize != defaultDims[0]) {
-	  PyArrayObject * myArray = (PyArrayObject *) PyArray_FromDims(1,defaultDims,
-								       PyArray_INT);
+	  PyArrayObject * myArray = (PyArrayObject *) PyArray_SimpleNew(1,defaultDims,
+									PyArray_INT);
 	  int           * myData  = (int *) myArray->data;
 	  int           * tmpData = (int *) tmp_array->data;
 	  for (int i=0; i<defaultDims[0]; i++) {
@@ -141,8 +141,8 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap, b
   int dims[ ] = { blockMap.NumMyPoints() };
   int *v = NULL;
   Epetra_IntVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_INT,
-						    (char *)v);
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_INT,
+						      (void *)v);
 
   // Copy the Epetra_BlockMap
   map = new Epetra_BlockMap(blockMap);
@@ -156,8 +156,8 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_IntVector & source):
   int dims[ ] = { map->NumMyPoints() };
   int *v = NULL;
   Epetra_IntVector::ExtractView(&v);
-  array = (PyArrayObject *) PyArray_FromDimsAndData(1,dims,PyArray_INT,
-						    (char *)v);
+  array = (PyArrayObject *) PyArray_SimpleNewFromData(1,dims,PyArray_INT,
+						      (void *)v);
 }
 
 // =============================================================================

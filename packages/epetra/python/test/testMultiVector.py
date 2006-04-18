@@ -44,7 +44,7 @@ except ImportError:
     print >>sys.stderr, "Using system-installed Epetra"
 
 import unittest
-from   Numeric    import *
+from   numpy    import *
 
 ##########################################################################
 
@@ -589,7 +589,7 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         emv2   = Epetra.MultiVector(map,array2)
         dot    = emv1.Dot(emv2)
         result = array([-14,-86])*self.comm.NumProc()
-        self.assertEqual(dot[:], result)
+        self.failUnless((dot == result).all())
 
     def testAbs(self):
         "Test Epetra.MultiVector Abs method"
@@ -652,11 +652,11 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         "Test Epetra.MultiVector Norm1 method"
         a      = [self.numPyArray1,self.numPyArray2]
         emv    = Epetra.MultiVector(self.map,a)
-        result = [sum(self.numPyArray1) * self.comm.NumProc(),
-                  sum(self.numPyArray2) * self.comm.NumProc()]
+        result = [sum(abs(self.numPyArray1)) * self.comm.NumProc(),
+                  sum(abs(self.numPyArray2)) * self.comm.NumProc()]
         norm1  = emv.Norm1()
-        self.assertEquals(len(norm1),2     )
-        self.assertEquals(norm1[:],  result)
+        self.assertEquals(len(norm1), 2)
+        self.failUnless((norm1 == result).all())
 
     def testNorm2(self):
         "Test Epetra.MultiVector Norm2 method"
@@ -665,8 +665,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         result = [sqrt(sum(self.numPyArray1*self.numPyArray1) * self.comm.NumProc()),
                   sqrt(sum(self.numPyArray2*self.numPyArray2) * self.comm.NumProc())]
         norm2  = emv.Norm2()
-        self.assertEquals(len(norm2),2     )
-        self.assertEquals(norm2[:],  result)
+        self.assertEquals(len(norm2), 2)
+        self.failUnless((norm2 == result).all())
 
     def testNormInf(self):
         "Test Epetra.MultiVector NormInf method"
@@ -674,8 +674,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         emv     = Epetra.MultiVector(self.map,a)
         result  = [max(abs(self.numPyArray1)),max(abs(self.numPyArray2))]
         normInf = emv.NormInf()
-        self.assertEquals(len(normInf),2     )
-        self.assertEquals(normInf[:],  result)
+        self.assertEquals(len(normInf), 2)
+        self.failUnless((normInf == result).all())
 
     def testNormWeighted(self):
         "Test Epetra.MultiVector NormWeighted method"
@@ -685,8 +685,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         weights = Epetra.MultiVector(self.map,wts)
         result  = sqrt(sum((a/wts)**2,1)/self.length)
         norm    = emv.NormWeighted(weights)
-        self.assertEquals(len(norm),2     )
-        self.assertEquals(norm[:],  result)
+        self.assertEquals(len(norm), 2)
+        self.failUnless((norm == result).all())
 
     def testMinValue(self):
         "Test Epetra.MultiVector MinValue method"
@@ -694,8 +694,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         emv      = Epetra.MultiVector(self.map,a)
         result   = [min(self.numPyArray1),min(self.numPyArray2)]
         minValue = emv.MinValue()
-        self.assertEquals(len(minValue),2     )
-        self.assertEquals(minValue[:],  result)
+        self.assertEquals(len(minValue), 2)
+        self.failUnless((minValue == result).all())
 
     def testMaxValue(self):
         "Test Epetra.MultiVector MaxValue method"
@@ -703,8 +703,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         emv      = Epetra.MultiVector(self.map,a)
         result   = [max(self.numPyArray1),max(self.numPyArray2)]
         maxValue = emv.MaxValue()
-        self.assertEquals(len(maxValue),2     )
-        self.assertEquals(maxValue[:],  result)
+        self.assertEquals(len(maxValue), 2)
+        self.failUnless((maxValue == result).all())
 
     def testMeanValue(self):
         "Test Epetra.MultiVector MeanValue method"
@@ -713,8 +713,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         result    = [sum(self.numPyArray1)/self.length,
                      sum(self.numPyArray2)/self.length]
         meanValue = emv.MeanValue()
-        self.assertEquals(len(meanValue),2     )
-        self.assertEquals(meanValue[:],  result)
+        self.assertEquals(len(meanValue), 2)
+        self.failUnless((meanValue == result).all())
 
     def testMultiply1(self):
         "Test Epetra.MultiVector Multiply method"
@@ -774,6 +774,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

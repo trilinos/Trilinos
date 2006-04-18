@@ -45,13 +45,13 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
     if (PyBool_Check(pyObject)) {
       tmp_bool = (bool) PyInt_AsLong(pyObject);
       int dimensions[ ] = {0,0};
-      tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,'d');
+      tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
     // If pyObject is an int, then emulate an int-int constructor
     } else {
       if (PyInt_Check(pyObject)) {
 	int numRows = (int) PyInt_AsLong(pyObject);
 	int dimensions[ ] = {numRows, numCols};
-	tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,'d');
+	tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
       // If pyObject is not a bool nor an int, try to build a
       // contiguous 2D PyArrayObject from the pyObject
       } else {
@@ -63,7 +63,7 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
   // If no array has been correctly constructed, build a zero-by-zero matrix
   if (!tmp_array) {
     int dimensions[ ] = {0,0};
-    tmp_array = (PyArrayObject *) PyArray_FromDims(2,dimensions,PyArray_DOUBLE);
+    tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
   }
 
   return (double*)(tmp_array->data);
@@ -77,8 +77,8 @@ void Epetra_NumPySerialDenseMatrix::setArray()
     tmp_array = NULL;
   } else {
     int dimensions[ ] = {M(), N()};
-    array = (PyArrayObject*) PyArray_FromDimsAndData(2,dimensions,'d',
-						     (char*)Epetra_SerialDenseMatrix::A());
+    array = (PyArrayObject*) PyArray_SimpleNewFromData(2,dimensions,'d',
+						       (void*)Epetra_SerialDenseMatrix::A());
   }
   // *** This will have to wait until upgrade from Numeric to NumPy ***
   // Change the strides so that Numeric accesses the matrix elements

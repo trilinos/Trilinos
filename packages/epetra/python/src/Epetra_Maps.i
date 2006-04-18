@@ -37,12 +37,6 @@
 #include "Epetra_BasicDirectory.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
-
-int multiply_list(int * list, int n) {
-  int product = list[0];
-  for (int i=1; i<n; i++) product *= list[i];
-  return product;
-}
 %}
 
 // Ignore directives
@@ -115,8 +109,8 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     } else {
       elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
-				       ((PyArrayObject*)elementArray)->nd);
+      numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
+						((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       // Constructor for user-defined, arbitrary distribution of constant-size elements
       returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
@@ -153,8 +147,8 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       } else {
 	elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
 	if (elementArray == NULL) goto fail;
-	numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
-					 ((PyArrayObject*)elementArray)->nd);
+	numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
+						  ((PyArrayObject*)elementArray)->nd);
 	myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
 	// Constructor for user-defined, arbitrary distribution of constant-size elements
 	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
@@ -162,17 +156,17 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
 	Py_DECREF(elementArray);
       }
     } else {
-      // Obtain a Numeric element array and check
+      // Obtain a numpy element array and check
       elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
-				       ((PyArrayObject*)elementArray)->nd);
+      numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
+						((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       // Obtain a Numric element size array and check
       elementSizeArray = PyArray_ContiguousFromObject(myElementSizes,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElementSizes = multiply_list(((PyArrayObject*)elementSizeArray)->dimensions,
-					((PyArrayObject*)elementSizeArray)->nd);
+      numMyElementSizes = _PyArray_multiply_list(((PyArrayObject*)elementSizeArray)->dimensions,
+						 ((PyArrayObject*)elementSizeArray)->nd);
       if (numMyElements != numMyElementSizes) {
 	PyErr_Format(PyExc_ValueError,
 		     "Element and element size arrays must have same lengths\n"
@@ -207,13 +201,13 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     PyObject * returnObj = NULL;
     GIDArray = PyArray_ContiguousFromObject(GIDList,'i',0,0);
     if (GIDArray == NULL) goto fail;
-    numIDs[0] = multiply_list(((PyArrayObject*)GIDArray)->dimensions,
-			      ((PyArrayObject*)GIDArray)->nd);
-    PIDArray  = PyArray_FromDims(1,numIDs,PyArray_INT);
+    numIDs[0] = _PyArray_multiply_list(((PyArrayObject*)GIDArray)->dimensions,
+				       ((PyArrayObject*)GIDArray)->nd);
+    PIDArray  = PyArray_SimpleNew(1,numIDs,PyArray_INT);
     if (PIDArray == NULL) goto fail;
-    LIDArray  = PyArray_FromDims(1,numIDs,PyArray_INT);
+    LIDArray  = PyArray_SimpleNew(1,numIDs,PyArray_INT);
     if (LIDArray == NULL) goto fail;
-    sizeArray = PyArray_FromDims(1,numIDs,PyArray_INT);
+    sizeArray = PyArray_SimpleNew(1,numIDs,PyArray_INT);
     if (sizeArray == NULL) goto fail;
     GIDData  = (int*) (((PyArrayObject*)GIDArray)->data);
     PIDData  = (int*) (((PyArrayObject*)PIDArray)->data);
@@ -226,7 +220,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     }
     returnObj = Py_BuildValue("(OOO)",PIDArray,LIDArray,sizeArray);
     Py_DECREF(GIDArray );
-    return returnObj;
+    return PyArray_Return((PyArrayObject*)returnObj);
 
   fail:
     Py_XDECREF(GIDArray );
@@ -257,7 +251,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     int      * geData  = NULL;
     PyObject * geArray = NULL;
     numEls[0] = self->NumMyElements();
-    geArray   = PyArray_FromDims(1,numEls,PyArray_INT);
+    geArray   = PyArray_SimpleNew(1,numEls,PyArray_INT);
     if (geArray == NULL) goto fail;
     geData = (int*) (((PyArrayObject*)geArray)->data);
     result = self->MyGlobalElements(geData);
@@ -265,7 +259,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       PyErr_Format(PyExc_RuntimeError,"Bad MyGlobalElements return code = %d", result);
       goto fail;
     }
-    return geArray;
+    return PyArray_Return((PyArrayObject*)geArray);
 
   fail:
     Py_XDECREF(geArray );
@@ -274,22 +268,18 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
 
   PyObject * FirstPointInElementList() {
     int        numEls[1];
-    int        result;
+    int      * result;
     int      * fpeData  = NULL;
     PyObject * fpeArray = NULL;
     numEls[0] = self->NumMyElements();
-    fpeArray  = PyArray_FromDims(1,numEls,PyArray_INT);
+    fpeArray  = PyArray_SimpleNew(1,numEls,PyArray_INT);
     if (fpeArray == NULL) goto fail;
     fpeData = (int*) (((PyArrayObject*)fpeArray)->data);
-    result = self->FirstPointInElementList(fpeData);
-    if (result != 0) {
-      PyErr_Format(PyExc_RuntimeError,"Bad FirstPointInElementList return code = %d", result);
-      goto fail;
-    }
-    return fpeArray;
-
+    result  = self->FirstPointInElementList();
+    for (int i=0; i<numEls[0]; ++i) fpeData[i] = result[i];
+    return PyArray_Return((PyArrayObject*)fpeArray);
   fail:
-    Py_XDECREF(fpeArray );
+    Py_XDECREF(fpeArray);
     return NULL;
   }
 
@@ -299,7 +289,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     int      * eslData  = NULL;
     PyObject * eslArray = NULL;
     numEls[0] = self->NumMyElements();
-    eslArray  = PyArray_FromDims(1,numEls,PyArray_INT);
+    eslArray  = PyArray_SimpleNew(1,numEls,PyArray_INT);
     if (eslArray == NULL) goto fail;
     eslData = (int*) (((PyArrayObject*)eslArray)->data);
     result = self->ElementSizeList(eslData);
@@ -307,7 +297,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       PyErr_Format(PyExc_RuntimeError,"Bad ElementSizeList return code = %d", result);
       goto fail;
     }
-    return eslArray;
+    return PyArray_Return((PyArrayObject*)eslArray);
 
   fail:
     Py_XDECREF(eslArray );
@@ -320,7 +310,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     int      * pteData  = NULL;
     PyObject * pteArray = NULL;
     numPts[0] = self->NumMyPoints();
-    pteArray  = PyArray_FromDims(1,numPts,PyArray_INT);
+    pteArray  = PyArray_SimpleNew(1,numPts,PyArray_INT);
     if (pteArray == NULL) goto fail;
     pteData = (int*) (((PyArrayObject*)pteArray)->data);
     result = self->PointToElementList(pteData);
@@ -328,7 +318,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       PyErr_Format(PyExc_RuntimeError,"Bad PointToElementList return code = %d", result);
       goto fail;
     }
-    return pteArray;
+    return PyArray_Return((PyArrayObject*)pteArray);
 
   fail:
     Py_XDECREF(pteArray );
@@ -353,11 +343,11 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       numMyElements = (int) PyInt_AsLong(myGlobalElementArray);
       returnMap = new Epetra_Map(numGlobalElements,numMyElements,indexBase,comm);
     } else {
-      // Obtain a Numeric element array and check
+      // Obtain a numpy element array and check
       elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = multiply_list(((PyArrayObject*)elementArray)->dimensions,
-				       ((PyArrayObject*)elementArray)->nd);
+      numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
+						((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       returnMap = new Epetra_Map(numGlobalElements,numMyElements,myGlobalElements,
 				 indexBase,comm);
@@ -376,12 +366,12 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     int        numIDs[]    = {self->numMethod()};
     int      * ids         = NULL;
     int      * returnData  = NULL;
-    PyObject * returnArray = PyArray_FromDims(1,numIDs,'i');
+    PyObject * returnArray = PyArray_SimpleNew(1,numIDs,'i');
     if (returnArray == NULL) goto fail;
     ids        = self->methodName();
     returnData = (int*)((PyArrayObject*)returnArray)->data;
     for (int i=0; i<numIDs[0]; i++) returnData[i] = ids[i];
-    return returnArray;
+    return PyArray_Return((PyArrayObject*)returnArray);
   fail:
     return NULL;
   }

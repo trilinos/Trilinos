@@ -28,9 +28,6 @@ if test -n "$PYTHON"; then
   AC_MSG_ERROR([You must have Python.h in order to build the Python support!!]))
   CPPFLAGS="$save_CPPFLAGS"
 
-  # Check for Numeric
-  AC_PYTHON_MODULE(Numeric,yes)
-
   # If user specifies prefix, use it for the PYTHON_PREFIX
   if test "$prefix" != "$ac_default_prefix"; then
     PYTHON_PREFIX=$prefix

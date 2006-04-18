@@ -89,7 +89,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
   if (result == -1) SWIG_exception(SWIG_ValueError,   "Invalid row index"  );
   if (result == -2) SWIG_exception(SWIG_RuntimeError, "Graph not completed");
   int dims[ ] = { *$1 };
-  $result = PyArray_FromDimsAndData(1,dims,'i',(char*)(*$2));
+  $result = PyArray_SimpleNewFromData(1,dims,'i',(void*)(*$2));
   if ($result == NULL) SWIG_exception(SWIG_RuntimeError, "Error creating integer array");
 }
 // End argout typemap collection for (int & NumIndices, int * Indices)
@@ -190,14 +190,14 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(lrid);
-    indicesArray  = PyArray_FromDims(1,dimensions,'i');
+    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
     indices       = (int *) ((PyArrayObject *)indicesArray)->data;
     result        = self->ExtractGlobalRowCopy(globalRow, dimensions[0], numIndices, indices);
     if (result == -2) {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");
       goto fail;
     }
-    return indicesArray;
+    return PyArray_Return((PyArrayObject*)indicesArray);
   fail:
     Py_XDECREF(indicesArray);
     return NULL;
@@ -219,14 +219,14 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
       goto fail;
     }
     dimensions[0] = self->NumMyIndices(localRow);
-    indicesArray  = PyArray_FromDims(1,dimensions,'i');
+    indicesArray  = PyArray_SimpleNew(1,dimensions,'i');
     indices       = (int *) ((PyArrayObject *)indicesArray)->data;
     result        = self->ExtractMyRowCopy(localRow, dimensions[0], numIndices, indices);
     if (result == -2) {
       PyErr_SetString(PyExc_RuntimeError, "Graph not completed");
       goto fail;
     }
-    return indicesArray;
+    return PyArray_Return((PyArrayObject*)indicesArray);
   fail:
     Py_XDECREF(indicesArray);
     return NULL;

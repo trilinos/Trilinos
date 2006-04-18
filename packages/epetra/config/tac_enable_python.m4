@@ -27,8 +27,20 @@ if test -n "$PYTHON"; then
   AC_MSG_ERROR([You must have Python.h in order to build the Python support!!]))
   CPPFLAGS="$save_CPPFLAGS"
 
-  # Check for Numeric
-  AC_PYTHON_MODULE(Numeric,yes)
+  # Check for numpy python module
+  AC_PYTHON_MODULE(numpy,yes)
+  AC_PYTHON_MODULE(numpy.lib.UserArray,yes)
+
+  # Check that numpy/arrayobject.h is available
+  save_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="$save_CPPFLAGS $PYTHON_CSPEC"
+  AC_LANG([C++])
+  AC_CHECK_HEADER(
+  [numpy/arrayobject.h],
+  break,
+  AC_MSG_ERROR([numpy/arrayobject.h not found]),
+  [#include <Python.h>])
+  CPPFLAGS="$save_CPPFLAGS"
 
   # If user specifies prefix, use it for the PYTHON_PREFIX
   if test "$prefix" != "$ac_default_prefix"; then

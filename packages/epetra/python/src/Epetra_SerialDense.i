@@ -110,7 +110,7 @@ NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPySerialDenseVector   )
 // Python code
 %pythoncode %{
 
-from UserArray import *
+from numpy.lib.UserArray import *
 
 class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
     def __init__(self, *args):
@@ -123,25 +123,33 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
         NumPySerialDenseMatrix.__init__(self, *args)
         self.__initArray__()
     def __initArray__(self):
-        UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
+        UserArray.__init__(self, self.A(), dtype="d", copy=False)
         self.__protected = True
     def __str__(self):
         return str(self.array)
     def __getattr__(self, key):
         # This should get called when the SerialDenseMatrix is accessed after
         # not properly being initialized
-        if not 'array' in self.__dict__:
+        if not "array" in self.__dict__:
             self.__initArray__()
-        return self.__dict__[key]
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return SerialDenseMatrix.__getattribute__(self, key)
     def __setattr__(self, key, value):
-        "Protect the 'array' and 'shape' attributes"
-        if key in self.__dict__:
-            if self.__protected:
-                if key == "array":
-                    raise AttributeError, "Cannot change Epetra.SerialDenseMatrix array attribute"
-                if key == "shape":
-                    raise AttributeError, "Cannot change Epetra.SerialDenseMatrix shape attribute"
-        UserArray.__setattr__(self, key, value)
+        "Handle 'this' attribute properly and protect the 'array' and 'shape' attributes"
+        if key == "this":
+            NumPySerialDenseMatrix.__setattr__(self, key, value)
+        else:
+            if key in self.__dict__:
+                if self.__protected:
+                    if key == "array":
+                        raise AttributeError, \
+                              "Cannot change Epetra.SerialDenseMatrix array attribute"
+                    if key == "shape":
+                        raise AttributeError, \
+                              "Cannot change Epetra.SerialDenseMatrix shape attribute"
+            UserArray.__setattr__(self, key, value)
     def __call__(self,i,j):
         "__call__(self, int i, int j) -> double"
         return self.__getitem__(i,j)
@@ -149,13 +157,13 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
         "Shape(self, int numRows, int numCols) -> int"
         result = NumPySerialDenseMatrix.Shape(self,numRows,numCols)
         self.__protected = False
-        UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
+        UserArray.__init__(self, self.A(), dtype="d", copy=False)
         self.__protected = True
     def Reshape(self,numRows,numCols):
         "Reshape(self, int numRows, int numCols) -> int"
         result = NumPySerialDenseMatrix.Reshape(self,numRows,numCols)
         self.__protected = False
-        UserArray.__init__(self,self.A(),'d',copy=False,savespace=True)
+        UserArray.__init__(self,self.A(),dtype="d",copy=False)
         self.__protected = True
 _Epetra.NumPySerialDenseMatrix_swigregister(SerialDenseMatrix)
 
@@ -170,23 +178,30 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         NumPySerialDenseVector.__init__(self, *args)
         self.__initArray__()
     def __initArray__(self):
-        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
+        UserArray.__init__(self, self.Values(), dtype="d", copy=False)
         self.__protected = True
     def __str__(self):
         return str(self.array)
     def __getattr__(self, key):
         # This should get called when the SerialDenseVector is accessed after
         # not properly being initialized
-        if not 'array' in self.__dict__:
+        if not "array" in self.__dict__:
             self.__initArray__()
-        return self.__dict__[key]
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return SerialDenseVector.__getattribute__(self, key)
     def __setattr__(self, key, value):
-        "Protect the 'array' attribute"
-        if key in self.__dict__:
-            if self.__protected:
-                if key == "array":
-                    raise AttributeError, "Cannot change Epetra.SerialDenseVector array attribute"
-        UserArray.__setattr__(self, key, value)
+        "Handle 'this' attribute properly and protect the 'array' attribute"
+        if key == "this":
+            NumPySerialDenseVector.__setattr__(self, key, value)
+        else:
+            if key in self.__dict__:
+                if self.__protected:
+                    if key == "array":
+                        raise AttributeError, \
+                              "Cannot change Epetra.SerialDenseVector array attribute"
+            UserArray.__setattr__(self, key, value)
     def __call__(self,i):
         "__call__(self, int i) -> double"
         return self.__getitem__(i)
@@ -194,13 +209,13 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         "Size(self, int length) -> int"
         result = NumPySerialDenseVector.Size(self,length)
         self.__protected = False
-        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
+        UserArray.__init__(self, self.Values(), dtype="d", copy=False)
         self.__protected = True
     def Resize(self,length):
         "Resize(self, int length) -> int"
         result = NumPySerialDenseVector.Resize(self,length)
         self.__protected = False
-        UserArray.__init__(self,self.Values(),'d',copy=False,savespace=True)
+        UserArray.__init__(self, self.Values(), dtype="d", copy=False)
         self.__protected = True
 _Epetra.NumPySerialDenseVector_swigregister(SerialDenseVector)
 
@@ -215,24 +230,30 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
         NumPyIntSerialDenseVector.__init__(self, *args)
         self.__initArray__()
     def __initArray__(self):
-        UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
+        UserArray.__init__(self, self.Values(), dtype="i", copy=False)
         self.__protected = True
     def __str__(self):
         return str(self.array)
     def __getattr__(self, key):
         # This should get called when the IntSerialDenseVector is accessed after
         # not properly being initialized
-        if not 'array' in self.__dict__:
+        if not "array" in self.__dict__:
             self.__initArray__()
-        return self.__dict__[key]
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return IntSerialDenseVector.__getattribute__(self, key)
     def __setattr__(self, key, value):
-        "Protect the 'array' attribute"
-        if key in self.__dict__:
-            if self.__protected:
-                if key == "array":
-                    raise AttributeError, "Cannot change Epetra.IntSerialDenseVector array" + \
-		      " attribute"
-        UserArray.__setattr__(self, key, value)
+        "Handle 'this' attribute properly and protect the 'array' attribute"
+        if key == "this":
+            NumPyIntSerialDenseVector.__setattr__(self, key, value)
+        else:
+            if key in self.__dict__:
+                if self.__protected:
+                    if key == "array":
+                        raise AttributeError, \
+                              "Cannot change Epetra.IntSerialDenseVector array attribute"
+            UserArray.__setattr__(self, key, value)
     def __call__(self,i):
         "__call__(self, int i) -> int"
         return self.__getitem__(i)
@@ -240,13 +261,13 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
         "Size(self, int length) -> int"
         result = NumPyIntSerialDenseVector.Size(self,length)
         self.__protected = False
-        UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
+        UserArray.__init__(self, self.Values(), dtype="i", copy=False)
         self.__protected = True
     def Resize(self,length):
         "Resize(self, int length) -> int"
         result = NumPyIntSerialDenseVector.Resize(self,length)
         self.__protected = False
-        UserArray.__init__(self,self.Values(),'i',copy=False,savespace=True)
+        UserArray.__init__(self, self.Values(), dtype="i", copy=False)
         self.__protected = True
 _Epetra.NumPyIntSerialDenseVector_swigregister(IntSerialDenseVector)
 

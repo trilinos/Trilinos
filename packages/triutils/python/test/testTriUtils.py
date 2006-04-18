@@ -71,8 +71,10 @@ class TriutilsTestCase(unittest.TestCase):
     def testGetRHS(self):
         "Test Triutils.CrsMatrixGallery GetRHS method"
         rhs = self.gallery.GetRHS()
+        # This is the result if swig version < 1.3.28
         if hasattr(Epetra,'NumPyMultiVectorPtr'):
             self.assertEqual(isinstance(rhs,Epetra.NumPyMultiVectorPtr), True)
+        # This is the result if swig version >= 1.3.28
         else:
             self.assertEqual(isinstance(rhs,Epetra.MultiVector), True)
 
@@ -97,6 +99,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
-    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))[0]
+    errsPlusFails = comm.SumAll(len(result.errors) + len(result.failures))
     if errsPlusFails == 0 and iAmRoot: print "End Result: TEST PASSED"
     sys.exit(errsPlusFails)

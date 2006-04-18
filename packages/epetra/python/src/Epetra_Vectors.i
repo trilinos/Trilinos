@@ -123,14 +123,15 @@ TYPEMAP_OUT(Epetra_IntVector,  Epetra_NumPyIntVector  )
 %include "Epetra_NumPyIntVector.h"
 
 // Python code.  Here we define the Epetra.MultiVector, Epetra.Vector
-// and Epetra.IntVector python classes, which multiply inherit from
-// the Numeric UserArray class (making these classes Numeric arrays)
-// and the Epetra_NumPyMultiVector, Epetra_NumPyVector or
+// and Epetra.IntVector python classes, which multiply-inherit from
+// the numpy UserArray class (making these classes numpy arrays) and
+// the Epetra_NumPyMultiVector, Epetra_NumPyVector or
 // Epetra_NumPyIntVector class (making these classes also Epetra
 // objects).
 %pythoncode %{
 
-from UserArray import *
+from numpy import *
+from numpy.lib.UserArray import *
 
 class MultiVector(UserArray,NumPyMultiVector):
     def __init__(self, *args):
@@ -142,29 +143,34 @@ class MultiVector(UserArray,NumPyMultiVector):
         __init__(self, PyObject array) -> MultiVector
         """
         NumPyMultiVector.__init__(self, *args)
-        #self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
-        UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
+        UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
     def __str__(self):
         return str(self.array)
     def __getattr__(self, key):
         # This should get called when the MultiVector is accessed after not
         # properly being initialized
-        if not 'array' in self.__dict__:
+        if not "array" in self.__dict__:
             self.__initArray__()
-        return self.__dict__[key]
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return MultiVector.__getattribute__(self, key)
     def __setattr__(self, key, value):
-        "Protect the 'array' and 'shape' attributes"
-        if key == "array":
-            if key in self.__dict__:
-                raise AttributeError, "Cannot change Epetra.MultiVector array attribute"
-        elif key == "shape":
-            value = tuple(value)
-            if len(value) < 2:
-                raise ValueError, "Epetra.MultiVector shape is " + str(value) + \
-		  " but must have minimum of 2 elements"
-        UserArray.__setattr__(self, key, value)
+        "Handle 'this' properly and protect the 'array' and 'shape' attributes"
+        if key == "this":
+            NumPyMultiVector.__setattr__(self, key, value)
+        else:
+            if key == "array":
+                if key in self.__dict__:
+                    raise AttributeError, "Cannot change Epetra.MultiVector array attribute"
+            elif key == "shape":
+                value = tuple(value)
+                if len(value) < 2:
+                    raise ValueError, "Epetra.MultiVector shape is " + str(value) + \
+                      " but must have minimum of 2 elements"
+            UserArray.__setattr__(self, key, value)
 _Epetra.NumPyMultiVector_swigregister(MultiVector)
 
 class Vector(UserArray,NumPyVector):
@@ -177,24 +183,29 @@ class Vector(UserArray,NumPyVector):
         __init__(self, PyObject array) -> Vector
         """
         NumPyVector.__init__(self, *args)
-        #self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
-        UserArray.__init__(self,self.ExtractView(),'d',copy=False,savespace=True)
+        UserArray.__init__(self, self.ExtractView(), dtype="d", copy=False)
     def __str__(self):
         return str(self.array)
     def __getattr__(self, key):
         # This should get called when the Vector is accessed after not properly
         # being initialized
-        if not 'array' in self.__dict__:
+        if not "array" in self.__dict__:
             self.__initArray__()
-        return self.__dict__[key]
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return Vector.__getattribute__(self, key)
     def __setattr__(self, key, value):
-        "Protect the 'array' attribute"
-        if key == "array":
-            if key in self.__dict__:
-                raise AttributeError, "Cannot change Epetra.Vector array attribute"
-        UserArray.__setattr__(self, key, value)
+        "Handle 'this' properly and protect the 'array' attribute"
+        if key == "this":
+            NumPyVector.__setattr__(self, key, value)
+        else:
+            if key == "array":
+                if key in self.__dict__:
+                    raise AttributeError, "Cannot change Epetra.Vector array attribute"
+            UserArray.__setattr__(self, key, value)
 _Epetra.NumPyVector_swigregister(Vector)
 
 class IntVector(UserArray,NumPyIntVector):
@@ -206,24 +217,29 @@ class IntVector(UserArray,NumPyIntVector):
         __init__(self, PyObject array) -> IntVector
         """
         NumPyIntVector.__init__(self, *args)
-        #self.CheckForError()
         self.__initArray__()
     def __initArray__(self):
-        UserArray.__init__(self,self.ExtractView(),'i',copy=False,savespace=True)
+        UserArray.__init__(self, self.ExtractView(), dtype="i", copy=False)
     def __str__(self):
         return str(self.array)
     def __getattr__(self, key):
         # This should get called when the IntVector is accessed after not
         # properly being initialized
-        if not 'array' in self.__dict__:
+        if not "array" in self.__dict__:
             self.__initArray__()
-        return self.__dict__[key]
+        try:
+            return self.array.__getattribute__(key)
+        except AttributeError:
+            return IntVector.__getattribute__(self, key)
     def __setattr__(self, key, value):
-        "Protect the 'array' attribute"
-        if key == "array":
-            if key in self.__dict__:
-                raise AttributeError, "Cannot change Epetra.IntVector array attribute"
-        UserArray.__setattr__(self, key, value)
+        "Handle 'this' properly and protect the 'array' attribute"
+        if key == "this":
+            NumPyIntVector.__setattr__(self, key, value)
+        else:
+            if key == "array":
+                if key in self.__dict__:
+                    raise AttributeError, "Cannot change Epetra.IntVector array attribute"
+            UserArray.__setattr__(self, key, value)
 _Epetra.NumPyIntVector_swigregister(IntVector)
 
 %}

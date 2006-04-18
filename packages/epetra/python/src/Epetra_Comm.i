@@ -67,11 +67,6 @@ PyObject* Finalize();
 %rename(Distributor  	 ) Epetra_Distributor;
 %rename(SerialDistributor) Epetra_Distributor;
 
-// Include the Numeric typemaps and helper functions
-%include "numeric.i"
-
-// Typemaps for interfacing Epetra_Comm objects and python Numeric
-
 // Include directives
 %include "Epetra_Comm.h"
 %include "Epetra_SerialComm.h"
@@ -80,8 +75,8 @@ PyObject* Finalize();
 
 /* Extend directives.  Many of the communicator methods take C arrays
  * as input or output arguments.  These extensions allow the python
- * user to use Numeric arrays instead, and for pure input arrays, any
- * python object that can be used to construct a Numeric array.
+ * user to use numpy arrays instead, and for pure input arrays, any
+ * python object that can be used to construct a numpy array.
  * Typemaps are not used because these methods are overloaded by array
  * type, and the SWIG overloading mechanism cannot disambiguate arrays
  * by type.  I only extend the base class (Epetra_Comm), which is
@@ -121,8 +116,7 @@ PyObject* Finalize();
       PyErr_Format(PyExc_RuntimeError, "Broadcast returned error code %d", result);
       goto fail;
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_BuildValue("");
   fail:
     return NULL;
   }
@@ -141,7 +135,7 @@ PyObject* Finalize();
       int allDims[allND];
       allDims[0] = self->NumProc();
       for (int i=1; i<allND; ++i) allDims[i] = myArray->dimensions[i-1];
-      allObj = PyArray_FromDims(allND, allDims, type);
+      allObj = PyArray_SimpleNew(allND, allDims, type);
     }
     if (!allObj) goto fail;
     if (type == PyArray_INT) {
@@ -169,7 +163,7 @@ PyObject* Finalize();
       goto fail;
     }
     if (is_new_object && myArray) Py_DECREF(myArray);
-    return allObj;
+    return PyArray_Return((PyArrayObject*)allObj);
   fail:
     if (is_new_object && myArray) Py_DECREF(myArray);
     return NULL;
@@ -184,7 +178,7 @@ PyObject* Finalize();
     if (!partialArray) goto fail;
     type      = array_type(partialArray);
     count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_FromDims(partialArray->nd, partialArray->dimensions, type);
+    globalObj = PyArray_SimpleNew(partialArray->nd, partialArray->dimensions, type);
     if (type == PyArray_INT) {
       int* partialVals = (int*)partialArray->data;
       int* globalVals  = (int*)((PyArrayObject*)globalObj)->data;
@@ -210,7 +204,7 @@ PyObject* Finalize();
       goto fail;
     }
     if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return globalObj;
+    return PyArray_Return((PyArrayObject*)globalObj);
   fail:
     if (is_new_object && partialArray) Py_DECREF(partialArray);
     return NULL;
@@ -225,7 +219,7 @@ PyObject* Finalize();
     if (!partialArray) goto fail;
     type      = array_type(partialArray);
     count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_FromDims(partialArray->nd, partialArray->dimensions, type);
+    globalObj = PyArray_SimpleNew(partialArray->nd, partialArray->dimensions, type);
     if (type == PyArray_INT) {
       int* partialMaxs = (int*)partialArray->data;
       int* globalMaxs  = (int*)((PyArrayObject*)globalObj)->data;
@@ -251,7 +245,7 @@ PyObject* Finalize();
       goto fail;
     }
     if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return globalObj;
+    return PyArray_Return((PyArrayObject*)globalObj);
   fail:
     if (is_new_object && partialArray) Py_DECREF(partialArray);
     return NULL;
@@ -266,7 +260,7 @@ PyObject* Finalize();
     if (!partialArray) goto fail;
     type      = array_type(partialArray);
     count     = PyArray_SIZE(partialArray);
-    globalObj = PyArray_FromDims(partialArray->nd, partialArray->dimensions, type);
+    globalObj = PyArray_SimpleNew(partialArray->nd, partialArray->dimensions, type);
     if (type == PyArray_INT) {
       int* partialMins = (int*)partialArray->data;
       int* globalMins  = (int*)((PyArrayObject*)globalObj)->data;
@@ -292,7 +286,7 @@ PyObject* Finalize();
       goto fail;
     }
     if (is_new_object && partialArray) Py_DECREF(partialArray);
-    return globalObj;
+    return PyArray_Return((PyArrayObject*)globalObj);
   fail:
     if (is_new_object && partialArray) Py_DECREF(partialArray);
     return NULL;
@@ -307,7 +301,7 @@ PyObject* Finalize();
     if (!myArray) goto fail;
     type    = array_type(myArray);
     count   = PyArray_SIZE(myArray);
-    scanObj = PyArray_FromDims(myArray->nd, myArray->dimensions, type);
+    scanObj = PyArray_SimpleNew(myArray->nd, myArray->dimensions, type);
     if (type == PyArray_INT) {
       int* myVals   = (int*)myArray->data;
       int* scanSums = (int*)((PyArrayObject*)scanObj)->data;
@@ -333,7 +327,7 @@ PyObject* Finalize();
       goto fail;
     }
     if (is_new_object && myArray) Py_DECREF(myArray);
-    return scanObj;
+    return PyArray_Return((PyArrayObject*)scanObj);
   fail:
     if (is_new_object && myArray) Py_DECREF(myArray);
     return NULL;
@@ -363,8 +357,7 @@ atexit.register(Finalize)
 PyObject* Init_Argv(PyObject *args) {
   int ierr = 0;
   MPI_Initialized(&ierr);
-  if (ierr)
-    return Py_BuildValue("");
+  if (ierr) return Py_BuildValue("");
 
   int i, error, myid, size;
   int argc = 0;

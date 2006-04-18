@@ -182,8 +182,7 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 	self->Print(os);
       }
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+    return Py_BuildValue("");
   }
 }
 
@@ -219,11 +218,11 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
     int      * list    = self->ListOfColors();
     int        dims[ ] = { self->NumColors() };
     int      * data;
-    PyObject * retObj  = PyArray_FromDims(1,dims,'i');
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
     if (retObj == NULL) goto fail;
     data = (int*)(((PyArrayObject*)(retObj))->data);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
-    return retObj;
+    return PyArray_Return((PyArrayObject*)retObj);
   fail:
     Py_XDECREF(retObj);
     return NULL;
@@ -233,11 +232,11 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
     int      * list    = self->ColorLIDList(color);
     int        dims[ ] = { self->NumElementsWithColor(color) };
     int      * data;
-    PyObject * retObj  = PyArray_FromDims(1,dims,'i');
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
     if (retObj == NULL) goto fail;
     data = (int*)(((PyArrayObject*)(retObj))->data);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
-    return retObj;
+    return PyArray_Return((PyArrayObject*)retObj);
   fail:
     Py_XDECREF(retObj);
     return NULL;
@@ -247,11 +246,11 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
     int      * list    = self->ElementColors();
     int        dims[ ] = { self->Map().NumMyElements() };
     int      * data;
-    PyObject * retObj  = PyArray_FromDims(1,dims,'i');
+    PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
     if (retObj == NULL) goto fail;
     data = (int*)(((PyArrayObject*)(retObj))->data);
     for (int i = 0; i<dims[0]; i++) data[i] = list[i];
-    return retObj;
+    return PyArray_Return((PyArrayObject*)retObj);
   fail:
     Py_XDECREF(retObj);
     return NULL;
