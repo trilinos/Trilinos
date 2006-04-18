@@ -32,8 +32,6 @@
 module dr_sort
 use zoltan
 implicit none
-private
-
 public :: dr_sort_index
 
 contains

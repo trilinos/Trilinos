@@ -150,6 +150,9 @@ type(PARIO_INFO) :: pio_info
       mm_iidx(i) = mm_iidx(i) - 1
     enddo
 
+    deallocate(idx)
+    deallocate(tmp)
+
   endif ! Proc == 0
 
 ! BCast pertinent info to all procs.
