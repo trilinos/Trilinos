@@ -94,7 +94,7 @@ typedef struct {
                        >= p is invalid. */
   int bisec_split;  /* For fixed vertex partitioning via Recursive Bisection
                        treat vertices fixed in parts < bisec_split as
-                       they were in the same part.
+                       they were in the part 0 and the others in part 1.
                     if bisec_split < 0 
                        if fixed!=NULL  it is k-way partitioning use fixed
                                       parts as they apear
