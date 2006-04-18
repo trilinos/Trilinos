@@ -62,8 +62,11 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: npins, nedges, nvtxs
   integer(Zoltan_INT), allocatable ::  iidx(:) ! pin data
   integer(Zoltan_INT), allocatable ::  jidx(:) ! pin data
+  integer(Zoltan_INT), allocatable ::  idx(:)  ! temp index 
+  integer(Zoltan_INT), allocatable ::  tmp(:)  ! temp values 
   integer i, prev, temp
   logical sorted
+
 !/***************************** BEGIN EXECUTION ******************************/
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -89,6 +92,8 @@ type(PARIO_INFO) :: pio_info
     allocate(mm_iidx(0:mm_nnz-1), stat=allocstat)
     allocate(mm_jidx(0:mm_nnz-1), stat=allocstat)
     allocate(mm_rval(0:mm_nnz-1), stat=allocstat)
+    allocate(idx(0:mm_nnz-1), stat=allocstat)
+    allocate(tmp(0:mm_nnz-1), stat=allocstat)
     if (allocstat /= 0) then
       print *, "fatal: insufficient memory"
       read_mm_file = .false.
@@ -102,11 +107,7 @@ type(PARIO_INFO) :: pio_info
 !   Don't need the numerical values.
     if (associated(mm_rval)) deallocate(mm_rval)
 
-!   EBEB Currently, our f90 version assumes the i indices are in sorted order.
-!   EBEB If the MM input file is not sorted by i index, we transpose the 
-!   EBEB matrix hoping that it was sorted by j index!
-!   EBEB This is a hack to enable testing and should be removed in the future
-!   EBEB when index sorting has been implemented (see KDDKDD).
+!   Check if pins are sorted by (i,j) values, with row (i) major index.
     sorted = .true.
     prev = 0
     do i = 0, mm_nnz-1
@@ -117,14 +118,32 @@ type(PARIO_INFO) :: pio_info
       prev = mm_iidx(i)
     enddo
 
+!   If not sorted by (i,j), then sort and permute arrays.
     if (.not. sorted) then
-      print *, 'Warning: Matrix not sorted by i index; transposing matrix!'
-      ! Swap iidx and jidx arrays
       do i = 0, mm_nnz-1
-        temp = mm_iidx(i)
-        mm_iidx(i) = mm_jidx(i)
-        mm_jidx(i) = temp
+        idx(i) = i
+        ! EBEB For large matrices, the formula below may cause overflow!
+        tmp(i) = mm_ncol*mm_iidx(i)+mm_jidx(i) ! Row major, column minor
       enddo
+      !print *, 'Before sort (i):', mm_iidx(0), mm_iidx(1), mm_iidx(2)
+      !print *, 'Before sort (j):', mm_jidx(0), mm_jidx(1), mm_jidx(2)
+      call dr_sort_index(mm_nnz, tmp, idx) ! TEST
+      ! Permute mm_iidx and mm_jidx
+      do i = 0, mm_nnz-1
+        tmp(i) = mm_iidx(idx(i))
+      enddo
+      do i = 0, mm_nnz-1
+        mm_iidx(i) = tmp(i)
+      enddo
+      do i = 0, mm_nnz-1
+        tmp(i) = mm_jidx(idx(i))
+      enddo
+      do i = 0, mm_nnz-1
+        mm_jidx(i) = tmp(i)
+      enddo
+      !print *, 'After sort (i):', mm_iidx(0), mm_iidx(1), mm_iidx(2)
+      !print *, 'After sort (j):', mm_jidx(0), mm_jidx(1), mm_jidx(2)
+
     endif
 
     do i = 0, mm_nnz-1    !  Decrement edge IDs to match C version
@@ -264,15 +283,8 @@ type(PARIO_INFO) :: pio_info
   if (associated(mm_iidx)) deallocate(mm_iidx)
   if (associated(mm_jidx)) deallocate(mm_jidx)
 
-! KDDKDD  DON'T COMMIT THIS BUG!!!!!!!!!!!!
-!  call dr_sort_index(npins, iidx, jidx)
-! KDDKDD  DON'T COMMIT THIS BUG!!!!!!!!!!!!
-! KDDKDD
 ! KDDKDD We assume the MatrixMarket file is sorted by row numbers.
-! KDDKDD This condition is true for all our test cases.
-! KDDKDD If this condition were not true, we would have to sort the
-! KDDKDD pins here based on their iidx values.
-! KDDKDD 
+! KDDKDD This sort was done on a single processor.
 
 ! Count number of unique edge IDs on this processor.
   prev_edge = -1
