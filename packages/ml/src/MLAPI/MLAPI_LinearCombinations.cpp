@@ -1,3 +1,4 @@
+#if defined(HAVE_ML_EPETRA)
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_MultiVector_Utils.h"
 #include "MLAPI_BaseOperator.h"
@@ -209,3 +210,4 @@ void Residual::Set(MultiVector& v) const
 }
 
 } // namespace MLAPI
+#endif //if defined(HAVE_ML_EPETRA)
