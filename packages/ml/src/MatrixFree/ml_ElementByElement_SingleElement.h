@@ -3,7 +3,11 @@
 
 #include "ml_include.h"
 #ifdef HAVE_ML_EPETRA
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
 #include "Epetra_Operator.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
