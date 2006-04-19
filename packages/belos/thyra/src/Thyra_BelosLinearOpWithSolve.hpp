@@ -309,7 +309,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   totalTimer.start(true);
   
   TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
-  TEST_FOR_EXCEPT(!this->opSupported(M_trans)); // ToDo: Support adjoint solves later!
+  TEST_FOR_EXCEPT(!this->solveSupportsTrans(M_trans)); // ToDo: Support adjoint solves later!
 
   const int numRhs = B.domain()->dim();
   const int numEquations = B.range()->dim();
