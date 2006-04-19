@@ -64,7 +64,7 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT), allocatable ::  jidx(:) ! pin data
   integer(Zoltan_INT), allocatable ::  idx(:)  ! temp index 
   integer(Zoltan_INT), allocatable ::  tmp(:)  ! temp values 
-  integer i, prev, temp
+  integer i, prev_i, prev_j, temp
   logical sorted
 
 !/***************************** BEGIN EXECUTION ******************************/
@@ -107,15 +107,19 @@ type(PARIO_INFO) :: pio_info
 !   Don't need the numerical values.
     if (associated(mm_rval)) deallocate(mm_rval)
 
-!   Check if pins are sorted by (i,j) values, with row (i) major index.
+!   Check if pins are sorted by (i,j) values, with row (i) the major index.
+!   We could alternatively skip this test and always sort. 
     sorted = .true.
-    prev = 0
+    prev_i = 0
+    prev_j = 0
     do i = 0, mm_nnz-1
-      if (mm_iidx(i) < prev) then
+      if ((mm_iidx(i) < prev_i) .or. ((mm_iidx(i) ==  prev_i) .and. &
+          mm_jidx(i) < prev_j)) then
         sorted = .false.
         exit
       endif
-      prev = mm_iidx(i)
+      prev_i = mm_iidx(i)
+      prev_j = mm_jidx(i)
     enddo
 
 !   If not sorted by (i,j), then sort and permute arrays.
