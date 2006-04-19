@@ -812,17 +812,49 @@ int AztecOO::Iterate(int MaxIters, double Tolerance)
 
   // Determine end status
 
-  int ierr = 0;
-  if (status_[AZ_why]==AZ_normal) ierr = 0;
-  else if (status_[AZ_why]==AZ_param) ierr = -1;
-  else if (status_[AZ_why]==AZ_breakdown) ierr = -2;
-  else if (status_[AZ_why]==AZ_loss) ierr = -3;
-  else if (status_[AZ_why]==AZ_ill_cond) ierr = -4;
-  else if (status_[AZ_why]==AZ_maxits) return(1);
-  else throw B_->ReportError("Internal AztecOO Error", -5);
+  //If status is AZ_normal or AZ_maxits, then make a quick exit:
+  if (status_[AZ_why]==AZ_normal) {
+    return(0);
+  }
+  else if (status_[AZ_why]==AZ_maxits) {
+    return(1);
+  }
 
-  if (options_[AZ_diagnostics]!=AZ_none ) {
-    EPETRA_CHK_ERR(ierr);
+  //If status is not AZ_normal or AZ_maxits, then we have to decide
+  //which error-code to return, and also decide whether to print an
+  //error-message to cerr, and what to print.
+
+  bool print_msg = (Epetra_Object::GetTracebackMode()>0) &&
+                   (options_[AZ_diagnostics]!=AZ_none);
+
+  int ierr = 0;
+  if (status_[AZ_why] == AZ_param) {
+    ierr = -1;
+    if (print_msg) {
+      cerr << "Aztec status AZ_param: option not implemented" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_breakdown) {
+    ierr = -2;
+    if (print_msg) {
+      cerr << "Aztec status AZ_breakdown: numerical breakdown" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_loss) {
+    ierr = -3;
+    if (print_msg) {
+      cerr << "Aztec status AZ_loss: loss of precision" << endl;
+    }
+  }
+  else if (status_[AZ_why] == AZ_ill_cond) {
+    ierr = -4;
+    if (print_msg) {
+      cerr << "Aztec status AZ_ill_cond: GMRES hessenberg ill-conditioned"
+           << endl;
+    }
+  }
+  else {
+    throw B_->ReportError("Internal AztecOO Error", -5);
   }
 
   return(ierr);
