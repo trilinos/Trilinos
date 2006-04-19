@@ -70,7 +70,6 @@ public:
     ) const
     {
       RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-      const Index globalOffset = sub_vecs[0].globalOffset();
       ScalarIndex<Scalar> minEle = this->getRawVal(*reduct_obj);
       if( v0_s == 1 ) {
         for( Teuchos_Index i = 0; i < subDim; ++i ) {

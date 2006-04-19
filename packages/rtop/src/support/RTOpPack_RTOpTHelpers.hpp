@@ -587,6 +587,7 @@ protected:
     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==0, targ_sub_vecs==NULL" \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride()
 
@@ -613,6 +614,7 @@ protected:
     " is not compatible with sub_vec[1] (subDim="<<(SUB_VECS)[1].subDim()<<",globalOffset="<<(SUB_VECS)[1].globalOffset()<<")" \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
   const Scalar                 *v1_val = (SUB_VECS)[1].values(); \
@@ -634,6 +636,7 @@ protected:
     ,"Error, num_targ_vecs="<<(NUM_TARG_VECS)<<" not allowed, only num_targ_vecs==1, targ_sub_vecs!=NULL" \
     ); \
   const RTOpPack::index_type   subDim  = (TARG_SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type   globalOffset = (TARG_SUB_VECS)[0].globalOffset(); \
   Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
   const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
 
@@ -658,6 +661,7 @@ protected:
     " is not compatible with targ_sub_vec[0] (subDim="<<(TARG_SUB_VECS)[0].subDim()<<",globalOffset="<<(TARG_SUB_VECS)[0].globalOffset()<<")" \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
   Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
@@ -690,6 +694,7 @@ protected:
     " are not compatible." \
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
+  const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
   const Scalar                 *v1_val = (SUB_VECS)[1].values(); \

@@ -373,7 +373,6 @@ void ROpGetSubVector<Scalar>::apply_op(
   using Teuchos::dyn_cast;
 
   RTOP_APPLY_OP_1_0(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
-  const index_type globalOffset = sub_vecs[0].globalOffset();
 
   if( u_ < globalOffset || globalOffset + subDim - 1 < l_ )
     return; // None of the sub-vector elements that we are looking for is in this vector chunk!
