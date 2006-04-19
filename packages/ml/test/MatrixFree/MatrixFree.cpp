@@ -28,6 +28,8 @@
 
 #include "ml_include.h"
 
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -295,3 +297,34 @@ int main(int argc, char *argv[])
 
   return(EXIT_SUCCESS);
 }
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#endif
+
+int main(int argc, char *argv[])
+{
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  puts("Please configure ML with:");
+  puts("--enable-epetra");
+  puts("--enable-epetraext");
+  puts("--enable-teuchos");
+  puts("--enable-aztecoo");
+  puts("--enable-galeri");
+  puts("--enable-ifpack");
+  puts("--enable-mpi");
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  
+  exit(EXIT_SUCCESS);
+}
+
+#endif //#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_EPETRAEXT) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_GALERI) && defined(HAVE_ML_AZTECOO)
