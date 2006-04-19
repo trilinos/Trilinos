@@ -181,7 +181,10 @@ am__include_HEADERS_DIST = $(srcdir)/Claps_ConfigDefs.hpp \
 	$(srcdir)/preconditioners/preconditioner_crd.hpp \
 	$(srcdir)/preconditioners/krylov_crd.hpp \
 	$(srcdir)/salinas/SCLOP_solver.hpp \
-	$(srcdir)/salinas/SCLIP_solver.hpp
+	$(srcdir)/salinas/SCLIP_solver.hpp \
+	$(srcdir)/salinas/CLIP_interface.H \
+	$(srcdir)/salinas/CLOP_interface.H \
+	$(srcdir)/salinas/MpcLocal.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -356,7 +359,10 @@ EXTRA_CLAPS = \
 
 EXTRA_SCLAPS_H = \
 	$(srcdir)/salinas/SCLOP_solver.hpp \
-	$(srcdir)/salinas/SCLIP_solver.hpp
+	$(srcdir)/salinas/SCLIP_solver.hpp \
+	$(srcdir)/salinas/CLIP_interface.H \
+	$(srcdir)/salinas/CLOP_interface.H \
+	$(srcdir)/salinas/MpcLocal.H 
 
 EXTRA_SCLAPS = \
 	$(srcdir)/salinas/SCLOP_interface.cpp \

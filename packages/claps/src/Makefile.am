@@ -91,7 +91,10 @@ EXTRA_CLAPS = \
 
 EXTRA_SCLAPS_H = \
 	$(srcdir)/salinas/SCLOP_solver.hpp \
-	$(srcdir)/salinas/SCLIP_solver.hpp
+	$(srcdir)/salinas/SCLIP_solver.hpp \
+	$(srcdir)/salinas/CLIP_interface.H \
+	$(srcdir)/salinas/CLOP_interface.H \
+	$(srcdir)/salinas/MpcLocal.H 
 
 EXTRA_SCLAPS = \
 	$(srcdir)/salinas/SCLOP_interface.cpp \

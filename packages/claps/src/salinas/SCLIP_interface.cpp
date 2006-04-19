@@ -27,7 +27,6 @@
 // ************************************************************************
 //@HEADER
 
-#define SALINAS_MPI
 #include <stdio.h>
 #include <iostream>
 #include <assert.h>
