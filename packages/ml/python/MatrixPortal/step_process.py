@@ -5,7 +5,7 @@ import re
 import string
 import Numeric
 
-from PyTrilinos import Epetra, EpetraExt, AztecOO, ML, Amesos, Galeri, IFPACK
+from PyTrilinos import Epetra, EpetraExt, AztecOO, ML, Galeri, IFPACK
 
 comm = Epetra.PyComm()
   
@@ -34,7 +34,7 @@ def generator(problemID, comm):
     parts = string.split(problemID, '_');
     ProblemType = parts[0];
     for i in range(1, len(parts)):
-      p2 = string.split(parts[i], '=')
+      p2 = string.split(parts[i], '+')
       type = p2[0][0];
       name = p2[0][1:]
       value = p2[1];
@@ -63,27 +63,101 @@ def generator(problemID, comm):
   return(Map, Matrix, LHS, RHS, ExactSolution);
 
 # -------------------------------------------------------------------------
-def analyze(Map, Matrix, LHS, RHS, ExactSolution):
+def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
+  print "<p><p><div class=\"outputBox\"><pre>";
+  print "<b><font color=red>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=red>Operation = matrix analysis </font></b>";
   IFPACK.AnalyzeMatrix(Matrix);
   IFPACK.AnalyzeMatrixElements(Matrix);
+  print "&nbsp;<pre></div>";
 
 # -------------------------------------------------------------------------
-def iterative(Map, Matrix, LHS, RHS, ExactSolution, List):
+def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
+  print "<p><p><div class=\"outputBox\"><pre>";
+  print "<b><font color=red>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=red>Operation = ", What, "</font></b>";
+  Factory = IFPACK.Factory()
+  if What == "Jacobi":
+    List['relaxation: type'] = "Jacobi";
+    Prec = Factory.Create("point relaxation stand-alone", Matrix)
+  elif What == "Gauss-Seidel":
+    List['relaxation: type'] = "Gauss-Seidel";
+    Prec = Factory.Create("point relaxation stand-alone", Matrix)
+  elif What == "symmetric Gauss-Seidel":
+    List['relaxation: type'] = "symmetric Gauss-Seidel";
+    Prec = Factory.Create("point relaxation stand-alone", Matrix)
+  elif What == "IC":
+    Prec = Factory.Create("IC stand-alone", Matrix);
+  elif What == "ICT":
+    Prec = Factory.Create("ICT stand-alone", Matrix);
+  elif What == "ILU":
+    Prec = Factory.Create("ILU stand-alone", Matrix);
+  elif What == "ILUT":
+    Prec = Factory.Create("ILUT stand-alone", Matrix);
+
+  Prec.SetParameters(List)
+  Prec.Initialize()
+  Prec.Compute()
+
+  RHS.Random();
+  LHS.PutScalar(0.0);
+  
+  Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
+  Solver.SetPrecOperator(Prec)
+  if (List['az_solver'] == "AZ_gmres"):
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
+  elif List['az_solver'] == "AZ_cg":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
+  elif List['az_solver'] == "AZ_cg_condnum":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg_condnum);
+  elif List['az_solver'] == "AZ_gmres_condnum":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres_condnum);
+  elif List['az_solver'] == "AZ_bicgstab":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
+  elif List['az_solver'] == "AZ_tfqmr":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_tfqmr);
+  else:
+    print "Solver type not correct, ", List['az_solver']
+  Solver.SetAztecOption(AztecOO.AZ_output, 16);
+  err = Solver.Iterate(List['iters'], List['tol']) 
+
+  del Prec;
+  print "&nbsp;<pre></div>";
+  return(Solver.NumIters())
+  
+# -------------------------------------------------------------------------
+def perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
+  print "<p><p><div class=\"outputBox\"><pre>";
+  print "<b><font color=red>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=red>Operation = multilevel preconditioner </font></b>";
   Prec = ML.MultiLevelPreconditioner(Matrix, False);
   Prec.SetParameterList(List);
   Prec.ComputePreconditioner();
 
+  RHS.Random();
+  LHS.PutScalar(0.0);
+  
   Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
   Solver.SetPrecOperator(Prec)
-  if (List['iterative_solver'] == "gmres"):
+  if (List['az_solver'] == "AZ_gmres"):
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
-  elif List['iterative_solver'] == "cg":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
+  elif List['az_solver'] == "AZ_cg":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
+  elif List['az_solver'] == "AZ_cg_condnum":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg_condnum);
+  elif List['az_solver'] == "AZ_gmres_condnum":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres_condnum);
+  elif List['az_solver'] == "AZ_bicgstab":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
+  elif List['az_solver'] == "AZ_tfqmr":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_tfqmr);
   else:
-    print "Solver type not correct"
+    print "Solver type not correct, ", List['az_solver']
   Solver.SetAztecOption(AztecOO.AZ_output, 16);
   err = Solver.Iterate(List['iters'], List['tol']) 
 
+  del Prec;
+  print "&nbsp;<pre></div>";
   return(Solver.NumIters())
   
 # -------------------------------------------------------------------------
@@ -112,102 +186,63 @@ def main():
   # Parse config file =========================================================
   
   file = open(configFile, 'r')
-  fileContents = file.read()
-  pattern = re.compile(r"^(\w+)\s*=(.*)$", re.M)
-  config = pattern.findall(fileContents)
-  config = dict(config)
-  for key in config:
-    config[key] = config[key].strip()
-  
-  # Parse list ================================================================
-  
   List = {}
-
-  step = sys.argv[2]
-
-  if step == 'analyze':
-    counter = 0;
-    donothing = 0;
-  elif step == 'iterative':
-    counter = int(config['COUNTER']);
-    List['iterative_solver'] = config['ITERATIVE_SOLVER'];
-    List['iters'] = int(config['ITERS']);
-    List['tol'] = float(config['TOL']);
-  elif step == 'direct':
-    counter = int(config['COUNTER']);
-    List['direct_solver'] = config['DIRECT_SOLVER'];
-
-  study_parameter = {}
-
-  for i in range(1,counter-1):
-    type_and_name = config['__PyTrilinos__name' + str(i)];
-    type = type_and_name[0:type_and_name.find(':')]
-    name = type_and_name[type_and_name.find(':')+1:]
-    value = config['__PyTrilinos__value' + str(i)];
-
-    if len(value.split('; ')) > 1:
-      study_parameter[type_and_name] = value
-    else:  
-      set_type(List, name, type, value)
+  for l in file.readlines():
+    d = string.split(string.strip(l), '=')
+    if string.strip(d[0]) == "ProblemIDs":
+      ProblemIDs = d[1];
+      continue;
+    what = d[0][0];
+    name = string.strip(d[0][2:]);
+    val = d[1];
+    if what == "i":
+      List[name] = int(val);
+    elif what == "b":
+      List[name] = bool(val);
+    elif what == "d":
+      List[name] = float(val);
+    elif what == "s":
+      List[name] = string.strip(val);
 
   # Construct the problem =====================================================
 
-  print '>>> ', config['PROBLEM_ID']
-  problemIDs = config['PROBLEM_ID'].split(":");
+  ProblemIDs = ProblemIDs[1:].split(":");
   
-  for problemID in problemIDs:
-    if problemID == '':
+  for FullProblemID in ProblemIDs:
+    if FullProblemID == '':
       continue;
+
+    pos = FullProblemID.find('@');
+    Label = FullProblemID[0:pos - 1];
+    problemID = FullProblemID[pos + 1:];
     (Map, Matrix, LHS, RHS, ExactSolution) = generator(problemID, comm);
 
-    if step == 'analyze':
-      analyze(Map, Matrix, LHS, RHS, ExactSolution);
-    elif step == 'iterative':
-      if len(study_parameter.keys()) == 0:
-        phi = iterative(Map, Matrix, LHS, RHS, ExactSolution, List);
-        label = problemID + "_phi_1"
-        print "<input type=hidden name=\"%s\" value=%e>" % (label,phi)
-
-      elif len(study_parameter.keys()) == 1:
-        type_and_name = study_parameter.keys()[0]
-
-        type = type_and_name[0:type_and_name.find(':')]
-        name = type_and_name[type_and_name.find(':')+1:]
-        count = 1
-        for value in study_parameter[type_and_name].split('; '):
-          set_type(List, name, type, value)
-          print 'ATTENTION: ZERO INITIAL SOL'
-          LHS.PutScalar(0.0)
-          iterative(Map, Matrix, LHS, RHS, ExactSolution, List);
-          label = problemID + "_phi_" + str(count)
-          count = count + 1
-          print "<input type=hidden name=\"%s\" value=%e>" % (label,phi)
-
-      elif len(study_parameter.keys()) == 2:
-        type_and_name0 = study_parameter.keys()[0]
-        type_and_name1 = study_parameter.keys()[1]
-
-        type0 = type_and_name0[0:type_and_name0.find(':')]
-        name0 = type_and_name0[type_and_name0.find(':')+1:]
-
-        type1 = type_and_name1[0:type_and_name1.find(':')]
-        name1 = type_and_name1[type_and_name1.find(':')+1:]
-
-        for value0 in study_parameter[type_and_name0].split('; '):
-          for value1 in study_parameter[type_and_name1].split('; '):
-            print 'KEY_0 = ', name0, ' VALUE_0 = ', value0
-            print 'KEY_1 = ', name1, ' VALUE_1 = ', value1
-
-            set_type(List, name0, type0, value0)
-            set_type(List, name1, type1, value1)
-
-            print 'ATTENTION: ZERO INITIAL SOL'
-            LHS.PutScalar(0.0)
-            iterative(Map, Matrix, LHS, RHS, ExactSolution, List);
-      else:
-        print 'THIS IS ONLY ALLOWED WITH ONE or TWO PARAMETER'
-    elif step == 'direct':
-      direct(Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List['perform_analysis']:
+      perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution);
+    
+    if List['perform_jacobi']:
+      phi = perform_IFPACK("Jacobi", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if List['perform_gs']:
+      phi = perform_IFPACK("Gauss-Seidel", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if List['perform_sgs']:
+      phi = perform_IFPACK("symmetric Gauss-Seidel", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if List['perform_ic']:
+      phi = perform_IFPACK("IC", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if False & List['perform_ict']: # FIXME
+      phi = perform_IFPACK("ICT", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if List['perform_ilu']:
+      phi = perform_IFPACK("ILU", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if List['perform_ilut']:
+      phi = perform_IFPACK("ILUT", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if List['perform_ml']:
+      phi = perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List);
 
 # -------------------------------------------------------------------------
 if __name__ == "__main__":

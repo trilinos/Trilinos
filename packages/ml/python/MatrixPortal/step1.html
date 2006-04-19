@@ -8,25 +8,38 @@
   include 'common/header.html';
 
   $ProblemIDs = $_POST['ProblemIDs'];
-  $Labels = $_POST['Labels'];
 
   if ($_POST['state'] == "add")
   {
-    $ProblemIDs .= ":" . $_POST['type'];
-    $Labels .= ":" . $_POST['MyLabel'];
-    foreach (split(" ", $_POST['parameters']) as $value)
-    { 
-      if ($value == "") continue;
-      $ProblemIDs .= '_' . $value . '=' . $_POST[$value];
+    if ($_POST['MyLabel'] === "")
+    {
+      echo "<p><font color=red><b>Sorry, empty labels are not allowed.";
+      echo "</b></font></p>";
+    }
+    else if (strstr($_POST['MyLabel'], ":") ||
+             strstr($_POST['MyLabel'], "@") ||
+             strstr($_POST['MyLabel'], ";") ||
+             strstr($_POST['MyLabel'], "+") ||
+             strstr($_POST['MyLabel'], "_"))
+    {
+      echo "<p><font color=red><b>Sorry, labels cannot contain : ; _ + or @";
+      echo "</b></font></p>";
+    }
+    else
+    {
+      $ProblemIDs .= ":" . $_POST['MyLabel'] . "@" . $_POST['type'];
+      foreach (split(" ", $_POST['parameters']) as $value)
+      { 
+        if ($value == "") continue;
+        $ProblemIDs .= '_' . $value . '+' . $_POST[$value];
+      }
     }
   }
-      
-  #arrows($ProblemIDs, $Labels);
 ?>
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">WebSolver</a> - You are at Step 1: Data</p>
+  <p class="heading"><a href="index.html">Matrix Portal</a> -- You are at Step 1: Data</p>
   
   <div class="stepBox current">Step 1:<br/>Data</div>
   <div class="stepBox upcoming">Step 2:<br/>Parameters</div>
@@ -44,10 +57,12 @@
   available matrices. The list of problems currently selected is reported in
   the "Current Settings" section.
 
-  <?php print_problem($Labels, 1); ?> 
+  <div class="problemIDs">
+  <?php print_problem($ProblemIDs, 1); ?> 
+  </div>
 
-  <br>
 
+  <p>
   <p class="heading">Data from Collections:</p>
   
   <div class="formSection">
@@ -80,7 +95,6 @@
 
   2D Laplace on a 
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
-  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny">
   <input type="hidden" name=type value="Laplace2D">
@@ -95,7 +109,6 @@
 
   3D Laplace on a 
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
-  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny inz">
   <input type="hidden" name=type value="Laplace3D">
@@ -111,7 +124,6 @@
 
   2D advection-diffuction with recirculating flow, on a 
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
-  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny dconv ddiff">
   <input type="hidden" name=type value="Recirc2D">
@@ -166,7 +178,6 @@
   <br>
   <p><form action="step2.html" enctype="multipart/form-data" method="post" name="inputForm" id="inputForm">
   <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
-  <input type=hidden name=Labels value="<? global $Labels; echo $Labels; ?>">
   Continue to:
   <input type="submit" name="submit" value="Step 2: Parameters" />
   

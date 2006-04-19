@@ -8,8 +8,6 @@
   include 'common/header.html';
 
   $ProblemIDs = $_POST['ProblemIDs'];
-  $Labels = $_POST['Labels'];
-
 ?>
 
 <!-- begin content ######################################################### -->
@@ -24,8 +22,11 @@
   
   <!-- ===================================================================== -->
   
+  <p>
+  <div class="problemIDs">
   <?
-  print_problem($Labels);
+  print_problem($ProblemIDs);
+  echo "</div></p>";
 
   echo "<form action=step4.html enctype=multipart/form-data method=post>";
   if ($_POST['stage'] == 'process_iterative') {
