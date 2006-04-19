@@ -664,7 +664,8 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         result  = sqrt(sum((a/wts)**2,1)/self.length)
         norm    = emv.NormWeighted(weights)
         self.assertEquals(len(norm), 2)
-        self.failUnless((norm == result).all())
+        for i in range(len(norm)):
+            self.assertAlmostEqual(norm[i], result[i])
 
     def testMinValue(self):
         "Test Epetra.MultiVector MinValue method"
