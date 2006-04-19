@@ -157,8 +157,10 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
 
 //==============================================================================
 // Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
-Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
-				 int ElementSize, int IndexBase, const Epetra_Comm& Comm)
+Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
+                                 const int * MyGlobalElements, 
+				 int ElementSize, int IndexBase,
+                                 const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
 {
@@ -248,8 +250,10 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
 
 //==============================================================================
 // Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
-Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
-				 int *ElementSizeList, int IndexBase, const Epetra_Comm& Comm)
+Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
+                                 const int * MyGlobalElements, 
+				 const int *ElementSizeList, int IndexBase,
+                                 const Epetra_Comm& Comm)
   : Epetra_Object("Epetra::BlockMap"),
     BlockMapData_(0)
 {

@@ -235,7 +235,7 @@ class Epetra_BlockMap: public Epetra_Object {
 
   */ 
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements, 
-									int ElementSize, int IndexBase, const Epetra_Comm& Comm);
+		int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
@@ -270,7 +270,8 @@ class Epetra_BlockMap: public Epetra_Object {
     \return Pointer to a Epetra_BlockMap object.
 
   */ 
-  Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *MyGlobalElements,  
+  Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
+                  const int *MyGlobalElements,  
 		  int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
@@ -307,8 +308,10 @@ class Epetra_BlockMap: public Epetra_Object {
     \return Pointer to a Epetra_BlockMap object.
 
   */ 
-  Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *MyGlobalElements, 
-									int *ElementSizeList, int IndexBase, const Epetra_Comm& Comm);
+  Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
+                  const int *MyGlobalElements,
+		  const int *ElementSizeList, int IndexBase,
+                  const Epetra_Comm& Comm);
   
   //! Epetra_BlockMap copy constructor.
   Epetra_BlockMap(const Epetra_BlockMap& map);

@@ -186,8 +186,9 @@ class Epetra_Map : public Epetra_BlockMap {
     \return Pointer to a Epetra_Map object.
 
   */ 
-  Epetra_Map(int NumGlobalElements, int NumMyElements, int *MyGlobalElements,  
-						 int IndexBase, const Epetra_Comm& Comm);
+  Epetra_Map(int NumGlobalElements, int NumMyElements,
+             const int *MyGlobalElements,
+             int IndexBase, const Epetra_Comm& Comm);
   
 	//! Epetra_Map copy constructor.
   Epetra_Map(const Epetra_Map& map);
