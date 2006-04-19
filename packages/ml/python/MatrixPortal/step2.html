@@ -1,0 +1,247 @@
+<?php 
+  include 'common/header.php';
+  include 'common/util.php';
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Matrix Port -- Step 2: Parameters');
+  setDir('./');
+  include 'common/header.html';
+
+  $ProblemIDs = $_POST['ProblemIDs'];
+  $Labels = $_POST['Labels'];
+
+  #arrows($ProblemIDs, $Labels);
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos <a href="index.html">WebSolver</a> - You are at Step 2: Parameters</p>
+  
+  <div class="stepBox completed"><a href="step1.html">Step 1:<br/>Data</a></div>
+  <div class="stepBox current">Step 2:<br/>Parameters</div>
+  <div class="stepBox upcoming">Step 3:<br/>Compute</div>
+  <div class="stepBox upcoming">Step 4:<br/>Results</div>
+  <br clear="all" /><br/>
+  
+  <!-- ===================================================================== -->
+  
+  <br/>
+  
+  <div class="formSection">
+  
+  <? print_problem($Labels); ?>
+
+  </div>
+
+  <!-- ===================================================================== -->
+  
+  <p>Values are as given in the ML guide. You can specify multiple values,
+  separated by the two characters "; ", for
+  at most <b>two</b> parameters.
+
+  <? print_form(); ?>
+
+  <!-- ===================================================================== -->
+  
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>
+
+<?
+  function print_form() { ?>
+
+  <form action="step3.html" enctype="multipart/form-data" method="post" name="inputForm">
+
+    <!-- ---------------------------------------------------------- -->
+
+    <div class="formSection">
+    <p class="subheading">General Settings</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>Solver type: </td>
+        <td>
+          <input type="radio" name="iterative_solver" value="AZ_gmres" checked>GMRES &nbsp; &nbsp;
+          <input type="radio" name="iterative_solver" value="AZ_cg">CG &nbsp; &nbsp;
+          <input type="radio" name="iterative_solver" value="AZ_bicgstab">Bi-CGSTAB &nbsp; &nbsp;
+          <input type="radio" name="iterative_solver" value="AZ_tfqmr">TFQMR
+          &nbsp; &nbsp;
+      </tr>
+      <tr>
+        <td>Maximum iterations: </td>
+        <td><input type="text" name="iters" value="1550" />
+      </tr>
+      <tr>
+        <td>Tolerance: </td>
+        <td><input type="text" name="tol" value="1e-9" />
+      </tr>
+    </table><br />
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>Analyze Matrix Elements: </td><td>
+        <input type="radio" name="perform_analysis" value="True" checked> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_analysis" value="False"> No
+      </tr>
+    </table>
+
+    </div>
+    <p>
+
+    <!-- ---------------------------------------------------------- -->
+    <? if (0) { ?>
+    <div class="formSection">
+    <p class="subheading">Direct Solution Methods</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <tr>
+        <td>Analyze Direct Solvers: </td><td>
+        <input type="radio" name="perform_direct" value="True" checked> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_direct" value="False"> No
+    </tr><tr>
+       <td>Solver type: </td>
+       <td><input type="text" name="direct_solver" value="Klu" />
+    </tr>
+    </table><br />
+
+    </div>
+    <p>
+    <? } ?>
+
+    <div class="formSection">
+    <p>
+
+    <!-- ---------------------------------------------------------- -->
+
+    <p class="subheading">One-Level Preconditioners</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>Analyze One-Level Preconditioners: </td><td>
+        <input type="radio" name="perform_one_level" value="True" checked> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_one_level" value="False"> No
+      </tr>
+    </table><br />
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("one-level: type", "string", "ILU"); ?>
+    <table class="formTable" cellspacing="0" cellpadding="0">
+
+    <p class="subheading">ILU parameters</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("ilu: level-of-fill", "int", "0"); ?>
+    </table><br />
+
+    <p class="subheading">User's Defined Parameters</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    </table><br />
+    </div>
+    <p>
+
+    <!-- ---------------------------------------------------------- -->
+
+    <div class="formSection">
+    <p class="subheading">Multilevel Preconditioners</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr>
+        <td>Analyze Multilevel Preconditioners: </td><td>
+        <input type="radio" name="perform_iterative" value="True" checked> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_iterative" value="False"> No
+      </tr>
+    </table><br />
+
+    <p class="subheading">Aggregation</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("aggregation: damping factor", "double", "1.333"); ?>
+    <? fixed_parameter("aggregation: type", "string", "Uncoupled-MIS"); ?>
+    <? fixed_parameter("aggregation: nodes per aggregate", "int", "512"); ?>
+    </table><br />
+
+
+    <p class="subheading">Smoothers</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+
+    <? fixed_parameter("smoother: type", "string", "symmetric Gauss-Seidel"); ?>
+    <? fixed_parameter("smoother: damping factor", "double", "0.67"); ?>
+    <? fixed_parameter("smoother: sweeps", "int", "1"); ?>
+    <? fixed_parameter("smoother: pre or post", "string", "both"); ?>
+    </table><br />
+
+    <p class="subheading">Coarse Solver</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("coarse: type", "string", "Amesos-KLU"); ?>
+    <? fixed_parameter("coarse: max size", "int", "512"); ?>
+    </table><br />
+
+    <p class="subheading">Miscellanous</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? fixed_parameter("aggregation: non-smoothed restriction", "bool", "false"); ?>
+    </table><br />
+
+    <p class="subheading">User's Defined Parameters</p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    <? custom_parameter("", "", ""); ?>
+    </table><br />
+    </div>
+    <p>
+
+    <!-- ---------------------------------------------------------- -->
+
+    <div class="formSection">
+    <p class="subheading"><font color=blue>Performance Evaluation</font></p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+      <tr><td>  phi = </td>
+        <? fixed_parameter2("evaluation: setup time", "double", "1.0"); ?>
+        <td> x&nbsp; Setup CPU time (s)</td> <td> + </td>
+      </tr>  
+      <tr><td></td>
+        <? fixed_parameter2("evaluation: solution time", "double", "1.0"); ?>
+        <td> x&nbsp; Solution CPU time (s)</td> <td> + </td>
+      </tr>  
+      <tr><td></td>
+        <? fixed_parameter2("evaluation: iterations", "double", "0.0"); ?>
+        <td> x&nbsp; iterations</td> <td> + </td>
+      </tr>  
+      <tr><td></td>
+        <? fixed_parameter2("evaluation: condnum", "double", "0.0"); ?>
+        <td> x&nbsp; cond(P A)</td> <td>  </td>
+      </tr>  
+    </table><br />
+    </div>
+
+    <!-- php marker for stage in form process -->
+    <input type="hidden" name="stage" value="process_iterative">
+    <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+    <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>">
+    <input type="hidden" name="counter" value="<? global $counter; echo $counter; ?>">
+  
+
+  <br>
+  Continue to:
+  <input type="submit" name="submit" value="Step 3: Compute">
+  
+  </form>
+  
+<? } ?>

@@ -1,0 +1,61 @@
+<?php 
+  include 'common/header.php';
+  include 'common/util.php';
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Matrix Portal -- Step 3: Compute');
+  setDir('./');
+  include 'common/header.html';
+
+  $ProblemIDs = $_POST['ProblemIDs'];
+  $Labels = $_POST['Labels'];
+
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos <a href="index.html">WebSolver</a> -- Step 3: Compute</p>
+  
+  <div class="stepBox completed"><a href="step1.html">Step 1:<br/>Data</a></div>
+  <div class="stepBox completed">Step 2:<br/>Parameters</div>
+  <div class="stepBox current">Step 3:<br/>Compute</div>
+  <div class="stepBox upcoming">Step 4:<br/>Results</div>
+  <br clear="all" /><br/>
+  
+  <!-- ===================================================================== -->
+  
+  <?
+  print_problem($Labels);
+
+  echo "<form action=step4.html enctype=multipart/form-data method=post>";
+  if ($_POST['stage'] == 'process_iterative') {
+    if ($_POST['perform_analysis'] == "True")
+      $analysis = 1;
+    else
+      $analysis = 0;
+    if ($_POST['perform_direct'] == "True")
+      $direct = 1;
+    else
+       $direct = 0;
+    if ($_POST['perform_iterative'] == "True")
+      $iterative = 1;
+    else 
+      $iterative = 0;
+
+     process($analysis, $direct, $iterative);
+  }
+  ?>
+
+  <br/><br/>
+  
+  <!-- ===================================================================== -->
+  
+  <br>
+  Continue to:
+  <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+  <input type=hidden name=Labels value="<? global $Labels; echo $Labels; ?>">
+  <input type="submit" name="submit" value="Step 4: Evaluation">
+
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>

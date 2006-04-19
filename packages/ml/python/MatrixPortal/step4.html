@@ -1,0 +1,51 @@
+<?php 
+  include 'common/header.php';
+  include 'common/util.php';
+  includeStyleSheet('styles.css'); 
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Trilinos - WebSolver - Step 4: Results');
+  setDir('./');
+  include 'common/header.html';
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos <a href="index.html">WebSolver</a> - Step 4: Results</p>
+  
+  <div class="stepBox completed"><a href="step1.html">Step 1:<br/>Data</a></div>
+  <div class="stepBox completed">Step 2:<br/>Parameters</div>
+  <div class="stepBox completed">Step 3:<br/>Compute</div>
+  <div class="stepBox current">Step 4:<br/>Results</div>
+  <br clear="all" /><br/>
+  
+  <!-- ===================================================================== -->
+  
+  INSTRUCTIONS...
+  <br/><br/><br/>
+  
+  
+    <table border=1> 
+      <tr>
+        <td width=100>Label</td><td width=100>phi</td></tr>
+<?
+$ProblemIDs = $_POST[ProblemIDs];
+$Labels = $_POST[Labels];
+
+  foreach (explode(':', $ProblemIDs) as $i)
+  {
+    if ($i == "") continue;
+    echo '<tr>';
+    echo '<td><b>' . $i;
+    echo '</b></td>';
+    echo '<td>' . $_POST[$i . "_phi_1"] . '</td>';
+    echo '</tr>';
+  }
+  
+?>
+  </tr></table>
+  <br/><br/>
+  
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>

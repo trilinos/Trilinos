@@ -1,0 +1,60 @@
+<?php 
+  include 'common/header.php';
+  include 'util.php';
+  includeStyleSheet('styles.css'); 
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Matrix Portal -- a portal for testing sparse linear algebra algorithms');
+  setDir('./');
+  include 'common/header.html';
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Matrix Portal</p>
+  
+  Welcome to the Matrix Portal, a Trilinos-based environment to test and
+  experiment with (distributed) sparse linear algebra algorithms. The Matrix
+  Portal allows you to generate or upload linear systems, then analyze and
+  solve them using direct and sparse methods. 
+  <br/><br/>
+  
+  An overview of the project is as follows: you define a set of linear
+  problems and a set of methods to solve them, then you compare the solution
+  phases, in order to evaluate (using a criterion you specified) the
+  effectiveness of the solution methods. 
+
+  <br/><br/>
+  The Matrix Portal operates as a sequence of <i>steps</i>. Currently,
+  there are four steps:<br/><br/>
+
+  <table cellspacing="0" cellpadding="0"><tr> 
+  <td><div class="stepBox link"><a href="step1.html">Step 1:<br/>Data</a></div></td>
+  <td>is the definition of the linear system matrices. After step 1, you
+  have one or more "ProblemID" or labels,  which identify the linear problem 
+  you want to analyze or solve.</td>
+  </tr></table>
+  
+  <table cellspacing="0" cellpadding="0"><tr>
+  <td><div class="stepBox upcoming">Step 2:<br/>Parameters</div></td>
+  <td>defines the parameters for the linear algebra object analysis, direct and
+    iterative solutions. In this step, for example, you can choose the
+    Kyrlov accelerator and the preconditioning parameters. If you are
+    interested in comparing the solutions, You also have
+    to specify an evaluation criterion (for example, the number of
+    iterations).</td>
+  </tr></table>
+  
+  <table cellspacing="0" cellpadding="0"><tr>
+  <td><div class="stepBox upcoming">Step 3:<br/>Compute</div></td>
+  <td>performs all the computatons and reports the result on the web browser;</td>
+  </tr></table>
+  
+  <table cellspacing="0" cellpadding="0"><tr>
+  <td><div class="stepBox upcoming">Step 4:<br/>Results</div></td>
+  <td>collects the results and offers tools to analyze and compare them.</td>
+  </tr></table><br/>
+  
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>

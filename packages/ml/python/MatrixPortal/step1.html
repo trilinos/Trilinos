@@ -1,0 +1,180 @@
+<?php 
+  include 'common/header.php';
+  include 'common/util.php';
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Matrix Portal -- Step 1: Data Selection');
+  setDir('./');
+  include 'common/header.html';
+
+  $ProblemIDs = $_POST['ProblemIDs'];
+  $Labels = $_POST['Labels'];
+
+  if ($_POST['state'] == "add")
+  {
+    $ProblemIDs .= ":" . $_POST['type'];
+    $Labels .= ":" . $_POST['MyLabel'];
+    foreach (split(" ", $_POST['parameters']) as $value)
+    { 
+      if ($value == "") continue;
+      $ProblemIDs .= '_' . $value . '=' . $_POST[$value];
+    }
+  }
+      
+  #arrows($ProblemIDs, $Labels);
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos <a href="index.html">WebSolver</a> - You are at Step 1: Data</p>
+  
+  <div class="stepBox current">Step 1:<br/>Data</div>
+  <div class="stepBox upcoming">Step 2:<br/>Parameters</div>
+  <div class="stepBox upcoming">Step 3:<br/>Compute</div>
+  <div class="stepBox upcoming">Step 4:<br/>Results</div>
+  <br clear="all" /><br/>
+
+  <!-- ===================================================================== -->
+  
+  <p>In this step, you should specify at least on problem to be solved.
+  Each problem is identified by a "label" you have to select. There are two
+  ways to supply problems: by selecting a matrix from the Matrix-Market or
+  Harwell/Boeing repositories, or by using the matrix generator.
+  Authorized users can upload their problems and add them to the already
+  available matrices. The list of problems currently selected is reported in
+  the "Current Settings" section.
+
+  <?php print_problem($Labels, 1); ?> 
+
+  <br>
+
+  <p class="heading">Data from Collections:</p>
+  
+  <div class="formSection">
+  
+  <ol>
+  
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+
+  Problem bcsstk13.rsa from MatrixMarket.<br>
+  MyLabel = <input type="text" name=MyLabel size=10>
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo
+  $ProblemIDs; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="">
+  <input type="hidden" name=type value="MM_bcsstk13.rsa"><br>
+  <input type=submit value="add to cart"><br></form>
+
+  </div>
+
+  <!-- ----------------------------------------------------------------- -->
+
+  <p class="heading">Data from Generator:</p>
+  
+  <div class="formSection">
+  <ol>
+  
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm2DLaplace">
+
+  2D Laplace on a 
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="inx iny">
+  <input type="hidden" name=type value="Laplace2D">
+  <input type="text" name="inx" value=100 size=5> x
+  <input type="text" name="iny" value=100 size=5> grid.<br>
+  MyLabel = <input type="text" name=MyLabel size=10><br>
+
+  <input type=image src="./common/add_to_cart.gif"><br></form>
+
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm3DLaplace">
+
+  3D Laplace on a 
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="inx iny inz">
+  <input type="hidden" name=type value="Laplace3D">
+  <input type="text" name="inx" value=10 size=5> x
+  <input type="text" name="iny" value=10 size=5> x
+  <input type="text" name="inz" value=10 size=5> grid.<br>
+  MyLabel = <input type="text" name=MyLabel size=10>.<br>
+
+  <input type=image src="./common/add_to_cart.gif"><br></form>
+
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm2Dadwrf">
+
+  2D advection-diffuction with recirculating flow, on a 
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="Labels" value="<? global $Labels; echo $Labels; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="inx iny dconv ddiff">
+  <input type="hidden" name=type value="Recirc2D">
+  <input type="text" name="inx" value=100 size=5> x
+  <input type="text" name="iny" value=100 size=5> grid.
+  conv = <input type="text" name="dconv" value=1 size=5>,
+  diff = <input type="text" name="ddiff" value=1e-5 size=5>.<br>
+  MyLabel = <input type="text" name=MyLabel size=10>.<br>
+
+  <input type=image src="./common/add_to_cart.gif"><br></form>
+  </ol>
+
+  </div>
+
+  <!-- ----------------------------------------------------------------- 
+
+  <p class="heading">Uploaded Data:</p>
+    
+  <div class="formSection">
+
+  <a href="step1upload.html">Upload Data</a>
+    
+  <form> -->
+    
+    <? 
+    if (0)
+  {
+    $files = array();
+    $dir = opendir('/var/www/html/MatrixPortal/data/') or die ($php_errormsg);
+    while (false !== ($file = readdir($dir))) {
+      if (is_file("/var/www/html/MatrixPortal/data/$file")) {
+        $files[] = $file;
+      }
+    }
+    closedir($dir);                  
+
+    echo "<select name=\"file\" size=" . count($files) . '>';
+        
+      foreach ($files as $file) {
+        ?><option><?php echo $file; ?></option><?php
+      }
+              
+    echo "</select>";
+  }
+      ?>
+    
+      <!-- 
+  </form>
+  </div>
+  -->
+
+  <br>
+  <p><form action="step2.html" enctype="multipart/form-data" method="post" name="inputForm" id="inputForm">
+  <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+  <input type=hidden name=Labels value="<? global $Labels; echo $Labels; ?>">
+  Continue to:
+  <input type="submit" name="submit" value="Step 2: Parameters" />
+  
+  </form>
+  
+  </div>
+  
+  <!-- ===================================================================== -->  
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>

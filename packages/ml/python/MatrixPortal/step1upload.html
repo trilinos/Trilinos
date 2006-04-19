@@ -1,0 +1,166 @@
+<?php 
+  include 'common/header.php';
+  include 'common/util.php';
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Trilinos - WebSolver - Step 1: Data (upload)');
+  setDir('./');
+  include 'common/header.html';
+?>
+
+<!-- begin content ######################################################### -->
+
+  <p class="heading">Trilinos <a href="index.html">WebSolver</a> - Step 1: Data (upload)</p>
+  
+  <div class="stepBox current">Step 1:<br/>Data</div>
+  <div class="stepBox upcoming">Step 2:<br/>Parameters</div>
+  <div class="stepBox upcoming">Step 3:<br/>Compute</div>
+  <div class="stepBox upcoming">Step 4:<br/>Results</div>
+  <br clear="all" /><br/>
+        
+  <!-- print form or process form? -->
+  <?php if ($_POST['stage'] != 'processInput') {
+    printInputForm();
+  } else {
+    processInputForm();
+  } ?>
+
+<!-- end content ########################################################### -->
+
+<?php include 'common/footer.html'; ?>
+
+<!-- ####################################################################### -->
+<!-- printInputForm() -->
+<!-- ####################################################################### -->
+
+<?php function printInputForm() { ?>
+  
+  <!-- ===================================================================== -->
+  
+  Upload your data here...more instructions...
+  <br/><br/><br/>
+  
+  <div class="formSection">
+  
+    <p class="heading">Existing Data Files:</p>
+    
+    <?php        
+    $files = array();
+    $dir = opendir('/people_old/trilinos_www/data') or die ($php_errormsg);
+    while (false !== ($file = readdir($dir))) {
+      if (is_file("/people_old/trilinos_www/data/$file")) {
+        $files[] = $file;
+      }
+    }
+    closedir($dir);                  
+    ?>
+      
+    <?php
+    foreach ($files as $file) {
+      echo $file; ?><br/><?php
+    }
+    ?>
+      
+  </div><br/><br/>
+  
+  <div class="formSection">
+  
+    <p class="heading">Upload Data:</p>
+  
+    <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+  
+      <p class="subheading">File:</p>
+  
+      <table class="formTable" cellspacing="0" cellpadding="0">
+        <tr><td>
+          <label for="file">Matrix or vector file:</label>
+        </td><td>
+          <input type="file" name="file" size="40" />
+        </td></tr>
+        
+        <tr><td>
+          <label for="filename">Filename on server:</label>
+        </td><td>
+          <input type="text" name="filename" size="40" />
+        </td></tr>
+        
+        <!--
+        <tr><td>
+          <label for="description">Description of matrix or vector (UNUSED):</label>
+        </td><td>
+          <textarea rows="4" cols="40"></textarea>
+        </td></tr>
+        -->
+        
+      </table><br />
+  
+      <!--
+      <p class="subheading">Format (UNUSED):</p>
+      <table class="formTable" cellspacing="0" cellpadding="0">
+        <tr><td>         
+          <input type="radio" name="format" value="matrixMarket" />
+        </td><td>         
+          MatrixMarket
+        </td></tr>
+        
+        <tr><td>         
+          <input type="radio" name="format" value="harwell-boeing" />
+        </td><td>         
+          Harwell-Boeing
+        </td></tr>
+      </table><br />
+      -->
+      
+      <!-- php marker for stage in form process -->
+      <input type="hidden" name="stage" value="processInput">
+      <input type="submit" name="uploadButton" value="Upload" />
+  
+    </form>
+  
+  </div>
+  <br/><br/>
+  
+  <!-- ===================================================================== -->  
+
+  <p class="subheading">Return to:
+  <div class="stepBox link"><a href="step1.html">Step 1:<br/>Data</a></div>  
+  <br clear="all" /><br/></p>
+  
+<?php } ?> <!-- printInputForm() -->
+
+<!-- ####################################################################### -->
+<!-- processInputForm() -->
+<!-- ####################################################################### -->
+
+<?php function processInputForm() {
+
+  $error = 0;
+  $errorText = "";
+  
+  if (!is_uploaded_file($_FILES['file']['tmp_name'])) {
+    $errorText .= "Error: please supply a file.<br />\n";
+    $error++;
+  } if (!$_POST['filename']) {
+    $errorText .= "Error: please provide a filename.<br />\n";
+    $error++;
+  } 
+  
+  if ($error) {
+    ?>
+    <div class="errorBox">
+      <?php echo $errorText; ?>
+    </div>  
+    <?php
+  
+    $_POST['stage'] = "";
+    printInputForm();
+    return;
+  }
+  
+  $filename = "/people_old/trilinos_www/data/".$_POST['filename'];
+  move_uploaded_file($_FILES['file']['tmp_name'], $filename);
+  chmod($filename, 0664);
+  
+  printInputForm();
+    
+} ?> <!-- processInputForm() -->
