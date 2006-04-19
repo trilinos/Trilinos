@@ -37,6 +37,7 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_epetra.h"
+#include "Epetra_Comm.h"
 #include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_FileInputSource.hpp"
