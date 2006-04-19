@@ -1,4 +1,6 @@
+//#include "ml_common.h"
 #if defined(HAVE_ML_EPETRA)
+
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_MultiVector_Utils.h"
 #include "MLAPI_BaseOperator.h"
