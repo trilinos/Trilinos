@@ -427,16 +427,8 @@ void BlockCG<ScalarType,MV,OP>::BlockIteration ( )
   // ************************Main CG Loop***************************************
   // ***************************************************************************
   // 
-  if (_om->isVerbosityAndPrint( IterationDetails )) *_os << "Entering main CG loop" << endl << endl;
-  //
   _new_blk = 1;
   for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) {
-    //
-    // Print current solver status if necessary.
-    //
-    if (_om->isVerbosityAndPrint( IterationDetails )) {
-      _stest->Print(*_os);
-    }  
     //
     //----------------Compute the new blocks of iterates and residuals------------------
     //

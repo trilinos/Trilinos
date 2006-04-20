@@ -268,16 +268,8 @@ namespace Belos {
       // ************************Main CG Loop***************************************
       // ***************************************************************************
       // 
-      if (_om->isVerbosityAndPrint( IterationDetails )) *_os << "Entering main CG loop" << endl << endl;
-      //
       for (_iter=0; _stest->CheckStatus(this) == Unconverged && !exit_flg; _iter++) 
 	{
-	  //
-	  // Print out solver status.
-	  //
-	  if (_om->isVerbosityAndPrint( IterationDetails )) {
-	    _stest->Print(*_os);
-	  }
 	  //
 	  // Multiply the current direction vector by A and store in _Ap
 	  //       _Ap = A*_p 
