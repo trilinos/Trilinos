@@ -2763,7 +2763,6 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
 
-   //Nrows = matrix->getrow->Nrows;
    Nrows = matrix->outvec_leng;
 
    if( label != NULL ) {	 
