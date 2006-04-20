@@ -280,6 +280,21 @@ the sond row gives the local size of the row- and column map.
 bool Print_Matrix(string name, Epetra_CrsMatrix& A, int ibase);
 
 /*!
+\brief Print graph to file
+
+Prints an Epetra_CrsGraph to file in serial and parallel.
+Will create several files with process id appended to the name in parallel.
+Index base can either be 0 or 1.
+The first row of the file gives the global size of the range and domain map, 
+the second row gives the local size of the row- and column map. 
+
+\param name : Name of file without appendix, appendix will be .mtx
+\param A : Graph to print
+\param ibase : Index base, should be either 1 or 0 
+*/
+bool Print_Graph(string name, Epetra_CrsGraph& A, int ibase);
+
+/*!
 \brief Print vector to file
 
 Prints an Epetra_Vector to file in serial and parallel.

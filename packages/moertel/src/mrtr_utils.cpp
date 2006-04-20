@@ -750,3 +750,62 @@ bool MOERTEL::Print_Vector(string name, Epetra_Vector& v, int ibase)
   fflush(stdout);
   return true;
 }
+
+
+/*----------------------------------------------------------------------*
+ | print matrix                                              m.gee 04/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
+{
+  char mypidc[100];
+  sprintf(mypidc,"%d",A.Comm().MyPID());
+  name = name + mypidc + ".mtx";
+  char* nameptr = &name[0];
+  FILE* out = fopen(nameptr,"w");
+  if (!out)
+  {
+    cout << "***ERR*** MOERTEL::Print_Graph:\n"
+         << "***ERR*** Cannot open file " << name << "\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    return false;
+  }
+  
+  // write global and local dimensions of this operator
+  fprintf(out,"%d %d 0\n",A.RangeMap().NumGlobalElements(),A.DomainMap().NumGlobalElements());
+  for (int lrow=0; lrow<A.NumMyRows(); ++lrow)
+  {
+    int grow = A.GRID(lrow); 
+    if (grow<0) 
+    { 
+      cout << "***ERR*** MOERTEL::Print_Graph:\n"
+           << "***ERR*** Cannot gind global row index from local row index\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return false;
+    }
+    int numentries;
+    int* lindices;
+    int err  = A.ExtractMyRowView(lrow,numentries,lindices);
+    if (err) 
+    { 
+      cout << "***ERR*** MOERTEL::Print_Graph:\n"
+           << "***ERR*** A.ExtractMyRowView returned " << err << endl
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      delete out;
+      return false;
+    }
+    for (int j=0; j<numentries; ++j)
+    {
+      int lcol = lindices[j];  
+      int gcol = A.GCID(lcol); 
+      if (gcol<0) { cout << "ERROR: gcol<0 \n"; exit(0); }
+      fprintf(out," %d   %d   %20.10e\n",grow+ibase,gcol+ibase,1.0);
+    }
+  }
+  fflush(out);
+  fclose(out);
+  cout << "Epetra_CrsGraph is written to file " << name << endl;
+  fflush(stdout);
+  return true;
+}
+
+
