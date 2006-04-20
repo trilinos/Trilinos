@@ -528,13 +528,6 @@ AC_CONFIG_FILES([
 		test/View/Makefile
 		test/Zoltan/Makefile
 		test/inout/Makefile
-		test/scripts/Makefile
-		test/scripts/daily/Makefile
-		test/scripts/daily/serial/Makefile
-		test/scripts/daily/mpi/Makefile
-		test/scripts/weekly/Makefile
-		test/scripts/weekly/serial/Makefile
-		test/scripts/weekly/mpi/Makefile
 		example/Makefile
 		example/inout/Makefile
 		example/zoltan/Makefile
