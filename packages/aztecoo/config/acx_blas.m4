@@ -34,6 +34,9 @@ dnl @author Steven G. Johnson <stevenj@alum.mit.edu>
 dnl
 dnl Edited by Jim Willenbring on 5-14-2004 to check for dgemm instead of
 dnl sgemm.
+dnl Edited by Jim Willenbring on 4-17-2006 to stop looking for BLAS if
+dnl a specific BLAS library specified by a user cannot be used.
+
 AC_DEFUN([ACX_BLAS], [
 AC_PREREQ(2.50)
 AC_REQUIRE([AC_F77_LIBRARY_LDFLAGS])
@@ -60,11 +63,17 @@ if test $acx_blas_ok = no; then
 if test "x$BLAS_LIBS" != x; then
 	save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
 	AC_MSG_CHECKING([for $dgemm in $BLAS_LIBS])
-	AC_TRY_LINK_FUNC($dgemm, [acx_blas_ok=yes], [BLAS_LIBS=""])
+	AC_TRY_LINK_FUNC($dgemm, [acx_blas_ok=yes], [user_spec_blas_failed=yes])
 	AC_MSG_RESULT($acx_blas_ok)
 	LIBS="$save_LIBS"
 fi
 fi
+
+# If the user specified a blas library that could not be used we will
+# halt the search process rather than risk finding a blas library that
+# the user did not specify.
+
+if test "x$user_spec_blas_failed" != xyes; then
 
 # BLAS linked to by default?  (happens on some supercomputers)
 if test $acx_blas_ok = no; then
@@ -140,6 +149,9 @@ fi
 
 AC_SUBST(BLAS_LIBS)
 
+fi # If the user specified library wasn't found, we skipped the remaining
+   # checks.
+
 LIBS="$acx_blas_save_LIBS"
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
@@ -150,4 +162,5 @@ else
         acx_blas_ok=no
         $2
 fi
+
 ])dnl ACX_BLAS
