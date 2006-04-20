@@ -438,7 +438,8 @@ private:
 /** \brief Get a FancyOStream from an std::ostream object.
  *
  * If the object already is a FancyOStream, then nothing has to be done.
- * Otherwise, a temp FancyOStream is created for this purpose.
+ * Otherwise, a temp FancyOStream is created for this purpose.  If
+ * <tt>out.get()==NULL</tt> then <tt>return.get()==NULL</tt> on return also!
  *
  * \relates basic_FancyOStream
  */
@@ -446,6 +447,8 @@ template <typename CharT, typename Traits>
 RefCountPtr<basic_FancyOStream<CharT,Traits> >
 getFancyOStream( const RefCountPtr<std::basic_ostream<CharT,Traits> > &out )
 {
+  if(out.get()==NULL)
+    return Teuchos::null;
   RefCountPtr<basic_FancyOStream<CharT,Traits> >
     fancyOut = rcp_dynamic_cast<basic_FancyOStream<CharT,Traits> >(out);
   if(fancyOut.get())
