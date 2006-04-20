@@ -159,7 +159,7 @@ function process()
 
 ################################################################################
 
-function step_header()
+function step_header($thisID)
 { 
   global $ProblemIDs;
   global $ResultIDs;
@@ -175,7 +175,7 @@ function step_header()
 
   </td><td>
 
-  <form action="step1C.html" enctype="multipart/form-data" method="post" name="step1">
+  <form action="#" enctype="multipart/form-data" method="post" name="step1">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
   <input type="hidden" name="perform_analysis" value="True">
@@ -192,7 +192,7 @@ function step_header()
 
   </td><td>
 
-  <form action="step3.html" enctype="multipart/form-data" method="post" name="step3">
+  <form action="#" enctype="multipart/form-data" method="post" name="step3">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
   <input type="submit" class=submitSecondary name="submit" value="Step 3: Compute">

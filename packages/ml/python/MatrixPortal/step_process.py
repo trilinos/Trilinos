@@ -27,11 +27,12 @@ def set_type(List, name, type, value):
     print "Type ", type, " not recognized"
 
 # -------------------------------------------------------------------------
-def add_result(List, Label, ierr, iters, PrecTime, SolverTime):
+def add_result(List, Label, ierr, iters, PrecTime, SolverTime, ConditionNumber):
   phi = 0.0;
   phi = phi + List['evaluation: setup time'] * PrecTime;
   phi = phi + List['evaluation: solution time'] * SolverTime;
   phi = phi + List['evaluation: iterations'] * iters;
+  phi = phi + List['evaluation: condnum'] * ConditionNumber;
 
   global count
   print "<p><font color=blue>Evaluation phi = %f. Add to results with label: <input type=text name=phi_label_%d value=\"%s\"></font>" % (phi, count, Label)
@@ -46,6 +47,8 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
   
   Time = Epetra.Time(Matrix.Comm())
 
+  hasConditionNumber = False;
+
   Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
   Solver.SetPrecOperator(Prec)
   if (List['az_solver'] == "AZ_gmres"):
@@ -54,8 +57,10 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
   elif List['az_solver'] == "AZ_cg_condnum":
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg_condnum);
+    hasConditionNumber = True
   elif List['az_solver'] == "AZ_gmres_condnum":
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres_condnum);
+    hasConditionNumber = True
   elif List['az_solver'] == "AZ_bicgstab":
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
   elif List['az_solver'] == "AZ_tfqmr":
@@ -66,7 +71,11 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
   Solver.SetAztecOption(AztecOO.AZ_output, 16);
   err = Solver.Iterate(List['iters'], List['tol']) 
 
-  return (err, Solver.NumIters(), Time.ElapsedTime())
+  if hasConditionNumber:
+    ConditionNumber = Solver.GetStatus("AZ_condnum")
+  else:
+    ConditionNumber = 0.0;
+  return (err, Solver.NumIters(), Time.ElapsedTime(), ConditionNumber)
 
 # -------------------------------------------------------------------------
 def generator(problemID, comm):
@@ -161,10 +170,10 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
 
   PrecTime = Time.ElapsedTime()
 
-  (ierr, iters, SolveTime) = iterative_solver(List, Matrix, LHS, RHS, Prec)
+  (ierr, iters, SolveTime, ConditionNumber) = iterative_solver(List, Matrix, LHS, RHS, Prec)
   del Prec;
 
-  add_result(List, Label + " " + What, ierr, iters, PrecTime, SolveTime)
+  add_result(List, Label + " " + What, ierr, iters, PrecTime, SolveTime, ConditionNumber)
   print "&nbsp;<pre></div>";
   
 # -------------------------------------------------------------------------
@@ -181,10 +190,10 @@ def perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
 
   PrecTime = Time.ElapsedTime()
 
-  (ierr, iters, SolveTime) = iterative_solver(List, Matrix, LHS, RHS, Prec)
+  (ierr, iters, SolveTime, ConditionNumber) = iterative_solver(List, Matrix, LHS, RHS, Prec)
   del Prec;
 
-  add_result(List, Label + " ML", ierr, iters, PrecTime, SolveTime)
+  add_result(List, Label + " ML", ierr, iters, PrecTime, SolveTime, ConditionNumber)
   print "&nbsp;<pre></div>";
   
 # -------------------------------------------------------------------------
