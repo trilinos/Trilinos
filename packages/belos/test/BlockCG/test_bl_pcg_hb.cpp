@@ -45,6 +45,7 @@
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockCG.hpp"
@@ -71,6 +72,7 @@ int main(int argc, char *argv[]) {
   // Get test parameters from command-line processor
   //  
   bool verbose = false;
+  int frequency = -1; // how often residuals are printed by solver 
   int numrhs = 15;  // total number of right-hand sides to solve for
   int blockSize = 10;  // blocksize used by solver
   std::string filename("bcsstk14.hb");
@@ -78,6 +80,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
@@ -85,6 +88,8 @@ int main(int argc, char *argv[]) {
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
+  if (!verbose)
+    frequency = -1;  // Reset frequency if verbosity is off
   //
   // Get the problem
   //
@@ -168,13 +173,17 @@ int main(int argc, char *argv[]) {
   //
   // *****Create Status Test Class for the Belos Solver
   //
-  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
-  Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
-  Belos::StatusTestCombo<ST,MV,OP> My_Test( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 );
-  
   Belos::OutputManager<ST> My_OM( MyPID );
   if (verbose)
     My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+
+  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
+  Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
+  Belos::StatusTestOutputter<ST,MV,OP> test3( frequency, false );
+  test3.set_resNormStatusTest( rcp(&test2,false) );
+  test3.set_outputManager( rcp(&My_OM,false) );
+  Belos::StatusTestCombo<ST,MV,OP> My_Test( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test3 );
+  
   //
   // *******************************************************************
   // *************Start the block CG iteration*************************

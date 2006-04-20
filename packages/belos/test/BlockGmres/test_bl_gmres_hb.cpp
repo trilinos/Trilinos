@@ -38,6 +38,7 @@
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
   Teuchos::Time timer("Belos");	
 
   bool verbose = 0;
+  int frequency = -1;
   int blocksize = 1;
   int numrhs = 1;
   int numrestarts = 15; // number of restarts allowed 
@@ -77,6 +79,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
@@ -85,6 +88,8 @@ int main(int argc, char *argv[]) {
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
+  if (!verbose)
+    frequency = -1;  // reset frequency if test is not verbose
   //
   // Get the problem
   //
@@ -115,17 +120,19 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
-  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
-  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
-  StatusTestCombo_t test3( StatusTestCombo_t::OR, test1, test2 );
-  StatusTestResNorm_t test4( tol );
-  StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, test4 );
-  
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
     My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+  
+  typedef Belos::StatusTestCombo<double,MV,OP> StatusTestCombo_t;
+  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
+  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
+  StatusTestCombo_t test3( StatusTestCombo_t::OR, test1, test2 );
+  Belos::StatusTestResNorm<double,MV,OP> test4( tol );
+  Belos::StatusTestOutputter<ST,MV,OP> test5( frequency, false );
+  test5.set_resNormStatusTest( rcp(&test4,false) );
+  test5.set_outputManager( rcp(&My_OM,false) );    
+  StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, test5 );
   
   Belos::BlockGmres<double,MV,OP>
     MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));

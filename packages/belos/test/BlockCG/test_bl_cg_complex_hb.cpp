@@ -37,6 +37,7 @@
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosBlockCG.hpp"
 #include "Teuchos_Time.hpp"
@@ -88,6 +89,7 @@ int main(int argc, char *argv[]) {
   Teuchos::Time timer("Belos CG");
 
   bool verbose = 0;
+  int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;  // total number of right-hand sides to solve for
   int blockSize = 1;  // blocksize used by solver
   std::string filename("mhd1280b.cua");
@@ -95,6 +97,7 @@ int main(int argc, char *argv[]) {
 
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
@@ -110,6 +113,10 @@ int main(int argc, char *argv[]) {
   if (verbose) {
     cout << Belos::Belos_Version() << endl << endl;
   }
+  if (!verbose)
+    frequency = -1;  // reset frequency if test is not verbose
+  //
+  //
 
 #ifndef HAVE_BELOS_TRIUTILS
    cout << "This test requires Triutils. Please configure with --enable-triutils." << endl;
@@ -181,11 +188,6 @@ int main(int argc, char *argv[]) {
   // *************Start the block CG iteration*************************
   // *******************************************************************
   //
-  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
-  Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
-  RefCountPtr<Belos::StatusTestCombo<ST,MV,OP> > MyTest
-    = rcp( new Belos::StatusTestCombo<ST,MV,OP>( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test2 ) );
-  //
   // Create default output manager 
   RefCountPtr<Belos::OutputManager<ST> > MyOM 
     = rcp( new Belos::OutputManager<ST>( MyPID ) );
@@ -193,6 +195,15 @@ int main(int argc, char *argv[]) {
   if (verbose) {
     MyOM->SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
   }
+
+  Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
+  Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
+  Belos::StatusTestOutputter<ST,MV,OP> test3( frequency, false );
+  test3.set_resNormStatusTest( rcp(&test2,false) );
+  test3.set_outputManager( MyOM );
+      
+  RefCountPtr<Belos::StatusTestCombo<ST,MV,OP> > MyTest
+    = rcp( new Belos::StatusTestCombo<ST,MV,OP>( Belos::StatusTestCombo<ST,MV,OP>::OR, test1, test3 ) );
   //
   Belos::BlockCG<ST,MV,OP>
     MyBlockCG( MyLP, MyTest, MyOM );

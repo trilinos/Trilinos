@@ -46,6 +46,7 @@
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
+#include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
@@ -79,6 +80,7 @@ int main(int argc, char *argv[]) {
   Teuchos::Time timer("Belos Preconditioned Gmres");
 
   bool verbose = 0;
+  int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 10;
   int numrhs = 15;
   int numrestarts = 15; // number of restarts allowed 
@@ -87,6 +89,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
+  cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
@@ -95,6 +98,8 @@ int main(int argc, char *argv[]) {
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
+  if (!verbose)
+    frequency = -1;  // reset frequency if test is not verbose
   //
   // Get the problem
   //
@@ -173,6 +178,10 @@ int main(int argc, char *argv[]) {
   //My_LP.SetLeftPrec( rcp(&Prec,false) );
   My_LP.SetBlockSize( blocksize );
   
+  Belos::OutputManager<double> My_OM( MyPID );
+  if (verbose)
+    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+
   typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
   Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
@@ -180,14 +189,13 @@ int main(int argc, char *argv[]) {
   StatusTestCombo_t BasicTest( StatusTestCombo_t::OR, test1, test2 );
   StatusTestResNorm_t test3( tol );
   test3.DefineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
-  BasicTest.AddStatusTest( test3 );
+  Belos::StatusTestOutputter<ST,MV,OP> test4( frequency, false, "Native Residual: ||A*x-b||/||b||" );
+  test4.set_resNormStatusTest( rcp(&test3, false) );
+  test4.set_outputManager( rcp(&My_OM,false) );
+  BasicTest.AddStatusTest( test4 );      
   StatusTestResNorm_t ExpTest( tol );
   ExpTest.DefineResForm( StatusTestResNorm_t::Explicit, Belos::TwoNorm ); 
-  StatusTestCombo_t My_Test( StatusTestCombo_t::SEQ, BasicTest, ExpTest );
-  
-  Belos::OutputManager<double> My_OM( MyPID );
-  if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+  StatusTestCombo_t My_Test( StatusTestCombo_t::SEQ, BasicTest, ExpTest );  
   //
   // *******************************************************************
   // *************Start the block Gmres iteration*************************
