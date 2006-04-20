@@ -7,44 +7,48 @@
   setTitle('Trilinos - WebSolver - Step 4: Results');
   setDir('./');
   include 'common/header.html';
+
+  $ProblemIDs = $_POST['ProblemIDs'];
+  $ResultIDs = $_POST['ResultIDs'];
+
+  for ($i = 0; $i < $_POST['phi_count']; $i = $i + 1)
+  {
+    $value = $_POST['phi_value_'. $i];
+    $label = $_POST['phi_label_'. $i];
+    $ResultIDs .= ":$value@$label";
+  }
 ?>
 
 <!-- begin content ######################################################### -->
 
   <p class="heading">Trilinos <a href="index.html">WebSolver</a> - Step 4: Results</p>
   
-  <div class="stepBox completed"><a href="step1.html">Step 1:<br/>Data</a></div>
-  <div class="stepBox completed">Step 2:<br/>Parameters</div>
-  <div class="stepBox completed">Step 3:<br/>Compute</div>
-  <div class="stepBox current">Step 4:<br/>Results</div>
-  <br clear="all" /><br/>
-  
-  <!-- ===================================================================== -->
-  
-  INSTRUCTIONS...
-  <br/><br/><br/>
-  
-  
-    <table border=1> 
-      <tr>
-        <td width=100>Label</td><td width=100>phi</td></tr>
-<?
-$ProblemIDs = $_POST[ProblemIDs];
-$Labels = $_POST[Labels];
+  <? step_header(); ?>
 
-  foreach (explode(':', $ProblemIDs) as $i)
-  {
-    if ($i == "") continue;
-    echo '<tr>';
-    echo '<td><b>' . $i;
-    echo '</b></td>';
-    echo '<td>' . $_POST[$i . "_phi_1"] . '</td>';
-    echo '</tr>';
-  }
-  
-?>
-  </tr></table>
-  <br/><br/>
+  <!-- --------------------------------------------------------------------- -->
+
+  <br/>
+  <div class="problemIDs">
+  <? print_problem_and_result($ProblemIDs, $ResultIDs); ?>
+  </div>
+
+  <p>
+  <center>
+  <table cols=2 border=1>
+  <tr>
+  <td>Result label</td>
+  <td>PHI</td>
+  </tr>
+  <? 
+    foreach (explode(':', $ResultIDs) as $i)
+    {
+      if ($i == "") continue;
+
+      $j = explode('@', $i);
+      echo "<tr><td><b>" . $j[1] . "</td><td>" . $j[0] . "</td></tr>";
+    }
+    ?>
+  </table>
   
 <!-- end content ########################################################### -->
 

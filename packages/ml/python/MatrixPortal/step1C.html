@@ -3,7 +3,7 @@
   include 'common/util.php';
   setBodyAttributes('onload="grabFocus();"'); 
   setFilename('index.html');
-  setTitle('Matrix Portal -- Step 3: Compute');
+  setTitle('Matrix Portal -- Step 1C: Check Data');
   setDir('./');
   include 'common/header.html';
 
@@ -13,7 +13,7 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">WebSolver</a> -- Step 3: Compute</p>
+  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> -- Step 1C: Check Data</p>
   
   <? step_header(); ?>
   
@@ -25,10 +25,8 @@
   print_problem_and_result($ProblemIDs, $ResultIDs1);
   echo "</div></p>";
 
-  echo "<P><b><font color=blue>Note: To register your results, go to step 4 by using";
-  echo " the buttom at the bottom of the page.</font></b>";
+  echo "<form action=step2.html enctype=multipart/form-data method=post>";
 
-  echo "<form name=step3 action=step4.html enctype=multipart/form-data method=post>";
   process();
   ?>
 
@@ -40,7 +38,7 @@
   Continue to:
   <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type=hidden name=ResultIDs value="<? global $ResultIDs; echo $ResultIDs; ?>">
-  <input type="submit" class=submitSecondary name="submit" value="Step 4: Results">
+  <input type="submit" class=submitSecondary name="submit" value="Step 2: Parameters">
 
 <!-- end content ########################################################### -->
 

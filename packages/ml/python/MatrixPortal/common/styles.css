@@ -78,9 +78,9 @@ td { font-size: 9pt; }
 .formTable td { margin: 0px; padding: 5px; font-size: 9pt; }
 div.formSection { padding: 0 10px 10px 10px; background-color: #f7f7f7;
   border: 1px solid #666; }
-div.formSection p.heading { font-weight: bold; font-size: 10pt;
+div.formSection p.heading { font-weight: bold; font-size: 10pt; background-color: #FFEFD5;
   margin: 5px 10px 10px 0; padding: 0; }
-div.problemIDs { padding: 0 10px 10px 10px; background-color: #98FB98;
+div.problemIDs { padding: 0 10px 10px 10px; background-color: #FAFAD2;
   border: 1px solid #666; }
 
 .errorBox { background-color: #fdd; border: 1px solid #666; padding: 10px; 
@@ -100,3 +100,23 @@ div.problemIDs { padding: 0 10px 10px 10px; background-color: #98FB98;
 .link a:visited { color: #33c; }
 .link a:hover { color: #33c; }
 .link a:active { color: #33c; }
+
+input.submitSecondary
+{
+	background-color: SkyBlue;
+	color: Black;
+	padding: 0px 3px 0px 3px;
+	border: groove 2px #fff;
+	margin: 3px 3px 3px 0px;
+	overflow: visible; 
+}
+input.submitPrimary
+{
+	background-color: #fff;
+	color: #f60;
+	padding: 0px 3px 0px 3px; /*	border: 1px solid #FF6600; */
+	border: groove 2px #fff;
+	margin: 3px 2px 3px 0px;
+	overflow: visible; 
+	width:auto;
+}

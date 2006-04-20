@@ -8,7 +8,10 @@ import Numeric
 from PyTrilinos import Epetra, EpetraExt, AztecOO, ML, Galeri, IFPACK
 
 comm = Epetra.PyComm()
+
+count = 0
   
+# -------------------------------------------------------------------------
 def set_type(List, name, type, value):  
   if (type == 'int'):
     List[name] = int(value);
@@ -24,11 +27,55 @@ def set_type(List, name, type, value):
     print "Type ", type, " not recognized"
 
 # -------------------------------------------------------------------------
+def add_result(List, Label, ierr, iters, PrecTime, SolverTime):
+  phi = 0.0;
+  phi = phi + List['evaluation: setup time'] * PrecTime;
+  phi = phi + List['evaluation: solution time'] * SolverTime;
+  phi = phi + List['evaluation: iterations'] * iters;
+
+  global count
+  print "<p><font color=blue>Evaluation phi = %f. Add to results with label: <input type=text name=phi_label_%d value=\"%s\"></font>" % (phi, count, Label)
+  print "<input type=hidden name=phi_value_%d value=%f>" %(count, phi)
+  count = count + 1
+
+# -------------------------------------------------------------------------
+def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
+
+  LHS = Epetra.MultiVector(InputLHS)
+  LHS.PutScalar(0.0)
+  
+  Time = Epetra.Time(Matrix.Comm())
+
+  Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
+  Solver.SetPrecOperator(Prec)
+  if (List['az_solver'] == "AZ_gmres"):
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
+  elif List['az_solver'] == "AZ_cg":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
+  elif List['az_solver'] == "AZ_cg_condnum":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg_condnum);
+  elif List['az_solver'] == "AZ_gmres_condnum":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres_condnum);
+  elif List['az_solver'] == "AZ_bicgstab":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
+  elif List['az_solver'] == "AZ_tfqmr":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_tfqmr);
+  else:
+    print "Solver type not correct, ", List['az_solver']
+
+  Solver.SetAztecOption(AztecOO.AZ_output, 16);
+  err = Solver.Iterate(List['iters'], List['tol']) 
+
+  return (err, Solver.NumIters(), Time.ElapsedTime())
+
+# -------------------------------------------------------------------------
 def generator(problemID, comm):
   GaleriList = {}
   if problemID[0:3] == "MM_":
-    FileName = "/people_old/trilinos_www/matrices/" + problemID[3:];
+    print "<p><p><div class=\"outputBox\"><pre>";
+    FileName = "/var/www/html/MatrixPortal/HBMatrices/" + problemID[3:];
     Map, Matrix, LHS, RHS, ExactSolution = Galeri.ReadHB(FileName, comm);
+    print "</div>"
 
   else:
     parts = string.split(problemID, '_');
@@ -54,6 +101,14 @@ def generator(problemID, comm):
 
     Matrix = Galeri.CreateCrsMatrix(ProblemType, Map, GaleriList);
 
+    if Map.NumGlobalElements() > 40000:
+      print "<b><font color=red>Sorry, the maximum matrix size is 20.000</font></b>"
+      throw(-1)
+
+    if Matrix.NumGlobalNonzeros() > 150000:
+      print "<b><font color=red>Sorry, the maximum number of nonzeros is 150.000</font></b>"
+      throw(-1)
+
     LHS = Epetra.Vector(Map);
     RHS = Epetra.Vector(Map);
     ExactSolution = Epetra.Vector(Map); ExactSolution.Random();
@@ -67,7 +122,7 @@ def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
   print "<p><p><div class=\"outputBox\"><pre>";
   print "<b><font color=red>Problem Label = ", Label, "</font></b>";
   print "<b><font color=red>Operation = matrix analysis </font></b>";
-  IFPACK.AnalyzeMatrix(Matrix);
+  IFPACK.AnalyzeMatrix(Matrix, True);
   IFPACK.AnalyzeMatrixElements(Matrix);
   print "&nbsp;<pre></div>";
 
@@ -76,8 +131,13 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   print "<p><p><div class=\"outputBox\"><pre>";
   print "<b><font color=red>Problem Label = ", Label, "</font></b>";
   print "<b><font color=red>Operation = ", What, "</font></b>";
+
+  Time = Epetra.Time(Matrix.Comm())
+
   Factory = IFPACK.Factory()
-  if What == "Jacobi":
+  if What == "Chebyshev":
+    Prec = Factory.Create("Chebyshev", Matrix)
+  elif What == "Jacobi":
     List['relaxation: type'] = "Jacobi";
     Prec = Factory.Create("point relaxation stand-alone", Matrix)
   elif What == "Gauss-Seidel":
@@ -99,66 +159,33 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   Prec.Initialize()
   Prec.Compute()
 
-  RHS.Random();
-  LHS.PutScalar(0.0);
-  
-  Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
-  Solver.SetPrecOperator(Prec)
-  if (List['az_solver'] == "AZ_gmres"):
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
-  elif List['az_solver'] == "AZ_cg":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
-  elif List['az_solver'] == "AZ_cg_condnum":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg_condnum);
-  elif List['az_solver'] == "AZ_gmres_condnum":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres_condnum);
-  elif List['az_solver'] == "AZ_bicgstab":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
-  elif List['az_solver'] == "AZ_tfqmr":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_tfqmr);
-  else:
-    print "Solver type not correct, ", List['az_solver']
-  Solver.SetAztecOption(AztecOO.AZ_output, 16);
-  err = Solver.Iterate(List['iters'], List['tol']) 
+  PrecTime = Time.ElapsedTime()
 
+  (ierr, iters, SolveTime) = iterative_solver(List, Matrix, LHS, RHS, Prec)
   del Prec;
+
+  add_result(List, Label + " " + What, ierr, iters, PrecTime, SolveTime)
   print "&nbsp;<pre></div>";
-  return(Solver.NumIters())
   
 # -------------------------------------------------------------------------
 def perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   print "<p><p><div class=\"outputBox\"><pre>";
   print "<b><font color=red>Problem Label = ", Label, "</font></b>";
   print "<b><font color=red>Operation = multilevel preconditioner </font></b>";
+
+  Time = Epetra.Time(Matrix.Comm())
+
   Prec = ML.MultiLevelPreconditioner(Matrix, False);
   Prec.SetParameterList(List);
   Prec.ComputePreconditioner();
 
-  RHS.Random();
-  LHS.PutScalar(0.0);
-  
-  Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
-  Solver.SetPrecOperator(Prec)
-  if (List['az_solver'] == "AZ_gmres"):
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres);
-  elif List['az_solver'] == "AZ_cg":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg);
-  elif List['az_solver'] == "AZ_cg_condnum":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cg_condnum);
-  elif List['az_solver'] == "AZ_gmres_condnum":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres_condnum);
-  elif List['az_solver'] == "AZ_bicgstab":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
-  elif List['az_solver'] == "AZ_tfqmr":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_tfqmr);
-  else:
-    print "Solver type not correct, ", List['az_solver']
-  Solver.SetAztecOption(AztecOO.AZ_output, 16);
-  err = Solver.Iterate(List['iters'], List['tol']) 
+  PrecTime = Time.ElapsedTime()
 
+  (ierr, iters, SolveTime) = iterative_solver(List, Matrix, LHS, RHS, Prec)
   del Prec;
+
+  add_result(List, Label + " ML", ierr, iters, PrecTime, SolveTime)
   print "&nbsp;<pre></div>";
-  return(Solver.NumIters())
   
 # -------------------------------------------------------------------------
 def direct(Map, Matrix, LHS, RHS, ExactSolution, List):
@@ -195,14 +222,15 @@ def main():
     what = d[0][0];
     name = string.strip(d[0][2:]);
     val = d[1];
-    if what == "i":
-      List[name] = int(val);
-    elif what == "b":
-      List[name] = bool(val);
-    elif what == "d":
-      List[name] = float(val);
-    elif what == "s":
-      List[name] = string.strip(val);
+    if (val != ""):
+      if what == "i":
+        List[name] = int(val)
+      elif what == "b":
+        List[name] = string.strip(val)
+      elif what == "d":
+        List[name] = float(val)
+      elif what == "s":
+        List[name] = string.strip(val)
 
   # Construct the problem =====================================================
 
@@ -213,37 +241,52 @@ def main():
       continue;
 
     pos = FullProblemID.find('@');
-    Label = FullProblemID[0:pos - 1];
+    Label = FullProblemID[0:pos];
     problemID = FullProblemID[pos + 1:];
     (Map, Matrix, LHS, RHS, ExactSolution) = generator(problemID, comm);
 
-    if List['perform_analysis']:
-      perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution);
+    if List.has_key('perform_analysis'):
+      if List['perform_analysis'] == "True":
+        perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution)
     
-    if List['perform_jacobi']:
-      phi = perform_IFPACK("Jacobi", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_cheby'):
+      if  List['perform_cheby'] == "True":
+        perform_IFPACK("Chebyshev", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
     
-    if List['perform_gs']:
-      phi = perform_IFPACK("Gauss-Seidel", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_jacobi'):
+      if  List['perform_jacobi'] == "True":
+        perform_IFPACK("Jacobi", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
     
-    if List['perform_sgs']:
-      phi = perform_IFPACK("symmetric Gauss-Seidel", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_gs'):
+      if  List['perform_gs'] == "True":
+        perform_IFPACK("Gauss-Seidel", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
     
-    if List['perform_ic']:
-      phi = perform_IFPACK("IC", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_sgs'):
+      if  List['perform_sgs'] == "True":
+        perform_IFPACK("symmetric Gauss-Seidel", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
     
-    if False & List['perform_ict']: # FIXME
-      phi = perform_IFPACK("ICT", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_ic'):
+      if  List['perform_ic'] == "True":
+        perform_IFPACK("IC", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
     
-    if List['perform_ilu']:
-      phi = perform_IFPACK("ILU", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_ict'):
+      if  List['perform_ict'] == "True": # FIXME
+        perform_IFPACK("ICT", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
     
-    if List['perform_ilut']:
-      phi = perform_IFPACK("ILUT", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_ilu') :
+      if List['perform_ilu'] == "True":
+        perform_IFPACK("ILU", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
     
-    if List['perform_ml']:
-      phi = perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    if List.has_key('perform_ilut'):
+      if List['perform_ilut'] == "True":
+        perform_IFPACK("ILUT", Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+    
+    if List.has_key('perform_ml'):
+      if List['perform_ml'] == "True":
+        perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List);
 
+  global count
+  print '<input type=hidden name=phi_count value=%d>' % count
 # -------------------------------------------------------------------------
 if __name__ == "__main__":
   main()

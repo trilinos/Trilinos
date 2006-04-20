@@ -8,24 +8,22 @@
   include 'common/header.html';
 
   $ProblemIDs = $_POST['ProblemIDs'];
+  $ResultIDs = $_POST['ResultIDs'];
 ?>
 
 <!-- begin content ######################################################### -->
 
   <p class="heading">Trilinos <a href="index.html">WebSolver</a> - You are at Step 2: Parameters</p>
   
-  <div class="stepBox completed"><a href="step1.html">Step 1:<br/>Data</a></div>
-  <div class="stepBox current">Step 2:<br/>Parameters</div>
-  <div class="stepBox upcoming">Step 3:<br/>Compute</div>
-  <div class="stepBox upcoming">Step 4:<br/>Results</div>
-  <br clear="all" /><br/>
+  <? step_header(); ?>
   
   <!-- --------------------------------------------------------------------- -->
   
   <br/>
   <div class="problemIDs">
-  <? print_problem($ProblemIDs); ?>
+  <?php print_problem_and_result($ProblemIDs, $ResultIDs); ?> 
   </div>
+  <p>
 
   <p>
   <? print_form(); ?>
@@ -57,18 +55,9 @@
       </tr>
       <tr>
         <td>Tolerance: </td>
-        <td><input type="text" name="tol" value="1e-9" />
+        <td><input type="text" name="tol" value="1e-5" />
       </tr>
     </table><br />
-
-    <table class="formTable" cellspacing="0" cellpadding="0">
-      <tr>
-        <td>Analyze Matrix Elements: </td><td>
-        <input type="radio" name="perform_analysis" value="True" checked> Yes
-        &nbsp; &nbsp;
-        <input type="radio" name="perform_analysis" value="False"> No
-      </tr>
-    </table>
 
     </div>
     <p>
@@ -233,12 +222,14 @@
     <!-- php marker for stage in form process -->
     <input type="hidden" name="stage" value="process_iterative">
     <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+    <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
     <input type="hidden" name="counter" value="<? global $counter; echo $counter; ?>">
+    <input type="hidden" name="perform_analysis" value="False">
   
 
   <br>
   Continue to:
-  <input type="submit" name="submit" value="Step 3: Compute">
+  <input type="submit" class=submitSecondary name="submit" value="Step 3: Compute">
   
   </form>
   
