@@ -610,14 +610,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
           *    c) Ptemp = Dinv*Ptemp;
           *    d) do an ML_Operator_Add() with the original P.
           */
-/*
-         Ptemp = ML_Operator_Create(Amat->comm);
-         ML_2matmult(Amat, Pmatrix, Ptemp, ML_CSR_MATRIX );
-         ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);
-         ML_Operator_Add(Pmatrix,Ptemp, &(ml->Pmat[clevel]),ML_CSR_MATRIX,
-                 -dampingFactors[ii] / max_eigen);
-         ML_Operator_Destroy(&Ptemp);
-*/
          Ptemp = ML_Operator_Create(Amat->comm);
          ML_2matmult(Amat, tmpmat1, Ptemp, ML_CSR_MATRIX );
          ML_AGG_DinvP(Ptemp, mls_widget, Amat->num_PDEs,1,1, Amat);

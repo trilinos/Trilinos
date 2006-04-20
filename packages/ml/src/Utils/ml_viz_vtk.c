@@ -188,7 +188,7 @@ int ML_Aggregate_VisualizeVTK( ML_Aggregate_Viz_Stats info,
 
   /* Impose a global numbering on the matrix. */
 
-  ML_build_global_numbering(Amatrix, &GlobRowOrdering);
+  ML_build_global_numbering(Amatrix, &GlobRowOrdering,"rows");
 
   /* Calculate global number of aggregates. */
   if (Naggregates > 0) {

@@ -158,7 +158,8 @@ std::cout << "--- Leaving:
                                            const char label[],
                                            int *, int *);
    extern int ML_build_global_numbering( ML_Operator *Amat,
-                                         int **pglobal_numbering );
+                                         int **pglobal_numbering,
+                                         const char *rowsOrCols );
 
 
    int ML_Operator_Lump(ML_Operator *A, ML_Operator **B);

@@ -2701,20 +2701,17 @@ double ML_gmin_double(double val, ML_Comm *comm)
 /* using global ordering.                                               */
 /*                                                                      */
 /* Parameter list:                                                      */
-/* matrix :             ML_Operator, distributed among the proceses     *
- *                      If the matrix is rectangular, the user should   *
- *                      pass in both a global row ordering and a global *
- *                      column numbering.                               *
- *
+/* matrix :             ML_Operator, distributed among processes.       *
+ *                      The matrix may be square or rectangular.        *
+ *                                                                      *
  * label :              matrix will be written in MATLAB (i,j,k) format *
  *                      to file "label.m". Note that only ONE file will *
  *                      be created that contains the ENTIRE operator.   *
+ *                                                                      *
  * global_row_ordering: optional global row numbering.                  *
- *                      If this is   null, we assume the matrix is      *
- *                      square and calculate our own global             *
- *                      numbering, the same for both rows and           *
- *                      columns.                                        *
- * global_col_ordering: optional global column numbering                *
+ * global_col_ordering: optional global column numbering.               *
+ *                      If either of these are null, they will be cal-  *
+ *                      culated in this function.                       *
  *                                                                      */
 /* Albuquerque, 30-Oct-03                                               */
 /* ******************************************************************** */
@@ -2733,43 +2730,41 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
    char   filename[80];
    FILE   *fid;
    int    Nrows, NglobalRows, NglobalCols=0;
-   int    is_global_allocated = 0;
+   int    is_globalRows_allocated = 0;
+   int    is_globalCols_allocated = 0;
    int    length=0;
    ML_Comm * comm = matrix->comm;
    
-   /* if ordering is NULL, assume we have a square matrix */
+   NglobalRows = matrix->outvec_leng;
+   ML_gsum_scalar_int(&NglobalRows,&i, comm);
+   NglobalCols = matrix->invec_leng;
+   ML_gsum_scalar_int(&NglobalCols,&i, comm);
+
    if( global_row_ordering == NULL ) {
-     length = ML_build_global_numbering(matrix, &global_row_ordering);
-     is_global_allocated = 1;
-     global_col_ordering = global_row_ordering; 
+     length = ML_build_global_numbering(matrix, &global_row_ordering,"rows");
+     is_globalRows_allocated = 1;
    }
 
-   if( global_col_ordering == NULL )
-     global_col_ordering = global_row_ordering; 
-         
+   if( global_col_ordering == NULL ) {
+     if (NglobalRows == NglobalCols)
+       global_col_ordering = global_row_ordering; 
+     else {
+       length = ML_build_global_numbering(matrix, &global_col_ordering,"cols");
+       is_globalCols_allocated = 1;
+     }
+   }
+ 
    if ( matrix->getrow == NULL) return(1);
 
    MyPID = comm->ML_mypid;
    NumProc = comm->ML_nprocs;
 
-/*
-   MPI_Barrier(MPI_COMM_WORLD);
-   for (i=0; i<length; i++)
-     printf("(%d, %s) %d: %d\n",MyPID,label,i,global_row_ordering[i]);
-   MPI_Barrier(MPI_COMM_WORLD);
-*/
-
    allocated = matrix->max_nz_per_row;
    bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
    val   = (double *)  ML_allocate( allocated*sizeof(double));
 
-   Nrows = matrix->getrow->Nrows;
-#ifdef ML_MPI
-   MPI_Reduce((void*)&Nrows, (void*)&NglobalRows,
-	      1, MPI_INT, MPI_SUM, 0, matrix->comm->USR_comm );
-#else
-   NglobalRows = Nrows; 
-#endif
+   //Nrows = matrix->getrow->Nrows;
+   Nrows = matrix->outvec_leng;
 
    if( label != NULL ) {	 
      sprintf( filename,
@@ -2796,34 +2791,33 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
        	 
        if( MyPID == 0 ) {
 	     fprintf( fid, "%%N_global_rows = %d\n", NglobalRows );
+	     fprintf( fid, "%%N_global_cols = %d\n", NglobalCols );
          fprintf(fid,"%% To load this data into Matlab:\n");
          fprintf(fid,"%%    load(filename); A = spconvert(filename);\n");
+         fprintf(fid,"%%This ordering may be different than the application's matrix ordering!\n");
        }
        
        fprintf( fid,
-		"%%Writing data for processor %d\n"
-		"%%N_update = %d\n",
+		"%%Writing data for processor %d\n%%N_update = %d\n%%outvec_leng = %d\n%%invec_leng = %d\n",
 		iproc,
-		Nrows );
+		Nrows,
+        matrix->outvec_leng,
+        matrix->invec_leng );
               
-       for (i = 0 ; i < matrix->getrow->Nrows; i++)
+       for (i = 0 ; i < Nrows; i++)
        {
          ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                  &row_length, 0);
   
-         for  (j = 0; j < row_length; j++) {
+         for  (j = 0; j < row_length; j++)
            fprintf(fid,"%d  %d  %20.13e\n",
                    global_row_ordering[i]+1,
                    global_col_ordering[bindx[j]]+1,
                    val[j]);
-           if( global_col_ordering[bindx[j]]>NglobalCols ) 
-             NglobalCols = global_col_ordering[bindx[j]];
-         }
        }
        /* in case last row is empty so that matlab gets the matrix size right */
   	   if (row_length == 0)
-  	     fprintf(fid,"%d  1 0.0\n",
-                 global_row_ordering[matrix->getrow->Nrows-1]+1);
+  	     fprintf(fid,"%d  1 0.0\n", global_row_ordering[Nrows-1]+1);
          if( label != NULL ) fclose(fid);
      }
 #ifdef ML_MPI
@@ -2832,64 +2826,74 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
      
    }
 
-   /* compute global number of columns */
-
-#ifdef ML_MPI
-   MPI_Reduce((void*)&NglobalCols, (void*)&i,
-	      1, MPI_INT, MPI_MAX, 0, matrix->comm->USR_comm );
-#else
-   i = NglobalCols; 
-#endif
-
-   if( MyPID == 0 ) {
-     if( label != NULL ) fid = fopen(filename,"a");     
-     else                fid = stdout;
-     
-     fprintf(fid,
-	     "%%N_global_cols = %d\n",
-	     i );
-     if( label != NULL ) fclose(fid);
-     
-   }
-   
    /* free memory and return */
    
    fflush(stdout);
    ML_free(val);
    ML_free(bindx);
 
-   if( is_global_allocated == 1 )
-     ML_free( global_row_ordering );
+   if( is_globalRows_allocated == 1 ) ML_free( global_row_ordering );
+   if( is_globalCols_allocated == 1 ) ML_free( global_col_ordering );
 
    return 0;
 }
 
-/* ******************************************************************** */
-/* Create global numbering for a ML_Operator. I suppose that ML uses a  */
-/* linear decomposition among the processes (that is, proc 0 is assigned*/
-/* the first Nrows elements, and so on). This is enough to define the   */
-/* global numbering of local nodes. For the ghost nodes (columns), I use*/
-/* ML_exchange_bdry.                                                    */
-/*                                                                      */
-/* Albuquerque, 30-Oct-03                                               */
-/* ******************************************************************** */
+/* ******************************************************************** *
+ * Create global numbering for a ML_Operator. I suppose that ML uses a  *
+ * linear decomposition among the processes (that is, proc 0 is assigned*
+ * the first Nrows elements, and so on). This is enough to define the   *
+ * global numbering of local nodes. For the ghost nodes (columns), I use*
+ * ML_exchange_bdry.                                                    *
+ *
+ * This now supports global numbering for either rows or columns, which *
+ * may be of interest for rectangular matrices.  If the 3rd input arg   *
+ * is either "columns" or "cols", global column numbers are found.      *
+ * Otherwise, global row numbers are found.                             *
+ *                                                                      *
+ * Albuquerque, 30-Oct-03                                               *
+ * ******************************************************************** */
 
 int ML_build_global_numbering( ML_Operator *Amat,
-			       int **pglobal_numbering )
+			       int **pglobal_numbering,
+                   const char *rowsOrCols )
 {
 
   int    i;
-  int    Nrows, Nghosts, offset;
+  int    Nloc, Nghosts, offset;
   double * dtemp = NULL;
   int * global_numbering;
   ML_Comm *comm = Amat->comm;
-  /*ML_CommInfoOP *pre_comm = Amat->getrow->pre_comm;
-  ML_NeighborList *neighbor;
-  int mypid = Amat->comm->ML_mypid;
-  int *temp;
-  int k;*/
+  int NglobalRows, NglobalCols;
+  int findingRows;
+
+  NglobalRows = Amat->outvec_leng;
+  ML_gsum_scalar_int(&NglobalRows,&i, comm);
+  NglobalCols = Amat->invec_leng;
+  ML_gsum_scalar_int(&NglobalCols,&i, comm);
   
-  Nrows = Amat->getrow->Nrows;
+  if (strcmp(rowsOrCols,"cols") == 0 ||  strcmp(rowsOrCols,"columns") == 0) {
+    Nloc = Amat->invec_leng;
+    findingRows = 0;
+  }
+  else {
+    Nloc = Amat->outvec_leng;
+    findingRows = 1;
+  }
+
+  if (findingRows && NglobalRows != NglobalCols) {
+#ifdef ML_MPI
+    MPI_Scan ( &Nloc, &offset, 1, MPI_INT, MPI_SUM,
+	       Amat->comm->USR_comm );
+    offset -= Nloc;
+#else
+    offset = 0;
+#endif
+    global_numbering = (int *)ML_allocate(sizeof(int)*(Nloc+1));
+    for (i=0; i<Nloc; i++) global_numbering[i] = i+offset;
+    *pglobal_numbering = global_numbering;
+    return Nloc;
+  }
+
   if (Amat->getrow->pre_comm == NULL) Nghosts = 0;
   else {
     if (Amat->getrow->pre_comm->total_rcv_length <= 0)
@@ -2900,21 +2904,17 @@ int ML_build_global_numbering( ML_Operator *Amat,
   /* allocate +1 because it is possible that some procs will have
      no rows at all (with ParMETIS) */
 
-  dtemp = (double *) ML_allocate( sizeof(double) * (Nrows+Nghosts+1));
-  if( dtemp == NULL ) {
-    fprintf( stderr,
-	     "*ML*ERR* not enough memory to allocated %d bytes\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     (Nrows+Nghosts) * (int)sizeof(double),
+  dtemp = (double *) ML_allocate( sizeof(double) * (Nloc+Nghosts+1));
+  if( dtemp == NULL )
+    pr_error("*ML*ERR* not enough memory to allocated %d bytes\n*ML*ERR* (file %s, line %d)\n",
+	     (Nloc+Nghosts) * (int)sizeof(double),
 	     __FILE__,
 	     __LINE__ );
-    exit( EXIT_FAILURE );
-  }
 
 #ifdef ML_MPI
-  MPI_Scan ( &Nrows, &offset, 1, MPI_INT, MPI_SUM,
+  MPI_Scan ( &Nloc, &offset, 1, MPI_INT, MPI_SUM,
 	     Amat->comm->USR_comm );
-  offset -= Nrows;
+  offset -= Nloc;
 #else
   offset = 0;
 #endif
@@ -2927,80 +2927,37 @@ int ML_build_global_numbering( ML_Operator *Amat,
      be surprised that a tridiagonal matrix (before AZ_transform)
      is no longer tridiagonal, for instance... */
     
-  for( i=0 ; i<Nrows ; i++ ) dtemp[i] = 1.0*(i+offset);
-  for (i=0 ; i<Nghosts; i++) dtemp[i+Nrows] = -1;
+  for( i=0 ; i<Nloc ; i++ ) dtemp[i] = 1.0*(i+offset);
+  for (i=0 ; i<Nghosts; i++) dtemp[i+Nloc] = -1;
 
   /* I exchange this information using ML_exchange_bdry,
      which is coded for double vectors. */
 
-/*
-struct ML_CommInfoOP_Struct {
-   int             N_neighbors;
-   ML_NeighborList *neighbors;
-   int             add_rcvd;
-   int             *remap;
-   int             total_rcv_length;
-   int             minimum_vec_size, remap_length, remap_max;
-   double          time;
-   int             NumActiveProc;
-   int             proc_active;
-   ML_Comm         *comm;
-};
-*/
-    
-/*
-  printf("(%d) calling ML_exchange_bdry\n",comm->ML_mypid);
-  printf("(%d, %d) Nrows = %d, Nghosts = %d, Amat->outvec_leng = %d\n",
-         comm->ML_mypid,getpid(),Nrows,Nghosts,Amat->outvec_leng);
-  printf("(%d, %d) N_neighbors = %d, total_rcv_length = %d\n",
-         comm->ML_mypid,getpid(), pre_comm->N_neighbors, pre_comm->total_rcv_length);
-
-  for (i = 0; i < pre_comm->N_neighbors; i++) 
-  {
-    neighbor = pre_comm->neighbors+i;
-    printf("(%d,%d) neighbor->N_send = %d\n",mypid,getpid(), neighbor->N_send);
-
-    temp = pre_comm->neighbors[i].send_list;
-    for (k = 0; k < neighbor->N_send; k++) 
-        printf("(%d,%d) sendlist(%d) = %d\n",mypid,getpid(),k,temp[k]);
-  }
-  fflush(stdout);
-
-*/
-  ML_exchange_bdry(dtemp,Amat->getrow->pre_comm,
-		   Amat->outvec_leng,
+  ML_exchange_bdry(dtemp,Amat->getrow->pre_comm, Nloc,
 		   comm, ML_OVERWRITE,NULL);
 
   /* allocates memory for global_ordering (+1 as before) */
   
-  global_numbering = (int *)ML_allocate(sizeof(int)*(Nrows+Nghosts+1));
+  global_numbering = (int *)ML_allocate(sizeof(int)*(Nloc+Nghosts+1));
        
-  if( global_numbering == NULL ) {
-    fprintf( stderr,
-	     "*ML*ERR* not enough memory to allocated %d bytes\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     (Nrows+Nghosts) * (int)sizeof(int),
+  if( global_numbering == NULL )
+    pr_error("*ML*ERR* not enough memory to allocated %d bytes\n*ML*ERR* (file %s, line %d)\n",
+	     (Nloc+Nghosts) * (int)sizeof(int),
 	     __FILE__,
 	     __LINE__ );
-    exit( EXIT_FAILURE );
-  }
 
   /* put the received double vectors in the integer vector */
 
-  for( i=0 ; i<Nrows+Nghosts ; i++ )
+  for( i=0 ; i<Nloc+Nghosts ; i++ )
     global_numbering[i] = (int)dtemp[i];
 
   *pglobal_numbering = global_numbering;
   
   ML_free( dtemp ); dtemp = NULL;
 
-/*
-  printf("%d: Nrows = %d, Nghosts = %d\n",Amat->comm->ML_mypid,Nrows,Nghosts);
-*/
-  return Nrows+Nghosts;
+  return Nloc+Nghosts;
     
-}
-/*ms*/
+} /* ML_build_global_numbering() */
 
 /*******************************************************************************
  * ML_Operator_Lump is intended to create a lumped matrix, e.g., a lumped
