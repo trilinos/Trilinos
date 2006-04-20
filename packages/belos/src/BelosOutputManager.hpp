@@ -34,6 +34,7 @@
 */
 
 #include "BelosConfigDefs.hpp"
+#include "BelosTypes.hpp"
 
 /*!	\class Belos::OutputManager
 
@@ -48,21 +49,6 @@
 */
 
 namespace Belos {
-
-  /*! \enum MsgType
-    \brief Enumerated list of available message types recognized by the linear solvers.
-  */
-  
-  enum MsgType 
-    {
-      Errors= 0,                  /*!< Errors [ always printed ] */
-      Warnings = 0x1,             /*!< Internal warnings */
-      IterationDetails = 0x2,     /*!< Approximate/exact residuals */
-      OrthoDetails = 0x4,         /*!< Orthogonalization/orthonormalization details */
-      FinalSummary = 0x8,         /*!< Final computational summary */
-      TimingDetails = 0x10,       /*!< Timing details */
-      Debug = 0x20                /*!< Debugging information */
-    };
   
   template <class ScalarType>
   class OutputManager {
