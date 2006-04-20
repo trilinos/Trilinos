@@ -116,6 +116,17 @@ using namespace std;
 %include "AztecOO_Version.h"
 %include "az_aztec_defs.h"
 
+// Extend directives
+%extend AztecOO {
+  double GetStatus(string what)
+  {
+    const double* status = self->GetAztecStatus();
+    if (what == "AZ_condnum")
+      return(status[AZ_condnum]);
+    return(0.0);
+  }
+}
+
 // Python code
 %pythoncode %{
 __version__ = AztecOO_Version().split()[2]
