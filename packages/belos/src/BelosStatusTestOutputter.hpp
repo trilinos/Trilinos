@@ -39,6 +39,8 @@
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOutputManager.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardCompositionMacros.hpp"
+#include "Teuchos_StandardMemberCompositionMacros.hpp"
 
 namespace Belos {
 
@@ -52,34 +54,34 @@ public:
 
   /** \name Public types */
   //@{
-
+  
   /** \brief . */
   typedef Teuchos::ScalarTraits<ScalarType> ST;
   /** \brief . */
   typedef typename ST::magnitudeType MagnitudeType;
   /** \brief . */
   typedef StatusTestResNorm<ScalarType,MV,OP> StatusTestResNorm_t;
-
+  
   /** \name Constructors/initializers/accessors */
   //@{
-
-	/** \brief Set the number of iterations skipped between outputting.
+  
+  /** \brief Set the number of iterations skipped between outputting.
    * A value <tt><=0</tt> means no outputting */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( int, outputFrequency )
-
-	/** \brief Determine if only max residual is printed or not for active RHS. */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputMaxResOnly )
-
-	/** \brief Determine if only max residual is printed or not for active RHS. */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, resString )
-
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, outputFrequency )
+    
+  /** \brief Determine if only max residual is printed or not for active RHS. */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputMaxResOnly )
+    
+  /** \brief Determine if only max residual is printed or not for active RHS. */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( std::string, resString )
+    
   /** \brief Set the residual norm status test object [Required] */
   STANDARD_COMPOSITION_MEMBERS( StatusTestResNorm_t, resNormStatusTest )
   // Note: Above the typedef is needed for this macro to work
-  
+    
   /** \brief Set the output manager [Required] */
   STANDARD_COMPOSITION_MEMBERS( OutputManager<ScalarType>, outputManager )
-
+    
   /** \brief . */
   StatusTestOutputter(
     const int                        outputFrequency    = -1
@@ -165,19 +167,19 @@ StatusType StatusTestOutputter<ScalarType,MV,OP>::CheckStatus(IterativeSolver<Sc
     std::ostream &out = *outputManager_->GetOStream();
     if(status==Converged)
       out << "[Converged]";
-    out << "iter="<<currIter<<",restart="<<currRestart;
+    out << "iter="<<currIter<<", restart="<<currRestart;
     const MagnitudeType maxRelRes = *std::max_element(
       resTestValuesVector.begin()+currRhsOffset,resTestValuesVector.begin()+currRhsOffset+currNumRhs
       );
     if(currNumRhs==1) {
-      out <<resString()<<"="<<maxRelRes<<"\n";
+      out << ", "<<resString()<<"="<<maxRelRes<<"\n";
     }
     else {
       if(outputMaxResOnly()) {
-        out << ",max{"<<resString()<<",i="<<currRhsOffset<<"..."<<currRhsOffset+currNumRhs-1<<"}=" << maxRelRes << "\n";
+        out << ", max{"<<resString()<<",i="<<currRhsOffset<<"..."<<currRhsOffset+currNumRhs-1<<"}=" << maxRelRes << "\n";
       }
       else {
-        out << ","<<resString()<<":\n";
+        out << ", "<<resString()<<":\n";
         for(int i=0; i<currNumRhs; ++i) {
           out <<"  "<<(i+currRhsOffset)<<": "<<resTestValuesVector[i+currRhsOffset]<<"\n"; 
         }
