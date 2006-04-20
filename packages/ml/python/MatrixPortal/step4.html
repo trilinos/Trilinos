@@ -50,6 +50,56 @@
     ?>
   </table>
   
+<?
+
+$timestamp = date("y-m-d_H.i.s", time());
+
+$myFile = "/tmp/gnuplot-" . $timestamp . '.dat';
+$fh = fopen($myFile, 'w') or die("can't open file");
+
+fwrite($fh, "set title 'evaluation'\n");
+fwrite($fh, "set ylabel 'phi'\n");
+fwrite($fh, "set terminal push\n");
+fwrite($fh, "set terminal png\n");
+fwrite($fh, "set autoscale\n");
+fwrite($fh, "set output '/var/www/html/tmp/gnuplot-" . $timestamp . ".png'\n");
+fwrite($fh, 'set xtics rotate ("" 0 ');
+$count = 1;
+foreach (explode(':', $ResultIDs) as $i)
+{
+  if ($i == "") continue;
+
+  $j = explode('@', $i);
+  fwrite($fh, ', "' . $j[1] . '" ' . $count++ . " ");
+}
+fwrite($fh, ")\n");
+fwrite($fh, 'set xrange [0:' . ($count + 1) . ']' . "\n");
+fwrite($fh, "set boxwidth 1\n");
+fwrite($fh, "set style fill solid\n");
+fwrite($fh, "set nokey\n");
+fwrite($fh, "set boxwidth 0.8\n");
+fwrite($fh, "plot '-' using 1:2 w boxes\n");
+$count = 1;
+foreach (explode(':', $ResultIDs) as $i)
+{
+  if ($i == "") continue;
+
+  $j = explode('@', $i);
+  fwrite($fh, $count++ . " " . $j[0] . "\n");
+}
+fwrite($fh, "end\n");
+
+fwrite($fh, "set output\n");
+fwrite($fh, "set terminal pop\n");
+
+fclose($fh); 
+
+passthru('/usr/bin/gnuplot /tmp/gnuplot-' . $timestamp . ".dat 2>&1");
+
+echo '<IMG SRC=../tmp/gnuplot-' . $timestamp . '.png>';
+
+?>
+
 <!-- end content ########################################################### -->
 
 <?php include 'common/footer.html'; ?>
