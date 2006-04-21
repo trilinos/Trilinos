@@ -156,13 +156,13 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
     List['relaxation: type'] = "symmetric Gauss-Seidel";
     Prec = Factory.Create("point relaxation stand-alone", Matrix)
   elif What == "IC":
-    Prec = Factory.Create("IC stand-alone", Matrix);
+    Prec = Factory.Create("IC", Matrix);
   elif What == "ICT":
-    Prec = Factory.Create("ICT stand-alone", Matrix);
+    Prec = Factory.Create("ICT", Matrix);
   elif What == "ILU":
-    Prec = Factory.Create("ILU stand-alone", Matrix);
+    Prec = Factory.Create("ILU", Matrix);
   elif What == "ILUT":
-    Prec = Factory.Create("ILUT stand-alone", Matrix);
+    Prec = Factory.Create("ILUT", Matrix);
 
   Prec.SetParameters(List)
   Prec.Initialize()

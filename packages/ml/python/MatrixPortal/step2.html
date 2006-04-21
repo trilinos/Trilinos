@@ -66,7 +66,7 @@
 
     <p>
     <div class="formSection">
-    <p class="subheading">Chebyshev Preconditioners: FIXME: DOES NOT WORK</p>
+    <p class="subheading">Chebyshev Preconditioners:</p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
@@ -130,7 +130,7 @@
         <input type="radio" name="perform_ic" value="False" checked> No
       </tr>
       <tr>
-        <td>Analyze ICT Preconditioners: FIXME: DOES NOT WORK</td><td>
+        <td>Analyze ICT Preconditioners:</td><td>
         <input type="radio" name="perform_ict" value="True"> Yes
         &nbsp; &nbsp;
         <input type="radio" name="perform_ict" value="False" checked> No
@@ -142,7 +142,7 @@
         <input type="radio" name="perform_ilu" value="False" checked> No
       </tr>
       <tr>
-        <td>Analyze ILUT Preconditioners: FIXME: DOES NOT WORK</td><td>
+        <td>Analyze ILUT Preconditioners:</td><td>
         <input type="radio" name="perform_ilut" value="True"> Yes
         &nbsp; &nbsp;
         <input type="radio" name="perform_ilut" value="False" checked> No
@@ -150,10 +150,10 @@
     </table><br />
 
     <table class="formTable" cellspacing="0" cellpadding="0">
-    <? fixed_parameter("ic: level-of-fill", "i", "0"); ?>
-    <? fixed_parameter("ict: level-of-fill", "d", "1.0"); ?>
-    <? fixed_parameter("ilu: level-of-fill", "i", "0"); ?>
-    <? fixed_parameter("ilut: level-of-fill", "d", "1.0"); ?>
+    <? fixed_parameter("fact: level-of-fill", "i", "0"); ?>
+    <? fixed_parameter("fact: ict level-of-fill", "d", "1.0"); ?>
+    <? fixed_parameter("fact: level-of-fill", "i", "0"); ?>
+    <? fixed_parameter("fact: ilut level-of-fill", "d", "1.0"); ?>
     </table><br />
     </div>
 
