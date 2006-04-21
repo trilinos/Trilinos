@@ -17,6 +17,8 @@
 #endif
 
 //==============================================================================
+// NOTE: any change to the default values should be committed to the other
+//       constructor as well.
 Ifpack_Chebyshev::
 Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   IsInitialized_(false),
@@ -49,9 +51,49 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   Time_(0),
   ZeroStartingSolution_(true)
 {
-  Matrix_ = dynamic_cast<const Epetra_RowMatrix*>(Operator);
-  if (Matrix_ != 0)
-    IsRowMatrix_ = true;
+}
+
+//==============================================================================
+// NOTE: This constructor has been introduced because SWIG does not appear
+//       to appreciate dynamic_cast. An instruction of type
+//       Matrix_ = dynamic_cast<const Epetra_RowMatrix*> in the
+//       other construction does not work in PyTrilinos -- of course
+//       it does in any C++ code (for an Epetra_Operator that is also
+//       an Epetra_RowMatrix).
+//
+// FIXME: move declarations into a separate method?
+Ifpack_Chebyshev::
+Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
+  IsInitialized_(false),
+  IsComputed_(false),
+  NumInitialize_(0),
+  NumCompute_(0),
+  NumApplyInverse_(0),
+  InitializeTime_(0.0),
+  ComputeTime_(0.0),
+  ApplyInverseTime_(0.0),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
+  PolyDegree_(1),
+  UseTranspose_(false),
+  Condest_(-1.0),
+  ComputeCondest_(false),
+  EigRatio_(30.0),
+  Label_(),
+  LambdaMin_(0.0),
+  LambdaMax_(100.0),
+  MinDiagonalValue_(0.0),
+  NumMyRows_(0),
+  NumMyNonzeros_(0),
+  NumGlobalRows_(0),
+  NumGlobalNonzeros_(0),
+  InvDiagonal_(0),
+  Operator_(Operator),
+  Matrix_(Operator),
+  IsRowMatrix_(true), 
+  Time_(0),
+  ZeroStartingSolution_(true)
+{
 }
 
 //==============================================================================

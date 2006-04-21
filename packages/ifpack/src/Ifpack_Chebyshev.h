@@ -63,9 +63,17 @@ public:
   /*! Creates an instance of Ifpack_Chebyshev class.
    *
    * \param
-   * Matrix - (In) Pointer to operator or matrix to precondition.
+   * Matrix - (In) Pointer to the operator to precondition.
    */
   Ifpack_Chebyshev(const Epetra_Operator* Matrix);
+
+  //! Ifpack_Chebyshev constructor with given Epetra_Operator/Epetra_RowMatrix.
+  /*! Creates an instance of Ifpack_Chebyshev class.
+   *
+   * \param
+   * Matrix - (In) Pointer to the matrix to precondition.
+   */
+  Ifpack_Chebyshev(const Epetra_RowMatrix* Matrix);
 
   //! Destructor.
   virtual ~Ifpack_Chebyshev();
