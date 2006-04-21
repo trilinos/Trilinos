@@ -114,6 +114,8 @@ function process()
   $timestamp = date("y-m-d_H.i.s", time());
 
   global $ProblemIDs;
+  global $TempDirectory;
+  global $PythonDirectory;
 
   $counter = $_POST['counter'];
 
@@ -141,18 +143,19 @@ function process()
     $configString .= "$type$name = $value\n";
   }
 
-  $configFile = fopen("/tmp/configs/$timestamp.txt", 'w')
-    or die("can't open /tmp/configs/$timestamp.txt: $php_errormsg");
+  $configFileName = "$TempDirectory/configs/$timestamp.txt";
+  $configFile = fopen($configFileName, 'w')
+    or die("can't open $configFileName: $php_errormsg");
   if (-1 == fwrite($configFile, $configString)) { 
-    die("can't write to /tmp/configs/$timestamp.txt: $php_errormsg"); }
+    die("can't write to $configFileName: $php_errormsg"); }
   fclose($configFile) 
-    or die("can't close /tmp/configs/$timestamp.txt: $php_errormsg");
-  chmod("/tmp/configs/$timestamp.txt", 0664);
+    or die("can't close $configFileName: $php_errormsg");
+  chmod($configFileName, 0664);
 
   chdir("solve/");
 
   $command = "PYTHONPATH=/home/msala/Trilinos/LINUX_SERIAL/lib/python2.4/site-packages/:\$PYTHONPATH ";
-  $command .= "python ./step_process.py /tmp/configs/$timestamp.txt 2>&1";
+  $command .= "python $PythonDirectory/step_process.py $configFileName 2>&1";
   passthru($command);
 }
 

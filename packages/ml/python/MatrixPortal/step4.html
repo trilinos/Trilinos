@@ -4,8 +4,9 @@
   includeStyleSheet('styles.css'); 
   setBodyAttributes('onload="grabFocus();"'); 
   setFilename('index.html');
-  setTitle('Trilinos - WebSolver - Step 4: Results');
+  setTitle('Matrix Portal -- Step 4: Results');
   setDir('./');
+  include 'common/config.php';
   include 'common/header.html';
 
   $ProblemIDs = $_POST['ProblemIDs'];
@@ -21,7 +22,7 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">WebSolver</a> - Step 4: Results</p>
+  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> - Step 4: Results</p>
   
   <? step_header("4"); ?>
 
@@ -54,15 +55,17 @@
 
 $timestamp = date("y-m-d_H.i.s", time());
 
-$myFile = "/tmp/gnuplot-" . $timestamp . '.dat';
+$myFile = $TempDirectory . "/gnuplot-" . $timestamp . '.dat';
 $fh = fopen($myFile, 'w') or die("can't open file");
+
+print "<BR>" . $myFile . "<BR>";
 
 fwrite($fh, "set title 'evaluation'\n");
 fwrite($fh, "set ylabel 'phi'\n");
 fwrite($fh, "set terminal push\n");
 fwrite($fh, "set terminal png\n");
 fwrite($fh, "set autoscale\n");
-fwrite($fh, "set output '/var/www/html/tmp/gnuplot-" . $timestamp . ".png'\n");
+fwrite($fh, "set output '" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png'\n");
 fwrite($fh, 'set xtics rotate ("" 0 ');
 $count = 1;
 foreach (explode(':', $ResultIDs) as $i)

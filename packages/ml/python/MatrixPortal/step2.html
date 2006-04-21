@@ -3,8 +3,9 @@
   include 'common/util.php';
   setBodyAttributes('onload="grabFocus();"'); 
   setFilename('index.html');
-  setTitle('Matrix Port -- Step 2: Parameters');
+  setTitle('Matrix Portal -- Step 2: Parameters');
   setDir('./');
+  include 'common/config.php';
   include 'common/header.html';
 
   $ProblemIDs = $_POST['ProblemIDs'];
@@ -13,7 +14,7 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">WebSolver</a> - You are at Step 2: Parameters</p>
+  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> - You are at Step 2: Parameters</p>
   
   <? step_header("2"); ?>
   

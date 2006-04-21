@@ -48,20 +48,12 @@
 
       <!-- Title =========================================================== -->
       <td class="titleCell">
-          <a href="<?php echo $dir ?>index.html"
-          onmouseover="document.getElementById('trilinosTitle').src=trilinos_title_over.src;"
-          onmouseout="document.getElementById('trilinosTitle').src=trilinos_title_normal.src;">
-            <img class="trilinosTitle" id="trilinosTitle" src="<?php echo $dir ?>common/trilinos_title_normal.png"
-            alt="The Trilinos Project" /></a>
+      <? top_left(); ?>
       </td>
       
       <!-- Top-Right Corner ================================================ -->
       <td class="topCornerCell">
-        <a href="http://www.sandia.gov/" target="_blank"
-          onmouseover="document.getElementById('sandia').src=sandia_over.src;"
-          onmouseout="document.getElementById('sandia').src=sandia_normal.src;">
-            <img class="sandia" id="sandia" src="<?php echo $dir ?>common/sandia_normal.png"
-            alt="Sandia National Laboratories" /></a>
+      <? top_right(); ?>
       </td> 
       
     </tr> </table> </div>

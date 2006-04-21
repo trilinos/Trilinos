@@ -5,6 +5,7 @@
   setFilename('index.html');
   setTitle('Matrix Portal -- Step 1: Data Selection');
   setDir('./');
+  include 'common/config.php';
   include 'common/header.html';
 
   $ProblemIDs = $_POST['ProblemIDs'];
@@ -64,7 +65,7 @@
     }
     else
     {
-      $filename = "/var/www/html/MatrixPortal/HBMatrices/".$_POST['filename'];
+      $filename = $MatrixDirectory . $_POST['filename'];
       echo "<BR>" . $filename;
       move_uploaded_file($_FILES['file']['tmp_name'], $filename);
       chmod($filename, 0664);
@@ -74,7 +75,7 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading"><a href="index.html">Matrix Portal</a> -- You are at Step 1: Data</p>
+  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> -- You are at Step 1: Data</p>
   
   <? step_header("1"); ?>
 
@@ -162,9 +163,9 @@
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
   <?
     $files = array();
-    $dir = opendir('/var/www/html/MatrixPortal/HBMatrices/') or die ($php_errormsg);
+    $dir = opendir($MatrixDirectory) or die ($php_errormsg);
     while (false !== ($file = readdir($dir))) {
-      if (is_file("/var/www/html/MatrixPortal/HBMatrices/$file")) {
+      if (is_file("$MatrixDirectory$file")) {
         $files[] = $file;
       }
     }
@@ -209,7 +210,7 @@
         </td><td> <input type="text" name="filename" size="40" />
         </td></tr>
         <tr><td> <label for="accessCode">Access Code:</label>
-        </td><td> <input type="file" name="accessCode" size="40" />
+        </td><td> <input type=password name="accessCode" size="40" />
         </td></tr>
       </table><br />
   
