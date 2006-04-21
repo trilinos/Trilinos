@@ -37,9 +37,13 @@
 #include "Teuchos_any.hpp"
 
 #ifdef REFCOUNTPTR_INLINE_FUNCS
-#define REFCOUNTPTR_INLINE inline
+#  define REFCOUNTPTR_INLINE inline
 #else
-#define REFCOUNTPTR_INLINE
+#  define REFCOUNTPTR_INLINE
+#endif
+
+#ifdef _DEBUG
+#  define TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
 #endif
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -95,14 +99,14 @@ class E : public D {};
 
 \endcode
 
-All of the following code examples used in this quickstart are assumed
-to be in the namespace <tt>Teuchos</tt> or have appropriate <tt>using
-Teuchos::...</tt> declarations.  This removes the need to explicitly
-use <tt>Teuchos::</tt> to qualify classes, functions and other
-declarations from the <tt>Teuchos</tt> namespace.  Note that some of
-the runtime checks are denoted as "debug runtime checked" which means
-that checking will only be performed in a debug build (that is one
-where the macro _DEBUG is defined at compile time).
+All of the following code examples used in this quickstart are assumed to be
+in the namespace <tt>Teuchos</tt> or have appropriate <tt>using
+Teuchos::...</tt> declarations.  This removes the need to explicitly use
+<tt>Teuchos::</tt> to qualify classes, functions and other declarations from
+the <tt>Teuchos</tt> namespace.  Note that some of the runtime checks are
+denoted as "debug runtime checked" which means that checking will only be
+performed in a debug build (that is one where the macro
+TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL, or _DEBUG is defined at compile time).
 
 <ol>
 

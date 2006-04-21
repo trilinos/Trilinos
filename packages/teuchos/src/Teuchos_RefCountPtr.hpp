@@ -253,7 +253,7 @@ RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T>& r_ptr) {
 template<class T>
 inline
 T* RefCountPtr<T>::operator->() const {
-#ifdef _DEBUG
+#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
 	assert_not_null();
 #endif
 	return ptr_;
@@ -262,7 +262,7 @@ T* RefCountPtr<T>::operator->() const {
 template<class T>
 inline
 T& RefCountPtr<T>::operator*() const {
-#ifdef _DEBUG
+#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
 	assert_not_null();
 #endif
 	return *ptr_;
