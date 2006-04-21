@@ -12,6 +12,32 @@ comm = Epetra.PyComm()
 count = 0
   
 # -------------------------------------------------------------------------
+def print_list(List, package):
+  print "<ul>";
+  ##for key in List.keys():
+  ##      print "<li><b>", key, "</b> = ", List[key]
+  if package == "ML":
+    for key in List.keys():
+      if (key == "smoother: type") | \
+         (key == "smoother: sweeps") | \
+         (key == "aggregation: nodes per aggregate") | \
+         (key == "smoother: pre or post") | \
+         (key == "smoother: damping factor") | \
+         (key == "aggregation: damping factor") | \
+         (key == "aggregation: type"):
+        print "<li><b>", key, "</b> = ", List[key]
+  elif package == "IFPACK":
+    for key in List.keys():
+      if (key == "chebyshev: degree") | \
+         (key == "relaxation: sweeps") | \
+         (key == "relaxation: damping") | \
+         (key == "fact: ict level-of-fill") | \
+         (key == "fact: ilut level-of-fill"):
+        print "<li><b>", key, "</b> = ", List[key]
+
+  print "</ul>"
+
+# -------------------------------------------------------------------------
 def set_type(List, name, type, value):  
   if (type == 'int'):
     List[name] = int(value);
@@ -35,7 +61,7 @@ def add_result(List, Label, ierr, iters, PrecTime, SolverTime, ConditionNumber):
   phi = phi + List['evaluation: condnum'] * ConditionNumber;
 
   global count
-  print "<p><font color=blue>Evaluation phi = %f. Add to results with label: <input type=text name=phi_label_%d value=\"%s\"></font>" % (phi, count, Label)
+  print "<p><font color=midnightblue>Evaluation phi = %f. Add to results with label: <input type=text size=30 name=phi_label_%d value=\"%s\"></font>" % (phi, count, Label)
   print "<input type=hidden name=phi_value_%d value=%f>" %(count, phi)
   count = count + 1
 
@@ -138,8 +164,13 @@ def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
 # -------------------------------------------------------------------------
 def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=red>Problem Label = ", Label, "</font></b>";
-  print "<b><font color=red>Operation = ", What, "</font></b>";
+  print "<b><font color=midnightblue>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=midnightblue>Operation = ", What, "</b>";
+
+  print "<p>Using the following list for IFPACK:";
+  print_list(List, "IFPACK");
+  print "The AztecOO/IFPACK output follows."
+  print "</font>";
 
   Time = Epetra.Time(Matrix.Comm())
 
@@ -179,8 +210,13 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
 # -------------------------------------------------------------------------
 def perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=red>Problem Label = ", Label, "</font></b>";
-  print "<b><font color=red>Operation = multilevel preconditioner </font></b>";
+  print "<b><font color=midnightblue>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=midnightblue>Operation = multilevel preconditioner</b>";
+
+  print "<p>Using the following list for ML:"
+  print_list(List, "ML");
+  print "The AztecOO/ML output follows."
+  print "</font>";
 
   Time = Epetra.Time(Matrix.Comm())
 
