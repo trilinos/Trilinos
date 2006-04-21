@@ -420,13 +420,6 @@ AC_CONFIG_FILES([
 		test/Makefile
 		test/Hello_Test/Makefile
 		test/Jambo_Test/Makefile
-		test/scripts/Makefile
-		test/scripts/daily/Makefile
-		test/scripts/daily/serial/Makefile
-		test/scripts/daily/mpi/Makefile
-		test/scripts/weekly/Makefile
-		test/scripts/weekly/serial/Makefile
-		test/scripts/weekly/mpi/Makefile
 		python/Makefile
 		python/src/Makefile
 		python/src/TRILINOS_HOME_DIR
