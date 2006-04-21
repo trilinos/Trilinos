@@ -72,7 +72,7 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
   err = Solver.Iterate(List['iters'], List['tol']) 
 
   if hasConditionNumber:
-    ConditionNumber = Solver.GetStatus("AZ_condnum")
+    ConditionNumber = Solver.GetStatus(AztecOO.AZ_condnum)
   else:
     ConditionNumber = 0.0;
   return (err, Solver.NumIters(), Time.ElapsedTime(), ConditionNumber)
