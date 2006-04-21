@@ -31,6 +31,13 @@
  * \date Last update do Doxygen: 22-Jul-04
  *
  */
+/*#############################################################################
+# CVS File Information
+#    Current revision: $Revision$
+#    Branch:           $Branch$
+#    Last modified:    $Date$
+#    Modified by:      $Author$
+#############################################################################*/
 
 #ifndef ML_MULTILEVELPRECONDITIONER_H
 #define ML_MULTILEVELPRECONDITIONER_H
@@ -85,10 +92,6 @@ class Epetra_VbrMatrix;
 #define ML_MEM_PREC_OTHER_MALLOC 16
 #define ML_MEM_TOT1_MALLOC       17
 #define ML_MEM_TOT2_MALLOC       18
-
-#ifdef HAVE_ML_TRIUTILS
-#include "Trilinos_Util_CommandLineParser.h"
-#endif
 
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
@@ -205,8 +208,6 @@ namespace ML_Epetra
   
    Defaults parameters can be specified using function SetDefaults().
 
-    \warning The Maxwell interface is still under development. 
-
     \author Marzio Sala, SNL 9214
 */  
 class MultiLevelPreconditioner : public virtual Epetra_Operator {
@@ -215,32 +216,43 @@ public:
 
   //@{ \name Constructors.
 
-  //! Constructs an MultiLevelPreconditioner with default values.
+  //! Constructs a MultiLevelPreconditioner with default values.
 
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
                            const bool ComputePrec = true);
 
-  //! Constructs an MultiLevelPreconditioner. Retrives parameters from \c List.
+  //! Constructs a MultiLevelPreconditioner. Retrives parameters from \c List.
   
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 			   const Teuchos::ParameterList & List,
 			   const bool ComputePrec = true);
 
-  //! Constructs an MultiLevelPreconditioner from an ML_Operator. Retrives parameters from \c List.
+  //! Constructs a MultiLevelPreconditioner from an ML_Operator. Retrives parameters from \c List.
   
   MultiLevelPreconditioner(ML_Operator* Operator,
 			   const Teuchos::ParameterList& List,
 			   const bool ComputePrec = true);
   
-  //! Constructs an MultiLevelPreconditioner for Maxwell equations. Retrives parameters from \c List.
-  /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
-    requires the edge matrix, the connectivity matrix T, the nodal matrix.
+  /*! Constructs a MultiLevelPreconditioner for Maxwell equations. The
+    constructor requires the edge matrix, the discrete grad T, and the
+    nodal matrix.
   */
   MultiLevelPreconditioner(const Epetra_RowMatrix& EdgeMatrix,
 			   const Epetra_RowMatrix& TMatrix,
 			   const Epetra_RowMatrix& NodeMatrix,
 			   const Teuchos::ParameterList& List,
 			   const bool ComputePrec = true);
+
+  /*! Constructs a MultiLevelPreconditioner for Maxwell equations. The
+    constructor requires the edge curl-curl matrix, the edge mass matrix,
+    the discrete grad T, and the nodal matrix.
+  */
+MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
+             const Epetra_RowMatrix & MassMatrix,
+             const Epetra_RowMatrix & TMatrix,
+             const Epetra_RowMatrix & NodeMatrix,
+             const Teuchos::ParameterList & List,
+             const bool ComputePrec = true);
   //! Constructs an MultiLevelPreconditioner for Maxwell equations. Retrives parameters from \c List.
   /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
     requires the edge matrix, the connectivity matrix T, the nodal matrix.
@@ -681,6 +693,9 @@ private:
   bool SolvingMaxwell_;
   //! Main matrix for Maxwell
   const Epetra_RowMatrix* EdgeMatrix_;
+  //! stiffness and mass matrices
+  const Epetra_RowMatrix* CurlCurlMatrix_;
+  const Epetra_RowMatrix* MassMatrix_;
   //! aux matrix for Maxwell
   const Epetra_RowMatrix* NodeMatrix_;
   bool CreatedNodeMatrix_;

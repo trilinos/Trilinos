@@ -400,6 +400,83 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
 
 // ================================================ ====== ==== ==== == =
 
+/*! Constructor for the Maxwell equations.  This version takes the stiffness
+ * and edge mass matrices separately.
+ * Two conditions are required on their maps:
+ * - TMatrix.OperatorDomainMap() == NodeMatrix.OperatorRangeMap()
+ * - TMatrix.OperatorRangeMap()  == EdgeMatrix.OperatorDomainMap()
+ */
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
+                         const Epetra_RowMatrix & MassMatrix,
+                         const Epetra_RowMatrix & TMatrix,
+                         const Epetra_RowMatrix & NodeMatrix,
+                         const ParameterList & List,
+                         const bool ComputePrec) :
+  RowMatrixAllocated_(0)
+{
+
+  // Check compatibility of CurlCurl and  TMatrix.
+  if (! TMatrix.OperatorDomainMap().SameAs(NodeMatrix.OperatorRangeMap()) ) {
+    cerr << ErrorMsg_ << "discrete grad DomainMap != node RangeMap..." << endl;
+    ML_CHK_ERRV(-1); // error on discrete grad
+  }
+
+  if (! TMatrix.OperatorRangeMap().SameAs(CurlCurlMatrix.OperatorDomainMap())) {
+    cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap..." <<endl;
+    ML_CHK_ERRV(-2); // error on discrete grad
+  }
+
+  // TODO Apply bc's to TMatrix here
+
+  // Check that the null space is correct.
+  Epetra_Vector XXX(TMatrix.OperatorDomainMap());
+  Epetra_Vector YYY(TMatrix.OperatorRangeMap());
+  Epetra_Vector ZZZ(TMatrix.OperatorRangeMap());
+  XXX.Random();
+  double norm;
+  XXX.Norm2(&norm);
+  XXX.Scale(1.0/norm);
+  TMatrix.Multiply(false,XXX,YYY);
+  CurlCurlMatrix.Multiply(false,YYY,ZZZ);
+  ZZZ.Norm2(&norm);
+  int mypid = CurlCurlMatrix.Comm().MyPID();
+  if (mypid ==0)
+    cout << "Checking curl/gradient relationship" << endl;
+  double norminf = CurlCurlMatrix.NormInf();
+  if (mypid == 0) {
+    if (norm > (1e-12 * norminf))
+      cout << endl
+           << "**WARNING** ||curlcurl * grad * vrand|| = " << norm << endl
+           << "**WARNING** Either the curl-curl or the null space may be wrong."
+           << endl << endl;
+    else
+      cout << "||curlcurl * grad * vrand|| = " << norm << endl;
+  }
+
+  List_ = List;
+
+  Epetra_RowMatrix *cc = const_cast<Epetra_RowMatrix*> (&CurlCurlMatrix);
+  Epetra_RowMatrix *mm = const_cast<Epetra_RowMatrix*> (&MassMatrix);
+  RowMatrix_ = Epetra_MatrixAdd(cc,mm,1.0);
+
+  ML_CHK_ERRV(Initialize());
+
+  SolvingMaxwell_ = true;
+  EdgeMatrix_ = RowMatrix_;
+  CurlCurlMatrix_ = & CurlCurlMatrix;
+  MassMatrix_ = & MassMatrix;
+  NodeMatrix_ = & NodeMatrix;
+  TMatrix_ = & TMatrix;
+
+  // construct hierarchy
+  if (ComputePrec == true) 
+    ML_CHK_ERRV(ComputePreconditioner());
+
+}
+
+// ================================================ ====== ==== ==== == =
+
 #ifdef HAVE_ML_AZTECOO
 /*! Another constructor for Maxwell equations that takes an Epetra_MsrMatrix,
  * an ML_Operator, and an AZ_MATRIX type.  The Epetra_MsrMatrix type is defined
@@ -3021,5 +3098,80 @@ int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
 
   return 0;
 }
+
+#ifdef FIXTHIS //FIXME
+void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
+             const Epetra_RowMatrix & CC,
+             const Epetra_RowMatrix & T)
+/*****************************************************************************/
+{
+  // CC is the curl-curl matrix.
+  // T is the gradient matrix.
+                                                                                
+  // locate Dirichlet edges
+  int *dirichletEdges = new int[CC.NumMyRows()];
+  cout << "scanning for dirichlet rows" << endl;
+  int numBCEdges = 0;
+  for (int i=0; i<CC.NumMyRows(); i++) {
+    int numEntries, *cols;
+    double *vals;
+    int ierr = CC.ExtractMyRowView(i,numEntries,vals,cols);
+    if (ierr == 0) {
+      int nz=0;
+      for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
+      if (nz == 1) {
+        dirichletEdges[numBCEdges++] = i;
+        //cout << "** bc edge " << i << " found" << endl;
+      }
+    }
+  }
+    cout << "pid " << CC.Comm_().MyPID() << ": found "
+         << numBCEdges << " bc edges" << endl;
+
+  const Epetra_Map & ColMap = T.ColMap();
+  Epetra_Map globalMap(T.NumGlobalCols(),1,Comm_);
+
+  // create the exporter from this proc's column map to global 1-1 column map
+  Epetra_Export Exporter(ColMap,globalMap);
+
+  // create a vector of global column indices that we will export to
+  Epetra_Vector globColsToZero(globalMap);
+  // create a vector of local column indices that we will export from
+  Epetra_Vector myColsToZero(ColMap);
+  myColsToZero.PutScalar(0);
+
+  // for each local column j in a local dirichlet row, set myColsToZero[j]=1
+  for (int i=0; i < numBCEdges; i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    T.ExtractMyRowView(dirichletEdges[i],numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++)
+      myColsToZero[ cols[j] ] = 1;
+  }
+
+  // export to the global column map
+  globColsToZero.Export(myColsToZero,Exporter,Add);
+  // now import from the global column map to the local column map
+  myColsToZero.Import(globColsToZero,Exporter,Insert);
+
+  // -------------------------
+  // now zero out the columns
+  // -------------------------
+
+  for (int i=0; i < T.NumMyRows(); i++) {
+    int numEntries;
+    double *vals;
+    int *cols;
+    T.ExtractMyRowView(i,numEntries,vals,cols);
+    for (int j=0; j < numEntries; j++) {
+      if (myColsToZero[ cols[j] ] > 0)
+        vals[j] = 0.0;
+    }
+  }
+  delete [] dirichletEdges;
+}
+#endif //FIXTHIS
+
 
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */
