@@ -118,12 +118,10 @@ using namespace std;
 
 // Extend directives
 %extend AztecOO {
-  double GetStatus(string what)
+  double GetStatus(int what)
   {
     const double* status = self->GetAztecStatus();
-    if (what == "AZ_condnum")
-      return(status[AZ_condnum]);
-    return(0.0);
+    return(status[what]);
   }
 }
 
