@@ -46,7 +46,7 @@ fullPath   = os.path.normpath(os.path.join(myDir, "..", "src", "build", libDir,
 epetraPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "epetra",
                                            "python", "src", "build", libDir,
                                            "PyTrilinos"))
-triutilsPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "triutils",
+galeriPath = os.path.normpath(os.path.join(myDir, "..", "..", "..", "galeri",
                                              "python", "src", "build", libDir,
                                              "PyTrilinos"))
 
@@ -56,5 +56,5 @@ if fullPath:
     sys.path.insert(0,fullPath)
 if epetraPath:
     sys.path.insert(1,epetraPath)
-if triutilsPath:
-    sys.path.insert(2,triutilsPath)
+if galeriPath:
+    sys.path.insert(2,galeriPath)

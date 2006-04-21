@@ -2,25 +2,33 @@
 try:
    import setpath
 except ImportError:
-   from PyTrilinos import Epetra, Triutils, AztecOO
-   print "Using system-installed Epetra, Triutils, AztecOO"
+   from PyTrilinos import Epetra, Galeri, AztecOO
+   print "Using system-installed Epetra, Galeri, AztecOO"
 else:
    import Epetra
-   import Triutils
+   import Galeri
    import AztecOO
 
-nx = 100
-ny = 100
-Comm = Epetra.PyComm()
-Gallery = Triutils.CrsMatrixGallery("laplace_2d", Comm)
-Gallery.Set("nx", nx)
-Gallery.Set("ny", ny)
-Matrix = Gallery.GetMatrix()
-LHS = Gallery.GetStartingSolution()
-RHS = Gallery.GetRHS()
+comm = Epetra.PyComm()
+
+nx = 30; ny = 30
+GaleriList = {
+  "n": nx * ny,  # for Linear map
+  "nx": nx,      # for Laplace2D, which requires nx
+  "ny": ny       # and ny
+}
+Map = Galeri.CreateMap("Linear", comm, GaleriList)
+Matrix = Galeri.CreateCrsMatrix("Laplace2D", Map, GaleriList)
+Exact = Epetra.Vector(Map) 
+LHS = Epetra.Vector(Map) 
+RHS = Epetra.Vector(Map) 
+Exact.Random()       # fix exact solution
+LHS.PutScalar(0.0)   # fix starting solution
+Matrix.Multiply(False, Exact, RHS) # fix rhs corresponding to Exact
 
 # Solve the linear problem
 if 0:
+  # this does not work on most installations
   Problem = Epetra.LinearProblem(Matrix, LHS, RHS)
   Solver = AztecOO.AztecOO(Problem)
 else:
@@ -32,4 +40,4 @@ Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_icc)
 Solver.SetAztecOption(AztecOO.AZ_output, 16)
 Solver.Iterate(1550, 1e-5)
 
-if Comm.MyPID() == 0: print "End Result: TEST PASSED"
+if comm.MyPID() == 0: print "End Result: TEST PASSED"
