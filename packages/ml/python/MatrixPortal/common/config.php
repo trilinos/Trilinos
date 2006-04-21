@@ -36,16 +36,11 @@ $PythonDirectory = "/home/msala/Trilinos/packages/ml/python/MatrixPortal/";
 
 <?  function top_left() { ?>
           <a href="<?php echo $dir ?>index.html"
-          onmouseover="document.getElementById('trilinosTitle').src=trilinos_title_over.src;"
-          onmouseout="document.getElementById('trilinosTitle').src=trilinos_title_normal.src;">
-            <img class="trilinosTitle" id="trilinosTitle" src="<?php echo $dir ?>common/trilinos_title_normal.png"
-            alt="The Trilinos Project" /></a>
+            <a href="index.html" target="_blank" 
+            <img src=common/matrix_portal_logo.png height=60 border=0 alt="The Matrix Portal" /></a>
 <?  } ?>
 
 <? function top_right() { ?>
-        <a href="http://www.sandia.gov/" target="_blank"
-          onmouseover="document.getElementById('sandia').src=sandia_over.src;"
-          onmouseout="document.getElementById('sandia').src=sandia_normal.src;">
-            <img class="sandia" id="sandia" src="<?php echo $dir ?>common/sandia_normal.png"
-            alt="Sandia National Laboratories" /></a>
+        <a href="http://www.ethz.ch/" target="_blank" 
+            <img src=common/eth_logo.gif border=0 alt="ETHZ" /></a>
 <?  } ?>

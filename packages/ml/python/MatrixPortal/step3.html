@@ -14,20 +14,26 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> -- Step 3: Compute</p>
-  
   <? step_header("3"); ?>
+
+  You are at Step 3: Compute.
   
+  <p>Here you can browse through the output of each solution phase for 
+  all the problems specified in Step 1. Each evaluation parameter (phi)
+  is reported after the corresponding solution technique; a tentative label is reported,
+  and can be modified. This label will be used in Step 4 to visualize and analyze the data.
+  In the case of repeated labels, only the last result is stored.
+
+  <p>To <b>continue</b>, proceed to Step 4 (Check Results) using the button at the
+  bottom of the page.
+
   <!-- ===================================================================== -->
   
   <p>
   <div class="problemIDs">
   <?
-  print_problem_and_result($ProblemIDs, $ResultIDs1);
+  print_problem_and_result($ProblemIDs, $ResultIDs);
   echo "</div></p>";
-
-  echo "<P><b><font color=blue>Note: To register your results, go to step 4 by using";
-  echo " the buttom at the bottom of the page.</font></b>";
 
   echo "<form name=step3 action=step4.html enctype=multipart/form-data method=post>";
   process();

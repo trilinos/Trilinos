@@ -22,12 +22,16 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> - Step 4: Results</p>
-  
   <? step_header("4"); ?>
 
-  <!-- --------------------------------------------------------------------- -->
+  You are at Step 4: Check Results.
+  
+  <p>Here you can analyze all results, in a table and graph format.
 
+  <p>To <b>continue</b>, proceed to either Step 1 or Step 2, to select new
+  problems, or to specify new solution techniques.
+
+  <!-- --------------------------------------------------------------------- -->
   <br/>
   <div class="problemIDs">
   <? print_problem_and_result($ProblemIDs, $ResultIDs); ?>
@@ -57,8 +61,6 @@ $timestamp = date("y-m-d_H.i.s", time());
 
 $myFile = $TempDirectory . "/gnuplot-" . $timestamp . '.dat';
 $fh = fopen($myFile, 'w') or die("can't open file");
-
-print "<BR>" . $myFile . "<BR>";
 
 fwrite($fh, "set title 'evaluation'\n");
 fwrite($fh, "set ylabel 'phi'\n");

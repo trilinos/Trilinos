@@ -90,7 +90,7 @@ def generator(problemID, comm):
     parts = string.split(problemID, '_');
     ProblemType = parts[0];
     for i in range(1, len(parts)):
-      p2 = string.split(parts[i], '+')
+      p2 = string.split(parts[i], '!')
       type = p2[0][0];
       name = p2[0][1:]
       value = p2[1];
@@ -132,7 +132,7 @@ def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
   print "<b><font color=red>Problem Label = ", Label, "</font></b>";
   print "<b><font color=red>Operation = matrix analysis </font></b>";
   IFPACK.AnalyzeMatrix(Matrix, True);
-  IFPACK.AnalyzeMatrixElements(Matrix);
+  #IFPACK.AnalyzeMatrixElements(Matrix);
   print "&nbsp;<pre></div>";
 
 # -------------------------------------------------------------------------

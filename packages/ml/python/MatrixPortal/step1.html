@@ -21,6 +21,7 @@
     else if (strstr($_POST['MyLabel'], ":") ||
              strstr($_POST['MyLabel'], "@") ||
              strstr($_POST['MyLabel'], ";") ||
+             strstr($_POST['MyLabel'], "!") ||
              strstr($_POST['MyLabel'], "+") ||
              strstr($_POST['MyLabel'], "_"))
     {
@@ -33,7 +34,7 @@
       foreach (split(" ", $_POST['parameters']) as $value)
       { 
         if ($value == "") continue;
-        $ProblemIDs .= '_' . $value . '+' . $_POST[$value];
+        $ProblemIDs .= '_' . $value . '!' . $_POST[$value];
       }
     }
   }
@@ -75,19 +76,25 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> -- You are at Step 1: Data</p>
-  
   <? step_header("1"); ?>
 
+  You are at Step 1: Select Data.
+  
   <!-- ===================================================================== -->
   
   <p>In this step, you should specify at least one problem to be solved.
-  Each problem is identified by a "label" or "ProblemID" you have to select. There are two
+  Each problem is identified by a <b>label</b> or <b>ProblemID</b> you have to select. There are two
   ways to supply problems: by selecting a matrix from the Matrix-Market or
   Harwell/Boeing repositories, or by using the matrix generator.
   Authorized users can upload their problems and add them to the already
   available matrices. The list of problems currently selected is reported in
-  the "Current Settings" section.
+  the <b>Current Settings</b> section. When you start, the list of <b>Recordered Results</b>
+  is empty; you first need to go through step 4 to populate this array. A <b>result</b> is an 
+  evaluation parameter for the solver you specified on a given problem.
+
+  <p>To <b>continue</b>, proceed to Step 1C (Check Data) using the button at the
+  bottom of the page.</font>
+
 
   <div class="problemIDs">
   <?php print_problem_and_result($ProblemIDs, $ResultIDs, 1); ?> 
@@ -104,46 +111,88 @@
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm2DLaplace">
 
   2D Laplace on a 
+  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny">
   <input type="hidden" name=type value="Laplace2D">
   <input type="text" name="inx" value=100 size=5> x
-  <input type="text" name="iny" value=100 size=5> grid.<br>
-  MyLabel = <input type="text" name=MyLabel size=10><br>
+  <input type="text" name="iny" value=100 size=5> grid.
+  <p>This creates a matrix corresponding to the stencil of a 2D Laplacian operator on a structured Cartesian grid. The matrix stencil is:
+  <p><img src=common/laplace2d_stencil.png>
 
+  <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
   <input type=submit class=submitPrimary value="add to cart"><br></form>
 
+  <br>
   <li>
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm3DLaplace">
 
   3D Laplace on a 
+  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny inz">
   <input type="hidden" name=type value="Laplace3D">
   <input type="text" name="inx" value=10 size=5> x
   <input type="text" name="iny" value=10 size=5> x
-  <input type="text" name="inz" value=10 size=5> grid.<br>
-  MyLabel = <input type="text" name=MyLabel size=10><br>
-
+  <input type="text" name="inz" value=10 size=5> grid.
+  <p>This creates a matrix corresponding to the stencil of a 3D Laplacian operator on a structured Cartesian grid.<br> 
+  <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
   <input type=submit class=submitPrimary value="add to cart"><br></form>
 
+  <br>
   <li>
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm2Dadwrf">
 
   2D advection-diffuction with recirculating flow, on a 
+  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny dconv ddiff">
   <input type="hidden" name=type value="Recirc2D">
   <input type="text" name="inx" value=100 size=5> x
   <input type="text" name="iny" value=100 size=5> grid.<br>
-  conv = <input type="text" name="dconv" value=1 size=5>,
-  diff = <input type="text" name="ddiff" value=1e-5 size=5>.<br>
-  MyLabel = <input type="text" name=MyLabel size=10><br>
+  conv = <input type="text" name="dconv" value=1 size=5>&nbsp;
+  diff = <input type="text" name="ddiff" value=1e-5 size=5>&nbsp;
+  <p>This creates a matrix corresponding to the finite-difference discretization of the problem
+  <p><img src=common/recirc1.png>
+  <p>on the unit square, with homogeneous Dirichlet boundary conditions. A standard 5-pt stencil is used to discretize the diffusive term, and a simple upwind stencil is used for the convective term. Here,
+ <p><img src=common/recirc2.png>
 
+  <p>The value of epsilon can be specified using <tt>diff</tt>, and that of V 
+  using <tt>conv</tt>.<br>
+
+  <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
   <input type=submit class=submitPrimary value="add to cart"><br></form>
+
+  <br>
+  <li>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm2Dadwrf">
+
+  Generic 9-pt stencil
+  <p><img src=common/star2d_stencil.png>
+  <p>using the following values:
+  <p>
+  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name=state value="add">
+  <input type="hidden" name=parameters value="inx iny da db dc dd dz1 dz2 dz3 dz4">
+  <input type="hidden" name=type value="Star2D">
+  <input type="text" name="inx" value=100 size=5> x
+  <input type="text" name="iny" value=100 size=5> grid.<br>
+  a = <input type="text" name="da" value=8.0 size=5>&nbsp;
+  b = <input type="text" name="db" value="-1.0" size=5>&nbsp;
+  c = <input type="text" name="dc" value="-1.0" size=5>&nbsp;
+  d = <input type="text" name="dd" value="-1.0" size=5>&nbsp;
+  z1 = <input type="text" name="dz1" value="-1.0" size=5>&nbsp;
+  z2 = <input type="text" name="dz2" value="-1.0" size=5>&nbsp;
+  z3 = <input type="text" name="dz3" value="-1.0" size=5>&nbsp;
+  z4 = <input type="text" name="dz4" value="-1.0" size=5>&nbsp;
+
+  <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
+  <input type=submit class=submitPrimary value="add to cart"><br></form>
+
   </ol>
 
   </div>
@@ -180,13 +229,13 @@
     echo "</select>";
   ?>
 
-  <p>MyLabel = <input type="text" name=MyLabel size=10 value="">
+  <p>Label this problem as <input type="text" name=MyLabel size=10 value="">&nbsp;then&nbsp;
 
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name=state value="add">
 
-  <p><input type=submit class=submitPrimary value="add to cart"><br></form>
+  <input type=submit class=submitPrimary value="add to cart"><br></form>
   </div>
 
   </div>
@@ -194,7 +243,7 @@
 
   <!-- ----------------------------------------------------------------- -->
 
-  <p class="heading">Upload data (requires authorization):
+  <p class="heading">Upload Data (requires access code):
 
   <div class="formSection">
   <p>
@@ -233,7 +282,7 @@
   <input type="submit" class=submitSecondary name="submit" value="Step 1C: Check Data" />
   
   </form>
-  <p>
+
   
   <!-- ===================================================================== -->  
 <!-- end content ########################################################### -->

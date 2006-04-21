@@ -14,9 +14,13 @@ function print_header() {
 
 function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
 {
-  echo '<p class="subheading">Selected Problem IDs:</p>';
-  echo '<ol>';
+  echo '<table border=0><cols=3>';
+  echo '<tr><td><b>Selected Problem IDs</b></td>';
+  echo '<td>&nbsp;&nbsp;&nbsp;</td>';
+  echo '<td><b>Recordered Results</b></td></tr>';
+  echo '<td valign=top><ol>';
   $done = 0;
+  $done2 = 0;
   foreach (explode(':', $ProblemIDs) as $i)
   {
     if ($i == "") continue;
@@ -28,42 +32,43 @@ function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
   }
   echo '</ol>';
   if ($done == 0)
-    echo "<p>No problems are currently selected.";
-  else
-  {
-    if ($flag == 1)
-    { 
-      echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
-      echo '<input type=hidden name=ProblemIDs value="">';
-      echo '<input type=hidden name=ResultIDs value="' . $ResultIDs . '">';
-      echo '<input type = submit class=submitPrimary value = "reset ProblemIDs" ></form>';
-    }
-  }
+    echo "No problems are currently selected.";
 
-  echo '<p class="subheading">Recordered Results:</p>';
+  echo '</td><td></td><td valign=top>';
   echo '<ol>';
-  $done = 0;
   foreach (explode(':', $ResultIDs) as $i)
   {
     if ($i == "") continue;
 
     $j = explode('@', $i);
     echo "<li>$j[1] &nbsp;&nbsp;-->&nbsp;&nbsp; phi = $j[0]";
-    $done = 1;
+    $done2 = 1;
   }
   echo '</ol>';
-  if ($done == 0)
-    echo "<p>No results are currently recordered.";
-  else
+  if ($done2 == 0)
+    echo "No results are currently recordered.";
+
+  if ($flag == 1)
   {
-    if ($flag == 1)
+  echo '</td></tr><tr><td>';
+    if ($done)
+    { 
+      echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
+      echo '<input type=hidden name=ProblemIDs value="">';
+      echo '<input type=hidden name=ResultIDs value="' . $ResultIDs . '">';
+      echo '<input type = submit class=submitPrimary value = "reset ProblemIDs" ></form>';
+    }
+    echo '</td><td>';
+    echo '</td><td>';
+    if ($done2)
     { 
       echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
       echo '<input type=hidden name=ProblemIDs value="' . $ProblemIDs . '">';
-      echo '<input type=hidden name=ResultIDs value="">';
-      echo '<input type = submit class=submitPrimary value = "reset results" ></form>';
+      echo '<input type=hidden name=ResultIDs value=>';
+      echo '<input type = submit class=submitPrimary value = "reset ResultIDs" ></form>';
     }
   }
+  echo '</td></tr></table>';
 }
 
 ################################################################################
@@ -173,41 +178,27 @@ function step_header($thisID)
   <form action="step1.html" enctype="multipart/form-data" method="post" name="inputForm">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
-  <input type="submit" class=submitSecondary name="submit" value="Step 1: Data">
+  <input type="submit" class=submitSecondary name="submit" value="Step 1: Select Data">
   </form> &nbsp; &nbsp;
 
   </td><td>
 
-  <form action="#" enctype="multipart/form-data" method="post" name="step1">
-  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
-  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
-  <input type="hidden" name="perform_analysis" value="True">
-  <input type="submit" class=submitSecondary name="submit" value="Step 1C: Check Data">
-  </form> &nbsp; &nbsp;
-
-  </td><td>
 
   <form action="step2.html" enctype="multipart/form-data" method="post" name="step2">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
-  <input type="submit" class=submitSecondary name="submit" value="Step 2: Parameters">
+  <input type="submit" class=submitSecondary name="submit" value="Step 2: Select Parameters">
   </form> &nbsp; &nbsp;
 
   </td><td>
 
-  <form action="#" enctype="multipart/form-data" method="post" name="step3">
-  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
-  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
-  <input type="submit" class=submitSecondary name="submit" value="Step 3: Compute">
-  </form> &nbsp; &nbsp;
-
-  </td><td>
-
+  <? if ($thisID != "3") { ?>
   <form action="step4.html" enctype="multipart/form-data" method="post" name="step4">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
-  <input type="submit" class=submitSecondary name="submit" value="Step 4: Results">
+  <input type="submit" class=submitSecondary name="submit" value="Step 4: Check Results">
   </form> &nbsp; &nbsp;
+  <? } ?>
   </td></tr></table>
 <?
 }

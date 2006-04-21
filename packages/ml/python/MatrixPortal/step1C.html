@@ -14,16 +14,23 @@
 
 <!-- begin content ######################################################### -->
 
-  <p class="heading">Trilinos <a href="index.html">Matrix Portal</a> -- Step 1C: Check Data</p>
-  
   <? step_header("1C"); ?>
   
+  You are at Step 1C: Check Data.
+  
+  <p>In this step, you can check that the matrix sizes and other data correspond to 
+  what you had in mind. 
+
+  <p>To <b>continue</b>, proceed to Step 2 (Select Parameters) using 
+  either the button at the bottom of the page or the one at the top. If you want to modify the list
+  of selected problems, go back to Step 1 using the button at the top of the page.
+
   <!-- ===================================================================== -->
   
   <p>
   <div class="problemIDs">
   <?
-  print_problem_and_result($ProblemIDs, $ResultIDs1);
+  print_problem_and_result($ProblemIDs, $ResultIDs);
   echo "</div></p>";
 
   echo "<form action=step2.html enctype=multipart/form-data method=post>";
