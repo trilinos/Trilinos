@@ -36,6 +36,11 @@ class Epetra_CrsMatrix;
 class Epetra_FECrsMatrix;
 class Ifpack_Chebyshev;
 
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_MultiVector.h"
+
 namespace ML_Epetra {
 
 class MultiLevelPreconditioner;
