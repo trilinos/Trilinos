@@ -161,7 +161,8 @@ void ML_Ifpack_Destroy(void * Ifpack_Handle)
 {
 
   Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle;
-  if (ML_Get_PrintLevel() > 8)
+  // a bit nasty, but I don't like the extensive output any more...
+  if (ML_Get_PrintLevel() > 10)
     cout << *Prec;
 
   if (MemoryManager[(void*)(&(Prec->Matrix()))])

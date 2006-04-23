@@ -7,6 +7,97 @@
 #include <algorithm>
 #include "float.h"
 
+#define NEW_HASHz
+#ifdef NEW_HASH
+template<class T>
+class QuickHash
+{
+  public:
+    inline QuickHash(const int hash_length)
+    {
+      ResetData(hash_length);
+    }
+
+    inline void ResetData(const int hash_length)
+    {
+      hash_length_ = hash_length;
+
+      hash_list_.resize(hash_length_);
+      hash_data_.resize(hash_length_);
+
+      for (int i = 0; i < hash_length_; ++i)
+      {
+        hash_list_[i] = -1;
+        hash_data_[i] = 0.0;
+      }
+
+      hash_used_ = 0;
+    }
+
+    inline ~QuickHash()
+    {}
+
+    inline int HashUsed() const
+    {
+      return(hash_used_);
+    }
+
+    inline T& operator[](int new_index)
+    {
+      int pos = HashIt(new_index);
+      return(hash_data_[pos]);
+    }
+
+    inline double CheapFind(int new_index)
+    {
+      int index;
+
+      index = new_index<<1;
+      if (index < 0) index = new_index;
+      index = index%hash_length_;
+      while (hash_list_[index] != new_index) {
+        if (hash_list_[index] == -1) 
+        { 
+          return(0.0);
+        }
+        index++;
+        index = (index)%hash_length_;
+      }
+      return(hash_data_[index]);
+    }
+
+    int HashIt(int new_index)
+    {
+      int index;
+
+      index = new_index<<1;
+      if (index < 0) index = new_index;
+      index = index%hash_length_;
+      while (hash_list_[index] != new_index) {
+        if (hash_list_[index] == -1) 
+        { 
+          (hash_used_)++; 
+          break;
+        }
+        index++;
+        index = (index)%hash_length_;
+      }
+      hash_list_[index] = new_index;
+      return(index);
+    }
+
+  private:
+    QuickHash(const QuickHash& rhs);
+
+    QuickHash& operator=(const QuickHash& rhs);
+    
+    std::vector<int> hash_list_;
+    std::vector<T> hash_data_;
+    int hash_length_;
+    int hash_used_;
+};
+#endif
+
 using namespace std;
 
 // ============ //
@@ -134,7 +225,12 @@ inline static void multiply_all(ML_Operator* left, ML_Operator* right,
 
   int*    lrowptr = left_data->rowptr;
   int*    rrowptr = right_data->rowptr;
+#ifdef NEW_HASH
+  int hash_size = 2;
+  QuickHash<double> lhash(hash_size);
+#else
   map<int, double>::iterator cur;
+#endif
 
   for (int row = 0 ; row < n_rows ; ++row)
   {
@@ -146,21 +242,42 @@ inline static void multiply_all(ML_Operator* left, ML_Operator* right,
     int*    rbindx  = &(right_data->columns[rrowptr[row]]);
     double* rval    = &(right_data->values[rrowptr[row]]);
 
+#ifdef NEW_HASH
+    while (hash_size < 2 * llen)
+      hash_size *= 2;
+
+    lhash.ResetData(hash_size);
+
+    for (int i = 0 ; i < llen ; ++i)
+    {
+      int& pos = lbindx[i];
+      if (pos < n && lval[i] != 0.0)
+        lhash[pos] = lval[i];
+    }
+#else
     map<int, double> lmap;
 
     for (int i = 0 ; i < llen ; ++i)
     {
       lmap[lbindx[i]] = lval[i];
     }
+#endif
 
     for (int i = 0 ; i < rlen ; ++i)
     {
-      int pos = rbindx[i];
-      if (pos < n) 
+      int rpos = rbindx[i];
+      if (rpos < n) 
       {
-        cur = lmap.find(pos);
+#ifdef NEW_HASH
+        double lval = lhash.CheapFind(rpos);
+
+        if (lval != 0.0 && rval[i] != 0.0)
+          result[rpos] += rval[i] * lval;
+#else
+        cur = lmap.find(rpos);
         if (cur != lmap.end())
-          result[pos] += rval[i] * (cur->second);
+          result[rpos] += rval[i] * (cur->second);
+#endif
       }
     }
   }
