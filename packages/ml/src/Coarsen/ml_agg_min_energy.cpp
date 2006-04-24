@@ -7,7 +7,7 @@
 #include <algorithm>
 #include "float.h"
 
-#define NEW_HASHz
+#define NEW_HASH
 #ifdef NEW_HASH
 template<class T>
 class QuickHash
