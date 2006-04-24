@@ -36,11 +36,6 @@ class Epetra_CrsMatrix;
 class Epetra_FECrsMatrix;
 class Ifpack_Chebyshev;
 
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_MultiVector.h"
-
 namespace ML_Epetra {
 
 class MultiLevelPreconditioner;
@@ -50,14 +45,14 @@ class MultiLevelPreconditioner;
 
 This file requires ML to be configured with the following options:
 - \c --enable-epetra
-- \c --enable-teuchos
 - \c --enable-epetraext
+- \c --enable-teuchos
     
-The following options is suggested:
+The following options are suggested:
 - \c --enable-amesos
 - \c --enable-ifpack
 
-This class does not support Maxwell problems.
+This class does not support Maxwell problems. It has been tested on symmetric problems; however it can in principle be used with non-symmetric problems as well.
 
 \author Marzio Sala, ETHZ/D-INFK
 */  
