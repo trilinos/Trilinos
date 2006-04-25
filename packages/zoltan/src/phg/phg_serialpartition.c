@@ -412,9 +412,13 @@ int rootnpins, rootrank;
    Multi-weights are not yet supported; only the
    first weight is used in computing the partition.
 
-   Note: This is a quick heuristic. We could alternatively use
-   a more expensive but optimal algorithm, see e.g. Ali Pinar's 
-   PhD thesis (UIUC), but for our purpose it is not worth the effort.
+   This is a quick but effective heuristic. We could alternatively use
+   a more expensive but optimal algorithm, see e.g. 
+   "Fast Optimal Load Balancing Algorithms for 1D Partitioning"
+   by Ali Pinar and C. Aykanat, but for our purpose it is 
+   probably not worth the effort.
+
+   Adapted for fixed vertices.
 
 */
 
@@ -430,8 +434,9 @@ static int seq_part (
 {
   int i, j, pnumber;
   int vwgtdim = hg->VtxWeightDim;
-  double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
+  double weight_sum = 0.0, part_sum, old_sum, cutoff;
   double psize_sum = 0.0;
+  double *fixed_wgts;
 
   if (part_sizes==NULL){
     /* part_sizes should always exist, even with uniform partitions */
@@ -443,9 +448,21 @@ static int seq_part (
     return ZOLTAN_FATAL;
   }
 
+  if (hg->fixed) {
+    fixed_wgts = (double *) ZOLTAN_CALLOC(p, sizeof(double));
+  }
+
   /* Sum up all the vertex weights. */
-  for (i=0; i<hg->nVtx; i++)
+  for (i=0; i<hg->nVtx; i++){
     weight_sum += hg->vwgt[i*vwgtdim];
+    if (hg->fixed)
+      if (hg->fixed[i] >= 0){
+        /* Set partition number for fixed vtx. */
+        part[i] = hg->fixed[i];
+        /* Add up weights of fixed vertices for each partition */
+        fixed_wgts[hg->fixed[i]] += hg->vwgt[i*vwgtdim];
+      }
+  }
 
   /* Sum up all the target partition weights. */
   /* Only use first vweight for now. */
@@ -453,37 +470,48 @@ static int seq_part (
     psize_sum += part_sizes[i*vwgtdim];
 
   pnumber = 0; /* Assign next vertex to partition no. pnumber */
+  part_sum = fixed_wgts[0]; /* Weight of fixed vertices */
+
   /* Set cutoff for current partition */
-  cutoff = weight_sum*part_sizes[0]/psize_sum;  
+  cutoff = weight_sum*part_sizes[0]/psize_sum - 
+           (fixed_wgts ? fixed_wgts[0] : 0);  
 
   /* Loop through all vertices in specified order, and assign
      partition numbers.  */                                        
   for (i=0; i<hg->nVtx; i++) {
-    /* If order==NULL, then use linear order. */
-    j = order ? order[i] : i;
-    part[j] = pnumber;
-    old_sum = part_sum;
-    part_sum += hg->vwgt[j*vwgtdim];
-    /* Check if we passed the cutoff and should start a new partition */
-    if ((pnumber+1) < p && part_sum > cutoff) {
-      pnumber++; /* Increase current part number */
-      /* Decide if current vertex should be moved to the next partition */
-      if ((part_sum-cutoff) > (cutoff-old_sum)) { 
-        part[j]++;
-        part_sum = old_sum;
+    /* for non-fixed vertices */
+    if ((!hg->fixed) || (hg->fixed[i] == -1)){
+      /* If order==NULL, then use linear order. */
+      j = order ? order[i] : i;
+      part[j] = pnumber;
+      old_sum = part_sum;
+      part_sum += hg->vwgt[j*vwgtdim];
+      /* Check if we passed the cutoff and should start a new partition */
+      if ((pnumber+1) < p && part_sum > cutoff) {
+        pnumber++; /* Increase current part number */
+        /* Decide if current vertex should be moved to the next partition */
+        if ((part_sum-cutoff) > (cutoff-old_sum)) { 
+          part[j]++;
+          part_sum = old_sum;
+        }
+        weight_sum -= part_sum;
+        /* Initialize part_sum for next partition no. */
+        part_sum = fixed_wgts[pnumber];
+        if (part[j] == pnumber)
+          part_sum += hg->vwgt[j*vwgtdim];
+        /* Update cutoff. */
+        psize_sum -= part_sizes[pnumber-1];
+        cutoff = weight_sum*part_sizes[pnumber]/psize_sum
+                 - (fixed_wgts ? fixed_wgts[pnumber] : 0);
       }
-      weight_sum -= part_sum;
-      if (part[j] == pnumber)
-        part_sum = hg->vwgt[j*vwgtdim];
-      else
-        part_sum = 0.0;
-      /* Update cutoff. */
-      psize_sum -= part_sizes[pnumber-1];
-      cutoff = weight_sum*part_sizes[pnumber]/psize_sum;
     }
     if (hgp->output_level >= PHG_DEBUG_ALL)
       printf("COARSE_PART i=%2d, part[%2d] = %2d, part_sum=%f, cutoff=%f\n", 
        i, j, part[j], part_sum, cutoff);
+  }
+
+  if (hg->fixed) {
+    ZOLTAN_FREE(&fixed_wgts);
   }
 
   return ZOLTAN_OK;
