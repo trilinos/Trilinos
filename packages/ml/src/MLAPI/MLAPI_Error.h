@@ -30,7 +30,6 @@ void StackPush_(std::string FuncName, std::string FileName, int line);
 void StackPop();
 
 void StackPrint();
-asdf
 #else
 inline void StackPop() {}
 inline void StackPrint() {std::cout << "Compile with -DMLAPI_CHECK to get the function stack" << std::endl;}
