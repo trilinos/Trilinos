@@ -781,6 +781,13 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
 
 if __name__ == "__main__":
 
+    # Print system environment information
+    print sys.executable, sys.version
+    print "\nEpetra module:", Epetra.__file__
+    print "   ", Epetra.Version()
+    print "\nnumpy module: ", numpy.__file__
+    print "    Version:", numpy.__version__
+
     # Create the test suite object
     suite = unittest.TestSuite()
 
