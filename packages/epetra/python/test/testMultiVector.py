@@ -44,6 +44,7 @@ except ImportError:
     print >>sys.stderr, "Using system-installed Epetra"
 
 import unittest
+import numpy
 from   numpy    import *
 
 ##########################################################################
