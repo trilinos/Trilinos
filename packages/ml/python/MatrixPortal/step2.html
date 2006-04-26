@@ -8,8 +8,10 @@
   include 'common/config.php';
   include 'common/header.html';
 
-  $ProblemIDs = $_POST['ProblemIDs'];
-  $ResultIDs = $_POST['ResultIDs'];
+  process_variables();
+
+  global $ProblemIDs;
+  global $ResultIDs;
 ?>
 
 <!-- begin content ######################################################### -->
@@ -61,15 +63,53 @@
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Solver: </td>
-        <td><input type="text" name="az_solver" value="AZ_gmres" />
+        <td>
+        <select name="az_solver">
+        <option value=AZ_gmres checked="checked">GMRES
+        <option value=AZ_gmres_condnum>GMRES with condnum
+        <option value=AZ_cg>CG
+        <option value=AZ_cg_condnum>CG with condnum
+        <option value=AZ_bicg>Bi-CG
+        <option value=AZ_bicgstab>Bi-CGSTAB
+        <option value=AZ_tfqmr>TFQMR
+        </select></td>
+        <!-- <input type="text" name="az_solver" value="AZ_gmres" /> -->
       </tr>
       <tr>
-        <td>Maximum iterations: </td>
-        <td><input type="text" name="iters" value="1550" />
+        <td>Maximum iterations: </td><td>
+        <select name="iters">
+        <option value=1550 checked="checked">1550
+        <option value=1>1
+        <option value=2>2
+        <option value=4>4
+        <option value=8>8
+        <option value=16>16
+        <option value=32>32
+        <option value=64>64
+        <option value=128>128
+        <option value=256>256
+        <option value=512>512
+        <option value=1024>1024
+        </select></td>
       </tr>
       <tr>
         <td>Tolerance: </td>
-        <td><input type="text" name="tol" value="1e-5" />
+        <td>
+        <select name="tol">
+        <option value="1e-5" checked="checked">1e-5
+        <option value="1e-1">1e-1
+        <option value="1e-2">1e-2
+        <option value="1e-3">1e-3
+        <option value="1e-4">1e-4
+        <option value="1e-5">1e-5
+        <option value="1e-6">1e-6
+        <option value="1e-7">1e-7
+        <option value="1e-8">1e-8
+        <option value="1e-9">1e-9
+        <option value="1e-10">1e-10
+        <option value="1e-11">1e-11
+        <option value="1e-12">1e-12
+        </select></td>
       </tr>
     </table><br />
 
@@ -93,7 +133,10 @@
     </table><br />
 
     <table class="formTable" cellspacing="0" cellpadding="0">
-    <? fixed_parameter("chebyshev: degree", "i", "3"); ?>
+    <? begin_select_parameter("Degree of the polynomial", "chebyshev: degree", "i"); ?>
+    <? for ($i = 1; $i < 6; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
     </table><br />
     </div>
 
@@ -125,8 +168,25 @@
     </table><br />
 
     <table class="formTable" cellspacing="0" cellpadding="0">
-    <? fixed_parameter("relaxation: damping", "d", "0.67"); ?>
-    <? fixed_parameter("relaxation: sweeps", "i", "1"); ?>
+    <? begin_select_parameter("Damping factor", "relaxation: damping factor", "d"); ?>
+    <? add_select_parameter("0.67", "0.67"); ?>
+    <? add_select_parameter("0.2", "0.2"); ?>
+    <? add_select_parameter("0.4", "0.4"); ?>
+    <? add_select_parameter("0.6", "0.6"); ?>
+    <? add_select_parameter("0.8", "0.8"); ?>
+    <? add_select_parameter("1.0", "1.0"); ?>
+    <? add_select_parameter("1.2", "1.2"); ?>
+    <? add_select_parameter("1.4", "1.4"); ?>
+    <? add_select_parameter("1.6", "1.6"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Number of sweeps", "relaxation: sweeps", "i"); ?>
+    <? add_select_parameter("1", "1"); ?>
+    <? add_select_parameter("2", "2"); ?>
+    <? add_select_parameter("3", "3"); ?>
+    <? add_select_parameter("4", "4"); ?>
+    <? add_select_parameter("5", "5"); ?>
+    <? end_select_parameter(); ?>
     </table><br />
     </div>
 
@@ -164,10 +224,20 @@
     </table><br />
 
     <table class="formTable" cellspacing="0" cellpadding="0">
-    <? fixed_parameter("fact: level-of-fill", "i", "0"); ?>
-    <? fixed_parameter("fact: ict level-of-fill", "d", "1.0"); ?>
-    <? fixed_parameter("fact: level-of-fill", "i", "0"); ?>
-    <? fixed_parameter("fact: ilut level-of-fill", "d", "1.0"); ?>
+    <? begin_select_parameter("Level-of-fill for ILU and IC", "fact: level-of-fill", "i"); ?>
+    <? for ($i = 0; $i < 10; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Levell-of-fill for ICT", "fact: ict level-of-fill", "d"); ?>
+    <? for ($i = 1; $i < 10; ++$i)
+         add_select_parameter("$i.0", "$i.0"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Level-of-fill for ILUT", "fact: ilut level-of-fill", "d"); ?>
+    <? for ($i = 1; $i < 10; ++$i)
+         add_select_parameter("$i.0", "$i.0"); ?>
+    <? end_select_parameter(); ?>
     </table><br />
     </div>
 
@@ -188,21 +258,148 @@
 
     <p>
     <table class="formTable" cellspacing="0" cellpadding="0">
-    <? fixed_parameter("max levels", "i", "10"); ?>
-    <? fixed_parameter("coarse: max size", "i", "512"); ?>
+    <? begin_select_parameter("Maximum number of levels", "max levels", "i"); ?>
+    <? add_select_parameter("10", "10"); ?>
+    <? add_select_parameter("9", "9"); ?>
+    <? add_select_parameter("8", "8"); ?>
+    <? add_select_parameter("7", "7"); ?>
+    <? add_select_parameter("6", "6"); ?>
+    <? add_select_parameter("5", "5"); ?>
+    <? add_select_parameter("4", "4"); ?>
+    <? add_select_parameter("3", "3"); ?>
+    <? add_select_parameter("2", "2"); ?>
+    <? add_select_parameter("1", "1"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Maximum coarse size", "coarse: max size", "i"); ?>
+    <? add_select_parameter("32", "32"); ?>
+    <? add_select_parameter("128", "128"); ?>
+    <? add_select_parameter("512", "512"); ?>
+    <? add_select_parameter("1024", "1024"); ?>
+    <? add_select_parameter("2048", "2048"); ?>
+    <? end_select_parameter(); ?>
 
     <tr><td>&nbsp;</tr></tr>
 
-    <? fixed_parameter("aggregation: damping factor", "d", "1.333"); ?>
-    <? fixed_parameter("aggregation: type", "s", "Uncoupled-MIS"); ?>
-    <? fixed_parameter("aggregation: nodes per aggregate", "i", "512"); ?>
+    <? begin_select_parameter("Strategy to compute lambda_max", "eigen-analysis: type", "s"); ?>
+    <? add_select_parameter("power-method", "10 steps of the power method"); ?>
+    <? add_select_parameter("cg", "10 steps of CG"); ?>
+    <? add_select_parameter("Anorm", "infinite norm of the matrix"); ?>
+    <? end_select_parameter(); ?>
+
+    <tr><td>&nbsp;</tr></tr>
+
+    <? begin_select_parameter("Damping facto for aggregation", "aggregation: damping factor", "d"); ?>
+    <? add_select_parameter("1.333", "classical SA: 1.333"); ?>
+    <? add_select_parameter("0.0", "Non-smoothed Aggregation: 0.0"); ?>
+    <? add_select_parameter("1.0", "SA with 1.0"); ?>
+    <? add_select_parameter("1.5", "SA with 1.5"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Aggregation scheme", "aggregation: type", "s"); ?>
+    <? add_select_parameter("Uncoupled-MIS", "Uncoupled-MIS"); ?>
+    <? add_select_parameter("Uncoupled", "Uncoupled"); ?>
+    <? add_select_parameter("MIS", "MIS"); ?>
+    <? add_select_parameter("METIS", "METIS"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Nodes per aggregete (for METIS aggregation scheme only)", "aggregation: nodes per aggregate", "i"); ?>
+    <? add_select_parameter("32", "32"); ?>
+    <? add_select_parameter("64", "64"); ?>
+    <? add_select_parameter("128", "128"); ?>
+    <? add_select_parameter("256", "256"); ?>
+    <? add_select_parameter("512", "512"); ?>
+    <? add_select_parameter("1024", "1024"); ?>
+    <? end_select_parameter(); ?>
 
     <tr><td>&nbsp;</td></tr>
 
-    <? fixed_parameter("smoother: type", "s", "symmetric Gauss-Seidel"); ?>
-    <? fixed_parameter("smoother: damping factor", "d", "0.67"); ?>
-    <? fixed_parameter("smoother: sweeps", "i", "1"); ?>
-    <? fixed_parameter("smoother: pre or post", "s", "both"); ?>
+    <? begin_select_parameter("Smoother type for level 0 (finest level)", "smoother: type (level 0)", "s"); ?>
+    <? add_select_parameter("symmetric Gauss-Seidel", "symmetric Gauss-Seidel"); ?>
+    <? add_select_parameter("Jacobi", "Jacobi"); ?>
+    <? add_select_parameter("Gauss-Seidel", "Gauss-Seidel"); ?>
+    <? add_select_parameter("block Gauss-Seidel", "block Gauss-Seidel"); ?>
+    <? add_select_parameter("Chebyshev", "Chebyshev"); ?>
+    <? add_select_parameter("MLS", "MLS"); ?>
+    <? add_select_parameter("IC", "IC"); ?>
+    <? add_select_parameter("ILU", "ILU"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Smoother type for level 1", "smoother: type (level 1)", "s"); ?>
+    <? add_select_parameter("symmetric Gauss-Seidel", "symmetric Gauss-Seidel"); ?>
+    <? add_select_parameter("Jacobi", "Jacobi"); ?>
+    <? add_select_parameter("Gauss-Seidel", "Gauss-Seidel"); ?>
+    <? add_select_parameter("block Gauss-Seidel", "block Gauss-Seidel"); ?>
+    <? add_select_parameter("Chebyshev", "Chebyshev"); ?>
+    <? add_select_parameter("MLS", "MLS"); ?>
+    <? add_select_parameter("IC", "IC"); ?>
+    <? add_select_parameter("ILU", "ILU"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Smoother type for level 2", "smoother: type (level 2)", "s"); ?>
+    <? add_select_parameter("symmetric Gauss-Seidel", "symmetric Gauss-Seidel"); ?>
+    <? add_select_parameter("Jacobi", "Jacobi"); ?>
+    <? add_select_parameter("Gauss-Seidel", "Gauss-Seidel"); ?>
+    <? add_select_parameter("block Gauss-Seidel", "block Gauss-Seidel"); ?>
+    <? add_select_parameter("Chebyshev", "Chebyshev"); ?>
+    <? add_select_parameter("MLS", "MLS"); ?>
+    <? add_select_parameter("IC", "IC"); ?>
+    <? add_select_parameter("ILU", "ILU"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Smoother type for level >=3", "smoother: type (level 3)", "s"); ?>
+    <? add_select_parameter("symmetric Gauss-Seidel", "symmetric Gauss-Seidel"); ?>
+    <? add_select_parameter("Jacobi", "Jacobi"); ?>
+    <? add_select_parameter("Gauss-Seidel", "Gauss-Seidel"); ?>
+    <? add_select_parameter("block Gauss-Seidel", "block Gauss-Seidel"); ?>
+    <? add_select_parameter("Chebyshev", "Chebyshev"); ?>
+    <? add_select_parameter("IC", "IC"); ?>
+    <? add_select_parameter("ILU", "ILU"); ?>
+    <? end_select_parameter(); ?>
+
+    <tr><td>&nbsp;</tr></tr>
+
+    <? begin_select_parameter("pre or post smoother", "smoother: pre or post", "s"); ?>
+    <? add_select_parameter("both", "both"); ?>
+    <? add_select_parameter("presmoother", "pre"); ?>
+    <? add_select_parameter("postsmoother", "post"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Damping factor (for relaxation smoothers only)", "smoother: damping factor", "d"); ?>
+    <? add_select_parameter("0.67", "0.67"); ?>
+    <? add_select_parameter("0.2", "0.2"); ?>
+    <? add_select_parameter("0.4", "0.4"); ?>
+    <? add_select_parameter("0.6", "0.6"); ?>
+    <? add_select_parameter("0.8", "0.8"); ?>
+    <? add_select_parameter("1.0", "1.0"); ?>
+    <? add_select_parameter("1.2", "1.2"); ?>
+    <? add_select_parameter("1.4", "1.4"); ?>
+    <? add_select_parameter("1.6", "1.6"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Number of sweeps (for relaxation smoothers only)", "smoother: sweeps", "i"); ?>
+    <? add_select_parameter("1", "1"); ?>
+    <? add_select_parameter("2", "2"); ?>
+    <? add_select_parameter("3", "3"); ?>
+    <? add_select_parameter("4", "4"); ?>
+    <? add_select_parameter("5", "5"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Degree of the polynomial (for polynomial preconditioner only)", "smoother: polynomial order", "i"); ?>
+    <? for ($i = 1; $i < 6; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Level-of-fill (for IC and ILU only)", "smoother: level-of-fill", "i"); ?>
+    <? for ($i = 0; $i < 6; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
+
+    <? begin_select_parameter("Overlap (for IC and ILU only)", "smoother: overlap", "i"); ?>
+    <? for ($i = 0; $i < 6; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
+
     </table><br />
 
     </div>
@@ -214,21 +411,41 @@
     <p class="subheading"><font color=blue>Performance Evaluation</font></p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
-      <tr><td>  phi = </td>
-        <? fixed_parameter2("evaluation: setup time", "d", "0.0"); ?>
-        <td> x&nbsp; Setup CPU time (s)</td> <td> + </td>
+      <tr><td>  phi = </td><td>
+
+        <? begin_select_parameter_notable("evaluation: setup time", "d"); ?>
+        <? add_select_parameter_notable("0.0", "0.0"); ?>
+        <? add_select_parameter_notable("1.0", "1.0"); ?>
+        <? end_select_parameter_notable(); ?>
+
+        </td><td> x&nbsp; Setup CPU time (s)</td> <td> + </td>
       </tr>  
-      <tr><td></td>
-        <? fixed_parameter2("evaluation: solution time", "d", "0.0"); ?>
-        <td> x&nbsp; Solution CPU time (s)</td> <td> + </td>
+      <tr><td></td><td>
+
+        <? begin_select_parameter_notable("evaluation: solution time", "d"); ?>
+        <? add_select_parameter_notable("0.0", "0.0"); ?>
+        <? add_select_parameter_notable("1.0", "1.0"); ?>
+        <? end_select_parameter_notable(); ?>
+
+        </td><td> x&nbsp; Solution CPU time (s)</td> <td> + </td>
       </tr>  
-      <tr><td></td>
-        <? fixed_parameter2("evaluation: iterations", "d", "1.0"); ?>
-        <td> x&nbsp; iterations</td> <td> + </td>
+      <tr><td></td><td>
+
+        <? begin_select_parameter_notable("evaluation: iterations", "d"); ?>
+        <? add_select_parameter_notable("1.0", "1.0"); ?>
+        <? add_select_parameter_notable("0.0", "0.0"); ?>
+        <? end_select_parameter_notable(); ?>
+
+        </td><td> x&nbsp; iterations</td> <td> + </td>
       </tr>  
-      <tr><td></td>
-        <? fixed_parameter2("evaluation: condnum", "d", "0.0"); ?>
-        <td> x&nbsp; cond(P A)</td> <td>  </td>
+      <tr><td></td><td>
+
+        <? begin_select_parameter_notable("evaluation: condnum", "d"); ?>
+        <? add_select_parameter_notable("0.0", "0.0"); ?>
+        <? add_select_parameter_notable("1.0", "1.0"); ?>
+        <? end_select_parameter_notable(); ?>
+
+        </td><td> x&nbsp; cond(P A) </td><td> (requires CG or GMRES with condnum) </td>
       </tr>  
     </table><br />
     </div>

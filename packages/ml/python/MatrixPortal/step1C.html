@@ -8,8 +8,10 @@
   include 'common/config.php';
   include 'common/header.html';
 
-  $ProblemIDs = $_POST['ProblemIDs'];
-  $ResultIDs = $_POST['ResultIDs'];
+  process_variables();
+
+  global $ProblemIDs;
+  global $ResultIDs;
 ?>
 
 <!-- begin content ######################################################### -->

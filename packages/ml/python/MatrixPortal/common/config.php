@@ -35,7 +35,7 @@ $PythonDirectory = "/home/msala/Trilinos/packages/ml/python/MatrixPortal/";
 ?>
 
 <?  function top_left() { ?>
-          <a href="<?php echo $dir ?>index.html"
+          <a href=index.html"
             <a href="index.html" target="_blank" 
             <img src=common/matrix_portal_logo.png height=60 border=0 alt="The Matrix Portal" /></a>
 <?  } ?>

@@ -8,8 +8,10 @@
   include 'common/config.php';
   include 'common/header.html';
 
-  $ProblemIDs = $_POST['ProblemIDs'];
-  $ResultIDs = $_POST['ResultIDs'];
+  process_variables();
+
+  global $ProblemIDs;
+  global $ResultIDs;
 
   if ($_POST['state'] == "add")
   {
@@ -249,10 +251,10 @@
   <p>
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
   
-    <p class="subheading">File:</p>
+    <p class="subheading">Harwell/Boeing File:</p>
   
       <table class="formTable" cellspacing="0" cellpadding="0">
-        <tr><td> <label for="file">Matrix or vector file:</label>
+        <tr><td> <label for="file">Matrix or linear problem file:</label>
         </td><td> <input type="file" name="file" size="40" />
         </td></tr>
         <tr><td> <label for="filename">Filename on server:</label>

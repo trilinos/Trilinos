@@ -14,6 +14,9 @@ function print_header() {
 
 function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
 {
+  echo '<form action="#" enctype="multipart/form-data" method="post">';
+  echo '<input type=hidden name=ProblemIDs value="' .  $ProblemIDs . '">';
+  echo '<input type=hidden name=ResultIDs value="' .  $ResultIDs . '">';
   echo '<table border=0><cols=3>';
   echo '<tr><td><b>Selected Problem IDs</b></td>';
   echo '<td>&nbsp;&nbsp;&nbsp;</td>';
@@ -21,54 +24,44 @@ function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
   echo '<td valign=top><ol>';
   $done = 0;
   $done2 = 0;
+  $count = 1;
   foreach (explode(':', $ProblemIDs) as $i)
   {
     if ($i == "") continue;
 
+    echo '<li><input type=checkbox name="dp_' . $count++ . '" value=Yes>&nbsp;';
+
     $j = explode('@', $i);
     if ($j[0] == "") continue;
-    echo '<li>' . $j[0];
+    echo $j[0];
     $done = 1;
   }
+
   echo '</ol>';
+  $count = 1;
   if ($done == 0)
-    echo "No problems are currently selected.";
+	  echo "No problems are currently selected.";
 
-  echo '</td><td></td><td valign=top>';
-  echo '<ol>';
-  foreach (explode(':', $ResultIDs) as $i)
-  {
-    if ($i == "") continue;
+	  echo '</td><td></td><td valign=top>';
+	  echo '<ol>';
+	  foreach (explode(':', $ResultIDs) as $i)
+	  {
+	    if ($i == "") continue;
 
-    $j = explode('@', $i);
-    echo "<li>$j[1] &nbsp;&nbsp;-->&nbsp;&nbsp; phi = $j[0]";
-    $done2 = 1;
-  }
-  echo '</ol>';
-  if ($done2 == 0)
-    echo "No results are currently recordered.";
+            echo '<li><input type=checkbox name="dr_' . $count++ . '" value=Yes>&nbsp;';
 
-  if ($flag == 1)
-  {
-  echo '</td></tr><tr><td>';
-    if ($done)
-    { 
-      echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
-      echo '<input type=hidden name=ProblemIDs value="">';
-      echo '<input type=hidden name=ResultIDs value="' . $ResultIDs . '">';
-      echo '<input type = submit class=submitPrimary value = "reset ProblemIDs" ></form>';
-    }
-    echo '</td><td>';
-    echo '</td><td>';
-    if ($done2)
-    { 
-      echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
-      echo '<input type=hidden name=ProblemIDs value="' . $ProblemIDs . '">';
-      echo '<input type=hidden name=ResultIDs value=>';
-      echo '<input type = submit class=submitPrimary value = "reset ResultIDs" ></form>';
-    }
-  }
+	    $j = explode('@', $i);
+	    echo "$j[1] &nbsp;&nbsp;<font color=red>phi = $j[0]</font>";
+	    $done2 = 1;
+	  }
+	  echo '</ol>';
+	  if ($done2 == 0)
+	    echo "No results are currently recordered.";
+
   echo '</td></tr></table>';
+  if ($done != 0 || $done2 != 0)
+    echo '<input type=submit class=submitPrimary value="delete selected"></form>';
+
 }
 
 ################################################################################
@@ -100,6 +93,64 @@ function fixed_parameter2($name, $type, $value)
 
 ################################################################################
 
+function begin_select_parameter($info, $name, $type)
+{
+  global $counter;
+  echo '<tr>';
+  $name2 = "name_" . $counter;
+  echo "<td>" . $info . "</td>";
+  echo "<input type=hidden name=$name2 value=\"$type:$name\"/></td>";
+  $value2 = "value_" . $counter;
+  echo "<td><select name=\"" . $value2 . "\">";
+}
+
+################################################################################
+
+function add_select_parameter($value, $desc) 
+{
+  global $counter;
+  $value2 = "value_" . $counter;
+  echo '<option value="' . $value . '">' . $desc;
+  $counter = $counter + 1;
+}
+
+################################################################################
+
+function end_select_parameter()
+{
+  echo '</select></td></tr>';
+}
+
+################################################################################
+
+function begin_select_parameter_notable($name, $type)
+{
+  global $counter;
+  $name2 = "name_" . $counter;
+  echo "<input type=hidden name=$name2 value=\"$type:$name\"/>";
+  $value2 = "value_" . $counter;
+  echo "<select name=\"" . $value2 . "\">";
+}
+
+################################################################################
+
+function add_select_parameter_notable($value, $desc) 
+{
+  global $counter;
+  $value2 = "value_" . $counter;
+  echo '<option value="' . $value . '">' . $desc;
+  $counter = $counter + 1;
+}
+
+################################################################################
+
+function end_select_parameter_notable()
+{
+  echo '</select>';
+}
+
+################################################################################
+
 function custom_parameter($name, $type, $value) 
 {
   global $counter;
@@ -111,6 +162,7 @@ function custom_parameter($name, $type, $value)
   echo '</tr>';
   $counter = $counter + 1;
 }
+
 
 ################################################################################
 
@@ -201,5 +253,34 @@ function step_header($thisID)
   <? } ?>
   </td></tr></table>
 <?
+}
+
+################################################################################
+
+function process_variables()
+{ 
+  global $ProblemIDs;
+  global $ResultIDs;
+  $OldProblemIDs = $_POST['ProblemIDs'];
+  $OldResultIDs = $_POST['ResultIDs'];
+  
+  $ProblemIDs = "";
+  $ResultIDs = "";
+
+  $count = 1;
+  foreach (explode(':', $OldProblemIDs) as $i)
+  {
+    if ($i == "") continue;
+    if ($_POST['dp_' . $count++] != "Yes")
+      $ProblemIDs .= ":" . $i;
+  }
+
+  $count = 1;
+  foreach (explode(':', $OldResultIDs) as $i)
+  {
+    if ($i == "") continue;
+    if ($_POST['dr_' . $count++] != "Yes")
+      $ResultIDs .= ":" . $i;
+  }
 }
 ?>

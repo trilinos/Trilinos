@@ -9,8 +9,10 @@
   include 'common/config.php';
   include 'common/header.html';
 
-  $ProblemIDs = $_POST['ProblemIDs'];
-  $ResultIDs = $_POST['ResultIDs'];
+  process_variables();
+
+  global $ProblemIDs;
+  global $ResultIDs;
 
   for ($i = 0; $i < $_POST['phi_count']; $i = $i + 1)
   {
@@ -18,6 +20,16 @@
     $label = $_POST['phi_label_'. $i];
     $ResultIDs .= ":$value@$label";
   }
+
+  if ($_POST['ymin'] != "")
+    $ymin = $_POST['ymin'];
+  else
+    $ymin = -1.0;
+
+  if ($_POST['ymax'] != "")
+    $ymax = $_POST['ymax'];
+  else
+    $ymax = -1.0;
 ?>
 
 <!-- begin content ######################################################### -->
@@ -32,32 +44,55 @@
   problems, or to specify new solution techniques.
 
   <!-- --------------------------------------------------------------------- -->
-  <br/>
-  <div class="problemIDs">
-  <? print_problem_and_result($ProblemIDs, $ResultIDs); ?>
-  </div>
 
+  <br/>
+  <div class="ProblemIDs">
+  <p class=heading>Recordered results:</p>
   <p>
-  <center>
-  <table cols=2 border=1>
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+  <table cols=3 border=0>
   <tr>
-  <td>Result label</td>
+  <td>Label</td>
   <td>PHI</td>
+  <td>plot this value</td>
   </tr>
   <? 
+    $count = 1;
     foreach (explode(':', $ResultIDs) as $i)
     {
       if ($i == "") continue;
 
       $j = explode('@', $i);
-      echo "<tr><td><b>" . $j[1] . "</td><td>" . $j[0] . "</td></tr>";
+      echo "<tr><td><b>" . $j[1] . "</td><td>" . $j[0] . "</td>";
+      echo "<td><input type=checkbox name=plot_" . $count++ . " value=Yes checked=checked>";
+      echo "</td>";
+      echo "</tr>";
     }
     ?>
   </table>
   
+  <br/>
+  <p>Limits for the Y-axis, set both to -1.0 for autoset
+  <table><tr>
+  <td>Y_min:</td><td>
+  <input type=text name=ymin value="<? global $ymin; echo $ymin;?>"  size=10>
+  </td></tr>
+  <tr><td>Y_min:</td><td>
+  <input type=text name=ymax value="<? global $ymax; echo $ymax;?>" size=10>
+  </td></tr></table>
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
+  <br><input type=submit class=submitPrimary value="replot"><br>
+  </form>
+  </div>
+
+  <b><center>
 <?
 
+{
 $timestamp = date("y-m-d_H.i.s", time());
+global $ymin;
+global $ymax;
 
 $myFile = $TempDirectory . "/gnuplot-" . $timestamp . '.dat';
 $fh = fopen($myFile, 'w') or die("can't open file");
@@ -70,27 +105,37 @@ fwrite($fh, "set autoscale\n");
 fwrite($fh, "set output '" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png'\n");
 fwrite($fh, 'set xtics rotate ("" 0 ');
 $count = 1;
+$new_count = 1;
 foreach (explode(':', $ResultIDs) as $i)
 {
   if ($i == "") continue;
-
-  $j = explode('@', $i);
-  fwrite($fh, ', "' . $j[1] . '" ' . $count++ . " ");
+  if ($_POST['plot_' . $count] == "Yes")
+  {
+    $j = explode('@', $i);
+    fwrite($fh, ', "' . $j[1] . '" ' . $new_count++ . " ");
+  }
+  $count++;
 }
 fwrite($fh, ")\n");
-fwrite($fh, 'set xrange [0:' . ($count + 1) . ']' . "\n");
+fwrite($fh, 'set xrange [0:' . ($new_count) . ']' . "\n");
+if ($ymin != -1.0 && $ymax != 1.0)
+  fwrite($fh, 'set yrange [' . $ymin . ':' . $ymax . ']' . "\n");
 fwrite($fh, "set boxwidth 1\n");
 fwrite($fh, "set style fill solid\n");
 fwrite($fh, "set nokey\n");
 fwrite($fh, "set boxwidth 0.8\n");
 fwrite($fh, "plot '-' using 1:2 w boxes\n");
 $count = 1;
+$new_count = 1;
 foreach (explode(':', $ResultIDs) as $i)
 {
   if ($i == "") continue;
-
-  $j = explode('@', $i);
-  fwrite($fh, $count++ . " " . $j[0] . "\n");
+  if ($_POST['plot_' . $count] == "Yes")
+  {
+    $j = explode('@', $i);
+    fwrite($fh, $new_count++ . " " . $j[0] . "\n");
+  }
+  $count++;
 }
 fwrite($fh, "end\n");
 
@@ -99,9 +144,12 @@ fwrite($fh, "set terminal pop\n");
 
 fclose($fh); 
 
-passthru('/usr/bin/gnuplot /tmp/gnuplot-' . $timestamp . ".dat 2>&1");
-
-echo '<IMG SRC=../tmp/gnuplot-' . $timestamp . '.png>';
+if ($new_count != 1)
+{
+  passthru('/usr/bin/gnuplot /tmp/gnuplot-' . $timestamp . ".dat");
+  echo '<IMG SRC=../tmp/gnuplot-' . $timestamp . '.png>';
+}
+}
 
 ?>
 

@@ -69,7 +69,6 @@ def add_result(List, Label, ierr, iters, PrecTime, SolverTime, ConditionNumber):
 def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
 
   LHS = Epetra.MultiVector(InputLHS)
-  LHS.PutScalar(0.0)
   
   Time = Epetra.Time(Matrix.Comm())
 
@@ -95,6 +94,13 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
     print "Solver type not correct, ", List['az_solver']
 
   Solver.SetAztecOption(AztecOO.AZ_output, 16);
+  if List['iters'] < 0 | List['iters'] > 1550:
+    print "Maximum number of iterations either negative of < 1550";
+    throw(-1);
+  if List['tol'] < 1e-12:
+    print "Tolerance is too small"
+    throw(-1);
+
   err = Solver.Iterate(List['iters'], List['tol']) 
 
   if hasConditionNumber:
@@ -140,8 +146,8 @@ def generator(problemID, comm):
       print "<b><font color=red>Sorry, the maximum matrix size is 20.000</font></b>"
       throw(-1)
 
-    if Matrix.NumGlobalNonzeros() > 150000:
-      print "<b><font color=red>Sorry, the maximum number of nonzeros is 150.000</font></b>"
+    if Matrix.NumGlobalNonzeros() > 250000:
+      print "<b><font color=red>Sorry, the maximum number of nonzeros is 250.000</font></b>"
       throw(-1)
 
     LHS = Epetra.Vector(Map);
@@ -261,6 +267,8 @@ def main():
   List = {}
   for l in file.readlines():
     d = string.split(string.strip(l), '=')
+    if d[0] == "":
+      continue;
     if string.strip(d[0]) == "ProblemIDs":
       ProblemIDs = d[1];
       continue;
