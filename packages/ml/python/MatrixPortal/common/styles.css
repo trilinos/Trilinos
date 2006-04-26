@@ -120,3 +120,8 @@ input.submitPrimary
 	overflow: visible; 
 	width:auto;
 }
+
+a.help { display: inline; margin: 0 .5em; padding: 0 .3em; font-size: 8pt;
+  vertical-align: top; background-color: #e7e7ff; border: 1px solid #669; }
+a.help:link, a.help:visited, a.help:hover, a.help:active { text-decoration: none;
+  font-weight: bold; color: #669; }
