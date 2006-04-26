@@ -190,8 +190,9 @@ int Zoltan_PHG_Partition (
   PHGComm *hgc = hg->comm;
   VCycle  *vcycle=NULL, *del=NULL;
   int  i, err = ZOLTAN_OK;
-  int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x];
-  int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y];
+  int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
+  int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
+						     before any coarsening */
   char *yo = "Zoltan_PHG_Partition";
   static int timer_match = -1,    /* Timers for various stages */
              timer_coarse = -1,   /* Declared static so we can accumulate */
@@ -231,8 +232,8 @@ int Zoltan_PHG_Partition (
   /****** Coarsening ******/    
 #define COARSEN_FRACTION_LIMIT 0.9  /* Stop if we don't make much progress */
   while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > hg->redl)
-    && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5))
-     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5)))
+	 && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
+	     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
     && hg->dist_y[hgc->nProc_y] && hgp->matching) {
       int *match = NULL;
       VCycle *coarser=NULL;
