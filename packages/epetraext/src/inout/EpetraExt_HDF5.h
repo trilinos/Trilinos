@@ -5,6 +5,8 @@
 #ifdef HAVE_EPETRAEXT_HDF5
 
 #include "hdf5.h"
+class Epetra_Map;
+class Epetra_BlockMap;
 class Epetra_Comm;
 class Epetra_IntVector;
 class Epetra_MultiVector;
@@ -281,7 +283,6 @@ class HDF5
     //! Closes the file.
     void Close()
     {
-      H5Pclose(plist_id_);
       H5Fclose(file_id_);
       IsOpen_ = false;
     }

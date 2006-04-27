@@ -231,30 +231,22 @@ void EpetraExt::HDF5::Create(const string FileName)
 
   FileName_ = FileName;
 
-#ifdef HAVE_MPI
   // Set up file access property list with parallel I/O access
   plist_id_ = H5Pcreate(H5P_FILE_ACCESS);
+#ifdef HAVE_MPI
   // Create property list for collective dataset write.
+  H5Pset_fapl_mpio(plist_id_, MPI_COMM_WORLD, MPI_INFO_NULL);
+#endif
 
 #if 0
   unsigned int boh = H5Z_FILTER_MAX;
-  cout << "............." << H5Pset_filter(plist_id_, H5Z_FILTER_DEFLATE, 
-                                           H5Z_FILTER_MAX, 0, &boh);
+  H5Pset_filter(plist_id_, H5Z_FILTER_DEFLATE, H5Z_FILTER_MAX, 0, &boh);
 #endif
 
-
-  H5Pset_fapl_mpio(plist_id_, MPI_COMM_WORLD, MPI_INFO_NULL);
-#else
-  cerr << "Not yet implemented" << endl;
-  exit(EXIT_FAILURE);
-#endif
   // create the file collectively and release property list identifier.
   file_id_ = H5Fcreate(FileName.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, 
                       plist_id_);
   H5Pclose(plist_id_);
-
-  plist_id_ = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
 
   IsOpen_ = true;
 }
@@ -272,8 +264,11 @@ void EpetraExt::HDF5::Open(const string FileName, int AccessType)
   // create the file collectively and release property list identifier.
   file_id_ = H5Fopen(FileName.c_str(), AccessType, H5P_DEFAULT);
 
-  plist_id_ = H5Pcreate(H5P_DATASET_XFER);
-  H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
+#ifdef HAVE_MPI
+// FIXME: DO I NEED THE MPIO_COLLECTIVE??
+//  plist_id_ = H5Pcreate(H5P_DATASET_XFER);
+//  H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
+#endif
 
   IsOpen_ = true;
 }
@@ -917,9 +912,9 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X
   // Create the dataset with default properties and close filespace_id.
   dset_id = H5Dcreate(group_id, "Values", H5T_NATIVE_DOUBLE, filespace_id, H5P_DEFAULT);
 
-#if 0
   // Create property list for collective dataset write.
   plist_id_ = H5Pcreate(H5P_DATASET_XFER);
+#ifdef HAVE_MPMI
   H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
 #endif
 
@@ -944,10 +939,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X
   H5Sclose(memspace_id);
   H5Sclose(filespace_id);
   H5Dclose(dset_id);
-
-#if 0
   H5Pclose(plist_id_);
-#endif
 
   Write(GroupName, "GlobalLength", GlobalLength);
   Write(GroupName, "NumVectors", NumVectors);
@@ -993,11 +985,12 @@ void EpetraExt::HDF5::Read(const string& GroupName, Epetra_MultiVector*& LinearX
   // Create the dataset with default properties and close filespace_id.
   hid_t dset_id = H5Dopen(group_id, "Values");
 
-#if 0
   // Create property list for collective dataset write.
   plist_id_ = H5Pcreate(H5P_DATASET_XFER);
+#ifdef HAVE_MPI
   H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
 #endif
+  H5Pclose(plist_id_);
 
   Epetra_Map LinearMap(GlobalLength, 0, Comm());
   LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
@@ -1498,6 +1491,11 @@ void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
   filespace_id = H5Dget_space(dset_id);
   H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, &Offset_t, NULL, &MySize_t, NULL);
 
+  plist_id_ = H5Pcreate(H5P_DATASET_XFER);
+#ifdef HAVE_MPI
+  H5Pset_dxpl_mpio(plist_id_, H5FD_MPIO_COLLECTIVE);
+#endif
+
   status = H5Dwrite(dset_id, type, memspace_id, filespace_id,
                     plist_id_, data);
   CHECK_STATUS(status);
@@ -1507,6 +1505,7 @@ void EpetraExt::HDF5::Write(const string& GroupName, const string& DataSetName,
   H5Gclose(group_id);
   H5Sclose(filespace_id);
   H5Sclose(memspace_id);
+  H5Pclose(plist_id_);
 }
 
 // ==========================================================================
