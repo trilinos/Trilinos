@@ -18,7 +18,10 @@
 
   <? step_header("3"); ?>
 
-  You are at Step 3: Compute.
+  <font color=blue>You are at Step 3: Compute</font>
+  <a href="help/step_workflow.html"
+    onclick='window.open(this.href,null,"height=400,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a>
   
   <p>Here you can browse through the output of each solution phase for 
   all the problems specified in Step 1. Each evaluation parameter (phi)
@@ -50,6 +53,7 @@
   <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type=hidden name=ResultIDs value="<? global $ResultIDs; echo $ResultIDs; ?>">
   <input type="submit" class=submitSecondary name="submit" value="Step 4: Results">
+  </form>
 
 <!-- end content ########################################################### -->
 

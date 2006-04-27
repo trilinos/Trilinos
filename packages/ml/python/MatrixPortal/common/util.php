@@ -60,8 +60,23 @@ function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
 
   echo '</td></tr></table>';
   if ($done != 0 || $done2 != 0)
+  {
     echo '<input type=submit class=submitPrimary value="delete selected"></form>';
+if (0) {
+    echo '&nbsp;';
 
+    echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
+    echo '<input type=hidden name=ProblemIDs value="">';
+    echo '<input type=hidden name=ResultIDs value="' . $ResultIDs . '">';
+    echo '<input type = submit class=submitPrimary value = "reset all ProblemIDs" ></form>';
+    echo '&nbsp;';
+
+    echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
+    echo '<input type=hidden name=ProblemIDs value="' . $ProblemIDs . '">';
+    echo '<input type=hidden name=ResultIDs value=>';
+    echo '<input type = submit class=submitPrimary value = "reset all ResultIDs" ></form>';
+}
+  }
 }
 
 ################################################################################
@@ -181,6 +196,11 @@ function process()
   $configString .= "i:iters            = ".$_POST['iters'] ."\n";
   $configString .= "d:tol              = ".$_POST['tol'] ."\n";
   $configString .= "s:az_solver        = ".$_POST['az_solver'] ."\n";
+  $configString .= "i:az_kspace        = ".$_POST['az_kspace'] ."\n";
+  $configString .= "s:az_output        = ".$_POST['az_output'] ."\n";
+  $configString .= "s:rhs              = ".$_POST['rhs'] ."\n";
+  $configString .= "s:starting_solution= ".$_POST['starting_solution'] ."\n";
+  $configString .= "s:solution         = ".$_POST['solution'] ."\n";
   $configString .= "b:perform_analysis = ".$_POST['perform_analysis'] ."\n";
   $configString .= "b:perform_cheby    = ".$_POST['perform_cheby'] ."\n";
   $configString .= "b:perform_jacobi   = ".$_POST['perform_jacobi'] ."\n";
@@ -225,7 +245,7 @@ function step_header($thisID)
   global $ResultIDs;
 ?>
 
-  <table>
+  <table border=0>
   <tr><td>
   <form action="step1.html" enctype="multipart/form-data" method="post" name="inputForm">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">

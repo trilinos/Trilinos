@@ -101,6 +101,17 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
     print "Tolerance is too small"
     throw(-1);
 
+  Solver.SetAztecOption(AztecOO.AZ_kspace, List['az_kspace']);
+
+  if List['az_output'] == "16":
+    Solver.SetAztecOption(AztecOO.AZ_output, 16)
+  elif List['az_output'] == "32":
+    Solver.SetAztecOption(AztecOO.AZ_output, 32)
+  elif List['az_output'] == "AZ_last":
+    Solver.SetAztecOption(AztecOO.AZ_output, AztecOO.AZ_last)
+  elif List['az_output'] == "AZ_none":
+    Solver.SetAztecOption(AztecOO.AZ_output, AztecOO.AZ_none)
+    
   err = Solver.Iterate(List['iters'], List['tol']) 
 
   if hasConditionNumber:
@@ -110,7 +121,7 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
   return (err, Solver.NumIters(), Time.ElapsedTime(), ConditionNumber)
 
 # -------------------------------------------------------------------------
-def generator(problemID, comm):
+def generator(problemID, comm, List):
   GaleriList = {}
   if problemID[0:3] == "MM_":
     print "<p><p><div class=\"outputBox\"><pre>";
@@ -152,9 +163,42 @@ def generator(problemID, comm):
 
     LHS = Epetra.Vector(Map);
     RHS = Epetra.Vector(Map);
-    ExactSolution = Epetra.Vector(Map); ExactSolution.Random();
-    Matrix.Apply(ExactSolution, RHS);
-    LHS.PutScalar(0.0);
+    ExactSolution = Epetra.Vector(Map); 
+    
+    if (List.has_key('solution') == True) & (List.has_key('starting_solution') == True) & (List.has_key('rhs') == True):
+
+      if List['solution'] == "zero":
+        ExactSolution.PutScalar(0.0)
+      elif List['solution'] == "random":
+        ExactSolution.Random()
+      elif List['solution'] == "constant":
+        ExactSolution.PutScalar(1.0)
+      else:
+        throw(-1)
+
+      if List['starting_solution'] == "zero":
+        LHS.PutScalar(0.0)
+      elif List['starting_solution'] == "random":
+        LHS.Random()
+      elif List['starting_solution'] == "constant":
+        LHS.PutScalar(1.0)
+      else:
+        throw(-1)
+  
+      if List['rhs'] == "zero":
+        RHS.PutScalar(0.0)
+      elif List['rhs'] == "random":
+        RHS.Random()
+      elif List['rhs'] == "constant":
+        RHS.PutScalar(1.0)
+      elif List['rhs'] == "matvec":
+        Matrix.Apply(ExactSolution, RHS);
+      else:
+        throw(-1)
+    else:
+      ExactSolution.Random()
+      Matrix.Apply(ExactSolution, RHS)
+      LHS.PutScalar(0.0)
 
   return(Map, Matrix, LHS, RHS, ExactSolution);
 
@@ -296,7 +340,7 @@ def main():
     pos = FullProblemID.find('@');
     Label = FullProblemID[0:pos];
     problemID = FullProblemID[pos + 1:];
-    (Map, Matrix, LHS, RHS, ExactSolution) = generator(problemID, comm);
+    (Map, Matrix, LHS, RHS, ExactSolution) = generator(problemID, comm, List);
 
     if List.has_key('perform_analysis'):
       if List['perform_analysis'] == "True":

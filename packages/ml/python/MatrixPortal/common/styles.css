@@ -9,6 +9,7 @@ a:hover { text-decoration: underline; font-weight: bold; color: #036;
 
 /* Font styles ************************************************************** */
 
+.heading { font-size: 14pt; font-weight: bold; line-height: 150%; display: block; }
 .heading { font-size: 12pt; font-weight: bold; line-height: 150%; display: block; }
 .subheading { font-size: 10pt; font-weight: bold; line-height: 150%; display: block; }
 .subheading2 { font-size: 10pt; line-height: 150%; display: block; }
@@ -64,13 +65,15 @@ a:hover { text-decoration: underline; font-weight: bold; color: #036;
 /* Body style *************************************************************** */
 
 body, .body { width: 100%; height: 100%; margin: 0px; padding: 0px;
-  font-family: Arial, Sans-serif; font-style: normal; font-variant: normal;
-  font-weight: normal; font-size: 9pt; color: #000; background-color: #fff;
+#  font-family: Arial, Sans-serif; font-style: normal; font-variant: normal;
+  font-family: verdana, arial, "Times New Roman";
+  color: #3D3535;
+  font-weight: normal; font-size: 12pt; color: #000; background-color: #fff;
   line-height: 120%; word-spacing: normal; letter-spacing: normal;
   text-decoration: none; vertical-align: baseline; text-transform: none;
   text-align: left; text-indent: 0%; white-space: normal; border-style: none; }
 
-td { font-size: 9pt; }
+td { font-size: 12pt; }
 
 /* WebSolver styles ********************************************************* */
 

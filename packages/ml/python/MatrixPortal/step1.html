@@ -45,7 +45,7 @@
     $error = 0;
     $errorText = "";
   
-    if (!$_POST['accessCode'] !== "this is the password") 
+    if ($_POST['accessCode'] !== "this is the password") 
     {
       $errorText .= "Error: Wrong authorization code\n";
       $error++;
@@ -79,11 +79,14 @@
 <!-- begin content ######################################################### -->
 
   <? step_header("1"); ?>
-
-  You are at Step 1: Select Data.
   
   <!-- ===================================================================== -->
   
+  <font color=blue>You are at Step 1: Select Data</font>
+  <a href="help/step_workflow.html"
+    onclick='window.open(this.href,null,"height=400,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a>
+
   <p>In this step, you should specify at least one problem to be solved.
   Each problem is identified by a <b>label</b> or <b>ProblemID</b> you have to select. There are two
   ways to supply problems: by selecting a matrix from the Matrix-Market or
@@ -95,7 +98,8 @@
   evaluation parameter for the solver you specified on a given problem.
 
   <p>To <b>continue</b>, proceed to Step 1C (Check Data) using the button at the
-  bottom of the page.</font>
+  bottom of the page to check your data, or go directly to Step 2 to specify the parameters
+  for the linear solvers.</font>
 
 
   <div class="problemIDs">
@@ -104,8 +108,9 @@
 
   <!-- ----------------------------------------------------------------- -->
 
-  <p class="heading">Data from Generator: <a href="help/step1_generator.html"
-    onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+  <p class="heading">Data from Generator:&nbsp; <a href="help/step1_generator.html"
+    onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a></p>
   
   <div class="formSection">
   <ol>
@@ -203,7 +208,8 @@
   <!-- ----------------------------------------------------------------- -->
 
   <p class="heading">Data from Collections: <a href="help/step1_collections.html"
-    onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+    onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a></p>
   
   <div class="formSection">
   
@@ -248,7 +254,8 @@
   <!-- ----------------------------------------------------------------- -->
 
   <p class="heading">Upload Data (requires access code): <a href="help/step1_upload.html"
-    onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+    onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a></p>
 
   <div class="formSection">
   <p>
@@ -286,6 +293,13 @@
   Continue to:
   <input type="submit" class=submitSecondary name="submit" value="Step 1C: Check Data" />
   
+  &nbsp;&nbsp; 
+  <form action="step1C.html" enctype="multipart/form-data" method="post" name="inputForm" id="inputForm">
+  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
+  <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+  <input type="hidden" name="perform_analysis" value="True">
+  or go directly to&nbsp;
+  <input type="submit" class=submitSecondary name="submit" value="Step 2: Select Parameters" />
   </form>
 
   

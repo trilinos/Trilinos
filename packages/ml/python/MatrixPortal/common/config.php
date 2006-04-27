@@ -36,11 +36,11 @@ $PythonDirectory = "/home/msala/Trilinos/packages/ml/python/MatrixPortal/";
 
 <?  function top_left() { ?>
           <a href=index.html"
-            <a href="index.html" target="_blank" 
+            <a href="index.html"
             <img src=common/matrix_portal_logo.png height=60 border=0 alt="The Matrix Portal" /></a>
 <?  } ?>
 
 <? function top_right() { ?>
-        <a href="http://www.ethz.ch/" target="_blank" 
+        <a href="http://www.ethz.ch/"
             <img src=common/eth_logo.gif border=0 alt="ETHZ" /></a>
 <?  } ?>

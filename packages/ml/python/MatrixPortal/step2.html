@@ -18,7 +18,10 @@
 
   <? step_header("2"); ?>
 
-  You are at Step 2: Select Data.
+  <font color=blue>You are at Step 2: Select Data</font>
+  <a href="help/step_workflow.html"
+    onclick='window.open(this.href,null,"height=400,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a>
 
   <p>In this step, you should specify what linear solution techniques you want to analyze.
   Several choices are possible; for example, if you want to test the symmetric Gauss-Seidel
@@ -58,8 +61,7 @@
     <!-- ---------------------------------------------------------- -->
 
     <div class="formSection">
-    <p class="subheading">General Settings <a href="help/step2_general.html"
-      onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+    <p class="subheading">General Settings</p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
@@ -74,7 +76,6 @@
         <option value=AZ_bicgstab>Bi-CGSTAB
         <option value=AZ_tfqmr>TFQMR
         </select></td>
-        <!-- <input type="text" name="az_solver" value="AZ_gmres" /> -->
       </tr>
       <tr>
         <td>Maximum iterations: </td><td>
@@ -112,6 +113,56 @@
         <option value="1e-12">1e-12
         </select></td>
       </tr>
+      <tr>
+        <td>Krylov output: </td>
+        <td>
+        <select name="az_output">
+        <option value="16">residual every 16 its
+        <option value="32">residual every 32 its
+        <option value="AZ_last">only last iterations
+        <option value="AZ_none">none
+        </select></td>
+      </tr>
+      <tr>
+        <td>Size of Krylov space (for GMRES only): </td>
+        <td>
+        <select name="az_kspace">
+        <option value="5">5
+        <option value="10">10
+        <option value="20">20
+        <option value="30">30
+        <option value="60">60
+        <option value="2000">200
+        </select></td>
+      </tr>
+      <tr>
+        <td>Solution (unless present in H/B file): </td>
+        <td>
+        <select name="solution">
+        <option value="random">Random
+        <option value="zero">Zero
+        <option value="constant">Constant
+        </select></td>
+      </tr>
+      <tr>
+        <td>Starting Solution (unless present in H/B file): </td>
+        <td>
+        <select name="starting_solution">
+        <option value="zero">Zero
+        <option value="random">Random
+        <option value="constant">Constant
+        </select></td>
+      </tr>
+      <tr>
+        <td>Right-hand size (unless present in H/B file): </td>
+        <td>
+        <select name="rhs">
+        <option value="matvec">b = A * x
+        <option value="zero">Zero
+        <option value="random">Random
+        <option value="constant">Constant
+        </select></td>
+      </tr>
     </table><br />
 
     </div>
@@ -121,8 +172,9 @@
 
     <p>
     <div class="formSection">
-    <p class="subheading">Chebyshev Preconditioners: <a href="help/step2_chebyshev.html"
-      onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+    <p class="subheading">Chebyshev Preconditioners:<a href="help/step2_chebyshev.html"
+       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
@@ -147,7 +199,8 @@
     <p>
     <div class="formSection">
     <p class="subheading">Relaxation Preconditioners <a href="help/step2_relaxation.html"
-      onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
@@ -198,7 +251,8 @@
     <p>
     <div class="formSection">
     <p class="subheading">Incomplete Factorization Preconditioners <a href="help/step2_incomplete_factorization.html"
-      onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
@@ -250,7 +304,8 @@
     <p>
     <div class="formSection">
     <p class="subheading">Multilevel Preconditioners <a href="help/step2_multilevel.html"
-      onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
@@ -263,6 +318,11 @@
 
     <p>
     <table class="formTable" cellspacing="0" cellpadding="0">
+    <? begin_select_parameter("Output level", "output", "i"); ?>
+    <? for ($i = 0; $i<11; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
+
     <? begin_select_parameter("Maximum number of levels", "max levels", "i"); ?>
     <? add_select_parameter("10", "10"); ?>
     <? add_select_parameter("9", "9"); ?>
@@ -284,6 +344,11 @@
     <? add_select_parameter("2048", "2048"); ?>
     <? end_select_parameter(); ?>
 
+    <? begin_select_parameter("Number of PDE equations", "PDE equations", "i"); ?>
+    <? for ($i = 1; $i < 11; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
+
     <tr><td>&nbsp;</tr></tr>
 
     <? begin_select_parameter("Strategy to compute lambda_max", "eigen-analysis: type", "s"); ?>
@@ -294,7 +359,7 @@
 
     <tr><td>&nbsp;</tr></tr>
 
-    <? begin_select_parameter("Damping facto for aggregation", "aggregation: damping factor", "d"); ?>
+    <? begin_select_parameter("Damping factor for aggregation", "aggregation: damping factor", "d"); ?>
     <? add_select_parameter("1.333", "classical SA: 1.333"); ?>
     <? add_select_parameter("0.0", "Non-smoothed Aggregation: 0.0"); ?>
     <? add_select_parameter("1.0", "SA with 1.0"); ?>
@@ -414,7 +479,8 @@
     <p>
     <div class="formSection">
     <p class="subheading"><font color=blue>Performance Evaluation</font> <a href="help/step2_performance.html"
-      onclick="helpWindow(this.href); return false;" class="help">?</a></p>
+       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></p>
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr><td>  phi = </td><td>

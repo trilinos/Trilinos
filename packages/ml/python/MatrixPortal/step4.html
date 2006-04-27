@@ -36,12 +36,15 @@
 
   <? step_header("4"); ?>
 
-  You are at Step 4: Check Results.
+  <font color=blue>You are at Step 4: Check Results</font>
+  <a href="help/step_workflow.html"
+    onclick='window.open(this.href,null,"height=400,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a>
   
   <p>Here you can analyze all results, in a table and graph format.
 
-  <p>To <b>continue</b>, proceed to either Step 1 or Step 2, to select new
-  problems, or to specify new solution techniques.
+  <p>To <b>continue</b>, proceed to either Step 1 and select new
+  problems, or to Step 2 and specify new solution techniques.
 
   <!-- --------------------------------------------------------------------- -->
 
@@ -55,6 +58,7 @@
   <td>Label</td>
   <td>PHI</td>
   <td>plot this value</td>
+  <td></td>
   </tr>
   <? 
     $count = 1;
@@ -65,8 +69,17 @@
       $j = explode('@', $i);
       echo "<tr><td><b>" . $j[1] . "</td><td>" . $j[0] . "</td>";
       echo "<td><input type=checkbox name=plot_" . $count++ . " value=Yes checked=checked>";
-      echo "</td>";
-      echo "</tr>";
+      if (0)
+      {
+      echo "</td><td>";
+      echo "<select name=color_" . $count++ . ">";
+      echo "<option value=red>in red";
+      echo "<option value=green>in green";
+      echo "<option value=blue>in blue";
+      echo "<option value=black>in black";
+      echo "</select>";
+      }
+      echo "</td></tr>";
     }
     ?>
   </table>
@@ -77,18 +90,23 @@
   <td>Y_min:</td><td>
   <input type=text name=ymin value="<? global $ymin; echo $ymin;?>"  size=10>
   </td></tr>
-  <tr><td>Y_min:</td><td>
+  <tr><td>Y_max:</td><td>
   <input type=text name=ymax value="<? global $ymax; echo $ymax;?>" size=10>
   </td></tr></table>
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
-  <br><input type=submit class=submitPrimary value="replot"><br>
+  <br><input type=submit class=submitPrimary value="plot/replot" name=plot>
+  <a href="help/step4_plot.html"
+    onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a>
+ 
   </form>
   </div>
 
   <b><center>
 <?
 
+if ($_POST['plot'] == "plot/replot")
 {
 $timestamp = date("y-m-d_H.i.s", time());
 global $ymin;
@@ -122,6 +140,7 @@ if ($ymin != -1.0 && $ymax != 1.0)
   fwrite($fh, 'set yrange [' . $ymin . ':' . $ymax . ']' . "\n");
 fwrite($fh, "set boxwidth 1\n");
 fwrite($fh, "set style fill solid\n");
+//fwrite($fh, "set style fill solid 0.25 border\n");
 fwrite($fh, "set nokey\n");
 fwrite($fh, "set boxwidth 0.8\n");
 fwrite($fh, "plot '-' using 1:2 w boxes\n");
