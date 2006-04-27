@@ -121,6 +121,7 @@ static int timer_cpart=-1, timer_gather=-1, timer_refine=-1;
 /* 10 when p=1, and 1 when p is large. */
 const int num_coarse_iter = 1 + 9/zz->Num_Proc; 
 
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (fine_timing) {
     if (timer_gather < 0)
@@ -360,6 +361,7 @@ End:
   if (fine_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
 
@@ -437,6 +439,9 @@ static int seq_part (
   double weight_sum = 0.0, part_sum, old_sum, cutoff;
   double psize_sum = 0.0;
   double *fixed_wgts;
+  char *yo = "seq_part";
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (part_sizes==NULL){
     /* part_sizes should always exist, even with uniform partitions */
@@ -514,6 +519,7 @@ static int seq_part (
     ZOLTAN_FREE(&fixed_wgts);
   }
 
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ZOLTAN_OK;
 }
 
