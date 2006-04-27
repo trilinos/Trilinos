@@ -6,6 +6,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include <vector>
+#include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_HDF5.h"
@@ -110,9 +111,7 @@ int main (int argc, char **argv)
     HDF5.Close();
 
     // delete memory
-#if 0
     if (Matrix) delete Matrix;
-#endif
   }
   catch(EpetraExt::Exception& rhs) 
   {
@@ -122,7 +121,6 @@ int main (int argc, char **argv)
   {
     cerr << "Caught generic exception" << endl;
   }
-
 
 #ifdef HAVE_MPI
   MPI_Finalize();
