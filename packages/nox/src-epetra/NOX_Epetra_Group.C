@@ -36,6 +36,7 @@
 #include "NOX_Utils.H"
 #include "NOX_Epetra_Interface_Required.H"
 #include "Epetra_Vector.h"
+#include "Epetra_Operator.h"
 #include "AztecOO_ConditionNumber.h"
 
 using namespace NOX;
