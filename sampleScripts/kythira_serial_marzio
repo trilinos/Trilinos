@@ -1,9 +1,10 @@
 /home/msala/Trilinos/$1/configure \
   F77=fort77 \
   FFLAGS="-O2" \
+  --with-incdirs="-I/home/msala/include" \
   --with-ldflags="-L/home/msala/lib" \
-  --with-libs="-llapack -lblas -lf2c -lm -lMAIN__" \
-  --prefix=/var/www/html/websolver \
+  --with-libs="-lmetis -llapack -lblas -lf2c -lm -lMAIN__" \
+  --prefix=/home/msala/Trilinos/LINUX_SERIAL \
   --with-install="/usr/bin/install -p" \
   --with-gnumake \
   --disable-default-packages \
@@ -19,4 +20,5 @@
   --enable-aztecoo \
   --enable-amesos \
   --enable-amesos-klu \
-  --enable-ml
+  --enable-ml \
+  --with-ml_metis
