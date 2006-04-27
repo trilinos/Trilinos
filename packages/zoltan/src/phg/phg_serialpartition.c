@@ -259,7 +259,7 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     new_part = spart;
 
     for (i=0; i< num_coarse_iter; i++){
-        int savefmlooplimit=hgp->fm_loop_limit;
+      int savefmlooplimit=hgp->fm_loop_limit;
         
       /* Overwrite worst partition with new candidate. */
       ierr = CoarsePartition(zz, shg, numPart, part_sizes, 
@@ -438,7 +438,7 @@ static int seq_part (
   int vwgtdim = hg->VtxWeightDim;
   double weight_sum = 0.0, part_sum, old_sum, cutoff;
   double psize_sum = 0.0;
-  double *fixed_wgts;
+  double *fixed_wgts = NULL;
   char *yo = "seq_part";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -475,11 +475,11 @@ static int seq_part (
     psize_sum += part_sizes[i*vwgtdim];
 
   pnumber = 0; /* Assign next vertex to partition no. pnumber */
-  part_sum = fixed_wgts[0]; /* Weight of fixed vertices */
+  part_sum = (fixed_wgts ? fixed_wgts[0] : 0.); /* Weight of fixed vertices */
 
   /* Set cutoff for current partition */
   cutoff = weight_sum*part_sizes[0]/psize_sum - 
-           (fixed_wgts ? fixed_wgts[0] : 0);  
+           (fixed_wgts ? fixed_wgts[0] : 0.);  
 
   /* Loop through all vertices in specified order, and assign
      partition numbers.  */                                        
@@ -501,13 +501,13 @@ static int seq_part (
         }
         weight_sum -= part_sum;
         /* Initialize part_sum for next partition no. */
-        part_sum = fixed_wgts[pnumber];
+        part_sum = (fixed_wgts ? fixed_wgts[pnumber] : 0.);
         if (part[j] == pnumber)
           part_sum += hg->vwgt[j*vwgtdim];
         /* Update cutoff. */
         psize_sum -= part_sizes[pnumber-1];
         cutoff = weight_sum*part_sizes[pnumber]/psize_sum
-                 - (fixed_wgts ? fixed_wgts[pnumber] : 0);
+                 - (fixed_wgts ? fixed_wgts[pnumber] : 0.);
       }
     }
     if (hgp->output_level >= PHG_DEBUG_ALL)
