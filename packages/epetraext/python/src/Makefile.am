@@ -30,11 +30,17 @@
 include $(top_builddir)/Makefile.export.epetraext
 include $(top_builddir)/../PyTrilinos/Makefile.export.pytrilinos
 
+if HAVE_EPETRAEXT_HDF5
+HDF5 = -DHAVE_EPETRAEXT_HDF5
+else
+HDF5 =
+endif
+
 # Include swig rules
 include $(top_srcdir)/config/swig.am
 SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES)                \
 	        $(PYTRILINOS_INCLUDES)               \
-		-I$(top_srcdir)/../epetra/python/src
+		-I$(top_srcdir)/../epetra/python/src $(HDF5)
 
 EXTRA_DIST = EpetraExt.i setup.py
 

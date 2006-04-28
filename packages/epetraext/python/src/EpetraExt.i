@@ -80,6 +80,7 @@ The most important classes of the EpetraExt module are:
 // Epetra python includes
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+#include "Epetra_NumPyIntVector.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
 
@@ -274,6 +275,58 @@ namespace EpetraExt
   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_Map & map, 
                                Epetra_CrsMatrix * & OutCrsMatrix);
 
+}
+
+%extend EpetraExt::HDF5 
+{
+  Epetra_BlockMap* ReadBlockMap(string Name)
+  {
+    Epetra_BlockMap* obj = 0;
+    self->Read(Name, obj);
+    return(obj);
+  }
+
+  Epetra_Map* ReadMap(string Name)
+  {
+    Epetra_Map* obj = 0;
+    self->Read(Name, obj);
+    return(obj);
+  }
+
+  Epetra_MultiVector* ReadMultiVector(string Name)
+  {
+    Epetra_MultiVector* obj = 0;
+    self->Read(Name, obj);
+    return(obj);
+  }
+
+  Epetra_MultiVector* ReadMultiVector(string Name)
+  {
+    Epetra_MultiVector* obj = 0;
+    self->Read(Name, obj);
+    return(obj);
+  }
+
+  Epetra_CrsGraph* ReadCrsGraph(string Name)
+  {
+    Epetra_CrsGraph* obj = 0;
+    self->Read(Name, obj);
+    return(obj);
+  }
+
+  Epetra_CrsMatrix* ReadCrsMatrix(string Name)
+  {
+    Epetra_CrsMatrix* obj = 0;
+    self->Read(Name, obj);
+    return(obj);
+  }
+
+  Epetra_IntVector* ReadIntVector(string Name)
+  {
+    Epetra_IntVector* obj = 0;
+    self->Read(Name, obj);
+    return(obj);
+  }
 }
 
 %inline %{
