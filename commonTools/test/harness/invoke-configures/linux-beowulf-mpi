@@ -19,6 +19,7 @@ FFLAGS=-O3 \
 --with-mpi-compilers \
 --cache-file=config.cache \
 --disable-default-packages \
+--with-swig=/home/wfspotz/bin/swig \
 --enable-amesos \
 --enable-amesos-umfpack \
 --enable-amesos-dscpack \
