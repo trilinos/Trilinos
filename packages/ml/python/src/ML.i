@@ -176,7 +176,6 @@ using namespace std;
 %typemap(in) (const ParameterList & List)
 {
   $1 = CreateList($input);
-  cout << *($1);
 }
 
 %typemap(in) (Teuchos::ParameterList& List)
@@ -216,6 +215,32 @@ using namespace std;
 %include "MLAPI_Eig.h"
 %include "MLAPI_Gallery.h"
 %include "MLAPI_PyMatrix.h"
+
+%extend ML_Epetra::MultiLevelPreconditioner
+{
+  // This is for MatrixPortal
+  int SetParameterListAndNullSpace(PyObject* obj,
+                                   Epetra_MultiVector& NullSpace)
+  {
+    Teuchos::ParameterList* List = CreateList(obj);
+
+    // WARNING: THIS IS DELICATE, NULLSPACE SHOULD NOT DISAPPEAR
+    // otherwise the pointer here stored will vanish. This function should
+    // be used only through the MatrixPortal
+    double* NullSpacePtr = (double*)NullSpace.Values();
+    int NullSpaceDim = NullSpace.NumVectors();
+
+    List->set("null space: type", "pre-computed");
+    List->set("null space: vectors", NullSpacePtr);
+    List->set("null space: dimension", NullSpaceDim);
+
+    self->SetParameterList(*List);
+
+    delete List;
+
+    return(0);
+  }
+}
 
 %extend MLAPI::Space {
 
