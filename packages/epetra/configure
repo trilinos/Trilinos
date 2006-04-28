@@ -721,13 +721,13 @@ echo X"$0" |
   	  /^X\(\/\).*/{ s//\1/; q; }
   	  s/.*/./; q'`
   srcdir=$ac_confdir
-  if test ! -r $srcdir/$ac_unique_file; then
+  if test ! -r "$srcdir/$ac_unique_file"; then
     srcdir=..
   fi
 else
   ac_srcdir_defaulted=no
 fi
-if test ! -r $srcdir/$ac_unique_file; then
+if test ! -r "$srcdir/$ac_unique_file"; then
   if test "$ac_srcdir_defaulted" = yes; then
     { echo "$as_me: error: cannot find sources ($ac_unique_file) in $ac_confdir or .." >&2
    { (exit 1); exit 1; }; }
@@ -736,7 +736,7 @@ if test ! -r $srcdir/$ac_unique_file; then
    { (exit 1); exit 1; }; }
   fi
 fi
-(cd $srcdir && test -r ./$ac_unique_file) 2>/dev/null ||
+(cd $srcdir && test -r "./$ac_unique_file") 2>/dev/null ||
   { echo "$as_me: error: sources are in $srcdir, but \`cd $srcdir' does not work" >&2
    { (exit 1); exit 1; }; }
 srcdir=`echo "$srcdir" | sed 's%\([^\\/]\)[\\/]*$%\1%'`
@@ -8332,7 +8332,7 @@ echo "$as_me: WARNING: cannot find 'swig' program. You should look at http://www
         else
 	    { echo "$as_me:$LINENO: SWIG executable is '$SWIG'" >&5
 echo "$as_me: SWIG executable is '$SWIG'" >&6;}
-	    if test -n "1.3.23" ; then
+	    if test -n "1.3.28" ; then
                 echo "$as_me:$LINENO: checking for SWIG version" >&5
 echo $ECHO_N "checking for SWIG version... $ECHO_C" >&6
                 swig_version=`$SWIG -version 2>&1 | grep 'SWIG Version' | sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/g'`
@@ -8340,7 +8340,7 @@ echo $ECHO_N "checking for SWIG version... $ECHO_C" >&6
 echo "${ECHO_T}$swig_version" >&6
                 if test -n "$swig_version" ; then
                         # Calculate the required version number components
-                        required=1.3.23
+                        required=1.3.28
                         required_major=`echo $required | sed 's/[^0-9].*//'`
                         if test -z "$required_major" ; then
                                 required_major=0
@@ -8374,9 +8374,9 @@ echo "${ECHO_T}$swig_version" >&6
                         if test $available_major -ne $required_major \
                                 -o $available_minor -ne $required_minor \
                                 -o $available_patch -lt $required_patch ; then
-                                { echo "$as_me:$LINENO: WARNING: SWIG version >= 1.3.23 is required.  You have $swig_version.  You should look at http://www.swig.org" >&5
-echo "$as_me: WARNING: SWIG version >= 1.3.23 is required.  You have $swig_version.  You should look at http://www.swig.org" >&2;}
-                                SWIG='echo "Error: SWIG version >= 1.3.23 is required.  You have '"$swig_version"'.  You should look at http://www.swig.org" ; false'
+                                { echo "$as_me:$LINENO: WARNING: SWIG version >= 1.3.28 is required.  You have $swig_version.  You should look at http://www.swig.org" >&5
+echo "$as_me: WARNING: SWIG version >= 1.3.28 is required.  You have $swig_version.  You should look at http://www.swig.org" >&2;}
+                                SWIG='echo "Error: SWIG version >= 1.3.28 is required.  You have '"$swig_version"'.  You should look at http://www.swig.org" ; false'
                         else
                                 SWIG_LIB=`$SWIG -swiglib`
                                 { echo "$as_me:$LINENO: SWIG library directory is '$SWIG_LIB'" >&5
