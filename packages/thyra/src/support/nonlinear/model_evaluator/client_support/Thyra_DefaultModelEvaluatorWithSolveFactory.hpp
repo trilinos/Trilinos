@@ -29,7 +29,7 @@
 #ifndef THYRA_DEFAULT_MODEL_EVALUATOR_WITH_SOLVE_FACTORY_HPP
 #define THYRA_DEFAULT_MODEL_EVALUATOR_WITH_SOLVE_FACTORY_HPP
 
-#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Teuchos_Time.hpp"
 
@@ -40,14 +40,10 @@ namespace Thyra {
  * of W.
  *
  * ToDo: Finish documentation!
- *
  */
 template<class Scalar>
-class DefaultModelEvaluatorWithSolveFactory : virtual public ModelEvaluator<Scalar> {
+class DefaultModelEvaluatorWithSolveFactory : virtual public ModelEvaluatorDelegatorBase<Scalar> {
 public:
-
-  /** \brief . */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
   /** \name Constructors/initializers/accessors/utilities. */
   //@{
@@ -68,9 +64,6 @@ public:
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > getUnderlyingModel() const;
-
-  /** \brief . */
   void uninitialize(
     Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 *thyraModel = NULL
     ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory   = NULL
@@ -82,53 +75,7 @@ public:
   //@{
 
   /** \brief . */
-	int Np() const;
-  /** \brief . */
-	int Ng() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
-  /** \brief . */
-	Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
-  /** \brief . */
-	Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_init() const;
-  /** \brief . */
-	Teuchos::RefCountPtr<const VectorBase<Scalar> > get_p_init(int l) const;
-  /** \brief . */
-  ScalarMag get_t_init() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_lower_bounds() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_upper_bounds() const;
-  /** \brief . */
-	Teuchos::RefCountPtr<const VectorBase<Scalar> > get_p_lower_bounds(int l) const;
-  /** \brief . */
-	Teuchos::RefCountPtr<const VectorBase<Scalar> > get_p_upper_bounds(int l) const;
-  /** \brief . */
-  ScalarMag get_t_lower_bound() const;
-  /** \brief . */
-  ScalarMag get_t_upper_bound() const;
-  /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const;
-  /** \brief . */
-  ModelEvaluatorBase::DerivativeMultiVector<Scalar> create_DfDp_mv(int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation) const;
-  /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const;
-  /** \brief . */
-  ModelEvaluatorBase::DerivativeMultiVector<Scalar> create_DgDx_mv(int j, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation) const;
-  /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const;
-  /** \brief . */
-  ModelEvaluatorBase::DerivativeMultiVector<Scalar> create_DgDp_mv( int j, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation ) const;
-  /** \brief . */
-  ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
   /** \brief . */
@@ -136,11 +83,6 @@ public:
     const ModelEvaluatorBase::InArgs<Scalar>    &inArgs
     ,const ModelEvaluatorBase::OutArgs<Scalar>  &outArgs
     ) const;
-  /** \brief . */
-  void reportFinalPoint(
-    const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-    ,const bool                                   wasSolved
-    );
 
   //@}
 
@@ -154,8 +96,7 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                      thyraModel_;
-  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >        W_factory_;
+  Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >   W_factory_;
   
 };
 
@@ -183,15 +124,8 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  &W_factory
   )
 {
-  thyraModel_ = thyraModel;
+  this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
   W_factory_ = W_factory;
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::getUnderlyingModel() const
-{
-  return thyraModel_;
 }
 
 template<class Scalar>
@@ -200,116 +134,13 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::uninitialize(
   ,Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<Scalar> >  *W_factory
   )
 {
-  if(thyraModel) *thyraModel = thyraModel_;
+  if(thyraModel) *thyraModel = this->getUnderlyingModel();
   if(W_factory) *W_factory = W_factory_;
-  thyraModel_ = Teuchos::null;
+  this->ModelEvaluatorDelegatorBase<Scalar>::uninitialize();
   W_factory_ = Teuchos::null;
 }
 
 // Overridden from ModelEvaulator.
-
-template<class Scalar>
-int DefaultModelEvaluatorWithSolveFactory<Scalar>::Np() const
-{
-  return thyraModel_->Np();
-}
-
-template<class Scalar>
-int DefaultModelEvaluatorWithSolveFactory<Scalar>::Ng() const
-{
-  return thyraModel_->Ng();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_x_space() const
-{
-  return thyraModel_->get_x_space();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_f_space() const
-{
-  return thyraModel_->get_f_space();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_p_space(int l) const
-{
-  return thyraModel_->get_p_space(l);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_g_space(int j) const
-{
-  return thyraModel_->get_g_space(j);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_x_init() const
-{
-  return thyraModel_->get_x_init();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_p_init(int l) const
-{
-  return thyraModel_->get_p_init(l);
-}
-
-template<class Scalar>
-typename DefaultModelEvaluatorWithSolveFactory<Scalar>::ScalarMag
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_t_init() const
-{
-  return thyraModel_->get_t_init();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_x_lower_bounds() const
-{
-  return thyraModel_->get_x_lower_bounds();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_x_upper_bounds() const
-{
-  return thyraModel_->get_x_upper_bounds();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_p_lower_bounds(int l) const
-{
-  return thyraModel_->get_p_lower_bounds(l);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_p_upper_bounds(int l) const
-{
-  return thyraModel_->get_p_upper_bounds(l);
-}
-
-template<class Scalar>
-typename DefaultModelEvaluatorWithSolveFactory<Scalar>::ScalarMag
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_t_lower_bound() const
-{
-  return thyraModel_->get_t_lower_bound();
-}
-
-template<class Scalar>
-typename DefaultModelEvaluatorWithSolveFactory<Scalar>::ScalarMag
-DefaultModelEvaluatorWithSolveFactory<Scalar>::get_t_upper_bound() const
-{
-  return thyraModel_->get_t_upper_bound();
-}
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
@@ -326,73 +157,13 @@ DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::create_W_op() const
-{
-  return thyraModel_->create_W_op();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::create_DfDp_op(int l) const
-{
-  return thyraModel_->create_DfDp_op(l);
-}
-
-template<class Scalar>
-ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-DefaultModelEvaluatorWithSolveFactory<Scalar>::create_DfDp_mv(int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation) const
-{
-  return thyraModel_->create_DfDp_mv(l,orientation);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::create_DgDx_op(int j) const
-{
-  return thyraModel_->create_DgDx_op(j);
-}
-
-template<class Scalar>
-ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-DefaultModelEvaluatorWithSolveFactory<Scalar>::create_DgDx_mv(int j, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation) const
-{
-  return thyraModel_->create_DgDx_mv(j,orientation);
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> >
-DefaultModelEvaluatorWithSolveFactory<Scalar>::create_DgDp_op( int j, int l ) const
-{
-  return thyraModel_->create_DgDp_op(j,l);
-}
-
-template<class Scalar>
-ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-DefaultModelEvaluatorWithSolveFactory<Scalar>::create_DgDp_mv( int j, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation ) const
-{
-  return thyraModel_->create_DgDp_mv(j,l,orientation);
-}
-
-template<class Scalar>
-ModelEvaluatorBase::InArgs<Scalar>
-DefaultModelEvaluatorWithSolveFactory<Scalar>::createInArgs() const
-{
-  typedef ModelEvaluatorBase MEB;
-  const MEB::InArgs<Scalar> wrappedInArgs = thyraModel_->createInArgs();
-  MEB::InArgsSetup<Scalar> inArgs;
-  inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(wrappedInArgs.Np());
-  inArgs.setSupports(wrappedInArgs);
-  return inArgs;
-}
-
-template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>
 DefaultModelEvaluatorWithSolveFactory<Scalar>::createOutArgs() const
 {
   typedef ModelEvaluatorBase MEB;
-  const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel_->createOutArgs();
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+  const MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(wrappedOutArgs.Np(),wrappedOutArgs.Ng());
@@ -423,21 +194,29 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(...) ...\n";
 
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
+    *out
+      << "\ninArgs =\n" << Teuchos::describe(inArgs,verbLevel)
+      << "\noutArgs on input =\n" << Teuchos::describe(outArgs,Teuchos::VERB_LOW);
+  
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
+
   typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME;
-  VOTSME thyraModel_outputTempState(thyraModel_,out,verbLevel);
+  VOTSME thyraModel_outputTempState(thyraModel,out,verbLevel);
 
   typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<Scalar> > VOTSLOWSF;
   VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
   
   // InArgs
 
-  MEB::InArgs<Scalar> wrappedInArgs = thyraModel_->createInArgs();
+  MEB::InArgs<Scalar> wrappedInArgs = thyraModel->createInArgs();
 
   wrappedInArgs.setArgs(inArgs,true);
 
   // OutArgs
 
-  MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel_->createOutArgs();
+  MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
 
   wrappedOutArgs.setArgs(outArgs,true);
   
@@ -451,7 +230,7 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
       nonconst_fwdW = rcp_const_cast<LinearOpBase<Scalar> >(fwdW);
     }
     else {
-      nonconst_fwdW = thyraModel_->create_W_op();
+      nonconst_fwdW = thyraModel->create_W_op();
       fwdW = nonconst_fwdW;
     }
   }
@@ -466,10 +245,10 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   // Do the evaluation
   
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEvaluating the output functions on model \'" << thyraModel_->description() << "\'  ...\n";
+    *out << "\nEvaluating the output functions on model \'" << thyraModel->description() << "\'  ...\n";
   timer.start(true);
   
-  thyraModel_->evalModel(wrappedInArgs,wrappedOutArgs);
+  thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
   
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
@@ -491,10 +270,13 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
     TEST_FOR_EXCEPT(true); // Handle this case later if we need to!
   }
 
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
+    *out
+      << "\noutArgs on output =\n" << Teuchos::describe(outArgs,verbLevel);
+
   timer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *OSTab(out).getOStream() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
-
 
   totalTimer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
@@ -504,25 +286,18 @@ void DefaultModelEvaluatorWithSolveFactory<Scalar>::evalModel(
   
 }
 
-template<class Scalar>
-void DefaultModelEvaluatorWithSolveFactory<Scalar>::reportFinalPoint(
-  const ModelEvaluatorBase::InArgs<Scalar>      &finalPoint
-  ,const bool                                   wasSolved
-  )
-{
-  thyraModel_->reportFinalPoint(finalPoint,wasSolved);
-}
-
 // Public functions overridden from Teuchos::Describable
 
 template<class Scalar>
 std::string DefaultModelEvaluatorWithSolveFactory<Scalar>::description() const
 {
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+    thyraModel = this->getUnderlyingModel();
   std::ostringstream oss;
   oss << "Thyra::DefaultModelEvaluatorWithSolveFactory{";
   oss << "thyraModel=";
-  if(thyraModel_.get())
-    oss << "\'"<<thyraModel_->description()<<"\'";
+  if(thyraModel.get())
+    oss << "\'"<<thyraModel->description()<<"\'";
   else
     oss << "NULL";
   oss << ",W_factory=";

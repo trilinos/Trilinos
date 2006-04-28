@@ -52,6 +52,8 @@ void EpetraModelEvaluator::initialize(
   ,const Teuchos::RefCountPtr<LinearOpWithSolveFactoryBase<double> >  &W_factory
   )
 {
+  typedef ModelEvaluatorBase MEB;
+  //
   epetraModel_ = epetraModel;
   //
   W_factory_ = W_factory;
@@ -70,6 +72,23 @@ void EpetraModelEvaluator::initialize(
     g_space_[j] = create_MPIVectorSpaceBase( g_map_[j] = epetraModel_->get_g_map(j) );
   //
   initialGuess_ = this->createInArgs();
+  lowerBounds_ = this->createInArgs();
+  upperBounds_ = this->createInArgs();
+  if(initialGuess_.supports(MEB::IN_ARG_x)) {
+    initialGuess_.set_x( create_MPIVectorBase( epetraModel_->get_x_init(), x_space_ ) );
+    lowerBounds_.set_x( create_MPIVectorBase( epetraModel_->get_x_lower_bounds(), x_space_ ) );
+    upperBounds_.set_x( create_MPIVectorBase( epetraModel_->get_x_upper_bounds(), x_space_ ) );
+  }
+  for( int l = 0; l < static_cast<int>(p_space_.size()); ++l ) {
+    initialGuess_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l] ) );
+    lowerBounds_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_lower_bounds(l), p_space_[l] ) );
+    upperBounds_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_upper_bounds(l), p_space_[l] ) );
+  }
+  if(initialGuess_.supports(MEB::IN_ARG_t)) {
+    initialGuess_.set_t(epetraModel_->get_t_init());
+    lowerBounds_.set_t(epetraModel_->get_t_lower_bound());
+    upperBounds_.set_t(epetraModel_->get_t_upper_bound());
+  }
   finalPointWasSolved_ = false;
 }
 
@@ -80,7 +99,7 @@ Teuchos::RefCountPtr<const EpetraExt::ModelEvaluator> EpetraModelEvaluator::getE
 
 void EpetraModelEvaluator::setInitialGuess( const ModelEvaluatorBase::InArgs<double>& initialGuess )
 {
-  initialGuess_ = initialGuess;
+  initialGuess_.setArgs(initialGuess);
 }
 
 void EpetraModelEvaluator::uninitialize(
@@ -143,66 +162,19 @@ EpetraModelEvaluator::get_g_space(int j) const
   return g_space_[j];
 }
 
-Teuchos::RefCountPtr<const VectorBase<double> >
-EpetraModelEvaluator::get_x_init() const
+ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::getNominalValues() const
 {
-  Teuchos::RefCountPtr<const VectorBase<double> >
-    x_init = initialGuess_.get_x();
-  if(x_init.get())
-    return x_init;
-  return create_MPIVectorBase( epetraModel_->get_x_init(), x_space_ );
+  return initialGuess_;
 }
 
-Teuchos::RefCountPtr<const VectorBase<double> >
-EpetraModelEvaluator::get_p_init(int l) const
+ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::getLowerBounds() const
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
-  Teuchos::RefCountPtr<const VectorBase<double> >
-    p_l_init = initialGuess_.get_p(l);
-  if(p_l_init.get())
-    return p_l_init;
-  return create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l] );
+  return lowerBounds_;
 }
 
-double EpetraModelEvaluator::get_t_init() const
+ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::getUpperBounds() const
 {
-  return epetraModel_->get_t_init();
-}
-
-Teuchos::RefCountPtr<const VectorBase<double> >
-EpetraModelEvaluator::get_x_lower_bounds() const
-{
-  return create_MPIVectorBase( epetraModel_->get_x_lower_bounds(), x_space_ );
-}
-
-Teuchos::RefCountPtr<const VectorBase<double> >
-EpetraModelEvaluator::get_x_upper_bounds() const
-{
-  return create_MPIVectorBase( epetraModel_->get_x_upper_bounds(), x_space_ );
-}
-
-Teuchos::RefCountPtr<const VectorBase<double> >
-EpetraModelEvaluator::get_p_lower_bounds(int l) const
-{
-  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
-  return create_MPIVectorBase( epetraModel_->get_p_lower_bounds(l), p_space_[l] );
-}
-
-Teuchos::RefCountPtr<const VectorBase<double> >
-EpetraModelEvaluator::get_p_upper_bounds(int l) const
-{
-  TEST_FOR_EXCEPT( ! ( 0 <= l && l < this->Np() ) );
-  return create_MPIVectorBase( epetraModel_->get_p_upper_bounds(l), p_space_[l] );
-}
-
-double EpetraModelEvaluator::get_t_lower_bound() const
-{
-  return epetraModel_->get_t_lower_bound();
-}
-
-double EpetraModelEvaluator::get_t_upper_bound() const
-{
-  return epetraModel_->get_t_upper_bound();
+  return upperBounds_;
 }
 
 Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
@@ -231,21 +203,6 @@ EpetraModelEvaluator::create_DfDp_op(int l) const
   return Teuchos::null;
 }
 
-ModelEvaluatorBase::DerivativeMultiVector<double>
-EpetraModelEvaluator::create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const
-{
-  return DerivativeMultiVector<double>(
-    orientation == DERIV_MV_BY_COL
-    ?create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*f_map_,p_map_[l]->NumGlobalElements()))
-      ,f_space_,p_space_[l] )
-    :create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l],f_map_->NumGlobalElements()))
-      ,p_space_[l],f_space_ )
-    ,orientation
-    );
-}
-
 Teuchos::RefCountPtr<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDx_op(int j) const
 {
@@ -253,41 +210,11 @@ EpetraModelEvaluator::create_DgDx_op(int j) const
   return Teuchos::null;
 }
 
-ModelEvaluatorBase::DerivativeMultiVector<double>
-EpetraModelEvaluator::create_DgDx_mv(int j, EDerivativeMultiVectorOrientation orientation) const
-{
-  return DerivativeMultiVector<double>(
-    orientation == DERIV_MV_BY_COL
-    ?create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j],x_map_->NumGlobalElements()))
-      ,g_space_[j],x_space_ )
-    :create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*x_map_,g_map_[j]->NumGlobalElements()))
-      ,x_space_,g_space_[j] )
-    ,orientation
-    );
-}
-
 Teuchos::RefCountPtr<LinearOpBase<double> >
 EpetraModelEvaluator::create_DgDp_op( int j, int l ) const
 {
   TEST_FOR_EXCEPT(true);
   return Teuchos::null;
-}
-
-ModelEvaluatorBase::DerivativeMultiVector<double>
-EpetraModelEvaluator::create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const
-{
-  return DerivativeMultiVector<double>(
-    orientation == DERIV_MV_BY_COL
-    ?create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*g_map_[j],p_map_[l]->NumGlobalElements()))
-      ,g_space_[j],p_space_[l] )
-    :create_MPIMultiVectorBase(
-      Teuchos::rcp(new Epetra_MultiVector(*p_map_[l],g_map_[j]->NumGlobalElements()))
-      ,p_space_[l],g_space_[j] )
-    ,orientation
-    );
 }
 
 ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::createInArgs() const
@@ -359,6 +286,11 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::EpetraModelEvaluator::evalModel(...) ...\n";
 
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
+    *out
+      << "\ninArgs =\n" << Teuchos::describe(inArgs,verbLevel)
+      << "\noutArgs on input =\n" << Teuchos::describe(outArgs,Teuchos::VERB_LOW);
+  
   typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveFactoryBase<double> > VOTSLOWSF;
   VOTSLOWSF W_factory_outputTempState(W_factory_,out,verbLevel);
   
@@ -567,6 +499,9 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *OSTab(out).getOStream() << "\nTime to process output objects = "<<timer.totalElapsedTime()<<" sec\n";
 
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_EXTREME))
+    *out
+      << "\noutArgs on output =\n" << Teuchos::describe(outArgs,verbLevel);
 
   totalTimer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))

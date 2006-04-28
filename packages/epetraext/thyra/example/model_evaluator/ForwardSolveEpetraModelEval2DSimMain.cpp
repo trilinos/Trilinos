@@ -135,7 +135,7 @@ int main( int argc, char* argv[] )
     newtonSolver.setVerbLevel(verbLevel);
     
     VectorPtr x = createMember(thyraModel->get_x_space());
-    V_V( &*x, *thyraModel->get_x_init() );
+    V_V( &*x, *thyraModel->getNominalValues().get_x() );
 
     Thyra::SolveCriteria<double> solveCriteria; // Sets defaults
     solveCriteria.solveMeasureType.set(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_NORM_RHS);

@@ -34,6 +34,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 
 namespace Rythmos {
 
@@ -92,7 +93,7 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RefCountPtr<const Th
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
-  solution_vector_ = model_->get_x_init()->clone_v();
+  solution_vector_ = model_->getNominalValues().get_x()->clone_v();
   stages_ = 4; // 4 stage ERK
   k_vector_.reserve(stages_);
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >

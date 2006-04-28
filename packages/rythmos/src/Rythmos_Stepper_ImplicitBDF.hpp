@@ -34,6 +34,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_SingleResidSSDAEModelEvaluator.hpp"
 
@@ -227,7 +228,7 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
   typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = model;
   t_ = ST::zero();
-  x_ = model_->get_x_init()->clone_v();
+  x_ = model_->getNominalValues().get_x()->clone_v();
   f_ = Thyra::createMember(model_->get_f_space());
 
   scaled_x_old_ = x_->clone_v();

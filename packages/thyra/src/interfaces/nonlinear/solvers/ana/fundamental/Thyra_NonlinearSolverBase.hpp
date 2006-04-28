@@ -40,7 +40,10 @@ namespace Thyra {
  * ToDo: Finish documentation.
  */
 template <class Scalar>
-class NonlinearSolverBase : virtual public Teuchos::Describable {
+class NonlinearSolverBase
+  : virtual public Teuchos::Describable
+  , virtual public Teuchos::VerboseObject<NonlinearSolverBase<Scalar> >
+{
 public:
   
   /** @name Pure virtual functions that must be overridden in subclasses */

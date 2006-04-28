@@ -35,6 +35,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "RTOpPack_RTOpTHelpers.hpp"
 
 namespace Rythmos {
@@ -347,7 +348,7 @@ namespace Rythmos {
   
     model = m;
     t = t_initial;
-    x_vector = model->get_x_init()->clone_v();
+    x_vector = model->getNominalValues().get_x()->clone_v();
     x_dot_vector = Thyra::createMember(model->get_x_space());
     f_vector = Thyra::createMember(model->get_f_space());
     x_poly = 

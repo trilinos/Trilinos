@@ -29,7 +29,8 @@
 #ifndef THYRA_SINGLE_RESID_SS_DAE_MODEL_EVALUATOR_HPP
 #define THYRA_SINGLE_RESID_SS_DAE_MODEL_EVALUATOR_HPP
 
-#include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
 #ifdef THYRA_RYTHMOS_DEBUG
@@ -60,7 +61,9 @@ namespace Thyra {
  * ToDo: Finish Documentation!
  */
 template<class Scalar>
-class SingleResidSSDAEModelEvaluator : public ModelEvaluator<Scalar> {
+class SingleResidSSDAEModelEvaluator
+  : virtual public ModelEvaluatorDelegatorBase<Scalar>
+{
 public:
 
   /** \name Constructors/initializers/accessors */
@@ -97,23 +100,11 @@ public:
   //@{
 
   /** \breif . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
-
-  /** \breif . */
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
-
-  /** \breif . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > get_x_init() const;
-
-  /** \breif . */
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const;
-
+  ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
-
   /** \brief . */
   ModelEvaluatorBase::OutArgs<Scalar> createOutArgs() const;
-
   /** \brief . */
   void evalModel( const ModelEvaluatorBase::InArgs<Scalar>& inArgs, const ModelEvaluatorBase::OutArgs<Scalar>& outArgs ) const;
 
@@ -121,13 +112,13 @@ public:
 
 private:
 
-  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >    daeModel_;
   Scalar                                                 coeff_x_dot_;
   Teuchos::RefCountPtr<const VectorBase<Scalar> >        x_dot_base_;
   Scalar                                                 coeff_x_;
   Teuchos::RefCountPtr<const VectorBase<Scalar> >        x_base_;
   Scalar                                                 t_base_;
-  Teuchos::RefCountPtr<const VectorBase<Scalar> >        x_bar_init_;
+
+  ModelEvaluatorBase::InArgs<Scalar>                     nominalValues_;
 
   // cache
   Teuchos::RefCountPtr<VectorBase<Scalar> >        x_;
@@ -143,9 +134,7 @@ private:
 
 template<class Scalar>
 SingleResidSSDAEModelEvaluator<Scalar>::SingleResidSSDAEModelEvaluator()
-{
-  // Compiler makes me write this!!!! (gcc 3.4.3)
-}
+{}
 
 template<class Scalar>
 SingleResidSSDAEModelEvaluator<Scalar>::SingleResidSSDAEModelEvaluator(
@@ -172,16 +161,18 @@ void SingleResidSSDAEModelEvaluator<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >        &x_bar_init
   )
 {
-  daeModel_      = daeModel;
+  this->ModelEvaluatorDelegatorBase<Scalar>::initialize(daeModel);
   coeff_x_dot_   = coeff_x_dot;
   x_dot_base_    = x_dot_base;
   coeff_x_       = coeff_x;
   x_base_        = x_base;
   t_base_        = t_base;
-  x_bar_init_    = x_bar_init;
 
-  x_dot_ = createMember( daeModel_->get_x_space() );
-  x_ = createMember( daeModel_->get_x_space() );
+  nominalValues_ = daeModel->getNominalValues();
+  nominalValues_.set_x(x_bar_init);
+
+  x_dot_ = createMember( daeModel->get_x_space() );
+  x_ = createMember( daeModel->get_x_space() );
 
   // ToDo: Check that daeModel supports x_dot, x and maybe t
 
@@ -201,8 +192,8 @@ void SingleResidSSDAEModelEvaluator<Scalar>::initialize(
   else
     std::cout << "null"                          << std::endl;
   std::cout << "t_base_ = " << t_base_           << std::endl;
-  std::cout << "x_bar_init_ = ";                  
-  if ( x_bar_init_.get() )
+  std::cout << "x_bar_init = ";                  
+  if ( x_bar_init.get() )
     std::cout << "\n" <<  *x_bar_init_           << std::endl;
   else
     std::cout << "null"                          << std::endl;
@@ -223,31 +214,10 @@ void SingleResidSSDAEModelEvaluator<Scalar>::initialize(
 // Overridden from ModelEvaluator
 
 template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-SingleResidSSDAEModelEvaluator<Scalar>::get_x_space() const
+ModelEvaluatorBase::InArgs<Scalar>
+SingleResidSSDAEModelEvaluator<Scalar>::getNominalValues() const
 {
-  return daeModel_->get_x_space();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-SingleResidSSDAEModelEvaluator<Scalar>::get_f_space() const
-{
-  return daeModel_->get_f_space();
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-SingleResidSSDAEModelEvaluator<Scalar>::get_x_init() const
-{
-  return x_bar_init_;
-}
-
-template<class Scalar>
-Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
-SingleResidSSDAEModelEvaluator<Scalar>::create_W() const
-{
-  return daeModel_->create_W();
+  return nominalValues_;
 }
 
 template<class Scalar>
@@ -278,6 +248,8 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
   ,const ModelEvaluatorBase::OutArgs<Scalar>& outArgs_bar
   ) const
 {
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+    daeModel = this->getUnderlyingModel();
 #ifdef THYRA_RYTHMOS_DEBUG
   std::cout << "----------------------------------------------------------------------" << std::endl;
   std::cout << "Thyra::SingleResidSSDAEModelEvaluator::evalModel" << std::endl;
@@ -333,7 +305,7 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
     // Compute Jacobian and the residual
     const Scalar beta = inArgs_bar.get_beta();
     eval_f_W(
-      *daeModel_
+      *daeModel
       ,*x_dot_, *x_, t_base_, Scalar(beta*coeff_x_dot_), Scalar(beta*coeff_x_)
       ,outArgs_bar.get_f().get(), &*W
       );
@@ -346,7 +318,7 @@ void SingleResidSSDAEModelEvaluator<Scalar>::evalModel(
   }
   else {
     // Compute only the residual
-    eval_f( *daeModel_, *x_dot_, *x_, t_base_, &*outArgs_bar.get_f() );
+    eval_f( *daeModel, *x_dot_, *x_, t_base_, &*outArgs_bar.get_f() );
 #ifdef THYRA_RYTHMOS_DEBUG
     std::cout << "f = "                 << std::endl;
     std::cout << *(outArgs_bar.get_f()) << std::endl;

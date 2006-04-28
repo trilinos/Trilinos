@@ -95,23 +95,11 @@ public:
   /** \brief . */
 	Teuchos::RefCountPtr<const VectorSpaceBase<double> > get_g_space(int j) const;
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<double> > get_x_init() const;
+  ModelEvaluatorBase::InArgs<double> getNominalValues() const;
   /** \brief . */
-	Teuchos::RefCountPtr<const VectorBase<double> > get_p_init(int l) const;
+  ModelEvaluatorBase::InArgs<double> getLowerBounds() const;
   /** \brief . */
-  double get_t_init() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<double> > get_x_lower_bounds() const;
-  /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<double> > get_x_upper_bounds() const;
-  /** \brief . */
-	Teuchos::RefCountPtr<const VectorBase<double> > get_p_lower_bounds(int l) const;
-  /** \brief . */
-	Teuchos::RefCountPtr<const VectorBase<double> > get_p_upper_bounds(int l) const;
-  /** \brief . */
-  double get_t_lower_bound() const;
-  /** \brief . */
-  double get_t_upper_bound() const;
+  ModelEvaluatorBase::InArgs<double> getUpperBounds() const;
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> > create_W() const;
   /** \brief . */
@@ -119,15 +107,9 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpBase<double> > create_DfDp_op(int l) const;
   /** \brief . */
-  DerivativeMultiVector<double> create_DfDp_mv(int l, EDerivativeMultiVectorOrientation orientation) const;
-  /** \brief . */
   Teuchos::RefCountPtr<LinearOpBase<double> > create_DgDx_op(int j) const;
   /** \brief . */
-  DerivativeMultiVector<double> create_DgDx_mv(int j, EDerivativeMultiVectorOrientation orientation) const;
-  /** \brief . */
   Teuchos::RefCountPtr<LinearOpBase<double> > create_DgDp_op( int j, int l ) const;
-  /** \brief . */
-  DerivativeMultiVector<double> create_DgDp_mv( int j, int l, EDerivativeMultiVectorOrientation orientation ) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
   /** \brief . */
@@ -178,6 +160,8 @@ private:
   Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >     f_space_;
   g_space_t                                                          g_space_;
   ModelEvaluatorBase::InArgs<double>                                 initialGuess_;
+  ModelEvaluatorBase::InArgs<double>                                 lowerBounds_;
+  ModelEvaluatorBase::InArgs<double>                                 upperBounds_;
   ModelEvaluatorBase::InArgs<double>                                 finalPoint_;
   bool                                                               finalPointWasSolved_;
   

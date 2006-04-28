@@ -24,10 +24,11 @@ FLIBS="-lg2c" \
 --enable-amesos \
 --enable-aztecoo \
 --enable-ifpack \
+--enable-nox \
+--enable-ml \
 --enable-belos \
 --enable-anasazi \
 --enable-rythmos \
 --enable-capo \
 --enable-moocho --enable-moocho-ma28 \
 --prefix=/home/rabartl/PROJECTS/install-dir/gcc-3.4.3/serial/debug
-

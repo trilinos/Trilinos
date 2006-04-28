@@ -30,6 +30,7 @@
 #define THYRA_DAMPENED_NEWTON_NONLINEAR_SOLVER_HPP
 
 #include "Thyra_NonlinearSolverBase.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
@@ -56,10 +57,7 @@ namespace Thyra {
  * ToDo: Finish documentation.
  */
 template <class Scalar>
-class DampenedNewtonNonlinearSolver
-  : public NonlinearSolverBase<Scalar>
-  , public Teuchos::VerboseObject<DampenedNewtonNonlinearSolver<Scalar> >
-{
+class DampenedNewtonNonlinearSolver : public NonlinearSolverBase<Scalar> {
 public:
 
   /** \brief. */
@@ -153,7 +151,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   // Get the output stream and verbosity level
   const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  const bool showNewtonIters = (verbLevel==Teuchos::VERB_LOW || verbLevel==Teuchos::VERB_DEFAULT);
+  const bool showNewtonIters = (verbLevel==Teuchos::VERB_LOW);
   const bool showLineSearchIters = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_MEDIUM));
   const bool showNewtonDetails = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH));
   const bool dumpAll = (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_EXTREME)); 
@@ -180,9 +178,9 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       maxIters = solveCriteria->extraParameters->get("Max Iters",int(maxIters));
     }
   }
-	// Compute the initial starting point
+  if(out.get() && showNewtonDetails)
+    *out << "\nCompute the initial starting point ...\n";
   eval_f_W( model, *x, &*f, &*J );
-	// Print the starting point
 	if(out.get() && dumpAll) {
 		*out << "\nInitial starting point:\n";
 		*out << "\nx =\n" << *x;
@@ -190,7 +188,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
 		*out << "\nJ =\n" << *J;
 	}
 	// Peform the Newton iterations
-	int newtonIter;
+	int newtonIter, num_residual_evals = 1;
   SolveStatus<Scalar> solveStatus;
   solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
   for( newtonIter = 1; newtonIter <= maxIters; ++newtonIter ) {
@@ -214,7 +212,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
         *out << "\nExiting SimpleNewtonSolver::solve(...)\n";
       }
       std::ostringstream oss;
-      oss << "Status test converged, ||f|| = " << sqrt_phi << "!";
+      oss << "Converged! ||f|| = " << sqrt_phi << ", num_newton_iters="<<newtonIter<<", num_residual_evals="<<num_residual_evals<<".";
       solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
       solveStatus.message = oss.str();
       break;
@@ -240,7 +238,8 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     const Scalar Dphi = -2.0*phi; // D(phi(x+alpha*dx))/D(alpha) at alpha=0.0 => -2.0*<f,c>: where dx = -inv(J)*f
     Scalar alpha = 1.0; // Try a full step initially since it will eventually be accepted near solution
     int lineSearchIter;
-    for( lineSearchIter = 1; lineSearchIter <= maxLineSearchIterations(); ++lineSearchIter ) {
+    ++num_residual_evals;
+    for( lineSearchIter = 1; lineSearchIter <= maxLineSearchIterations(); ++lineSearchIter, ++num_residual_evals ) {
       TEUCHOS_OSTAB;
       if(out.get() && showNewtonDetails) *out << "\n*** lineSearchIter = " << lineSearchIter << endl;
       // x_new = x + alpha*dx
@@ -286,6 +285,8 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     std::swap<Teuchos::RefCountPtr<VectorBase<Scalar> > >( x_new, x ); // Now x is current point!
   }
 exit:
+	if(out.get() && showNewtonIters) *out
+    << "\n[Final] newton_iters="<<newtonIter<<", num_residual_evals="<<num_residual_evals<<"\n";
   if(newtonIter > maxIters) {
     std::ostringstream oss;
     oss

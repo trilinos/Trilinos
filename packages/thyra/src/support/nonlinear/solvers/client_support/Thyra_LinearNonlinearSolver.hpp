@@ -30,6 +30,7 @@
 #define THYRA_LINEAR_NONLINEAR_SOLVER_BASE_HPP
 
 #include "Thyra_NonlinearSolverBase.hpp"
+#include "Thyra_ModelEvaluatorHelpers.hpp"
 
 namespace Thyra {
 
