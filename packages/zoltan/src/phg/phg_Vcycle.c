@@ -190,6 +190,8 @@ int Zoltan_PHG_Partition (
   PHGComm *hgc = hg->comm;
   VCycle  *vcycle=NULL, *del=NULL;
   int  i, err = ZOLTAN_OK;
+  int  origVcnt     = hg->dist_x[hgc->nProc_x];   /* for processor */
+  int  origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
   int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
   int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
 						     before any coarsening */
@@ -231,6 +233,8 @@ int Zoltan_PHG_Partition (
 
   /****** Coarsening ******/    
 #define COARSEN_FRACTION_LIMIT 0.9  /* Stop if we don't make much progress */
+#define PROCESSOR_REDUCTION_FRACTION 0.5 /* Reduce processors if we make this
+					    much progress */
   while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > hg->redl)
 	 && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
 	     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
@@ -337,6 +341,8 @@ int Zoltan_PHG_Partition (
         goto End;
       vcycle = coarser;
       hg = vcycle->hg;
+      hgc = hg->comm; /* updating hgc is required when the number of processors
+			 changes */
   }
 
   if (hgp->output_level >= PHG_DEBUG_LIST) {
@@ -376,7 +382,8 @@ int Zoltan_PHG_Partition (
   while (vcycle) {
     VCycle *finer = vcycle->finer;
     hg = vcycle->hg;
-
+    hgc = hg->comm; /* updating hgc is required when the number of processors
+		       changes */
     if (do_timing) {
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
