@@ -59,8 +59,9 @@
     COMM = SERIAL, MPI(1-4); 
 }
 
+# TestOptions is hanging on herouxsmp--disabling for now.  Bug #2111
 (FRAMEWORK ) {   
-    DIRS = TestOptions;
+#   DIRS = TestOptions;
     X-HOST = atlantis;
     COMM = SERIAL, MPI(1-4); 
 }
