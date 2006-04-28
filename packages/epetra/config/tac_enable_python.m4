@@ -84,7 +84,7 @@ if test -n "$PYTHON"; then
   fi
 
   # SWIG configuration
-  AC_PROG_SWIG(1.3.23)
+  AC_PROG_SWIG(1.3.28)
   SWIG_ENABLE_CXX
   SWIG_MULTI_MODULE_SUPPORT
   SWIG_PYTHON
