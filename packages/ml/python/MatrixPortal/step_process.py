@@ -5,12 +5,35 @@ import re
 import string
 import Numeric
 
+# -------------------------------------------------------------------------
+# \author Marzio Sala, COLAB/ETHZ
+#
+# \date Last updated on Apr-06
+# 
+# To test this file on your local machine without any PHP/HTML, you
+# can run the following command:
+#
+# $ python step_process.py step_text.txt
+#
+# which should run all the solvers with two test cases.
+# -------------------------------------------------------------------------
+
 from PyTrilinos import Epetra, EpetraExt, AztecOO, ML, Galeri, IFPACK
 
 comm = Epetra.PyComm()
 
 count = 0
   
+# -------------------------------------------------------------------------
+# checks on parameters and location of the HB and H5 files
+# -------------------------------------------------------------------------
+MAX_MATRIX_ROWS = 40000
+MAX_MATRIX_NONZEROS = 250000
+MAX_ITERATIONS = 1550
+MAX_KSPACE = 200
+HB_REPOSITORY = "/var/www/html/MatrixPortal/HBMatrices/"
+H5_REPOSITORY = "/var/www/html/MatrixPortal/H5Matrices/"
+
 # -------------------------------------------------------------------------
 def print_list(List, package):
   print "<ul>";
@@ -90,18 +113,25 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
   elif List['az_solver'] == "AZ_tfqmr":
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_tfqmr);
+  elif List['az_solver'] == "AZ_bicg":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicg);
   else:
     print "Solver type not correct, ", List['az_solver']
 
   Solver.SetAztecOption(AztecOO.AZ_output, 16);
-  if List['iters'] < 0 | List['iters'] > 1550:
-    print "Maximum number of iterations either negative of < 1550";
-    throw(-1);
+  if List['iters'] < 0 | List['iters'] > MAX_ITERATIONS:
+    print "Maximum number of iterations either negative of > ", MAX_ITERATIONS;
+    raise("PARAMETER_ERROR");
   if List['tol'] < 1e-12:
     print "Tolerance is too small"
-    throw(-1);
+    raise("PARAMETER_ERROR");
 
-  Solver.SetAztecOption(AztecOO.AZ_kspace, List['az_kspace']);
+  if List['az_kspace'] > 0 & List['az_kspace'] <= MAX_KSPACE:
+    Solver.SetAztecOption(AztecOO.AZ_kspace, List['az_kspace']);
+  else:
+    print "Krylov space dimension either negative of >", MAX_KSPACE
+    print "You have", List['az_kspace']
+    raise("PARAMETER_ERROR");
 
   if List['az_output'] == "16":
     Solver.SetAztecOption(AztecOO.AZ_output, 16)
@@ -125,8 +155,32 @@ def generator(problemID, comm, List):
   GaleriList = {}
   if problemID[0:3] == "MM_":
     print "<p><p><div class=\"outputBox\"><pre>";
-    FileName = "/var/www/html/MatrixPortal/HBMatrices/" + problemID[3:];
+    FileName = HB_REPOSITORY + problemID[3:];
     Map, Matrix, LHS, RHS, ExactSolution = Galeri.ReadHB(FileName, comm);
+    NullSpace = "not-set"
+    print "</div>"
+
+  elif problemID[0:3] == "H5_":
+    print "<p><p><div class=\"outputBox\"><pre>";
+    FileName = H5_REPOSITORY + problemID[3:];
+    HDF5 = EpetraExt.HDF5(Comm)
+    HDF5.Open(FileName)
+
+    Map = HDF5.ReadMultiVector("MAP")
+    Matrix = HDF5.ReadMultiVector("MATRIX")
+    if HDF5.IsContained("LHS"):
+      LHS = HDF5.ReadMultiVector("LHS")
+    else:
+      LHS = Epetra.MultiVector(Map, 1)
+    if HDF5.IsContained("RHS"):
+      RHS = HDF5.ReadMultiVector("RHS")
+    else:
+      RHS = Epetra.MultiVector(Map, 1)
+    if HDF5.IsContained("NULLSPACE"):
+      NullSpace = HDF5.ReadMultiVector("NULLSPACE")
+    else:
+      NullSpace = "not-set";
+    HDF5.Close()
     print "</div>"
 
   else:
@@ -153,54 +207,60 @@ def generator(problemID, comm, List):
 
     Matrix = Galeri.CreateCrsMatrix(ProblemType, Map, GaleriList);
 
-    if Map.NumGlobalElements() > 40000:
-      print "<b><font color=red>Sorry, the maximum matrix size is 20.000</font></b>"
-      throw(-1)
-
-    if Matrix.NumGlobalNonzeros() > 250000:
-      print "<b><font color=red>Sorry, the maximum number of nonzeros is 250.000</font></b>"
-      throw(-1)
-
-    LHS = Epetra.Vector(Map);
-    RHS = Epetra.Vector(Map);
-    ExactSolution = Epetra.Vector(Map); 
+    LHS = Epetra.Vector(Map)
+    RHS = Epetra.Vector(Map)
+    ExactSolution = Epetra.Vector(Map)
     
-    if (List.has_key('solution') == True) & (List.has_key('starting_solution') == True) & (List.has_key('rhs') == True):
+    NullSpace = "not-set"
 
-      if List['solution'] == "zero":
-        ExactSolution.PutScalar(0.0)
-      elif List['solution'] == "random":
-        ExactSolution.Random()
-      elif List['solution'] == "constant":
-        ExactSolution.PutScalar(1.0)
-      else:
-        throw(-1)
+  # checks that the matrix is not too big
 
-      if List['starting_solution'] == "zero":
-        LHS.PutScalar(0.0)
-      elif List['starting_solution'] == "random":
-        LHS.Random()
-      elif List['starting_solution'] == "constant":
-        LHS.PutScalar(1.0)
-      else:
-        throw(-1)
-  
-      if List['rhs'] == "zero":
-        RHS.PutScalar(0.0)
-      elif List['rhs'] == "random":
-        RHS.Random()
-      elif List['rhs'] == "constant":
-        RHS.PutScalar(1.0)
-      elif List['rhs'] == "matvec":
-        Matrix.Apply(ExactSolution, RHS);
-      else:
-        throw(-1)
-    else:
+  if Map.NumGlobalElements() > MAX_MATRIX_ROWS:
+    print "<b><font color=red>Sorry, the maximum matrix size is 20.000</font></b>"
+    raise("PARAMETER_ERROR");
+
+  if Matrix.NumGlobalNonzeros() > MAX_MATRIX_NONZEROS:
+    print "<b><font color=red>Sorry, the maximum number of nonzeros is 250.000</font></b>"
+    raise("PARAMETER_ERROR");
+
+  # FIXME???
+  if (List.has_key('solution') == True) & (List.has_key('starting_solution') == True) & (List.has_key('rhs') == True):
+
+    if List['solution'] == "zero":
+      ExactSolution.PutScalar(0.0)
+    elif List['solution'] == "random":
       ExactSolution.Random()
-      Matrix.Apply(ExactSolution, RHS)
-      LHS.PutScalar(0.0)
+    elif List['solution'] == "constant":
+      ExactSolution.PutScalar(1.0)
+    else:
+      raise("PARAMETER_ERROR");
 
-  return(Map, Matrix, LHS, RHS, ExactSolution);
+    if List['starting_solution'] == "zero":
+      LHS.PutScalar(0.0)
+    elif List['starting_solution'] == "random":
+      LHS.Random()
+    elif List['starting_solution'] == "constant":
+      LHS.PutScalar(1.0)
+    else:
+      raise("PARAMETER_ERROR");
+  
+    if List['rhs'] == "zero":
+      RHS.PutScalar(0.0)
+    elif List['rhs'] == "random":
+      RHS.Random()
+    elif List['rhs'] == "constant":
+      RHS.PutScalar(1.0)
+    elif List['rhs'] == "matvec":
+      Matrix.Apply(ExactSolution, RHS);
+    else:
+      raise("PARAMETER_ERROR");
+
+  else:
+    ExactSolution.Random()
+    Matrix.Apply(ExactSolution, RHS)
+    LHS.PutScalar(0.0)
+
+  return(Map, Matrix, LHS, RHS, ExactSolution, NullSpace);
 
 # -------------------------------------------------------------------------
 def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
@@ -258,7 +318,7 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   print "&nbsp;<pre></div>";
   
 # -------------------------------------------------------------------------
-def perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
+def perform_ML(Label, Map, Matrix, LHS, RHS, ExactSolution, NullSpace, List):
   print "<p><p><div class=\"outputBox\"><pre>";
   print "<b><font color=midnightblue>Problem Label = ", Label, "</font></b>";
   print "<b><font color=midnightblue>Operation = multilevel preconditioner</b>";
@@ -271,8 +331,12 @@ def perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   Time = Epetra.Time(Matrix.Comm())
 
   Prec = ML.MultiLevelPreconditioner(Matrix, False);
-  Prec.SetParameterList(List);
-  Prec.ComputePreconditioner();
+  if NullSpace == "not-set":
+    Prec.SetParameterList(List)
+  else:
+    Prec.SetParameterListAndNullSpace(List, NullSpace)
+
+  Prec.ComputePreconditioner()
 
   PrecTime = Time.ElapsedTime()
 
@@ -340,7 +404,7 @@ def main():
     pos = FullProblemID.find('@');
     Label = FullProblemID[0:pos];
     problemID = FullProblemID[pos + 1:];
-    (Map, Matrix, LHS, RHS, ExactSolution) = generator(problemID, comm, List);
+    (Map, Matrix, LHS, RHS, ExactSolution, NullSpace) = generator(problemID, comm, List);
 
     if List.has_key('perform_analysis'):
       if List['perform_analysis'] == "True":
@@ -380,7 +444,7 @@ def main():
     
     if List.has_key('perform_ml'):
       if List['perform_ml'] == "True":
-        perform_ml(Label, Map, Matrix, LHS, RHS, ExactSolution, List);
+        perform_ML(Label, Map, Matrix, LHS, RHS, ExactSolution, NullSpace, List);
 
   global count
   print '<input type=hidden name=phi_count value=%d>' % count
