@@ -37,27 +37,36 @@ namespace RTOpPack {
  * 0.5*((u-l)*Teuchos::ScalarTraits<Scalar>::random()+(u+l)), i=0...n-1</tt>.
  *
  * The seed for the random number generator can be set by
- * <tt>this->set_seed(s)</tt> where <tt>s</tt> is some unsigned integer.  Note
- * that this class generates random numbers based on the initial seed and the
- * global element ID so this should produce the save elements independent of
- * the number of processors being used.
+ * <tt>TOpRandomize<Scalar>::set_seed(s)</tt> where <tt>s</tt> is some
+ * unsigned integer.  Note that this class generates random numbers based on
+ * the initial seed and the global element ID so this should produce the save
+ * elements independent of the number of processors being used.
+ *
+ * The seed changes every time a new object is created
  */
 template<class Scalar>
 class TOpRandomize : public ROpScalarScalarTransformationBase<Scalar> {
 public:
   /** \brief . */
+  static void set_static_seed( const unsigned int static_seed ) { static_seed_ = static_seed; }
+  /** \brief . */
+  static unsigned int get_static_seed() { return static_seed_; }
+  /** \brief . */
   TOpRandomize(
     const Scalar& l   = -Teuchos::ScalarTraits<Scalar>::one()
     ,const Scalar& u  = +Teuchos::ScalarTraits<Scalar>::one()
     )
-    :RTOpT<Scalar>("TOpRandomize"), ROpScalarScalarTransformationBase<Scalar>(l,u), seed_(0)
-    {}
+    :RTOpT<Scalar>("TOpRandomize"), ROpScalarScalarTransformationBase<Scalar>(l,u)
+    {
+      seed_ = static_seed_;
+      ++static_seed_; // By default we will just increment the seed!
+    }
   /** \brief . */
   void set_bounds( const Scalar& l, const Scalar& u ) { this->scalarData1(l); this->scalarData2(u); }
   /** \brief . */
-  void set_seed( const int seed ) { seed_ = seed; }
+  void set_seed( const unsigned int seed ) { seed_ = seed; }
   /** \brief . */
-  int get_seed() const { return seed_; }
+  unsigned int get_seed() const { return seed_; }
   /** @name Overridden from RTOpT */
   //@{
   /** \brief . */
@@ -71,14 +80,18 @@ public:
       const Scalar a = Scalar(0.5)*(u-l), b = Scalar(0.5)*(u+l) ; // Linear coefficients for translating from [-1,+1] to [l,b]
       RTOP_APPLY_OP_0_1(num_vecs,sub_vecs,num_targ_vecs,targ_sub_vecs);
       for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s ) {
-        Teuchos::ScalarTraits<Scalar>::seedrandom(globalOffset+i);
+        Teuchos::ScalarTraits<Scalar>::seedrandom(seed_+globalOffset+i);
         *z0_val = a * Teuchos::ScalarTraits<Scalar>::random() + b; // Should be in the range [l,b]
       }
     }
   //@}
 private:
-  int seed_;
+  static unsigned int     static_seed_;
+  unsigned int            seed_;
 }; // class TOpRandomize
+
+template<class Scalar>
+unsigned int TOpRandomize<Scalar>::static_seed_ = 0;
 
 } // namespace RTOpPack
 

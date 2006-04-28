@@ -285,7 +285,7 @@ void Thyra::linear_combination(
 template<class Scalar>
 void Thyra::seed_randomize( unsigned int s )
 {
-  Teuchos::ScalarTraits<Scalar>::seedrandom(s);
+  RTOpPack::TOpRandomize<Scalar>::set_static_seed(s);
 }
 
 template<class Scalar>
@@ -297,6 +297,11 @@ void Thyra::randomize( Scalar l, Scalar u, VectorBase<Scalar>* v )
   RTOpPack::TOpRandomize<Scalar> random_vector_op(l,u);
   VectorBase<Scalar>* targ_vecs[] = { v };
   applyOp<Scalar>(random_vector_op,0,(const VectorBase<Scalar>**)NULL,1,targ_vecs,(RTOpPack::ReductTarget*)NULL);
+  // Warning! If the RTOpPack::TOpRandomize<Scalar> object is ever made
+  // static, the one must be careful to change the seed in between calls.
+  // Right now the seed is being incremented by the constructor automatically.
+  // It is important to generate different random vectors on each call
+  // (i.e. to generate different columns in a multi-vector).
 }
 
 // Linear algebra names

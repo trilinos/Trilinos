@@ -177,7 +177,7 @@ void linear_combination(
  *
  * @param  s  [in] The seed for the random number generator.
  *
- * Note, this just calls <tt>Teuchos::ScalarTraits<Scalar>::seedrandom(s)</tt>.
+ * Note, this just calls <tt>Teuchos::TOpRandomize<Scalar>::set_static_seed(s)</tt>.
  */
 template<class Scalar>
 void seed_randomize( unsigned int s );

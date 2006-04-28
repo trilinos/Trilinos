@@ -588,6 +588,7 @@ protected:
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
   const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+  TEST_FOR_EXCEPT(globalOffset<0); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride()
 
@@ -615,6 +616,7 @@ protected:
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
   const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+  TEST_FOR_EXCEPT(globalOffset<0); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
   const Scalar                 *v1_val = (SUB_VECS)[1].values(); \
@@ -637,6 +639,7 @@ protected:
     ); \
   const RTOpPack::index_type   subDim  = (TARG_SUB_VECS)[0].subDim(); \
   const RTOpPack::index_type   globalOffset = (TARG_SUB_VECS)[0].globalOffset(); \
+  TEST_FOR_EXCEPT(globalOffset<0); \
   Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
   const ptrdiff_t              z0_s    = (TARG_SUB_VECS)[0].stride()
 
@@ -662,6 +665,7 @@ protected:
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
   const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+  TEST_FOR_EXCEPT(globalOffset<0); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
   Scalar                       *z0_val = (TARG_SUB_VECS)[0].values(); \
@@ -695,6 +699,7 @@ protected:
     ); \
   const RTOpPack::index_type   subDim  = (SUB_VECS)[0].subDim(); \
   const RTOpPack::index_type   globalOffset = (SUB_VECS)[0].globalOffset(); \
+  TEST_FOR_EXCEPT(globalOffset<0); \
   const Scalar                 *v0_val = (SUB_VECS)[0].values(); \
   const ptrdiff_t              v0_s    = (SUB_VECS)[0].stride(); \
   const Scalar                 *v1_val = (SUB_VECS)[1].values(); \
