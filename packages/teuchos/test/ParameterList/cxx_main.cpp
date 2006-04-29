@@ -32,8 +32,9 @@
 #include "Teuchos_Version.hpp"
 
 #ifdef HAVE_TEUCHOS_EXTENDED
-#include "Teuchos_XMLParameterListWriter.hpp"
-#include "Teuchos_XMLParameterListReader.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+//#include "Teuchos_XMLParameterListWriter.hpp"
+//#include "Teuchos_XMLParameterListReader.hpp"
 #endif
 
 #ifdef HAVE_MPI
@@ -550,30 +551,45 @@ int main(int argc, char *argv[])
   }
 
 
-#ifdef HAVE_TEUCHOS_EXTENDED
-  //-----------------------------------------------------------
-  // Write to XML
-  // KL - 7 August 2004
-  //-----------------------------------------------------------
-  try
-  {
+#if defined(HAVE_TEUCHOS_EXTENDED) && defined(HAVE_TEUCHOS_EXPAT)
+
+  try {
+
     if (verbose) {
+
       print_break();
-      cout << "writing to XML" << endl;
+      cout << "writing to XML ostream" << endl;
       print_break();
+      writeParameterListToXmlOStream(PL_Main,cout);
+
+      print_break();
+      cout << "writing to XML file" << endl;
+      print_break();
+      writeParameterListToXmlFile(PL_Main,"PL_Main.xml");
+
+      print_break();
+      cout << "reading from XML file" << endl;
+      print_break();
+      ParameterList readBack;
+      updateParametersFromXmlFile("PL_Main.xml",&readBack);
+      if (verbose) readBack.print(cout);
+
+      print_break();
+      cout << "reading from XML string" << endl;
+      print_break();
+      std::ifstream xmlInFile("PL_Main.xml");
+      std::string xmlStr;
+      while(!xmlInFile.eof()) {
+        std::string line;
+        std::getline(xmlInFile,line);
+        xmlStr += line + "\n";
+      }
+      readBack = ParameterList();
+      updateParametersFromXmlString(xmlStr,&readBack);
+      if (verbose) readBack.print(cout);
+
     }
-    XMLParameterListWriter writer;
-    XMLObject xml = writer.toXML(PL_Main);
-      
-    if (verbose) cout << xml << endl;
-    if (verbose) {
-      print_break();
-      cout << "reading from XML" << endl;
-      print_break();
-    }
-    XMLParameterListReader reader;
-    ParameterList readBack = reader.toParameterList(xml);
-    if (verbose) readBack.print(cout);
+
   }
   catch(const std::exception& e)
   {
