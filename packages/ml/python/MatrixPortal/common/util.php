@@ -14,13 +14,17 @@ function print_header() {
 
 function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
 {
+?>
+  <p class'subheading'><a onclick="toggle('IDs');" onkeypress="toggle('IDs');"><b>Labels and Results</b></p></a>
+<?
+  echo '<div class=open id=IDs>';
   echo '<form action="#" enctype="multipart/form-data" method="post">';
   echo '<input type=hidden name=ProblemIDs value="' .  $ProblemIDs . '">';
   echo '<input type=hidden name=ResultIDs value="' .  $ResultIDs . '">';
   echo '<table border=0><cols=3>';
-  echo '<tr><td><b>Selected Problem IDs</b></td>';
+  echo '<tr><td>Problem IDs</td>';
   echo '<td>&nbsp;&nbsp;&nbsp;</td>';
-  echo '<td><b>Recordered Results</b></td></tr>';
+  echo '<td>Recordered Results</td></tr>';
   echo '<td valign=top><ol>';
   $done = 0;
   $done2 = 0;
@@ -61,22 +65,21 @@ function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
   echo '</td></tr></table>';
   if ($done != 0 || $done2 != 0)
   {
+    echo '<table border=0><tr valign=top><td>';
     echo '<input type=submit class=submitPrimary value="delete selected"></form>';
-if (0) {
-    echo '&nbsp;';
-
+    echo '</td><td>';
     echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
     echo '<input type=hidden name=ProblemIDs value="">';
     echo '<input type=hidden name=ResultIDs value="' . $ResultIDs . '">';
     echo '<input type = submit class=submitPrimary value = "reset all ProblemIDs" ></form>';
-    echo '&nbsp;';
-
+    echo '</td><td>';
     echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
     echo '<input type=hidden name=ProblemIDs value="' . $ProblemIDs . '">';
     echo '<input type=hidden name=ResultIDs value=>';
     echo '<input type = submit class=submitPrimary value = "reset all ResultIDs" ></form>';
-}
+    echo '</td></tr></table>';
   }
+  echo '</div>';
 }
 
 ################################################################################
@@ -192,32 +195,32 @@ function process()
   $counter = $_POST['counter'];
 
   $configString  = "";
-  $configString .= "ProblemIDs         = ".$ProblemIDs ."\n";
-  $configString .= "i:iters            = ".$_POST['iters'] ."\n";
-  $configString .= "d:tol              = ".$_POST['tol'] ."\n";
-  $configString .= "s:az_solver        = ".$_POST['az_solver'] ."\n";
-  $configString .= "i:az_kspace        = ".$_POST['az_kspace'] ."\n";
-  $configString .= "s:az_output        = ".$_POST['az_output'] ."\n";
-  $configString .= "s:rhs              = ".$_POST['rhs'] ."\n";
-  $configString .= "s:starting_solution= ".$_POST['starting_solution'] ."\n";
-  $configString .= "s:solution         = ".$_POST['solution'] ."\n";
-  $configString .= "b:perform_analysis = ".$_POST['perform_analysis'] ."\n";
-  $configString .= "b:perform_cheby    = ".$_POST['perform_cheby'] ."\n";
-  $configString .= "b:perform_jacobi   = ".$_POST['perform_jacobi'] ."\n";
-  $configString .= "b:perform_gs       = ".$_POST['perform_gs'] ."\n";
-  $configString .= "b:perform_sgs      = ".$_POST['perform_sgs'] ."\n";
-  $configString .= "b:perform_ic       = ".$_POST['perform_ic'] ."\n";
-  $configString .= "b:perform_ict      = ".$_POST['perform_ict'] ."\n";
-  $configString .= "b:perform_ilu      = ".$_POST['perform_ilu'] ."\n";
-  $configString .= "b:perform_ilut     = ".$_POST['perform_ilut'] ."\n";
-  $configString .= "b:perform_ml       = ".$_POST['perform_ml'] ."\n";
+  $configString .= "ProblemIDs         := ".$ProblemIDs ."\n";
+  $configString .= "i:iters            := ".$_POST['iters'] ."\n";
+  $configString .= "d:tol              := ".$_POST['tol'] ."\n";
+  $configString .= "s:az_solver        := ".$_POST['az_solver'] ."\n";
+  $configString .= "i:az_kspace        := ".$_POST['az_kspace'] ."\n";
+  $configString .= "s:az_output        := ".$_POST['az_output'] ."\n";
+  $configString .= "s:rhs              := ".$_POST['rhs'] ."\n";
+  $configString .= "s:starting_solution:= ".$_POST['starting_solution'] ."\n";
+  $configString .= "s:solution         := ".$_POST['solution'] ."\n";
+  $configString .= "b:perform_analysis := ".$_POST['perform_analysis'] ."\n";
+  $configString .= "b:perform_cheby    := ".$_POST['perform_cheby'] ."\n";
+  $configString .= "b:perform_jacobi   := ".$_POST['perform_jacobi'] ."\n";
+  $configString .= "b:perform_gs       := ".$_POST['perform_gs'] ."\n";
+  $configString .= "b:perform_sgs      := ".$_POST['perform_sgs'] ."\n";
+  $configString .= "b:perform_ic       := ".$_POST['perform_ic'] ."\n";
+  $configString .= "b:perform_ict      := ".$_POST['perform_ict'] ."\n";
+  $configString .= "b:perform_ilu      := ".$_POST['perform_ilu'] ."\n";
+  $configString .= "b:perform_ilut     := ".$_POST['perform_ilut'] ."\n";
+  $configString .= "b:perform_ml       := ".$_POST['perform_ml'] ."\n";
 
   for ($i = 1; $i < $counter; $i++)
   {
     $name  = $_POST["name_"  . $i];
     $type  = $_POST["type_"  . $i];
     $value = $_POST["value_" . $i];
-    $configString .= "$type$name = $value\n";
+    $configString .= "$type$name := $value\n";
   }
 
   $configFileName = "$TempDirectory/configs/$timestamp.txt";
@@ -301,6 +304,28 @@ function process_variables()
     if ($i == "") continue;
     if ($_POST['dr_' . $count++] != "Yes")
       $ResultIDs .= ":" . $i;
+  }
+}
+
+################################################################################
+
+function check_data($LabelIDs, $ResultIDs)
+{ 
+  foreach (explode(':', $ProblemIDs) as $i)
+  {
+    if ($i == "") continue;
+    else if (strstr($i, ":") ||
+             strstr($i, "@") ||
+             strstr($i, ";") ||
+             strstr($i, "!") ||
+             strstr($i, "+") ||
+             strstr($i, "\") ||
+             strstr($i, "_") ||
+             strstr($i, ":="))
+    {
+      echo "<p><font color=red><b>Sorry, labels cannot contain \ : ; _ +  @ :=";
+      echo "</b></font></p>";
+    }
   }
 }
 ?>

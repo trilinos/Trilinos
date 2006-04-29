@@ -30,6 +30,19 @@
     <?php echo $styles ?>
     
   //--> </style>
+  <script type="text/javascript">
+    function toggle(id){
+      ulElement = document.getElementById(id);
+      if (ulElement){
+        if (ulElement.className == 'closed'){
+           ulElement.className = "open";
+        } else {
+           ulElement.className = "closed";
+        }
+      }
+    } // toggle()
+  </script>
+
   
 </head>
 

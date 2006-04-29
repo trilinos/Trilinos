@@ -27,8 +27,8 @@ count = 0
 # -------------------------------------------------------------------------
 # checks on parameters and location of the HB and H5 files
 # -------------------------------------------------------------------------
-MAX_MATRIX_ROWS = 40000
-MAX_MATRIX_NONZEROS = 250000
+MAX_MATRIX_ROWS = 256 * 256
+MAX_MATRIX_NONZEROS = MAX_MATRIX_ROWS * 5
 MAX_ITERATIONS = 1550
 MAX_KSPACE = 200
 HB_REPOSITORY = "/var/www/html/MatrixPortal/HBMatrices/"
@@ -84,8 +84,9 @@ def add_result(List, Label, ierr, iters, PrecTime, SolverTime, ConditionNumber):
   phi = phi + List['evaluation: condnum'] * ConditionNumber;
 
   global count
-  print "<p><font color=midnightblue>Evaluation phi = %f. Add to results with label: <input type=text size=30 name=phi_label_%d value=\"%s\"></font>" % (phi, count, Label)
-  print "<input type=hidden name=phi_value_%d value=%f>" %(count, phi)
+  print "<p><font color=midnightblue>Evaluation phi = ",
+  print "<input type=text size=10 name=phi_value_%d value=%f>" %(count, phi),
+  print "Add to results with label: <input type=text size=20 name=phi_label_%d value=\"%s\"></font>" % (count, Label)
   count = count + 1
 
 # -------------------------------------------------------------------------
@@ -374,7 +375,7 @@ def main():
   file = open(configFile, 'r')
   List = {}
   for l in file.readlines():
-    d = string.split(string.strip(l), '=')
+    d = string.split(string.strip(l), ':=')
     if d[0] == "":
       continue;
     if string.strip(d[0]) == "ProblemIDs":

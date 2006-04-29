@@ -77,6 +77,8 @@ td { font-size: 12pt; }
 
 /* WebSolver styles ********************************************************* */
 
+form {MARGIN-TOP: 0pt; MARGIN-BOTTOM: 0pt; MARGIN-LEFT: 0pt; MARGIN-RIGHT: 0pt;}
+
 .formTable { width: auto; height: auto; margin: 0px; padding: 0px; }
 .formTable td { margin: 0px; padding: 5px; font-size: 9pt; }
 div.formSection { padding: 0 10px 10px 10px; background-color: #f7f7f7;
@@ -128,3 +130,6 @@ a.help { display: inline; margin: 0 .5em; padding: 0 .3em; font-size: 8pt;
   vertical-align: top; background-color: #e7e7ff; border: 1px solid #669; }
 a.help:link, a.help:visited, a.help:hover, a.help:active { text-decoration: none;
   font-weight: bold; color: #669; }
+
+.open   { display: block; }
+.closed { display: none;  }

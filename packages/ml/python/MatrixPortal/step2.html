@@ -61,8 +61,10 @@
     <!-- ---------------------------------------------------------- -->
 
     <div class="formSection">
-    <p class="subheading">General Settings</p>
+    <p class="subheading">
+    <a onclick="toggle('general');" onkeypress="toggle('general');">General Settings</p>
 
+    <div class=open id=general>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Solver: </td>
@@ -166,16 +168,20 @@
     </table><br />
 
     </div>
+    </div>
     <p>
 
     <!-- ---------------------------------------------------------- -->
 
     <p>
     <div class="formSection">
-    <p class="subheading">Chebyshev Preconditioners:<a href="help/step2_chebyshev.html"
+    <p class="subheading">
+    <a onclick="toggle('cheby');" onkeypress="toggle('cheby');">Chebyshev Preconditioners:
+    <a href="help/step2_chebyshev.html"
        onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
+    <div class=closed id=cheby>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Analyze Chebyshev Preconditioners: </td><td>
@@ -193,15 +199,19 @@
     <? end_select_parameter(); ?>
     </table><br />
     </div>
+    </div>
 
     <!-- ---------------------------------------------------------- -->
 
     <p>
     <div class="formSection">
-    <p class="subheading">Relaxation Preconditioners <a href="help/step2_relaxation.html"
+    <p class="subheading">
+    <a onclick="toggle('relax');" onkeypress="toggle('relax');">Relaxation Preconditioners
+    <a href="help/step2_relaxation.html"
        onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
+    <div class=closed id=relax>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Analyze Jacobi Preconditioners: </td><td>
@@ -245,15 +255,20 @@
     <? end_select_parameter(); ?>
     </table><br />
     </div>
+    </div>
 
     <!-- ---------------------------------------------------------- -->
 
     <p>
     <div class="formSection">
-    <p class="subheading">Incomplete Factorization Preconditioners <a href="help/step2_incomplete_factorization.html"
+    <p class="subheading">
+    <a onclick="toggle('ifpack');" onkeypress="toggle('ifpack');">
+    Incomplete Factorization Preconditioners</a>
+     <a href="help/step2_incomplete_factorization.html"
        onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
+    <div class=closed id=ifpack>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Analyze IC Preconditioners: </td><td>
@@ -298,15 +313,19 @@
     <? end_select_parameter(); ?>
     </table><br />
     </div>
+    </div>
 
     <!-- ---------------------------------------------------------- -->
 
     <p>
     <div class="formSection">
-    <p class="subheading">Multilevel Preconditioners <a href="help/step2_multilevel.html"
+    <p class="subheading">
+    <a onclick="toggle('ml');" onkeypress="toggle('ml');">Multilevel Preconditioners</a>
+    <a href="help/step2_multilevel.html"
        onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
+    <div class=closed id=ml>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Analyze Multilevel Preconditioners: </td><td>
@@ -473,15 +492,19 @@
     </table><br />
 
     </div>
+    </div>
 
     <!-- ---------------------------------------------------------- -->
 
     <p>
     <div class="formSection">
-    <p class="subheading"><font color=blue>Performance Evaluation</font> <a href="help/step2_performance.html"
+    <p class="subheading"><font color=blue>
+    <a onclick="toggle('item1');" onkeypress="toggle('item1');">Performance Evaluation</a></font>
+    <a href="help/step2_performance.html"
        onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
+    <div class=closed id=item1>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr><td>  phi = </td><td>
 
@@ -520,6 +543,7 @@
         </td><td> x&nbsp; cond(P A) </td><td> (requires CG or GMRES with condnum) </td>
       </tr>  
     </table><br />
+    </div>
     </div>
 
     <!-- php marker for stage in form process -->

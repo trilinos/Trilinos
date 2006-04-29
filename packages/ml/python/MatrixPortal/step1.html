@@ -13,6 +13,8 @@
   global $ProblemIDs;
   global $ResultIDs;
 
+  check_data($ProblemIDs, $ResultIDs);
+
   if ($_POST['state'] == "add")
   {
     if ($_POST['MyLabel'] === "")
@@ -25,9 +27,10 @@
              strstr($_POST['MyLabel'], ";") ||
              strstr($_POST['MyLabel'], "!") ||
              strstr($_POST['MyLabel'], "+") ||
-             strstr($_POST['MyLabel'], "_"))
+             strstr($_POST['MyLabel'], "_") ||
+             strstr($_POST['MyLabel'], ":="))
     {
-      echo "<p><font color=red><b>Sorry, labels cannot contain : ; _ + or @";
+      echo "<p><font color=red><b>Sorry, labels cannot contain : ; _ +  @ :=";
       echo "</b></font></p>";
     }
     else

@@ -30,6 +30,37 @@
     $ymax = $_POST['ymax'];
   else
     $ymax = -1.0;
+
+  if ($_POST['y_legend'] != "")
+    $y_legend = $_POST['y_legend'];
+  else
+    $y_legend = "phi";
+
+  if ($_POST['red_legend'] != "")
+    $red_legend = $_POST['red_legend'];
+  else
+    $red_legend = "red";
+
+  if ($_POST['blue_legend'] != "")
+    $blue_legend = $_POST['blue_legend'];
+  else
+    $blue_legend = "blue";
+
+  if ($_POST['green_legend'] != "")
+    $green_legend = $_POST['green_legend'];
+  else
+    $green_legend = "green";
+
+  if ($_POST['purple_legend'] != "")
+    $purple_legend = $_POST['purple_legend'];
+  else
+    $purple_legend = "purple";
+
+  if ($_POST['yellow_legend'] != "")
+    $yellow_legend = $_POST['yellow_legend'];
+  else
+    $yellow_legend = "yellow";
+
 ?>
 
 <!-- begin content ######################################################### -->
@@ -58,6 +89,8 @@
   <td>Label</td>
   <td>PHI</td>
   <td>plot this value</td>
+  <td>divided by</td>
+  <td></td>
   <td></td>
   </tr>
   <? 
@@ -68,31 +101,126 @@
 
       $j = explode('@', $i);
       echo "<tr><td><b>" . $j[1] . "</td><td>" . $j[0] . "</td>";
-      echo "<td><input type=checkbox name=plot_" . $count++ . " value=Yes checked=checked>";
-      if (0)
+      echo "<td><input type=checkbox name=plot_" . $count . " value=Yes ";
+      if ($_POST['plot_' . $count] == "Yes") echo "checked=checked";
+      echo ">";
+      echo "<td><input type=text name=scale_" . $count . " size=5 value=\"";
+      if ($_POST['scale_' . $count] != "") echo $_POST['scale_' . $count];
+      else echo "1.0";
+      echo "\">";
+      echo "<select name=op_" . $count . ">";
+      if ($_POST['op_' . $count] == "squared")
       {
-      echo "</td><td>";
-      echo "<select name=color_" . $count++ . ">";
-      echo "<option value=red>in red";
-      echo "<option value=green>in green";
-      echo "<option value=blue>in blue";
-      echo "<option value=black>in black";
-      echo "</select>";
+        echo "<option value=squared>^2";
+        echo "<option value=linear>^1";
+        echo "<option value=half>^1/2";
+        echo "<option value=threehalves>^3/2";
       }
+      else if ($_POST['op_' . $count] == "half")
+      {
+        echo "<option value=half>^1/2";
+        echo "<option value=linear>^1";
+        echo "<option value=squared>^2";
+        echo "<option value=threehalves>^3/2";
+      }
+      else if ($_POST['op_' . $count] == "threehalf")
+      {
+        echo "<option value=threehalves>^3/2";
+        echo "<option value=half>^1/2";
+        echo "<option value=linear>^1";
+        echo "<option value=squared>^2";
+      }
+      else
+      {
+        echo "<option value=linear>^1";
+        echo "<option value=squared>^2";
+        echo "<option value=half>^1/2";
+        echo "<option value=threehalves>^3/2";
+      }
+      echo "</select>";
+      echo "</td><td>&nbsp;";
+      echo "<select name=color_" . $count . ">";
+      if ($_POST['color_' . $count] == "darkseagreen")
+      {
+        echo "<option value=darkseagreen>in green";
+        echo "<option value=red>in red";
+        echo "<option value=aquamarine1>in blue";
+        echo "<option value=darkorchid>in purple";
+        echo "<option value=goldenrod>in yellow";
+      }
+      else if ($_POST['color_' . $count] == "aquamarine1")
+      {
+        echo "<option value=aquamarine1>in blue";
+        echo "<option value=red>in red";
+        echo "<option value=darkseagreen>in green";
+        echo "<option value=darkorchid>in purple";
+        echo "<option value=goldenrod>in yellow";
+      }
+      else if ($_POST['color_' . $count] == "darkorchid")
+      {
+        echo "<option value=darkorchid>in purple";
+        echo "<option value=red>in red";
+        echo "<option value=darkseagreen>in green";
+        echo "<option value=aquamarine1>in blue";
+        echo "<option value=goldenrod>in yellow";
+      }
+      else if ($_POST['color_' . $count] == "goldenrod")
+      {
+        echo "<option value=goldenrod>in yellow";
+        echo "<option value=red>in red";
+        echo "<option value=darkseagreen>in green";
+        echo "<option value=aquamarine1>in blue";
+        echo "<option value=darkorchid>in purple";
+      }
+      else
+      {
+        echo "<option value=red>in red";
+        echo "<option value=darkseagreen>in green";
+        echo "<option value=aquamarine1>in blue";
+        echo "<option value=darkorchid>in purple";
+        echo "<option value=goldenrod>in yellow";
+      }
+      $count++;
+      echo "</select>";
       echo "</td></tr>";
     }
     ?>
   </table>
   
+  <p>Open a simple <a href="calculator.html"
+    onclick='window.open(this.href,null,"height=100,width=700,status=yes,toolbar=no,menubar=no,location=no"); return false;'>calculator</a>.
   <br/>
+
   <p>Limits for the Y-axis, set both to -1.0 for autoset
   <table><tr>
   <td>Y_min:</td><td>
   <input type=text name=ymin value="<? global $ymin; echo $ymin;?>"  size=10>
-  </td></tr>
-  <tr><td>Y_max:</td><td>
+  &nbsp;&nbsp;Y_max:</td><td>
   <input type=text name=ymax value="<? global $ymax; echo $ymax;?>" size=10>
   </td></tr></table>
+
+  <p>Legend and Labels:
+  <table>
+  <tr><td>Y-axis label:</td><td>
+  <input type=text name=y_legend value="<? global $y_legend; echo $y_legend;?>"  size=20>
+  </td></tr>
+  <tr><td>Red data:</td><td>
+  <input type=text name=red_legend value="<? global $red_legend; echo $red_legend;?>"  size=20>
+  </td></tr>
+  <tr><td>Green data:</td><td>
+  <input type=text name=green_legend value="<? global $green_legend; echo $green_legend;?>"  size=20>
+  </td></tr>
+  <tr><td>Blue data:</td><td>
+  <input type=text name=blue_legend value="<? global $blue_legend; echo $blue_legend;?>"  size=20>
+  </td></tr>
+  <tr><td>Purple data:</td><td>
+  <input type=text name=purple_legend value="<? global $purple_legend; echo $purple_legend;?>"  size=20>
+  </td></tr>
+  <tr><td>Yellow data:</td><td>
+  <input type=text name=yellow_legend value="<? global $yellow_legend; echo $yellow_legend;?>"  size=20>
+  </td></tr>
+  </td></tr></table>
+
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <br><input type=submit class=submitPrimary value="plot/replot" name=plot>
@@ -106,68 +234,206 @@
   <b><center>
 <?
 
+//$PLOTTER = "GNUPLOT";
+$PLOTTER = "PyChart";
+
 if ($_POST['plot'] == "plot/replot")
 {
-$timestamp = date("y-m-d_H.i.s", time());
-global $ymin;
-global $ymax;
+  $timestamp = date("y-m-d_H.i.s", time());
+  global $ymin;
+  global $ymax;
+  global $y_legend;
+  global $red_legend;
+  global $blue_legend;
+  global $yellow_legend;
+  global $purple_legend;
+  global $green_legend;
 
-$myFile = $TempDirectory . "/gnuplot-" . $timestamp . '.dat';
-$fh = fopen($myFile, 'w') or die("can't open file");
+  $myFile = $TempDirectory . "/gnuplot-" . $timestamp . '.dat';
+  $fh = fopen($myFile, 'w') or die("can't open file");
 
-fwrite($fh, "set title 'evaluation'\n");
-fwrite($fh, "set ylabel 'phi'\n");
-fwrite($fh, "set terminal push\n");
-fwrite($fh, "set terminal png\n");
-fwrite($fh, "set autoscale\n");
-fwrite($fh, "set output '" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png'\n");
-fwrite($fh, 'set xtics rotate ("" 0 ');
-$count = 1;
-$new_count = 1;
-foreach (explode(':', $ResultIDs) as $i)
-{
-  if ($i == "") continue;
-  if ($_POST['plot_' . $count] == "Yes")
+  if ($PLOTTER == "GNUPLOT")
   {
-    $j = explode('@', $i);
-    fwrite($fh, ', "' . $j[1] . '" ' . $new_count++ . " ");
+    fwrite($fh, "set title 'evaluation'\n");
+    fwrite($fh, "set ylabel 'phi'\n");
+    fwrite($fh, "set terminal push\n");
+    fwrite($fh, "set terminal png\n");
+    fwrite($fh, "set autoscale\n");
+    fwrite($fh, "set output '" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png'\n");
+    fwrite($fh, 'set xtics rotate ("" 0 ');
+    $count = 1;
+    $new_count = 1;
+    foreach (explode(':', $ResultIDs) as $i)
+    {
+      if ($i == "") continue;
+      if ($_POST['plot_' . $count] == "Yes")
+      {
+        $j = explode('@', $i);
+        fwrite($fh, ', "' . $j[1] . '" ' . $new_count++ . " ");
+      }
+      $count++;
+    }
+    fwrite($fh, ")\n");
+    fwrite($fh, 'set xrange [0:' . ($new_count) . ']' . "\n");
+    if ($ymin != -1.0 && $ymax != 1.0)
+      fwrite($fh, 'set yrange [' . $ymin . ':' . $ymax . ']' . "\n");
+    fwrite($fh, "set boxwidth 1\n");
+    fwrite($fh, "set style fill solid\n");
+    //fwrite($fh, "set style fill solid 0.25 border\n");
+    fwrite($fh, "set nokey\n");
+    fwrite($fh, "set boxwidth 0.8\n");
+    fwrite($fh, "plot '-' using 1:2 w boxes\n");
+    $count = 1;
+    $new_count = 1;
+    foreach (explode(':', $ResultIDs) as $i)
+    {
+      if ($i == "") continue;
+      if ($_POST['plot_' . $count] == "Yes")
+      {
+        $j = explode('@', $i);
+        fwrite($fh, $new_count++ . " " . $j[0] . "\n");
+      }
+      $count++;
+    }
+    fwrite($fh, "end\n");
+    
+    fwrite($fh, "set output\n");
+    fwrite($fh, "set terminal pop\n");
+    
+    fclose($fh); 
+
+    passthru('/usr/bin/gnuplot /tmp/gnuplot-' . $timestamp . ".dat");
+
+    if ($new_count != 1)
+    {
+      echo '<IMG SRC=../tmp/gnuplot-' . $timestamp . '.png>';
+    }
   }
-  $count++;
-}
-fwrite($fh, ")\n");
-fwrite($fh, 'set xrange [0:' . ($new_count) . ']' . "\n");
-if ($ymin != -1.0 && $ymax != 1.0)
-  fwrite($fh, 'set yrange [' . $ymin . ':' . $ymax . ']' . "\n");
-fwrite($fh, "set boxwidth 1\n");
-fwrite($fh, "set style fill solid\n");
-//fwrite($fh, "set style fill solid 0.25 border\n");
-fwrite($fh, "set nokey\n");
-fwrite($fh, "set boxwidth 0.8\n");
-fwrite($fh, "plot '-' using 1:2 w boxes\n");
-$count = 1;
-$new_count = 1;
-foreach (explode(':', $ResultIDs) as $i)
-{
-  if ($i == "") continue;
-  if ($_POST['plot_' . $count] == "Yes")
+  else if ($PLOTTER == "PyChart")
   {
-    $j = explode('@', $i);
-    fwrite($fh, $new_count++ . " " . $j[0] . "\n");
+    fwrite($fh, "from pychart import *\n");
+    fwrite($fh, "theme.get_options()\n");
+
+    fwrite($fh, "theme.use_color = 1\n");
+    fwrite($fh, "theme.reinitialize()\n");
+
+    $IsFirst = 1;
+    $count = 1;
+    $new_count = 1;
+    fwrite($fh, 'labels = [');
+    foreach (explode(':', $ResultIDs) as $i)
+    {
+      if ($i == "") continue;
+      if ($_POST['plot_' . $count] == "Yes")
+      {
+        $j = explode('@', $i);
+        if ($IsFirst == 1)
+        {
+          $IsFirst = 0;
+        }
+        else
+        {
+          fwrite($fh, ', ');
+        }
+	$xxx = str_replace('/', '//', $j[1]);
+        fwrite($fh, '("/4/a90{}' . $xxx . '", ' . $new_count++ . ")");
+      }
+      $count++;
+    }
+    fwrite($fh, "]\n");
+
+    fwrite($fh, "chart_object.set_defaults(area.T, size = (150, 120), ");
+    if ($ymin != -1.0 && $ymax != -1.0)
+      fwrite($fh, "y_range = ($ymin, $ymax),");
+
+    fwrite($fh, " x_coord = category_coord.T(labels, 0))\n");
+
+    if ($ymax == $ymin)
+      $tic = 1000;
+    else
+    {
+      $tic = floor(($ymax - $ymin) / 10);
+      if ($tic < 1) $tic = 1;
+    }
+
+    fwrite($fh, 'ar = area.T(x_axis=axis.X(label=""), y_axis=axis.Y(label="');
+    fwrite($fh, $y_legend . '", tic_interval=' . $tic . '))' . "\n");
+
+    $ColorList = "";
+    $count = 1;
+    foreach (explode(':', $ResultIDs) as $i)
+    {
+      if ($i == "") continue;
+      if ($_POST['plot_' . $count] == "Yes")
+      {
+        $NewColor = $_POST['color_' . $count];
+        if (strstr($ColorList, $NewColor) == FALSE)
+          $ColorList .= " " . $NewColor;
+      }
+      $count++;
+    }
+
+    foreach (explode(' ', $ColorList) as $color)
+    {
+      if ($color == "") continue;
+      fwrite($fh, 'ar.add_plot(');
+      fwrite($fh, 'bar_plot.T(label="');
+      if ($color == "red")
+        fwrite($fh, $red_legend);
+      else if ($color == "darkseagreen")
+        fwrite($fh, $green_legend);
+      else if ($color == "aquamarine1")
+        fwrite($fh, $blue_legend);
+      else if ($color == "darkorchid")
+        fwrite($fh, $purple_legend);
+      else if ($color == "goldenrod")
+        fwrite($fh, $yellow_legend);
+      else
+        fwrite($fh, "not-set");
+      fwrite($fh, '", data = [');
+
+      $IsFirst = 1;
+      $count = 1;
+      foreach (explode(':', $ResultIDs) as $i)
+      {
+        if ($i == "") continue;
+        if ($_POST['plot_' . $count] == "Yes")
+        {
+          $scale = $_POST['scale_' . $count];
+          if ($_POST['op_' . $count] == "squared")
+            $scale *= $scale;
+          else if ($_POST['op_' . $count] == "half")
+            $scale = sqrt($scale);
+          else if ($_POST['op_' . $count] == "threehalves")
+            $scale *= sqrt($scale);
+          else if ($_POST['op_' . $count] == "four")
+            $scale *= sqrt(sqrt($scale)) * sqrt($scale);
+
+          if ($_POST['color_' . $count] == $color)
+          {
+            $j = explode('@', $i);
+            if ($IsFirst) $IsFirst = 0;
+            else
+              fwrite($fh, ', ');
+            $xxx = str_replace('/', '//', $j[1]);
+            fwrite($fh, '("/4/a90{}' . $xxx . '", ' . $j[0] / $scale . ")");
+          }
+        }
+        $count++;
+      }
+      fwrite($fh, "], \n");
+      fwrite($fh, 'fill_style = fill_style.' . $color . ')' . "\n");
+      fwrite($fh, ")\n");
+    }
+    fwrite($fh, "ar.draw()\n");
+
+    fclose($fh);
+
+    passthru('python /tmp/gnuplot-' . $timestamp . ".dat --format=png --scale=3 --output=" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png 2>&1");
+
+    echo '<IMG SRC=../tmp/gnuplot-' . $timestamp . '.png>';
   }
-  $count++;
-}
-fwrite($fh, "end\n");
-
-fwrite($fh, "set output\n");
-fwrite($fh, "set terminal pop\n");
-
-fclose($fh); 
-
-if ($new_count != 1)
-{
-  passthru('/usr/bin/gnuplot /tmp/gnuplot-' . $timestamp . ".dat");
-  echo '<IMG SRC=../tmp/gnuplot-' . $timestamp . '.png>';
-}
+    
 }
 
 ?>
