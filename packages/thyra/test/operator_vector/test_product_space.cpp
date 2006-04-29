@@ -194,7 +194,9 @@ int main( int argc, char* argv[] ) {
     bool showAllTests  = true;
     bool dumpAll       = false;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
     clp.setOption( "n", &n, "Number of elements in each constituent vector." );
     clp.setOption( "num-blocks", &numBlocks, "blocks to create." );

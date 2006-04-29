@@ -147,7 +147,9 @@ int main(int argc, char *argv[])
     int    dim          = 4;
     bool   dumpAll      = false;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
     clp.setOption( "dim", &dim, "Dimension of the linear system." );
     clp.setOption( "dump-all", "no-dump", &dumpAll, "Determines if quantities are dumped or not." );

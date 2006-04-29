@@ -169,7 +169,9 @@ int main(int argc, char* argv[])
   try {
 
     // Get some commandline options
-    CommandLineProcessor clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
 		CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 

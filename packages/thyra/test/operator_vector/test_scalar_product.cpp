@@ -214,7 +214,9 @@ int main( int argc, char* argv[] ) {
     int n         = 4;
     bool dumpAll  = false;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
     clp.setOption( "n", &n, "Number of elements in each constituent vector." );
     clp.setOption( "dump-all", "no-dump-all", &dumpAll, "Determines if vectors are printed or not." );

@@ -206,7 +206,9 @@ int main(int argc, char *argv[])
     bool   dumpAll       = false;
     int    outputPrec    = -1;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
 
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
     clp.setOption( "N", &N, "Power of 2 for size of the FFT." );

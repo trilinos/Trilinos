@@ -155,6 +155,7 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_XMLInputStream.hpp\
 	$(srcdir)/Teuchos_XMLObject.hpp\
 	$(srcdir)/Teuchos_XMLObjectImplem.hpp \
+	$(srcdir)/Teuchos_XMLParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.hpp \
 	$(srcdir)/Teuchos_XMLParameterListWriter.hpp
 
@@ -175,6 +176,7 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_XMLInputStream.cpp \
 	$(srcdir)/Teuchos_XMLObject.cpp \
 	$(srcdir)/Teuchos_XMLObjectImplem.cpp \
+	$(srcdir)/Teuchos_XMLParameterListHelpers.cpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.cpp \
 	$(srcdir)/Teuchos_XMLParameterListWriter.cpp
 

@@ -180,7 +180,9 @@ int main(int argc, char *argv[])
     bool   showAllTests = false;
     int    maxNumIters  = 300;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
 
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
     clp.setOption( "dim", &dim, "Dimension of the linear system." );

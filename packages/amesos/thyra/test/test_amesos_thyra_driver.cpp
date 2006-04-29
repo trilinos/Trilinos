@@ -68,7 +68,9 @@ int main(int argc, char* argv[])
     bool           showAllTestsDetails    = false;
     bool           dumpAll                = false;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
     clp.setOption( "matrix-dir", &matrixDir, "Base directory for the test matrices" );
     clp.setOption( "test-transpose", "no-test-transpose", &testTranspose, "Test the transpose solve or not." );
     clp.setOption( "num-random-vectors", &numRandomVectors, "Number of times a test is performed with different random vectors." );

@@ -65,7 +65,9 @@ int main(int argc, char* argv[])
     bool                                    showAllTests           = false;
     bool                                    dumpAll                = false;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
     clp.setOption( "matrix-file", &matrixFile, "Matrix iput file [Required]." );
     clp.setOption(
       "solver-type", &solverType

@@ -147,7 +147,9 @@ int main( int argc, char* argv[] )
 #ifdef RTOp_USE_MPI
 		bool    useMPI               = true;
 #endif
-		CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
 		clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
 		clp.setOption( "dump-all", "no-dump", &dumpAll, "Determines if quantities are dumped or not." );
 		clp.setOption( "local-dim", &local_dim, "Number of vector elements per process." );

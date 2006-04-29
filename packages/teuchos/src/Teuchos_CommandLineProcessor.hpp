@@ -106,7 +106,7 @@ public:
 	CommandLineProcessor(
 		bool    throwExceptions       = true
 		,bool   recogniseAllOptions   = true
-    ,bool   addOutputSetupOptions = true
+    ,bool   addOutputSetupOptions = false
 		);
 
 	//@}

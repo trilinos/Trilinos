@@ -22,7 +22,9 @@ int main( int argc, char* argv[] )
 		// Get options from the command line
 		//
 
-		CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
 
     clp.setDocString(
       "This example program solves a simple 2 x 2 set of nonlinear equations using a simple\n"

@@ -188,7 +188,9 @@ int main(int argc, char *argv[])
     int    maxNumIters = 300;
     bool   dumpAll     = false;
 
-    CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
 
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
     clp.setOption( "local-dim", &localDim, "Local dimension of the linear system." );
