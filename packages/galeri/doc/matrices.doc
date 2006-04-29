@@ -325,8 +325,8 @@ on the unit square, with homogeneous Dirichlet boundary conditions. A
 standard 5-pt stencil is used to discretize the diffusive term, and a
 simple upwind stencil is used for the convective term. Here,
   \f[
-  v_x = 4 conv x (x - 1) (1 - 2y), \quad \quad \quad 
-  v_y =-4 conv y (y - 1) (1 - 2x)
+  v_x = conv \cdot 4 x (x - 1) (1 - 2y), \quad \quad \quad 
+  v_y = -conv \cdot 4 y (y - 1) (1 - 2x)
   \f]
   The value of \f$\epsilon\f$ can be specified using \c diff, and that of
   \f$V\f$ using \c conv. The default values are \c diff=1e-5, \c conv=1.
