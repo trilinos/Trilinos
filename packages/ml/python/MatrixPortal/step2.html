@@ -12,6 +12,8 @@
 
   global $ProblemIDs;
   global $ResultIDs;
+
+  check_data();
 ?>
 
 <!-- begin content ######################################################### -->
@@ -74,8 +76,7 @@
         <option value=AZ_gmres_condnum>GMRES with condnum
         <option value=AZ_cg>CG
         <option value=AZ_cg_condnum>CG with condnum
-        <option value=AZ_bicg>Bi-CG
-        <option value=AZ_bicgstab>Bi-CGSTAB
+        <option value=AZ_cgs>CGS
         <option value=AZ_tfqmr>TFQMR
         </select></td>
       </tr>

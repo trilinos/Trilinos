@@ -220,7 +220,8 @@ function process()
     $name  = $_POST["name_"  . $i];
     $type  = $_POST["type_"  . $i];
     $value = $_POST["value_" . $i];
-    $configString .= "$type$name := $value\n";
+    if ("$type$name" != "")
+      $configString .= "$type$name := $value\n";
   }
 
   $configFileName = "$TempDirectory/configs/$timestamp.txt";
@@ -231,8 +232,6 @@ function process()
   fclose($configFile) 
     or die("can't close $configFileName: $php_errormsg");
   chmod($configFileName, 0664);
-
-  chdir("solve/");
 
   $command = "PYTHONPATH=/home/msala/Trilinos/LINUX_SERIAL/lib/python2.4/site-packages/:\$PYTHONPATH ";
   $command .= "python $PythonDirectory/step_process.py $configFileName 2>&1";
@@ -309,23 +308,57 @@ function process_variables()
 
 ################################################################################
 
-function check_data($LabelIDs, $ResultIDs)
+function check_data()
 { 
-  foreach (explode(':', $ProblemIDs) as $i)
+  global $ProblemIDs;
+  global $ResultIDs;
+
+  $OldProblemIDs = $ProblemIDs;
+  $OldResultIDs = $ResultIDs;
+
+  $ProblemIDs = "";
+
+  foreach (explode(':', $OldProblemIDs) as $i)
   {
     if ($i == "") continue;
-    else if (strstr($i, ":") ||
-             strstr($i, "@") ||
-             strstr($i, ";") ||
-             strstr($i, "!") ||
-             strstr($i, "+") ||
-             strstr($i, "\") ||
-             strstr($i, "_") ||
-             strstr($i, ":="))
+    $j = explode('@', $i);
+    if (strstr($j[0], ":") ||
+        strstr($j[0], "@") ||
+        strstr($j[0], ";") ||
+        strstr($j[0], "!") ||
+        strstr($j[0], "+") ||
+        strstr($j[0], "\\") ||
+        strstr($j[0], "_") ||
+        strstr($j[0], ":="))
     {
-      echo "<p><font color=red><b>Sorry, labels cannot contain \ : ; _ +  @ :=";
-      echo "</b></font></p>";
+      echo "<p><font color=red><b>Sorry, ProblemIDs cannot contain \ : ; _ +  @ :=";
+      echo ". The ProblemID was " . $j[0] . "</b></font></p>";
     }
+    else
+      $ProblemIDs .= $i . ":";
   }
+
+  $ResultIDs = "";
+
+  foreach (explode(':', $OldResultIDs) as $i)
+  {
+    if ($i == "") continue;
+    $j = explode('@', $i);
+    if (strstr($j[1], ":") ||
+        strstr($j[1], "@") ||
+        strstr($j[1], ";") ||
+        strstr($j[1], "!") ||
+        strstr($j[1], "+") ||
+        strstr($j[1], "\\") ||
+        strstr($j[1], "_") ||
+        strstr($j[1], ":="))
+    {
+      echo "<p><font color=red><b>Sorry, ResultIDs cannot contain \ : ; _ +  @ :=";
+      echo ". The resultID was " . $j[1] . "</b></font></p>";
+    }
+    else
+      $ResultIDs .= $i . ":";
+  }
+
 }
 ?>

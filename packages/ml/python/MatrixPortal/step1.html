@@ -13,7 +13,7 @@
   global $ProblemIDs;
   global $ResultIDs;
 
-  check_data($ProblemIDs, $ResultIDs);
+  check_data();
 
   if ($_POST['state'] == "add")
   {
@@ -165,7 +165,7 @@
   <input type="text" name="inx" value=100 size=5> x
   <input type="text" name="iny" value=100 size=5> grid.<br>
   conv = <input type="text" name="dconv" value=1 size=5>&nbsp;
-  diff = <input type="text" name="ddiff" value=1e-5 size=5>&nbsp;
+  epsilon = <input type="text" name="ddiff" value=1e-5 size=5>&nbsp;
   <p>This creates a matrix corresponding to the finite-difference discretization of the problem
   <p><img src=common/recirc1.png>
   <p>on the unit square, with homogeneous Dirichlet boundary conditions. A standard 5-pt stencil is used to discretize the diffusive term, and a simple upwind stencil is used for the convective term. Here,

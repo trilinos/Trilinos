@@ -35,32 +35,6 @@ HB_REPOSITORY = "/var/www/html/MatrixPortal/HBMatrices/"
 H5_REPOSITORY = "/var/www/html/MatrixPortal/H5Matrices/"
 
 # -------------------------------------------------------------------------
-def print_list(List, package):
-  print "<ul>";
-  ##for key in List.keys():
-  ##      print "<li><b>", key, "</b> = ", List[key]
-  if package == "ML":
-    for key in List.keys():
-      if (key == "smoother: type") | \
-         (key == "smoother: sweeps") | \
-         (key == "aggregation: nodes per aggregate") | \
-         (key == "smoother: pre or post") | \
-         (key == "smoother: damping factor") | \
-         (key == "aggregation: damping factor") | \
-         (key == "aggregation: type"):
-        print "<li><b>", key, "</b> = ", List[key]
-  elif package == "IFPACK":
-    for key in List.keys():
-      if (key == "chebyshev: degree") | \
-         (key == "relaxation: sweeps") | \
-         (key == "relaxation: damping") | \
-         (key == "fact: ict level-of-fill") | \
-         (key == "fact: ilut level-of-fill"):
-        print "<li><b>", key, "</b> = ", List[key]
-
-  print "</ul>"
-
-# -------------------------------------------------------------------------
 def set_type(List, name, type, value):  
   if (type == 'int'):
     List[name] = int(value);
@@ -114,8 +88,8 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicgstab);
   elif List['az_solver'] == "AZ_tfqmr":
     Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_tfqmr);
-  elif List['az_solver'] == "AZ_bicg":
-    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_bicg);
+  elif List['az_solver'] == "AZ_cgs":
+    Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_cgs);
   else:
     print "Solver type not correct, ", List['az_solver']
 
@@ -266,7 +240,7 @@ def generator(problemID, comm, List):
 # -------------------------------------------------------------------------
 def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
   print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=red>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=red>Problem Label =", Label, "</font></b>";
   print "<b><font color=red>Operation = matrix analysis </font></b>";
   IFPACK.AnalyzeMatrix(Matrix, True);
   #IFPACK.AnalyzeMatrixElements(Matrix);
@@ -275,11 +249,9 @@ def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
 # -------------------------------------------------------------------------
 def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=midnightblue>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=midnightblue>Problem Label =", Label, "</font></b>";
   print "<b><font color=midnightblue>Operation = ", What, "</b>";
 
-  print "<p>Using the following list for IFPACK:";
-  print_list(List, "IFPACK");
   print "The AztecOO/IFPACK output follows."
   print "</font>";
 
@@ -321,11 +293,9 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
 # -------------------------------------------------------------------------
 def perform_ML(Label, Map, Matrix, LHS, RHS, ExactSolution, NullSpace, List):
   print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=midnightblue>Problem Label = ", Label, "</font></b>";
+  print "<b><font color=midnightblue>Problem Label =", Label, "</font></b>";
   print "<b><font color=midnightblue>Operation = multilevel preconditioner</b>";
 
-  print "<p>Using the following list for ML:"
-  print_list(List, "ML");
   print "The AztecOO/ML output follows."
   print "</font>";
 
