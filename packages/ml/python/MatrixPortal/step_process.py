@@ -23,6 +23,7 @@ from PyTrilinos import Epetra, EpetraExt, AztecOO, ML, Galeri, IFPACK
 comm = Epetra.PyComm()
 
 count = 0
+analysis_count = 0
   
 # -------------------------------------------------------------------------
 # checks on parameters and location of the HB and H5 files
@@ -238,12 +239,24 @@ def generator(problemID, comm, List):
   return(Map, Matrix, LHS, RHS, ExactSolution, NullSpace);
 
 # -------------------------------------------------------------------------
-def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution):
+def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   print "<p><p><div class=\"outputBox\"><pre>";
   print "<b><font color=red>Problem Label =", Label, "</font></b>";
   print "<b><font color=red>Operation = matrix analysis </font></b>";
+  ImageBase = List['image_base'];
+  TimeStamp = List['timestamp'];
   IFPACK.AnalyzeMatrix(Matrix, True);
   #IFPACK.AnalyzeMatrixElements(Matrix);
+  global analysis_count
+  PSImageBase = ImageBase + TimeStamp + str(analysis_count) + ".ps"
+  PNGImageBase = ImageBase + TimeStamp + str(analysis_count) + ".png"
+
+  IFPACK.PrintSparsity(Matrix, PSImageBase)
+  import commands
+  u=commands.getoutput('convert ' + PSImageBase + ' ' + PNGImageBase)
+  print '<center><p><img src=../tmp/%s.png></center>' % (TimeStamp + str(analysis_count))
+  analysis_count = analysis_count + 1
+  
   print "&nbsp;<pre></div>";
 
 # -------------------------------------------------------------------------
@@ -379,7 +392,7 @@ def main():
 
     if List.has_key('perform_analysis'):
       if List['perform_analysis'] == "True":
-        perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution)
+        perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution, List)
     
     if List.has_key('perform_cheby'):
       if  List['perform_cheby'] == "True":

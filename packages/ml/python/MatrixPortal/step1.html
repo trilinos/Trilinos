@@ -86,24 +86,22 @@
   <!-- ===================================================================== -->
   
   <font color=blue>You are at Step 1: Select Data</font>
-  <a href="help/step_workflow.html"
-    onclick='window.open(this.href,null,"height=400,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
-    class="help">?</a>
 
   <p>In this step, you should specify at least one problem to be solved.
   Each problem is identified by a <b>label</b> or <b>ProblemID</b> you have to select. There are two
-  ways to supply problems: by selecting a matrix from the Matrix-Market or
-  Harwell/Boeing repositories, or by using the matrix generator.
-  Authorized users can upload their problems and add them to the already
-  available matrices. The list of problems currently selected is reported in
-  the <b>Current Settings</b> section. When you start, the list of <b>Recordered Results</b>
-  is empty; you first need to go through step 4 to populate this array. A <b>result</b> is an 
-  evaluation parameter for the solver you specified on a given problem.
+  ways to supply problems: by using the matrix generator, or by uploading
+  a matrix or linear system, using the Harwell/Boeing or HDF5 format, for
+  authorized users only..
+  The list of problems currently selected is reported in
+  the <b>Labels and Results</b> section, in the column <b>Problem IDs</b>. 
+  When you start, the other column, <b>Recordered Results</b>,
+  is empty; you first need to go through step 4 to populate this array. 
+  When results are present, they contain a label and a value, which is
+  the evaluation parameter for the solver you specified on a given problem.
 
   <p>To <b>continue</b>, proceed to Step 1C (Check Data) using the button at the
   bottom of the page to check your data, or go directly to Step 2 to specify the parameters
   for the linear solvers.</font>
-
 
   <div class="problemIDs">
   <?php print_problem_and_result($ProblemIDs, $ResultIDs, 1); ?> 
@@ -183,15 +181,15 @@
 
   Generic 9-pt stencil
   <p><img src=common/star2d_stencil.png>
-  <p>using the following values:
+  <p>The grid has <input type="text" name="inx" value=100 size=5> x
+  <input type="text" name="iny" value=100 size=5> nodes, and the 
+  following values are used:
   <p>
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny da db dc dd dz1 dz2 dz3 dz4">
   <input type="hidden" name=type value="Star2D">
-  <input type="text" name="inx" value=100 size=5> x
-  <input type="text" name="iny" value=100 size=5> grid.<br>
   a = <input type="text" name="da" value=8.0 size=5>&nbsp;
   b = <input type="text" name="db" value="-1.0" size=5>&nbsp;
   c = <input type="text" name="dc" value="-1.0" size=5>&nbsp;

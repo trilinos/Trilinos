@@ -21,22 +21,23 @@
   <? step_header("2"); ?>
 
   <font color=blue>You are at Step 2: Select Data</font>
-  <a href="help/step_workflow.html"
-    onclick='window.open(this.href,null,"height=400,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
-    class="help">?</a>
 
   <p>In this step, you should specify what linear solution techniques you want to analyze.
   Several choices are possible; for example, if you want to test the symmetric Gauss-Seidel
-  preconditioner, click on the "Yes" button where "analyze symmetric Gauss-Seidel" is reported.
+  preconditioner, first click on the "Relaxation Preconditioners" to show all the
+  parameters of this class of preconditioners, then
+  click on the "Yes" button where "analyze symmetric Gauss-Seidel" is reported. You can also select the number of sweeps and the damping parameter, or just take the default values.
+The same should
+  be done with any other family of preconditioners.
   You can enable as many solution techniques as you want. All problems you have selected at step 1
   will be tested with all the specified solution techniques.
 
   <p>You also have to specify how to evaluate the solution phase. The evaluation parameter,
-  called phi, is defined as a linear combition of CPU time, iterations and estimated condition number.
+  called <b>phi</b>, is defined as a linear combition of CPU time, iterations and estimated condition number.
   The weights are defined in the "Performance Evaluation" section of this page.
 
   <p>To <b>continue</b>, proceed to Step 3 (Compute Data) using the button at the
-  bottom of the page.</font>
+  bottom of the page. Note that if you don't specify any preconditioners, Step 3 will be an empty box.
 
   <!-- --------------------------------------------------------------------- -->
   
@@ -179,7 +180,7 @@
     <p class="subheading">
     <a onclick="toggle('cheby');" onkeypress="toggle('cheby');">Chebyshev Preconditioners:
     <a href="help/step2_chebyshev.html"
-       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       onclick='window.open(this.href,null,"height=300,width=400,status=yes,scrollbars=yes, toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
     <div class=closed id=cheby>
@@ -207,9 +208,9 @@
     <p>
     <div class="formSection">
     <p class="subheading">
-    <a onclick="toggle('relax');" onkeypress="toggle('relax');">Relaxation Preconditioners
+    <a onclick="toggle('relax');" onkeypress="toggle('relax');">Relaxation Preconditioners (Jacobi, Gauss-Seidel, SGS)
     <a href="help/step2_relaxation.html"
-       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
     <div class=closed id=relax>
@@ -264,9 +265,9 @@
     <div class="formSection">
     <p class="subheading">
     <a onclick="toggle('ifpack');" onkeypress="toggle('ifpack');">
-    Incomplete Factorization Preconditioners</a>
+    Incomplete Factorization Preconditioners (IC, ICT, ILU, ILUT)</a>
      <a href="help/step2_incomplete_factorization.html"
-       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
     <div class=closed id=ifpack>
@@ -323,7 +324,7 @@
     <p class="subheading">
     <a onclick="toggle('ml');" onkeypress="toggle('ml');">Multilevel Preconditioners</a>
     <a href="help/step2_multilevel.html"
-       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
     <div class=closed id=ml>
@@ -502,7 +503,7 @@
     <p class="subheading"><font color=blue>
     <a onclick="toggle('item1');" onkeypress="toggle('item1');">Performance Evaluation</a></font>
     <a href="help/step2_performance.html"
-       onclick='window.open(this.href,null,"height=300,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
     <div class=closed id=item1>

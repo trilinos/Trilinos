@@ -70,15 +70,12 @@
   <? step_header("4"); ?>
 
   <font color=blue>You are at Step 4: Check Results</font>
-  <a href="help/step_workflow.html"
-    onclick='window.open(this.href,null,"height=400,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
-    class="help">?</a>
   
   <p>Here you can analyze all or parrt of the results, in a table and graph format.
 
   <p>To <b>continue</b>, proceed to either Step 1 and select new
   problems, or to Step 2 and specify new solution techniques. 
-  <p>Note: if you use the <b>back</b> button, your results will <b>not</b> be recordered. Please use the Step buttom at the top of this page.
+  <p>Note: if you use the <b>back</b> button, your results will <b>not</b> be recordered. Please use the Step button at the top of this page if you want to go back to Step 1 or 2.
 
   <!-- --------------------------------------------------------------------- -->
 
@@ -207,19 +204,19 @@
   <tr><td>Y-axis label:</td><td>
   <input type=text name=y_legend value="<? global $y_legend; echo $y_legend;?>"  size=20>
   </td></tr>
-  <tr><td>Red data:</td><td>
+  <tr><td>Label for red data:</td><td>
   <input type=text name=red_legend value="<? global $red_legend; echo $red_legend;?>"  size=20>
-  </td></tr>
-  <tr><td>Green data:</td><td>
+  </td>
+  <td>&nbsp;Label for green data:</td><td>
   <input type=text name=green_legend value="<? global $green_legend; echo $green_legend;?>"  size=20>
   </td></tr>
-  <tr><td>Blue data:</td><td>
+  <tr><td>Label for blue data:</td><td>
   <input type=text name=blue_legend value="<? global $blue_legend; echo $blue_legend;?>"  size=20>
-  </td></tr>
-  <tr><td>Purple data:</td><td>
+  </td>
+  <td>&nbsp;Purple data:</td><td>
   <input type=text name=purple_legend value="<? global $purple_legend; echo $purple_legend;?>"  size=20>
   </td></tr>
-  <tr><td>Yellow data:</td><td>
+  <tr><td>Label for yellow data:</td><td>
   <input type=text name=yellow_legend value="<? global $yellow_legend; echo $yellow_legend;?>"  size=20>
   </td></tr>
   </td></tr></table>
@@ -449,7 +446,7 @@ if ($_POST['plot'] == "plot/replot")
 
     passthru('python /tmp/gnuplot-' . $timestamp . ".dat --format=png --scale=3 --output=" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png");
 
-    echo '<IMG SRC=../tmp/gnuplot-' . $timestamp . '.png>';
+    echo '<img src=../tmp/gnuplot-' . $timestamp . '.png>';
   }
     
 }

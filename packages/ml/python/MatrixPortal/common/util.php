@@ -4,14 +4,6 @@ $counter = 1;
 
 ################################################################################
 
-function print_header() {
-
-  echo '<p class="heading">WebSolver</p>';
-  
-}
-
-################################################################################
-
 function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
 {
 ?>
@@ -189,6 +181,7 @@ function process()
   $timestamp = date("y-m-d_H.i.s", time());
 
   global $ProblemIDs;
+  global $ImageDirectory;
   global $TempDirectory;
   global $PythonDirectory;
 
@@ -196,6 +189,8 @@ function process()
 
   $configString  = "";
   $configString .= "ProblemIDs         := ".$ProblemIDs ."\n";
+  $configString .= "s:image_base       := ".$ImageDirectory . "\n";
+  $configString .= "s:timestamp        := ".$timestamp . "\n";
   $configString .= "i:iters            := ".$_POST['iters'] ."\n";
   $configString .= "d:tol              := ".$_POST['tol'] ."\n";
   $configString .= "s:az_solver        := ".$_POST['az_solver'] ."\n";
@@ -248,7 +243,7 @@ function step_header($thisID)
 ?>
 
   <table border=0>
-  <tr><td>
+  <tr valign=top><td>
   <form action="step1.html" enctype="multipart/form-data" method="post" name="inputForm">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
@@ -273,6 +268,10 @@ function step_header($thisID)
   <input type="submit" class=submitSecondary name="submit" value="Step 4: Check Results">
   </form> &nbsp; &nbsp;
   <? } ?>
+  </td><td>
+  <a href="help/step_workflow.html"
+    onclick='window.open(this.href,null,"height=600,width=400,scrollbars=yes,status=no,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a>
   </td></tr></table>
 <?
 }
