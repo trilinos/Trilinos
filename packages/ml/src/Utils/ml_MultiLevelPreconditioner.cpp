@@ -2297,9 +2297,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if( CoarseSolution == "do-nothing" ) {
     // do nothing, ML will not use any coarse solver 
   } else {
-    ML_Gen_Smoother_Amesos(ml_, LevelID_[NumLevels_-1], 
-                           ML_AMESOS_KLU, MaxProcs, AddToDiag);
-    ML_EXIT(-1); // Amesos is only the default...
+    if( Comm().MyPID() == 0 ) {
+      cout << ErrorMsg_ << "specified options for coarse solver ("
+           << CoarseSolution << ") not valid. Should be:" << endl;
+      cout << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel> / <symmetric Gauss-Seidel /" << endl;
+      cout << ErrorMsg_ << "<MLS> / <Hiptmair> / <Amesos-LAPACK> / <Amesos-KLU> /" << endl;
+      cout << ErrorMsg_ << "<Amesos-UMFPACK> / <Amesos-Superludist> / <Amesos-Superlu> /" << endl;
+      cout << ErrorMsg_ << "<Amesos-MUMPS> / <block Gauss-Seidel> /" << endl;
+      cout << ErrorMsg_ << "<symmetric block Gauss-Seidel>";
+    }
+
+    ML_EXIT(-1);
   }
     
   return 0;
