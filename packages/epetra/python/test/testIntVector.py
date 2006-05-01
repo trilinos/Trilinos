@@ -79,7 +79,6 @@ class EpetraIntVectorTestCase(unittest.TestCase):
     def testConstructor03(self):
         "Test Epetra.IntVector (BlockMap,bad-list) constructor"
         list = [0, 1.0, "e", "pi"]
-        eiv = Epetra.IntVector(self.map,list)
         self.assertRaises(TypeError,Epetra.IntVector,self.map,list)
 
     def testConstructor04(self):
