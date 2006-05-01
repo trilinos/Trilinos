@@ -44,7 +44,6 @@ except ImportError:
     print >>sys.stderr, "Using system-installed Epetra"
 
 import unittest
-import numpy
 from   numpy    import *
 
 ##########################################################################
@@ -312,13 +311,6 @@ class EpetraIntVectorTestCase(unittest.TestCase):
 ##########################################################################
 
 if __name__ == "__main__":
-
-    # Print system environment information
-    print >>sys.stderr, sys.executable, sys.version
-    print >>sys.stderr, "\nEpetra module:", Epetra.__file__
-    print >>sys.stderr, "   ", Epetra.Version()
-    print >>sys.stderr, "\nnumpy module: ", numpy.__file__
-    print >>sys.stderr, "    Version:", numpy.__version__
 
     # Create the test suite object
     suite = unittest.TestSuite()
