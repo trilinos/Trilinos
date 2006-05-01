@@ -16,7 +16,7 @@
 
 #@HEADER
 
-SOURCES = $(ml_XML_SOURCES) $(ml_aztec_simple_SOURCES) $(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) $(ml_readex_SOURCES)
+SOURCES = $(ml_XML_SOURCES) $(ml_aztec_simple_SOURCES) $(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) $(ml_readex_SOURCES) $(ml_user_smoothing_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,7 +40,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = ml_aztec_simple$(EXEEXT) ml_operator$(EXEEXT) \
-	ml_preconditioner$(EXEEXT) ml_readex$(EXEEXT) ml_XML$(EXEEXT)
+	ml_preconditioner$(EXEEXT) ml_user_smoothing$(EXEEXT) \
+	ml_readex$(EXEEXT) ml_XML$(EXEEXT)
 subdir = examples/BasicExamples
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -92,6 +93,9 @@ am_ml_preconditioner_OBJECTS =  \
 ml_preconditioner_OBJECTS = $(am_ml_preconditioner_OBJECTS)
 am_ml_readex_OBJECTS = ml_readex-ml_readex.$(OBJEXT)
 ml_readex_OBJECTS = $(am_ml_readex_OBJECTS)
+am_ml_user_smoothing_OBJECTS =  \
+	ml_user_smoothing-ml_user_smoothing.$(OBJEXT)
+ml_user_smoothing_OBJECTS = $(am_ml_user_smoothing_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -99,7 +103,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_operator-ml_operator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_readex-ml_readex.Po
+@AMDEP_TRUE@	./$(DEPDIR)/ml_readex-ml_readex.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
@@ -110,10 +115,10 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(ml_XML_SOURCES) $(ml_aztec_simple_SOURCES) \
 	$(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) \
-	$(ml_readex_SOURCES)
+	$(ml_readex_SOURCES) $(ml_user_smoothing_SOURCES)
 DIST_SOURCES = $(ml_XML_SOURCES) $(ml_aztec_simple_SOURCES) \
 	$(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) \
-	$(ml_readex_SOURCES)
+	$(ml_readex_SOURCES) $(ml_user_smoothing_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -307,6 +312,10 @@ ml_readex_SOURCES = $(srcdir)/ml_readex.c
 ml_readex_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_readex_CFLAGS = $(EXAMPLE_INCLUDES)
 ml_readex_LDADD = $(EXAMPLE_LIBS)
+ml_user_smoothing_SOURCES = $(srcdir)/ml_user_smoothing.cpp
+ml_user_smoothing_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_user_smoothing_CXXFLAGS = $(EXAMPLE_INCLUDES)
+ml_user_smoothing_LDADD = $(EXAMPLE_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -358,6 +367,9 @@ ml_preconditioner$(EXEEXT): $(ml_preconditioner_OBJECTS) $(ml_preconditioner_DEP
 ml_readex$(EXEEXT): $(ml_readex_OBJECTS) $(ml_readex_DEPENDENCIES) 
 	@rm -f ml_readex$(EXEEXT)
 	$(LINK) $(ml_readex_LDFLAGS) $(ml_readex_OBJECTS) $(ml_readex_LDADD) $(LIBS)
+ml_user_smoothing$(EXEEXT): $(ml_user_smoothing_OBJECTS) $(ml_user_smoothing_DEPENDENCIES) 
+	@rm -f ml_user_smoothing$(EXEEXT)
+	$(CXXLINK) $(ml_user_smoothing_LDFLAGS) $(ml_user_smoothing_OBJECTS) $(ml_user_smoothing_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -370,6 +382,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operator-ml_operator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readex-ml_readex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -482,6 +495,22 @@ ml_preconditioner-ml_preconditioner.obj: $(srcdir)/ml_preconditioner.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner-ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`
+
+ml_user_smoothing-ml_user_smoothing.o: $(srcdir)/ml_user_smoothing.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_smoothing_CXXFLAGS) $(CXXFLAGS) -MT ml_user_smoothing-ml_user_smoothing.o -MD -MP -MF "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Tpo" -c -o ml_user_smoothing-ml_user_smoothing.o `test -f '$(srcdir)/ml_user_smoothing.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_smoothing.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Tpo" "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Po"; else rm -f "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_smoothing.cpp' object='ml_user_smoothing-ml_user_smoothing.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Po' tmpdepfile='$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_smoothing_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_smoothing-ml_user_smoothing.o `test -f '$(srcdir)/ml_user_smoothing.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_smoothing.cpp
+
+ml_user_smoothing-ml_user_smoothing.obj: $(srcdir)/ml_user_smoothing.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_smoothing_CXXFLAGS) $(CXXFLAGS) -MT ml_user_smoothing-ml_user_smoothing.obj -MD -MP -MF "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Tpo" -c -o ml_user_smoothing-ml_user_smoothing.obj `if test -f '$(srcdir)/ml_user_smoothing.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_smoothing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_smoothing.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Tpo" "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Po"; else rm -f "$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_smoothing.cpp' object='ml_user_smoothing-ml_user_smoothing.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.Po' tmpdepfile='$(DEPDIR)/ml_user_smoothing-ml_user_smoothing.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_user_smoothing_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_smoothing-ml_user_smoothing.obj `if test -f '$(srcdir)/ml_user_smoothing.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_smoothing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_smoothing.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

@@ -14,6 +14,7 @@ EXTRA_DIST = ml_ParameterList.xml
 noinst_PROGRAMS = ml_aztec_simple   \
                   ml_operator       \
                   ml_preconditioner \
+                  ml_user_smoothing \
 		  ml_readex         \
 		  ml_XML
 
@@ -43,3 +44,8 @@ ml_readex_SOURCES      = $(srcdir)/ml_readex.c
 ml_readex_DEPENDENCIES = $(top_builddir)/src/libml.a
 ml_readex_CFLAGS       = $(EXAMPLE_INCLUDES)
 ml_readex_LDADD        = $(EXAMPLE_LIBS)
+
+ml_user_smoothing_SOURCES      = $(srcdir)/ml_user_smoothing.cpp
+ml_user_smoothing_DEPENDENCIES = $(top_builddir)/src/libml.a
+ml_user_smoothing_CXXFLAGS     = $(EXAMPLE_INCLUDES)
+ml_user_smoothing_LDADD        = $(EXAMPLE_LIBS)
