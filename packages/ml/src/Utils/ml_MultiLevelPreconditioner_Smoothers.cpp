@@ -129,6 +129,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     edge_its = List_.get(parameter, 1);
   }
 
+  ML_Smoother *userSmoother;
+
   // ===================== //
   // cycle over all levels //
   // ===================== //
@@ -593,7 +595,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       else if (SubSmootherType == "symmetric Gauss-Seidel") {
         sprintf(parameter,"subsmoother: damping factor (level %d)",
                 level);
-        omega = List_.get(parameter,1.0);
+        omega = List_.get(parameter,ML_DDEFAULT);
         nodal_smoother=(void *) ML_Gen_Smoother_SymGaussSeidel;
         ML_Smoother_Arglist_Set(nodal_args_, 0, &nodal_its);
         ML_Smoother_Arglist_Set(nodal_args_, 1, &omega);
@@ -656,6 +658,34 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         ML_Gen_Smoother_MLS(ml_subproblem,0,ML_PRESMOOTHER,eig_ratio,degree);
       }
 
+    } else if( Smoother == "user-defined" || Smoother == "user defined" ) {
+
+      // ============ //
+      // user-defined //
+      // ============ //
+
+      int (*userSmootherPtr)(ML_Smoother *, int, double *, int, double *);
+      userSmootherPtr = NULL;
+      userSmootherPtr = List_.get("smoother: user-defined function",
+                                  userSmootherPtr);
+      string userSmootherName;
+      userSmootherName = List_.get("smoother: user-defined name",
+                                   "User-defined");
+
+      if( verbose_ ) cout << msg << userSmootherName << " (sweeps=" 
+			 << num_smoother_steps << "," << PreOrPostSmoother << ")" << endl;
+
+      if (userSmootherPtr == NULL) {
+        if (Comm().MyPID() == 0)
+          cerr << ErrorMsg_
+               << "No pointer to user-defined smoother function found." << endl;
+        ML_EXIT(EXIT_FAILURE);
+      }
+      ML_Operator *data;
+      ML_Get_Amatrix(ml_, LevelID_[level], &data);
+      ML_Set_Smoother(ml_, LevelID_[level], pre_or_post , data,
+                      userSmootherPtr,
+                      const_cast<char *>(userSmootherName.c_str()));
 
     } else if( Smoother == "do-nothing" ) {
 
@@ -683,8 +713,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 	          << ErrorMsg_
               << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl
 	          << ErrorMsg_ << "<MLS> / <ParaSails>" << endl;
-      ML_EXIT(-99);
-    }
+      ML_EXIT(-99); }
     
     if( verbose_ ) 
       cout << msg << "Setup time : " << Time.ElapsedTime() << " (s)" << endl;
