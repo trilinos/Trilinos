@@ -87,7 +87,9 @@
   
   <!-- ===================================================================== -->
   
-  <font color=blue>You are at Step 1: Select Data,<b>&nbsp;
+  <div class="ProblemIDs">
+  <p>
+  <font color=blue>You are at Step 1: Select Data, in <b>
   <? global  $Mode;
      if ($Mode == "beginner")
        echo "beginner mode.";
@@ -102,7 +104,6 @@
 
   <br>
   <br>
-  <div class="instructions">
   <p>The first step of MatrixPortal is used to define the problems to be
   solved. Here you can either generate a problem, or upload your linear
   system if you are an authorized user.
@@ -125,7 +126,6 @@
   At this point, the box below should now contain these three labels in the "Problem IDs" column. If you make a mistake, you can delete the wrong labels.
   <p>When you done with this, go at the bottom of the page, and proceed to step 1C to check your data.
   <p>Note: there are many more choices for the problem generator in the intermediate and expert mode, not reported here for the sake of clarity.
-  </div>
   <br>
 
   <? } 
@@ -153,17 +153,18 @@
   <p></p>
   <?   } ?>
 
-  <div class="problemIDs">
+  <p>
   <?php print_problem_and_result($ProblemIDs, $ResultIDs, 1); ?> 
   </div>
 
   <!-- ----------------------------------------------------------------- -->
 
-  <p class="heading">Data from Generator:&nbsp; <a href="help/step1_generator.html"
+  <p>
+  <div class="formSection">
+  <p class="subheading">Data from Generator:&nbsp; <a href="help/step1_generator.html"
     onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
     class="help">?</a></p>
   
-  <div class="formSection">
   <ol>
   
   <li>
@@ -294,18 +295,19 @@
 
   <!-- ----------------------------------------------------------------- -->
 
+  <p>
+  <div class="formSection">
   <? global $Mode; if ($Mode != "beginner") { ?>
 
-  <p class="heading">Data from Collections: <a href="help/step1_collections.html"
+  <p class="subheading">Data from Collections: <a href="help/step1_collections.html"
     onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
     class="help">?</a></p>
   
-  <div class="formSection">
   
   <ol>
   
   <li>
-  Problems rsa from the Harwell/Boeing collection
+  Linear problems from the Harwell/Boeing collection
   <p>
 
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
@@ -343,11 +345,12 @@
 
   <!-- ----------------------------------------------------------------- -->
 
-  <p class="heading">Upload Data (requires access code): <a href="help/step1_upload.html"
+  <p>
+  <div class="formSection">
+  <p class="subheading">Upload Data (requires access code): <a href="help/step1_upload.html"
     onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
     class="help">?</a></p>
 
-  <div class="formSection">
   <p>
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
   

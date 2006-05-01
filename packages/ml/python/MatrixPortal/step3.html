@@ -22,7 +22,9 @@
   <? global $Mode; if ($Mode != "beginner")
      step_header("3"); ?>
 
-  <font color=blue>You are at Step 3: Compute,<b>&nbsp;
+  <div class="ProblemIDs">
+  <p>
+  <font color=blue>You are at Step 3: Compute, in <b>
   <? global  $Mode;
      if ($Mode == "beginner")
        echo "beginner mode.";
@@ -37,7 +39,6 @@
   
   <br>
   <br>
-  <div class="instructions">
   Here you can give a look to the output of each solution phase. Each problem
 has been solved using the multilevel preconditioner, and the evaluation
 parameter (phi) is reported. Each phi has a tentative label that you can modify.
@@ -62,7 +63,6 @@ bottom of the page and proceed to Step 4.  </div>
   <!-- ===================================================================== -->
   
   <p>
-  <div class="problemIDs">
   <?
   print_problem_and_result($ProblemIDs, $ResultIDs);
   echo "</div></p>";

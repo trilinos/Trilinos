@@ -22,7 +22,9 @@
   <? global $Mode; 
      if ($Mode != "beginner") step_header("2"); ?>
 
-  <font color=blue>You are at Step 2: Select Data,<b>&nbsp;
+  <div class="ProblemIDs">
+  <p>
+  <font color=blue>You are at Step 2: Select Data, in <b>
   <? global  $Mode;
      if ($Mode == "beginner")
        echo "beginner mode.";
@@ -37,7 +39,6 @@
 
   <br>
   <br>
-  <div class="instructions">
 
   <p>This is the step where the Krylov solver and the preconditioners are specified. We select the following:
   <ol>
@@ -45,14 +46,12 @@
   <li>set the tolerance to 1e-9;
   <li>enable multilevel preconditioners by clicking on the Yes button of the
   <b>Analyze Multilevel Preconditioners</b> option;
-  <li>Scroll down the page, and in the options for multilevel preconditioners specify a smoother for the preconditioner, for example an incomplete Cholesky (IC) for level 1 and 2.
-  <li>define condition number as evaluation parameter.
+  <li>define condition number as evaluation parameter;
+  <li>Scroll down the page, and in the options for multilevel preconditioners specify a smoother for the preconditioner, for example an incomplete Cholesky (IC) for level 1 and 2. You can skip this step if you want.
   </ol>
 
   <p>To <b>continue</b>, proceed to Step 3 (Compute Data) using the button at the
   bottom of the page. Note that if you don't enable any preconditioners, Step 3 will be an empty box.
-
-  </div> 
 
   <? } 
      else if ($Mode == "intermediate") { ?>
@@ -67,13 +66,11 @@
   bottom of the page. Note that if you don't specify any preconditioners, Step 3 will be an empty box.
 
   <? } else if ($Mode == "expert") { ?>
-  <p></p>
   <? } ?>
 
   <!-- --------------------------------------------------------------------- -->
   
   <br/>
-  <div class="problemIDs">
   <?php print_problem_and_result($ProblemIDs, $ResultIDs); ?> 
   </div>
   <p>

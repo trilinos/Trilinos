@@ -22,7 +22,9 @@
   <? global $Mode; 
      if ($Mode != "beginner") step_header("1C"); ?>
   
-  <font color=blue>You are at Step 1C: Check Data,<b>&nbsp;
+  <div class="ProblemIDs">
+  <p>
+  <font color=blue>You are at Step 1C: Check Data, in <b>
   <? global  $Mode;
      if ($Mode == "beginner")
        echo "beginner mode.";
@@ -37,13 +39,11 @@
 
   <br>
   <br>
-  <div class="instructions">
   <p>This step, which is optional, allows you to verify that the matrix has the
 correct  number of rows. You can give a look to the number of nonzeros, the
 ratio between nonzeros and rows, and observe the sparsity pattern of the
 matrix.
   <p>To continue, go to the bottom of the page and proceed to Step 2.
-  </div>
   
   <? } 
      else if ($Mode == "intermediate") { ?>
@@ -63,7 +63,6 @@ matrix.
   <!-- ===================================================================== -->
   
   <p>
-  <div class="problemIDs">
   <?
   print_problem_and_result($ProblemIDs, $ResultIDs);
   echo "</div></p>";
