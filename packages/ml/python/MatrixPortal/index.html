@@ -72,13 +72,15 @@
 
   <p>You can move across these steps as shown in the following picture:
   <p>
-  <br><img src=common/workflow.png width=500 border=0>
+  <br>&nbsp;&nbsp;<img src=common/workflow.png width=500 border=0>
 
   <p>
   <br>To start, go to <a href=step1.html>Step 1</a> and select the data to be analyzed.
   
   <br>
   <br>
+  <p class=heading>Implementation Details and Installation</p>
+
   <p>MatrixPortal is part of the <a
   href=http://software.sandia.gov/trilinos/packages/ml>ML</a> package of <a
   href=http://software.sandia.gov/trilinos>Trilinos</a>. Other than ML, the following Trilinos packages are used by MatrixPortal: 
@@ -93,7 +95,6 @@ multilevel preconditioners based on smoothed aggregation procedures. All these
 packages are used through its Python interface, that is, through 
   <a href=http://software.sandia.gov/trilinos/packages/pytrilinos>PyTrilinos</a>.
 
-  <br>
   <p>To install MatrixPortal, you first need to install Trilinos and 
   PyTrilinos; a possible configuration
   script is <a href=./configure.txt>here</a>. We suggest to enable the support
@@ -103,9 +104,17 @@ packages are used through its Python interface, that is, through
   you need a web server (we use <a href=http://www.apache.org>Apache</a>) with 
   <a href=http://www.php.net>PHP</a> support. The graphs in Step 4 are done by
   <a href=http://home.gna.org/pychart/>PyChart</a>, but you can use
-  GNUPLOT if you don't mind to have simple graphs.
+  GNUPLOT if you don't mind having simple graphs. A simplified workflow is
+  reported in the figure below; note that, in the current implementation,
+  the server and solver are hosted on the same machine.
+  <br>
+  <p>
+  &nbsp;&nbsp;<img src=./common/diagram.png>
 
   <br>
+  <br>
+  <p class=heading>Developers</p>
+
   <p>MatrixPortal is developed by Marzio Sala (COLAB/ETHZ), Michael Phenow (SNL), 
   Jonathan Hu (SNL), and Ray Tuminaro (SNL).
 
