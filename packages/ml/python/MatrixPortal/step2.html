@@ -12,25 +12,52 @@
 
   global $ProblemIDs;
   global $ResultIDs;
+  global $Mode;
 
   check_data();
 ?>
 
 <!-- begin content ######################################################### -->
 
-  <? step_header("2"); ?>
+  <? global $Mode; 
+     if ($Mode != "beginner") step_header("2"); ?>
 
-  <font color=blue>You are at Step 2: Select Data</font>
+  <font color=blue>You are at Step 2: Select Data,<b>&nbsp;
+  <? global  $Mode;
+     if ($Mode == "beginner")
+       echo "beginner mode.";
+     else if ($Mode == "intermediate")
+       echo "intermediate mode.";
+     else if ($Mode == "expert")
+       echo "expert mode.";
+  ?></b></font>
+
+  <? global  $Mode;
+     if ($Mode == "beginner") { ?>
+
+  <br>
+  <br>
+  <div class="instructions">
+
+  <p>This is the step where the Krylov solver and the preconditioners are specified. We select the following:
+  <ol>
+  <li>conjugate gradient with condition number estimate (<tt>CG with condnum</tt>);
+  <li>set the tolerance to 1e-9;
+  <li>enable multilevel preconditioners by clicking on the Yes button of the
+  <b>Analyze Multilevel Preconditioners</b> option;
+  <li>Scroll down the page, and in the options for multilevel preconditioners specify a smoother for the preconditioner, for example an incomplete Cholesky (IC) for level 1 and 2.
+  <li>define condition number as evaluation parameter.
+  </ol>
+
+  <p>To <b>continue</b>, proceed to Step 3 (Compute Data) using the button at the
+  bottom of the page. Note that if you don't enable any preconditioners, Step 3 will be an empty box.
+
+  </div> 
+
+  <? } 
+     else if ($Mode == "intermediate") { ?>
 
   <p>In this step, you should specify what linear solution techniques you want to analyze.
-  Several choices are possible; for example, if you want to test the symmetric Gauss-Seidel
-  preconditioner, first click on the "Relaxation Preconditioners" to show all the
-  parameters of this class of preconditioners, then
-  click on the "Yes" button where "analyze symmetric Gauss-Seidel" is reported. You can also select the number of sweeps and the damping parameter, or just take the default values.
-The same should
-  be done with any other family of preconditioners.
-  You can enable as many solution techniques as you want. All problems you have selected at step 1
-  will be tested with all the specified solution techniques.
 
   <p>You also have to specify how to evaluate the solution phase. The evaluation parameter,
   called <b>phi</b>, is defined as a linear combition of CPU time, iterations and estimated condition number.
@@ -38,6 +65,10 @@ The same should
 
   <p>To <b>continue</b>, proceed to Step 3 (Compute Data) using the button at the
   bottom of the page. Note that if you don't specify any preconditioners, Step 3 will be an empty box.
+
+  <? } else if ($Mode == "expert") { ?>
+  <p></p>
+  <? } ?>
 
   <!-- --------------------------------------------------------------------- -->
   
@@ -65,9 +96,8 @@ The same should
 
     <div class="formSection">
     <p class="subheading">
-    <a onclick="toggle('general');" onkeypress="toggle('general');">General Settings</p>
+    General Settings</p>
 
-    <div class=open id=general>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Solver: </td>
@@ -167,23 +197,21 @@ The same should
         <option value="constant">Constant
         </select></td>
       </tr>
+        <? begin_select_parameter('phi', "evaluation: type", "s"); ?>
+        <? add_select_parameter("iterations", "iterations"); ?>
+        <? add_select_parameter("condnum", "condition number"); ?>
+        <? add_select_parameter("setup+sol", "setup + solution time"); ?>
+        <? add_select_parameter("setup", "setup time"); ?>
+        <? add_select_parameter("sol", "solution time"); ?>
+        <? end_select_parameter(); ?>
+      <tr><td>phi is the evaluation parameter<a href="help/step2_performance.html"
+       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></td><td>
+
+
+      </td></tr>
     </table><br />
 
-    </div>
-    </div>
-    <p>
-
-    <!-- ---------------------------------------------------------- -->
-
-    <p>
-    <div class="formSection">
-    <p class="subheading">
-    <a onclick="toggle('cheby');" onkeypress="toggle('cheby');">Chebyshev Preconditioners:
-    <a href="help/step2_chebyshev.html"
-       onclick='window.open(this.href,null,"height=300,width=400,status=yes,scrollbars=yes, toolbar=no,menubar=no,location=no"); return false;'
-       class="help">?</a></p>
-
-    <div class=closed id=cheby>
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Analyze Chebyshev Preconditioners: </td><td>
@@ -192,29 +220,6 @@ The same should
         <input type="radio" name="perform_cheby" value="False" checked> No
       </tr>
       <tr>
-    </table><br />
-
-    <table class="formTable" cellspacing="0" cellpadding="0">
-    <? begin_select_parameter("Degree of the polynomial", "chebyshev: degree", "i"); ?>
-    <? for ($i = 1; $i < 6; ++$i)
-         add_select_parameter("$i", "$i"); ?>
-    <? end_select_parameter(); ?>
-    </table><br />
-    </div>
-    </div>
-
-    <!-- ---------------------------------------------------------- -->
-
-    <p>
-    <div class="formSection">
-    <p class="subheading">
-    <a onclick="toggle('relax');" onkeypress="toggle('relax');">Relaxation Preconditioners (Jacobi, Gauss-Seidel, SGS)
-    <a href="help/step2_relaxation.html"
-       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
-       class="help">?</a></p>
-
-    <div class=closed id=relax>
-    <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
         <td>Analyze Jacobi Preconditioners: </td><td>
         <input type="radio" name="perform_jacobi" value="True"> Yes
@@ -233,7 +238,69 @@ The same should
         &nbsp; &nbsp;
         <input type="radio" name="perform_sgs" value="False" checked> No
       </tr>
+      <tr>
+        <td>Analyze IC Preconditioners: </td><td>
+        <input type="radio" name="perform_ic" value="True"> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_ic" value="False" checked> No
+      </tr>
+      <tr>
+        <td>Analyze ICT Preconditioners:</td><td>
+        <input type="radio" name="perform_ict" value="True"> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_ict" value="False" checked> No
+      </tr>
+      <tr>
+        <td>Analyze ILU Preconditioners: </td><td>
+        <input type="radio" name="perform_ilu" value="True"> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_ilu" value="False" checked> No
+      </tr>
+      <tr>
+        <td>Analyze ILUT Preconditioners:</td><td>
+        <input type="radio" name="perform_ilut" value="True"> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_ilut" value="False" checked> No
+      </tr>
+      <tr>
+        <td>Analyze Multilevel Preconditioners: </td><td>
+        <input type="radio" name="perform_ml" value="True"> Yes
+        &nbsp; &nbsp;
+        <input type="radio" name="perform_ml" value="False" checked> No
+      </tr>
     </table><br />
+    </div>
+    <p>
+    <p><font color=red>Note: at least one preconditioner has to be analyzed (enabled)</font>
+
+    <!-- ---------------------------------------------------------- -->
+
+    <p>
+    <div class="formSection">
+    <p class="subheading">
+    Chebyshev Preconditioners:
+    <a href="help/step2_chebyshev.html"
+       onclick='window.open(this.href,null,"height=300,width=400,status=yes,scrollbars=yes, toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></p>
+
+    <table class="formTable" cellspacing="0" cellpadding="0">
+    <? begin_select_parameter("Degree of the polynomial", "chebyshev: degree", "i"); ?>
+    <? for ($i = 1; $i < 6; ++$i)
+         add_select_parameter("$i", "$i"); ?>
+    <? end_select_parameter(); ?>
+    </table><br />
+    </div>
+
+    <!-- ---------------------------------------------------------- -->
+
+    <p>
+    <div class="formSection">
+    <p class="subheading">
+    Relaxation Preconditioners (Jacobi, Gauss-Seidel, SGS)
+    <a href="help/step2_relaxation.html"
+       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
+       class="help">?</a></p>
+
 
     <table class="formTable" cellspacing="0" cellpadding="0">
     <? begin_select_parameter("Damping factor", "relaxation: damping factor", "d"); ?>
@@ -264,39 +331,10 @@ The same should
     <p>
     <div class="formSection">
     <p class="subheading">
-    <a onclick="toggle('ifpack');" onkeypress="toggle('ifpack');">
-    Incomplete Factorization Preconditioners (IC, ICT, ILU, ILUT)</a>
+    Incomplete Factorization Preconditioners (IC, ICT, ILU, ILUT)
      <a href="help/step2_incomplete_factorization.html"
        onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
-
-    <div class=closed id=ifpack>
-    <table class="formTable" cellspacing="0" cellpadding="0">
-      <tr>
-        <td>Analyze IC Preconditioners: </td><td>
-        <input type="radio" name="perform_ic" value="True"> Yes
-        &nbsp; &nbsp;
-        <input type="radio" name="perform_ic" value="False" checked> No
-      </tr>
-      <tr>
-        <td>Analyze ICT Preconditioners:</td><td>
-        <input type="radio" name="perform_ict" value="True"> Yes
-        &nbsp; &nbsp;
-        <input type="radio" name="perform_ict" value="False" checked> No
-      </tr>
-      <tr>
-        <td>Analyze ILU Preconditioners: </td><td>
-        <input type="radio" name="perform_ilu" value="True"> Yes
-        &nbsp; &nbsp;
-        <input type="radio" name="perform_ilu" value="False" checked> No
-      </tr>
-      <tr>
-        <td>Analyze ILUT Preconditioners:</td><td>
-        <input type="radio" name="perform_ilut" value="True"> Yes
-        &nbsp; &nbsp;
-        <input type="radio" name="perform_ilut" value="False" checked> No
-      </tr>
-    </table><br />
 
     <table class="formTable" cellspacing="0" cellpadding="0">
     <? begin_select_parameter("Level-of-fill for ILU and IC", "fact: level-of-fill", "i"); ?>
@@ -315,27 +353,17 @@ The same should
     <? end_select_parameter(); ?>
     </table><br />
     </div>
-    </div>
 
     <!-- ---------------------------------------------------------- -->
 
     <p>
     <div class="formSection">
     <p class="subheading">
-    <a onclick="toggle('ml');" onkeypress="toggle('ml');">Multilevel Preconditioners</a>
+    Multilevel Preconditioners
     <a href="help/step2_multilevel.html"
        onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
        class="help">?</a></p>
 
-    <div class=closed id=ml>
-    <table class="formTable" cellspacing="0" cellpadding="0">
-      <tr>
-        <td>Analyze Multilevel Preconditioners: </td><td>
-        <input type="radio" name="perform_ml" value="True"> Yes
-        &nbsp; &nbsp;
-        <input type="radio" name="perform_ml" value="False" checked> No
-      </tr>
-    </table><br />
 
     <p>
     <table class="formTable" cellspacing="0" cellpadding="0">
@@ -496,62 +524,12 @@ The same should
     </div>
     </div>
 
-    <!-- ---------------------------------------------------------- -->
-
-    <p>
-    <div class="formSection">
-    <p class="subheading"><font color=blue>
-    <a onclick="toggle('item1');" onkeypress="toggle('item1');">Performance Evaluation</a></font>
-    <a href="help/step2_performance.html"
-       onclick='window.open(this.href,null,"height=300,width=400,scrollbars=yes,status=yes,toolbar=no,menubar=no,location=no"); return false;'
-       class="help">?</a></p>
-
-    <div class=closed id=item1>
-    <table class="formTable" cellspacing="0" cellpadding="0">
-      <tr><td>  phi = </td><td>
-
-        <? begin_select_parameter_notable("evaluation: setup time", "d"); ?>
-        <? add_select_parameter_notable("0.0", "0.0"); ?>
-        <? add_select_parameter_notable("1.0", "1.0"); ?>
-        <? end_select_parameter_notable(); ?>
-
-        </td><td> x&nbsp; Setup CPU time (s)</td> <td> + </td>
-      </tr>  
-      <tr><td></td><td>
-
-        <? begin_select_parameter_notable("evaluation: solution time", "d"); ?>
-        <? add_select_parameter_notable("0.0", "0.0"); ?>
-        <? add_select_parameter_notable("1.0", "1.0"); ?>
-        <? end_select_parameter_notable(); ?>
-
-        </td><td> x&nbsp; Solution CPU time (s)</td> <td> + </td>
-      </tr>  
-      <tr><td></td><td>
-
-        <? begin_select_parameter_notable("evaluation: iterations", "d"); ?>
-        <? add_select_parameter_notable("1.0", "1.0"); ?>
-        <? add_select_parameter_notable("0.0", "0.0"); ?>
-        <? end_select_parameter_notable(); ?>
-
-        </td><td> x&nbsp; iterations</td> <td> + </td>
-      </tr>  
-      <tr><td></td><td>
-
-        <? begin_select_parameter_notable("evaluation: condnum", "d"); ?>
-        <? add_select_parameter_notable("0.0", "0.0"); ?>
-        <? add_select_parameter_notable("1.0", "1.0"); ?>
-        <? end_select_parameter_notable(); ?>
-
-        </td><td> x&nbsp; cond(P A) </td><td> (requires CG or GMRES with condnum) </td>
-      </tr>  
-    </table><br />
-    </div>
-    </div>
 
     <!-- php marker for stage in form process -->
     <input type="hidden" name="stage" value="process_iterative">
     <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
     <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
+    <input type="hidden" name="mode" value="<? global $Mode; echo $Mode; ?>">
     <input type="hidden" name="counter" value="<? global $counter; echo $counter; ?>">
     <input type="hidden" name="perform_analysis" value="False">
   

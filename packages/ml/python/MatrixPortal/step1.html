@@ -12,6 +12,7 @@
 
   global $ProblemIDs;
   global $ResultIDs;
+  global $Mode;
 
   check_data();
 
@@ -81,17 +82,60 @@
 
 <!-- begin content ######################################################### -->
 
-  <? step_header("1"); ?>
+  <? global $Mode;
+     if ($Mode != "beginner") step_header("1"); ?>
   
   <!-- ===================================================================== -->
   
-  <font color=blue>You are at Step 1: Select Data</font>
+  <font color=blue>You are at Step 1: Select Data,<b>&nbsp;
+  <? global  $Mode;
+     if ($Mode == "beginner")
+       echo "beginner mode.";
+     else if ($Mode == "intermediate")
+       echo "intermediate mode.";
+     else if ($Mode == "expert")
+       echo "expert mode.";
+  ?></b></font>
+
+  <? global  $Mode;
+     if ($Mode == "beginner") { ?>
+
+  <br>
+  <br>
+  <div class="instructions">
+  <p>The first step of MatrixPortal is used to define the problems to be
+  solved. Here you can either generate a problem, or upload your linear
+  system if you are an authorized user.
+  <br>
+  <p><b>Example</b>: we want to verify numerically that
+  multilevel preconditioners, applied to a model problem, yields
+  optimal preconditioners. Stated otherwise,  the condition number of the
+  preconditioned problem does not depend on the mesh size.
+  <p>We want to select three different mesh sizes for the 2D Laplacian
+  problem.
+  <ol>
+  <li>Select a 40 x 40 grid, then give the label <tt>Lapl 40</tt> 
+      (or what you like),
+      then click on "Add to Cart";
+  <li>Repeat the procedure for a 80 x 80 grid, and give the label
+      <tt>Label 80</tt>, and click "Add to cart";
+  <li>Repeat the procedure for a 160 x 160 grid, and give the label
+      <tt>Label 160</tt>, and click "Add to cart".
+  </ol>
+  At this point, the box below should now contain these three labels in the "Problem IDs" column. If you make a mistake, you can delete the wrong labels.
+  <p>When you done with this, go at the bottom of the page, and proceed to step 1C to check your data.
+  <p>Note: there are many more choices for the problem generator in the intermediate and expert mode, not reported here for the sake of clarity.
+  </div>
+  <br>
+
+  <? } 
+     else if ($Mode == "intermediate") { ?>
 
   <p>In this step, you should specify at least one problem to be solved.
   Each problem is identified by a <b>label</b> or <b>ProblemID</b> you have to select. There are two
   ways to supply problems: by using the matrix generator, or by uploading
   a matrix or linear system, using the Harwell/Boeing or HDF5 format, for
-  authorized users only..
+  authorized users only.
   The list of problems currently selected is reported in
   the <b>Labels and Results</b> section, in the column <b>Problem IDs</b>. 
   When you start, the other column, <b>Recordered Results</b>,
@@ -102,6 +146,12 @@
   <p>To <b>continue</b>, proceed to Step 1C (Check Data) using the button at the
   bottom of the page to check your data, or go directly to Step 2 to specify the parameters
   for the linear solvers.</font>
+
+  <? } 
+     else if ($Mode == "expert") { ?>
+
+  <p></p>
+  <?   } ?>
 
   <div class="problemIDs">
   <?php print_problem_and_result($ProblemIDs, $ResultIDs, 1); ?> 
@@ -122,16 +172,25 @@
   2D Laplace on a 
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny">
   <input type="hidden" name=type value="Laplace2D">
-  <input type="text" name="inx" value=100 size=5> x
-  <input type="text" name="iny" value=100 size=5> grid.
+  <select option name="inx">
+  <? for ($i = 10; $i <= 250; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> x 
+  <select option name="iny">
+  <? for ($i = 10; $i <= 250; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> grid.
   <p>This creates a matrix corresponding to the stencil of a 2D Laplacian operator on a structured Cartesian grid. The matrix stencil is:
   <p><img src=common/laplace2d_stencil.png>
 
   <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
   <input type=submit class=submitPrimary value="add to cart"><br></form>
+
+  <? global $Mode; if ($Mode != "beginner") { ?>
 
   <br>
   <li>
@@ -140,12 +199,22 @@
   3D Laplace on a 
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny inz">
   <input type="hidden" name=type value="Laplace3D">
-  <input type="text" name="inx" value=10 size=5> x
-  <input type="text" name="iny" value=10 size=5> x
-  <input type="text" name="inz" value=10 size=5> grid.
+  <select option name="inx">
+  <? for ($i = 10; $i <= 100; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> x 
+  <select option name="iny">
+  <? for ($i = 10; $i <= 100; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> x 
+  <select option name="inz">
+  <? for ($i = 10; $i <= 100; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> grid.
   <p>This creates a matrix corresponding to the stencil of a 3D Laplacian operator on a structured Cartesian grid.<br> 
   <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
   <input type=submit class=submitPrimary value="add to cart"><br></form>
@@ -157,11 +226,18 @@
   2D advection-diffuction with recirculating flow, on a 
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny dconv ddiff">
   <input type="hidden" name=type value="Recirc2D">
-  <input type="text" name="inx" value=100 size=5> x
-  <input type="text" name="iny" value=100 size=5> grid.<br>
+  <select option name="inx">
+  <? for ($i = 10; $i <= 250; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> x 
+  <select option name="iny">
+  <? for ($i = 10; $i <= 250; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> grid.<br> 
   conv = <input type="text" name="dconv" value=1 size=5>&nbsp;
   epsilon = <input type="text" name="ddiff" value=1e-5 size=5>&nbsp;
   <p>This creates a matrix corresponding to the finite-difference discretization of the problem
@@ -181,12 +257,20 @@
 
   Generic 9-pt stencil
   <p><img src=common/star2d_stencil.png>
-  <p>The grid has <input type="text" name="inx" value=100 size=5> x
-  <input type="text" name="iny" value=100 size=5> nodes, and the 
+  <p>The 2D Cartesian grid has 
+  <select option name="inx">
+  <? for ($i = 10; $i <= 250; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> x 
+  <select option name="iny">
+  <? for ($i = 10; $i <= 250; $i += 10)
+     echo "<option value=$i>$i"; ?>
+  </select> nodes, and the
   following values are used:
   <p>
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="hidden" name=state value="add">
   <input type="hidden" name=parameters value="inx iny da db dc dd dz1 dz2 dz3 dz4">
   <input type="hidden" name=type value="Star2D">
@@ -202,11 +286,15 @@
   <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
   <input type=submit class=submitPrimary value="add to cart"><br></form>
 
+  <? } ?>
+
   </ol>
 
   </div>
 
   <!-- ----------------------------------------------------------------- -->
+
+  <? global $Mode; if ($Mode != "beginner") { ?>
 
   <p class="heading">Data from Collections: <a href="help/step1_collections.html"
     onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
@@ -244,6 +332,7 @@
 
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="hidden" name=state value="add">
 
   <input type=submit class=submitPrimary value="add to cart"><br></form>
@@ -281,28 +370,36 @@
       <input type="hidden" name="state" value="uploadData">
       <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
       <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
       <input type="submit" class=submitPrimary name="uploadButton" value="Upload" />
     </form>
   
   </div>
     
+  <? } ?>
+
   <br>
   <p><form action="step1C.html" enctype="multipart/form-data" method="post" name="inputForm" id="inputForm">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="hidden" name="perform_analysis" value="True">
   Continue to:
   <input type="submit" class=submitSecondary name="submit" value="Step 1C: Check Data" />
+  </form>
   
-  &nbsp;&nbsp; 
+  <? global $Mode; if ($Mode != "beginner") { ?>
+
   <form action="step2.html" enctype="multipart/form-data" method="post" name="inputForm" id="inputForm">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
   <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="hidden" name="perform_analysis" value="True">
-  or go directly to&nbsp;
+  You can also go directly to&nbsp;
   <input type="submit" class=submitSecondary name="submit" value="Step 2: Select Parameters" />
   </form>
 
+  <? } ?>
   
   <!-- ===================================================================== -->  
 <!-- end content ########################################################### -->

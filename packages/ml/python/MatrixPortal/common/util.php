@@ -6,13 +6,15 @@ $counter = 1;
 
 function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
 {
+  global $Mode;
 ?>
-  <p class'subheading'><a onclick="toggle('IDs');" onkeypress="toggle('IDs');"><b>Labels and Results</b></p></a>
+  <p class='heading'><a onclick="toggle('IDs');" onkeypress="toggle('IDs');"><b>Labels and Results</b></p></a>
 <?
   echo '<div class=open id=IDs>';
   echo '<form action="#" enctype="multipart/form-data" method="post">';
   echo '<input type=hidden name=ProblemIDs value="' .  $ProblemIDs . '">';
   echo '<input type=hidden name=ResultIDs value="' .  $ResultIDs . '">';
+  echo '<input type="hidden" name=mode value="' . $Mode  . '">';
   echo '<table border=0><cols=3>';
   echo '<tr><td>Problem IDs</td>';
   echo '<td>&nbsp;&nbsp;&nbsp;</td>';
@@ -63,11 +65,13 @@ function print_problem_and_result($ProblemIDs, $ResultIDs, $flag)
     echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
     echo '<input type=hidden name=ProblemIDs value="">';
     echo '<input type=hidden name=ResultIDs value="' . $ResultIDs . '">';
+  echo '<input type="hidden" name=mode value="' . $Mode  . '">';
     echo '<input type = submit class=submitPrimary value = "reset all ProblemIDs" ></form>';
     echo '</td><td>';
     echo '<form action="#" enctype="multipart/form-data" method="post" name="inputForm">';
     echo '<input type=hidden name=ProblemIDs value="' . $ProblemIDs . '">';
     echo '<input type=hidden name=ResultIDs value=>';
+  echo '<input type="hidden" name=mode value="' . $Mode  . '">';
     echo '<input type = submit class=submitPrimary value = "reset all ResultIDs" ></form>';
     echo '</td></tr></table>';
   }
@@ -240,6 +244,7 @@ function step_header($thisID)
 { 
   global $ProblemIDs;
   global $ResultIDs;
+  global $Mode;
 ?>
 
   <table border=0>
@@ -247,6 +252,7 @@ function step_header($thisID)
   <form action="step1.html" enctype="multipart/form-data" method="post" name="inputForm">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="submit" class=submitSecondary name="submit" value="Step 1: Select Data">
   </form> &nbsp; &nbsp;
 
@@ -256,6 +262,7 @@ function step_header($thisID)
   <form action="step2.html" enctype="multipart/form-data" method="post" name="step2">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="submit" class=submitSecondary name="submit" value="Step 2: Select Parameters">
   </form> &nbsp; &nbsp;
 
@@ -265,6 +272,7 @@ function step_header($thisID)
   <form action="step4.html" enctype="multipart/form-data" method="post" name="step4">
   <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>">
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="submit" class=submitSecondary name="submit" value="Step 4: Check Results">
   </form> &nbsp; &nbsp;
   <? } ?>
@@ -282,8 +290,11 @@ function process_variables()
 { 
   global $ProblemIDs;
   global $ResultIDs;
+  global $Mode;
+
   $OldProblemIDs = $_POST['ProblemIDs'];
   $OldResultIDs = $_POST['ResultIDs'];
+  $Mode = $_POST['mode'];
   
   $ProblemIDs = "";
   $ResultIDs = "";

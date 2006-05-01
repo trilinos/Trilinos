@@ -52,11 +52,16 @@ def set_type(List, name, type, value):
 
 # -------------------------------------------------------------------------
 def add_result(List, Label, ierr, iters, PrecTime, SolverTime, ConditionNumber):
-  phi = 0.0;
-  phi = phi + List['evaluation: setup time'] * PrecTime;
-  phi = phi + List['evaluation: solution time'] * SolverTime;
-  phi = phi + List['evaluation: iterations'] * iters;
-  phi = phi + List['evaluation: condnum'] * ConditionNumber;
+  if List['evaluation: type'] == 'iterations':
+    phi = iters;
+  elif List['evaluation: type'] == 'condnum':
+    phi = ConditionNumber
+  elif List['evaluation: type'] == 'setup+sol':
+    phi = PrecTime + SolverTime
+  elif List['evaluation: type'] == 'setup':
+    phi = PrecTime
+  elif List['evaluation: type'] == 'sol':
+    phi = SolverTime
 
   global count
   print "<p><font color=midnightblue>Evaluation phi = ",

@@ -87,6 +87,8 @@ div.formSection p.heading { font-weight: bold; font-size: 10pt; background-color
   margin: 5px 10px 10px 0; padding: 0; }
 div.problemIDs { padding: 0 10px 10px 10px; background-color: #FAFAD2;
   border: 1px solid #666; }
+div.instructions { padding: 0 10px 10px 10px; background-color: yellow;
+  border: 1px solid #666; }
 
 .errorBox { background-color: #fdd; border: 1px solid #666; padding: 10px; 
   margin: 0px 0px 10px 0px; }

@@ -12,21 +12,53 @@
 
   global $ProblemIDs;
   global $ResultIDs;
+  global $Mode;
 
   check_data();
 ?>
 
 <!-- begin content ######################################################### -->
 
-  <? step_header("1C"); ?>
+  <? global $Mode; 
+     if ($Mode != "beginner") step_header("1C"); ?>
   
-  <font color=blue>You are at Step 1C: Check Data</font>
+  <font color=blue>You are at Step 1C: Check Data,<b>&nbsp;
+  <? global  $Mode;
+     if ($Mode == "beginner")
+       echo "beginner mode.";
+     else if ($Mode == "intermediate")
+       echo "intermediate mode.";
+     else if ($Mode == "expert")
+       echo "expert mode.";
+  ?></b></font>
+
+  <? global  $Mode;
+     if ($Mode == "beginner") { ?>
+
+  <br>
+  <br>
+  <div class="instructions">
+  <p>This step, which is optional, allows you to verify that the matrix has the
+correct  number of rows. You can give a look to the number of nonzeros, the
+ratio between nonzeros and rows, and observe the sparsity pattern of the
+matrix.
+  <p>To continue, go to the bottom of the page and proceed to Step 2.
+  </div>
   
+  <? } 
+     else if ($Mode == "intermediate") { ?>
+
   <p>In this step, you can check that the matrix sizes and other data correspond to what you had in mind, and give a look to the sparsity pattern of the matrix.
 
   <p>To <b>continue</b>, proceed to Step 2 (Select Parameters) using 
   either the button at the bottom of the page or the one at the top. If you want to add other problems to the list,
   go back to Step 1 using the button at the top of the page.
+
+  <? } 
+     else if ($Mode == "expert") { ?>
+
+  <p></p>
+  <? } ?>
 
   <!-- ===================================================================== -->
   
@@ -49,6 +81,7 @@
   Continue to:
   <input type=hidden name=ProblemIDs value="<? global $ProblemIDs; echo $ProblemIDs; ?>">
   <input type=hidden name=ResultIDs value="<? global $ResultIDs; echo $ResultIDs; ?>">
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
   <input type="submit" class=submitSecondary name="submit" value="Step 2: Parameters">
 
 <!-- end content ########################################################### -->
