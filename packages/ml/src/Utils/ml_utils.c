@@ -2635,6 +2635,10 @@ void ML_PauseForDebugger(ML_Comm *comm)
 void ML_Pause(ML_Comm *comm)
 {
   char go = ' ';
+
+#ifdef HAVE_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
                                                                                 
   if (comm->ML_mypid == 0) {
       printf( "** Press enter to continue > "); fflush(stdout);
