@@ -1049,6 +1049,10 @@ The \aztecoo~vectors \verb!options! and {\tt params} can be set using
 \verb!MLS! & Use MLS smoother. The polynomial order is specified by {\tt
   \tt smoother: MLS polynomial order}, and the alpha value by {\tt
   smoother: MLS alpha}.\\ 
+\verb!user-defined! & User-defined smoothing function.  The function must conform to
+the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
+ double *outvec)}. The number of sweeps is controlled via {\tt smoother: sweeps}. See
+{\tt ml/examples/BasicExamples/ml\_user\_smoothing.cpp}.\\
 \hline
 \end{tabular}
 \caption{ML\_Epetra::MultiLevelPreconditioner: Commonly used smoothers.} 
@@ -1386,6 +1390,13 @@ smoothers. Default: 3.}
 
 \choicebox{\tt smoother: MLS alpha $\star$}{[{\tt double}] Alpha value for {\tt MLS} 
 smoothers. Default: 30.0.}
+
+\choicebox{\tt smoother: user-defined function}{[{\tt int (*)(ML\_Smoother *, int
+inLength, double *invec, int outLength, double *outvec)}] Pointer to user-defined
+smoothing function.  Default: {\tt NULL}.}
+
+\choicebox{\tt smoother: user-defined name}{[{\tt string}] Label for user-defined
+smoother. Default: ``User-defined".}
 
 \choicebox{\tt smoother: Hiptmair sweeps $\star$}{[{\tt int}] Number of Hiptmair iterations
 to perform. Default: 1.}
