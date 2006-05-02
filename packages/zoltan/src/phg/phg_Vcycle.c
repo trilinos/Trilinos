@@ -343,10 +343,11 @@ int Zoltan_PHG_Partition (
       hg = vcycle->hg;
       hgc = hg->comm; /* updating hgc is required when the number of processors
 			 changes */
-      if (hg->dist_x[hgc->nProc_x] <
-	  (int) (PROCESSOR_REDUCTION_FRACTION * origVcnt + 0.5) ||
-	  hg->dist_y[hgc->nProc_y] <
-	  (int) (PROCESSOR_REDUCTION_FRACTION * origVedgecnt + 0.5)) {
+      if ((hgc->nProc_x > 1 || hgc->nProc_y > 1) &&
+	  (hg->dist_x[hgc->nProc_x] <
+	   (int) (PROCESSOR_REDUCTION_FRACTION * origVcnt + 0.5) ||
+	   hg->dist_y[hgc->nProc_y] <
+	   (int) (PROCESSOR_REDUCTION_FRACTION * origVedgecnt + 0.5))) {
 	printf("hypergraph halved\n");
 	origVcnt     = hg->dist_x[hgc->nProc_x];   /* update for processor */
 	origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
