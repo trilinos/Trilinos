@@ -44,6 +44,13 @@ class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
+// Define this to see a complete dump a an Epetra_CrsMatrix::Multiply(...) call
+//#define EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+extern bool Epetra_CrsMatrixTraceDumpMultiply;
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+
 //! Epetra_CrsMatrix: A class for constructing and using real-valued double-precision sparse compressed row matrices.
 
 /*! The Epetra_CrsMatrix class is a sparse compressed row matrix object. This matrix can be

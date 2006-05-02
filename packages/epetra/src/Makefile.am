@@ -276,8 +276,16 @@ EXTRA_libepetra_a_SOURCES = \
 	$(EXTRA_MPISMP) \
 	$(EXTRA_MPISMP_H)
 
-#We need the following to support separate build directories
-#AM_CPPFLAGS=-I$(builddir)/src
+include $(top_builddir)/Makefile.export.epetra
+
+if USING_GNUMAKE
+EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(EPETRA_INCLUDES))
+else
+EXPORT_INCLUDES = $(EPETRA_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXPORT_INCLUDES)
+
 # ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------

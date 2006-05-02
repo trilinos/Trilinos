@@ -48,6 +48,12 @@
 //    person wishing to bypass cache.
 void Epetra_SetCacheBypassRange( void * address, int length, bool bypassCache); 
 #endif
+
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+# include "Teuchos_VerboseObject.hpp"
+bool Epetra_CrsMatrixTraceDumpMultiply = false;
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+
 //==============================================================================
 Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMap, const int* NumEntriesPerRow, bool StaticProfile) 
   : Epetra_DistObject(RowMap, "Epetra::CrsMatrix"),
@@ -2279,6 +2285,27 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vecto
 
 //=============================================================================
 int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::OSTab tab(out);
+  if(Epetra_CrsMatrixTraceDumpMultiply) {
+    *out << std::boolalpha;
+    *out << "\nEntering Epetra_CrsMatrix::Multipy("<<TransA<<",X,Y) ...\n";
+    if(!TransA) {
+      *out << "\nDomainMap =\n";
+      this->DomainMap().Print(*Teuchos::OSTab(out).getOStream());
+    }
+    else {
+      *out << "\nRangeMap =\n";
+      this->RangeMap().Print(*Teuchos::OSTab(out).getOStream());
+    }
+    *out << "\nInitial input X with " << ( TransA ? "RangeMap" : "DomainMap" ) << " =\n\n";
+    X.Print(*Teuchos::OSTab(out).getOStream());
+  }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+
   //
   // This function forms the product Y = A * Y or Y = A' * X
   //
@@ -2313,6 +2340,14 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       EPETRA_CHK_ERR(ImportVector_->Import(X, *Importer(), Insert));
       Xp = (double**)ImportVector_->Pointers();
       LDX = ImportVector_->ConstantStride() ? ImportVector_->Stride() : 0;
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+      if(Epetra_CrsMatrixTraceDumpMultiply) {
+        *out << "\nColMap =\n";
+        this->ColMap().Print(*Teuchos::OSTab(out).getOStream());
+        *out << "\nX after import from DomainMap to ColMap =\n\n";
+        ImportVector_->Print(*Teuchos::OSTab(out).getOStream());
+      }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }
 
     // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
@@ -2326,15 +2361,33 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       GeneralMV(*Xp, *Yp);
     else
       GeneralMM(Xp, LDX, Yp, LDY, NumVectors);
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+    if(Epetra_CrsMatrixTraceDumpMultiply) {
+      *out << "\nRowMap =\n";
+      this->RowMap().Print(*Teuchos::OSTab(out).getOStream());
+      *out << "\nY after local mat-vec where Y has RowMap =\n\n";
+      if(Exporter()!=0)
+        ExportVector_->Print(*Teuchos::OSTab(out).getOStream());
+      else
+        Y.Print(*Teuchos::OSTab(out).getOStream());
+    }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     if (Exporter()!=0) {
       Y.PutScalar(0.0);  // Make sure target is zero
       Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+      if(Epetra_CrsMatrixTraceDumpMultiply) {
+        *out << "\nRangeMap =\n";
+        this->RangeMap().Print(*Teuchos::OSTab(out).getOStream());
+        *out << "\nY after export from RowMap to RangeMap = \n\n";
+        Y.Print(*Teuchos::OSTab(out).getOStream());
+      }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().RangeMap().DistributedGlobal() && Comm().NumProc()>1) EPETRA_CHK_ERR(Y.Reduce());
   }
   else { // Transpose operation
-		
 
     // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
 
@@ -2342,6 +2395,14 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       EPETRA_CHK_ERR(ExportVector_->Import(X, *Exporter(), Insert));
       Xp = (double**)ExportVector_->Pointers();
       LDX = ExportVector_->ConstantStride() ? ExportVector_->Stride() : 0;
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+      if(Epetra_CrsMatrixTraceDumpMultiply) {
+        *out << "\nRowMap =\n";
+        this->RowMap().Print(*Teuchos::OSTab(out).getOStream());
+        *out << "\nX after import from RangeMap to RowMap =\n\n";
+        ExportVector_->Print(*Teuchos::OSTab(out).getOStream());
+      }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }
 
     // If we have a non-trivial importer, we must export elements that are permuted or belong to other processors
@@ -2355,9 +2416,28 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
       GeneralMTV(*Xp, *Yp);
     else
       GeneralMTM(Xp, LDX, Yp, LDY, NumVectors);
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+    if(Epetra_CrsMatrixTraceDumpMultiply) {
+      *out << "\nColMap =\n";
+      this->ColMap().Print(*Teuchos::OSTab(out).getOStream());
+      *out << "\nY after local transpose mat-vec where Y has ColMap =\n\n";
+      if(Importer()!=0)
+        ImportVector_->Print(*Teuchos::OSTab(out).getOStream());
+      else
+        Y.Print(*Teuchos::OSTab(out).getOStream());
+    }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     if (Importer()!=0) {
       Y.PutScalar(0.0);  // Make sure target is zero
       EPETRA_CHK_ERR(Y.Export(*ImportVector_, *Importer(), Add)); // Fill Y with Values from export vector
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+      if(Epetra_CrsMatrixTraceDumpMultiply) {
+        *out << "\nDomainMap =\n";
+        this->DomainMap().Print(*Teuchos::OSTab(out).getOStream());
+        *out << "\nY after export from ColMap to DomainMap =\n\n";
+        Y.Print(*Teuchos::OSTab(out).getOStream());
+      }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
     }
     // Handle case of rangemap being a local replicated map
     if (!Graph().DomainMap().DistributedGlobal() && Comm().NumProc()>1)  EPETRA_CHK_ERR(Y.Reduce());
@@ -2369,6 +2449,14 @@ int Epetra_CrsMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
     EPETRA_CHK_ERR(1); // Return positive code to alert the user about needing extra copy of X
     return(1);
   }
+
+#ifdef EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+  if(Epetra_CrsMatrixTraceDumpMultiply) {
+    *out << "\nFinal output Y is the last Y printed above!\n";
+    *out << "\nLeaving Epetra_CrsMatrix::Multipy("<<TransA<<",X,Y) ...\n";
+  }
+#endif // EPETRA_CRS_MATRIX_TRACE_DUMP_MULTIPLY
+
   return(0);
 }
 //=======================================================================================================

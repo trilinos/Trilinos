@@ -251,7 +251,10 @@ TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output],
                    FORMAT_IO, yes)
 TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetra, thyra, EPETRA_THYRA, ENABLE_EPETRA_THYRA, yes, [Build the Thyra operator/vector adapater support in Epetra.], [Build the Thyra operator/vector adapater support in Epetra.  Can be overridden with --disable-epetra-thyra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(
+  epetra, thyra, EPETRA_THYRA, ENABLE_EPETRA_THYRA, yes,
+  [Build the Thyra operator/vector adapater support in Epetra.],
+  [Build the Thyra operator/vector adapater support in Epetra.  Can be overridden with --disable-epetra-thyra.])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
