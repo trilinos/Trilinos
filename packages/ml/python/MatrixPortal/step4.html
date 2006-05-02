@@ -475,9 +475,15 @@ if ($_POST['plot'] == "plot/replot")
 
     fclose($fh);
 
-    passthru('python /tmp/gnuplot-' . $timestamp . ".dat --format=png --scale=3 --output=" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png");
+    global $PYTHONPATH;
+    global $ImageDirectory;
+    global $HTMLImageDirectory;
 
-    echo '<img src=../tmp/gnuplot-' . $timestamp . '.png>';
+    $command = "PYTHONPATH=$PYTHONPATH ";
+    $command .= 'python ' . $TempDirectory . '/gnuplot-' . $timestamp . ".dat --format=png --scale=3 --output=" . $ImageDirectory . "/gnuplot-" . $timestamp . ".png 2>&1";
+    passthru($command);
+
+    echo '<img src=' . $HTMLImageDirectory . '/gnuplot-' . $timestamp . '.png>';
   }
     
 }

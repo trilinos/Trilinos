@@ -97,6 +97,16 @@
 
     <table class="formTable" cellspacing="0" cellpadding="0">
       <tr>
+        <? global $ENABLE_MPI; global $MAX_PROCS; 
+           if ($ENABLE_MPI == TRUE) { ?>
+        <tr>
+          <td>Number of processors:</td>
+          <td><select name=num_procs>
+              <? for ($i = 1; $i <= $MAX_PROCS; $i++)
+              echo "<option value=$i>$i"; ?>
+          </select> </td></tr><tr>
+        <? } ?>
+
         <td>Solver: </td>
         <td>
         <select name="az_solver">

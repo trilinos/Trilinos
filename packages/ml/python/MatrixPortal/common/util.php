@@ -188,8 +188,23 @@ function process()
   global $ImageDirectory;
   global $TempDirectory;
   global $PythonDirectory;
+  global $PYTHONPATH;
+  global $LD_LIBRARY_PATH;
+  global $MPI_BOOT;
+  global $MPI_HALT;
+  global $ENABLE_MPI;
 
   $counter = $_POST['counter'];
+
+  $num_procs = $_POST['num_procs'];
+  if ($num_procs == "")
+    $num_procs = 1;
+
+  if ($num_procs > 25)
+  {
+    echo "SOMETHING STRANGE HERE...";
+    return;
+  }
 
   $configString  = "";
   $configString .= "ProblemIDs         := ".$ProblemIDs ."\n";
@@ -232,11 +247,20 @@ function process()
     or die("can't close $configFileName: $php_errormsg");
   chmod($configFileName, 0664);
 
-  $command = "PYTHONPATH=/home/msala/Trilinos/LINUX_SERIAL/lib/python2.4/site-packages/:\$PYTHONPATH ";
-  $command .= "python $PythonDirectory/step_process.py $configFileName 2>&1";
+  $command = "";
+  if ($MPI_BOOT != "")
+    $command .= "$MPI_BOOT > /dev/null; ";
+  if ($PYTHONPATH != "")
+    $command .= "PYTHONPATH=$PYTHONPATH ";
+  if ($LD_LIBRARY_PATH != "")
+    $command .= "LD_LIBRARY_PATH=$LD_LIBRARY_PATH ";
+  if ($ENABLE_MPI == TRUE)
+    $command .= "mpirun -x PYTHONPATH,LD_LIBRARY_PATH -np $num_procs ";
+  $command .= "python $PythonDirectory/step_process.py $configFileName 2>&1;";
+  if ($MPI_HALT == TRUE)
+    $command .= "$MPI_HALT > /dev/null";
   passthru($command);
 }
-
 
 ################################################################################
 

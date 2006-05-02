@@ -20,10 +20,36 @@
 # MatrixPortal directory.                             #
 # --------------------------------------------------- #
 
-$MatrixDirectory = "/var/www/html/MatrixPortal/HBMatrices/";
-$ImageDirectory = "/var/www/html/tmp/";
-$TempDirectory = "/tmp/";
-$PythonDirectory = "/home/msala/Trilinos/packages/ml/python/MatrixPortal/";
+$MACHINE = "givens4";
+
+if ($MACHINE == "givens4")
+{
+  $MatrixDirectory = "/home/chinella/Web/MatrixPortal/HBMatrices/";
+  $ImageDirectory = "/home/chinella/Web/MatrixPortal/tmp/";
+  $TempDirectory = "/tmp/";
+  $PythonDirectory = "/home/chinella/Web/MatrixPortal/";
+  $HTMLImageDirectory = "http://givens4.ethz.ch/MatrixPortal/tmp";
+  $PYTHONPATH = "/home/masala/Trilinos/LINUX_MPI/lib/python2.3/site-packages/:/home/masala/lib/python2.3/site-packages/";
+  $LD_LIBRARY_PATH = "/home/masala/Trilinos/LINUX_MPI/lib";
+  $ENABLE_MPI = TRUE;
+  $MAX_PROCS = 25;
+  $MPI_BOOT = "lamboot";
+  $MPI_HALT = "lamhalt";
+}
+else if ($MACHINE == "kythira")
+{
+  $MatrixDirectory = "/var/www/html/MatrixPortal/HBMatrices/";
+  $ImageDirectory = "/var/www/html/MatrixPortal/tmp/";
+  $TempDirectory = "/tmp/";
+  $PythonDirectory = "/home/msala/Trilinos/packages/ml/python/MatrixPortal";
+  $HTMLImageDirectory = "http://kythira.ethz.ch/MatrixPortal/tmp";
+  $PYTHONPATH = "/home/masala/Trilinos/LINUX_MPI/lib/python2.3/site-packages/:/home/masala/lib/python2.3/site-packages/";
+  $LD_LIBRARY_PATH = "/home/masala/Trilinos/LINUX_MPI/lib";
+  $ENABLE_MPI = FALSE;
+  $MAX_PROCS = 1;
+  $MPI_BOOT = "";
+  $MPI_HALT = "";
+}
 
 # --------------------------------------------------- #
 # Web Page Styles and Appearance                      #

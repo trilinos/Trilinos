@@ -3,7 +3,7 @@ import os
 import sys
 import re
 import string
-import Numeric
+import math
 
 # -------------------------------------------------------------------------
 # \author Marzio Sala, COLAB/ETHZ
@@ -22,6 +22,8 @@ from PyTrilinos import Epetra, EpetraExt, AztecOO, ML, Galeri, IFPACK
 
 comm = Epetra.PyComm()
 
+NumProcs = comm.NumProc()
+MyPID = comm.MyPID()
 count = 0
 analysis_count = 0
   
@@ -181,8 +183,25 @@ def generator(problemID, comm, List):
     
     if string.find(ProblemType, '2D') != -1:
       MapType = "Cartesian2D";
+      mx = math.sqrt(NumProcs)
+      if mx * mx == NumProcs:
+        GaleriList['mx'] = int(mx)
+        GaleriList['my'] = int(mx)
+      else:
+        GaleriList['mx'] = int(NumProcs)
+        GaleriList['my'] = 1
+
     elif string.find(ProblemType, '3D') != -1:
       MapType = "Cartesian3D"
+      mx = math.pow(NumProcs, 0.33334)
+      if mx * mx * mx == NumProcs:
+        GaleriList['mx'] = int(mx)
+        GaleriList['my'] = int(mx)
+        GaleriList['mz'] = int(mx)
+      else:
+        GaleriList['mx'] = int(NumProcs)
+        GaleriList['my'] = 1
+        GaleriList['mz'] = 1
 
     Map = Galeri.CreateMap(MapType, comm, GaleriList);
 
@@ -245,9 +264,10 @@ def generator(problemID, comm, List):
 
 # -------------------------------------------------------------------------
 def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
-  print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=red>Problem Label =", Label, "</font></b>";
-  print "<b><font color=red>Operation = matrix analysis </font></b>";
+  if MyPID == 0:
+    print "<p><p><div class=\"outputBox\"><pre>";
+    print "<b><font color=red>Problem Label =", Label, "</font></b>";
+    print "<b><font color=red>Operation = matrix analysis </font></b>";
   ImageBase = List['image_base'];
   TimeStamp = List['timestamp'];
   IFPACK.AnalyzeMatrix(Matrix, True);
@@ -259,19 +279,22 @@ def perform_analysis(Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   IFPACK.PrintSparsity(Matrix, PSImageBase)
   import commands
   u=commands.getoutput('convert ' + PSImageBase + ' ' + PNGImageBase)
-  print '<center><p><img src=../tmp/%s.png></center>' % (TimeStamp + str(analysis_count))
+  if MyPID == 0:
+    print '<center><p><img src=tmp/%s.png></center>' % (TimeStamp + str(analysis_count))
   analysis_count = analysis_count + 1
   
-  print "&nbsp;<pre></div>";
+  if MyPID == 0:
+    print "&nbsp;<pre></div>";
 
 # -------------------------------------------------------------------------
 def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
-  print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=midnightblue>Problem Label =", Label, "</font></b>";
-  print "<b><font color=midnightblue>Operation = ", What, "</b>";
-
-  print "The AztecOO/IFPACK output follows."
-  print "</font>";
+  if MyPID == 0:
+    print "<p><p><div class=\"outputBox\"><pre>";
+    print "<b><font color=midnightblue>Problem Label =", Label, "</font></b>";
+    print "<b><font color=midnightblue>Operation = ", What, "</b>";
+    print "Using", NumProcs, "processors."
+    print "The AztecOO/IFPACK output follows."
+    print "</font>";
 
   Time = Epetra.Time(Matrix.Comm())
 
@@ -305,19 +328,24 @@ def perform_IFPACK(What, Label, Map, Matrix, LHS, RHS, ExactSolution, List):
   (ierr, iters, SolveTime, ConditionNumber) = iterative_solver(List, Matrix, LHS, RHS, Prec)
   del Prec;
 
-  add_result(List, Label + " " + What, ierr, iters, PrecTime, SolveTime, ConditionNumber)
-  print "&nbsp;<pre></div>";
+  if MyPID == 0:
+    add_result(List, Label + " " + What, ierr, iters, PrecTime, SolveTime, ConditionNumber)
+    print "&nbsp;<pre></div>";
   
 # -------------------------------------------------------------------------
 def perform_ML(Label, Map, Matrix, LHS, RHS, ExactSolution, NullSpace, List):
-  print "<p><p><div class=\"outputBox\"><pre>";
-  print "<b><font color=midnightblue>Problem Label =", Label, "</font></b>";
-  print "<b><font color=midnightblue>Operation = multilevel preconditioner</b>";
-
-  print "The AztecOO/ML output follows."
-  print "</font>";
+  if MyPID == 0:
+    print "<p><p><div class=\"outputBox\"><pre>";
+    print "<b><font color=midnightblue>Problem Label =", Label, "</font></b>";
+    print "<b><font color=midnightblue>Operation = multilevel preconditioner</b>";
+    print "Using", NumProcs, "processors."
+    print "The AztecOO/ML output follows."
+    print "</font>";
 
   Time = Epetra.Time(Matrix.Comm())
+
+  # FIXME
+  List['coarse: type'] = 'symmetric Gauss-Seidel';
 
   Prec = ML.MultiLevelPreconditioner(Matrix, False);
   if NullSpace == "not-set":
@@ -332,8 +360,9 @@ def perform_ML(Label, Map, Matrix, LHS, RHS, ExactSolution, NullSpace, List):
   (ierr, iters, SolveTime, ConditionNumber) = iterative_solver(List, Matrix, LHS, RHS, Prec)
   del Prec;
 
-  add_result(List, Label + " ML", ierr, iters, PrecTime, SolveTime, ConditionNumber)
-  print "&nbsp;<pre></div>";
+  if MyPID == 0:
+    add_result(List, Label + " ML", ierr, iters, PrecTime, SolveTime, ConditionNumber)
+    print "&nbsp;<pre></div>";
   
 # -------------------------------------------------------------------------
 def direct(Map, Matrix, LHS, RHS, ExactSolution, List):
@@ -435,8 +464,10 @@ def main():
       if List['perform_ml'] == "True":
         perform_ML(Label, Map, Matrix, LHS, RHS, ExactSolution, NullSpace, List);
 
-  global count
-  print '<input type=hidden name=phi_count value=%d>' % count
+  if MyPID == 0:
+    global count
+    print '<input type=hidden name=phi_count value=%d>' % count
+
 # -------------------------------------------------------------------------
 if __name__ == "__main__":
   main()
