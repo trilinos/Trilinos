@@ -30,7 +30,7 @@
 #include "Teuchos_Hashtable.hpp"
 #include "Teuchos_HashSet.hpp"
 #include "Teuchos_MPIContainerComm.hpp"
-#include "Teuchos_CollectiveErrorCheck.hpp"
+#include "Teuchos_ErrorPolling.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_Version.hpp"
 
@@ -88,7 +88,7 @@ int main(int argc, char** argv)
               catch(std::exception& eb)
                 {
                   caughtBoundsError = true;
-                  cerr << "caught bounds error: \n" <<  eb.what() << endl;
+                  cerr << "caught [expected] bounds error: \n" <<  eb.what() << endl;
                 }
               if (!caughtBoundsError)
                 {
@@ -186,13 +186,15 @@ int main(int argc, char** argv)
         {
           try
             {
-              TEST_FOR_EXCEPT(MPIComm::world().getRank()==1);
+              TEST_FOR_EXCEPTION(MPIComm::world().getRank()==1,
+                              runtime_error, 
+                              "exception [expected]");
             }
           catch(std::exception& ex1)
             {
               cerr << "successful detection of exception on proc="
                    << MPIComm::world().getRank() << endl;
-              CollectiveErrorCheck::reportFailure(MPIComm::world());
+              ErrorPolling::reportFailure(MPIComm::world());
               TEUCHOS_TRACE(ex1);
             }
           TEUCHOS_POLL_FOR_FAILURES(MPIComm::world());
