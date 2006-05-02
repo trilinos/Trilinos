@@ -46,6 +46,8 @@ run_test("$test_dir/BLAS/BLAS_test.exe","","-v");
 run_test("$test_dir/LAPACK/LAPACK_test.exe","","-v");
 run_test("$test_dir/DenseMatrix/DenseMatrix_test.exe","","-v");
 run_test("$test_dir/ParameterList/ParameterList_test.exe","","-v");
+run_test("$test_dir/Polling/Polling_test.exe","","-v");
+run_test("$test_dir/Time/Time_test.exe","","-v");
 
 if($ierr) {
   print "\n***\n*** Oh no, at least one of the teuchos testing programs failed!\n***\n";

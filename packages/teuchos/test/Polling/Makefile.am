@@ -26,21 +26,16 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
-	@echo ""
-	@echo "Trilinos package teuchos subdirectory test built successfully."
-	@echo ""
+noinst_PROGRAMS = Polling_test
 
-if HAVE_TEUCHOS_EXTENDED
-CONTAINERS_SUBDIR = Containers
-XML_SUBDIR = XML
-FANCY_OUTPUTTING_SUBDIR = FancyOutputting
-endif
-STANDARD_SUBDIRS = scripts BLAS DenseMatrix dyn_cast exit LAPACK ParameterList RefCountPtr Time Workspace Polling
+Polling_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR) $(FANCY_OUTPUTTING_SUBDIR)
+Polling_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
-EXTRA_DIST = definition
+Polling_test_CXXFLAGS = -I$(top_srcdir)/src
+
+Polling_test_LDADD = $(top_builddir)/src/libteuchos.a \
+	$(Polling_LIBS) $(LIBS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

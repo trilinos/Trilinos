@@ -37,15 +37,13 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_Time.hpp"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_Array.hpp"
-#include <iostream>
 
 #define TEUCHOS_TIMER(funcName, strName) \
 static Teuchos::Time& funcName()       \
 {static Teuchos::RefCountPtr<Time> rtn =        \
-Teuchos::TimeMonitor::getNewTimer(strName); return *rtn;}
+Teuchos::TimeMonitor::getNewCounter(strName); return *rtn;}
 
 namespace Teuchos
 {
@@ -58,42 +56,36 @@ namespace Teuchos
    *
    * \note Teuchos::TimeMonitor uses the Teuchos::Time class internally.
    */
-  class TimeMonitor
+  class TimeMonitor : public PerformanceMonitorBase<Time>
     {
     public:
  
       /** \brief Constructor starts timer */
       TimeMonitor(Time& timer, bool reset=false)
-        : timer_(timer), isRoot_(!timer.isRunning())
+        : PerformanceMonitorBase<Time>(timer, reset)
         {
-          if (isRoot_) timer_.start(reset);
+          if (!isRecursiveCall()) counter().start(reset);
         }
 
       /** \brief Destructor causes timer to stop */
       inline ~TimeMonitor()
         {
-          if (isRoot_) timer_.stop();
+          if (!isRecursiveCall()) counter().stop();
         }
 
-      /** \brief Print summary statistics for a group of timers. Timings are gathered from all processors */
-      /** \note This method <b>must</b> be called by all processors */
-      static void summarize(ostream &out=std::cout);
+      /** Wrapping of getNewCounter() for backwards compatibiity with old code*/
+      static Teuchos::RefCountPtr<Time> getNewTimer(const string& name)
+      {return getNewCounter(name);}
 
-      /** \brief Create a new timer with the given name, and append it to the list of
-       * timers to be used */
-      static RefCountPtr<Time> getNewTimer(const string& name);
+      /** \brief Print summary statistics for a group of timers. 
+       * Timings are gathered from all processors 
+       *
+       * \note This method <b>must</b> be called by all processors */
+      static void summarize(ostream &out=std::cout, 
+                            bool alwaysWriteLocal=false,
+                            bool writeGlobalStats=true);
+
     private:
-      
-      Time& timer_;
-      bool isRoot_;
-
-      /** collect summary timings from all processors */
-      static void gatherTimings(const Array<double>& timings,
-                                Array<double>& minTime,
-                                Array<double>& avgTime,
-                                Array<double>& maxTime);
-      
-      static Array<RefCountPtr<Time> > timers_;
     };
 
 }

@@ -30,8 +30,10 @@
 #define TEUCHOS_MPITRAITS_H
 
 /*! \file Teuchos_MPITraits.hpp
-    \brief Declaration of a templated traits class for binding MPI types to
-	C++ types
+ * \brief Declaration of a templated traits class for binding MPI types to
+ * C++ types. This is for use with the MPIComm class and is supposed to compile
+ * rgeardless of whether MPI has been enabled. If you need to convert directly to 
+ * MPI types (e.g., MPI_INT), please refer to Teuchos_MPIRawTraits.hpp.
 */
 
 #include "Teuchos_MPIComm.hpp"

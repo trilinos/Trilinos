@@ -90,7 +90,7 @@ if ($result != 0) {
 # Timer test
 #************************************
 
-$result = system ($mpirun . "./Time/Time_test.exe");
+$result = system ($mpirun . "./Time/Time_test.exe -v");
 if ($result != 0) {
   $success = 0;  
   # If we failed run it again in verbose mode.
@@ -102,6 +102,24 @@ if ($result != 0) {
 } else {
   printf
     "\n ********* Timer MPI test PASSED ********* \n";
+}
+
+#************************************
+# Polling test
+#************************************
+
+$result = system ($mpirun . "./Polling/Polling_test.exe");
+if ($result != 0) {
+  $success = 0;  
+  # If we failed run it again in verbose mode.
+  printf
+    "\n\n*******************************************".
+    "\n******* Running Teuchos Polling test ********".
+    "\n*******************************************\n\n";
+  system ($mpirun . "./Polling/Polling_test.exe --v");
+} else {
+  printf
+    "\n ********* Polling MPI test PASSED ********* \n";
 }
 # Return 0 if all the tests were successful, else return -1.
 exit ($success ? 0 : -1 );

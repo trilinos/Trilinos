@@ -72,9 +72,9 @@ IGNORE_PREFIX          =
 # What diagrams are created
 #
 CLASS_GRAPH            = YES
-COLLABORATION_GRAPH    = YES
-INCLUDE_GRAPH          = YES
-INCLUDED_BY_GRAPH      = YES
+COLLABORATION_GRAPH    = NO
+INCLUDE_GRAPH          = NO
+INCLUDED_BY_GRAPH      = NO
 GRAPHICAL_HIERARCHY    = YES
 #
 # Preprocessing
@@ -98,7 +98,7 @@ EXTERNAL_GROUPS        = NO
 # Environment
 #
 PERL_PATH              = /usr/bin/perl
-HAVE_DOT               = YES
+HAVE_DOT               = NO
 DOT_PATH               = 
 MAX_DOT_GRAPH_WIDTH    = 1024
 MAX_DOT_GRAPH_HEIGHT   = 1024

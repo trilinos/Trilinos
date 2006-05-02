@@ -35,7 +35,7 @@ using namespace Teuchos;
 
 //=============================================================================
 Time::Time(const string& name, bool start) 
-  : startTime_(0), totalTime_(0), isRunning_(false), name_(name)
+  : startTime_(0), totalTime_(0), isRunning_(false), name_(name), numCalls_(0)
 {
   if(start) this->start();
 }

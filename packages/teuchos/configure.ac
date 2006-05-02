@@ -727,6 +727,7 @@ AC_CONFIG_FILES([
 		test/RefCountPtr/Makefile
 		test/XML/Makefile
 		test/Workspace/Makefile
+		test/Polling/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/run-teuchos-tests.pl

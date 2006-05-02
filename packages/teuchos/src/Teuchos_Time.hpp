@@ -108,7 +108,13 @@ namespace Teuchos
 
     /** \brief Return the name of this timer */
     const string& name() const {return name_;}
-    
+
+    /** */
+    void incrementNumCalls() {numCalls_++;}
+
+    /** */
+    int numCalls() const {return numCalls_;}
+
   private:
     double startTime_;
 
@@ -117,6 +123,8 @@ namespace Teuchos
     bool isRunning_;
 
     string name_;
+
+    int numCalls_;
   };
 
 } // namespace Teuchos

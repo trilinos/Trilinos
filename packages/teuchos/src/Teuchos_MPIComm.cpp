@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "Teuchos_MPIComm.hpp"
+#include "Teuchos_ErrorPolling.hpp"
 
 
 using namespace Teuchos;
@@ -135,6 +136,11 @@ void MPIComm::synchronize() const
 #ifdef HAVE_MPI
 	//mutex_.lock();
 	{
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */
+
 		errCheck(::MPI_Barrier(comm_), "Barrier");
 	}
 	//mutex_.unlock();
@@ -149,6 +155,13 @@ void MPIComm::allToAll(void* sendBuf, int sendCount, int sendType,
 	{
 		MPI_Datatype mpiSendType = getDataType(sendType);
 		MPI_Datatype mpiRecvType = getDataType(recvType);
+
+
+    
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */
 
 		errCheck(::MPI_Alltoall(sendBuf, sendCount, mpiSendType,
 														recvBuf, recvCount, mpiRecvType,
@@ -168,7 +181,13 @@ void MPIComm::allToAllv(void* sendBuf, int* sendCount,
 	{
 		MPI_Datatype mpiSendType = getDataType(sendType);
 		MPI_Datatype mpiRecvType = getDataType(recvType);
-		
+
+    
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */		
+
 		errCheck(::MPI_Alltoallv(sendBuf, sendCount, sendDisplacements, mpiSendType,
 														 recvBuf, recvCount, recvDisplacements, mpiRecvType,
 														 comm_), "Alltoallv");
@@ -186,10 +205,41 @@ void MPIComm::gather(void* sendBuf, int sendCount, int sendType,
 	{
 		MPI_Datatype mpiSendType = getDataType(sendType);
 		MPI_Datatype mpiRecvType = getDataType(recvType);
+
+
+    
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */
 		
 		errCheck(::MPI_Gather(sendBuf, sendCount, mpiSendType,
 													recvBuf, recvCount, mpiRecvType,
 													root, comm_), "Gather");
+	}
+	//mutex_.unlock();
+#endif
+}
+
+void MPIComm::gatherv(void* sendBuf, int sendCount, int sendType,
+										 void* recvBuf, int* recvCount, int* displacements, int recvType,
+										 int root) const
+{
+#ifdef HAVE_MPI
+	//mutex_.lock();
+	{
+		MPI_Datatype mpiSendType = getDataType(sendType);
+		MPI_Datatype mpiRecvType = getDataType(recvType);
+		
+    
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */
+
+		errCheck(::MPI_Gatherv(sendBuf, sendCount, mpiSendType,
+                           recvBuf, recvCount, displacements, mpiRecvType,
+                           root, comm_), "Gatherv");
 	}
 	//mutex_.unlock();
 #endif
@@ -205,6 +255,12 @@ void MPIComm::allGather(void* sendBuf, int sendCount, int sendType,
 		MPI_Datatype mpiSendType = getDataType(sendType);
 		MPI_Datatype mpiRecvType = getDataType(recvType);
 		
+    
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */
+
 		errCheck(::MPI_Allgather(sendBuf, sendCount, mpiSendType,
 														 recvBuf, recvCount, 
 														 mpiRecvType, comm_), 
@@ -225,7 +281,12 @@ void MPIComm::allGatherv(void* sendBuf, int sendCount, int sendType,
 	{
 		MPI_Datatype mpiSendType = getDataType(sendType);
 		MPI_Datatype mpiRecvType = getDataType(recvType);
-		
+    
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */
+
 		errCheck(::MPI_Allgatherv(sendBuf, sendCount, mpiSendType,
 															recvBuf, recvCount, recvDisplacements,
 															mpiRecvType, 
@@ -242,6 +303,12 @@ void MPIComm::bcast(void* msg, int length, int type, int src) const
 #ifdef HAVE_MPI
 	//mutex_.lock();
 	{
+    
+    /* test whether errors have been detected on another proc before
+     * doing the collective operation. */
+    TEUCHOS_POLL_FOR_FAILURES(*this);
+    /* if we're to this point, all processors are OK */
+
 		MPI_Datatype mpiType = getDataType(type);
 		errCheck(::MPI_Bcast(msg, length, mpiType, src, 
 												 comm_), "Bcast");

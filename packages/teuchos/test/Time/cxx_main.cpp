@@ -41,12 +41,20 @@ using std::string;
 /* Test of Teuchos timing classes */
 
 
-/* create timers for three functions */
+/* create timers for several functions */
 static Time& sqrtTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("square roots"); return *t;}
 
 static Time& factTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("factorials"); return *t;}
 
-static Time& exceptTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("exception"); return *t;}
+static Time& exceptTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("func with exception"); return *t;}
+
+static Time& localTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("a function that is not called on all procs"); return *t;}
+
+static Time& anotherTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("another func"); return *t;}
+
+static Time& yetAnotherTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("yet another func"); return *t;}
+
+static Time& yetOneMoreTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTimer("yet one more func"); return *t;}
 
 
 int main(int argc, char* argv[])
@@ -72,6 +80,10 @@ int main(int argc, char* argv[])
       double sqrtFunc();
       double factFunc(int x);
       double exceptFunc();
+      double localFunc();
+      double anotherFunc();
+      double yetAnotherFunc();
+      double yetOneMoreFunc();
 
       
       /* time a simple function */
@@ -87,12 +99,33 @@ int main(int argc, char* argv[])
           factFunc(100);
         }
 
-      /* time a function that throws an exception */
+      /* time a couple of silly functions */
       for (int i=0; i<100; i++)
         {
-          double x = 0.0;
-          x = exceptFunc();
+          anotherFunc();
+          yetAnotherFunc();
+          yetOneMoreFunc();
         }
+
+      /* Time a function that will be called only on the root proc. This 
+       * checks that the TimeMonitor will work properly when different
+       * processors have different sets of timers. */
+      if (procRank==0)
+        {
+          for (int i=0; i<100; i++)
+            {
+              double x = 0.0;
+              x = localFunc();
+            }
+        }
+
+      /* time a function that throws an exception */
+       for (int i=0; i<100; i++)
+         {
+           double x = 0.0;
+           x = exceptFunc();
+         }
+
       
     }
   catch(std::exception& e)
@@ -106,6 +139,7 @@ int main(int argc, char* argv[])
     }
 
   /* Summarize timings. This must be done before finalizing MPI  */
+  TimeMonitor::format().setRowsBetweenLines(3);
   if (verbose)
     TimeMonitor::summarize();
 
@@ -171,6 +205,71 @@ double exceptFunc()
   return sum;
 }
 
+
+
+/* sum x, x=[0, 10000). */
+double localFunc()
+{
+  /* construct a time monitor. This starts the timer. It will stop when leaving scope */
+  TimeMonitor timer(localTimer());
+
+  double sum = 0.0;
+
+  for (int i=0; i<10000; i++) 
+    {
+      sum += i;
+    }
+
+  return sum;
+}
+
+/* sum x^2, x=[0, 10000). */
+double anotherFunc()
+{
+  /* construct a time monitor. This starts the timer. It will stop when leaving scope */
+  TimeMonitor timer(anotherTimer());
+
+  double sum = 0.0;
+
+  for (int i=0; i<10000; i++) 
+    {
+      sum += i*i;
+    }
+
+  return sum;
+}
+
+/* sum x^3, x=[0, 10000). */
+double yetAnotherFunc()
+{
+  /* construct a time monitor. This starts the timer. It will stop when leaving scope */
+  TimeMonitor timer(yetAnotherTimer());
+
+  double sum = 0.0;
+
+  for (int i=0; i<10000; i++) 
+    {
+      sum += i*i*i;
+    }
+
+  return sum;
+}
+
+/* sum x+1, x=[0, 10000). */
+double yetOneMoreFunc()
+{
+  /* construct a time monitor. This starts the timer. It will stop when leaving scope */
+  TimeMonitor timer(yetOneMoreTimer());
+
+  double sum = 0.0;
+
+  for (int i=0; i<10000; i++) 
+    {
+      sum += i+1;
+    }
+
+  return sum;
+}
 
 
 

@@ -27,91 +27,129 @@
 // @HEADER
 
 #include "Teuchos_TimeMonitor.hpp"
+#include "Teuchos_TableColumn.hpp"
+#include "Teuchos_TableFormat.hpp"
 #include "Teuchos_MPISession.hpp"
+#include "Teuchos_MPIContainerComm.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-
+#include <map>
+#include <set>
 using namespace Teuchos;
 
-Array<RefCountPtr<Time> > TimeMonitor::timers_;
 
-RefCountPtr<Time> TimeMonitor::getNewTimer(const string& name)
+
+void TimeMonitor::summarize(ostream &out, bool alwaysWriteLocal,
+                            bool writeGlobalStats)
 {
-  RefCountPtr<Time> rtn = rcp(new Time(name), true);
-  timers_.append(rtn);
-  return rtn;
+  Array<string> localNames(counters().length());
+  Array<double> localTimings(counters().length());
+  Array<double> localCallCounts(counters().length());
+
+  for (int i=0; i<counters().length(); i++)
+    {
+      localNames[i] = counters()[i]->name();
+      localTimings[i] = counters()[i]->totalElapsedTime();
+      localCallCounts[i] = counters()[i]->numCalls();
+    }
+  
+  /* Gather timings from all procs, in case some timers have been activated
+   * on other processors but not on this one.  */
+  Array<string> names;
+  Array<Array<double> > data(2);
+  PerformanceMonitorUtils::synchValues(MPIComm::world(), localNames, 
+                                       tuple(localTimings, localCallCounts),
+                                       names, data);
+  
+  const Array<double>& timings = data[0];
+  const Array<double>& calls = data[1];
+
+
+  
+  /* form the table data */
+  MPIComm comm = MPIComm::world();
+  int np = comm.getNProc();
+
+  int precision = format().precision();
+
+  Array<TableColumn> columnsToWrite;
+
+  TableColumn nameCol(names);
+  Array<string> titles;
+  titles.append("Timer Name");
+
+  columnsToWrite.append(nameCol);
+
+  Array<int> columnWidths;
+  columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+                                                          nameCol));
+  
+  if (np==1 || alwaysWriteLocal)
+    {
+      TableColumn timeAndCalls(timings, calls, precision, true);
+      titles.append("Local time (num calls)");
+      columnsToWrite.append(timeAndCalls);
+      columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+                                                              timeAndCalls));
+    }
+  
+  if (np > 1 && writeGlobalStats)
+    {
+      titles.append("Min over procs");
+      
+      Array<double> minTimings;
+      PerformanceMonitorUtils::reduce(comm, EMin, timings, minTimings);
+      
+      Array<double> minCalls;
+      PerformanceMonitorUtils::reduce(comm, EMin, calls, minCalls);
+
+      TableColumn timeAndCalls(minTimings, minCalls, precision, true);
+      columnsToWrite.append(timeAndCalls);
+      
+      columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+                                                              timeAndCalls));
+    }
+  
+  if (np > 1 && writeGlobalStats)
+    {
+      titles.append("Avg over procs");
+      
+      Array<double> avgTimings;
+      PerformanceMonitorUtils::reduce(comm, EAvg, timings, avgTimings);
+      
+      Array<double> avgCalls;
+      PerformanceMonitorUtils::reduce(comm, EAvg, calls, avgCalls);
+
+      TableColumn timeAndCalls(avgTimings, avgCalls, precision, true);
+      columnsToWrite.append(timeAndCalls);
+      
+      columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+                                                              timeAndCalls));
+    }
+  
+  if (np > 1 && writeGlobalStats)
+    {
+      titles.append("Max over procs");
+      
+      Array<double> maxTimings;
+      PerformanceMonitorUtils::reduce(comm, EMax, timings, maxTimings);
+      
+      Array<double> maxCalls;
+      PerformanceMonitorUtils::reduce(comm, EMax, calls, maxCalls);
+
+      TableColumn timeAndCalls(maxTimings, maxCalls, precision, true);
+      columnsToWrite.append(timeAndCalls);
+      
+      columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
+                                                              timeAndCalls));
+    }
+
+  format().setColumnWidths(columnWidths);
+
+  RefCountPtr<std::ostream> outPtr = rcp(&out, false);
+  bool writeOnThisProcessor = comm.getRank()==0;
+  if (writeOnThisProcessor)
+    {
+      format().writeWholeTable(outPtr, "TimeMonitor Results",
+                               titles, columnsToWrite);
+    }
 }
-
-
-void TimeMonitor::summarize(ostream &out)
-{
-  Array<string> names(timers_.length());
-  Array<double> timings(timers_.length());
-
-  for (int i=0; i<timers_.length(); i++)
-    {
-      names[i] = timers_[i]->name();
-      timings[i] = timers_[i]->totalElapsedTime();
-    }
-
-  int np=1;
-  int rank=0;
-#ifdef HAVE_MPI
-  MPI_Comm_size(MPI_COMM_WORLD, &np);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-  if (np==1)
-    {
-      for (int i=0; i<names.length(); i++)
-        {
-          out << std::left << std::setw(40) << names[i]
-              << ": " << timings[i] << endl;
-        }
-    }
-  else
-    {
-      Array<double> minTime(timers_.length());
-      Array<double> maxTime(timers_.length());
-      Array<double> avgTime(timers_.length());
-      gatherTimings(timings, minTime, avgTime, maxTime);
-      if (rank==0)
-        {
-          for (int i=0; i<names.length(); i++)
-            {
-              out << std::left << std::setw(30) << names[i]
-                  << ": " << std::left << std::setw(12) << minTime[i]
-                  << " "  << std::left << std::setw(12) << avgTime[i]
-                  << " "  << std::left << std::setw(12) << maxTime[i] 
-                  << endl;
-            }
-        }
-    }
-
-}
-
-void TimeMonitor::gatherTimings(const Array<double>& timings,
-                                Array<double>& minTime,
-                                Array<double>& avgTime,
-                                Array<double>& maxTime)
-{
-#ifdef HAVE_MPI
-  int np;
-  MPI_Comm_size(MPI_COMM_WORLD, &np);
-
-  void* tPtr = (void*) &(timings[0]);
-  void* minPtr = (void*) &(minTime[0]);
-  void* avgPtr = (void*) &(avgTime[0]);
-  void* maxPtr = (void*) &(maxTime[0]);
-
-  int count = (int) timings.length();
-
-  MPI_Allreduce(tPtr, minPtr, count, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-  MPI_Allreduce(tPtr, avgPtr, count, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(tPtr, maxPtr, count, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-
-  for (int i=0; i<avgTime.length(); i++)
-    {
-      avgTime[i] = avgTime[i]/((double) np);
-    }
-#endif
-}
-

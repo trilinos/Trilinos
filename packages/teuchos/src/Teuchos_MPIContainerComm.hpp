@@ -30,7 +30,7 @@
 #define TEUCHOS_MPICONTAINERCOMM_H
 
 /*! \file Teuchos_MPIContainerComm.hpp
-    \brief Object representation of an MPI communicator for templated containers
+  \brief Object representation of an MPI communicator for templated containers
 */
 
 #include "Teuchos_ConfigDefs.hpp"
@@ -75,6 +75,12 @@ namespace Teuchos
                          Array<Array<T> >& incoming,
                          const MPIComm& comm);
 
+    /** Gatherv: gather arrays of data to the root processor */
+    static void gatherv(const Array<T>& outgoing,
+                        Array<Array<T> >& incoming,
+                        int rootRank,
+                        const MPIComm& comm);
+
     //! Sum local values from all processors with rank < myRank
     static void accumulate(const T& localValue, Array<T>& sums, T& total,
                            const MPIComm& comm);
@@ -115,6 +121,26 @@ namespace Teuchos
                           Array<string>& incoming,
                           const MPIComm& comm);
 
+    /** Gatherv: gather arrays of strings to the root processor */
+    static void gatherv(const Array<string>& outgoing,
+                        Array<Array<string> >& incoming,
+                        int rootRank,
+                        const MPIComm& comm);
+
+    /** get a single big array of characters from an array of strings,
+     * packing the structural description into the header of the packed
+     * array as follows:
+     * \code
+     * [numStrings, offset0, offset1, ..., offsetN, char data]
+     * \endcode 
+     */
+    static void pack(const Array<string>& x,
+                     Array<char>& packed);
+
+    /** recover an array of strings from a single big array and
+     * and offset table */
+    static void unpack(const Array<char>& packed,
+                       Array<string>& x);
   private:
     /** get a single big array of characters from an array of strings */
     static void getBigArray(const Array<string>& x,
@@ -133,7 +159,7 @@ namespace Teuchos
   /* --------- generic functions for primitives ------------------- */
 
   template <class T> inline void MPIContainerComm<T>::bcast(T& x, int src,
-                                                         const MPIComm& comm)
+                                                            const MPIComm& comm)
   {
     comm.bcast((void*)&x, 1, MPITraits<T>::type(), src);
   }
@@ -144,7 +170,6 @@ namespace Teuchos
   template <class T>
   inline void MPIContainerComm<T>::bcast(Array<T>& x, int src, const MPIComm& comm)
   {
-     
     int len = x.length();
     MPIContainerComm<int>::bcast(len, src, comm);
 
@@ -187,8 +212,8 @@ namespace Teuchos
 
   template <class T> inline
   void MPIContainerComm<T>::allToAll(const Array<T>& outgoing,
-                                  Array<Array<T> >& incoming,
-                                  const MPIComm& comm)
+                                     Array<Array<T> >& incoming,
+                                     const MPIComm& comm)
   {
     int numProcs = comm.getNProc();
 
@@ -200,12 +225,16 @@ namespace Teuchos
         return;
       }
 
+    Array<T> sb(numProcs * outgoing.length());
+    Array<T> rb(numProcs * outgoing.length());
+
     T* sendBuf = new T[numProcs * outgoing.length()];
     TEST_FOR_EXCEPTION(sendBuf==0, 
-      std::runtime_error, "Comm::allToAll failed to allocate sendBuf");
+                       std::runtime_error, "Comm::allToAll failed to allocate sendBuf");
+
     T* recvBuf = new T[numProcs * outgoing.length()];
     TEST_FOR_EXCEPTION(recvBuf==0, 
-      std::runtime_error, "Comm::allToAll failed to allocate recvBuf");
+                       std::runtime_error, "Comm::allToAll failed to allocate recvBuf");
 
     int i;
     for (i=0; i<numProcs; i++)
@@ -215,6 +244,8 @@ namespace Teuchos
             sendBuf[i*outgoing.length() + j] = outgoing[j];
           }
       }
+
+
 
     comm.allToAll(sendBuf, outgoing.length(), MPITraits<T>::type(),
                   recvBuf, outgoing.length(), MPITraits<T>::type());
@@ -236,7 +267,7 @@ namespace Teuchos
 
   template <class T> inline
   void MPIContainerComm<T>::allToAll(const Array<Array<T> >& outgoing,
-                                  Array<Array<T> >& incoming, const MPIComm& comm)
+                                     Array<Array<T> >& incoming, const MPIComm& comm)
   {
     int numProcs = comm.getNProc();
 
@@ -249,17 +280,17 @@ namespace Teuchos
 
     int* sendMesgLength = new int[numProcs];
     TEST_FOR_EXCEPTION(sendMesgLength==0, 
-      std::runtime_error, "failed to allocate sendMesgLength");
+                       std::runtime_error, "failed to allocate sendMesgLength");
     int* recvMesgLength = new int[numProcs];
     TEST_FOR_EXCEPTION(recvMesgLength==0, 
-      std::runtime_error, "failed to allocate recvMesgLength");
+                       std::runtime_error, "failed to allocate recvMesgLength");
 
     int p = 0;
     for (p=0; p<numProcs; p++)
       {
         sendMesgLength[p] = outgoing[p].length();
       }
-
+    
     comm.allToAll(sendMesgLength, 1, MPIComm::INT,
                   recvMesgLength, 1, MPIComm::INT);
 
@@ -274,17 +305,17 @@ namespace Teuchos
 
     T* sendBuf = new T[totalSendLength];
     TEST_FOR_EXCEPTION(sendBuf==0, 
-      std::runtime_error, "failed to allocate sendBuf");
+                       std::runtime_error, "failed to allocate sendBuf");
     T* recvBuf = new T[totalRecvLength];
     TEST_FOR_EXCEPTION(recvBuf==0, 
-      std::runtime_error, "failed to allocate recvBuf");
+                       std::runtime_error, "failed to allocate recvBuf");
 
     int* sendDisp = new int[numProcs];
     TEST_FOR_EXCEPTION(sendDisp==0, 
-      std::runtime_error, "failed to allocate sendDisp");
+                       std::runtime_error, "failed to allocate sendDisp");
     int* recvDisp = new int[numProcs];
     TEST_FOR_EXCEPTION(recvDisp==0, 
-      std::runtime_error, "failed to allocate recvDisp");
+                       std::runtime_error, "failed to allocate recvDisp");
 
     int count = 0;
     sendDisp[0] = 0;
@@ -329,7 +360,7 @@ namespace Teuchos
 
   template <class T> inline
   void MPIContainerComm<T>::allGather(const T& outgoing, Array<T>& incoming,
-                                   const MPIComm& comm)
+                                      const MPIComm& comm)
   {
     int nProc = comm.getNProc();
     incoming.resize(nProc);
@@ -368,7 +399,7 @@ namespace Teuchos
 
   template <class T> inline
   void MPIContainerComm<T>::getBigArray(const Array<Array<T> >& x, Array<T>& bigArray,
-                                     Array<int>& offsets)
+                                        Array<int>& offsets)
   {
     offsets.resize(x.length()+1);
     int totalLength = 0;
@@ -393,8 +424,8 @@ namespace Teuchos
 
   template <class T> inline
   void MPIContainerComm<T>::getSmallArrays(const Array<T>& bigArray,
-                                        const Array<int>& offsets,
-                                        Array<Array<T> >& x)
+                                           const Array<int>& offsets,
+                                           Array<Array<T> >& x)
   {
     x.resize(offsets.length()-1);
     for (int i=0; i<x.length(); i++)
@@ -413,7 +444,7 @@ namespace Teuchos
   /* --------------- string specializations --------------------- */
 
   inline void MPIContainerComm<string>::bcast(string& x,
-                                           int src, const MPIComm& comm)
+                                              int src, const MPIComm& comm)
   {
     int len = x.length();
     MPIContainerComm<int>::bcast(len, src, comm);
@@ -424,7 +455,7 @@ namespace Teuchos
 
 
   inline void MPIContainerComm<string>::bcast(Array<string>& x, int src,
-                                           const MPIComm& comm)
+                                              const MPIComm& comm)
   {
     /* begin by packing all the data into a big char array. This will
      * take a little time, but will be cheaper than multiple MPI calls */
@@ -447,7 +478,7 @@ namespace Teuchos
   }
 
   inline void MPIContainerComm<string>::bcast(Array<Array<string> >& x,
-                                           int src, const MPIComm& comm)
+                                              int src, const MPIComm& comm)
   {
     int len = x.length();
     MPIContainerComm<int>::bcast(len, src, comm);
@@ -461,8 +492,8 @@ namespace Teuchos
 
 
   inline void MPIContainerComm<string>::allGather(const string& outgoing,
-                                               Array<string>& incoming,
-                                               const MPIComm& comm)
+                                                  Array<string>& incoming,
+                                                  const MPIComm& comm)
   {
     int nProc = comm.getNProc();
 
@@ -503,16 +534,84 @@ namespace Teuchos
         incoming[j] = string(tmp);
         delete [] tmp;
       }
-
+    
     delete [] recvCounts;
     delete [] recvDisplacements;
     delete [] recvBuf;
   }
+  
+  inline void MPIContainerComm<string>::gatherv(const Array<string>& outgoing,
+                                                Array<Array<string> >& incoming,
+                                                int root,
+                                                const MPIComm& comm)
+  {
+    int nProc = comm.getNProc();
+
+    Array<char> packedLocalArray;
+    pack(outgoing, packedLocalArray);
+
+    int sendCount = packedLocalArray.size();
+
+    /* gather the message sizes from all procs */
+    Array<int> recvCounts(nProc);
+    Array<int> recvDisplacements(nProc);
+
+    comm.gather((void*) &sendCount, 1, MPIComm::INT,
+                (void*) &(recvCounts[0]), 1, MPIComm::INT, root);
+    
+    /* compute the displacements */
+    int recvSize = 0;
+    if (root == comm.getRank())
+      {
+        recvDisplacements[0] = 0;
+        for (int i=0; i<nProc; i++)
+          {
+            recvSize += recvCounts[i];
+            if (i < nProc-1)
+              {
+                recvDisplacements[i+1] = recvDisplacements[i]+recvCounts[i];
+              }
+          }
+      }
+
+    /* set the size to 1 on non-root procs */
+    Array<char> recvBuf(max(1,recvSize));
+    
+
+    void* sendBuf = (void*) &(packedLocalArray[0]);
+    void* inBuf = (void*) &(recvBuf[0]);
+    int* inCounts = inCounts = &(recvCounts[0]);
+    int* inDisps = inDisps = &(recvDisplacements[0]);
+
+
+    
+
+    /* gather the packed data */
+    comm.gatherv( sendBuf, sendCount, MPIComm::CHAR,
+                  inBuf, inCounts, inDisps,
+                  MPIComm::CHAR, root);
+
+    /* on the root, unpack the data */
+    if (comm.getRank()==root)
+      {
+        incoming.resize(nProc);
+        for (int j=0; j<nProc; j++)
+          {
+            char* start = &(recvBuf[0]) + recvDisplacements[j];
+            Array<char> tmp(recvCounts[j]+1);
+            memcpy(&(tmp[0]), start, recvCounts[j]);
+            tmp[recvCounts[j]] = '\0';
+            unpack(tmp, incoming[j]);
+          }
+      }
+                 
+                 
+  }
 
 
   inline void MPIContainerComm<string>::getBigArray(const Array<string>& x,
-                                                 Array<char>& bigArray,
-                                                 Array<int>& offsets)
+                                                    Array<char>& bigArray,
+                                                    Array<int>& offsets)
   {
     offsets.resize(x.length()+1);
     int totalLength = 0;
@@ -535,9 +634,65 @@ namespace Teuchos
       }
   }
 
+  inline void MPIContainerComm<string>::pack(const Array<string>& x,
+                                             Array<char>& bigArray)
+  {
+    Array<int> offsets(x.size()+1);
+    int headerSize = (x.size()+2) * sizeof(int);
+
+    int totalLength = headerSize;
+
+    for (int i=0; i<x.length(); i++)
+      {
+        offsets[i] = totalLength;
+        totalLength += x[i].length();
+      }
+    offsets[x.length()] = totalLength;
+
+    /* The array will be packed as follows:
+     * [numStrs, offset1, ... offsetN, characters data] 
+     */
+
+    bigArray.resize(totalLength);
+
+    int* header = reinterpret_cast<int*>( &(bigArray[0]) );
+    header[0] = x.size();
+    for (unsigned int i=0; i<=x.size(); i++)
+      {
+        header[i+1] = offsets[i];
+      }
+
+    for (int i=0; i<x.length(); i++)
+      {
+        for (unsigned int j=0; j<x[i].length(); j++)
+          {
+            bigArray[offsets[i]+j] = x[i][j];
+          }
+      }
+  }
+
+  inline void MPIContainerComm<string>::unpack(const Array<char>& packed,
+                                             Array<string>& x)
+  {
+    const int* header = reinterpret_cast<const int*>( &(packed[0]) );
+
+    x.resize(header[0]);
+    Array<int> offsets(x.size()+1);
+    for (unsigned int i=0; i<=x.size(); i++) offsets[i] = header[i+1];
+
+    for (unsigned int i=0; i<x.size(); i++)
+      {
+        x[i].resize(offsets[i+1]-offsets[i]);
+        for (unsigned int j=0; j<x[i].length(); j++)
+          {
+            x[i][j] = packed[offsets[i] + j];
+          }
+      }
+  }
+
   inline void MPIContainerComm<string>::getStrings(const Array<char>& bigArray,
-                                                const Array<int>& offsets,
-                                                Array<string>& x)
+                                                   const Array<int>& offsets,
+                                                   Array<string>& x)
   {
     x.resize(offsets.length()-1);
     for (int i=0; i<x.length(); i++)

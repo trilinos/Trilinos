@@ -42,6 +42,11 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
                      << xml.getTag());
 
   ParameterList rtn;
+  
+  if (xml.hasAttribute("name"))
+    {
+      rtn.setName(xml.getAttribute("name"));
+    }
 
   for (int i=0; i<xml.numChildren(); i++)
     {
@@ -59,6 +64,7 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
           const string& name = child.getRequired("name");
 
           ParameterList sublist = toParameterList(child);
+          sublist.setName(name);
 
           rtn.set(name, sublist);
         }

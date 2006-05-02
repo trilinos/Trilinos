@@ -67,6 +67,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
+	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_exit.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
@@ -77,13 +78,19 @@ CORE_H = \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
+	$(srcdir)/Teuchos_MPIComm.hpp \
+	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPIReductionOpBase.hpp \
+	$(srcdir)/Teuchos_MPISession.hpp \
+	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
+	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
+	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
 	$(srcdir)/Teuchos_PolynomialDecl.hpp \
 	$(srcdir)/Teuchos_Polynomial.hpp \
@@ -101,6 +108,9 @@ CORE_H = \
 	$(srcdir)/Teuchos_StandardCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StringToIntMap.hpp \
+	$(srcdir)/Teuchos_TableColumn.hpp \
+	$(srcdir)/Teuchos_TableEntry.hpp \
+	$(srcdir)/Teuchos_TableFormat.hpp \
 	$(srcdir)/Teuchos_TestForException.hpp \
 	$(srcdir)/Teuchos_Time.hpp \
 	$(srcdir)/Teuchos_TimeMonitor.hpp \
@@ -115,18 +125,25 @@ CORE = \
 	$(srcdir)/Teuchos_CompObject.cpp \
 	$(srcdir)/Teuchos_Describable.cpp \
 	$(srcdir)/Teuchos_dyn_cast.cpp \
+	$(srcdir)/Teuchos_ErrorPolling.cpp \
 	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
+	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \
+	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
+	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_Range1D.cpp \
 	$(srcdir)/Teuchos_RefCountPtr.cpp \
 	$(srcdir)/Teuchos_ScalarTraits.cpp \
 	$(srcdir)/Teuchos_StringToIntMap.cpp \
+	$(srcdir)/Teuchos_TableColumn.cpp \
+	$(srcdir)/Teuchos_TableEntry.cpp \
+	$(srcdir)/Teuchos_TableFormat.cpp \
 	$(srcdir)/Teuchos_TestForException.cpp \
 	$(srcdir)/Teuchos_Time.cpp \
 	$(srcdir)/Teuchos_TimeMonitor.cpp \
@@ -142,10 +159,6 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_Hashtable.hpp \
 	$(srcdir)/Teuchos_HashUtils.hpp \
 	$(srcdir)/Teuchos_Libxml2HandlerAdapter.hpp \
-	$(srcdir)/Teuchos_MPIComm.hpp \
-	$(srcdir)/Teuchos_MPIContainerComm.hpp \
-	$(srcdir)/Teuchos_MPISession.hpp \
-	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_ParameterXMLFileReader.hpp \
 	$(srcdir)/Teuchos_StringInputSource.hpp \
 	$(srcdir)/Teuchos_StringInputStream.hpp \
@@ -165,8 +178,6 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_FileInputStream.cpp \
 	$(srcdir)/Teuchos_HashUtils.cpp \
 	$(srcdir)/Teuchos_Libxml2HandlerAdapter.cpp \
-	$(srcdir)/Teuchos_MPIComm.cpp \
-	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_ParameterXMLFileReader.cpp \
 	$(srcdir)/Teuchos_StrUtils.cpp \
 	$(srcdir)/Teuchos_StringInputSource.cpp \

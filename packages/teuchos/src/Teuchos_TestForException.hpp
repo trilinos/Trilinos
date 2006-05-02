@@ -169,6 +169,20 @@ catch(const std::exception &except) { \
  */
 #define TEST_FOR_EXCEPT_PRINT(throw_exception_test,out_ptr) TEST_FOR_EXCEPTION_PRINT(throw_exception_test,std::logic_error,"Error!",out_ptr)
 
+
+/** \brief This macro intercepts an exception, prints a standardized message including
+ * the current filename and line number, and then throws the exception up the stack
+ * @param exc [in] the exception that has been caught
+ */
+#define TEUCHOS_TRACE(exc)\
+{ \
+  TeuchosOStringStream omsg; \
+	omsg << exc.what() << endl \
+  << "caught in " << __FILE__ << ":" << __LINE__ << endl ; \
+  throw std::runtime_error(TEUCHOS_OSTRINGSTREAM_GET_C_STR(omsg));  \
+}
+
+
 //@}
 
 #endif // TEUCHOS_TEST_FOR_EXCEPTION_H

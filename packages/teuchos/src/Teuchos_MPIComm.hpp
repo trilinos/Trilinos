@@ -39,6 +39,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 
+
 namespace Teuchos
 {
   /**
@@ -89,10 +90,16 @@ namespace Teuchos
       void allReduce(void* input, void* result, int inputCount, int type,
                      int op) const ;
 
+
       //! Gather to root 
       void gather(void* sendBuf, int sendCount, int sendType,
                   void* recvBuf, int recvCount, int recvType,
                   int root) const ;
+
+      //! Gather variable-sized arrays to root 
+      void gatherv(void* sendBuf, int sendCount, int sendType,
+                   void* recvBuf, int* recvCount, int* displacements, 
+                   int recvType, int root) const ;
 
       //! Gather to all processors
       void allGather(void* sendBuf, int sendCount, int sendType,
