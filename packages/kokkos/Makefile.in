@@ -251,10 +251,6 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
-
-#  #np# - Most packages should have an example and a full suite 
-#  of tests.  At present, new_package only offers src and example.
-#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
 @BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
@@ -653,6 +649,13 @@ uninstall-info: uninstall-info-recursive
 
 all-local:
 	@echo "Trilinos package kokkos built successfully"
+
+#  #np# - Most packages should have an example and a full suite 
+#  of tests.  At present, new_package only offers src and example.
+#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
+
+all-libs:
+	cd $(top_builddir)/src ; $(MAKE)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
