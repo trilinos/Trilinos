@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# This is the script that I used to get purify to work on sahp6556 (a 64 bit machine)
+# on the SCICO LAN.
+#
+# To make this work, you need to source the script ~/setup-g++-3.4.3-compiler which
+# on 2006/04/20 looks like this:
+#
+#  . /usr/local/Modules/3.2.1/init/bash 
+#  module avail
+#  module load compilers/64Bit/gcc/gcc-3.4.3
+#
+# After this then g++ should be at:
+#
+#  /usr/local/gcc/64Bit/3.4.3/bin/g++
+#
+rm config.cache
+../../../../Trilinos/configure \
+--cache-file=config.cache \
+CXX="purify -cache-dir=/tmp/pure -always-use-cache-dir g++" \
+CC=gcc \
+F77=g77 \
+--with-libs="-lm -L/usr/lib" \
+CPPFLAGS="-DTEUCHOS_REFCOUNTPTR_ASSERT_NONNULL" \
+CXXFLAGS="-g -O0 -m32" \
+CFLAGS="-g -O0 -m32" \
+FFLAGS="-g -O0 -m32" \
+--enable-export-makefiles \
+--with-gnumake \
+--disable-default-packages \
+--enable-teuchos --enable-teuchos-extended \
+--enable-thyra \
+--enable-epetra \
+--enable-epetraext \
+--enable-ifpack \
+--enable-amesos \
+--enable-belos \
+--enable-anasazi \
+--enable-aztecoo \
+--enable-rythmos \
+--enable-moocho
+
+#--with-libs="-L/home/rabartl/PROJECTS/install-dir/linux/gcc/32/lib -lexpat" \
+#CXX="purify -cache-dir=/tmp/pure -always-use-cache-dir g++" \
