@@ -34,6 +34,13 @@ extern "C" {
 typedef struct tagVCycle {
     HGraph           *hg;         /* for finer==NULL, hg and Part contains   */
     Partition         Part;       /* original hg and Part, don't delete them */  
+    int              **vdest;     /* necessary to unredistribute             */
+                                  /* vdest size = hg->nVtx
+				     vdest[i] is the dest proc of vtx i in the
+				     unredistributed communicators. */
+    int              **vlno;      /* vlno size = hg-> nVtx 
+                                     vlno[i] is the local vertex number of vtx
+				     i on proc vdest[i]. */
     int              *LevelMap;   /* necessary to uncoarsen                  */
                                   /* LevelMap size = hg->nVtx 
                                      LevelMap[i] is the vtx number of the
@@ -144,6 +151,8 @@ static VCycle *newVCycle(ZZ *zz, HGraph *hg, Partition part, VCycle *finer,
         
   vcycle->finer    = finer;
   vcycle->Part     = part;
+  vcycle->vdest    = NULL;
+  vcycle->vlno     = NULL;
   vcycle->LevelMap = NULL;
   vcycle->LevelData = NULL;
   vcycle->LevelCnt = 0;
@@ -341,16 +350,17 @@ int Zoltan_PHG_Partition (
         goto End;
       vcycle = coarser;
       hg = vcycle->hg;
-      hgc = hg->comm; /* updating hgc is required when the number of processors
-			 changes */
-      if ((hgc->nProc_x > 1 || hgc->nProc_y > 1) &&
+
+      if (hgc->nProc_x * hgc->nProc_y > 1 &&
 	  (hg->dist_x[hgc->nProc_x] <
 	   (int) (PROCESSOR_REDUCTION_FRACTION * origVcnt + 0.5) ||
 	   hg->dist_y[hgc->nProc_y] <
 	   (int) (PROCESSOR_REDUCTION_FRACTION * origVedgecnt + 0.5))) {
-	printf("hypergraph halved\n");
+	printf("Node %d:  hypergraph halved\n", hgc->myProc);
 	origVcnt     = hg->dist_x[hgc->nProc_x];   /* update for processor */
 	origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
+	hgc = hg->comm; /* updating hgc is required when the number of
+			   processors changes */
       }
   }
 
