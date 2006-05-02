@@ -86,7 +86,7 @@ T intToOrdinal(int n) {
 		n++;
 	}
 	return(result);
-};
+}
 
 //! safely converts an int value to any defined ScalarType
 template <typename T>
@@ -101,7 +101,7 @@ T intToScalar(int n) {
 		n++;
 	}
 	return(result);
-};
+}
 
 //======================================================================
 // functions for outputting nicely formatted text
@@ -113,7 +113,7 @@ void outputStartMessage(std::string const className) {
 	cout << "Starting " << className << "Test..." << endl;
 	cout << Tpetra::Tpetra_Version() << endl;
 	cout << "************************************************************" << endl;
-};
+}
 
 //! Message outputed at end of a test program
 void outputEndMessage(std::string const className, bool passed) {
@@ -124,19 +124,19 @@ void outputEndMessage(std::string const className, bool passed) {
 	else
 		cout << "failed." << endl;
 	cout << "************************************************************\n" << endl;
-};
+}
 
 //! Merssage outputed to seperate sections
 void outputHeading(std::string const message) {
 	cout << "**************************************************" << endl;
 	cout << message << endl;
 	cout << "**************************************************" << endl;
-};
+}
 
 //! Message outputed to seperate subsections
 void outputSubHeading(std::string const message) {
 	cout << message << endl;
-};
+}
 
 //! Outputs a message from all images in deterministic order
 /** Each image's string is printed on a seperate line, preceded by its ImageID */
@@ -151,7 +151,7 @@ void outputData(int const myImageID, int const numImages, std::string const mess
 		MPI_Barrier(MPI_COMM_WORLD);
 #endif
 	}
-};
+}
 
 //======================================================================
 // functions for generator

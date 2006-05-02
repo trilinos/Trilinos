@@ -23,7 +23,7 @@ ac_cv_cxx_new_count,
 void dummy() {
 	std::vector<int> foo;
 	std::count(foo.begin(), foo.end(), 0);
-};],
+}],
 [ dummy(); ],
 ac_cv_cxx_new_count=yes, ac_cv_cxx_new_count=no)
 AC_LANG_RESTORE

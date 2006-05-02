@@ -34,6 +34,7 @@
 #include <Kokkos_HbMatrix.hpp>
 #include <Kokkos_DenseVector.hpp>
 #include <Kokkos_BaseSparseMultiply.hpp>
+#include "Tpetra_Operator.hpp"
 #include "Tpetra_Object.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_VectorSpace.hpp"
@@ -102,9 +103,8 @@ namespace Tpetra {
 		</ol>
 		
 	*/
-	
 	template<typename OrdinalType, typename ScalarType>
-	class CisMatrix : public Object, public Teuchos::CompObject {
+	class CisMatrix : public Operator<OrdinalType,ScalarType>, public Teuchos::CompObject {
 
 	public:
   
@@ -141,7 +141,7 @@ namespace Tpetra {
 		//! Set all matrix entries equal to scalarThis
 		void setAllToScalar(ScalarType scalarThis) {
 			if(isFillCompleted())
-				throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
+				throw this->reportError("Cannot change matrix values after fillComplete has been called.", 5);
 			typedef std::map<OrdinalType, ScalarType> OrdScalMap;
 			typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
 			MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
@@ -155,7 +155,7 @@ namespace Tpetra {
 		//! Scale the current values of a matrix, \e this = scalarThis*\e this.
 		void scale(ScalarType scalarThis) {
 			if(isFillCompleted())
-				throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
+				throw this->reportError("Cannot change matrix values after fillComplete has been called.", 5);
 			typedef std::map<OrdinalType, ScalarType> OrdScalMap;
 			typedef std::map<OrdinalType, OrdScalMap> MapOfMaps;
 			MapOfMaps& outermap = CisMatrixData_->indicesAndValues_;
@@ -182,10 +182,10 @@ namespace Tpetra {
 						   OrdinalType const* indices) 
 		{
 			if(isFillCompleted())
-				throw reportError("Cannot change matrix values after fillComplete has been called.", 5);
+				throw this->reportError("Cannot change matrix values after fillComplete has been called.", 5);
 			// first check for proper index values
 			if(!getPrimaryDist().isMyGlobalIndex(myRowOrColumn))
-				throw reportError("Global primary index " + toString(myRowOrColumn) + " is not owned by this image.", 1);
+				throw this->reportError("Global primary index " + toString(myRowOrColumn) + " is not owned by this image.", 1);
 
 			// create a map for that row/column if it doesn't exist
 			if(CisMatrixData_->indicesAndValues_.find(myRowOrColumn) == CisMatrixData_->indicesAndValues_.end()) {
@@ -200,7 +200,7 @@ namespace Tpetra {
 				for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numEntries; i++) {
 					if(CisMatrixData_->haveSecondary_)
 						if(!getSecondaryDist().isMyGlobalIndex(*indices))
-							throw reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
+							throw this->reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
 					innerMap[*indices++] = *values++; // change this to a call to insert
 					//innermap.insert(std::map<OrdinalType, ScalarType>::value_type(*indices++, *values++);
 					//efficientAddOrUpdate(innerMap, *indices++, *values++);
@@ -210,7 +210,7 @@ namespace Tpetra {
 				for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numEntries; i++) {
 					if(CisMatrixData_->haveSecondary_)
 						if(!getSecondaryDist().isMyGlobalIndex(*indices))
-							throw reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
+							throw this->reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
 					innerMap[*indices++] = *values++;
 				}
 			}
@@ -218,12 +218,12 @@ namespace Tpetra {
 				for(OrdinalType i = Teuchos::OrdinalTraits<OrdinalType>::zero(); i < numEntries; i++) {
 					if(CisMatrixData_->haveSecondary_)
 						if(!getSecondaryDist().isMyGlobalIndex(*indices))
-							throw reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
+							throw this->reportError("Global secondary index " + toString(*indices) + "is not owned by this image.", 1);
 					innerMap[*indices++] += *values++;
 				}
 			}
 			else
-				throw reportError("Unknown Combine Mode.", 2);
+				throw this->reportError("Unknown Combine Mode.", 2);
     
 			data().numMyNonzeros_+= numEntries;
 		}
@@ -241,7 +241,7 @@ namespace Tpetra {
 		void fillComplete(VectorSpace<OrdinalType, ScalarType> const& domainSpace, 
 						  VectorSpace<OrdinalType, ScalarType> const& rangeSpace) {
 			if(isFillCompleted())
-				throw reportError("Already fillCompleted.", -99);
+				throw this->reportError("Already fillCompleted.", -99);
 
 			OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 			OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
@@ -315,19 +315,19 @@ namespace Tpetra {
 																 &data().pntr_.front(), 
 																 &data().indx_.front());
 			if(errorcode) 
-				throw reportError("HbMatrix_.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("HbMatrix_.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
 
 			errorcode = data().HbMatrix_.initializeValues(&data().values_.front());
 			if(errorcode) 
-				throw reportError("HbMatrix_.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("HbMatrix_.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
     
 			// setup kokkos sparsemultiply object
 			errorcode = data().axy_.initializeStructure(data().HbMatrix_);
 			if(errorcode) 
-				throw reportError("axy.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("axy.initializeStructure returned non-zero. code = " + toString(errorcode) + ".", -99);
 			errorcode = data().axy_.initializeValues(data().HbMatrix_);
 			if(errorcode) 
-				throw reportError("axy.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("axy.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
 			// setup Import and Export objects if we need to
 			// importer: DomainDist->ColumnDist
@@ -360,39 +360,11 @@ namespace Tpetra {
 		//@}
   
 		//@{ \name Computational Methods
-  
-		//! Computes the matrix-vector multiplication y = Ax
-		void apply(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y, bool transpose = false) {
-			if(!isFillCompleted())
-				throw reportError("Cannot apply until after fillComplete.", 4);
-
-			if(!transpose) { // non-transpose case (A and C)
-				// x must match domain, y must match range
-				if(!getDomainDist().isCompatible(x.vectorSpace()))
-					throw reportError("Distribution of x is not compatible with domain distribution", 6);
-				if(!getRangeDist().isCompatible(y.vectorSpace()))
-					throw reportError("Distribution of y is not compatible with range distribution", 6);
-
-				applyA(x, y);
-			}
-			else { // transpose case (B and D)
-				// x must match range, y must match domain
-				if(!getDomainDist().isCompatible(y.vectorSpace()))
-					throw reportError("Distribution of y is not compatible with domain distribution", 6);
-				if(!getRangeDist().isCompatible(x.vectorSpace()))
-					throw reportError("Distribution of x is not compatible with range distribution", 6);
-
-				applyB(x, y);
-			}
-
-			// update flops counter: 2 * nnz
-			updateFlops(getNumGlobalNonzeros() + getNumGlobalNonzeros());
-		}
-  
+    
 		//! Returns the global one norm of the matrix
 		ScalarType normOne() const {
 			if(!isFillCompleted())
-				throw reportError("Cannot compute one-norm until after call to fillComplete.", 3);
+				throw this->reportError("Cannot compute one-norm until after call to fillComplete.", 3);
 			if(isRowOriented())
 				return(secondaryNorm());
 			else
@@ -402,7 +374,7 @@ namespace Tpetra {
 		//! Returns the global infinity norm of the matrix
 		ScalarType normInf() const {
 			if(!isFillCompleted())
-				throw reportError("Cannot compute infinity-norm until after call to fillComplete.", 3);
+				throw this->reportError("Cannot compute infinity-norm until after call to fillComplete.", 3);
 			if(isRowOriented())
 				return(primaryNorm());
 			else
@@ -429,28 +401,28 @@ namespace Tpetra {
 		//! Returns the number of global matrix rows.
 		OrdinalType getNumGlobalRows() const {
 			if(!data().haveRow_)
-				throw reportError("Row distribution not specified.", 3);
+				throw this->reportError("Row distribution not specified.", 3);
 			return(getRowDist().getNumGlobalEntries());
 		}
 	
 		//! Returns the number of global matrix columns.
 		OrdinalType getNumGlobalCols() const {
 			if(!data().haveCol_)
-				throw reportError("Column distribution not specified.", 3);
+				throw this->reportError("Column distribution not specified.", 3);
 			return(getColumnDist().getNumGlobalEntries());
 		}
   
 		//! Returns the number of matrix rows owned by the calling image.
 		OrdinalType getNumMyRows() const {
 			if(!data().haveRow_)
-				throw reportError("Row distribution not specified.", 3);
+				throw this->reportError("Row distribution not specified.", 3);
 			return(getRowDist().getNumMyEntries());
 		}
 	
 		//! Returns the number of matrix columns owned by the calling image.
 		OrdinalType getNumMyCols() const {
 			if(!data().haveCol_)
-				throw reportError("Column distribution not specified.", 3);
+				throw this->reportError("Column distribution not specified.", 3);
 			return(getColumnDist().getNumMyEntries());
 		}
 	
@@ -532,14 +504,14 @@ namespace Tpetra {
 		   In a column-oriented matrix, this will be the row VectorSpace. */
 		VectorSpace<OrdinalType, ScalarType> const& getSecondaryDist() const {
 			if(!CisMatrixData_->haveSecondary_)
-				throw reportError("Secondary distribution is not currently defined.", 3);
+				throw this->reportError("Secondary distribution is not currently defined.", 3);
 			return(CisMatrixData_->secondary_);
 		}
 
 		//! Returns the VectorSpace that describes the row distribution in this matrix.
 		VectorSpace<OrdinalType, ScalarType> const& getRowDist() const {
 			if(!CisMatrixData_->haveRow_)
-				throw reportError("Row distribution is not currently defined.", 3);
+				throw this->reportError("Row distribution is not currently defined.", 3);
 			if(isRowOriented())
 				return(CisMatrixData_->primary_);
 			else
@@ -549,25 +521,11 @@ namespace Tpetra {
 		//! Returns the VectorSpace that describes the column distribution in this matrix.
 		VectorSpace<OrdinalType, ScalarType> const& getColumnDist() const {
 			if(!CisMatrixData_->haveCol_)
-				throw reportError("Column distribution is not currently defined.", 3);
+				throw this->reportError("Column distribution is not currently defined.", 3);
 			if(isRowOriented())
 				return(CisMatrixData_->secondary_);
 			else
 				return(CisMatrixData_->primary_);
-		}
-  
-		//! Returns the VectorSpace associated with the domain of this matrix.
-		VectorSpace<OrdinalType, ScalarType> const& getDomainDist() const {
-			if(!CisMatrixData_->haveDomain_)
-				throw reportError("Domain distribution is not currently defined.", 3);
-			return(CisMatrixData_->domain_);
-		}
-  
-		//! Returns the VectorSpace associated with the range of this matrix.
-		VectorSpace<OrdinalType, ScalarType> const& getRangeDist() const {
-			if(!CisMatrixData_->haveRange_)
-				throw reportError("Range distribution is not currently defined.", 3);
-			return(CisMatrixData_->range_);
 		}
   
 		//! Returns the Platform object used by this matrix
@@ -654,6 +612,53 @@ namespace Tpetra {
 		}
   
 		//@}
+
+    /** \name Overridden from Tpetra::Operator */
+    //@{
+  
+		/** \brief . */
+		VectorSpace<OrdinalType, ScalarType> const& getDomainDist() const {
+			if(!CisMatrixData_->haveDomain_)
+				throw this->reportError("Domain distribution is not currently defined.", 3);
+			return(CisMatrixData_->domain_);
+		}
+  
+		/** \brief . */
+		VectorSpace<OrdinalType, ScalarType> const& getRangeDist() const {
+			if(!CisMatrixData_->haveRange_)
+				throw this->reportError("Range distribution is not currently defined.", 3);
+			return(CisMatrixData_->range_);
+		}
+
+		/** \brief . */
+		void apply(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y, bool transpose = false) const {
+			if(!isFillCompleted())
+				throw this->reportError("Cannot apply until after fillComplete.", 4);
+
+			if(!transpose) { // non-transpose case (A and C)
+				// x must match domain, y must match range
+				if(!getDomainDist().isCompatible(x.vectorSpace()))
+					throw this->reportError("Distribution of x is not compatible with domain distribution", 6);
+				if(!getRangeDist().isCompatible(y.vectorSpace()))
+					throw this->reportError("Distribution of y is not compatible with range distribution", 6);
+
+				applyA(x, y);
+			}
+			else { // transpose case (B and D)
+				// x must match range, y must match domain
+				if(!getDomainDist().isCompatible(y.vectorSpace()))
+					throw this->reportError("Distribution of y is not compatible with domain distribution", 6);
+				if(!getRangeDist().isCompatible(x.vectorSpace()))
+					throw this->reportError("Distribution of x is not compatible with range distribution", 6);
+
+				applyB(x, y);
+			}
+
+			// update flops counter: 2 * nnz
+			updateFlops(getNumGlobalNonzeros() + getNumGlobalNonzeros());
+		}
+
+    //@}
 	
 	private:
 
@@ -732,7 +737,7 @@ namespace Tpetra {
 		}
 
 		// apply subfunction for non-transpose
-		void applyA(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y) {
+		void applyA(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const {
 			// temp vectors in case we need to import or export
 			Vector<OrdinalType, ScalarType>* x2 = data().columnVec_.get();
 			Vector<OrdinalType, ScalarType>* y2 = data().rowVec_.get();
@@ -744,7 +749,7 @@ namespace Tpetra {
 			// setup variables Kokkos will use
 			OrdinalType kx_length = x.getNumMyEntries();
 			OrdinalType ky_length = y.getNumMyEntries();
-			ScalarType* kx_values = x.scalarPointer();
+			ScalarType const* kx_values = x.scalarPointer();
 			ScalarType* ky_values = y.scalarPointer();
 			if(data().haveImporter_) {
 				kx_length = x2->getNumMyEntries();
@@ -756,19 +761,19 @@ namespace Tpetra {
 			}
 
 			// setup kokkos x vector
-			int errorcode = data().kx_.initializeValues(kx_length, kx_values); 		
+			int errorcode = data().kx_.initializeValues(kx_length, const_cast<ScalarType*>(kx_values)); 		
 			if(errorcode) 
-				throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 		
 			// setup kokkos y vector
 			errorcode = data().ky_.initializeValues(ky_length, ky_values);
 			if(errorcode) 
-				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 
 			// do Kokkos apply operation
 			errorcode = data().axy_.apply(data().kx_, data().ky_, false);
 			if(errorcode) 
-				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
 
 			// do export if needed
 			if(data().haveExporter_)
@@ -776,7 +781,7 @@ namespace Tpetra {
 		}
 
 		// apply subfunction for transpose
-		void applyB(Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y) {
+		void applyB(Vector<OrdinalType, ScalarType> const& x, Vector<OrdinalType, ScalarType>& y) const {
 			// temp vectors in case we need to import or export
 			Vector<OrdinalType, ScalarType>* x2 = data().rowVec_.get();
 			Vector<OrdinalType, ScalarType>* y2 = data().columnVec_.get();
@@ -788,7 +793,7 @@ namespace Tpetra {
 			// setup variables Kokkos will use
 			OrdinalType kx_length = x.getNumMyEntries();
 			OrdinalType ky_length = y.getNumMyEntries();
-			ScalarType* kx_values = x.scalarPointer();
+			ScalarType const* kx_values = x.scalarPointer();
 			ScalarType* ky_values = y.scalarPointer();
 			if(data().haveExporter_) {
 				kx_length = x2->getNumMyEntries();
@@ -800,19 +805,19 @@ namespace Tpetra {
 			}
 
 			// setup kokkos x vector
-			int errorcode = data().kx_.initializeValues(kx_length, kx_values); 		
+			int errorcode = data().kx_.initializeValues(kx_length, const_cast<ScalarType*>(kx_values)); 		
 			if(errorcode) 
-				throw reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("kx.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 		
 			// setup kokkos y vector
 			errorcode = data().ky_.initializeValues(ky_length, ky_values);
 			if(errorcode) 
-				throw reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("ky.initializeValues returned non-zero. code = " + toString(errorcode) + ".", -99);
 			
 			// do Kokkos apply operation
 			errorcode = data().axy_.apply(data().kx_, data().ky_, true);
 			if(errorcode) 
-				throw reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
+				throw this->reportError("axy.apply returned non-zero. code = " + toString(errorcode) + ".", -99);
 			
 			// do export if needed
 			if(data().haveImporter_)

@@ -102,8 +102,8 @@ namespace Tpetra {
 		std::vector<ScalarType> values_;
 		Kokkos::HbMatrix<OrdinalType, ScalarType> HbMatrix_;
 		Kokkos::BaseSparseMultiply<OrdinalType, ScalarType> axy_;
-		Kokkos::DenseVector<OrdinalType, ScalarType> kx_;
-		Kokkos::DenseVector<OrdinalType, ScalarType> ky_;
+		mutable Kokkos::DenseVector<OrdinalType, ScalarType> kx_;
+		mutable Kokkos::DenseVector<OrdinalType, ScalarType> ky_;
   
 
 		// VectorSpaces
