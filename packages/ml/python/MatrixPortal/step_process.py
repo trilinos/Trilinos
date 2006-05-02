@@ -344,8 +344,8 @@ def perform_ML(Label, Map, Matrix, LHS, RHS, ExactSolution, NullSpace, List):
 
   Time = Epetra.Time(Matrix.Comm())
 
-  # FIXME
-  List['coarse: type'] = 'symmetric Gauss-Seidel';
+  if NumProcs > 1:
+    List['coarse: type'] = 'symmetric Gauss-Seidel';
 
   Prec = ML.MultiLevelPreconditioner(Matrix, False);
   if NullSpace == "not-set":
