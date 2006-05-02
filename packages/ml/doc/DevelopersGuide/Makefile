@@ -37,7 +37,7 @@ ${PAPER}.aux: ${PAPER}.tex ${PARTS} force
 force:
 
 ${PAPER}.ps:    ${PAPER}.dvi
-	dvips -Ppdf -o ${PAPER}.ps ${PAPER}
+	dvips -Ppdf -G0 -o ${PAPER}.ps ${PAPER}
 
 tarfile:
 	tar chvf ${PAPER}.tar Makefile ${PARTS} ${PICTURES} ${BIBFILE} ${SIAM}
