@@ -39,7 +39,7 @@
 #include "Teuchos_TreeBuildingXMLHandler.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
-#include <libxml2/libxml/parser.h>
+#include <libxml/parser.h>
 
 extern "C"
 {

@@ -543,6 +543,7 @@ if test "X$ac_cv_use_teuchos_libxml2" != "Xno"; then
 #  Check for LibXML2 headers.
 #
      AC_MSG_CHECKING(for LibXML2 headers (libxml/parser.h) ) 
+     CPPFLAGS="-I/usr/include/libxml2 $CPPFLAGS";
      AC_TRY_CPP([#include "libxml/parser.h"],
 	[AC_MSG_RESULT(yes)],  
 	[
@@ -559,8 +560,12 @@ if test "X$ac_cv_use_teuchos_libxml2" != "Xno"; then
      AC_MSG_CHECKING(for LibXML2 library (libxml2.a) )
      AC_LANG_SAVE
      AC_LANG_CPLUSPLUS
-     AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "libxml/parser.h"]], 
-	[[xmlDocPtr doc = NULL; doc = xmlNewDoc(BAD_CAST "1.0"); xmlFreeDoc(doc);]]) ],
+     AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "libxml/tree.h"]], 
+        [[xmlDocPtr doc = NULL; doc = xmlNewDoc(BAD_CAST "1.0"); xmlFreeDoc(doc);]]) ],
+	[AC_MSG_RESULT(yes)],
+	[LIBS="-lxml2 $LIBS"
+	 AC_LINK_IFELSE([ AC_LANG_PROGRAM([[#include "libxml/tree.h"]], 
+         [[xmlDocPtr doc = NULL; doc = xmlNewDoc(BAD_CAST "1.0"); xmlFreeDoc(doc);]]) ],
 	[AC_MSG_RESULT(yes)],
 	[AC_MSG_RESULT(no)
 		 echo "-----"
@@ -569,6 +574,7 @@ if test "X$ac_cv_use_teuchos_libxml2" != "Xno"; then
 	     	 echo "Use --with-libs to specify LibXML2 library (-lxml2)."
 	     	 echo "-----"
 	     	 AC_MSG_ERROR(LibXML2 test cannot link)])
+	])
      AC_LANG_RESTORE
 
 fi
