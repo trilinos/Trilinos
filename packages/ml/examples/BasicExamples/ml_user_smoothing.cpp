@@ -68,8 +68,6 @@ using namespace Galeri;
 extern int userSmoother(ML_Smoother *data, int x_length, double x[],
                    int rhs_length, double rhs[]);
 
-int NN=5000;
-
 // ============== //
 // example driver //
 // ============== //
@@ -107,11 +105,6 @@ int main(int argc, char *argv[])
   GaleriList.set("ny", ny);
   GaleriList.set("mx", 1);
   GaleriList.set("my", Comm.NumProc());
-
-  if (nx * ny > NN) {
-    if (Comm.MyPID() == 0) cout << "Please increase the size of NN in the example source and recompile." << endl;
-    exit(EXIT_FAILURE);
-  }
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
 
@@ -241,17 +234,20 @@ int userSmoother(ML_Smoother *data, int x_length, double x[],
                  int rhs_length, double rhs[])
 {
    int i;
-   double ap[NN], omega = .5; /* temp vector and damping factor */
+   double *ap, omega = .5; /* temp vector and damping factor */
    double *diag;
    ML_Operator *Amat;
    ML_Smoother *smoo;
 
    smoo    = (ML_Smoother *) data;
    Amat = (ML_Operator *) ML_Get_MySmootherData(smoo);
+   ap = (double *) ML_allocate(Amat->outvec_leng * sizeof(double));
    ML_Operator_Apply(Amat, x_length, x, rhs_length, ap);
    ML_Operator_Get_Diag(Amat, x_length, &diag);
    
    for (i = 0; i < x_length; i++) x[i] = x[i] + omega*(rhs[i] - ap[i])/diag[i];
+
+   ML_free(ap);
 
    return 0;
 }
@@ -271,10 +267,18 @@ int main(int argc, char *argv[])
 #endif
 
   puts("Please configure ML with:");
+#if !defined(HAVE_ML_EPETRA)
   puts("--enable-epetra");
+#endif
+#if !defined(HAVE_ML_TEUCHOS)
   puts("--enable-teuchos");
+#endif
+#if !defined(HAVE_ML_AZTECOO)
   puts("--enable-aztecoo");
+#endif
+#if !defined(HAVE_ML_GALERI)
   puts("--enable-galeri");
+#endif
 
 #ifdef HAVE_MPI
   MPI_Finalize();
