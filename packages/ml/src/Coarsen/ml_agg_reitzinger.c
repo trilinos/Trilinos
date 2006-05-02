@@ -1112,9 +1112,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        else
          printf("Checking commuting...\n");
      }
+     fflush(stdout);
      ML_Reitzinger_CheckCommutingProperty(ml_nodes, ml_edges, *Tmat_array,
                                   *Tmat_trans_array,
                                   grid_level+1, grid_level);
+     fflush(stdout);
 
 #ifdef ML_VAMPIR
   VT_end(ml_vt_build_Pe_state);
@@ -1415,9 +1417,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
          && 3 < ML_Get_PrintLevel()
          && smooth_flag == ML_YES)
        printf("Checking commuting after smoothing...\n");
+     fflush(stdout);
      ML_Reitzinger_CheckCommutingProperty(ml_nodes, ml_edges, *Tmat_array,
                                     *Tmat_trans_array,
                                     grid_level+1, grid_level);
+     fflush(stdout);
 
      Nnz_allgrids += ml_edges->Amat[grid_level].N_nonzeros;
 
@@ -2159,7 +2163,7 @@ void ML_Reitzinger_CheckCommutingProperty(ML *ml_nodes, ML *ml_edges,
   for (i = 0; i < Pe->outvec_leng ; i++) 
     vec[i] = vec[i] - Tfine_Pn_vec[i];
 
-  if (8 < ML_Get_PrintLevel())  {
+  if (ML_Get_PrintLevel() > 0)  {
     /*
     d1 = sqrt(ML_gdot(Tfine->outvec_leng, Tfine_Pn_vec,Tfine_Pn_vec, Pe->comm));
     if (ml_edges->comm->ML_mypid == 0 )
