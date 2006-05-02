@@ -403,6 +403,7 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   //
   // Report the solve status
   //
+  totalTimer.stop();
   const Belos::StatusType belosSolveStatus = resNormST_->GetStatus();
   const std::vector<ScalarMag>* resNormValues = resNormST_->GetTestValue();
   TEST_FOR_EXCEPT(resNormValues==NULL);
@@ -435,8 +436,8 @@ void BelosLinearOpWithSolve<Scalar>::solve(
   std::ostringstream ossmessage;
   ossmessage
     << "The Belos solver of type \""<<iterativeSolver_->description()<<"\" returned a solve status of \""
-    << toString(belosSolveStatus) << "\" in " << iterations << " iterations and achieved an approximate tolerance of "
-    << SolveStatus<Scalar>::achievedTolToString(achievedTol);
+    << toString(belosSolveStatus) << "\" in " << iterations << " iterations and achieved an approximate max tolerance of "
+    << belosAchievedTol << " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\n" << ossmessage.str() << "\n";
   //
@@ -445,7 +446,6 @@ void BelosLinearOpWithSolve<Scalar>::solve(
     blockSolveStatus[0].achievedTol = achievedTol;
     blockSolveStatus[0].message     = ossmessage.str();
   }
-  totalTimer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";

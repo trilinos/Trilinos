@@ -396,15 +396,27 @@ void AztecOOLinearOpWithSolve::solve(
     }
   }
   //
+  // Scale the solution
+  //
+  if(aztecSolverScalar_ != 1.0)
+    epetra_X->Scale(1.0/aztecSolverScalar_);
+  //
+  // Release the Epetra_MultiVector views of X and B
+  //
+  epetra_X = Teuchos::null;
+  epetra_B = Teuchos::null;
+  //
   // Update the overall solve criteria
   //
+  totalTimer.stop();
   if( numBlocks && blockSolveStatus ) {
     std::ostringstream oss;
     oss
       << "AztecOO solver "
       << ( solveStatus.solveStatus==SOLVE_STATUS_CONVERGED ? "converged" : "unconverged" )
       << " on m = "<<m<<" RHSs using " << totalIterations << " cumulative iterations"
-      << " for an average of " << (totalIterations/m) << " iterations/RHS.";
+      << " for an average of " << (totalIterations/m) << " iterations/RHS and"
+      << " total CPU time of "<<totalTimer.totalElapsedTime()<<" sec.";
     blockSolveStatus[0].message     = oss.str();
     if(isDefaultSolveCriteria) {
       blockSolveStatus[0].solveStatus = SOLVE_STATUS_UNKNOWN;
@@ -416,19 +428,8 @@ void AztecOOLinearOpWithSolve::solve(
     }
   }
   //
-  // Scale the solution
-  //
-  if(aztecSolverScalar_ != 1.0)
-    epetra_X->Scale(1.0/aztecSolverScalar_);
-  //
-  // Release the Epetra_MultiVector views of X and B
-  //
-  epetra_X = Teuchos::null;
-  epetra_B = Teuchos::null;
-  //
   // Report the overall time
   //
-  totalTimer.stop();
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
