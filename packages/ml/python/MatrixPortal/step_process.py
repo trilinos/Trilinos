@@ -134,7 +134,7 @@ def iterative_solver(List, Matrix, InputLHS, RHS, Prec):
 # -------------------------------------------------------------------------
 def generator(problemID, comm, List):
   GaleriList = {}
-  if problemID[0:3] == "MM_":
+  if problemID[0:3] == "HB_":
     print "<p><p><div class=\"outputBox\"><pre>";
     FileName = HB_REPOSITORY + problemID[3:];
     Map, Matrix, LHS, RHS, ExactSolution = Galeri.ReadHB(FileName, comm);

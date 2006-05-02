@@ -13,6 +13,7 @@
   global $ProblemIDs;
   global $ResultIDs;
   global $Mode;
+  if($Mode == "") $Mode = "intermediate";
 
   check_data();
 
@@ -102,8 +103,6 @@
   <? global  $Mode;
      if ($Mode == "beginner") { ?>
 
-  <br>
-  <br>
   <p>The first step of MatrixPortal is used to define the problems to be
   solved. Here you can either generate a problem, or upload your linear
   system if you are an authorized user.
@@ -239,8 +238,21 @@
   <? for ($i = 10; $i <= 250; $i += 10)
      echo "<option value=$i>$i"; ?>
   </select> grid.<br> 
-  conv = <input type="text" name="dconv" value=1 size=5>&nbsp;
+  conv = 
+  <select option name="dconv">
+  <option value=1>1.0
+  <? for ($i = -5; $i <= 5; ++$i)
+     echo "<option value=1.0e$i>10e$i"; ?>
+  </select>&nbsp;
+  epsilon = 
+  <select option name="ddiff">
+  <? for ($i = -5; $i <= 5; ++$i)
+     echo "<option value=1.0e$i>10e$i"; ?>
+  </select>
+  <!--
+  <input type="text" name="dconv" value=1 size=5>&nbsp;
   epsilon = <input type="text" name="ddiff" value=1e-5 size=5>&nbsp;
+  -->
   <p>This creates a matrix corresponding to the finite-difference discretization of the problem
   <p><img src=common/recirc1.png>
   <p>on the unit square, with homogeneous Dirichlet boundary conditions. A standard 5-pt stencil is used to discretize the diffusive term, and a simple upwind stencil is used for the convective term. Here,
@@ -287,17 +299,19 @@
   <p>Label this problem as <input type="text" name=MyLabel size=10>&nbsp;then&nbsp;
   <input type=submit class=submitPrimary value="add to cart"><br></form>
 
-  <? } ?>
+  <? } else { ?>
+  <li>Other problems available in intermediate and expert mode not shown now to avoid confusion.
 
+  <? } ?>
   </ol>
 
   </div>
 
   <!-- ----------------------------------------------------------------- -->
 
+  <? global $Mode; if ($Mode != "beginner") { ?>
   <p>
   <div class="formSection">
-  <? global $Mode; if ($Mode != "beginner") { ?>
 
   <p class="subheading">Data from Collections: <a href="help/step1_collections.html"
     onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
@@ -324,7 +338,7 @@
     echo "<select name=type size=" . count($files) . '>';
         
       foreach ($files as $file) {
-        echo "<option value=MM_" . $file . ">" . $file . "</option>";
+        echo "<option value=HB_" . $file . ">" . $file . "</option>";
       }
               
     echo "</select>";
@@ -376,10 +390,10 @@
   <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
       <input type="submit" class=submitPrimary name="uploadButton" value="Upload" />
     </form>
-  
+
   </div>
-    
   <? } ?>
+    
 
   <br>
   <p><form action="step1C.html" enctype="multipart/form-data" method="post" name="inputForm" id="inputForm">
