@@ -3,7 +3,7 @@
 // @HEADER
 // ***********************************************************************
 //
-//            PyTrilinos.Epetra: Python Interface to Epetra
+//            PyTrilinos.Amesos: Python Interface to Amesos
 //                 Copyright (2005) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -129,28 +129,25 @@ For examples of usage, please consult the python/example subdirectory.
 
 %}
 
-// Auto-documentation feature
-%feature("autodoc", "1");
-
-%include "Amesos_config.h"
-%include "Amesos_ConfigDefs.h"
-
 // Epetra
 %import "Epetra.i"
 
+// Auto-documentation feature
+%feature("autodoc", "1");
+
 // Rename directives for Amesos
-%rename(BaseSolver          ) Amesos_BaseSolver;
-%rename(Factory             ) Amesos;
-%rename(Klu                 ) Amesos_Klu;
-%rename(Lapack              ) Amesos_Lapack;
-%rename(Umfpack             ) Amesos_Umfpack;
-%rename(Scalapack           ) Amesos_Scalapack;
-%rename(Taucs               ) Amesos_Taucs;
-%rename(Pardiso             ) Amesos_Pardiso;
-%rename(Superlu             ) Amesos_Superlu;
-%rename(Superludist         ) Amesos_Superludist;
-%rename(Mumps               ) Amesos_Mumps;
-%rename(Dscpack             ) Amesos_Dscpack;
+%rename(BaseSolver ) Amesos_BaseSolver;
+%rename(Factory    ) Amesos;
+%rename(Klu        ) Amesos_Klu;
+%rename(Lapack     ) Amesos_Lapack;
+%rename(Umfpack    ) Amesos_Umfpack;
+%rename(Scalapack  ) Amesos_Scalapack;
+%rename(Taucs      ) Amesos_Taucs;
+%rename(Pardiso    ) Amesos_Pardiso;
+%rename(Superlu    ) Amesos_Superlu;
+%rename(Superludist) Amesos_Superludist;
+%rename(Mumps      ) Amesos_Mumps;
+%rename(Dscpack    ) Amesos_Dscpack;
 
 // SWIG library includes
 %include "std_string.i"
@@ -172,6 +169,7 @@ For examples of usage, please consult the python/example subdirectory.
 }
 // Amesos interface includes
 %include "Amesos_config.h"
+%include "Amesos_ConfigDefs.h"
 %include "Amesos.h"
 %include "Amesos_BaseSolver.h"
 #ifdef HAVE_AMESOS_LAPACK
