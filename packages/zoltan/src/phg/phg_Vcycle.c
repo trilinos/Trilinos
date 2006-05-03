@@ -58,7 +58,7 @@ typedef struct tagVCycle {
                                      combined into coarse vertices on this
                                      processor */
     int               LevelSndCnt; /* number of vertices being returned by
-                                      by the Zoltan_comm_do_reverse(). Used to
+                                      the Zoltan_comm_do_reverse(). Used to
                                       establish the receive buffer size. 
                                       Number of vertices I own that are being
                                       combined into a coarse vertex on another
@@ -351,14 +351,14 @@ int Zoltan_PHG_Partition (
       vcycle = coarser;
       hg = vcycle->hg;
 
-      if (hgc->nProc_x * hgc->nProc_y > 1 &&
+      if (hgc->nProc > 1 &&
 	  (hg->dist_x[hgc->nProc_x] <
 	   (int) (PROCESSOR_REDUCTION_FRACTION * origVcnt + 0.5) ||
 	   hg->dist_y[hgc->nProc_y] <
 	   (int) (PROCESSOR_REDUCTION_FRACTION * origVedgecnt + 0.5))) {
-	printf("Node %d:  hypergraph halved\n", hgc->myProc);
 	origVcnt     = hg->dist_x[hgc->nProc_x];   /* update for processor */
 	origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
+	printf("Node %d:  hypergraph halved\n", hgc->myProc);
 	hgc = hg->comm; /* updating hgc is required when the number of
 			   processors changes */
       }
@@ -396,13 +396,13 @@ int Zoltan_PHG_Partition (
     ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
   }
 
+Refine:
   del = vcycle;
   /****** Uncoarsening/Refinement ******/
   while (vcycle) {
     VCycle *finer = vcycle->finer;
     hg = vcycle->hg;
-    hgc = hg->comm; /* updating hgc is required when the number of processors
-		       changes */
+
     if (do_timing) {
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
@@ -456,7 +456,7 @@ int Zoltan_PHG_Partition (
     }
 
     /* Project coarse partition to fine partition */
-    if (finer)  { 
+    if (finer)  { if (finer->LevelMap) {
       int *rbuffer;
             
       /* easy to undo internal matches */
@@ -495,7 +495,8 @@ int Zoltan_PHG_Partition (
 
       ZOLTAN_FREE (&rbuffer);                  
       Zoltan_Comm_Destroy (&finer->comm_plan);                   
-    }
+    } else hgc = hg->comm; } /* updating hgc is required when the number of
+				processors changes */
     if (do_timing) {
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hgc->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
