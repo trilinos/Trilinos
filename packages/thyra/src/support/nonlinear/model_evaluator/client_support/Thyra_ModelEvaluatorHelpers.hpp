@@ -36,7 +36,7 @@ namespace Thyra {
 /** \relates ModelEvaluator */
 template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-Thyra::create_DfDp_mv( const ModelEvaluator<Scalar>& model, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
+create_DfDp_mv( const ModelEvaluator<Scalar>& model, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
 {
   TEST_FOR_EXCEPT(!(orientation==ModelEvaluatorBase::DERIV_MV_BY_COL));
   return createMembers( model.get_f_space(), model.get_p_space(l)->dim() );
@@ -45,7 +45,7 @@ Thyra::create_DfDp_mv( const ModelEvaluator<Scalar>& model, int l, ModelEvaluato
 /** \relates ModelEvaluator */
 template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-Thyra::create_DgDx_mv( const ModelEvaluator<Scalar>& model, int j, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
+create_DgDx_mv( const ModelEvaluator<Scalar>& model, int j, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
 {
   typedef ModelEvaluatorBase MEB;
   switch(orientation) {
@@ -62,7 +62,7 @@ Thyra::create_DgDx_mv( const ModelEvaluator<Scalar>& model, int j, ModelEvaluato
 /** \relates ModelEvaluator */
 template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
-Thyra::create_DgDp_mv( const ModelEvaluator<Scalar>& model, int j, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
+create_DgDp_mv( const ModelEvaluator<Scalar>& model, int j, int l, ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation )
 {
   typedef ModelEvaluatorBase MEB;
   switch(orientation) {
@@ -84,7 +84,7 @@ void eval_f(
   ,VectorBase<Scalar>                                             *f
   )
 {
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
   inArgs.set_x(Teuchos::rcp(&x,false));
@@ -102,7 +102,7 @@ void eval_f_W(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
 
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
@@ -127,7 +127,7 @@ void eval_f_W(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
 
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
@@ -151,7 +151,7 @@ void eval_f(
   ,VectorBase<Scalar>                                             *f
   )
 {
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
   inArgs.set_x(Teuchos::rcp(&x,false));
@@ -172,7 +172,7 @@ void eval_f(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
 
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
@@ -203,7 +203,7 @@ void eval_f_W(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
 
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
@@ -232,7 +232,7 @@ void eval_f_poly(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
 
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
@@ -258,7 +258,7 @@ void eval_f_poly(
   )
 {
 
-  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef ModelEvaluatorBase MEB;
 
   MEB::InArgs<Scalar>   inArgs  = model.createInArgs();
   MEB::OutArgs<Scalar>  outArgs = model.createOutArgs();
