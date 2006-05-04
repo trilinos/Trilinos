@@ -7,10 +7,12 @@
 #
 # I can use most of PyTrilinos after running this. Some problem persists,
 # for example, the Amesos interface of ML does not appear to work properly.
+#
+# This script should be executed from $BASEDIR.
 
 BASEDIR=$HOME/Trilinos/LINUX_MPI
 cd packages/epetra/src
-gcc -fPIC -shared -Wl,-soname,lib$i.so -o lib$i.so \
+gcc -fPIC -shared -Wl,-soname,libepetra.so -o libepetra.so \
 $BASEDIR/packages/PyTrilinos/src/libpytrilinos.a *.o
 cp libepetra.so $BASEDIR/lib/
 cd ../../..
