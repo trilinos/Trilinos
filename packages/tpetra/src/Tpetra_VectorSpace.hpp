@@ -89,7 +89,7 @@ namespace Tpetra {
 			VectorSpaceData_->ElementSpace_ = Teuchos::rcp(blockElementSpace.generateCompatibleElementSpace());
 		};
 	
-		//! Tpetra::VectorSpace copy constructor.
+		//! Tpetra::VectorSpace shallow copy constructor.
 		VectorSpace(VectorSpace<OrdinalType, ScalarType> const& vectorSpace)
 			: Object(vectorSpace.label())
 			, VectorSpaceData_(vectorSpace.VectorSpaceData_)

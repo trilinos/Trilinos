@@ -81,6 +81,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
+	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
@@ -88,6 +89,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libdirs.m4 \
 	$(top_srcdir)/config/tac_arg_with_libs.m4 \
+	$(top_srcdir)/config/tac_arg_with_perl.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -143,12 +145,15 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_TPETRA_THYRA_FALSE = @ENABLE_TPETRA_THYRA_FALSE@
+ENABLE_TPETRA_THYRA_TRUE = @ENABLE_TPETRA_THYRA_TRUE@
 EXEEXT = .exe
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERL = @HAVE_PERL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -175,13 +180,22 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
+PERL_EXE = @PERL_EXE@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
+USING_EXPORT_MAKEFILES_FALSE = @USING_EXPORT_MAKEFILES_FALSE@
+USING_EXPORT_MAKEFILES_TRUE = @USING_EXPORT_MAKEFILES_TRUE@
+USING_GNUMAKE_FALSE = @USING_GNUMAKE_FALSE@
+USING_GNUMAKE_TRUE = @USING_GNUMAKE_TRUE@
+USING_PERL_FALSE = @USING_PERL_FALSE@
+USING_PERL_TRUE = @USING_PERL_TRUE@
 VERSION = @VERSION@
+_FALSE = @_FALSE@
+_TRUE = @_TRUE@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@

@@ -52,7 +52,7 @@ namespace Tpetra
 			: label_("Tpetra::Object")
 		{
 			tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
-		};
+		}
   
 		//! Object Constructor.
 		/*! Creates an Object with the given label.
@@ -61,19 +61,19 @@ namespace Tpetra
 			: label_(label)
 		{
 			tracebackMode = (tracebackModeIn != -1) ? tracebackModeIn : tracebackMode;
-		};
+		}
   
 		//! Object Copy Constructor.
 		/*! Makes an exact copy of an existing Object instance.
 		 */
 		Object(Object const& obj)
 			: label_(obj.label_)
-		{};
+		{}
   
 		//! Object Destructor.
 		/*! Completely deletes an Object object.  
 		 */
-		virtual ~Object() {};
+		virtual ~Object() {}
   
 		//@}
   
@@ -82,7 +82,7 @@ namespace Tpetra
 		//! Object Label definition using string.
 		/*! Defines the label used to describe the \e this object.  
 		 */
-		virtual void setLabel(std::string const label) { 
+		virtual void setLabel(std::string const& label) { 
 			label_ = label;
 		}
   
@@ -91,7 +91,7 @@ namespace Tpetra
 		 */
 		virtual std::string label() const {
 			return(label_);
-		};
+		}
   
 		//! Set the value of the Object error traceback report mode.
 		/*! Sets the integer error traceback behavior.  
@@ -108,7 +108,7 @@ namespace Tpetra
 			if(tracebackModeValue < 0)
 				tracebackModeValue = 0;
 			Object tempObject(tracebackModeValue);
-		};
+		}
   
 		//! Get the value of the Object error report mode.
 		static int getTracebackMode() {
@@ -116,7 +116,7 @@ namespace Tpetra
 			if(temp == -1)
 				temp = Tpetra_DefaultTracebackMode;
 			return(temp);
-		};
+		}
   
 		//@}
   
@@ -126,7 +126,7 @@ namespace Tpetra
 		//! Print method
 		virtual void print(ostream& os) const {
 			os << label();
-		};
+		}
   
 		//! Error reporting method.
 		virtual int reportError(std::string const message, int errorCode) const {
@@ -155,7 +155,7 @@ namespace Tpetra
 	}; // class Object
   
 	// Set TracebackMode value to default
-	int Object::tracebackMode(-1);
+  int Object::tracebackMode(-1);
 
 	inline ostream& operator<<(ostream& os, Tpetra::Object const& Obj) {
 		Obj.print(os); 
@@ -163,6 +163,5 @@ namespace Tpetra
 	}
 
 } // namespace Tpetra
-
 
 #endif // TPETRA_OBJECT_HPP

@@ -14,35 +14,7 @@
 
 @SET_MAKE@
 
-#@HEADER
-# ************************************************************************
-# 
-#          Tpetra: Templated Linear Algebra Services Package
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
-#@HEADER
-
-SOURCES = $(BasicPerfTest_test_SOURCES)
+SOURCES = $(sillyPowerMethod_tpetra_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,8 +37,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = BasicPerfTest_test$(EXEEXT)
-subdir = test/BasicPerfTest
+noinst_PROGRAMS = $(am__EXEEXT_1)
+subdir = thyra/example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -96,21 +68,29 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Tpetra_config.h
 CONFIG_CLEAN_FILES =
+am__EXEEXT_1 = sillyPowerMethod_tpetra$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_BasicPerfTest_test_OBJECTS = BasicPerfTest_test-cxx_main.$(OBJEXT)
-BasicPerfTest_test_OBJECTS = $(am_BasicPerfTest_test_OBJECTS)
+am__objects_1 =
+am_sillyPowerMethod_tpetra_OBJECTS =  \
+	sillyPowerMethod_tpetra.$(OBJEXT) $(am__objects_1)
+sillyPowerMethod_tpetra_OBJECTS =  \
+	$(am_sillyPowerMethod_tpetra_OBJECTS)
 am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(TPETRA_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BasicPerfTest_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/sillyPowerMethod_tpetra.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(BasicPerfTest_test_SOURCES)
-DIST_SOURCES = $(BasicPerfTest_test_SOURCES)
+SOURCES = $(sillyPowerMethod_tpetra_SOURCES)
+DIST_SOURCES = $(sillyPowerMethod_tpetra_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -161,7 +141,9 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = @LIBS@
+
+# This is already added part of TPETRA_LIBS and therefore automake does not need to add this again!
+LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
@@ -241,17 +223,27 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-BasicPerfTest_test_SOURCES = $(srcdir)/cxx_main.cpp
-BasicPerfTest_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BasicPerfTest_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
-	-I$(top_builddir)/../teuchos/src
+#
+# Actual programs
+#
+SILLY_POWER_METHOD_TPETRA = sillyPowerMethod_tpetra
+sillyPowerMethod_tpetra_SOURCES = $(srcdir)/sillyPowerMethod_tpetra.cpp $(common_sources)
+sillyPowerMethod_tpetra_DEPENDENCIES = $(common_dependencies)
+sillyPowerMethod_tpetra_LDADD = $(common_ldadd)
 
-BasicPerfTest_test_LDADD = $(top_builddir)/src/libtpetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(LIBS) $(BLAS_LIBS) $(FLIBS)
-
+#
+# Common stuff
+#
+common_sources = 
+common_dependencies = $(top_builddir)/src/libtpetra.a
+@USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(TPETRA_INCLUDES)
+@USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TPETRA_INCLUDES))
+@USING_GNUMAKE_FALSE@EXPORT_LIBS = $(TPETRA_LIBS)
+@USING_GNUMAKE_TRUE@EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(TPETRA_LIBS))
+AM_CPPFLAGS = -I$(top_srcdir)/../thyra/example/operator_vector $(EXPORT_INCLUDES)
+common_ldadd = $(EXPORT_LIBS)
+EXTRA_DIST = 
 all: all-am
 
 .SUFFIXES:
@@ -265,9 +257,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/BasicPerfTest/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  thyra/example/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/BasicPerfTest/Makefile
+	  $(AUTOMAKE) --foreign  thyra/example/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -288,9 +280,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-BasicPerfTest_test$(EXEEXT): $(BasicPerfTest_test_OBJECTS) $(BasicPerfTest_test_DEPENDENCIES) 
-	@rm -f BasicPerfTest_test$(EXEEXT)
-	$(CXXLINK) $(BasicPerfTest_test_LDFLAGS) $(BasicPerfTest_test_OBJECTS) $(BasicPerfTest_test_LDADD) $(LIBS)
+sillyPowerMethod_tpetra$(EXEEXT): $(sillyPowerMethod_tpetra_OBJECTS) $(sillyPowerMethod_tpetra_DEPENDENCIES) 
+	@rm -f sillyPowerMethod_tpetra$(EXEEXT)
+	$(CXXLINK) $(sillyPowerMethod_tpetra_LDFLAGS) $(sillyPowerMethod_tpetra_OBJECTS) $(sillyPowerMethod_tpetra_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -298,7 +290,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BasicPerfTest_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sillyPowerMethod_tpetra.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -316,21 +308,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-BasicPerfTest_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -MT BasicPerfTest_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo" -c -o BasicPerfTest_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo" "$(DEPDIR)/BasicPerfTest_test-cxx_main.Po"; else rm -f "$(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='BasicPerfTest_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BasicPerfTest_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/BasicPerfTest_test-cxx_main.TPo' @AMDEPBACKSLASH@
+sillyPowerMethod_tpetra.o: $(srcdir)/sillyPowerMethod_tpetra.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sillyPowerMethod_tpetra.o -MD -MP -MF "$(DEPDIR)/sillyPowerMethod_tpetra.Tpo" -c -o sillyPowerMethod_tpetra.o `test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp' || echo '$(srcdir)/'`$(srcdir)/sillyPowerMethod_tpetra.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/sillyPowerMethod_tpetra.Tpo" "$(DEPDIR)/sillyPowerMethod_tpetra.Po"; else rm -f "$(DEPDIR)/sillyPowerMethod_tpetra.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sillyPowerMethod_tpetra.cpp' object='sillyPowerMethod_tpetra.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/sillyPowerMethod_tpetra.Po' tmpdepfile='$(DEPDIR)/sillyPowerMethod_tpetra.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -c -o BasicPerfTest_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sillyPowerMethod_tpetra.o `test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp' || echo '$(srcdir)/'`$(srcdir)/sillyPowerMethod_tpetra.cpp
 
-BasicPerfTest_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -MT BasicPerfTest_test-cxx_main.obj -MD -MP -MF "$(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo" -c -o BasicPerfTest_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo" "$(DEPDIR)/BasicPerfTest_test-cxx_main.Po"; else rm -f "$(DEPDIR)/BasicPerfTest_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='BasicPerfTest_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BasicPerfTest_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/BasicPerfTest_test-cxx_main.TPo' @AMDEPBACKSLASH@
+sillyPowerMethod_tpetra.obj: $(srcdir)/sillyPowerMethod_tpetra.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT sillyPowerMethod_tpetra.obj -MD -MP -MF "$(DEPDIR)/sillyPowerMethod_tpetra.Tpo" -c -o sillyPowerMethod_tpetra.obj `if test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp'; then $(CYGPATH_W) '$(srcdir)/sillyPowerMethod_tpetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sillyPowerMethod_tpetra.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/sillyPowerMethod_tpetra.Tpo" "$(DEPDIR)/sillyPowerMethod_tpetra.Po"; else rm -f "$(DEPDIR)/sillyPowerMethod_tpetra.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/sillyPowerMethod_tpetra.cpp' object='sillyPowerMethod_tpetra.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/sillyPowerMethod_tpetra.Po' tmpdepfile='$(DEPDIR)/sillyPowerMethod_tpetra.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BasicPerfTest_test_CXXFLAGS) $(CXXFLAGS) -c -o BasicPerfTest_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o sillyPowerMethod_tpetra.obj `if test -f '$(srcdir)/sillyPowerMethod_tpetra.cpp'; then $(CYGPATH_W) '$(srcdir)/sillyPowerMethod_tpetra.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/sillyPowerMethod_tpetra.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -494,6 +486,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+include $(top_builddir)/Makefile.export.tpetra
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -17,3 +17,9 @@
     ARGS = -v;
     COMM = SERIAL, MPI;
 }
+
+(FRAMEWORK,INSTALL,Thyra) {
+    TESTS = ../thyra/example/sillyPowerMethod_tpetra.exe;
+    ARGS = --verbose;
+    COMM = SERIAL, MPI;
+}
