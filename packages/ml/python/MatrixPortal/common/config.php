@@ -18,9 +18,31 @@
 # `PythonDirectory' is the directory containing the   #
 # step_process.py; typically, this is the ml/python/  #
 # MatrixPortal directory.                             #
+#                                                     #
+# `HTMLImageDirectory' is the a web-accessible        #
+# directory (as local path or as an absolute http     #
+# address) that will contain the automatically        #
+# generated images.                                   #
+#                                                     #
+# `PYTHONPATH' will be given to tbe python script     #
+# before executing; typically it contains the location#
+# of PyTrilinos and of PyChart.                       #
+#                                                     #
+# `LD_LIBRARY_PATH' can be needed to Trilinos         #
+# if compiled as shared libraries.                    #
+#                                                     #
+# `ENABLE_MPI' can be either TRUE of FALSE. If TRUE,  #
+# then PyTrilinos and Trilinos have been configured   #
+# and compiled with MPI support. mpirun will be used  #
+# to fire up all python scripts using PyTrilinos.     #
+#                                                     #
+# `MAX_PROCS', `MPI_BOOT'; and `MPI_HALT' specify the #
+# maximum number of processors, what to call to ini-  #
+# tialize and finalize MPI. For LAM/MPI, these values #
+# are lamboot and lamhalt.                            #
 # --------------------------------------------------- #
 
-$MACHINE = "givens4";
+$MACHINE = "kythira";
 
 if ($MACHINE == "givens4")
 {
@@ -43,8 +65,8 @@ else if ($MACHINE == "kythira")
   $TempDirectory = "/tmp/";
   $PythonDirectory = "/home/msala/Trilinos/packages/ml/python/MatrixPortal";
   $HTMLImageDirectory = "http://kythira.ethz.ch/MatrixPortal/tmp";
-  $PYTHONPATH = "/home/masala/Trilinos/LINUX_MPI/lib/python2.3/site-packages/:/home/masala/lib/python2.3/site-packages/";
-  $LD_LIBRARY_PATH = "/home/masala/Trilinos/LINUX_MPI/lib";
+  $PYTHONPATH = "/home/msala/Trilinos/LINUX_SERIAL/lib/python2.4/site-packages/";
+  $LD_LIBRARY_PATH = "/home/msala/Trilinos/LINUX_SERIAL/lib";
   $ENABLE_MPI = FALSE;
   $MAX_PROCS = 1;
   $MPI_BOOT = "";
