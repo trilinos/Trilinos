@@ -94,10 +94,9 @@ namespace Teuchos
      * only when the clock is stopped.</b> */
     double totalElapsedTime() const {return totalTime_;}
 
-    /** \brief Resets the cummulative time associated with this timer. 
-
-        Does not affect any other state. */
-    void reset() {totalTime_ = 0;}
+    /** \brief Resets the cummulative time and number of times this timer
+     * has been called.  Does not affect any other state. */
+    void reset() {totalTime_ = 0; numCalls_ = 0;}
 
     /** \brief Indicates if this timer is currently running, i.e., if it has been started but
      * not yet stopped. 
@@ -109,10 +108,10 @@ namespace Teuchos
     /** \brief Return the name of this timer */
     const string& name() const {return name_;}
 
-    /** */
+    /** \brief Increment the number of times this timer has been called */
     void incrementNumCalls() {numCalls_++;}
 
-    /** */
+    /** \brief Return the number of times this timer has been called */
     int numCalls() const {return numCalls_;}
 
   private:
@@ -128,7 +127,5 @@ namespace Teuchos
   };
 
 } // namespace Teuchos
-
-// #include "Teuchos_Time.cpp"
 
 #endif // TEUCHOS_TIME_HPP_
