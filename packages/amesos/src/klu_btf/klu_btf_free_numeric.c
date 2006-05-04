@@ -28,7 +28,7 @@ void klu_btf_free_numeric (klu_numeric **NumericHandle)
     FREE (Numeric->Singleton, double) ;
     FREE (Numeric->Rs, double) ;
     FREE (Numeric->Pinv, int) ;
-    FREE (Numeric->Work, void) ;
+    FREE (Numeric->Work, double) ;
 
     Lbp = Numeric->Lbp ;
     Lbi = Numeric->Lbi ;

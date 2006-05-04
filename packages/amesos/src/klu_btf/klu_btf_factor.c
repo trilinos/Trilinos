@@ -472,7 +472,7 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
      * of size 6n. */
     Numeric->worksize = n * sizeof (double) +
 	MAX (3*n * sizeof (double), 6*maxblock * sizeof (int)) ;
-    Numeric->Work = (void *) ALLOCATE (Numeric->worksize) ; 
+    Numeric->Work = (double *) ALLOCATE (Numeric->worksize) ; 
     Numeric->Xwork = (double *) Numeric->Work ;
     Numeric->Iwork = (int *) (Numeric->Xwork + n) ;
 
