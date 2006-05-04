@@ -29,7 +29,8 @@
 #ifndef THYRA_SINGLE_RHS_EUCLIDEAN_LINEAR_OP_BASE_HPP
 #define THYRA_SINGLE_RHS_EUCLIDEAN_LINEAR_OP_BASE_HPP
 
-#include "Thyra_SingleRhseuclideanApplyLinearOpBaseDecl.hpp"
+#include "Thyra_SingleRhsEuclideanLinearOpBaseDecl.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_AssertOp.hpp"
@@ -37,7 +38,7 @@
 namespace Thyra {
 
 template<class Scalar>
-void SingleRhsLinearOpBase<Scalar>::euclideanApply(
+void SingleRhsEuclideanLinearOpBase<Scalar>::euclideanApply(
   const ETransp                     M_trans
   ,const MultiVectorBase<Scalar>    &X
   ,MultiVectorBase<Scalar>          *Y
