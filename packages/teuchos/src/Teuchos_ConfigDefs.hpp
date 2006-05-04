@@ -181,6 +181,12 @@
 #include <list.h>
 #endif
 
+#ifdef HAVE_SET
+#include <set>
+#elif defined(HAVE_SET_H)
+#include <set.h>
+#endif
+
 #ifdef HAVE_STRING
 #include <string>
 #elif defined(HAVE_STRING_H) 

@@ -30,8 +30,6 @@
 #include "Teuchos_MPISession.hpp"
 #include "Teuchos_MPIContainerComm.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#include <map>
-#include <set>
 using namespace Teuchos;
 
 

@@ -123,6 +123,12 @@
    classes in derived classes */
 #undef HAVE_PROTECTED_NESTED_TEMPLATE_CLASS_ACCESS
 
+/* Define to 1 if you have the <set> header file. */
+#undef HAVE_SET
+
+/* Define to 1 if you have the <set.h> header file. */
+#undef HAVE_SET_H
+
 /* Define to 1 if you have the `sqrt' function. */
 #undef HAVE_SQRT
 

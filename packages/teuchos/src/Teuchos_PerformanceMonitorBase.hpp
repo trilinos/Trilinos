@@ -40,7 +40,6 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_PerformanceMonitorUtils.hpp"
 #include "Teuchos_TableFormat.hpp"
-#include <iostream>
 
 namespace Teuchos
 {

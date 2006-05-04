@@ -27,7 +27,6 @@
 // @HEADER
 
 #include "Teuchos_TableColumn.hpp"
-#include <typeinfo>
 
 using namespace Teuchos;
 

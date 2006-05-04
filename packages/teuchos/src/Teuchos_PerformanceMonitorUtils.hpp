@@ -38,7 +38,6 @@
 #include "Teuchos_MPIComm.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Array.hpp"
-#include <iostream>
 
 namespace Teuchos
 {

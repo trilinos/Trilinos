@@ -32,8 +32,6 @@
 #include "Teuchos_MPISession.hpp"
 #include "Teuchos_MPIContainerComm.hpp"
 #include "Teuchos_ConfigDefs.hpp"
-#include <map>
-#include <set>
 using namespace Teuchos;
 
 
@@ -82,7 +80,6 @@ void TimeMonitor::summarize(ostream &out, bool alwaysWriteLocal,
   Array<int> columnWidths;
   columnWidths.append(format().computeRequiredColumnWidth(titles[titles.size()-1], 
                                                           nameCol));
-  
   if (np==1 || alwaysWriteLocal)
     {
       TableColumn timeAndCalls(timings, calls, precision, true);

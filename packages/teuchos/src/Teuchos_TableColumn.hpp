@@ -36,7 +36,6 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TableEntry.hpp"
 #include "Teuchos_Array.hpp"
-#include <iostream>
 
 namespace Teuchos
 {
