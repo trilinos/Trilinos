@@ -7,6 +7,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_CrsGraph.h"
@@ -892,10 +893,17 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X
   herr_t      status;
 
   // need a linear distribution to use hyperslabs
-  Epetra_Map LinearMap(X.GlobalLength(), 0, Comm_);
-  Epetra_MultiVector LinearX(LinearMap, X.NumVectors());
-  Epetra_Import Importer(LinearMap, X.Map());
-  LinearX.Import(X, Importer, Insert);
+  Teuchos::RefCountPtr<Epetra_MultiVector> LinearX;
+
+  if (Comm().NumProc() == 1 || X.Map().LinearMap())
+    LinearX = Teuchos::rcp(const_cast<Epetra_MultiVector*>(&X), false);
+  else
+  {
+    Epetra_Map LinearMap(X.GlobalLength(), 0, Comm_);
+    LinearX = Teuchos::rcp(new Epetra_MultiVector(LinearMap, X.NumVectors()));
+    Epetra_Import Importer(LinearMap, X.Map());
+    LinearX->Import(X, Importer, Insert);
+  }
 
   int NumVectors = X.NumVectors();
   int GlobalLength = X.GlobalLength();
@@ -919,21 +927,21 @@ void EpetraExt::HDF5::Write(const string& GroupName, const Epetra_MultiVector& X
 #endif
 
   // Select hyperslab in the file.
-  hsize_t offset[] = {0, LinearX.Map().GID(0)};
+  hsize_t offset[] = {0, LinearX->Map().GID(0)};
   hsize_t stride[] = {1, 1};
   hsize_t count[] = {NumVectors, 1};
-  hsize_t block[] = {1, LinearX.MyLength()};
+  hsize_t block[] = {1, LinearX->MyLength()};
   filespace_id = H5Dget_space(dset_id);
   H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride, 
                       count, block);
 
   // Each process defines dataset in memory and writes it to the hyperslab in the file.
-  hsize_t dimsm[] = {NumVectors * LinearX.MyLength()};
+  hsize_t dimsm[] = {NumVectors * LinearX->MyLength()};
   memspace_id = H5Screate_simple(1, dimsm, NULL);
 
   // Write hyperslab
   status = H5Dwrite(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
-                    plist_id_, LinearX.Values());
+                    plist_id_, LinearX->Values());
   CHECK_STATUS(status);
   H5Gclose(group_id);
   H5Sclose(memspace_id);

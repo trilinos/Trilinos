@@ -58,7 +58,7 @@ The most important classes of the EpetraExt module are:
 "
 %enddef
 
-%module(package="PyTrilinos", docstring=EPETRAEXT_DOCSTRING) EpetraExt
+%module(package="PyTrilinos", directors="1", docstring=EPETRAEXT_DOCSTRING) EpetraExt
 
 %{
 // System includes
