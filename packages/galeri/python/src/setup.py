@@ -62,8 +62,10 @@ except KeyError:
 include_dirs       = [srcdir]
 library_dirs       = [      ]
 libraries          = [      ]
-extra_compile_args = [      ]
+extra_compile_args = []
 extra_link_args    = [      ]
+extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
+uniquifyList(extra_compile_args)
 
 # the GALERI and GALERI_LIBS variables from scratch
 GALERI_INCLUDES = "-I%s -I%s -I%s -I%s -I%s -I%s" % (os.path.normpath(os.path.join(top_srcdir,"src")),
