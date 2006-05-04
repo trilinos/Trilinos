@@ -326,10 +326,11 @@
 
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
   <?
+    global $HBMatrixDirectory;
     $files = array();
-    $dir = opendir($MatrixDirectory) or die ($php_errormsg);
+    $dir = opendir($HBMatrixDirectory) or die ($php_errormsg);
     while (false !== ($file = readdir($dir))) {
-      if (is_file("$MatrixDirectory$file")) {
+      if (is_file("$HBMatrixDirectory$file")) {
         $files[] = $file;
       }
     }
@@ -352,6 +353,42 @@
   <input type="hidden" name=state value="add">
 
   <input type=submit class=submitPrimary value="add to cart"><br></form>
+
+  <li>
+  Linear problems in HDF5 format:
+  <p>
+
+  <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
+  <?
+    global $H5MatrixDirectory;
+    $files = array();
+    $dir = opendir($H5MatrixDirectory) or die ($php_errormsg);
+    while (false !== ($file = readdir($dir))) {
+      if (is_file("$H5MatrixDirectory$file")) {
+        $files[] = $file;
+      }
+    }
+    closedir($dir);                  
+
+    echo "<select name=type size=" . count($files) . '>';
+        
+      foreach ($files as $file) {
+        echo "<option value=H5_" . $file . ">" . $file . "</option>";
+      }
+              
+    echo "</select>";
+  ?>
+
+  <p>Label this problem as <input type="text" name=MyLabel size=10 value="">&nbsp;then&nbsp;
+
+  <input type="hidden" name="ProblemIDs" value="<? global $ProblemIDs; echo $ProblemIDs; ?>" >
+  <input type="hidden" name="ResultIDs" value="<? global $ResultIDs; echo $ResultIDs; ?>" >
+  <input type="hidden" name=mode value="<? global $Mode; echo $Mode; ?>">
+  <input type="hidden" name=state value="add">
+
+  <input type=submit class=submitPrimary value="add to cart"><br></form>
+
+
   </div>
 
   </div>

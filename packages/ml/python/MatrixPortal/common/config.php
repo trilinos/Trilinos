@@ -46,7 +46,8 @@ $MACHINE = "kythira";
 
 if ($MACHINE == "givens4")
 {
-  $MatrixDirectory = "/home/chinella/Web/MatrixPortal/HBMatrices/";
+  $HBMatrixDirectory = "/home/chinella/Web/MatrixPortal/HBMatrices/";
+  $H5MatrixDirectory = "/home/chinella/Web/MatrixPortal/H5Matrices/";
   $ImageDirectory = "/home/chinella/Web/MatrixPortal/tmp/";
   $TempDirectory = "/tmp/";
   $PythonDirectory = "/home/chinella/Web/MatrixPortal/";
@@ -60,7 +61,8 @@ if ($MACHINE == "givens4")
 }
 else if ($MACHINE == "kythira")
 {
-  $MatrixDirectory = "/var/www/html/MatrixPortal/HBMatrices/";
+  $HBMatrixDirectory = "/var/www/html/MatrixPortal/HBMatrices/";
+  $H5MatrixDirectory = "/var/www/html/MatrixPortal/H5Matrices/";
   $ImageDirectory = "/var/www/html/MatrixPortal/tmp/";
   $TempDirectory = "/tmp/";
   $PythonDirectory = "/home/msala/Trilinos/packages/ml/python/MatrixPortal";

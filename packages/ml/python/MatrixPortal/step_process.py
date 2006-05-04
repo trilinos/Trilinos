@@ -34,8 +34,8 @@ MAX_MATRIX_ROWS = 256 * 256
 MAX_MATRIX_NONZEROS = MAX_MATRIX_ROWS * 5
 MAX_ITERATIONS = 1550
 MAX_KSPACE = 200
-HB_REPOSITORY = "/var/www/html/MatrixPortal/HBMatrices/"
-H5_REPOSITORY = "/var/www/html/MatrixPortal/H5Matrices/"
+HB_REPOSITORY = "/home/chinella/Web/MatrixPortal/HBMatrices/"
+H5_REPOSITORY = "/home/chinella/Web/MatrixPortal/H5Matrices/"
 
 # -------------------------------------------------------------------------
 def set_type(List, name, type, value):  
@@ -146,10 +146,10 @@ def generator(problemID, comm, List):
   elif problemID[0:3] == "H5_":
     print "<p><p><div class=\"outputBox\"><pre>";
     FileName = H5_REPOSITORY + problemID[3:];
-    HDF5 = EpetraExt.HDF5(Comm)
+    HDF5 = EpetraExt.HDF5(comm)
     HDF5.Open(FileName)
 
-    Map = HDF5.ReadMultiVector("MAP")
+    Map = HDF5.ReadMap("MAP")
     Matrix = HDF5.ReadMultiVector("MATRIX")
     if HDF5.IsContained("LHS"):
       LHS = HDF5.ReadMultiVector("LHS")
