@@ -34,11 +34,11 @@ extern "C" {
 typedef struct tagVCycle {
     HGraph           *hg;         /* for finer==NULL, hg and Part contains   */
     Partition         Part;       /* original hg and Part, don't delete them */  
-    int              **vdest;     /* necessary to unredistribute             */
+    int              *vdest;      /* necessary to unredistribute             */
                                   /* vdest size = hg->nVtx
 				     vdest[i] is the dest proc of vtx i in the
 				     unredistributed communicators. */
-    int              **vlno;      /* vlno size = hg-> nVtx 
+    int              *vlno;       /* vlno size = hg-> nVtx 
                                      vlno[i] is the local vertex number of vtx
 				     i on proc vdest[i]. */
     int              *LevelMap;   /* necessary to uncoarsen                  */
@@ -70,7 +70,7 @@ typedef struct tagVCycle {
                                      Proc owning my_lno will have the 
                                      coarse vtx resulting from the match
                                      and, thus, will have to send part
-                                     assignment to external_gno when 
+                                     assignment to external_lno when 
                                      uncoarsening.  */
     struct tagVCycle *finer; 
     struct Zoltan_Comm_Obj  *comm_plan;    
