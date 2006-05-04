@@ -341,7 +341,7 @@ void EpetraLinearOp::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "type = \'Thyra::EpetraLinearOp<" << ST::name() << ">\', "
+        << "type = \'Thyra::EpetraLinearOp\', "
         << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
       OSTab tab(out);
       if(op_.get()) {
