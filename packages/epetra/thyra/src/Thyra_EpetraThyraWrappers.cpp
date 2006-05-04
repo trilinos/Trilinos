@@ -220,9 +220,9 @@ Thyra::get_Epetra_Vector(
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
 	//
 	// Here we will extract a view of the local elements in the underlying
-	// MultiVectorBase object.  In most cases, no data will be allocated or
-	// copied and only some small objects will be created and a few virtual
-	// functions will be called so the overhead should be low and fixed.
+	// VectorBase object.  In most cases, no data will be allocated or copied
+	// and only some small objects will be created and a few virtual functions
+	// will be called so the overhead should be low and fixed.
 	//
 	// Create a *mutable* view of the local elements, this view will be set on
 	// the RefCountPtr that is returned.  As a result, this view will be relased
@@ -275,9 +275,12 @@ Thyra::get_Epetra_Vector(
   //
   const Teuchos::RefCountPtr<const Epetra_Vector>
     *epetra_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<const Epetra_Vector> >(v,"Epetra_Vector");
-  if(epetra_v_ptr) {
+  if(epetra_v_ptr)
     return *epetra_v_ptr;
-  }
+  const Teuchos::RefCountPtr<Epetra_Vector>
+    *epetra_nonconst_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<Epetra_Vector> >(v,"Epetra_Vector");
+  if(epetra_nonconst_v_ptr)
+    return *epetra_nonconst_v_ptr;
 	//
 	// Same as above function except as stated below
 	//

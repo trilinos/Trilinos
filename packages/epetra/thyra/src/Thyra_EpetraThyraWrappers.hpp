@@ -51,11 +51,11 @@ views of %Thyra objects.
  * \param  epetra_map  [in] The Epetra map defining the partitioning of elements
  *                     to processors.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li><tt>epetra_map.get() != NULL</tt>
  * </ul>
  *
- * Postconditions:<ul>
+ * <b>Postconditions:</b><ul>
  * <li> <tt>return.get() != NULL</tt>
  * <li> The <tt>RefCountPtr</tt> object <tt>epetra_map</tt> is copied into
  *      the <tt>return</tt> object and therefore a memory of epetra_map is
@@ -89,9 +89,13 @@ create_MPIVectorSpaceBase(
  * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
  * @param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
  *
- * Precondiitions:<ul>
- * <li><tt>epetra_v.get()!=NULL</tt>
- * <li><tt>space.get()!=NULL</tt>
+ * <b>Precondiitions:</b><ul>
+ * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>space.get()!=NULL</tt>
+ * </ul>
+ *
+ * <b>Postconditions:</b><ul>
+ * <li>[<tt>epetra_v.get()==NULL</tt>] <tt>return.get()==NULL<tt>
+ * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>return.get()!=NULL<tt>
  * </ul>
  *
  * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
@@ -116,9 +120,13 @@ create_MPIVectorBase(
  * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
  * @param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
  *
- * Precondiitions:<ul>
- * <li><tt>epetra_v.get()!=NULL</tt>
- * <li><tt>space.get()!=NULL</tt>
+ * <b>Precondiitions:</b><ul>
+ * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>space.get()!=NULL</tt>
+ * </ul>
+ *
+ * <b>Postconditions:</b><ul>
+ * <li>[<tt>epetra_v.get()==NULL</tt>] <tt>return.get()==NULL<tt>
+ * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>return.get()!=NULL<tt>
  * </ul>
  *
  * \return The returned <tt>RefCountPtr</tt> object contains a copy of the
@@ -141,7 +149,7 @@ create_MPIVectorBase(
  * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
  * @param  domain     [in] The vector space that is compatible with <tt>epetra_mv.NumVectors</tt>.
  *
- * Precondiitions:<ul>
+ * <b>Precondiitions:</b><ul>
  * <li><tt>epetra_mv.get()!=NULL</tt>
  * <li><tt>range.get()!=NULL</tt>
  * <li><tt>domain.get()!=NULL</tt>
@@ -171,7 +179,7 @@ create_MPIMultiVectorBase(
  * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
  * @param  domain     [in] The vector space that is compatible with <tt>epetra_mv.NumVectors</tt>.
  *
- * Precondiitions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li><tt>epetra_mv.get()!=NULL</tt>
  * <li><tt>range.get()!=NULL</tt>
  * <li><tt>domain.get()!=NULL</tt>
@@ -247,7 +255,7 @@ get_Epetra_Vector(
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * non-<tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>mv.get()!=NULL</tt>
  * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
  * </ul>
@@ -276,7 +284,7 @@ get_Epetra_MultiVector(
 /** \brief Get a <tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * <tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
  *
- * Preconditions:<ul>
+ * <b>Preconditions:</b><ul>
  * <li> <tt>mv.get()!=NULL</tt>
  * <li> <tt>map</tt> must be compatible with <tt>*mv.range()</tt>
  * </ul>
