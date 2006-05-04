@@ -92,6 +92,8 @@ epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyMultiVector.cpp"))
 epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyVector.cpp"     ))
+epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
+                                                       "Epetra_NumPyIntVector.cpp"     ))
 
 # Compiler and linker
 sysconfig.get_config_vars()
