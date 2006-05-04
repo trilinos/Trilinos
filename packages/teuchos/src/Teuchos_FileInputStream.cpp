@@ -43,10 +43,11 @@ FileInputStream::FileInputStream(const string& filename)
 unsigned int FileInputStream::readBytes(unsigned char* const toFill, 
 																				const unsigned int maxToRead)
 {
-	if (feof(file_)) return 0;
+	if (feof(file_)) return (size_t)0;
 	int n = ::fread((void*) toFill, sizeof(char), maxToRead, file_);
-  
-	TEST_FOR_EXCEPTION(n <= 0 || (n<(int) maxToRead && !feof(file_)),
+    if (n==0) return (size_t)0; 
+
+	TEST_FOR_EXCEPTION(n < 0 || (n<(int) maxToRead && !feof(file_)),
                      runtime_error,
                      "FileInputStream::readBytes error");
 	
