@@ -61,7 +61,7 @@
     COMM = SERIAL, MPI;
 }
 
-(FRAMEWORK,INSTALL) {
+(FRAMEWORK,INSTALL,Thyra) {
     TESTS = ../thyra/test/test_epetra_adapters.exe;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
