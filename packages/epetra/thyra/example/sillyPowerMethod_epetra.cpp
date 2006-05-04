@@ -31,7 +31,7 @@
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -94,9 +94,9 @@ int main(int argc, char *argv[])
 	//
 	// (B) Setup the output stream (do output only on root process!)
 	//
-	
-	Teuchos::oblackholestream black_hole_out;
-	std::ostream &out = ( procRank == 0 ? std::cout : black_hole_out );
+
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
 	
 	try {
 
@@ -107,7 +107,10 @@ int main(int argc, char *argv[])
 		int    globalDim                  = 500;
 		bool   dumpAll                    = false;
 
-		CommandLineProcessor  clp(false); // Don't throw exceptions
+		CommandLineProcessor  clp;
+    clp.throwExceptions(false);
+    clp.addOutputSetupOptions(true);
+
 		clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
 		clp.setOption( "global-dim", &globalDim, "Global dimension of the linear system." );
 		clp.setOption( "dump-all", "no-dump", &dumpAll, "Determines if quantities are dumped or not." );
@@ -117,7 +120,7 @@ int main(int argc, char *argv[])
 
 		TEST_FOR_EXCEPTION( globalDim < 2, std::logic_error, "Error, globalDim=" << globalDim << " < 2 is not allowed!" );
 
-		if(verbose) out << "\n***\n*** Running power method example using Epetra implementation\n***\n" << std::scientific;
+		if(verbose) *out << "\n***\n*** Running power method example using Epetra implementation\n***\n" << std::scientific;
 
 		//
 		// (D) Setup the operator and run the power method!
@@ -132,40 +135,41 @@ int main(int argc, char *argv[])
 		//       [          -1  2  -1 ]
 		//       [             -1   2 ]
 		//
-		if(verbose) out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
+		if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
 		RefCountPtr<Thyra::LinearOpBase<double> >
 			A = createTridiagEpetraLinearOp(
 				globalDim
 #ifdef HAVE_MPI
 				,mpiComm
 #endif
-				,1.0,verbose,out
+				,1.0,verbose,*out
 				);
-		if( verbose && dumpAll ) out << "\nA =\n" << *A; // This works even in parallel!
+		if( verbose && dumpAll ) *out << "\nA =\n" << *A; // This works even in parallel!
 		
 		//
 		// (2) Run the power method ANA
 		//
-		if(verbose) out << "\n(2) Running the power method on matrix A ...\n";
+		if(verbose) *out << "\n(2) Running the power method on matrix A ...\n";
 		double  lambda      = 0.0;
 		double  tolerance   = 1e-3;
 		int     maxNumIters = 10*globalDim;
-		result = sillyPowerMethod<double>(*A,maxNumIters,tolerance,&lambda,(verbose?&out:NULL));
+		result = sillyPowerMethod<double>(*A,maxNumIters,tolerance,&lambda,(verbose?&*out:NULL));
 		if(!result) success = false;
-		if(verbose) out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
+		if(verbose) *out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
 		
 		//
 		// (3) Increase dominance of first eigenvalue
-		if(verbose) out << "\n(3) Scale the diagonal of A by a factor of 10 ...\n";
-		scaleFirstDiagElement( 10, &*A );
+    //
+		if(verbose) *out << "\n(3) Scale the diagonal of A by a factor of 10 ...\n";
+		scaleFirstDiagElement( 10.0, &*A );
 		
 		//
 		// (4) Run the power method ANA again
 		//
-		if(verbose) out << "\n(4) Running the power method again on matrix A ...\n";
-		result = sillyPowerMethod<double>(*A,maxNumIters,tolerance,&lambda,(verbose?&out:NULL));
+		if(verbose) *out << "\n(4) Running the power method again on matrix A ...\n";
+		result = sillyPowerMethod<double>(*A,maxNumIters,tolerance,&lambda,(verbose?&*out:NULL));
 		if(!result) success = false;
-		if(verbose) out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
+		if(verbose) *out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
 		
 	}
 	catch( const std::exception &excpt ) {
@@ -178,8 +182,8 @@ int main(int argc, char *argv[])
 	}
 	
 	if (verbose) {
-		if(success)  out << "\nCongratulations! All of the tests checked out!\n";
-		else         out << "\nOh no! At least one of the tests failed!\n";
+		if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
+		else         *out << "\nOh no! At least one of the tests failed!\n";
 	}
 
 #ifdef HAVE_MPI
