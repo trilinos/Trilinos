@@ -154,27 +154,44 @@ public:
    * <li>[<tt>forceUnitStride==true</tt>] <tt>this->stride()==1</tt>
    * </ul>
    */
-  ConstDetachedVectorView( const VectorBase<Scalar>& v, const Range1D &rng = Range1D(), const bool forceUnitStride = false )
-    :v_(v)
+  ConstDetachedVectorView(
+    const Teuchos::RefCountPtr<const VectorBase<Scalar> > &v
+    ,const Range1D &rng = Range1D(), const bool forceUnitStride = false
+    )
     {
-      v_.acquireDetachedView(rng,&sv_s_);
-      if( forceUnitStride && sv_s_.stride() != 1 ) {
-        Scalar *values = new Scalar[sv_s_.subDim()];
-        Teuchos_Index i; const Scalar *sv_v;
-        for( sv_v = sv_s_.values(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
-          values[i] = *sv_v;
-        sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
-      }
-      else {
-        sv_ = sv_s_;
-      }
+      this->initialize(v,rng,forceUnitStride);
+    }
+  /** \brief Construct an explicit non-mutable (const) view of a subset of elements.
+   *
+   * @param  v     [in] The vector that a view will be taken.  This object must be maintained
+   *               until <tt>*this</tt> is destroyed.
+   * @param  rng   [in] the range of element indices that the explicit view will be taken.
+   * @param  forceUnitStride
+   *               [in] If <tt>true</tt> then the view will have unit stride.
+   *
+   * Preconditions:<ul>
+   * <li>[<tt>rng.full_range()==false</tt>] <tt>rng.ubound() < v.space()->dim()</tt>
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * <li><tt>this->sv()</tt> returns the created view
+   * <li><tt>this->globalOffset()==rng.lbound()</tt>
+   * <li><tt>this->subDim()==rng.size()</tt>
+   * <li><tt>this->values()</tt> returns a pointer to a <tt>Scalar</tt> array
+   * <li><tt>this->stride()</tt> returns the stride between the elements pointed it in <tt>this->values()</tt>
+   * <li>[<tt>forceUnitStride==true</tt>] <tt>this->stride()==1</tt>
+   * </ul>
+   */
+  ConstDetachedVectorView( const VectorBase<Scalar>& v, const Range1D &rng = Range1D(), const bool forceUnitStride = false )
+    {
+      this->initialize(Teuchos::rcp(&v,false),rng,forceUnitStride);
     }
   /// Free the explicit view on the <tt>VectorBase</tt> object <tt>v</tt> passed to <tt>ConstDetachedVectorView()</tt>
   ~ConstDetachedVectorView()
     {
       if( sv_s_.stride() != sv_.stride() )
         delete [] const_cast<Scalar*>(sv_.values());
-      v_.releaseDetachedView(&sv_s_);
+      v_->releaseDetachedView(&sv_s_);
     }
   /// Returns the explicit view as an <tt>RTOpPack::ConstSubVectorView<Scalar></tt> object
   const RTOpPack::ConstSubVectorView<Scalar>& sv() const { return sv_; }
@@ -191,9 +208,29 @@ public:
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   const Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
 private:
-  const VectorBase<Scalar>      &v_;
+  //
+  Teuchos::RefCountPtr<const VectorBase<Scalar> > v_;
   RTOpPack::ConstSubVectorView<Scalar>  sv_s_;
   RTOpPack::ConstSubVectorView<Scalar>  sv_;
+  //
+  void initialize(
+    const Teuchos::RefCountPtr<const VectorBase<Scalar> > &v
+    ,const Range1D &rng, const bool forceUnitStride
+    )
+    {
+      v_ = v;
+      v_->acquireDetachedView(rng,&sv_s_);
+      if( forceUnitStride && sv_s_.stride() != 1 ) {
+        Scalar *values = new Scalar[sv_s_.subDim()];
+        Teuchos_Index i; const Scalar *sv_v;
+        for( sv_v = sv_s_.values(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+          values[i] = *sv_v;
+        sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
+      }
+      else {
+        sv_ = sv_s_;
+      }
+    }
   // Not defined and not to be called
   ConstDetachedVectorView();
   ConstDetachedVectorView(const ConstDetachedVectorView<Scalar>&);
@@ -322,20 +359,38 @@ public:
    * <li>[<tt>forceUnitStride==true</tt>] <tt>this->stride()==1</tt>
    * </ul>
    */
-  DetachedVectorView( VectorBase<Scalar>& v, const Range1D &rng = Range1D(), const bool forceUnitStride = false )
-    :v_(v)
+  DetachedVectorView(
+    const Teuchos::RefCountPtr<VectorBase<Scalar> > &v
+    ,const Range1D &rng = Range1D(), const bool forceUnitStride = false
+    )
     {
-      v_.acquireDetachedView(rng,&sv_s_);
-      if( forceUnitStride && sv_s_.stride() != 1 ) {
-        Scalar *values = new Scalar[sv_s_.subDim()];
-        Teuchos_Index i; const Scalar *sv_v;
-        for( sv_v = sv_s_.values(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
-          values[i] = *sv_v;
-        sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
-      }
-      else {
-        sv_ = sv_s_;
-      }
+      this->initialize(v,rng,forceUnitStride);
+    }
+  /** \brief Construct an explicit mutable (non-const) view of a subset of elements.
+   *
+   * @param  v     [in] The vector that a view will be taken.  This object must be maintained
+   *               until <tt>*this</tt> is destroyed.  The elements in <tt>v</tt> are not
+   *               guaranteed to be updated until <tt>*this</tt> is destroyed.
+   * @param  rng   [in] the range of element indices that the explicit view will be taken.
+   * @param  forceUnitStride
+   *               [in] If <tt>true</tt> then the view will have unit stride.
+   *
+   * Preconditions:<ul>
+   * <li>[<tt>rng.full_range()==false</tt>] <tt>rng.ubound() < v.space()->dim()</tt>
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * <li><tt>this->sv()</tt> returns the created view
+   * <li><tt>this->globalOffset()==rng.lbound()</tt>
+   * <li><tt>this->subDim()==rng.size()</tt>
+   * <li><tt>this->values()</tt> returns a pointer to a <tt>Scalar</tt> array
+   * <li><tt>this->stride()</tt> returns the stride between the elements pointed it in <tt>this->values()</tt>
+   * <li>[<tt>forceUnitStride==true</tt>] <tt>this->stride()==1</tt>
+   * </ul>
+   */
+  DetachedVectorView( VectorBase<Scalar>& v, const Range1D &rng = Range1D(), const bool forceUnitStride = false )
+    {
+      this->initialize(Teuchos::rcp(&v,false),rng,forceUnitStride);
     }
   /// Commits back the the explicit view on the <tt>VectorBase</tt> object <tt>v</tt> passed to <tt>DetachedVectorView()</tt>
   ~DetachedVectorView()
@@ -346,7 +401,7 @@ public:
           *sv_v = *values++;
         delete [] sv_.values();
       }
-      v_.commitDetachedView(&sv_s_);
+      v_->commitDetachedView(&sv_s_);
     }
   /// Returns the explicit view as an <tt>RTOpPack::ConstSubVectorView<Scalar></tt> object
   const RTOpPack::SubVectorView<Scalar>& sv() const { return sv_; }
@@ -363,9 +418,29 @@ public:
   /// Zero-based indexing: Preconditions: <tt>values()!=NULL && (0 <= i < subDim()-1)</tt>
   Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
 private:
-  VectorBase<Scalar>                   &v_;
+  //
+  Teuchos::RefCountPtr<VectorBase<Scalar> > v_;
   RTOpPack::SubVectorView<Scalar>  sv_s_;
   RTOpPack::SubVectorView<Scalar>  sv_;
+  //
+  void initialize(
+    const Teuchos::RefCountPtr<VectorBase<Scalar> > &v
+    ,const Range1D &rng, const bool forceUnitStride
+    )
+    {
+      v_ = v;
+      v_->acquireDetachedView(rng,&sv_s_);
+      if( forceUnitStride && sv_s_.stride() != 1 ) {
+        Scalar *values = new Scalar[sv_s_.subDim()];
+        Teuchos_Index i; const Scalar *sv_v;
+        for( sv_v = sv_s_.values(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+          values[i] = *sv_v;
+        sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
+      }
+      else {
+        sv_ = sv_s_;
+      }
+    }
   // Not defined and not to be called
   DetachedVectorView();
   DetachedVectorView(const DetachedVectorView<Scalar>&);
