@@ -459,18 +459,22 @@ Refine:
     if (finer)  { if (finer->LevelMap) {
       int *rbuffer;
             
-      /* easy to undo internal matches */
+      /* easy to assign partitions to internal matches */
       for (i = 0; i < finer->hg->nVtx; i++)
-        if (finer->LevelMap[i] >= 0)
+        if (finer->LevelMap[i] >= 0)   /* if considers only the local vertices */
           finer->Part[i] = vcycle->Part[finer->LevelMap[i]];
           
-      /* fill sendbuffer with part data for external matches I owned */    
+      /* now that the course partition assignments have been propagated */
+      /* upward to the finer level for the local vertices, we need to  */    
+      /* fill the LevelData (matched pairs of a local vertex with a    */
+      /* off processor vertex) with the partition assignment of the    */
+      /* local vertex - can be done totally in the finer level!        */    
       for (i = 0; i < finer->LevelCnt; i++)  {
-        ++i;          /* skip return lno */
+        ++i;          /* skip over off processor lno */
         finer->LevelData[i] = finer->Part[finer->LevelData[i]]; 
       }
             
-      /* allocate rec buffer */
+      /* allocate rec buffer to exchange LevelData information */
       rbuffer = NULL;
       if (finer->LevelSndCnt > 0)  {
         rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->LevelSndCnt * sizeof(int));
@@ -480,12 +484,12 @@ Refine:
         }
       }       
       
-      /* get partition assignments from owners of externally matchted vtxs */  
+      /* get partition assignments from owners of externally matched vtxs */  
       Zoltan_Comm_Resize (finer->comm_plan, NULL, COMM_TAG, &i);
       Zoltan_Comm_Do_Reverse (finer->comm_plan, COMM_TAG+1, 
        (char*) finer->LevelData, 2 * sizeof(int), NULL, (char*) rbuffer);
 
-      /* process data to undo external matches */
+      /* process data to assign partitions to expernal matches */
       for (i = 0; i < 2 * finer->LevelSndCnt;)  {
         int lno, partition;
         lno       = rbuffer[i++];
