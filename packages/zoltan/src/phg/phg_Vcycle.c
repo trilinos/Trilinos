@@ -65,7 +65,7 @@ typedef struct tagVCycle {
                                       processor. */
     int              *LevelData;  /* buffer for external vertex information  */
                                   /* LevelData size  = LevelCnt
-                                     LevelCnt/2 pairs of (my_lno, external_gno)
+                                     LevelCnt/2 pairs of (external_lno, my_lno)
                                      describing matches made across procs.
                                      Proc owning my_lno will have the 
                                      coarse vtx resulting from the match
