@@ -40,7 +40,6 @@
 #include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosBlockCG.hpp"
-#include "Teuchos_Time.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 // I/O for Harwell-Boeing files
@@ -86,7 +85,6 @@ int main(int argc, char *argv[]) {
   //
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos CG");
 
   bool verbose = 0;
   int frequency = -1;  // how often residuals are printed by solver
@@ -229,14 +227,9 @@ int main(int argc, char *argv[]) {
     cout << numrhs << " right-hand side(s) -- using a block size of " << blockSize
 	 << endl << endl;
   }
-  timer.start(true);
+
   MyBlockCG.Solve();
-  timer.stop();
-  
-  if (verbose) {
-    cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
-  }
-  
+   
   if (MyTest->GetStatus()!=Belos::Converged) {
 	if (verbose)
       		cout << "End Result: TEST FAILED" << endl;	

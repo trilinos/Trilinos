@@ -54,7 +54,6 @@
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
-#include "Teuchos_Time.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 //
 int main(int argc, char *argv[]) {
@@ -67,7 +66,6 @@ int main(int argc, char *argv[]) {
   //
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos Preconditioned CG");
   //
   // Get test parameters from command-line processor
   //  
@@ -175,7 +173,8 @@ int main(int argc, char *argv[]) {
   //
   Belos::OutputManager<ST> My_OM( MyPID );
   if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings 
+			+ Belos::TimingDetails + Belos::FinalSummary );
 
   Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
   Belos::StatusTestResNorm<ST,MV,OP> test2( tol );
@@ -211,9 +210,9 @@ int main(int argc, char *argv[]) {
     cout << numrhs << " right-hand side(s) -- using a block size of " << blockSize
 	 << endl << endl;
   }
-  timer.start(true);
+
   MyBlockCG.Solve();	
-  timer.stop();
+
   //
   // Compute actual residuals.
   //
@@ -229,10 +228,6 @@ int main(int argc, char *argv[]) {
     for (int i=0; i<numrhs; i++) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
-  }
-
-  if (verbose) {
-    cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
 
   if (My_Test.GetStatus()!=Belos::Converged) {

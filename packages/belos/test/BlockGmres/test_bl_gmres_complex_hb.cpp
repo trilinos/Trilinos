@@ -41,7 +41,6 @@
 #include "BelosStatusTestOutputter.hpp"
 #include "BelosStatusTestCombo.hpp"
 #include "BelosBlockGmres.hpp"
-#include "Teuchos_Time.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
 // I/O for Harwell-Boeing files
@@ -88,7 +87,6 @@ int main(int argc, char *argv[]) {
   //
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos Gmres");
 
   bool verbose = 0;
   int frequency = -1;  // how often residuals are printed by solver
@@ -192,7 +190,9 @@ int main(int argc, char *argv[]) {
   RefCountPtr<Belos::OutputManager<ST> > My_OM = 
     rcp( new Belos::OutputManager<ST>( MyPID ) );
   if (verbose)
-    My_OM->SetVerbosity( Belos::Errors + Belos::Warnings + Belos::IterationDetails + Belos::FinalSummary );	
+    My_OM->SetVerbosity( Belos::Errors + Belos::Warnings 
+			 + Belos::TimingDetails + Belos::IterationDetails 
+			 + Belos::FinalSummary );	
   //
   typedef Belos::StatusTestCombo<ST,MV,OP> StatusTestCombo_t;
   Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
@@ -230,9 +230,11 @@ int main(int argc, char *argv[]) {
     cout << numrhs << " right-hand side(s) -- using a block size of " << blocksize
 	 << endl << endl;
   }
-  timer.start(true);
+
+  // 
+  // Perform solve.
+  //
   MyBlockGmres.Solve();
-  timer.stop();
 
   RefCountPtr<MyMultiVec<ST> > temp = rcp( new MyMultiVec<ST>(dim,numrhs) );
   OPT::Apply( *A, *soln, *temp );
@@ -246,9 +248,6 @@ int main(int argc, char *argv[]) {
     if ( norm_num[i] / norm_denom[i] > tol ) {
       norm_failure = true;
     }
-  }
-  if (verbose) {
-    cout << "Solution time : "<< timer.totalElapsedTime()<<endl;
   }
   
   // Clean up.

@@ -56,7 +56,6 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_Time.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 int main(int argc, char *argv[]) {
@@ -77,7 +76,6 @@ int main(int argc, char *argv[]) {
   using Teuchos::ParameterList;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
-  Teuchos::Time timer("Belos Preconditioned Gmres");
 
   bool verbose = 0;
   int frequency = -1;  // how often residuals are printed by solver
@@ -180,7 +178,8 @@ int main(int argc, char *argv[]) {
   
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings 
+			+ Belos::TimingDetails + Belos::FinalSummary );
 
   typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
   typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
@@ -231,9 +230,7 @@ int main(int argc, char *argv[]) {
   //
   // Perform solve
   //
-  timer.start(true);
   MyBlockGmres.Solve();
-  timer.stop();
 
   //
   // Compute actual residuals.
@@ -252,10 +249,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (verbose) {
-    cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
-  }
-  
   if (My_Test.GetStatus()!=Belos::Converged) {
 	if (verbose)
       		cout << "End Result: TEST FAILED" << endl;	

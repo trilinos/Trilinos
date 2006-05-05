@@ -50,13 +50,6 @@
   \brief Belos concrete class for solving nonsymmetric linear systems with the Generalized Miminum Residual (GMRES) method.
 */
 
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_ParameterList.hpp"
-
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
 #include "BelosLinearProblem.hpp"
@@ -64,6 +57,14 @@
 #include "BelosStatusTest.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "BelosMultiVecTraits.hpp"
+
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 using Teuchos::ParameterList;
 using Teuchos::RefCountPtr;
@@ -103,7 +104,7 @@ namespace Belos {
 	       );
     
     //! %Belos::BlockGmres destructor.
-    virtual ~BlockGmres();
+    virtual ~BlockGmres() {};
     //@}
     
     /** \name Accessor methods */
@@ -215,14 +216,29 @@ namespace Belos {
 
     //! The output stream for sending solver information.
     RefCountPtr<ostream> _os;
-
+    
+    //! Length of the Krylov factorization.
     int _length;
-    int _blocksize;
-    int _restartiter, _totaliter, _iter;
-    bool _flexible;
+
+    //! Current blocksize, number of restarts, total iteration number, current iteration number.
+    int _blocksize, _restartiter, _totaliter, _iter;
+
+    //! Numerical breakdown tolerances.
     MagnitudeType _dep_tol, _blk_tol, _sing_tol;
+
+    //! Whether this solver is using the flexible variant or not.
+    bool _flexible;
+
+    //! Storage for QR factorization of the least-squares system.
     Teuchos::SerialDenseVector<int,ScalarType> beta, sn;
     Teuchos::SerialDenseVector<int,MagnitudeType> cs;
+
+    //! Restart the timers each time Solve() is called.
+    bool _restartTimers;
+    
+    //! Internal timers
+    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerPrec, 
+                                        _timerOrtho, _timerTotal;
   };
 
   //
@@ -247,7 +263,15 @@ namespace Belos {
     _restartiter(0), 
     _totaliter(0),
     _iter(0),
-    _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") )    
+    _dep_tol(1.0),
+    _blk_tol(1.0),
+    _sing_tol(1.0),
+    _flexible( (_pl->isParameter("Variant"))&&(Teuchos::getParameter<std::string>(*_pl, "Variant")=="Flexible") ),
+    _restartTimers(true),
+    _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
+    _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
+    _timerOrtho(Teuchos::TimeMonitor::getNewTimer("Orthogonalization")),
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))    
   {
     //
     // Set up the block orthogonality tolerances
@@ -256,12 +280,8 @@ namespace Belos {
   }
     
   template <class ScalarType, class MV, class OP>
-  BlockGmres<ScalarType,MV,OP>::~BlockGmres() 
-  {
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  void BlockGmres<ScalarType,MV,OP>::SetGmresBlkTols() 
+  void 
+  BlockGmres<ScalarType,MV,OP>::SetGmresBlkTols() 
   {
     typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
     const MagnitudeType two = 2.0;
@@ -272,7 +292,8 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<const MV> BlockGmres<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
+  RefCountPtr<const MV> 
+  BlockGmres<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     //
     // If this is the first iteration for a new right-hand side return the
@@ -298,11 +319,13 @@ namespace Belos {
   }
 
   template <class ScalarType, class MV, class OP>
-  RefCountPtr<MV> BlockGmres<ScalarType,MV,OP>::GetCurrentSoln()
+  RefCountPtr<MV> 
+  BlockGmres<ScalarType,MV,OP>::GetCurrentSoln()
   {    
     //
-    // If this is the first iteration of the Arnoldi factorization, return the current solution.
-    // It has either been updated recently, if there was a restart, or we haven't computed anything yet.
+    // If this is the first iteration of the Arnoldi factorization, 
+    // return the current solution.  It has either been updated recently, 
+    // if there was a restart, or we haven't computed anything yet.
     //
     RefCountPtr<MV> cur_sol_copy = MVT::CloneCopy(*_cur_block_sol);
     if (_iter==0) { 
@@ -339,8 +362,17 @@ namespace Belos {
   }
     
   template <class ScalarType, class MV, class OP>
-  void BlockGmres<ScalarType,MV,OP>::Solve() 
+  void 
+  BlockGmres<ScalarType,MV,OP>::Solve() 
   {
+    Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
+
+    if ( _restartTimers ) {
+      _timerOp->reset();
+      _timerPrec->reset();
+      _timerOrtho->reset();
+    }
+
     int i=0;
     std::vector<int> index;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
@@ -502,11 +534,12 @@ namespace Belos {
 	// NOTE:  We will try to restart if we actually computed a subspace of nontrivial dimension (iter!=0)
 	//
 	restart_flg = (_iter!=0 && restart_flg);
-  if (ortho_flg && restart_flg) {
-    if (_om->isVerbosityAndPrint( Warnings )) {
-      *_os << "WARNING: Orthogonalization failure detected at local iteration "<< _iter<<", total iteration "<<_totaliter<<", restart will be performed!\n";
-    }
-  } 
+	if (ortho_flg && restart_flg) {
+	  if (_om->isVerbosityAndPrint( Warnings )) {
+	    *_os << "WARNING: Orthogonalization failure detected at local iteration "
+		 << _iter<<", total iteration "<<_totaliter<<", restart will be performed!\n";
+	  }
+	} 
 	//
 	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
@@ -537,11 +570,27 @@ namespace Belos {
       //
     } // end while( _cur_block_sol && _cur_block_rhs )
     //
+    // Print timing details 
+
+    // Stop timer.
+    _timerTotal->stop();
+
+    // Reset format that will be used to print the summary
+    Teuchos::TimeMonitor::format().setPageWidth(54);
+
+    if (_om->isVerbosity( Belos::TimingDetails )) {
+      if (_om->doPrint())
+        *_os <<"********************TIMING DETAILS********************"<<endl;
+      Teuchos::TimeMonitor::summarize( *_os );
+      if (_om->doPrint())
+        *_os <<"******************************************************"<<endl;
+    }
   } // end Solve()
   
   
   template<class ScalarType, class MV, class OP>
-  int BlockGmres<ScalarType,MV,OP>::Reset( const RefCountPtr<ParameterList>& pl )
+  int 
+  BlockGmres<ScalarType,MV,OP>::Reset( const RefCountPtr<ParameterList>& pl )
   {
     // Set new parameter list if one is passed in.
     if (pl.get() != 0 )  
@@ -560,7 +609,8 @@ namespace Belos {
   }
 
   template<class ScalarType, class MV, class OP>
-  bool BlockGmres<ScalarType,MV,OP>::BlockReduction ( bool& dep_flg ) 
+  bool 
+  BlockGmres<ScalarType,MV,OP>::BlockReduction ( bool& dep_flg ) 
   {
     //
     int i;	
@@ -582,19 +632,29 @@ namespace Belos {
       //                                                                        
       //  Apply right preconditioning and store it in _z_basisvecs.             
       //                                                                        
-      _lp->ApplyRightPrec( *U_vec, *Z_vec );                                    
+      {
+	Teuchos::TimeMonitor PrecTimer(*_timerPrec);
+	_lp->ApplyRightPrec( *U_vec, *Z_vec );                                    
+      }
       //                                                                        
       //  Apply operator and store it in AU_vec.                                
       //                                                                        
-      _lp->ApplyOp( *Z_vec, *AU_vec );                                          
+      {
+	Teuchos::TimeMonitor OpTimer(*_timerOp);
+	_lp->ApplyOp( *Z_vec, *AU_vec );                                          
+      }
     } 
     else                                                                      
-      _lp->Apply( *U_vec, *AU_vec ); 
+      { 
+	Teuchos::TimeMonitor OpTimer(*_timerOp);
+	_lp->Apply( *U_vec, *AU_vec ); 
+      }
     //
     //  Orthogonalize the new block in the Krylov expansion and check for dependencies.
     //
     bool dep = false;
     if (!dep_flg){
+      Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
       dep = BlkOrth(*AU_vec);
       if (dep) {
 	dep_flg = true;
@@ -610,6 +670,7 @@ namespace Belos {
     //
     bool flg = false;
     if (dep_flg){
+      Teuchos::TimeMonitor OrthoTimer(*_timerOrtho);
       flg = BlkOrthSing(*AU_vec);
     }
     //
@@ -1115,10 +1176,10 @@ namespace Belos {
   } // end QRFactorAug()
   
   template<class ScalarType, class MV, class OP>
-  void BlockGmres<ScalarType,MV,OP>::UpdateLSQR( Teuchos::SerialDenseMatrix<int,ScalarType>& R, 
-				     Teuchos::SerialDenseMatrix<int,ScalarType>& z )
+  void 
+  BlockGmres<ScalarType,MV,OP>::UpdateLSQR( Teuchos::SerialDenseMatrix<int,ScalarType>& R, 
+					    Teuchos::SerialDenseMatrix<int,ScalarType>& z )
   {
-    //R.print( cout );
     int i, j, maxidx;
     ScalarType sigma, mu, vscale, maxelem;
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();

@@ -42,11 +42,6 @@
   preconditioned Conjugate Gradient (CG) method.
 */
 
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_OrdinalTraits.hpp"
-
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
 #include "BelosLinearProblem.hpp"
@@ -54,6 +49,11 @@
 #include "BelosOperator.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosMultiVecTraits.hpp"
+
+#include "Teuchos_LAPACK.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 /*!	\class Belos::CG
 
@@ -128,8 +128,6 @@ namespace Belos {
     
   private:
     
-    void SetCGBlkTols();
-    
     //! Linear problem manager [ must be passed in by the user ]
     RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
     
@@ -154,8 +152,11 @@ namespace Belos {
     //! Current blocksize, iteration number, and basis pointer.
     int _iter;
     
-    //! Numerical breakdown tolerances.
-    MagnitudeType _prec, _dep_tol;
+    //! Restart timers each time Solve() is called.
+    bool _restartTimers;
+
+    //! Internal timers
+    Teuchos::RefCountPtr<Teuchos::Time> _timerOp, _timerPrec, _timerTotal;
   };
   
   //
@@ -171,27 +172,16 @@ namespace Belos {
     _om(om),
     _os(om->GetOStream()),
     _iter(0),
-    _prec(1.0), 
-    _dep_tol(1.0)
+    _restartTimers(true),
+    _timerOp(Teuchos::TimeMonitor::getNewTimer("Operation Op*x")),
+    _timerPrec(Teuchos::TimeMonitor::getNewTimer("Operation Prec*x")),
+    _timerTotal(Teuchos::TimeMonitor::getNewTimer("Total time"))
   { 
-    //
-    // Set the block orthogonality tolerances
-    //
-    SetCGBlkTols();
   }
   
   template <class ScalarType, class MV, class OP>
-  void CG<ScalarType,MV,OP>::SetCGBlkTols() 
-  {
-    typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
-    const MagnitudeType two = 2.0;
-    const MagnitudeType eps = SCT::eps();
-    _prec = eps;
-    _dep_tol = MGT::one()/MGT::squareroot(two);
-  }
-  
-  template <class ScalarType, class MV, class OP>
-  RefCountPtr<const MV> CG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
+  RefCountPtr<const MV> 
+  CG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<MagnitudeType> *normvec ) const 
   {
     std::vector<int> index( 1 );
     index[0] = 0;
@@ -200,13 +190,23 @@ namespace Belos {
   }
   
   template <class ScalarType, class MV, class OP>
-  void CG<ScalarType,MV,OP>::Solve () 
+  void 
+  CG<ScalarType,MV,OP>::Solve () 
   {
+    Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
+
+    if ( _restartTimers ) {
+      _timerOp->reset();
+      _timerPrec->reset();
+    }
+
+    // Get the output stream from the OutputManager
     _os = _om->GetOStream();
     //
-    bool exit_flg = false;
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const MagnitudeType zero = Teuchos::ScalarTraits<MagnitudeType>::zero();
+    bool exit_flg = false;
+    bool isPrec = ( _lp->GetLeftPrec().get()!=NULL );
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> rHz( 1, 1 ), rHz_old( 1, 1 ), pAp( 1, 1 );
@@ -244,7 +244,10 @@ namespace Belos {
       // Multiply the current solution by A and store in _Ap
       //       _Ap = A*_p 
       //
-      _lp->ApplyOp( *_p, *_Ap );
+      {
+	Teuchos::TimeMonitor OpTimer(*_timerOp);
+	_lp->ApplyOp( *_p, *_Ap );
+      }
       //
       // Compute initial residual and store in _residvec
       //     _residvec = cur_block_rhs - _Ap
@@ -254,11 +257,16 @@ namespace Belos {
       //----------------Compute initial direction vectors--------------------------
       // Initially, they are set to the preconditioned residuals
       //
-      if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { 
+      if ( isPrec ) {
+	{
+	  Teuchos::TimeMonitor PrecTimer(*_timerPrec);
+	  _lp->ApplyLeftPrec( *_residvec, *_z ); 
+	}
+	MVT::MvAddMv( one, *_z, zero, *_z, *_p );
+      } else {
 	MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z ); 
 	MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_p );
-      } else
-	MVT::MvAddMv( one, *_z, zero, *_z, *_p );
+      }
       //
       // Compute first <r,z> a.k.a. rHz
       // 
@@ -274,7 +282,10 @@ namespace Belos {
 	  // Multiply the current direction vector by A and store in _Ap
 	  //       _Ap = A*_p 
 	  //
-	  _lp->ApplyOp( *_p, *_Ap );  
+	  {
+	    Teuchos::TimeMonitor OpTimer(*_timerOp);
+	    _lp->ApplyOp( *_p, *_Ap );
+	  }
 	  //
 	  // Compute alpha := <_residvec, _z> / <_p, _Ap >
 	  //
@@ -305,9 +316,17 @@ namespace Belos {
 	  //
 	  MVT::MvAddMv( one, *_residvec, -alpha(0,0), *_Ap, *_residvec );
 	  //
-	  // Compute beta := [ new <_residvec, _z> ] / [ old <_residvec, _z> ], and the new direction vector
+	  // Compute beta := [ new <_residvec, _z> ] / [ old <_residvec, _z> ], 
+	  // and the new direction vector p.
 	  //
-	  if (_lp->ApplyLeftPrec( *_residvec, *_z ) != Ok ) { MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z ); }
+	  if ( isPrec ) {
+	    {
+	      Teuchos::TimeMonitor PrecTimer(*_timerPrec);
+	      _lp->ApplyLeftPrec( *_residvec, *_z );
+	    }
+	  } else {
+	    MVT::MvAddMv( one, *_residvec, zero, *_residvec, *_z ); 
+	  }
 	  //
 	  MVT::MvTransMv( one, *_residvec, *_z, rHz );
 	  //
@@ -336,6 +355,21 @@ namespace Belos {
     } // end while ( _cur_block_sol && _cur_block_rhs )
     // **********************************************************************************
     //
+    // Print timing details 
+
+    // Stop timer.
+    _timerTotal->stop();
+
+    // Reset format that will be used to print the summary
+    Teuchos::TimeMonitor::format().setPageWidth(54);
+
+    if (_om->isVerbosity( Belos::TimingDetails )) {
+      if (_om->doPrint())
+        *_os <<"********************TIMING DETAILS********************"<<endl;
+      Teuchos::TimeMonitor::summarize( *_os );
+      if (_om->doPrint())
+        *_os <<"******************************************************"<<endl;
+    }
   } // end CGSolve()
   //
 } // namespace Belos
