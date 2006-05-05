@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   //
   // Get test parameters from command-line processor
   //  
-  bool verbose = false;
+  bool verbose = false, proc_verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;  // total number of right-hand sides to solve for
   int blockSize = 1;  // blocksize used by solver
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
-  verbose &= (MyPID==0); /* Only print on the zero processor */
+  proc_verbose = ( verbose && (MyPID==0) );
   //
   // Solve using Belos
   //
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   //
   // **********Print out information about problem*******************
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   }
   //
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Running Block CG -- please wait" << endl;
     cout << (numrhs+blockSize-1)/blockSize 
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
   //
   // Default return value
   //
-  if (verbose)
+  if (proc_verbose)
     cout << "End Result: TEST PASSED" << endl;
   return 0;
   //

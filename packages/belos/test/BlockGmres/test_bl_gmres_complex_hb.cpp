@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
 
-  bool verbose = 0;
+  bool verbose = false, proc_verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
   int blocksize = 1;
   int numrhs = 1;
@@ -113,8 +113,8 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  verbose &= (MyPID==0);  /* Only print on the zero processor */
-  if (verbose) {
+  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
+  if (proc_verbose) {
     cout << Belos::Belos_Version() << endl << endl;
   }
   if (!verbose)
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
   //
   // **********Print out information about problem*******************
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << dim << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
   }
   //
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Running Block Gmres -- please wait" << endl;
     cout << (numrhs+blocksize-1)/blocksize 
@@ -243,7 +243,7 @@ int main(int argc, char *argv[]) {
   MVT::MvNorm( *temp, &norm_num );
   MVT::MvNorm( *rhs, &norm_denom );
   for (int i=0; i<numrhs; ++i) {
-    if (verbose) 
+    if (proc_verbose) 
       cout << "Relative residual "<<i<<" : " << norm_num[i] / norm_denom[i] << endl;
     if ( norm_num[i] / norm_denom[i] > tol ) {
       norm_failure = true;
@@ -261,14 +261,14 @@ int main(int argc, char *argv[]) {
 #endif
 
   if ( My_Test->GetStatus()!=Belos::Converged || norm_failure ) {
-    if (verbose)
+    if (proc_verbose)
       cout << "End Result: TEST FAILED" << endl;	
     return -1;
   }
   //
   // Default return value
   //
-  if (verbose)
+  if (proc_verbose)
     cout << "End Result: TEST PASSED" << endl;
   return 0;
   //

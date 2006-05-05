@@ -76,10 +76,10 @@ int main(int argc, char *argv[]) {
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
 
-  bool verbose = 0;
+  bool verbose = false, proc_verbose = false;
   int blocksize = 1;
   int numrhs = 1;
-  int numrestarts = 15; // number of restarts allowed 
+  int numrestarts = 25; // number of restarts allowed 
   std::string filename("orsirr1.hb");
   MT tol = 1.0e-5;  // relative residual tolerance
 
@@ -101,24 +101,24 @@ int main(int argc, char *argv[]) {
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
   if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
-  verbose &= (MyPID==0);  /* Only print on the zero processor */
+  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
   //
   // *****Construct the Preconditioner*****
   //
-  if (verbose) cout << endl << endl;
-  if (verbose) cout << "Constructing ILU preconditioner" << endl;
+  if (proc_verbose) cout << endl << endl;
+  if (proc_verbose) cout << "Constructing ILU preconditioner" << endl;
   int Lfill = 0;
   // if (argc > 2) Lfill = atoi(argv[2]);
-  if (verbose) cout << "Using Lfill = " << Lfill << endl;
+  if (proc_verbose) cout << "Using Lfill = " << Lfill << endl;
   int Overlap = 0;
   // if (argc > 3) Overlap = atoi(argv[3]);
-  if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
+  if (proc_verbose) cout << "Using Level Overlap = " << Overlap << endl;
   double Athresh = 0.0;
   // if (argc > 4) Athresh = atof(argv[4]);
-  if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
+  if (proc_verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
   double Rthresh = 1.0;
   // if (argc >5) Rthresh = atof(argv[5]);
-  if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
+  if (proc_verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   //
   Teuchos::RefCountPtr<Ifpack_IlukGraph> ilukGraph;
   Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
   bool transA = false;
   double Cond_Est;
   ilukFactors->Condest(transA, Cond_Est);
-  if (verbose) {
+  if (proc_verbose) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   }
@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
   //
   const int NumGlobalElements = Map.NumGlobalElements();
   int maxits = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
-  int length = 15;
+  int length = 25;
   //
   ParameterList My_PL;
   My_PL.set( "Length", length );
@@ -186,7 +186,8 @@ int main(int argc, char *argv[]) {
   
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
-    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+    My_OM.SetVerbosity( Belos::Errors + Belos::Warnings		
+			+ Belos::TimingDetails + Belos::FinalSummary );
   //
   // *******************************************************************
   // *************Start the block Gmres iteration*************************
@@ -197,7 +198,7 @@ int main(int argc, char *argv[]) {
   //
   // **********Print out information about problem*******************
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
@@ -210,7 +211,7 @@ int main(int argc, char *argv[]) {
   }
   //
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Running Block Gmres -- please wait" << endl;
     cout << (numrhs+blocksize-1)/blocksize 
@@ -234,7 +235,7 @@ int main(int argc, char *argv[]) {
   MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
   MVT::MvNorm( resid, &actual_resids );
   MVT::MvNorm( rhs, &rhs_norm );
-  if (verbose) {
+  if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
@@ -242,14 +243,14 @@ int main(int argc, char *argv[]) {
   }
 
   if (My_Test.GetStatus()!=Belos::Converged) {
-        if (verbose)
+        if (proc_verbose)
                 cout << "End Result: TEST FAILED" << endl;
         return -1;
   }
   //
   // Default return value
   //
-  if (verbose)
+  if (proc_verbose)
     cout << "End Result: TEST PASSED" << endl;
   return 0;
   //

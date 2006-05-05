@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
 
-  bool verbose = 0;
+  bool verbose = false, proc_verbose = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;  // total number of right-hand sides to solve for
   int blockSize = 1;  // blocksize used by solver
@@ -107,8 +107,8 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  verbose &= (MyPID==0);  /* Only print on the zero processor */
-  if (verbose) {
+  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
+  if (proc_verbose) {
     cout << Belos::Belos_Version() << endl << endl;
   }
   if (!verbose)
@@ -191,7 +191,8 @@ int main(int argc, char *argv[]) {
     = rcp( new Belos::OutputManager<ST>( MyPID ) );
   // Set verbosity level
   if (verbose) {
-    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings + Belos::FinalSummary );
+    MyOM->SetVerbosity( Belos::Errors + Belos::Warnings 
+			+ Belos::TimingDetails + Belos::FinalSummary );
   }
 
   Belos::StatusTestMaxIters<ST,MV,OP> test1( maxits );
@@ -208,7 +209,7 @@ int main(int argc, char *argv[]) {
   //
   // **********Print out information about problem*******************
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << dim << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
@@ -219,7 +220,7 @@ int main(int argc, char *argv[]) {
   }
   //
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Running Block CG -- please wait" << endl;
     cout << (numrhs+blockSize-1)/blockSize 
@@ -229,17 +230,22 @@ int main(int argc, char *argv[]) {
   }
 
   MyBlockCG.Solve();
-   
+  
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  
   if (MyTest->GetStatus()!=Belos::Converged) {
-	if (verbose)
-      		cout << "End Result: TEST FAILED" << endl;	
-	return -1;
+    if (proc_verbose)
+      cout << "End Result: TEST FAILED" << endl;	
+    return -1;
   }
   //
   // Default return value
   //
-  if (verbose)
+  if (proc_verbose)
     cout << "End Result: TEST PASSED" << endl;
   return 0;
+
   //
 } // end test_bl_cg_complex_hb.cpp

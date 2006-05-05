@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
 
-  bool verbose = 0;
+  bool verbose = false, proc_verbose = false;
   int frequency = -1;
   int blocksize = 1;
   int numrhs = 1;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   int return_val =Belos::createEpetraProblem(filename,NULL,&A,&B,&X,&MyPID);
   if(return_val != 0) return return_val;
   const Epetra_Map &Map = A->RowMap();
-  verbose &= (MyPID==0);  /* Only print on the zero processor */
+  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   //
   // **********Print out information about problem*******************
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Dimension of matrix: " << NumGlobalElements << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   }
   //
   //
-  if (verbose) {
+  if (proc_verbose) {
     cout << endl << endl;
     cout << "Running Block Gmres -- please wait" << endl;
     cout << (numrhs+blocksize-1)/blocksize 
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
   MVT::MvNorm( resid, &actual_resids );
   MVT::MvNorm( *B, &rhs_norm );
-  if (verbose) {
+  if (proc_verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
@@ -183,14 +183,14 @@ int main(int argc, char *argv[]) {
   }
 
   if (My_Test.GetStatus()!=Belos::Converged) {
-	if (verbose)
+	if (proc_verbose)
       		cout << "End Result: TEST FAILED" << endl;	
 	return -1;
   }
   //
   // Default return value
   //
-  if (verbose)
+  if (proc_verbose)
     cout << "End Result: TEST PASSED" << endl;
   return 0;
   //
