@@ -228,11 +228,12 @@ Thyra::get_Epetra_Vector(
 	// the RefCountPtr that is returned.  As a result, this view will be relased
 	// when the returned Epetra_Vector is released.
 	//
-	Teuchos::RefCountPtr<DetachedMultiVectorView<double> >
+	Teuchos::RefCountPtr<DetachedVectorView<double> >
 		emvv = Teuchos::rcp(
-			new DetachedMultiVectorView<double>(
-				*v
+			new DetachedVectorView<double>(
+				v
 				,Range1D(localOffset,localOffset+localSubDim-1)
+        ,true // forceContiguous
 				)
 			);
 	// Create a temporary Epetra_Vector object and give it
@@ -252,8 +253,6 @@ Thyra::get_Epetra_Vector(
 	// the input v MultiVectorBase object (reguardless of its
 	// implementation).  This is truly an elegant result!
 	Teuchos::set_extra_data( emvv, "emvv", &epetra_v, Teuchos::PRE_DESTROY );
-  // Also set the v itself as extra data just to be safe
-	Teuchos::set_extra_data( v, "v", &epetra_v );
   // We are done!
 	return epetra_v;
 }
@@ -295,6 +294,7 @@ Thyra::get_Epetra_Vector(
 			new ConstDetachedVectorView<double>(
 				*v
 				,Range1D(localOffset,localOffset+localSubDim-1)
+        ,true // forceContiguous
 				)
 			);
 	// Create a temporary Epetra_Vector object and give it
