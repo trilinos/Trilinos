@@ -38,8 +38,7 @@ TreeBuildingXMLHandler::TreeBuildingXMLHandler()
 	current_ = root_;
 }
 
-void TreeBuildingXMLHandler::characters(const string& chars, 
-																				const unsigned int length)
+void TreeBuildingXMLHandler::characters(const string& chars)
 {
   if (StrUtils::isWhite(chars)) return;
   TEST_FOR_EXCEPTION(current_.isEmpty(), std::logic_error,
@@ -71,12 +70,21 @@ void TreeBuildingXMLHandler::startElement(const string& tag,
     }
 }
 
-void TreeBuildingXMLHandler::endElement(const string& tag)
+int TreeBuildingXMLHandler::endElement(const string& tag)
 {
+  int error = 0;
   if (path_.size() > 0)
     {
+      if (current_.getTag() != tag) {
+        error = 1; // error: tags must be balanced
+      }
       current_ = path_.top();
       path_.pop();
     }
+  else 
+    {
+      error = 1; // error: cannot end element that wasn't started
+    }
+  return error;
 }
 

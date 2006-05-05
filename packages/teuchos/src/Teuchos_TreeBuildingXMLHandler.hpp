@@ -56,10 +56,10 @@ namespace Teuchos
       const XMLObject& getObject() const {return root_.getChild(0);}
 
       /** \brief Process character data */
-      void characters(const string& chars, const unsigned int length);
+      void characters(const string& chars);
 
       /** \brief Receive notification of the end of an element */
-      void endElement(const string& tag);
+      int endElement(const string& tag);
 
       /** \brief Receive notification of the start of an element */
       void startElement(const string& tag,

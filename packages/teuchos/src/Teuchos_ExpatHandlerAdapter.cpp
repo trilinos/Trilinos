@@ -78,7 +78,7 @@ void expatCharacterDataHandler(void* handler,
 	string chars = str;
 
 	TreeBuildingXMLHandler* h = (TreeBuildingXMLHandler*) handler;
-	h->characters(chars, chars.length());
+	h->characters(chars);
   delete [] str;
 }
 
