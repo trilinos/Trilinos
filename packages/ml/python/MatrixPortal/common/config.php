@@ -41,8 +41,13 @@
 # tialize and finalize MPI. For LAM/MPI, these values #
 # are lamboot and lamhalt.                            #
 # --------------------------------------------------- #
+# CVS File Information
+#    Current revision: $Revision$
+#    Branch:           $Branch$
+#    Last modified:    $Date$
+#    Modified by:      $Author$
 
-$MACHINE = "kythira";
+$MACHINE = "aphrodite-serial";
 
 if ($MACHINE == "givens4")
 {
@@ -70,6 +75,23 @@ else if ($MACHINE == "kythira")
   $PYTHONPATH = "/home/msala/Trilinos/LINUX_SERIAL/lib/python2.4/site-packages/";
   $LD_LIBRARY_PATH = "/home/msala/Trilinos/LINUX_SERIAL/lib";
   $ENABLE_MPI = FALSE;
+  $MAX_PROCS = 1;
+  $MPI_BOOT = "";
+  $MPI_HALT = "";
+}
+else if ($MACHINE == "aphrodite-serial")
+{
+  $HBMatrixDirectory = "/var/www/html/MatrixPortal/HBMatrices/";
+  $H5MatrixDirectory = "/var/www/html/MatrixPortal/H5Matrices/";
+  $ImageDirectory = "/var/www/html/tmp/";
+  $TempDirectory = "/tmp/";
+  $PythonDirectory = "/home/jhu/Trilinos/development-branch/Trilinos/packages/ml/python/MatrixPortal/";
+  $HTMLImageDirectory = "http://localhost/MatrixPortal/tmp";
+  $PYTHONPATH = "/home/jhu/Trilinos/development-branch/sandbox-serial/lib/python2.4/site-packages/";
+  $LD_LIBRARY_PATH = "/home/jhu/Trilinos/development-branch/sandbox-serial";
+  $ENABLE_MPI = FALSE;
+  $MPI_ROOT_DIR = "";
+  $MPI_ROOT_DIR = "";
   $MAX_PROCS = 1;
   $MPI_BOOT = "";
   $MPI_HALT = "";
