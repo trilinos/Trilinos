@@ -1001,7 +1001,7 @@ namespace Belos {
   
   template<class ScalarType, class MV, class OP>
   bool BlockGmres<ScalarType,MV,OP>::QRFactorAug(MV& VecIn, 
-						 Teuchos::SerialDenseMatrix<int,ScalarType>& FouierR, 
+						 Teuchos::SerialDenseMatrix<int,ScalarType>& R, 
 						 bool blkone) 
   {
     int i,j,k;
@@ -1024,7 +1024,7 @@ namespace Belos {
     //
     for ( j=0; j<nb; j++ ) {
       for ( i=0; i<nb; i++ ) {
-	FouierR(i,j) = zero;
+	R(i,j) = zero;
       }
     }
     //
@@ -1066,7 +1066,7 @@ namespace Belos {
 	// Sum results[0:j-1] into column j of R.
 	//
 	for ( k=0; k<j; k++ ) {
-	  FouierR(k,j) += rj(k);
+	  R(k,j) += rj(k);
 	}
 	//
 	// Compute qj <- qj - Qj * rj.
@@ -1084,7 +1084,7 @@ namespace Belos {
 	  // Sum results[0:j-1] into column j of R.
 	  //
 	  for ( k=0; k<j; k++ ) {
-	    FouierR(k,j) += rj(k);
+	    R(k,j) += rj(k);
 	  }
 	  //
 	  // Compute qj <- qj - Qj * rj.
@@ -1163,10 +1163,10 @@ namespace Belos {
       if (addvec){
 	// We've added a random vector, so
 	// enter a zero in j'th diagonal element of R
-	FouierR(j,j) = zero;
+	R(j,j) = zero;
       }
       else {
-	FouierR(j,j) = normq[0];
+	R(j,j) = normq[0];
       }
       //
     } // end for (j=0; j<nb; j++)
