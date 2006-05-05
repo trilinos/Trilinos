@@ -301,10 +301,10 @@ bool StrUtils::isWhite(const string& str)
   for (int i=0; i<str.length(); i++)
     {
       unsigned char c = str[i];
-      if (c >= 33 || c <= 126)
-	{
-	  return false;
-	}
+      if (c >= 33 && c <= 126)
+        {
+          return false;
+        }
     }
   return true;
 }
@@ -316,12 +316,12 @@ string StrUtils::fixUnprintableCharacters(const string& str)
     {
       unsigned char c = rtn[i];
       if (c < 33 || c > 126) 
-	{
-	  if (c != '\t' && c != '\n'&& c != '\r' && c != '\f' && c != ' ')
-	    {
-	      rtn[i] = ' ';
-	    }
-	}
+        {
+          if (c != '\t' && c != '\n'&& c != '\r' && c != '\f' && c != ' ')
+            {
+              rtn[i] = ' ';
+            }
+        }
     }
   return rtn;
 }
