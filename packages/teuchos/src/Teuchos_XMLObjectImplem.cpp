@@ -120,12 +120,13 @@ string XMLObjectImplem::toString() const
               break;
             }
         }
-      if (allBlankContent)
+      if (!allBlankContent)
         {
           for (int i=0; i<content_.length(); i++)
             {
-              rtn += content_[i] + "\n";
+              rtn += content_[i];
             }
+            rtn += "\n";
         }
       for (int i=0; i<children_.length(); i++)
         {
@@ -140,8 +141,6 @@ void XMLObjectImplem::print(ostream& os, int indent) const
 {
   for (int i=0; i<indent; i++) os << " ";
   
-
-  
   if (content_.length()==0 && children_.length()==0) 
     {
       os << terminatedHeader() << endl;
@@ -151,7 +150,7 @@ void XMLObjectImplem::print(ostream& os, int indent) const
     {
       os << header() << endl;
       printContent(os, indent+2);
-
+      
       for (int i=0; i<children_.length(); i++)
         {
           children_[i].print(os, indent+2);
@@ -176,12 +175,14 @@ void XMLObjectImplem::printContent(ostream& os, int indent) const
         }
     }
   
-  if (allBlankContent)
+  if (!allBlankContent) 
     {
+      os << space;
       for (int i=0; i<content_.length(); i++)
         {
-          os << space << content_[i];
+          os << content_[i];
         }
+      os << '\n';
     }
 }
 
