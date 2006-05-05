@@ -61,177 +61,177 @@ public:
   /** \brief . */
   using SingleScalarEuclideanLinearOpBase<double>::euclideanApply;
 
-	/** @name Public types */
-	//@{
+  /** @name Public types */
+  //@{
 
-	/** \brief . */
-	typedef double Scalar;
-
-	//@}
-
-	/** @name Constructors / initializers / accessors */
-	//@{
-
-	/** \brief Construct to uninitialized.
-	 *
-	 * See the postconditions for <tt>uninitialize()</tt>
-	 */
-	EpetraLinearOp();
-
-	/// Calls <tt>initialize()</tt>.
-	EpetraLinearOp(
-		const Teuchos::RefCountPtr<Epetra_Operator>                        &op
-		,ETransp                                                           opTrans         = NOTRANS
-		,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
-		,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
-		,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
-		,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
-		);
-
-	/** \brief Initialize
-	 *
-	 * @param  op       [in] The <tt>Epetra_Operator</tt> this <tt>*this</tt> will wrap.
-	 * @param  opTrans  [in] If <tt>opTrans==NOTRANS</tt> then <tt>op</tt> will be viewed as <tt>op</tt>
-	 *                  and if <tt>opTrans==TRANS</tt> then <tt>op</tt> will be viewed as its transpose
-	 *                  <tt>op'</tt> for the behavior of <tt>apply()</tt>.
-	 * @param  applyAs  [in] If <tt>applyAs==APPLY_APPLY</tt> then <tt>op->Apply()</tt> will be used
-	 *                  and if <tt>applyAs==APPLY_APPLY_INVERSE</tt> then <tt>op->ApplyInverse()</tt>
-	 *                  is used instead.
-	 * @param  adjointSupport
-	 *                  [in] Determines if it is to be assumed that adjoints are supported on the
-	 *                  underlying <tt>Epetra_Operator</tt> object <tt>op</tt>.  If
-	 *                  <tt>adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt> then <tt>this->opSupported(TRANS)</tt>
-	 *                  will return <tt>true</tt>.  If <tt>adjointSupport==EPETRA_OP_ADJOINT_UNSUPPORTED</tt> then
-	 *                  <tt>this->opSupported(TRANS)</tt> will return <tt>false</tt>.
-	 * @param  mpiRange
-	 *                  [in] Smart pointer to the range space for the <tt>Epetra_Operator</tt>.  The default
-   *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
-	 *                  a new <tt>MPIVectorSpace</tt> given range map from <tt>op</tt>.  A client may only bother
-	 *                  to specify this space if one wants to override the defintion of the scalar product.
-	 * @param  mpiDomain
-	 *                  [in] Smart pointer to the domain space for the <tt>Epetra_Operator</tt>.  The default
-   *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
-	 *                  a new <tt>DefaultMPIVectorSpace</tt> given map from <tt>op</tt>.  A client may only bother
-	 *                  to specify this space if one wants to override the defintion of the scalar product.
-	 *
-	 * Preconditions:<ul>
-	 * <li> <tt>op.get() != NULL</tt> (throw <tt>std::invalid_argument</tt>)
-	 * </ul>
-	 *
-	 * Postconditions:<ul>
-   * <li> <tt>this->epetra_op().get() == op.get()</tt>
-	 * <li> [<tt>mpiRange.get() != NULL</tt>] <tt>this->mpiRange().get() == mpiRange.get()</tt>
-	 * <li> [<tt>mpiDomain.get() != NULL</tt>] <tt>this->mpiDomain().get() == mpiDomain.get()</tt>
-	 * <li> [<tt>mpiRange.get() == NULL</tt>] <tt>this->mpiRange().get() != NULL</tt>
-	 * <li> [<tt>mpiDomain.get() == NULL</tt>] <tt>this->mpiDomain().get() != NULL</tt>
-	 * <li> <tt>this->opSupported(NOTRANS) == true</tt>
-	 * <li> <tt>this->opSupported(TRNAS) == adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt>
-	 * </ul>
-	 */
-	void initialize(
-		const Teuchos::RefCountPtr<Epetra_Operator>                        &op
-		,ETransp                                                           opTrans         = NOTRANS
-		,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
-		,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
-		,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
-		,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
-		);
-	
-	/** \brief Set to uninitialized and optionally return the current state.
-	 *
-	 * Postconditions:<ul>
-	 * <li> <tt>this->domain().get() == NULL</tt>
-	 * <li> <tt>this->range().get() == NULL</tt>
-	 * </ul>
-	 */
-	void uninitialize(
-		Teuchos::RefCountPtr<Epetra_Operator>                       *op             = NULL
-		,ETransp                                                    *opTrans        = NULL
-		,EApplyEpetraOpAs                                           *applyAs        = NULL
-		,EAdjointEpetraOp                                           *adjointSupport = NULL
-		,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiRange       = NULL
-		,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiDomain      = NULL
-		);
-
-  /** \brief Return a smart pointer to the MPIVectorSpaceBase object for the range.
-   *
-	 * Postconditions:<ul>
-	 * <li> [<tt>this->range().get() != NULL</tt>] <tt>return.get() != NULL</tt>
-	 * <li> [<tt>this->range().get() == NULL</tt>] <tt>return.get() == NULL</tt>
-	 * </ul>
-	 */
-	Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiRange() const;
-
-  /** \brief Return a smart pointer to the MPIVectorSpaceBase object for the domain.
-   *
-	 * Postconditions:<ul>
-	 * <li> [<tt>this->domain().get() != NULL</tt>] <tt>return.get() != NULL</tt>
-	 * <li> [<tt>this->domain().get() == NULL</tt>] <tt>return.get() == NULL</tt>
-	 * </ul>
-	 */
-	Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiDomain() const;
-
-	/** \brief . */
-	Teuchos::RefCountPtr<Epetra_Operator> epetra_op();
-
-	/** \brief . */
-	Teuchos::RefCountPtr<const Epetra_Operator> epetra_op() const;
+  /** \brief . */
+  typedef double Scalar;
 
   //@}
 
-	/** @name Overridden from EpetraLinearOpBase */
-	//@{
+  /** @name Constructors / initializers / accessors */
+  //@{
 
-	/** \brief . */
-	void getEpetraOpView(
+  /** \brief Construct to uninitialized.
+   *
+   * See the postconditions for <tt>uninitialize()</tt>
+   */
+  EpetraLinearOp();
+
+  /// Calls <tt>initialize()</tt>.
+  EpetraLinearOp(
+    const Teuchos::RefCountPtr<Epetra_Operator>                        &op
+    ,ETransp                                                           opTrans         = NOTRANS
+    ,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
+    ,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
+    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
+    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
+    );
+
+  /** \brief Initialize
+   *
+   * @param  op       [in] The <tt>Epetra_Operator</tt> this <tt>*this</tt> will wrap.
+   * @param  opTrans  [in] If <tt>opTrans==NOTRANS</tt> then <tt>op</tt> will be viewed as <tt>op</tt>
+   *                  and if <tt>opTrans==TRANS</tt> then <tt>op</tt> will be viewed as its transpose
+   *                  <tt>op'</tt> for the behavior of <tt>apply()</tt>.
+   * @param  applyAs  [in] If <tt>applyAs==APPLY_APPLY</tt> then <tt>op->Apply()</tt> will be used
+   *                  and if <tt>applyAs==APPLY_APPLY_INVERSE</tt> then <tt>op->ApplyInverse()</tt>
+   *                  is used instead.
+   * @param  adjointSupport
+   *                  [in] Determines if it is to be assumed that adjoints are supported on the
+   *                  underlying <tt>Epetra_Operator</tt> object <tt>op</tt>.  If
+   *                  <tt>adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt> then <tt>this->opSupported(TRANS)</tt>
+   *                  will return <tt>true</tt>.  If <tt>adjointSupport==EPETRA_OP_ADJOINT_UNSUPPORTED</tt> then
+   *                  <tt>this->opSupported(TRANS)</tt> will return <tt>false</tt>.
+   * @param  mpiRange
+   *                  [in] Smart pointer to the range space for the <tt>Epetra_Operator</tt>.  The default
+   *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
+   *                  a new <tt>MPIVectorSpace</tt> given range map from <tt>op</tt>.  A client may only bother
+   *                  to specify this space if one wants to override the defintion of the scalar product.
+   * @param  mpiDomain
+   *                  [in] Smart pointer to the domain space for the <tt>Epetra_Operator</tt>.  The default
+   *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
+   *                  a new <tt>DefaultMPIVectorSpace</tt> given map from <tt>op</tt>.  A client may only bother
+   *                  to specify this space if one wants to override the defintion of the scalar product.
+   *
+   * Preconditions:<ul>
+   * <li> <tt>op.get() != NULL</tt> (throw <tt>std::invalid_argument</tt>)
+   * </ul>
+   *
+   * Postconditions:<ul>
+   * <li> <tt>this->epetra_op().get() == op.get()</tt>
+   * <li> [<tt>mpiRange.get() != NULL</tt>] <tt>this->mpiRange().get() == mpiRange.get()</tt>
+   * <li> [<tt>mpiDomain.get() != NULL</tt>] <tt>this->mpiDomain().get() == mpiDomain.get()</tt>
+   * <li> [<tt>mpiRange.get() == NULL</tt>] <tt>this->mpiRange().get() != NULL</tt>
+   * <li> [<tt>mpiDomain.get() == NULL</tt>] <tt>this->mpiDomain().get() != NULL</tt>
+   * <li> <tt>this->opSupported(NOTRANS) == true</tt>
+   * <li> <tt>this->opSupported(TRNAS) == adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt>
+   * </ul>
+   */
+  void initialize(
+    const Teuchos::RefCountPtr<Epetra_Operator>                        &op
+    ,ETransp                                                           opTrans         = NOTRANS
+    ,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
+    ,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
+    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
+    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
+    );
+  
+  /** \brief Set to uninitialized and optionally return the current state.
+   *
+   * Postconditions:<ul>
+   * <li> <tt>this->domain().get() == NULL</tt>
+   * <li> <tt>this->range().get() == NULL</tt>
+   * </ul>
+   */
+  void uninitialize(
+    Teuchos::RefCountPtr<Epetra_Operator>                       *op             = NULL
+    ,ETransp                                                    *opTrans        = NULL
+    ,EApplyEpetraOpAs                                           *applyAs        = NULL
+    ,EAdjointEpetraOp                                           *adjointSupport = NULL
+    ,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiRange       = NULL
+    ,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiDomain      = NULL
+    );
+
+  /** \brief Return a smart pointer to the MPIVectorSpaceBase object for the range.
+   *
+   * Postconditions:<ul>
+   * <li> [<tt>this->range().get() != NULL</tt>] <tt>return.get() != NULL</tt>
+   * <li> [<tt>this->range().get() == NULL</tt>] <tt>return.get() == NULL</tt>
+   * </ul>
+   */
+  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiRange() const;
+
+  /** \brief Return a smart pointer to the MPIVectorSpaceBase object for the domain.
+   *
+   * Postconditions:<ul>
+   * <li> [<tt>this->domain().get() != NULL</tt>] <tt>return.get() != NULL</tt>
+   * <li> [<tt>this->domain().get() == NULL</tt>] <tt>return.get() == NULL</tt>
+   * </ul>
+   */
+  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiDomain() const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<Epetra_Operator> epetra_op();
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const Epetra_Operator> epetra_op() const;
+
+  //@}
+
+  /** @name Overridden from EpetraLinearOpBase */
+  //@{
+
+  /** \brief . */
+  void getEpetraOpView(
     Teuchos::RefCountPtr<Epetra_Operator>   *epetraOp
     ,ETransp                                *epetraOpTransp
     ,EApplyEpetraOpAs                       *epetraOpApplyAs
     ,EAdjointEpetraOp                       *epetraOpAdjointSupport
     );
-	/** \brief . */
-	void getEpetraOpView(
+  /** \brief . */
+  void getEpetraOpView(
     Teuchos::RefCountPtr<const Epetra_Operator>   *epetraOp
     ,ETransp                                      *epetraOpTransp
     ,EApplyEpetraOpAs                             *epetraOpApplyAs
     ,EAdjointEpetraOp                             *epetraOpAdjointSupport
     ) const;
 
-	//@}
+  //@}
 
-	/** @name Overridden from SingleScalarLinearOpBase */
-	//@{
+  /** @name Overridden from SingleScalarLinearOpBase */
+  //@{
 
-	/** \brief . */
-	bool opSupported(ETransp M_trans) const;
-	
-	//@}
-	
-	/** @name Overridden from EuclideanLinearOpBase */
-	//@{
+  /** \brief . */
+  bool opSupported(ETransp M_trans) const;
+  
+  //@}
+  
+  /** @name Overridden from EuclideanLinearOpBase */
+  //@{
 
-	/// Returns <tt>this->mpiRange()</tt>
-	Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
-	/// Returns <tt>this->mpiDomain()</tt>
-	Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
-	/** \brief . */
-	void euclideanApply(
-		const ETransp                     M_trans
-		,const MultiVectorBase<Scalar>    &X
-		,MultiVectorBase<Scalar>          *Y
-		,const Scalar                     alpha
-		,const Scalar                     beta
-		) const;
+  /// Returns <tt>this->mpiRange()</tt>
+  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
+  /// Returns <tt>this->mpiDomain()</tt>
+  Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
+  /** \brief . */
+  void euclideanApply(
+    const ETransp                     M_trans
+    ,const MultiVectorBase<Scalar>    &X
+    ,MultiVectorBase<Scalar>          *Y
+    ,const Scalar                     alpha
+    ,const Scalar                     beta
+    ) const;
 
-	//@}
-	
-	/** @name Overridden from LinearOpBase */
-	//@{
+  //@}
+  
+  /** @name Overridden from LinearOpBase */
+  //@{
 
-	/** \brief . */
-	Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
 
-	//@}
+  //@}
 
   /** \name Overridden from Teuchos::Describable */
   //@{
@@ -252,33 +252,33 @@ protected:
   //@{
 
   /** \brief Allocate the domain space of the operator.
-	 *
-	 * Purpose: In TSFExtended, both EpetraLinearOp and
-	 * EpetraVectorSpace are extended from the Thyra versions by
-	 * inheritance, and the TSFExtended operator subclasses expect to
-	 * work with an extended vector space subclass. Thus, it is
-	 * necessary for the base operator class to never directly allocate
-	 * vector space objects, and allocation is delegated to a virtual
-	 * allocator function.
-	 */
+   *
+   * Purpose: In TSFExtended, both EpetraLinearOp and
+   * EpetraVectorSpace are extended from the Thyra versions by
+   * inheritance, and the TSFExtended operator subclasses expect to
+   * work with an extended vector space subclass. Thus, it is
+   * necessary for the base operator class to never directly allocate
+   * vector space objects, and allocation is delegated to a virtual
+   * allocator function.
+   */
   virtual Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > 
   allocateDomain(
-		const Teuchos::RefCountPtr<Epetra_Operator>  &op 
-		,ETransp                                     op_trans 
-		) const; 
+    const Teuchos::RefCountPtr<Epetra_Operator>  &op 
+    ,ETransp                                     op_trans 
+    ) const; 
   
   /** \brief Allocate the range space of the operator.
-	 *
-	 * Purpose: In TSFExtended, both EpetraLinearOp and
-	 * EpetraVectorSpace are extended from the Thyra versions by
-	 * inheritance, and the TSFExtended operator subclasses expect to
-	 * work with an extended vector space subclass. Thus, it is
-	 * necessary for the base operator class to never directly allocate
-	 * vector space objects, and allocation is delegated to a virtual
-	 * allocator function.
-	 */
+   *
+   * Purpose: In TSFExtended, both EpetraLinearOp and
+   * EpetraVectorSpace are extended from the Thyra versions by
+   * inheritance, and the TSFExtended operator subclasses expect to
+   * work with an extended vector space subclass. Thus, it is
+   * necessary for the base operator class to never directly allocate
+   * vector space objects, and allocation is delegated to a virtual
+   * allocator function.
+   */
   virtual Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >
-	allocateRange( 
+  allocateRange( 
     const Teuchos::RefCountPtr<Epetra_Operator>  &op 
     ,ETransp                                     op_trans 
     ) const; 
@@ -287,22 +287,22 @@ protected:
 
 private:
 
-	// ////////////////////////////////////
-	// Private data members
+  // ////////////////////////////////////
+  // Private data members
 
-	Teuchos::RefCountPtr<Epetra_Operator>                     op_;
-	ETransp                                                   opTrans_;
-	EApplyEpetraOpAs                                          applyAs_;
-	EAdjointEpetraOp                                          adjointSupport_;
-	Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >  range_;
-	Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >  domain_;
+  Teuchos::RefCountPtr<Epetra_Operator>                     op_;
+  ETransp                                                   opTrans_;
+  EApplyEpetraOpAs                                          applyAs_;
+  EAdjointEpetraOp                                          adjointSupport_;
+  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >  range_;
+  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >  domain_;
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >  sp_range_;
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >  sp_domain_;
-	// ////////////////////////////////////
-	// Private member functions
+  // ////////////////////////////////////
+  // Private member functions
 
-	const Epetra_Map& getRangeMap() const;
-	const Epetra_Map& getDomainMap() const;
+  const Epetra_Map& getRangeMap() const;
+  const Epetra_Map& getDomainMap() const;
 
 };	// end class EpetraLinearOp
 

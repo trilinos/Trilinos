@@ -38,18 +38,18 @@ namespace {
 inline
 Teuchos::ETransp convert( Thyra::ETransp trans_in )
 {
-	Teuchos::ETransp  trans_out;
-	switch(trans_in) {
-		case Thyra::NOTRANS:
-			trans_out = Teuchos::NO_TRANS;
-			break;
-		case Thyra::TRANS:
-			trans_out = Teuchos::TRANS;
-			break;
-		default:
-			TEST_FOR_EXCEPT(true); // Should never get here!
-	}
-	return trans_out;
+  Teuchos::ETransp  trans_out;
+  switch(trans_in) {
+    case Thyra::NOTRANS:
+      trans_out = Teuchos::NO_TRANS;
+      break;
+    case Thyra::TRANS:
+      trans_out = Teuchos::TRANS;
+      break;
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+  return trans_out;
 }
 
 } // namespace

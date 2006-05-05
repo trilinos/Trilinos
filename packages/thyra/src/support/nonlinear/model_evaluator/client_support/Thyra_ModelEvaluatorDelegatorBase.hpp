@@ -111,17 +111,17 @@ public:
   //@{
 
   /** \brief . */
-	int Np() const;
+  int Np() const;
   /** \brief . */
-	int Ng() const;
+  int Ng() const;
   /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_x_space() const;
   /** \brief . */
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const;
   /** \brief . */
-	Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
-	Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief . */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief . */

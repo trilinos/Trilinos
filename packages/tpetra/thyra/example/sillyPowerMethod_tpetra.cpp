@@ -17,18 +17,18 @@
 template<class Ordinal, class Scalar>
 void scaleFirstDiagElement( const Scalar diagScale, Thyra::LinearOpBase<Scalar> *A )
 {
-	using Teuchos::RefCountPtr;
-	TEST_FOR_EXCEPT(A==NULL);
-	// (A) Get at the underlying Tpetra::Operator object that the TpetraLinearOp
-	// object directly maintains.
-	const RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >
+  using Teuchos::RefCountPtr;
+  TEST_FOR_EXCEPT(A==NULL);
+  // (A) Get at the underlying Tpetra::Operator object that the TpetraLinearOp
+  // object directly maintains.
+  const RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >
     tpetra_op = Thyra::get_Tpetra_Operator<Ordinal>(*A);
-	// (B) Perform a dynamic cast to Tpetra::CisMatrix.
-	// Note, the dyn_cast<>() template function will throw std::bad_cast
-	// with a nice error message if the cast fails! 
-	Tpetra::CisMatrix<Ordinal,Scalar>
+  // (B) Perform a dynamic cast to Tpetra::CisMatrix.
+  // Note, the dyn_cast<>() template function will throw std::bad_cast
+  // with a nice error message if the cast fails! 
+  Tpetra::CisMatrix<Ordinal,Scalar>
     &cisMatrix = Teuchos::dyn_cast<Tpetra::CisMatrix<Ordinal,Scalar> >(*tpetra_op);
-	TEST_FOR_EXCEPT(true); // ToDo: Implement below!
+  TEST_FOR_EXCEPT(true); // ToDo: Implement below!
 } // end scaleFirstDiagElement()
 */
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
     int    globalDim    = 500;
     bool   dumpAll      = false;
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );

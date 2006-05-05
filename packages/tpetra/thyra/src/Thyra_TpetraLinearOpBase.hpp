@@ -59,8 +59,8 @@ public:
    * <tt>*(*tpetraOp)</tt> will be valid past the lifetime of <tt>*this</tt>
    * object which is providing the view!  The client must take special care in
    * the case!
-	 */
-	virtual void getTpetraOpView(
+   */
+  virtual void getTpetraOpView(
     Teuchos::RefCountPtr<Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
     ,EAdjointTpetraOp                                         *tpetraOpAdjointSupport
     ) = 0;
@@ -98,13 +98,13 @@ public:
    * <tt>*(*tpetraOp)</tt> will be valid past the lifetime of <tt>*this</tt>
    * object which is providing the view!  The client must take special care in
    * the case!
-	 */
-	virtual void getTpetraOpView(
+   */
+  virtual void getTpetraOpView(
     Teuchos::RefCountPtr<const Tpetra::Operator<Ordinal,Scalar> >   *tpetraOp
     ,EAdjointTpetraOp                                               *tpetraOpAdjointSupport
     ) const = 0;
 
-	//@}
+  //@}
 
 };
 

@@ -194,7 +194,7 @@ int main( int argc, char* argv[] ) {
     bool showAllTests  = true;
     bool dumpAll       = false;
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );

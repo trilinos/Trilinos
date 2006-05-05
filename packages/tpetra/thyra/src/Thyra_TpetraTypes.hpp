@@ -25,10 +25,10 @@ This is some basic support code that the Tpetra to %Thyra operator/vector adapte
  * \ingroup Tpetra_Thyra_Op_Vec_support_code_grp
  */
 enum EAdjointTpetraOp {
-	TPETRA_OP_TRANSPOSE_ADJOINT_UNSUPPORTED    ///< Adjoint not supported
-	,TPETRA_OP_ADJOINT_SUPPORTED               ///< Adjoint (conjugate transpose) supported
-	,TPETRA_OP_TRANSPOSE_SUPPORTED             ///< Tranpose (non-conjugate transpose) supported
-	,TPETRA_OP_TRANSPOSE_ADJOINT_SUPPORTED     ///< Adjoint not supported
+  TPETRA_OP_TRANSPOSE_ADJOINT_UNSUPPORTED    ///< Adjoint not supported
+  ,TPETRA_OP_ADJOINT_SUPPORTED               ///< Adjoint (conjugate transpose) supported
+  ,TPETRA_OP_TRANSPOSE_SUPPORTED             ///< Tranpose (non-conjugate transpose) supported
+  ,TPETRA_OP_TRANSPOSE_ADJOINT_SUPPORTED     ///< Adjoint not supported
 };
 
 /** \brief . 

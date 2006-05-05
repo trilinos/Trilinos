@@ -38,24 +38,24 @@ int main(int argc, char argv[])
 
   std::ostream &out = std::cout;
 
-	try {
+  try {
 
     TEST_FOR_EXCEPT(true); // ToDo: Implement!
 
-	}
-	catch( const std::exception &excpt ) {
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-		success = false;
-	}
-	catch( ... ) {
-		std::cerr << "*** Caught an unknown exception\n";
-		success = false;
-	}
-	
-	if (verbose) {
-		if(success)  out << "\nCongratulations! All of the tests checked out!\n";
-		else         out << "\nOh no! At least one of the tests failed!\n";
-	}
+  }
+  catch( const std::exception &excpt ) {
+    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+    success = false;
+  }
+  catch( ... ) {
+    std::cerr << "*** Caught an unknown exception\n";
+    success = false;
+  }
+  
+  if (verbose) {
+    if(success)  out << "\nCongratulations! All of the tests checked out!\n";
+    else         out << "\nOh no! At least one of the tests failed!\n";
+  }
 
   return ( success ? 0 : 1 );
 }

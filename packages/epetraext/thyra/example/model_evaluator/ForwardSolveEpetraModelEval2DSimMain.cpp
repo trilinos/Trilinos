@@ -11,18 +11,18 @@
 int main( int argc, char* argv[] )
 {
 
-	using Teuchos::CommandLineProcessor;
+  using Teuchos::CommandLineProcessor;
   typedef Teuchos::RefCountPtr<Thyra::VectorBase<double> > VectorPtr;
 
   bool success = true;
 
-	try {
-	
-		//
-		// Get options from the command line
-		//
+  try {
+  
+    //
+    // Get options from the command line
+    //
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 
@@ -44,8 +44,8 @@ int main( int argc, char* argv[] )
       "You can get different levels of detail about the Newton method by adjustingthe command-line\n"
       "option \"verb-level\" (see above)\n"
       );
-		
-		double       d           = 10.0;
+    
+    double       d           = 10.0;
     double       p0          = 2.0;
     double       p1          = 0.0;
     double       x00         = 0.0;
@@ -68,11 +68,11 @@ int main( int argc, char* argv[] )
     bool showSetInvalidArg = false;
     bool showGetInvalidArg = false;
 
-		clp.setOption( "d", &d, "Model constant d" );
-		clp.setOption( "p0", &p0, "Model constant p[0]" );
-		clp.setOption( "p1", &p1, "Model constant p[1]" );
-		clp.setOption( "x00", &x00, "Initial guess for x[0]" );
-		clp.setOption( "x01", &x01, "Initial guess for x[1]" );
+    clp.setOption( "d", &d, "Model constant d" );
+    clp.setOption( "p0", &p0, "Model constant p[0]" );
+    clp.setOption( "p1", &p1, "Model constant p[1]" );
+    clp.setOption( "x00", &x00, "Initial guess for x[0]" );
+    clp.setOption( "x01", &x01, "Initial guess for x[1]" );
     clp.setOption( "verb-level", &verbLevel, numVerbLevels, verbLevelValues, verbLevelNames, "Verbosity level" );
     clp.setOption( "tol", &tol, "Nonlinear solve tolerance" );
     clp.setOption( "max-iters", &maxIters, "Maximum number of nonlinear iterations" );
@@ -84,18 +84,18 @@ int main( int argc, char* argv[] )
                    ,"Determines if an attempt is made to set an invalid/unsupported ModelEvaluator input argument"  );
     clp.setOption( "show-get-invalid-arg", "no-show-get-invalid-arg", &showGetInvalidArg
                    ,"Determines if an attempt is made to get an invalid/unsupported ModelEvaluator output argument (2DSim only)"  );
-	
-		CommandLineProcessor::EParseCommandLineReturn
-			parse_return = clp.parse(argc,argv,&std::cerr);
+  
+    CommandLineProcessor::EParseCommandLineReturn
+      parse_return = clp.parse(argc,argv,&std::cerr);
 
-		if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
-			return parse_return;
+    if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
+      return parse_return;
 
     Teuchos::RefCountPtr<Teuchos::FancyOStream>
       out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
     *out << "\nCreating the nonlinear equations object ...\n";
-		
+    
     Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> epetraModel;
     if(use4DOpt) {
       epetraModel = rcp(new EpetraModelEval4DOpt(0.0,0.0,p0,p1,d,x00,x01,p0,p1));
@@ -155,7 +155,7 @@ int main( int argc, char* argv[] )
     }
     *out << "\nFinal solution for x=\n" << *x;
     
-	}
+  }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success)
     
   return  success ? 0 : 1;

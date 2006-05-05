@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
-	try {
+  try {
 
     //
     // Read options from command-line
@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
     bool                                    showAllTests           = false;
     bool                                    dumpAll                = false;
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
     clp.setOption( "matrix-file", &matrixFile, "Matrix iput file [Required]." );
@@ -102,20 +102,20 @@ int main(int argc, char* argv[])
         ,maxFwdError,maxError,maxResid,showAllTests,dumpAll,verbose?&*out:0
         );
 
-	}
-	catch( const std::exception &excpt ) {
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-		success = false;
-	}
-	catch( ... ) {
-		std::cerr << "*** Caught an unknown exception\n";
-		success = false;
-	}
-	
-	if (verbose) {
-		if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
-		else         *out << "\nOh no! At least one of the tests failed!\n";
-	}
+  }
+  catch( const std::exception &excpt ) {
+    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+    success = false;
+  }
+  catch( ... ) {
+    std::cerr << "*** Caught an unknown exception\n";
+    success = false;
+  }
+  
+  if (verbose) {
+    if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
+    else         *out << "\nOh no! At least one of the tests failed!\n";
+  }
 
   return ( success ? 0 : 1 );
 }

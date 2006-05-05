@@ -302,18 +302,18 @@ public:
   /** \name Basic inforamtion */
   //@{
 
-	/** \brief Return the number of sets of auxiliary parameters.
+  /** \brief Return the number of sets of auxiliary parameters.
    *
-	 * If this function returns 0, then there are no auxiliary parameters.
-	 */
-	virtual int Np() const = 0;
+   * If this function returns 0, then there are no auxiliary parameters.
+   */
+  virtual int Np() const = 0;
 
-	/** \brief Return the number of sets of auxiliary response functions.
+  /** \brief Return the number of sets of auxiliary response functions.
    *
-	 * If this function returns 0, then there are no auxiliary response
-	 * functions.
-	 */
-	virtual int Ng() const = 0;
+   * If this function returns 0, then there are no auxiliary response
+   * functions.
+   */
+  virtual int Ng() const = 0;
 
   //@}
 
@@ -326,33 +326,33 @@ public:
   /** \brief Return the vector space for the state function <tt>f(...)</tt>. */
   virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_f_space() const = 0;
 
-	/** \brief Return the vector space for the auxiliary parameters
-	 * <tt>p(l)</tt>.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>0 <= l < this->Np()</tt>
-	 * </ul>
-	 *
-	 * <b>Postconditions:</b><ul>
-	 * <li> <tt>return.get()!=NULL</tt>
-	 * </ul>
-	 */
-	virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const = 0;
+  /** \brief Return the vector space for the auxiliary parameters
+   * <tt>p(l)</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Np() > 0</tt>
+   * <li><tt>0 <= l < this->Np()</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li> <tt>return.get()!=NULL</tt>
+   * </ul>
+   */
+  virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const = 0;
 
-	/** \brief Return the vector space for the auxiliary response functions
-	 * <tt>g(j)</tt>.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->Ng() > 0</tt>
-	 * <li><tt>0 <= j < this->Ng()</tt>
-	 * </ul>
-	 *
-	 * <b>Postconditions:</b><ul>
-	 * <li> <tt>return.get()!=NULL</tt>
-	 * </ul>
-	 */
-	virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
+  /** \brief Return the vector space for the auxiliary response functions
+   * <tt>g(j)</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   * <li> <tt>return.get()!=NULL</tt>
+   * </ul>
+   */
+  virtual Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const = 0;
 
   //@}
 
@@ -379,31 +379,31 @@ public:
 
   /** \brief If supported, create a <tt>LinearOpWithSolveBase</tt> object for
    * <tt>W</tt> to be evaluated.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->createOutArgs().supports(OUT_ARG_W)==true</tt>
-	 * </ul>
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->createOutArgs().supports(OUT_ARG_W)==true</tt>
+   * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > create_W() const = 0;
 
   /** \brief If supported, create a <tt>LinearOpBase</tt> object for
    * <tt>W</tt> to be evaluated.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
-	 * </ul>
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->createOutArgs().supports(OUT_ARG_W_op)==true</tt>
+   * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_W_op() const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(f)/D(p(l))</tt>.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>0 <= l < this->Np()</tt>
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Np() > 0</tt>
+   * <li><tt>0 <= l < this->Np()</tt>
    * <li><tt>outArgs.supports_DfDp(l).supports(DERIV_LINEAR_OP)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
-	 * </ul>
+   * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DfDp_op(int l) const = 0;
 
@@ -411,27 +411,27 @@ public:
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(g(j))/D(x)</tt>.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->Ng() > 0</tt>
-	 * <li><tt>0 <= j < this->Ng()</tt>
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
    * <li><tt>outArgs.supports_DgDx(j).supports(DERIV_LINEAR_OP)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
-	 * </ul>
+   * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDx_op(int j) const = 0;
 
   /** \brief If supported, create a linear operator derivative object for
    * <tt>D(g(j))/D(p(l))</tt>.
-	 *
-	 * <b>Preconditions:</b><ul>
-	 * <li><tt>this->Ng() > 0</tt>
-	 * <li><tt>this->Np() > 0</tt>
-	 * <li><tt>0 <= j < this->Ng()</tt>
-	 * <li><tt>0 <= l < this->Np()</tt>
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>this->Ng() > 0</tt>
+   * <li><tt>this->Np() > 0</tt>
+   * <li><tt>0 <= j < this->Ng()</tt>
+   * <li><tt>0 <= l < this->Np()</tt>
    * <li><tt>outArgs.supports_DgDp(j,l).supports(DERIV_LINEAR_OP)==true</tt>,
    *     where <tt>outArgs = this->createOutArgs()</tt>
-	 * </ul>
+   * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > create_DgDp_op( int j, int l ) const = 0;
   

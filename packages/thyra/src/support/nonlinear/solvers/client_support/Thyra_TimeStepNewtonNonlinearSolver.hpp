@@ -50,14 +50,14 @@ public:
   /** \brief. */
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
 
-	/** \brief The default maximum number of iterations. */
+  /** \brief The default maximum number of iterations. */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( int, defaultMaxIterations )
 
   /** \brief The default solution tolerance. */
- 	STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol )
 
   /** \brief Stream that warnings are printed to. */
- 	STANDARD_NONCONST_COMPOSITION_MEMBERS( std::ostream, warningOut )
+   STANDARD_NONCONST_COMPOSITION_MEMBERS( std::ostream, warningOut )
 
   TimeStepNewtonNonlinearSolver(
     const int                 defaultMaxIterations = 3

@@ -120,7 +120,7 @@ int main( int argc, char* argv[] ) {
     //
 
     int     local_dim         = 4;
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );

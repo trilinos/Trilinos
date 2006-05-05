@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     int    maxNumIters = 300;
     bool   dumpAll     = false;
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 

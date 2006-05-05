@@ -180,7 +180,7 @@ int main(int argc, char *argv[])
     bool   showAllTests = false;
     int    maxNumIters  = 300;
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 

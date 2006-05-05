@@ -67,7 +67,7 @@ namespace Teuchos {
 
     //! y = x + beta*y
     static inline void update(coeff_type* y, const coeff_type& x, 
-			      const scalar_type& beta) {
+            const scalar_type& beta) {
       Thyra::Vp_V(y,x,beta);
     }
 

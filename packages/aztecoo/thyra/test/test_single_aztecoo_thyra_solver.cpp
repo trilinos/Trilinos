@@ -360,17 +360,17 @@ bool Thyra::test_single_aztecoo_thyra_solver(
     }
 
 #else // __sun
-		
-		if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
-		success = false;
+    
+    if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+    success = false;
 
 #endif // __sun
 
   }
-	catch( const std::exception &excpt ) {
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-		success = false;
-	}
+  catch( const std::exception &excpt ) {
+    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+    success = false;
+  }
    
   return success;
     

@@ -78,8 +78,8 @@ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
-	/** \brief Construct uninitialized. */
- 	AztecOOLinearOpWithSolveFactory();
+  /** \brief Construct uninitialized. */
+   AztecOOLinearOpWithSolveFactory();
     
   /** \brief Set the strategy object used to extract an
    * <tt>Epetra_Operator</tt> view of an input forward operator.

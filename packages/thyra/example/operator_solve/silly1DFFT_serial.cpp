@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
     bool   dumpAll       = false;
     int    outputPrec    = -1;
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 

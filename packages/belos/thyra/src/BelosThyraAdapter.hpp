@@ -212,8 +212,8 @@ namespace Belos {
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
     static void MvTimesMatAddMv( const ScalarType alpha, const TMVB& A, 
-				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
-				 const ScalarType beta, TMVB& mv )
+         const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
+         const ScalarType beta, TMVB& mv )
     {
       int m = B.numRows();
       int n = B.numCols();

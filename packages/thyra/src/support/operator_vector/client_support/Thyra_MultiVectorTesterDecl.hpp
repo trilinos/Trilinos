@@ -147,29 +147,29 @@ public:
     ,const bool         dump_all               = false
     );
 
-	/** \brief Check a multi-vector object in a set of comprehensive teats.
-	 *
-	 * @param  mv     [in] The multi-vector object to test.
-	 * @param  out    [in/out] If <tt>out != NULL</tt> then output will be sent to <tt>*out</tt>.
-	 *
-	 * The behavior of this function greatly depends on a number of options (see
-	 * <tt>MultiVectorTester()</tt> for the default values for these options):
+  /** \brief Check a multi-vector object in a set of comprehensive teats.
    *
-	 * <ul>
-	 * <li> <b><tt>print_all_tests(bool)</tt></b>:  If <tt>print_all_tests() == true</tt>, then some output will be sent to
-	 *      <tt>*out</tt> for every test performed.  This is useful to see all of tests that are performed and
-	 *      in debugging.
-	 * <li> <b><tt>dump_all(bool)</tt></b>:  If <tt>dump_all() == true</tt>, then all of the vectors will be printed
-	 *      that are created during the tests.  This option is really only needed during initial debugging
-	 *      and should only be used with small vector spaces since it will produce a lot of <tt>O(space.dim())</tt>
-	 *      output.
-	 * <li> <b><tt>num_random_tests(int)</tt></b>:  This is the number of random tests to perform per category of test.
-	 *      A higher number will result is better validation but will consume more CPU time.
-	 * <li> <b><tt>warning_tol(ScalarMag)</tt></b>:  Any test with a relative error greater than <tt>warning_tol()</tt> will
-	 *      result in a warning message printed to <tt>*out</tt> but will not result in a filed test.
-	 * <li> <b><tt>error_tol(Scalar)</tt></b>:  Any test with a relative error greater than <tt>error_tol()</tt> will
-	 *      result in an error message printed to <tt>*out</tt> and will result in a failed test.
-	 * </ul>
+   * @param  mv     [in] The multi-vector object to test.
+   * @param  out    [in/out] If <tt>out != NULL</tt> then output will be sent to <tt>*out</tt>.
+   *
+   * The behavior of this function greatly depends on a number of options (see
+   * <tt>MultiVectorTester()</tt> for the default values for these options):
+   *
+   * <ul>
+   * <li> <b><tt>print_all_tests(bool)</tt></b>:  If <tt>print_all_tests() == true</tt>, then some output will be sent to
+   *      <tt>*out</tt> for every test performed.  This is useful to see all of tests that are performed and
+   *      in debugging.
+   * <li> <b><tt>dump_all(bool)</tt></b>:  If <tt>dump_all() == true</tt>, then all of the vectors will be printed
+   *      that are created during the tests.  This option is really only needed during initial debugging
+   *      and should only be used with small vector spaces since it will produce a lot of <tt>O(space.dim())</tt>
+   *      output.
+   * <li> <b><tt>num_random_tests(int)</tt></b>:  This is the number of random tests to perform per category of test.
+   *      A higher number will result is better validation but will consume more CPU time.
+   * <li> <b><tt>warning_tol(ScalarMag)</tt></b>:  Any test with a relative error greater than <tt>warning_tol()</tt> will
+   *      result in a warning message printed to <tt>*out</tt> but will not result in a filed test.
+   * <li> <b><tt>error_tol(Scalar)</tt></b>:  Any test with a relative error greater than <tt>error_tol()</tt> will
+   *      result in an error message printed to <tt>*out</tt> and will result in a failed test.
+   * </ul>
    *
    * @return The function returns <tt>true</tt> if all of the tests where
    * within the <tt>error_tol()</tt> and returns <tt>false</tt> if not.

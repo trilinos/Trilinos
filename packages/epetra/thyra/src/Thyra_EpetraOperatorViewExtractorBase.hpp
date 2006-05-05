@@ -95,8 +95,8 @@ public:
    * specialized interfaces and therefore modified.  Then, when the last
    * <tt>RefCountPtr</tt> object ancestor returned from this function goes
    * away, then <tt>*this</tt> will be updated to relect the change.
-	 */
-	virtual void getEpetraOpView(
+   */
+  virtual void getEpetraOpView(
     const Teuchos::RefCountPtr<LinearOpBase<double> >   &fwdOp
     ,Teuchos::RefCountPtr<Epetra_Operator>              *epetraOp
     ,ETransp                                            *epetraOpTransp
@@ -150,8 +150,8 @@ public:
    * modify it that this returned view is not guaranteed to update
    * <tt>*this</tt>.  If the goal is to modify <tt>*this</tt> then the client
    * should call the non-<tt>const</tt> version of this function.
-	 */
-	virtual void getEpetraOpView(
+   */
+  virtual void getEpetraOpView(
     const Teuchos::RefCountPtr<const LinearOpBase<double> >   &fwdOp
     ,Teuchos::RefCountPtr<const Epetra_Operator>              *epetraOp
     ,ETransp                                                  *epetraOpTransp
@@ -160,7 +160,7 @@ public:
     ,double                                                   *epetraOpScalar
     ) const = 0;
 
-	//@}
+  //@}
 
 };
 

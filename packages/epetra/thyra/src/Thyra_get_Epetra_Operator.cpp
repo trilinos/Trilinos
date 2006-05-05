@@ -33,13 +33,13 @@
 Teuchos::RefCountPtr<Epetra_Operator>
 Thyra::get_Epetra_Operator( LinearOpBase<double> &op )
 {
-	EpetraLinearOp &tsfcore_epetra_op = Teuchos::dyn_cast<EpetraLinearOp>(op);
-	return tsfcore_epetra_op.epetra_op();
+  EpetraLinearOp &tsfcore_epetra_op = Teuchos::dyn_cast<EpetraLinearOp>(op);
+  return tsfcore_epetra_op.epetra_op();
 }
 
 Teuchos::RefCountPtr<const Epetra_Operator>
 Thyra::get_Epetra_Operator( const LinearOpBase<double> &op )
 {
-	const EpetraLinearOp &tsfcore_epetra_op = Teuchos::dyn_cast<const EpetraLinearOp>(op);
-	return tsfcore_epetra_op.epetra_op();
+  const EpetraLinearOp &tsfcore_epetra_op = Teuchos::dyn_cast<const EpetraLinearOp>(op);
+  return tsfcore_epetra_op.epetra_op();
 }

@@ -54,13 +54,13 @@ A=
  */
 Teuchos::RefCountPtr<Thyra::LinearOpBase<double> >
 createTridiagEpetraLinearOp(
-	const int      globalDim
+  const int      globalDim
 #ifdef HAVE_MPI
-	,MPI_Comm      mpiComm
+  ,MPI_Comm      mpiComm
 #endif
-	,const double  diagScale
-	,const bool    verbose
-	,std::ostream  &out
-	);
+  ,const double  diagScale
+  ,const bool    verbose
+  ,std::ostream  &out
+  );
 
 #endif // THYRA_CREATE_TRIDIAG_EPETRA_LINEAR_OP_HPP

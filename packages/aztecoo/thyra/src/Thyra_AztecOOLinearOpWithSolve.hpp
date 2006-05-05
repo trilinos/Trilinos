@@ -70,30 +70,30 @@ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
-	/** Construct uninitialized but with default option values.
-	 *
-	 * Note, these defaults where taken from
-	 * NOX::EpetraNew::LinearSystemAztecOO::applyJacobianInverse(...) on
-	 * 2005/08/15.
-	 */
- 	AztecOOLinearOpWithSolve(
-	 	const int       fwdDefaultMaxIterations       = 400
-		,const double   fwdDefaultTol                 = 1e-6
-	 	,const int      adjDefaultMaxIterations       = 400
-		,const double   adjDefaultTol                 = 1e-6
+  /** Construct uninitialized but with default option values.
+   *
+   * Note, these defaults where taken from
+   * NOX::EpetraNew::LinearSystemAztecOO::applyJacobianInverse(...) on
+   * 2005/08/15.
+   */
+   AztecOOLinearOpWithSolve(
+     const int       fwdDefaultMaxIterations       = 400
+    ,const double   fwdDefaultTol                 = 1e-6
+     ,const int      adjDefaultMaxIterations       = 400
+    ,const double   adjDefaultTol                 = 1e-6
     ,const bool     outputEveryRhs                = false
-		);
+    );
 
-	/** \brief The default maximum number of iterations for forward solves. */
+  /** \brief The default maximum number of iterations for forward solves. */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( int, fwdDefaultMaxIterations )
   /** \brief The default solution tolerance on the residual for forward solves. */
- 	STANDARD_MEMBER_COMPOSITION_MEMBERS( double, fwdDefaultTol )
-	/** \brief The default maximum number of iterations for adjoint solves. */
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( double, fwdDefaultTol )
+  /** \brief The default maximum number of iterations for adjoint solves. */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( int, adjDefaultMaxIterations )
   /** \brief The default solution tolerance on the residual for adjoint solves. */
- 	STANDARD_MEMBER_COMPOSITION_MEMBERS( double, adjDefaultTol )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( double, adjDefaultTol )
   /** \brief Determine if output for every RHS will be printed or not. */
- 	STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputEveryRhs )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, outputEveryRhs )
 
   /** \brief Sets up this object.
    *
@@ -132,7 +132,7 @@ public:
    *                 before a forward and adjoint linear solver and post-process the linear problem after
    *                 forward and adjoint linear solve.  This abstract object is used to deal with scaling
    *                 and aggregated preconditioners.  It is what makes this implementation fairly flexible.
-	 *
+   *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
    * <li><tt>fwdFwdSolver.get()!=NULL</tt>
@@ -150,7 +150,7 @@ public:
    * </ul>
    *
    * ToDo: Finish documentation!
-	 */
+   */
   void initialize(
     const Teuchos::RefCountPtr<const LinearOpBase<double> >                 &fwdOp
     ,const Teuchos::RefCountPtr<const PreconditionerBase<double> >          &prec
@@ -178,9 +178,9 @@ public:
   /** \brief Extract the approximate forward <tt>LinearOpBase<double></tt> object used to build the preconditioner.
    */
   Teuchos::RefCountPtr<const LinearOpBase<double> > extract_approxFwdOp();
-	
-	/** \brief Uninitialize. */
-	void uninitialize(
+  
+  /** \brief Uninitialize. */
+  void uninitialize(
     Teuchos::RefCountPtr<const LinearOpBase<double> >                 *fwdOp                     = NULL
     ,Teuchos::RefCountPtr<const PreconditionerBase<double> >          *prec                      = NULL
     ,bool                                                             *isExternalPrec              = NULL

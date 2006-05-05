@@ -68,24 +68,24 @@ public:
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
 
   /** \brief The default solution tolerance. */
- 	STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol )
+   STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, defaultTol )
 
-	/** \brief The default maximum number of iterations. */
+  /** \brief The default maximum number of iterations. */
   STANDARD_MEMBER_COMPOSITION_MEMBERS( int, defaultMaxNewtonIterations )
-	
-	/** \brief Set the armijo constant for the line search */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, armijoConstant )
-	
-	/** \brief Set the maximum number of backtracking line search iterations to take. */
-	STANDARD_MEMBER_COMPOSITION_MEMBERS( int, maxLineSearchIterations )
+  
+  /** \brief Set the armijo constant for the line search */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( Scalar, armijoConstant )
+  
+  /** \brief Set the maximum number of backtracking line search iterations to take. */
+  STANDARD_MEMBER_COMPOSITION_MEMBERS( int, maxLineSearchIterations )
 
   /** \brief . */
   DampenedNewtonNonlinearSolver(
     const ScalarMag           defaultTol                   = 1e-2
     ,const int                defaultMaxNewtonIterations   = 1000
-		,const Scalar             armijoConstant               = 1e-4
-		,const int                maxLineSearchIterations      = 20
-		);
+    ,const Scalar             armijoConstant               = 1e-4
+    ,const int                maxLineSearchIterations      = 20
+    );
 
   /** \brief . */
   static Teuchos::RefCountPtr<const Teuchos::ParameterList> getValidSolveCriteriaExtraParameters();
@@ -113,7 +113,7 @@ DampenedNewtonNonlinearSolver<Scalar>::DampenedNewtonNonlinearSolver(
   ,const int                defaultMaxNewtonIterations
   ,const Scalar             armijoConstant
   ,const int                maxLineSearchIterations
-	)
+  )
   :defaultTol_(defaultTol)
   ,defaultMaxNewtonIterations_(defaultMaxNewtonIterations)
   ,armijoConstant_(armijoConstant)
@@ -156,7 +156,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   const bool showNewtonDetails = (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH));
   const bool dumpAll = (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
-	if(out.get() && showNewtonIters) *out
+  if(out.get() && showNewtonIters) *out
     << "\nBeginning dampended Newton solve of model = " << model.description() << "\n\n";
   // Initialize storage for algorithm
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > J     = model.create_W();
@@ -181,14 +181,14 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   if(out.get() && showNewtonDetails)
     *out << "\nCompute the initial starting point ...\n";
   eval_f_W( model, *x, &*f, &*J );
-	if(out.get() && dumpAll) {
-		*out << "\nInitial starting point:\n";
-		*out << "\nx =\n" << *x;
-		*out << "\nf =\n" << *f;
-		*out << "\nJ =\n" << *J;
-	}
-	// Peform the Newton iterations
-	int newtonIter, num_residual_evals = 1;
+  if(out.get() && dumpAll) {
+    *out << "\nInitial starting point:\n";
+    *out << "\nx =\n" << *x;
+    *out << "\nf =\n" << *f;
+    *out << "\nJ =\n" << *J;
+  }
+  // Peform the Newton iterations
+  int newtonIter, num_residual_evals = 1;
   SolveStatus<Scalar> solveStatus;
   solveStatus.solveStatus = SOLVE_STATUS_UNCONVERGED;
   for( newtonIter = 1; newtonIter <= maxIters; ++newtonIter ) {
@@ -252,7 +252,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       const Scalar phi_new = scalarProd(*f,*f), phi_frac = phi + alpha * armijoConstant() * Dphi;
       if(out.get() && showNewtonDetails) *out << "\nphi_new = <f_new,f_new> = " << phi_new << endl;
       if( Teuchos::ScalarTraits<Scalar>::isnaninf(phi_new) ) {
-				if(out.get() && showNewtonDetails) *out << "\nphi_new is not a valid number, backtracking (alpha = 0.1*alpha) ...\n";
+        if(out.get() && showNewtonDetails) *out << "\nphi_new is not a valid number, backtracking (alpha = 0.1*alpha) ...\n";
         alpha *= 0.1;
         continue;
       }
@@ -285,7 +285,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     std::swap<Teuchos::RefCountPtr<VectorBase<Scalar> > >( x_new, x ); // Now x is current point!
   }
 exit:
-	if(out.get() && showNewtonIters) *out
+  if(out.get() && showNewtonIters) *out
     << "\n[Final] newton_iters="<<newtonIter<<", num_residual_evals="<<num_residual_evals<<"\n";
   if(newtonIter > maxIters) {
     std::ostringstream oss;

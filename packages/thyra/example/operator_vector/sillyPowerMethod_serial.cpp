@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
     int    dim          = 4;
     bool   dumpAll      = false;
 
-		CommandLineProcessor  clp;
+    CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );

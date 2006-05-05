@@ -52,8 +52,8 @@ This is some basic support code that the Epetra to %Thyra operator/vector adapte
  * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
  */
 enum EAdjointEpetraOp {
-	EPETRA_OP_ADJOINT_SUPPORTED      ///< Adjoint supported
-	,EPETRA_OP_ADJOINT_UNSUPPORTED   ///< Adjoint not supported
+  EPETRA_OP_ADJOINT_SUPPORTED      ///< Adjoint supported
+  ,EPETRA_OP_ADJOINT_UNSUPPORTED   ///< Adjoint not supported
 };
 
 /** \brief . 
@@ -79,8 +79,8 @@ const char* toString(const EAdjointEpetraOp adjointEpetraOp)
  * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
  */
 enum EApplyEpetraOpAs {
-	EPETRA_OP_APPLY_APPLY            ///< Apply using Epetra_Operator::Apply(...)
-	,EPETRA_OP_APPLY_APPLY_INVERSE   ///< Apply using Epetra_Operator::ApplyInverse(...)
+  EPETRA_OP_APPLY_APPLY            ///< Apply using Epetra_Operator::Apply(...)
+  ,EPETRA_OP_APPLY_APPLY_INVERSE   ///< Apply using Epetra_Operator::ApplyInverse(...)
 };
 
 /** \brief .

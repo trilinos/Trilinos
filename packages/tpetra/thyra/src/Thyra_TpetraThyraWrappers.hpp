@@ -42,8 +42,8 @@ objects in %Thyra object and for getting %Tpetra views of %Thyra objects.
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<Scalar> >
 create_VectorSpace(
-	const Teuchos::RefCountPtr<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
-	);
+  const Teuchos::RefCountPtr<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
+  );
 
 /** \brief Create a non-<tt>const</tt> <tt>MPIVectorBase</tt> object from
  * a <tt>const> <tt>Tpetra::Vector</tt> object.
@@ -71,9 +71,9 @@ create_VectorSpace(
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<MPIVectorBase<Scalar> >
 create_Vector(
-	const Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >      &tpetra_v
-	,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >   &space       = Teuchos::null
-	);
+  const Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >      &tpetra_v
+  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >   &space       = Teuchos::null
+  );
 
 /** \brief Create an <tt>const</tt> <tt>MPIVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Tpetra::Vector</tt> object.
@@ -98,9 +98,9 @@ create_Vector(
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<const MPIVectorBase<Scalar> >
 create_Vector(
-	const Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >  &tpetra_v
-	,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >     &space       = Teuchos::null
-	);
+  const Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >  &tpetra_v
+  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >     &space       = Teuchos::null
+  );
 
 /** \brief Get a non-<tt>const</tt> <tt>Tpetra::Vector</tt> view from a
  * non-<tt>const</tt> <tt>VectorBase</tt> object if possible.
@@ -127,9 +127,9 @@ create_Vector(
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >
 get_Tpetra_Vector(
-	const Tpetra::VectorSpace<Ordinal,Scalar>           &tpetra_vs
-	,const Teuchos::RefCountPtr<VectorBase<Scalar> >    &v
-	);
+  const Tpetra::VectorSpace<Ordinal,Scalar>           &tpetra_vs
+  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >    &v
+  );
 
 /** \brief Get a <tt>const</tt> <tt>Tpetra::Vector</tt> view from a
  * <tt>const</tt> <tt>VectorBase</tt> object if possible.
@@ -153,9 +153,9 @@ get_Tpetra_Vector(
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >
 get_Tpetra_Vector(
-	const Tpetra::VectorSpace<Ordinal,Scalar>                &tpetra_vs
-	,const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &v
-	);
+  const Tpetra::VectorSpace<Ordinal,Scalar>                &tpetra_vs
+  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >   &v
+  );
 /** \brief Get smart pointer to non-<tt>const</tt>
  * <tt>Tpetra::Operator</tt> object from reference to a
  * non-<tt>const</tt> <tt>TpetraLinearOp</tt> accessed through its
@@ -245,7 +245,7 @@ public:
     }
 private:
   Tpetra::Vector<Ordinal,Scalar> const& tpetra_v_; // Can not be a RCP due to circular references!
-	Teuchos::RefCountPtr<DetachedVectorView<Scalar> > detachedView_;
+  Teuchos::RefCountPtr<DetachedVectorView<Scalar> > detachedView_;
   // Not defined and not to be called
   CopyFromTpetraToThyraVector();
   CopyFromTpetraToThyraVector(const CopyFromTpetraToThyraVector&);
@@ -258,60 +258,60 @@ private:
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceDefaultBase<Scalar> >
 Thyra::create_VectorSpace(
-	const Teuchos::RefCountPtr<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
-	)
+  const Teuchos::RefCountPtr<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
+  )
 {
 #ifdef _DEBUG
-	TEST_FOR_EXCEPTION( !tpetra_vs.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
+  TEST_FOR_EXCEPTION( !tpetra_vs.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
 #endif // _DEBUG
-	MPI_Comm mpiComm;
+  MPI_Comm mpiComm;
 #ifdef HAVE_MPI
-	const Tpetra::MpiComm<Ordinal,Scalar>
-		*tpetra_mpi_comm = dynamic_cast<const Tpetra::MpiComm<Ordinal,Scalar>*>(&tpetra_vs->Comm());
-	if(tpetra_mpi_comm) {
+  const Tpetra::MpiComm<Ordinal,Scalar>
+    *tpetra_mpi_comm = dynamic_cast<const Tpetra::MpiComm<Ordinal,Scalar>*>(&tpetra_vs->Comm());
+  if(tpetra_mpi_comm) {
     //std::cout << "EpetraVectorSpace::initialize(...): Using an Tpetra::MpiComm<Ordinal,Scalar>!\n";
-		mpiComm = tpetra_mpi_comm->getMpiComm();
+    mpiComm = tpetra_mpi_comm->getMpiComm();
 #ifdef _DEBUG
-		TEST_FOR_EXCEPTION(
-			mpiComm == MPI_COMM_NULL, std::logic_error
-			,"EpetraVectorSpace::initialize(...), Error, if using Tpetra::MpiComm<Ordinal,Scalar> then "
-			"the associated MPI_Comm object can not be MPI_COMM_NULL!"
-			);
+    TEST_FOR_EXCEPTION(
+      mpiComm == MPI_COMM_NULL, std::logic_error
+      ,"EpetraVectorSpace::initialize(...), Error, if using Tpetra::MpiComm<Ordinal,Scalar> then "
+      "the associated MPI_Comm object can not be MPI_COMM_NULL!"
+      );
 #endif // _DEBUG
      //std::cout << "EpetraVectorSpace::initialize(...): mpiComm = " << mpiComm << std::endl;
-	}
-	else {
-		mpiComm = MPI_COMM_NULL;
-	}
+  }
+  else {
+    mpiComm = MPI_COMM_NULL;
+  }
 #else // HAVE_MPI
-	mpiComm = MPI_COMM_NULL;
+  mpiComm = MPI_COMM_NULL;
 #endif // HAVE_MPI
-	const Index localSubDim = tpetra_vs->getNumMyEntries();
-	Teuchos::RefCountPtr<DefaultMPIVectorSpace<Scalar> >
-		vs = Teuchos::rcp(
-			new DefaultMPIVectorSpace<Scalar>(
-				mpiComm
-				,localSubDim
-				,tpetra_vs->getNumGlobalEntries()
-				)
-			);
+  const Index localSubDim = tpetra_vs->getNumMyEntries();
+  Teuchos::RefCountPtr<DefaultMPIVectorSpace<Scalar> >
+    vs = Teuchos::rcp(
+      new DefaultMPIVectorSpace<Scalar>(
+        mpiComm
+        ,localSubDim
+        ,tpetra_vs->getNumGlobalEntries()
+        )
+      );
 #ifndef _DEBUG
-			TEST_FOR_EXCEPTION(
-				vs->dim() != tpetra_vs->getNumGlobalEntries(), std::logic_error
-				,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
+      TEST_FOR_EXCEPTION(
+        vs->dim() != tpetra_vs->getNumGlobalEntries(), std::logic_error
+        ,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
         "tpetra_vs->getNumGlobalEntries() = "<<tpetra_vs->getNumGlobalEntries()<<"!"
         );
 #endif		
-	Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", &vs );
-	return vs;
+  Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", &vs );
+  return vs;
 }
 
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<Thyra::MPIVectorBase<Scalar> >
 Thyra::create_Vector(
-	const Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >             &tpetra_v
-	,const Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >   &space_in
-	)
+  const Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >             &tpetra_v
+  ,const Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >   &space_in
+  )
 {
   if(!tpetra_v.get()) return Teuchos::null;
   // Create the space if it is missing
@@ -325,7 +325,7 @@ Thyra::create_Vector(
   // New local view of raw data
   Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
-	Teuchos::RefCountPtr<MPIVectorBase<Scalar> >
+  Teuchos::RefCountPtr<MPIVectorBase<Scalar> >
     v = Teuchos::rcp(new DefaultMPIVector<Scalar>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
@@ -334,9 +334,9 @@ Thyra::create_Vector(
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<const Thyra::MPIVectorBase<Scalar> >
 Thyra::create_Vector(
-	const Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >       &tpetra_v
-	,const Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >   &space_in
-	)
+  const Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >       &tpetra_v
+  ,const Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >   &space_in
+  )
 {
   if(!tpetra_v.get()) return Teuchos::null;
   // Create the space if it is missing
@@ -350,7 +350,7 @@ Thyra::create_Vector(
   // New local view of raw data
   const Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
-	Teuchos::RefCountPtr<const MPIVectorBase<Scalar> >
+  Teuchos::RefCountPtr<const MPIVectorBase<Scalar> >
     v = Teuchos::rcp(new DefaultMPIVector<Scalar>(space,Teuchos::rcp(const_cast<Scalar*>(localValues),false),1));
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
@@ -359,9 +359,9 @@ Thyra::create_Vector(
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >
 Thyra::get_Tpetra_Vector(
-	const Tpetra::VectorSpace<Ordinal,Scalar>                  &tpetra_vs
-	,const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >    &v
-	)
+  const Tpetra::VectorSpace<Ordinal,Scalar>                  &tpetra_vs
+  ,const Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >    &v
+  )
 {
   //
   // Warning! There is some advanced stuff going on here using RCP and extra
@@ -371,7 +371,7 @@ Thyra::get_Tpetra_Vector(
 #ifdef _DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
     thyra_vs = create_VectorSpace<Ordinal,Scalar>(Teuchos::rcp(&tpetra_vs,false));
-	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );
+  THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );
 #endif
   //
   // First, try to grab the Tpetra::Vector straight out of the
@@ -382,33 +382,33 @@ Thyra::get_Tpetra_Vector(
   if(tpetra_v_ptr) {
     return *tpetra_v_ptr;
   }
-	//
-	// The assumption that we (rightly) make here is that if the vector spaces
-	// are compatible, that either the vectors are both in-core or the vector
-	// spaces are both derived from MPIVectorSpaceBase and have compatible
-	// distributions.
-	// 
+  //
+  // The assumption that we (rightly) make here is that if the vector spaces
+  // are compatible, that either the vectors are both in-core or the vector
+  // spaces are both derived from MPIVectorSpaceBase and have compatible
+  // distributions.
+  // 
   const VectorSpaceBase<Scalar>  &vs = *v->range();
   const MPIVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<Scalar>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
-	//
-	// Here we will extract a view of the local elements in the underlying
-	// VectorBase object.  In most cases, no data will be allocated or copied
-	// and only some small objects will be created and a few virtual functions
-	// will be called so the overhead should be low and fixed.  Note that 'v' is
-	// "remembered" by 'detachedView' so that 'v' will not go away until the //
-	// detached view is copied back.
-	//
-	Teuchos::RefCountPtr<DetachedVectorView<Scalar> >
-		detachedView = Teuchos::rcp(
-			new DetachedVectorView<Scalar>(
-				v,Range1D(localOffset,localOffset+localSubDim-1)
-				)
-			);
+  //
+  // Here we will extract a view of the local elements in the underlying
+  // VectorBase object.  In most cases, no data will be allocated or copied
+  // and only some small objects will be created and a few virtual functions
+  // will be called so the overhead should be low and fixed.  Note that 'v' is
+  // "remembered" by 'detachedView' so that 'v' will not go away until the //
+  // detached view is copied back.
+  //
+  Teuchos::RefCountPtr<DetachedVectorView<Scalar> >
+    detachedView = Teuchos::rcp(
+      new DetachedVectorView<Scalar>(
+        v,Range1D(localOffset,localOffset+localSubDim-1)
+        )
+      );
   // Create a temporary Tpetra::Vector object and copy the local data into it.
-	Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >
-		tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
+  Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >
+    tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
   for( Index i = 0; i < detachedView->subDim(); ++i )
     (*tpetra_v)[i] = (*detachedView)[i];
   // Create a utility object that will copy back the values in the
@@ -427,7 +427,7 @@ Thyra::get_Tpetra_Vector(
   // destroyed (after the CopyFromTpetraToThyraVector is destoryed and the
   // data is copied back) the view will be commited back to the underlying
   // Thyra vector v.
-	return tpetra_v;
+  return tpetra_v;
   // Note that when Tpetra::Vector supports a view mode, we will initalize it
   // with the view in detachedView (with the stride forced to be unit) and we
   // will have to set detachedView as extra data to the RCP for tpetra_v!
@@ -436,14 +436,14 @@ Thyra::get_Tpetra_Vector(
 template<class Ordinal, class Scalar>
 Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >
 Thyra::get_Tpetra_Vector(
-	const Tpetra::VectorSpace<Ordinal,Scalar>                       &tpetra_vs
-	,const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >   &v
-	)
+  const Tpetra::VectorSpace<Ordinal,Scalar>                       &tpetra_vs
+  ,const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >   &v
+  )
 {
 #ifdef _DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
     thyra_vs = create_VectorSpace<Ordinal,Scalar>(Teuchos::rcp(&tpetra_vs,false));
-	THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );
+  THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );
 #endif
   //
   // First, try to grab the Tpetra::Vector straight out of the
@@ -457,36 +457,36 @@ Thyra::get_Tpetra_Vector(
     *tpetra_nonconst_v_ptr = Teuchos::get_optional_extra_data<Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> > >(v,"Tpetra::Vector");
   if(tpetra_nonconst_v_ptr)
     return *tpetra_nonconst_v_ptr;
-	//
-	// The assumption that we (rightly) make here is that if the vector spaces
-	// are compatible, that either the vectors are both in-core or the vector
-	// spaces are both derived from MPIVectorSpaceBase and have compatible
-	// distributions.
-	// 
+  //
+  // The assumption that we (rightly) make here is that if the vector spaces
+  // are compatible, that either the vectors are both in-core or the vector
+  // spaces are both derived from MPIVectorSpaceBase and have compatible
+  // distributions.
+  // 
   const VectorSpaceBase<Scalar>  &vs = *v->range();
   const MPIVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<Scalar>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
-	//
-	// Here we will extract a view of the local elements in the underlying
-	// VectorBase object.  In most cases, no data will be allocated or copied
-	// and only some small objects will be created and a few virtual functions
-	// will be called so the overhead should be low and fixed.  Note that 'v' is
-	// "remembered" by 'detachedView' so that 'v' will not go away until the
-	// detached view is finished being used and is destroyed.
-	//
-	Teuchos::RefCountPtr<ConstDetachedVectorView<Scalar> >
-		detachedView = Teuchos::rcp(
-			new ConstDetachedVectorView<Scalar>(
-				v,Range1D(localOffset,localOffset+localSubDim-1)
-				)
-			);
+  //
+  // Here we will extract a view of the local elements in the underlying
+  // VectorBase object.  In most cases, no data will be allocated or copied
+  // and only some small objects will be created and a few virtual functions
+  // will be called so the overhead should be low and fixed.  Note that 'v' is
+  // "remembered" by 'detachedView' so that 'v' will not go away until the
+  // detached view is finished being used and is destroyed.
+  //
+  Teuchos::RefCountPtr<ConstDetachedVectorView<Scalar> >
+    detachedView = Teuchos::rcp(
+      new ConstDetachedVectorView<Scalar>(
+        v,Range1D(localOffset,localOffset+localSubDim-1)
+        )
+      );
   // Create a temporary Tpetra::Vector object and copy the local data into it.
-	Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >
-		tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
+  Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >
+    tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
   for( Index i = 0; i < detachedView->subDim(); ++i )
     (*tpetra_v)[i] = (*detachedView)[i];
-	return tpetra_v;
+  return tpetra_v;
   // Note that when Tpetra::Vector supports a view mode, we will initalize it
   // with the view in detachedView (with the stride forced to be unit) and we
   // will have to set detachedView as extra data to the RCP for tpetra_v!

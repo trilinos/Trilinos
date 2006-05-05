@@ -80,8 +80,8 @@ views of %Thyra objects.
  */
 Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >
 create_MPIVectorSpaceBase(
-	const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
-	);
+  const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
+  );
 
 /** \brief Create a non-<tt>const</tt> <tt>MPIVectorBase</tt> object from
  * a <tt>const> <tt>Epetra_Vector</tt> object.
@@ -110,9 +110,9 @@ create_MPIVectorSpaceBase(
  */
 Teuchos::RefCountPtr<MPIVectorBase<double> >
 create_MPIVectorBase(
-	const Teuchos::RefCountPtr<Epetra_Vector>                                &epetra_v
-	,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
-	);
+  const Teuchos::RefCountPtr<Epetra_Vector>                                &epetra_v
+  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
+  );
 
 /** \brief Create an <tt>const</tt> <tt>MPIVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Epetra_Vector</tt> object.
@@ -138,9 +138,9 @@ create_MPIVectorBase(
  */
 Teuchos::RefCountPtr<const MPIVectorBase<double> >
 create_MPIVectorBase(
-	const Teuchos::RefCountPtr<const Epetra_Vector>                          &epetra_v
-	,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
-	);
+  const Teuchos::RefCountPtr<const Epetra_Vector>                          &epetra_v
+  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
+  );
 
 /** \brief Create a non-<tt>const</tt> <tt>MPIMultiVectorBase</tt> object from
  * a <tt>const> <tt>Epetra_MultiVector</tt> object.
@@ -167,10 +167,10 @@ create_MPIVectorBase(
  */
 Teuchos::RefCountPtr<MPIMultiVectorBase<double> >
 create_MPIMultiVectorBase(
-	const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
-	,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
-	,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
-	);
+  const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
+  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
+  );
 
 /** \brief Create an <tt>const</tt> <tt>MPIMultiVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Epetra_MultiVector</tt> object.
@@ -194,10 +194,10 @@ create_MPIMultiVectorBase(
  */
 Teuchos::RefCountPtr<const MPIMultiVectorBase<double> >
 create_MPIMultiVectorBase(
-	const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
-	,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
-	,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
-	);
+  const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
+  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
+  );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_Vector</tt> view from a
  * non-<tt>const</tt> <tt>VectorBase</tt> object if possible.
@@ -223,9 +223,9 @@ create_MPIMultiVectorBase(
  */
 Teuchos::RefCountPtr<Epetra_Vector>
 get_Epetra_Vector(
-	const Epetra_Map                                    &map
-	,const Teuchos::RefCountPtr<VectorBase<double> >    &v
-	);
+  const Epetra_Map                                    &map
+  ,const Teuchos::RefCountPtr<VectorBase<double> >    &v
+  );
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_Vector</tt> view from a
  * <tt>const</tt> <tt>VectorBase</tt> object if possible.
@@ -248,9 +248,9 @@ get_Epetra_Vector(
  */
 Teuchos::RefCountPtr<const Epetra_Vector>
 get_Epetra_Vector(
-	const Epetra_Map                                         &map 
-	,const Teuchos::RefCountPtr<const VectorBase<double> >   &v
-	);
+  const Epetra_Map                                         &map 
+  ,const Teuchos::RefCountPtr<const VectorBase<double> >   &v
+  );
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * non-<tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
@@ -277,9 +277,9 @@ get_Epetra_Vector(
  */
 Teuchos::RefCountPtr<Epetra_MultiVector>
 get_Epetra_MultiVector(
-	const Epetra_Map                                         &map
-	,const Teuchos::RefCountPtr<MultiVectorBase<double> >    &mv
-	);
+  const Epetra_Map                                         &map
+  ,const Teuchos::RefCountPtr<MultiVectorBase<double> >    &mv
+  );
 
 /** \brief Get a <tt>const</tt> <tt>Epetra_MultiVector</tt> view from a
  * <tt>const</tt> <tt>MultiVectorBase</tt> object if possible.
@@ -302,9 +302,9 @@ get_Epetra_MultiVector(
  */
 Teuchos::RefCountPtr<const Epetra_MultiVector>
 get_Epetra_MultiVector(
-	const Epetra_Map                                              &map 
-	,const Teuchos::RefCountPtr<const MultiVectorBase<double> >   &mv
-	);
+  const Epetra_Map                                              &map 
+  ,const Teuchos::RefCountPtr<const MultiVectorBase<double> >   &mv
+  );
 
 } // namespace Thyra
 

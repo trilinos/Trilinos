@@ -166,18 +166,18 @@ bool Thyra::test_single_belos_thyra_solver(
     }
     
 #else // __sun
-		
-		if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
-		success = false;
+    
+    if(out.get()) *out << "\nTest failed since is was not even compiled since __sun was defined!\n";
+    success = false;
 
 #endif // __sun
 
   }
-	catch( const std::exception &excpt ) {
+  catch( const std::exception &excpt ) {
     if(out.get()) *out << std::flush;
-		std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-		success = false;
-	}
+    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
+    success = false;
+  }
    
   return success;
     

@@ -228,7 +228,7 @@ ModelEvaluatorBase::InArgs<double> EpetraModelEvaluator::createInArgs() const
   inArgs.setSupports(IN_ARG_x_dot,epetraInArgs.supports(EME::IN_ARG_x_dot));
   inArgs.setSupports(IN_ARG_x,epetraInArgs.supports(EME::IN_ARG_x));
   inArgs.setSupports(IN_ARG_x_dot_poly,
-		     epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
+         epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
   inArgs.setSupports(IN_ARG_x_poly,epetraInArgs.supports(EME::IN_ARG_x_poly));
   inArgs.setSupports(IN_ARG_t,epetraInArgs.supports(EME::IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha,epetraInArgs.supports(EME::IN_ARG_alpha));
@@ -326,7 +326,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
       Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_dot_poly->degree()));
     for (unsigned int i=0; i<=x_dot_poly->degree(); i++) {
       epetra_ptr = 
-	Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*x_map_, x_dot_poly->getCoefficient(i)));
+  Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*x_map_, x_dot_poly->getCoefficient(i)));
       epetra_x_dot_poly->setCoefficientPtr(i,epetra_ptr);
     }
     epetraInArgs.set_x_dot_poly(epetra_x_dot_poly);
@@ -339,7 +339,7 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
       Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(x_poly->degree()));
     for (unsigned int i=0; i<=x_poly->degree(); i++) {
       epetra_ptr = 
-	Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*x_map_, x_poly->getCoefficient(i)));
+  Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*x_map_, x_poly->getCoefficient(i)));
       epetra_x_poly->setCoefficientPtr(i,epetra_ptr);
     }
     epetraInArgs.set_x_poly(epetra_x_poly);
@@ -449,8 +449,8 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
       Teuchos::rcp(new Teuchos::Polynomial<Epetra_Vector>(f_poly->degree()));
     for (unsigned int i=0; i<=f_poly->degree(); i++) {
       epetra_ptr = 
-	Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_,
-								 f_poly->getCoefficient(i)));
+  Teuchos::rcp_const_cast<Epetra_Vector>(get_Epetra_Vector(*f_map_,
+                 f_poly->getCoefficient(i)));
       epetra_f_poly->setCoefficientPtr(i,epetra_ptr);
     }
     epetraOutArgs.set_f_poly(epetra_f_poly);

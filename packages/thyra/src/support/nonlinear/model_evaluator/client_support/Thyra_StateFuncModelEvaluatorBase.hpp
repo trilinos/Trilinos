@@ -49,13 +49,13 @@ public:
   //@{
 
   /** \brief Returns 0 . */
-	int Np() const;
+  int Np() const;
   /** \brief Returns 0 . */
-	int Ng() const;
+  int Ng() const;
   /** \brief Throws exception. */
-	Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief Throws exception. */
-	Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > get_g_space(int j) const;
   /** \brief Returns this->createInArgs(). */
   ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
   /** \brief Returns this->createInArgs(). */
@@ -101,25 +101,25 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_p_space(int l) const
 {
-	TEST_FOR_EXCEPTION(
-		true,std::logic_error
-		,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_space(l): "
+  TEST_FOR_EXCEPTION(
+    true,std::logic_error
+    ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_p_space(l): "
     "Error, this function was not overridden in *this = \'"<<this->description()<<"\'!"
-		);
-	return Teuchos::null;
+    );
+  return Teuchos::null;
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
 StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
 {
-	TEST_FOR_EXCEPTION(
-		true,std::logic_error
-		,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_g_space(j): "
+  TEST_FOR_EXCEPTION(
+    true,std::logic_error
+    ,"ModelEvaluator<"<<Teuchos::ScalarTraits<Scalar>::name()<<">::get_g_space(j): "
     " Error, this function was not overridden in \'"
     <<this->description()<<"\'!"
-		);
-	return Teuchos::null;
+    );
+  return Teuchos::null;
 }
 
 // Initial guess and upper and lower bounds

@@ -97,8 +97,8 @@ public:
    * <tt>*(*epetraOp)</tt> will be valid past the lifetime of <tt>*this</tt>
    * object which is providing the view!  The client must take special care in
    * the case!
-	 */
-	virtual void getEpetraOpView(
+   */
+  virtual void getEpetraOpView(
     Teuchos::RefCountPtr<Epetra_Operator>   *epetraOp
     ,ETransp                                *epetraOpTransp
     ,EApplyEpetraOpAs                       *epetraOpApplyAs
@@ -150,15 +150,15 @@ public:
    * <tt>*(*epetraOp)</tt> will be valid past the lifetime of <tt>*this</tt>
    * object which is providing the view!  The client must take special care in
    * the case!
-	 */
-	virtual void getEpetraOpView(
+   */
+  virtual void getEpetraOpView(
     Teuchos::RefCountPtr<const Epetra_Operator>   *epetraOp
     ,ETransp                                      *epetraOpTransp
     ,EApplyEpetraOpAs                             *epetraOpApplyAs
     ,EAdjointEpetraOp                             *epetraOpAdjointSupport
     ) const = 0;
 
-	//@}
+  //@}
 
 };	// end class EpetraLinearOpBase
 
