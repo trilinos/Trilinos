@@ -127,10 +127,10 @@ int method(int row, PyObject * values, PyObject * indices) {
   PyArrayObject * indArray = NULL;
   valArray = (PyArrayObject*) PyArray_ContiguousFromObject(values,'d',0,0);
   if (valArray == NULL) goto fail;
-  numValEntries = _PyArray_multiply_list(valArray->dimensions,valArray->nd);
+  numValEntries = (int) PyArray_MultiplyList(valArray->dimensions,valArray->nd);
   indArray = (PyArrayObject*) PyArray_ContiguousFromObject(indices,'i',0,0);
   if (indArray == NULL) goto fail;
-  numIndEntries = _PyArray_multiply_list(indArray->dimensions,indArray->nd);
+  numIndEntries = (int) PyArray_MultiplyList(indArray->dimensions,indArray->nd);
   if (numIndEntries != numValEntries) {
     PyErr_Format(PyExc_ValueError, "values length of %d not equal to indices length %d", 
 		 numValEntries, numIndEntries);
@@ -169,7 +169,7 @@ int method(int row, PyObject * values, PyObject * indices) {
       numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,'i',0,0);
       if (numEntriesArray == NULL) goto fail;
       numEntriesPerRow = (int*) (numEntriesArray->data);
-      listSize = _PyArray_multiply_list(numEntriesArray->dimensions,numEntriesArray->nd);
+      listSize = (int) PyArray_MultiplyList(numEntriesArray->dimensions,numEntriesArray->nd);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of entries has %d",
@@ -205,7 +205,7 @@ int method(int row, PyObject * values, PyObject * indices) {
       numEntriesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numEntriesList,'i',0,0);
       if (numEntriesArray == NULL) goto fail;
       numEntriesPerRow = (int*) numEntriesArray->data;
-      listSize = _PyArray_multiply_list(numEntriesArray->dimensions,numEntriesArray->nd);
+      listSize = (int) PyArray_MultiplyList(numEntriesArray->dimensions,numEntriesArray->nd);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of entries has %d",
@@ -234,7 +234,7 @@ int method(int row, PyObject * values, PyObject * indices) {
     int        lrid          = 0;
     int        numEntries    = 0;
     int        result        = 0;
-    int        dimensions[ ] = { 0 };
+    intp       dimensions[ ] = { 0 };
     double   * values        = NULL;
     int      * indices       = NULL;
     PyObject * valuesArray   = NULL;
@@ -266,7 +266,7 @@ int method(int row, PyObject * values, PyObject * indices) {
   PyObject * ExtractMyRowCopy(int localRow) const {
     int        numEntries    = 0;
     int        result        = 0;
-    int        dimensions[ ] = { 0 };
+    intp       dimensions[ ] = { 0 };
     double   * values        = NULL;
     int      * indices       = NULL;
     PyObject * valuesArray   = NULL;
@@ -312,7 +312,7 @@ int method(int row, PyObject * values, PyObject * indices) {
     int        lcid          = 0;
     int        error         = 0;
     int        numEntries    = 0;
-    int        dimensions[ ] = { 0 };
+    intp       dimensions[ ] = { 0 };
     int      * indices       = NULL;
     double     result        = 0.0;
     double   * values        = NULL;

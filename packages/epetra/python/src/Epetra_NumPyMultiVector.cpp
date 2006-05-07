@@ -51,7 +51,7 @@ double * Epetra_NumPyMultiVector::getArray(PyObject * pyObject)
   // If this fails, build a single vector with length zero to prevent
   // a Bus Error
   if (!tmp_array) {
-    int dimensions[ ] = { 1, 0 };
+    intp dimensions[ ] = { 1, 0 };
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
 
   // If the contiguous PyArrayObject built successfully, make sure it has the correct
@@ -73,8 +73,8 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
 {
   // PyObject argument is an int
   if PyInt_Check(pyObject) {
-    int numVectors = (int) PyInt_AsLong(pyObject);
-    int dimensions[ ] = { numVectors, blockMap.NumMyPoints() };
+    int  numVectors = (int) PyInt_AsLong(pyObject);
+    intp dimensions[ ] = { numVectors, blockMap.NumMyPoints() };
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
     if (tmp_array == NULL) {
       dimensions[0] = 1;
@@ -89,16 +89,16 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
     // If this fails, build a single vector with length zero to
     // prevent a Bus Error
     if (!tmp_array) {
-      int dimensions[ ] = { 1, 0 };
+      intp dimensions[ ] = { 1, 0 };
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
 
     // If the contiguous PyArrayObject built successfully, make sure it has the correct
     // number of dimensions
     } else {
       int   nd            = tmp_array->nd;
-      int   dimensions[ ] = { 1, blockMap.NumMyPoints() };  // Default dimensions
+      intp  dimensions[ ] = { 1, blockMap.NumMyPoints() };  // Default dimensions
       bool  reallocate    = false;
-      int   arraySize     = _PyArray_multiply_list(tmp_array->dimensions,nd);
+      intp  arraySize     = PyArray_MultiplyList(tmp_array->dimensions,nd);
 
       if (nd < 2) {
 	reallocate = true;
@@ -163,7 +163,7 @@ int * Epetra_NumPyMultiVector::getRange(PyObject * range)
 
   // If this fails, generate an array of integers of the same size as the PyObject
   if (tmp_range == NULL) {
-    int dims[ ] = { PyObject_Length(range) };
+    intp dims[ ] = { PyObject_Length(range) };
     tmp_range = (PyArrayObject *) PyArray_SimpleNew(1,dims,PyArray_INT);
     int * data = (int *) tmp_range->data;
     for (int i=0; i<dims[0]; i++) data[i] = i;
@@ -213,7 +213,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_BlockMap & blockMa
   Epetra_MultiVector(blockMap, numVectors, zeroOut)
 {
   // Create the array object
-  int dims[ ] = { numVectors, blockMap.NumMyPoints() };
+  intp dims[ ] = { numVectors, blockMap.NumMyPoints() };
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
@@ -228,7 +228,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(const Epetra_MultiVector & sour
   Epetra_MultiVector(source)
 {
   map = new Epetra_BlockMap(source.Map());
-  int dims[ ] = { NumVectors(), map->NumMyPoints() };
+  intp dims[ ] = { NumVectors(), map->NumMyPoints() };
   double **v = NULL;
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,
@@ -265,7 +265,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   // This shouldn't happen, but it does . . .
   if (NULL == src_array) nd = 2;
   else nd = src_array->nd;
-  int dims[nd];
+  intp dims[nd];
   dims[0] = NumVectors();
   if (NULL == src_array) dims[1] = source.MyLength();
   else for (int i=1; i<nd; i++) dims[i] = src_array->dimensions[i];
@@ -290,7 +290,7 @@ Epetra_NumPyMultiVector::Epetra_NumPyMultiVector(Epetra_DataAccess CV,
   map = new Epetra_BlockMap(source.Map());
 
   // Wrap the Epetra_MultiVector
-  int dims[ ] = { NumVectors(), MyLength() };
+  intp dims[ ] = { NumVectors(), MyLength() };
   double **v  = NULL;
   Epetra_MultiVector::ExtractView(&v);
   array = (PyArrayObject *) PyArray_SimpleNewFromData(2,dims,PyArray_DOUBLE,

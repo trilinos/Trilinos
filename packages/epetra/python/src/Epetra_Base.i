@@ -216,7 +216,7 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 
   PyObject * ListOfColors() {
     int      * list    = self->ListOfColors();
-    int        dims[ ] = { self->NumColors() };
+    intp       dims[ ] = { self->NumColors() };
     int      * data;
     PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
     if (retObj == NULL) goto fail;
@@ -230,7 +230,7 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 
   PyObject * ColorLIDList(int color) {
     int      * list    = self->ColorLIDList(color);
-    int        dims[ ] = { self->NumElementsWithColor(color) };
+    intp       dims[ ] = { self->NumElementsWithColor(color) };
     int      * data;
     PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
     if (retObj == NULL) goto fail;
@@ -244,7 +244,7 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 
   PyObject * ElementColors() {
     int      * list    = self->ElementColors();
-    int        dims[ ] = { self->Map().NumMyElements() };
+    intp       dims[ ] = { self->Map().NumMyElements() };
     int      * data;
     PyObject * retObj  = PyArray_SimpleNew(1,dims,'i');
     if (retObj == NULL) goto fail;

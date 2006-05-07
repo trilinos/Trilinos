@@ -109,8 +109,8 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     } else {
       elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
-						((PyArrayObject*)elementArray)->nd);
+      numMyElements    = (int) PyArray_MultiplyList(((PyArrayObject*)elementArray)->dimensions,
+						    ((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       // Constructor for user-defined, arbitrary distribution of constant-size elements
       returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
@@ -147,8 +147,8 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       } else {
 	elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
 	if (elementArray == NULL) goto fail;
-	numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
-						  ((PyArrayObject*)elementArray)->nd);
+	numMyElements    = (int) PyArray_MultiplyList(((PyArrayObject*)elementArray)->dimensions,
+						      ((PyArrayObject*)elementArray)->nd);
 	myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
 	// Constructor for user-defined, arbitrary distribution of constant-size elements
 	returnBlockMap = new Epetra_BlockMap(numGlobalElements,numMyElements,myGlobalElements,
@@ -159,14 +159,14 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       // Obtain a numpy element array and check
       elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
-						((PyArrayObject*)elementArray)->nd);
+      numMyElements    = (int) PyArray_MultiplyList(((PyArrayObject*)elementArray)->dimensions,
+						    ((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       // Obtain a Numric element size array and check
       elementSizeArray = PyArray_ContiguousFromObject(myElementSizes,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElementSizes = _PyArray_multiply_list(((PyArrayObject*)elementSizeArray)->dimensions,
-						 ((PyArrayObject*)elementSizeArray)->nd);
+      numMyElementSizes = (int) PyArray_MultiplyList(((PyArrayObject*)elementSizeArray)->dimensions,
+						     ((PyArrayObject*)elementSizeArray)->nd);
       if (numMyElements != numMyElementSizes) {
 	PyErr_Format(PyExc_ValueError,
 		     "Element and element size arrays must have same lengths\n"
@@ -188,7 +188,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
   }
 
   PyObject * RemoteIDList(PyObject * GIDList) {
-    int        numIDs[1];
+    intp       numIDs[1];
     int        result;
     int      * GIDData 	 = NULL;
     int      * PIDData 	 = NULL;
@@ -201,8 +201,8 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
     PyObject * returnObj = NULL;
     GIDArray = PyArray_ContiguousFromObject(GIDList,'i',0,0);
     if (GIDArray == NULL) goto fail;
-    numIDs[0] = _PyArray_multiply_list(((PyArrayObject*)GIDArray)->dimensions,
-				       ((PyArrayObject*)GIDArray)->nd);
+    numIDs[0] = PyArray_MultiplyList(((PyArrayObject*)GIDArray)->dimensions,
+				     ((PyArrayObject*)GIDArray)->nd);
     PIDArray  = PyArray_SimpleNew(1,numIDs,PyArray_INT);
     if (PIDArray == NULL) goto fail;
     LIDArray  = PyArray_SimpleNew(1,numIDs,PyArray_INT);
@@ -346,8 +346,8 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
       // Obtain a numpy element array and check
       elementArray = PyArray_ContiguousFromObject(myGlobalElementArray,'i',0,0);
       if (elementArray == NULL) goto fail;
-      numMyElements    = _PyArray_multiply_list(((PyArrayObject*)elementArray)->dimensions,
-						((PyArrayObject*)elementArray)->nd);
+      numMyElements    = (int) PyArray_MultiplyList(((PyArrayObject*)elementArray)->dimensions,
+						    ((PyArrayObject*)elementArray)->nd);
       myGlobalElements = (int *) (((PyArrayObject*)elementArray)->data);
       returnMap = new Epetra_Map(numGlobalElements,numMyElements,myGlobalElements,
 				 indexBase,comm);

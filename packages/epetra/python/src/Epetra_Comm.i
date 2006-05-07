@@ -132,7 +132,7 @@ PyObject* Finalize();
     myCount = PyArray_SIZE(myArray);
     allND   = myArray->nd + 1;
     { // Scope this to make allDims array temporary
-      int allDims[allND];
+      intp allDims[allND];
       allDims[0] = self->NumProc();
       for (int i=1; i<allND; ++i) allDims[i] = myArray->dimensions[i-1];
       allObj = PyArray_SimpleNew(allND, allDims, type);

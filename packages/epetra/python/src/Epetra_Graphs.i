@@ -70,7 +70,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
 {
   array = (PyArrayObject*) PyArray_ContiguousFromObject($input, 'i', 0, 0);
   if (array == NULL) SWIG_exception(SWIG_ValueError,"Invalid sequence of indices");
-  $1 = _PyArray_multiply_list(array->dimensions,array->nd);
+  $1 = (int) PyArray_MultiplyList(array->dimensions,array->nd);
   $2 = (int *) (array->data);
 }
 %typemap(freearg) (int NumIndices, int * Indices) {
@@ -88,7 +88,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
   Py_XDECREF($result);
   if (result == -1) SWIG_exception(SWIG_ValueError,   "Invalid row index"  );
   if (result == -2) SWIG_exception(SWIG_RuntimeError, "Graph not completed");
-  int dims[ ] = { *$1 };
+  intp dims[ ] = { *$1 };
   $result = PyArray_SimpleNewFromData(1,dims,'i',(void*)(*$2));
   if ($result == NULL) SWIG_exception(SWIG_RuntimeError, "Error creating integer array");
 }
@@ -123,7 +123,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
       numIndicesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numIndicesList,'i',0,0);
       if (numIndicesArray == NULL) goto fail;
       numIndicesPerRow = (int*) (numIndicesArray->data);
-      listSize = _PyArray_multiply_list(numIndicesArray->dimensions,numIndicesArray->nd);
+      listSize = (int) PyArray_MultiplyList(numIndicesArray->dimensions,numIndicesArray->nd);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of indices has %d",
@@ -159,7 +159,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
       numIndicesArray = (PyArrayObject*) PyArray_ContiguousFromObject(numIndicesList,'i',0,0);
       if (numIndicesArray == NULL) goto fail;
       numIndicesPerRow = (int*) numIndicesArray->data;
-      listSize = _PyArray_multiply_list(numIndicesArray->dimensions,numIndicesArray->nd);
+      listSize = (int) PyArray_MultiplyList(numIndicesArray->dimensions,numIndicesArray->nd);
       if (listSize != rowMap.NumMyElements()) {
 	PyErr_Format(PyExc_ValueError,
 		     "Row map has %d elements, list of number of indices has %d",
@@ -180,7 +180,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
     int        lrid          = 0;
     int        numIndices    = 0;
     int        result        = 0;
-    int        dimensions[ ] = { 0 };
+    intp       dimensions[ ] = { 0 };
     int      * indices       = NULL;
     PyObject * indicesArray  = NULL;
 
@@ -210,7 +210,7 @@ EXCEPTION_HANDLER(Epetra_CrsGraph,OptimizeStorage)
   PyObject * ExtractMyRowCopy(int localRow) const {
     int        numIndices    = 0;
     int        result        = 0;
-    int        dimensions[ ] = { 0 };
+    intp       dimensions[ ] = { 0 };
     int      * indices       = NULL;
     PyObject * indicesArray  = NULL;
 

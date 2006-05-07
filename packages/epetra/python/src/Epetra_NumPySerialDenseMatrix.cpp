@@ -44,13 +44,13 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
     // If pyObject is a bool, then emulate a bool constructor
     if (PyBool_Check(pyObject)) {
       tmp_bool = (bool) PyInt_AsLong(pyObject);
-      int dimensions[ ] = {0,0};
+      intp dimensions[ ] = {0,0};
       tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
     // If pyObject is an int, then emulate an int-int constructor
     } else {
       if (PyInt_Check(pyObject)) {
-	int numRows = (int) PyInt_AsLong(pyObject);
-	int dimensions[ ] = {numRows, numCols};
+	int  numRows = (int) PyInt_AsLong(pyObject);
+	intp dimensions[ ] = {numRows, numCols};
 	tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,'d');
       // If pyObject is not a bool nor an int, try to build a
       // contiguous 2D PyArrayObject from the pyObject
@@ -62,7 +62,7 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
   }
   // If no array has been correctly constructed, build a zero-by-zero matrix
   if (!tmp_array) {
-    int dimensions[ ] = {0,0};
+    intp dimensions[ ] = {0,0};
     tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
   }
 
@@ -76,7 +76,7 @@ void Epetra_NumPySerialDenseMatrix::setArray()
     array     = tmp_array;
     tmp_array = NULL;
   } else {
-    int dimensions[ ] = {M(), N()};
+    intp dimensions[ ] = {M(), N()};
     array = (PyArrayObject*) PyArray_SimpleNewFromData(2,dimensions,'d',
 						       (void*)Epetra_SerialDenseMatrix::A());
   }
