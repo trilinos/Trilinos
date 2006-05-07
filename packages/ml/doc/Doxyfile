@@ -250,6 +250,7 @@ INPUT                 += ../src/Utils
 INPUT                 += ../src/Coarsen
 INPUT                 += ../src/Main
 INPUT                 += ../src/MLAPI
+INPUT                 += ../src/MatrixFree
 INPUT                 += ../src/NonlinML
 
 # If the value of the INPUT tag contains directories, you can use the 
@@ -279,6 +280,7 @@ FILE_PATTERNS         += ml_*Quadrature*.h
 FILE_PATTERNS         += ml_*Problem*.h
 FILE_PATTERNS         += ml_*Variational*.h
 FILE_PATTERNS         += ml_Workspace.h
+FILE_PATTERNS         += ml_MatrixFreePreconditioner.h
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories 
 # should be searched for input files as well. Possible values are YES and NO. 
