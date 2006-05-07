@@ -48,6 +48,7 @@ INPUT                 += ../src/Utils
 INPUT                 += ../src/Coarsen 
 INPUT                 += ../src/Main
 INPUT                 += ../src/MLAPI
+INPUT                 += ../src/MatrixFree
 INPUT                 += ../src/NonlinML
 
 FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
@@ -72,6 +73,7 @@ FILE_PATTERNS         += ml_*Quadrature*.h
 FILE_PATTERNS         += ml_*Problem*.h
 FILE_PATTERNS         += ml_*Variational*.h
 FILE_PATTERNS         += ml_Workspace.h
+FILE_PATTERNS         += ml_MatrixFreePreconditioner.h
 
 EXAMPLE_PATH           = ../examples/BasicExamples 
 EXAMPLE_PATH          += ../examples/Advanced 
