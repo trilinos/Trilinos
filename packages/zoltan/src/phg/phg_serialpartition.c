@@ -453,6 +453,15 @@ static int seq_part (
     return ZOLTAN_FATAL;
   }
 
+#ifdef DEBUG_FIXED
+  hg->fixed = (int *) ZOLTAN_MALLOC(hg->nVtx*sizeof(int));
+  for (i=0; i<hg->nVtx; i++)
+    hg->fixed[i] = -1;
+  /* TEST: Fix the first two vertices */
+  hg->fixed[0] = 0;
+  hg->fixed[1] = 1;
+#endif
+
   if (hg->fixed) {
     fixed_wgts = (double *) ZOLTAN_CALLOC(p, sizeof(double));
   }
@@ -517,6 +526,9 @@ static int seq_part (
 
   if (hg->fixed) {
     ZOLTAN_FREE(&fixed_wgts);
+#ifdef DEBUG_FIXED
+    ZOLTAN_FREE(&hg->fixed);
+#endif
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -535,8 +547,35 @@ static int coarse_part_linear (
   PHGPartParams *hgp
 )
 {
-  /* Call sequence partitioning with no order array. */
-  return seq_part(zz, hg, NULL, p, part_sizes, part, hgp);  
+    int i, offset, err=0, *order=NULL;
+    static char *yo = "coarse_part_linear";
+
+    if (!(order  = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
+        ZOLTAN_FREE ((void**) &order);
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+
+    /* Make sure all procs do different variations of linear partitioning.
+       We achieve diversity by picking different starting vertices.
+       The vertex ordering is still linear, but with cyclic "wrap-around".
+     */
+    if (zz->Proc == 0)
+      offset = 0;  /* Special case for proc 0 is not really necessary */
+    else
+      offset = Zoltan_Rand(NULL) % (hg->nVtx);
+
+    for (i=0; i<hg->nVtx; i++) {
+        order[i] = offset + i;
+        if (order[i] >= hg->nVtx) 
+          order[i] -= hg->nVtx;
+    }
+
+    /* Call sequence partitioning with order array. */
+    err = seq_part (zz, hg, order, p, part_sizes, part, hgp);
+
+    ZOLTAN_FREE ((void**) &order);
+    return err;
 }
 
 
