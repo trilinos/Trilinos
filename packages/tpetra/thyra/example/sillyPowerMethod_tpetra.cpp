@@ -4,6 +4,7 @@
 #include "Thyra_TpetraThyraWrappers.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
@@ -58,6 +59,11 @@ bool runPowerMethodExample(
 
   if(verbose)
     *out << "\n***\n*** Running power method example using scalar type = \'" << ST::name() << "\' ...\n***\n" << std::scientific;
+
+#ifdef HAVE_MPI
+  MPI_Comm mpiComm = MPI_COMM_WORLD;
+#endif
+
 
   //
   // (1) Setup the initial tridiagonal operator
@@ -146,6 +152,8 @@ int main(int argc, char *argv[])
   bool success = true;
   bool verbose = true;
   bool result;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

@@ -5,6 +5,9 @@
 #include "Thyra_TpetraTypes.hpp"
 #include "Thyra_MPIVectorSpaceBase.hpp"
 #include "Thyra_MPIVectorBase.hpp"
+#ifdef HAVE_MPI
+#include "Tpetra_MpiComm.hpp"
+#endif
 
 namespace Thyra {
 
@@ -267,7 +270,7 @@ Thyra::create_VectorSpace(
   MPI_Comm mpiComm;
 #ifdef HAVE_MPI
   const Tpetra::MpiComm<Ordinal,Scalar>
-    *tpetra_mpi_comm = dynamic_cast<const Tpetra::MpiComm<Ordinal,Scalar>*>(&tpetra_vs->Comm());
+    *tpetra_mpi_comm = dynamic_cast<const Tpetra::MpiComm<Ordinal,Scalar>*>(&tpetra_vs->comm());
   if(tpetra_mpi_comm) {
     //std::cout << "EpetraVectorSpace::initialize(...): Using an Tpetra::MpiComm<Ordinal,Scalar>!\n";
     mpiComm = tpetra_mpi_comm->getMpiComm();
