@@ -66,20 +66,8 @@ namespace Teuchos
 			//! Add a content line
 			void addContent(const string& contentLine);
 
-			//! Write as a string
-			string toString() const ;
-
 			//! Return the tag string
 			const string& getTag() const {return tag_;}
-
-			//! Write the header
-			string header() const ;
-
-			//! Write the header terminated as <Header/>
-			string terminatedHeader() const ;
-
-			//! Write the footer
-			string footer() const {return "</" + getTag() + ">";}
 
 			//! Determine whether an attribute exists
 			bool hasAttribute(const string& name) const 
@@ -101,13 +89,28 @@ namespace Teuchos
 			//! Look up a content line by index
 			const string& getContentLine(int i) const {return content_[i];}
 
-      //!  Print to stream with the given indentation level
+      //!  Print to stream with the given indentation level. Output will be well-formed XML.
       void print(ostream& os, int indent) const ;
+
+			//! Write as a string. Output may be ill-formed XML.
+			string toString() const ;
+
+			//! Write the header
+			string header(bool strictXML = false) const ;
+
+			//! Write the header terminated as <Header/>
+			string terminatedHeader(bool strictXML = false) const ;
+
+			//! Write the footer
+			string footer() const {return "</" + getTag() + ">";}
 
 		private:
 
       //! Print content lines using the given indentation level
       void printContent(ostream& os, int indent) const ;
+  
+      //! Convert attribute value text into well-formed XML
+      static string XMLifyAttVal(const string &attval);
 
 			string tag_;
 			Map attributes_;

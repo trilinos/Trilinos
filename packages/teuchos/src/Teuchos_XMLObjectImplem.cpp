@@ -73,40 +73,107 @@ const XMLObject& XMLObjectImplem::getChild(int i) const
 	return children_[i];
 }
 
-string XMLObjectImplem::header() const
+string XMLObjectImplem::header(bool strictXML) const
 {
 	string rtn = "<" + tag_;
       
   for (Map::const_iterator i=attributes_.begin(); i!=attributes_.end(); ++i)
 		{
-			rtn += " " + (*i).first + "=\"" + (*i).second + "\"";
+      if (strictXML) {
+			  rtn += " " 
+            + (*i).first 
+            + "="
+            + XMLifyAttVal((*i).second);
+      }
+      else {
+			  rtn += " " + (*i).first + "=\"" + (*i).second + "\"";
+      }
 		}
-
+  
   rtn += ">";
 	return rtn;
 }
 
-string XMLObjectImplem::terminatedHeader() const
+string XMLObjectImplem::XMLifyAttVal(const string &attval) {
+  string ret;
+  bool hasQuot, hasApos;
+  char delim;
+
+  if (attval.find("\"") == string::npos) {
+    hasQuot = false;
+  }
+  else {
+    hasQuot = true;
+  }
+
+  if (attval.find("\'") == string::npos) {
+    hasApos = false;
+  }
+  else {
+    hasApos = true;
+  }
+
+  if (!hasQuot || hasApos) {
+    delim = '\"'; // wrap the attribute value in "
+  }
+  else {
+    delim = '\''; // wrap the attribute value in '
+  }
+
+  // Rules:
+  // "-wrapped string cannot contain a literal "
+  // '-wrapped string cannot contain a literal '
+  // attribute value cannot contain a literal <
+  // attribute value cannot contain a literal &
+  ret.push_back(delim);
+  for (string::const_iterator i=attval.begin(); i != attval.end(); i++) {
+    if (*i == delim) {
+      if (delim == '\'') ret.append("&apos;");
+      else if (delim == '\"') ret.append("&quot;");
+    }
+    else if (*i == '&') {
+      ret.append("&amp;");
+    }
+    else if (*i == '<') {
+      ret.append("&lt;");
+    }
+    else {
+      ret.push_back(*i);  
+    }
+  }
+  ret.push_back(delim);
+
+  return ret;
+}
+
+string XMLObjectImplem::terminatedHeader(bool strictXML) const
 {
 	string rtn = "<" + tag_;
       
   for (Map::const_iterator i=attributes_.begin(); i!=attributes_.end(); ++i)
 		{
-			rtn += " " + (*i).first + "=\"" + (*i).second + "\"";
+      if (strictXML) {
+			  rtn += " " 
+            + (*i).first 
+            + "="
+            + XMLifyAttVal((*i).second);
+      }
+      else {
+			  rtn += " " + (*i).first + "=\"" + (*i).second + "\"";
+      }
 		}
 
   rtn += "/>";
-
 	return rtn;
 }
 
 string XMLObjectImplem::toString() const
 {
   string rtn;
-
+  
   if (content_.length()==0 && children_.length()==0) 
     {
-      rtn= terminatedHeader() + "\n";
+      rtn = terminatedHeader() + "\n";
     }
   else
     {
@@ -126,7 +193,7 @@ string XMLObjectImplem::toString() const
             {
               rtn += content_[i];
             }
-            rtn += "\n";
+          rtn += "\n";
         }
       for (int i=0; i<children_.length(); i++)
         {
@@ -143,12 +210,12 @@ void XMLObjectImplem::print(ostream& os, int indent) const
   
   if (content_.length()==0 && children_.length()==0) 
     {
-      os << terminatedHeader() << endl;
+      os << terminatedHeader(true) << endl;
       return;
     }
   else
     {
-      os << header() << endl;
+      os << header(true) << endl;
       printContent(os, indent+2);
       
       for (int i=0; i<children_.length(); i++)
