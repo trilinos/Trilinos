@@ -40,7 +40,6 @@ TreeBuildingXMLHandler::TreeBuildingXMLHandler()
 
 void TreeBuildingXMLHandler::characters(const string& chars)
 {
-  if (StrUtils::isWhite(chars)) return;
   TEST_FOR_EXCEPTION(current_.isEmpty(), std::logic_error,
                      "TreeBuildingXMLHandler::trying to add content to an empty node");
                         
