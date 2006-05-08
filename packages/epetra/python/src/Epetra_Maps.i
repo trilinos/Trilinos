@@ -246,7 +246,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
   }
 
   PyObject * MyGlobalElements() {
-    int        numEls[1];
+    intp       numEls[1];
     int        result;
     int      * geData  = NULL;
     PyObject * geArray = NULL;
@@ -267,7 +267,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
   }
 
   PyObject * FirstPointInElementList() {
-    int        numEls[1];
+    intp       numEls[1];
     int      * result;
     int      * fpeData  = NULL;
     PyObject * fpeArray = NULL;
@@ -284,7 +284,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
   }
 
   PyObject * ElementSizeList() {
-    int        numEls[1];
+    intp       numEls[1];
     int        result;
     int      * eslData  = NULL;
     PyObject * eslArray = NULL;
@@ -305,7 +305,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
   }
 
   PyObject * PointToElementList() {
-    int        numPts[1];
+    intp       numPts[1];
     int        result;
     int      * pteData  = NULL;
     PyObject * pteArray = NULL;
@@ -363,7 +363,7 @@ EXCEPTION_HANDLER(Epetra_Import  ,Epetra_Import   )
 // Import/Export extensions are done with a couple of nested macros
 %define MOVER_METHOD(methodName, numMethod)
   PyObject * methodName() {
-    int        numIDs[]    = {self->numMethod()};
+    intp       numIDs[]    = {self->numMethod()};
     int      * ids         = NULL;
     int      * returnData  = NULL;
     PyObject * returnArray = PyArray_SimpleNew(1,numIDs,'i');
