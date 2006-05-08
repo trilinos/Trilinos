@@ -152,7 +152,8 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_XMLObjectImplem.cpp \
 	$(srcdir)/Teuchos_XMLParameterListHelpers.cpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.cpp \
-	$(srcdir)/Teuchos_XMLParameterListWriter.cpp
+	$(srcdir)/Teuchos_XMLParameterListWriter.cpp \
+	$(srcdir)/Teuchos_XMLParser.cpp
 am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_CommandLineProcessor.$(OBJEXT) \
 	Teuchos_CompObject.$(OBJEXT) Teuchos_Describable.$(OBJEXT) \
@@ -187,7 +188,8 @@ am__objects_4 = Teuchos_ExpatHandlerAdapter.$(OBJEXT) \
 	Teuchos_XMLObjectImplem.$(OBJEXT) \
 	Teuchos_XMLParameterListHelpers.$(OBJEXT) \
 	Teuchos_XMLParameterListReader.$(OBJEXT) \
-	Teuchos_XMLParameterListWriter.$(OBJEXT)
+	Teuchos_XMLParameterListWriter.$(OBJEXT) \
+	Teuchos_XMLParser.$(OBJEXT)
 @HAVE_TEUCHOS_EXTENDED_TRUE@am__objects_5 = $(am__objects_4)
 am_libteuchos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
@@ -241,6 +243,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLParameterListHelpers.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLParameterListReader.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLParameterListWriter.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_XMLParser.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_dyn_cast.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_exit.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -329,7 +332,8 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_XMLObjectImplem.hpp \
 	$(srcdir)/Teuchos_XMLParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.hpp \
-	$(srcdir)/Teuchos_XMLParameterListWriter.hpp
+	$(srcdir)/Teuchos_XMLParameterListWriter.hpp \
+	$(srcdir)/Teuchos_XMLParser.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -608,7 +612,8 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_XMLObjectImplem.hpp \
 	$(srcdir)/Teuchos_XMLParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.hpp \
-	$(srcdir)/Teuchos_XMLParameterListWriter.hpp
+	$(srcdir)/Teuchos_XMLParameterListWriter.hpp \
+	$(srcdir)/Teuchos_XMLParser.hpp
 
 EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
@@ -627,7 +632,8 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_XMLObjectImplem.cpp \
 	$(srcdir)/Teuchos_XMLParameterListHelpers.cpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.cpp \
-	$(srcdir)/Teuchos_XMLParameterListWriter.cpp
+	$(srcdir)/Teuchos_XMLParameterListWriter.cpp \
+	$(srcdir)/Teuchos_XMLParser.cpp 
 
 UTIL_H = \
 	$(srcdir)/Teuchos_Version.hpp
@@ -892,6 +898,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLParameterListHelpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLParameterListReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLParameterListWriter.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_XMLParser.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_dyn_cast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_exit.Po@am__quote@
 
@@ -1662,6 +1669,22 @@ Teuchos_XMLParameterListWriter.obj: $(srcdir)/Teuchos_XMLParameterListWriter.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_XMLParameterListWriter.Po' tmpdepfile='$(DEPDIR)/Teuchos_XMLParameterListWriter.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_XMLParameterListWriter.obj `if test -f '$(srcdir)/Teuchos_XMLParameterListWriter.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_XMLParameterListWriter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_XMLParameterListWriter.cpp'; fi`
+
+Teuchos_XMLParser.o: $(srcdir)/Teuchos_XMLParser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_XMLParser.o -MD -MP -MF "$(DEPDIR)/Teuchos_XMLParser.Tpo" -c -o Teuchos_XMLParser.o `test -f '$(srcdir)/Teuchos_XMLParser.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_XMLParser.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_XMLParser.Tpo" "$(DEPDIR)/Teuchos_XMLParser.Po"; else rm -f "$(DEPDIR)/Teuchos_XMLParser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_XMLParser.cpp' object='Teuchos_XMLParser.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_XMLParser.Po' tmpdepfile='$(DEPDIR)/Teuchos_XMLParser.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_XMLParser.o `test -f '$(srcdir)/Teuchos_XMLParser.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_XMLParser.cpp
+
+Teuchos_XMLParser.obj: $(srcdir)/Teuchos_XMLParser.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_XMLParser.obj -MD -MP -MF "$(DEPDIR)/Teuchos_XMLParser.Tpo" -c -o Teuchos_XMLParser.obj `if test -f '$(srcdir)/Teuchos_XMLParser.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_XMLParser.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_XMLParser.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_XMLParser.Tpo" "$(DEPDIR)/Teuchos_XMLParser.Po"; else rm -f "$(DEPDIR)/Teuchos_XMLParser.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_XMLParser.cpp' object='Teuchos_XMLParser.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_XMLParser.Po' tmpdepfile='$(DEPDIR)/Teuchos_XMLParser.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_XMLParser.obj `if test -f '$(srcdir)/Teuchos_XMLParser.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_XMLParser.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_XMLParser.cpp'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

@@ -170,7 +170,9 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_XMLObjectImplem.hpp \
 	$(srcdir)/Teuchos_XMLParameterListHelpers.hpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.hpp \
-	$(srcdir)/Teuchos_XMLParameterListWriter.hpp
+	$(srcdir)/Teuchos_XMLParameterListWriter.hpp \
+	$(srcdir)/Teuchos_XMLParser.hpp
+
 
 EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
@@ -189,7 +191,8 @@ EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_XMLObjectImplem.cpp \
 	$(srcdir)/Teuchos_XMLParameterListHelpers.cpp \
 	$(srcdir)/Teuchos_XMLParameterListReader.cpp \
-	$(srcdir)/Teuchos_XMLParameterListWriter.cpp
+	$(srcdir)/Teuchos_XMLParameterListWriter.cpp \
+	$(srcdir)/Teuchos_XMLParser.cpp 
 
 UTIL_H = \
 	$(srcdir)/Teuchos_Version.hpp
