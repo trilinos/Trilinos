@@ -120,8 +120,8 @@ endif
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
 
-PARMETIS_LIBPATH        = -L/home/vjleung/TSTT/ParMETIS3_1
-PARMETIS_INCPATH        = -I/home/vjleung/TSTT/ParMETIS3_1
+PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3 
+PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
@@ -131,8 +131,8 @@ PARMETIS_INCPATH        = -I/home/vjleung/TSTT/ParMETIS3_1
 NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
 NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
 
-#PATOH_LIBPATH           = -L/Net/local/proj/zoltan/arch/pclinux/PaToH
-#PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/pclinux/PaToH
+PATOH_LIBPATH           = -L/Net/local/proj/zoltan/arch/pclinux/PaToH
+PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/pclinux/PaToH
 
 #PARKWAY_LIBPATH        = -L/home/umit/prgs/parkway-2.0
 #PARKWAY_INCPATH        = -I/home/umit/prgs/parkway-2.0
