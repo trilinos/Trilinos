@@ -95,10 +95,10 @@ double * Epetra_NumPyMultiVector::getArray(const Epetra_BlockMap & blockMap,
     // If the contiguous PyArrayObject built successfully, make sure it has the correct
     // number of dimensions
     } else {
-      int   nd            = tmp_array->nd;
-      intp  dimensions[ ] = { 1, blockMap.NumMyPoints() };  // Default dimensions
-      bool  reallocate    = false;
-      intp  arraySize     = PyArray_MultiplyList(tmp_array->dimensions,nd);
+      int  nd            = tmp_array->nd;
+      intp dimensions[ ] = { 1, blockMap.NumMyPoints() };  // Default dimensions
+      bool reallocate    = false;
+      intp arraySize     = PyArray_MultiplyList(tmp_array->dimensions,nd);
 
       if (nd < 2) {
 	reallocate = true;
@@ -338,11 +338,11 @@ PyObject * Epetra_NumPyMultiVector::ExtractView() const
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::Dot(const Epetra_MultiVector & a) const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
-  double   * data;  
+  double   * data;
 
   int status = Epetra_MultiVector::Dot(a, result);
 
@@ -360,9 +360,9 @@ PyObject * Epetra_NumPyMultiVector::Dot(const Epetra_MultiVector & a) const {
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::Norm1() const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
   double   * data;
 
@@ -382,9 +382,9 @@ PyObject * Epetra_NumPyMultiVector::Norm1() const {
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::Norm2() const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
   double   * data;
 
@@ -404,9 +404,9 @@ PyObject * Epetra_NumPyMultiVector::Norm2() const {
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::NormInf() const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
   double   * data;  
 
@@ -426,9 +426,9 @@ PyObject * Epetra_NumPyMultiVector::NormInf() const {
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::NormWeighted(const Epetra_MultiVector & weights) const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
   double   * data;  
 
@@ -448,9 +448,9 @@ PyObject * Epetra_NumPyMultiVector::NormWeighted(const Epetra_MultiVector & weig
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::MinValue() const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
   double   * data;  
 
@@ -470,9 +470,9 @@ PyObject * Epetra_NumPyMultiVector::MinValue() const {
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::MaxValue() const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
   double   * data;  
 
@@ -492,9 +492,9 @@ PyObject * Epetra_NumPyMultiVector::MaxValue() const {
 
 // =============================================================================
 PyObject * Epetra_NumPyMultiVector::MeanValue() const {
-  int    n = NumVectors();
-  double result[n];
-  intp    numVectors[ ] = {n};
+  int        n = NumVectors();
+  double     result[n];
+  intp       numVectors[ ] = {n};
   PyObject * po;
   double   * data;  
 
