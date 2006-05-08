@@ -225,7 +225,11 @@ class EpetraMultiVectorTestCase(unittest.TestCase):
         self.assertEquals(emv2.NumVectors(),1)
         self.assertEquals(emv2.MyLength(),self.length)
         self.assertEquals(emv2.GlobalLength(), self.length*comm.NumProc())
-        self.failUnless((emv2[0,:] == emv1[1,:]).all())
+        for i in range(emv1.MyLength()):
+            print "%d: %d %g %g %g" % (self.comm.MyPID(), i, emv1[1,i],
+                                       emv2[0,i], emv1[1,i]-emv2[0,i])
+            self.assertEqual(emv1[1,i], emv2[0,i])
+        #self.failUnless((emv2[0,:] == emv1[1,:]).all())
 
     def testConstructor19(self):
         "Test Epetra.MultiVector (Copy,MultiVector,range-of-4) constructor"
