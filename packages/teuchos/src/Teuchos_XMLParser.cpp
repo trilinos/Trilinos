@@ -544,7 +544,7 @@ int XMLParser::assertChar(unsigned char cexp)
   if (_is->readBytes(&c,1) < 1) {
     return 1;
   }
-  if (c != cwant) {
+  if (c != cexp) {
     return 2;
   }
   return 0; 
