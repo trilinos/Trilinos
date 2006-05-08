@@ -813,12 +813,13 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated( EInArgsMember
 {
   this->_setSupports(arg,false);
   switch(arg) {
-    case IN_ARG_x:
+    case IN_ARG_x: {
       this->_setSupports(IN_ARG_x_dot,false);
       this->_setSupports(IN_ARG_x_dot_poly,false);
       this->_setSupports(IN_ARG_alpha,false);
       this->_setSupports(IN_ARG_beta,false);
       break;
+    }
     default:
       TEST_FOR_EXCEPTION(
         true ,std::logic_error
@@ -1257,11 +1258,12 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated( EInArgsMembers arg )
 {
   switch(arg) {
-    case IN_ARG_x:
+    case IN_ARG_x: {
       const int Ng = this->Ng();
       for( int j = 0; j < Ng; ++j )
         this->_setSupports(OUT_ARG_DgDx,j,DerivativeSupport());
       break;
+    }
     default:
       TEST_FOR_EXCEPTION(
         true ,std::logic_error
@@ -1275,7 +1277,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated( EOutArgsMemb
 {
   this->_setSupports(arg,false);
   switch(arg) {
-    case OUT_ARG_f:
+    case OUT_ARG_f: {
       this->_setSupports(OUT_ARG_W,false);
       this->_setSupports(OUT_ARG_W_op,false);
       this->_setSupports(OUT_ARG_f_poly,false);
@@ -1283,6 +1285,7 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated( EOutArgsMemb
       for( int l = 0; l < Np; ++l )
         this->_setSupports(OUT_ARG_DfDp,l,DerivativeSupport());
       break;
+    }
     default:
       TEST_FOR_EXCEPTION(
         true ,std::logic_error
