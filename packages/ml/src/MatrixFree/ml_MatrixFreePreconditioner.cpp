@@ -248,7 +248,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   omega_ = List_.get("smoother: damping", omega_);
   ML_Set_PrintLevel(OutputLevel);
   bool LowMemory = List_.get("low memory", true);
-  double AllocationFactor = List_.get("AP allocation factor", 3.0);
+  double AllocationFactor = List_.get("AP allocation factor", 0.5);
 
   verbose_ = (MyPID() == 0 && ML_Get_PrintLevel() > 5);
 
@@ -276,7 +276,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   else
     ML_CHK_ERR(-4); // not recognized
 
-  if (AllocationFactor < 0.0) ML_CHK_ERR(-1);
+  if (AllocationFactor <= 0.0)
+    ML_CHK_ERR(-1); // should be positive
 
   // =============================== //
   // basic checkings and some output //
@@ -311,8 +312,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     cout << "Preconditioner type            = " << PrecType << endl;
     cout << "Smoother type                  = " << SmootherType << endl;
     cout << "Coloring type                  = " << ColoringType << endl;
+    cout << "Allocation factor              = " << AllocationFactor << endl;
     cout << "Number of V-cycles for C       = " << List_.sublist("ML list").get("cycle applications", 1) << endl;
-    cout << "Allocation factor for AP       = " << AllocationFactor << endl;
     cout << endl;
   }
 
@@ -422,6 +423,14 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
   Epetra_CrsMatrix* GraphCoarse;
   ML_CHK_ERR(ML_Operator2EpetraCrsMatrix(CoarseGraph_ML, GraphCoarse));
+
+  // used later to estimate the entries in AP
+  ML_Operator* CoarseAP_ML = ML_Operator_Create(Comm_ML());
+  ML_2matmult(Graph_ML, BlockPtent_ML, CoarseAP_ML, ML_CSR_MATRIX);
+
+  int AP_MaxNnzRow, itmp = CoarseAP_ML->max_nz_per_row;
+  Comm().MaxAll(&itmp, &AP_MaxNnzRow, 1);
+  ML_Operator_Destroy(&CoarseAP_ML);
 
   int NumAggregates = BlockPtent_ML->invec_leng;
   ML_Operator_Destroy(&BlockRtent_ML);
@@ -640,27 +649,15 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
   RefCountPtr<Epetra_FECrsMatrix> AP;
   
-  try
-  {
-    // 9 should be for a Cartesian 3D grid. 6 seems a good compromize to me.
-    // If this number is too low, the Cray XT3 goes nuts and takes forever.
-    AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, (int)(NullSpaceDim * AllocationFactor)));
-    if (AP.get() == 0) throw(-1);
-  }
-  catch (...)
-  {
-    // try again, smaller memory
-    try
-    {
-      // this should be for a Cartesian 3D grid.
-      AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, NullSpaceDim));
-      if (AP.get() == 0) throw(-1);
-    }
-    catch (...)
-    {
-      AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, 0));
-    }
-  }
+  // try to get a good estimate of the nonzeros per row.
+  // This is a compromize between efficiency -- that is, reduce
+  // the memory allocation processes, and memory usage -- that, is
+  // overestimating can actually kill the code. Basically, this is
+  // all junk due to our dear friend, the Cray XT3.
+  
+  AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, (int)
+                                  (AllocationFactor * AP_MaxNnzRow * NullSpaceDim)));
+  if (AP.get() == 0) throw(-1);
 
   if (!LowMemory)
   {
@@ -808,11 +805,11 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     {
       if (ML_Get_PrintLevel() > 8 && Comm().MyPID() == 0)
       {
-        if (ic % 10 == 0)
+        if (ic % 20 == 0)
           cout << "Processing color " << flush;
 
         cout << ic << " " << flush;
-        if (ic % 10 == 9 || ic == NumColors - 1)
+        if (ic % 20 == 19 || ic == NumColors - 1)
           cout << endl;
         if (ic == NumColors - 1) cout << endl;
       }
@@ -850,6 +847,9 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
       // populate the actual AP operator, skip some controls to make it faster
 
+      vector<int> InsertCols(NullSpaceDim * NumPDEEqns_);
+      vector<double> InsertValues(NullSpaceDim * NumPDEEqns_);
+
       for (int i = 0; i < NumAggregates; ++i)
       {
         for (int j = 0; j < aggregates[i].size(); ++j)
@@ -860,21 +860,25 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
           int GCID = CoarseMap.GID(i * NullSpaceDim);
           //assert (GCID != -1); 
           int color = (*Colors)[i] - 1;
-          if (color != ic)
-            continue;
+          if (color != ic) continue;
 
           for (int k = 0; k < NumPDEEqns_; ++k)
+          {
+            int count = 0;
+            int GRID2 = GRID * NumPDEEqns_ + k;
             for (int j = 0; j < NullSpaceDim; ++j)
             {
               double val = ExtColoredAP[j][LRID * NumPDEEqns_ + k];
               if (val != 0.0)
               {
-                int GRID2 = GRID * NumPDEEqns_ + k;
-                int GCID2 = GCID + j;
-                AP->InsertGlobalValues(1, &GRID2, 1, &GCID2, &val);
-                //if (ierr < 0) ML_CHK_ERR(ierr);
+                InsertCols[count] = GCID + j;
+                InsertValues[count] = val;
+                ++count;
               }
             }
+            AP->InsertGlobalValues(1, &GRID2, count, &InsertCols[0], 
+                                   &InsertValues[0]);
+          }
         }
       }
     }
@@ -890,9 +894,18 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
   AP->GlobalAssemble(false);
   AP->FillComplete(CoarseMap, FineMap);
-  // The following can indeed crash the code because of
-  // memory requirements.
-  // FIXME AP->OptimizeStorage();
+
+#if 0
+  try
+  {
+    AP->OptimizeStorage();
+  }
+  catch(...)
+  {
+    // a memory error was reported, typically ReportError.
+    // We just continue with fingers crossed.
+  }
+#endif
 
   AddAndResetStartTime("computation of the final AP", true); 
 
@@ -929,7 +942,6 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
           double& val = NullSpace[k][LCID];
 
           int GRID = CoarseMap.GID(AID * NullSpaceDim + k);
-          assert (GRID != -1); // FIXME
           int ierr = R_->InsertGlobalValues(GRID, 1, &val, &GCID);
           if (ierr < 0)
             ML_CHK_ERR(-1);
@@ -939,7 +951,17 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   NodesOfAggregate.resize(0);
 
   R_->FillComplete(FineMap, CoarseMap);
-  R_->OptimizeStorage();
+#if 0
+  try
+  {
+    R_->OptimizeStorage();
+  }
+  catch(...)
+  {
+    // a memory error was reported, typically ReportError.
+    // We just continue with fingers crossed.
+  }
+#endif
 
   ML_Operator* R_ML = ML_Operator_Create(Comm_ML());
   ML_Operator_WrapEpetraMatrix(R_.get(), R_ML);
