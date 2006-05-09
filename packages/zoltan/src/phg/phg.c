@@ -38,6 +38,7 @@ extern "C" {
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
+  {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
   {"FINAL_OUTPUT",                    NULL,  "INT",    0},
   {"CHECK_GRAPH",                     NULL,  "INT",    0},
@@ -488,13 +489,14 @@ int Zoltan_PHG_Initialize_Params(
   PHGPartParams *hgp
 )
 {
-  int err;
+  int err=ZOLTAN_OK;
   char *yo = "Zoltan_PHG_Initialize_Params";
   int nProc;
   int usePrimeComm;
   MPI_Comm communicator;
   char add_obj_weight[MAX_PARAM_STRING_LEN];
   char edge_weight_op[MAX_PARAM_STRING_LEN];
+  char cut_objective[MAX_PARAM_STRING_LEN];
 
   memset(hgp, 0, sizeof(*hgp)); /* in the future if we forget to initialize
                                    another param at least it will be 0 */
@@ -531,7 +533,9 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_BAL_TOL_ADJUSTMENT",
                                  (void*) &hgp->bal_tol_adjustment);  
   Zoltan_Bind_Param(PHG_params, "PARKWAY_SERPART",
-                                 (void *) hgp->parkway_serpart);  
+                                 (void *) hgp->parkway_serpart);
+  Zoltan_Bind_Param(PHG_params, "PHG_CUT_OBJECTIVE",
+                                 (void *) &cut_objective);
   Zoltan_Bind_Param(PHG_params, "ADD_OBJ_WEIGHT",
                                  (void *) add_obj_weight);
   Zoltan_Bind_Param(PHG_params, "PHG_EDGE_WEIGHT_OPERATION",
@@ -545,14 +549,15 @@ int Zoltan_PHG_Initialize_Params(
   
   
   /* Set default values */
-  strncpy(hgp->hgraph_pkg,       "default",  MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redm_str,            "ipm",   MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redm_fast,           "l-ipm", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->coarsepartition_str, "auto",  MAX_PARAM_STRING_LEN);
-  strncpy(hgp->refinement_str,      "fm2",   MAX_PARAM_STRING_LEN);
-  strncpy(hgp->parkway_serpart,     "patoh", MAX_PARAM_STRING_LEN);
-  strncpy(add_obj_weight,            "none", MAX_PARAM_STRING_LEN);
-  strncpy(edge_weight_op,            "max",  MAX_PARAM_STRING_LEN);
+  strncpy(hgp->hgraph_pkg,       "default", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_str,             "ipm", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_fast,          "l-ipm", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->coarsepartition_str, "auto", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->refinement_str,       "fm2", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->parkway_serpart,    "patoh", MAX_PARAM_STRING_LEN);
+  strncpy(cut_objective,    "connectivity", MAX_PARAM_STRING_LEN);
+  strncpy(add_obj_weight,           "none", MAX_PARAM_STRING_LEN);
+  strncpy(edge_weight_op,            "max", MAX_PARAM_STRING_LEN);
 
   hgp->use_timers = 0;
   hgp->LocalCoarsePartition = 0;
@@ -561,6 +566,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->vtx_scal = NULL;  /* Array for storing vertex degree scale vector. 
                             Should perhaps go in hg structure, not the
                             param struct? */
+  hgp->connectivity_cut = 1; 
   hgp->visit_order = 0;  /* Random */
   hgp->check_graph = 0;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0]; /* Make vector for multiconstraint */
@@ -624,6 +630,16 @@ int Zoltan_PHG_Initialize_Params(
       (hgp->add_obj_weight==PHG_ADD_NO_WEIGHT)){ /* no calculated weight */
 
     hgp->add_obj_weight = PHG_ADD_UNIT_WEIGHT; /* default object weight */
+  }
+
+  if (!strcasecmp(cut_objective, "default")
+      || !strcasecmp(cut_objective, "connectivity"))
+      hgp->connectivity_cut = 1;
+  else if (!strcasecmp(cut_objective, "hyperedges"))
+      hgp->connectivity_cut = 0;
+  else {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid PHG_CUT_OBJECTIVE parameter.\n");
+      goto End;
   }
 
   if (!strcasecmp(edge_weight_op, "max")){

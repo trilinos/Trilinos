@@ -26,8 +26,9 @@
 /* if you want to disable processor split, set PHG_PROC_SPLIT to 0 */
 #define PHG_PROC_SPLIT 1
 
+
 static int split_hypergraph(int *pins[2], HGraph*, HGraph*, Partition, int,
-                            ZZ*, double *, double *);
+                            ZZ*, double *, double *, int connectivitycut);
 
 
 static int rdivide_and_prepsend(int, int, Partition, ZZ *, HGraph *,
@@ -188,7 +189,7 @@ int Zoltan_PHG_rdivide(
       if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
       
-      ierr = split_hypergraph (pins, hg, left, part, 0, zz, &leftw, &rightw);
+      ierr = split_hypergraph (pins, hg, left, part, 0, zz, &leftw, &rightw, hgp->connectivity_cut);
       if (ierr != ZOLTAN_OK) 
           goto End;
       if (!left->dist_x[hgc->nProc_x]) { /* left is empty */
@@ -204,7 +205,7 @@ int Zoltan_PHG_rdivide(
   if (hi>mid+1) { /* only split if we need it */
       if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
           MEMORY_ERROR;
-      ierr = split_hypergraph (pins, hg, right, part, 1, zz, &rightw, &leftw);
+      ierr = split_hypergraph (pins, hg, right, part, 1, zz, &rightw, &leftw, hgp->connectivity_cut);
   
       if (ierr != ZOLTAN_OK)
           goto End;
@@ -535,7 +536,7 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz,
 
 
 static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition part,
-                             int partid, ZZ *zz, double *splitpw, double *otherpw)
+                             int partid, ZZ *zz, double *splitpw, double *otherpw, int connectivitycut)
 {
   int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
   int edge, i, ierr=ZOLTAN_OK;  
@@ -613,14 +614,17 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg, Partition p
   nhg->nEdge = 0;
   nhg->nPins = 0;
   for (edge = 0; edge < ohg->nEdge; ++edge)
-    if (pins[partid][edge] > 1) { /* edge has at least two vertices in partition:
-                                        we are skipping size 1 nets */
-      nhg->hindex[nhg->nEdge] = nhg->nPins;
-      for (i = ohg->hindex[edge]; i < ohg->hindex[edge+1]; ++i)
-        if (tmap [ohg->hvertex[i]] >= 0)  {
-          nhg->hvertex[nhg->nPins] = tmap[ohg->hvertex[i]];
-          nhg->nPins++;  
-        }
+    if ((pins[partid][edge] > 1)         /* edge has at least two vertices in partition:
+                                            we are skipping size 1 nets */
+        && (connectivitycut              /* if connectivity-1 metric; split the edge */
+            || !pins[1-partid][edge])) { /* if cut-net metric only take if
+                                            it is not a cut net */
+        nhg->hindex[nhg->nEdge] = nhg->nPins;
+        for (i = ohg->hindex[edge]; i < ohg->hindex[edge+1]; ++i)
+          if (tmap [ohg->hvertex[i]] >= 0)  {
+            nhg->hvertex[nhg->nPins] = tmap[ohg->hvertex[i]];
+            nhg->nPins++;  
+          }
         if (nhg->ewgt)
             memcpy(&nhg->ewgt[nhg->nEdge*nhg->EdgeWeightDim], &ohg->ewgt[edge*nhg->EdgeWeightDim],
                    nhg->EdgeWeightDim * sizeof(float));

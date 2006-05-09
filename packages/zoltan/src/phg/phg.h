@@ -107,7 +107,9 @@ struct PHGPartParamsStruct {
                                considered to be dense. */
   float hybrid_keep_factor; /* h-ipm only: keep matches with i.p. values
                                greater than this factor times the mean */
-  char parkway_serpart[MAX_PARAM_STRING_LEN];  /* SerialPartitioner for parKway. */    
+  char parkway_serpart[MAX_PARAM_STRING_LEN];  /* SerialPartitioner for parKway. */
+  int connectivity_cut;     /* 1: if cut_objective==connectivity,
+                               0: if it is hyperedges */
   int add_obj_weight;       /* Calculated weight: unit vertex, non-zeroes,
                                                   or none */
   int edge_weight_op;   /* What to do when more than one process returns a
