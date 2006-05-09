@@ -302,18 +302,19 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     cout << "*** " << endl;
     cout << "*** ML_Epetra::MatrixFreePreconditioner" << endl;
     cout << "***" << endl;
-    cout << "Number of rows and columns     = " << OperatorDomainPoints << endl;
-    cout << "Number of rows per processor   = " << OperatorDomainPoints / Comm().NumProc()
+    cout << "Number of rows and columns      = " << OperatorDomainPoints << endl;
+    cout << "Number of rows per processor    = " << OperatorDomainPoints / Comm().NumProc()
          << " (on average)" << endl;
-    cout << "The graph has " << GraphBlockRows << " rows and " << GraphNnz << " nonzeros" << endl;
-    cout << "Processors used in computation = " << Comm().NumProc() << endl;
-    cout << "Number of PDE equations        = " << NumPDEEqns_ << endl;
-    cout << "Null space dimension           = " << NullSpaceDim << endl;
-    cout << "Preconditioner type            = " << PrecType << endl;
-    cout << "Smoother type                  = " << SmootherType << endl;
-    cout << "Coloring type                  = " << ColoringType << endl;
-    cout << "Allocation factor              = " << AllocationFactor << endl;
-    cout << "Number of V-cycles for C       = " << List_.sublist("ML list").get("cycle applications", 1) << endl;
+    cout << "Number of rows in the graph     = " << GraphBlockRows << endl;
+    cout << "Number of nonzeros in the graph = " << GraphNnz << endl;
+    cout << "Processors used in computation  = " << Comm().NumProc() << endl;
+    cout << "Number of PDE equations         = " << NumPDEEqns_ << endl;
+    cout << "Null space dimension            = " << NullSpaceDim << endl;
+    cout << "Preconditioner type             = " << PrecType << endl;
+    cout << "Smoother type                   = " << SmootherType << endl;
+    cout << "Coloring type                   = " << ColoringType << endl;
+    cout << "Allocation factor               = " << AllocationFactor << endl;
+    cout << "Number of V-cycles for C        = " << List_.sublist("ML list").get("cycle applications", 1) << endl;
     cout << endl;
   }
 
