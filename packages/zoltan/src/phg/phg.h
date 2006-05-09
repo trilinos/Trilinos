@@ -199,6 +199,13 @@ extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
 extern int Zoltan_PHG_PaToH(ZZ *, HGraph *, int, int *, PHGPartParams*);    
 extern int Zoltan_PHG_ParKway(ZZ *, HGraph *, int, Partition, PHGPartParams* );
+
+/* Functions that are used in more than one PHG source file, 
+   but not called from outside PHG. */
+#include "zz_heap.h"  /* defines type HEAP */
+int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
+    int *part, int **cut, double *gain, HEAP *heap);
+
     
 
 #ifdef __cplusplus

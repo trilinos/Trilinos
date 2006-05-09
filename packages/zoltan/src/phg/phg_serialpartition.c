@@ -17,8 +17,8 @@ extern "C" {
 #endif
 
 #include "zz_sort.h"
-#include "phg.h"
 #include "zz_heap.h"
+#include "phg.h"
     
 /* If adding a new coarse partitioning fn, add prototype here 
  * AND add entry to CoarsePartitionFns array 
@@ -615,65 +615,10 @@ static int coarse_part_random (
 
 
 /*********************************************************************/
-/* Greedy ordering/partitioning based on a priority function
-   for selecting vertices. A heap is used as a priority queue. */
- 
-int Zoltan_PHG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
-                            int *part, int **cut, double *gain, HEAP *heap)
-{
-    int i, j, edge, v;
 
-    gain[vertex] = 0.0;
-    part[vertex] = dest;
+/* Greedy growing algorithm. */
 
-    for (i = hg->vindex[vertex]; i < hg->vindex[vertex+1]; i++) {
-        edge = hg->vedge[i];
-        if (cut[sour][edge] == 1) {
-            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
-                v = hg->hvertex[j];
-                gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
-                if (heap)
-                    Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
-            }
-        }
-        else if (cut[sour][edge] == 2) {
-            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
-                v = hg->hvertex[j];
-                if (part[v] == sour) {
-                    gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
-                    if (heap)
-                        Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
-                    break;
-                }
-            }
-        }
-
-        if (cut[dest][edge] == 0) {
-            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
-                v = hg->hvertex[j];
-                gain[v] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
-                if (heap)
-                    Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
-            }
-        }
-        else if (cut[dest][edge] == 1) {
-            for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++) {
-                v = hg->hvertex[j];
-                if (v != vertex && part[v] == dest) {
-                    gain[v] -= (hg->ewgt ? hg->ewgt[edge] : 1.0);
-                    if (heap)
-                        Zoltan_Heap_Change_Value(&heap[part[v]], v, gain[v]);
-                    break;
-                }
-            }
-        }
-        cut[sour][edge]--;
-        cut[dest][edge]++;
-    }
-    return ZOLTAN_OK;
-}
-
-static int greedy_order (
+static int greedy_grow_part (
   ZZ *zz,
   HGraph *hg,		/* Hypergraph. */
   int *order,		/* Order array. On exit, order[i] is the i'th vertex. */
@@ -696,7 +641,7 @@ static int greedy_order (
   double damp_factor, psize_sum= 0.0;
   char msg[128];
   HEAP h[2];
-  static char *yo = "greedy_order";
+  static char *yo = "greedy_grow_part";
 
   bfsnumber = 0;  /* Assign next vertex this bfs number */
   pnumber = 0;    /* Assign next vertex this partition number */
@@ -857,7 +802,8 @@ static int greedy_order (
     /* Update gain values for nbors. */
     if (priority_mode == 0) {
       /* Move from visited=0 to visited=1. */
-      Zoltan_PHG_move_vertex(hg, vtx, 0, 1, visited, cut, gain, h);
+      /* We use Zoltan_HG_move_vertex from the refinement code. */
+      Zoltan_HG_move_vertex(hg, vtx, 0, 1, visited, cut, gain, h);
     }
     else {
       if (part[vtx] == pnumber) {
@@ -957,7 +903,7 @@ static int coarse_part_greedy (
   start = Zoltan_Rand(NULL) % (hg->nVtx);
 
   /* Call greedy_order. */
-  err = greedy_order(zz, hg, order, start, pri_mode, p, part_sizes, part, hgp);
+  err = greedy_grow_part(zz, hg, order, start, pri_mode, p, part_sizes, part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
