@@ -9,8 +9,8 @@
             pdfstartview=FitH]{hyperref}
 
 \hypersetup{
-  pdfauthor = {Marzio Sala, Michael Gee, Jonathan Hu, Ray Tuminaro},
-  pdftitle = {ML 4.0 Smoothed Aggregation User's Guide},
+  pdfauthor = {Michael W. Gee, Jonathan J. Hu, Marzio G. Sala, Christopher M.  Siefert, Ray S. Tuminaro},
+  pdftitle = {ML 5.0 Smoothed Aggregation User's Guide},
   colorlinks= {true},
   citecolor = {blue},
 }
@@ -105,19 +105,19 @@
 %
 %\hspace{2.22in}
 \begin{center}
-SAND2004--4819 \\
+SAND2006-2649
 %\hfill
 %\hspace{2.41in}
 Unlimited Release \\
 %\hfill
 %\begin{center}
-Printed January 2006
+Printed May 2006
 \end{center}
 
 \vspace{0.2in}
 
 \begin{center}
-{\Large {\bf ML 4.0 Smoothed Aggregation User's Guide}}
+{\Large {\bf ML 5.0 Smoothed Aggregation User's Guide}}
 %\footnote{ Sandia is a multiprogram laboratory operated by Sandia Corporation,
 %a Lockheed Martin Company, for the United States Department of Energy's
 %National Nuclear Security Administration under contract DE-AC04-94AL85000.}}}
@@ -130,19 +130,24 @@ Printed January 2006
 %        No. DE-AC04-94AL85000.} }}
 
 \vspace*{0.8in}
-Marzio  Sala $\quad$ and $\quad$
-Michael W. Gee\\
+Michael W. Gee $\quad$ and $\quad$
+Christopher M. Siefert \\
 Computational Math \& Algorithms \\
 Sandia National Laboratories\\
 P.O.~Box 5800 \\
-Albuquerque, NM 87185-1110\\[20pt]
+Albuquerque, NM 87185-1110\\[10pt]
 Jonathan J. Hu $\quad$ and $\quad$
 Ray S. Tuminaro \\
 Computational Math \& Algorithms \\
 Sandia National Laboratories\\
 Mailstop 9159 \\
 P.O.~Box 0969 \\
-Livermore, CA 94551-0969\\
+Livermore, CA 94551-0969\\[10pt]
+Marzio G. Sala \\
+ETH Z\"urich Computational Laboratory\\
+CAB F84\\
+ETH Zentrum\\
+8092 Z\"urich\\
 
 
 \vspace*{1in}
@@ -957,7 +962,7 @@ The \ML\ preconditioner is created as in the previous example,
   ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
 \end{verbatim}
-and we can check that no options have been mispelled, using
+and we can check that no options have been misspelled, using
 \begin{verbatim}
   MLPrec->PrintUnused();
 \end{verbatim}
@@ -1071,7 +1076,7 @@ the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outL
 parameter {\tt coarse: damping parameter}) as a solver. \\
 \verb!Gauss-Seidel! & Use  {\tt coarse: sweeps} steps of Gauss-Seidel (with damping
 parameter {\tt coarse: damping parameter}) as a solver. \\ 
-\verb!MLS! & Use degree {\tt coarse: MLS polynomial order} Chebychev polynomial
+\verb!MLS! & Use degree {\tt coarse: MLS polynomial order} Chebyshev polynomial
              as a solver. \\
 \verb!Hiptmair! & Use {\tt coarse: sweeps} steps of two-stage Hiptmair
              smoothing, with subsmoother {\tt coarse: subsmoother type},
@@ -1584,7 +1589,7 @@ L_{i,i} = - \sum_{i \neq j} L_{i,j},
 (where $\mathbf{x}_i$ represents the coordinates of node $i$)
 in conjunction with a given nonzero dropping threshold.
 This may happen, for instance, when working with bilinear finite elements on 
-strecthed grids. 
+stretched grids. 
 \ML~can be instructed to generate the aggregates using
 matrix~(\ref{eq:discrete_laplacian}), then build the preconditioner using the
 actual linear system matrix, as done in the following code fragment:
