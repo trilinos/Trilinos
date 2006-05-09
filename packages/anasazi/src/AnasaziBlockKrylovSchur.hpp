@@ -537,6 +537,10 @@ namespace Anasazi {
 
     // Print timing details 
     _timerTotal->stop();
+
+    // Reset format that will be used to print the summary
+    Teuchos::TimeMonitor::format().setPageWidth(54);
+
     if (_om->isVerbosity( Anasazi::TimingDetails )) {
       if (_om->doPrint())
         _os <<"********************TIMING DETAILS********************"<<endl;
