@@ -248,6 +248,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   omega_ = List_.get("smoother: damping", omega_);
   ML_Set_PrintLevel(OutputLevel);
   bool LowMemory = List_.get("low memory", true);
+  double AllocationFactor = List_.get("AP allocation factor", 3.0);
 
   verbose_ = (MyPID() == 0 && ML_Get_PrintLevel() > 5);
 
@@ -274,6 +275,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     SmootherType_ = ML_MFP_CHEBY;
   else
     ML_CHK_ERR(-4); // not recognized
+
+  if (AllocationFactor < 0.0) ML_CHK_ERR(-1);
 
   // =============================== //
   // basic checkings and some output //
@@ -309,6 +312,8 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
     cout << "Smoother type                  = " << SmootherType << endl;
     cout << "Coloring type                  = " << ColoringType << endl;
     cout << "Number of V-cycles for C       = " << List_.sublist("ML list").get("cycle applications", 1) << endl;
+    cout << "Allocation factor for AP       = " << AllocationFactor << endl;
+    cout << endl;
   }
 
   ResetStartTime();
@@ -637,12 +642,24 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   
   try
   {
-    AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, NullSpaceDim));
+    // 9 should be for a Cartesian 3D grid. 6 seems a good compromize to me.
+    // If this number is too low, the Cray XT3 goes nuts and takes forever.
+    AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, (int)(NullSpaceDim * AllocationFactor)));
     if (AP.get() == 0) throw(-1);
   }
   catch (...)
   {
-    AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, 0));
+    // try again, smaller memory
+    try
+    {
+      // this should be for a Cartesian 3D grid.
+      AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, NullSpaceDim));
+      if (AP.get() == 0) throw(-1);
+    }
+    catch (...)
+    {
+      AP = rcp(new Epetra_FECrsMatrix(Copy, FineMap, 0));
+    }
   }
 
   if (!LowMemory)
@@ -789,6 +806,17 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
 
     for (int ic = 0; ic < NumColors; ++ic)
     {
+      if (ML_Get_PrintLevel() > 8 && Comm().MyPID() == 0)
+      {
+        if (ic % 10 == 0)
+          cout << "Processing color " << flush;
+
+        cout << ic << " " << flush;
+        if (ic % 10 == 9 || ic == NumColors - 1)
+          cout << endl;
+        if (ic == NumColors - 1) cout << endl;
+      }
+
       ColoredP.PutScalar(0.0);
 
       for (int i = 0; i < BlockPtent_ML->outvec_leng; ++i)
@@ -916,7 +944,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   ML_Operator* R_ML = ML_Operator_Create(Comm_ML());
   ML_Operator_WrapEpetraMatrix(R_.get(), R_ML);
 
-  AddAndResetStartTime("computation of the R", true); 
+  AddAndResetStartTime("computation of R", true); 
 
   // ======== //
   // Create C //
@@ -935,7 +963,7 @@ Compute(const Epetra_CrsGraph& Graph, Epetra_MultiVector& NullSpace)
   double SetupTime = TotalTime.ElapsedTime();
   TotalTime.ResetStartTime();
 
-  AddAndResetStartTime("computation of the C", true); 
+  AddAndResetStartTime("computation of C", true); 
 
   if (verbose_)
   {
