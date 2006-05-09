@@ -1038,8 +1038,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     // ========================================= //
     // repartition of matrices                   //
-    // - parameter names are slightly different  //
-    //   (no node/edge in the name);             //
     // ========================================= //
     
     if (List_.get("repartition: enable",0))
@@ -1146,12 +1144,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       double minmax = List_.get("repartition: node max min ratio", 1.1);
       ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
-      int minperproc = List_.get("repartition: node min per proc", 20);
+      int minperproc = List_.get("repartition: node min per proc", 170);
       ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
 
-      minmax = List_.get("repartition: edge max min ratio", 1.1);
+      minmax = List_.get("repartition: max min ratio", 1.1);
       ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
-      minperproc = List_.get("repartition: edge min per proc", 20);
+      minperproc = List_.get("repartition: min per proc", 512);
       ML_Repartition_Set_MinPerProc(ml_,minperproc);
 
       if (Repartitioner == "Zoltan") {
