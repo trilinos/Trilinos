@@ -286,8 +286,8 @@ int main(int argc, char *argv[])
   MLList.set("repartition: enable",1);
   MLList.set("repartition: node max min ratio",1.1);
   MLList.set("repartition: node min per proc",20);
-  MLList.set("repartition: edge max min ratio",1.1);
-  MLList.set("repartition: edge min per proc",20);
+  MLList.set("repartition: max min ratio",1.1);
+  MLList.set("repartition: min per proc",20);
   MLList.set("repartition: partitioner","Zoltan");
   MLList.set("repartition: Zoltan dimensions",2);
 
