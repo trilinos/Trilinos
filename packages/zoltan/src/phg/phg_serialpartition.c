@@ -640,8 +640,8 @@ static int greedy_grow_part (
   int *cut[2];
   double *gain = NULL;
   int vwgtdim = hg->VtxWeightDim;
-  double weight_sum= 0.0, part_sum, old_sum;
-  double cutoff=0.0;
+  double weight_sum, part_sum;
+  double cutoff;
   double psize_sum= 0.0;
   HEAP h[2];
   static char *yo = "greedy_grow_part";
@@ -654,10 +654,14 @@ static int greedy_grow_part (
     goto End;
   }
 
-  /* Initially put all vertices in part 0 */
-  /* EBEB: Fixed vertices in future versions. */
+  /* Initially put all vertices in part 0, except fixed ones. */
   for (i=0; i<hg->nVtx; i++)
     part[i] = 0;   
+  if (hg->fixed){
+    for (i=0; i<hg->nVtx; i++)
+      if ((hg->bisec_split >= 0) && (hg->fixed[i] >= hg->bisec_split))
+        part[i] = 1;   
+  }
  
   cut[0]  = (int*) ZOLTAN_CALLOC (2*hg->nEdge, sizeof (int));
   if ((hg->nEdge > 0 && cut[0] == NULL) ) {
@@ -666,22 +670,30 @@ static int greedy_grow_part (
     goto End;
   }
   cut[1] = &(cut[0][hg->nEdge]);
+
   /* Initialize cut values. */
   for (i=0; i<hg->nEdge; i++)
     for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
       (cut[part[hg->hvertex[j]]][i])++;
+
   /* Initialize gain values. */
   for (i=0; i<hg->nVtx; i++){
     for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++) {
       edge = hg->vedge[j];
-      gain[i] -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
+      /* if edge is not cut by fixed vertices, update gain value */
+      if (MIN(cut[0][edge],cut[1][edge])==0)
+        gain[i] -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
     }
   }
 
   /* Sum total weights. (No multi-weights yet) */
   weight_sum = 0.;
-  for (i=0; i<hg->nVtx; i++)
+  part_sum = 0.0;  /* Weight in the growing partition (1) */
+  for (i=0; i<hg->nVtx; i++){
     weight_sum += hg->vwgt[i*vwgtdim];
+    if (part[i]>0) 
+      part_sum  += hg->vwgt[i*vwgtdim];
+  }
 
   /* Set cutoff for growing partition (1) */
   psize_sum = part_sizes[0] + part_sizes[1];
@@ -700,7 +712,6 @@ static int greedy_grow_part (
   }
   Zoltan_Heap_Make(h);
 
-  part_sum = 0.0;  /* Weight in the growing partition (1) */
 
   while (part_sum < cutoff) {
 
