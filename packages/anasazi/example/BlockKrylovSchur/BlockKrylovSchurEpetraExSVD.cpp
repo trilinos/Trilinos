@@ -236,10 +236,15 @@ int main(int argc, char *argv[]) {
   Av.MvTimesMatAddMv( -one, u, S, one );
   Av.MvNorm( &directnrm );
   if (MyOM->doPrint()) {
-    cout<<"Singular Value"<<"\t\t"<<"Direct Residual"<<endl;
+    cout.setf(ios_base::right, ios_base::adjustfield);
+    cout<<std::setw(16)<<"Singular Value"
+	<<std::setw(16)<<"Direct Residual"
+	<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
-      cout<< (*evals)[i] << "\t\t" << directnrm[i] << endl;
+      cout<<std::setw(16)<<(*evals)[i]
+	  <<std::setw(16)<<directnrm[i] 
+	  <<endl;
     }  
     cout<<"------------------------------------------------------"<<endl;
   }

@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
   // Create an output manager to handle the I/O from the solver
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
     Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-  MyOM->SetVerbosity( Anasazi::FinalSummary );  
+  MyOM->SetVerbosity( Anasazi::FinalSummary + Anasazi::TimingDetails );  
 
   std::string which;
   if (argc > 1) {
@@ -327,10 +327,15 @@ int main(int argc, char *argv[]) {
     normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
 
   if (MyOM->doPrint()) {
-    cout << "Eigenvalue" << "\t\t" << "Direct Residual" << endl;
+    cout.setf( ios_base::right, ios_base::adjustfield );
+    cout << std::setw( 16 ) << "Eigenvalue"
+         << std::setw( 16 ) << "Direct Residual" 
+	 << endl;
     cout << "------------------------------------------------------" << endl;
     for (i=0; i<nev; i++) {
-      cout << (*evals)[i] << "\t\t"<< normA[i] << endl;
+      cout << std::setw( 16 ) << (*evals)[i] 
+	   << std::setw( 16 ) << normA[i] 
+	   << endl;
     }  
     cout << "------------------------------------------------------" << endl;
   }

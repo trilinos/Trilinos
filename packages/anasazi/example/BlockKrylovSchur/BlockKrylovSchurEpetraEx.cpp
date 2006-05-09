@@ -140,8 +140,8 @@ int main(int argc, char *argv[]) {
   // Diffusion coefficient, can be set by user.
   // When rho*h/2 <= 1, the discrete convection-diffusion operator has real eigenvalues.
   // When rho*h/2 > 1, the operator has complex eigenvalues.
-  double rho = 2*(nx+2);  
-
+  double rho = 0;
+  
   // Compute coefficients for discrete convection-diffution operator
   const double one = 1.0;
   std::vector<double> Values(4);
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
   //  Variables used for the Block Krylov Schur Method
   //    
   int nev = 4;
-  int blockSize = 1;
+  int blockSize = 2;
   int maxBlocks = 20;
   int maxRestarts = 500;
   //  int step = 1;
@@ -383,21 +383,28 @@ int main(int argc, char *argv[]) {
     }
   }
   if (MyOM->doPrint()) {
+    cout.setf(ios_base::right, ios_base::adjustfield);	
     cout<<endl<< "Actual Residuals"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     if (MyProblem->IsSymmetric()) {
-      cout<<"Real Part"<<"\t"<<"Direct Residual"<<endl;
+      cout<< std::setw(16) << "Real Part"
+	  << std::setw(16) << "Direct Residual"<< endl;
       cout<<"------------------------------------------------------"<<endl;
       for (i=0; i<nev; i++) {
-        cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
+        cout<< std::setw(16) << (*evals)[i] 
+            << std::setw(16) << normA[i] << endl;
       }  
       cout<<"------------------------------------------------------"<<endl;
     } 
     else {
-      cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Direct Residual"<<endl;
+      cout<< std::setw(16) << "Real Part"
+	  << std::setw(16) << "Imag Part"
+	  << std::setw(16) << "Direct Residual"<< endl;
       cout<<"------------------------------------------------------"<<endl;
       for (i=0; i<nev; i++) {
-        cout<< (*evals)[i] << "\t\t" << (*evals)[nev + i] << "\t\t"<< normA[i] << endl;
+        cout<< std::setw(16) << (*evals)[i] 
+            << std::setw(16) << (*evals)[nev + i] 
+	    << std::setw(16) << normA[i] << endl;
       }  
       cout<<"------------------------------------------------------"<<endl;
     }  

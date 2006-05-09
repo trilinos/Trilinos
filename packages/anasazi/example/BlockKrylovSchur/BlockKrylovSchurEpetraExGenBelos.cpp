@@ -303,13 +303,17 @@ int main(int argc, char *argv[]) {
 
   if (MyOM->doPrint()) {
     double compeval = 0.0;
+    cout.setf(ios_base::right, ios_base::adjustfield);
     cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
     cout<<"------------------------------------------------------"<<endl;
-    cout<<"Real Part \t Rayleigh Error"<<endl;
+    cout<<std::setw(16)<<"Real Part"
+	<<std::setw(16)<<"Rayleigh Error"<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
       compeval = dmatr(i,i);
-      cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/(*evals)[i])<<endl;
+      cout<<std::setw(16)<<compeval
+	  <<std::setw(16)<<Teuchos::ScalarTraits<double>::magnitude(compeval-1.0/(*evals)[i])
+	  <<endl;
     }
     cout<<"------------------------------------------------------"<<endl;
   }

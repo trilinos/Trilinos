@@ -266,19 +266,30 @@ int main(int argc, char *argv[]) {
       }
     }
   }
+  cout.setf(ios_base::right, ios_base::adjustfield);
   if (MyProblem->IsSymmetric()) {
-    cout<<"Real Part"<<"\t"<<"Residual"<<endl;
+    cout<<std::setw(16)<<"Real Part"
+	<<std::setw(16)<<"Residual"
+	<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
-      cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
+      cout<<std::setw(16)<< (*evals)[i] 
+	  <<std::setw(16)<<  normA[i] 
+	  << endl;
     }  
     cout<<"------------------------------------------------------"<<endl;
   } 
   else {
-    cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
+    cout<<std::setw(16)<<"Real Part"
+	<<std::setw(16)<<"Imag Part"
+	<<std::setw(16)<<"Residual"
+	<<endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
-      cout<< (*evals)[i] << "\t\t" << (*evals)[nev + i] << "\t\t"<< normA[i] << endl;
+      cout<<std::setw(16)<< (*evals)[i] 
+	  <<std::setw(16)<< (*evals)[nev + i] 
+	  <<std::setw(16)<< normA[i] 
+	  << endl;
     }  
     cout<<"------------------------------------------------------"<<endl;
   }  

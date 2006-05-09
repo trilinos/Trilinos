@@ -186,12 +186,17 @@ int main(int argc, char *argv[])
   assert( info==0 );
 
   if (MyOM->doPrint()) {
+    cout.setf(ios_base::right, ios_base::adjustfield);
     cout<<"Actual Residuals"<<endl;
     cout<<"------------------------------------------------------"<<endl;
-    cout<<"Eigenvalue"<<"\t\t"<<"Direct Residual"<<endl;
+    cout<< std::setw(16) << "Eigenvalue"
+	<< std::setw(16) << "Direct Residual"
+	<< endl;
     cout<<"------------------------------------------------------"<<endl;
     for (i=0; i<nev; i++) {
-      cout<< (*evals)[i] << "\t\t"<< normV[i]/(*evals)[i] << endl;
+      cout<< std::setw(16) << (*evals)[i]
+	  << std::setw(16) << normV[i]/(*evals)[i]
+	  << endl;
     }
     cout<<"------------------------------------------------------"<<endl;
   }
