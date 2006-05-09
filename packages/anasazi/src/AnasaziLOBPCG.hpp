@@ -243,7 +243,8 @@ namespace Anasazi {
   }
 
   template <class ScalarType, class MV, class OP>
-  void LOBPCG<ScalarType,MV,OP>::currentStatus() 
+  void 
+  LOBPCG<ScalarType,MV,OP>::currentStatus() 
   {
     int i;
     if (_om->doPrint()) {
@@ -262,14 +263,15 @@ namespace Anasazi {
       _os <<"The number of operations Prec*x is "<<_count_ApplyPrec<<endl;
       _os << endl;
       _os <<"COMPUTED EIGENVALUES                 "<<endl;
-      _os << std::setw(16) << std::right << "Eigenvalue" 
-          << std::setw(16) << std::right << "Ritz Residual"
+      _os.setf(ios_base::right, ios_base::adjustfield);
+      _os << std::setw(16) << "Eigenvalue" 
+          << std::setw(16) << "Ritz Residual"
           << endl;
       _os <<"------------------------------------------------------"<<endl;
       if ( _knownEV > 0 ) {
         for (i=0; i<_knownEV; i++) {
-          _os << std::setw(16) << std::right << (*_evals)[i] 
-              << std::setw(16) << std::right << _resids[i] 
+          _os << std::setw(16) << (*_evals)[i] 
+              << std::setw(16) << _resids[i] 
               << endl;
         }
       } 
@@ -278,14 +280,14 @@ namespace Anasazi {
       }
       _os <<endl;
       _os <<"CURRENT EIGENVALUE ESTIMATES             "<<endl;
-      _os << std::setw(16) << std::right << "Ritz value" 
-          << std::setw(16) << std::right << "Residual"
+      _os << std::setw(16) << "Ritz value" 
+          << std::setw(16) << "Residual"
           << endl;
       _os <<"------------------------------------------------------"<<endl;
       if ( _iter > 0 || _nevLocal > 0 ) {
         for (i=0; i<_blockSize; i++) {
-          _os << std::setw(16) << std::right << _theta[i] 
-              << std::setw(16) << std::right << _normR[i] 
+          _os << std::setw(16) << _theta[i] 
+              << std::setw(16) << _normR[i] 
               << endl;
         }
       } 
@@ -517,9 +519,10 @@ namespace Anasazi {
           
           // Apply the mass matrix to X
           if (haveMass) {
-            _timerMOp->start();
-            ret = OPT::Apply( *_MOp, *X2, *MX2 );
-            _timerMOp->stop();
+	    {
+	      Teuchos::TimeMonitor MOpTimer( *_timerMOp );
+	      ret = OPT::Apply( *_MOp, *X2, *MX2 );
+	    }
             _count_ApplyM += MVT::GetNumberVecs( *X2 );
             if (ret != Ok) {
               if (_om->isVerbosityAndPrint(Error)) {
@@ -540,9 +543,10 @@ namespace Anasazi {
             }
             Teuchos::RefCountPtr<MV> copyQ = MVT::CloneView( *_evecs, index );
             
-            _timerOrtho->start();
-            info = _MSUtils.massOrthonormalize( *X, *MX, _MOp.get(), *copyQ, _nFound, 0 );
-            _timerOrtho->stop();
+	    {
+	      Teuchos::TimeMonitor OrthoTimer( *_timerOrtho );
+	      info = _MSUtils.massOrthonormalize( *X, *MX, _MOp.get(), *copyQ, _nFound, 0 );
+	    }
             
             // Exit the code if the orthogonalization did not succeed
             if (info < 0) {
@@ -552,9 +556,10 @@ namespace Anasazi {
           } // if (knownEV > 0) 
           
           // Apply the stiffness matrix to X
-          _timerOp->start();
-          ret = OPT::Apply( *_Op, *X2, *KX2 );
-          _timerOp->stop();
+	  {
+	    Teuchos::TimeMonitor OpTimer( *_timerOp );
+	    ret = OPT::Apply( *_Op, *X2, *KX2 );
+	  }
           _count_ApplyOp += MVT::GetNumberVecs( *X2 );
           if (ret != Ok) {
             if (_om->isVerbosityAndPrint(Error)) {
@@ -572,9 +577,10 @@ namespace Anasazi {
         
         // Apply the preconditioner on the residuals
         if (_Prec.get()) {
-          _timerPrec->start();
-          ret = OPT::Apply( *_Prec, *R, *H );
-          _timerPrec->stop();
+	  {
+	    Teuchos::TimeMonitor PrecTimer( *_timerPrec );
+	    ret = OPT::Apply( *_Prec, *R, *H );
+	  }
           _count_ApplyPrec += MVT::GetNumberVecs( *R );
           if (ret != Ok) {
             if (_om->isVerbosityAndPrint(Error)) {
@@ -590,9 +596,10 @@ namespace Anasazi {
 
         // Apply the mass matrix on H
         if (haveMass) {
-          _timerMOp->start();
-          ret = OPT::Apply( *_MOp, *H, *MH);
-          _timerMOp->stop();
+	  {
+	    Teuchos::TimeMonitor MOpTimer( *_timerMOp );
+	    ret = OPT::Apply( *_MOp, *H, *MH);
+	  }
           _count_ApplyM += MVT::GetNumberVecs( *H );
           if (ret != Ok) {
             if (_om->isVerbosityAndPrint(Error)) {
@@ -613,16 +620,17 @@ namespace Anasazi {
           }
           Teuchos::RefCountPtr<MV> copyQ = MVT::CloneView( *_evecs, index );
 
-          _timerOrtho->start();
-          _MSUtils.massOrthonormalize( *H, *MH, _MOp.get(), *copyQ, _blockSize, 1);
-          _timerOrtho->stop();
-
+	  {
+	    Teuchos::TimeMonitor OrthoTimer( *_timerOrtho );
+	    _MSUtils.massOrthonormalize( *H, *MH, _MOp.get(), *copyQ, _blockSize, 1);
+	  }
         } // if (knownEV > 0)
         
         // Apply the stiffness matrix to H
-        _timerOp->start();
-        ret = OPT::Apply( *_Op, *H, *KH);
-        _timerOp->stop();
+	{
+	  Teuchos::TimeMonitor OpTimer( *_timerOp );
+	  ret = OPT::Apply( *_Op, *H, *KH);
+	}
         _count_ApplyOp += MVT::GetNumberVecs( *H );
         if (ret != Ok) {
           if (_om->isVerbosityAndPrint(Error)) {
@@ -638,68 +646,71 @@ namespace Anasazi {
       } // if ( (_iter==0) || (reStart==true))
 
       // Form "local" mass and stiffness matrices
-      _timerLocalProj->start();
-      Teuchos::SerialDenseMatrix<int,ScalarType> KK11( Teuchos::View, KK, _blockSize, _blockSize );
-      MVT::MvTransMv( one, *X, *KX, KK11 );
+      {
+	Teuchos::TimeMonitor LocalProjTimer( *_timerLocalProj );
+	Teuchos::SerialDenseMatrix<int,ScalarType> KK11( Teuchos::View, KK, _blockSize, _blockSize );
+	MVT::MvTransMv( one, *X, *KX, KK11 );
+	
+	Teuchos::SerialDenseMatrix<int,ScalarType> MM11( Teuchos::View, MM, _blockSize, _blockSize );
+	MVT::MvTransMv( one, *X, *MX, MM11 );
       
-      Teuchos::SerialDenseMatrix<int,ScalarType> MM11( Teuchos::View, MM, _blockSize, _blockSize );
-      MVT::MvTransMv( one, *X, *MX, MM11 );
-      
-      if (localSize > _blockSize) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> KK12( Teuchos::View, KK, _blockSize, _blockSize, 
-                                                         0, _blockSize );
-        MVT::MvTransMv( one, *X, *KH, KK12 );
-        
-        Teuchos::SerialDenseMatrix<int,ScalarType> KK22( Teuchos::View, KK, _blockSize, _blockSize, 
-                                                         _blockSize, _blockSize );
-        MVT::MvTransMv( one, *H, *KH, KK22 );
-        
-        Teuchos::SerialDenseMatrix<int,ScalarType> MM12( Teuchos::View, MM, _blockSize, _blockSize, 
-                                                         0, _blockSize );
-        MVT::MvTransMv( one, *X, *MH, MM12 );
-        
-        Teuchos::SerialDenseMatrix<int,ScalarType> MM22( Teuchos::View, MM, _blockSize, _blockSize, 
-                                                         _blockSize, _blockSize );
-        MVT::MvTransMv( one, *H, *MH, MM22 );
-        
-        if (localSize > twoBlocks) {
-          
-          Teuchos::SerialDenseMatrix<int,ScalarType> KK13( Teuchos::View, KK, _blockSize, _blockSize, 
-                                                           0, twoBlocks );
-          MVT::MvTransMv( one, *X, *KP, KK13 );
-          
-          Teuchos::SerialDenseMatrix<int,ScalarType> KK23( Teuchos::View, KK, _blockSize, _blockSize, 
-                                                           _blockSize, twoBlocks );
-          MVT::MvTransMv( one, *H, *KP, KK23 );
-          
-          Teuchos::SerialDenseMatrix<int,ScalarType> KK33( Teuchos::View, KK, _blockSize, _blockSize, 
-                                                           twoBlocks, twoBlocks );
-          MVT::MvTransMv( one, *P, *KP, KK33 );
-          
-          Teuchos::SerialDenseMatrix<int,ScalarType> MM13( Teuchos::View, MM, _blockSize, _blockSize, 
-                                                           0, twoBlocks );
-          MVT::MvTransMv( one, *X, *MP, MM13 );
-          
-          Teuchos::SerialDenseMatrix<int,ScalarType> MM23( Teuchos::View, MM, _blockSize, _blockSize, 
-                                                           _blockSize, twoBlocks );
-          MVT::MvTransMv( one, *H, *MP, MM23 );
-          
-          Teuchos::SerialDenseMatrix<int,ScalarType> MM33( Teuchos::View, MM, _blockSize, _blockSize, 
-                                                           twoBlocks, twoBlocks );
-          MVT::MvTransMv( one, *P, *MP, MM33 );
-          
-        } // if (localSize > twoBlocks)
-        
-      } // if (localSize > blockSize)
-      _timerLocalProj->stop();
+	if (localSize > _blockSize) {
+	  Teuchos::SerialDenseMatrix<int,ScalarType> KK12( Teuchos::View, KK, _blockSize, _blockSize, 
+							   0, _blockSize );
+	  MVT::MvTransMv( one, *X, *KH, KK12 );
+	  
+	  Teuchos::SerialDenseMatrix<int,ScalarType> KK22( Teuchos::View, KK, _blockSize, _blockSize, 
+							   _blockSize, _blockSize );
+	  MVT::MvTransMv( one, *H, *KH, KK22 );
+	  
+	  Teuchos::SerialDenseMatrix<int,ScalarType> MM12( Teuchos::View, MM, _blockSize, _blockSize, 
+							   0, _blockSize );
+	  MVT::MvTransMv( one, *X, *MH, MM12 );
+	  
+	  Teuchos::SerialDenseMatrix<int,ScalarType> MM22( Teuchos::View, MM, _blockSize, _blockSize, 
+							   _blockSize, _blockSize );
+	  MVT::MvTransMv( one, *H, *MH, MM22 );
+	  
+	  if (localSize > twoBlocks) {
+	    
+	    Teuchos::SerialDenseMatrix<int,ScalarType> KK13( Teuchos::View, KK, _blockSize, _blockSize, 
+							     0, twoBlocks );
+	    MVT::MvTransMv( one, *X, *KP, KK13 );
+	    
+	    Teuchos::SerialDenseMatrix<int,ScalarType> KK23( Teuchos::View, KK, _blockSize, _blockSize, 
+							     _blockSize, twoBlocks );
+	    MVT::MvTransMv( one, *H, *KP, KK23 );
+	    
+	    Teuchos::SerialDenseMatrix<int,ScalarType> KK33( Teuchos::View, KK, _blockSize, _blockSize, 
+							     twoBlocks, twoBlocks );
+	    MVT::MvTransMv( one, *P, *KP, KK33 );
+	    
+	    Teuchos::SerialDenseMatrix<int,ScalarType> MM13( Teuchos::View, MM, _blockSize, _blockSize, 
+							     0, twoBlocks );
+	    MVT::MvTransMv( one, *X, *MP, MM13 );
+	    
+	    Teuchos::SerialDenseMatrix<int,ScalarType> MM23( Teuchos::View, MM, _blockSize, _blockSize, 
+							     _blockSize, twoBlocks );
+	    MVT::MvTransMv( one, *H, *MP, MM23 );
+	    
+	    Teuchos::SerialDenseMatrix<int,ScalarType> MM33( Teuchos::View, MM, _blockSize, _blockSize, 
+							     twoBlocks, twoBlocks );
+	    MVT::MvTransMv( one, *P, *MP, MM33 );
+	    
+	  } // if (localSize > twoBlocks)
+	  
+	} // if (localSize > blockSize)
+
+      } // end timing block
 
       // Perform a spectral decomposition
       _nevLocal = localSize;
-      _timerDS->start();
-      info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, &_nevLocal, 
-                                   (_blockSize == 1) ? 1 : 0);
-      _timerDS->stop();
-
+      {
+	Teuchos::TimeMonitor DSTimer( *_timerDS );
+	info = _MSUtils.directSolver(localSize, KK, &MM, &S, &_theta, &_nevLocal, 
+				     (_blockSize == 1) ? 1 : 0);
+      }
+      
       if (info < 0) {
         // Stop when spectral decomposition has a critical failure
         criticalExit = true;
@@ -747,16 +758,18 @@ namespace Anasazi {
       // The sort manager is templated on ScalarType
       // Make a ScalarType copy of _theta for sorting
       std::vector<ScalarType> _theta_st(_theta.size());
-      _timerSortEval->start();
-      std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
-      _order.resize(_nevLocal);
-      ret = _sm->sort( this, _nevLocal, &(_theta_st[0]), &_order );
-      //reorder _theta according to sorting results from _theta_st
-      std::vector<MagnitudeType> _theta_copy(_theta);
-      for (i=0; i<_nevLocal; i++) {
-        _theta[i] = _theta_copy[_order[i]];
+      {
+	Teuchos::TimeMonitor SortTimer( *_timerSortEval );
+	std::copy<MTiter,STiter>(_theta.begin(),_theta.begin()+_nevLocal,_theta_st.begin());
+	_order.resize(_nevLocal);
+	ret = _sm->sort( this, _nevLocal, &(_theta_st[0]), &_order );
+
+	//  Reorder _theta according to sorting results from _theta_st
+	std::vector<MagnitudeType> _theta_copy(_theta);
+	for (i=0; i<_nevLocal; i++) {
+	  _theta[i] = _theta_copy[_order[i]];
+	}
       }
-      _timerSortEval->stop();
       if (ret != Ok) {
         if (_om->isVerbosityAndPrint(Error)) {
           _os << "ERROR : Sorting in solve()" << endl;
@@ -773,43 +786,45 @@ namespace Anasazi {
       }
       
       // Compute the residuals
-      _timerCompRes->start();
       Teuchos::SerialDenseMatrix<int,ScalarType> S11( Teuchos::View, S, _blockSize, _blockSize );
-      MVT::MvTimesMatAddMv( one, *KX, S11, zero, *R );
-      
-      if (localSize >= twoBlocks) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );
-        MVT::MvTimesMatAddMv( one, *KH, S21, one, *R );
-        
-        if (localSize == threeBlocks) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
-          MVT::MvTimesMatAddMv( one, *KP, S31, one, *R );
+      {
+	Teuchos::TimeMonitor CompResTimer( *_timerCompRes );
+	MVT::MvTimesMatAddMv( one, *KX, S11, zero, *R );
+	
+	if (localSize >= twoBlocks) {
+	  Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );
+	  MVT::MvTimesMatAddMv( one, *KH, S21, one, *R );
+	  
+	  if (localSize == threeBlocks) {
+	    Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
+	    MVT::MvTimesMatAddMv( one, *KP, S31, one, *R );
+	    
+	  } // if (localSize == threeBlocks)
+	} // if (localSize >= twoBlocks )
+	
+	// Replace S with S*Lambda
+	for (j = 0; j < _blockSize; ++j) {
+	  blas.SCAL(localSize, _theta[j], S[j], 1);
+	}
+	
+	MVT::MvTimesMatAddMv( -one, *MX, S11, one, *R );
+	
+	if (localSize >= twoBlocks) {
+	  Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );
+	  MVT::MvTimesMatAddMv( -one, *MH, S21, one, *R );
+	  
+	  if (localSize == threeBlocks) {
+	    Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
+	    MVT::MvTimesMatAddMv( -one, *MP, S31, one, *R );
+	  }
+	} // if (localSize >= twoBlocks)
+	
+	// Restore S from S*Lambda back to S
+	for (j = 0; j < _blockSize; ++j) {
+	  blas.SCAL(localSize, one/_theta[j], S[j], 1);
+	}
 
-        } // if (localSize == threeBlocks)
-      } // if (localSize >= twoBlocks )
-
-      // Replace S with S*Lambda
-      for (j = 0; j < _blockSize; ++j) {
-        blas.SCAL(localSize, _theta[j], S[j], 1);
-      }
-      
-      MVT::MvTimesMatAddMv( -one, *MX, S11, one, *R );
-      
-      if (localSize >= twoBlocks) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );
-        MVT::MvTimesMatAddMv( -one, *MH, S21, one, *R );
-        
-        if (localSize == threeBlocks) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
-          MVT::MvTimesMatAddMv( -one, *MP, S31, one, *R );
-        }
-      } // if (localSize >= twoBlocks)
-            
-      // Restore S from S*Lambda back to S
-      for (j = 0; j < _blockSize; ++j) {
-        blas.SCAL(localSize, one/_theta[j], S[j], 1);
-      }
-      _timerCompRes->stop();
+      } // end timing block
 
       // Compute the norms of the residuals
       MVT::MvNorm( *R, &_normR );
@@ -845,64 +860,67 @@ namespace Anasazi {
         // Note: Use R as a temporary work space
         // Note: S11 was previously defined above
 
-        _timerLocalUpdate->start();
-        
-        MVT::MvAddMv( one, *X, zero, *X, *R );        
-        MVT::MvTimesMatAddMv( one, *R, S11, zero, *X );
-        
-        MVT::MvAddMv( one, *KX, zero, *KX, *R );
-        MVT::MvTimesMatAddMv( one, *R, S11, zero, *KX );
-        
-        if (haveMass) {
-          MVT::MvAddMv( one, *MX, zero, *MX, *R );
-          MVT::MvTimesMatAddMv( one, *R, S11, zero, *MX );
-        }
-        
-        if (localSize == twoBlocks) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );
-          MVT::MvTimesMatAddMv( one, *H, S21, zero, *P );
-          MVT::MvAddMv( one, *P, one, *X, *X );
-          
-          MVT::MvTimesMatAddMv( one, *KH, S21, zero, *KP );
-          MVT::MvAddMv( one, *KP, one, *KX, *KX );
-          
-          if (haveMass) {
-            MVT::MvTimesMatAddMv( one, *MH, S21, zero, *MP );
-            MVT::MvAddMv( one, *MP, one, *MX, *MX );
-          }
-        } // if (localSize == twoBlocks)
-        else if (localSize == threeBlocks) {          
-          Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );          
-          Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
-          MVT::MvAddMv( one, *P, zero, *P, *R );
-          MVT::MvTimesMatAddMv( one, *R, S31, zero, *P );
-          MVT::MvTimesMatAddMv( one, *H, S21, one, *P );
-          MVT::MvAddMv( one, *P, one, *X, *X );
-          
-          MVT::MvAddMv( one, *KP, zero, *KP, *R );
-          MVT::MvTimesMatAddMv( one, *R, S31, zero, *KP );
-          MVT::MvTimesMatAddMv( one, *KH, S21, one, *KP );
-          MVT::MvAddMv( one, *KP, one, *KX, *KX );
-          
-          if (haveMass) {
-            MVT::MvAddMv( one, *MP, zero, *MP, *R );
-            MVT::MvTimesMatAddMv( one, *R, S31, zero, *MP );
-            MVT::MvTimesMatAddMv( one, *MH, S21, one, *MP );
-            MVT::MvAddMv( one, *MP, one, *MX, *MX );
-          }
-        } // if (localSize == threeBlocks)
-        _timerLocalUpdate->stop();
-
+	{
+	  Teuchos::TimeMonitor LocalUpdateTimer( *_timerLocalUpdate );
+	  
+	  MVT::MvAddMv( one, *X, zero, *X, *R );        
+	  MVT::MvTimesMatAddMv( one, *R, S11, zero, *X );
+	  
+	  MVT::MvAddMv( one, *KX, zero, *KX, *R );
+	  MVT::MvTimesMatAddMv( one, *R, S11, zero, *KX );
+	  
+	  if (haveMass) {
+	    MVT::MvAddMv( one, *MX, zero, *MX, *R );
+	    MVT::MvTimesMatAddMv( one, *R, S11, zero, *MX );
+	  }
+	  
+	  if (localSize == twoBlocks) {
+	    Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );
+	    MVT::MvTimesMatAddMv( one, *H, S21, zero, *P );
+	    MVT::MvAddMv( one, *P, one, *X, *X );
+	    
+	    MVT::MvTimesMatAddMv( one, *KH, S21, zero, *KP );
+	    MVT::MvAddMv( one, *KP, one, *KX, *KX );
+	    
+	    if (haveMass) {
+	      MVT::MvTimesMatAddMv( one, *MH, S21, zero, *MP );
+	      MVT::MvAddMv( one, *MP, one, *MX, *MX );
+	    }
+	  } // if (localSize == twoBlocks)
+	  else if (localSize == threeBlocks) {          
+	    Teuchos::SerialDenseMatrix<int,ScalarType> S21( Teuchos::View, S, _blockSize, _blockSize, _blockSize );          
+	    Teuchos::SerialDenseMatrix<int,ScalarType> S31( Teuchos::View, S, _blockSize, _blockSize, twoBlocks  );          
+	    MVT::MvAddMv( one, *P, zero, *P, *R );
+	    MVT::MvTimesMatAddMv( one, *R, S31, zero, *P );
+	    MVT::MvTimesMatAddMv( one, *H, S21, one, *P );
+	    MVT::MvAddMv( one, *P, one, *X, *X );
+	    
+	    MVT::MvAddMv( one, *KP, zero, *KP, *R );
+	    MVT::MvTimesMatAddMv( one, *R, S31, zero, *KP );
+	    MVT::MvTimesMatAddMv( one, *KH, S21, one, *KP );
+	    MVT::MvAddMv( one, *KP, one, *KX, *KX );
+	    
+	    if (haveMass) {
+	      MVT::MvAddMv( one, *MP, zero, *MP, *R );
+	      MVT::MvTimesMatAddMv( one, *R, S31, zero, *MP );
+	      MVT::MvTimesMatAddMv( one, *MH, S21, one, *MP );
+	      MVT::MvAddMv( one, *MP, one, *MX, *MX );
+	    }
+	  } // if (localSize == threeBlocks)
+	  
+	} // end timing block
+	
         // Compute the new residuals
-        _timerCompRes->start();
-        MVT::MvAddMv( one, *KX, zero, *KX, *R );
-        Teuchos::SerialDenseMatrix<int,ScalarType> T( _blockSize, _blockSize );
-        for (j = 0; j < _blockSize; ++j) {
-          T(j,j) = _theta[j];
-        }
-        MVT::MvTimesMatAddMv( -one, *MX, T, one, *R );
-        _timerCompRes->stop();
-
+	{
+	  Teuchos::TimeMonitor CompResTimer( *_timerCompRes );
+	  MVT::MvAddMv( one, *KX, zero, *KX, *R );
+	  Teuchos::SerialDenseMatrix<int,ScalarType> T( _blockSize, _blockSize );
+	  for (j = 0; j < _blockSize; ++j) {
+	    T(j,j) = _theta[j];
+	  }
+	  MVT::MvTimesMatAddMv( -one, *MX, T, one, *R );
+	}
+	
         // When required, monitor some orthogonalities
         if (_om->isVerbosity( OrthoDetails )) {
           if (_knownEV == 0) {
@@ -1010,9 +1028,10 @@ namespace Anasazi {
         // Sort the computed eigenvalues, eigenvectors, and residuals
         //
         _order.resize(_knownEV+_nFound-leftOver);
-        _timerSortEval->start();
-        ret = _sm->sort( this, _knownEV+_nFound-leftOver, &(*_evals)[0], &_order);
-        _timerSortEval->stop();
+	{
+	  Teuchos::TimeMonitor SortTimer( *_timerSortEval );
+	  ret = _sm->sort( this, _knownEV+_nFound-leftOver, &(*_evals)[0], &_order);
+	}
         if (ret != Ok) {
           if (_om->isVerbosityAndPrint(Error)) {
             _os << "ERROR : Sorting in solve()" << endl;
@@ -1032,62 +1051,64 @@ namespace Anasazi {
       }
 
       // Define the restarting vectors
-      _timerRestart->start();
-      leftOver = (_nevLocal < _blockSize + _nFound) ? _nevLocal - _nFound : _blockSize;
+      {
+	Teuchos::TimeMonitor RestartTimer( *_timerRestart );
+	leftOver = (_nevLocal < _blockSize + _nFound) ? _nevLocal - _nFound : _blockSize;
+	
+	// Grab a view of the restarting vectors (a subview of X)
+	std::vector<int> index2( leftOver );
+	for (j=0; j<leftOver; j++) {
+	  index2[j] = j;
+	}
+	Teuchos::RefCountPtr<MV>  Xtmp = MVT::CloneView( *X, index2 );
+	Teuchos::RefCountPtr<MV> KXtmp = MVT::CloneView(*KX, index2 );
+	Teuchos::RefCountPtr<MV> MXtmp = MVT::CloneView(*MX, index2 );
+	
+	Teuchos::SerialDenseMatrix<int,ScalarType> S11new( Teuchos::View, S, _blockSize, leftOver, 0, _nFound );
+	
+	MVT::MvAddMv( one, *X, zero, *X, *R );
+	MVT::MvTimesMatAddMv( one, *R, S11new, zero, *Xtmp );
+	
+	MVT::MvAddMv( one, *KX, zero, *KX, *R );
+	MVT::MvTimesMatAddMv( one, *R, S11new, zero, *KXtmp );
+	
+	if (haveMass) {
+	  MVT::MvAddMv( one, *MX, zero, *MX, *R );
+	  MVT::MvTimesMatAddMv( one, *R, S11new, zero, *MXtmp );
+	}
+	
+	if (localSize >= twoBlocks) {
+	  Teuchos::SerialDenseMatrix<int,ScalarType> S21new( Teuchos::View, S, _blockSize, leftOver, _blockSize, _nFound );        
+	  MVT::MvTimesMatAddMv( one, *H, S21new, one, *Xtmp );
+	  MVT::MvTimesMatAddMv( one, *KH, S21new, one, *KXtmp );
+	  if (haveMass) {
+	    MVT::MvTimesMatAddMv( one, *MH, S21new, one, *MXtmp );
+	  }
+	  
+	  if (localSize >= threeBlocks) {
+	    Teuchos::SerialDenseMatrix<int,ScalarType> S31new( Teuchos::View, S, _blockSize, leftOver, twoBlocks, _nFound );
+	    MVT::MvTimesMatAddMv( one, *P, S31new, one, *Xtmp );
+	    MVT::MvTimesMatAddMv( one, *KP, S31new, one, *KXtmp );
+	    if (haveMass) {
+	      MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MXtmp );
+	    }
+	  }
+	}
+	if (_nevLocal < _blockSize + _nFound) {
+	  // Put new random vectors at the end of the block
+	  index2.resize( _blockSize - leftOver );
+	  for (j=0; j<_blockSize-leftOver; j++)
+	    index2[j] = leftOver + j;
+	  Xtmp = MVT::CloneView( *X, index2 );
+	  MVT::MvRandom( *Xtmp );
+	}
+	else {
+	  _nFound = 0;
+	}
+	reStart = true;
 
-      // Grab a view of the restarting vectors (a subview of X)
-      std::vector<int> index2( leftOver );
-      for (j=0; j<leftOver; j++) {
-        index2[j] = j;
-      }
-      Teuchos::RefCountPtr<MV>  Xtmp = MVT::CloneView( *X, index2 );
-      Teuchos::RefCountPtr<MV> KXtmp = MVT::CloneView(*KX, index2 );
-      Teuchos::RefCountPtr<MV> MXtmp = MVT::CloneView(*MX, index2 );
-
-      Teuchos::SerialDenseMatrix<int,ScalarType> S11new( Teuchos::View, S, _blockSize, leftOver, 0, _nFound );
-      
-      MVT::MvAddMv( one, *X, zero, *X, *R );
-      MVT::MvTimesMatAddMv( one, *R, S11new, zero, *Xtmp );
-      
-      MVT::MvAddMv( one, *KX, zero, *KX, *R );
-      MVT::MvTimesMatAddMv( one, *R, S11new, zero, *KXtmp );
-      
-      if (haveMass) {
-        MVT::MvAddMv( one, *MX, zero, *MX, *R );
-        MVT::MvTimesMatAddMv( one, *R, S11new, zero, *MXtmp );
-      }
-
-      if (localSize >= twoBlocks) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> S21new( Teuchos::View, S, _blockSize, leftOver, _blockSize, _nFound );        
-        MVT::MvTimesMatAddMv( one, *H, S21new, one, *Xtmp );
-        MVT::MvTimesMatAddMv( one, *KH, S21new, one, *KXtmp );
-        if (haveMass) {
-          MVT::MvTimesMatAddMv( one, *MH, S21new, one, *MXtmp );
-        }
-        
-        if (localSize >= threeBlocks) {
-          Teuchos::SerialDenseMatrix<int,ScalarType> S31new( Teuchos::View, S, _blockSize, leftOver, twoBlocks, _nFound );
-          MVT::MvTimesMatAddMv( one, *P, S31new, one, *Xtmp );
-          MVT::MvTimesMatAddMv( one, *KP, S31new, one, *KXtmp );
-          if (haveMass) {
-            MVT::MvTimesMatAddMv( one, *MP, S31new, one, *MXtmp );
-          }
-        }
-      }
-      if (_nevLocal < _blockSize + _nFound) {
-        // Put new random vectors at the end of the block
-        index2.resize( _blockSize - leftOver );
-        for (j=0; j<_blockSize-leftOver; j++)
-          index2[j] = leftOver + j;
-        Xtmp = MVT::CloneView( *X, index2 );
-        MVT::MvRandom( *Xtmp );
-      }
-      else {
-        _nFound = 0;
-      }
-      reStart = true;
-      _timerRestart->stop();
-      
+      } // end timing block
+	
     } // for (_iter = 0; _iter < _maxIter; ++_iter)
 
     //

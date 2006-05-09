@@ -269,7 +269,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
   
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::SetBlkTols() {
+  void 
+  BlockKrylovSchur<ScalarType,MV,OP>::SetBlkTols() {
     typedef typename Teuchos::ScalarTraits<MagnitudeType> MGT;
     const MagnitudeType two = 2.0;
     const MagnitudeType eps = SCT::eps();
@@ -283,7 +284,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
   
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::currentStatus() {
+  void 
+  BlockKrylovSchur<ScalarType,MV,OP>::currentStatus() {
     int i;
     if (_om->doPrint()) {
       _os.setf(ios::scientific, ios::floatfield);
@@ -362,7 +364,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
   
   template <class ScalarType, class MV, class OP>
-  ReturnType BlockKrylovSchur<ScalarType,MV,OP>::solve () 
+  ReturnType 
+  BlockKrylovSchur<ScalarType,MV,OP>::solve () 
   {
     Teuchos::TimeMonitor LocalTimer(*_timerTotal,_restartTimers);
 
@@ -522,9 +525,8 @@ namespace Anasazi {
     // Compute the current approximate eigenvectors before returning.
     //
     if (!_error_flg) {
-      _timerCompEvec->start();
+      Teuchos::TimeMonitor CompTimer(*_timerCompEvec);
       ComputeEvecs();    
-      _timerCompEvec->stop();
     }
     //
     // Print out a final summary before returning.
@@ -567,7 +569,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
   
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::iterate(const int steps) {
+  void 
+  BlockKrylovSchur<ScalarType,MV,OP>::iterate(const int steps) {
     int i=0;
     int tempsteps = steps;
     int blk_red_steps = 0;
@@ -676,7 +679,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
   
   template <class ScalarType, class MV, class OP>
-  int BlockKrylovSchur<ScalarType,MV,OP>::BlockReduction () {
+  int 
+  BlockKrylovSchur<ScalarType,MV,OP>::BlockReduction () {
 
     int i,j;
     ReturnType ret;
@@ -702,9 +706,10 @@ namespace Anasazi {
       //
       //  Compute F_vec = OP * U_vec
       //
-      _timerOp->start();
-      ret = OPT::Apply( *_Op, *U_vec, *F_vec ); 
-      _timerOp->stop();
+      {
+	Teuchos::TimeMonitor OpTimer(*_timerOp);
+	ret = OPT::Apply( *_Op, *U_vec, *F_vec ); 
+      }
       _count_ApplyOp += MVT::GetNumberVecs(*U_vec);
       if (ret != Ok) {
         // Apply() failed. Return error code.
@@ -753,7 +758,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::BlkOrth( MV& Vec_in, const int j ) {
+  void 
+  BlockKrylovSchur<ScalarType,MV,OP>::BlkOrth( MV& Vec_in, const int j ) {
     //
     // Orthogonalization is first done between the new block of
     // vectors and all previous blocks, then the vectors within the
@@ -887,7 +893,8 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::BlkOrthSing( MV& Vec_in, const int j ) {
+  void 
+  BlockKrylovSchur<ScalarType,MV,OP>::BlkOrthSing( MV& Vec_in, const int j ) {
     //
     // This is a variant of A. Ruhe's block Arnoldi
     // The orthogonalization of the vectors F_vec is done
@@ -1086,8 +1093,9 @@ namespace Anasazi {
   //----------------------------------------------------------------------------------------
 
   template <class ScalarType, class MV, class OP>
-  void BlockKrylovSchur<ScalarType,MV,OP>::QRFactorization (MV& VecIn, 
-                                                            Teuchos::SerialDenseMatrix<int,ScalarType>& FourierR) {
+  void 
+  BlockKrylovSchur<ScalarType,MV,OP>::QRFactorization (MV& VecIn, 
+						       Teuchos::SerialDenseMatrix<int,ScalarType>& R) {
     // local timer
     Teuchos::TimeMonitor LocalTimer(*_timerQRFact);
 
@@ -1106,7 +1114,7 @@ namespace Anasazi {
     //
     // Zero out the array that will contain the Fourier coefficients.
     //
-    FourierR.putScalar( zero );
+    R.putScalar( zero );
     //
     // Start the loop to orthogonalize the nb columns of VecIn.
     //
@@ -1122,7 +1130,7 @@ namespace Anasazi {
       // vectors in the current block.
       //
       if ( j ) {
-        Teuchos::SerialDenseMatrix<int,ScalarType> FourierR_col( Teuchos::View, FourierR, j, 1, 0, j );
+        Teuchos::SerialDenseMatrix<int,ScalarType> R_col( Teuchos::View, R, j, 1, 0, j );
         index.resize( j );
         for ( i=0; i<j; i++ ) {
           index[i] = i;
@@ -1146,7 +1154,7 @@ namespace Anasazi {
         //
         // Sum results[0:j-1] into column j of R.
         //
-        FourierR_col += rj;
+        R_col += rj;
         //
         // Compute qj <- qj - Qj * rj.
         //
@@ -1162,7 +1170,7 @@ namespace Anasazi {
           //
           // Sum results[0:j-1] into column j of R.
           //
-          FourierR += rj;
+          R += rj;
           //
           // Compute qj <- qj - Qj * rj.
           //
@@ -1238,10 +1246,10 @@ namespace Anasazi {
       if (addvec){
         // We've added a random vector, so
         // enter a zero in j'th diagonal element of R
-        FourierR(j,j) = zero;
+        R(j,j) = zero;
       }
       else {
-        FourierR(j,j) = normq[0];
+        R(j,j) = normq[0];
       }
     } // for (j=0; j<nb; j++) ...
     //
@@ -1705,9 +1713,10 @@ namespace Anasazi {
       }
       //
       
-      _timerSortEval->start();
-      ret = _sm->sort( this, n, &(*_ritzvalues)[0], &_order );
-      _timerSortEval->stop();
+      {
+	Teuchos::TimeMonitor SortTimer(*_timerSortEval);
+	ret = _sm->sort( this, n, &(*_ritzvalues)[0], &_order );
+      }
       if (ret != Ok) {
         if (_om->isVerbosityAndPrint(Error)) {
           _os << "ERROR : Sorting in SortSchurForm"
@@ -1732,9 +1741,10 @@ namespace Anasazi {
         _os <<endl;
       }
       //
-      _timerSortEval->start();
-      ret = _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], &_order );
-      _timerSortEval->stop();
+      {
+	Teuchos::TimeMonitor SortTimer(*_timerSortEval);
+	ret = _sm->sort( this, n, &(*_ritzvalues)[0], &(*_ritzvalues)[_totallength], &_order );
+      }
       if (ret != Ok) {
         if (_om->isVerbosityAndPrint(Error)) {
           _os << "Error sorting in SortSchurForm!"
@@ -1874,9 +1884,10 @@ namespace Anasazi {
     Teuchos::SerialDenseMatrix<int,ScalarType> SchurProj( n, n );
     Teuchos::RefCountPtr<MV> Z = MVT::CloneView( *_basisvecs, index );
     Teuchos::RefCountPtr<MV> basistemp = MVT::Clone( *_basisvecs, n );
-    _timerOp->start();
+    {
+      Teuchos::TimeMonitor OpTimer(*_timerOp);
     ret = OPT::Apply( *_Op, *Z, *basistemp );
-    _timerOp->stop();
+    }
     _count_ApplyOp += MVT::GetNumberVecs(*Z);
     if (ret != Ok) {
       if (_om->isVerbosityAndPrint(Error)) {
@@ -1977,9 +1988,10 @@ namespace Anasazi {
     }
     
     Teuchos::RefCountPtr<MV> AVj = MVT::Clone( *_basisvecs, m ); 
-    _timerOp->start();
-    ret = OPT::Apply( *_Op, *Vj, *AVj );
-    _timerOp->stop();
+    {
+      Teuchos::TimeMonitor OpTimer(*_timerOp);
+      ret = OPT::Apply( *_Op, *Vj, *AVj );
+    }
     _count_ApplyOp += MVT::GetNumberVecs( *Vj );
     if (ret != Ok) {
       // Apply() failed. Return error code.
