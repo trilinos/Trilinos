@@ -703,12 +703,15 @@ static int greedy_grow_part (
     printf("Debug: Starting new greedy growing at vertex %d, part=%2d\n", start_vtx, p);
 
   /* Initialize heap. */
-  gain[start_vtx] = 1e10;        /* Make it highest value in heap. */
+  if (!hg->fixed) 
+    gain[start_vtx] = 1e10;      /* Make start_vtx max value in heap. */
                                  /* All other values should be negative. */
   Zoltan_Heap_Init(zz, &h[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &h[1], 0);       /* Dummy heap, not used. */
-  for(i=0; i<hg->nVtx; i++){
-    Zoltan_Heap_Input(h, i, gain[i]);
+  for (i=0; i<hg->nVtx; i++){
+    /* Insert all non-fixed vertices into heap. */
+    if (!hg->fixed || (hg->fixed[i] < 0))
+      Zoltan_Heap_Input(h, i, gain[i]);
   }
   Zoltan_Heap_Make(h);
 
@@ -719,10 +722,8 @@ static int greedy_grow_part (
     vtx = Zoltan_Heap_Extract_Max(h);
 
     if (vtx < 0) {
-      /* Empty heap: This should never happen. */
-      ZOLTAN_PRINT_ERROR(-1, yo, "Internal error: No vertices in heap.");
-      err = ZOLTAN_FATAL;
-      goto End;
+      /* Empty heap: This can only happen if all vertices are fixed. */
+      break;
     }
 
     part_sum += hg->vwgt[vtx*vwgtdim];
