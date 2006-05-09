@@ -77,6 +77,9 @@ static int refine_no (ZZ *zz,     /* Zoltan data structure */
 
 /****************************************************************************/
 
+/* Move a vertex from sour to dest, update cut and gain values. */
+/* Note this function is also used by the coarse partitioner. */
+
 int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
  int *part, int **cut, double *gain, HEAP *heap)
 {

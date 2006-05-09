@@ -616,251 +616,120 @@ static int coarse_part_random (
 
 /*********************************************************************/
 
-/* Greedy growing algorithm. */
+/* Greedy growing algorithm. 
+
+   Start with all vertices in part 0, except start_vtx
+   goes in part 1. Greedily grow part 1 while
+   minimizing the cut at every step.
+
+   Note: This version assumes p==2 (bisection). 
+*/
 
 static int greedy_grow_part (
   ZZ *zz,
   HGraph *hg,		/* Hypergraph. */
-  int *order,		/* Order array. On exit, order[i] is the i'th vertex. */
   int start_vtx,	/* Start the ordering from this vertex. */
-  int priority_mode,	/* Priority mode for selecting vertices */
-  int p,		/* Optional (input):  Number of partitions. */
+  int p,		/* Number of partitions (must be 2). */
   float *part_sizes,    /* Array of length p containing the percentages of
                            work to be assigned to each partition. */
-  Partition part,	/* Optional (output): Partition array. */
-  PHGPartParams *hgp     /* Partitioning parameters. */
+  Partition part,	/* Output: Partition array. */
+  PHGPartParams *hgp    /* Partitioning parameters. */
 )
 {
-  int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank;
-  int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
+  int i, j, vtx, edge;
+  int *cut[2];
+  double *gain = NULL;
   int vwgtdim = hg->VtxWeightDim;
-  int err=ZOLTAN_OK;
-  double weight_sum= 0.0, part_sum= 0.0, old_sum;
-  double delta=0.0, cutoff=0.0;
-  double *gain = NULL, *edge_sum = NULL;
-  double damp_factor, psize_sum= 0.0;
-  char msg[128];
+  double weight_sum= 0.0, part_sum, old_sum;
+  double cutoff=0.0;
+  double psize_sum= 0.0;
   HEAP h[2];
   static char *yo = "greedy_grow_part";
-
-  bfsnumber = 0;  /* Assign next vertex this bfs number */
-  pnumber = 0;    /* Assign next vertex this partition number */
+  int err=ZOLTAN_OK;
 
   /* Allocate arrays. */
-  if (!(rank  = (int*)    ZOLTAN_CALLOC (hg->nVtx, sizeof (int))) ||
-      !(gain  = (double*) ZOLTAN_CALLOC (hg->nVtx, sizeof (double))) ) {
+  if (!(gain  = (double*) ZOLTAN_CALLOC (hg->nVtx, sizeof (double)))){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     err =  ZOLTAN_MEMERR;
     goto End;
   }
+
+  /* Initially put all vertices in part 0 */
+  /* EBEB: Fixed vertices in future versions. */
   for (i=0; i<hg->nVtx; i++)
-    rank[i] = -1;       /* -1 means this vtx has not yet been numbered */
+    part[i] = 0;   
  
-  if (priority_mode && (!(priority_mode&1))) {   /* 2,4,6,... */
-    if (!(edge_sum = (double*) ZOLTAN_CALLOC (hg->nVtx, sizeof (double)))){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      err = ZOLTAN_MEMERR;
-      goto End;
-    }
-    /* Sum up edge weights incident to each vertex. */
-    for (edge=0; edge<hg->nEdge; edge++) {
-      for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++){
-        edge_sum[hg->hvertex[i]] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
-      }
-    }
+  cut[0]  = (int*) ZOLTAN_CALLOC (2*hg->nEdge, sizeof (int));
+  if ((hg->nEdge > 0 && cut[0] == NULL) ) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    err = ZOLTAN_MEMERR;
+    goto End;
   }
-  if (priority_mode == 0) {
-    cut[0]  = (int*) ZOLTAN_CALLOC (2*hg->nEdge, sizeof (int));
-    visited = (int*) ZOLTAN_CALLOC (hg->nVtx,    sizeof (int));
-    if ((hg->nEdge > 0 && cut[0] == NULL) || visited == NULL) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      err = ZOLTAN_MEMERR;
-      goto End;
-    }
-    cut[1] = &(cut[0][hg->nEdge]);
-    /* Initialize cut values. */
-    for (i=0; i<hg->nEdge; i++)
-      for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
-        (cut[visited[hg->hvertex[j]]][i])++;
-    /* Initialize gain values. */
-    for (i=0; i<hg->nVtx; i++){
-      for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++) {
-        edge = hg->vedge[j];
-        gain[i] -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
-      }
-    }
-  }
-  else
-    cut[0] = cut[1] = NULL;
-
-  if (priority_mode >= 3) {
-    if (!(vtx_count = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof (int)))){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      err = ZOLTAN_MEMERR;
-      goto End;
+  cut[1] = &(cut[0][hg->nEdge]);
+  /* Initialize cut values. */
+  for (i=0; i<hg->nEdge; i++)
+    for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
+      (cut[part[hg->hvertex[j]]][i])++;
+  /* Initialize gain values. */
+  for (i=0; i<hg->nVtx; i++){
+    for (j=hg->vindex[i]; j<hg->vindex[i+1]; j++) {
+      edge = hg->vedge[j];
+      gain[i] -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
     }
   }
 
-  if (p) {
-    /* If partitioning is chosen, sum up all the weights. */
-    for (i=0; i<hg->nVtx; i++)
-      weight_sum += hg->vwgt[i*vwgtdim];
+  /* Sum total weights. (No multi-weights yet) */
+  weight_sum = 0.;
+  for (i=0; i<hg->nVtx; i++)
+    weight_sum += hg->vwgt[i*vwgtdim];
 
-    /* Sum up all the target partition weights. */
-    /* Only use first vweight for now. */
-    for (i=0; i<p; i++)
-      psize_sum += part_sizes[i*vwgtdim];
-
-    /* Set cutoff for current partition */
-    cutoff = weight_sum*part_sizes[0]/psize_sum;
-  }
+  /* Set cutoff for growing partition (1) */
+  psize_sum = part_sizes[0] + part_sizes[1];
+  cutoff = weight_sum*part_sizes[1]/psize_sum;
 
   if (hgp->output_level >= PHG_DEBUG_ALL)
-    printf("Starting new ordering at vertex %d, part=%2d\n", start_vtx, p);
+    printf("Debug: Starting new greedy growing at vertex %d, part=%2d\n", start_vtx, p);
 
   /* Initialize heap. */
-  gain[start_vtx] = 1.0;           /* Make it highest value in heap. */
+  gain[start_vtx] = 1e10;        /* Make it highest value in heap. */
+                                 /* All other values should be negative. */
   Zoltan_Heap_Init(zz, &h[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &h[1], 0);       /* Dummy heap, not used. */
-  for(i=0; i<hg->nVtx; i++)
+  for(i=0; i<hg->nVtx; i++){
     Zoltan_Heap_Input(h, i, gain[i]);
+  }
   Zoltan_Heap_Make(h);
 
-  while (bfsnumber < hg->nVtx ) {
+  part_sum = 0.0;  /* Weight in the growing partition (1) */
+
+  while (part_sum < cutoff) {
 
     /* Get next vertex from heap */
     vtx = Zoltan_Heap_Extract_Max(h);
 
     if (vtx < 0) {
-      /* This should never happen. */
+      /* Empty heap: This should never happen. */
       ZOLTAN_PRINT_ERROR(-1, yo, "Internal error: No vertices in heap.");
       err = ZOLTAN_FATAL;
       goto End;
     }
-    if (rank[vtx] < 0){
-      order[bfsnumber] = vtx;
-      rank[vtx] = bfsnumber++;
-    }
-    else{
-      sprintf(msg, "Vertex %d in heap already labeled", vtx);
-      ZOLTAN_PRINT_ERROR(-1, yo, msg);
-      sprintf(msg, "bfsnumber=%d, rank[vtx] = %d", bfsnumber, rank[vtx]);
-      ZOLTAN_PRINT_ERROR(-1, yo, msg);
-      err = ZOLTAN_FATAL;
-      goto End;
-    }
-    if (p) {
-      old_sum = part_sum;
-      part_sum += hg->vwgt[vtx*vwgtdim];
-      part[vtx] = pnumber;
-      if (hgp->output_level >= PHG_DEBUG_ALL)
-        printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d, part_sum=%f\n",
-               vtx,bfsnumber-1,vtx,part[vtx],part_sum);
-    }
 
-    if (p && (pnumber+1)<p && part_sum > cutoff) {
-      /* Start new partition. Reset gain values. */
-      pnumber++;
-      /* Decide if current vertex should be moved to the next partition */
-      if (part_sum-cutoff > cutoff-old_sum) {
-        part[vtx]++;
-        part_sum = old_sum;
-        if (hgp->output_level >= PHG_DEBUG_ALL)
-          printf("COARSE_PART vtx=%2d, bfsnum=%2d, part[%2d]=%2d\n",
-           vtx, bfsnumber-1, vtx, part[vtx]);
-      }
-      weight_sum -= part_sum;
-      if (part[vtx] == pnumber){
-        part_sum = hg->vwgt[vtx*vwgtdim];
-        j = -1;
-      }
-      else { /* part[vtx] == pnumber-1 */
-        part_sum = 0.0;
-        j = Zoltan_Heap_Peek_Max(h); /* j will be the first vertex in the next part. */
-      }
-      /* Update cutoff. */
-      psize_sum -= part_sizes[pnumber-1];
-      cutoff = weight_sum*part_sizes[pnumber]/psize_sum;
+    part_sum += hg->vwgt[vtx*vwgtdim];
+    part[vtx] = 1;
+    if (hgp->output_level >= PHG_DEBUG_ALL)
+      printf("COARSE_PART vtx=%2d, part[%2d]=%2d, part_sum=%f\n",
+              vtx,vtx,part[vtx],part_sum);
 
-      if (hgp->output_level >= PHG_DEBUG_ALL)
-        printf("COARSE_PART vtx=%2d, part[%2d] = %2d, part_sum=%f, cutoff=%f\n",
-          vtx, vtx, part[vtx], part_sum, cutoff);
-
-      if (priority_mode > 0) {
-        /* Reset all gain values (but one). */
-        for (i=0; i<hg->nVtx; i++){
-          if (i != j) gain[i] = 0.0;
-          if (rank[i] < 0) Zoltan_Heap_Change_Value(h, i, gain[i]);
-        }
-        /* Reset counters. */
-        if (vtx_count)
-          for (j=0; j<hg->nEdge; j++)
-            vtx_count[j] = 0;
-      }
-    }
-
+    /* Move vertex from part=0 to part=1. */
     /* Update gain values for nbors. */
-    if (priority_mode == 0) {
-      /* Move from visited=0 to visited=1. */
-      /* We use Zoltan_HG_move_vertex from the refinement code. */
-      Zoltan_HG_move_vertex(hg, vtx, 0, 1, visited, cut, gain, h);
-    }
-    else {
-      if (part[vtx] == pnumber) {
-        /* Don't update if vtx was the last in a partition. */
-        for (j=hg->vindex[vtx]; j<hg->vindex[vtx+1]; j++) {
-          edge = hg->vedge[j];
-          esize = hg->hindex[edge+1] - hg->hindex[edge];
-          if (vtx_count) vtx_count[edge]++;
-          for (i=hg->hindex[edge]; i<hg->hindex[edge+1]; i++) {
-            nbor = hg->hvertex[i];
-            if (rank[nbor] < 0) {
-               switch (priority_mode) {
-               case 1:
-               case 2:
-                 /* Absorption metric. */
-                 delta = (hg->ewgt ? hg->ewgt[edge] : 1.0)/(esize-1);
-                 break;
-               case 3:
-               case 4:
-                 damp_factor = 0.5; /* Choose a value between 0 and 1. */
-                 /* gain contribution from current edge will be
-                    hg->ewgt[edge]*pow(damp_factor, esize-vtx_count[edge]-1) */
-                 if (vtx_count[edge] == 1)
-                   delta = (hg->ewgt ? hg->ewgt[edge] : 1.0)
-                    * pow(damp_factor, (double) (esize-2));
-                 else
-                   delta = (hg->ewgt ? hg->ewgt[edge] : 1.0) * (1.0-damp_factor)
-                    * pow(damp_factor, (double) (esize-vtx_count[edge]-1));
-                 break;
-               }
-               if (priority_mode & 1)
-                 gain[nbor] += delta;
-               else
-                 gain[nbor] += delta/edge_sum[nbor];
+    /* We use Zoltan_HG_move_vertex from the refinement code. */
+    Zoltan_HG_move_vertex(hg, vtx, 0, 1, part, cut, gain, h);
 
-               Zoltan_Heap_Change_Value(h, nbor, gain[nbor]);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /* Sanity check: Order should be the inverse permutation of rank. */
-  for (i=0; i<hg->nVtx; i++){
-    if (rank[i]>=0)
-      if (order[rank[i]] != i)
-         ZOLTAN_PRINT_WARN(-1, yo, "Arrays order and rank are inconsistent.");
   }
 
 End:
-  ZOLTAN_FREE ((void**) &rank);
-  ZOLTAN_FREE ((void**) &gain);
-  if (edge_sum)  ZOLTAN_FREE ((void**) &edge_sum);
-  if (vtx_count) ZOLTAN_FREE ((void**) &vtx_count);
-  if (cut[0])    ZOLTAN_FREE ((void**) &cut[0]);
-  if (visited)   ZOLTAN_FREE ((void**) &visited);
+  ZOLTAN_FREE (&gain);
+  if (cut[0])    ZOLTAN_FREE (&cut[0]);
   Zoltan_Heap_Free (&h[0]);
   Zoltan_Heap_Free( &h[1]);
   return err;
@@ -869,16 +738,8 @@ End:
 
 
 /*****************************************************************/
-/* Generic greedy ordering. 
- * Default priority function (0):
- *    gain = cut size improvement (like FM gain)
- *
- * The options below are no longer supported.
- * Priority function 1:  [absorption]
- *    gain(v,S) = \sum_e wgt(e) * |e \intersect S| / |e|
- * Priority function 2:
- *    gain(v,S) = \sum_e wgt(e)/edge_sum(v) * |e \intersect S| / |e|
- */
+/* Wrapper function for greedy growing. */
+
 static int coarse_part_greedy (
   ZZ *zz,
   HGraph *hg,
@@ -888,28 +749,22 @@ static int coarse_part_greedy (
   PHGPartParams *hgp
 )
 {
-  int start, *order;
+  int start;
   int err = ZOLTAN_OK;
-  const int pri_mode = 0;  /* set to 0; other options not supported any more  */
   char *yo = "coarse_part_greedy";
 
-  if (!(order  = (int*) ZOLTAN_MALLOC (sizeof(int) * hg->nVtx))) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    err = ZOLTAN_MEMERR;
-    goto End;
-  }
+  /* EBEB: Add edge weight scaling here? */
 
   /* Start at random vertex */
   start = Zoltan_Rand(NULL) % (hg->nVtx);
 
-  /* Call greedy_order. */
-  err = greedy_grow_part(zz, hg, order, start, pri_mode, p, part_sizes, part, hgp);
-  if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
-    goto End;
+  if (p==2)
+    /* Call greedy method. */
+    err = greedy_grow_part(zz, hg, start, p, part_sizes, part, hgp);
+  else
+    /* We should always do bisection?? */
+    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Invalid value for p, expected p=2.");
 
-End:
-  /* Free data and return. */
-  ZOLTAN_FREE ((void**) &order);
   return err;
 }
 
