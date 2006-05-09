@@ -266,7 +266,7 @@ ModelEvaluatorBase::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
   return outArgs;
 }
 
-void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArgs<double>& outArgs ) const
+void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs_in, const OutArgs<double>& outArgs ) const
 {
 
   using Thyra::get_Epetra_Vector;
@@ -276,6 +276,9 @@ void EpetraModelEvaluator::evalModel( const InArgs<double>& inArgs, const OutArg
   using Teuchos::OSTab;
 
   typedef EpetraExt::ModelEvaluator EME;
+
+  InArgs<double> inArgs = initialGuess_; // Make sure we grab the initial guess first!
+  inArgs.setArgs(inArgs_in);
 
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
