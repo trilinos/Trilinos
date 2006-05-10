@@ -27,7 +27,12 @@ extern "C" {
    Note that the scaled weights are returned in a separate
    array (new_ewgts) and the hypergraph is not changed in this function.
 
-   EBEB: Removed Robert's serial scaling methods. 
+   Currently, three scalings are available:
+   1: absorption scaling (1/(size-1))
+   2: net size scaling   (1/size)
+   3: clique scaling     (2/(size*(size-1)))
+
+   EBEB: Removed Robert's old serial scaling methods. 
          We should look at these later.
  */
 int Zoltan_PHG_Scale_Edges (ZZ *zz, HGraph *hg, float *new_ewgt, 
@@ -36,7 +41,7 @@ int Zoltan_PHG_Scale_Edges (ZZ *zz, HGraph *hg, float *new_ewgt,
 int    i, err;
 int    *lsize = NULL;  /* local edge sizes */
 int    *size = NULL;   /* edge sizes */
-static char *yo = "Zoltan_PHG_Scale_Weights";
+static char *yo = "Zoltan_PHG_Scale_Edges";
 
   err = ZOLTAN_OK; 
 
@@ -61,6 +66,9 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
     /* absorption scaling; scale by 1/(size -1) */
     /* intentionally fall through into next case! */
   case 2:
+    /* net size scaling; scale by 1/size */
+    /* intentionally fall through into next case! */
+  case 3:
     /* clique scaling; scale by 2/(size*(size-1)) */
 
     /* first compute size of all hyperedges */
@@ -86,6 +94,8 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
         if (edge_scaling==1)
           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) / (size[i]-1.0);
         else if (edge_scaling==2)
+          new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) / size[i];
+        else if (edge_scaling==3)
           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) * 2.0 / 
                         (size[i]*(size[i]-1.0));
       }

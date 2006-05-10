@@ -761,7 +761,7 @@ static int coarse_part_greedy (
   PHGPartParams *hgp
 )
 {
-  int start;
+  int start, scaling;
   float *old_ewgt=NULL, *new_ewgt=NULL;
   int err = ZOLTAN_OK;
   char *yo = "coarse_part_greedy";
@@ -772,7 +772,13 @@ static int coarse_part_greedy (
                       ZOLTAN_MALLOC(hg->nEdge * sizeof(float))))
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory")
      else {
-       Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp->edge_scaling);
+       if (hgp->edge_scaling)
+         scaling = hgp->edge_scaling;
+       else
+         /* Pick a random scaling. */
+         scaling = Zoltan_Rand(NULL) % 4; /* scaling is in [0,3] */
+       /* Temporarily scale the edge weights (save old weights) */
+       Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, scaling);
        old_ewgt = hg->ewgt;
        hg->ewgt = new_ewgt;
      }
