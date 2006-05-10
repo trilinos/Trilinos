@@ -14,35 +14,7 @@
 
 @SET_MAKE@
 
-#@HEADER
-# ************************************************************************
-# 
-#                 Belos: Block Linear Solvers Package
-#                 Copyright (2004) Sandia Corporation
-# 
-# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
-# license for use of this work by or on behalf of the U.S. Government.
-# 
-# This library is free software; you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License as
-# published by the Free Software Foundation; either version 2.1 of the
-# License, or (at your option) any later version.
-#  
-# This library is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-#  
-# You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
-# USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-# 
-# ************************************************************************
-#@HEADER
-
-SOURCES = $(MVOPTesterThyra_test_SOURCES)
+SOURCES = $(belos_epetra_thyra_lowsf_hb_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -50,7 +22,7 @@ VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../../..
+top_builddir = ../../../..
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = @INSTALL@
 install_sh_DATA = $(install_sh) -c -m 644
@@ -65,8 +37,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = MVOPTesterThyra_test$(EXEEXT)
-subdir = thyra/test/MVOPTester
+noinst_PROGRAMS = $(am__EXEEXT_1)
+subdir = thyra/example/LOWSFactory/Epetra
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -97,25 +69,29 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Belos_config.h
 CONFIG_CLEAN_FILES =
+@BUILD_EPETRAEXT_TRUE@am__EXEEXT_1 =  \
+@BUILD_EPETRAEXT_TRUE@	belos_epetra_thyra_lowsf_hb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_MVOPTesterThyra_test_OBJECTS =  \
-	MVOPTesterThyra_test-cxx_main.$(OBJEXT)
-MVOPTesterThyra_test_OBJECTS = $(am_MVOPTesterThyra_test_OBJECTS)
+am_belos_epetra_thyra_lowsf_hb_OBJECTS =  \
+	belos_epetra_thyra_lowsf_hb.$(OBJEXT)
+belos_epetra_thyra_lowsf_hb_OBJECTS =  \
+	$(am_belos_epetra_thyra_lowsf_hb_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(BELOS_TEST_LIBS))
+am__DEPENDENCIES_3 = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(MVOPTesterThyra_test_SOURCES)
-DIST_SOURCES = $(MVOPTesterThyra_test_SOURCES)
+SOURCES = $(belos_epetra_thyra_lowsf_hb_SOURCES)
+DIST_SOURCES = $(belos_epetra_thyra_lowsf_hb_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -179,7 +155,7 @@ LAPACK_LIBS = @LAPACK_LIBS@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 
-# Dummy for new export makefiles
+# This is already added part of BELOS_LIBS and therefore automake does not need to add this again!
 LIBS = 
 LTLIBOBJS = @LTLIBOBJS@
 MAINT = @MAINT@
@@ -264,29 +240,19 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(BELOS_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
-#np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
-#np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
-#np# files needed to compile the exe.
-MVOPTesterThyra_test_SOURCES = $(srcdir)/cxx_main.cpp
+#
+# Actual programs
+#
+@BUILD_EPETRAEXT_TRUE@BELOS_THYRA_SOLVER_DRIVER = belos_epetra_thyra_lowsf_hb 
+belos_epetra_thyra_lowsf_hb_SOURCES = $(srcdir)/belos_epetra_thyra_lowsf_hb.cpp 
+belos_epetra_thyra_lowsf_hb_DEPENDENCIES = $(common_dependencies)
+belos_epetra_thyra_lowsf_hb_LDADD = $(common_ldadd)
 
-#np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
-#np# exe depends on.  (This primary is not absolutely essential.)
-MVOPTesterThyra_test_DEPENDENCIES = \
-	$(top_builddir)/src/libbelos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-
-#np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
-#np# building the exe.
-MVOPTesterThyra_test_CXXFLAGS = \
-	-I$(top_srcdir)/thyra/src \
-	-I$(top_srcdir)/src
-
-
-#np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
-#np# building the exe.
-MVOPTesterThyra_test_LDADD = $(EXPORT_LIBS) 
+#
+# Common stuff
+#
+common_dependencies = $(top_builddir)/src/libbelos.a Example.mtx
+common_ldadd = $(EXPORT_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -300,9 +266,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  thyra/test/MVOPTester/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  thyra/example/LOWSFactory/Epetra/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  thyra/test/MVOPTester/Makefile
+	  $(AUTOMAKE) --foreign  thyra/example/LOWSFactory/Epetra/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -323,9 +289,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-MVOPTesterThyra_test$(EXEEXT): $(MVOPTesterThyra_test_OBJECTS) $(MVOPTesterThyra_test_DEPENDENCIES) 
-	@rm -f MVOPTesterThyra_test$(EXEEXT)
-	$(CXXLINK) $(MVOPTesterThyra_test_LDFLAGS) $(MVOPTesterThyra_test_OBJECTS) $(MVOPTesterThyra_test_LDADD) $(LIBS)
+belos_epetra_thyra_lowsf_hb$(EXEEXT): $(belos_epetra_thyra_lowsf_hb_OBJECTS) $(belos_epetra_thyra_lowsf_hb_DEPENDENCIES) 
+	@rm -f belos_epetra_thyra_lowsf_hb$(EXEEXT)
+	$(CXXLINK) $(belos_epetra_thyra_lowsf_hb_LDFLAGS) $(belos_epetra_thyra_lowsf_hb_OBJECTS) $(belos_epetra_thyra_lowsf_hb_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -333,7 +299,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -351,21 +317,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-MVOPTesterThyra_test-cxx_main.o: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterThyra_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTesterThyra_test-cxx_main.o -MD -MP -MF "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Tpo" -c -o MVOPTesterThyra_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Tpo" "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTesterThyra_test-cxx_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTesterThyra_test-cxx_main.TPo' @AMDEPBACKSLASH@
+belos_epetra_thyra_lowsf_hb.o: $(srcdir)/belos_epetra_thyra_lowsf_hb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT belos_epetra_thyra_lowsf_hb.o -MD -MP -MF "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" -c -o belos_epetra_thyra_lowsf_hb.o `test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po"; else rm -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' object='belos_epetra_thyra_lowsf_hb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po' tmpdepfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterThyra_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTesterThyra_test-cxx_main.o `test -f '$(srcdir)/cxx_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o belos_epetra_thyra_lowsf_hb.o `test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp
 
-MVOPTesterThyra_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterThyra_test_CXXFLAGS) $(CXXFLAGS) -MT MVOPTesterThyra_test-cxx_main.obj -MD -MP -MF "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Tpo" -c -o MVOPTesterThyra_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Tpo" "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Po"; else rm -f "$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='MVOPTesterThyra_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MVOPTesterThyra_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/MVOPTesterThyra_test-cxx_main.TPo' @AMDEPBACKSLASH@
+belos_epetra_thyra_lowsf_hb.obj: $(srcdir)/belos_epetra_thyra_lowsf_hb.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT belos_epetra_thyra_lowsf_hb.obj -MD -MP -MF "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" -c -o belos_epetra_thyra_lowsf_hb.obj `if test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo" "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po"; else rm -f "$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp' object='belos_epetra_thyra_lowsf_hb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.Po' tmpdepfile='$(DEPDIR)/belos_epetra_thyra_lowsf_hb.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MVOPTesterThyra_test_CXXFLAGS) $(CXXFLAGS) -c -o MVOPTesterThyra_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o belos_epetra_thyra_lowsf_hb.obj `if test -f '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/belos_epetra_thyra_lowsf_hb.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -529,8 +495,11 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
-
 include $(top_builddir)/Makefile.export.belos
+
+Example.mtx:
+	cp  $(top_srcdir)/../belos/test/BlockGmres/orsirr1.hb orsirr1.hb                               
+	cp  $(top_srcdir)/../belos/test/BlockCG/bcsstk14.hb bcsstk14.hb                              
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -26,25 +26,12 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
-
-all-local:
-	@echo ""
-	@echo "Trilinos package belos subdirectory thyra built successfully."
-	@echo ""
-
-if BUILD_TESTS
 if BUILD_EPETRA_THYRA
-TEST_SUBDIR=test
-endif
-endif
-
-if BUILD_EXAMPLES
-if BUILD_EPETRA_THYRA
-EXAMPLE_SUBDIR=example
-endif
+EPETRA_LOWSF_DIR = Epetra
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
-#SUBDIRS = src $(TEST_SUBDIR)
+if BUILD_TPETRA_THYRA
+TPETRA_LOWSF_DIR = Tpetra
+endif
 
+SUBDIRS = $(EPETRA_LOWSF_DIR) $(TPETRA_LOWSF_DIR)

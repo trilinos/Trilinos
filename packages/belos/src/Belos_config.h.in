@@ -20,6 +20,9 @@
 /* Define if want to build with belos enabled */
 #undef HAVE_BELOS_EPETRAEXT
 
+/* Define if want to build belos-examples */
+#undef HAVE_BELOS_EXAMPLES
+
 /* Define if want to build belos-experimental */
 #undef HAVE_BELOS_EXPERIMENTAL
 
@@ -61,6 +64,9 @@
 
 /* Define if want to build with epetra enabled */
 #undef HAVE_EPETRA_THYRA
+
+/* Define if want to build examples */
+#undef HAVE_EXAMPLES
 
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
@@ -136,6 +142,9 @@
 
 /* Define if want to build teuchos-complex */
 #undef HAVE_TEUCHOS_COMPLEX
+
+/* Define if want to build with tpetra enabled */
+#undef HAVE_TPETRA_THYRA
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

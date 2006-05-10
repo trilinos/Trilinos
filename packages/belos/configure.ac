@@ -204,10 +204,9 @@ AC_CXX_STD_SPRINTF
 # Checks if examples and tests should be built and which ones should be built
 # ------------------------------------------------------------------------
 
-#TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive 
-#to this option)], EXAMPLES, yes)
-#TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, examples, [Build Belos examples], BELOS_EXAMPLES)
-#AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_belos_examples" != "Xno" ])
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, examples, [Build Belos examples], BELOS_EXAMPLES)
+AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_belos_examples" != "Xno" ])
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, tests, [Build Belos tests], BELOS_TESTS)
@@ -236,6 +235,9 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, epetraext, BELOS_EPETRAEXT, BUILD_EPETRAEX
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, thyra, BELOS_THYRA, BUILD_BELOS_THYRA, yes, [Build source code and tests that use Thyra. Can be overridden with --disable-belos-thyra.], [Build source code and tests that use Thyra.])
 
 TAC_ARG_INFORM_SUBPACKAGE_USED(epetra, thyra, EPETRA_THYRA, BUILD_EPETRA_THYRA, yes, [Build source code and tests that use Epetra-Thyra wrappers. Can be overridden with --disable-epetra-thyra.], [Build source code and tests that use Epetra-Thyra wrappers.])
+
+TAC_ARG_INFORM_SUBPACKAGE_USED(tpetra, thyra, TPETRA_THYRA, BUILD_TPETRA_THYRA, yes, [Build source code and tests that use Tpetra-Thyra wrappers. Can be overridden with --disable-tpetra-thyra.], [Build source code and tests that use Tpetra-Thyra wrappers.])
+
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -344,6 +346,9 @@ AC_CONFIG_FILES([
 		thyra/test/Makefile
 		thyra/test/MVOPTester/Makefile
 		thyra/test/LOWSFactory/Makefile
+		thyra/example/Makefile
+		thyra/example/LOWSFactory/Makefile
+		thyra/example/LOWSFactory/Epetra/Makefile
 		])
 
 AC_OUTPUT()
