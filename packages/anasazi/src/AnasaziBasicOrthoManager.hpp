@@ -208,13 +208,16 @@ namespace Anasazi {
       if (M) {
         curMX = MVT::CloneView(MX,curind);
       }
+      else {
+        curMX = curX; // this won't be referenced
+      }
 
       // orthogonalize current X against Q
-      ret = project(curX,curMX,M,Q);
+      ret = project(*curX,*curMX,M,Q);
       if (ret == Failed) return Failed;
 
       // orthonormalize X, but quit if it is rank deficient
-      ret = findBasis(curX,curMX,M,rank,false);
+      ret = findBasis(*curX,*curMX,M,rank,false);
       if (ret == Failed) {
         return Failed;
       }
@@ -229,10 +232,36 @@ namespace Anasazi {
         if (numTries <= 0) {
           break;
         }
+        // steal one
+        numTries--;
+
+        // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
         curX.release();
         curMX.release();
-        // FINISH: CGB: 05/09/2006: finish this mechanism
-        // reset curX/curXM to troubled index (rank); randomize; orthogonalize against Q and prevX; continue
+
+        // randomize troubled direction
+        std::vector<int> ind(1);
+        ind[0] = rank;
+        curX = MVT::CloneView(X,ind);
+        MVT::MvRandom(*curX);
+        if (M) {
+          curMX = MVT::CloneView(MX,ind);
+          if ( OPT::Apply( *M, *curX, *curMX ) != Ok ) return Failed;
+        }
+        else {
+          curMX = curX;
+        }
+
+        // orthogonalize against Q and prevX
+        std::vector<int> prevind(rank);
+        for (int i=0; i<rank; i++) {
+          prevind[i] = i;
+        }
+        Teuchos::RefCountPtr<MV> prevX = MVT::CloneView(X,prevind);
+        if ( project(*curX,*curMX,M,Q) != Ok ) return Failed;
+        if ( project(*curX,*curMX,M,*prevX) != Ok ) return Failed;
+
+        continue;
       }
 
     } while (rank < xc);
@@ -516,7 +545,7 @@ namespace Anasazi {
             prevMX = MVT::CloneView( MX, prev_idx );
             // MXj <- M*Xj_new
             //      = M*(Xj_old - prevX prevX^T MXj)
-            //      = MXj - prevX product
+            //      = MXj - prevMX product
             MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *MXj );
           }
 
