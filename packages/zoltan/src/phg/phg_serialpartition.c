@@ -762,10 +762,21 @@ static int coarse_part_greedy (
 )
 {
   int start;
+  float *old_ewgt=NULL, *new_ewgt=NULL;
   int err = ZOLTAN_OK;
   char *yo = "coarse_part_greedy";
 
-  /* EBEB: Add edge weight scaling here? */
+  /* Scale the edge weights */
+  if (hgp->edge_scaling) {
+     if (hg->nEdge && !(new_ewgt = (float*)
+                      ZOLTAN_MALLOC(hg->nEdge * sizeof(float))))
+       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory")
+     else {
+       Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp->edge_scaling);
+       old_ewgt = hg->ewgt;
+       hg->ewgt = new_ewgt;
+     }
+  }
 
   /* Start at random vertex */
   start = Zoltan_Rand(NULL) % (hg->nVtx);
@@ -776,6 +787,13 @@ static int coarse_part_greedy (
   else
     /* We should always do bisection?? */
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Invalid value for p, expected p=2.");
+
+  /* Restore original edge weights */
+  if (old_ewgt){
+    ZOLTAN_FREE(&(hg->ewgt));
+    hg->ewgt = old_ewgt;
+    old_ewgt = NULL;
+  }
 
   return err;
 }

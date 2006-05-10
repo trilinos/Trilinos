@@ -139,7 +139,7 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 /**********************/
 int Zoltan_PHG_Matching (ZZ*, HGraph*, Matching, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
-int Zoltan_PHG_Scale_Edges (ZZ*, HGraph*, float*, PHGPartParams*);
+int Zoltan_PHG_Scale_Edges (ZZ*, HGraph*, float*, int);
 int Zoltan_PHG_Scale_Vtx (ZZ*, HGraph*, PHGPartParams*);
 int Zoltan_PHG_Vertex_Visit_Order (ZZ*, HGraph*, PHGPartParams*, int*);
 

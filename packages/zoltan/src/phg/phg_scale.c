@@ -23,15 +23,15 @@ extern "C" {
 
 /* Scaling the weight of hypergraph edges. 
    This changes the inner product used in matching,
-   hopefully to the better! 
-   Note that the scaled weights are only used for matching,
-   and the original weights are restored afterwards (see phg_match.c).
+   usually to the better! 
+   Note that the scaled weights are returned in a separate
+   array (new_ewgts) and the hypergraph is not changed in this function.
 
    EBEB: Removed Robert's serial scaling methods. 
          We should look at these later.
  */
 int Zoltan_PHG_Scale_Edges (ZZ *zz, HGraph *hg, float *new_ewgt, 
-                             PHGPartParams *hgp)
+                            int edge_scaling)
 {
 int    i, err;
 int    *lsize = NULL;  /* local edge sizes */
@@ -49,7 +49,7 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
     return ZOLTAN_MEMERR;
   }
 
-  switch (hgp->edge_scaling){
+  switch (edge_scaling){
 
   case 0:
     /* copy current weights; no scaling. */
@@ -83,9 +83,9 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
       printf(" %1d,", size[i]);
 #endif
       if (size[i]>1) {
-        if (hgp->edge_scaling==1)
+        if (edge_scaling==1)
           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) / (size[i]-1.0);
-        else if (hgp->edge_scaling==2)
+        else if (edge_scaling==2)
           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) * 2.0 / 
                         (size[i]*(size[i]-1.0));
       }

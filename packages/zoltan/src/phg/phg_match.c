@@ -86,7 +86,7 @@ char  *yo = "Zoltan_PHG_Matching";
                       ZOLTAN_MALLOC(hg->nEdge * sizeof(float))))
          MEMORY_ERROR;
  
-     Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp);
+     Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp->edge_scaling);
      old_ewgt = hg->ewgt;
      hg->ewgt = new_ewgt;
   }
