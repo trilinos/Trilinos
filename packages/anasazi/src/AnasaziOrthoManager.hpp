@@ -61,30 +61,68 @@ namespace Anasazi {
 
     //@{ \name Orthogonalization methods.
 
-    /*! \brief This method takes ....
-    */
-    virtual ReturnType project ( MV &X, MV &MX, const OP *M, const MV &Q ) const = 0;
+    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
+     *  another given multivector, in a specified inner product.
+     *  
+     @param X [in/out] The multivector to the modified. 
+       On output, \f$X^T M Q = 0\f$ if \c M!=0 or \f$X^T Q = 0\f$ if \c M==0.
 
-    /*! \brief This method takes ...
-    */
-    virtual ReturnType normalize ( MV &X, MV &MX, const OP *M ) const = 0;
+     @param MX [in/out] The image of \c X under the operator \c M. 
+       On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
+       If \c M == 0, \c MX is not referenced.
 
-    /*! \brief This method takes ...
+     @param M [in] Pointer to the operator used for the inner product. If \c M == 0, the Euclidean inner product is used.
+
+     @param Q [in] A multivector specifying the space to be orthogonalized against. 
+
+     @return Code specifying failure of the routine, as defined by the implementation.
     */
-    ReturnType projectAndNormalize ( MV &X, MV &MX, const OP *M, const MV &Q ) const;
+    static virtual ReturnType project ( MV &X, MV &MX, const OP *M, const MV &Q ) const = 0;
+
+
+
+    /*! \brief This method takes a multivector and orthonormalizes the columns using a specified inner product.
+     *  
+     @param X [in/out] The multivector to the modified. 
+       On output, \f$X^T M X = I\f$ if \c M!=0 or \f$X^T X = I\f$ if \c M==0.
+
+     @param MX [in/out] The image of \c X under the operator \c M. 
+       On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
+       If \c M == 0, \c MX is not referenced.
+
+     @param M [in] Pointer to the operator used for the inner product. If \c M == 0, the Euclidean inner product is used.
+
+     @param rank [out] Rank of the basis computed by this method.
+
+     @return Code specifying failure of the routine, as defined by the implementation.
+    */
+    static virtual ReturnType normalize ( MV &X, MV &MX, const OP *M, int &rank ) const = 0;
+
+
+
+    /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
+     *  another given multivector, in a specified inner product. It also orthonormalizes the 
+     *  columns of the resulting multivector.
+     *  
+     @param X [in/out] The multivector to the modified. 
+       On output, \f$X^T M Q = 0\f$ and \f$X^T M X = I\f$ if \c M!=0 or \f$X^T Q = 0\f$ and \f$X^T X = I\f$ if \c M==0.
+
+     @param MX [in/out] The image of \c X under the operator \c M. 
+       On input, this is expected to be consistent with \c X. On output, this is updated consistent with updates to \c X.
+       If \c M == 0, \c MX is not referenced.
+
+     @param M [in] Pointer to the operator used for the inner product. If \c M == 0, the Euclidean inner product is used.
+
+     @param Q [in] A multivector specifying the space to be orthogonalized against. 
+
+     @param rank [out] Rank of the basis computed by this method.
+
+     @return Code specifying failure of the routine, as defined by the implementation.
+    */
+    static ReturnType projectAndNormalize ( MV &X, MV &MX, const OP *M, const MV &Q, int &rank ) const = 0;
 
     //@}
   };
-
-  template <class ScalarType, class MV, class OP>
-  OrthoManager::projectAndNormalize( MV &X, MV &MX, const OP *M, const MV &Q) const {
-    ReturnType ret;
-    ret = project( X, MX, M, Q );
-    if (ret == OK) {
-      ret = normalize(X, MX, M);
-    }
-    return ret;
-  }
 
 } // end of Anasazi namespace
 
