@@ -93,6 +93,12 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #error "Isorropia must have <vector>"
 #endif
 
+#ifdef HAVE_SET
+#include <set>
+#else
+#error "Isorropia must have <set>"
+#endif
+
 #ifdef HAVE_TIME_H
 #include <time.h>
 #endif

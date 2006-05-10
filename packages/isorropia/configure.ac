@@ -158,7 +158,7 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # ------------------------------------------------------------------------
 
 AC_HEADER_STDC
-AC_CHECK_HEADERS([iostream fstream exception vector time.h],
+AC_CHECK_HEADERS([iostream fstream exception vector set time.h],
                  [],[], [#include <stdlib.h>],)
 
 if test "X$ac_cv_header_iostream" != "Xyes"; then
@@ -198,6 +198,8 @@ AC_CXX_STD_SPRINTF
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, teuchos, TEUCHOS, HAVE_TEUCHOS, yes, [Build Teuchos support in Isorropia.], [Build Teuchos support in Isorropia.  Can be overridden with --disable-isorropia-teuchos.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetra, EPETRA, HAVE_EPETRA, yes, [Build Epetra support in Isorropia.], [Build Epetra support in Isorropia.  Can be overridden with --disable-isorropia-epetra.])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext_zoltan, EPETRAEXT_ZOLTAN, HAVE_EPETRAEXT_ZOLTAN, yes, [Build EpetraExt-zoltan support in Isorropia.], [Build EpetraExt-zoltan support in Isorropia.  Can be overridden with --disable-isorropia-epetraext-zoltan.])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
@@ -305,6 +307,8 @@ AC_CONFIG_FILES([
     test/Makefile
     test/rebalance_1d_default/Makefile
     test/rebalance_1d_default/Makefile.include
+    test/zoltan/Makefile
+    test/zoltan/Makefile.include
     test/utest/Makefile
     test/utest/Makefile.include
     test/utils/Makefile

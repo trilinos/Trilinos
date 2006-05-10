@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(linsys_SOURCES)
+SOURCES = $(copyfiles_SOURCES) $(rebalance_zoltan_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -68,10 +68,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = linsys$(EXEEXT)
-subdir = example/linearsystem
-DIST_COMMON = README $(srcdir)/Makefile.in \
-	$(srcdir)/Makefile.include.am $(srcdir)/Makefile.include.in
+noinst_PROGRAMS = copyfiles$(EXEEXT) rebalance_zoltan$(EXEEXT)
+subdir = test/zoltan
+DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.include.am \
+	$(srcdir)/Makefile.include.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -106,8 +106,12 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Isorropia_autoheader.h
 CONFIG_CLEAN_FILES = Makefile
 PROGRAMS = $(noinst_PROGRAMS)
-am_linsys_OBJECTS = linsys-linsys.$(OBJEXT)
-linsys_OBJECTS = $(am_linsys_OBJECTS)
+am_copyfiles_OBJECTS =
+copyfiles_OBJECTS = $(am_copyfiles_OBJECTS)
+copyfiles_LDADD = $(LDADD)
+am_rebalance_zoltan_OBJECTS =  \
+	rebalance_zoltan-rebalance_zoltan.$(OBJEXT)
+rebalance_zoltan_OBJECTS = $(am_rebalance_zoltan_OBJECTS)
 am__DEPENDENCIES_1 =
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -116,8 +120,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(linsys_SOURCES)
-DIST_SOURCES = $(linsys_SOURCES)
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+SOURCES = $(copyfiles_SOURCES) $(rebalance_zoltan_SOURCES)
+DIST_SOURCES = $(copyfiles_SOURCES) $(rebalance_zoltan_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -269,14 +277,20 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 DEFAULT_INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
-linsys_SOURCES = $(srcdir)/linsys.cpp
-linsys_DEPENDENCIES = \
-	$(top_builddir)/src/libisorropia.a
+rebalance_zoltan_SOURCES = $(srcdir)/rebalance_zoltan.cpp
+copyfiles_SOURCES = 
+rebalance_zoltan_DEPENDENCIES = \
+	$(top_builddir)/src/libisorropia.a \
+	$(top_builddir)/test/utils/libisorropia_test_utils.a
 
-linsys_CXXFLAGS = $(EPETRA_INCLUDES)
-linsys_LDADD = \
+rebalance_zoltan_CXXFLAGS = $(EPETRA_INCLUDES)
+rebalance_zoltan_LDADD = \
+      -L$(top_builddir)/test/utils -lisorropia_test_utils \
       -L$(top_builddir)/src -lisorropia \
-      $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+EXTRA_DIST = \
+	src_rebalance_1d_dist.2
 
 all: all-am
 
@@ -291,9 +305,9 @@ $(srcdir)/Makefile.include.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.include
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/linearsystem/Makefile.include'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/zoltan/Makefile.include'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/linearsystem/Makefile.include
+	  $(AUTOMAKE) --foreign  test/zoltan/Makefile.include
 .PRECIOUS: Makefile.include
 Makefile.include: $(srcdir)/Makefile.include.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -316,9 +330,9 @@ Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-linsys$(EXEEXT): $(linsys_OBJECTS) $(linsys_DEPENDENCIES) 
-	@rm -f linsys$(EXEEXT)
-	$(CXXLINK) $(linsys_LDFLAGS) $(linsys_OBJECTS) $(linsys_LDADD) $(LIBS)
+rebalance_zoltan$(EXEEXT): $(rebalance_zoltan_OBJECTS) $(rebalance_zoltan_DEPENDENCIES) 
+	@rm -f rebalance_zoltan$(EXEEXT)
+	$(CXXLINK) $(rebalance_zoltan_LDFLAGS) $(rebalance_zoltan_OBJECTS) $(rebalance_zoltan_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -326,7 +340,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linsys-linsys.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -342,19 +356,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-linsys-linsys.o: $(srcdir)/linsys.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linsys_CXXFLAGS) $(CXXFLAGS) -MT linsys-linsys.o -MD -MP -MF "$(DEPDIR)/linsys-linsys.Tpo" -c -o linsys-linsys.o `test -f '$(srcdir)/linsys.cpp' || echo '$(srcdir)/'`$(srcdir)/linsys.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/linsys-linsys.Tpo" "$(DEPDIR)/linsys-linsys.Po"; else rm -f "$(DEPDIR)/linsys-linsys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/linsys.cpp' object='linsys-linsys.o' libtool=no @AMDEPBACKSLASH@
+rebalance_zoltan-rebalance_zoltan.o: $(srcdir)/rebalance_zoltan.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_zoltan_CXXFLAGS) $(CXXFLAGS) -MT rebalance_zoltan-rebalance_zoltan.o -MD -MP -MF "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Tpo" -c -o rebalance_zoltan-rebalance_zoltan.o `test -f '$(srcdir)/rebalance_zoltan.cpp' || echo '$(srcdir)/'`$(srcdir)/rebalance_zoltan.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Tpo" "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Po"; else rm -f "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/rebalance_zoltan.cpp' object='rebalance_zoltan-rebalance_zoltan.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linsys_CXXFLAGS) $(CXXFLAGS) -c -o linsys-linsys.o `test -f '$(srcdir)/linsys.cpp' || echo '$(srcdir)/'`$(srcdir)/linsys.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_zoltan_CXXFLAGS) $(CXXFLAGS) -c -o rebalance_zoltan-rebalance_zoltan.o `test -f '$(srcdir)/rebalance_zoltan.cpp' || echo '$(srcdir)/'`$(srcdir)/rebalance_zoltan.cpp
 
-linsys-linsys.obj: $(srcdir)/linsys.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linsys_CXXFLAGS) $(CXXFLAGS) -MT linsys-linsys.obj -MD -MP -MF "$(DEPDIR)/linsys-linsys.Tpo" -c -o linsys-linsys.obj `if test -f '$(srcdir)/linsys.cpp'; then $(CYGPATH_W) '$(srcdir)/linsys.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/linsys.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/linsys-linsys.Tpo" "$(DEPDIR)/linsys-linsys.Po"; else rm -f "$(DEPDIR)/linsys-linsys.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/linsys.cpp' object='linsys-linsys.obj' libtool=no @AMDEPBACKSLASH@
+rebalance_zoltan-rebalance_zoltan.obj: $(srcdir)/rebalance_zoltan.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_zoltan_CXXFLAGS) $(CXXFLAGS) -MT rebalance_zoltan-rebalance_zoltan.obj -MD -MP -MF "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Tpo" -c -o rebalance_zoltan-rebalance_zoltan.obj `if test -f '$(srcdir)/rebalance_zoltan.cpp'; then $(CYGPATH_W) '$(srcdir)/rebalance_zoltan.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/rebalance_zoltan.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Tpo" "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Po"; else rm -f "$(DEPDIR)/rebalance_zoltan-rebalance_zoltan.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/rebalance_zoltan.cpp' object='rebalance_zoltan-rebalance_zoltan.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(linsys_CXXFLAGS) $(CXXFLAGS) -c -o linsys-linsys.obj `if test -f '$(srcdir)/linsys.cpp'; then $(CYGPATH_W) '$(srcdir)/linsys.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/linsys.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(rebalance_zoltan_CXXFLAGS) $(CXXFLAGS) -c -o rebalance_zoltan-rebalance_zoltan.obj `if test -f '$(srcdir)/rebalance_zoltan.cpp'; then $(CYGPATH_W) '$(srcdir)/rebalance_zoltan.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/rebalance_zoltan.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -520,6 +534,9 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+copyfiles$(EXEEXT):$(copyfiles_SOURCES)
+	echo "nothing to do here..."
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

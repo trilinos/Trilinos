@@ -27,30 +27,28 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
-	@echo ""
-	@echo "Trilinos package isorropia subdirectory test built successfully."
-	@echo ""
+DEFAULT_INCLUDES= -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
 
-if HAVE_EPETRAEXT_ZOLTAN
-ZOLTAN_TEST_DIR = zoltan
-ZOLTAN_TEST = rebalance_zoltan.exe
-else
-ZOLTAN_TEST_DIR =
-ZOLTAN_TEST =
-endif
+noinst_PROGRAMS = copyfiles rebalance_zoltan
 
-#
-# Note: utils must be built first, before the other subdirs
-#
-SUBDIRS = utils utest rebalance_1d_default $(ZOLTAN_TEST_DIR)
+rebalance_zoltan_SOURCES = $(srcdir)/rebalance_zoltan.cpp
 
-TESTS = \
-utest/utest.exe \
-rebalance_1d_default/rebalance_1d_default.exe \
-$(ZOLTAN_TEST)
+copyfiles_SOURCES = 
 
-EXTRA_DIST = definition
+rebalance_zoltan_DEPENDENCIES = \
+	$(top_builddir)/src/libisorropia.a \
+	$(top_builddir)/test/utils/libisorropia_test_utils.a
 
+rebalance_zoltan_CXXFLAGS = $(EPETRA_INCLUDES)
+rebalance_zoltan_LDADD = \
+      -L$(top_builddir)/test/utils -lisorropia_test_utils \
+      -L$(top_builddir)/src -lisorropia \
+      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+EXTRA_DIST = \
+	src_rebalance_1d_dist.2
+
+copyfiles$(EXEEXT):$(copyfiles_SOURCES)
+	echo "nothing to do here..."

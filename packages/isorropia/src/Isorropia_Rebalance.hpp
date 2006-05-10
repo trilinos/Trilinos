@@ -34,6 +34,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_configdefs.hpp>
 #include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
 class Epetra_Map;
@@ -115,9 +116,18 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 
 /** Create a balanced copy of an input Epetra_CrsGraph.
 
-  This function represents the most basic default case, not accepting
-  parameters or weights, and uses a self-contained internal implementation
+  This function represents a basic case, not accepting weights.
+  By default, it uses a self-contained internal implementation
   rather than interfacing to a third-party library such as Zoltan.
+
+  If the ParameterList object contains a string parameter with
+  name == "Balancing package" and value == "Zoltan", then the Zoltan
+  library is used to perform the balancing.
+
+  Furthmore, if the ParameterList object contains a string parameter with
+  name == "Partitioning algorithm" then possible values are "graph"
+  or "hypergraph" (not yet supported). If "Zoltan" has not been specified
+  as the "Balancing package", then "Partitioning algorithm" is ignored.
 
   The rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
@@ -125,7 +135,8 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   each row.
 */
 Teuchos::RefCountPtr<Epetra_CrsGraph>
-  create_balanced_copy(const Epetra_CrsGraph& input_graph);
+create_balanced_copy(const Epetra_CrsGraph& input_graph,
+		     Teuchos::ParameterList& paramlist);
 
 /** Create a balanced copy of an input Epetra_CrsGraph, accounting for
    user-supplied weights assigned to each row.

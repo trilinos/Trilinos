@@ -103,17 +103,17 @@ int main(int argc, char** argv) {
   test_passed = test_passed &&
     test_rebalance_epetra_linproblem(numProcs, localProc, verbose);
 #else
-  std::cout << "rebalance_1d_default main: currently can only test "
+  std::cout << "rebalance_zoltan main: currently can only test "
          << "rebalancing with Epetra enabled." << std::endl;
   test_passed = false;
 #endif
 
   if (test_passed && verbose) {
-    std::cout << "rebalance_1d_default main: tests passed."<<std::endl;
+    std::cout << "rebalance_zoltan main: tests passed."<<std::endl;
   }
 
 #else
-  std::cout << "rebalance_1d_default: don't have MPI, can't run test."
+  std::cout << "rebalance_zoltan: don't have MPI, can't run test."
             << std::endl;
 #endif
 
@@ -386,6 +386,8 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   //be the number of nonzeros in that row.
 
   Teuchos::ParameterList paramlist;
+  paramlist.set("Balancing package", "Zoltan");
+
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
     if (verbose) {

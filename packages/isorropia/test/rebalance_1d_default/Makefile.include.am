@@ -45,7 +45,7 @@ rebalance_1d_default_CXXFLAGS = $(EPETRA_INCLUDES)
 rebalance_1d_default_LDADD = \
       -L$(top_builddir)/test/utils -lisorropia_test_utils \
       -L$(top_builddir)/src -lisorropia \
-      $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
 EXTRA_DIST = \
 	src_rebalance_1d_dist.2

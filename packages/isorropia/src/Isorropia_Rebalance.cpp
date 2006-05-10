@@ -30,6 +30,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 //@HEADER
 
 #include <Isorropia_Rebalance.hpp>
+#include <Isorropia_Zoltan_Rebalance.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra_utils.hpp>
 
@@ -193,8 +194,19 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
 }
 
 Teuchos::RefCountPtr<Epetra_CrsGraph>
-create_balanced_copy(const Epetra_CrsGraph& input_graph)
+create_balanced_copy(const Epetra_CrsGraph& input_graph,
+		     Teuchos::ParameterList& paramlist)
 {
+  std::string bal_package_str("Balancing package");
+  std::string bal_package = paramlist.get(bal_package_str, "none_specified");
+  if (bal_package == "Zoltan" || bal_package == "zoltan") {
+#ifdef HAVE_EPETRAEXT_ZOLTAN
+    return( Isorropia_Zoltan::create_balanced_copy(input_graph, paramlist) );
+#else
+    throw Isorropia::Exception("Zoltan requested, but epetraext-zoltan not enabled.");
+#endif
+  }
+
   //first, create a weights vector which contains the number of nonzeros
   //per row in the input_graph.
   Epetra_Vector* weights = 0;
