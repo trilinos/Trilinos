@@ -99,6 +99,7 @@ configuring Trilinos:
 --enable-epetraext
 --enable-teuchos 
 --enable-ml
+--enable-ifpack
 --enable-aztecoo --enable-aztecoo-teuchos 
 --enable-amesos
 \endcode 
