@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 #include "phg.h"
+#include "phg_distrib.h"
 #include <limits.h>
 
     /*
@@ -27,7 +28,6 @@ extern "C" {
    Zoltan_PHG_Compute_ConCut function */
 #define MAXMEMORYALLOC 4*1024*1024
 
-    
 #define COMM_TAG 23973
 
 
@@ -38,7 +38,7 @@ typedef struct tagVCycle {
                                   /* vdest size = hg->nVtx
 				     vdest[i] is the dest proc of vtx i in the
 				     unredistributed communicators. */
-    int              *vlno;       /* vlno size = hg-> nVtx 
+    int              *vlno;       /* vlno size = hg->nVtx 
                                      vlno[i] is the local vertex number of vtx
 				     i on proc vdest[i]. */
     int              *LevelMap;   /* necessary to uncoarsen                  */
@@ -198,7 +198,7 @@ int Zoltan_PHG_Partition (
 
   PHGComm *hgc = hg->comm;
   VCycle  *vcycle=NULL, *del=NULL;
-  int  i, err = ZOLTAN_OK;
+  int  i, err = ZOLTAN_OK, middle;
   int  origVcnt     = hg->dist_x[hgc->nProc_x];   /* for processor */
   int  origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
   int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
@@ -242,14 +242,12 @@ int Zoltan_PHG_Partition (
 
   /****** Coarsening ******/    
 #define COARSEN_FRACTION_LIMIT 0.9  /* Stop if we don't make much progress */
-#define PROCESSOR_REDUCTION_FRACTION 0.5 /* Reduce processors if we make this
-					    much progress */
   while ((hg->redl>0) && (hg->dist_x[hgc->nProc_x] > hg->redl)
 	 && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
 	     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
     && hg->dist_y[hgc->nProc_y] && hgp->matching) {
       int *match = NULL;
-      VCycle *coarser=NULL;
+      VCycle *coarser=NULL, *redistributed=NULL;
         
       prevVcnt     = hg->dist_x[hgc->nProc_x];
       prevVedgecnt = hg->dist_y[hgc->nProc_y];
@@ -351,16 +349,49 @@ int Zoltan_PHG_Partition (
       vcycle = coarser;
       hg = vcycle->hg;
 
-      if (hgc->nProc > 1 &&
-	  (hg->dist_x[hgc->nProc_x] <
-	   (int) (PROCESSOR_REDUCTION_FRACTION * origVcnt + 0.5) ||
-	   hg->dist_y[hgc->nProc_y] <
-	   (int) (PROCESSOR_REDUCTION_FRACTION * origVedgecnt + 0.5))) {
+      if (hgc->nProc>1 &&
+	  (hg->dist_x[hgc->nProc_x] < (int) (0.5 * origVcnt + 0.5) ||
+	   hg->dist_y[hgc->nProc_y] < (int) (0.5 * origVedgecnt + 0.5))) {
+	/* redistribute to half the processors */
 	origVcnt     = hg->dist_x[hgc->nProc_x];   /* update for processor */
 	origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
-	printf("Node %d:  hypergraph halved\n", hgc->myProc);
-	hgc = hg->comm; /* updating hgc is required when the number of
-			   processors changes */
+
+	if (!(hg->vmap = (int *) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
+	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: hg->vmap");
+	  return ZOLTAN_MEMERR;
+	}
+
+	for (i = 0; i < hg->nVtx; i++)
+	  hg->vmap[i] = i;
+
+	middle = (int)((float) (hgc->nProc-1) * 0.5);
+
+	if (hgp->nProc_x_req!=1 && hgp->nProc_y_req!=1) { /* Want 2D decomp */
+	  if ((middle+1) > SMALL_PRIME && Zoltan_PHG_isPrime(middle+1))
+	    --middle; /* if it was prime just use one less #procs (since
+			 it should be bigger than 7 it is safe to decrement) */
+	}
+	
+	/*if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
+	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: PHGComm");
+	  return ZOLTAN_MEMERR;
+	}
+
+	if (!(redistributed = newVCycle(zz,NULL,NULL,vcycle,vcycle_timing))) {
+	  ZOLTAN_FREE (&hgc);
+	  ZOLTAN_PRINT_ERROR (zz->Proc, yo, "redistributed is NULL.");
+	  goto End;
+	}
+
+	Zoltan_PHG_Redistribute(zz, hgp, hg, 0, middle, hgc, redistributed->hg,
+				&vcycle->vlno, &vcycle->vdest);
+	vcycle = redistributed;
+	hg = vcycle->hg;*/
+
+	if (hgc->myProc < 0)
+	  /* I'm not in the redistributed part so I should go to uncoarsening
+	     refinement and wait */
+	  goto Refine;
       }
   }
 
@@ -387,7 +418,9 @@ int Zoltan_PHG_Partition (
   }
 
   /****** Coarse Partitioning ******/
+  fprintf(stderr, "Node %d:  Before Coarse Partitioning.\n", hgc->myProc);
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
+  fprintf(stderr, "Node %d:  After Coarse Partitioning.\n", hgc->myProc);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
@@ -403,104 +436,156 @@ Refine:
     VCycle *finer = vcycle->finer;
     hg = vcycle->hg;
 
-    if (do_timing) {
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-      ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
-    }
-    if (vcycle_timing) {
-      if (vcycle->timer_refine < 0) {
-        char str[80];
-        sprintf(str, "VC Refinement %d", hg->info);
-        vcycle->timer_refine = Zoltan_Timer_Init(vcycle->timer, 0, str);
+    if (vcycle->Part) {
+      if (do_timing) {
+	ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
+	ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
       }
-      ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_refine,
-                         hgc->Communicator);
-    }
+      if (vcycle_timing) {
+	if (vcycle->timer_refine < 0) {
+	  char str[80];
+	  sprintf(str, "VC Refinement %d", hg->info);
+	  vcycle->timer_refine = Zoltan_Timer_Init(vcycle->timer, 0, str);
+	}
+	ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_refine,
+			   hgc->Communicator);
+      }
 
-    err = Zoltan_PHG_Refinement (zz, hg, p, part_sizes, vcycle->Part, hgp);
+      err = Zoltan_PHG_Refinement (zz, hg, p, part_sizes, vcycle->Part, hgp);
         
-    if (do_timing) {
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hgc->Communicator);
-      ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
-    }
-    if (vcycle_timing)
-      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine,
-                        hgc->Communicator);
+      if (do_timing) {
+	ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hgc->Communicator);
+	ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+      }
+      if (vcycle_timing)
+	ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine,
+			  hgc->Communicator);
 
                           
-    if (hgp->output_level >= PHG_DEBUG_LIST)     
-      uprintf(hgc, 
-              "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
-              hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, 
-              hgp->redm_str,
-              hgp->coarsepartition_str, hgp->refinement_str, p,
-              Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, vcycle->Part),
-              Zoltan_PHG_Compute_ConCut(hgc, hg, vcycle->Part, p, &err));
+      if (hgp->output_level >= PHG_DEBUG_LIST)     
+	uprintf(hgc, 
+		"FINAL %3d |V|=%6d |E|=%6d #pins=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
+		hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, 
+		hgp->redm_str,
+		hgp->coarsepartition_str, hgp->refinement_str, p,
+		Zoltan_PHG_Compute_Balance(zz, hg, part_sizes, p, vcycle->Part),
+		Zoltan_PHG_Compute_ConCut(hgc, hg, vcycle->Part, p, &err));
 
-    if (hgp->output_level >= PHG_DEBUG_PLOT)
-      Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->Part,
-       "partitioned plot");
+      if (hgp->output_level >= PHG_DEBUG_PLOT)
+	Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->Part,
+			"partitioned plot");
         
-    if (do_timing) {
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-      ZOLTAN_TIMER_START(zz->ZTime, timer_project, hgc->Communicator);
-    }
-    if (vcycle_timing) {
-      if (vcycle->timer_project < 0) {
-        char str[80];
-        sprintf(str, "VC Project Up %d", hg->info);
-        vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
+      if (do_timing) {
+	ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
+	ZOLTAN_TIMER_START(zz->ZTime, timer_project, hgc->Communicator);
       }
-      ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_project,
-                         hgc->Communicator);
+      if (vcycle_timing) {
+	if (vcycle->timer_project < 0) {
+	  char str[80];
+	  sprintf(str, "VC Project Up %d", hg->info);
+	  vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
+	}
+	ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_project,
+			   hgc->Communicator);
+      }
     }
 
-    /* Project coarse partition to fine partition */
-    if (finer)  { if (finer->LevelMap) {
+    if (finer)  {
       int *rbuffer;
             
-      /* easy to assign partitions to internal matches */
-      for (i = 0; i < finer->hg->nVtx; i++)
-        if (finer->LevelMap[i] >= 0)   /* if considers only the local vertices */
-          finer->Part[i] = vcycle->Part[finer->LevelMap[i]];
+      /* Project coarse partition to fine partition */
+      if (finer->LevelMap) {
+	/* easy to assign partitions to internal matches */
+	for (i = 0; i < finer->hg->nVtx; i++)
+	  if (finer->LevelMap[i] >= 0)   /* if considers only the local vertices */
+	    finer->Part[i] = vcycle->Part[finer->LevelMap[i]];
           
-      /* now that the course partition assignments have been propagated */
-      /* upward to the finer level for the local vertices, we need to  */    
-      /* fill the LevelData (matched pairs of a local vertex with a    */
-      /* off processor vertex) with the partition assignment of the    */
-      /* local vertex - can be done totally in the finer level!        */    
-      for (i = 0; i < finer->LevelCnt; i++)  {
-        ++i;          /* skip over off processor lno */
-        finer->LevelData[i] = finer->Part[finer->LevelData[i]]; 
-      }
+	/* now that the course partition assignments have been propagated */
+	/* upward to the finer level for the local vertices, we need to  */    
+	/* fill the LevelData (matched pairs of a local vertex with a    */
+	/* off processor vertex) with the partition assignment of the    */
+	/* local vertex - can be done totally in the finer level!        */    
+	for (i = 0; i < finer->LevelCnt; i++)  {
+	  ++i;          /* skip over off processor lno */
+	  finer->LevelData[i] = finer->Part[finer->LevelData[i]]; 
+	}
             
-      /* allocate rec buffer to exchange LevelData information */
-      rbuffer = NULL;
-      if (finer->LevelSndCnt > 0)  {
-        rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->LevelSndCnt * sizeof(int));
-        if (!rbuffer)    {
-          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
-          return ZOLTAN_MEMERR;
-        }
-      }       
+	/* allocate rec buffer to exchange LevelData information */
+	rbuffer = NULL;
+	if (finer->LevelSndCnt > 0)  {
+	  rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->LevelSndCnt * sizeof(int));
+	  if (!rbuffer)    {
+	    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+	    return ZOLTAN_MEMERR;
+	  }
+	}       
       
-      /* get partition assignments from owners of externally matched vtxs */  
-      Zoltan_Comm_Resize (finer->comm_plan, NULL, COMM_TAG, &i);
-      Zoltan_Comm_Do_Reverse (finer->comm_plan, COMM_TAG+1, 
-       (char*) finer->LevelData, 2 * sizeof(int), NULL, (char*) rbuffer);
+	/* get partition assignments from owners of externally matched vtxs */  
+	Zoltan_Comm_Resize (finer->comm_plan, NULL, COMM_TAG, &i);
+	Zoltan_Comm_Do_Reverse (finer->comm_plan, COMM_TAG+1, 
+         (char*) finer->LevelData, 2 * sizeof(int), NULL, (char*) rbuffer);
 
-      /* process data to assign partitions to expernal matches */
-      for (i = 0; i < 2 * finer->LevelSndCnt;)  {
-        int lno, partition;
-        lno       = rbuffer[i++];
-        partition = rbuffer[i++];      
-        finer->Part[lno] = partition;         
+	/* process data to assign partitions to expernal matches */
+	for (i = 0; i < 2 * finer->LevelSndCnt;)  {
+	  int lno, partition;
+	  lno       = rbuffer[i++];
+	  partition = rbuffer[i++];      
+	  finer->Part[lno] = partition;         
+	}
+
+	ZOLTAN_FREE (&rbuffer);                  
+	Zoltan_Comm_Destroy (&finer->comm_plan);                   
+      } else {
+	int *sendbuf = NULL, size = 2 * hg->nVtx; /* ints local and partition
+						     numbers */
+	if (hg->nVtx > 0) {
+	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
+	  if (!sendbuf) {
+	    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+	    return ZOLTAN_MEMERR;
+	  }
+	}
+
+	for (i = 0; i < hg->nVtx; ++i) {
+	  sendbuf[2 * i] = finer->vlno[i];      /* assign local numbers */
+	  sendbuf[2 * i + 1] = vcycle->Part[i]; /* assign partition numbers */
+	}
+
+	hgc = finer->hg->comm; /* updating hgc is required when the processors
+				   change */
+	/* Create comm plan to unredistributed processors */
+	Zoltan_Comm_Create(&finer->comm_plan, hg->nVtx, finer->vdest,
+			   hgc->Communicator, COMM_TAG+2, &size);
+	/* allocate rec buffer to exchange sendbuf information */
+	rbuffer = NULL;
+	if (finer->hg->nVtx > 0) {
+	  rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->hg->nVtx * sizeof(int));
+
+	  if (!rbuffer) {
+	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+	    return ZOLTAN_MEMERR;
+	  }
+	}
+
+	/* Use plan to send partitions to the unredistributed processors */
+
+	Zoltan_Comm_Do(finer->comm_plan, COMM_TAG+3, (char *) sendbuf,
+		       2*sizeof(int), (char *) rbuffer);
+	
+	/* process data to assign partitions to unredistributed processors */
+	for (i = 0; i < 2 * finer->hg->nVtx;) {
+	  int lno, partition;
+	  lno       = rbuffer[i++];
+	  partition = rbuffer[i++];
+	  finer->Part[lno] = partition;
+	}
+
+	ZOLTAN_FREE (&sendbuf);
+	ZOLTAN_FREE (&rbuffer);
+	Zoltan_Comm_Destroy (&finer->comm_plan);
       }
+    }
 
-      ZOLTAN_FREE (&rbuffer);                  
-      Zoltan_Comm_Destroy (&finer->comm_plan);                   
-    } else hgc = hg->comm; } /* updating hgc is required when the number of
-				processors changes */
     if (do_timing) {
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hgc->Communicator);
       ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
@@ -521,8 +606,13 @@ End:
     }
     if (vcycle->finer) {   /* cleanup by level */
       Zoltan_HG_HGraph_Free (vcycle->hg);
-      Zoltan_Multifree (__FILE__, __LINE__, 4, &vcycle->Part, &vcycle->LevelMap,
-                        &vcycle->LevelData, &vcycle->hg);
+
+      if (vcycle->LevelMap)
+	Zoltan_Multifree (__FILE__, __LINE__, 4, &vcycle->Part,
+			  &vcycle->LevelMap, &vcycle->LevelData, &vcycle->hg);
+      else
+	Zoltan_Multifree (__FILE__, __LINE__, 3, &vcycle->vdest, &vcycle->vlno,
+			  &vcycle->hg);
     }
     else                   /* cleanup top level */
       Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->LevelMap,
