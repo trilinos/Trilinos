@@ -166,7 +166,7 @@ bool MOERTEL::Interface::Integrate_3D()
     // the segment to be integrated
     RefCountPtr<MOERTEL::Segment> actsseg = scurr->second;
 
-#if 1
+#if 0
     cout << "\n\nActive sseg id " << actsseg->Id() << "\n";
 #endif
 
@@ -193,7 +193,7 @@ bool MOERTEL::Interface::Integrate_3D()
     {
       RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
       
-#if 1
+#if 0
     cout << "Active mseg id " << actmseg->Id() << endl;
 #endif
       // if there is an overlap, integrate the pair

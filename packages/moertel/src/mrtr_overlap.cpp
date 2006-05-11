@@ -442,7 +442,7 @@ bool MOERTEL::Overlap::ComputeOverlap()
 
   // perform clipping algorithm
   ok = Clipelements();
-  exit(0);
+  //exit(0);
   if (!ok)
     return false;
   
@@ -474,8 +474,8 @@ bool MOERTEL::Overlap::Clipelements()
   for (int i=0; i<nmnode; ++i)
     AddPointtoPolygon(100+i,&mline_[i][0]);
   
-  for (int i=0; i<4; ++i)
-    cout << "mline_[" << i << "][0] " << mline_[i][0] << " mline_[" << i << "][1] " << mline_[i][1] << endl;
+  //for (int i=0; i<4; ++i)
+    //cout << "mline_[" << i << "][0] " << mline_[i][0] << " mline_[" << i << "][1] " << mline_[i][1] << endl;
   //===========================================================================
 
   // loop edges of slave segment and clip the master edges
@@ -611,7 +611,7 @@ bool MOERTEL::Overlap::Clipelements()
   //===========================================================================
   //===========================================================================
   
-#if 1
+#if 0
   // make printout of the polygon so far
   {
     int np    = SizePointPolygon();
@@ -625,7 +625,7 @@ bool MOERTEL::Overlap::Clipelements()
     point.clear();
   }
 #endif
-exit(0);
+//exit(0);
   //===========================================================================
   // count how many corner nodes of mseg are in and how many
   // intersections there are

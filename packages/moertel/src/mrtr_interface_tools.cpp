@@ -1733,6 +1733,12 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
     exit(EXIT_FAILURE);     
   }
   
+#if 1
+  if (primal_==MOERTEL::Function::func_BiLinearQuad) primal_ = MOERTEL::Function::func_LinearTri;
+  if (dual_==MOERTEL::Function::func_BiLinearQuad) dual_ = MOERTEL::Function::func_LinearTri;
+  if (dual_==MOERTEL::Function::func_DualBiLinearQuad) dual_ = MOERTEL::Function::func_DualLinearTri;
+#endif
+
   // set the primal shape functions
   MOERTEL::Function_Linear1D*         func1 = NULL;
   MOERTEL::Function_Constant1D*       func2 = NULL;

@@ -514,6 +514,17 @@ public:
   */
   void ResetSolver();
   
+  /*!
+  \brief Get pointer to constraints matrix D
+  
+  */
+  const Epetra_CrsMatrix* D() const { return D_.get();}
+
+  /*!
+  \brief Get pointer to constraints matrix M
+  
+  */
+  const Epetra_CrsMatrix* M() const { return M_.get();}
   //@}
 
 private:  
