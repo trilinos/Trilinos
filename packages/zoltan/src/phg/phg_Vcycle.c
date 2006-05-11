@@ -385,13 +385,16 @@ int Zoltan_PHG_Partition (
 
 	Zoltan_PHG_Redistribute(zz, hgp, hg, 0, middle, hgc, redistributed->hg,
 				&vcycle->vlno, &vcycle->vdest);
-	vcycle = redistributed;
-	hg = vcycle->hg;*/
 
 	if (hgc->myProc < 0)
 	  /* I'm not in the redistributed part so I should go to uncoarsening
-	     refinement and wait */
+	     refinement and wait *
 	  goto Refine;
+
+	if ((err=allocVCycle(redistributed))!= ZOLTAN_OK)
+	  goto End;
+	vcycle = redistributed;
+	hg = vcycle->hg;*/
       }
   }
 
@@ -418,9 +421,7 @@ int Zoltan_PHG_Partition (
   }
 
   /****** Coarse Partitioning ******/
-  fprintf(stderr, "Node %d:  Before Coarse Partitioning.\n", hgc->myProc);
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
-  fprintf(stderr, "Node %d:  After Coarse Partitioning.\n", hgc->myProc);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
