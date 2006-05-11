@@ -100,6 +100,7 @@ configuring Trilinos:
 --enable-teuchos 
 --enable-ml
 --enable-ifpack
+--enable-ifpack-teuchos
 --enable-aztecoo --enable-aztecoo-teuchos 
 --enable-amesos
 \endcode 
