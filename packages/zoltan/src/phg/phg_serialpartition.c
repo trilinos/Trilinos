@@ -134,7 +134,6 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
   }
 
-#define DEBUG_FIXED
 #ifdef DEBUG_FIXED
   /* TEST: create fixed vtx array */
   phg->fixed = (int *) ZOLTAN_MALLOC(phg->nVtx*sizeof(int));
