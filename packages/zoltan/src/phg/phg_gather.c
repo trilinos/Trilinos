@@ -105,6 +105,10 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   if (shg->EdgeWeightDim && shg->nEdge)
     shg->ewgt = (float *) ZOLTAN_MALLOC(shg->nEdge * shg->EdgeWeightDim 
                                                   * sizeof(float));
+  /* Fixed vertices */
+  shg->bisec_split = phg->bisec_split;
+  if (phg->fixed)
+    shg->fixed = (int *) ZOLTAN_MALLOC(shg->nVtx * sizeof(int));
   
   /* Allocate arrays for use in gather operations */
   recv_size = (int *) ZOLTAN_MALLOC(3 * max_nProc_xy * sizeof(int));
@@ -331,6 +335,21 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
       exit(-1);
     }
   
+    /* Gather fixed array, if any  */
+    if (phg->fixed){
+  
+      /* Can use the same each array. */
+      /* Need to compute new disp array. */
+  
+      disp[0] = 0;
+      for (i = 1; i < nProc_x; i++) {
+        disp[i] = disp[i-1] + each[i-1];
+      }
+      
+      MPI_Allgatherv(phg->fixed, phg->nVtx, MPI_FLOAT, 
+                     shg->fixed, each, disp, MPI_FLOAT, phg->comm->row_comm);
+    }
+
     /* Gather vertex weights, if any. */
     if (shg->VtxWeightDim) {
   

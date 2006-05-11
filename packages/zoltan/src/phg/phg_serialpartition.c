@@ -134,6 +134,18 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     ZOLTAN_TIMER_START(zz->ZTime, timer_cpart, phg->comm->Communicator);
   }
 
+#define DEBUG_FIXED
+#ifdef DEBUG_FIXED
+  /* TEST: create fixed vtx array */
+  phg->fixed = (int *) ZOLTAN_MALLOC(phg->nVtx*sizeof(int));
+  for (i=0; i<phg->nVtx; i++)
+    phg->fixed[i] = -1;
+  /* TEST: Fix the first two vertices */
+  phg->fixed[0] = 0;
+  phg->fixed[1] = 1;
+#endif
+
+
   /* Force LocalCoarsePartition if large global graph */
 #define LARGE_GRAPH_VTX   32000
 #define LARGE_GRAPH_PINS 256000
@@ -155,7 +167,11 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
           first = 0;
           ierr = ZOLTAN_WARN;
         }
-        part[i] = part[i] % numPart;
+        /* Impose fixed vertex constraints. */
+        if (phg->fixed && (phg->fixed[i] >= 0))
+          part[i] = phg->fixed[i];
+        else
+          part[i] = part[i] % numPart; /* map to a valid part no. */
       }
   }
   else if (numPart == 1) {            
@@ -361,6 +377,10 @@ End:
   if (fine_timing) 
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_cpart, phg->comm->Communicator);
 
+#ifdef DEBUG_FIXED
+  ZOLTAN_FREE(&phg->fixed);
+#endif
+
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
 }
@@ -453,15 +473,6 @@ static int seq_part (
     return ZOLTAN_FATAL;
   }
 
-#ifdef DEBUG_FIXED
-  hg->fixed = (int *) ZOLTAN_MALLOC(hg->nVtx*sizeof(int));
-  for (i=0; i<hg->nVtx; i++)
-    hg->fixed[i] = -1;
-  /* TEST: Fix the first two vertices */
-  hg->fixed[0] = 0;
-  hg->fixed[1] = 1;
-#endif
-
   if (hg->fixed) {
     fixed_wgts = (double *) ZOLTAN_CALLOC(p, sizeof(double));
   }
@@ -486,9 +497,8 @@ static int seq_part (
   pnumber = 0; /* Assign next vertex to partition no. pnumber */
   part_sum = (fixed_wgts ? fixed_wgts[0] : 0.); /* Weight of fixed vertices */
 
-  /* Set cutoff for current partition */
-  cutoff = weight_sum*part_sizes[0]/psize_sum - 
-           (fixed_wgts ? fixed_wgts[0] : 0.);  
+  /* Set cutoff for current partition. (Include fixed vtx.) */
+  cutoff = weight_sum*part_sizes[0]/psize_sum;
 
   /* Loop through all vertices in specified order, and assign
      partition numbers.  */                                        
@@ -515,8 +525,7 @@ static int seq_part (
           part_sum += hg->vwgt[j*vwgtdim];
         /* Update cutoff. */
         psize_sum -= part_sizes[pnumber-1];
-        cutoff = weight_sum*part_sizes[pnumber]/psize_sum
-                 - (fixed_wgts ? fixed_wgts[pnumber] : 0.);
+        cutoff = weight_sum*part_sizes[pnumber]/psize_sum;
       }
     }
     if (hgp->output_level >= PHG_DEBUG_ALL)
@@ -526,9 +535,6 @@ static int seq_part (
 
   if (hg->fixed) {
     ZOLTAN_FREE(&fixed_wgts);
-#ifdef DEBUG_FIXED
-    ZOLTAN_FREE(&hg->fixed);
-#endif
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
