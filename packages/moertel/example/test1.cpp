@@ -113,6 +113,19 @@ int main(int argc, char *argv[])
   // print interface information
   // (Manager, Interface, Segment, Node implement the << operator)
   if (printlevel) cout << manager;
+  
+  
+  // get the 2 pieces of the constraint equation
+  const Epetra_CrsMatrix* D = manager.D();
+  const Epetra_CrsMatrix* M = manager.M();
+
+  // create an empty Epetra_CrsMatrix and add D and M
+  Epetra_CrsMatrix constraints(Copy,D->RowMap(),5);
+  MOERTEL::MatrixMatrixAdd(*D,false,1.0,constraints,0.0);
+  MOERTEL::MatrixMatrixAdd(*M,false,1.0,constraints,1.0);
+  constraints.FillComplete(D->DomainMap(),D->RangeMap());
+  constraints.OptimizeStorage();
+  cout << constraints;
         
   MPI_Finalize();
 }
