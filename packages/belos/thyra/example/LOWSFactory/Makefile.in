@@ -103,7 +103,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = Epetra Tpetra
+DIST_SUBDIRS = Epetra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -243,7 +243,10 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 @BUILD_EPETRA_THYRA_TRUE@EPETRA_LOWSF_DIR = Epetra
-@BUILD_TPETRA_THYRA_TRUE@TPETRA_LOWSF_DIR = Tpetra
+
+#if BUILD_TPETRA_THYRA
+#TPETRA_LOWSF_DIR = Tpetra
+#endif
 SUBDIRS = $(EPETRA_LOWSF_DIR) $(TPETRA_LOWSF_DIR)
 all: all-recursive
 
