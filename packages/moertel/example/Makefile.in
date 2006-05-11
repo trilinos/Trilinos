@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES)
+SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES) $(test1_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = TwoSquares$(EXEEXT) Hex_3D$(EXEEXT)
+noinst_PROGRAMS = TwoSquares$(EXEEXT) Hex_3D$(EXEEXT) test1$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,6 +98,8 @@ am_Hex_3D_OBJECTS = Hex_3D-Hex_3D.$(OBJEXT)
 Hex_3D_OBJECTS = $(am_Hex_3D_OBJECTS)
 am_TwoSquares_OBJECTS = TwoSquares-TwoSquares.$(OBJEXT)
 TwoSquares_OBJECTS = $(am_TwoSquares_OBJECTS)
+am_test1_OBJECTS = test1-test1.$(OBJEXT)
+test1_OBJECTS = $(am_test1_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -106,8 +108,9 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES)
-DIST_SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES)
+SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES) $(test1_SOURCES)
+DIST_SOURCES = $(Hex_3D_SOURCES) $(TwoSquares_SOURCES) \
+	$(test1_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -246,6 +249,10 @@ Hex_3D_SOURCES = $(srcdir)/Hex_3D.cpp
 Hex_3D_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
 Hex_3D_CXXFLAGS = $(MOERTEL_INCLUDES) $(GALERI_INCLUDES)
 Hex_3D_LDADD = $(MOERTEL_LIBS) $(GALERI_LIBS)
+test1_SOURCES = $(srcdir)/test1.cpp
+test1_DEPENDENCIES = $(top_builddir)/src/libmoertel.a
+test1_CXXFLAGS = $(MOERTEL_INCLUDES)
+test1_LDADD = $(MOERTEL_LIBS)
 all: all-recursive
 
 .SUFFIXES:
@@ -288,6 +295,9 @@ Hex_3D$(EXEEXT): $(Hex_3D_OBJECTS) $(Hex_3D_DEPENDENCIES)
 TwoSquares$(EXEEXT): $(TwoSquares_OBJECTS) $(TwoSquares_DEPENDENCIES) 
 	@rm -f TwoSquares$(EXEEXT)
 	$(CXXLINK) $(TwoSquares_LDFLAGS) $(TwoSquares_OBJECTS) $(TwoSquares_LDADD) $(LIBS)
+test1$(EXEEXT): $(test1_OBJECTS) $(test1_DEPENDENCIES) 
+	@rm -f test1$(EXEEXT)
+	$(CXXLINK) $(test1_LDFLAGS) $(test1_OBJECTS) $(test1_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -297,6 +307,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Hex_3D-Hex_3D.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TwoSquares-TwoSquares.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test1-test1.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -339,6 +350,20 @@ TwoSquares-TwoSquares.obj: $(srcdir)/TwoSquares.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TwoSquares.cpp' object='TwoSquares-TwoSquares.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TwoSquares_CXXFLAGS) $(CXXFLAGS) -c -o TwoSquares-TwoSquares.obj `if test -f '$(srcdir)/TwoSquares.cpp'; then $(CYGPATH_W) '$(srcdir)/TwoSquares.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TwoSquares.cpp'; fi`
+
+test1-test1.o: $(srcdir)/test1.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -MT test1-test1.o -MD -MP -MF "$(DEPDIR)/test1-test1.Tpo" -c -o test1-test1.o `test -f '$(srcdir)/test1.cpp' || echo '$(srcdir)/'`$(srcdir)/test1.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test1-test1.Tpo" "$(DEPDIR)/test1-test1.Po"; else rm -f "$(DEPDIR)/test1-test1.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test1.cpp' object='test1-test1.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -c -o test1-test1.o `test -f '$(srcdir)/test1.cpp' || echo '$(srcdir)/'`$(srcdir)/test1.cpp
+
+test1-test1.obj: $(srcdir)/test1.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -MT test1-test1.obj -MD -MP -MF "$(DEPDIR)/test1-test1.Tpo" -c -o test1-test1.obj `if test -f '$(srcdir)/test1.cpp'; then $(CYGPATH_W) '$(srcdir)/test1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test1.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/test1-test1.Tpo" "$(DEPDIR)/test1-test1.Po"; else rm -f "$(DEPDIR)/test1-test1.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test1.cpp' object='test1-test1.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test1_CXXFLAGS) $(CXXFLAGS) -c -o test1-test1.obj `if test -f '$(srcdir)/test1.cpp'; then $(CYGPATH_W) '$(srcdir)/test1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test1.cpp'; fi`
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
