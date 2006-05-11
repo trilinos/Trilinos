@@ -441,9 +441,9 @@ namespace Anasazi {
     
     int i;
     int info = 0;
-    ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    ScalarType eps = Teuchos::ScalarTraits<ScalarType>::eps();
+    ScalarType one     = SCT::one();
+    MagnitudeType zero = SCT::magnitude(SCT::zero()); 
+    ScalarType eps     = SCT::eps();
     
     // Orthogonalize X against Q
     //timeProj -= MyWatch.WallTime();
@@ -673,7 +673,12 @@ namespace Anasazi {
           //
           MVT::MvDot( *Xj, *oldMXj, &newDot );
           
-          if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*eps*eps) ) {
+          // even if the vector Xj is complex, the inner product
+          // Xj^H oldMXj should be, not only real, but positive.
+          // If the real part isn't positive, then it suggests that 
+          // Xj had very little energy outside of the previous vectors. Check this.
+
+          if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*eps*eps) && SCT::real(newDot[0]) > zero ) {
             MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *Xj, zero, *Xj, *Xj );
             if (M) {
               MVT::MvAddMv( one/Teuchos::ScalarTraits<ScalarType>::squareroot(newDot[0]), *MXj, zero, *MXj, *MXj );

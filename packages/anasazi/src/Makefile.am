@@ -51,6 +51,7 @@ all-local:
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/AnasaziBasicEigenproblem.hpp \
+	$(srcdir)/AnasaziBasicOrthoManager.hpp \
 	$(srcdir)/AnasaziBasicSort.hpp \
 	$(srcdir)/AnasaziBlockDavidson.hpp \
 	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
@@ -64,6 +65,7 @@ CORE_H = \
 	$(srcdir)/AnasaziMultiVecTraits.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
 	$(srcdir)/AnasaziOperatorTraits.hpp \
+	$(srcdir)/AnasaziOrthoManager.hpp \
 	$(srcdir)/AnasaziOutputManager.hpp \
 	$(srcdir)/AnasaziTypes.hpp \
 	$(srcdir)/AnasaziSortManager.hpp

@@ -42,6 +42,8 @@
 
 #include "AnasaziOrthoManager.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "AnasaziMultiVecTraits.hpp"
+#include "AnasaziOperatorTraits.hpp"
 
 namespace Anasazi {
 
@@ -50,15 +52,15 @@ namespace Anasazi {
 
   private:
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    typedef typename Teuchos::ScalarTraits<ScalarType>  SCT;
-    typedef typename MultiVecTraits<ScalarType,MV>      MVT;
-    typedef typename OperatorTraits<ScalarType,MV,OP>   OPT;
+    typedef Teuchos::ScalarTraits<ScalarType>  SCT;
+    typedef MultiVecTraits<ScalarType,MV>      MVT;
+    typedef OperatorTraits<ScalarType,MV,OP>   OPT;
 
   public:
     
     //@{ \name Constructor/Destructor.
     //! Constructor specifying re-orthogonalization tolerance.
-    BasicOrthoManager( const MagnitudeType kappa = SCT::magnitude(1.5625) ) { _kappa = kappa; };
+    BasicOrthoManager( const MagnitudeType kappa = SCT::magnitude(1.5625) ) : _kappa(kappa) {};
 
     //! Destructor
     ~BasicOrthoManager() {};
@@ -71,7 +73,7 @@ namespace Anasazi {
     void setKappa( const MagnitudeType kappa ) { _kappa = kappa; };
 
     //! Return parameter for re-orthogonalization threshhold.
-    void getKappa() { return kappa; }
+    void getKappa() const { return _kappa; } 
 
     //@} 
 
@@ -148,7 +150,7 @@ namespace Anasazi {
     MagnitudeType _kappa;
   
     // ! Routine to find an orthonormal basis for the 
-    static ReturnType BasicOrthoManager<ScalarType, MV, OP>::findBasis(MV &X, MV &MX, const OP *M, int &rank, bool completeBasis ) const;
+    ReturnType findBasis(MV &X, MV &MX, const OP *M, int &rank, bool completeBasis ) const;
     
   };
 
@@ -172,7 +174,7 @@ namespace Anasazi {
     }
 
     // check size of X and Q w.r.t. common sense
-    if (xc<0 || xr<0 || mc<0 || mr<0) {
+    if (xc<0 || xr<0 || mxc<0 || mxr<0) {
       return Failed;
     }
     // check size of X w.r.t. MX 
@@ -195,6 +197,8 @@ namespace Anasazi {
     // start working
     rank = 0;
     int numTries = 10;   // each vector in X gets 10 random chances to escape degeneracy
+    // this is not an infinite loop;
+    // either 
     do {
 
       ReturnType ret;
@@ -266,10 +270,13 @@ namespace Anasazi {
 
     } while (rank < xc);
 
-    if (cdone < xc) {
-      rank = cdone;
+    if (rank < xc) {
       return Undefined;
     }
+
+    // this should not raise an exception; but our post-conditions oblige us to check
+    TEST_FOR_EXCEPTION( rank != xc, std::logic_error, "BasicOrthoManager::projectAndNormalize(): error in rank variable" );
+    return Ok; 
   }
 
 
@@ -311,9 +318,9 @@ namespace Anasazi {
     //                   >> Length of vectors in X != length of vectors in Q
     //                   >> Failure applying operator M
 
-    ScalarType ONE  = SCT::one();
-    ScalarType ZERO = SCT::zero();
-    ScalarType EPS  = SCT::eps();
+    ScalarType    ONE  = SCT::one();
+    MagnitudeType ZERO = SCT::magnitude(SCT::zero());
+    ScalarType    EPS  = SCT::eps();
 
     int qc = MVT::GetNumberVecs( Q );
     int qr = MVT::GetVecLength( Q );
@@ -328,7 +335,7 @@ namespace Anasazi {
     }
 
     // check size of X and Q w.r.t. common sense
-    if (xc<0 || xr<0 || mc<0 || mr<0) {
+    if (xc<0 || xr<0 || mxc<0 || mxr<0) {
       return Failed;
     }
     // check size of X w.r.t. MX and Q
@@ -366,7 +373,7 @@ namespace Anasazi {
       MVT::MvTransMv( ONE, Q, X, qTmx );
     }
     // Multiply by Q and substract the result in X
-    MVT::MvTimesMatAddMv( -ONE, Q, qTmx, ONE, *X );
+    MVT::MvTimesMatAddMv( -ONE, Q, qTmx, ONE, X );
 
     // Update MX, with the least number of applications of M as possible
     Teuchos::RefCountPtr<MV> MQ;
@@ -382,18 +389,18 @@ namespace Anasazi {
         if ( OPT::Apply( *M, Q, *MQ ) != Ok ) {
           return Failed;
         }
-        MVT::MvTimesMatAddMv( -ONE, *MQ, qTmx, ONE, *MXX );
+        MVT::MvTimesMatAddMv( -ONE, *MQ, qTmx, ONE, MX );
       }
     }
 
     // Compute new M-norms
     std::vector<ScalarType> newDot(xc);
-    MVT::MvDot( *X, *MXX, &newDot );
+    MVT::MvDot( X, MX, &newDot );
     
     // determine (individually) whether to do another step of classical Gram-Schmidt
     for (int j = 0; j < xc; ++j) {
       
-      if ( SCT::magnitude(kappa*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
+      if ( SCT::magnitude(_kappa*newDot[j]) < SCT::magnitude(oldDot[j]) ) {
         
         // Apply another step of classical Gram-Schmidt
         if (M) {
@@ -419,7 +426,7 @@ namespace Anasazi {
         }
         
         break;
-      } // if (kappa*newDot[j] < oldDot[j])
+      } // if (_kappa*newDot[j] < oldDot[j])
     } // for (int j = 0; j < xc; ++j)
 
     return Ok;
@@ -459,9 +466,9 @@ namespace Anasazi {
     //                      >> X is rank deficient and completeBasis == true and we couldn't fix it
     //                      >> Failure applying operator M
 
-    ScalarType ONE  = SCT::one();
-    ScalarType ZERO = SCT::zero();
-    ScalarType EPS  = SCT::eps();
+    const ScalarType ONE  = SCT::one();
+    const ScalarType ZERO = SCT::zero();
+    const ScalarType EPS  = SCT::eps();
 
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
@@ -527,6 +534,7 @@ namespace Anasazi {
         //
         Teuchos::RefCountPtr<MV> oldMXj = MVT::CloneCopy( *MXj ); 
         MVT::MvDot( *Xj, *oldMXj, &oldDot );
+        // FINISH: we could add a check here that oldDot[0] > 0
 
         if (numX > 0) {
           // Apply the first step of Gram-Schmidt
@@ -571,7 +579,7 @@ namespace Anasazi {
         MVT::MvDot( *Xj, *oldMXj, &newDot );
 
         // Check if Xj has any directional information left after the orthogonalization.
-        if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*EPS*EPS) ) {
+        if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*EPS*EPS) && SCT::real(newDot[0]) > ZERO ) {
           // Normalize Xj.
           // Xj <- Xj / sqrt(newDot*EPS*EPS)
           MVT::MvAddMv( ONE/SCT::squareroot(newDot[0]), *Xj, ZERO, *Xj, *Xj );

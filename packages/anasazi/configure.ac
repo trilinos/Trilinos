@@ -454,6 +454,7 @@ AC_CONFIG_FILES([
 		test/BlockKrylovSchur/Makefile
 		test/MVOPTester/Makefile
 		test/LOBPCG/Makefile
+		test/OrthoManager/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile

@@ -33,8 +33,6 @@
 #ifndef ANASAZI_ORTHOMANAGER_HPP
 #define ANASAZI_ORTHOMANAGER_HPP
 
-#include "AnasaziMultiVec.hpp"
-
 /*! \class Anasazi::OrthoManager
   
   \brief Anasazi's templated virtual class for providing routines for orthogonalization and 
@@ -45,6 +43,8 @@
   
   \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
+
+#include "AnasaziTypes.hpp"
 
 namespace Anasazi {
 
@@ -77,7 +77,7 @@ namespace Anasazi {
 
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    static virtual ReturnType project ( MV &X, MV &MX, const OP *M, const MV &Q ) const = 0;
+    virtual ReturnType project ( MV &X, MV &MX, const OP *M, const MV &Q ) const = 0;
 
 
 
@@ -96,7 +96,7 @@ namespace Anasazi {
 
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    static virtual ReturnType normalize ( MV &X, MV &MX, const OP *M, int &rank ) const = 0;
+    virtual ReturnType normalize ( MV &X, MV &MX, const OP *M, int &rank ) const = 0;
 
 
 
@@ -119,7 +119,7 @@ namespace Anasazi {
 
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    static ReturnType projectAndNormalize ( MV &X, MV &MX, const OP *M, const MV &Q, int &rank ) const = 0;
+    virtual ReturnType projectAndNormalize ( MV &X, MV &MX, const OP *M, const MV &Q, int &rank ) const = 0;
 
     //@}
   };
