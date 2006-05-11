@@ -26,6 +26,39 @@
 // ***********************************************************************
 // @HEADER
 
+
+/* BUG
+
+ findBasis is balking at column 2 and falling back to projectAndNormalize
+ projectAndNormalize is proposing a random vector, which is being accepted, along with column 3
+ this chain of events seems fine; the result, however, is not.
+
+ projectAndNormalize() without M testing on rank-deficient multivector 
+   || X^T M X - I ||_F before : 79.5559
+   || Q^T M X ||_F before     : 3.1933
+       MSU.massOrthonormalize returned 0
+       MSU.massOrthonormalize || X^T M X - I ||_F : 0.989307
+       MSU.massOrthonormalize || Q^T M X ||_F     : 0.0350225
+olddot: 28.0354    newdot: 28.0354 ACCEPTED
+olddot: 31.686    newdot: 31.1708 ACCEPTED
+olddot: 31.686    newdot: 7.20184e-30 REJECTED
+Random for column 2
+olddot: 34.4411    newdot: 34.4411 ACCEPTED
+olddot: 29.089    newdot: 29.0414 ACCEPTED
+   projectAndNormalize() returned Ok
+ ----------------------------------------------------- tolerance exceeded! test failed!
+   || X^T M X - I ||_F after  : 0.125601
+   || Q^T M X ||_F after      : 1.78074e-16
+
+The bug is as follows: 
+[x_1 x_2] orthonormal
+x_3 = random is orthogonal to Q and [x_1 x_2], but x_4 is not
+so when we orthonormalize [x_3 x_4], x_4 is orthonormal to x_3 but not to x_1,x_2 or Q
+solution: findBasis gets the whole thing, but takes a startAt argument (just like Ulrich did)
+
+*/
+
+
 /*! \file AnasaziBasicOrthoManager.hpp
   \brief Basic implementation of the Anasazi::OrthoManager class
 */
@@ -221,22 +254,28 @@ namespace Anasazi {
       if (ret == Failed) return Failed;
 
       // orthonormalize X, but quit if it is rank deficient
-      ret = findBasis(*curX,*curMX,M,rank,false);
+      ret = findBasis(*curX,*curMX,M,curxsize,false);
+      rank += curxsize;
       if (ret == Failed) {
         return Failed;
       }
       else if (ret == Ok) {
-        // reset the random-chance counter
-        numTries = 10;
-        continue;
+        // we are done
+        break;
       }
       else {
         TEST_FOR_EXCEPTION( ret != Undefined, std::logic_error, "BasicOrthoManager::projectAndNormalize(): findBasis returned impossible value" );
+
+        if (curxsize > 0) {
+          // we finished a vector; reset the chance counter
+          numTries = 10;
+        }
+
         // has this vector run out of chances to escape degeneracy?
         if (numTries <= 0) {
           break;
         }
-        // steal one
+        // use one of this vector's chances
         numTries--;
 
         // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
@@ -247,6 +286,7 @@ namespace Anasazi {
         std::vector<int> ind(1);
         ind[0] = rank;
         curX = MVT::CloneView(X,ind);
+        cout << "Random for column " << rank << endl;
         MVT::MvRandom(*curX);
         if (M) {
           curMX = MVT::CloneView(MX,ind);
@@ -262,13 +302,41 @@ namespace Anasazi {
           prevind[i] = i;
         }
         Teuchos::RefCountPtr<MV> prevX = MVT::CloneView(X,prevind);
+        Teuchos::RefCountPtr<MV> prevMX;
+        if (M) {
+          prevMX = MVT::CloneView(MX,prevind);
+        }
+        else {
+          prevMX = prevX;
+        }
         if ( project(*curX,*curMX,M,Q) != Ok ) return Failed;
+        { 
+          // FINISH: remove this debugging check
+          ScalarType    ONE  = SCT::one();
+          Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
+          MVT::MvTransMv(ONE,*prevMX,*prevX,xTx);
+          for (int i=0; i<rank; i++) {
+            xTx(i,i) -= ONE;
+          }
+          cout << "|| prevX^H M prevX - I ||_F == " << xTx.normFrobenius() << endl;
+        }
+        { 
+          // FINISH: remove this debugging check
+          ScalarType    ONE  = SCT::one();
+          Teuchos::SerialDenseMatrix<int,ScalarType> qTx(MVT::GetNumberVecs(Q),MVT::GetNumberVecs(*prevX));
+          MVT::MvTransMv(ONE,Q,*prevMX,qTx);
+          cout << "|| Q^H M prevX ||_F == " << qTx.normFrobenius() << endl;
+        }
         if ( project(*curX,*curMX,M,*prevX) != Ok ) return Failed;
+        
+        // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
+        curX.release();
+        curMX.release();
 
         continue;
       }
 
-    } while (rank < xc);
+    } while (1);
 
     if (rank < xc) {
       return Undefined;
@@ -395,8 +463,13 @@ namespace Anasazi {
 
     // Compute new M-norms
     std::vector<ScalarType> newDot(xc);
-    MVT::MvDot( X, MX, &newDot );
-    
+    if (M) {
+      MVT::MvDot( X, MX, &newDot );
+    }
+    else {
+      MVT::MvDot( X, MX, &oldDot );
+    }
+
     // determine (individually) whether to do another step of classical Gram-Schmidt
     for (int j = 0; j < xc; ++j) {
       
@@ -534,7 +607,10 @@ namespace Anasazi {
         //
         Teuchos::RefCountPtr<MV> oldMXj = MVT::CloneCopy( *MXj ); 
         MVT::MvDot( *Xj, *oldMXj, &oldDot );
-        // FINISH: we could add a check here that oldDot[0] > 0
+        // Xj^H M Xj should be real and positive, by the hermitian positive definiteness of M
+        if ( SCT::real(oldDot[0]) < ZERO ) {
+          return Failed;
+        }
 
         if (numX > 0) {
           // Apply the first step of Gram-Schmidt
@@ -575,28 +651,31 @@ namespace Anasazi {
         } // if (numX > 0)
 
         // Compute M-norm with old MXj
-        // NOTE:  Re-using newDot vector
         MVT::MvDot( *Xj, *oldMXj, &newDot );
 
         // Check if Xj has any directional information left after the orthogonalization.
+        cout << "olddot: " << SCT::magnitude(oldDot[0]) << "    newdot: " << SCT::magnitude(newDot[0]);
         if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*EPS*EPS) && SCT::real(newDot[0]) > ZERO ) {
+          cout << " ACCEPTED" << endl;
           // Normalize Xj.
           // Xj <- Xj / sqrt(newDot*EPS*EPS)
-          MVT::MvAddMv( ONE/SCT::squareroot(newDot[0]), *Xj, ZERO, *Xj, *Xj );
+          MVT::MvAddMv( ONE/SCT::squareroot(SCT::magnitude(newDot[0])), *Xj, ZERO, *Xj, *Xj );
           if (M) {
             // Update MXj.
-            MVT::MvAddMv( ONE/SCT::squareroot(newDot[0]), *MXj, ZERO, *MXj, *MXj );
+            MVT::MvAddMv( ONE/SCT::squareroot(SCT::magnitude(newDot[0])), *MXj, ZERO, *MXj, *MXj );
           }
           // We are not rank deficient in this vector. Move on to the next vector in X.
           rankDef = false;
           break;
         }
         else {
+          cout << " REJECTED" << endl;
           // There was nothing left in Xj after orthogonalizing against previous columns in X.
           // X is rank deficient.
 
           if (completeBasis) {
             // Nothing left in Xj. Fill it with random information and keep going.
+            cout << "Random for column " << j << endl;
             MVT::MvRandom( *Xj );
             if (M) {
               if ( OPT::Apply( *M, *Xj, *MXj ) != Ok ) return Failed;
