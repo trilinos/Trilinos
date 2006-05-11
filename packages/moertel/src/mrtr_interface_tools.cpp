@@ -309,7 +309,7 @@ bool MOERTEL::Interface::AddSegment(MOERTEL::Segment& seg, int side)
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-#if 0 // splitting the quad into 2 triangles
+#if 1 // splitting the quad into 2 triangles
     // split the quad into 2 triangles
     int ids1[3];
     ids1[0] = seg.NodeIds()[0];
