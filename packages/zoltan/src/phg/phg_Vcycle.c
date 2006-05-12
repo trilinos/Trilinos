@@ -386,16 +386,17 @@ int Zoltan_PHG_Partition (
 	Zoltan_PHG_Redistribute(zz, hgp, hg, 0, middle, hgc, redistributed->hg,
 				&vcycle->vlno, &vcycle->vdest);
 
-	if (hgc->myProc < 0)
-	  /* I'm not in the redistributed part so I should go to uncoarsening
-	     refinement and wait *
-	  goto Refine;
-
 	if ((err=allocVCycle(redistributed))!= ZOLTAN_OK)
 	  goto End;
 	vcycle = redistributed;
-	hg = vcycle->hg;*/
-	hg->redl = hgp->redl;
+
+	if (hgc->myProc < 0)
+	  /* I'm not in the redistributed part so I should go to uncoarsening
+	     refinement and wait *
+	     goto Refine;*/
+
+	hg = vcycle->hg;
+	hg->redl = hgp->redl; /* not set with hg creation */
       }
   }
 
@@ -430,7 +431,6 @@ int Zoltan_PHG_Partition (
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarsepart, hgc->Communicator);
     ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
   }
-  /*fprintf(stderr, "Node %d:  after if.\n", hgc->myProc);*/
 
 Refine:
   del = vcycle;
@@ -439,7 +439,7 @@ Refine:
     VCycle *finer = vcycle->finer;
     hg = vcycle->hg;
 
-    if (vcycle->Part) {
+    if (hgc->myProc >= 0) {
       if (do_timing) {
 	ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
 	ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hgc->Communicator);
@@ -539,9 +539,9 @@ Refine:
 	ZOLTAN_FREE (&rbuffer);                  
 	Zoltan_Comm_Destroy (&finer->comm_plan);                   
       } else {
-	fprintf(stderr, "Node %d: else\n", hgc->myProc);
-	int *sendbuf = NULL, size = 2 * hg->nVtx; /* ints local and partition
-						     numbers */
+	/*fprintf(stderr, "Node %d: else\n", hgc->myProc);*/
+	int *sendbuf = NULL, size = 2 * hg->nVtx; /* ints local and
+						     partition numbers */
 	if (hg->nVtx > 0) {
 	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
 	  if (!sendbuf) {
