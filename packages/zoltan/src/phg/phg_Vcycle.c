@@ -395,7 +395,9 @@ int Zoltan_PHG_Partition (
 	  goto End;
 	vcycle = redistributed;
 	hg = vcycle->hg;*/
+	hg->redl = hgp->redl;
       }
+      /*fprintf(stderr, "Node %d:  hg->redl = %d.\n", hgc->myProc, hg->redl);*/
   }
 
   if (hgp->output_level >= PHG_DEBUG_LIST) {
@@ -495,7 +497,7 @@ Refine:
       int *rbuffer;
             
       /* Project coarse partition to fine partition */
-      if (finer->LevelMap) {
+      if (finer->comm_plan) {
 	/* easy to assign partitions to internal matches */
 	for (i = 0; i < finer->hg->nVtx; i++)
 	  if (finer->LevelMap[i] >= 0)   /* if considers only the local vertices */
@@ -537,6 +539,7 @@ Refine:
 	ZOLTAN_FREE (&rbuffer);                  
 	Zoltan_Comm_Destroy (&finer->comm_plan);                   
       } else {
+	fprintf(stderr, "Node %d: else\n", hgc->myProc);
 	int *sendbuf = NULL, size = 2 * hg->nVtx; /* ints local and partition
 						     numbers */
 	if (hg->nVtx > 0) {
