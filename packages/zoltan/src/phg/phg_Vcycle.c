@@ -372,7 +372,7 @@ int Zoltan_PHG_Partition (
 			 it should be bigger than 7 it is safe to decrement) */
 	}
 	
-	/*if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
+	if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: PHGComm");
 	  return ZOLTAN_MEMERR;
 	}
@@ -388,16 +388,15 @@ int Zoltan_PHG_Partition (
 
 	if (hgc->myProc < 0)
 	  /* I'm not in the redistributed part so I should go to uncoarsening
-	     refinement and wait *
+	     refinement and wait */
 	  goto Refine;
 
 	if ((err=allocVCycle(redistributed))!= ZOLTAN_OK)
 	  goto End;
 	vcycle = redistributed;
-	hg = vcycle->hg;*/
+	hg = vcycle->hg;
 	hg->redl = hgp->redl;
       }
-      /*fprintf(stderr, "Node %d:  hg->redl = %d.\n", hgc->myProc, hg->redl);*/
   }
 
   if (hgp->output_level >= PHG_DEBUG_LIST) {
@@ -431,6 +430,7 @@ int Zoltan_PHG_Partition (
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarsepart, hgc->Communicator);
     ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
   }
+  fprintf(stderr, "Node %d:  after if.\n", hgc->myProc);
 
 Refine:
   del = vcycle;
