@@ -52,6 +52,7 @@ The most important classes of the EpetraExt module are:
    - MultiVectorToMatrixMarketFile()
 *) Input/Output classes:
    - HDF5
+   - XML
 *) Matrix-Matrix functions:
    - Add()
    - Multiply()
@@ -100,6 +101,8 @@ The most important classes of the EpetraExt module are:
 #include "EpetraExt_MatrixMatrix.h"
 
 #include "EpetraExt_HDF5.h" // FIXME: memory management still scary...
+#include "EpetraExt_XMLReader.h" // FIXME: memory management still scary...
+#include "EpetraExt_XMLWriter.h" // FIXME: memory management still scary...
 
 namespace EpetraExt {
   int MatrixMarketFileToCrsMatrix(const char *filename, Epetra_CrsMatrix* A)
@@ -232,6 +235,8 @@ using namespace std;
 %include "EpetraExt_MapColoring.h"
 %include "EpetraExt_MapColoringIndex.h"
 %include "EpetraExt_HDF5.h"
+%include "EpetraExt_XMLReader.h"
+%include "EpetraExt_XMLWriter.h"
 
 namespace EpetraExt 
 {
@@ -300,13 +305,6 @@ namespace EpetraExt
     return(obj);
   }
 
-  Epetra_MultiVector* ReadMultiVector(string Name)
-  {
-    Epetra_MultiVector* obj = 0;
-    self->Read(Name, obj);
-    return(obj);
-  }
-
   Epetra_CrsGraph* ReadCrsGraph(string Name)
   {
     Epetra_CrsGraph* obj = 0;
@@ -325,6 +323,53 @@ namespace EpetraExt
   {
     Epetra_IntVector* obj = 0;
     self->Read(Name, obj);
+    return(obj);
+  }
+}
+
+%extend EpetraExt::XMLReader 
+{
+  Epetra_Map* ReadMap(string Name)
+  {
+    Epetra_Map* obj = 0;
+    try {
+      self->Read(Name, obj);
+    } catch(...) {
+      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
+    }
+    return(obj);
+  }
+
+  Epetra_MultiVector* ReadMultiVector(string Name)
+  {
+    Epetra_MultiVector* obj = 0;
+    try {
+      self->Read(Name, obj);
+    } catch(...) {
+      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
+    }
+    return(obj);
+  }
+
+  Epetra_CrsGraph* ReadCrsGraph(string Name)
+  {
+    Epetra_CrsGraph* obj = 0;
+    try {
+      self->Read(Name, obj);
+    } catch(...) {
+      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
+    }
+    return(obj);
+  }
+
+  Epetra_CrsMatrix* ReadCrsMatrix(string Name)
+  {
+    Epetra_CrsMatrix* obj = 0;
+    try {
+      self->Read(Name, obj);
+    } catch(...) {
+      cout << "Caught generic exception, maybe the specified class does not exist" << endl;
+    }
     return(obj);
   }
 }

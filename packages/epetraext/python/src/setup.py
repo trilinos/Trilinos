@@ -92,7 +92,7 @@ epetraNumPyMultiVector = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyMultiVector.cpp"))
 epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyVector.cpp"     ))
-epetraNumPyVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
+epetraNumPyIntVector      = os.path.normpath(os.path.join(epetraPythonSrcDir,
                                                        "Epetra_NumPyIntVector.cpp"     ))
 
 # Compiler and linker
@@ -102,7 +102,7 @@ sysconfig._config_vars["CXX"] = CXX
 
 # _EpetraExt extension module
 _EpetraExt = Extension("PyTrilinos._EpetraExt",
-                       [epetraExtWrap, epetraNumPyMultiVector, epetraNumPyVector],
+                       [epetraExtWrap, epetraNumPyMultiVector, epetraNumPyVector, epetraNumPyIntVector],
                        define_macros      = [("HAVE_CONFIG_H", "1")],
                        include_dirs       = include_dirs,
                        library_dirs       = library_dirs,
