@@ -84,12 +84,13 @@ for option in options:
 
 # Define the strings that refer to the required local source files
 srcFiles = ["Epetra_wrap.cpp",
-            os.path.join(srcdir,"Epetra_NumPyMultiVector.cpp"         ),
-            os.path.join(srcdir,"Epetra_NumPyVector.cpp"              ),
-            os.path.join(srcdir,"Epetra_NumPyIntVector.cpp"           ),
+            os.path.join(srcdir,"Epetra_NumPyIntSerialDenseMatrix.cpp"),
+            os.path.join(srcdir,"Epetra_NumPyIntSerialDenseVector.cpp"),
             os.path.join(srcdir,"Epetra_NumPySerialDenseMatrix.cpp"   ),
             os.path.join(srcdir,"Epetra_NumPySerialDenseVector.cpp"   ),
-            os.path.join(srcdir,"Epetra_NumPyIntSerialDenseVector.cpp") ]
+            os.path.join(srcdir,"Epetra_NumPyIntVector.cpp"           ),
+            os.path.join(srcdir,"Epetra_NumPyMultiVector.cpp"         ),
+            os.path.join(srcdir,"Epetra_NumPyVector.cpp"              ) ]
 
 # Compiler and linker
 sysconfig.get_config_vars()

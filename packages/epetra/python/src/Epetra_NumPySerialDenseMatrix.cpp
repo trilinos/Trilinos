@@ -55,37 +55,43 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
       // If pyObject is not a bool nor an int, try to build a
       // contiguous 2D PyArrayObject from the pyObject
       } else {
-	tmp_array = (PyArrayObject *) PyArray_ContiguousFromObject(pyObject,'d',2,2);
+	PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_DOUBLE); // This function returns a
+	                                                               // borrowed ptr: no DECREF
+	tmp_array = (PyArrayObject *) PyArray_FromAny(pyObject, dtype, 2, 2, FARRAY_FLAGS, NULL);
 	tmp_bool  = (bool) numCols;
       }
     }
   }
   // If no array has been correctly constructed, build a zero-by-zero matrix
   if (!tmp_array) {
-    intp dimensions[ ] = {0,0};
-    tmp_array = (PyArrayObject *) PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
+    intp dimensions[ ] = { 0, 0 };
+    tmp_array = (PyArrayObject *) PyArray_SimpleNew(2, dimensions, PyArray_DOUBLE);
   }
 
   return (double*)(tmp_array->data);
 }
 
 // =============================================================================
-void Epetra_NumPySerialDenseMatrix::setArray()
+void Epetra_NumPySerialDenseMatrix::setArray(bool copy)
 {
   if (tmp_array) {
     array     = tmp_array;
     tmp_array = NULL;
   } else {
-    intp dimensions[ ] = {M(), N()};
-    array = (PyArrayObject*) PyArray_SimpleNewFromData(2,dimensions,'d',
-						       (void*)Epetra_SerialDenseMatrix::A());
+    intp     dimensions[ ] = { M(), N() };
+    double * data          = NULL;
+    if (!copy) data        = Epetra_SerialDenseMatrix::A();
+    PyArray_Descr * dtype  = PyArray_DescrFromType(PyArray_DOUBLE); // This NumPy function returns a
+                                                                   // borrowed pointer: no DECREF
+    array = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dimensions, NULL,
+						  (void*)data, FARRAY_FLAGS, NULL);
+    if (copy) {
+      double * oldData = Epetra_SerialDenseMatrix::A();
+      double * newData = (double*) array->data;
+      int      size    = dimensions[0] * dimensions[1];
+      for (int i=0; i<size; ++i) newData[i] = oldData[i];
+    }
   }
-  // *** This will have to wait until upgrade from Numeric to NumPy ***
-  // Change the strides so that Numeric accesses the matrix elements
-  // in the same order as Epetra
-  // array->flags     &= ~CONTIGUOUS;   // Tell Numeric the array is noncontiguous
-  // array->strides[0] = 8;
-  // array->strides[1] = 8 * M();
 }
 
 // =============================================================================
@@ -155,7 +161,7 @@ Epetra_NumPySerialDenseMatrix::Epetra_NumPySerialDenseMatrix(const Epetra_Serial
   Epetra_SerialDenseMatrix(src)
 {
   // Synchronize the PyArrayObject with the Epetra_SerialDenseMatrix
-  setArray();
+  setArray(true);
 }
 
 // Destructor
@@ -170,7 +176,7 @@ int Epetra_NumPySerialDenseMatrix::Shape(int numRows, int numCols) {
   // Call the base-class method
   int result = Epetra_SerialDenseMatrix::Shape(numRows, numCols);
   if (result) {
-    PyErr_Format(PyExc_RuntimeError, "Shape() method failed with code %d", result);
+    PyErr_Format(PyExc_ValueError, "Shape() method failed with code %d", result);
   } else {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_SerialDenseMatrix data
@@ -183,7 +189,7 @@ int Epetra_NumPySerialDenseMatrix::Reshape(int numRows, int numCols) {
   // Call the base-class method
   int result = Epetra_SerialDenseMatrix::Reshape(numRows,numCols);
   if (result) {
-    PyErr_Format(PyExc_RuntimeError, "Reshape() method failed with code %d", result);
+    PyErr_Format(PyExc_ValueError, "Reshape() method failed with code %d", result);
   } else {
     Py_DECREF(array);   // Decrement the refcount to the current array
     setArray();         // Set the array from the Epetra_SerialDenseMatrix data

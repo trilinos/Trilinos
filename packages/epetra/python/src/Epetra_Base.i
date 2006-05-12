@@ -133,6 +133,19 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 }
 %enddef
 
+// Define macro for a typemap that converts return arguments from
+// Epetra_*Matrix or Epetra_*Vector to the corresponding
+// Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
+// magic in the python code to convert the Epetra_NumPy*Matrix or
+// Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
+%define TYPEMAP_OUT(array,numPyArray)
+%typemap(out) array * {
+  numPyArray * npa = new numPyArray(*$1);
+  static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
+  $result = SWIG_NewPointerObj(npa, ty, 1);
+}
+%enddef
+
 // Include directives
 %include "Epetra_Version.h"
 %include "Epetra_CombineMode.h"

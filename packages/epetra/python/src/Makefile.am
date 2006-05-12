@@ -39,13 +39,31 @@ SWIG_CXXFLAGS = $(EPETRA_INCLUDES)     \
 	        -I$(srcdir)            \
 		$(MPI_FLAG)
 
-EXTRA_DIST = Epetra.i               \
-	     Epetra_Comm.i          \
-	     setup.py               \
-	     Epetra_NumPyVector.cpp \
-	     Epetra_NumPyVector.h   \
-	     Epetra_PyOperator.h    \
-	     Epetra_PyRowMatrix.h
+EXTRA_DIST = Epetra.i                             \
+	     Epetra_Base.i                        \
+	     Epetra_Comm.i                        \
+	     Epetra_Graphs.i                      \
+	     Epetra_Maps.i                        \
+	     Epetra_Operators.i                   \
+	     Epetra_SerialDense.i                 \
+	     Epetra_Vectors.i                     \
+	     Epetra_NumPyIntSerialDenseMatrix.cpp \
+	     Epetra_NumPyIntSerialDenseMatrix.h   \
+	     Epetra_NumPyIntSerialDenseVector.cpp \
+	     Epetra_NumPyIntSerialDenseVector.h   \
+	     Epetra_NumPyIntVector.cpp            \
+	     Epetra_NumPyIntVector.h              \
+	     Epetra_NumPyMultiVector.cpp          \
+	     Epetra_NumPyMultiVector.h            \
+	     Epetra_NumPySerialDenseMatrix.cpp    \
+	     Epetra_NumPySerialDenseMatrix.h      \
+	     Epetra_NumPySerialDenseVector.cpp    \
+	     Epetra_NumPySerialDenseVector.h      \
+	     Epetra_NumPyVector.cpp               \
+	     Epetra_NumPyVector.h                 \
+	     Epetra_PyOperator.h                  \
+	     Epetra_PyRowMatrix.h                 \
+	     setup.py
 
 # Default make target
 all-am: build

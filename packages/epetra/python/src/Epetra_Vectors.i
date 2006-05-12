@@ -97,25 +97,15 @@ NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyVector     )
 NUMPY_CONSTRUCTOR_EXCEPTION_HANDLER(Epetra_NumPyIntVector  )
 
 // Typemaps
-// When a method returns an Epetra_*Vector, this typemap converts it
-// to an Epetra_NumPy*Vector.  There is additional magic in the python
-// code to convert the Epetra_NumPy*Vector to an Epetra.*Vector.
-%define TYPEMAP_OUT(vector,numPyVector)
-%typemap(out) vector * {
-  numPyVector * vec = new numPyVector(*$1);
-  static swig_type_info *ty = SWIG_TypeQuery("numPyVector *");
-  $result = SWIG_NewPointerObj(vec, ty, 1);
-}
-%enddef
 TYPEMAP_OUT(Epetra_MultiVector,Epetra_NumPyMultiVector)
 TYPEMAP_OUT(Epetra_Vector,     Epetra_NumPyVector     )
 TYPEMAP_OUT(Epetra_IntVector,  Epetra_NumPyIntVector  )
 
 // Include directives for Epetra
+%include "Epetra_IntVector.h"
 %include "Epetra_MultiVector.h"
 %include "Epetra_Vector.h"
 %include "Epetra_FEVector.h"
-%include "Epetra_IntVector.h"
 
 // Local interface includes
 %include "Epetra_NumPyMultiVector.h"
