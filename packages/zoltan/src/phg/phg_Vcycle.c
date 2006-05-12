@@ -349,7 +349,7 @@ int Zoltan_PHG_Partition (
       vcycle = coarser;
       hg = vcycle->hg;
 
-      if (hgc->nProc>1 &&
+      if (hgc->nProc>3 &&
 	  (hg->dist_x[hgc->nProc_x] < (int) (0.5 * origVcnt + 0.5) ||
 	   hg->dist_y[hgc->nProc_y] < (int) (0.5 * origVedgecnt + 0.5))) {
 	/* redistribute to half the processors */
@@ -385,6 +385,10 @@ int Zoltan_PHG_Partition (
 
 	Zoltan_PHG_Redistribute(zz, hgp, hg, 0, middle, hgc, redistributed->hg,
 				&vcycle->vlno, &vcycle->vdest);
+	for (i = 0; i < redistributed->hg->nVtx; i++) {
+	  fprintf(stderr, "Node %d: vcycle->vlno[%d] = ", hgc->myProc, i);
+	  fprintf(stderr, "%d\n", vcycle->vlno[i]);
+	}
 
 	if ((err=allocVCycle(redistributed))!= ZOLTAN_OK)
 	  goto End;
@@ -393,7 +397,7 @@ int Zoltan_PHG_Partition (
 	if (hgc->myProc < 0)
 	  /* I'm not in the redistributed part so I should go to uncoarsening
 	     refinement and wait *
-	     goto Refine;*/
+	  goto Refine;
 
 	hg = vcycle->hg;
 	hg->redl = hgp->redl; /* not set with hg creation */
@@ -539,9 +543,8 @@ Refine:
 	ZOLTAN_FREE (&rbuffer);                  
 	Zoltan_Comm_Destroy (&finer->comm_plan);                   
       } else {
-	/*fprintf(stderr, "Node %d: else\n", hgc->myProc);*/
-	int *sendbuf = NULL, size = 2 * hg->nVtx; /* ints local and
-						     partition numbers */
+	int *sendbuf = NULL, size = 2*finer->hg->nVtx; /* ints local and
+							  partition numbers */
 	if (hg->nVtx > 0) {
 	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
 	  if (!sendbuf) {
@@ -615,8 +618,8 @@ End:
 	Zoltan_Multifree (__FILE__, __LINE__, 4, &vcycle->Part,
 			  &vcycle->LevelMap, &vcycle->LevelData, &vcycle->hg);
       else
-	Zoltan_Multifree (__FILE__, __LINE__, 3, &vcycle->vdest, &vcycle->vlno,
-			  &vcycle->hg);
+	Zoltan_Multifree (__FILE__, __LINE__, 5, &vcycle->Part, &vcycle->vdest,
+			  &vcycle->vlno, &vcycle->LevelMap, &vcycle->hg);
     }
     else                   /* cleanup top level */
       Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->LevelMap,
