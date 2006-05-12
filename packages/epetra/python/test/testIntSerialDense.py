@@ -428,7 +428,8 @@ class EpetraIntSerialDenseVectorTestCase(unittest.TestCase):
     def testSize(self):
         "Test Epetra.IntSerialDenseVector Size method"
         isdv = Epetra.IntSerialDenseVector()
-        isdv.Size(3*self.size)
+        result = isdv.Size(3*self.size)
+        self.assertEqual(result, 0)
         self.assertEqual(isdv.Length(), 3*self.size)
         self.assertEqual(isdv.Length(), len(isdv))
         self.failUnless((isdv == 0).all())
@@ -439,7 +440,8 @@ class EpetraIntSerialDenseVectorTestCase(unittest.TestCase):
         self.assertEqual(isdv.Length(), 3*self.size)
         self.assertEqual(isdv.Length(), len(isdv))
         isdv[:] = range(len(isdv))
-        isdv.Resize(self.size)
+        result = isdv.Resize(self.size)
+        self.assertEqual(result, 0)
         self.assertEqual(isdv.Length(), self.size)
         self.assertEqual(isdv.Length(), len(isdv))
         for i in range(len(isdv)):

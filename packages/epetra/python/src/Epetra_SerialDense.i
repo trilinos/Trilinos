@@ -156,6 +156,12 @@ class IntSerialDenseMatrix(UserArray,NumPyIntSerialDenseMatrix):
                               "Cannot change Epetra.IntSerialDenseMatrix shape attribute"
             UserArray.__setattr__(self, key, value)
     def __getitem__(self, index):
+        """
+        __getitem__(self,int,int) -> int
+        __getitem__(self,int,slice) -> array
+        __getitem__(self,slice,int) -> array
+        __getitem__(self,slice,slice) -> array
+        """
         return self.array[index]
     def Shape(self,numRows,numCols):
         "Shape(self, int numRows, int numCols) -> int"
@@ -214,6 +220,7 @@ class IntSerialDenseVector(UserArray,NumPyIntSerialDenseVector):
         result = NumPyIntSerialDenseVector.Size(self,length)
         self.__protected = False
         self.__initArray__()
+        return result
     def Resize(self,length):
         "Resize(self, int length) -> int"
         result = NumPyIntSerialDenseVector.Resize(self,length)
@@ -260,9 +267,14 @@ class SerialDenseMatrix(UserArray,NumPySerialDenseMatrix):
                         raise AttributeError, \
                               "Cannot change Epetra.SerialDenseMatrix shape attribute"
             UserArray.__setattr__(self, key, value)
-    def __call__(self,i,j):
-        "__call__(self, int i, int j) -> double"
-        return self.__getitem__(i,j)
+    def __getitem__(self, index):
+        """
+        __getitem__(self,int,int) -> int
+        __getitem__(self,int,slice) -> array
+        __getitem__(self,slice,int) -> array
+        __getitem__(self,slice,slice) -> array
+        """
+        return self.array[index]
     def Shape(self,numRows,numCols):
         "Shape(self, int numRows, int numCols) -> int"
         result = NumPySerialDenseMatrix.Shape(self,numRows,numCols)
@@ -320,6 +332,7 @@ class SerialDenseVector(UserArray,NumPySerialDenseVector):
         result = NumPySerialDenseVector.Size(self,length)
         self.__protected = False
         self.__initArray__()
+        return result
     def Resize(self,length):
         "Resize(self, int length) -> int"
         result = NumPySerialDenseVector.Resize(self,length)

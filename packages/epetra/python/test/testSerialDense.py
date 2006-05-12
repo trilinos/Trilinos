@@ -54,11 +54,11 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
     def setUp(self):
         self.comm  = Epetra.PyComm()
         self.size  = 4
-        self.rows  = 2
+        self.rows  = 3
         self.cols  = 4
-        self.array = [[0.1, 2.3, 4.5],
-                      [6.7, 8.9, 0.1],
-                      [2.3, 4.5, 6.7]]
+        self.array = [[0.1, 2.3, 4.5, 6.7],
+                      [6.7, 8.9, 0.1, 2.3],
+                      [2.3, 4.5, 6.7, 8.9]]
         # Query whether Copy objects are actually Copy objects.  For older
         # versions of SWIG, they are View objects, but newer versions of SWIG
         # get it right
@@ -249,6 +249,56 @@ class EpetraSerialDenseMatrixTestCase(unittest.TestCase):
         a   = array(self.array)
         sdm = Epetra.SerialDenseMatrix(self.array)
         self.assertAlmostEqual(sdm.NormInf(), max(sum(abs(a),axis=1)))
+
+    def testParentheses(self):
+        "Test Epetra.SerialDenseMatrix __call__ method"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm(i,j), self.array[i][j])
+
+    def testGetItem1(self):
+        "Test Epetra.SerialDenseMatrix __getitem__ method for two ints"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                self.assertEqual(sdm[i,j], self.array[i][j])
+
+    def testGetItem2(self):
+        "Test Epetra.SerialDenseMatrix __getitem__ method for int and slice"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        for i in range(sdm.M()):
+            testing.assert_array_equal(sdm[i,:], self.array[i])
+
+    def testGetItem3(self):
+        "Test Epetra.SerialDenseMatrix __getitem__ method for two slices"
+        sdm = Epetra.SerialDenseMatrix(self.array)
+        testing.assert_array_equal(sdm[:,:], self.array)
+
+    def testSetitem1(self):
+        "Test Epetra.SerialDenseMatrix __setitem__ method for two ints"
+        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
+        testing.assert_array_equal(sdm, zeros((self.rows,self.cols),'d'))
+        for i in range(sdm.M()):
+            for j in range(sdm.N()):
+                value = i * sdm.N() + j
+                sdm[i,j] = value
+                self.assertEqual(sdm[i,j], value)
+
+    def testSetitem2(self):
+        "Test Epetra.SerialDenseMatrix __setitem__ method for int and slice"
+        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
+        testing.assert_array_equal(sdm, zeros((self.rows,self.cols),'d'))
+        for i in range(sdm.M()):
+            sdm[i,:] = self.array[i]
+            testing.assert_array_equal(sdm[i,:], self.array[i])
+
+    def testSetitem3(self):
+        "Test Epetra.SerialDenseMatrix __setitem__ method for two slices"
+        sdm = Epetra.SerialDenseMatrix(self.rows,self.cols)
+        testing.assert_array_equal(sdm, zeros((self.rows,self.cols),'d'))
+        sdm[:,:] = self.array
+        testing.assert_array_equal(sdm, self.array)
 
     def testIndexErrors(self):
         "Test Epetra.SerialDenseMatrix index errors "
@@ -466,7 +516,8 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
     def testSize(self):
         "Test Epetra.SerialDenseVector Size method"
         sdv = Epetra.SerialDenseVector()
-        sdv.Size(3*self.size)
+        result = sdv.Size(3*self.size)
+        self.assertEqual(result, 0)
         self.assertEqual(sdv.Length(), 3*self.size)
         self.assertEqual(sdv.Length(), len(sdv))
         self.failUnless((sdv == 0.0).all())
@@ -477,7 +528,8 @@ class EpetraSerialDenseVectorTestCase(unittest.TestCase):
         self.assertEqual(sdv.Length(), 3*self.size)
         self.assertEqual(sdv.Length(), len(sdv))
         sdv[:] = range(len(sdv))
-        sdv.Resize(self.size)
+        result = sdv.Resize(self.size)
+        self.assertEqual(result, 0)
         self.assertEqual(sdv.Length(), self.size)
         self.assertEqual(sdv.Length(), len(sdv))
         for i in range(len(sdv)):

@@ -51,9 +51,9 @@ public:
   // for one of two reasons: (1) to provide a more python-like
   // signature, or (2) to maintain synchronization between the
   // Epetra_SerialDenseMatrix and the numpy array.
+  double     operator() (int rowIndex, int colIndex);
   int        Shape(  int numRows, int numCols);
   int        Reshape(int numRows, int numCols);
-  PyObject * A() const;
   PyObject * A();
 
   // Static cleanup function, to be called when python exceptions are

@@ -172,6 +172,11 @@ Epetra_NumPySerialDenseMatrix::~Epetra_NumPySerialDenseMatrix() {
 
 // Methods
 // =============================================================================
+double Epetra_NumPySerialDenseMatrix::operator() (int rowIndex, int colIndex) {
+  return double(Epetra_SerialDenseMatrix::operator()(rowIndex, colIndex));
+}
+
+// =============================================================================
 int Epetra_NumPySerialDenseMatrix::Shape(int numRows, int numCols) {
   // Call the base-class method
   int result = Epetra_SerialDenseMatrix::Shape(numRows, numCols);
@@ -195,12 +200,6 @@ int Epetra_NumPySerialDenseMatrix::Reshape(int numRows, int numCols) {
     setArray();         // Set the array from the Epetra_SerialDenseMatrix data
   }
   return result;
-}
-
-// =============================================================================
-PyObject * Epetra_NumPySerialDenseMatrix::A() const {
-  Py_INCREF(array);
-  return PyArray_Return(array);
 }
 
 // =============================================================================
