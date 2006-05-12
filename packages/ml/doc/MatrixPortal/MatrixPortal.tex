@@ -1,8 +1,6 @@
 % @HEADER
 % ***********************************************************************
-%
-%            Trilinos: An Object-Oriented Solver Framework
-%                 Copyright (2001) Sandia Corporation
+%            MatrixPortal: A Web-Based Computing Environment
 %
 % Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 % license for use of this work by or on behalf of the U.S. Government.
@@ -21,8 +19,6 @@
 % License along with this library; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 % USA
-% Questions? Contact Michael A. Heroux (maherou@sandia.gov)
-%
 % ***********************************************************************
 % @HEADER
 
@@ -41,8 +37,7 @@
 
 \author{Sala, Phenow, Hu, Tuminaro}
 
-\title{MatrixPortal: a Web-based Tools for Performance Analysis of Sparse Linear
-Algebra Libraries}
+\title{On the Development of Portals for Scientific Computing (DRAFT)}
 \SANDnum{SAND2006-XXXX}
 \SANDauthor{Sala, Phenow, Hu, Tuminaro}
 
@@ -83,6 +78,8 @@ Algebra Libraries}
 \maketitle
 
 \begin{abstract}
+TO BE FIXED.... \\
+
 Mathematical software is a subfield of computer science
 characterized by a mixture of algorithms and numerics. Although elegant
 theoretical results have been proved for a variety of problems, there is
@@ -105,6 +102,9 @@ distributed sparse matrices.
 \end{abstract}
 
 \clearpage
+\begin{center}
+(page intentionally left blank)
+\end{center}
 
 \SANDmain
 
@@ -118,34 +118,115 @@ distributed sparse matrices.
 \section{Introduction}
 % ------------------------------------------------------------------------- %
 
-Performance analysis if a key step in the design of any new
-software library, in order to provide the highest performance at the lowest
-cost. 
+In the language of the World Wide Web (WWW), a {\sl portal}, or portal site,
+is the site that users visit first. As its name stands for, it acts as a
+doorway to all the resources of a given subject. Typically, a portal gives a
+single, coherent view of information aggregated from disparate sources or
+providers. 
 
-There are several motivations for measuring
-the performance of linear algebra libraries, including:
+Here, we are investigating the issues related to the development
+and implementation of a portal for scientific computing. Therefore, we will
+only consider {\sl vertical portal}, developed for a specified audience ---
+that is, scientific computing. Although the ideas we present can in principle
+be applied to a vast group of software projects, we will focus our attention
+to sparse linear algebra.
+
+With the term {\sl portal for scientific computing} we mean a web-based
+interface to access high-performance software libraries. Among several
+possible choices, we consider the Trilinos project as concrete implementation
+of our model. However, other projects (like PETSc~\cite{petsc-guide} 
+                                       or Hypre~\cite{hypre}) could
+straightforwardly be included in our portal.
+
+Why should a portal be needed in the field of scientific computing? In our
+opinion, the following motivations suggest that such a project could benefit
+the research community:
 \begin{itemize}
-\item {\sl Validation of the library itself}.
-The only way to demonstrate that the library meets its
-performance goals for a given application is to measure performance under realistic
-conditions.
-\item {\sl Validation of an application}. The best way to validate a
-performance model is to compare the model predictions to measured
-performance, using well-tested and reliable solvers.
-\item {\sl Support.} Developers often have to respond to value complaints of
-poor performances. Offering an easy tool for testing can alleviate the
-pressure on developers, and help users to fix the problem.
-\item {\sl Fine tuning}.
-\item {\sl Teaching}.
-\item {\sl Library evaluation}.
-Linear algebra libraries for distributed parallel computing require an
-intensive effort to compile and optimize. Often, however, these libraries are
-used to perform basic performance evaluations on standard tests cases. Making
-it available all these functionalities through the
-web, without installing any single component of the library on the user's
-machine, can favor the use of the library.
+\item Scientific libraries can require quite different amount
+of knowledge to be unleashed. Software projects are sometimes large, and the
+learning curve can be steep. Typically, it is not easy for the intended user
+to load up his or her data and solve the corresponding problem with a new
+library. This can slow down the testing, usage and acceptance of new 
+projects. Being language-independent, and with no need to download or install
+any software, a portal offers a demo version of the actual library which
+requires a small amount of data, or no data at all if test problems are
+selected.
+%
+\item Configuring, compiling and installing is general a challenging step for
+the unexperienced user, and a time-consuming step for both unexperienced and
+expert users. Besides, some configuration options may require additional
+libraries.
+%
+\item For teaching and learning purposes, it can be of interest to move
+smoothly from theoretical results to practical evidence.
+Users interested only in the specific results 
+(e.g., the iterations to converge for a given preconditioner) could benefit
+from pop-down menus and common test problems.
+some more parameters, thus encouraging experimentation.
+%
+\item Bug-tracking capabilities like Bugzilla~\cite{bugzilla} and
+mailing lists help to create a sense of community, they are often not
+effective enough to share data. A web portal can improve the communication
+between users and developers: if a certain bug can be reproduced on the
+portal, then developers will have all required data and access to the buggy
+code. This can be a step forward {\sl collaborative computing}.
+\item Comparing different versions, or compare the installed version with the
+latest can become as easy as selecting one option in a list. Then, the user
+can decide whether the new version deserves to be downloaded and installed or
+not.
 \end{itemize}
+We design our portal as a Web service. The Web Web standards have been
+conceived to support interoperability, i.e., independence of the transport
+protocols, programming languages, programming models, and system software.
+Being based on industry standards like XML and HTML, a portal does not require
+any special purpose hardware or software.  Since the services reside only on
+the web server(s), the client software does not need to be updates every time
+the web service is modified; changes to the interfaces simply need a "reload"
+procedure.  The web service code never leaves the server, so property code is
+protected. And, last but not least, Web services can be accessed from
+everywhere and no special purpose interface is necessary.
 
+\smallskip
+
+This report is organized as follows.
+
+% ------------------------------------------------------------------------- %
+\section{Design Overview}
+% ------------------------------------------------------------------------- %
+
+% ------------------------------------------------------------------------- %
+\subsection{Objectives}
+% ------------------------------------------------------------------------- %
+
+We divide portals for scientific computing into two categories:
+\begin{enumerate}
+\item {\sl Portals for the novice user,} which aim to minimize the investment
+from this (casual) user, as well as the time required to move from the problem
+specification to the data analysis. A possible usage of the novice mode is for
+live presentations, or for teaching purposes.
+\item {\sl Portal for the expert user,} where an extensive set of
+functionalities is offered. In expert mode, the portal can be used as a
+scientific computational tool, where real-life problems can be solved, and the
+solution can be post-processed or sent to the user.
+A key point to note in this category is the issue
+of trust. Typically, expert users can upload their own problems, and possibly
+define a custom script of compilation file. To avoid abuses or misuses of the
+system, only certified users can receive the authorizations to access this
+expert mode.
+\end{enumerate}
+
+In  both cases, we are interesting in a user interface that favor the
+experimentation process, and offer an extensive list of parameters to toggle
+the behavior of the solvers, as well as a detailed help to guide users with
+less experience. The approach is to offer a clear and uniform design, avoiding
+everything that can be misinterpreted or can lead to confusion. The user
+should be able to assign custom names to problem definitions, and perform 
+a valid performance analysis. Performance analysis is required to help the 
+decision-making processing for the user's application.  Conveying the
+results in a clear and understandable way is a major objective of our work.
+
+The navigation of the portal in the novice mode is reported in
+Figure~\ref{fig:navigation}.
 Our system is structured as follows:
 \begin{itemize}
 \item select the problem of interests;
@@ -155,28 +236,71 @@ Our system is structured as follows:
 \item analyze and present data.
 \end{itemize}
 
-Properly selected and
-measured data can be very useful for future performance analysis.
-One use is estimating the performance of customer applications on
-a product, based on fundamental operations. For example,
-measurements of the time need to scan, update or create database
-records could be used to predict performance of specific queries
-against the database. The same data is useful for modeling new
-products.
-
-\smallskip
-
 \begin{figure}
-\includegraphics[width=7cm,angle=-90]{portal_design}
-\caption{Design}
-\label{fig:design}
+\begin{center}
+\begin{tabular}{c c c}
+%
+\begin{tabular}{| p{3.5cm} |}
+\hline \\ Setup problems \\  \\ \hline
+\end{tabular} 
+& $\Rightarrow$ & 
+%
+\begin{tabular}{| p{3.5cm} |}
+\hline \\ Analyze data\\ \\ \hline
+\end{tabular}  \\
+% - newline - %
+               &               & $\Downarrow$ \\
+% - newline - %
+\begin{tabular}{| p{3.5cm} |}
+\hline \\ Save results in XML\\ \\ \hline
+\end{tabular}  
+&  &
+\begin{tabular}{| p{3.5cm} |}
+\hline \\ Specify parameters\\ \\ \hline
+\end{tabular}  \\
+% - newline - %
+$\Uparrow$     &               &    $\Downarrow$ \\
+% - newline - %
+\begin{tabular}{| p{3.5cm} |}
+\hline \\ Analyze data\\ \\ \hline
+\end{tabular}  & $\Leftarrow$ &
+\begin{tabular}{| p{3.5cm} |}
+\hline \\ Compute solutions\\ \\ \hline
+\end{tabular}  \\
+\end{tabular}
+\end{center}
+\caption{}
+\label{fig:navigation}
 \end{figure}
 
-\begin{figure}
-\includegraphics[height=18cm,angle=-90]{diagram}
-\caption{Implementation diagram.}
-\label{fig:design}
-\end{figure}
+We now analyze in more details these phases.
+
+The types of applications
+are so numerous that it is not possible to have a standard approach on
+measure. Indeed, the first step in performance evaluation is to select the
+right model and measure, the right measurement environments, and the right
+techniques.
+
+By {\sl data acquisition} we mean the act of gathering data from multiple data
+sources. To successfully acquire data, a system must support well-recognized
+protocols. TALK ABOUT XML HERE
+
+By {\sl data management} refers to functionalities for dealing with the various
+information types once they have been made accessible by the data acquisition
+component. Those include:
+\begin{itemize}
+\item a persistent data repository;
+\item index capabilities for data stored;
+\item search facilities.
+\end{itemize}
+
+
+How much insight is gained from the results? The presentation of the final
+results is, for the users, the key step towards decision making. 
+
+% ------------------------------------------------------------------------- %
+\subsection{The Computational Mode: A Three-Tier Computing}
+% ------------------------------------------------------------------------- %
 
 An overview of the structure is reported in Figure~\ref{fig:design}.
 Our portal is organized in a three-layer structure. While the user's interface
@@ -186,117 +310,13 @@ Client-Server service, in the latter a Client-Server-Solver. The solver layer
 could be located on the Grid; in this case we call the structure
 Client-Server-Grid.
 
-\medskip
-
-This report is organized as follows.
-
-% ------------------------------------------------------------------------- %
-\section{Brief Overview of Performance Analysis}
-% ------------------------------------------------------------------------- %
-
-We now give a basic overview of the terminology used in performance analysis.
-For an overview on the subject, we refer to~\cite{jain91art}.
-
-Performance analysis of mathematical software can be divided into two classes:
-theoretical (or analytical) modeling and performance measurement (benchmarking).
-All analytic techniques require the
-construction of a model, an abstract representation of the real system. 
-Performance measurement does not
-use models but instead relies on direct observation of the system of interest,
-or a similar system.
-A proper performance analysis required that the effect of each factor can be
-isolated from those of others so that meaningful statements can be made about
-different levels of the factors.
-
-{\sl response variable} is the outcome of the experiment. Generally, this is
-the measured performance of the system. 
-{\sl Factors:} each variable that affects the response variable and has
-several alternatives. Usually divided into primary and secondary factors.
-
-The values that a factor can assume are called {\sl levels}. 
-
-The entity that is used for the experiment is called an {\sl experimental
-  unit}.
-
-\smallskip
-
-The term {\sl test workload} denotes any workload used in performance studies.
-A test workload can be real or synthetic. A real workload is one observed on a
-system being used for normal operations. A synthetic workload, whose
-characteristics are similar to those of the real workload, and can be applie
-repeatedly in a controlled manner, is developed and used for studies. The main
-reason for using a synthetic workload is that it is a representation of a
-model of a real world. As such, a theoretical estimate can sometimes be
-available, and can be used to validate the system. Besudes, synthetic worload
-can be easily modified and generated, and ported to different systems. Real
-workload might also contain sensitive data.
-
-A {\sl monitor} is a tool used to abserve the activity of a system. It is the key
-step in performance measurement. 
-
-% ------------------------------------------------------------------------- %
-\section{Design Overview}
-% ------------------------------------------------------------------------- %
-
-% ------------------------------------------------------------------------- %
-\subsection{User Interface Requirements}
-% ------------------------------------------------------------------------- %
-
-We designed our user interface as a Web service.
-A Web service is a piece of functionality, exposed through a web interface.
-Any authorized client on the internet can use this functionality. The server
-can either send the result as a web page (HTML format), or send the response
-both through an XML message or a e-mail. There are several advantages in using
-web services to perform computations:
-\begin{itemize}
-\item XML and HTML are industry standard;
-\item No special-purpose hardware is required for running web services;
-\item Since the services reside only on the web server(s), the client software
-does not need to be updates every time the web service is modified. Changes to
-the interfaces simply need a "reload" procedure;
-\item The web service code never leaves the server, so property code is
-protected;
-\item Web services can be accessed from everywhere; no special
-purpose interface is necessary.
-\end{itemize}
-However, in the context of linear algebra, there are some limitations to the
-utilization of web services:
-\begin{itemize}
-\item the data and results can be quite large, and there is no standard way to
-communicate these objects;
-\item intermediate results cannot be shown.
-\end{itemize}
-
-Web standards have been conceived to support interoperability, i.e.,
-    independence of the transport protocols, programming languages,
-    programming models, and system software. The main actors in a Web service
-    architecture are requestors and providers. Requestors access services from
-    providers. The added-value for the requestors will be improved by
-    customized services.
-
-Connected to the previous point is the presentation of the results. The final
-goal of our analysis is to provide insight of the problem, and guidelines to
-help the decision-making processing the user's application. Conveying the
-results in a clear and understandable way is a major objective of our work.
-This requires a carefully-prepared list of assumption and limitations of the
-model.
-
-% ------------------------------------------------------------------------- %
-\subsection{Middle-Layer Requirements}
-% ------------------------------------------------------------------------- %
-
-% ------------------------------------------------------------------------- %
-\subsection{Solver and Grid Requirements}
-% ------------------------------------------------------------------------- %
-
-Our focus is on the generation of interfaces for software libraries in the
-remote computing scenario. The middleware solution we use is based on
-PyTrilinos. PyTrilinos makes it possible to call several Trilinos packages,
-  and therefore BLAS, LAPACK, and several other libraries for distributed and
-  serial linear algebra. Our goal is to develop linear algorithm portal.
-
-Each  software component is  required to be manageable by a set of boolean,
-integer, double and string parameters. 
+\begin{figure}
+\begin{center}
+\includegraphics[width=14cm]{portal_design}
+\caption{Design}
+\end{center}
+\label{fig:design}
+\end{figure}
 
 Ideally, the front-end would parse the proper specification from the source
 code of the numerical software library and extract the required interface. To
@@ -311,32 +331,25 @@ The information contained in the parameters are the parameter name, type, and
 value. A check on admissible parameters is performed.
 
 % ------------------------------------------------------------------------- %
-\subsection{Data Analysis}
+\section{A Concrete Implementation}
 % ------------------------------------------------------------------------- %
 
-The types of applications
-are so numerous that it is not possible to have a standard approach on
-measure. Indeed, the first step in performance evaluation is to select the
-right model and measure, the right measurement environments, and the right
-techniques.
+Our focus is on the generation of interfaces for software libraries in the
+remote computing scenario. The middleware solution we use is based on
+PyTrilinos. PyTrilinos makes it possible to call several Trilinos packages,
+  and therefore BLAS, LAPACK, and several other libraries for distributed and
+  serial linear algebra. Our goal is to develop linear algorithm portal.
 
-How much insight is gained from the results? The presentation of the final
-results is, for the users, the key step towards decision making. 
+Loosely speaking, this portal is a {\sl semantic Trilinos}, that is, a
+collection of tools {\sl and} rules on how to use them.
 
-% ------------------------------------------------------------------------- %
-\section{Using MatrixPortal}
-% ------------------------------------------------------------------------- %
-
-MatrixPortal is composed by three fundamental services:
-\begin{enumerate}
-\item user managements: account, ...
-\item resources managements
-\item application managements.
-\end{enumerate}
-
-% ------------------------------------------------------------------------- %
-\subsection{Installation}
-% ------------------------------------------------------------------------- %
+\begin{figure}
+\begin{center}
+\includegraphics[width=14cm]{diagram}
+\caption{Implementation diagram.}
+\label{fig:design}
+\end{center}
+\end{figure}
 
 % ------------------------------------------------------------------------- %
 \subsection{Matrices from Collections}
@@ -399,6 +412,17 @@ Talk about SANS (Self-Adapting Numerical Software)??? What else???
 \section{Concluding Remarks}
 % ------------------------------------------------------------------------- %
 
+We have described the design issues for a portal targeted to scientific
+computing, with particular emphasis to sparse linear algebra. Motivations for
+creating web portals are to ease experimentation, increase communication
+between users and developers and within developers, scientific computation,
+teaching, and diffision.
+
+ease exploring new strategies with minimal investment. To allow the
+casual user to explore the algorithms and ideas offered by a scientific
+library and not by the implementation and installation details, it is
+convenient to hide the complexity of the infrastructure and just offer a
+fully-fledge, already configured web interface.
 % ------------------------------------------------------------------------- %
 \section*{Acknowledgments}
 % ------------------------------------------------------------------------- %
