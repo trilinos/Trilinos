@@ -43,7 +43,7 @@ TEUCHOS_LIBS =
 TEUCHOS_INCLUDES =
 endif
 
-noinst_PROGRAMS = MatrixMarket_IO $(HDF5Files) 
+noinst_PROGRAMS = MatrixMarket_IO XML_IO $(HDF5Files) 
 
 MatrixMarket_IO_SOURCES = $(srcdir)/MatrixMarket_IO.cpp
 MatrixMarket_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
@@ -61,6 +61,23 @@ MatrixMarket_IO_LDADD = $(top_builddir)/src/libepetraext.a \
 			   $(LIBS) \
 			   $(BLAS_LIBS) \
 			   $(FLIBS)
+
+XML_IO_SOURCES = $(srcdir)/XML_IO.cpp
+XML_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
+		      $(top_builddir)/../epetra/src/libepetra.a
+XML_IO_CXXFLAGS = -I$(top_srcdir)/src/inout \
+		  -I$(top_srcdir)/src \
+		  -I$(top_builddir)/src \
+		  -I$(top_srcdir)/../epetra/src \
+		  -I$(top_builddir)/../epetra/src \
+		  -I$(top_srcdir)/../teuchos/src \
+		  -I$(top_builddir)/../teuchos/src
+XML_IO_LDADD = $(top_builddir)/src/libepetraext.a \
+	       $(top_builddir)/../epetra/src/libepetra.a \
+	       $(top_builddir)/../teuchos/src/libteuchos.a \
+	       $(LIBS) \
+	       $(BLAS_LIBS) \
+	       $(FLIBS)
 
 HDF5_IO_SOURCES = $(srcdir)/HDF5_IO.cpp
 HDF5_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
