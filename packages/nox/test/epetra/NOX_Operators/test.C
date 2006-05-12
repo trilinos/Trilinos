@@ -1,0 +1,215 @@
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//                                                                                 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA                                                                                
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov), Sandia National Laboratories.
+// 
+// ************************************************************************
+//@HEADER
+                                                                                
+// NOX headers
+#include "NOX.H"  // Required headers
+#include "NOX_Epetra.H" // Epetra Interface headers
+#include "NOX_TestCompare.H" // Test Suite headers
+
+// Trilinos headers
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_Map.h"
+#include "Epetra_Vector.h"
+#include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_LinearProblem.h"
+#include "AztecOO.h"
+
+#include "Laplace2D.H"
+
+
+int main(int argc, char *argv[]) 
+{
+  // Initialize MPI
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  // Create a communicator for Epetra objects
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
+ 
+  bool verbose = false;
+
+  if (argc > 1)
+    if (argv[1][0]=='-' && argv[1][1]=='v')
+      verbose = true;
+
+  // Get the process ID and the total number of processors
+  int MyPID = Comm.MyPID();
+  int NumProc = Comm.NumProc();
+
+  // define the parameters of the nonlinear PDE problem
+  int nx = 5;
+  int ny = 6;  
+  double lambda = 1.0;
+
+  PDEProblem Problem(nx,ny,lambda,&Comm);
+ 
+  // starting solution, here a zero vector
+  Epetra_Vector InitialGuess(Problem.GetMatrix()->Map());
+  InitialGuess.PutScalar(0.0);
+
+  // random vector upon which to apply each operator being tested
+  Epetra_Vector directionVec(Problem.GetMatrix()->Map());
+  directionVec.Random();
+
+  // Set up the problem interface
+  Teuchos::RefCountPtr<SimpleProblemInterface> interface = 
+    Teuchos::rcp(new SimpleProblemInterface(&Problem) );
+  
+  // Set up theolver options parameter list
+  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsPtr = Teuchos::rcp(new NOX::Parameter::List);
+  NOX::Parameter::List & noxParams = *(noxParamsPtr.get());
+
+  // Set the nonlinear solver method
+  noxParams.setParameter("Nonlinear Solver", "Line Search Based");
+
+  // Set up the printing utilities
+  // Only print output if the "-v" flag is set on the command line
+  NOX::Parameter::List& printParams = noxParams.sublist("Printing");
+  printParams.setParameter("MyPID", MyPID); 
+  printParams.setParameter("Output Precision", 5);
+  printParams.setParameter("Output Processor", 0);
+  if( verbose )
+    printParams.setParameter("Output Information", 
+		NOX::Utils::OuterIteration + 
+		NOX::Utils::OuterIterationStatusTest + 
+		NOX::Utils::InnerIteration +
+		NOX::Utils::Parameters + 
+		NOX::Utils::Details + 
+		NOX::Utils::Warning +
+		NOX::Utils::TestDetails);
+  else
+    printParams.setParameter("Output Information", NOX::Utils::Error +
+		NOX::Utils::TestDetails);
+
+  NOX::Utils printing(printParams);
+
+
+  // Identify the test problem
+  if (printing.isPrintType(NOX::Utils::TestDetails))
+    printing.out() << "Starting epetra/NOX_NewTest/NOX_NewTest.exe" << endl;
+
+  // Identify processor information
+#ifdef HAVE_MPI
+  if (printing.isPrintType(NOX::Utils::TestDetails)) {
+    printing.out() << "Parallel Run" << endl;
+    printing.out() << "Number of processors = " << NumProc << endl;
+    printing.out() << "Print Process = " << MyPID << endl;
+  }
+  Comm.Barrier();
+  if (printing.isPrintType(NOX::Utils::TestDetails))
+    printing.out() << "Process " << MyPID << " is alive!" << endl;
+  Comm.Barrier();
+#else
+  if (printing.isPrintType(NOX::Utils::TestDetails))
+    printing.out() << "Serial Run" << endl;
+#endif
+
+  // *** Insert your testing here! ***
+
+  int status = 0;
+
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
+
+  // Need a NOX::Epetra::Vector for constructor
+  NOX::Epetra::Vector noxInitGuess(InitialGuess, NOX::DeepCopy);
+
+  // Analytic matrix
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( Problem.GetMatrix(), false );
+
+  Epetra_Vector A_resultVec(Problem.GetMatrix()->Map());
+  interface->computeJacobian( InitialGuess, *A );
+  A->Apply( directionVec, A_resultVec );
+
+  // FD operator
+  Teuchos::RefCountPtr<Epetra_CrsGraph> graph = Teuchos::rcp( const_cast<Epetra_CrsGraph*>(&A->Graph()), false );
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference> FD = Teuchos::rcp(
+    new NOX::Epetra::FiniteDifference(printParams, iReq, noxInitGuess, graph) );
+  
+  Epetra_Vector FD_resultVec(Problem.GetMatrix()->Map());
+  FD->computeJacobian(InitialGuess, *FD);
+  FD->Apply( directionVec, FD_resultVec );
+
+  // Matrix-Free operator
+  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> MF = Teuchos::rcp(
+    new NOX::Epetra::MatrixFree(printParams, iReq, noxInitGuess) );
+
+  Epetra_Vector MF_resultVec(Problem.GetMatrix()->Map());
+  MF->computeJacobian(InitialGuess, *MF);
+  MF->Apply( directionVec, MF_resultVec );
+
+  // Need NOX::Epetra::Vectors for tests
+  NOX::Epetra::Vector noxAvec ( A_resultVec , NOX::DeepCopy );
+  NOX::Epetra::Vector noxFDvec( FD_resultVec, NOX::DeepCopy );
+  NOX::Epetra::Vector noxMFvec( MF_resultVec, NOX::DeepCopy );
+
+  // Create a TestCompare class
+  NOX::TestCompare tester( printing.out(), printing);
+  double abstol = 1.e-4;
+  double reltol = 1.e-4 ;
+  NOX::TestCompare::CompareType aComp = NOX::TestCompare::Absolute;
+
+  //cout << "Direction vec :\n" << directionVec << endl;
+  //cout << "A_resultVec vec :\n" << A_resultVec << endl;
+  //cout << "FD_resultVec vec :\n" << FD_resultVec << endl;
+  //cout << "MF_resultVec vec :\n" << MF_resultVec << endl;
+
+  status += tester.testVector( noxFDvec, noxAvec, reltol, abstol,
+                              "Finite-Difference Operator Apply Test" );
+  status += tester.testVector( noxMFvec, noxAvec, reltol, abstol,
+                              "Matrix-Free Operator Apply Test" );
+
+  // Summarize test results  
+  if( status == 0 )
+    printing.out() << "Test passed!" << endl;
+  else 
+    printing.out() << "Test failed!" << endl;
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+
+  // Final return value (0 = successfull, non-zero = failure)
+  return status;
+
+}
+
+/*
+  end of file test.C
+*/
