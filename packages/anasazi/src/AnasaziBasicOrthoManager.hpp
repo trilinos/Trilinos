@@ -27,38 +27,6 @@
 // @HEADER
 
 
-/* BUG
-
- findBasis is balking at column 2 and falling back to projectAndNormalize
- projectAndNormalize is proposing a random vector, which is being accepted, along with column 3
- this chain of events seems fine; the result, however, is not.
-
- projectAndNormalize() without M testing on rank-deficient multivector 
-   || X^T M X - I ||_F before : 79.5559
-   || Q^T M X ||_F before     : 3.1933
-       MSU.massOrthonormalize returned 0
-       MSU.massOrthonormalize || X^T M X - I ||_F : 0.989307
-       MSU.massOrthonormalize || Q^T M X ||_F     : 0.0350225
-olddot: 28.0354    newdot: 28.0354 ACCEPTED
-olddot: 31.686    newdot: 31.1708 ACCEPTED
-olddot: 31.686    newdot: 7.20184e-30 REJECTED
-Random for column 2
-olddot: 34.4411    newdot: 34.4411 ACCEPTED
-olddot: 29.089    newdot: 29.0414 ACCEPTED
-   projectAndNormalize() returned Ok
- ----------------------------------------------------- tolerance exceeded! test failed!
-   || X^T M X - I ||_F after  : 0.125601
-   || Q^T M X ||_F after      : 1.78074e-16
-
-The bug is as follows: 
-[x_1 x_2] orthonormal
-x_3 = random is orthogonal to Q and [x_1 x_2], but x_4 is not
-so when we orthonormalize [x_3 x_4], x_4 is orthonormal to x_3 but not to x_1,x_2 or Q
-solution: findBasis gets the whole thing, but takes a startAt argument (just like Ulrich did)
-
-*/
-
-
 /*! \file AnasaziBasicOrthoManager.hpp
   \brief Basic implementation of the Anasazi::OrthoManager class
 */
@@ -72,6 +40,9 @@ solution: findBasis gets the whole thing, but takes a startAt argument (just lik
       
       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
+
+
+// #define ORTHO_DEBUG
 
 #include "AnasaziOrthoManager.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -286,7 +257,9 @@ namespace Anasazi {
         std::vector<int> ind(1);
         ind[0] = rank;
         curX = MVT::CloneView(X,ind);
+#ifdef ORTHO_DEBUG
         cout << "Random for column " << rank << endl;
+#endif
         MVT::MvRandom(*curX);
         if (M) {
           curMX = MVT::CloneView(MX,ind);
@@ -309,26 +282,27 @@ namespace Anasazi {
         else {
           prevMX = prevX;
         }
+        // orthogonalize curMX against Q
         if ( project(*curX,*curMX,M,Q) != Ok ) return Failed;
-        { 
-          // FINISH: remove this debugging check
-          ScalarType    ONE  = SCT::one();
-          Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
-          MVT::MvTransMv(ONE,*prevMX,*prevX,xTx);
-          for (int i=0; i<rank; i++) {
-            xTx(i,i) -= ONE;
-          }
-          cout << "|| prevX^H M prevX - I ||_F == " << xTx.normFrobenius() << endl;
+        
+        // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
+        curX.release();
+        curMX.release();
+
+        // orthogonalize the rest of X against prevX
+        curind.resize(xc-rank);
+        for (int i=0; i<xc-rank; i++) {
+          curind[i] = rank+i;
         }
-        { 
-          // FINISH: remove this debugging check
-          ScalarType    ONE  = SCT::one();
-          Teuchos::SerialDenseMatrix<int,ScalarType> qTx(MVT::GetNumberVecs(Q),MVT::GetNumberVecs(*prevX));
-          MVT::MvTransMv(ONE,Q,*prevMX,qTx);
-          cout << "|| Q^H M prevX ||_F == " << qTx.normFrobenius() << endl;
+        curX = MVT::CloneView(X,curind);
+        if (M) {
+          curMX = MVT::CloneView(MX,curind);
+        }
+        else {
+          curMX = curX;
         }
         if ( project(*curX,*curMX,M,*prevX) != Ok ) return Failed;
-        
+
         // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
         curX.release();
         curMX.release();
@@ -654,9 +628,13 @@ namespace Anasazi {
         MVT::MvDot( *Xj, *oldMXj, &newDot );
 
         // Check if Xj has any directional information left after the orthogonalization.
+#ifdef ORTHO_DEBUG
         cout << "olddot: " << SCT::magnitude(oldDot[0]) << "    newdot: " << SCT::magnitude(newDot[0]);
+#endif
         if ( SCT::magnitude(newDot[0]) > SCT::magnitude(oldDot[0]*EPS*EPS) && SCT::real(newDot[0]) > ZERO ) {
+#ifdef ORTHO_DEBUG
           cout << " ACCEPTED" << endl;
+#endif
           // Normalize Xj.
           // Xj <- Xj / sqrt(newDot*EPS*EPS)
           MVT::MvAddMv( ONE/SCT::squareroot(SCT::magnitude(newDot[0])), *Xj, ZERO, *Xj, *Xj );
@@ -669,13 +647,17 @@ namespace Anasazi {
           break;
         }
         else {
+#ifdef ORTHO_DEBUG
           cout << " REJECTED" << endl;
+#endif
           // There was nothing left in Xj after orthogonalizing against previous columns in X.
           // X is rank deficient.
 
           if (completeBasis) {
             // Nothing left in Xj. Fill it with random information and keep going.
+#ifdef ORTHO_DEBUG
             cout << "Random for column " << j << endl;
+#endif
             MVT::MvRandom( *Xj );
             if (M) {
               if ( OPT::Apply( *M, *Xj, *MXj ) != Ok ) return Failed;
