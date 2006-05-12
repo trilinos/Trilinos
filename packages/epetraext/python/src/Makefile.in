@@ -312,7 +312,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 @HAVE_EPETRAEXT_HDF5_FALSE@HDF5 = 
-@HAVE_EPETRAEXT_HDF5_TRUE@HDF5 = -DHAVE_EPETRA_HDF5
+@HAVE_EPETRAEXT_HDF5_TRUE@HDF5 = -DHAVE_EPETRAEXT_HDF5
 
 # Dependencies.  Obtain the list of dependencies by executing ls.  This could
 # be empty, so when we include the dependency files, we also include 'dummy',
@@ -329,7 +329,7 @@ SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 # Include swig rules
 SWIG_CXXFLAGS = $(EPETRAEXT_INCLUDES)                \
 	        $(PYTRILINOS_INCLUDES)               \
-		-I$(top_srcdir)/../epetra/python/src ${HDF5}
+		-I$(top_srcdir)/../epetra/python/src $(HDF5)
 
 EXTRA_DIST = EpetraExt.i setup.py
 

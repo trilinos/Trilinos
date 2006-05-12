@@ -286,11 +286,11 @@ AUTOMAKE_OPTIONS = foreign
 #       I believe that by switching to AUX_DIR(../../config) one 
 #       could get rid of these.
 #
-EXTRA_DIST = setpath.py exInputOutput.py exMatrixMatrix.py
+EXTRA_DIST = setpath.py exIO_MatrixMarket.py exIO_XML.py exMatrixMatrix.py
 MAINTAINERCLEANFILES = Makefile.in
 
 # Define the suite of examples
-EXAMPLE_SUITE = exInputOutput exMatrixMatrix
+EXAMPLE_SUITE = exIO_MatrixMarket exIO_XML exMatrixMatrix
 SETPATH = setpath.py
 CLEANFILES = $(EXAMPLE_SUITE:=.py) $(SETPATH) *.pyc
 all: all-am

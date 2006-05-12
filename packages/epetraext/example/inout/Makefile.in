@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(HDF5Converter_SOURCES) $(HDF5_IO_SOURCES) $(HDF5_MATLAB_SOURCES) $(MatrixMarket_IO_SOURCES)
+SOURCES = $(HDF5Converter_SOURCES) $(HDF5_IO_SOURCES) $(HDF5_MATLAB_SOURCES) $(MatrixMarket_IO_SOURCES) $(XML_IO_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = MatrixMarket_IO$(EXEEXT) $(am__EXEEXT_1)
+noinst_PROGRAMS = MatrixMarket_IO$(EXEEXT) XML_IO$(EXEEXT) \
+	$(am__EXEEXT_1)
 subdir = example/inout
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -119,22 +120,27 @@ HDF5_MATLAB_OBJECTS = $(am_HDF5_MATLAB_OBJECTS)
 am_MatrixMarket_IO_OBJECTS =  \
 	MatrixMarket_IO-MatrixMarket_IO.$(OBJEXT)
 MatrixMarket_IO_OBJECTS = $(am_MatrixMarket_IO_OBJECTS)
+am_XML_IO_OBJECTS = XML_IO-XML_IO.$(OBJEXT)
+XML_IO_OBJECTS = $(am_XML_IO_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/HDF5Converter-HDF5Converter.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HDF5_IO-HDF5_IO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/HDF5_MATLAB-HDF5_MATLAB.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po
+@AMDEP_TRUE@	./$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/XML_IO-XML_IO.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(HDF5Converter_SOURCES) $(HDF5_IO_SOURCES) \
-	$(HDF5_MATLAB_SOURCES) $(MatrixMarket_IO_SOURCES)
+	$(HDF5_MATLAB_SOURCES) $(MatrixMarket_IO_SOURCES) \
+	$(XML_IO_SOURCES)
 DIST_SOURCES = $(HDF5Converter_SOURCES) $(HDF5_IO_SOURCES) \
-	$(HDF5_MATLAB_SOURCES) $(MatrixMarket_IO_SOURCES)
+	$(HDF5_MATLAB_SOURCES) $(MatrixMarket_IO_SOURCES) \
+	$(XML_IO_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -340,6 +346,25 @@ MatrixMarket_IO_LDADD = $(top_builddir)/src/libepetraext.a \
 			   $(BLAS_LIBS) \
 			   $(FLIBS)
 
+XML_IO_SOURCES = $(srcdir)/XML_IO.cpp
+XML_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
+		      $(top_builddir)/../epetra/src/libepetra.a
+
+XML_IO_CXXFLAGS = -I$(top_srcdir)/src/inout \
+		  -I$(top_srcdir)/src \
+		  -I$(top_builddir)/src \
+		  -I$(top_srcdir)/../epetra/src \
+		  -I$(top_builddir)/../epetra/src \
+		  -I$(top_srcdir)/../teuchos/src \
+		  -I$(top_builddir)/../teuchos/src
+
+XML_IO_LDADD = $(top_builddir)/src/libepetraext.a \
+	       $(top_builddir)/../epetra/src/libepetra.a \
+	       $(top_builddir)/../teuchos/src/libteuchos.a \
+	       $(LIBS) \
+	       $(BLAS_LIBS) \
+	       $(FLIBS)
+
 HDF5_IO_SOURCES = $(srcdir)/HDF5_IO.cpp
 HDF5_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
 			  $(top_builddir)/../epetra/src/libepetra.a
@@ -451,6 +476,9 @@ HDF5_MATLAB$(EXEEXT): $(HDF5_MATLAB_OBJECTS) $(HDF5_MATLAB_DEPENDENCIES)
 MatrixMarket_IO$(EXEEXT): $(MatrixMarket_IO_OBJECTS) $(MatrixMarket_IO_DEPENDENCIES) 
 	@rm -f MatrixMarket_IO$(EXEEXT)
 	$(CXXLINK) $(MatrixMarket_IO_LDFLAGS) $(MatrixMarket_IO_OBJECTS) $(MatrixMarket_IO_LDADD) $(LIBS)
+XML_IO$(EXEEXT): $(XML_IO_OBJECTS) $(XML_IO_DEPENDENCIES) 
+	@rm -f XML_IO$(EXEEXT)
+	$(CXXLINK) $(XML_IO_LDFLAGS) $(XML_IO_OBJECTS) $(XML_IO_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -462,6 +490,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDF5_IO-HDF5_IO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HDF5_MATLAB-HDF5_MATLAB.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/XML_IO-XML_IO.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -542,6 +571,22 @@ MatrixMarket_IO-MatrixMarket_IO.obj: $(srcdir)/MatrixMarket_IO.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.Po' tmpdepfile='$(DEPDIR)/MatrixMarket_IO-MatrixMarket_IO.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(MatrixMarket_IO_CXXFLAGS) $(CXXFLAGS) -c -o MatrixMarket_IO-MatrixMarket_IO.obj `if test -f '$(srcdir)/MatrixMarket_IO.cpp'; then $(CYGPATH_W) '$(srcdir)/MatrixMarket_IO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MatrixMarket_IO.cpp'; fi`
+
+XML_IO-XML_IO.o: $(srcdir)/XML_IO.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(XML_IO_CXXFLAGS) $(CXXFLAGS) -MT XML_IO-XML_IO.o -MD -MP -MF "$(DEPDIR)/XML_IO-XML_IO.Tpo" -c -o XML_IO-XML_IO.o `test -f '$(srcdir)/XML_IO.cpp' || echo '$(srcdir)/'`$(srcdir)/XML_IO.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/XML_IO-XML_IO.Tpo" "$(DEPDIR)/XML_IO-XML_IO.Po"; else rm -f "$(DEPDIR)/XML_IO-XML_IO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/XML_IO.cpp' object='XML_IO-XML_IO.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/XML_IO-XML_IO.Po' tmpdepfile='$(DEPDIR)/XML_IO-XML_IO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(XML_IO_CXXFLAGS) $(CXXFLAGS) -c -o XML_IO-XML_IO.o `test -f '$(srcdir)/XML_IO.cpp' || echo '$(srcdir)/'`$(srcdir)/XML_IO.cpp
+
+XML_IO-XML_IO.obj: $(srcdir)/XML_IO.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(XML_IO_CXXFLAGS) $(CXXFLAGS) -MT XML_IO-XML_IO.obj -MD -MP -MF "$(DEPDIR)/XML_IO-XML_IO.Tpo" -c -o XML_IO-XML_IO.obj `if test -f '$(srcdir)/XML_IO.cpp'; then $(CYGPATH_W) '$(srcdir)/XML_IO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/XML_IO.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/XML_IO-XML_IO.Tpo" "$(DEPDIR)/XML_IO-XML_IO.Po"; else rm -f "$(DEPDIR)/XML_IO-XML_IO.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/XML_IO.cpp' object='XML_IO-XML_IO.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/XML_IO-XML_IO.Po' tmpdepfile='$(DEPDIR)/XML_IO-XML_IO.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(XML_IO_CXXFLAGS) $(CXXFLAGS) -c -o XML_IO-XML_IO.obj `if test -f '$(srcdir)/XML_IO.cpp'; then $(CYGPATH_W) '$(srcdir)/XML_IO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/XML_IO.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

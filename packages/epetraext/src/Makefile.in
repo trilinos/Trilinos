@@ -157,6 +157,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/inout/EpetraExt_VectorIn.cpp \
 	$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
 	$(srcdir)/inout/EpetraExt_Utils.cpp \
+	$(srcdir)/inout/EpetraExt_XMLReader.cpp \
+	$(srcdir)/inout/EpetraExt_XMLWriter.cpp \
 	$(srcdir)/inout/EpetraExt_HDF5.cpp \
 	$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp \
 	$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp \
@@ -220,7 +222,8 @@ am__objects_7 = EpetraExt_mmio.$(OBJEXT) \
 	EpetraExt_BlockMapIn.$(OBJEXT) EpetraExt_CrsMatrixIn.$(OBJEXT) \
 	EpetraExt_MultiVectorIn.$(OBJEXT) EpetraExt_VectorIn.$(OBJEXT) \
 	EpetraExt_readEpetraLinearSystem.$(OBJEXT) \
-	EpetraExt_Utils.$(OBJEXT) EpetraExt_HDF5.$(OBJEXT) \
+	EpetraExt_Utils.$(OBJEXT) EpetraExt_XMLReader.$(OBJEXT) \
+	EpetraExt_XMLWriter.$(OBJEXT) EpetraExt_HDF5.$(OBJEXT) \
 	EpetraExt_HDF5_DistObject.$(OBJEXT)
 @BUILD_INOUT_TRUE@am__objects_8 = $(am__objects_7)
 am__objects_9 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
@@ -309,6 +312,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_View_CrsGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_View_CrsMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_View_MultiVector.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_XMLReader.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_XMLWriter.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_ZoltanOrder_CrsGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_ZoltanQuery.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Po \
@@ -371,6 +376,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
 	$(srcdir)/inout/EpetraExt_Exception.h \
 	$(srcdir)/inout/EpetraExt_Utils.h \
+	$(srcdir)/inout/EpetraExt_XMLReader.h \
+	$(srcdir)/inout/EpetraExt_XMLWriter.h \
 	$(srcdir)/inout/EpetraExt_HDF5.h \
 	$(srcdir)/inout/EpetraExt_HDF5_Handle.h \
 	$(srcdir)/inout/EpetraExt_DistArray.h \
@@ -701,6 +708,8 @@ EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
      $(srcdir)/inout/EpetraExt_Exception.h \
      $(srcdir)/inout/EpetraExt_Utils.h \
+     $(srcdir)/inout/EpetraExt_XMLReader.h \
+     $(srcdir)/inout/EpetraExt_XMLWriter.h \
      $(srcdir)/inout/EpetraExt_HDF5.h \
      $(srcdir)/inout/EpetraExt_HDF5_Handle.h \
      $(srcdir)/inout/EpetraExt_DistArray.h
@@ -717,6 +726,8 @@ EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_VectorIn.cpp\
      $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
      $(srcdir)/inout/EpetraExt_Utils.cpp \
+     $(srcdir)/inout/EpetraExt_XMLReader.cpp \
+     $(srcdir)/inout/EpetraExt_XMLWriter.cpp \
      $(srcdir)/inout/EpetraExt_HDF5.cpp \
      $(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
 
@@ -1090,6 +1101,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_View_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_View_CrsMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_View_MultiVector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_XMLReader.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_XMLWriter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_ZoltanOrder_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_ZoltanQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Po@am__quote@
@@ -1678,6 +1691,38 @@ EpetraExt_Utils.obj: $(srcdir)/inout/EpetraExt_Utils.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_Utils.Po' tmpdepfile='$(DEPDIR)/EpetraExt_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_Utils.obj `if test -f '$(srcdir)/inout/EpetraExt_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_Utils.cpp'; fi`
+
+EpetraExt_XMLReader.o: $(srcdir)/inout/EpetraExt_XMLReader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_XMLReader.o -MD -MP -MF "$(DEPDIR)/EpetraExt_XMLReader.Tpo" -c -o EpetraExt_XMLReader.o `test -f '$(srcdir)/inout/EpetraExt_XMLReader.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_XMLReader.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_XMLReader.Tpo" "$(DEPDIR)/EpetraExt_XMLReader.Po"; else rm -f "$(DEPDIR)/EpetraExt_XMLReader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_XMLReader.cpp' object='EpetraExt_XMLReader.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_XMLReader.Po' tmpdepfile='$(DEPDIR)/EpetraExt_XMLReader.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_XMLReader.o `test -f '$(srcdir)/inout/EpetraExt_XMLReader.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_XMLReader.cpp
+
+EpetraExt_XMLReader.obj: $(srcdir)/inout/EpetraExt_XMLReader.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_XMLReader.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_XMLReader.Tpo" -c -o EpetraExt_XMLReader.obj `if test -f '$(srcdir)/inout/EpetraExt_XMLReader.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_XMLReader.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_XMLReader.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_XMLReader.Tpo" "$(DEPDIR)/EpetraExt_XMLReader.Po"; else rm -f "$(DEPDIR)/EpetraExt_XMLReader.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_XMLReader.cpp' object='EpetraExt_XMLReader.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_XMLReader.Po' tmpdepfile='$(DEPDIR)/EpetraExt_XMLReader.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_XMLReader.obj `if test -f '$(srcdir)/inout/EpetraExt_XMLReader.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_XMLReader.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_XMLReader.cpp'; fi`
+
+EpetraExt_XMLWriter.o: $(srcdir)/inout/EpetraExt_XMLWriter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_XMLWriter.o -MD -MP -MF "$(DEPDIR)/EpetraExt_XMLWriter.Tpo" -c -o EpetraExt_XMLWriter.o `test -f '$(srcdir)/inout/EpetraExt_XMLWriter.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_XMLWriter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_XMLWriter.Tpo" "$(DEPDIR)/EpetraExt_XMLWriter.Po"; else rm -f "$(DEPDIR)/EpetraExt_XMLWriter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_XMLWriter.cpp' object='EpetraExt_XMLWriter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_XMLWriter.Po' tmpdepfile='$(DEPDIR)/EpetraExt_XMLWriter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_XMLWriter.o `test -f '$(srcdir)/inout/EpetraExt_XMLWriter.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_XMLWriter.cpp
+
+EpetraExt_XMLWriter.obj: $(srcdir)/inout/EpetraExt_XMLWriter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_XMLWriter.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_XMLWriter.Tpo" -c -o EpetraExt_XMLWriter.obj `if test -f '$(srcdir)/inout/EpetraExt_XMLWriter.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_XMLWriter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_XMLWriter.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_XMLWriter.Tpo" "$(DEPDIR)/EpetraExt_XMLWriter.Po"; else rm -f "$(DEPDIR)/EpetraExt_XMLWriter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_XMLWriter.cpp' object='EpetraExt_XMLWriter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_XMLWriter.Po' tmpdepfile='$(DEPDIR)/EpetraExt_XMLWriter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_XMLWriter.obj `if test -f '$(srcdir)/inout/EpetraExt_XMLWriter.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_XMLWriter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_XMLWriter.cpp'; fi`
 
 EpetraExt_HDF5.o: $(srcdir)/inout/EpetraExt_HDF5.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_HDF5.o -MD -MP -MF "$(DEPDIR)/EpetraExt_HDF5.Tpo" -c -o EpetraExt_HDF5.o `test -f '$(srcdir)/inout/EpetraExt_HDF5.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_HDF5.cpp; \
