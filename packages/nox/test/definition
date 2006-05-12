@@ -26,6 +26,7 @@
            epetra/NOX_Group,
            epetra/NOX_NewTest,
            epetra/NOX_Vector,
+           epetra/NOX_Operators,
            epetra/FiniteDifferenceColoring,
            epetra/Brusselator;
     EXIT-STATUS = STRING-COMPARISON(Test passed!);

@@ -27,7 +27,7 @@
 # ************************************************************************
 #@HEADER
 
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem DS6.5.1 Brusselator FiniteDifferenceColoring MultiPhysics 
+NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Operators NOX_Group 1Dfem DS6.5.1 Brusselator FiniteDifferenceColoring MultiPhysics 
 
 LOCA_SUBDIRS = LOCA_TestProblems LOCA_UnitTests LOCA_Tcubed LOCA_Pitchfork
 

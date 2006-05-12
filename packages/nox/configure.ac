@@ -965,6 +965,7 @@ AC_CONFIG_FILES([
                 test/epetra/Makefile
                 test/epetra/NOX_NewTest/Makefile
                 test/epetra/NOX_Vector/Makefile
+                test/epetra/NOX_Operators/Makefile
                 test/epetra/NOX_Group/Makefile
 		test/epetra/LOCA_TestProblems/Makefile
 		test/epetra/LOCA_UnitTests/Makefile
