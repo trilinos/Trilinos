@@ -133,48 +133,20 @@ to sparse linear algebra.
 
 With the term {\sl portal for scientific computing} we mean a web-based
 interface to access high-performance software libraries. Among several
-possible choices, we consider the Trilinos project as concrete implementation
+possible choices, we consider the Trilinos project~\cite{trilinos}
+as concrete implementation
 of our model. However, other projects (like PETSc~\cite{petsc-guide} 
                                        or Hypre~\cite{hypre}) could
 straightforwardly be included in our portal.
 
-Why should a portal be needed in the field of scientific computing? In our
-opinion, the following motivations suggest that such a project could benefit
-the research community:
-\begin{itemize}
-\item Scientific libraries can require quite different amount
-of knowledge to be unleashed. Software projects are sometimes large, and the
-learning curve can be steep. Typically, it is not easy for the intended user
-to load up his or her data and solve the corresponding problem with a new
-library. This can slow down the testing, usage and acceptance of new 
-projects. Being language-independent, and with no need to download or install
-any software, a portal offers a demo version of the actual library which
-requires a small amount of data, or no data at all if test problems are
-selected.
-%
-\item Configuring, compiling and installing is general a challenging step for
-the unexperienced user, and a time-consuming step for both unexperienced and
-expert users. Besides, some configuration options may require additional
-libraries.
-%
-\item For teaching and learning purposes, it can be of interest to move
-smoothly from theoretical results to practical evidence.
-Users interested only in the specific results 
-(e.g., the iterations to converge for a given preconditioner) could benefit
-from pop-down menus and common test problems.
-some more parameters, thus encouraging experimentation.
-%
-\item Bug-tracking capabilities like Bugzilla~\cite{bugzilla} and
-mailing lists help to create a sense of community, they are often not
-effective enough to share data. A web portal can improve the communication
-between users and developers: if a certain bug can be reproduced on the
-portal, then developers will have all required data and access to the buggy
-code. This can be a step forward {\sl collaborative computing}.
-\item Comparing different versions, or compare the installed version with the
-latest can become as easy as selecting one option in a list. Then, the user
-can decide whether the new version deserves to be downloaded and installed or
-not.
-\end{itemize}
+MatrixPortal is intended to be a generic
+toolkit that enables users to quickly test and get experience. The Web
+interface encapsulates, in a high level of abstraction, the most prominent
+features of the supported libraries. By offering a service like the
+MatrixPortal, we hope to make our work
+accessible to a larger target audience, and to receive feedback from the user
+community.
+
 We design our portal as a Web service. The Web Web standards have been
 conceived to support interoperability, i.e., independence of the transport
 protocols, programming languages, programming models, and system software.
@@ -186,20 +158,30 @@ procedure.  The web service code never leaves the server, so property code is
 protected. And, last but not least, Web services can be accessed from
 everywhere and no special purpose interface is necessary.
 
-\smallskip
 
-This report is organized as follows.
+\medskip
+
+This report is organized as follows. Section~\ref{sec:design} presents the
+design requirements and objectives of the portal. The computational model
+is described in Section~\ref{sec:computational}.
+Section~\ref{sec:navigation} outlines the navigation model.
+Finally, Section~\ref{sec:concluding} reports the conclusions and the future
+works.
 
 % ------------------------------------------------------------------------- %
-\section{Design Overview}
+\section{Design Models for Scientific Computing Portals}
+\label{sec:design}
 % ------------------------------------------------------------------------- %
 
 % ------------------------------------------------------------------------- %
-\subsection{Objectives}
+\subsection{A Taxonomy for Scientific Computing Portals}
 % ------------------------------------------------------------------------- %
+
+{\bf To add references to other portals...}
 
 We divide portals for scientific computing into two categories:
 \begin{enumerate}
+\setlength{\itemsep}{0pt}
 \item {\sl Portals for the novice user,} which aim to minimize the investment
 from this (casual) user, as well as the time required to move from the problem
 specification to the data analysis. A possible usage of the novice mode is for
@@ -214,8 +196,83 @@ define a custom script of compilation file. To avoid abuses or misuses of the
 system, only certified users can receive the authorizations to access this
 expert mode.
 \end{enumerate}
+Here, we describe the design and implementation issues for portal targeted to
+novice users. The added value of these portals is the knowledge management
+tools they offer.
 
-In  both cases, we are interesting in a user interface that favor the
+{\bf Talk about grid-related portals}
+
+\bigskip
+
+MUST LOOK HERE: \verb!http://tyne.dl.ac.uk/GROWL/portal_guide/node3.html!
+
+Talk about SANS (Self-Adapting Numerical Software)??? What else???
+
+\verb!http://esc.dl.ac.uk/HPCPortal/!
+
+Basic grid portal computing 
+EPCC MHD portal, HPCGrid Portal 
+Advance portal computing 
+ASC Portal (Cactus Portal) 
+Small scale grids (LSF, PBS, Condor) 
+Toolkit approach (Globus, Legion, Unicore) 
+Internet computing (Entropia, SETI@home)and peer-to-peer computing (Napster, Gnutella etc.)
+
+
+www.gridforum.org
+
+www.gridlab.org 
+
+www.epcc.ed.ac.uk/ENACTS/
+
+% ------------------------------------------------------------------------- %
+\subsection{Why Scientific Computing Portals}
+% ------------------------------------------------------------------------- %
+
+Why should a novice portal be needed in the field of scientific computing? In
+our opinion, the following motivations suggest that such a project could
+benefit the research community:
+\begin{itemize}
+\setlength{\itemsep}{0pt}
+\item Scientific libraries can require quite different amount
+of knowledge to be unleashed. Software projects are sometimes large, and the
+learning curve can be steep. Typically, it is not easy for the intended user
+to load up his or her data and solve the corresponding problem with a new
+library. This can slow down the testing, usage and acceptance of new 
+projects. Being language-independent, and with no need to download or install
+any software, a portal offers a demo version of the actual library which
+requires a small amount of data, or no data at all if test problems are
+selected.
+%
+\item For teaching and learning purposes, it can be of interest to move
+smoothly from theoretical results to practical evidence.
+Users interested only in the specific results 
+(e.g., the iterations to converge for a given preconditioner) could benefit
+from pop-down menus and common test problems.
+some more parameters, thus encouraging experimentation. By using a portal,
+the need to configure, compile and install is lifted. These steps are
+generally challenging  for
+the unexperienced user, and a time-consuming step for both unexperienced and
+expert users. Besides, some configuration options may require additional
+libraries.
+%
+\item Bug-tracking capabilities like Bugzilla~\cite{bugzilla} and
+mailing lists help to create a sense of community, they are often not
+effective enough to share data. A web portal can improve the communication
+between users and developers: if a certain bug can be reproduced on the
+portal, then developers will have all required data and access to the buggy
+code. This can be a step forward {\sl collaborative computing}.
+\item Comparing different versions, or compare the installed version with the
+latest can become as easy as selecting one option in a list. Then, the user
+can decide whether the new version deserves to be downloaded and installed or
+not.
+\end{itemize}
+
+% ------------------------------------------------------------------------- %
+\subsection{Portal Objectives}
+% ------------------------------------------------------------------------- %
+
+We are interesting in a user interface that favor the
 experimentation process, and offer an extensive list of parameters to toggle
 the behavior of the solvers, as well as a detailed help to guide users with
 less experience. The approach is to offer a clear and uniform design, avoiding
@@ -225,15 +282,50 @@ a valid performance analysis. Performance analysis is required to help the
 decision-making processing for the user's application.  Conveying the
 results in a clear and understandable way is a major objective of our work.
 
-The navigation of the portal in the novice mode is reported in
-Figure~\ref{fig:navigation}.
-Our system is structured as follows:
+The design philosophy is that of a ``bag of services,'' that is, we aim to
+offer a variety of solutions for a given problem. A user interested in using
+the portal does not have to adopt any particular programming model or
+language, to learn or read any documentation or to configure and install any
+software.
+
+% ------------------------------------------------------------------------- %
+\subsection{Portal Requirements}
+% ------------------------------------------------------------------------- %
+
+The requirements for users are:
 \begin{itemize}
-\item select the problem of interests;
-\item specify the solution parameters;
-\item specify the evaluation metrics;
-\item solve the problems and perform the evaluation;
-\item analyze and present data.
+\setlength{\itemsep}{0pt}
+\item flexibility;
+\item scalability;
+\item low latency.
+\end{itemize}
+The requirements for managers are:
+\begin{itemize}
+\setlength{\itemsep}{0pt}
+\item extensibility. Only a minimal investment should be required to add new
+\item need to track and archive user information;
+features.
+\end{itemize}
+
+% ------------------------------------------------------------------------- %
+\section{The Portal from the User's Perspective}
+\label{sec:navigation}
+% ------------------------------------------------------------------------- %
+
+The navigation of the web portal in the novice mode is reported in
+Figure~\ref{fig:navigation}. These steps are:
+\begin{itemize}
+\setlength{\itemsep}{0pt}
+\item {\sl selection of the problems of interest};
+\item {\sl data checking};
+\item {\sl selection of the solution parameters and evaluation criterion}.
+In this step, the user selects the solution strategy, and specifies all the
+parameters of interest. Also, an evaluation strategy is chosen. Since we are
+targeting linear algebra applications, the evaluation parameter can be one of
+the following: iterations, CPU time for construction and solution, or
+estimated condition number (if available).
+\item {\sl computation};
+\item {\sl analysis of the results}.
 \end{itemize}
 
 \begin{figure}
@@ -273,6 +365,11 @@ $\Uparrow$     &               &    $\Downarrow$ \\
 \label{fig:navigation}
 \end{figure}
 
+The portal is based on commodity Web technologies,
+and it can be run by anyone who has access to a Web browser with support for
+HTML 3.0, JavaScript 1.1, and the SSL protocol.  No special plugins are
+required, nor a Java machine is used. This increases its portability.
+
 We now analyze in more details these phases.
 
 The types of applications
@@ -281,25 +378,31 @@ measure. Indeed, the first step in performance evaluation is to select the
 right model and measure, the right measurement environments, and the right
 techniques.
 
+The easiest way to define data is by {\sl Data generation}. Linear systems can
+be created on-the-fly from a collection of predefined problems.
+
 By {\sl data acquisition} we mean the act of gathering data from multiple data
 sources. To successfully acquire data, a system must support well-recognized
-protocols. TALK ABOUT XML HERE
+protocols. We adopt the Harwell/Boeing format or the
+EpetraExt::XML format.
 
 By {\sl data management} refers to functionalities for dealing with the various
 information types once they have been made accessible by the data acquisition
 component. Those include:
 \begin{itemize}
+\setlength{\itemsep}{0pt}
 \item a persistent data repository;
 \item index capabilities for data stored;
 \item search facilities.
 \end{itemize}
 
-
-How much insight is gained from the results? The presentation of the final
-results is, for the users, the key step towards decision making. 
+By {\sl data analysis} we mean all the techniques that can be used to gain
+insight from the results. Data analysis is the key step towards decision
+making. 
 
 % ------------------------------------------------------------------------- %
-\subsection{The Computational Mode: A Three-Tier Computing}
+\section{The Portal from the Server's Perspective}
+\label{sec:computational}
 % ------------------------------------------------------------------------- %
 
 An overview of the structure is reported in Figure~\ref{fig:design}.
@@ -323,6 +426,7 @@ code of the numerical software library and extract the required interface. To
 make it simpler, we suppose that the library adhere to the following calling
 sequence:
 \begin{enumerate}
+\setlength{\itemsep}{0pt}
 \item parameters are declared
 \item object is initialized
 \item compute
@@ -330,18 +434,15 @@ sequence:
 The information contained in the parameters are the parameter name, type, and
 value. A check on admissible parameters is performed.
 
-% ------------------------------------------------------------------------- %
-\section{A Concrete Implementation}
-% ------------------------------------------------------------------------- %
-
-Our focus is on the generation of interfaces for software libraries in the
-remote computing scenario. The middleware solution we use is based on
-PyTrilinos. PyTrilinos makes it possible to call several Trilinos packages,
-  and therefore BLAS, LAPACK, and several other libraries for distributed and
-  serial linear algebra. Our goal is to develop linear algorithm portal.
-
-Loosely speaking, this portal is a {\sl semantic Trilinos}, that is, a
-collection of tools {\sl and} rules on how to use them.
+The list below describes the role of each tool composing the framework:
+\begin{itemize}
+\setlength{\itemsep}{0pt}
+\item {\sl Data repository}. For authorized users, the portal might require
+intensive exchange through the network. A data repository server acts as a
+resource provider.
+\item {\sl Solver-tier} (or back-end). The solver-tier consists of a python
+scripts executing the tests.
+\end{itemize}
 
 \begin{figure}
 \begin{center}
@@ -351,69 +452,26 @@ collection of tools {\sl and} rules on how to use them.
 \end{center}
 \end{figure}
 
-% ------------------------------------------------------------------------- %
-\subsection{Matrices from Collections}
-% ------------------------------------------------------------------------- %
-
-% ------------------------------------------------------------------------- %
-\subsection{Matrices from Generators}
-% ------------------------------------------------------------------------- %
-
-The list of supported matrices is now reported in alphabetical order.
-
+Server's perspective:
 \begin{itemize}
+\item Web server (like Apache) with support for PHP version 4;
+\item Python version 2.4 or more recent;
 \item 
-{\tt Big\-Cross2D} (MAP2D): Creates a matrix corresponding to the following stencil: \[ \left[ \begin{tabular}{ccccc} & & ee & & \\ & & e & & \\ bb & b & a & c & cc \\ & & d & & \\ & & dd & & \\ \end{tabular} \right] . \] The default values are those given by {\tt Laplace2DFourth\-Order}. A non-default value must be set in the input parameter list before creating the matrix. For example, to specify the value of $ee$ , one should do 
-\begin{verbatim}  List.set("ee", 12.0);
-  Matrix = Galeri.Create("BigCross2D", Map, List);
-\end{verbatim}
-%
-\item
-{\tt Cross2D} (MAP2D): Creates a matrix with the same stencil of {\tt
-  Laplace2D\}}, but with arbitrary values. The computational stencil is \[
-  \left[ \begin{tabular}{ccc} & e & \\ b & a & c \\ & d & \\ \end{tabular}
-  \right] . \] The default values are {\tt b = c = d = e = -1.0}.
-%
-\item {\tt Cross3D} (MAP3D): Similar to the Cross2D case. The matrix stencil correspond to that of a 3D Laplace operator on a structured 3D grid. On a given x-y plane, the stencil is as in {\tt Laplace2D}. The value on the plane below is set using {\tt f}, the value on the plane above with {\tt g}.
-%
-\item
-{\tt Laplace1D} (MAP): Creates the classical tridiagonal matrix with stencil $ [-1, 2, -1] $ .
-%
-\item
-{\tt Laplace2D} (MAP2D): Creates a matrix corresponding to the stencil of a 2D Laplacian operator on a structured Cartesian grid. The matrix stencil is: \[ \frac{1}{h^2} \; \left[ \begin{tabular}{ccc} & -1 & \\ -1 & 4 & -1 \\ & -1 & \\ \end{tabular} \right] . \] The formula does not include the $\frac{1}{h^2}$ scaling.
-%
-\item
-{\tt Laplace3D} (MAP3D): Creates a matrix corresponding to the stencil of a 3D Laplacian operator on a structured Cartesian grid.
-%
-\item {\tt Recirc2D} (MAP2D): Returns a matrix corresponding to the finite-difference discretization of the problem \[ - \epsilon \Delta u + (v_x,v_y) \cdot \nabla u = f \] on the unit square, with homogeneous Dirichlet boundary conditions. A standard 5-pt stencil is used to discretize the diffusive term, and a simple upwind stencil is used for the convective term. Here, \[ v_x = 4 conv x (x - 1) (1 - 2y), \quad \quad \quad v_y =-4 conv y (y - 1) (1 - 2x) \] The value of $\epsilon$ can be specified using {\tt diff}, and that of $V$ using {\tt conv}. The default values are {\tt diff=1e-5}, {\tt conv=1}.
-
-\item {\tt Star2D} (MAP2D): Creates a matrix with the 9-point stencil: \[
-                                 \left[ \begin{tabular}{ccc} z3 & e & z4 \\ b
-                                 & a & c \\ z1 & d & z2 \\ \end{tabular}
-                                 \right] . \] The default values for all
-                                 parameters is -1.0, except for {\tt a}, which
-                                 is set to 8.0.
-%
-\item 
-{\tt Tridiag} (MAP): Creates a tridiagonal matrix with stencil \[ \left[
-                          \begin{tabular}{ccc} b & a & c \\ \end{tabular}
-                          \right] . \] The default values are  {\tt a = 2.0},
-                          {\tt b = c = -1.0}.
-%
+The middleware solution we use is based on Trilinos version 7.0 or more
+recent. In particular, we use the Python interface to Trilinos, PyTrilinos.
+PyTrilinos makes it possible to call several Trilinos packages, and therefore
+BLAS, LAPACK, and several other libraries for distributed and serial linear
+algebra.
 \end{itemize}
-
-% ------------------------------------------------------------------------- %
-\section{Related Works}
-% ------------------------------------------------------------------------- %
-
-Talk about SANS (Self-Adapting Numerical Software)??? What else???
-
+The implementation diagram is reported in Figure~\ref{fig:design}.
+  
 % ------------------------------------------------------------------------- %
 \section{Concluding Remarks}
+\label{sec:concluding}
 % ------------------------------------------------------------------------- %
 
 We have described the design issues for a portal targeted to scientific
-computing, with particular emphasis to sparse linear algebra. Motivations for
+computing, with particular emphasis on sparse linear algebra. Motivations for
 creating web portals are to ease experimentation, increase communication
 between users and developers and within developers, scientific computation,
 teaching, and diffision.
@@ -423,6 +481,7 @@ casual user to explore the algorithms and ideas offered by a scientific
 library and not by the implementation and installation details, it is
 convenient to hide the complexity of the infrastructure and just offer a
 fully-fledge, already configured web interface.
+
 % ------------------------------------------------------------------------- %
 \section*{Acknowledgments}
 % ------------------------------------------------------------------------- %
