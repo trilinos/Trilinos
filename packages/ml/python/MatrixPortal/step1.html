@@ -357,16 +357,17 @@
   <input type=submit class=submitPrimary value="add to cart"><br></form>
 
   <li>
-  Linear problems in HDF5 format:
+  Linear problems in XML format:
   <p>
 
   <form action="#" enctype="multipart/form-data" method="post" name="inputForm">
   <?
-    global $H5MatrixDirectory;
+  if (0) {
+    global $XMLMatrixDirectory;
     $files = array();
-    $dir = opendir($H5MatrixDirectory) or die ($php_errormsg);
+    $dir = opendir($XMLMatrixDirectory) or die ($php_errormsg);
     while (false !== ($file = readdir($dir))) {
-      if (is_file("$H5MatrixDirectory$file")) {
+      if (is_file("$XMLMatrixDirectory$file")) {
         $files[] = $file;
       }
     }
@@ -375,10 +376,11 @@
     echo "<select name=type size=" . count($files) . '>';
         
       foreach ($files as $file) {
-        echo "<option value=H5_" . $file . ">" . $file . "</option>";
+        echo "<option value=XML_" . $file . ">" . $file . "</option>";
       }
               
     echo "</select>";
+  }
   ?>
 
   <p>Label this problem as <input type="text" name=MyLabel size=10 value="">&nbsp;then&nbsp;

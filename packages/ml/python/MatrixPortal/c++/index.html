@@ -146,18 +146,20 @@ if ($_POST["mode"] == "Run Script")
     or die("can't close $configFileName: $php_errormsg");
   chmod($configFileName, 0664);
 
-  $includes = "-I/home/masala/Trilinos/LINUX_MPI/include";
+  $includes = "-I/home/msala/Trilinos/LINUX_MPI/include";
   $ldflags = "-L/home/msala/lib -L/home/masala/Trilinos/LINUX_MPI/lib";
   $libs = "-lml -lifpack -laztecoo -lamesos -lgaleri -lepetraext -lepetra -lteuchos";
   $extra_libs = "-llapack -lblas";
   $command = "cd $TempDirectory/configs;";
   
   global $ENABLE_MPI;
-  if ($ENABLE_MPI == TRUE)
-    $command.= "mpic++ ";
-  else
-   $command = "g++ ";
-   $command .= "-DHAVE_CONFIG_H $includes $timestamp.cpp $ldflags $libs $extra_libs -o $timestamp.exe 2>&1";
+  global $INCLUDES;
+  global $LDFLAGS;
+  global $LIBS;
+  global $CXX;
+
+  $command .= "$CXX $INCLUDES $LDFLAGS $LIBS ";
+  $command .= "-DHAVE_CONFIG_H $includes $timestamp.cpp $ldflags $libs $extra_libs -o $timestamp.exe 2>&1";
 
   passthru($command);
   echo '</pre></div>';

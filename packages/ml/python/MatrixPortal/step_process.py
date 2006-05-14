@@ -143,28 +143,8 @@ def generator(problemID, comm, List):
     NullSpace = "not-set"
     print "</div>"
 
-  elif problemID[0:3] == "H5_":
-    print "<p><p><div class=\"outputBox\"><pre>";
-    FileName = H5_REPOSITORY + problemID[3:];
-    HDF5 = EpetraExt.HDF5(comm)
-    HDF5.Open(FileName)
-
-    Map = HDF5.ReadMap("MAP")
-    Matrix = HDF5.ReadMultiVector("MATRIX")
-    if HDF5.IsContained("LHS"):
-      LHS = HDF5.ReadMultiVector("LHS")
-    else:
-      LHS = Epetra.MultiVector(Map, 1)
-    if HDF5.IsContained("RHS"):
-      RHS = HDF5.ReadMultiVector("RHS")
-    else:
-      RHS = Epetra.MultiVector(Map, 1)
-    if HDF5.IsContained("NULLSPACE"):
-      NullSpace = HDF5.ReadMultiVector("NULLSPACE")
-    else:
-      NullSpace = "not-set";
-    HDF5.Close()
-    print "</div>"
+  elif problemID[0:3] == "XML_":
+    print "TO BE DONE";
 
   else:
     parts = string.split(problemID, '_');

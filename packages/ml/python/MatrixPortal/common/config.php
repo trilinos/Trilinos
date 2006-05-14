@@ -47,7 +47,7 @@
 #    Last modified:    $Date$
 #    Modified by:      $Author$
 
-$MACHINE = "givens4";
+$MACHINE = "kythira";
 
 if ($MACHINE == "givens4")
 {
@@ -64,6 +64,11 @@ if ($MACHINE == "givens4")
   $MPI_BOOT = "lamboot";
   $MPI_HALT = "lamhalt";
   $MPI_RUN  = "mpirun";
+
+  $INCLUDES = "-I/home/msala/Trilinos/LINUX_MPI/include";
+  $LDFLAGS = "-L/home/msala/lib -L/home/masala/Trilinos/LINUX_MPI/lib";
+  $LIBS = "-lml -lifpack -laztecoo -lamesos -lgaleri -lepetraext -lepetra -lteuchos -llapack -lblas";
+  $CXX = "mpic++";
 }
 else if ($MACHINE == "kythira")
 {
@@ -79,6 +84,11 @@ else if ($MACHINE == "kythira")
   $MAX_PROCS = 1;
   $MPI_BOOT = "";
   $MPI_HALT = "";
+
+  $INCLUDES = "-I/home/msala/Trilinos/LINUX_SERIAL/include";
+  $LDFLAGS = "-L/home/msala/lib -L/home/msala/Trilinos/LINUX_SERIAL/lib";
+  $LIBS = "-lml -lifpack -laztecoo -lamesos -lgaleri -lepetraext -lepetra -lteuchos -llapack -lblas -lf2c -lm -lMAIN__";
+  $CXX = "g++";
 }
 else if ($MACHINE == "aphrodite-serial")
 {
@@ -96,6 +106,11 @@ else if ($MACHINE == "aphrodite-serial")
   $MAX_PROCS = 1;
   $MPI_BOOT = "";
   $MPI_HALT = "";
+
+  $INCLUDES = "-I/home/masala/Trilinos/LINUX_MPI/include";
+  $LDFLAGS = "-L/home/masala/lib -L/home/masala/Trilinos/LINUX_MPI/lib";
+  $LIBS = "-lml -lifpack -laztecoo -lamesos -lgaleri -lepetraext -lepetra -lteuchos -llapack -lblas -lf2c";
+  $CXX = "mpic++";
 }
 
 # --------------------------------------------------- #
