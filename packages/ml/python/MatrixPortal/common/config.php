@@ -47,7 +47,7 @@
 #    Last modified:    $Date$
 #    Modified by:      $Author$
 
-$MACHINE = "aphrodite-serial";
+$MACHINE = "givens4";
 
 if ($MACHINE == "givens4")
 {
@@ -57,12 +57,13 @@ if ($MACHINE == "givens4")
   $TempDirectory = "/tmp/";
   $PythonDirectory = "/home/chinella/Web/MatrixPortal/";
   $HTMLImageDirectory = "http://givens4.ethz.ch/MatrixPortal/tmp";
-  $PYTHONPATH = "/home/masala/Trilinos/LINUX_MPI/lib/python2.3/site-packages/:/home/masala/lib/python2.3/site-packages/";
-  $LD_LIBRARY_PATH = "/home/masala/Trilinos/LINUX_MPI/lib";
+  $PYTHONPATH = "/home/masala/Trilinos/LINUX_SERIAL/lib/python2.3/site-packages/:/home/masala/lib/python2.3/site-packages/";
+  $LD_LIBRARY_PATH = "/home/masala/Trilinos/LINUX_SERIAL/lib";
   $ENABLE_MPI = TRUE;
-  $MAX_PROCS = 25;
+  $MAX_PROCS = 16;
   $MPI_BOOT = "lamboot";
   $MPI_HALT = "lamhalt";
+  $MPI_RUN  = "mpirun";
 }
 else if ($MACHINE == "kythira")
 {
@@ -104,9 +105,7 @@ else if ($MACHINE == "aphrodite-serial")
 # personalize the appearance of the web page.         #
 # --------------------------------------------------- #
 
-?>
-
-<?  function top_left() { ?>
+function top_left() { ?>
           <a href=<? global $dir; echo $dir; ?>index.html>
             <img src="<?php global $dir; echo $dir; ?>common/matrix_portal_logo.png" height=60 border=0 alt="The Matrix Portal" /></a>
 <?  } ?>

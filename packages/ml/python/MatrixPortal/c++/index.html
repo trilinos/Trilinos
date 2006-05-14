@@ -15,6 +15,30 @@
   if ($_POST["cols"] == "") $cols = 80; else $cols = $_POST["cols"];
 ?>
 
+<script type="text/javascript"> versionOK = false </script>
+<script type="text/javascript; version=1.5"> versionOK = true </script>
+<script type="text/jscript">
+if (parseFloat(ScriptEngineMajorVersion() + "." + ScriptEngineMinorVersion()) >= 5.5) versionOK = true
+</script>
+
+<script type="text/javascript">
+  if (versionOK) {
+    // edit lines below to change the output style
+    comment       = {color:"#999990", bold:false, italic:true, name:"comment"} // comment blocks and lines
+    precompiler   = {color:"#000099", bold:false, italic:false, name:"pre"} // precompiler lines
+    operator      = {color:"#663300", bold:true,  italic:false, name:"operator"} // operator and punctuator symbols
+    stringLiteral = {color:"#009900", bold:false, italic:false, name:"string"} // string and wide char string literals
+    charLiteral   = {color:"#009900", bold:false, italic:false, name:"char"} // char and wchar_t literals
+    intLiteral    = {color:"#999900", bold:false, italic:false, name:"int"} // integer literals
+    floatLiteral  = {color:"#996600", bold:false, italic:false, name:"float"} // floating point literals
+    boolLiteral   = {color:"#000000", bold:true, italic:false, name:"bool"} // boolean literals
+    types         = {color:"#FF6633", bold:false, italic:false, name:"type"} // built-in type names
+    flowControl   = {color:"#FF0000", bold:false, italic:false, name:"flow"} // program flow control keywords 
+    keyword       = {color:"#990000", bold:false, italic:false, name:"keyword"} // other keywords
+  }
+</script>
+<script type="text/javascript" src="highlight.js"> </script>
+
 <!-- begin content ######################################################### -->
 
 <b>C++ Script Page</b><a href="help.html"
@@ -25,8 +49,8 @@
 <p>
 <form method="POST" action=index.html>
   Insert template <select name=template>
-<option value=Epetra_Comm>Using Epetra_Comm</option>
 <option name=template value="">-- select -- </option>
+<option value=Epetra_Comm>Using Epetra_Comm</option>
 <option name=template value=Epetra_Map>Using Epetra_Map</option>
 <option name=template value=Epetra_Vector>Using Epetra_Vector</option>
 <option name=template value=Epetra_MultiVector>Using Epetra_MultiVector</option>
@@ -54,10 +78,26 @@
 <input type=submit class=submitPrimary value="Redisplay" name="mode">
 
 <br>
-<P>Insert your C++ script below.
+<P>Please type your C++ code below.
+<?
+global $ENABLE_MPI;
+global $MAX_PROCS;
+if ($ENABLE_MPI == TRUE) {
+ echo "Run with ";
+ echo "<select name=NumProcs>";
+   if ($_POST["NumProcs"] != "")
+   { 
+     $NumProcs = $_POST['NumProcs'];
+     echo "<option value=$NumProcs>$NumProcs</option>";
+   }
+   for ($i = 1; $i <= $MAX_PROCS; ++$i) {
+   echo "<option value=$i>$i</option>";
+   }
+   echo "</select>";
+   }   ?>
+   processors.<br>
 <p><textarea NAME="script" COLS=<? global $cols; echo $cols; ?>
   ROWS=<? global $rows; echo $rows; ?>>
-<?  if ($_POST["mode"] != "Reset Script") echo $_POST["script"]; ?>
 <? if ($_POST["mode"] == "Insert") {
 if ($_POST["template"] == "Epetra_Comm") {
   include 'test_Epetra_Comm.cpp';
@@ -82,9 +122,11 @@ if ($_POST["template"] == "Epetra_Comm") {
 } else if ($_POST["template"] == "ML") {
   include 'test_ML.cpp';
 } 
-} ?>
+} else if ($_POST["mode"] != "Reset Script") echo $_POST["script"]; ?>
 </textarea>
 <p><input type=submit class=submitSecondary value="Run Script" name="mode">&nbsp;&nbsp;
+&nbsp;&nbsp;
+<input type="button" id="convert" class=submitPrimary value="Color Script" onclick="colorCode(this.form);" />
 </form>
 
 <?
@@ -104,12 +146,18 @@ if ($_POST["mode"] == "Run Script")
     or die("can't close $configFileName: $php_errormsg");
   chmod($configFileName, 0664);
 
-  $includes = "-I/home/msala/Trilinos/LINUX_SERIAL/include";
-  $ldflags = "-L/home/msala/lib -L/home/msala/Trilinos/LINUX_SERIAL/lib";
+  $includes = "-I/home/masala/Trilinos/LINUX_MPI/include";
+  $ldflags = "-L/home/msala/lib -L/home/masala/Trilinos/LINUX_MPI/lib";
   $libs = "-lml -lifpack -laztecoo -lamesos -lgaleri -lepetraext -lepetra -lteuchos";
-  $extra_libs = "-lmetis -llapack -lblas -lf2c -lm -lMAIN__";
+  $extra_libs = "-llapack -lblas";
   $command = "cd $TempDirectory/configs;";
-  $command.= "g++ -DHAVE_CONFIG_H $includes $timestamp.cpp $ldflags $libs $extra_libs -o $timestamp.exe 2>&1";
+  
+  global $ENABLE_MPI;
+  if ($ENABLE_MPI == TRUE)
+    $command.= "mpic++ ";
+  else
+   $command = "g++ ";
+   $command .= "-DHAVE_CONFIG_H $includes $timestamp.cpp $ldflags $libs $extra_libs -o $timestamp.exe 2>&1";
 
   passthru($command);
   echo '</pre></div>';
@@ -118,7 +166,24 @@ if ($_POST["mode"] == "Run Script")
   echo '<p><div class=outputBox><pre>';
 
   $command = "cd $TempDirectory/configs;";
-  $command.= "./$timestamp.exe 2>&1";
+  if ($ENABLE_MPI == TRUE)
+  {
+    global $MPI_BOOT;
+    global $MPI_HALT;
+    global $MPI_RUN;
+
+    $NumProcs = $_POST["NumProcs"];
+    if ($NumProcs > 16)
+      $NumProcs = 16;
+
+    if ($MPI_BOOT != "") $command.= "$MPI_BOOT > /dev/null; ";
+    $command.= "$MPI_RUN -np $NumProcs ./$timestamp.exe 2>&1 && ";
+    if ($MPI_HALT != "") $command.= "$MPI_HALT > /dev/null;";
+  } 
+  else
+  {
+    $command.= "./$timestamp.exe 2>&1 ";
+  }
   passthru($command);
 
   echo '</pre></div>';
