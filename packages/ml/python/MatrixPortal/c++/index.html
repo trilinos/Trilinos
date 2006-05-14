@@ -1,0 +1,130 @@
+<?php 
+  include '../common/header.php';
+  include '../common/util.php';
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Matrix Portal -- Custom Script');
+  setDir('../');
+  include '../common/config.php';
+  include '../common/header.html';
+  include '../util.php';
+
+  logFile("c++/index.html");
+
+  if ($_POST["rows"] == "") $rows = 20; else $rows = $_POST["rows"];
+  if ($_POST["cols"] == "") $cols = 80; else $cols = $_POST["cols"];
+?>
+
+<!-- begin content ######################################################### -->
+
+<b>C++ Script Page</b><a href="help.html"
+    onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a></p>
+
+
+<p>
+<form method="POST" action=index.html>
+  Insert template <select name=template>
+<option value=Epetra_Comm>Using Epetra_Comm</option>
+<option name=template value="">-- select -- </option>
+<option name=template value=Epetra_Map>Using Epetra_Map</option>
+<option name=template value=Epetra_Vector>Using Epetra_Vector</option>
+<option name=template value=Epetra_MultiVector>Using Epetra_MultiVector</option>
+<option name=template value=Epetra_CrsMatrix>Using Epetra_CrsMatrix</option>
+<option name=template value=Epetra_FECrsMatrix>Using Epetra_FECrsMatrix</option>
+<option name=template value=Epetra_VbrMatrix>Using Epetra_VbrMatrix</option>
+<option name=template value=Amesos>Using Amesos</option>
+<option name=template value=AztecOO>Using AztecOO</option>
+<option name=template value=IFPACK>Using IFPACK with AztecOO</option>
+<option name=template value=ML>Using ML with AztecOO</option>
+</select>&nbsp;
+<input type=submit class=submitPrimary value=Insert name="mode">&nbsp;&nbsp;or&nbsp;&nbsp;
+<input type=submit class=submitPrimary value="Reset Script" name="mode">
+<p>Text area with 
+<select name=rows>
+  <? global $rows; echo "<option value=$rows>$rows</option>"; ?>
+  <? for ($i = 10; $i < 200; $i+=10)
+  echo "<option value=$i>$i</option>"; ?>
+</select>&nbsp;rows and 
+<select name=cols>
+  <? global $cols; echo "<option value=$cols>$cols</option>"; ?>
+  <? for ($i = 10; $i < 200; $i+=10)
+  echo "<option value=$i>$i</option>"; ?>
+</select>&nbsp;columns.
+<input type=submit class=submitPrimary value="Redisplay" name="mode">
+
+<br>
+<P>Insert your C++ script below.
+<p><textarea NAME="script" COLS=<? global $cols; echo $cols; ?>
+  ROWS=<? global $rows; echo $rows; ?>>
+<?  if ($_POST["mode"] != "Reset Script") echo $_POST["script"]; ?>
+<? if ($_POST["mode"] == "Insert") {
+if ($_POST["template"] == "Epetra_Comm") {
+  include 'test_Epetra_Comm.cpp';
+} else if ($_POST["template"] == "Epetra_Map") {
+  include 'test_Epetra_Map.cpp';
+} else if ($_POST["template"] == "Epetra_Vector") {
+  include 'test_Epetra_Vector.cpp';
+} else if ($_POST["template"] == "Epetra_MultiVector") {
+  include 'test_Epetra_MultiVector.cpp';
+} else if ($_POST["template"] == "Epetra_CrsMatrix") {
+  include 'test_Epetra_CrsMatrix.cpp';
+} else if ($_POST["template"] == "Epetra_FECrsMatrix") {
+  include 'test_Epetra_FECrsMatrix.cpp';
+} else if ($_POST["template"] == "Epetra_VbrMatrix") {
+  include 'test_Epetra_VbrMatrix.cpp';
+} else if ($_POST["template"] == "Amesos") {
+  include 'test_Amesos.cpp';
+} else if ($_POST["template"] == "AztecOO") {
+  include 'test_AztecOO.cpp';
+} else if ($_POST["template"] == "IFPACK") {
+  include 'test_IFPACK.cpp';
+} else if ($_POST["template"] == "ML") {
+  include 'test_ML.cpp';
+} 
+} ?>
+</textarea>
+<p><input type=submit class=submitSecondary value="Run Script" name="mode">&nbsp;&nbsp;
+</form>
+
+<?
+if ($_POST["mode"] == "Run Script")
+{
+  echo '<p>Compiler errors are reported below';
+  echo '<div class=outputBox><pre>';
+
+  $timestamp = date("y-m-d_H.i.s", time());
+
+  $configFileName = "$TempDirectory/configs/$timestamp.cpp";
+  $configFile = fopen($configFileName, 'w')
+    or die("can't open $configFileName: $php_errormsg");
+  if (-1 == fwrite($configFile, $_POST["script"])) { 
+    die("can't write to $configFileName: $php_errormsg"); }
+  fclose($configFile) 
+    or die("can't close $configFileName: $php_errormsg");
+  chmod($configFileName, 0664);
+
+  $includes = "-I/home/msala/Trilinos/LINUX_SERIAL/include";
+  $ldflags = "-L/home/msala/lib -L/home/msala/Trilinos/LINUX_SERIAL/lib";
+  $libs = "-lml -lifpack -laztecoo -lamesos -lgaleri -lepetraext -lepetra -lteuchos";
+  $extra_libs = "-lmetis -llapack -lblas -lf2c -lm -lMAIN__";
+  $command = "cd $TempDirectory/configs;";
+  $command.= "g++ -DHAVE_CONFIG_H $includes $timestamp.cpp $ldflags $libs $extra_libs -o $timestamp.exe 2>&1";
+
+  passthru($command);
+  echo '</pre></div>';
+
+  echo '<p>The output of the script is reported below.<p>';
+  echo '<p><div class=outputBox><pre>';
+
+  $command = "cd $TempDirectory/configs;";
+  $command.= "./$timestamp.exe 2>&1";
+  passthru($command);
+
+  echo '</pre></div>';
+}
+?>
+
+<!-- end content ########################################################### -->
+
+<?php include '../common/footer.html'; ?>

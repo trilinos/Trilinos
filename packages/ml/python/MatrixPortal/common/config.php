@@ -107,12 +107,11 @@ else if ($MACHINE == "aphrodite-serial")
 ?>
 
 <?  function top_left() { ?>
-          <a href=index.html"
-            <a href="index.html"
-            <img src=common/matrix_portal_logo.png height=60 border=0 alt="The Matrix Portal" /></a>
+          <a href=<? global $dir; echo $dir; ?>index.html>
+            <img src="<?php global $dir; echo $dir; ?>common/matrix_portal_logo.png" height=60 border=0 alt="The Matrix Portal" /></a>
 <?  } ?>
 
 <? function top_right() { ?>
-        <a href="http://www.ethz.ch/"
-            <img src=common/eth_logo.gif border=0 alt="ETHZ" /></a>
+<a href="http://www.ethz.ch/">
+      <img src="<?php global $dir; echo $dir; ?>common/eth_logo.gif" border=0 alt="ETHZ" /></a>
 <?  } ?>

@@ -12,10 +12,10 @@
     
       <!-- Bottom-Left Corner ============================================== -->
       <td class="bottomCornerCell">       
-        <a href="<?php echo $dir ?>index.html"
+        <a href="http://software.sandia.gov/trilinos/index.html"
         onmouseover="document.getElementById('trilinosLogo').src=trilinos_over.src;"
         onmouseout="document.getElementById('trilinosLogo').src=trilinos_normal.src;">
-          <img class="trilinos" id="trilinosLogo" src="common/trilinos_normal.png"
+        <img class="trilinos" id="trilinosLogo" src="<?php echo $dir ?>common/trilinos_normal.png"
           alt="The Trilinos Project" /></a>
       </td>
   
@@ -32,8 +32,8 @@
     
       <!-- Bottom-Right Corner ============================================= -->
       <td class="bottomCornerCell">  
-        <a href="rd100_2004.html">     
-          <img class="rd100" src="common/rd100.png"
+        <a href="http://software.sandia.gov/trilinos/rd100_2004.html">     
+          <img class="rd100" src="<? global $dir; echo $dir ?>common/rd100.png"
             alt="2004 R&D 100 Award Winner" />
         </a>
       </td>

@@ -1,0 +1,219 @@
+<?php 
+  include '../common/header.php';
+  include '../common/util.php';
+  setBodyAttributes('onload="grabFocus();"'); 
+  setFilename('index.html');
+  setTitle('Matrix Portal -- Custom Script');
+  setDir('../');
+  include '../common/config.php';
+  include '../common/header.html';
+  include '../util.php';
+
+  logFile("PyTrilinos/index.html");
+
+  if ($_POST["rows"] == "") $rows = 20; else $rows = $_POST["rows"];
+  if ($_POST["cols"] == "") $cols = 80; else $cols = $_POST["cols"];
+?>
+
+<!-- begin content ######################################################### -->
+
+<b>PyTrilinos Script Page</b><a href="help.html"
+    onclick='window.open(this.href,null,"height=400,width=400,status=yes,toolbar=no,menubar=no,location=no"); return false;' 
+    class="help">?</a></p>
+
+
+<p>
+<form method="POST" action=index.html>
+Insert template at the bottom of the script:
+<select name=template>
+<option value=none>-- select --</option>
+<option value=basic>Basic settings</option>
+<option value=map>Create a Map</option>
+<option value=matrix>Create a Matrix</option>
+<option value=multivector>Create MultiVector's</option>
+<option value=amesos>Solve with Amesos</option>
+<option value=aztecoo>Solve with AztecOO</option>
+<option value=ifpack>Define an IFPACK Preconditioner</option>
+<option value=ml>Define an ML Preconditioner</option>
+<option value=check>Check Solution</option>
+</select>
+<input type=submit class=submitPrimary value=Insert name="mode">&nbsp;&nbsp;or&nbsp;&nbsp;
+<input type=submit class=submitPrimary value="Reset Script" name="mode">
+<p>Text area with 
+<select name=rows>
+  <? global $rows; echo "<option value=$rows>$rows</option>"; ?>
+  <? for ($i = 10; $i < 200; $i+=10)
+  echo "<option value=$i>$i</option>"; ?>
+</select>&nbsp;rows and 
+<select name=cols>
+  <? global $cols; echo "<option value=$cols>$cols</option>"; ?>
+  <? for ($i = 10; $i < 200; $i+=10)
+  echo "<option value=$i>$i</option>"; ?>
+</select>&nbsp;columns.
+<input type=submit class=submitPrimary value="Redisplay" name="mode">
+
+<br>
+<P>Insert your PyTrilinos script below.
+<p><textarea NAME="script" COLS=<? global $cols; echo $cols; ?>
+  ROWS=<? global $rows; echo $rows; ?>>
+<?  if ($_POST["mode"] != "Reset Script") echo $_POST["script"]; ?>
+<? if ($_POST["mode"] == "Insert") {
+if ($_POST["template"] == "basic") {
+?>
+from PyTrilinos import Epetra, AztecOO, Amesos, IFPACK, ML
+from Numeric import *
+
+Comm = Epetra.PyComm()
+
+<?
+} 
+else if ($_POST["template"] == "map") {
+?>
+NumGlobalElements = 10
+Map = Epetra.Map(NumGlobalElements, 0, Comm)
+MyGlobalElements = Map.MyGlobalElements()
+
+<?
+} 
+else if ($_POST["template"] == "matrix") {
+?>
+Matrix = Epetra.CrsMatrix(Epetra.Copy, Map, 0)
+
+for i in MyGlobalElements:
+  Matrix[i, i] = 1.0
+
+Matrix.FillComplete()
+
+<?
+} 
+else if ($_POST["template"] == "multivector") {
+?>
+ExactSolution = Epetra.MultiVector(Map, 1)
+ExactSolutionView = ExactSolution.ExtractView()
+n = ExactSolution.MyLength()
+for i in xrange(0, n):
+  ExactSolutionView[0][i] = sin(i * 3.1415 / n) * sin(i * 3.1415 / n)
+
+LHS = Epetra.MultiVector(Map, 1)
+RHS = Epetra.MultiVector(Map, 1)
+Matrix.Multiply(False, ExactSolution, RHS)
+
+<?
+} 
+else if ($_POST["template"] == "amesos") {
+?>
+Problem = Epetra.LinearProblem(Matrix, LHS, RHS);
+
+Factory = Amesos.Factory();
+Solver = Factory.Create("Amesos_Klu", Problem);
+
+AmesosList = {
+  "PrintTiming":         True,
+  "PrintStatus":         True,
+}
+Solver.SetParameters(AmesosList);
+
+Solver.SymbolicFactorization()
+Solver.NumericFactorization()
+Solver.Solve();
+      
+del Solver
+
+<?
+} 
+else if ($_POST["template"] == "aztecoo") {
+?>
+Solver = AztecOO.AztecOO(Matrix, LHS, RHS)
+
+Solver.SetAztecOption(AztecOO.AZ_solver, AztecOO.AZ_gmres)
+Solver.SetAztecOption(AztecOO.AZ_precond, AztecOO.AZ_dom_decomp)
+Solver.SetAztecOption(AztecOO.AZ_subdomain_solve, AztecOO.AZ_ilu)
+Solver.SetAztecOption(AztecOO.AZ_output, 16)
+Solver.Iterate(1550, 1e-5)
+
+<?
+} 
+else if ($_POST["template"] == "ifpack") {
+?>
+Factory = IFPACK.Factory()
+Prec = Factory.Create("ILU", Matrix)
+IFPACKList = {
+  "fact: level-of-fill": 1
+}
+
+Prec.SetParameters(IFPACKList)
+Prec.Initialize()
+Prec.Compute()
+
+<?
+} 
+else if ($_POST["template"] == "ml") {
+?>
+MLList = {
+  "max levels"        : 3,
+  "output"            : 10,
+  "smoother: type"    : "symmetric Gauss-Seidel",
+  "aggregation: type" : "Uncoupled"
+}
+
+Prec = ML.MultiLevelPreconditioner(Matrix, False)
+Prec.SetParameterList(MLList)
+Prec.ComputePreconditioner()
+
+<?
+} 
+else if ($_POST["template"] == "check") {
+?>
+LHS.Update(-1.0, ExactSolution, 1.0)
+norm = LHS.Norm2()
+
+print norm
+
+<?
+} 
+} ?>
+</textarea>
+<p><input type=submit class=submitSecondary value="Run Script" name="mode">&nbsp;&nbsp;or
+&nbsp;&nbsp;
+<input type=submit class=submitPrimary value="Color Script" name="mode">
+</form>
+
+<?
+if ($_POST["mode"] == "Run Script")
+{
+  echo '<p>The output of the script is reported below.<p>';
+  echo '<div class=outputBox><pre>';
+
+  $timestamp = date("y-m-d_H.i.s", time());
+
+  $configFileName = "$TempDirectory/configs/$timestamp.txt";
+  $configFile = fopen($configFileName, 'w')
+    or die("can't open $configFileName: $php_errormsg");
+  if (-1 == fwrite($configFile, $_POST["script"])) { 
+    die("can't write to $configFileName: $php_errormsg"); }
+  fclose($configFile) 
+    or die("can't close $configFileName: $php_errormsg");
+  chmod($configFileName, 0664);
+
+  $command = "";
+  if ($PYTHONPATH != "")
+    $command .= "PYTHONPATH=$PYTHONPATH ";
+  if ($LD_LIBRARY_PATH != "")
+    $command .= "LD_LIBRARY_PATH=$LD_LIBRARY_PATH ";
+  $command .= "python $configFileName 2>&1;";
+  passthru($command);
+
+  echo '</pre></div>';
+}
+else if ($_POST["mode"] == "Color Script")
+{
+  echo '<p>Colorized version of your script reported below.<br>';
+  echo '<div class=outputBox>';
+  highlight_string($_POST['script']);
+  echo '</div>';
+}
+?>
+
+<!-- end content ########################################################### -->
+
+<?php include '../common/footer.html'; ?>

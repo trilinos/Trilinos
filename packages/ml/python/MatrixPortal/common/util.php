@@ -395,4 +395,36 @@ function check_data()
   }
 
 }
+
+# ===========================================================================
+function logFile($PAGE_NAME)
+{
+  $REMOTE_ADDR = $_SERVER['REMOTE_ADDR'];
+  $REMOTE_HOST = @getHostByAddr($REMOTE_ADDR);
+  $FILE = "/var/www/html/MatrixPortal/_log.txt";
+
+  $fp = fopen($FILE, "a");
+
+  $i = 0;
+  while ($i < 4)
+  {
+    if (flock($fp, 2))
+    {
+      $DATE_AND_TIME = date("H:i:s d/m/Y");
+      $INFO = $DATE_AND_TIME . "\t";
+      $INFO = $INFO . $PAGE_NAME . "\t";
+      $INFO = $INFO .  $REMOTE_HOST . "\t";
+      $INFO = $INFO .  $REMOTE_ADDR .  "\n";
+      fwrite ($fp, $INFO);
+      flock($fp,3);
+      $i = 5;
+    }
+    else
+    {
+      sleep(0.2);
+    }
+    $i = $i + 1;
+  }
+  fclose($fp);
+}
 ?>
