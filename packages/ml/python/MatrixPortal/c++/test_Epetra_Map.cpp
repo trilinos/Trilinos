@@ -16,11 +16,11 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  int NumGlobalPoint = 4;
+  int NumGlobalElements  = 4;
 
-  Epetra_Map Map1(NumGlobalPoint,0,Comm);
+  Epetra_Map Map(NumGlobalElements, 0, Comm);
 
-  cout << Map1;
+  cout << Map;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

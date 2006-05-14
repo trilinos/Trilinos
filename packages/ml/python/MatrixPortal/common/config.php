@@ -47,7 +47,7 @@
 #    Last modified:    $Date$
 #    Modified by:      $Author$
 
-$MACHINE = "kythira";
+$MACHINE = "givens4";
 
 if ($MACHINE == "givens4")
 {
@@ -65,8 +65,8 @@ if ($MACHINE == "givens4")
   $MPI_HALT = "lamhalt";
   $MPI_RUN  = "mpirun";
 
-  $INCLUDES = "-I/home/msala/Trilinos/LINUX_MPI/include";
-  $LDFLAGS = "-L/home/msala/lib -L/home/masala/Trilinos/LINUX_MPI/lib";
+  $INCLUDES = "-I/home/masala/Trilinos/LINUX_MPI/include";
+  $LDFLAGS = "-L/home/masala/Trilinos/LINUX_MPI/lib";
   $LIBS = "-lml -lifpack -laztecoo -lamesos -lgaleri -lepetraext -lepetra -lteuchos -llapack -lblas";
   $CXX = "mpic++";
 }
