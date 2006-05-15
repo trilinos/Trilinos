@@ -349,7 +349,7 @@ int Zoltan_PHG_Partition (
       vcycle = coarser;
       hg = vcycle->hg;
 
-      if (hgc->nProc>3 &&
+      if (hgc->nProc>1 &&
 	  (hg->dist_x[hgc->nProc_x] < (int) (0.5 * origVcnt + 0.5) ||
 	   hg->dist_y[hgc->nProc_y] < (int) (0.5 * origVedgecnt + 0.5))) {
 	/* redistribute to half the processors */
@@ -385,10 +385,6 @@ int Zoltan_PHG_Partition (
 
 	Zoltan_PHG_Redistribute(zz, hgp, hg, 0, middle, hgc, redistributed->hg,
 				&vcycle->vlno, &vcycle->vdest);
-	for (i = 0; i < redistributed->hg->nVtx; i++) {
-	  fprintf(stderr, "Node %d: vcycle->vlno[%d] = ", hgc->myProc, i);
-	  fprintf(stderr, "%d\n", vcycle->vlno[i]);
-	}
 
 	if ((err=allocVCycle(redistributed))!= ZOLTAN_OK)
 	  goto End;
@@ -545,24 +541,24 @@ Refine:
       } else {
 	int *sendbuf = NULL, size = 2*finer->hg->nVtx; /* ints local and
 							  partition numbers */
-	if (hg->nVtx > 0) {
+	if (finer->vlno) {
 	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
 	  if (!sendbuf) {
 	    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
 	    return ZOLTAN_MEMERR;
 	  }
-	}
 
-	for (i = 0; i < hg->nVtx; ++i) {
-	  sendbuf[2 * i] = finer->vlno[i];      /* assign local numbers */
-	  sendbuf[2 * i + 1] = vcycle->Part[i]; /* assign partition numbers */
+	  for (i = 0; i < hg->nVtx; ++i) {
+	    sendbuf[2 * i] = finer->vlno[i];     /* assign local numbers */
+	    sendbuf[2 * i + 1] = vcycle->Part[i];/* assign partition numbers */
+	  }
 	}
 
 	hgc = finer->hg->comm; /* updating hgc is required when the processors
 				   change */
 	/* Create comm plan to unredistributed processors */
-	Zoltan_Comm_Create(&finer->comm_plan, hg->nVtx, finer->vdest,
-			   hgc->Communicator, COMM_TAG+2, &size);
+	Zoltan_Comm_Create(&finer->comm_plan, finer->vlno ? hg->nVtx : 0,
+			   finer->vdest, hgc->Communicator, COMM_TAG+2, &size);
 	/* allocate rec buffer to exchange sendbuf information */
 	rbuffer = NULL;
 	if (finer->hg->nVtx > 0) {
@@ -580,12 +576,13 @@ Refine:
 		       2*sizeof(int), (char *) rbuffer);
 	
 	/* process data to assign partitions to unredistributed processors */
-	for (i = 0; i < 2 * finer->hg->nVtx;) {
-	  int lno, partition;
-	  lno       = rbuffer[i++];
-	  partition = rbuffer[i++];
-	  finer->Part[lno] = partition;
-	}
+	if (finer->vlno)
+	  for (i = 0; i < 2 * finer->hg->nVtx;) {
+	    int lno, partition;
+	    lno       = rbuffer[i++];
+	    partition = rbuffer[i++];
+	    finer->Part[lno] = partition;
+	  }
 
 	ZOLTAN_FREE (&sendbuf);
 	ZOLTAN_FREE (&rbuffer);
@@ -614,12 +611,15 @@ End:
     if (vcycle->finer) {   /* cleanup by level */
       Zoltan_HG_HGraph_Free (vcycle->hg);
 
-      if (vcycle->LevelMap)
+      if (vcycle->LevelData)
 	Zoltan_Multifree (__FILE__, __LINE__, 4, &vcycle->Part,
 			  &vcycle->LevelMap, &vcycle->LevelData, &vcycle->hg);
-      else
+      else if (vcycle->vlno)
 	Zoltan_Multifree (__FILE__, __LINE__, 5, &vcycle->Part, &vcycle->vdest,
 			  &vcycle->vlno, &vcycle->LevelMap, &vcycle->hg);
+      else
+	Zoltan_Multifree (__FILE__, __LINE__, 3, &vcycle->Part,
+			  &vcycle->LevelMap, &vcycle->hg);
     }
     else                   /* cleanup top level */
       Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->LevelMap,
