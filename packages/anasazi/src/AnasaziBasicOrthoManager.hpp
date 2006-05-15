@@ -48,6 +48,9 @@
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziOperatorTraits.hpp"
 
+
+// FINISH: return coefficients as well
+
 namespace Anasazi {
 
   template<class ScalarType, class MV, class OP>
@@ -169,7 +172,7 @@ namespace Anasazi {
     MagnitudeType _kappa;
   
     // ! Routine to find an orthonormal basis for the 
-    ReturnType findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, int &rank, bool completeBasis ) const;
+    ReturnType findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, int &rank, bool completeBasis, int howMany = -1 ) const;
     
   };
 
@@ -181,7 +184,7 @@ namespace Anasazi {
   BasicOrthoManager<ScalarType,MV,OP>::orthonormError(const MV &X, Teuchos::RefCountPtr<const MV> MX) const {
     const ScalarType ONE = SCT::one();
     int rank = MVT::GetNumberVecs(X);
-    Teuchos::SerialDenseMatrix<int,double> xTx(rank,rank);
+    Teuchos::SerialDenseMatrix<int,ScalarType> xTx(rank,rank);
     ReturnType ret = innerProd(X,X,MX,xTx);
     TEST_FOR_EXCEPTION( ret != Ok, std::runtime_error, "BasicOrthoManager::orthonormError(): innerProd returned error!" );
     for (int i=0; i<rank; i++) {
@@ -197,7 +200,7 @@ namespace Anasazi {
   BasicOrthoManager<ScalarType,MV,OP>::orthogError(const MV &X1, Teuchos::RefCountPtr<const MV> MX1, const MV &X2) const {
     int r1 = MVT::GetNumberVecs(X1);
     int r2  = MVT::GetNumberVecs(X2);
-    Teuchos::SerialDenseMatrix<int,double> xTx(r2,r1);
+    Teuchos::SerialDenseMatrix<int,ScalarType> xTx(r2,r1);
     ReturnType ret = innerProd(X2,X1,MX1,xTx);
     TEST_FOR_EXCEPTION( ret != Ok, std::runtime_error, "BasicOrthoManager::orthogError(): innerProd returned error!" );
     return xTx.normFrobenius();
@@ -259,35 +262,22 @@ namespace Anasazi {
       return Failed;
     }
 
+    // orthogonalize all of X against Q
+    ret = project(X,MX,Q);
+    if (ret == Failed) return Failed;
+
     // start working
     rank = 0;
     int numTries = 10;   // each vector in X gets 10 random chances to escape degeneracy
-    // this is not an infinite loop;
-    // either 
     do {
 
-      ReturnType ret;
+      int oldrank = rank;
       int curxsize = xc - rank;
-      std::vector<int> curind(curxsize);
-      for (int i=0; i<curxsize; i++) {
-        curind[i] = rank+i;
-      }
-      Teuchos::RefCountPtr<MV> curX, curMX;
-      curX  = MVT::CloneView(X,curind);
-      if (this->_hasOp) {
-        curMX = MVT::CloneView(*MX,curind);
-      }
-      else {
-        curMX = curX;
-      }
-
-      // orthogonalize current X against Q
-      ret = project(*curX,curMX,Q);
-      if (ret == Failed) return Failed;
 
       // orthonormalize X, but quit if it is rank deficient
-      ret = findBasis(*curX,curMX,curxsize,false);
-      rank += curxsize;
+      // we can't let findBasis generated random vectors to complete the basis,
+      // because it doesn't know about Q; we will do this ourselves below
+      ret = findBasis(X,MX,rank,false,curxsize);
       if (ret == Failed) {
         return Failed;
       }
@@ -297,8 +287,9 @@ namespace Anasazi {
       }
       else {
         TEST_FOR_EXCEPTION( ret != Undefined, std::logic_error, "BasicOrthoManager::projectAndNormalize(): findBasis returned impossible value" );
+        TEST_FOR_EXCEPTION( rank < oldrank, std::logic_error,   "BasicOrthoManager::projectAndNormalize(): basis lost rank; this shouldn't happen");
 
-        if (curxsize > 0) {
+        if (rank != oldrank) {
           // we finished a vector; reset the chance counter
           numTries = 10;
         }
@@ -310,66 +301,24 @@ namespace Anasazi {
         // use one of this vector's chances
         numTries--;
 
-        // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
-        curX.release();
-        curMX.release();
-
         // randomize troubled direction
-        std::vector<int> ind(1);
-        ind[0] = rank;
 #ifdef ORTHO_DEBUG
         cout << "Random for column " << rank << endl;
 #endif
+        Teuchos::RefCountPtr<MV> curX, curMX;
+        std::vector<int> ind(1);
+        ind[0] = rank;
         curX  = MVT::CloneView(X,ind);
-        if (this->_hasOp) {
-          curMX = MVT::CloneView(*MX,curind);
-        }
-        else {
-          curMX = curX;
-        }
         MVT::MvRandom(*curX);
         if (this->_hasOp) {
+          curMX = MVT::CloneView(*MX,ind);
           if ( OPT::Apply( *(this->_Op), *curX, *curMX ) != Ok ) return Failed;
         }
 
-        // orthogonalize against Q and prevX
-        std::vector<int> prevind(rank);
-        for (int i=0; i<rank; i++) {
-          prevind[i] = i;
-        }
-        Teuchos::RefCountPtr<MV> prevX, prevMX;
-        prevX  = MVT::CloneView(X,prevind);
-        if (this->_hasOp) {
-          prevMX = MVT::CloneView(*MX,prevind);
-        }
-        else {
-          prevMX = prevX;
-        }
-        // orthogonalize curMX against Q
+        // orthogonalize against Q
+        // if !this->_hasOp, the curMX will be ignored.
         if ( project(*curX,curMX,Q) != Ok ) return Failed;
         
-        // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
-        curX.release();
-        curMX.release();
-
-        // orthogonalize the rest of X against prevX
-        curind.resize(xc-rank);
-        for (int i=0; i<xc-rank; i++) {
-          curind[i] = rank+i;
-        }
-        curX  = MVT::CloneView(X,curind);
-        if (this->_hasOp) {
-          curMX = MVT::CloneView(*MX,curind);
-        }
-        else {
-          curMX = curX;
-        }
-        if ( project(*curX,curMX,*prevX) != Ok ) return Failed;
-
-        // FINISH: CGB: 05/09/2006: have Heidi look at these releases,to reassure me they are sufficient
-        curX.release();
-        curMX.release();
-
         continue;
       }
 
@@ -541,7 +490,7 @@ namespace Anasazi {
   // Find an M-orthonormal basis for span(X), with the option of extending the subspace so that 
   // the rank is numvectors(X)
   template<class ScalarType, class MV, class OP>
-  ReturnType BasicOrthoManager<ScalarType, MV, OP>::findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, int &rank, bool completeBasis ) const {
+  ReturnType BasicOrthoManager<ScalarType, MV, OP>::findBasis(MV &X, Teuchos::RefCountPtr<MV> MX, int &rank, bool completeBasis, int howMany ) const {
     // For the inner product defined by the operator M or the identity (M == 0)
     //   -> Orthonormalize X 
     // Modify MX accordingly
@@ -571,29 +520,33 @@ namespace Anasazi {
     //                      >> Failure applying operator M
 
     const ScalarType ONE  = SCT::one();
-    const ScalarType ZERO = SCT::zero();
+    const MagnitudeType ZERO = SCT::magnitude(SCT::zero());
     const ScalarType EPS  = SCT::eps();
 
     int xc = MVT::GetNumberVecs( X );
     int xr = MVT::GetVecLength( X );
 
-    /******   DO NO MODIFY *MX IF _hasOp == false   ******/
+    if (howMany == -1) {
+      howMany = xc;
+    }
 
+    /*******************************************************
+     *  If _hasOp == false, we will not reference MX below *
+     *******************************************************/
+
+    // if Op==null, MX == X (via pointer)
+    // Otherwise, either the user passed in MX or we will allocated and compute it
     if (this->_hasOp) {
       if (MX == Teuchos::null) {
         // we need to allocate space for MX
-        MX = MVT::Clone(X,MVT::GetNumberVecs(X));
+        MX = MVT::Clone(X,xc);
         ReturnType ret = OPT::Apply(*(this->_Op),X,*MX);
         if (ret != Ok) return Failed;
       }
     }
-    else {
-      // Op == I  -->  MX = X (ignore it if the user passed it in)
-      MX = Teuchos::rcp( &X, false );
-    }
 
-    int mxc = MVT::GetNumberVecs( *MX );
-    int mxr = MVT::GetVecLength( *MX );
+    int mxc = (this->_hasOp) ? MVT::GetNumberVecs( *MX ) : xc;
+    int mxr = (this->_hasOp) ? MVT::GetVecLength( *MX )  : xr;
 
     // short-circuit
     if (xc != mxc) {
@@ -608,8 +561,13 @@ namespace Anasazi {
     else if (xc == 0 || xr == 0) {
       return Failed;
     }
+    else if (howMany < 0 || howMany > xc) {
+      return Failed;
+    }
 
-    for (int j = 0; j < xc; j++) {
+    int xstart = xc - howMany;
+
+    for (int j = xstart; j < xc; j++) {
 
       // numX is 
       // * number of currently orthonormal columns of X
@@ -632,13 +590,16 @@ namespace Anasazi {
 
       // Get a view of the previous vectors.
       std::vector<int> prev_idx( numX );
-      Teuchos::RefCountPtr<MV> prevX;
+      Teuchos::RefCountPtr<const MV> prevX, prevMX;
 
       if (numX > 0) {
         for (int i=0; i<numX; i++) {
           prev_idx[i] = i;
         }
         prevX = MVT::CloneView( X, prev_idx );
+        if (this->_hasOp) {
+          prevMX = MVT::CloneView( *MX, prev_idx );
+        }
       } 
 
       // Make storage for these Gram-Schmidt iterations.
@@ -653,7 +614,7 @@ namespace Anasazi {
         // Save old MXj vector and compute M-norm
         //
         Teuchos::RefCountPtr<MV> oldMXj = MVT::CloneCopy( *MXj ); 
-        MVT::MvDot( *Xj, *oldMXj, &oldDot );
+        MVT::MvDot( *Xj, *MXj, &oldDot );
         // Xj^H M Xj should be real and positive, by the hermitian positive definiteness of M
         if ( SCT::real(oldDot[0]) < ZERO ) {
           return Failed;
@@ -663,17 +624,14 @@ namespace Anasazi {
           // Apply the first step of Gram-Schmidt
 
           // product <- prevX^T MXj
-          innerProd(*prevX,*MXj,product);
+          innerProd(*prevX,*prevX,MXj,product);
 
           // Xj <- Xj - prevX prevX^T MXj   
           //     = Xj - prevX product
           MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *Xj );
 
           // Update MXj
-          Teuchos::RefCountPtr<const MV> prevMX;
           if (this->_hasOp) {
-            // prevMX may be used below
-            prevMX = MVT::CloneView( *MX, prev_idx );
             // MXj <- M*Xj_new
             //      = M*(Xj_old - prevX prevX^T MXj)
             //      = MXj - prevMX product
@@ -687,10 +645,9 @@ namespace Anasazi {
           if ( SCT::magnitude(_kappa*newDot[0]) < SCT::magnitude(oldDot[0]) ) {
             // Apply the second step of Gram-Schmidt
             // This is the same as above
-            innerProd(*prevX,*MXj,product);
+            innerProd(*prevX,*prevX,MXj,product);
             MVT::MvTimesMatAddMv( -ONE, *prevX, product, ONE, *Xj );
             if ((this->_hasOp)) {
-              // prevMX was initialized above
               MVT::MvTimesMatAddMv( -ONE, *prevMX, product, ONE, *MXj );
             }
           } // if (_kappa*newDot[0] < oldDot[0])
@@ -727,7 +684,7 @@ namespace Anasazi {
           // X is rank deficient.
 
           if (completeBasis) {
-            // Nothing left in Xj. Fill it with random information and keep going.
+            // Fill it with random information and keep going.
 #ifdef ORTHO_DEBUG
             cout << "Random for column " << j << endl;
 #endif
