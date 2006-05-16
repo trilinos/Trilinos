@@ -10785,7 +10785,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # ------------------------------------------------------------------------
 ##
 
-                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile"
+                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile Makefile.export.belos src/Makefile test/Makefile test/BlockCG/Makefile test/BlockGmres/Makefile test/MVOPTester/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile thyra/Makefile thyra/src/Makefile thyra/test/Makefile thyra/test/MVOPTester/Makefile thyra/test/LOWSFactory/Makefile thyra/example/Makefile thyra/example/LOWSFactory/Makefile thyra/example/LOWSFactory/Epetra/Makefile thyra/example/LOWSFactory/Tpetra/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11481,6 +11481,7 @@ do
   "thyra/example/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/Makefile" ;;
   "thyra/example/LOWSFactory/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Makefile" ;;
   "thyra/example/LOWSFactory/Epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Epetra/Makefile" ;;
+  "thyra/example/LOWSFactory/Tpetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES thyra/example/LOWSFactory/Tpetra/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "src/Belos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Belos_config.h:src/Belos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

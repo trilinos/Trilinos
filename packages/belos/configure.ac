@@ -349,6 +349,7 @@ AC_CONFIG_FILES([
 		thyra/example/Makefile
 		thyra/example/LOWSFactory/Makefile
 		thyra/example/LOWSFactory/Epetra/Makefile
+		thyra/example/LOWSFactory/Tpetra/Makefile
 		])
 
 AC_OUTPUT()
