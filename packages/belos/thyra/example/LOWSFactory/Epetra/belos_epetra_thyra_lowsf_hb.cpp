@@ -38,7 +38,6 @@
 // Thyra includes
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-//#include "Thyra_MultiVectorStdOps.hpp"
 
 // Epetra includes
 #include "Epetra_SerialComm.h"
