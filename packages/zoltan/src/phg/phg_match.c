@@ -682,7 +682,7 @@ int fixed;
         lno = select[i];
         if (hg->vindex[lno+1] > hg->vindex[lno])
           sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE 
-+ (hg->fixed) ? 1 : 0; 
++ (hg->fixed ? 1 : 0); 
       }
       if (sendsize > nSend)
         MACRO_REALLOC (1.2 * sendsize, nSend, send);    /* resize send buffer */    
