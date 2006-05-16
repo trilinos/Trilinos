@@ -87,7 +87,8 @@ namespace Anasazi {
 
     /*! \brief Provides the inner product defining the orthogonality concepts, using the provided operator.
      */
-    virtual ReturnType innerProd( const MV& X, const MV& Y, Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
+    virtual ReturnType innerProd( const MV& X, const MV& Y, 
+                                  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const {
       typedef Teuchos::ScalarTraits<ScalarType> SCT;
       typedef MultiVecTraits<ScalarType,MV>     MVT;
       typedef OperatorTraits<ScalarType,MV,OP>  OPT;
@@ -154,8 +155,10 @@ namespace Anasazi {
       
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType project ( MV &X, const MV &Q ) const {
-      return project(X,Teuchos::null,Q);
+    virtual ReturnType project ( MV &X, 
+                                 Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
+                                 const MV &Q ) const {
+      return project(X,Teuchos::null,C,Q);
     }
 
 
@@ -174,7 +177,9 @@ namespace Anasazi {
             
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType project ( MV &X, Teuchos::RefCountPtr<MV> MX, const MV &Q ) const = 0;
+    virtual ReturnType project ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                                 Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
+                                 const MV &Q ) const = 0;
 
 
     /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
@@ -186,8 +191,10 @@ namespace Anasazi {
     
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType normalize ( MV &X, int &rank ) const {
-      return normalize(X,Teuchos::null,rank);
+    virtual ReturnType normalize ( MV &X, 
+                                   Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                                   int &rank ) const {
+      return normalize(X,Teuchos::null,R,rank);
     }
 
 
@@ -206,7 +213,9 @@ namespace Anasazi {
     
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, int &rank ) const = 0;
+    virtual ReturnType normalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                                   Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                                   int &rank ) const = 0;
 
 
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
@@ -224,8 +233,11 @@ namespace Anasazi {
       
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType projectAndNormalize ( MV &X, const MV &Q, int &rank ) const {
-      return projectAndNormalize(X,Teuchos::null,Q,rank);
+    virtual ReturnType projectAndNormalize ( MV &X, 
+                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
+                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R,
+                                             const MV &Q, int &rank ) const {
+      return projectAndNormalize(X,Teuchos::null,C,R,Q,rank);
     }
 
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
@@ -249,7 +261,10 @@ namespace Anasazi {
       
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, const MV &Q, int &rank ) const = 0;
+    virtual ReturnType projectAndNormalize ( MV &X, Teuchos::RefCountPtr<MV> MX, 
+                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
+                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                                             const MV &Q, int &rank ) const = 0;
 
     //@}
 

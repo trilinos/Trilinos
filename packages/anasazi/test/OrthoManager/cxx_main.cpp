@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
   RefCountPtr<MV> Q1  = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q1);
   int dummy = 0;
-  ret = OM_M->normalize(*Q1,dummy);
+  ret = OM_M->normalize(*Q1,null,dummy);
   if ( ret  != Ok ) {
     cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() return " << ret << "/" << dummy << " . Further tests will not be valid." << endl;
     numFailed += 1;
@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
   cout << " Generating Q2 for project() testing... " << endl;
   RefCountPtr<MV> Q2 = MVT::Clone(*X,sizeQ);
   MVT::MvRandom(*Q2);
-  ret = OM->normalize(*Q2,dummy);
+  ret = OM->normalize(*Q2,null,dummy);
   if ( ret != Ok ) {
     cout << "   vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         FAILED!!! normalize() return " << ret << "/" << dummy << " . Further tests will not be valid." << endl;
     numFailed += 1;
@@ -379,7 +379,7 @@ int testProjectAndNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
   cout << "       MSU.massOrthonormalize || X^T M X - I ||_F : " << OM->orthonormError(*xcopy) << endl;
   cout << "       MSU.massOrthonormalize || Q^T M X ||_F     : " << OM->orthogError(*Q,*xcopy) << endl;
 
-  ret = OM->projectAndNormalize(*X,MX,*Q,rank);
+  ret = OM->projectAndNormalize(*X,MX,null,null,*Q,rank);
   switch (ret) {
   case Ok:
     cout << "   projectAndNormalize() returned Ok" << endl;
@@ -521,7 +521,7 @@ int testProject(RefCountPtr<MatOrthoManager<double,MV,OP> > OM,
   cout << "       MSU.massOrthonormalize error: " << err << endl;
 
 
-  ret = OM->project(*X,MX,*Q);
+  ret = OM->project(*X,MX,null,*Q);
   switch (ret) {
   case Ok:
     cout << "   project() returned Ok" << endl;
@@ -601,7 +601,7 @@ int testNormalize(RefCountPtr<MatOrthoManager<double,MV,OP> > OM, RefCountPtr<MV
   cout << "       MSU.massOrthonormalize returned " << iret << endl;
   cout << "       MSU.massOrthonormalize error: " << OM->orthonormError(*xcopy) << endl;
 
-  ret = OM->normalize(*X,MX,rank);
+  ret = OM->normalize(*X,MX,null,rank);
   switch (ret) {
   case Ok:
     cout << "   normalize() returned Ok" << endl;

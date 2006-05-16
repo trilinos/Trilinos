@@ -83,7 +83,7 @@ namespace Anasazi {
 
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType project ( MV &X, const MV &Q ) const = 0;
+    virtual ReturnType project ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, const MV &Q ) const = 0;
 
 
     /*! \brief This method takes a multivector and orthonormalizes the columns, with respect to \c innerProd().
@@ -95,7 +95,7 @@ namespace Anasazi {
 
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType normalize ( MV &X, int &rank ) const = 0;
+    virtual ReturnType normalize ( MV &X, Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, int &rank ) const = 0;
 
 
     /*! \brief This method takes a multivector and projects it onto the space orthogonal to 
@@ -113,7 +113,10 @@ namespace Anasazi {
 
      @return Code specifying failure of the routine, as defined by the implementation.
     */
-    virtual ReturnType projectAndNormalize ( MV &X, const MV &Q, int &rank ) const = 0;
+    virtual ReturnType projectAndNormalize ( MV &X, 
+                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > C, 
+                                             Teuchos::RefCountPtr<Teuchos::SerialDenseMatrix<int,ScalarType> > R, 
+                                             const MV &Q, int &rank ) const = 0;
 
     //@}
 
