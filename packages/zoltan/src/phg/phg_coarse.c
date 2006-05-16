@@ -208,7 +208,7 @@ int Zoltan_PHG_Coarsening
   PHGComm                *hgc = hg->comm;
   struct Zoltan_Comm_Obj *plan=NULL;
   MPI_Op                 idenOp;
-
+int header;
   static int timer_merge=-1, timer_shuffle=-1, timer_remove=-1, timer_theend=-1;
   int time_details = (hgp->use_timers > 3);
 
@@ -251,6 +251,8 @@ int Zoltan_PHG_Coarsening
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
   c_hg->redl    = hg->redl;  /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
+
+c_hg->fixed = (hg->fixed) ? (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)) : NULL;
   
   /* (over) estimate number of external matches that we need to send data to */
   count = 0; 
@@ -298,18 +300,25 @@ int Zoltan_PHG_Coarsening
       }
     } else if (!vmark[i]) {     /* local matching, packing and groupings */
       int v = i;
+int fixed = -1;
       while (!vmark[v])  {
+if (hg->fixed && hg->fixed[v] >= 0)
+  fixed = hg->fixed[v];
+        
         LevelMap[v] = c_hg->nVtx;         /* next available coarse vertex */      
         vmark[v] = 1;  /* flag this as done already */
         v = match[v];  
       }
+if (c_hg->fixed)      
+c_hg->fixed[c_hg->nVtx] = fixed;      
       ++c_hg->nVtx;
     }
   }
   *LevelSndCnt = count;
   
   /* size and allocate the send buffer */
-  size += ((3 + hg->VtxWeightDim) * count);
+header = (hg->fixed) ? 4 : 3;
+  size += ((header + hg->VtxWeightDim) * count); 
   if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))
       MEMORY_ERROR;
   
@@ -323,6 +332,9 @@ int Zoltan_PHG_Coarsening
       
     *ip++ = listlno[i];             /* source lno */
     *ip++ = listgno[i];             /* destination vertex gno */
+if (hg->fixed)    
+*ip++ = hg->fixed[lno];
+    
     /* UVC Assumes a float is no larger than an int which true in almost all
        platforms except prehistoric 16-bit platforms. */
     memcpy(ip, &hg->vwgt[lno*hg->VtxWeightDim], sizeof(float)*hg->VtxWeightDim);
@@ -375,6 +387,9 @@ int Zoltan_PHG_Coarsening
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, source_lno=ip[i++];
     int lno=VTX_GNO_TO_LNO (hg, ip[i++]);
+if (c_hg->fixed)    
+c_hg->fixed[LevelMap[lno]] = ip[i++];
+    
     float *pw=(float*) &ip[i];
 
     (*LevelData)[(*LevelCnt)++] = source_lno;
