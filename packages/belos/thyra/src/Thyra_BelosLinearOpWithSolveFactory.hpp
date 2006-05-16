@@ -193,7 +193,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   if(precFactory_.get()) {
     myPrec =
       ( !belosOp->isExternalPrec()
-        ? Teuchos::rcp_const_cast<PreconditionerBase<double> >(belosOp->extract_prec())
+        ? Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(belosOp->extract_prec())
         : Teuchos::null
         );
     if(myPrec.get()) {
