@@ -17,10 +17,14 @@ EXEEXT = .exe
 #
 
 if BUILD_TRIUTILS
-BELOS_THYRA_SOLVER_DRIVER = belos_tpetra_thyra_lowsf_hb 
+BELOS_THYRA_SOLVER_DRIVER_HB = belos_tpetra_thyra_lowsf_hb 
 endif
 
-noinst_PROGRAMS = $(BELOS_THYRA_SOLVER_DRIVER) 
+noinst_PROGRAMS = belos_tpetra_thyra_lowsf_lap $(BELOS_THYRA_SOLVER_DRIVER_HB) 
+
+belos_tpetra_thyra_lowsf_lap_SOURCES = $(srcdir)/belos_tpetra_thyra_lowsf_lap.cpp 
+belos_tpetra_thyra_lowsf_lap_DEPENDENCIES= $(common_dependencies)
+belos_tpetra_thyra_lowsf_lap_LDADD = $(common_ldadd)
 
 belos_tpetra_thyra_lowsf_hb_SOURCES = $(srcdir)/belos_tpetra_thyra_lowsf_hb.cpp 
 belos_tpetra_thyra_lowsf_hb_DEPENDENCIES= $(common_dependencies)
