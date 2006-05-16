@@ -86,7 +86,7 @@ char  *yo = "Zoltan_PHG_Matching";
                       ZOLTAN_MALLOC(hg->nEdge * sizeof(float))))
          MEMORY_ERROR;
  
-     Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp->edge_scaling);
+     Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp);
      old_ewgt = hg->ewgt;
      hg->ewgt = new_ewgt;
   }
@@ -248,7 +248,10 @@ static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
         maxindex = -1;
         for (i = 0; i < n; i++) {
             v2 = adj[i];
-            if (ips[v2] > maxip && v2 != v1 && match[v2] == v2) {
+            if (ips[v2] > maxip && v2 != v1 && match[v2] == v2
+&& (hg->fixed == NULL  || !(hg->fixed[v2] >= 0 && hg->fixed[v1] >= 0
+&& hg->fixed[v1] != hg->fixed[v2]))         
+            ) {
                 maxip = ips[v2];
                 maxindex = v2;
             }
@@ -523,6 +526,7 @@ static int pmatching_ipm (ZZ *zz,
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
   int candidate_index, first_candidate_index;
+int fixed;
   int num_matches_considered = 0;
   double ipsum = 0.;
   static int timer[7] = {-1, -1, -1, -1, -1, -1, -1};
@@ -677,7 +681,8 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0; i < sendcnt; i++)  {
         lno = select[i];
         if (hg->vindex[lno+1] > hg->vindex[lno])
-          sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE; 
+          sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE 
++ (hg->fixed) ? 1 : 0; 
       }
       if (sendsize > nSend)
         MACRO_REALLOC (1.2 * sendsize, nSend, send);    /* resize send buffer */    
@@ -688,6 +693,8 @@ static int pmatching_ipm (ZZ *zz,
         if (hg->vindex[lno+1] > hg->vindex[lno]) {
           *s++ = VTX_LNO_TO_GNO(hg, lno);                  /* gno of candidate */
           *s++ = i + first_candidate_index;                 /* candidate index */
+if (hg->fixed)          
+*s++ = hg->fixed[lno];       /* fixed partition info */
           *s++ = hg->vindex[lno+1] - hg->vindex[lno];            /* edge count */
           for (j = hg->vindex[lno]; j < hg->vindex[lno+1]; j++)  
             *s++ = hg->vedge[j];                                   /* edge lno */
@@ -725,6 +732,8 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0 ; i < recsize; i += count)   {
         int indx        = i++;              /* position of next gno in edgebuf */
         candidate_index = edgebuf[i++];
+if (hg->fixed)        
+fixed           = edgebuf[i++];   /* skip over fixed vertex information */
         count           = edgebuf[i++];     /* count of edges */      
         permute[candidate_index] = indx ;   /* save position of gno in edgebuf */
       }
@@ -751,11 +760,15 @@ static int pmatching_ipm (ZZ *zz,
           r = &edgebuf[permute[select[k]]];
           candidate_gno   = *r++;          /* gno of candidate vertex */
           candidate_index = *r++;          /* candidate_index of vertex */
+if (hg->fixed)          
+fixed = *r++;     /* fixed vertex information */          
           count           = *r++;          /* count of following hyperedges */
         }
         else  {
           candidate_index = k;
           candidate_gno   = permute[k];  /* need to use next local vertex */
+if (hg->fixed)          
+fixed = hg->fixed[candidate_gno];          
         }                          /* here candidate_gno is really a local id */
                   
         /* now compute the row's nVtx inner products for kth candidate */
@@ -790,7 +803,9 @@ static int pmatching_ipm (ZZ *zz,
         count = 0;
         for (i = 0; i < m; i++)  {
           lno = index[i];
-          if (sums[lno] > PSUM_THRESHOLD)
+          if (sums[lno] > PSUM_THRESHOLD
+&& (hg->fixed == 0 || !(hg->fixed[lno] >= 0 && fixed >= 0
+&& hg->fixed[lno] != fixed)))
             aux[count++] = lno;      /* save lno for significant partial sum */
           else
             sums[lno] = 0.0;         /* clear unwanted entries */  
