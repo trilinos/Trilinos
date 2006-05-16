@@ -894,7 +894,7 @@ Optional Features:
   --enable-teuchos-complex
                           Enable Teuchos complex code (default is yes)
   --enable-teuchos-extended
-                          Enable Teuchos extended code (default is no)
+                          Enable Teuchos extended code (default is yes)
   --enable-teuchos-arprec Enable Teuchos interface support for the ARbitrary
                           PRECision Library (default is no)
   --enable-teuchos-gmp    Enable Teuchos interface support for the GNU MP
@@ -8988,7 +8988,7 @@ if test "${enable_teuchos_extended+set}" = set; then
   enableval="$enable_teuchos_extended"
   ac_cv_use_teuchos_extended=$enableval
 else
-  ac_cv_use_teuchos_extended=no
+  ac_cv_use_teuchos_extended=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use teuchos-extended" >&5

@@ -387,7 +387,7 @@ AM_CONDITIONAL(HAVE_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno
 #  --enable-teuchos-extended
 #
 
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, extended, [Enable Teuchos extended code], TEUCHOS_EXTENDED, no)
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, extended, [Enable Teuchos extended code], TEUCHOS_EXTENDED, yes)
 AM_CONDITIONAL(HAVE_TEUCHOS_EXTENDED, [test "X$ac_cv_use_teuchos_extended" != "Xno"])
 
 #
