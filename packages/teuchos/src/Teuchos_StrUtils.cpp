@@ -106,7 +106,7 @@ Array<string> StrUtils::getTokensPlusWhitespace(const string& str){
 	
   while(start < str.length())
     {
-      int wordStart =  findNextNonWhitespace(str, start);
+      unsigned int wordStart =  findNextNonWhitespace(str, start);
 			/* add any preceding whitespace */
 			if (wordStart > start)
 				{
@@ -298,7 +298,7 @@ int StrUtils::find(const string& str, const string& sub)
 
 bool StrUtils::isWhite(const string& str)
 {
-  for (int i=0; i<str.length(); i++)
+  for (unsigned int i=0; i<str.length(); i++)
     {
       unsigned char c = str[i];
       if (c >= 33 && c <= 126)
@@ -312,7 +312,7 @@ bool StrUtils::isWhite(const string& str)
 string StrUtils::fixUnprintableCharacters(const string& str)
 {
   string rtn = str;
-  for (int i=0; i<rtn.length(); i++)
+  for (unsigned int i=0; i<rtn.length(); i++)
     {
       unsigned char c = rtn[i];
       if (c < 33 || c > 126) 
