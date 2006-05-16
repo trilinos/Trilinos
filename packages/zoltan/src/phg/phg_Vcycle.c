@@ -372,7 +372,7 @@ int Zoltan_PHG_Partition (
 			 it should be bigger than 7 it is safe to decrement) */
 	}
 	
-	/*if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
+	if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: PHGComm");
 	  return ZOLTAN_MEMERR;
 	}
@@ -392,7 +392,7 @@ int Zoltan_PHG_Partition (
 
 	if (hgc->myProc < 0)
 	  /* I'm not in the redistributed part so I should go to uncoarsening
-	     refinement and wait *
+	     refinement and wait */
 	  goto Refine;
 
 	hg = vcycle->hg;
@@ -539,8 +539,8 @@ Refine:
 	ZOLTAN_FREE (&rbuffer);                  
 	Zoltan_Comm_Destroy (&finer->comm_plan);                   
       } else {
-	int *sendbuf = NULL, size = 2*finer->hg->nVtx; /* ints local and
-							  partition numbers */
+	/* ints local and partition numbers */
+	int *sendbuf = NULL, size = finer->vlno ? 2 * hg->nVtx : 0;
 	if (finer->vlno) {
 	  sendbuf = (int*) ZOLTAN_MALLOC (2 * hg->nVtx * sizeof(int));
 	  if (!sendbuf) {
@@ -561,30 +561,31 @@ Refine:
 			   finer->vdest, hgc->Communicator, COMM_TAG+2, &size);
 	/* allocate rec buffer to exchange sendbuf information */
 	rbuffer = NULL;
-	if (finer->hg->nVtx > 0) {
-	  rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->hg->nVtx * sizeof(int));
+	rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->hg->nVtx * sizeof(int));
 
-	  if (!rbuffer) {
-	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-	    return ZOLTAN_MEMERR;
-	  }
+	if (!rbuffer) {
+	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+	  return ZOLTAN_MEMERR;
 	}
 
 	/* Use plan to send partitions to the unredistributed processors */
 
 	Zoltan_Comm_Do(finer->comm_plan, COMM_TAG+3, (char *) sendbuf,
 		       2*sizeof(int), (char *) rbuffer);
+
+	MPI_Bcast(rbuffer, 2*finer->hg->nVtx, MPI_INT, 0, hgc->col_comm);
 	
 	/* process data to assign partitions to unredistributed processors */
-	if (finer->vlno)
-	  for (i = 0; i < 2 * finer->hg->nVtx;) {
-	    int lno, partition;
-	    lno       = rbuffer[i++];
-	    partition = rbuffer[i++];
-	    finer->Part[lno] = partition;
-	  }
+	for (i = 0; i < 2 * finer->hg->nVtx;) {
+	  int lno, partition;
+	  lno       = rbuffer[i++];
+	  partition = rbuffer[i++];
+	  finer->Part[lno] = partition;
+	}
 
-	ZOLTAN_FREE (&sendbuf);
+	if (finer->vlno)
+	  ZOLTAN_FREE (&sendbuf);
+
 	ZOLTAN_FREE (&rbuffer);
 	Zoltan_Comm_Destroy (&finer->comm_plan);
       }
