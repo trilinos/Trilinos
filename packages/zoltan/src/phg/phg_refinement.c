@@ -25,8 +25,10 @@ extern "C" {
 #define USE_SERIAL_REFINEMENT_ON_ONE_PROC
 
 
+
+    
 /*
-#define _DEBUG        
+#define _DEBUG          
 #define _DEBUG2
 #define _DEBUG3
 */
@@ -217,16 +219,26 @@ int    best_imbalance, imbalance;
   /* Initialize the heaps and fill them with the gain values */
   Zoltan_Heap_Init(zz, &heap[0], hg->nVtx);
   Zoltan_Heap_Init(zz, &heap[1], hg->nVtx);  
-  for (i = 0; i < hg->nVtx; i++) {
+  for (i = 0; i < hg->nVtx; i++)
+      if (!hg->fixed || hg->fixed[i]<0) {
 #ifdef HANDLE_ISOLATED_VERTICES          
-      if (hg->vindex[i+1]==hg->vindex[i]) { /* isolated vertex */
-          part_weight[part[i]] -= hg->vwgt ? hg->vwgt[i] : 1.0;
-          part[i] = -(part[i]+1); /* remove those vertices from that part*/
-          ++isocnt;
-      } else
+          if (hg->vindex[i+1]==hg->vindex[i]) { /* isolated vertex */
+              part_weight[part[i]] -= hg->vwgt ? hg->vwgt[i] : 1.0;
+              part[i] = -(part[i]+1); /* remove those vertices from that part*/
+              ++isocnt;
+          } else
 #endif
-          Zoltan_Heap_Input(&heap[part[i]], i, gain[i]);
-  }
+              Zoltan_Heap_Input(&heap[part[i]], i, gain[i]);
+      }
+#ifdef _DEBUG
+      else {
+          int pp = (hg->fixed[i] < hg->bisec_split) ? 0 : 1;
+          if (part[i]!=pp) 
+              errexit("%s: beginning of pass vertex %d is fixed at %d bisec_split is %d but its part is %d\n", uMe(hg->comm), i, hg->fixed[i], hg->bisec_split, part[i]);
+          
+              
+      }
+#endif
   Zoltan_Heap_Make(&heap[0]);
   Zoltan_Heap_Make(&heap[1]);
 
@@ -348,10 +360,12 @@ int    best_imbalance, imbalance;
       isoimbalbefore = (targetw0==0) ? 0.0 : (part_weight[0] - targetw0)/ targetw0;
 #endif
       for (i=0; i < hg->nVtx; ++i)
-          if (hg->vindex[i+1]==hg->vindex[i])  { /* go over isolated vertices */
-              int npno = (part_weight[0] <  targetw0) ? 0 : 1;
-              part_weight[npno] += hg->vwgt ? hg->vwgt[i] : 1.0;                
-              part[i] = npno;
+          if (!hg->fixed || hg->fixed[i]<0) {
+              if (hg->vindex[i+1]==hg->vindex[i])  { /* go over isolated vertices */
+                  int npno = (part_weight[0] <  targetw0) ? 0 : 1;
+                  part_weight[npno] += hg->vwgt ? hg->vwgt[i] : 1.0;                
+                  part[i] = npno;
+              }
           }
 #ifdef _DEBUG      
       isoimbal = (targetw0==0) ? 0.0 : (part_weight[0] - targetw0)/ targetw0;
@@ -446,8 +460,10 @@ static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part,
             errexit("hey while moving v=%d u=%d is in part %d", v, u, part[u]);
 #endif
         mark[u] = 0;
-        if (Zoltan_Heap_Has_Elem(&heap[p], u))
-            Zoltan_Heap_Change_Value(&heap[p], u, gain[u]);
+        /* UVC: Heap_Change already checks if the element is
+           in the heap 
+           if (Zoltan_Heap_Has_Elem(&heap[p], u)) */
+        Zoltan_Heap_Change_Value(&heap[p], u, gain[u]);
     }
 }
 
@@ -660,10 +676,12 @@ static int refine_fm2 (ZZ *zz,
 
         if (hgc->myProc_y==root.rank) { /* root marks isolated vertices */
             for (i=0; i<hg->nVtx; ++i)
-                if (!deg[i]) {
-                    moves[--isocnt] = i;
-                    part[i] = -(part[i]+1); /* remove those vertices from that part*/
-                }        
+                if (!hg->fixed || hg->fixed[i]<0) {
+                    if (!deg[i]) {
+                        moves[--isocnt] = i;
+                        part[i] = -(part[i]+1); /* remove those vertices from that part*/
+                    }
+                }
         }   
         if (detail_timing)         
             ZOLTAN_TIMER_STOP(zz->ZTime, timer_iso, hgc->Communicator);        
@@ -732,7 +750,7 @@ static int refine_fm2 (ZZ *zz,
         
         for (i = 0; i < hg->nVtx; ++i) {
             lgain[i] = 0.0;
-            if (part[i]==from) 
+            if ((part[i]==from) && (!hg->fixed || hg->fixed[i]<0))
                 for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
                     int edge = hg->vedge[j];
                     if ((pins[0][edge]+pins[1][edge])>1) { /* if they have at least 2 pins :) */
@@ -786,7 +804,7 @@ static int refine_fm2 (ZZ *zz,
             /* Initialize the heaps and fill them with the gain values */
             Zoltan_Heap_Clear(&heap[from]);  
             for (i = 0; i < hg->nVtx; ++i)
-                if (part[i]==from)
+                if ((part[i]==from) && (!hg->fixed || hg->fixed[i]<0))
                     Zoltan_Heap_Input(&heap[from], i, gain[i]);
             Zoltan_Heap_Make(&heap[from]);
             if (detail_timing) {
