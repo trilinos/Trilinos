@@ -181,7 +181,7 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS, p
   */
   virtual int Invert(void);
 
-  //! Computes the scaling vector S(i) = 1/sqrt(A(i,i) of the \e this matrix.
+  //! Computes the scaling vector S(i) = 1/sqrt(A(i,i)) of the \e this matrix.
   /*! 
     \return Integer error code, set to 0 if successful. Otherwise returns the LAPACK error code INFO.
   */
