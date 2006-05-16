@@ -78,10 +78,13 @@ namespace Belos {
     typedef typename SCT::magnitudeType MagnitudeType;
     
     //@{ \name Constructor/Destructor.
+
     //! %Belos::CG constructor.
     CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp, 
        const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest, 
-       const RefCountPtr<OutputManager<ScalarType> > &om);
+       const RefCountPtr<OutputManager<ScalarType> > &om,
+       const RefCountPtr<ParameterList> &pl = Teuchos::null
+       );
     
     //! %Belos::CG destructor.
     virtual ~CG() {};
@@ -137,6 +140,9 @@ namespace Belos {
     //! Output manager [ must be passed in by the user ]
     RefCountPtr<OutputManager<ScalarType> > _om;
     
+    //! Parameter list containing information for configuring the linear solver. [ must be passed in by the user ]
+    RefCountPtr<ParameterList> _pl;     
+
     //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
     RefCountPtr<MV> _cur_block_sol;
     
@@ -166,10 +172,13 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   CG<ScalarType,MV,OP>::CG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
 			   const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
-			   const RefCountPtr<OutputManager<ScalarType> > &om) : 
+			   const RefCountPtr<OutputManager<ScalarType> > &om,
+			   const RefCountPtr<ParameterList> &pl 
+			   ) : 
     _lp(lp), 
     _stest(stest),
     _om(om),
+    _pl(pl),
     _os(om->GetOStream()),
     _iter(0),
     _restartTimers(true),
