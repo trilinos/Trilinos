@@ -772,21 +772,20 @@ static int coarse_part_greedy (
   char *yo = "coarse_part_greedy";
 
   /* Scale the edge weights */
-  if (hgp->edge_scaling) {
-     if (hg->nEdge && !(new_ewgt = (float*)
-                      ZOLTAN_MALLOC(hg->nEdge * sizeof(float))))
-       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory")
-     else {
-       if (hgp->edge_scaling)
-         scaling = hgp->edge_scaling;
-       else
-         /* Pick a random scaling. */
-         scaling = Zoltan_Rand(NULL) % 4; /* scaling is in [0,3] */
-       /* Temporarily scale the edge weights (save old weights) */
-       Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, scaling);
-       old_ewgt = hg->ewgt;
-       hg->ewgt = new_ewgt;
-     }
+  if (hg->nEdge) {
+    if (!(new_ewgt = (float*) ZOLTAN_MALLOC(hg->nEdge * sizeof(float))))
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory")
+    else {
+      if (hgp->edge_scaling)
+        scaling = hgp->edge_scaling;
+      else
+        /* Pick a random scaling. */
+        scaling = Zoltan_Rand(NULL) % 4; /* scaling is in [0,3] */
+      /* Temporarily scale the edge weights (save old weights) */
+      Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, scaling);
+      old_ewgt = hg->ewgt;
+      hg->ewgt = new_ewgt;
+    }
   }
 
   /* Start at random vertex */
