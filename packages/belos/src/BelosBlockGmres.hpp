@@ -157,7 +157,7 @@ namespace Belos {
     /** \name Overridden from Teuchos::Describable */
     //@{
 
-    /** \brief . */
+    /** \brief Method to return description of the block GMRES solver */
     std::string description() const;
 
     //@}

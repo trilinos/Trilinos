@@ -128,6 +128,14 @@ namespace Belos {
     */
     void Solve();
     //@}
+
+    /** \name Overridden from Teuchos::Describable */
+    //@{
+    
+    /** \brief Method to return description of the block GMRES solver */
+    std::string description() const;
+    
+    //@}
     
   private:
     
@@ -380,6 +388,20 @@ namespace Belos {
         *_os <<"******************************************************"<<endl;
     }
   } // end CGSolve()
+
+
+  // Overridden from Teuchos::Describable
+  template<class ScalarType, class MV, class OP>
+  std::string 
+  CG<ScalarType,MV,OP>::description() const
+  {
+    std::ostringstream oss;
+    oss << "Belos::CG<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
+    oss << "{";
+    oss << "}";
+    return oss.str();
+  }
+
   //
 } // namespace Belos
 //

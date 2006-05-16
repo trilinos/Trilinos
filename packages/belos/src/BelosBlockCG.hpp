@@ -141,7 +141,15 @@ public:
   */
   void Solve();
   //@}
-    
+ 
+  /** \name Overridden from Teuchos::Describable */
+  //@{
+
+  /** \brief Method to return description of the block GMRES solver */
+  std::string description() const;
+
+  //@}
+
 private:
 
   void SetCGBlkTols();
@@ -968,6 +976,19 @@ private:
     //
   } // end Print_CGiter_info
 
+
+  // Overridden from Teuchos::Describable
+  template<class ScalarType, class MV, class OP>
+  std::string 
+  BlockCG<ScalarType,MV,OP>::description() const
+  {
+    std::ostringstream oss;
+    oss << "Belos::BlockCG<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
+    oss << "{";
+    oss << "}";
+    return oss.str();
+  }
+//                                 
 } // end namespace Belos
 
 #endif
