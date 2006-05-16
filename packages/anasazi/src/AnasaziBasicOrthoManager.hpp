@@ -41,7 +41,6 @@
       \author Chris Baker, Ulrich Hetmaniuk, Rich Lehoucq, and Heidi Thornquist
 */
 
-
 // #define ORTHO_DEBUG
 
 #include "AnasaziMatOrthoManager.hpp"
@@ -49,7 +48,7 @@
 #include "AnasaziOperatorTraits.hpp"
 
 
-// FINISH: return coefficients as well
+// FINISH: using findBasis may have been more trouble than it is worth; consider rewriting?
 
 namespace Anasazi {
 
@@ -293,18 +292,36 @@ namespace Anasazi {
     ret = project(X,MX,C,Q);
     if (ret == Failed) return Failed;
 
+    Teuchos::SerialDenseMatrix<int,ScalarType> oldCoeff(xc,1);
+
     // start working
     rank = 0;
     int numTries = 10;   // each vector in X gets 10 random chances to escape degeneracy
+    int oldrank = -1;
     do {
 
-      int oldrank = rank;
       int curxsize = xc - rank;
 
       // orthonormalize X, but quit if it is rank deficient
       // we can't let findBasis generated random vectors to complete the basis,
       // because it doesn't know about Q; we will do this ourselves below
       ret = findBasis(X,MX,R,rank,false,curxsize);
+
+      if (rank < xc && numTries == 10) {
+        // we quit on this vector, and for the first time;
+        // save the coefficient information, because findBasis will overwrite it
+        for (int i=0; i<xc; i++) {
+          oldCoeff(i,0) = (*R)(i,rank);
+        }
+      }
+
+      if (oldrank != -1 && rank != oldrank) {
+        // we moved on; restore the previous coefficients
+        for (int i=0; i<xc; i++) {
+          (*R)(i,oldrank) = oldCoeff(i,0);
+        }
+      }
+
       if (ret == Failed) {
         return Failed;
       }
@@ -315,11 +332,14 @@ namespace Anasazi {
       else {
         TEST_FOR_EXCEPTION( ret != Undefined, std::logic_error, "BasicOrthoManager::projectAndNormalize(): findBasis returned impossible value" );
         TEST_FOR_EXCEPTION( rank < oldrank, std::logic_error,   "BasicOrthoManager::projectAndNormalize(): basis lost rank; this shouldn't happen");
-        
+
         if (rank != oldrank) {
-          // we finished a vector; reset the chance counter
+          // we added a basis vector from random info; reset the chance counter
           numTries = 10;
         }
+
+        // store old rank
+        oldrank = rank;
 
         // has this vector run out of chances to escape degeneracy?
         if (numTries <= 0) {
@@ -344,10 +364,8 @@ namespace Anasazi {
 
         // orthogonalize against Q
         // if !this->_hasOp, the curMX will be ignored.
-        Teuchos::RefCountPtr< Teuchos::SerialDenseMatrix<int,ScalarType> > curC
-            = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View, *C, qc, 1, 0, rank) );
-        if ( project(*curX,curMX,curC,Q) != Ok ) return Failed;
-        curC.release();
+        // we don't care about these coefficients; in fact, we need to preserve the previous coeffs
+        if ( project(*curX,curMX,Teuchos::null,Q) != Ok ) return Failed;
         
         continue;
       }
@@ -627,6 +645,9 @@ namespace Anasazi {
       return Failed;
     }
 
+    /* xstart is which column we are starting the process with, based on howMany
+     * columns before xstart are assumed to be M-orthonormal already
+     */
     int xstart = xc - howMany;
 
     for (int j = xstart; j < xc; j++) {
@@ -665,8 +686,14 @@ namespace Anasazi {
       } 
 
       bool rankDef = true;
+      /* numTrials>0 will denote that the current vector was randomized for the purpose
+       * of finding a basis vector, and that the coefficients of that vector should
+       * not be stored in R
+       */
       for (int numTrials = 0; numTrials < 10; numTrials++) {
 
+        // Make storage for these Gram-Schmidt iterations.
+        Teuchos::SerialDenseMatrix<int,ScalarType> product(numX, 1);
         std::vector<ScalarType> oldDot( 1 ), newDot( 1 );
 
         //
@@ -681,9 +708,6 @@ namespace Anasazi {
 
         if (numX > 0) {
           // Apply the first step of Gram-Schmidt
-
-          // Make storage for these Gram-Schmidt iterations.
-          Teuchos::SerialDenseMatrix<int,ScalarType> product(Teuchos::View, *R, numX, 1, 0, numX);
 
           // product <- prevX^T MXj
           innerProd(*prevX,*prevX,MXj,product);
@@ -722,6 +746,13 @@ namespace Anasazi {
         // Compute M-norm with old MXj
         MVT::MvDot( *Xj, *oldMXj, &newDot );
 
+        // save the coefficients, if we are working on the original vector and not a randomly generated one
+        if (numTrials == 0) {
+          for (int i=0; i<numX; i++) {
+            (*R)(i,j) = product(i,0);
+          }
+        }
+
         // Check if Xj has any directional information left after the orthogonalization.
 #ifdef ORTHO_DEBUG
         cout << "olddot: " << SCT::magnitude(oldDot[0]) << "    newdot: " << SCT::magnitude(newDot[0]);
@@ -731,13 +762,20 @@ namespace Anasazi {
           cout << " ACCEPTED" << endl;
 #endif
           // Normalize Xj.
-          // Xj <- Xj / sqrt(newDot*EPS*EPS)
-          (*R)(j,j) = ONE/SCT::squareroot(SCT::magnitude(newDot[0]));
-          MVT::MvAddMv( (*R)(j,j), *Xj, ZERO, *Xj, *Xj );
+          // Xj <- Xj / sqrt(newDot)
+          ScalarType diag = SCT::squareroot(SCT::magnitude(newDot[0]));
+
+          MVT::MvAddMv( ONE/diag, *Xj, ZERO, *Xj, *Xj );
           if (this->_hasOp) {
             // Update MXj.
-            MVT::MvAddMv( (*R)(j,j), *MXj, ZERO, *MXj, *MXj );
+            MVT::MvAddMv( ONE/diag, *MXj, ZERO, *MXj, *MXj );
           }
+
+          // save it, if it corresponds to the original vector and not a randomly generated one
+          if (numTrials == 0) {
+            (*R)(j,j) = diag;
+          }
+
           // We are not rank deficient in this vector. Move on to the next vector in X.
           rankDef = false;
           break;
@@ -748,6 +786,8 @@ namespace Anasazi {
 #endif
           // There was nothing left in Xj after orthogonalizing against previous columns in X.
           // X is rank deficient.
+          // reflect this in the coefficients
+          (*R)(j,j) = ZERO;
 
           if (completeBasis) {
             // Fill it with random information and keep going.
