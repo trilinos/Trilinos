@@ -73,8 +73,12 @@ int Zoltan_PHG_rdivide(
   int do_timing = (hgp->use_timers > 1);
   int detail_timing = (hgp->use_timers > 3);
 
-  if (!gnVtx)  /* UVC: no vertex; no need for recursion!? */
+  if (!gnVtx) { /* UVC: no vertex; no need for recursion!? */
+      if (level>0)
+          Zoltan_HG_HGraph_Free(hg);
+
       return ierr;
+  }
   
   if (do_timing) { 
     if (timer_rdivide < 0) 
@@ -478,6 +482,9 @@ int Zoltan_PHG_rdivide(
   
 
 End:
+  if (level>0)
+      Zoltan_HG_HGraph_Free(hg);
+    
   Zoltan_Multifree (__FILE__, __LINE__, 8, &pins[0], &lpins[0], &part, 
                     &left, &right, &proclist, &sendbuf, &recvbuf);
 

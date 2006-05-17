@@ -489,7 +489,7 @@ int Zoltan_PHG_Initialize_Params(
   PHGPartParams *hgp
 )
 {
-  int err=ZOLTAN_OK;
+  int err = ZOLTAN_OK;
   char *yo = "Zoltan_PHG_Initialize_Params";
   int nProc;
   int usePrimeComm;
@@ -588,8 +588,8 @@ int Zoltan_PHG_Initialize_Params(
   hgp->patoh_alloc_pool1 = 0;
   
   /* Get application values of parameters. */
-  Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, zz->Proc,
-                           zz->Debug_Proc);
+  err = Zoltan_Assign_Param_Vals(zz->Params, PHG_params, zz->Debug_Level, 
+          zz->Proc, zz->Debug_Proc);
 
   nProc = zz->Num_Proc;
   usePrimeComm = 0;
@@ -605,7 +605,7 @@ int Zoltan_PHG_Initialize_Params(
     ; /* do nothing; leave LB.Method as is */
   else {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid hypergraph package.\n");
-    goto End;
+    err = ZOLTAN_WARN;
   }
 
   /* Parse add_obj_weight parameter */
@@ -623,7 +623,7 @@ int Zoltan_PHG_Initialize_Params(
     hgp->add_obj_weight = PHG_ADD_PINS_WEIGHT;
   } else{
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid ADD_OBJ_WEIGHT parameter.\n");
-    goto End;
+    err = ZOLTAN_WARN;
   }
 
   if ((zz->Obj_Weight_Dim==0) &&      /* no application supplied weights */
@@ -650,8 +650,8 @@ int Zoltan_PHG_Initialize_Params(
     hgp->edge_weight_op = PHG_FLAG_ERROR_EDGE_WEIGHTS;
   } else{
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-    "Invalid PHG_EDGE_WEIGHT_OPERATION parameter.\n");
-    goto End;
+      "Invalid PHG_EDGE_WEIGHT_OPERATION parameter.\n");
+    err = ZOLTAN_WARN;
   }
 
   /* Adjust refinement parameters using hgp->refinement_quality */

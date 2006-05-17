@@ -168,7 +168,7 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #
 SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
-		  ../phg  ../hg ../util \
+		  ../phg  ../util \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
@@ -176,14 +176,14 @@ SUB_VPATH	= ../include ../Utilities/shared \
 SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../zz -I../all -I../lb -I../par -I../rcb \
 		  -I../coloring -I../oct  \
-		  -I../order -I../hsfc -I../phg -I../hg -I../util \
+		  -I../order -I../hsfc -I../phg  -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
 		  -I../parmetis -I../timer \
                   -I../ha -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
-		  coloring oct phg hg util \
+		  coloring oct phg util \
                   hsfc parmetis params \
 		  timer ha  reftree include
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
@@ -245,17 +245,6 @@ GDEFINES       += -DZOLTAN_HG
 else
 HG_CSRC		= phg_hypergraph.c
 endif
-
-# ifdef ZOLTAN_HG
-# HG_CSRC 	= hg.c hg_build.c hg_build_calls.c hg_coarse.c hg_global.c \
-# 		  hg_group.c hg_local.c hg_scale.c \
-# 		  hg_match.c hg_pack.c hg_rdivide.c \
-# 		  hg_part.c hg_plot.c hg_hypergraph.c hg_patoh.c
-# HG_INC 		= hg.h hg_hypergraph.h 
-# GDEFINES       += -DZOLTAN_HG
-# else
-# HG_CSRC		= hg_hypergraph.c
-# endif
 
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
@@ -396,7 +385,7 @@ LINT		= lint
 LINT_INC_PATH	= -Iinclude -Idriver$(ZOLTAN_OLD) -Ich -Izz -Iall -Ilb \
 		  -Iorder -Ipar -Ircb -Icoloring -Iparams \
 		  -Ioct -Ihsfc -Iparmetis -Itimer -Iha -Ireftree \
-		  -Iphg -Ihg \
+		  -Iphg \
 		  -IUtilities/shared -IUtilities/Memory \
 		  -IUtilities/Communication -IUtilities/DDirectory \
 		  -IUtilities/Timer \
@@ -631,10 +620,6 @@ zscript:
 	@for iii in $(PHG_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../phg/$$iii >> zoltan_script; \
 	 done;
-	@echo "echo 'Zoltan:  Compiling Zoltan/hg'" >> zoltan_script
-	@for iii in $(HG_CSRC) ; do \
-	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../hg/$$iii >> zoltan_script; \
-	 done;     
 	@echo "echo 'Zoltan:  Compiling Zoltan/params'" >> zoltan_script
 	@for iii in $(PARAMS_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../params/$$iii >> zoltan_script; \

@@ -65,7 +65,8 @@ further technical description, see <a
 <p>Planned future features (currently not supported):<br>
 </p>
 <ul>
-  <li>Adaptive (diffusive) repartitioning</li>
+  <li>Fixed vertices</li>
+  <li>Repartitioning (to reduce migration cost)</li>
   <li>Multiconstraint partitioning </li>
   <li>2-dimensional (sparse matrix) partitioning </li>
 </ul>
@@ -315,8 +316,9 @@ pair</td>
 It is possible to provide the graph query functions instead of the
 hypergraph queries, though this is not recommended. If only graph query
 functions are registered, Zoltan will automatically create a hypergraph
-from the graph, but some information (in particular, edge weights) will
-be lost. </p>
+from the graph, but this is not equivalent to graph partitioning.
+In particular, the edge weights will not be accurate.
+</p>
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
  href="ug_alg_oct.html">Next:&nbsp;
 Octree</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Previous:&nbsp;

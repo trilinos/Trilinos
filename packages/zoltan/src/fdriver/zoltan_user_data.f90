@@ -107,7 +107,7 @@ type MESH_INFO
   integer(Zoltan_INT), pointer :: hgid(:)      ! gids of hyperedges
   integer(Zoltan_INT), pointer :: hindex(:)    ! index of hyperedges 
   integer(Zoltan_INT), pointer :: hvertex(:)   ! pins of hyperedges 
-  integer(Zoltan_INT) :: henumwgts             ! #edges with given weights
+  !integer(Zoltan_INT) :: henumwgts             ! #edges with given weights
   integer(Zoltan_FLOAT), pointer :: hewgts(:)  ! the hyperedge weights
 end type
 

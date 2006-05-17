@@ -18,7 +18,7 @@ use dr_const
 use dr_input
 use dr_migrate
 implicit none
-private
+!private
 
 public :: run_zoltan
 
@@ -88,7 +88,6 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: ndim, lid
   character(len=FILENAME_MAX+1) :: fname
   real(Zoltan_DOUBLE) :: xmin, ymin, zmin, xmax, ymax, zmax
-  integer ewgt_dim
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -307,9 +306,24 @@ type(PARIO_INFO) :: pio_info
     goto 9999
   endif
 
-  ewgt_dim = 0 ! Set to 1 to test edge weights.
-  if (ewgt_dim > 0) then
-! TODO Register edge weight query functions
+
+  if (.true.) then 
+!   Register hypergraph edge weight query functions
+
+    if (Zoltan_Set_Hg_Size_Edge_Weights_Fn(zz_obj, get_hg_size_edge_weights, &
+                mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
+
+    if (Zoltan_Set_Hg_Edge_Weights_Fn(zz_obj, get_hg_edge_weights, &
+                mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
+
   endif
 
 
@@ -1023,15 +1037,14 @@ integer(Zoltan_INT), intent(out) :: num_lists, num_pins, fmat, ierr
   type(MESH_INFO), pointer :: mesh
 
   mesh => data%ptr
-
-  if (.not. associated(mesh%hindex)) then
-    ierr = ZOLTAN_FATAL
-    return
-  endif
-
   num_lists = mesh%nhedges
   fmat = 1 ! ZOLTAN_COMPRESSED_EDGE 
-  num_pins = mesh%hindex(mesh%nhedges)
+
+  if (.not. associated(mesh%hindex)) then
+    num_pins = 0
+  else
+    num_pins = mesh%hindex(mesh%nhedges)
+  endif
   ierr = ZOLTAN_OK
 
 end subroutine get_hg_size_compressed_pins
@@ -1083,21 +1096,52 @@ integer(Zoltan_INT), intent(out) :: ierr
 
 end subroutine get_hg_compressed_pins
 
-!subroutine get_hg_size_edge_weights(data, num_edge, ierr)
-!type(Zoltan_User_Data_2), intent(in) :: data
-!integer(Zoltan_INT), intent(out) :: num_edge, ierr
-!
-!  type(MESH_INFO), pointer :: mesh
-!
-!  mesh => data%ptr
-!  num_edge = mesh%henumwgts ! TODO probably unnecessary?
-!  ierr = ZOLTAN_OK
-!  
-!end subroutine get_hg_size_edge_weights
+subroutine get_hg_size_edge_weights(data, num_edge, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(out) :: num_edge, ierr
 
-!subroutine get_hg_edge_weights
-!TODO return all ones just to test functionality
-!end subroutine get_hg_edge_weights
+  type(MESH_INFO), pointer :: mesh
+
+  mesh => data%ptr
+  num_edge = mesh%nhedges
+  ierr = ZOLTAN_OK
+  
+end subroutine get_hg_size_edge_weights
+
+subroutine get_hg_edge_weights(data, num_gid_entries, num_lid_entries, &
+           num_edges, edge_weight_dim, edge_GID, edge_LID, edge_weight, ierr) 
+type(Zoltan_User_Data_2), INTENT(IN) :: data 
+INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_edges, edge_weight_dim 
+INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(0:*) :: edge_GID 
+INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(0:*) :: edge_LID 
+REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(0:*) :: edge_weight 
+INTEGER(Zoltan_INT), INTENT(OUT) :: ierr 
+! Local variables
+integer i, k, q
+
+! TEST: return all unit weights just to test functionality.
+!       f90 driver supports only plain MatrixMarket (no weights).
+
+  if (edge_weight_dim > 0) then
+    q = 0
+    do i= 0, num_edges-1
+!     First insert padded hyperedge GID
+      do k= 1, num_gid_entries-1
+        edge_GID(q) = 0
+        q = q+1
+      end do
+      edge_GID(q) = mesh%hgid(i)
+      q = q+1
+!     Then insert corresponding weights; always 1 for now
+      do k= 0, edge_weight_dim-1
+        edge_weight(i*edge_weight_dim +k) = 1.0 
+      end do
+    end do
+  endif
+
+  ierr = ZOLTAN_OK
+
+end subroutine get_hg_edge_weights
 
 !/*****************************************************************************/
 !/*****************************************************************************/

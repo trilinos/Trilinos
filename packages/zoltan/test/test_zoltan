@@ -159,6 +159,12 @@ if ( $yes_serial ) then
   set hg_nproc = (1      1     1     1)
 endif
 
+# zfdrive can only handle plain MatrixMarket format, so run only these
+if ( $yes_fortran ) then
+  set hg_name  = (diag500_4 cage10 FluidDFT)
+  set hg_nproc = (  4       11     8)
+endif
+
 # Determine what command to use to launch a parallel program based on $arch
 if (! $?run ) then
   if ( $?arch ) then
@@ -898,7 +904,6 @@ if (! $no_hg) then
     phg.nproc_edge2 \
     phg.nproc_vertex1 \
     phg.nproc_vertex2 \
-    phg.oneproc \
     phg.output_level0 \
     phg.output_level4 \
     phg.partlocal1 \
@@ -925,6 +930,9 @@ if (! $no_hg) then
     phg.vertex_visit_order4 \
   )
 
+  if (! $yes_fortran) then
+    set hg_methods=( $hg_methods phg.oneproc)
+  endif
 
   @ nprob = $#hg_name
   @ nfailed = 0

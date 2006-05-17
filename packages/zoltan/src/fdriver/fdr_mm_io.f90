@@ -24,7 +24,6 @@ private
 public :: read_mm_file
 
 ! Pin distribution is assumed to be linear always.
-integer(Zoltan_INT), parameter :: INITIAL_LINEAR = 1
 
 contains
 
@@ -45,7 +44,7 @@ type(PARIO_INFO) :: pio_info
   character(len=10) :: mm_rep
   character(len=7) :: mm_field
   character(len=19) :: mm_symm
-  integer :: i, rest, cnt, sum, n, share, pin, pinproc, tmp, mynext
+  integer :: i, rest, cnt, sum, n, share, pin, p, itmp, mynext
   integer :: prev_edge, pincnt, edgecnt
 
 ! Values read from matrix market
@@ -64,8 +63,8 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT), allocatable ::  jidx(:) ! pin data
   integer(Zoltan_INT), allocatable ::  idx(:)  ! temp index 
   integer(Zoltan_INT), allocatable ::  tmp(:)  ! temp values 
-  integer i, prev_i, prev_j, temp
-  logical sorted
+  integer :: prev_i, prev_j, temp
+  logical :: sorted
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -242,32 +241,40 @@ type(PARIO_INFO) :: pio_info
   if (associated(vtxdist)) deallocate(vtxdist)
   
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  Calculate pin distribution 
-!  Send pins to owning processor
+!  Calculate edge and pin distribution 
+!  Send pins for those edges to owning processor
 
   allocate(pindist(0:Num_Proc))
-  if (pio_info%init_dist_pins == INITIAL_LINEAR) then
-    share = mm_nnz / Num_Proc;
-    rest = mm_nnz - (Num_Proc * share);
-    sum = 0
+! ONLY INITIAL_LINEAR edge distribution is supported.
+  if (Proc == 0) then
+!   Assuming pins are sorted by edge number.
     do i = 0, Num_Proc
-      pindist(i) = sum
-      sum = sum + share
-      if (i < rest) sum = sum + 1
+      pindist(i) = 0
     enddo
-  else
-    print *, "INITIAL_LINEAR IS ONLY DISTRIBUTION SUPPORTED FOR PINS"
-    read_mm_file = .false.
-    return
+    do i = 0, mm_nnz-1
+!     Compute the processor to which the edge goes.
+      p = int(float(mm_iidx(i) * Num_Proc) / float(mm_nrow));
+      pindist(p) = pindist(p)+1
+    enddo
+!   Compute prefix sum.
+    sum = 0
+    do i = 0, Num_Proc-1
+      itmp = pindist(i)
+      pindist(i) = sum
+      sum = sum + itmp
+    enddo
+    pindist(Num_Proc) = sum   
   endif
 
 ! Allocate arrays to receive pins.
+  call MPI_Bcast(pindist, Num_Proc+1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr);
   npins = pindist(Proc+1) - pindist(Proc)
   allocate(iidx(0:npins-1),jidx(0:npins-1),stat=allocstat)
 
   if (Proc == 0) then
+
 !   Fill communication buffer with pins to be sent.
-!   Assume INITIAL_LINEAR pin distribution.
+!   Assume INITIAL_LINEAR edge distribution.
     do i = 1, Num_Proc-1
       call MPI_Send(mm_iidx(pindist(i)), (pindist(i+1)-pindist(i)), MPI_INTEGER, &
                     i, 1, MPI_COMM_WORLD, ierr)

@@ -13,17 +13,13 @@ CURDIR="`pwd`"
 ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
 rm -rf Zoltan ParMETIS3_1 siMPI
 rm -f zoltan_distrib.tar.gz
-cvs checkout -r Zoltan_v1_5_bugfix -P Zoltan
+cvs checkout -r Zoltan_v2_0_bugfix -P Zoltan
 cvs checkout -P ParMETIS3_1
 cvs checkout -P siMPI
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
 find . -name '.cvsignore' -exec rm -f {} \;
 #
-# Remove HG code that will not be released. Do not define ZOLTAN_HG in Makefile.
-cd Zoltan; sed -e 's/ZOLTAN_HG=1/#ZOLTAN_HG=1/' Makefile > tmp; /bin/mv tmp Makefile; cd ..
-cd Zoltan/hg; mkdir tmp; /bin/mv hg_hypergraph.h hg_util.h hg_util.c tmp; /bin/rm *; /bin/mv tmp/* .; rmdir tmp; cd ../..
-cd Zoltan/test; /bin/rm -r hg_test; cd ../..
 #
 # Remove stuff we don't want to share.
 cd Zoltan; /bin/rm -rf docs/internal; cd ..
@@ -72,7 +68,7 @@ tar cvf zoltan_distrib.tar Zoltan ParMETIS3_1 siMPI
 gzip zoltan_distrib.tar
 #
 # Tag repository.
-cvs rtag -r Zoltan_v1_5_bugfix ${ACT_TAG} Zoltan 
+cvs rtag -r Zoltan_v2_0_bugfix ${ACT_TAG} Zoltan 
 cvs rtag ${ACT_TAG} ParMETIS3_1
 cvs rtag ${ACT_TAG} siMPI
 exit 0

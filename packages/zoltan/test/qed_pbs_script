@@ -1,0 +1,6 @@
+#!/bin/tcsh
+#PBS -l walltime=06:00:00
+#PBS -l nodes=6:ppn=2
+
+test_zoltan -arch qed -no_nemesis >& test_zoltan_qed.out 
+

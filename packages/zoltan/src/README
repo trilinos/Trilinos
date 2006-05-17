@@ -100,16 +100,20 @@ Makefile        -- Top-level Zoltan Makefile.
 Makefile_sub    -- Lower-level Makefile template.  Copied to Obj_target
                    directories when targets are compiled.
 
-lb              -- Interface definitions, user data type definitions,
-                   load-balancing data structure definitions, interface
-                   functions, and functions related to the load-balancing
-                   interface and migration-help tools.
-
 all             -- Memory allocation functions.
+
+coloring        -- Graph coloring routines.
 
 fort            -- William Mitchell's Fortran interface for Zoltan.
 
 ha 		-- Support for heterogeneous architectures (under development).
+
+include         -- include files for apps calling Zoltan
+
+lb              -- Interface definitions, user data type definitions,
+                   load-balancing data structure definitions, interface
+                   functions, and functions related to the load-balancing
+                   interface and migration-help tools.
 
 oct             -- RPI's octree partitioning and space-filling curves 
                    algorithms.
@@ -119,6 +123,8 @@ par             -- Parallel computing utilities.
 params		-- Parameter setting routines.
 
 parmetis	-- Routines to interface to ParMETIS and Jostle libraries.
+
+phg             -- Parallel hypergraph partitioning.
 
 rcb             -- Recursive Coordinate Bisection and Recursive Inertial 
                    Bisection algorithms.
@@ -130,6 +136,8 @@ timer		-- Timer routines.
 Utilities 	-- Zoltan utilities, including the memory management and
 		   unstructured communication packages.  Also includes
 		   shared configuration files for Zoltan compilation.
+
+zz              -- Zoltan infrastructure code, used many places.
 
 
 OTHER CODE (not compiled into the Zoltan library)

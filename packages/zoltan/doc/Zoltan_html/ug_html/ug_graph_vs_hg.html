@@ -61,7 +61,8 @@ there are two ways to switch to the Zoltan-PHG hypergraph partitioner:
 <li>The quick and easy way: Just change the <a href="ug_alg.html#LB_METHOD">
 LB_METHOD</a> to "Hypergraph" (or "PHG").
 Zoltan will then use the graph query functions (presumably
-already implemented) to construct a hypergraph model.
+already implemented) to construct a hypergraph model, which
+is similar to but not equivalent to the graph.
 <li>The proper way: Change the LB_METHOD, but also implement and
 register the <a href="ug_query_lb.html#ZOLTAN_HG_SIZE_CS_FN">
 hypergraph query functions</a>
@@ -69,6 +70,11 @@ required by Zoltan. These may give a more accurate representation
 of data dependencies (and communication requirements) for your
 application.
 </ol>
+
+Technical note: A hypergraph is constructed from the graph as follows:
+The vertices are the same in the hypergraph as in the graph. For each vertex
+<i>v</i>, create a hyperedge that consists of all neighbors in the graph 
+and <i>v </i> itself.
 
 <hr width="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a
  href="ug_alg_phg.html">Next:&nbsp;

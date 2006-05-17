@@ -11,7 +11,7 @@ CURDIR="`pwd`"
 #
 echo "Checking out Bugfix branch"
 rm -rf Zoltan 
-cvs checkout -r Zoltan_v1_5_bugfix -P Zoltan
+cvs checkout -r Zoltan_v2_0_bugfix -P Zoltan
 #
 # Remove HG code that will not be released. Do not define ZOLTAN_HG in Makefile.
 echo "Removing hg"
