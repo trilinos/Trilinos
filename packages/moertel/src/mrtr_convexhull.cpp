@@ -178,6 +178,7 @@ bool MOERTEL::Overlap::ConvexHull(map<int,RefCountPtr<MOERTEL::Point> >& p)
 
 #if 0
   // printout the polygon
+  cout << "--------------------------------------------\n";
   cout << "Final polygon:\n";
   for (pcurr=finalp.begin(); pcurr != finalp.end(); ++pcurr)
     if (pcurr->second != null)

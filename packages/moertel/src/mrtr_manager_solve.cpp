@@ -447,7 +447,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   //--------------------------------------------------------------------------
   // 3) create B
   // create a temporary matrix with rowmap of the Ann block
-  Epetra_CrsMatrix* tmp = new Epetra_CrsMatrix(Copy,*annmap,90);
+  Epetra_CrsMatrix* tmp = new Epetra_CrsMatrix(Copy,*annmap,120);
   vector<int> newindices(100);
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {

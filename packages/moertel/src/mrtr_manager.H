@@ -272,6 +272,38 @@ public:
   bool AddInterface(MOERTEL::Interface& interface);
 
   /*!
+  \brief Obtain a parameter list with default values
+  
+  Obtain a parameter list containing deafult values for 
+  integration of mortar interfaces.
+  Default values set are:
+  \code
+    // When true, values of shape functions are exact at
+    // every single integration point.
+    // When false, linear shape functions of an overlap 
+    // discretization are used to linearily interpolate 
+    // shape functions in the overlap region.
+    // The latter is significantly cheaper but only 
+    // recommended for truly linear functions, e.g. with 
+    // 1D interfaces discretized with linear elements
+    // 2D interfaces discretized with linear triangle elements
+    // It is NOT recommended for 2D interfaces discretized with
+    // bilinear quads as shape functions are not truly linear.
+    integrationparams_->set("exact values at gauss points",true);
+
+    // 1D interface possible values are 1,2,3,4,5,6,7,8,10
+    integrationparams_->set("number gaussian points 1D",3);
+
+    // 2D interface possible values are 3,6,12,13,16,19,27
+    integrationparams_->set("number gaussian points 2D",12);
+  \endcode
+
+  \sa SetProblemMap , AddInterface, Mortar_integrate
+    
+  */
+  Teuchos::ParameterList& Default_Parameters();
+
+  /*!
   \brief Perform integration of the mortar integral on all interfaces
   
   Once all interfaces and a row map of the original system are passed to 
@@ -570,7 +602,9 @@ protected:
   RefCountPtr<Epetra_CrsMatrix> WT_;
   RefCountPtr<Epetra_CrsMatrix> B_;
 
+  RefCountPtr<Teuchos::ParameterList> integrationparams_; // parameter list with integration parameters
   RefCountPtr<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    
+
   RefCountPtr<MOERTEL::Solver>        solver_;        // the mortar solver
 };
 

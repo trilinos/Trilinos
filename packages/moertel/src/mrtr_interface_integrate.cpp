@@ -189,9 +189,11 @@ bool MOERTEL::Interface::Mortar_Integrate(Epetra_CrsMatrix& D,
 /*----------------------------------------------------------------------*
  |  make mortar integration of this interface (2D problem)              |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Mortar_Integrate_2D()
+bool MOERTEL::Interface::Mortar_Integrate_2D(
+                           RefCountPtr<Teuchos::ParameterList> intparams)
 { 
   bool ok = false;
+  intparams_ = intparams;
   
   //-------------------------------------------------------------------
   // time this process

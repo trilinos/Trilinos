@@ -292,6 +292,117 @@ void MOERTEL::Overlap::PointView(vector<MOERTEL::Point*>& p,const int* nodeids,c
  *----------------------------------------------------------------------*/
 bool MOERTEL::Overlap::QuickOverlapTest()
 {
+  MOERTEL::Node** snode = sseg_.Nodes();
+  MOERTEL::Node** mnode = mseg_.Nodes();
+  const int nsnode = sseg_.Nnode();
+  const int nmnode = mseg_.Nnode();
+  // compute closest distance between 2 nodes of sseg and mseg
+  double dmin[3];
+  double minlength;
+  for (int i=0; i<3; ++i)
+    dmin[i] = snode[0]->X()[i] - mnode[0]->X()[i];
+  minlength = MOERTEL::length(dmin,3);
+  for (int slave=1; slave<nsnode; ++slave)
+    for (int master=0; master<nmnode; ++master)
+    {
+      for (int i=0; i<3; ++i)
+        dmin[i] = snode[slave]->X()[i] - mnode[master]->X()[i];
+      double length = MOERTEL::length(dmin,3);
+      if (length<minlength) minlength = length;
+    }
+  
+  // compute max element edge
+  double mdiam;
+  double sdiam;
+  if (nmnode==4)
+  {
+    double d1[3];
+    d1[0] = mnode[0]->X()[0] - mnode[2]->X()[0];
+    d1[1] = mnode[0]->X()[1] - mnode[2]->X()[1];
+    d1[2] = mnode[0]->X()[2] - mnode[2]->X()[2];
+    double d2[3];
+    d2[0] = mnode[1]->X()[0] - mnode[3]->X()[0];
+    d2[1] = mnode[1]->X()[1] - mnode[3]->X()[1];
+    d2[2] = mnode[1]->X()[2] - mnode[3]->X()[2];
+    double length1 = MOERTEL::length(d1,3);
+    double length2 = MOERTEL::length(d2,3);
+    if (length1>=length2) mdiam = length1;
+    else                  mdiam = length2;
+  }
+  else
+  {
+    double d1[3];
+    d1[0] = mnode[0]->X()[0] - mnode[1]->X()[0];
+    d1[1] = mnode[0]->X()[1] - mnode[1]->X()[1];
+    d1[2] = mnode[0]->X()[2] - mnode[1]->X()[2];
+    double d2[3];
+    d2[0] = mnode[0]->X()[0] - mnode[2]->X()[0];
+    d2[1] = mnode[0]->X()[1] - mnode[2]->X()[1];
+    d2[2] = mnode[0]->X()[2] - mnode[2]->X()[2];
+    double d3[3];
+    d3[0] = mnode[1]->X()[0] - mnode[2]->X()[0];
+    d3[1] = mnode[1]->X()[1] - mnode[2]->X()[1];
+    d3[2] = mnode[1]->X()[2] - mnode[2]->X()[2];
+    double length1 = MOERTEL::length(d1,3);
+    double length2 = MOERTEL::length(d2,3);
+    double length3 = MOERTEL::length(d3,3);
+    if (length1>=length2) mdiam = length1;
+    else                  mdiam = length2;
+    if (mdiam>=length3);
+    else                  mdiam = length3;    
+  }
+  if (nsnode==4)
+  {
+    double d1[3];
+    d1[0] = snode[0]->X()[0] - snode[2]->X()[0];
+    d1[1] = snode[0]->X()[1] - snode[2]->X()[1];
+    d1[2] = snode[0]->X()[2] - snode[2]->X()[2];
+    double d2[3];
+    d2[0] = snode[1]->X()[0] - snode[3]->X()[0];
+    d2[1] = snode[1]->X()[1] - snode[3]->X()[1];
+    d2[2] = snode[1]->X()[2] - snode[3]->X()[2];
+    double length1 = MOERTEL::length(d1,3);
+    double length2 = MOERTEL::length(d2,3);
+    if (length1>=length2) sdiam = length1;
+    else                  sdiam = length2;
+  }
+  else
+  {
+    double d1[3];
+    d1[0] = snode[0]->X()[0] - snode[1]->X()[0];
+    d1[1] = snode[0]->X()[1] - snode[1]->X()[1];
+    d1[2] = snode[0]->X()[2] - snode[1]->X()[2];
+    double d2[3];
+    d2[0] = snode[0]->X()[0] - snode[2]->X()[0];
+    d2[1] = snode[0]->X()[1] - snode[2]->X()[1];
+    d2[2] = snode[0]->X()[2] - snode[2]->X()[2];
+    double d3[3];
+    d3[0] = snode[1]->X()[0] - snode[2]->X()[0];
+    d3[1] = snode[1]->X()[1] - snode[2]->X()[1];
+    d3[2] = snode[1]->X()[2] - snode[2]->X()[2];
+    double length1 = MOERTEL::length(d1,3);
+    double length2 = MOERTEL::length(d2,3);
+    double length3 = MOERTEL::length(d3,3);
+    if (length1>=length2) sdiam = length1;
+    else                  sdiam = length2;
+    if (sdiam>=length3);
+    else                  sdiam = length3;    
+  }
+  
+  //cout << "minlength " << minlength << " sdiam " << sdiam << " mdiam " << mdiam;
+  if (minlength>1.5*(sdiam+mdiam)) 
+  {
+    //cout << " test NOT passed\n";
+    return false;
+  }
+  else                       
+  {
+    //cout << " test passed\n";
+    return true;
+  }
+  
+  
+#if 0 // the old overlap test works only if projection works
   // we need the projection of the master element on the slave element 
   // to do this test, otherwise we assume we passed it
   if (!havemxi_) 
@@ -338,7 +449,7 @@ bool MOERTEL::Overlap::QuickOverlapTest()
     //cout << "OVERLAP: " << sseg_.Id() << " and " << mseg_.Id() << " do NOT overlap in QuickOverlapTest\n";
     return false;
   }
-
+#endif
   return true;
 }
 

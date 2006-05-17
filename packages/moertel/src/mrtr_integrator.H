@@ -265,7 +265,8 @@ public:
                  MOERTEL::Segment& mseg,
                  Epetra_SerialDenseMatrix** Ddense, 
                  Epetra_SerialDenseMatrix** Mdense, 
-                 MOERTEL::Overlap& overlap, double eps);
+                 MOERTEL::Overlap& overlap, double eps,
+                 bool exactvalues);
 
   /*!
   \brief Assemble integration result 'D' into Node (2D interfaces only)

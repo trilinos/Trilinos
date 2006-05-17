@@ -309,7 +309,7 @@ bool MOERTEL::Interface::AddSegment(MOERTEL::Segment& seg, int side)
            << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
       return false;
     }
-#if 1 // splitting the quad into 2 triangles
+#if 0 // splitting the quad into 2 triangles
     // split the quad into 2 triangles
     int ids1[3];
     ids1[0] = seg.NodeIds()[0];
@@ -1733,7 +1733,7 @@ bool MOERTEL::Interface::SetFunctionsFromFunctionTypes()
     exit(EXIT_FAILURE);     
   }
   
-#if 1
+#if 0
   if (primal_==MOERTEL::Function::func_BiLinearQuad) primal_ = MOERTEL::Function::func_LinearTri;
   if (dual_==MOERTEL::Function::func_BiLinearQuad) dual_ = MOERTEL::Function::func_LinearTri;
   if (dual_==MOERTEL::Function::func_DualBiLinearQuad) dual_ = MOERTEL::Function::func_DualLinearTri;

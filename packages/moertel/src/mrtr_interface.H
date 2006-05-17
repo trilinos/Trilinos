@@ -56,6 +56,7 @@
 #else
 #include <Epetra_SerialComm.h>
 #endif
+#include "Teuchos_ParameterList.hpp"
 
 // mrtr includes
 #include "mrtr_segment.H"
@@ -717,11 +718,14 @@ public:
   the user should not call this method directly but use a \ref MOERTEL::Manager to
   perform the integration to make sure all neccessary prerequisites are fulfilled
   
+  \param intparams : parameter list from the MOERTEL::Manager holding
+                     integration parameters
+  
   \warning \ref Complete() has to be called before integration
   
   \return True if successful, false otherwise
   */
-  bool Mortar_Integrate_2D();
+  bool Mortar_Integrate_2D(RefCountPtr<Teuchos::ParameterList> intparams);
   
   /*!
   \brief Integrate the mortar integrals on this interface (2D interface)
@@ -730,11 +734,14 @@ public:
   the user should not call this method directly but use a \ref MOERTEL::Manager to
   control the integration to make sure all neccessary prerequisites are fulfilled
   
+  \param intparams : parameter list from the MOERTEL::Manager holding
+                     integration parameters
+
   \warning \ref Complete() has to be called before integration
 
   \return True if successful, false otherwise
   */
-  bool Mortar_Integrate();
+  bool Mortar_Integrate(RefCountPtr<Teuchos::ParameterList> intparams);
   
   /*!
   \brief Assemble coupling matrices D and M after integration
@@ -902,17 +909,18 @@ private:
   RefCountPtr<Epetra_Comm>             lcomm_;        // the local communicator
   int                                  mortarside_;   // indicate which side (0 or 1) is mortar (master) side
   ProjectionType                       ptype_;        // type of projection used
+  RefCountPtr<Teuchos::ParameterList>  intparams_;    // parameter list holding integration parameters
   
-  map<int,RefCountPtr<MOERTEL::Segment> > seg_[2];       // local segments of interface (both sides)
-  map<int,RefCountPtr<MOERTEL::Segment> > rseg_[2];      // global segments of interface (both sides)
-  map<int,int>                         segPID_;       // maps all global seg ids to process holding segment
+  map<int,RefCountPtr<MOERTEL::Segment> > seg_[2];    // local segments of interface (both sides)
+  map<int,RefCountPtr<MOERTEL::Segment> > rseg_[2];   // global segments of interface (both sides)
+  map<int,int>                            segPID_;    // maps all global seg ids to process holding segment
   
-  map<int,RefCountPtr<MOERTEL::Node> >    node_[2];      // local nodes of interface (both sides)
-  map<int,RefCountPtr<MOERTEL::Node> >    rnode_[2];     // global nodes of interface (both sides)
-  map<int,int>                         nodePID_;      // maps all global node ids to process holding the node
+  map<int,RefCountPtr<MOERTEL::Node> >    node_[2];   // local nodes of interface (both sides)
+  map<int,RefCountPtr<MOERTEL::Node> >    rnode_[2];  // global nodes of interface (both sides)
+  map<int,int>                            nodePID_;   // maps all global node ids to process holding the node
   
-  MOERTEL::Function::FunctionType         primal_;       // the type of functions to be set as trace space function
-  MOERTEL::Function::FunctionType         dual_;         // the type of functions to be set as LM space function
+  MOERTEL::Function::FunctionType         primal_;    // the type of functions to be set as trace space function
+  MOERTEL::Function::FunctionType         dual_;      // the type of functions to be set as LM space function
   
 };
 

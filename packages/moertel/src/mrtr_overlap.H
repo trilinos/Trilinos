@@ -133,7 +133,7 @@ public:
   \param outlevel : Level of output information written to stdout ( 0 - 10 )
   */
   explicit Overlap(MOERTEL::Segment& sseg, MOERTEL::Segment& mseg, 
-                   MOERTEL::Interface& inter, int outlevel);
+                   MOERTEL::Interface& inter, bool exactvalues, int outlevel);
   
   /*!
   \brief Destructor
@@ -266,6 +266,7 @@ double                               slinem_[4][4]; // 3 lines of sseg_ in mseg_
 double                               mlinem_[4][4]; // 3 lines of mseg_in mseg_'s local coords
 bool                                 havelinem_;   // flag indicating built of line information in master coords
 
+bool                                 exactvalues_ ; // use exact function values at gauss points
 
 map<int,RefCountPtr<MOERTEL::Point> >   p_;       // map holding polygon points and later points of triangulation
 map<int,RefCountPtr<MOERTEL::Segment> > s_;       // map holding segments of polygon triangulation

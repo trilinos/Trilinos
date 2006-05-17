@@ -166,7 +166,9 @@ double MOERTEL::dot(const double* g1, const double* g2, const int dim)
  *----------------------------------------------------------------------*/
 double MOERTEL::length(const double* g, const int dim)
 {
-  return sqrt(MOERTEL::dot(g,g,dim));
+  double result=0.0;
+  for (int i=0; i<dim; ++i) result+=g[i]*g[i];
+  return (sqrt(result));
 }
 
 /*----------------------------------------------------------------------*

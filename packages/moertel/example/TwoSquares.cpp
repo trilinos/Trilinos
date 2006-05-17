@@ -280,6 +280,17 @@ int main(int argc, char *argv[])
     manager.SetProblemMap(&Grid.RowMap());
 
     // ============================================================= //
+    // choose integration parameters
+    // ============================================================= //
+    Teuchos::ParameterList& moertelparams = manager.Default_Parameters();
+    // this does not affect this 2D case
+    moertelparams.set("exact values at gauss points",true);
+    // 1D interface possible values are 1,2,3,4,5,6,7,8,10 (2 recommended with linear shape functions)
+    moertelparams.set("number gaussian points 1D",2);
+    // 2D interface possible values are 3,6,12,13,16,19,27
+    moertelparams.set("number gaussian points 2D",27);
+
+    // ============================================================= //
     // Here we are done with the construction phase of the interface
     // so we can integrate the mortar integrals
     // (Note we have not yet evaluated the PDE at all!)
@@ -401,10 +412,10 @@ int main(int argc, char *argv[])
     //         "ML Gauss-Seidel"
     //         and accompanying parameters
     mlparams.set("coarse: type","Amesos-KLU"); 
-    mlparams.set("smoother: type","MLS"); 
-    mlparams.set("smoother: MLS polynomial order",-3);
+    mlparams.set("smoother: type","symmetric Gauss-Seidel"); 
+    mlparams.set("smoother: MLS polynomial order",3);
     mlparams.set("relaxation: min diagonal value",0.1); 
-    mlparams.set("smoother: damping factor",1.0);
+    mlparams.set("smoother: damping factor",0.67);
     mlparams.set("smoother: sweeps",1);
     mlparams.set("smoother: pre or post","both");
     // the ns for Laplace is the constant

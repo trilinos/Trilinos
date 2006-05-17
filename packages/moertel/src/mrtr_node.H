@@ -165,13 +165,7 @@ public:
   \brief Return pointer to vector of length 3 of coordinates of this node
   
   */
-  const double* X() const { return x_; }
-  
-  /*!
-  \brief Return pointer to vector of length 3 of normal of this node
-  
-  */
-  const double* N() const { return n_; }
+  inline const double* X() const { return x_; }
   
   /*!
   \brief Store a normal in this node
@@ -180,7 +174,22 @@ public:
   
   \param n : pointer to vector of length 3 holding an outward normal at this node to be stored (deep copy) in this instance
   */
-  bool SetN(double* n) { for (int i=0; i<3; ++i) n_[i] = n[i]; return true; }
+  inline bool SetX(double* x) { for (int i=0; i<3; ++i) x_[i] = x[i]; return true; }
+
+  /*!
+  \brief Return pointer to vector of length 3 of normal of this node
+  
+  */
+  inline const double* N() const { return n_; }
+  
+  /*!
+  \brief Store a normal in this node
+  
+  This class makes a deep copy of the vector n
+  
+  \param n : pointer to vector of length 3 holding an outward normal at this node to be stored (deep copy) in this instance
+  */
+  inline bool SetN(double* n) { for (int i=0; i<3; ++i) n_[i] = n[i]; return true; }
   
   /*!
   \brief Return the number of degrees of freedom on this node

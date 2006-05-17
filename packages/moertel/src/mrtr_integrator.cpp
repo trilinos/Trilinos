@@ -35,6 +35,7 @@
 #include "mrtr_node.H"
 #include "mrtr_segment.H"
 #include "mrtr_interface.H"
+#include "mrtr_utils.H"
 
 /*----------------------------------------------------------------------*
  |  ctor (public)                                            mwgee 07/05|
@@ -991,7 +992,7 @@ bool MOERTEL::Integrator::Assemble_2D_Mod(MOERTEL::Interface& inter,
 
 
 /*----------------------------------------------------------------------*
- |  integrate a 2D triangle overlap segment (public)         mwgee 11/05|
+ |  integrate a 2D triangle/quad overlap segment (public)    mwgee 11/05|
  |  contribution from the master/slave side M/D                         |
  *----------------------------------------------------------------------*/
 bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
@@ -999,9 +1000,10 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
                                     MOERTEL::Segment& mseg, 
                                     Epetra_SerialDenseMatrix** Ddense, 
                                     Epetra_SerialDenseMatrix** Mdense, 
-                                    MOERTEL::Overlap& overlap, double eps)
+                                    MOERTEL::Overlap& overlap, double eps,
+                                    bool exactvalues)
 {
-  if (oneD_)
+  if (oneD_) 
   {
     cout << "***ERR*** MOERTEL::Integrator::Integrate:\n"
          << "***ERR*** Integrator was not constructed for 2D integration\n"
@@ -1013,19 +1015,12 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   int nrow = sseg.Nnode();
   int ncol = mseg.Nnode();
   // get the points
-  const int np = actseg->Nnode();
+  const int np = actseg->Nnode(); // this is an overlap segment - always a triangle
   const int* nodeid = actseg->NodeIds();
   vector<MOERTEL::Point*> points;
   overlap.PointView(points,nodeid,np);
 
-  // get the function values at the points
-  // slave segment function 0 is vals[point][0][0...np-1]
-  // slave segment function 1 is vals[point][1][0...np-1]
-  // master segment function 0 is vals[point][2][0...np-1]
-  vector< vector<double>* > vals(np);
-  for (int i=0; i<np; ++i)
-    vals[i] = points[i]->FunctionValues();
-
+  
   // get the area of the overlap segment
   double area = actseg->Area();
   if (area<0.0)
@@ -1045,6 +1040,7 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   {
     if (OutLevel()>10)
       cout << "MOERTEL: ***WRN*** Skipping overlap segment with tiny area " << area << endl;
+    points.clear();
     return false;  
   }
 
@@ -1055,74 +1051,185 @@ bool MOERTEL::Integrator::Integrate(RefCountPtr<MOERTEL::Segment> actseg,
   *Mdense = new Epetra_SerialDenseMatrix(nrow,ncol);
   *Ddense = new Epetra_SerialDenseMatrix(nrow,nrow);
 
-  // loop integration points
-  for (int gp=0; gp<Ngp(); ++gp)
+  //========================================================================
+  //========================================================================
+  // interpolate values at gaussian points with shape functions from actsseg
+  vector< vector<double>* > vals;
+  if (!exactvalues)
   {
-    double* eta   = Coordinate(&gp);
-    double weight = area*Weight(gp);
-    
-    
-    // evaluate the linear function 0 of the actseg at gaussian point
-    double val[20];
-    actseg->EvaluateFunction(0,eta,val,actseg->Nnode(),NULL);
+    // get the function values at the points
+    // slave segment function 0 is vals[point][0][0...np-1]
+    // slave segment function 1 is vals[point][1][0...np-1]
+    // master segment function 0 is vals[point][2][0...np-1]
+    vals.resize(np);
+    for (int i=0; i<np; ++i)
+      vals[i] = points[i]->FunctionValues();
 
-    // interpolate shape function 0 from sseg
-    // interpolate shape function 1 from sseg
-    double val_sfunc0[20];
-    double val_sfunc1[20];
-    double val_mfunc0[20];
-    for (int i=0; i<np; ++i) 
+    // loop integration points
+    for (int gp=0; gp<Ngp(); ++gp)
     {
-      val_sfunc0[i] = 0.0;
-      val_sfunc1[i] = 0.0;
-      val_mfunc0[i] = 0.0;
-    }
-    for (int point=0; point<np; ++point)
-    {
-      val_sfunc0[0] += val[point]*vals[point][0][0];
-      val_sfunc0[1] += val[point]*vals[point][0][1];
-      val_sfunc0[2] += val[point]*vals[point][0][2];
+      double* eta   = Coordinate(&gp);
+      double weight = area*Weight(gp);
+      
+      
+      // evaluate the linear function 0 of the actseg at gaussian point
+      double val[20];
+      actseg->EvaluateFunction(0,eta,val,actseg->Nnode(),NULL);
 
-      val_sfunc1[0] += val[point]*vals[point][1][0];
-      val_sfunc1[1] += val[point]*vals[point][1][1];
-      val_sfunc1[2] += val[point]*vals[point][1][2];
-
-      val_mfunc0[0] += val[point]*vals[point][2][0];
-      val_mfunc0[1] += val[point]*vals[point][2][1];
-      val_mfunc0[2] += val[point]*vals[point][2][2];
-    }
-    
-    //cout << val_sfunc0[0] << " " << val_sfunc0[1] << " " << val_sfunc0[2] << endl;
-    //cout << val_sfunc1[0] << " " << val_sfunc1[1] << " " << val_sfunc1[2] << endl;
-    //cout << val_mfunc0[0] << " " << val_mfunc0[1] << " " << val_mfunc0[2] << endl;
-
-    // loop over all nodes (lm loop)
-    for (int lm=0; lm<sseg.Nnode(); ++lm)
-    {
-      // loop over all nodes (dof loop master)
-      for (int dof=0; dof<mseg.Nnode(); ++dof)
+      // interpolate shape function 0 from sseg
+      // interpolate shape function 1 from sseg
+      double val_sfunc0[20];
+      double val_sfunc1[20];
+      double val_mfunc0[20];
+      for (int i=0; i<np; ++i) 
       {
-        // multiply the 2 functions
-        double N1N2 = val_sfunc1[lm]*val_mfunc0[dof];
-        (**Mdense)(lm,dof) += (N1N2*weight);
-        // cout << "Adding integrated M value " << val_sfunc1[lm] << " * " << val_mfunc0[dof] << " * " << weight << endl;
+        val_sfunc0[i] = 0.0;
+        val_sfunc1[i] = 0.0;
+        val_mfunc0[i] = 0.0;
+      }
+      for (int point=0; point<np; ++point)
+      {
+        for (int i=0; i<nrow; ++i) // could be either 3 or 4 values
+        {
+          val_sfunc0[i] += val[point]*vals[point][0][i];
+          val_sfunc1[i] += val[point]*vals[point][1][i];
+        }
+        for (int i=0; i<ncol; ++i) // could be either 3 or 4 values
+          val_mfunc0[i] += val[point]*vals[point][2][i];
       }
       
-      // loop over all nodes (dof loop slave)
-      for (int dof=0; dof<sseg.Nnode(); ++dof)
+      //cout << val_sfunc0[0] << " " << val_sfunc0[1] << " " << val_sfunc0[2] << " " << val_sfunc0[3] << endl;
+      //cout << val_sfunc1[0] << " " << val_sfunc1[1] << " " << val_sfunc1[2] << " " << val_sfunc1[3] << endl;
+      //cout << val_mfunc0[0] << " " << val_mfunc0[1] << " " << val_mfunc0[2] << " " << val_mfunc0[3] << endl;
+
+      // loop over all nodes (lm loop)
+      for (int lm=0; lm<sseg.Nnode(); ++lm)
       {
-        // multiply the 2 functions
-        double N1N2 = val_sfunc1[lm]*val_sfunc0[dof];
-        (**Ddense)(lm,dof) += (N1N2*weight);
+        // loop over all nodes (dof loop master)
+        for (int dof=0; dof<mseg.Nnode(); ++dof)
+        {
+          // multiply the 2 functions
+          double N1N2 = val_sfunc1[lm]*val_mfunc0[dof];
+          (**Mdense)(lm,dof) += (N1N2*weight);
+          //cout << "Adding gausspoint M value M(" << lm << "," << dof << ") += " << val_sfunc1[lm] << " * " << val_mfunc0[dof] << " * " << weight << endl;
+        }
+        
+        // loop over all nodes (dof loop slave)
+        for (int dof=0; dof<sseg.Nnode(); ++dof)
+        {
+          // multiply the 2 functions
+          double N1N2 = val_sfunc1[lm]*val_sfunc0[dof];
+          (**Ddense)(lm,dof) += (N1N2*weight);
+          //cout << "Adding gausspoint D value D(" << lm << "," << dof << ") += " << val_sfunc1[lm] << " * " << val_sfunc0[dof] << " * " << weight << endl;
+        }
       }
-    }
+      
+    } // for (int gp=0; gp<Ngp(); ++gp)
+    //cout << **Ddense;
+    //cout << **Mdense;
     
-  } // for (int gp=0; gp<Ngp(); ++gp)
-  
-  //cout << **Ddense;
-  //cout << **Mdense;
-  
-  vals.clear();
+    vals.clear();
+    points.clear();
+  } // if (!exactvalues)
+  //========================================================================
+  //========================================================================
+  // use exact values at gaussian points
+  else
+  {
+    // compute local coordinates of actseg's nodes in slave element
+    double psxi[3][2];
+    for (int i=0; i<np; ++i)
+    {
+      psxi[i][0] = points[i]->Xi()[0];
+      psxi[i][1] = points[i]->Xi()[1];
+      //cout << "psxi[" << i << "] = " << psxi[i][0] << " / " << psxi[i][1] << endl; 
+    }
+    // create a node to use for projection
+    double x[3];
+    double n[3];
+    int dof[3]; dof[0] = dof[1] = dof[2] = -1;
+    RefCountPtr<MOERTEL::Node> gpnode = rcp(new MOERTEL::Node(-2,x,3,dof,false,OutLevel()));
+    
+    // create a projector to project gaussian points
+    MOERTEL::Projector projector(false,OutLevel());
+    
+    for (int gp=0; gp<Ngp(); ++gp)
+    {
+      double* eta    = Coordinate(&gp);
+      double  weight = area*Weight(gp);
+      
+      //-------------------------------------------------------------------
+      // compute the local coord of the gaussian point in the slave element
+      double val[3];
+      actseg->EvaluateFunction(0,eta,val,actseg->Nnode(),NULL);
+
+      double sxi[2]; sxi[0] = sxi[1] = 0.0;
+      for (int point=0; point<np; ++point)
+      {
+        sxi[0] += val[point] * psxi[point][0];
+        sxi[1] += val[point] * psxi[point][1];
+      }
+      //cout << "sxi = " << sxi[0] << " / " << sxi[1] << endl;
+      
+      //-------------------------------------------------------------------
+      // get shape function values from function 0 and 1 from slave element here
+      double val_sfunc0[20];
+      double val_sfunc1[20];
+      sseg.EvaluateFunction(0,sxi,val_sfunc0,sseg.Nnode(),NULL);  
+      sseg.EvaluateFunction(1,sxi,val_sfunc1,sseg.Nnode(),NULL);  
+      
+      //-------------------------------------------------------------------
+      // compute the global coordinate of the gaussian point and project it
+      // to the master element
+      x[0] = x[1] = x[2] = 0.0;
+      n[0] = n[1] = n[2] = 0.0;
+      for (int point=0; point<np; ++point)
+        for (int j=0; j<3; ++j)
+        {
+          x[j] += val[point] * points[point]->Node()->X()[j];
+          n[j] += val[point] * points[point]->Node()->N()[j];
+        }
+      const double length = MOERTEL::length(n,3);
+      for (int j=0; j<3; ++j) n[j] /= length;
+      //cout << "x = " << x[0] << " / " << x[1] << " / " << x[2] << endl;
+      //cout << "n = " << n[0] << " / " << n[1] << " / " << n[2] << endl;
+      gpnode->SetX(x);             
+      gpnode->SetN(n);
+      double mxi[2];
+      bool ok = projector.ProjectNodetoSegment_NodalNormal(*gpnode,mseg,mxi);
+      // if we have problems projecting here, we better skip this gauss point
+      if (!ok)
+      { 
+        cout << "MOERTEL: ***WRN***------------------projection failed in integration\n";fflush(stdout);
+        continue;
+      }
+      //cout << "mxi = " << mxi[0] << " / " << mxi[1] << endl;
+                   
+      //-------------------------------------------------------------------
+      // get shape function value from mseg
+      double val_mfunc0[20];
+      mseg.EvaluateFunction(0,mxi,val_mfunc0,mseg.Nnode(),NULL);  
+
+      //-------------------------------------------------------------------
+      // loop over all slave nodes (lm loop)
+      for (int lm=0; lm<sseg.Nnode(); ++lm)
+      {
+        // loop over all nodes (dof loop master)
+        for (int dof=0; dof<mseg.Nnode(); ++dof)
+          (**Mdense)(lm,dof) += (weight * val_sfunc1[lm] * val_mfunc0[dof]);
+        
+        // loop over all nodes (dof loop slave)
+        for (int dof=0; dof<sseg.Nnode(); ++dof)
+          (**Ddense)(lm,dof) += (weight * val_sfunc1[lm] * val_sfunc0[dof]); 
+
+      }
+    } // for (int gp=0; gp<Ngp(); ++gp)
+    
+    // tidy up
+    gpnode = null;
+    
+  } // if (exactvalues)
+
 
   return true;
 }
@@ -1177,6 +1284,7 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,MOERTEL::Segment& s
           snode[row]->AddMValue(Ddense(row,col),snode[col]->Id());
       }
     }
+    // row node is a boundary node
     else
     {
       map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
@@ -1240,7 +1348,7 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
     if (!snode[row]->IsOnBoundary())
       for (int col=0; col<nmnode; ++col)
         // note the sign change here!!!!
-        snode[row]->AddMValue(-Mdense(row,col),mnode[col]->Id());
+        snode[row]->AddMValue((-Mdense(row,col)),mnode[col]->Id());
     else
     {
       map<int,MOERTEL::Node*>& suppnodes = snode[row]->GetSupportedByNode();
@@ -1249,7 +1357,7 @@ bool MOERTEL::Integrator::Assemble(MOERTEL::Interface& inter,
       map<int,MOERTEL::Node*>::iterator curr;
       for (curr=suppnodes.begin(); curr!=suppnodes.end(); ++curr)
         for (int col=0; col<nmnode; ++col)
-          curr->second->AddMValue(w*Mdense(row,col),mnode[col]->Id());
+          curr->second->AddMValue((w*Mdense(row,col)),mnode[col]->Id());
     }
   }
 #endif

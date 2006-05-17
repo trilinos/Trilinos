@@ -60,6 +60,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
                                                        MOERTEL::Segment& seg, 
 						       double xi[])
 {
+  bool ok = true;
   // 2D version of the problem
   if (IsTwoDimensional())
   {
@@ -74,7 +75,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
     // set starting value to the middle of the segment
     double eta = 0.0;
     int    i = 0;
-    double F,dF,deta;
+    double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
       F    = evaluate_F_2D_NodalNormal(node,seg,eta);
@@ -85,6 +86,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
     }
     if (abs(F)>1.0e-9)
     {
+      ok = false;
       if (OutLevel()>3)
       cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
       	   << "MOERTEL: ***WRN*** Newton iteration failed to converge\n"
@@ -96,7 +98,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
     cout << "#iterations = " << i << " F = " << F << " eta = " << eta << endl;
 #endif
     xi[0] = eta;
-    return true;
+    return ok;
   }
   // 3D version of the problem
   else
@@ -133,6 +135,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
     }    
     if (eps>1.0e-10)
     {
+      ok = false;
       if (OutLevel()>3)
       cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
       	   << "MOERTEL: ***WRN*** 3D Newton iteration failed to converge\n"
@@ -147,7 +150,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
     xi[0] = eta[0];
     xi[1] = eta[1];
   } // 
-  return true;
+  return ok;
 }
 
 
@@ -287,7 +290,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node&
     // set starting value to the middle of the segment
     double eta = 0.0;
     int    i = 0;
-    double F,dF,deta;
+    double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
       F = evaluate_F_2D_SegmentNormal(node,seg,eta);
@@ -347,7 +350,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node&
     if (eps>1.0e-10)
     {
       if (OutLevel()>3)
-      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_NodalNormal:\n"
+      cout << "MOERTEL: ***WRN*** MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal:\n"
       	   << "MOERTEL: ***WRN*** 3D Newton iteration failed to converge\n"
       	   << "MOERTEL: ***WRN*** #iterations = " << i << endl
       	   << "MOERTEL: ***WRN*** eps = " << eps << " eta[3] = " << eta[0] << "/" << eta[1] << "/" << alpha << "\n"
@@ -522,7 +525,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MOERTEL::N
     // set starting value to the middle of the segment
     double eta = 0.0;
     int    i = 0;
-    double F,dF,deta;
+    double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
       F = evaluate_F_2D_SegmentOrthogonal(node,seg,eta);
@@ -712,7 +715,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
     // set starting value to the middle of the segment
     double eta = 0.0;
     int    i = 0;
-    double F,dF,deta;
+    double F=0.0,dF=0.0,deta=0.0;
     for (i=0; i<10; ++i)
     {
       F = evaluate_F_2D_SegmentOrthogonal_to_g(snode,seg,eta,g);

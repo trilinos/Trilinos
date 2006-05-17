@@ -10,16 +10,21 @@
 
 int main(int argc, char *argv[])
 {
-  int i, MyPID, NumProc, nedge, side, nnode, ScanSum;
+  int i, MyPID, NumProc, nedge, side=0, nnode, ScanSum;
   bool berr;
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
   MyPID = Comm.MyPID();
   NumProc = Comm.NumProc();
+  if (NumProc != 2)
+  {
+    cout << "test1.exe needs to be run on 2 processors\n";
+    exit(0);
+  }
   // ------------------------------------------------------------- //
   // create an empty MOERTEL::Interface, in this example just one
   // ------------------------------------------------------------- //
-  int printlevel = 9; // ( moertel takes values 0 - 10 )
+  int printlevel = 8; // ( moertel takes values 0 - 10 )
   MOERTEL::Interface interface(0, true, Comm, printlevel);
   // ------------------------------------------------------------- //
   // Add nodes on both sides of interface to interface
@@ -102,7 +107,17 @@ int main(int argc, char *argv[])
   Epetra_Map map(gnnode,nnode,nodeid,0,Comm);
   manager.SetProblemMap(&map);
   
-  
+  // ============================================================= //
+  // choose integration parameters
+  // ============================================================= //
+  //Teuchos::ParameterList& moertelparams = manager.Default_Parameters();
+  // this takes effect in 3D only
+  //moertelparams.set("exact values at gauss points",true);
+  // 1D interface possible values are 1,2,3,4,5,6,7,8,10 (2 recommended with linear shape functions)
+  //moertelparams.set("number gaussian points 1D",2);
+  // 2D interface possible values are 3,6,12,13,16,19,27 (12 recommended with linear functions)
+  //moertelparams.set("number gaussian points 2D",12);
+
   // ============================================================= //
   // Here we are done with the construction phase of the interface
   // so we can integrate the mortar integrals

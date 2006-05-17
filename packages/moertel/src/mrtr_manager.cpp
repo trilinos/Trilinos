@@ -52,9 +52,12 @@ saddlemap_(null),
 saddlematrix_(null),
 spdmatrix_(null),
 spdrhs_(null),
+integrationparams_(null),
 solverparams_(null),
 solver_(null)
 {
+  // create default integration parameters
+  Default_Parameters();
 }
 
 /*----------------------------------------------------------------------*
@@ -75,9 +78,12 @@ saddlemap_(null),
 saddlematrix_(null),
 spdmatrix_(null),
 spdrhs_(null),
+integrationparams_(null),
 solverparams_(null),
 solver_(null)
 {
+  // create default integration parameters
+  Default_Parameters();
 }
 
 /*----------------------------------------------------------------------*
@@ -86,6 +92,24 @@ solver_(null)
 MOERTEL::Manager::~Manager()
 {
   interface_.clear();
+}
+
+/*----------------------------------------------------------------------*
+ |  Add an interface (public)                                mwgee 06/05|
+ *----------------------------------------------------------------------*/
+Teuchos::ParameterList& MOERTEL::Manager::Default_Parameters()
+{
+  if (integrationparams_==null)
+  {
+    integrationparams_ = rcp(new Teuchos::ParameterList());
+    // see comment in mrtr_manager.H
+    integrationparams_->set("exact values at gauss points",true);
+    // 1D interface possible values are 1,2,3,4,5,6,7,8,10
+    integrationparams_->set("number gaussian points 1D",3);
+    // 2D interface possible values are 3,6,12,13,16,19,27
+    integrationparams_->set("number gaussian points 2D",6);
+  }
+  return (*integrationparams_.get());
 }
 
 /*----------------------------------------------------------------------*
@@ -583,7 +607,7 @@ bool MOERTEL::Manager::Mortar_Integrate_2D()
     map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
-      bool ok = curr->second->Mortar_Integrate_2D();
+      bool ok = curr->second->Mortar_Integrate_2D(integrationparams_);
       if (!ok)
       {
         cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
@@ -777,7 +801,7 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
     map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
     for (curr=interface_.begin(); curr != interface_.end(); ++curr)
     {  
-      bool ok = curr->second->Mortar_Integrate();
+      bool ok = curr->second->Mortar_Integrate(integrationparams_);
       if (!ok)
       {
         cout << "***ERR*** MOERTEL::Manager::Mortar_Integrate:\n"
@@ -840,7 +864,7 @@ bool MOERTEL::Manager::Mortar_Integrate_3D()
   //-------------------------------------------------------------------
   // call FillComplete() on M_ and D_ 
   D_->FillComplete(*saddlemap_,*saddlemap_);
-  D_ = rcp(MOERTEL::StripZeros(*D_,1.e-9));
+  D_ = rcp(MOERTEL::StripZeros(*D_,1.e-4));
   D_->OptimizeStorage();
   M_->FillComplete(*saddlemap_,*saddlemap_);
   M_->OptimizeStorage();
@@ -892,12 +916,12 @@ bool MOERTEL::Manager::ChooseMortarSide()
  *----------------------------------------------------------------------*/
 bool MOERTEL::Manager::ChooseMortarSide_3D(vector<RefCountPtr<MOERTEL::Interface> >& inter)
 {
-  // loop interfaces and choose the side with more nodes as slave side
+  // loop interfaces and choose the side with less nodes as slave side
   // (only if not already chosen on some interface)
   for (int i=0; i<(int)inter.size(); ++i)
   {
     if (inter[i]->MortarSide() == 0 || inter[i]->MortarSide() == 1) continue;
-    if (inter[i]->GlobalNnode(0) >= inter[i]->GlobalNnode(1))
+    if (inter[i]->GlobalNnode(0) <= inter[i]->GlobalNnode(1))
       inter[i]->SetMortarSide(1);
     else
       inter[i]->SetMortarSide(0);
@@ -911,12 +935,12 @@ bool MOERTEL::Manager::ChooseMortarSide_3D(vector<RefCountPtr<MOERTEL::Interface
  *----------------------------------------------------------------------*/
 bool MOERTEL::Manager::ChooseMortarSide_2D(vector<RefCountPtr<MOERTEL::Interface> >& inter)
 {
-  // loop interfaces and choose the side with more nodes as slave side
+  // loop interfaces and choose the side with less nodes as slave side
   // (only if not already chosen on some interface)
   for (int i=0; i<(int)inter.size(); ++i)
   {
     if (inter[i]->MortarSide() == 0 || inter[i]->MortarSide() == 1) continue;
-    if (inter[i]->GlobalNnode(0) >= inter[i]->GlobalNnode(1))
+    if (inter[i]->GlobalNnode(0) <= inter[i]->GlobalNnode(1))
       inter[i]->SetMortarSide(1);
     else
       inter[i]->SetMortarSide(0);

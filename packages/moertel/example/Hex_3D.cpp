@@ -113,8 +113,6 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  try {
-
     // this example is in serial only
     if (Comm.NumProc()>1) exit(0);
 
@@ -255,9 +253,9 @@ int main(int argc, char *argv[])
     // so we just give orders for the function type
     // ------------------------------------------------------------- //
     for (int i=0; i<ninter; ++i)
-      interfaces[i]->SetFunctionTypes(MOERTEL::Function::func_LinearTri,       // primal trace space
-                                      MOERTEL::Function::func_DualLinearTri);  // dual mortar space (recommended)
-                                      //MOERTEL::Function::func_LinearTri);    // mortar space (not recommended)
+      interfaces[i]->SetFunctionTypes(MOERTEL::Function::func_BiLinearQuad,       // primal trace space
+                                      MOERTEL::Function::func_DualBiLinearQuad);  // dual mortar space (recommended)
+                                      //MOERTEL::Function::func_BiLinearQuad);    // mortar space (not recommended)
 
     // ------------------------------------------------------------- //
     // complete the interfaces
@@ -287,6 +285,17 @@ int main(int argc, char *argv[])
     // create coupling matrices D and M matching that rowmap
     // ------------------------------------------------------------- //
     manager.SetProblemMap(&Grid.RowMap());
+
+    // ============================================================= //
+    // choose integration parameters
+    // ============================================================= //
+    Teuchos::ParameterList& moertelparams = manager.Default_Parameters();
+    // this does affect this 3D case only
+    moertelparams.set("exact values at gauss points",true);
+    // 1D interface possible values are 1,2,3,4,5,6,7,8,10 (2 recommended with linear shape functions)
+    moertelparams.set("number gaussian points 1D",2);
+    // 2D interface possible values are 3,6,12,13,16,19,27 (12 recommended with linear functions)
+    moertelparams.set("number gaussian points 2D",12);
 
     // ============================================================= //
     // Here we are done with the construction phase of the interface
@@ -409,8 +418,8 @@ int main(int argc, char *argv[])
     //         "ML Gauss-Seidel" "ML Jacobi"
     //         and accompanying parameters as listed
     mlparams.set("coarse: type","Amesos-KLU"); 
-    mlparams.set("smoother: type","MLS"); 
-    mlparams.set("smoother: MLS polynomial order",-3);
+    mlparams.set("smoother: type","symmetric Gauss-Seidel"); 
+    mlparams.set("smoother: MLS polynomial order",3);
     mlparams.set("smoother: damping factor",0.67);
     mlparams.set("smoother: sweeps",1);
     mlparams.set("smoother: pre or post","both");
@@ -452,13 +461,6 @@ int main(int argc, char *argv[])
     // ================== //
     MEDITInterface MEDIT(Comm);
     MEDIT.Write(Grid, "hex_output", LHS);
-  }
-  catch (int e) {
-    cerr << "Caught exception, value = " << e << endl;
-  }
-  catch (...) {
-    cerr << "Caught generic exception" << endl;
-  }
 
 #ifdef HAVE_MPI
   MPI_Finalize();

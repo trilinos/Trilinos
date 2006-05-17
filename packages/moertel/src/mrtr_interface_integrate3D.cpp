@@ -48,9 +48,11 @@
 /*----------------------------------------------------------------------*
  |  make mortar integration of this interface (2D/3D problem)           |
  *----------------------------------------------------------------------*/
-bool MOERTEL::Interface::Mortar_Integrate()
+bool MOERTEL::Interface::Mortar_Integrate(
+                            RefCountPtr<Teuchos::ParameterList> intparams)
 { 
   bool ok = false;
+  intparams_ = intparams;
   
   //-------------------------------------------------------------------
   // time this process
@@ -192,10 +194,11 @@ bool MOERTEL::Interface::Integrate_3D()
     for (mcurr=rseg_[mside].begin(); mcurr!=rseg_[mside].end(); ++mcurr)    
     {
       RefCountPtr<MOERTEL::Segment> actmseg = mcurr->second;
-      
 #if 0
-    cout << "Active mseg id " << actmseg->Id() << endl;
+      cout << "Active mseg id " << actmseg->Id() << endl;
 #endif
+
+      
       // if there is an overlap, integrate the pair
       // (whether there is an overlap or not will be checked inside)
       Integrate_3D_Section(*actsseg,*actmseg);
@@ -227,10 +230,13 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
     exit(EXIT_FAILURE);
   }
   
+  // find whether we want exact values at gaussian points
+  bool exactvalues = intparams_->get("exact values at gauss points",true);
+  
   // first determine whether there is an overlap between sseg and mseg
   // for this purpose, the 'overlapper' class is used
   // It also builds a triangulation of the overlap polygon if there is any
-  MOERTEL::Overlap overlap(sseg,mseg,*this,OutLevel());
+  MOERTEL::Overlap overlap(sseg,mseg,*this,exactvalues,OutLevel());
 
   // determine the overlap triangulation if any
   bool ok = overlap.ComputeOverlap();
@@ -243,7 +249,8 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
   overlap.SegmentView(segs);
   
   // integrator object
-  MOERTEL::Integrator integrator(12,IsOneDimensional(),OutLevel());
+  int ngp = intparams_->get("number gaussian points 2D",12);
+  MOERTEL::Integrator integrator(ngp,IsOneDimensional(),OutLevel());
   
   // loop segments and integrate them
   for (int s=0; s<nseg; ++s)
@@ -253,7 +260,8 @@ bool MOERTEL::Interface::Integrate_3D_Section(MOERTEL::Segment& sseg,
     // integrate master and slave part of this segment
     Epetra_SerialDenseMatrix* Ddense = NULL;
     Epetra_SerialDenseMatrix* Mdense = NULL;
-    bool ok = integrator.Integrate(actseg,sseg,mseg,&Ddense,&Mdense,overlap,1.0e-04);
+    bool ok = integrator.Integrate(actseg,sseg,mseg,&Ddense,&Mdense,overlap,1.0e-04,
+                                   exactvalues);
     if (!ok)
       continue;
     
@@ -299,7 +307,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
     if (NodePID(curr->second->Id()) != lComm()->MyPID())
       continue;
     
-    // get maps D and M from node
+    // get maps D and M and Mmod from node
     RefCountPtr<map<int,double> >          Drow = curr->second->GetD();
     RefCountPtr<map<int,double> >          Mrow = curr->second->GetM();
     RefCountPtr<vector<map<int,double> > > Mmod = curr->second->GetMmod();
@@ -389,7 +397,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
           
         // cout << "Current colmnode: " << colnode << endl;
         
-        // get the colsnode
+        // get the colmnode
         RefCountPtr<MOERTEL::Node> colmnode = GetNodeView(colnode);
         if (colmnode==null)
         {
@@ -447,6 +455,7 @@ bool MOERTEL::Interface::Assemble_3D(Epetra_CrsMatrix& D, Epetra_CrsMatrix& M)
         int row = slmdof[lrow];
         
         // loop over the columns in that row
+        // FIXMEL: should this be Mmodrow?
         for (rowcurr=Mrow->begin(); rowcurr!=Mrow->end(); ++rowcurr)
         {
           int col = rowcurr->first;
