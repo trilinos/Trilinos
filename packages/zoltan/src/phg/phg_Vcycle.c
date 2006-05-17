@@ -20,6 +20,10 @@ extern "C" {
 #include "phg_distrib.h"
 #include <limits.h>
 
+  /*
+#define PROCESSOR_REDUCTION
+  */
+
     /*
 #define _DEBUG
     */
@@ -371,7 +375,8 @@ int Zoltan_PHG_Partition (
 	    --middle; /* if it was prime just use one less #procs (since
 			 it should be bigger than 7 it is safe to decrement) */
 	}
-	
+
+#ifdef PROCESSOR_REDUCTION
 	if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: PHGComm");
 	  return ZOLTAN_MEMERR;
@@ -397,6 +402,7 @@ int Zoltan_PHG_Partition (
 
 	hg = vcycle->hg;
 	hg->redl = hgp->redl; /* not set with hg creation */
+#endif
       }
   }
 
