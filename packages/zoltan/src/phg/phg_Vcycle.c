@@ -360,6 +360,7 @@ int Zoltan_PHG_Partition (
 	origVcnt     = hg->dist_x[hgc->nProc_x];   /* update for processor */
 	origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
 
+#ifdef PROCESSOR_REDUCTION
 	if (!(hg->vmap = (int *) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: hg->vmap");
 	  return ZOLTAN_MEMERR;
@@ -376,7 +377,6 @@ int Zoltan_PHG_Partition (
 			 it should be bigger than 7 it is safe to decrement) */
 	}
 
-#ifdef PROCESSOR_REDUCTION
 	if (!(hgc = (PHGComm*) ZOLTAN_MALLOC (sizeof(PHGComm)))) {
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: PHGComm");
 	  return ZOLTAN_MEMERR;
