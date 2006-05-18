@@ -867,16 +867,14 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         self.solveProblem(sds)
         self.assertEqual(sds.SolutionRefined(), True)
 
-    # This test will not pass until bug 2197 has been resolved
-
-    #def testEstimateSolutionErrors(self):
-    #    "Test Epetra.SerialDenseSolver EstimateSolutionErrors method"
-    #    sds = Epetra.SerialDenseSolver()
-    #    self.assertEqual(sds.SolutionErrorsEstimated(), False)
-    #    self.buildProblem(sds)
-    #    sds.EstimateSolutionErrors(True)
-    #    self.solveProblem(sds)
-    #    self.assertEqual(sds.SolutionErrorsEstimated(), True)
+    def testEstimateSolutionErrors(self):
+        "Test Epetra.SerialDenseSolver EstimateSolutionErrors method"
+        sds = Epetra.SerialDenseSolver()
+        self.assertEqual(sds.SolutionErrorsEstimated(), False)
+        self.buildProblem(sds)
+        sds.EstimateSolutionErrors(True)
+        self.solveProblem(sds)
+        self.assertEqual(sds.SolutionErrorsEstimated(), True)
 
     def testFactor(self):
         "Test Epetra.SerialDenseSolver Factor and Factored methods"
