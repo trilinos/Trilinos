@@ -20,9 +20,7 @@ extern "C" {
 #include "phg_distrib.h"
 #include <limits.h>
 
-  /*
 #define PROCESSOR_REDUCTION
-  */
 
     /*
 #define _DEBUG
@@ -361,7 +359,7 @@ int Zoltan_PHG_Partition (
 	origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
 
 #ifdef PROCESSOR_REDUCTION
-	if (!(hg->vmap = (int *) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
+	if (hg->nVtx&&!(hg->vmap=(int*)ZOLTAN_MALLOC(hg->nVtx*sizeof(int)))) {
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: hg->vmap");
 	  return ZOLTAN_MEMERR;
 	}
