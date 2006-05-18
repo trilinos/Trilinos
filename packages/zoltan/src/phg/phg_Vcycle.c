@@ -565,11 +565,13 @@ Refine:
 			   finer->vdest, hgc->Communicator, COMM_TAG+2, &size);
 	/* allocate rec buffer to exchange sendbuf information */
 	rbuffer = NULL;
-	rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->hg->nVtx * sizeof(int));
+	if (finer->hg->nVtx) {
+	  rbuffer = (int*) ZOLTAN_MALLOC (2 * finer->hg->nVtx * sizeof(int));
 
-	if (!rbuffer) {
-	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-	  return ZOLTAN_MEMERR;
+	  if (!rbuffer) {
+	    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+	    return ZOLTAN_MEMERR;
+	  }
 	}
 
 	/* Use plan to send partitions to the unredistributed processors */
