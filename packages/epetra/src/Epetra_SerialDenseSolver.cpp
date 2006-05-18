@@ -196,6 +196,13 @@ int Epetra_SerialDenseSolver::SetVectors(Epetra_SerialDenseMatrix & X, Epetra_Se
   return(0);
 }
 //=============================================================================
+void Epetra_SerialDenseSolver::EstimateSolutionErrors(bool Flag) {
+  EstimateSolutionErrors_ = Flag;
+  // If the errors are estimated, this implies that the solution must be refined
+  RefineSolution_ = RefineSolution_ || Flag;
+  return;
+}
+//=============================================================================
 int Epetra_SerialDenseSolver::Factor(void) {
   if (Factored()) return(0); // Already factored
   if (Inverted()) EPETRA_CHK_ERR(-100); // Cannot factor inverted matrix
@@ -254,7 +261,7 @@ int Epetra_SerialDenseSolver::Solve(void) {
   if (A_Equilibrated_ && !B_Equilibrated_) EPETRA_CHK_ERR(-1); // Matrix and vectors must be similarly scaled
   if (!A_Equilibrated_ && B_Equilibrated_) EPETRA_CHK_ERR(-2);
   if (B_==0) EPETRA_CHK_ERR(-3); // No B
-  if (X_==0) EPETRA_CHK_ERR(-4); // No B
+  if (X_==0) EPETRA_CHK_ERR(-4); // No X
 
   if (ShouldEquilibrate() && !A_Equilibrated_) ierr = 1; // Warn that the system should be equilibrated.
 
@@ -304,7 +311,7 @@ int Epetra_SerialDenseSolver::ApplyRefinement(void)
 
   if (FERR_ != 0) delete [] FERR_; // Always start with a fresh copy of FERR_, since NRHS_ may change
   FERR_ = new double[NRHS_];
-  if (BERR_ != 0) delete [] BERR_; // Always start with a fresh copy of FERR_, since NRHS_ may change
+  if (BERR_ != 0) delete [] BERR_; // Always start with a fresh copy of BERR_, since NRHS_ may change
   BERR_ = new double[NRHS_];
   AllocateWORK();
   AllocateIWORK();

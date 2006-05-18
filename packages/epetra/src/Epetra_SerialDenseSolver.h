@@ -158,7 +158,7 @@ class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS, p
   /*! Error estimates will be in the arrays FERR and BERR, resp, after the solve step is complete.
       These arrays are accessible via the FERR() and BERR() access functions.
   */
-  void EstimateSolutionErrors(bool Flag) {EstimateSolutionErrors_ = Flag; return;};
+  void EstimateSolutionErrors(bool Flag) ;
   //@}
 
   //@{ \name Factor/Solve/Invert Methods
