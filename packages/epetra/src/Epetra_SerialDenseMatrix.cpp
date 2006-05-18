@@ -382,10 +382,10 @@ int Epetra_SerialDenseMatrix::Scale(double ScalarA) {
   
 }
 //=========================================================================
-int  Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarAB, 
-				      const Epetra_SerialDenseMatrix& A, 
-				      const Epetra_SerialDenseMatrix& B,
-				      double ScalarThis ) {
+int Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarAB, 
+					const Epetra_SerialDenseMatrix& A, 
+					const Epetra_SerialDenseMatrix& B,
+					double ScalarThis ) {
   // Check for compatible dimensions
 
   if (TransA!='T' && TransA!='N') EPETRA_CHK_ERR(-2); // Return error
@@ -521,3 +521,8 @@ int Epetra_SerialDenseMatrix::Random() {
   return(0);
 }
   
+//=========================================================================
+int Epetra_SerialDenseMatrix::Apply(const Epetra_SerialDenseMatrix& X,
+				    Epetra_SerialDenseMatrix& Y) {
+  return Multiply(UseTranspose(), X, Y);
+}

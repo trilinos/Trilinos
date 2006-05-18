@@ -201,9 +201,9 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
 	 
   */
   int Multiply(char TransA, char TransB, double ScalarAB, 
-							 const Epetra_SerialDenseMatrix& A, 
-							 const Epetra_SerialDenseMatrix& B,
-							 double ScalarThis);
+	       const Epetra_SerialDenseMatrix& A, 
+	       const Epetra_SerialDenseMatrix& B,
+	       double ScalarThis);
 
   //! Matrix-Vector multiplication, y = A*x, where 'this' == A.
   /* This method is intended to imitate the semantics of the matrix-vector
@@ -238,9 +238,9 @@ This function performs a variety of matrix-matrix multiply operations.
 	 
   */
   int Multiply(char SideA, double ScalarAB, 
-							 const Epetra_SerialSymDenseMatrix& A, 
-							 const Epetra_SerialDenseMatrix& B,
-							 double ScalarThis);
+	       const Epetra_SerialSymDenseMatrix& A, 
+	       const Epetra_SerialDenseMatrix& B,
+	       double ScalarThis);
 
   //! Inplace scalar-matrix product A = \e a A.
   /*! Scale a matrix, entry-by-entry using the value ScalarA.
@@ -403,8 +403,7 @@ This function performs a variety of matrix-matrix multiply operations.
  
     \return Integer error code, set to 0 if successful.
   */
-    virtual int Apply(const Epetra_SerialDenseMatrix& X, Epetra_SerialDenseMatrix& Y)
-    { return Y.Multiply( Epetra_SerialDenseMatrix::UseTranspose(), false, 1.0, *this, X, 0.0 ); }
+  virtual int Apply(const Epetra_SerialDenseMatrix& X, Epetra_SerialDenseMatrix& Y);
  
     //! Returns the result of a Epetra_SerialDenseOperator inverse applied to an Epetra_SerialDenseMatrix X in Y.
     /*!
