@@ -45,6 +45,7 @@
 #include "Rythmos_Stepper_ForwardEuler.hpp"
 #include "Rythmos_Stepper_BackwardEuler.hpp"
 #include "Rythmos_Stepper_ExplicitRK.hpp"
+#include "Rythmos_Stepper_ImplicitBDF.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -65,7 +66,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK };
+enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
 
 int main(int argc, char *argv[])
 {
@@ -90,9 +91,9 @@ int main(int argc, char *argv[])
     double x0 = 10.0; // ODE initial condition
     double finalTime = 1.0; // ODE final time
     int N = 10;  // number of steps to take
-    const int num_methods = 3;
-    const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK };
-    const char * method_names[] = { "FE", "BE", "ERK" };
+    const int num_methods = 4;
+    const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
+    const char * method_names[] = { "FE", "BE", "ERK", "BDF" };
     EMethod method_val = METHOD_ERK;
     double maxError = 1e-6;
     bool version = false;  // display version information 
@@ -136,7 +137,8 @@ int main(int argc, char *argv[])
     
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
-    params.set( "implicit", method_val==METHOD_BE );
+    bool implicitFlag = ((method_val==METHOD_BE) | (method_val==METHOD_BDF));
+    params.set( "implicit", implicitFlag );
     params.set( "Lambda_min", lambda_min );
     params.set( "Lambda_max", lambda_max );
     params.set( "Lambda_fit", lambda_fit );
@@ -149,7 +151,7 @@ int main(int argc, char *argv[])
     // Create the factory for the LinearOpWithSolveBase object
     Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
-    if(method_val == METHOD_BE)
+    if((method_val == METHOD_BE) | (method_val == METHOD_BDF))
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
       W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
 
@@ -168,7 +170,7 @@ int main(int argc, char *argv[])
     } else if (method_val == METHOD_FE) {
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
       method = "Forward Euler";
-    } else if (method_val == METHOD_BE) {
+    } else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
       Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
 //    nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
@@ -176,8 +178,16 @@ int main(int argc, char *argv[])
         _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
       _nonlinearSolver->defaultTol(1e-3*maxError);
       nonlinearSolver = _nonlinearSolver;
-      stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
-      method = "Backward Euler";
+      if (method_val == METHOD_BE)
+      {
+        stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
+        method = "Backward Euler";
+      } 
+      else 
+      {
+        stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver));
+        method = "Implicit BDF";
+      }
     } else {
       TEST_FOR_EXCEPT(true);
     }
@@ -241,6 +251,10 @@ int main(int argc, char *argv[])
         x_exact[i] = x0*pow(1/(1-lambda[i]*dt),N);
       }
       x_numerical_exact_ptr = x_exact_ptr;
+    }
+    else if (method_val == METHOD_BDF)
+    {
+      // exact bdf solution here?
     }
 
 
