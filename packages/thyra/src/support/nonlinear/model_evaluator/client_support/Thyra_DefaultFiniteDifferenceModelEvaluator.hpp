@@ -32,9 +32,10 @@
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_DirectionalFiniteDiffCalculator.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
+#include "Teuchos_StandardCompositionMacros.hpp"
 #include "Teuchos_Time.hpp"
-#include "Teuchos_Array.hpp"
 
 namespace Thyra {
 
@@ -49,37 +50,31 @@ class DefaultFiniteDifferenceModelEvaluator
 {
 public:
 
-  /** \brief . */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-
-  /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( ScalarMag, fdStepLen )
-
-  /** \brief . */
-  STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, fdStepLenIsRelative )
-
   /** \name Constructors/initializers/accessors/utilities. */
   //@{
 
+  /** \brief Utility object that computes directional finite differences */
+  STANDARD_COMPOSITION_MEMBERS( Thyra::DirectionalFiniteDiffCalculator<Scalar>, direcFiniteDiffCalculator )
+
   /** \brief . */
-  DefaultFiniteDifferenceModelEvaluator(
-    const ScalarMag       fdStepLen            = -1.0
-    ,const bool           fdStepLenIsRelative  = false
-    );
+  DefaultFiniteDifferenceModelEvaluator();
 
   /** \brief . */
   DefaultFiniteDifferenceModelEvaluator(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
+    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
+    ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
     );
 
   /** \brief . */
   void initialize(
-    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
+    const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
+    ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
     );
 
   /** \brief . */
   void uninitialize(
-    Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 *thyraModel = NULL
+    Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          *thyraModel
+    ,Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > *direcFiniteDiffCalculator
     );
 
   //@}
@@ -112,37 +107,38 @@ public:
 // Constructors/initializers/accessors/utilities
 
 template<class Scalar>
-DefaultFiniteDifferenceModelEvaluator<Scalar>::DefaultFiniteDifferenceModelEvaluator(
-  const ScalarMag       fdStepLen
-  ,const bool           fdStepLenIsRelative
-  )
-  :fdStepLen_(fdStepLen)
-  ,fdStepLenIsRelative_(fdStepLenIsRelative)
+DefaultFiniteDifferenceModelEvaluator<Scalar>::DefaultFiniteDifferenceModelEvaluator()
 {}
 
 template<class Scalar>
 DefaultFiniteDifferenceModelEvaluator<Scalar>::DefaultFiniteDifferenceModelEvaluator(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
+  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
+  ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
   )
 {
-  initialize(thyraModel);
+  initialize(thyraModel,direcFiniteDiffCalculator);
 }
 
 template<class Scalar>
 void DefaultFiniteDifferenceModelEvaluator<Scalar>::initialize(
-  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 &thyraModel
+  const Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          &thyraModel
+  ,const Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > &direcFiniteDiffCalculator
   )
 {
   this->ModelEvaluatorDelegatorBase<Scalar>::initialize(thyraModel);
+  direcFiniteDiffCalculator_ = direcFiniteDiffCalculator;
 }
 
 template<class Scalar>
 void DefaultFiniteDifferenceModelEvaluator<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                 *thyraModel
+  Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                          *thyraModel
+  ,Teuchos::RefCountPtr<Thyra::DirectionalFiniteDiffCalculator<Scalar> > *direcFiniteDiffCalculator
   )
 {
   if(thyraModel) *thyraModel = this->getUnderlyingModel();
   this->ModelEvaluatorDelegatorBase<Scalar>::uninitialize();
+  if(direcFiniteDiffCalculator) *direcFiniteDiffCalculator = direcFiniteDiffCalculator_;
+  direcFiniteDiffCalculator_ = Teuchos::null;
 }
 
 // Overridden from ModelEvaulator.
@@ -224,146 +220,44 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModel(
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nComputing the base point ...\n";
 
+  const int Np = outArgs.Np();
+  const int Ng = outArgs.Ng();
   MEB::InArgs<Scalar>  wrappedInArgs = inArgs;
-  MEB::OutArgs<Scalar> wrappedOutArgs = thyraModel->createOutArgs();
-  V_ptr g_base_ptr = ( outArgs.get_g(0).get() ? outArgs.get_g(0) : createMember(g_space) );
-  wrappedOutArgs.set_g(0,g_base_ptr);
-  thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
-  ConstDetachedVectorView<Scalar> g(*wrappedOutArgs.get_g(0));
-  
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\ng="<<g[0]<<"\n";
-
-  bool failed = false;
-  if( ST::isnaninf(g[0]) )
-    failed = true;
-  
-  //
-  // Compute the variations
-  //
-
-  MV_ptr DgDp_trans = outArgs.get_DgDp(0,0).getDerivativeMultiVector().getMultiVector();
-  if(DgDp_trans.get()) {
-    if(!failed) {
-      const V_ptr Dg0Dp_trans_ptr = DgDp_trans->col(0);
-      DetachedVectorView<Scalar> Dg0Dp_trans(*Dg0Dp_trans_ptr);
-      const ScalarMag eps = ( fdStepLen() > 0.0 ? fdStepLen() : ST::squareroot(ST::eps()) );
-      V_ptr g_perturbed_ptr = createMember(g_space);
-      wrappedOutArgs.set_g(0,g_perturbed_ptr);
-      V_ptr p_perturbed_ptr = createMember(p_space);
-      V_V(&*p_perturbed_ptr,*inArgs.get_p(0));
-      wrappedInArgs.set_p(0,p_perturbed_ptr);
-      ConstDetachedVectorView<Scalar> p(*inArgs.get_p(0));
-      const int np = p_space->dim();
-      for( int i = 0; i < np && !failed; ++i ) {
-        const Scalar
-          p_i = p[i],
-          p_perturbed_i = p_i + eps;
-        if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-          *out << "\nComputing perturbation i="<<i<<", p_i="<<p_i<<", eps="<<eps<<", p_perturbed_i=p_i+eta="<<p_perturbed_i<<" ...\n";
-        set_ele(i,p_perturbed_i,&*p_perturbed_ptr);
-        thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
-        set_ele(i,p_i,&*p_perturbed_ptr);
-        ConstDetachedVectorView<Scalar> g_perturbed(*wrappedOutArgs.get_g(0));
-        const Scalar dgdp_i = (g_perturbed[0] - g[0])/eps;
-        if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-          *out << "\ng_perturbed_i="<<g_perturbed[0]<<", dgdp_i=(g_perturbed_i-g)/eps="<<dgdp_i<<"\n";
-        Dg0Dp_trans[i] = dgdp_i;
-        if( ST::isnaninf(dgdp_i) )
-          failed = true;
-      }
-    }
-  }
-  
-/*
-
-  //
-  // Get the output objects
-  //
-
-  const int Ng = outArgs.Ng(), Np = outArgs.Np();
-  typedef Teuchos::Array<bool>    bool_t;
-  typedef Teuchos::Array<V_ptr>   V_ptr_array;
-  typedef Teuchos::Array<MV_ptr>  MV_ptr_array;
-  bool_t  perturb_p(Np,false);
-  bool_t  perturb_g(Ng,false);
-  V_ptr_array     g(Ng);
-  MV_ptr_array_t  DgDp(Ng*Np);
+  MEB::OutArgs<Scalar> baseFunc = thyraModel->createOutArgs();
+  if( outArgs.supports(MEB::OUT_ARG_f) && outArgs.get_f().get() )
+    baseFunc.set_f(outArgs.get_f());
   for( int j = 0; j < Ng; ++j ) {
+    V_ptr g_j;
+    if( (g_j=outArgs.get_g(j)).get() )
+      baseFunc.set_g(j,g_j);
+  }
+  thyraModel->evalModel(wrappedInArgs,baseFunc);
+
+  bool failed = baseFunc.isFailed();
+  
+  if(!failed) {
+    //
+    // Compute the derivatives
+    //
+    MEB::OutArgs<Scalar> deriv = thyraModel->createOutArgs();
     for( int l = 0; l < Np; ++l ) {
-      if( outArgs.supports(MEB::OUT_ARG_DgDp,j,l) && outArgs.get_DgDp(j,l).get() ) {
-        perturb_p[l] = true;
-        perturb_g[j] = true;
+      if( outArgs.supports(MEB::OUT_ARG_DfDp,l).none()==false
+          && outArgs.get_DfDp(l).isEmpty()==false )
+      {
+        deriv.set_DfDp(l,outArgs.get_DfDp(l));
+      }
+      for( int j = 0; j < Ng; ++j ) {
+        if( outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none()==false
+            && outArgs.get_DgDp(j,l).isEmpty()==false )
+        {
+          deriv.set_DgDp(j,l,outArgs.get_DgDp(j,l));
+        }
       }
     }
-    const V_ptr g_j = outArgs.get_g(j);
-    g[j] = (
-      g_j.get()
-      ? g_j
-      : ( perturb_g[j]
-          ? createMember(thyraModel->get_g_space(j))
-          : Teuchos::null
-        )
+    direcFiniteDiffCalculator_->calcDerivatives(
+      *thyraModel,inArgs,baseFunc,deriv
       );
   }
-
-  //
-  // Compute the output functions at the base point 
-  //
-  
-  MEB::InArgs<Scalar>  wrappedInArgs = inArgs;
-  MEB::OutArgs<Scalar> wrappedOutArgs = outArgs;
-  for( int j = 0; j < Ng; ++j ) {
-    V_ptr = g_j;
-    if((g_j=g[j].get())
-       wrappedOutArgs.set_g(j,g_j));
-  }
-  thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
-  
-  //
-  // Do the perturbations of p!
-  //
-  
-  V_ptr_array g_perturbed(Ng);
-  for( int j = 0; j < Ng; ++j ) {
-    if(perturb_g[j]) {
-      g_perturbed[j] = createMember(thyraModel->get_g_space(j));
-    }
-  }
-  for( int l = 0; l < Np; ++l ) {
-    if(!perturb_p[l]) continue;
-    RefCountPtr<const VectorBase<Scalar> >
-      p_l = inArgs.get_p(l);
-    RefCountPtr<const VectorBase<Scalar> >
-      p_perturbed_l = createMember(p_l->space());
-    assign(&*p_perturbed_l,*p_l);
-    wrappedInArgs.set_p(l,p_perturbed_l);
-    const int np_l = p_l->space()->dim();
-    for( int l_i = 0; l_i < np_l; ++l_i ) {
-      const Scalar p_l_i = get_ele(l_i,*p_l);
-      const Scalar eps = fdStepLen(); // ToDo: Also consider relative step also
-      const Scalar p_perturbed_l_i = p_l_i + eta;
-      set_ele(l_i,p_perturbed_l_i,&*p_perturbed_l);
-      for( int j = 0; j < Ng; ++j ) {
-        if( outArgs.supports(MEB::OUT_ARG_DgDp,j,l) &&outArgs.get_DgDp(j,l).get() ) {
-          wrappedOutArgs.set_g(j,g_perturbed[j]);
-        }
-      }
-      thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
-      for( int j = 0; j < Ng; ++j ) {
-        wrappedOutArgs.set_g(j,Teuchos::null);
-      }
-      set_ele(l_i,p_l_i,&*p_perturbed_l);
-      for( int j = 0; j < Ng; ++j ) {
-        MV_ptr_t DgDp_j_l;
-        if( outArgs.supports(MEB::OUT_ARG_DgDp,j,l) && (DgDp_j_j=outArgs.get_DgDp(j,l)).get() ) {
-          V_VmV(&*DgDp_j_l->col(l_i),*g_perturbed[j],*g[j]);
-        }
-      }
-    }
-    wrappedInArgs.set_p(l,p_l);
-  }
-*/
 
   if(failed) {
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
@@ -398,7 +292,6 @@ std::string DefaultFiniteDifferenceModelEvaluator<Scalar>::description() const
     oss << "\'"<<thyraModel->description()<<"\'";
   else
     oss << "NULL";
-  oss << ",fdStepLen="<<fdStepLen();
   oss << "}";
   return oss.str();
 }
