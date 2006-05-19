@@ -57,7 +57,12 @@ double Time::stop()
   return totalTime_;
 }
 
-
+double Time::totalElapsedTime(bool readCurrentTime) const
+{
+  if(readCurrentTime)
+    return wallTime() - startTime_ + totalTime_;
+  return totalTime_;
+}
 
 //=============================================================================
 double Time::wallTime() 

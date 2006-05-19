@@ -92,7 +92,7 @@ namespace Teuchos
 
     /** \brief Returns the total time accumulated by this timer. <b>This should be called
      * only when the clock is stopped.</b> */
-    double totalElapsedTime() const {return totalTime_;}
+    double totalElapsedTime(bool readCurrentTime = false) const;
 
     /** \brief Resets the cummulative time and number of times this timer
      * has been called.  Does not affect any other state. */
