@@ -384,6 +384,8 @@ public:
     /** \brief . */
     void setFailed() const;
     /** \brief . */
+    bool isFailed() const;
+    /** \brief . */
     std::string description() const;
     /** \brief . */
     void describe( Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel ) const;
@@ -438,6 +440,7 @@ public:
     deriv_t                                               DgDp_;            // Ng x Np
     deriv_properties_t                                    DgDp_properties_; // Ng x Np
     Teuchos::RefCountPtr<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
+    mutable bool                                          isFailed_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(EOutArgsDfDp arg, int l) const;
@@ -768,14 +771,31 @@ void ModelEvaluatorBase::InArgs<Scalar>::describe(
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME:
     {
+      if(this->supports(IN_ARG_x_dot) ) {
+        *out << "x_dot =";
+        CV_ptr x_dot = this->get_x_dot();
+        if(x_dot.get())
+          *out << "\n" << Teuchos::describe(*x_dot,verbLevel);
+        else
+          *out << " NULL\n";
+      }
+      if(this->supports(IN_ARG_x) ) {
+        *out << "x =";
+        CV_ptr x = this->get_x();
+        if(x.get())
+          *out << "\n" << Teuchos::describe(*x,verbLevel);
+        else
+          *out << " NULL\n";
+      }
       for( int l = 0; l < Np(); ++l ) {
-        *out << "p["<<l<<"] =";
+        *out << "p("<<l<<") =";
         CV_ptr p_l = this->get_p(l);
         if(p_l.get())
           *out << "\n" << Teuchos::describe(*p_l,verbLevel);
         else
           *out << " NULL\n";
       }
+      // ToDo: Add output for more objects!
       break;
     }
     default:
@@ -856,6 +876,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::assert_l(int l) const
 
 template<class Scalar>
 ModelEvaluatorBase::OutArgs<Scalar>::OutArgs()
+  :isFailed_(false)
 { std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false); }
 
 template<class Scalar>
@@ -1090,6 +1111,7 @@ template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::setFailed() const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  isFailed_ = true;
   if( this->supports(OUT_ARG_f) && this->get_f().get() ) {
     assign(&*this->get_f(),ST::nan());
   }
@@ -1098,6 +1120,12 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setFailed() const
       assign(&*this->get_g(j),ST::nan());
   }
   // ToDo: Set other objects to NaN as well!
+}
+
+template<class Scalar>
+bool ModelEvaluatorBase::OutArgs<Scalar>::isFailed() const
+{
+  return isFailed_;
 }
 
 template<class Scalar>
@@ -1120,9 +1148,11 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
   Teuchos::FancyOStream &out_arg, const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   using Teuchos::OSTab;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Teuchos::RefCountPtr<const VectorBase<Scalar> > CV_ptr;
+  typedef Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > CLOWS_ptr;
+  typedef ModelEvaluatorBase MEB;
   if(verbLevel == Teuchos::VERB_NONE)
     return;
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
@@ -1139,14 +1169,52 @@ void ModelEvaluatorBase::OutArgs<Scalar>::describe(
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME:
     {
+      if(this->supports(OUT_ARG_f) ) {
+        *out << "f =";
+        CV_ptr f = this->get_f();
+        if(f.get())
+          *out << "\n" << Teuchos::describe(*f,verbLevel);
+        else
+          *out << " NULL\n";
+      }
       for( int j = 0; j < Ng(); ++j ) {
-        *out << "g["<<j<<"] =";
+        *out << "g("<<j<<") =";
         CV_ptr g_j = this->get_g(j);
         if(g_j.get())
           *out << "\n" << Teuchos::describe(*g_j,verbLevel);
         else
           *out << " NULL\n";
       }
+      if(this->supports(OUT_ARG_W) ) {
+        *out << "W =";
+        CLOWS_ptr W = this->get_W();
+        if(W.get())
+          *out << "\n" << Teuchos::describe(*W,verbLevel);
+        else
+          *out << " NULL\n";
+      }
+      for( int l = 0; l < Np(); ++l ) {
+        if(!this->supports(OUT_ARG_DfDp,l).none()) {
+          *out << "DfDp("<<l<<") =";
+          const MEB::Derivative<Scalar> DfDp_l = this->get_DfDp(l);
+          if(!DfDp_l.isEmpty()) {
+            *out << "\n";
+            if(DfDp_l.getLinearOp().get()) {
+              *out << Teuchos::describe(*DfDp_l.getLinearOp(),verbLevel);
+            }
+            else {
+              *OSTab(out).getOStream()
+                << "orientation="
+                << toString(DfDp_l.getDerivativeMultiVector().getOrientation()) << "\n";
+              *out << Teuchos::describe(*DfDp_l.getDerivativeMultiVector().getMultiVector(),verbLevel);
+            }
+          }
+          else {
+            *out << " NULL\n";
+          }
+        }
+      }
+      // ToDo: Add output for more objects?
       break;
     }
     default:
