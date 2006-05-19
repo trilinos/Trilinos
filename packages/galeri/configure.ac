@@ -343,6 +343,16 @@ else
   AM_CONDITIONAL(HAVE_GALERI_EPETRAEXT, false ) 
 fi
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(galeri, aztecoo, GALERI_AZTECOO, 
+                               HAVE_GALERI_AZTECOO, yes, 
+                               [Enable AztecOO support.])
+
+if test "X$ac_cv_use_galeri_aztecoo" != "Xno" ; then
+  AM_CONDITIONAL(HAVE_GALERI_AZTECOO, true ) 
+else
+  AM_CONDITIONAL(HAVE_GALERI_AZTECOO, false ) 
+fi
+
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
 # ------------------------------------------------------------------------
@@ -359,6 +369,7 @@ AC_CONFIG_FILES([
 		Makefile.export.galeri
 		src/Makefile
 		example/Makefile
+		example-phoenix/Makefile
 		test/Makefile
 		test/VerySimple/Makefile
 		python/Makefile

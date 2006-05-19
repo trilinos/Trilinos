@@ -5,8 +5,15 @@
 @HAVE_GALERI_EPETRAEXT_TRUE@EPETRAEXT_LIBS =    \
 	-L$(top_builddir)/../epetraext/src -lepetraext
 
+@HAVE_GALERI_AZTECOO_TRUE@AZTECOO_INCLUDE = \
+	-I$(top_builddir)/../aztecoo/src    \
+	-I$(top_srcdir)/../aztecoo/src 
+@HAVE_GALERI_AZTECOO_TRUE@AZTECOO_LIBS =    \
+	-L$(top_builddir)/../aztecoo/src -laztecoo
+
 GALERI_LIBS = $(top_builddir)/src/libgaleri.a                    \
 	      $(EPETRAEXT_LIBS)                                  \
+	      $(AZTECOO_LIBS)                                    \
 	      $(top_builddir)/../epetra/src/libepetra.a          \
 	      $(top_builddir)/../teuchos/src/libteuchos.a        \
               @LDFLAGS@ @LAPACK_LIBS@ @BLAS_LIBS@ @LIBS@ @FLIBS@ \
@@ -18,4 +25,5 @@ GALERI_INCLUDES = -I$(top_builddir)/src/             \
 		  -I$(top_srcdir)/../epetra/src      \
 		  -I$(top_builddir)/../teuchos/src   \
 		  -I$(top_srcdir)/../teuchos/src     \
-		  $(EPETRAEXT_INCLUDE)
+		  $(EPETRAEXT_INCLUDE) \
+		  $(AZTECOO_INCLUDE)
