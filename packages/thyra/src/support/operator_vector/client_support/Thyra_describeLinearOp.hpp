@@ -49,10 +49,19 @@ void Thyra::describeLinearOp(
   typedef Teuchos::ScalarTraits<DomainScalar> DST;
   RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
-  const Index dimDomain = A.domain()->dim(), dimRange = A.range()->dim();
-  *out << "type = \'" << A.description()
-      << "\', rangeDim = " << dimRange
-      << ", domainDim = " << dimDomain << "\n";
+  *out << A.description();
+  const Teuchos::RefCountPtr<const VectorSpaceBase<RangeScalar> >
+    range = A.range();
+  const Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >
+    domain = A.domain();
+  if(!range.get()) {
+    *out << ", range=NULL, domain=NULL\n"; 
+    return;
+  }
+  const Index dimDomain = domain->dim(), dimRange = range->dim();
+  *out
+    << ", rangeDim = " << dimRange
+    << ", domainDim = " << dimDomain << "\n";
   if(verbLevel >= Teuchos::VERB_EXTREME) {
     // Copy into dense matrix by column
     Teuchos::RefCountPtr<VectorBase<DomainScalar> > e_j = createMember(A.domain());
