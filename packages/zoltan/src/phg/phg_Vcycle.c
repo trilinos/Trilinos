@@ -558,6 +558,7 @@ Refine:
 	  }
 	}
 
+	ZOLTAN_FREE (&hgc);
 	hgc = finer->hg->comm; /* updating hgc is required when the processors
 				   change */
 	/* Create comm plan to unredistributed processors */
