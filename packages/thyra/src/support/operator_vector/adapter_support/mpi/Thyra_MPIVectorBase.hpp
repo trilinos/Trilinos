@@ -62,24 +62,16 @@ void MPIVectorBase<Scalar>::freeLocalData( const Scalar* values ) const
   const_cast<MPIVectorBase<Scalar>*>(this)->commitLocalData(const_cast<Scalar*>(values));
 }
 
-// Overridden from VectorBase
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-MPIVectorBase<Scalar>::space() const
-{
-  return mpiSpace();
-}
-
 template<class Scalar>
 void MPIVectorBase<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>   &op
+  MPI_Comm                        comm_in
+  ,const RTOpPack::RTOpT<Scalar>  &op
   ,const int                      num_vecs
   ,const VectorBase<Scalar>*      vecs[]
   ,const int                      num_targ_vecs
   ,VectorBase<Scalar>*            targ_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    first_ele_in
+  ,const Index                    first_ele_offset_in
   ,const Index                    sub_dim_in
   ,const Index                    global_offset_in
   ) const
@@ -98,22 +90,23 @@ void MPIVectorBase<Scalar>::applyOp(
     );
   Thyra::apply_op_validate_input(
     "MPIVectorBase<>::applyOp(...)",*space()
-    ,op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_in,sub_dim_in,global_offset_in
+    ,op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,first_ele_offset_in,sub_dim_in,global_offset_in
     );
 #endif
+  MPI_Comm comm = ( comm_in != MPI_COMM_NULL ? comm_in : mpiSpc.mpiComm() );
   // Flag that we are in applyOp()
   in_applyOp_ = true;
   // First see if this is a locally replicated vector in which case
   // we treat this as a local operation only.
   const bool locallyReplicated = (localSubDim_ == globalDim_);
   // Get the overlap in the current process with the input logical sub-vector
-  // from (first_ele_in,sub_dim_in,global_offset_in)
+  // from (first_ele_offset_in,sub_dim_in,global_offset_in)
   Teuchos_Index  overlap_first_local_ele_off  = 0;
   Teuchos_Index  overalap_local_sub_dim       = 0;
   Teuchos_Index  overlap_global_off           = 0;
   if(localSubDim_) {
     RTOp_parallel_calc_overlap(
-      globalDim_, localSubDim_, localOffset_, first_ele_in, sub_dim_in, global_offset_in
+      globalDim_, localSubDim_, localOffset_, first_ele_offset_in, sub_dim_in, global_offset_in
       ,&overlap_first_local_ele_off, &overalap_local_sub_dim, &overlap_global_off
       );
   }
@@ -138,7 +131,7 @@ void MPIVectorBase<Scalar>::applyOp(
   // Apply the RTOp operator object (all processors must participate)
   const bool validSubVecs = ( localSubDim_ > 0 && overlap_first_local_ele_off >= 0 );
   RTOpPack::MPI_apply_op(
-    locallyReplicated ? MPI_COMM_NULL : mpiSpc.mpiComm()        // comm
+    locallyReplicated ? MPI_COMM_NULL : comm                    // comm
     ,op                                                         // op
     ,-1                                                         // root_rank (perform an all-reduce)
     ,num_vecs                                                   // num_vecs
@@ -160,6 +153,35 @@ void MPIVectorBase<Scalar>::applyOp(
   }
   // Flag that we are leaving applyOp()
   in_applyOp_ = false;
+}
+
+// Overridden from VectorBase
+
+template<class Scalar>
+Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+MPIVectorBase<Scalar>::space() const
+{
+  return mpiSpace();
+}
+
+template<class Scalar>
+void MPIVectorBase<Scalar>::applyOp(
+  const RTOpPack::RTOpT<Scalar>   &op
+  ,const int                      num_vecs
+  ,const VectorBase<Scalar>*      vecs[]
+  ,const int                      num_targ_vecs
+  ,VectorBase<Scalar>*            targ_vecs[]
+  ,RTOpPack::ReductTarget         *reduct_obj
+  ,const Index                    first_ele_offset
+  ,const Index                    sub_dim
+  ,const Index                    global_offset
+  ) const
+{
+  applyOp(
+    MPI_COMM_NULL
+    ,op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj
+    ,first_ele_offset,sub_dim,global_offset
+    );
 }
 
 template<class Scalar>

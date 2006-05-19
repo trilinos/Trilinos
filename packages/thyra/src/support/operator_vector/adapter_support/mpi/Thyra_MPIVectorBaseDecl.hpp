@@ -208,16 +208,14 @@ public:
    */
   virtual void freeLocalData( const Scalar* localValues ) const;
 
-  //@}
-
-  /** @name Overridden from MultiVectorBase */
-  //@{
-
-  /// Returns <tt>this->mpiSpace()</tt>
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > space() const;
   /** \brief Implements the <tt>%applyOp()</tt> method through the
    * methods <tt>acquireDetachedView()</tt>, <tt>releaseDetachedView()</tt> and
    * <tt>commitDetachedView()</tt> as described above.
+   *
+   * \param  comm
+   *           [in] The MPI communicator to use in the global reduction.
+   *           If <tt>comm==MPI_COMM_NULL</tt>, then the local communicator
+   *           will be used instead.
    *
    * Note that if this method is entered again before a call has
    * been completed, then this is an indication that the methods
@@ -226,13 +224,34 @@ public:
    * and this method will then throw an exception.
    */
   void applyOp(
+    MPI_Comm                        comm
+    ,const RTOpPack::RTOpT<Scalar>  &op
+    ,const int                      num_vecs
+    ,const VectorBase<Scalar>*      vecs[]
+    ,const int                      num_targ_vecs
+    ,VectorBase<Scalar>*            targ_vecs[]
+    ,RTOpPack::ReductTarget         *reduct_obj
+    ,const Index                    first_ele_offset
+    ,const Index                    sub_dim
+    ,const Index                    global_offset
+    ) const;
+
+  //@}
+
+  /** @name Overridden from MultiVectorBase */
+  //@{
+
+  /// Returns <tt>this->mpiSpace()</tt>
+  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > space() const;
+  /** \brief Calls <tt>this->applyOp(MPI_COMM_NULL,op,...)</tt>. */
+  void applyOp(
     const RTOpPack::RTOpT<Scalar>   &op
     ,const int                      num_vecs
     ,const VectorBase<Scalar>*      vecs[]
     ,const int                      num_targ_vecs
     ,VectorBase<Scalar>*            targ_vecs[]
     ,RTOpPack::ReductTarget         *reduct_obj
-    ,const Index                    first_ele
+    ,const Index                    first_ele_offset
     ,const Index                    sub_dim
     ,const Index                    global_offset
     ) const;
