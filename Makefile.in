@@ -708,6 +708,9 @@ uninstall-info: uninstall-info-recursive
 all-libs:
 	cd $(top_builddir)/packages ; $(MAKE) all-libs
 
+libs:
+	cd $(top_builddir)/packages ; $(MAKE) libs
+
 install-exec-hook:	
 	cp $(top_srcdir)/commonTools/buildTools/strip_dup_incl_paths.pl $(exec_prefix)/include/. ;
 	cp $(top_srcdir)/commonTools/buildTools/strip_dup_libs.pl $(exec_prefix)/include/.

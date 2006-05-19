@@ -710,6 +710,9 @@ all-local:
 all-libs:
 	cd src ; $(MAKE) all-libs
 
+libs:
+	cd src ; $(MAKE)
+
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.pytrilinos $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \

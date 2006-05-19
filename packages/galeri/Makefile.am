@@ -115,6 +115,9 @@ all-local:
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
 
+libs:
+	cd $(top_builddir)/src ; $(MAKE)
+
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################

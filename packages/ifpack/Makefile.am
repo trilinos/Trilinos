@@ -117,6 +117,10 @@ all-libs:
 	cd src ; $(MAKE) all-libs
 	cd thyra/src ; $(MAKE) all-libs
 
+libs:
+	cd src ; $(MAKE)
+	cd thyra/src ; $(MAKE)
+
 ## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################

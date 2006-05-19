@@ -81,6 +81,9 @@ all-local:
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE)
 
+libs:
+	cd $(top_builddir)/src ; $(MAKE)
+
 if BUILD_TESTS
 TEST_SUBDIR=test
 endif

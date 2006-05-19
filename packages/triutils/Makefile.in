@@ -688,6 +688,9 @@ all-local:
 all-libs:
 	cd src ; $(MAKE) all-libs
 
+libs:
+	cd src ; $(MAKE)
+
 run-pytests:
 	@echo
 	@echo "===================================="

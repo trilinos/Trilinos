@@ -66,167 +66,199 @@ ACLOCAL	= aclocal -I config
 
 if BUILD_AMESOS
 AMESOS_SUBDIR = amesos
-AMESOS_LIB_BUILD_CMND = cd amesos ; $(MAKE) all-libs ;
+AMESOS_LIBS_BUILD_CMND = cd amesos ; $(MAKE) libs ;
+AMESOS_ALL_LIBS_BUILD_CMND = cd amesos ; $(MAKE) all-libs ;
 endif
 
 if BUILD_ANASAZI
 ANASAZI_SUBDIR = anasazi
-ANASAZI_LIB_BUILD_CMND = cd anasazi ; $(MAKE) all-libs ;
+ANASAZI_LIBS_BUILD_CMND = cd anasazi ; $(MAKE) libs ;
+ANASAZI_ALL_LIBS_BUILD_CMND = cd anasazi ; $(MAKE) all-libs ;
 endif
 
 if BUILD_AZTECOO
 AZTECOO_SUBDIR = aztecoo
-AZTECOO_LIB_BUILD_CMND = cd aztecoo ; $(MAKE) all-libs ;
+AZTECOO_LIBS_BUILD_CMND = cd aztecoo ; $(MAKE) libs ;
+AZTECOO_ALL_LIBS_BUILD_CMND = cd aztecoo ; $(MAKE) all-libs ;
 endif
 
 if BUILD_BELOS
 BELOS_SUBDIR = belos
-BELOS_LIB_BUILD_CMND = cd belos ; $(MAKE) all-libs ;
+BELOS_LIBS_BUILD_CMND = cd belos ; $(MAKE) libs ;
+BELOS_ALL_LIBS_BUILD_CMND = cd belos ; $(MAKE) all-libs ;
 endif
 
 if BUILD_CAPO
 CAPO_SUBDIR = capo
-CAPO_LIB_BUILD_CMND = echo "capo does not support all-libs yet";
+CAPO_LIBS_BUILD_CMND = echo "capo does not support libs target yet";
+CAPO_ALL_LIBS_BUILD_CMND = echo "capo does not support all-libs target yet";
 endif
 
 if BUILD_CLAPS
 CLAPS_SUBDIR = claps
-CLAPS_LIB_BUILD_CMND = echo "claps does not support all-libs yet";
+CLAPS_LIBS_BUILD_CMND = echo "claps does not support libs target yet";
+CLAPS_ALL_LIBS_BUILD_CMND = echo "claps does not support all-libs target yet";
 endif
 
 if BUILD_DIDASKO
 DIDASKO_SUBDIR = didasko
-DIDASKO_LIB_BUILD_CMND = echo "disasko does not support all-libs yet";
+DIDASKO_LIBS_BUILD_CMND = echo "disasko does not support all-libs target yet";
+DIDASKO_ALL_LIBS_BUILD_CMND = echo "disasko does not support all-libs target yet";
 endif
 
 if BUILD_EPETRA
 EPETRA_SUBDIR = epetra
-EPETRA_LIB_BUILD_CMND = cd epetra ; $(MAKE) all-libs ;
+EPETRA_LIBS_BUILD_CMND = cd epetra ; $(MAKE) libs ;
+EPETRA_ALL_LIBS_BUILD_CMND = cd epetra ; $(MAKE) all-libs ;
 endif
 
 if BUILD_EPETRAEXT
 EPETRAEXT_SUBDIR = epetraext
-EPETRAEXT_LIB_BUILD_CMND = cd epetraext ; $(MAKE) all-libs ;
+EPETRAEXT_LIBS_BUILD_CMND = cd epetraext ; $(MAKE) libs ;
+EPETRAEXT_ALL_LIBS_BUILD_CMND = cd epetraext ; $(MAKE) all-libs ;
 endif
 
 if BUILD_EXTERNAL
 EXTERNAL_SUBDIR = external
-EXTERNAL_LIB_BUILD_CMND = echo "external does not support all-libs yet";
+EXTERNAL_LIBS_BUILD_CMND = echo "external does not support libs target yet";
+EXTERNAL_ALL_LIBS_BUILD_CMND = echo "external does not support all-libs target yet";
 endif
 
 if BUILD_IFPACK
 IFPACK_SUBDIR = ifpack
-IFPACK_LIB_BUILD_CMND = cd ifpack ; $(MAKE) all-libs ;
+IFPACK_LIBS_BUILD_CMND = cd ifpack ; $(MAKE) libs ;
+IFPACK_ALL_LIBS_BUILD_CMND = cd ifpack ; $(MAKE) all-libs ;
 endif
 
 if BUILD_GALERI
 GALERI_SUBDIR = galeri 
-GALERI_LIB_BUILD_CMND = cd galeri ; $(MAKE) all-libs ;
+GALERI_LIBS_BUILD_CMND = cd galeri ; $(MAKE) libs ;
+GALERI_ALL_LIBS_BUILD_CMND = cd galeri ; $(MAKE) all-libs ;
 endif
 
 if BUILD_KOKKOS
 KOKKOS_SUBDIR = kokkos
-KOKKOS_LIB_BUILD_CMND = echo "kokkos does not support all-libs yet";
+KOKKOS_LIBS_BUILD_CMND = cd kokkos ; $(MAKE) libs ;
+KOKKOS_ALL_LIBS_BUILD_CMND = cd kokkos ; $(MAKE) all-libs ;
 endif
 
 if BUILD_KOMPLEX
 KOMPLEX_SUBDIR = komplex
-KOMPLEX_LIB_BUILD_CMND = echo "komplex does not support all-libs yet";
+KOMPLEX_LIBS_BUILD_CMND = echo "komplex does not support libs target yet";
+KOMPLEX_ALL_LIBS_BUILD_CMND = echo "komplex does not support all-libs target yet";
 endif
 
 if BUILD_MEROS
 MEROS_SUBDIR = meros
-MEROS_LIB_BUILD_CMND = echo "meros does not support all-libs yet";
+MEROS_LIBS_BUILD_CMND = echo "meros does not support libs target yet";
+MEROS_ALL_LIBS_BUILD_CMND = echo "meros does not support all-libs target yet";
 endif
 
 if BUILD_ML
 ML_SUBDIR = ml
-ML_LIB_BUILD_CMND = echo "ml does not support all-libs yet";
+ML_LIBS_BUILD_CMND = cd ml ; $(MAKE) libs ;
+ML_ALL_LIBS_BUILD_CMND = cd ml ; $(MAKE) all-libs ;
 endif
 
 if BUILD_MOERTEL
 MOERTEL_SUBDIR = moertel 
-MOERTEL_LIB_BUILD_CMND = echo "moertel does not support all-libs yet";
+MOERTEL_LIBS_BUILD_CMND = cd moertel ; $(MAKE) libs ;
+MOERTEL_ALL_LIBS_BUILD_CMND = cd moertel ; $(MAKE) all-libs ;
 endif
 
 if BUILD_MOOCHO
 MOOCHO_SUBDIR = moocho
-MOOCHO_LIB_BUILD_CMND = cd moocho ; $(MAKE) all-libs ;
+MOOCHO_LIBS_BUILD_CMND = cd moocho ; $(MAKE) libs ;
+MOOCHO_ALL_LIBS_BUILD_CMND = cd moocho ; $(MAKE) all-libs ;
 endif
 
 if BUILD_NEW_PACKAGE
 NEW_PACKAGE_SUBDIR = new_package
-NEW_PACKAGE_LIB_BUILD_CMND = echo "new_package does not support all-libs yet";
+NEW_PACKAGE_LIBS_BUILD_CMND = cd new_package ; $(MAKE) libs ;
+NEW_PACKAGE_ALL_LIBS_BUILD_CMND = cd new_package ; $(MAKE) all-libs ;
 endif
 
 if BUILD_ISORROPIA
 ISORROPIA_SUBDIR = isorropia
-ISORROPIA_LIB_BUILD_CMND = cd isorropia ; $(MAKE) all-libs ;
+ISORROPIA_ALL_LIBS_BUILD_CMND = cd isorropia ; $(MAKE) all-libs ;
 endif
 
 if BUILD_NOX
 NOX_SUBDIR = nox
-NOX_LIB_BUILD_CMND = cd nox ; $(MAKE) all-libs ;
+NOX_LIBS_BUILD_CMND = cd nox ; $(MAKE) libs ;
+NOX_ALL_LIBS_BUILD_CMND = cd nox ; $(MAKE) all-libs ;
 endif
 
 if BUILD_PLIRIS
 PLIRIS_SUBDIR = pliris
-PLIRIS_LIB_BUILD_CMND = echo "pliris does not support all-libs yet";
+PLIRIS_LIBS_BUILD_CMND = echo "pliris does not support libs target yet";
+PLIRIS_ALL_LIBS_BUILD_CMND = echo "pliris does not support all-libs target yet";
 endif
 
 if BUILD_PYTRILINOS
 PYTRILINOS_SUBDIR = PyTrilinos 
-PYTRILINOS_LIB_BUILD_CMND = cd PyTrilinos ; $(MAKE) all-libs ;
+PYTRILINOS_LIBS_BUILD_CMND = cd PyTrilinos ; $(MAKE) libs ;
+PYTRILINOS_ALL_LIBS_BUILD_CMND = cd PyTrilinos ; $(MAKE) all-libs ;
 endif
 
 if BUILD_RYTHMOS
 RYTHMOS_SUBDIR = rythmos
-RYTHMOS_LIB_BUILD_CMND = cd rythmos ; $(MAKE) all-libs ;
+RYTHMOS_LIBS_BUILD_CMND = cd rythmos ; $(MAKE) libs ;
+RYTHMOS_ALL_LIBS_BUILD_CMND = cd rythmos ; $(MAKE) all-libs ;
 endif
 
 if BUILD_TEUCHOS
 TEUCHOS_SUBDIR = teuchos
-TEUCHOS_LIB_BUILD_CMND = cd teuchos ; $(MAKE) all-libs ;
+TEUCHOS_LIBS_BUILD_CMND = cd teuchos ; $(MAKE) libs ;
+TEUCHOS_ALL_LIBS_BUILD_CMND = cd teuchos ; $(MAKE) all-libs ;
 endif
 
 if BUILD_RTOP
 RTOP_SUBDIR = rtop
-RTOP_LIB_BUILD_CMND = cd rtop ; $(MAKE) all-libs ;
+RTOP_LIBS_BUILD_CMND = cd rtop ; $(MAKE) libs ;
+RTOP_ALL_LIBS_BUILD_CMND = cd rtop ; $(MAKE) all-libs ;
 endif
 
 if BUILD_THYRA
 THYRA_SUBDIR = thyra
-THYRA_LIB_BUILD_CMND = cd thyra ; $(MAKE) all-libs ;
+THYRA_LIBS_BUILD_CMND = cd thyra ; $(MAKE) libs ;
+THYRA_ALL_LIBS_BUILD_CMND = cd thyra ; $(MAKE) all-libs ;
 endif
 
 if BUILD_TPETRA
 TPETRA_SUBDIR = tpetra
-TPETRA_LIB_BUILD_CMND = echo "tpetra does not support all-libs yet";
+TPETRA_LIBS_BUILD_CMND = cd tpetra ; $(MAKE) libs ;
+TPETRA_ALL_LIBS_BUILD_CMND = cd tpetra ; $(MAKE) all-libs ;
 endif
 
 if BUILD_TRIUTILS
 TRIUTILS_SUBDIR = triutils
-TRIUTILS_LIB_BUILD_CMND = cd triutils ; $(MAKE) all-libs ;
+TRIUTILS_LIBS_BUILD_CMND = cd triutils ; $(MAKE) libs ;
+TRIUTILS_ALL_LIBS_BUILD_CMND = cd triutils ; $(MAKE) all-libs ;
 endif
 
 if BUILD_TSF
 TSF_SUBDIR = TSF
-TSF_LIB_BUILD_CMND = echo "TSF does not support all-libs yet";
+TSF_LIBS_BUILD_CMND = echo "TSF does not support libs target yet";
+TSF_ALL_LIBS_BUILD_CMND = echo "TSF does not support all-libs target yet";
 endif
 
 if BUILD_TSFCORE
 TSFCORE_SUBDIR = TSFCore
-TSFCORE_LIB_BUILD_CMND = echo "TSFCore does not support all-libs yet";
+TSFCORE_LIBS_BUILD_CMND = echo "TSFCore does not support libs target yet";
+TSFCORE_ALL_LIBS_BUILD_CMND = echo "TSFCore does not support all-libs target yet";
 endif
 
 if BUILD_TSFCOREUTILS
 TSFCOREUTILS_SUBDIR = TSFCoreUtils
-TSFCOREUTILS_LIB_BUILD_CMND = echo "TSFCoreUtils does not support all-libs yet";
+TSFCOREUTILS_LIBS_BUILD_CMND = echo "TSFCoreUtils does not support libs target yet";
+TSFCOREUTILS_ALL_LIBS_BUILD_CMND = echo "TSFCoreUtils does not support all-libs target yet";
 endif
 
 if BUILD_TSFEXTENDED
 TSFEXTENDED_SUBDIR = TSFExtended
-TSFEXTENDED_LIB_BUILD_CMND = echo "TSFExtended does not support all-libs yet";
+TSFEXTENDED_LIBS_BUILD_CMND = echo "TSFExtended does not support libs target yet";
+TSFEXTENDED_ALL_LIBS_BUILD_CMND = echo "TSFExtended does not support all-libs target yet";
 endif
 
 # Must list the packages in the order that they are built!
@@ -266,37 +298,72 @@ SUBDIRS = \
 	$(DIDASKO_SUBDIR) \
 	$(EXTERNAL_SUBDIR)
 
+libs:
+	$(TEUCHOS_LIBS_BUILD_CMND)
+	$(PYTRILINOS_LIBS_BUILD_CMND)
+	$(RTOP_LIBS_BUILD_CMND)
+	$(THYRA_LIBS_BUILD_CMND)
+	$(KOKKOS_LIBS_BUILD_CMND)
+	$(EPETRA_LIBS_BUILD_CMND)
+	$(TRIUTILS_LIBS_BUILD_CMND)
+	$(TPETRA_LIBS_BUILD_CMND)
+	$(EPETRAEXT_LIBS_BUILD_CMND)
+	$(ISORROPIA_LIBS_BUILD_CMND)
+	$(AZTECOO_LIBS_BUILD_CMND)
+	$(AMESOS_LIBS_BUILD_CMND)
+	$(IFPACK_LIBS_BUILD_CMND)
+	$(GALERI_LIBS_BUILD_CMND)
+	$(KOMPLEX_LIBS_BUILD_CMND)
+	$(CLAPS_LIBS_BUILD_CMND)
+	$(TSFCOREUTILS_LIBS_BUILD_CMND)
+	$(TSFCORE_LIBS_BUILD_CMND)
+	$(BELOS_LIBS_BUILD_CMND)
+	$(ANASAZI_LIBS_BUILD_CMND)
+	$(PLIRIS_LIBS_BUILD_CMND)
+	$(ML_LIBS_BUILD_CMND)
+	$(MOERTEL_LIBS_BUILD_CMND)
+	$(TSF_LIBS_BUILD_CMND)
+	$(MEROS_LIBS_BUILD_CMND)
+	$(NOX_LIBS_BUILD_CMND)
+	$(CAPO_LIBS_BUILD_CMND)
+	$(RYTHMOS_LIBS_BUILD_CMND)
+	$(NEW_PACKAGE_LIBS_BUILD_CMND)
+	$(TSFEXTENDED_LIBS_BUILD_CMND)
+	$(MOOCHO_LIBS_BUILD_CMND)
+	$(DIDASKO_LIBS_BUILD_CMND)
+	$(EXTERNAL_LIBS_BUILD_CMND)
+
 all-libs:
-	$(TEUCHOS_LIB_BUILD_CMND)
-	$(PYTRILINOS_LIB_BUILD_CMND)
-	$(RTOP_LIB_BUILD_CMND)
-	$(THYRA_LIB_BUILD_CMND)
-	$(KOKKOS_LIB_BUILD_CMND)
-	$(EPETRA_LIB_BUILD_CMND)
-	$(TRIUTILS_LIB_BUILD_CMND)
-	$(TPETRA_LIB_BUILD_CMND)
-	$(EPETRAEXT_LIB_BUILD_CMND)
-	$(ISORROPIA_LIB_BUILD_CMND)
-	$(AZTECOO_LIB_BUILD_CMND)
-	$(AMESOS_LIB_BUILD_CMND)
-	$(IFPACK_LIB_BUILD_CMND)
-	$(GALERI_LIB_BUILD_CMND)
-	$(KOMPLEX_LIB_BUILD_CMND)
-	$(CLAPS_LIB_BUILD_CMND)
-	$(TSFCOREUTILS_LIB_BUILD_CMND)
-	$(TSFCORE_LIB_BUILD_CMND)
-	$(BELOS_LIB_BUILD_CMND)
-	$(ANASAZI_LIB_BUILD_CMND)
-	$(PLIRIS_LIB_BUILD_CMND)
-	$(ML_LIB_BUILD_CMND)
-	$(MOERTEL_LIB_BUILD_CMND)
-	$(TSF_LIB_BUILD_CMND)
-	$(MEROS_LIB_BUILD_CMND)
-	$(NOX_LIB_BUILD_CMND)
-	$(CAPO_LIB_BUILD_CMND)
-	$(RYTHMOS_LIB_BUILD_CMND)
-	$(NEW_PACKAGE_LIB_BUILD_CMND)
-	$(TSFEXTENDED_LIB_BUILD_CMND)
-	$(MOOCHO_LIB_BUILD_CMND)
-	$(DIDASKO_LIB_BUILD_CMND)
-	$(EXTERNAL_LIB_BUILD_CMND)
+	$(TEUCHOS_ALL_LIBS_BUILD_CMND)
+	$(PYTRILINOS_ALL_LIBS_BUILD_CMND)
+	$(RTOP_ALL_LIBS_BUILD_CMND)
+	$(THYRA_ALL_LIBS_BUILD_CMND)
+	$(KOKKOS_ALL_LIBS_BUILD_CMND)
+	$(EPETRA_ALL_LIBS_BUILD_CMND)
+	$(TRIUTILS_ALL_LIBS_BUILD_CMND)
+	$(TPETRA_ALL_LIBS_BUILD_CMND)
+	$(EPETRAEXT_ALL_LIBS_BUILD_CMND)
+	$(ISORROPIA_ALL_LIBS_BUILD_CMND)
+	$(AZTECOO_ALL_LIBS_BUILD_CMND)
+	$(AMESOS_ALL_LIBS_BUILD_CMND)
+	$(IFPACK_ALL_LIBS_BUILD_CMND)
+	$(GALERI_ALL_LIBS_BUILD_CMND)
+	$(KOMPLEX_ALL_LIBS_BUILD_CMND)
+	$(CLAPS_ALL_LIBS_BUILD_CMND)
+	$(TSFCOREUTILS_ALL_LIBS_BUILD_CMND)
+	$(TSFCORE_ALL_LIBS_BUILD_CMND)
+	$(BELOS_ALL_LIBS_BUILD_CMND)
+	$(ANASAZI_ALL_LIBS_BUILD_CMND)
+	$(PLIRIS_ALL_LIBS_BUILD_CMND)
+	$(ML_ALL_LIBS_BUILD_CMND)
+	$(MOERTEL_ALL_LIBS_BUILD_CMND)
+	$(TSF_ALL_LIBS_BUILD_CMND)
+	$(MEROS_ALL_LIBS_BUILD_CMND)
+	$(NOX_ALL_LIBS_BUILD_CMND)
+	$(CAPO_ALL_LIBS_BUILD_CMND)
+	$(RYTHMOS_ALL_LIBS_BUILD_CMND)
+	$(NEW_PACKAGE_ALL_LIBS_BUILD_CMND)
+	$(TSFEXTENDED_ALL_LIBS_BUILD_CMND)
+	$(MOOCHO_ALL_LIBS_BUILD_CMND)
+	$(DIDASKO_ALL_LIBS_BUILD_CMND)
+	$(EXTERNAL_ALL_LIBS_BUILD_CMND)

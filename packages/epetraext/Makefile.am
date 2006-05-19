@@ -107,6 +107,10 @@ all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
 	$(BUILD_THYRA_SUBLIB)
 
+libs:
+	cd $(top_builddir)/src ; $(MAKE)
+	$(BUILD_THYRA_SUBLIB)
+
 ## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################

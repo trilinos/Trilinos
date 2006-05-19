@@ -122,6 +122,9 @@ SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR) $(PYTHON_SUBDIR)
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
 
+libs:
+	cd $(top_builddir)/src ; $(MAKE)
+
 if USING_EXPORT_MAKEFILES
 
 install-exec-hook:	

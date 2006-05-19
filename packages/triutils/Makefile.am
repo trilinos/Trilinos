@@ -83,6 +83,9 @@ SUBDIRS = src $(TEST_SUBDIR) $(PYTHON_SUBDIR)
 all-libs:
 	cd src ; $(MAKE) all-libs
 
+libs:
+	cd src ; $(MAKE)
+
 ## #######################################################################
 ## The below targets allow you to use the new
 ## testharness to run the test suite as make targets

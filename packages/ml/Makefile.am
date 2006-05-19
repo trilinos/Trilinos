@@ -131,6 +131,9 @@ SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) doc $(PYTHON_SUBDIR)
 all-libs:
 	cd src ; $(MAKE) all-libs
 
+libs:
+	cd src ; $(MAKE)
+
 ## #######################################################################
 ## Export Makefile Installation
 ## #######################################################################

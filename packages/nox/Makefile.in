@@ -780,6 +780,17 @@ all-libs:
 	cd ../src-loca/src-epetra; $(MAKE)
 	cd ../src-loca/src-mf; $(MAKE)
 
+libs:
+	cd src ; $(MAKE)
+	cd ../src-lapack; $(MAKE)
+	cd ../src-epetra; $(MAKE)
+	cd ../src-petsc; $(MAKE)
+	cd ../src-belos; $(MAKE)
+	cd ../src-loca/src; $(MAKE)
+	cd ../src-loca/src-lapack; $(MAKE)
+	cd ../src-loca/src-epetra; $(MAKE)
+	cd ../src-loca/src-mf; $(MAKE)
+
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.nox $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \

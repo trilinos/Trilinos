@@ -721,6 +721,10 @@ all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
 	$(BUILD_THYRA_SUBLIB)
 
+libs:
+	cd $(top_builddir)/src ; $(MAKE)
+	$(BUILD_THYRA_SUBLIB)
+
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.aztecoo $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \

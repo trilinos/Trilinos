@@ -765,6 +765,9 @@ run-pyexamples:
 all-libs:
 	cd $(top_builddir)/src ; $(MAKE) all-libs
 
+libs:
+	cd $(top_builddir)/src ; $(MAKE)
+
 @USING_EXPORT_MAKEFILES_TRUE@install-exec-hook:	
 @USING_EXPORT_MAKEFILES_TRUE@	cp $(top_builddir)/Makefile.export.thyra $(exec_prefix)/include/.
 @USING_EXPORT_MAKEFILES_TRUE@	$(PERL_EXE) $(top_srcdir)/config/replace-install-prefix.pl \
