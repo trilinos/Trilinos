@@ -63,21 +63,15 @@ class Loadable : public core::Object
     }
 
     //! Returns the Epetra_Map associated to the element distribution.
-    inline const Epetra_Map& getElementMap() const
+    inline const RefCountPtr<Epetra_Map> getElementMap() const
     {
-      return(*ElementMap_.get());
+      return(ElementMap_);
     }
 
     //! Returns the Epetra_Map associated to the vertex distribution.
-    inline const Epetra_Map& getVertexMap() const
+    inline const RefCountPtr<Epetra_Map> getVertexMap() const
     {
-      return(*(VertexMap_.get()));
-    }
-
-    //! Returns the Element contained in the grid. FIXME: DELETE
-    const grid::Element& getGridElement() const
-    {
-      return(*GridElement_.get());
+      return(VertexMap_);
     }
 
     const RefCountPtr<grid::Element> getElement() const
@@ -189,7 +183,7 @@ class Loadable : public core::Object
     // @} 
     // @{ \name 
     
-    virtual void FreezeElements()
+    virtual void freezeConnectivity()
     {
       const Epetra_Comm& Comm = ADJ_->Comm();
 
@@ -197,7 +191,7 @@ class Loadable : public core::Object
       // for the vertex map (with overlap). Note that the vertices
       // of all elements are in global numbering.
 
-      int MaxSize = getElementMap().NumMyElements() * getGridElement().getNumVertices();
+      int MaxSize = getElementMap()->NumMyElements() * getElement()->getNumVertices();
 
       vector<int> MyGlobalElements(MaxSize);
       int count = 0;
@@ -205,9 +199,9 @@ class Loadable : public core::Object
       // insert all elements in a hash table
       Teuchos::Hashtable<int, short int> hash(MaxSize * 2);
 
-      for (int i = 0; i < getElementMap().NumMyElements(); ++i)
+      for (int i = 0; i < getElementMap()->NumMyElements(); ++i)
       {
-        for (int j = 0; j < getGridElement().getNumVertices(); ++j)
+        for (int j = 0; j < getElement()->getNumVertices(); ++j)
         {
           const int& GVID = ADJ(i, j);
           if (hash.containsKey(GVID) == false)
@@ -224,13 +218,13 @@ class Loadable : public core::Object
         COO_[i] = rcp(new Epetra_FEVector(*VertexMap_));
     }
 
-    void FreezeCoordinates()
+    void freezeCoordinates()
     {
       const Epetra_Comm& Comm = ADJ_->Comm();
 
       for (int i = 0; i < COO_.size(); ++i)
       {
-        COO_[i]->GlobalAssemble();
+        COO_[i]->GlobalAssemble(Insert);
       }
     }
 
@@ -239,7 +233,7 @@ class Loadable : public core::Object
       return(*(COO_[i].get()));
     }
 
-    virtual void Print(ostream & os) const
+    virtual void print(ostream & os) const
     {
       cout << *ADJ_;
 

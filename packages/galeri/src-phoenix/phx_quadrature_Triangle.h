@@ -11,45 +11,45 @@ class Triangle : public Element
 {
 public:
 
-  Triangle(const int NumQuadrNodes)
+  Triangle(const int numQuadrNodes)
   {
-    NumQuadrNodes_ = NumQuadrNodes;
-    NumDimensions_ = 2;
-    NumLocalNodes_ = 3;
-    NumBasisFunctions_ = 3;
+    numQuadrNodes_ = numQuadrNodes;
+    numDimensions_ = 2;
+    numLocalNodes_ = 3;
+    numBasisFunctions_ = 3;
 
-    J_.Reshape(NumDimensions_,NumDimensions_);
-    basis_rs_.Reshape(NumLocalNodes_,NumQuadrNodes_);
-    basis_dr_.Reshape(NumLocalNodes_,NumQuadrNodes_);
-    basis_ds_.Reshape(NumLocalNodes_,NumQuadrNodes_);
-    basis_dt_.Reshape(NumLocalNodes_,NumQuadrNodes_);
+    J_.Reshape(numDimensions_,numDimensions_);
+    basis_rs_.Reshape(numLocalNodes_,numQuadrNodes_);
+    basis_dr_.Reshape(numLocalNodes_,numQuadrNodes_);
+    basis_ds_.Reshape(numLocalNodes_,numQuadrNodes_);
+    basis_dt_.Reshape(numLocalNodes_,numQuadrNodes_);
 
-    basis_xy_.Reshape(NumLocalNodes_, 1);
-    basis_dx_.Reshape(NumLocalNodes_, 1);
-    basis_dy_.Reshape(NumLocalNodes_, 1);
-    basis_dz_.Reshape(NumLocalNodes_, 1);
+    basis_xy_.Reshape(numLocalNodes_, 1);
+    basis_dx_.Reshape(numLocalNodes_, 1);
+    basis_dy_.Reshape(numLocalNodes_, 1);
+    basis_dz_.Reshape(numLocalNodes_, 1);
 
-    basis_rs_temp_.Reshape(NumLocalNodes_, 1);
-    basis_dr_temp_.Reshape(NumLocalNodes_, 1);
-    basis_ds_temp_.Reshape(NumLocalNodes_, 1);
-    basis_dt_temp_.Reshape(NumLocalNodes_, 1);
+    basis_rs_temp_.Reshape(numLocalNodes_, 1);
+    basis_dr_temp_.Reshape(numLocalNodes_, 1);
+    basis_ds_temp_.Reshape(numLocalNodes_, 1);
+    basis_dt_temp_.Reshape(numLocalNodes_, 1);
 
-    Weight_.Reshape(NumQuadrNodes_, 1);
+    weight_.Reshape(numQuadrNodes_, 1);
 
-    coord_.Reshape(NumLocalNodes_, 3);
-    for (int i = 0; i < NumLocalNodes_; ++i)
+    coord_.Reshape(numLocalNodes_, 3);
+    for (int i = 0; i < numLocalNodes_; ++i)
       for (int j = 0; j < 3; ++j)
         coord_(i, j) = 0.0;
 
-    qr_.Reshape(NumQuadrNodes_, 1);
-    qs_.Reshape(NumQuadrNodes_, 1);
+    qr_.Reshape(numQuadrNodes_, 1);
+    qs_.Reshape(numQuadrNodes_, 1);
 
-    switch (NumQuadrNodes_) {
+    switch (numQuadrNodes_) {
     case 1:
       // up to order 1
       qs_[0]    = 1.0/3;
       qr_[0]    = 1.0/3;
-      Weight_[0] = 0.5;
+      weight_[0] = 0.5;
       break;
 
     case 3:
@@ -62,9 +62,9 @@ public:
       qs_[1] =  0.5;
       qs_[2] =  0.5;
 
-      Weight_[0] = 1.0/6.0;
-      Weight_[1] = 1.0/6.0;    
-      Weight_[2] = 1.0/6.0;
+      weight_[0] = 1.0/6.0;
+      weight_[1] = 1.0/6.0;    
+      weight_[2] = 1.0/6.0;
       break;
 
     case 4:
@@ -79,10 +79,10 @@ public:
       qs_[2] =  3.0/5;
       qs_[3] =  1.0/5;
 
-      Weight_[0] = -27.0/96.0;
-      Weight_[1] =  25.0/96.0;    
-      Weight_[2] =  25.0/96.0;
-      Weight_[2] =  25.0/96.0;
+      weight_[0] = -27.0/96.0;
+      weight_[1] =  25.0/96.0;    
+      weight_[2] =  25.0/96.0;
+      weight_[2] =  25.0/96.0;
       break;
 
     case 7:
@@ -103,23 +103,22 @@ public:
       qs_[5] =  0.5;
       qs_[6] =  1.0/3.0;
 
-      Weight_[0] = 1.0/40.0; 
-      Weight_[1] = 1.0/15.0;    
-      Weight_[2] = 1.0/40.0;
-      Weight_[3] = 1.0/15.0;
-      Weight_[4] = 1.0/40.0;
-      Weight_[5] = 1.0/15.0;
-      Weight_[6] = 9.0/40.0;
+      weight_[0] = 1.0/40.0; 
+      weight_[1] = 1.0/15.0;    
+      weight_[2] = 1.0/40.0;
+      weight_[3] = 1.0/15.0;
+      weight_[4] = 1.0/40.0;
+      weight_[5] = 1.0/15.0;
+      weight_[6] = 9.0/40.0;
       break;
 
     default:
-      cerr << "Specified number of quadrature points ("
-           << NumQuadrNodes << ") is not available." << endl;
-      cerr << "Valid choices are: 1, 3, 4, 7." << endl;
-      throw(-1);
+      TEST_FOR_EXCEPTION(false, std::out_of_range,
+                         "Selected quadrature nodes, " << numQuadrNodes_ <<
+                         ", not defined. Available choices are 1, 3, 4, 7");
     }
 
-    for (int k = 0; k < NumQuadrNodes_; k++) 
+    for (int k = 0; k < numQuadrNodes_; k++) 
     {
       basis_rs_(0,k) = 1 - qr_[k] - qs_[k];
       basis_rs_(1,k) = qr_[k];
@@ -135,11 +134,11 @@ public:
     }
   }
 
-  //! Deastructor.
+  //! Destructor.
   ~Triangle()
   {}
 
-  virtual void ComputeJacobian(const int QuadrNode) const
+  virtual void computeJacobian(const int quadrNode) const
   {
     const double& x_triangle_0 = coord_(0, 0);
     const double& x_triangle_1 = coord_(1, 0);
@@ -154,14 +153,10 @@ public:
              (  y_triangle_0 - y_triangle_1) *
              (  x_triangle_0 - x_triangle_2);
 
-    if (det_J_ == 0) 
-    {
-      cerr << "TriangleQuadrature: element has zero determinant" << endl;
-      cerr << "Coordinates are: " << endl;
-      cerr << "x = " << x_triangle_0 << " " << x_triangle_1 << " " << x_triangle_2 << endl;
-      cerr << "y = " << y_triangle_0 << " " << y_triangle_1 << " " << y_triangle_2 << endl;
-      throw(-1);
-    }
+    TEST_FOR_EXCEPTION(det_J_ == 0, std::logic_error,
+                       "element has zero determinant, " << 
+                       "x = (" << x_triangle_0 << ", " << x_triangle_1 << ", " << x_triangle_2 << "); " << 
+                       "y = (" << y_triangle_0 << ", " << y_triangle_1 << ", " << y_triangle_2 << "); ");
 
     double divide_by = 1.0 / det_J_;
 

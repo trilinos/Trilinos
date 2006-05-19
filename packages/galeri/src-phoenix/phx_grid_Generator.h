@@ -41,7 +41,7 @@ public:
       domain->setGlobalConnectivity(i, 3, base + 1 + nx);
     }
 
-    domain->FreezeElements();
+    domain->freezeConnectivity();
 
     for (int i = 0; i < numGlobalVertices; ++i)
     {
@@ -52,7 +52,7 @@ public:
       domain->setGlobalCoordinates(i, 1, iy * deltay);
     }
 
-    domain->FreezeCoordinates();
+    domain->freezeCoordinates();
 
     cout << *domain;
     // now build boundary faces
@@ -67,7 +67,7 @@ public:
       boundary->setGlobalConnectivity(i, 1, i + 1);
     }
 
-    boundary->FreezeElements();
+    boundary->freezeConnectivity();
 
     for (int i = 0; i < nx + 1; ++i)
     {
@@ -75,7 +75,7 @@ public:
       boundary->setGlobalCoordinates(i, 1, 0.0);
     }
 
-    boundary->FreezeCoordinates();
+    boundary->freezeCoordinates();
 
     map<string, RefCountPtr<Loadable> > patches;
     patches["domain"] = domain;

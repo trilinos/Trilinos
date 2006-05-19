@@ -15,9 +15,14 @@ public:
   virtual ~Element()
   {}
 
-  inline int& operator()(const int i)
+  inline int& getID()
   {
     return(ID_);
+  }
+
+  inline void setID(const int ID)
+  {
+    ID_ = ID;
   }
 
   inline double& operator()(const int i, const int j)
@@ -30,15 +35,15 @@ public:
     return(coord_(i, j));
   }
 
-  virtual void ComputeJacobian(const int QuadrNode) const = 0;
+  virtual void computeJacobian(const int quadrNode) const = 0;
 
-  void ComputeQuadrNodes(const int ii, double& xq, double& yq, double& zq) const
+  void computeQuadrNodes(const int ii, double& xq, double& yq, double& zq) const
   {
     xq = 0.0;
     yq = 0.0;
     zq = 0.0;
 
-    for (int k = 0; k < NumLocalNodes_; k++) 
+    for (int k = 0; k < numLocalNodes_; k++) 
     {
       xq += basis_rs_(k,ii) * coord_(k, 0);
       yq += basis_rs_(k,ii) * coord_(k, 1);
@@ -50,23 +55,23 @@ public:
     }
   }
 
-  void ComputeDerivatives(const int QuadrNode) const
+  void computeDerivatives(const int quadrNode) const
   {
-    for (int i = 0; i < NumLocalNodes_; i++) 
+    for (int i = 0; i < numLocalNodes_; i++) 
     {
-      basis_dx_[i] = basis_dr_(i,QuadrNode) * J_(0,0) +
-                     basis_ds_(i,QuadrNode) * J_(0,1);
-      basis_dy_[i] = basis_dr_(i,QuadrNode) * J_(1,0) +
-                     basis_ds_(i,QuadrNode) * J_(1,1);
+      basis_dx_[i] = basis_dr_(i, quadrNode) * J_(0,0) +
+                     basis_ds_(i, quadrNode) * J_(0,1);
+      basis_dy_[i] = basis_dr_(i, quadrNode) * J_(1,0) +
+                     basis_ds_(i, quadrNode) * J_(1,1);
     }
   }
 
-  inline double getQuadrWeight(const int QuadrNode) const
+  inline double getQuadrWeight(const int quadrNode) const
   {
-    return(Weight_[QuadrNode]);
+    return(weight_[quadrNode]);
   }
 
-  inline double getDetJacobian(const int QuadrNode) const
+  inline double getDetJacobian(const int quadrNode) const
   {
     return(det_J_);
   }
@@ -93,28 +98,27 @@ public:
 
   inline int getNumQuadrNodes() const
   {
-    return(NumQuadrNodes_);
+    return(numQuadrNodes_);
   }
 
   inline int getNumBasisFunctions() const 
   {
-    return(NumBasisFunctions_);
+    return(numBasisFunctions_);
   }
 
-  virtual void Print(ostream & os) const
+  virtual void print(ostream & os) const
   {
-    cout << "Number of quadrature nodes = " << NumQuadrNodes_ << endl;
-    cout << "Number of dimensions = " << NumDimensions_ << endl;
+    cout << "Number of quadrature nodes = " << numQuadrNodes_ << endl;
+    cout << "Number of dimensions = " << numDimensions_ << endl;
     cout << coord_;
-
   }
 
 protected:
 
-  int NumQuadrNodes_;
-  int NumDimensions_;
-  int NumLocalNodes_;
-  int NumBasisFunctions_;
+  int numQuadrNodes_;
+  int numDimensions_;
+  int numLocalNodes_;
+  int numBasisFunctions_;
 
   mutable double det_J_;
 
@@ -135,7 +139,7 @@ protected:
   mutable Epetra_SerialDenseVector basis_ds_temp_;
   mutable Epetra_SerialDenseVector basis_dt_temp_;
 
-  mutable Epetra_SerialDenseVector Weight_;
+  mutable Epetra_SerialDenseVector weight_;
 
   mutable Epetra_SerialDenseVector qr_;
   mutable Epetra_SerialDenseVector qs_;

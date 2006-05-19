@@ -1,5 +1,5 @@
-#ifndef PHX_GRID_QUAD_H
-#define PHX_GRID_QUAD_H
+#ifndef PHX_GRID_TET_H
+#define PHX_GRID_TET_H
 
 #include "Teuchos_TestForException.hpp"
 
@@ -9,24 +9,25 @@
 namespace phx {
 namespace grid {
 
-class Quad : public Element
+class Tet : public Element
 {
   public:
-    Quad(const int numDimensions)
+    Tet(const int numDimensions)
     {
-      TEST_FOR_EXCEPTION(numDimensions <= 1, std::out_of_range,
-                         "numDimensions = " << numDimensions << ", should be > 1");
-
-      setLabel("phx::grid::Quad");
+      TEST_FOR_EXCEPTION(numDimensions < 3, std::out_of_range,
+                         "numDimensions = " << numDimensions << ", should be > 2");
+      
+      setLabel("phx::grid::Tet");
       setNumVertices(4);
       setNumDimensions(numDimensions);
       setNumComponents(4);
-      Segment component(numDimensions);
+      Triangle component(numDimensions);
       for (int i = 0; i < 4; ++i)
         setComponent(i, component);
     }
-}; 
+};
 
 } // namespace grid
 } // namespace phx
 #endif
+

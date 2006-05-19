@@ -84,7 +84,7 @@ class SerialXML
                 ++count;
               }
 
-              patch->FreezeElements();
+              patch->freezeConnectivity();
             }
             else if (tag == "Vertices")
             {
@@ -107,7 +107,7 @@ class SerialXML
                 }
               }
 
-              patch->FreezeCoordinates();
+              patch->freezeCoordinates();
             }
           }
           patches[Label] = patch;

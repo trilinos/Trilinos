@@ -11,62 +11,63 @@ class Quad : public Element
 {
 public:
 
-  Quad(const int NumQuadrNodes)
+  Quad(const int numQuadrNodes)
   {
-    NumQuadrNodes_ = NumQuadrNodes;
-    NumDimensions_ = 2;
-    NumLocalNodes_ = 4;
-    NumBasisFunctions_ = 4;
+    numQuadrNodes_ = numQuadrNodes;
+    numDimensions_ = 2; // FIXME: NEEDED?
+    numLocalNodes_ = 4;
+    numBasisFunctions_ = 4;
 
-    J_.Reshape(NumDimensions_,NumDimensions_);
-    basis_rs_.Reshape(NumLocalNodes_,NumQuadrNodes_);
-    basis_dr_.Reshape(NumLocalNodes_,NumQuadrNodes_);
-    basis_ds_.Reshape(NumLocalNodes_,NumQuadrNodes_);
-    basis_dt_.Reshape(NumLocalNodes_,NumQuadrNodes_);
+    J_.Reshape(3,3);
+    basis_rs_.Reshape(numLocalNodes_, numQuadrNodes_);
+    basis_dr_.Reshape(numLocalNodes_, numQuadrNodes_);
+    basis_ds_.Reshape(numLocalNodes_, numQuadrNodes_);
+    basis_dt_.Reshape(numLocalNodes_, numQuadrNodes_);
 
-    basis_xy_.Reshape(NumLocalNodes_, 1);
-    basis_dx_.Reshape(NumLocalNodes_, 1);
-    basis_dy_.Reshape(NumLocalNodes_, 1);
-    basis_dz_.Reshape(NumLocalNodes_, 1);
+    basis_xy_.Reshape(numLocalNodes_, 1);
+    basis_dx_.Reshape(numLocalNodes_, 1);
+    basis_dy_.Reshape(numLocalNodes_, 1);
+    basis_dz_.Reshape(numLocalNodes_, 1);
 
-    basis_rs_temp_.Reshape(NumLocalNodes_, 1);
-    basis_dr_temp_.Reshape(NumLocalNodes_, 1);
-    basis_ds_temp_.Reshape(NumLocalNodes_, 1);
-    basis_dt_temp_.Reshape(NumLocalNodes_, 1);
+    basis_rs_temp_.Reshape(numLocalNodes_, 1);
+    basis_dr_temp_.Reshape(numLocalNodes_, 1);
+    basis_ds_temp_.Reshape(numLocalNodes_, 1);
+    basis_dt_temp_.Reshape(numLocalNodes_, 1);
 
-    Weight_.Reshape(NumQuadrNodes_, 1);
+    weight_.Reshape(numQuadrNodes_, 1);
 
-    coord_.Reshape(NumLocalNodes_, 3);
-    for (int i = 0; i < NumLocalNodes_; ++i)
+    coord_.Reshape(numLocalNodes_, 3);
+    for (int i = 0; i < numLocalNodes_; ++i)
       for (int j = 0; j < 3; ++j)
         coord_(i, j) = 0.0;
 
-    qr_.Reshape(NumQuadrNodes_, 1);
-    qs_.Reshape(NumQuadrNodes_, 1);
+    qr_.Reshape(numQuadrNodes_, 1);
+    qs_.Reshape(numQuadrNodes_, 1);
 
-    switch (NumQuadrNodes_) {
+    switch (numQuadrNodes_) {
     case 1:      
       qs_[0]     = 0.0;
       qr_[0]     = 0.0;
-      Weight_[0] = 4.0;
+      weight_[0] = 4.0;
       break;
 
     case 4:
 
       qs_[0]     =  -0.57735026918963;
       qr_[0]     =  -0.57735026918963;
-      Weight_[0] =   1.0;
+      weight_[0] =   1.0;
 
       qs_[1]     =   0.57735026918963;
       qr_[1]     =  -0.57735026918963;
-      Weight_[1] =   1.0;
+      weight_[1] =   1.0;
+
       qs_[2]     =   0.57735026918963;
       qr_[2]     =   0.57735026918963;
+      weight_[2] =   1.0;
 
-      Weight_[2] =   1.0;
       qs_[3]     =   0.57735026918963;
       qr_[3]     =  -0.57735026918963;
-      Weight_[3] =   1.0;
+      weight_[3] =   1.0;
 
       break;
 
@@ -74,47 +75,46 @@ public:
 
       qs_[0]     =  -0.34641016151378; /* -sqrt(3)/5 */
       qr_[0]     =  -0.34641016151378;
-      Weight_[0] =  25.0/81;
+      weight_[0] =  25.0/81;
 
       qs_[1]     =  0.0;
       qr_[1]     =  -0.34641016151378;
-      Weight_[1] = 40.0/81;
+      weight_[1] = 40.0/81;
 
       qs_[2]     =  +0.34641016151378;
       qr_[2]     =  -0.34641016151378;
-      Weight_[2] = 25.0/81;
+      weight_[2] = 25.0/81;
 
       qs_[3]     =  -0.34641016151378;
       qr_[3]     =  0.0;
-      Weight_[3] = 40.0/81;
+      weight_[3] = 40.0/81;
 
       qs_[4]     =  0.0;
       qr_[4]     =  0.0;
-      Weight_[4] = 64.0/81;
+      weight_[4] = 64.0/81;
 
       qs_[5]     =  +0.34641016151378;
       qr_[5]     =  0.0;
-      Weight_[5] = 40.0/81;
+      weight_[5] = 40.0/81;
 
       qs_[6]     =  -0.34641016151378;
       qr_[6]     =  +0.34641016151378;
-      Weight_[6] = 25.0/81;
+      weight_[6] = 25.0/81;
 
       qs_[7]     =  0.0;
       qr_[7]     =  +0.34641016151378;
-      Weight_[7] = 40.0/81;
+      weight_[7] = 40.0/81;
 
       qs_[8]     =  +0.34641016151378;
       qr_[8]     =  +0.34641016151378;
-      Weight_[8] = 25.0/81;
+      weight_[8] = 25.0/81;
 
       break;
 
     default:
-      cerr << "The selected number of quadrature nodes ("
-           << NumQuadrNodes_ << " is not available" << endl;
-      cerr << "Valid choices are: 1, 4, 9." << endl;
-      throw(-1);
+      TEST_FOR_EXCEPTION(true, std::out_of_range,
+                         "Selected quadrature nodes, " << numQuadrNodes_ <<
+                         ", not defined. Available choices are 1, 4, 9");
     }
 
     double x[4], y[4];
@@ -122,7 +122,7 @@ public:
     x[0] = -1.0;  x[1] =  1.0;  x[2] =  1.0;  x[3] = -1.0;
     y[0] = -1.0;  y[1] = -1.0;  y[2] =  1.0;  y[3] =  1.0;
 
-    for (int k = 0 ; k < NumQuadrNodes_ ; k++) {
+    for (int k = 0 ; k < numQuadrNodes_ ; k++) {
       for (int i = 0 ; i < 4 ; i++) {
         basis_rs_(i,k) = 0.25*(1+x[i] * qr_[k])*(1 + y[i] * qs_[k]);
         basis_dr_(i,k) = 0.25*   x[i]          *(1 + y[i] * qs_[k]);
@@ -135,7 +135,7 @@ public:
   ~Quad()
   {}
 
-  virtual void ComputeJacobian(const int QuadrNode) const
+  virtual void computeJacobian(const int quadrNode) const
   {
     const double& x_0 = coord_(0, 0);
     const double& x_1 = coord_(1, 0);
@@ -150,8 +150,8 @@ public:
     double divide_by;
     double ijacobian[2][2];
 
-    double qr = qr_[QuadrNode];
-    double qs = qs_[QuadrNode];
+    double qr = qr_[quadrNode];
+    double qs = qs_[quadrNode];
 
     /* transformation from the reference square to the actual one */
     ijacobian[0][0] = 0.25 * (-x_0 * (1-qs) + x_1 * (1-qs) + x_2 * (1+qs) - x_3 * (1+qs));
@@ -161,7 +161,10 @@ public:
 
     det_J_ = ijacobian[0][0] * ijacobian[1][1] - ijacobian[0][1] * ijacobian[1][0];
 
-    assert (det_J_ != 0.0);
+    TEST_FOR_EXCEPTION(det_J_ == 0, std::logic_error,
+                       "element has zero determinant, " << endl <<
+                       "x = (" << x_0 << ", " << x_1 << ", " << x_2 << ", " << x_3 << "); "
+                       "y = (" << y_0 << ", " << y_1 << ", " << y_2 << ", " << y_3 << "); ");
 
     divide_by = 1.0 / (det_J_);
 

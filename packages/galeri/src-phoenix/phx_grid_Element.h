@@ -14,9 +14,9 @@ public:
   // @{ \name constructor and destructor
   //! Default constructor.
   Element() :
-    NumVertices_(0),
-  NumDimensions_(0),
-  NumComponents_(0)
+    numVertices_(0),
+    numDimensions_(0),
+    numComponents_(0)
   {}
 
   //! Copy constructor.
@@ -50,49 +50,49 @@ public:
 
   int getNumVertices() const
   {
-    return(NumVertices_);
+    return(numVertices_);
   }
 
   int getNumDimensions() const
   {
-    return(NumDimensions_);
+    return(numDimensions_);
   }
 
   int getNumComponents() const 
   {
-    return(NumComponents_);
+    return(numComponents_);
   }
 
   const Element& getComponent(const int which) const
   {
-    return(Components_[which]);
+    return(components_[which]);
   }
 
   // @}
   // @{ \name Set methods
 
-  void setNumVertices(const int NumVertices)
+  void setNumVertices(const int numVertices)
   {
-    NumVertices_ = NumVertices;
+    numVertices_ = numVertices;
   }
 
-  void setNumDimensions(const int NumDimensions)
+  void setNumDimensions(const int numDimensions)
   {
-    NumDimensions_ = NumDimensions;
+    numDimensions_ = numDimensions;
   }
 
-  void setNumComponents(const int NumComponents)
+  void setNumComponents(const int numComponents)
   {
-    NumComponents_ = NumComponents;
-    Components_.resize(NumComponents);
+    numComponents_ = numComponents;
+    components_.resize(numComponents);
   }
 
   void setComponent(const int which, const Element& what)
   {
-    Components_[which] = what;
+    components_[which] = what;
   }
 
-  virtual void Print(ostream & os) const
+  virtual void print(ostream & os) const
   {
     cout << endl;
     cout << "Number of vertices = " << getNumVertices() << endl;
@@ -108,15 +108,14 @@ public:
 private:
   // @{ \name Private data and methods
 
-  int NumVertices_;
-  int NumDimensions_;
-  int NumComponents_;
-  vector<Element> Components_;
+  int numVertices_;
+  int numDimensions_;
+  int numComponents_;
+  vector<Element> components_;
 
   // @}
 }; // class Element
 
 } // namespace grid
 } // namespace phx
-
 #endif // PHX_BASE_ELEMENT_H

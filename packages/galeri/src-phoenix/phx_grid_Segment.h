@@ -10,15 +10,18 @@ namespace grid {
 class Segment : public Element
 {
   public:
-    Segment(const int NumDimensions)
+    Segment(const int numDimensions)
     {
-      setLabel("GridSegment");
+      TEST_FOR_EXCEPTION(numDimensions < 1, std::out_of_range,
+                         "numDimensions = " << numDimensions << ", should be > 0");
+
+      setLabel("phx::grid::Segment");
       setNumVertices(2);
-      setNumDimensions(NumDimensions);
+      setNumDimensions(numDimensions);
       setNumComponents(2);
-      Point Component(NumDimensions);
+      Point component(numDimensions);
       for (int i = 0; i < 2; ++i)
-        setComponent(i, Component);
+        setComponent(i, component);
     }
 };
 

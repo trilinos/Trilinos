@@ -37,11 +37,11 @@ public:
 
     for (iter = patches.begin(); iter != patches.end(); ++iter)
     {
-      const Epetra_Map& vertexMap = iter->second->getVertexMap();
+      const RefCountPtr<Epetra_Map> vertexMap = iter->second->getVertexMap();
 
-      int* myGlobalElements = vertexMap.MyGlobalElements();
+      int* myGlobalElements = vertexMap->MyGlobalElements();
 
-      for (int i = 0; i < vertexMap.NumMyElements(); ++i)
+      for (int i = 0; i < vertexMap->NumMyElements(); ++i)
       {
         if (!hash.containsKey(myGlobalElements[i]))
         {

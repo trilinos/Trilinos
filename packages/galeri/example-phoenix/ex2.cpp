@@ -38,8 +38,11 @@ double exactSolution(const char& what, const double& x, const double& y, const d
     return(x);
   else if (what == 'x')
     return(1.0);
-  else
+  else if (what == 'y')
     return(0.0);
+  else if (what == 'z')
+    return(0.0);
+  return(0.0);
 }
 
 // =========== //
@@ -55,54 +58,18 @@ int main(int argc, char *argv[])
   Epetra_SerialComm comm;
 #endif
 
-  // create a 1D grid on (0, 1) composed by segments. Each processor will have 4
-  // elements. The boundary conditions of Dirichlet type and then imposed on
-  // the assembled matrix.
-  
-  int numDimensions = 1;
-  int numMyElements = 4;
-
-  RefCountPtr<Epetra_Map> domainMap, leftCornerMap, rightCornerMap;
-  
-  domainMap = rcp(new Epetra_Map(-1, numMyElements, 0, comm));
-  RefCountPtr<phx::grid::Loadable> domain, leftCorner, rightCorner;
-  
-  RefCountPtr<phx::grid::Element> domainElement, cornerElement;
-  domainElement = rcp(new phx::grid::Segment(numDimensions));
-  cornerElement = rcp(new phx::grid::Point(numDimensions));
-
-  domain = rcp(new phx::grid::Loadable(domainMap, domainElement));
-
-  int* myGlobalElements = domainMap->MyGlobalElements();
-
-  // each processor inserts locally owned elements
-  for (int LID = 0; LID < numMyElements; ++LID)
-  {
-    int GID = myGlobalElements[LID];
-
-    domain->setGlobalConnectivity(GID, 0, GID);
-    domain->setGlobalConnectivity(GID, 1, GID + 1);
-  }
-
-  domain->freezeConnectivity();
-
-  double h = 1.0 / domain->getNumGlobalElements();
-
-  int* myGlobalVertices = domain->getVertexMap()->MyGlobalElements();
-
-  for (int LID = 0; LID < domain->getNumMyVertices(); ++LID)
-  {
-    int GID = myGlobalVertices[LID];
-    domain->setGlobalCoordinates(GID, 0, h * GID);
-  }
-
-  domain->freezeCoordinates();
+  string XMLFileName = "/Users/marzio/test.xml";
 
   map<string, RefCountPtr<phx::grid::Loadable> > patches;
-  patches["domain"] = domain;
+  //patches = phx::grid::SerialXML::readFile(comm, XMLFileName);
+  patches = phx::grid::Generator::getSquareWithQuad(comm, 10, 10, 1, 1);
 
-  // create the map for the matrix, in this case simply linear.
-  RefCountPtr<Epetra_Map> matrixMap = rcp(new Epetra_Map(domain->getNumGlobalVertices(), 0, comm));
+  RefCountPtr<phx::grid::Loadable> domain          = patches["domain"];
+  RefCountPtr<phx::grid::Loadable> boundary        = patches["boundary"];
+  RefCountPtr<phx::grid::Element>  domainElement   = domain->getElement();
+  RefCountPtr<phx::grid::Element>  boundaryElement = boundary->getElement();
+
+  RefCountPtr<Epetra_Map> matrixMap = phx::core::Utils::createMatrixMap(comm, patches);
 
   Epetra_FECrsMatrix matrix(Copy, *matrixMap, 0);
   Epetra_FEVector    lhs(*matrixMap);
@@ -110,7 +77,7 @@ int main(int argc, char *argv[])
 
   Epetra_IntSerialDenseVector vertexList(domainElement->getNumVertices());
 
-  phx::quadrature::Segment domainQuadrature(4);
+  phx::quadrature::Quad domainQuadrature(1);
   phx::problem::ScalarLaplacian problem;
   Epetra_SerialDenseMatrix elementLHS(domainElement->getNumVertices(),domainElement->getNumVertices());
   Epetra_SerialDenseVector elementRHS(domainElement->getNumVertices());
@@ -136,8 +103,20 @@ int main(int argc, char *argv[])
   rhs.GlobalAssemble();
 
   Teuchos::Hashtable<int, double> dirichletRows;
-  dirichletRows.put(0, 0.0);
-  dirichletRows.put(numMyElements * comm.NumProc() - 1, 0.0);
+
+  vector<double> coord(boundaryElement->getNumDimensions());
+  
+  for (int i = 0; i < boundary->getNumMyElements(); ++i)
+  {
+    for (int j = 0; j < boundaryElement->getNumVertices(); ++j)
+    {
+      int GID = boundary->getGlobalConnectivity(i, j);
+      for (int k = 0; k < boundaryElement->getNumDimensions(); ++k)
+        coord[k] = boundary->getGlobalCoordinates(GID, k);
+      
+      dirichletRows.put(GID, 0.0);
+    }
+  }
 
   for (int i = 0; i < matrix.NumMyRows(); ++i)
   {
@@ -164,6 +143,7 @@ int main(int argc, char *argv[])
       {
         if (indices[j] == i) continue;
         if (dirichletRows.containsKey(matrix.RowMatrixColMap().GID(indices[j]))) values[j] = 0.0;
+        // FIXME: RHS??
       }
     }
   }
@@ -178,10 +158,10 @@ int main(int argc, char *argv[])
 
   solver.Iterate(150, 1e-9);
 
-  // now compute the norm of the solution
-  
+  phx::viz::VTK::Write(comm, patches["domain"], "sol", lhs);
+
   Epetra_SerialDenseVector elementSol(domainElement->getNumVertices());
-  Epetra_SerialDenseVector elementNorm(numDimensions);
+  Epetra_SerialDenseVector elementNorm(2);
   double normL2 = 0.0, semiNormH1 = 0.0;
 
   for (int i = 0; i < domain->getNumMyElements(); ++i)
@@ -203,11 +183,9 @@ int main(int argc, char *argv[])
     semiNormH1 += elementNorm[1];
   }
 
-  if (comm.MyPID() == 0)
-  {
-    cout << "Norm L2 = " << normL2 << endl;
-    cout << "SemiNorm H1 = " << semiNormH1 << endl;
-  }
+
+  cout << "Norm L2 = " << normL2 << endl;
+  cout << "SemiNorm H1 = " << semiNormH1 << endl;
 
 #ifdef HAVE_MPI
   MPI_Finalize();

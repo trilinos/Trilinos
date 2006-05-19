@@ -13,7 +13,7 @@ class ScalarLaplacian : public Base
 
   ~ScalarLaplacian() {}
 
-  virtual void Integrate(phx::quadrature::Element& QE,
+  virtual void integrate(phx::quadrature::Element& QE,
                          Epetra_SerialDenseMatrix& ElementLHS, 
                          Epetra_SerialDenseMatrix& ElementRHS)
   {
@@ -31,9 +31,9 @@ class ScalarLaplacian : public Base
     {
       double xq, yq, zq;
 
-      QE.ComputeQuadrNodes(ii, xq, yq, zq);
-      QE.ComputeJacobian(ii);
-      QE.ComputeDerivatives(ii);
+      QE.computeQuadrNodes(ii, xq, yq, zq);
+      QE.computeJacobian(ii);
+      QE.computeDerivatives(ii);
 
       const double& weight = QE.getQuadrWeight(ii);
       const double& det    = QE.getDetJacobian(ii);
@@ -67,18 +67,18 @@ class ScalarLaplacian : public Base
 
   virtual void computeNorm(phx::quadrature::Element& QE,
                            Epetra_SerialDenseMatrix& elementSol,
-                           Epetra_SerialDenseVector& elementNorm)
+                           Epetra_SerialDenseMatrix& elementNorm)
   {
-    elementNorm[0] = 0.0;
-    elementNorm[1] = 0.0;
+    elementNorm(0, 0) = 0.0;
+    elementNorm(1, 0) = 0.0;
 
     for (int ii = 0 ; ii < QE.getNumQuadrNodes() ; ii++) 
     {
       double xq, yq, zq;
 
-      QE.ComputeQuadrNodes(ii, xq, yq, zq);
-      QE.ComputeJacobian(ii);
-      QE.ComputeDerivatives(ii);
+      QE.computeQuadrNodes(ii, xq, yq, zq);
+      QE.computeJacobian(ii);
+      QE.computeDerivatives(ii);
 
       const double& weight = QE.getQuadrWeight(ii);
       const double& det    = QE.getDetJacobian(ii);
@@ -94,10 +94,84 @@ class ScalarLaplacian : public Base
         sol_derz += QE.getPhiZ(k) * elementSol(k, 0);
       }
 
-      elementNorm[0] += weight * det * sol * sol;
-      elementNorm[1] += weight * det * (sol_derx * sol_derx +
-                                        sol_dery * sol_dery +
-                                        sol_derz * sol_derz);
+      elementNorm(0, 0) += weight * det * sol * sol;
+      elementNorm(1, 0) += weight * det * (sol_derx * sol_derx +
+                                           sol_dery * sol_dery +
+                                           sol_derz * sol_derz);
+    }
+  }
+
+  virtual void computeNorm(phx::quadrature::Element& QE,
+                           Epetra_SerialDenseMatrix& elementSol,
+                           double (*exactSolution)(const char& what, const double& x, 
+                                                   const double& y, const double& z),
+                           Epetra_SerialDenseMatrix& elementNorm)
+  {
+    elementNorm(0, 0) = 0.0;
+    elementNorm(1, 0) = 0.0;
+
+    for (int ii = 0 ; ii < QE.getNumQuadrNodes() ; ii++) 
+    {
+      double xq, yq, zq;
+
+      QE.computeQuadrNodes(ii, xq, yq, zq);
+      QE.computeJacobian(ii);
+      QE.computeDerivatives(ii);
+
+      const double& weight = QE.getQuadrWeight(ii);
+      const double& det    = QE.getDetJacobian(ii);
+
+      double sol      = 0.0, sol_derx = 0.0;
+      double sol_dery = 0.0, sol_derz = 0.0;
+
+      for (int k = 0 ; k < QE.getNumBasisFunctions() ; ++k)
+      {
+        sol      += QE.getPhi(k)  * elementSol(k, 0);
+        sol_derx += QE.getPhiX(k) * elementSol(k, 0);
+        sol_dery += QE.getPhiY(k) * elementSol(k, 0);
+        sol_derz += QE.getPhiZ(k) * elementSol(k, 0);
+      }
+
+      sol      -= exactSolution('f', xq, yq, zq);
+      sol_derx -= exactSolution('x', xq, yq, zq);
+      sol_dery -= exactSolution('y', xq, yq, zq);
+      sol_derz -= exactSolution('z', xq, yq, zq);
+
+      elementNorm(0, 0) += weight * det * sol * sol;
+      elementNorm(1, 0) += weight * det * (sol_derx * sol_derx +
+                                           sol_dery * sol_dery +
+                                           sol_derz * sol_derz);
+    }
+  }
+
+  virtual void computeNorm(phx::quadrature::Element& QE,
+                           double (*exactSolution)(const char& what, const double& x, 
+                                                   const double& y, const double& z),
+                           Epetra_SerialDenseMatrix& elementNorm)
+  {
+    elementNorm(0, 0) = 0.0;
+    elementNorm(1, 0) = 0.0;
+
+    for (int ii = 0 ; ii < QE.getNumQuadrNodes() ; ii++) 
+    {
+      double xq, yq, zq;
+
+      QE.computeQuadrNodes(ii, xq, yq, zq);
+      QE.computeJacobian(ii);
+      QE.computeDerivatives(ii);
+
+      const double& weight = QE.getQuadrWeight(ii);
+      const double& det    = QE.getDetJacobian(ii);
+
+      double sol      = exactSolution('f', xq, yq, zq);
+      double sol_derx = exactSolution('x', xq, yq, zq);
+      double sol_dery = exactSolution('y', xq, yq, zq);
+      double sol_derz = exactSolution('z', xq, yq, zq);
+
+      elementNorm(0, 0) += weight * det * sol * sol;
+      elementNorm(1, 0) += weight * det * (sol_derx * sol_derx +
+                                           sol_dery * sol_dery +
+                                           sol_derz * sol_derz);
     }
   }
 

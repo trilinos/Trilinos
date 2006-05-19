@@ -42,6 +42,9 @@
 #undef HAVE_EXPORT_MAKEFILES
 
 /* Define if want to build with galeri enabled */
+#undef HAVE_GALERI_AZTECOO
+
+/* Define if want to build with galeri enabled */
 #undef HAVE_GALERI_EPETRAEXT
 
 /* Define if want to build galeri-examples */

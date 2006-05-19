@@ -30,16 +30,21 @@
 
 all-local:
 	@echo ""
-	@echo "Trilinos package galeri subdirectory example built successfully."
+	@echo "Trilinos package galeri subdirectory example-phoenix built successfully."
 	@echo ""
 
 include $(top_builddir)/Makefile.export
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = ex1 
+noinst_PROGRAMS = ex1 ex2
 
 ex1_SOURCES      = $(srcdir)/ex1.cpp
 ex1_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 ex1_CXXFLAGS     = $(GALERI_INCLUDES)
 ex1_LDADD        = $(GALERI_LIBS)
+
+ex2_SOURCES      = $(srcdir)/ex2.cpp
+ex2_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
+ex2_CXXFLAGS     = $(GALERI_INCLUDES)
+ex2_LDADD        = $(GALERI_LIBS)

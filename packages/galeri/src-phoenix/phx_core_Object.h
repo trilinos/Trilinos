@@ -10,30 +10,26 @@ class Object
   public:
     Object() 
     {
-      Label_ = "";
-      Tag_ = 0;
-      Modifiable_ = true;
+      label_ = "";
+      tag_ = 0;
     }
 
     Object(const string& Label, const int Tag = 0) 
     {
       setLabel(Label);
       setTag(Tag);
-      setModifiable(true);
     }
 
     Object(const Object& rhs) 
     {
       setLabel(rhs.getLabel());
       setTag(rhs.getTag());
-      setModifiable(rhs.getModifiable());
     }
 
     Object& operator=(const Object& rhs)
     {
       setLabel(rhs.getLabel());
       setTag(rhs.getTag());
-      setModifiable(rhs.getModifiable());
       return(*this);
     }
 
@@ -41,51 +37,40 @@ class Object
 
     virtual string getLabel() const
     {
-      return(Label_);
+      return(label_);
     }
 
-    virtual void setLabel(const string& Label)
+    virtual void setLabel(const string& label)
     {
-      Label_ = Label;
+      label_ = label;
     }
 
     virtual int getTag() const
     {
-      return(Tag_);
+      return(tag_);
     }
 
-    virtual void setTag(const int& Tag)
+    virtual void setTag(const int& tag)
     {
-      Tag_ = Tag;
-    }
-
-    virtual bool getModifiable() const
-    {
-      return(Modifiable_);
-    }
-
-    virtual void setModifiable(const bool& Modifiable)
-    {
-      Modifiable_ = Modifiable;
+      tag_ = tag;
     }
 
     //! Print Object to an output stream
-    virtual void Print(ostream & os) const
+    virtual void print(ostream & os) const
     {
       return;
     }
 
   private:
-    string Label_;
-    int Tag_;
-    bool Modifiable_;
+    string label_;
+    int tag_;
 
 }; // class Object
 
 inline ostream& operator<<(ostream& os, const Object& obj)
 {
   os << obj.getLabel() << endl;
-  obj.Print(os);
+  obj.print(os);
 
   return(os);
 }
