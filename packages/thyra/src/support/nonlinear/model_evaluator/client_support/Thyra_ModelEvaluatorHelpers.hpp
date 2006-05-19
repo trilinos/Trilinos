@@ -76,6 +76,50 @@ create_DgDp_mv( const ModelEvaluator<Scalar>& model, int j, int l, ModelEvaluato
   return ModelEvaluatorBase::DerivativeMultiVector<Scalar>(); // Never be executed!
 }
 
+/** \relates ModelEvaluator */
+template<class Scalar>
+ModelEvaluatorBase::DerivativeMultiVector<Scalar>
+get_dmv(
+  const ModelEvaluatorBase::Derivative<Scalar>             &deriv
+  ,const std::string                                       &derivName
+  )
+{
+  TEST_FOR_EXCEPTION(
+    deriv.getLinearOp().get()!=NULL, std::logic_error
+    ,"Error, LinearOpBase type not expected for " << derivName <<"!"
+    );
+  return deriv.getDerivativeMultiVector();
+}
+
+/** \relates ModelEvaluator */
+template<class Scalar>
+Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+get_mv(
+  const ModelEvaluatorBase::Derivative<Scalar>             &deriv
+  ,const std::string                                       &derivName
+  ,ModelEvaluatorBase::EDerivativeMultiVectorOrientation   orientation
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  TEST_FOR_EXCEPTION(
+    deriv.getLinearOp().get()!=NULL, std::logic_error
+    ,"Error, LinearOpBase type not expected for " << derivName <<"!"
+    );
+  MEB::DerivativeMultiVector<Scalar>
+    dmv = deriv.getDerivativeMultiVector();
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+    mv = dmv.getMultiVector();
+  if( mv.get() ) {
+    TEST_FOR_EXCEPTION(
+      dmv.getOrientation() != orientation, std::logic_error
+      ,"Error, the orientation " << toString(dmv.getOrientation()) << " is not the"
+      " expected orientation of " << toString(orientation)
+      << " for " << derivName << "!"
+      );
+  }
+  return mv;
+}
+
 /** \brief Evaluate <tt>f(x)</tt>. */
 template<class Scalar>
 void eval_f(
