@@ -265,7 +265,7 @@ SUBDIRS = src BlockMap CrsGraph CrsMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
 MultiVector Object RowMatrixTransposer SerialDense SerialSpdDense \
-VbrMatrix Vector Comm scripts BasicPerfTest
+VbrMatrix Vector Comm BasicPerfTest
 
 TESTS = \
 BlockMap/BlockMap_test.exe \

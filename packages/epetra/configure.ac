@@ -88,11 +88,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(1.6.3)
+AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.59)
 
 # Specify revision number of configure.ac that was used to generate
 # configure.
@@ -426,15 +426,6 @@ AC_CONFIG_FILES([
 		example/UG_Ex1/Makefile
 		example/UG_ExMaps/Makefile
 		example/my_example/Makefile
-		test/scripts/Makefile
-		test/scripts/daily/Makefile
-		test/scripts/daily/mpi/Makefile
-		test/scripts/daily/mpi/run_epetra_thyra_tests.pl
-		test/scripts/daily/serial/Makefile
-		test/scripts/daily/serial/run_epetra_thyra_tests.pl
-		test/scripts/weekly/Makefile
-		test/scripts/weekly/mpi/Makefile
-		test/scripts/weekly/serial/Makefile
 		python/Makefile
 		python/src/Makefile
 		python/src/TRILINOS_HOME_DIR

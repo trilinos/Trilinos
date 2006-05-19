@@ -58,9 +58,9 @@ except KeyError:
 include_dirs       = [srcdir]
 library_dirs       = [      ]
 libraries          = [      ]
-extra_link_args    = [      ]
 extra_compile_args = CPPFLAGS.split() + CXXFLAGS.split()
 uniquifyList(extra_compile_args)
+extra_link_args    = extra_compile_args[:]    # Shallow copy
 
 # Get the relevant Makefile export variable values, split them into lists of
 # strings, add them together to obtain a big list of option strings, and then

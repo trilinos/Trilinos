@@ -133,11 +133,16 @@ class Epetra_Map : public Epetra_BlockMap {
 
 
   //! Epetra_Map constructor for a user-defined linear distribution of elements.
-  /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
-      computed as the sum of NumMyElements across all processors in the Epetra_Comm communicator.
+  /*! Creates a map that puts NumMyElements on the calling processor. If
+        NumGlobalElements=-1, the number of global elements will be
+        the computed sum of NumMyElements across all processors in the
+        Epetra_Comm communicator.
 
     \param In
-            NumGlobalElements - Number of elements to distribute.
+            NumGlobalElements - Number of elements to distribute.  Must be
+     either -1 or equal to the computed sum of NumMyElements across all
+     processors in the Epetra_Comm communicator.
+
     \param In
             NumMyElements - Number of elements owned by the calling processor.
     
@@ -160,11 +165,16 @@ class Epetra_Map : public Epetra_BlockMap {
 
   //! Epetra_Map constructor for a user-defined arbitrary distribution of elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
-      are determined from the list MyGlobalElements.  NumGlobalElements will be the
-      computed as the sum of NumMyElements across all processors in the Epetra_Comm communicator.
+      are determined from the list MyGlobalElements.  If 
+       NumGlobalElements=-1, the number of global elements will be 
+       the computed sum of NumMyElements across all processors in the
+       Epetra_Comm communicator.
 
     \param In
-            NumGlobalElements - Number of elements to distribute.
+            NumGlobalElements - Number of elements to distribute.  Must be
+     either -1 or equal to the computed sum of NumMyElements across all
+     processors in the Epetra_Comm communicator.
+
     \param In
             NumMyElements - Number of elements owned by the calling processor.
     

@@ -210,13 +210,18 @@ class Epetra_BlockMap: public Epetra_Object {
   Epetra_BlockMap(int NumGlobalElements, int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined linear distribution of constant size elements.
-  /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
-      computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
+  /*! Creates a map that puts NumMyElements on the calling processor.  If 
+      NumGlobalElements=-1, the number of global elements will be 
+      the computed sum of NumMyElements across all processors in the 
+      Epetra_Comm communicator.
 
       The elements are defined to have a constant fixed size specified by ElementSize.
 
     \param In
-            NumGlobalElements - Number of elements to distribute.
+            NumGlobalElements - Number of elements to distribute.  Must be 
+     either -1 or equal to the computed sum of NumMyElements across all 
+     processors in the Epetra_Comm communicator.
+
     \param In
             NumMyElements - Number of elements owned by the calling processor.
     
@@ -239,13 +244,17 @@ class Epetra_BlockMap: public Epetra_Object {
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
-      are determined from the list MyGlobalElements.  NumGlobalElements will be the
-      computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
+      are determined from the list MyGlobalElements.  If NumGlobalElements=-1, 
+      the number of global elements will be the computed sum of NumMyElements 
+      across all processors in the Epetra_Comm communicator.
 
       The elements are defined to have a constant fixed size specified by ElementSize.
 
     \param In
-            NumGlobalElements - Number of elements to distribute.
+            NumGlobalElements - Number of elements to distribute.  Must be
+     either -1 or equal to the computed sum of NumMyElements across all
+     processors in the Epetra_Comm communicator.
+
     \param In
             NumMyElements - Number of elements owned by the calling processor.
     
@@ -275,13 +284,17 @@ class Epetra_BlockMap: public Epetra_Object {
 		  int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
-  /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
-      computed sum of NumMyElements across all processors in the Epetra_Comm communicator.
+  /*! Creates a map that puts NumMyElements on the calling processor. If 
+     NumGlobalElements=-1, the number of global elements will be
+     the computed sum of NumMyElements across all processors in the       
+     Epetra_Comm communicator.
 
       The elements are defined to have a variable size defined by ElementSizeList.
 
     \param In
-            NumGlobalElements - Number of elements to distribute.
+            NumGlobalElements - Number of elements to distribute.  Must be
+     either -1 or equal to the computed sum of NumMyElements across all
+     processors in the Epetra_Comm communicator.
     
     \param In
             NumMyElements - Number of elements owned by the calling processor.
