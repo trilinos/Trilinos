@@ -31,9 +31,12 @@
 
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Time.hpp"
 
 namespace {
+
+Teuchos::RefCountPtr<Teuchos::Time> overallSolveTimer, individualSolveTimer;
 
 inline
 Teuchos::ETransp convert( Thyra::ETransp trans_in )
@@ -74,7 +77,9 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
   ,allowInexactFwdSolve_(false)
   ,allowInexactAdjSolve_(false)
   ,aztecSolverScalar_(0.0)
-{}
+{
+  initializeTimers();
+}
 
 void AztecOOLinearOpWithSolve::initialize(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >                 &fwdOp
@@ -275,6 +280,7 @@ void AztecOOLinearOpWithSolve::solve(
 
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
+  Teuchos::TimeMonitor timeMonitor(*overallSolveTimer);
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>  out = this->getOStream();
   Teuchos::EVerbosityLevel                     verbLevel = this->getVerbLevel();
@@ -336,6 +342,7 @@ void AztecOOLinearOpWithSolve::solve(
   solveStatus.achievedTol = -1.0;
   const int m = epetra_B->NumVectors();
   for( int j = 0; j < m; ++j ) {
+    Teuchos::TimeMonitor timeMonitor(*individualSolveTimer);
     //
     // Get Epetra_Vector views of B(:,j) and X(:,j)
     //
@@ -433,6 +440,16 @@ void AztecOOLinearOpWithSolve::solve(
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
+}
+
+// private
+
+void AztecOOLinearOpWithSolve::initializeTimers()
+{
+  if(!overallSolveTimer.get()) {
+    overallSolveTimer    = Teuchos::TimeMonitor::getNewTimer("AztecOOLOWS");
+    individualSolveTimer = Teuchos::TimeMonitor::getNewTimer("AztecOOLOWS:SingleSolve");
+  }
 }
 
 }	// end namespace Thyra

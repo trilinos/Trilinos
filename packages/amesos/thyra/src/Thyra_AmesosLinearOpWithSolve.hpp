@@ -225,6 +225,8 @@ private:
 
   void assertInitialized() const;
 
+  static void initializeTimers();
+
 };
 
 // ///////////////////////////

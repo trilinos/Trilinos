@@ -33,13 +33,22 @@
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Epetra_MultiVector.h"
+#include "Teuchos_TimeMonitor.hpp"
+
+namespace {
+
+Teuchos::RefCountPtr<Teuchos::Time> overallSolveTimer;
+
+} // namespace
 
 namespace Thyra {
 
 // Constructors/initializers/accessors
 
 AmesosLinearOpWithSolve::AmesosLinearOpWithSolve()
-{}
+{
+  initializeTimers();
+}
 
 AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
   const Teuchos::RefCountPtr<const LinearOpBase<double> >    &fwdOp
@@ -49,6 +58,7 @@ AmesosLinearOpWithSolve::AmesosLinearOpWithSolve(
   ,const double                                              amesosSolverScalar
   )
 {
+  initializeTimers();
   this->initialize(fwdOp,epetraLP,amesosSolver,amesosSolverTransp,amesosSolverScalar);
 }
 
@@ -192,6 +202,7 @@ void AmesosLinearOpWithSolve::solve(
   TEST_FOR_EXCEPT(X==NULL);
   TEST_FOR_EXCEPT(blockSolveCriteria==NULL && blockSolveStatus!=NULL);
 #endif
+  Teuchos::TimeMonitor timeMonitor(*overallSolveTimer);
   //
   // Get the op(...) range and domain maps
   //
@@ -245,6 +256,16 @@ void AmesosLinearOpWithSolve::solve(
       blockSolveStatus[i].achievedTol = SS::unknownTolerance();
     }
   }
+}
+
+// private
+
+void AmesosLinearOpWithSolve::initializeTimers()
+{
+  if(!overallSolveTimer.get()) {
+    overallSolveTimer    = Teuchos::TimeMonitor::getNewTimer("AmesosLOWS");
+  }
+
 }
 
 }	// end namespace Thyra

@@ -34,6 +34,7 @@
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 #ifdef HAVE_AMESOS_KLU
 #include "Amesos_Klu.h"
@@ -73,7 +74,11 @@
 #endif
 
 namespace {
+
+Teuchos::RefCountPtr<Teuchos::Time> overallTimer, constructTimer, symbolicTimer, factorTimer;
+
 const std::string epetraFwdOp_str = "epetraFwdOp";
+
 } // namespace
 
 namespace Thyra {
@@ -100,7 +105,9 @@ AmesosLinearOpWithSolveFactory::AmesosLinearOpWithSolveFactory(
   ,refactorizationPolicy_(refactorizationPolicy)
   ,throwOnPrecInput_(throwOnPrecInput)
   ,epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
-{}
+{
+  initializeTimers();
+}
 
 // Overridden from LinearOpWithSolveFactoryBase
 
@@ -134,6 +141,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   ,const ESupportSolveUse                                    supportSolveUse
   ) const
 {
+  Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
 #ifdef _DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
@@ -182,76 +190,85 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Create the concrete solver
     Teuchos::RefCountPtr<Amesos_BaseSolver>
       amesosSolver;
-    switch(solverType()) {
-      case Thyra::Amesos::LAPACK :
-        amesosSolver = Teuchos::rcp(new Amesos_Lapack(*epetraLP));
-        break;
+    if(1) {
+      Teuchos::TimeMonitor constructTimeMonitor(*constructTimer);
+      switch(solverType()) {
+        case Thyra::Amesos::LAPACK :
+          amesosSolver = Teuchos::rcp(new Amesos_Lapack(*epetraLP));
+          break;
 #ifdef HAVE_AMESOS_KLU
-      case Thyra::Amesos::KLU :
-        amesosSolver = Teuchos::rcp(new Amesos_Klu(*epetraLP));
-        break;
+        case Thyra::Amesos::KLU :
+          amesosSolver = Teuchos::rcp(new Amesos_Klu(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_PASTIX
-      case Thyra::Amesos::PASTIX :
-        amesosSolver = Teuchos::rcp(new Amesos_Pastix(*epetraLP));
-        break;
+        case Thyra::Amesos::PASTIX :
+          amesosSolver = Teuchos::rcp(new Amesos_Pastix(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_MUMPS
-      case Thyra::Amesos::MUMPS :
-        amesosSolver = Teuchos::rcp(new Amesos_Mumps(*epetraLP));
-        break;
+        case Thyra::Amesos::MUMPS :
+          amesosSolver = Teuchos::rcp(new Amesos_Mumps(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK
-      case Thyra::Amesos::SCALAPACK :
-        amesosSolver = Teuchos::rcp(new Amesos_Scalapack(*epetraLP));
-        break;
+        case Thyra::Amesos::SCALAPACK :
+          amesosSolver = Teuchos::rcp(new Amesos_Scalapack(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
-      case Thyra::Amesos::UMFPACK :
-        amesosSolver = Teuchos::rcp(new Amesos_Umfpack(*epetraLP));
-        break;
+        case Thyra::Amesos::UMFPACK :
+          amesosSolver = Teuchos::rcp(new Amesos_Umfpack(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
-      case Thyra::Amesos::SUPERLUDIST :
-        amesosSolver = Teuchos::rcp(new Amesos_Superludist(*epetraLP));
-        break;
+        case Thyra::Amesos::SUPERLUDIST :
+          amesosSolver = Teuchos::rcp(new Amesos_Superludist(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_SUPERLU
-      case Thyra::Amesos::SUPERLU :
-        amesosSolver = Teuchos::rcp(new Amesos_Superlu(*epetraLP));
-        break;
+        case Thyra::Amesos::SUPERLU :
+          amesosSolver = Teuchos::rcp(new Amesos_Superlu(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-      case Thyra::Amesos::DSCPACK :
-        amesosSolver = Teuchos::rcp(new Amesos_Dscpack(*epetraLP));
-        break;
+        case Thyra::Amesos::DSCPACK :
+          amesosSolver = Teuchos::rcp(new Amesos_Dscpack(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_PARDISO
-      case Thyra::Amesos::PARDISO :
-        amesosSolver = Teuchos::rcp(new Amesos_Pardiso(*epetraLP));
-        break;
+        case Thyra::Amesos::PARDISO :
+          amesosSolver = Teuchos::rcp(new Amesos_Pardiso(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_TAUCS
-      case Thyra::Amesos::TAUCS :
-        amesosSolver = Teuchos::rcp(new Amesos_Taucs(*epetraLP));
-        break;
+        case Thyra::Amesos::TAUCS :
+          amesosSolver = Teuchos::rcp(new Amesos_Taucs(*epetraLP));
+          break;
 #endif
 #ifdef HAVE_AMESOS_PARAKLETE
-      case Thyra::Amesos::PARAKLETE :
-        amesosSolver = Teuchos::rcp(new Amesos_Paraklete(*epetraLP));
-        break;
+        case Thyra::Amesos::PARAKLETE :
+          amesosSolver = Teuchos::rcp(new Amesos_Paraklete(*epetraLP));
+          break;
 #endif
-      default:
-        TEST_FOR_EXCEPTION(
-          true, std::logic_error
-          ,"Error, the solver type ID = " << solverType() << " is invalid!"
-          );
+        default:
+          TEST_FOR_EXCEPTION(
+            true, std::logic_error
+            ,"Error, the solver type ID = " << solverType() << " is invalid!"
+            );
+      }
     }
     // Set the parameters
     if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist("AMESOS"));
     // Do the initial factorization
-    amesosSolver->SymbolicFactorization();
-    amesosSolver->NumericFactorization();
+    if(1) {
+      Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
+      amesosSolver->SymbolicFactorization();
+    }
+    if(1) {
+      Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
+      amesosSolver->NumericFactorization();
+    }
     // Initialize the LOWS object and we are done!
     amesosOp->initialize(fwdOp,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
   }
@@ -272,9 +289,14 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     // Reset the parameters
     if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist(AMESOS_name));
     // Repivot if asked
-    if(refactorizationPolicy()==Amesos::REPIVOT_ON_REFACTORIZATION)
+    if(refactorizationPolicy()==Amesos::REPIVOT_ON_REFACTORIZATION) {
+      Teuchos::TimeMonitor symbolicTimeMonitor(*symbolicTimer);
       amesosSolver->SymbolicFactorization();
-    amesosSolver->NumericFactorization();
+    }
+    if(1) {
+      Teuchos::TimeMonitor factorTimeMonitor(*factorTimer);
+      amesosSolver->NumericFactorization();
+    }
     // Reinitialize the LOWS object and we are done! (we must do this to get the
     // possibly new transpose and scaling factors back in)
     amesosOp->initialize(fwdOp,epetraLP,amesosSolver,epetraFwdOpTransp,epetraFwdOpScalar);
@@ -410,6 +432,17 @@ std::string AmesosLinearOpWithSolveFactory::description() const
 }
 
 // private
+
+
+void AmesosLinearOpWithSolveFactory::initializeTimers()
+{
+  if(!overallTimer.get()) {
+    overallTimer    = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF");
+    constructTimer  = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF:InitConstruct");
+    symbolicTimer   = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF:Symbolic");
+    factorTimer     = Teuchos::TimeMonitor::getNewTimer("AmesosLOWSF:Factor");
+  }
+}
 
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
 AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()

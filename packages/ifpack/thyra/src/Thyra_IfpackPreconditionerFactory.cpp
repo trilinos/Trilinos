@@ -35,7 +35,14 @@
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack.h"
 #include "Epetra_RowMatrix.h"
+#include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_dyn_cast.hpp"
+
+namespace {
+
+Teuchos::RefCountPtr<Teuchos::Time> overallTimer, creationTimer, factorizationTimer;
+
+} // namespace
 
 namespace Thyra {
 
@@ -45,7 +52,9 @@ IfpackPreconditionerFactory::IfpackPreconditionerFactory()
   :epetraFwdOpViewExtractor_(Teuchos::rcp(new EpetraOperatorViewExtractorStd()))
    ,precType_(Ifpack::ILU)
    ,overlap_(0)
-{}
+{
+  initializeTimers();
+}
 
 // Overridden from PreconditionerFactoryBase
 
@@ -98,6 +107,7 @@ void IfpackPreconditionerFactory::initializePrec(
   using Teuchos::get_optional_extra_data;
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
+  Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
   const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
   const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
   Teuchos::OSTab tab(out);
@@ -157,6 +167,7 @@ void IfpackPreconditionerFactory::initializePrec(
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
       *out << "\nCreating the initial Ifpack_Preconditioner object of type \'"<<toString(precType_)<<"\' ...\n";
     timer.start(true);
+    Teuchos::TimeMonitor creationTimeMonitor(*creationTimer);
     // Create the initial preconditioner
     ::Ifpack ifpackFcty; // Should be a static function!
     const std::string &precTypeName = toString(precType_);
@@ -193,13 +204,16 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Update the factorization
   //
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nComputing the factorization of the preconditioner ...\n";
-  timer.start(true);
-  TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
-  timer.stop();
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *OSTab(out).getOStream() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+  if(1){
+    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+      *out << "\nComputing the factorization of the preconditioner ...\n";
+    Teuchos::TimeMonitor factorizationTimeMonitor(*factorizationTimer);
+    timer.start(true);
+    TEST_FOR_EXCEPT(0!=ifpack_precOp->Compute());
+    timer.stop();
+    if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+      *OSTab(out).getOStream() <<"\n=> Factorization time = "<<timer.totalElapsedTime()<<" sec\n";
+  }
   //
   // Compute the conditioner number estimate if asked
   //
@@ -299,6 +313,15 @@ std::string IfpackPreconditionerFactory::description() const
 }
 
 // private
+
+void IfpackPreconditionerFactory::initializeTimers()
+{
+  if(!overallTimer.get()) {
+    overallTimer       = Teuchos::TimeMonitor::getNewTimer("IfpackPF");
+    creationTimer      = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Creation");
+    factorizationTimer = Teuchos::TimeMonitor::getNewTimer("IfpackPF:Factorization");
+  }
+}
 
 Teuchos::RefCountPtr<const Teuchos::ParameterList>
 IfpackPreconditionerFactory::generateAndGetValidParameters()

@@ -258,6 +258,8 @@ private:
   Teuchos::RefCountPtr<AztecOO>                                    aztecAdjSolver_;
   bool                                                             allowInexactAdjSolve_;
   double                                                           aztecSolverScalar_;
+
+  static void initializeTimers();
                                                      
   void assertInitialized() const;
   

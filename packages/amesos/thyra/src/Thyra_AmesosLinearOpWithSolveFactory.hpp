@@ -218,6 +218,8 @@ private:
   // /////////////////////////
   // Private member functions
 
+  static void initializeTimers();
+
   static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
 
 };
