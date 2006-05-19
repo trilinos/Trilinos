@@ -1136,6 +1136,13 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
     def testPrint(self):
         "Test Epetra.SerialDenseSolver Print method()"
         sds = Epetra.SerialDenseSolver()
+        self.buildProblem(sds)
+        filename = "testSerialDense%d.dat" % self.comm.MyPID()
+        f = open(filename, "w")
+        sds.Print(f)
+        f.close()
+        output = open(filename,"r").read()
+        self.assertEqual(len(output), 815)
 
 ##########################################################################
 
