@@ -95,6 +95,9 @@ void Epetra_SerialDenseSVD::InitPointers()
 //=============================================================================
 void Epetra_SerialDenseSVD::DeleteArrays()
 {
+  if (U_ !=0) {delete[] U_; U_ = 0;}
+  if (S_ !=0) {delete[] S_; S_ = 0;}
+  if (Vt_ !=0) {delete[] Vt_; Vt_ = 0;}
   if (IWORK_ != 0) {delete [] IWORK_; IWORK_ = 0;}
 //  if (FERR_ != 0)  {delete [] FERR_; FERR_ = 0;}
 //  if (BERR_ != 0)  {delete [] BERR_; BERR_ = 0;}
