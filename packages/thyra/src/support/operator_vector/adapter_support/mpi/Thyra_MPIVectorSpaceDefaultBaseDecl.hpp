@@ -36,35 +36,35 @@
 namespace Thyra {
 
 /** \brief Base <tt>%VectorSpaceBase</tt> class for all MPI-based vector
- * spaces with contiguous local storage.
+ * spaces with contiguous local-to-global indexing.
  *
  * See <tt>MPIVectorSpaceBase</tt> for details on what this class
  * represents in an abstract way.
  *
  * <b>Notes to subclass developers:</b>
  *
- * The pure virtual methods <tt>mpiComm()</tt>, <tt>localSubDim()</tt>,
- * <tt>dim()</tt> and <tt>createMember()</tt> are the only methods that must
- * be overridden.
+ * The pure virtual methods <tt>mpiComm()</tt>, <tt>localSubDim()</tt> and
+ * <tt>createMember()</tt> are the only functions that must be overridden.
  *
  * If <tt>this</tt> this is in an uninitialized state then
  * <tt>localSubDim()</tt> should return <tt>0</tt>.
  *
  * It should never be necessary to override the virtual functions
  * <tt>mapCode()</tt> and <tt>isCompatible()</tt> as these functions
- * have very good and very general implementations.  do.
+ * have very good and very general implementations.
  *
  * If optimized implementations of multi-vectors can be supported,
  * then the <tt>createMembers()</tt> method should also be overridden.
  *
  * This class defines a very general default implementation for
  * <tt>smallVecSpcFcty()</tt> that returns a
- * <tt>DefaultMPIVectorSpaceFactory</tt> object.  This returned object
- * creates <tt>DefaultMPIVectorSpace</tt>
- * objects. <tt>DefaultMPIVectorSpace</tt> creates <tt>DefaultMPIVector</tt>
- * and <tt>DefaultMPIMultiVector</tt>.  This implementation is very
- * general should be very appropriate for many different concrete
- * implementations.
+ * <tt>DefaultMPIVectorSpaceFactory</tt> object.  This returned object creates
+ * <tt>DefaultMPIVectorSpace</tt> objects.  These are the vector space objects
+ * that are used by the domain space of multi-vectors created by
+ * <tt>createMembers()</tt>.  The class <tt>DefaultMPIVectorSpace</tt> creates
+ * <tt>DefaultMPIVector</tt> and <tt>DefaultMPIMultiVector</tt> objects.  This
+ * implementation of <tt>smallVecSpcFcty()</tt> is very general should be very
+ * appropriate for many different concrete implementations.
  *
  * <b>Note:</b> It is very important that subclasses call the
  * <tt>updateState()</tt> function whenever the state of
@@ -176,16 +176,17 @@ protected:
   /** \brief This function must be called whenever the state of
    * <tt>this</tt> changes and some internal state must be updated.
    *
-   * @param  globalDim  [in] If <tt>globalDim > 0</tt> then this determines
-   *                    the global dimension of the vector space.  If <tt>globalDim==this->localSubDim()</tt>
-   *                    then this is a locally replicated vector space.  If <tt>globalDim < 0</tt> then
-   *                    the global dimension is computed using a global reduction.
-   *                    If <tt>MPI_Comm_size(this->mpiComm(),&numProc)</tt> returns <tt>numProc==1</tt>
-   *                    then this argument is ignored.
+   * @param  globalDim
+   *             [in] If <tt>globalDim > 0</tt> then this determines
+   *             the global dimension of the vector space.  If <tt>globalDim==this->localSubDim()</tt>
+   *             then this is a locally replicated vector space.  If <tt>globalDim < 0</tt> then
+   *             the global dimension is computed using a global reduction.
+   *             If <tt>MPI_Comm_size(this->mpiComm(),&numProc)</tt> returns <tt>numProc==1</tt>
+   *             then this argument is ignored.
    *
-   * Note that calling this function will involve one or more global
-   * reductions being called if this is parallel vector space so it
-   * should only be called when needed by subclasses.
+   * Note that calling this function may involve one or more global reductions
+   * being called if this is parallel vector space so it should only be called
+   * when needed by subclasses.
    *
    * Usually, this operation only needs to be called once for every
    * *new* parallel vector space constructed and very few parallel
