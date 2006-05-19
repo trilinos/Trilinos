@@ -56,6 +56,7 @@
 %ignore Epetra_SerialDenseMatrix::A() const;
 %ignore Epetra_SerialDenseVector::operator()(int);
 %ignore Epetra_SerialDenseVector::operator()(int) const;
+%ignore Epetra_SerialDenseSolver::ReciprocalConditionEstimate(double&);
 
 // Rename directives
 %rename(NumPyIntSerialDenseMatrix) Epetra_NumPyIntSerialDenseMatrix;
@@ -95,6 +96,7 @@ EXCEPTION_HANDLER(Epetra_NumPyIntSerialDenseVector,Resize )
 EXCEPTION_HANDLER(Epetra_NumPySerialDenseMatrix   ,Reshape)
 EXCEPTION_HANDLER(Epetra_NumPySerialDenseMatrix   ,Shape  )
 EXCEPTION_HANDLER(Epetra_NumPySerialDenseVector   ,Resize )
+EXCEPTION_HANDLER(Epetra_SerialDenseSolver, ReciprocalConditionEstimate)
 
 // Epetra include directives
 %include "Epetra_IntSerialDenseMatrix.h"
@@ -111,6 +113,31 @@ EXCEPTION_HANDLER(Epetra_NumPySerialDenseVector   ,Resize )
 %include "Epetra_NumPyIntSerialDenseVector.h"
 %include "Epetra_NumPySerialDenseMatrix.h"
 %include "Epetra_NumPySerialDenseVector.h"
+
+// Extensions
+METHOD_WITH_OUTPUT_INTARRAY1D(Epetra_SerialDenseSolver,IPIV,M)
+METHOD_WITH_OUTPUT_ARRAY2D(Epetra_SerialDenseSolver,A,M,N    )
+METHOD_WITH_OUTPUT_ARRAY2D(Epetra_SerialDenseSolver,B,N,NRHS )
+METHOD_WITH_OUTPUT_ARRAY2D(Epetra_SerialDenseSolver,X,N,NRHS )
+METHOD_WITH_OUTPUT_ARRAY2D(Epetra_SerialDenseSolver,AF,M,N   )
+METHOD_WITH_OUTPUT_ARRAY1D(Epetra_SerialDenseSolver,FERR,NRHS)
+METHOD_WITH_OUTPUT_ARRAY1D(Epetra_SerialDenseSolver,BERR,NRHS)
+METHOD_WITH_OUTPUT_ARRAY1D(Epetra_SerialDenseSolver,R,M      )
+METHOD_WITH_OUTPUT_ARRAY1D(Epetra_SerialDenseSolver,C,N      )
+
+%extend Epetra_SerialDenseSolver {
+  double ReciprocalConditionEstimate() {
+    double value = 0.0;
+    int result = self->ReciprocalConditionEstimate(value);
+    if (result) {
+      PyErr_Format(PyExc_RuntimeError,
+		   "ReciprocalConditionEstimate method returned LAPACK error code %d",
+		   result);
+      value = -1.0;
+    }
+    return value;
+  }
+}
 
 // Python code
 %pythoncode %{

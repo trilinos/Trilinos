@@ -133,6 +133,71 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 }
 %enddef
 
+// Define macros for converting a method that returns a pointer to
+// an array of doubles (or ints) to returning a NumPy array
+%define METHOD_WITH_OUTPUT_INTARRAY1D(className,methodName,dimMethod)
+%ignore className::methodName() const;
+%extend className {
+  PyObject * methodName() {
+    int * result = self->methodName();
+    if (result == NULL) return Py_BuildValue("");
+    int * data   = NULL;
+    intp dims[ ] = { self->dimMethod() };
+    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_INT);
+    PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
+						NULL, FARRAY_FLAGS, NULL);
+    if (returnObj == NULL) goto fail;
+    data = (int*) (((PyArrayObject*)returnObj)->data);
+    for (int i=0; i<dims[0]; ++i) data[i] = result[i];
+    return PyArray_Return((PyArrayObject*)returnObj);
+  fail:
+    return NULL;
+  }
+}
+%enddef
+
+%define METHOD_WITH_OUTPUT_ARRAY1D(className,methodName,dimMethod)
+%ignore className::methodName() const;
+%extend className {
+  PyObject * methodName() {
+    double * result = self->methodName();
+    if (result == NULL) return Py_BuildValue("");
+    double * data   = NULL;
+    intp dims[ ] = { self->dimMethod() };
+    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_DOUBLE);
+    PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 1, dims, NULL,
+						NULL, FARRAY_FLAGS, NULL);
+    if (returnObj == NULL) goto fail;
+    data = (double*) (((PyArrayObject*)returnObj)->data);
+    for (int i=0; i<dims[0]; ++i) data[i] = result[i];
+    return PyArray_Return((PyArrayObject*)returnObj);
+  fail:
+    return NULL;
+  }
+}
+%enddef
+
+%define METHOD_WITH_OUTPUT_ARRAY2D(className,methodName,dimMethod1,dimMethod2)
+%ignore className::methodName() const;
+%extend className {
+  PyObject * methodName() {
+    double * result = self->methodName();
+    if (result == NULL) return Py_BuildValue("");
+    double * data   = NULL;
+    intp dims[ ] = { self->dimMethod1(), self->dimMethod2() };
+    PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_DOUBLE);
+    PyObject * returnObj = PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dims, NULL,
+						NULL, FARRAY_FLAGS, NULL);
+    if (returnObj == NULL) goto fail;
+    data = (double*) (((PyArrayObject*)returnObj)->data);
+    for (int i=0; i<dims[0]*dims[1]; ++i) data[i] = result[i];
+    return PyArray_Return((PyArrayObject*)returnObj);
+  fail:
+    return NULL;
+  }
+}
+%enddef
+
 // Define macro for a typemap that converts return arguments from
 // Epetra_*Matrix or Epetra_*Vector to the corresponding
 // Epetra_NumPy*Matrix or Epetra_NumPy*Vector.  There is additional
@@ -140,9 +205,12 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
 // Epetra_NumPy*Vector to to an Epetra.*Matrix or Epetra.*Vector.
 %define TYPEMAP_OUT(array,numPyArray)
 %typemap(out) array * {
-  numPyArray * npa = new numPyArray(*$1);
-  static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
-  $result = SWIG_NewPointerObj(npa, ty, 1);
+  if ($1 == NULL) $result = Py_BuildValue("");
+  else {
+    numPyArray * npa = new numPyArray(*$1);
+    static swig_type_info *ty = SWIG_TypeQuery("numPyArray *");
+    $result = SWIG_NewPointerObj(npa, ty, 1);
+  }
 }
 %enddef
 

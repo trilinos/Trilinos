@@ -82,7 +82,7 @@ void Epetra_NumPySerialDenseMatrix::setArray(bool copy)
     double * data          = NULL;
     if (!copy) data        = Epetra_SerialDenseMatrix::A();
     PyArray_Descr * dtype  = PyArray_DescrFromType(PyArray_DOUBLE); // This NumPy function returns a
-                                                                   // borrowed pointer: no DECREF
+                                                                    // borrowed pointer: no DECREF
     array = (PyArrayObject*) PyArray_NewFromDescr(&PyArray_Type, dtype, 2, dimensions, NULL,
 						  (void*)data, FARRAY_FLAGS, NULL);
     if (copy) {
