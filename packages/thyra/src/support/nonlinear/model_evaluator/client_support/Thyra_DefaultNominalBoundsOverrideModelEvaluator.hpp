@@ -117,6 +117,13 @@ public:
     ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &lowerBounds = Teuchos::null
     ,const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &upperBounds = Teuchos::null
     );
+  
+  /** \brief Set only nominal values. */
+  void setNominalValues(
+    const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+    );
+  
+  // ToDo: Add functions to reset lower and upper bounds when needed!
 
   //@}
 
@@ -185,6 +192,14 @@ void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::initialize(
   nominalValues_ = nominalValues;
   lowerBounds_ = lowerBounds;
   upperBounds_ = upperBounds;
+}
+
+template<class Scalar>
+void DefaultNominalBoundsOverrideModelEvaluator<Scalar>::setNominalValues(
+  const Teuchos::RefCountPtr<const ModelEvaluatorBase::InArgs<Scalar> >  &nominalValues
+  )
+{
+  nominalValues_ = nominalValues;
 }
 
 // Overridden from ModelEvaulator.
