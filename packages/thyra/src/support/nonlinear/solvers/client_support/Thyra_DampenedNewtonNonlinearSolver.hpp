@@ -94,13 +94,35 @@ public:
   //@{
 
   /** \brief . */
+  void setModel(
+    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+    );
+  /** \brief . */
+  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > getModel() const;
+  /** \brief . */
   SolveStatus<Scalar> solve(
-    const ModelEvaluator<Scalar>          &model
-    ,VectorBase<Scalar>                   *x
-    ,const SolveCriteria<Scalar>          *solveCriteria
-    ) const;
+    VectorBase<Scalar>              *x
+    ,const SolveCriteria<Scalar>    *solveCriteria
+    );
+  /** \brief . */
+  Teuchos::RefCountPtr<const VectorBase<Scalar> > get_current_x() const;
+  /** \brief . */
+  bool is_W_current() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > get_W() const;
+  /** \brief . */
+  void set_W_is_current(bool W_is_current);
 
   //@}
+
+private:
+
+  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >    model_;
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >   J_;
+  Teuchos::RefCountPtr<VectorBase<Scalar> >              current_x_;
+  bool                                                   J_is_current_;
 
 };
 
@@ -118,6 +140,7 @@ DampenedNewtonNonlinearSolver<Scalar>::DampenedNewtonNonlinearSolver(
   ,defaultMaxNewtonIterations_(defaultMaxNewtonIterations)
   ,armijoConstant_(armijoConstant)
   ,maxLineSearchIterations_(maxLineSearchIterations)
+  ,J_is_current_(false)
 {}
 
 template <class Scalar>
@@ -137,17 +160,35 @@ DampenedNewtonNonlinearSolver<Scalar>::getValidSolveCriteriaExtraParameters()
 // Overridden from NonlinearSolverBase
 
 template <class Scalar>
+void DampenedNewtonNonlinearSolver<Scalar>::setModel(
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+  )
+{
+  TEST_FOR_EXCEPT(model.get()==NULL);
+  model_ = model;
+  J_ = Teuchos::null;
+  current_x_ = Teuchos::null;
+  J_is_current_ = false;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+DampenedNewtonNonlinearSolver<Scalar>::getModel() const
+{
+  return model_;
+}
+
+template <class Scalar>
 SolveStatus<Scalar>
 DampenedNewtonNonlinearSolver<Scalar>::solve(
-  const ModelEvaluator<Scalar>          &model
-  ,VectorBase<Scalar>                   *x_inout
+  VectorBase<Scalar>                    *x_inout
   ,const SolveCriteria<Scalar>          *solveCriteria
-  ) const
+  )
 {
   using std::endl;
   // Validate input
   THYRA_ASSERT_VEC_SPACES(
-    "DampenedNewtonNonlinearSolver<Scalar>::solve(...)",*x_inout->space(),*model.get_x_space());
+    "DampenedNewtonNonlinearSolver<Scalar>::solve(...)",*x_inout->space(),*model_->get_x_space());
   // Get the output stream and verbosity level
   const Teuchos::RefCountPtr<Teuchos::FancyOStream> out = this->getOStream();
   const Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -157,13 +198,13 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   const bool dumpAll = (static_cast<int>(verbLevel) == static_cast<int>(Teuchos::VERB_EXTREME)); 
   TEUCHOS_OSTAB;
   if(out.get() && showNewtonIters) *out
-    << "\nBeginning dampended Newton solve of model = " << model.description() << "\n\n";
+    << "\nBeginning dampended Newton solve of model = " << model_->description() << "\n\n";
   // Initialize storage for algorithm
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > J     = model.create_W();
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            f     = createMember(model.get_f_space());
+  if(!J_.get())                                        J_    = model_->create_W();
+  Teuchos::RefCountPtr<VectorBase<Scalar> >            f     = createMember(model_->get_f_space());
   Teuchos::RefCountPtr<VectorBase<Scalar> >            x     = Teuchos::rcp(x_inout,false);
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            dx    = createMember(model.get_x_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            x_new = createMember(model.get_x_space());
+  Teuchos::RefCountPtr<VectorBase<Scalar> >            dx    = createMember(model_->get_x_space());
+  Teuchos::RefCountPtr<VectorBase<Scalar> >            x_new = createMember(model_->get_x_space());
   // Get convergence criteria
   ScalarMag tol = this->defaultTol();
   int maxIters = this->defaultMaxNewtonIterations();
@@ -180,12 +221,12 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   }
   if(out.get() && showNewtonDetails)
     *out << "\nCompute the initial starting point ...\n";
-  eval_f_W( model, *x, &*f, &*J );
+  eval_f_W( *model_, *x, &*f, &*J_ );
   if(out.get() && dumpAll) {
     *out << "\nInitial starting point:\n";
     *out << "\nx =\n" << *x;
     *out << "\nf =\n" << *f;
-    *out << "\nJ =\n" << *J;
+    *out << "\nJ =\n" << *J_;
   }
   // Peform the Newton iterations
   int newtonIter, num_residual_evals = 1;
@@ -220,15 +261,15 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     if(out.get() && showNewtonDetails) *out << "\nWe have to keep going :-(\n";
     // Compute the Jacobian if we have not already
     if(newtonIter > 1) {
-      if(out.get() && showNewtonDetails) *out << "\nComputing the Jacobian J at current point ...\n";
-      eval_f_W<Scalar>( model, *x, NULL, &*J );
-      if(out.get() && dumpAll) *out << "\nJ =\n" << *J;
+      if(out.get() && showNewtonDetails) *out << "\nComputing the Jacobian J_ at current point ...\n";
+      eval_f_W<Scalar>( *model_, *x, NULL, &*J_ );
+      if(out.get() && dumpAll) *out << "\nJ =\n" << *J_;
     }
     // Compute the newton step: dx = -inv(J)*f
     if(out.get() && showNewtonDetails) *out << "\nComputing the Newton step: dx = - inv(J)*f ...\n";
     if(out.get() && showNewtonIters) *out << "newton_iter="<<newtonIter<<": Computing Newton step ...\n";
     assign( &*dx, ST::zero() );       // Initial guess for the linear solve
-    Thyra::solve(*J,NOTRANS,*f,&*dx); // Solve: J*dx = f
+    Thyra::solve(*J_,NOTRANS,*f,&*dx); // Solve: J*dx = f
     Vt_S( &*dx, Scalar(-ST::one()) ); // dx *= -1.0
     if(out.get() && showNewtonDetails) *out << "\n||dx||inf = " << norm_inf(*dx) << endl;
     if(out.get() && dumpAll) *out << "\ndy =\n" << *dx;
@@ -247,7 +288,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       if(out.get() && showNewtonDetails) *out << "\n||x_new||inf = " << norm_inf(*x_new) << endl;
       if(out.get() && dumpAll) *out << "\nx_new =\n" << *x_new;
       // Compute the residual at the updated point
-      eval_f(model,*x_new,&*f);
+      eval_f(*model_,*x_new,&*f);
       if(out.get() && dumpAll) *out << "\nf_new =\n" << *f;
       const Scalar phi_new = scalarProd(*f,*f), phi_frac = phi + alpha * armijoConstant() * Dphi;
       if(out.get() && showNewtonDetails) *out << "\nphi_new = <f_new,f_new> = " << phi_new << endl;
@@ -296,9 +337,44 @@ exit:
     if( out.get() && (showNewtonIters || showNewtonDetails)) *out << endl << oss.str() << endl;
   }
   if(x_inout != x.get()) assign( x_inout, *x ); // Assign the final point
+  current_x_ = x_inout->clone_v(); // Remember the final point
+  J_is_current_ = newtonIter==1; // J is only current with x if initial point was converged!
   if(out.get() && showNewtonDetails) *out
     << "\n*** Ending dampended Newton solve." << endl; 
   return solveStatus;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const VectorBase<Scalar> >
+DampenedNewtonNonlinearSolver<Scalar>::get_current_x() const
+{
+  return current_x_;
+}
+
+template <class Scalar>
+bool DampenedNewtonNonlinearSolver<Scalar>::is_W_current() const
+{
+  return J_is_current_;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+DampenedNewtonNonlinearSolver<Scalar>::get_nonconst_W()
+{
+  return J_;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+DampenedNewtonNonlinearSolver<Scalar>::get_W() const
+{
+  return J_;
+}
+
+template <class Scalar>
+void DampenedNewtonNonlinearSolver<Scalar>::set_W_is_current(bool W_is_current)
+{
+  J_is_current_ = W_is_current;
 }
 
 } // namespace Thyra

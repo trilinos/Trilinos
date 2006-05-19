@@ -151,7 +151,7 @@ int main(int argc, char *argv[])
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
       method = "Forward Euler";
     } else if (method_val == METHOD_BE) {
-      Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<double> >
+      Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
       Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
         _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());

@@ -519,7 +519,8 @@ void EpetraModelEvaluator::reportFinalPoint(
   ,const bool                                   wasSolved
   )
 {
-  finalPoint_ = finalPoint;
+  finalPoint_ = this->createInArgs();
+  finalPoint_.setArgs(finalPoint);
   finalPointWasSolved_ = wasSolved;
 }
 

@@ -145,9 +145,10 @@ int main( int argc, char* argv[] )
     solveCriteria.extraParameters = Teuchos::rcp(new Teuchos::ParameterList("Nonlinear Solve"));
     solveCriteria.extraParameters->set("Max Iters",int(maxIters));
 
+    newtonSolver.setModel(thyraModel);
     Thyra::SolveStatus<double>
-      solveStatus = newtonSolver.solve(*thyraModel,&*x,&solveCriteria);
-
+      solveStatus = newtonSolver.solve(&*x,&solveCriteria);
+    
     *out << "\nNonlinear solver return status:\n";
     if(1) {
       Teuchos::OSTab tab(out);

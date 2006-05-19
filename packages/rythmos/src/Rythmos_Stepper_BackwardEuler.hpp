@@ -48,15 +48,15 @@ class BackwardEulerStepper : public Stepper<Scalar>
 
     /** \brief . */
     BackwardEulerStepper(
-      const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >        &model
-      ,const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >  &solver
+      const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
+      ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
       );
 
     /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
-    void setSolver(const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver);
+    void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
     Scalar TakeStep(Scalar dt);
@@ -83,14 +83,14 @@ class BackwardEulerStepper : public Stepper<Scalar>
   private:
 
     Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model_;
-    Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > solver_;
+    Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > scaled_x_old_;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > f_;
     Scalar t_;
     Scalar t_old_;
 
-    Thyra::SingleResidSSDAEModelEvaluator<Scalar>   neModel_;
+    Teuchos::RefCountPtr<Thyra::SingleResidSSDAEModelEvaluator<Scalar> >  neModel_;
 
 };
 
@@ -100,7 +100,7 @@ class BackwardEulerStepper : public Stepper<Scalar>
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper(
   const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver
+  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
   setModel(model);
@@ -121,7 +121,7 @@ void BackwardEulerStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thy
 }
 
 template<class Scalar>
-void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver)
+void BackwardEulerStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver)
 {
   solver_ = solver;
 }
@@ -145,11 +145,15 @@ Scalar BackwardEulerStepper<Scalar>::TakeStep(Scalar dt)
   //
   V_StV( &*scaled_x_old_, Scalar(-ST::one()/dt), *x_ );
   t_old_ = t_;
-  neModel_.initialize(model_,Scalar(ST::one()/dt),scaled_x_old_,ST::one(),Teuchos::null,t_old_+dt,Teuchos::null);
+  if(!neModel_.get())
+    neModel_ = Teuchos::rcp(new Thyra::SingleResidSSDAEModelEvaluator<Scalar>());
+  neModel_->initialize(model_,Scalar(ST::one()/dt),scaled_x_old_,ST::one(),Teuchos::null,t_old_+dt,Teuchos::null);
+  if(solver_->getModel().get()!=neModel_.get())
+    solver_->setModel(neModel_);
   //
   // Solve the implicit nonlinear system to a tolerance of ???
   //
-  solver_->solve( neModel_, &*x_ ); // Note that x in input is x_old!
+  solver_->solve(&*x_); // Note that x in input is x_old and on output is the solved x!
   //
   // Update the step
   //

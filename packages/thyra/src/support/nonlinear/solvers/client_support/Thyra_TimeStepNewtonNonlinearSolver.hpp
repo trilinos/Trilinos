@@ -68,14 +68,37 @@ public:
   /** @name Overridden from NonlinearSolverBase */
   //@{
 
+
+  /** \brief . */
+  void setModel(
+    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+    );
+  /** \brief . */
+  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > getModel() const;
   /** \brief . */
   SolveStatus<Scalar> solve(
-    const ModelEvaluator<Scalar>          &model
-    ,VectorBase<Scalar>                   *x
-    ,const SolveCriteria<Scalar>          *solveCriteria
-    ) const;
+    VectorBase<Scalar>              *x
+    ,const SolveCriteria<Scalar>    *solveCriteria
+    );
+  /** \brief . */
+  Teuchos::RefCountPtr<const VectorBase<Scalar> > get_current_x() const;
+  /** \brief . */
+  bool is_W_current() const;
+  /** \brief . */
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > get_W() const;
+  /** \brief . */
+  void set_W_is_current(bool W_is_current);
 
   //@}
+
+private:
+
+  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >    model_;
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >   J_;
+  Teuchos::RefCountPtr<VectorBase<Scalar> >              current_x_;
+  bool                                                   J_is_current_;
 
 };
 
@@ -91,16 +114,35 @@ TimeStepNewtonNonlinearSolver<Scalar>::TimeStepNewtonNonlinearSolver(
   :defaultMaxIterations_(defaultMaxIterations)
   ,defaultTol_(defaultTol)
   ,warningOut_(warningOut)
+  ,J_is_current_(false)
 {}
 
 // Overridden from NonlinearSolverBase
 
 template <class Scalar>
+void TimeStepNewtonNonlinearSolver<Scalar>::setModel(
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+  )
+{
+  TEST_FOR_EXCEPT(model.get()==NULL);
+  model_ = model;
+  J_ = Teuchos::null;
+  current_x_ = Teuchos::null;
+  J_is_current_ = false;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+TimeStepNewtonNonlinearSolver<Scalar>::getModel() const
+{
+  return model_;
+}
+
+template <class Scalar>
 SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
-  const ModelEvaluator<Scalar>          &model
-  ,VectorBase<Scalar>                   *x
-  ,const SolveCriteria<Scalar>          *solveCriteria
-  ) const
+  VectorBase<Scalar>             *x
+  ,const SolveCriteria<Scalar>   *solveCriteria
+  )
 {
   using std::endl;
   using Teuchos::rcp;
@@ -108,11 +150,11 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   using Teuchos::getFancyOStream;
   TEST_FOR_EXCEPT(solveCriteria!=NULL); // ToDo: Pass to linear solver?
   // Initialize storage for algorithm
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > J = model.create_W();
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            f = createMember(model.get_f_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            dx = createMember(model.get_x_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            dx_last = createMember(model.get_x_space());
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            x_curr = createMember(model.get_x_space());
+  if(!J_.get())                                 J_ = model_->create_W();
+  Teuchos::RefCountPtr<VectorBase<Scalar> >     f = createMember(model_->get_f_space());
+  Teuchos::RefCountPtr<VectorBase<Scalar> >     dx = createMember(model_->get_x_space());
+  Teuchos::RefCountPtr<VectorBase<Scalar> >     dx_last = createMember(model_->get_x_space());
+  Teuchos::RefCountPtr<VectorBase<Scalar> >     x_curr = createMember(model_->get_x_space());
   Thyra::assign(&*x_curr,*x);
   // Initialize convergence criteria
   ScalarMag R = SMT::one();
@@ -127,11 +169,17 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   int iter = 1;
   for( ; iter <= maxIters; ++iter ) {
     // Evaluate f and W
-    eval_f_W( model, *x_curr, ST::one(), &*f, &*J );
+    eval_f_W( *model_, *x_curr, ST::one(), &*f, &*J_ );
     // Solve the system: J*dx = -f
-    SolveCriteria<Scalar> linearSolveCriteria(SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS),linearTolSafety*tol);
+    SolveCriteria<Scalar>
+      linearSolveCriteria(
+        SolveMeasureType(
+          SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS
+          )
+        ,linearTolSafety*tol
+        );
     SolveStatus<Scalar>
-      linearSolveStatus = Thyra::solve( *J, NOTRANS, *f, &*dx, &linearSolveCriteria );
+      linearSolveStatus = Thyra::solve( *J_, NOTRANS, *f, &*dx, &linearSolveCriteria );
     Thyra::Vt_S(&*dx,Scalar(-ST::one()));
     // Check the linear solve
     if(linearSolveStatus.solveStatus != SOLVE_STATUS_CONVERGED) {
@@ -173,7 +221,43 @@ SolveStatus<Scalar> TimeStepNewtonNonlinearSolver<Scalar>::solve(
   }
   solveStatus.message = oss.str();
   //
+  current_x_ = x->clone_v();
+  J_is_current_ = true;
+  //
   return solveStatus;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const VectorBase<Scalar> >
+TimeStepNewtonNonlinearSolver<Scalar>::get_current_x() const
+{
+  return current_x_;
+}
+
+template <class Scalar>
+bool TimeStepNewtonNonlinearSolver<Scalar>::is_W_current() const
+{
+  return J_is_current_;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+TimeStepNewtonNonlinearSolver<Scalar>::get_nonconst_W()
+{
+  return J_;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+TimeStepNewtonNonlinearSolver<Scalar>::get_W() const
+{
+  return J_;
+}
+
+template <class Scalar>
+void TimeStepNewtonNonlinearSolver<Scalar>::set_W_is_current(bool W_is_current)
+{
+  J_is_current_ = W_is_current;
 }
 
 } // namespace Thyra

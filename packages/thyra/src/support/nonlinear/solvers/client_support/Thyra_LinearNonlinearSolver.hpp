@@ -46,13 +46,27 @@ public:
   //@{
 
   /** \brief . */
+  void setModel(
+    const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+    );
+  /** \brief . */
+  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > getModel() const;
+  /** \brief . */
   SolveStatus<Scalar> solve(
-    const ModelEvaluator<Scalar>          &model
-    ,VectorBase<Scalar>                   *x
-    ,const SolveCriteria<Scalar>          *solveCriteria
-    ) const;
+    VectorBase<Scalar>              *x
+    ,const SolveCriteria<Scalar>    *solveCriteria
+    );
+  /** \brief . */
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > get_W() const;
 
   //@}
+
+private:
+
+  Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >    model_;
+  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >   J_;
 
 };
 
@@ -62,25 +76,55 @@ public:
 // Overridden from NonlinearSolverBase
 
 template <class Scalar>
+void LinearNonlinearSolver<Scalar>::setModel(
+  const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> > &model
+  )
+{
+  TEST_FOR_EXCEPT(model.get()==NULL);
+  model_ = model;
+  J_ = Teuchos::null;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
+LinearNonlinearSolver<Scalar>::getModel() const
+{
+  return model_;
+}
+
+template <class Scalar>
 SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
-  const ModelEvaluator<Scalar>          &model
-  ,VectorBase<Scalar>                   *x
-  ,const SolveCriteria<Scalar>          *solveCriteria
-  ) const
+  VectorBase<Scalar>             *x
+  ,const SolveCriteria<Scalar>   *solveCriteria
+  )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPT(solveCriteria!=NULL); // ToDo: Pass to linear solver?
   // Compute the Jacobian and the residual at the input point!
-  Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > J = model.create_W();
-  Teuchos::RefCountPtr<VectorBase<Scalar> >            f = createMember(model.get_f_space());
-  eval_f_W( model, *x, ST::one(), &*f, &*J );
+  if(!J_.get())                               J_ = model_->create_W();
+  Teuchos::RefCountPtr<VectorBase<Scalar> >   f = createMember(model_->get_f_space());
+  eval_f_W( *model_, *x, ST::one(), &*f, &*J_ );
   // Solve the system: J*m_dx = f
-  Teuchos::RefCountPtr<VectorBase<Scalar> > m_dx = createMember(model.get_x_space());
-  Thyra::solve( *J, NOTRANS, *f, &*m_dx );
+  Teuchos::RefCountPtr<VectorBase<Scalar> > m_dx = createMember(model_->get_x_space());
+  Thyra::solve( *J_, NOTRANS, *f, &*m_dx );
   // Set the solution: x = x - m_dx
   Vp_StV( x, Scalar(-ST::one()), *m_dx );
   // Return default status
   return SolveStatus<Scalar>();
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
+LinearNonlinearSolver<Scalar>::get_nonconst_W()
+{
+  return J_;
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> >
+LinearNonlinearSolver<Scalar>::get_W() const
+{
+  return J_;
 }
 
 } // namespace Thyra

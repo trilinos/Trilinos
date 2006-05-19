@@ -45,7 +45,7 @@
 #include "Rythmos_Stepper_ForwardEuler.hpp"
 #include "Rythmos_Stepper_BackwardEuler.hpp"
 #include "Rythmos_Stepper_ExplicitRK.hpp"
-#include "Rythmos_Stepper_ImplicitBDF.hpp"
+//#include "Rythmos_Stepper_ImplicitBDF.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
       stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
       method = "Forward Euler";
     } else if ((method_val == METHOD_BE) | (method_val == METHOD_BDF)) {
-      Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<double> >
+      Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
         nonlinearSolver;
 //    nonlinearSolver = Teuchos::rcp(new Thyra::LinearNonlinearSolver<double>());
       Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
@@ -185,7 +185,8 @@ int main(int argc, char *argv[])
       } 
       else 
       {
-        stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver));
+        //stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver));
+        TEST_FOR_EXCEPT(true); // RAB: Above is commented out due to lack of other commits
         method = "Implicit BDF";
       }
     } else {

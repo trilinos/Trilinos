@@ -120,6 +120,8 @@ private:
   Teuchos::RefCountPtr<ModelEvaluator<Scalar> >                thyraModel_;
   Teuchos::RefCountPtr<NonlinearSolverBase<Scalar> >           stateSolver_;
 
+  Teuchos::RefCountPtr<DefaultNominalBoundsOverrideModelEvaluator<Scalar> >  wrappedThyraModel_;
+
   mutable Teuchos::RefCountPtr<VectorBase<Scalar> >            x_guess_solu_;
   
 };
@@ -160,6 +162,13 @@ void DefaultStateEliminationModelEvaluator<Scalar>::initialize(
     x_guess_solu_ = createMember(thyraModel->get_x_space());
     assign(&*x_guess_solu_,Scalar(0.0));
   }
+  wrappedThyraModel_ = rcp(
+    new DefaultNominalBoundsOverrideModelEvaluator<Scalar>(
+      Teuchos::rcp_const_cast<ModelEvaluator<Scalar> >(thyraModel)
+      ,Teuchos::null
+      )
+    );
+  stateSolver_->setModel(wrappedThyraModel_);
 }
 
 template<class Scalar>
@@ -172,6 +181,8 @@ void DefaultStateEliminationModelEvaluator<Scalar>::uninitialize(
   if(stateSolver) *stateSolver = stateSolver_;
   this->ModelEvaluatorDelegatorBase<Scalar>::uninitialize();
   stateSolver_ = Teuchos::null;
+  wrappedThyraModel_ = Teuchos::null;
+  x_guess_solu_ = Teuchos::null;
 }
 
 // Overridden from ModelEvaulator.
@@ -316,15 +327,12 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
   const Teuchos::RefCountPtr<const ModelEvaluator<Scalar> >
     thyraModel = this->getUnderlyingModel();
 
+  const int Np = outArgs.Np(), Ng = outArgs.Ng();
+
   // Reset the nominal values
   MEB::InArgs<Scalar> wrappedNominalValues = thyraModel->getNominalValues();
   wrappedNominalValues.setArgs(inArgs,true);
   wrappedNominalValues.set_x(x_guess_solu_);
-  DefaultNominalBoundsOverrideModelEvaluator<Scalar>
-    wrappedThyraModel( 
-      Teuchos::rcp_const_cast<ModelEvaluator<Scalar> >(thyraModel)
-      ,rcp(&wrappedNominalValues,false)
-      );
   
   typedef Teuchos::VerboseObjectTempState<ModelEvaluatorBase> VOTSME;
   //VOTSME thyraModel_outputTempState(rcp(&wrappedThyraModel,false),out,verbLevel);
@@ -342,20 +350,69 @@ void DefaultStateEliminationModelEvaluator<Scalar>::evalModel(
 
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nSolving f(x,...) for x ...\n";
+
+  wrappedThyraModel_->setNominalValues(
+    rcp(new MEB::InArgs<Scalar>(wrappedNominalValues))
+    );
   
-  SolveStatus<Scalar> solveStatus = stateSolver_->solve(wrappedThyraModel,&*x_guess_solu_,NULL);
+  SolveStatus<Scalar> solveStatus = stateSolver_->solve(&*x_guess_solu_,NULL);
 
   if( solveStatus.solveStatus == SOLVE_STATUS_CONVERGED ) {
     
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
       *out << "\nComputing the output functions at the solved state solution ...\n";
-    
+
     MEB::InArgs<Scalar>   wrappedInArgs  = thyraModel->createInArgs();
     MEB::OutArgs<Scalar>  wrappedOutArgs = thyraModel->createOutArgs();
     wrappedInArgs.setArgs(inArgs,true);
     wrappedInArgs.set_x(x_guess_solu_);
     wrappedOutArgs.setArgs(outArgs,true);
+    
+    for( int l = 0; l < Np; ++l ) {
+      for( int j = 0; j < Ng; ++j ) {
+        if(
+          outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none()==false
+          && outArgs.get_DgDp(j,l).isEmpty()==false
+          )
+        {
+          // Set DfDp(l) and DgDx(j) to be computed!
+          //wrappedOutArgs.set_DfDp(l,...);
+          //wrappedOutArgs.set_DgDx(j,...);
+          TEST_FOR_EXCEPT(true);
+        }
+      }
+    }
+    
     thyraModel->evalModel(wrappedInArgs,wrappedOutArgs);
+
+    //
+    // Compute DgDp(j,l) using direct sensitivties
+    //
+    for( int l = 0; l < Np; ++l ) {
+      if(
+        wrappedOutArgs.supports(MEB::OUT_ARG_DfDp,l).none()==false
+        && wrappedOutArgs.get_DfDp(l).isEmpty()==false
+        )
+      {
+        //
+        // Compute:  D(l) = -inv(DfDx)*DfDp(l)
+        //
+        TEST_FOR_EXCEPT(true);
+        for( int j = 0; j < Ng; ++j ) {
+          if(
+            outArgs.supports(MEB::OUT_ARG_DgDp,j,l).none()==false
+            && outArgs.get_DgDp(j,l).isEmpty()==false
+            )
+          {
+            //
+            // Compute:  DgDp(j,l) = DgDp(j,l) + DgDx(j)*D
+            //
+            TEST_FOR_EXCEPT(true);
+          }
+        }
+      }
+    }
+    // ToDo: Add a mode to compute DgDp(l) using adjoint sensitivities?
     
   }
   else {
