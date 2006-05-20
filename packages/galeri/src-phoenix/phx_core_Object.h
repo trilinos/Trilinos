@@ -11,25 +11,25 @@ class Object
     Object() 
     {
       label_ = "";
-      tag_ = 0;
+      ID_ = 0;
     }
 
-    Object(const string& Label, const int Tag = 0) 
+    Object(const string& Label, const int ID = 0) 
     {
       setLabel(Label);
-      setTag(Tag);
+      setID(ID);
     }
 
     Object(const Object& rhs) 
     {
       setLabel(rhs.getLabel());
-      setTag(rhs.getTag());
+      setID(rhs.getID());
     }
 
     Object& operator=(const Object& rhs)
     {
       setLabel(rhs.getLabel());
-      setTag(rhs.getTag());
+      setID(rhs.getID());
       return(*this);
     }
 
@@ -45,14 +45,14 @@ class Object
       label_ = label;
     }
 
-    virtual int getTag() const
+    virtual int getID() const
     {
-      return(tag_);
+      return(ID_);
     }
 
-    virtual void setTag(const int& tag)
+    virtual void setID(const int& ID)
     {
-      tag_ = tag;
+      ID_ = ID;
     }
 
     //! Print Object to an output stream
@@ -63,7 +63,7 @@ class Object
 
   private:
     string label_;
-    int tag_;
+    int ID_;
 
 }; // class Object
 

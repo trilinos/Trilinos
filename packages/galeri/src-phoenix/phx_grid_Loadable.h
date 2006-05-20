@@ -8,6 +8,12 @@
 
 #include "phx_core_Object.h"
 #include "phx_grid_Element.h"
+#include "phx_grid_Point.h"
+#include "phx_grid_Segment.h"
+#include "phx_grid_Triangle.h"
+#include "phx_grid_Quad.h"
+#include "phx_grid_Tet.h"
+#include "phx_grid_Hex.h"
 
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -27,13 +33,39 @@ class Loadable : public core::Object
   public:
     // @{ \name Constructors and destructors.
     //! Constructor.
+    Loadable(const Epetra_Comm& comm,
+             const int numGlobalElements,
+             const int numMyElements,
+             const string& elementType, 
+             const int numDimensions)
+    { 
+      ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 0, comm));
+
+      if (elementType == "Point")
+        GridElement_ = rcp(new phx::grid::Point(numDimensions));
+      else if (elementType == "Segment")
+        GridElement_ = rcp(new phx::grid::Segment(numDimensions));
+      else if (elementType == "Triangle")
+        GridElement_ = rcp(new phx::grid::Triangle(numDimensions));
+      else if (elementType == "Quad")
+        GridElement_ = rcp(new phx::grid::Quad(numDimensions));
+      else if (elementType == "Tet")
+        GridElement_ = rcp(new phx::grid::Tet(numDimensions));
+      else if (elementType == "Hex")
+        GridElement_ = rcp(new phx::grid::Hex(numDimensions));
+      else
+        TEST_FOR_EXCEPTION(true, std::logic_error,
+                           "input elementType not recognized, " << elementType);
+
+      ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
+    }
+
     Loadable(RefCountPtr<Epetra_Map> ElementMap, 
              RefCountPtr<grid::Element> Element) :
       ElementMap_(ElementMap),
       GridElement_(Element)
     { 
       ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
-      COO_.resize(GridElement_->getNumDimensions());
     }
 
     //! Destructor.
@@ -42,6 +74,11 @@ class Loadable : public core::Object
     // @}
     // @{ \name Get methods.
     
+    inline int getNumDimensions() const 
+    {
+      return(getElement()->getNumDimensions());
+    }
+
     inline int getNumGlobalElements() const 
     {
       return(ElementMap_->NumGlobalElements());
@@ -62,6 +99,11 @@ class Loadable : public core::Object
       return(VertexMap_->NumMyElements());
     }
 
+    inline int getNumVerticesPerElement() const
+    {
+      return(GridElement_->getNumVertices());
+    }
+
     //! Returns the Epetra_Map associated to the element distribution.
     inline const RefCountPtr<Epetra_Map> getElementMap() const
     {
@@ -72,6 +114,26 @@ class Loadable : public core::Object
     inline const RefCountPtr<Epetra_Map> getVertexMap() const
     {
       return(VertexMap_);
+    }
+
+    inline int getGEID(const int LEID) const
+    {
+      return(ElementMap_->GID(LEID));
+    }
+
+    inline int getGVID(const int LVID) const
+    {
+      return(VertexMap_->GID(LVID));
+    }
+
+    inline int getLEID(const int GEID) const
+    {
+      return(ElementMap_->LID(GEID));
+    }
+
+    inline int getLVID(const int GVID) const
+    {
+      return(VertexMap_->LID(GVID));
     }
 
     const RefCountPtr<grid::Element> getElement() const
@@ -125,42 +187,26 @@ class Loadable : public core::Object
     // @}
     // @{ \name Data access methods
     
-    inline void setGlobalCoordinates(const int index, const int NumEntries,
-                                     const int* GVID, const double* value)
-    {
-      Epetra_FEVector& V = *COO_[index];
-      V.SumIntoGlobalValues(NumEntries, GVID, value);
-    }
-
     inline void setGlobalCoordinates(const int GID, const int index, const double value)
     {
-      Epetra_FEVector& V = *COO_[index];
-      V.SumIntoGlobalValues(1, &GID, &value);
+      COO_->SumIntoGlobalValue(GID, index, value);
     }
 
     inline double& getGlobalCoordinates(const int GID, const int index)
     {
-      Epetra_FEVector& V = *COO_[index];
       int LID = VertexMap_->LID(GID);
-      assert (LID != -1);
-      return(V[0][LID]);
+      return((*COO_)[index][LID]);
     }
 
     inline double& getMyCoordinates(const int LID, const int index)
     {
-      Epetra_FEVector& V = *COO_[index];
-      return(V[0][LID]);
-    }
-
-    inline double& COO(const int GVID, const int index)
-    {
-      Epetra_FEVector& V = *COO_[index];
-      return(V[0][VertexMap_->LID(GVID)]);
+      return((*COO_)[index][LID]);
     }
 
     inline void setGlobalConnectivity(const int GID, const int index, const int what)
     {
       int LID = ElementMap_->LID(GID);
+      assert (LID != -1);
       (*ADJ_)(LID, index) = what;
     }
 
@@ -214,31 +260,19 @@ class Loadable : public core::Object
 
       VertexMap_ = rcp(new Epetra_Map(-1, count, &MyGlobalElements[0], 0,  Comm));
 
-      for (int i = 0; i < COO_.size(); ++i)
-        COO_[i] = rcp(new Epetra_FEVector(*VertexMap_));
+      COO_ = rcp(new Epetra_MultiVector(*VertexMap_, getElement()->getNumDimensions()));
     }
 
     void freezeCoordinates()
     {
-      const Epetra_Comm& Comm = ADJ_->Comm();
-
-      for (int i = 0; i < COO_.size(); ++i)
-      {
-        COO_[i]->GlobalAssemble(Insert);
-      }
-    }
-
-    const Epetra_FEVector& COOPtr(const int i) const
-    {
-      return(*(COO_[i].get()));
+      // do-nothing at this point
     }
 
     virtual void print(ostream & os) const
     {
       cout << *ADJ_;
 
-      for (int i = 0; i < COO_.size(); ++i)
-        cout << *(COO_[i]);
+      cout << *COO_;
     }
 
   private:
@@ -253,7 +287,7 @@ class Loadable : public core::Object
     vector<RefCountPtr<Epetra_IntVector> > IntData_;
     vector<RefCountPtr<Epetra_Vector> > DoubleData_;
 
-    vector<RefCountPtr<Epetra_FEVector> > COO_;
+    RefCountPtr<Epetra_MultiVector> COO_;
     RefCountPtr<EpetraExt::DistArray<int> > ADJ_;
 
     // @}

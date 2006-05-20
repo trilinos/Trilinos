@@ -102,7 +102,7 @@ class SerialXML
                   for (int kk = 0; kk < NumDimensions; ++kk)
                   {
                     double coord = Teuchos::StrUtils::atof(tokens[kk + 1]);
-                    patch->setGlobalCoordinates(kk, 1, &GVID, &coord);
+                    patch->setGlobalCoordinates(GVID, kk, coord);
                   }
                 }
               }

@@ -1,19 +1,242 @@
 #ifndef PHX_PROBLEM_SCALAR_LAPLACIAN_H
 #define PHX_PROBLEM_SCALAR_LAPLACIAN_H
 
+#include <limits>
+
 #include "phx_problem_Base.h"
+#include "phx_quadrature_Segment.h"
+#include "phx_quadrature_Triangle.h"
+#include "phx_quadrature_Quad.h"
+#include "phx_quadrature_Tet.h"
+#include "phx_quadrature_Hex.h"
+
+#include "Teuchos_RefCountPtr.hpp"
+
+using namespace Teuchos;
 
 namespace phx {
 namespace problem {
   
+template<class T>
 class ScalarLaplacian : public Base
 {
   public:
-  ScalarLaplacian() {}
+  ScalarLaplacian(RefCountPtr<Epetra_Map> matrixMap,
+                  const string& elementType,
+                  const int integrationDegree, 
+                  const int normDegree) 
+  {
+    matrixMap_ = matrixMap;
+
+    if (elementType == "Segment")
+    {
+      IE_ = rcp(new phx::quadrature::Segment(integrationDegree));
+      NE_ = rcp(new phx::quadrature::Segment(normDegree));
+    }
+    else if (elementType == "Triangle")
+    {
+      IE_ = rcp(new phx::quadrature::Triangle(integrationDegree));
+      NE_ = rcp(new phx::quadrature::Triangle(normDegree));
+    }
+    else if (elementType == "Quad")
+    {
+      IE_ = rcp(new phx::quadrature::Quad(integrationDegree));
+      NE_ = rcp(new phx::quadrature::Quad(normDegree));
+    }
+    else if (elementType == "Tet")
+    {
+      IE_ = rcp(new phx::quadrature::Tet(integrationDegree));
+      NE_ = rcp(new phx::quadrature::Tet(normDegree));
+    }
+    else if (elementType == "Hex")
+    {
+      IE_ = rcp(new phx::quadrature::Hex(integrationDegree));
+      NE_ = rcp(new phx::quadrature::Hex(normDegree));
+    }
+    else
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+                         "input elementType not recognized, " << elementType);
+  }
 
   ~ScalarLaplacian() {}
 
-  virtual void integrate(phx::quadrature::Element& QE,
+  virtual void integrate(RefCountPtr<phx::grid::Loadable> domain,
+                         const int numDimensions)
+  {
+    A_ = rcp(new Epetra_FECrsMatrix(Copy, *matrixMap_, 0));
+    LHS_ = rcp(new Epetra_FEVector(*matrixMap_));
+    RHS_ = rcp(new Epetra_FEVector(*matrixMap_));
+
+    int numVerticesPerElement = domain->getNumVerticesPerElement();
+    Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
+    Epetra_SerialDenseMatrix elementLHS(numVerticesPerElement, numVerticesPerElement);
+    Epetra_SerialDenseVector elementRHS(numVerticesPerElement);
+
+    for (int i = 0; i < domain->getNumMyElements(); ++i)
+    {
+      // load the element vertex IDs
+      for (int j = 0; j < numVerticesPerElement; ++j)
+        vertexList[j] = domain->getMyConnectivity(i, j);
+
+      // load the element coordinates
+      for (int j = 0; j < numVerticesPerElement; ++j)
+        for (int k = 0; k < numDimensions; ++k) 
+          (*IE_)(j, k) = domain->getGlobalCoordinates(vertexList[j], k);
+
+      integrateOverElement(*IE_, elementLHS, elementRHS);
+
+      A_->InsertGlobalValues(vertexList, elementLHS);
+      RHS_->SumIntoGlobalValues(vertexList, elementRHS);
+    }
+
+    A_->GlobalAssemble();
+    RHS_->GlobalAssemble();
+  }
+
+  void imposeDirichletBoundaryConditions(RefCountPtr<phx::grid::Loadable> boundary,
+                                         const int numDimensions)
+  {
+    double min = numeric_limits<double>::min();
+
+    Epetra_FEVector rowValues(*matrixMap_);
+    rowValues.PutScalar(min);
+    double coord[3];
+    coord[0] = 0.0; coord[1] = 0.0; coord[2] = 0.0;
+
+    for (int LEID = 0; LEID < boundary->getNumMyElements(); ++LEID)
+    {
+      for (int i = 0; i < boundary->getNumVerticesPerElement(); ++i)
+      {
+        int index = boundary->getGlobalConnectivity(LEID, i);
+        for (int j = 0; j < boundary->getNumDimensions(); ++j)
+          coord[j] = boundary->getGlobalCoordinates(index, j);
+
+        if (T::getBoundaryType(boundary->getID(), coord[0], coord[1], coord[2]) == 'd')
+        {
+          double value = T::getBoundaryValue(coord[0], coord[1], coord[2]);
+          rowValues.ReplaceGlobalValues(1, &index, &value);
+        }
+      }
+    }
+
+    rowValues.GlobalAssemble();
+
+    Epetra_Vector colValues(A_->RowMatrixColMap());
+    Epetra_Import importer(*matrixMap_, A_->RowMatrixColMap());
+    colValues.Import(rowValues, importer, Insert); 
+
+    for (int i = 0; i < A_->NumMyRows(); ++i)
+    {
+      int GID = A_->RowMatrixRowMap().GID(i);
+
+      bool isDirichlet = (rowValues[0][i] != min)?true:false;
+
+      int* indices;
+      double* values;
+      int numEntries;
+      A_->ExtractMyRowView(i, numEntries, values, indices);
+
+      if (isDirichlet)
+      {
+        for (int j = 0; j < numEntries; ++j)
+          if (indices[j] != i) values[j] = 0.0;
+          else values[j] = 1.0;
+          (*RHS_)[0][i] = rowValues[0][i];
+      }
+      else
+      {
+        for (int j = 0; j < numEntries; ++j)
+        {
+          if (indices[j] == i) continue;
+          if (colValues[indices[j]] != min) values[j] = 0.0;
+        }
+      }
+    }
+
+    LHS_->PutScalar(0.0);
+  }
+
+  Epetra_FECrsMatrix* getMatrix()
+  {
+    return(A_.get());
+  }
+
+  Epetra_FEVector* getLHS()
+  {
+    return(LHS_.get());
+  }
+
+  Epetra_FEVector* getRHS()
+  {
+    return(RHS_.get());
+  }
+
+  virtual void computeNorms(RefCountPtr<phx::grid::Loadable> domain,
+                            const int numDimensions,
+                            const Epetra_MultiVector& solution,
+                            const bool print = true)
+  {
+    // FIXME: should be done only if NumProc > 1.
+    const Epetra_Map& vertexMap = *(domain->getVertexMap());
+    Epetra_MultiVector vertexSolution(vertexMap, solution.NumVectors());
+    Epetra_Import importer(solution.Map(), vertexMap);
+    vertexSolution.Import(solution, importer, Insert);
+
+    int numVerticesPerElement = domain->getNumVerticesPerElement();
+
+    Epetra_SerialDenseVector elementSol(numVerticesPerElement);
+    Epetra_SerialDenseVector elementNorm(numDimensions);
+
+    Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
+    Epetra_SerialDenseMatrix elementLHS(numVerticesPerElement, numVerticesPerElement);
+    Epetra_SerialDenseVector elementRHS(numVerticesPerElement);
+
+    double exaNormL2 = 0.0, exaSemiNormH1 = 0.0;
+    double solNormL2 = 0.0, solSemiNormH1 = 0.0;
+    double errNormL2 = 0.0, errSemiNormH1 = 0.0;
+
+    for (int i = 0; i < domain->getNumMyElements(); ++i)
+    {
+      for (int j = 0; j < numVerticesPerElement; ++j)
+      {
+        vertexList[j] = domain->getMyConnectivity(i, j);
+        elementSol[j] = vertexSolution[0][vertexList[j]];
+      }
+
+      // load the element coordinates
+      for (int j = 0; j < numVerticesPerElement; ++j)
+        for (int k = 0; k < numDimensions; ++k) 
+          (*NE_)(j, k) = domain->getGlobalCoordinates(vertexList[j], k);
+
+      computeNormOverElement((*NE_), elementNorm);
+      exaNormL2 += elementNorm[0]; exaSemiNormH1 += elementNorm[1];
+
+      computeErrorOverElement((*NE_), elementSol, elementNorm);
+      errNormL2 += elementNorm[0]; errSemiNormH1 += elementNorm[1];
+
+      computeNormOverElement((*NE_), elementSol, elementNorm);
+      solNormL2 += elementNorm[0]; solSemiNormH1 += elementNorm[1];
+    }
+
+    exaNormL2 = sqrt(exaNormL2); exaSemiNormH1 = sqrt(exaSemiNormH1);
+    errNormL2 = sqrt(errNormL2); errSemiNormH1 = sqrt(errSemiNormH1);
+    solNormL2 = sqrt(solNormL2); solSemiNormH1 = sqrt(solSemiNormH1);
+
+    if (print && solution.Comm().MyPID() == 0)
+    {
+      cout << endl;
+      cout << "||x_h||_2        = " << solNormL2 << endl;
+      cout << "||x_ex||_2       = " << exaNormL2 << endl;
+      cout << "||x_ex - x_h||_2 = " << errNormL2 << endl;
+      cout << endl;
+      cout << "|x_h|_1        = " << solSemiNormH1 << endl;
+      cout << "|x_ex|_1       = " << exaSemiNormH1 << endl;
+      cout << "|x_ex - x_h|_1 = " << errSemiNormH1 << endl;
+      cout << endl;
+    }
+  }
+
+  virtual void integrateOverElement(phx::quadrature::Element& QE,
                          Epetra_SerialDenseMatrix& ElementLHS, 
                          Epetra_SerialDenseMatrix& ElementRHS)
   {
@@ -53,21 +276,22 @@ class ScalarLaplacian : public Base
           const double& phi_y_j = QE.getPhiY(j);
           const double& phi_z_j = QE.getPhiZ(j);
 
-          double contrib = 0.0;
-          contrib += phi_x_i * phi_x_j + phi_y_i * phi_y_j + phi_z_i * phi_z_j;
+          double contrib = T::getElementLHS(xq, yq, zq,
+                                            phi_i, phi_x_i, phi_y_i, phi_z_i,
+                                            phi_j, phi_x_j, phi_y_j, phi_z_j);
           contrib *= weight * det;
 
           ElementLHS(i, j) += contrib;
         }
 
-        ElementRHS(i, 0) += weight * det * phi_i;
+        ElementRHS(i, 0) += weight * det * T::getElementRHS(xq, yq, zq, phi_i);
       }
     }
   }
 
-  virtual void computeNorm(phx::quadrature::Element& QE,
-                           Epetra_SerialDenseMatrix& elementSol,
-                           Epetra_SerialDenseMatrix& elementNorm)
+  virtual void computeNormOverElement(phx::quadrature::Element& QE,
+                                      Epetra_SerialDenseMatrix& elementSol,
+                                      Epetra_SerialDenseMatrix& elementNorm)
   {
     elementNorm(0, 0) = 0.0;
     elementNorm(1, 0) = 0.0;
@@ -101,16 +325,14 @@ class ScalarLaplacian : public Base
     }
   }
 
-  virtual void computeNorm(phx::quadrature::Element& QE,
-                           Epetra_SerialDenseMatrix& elementSol,
-                           double (*exactSolution)(const char& what, const double& x, 
-                                                   const double& y, const double& z),
-                           Epetra_SerialDenseMatrix& elementNorm)
+  virtual void computeErrorOverElement(phx::quadrature::Element& QE,
+                                       Epetra_SerialDenseMatrix& elementSol,
+                                       Epetra_SerialDenseMatrix& elementNorm)
   {
     elementNorm(0, 0) = 0.0;
     elementNorm(1, 0) = 0.0;
 
-    for (int ii = 0 ; ii < QE.getNumQuadrNodes() ; ii++) 
+    for (int ii = 0; ii < QE.getNumQuadrNodes(); ii++) 
     {
       double xq, yq, zq;
 
@@ -124,7 +346,7 @@ class ScalarLaplacian : public Base
       double sol      = 0.0, sol_derx = 0.0;
       double sol_dery = 0.0, sol_derz = 0.0;
 
-      for (int k = 0 ; k < QE.getNumBasisFunctions() ; ++k)
+      for (int k = 0; k < QE.getNumBasisFunctions(); ++k)
       {
         sol      += QE.getPhi(k)  * elementSol(k, 0);
         sol_derx += QE.getPhiX(k) * elementSol(k, 0);
@@ -132,10 +354,10 @@ class ScalarLaplacian : public Base
         sol_derz += QE.getPhiZ(k) * elementSol(k, 0);
       }
 
-      sol      -= exactSolution('f', xq, yq, zq);
-      sol_derx -= exactSolution('x', xq, yq, zq);
-      sol_dery -= exactSolution('y', xq, yq, zq);
-      sol_derz -= exactSolution('z', xq, yq, zq);
+      sol      -= T::getExactSolution('f', xq, yq, zq);
+      sol_derx -= T::getExactSolution('x', xq, yq, zq);
+      sol_dery -= T::getExactSolution('y', xq, yq, zq);
+      sol_derz -= T::getExactSolution('z', xq, yq, zq);
 
       elementNorm(0, 0) += weight * det * sol * sol;
       elementNorm(1, 0) += weight * det * (sol_derx * sol_derx +
@@ -144,15 +366,14 @@ class ScalarLaplacian : public Base
     }
   }
 
-  virtual void computeNorm(phx::quadrature::Element& QE,
-                           double (*exactSolution)(const char& what, const double& x, 
-                                                   const double& y, const double& z),
-                           Epetra_SerialDenseMatrix& elementNorm)
+  virtual void 
+  computeNormOverElement(phx::quadrature::Element& QE,
+                         Epetra_SerialDenseMatrix& elementNorm)
   {
     elementNorm(0, 0) = 0.0;
     elementNorm(1, 0) = 0.0;
 
-    for (int ii = 0 ; ii < QE.getNumQuadrNodes() ; ii++) 
+    for (int ii = 0; ii < QE.getNumQuadrNodes(); ii++) 
     {
       double xq, yq, zq;
 
@@ -163,10 +384,10 @@ class ScalarLaplacian : public Base
       const double& weight = QE.getQuadrWeight(ii);
       const double& det    = QE.getDetJacobian(ii);
 
-      double sol      = exactSolution('f', xq, yq, zq);
-      double sol_derx = exactSolution('x', xq, yq, zq);
-      double sol_dery = exactSolution('y', xq, yq, zq);
-      double sol_derz = exactSolution('z', xq, yq, zq);
+      double sol      = T::getExactSolution('f', xq, yq, zq);
+      double sol_derx = T::getExactSolution('x', xq, yq, zq);
+      double sol_dery = T::getExactSolution('y', xq, yq, zq);
+      double sol_derz = T::getExactSolution('z', xq, yq, zq);
 
       elementNorm(0, 0) += weight * det * sol * sol;
       elementNorm(1, 0) += weight * det * (sol_derx * sol_derx +
@@ -174,6 +395,13 @@ class ScalarLaplacian : public Base
                                            sol_derz * sol_derz);
     }
   }
+
+private:
+  RefCountPtr<phx::quadrature::Element> IE_, NE_;
+  RefCountPtr<Epetra_Map> matrixMap_;
+  RefCountPtr<Epetra_FECrsMatrix> A_;
+  RefCountPtr<Epetra_FEVector> LHS_;
+  RefCountPtr<Epetra_FEVector> RHS_;
 
 }; // class Base
 

@@ -32,15 +32,61 @@
 
 using namespace phx;
 
-double exactSolution(const char& what, const double& x, const double& y, const double& z)
+class MyScalarLaplacian 
 {
-  if (what == 'f')
-    return(x);
-  else if (what == 'x')
-    return(1.0);
-  else
-    return(0.0);
-}
+  public:
+    static inline double 
+    getElementLHS(const double& x, 
+                  const double& y, 
+                  const double& z,
+                  const double& phi_i,
+                  const double& phi_i_derx, 
+                  const double& phi_i_dery,
+                  const double& phi_i_derz,
+                  const double& phi_j,
+                  const double& phi_j_derx,
+                  const double& phi_j_dery,
+                  const double& phi_j_derz)
+    {
+      return(phi_i_derx * phi_j_derx + 
+             phi_i_dery * phi_j_dery + 
+             phi_i_derz * phi_j_derz);
+    }
+
+    static inline double
+    getElementRHS(const double& x,
+                  const double& y,
+                  const double& z,
+                  const double& phi_i)
+
+    {
+      return(2.0 * phi_i);
+    }
+
+    static inline double
+    getBoundaryValue(const double& x, const double& y, const double& z)
+    {
+      return(0.0);
+    }
+
+    static inline char
+    getBoundaryType(const int ID, const double& x, const double& y, const double& z)
+    {
+      return('d');
+    }
+
+    static inline double 
+    getExactSolution(const char& what, const double& x, 
+                     const double& y, const double& z)
+    {
+      if (what == 'f')
+        return(x * (1 - x));
+      else if (what == 'x')
+        return(1.0 - 2.0 * x);
+      else
+        return(0.0);
+    }
+};
 
 // =========== //
 // main driver //
@@ -55,122 +101,97 @@ int main(int argc, char *argv[])
   Epetra_SerialComm comm;
 #endif
 
-  // create a 1D grid on (0, 1) composed by segments. Each processor will have 4
-  // elements. The boundary conditions of Dirichlet type and then imposed on
-  // the assembled matrix.
+  // ======================================================= //
+  // Creates a 1D grid on (0, 1) composed by segments. Each  //
+  // processor will have 4 elements. The boundary conditions //
+  // are of Dirichlet type.                                  //
+  // ======================================================= //
   
   int numDimensions = 1;
-  int numMyElements = 4;
+  int numMyElements = 32;
+  int numGlobalElements = numMyElements * comm.NumProc();
 
-  RefCountPtr<Epetra_Map> domainMap, leftCornerMap, rightCornerMap;
+  RefCountPtr<phx::grid::Loadable> domain;
   
-  domainMap = rcp(new Epetra_Map(-1, numMyElements, 0, comm));
-  RefCountPtr<phx::grid::Loadable> domain, leftCorner, rightCorner;
+  domain = rcp(new phx::grid::Loadable(comm, numGlobalElements, numMyElements, 
+                                       "Segment", numDimensions));
+
+  // ===================================================== //
+  // Each processor inserts locally owned elements, then   //
+  // call freezeCoordinates(), which computes the set      //
+  // of locally owned vertices. Then, the coordinates of   //
+  // these vertices is inserted. Finanlly, the grid is     //
+  // freezed by calling freezeConnectivity().              //
+  // ===================================================== //
   
-  RefCountPtr<phx::grid::Element> domainElement, cornerElement;
-  domainElement = rcp(new phx::grid::Segment(numDimensions));
-  cornerElement = rcp(new phx::grid::Point(numDimensions));
-
-  domain = rcp(new phx::grid::Loadable(domainMap, domainElement));
-
-  int* myGlobalElements = domainMap->MyGlobalElements();
-
-  // each processor inserts locally owned elements
-  for (int LID = 0; LID < numMyElements; ++LID)
+  for (int LEID = 0; LEID < numMyElements; ++LEID)
   {
-    int GID = myGlobalElements[LID];
+    int GEID = domain->getGEID(LEID);
 
-    domain->setGlobalConnectivity(GID, 0, GID);
-    domain->setGlobalConnectivity(GID, 1, GID + 1);
+    domain->setGlobalConnectivity(GEID, 0, GEID);
+    domain->setGlobalConnectivity(GEID, 1, GEID + 1);
   }
 
   domain->freezeConnectivity();
 
-  double h = 1.0 / domain->getNumGlobalElements();
+  double h = 1.0 / numGlobalElements;
 
-  int* myGlobalVertices = domain->getVertexMap()->MyGlobalElements();
-
-  for (int LID = 0; LID < domain->getNumMyVertices(); ++LID)
+  for (int LVID = 0; LVID < domain->getNumMyVertices(); ++LVID)
   {
-    int GID = myGlobalVertices[LID];
-    domain->setGlobalCoordinates(GID, 0, h * GID);
+    int GVID = domain->getGVID(LVID);
+    domain->setGlobalCoordinates(GVID, 0, h * GVID);
   }
 
   domain->freezeCoordinates();
 
-  map<string, RefCountPtr<phx::grid::Loadable> > patches;
-  patches["domain"] = domain;
+  // The boundary points are now inserted in an equivalent
+  // manner.
 
-  // create the map for the matrix, in this case simply linear.
-  RefCountPtr<Epetra_Map> matrixMap = rcp(new Epetra_Map(domain->getNumGlobalVertices(), 0, comm));
+  int numMyBoundaries = 0;
+  if (comm.MyPID() == 0) ++numMyBoundaries; 
+  if (comm.MyPID() == comm.NumProc() - 1) ++numMyBoundaries;
 
-  Epetra_FECrsMatrix matrix(Copy, *matrixMap, 0);
-  Epetra_FEVector    lhs(*matrixMap);
-  Epetra_FEVector    rhs(*matrixMap);
+  RefCountPtr<phx::grid::Loadable> boundaries;
+  boundaries = rcp(new phx::grid::Loadable(comm, 2, numMyBoundaries, "Point", 1));
+  if (comm.MyPID() == 0)
+    boundaries->setGlobalConnectivity(0, 0, 0);
+  if (comm.MyPID() == comm.NumProc() - 1)
+    boundaries->setGlobalConnectivity(1, 0, domain->getNumGlobalVertices() - 1);
 
-  Epetra_IntSerialDenseVector vertexList(domainElement->getNumVertices());
+  boundaries->freezeConnectivity();
+
+  if (comm.MyPID() == 0)
+    boundaries->setGlobalCoordinates(0, 0, 0.0);
+  if (comm.MyPID() == comm.NumProc() - 1)
+    boundaries->setGlobalCoordinates(1, 0, 1.0);
+
+  boundaries->freezeCoordinates();
+
+  // ============================================================ //
+  // We are now ready to create the linear problem.               //
+  // First, we need to define the Epetra_Map for the matrix,      //
+  // where each grid vertex is assigned to a different            //
+  // processor. To keep things simple, we use a linear partition. //
+  // Then, we allocate the matrix (A), the solution vector (LHS), //
+  // and the right-hand side (RHS).                               //
+  // ============================================================ //
+  
+  RefCountPtr<Epetra_Map> matrixMap = 
+    rcp(new Epetra_Map(domain->getNumGlobalVertices(), 0, comm));
 
   phx::quadrature::Segment domainQuadrature(4);
-  phx::problem::ScalarLaplacian problem;
-  Epetra_SerialDenseMatrix elementLHS(domainElement->getNumVertices(),domainElement->getNumVertices());
-  Epetra_SerialDenseVector elementRHS(domainElement->getNumVertices());
+  phx::problem::ScalarLaplacian<MyScalarLaplacian> problem(matrixMap, "Segment", 1, 4);
 
-  for (int i = 0; i < domain->getNumMyElements(); ++i)
-  {
-    // load the element vertex IDs
-    for (int j = 0; j < domainElement->getNumVertices(); ++j)
-      vertexList[j] = domain->getMyConnectivity(i, j);
+  problem.integrate(domain, numDimensions);
 
-    // load the element coordinates
-    for (int j = 0; j < domainElement->getNumVertices(); ++j)
-      for (int k = 0; k < domainElement->getNumDimensions(); ++k) 
-        domainQuadrature(j, k) = domain->getGlobalCoordinates(vertexList[j], k);
+  problem.imposeDirichletBoundaryConditions(boundaries, numDimensions);
 
-    problem.integrate(domainQuadrature, elementLHS, elementRHS);
-
-    matrix.InsertGlobalValues(vertexList, elementLHS);
-    rhs.SumIntoGlobalValues(vertexList, elementRHS);
-  }
-
-  matrix.GlobalAssemble();
-  rhs.GlobalAssemble();
-
-  Teuchos::Hashtable<int, double> dirichletRows;
-  dirichletRows.put(0, 0.0);
-  dirichletRows.put(numMyElements * comm.NumProc() - 1, 0.0);
-
-  for (int i = 0; i < matrix.NumMyRows(); ++i)
-  {
-    int GID = matrix.RowMatrixRowMap().GID(i);
-
-    bool isDirichlet = false;
-    if (dirichletRows.containsKey(GID)) isDirichlet = true;
-
-    int* indices;
-    double* values;
-    int numEntries;
-    matrix.ExtractMyRowView(i, numEntries, values, indices);
-
-    if (isDirichlet)
-    {
-      for (int j = 0; j < numEntries; ++j)
-      if (indices[j] != i) values[j] = 0.0;
-      else values[j] = 1.0;
-      rhs[0][i] = dirichletRows.get(GID);
-    }
-    else
-    {
-      for (int j = 0; j < numEntries; ++j)
-      {
-        if (indices[j] == i) continue;
-        if (dirichletRows.containsKey(matrix.RowMatrixColMap().GID(indices[j]))) values[j] = 0.0;
-      }
-    }
-  }
-
-  lhs.PutScalar(0.0);
-
-  AztecOO solver(&matrix, &lhs, &rhs);
+  // ============================================================ //
+  // Solving the linear system is the next step, quite easy       //
+  // because we just call AztecOO and we wait for the solution... //
+  // ============================================================ //
+  
+  AztecOO solver(problem.getMatrix(), problem.getLHS(), problem.getRHS());
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
   solver.SetAztecOption(AZ_subdomain_solve, AZ_icc);
@@ -180,34 +201,7 @@ int main(int argc, char *argv[])
 
   // now compute the norm of the solution
   
-  Epetra_SerialDenseVector elementSol(domainElement->getNumVertices());
-  Epetra_SerialDenseVector elementNorm(numDimensions);
-  double normL2 = 0.0, semiNormH1 = 0.0;
-
-  for (int i = 0; i < domain->getNumMyElements(); ++i)
-  {
-    for (int j = 0; j < domainElement->getNumVertices(); ++j)
-    {
-      vertexList[j] = domain->getMyConnectivity(i, j);
-      elementSol[j] = lhs[0][vertexList[j]];
-    }
-
-    // load the element coordinates
-    for (int j = 0; j < domainElement->getNumVertices(); ++j)
-      for (int k = 0; k < domainElement->getNumDimensions(); ++k) 
-        domainQuadrature(j, k) = domain->getGlobalCoordinates(vertexList[j], k);
-
-    problem.computeNorm(domainQuadrature, exactSolution, elementNorm);
-
-    normL2     += elementNorm[0];
-    semiNormH1 += elementNorm[1];
-  }
-
-  if (comm.MyPID() == 0)
-  {
-    cout << "Norm L2 = " << normL2 << endl;
-    cout << "SemiNorm H1 = " << semiNormH1 << endl;
-  }
+  problem.computeNorms(domain, numDimensions, *problem.getLHS(), true);
 
 #ifdef HAVE_MPI
   MPI_Finalize();
