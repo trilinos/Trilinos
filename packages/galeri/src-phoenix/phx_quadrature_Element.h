@@ -15,16 +15,6 @@ public:
   virtual ~Element()
   {}
 
-  inline int& getID()
-  {
-    return(ID_);
-  }
-
-  inline void setID(const int ID)
-  {
-    ID_ = ID;
-  }
-
   inline double& operator()(const int i, const int j)
   {
     return(coord_(i, j));
@@ -57,6 +47,7 @@ public:
 
   void computeDerivatives(const int quadrNode) const
   {
+    // FIXME: Only for 2D
     for (int i = 0; i < numLocalNodes_; i++) 
     {
       basis_dx_[i] = basis_dr_(i, quadrNode) * J_(0,0) +
@@ -93,7 +84,7 @@ public:
 
   inline double getPhiZ(const int i) const
   {
-    return(basis_dy_[i]);
+    return(basis_dz_[i]);
   }
 
   inline int getNumQuadrNodes() const

@@ -12,78 +12,489 @@ namespace grid {
 class Generator 
 {
 public:
-  static map<string, RefCountPtr<Loadable> >
-  getSquareWithQuad(Epetra_Comm& comm, const int nx, const int ny,
-                    const int mx, const int my)
+  static void
+  getSquareWithTriangles(Epetra_Comm& comm, 
+                         const int numGlobalElementsX, const int numGlobalElementsY,
+                         const int numDomainsX, const int numDomainsY,
+                         phx::grid::Loadable& domain, phx::grid::Loadable& boundary)
   {
+    TEST_FOR_EXCEPTION(numDomainsX * numDomainsY != comm.NumProc(), std::logic_error,
+                       "the number of processor should equal numDomainsX * numDomainsY"
+                       << ", now numProcs = " << comm.NumProc()
+                       << " and numDomainsX * numDomainsY = " << numDomainsX * numDomainsY);
+
+    TEST_FOR_EXCEPTION(numGlobalElementsX % numDomainsX != 0, std::logic_error,
+                       "numGlobalElementsX must be a multiple of numDomainsX");
+
+    TEST_FOR_EXCEPTION(numGlobalElementsY % numDomainsY != 0, std::logic_error,
+                       "numGlobalElementsY must be a multiple of numDomainsY");
+
     double lx = 1.0;
     double ly = 1.0;
 
-    int numGlobalElements = nx * ny;
-    int numGlobalVertices = (nx + 1) * (ny + 1);
+    // these are the global number of elements and vertices
+    int numGlobalElements = numGlobalElementsX * numGlobalElementsY * 2;
+    int numGlobalVertices = (numGlobalElementsX + 1) * (numGlobalElementsY + 1);
 
-    double deltax = lx / nx;
-    double deltay = ly / ny;
+    int numGlobalVerticesX = numGlobalElementsX + 1;
+    int numGlobalVerticesY = numGlobalElementsY + 1;
 
-    RefCountPtr<Epetra_Map> elementMap = rcp(new Epetra_Map(numGlobalElements, 0, comm));
-    RefCountPtr<phx::grid::Element> quad = rcp(new phx::grid::Quad);
-    RefCountPtr<phx::grid::Loadable> domain = rcp(new Loadable(elementMap, quad));
+    // these are the mesh sizes, hx and hy
+    double deltax = lx / numGlobalElementsX;
+    double deltay = ly / numGlobalElementsY;
 
-    for (int i = 0; i < numGlobalElements; ++i)
+    // (px, py) are the coordinates of this processor.
+    int px = comm.MyPID() % numDomainsX;
+    int py = comm.MyPID() / numDomainsY;
+
+    // (numMyElementsX, numMyElementsY) are the number of elements
+    // in the square assigned to this processor, and
+    // (numMyVerticesX, numMyVerticesY) the number of vertices.
+    int numMyElementsX = numGlobalElementsX / numDomainsX;
+    int numMyElementsY = numGlobalElementsY / numDomainsY;
+
+    int numMyVerticesX = numMyElementsX + 1;
+    int numMyVerticesY = numMyElementsY + 1;
+
+    // (sx, sy) are the coordinates of the first element of this processor.
+    int sx = px * numMyElementsX;
+    int sy = py * numMyElementsY;
+
+    // and these are the number of vertices and elements assigned
+    // to this processor.
+    int numMyElements = numMyElementsX * numMyElementsY * 2;
+    int numMyVertices = (numMyElementsX + 1) * (numMyElementsY + 1);
+
+    domain.initialize(comm, numGlobalElements, numMyElements, "Triangle");
+
+    int elementOffset = numMyElements * comm.MyPID();
+    int vertexOffset  = px * numMyElementsX + py * numMyElementsY * numGlobalVerticesX;
+
+    int count = 0;
+    for (int iy = 0; iy < numMyElementsY; ++iy)
     {
-      int ix = i % nx;
-      int iy = i / nx;
+      for (int ix = 0; ix < numMyElementsX; ++ix)
+      {
+        int GEID = elementOffset + count++;
+        int GVID = vertexOffset + ix + iy * numGlobalVerticesX;
 
-      int base = ix + iy * (nx + 1);
-      domain->setGlobalConnectivity(i, 0, base);
-      domain->setGlobalConnectivity(i, 1, base + 1);
-      domain->setGlobalConnectivity(i, 2, base + 2 + nx);
-      domain->setGlobalConnectivity(i, 3, base + 1 + nx);
+        domain.setGlobalConnectivity(GEID, 0, GVID);
+        domain.setGlobalConnectivity(GEID, 1, GVID + 1);
+        domain.setGlobalConnectivity(GEID, 2, GVID + 2 + numGlobalElementsX);
+
+        GEID = elementOffset + count++;
+        domain.setGlobalConnectivity(GEID, 0, GVID + 2 + numGlobalElementsX);
+        domain.setGlobalConnectivity(GEID, 1, GVID + 1 + numGlobalElementsX);
+        domain.setGlobalConnectivity(GEID, 2, GVID);
+      }
     }
 
-    domain->freezeConnectivity();
+    domain.freezeConnectivity();
 
-    for (int i = 0; i < numGlobalVertices; ++i)
+    for (int iy = 0; iy < numMyVerticesY; ++iy)
     {
-      int ix = i % (nx + 1);
-      int iy = i / (nx + 1);
+      for (int ix = 0; ix < numMyVerticesX; ++ix)
+      {
+        int GVID = vertexOffset + ix + iy * numGlobalVerticesX;
 
-      domain->setGlobalCoordinates(i, 0, ix * deltax);
-      domain->setGlobalCoordinates(i, 1, iy * deltay);
+        domain.setGlobalCoordinates(GVID, 0, (sx + ix) * deltax);
+        domain.setGlobalCoordinates(GVID, 1, (sy + iy) * deltay);
+      }
     }
 
-    domain->freezeCoordinates();
+    domain.freezeCoordinates();
 
-    cout << *domain;
     // now build boundary faces
-    int numGlobalBoundaries = nx;
-    RefCountPtr<Epetra_Map> boundaryMap = rcp(new Epetra_Map(numGlobalBoundaries, 0, comm));
-    RefCountPtr<phx::grid::Element> segment = rcp(new phx::grid::Segment);
-    RefCountPtr<phx::grid::Loadable> boundary = rcp(new Loadable(boundaryMap, segment));
 
-    for (int i = 0; i < nx; ++i)
+    int numMyBoundaries = 0;
+    
+    if (py == 0)               numMyBoundaries += numMyElementsX;
+    if (py == numDomainsY - 1) numMyBoundaries += numMyElementsX;
+    
+    if (px == 0)               numMyBoundaries += numMyElementsY;
+    if (px == numDomainsX - 1) numMyBoundaries += numMyElementsY;
+
+    int pos = 0;
+    vector<int> list(numMyBoundaries);
+
+    if (py == 0)
     {
-      boundary->setGlobalConnectivity(i, 0, i);
-      boundary->setGlobalConnectivity(i, 1, i + 1);
+      int offset = px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+        list[pos++] = offset + i;
     }
 
-    boundary->freezeConnectivity();
-
-    for (int i = 0; i < nx + 1; ++i)
+    if (px == numDomainsX - 1)
     {
-      boundary->setGlobalCoordinates(i, 0, i * deltax);
-      boundary->setGlobalCoordinates(i, 1, 0.0);
+      int offset2 = numGlobalElementsX + py * numMyElementsY;
+
+      for (int i = 0; i < numMyElementsY; ++i)
+        list[pos++] = offset2 + i;
     }
 
-    boundary->freezeCoordinates();
+    if (py == numDomainsY - 1)
+    {
+      int offset2 = numGlobalElementsX + numGlobalElementsY + px * numMyElementsX;
 
-    map<string, RefCountPtr<Loadable> > patches;
-    patches["domain"] = domain;
-    patches["boundary"] = boundary;
+      for (int i = 0; i < numMyElementsX; ++i)
+        list[pos++] = offset2 + i;
+    }
 
-    return(patches);
+    if (px == 0)
+    {
+      int offset2 = 2 * numGlobalElementsX + numGlobalElementsY + py * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY; ++i)
+        list[pos++] = offset2 + i;
+    }
+
+    TEST_FOR_EXCEPTION(pos != numMyBoundaries, std::logic_error,
+                       "internal error in boundary list definition, " 
+                       << pos << " vs. " << numMyBoundaries);
+
+    boundary.initialize(comm, -1, numMyBoundaries, "Segment", &list[0]);
+
+    // now insert the actual vertices in the grid
+
+    if (py == 0)
+    {
+      int offset = px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+      {
+        boundary.setGlobalConnectivity(offset + i, 0, offset + i);
+        boundary.setGlobalConnectivity(offset + i, 1, offset + i + 1);
+      }
+    }
+
+    if (px == numDomainsX - 1)
+    {
+      int offset = numGlobalVerticesX + py * numMyElementsY - 1;
+      int offset2 = numGlobalElementsX + py * numMyElementsY;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+      {
+        boundary.setGlobalConnectivity(offset2 + i, 0, offset + i * numGlobalVerticesX);
+        boundary.setGlobalConnectivity(offset2 + i, 1, offset + (i + 1) * numGlobalVerticesX);
+      }
+    }
+
+    if (py == numDomainsY - 1)
+    {
+      int offset = numGlobalVerticesX * numGlobalElementsY + px * numMyElementsX;
+      int offset2 = numGlobalElementsX + numGlobalElementsY + px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+      {
+        boundary.setGlobalConnectivity(offset2 + i, 0, offset + i);
+        boundary.setGlobalConnectivity(offset2 + i, 1, offset + i + 1);
+      }
+    }
+
+    if (px == 0)
+    {
+      int offset = numGlobalVerticesX * py * numMyElementsY;
+      int offset2 = 2 * numGlobalElementsX + numGlobalElementsY + py * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY; ++i)
+      {
+        boundary.setGlobalConnectivity(offset2 + i, 0, offset + i * numGlobalVerticesX);
+        boundary.setGlobalConnectivity(offset2 + i, 1, offset + (i + 1) * numGlobalVerticesX);
+      }
+    }
+
+    boundary.freezeConnectivity();
+
+    if (py == 0)
+    {
+      int offset = px * numMyElementsX + 1;
+
+      for (int i = 0; i < numMyElementsX + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset + i, 0, deltax * (offset + i));
+        boundary.setGlobalCoordinates(offset + i, 1, 0.0);
+      }
+    }
+
+    if (px == numDomainsX - 1)
+    {
+      int offset = numGlobalVerticesX + py * numMyElementsY - 1;
+      int offset2 = px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 0, lx);
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 1, deltay * (offset2 + i));
+      }
+    }
+
+    if (py == numDomainsY - 1)
+    {
+      int offset = px * numMyElementsX;
+      int offset2 = numGlobalVerticesX * numGlobalElementsY + px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset2 + i, 0, deltax * (offset + i));
+        boundary.setGlobalCoordinates(offset2 + i, 1, ly);
+      }
+    }
+
+    if (px == 0)
+    {
+      int offset = numGlobalVerticesX * py * numMyElementsY;
+      int offset2 = py * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 0, 0.0);
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 1, deltay * (offset2 + i));
+      }
+    }
+
+    boundary.freezeCoordinates();
   }
 
+  static void
+  getSquareWithQuads(Epetra_Comm& comm, 
+                    const int numGlobalElementsX, const int numGlobalElementsY,
+                    const int numDomainsX, const int numDomainsY,
+                    phx::grid::Loadable& domain, phx::grid::Loadable& boundary)
+  {
+    TEST_FOR_EXCEPTION(numDomainsX * numDomainsY != comm.NumProc(), std::logic_error,
+                       "the number of processor should equal numDomainsX * numDomainsY"
+                       << ", now numProcs = " << comm.NumProc()
+                       << " and numDomainsX * numDomainsY = " << numDomainsX * numDomainsY);
+
+    TEST_FOR_EXCEPTION(numGlobalElementsX % numDomainsX != 0, std::logic_error,
+                       "numGlobalElementsX must be a multiple of numDomainsX");
+
+    TEST_FOR_EXCEPTION(numGlobalElementsY % numDomainsY != 0, std::logic_error,
+                       "numGlobalElementsY must be a multiple of numDomainsY");
+
+    double lx = 1.0;
+    double ly = 1.0;
+
+    // these are the global number of elements and vertices
+    int numGlobalElements = numGlobalElementsX * numGlobalElementsY;
+    int numGlobalVertices = (numGlobalElementsX + 1) * (numGlobalElementsY + 1);
+
+    int numGlobalVerticesX = numGlobalElementsX + 1;
+    int numGlobalVerticesY = numGlobalElementsY + 1;
+
+    // these are the mesh sizes, hx and hy
+    double deltax = lx / numGlobalElementsX;
+    double deltay = ly / numGlobalElementsY;
+
+    // (px, py) are the coordinates of this processor.
+    int px = comm.MyPID() % numDomainsX;
+    int py = comm.MyPID() / numDomainsY;
+
+    // (numMyElementsX, numMyElementsY) are the number of elements
+    // in the square assigned to this processor, and
+    // (numMyVerticesX, numMyVerticesY) the number of vertices.
+    int numMyElementsX = numGlobalElementsX / numDomainsX;
+    int numMyElementsY = numGlobalElementsY / numDomainsY;
+
+    int numMyVerticesX = numMyElementsX + 1;
+    int numMyVerticesY = numMyElementsY + 1;
+
+    // (sx, sy) are the coordinates of the first element of this processor.
+    int sx = px * numMyElementsX;
+    int sy = py * numMyElementsY;
+
+    // and these are the number of vertices and elements assigned
+    // to this processor.
+    int numMyElements = numMyElementsX * numMyElementsY;
+    int numMyVertices = (numMyElementsX + 1) * (numMyElementsY + 1);
+
+    domain.initialize(comm, numGlobalElements, numMyElements, "Quad");
+
+    int elementOffset = numMyElements * comm.MyPID();
+    int vertexOffset  = px * numMyElementsX + py * numMyElementsY * numGlobalVerticesX;
+
+    int count = 0;
+    for (int iy = 0; iy < numMyElementsY; ++iy)
+    {
+      for (int ix = 0; ix < numMyElementsX; ++ix)
+      {
+        int GEID = elementOffset + count++;
+        int GVID = vertexOffset + ix + iy * numGlobalVerticesX;
+
+        domain.setGlobalConnectivity(GEID, 0, GVID);
+        domain.setGlobalConnectivity(GEID, 1, GVID + 1);
+        domain.setGlobalConnectivity(GEID, 2, GVID + 2 + numGlobalElementsX);
+        domain.setGlobalConnectivity(GEID, 3, GVID + 1 + numGlobalElementsX);
+      }
+    }
+
+    domain.freezeConnectivity();
+
+    for (int iy = 0; iy < numMyVerticesY; ++iy)
+    {
+      for (int ix = 0; ix < numMyVerticesX; ++ix)
+      {
+        int GVID = vertexOffset + ix + iy * numGlobalVerticesX;
+
+        domain.setGlobalCoordinates(GVID, 0, (sx + ix) * deltax);
+        domain.setGlobalCoordinates(GVID, 1, (sy + iy) * deltay);
+      }
+    }
+
+    domain.freezeCoordinates();
+
+    // now build boundary faces
+
+    int numMyBoundaries = 0;
+    
+    if (py == 0)               numMyBoundaries += numMyElementsX;
+    if (py == numDomainsY - 1) numMyBoundaries += numMyElementsX;
+    
+    if (px == 0)               numMyBoundaries += numMyElementsY;
+    if (px == numDomainsX - 1) numMyBoundaries += numMyElementsY;
+
+    int pos = 0;
+    vector<int> list(numMyBoundaries);
+
+    if (py == 0)
+    {
+      int offset = px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+        list[pos++] = offset + i;
+    }
+
+    if (px == numDomainsX - 1)
+    {
+      int offset2 = numGlobalElementsX + py * numMyElementsY;
+
+      for (int i = 0; i < numMyElementsY; ++i)
+        list[pos++] = offset2 + i;
+    }
+
+    if (py == numDomainsY - 1)
+    {
+      int offset2 = numGlobalElementsX + numGlobalElementsY + px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+        list[pos++] = offset2 + i;
+    }
+
+    if (px == 0)
+    {
+      int offset2 = 2 * numGlobalElementsX + numGlobalElementsY + py * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY; ++i)
+        list[pos++] = offset2 + i;
+    }
+
+    TEST_FOR_EXCEPTION(pos != numMyBoundaries, std::logic_error,
+                       "internal error in boundary list definition, " 
+                       << pos << " vs. " << numMyBoundaries);
+
+    boundary.initialize(comm, -1, numMyBoundaries, "Segment", &list[0]);
+
+    // now insert the actual vertices in the grid
+
+    if (py == 0)
+    {
+      int offset = px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+      {
+        boundary.setGlobalConnectivity(offset + i, 0, offset + i);
+        boundary.setGlobalConnectivity(offset + i, 1, offset + i + 1);
+      }
+    }
+
+    if (px == numDomainsX - 1)
+    {
+      int offset = numGlobalVerticesX + py * numMyElementsY - 1;
+      int offset2 = numGlobalElementsX + py * numMyElementsY;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+      {
+        boundary.setGlobalConnectivity(offset2 + i, 0, offset + i * numGlobalVerticesX);
+        boundary.setGlobalConnectivity(offset2 + i, 1, offset + (i + 1) * numGlobalVerticesX);
+      }
+    }
+
+    if (py == numDomainsY - 1)
+    {
+      int offset = numGlobalVerticesX * numGlobalElementsY + px * numMyElementsX;
+      int offset2 = numGlobalElementsX + numGlobalElementsY + px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX; ++i)
+      {
+        boundary.setGlobalConnectivity(offset2 + i, 0, offset + i);
+        boundary.setGlobalConnectivity(offset2 + i, 1, offset + i + 1);
+      }
+    }
+
+    if (px == 0)
+    {
+      int offset = numGlobalVerticesX * py * numMyElementsY;
+      int offset2 = 2 * numGlobalElementsX + numGlobalElementsY + py * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY; ++i)
+      {
+        boundary.setGlobalConnectivity(offset2 + i, 0, offset + i * numGlobalVerticesX);
+        boundary.setGlobalConnectivity(offset2 + i, 1, offset + (i + 1) * numGlobalVerticesX);
+      }
+    }
+
+    boundary.freezeConnectivity();
+
+    if (py == 0)
+    {
+      int offset = px * numMyElementsX + 1;
+
+      for (int i = 0; i < numMyElementsX + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset + i, 0, deltax * (offset + i));
+        boundary.setGlobalCoordinates(offset + i, 1, 0.0);
+      }
+    }
+
+    if (px == numDomainsX - 1)
+    {
+      int offset = numGlobalVerticesX + py * numMyElementsY - 1;
+      int offset2 = px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 0, lx);
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 1, deltay * (offset2 + i));
+      }
+    }
+
+    if (py == numDomainsY - 1)
+    {
+      int offset = px * numMyElementsX;
+      int offset2 = numGlobalVerticesX * numGlobalElementsY + px * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsX + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset2 + i, 0, deltax * (offset + i));
+        boundary.setGlobalCoordinates(offset2 + i, 1, ly);
+      }
+    }
+
+    if (px == 0)
+    {
+      int offset = numGlobalVerticesX * py * numMyElementsY;
+      int offset2 = py * numMyElementsX;
+
+      for (int i = 0; i < numMyElementsY + 1; ++i)
+      {
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 0, 0.0);
+        boundary.setGlobalCoordinates(offset + i * numGlobalVerticesX, 1, deltay * (offset2 + i));
+      }
+    }
+
+    boundary.freezeCoordinates();
+  }
 
 }; // class Generator
 

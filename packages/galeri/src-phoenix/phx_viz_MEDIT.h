@@ -14,12 +14,10 @@ public:
 
   static
   void Write(const Epetra_Comm& comm,
-             RefCountPtr<phx::grid::Loadable> patch,
+             phx::grid::Loadable& patch,
              const string& BaseName,
              const Epetra_MultiVector& vector)
   {
-    RefCountPtr<phx::grid::Element> element = patch->getElement();
-
     if (comm.MyPID() == 0)
     {
       string FileName = BaseName + ".mesh";
@@ -29,13 +27,13 @@ public:
       medit << "MeshVersionFormatted 1" << endl;
       medit << "Dimension 3" << endl;
       medit << "# mesh from phoenix" << endl << endl;
-      medit << "Vertices " << patch->getNumGlobalVertices() << endl;
+      medit << "Vertices " << patch.getNumGlobalVertices() << endl;
 
-      for (int i = 0; i < patch->getNumGlobalVertices(); ++i)
+      for (int i = 0; i < patch.getNumGlobalVertices(); ++i)
       {
         medit << setw(12) << setiosflags(ios::showpoint) 
-              << setw(12) << patch->getGlobalCoordinates(i, 0) << " "
-              << setw(12) << patch->getGlobalCoordinates(i, 1) << " "
+              << setw(12) << patch.getGlobalCoordinates(i, 0) << " "
+              << setw(12) << patch.getGlobalCoordinates(i, 1) << " "
               << setw(12) << "0.0 1" << endl;
       }
       medit.close();
@@ -50,12 +48,12 @@ public:
         string FileName = BaseName + ".mesh";
         std::ofstream medit(FileName.c_str(),ios::app);
 
-        medit << "Quadrilaterals " << patch->getNumGlobalElements() << endl;
+        medit << "Quadrilaterals " << patch.getNumGlobalElements() << endl;
 
-        for (int i = 0 ; i < patch->getNumMyElements(); ++i) 
+        for (int i = 0 ; i < patch.getNumMyElements(); ++i) 
         {
           for (int j = 0; j < 4; ++j)
-            medit << patch->getGlobalConnectivity(i, j) + 1 << " ";
+            medit << patch.getGlobalConnectivity(i, j) + 1 << " ";
 
           medit << comm.MyPID() << endl;
         }
@@ -75,8 +73,6 @@ public:
     Epetra_MultiVector linearVector(linearMap, vector.NumVectors());
     linearVector.Import(vector, importer, Insert);
 
-    cout << linearVector;
-
     // ======== //
     // .bb file //
     // ======== //
@@ -87,7 +83,7 @@ public:
       std::ofstream bb;
 
         bb.open(BBName.c_str());
-        bb << "3 1 " << patch->getNumGlobalVertices() << " 2" << endl;
+        bb << "3 1 " << patch.getNumGlobalVertices() << " 2" << endl;
 
       for (int i = 0; i < linearVector.MyLength(); ++i)
         bb << setiosflags(ios::showpoint) << linearVector[0][i] << endl;

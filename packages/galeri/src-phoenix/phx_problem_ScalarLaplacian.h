@@ -68,9 +68,10 @@ class ScalarLaplacian : public Base
 
     for (int i = 0; i < domain.getNumMyElements(); ++i)
     {
+      int GEID = domain.getGEID(i);
       // load the element vertex IDs
       for (int j = 0; j < numVerticesPerElement; ++j)
-        vertexList[j] = domain.getMyConnectivity(i, j);
+        vertexList[j] = domain.getGlobalConnectivity(GEID, j);
 
       // load the element coordinates
       for (int j = 0; j < numVerticesPerElement; ++j)
@@ -272,15 +273,14 @@ class ScalarLaplacian : public Base
 
       for (int i = 0 ; i < QE.getNumBasisFunctions() ; ++i) 
       {
-        const double& phi_i = QE.getPhi(i);
+        const double& phi_i   = QE.getPhi(i);
         const double& phi_x_i = QE.getPhiX(i);
         const double& phi_y_i = QE.getPhiY(i);
         const double& phi_z_i = QE.getPhiZ(i);
 
         for (int j = 0 ; j < QE.getNumBasisFunctions() ; ++j) 
         {
-          const double& phi_j = QE.getPhi(j);
-
+          const double& phi_j   = QE.getPhi(j);
           const double& phi_x_j = QE.getPhiX(j);
           const double& phi_y_j = QE.getPhiY(j);
           const double& phi_z_j = QE.getPhiZ(j);

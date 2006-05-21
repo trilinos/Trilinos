@@ -34,12 +34,41 @@ class Loadable : public core::Object
   public:
     // @{ \name Constructors and destructors.
     //! Constructor.
+    Loadable()
+    {}
+
     Loadable(const Epetra_Comm& comm,
              const int numGlobalElements,
              const int numMyElements,
              const string& elementType)
     { 
-      ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 0, comm));
+      initialize(comm, numGlobalElements, numMyElements, elementType);
+    }
+
+    Loadable(RefCountPtr<Epetra_Map> ElementMap, 
+             RefCountPtr<grid::Element> Element) :
+      ElementMap_(ElementMap),
+      GridElement_(Element)
+    { 
+      ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
+    }
+
+    //! Destructor.
+    ~Loadable() {}
+
+    void initialize(const Epetra_Comm& comm,
+                    const int numGlobalElements,
+                    const int numMyElements,
+                    const string& elementType,
+                    const int* myGlobalElements = 0)
+    { 
+      if (myGlobalElements != 0)
+        ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 
+                                         myGlobalElements, 0, comm));
+      else if (numMyElements != -1)
+        ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 0, comm));
+      else
+        ElementMap_ = rcp(new Epetra_Map(numGlobalElements, 0, comm));
 
       if (elementType == "Point")
         GridElement_ = rcp(new phx::grid::Point);
@@ -60,17 +89,6 @@ class Loadable : public core::Object
       ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
     }
 
-    Loadable(RefCountPtr<Epetra_Map> ElementMap, 
-             RefCountPtr<grid::Element> Element) :
-      ElementMap_(ElementMap),
-      GridElement_(Element)
-    { 
-      ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
-    }
-
-    //! Destructor.
-    ~Loadable() {}
-
     // @}
     // @{ \name Get methods.
     
@@ -84,10 +102,10 @@ class Loadable : public core::Object
       return(ElementMap_->NumMyElements());
     }
 
-    // FIXME: THIS IS THE WRONG NUMBER *OVERLAPPING*
     inline int getNumGlobalVertices() const 
     {
-      return(VertexMap_->NumGlobalElements());
+      // NOTE: this requires IndexBase == 0
+      return(VertexMap_->MaxAllGID() + 1);
     }
 
     inline int getNumMyVertices() const 
