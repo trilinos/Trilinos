@@ -26,7 +26,7 @@ public:
     double deltay = ly / ny;
 
     RefCountPtr<Epetra_Map> elementMap = rcp(new Epetra_Map(numGlobalElements, 0, comm));
-    RefCountPtr<phx::grid::Element> quad = rcp(new phx::grid::Quad(2));
+    RefCountPtr<phx::grid::Element> quad = rcp(new phx::grid::Quad);
     RefCountPtr<phx::grid::Loadable> domain = rcp(new Loadable(elementMap, quad));
 
     for (int i = 0; i < numGlobalElements; ++i)
@@ -58,7 +58,7 @@ public:
     // now build boundary faces
     int numGlobalBoundaries = nx;
     RefCountPtr<Epetra_Map> boundaryMap = rcp(new Epetra_Map(numGlobalBoundaries, 0, comm));
-    RefCountPtr<phx::grid::Element> segment = rcp(new phx::grid::Segment(2));
+    RefCountPtr<phx::grid::Element> segment = rcp(new phx::grid::Segment);
     RefCountPtr<phx::grid::Loadable> boundary = rcp(new Loadable(boundaryMap, segment));
 
     for (int i = 0; i < nx; ++i)

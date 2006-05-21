@@ -7,6 +7,7 @@
 #include "Teuchos_Hashtable.hpp"
 
 #include "phx_core_Object.h"
+#include "phx_core_Utils.h"
 #include "phx_grid_Element.h"
 #include "phx_grid_Point.h"
 #include "phx_grid_Segment.h"
@@ -36,23 +37,22 @@ class Loadable : public core::Object
     Loadable(const Epetra_Comm& comm,
              const int numGlobalElements,
              const int numMyElements,
-             const string& elementType, 
-             const int numDimensions)
+             const string& elementType)
     { 
       ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 0, comm));
 
       if (elementType == "Point")
-        GridElement_ = rcp(new phx::grid::Point(numDimensions));
+        GridElement_ = rcp(new phx::grid::Point);
       else if (elementType == "Segment")
-        GridElement_ = rcp(new phx::grid::Segment(numDimensions));
+        GridElement_ = rcp(new phx::grid::Segment);
       else if (elementType == "Triangle")
-        GridElement_ = rcp(new phx::grid::Triangle(numDimensions));
+        GridElement_ = rcp(new phx::grid::Triangle);
       else if (elementType == "Quad")
-        GridElement_ = rcp(new phx::grid::Quad(numDimensions));
+        GridElement_ = rcp(new phx::grid::Quad);
       else if (elementType == "Tet")
-        GridElement_ = rcp(new phx::grid::Tet(numDimensions));
+        GridElement_ = rcp(new phx::grid::Tet);
       else if (elementType == "Hex")
-        GridElement_ = rcp(new phx::grid::Hex(numDimensions));
+        GridElement_ = rcp(new phx::grid::Hex);
       else
         TEST_FOR_EXCEPTION(true, std::logic_error,
                            "input elementType not recognized, " << elementType);
@@ -74,11 +74,6 @@ class Loadable : public core::Object
     // @}
     // @{ \name Get methods.
     
-    inline int getNumDimensions() const 
-    {
-      return(getElement()->getNumDimensions());
-    }
-
     inline int getNumGlobalElements() const 
     {
       return(ElementMap_->NumGlobalElements());
@@ -89,6 +84,7 @@ class Loadable : public core::Object
       return(ElementMap_->NumMyElements());
     }
 
+    // FIXME: THIS IS THE WRONG NUMBER *OVERLAPPING*
     inline int getNumGlobalVertices() const 
     {
       return(VertexMap_->NumGlobalElements());
@@ -216,6 +212,7 @@ class Loadable : public core::Object
       return ((*ADJ_)(LID, index));
     }
 
+    // FIXME???
     inline int& getMyConnectivity(const int LID, const int index)
     {
       return ((*ADJ_)(LID, index));
@@ -260,7 +257,8 @@ class Loadable : public core::Object
 
       VertexMap_ = rcp(new Epetra_Map(-1, count, &MyGlobalElements[0], 0,  Comm));
 
-      COO_ = rcp(new Epetra_MultiVector(*VertexMap_, getElement()->getNumDimensions()));
+      COO_ = rcp(new Epetra_MultiVector(*VertexMap_, 
+                                        phx::core::Utils::getNumDimensions()));
     }
 
     void freezeCoordinates()
@@ -270,6 +268,10 @@ class Loadable : public core::Object
 
     virtual void print(ostream & os) const
     {
+      cout << *ElementMap_;
+
+      cout << *VertexMap_;
+
       cout << *ADJ_;
 
       cout << *COO_;

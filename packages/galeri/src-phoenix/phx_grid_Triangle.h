@@ -12,16 +12,12 @@ namespace grid {
 class Triangle : public Element
 {
   public:
-    Triangle(const int numDimensions)
+    Triangle()
     {
-      TEST_FOR_EXCEPTION(numDimensions > 1, std::out_of_range,
-                         "numDimensions = " << numDimensions << ", should be > 1");
-
       setLabel("phx::grid::Triangle");
       setNumVertices(3);
-      setNumDimensions(numDimensions);
       setNumComponents(3);
-      Segment component(numDimensions);
+      Segment component;
       for (int i = 0; i < 3; ++i)
         setComponent(i, component);
     }

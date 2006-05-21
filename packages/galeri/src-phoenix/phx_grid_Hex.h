@@ -12,16 +12,12 @@ namespace grid {
 class Hex : public Element
 {
   public:
-    Hex(const int numDimensions)
+    Hex()
     {
-      TEST_FOR_EXCEPTION(numDimensions < 3, std::out_of_range,
-                         "numDimensions = " << numDimensions << ", should be > 2");
-
       setLabel("phx::grid::Hex");
       setNumVertices(3);
-      setNumDimensions(numDimensions);
       setNumComponents(6);
-      Quad component(numDimensions);
+      Quad component;
       for (int i = 0; i < 6; ++i)
         setComponent(i, component);
     }

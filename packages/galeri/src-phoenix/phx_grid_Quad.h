@@ -12,16 +12,12 @@ namespace grid {
 class Quad : public Element
 {
   public:
-    Quad(const int numDimensions)
+    Quad()
     {
-      TEST_FOR_EXCEPTION(numDimensions <= 1, std::out_of_range,
-                         "numDimensions = " << numDimensions << ", should be > 1");
-
       setLabel("phx::grid::Quad");
       setNumVertices(4);
-      setNumDimensions(numDimensions);
       setNumComponents(4);
-      Segment component(numDimensions);
+      Segment component;
       for (int i = 0; i < 4; ++i)
         setComponent(i, component);
     }

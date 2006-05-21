@@ -11,14 +11,10 @@ namespace grid {
 class Point : public Element
 {
   public:
-    Point(const int numDimensions)
+    Point()
     {
-      TEST_FOR_EXCEPTION(numDimensions < 1, std::out_of_range,
-                         "numDimensions = " << numDimensions << ", should be > 0");
-
       setLabel("phx::grid::Point");
       setNumVertices(1);
-      setNumDimensions(numDimensions);
       setNumComponents(0);
     }
 }; 

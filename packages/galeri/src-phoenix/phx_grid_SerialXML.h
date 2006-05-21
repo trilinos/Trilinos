@@ -6,6 +6,7 @@
 #include "Teuchos_FileInputSource.hpp"
 #include "Teuchos_StrUtils.hpp"
 
+#include "phx_core_Utils.h"
 #include "phx_grid_Loadable.h"
 
 namespace phx {
@@ -31,6 +32,7 @@ class SerialXML
       map<string, RefCountPtr<phx::grid::Loadable> > patches;
 
       int NumDimensions = fileXML.getRequiredInt("NumDimensions");
+      phx::core::Utils::setNumDimensions(NumDimensions);
 
       for (int i = 0; i < fileXML.numChildren(); ++i)
       {
@@ -58,11 +60,11 @@ class SerialXML
               ElementMap = rcp(new Epetra_Map(rows, 0, Comm));
               if (ElementType == "Triangle")
               {
-                GridElement = rcp(new phx::grid::Triangle(NumDimensions));
+                GridElement = rcp(new phx::grid::Triangle);
               }
               else if (ElementType == "Segment")
               {
-                GridElement = rcp(new phx::grid::Segment(NumDimensions));
+                GridElement = rcp(new phx::grid::Segment);
               }
               else
                 throw(-1);

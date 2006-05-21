@@ -12,16 +12,12 @@ namespace grid {
 class Tet : public Element
 {
   public:
-    Tet(const int numDimensions)
+    Tet()
     {
-      TEST_FOR_EXCEPTION(numDimensions < 3, std::out_of_range,
-                         "numDimensions = " << numDimensions << ", should be > 2");
-      
       setLabel("phx::grid::Tet");
       setNumVertices(4);
-      setNumDimensions(numDimensions);
       setNumComponents(4);
-      Triangle component(numDimensions);
+      Triangle component;
       for (int i = 0; i < 4; ++i)
         setComponent(i, component);
     }

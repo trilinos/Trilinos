@@ -21,13 +21,10 @@ template<class T>
 class ScalarLaplacian : public Base
 {
   public:
-  ScalarLaplacian(RefCountPtr<Epetra_Map> matrixMap,
-                  const string& elementType,
+  ScalarLaplacian(const string& elementType,
                   const int integrationDegree, 
                   const int normDegree) 
   {
-    matrixMap_ = matrixMap;
-
     if (elementType == "Segment")
     {
       IE_ = rcp(new phx::quadrature::Segment(integrationDegree));
@@ -60,88 +57,88 @@ class ScalarLaplacian : public Base
 
   ~ScalarLaplacian() {}
 
-  virtual void integrate(RefCountPtr<phx::grid::Loadable> domain,
-                         const int numDimensions)
+  virtual void integrate(phx::grid::Loadable& domain,
+                         Epetra_FECrsMatrix& A,
+                         Epetra_FEVector& RHS)
   {
-    A_ = rcp(new Epetra_FECrsMatrix(Copy, *matrixMap_, 0));
-    LHS_ = rcp(new Epetra_FEVector(*matrixMap_));
-    RHS_ = rcp(new Epetra_FEVector(*matrixMap_));
-
-    int numVerticesPerElement = domain->getNumVerticesPerElement();
+    int numVerticesPerElement = domain.getNumVerticesPerElement();
     Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
     Epetra_SerialDenseMatrix elementLHS(numVerticesPerElement, numVerticesPerElement);
     Epetra_SerialDenseVector elementRHS(numVerticesPerElement);
 
-    for (int i = 0; i < domain->getNumMyElements(); ++i)
+    for (int i = 0; i < domain.getNumMyElements(); ++i)
     {
       // load the element vertex IDs
       for (int j = 0; j < numVerticesPerElement; ++j)
-        vertexList[j] = domain->getMyConnectivity(i, j);
+        vertexList[j] = domain.getMyConnectivity(i, j);
 
       // load the element coordinates
       for (int j = 0; j < numVerticesPerElement; ++j)
-        for (int k = 0; k < numDimensions; ++k) 
-          (*IE_)(j, k) = domain->getGlobalCoordinates(vertexList[j], k);
+        for (int k = 0; k < phx::core::Utils::getNumDimensions(); ++k) 
+          (*IE_)(j, k) = domain.getGlobalCoordinates(vertexList[j], k);
 
       integrateOverElement(*IE_, elementLHS, elementRHS);
 
-      A_->InsertGlobalValues(vertexList, elementLHS);
-      RHS_->SumIntoGlobalValues(vertexList, elementRHS);
+      A.InsertGlobalValues(vertexList, elementLHS);
+      RHS.SumIntoGlobalValues(vertexList, elementRHS);
     }
 
-    A_->GlobalAssemble();
-    RHS_->GlobalAssemble();
+    A.GlobalAssemble();
+    RHS.GlobalAssemble();
   }
 
-  void imposeDirichletBoundaryConditions(RefCountPtr<phx::grid::Loadable> boundary,
-                                         const int numDimensions)
+  void imposeDirichletBoundaryConditions(phx::grid::Loadable& boundary,
+                                         Epetra_FECrsMatrix& A,
+                                         Epetra_FEVector& RHS,
+                                         Epetra_FEVector& LHS)
   {
+    TEST_FOR_EXCEPTION(A.Filled() == false, std::logic_error,
+                       "input matrix must be filled");
+
+    const Epetra_Map& matrixMap = A.RowMatrixRowMap();
+
     double min = numeric_limits<double>::min();
 
-    Epetra_FEVector rowValues(*matrixMap_);
+    Epetra_FEVector rowValues(matrixMap);
     rowValues.PutScalar(min);
     double coord[3];
     coord[0] = 0.0; coord[1] = 0.0; coord[2] = 0.0;
 
-    for (int LEID = 0; LEID < boundary->getNumMyElements(); ++LEID)
+    for (int LEID = 0; LEID < boundary.getNumMyElements(); ++LEID)
     {
-      for (int i = 0; i < boundary->getNumVerticesPerElement(); ++i)
+      for (int i = 0; i < boundary.getNumVerticesPerElement(); ++i)
       {
-        int index = boundary->getGlobalConnectivity(LEID, i);
-        for (int j = 0; j < boundary->getNumDimensions(); ++j)
-          coord[j] = boundary->getGlobalCoordinates(index, j);
+        int GVID = boundary.getMyConnectivity(LEID, i);
+        for (int j = 0; j < phx::core::Utils::getNumDimensions(); ++j)
+          coord[j] = boundary.getGlobalCoordinates(GVID, j);
 
-        if (T::getBoundaryType(boundary->getID(), coord[0], coord[1], coord[2]) == 'd')
+        if (T::getBoundaryType(boundary.getID(), coord[0], coord[1], coord[2]) == 'd')
         {
           double value = T::getBoundaryValue(coord[0], coord[1], coord[2]);
-          rowValues.ReplaceGlobalValues(1, &index, &value);
+          rowValues.ReplaceGlobalValues(1, &GVID, &value);
         }
       }
     }
 
     rowValues.GlobalAssemble();
 
-    Epetra_Vector colValues(A_->RowMatrixColMap());
-    Epetra_Import importer(*matrixMap_, A_->RowMatrixColMap());
+    Epetra_Vector colValues(A.RowMatrixColMap());
+    Epetra_Import importer(A.RowMatrixColMap(), matrixMap);
     colValues.Import(rowValues, importer, Insert); 
 
-    for (int i = 0; i < A_->NumMyRows(); ++i)
+    for (int i = 0; i < A.NumMyRows(); ++i)
     {
-      int GID = A_->RowMatrixRowMap().GID(i);
-
-      bool isDirichlet = (rowValues[0][i] != min)?true:false;
-
       int* indices;
       double* values;
       int numEntries;
-      A_->ExtractMyRowView(i, numEntries, values, indices);
+      A.ExtractMyRowView(i, numEntries, values, indices);
 
-      if (isDirichlet)
+      if (rowValues[0][i] != min)
       {
         for (int j = 0; j < numEntries; ++j)
           if (indices[j] != i) values[j] = 0.0;
           else values[j] = 1.0;
-          (*RHS_)[0][i] = rowValues[0][i];
+          RHS[0][i] = rowValues[0][i]; // FIXME
       }
       else
       {
@@ -152,8 +149,6 @@ class ScalarLaplacian : public Base
         }
       }
     }
-
-    LHS_->PutScalar(0.0);
   }
 
   Epetra_FECrsMatrix* getMatrix()
@@ -171,42 +166,44 @@ class ScalarLaplacian : public Base
     return(RHS_.get());
   }
 
-  virtual void computeNorms(RefCountPtr<phx::grid::Loadable> domain,
-                            const int numDimensions,
-                            const Epetra_MultiVector& solution,
-                            const bool print = true)
+  virtual void 
+  computeNorms(phx::grid::Loadable& domain,
+               const Epetra_MultiVector& solution,
+               double& solNormL2, double& solSemiNormH1,
+               double& exaNormL2, double& exaSemiNormH1,
+               double& errNormL2, double& errSemiNormH1)
   {
     // FIXME: should be done only if NumProc > 1.
-    const Epetra_Map& vertexMap = *(domain->getVertexMap());
+    const Epetra_Map& vertexMap = *(domain.getVertexMap());
     Epetra_MultiVector vertexSolution(vertexMap, solution.NumVectors());
-    Epetra_Import importer(solution.Map(), vertexMap);
+    Epetra_Import importer(vertexMap, solution.Map());
     vertexSolution.Import(solution, importer, Insert);
 
-    int numVerticesPerElement = domain->getNumVerticesPerElement();
+    int numVerticesPerElement = domain.getNumVerticesPerElement();
 
     Epetra_SerialDenseVector elementSol(numVerticesPerElement);
-    Epetra_SerialDenseVector elementNorm(numDimensions);
+    Epetra_SerialDenseVector elementNorm(phx::core::Utils::getNumDimensions());
 
     Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
     Epetra_SerialDenseMatrix elementLHS(numVerticesPerElement, numVerticesPerElement);
     Epetra_SerialDenseVector elementRHS(numVerticesPerElement);
 
-    double exaNormL2 = 0.0, exaSemiNormH1 = 0.0;
-    double solNormL2 = 0.0, solSemiNormH1 = 0.0;
-    double errNormL2 = 0.0, errSemiNormH1 = 0.0;
+    exaNormL2 = 0.0, exaSemiNormH1 = 0.0;
+    solNormL2 = 0.0, solSemiNormH1 = 0.0;
+    errNormL2 = 0.0, errSemiNormH1 = 0.0;
 
-    for (int i = 0; i < domain->getNumMyElements(); ++i)
+    for (int i = 0; i < domain.getNumMyElements(); ++i)
     {
       for (int j = 0; j < numVerticesPerElement; ++j)
       {
-        vertexList[j] = domain->getMyConnectivity(i, j);
+        vertexList[j] = domain.getMyConnectivity(i, j);
         elementSol[j] = vertexSolution[0][vertexList[j]];
       }
 
       // load the element coordinates
       for (int j = 0; j < numVerticesPerElement; ++j)
-        for (int k = 0; k < numDimensions; ++k) 
-          (*NE_)(j, k) = domain->getGlobalCoordinates(vertexList[j], k);
+        for (int k = 0; k < phx::core::Utils::getNumDimensions(); ++k) 
+          (*NE_)(j, k) = domain.getGlobalCoordinates(vertexList[j], k);
 
       computeNormOverElement((*NE_), elementNorm);
       exaNormL2 += elementNorm[0]; exaSemiNormH1 += elementNorm[1];
@@ -222,7 +219,19 @@ class ScalarLaplacian : public Base
     errNormL2 = sqrt(errNormL2); errSemiNormH1 = sqrt(errSemiNormH1);
     solNormL2 = sqrt(solNormL2); solSemiNormH1 = sqrt(solSemiNormH1);
 
-    if (print && solution.Comm().MyPID() == 0)
+  }
+
+  virtual void computeNorms(phx::grid::Loadable& domain,
+                            const Epetra_MultiVector& solution)
+  {
+    double exaNormL2 = 0.0, exaSemiNormH1 = 0.0;
+    double solNormL2 = 0.0, solSemiNormH1 = 0.0;
+    double errNormL2 = 0.0, errSemiNormH1 = 0.0;
+
+    computeNorms(domain, solution, solNormL2, solSemiNormH1,
+                 exaNormL2, exaSemiNormH1, errNormL2, errSemiNormH1);
+
+    if (solution.Comm().MyPID() == 0)
     {
       cout << endl;
       cout << "||x_h||_2        = " << solNormL2 << endl;

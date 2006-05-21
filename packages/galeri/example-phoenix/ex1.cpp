@@ -102,19 +102,19 @@ int main(int argc, char *argv[])
 #endif
 
   // ======================================================= //
+  // Specifies the dimensionality of the problem: 1, 2, or 3 //
   // Creates a 1D grid on (0, 1) composed by segments. Each  //
-  // processor will have 4 elements. The boundary conditions //
-  // are of Dirichlet type.                                  //
+  // processor will have 4 elements.                         //
   // ======================================================= //
   
-  int numDimensions = 1;
-  int numMyElements = 32;
-  int numGlobalElements = numMyElements * comm.NumProc();
+  phx::core::Utils::setNumDimensions(1);
 
-  RefCountPtr<phx::grid::Loadable> domain;
-  
-  domain = rcp(new phx::grid::Loadable(comm, numGlobalElements, numMyElements, 
-                                       "Segment", numDimensions));
+  int numMyElements = 4;
+  int numGlobalElements = numMyElements * comm.NumProc();
+  int numGlobalVertices = numGlobalElements + 1;
+
+  phx::grid::Loadable domain(comm, numGlobalElements, 
+                             numMyElements, "Segment");
 
   // ===================================================== //
   // Each processor inserts locally owned elements, then   //
@@ -126,46 +126,50 @@ int main(int argc, char *argv[])
   
   for (int LEID = 0; LEID < numMyElements; ++LEID)
   {
-    int GEID = domain->getGEID(LEID);
+    int GEID = domain.getGEID(LEID);
 
-    domain->setGlobalConnectivity(GEID, 0, GEID);
-    domain->setGlobalConnectivity(GEID, 1, GEID + 1);
+    domain.setGlobalConnectivity(GEID, 0, GEID);
+    domain.setGlobalConnectivity(GEID, 1, GEID + 1);
   }
 
-  domain->freezeConnectivity();
+  domain.freezeConnectivity();
 
   double h = 1.0 / numGlobalElements;
 
-  for (int LVID = 0; LVID < domain->getNumMyVertices(); ++LVID)
+  for (int LVID = 0; LVID < domain.getNumMyVertices(); ++LVID)
   {
-    int GVID = domain->getGVID(LVID);
-    domain->setGlobalCoordinates(GVID, 0, h * GVID);
+    int GVID = domain.getGVID(LVID);
+    domain.setGlobalCoordinates(GVID, 0, h * GVID);
   }
 
-  domain->freezeCoordinates();
+  domain.freezeCoordinates();
 
-  // The boundary points are now inserted in an equivalent
-  // manner.
+  // ========================================================= //
+  // We now create the set of boundary nodes. For simplicity,  //
+  // both nodes (the one on the left and the one on the right) //
+  // are defined on processor 0. The nodes have coordinates    //
+  // (0.0) and (1.0), and they are of Dirichlet type.          //
+  // ========================================================= //
 
-  int numMyBoundaries = 0;
-  if (comm.MyPID() == 0) ++numMyBoundaries; 
-  if (comm.MyPID() == comm.NumProc() - 1) ++numMyBoundaries;
+  int numMyBoundaryElements = (comm.MyPID() == 0)?2:0; 
 
-  RefCountPtr<phx::grid::Loadable> boundaries;
-  boundaries = rcp(new phx::grid::Loadable(comm, 2, numMyBoundaries, "Point", 1));
-  if (comm.MyPID() == 0)
-    boundaries->setGlobalConnectivity(0, 0, 0);
-  if (comm.MyPID() == comm.NumProc() - 1)
-    boundaries->setGlobalConnectivity(1, 0, domain->getNumGlobalVertices() - 1);
-
-  boundaries->freezeConnectivity();
+  phx::grid::Loadable boundary(comm, 2, numMyBoundaryElements, "Point");
 
   if (comm.MyPID() == 0)
-    boundaries->setGlobalCoordinates(0, 0, 0.0);
-  if (comm.MyPID() == comm.NumProc() - 1)
-    boundaries->setGlobalCoordinates(1, 0, 1.0);
+  {
+    boundary.setGlobalConnectivity(0, 0, 0);
+    boundary.setGlobalConnectivity(1, 0, domain.getNumGlobalElements());
+  }
 
-  boundaries->freezeCoordinates();
+  boundary.freezeConnectivity();
+
+  if (comm.MyPID() == 0)
+  {
+    boundary.setGlobalCoordinates(0, 0, 0.0);
+    boundary.setGlobalCoordinates(1, 0, 1.0);
+  }
+
+  boundary.freezeCoordinates();
 
   // ============================================================ //
   // We are now ready to create the linear problem.               //
@@ -176,24 +180,29 @@ int main(int argc, char *argv[])
   // and the right-hand side (RHS).                               //
   // ============================================================ //
   
-  RefCountPtr<Epetra_Map> matrixMap = 
-    rcp(new Epetra_Map(domain->getNumGlobalVertices(), 0, comm));
+  Epetra_Map matrixMap(domain.getNumGlobalElements() + 1, 0, comm);
 
-  phx::quadrature::Segment domainQuadrature(4);
-  phx::problem::ScalarLaplacian<MyScalarLaplacian> problem(matrixMap, "Segment", 1, 4);
+  Epetra_FECrsMatrix A(Copy, matrixMap, 0);
+  Epetra_FEVector    LHS(matrixMap);
+  Epetra_FEVector    RHS(matrixMap);
 
-  problem.integrate(domain, numDimensions);
+  phx::problem::ScalarLaplacian<MyScalarLaplacian> problem("Segment", 1, 4);
 
-  problem.imposeDirichletBoundaryConditions(boundaries, numDimensions);
+  problem.integrate(domain, A, RHS);
+
+  LHS.PutScalar(0.0);
+
+  problem.imposeDirichletBoundaryConditions(boundary, A, RHS, LHS);
 
   // ============================================================ //
   // Solving the linear system is the next step, quite easy       //
   // because we just call AztecOO and we wait for the solution... //
   // ============================================================ //
   
-  AztecOO solver(problem.getMatrix(), problem.getLHS(), problem.getRHS());
+  Epetra_LinearProblem linearProblem(&A, &LHS, &RHS);
+  AztecOO solver(linearProblem);
   solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
+  solver.SetAztecOption(AZ_precond, AZ_Jacobi);
   solver.SetAztecOption(AZ_subdomain_solve, AZ_icc);
   solver.SetAztecOption(AZ_output, 16);
 
@@ -201,7 +210,7 @@ int main(int argc, char *argv[])
 
   // now compute the norm of the solution
   
-  problem.computeNorms(domain, numDimensions, *problem.getLHS(), true);
+  problem.computeNorms(domain, LHS);
 
 #ifdef HAVE_MPI
   MPI_Finalize();

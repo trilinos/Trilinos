@@ -15,7 +15,6 @@ public:
   //! Default constructor.
   Element() :
     numVertices_(0),
-    numDimensions_(0),
     numComponents_(0)
   {}
 
@@ -23,7 +22,6 @@ public:
   Element(const Element& rhs)
   {
     setNumVertices(rhs.getNumVertices());
-    setNumDimensions(rhs.getNumDimensions());
     setNumComponents(rhs.getNumComponents());
     for (int i = 0; i < rhs.getNumComponents(); ++i)
       setComponent(i, rhs.getComponent(i));
@@ -33,7 +31,6 @@ public:
   Element& operator=(const Element& rhs)
   {
     setNumVertices(rhs.getNumVertices());
-    setNumDimensions(rhs.getNumDimensions());
     setNumComponents(rhs.getNumComponents());
     for (int i = 0; i < rhs.getNumComponents(); ++i)
       setComponent(i, rhs.getComponent(i));
@@ -51,11 +48,6 @@ public:
   int getNumVertices() const
   {
     return(numVertices_);
-  }
-
-  int getNumDimensions() const
-  {
-    return(numDimensions_);
   }
 
   int getNumComponents() const 
@@ -76,11 +68,6 @@ public:
     numVertices_ = numVertices;
   }
 
-  void setNumDimensions(const int numDimensions)
-  {
-    numDimensions_ = numDimensions;
-  }
-
   void setNumComponents(const int numComponents)
   {
     numComponents_ = numComponents;
@@ -96,7 +83,6 @@ public:
   {
     cout << endl;
     cout << "Number of vertices = " << getNumVertices() << endl;
-    cout << "Number of dimensions = " << getNumDimensions() << endl;
     cout << "Number of components = " << getNumComponents() << endl;
     for (int i = 0; i < getNumComponents(); ++i)
       cout << "Label of component " << i << " = " <<
@@ -109,7 +95,6 @@ private:
   // @{ \name Private data and methods
 
   int numVertices_;
-  int numDimensions_;
   int numComponents_;
   vector<Element> components_;
 

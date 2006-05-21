@@ -9,13 +9,18 @@ class Base : public phx::core::Object
   public:
     virtual ~Base() {}
 
-    virtual void integrate(RefCountPtr<phx::grid::Loadable> domain,
-                           const int numDimensions) = 0;
+    virtual void integrate(phx::grid::Loadable& domain,
+                         Epetra_FECrsMatrix& A,
+                         Epetra_FEVector& RHS) = 0;
 
-    virtual void computeNorms(RefCountPtr<phx::grid::Loadable> domain,
-                              const int numDimensions,
+    virtual void computeNorms(phx::grid::Loadable& domain,
+                              const Epetra_MultiVector& solution) = 0;
+
+    virtual void computeNorms(phx::grid::Loadable& domain,
                               const Epetra_MultiVector& solution,
-                              const bool print = true) = 0;
+                              double& solNormL2, double& solSemiNormH1,
+                              double& exaNormL2, double& exaSemiNormH1,
+                              double& errNormL2, double& errSemiNormH1) = 0;
 
     virtual void integrateOverElement(phx::quadrature::Element& QE,
                                       Epetra_SerialDenseMatrix& ElementLHS, 

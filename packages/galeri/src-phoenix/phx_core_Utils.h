@@ -1,8 +1,6 @@
 #ifndef PHX_CORE_UTILS_H
 #define PHX_CORE_UTILS_H
 
-#include "phx_grid_Loadable.h"
-
 #include "Epetra_Map.h"
 
 #include "Teuchos_Hashtable.hpp"
@@ -16,6 +14,19 @@ public:
   Utils() {}
   ~Utils() {}
 
+  static int getNumDimensions()
+  {
+    return(numDimensions_);
+  }
+
+  static void setNumDimensions(const int numDimensions)
+  {
+    numDimensions_ = numDimensions;
+  }
+
+  static int numDimensions_;
+
+#if 0
   static
   RefCountPtr<Epetra_Map>
   createMatrixMap(const Epetra_Comm& Comm,
@@ -109,10 +120,13 @@ public:
       }
     }
   }
+#endif
 
 private:
 
 }; // class Utils
+
+int Utils::numDimensions_ = 3;
 
 } // namespace core
 } // namespace phx
