@@ -117,11 +117,13 @@ exampleLibrary:
                             "INCLUDE=$(INCLUDE)" 
 
 C_Examples: exampleLibrary
-	@cd C; $(MAKE) all "CC=$(CC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
+	@cd C; $(MAKE) all "ZOLTAN_LIB_DIR=$(ZOLTAN_LIB_DIR)" \
+           "CC=$(CC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
                           "LIBDIR=$(LIBDIR)" "LIBS=$(LIBS)"
 
 CPP_Examples: exampleLibrary
-	@cd CPP; $(MAKE) all "CC=$(CPPC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
+	@cd CPP; $(MAKE) all "ZOLTAN_LIB_DIR=$(ZOLTAN_LIB_DIR)" \
+           "CC=$(CPPC)" "CFLAGS=$(CFLAGS)" "INCLUDE=$(INCLUDE)" \
                           "LIBDIR=$(LIBDIR)" "LIBS=$(LIBS)"
 
 

@@ -8,7 +8,7 @@ DOTDOTLIBDIR= $(subst -L../, -L../../, $(LIBDIR))
 
 all:    $(CEXAMPLES)
 
-% : %.c ../lib/libexzoltan.a 
+% : %.c ../lib/libexzoltan.a $(ZOLTAN_LIB_DIR)/libzoltan.a
 	@echo "Building $@"
 	@$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 

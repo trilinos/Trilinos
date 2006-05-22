@@ -5,7 +5,7 @@ EXAMPLES = zCPPExample1 zCPPExample2
 
 all:    $(EXAMPLES)
 
-% : %.cpp ../lib/libexzoltan.a 
+% : %.cpp ../lib/libexzoltan.a $(ZOLTAN_LIB_DIR)/libzoltan.a
 	@echo "Building $@"
 	@$(CC) $(CFLAGS) -o $@ $(INCLUDE) $(LIBDIR) $< $(LIBS)
 
