@@ -298,7 +298,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
 	CrsGraphData_->Indices_[Row] = temp;
       }
       else {
-	ierr = 1; // Out of room.  Must allocate more space, copy and delete... 
+	ierr = 3; // Out of room.  Must allocate more space, copy and delete... 
 	int * temp = new int[stop];
 	int* RowIndices = CrsGraphData_->Indices_[Row];
 	for (j=0; j<start; ++j) temp[j] = RowIndices[j];
