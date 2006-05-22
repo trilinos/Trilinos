@@ -119,9 +119,6 @@ int main(int argc, char *argv[])
   /* Parallel hypergraph parameters */
 
   Zoltan_Set_Param(zz, "PHG_OUTPUT_LEVEL", "0"); /* in general, be quiet   */
-  Zoltan_Set_Param(zz, "PHG_FINAL_OUTPUT", "1"); /* provide stats at the end */
-  Zoltan_Set_Param(zz, "PHG_REDUCTION_METHOD", "ipm"); /* see User's Guide */
-  Zoltan_Set_Param(zz, "PHG_COARSE_PARTITIONING", "gr0"); /* see User's Guide */
   Zoltan_Set_Param(zz, "PHG_VERTEX_VISIT_ORDER", "0");  /* see User's Guide */
 
 #if 0
