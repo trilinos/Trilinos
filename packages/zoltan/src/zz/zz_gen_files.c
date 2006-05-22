@@ -174,7 +174,13 @@ int gen_geom, int gen_graph, int gen_hg)
         error = ZOLTAN_FATAL;
         goto End;
       }
-      numPins = edgeSize[nEdges];
+
+      if (nEdges > 0){
+        numPins = edgeSize[nEdges];
+      }
+      else{
+        numPins = 0;
+      }
 
       /* Get the global number of pins for process 0. 
        */
