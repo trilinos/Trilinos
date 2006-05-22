@@ -1162,7 +1162,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
 
 
   if((CrsGraphData_->CV_ == View) && !Contiguous) 
-    return(1);  // This is user data, it's not contiguous and we can't make it so.
+    return(3);  // This is user data, it's not contiguous and we can't make it so.
 
   if(CrsGraphData_->IndexOffset_ .Values() != CrsGraphData_->NumIndicesPerRow_.Values())
     CrsGraphData_->IndexOffset_.MakeViewOf(CrsGraphData_->NumIndicesPerRow_);
