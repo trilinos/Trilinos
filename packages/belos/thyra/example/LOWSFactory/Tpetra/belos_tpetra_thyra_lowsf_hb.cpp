@@ -28,8 +28,9 @@
 // @HEADER
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file into an 
-// Epetra_CrsMatrix.  This matrix is then converted into a Thyra linear operator
-// through the Thyra-Epetra adapters.
+// Tpetra::CisMatrix.  This matrix is then converted into a Thyra linear operator
+// through the Thyra-Tpetra adapters.
+//
 // The right-hand-side from the HB file is used instead of random vectors.
 // The initial guesses are all set to zero. 
 //
@@ -37,7 +38,12 @@
 
 // Thyra includes
 #include "Thyra_BelosLinearOpWithSolveFactory.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
+
+// Tpetra includes
+#include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_VectorSpace.hpp"
+#include "Tpetra_CisMatrix.hpp"
 
 // I/O for Harwell-Boeing files
 #ifdef HAVE_BELOS_TRIUTILS
@@ -47,6 +53,13 @@
 // Teuchos includes
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
+#ifdef HAVE_MPI
+#  include "Tpetra_MpiPlatform.hpp"
+#else
+#  include "Tpetra_SerialPlatform.hpp"
+#endif
 
 int main(int argc, char* argv[])
 {
