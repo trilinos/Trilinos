@@ -1,6 +1,7 @@
 #ifndef HAVE_QUADRATURE_HEX_H
 #define HAVE_QUADRATURE_HEX_H
 
+#include "phx_core_Constants.h"
 #include "phx_quadrature_Element.h"
 
 namespace phx {
@@ -14,7 +15,9 @@ public:
   Hex(const int numQuadrNodes)
   {
     numQuadrNodes_ = numQuadrNodes;
-    numDimensions_ = 3; // FIXME: NEEDED?
+    if (numQuadrNodes_ == phx::core::Constants::MIN) numQuadrNodes_ = 1;
+    if (numQuadrNodes_ == phx::core::Constants::MAX) numQuadrNodes_ = 8;
+
     numLocalNodes_ = 8;
     numBasisFunctions_ = 8;
 

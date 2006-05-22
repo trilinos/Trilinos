@@ -3,6 +3,7 @@
 
 #include <limits>
 
+#include "phx_core_Constants.h"
 #include "phx_problem_Base.h"
 #include "phx_quadrature_Segment.h"
 #include "phx_quadrature_Triangle.h"
@@ -22,8 +23,8 @@ class ScalarLaplacian : public Base
 {
   public:
   ScalarLaplacian(const string& elementType,
-                  const int integrationDegree, 
-                  const int normDegree) 
+                  const int integrationDegree = phx::core::Constants::MIN, 
+                  const int normDegree = phx::core::Constants::MAX) 
   {
     if (elementType == "Segment")
     {
@@ -121,9 +122,10 @@ class ScalarLaplacian : public Base
       }
     }
 
-    rowValues.GlobalAssemble();
+    rowValues.GlobalAssemble(Insert);
 
     Epetra_Vector colValues(A.RowMatrixColMap());
+    colValues.PutScalar(min);
     Epetra_Import importer(A.RowMatrixColMap(), matrixMap);
     colValues.Import(rowValues, importer, Insert); 
 
@@ -175,7 +177,7 @@ class ScalarLaplacian : public Base
                double& errNormL2, double& errSemiNormH1)
   {
     // FIXME: should be done only if NumProc > 1.
-    const Epetra_Map& vertexMap = *(domain.getVertexMap());
+    const Epetra_Map& vertexMap = domain.getVertexMap();
     Epetra_MultiVector vertexSolution(vertexMap, solution.NumVectors());
     Epetra_Import importer(vertexMap, solution.Map());
     vertexSolution.Import(solution, importer, Insert);
@@ -198,7 +200,7 @@ class ScalarLaplacian : public Base
       for (int j = 0; j < numVerticesPerElement; ++j)
       {
         vertexList[j] = domain.getMyConnectivity(i, j);
-        elementSol[j] = vertexSolution[0][vertexList[j]];
+        elementSol[j] = vertexSolution[0][vertexMap.LID(vertexList[j])];
       }
 
       // load the element coordinates

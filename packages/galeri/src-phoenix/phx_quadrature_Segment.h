@@ -14,7 +14,6 @@ public:
   Segment(const int numQuadrNodes)
   {
     numQuadrNodes_ = numQuadrNodes;
-    numDimensions_ = 1; // FIXME: NEEDED??
     numLocalNodes_ = 2;
     numBasisFunctions_ = 2;
 

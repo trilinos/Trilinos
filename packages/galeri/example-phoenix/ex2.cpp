@@ -8,6 +8,7 @@
 #include "Epetra_FECrsMatrix.h"
 #include "AztecOO.h"
 
+#include "../src-phoenix/phx_core_Constants.h"
 #include "../src-phoenix/phx_core_Object.h"
 #include "../src-phoenix/phx_core_Utils.h"
 #include "../src-phoenix/phx_grid_Element.h"
@@ -109,12 +110,24 @@ int main(int argc, char *argv[])
 
   phx::grid::Loadable domain, boundary;
 
-  int numGlobalElementsX = 32;
-  int numGlobalElementsY = numGlobalElementsX * comm.NumProc();
+  int numGlobalElementsX = 2 * 3 * 4;
+  int numGlobalElementsY = numGlobalElementsX;
 
+  int mx = (int)sqrt(comm.NumProc());
+  int my = mx;
+
+#if 0
   phx::grid::Generator::
-  getSquareWithQuads(comm, numGlobalElementsX, numGlobalElementsY,
-                    1, comm.NumProc(), domain, boundary);
+  getSquareWithTriangles(comm, numGlobalElementsX, numGlobalElementsY,
+                    mx, my, domain, boundary);
+#else
+
+  phx::grid::SerialXML XMLReader;
+  map<string, phx::grid::Loadable> patches = XMLReader.read(comm, XMLFileName);
+
+  domain = patches["domain"];
+  boundary = patches["boundary"];
+#endif
 
   Epetra_Map matrixMap(domain.getNumGlobalVertices(), 0, comm);
 
@@ -122,7 +135,7 @@ int main(int argc, char *argv[])
   Epetra_FEVector    LHS(matrixMap);
   Epetra_FEVector    RHS(matrixMap);
 
-  phx::problem::ScalarLaplacian<Laplacian> problem("Quad", 4, 9);
+  phx::problem::ScalarLaplacian<Laplacian> problem("Triangle");
 
   problem.integrate(domain, A, RHS);
 
@@ -137,9 +150,9 @@ int main(int argc, char *argv[])
   
   Epetra_LinearProblem linearProblem(&A, &LHS, &RHS);
   AztecOO solver(linearProblem);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_precond, AZ_dom_decomp);
-  solver.SetAztecOption(AZ_subdomain_solve, AZ_icc);
+  solver.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
   solver.SetAztecOption(AZ_output, 16);
 
   solver.Iterate(1550, 1e-9);

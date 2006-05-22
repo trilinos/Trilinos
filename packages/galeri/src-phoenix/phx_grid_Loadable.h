@@ -20,7 +20,8 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_IntVector.h"
-#include "Epetra_FEVector.h"
+#include "Epetra_Export.h"
+
 #include "EpetraExt_DistArray.h"
 
 using namespace Teuchos;
@@ -40,18 +41,23 @@ class Loadable : public core::Object
     Loadable(const Epetra_Comm& comm,
              const int numGlobalElements,
              const int numMyElements,
-             const string& elementType)
+             const string& elementType,
+             const int numElementData = 0,
+             const int numVertexData = 0)
     { 
-      initialize(comm, numGlobalElements, numMyElements, elementType);
+      initialize(comm, numGlobalElements, numMyElements, elementType, 0,
+                 numElementData, numVertexData);
     }
 
-    Loadable(RefCountPtr<Epetra_Map> ElementMap, 
-             RefCountPtr<grid::Element> Element) :
-      ElementMap_(ElementMap),
+#if 0
+    Loadable(const Epetra_Map& ElementMap, 
+             const grid::Element& Element) :
+      ElementMap_(new Epetra_Map(ElementMap)),
       GridElement_(Element)
     { 
       ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
     }
+#endif
 
     //! Destructor.
     ~Loadable() {}
@@ -60,7 +66,9 @@ class Loadable : public core::Object
                     const int numGlobalElements,
                     const int numMyElements,
                     const string& elementType,
-                    const int* myGlobalElements = 0)
+                    const int* myGlobalElements = 0,
+                    const int numElementData = 0,
+                    const int numVertexData = 0)
     { 
       if (myGlobalElements != 0)
         ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 
@@ -69,6 +77,8 @@ class Loadable : public core::Object
         ElementMap_ = rcp(new Epetra_Map(numGlobalElements, numMyElements, 0, comm));
       else
         ElementMap_ = rcp(new Epetra_Map(numGlobalElements, 0, comm));
+
+      elementType_ = elementType;
 
       if (elementType == "Point")
         GridElement_ = rcp(new phx::grid::Point);
@@ -87,6 +97,12 @@ class Loadable : public core::Object
                            "input elementType not recognized, " << elementType);
 
       ADJ_ = rcp(new EpetraExt::DistArray<int>(*ElementMap_, GridElement_->getNumVertices()));
+
+      numElementData_ = numElementData;
+      numVertexData_ = numVertexData;
+
+      if (numElementData_ > 0)
+        elementData_ = rcp(new Epetra_MultiVector(*ElementMap_, numElementData_));
     }
 
     // @}
@@ -119,15 +135,15 @@ class Loadable : public core::Object
     }
 
     //! Returns the Epetra_Map associated to the element distribution.
-    inline const RefCountPtr<Epetra_Map> getElementMap() const
+    inline const Epetra_Map getElementMap() const
     {
-      return(ElementMap_);
+      return(*ElementMap_);
     }
 
     //! Returns the Epetra_Map associated to the vertex distribution.
-    inline const RefCountPtr<Epetra_Map> getVertexMap() const
+    inline const Epetra_Map getVertexMap() const
     {
-      return(VertexMap_);
+      return(*VertexMap_);
     }
 
     inline int getGEID(const int LEID) const
@@ -150,52 +166,43 @@ class Loadable : public core::Object
       return(VertexMap_->LID(GVID));
     }
 
-    const RefCountPtr<grid::Element> getElement() const
+    const grid::Element getElement() const
     {
-      return(GridElement_);
+      return(*GridElement_);
     }
 
-    //! Returns the number of integer data associated with each element.
-    int getIntDataSize() const
+    inline int getNumVertexData() const
     {
-      return(IntData_.size());
+      return(numVertexData_);
     }
 
-    void setIntDataSize(const int size)
+    inline int getNumElementData() const
     {
-      IntData_.resize(size);
+      return(numElementData_);
     }
 
-    //! Returns the \c what integer data vector associated with elements.
-    RefCountPtr<Epetra_IntVector> getIntData(const int what)
+    inline double getVertexData(const int GVID, const int which) const
     {
-      return(IntData_[what]);
+      int LVID = getLVID(GVID);
+      return((*vertexData_)[which][LVID]);
     }
 
-    void setIntData(const int what, RefCountPtr<Epetra_IntVector> IntVector)
+    inline void setVertexData(const int GVID, const int which, const double val)
     {
-      IntData_[what] = IntVector;
+      int LVID = getLVID(GVID);
+      (*vertexData_)[which][LVID] = val;
     }
 
-    int getDoubleDataSize() const
+    inline double getElementData(const int GEID, const int which) const
     {
-      return(DoubleData_.size());
+      int LEID = getLEID(GEID);
+      return((*elementData_)[which][LEID]);
     }
 
-    void setDoubleDataSize(const int size)
+    inline void setElementData(const int GEID, const int which, const double val)
     {
-      DoubleData_.resize(size);
-    }
-
-    //! Returns the \c what double data vector associated with vertices.
-    RefCountPtr<Epetra_Vector> getDoubleData(const int what)
-    {
-      return(DoubleData_[what]);
-    }
-
-    void setDoubleData(const int what, RefCountPtr<Epetra_Vector> Vector)
-    {
-      DoubleData_[what] = Vector;
+      int LEID = getLEID(GEID);
+      (*elementData_)[which][LEID] = val;
     }
 
     // @}
@@ -252,7 +259,7 @@ class Loadable : public core::Object
       // for the vertex map (with overlap). Note that the vertices
       // of all elements are in global numbering.
 
-      int MaxSize = getElementMap()->NumMyElements() * getElement()->getNumVertices();
+      int MaxSize = getElementMap().NumMyElements() * getElement().getNumVertices();
 
       vector<int> MyGlobalElements(MaxSize);
       int count = 0;
@@ -260,9 +267,9 @@ class Loadable : public core::Object
       // insert all elements in a hash table
       Teuchos::Hashtable<int, short int> hash(MaxSize * 2);
 
-      for (int i = 0; i < getElementMap()->NumMyElements(); ++i)
+      for (int i = 0; i < getElementMap().NumMyElements(); ++i)
       {
-        for (int j = 0; j < getElement()->getNumVertices(); ++j)
+        for (int j = 0; j < getElement().getNumVertices(); ++j)
         {
           const int& GVID = ADJ(i, j);
           if (hash.containsKey(GVID) == false)
@@ -277,6 +284,9 @@ class Loadable : public core::Object
 
       COO_ = rcp(new Epetra_MultiVector(*VertexMap_, 
                                         phx::core::Utils::getNumDimensions()));
+
+      if (numVertexData_ > 0)
+        vertexData_ = rcp(new Epetra_MultiVector(*VertexMap_, numVertexData_));
     }
 
     void freezeCoordinates()
@@ -295,6 +305,33 @@ class Loadable : public core::Object
       cout << *COO_;
     }
 
+    Epetra_Map getLinearVertexMap()
+    {
+      if (linearVertexMap_ == Teuchos::null)
+      {
+        linearVertexMap_ = rcp(new Epetra_Map(getNumGlobalVertices(), 0, ElementMap_->Comm()));
+      }
+      return(*linearVertexMap_);
+    }
+
+    const Epetra_MultiVector& getLinearCoordinates()
+    {
+      if (linearCOO_ == Teuchos::null)
+      {
+        Epetra_Map linearVertexMap = getLinearVertexMap();
+        linearCOO_ = rcp(new Epetra_MultiVector(linearVertexMap, 
+                                                phx::core::Utils::getNumDimensions()));
+        linearExporter_ = rcp(new Epetra_Export(getVertexMap(), linearVertexMap));
+        linearCOO_->Export(*COO_, *linearExporter_, Insert);
+      }
+      return(*linearCOO_);
+    }
+
+    string getElementType() const
+    {
+      return(elementType_);
+    }
+
   private:
 
     // @}
@@ -302,14 +339,20 @@ class Loadable : public core::Object
 
     RefCountPtr<Epetra_Map> ElementMap_;
     RefCountPtr<Epetra_Map> VertexMap_;
+    RefCountPtr<Epetra_Map> linearVertexMap_;
+    RefCountPtr<Epetra_Export> linearExporter_;
     RefCountPtr<grid::Element> GridElement_;
 
-    vector<RefCountPtr<Epetra_IntVector> > IntData_;
-    vector<RefCountPtr<Epetra_Vector> > DoubleData_;
-
     RefCountPtr<Epetra_MultiVector> COO_;
+    RefCountPtr<Epetra_MultiVector> linearCOO_;
     RefCountPtr<EpetraExt::DistArray<int> > ADJ_;
 
+    string elementType_;
+
+    int numElementData_;
+    int numVertexData_;
+    RefCountPtr<Epetra_MultiVector> elementData_;
+    RefCountPtr<Epetra_MultiVector> vertexData_;
     // @}
 
 }; // class Loadable

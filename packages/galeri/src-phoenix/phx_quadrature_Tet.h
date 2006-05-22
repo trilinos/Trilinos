@@ -14,7 +14,6 @@ public:
   Tet(const int numQuadrNodes)
   {
     numQuadrNodes_ = numQuadrNodes;
-    numDimensions_ = 3; // FIXME: NEEDED?
     numLocalNodes_ = 4;
     numBasisFunctions_ = 4;
 

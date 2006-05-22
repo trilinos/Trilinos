@@ -21,15 +21,15 @@ class SerialXML
     ~SerialXML() {}
 
     static
-    map<string, RefCountPtr<Loadable> > 
-    readFile(const Epetra_Comm& Comm, const string& XMLFileName)
+    map<string, phx::grid::Loadable>
+    read(const Epetra_Comm& comm, const string& XMLFileName)
     {
-      // read on all processors
+      // read only on processor 0
       
       FileInputSource fileSrc(XMLFileName);
       Teuchos::XMLObject fileXML(fileSrc.getObject());
 
-      map<string, RefCountPtr<phx::grid::Loadable> > patches;
+      map<string, phx::grid::Loadable> patches;
 
       int NumDimensions = fileXML.getRequiredInt("NumDimensions");
       phx::core::Utils::setNumDimensions(NumDimensions);
@@ -43,10 +43,7 @@ class SerialXML
         {
           string Label = child.getRequired("Label");
           string ElementType = child.getRequired("ElementType");
-          RefCountPtr<phx::grid::Loadable> patch;
-
-          RefCountPtr<Epetra_Map> ElementMap;
-          RefCountPtr<phx::grid::Element> GridElement;
+          phx::grid::Loadable patch;
 
           for (int j = 0; j < child.numChildren(); ++j)
           {
@@ -57,43 +54,35 @@ class SerialXML
               int rows = newChild.getRequiredInt("rows");
               int cols = newChild.getRequiredInt("cols");
 
-              ElementMap = rcp(new Epetra_Map(rows, 0, Comm));
-              if (ElementType == "Triangle")
-              {
-                GridElement = rcp(new phx::grid::Triangle);
-              }
-              else if (ElementType == "Segment")
-              {
-                GridElement = rcp(new phx::grid::Segment);
-              }
-              else
-                throw(-1);
-
-              patch = rcp(new phx::grid::Loadable(ElementMap, GridElement));
+              // assign all elements to processor 0
+              if (comm.MyPID()) rows = 0;
+              patch.initialize(comm, -1, rows, ElementType);
+              patch.setLabel(Label);
 
               int count = 0;
-              for (int k = 0; k < newChild.numContentLines(); ++k)
+              if (comm.MyPID() == 0)
               {
-                const string& line = newChild.getContentLine(k);
-                Array<string> tokens = Teuchos::StrUtils::stringTokenizer(line);
-                if (tokens.size() != cols) continue;
-                for (int kk = 0; kk < cols; ++kk)
+                for (int k = 0; k < newChild.numContentLines(); ++k)
                 {
-                  int LID = ElementMap->LID(count);
-                  if (LID != -1)
-                    patch->ADJ(LID, kk) = Teuchos::StrUtils::atoi(tokens[kk]);
+                  const string& line = newChild.getContentLine(k);
+                  Array<string> tokens = Teuchos::StrUtils::stringTokenizer(line);
+                  if (tokens.size() != cols) continue;
+                  for (int kk = 0; kk < cols; ++kk)
+                  {
+                    patch.setGlobalConnectivity(count, kk, Teuchos::StrUtils::atoi(tokens[kk]));
+                  }
+                  ++count;
                 }
-                ++count;
               }
 
-              patch->freezeConnectivity();
+              patch.freezeConnectivity();
             }
             else if (tag == "Vertices")
             {
               int rows = newChild.getRequiredInt("rows");
               int cols = newChild.getRequiredInt("cols");
 
-              if (Comm.MyPID() == 0)
+              if (comm.MyPID() == 0)
               {
                 for (int k = 0; k < newChild.numContentLines(); ++k)
                 {
@@ -104,12 +93,12 @@ class SerialXML
                   for (int kk = 0; kk < NumDimensions; ++kk)
                   {
                     double coord = Teuchos::StrUtils::atof(tokens[kk + 1]);
-                    patch->setGlobalCoordinates(GVID, kk, coord);
+                    patch.setGlobalCoordinates(GVID, kk, coord);
                   }
                 }
               }
 
-              patch->freezeCoordinates();
+              patch.freezeCoordinates();
             }
           }
           patches[Label] = patch;

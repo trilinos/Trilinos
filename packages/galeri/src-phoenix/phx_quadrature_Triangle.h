@@ -1,6 +1,7 @@
 #ifndef HAVE_QUADRATURE_TRIANGLE_H
 #define HAVE_QUADRATURE_TRIANGLE_H
 
+#include "phx_core_Constants.h"
 #include "phx_quadrature_Element.h"
 
 namespace phx {
@@ -14,11 +15,14 @@ public:
   Triangle(const int numQuadrNodes)
   {
     numQuadrNodes_ = numQuadrNodes;
-    numDimensions_ = 2;
+    if (numQuadrNodes_ == phx::core::Constants::MIN) numQuadrNodes_ = 1;
+    if (numQuadrNodes_ == phx::core::Constants::MAX) numQuadrNodes_ = 7;
+
     numLocalNodes_ = 3;
     numBasisFunctions_ = 3;
 
-    J_.Reshape(numDimensions_,numDimensions_);
+    J_.Reshape(3, 3);
+
     basis_rs_.Reshape(numLocalNodes_,numQuadrNodes_);
     basis_dr_.Reshape(numLocalNodes_,numQuadrNodes_);
     basis_ds_.Reshape(numLocalNodes_,numQuadrNodes_);

@@ -1,6 +1,8 @@
 #ifndef PHX_PROBLEM_BASE_H
 #define PHX_PROBLEM_BASE_H
 
+#include "Epetra_FEVector.h"
+
 namespace phx {
 namespace problem {
   
