@@ -27,10 +27,11 @@
 // ***********************************************************************
 // @HEADER
 //
-// This driver reads a problem from a Harwell-Boeing (HB) file into an 
-// Epetra_CrsMatrix.  This matrix is then converted into a Thyra linear operator
-// through the Thyra-Epetra adapters.
-// The right-hand-side from the HB file is used instead of random vectors.
+// This driver creates a 2D Laplacian operator as a Tpetra::CisMatrix. 
+// This matrix is then converted into a Thyra linear operator 
+// through the Thyra-Tpetra adapters.
+//
+// The right-hand sides are all random vectors.
 // The initial guesses are all set to zero. 
 //
 //
