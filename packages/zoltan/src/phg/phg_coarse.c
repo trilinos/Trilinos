@@ -253,6 +253,9 @@ int header;
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
 
 c_hg->fixed = (hg->fixed) ? (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)) : NULL;
+if (c_hg->fixed)
+  for (i = 0; i < hg->nVtx; i++)
+     c_hg->fixed[i] = -1;
   
   /* (over) estimate number of external matches that we need to send data to */
   count = 0; 
