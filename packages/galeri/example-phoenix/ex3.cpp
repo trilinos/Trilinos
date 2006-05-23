@@ -17,17 +17,10 @@
 #include "../src-phoenix/phx_grid_Tet.h"
 #include "../src-phoenix/phx_grid_Hex.h"
 #include "../src-phoenix/phx_grid_Loadable.h"
-#include "../src-phoenix/phx_grid_SerialXML.h"
 #include "../src-phoenix/phx_grid_Generator.h"
-#include "../src-phoenix/phx_quadrature_Element.h"
-#include "../src-phoenix/phx_quadrature_Segment.h"
-#include "../src-phoenix/phx_quadrature_Triangle.h"
-#include "../src-phoenix/phx_quadrature_Quad.h"
-#include "../src-phoenix/phx_quadrature_Tet.h"
 #include "../src-phoenix/phx_quadrature_Hex.h"
 #include "../src-phoenix/phx_problem_ScalarLaplacian.h"
 #include "../src-phoenix/phx_viz_MEDIT.h"
-#include "../src-phoenix/phx_viz_VTK.h"
 #include <fstream>
 
 using namespace phx;
@@ -48,7 +41,8 @@ class Laplacian
                   const double& phi_j_dery,
                   const double& phi_j_derz)
     {
-      return(phi_i_derx * phi_j_derx + 
+      return(phi_i * phi_j + 
+             phi_i_derx * phi_j_derx + 
              phi_i_dery * phi_j_dery + 
              phi_i_derz * phi_j_derz);
     }
@@ -110,9 +104,9 @@ int main(int argc, char *argv[])
   phx::grid::Loadable domain, boundary;
 
   map<char, int> numGlobalElements;
-  numGlobalElements['x'] = 20;
-  numGlobalElements['y'] = 20;
-  numGlobalElements['z'] = 20;
+  numGlobalElements['x'] = 10;
+  numGlobalElements['y'] = 10;
+  numGlobalElements['z'] = 10;
   numGlobalElements['p'] = numGlobalElements['x'] * numGlobalElements['y'];
   numGlobalElements['q'] = numGlobalElements['y'] * numGlobalElements['z'];
   numGlobalElements['r'] = numGlobalElements['x'] * numGlobalElements['z'];
@@ -132,16 +126,61 @@ int main(int argc, char *argv[])
   length['y'] = 1.0;
   length['z'] = 1.0;
 
-  domain.initialize(comm, numGlobalElements['a'], -1, "Hex");
+  map<char, int> numDomains;
+  numDomains['x'] = 1;
+  numDomains['y'] = 1;
+  numDomains['z'] = 2;
+  numDomains['p'] = numDomains['x'] * numDomains['y'];
 
-  for (int iz = 0; iz < numGlobalElements['z']; ++iz)
+  map<char, int> numMyElements;
+  numMyElements['x'] = numGlobalElements['x'] / numDomains['x'];
+  numMyElements['y'] = numGlobalElements['y'] / numDomains['y'];
+  numMyElements['z'] = numGlobalElements['z'] / numDomains['z'];
+  numMyElements['a'] = numMyElements['x'] * numMyElements['y'] * numMyElements['z'];
+
+  map<char, int> numMyVertices;
+  numMyVertices['x'] = numMyElements['x'] + 1;
+  numMyVertices['y'] = numMyElements['y'] + 1;
+  numMyVertices['z'] = numMyElements['z'] + 1;
+  numMyVertices['a'] = numMyVertices['x'] * numMyVertices['y'] * numMyVertices['z'];
+
+  map<char, int> pos;
+  pos['z'] = comm.MyPID() / numDomains['p'];
+  pos['y'] = (comm.MyPID() - pos['z'] * numDomains['p']) / numDomains['x'];
+  pos['x'] = (comm.MyPID() - pos['z'] * numDomains['p']) % numDomains['x'];
+
+  vector<int> list;
+
+  for (int iz = 0; iz < numMyElements['z']; ++iz)
   {
-    for (int iy = 0; iy < numGlobalElements['y']; ++iy)
+    for (int iy = 0; iy < numMyElements['y']; ++iy)
     {
-      for (int ix = 0; ix < numGlobalElements['x']; ++ix)
+      for (int ix = 0; ix < numMyElements['x']; ++ix)
       {
-        int GEID = iz * numGlobalElements['p'] + iy * numGlobalElements['x'] + ix;
-        int offset = iz * numGlobalVertices['p'] + iy * numGlobalVertices['x'] + ix;
+        int IX = ix + numMyElements['x'] * pos['x'];
+        int IY = iy + numMyElements['y'] * pos['y'];
+        int IZ = iz + numMyElements['z'] * pos['z'];
+
+        int GEID = IZ * numGlobalElements['p'] + IY * numGlobalElements['x'] + IX;
+        list.push_back(GEID);
+      }
+    }
+  }
+
+  domain.initialize(comm, numGlobalElements['a'], list.size(), "Hex", &list[0]);
+
+  for (int iz = 0; iz < numMyElements['z']; ++iz)
+  {
+    for (int iy = 0; iy < numMyElements['y']; ++iy)
+    {
+      for (int ix = 0; ix < numMyElements['x']; ++ix)
+      {
+        int IX = ix + numMyElements['x'] * pos['x'];
+        int IY = iy + numMyElements['y'] * pos['y'];
+        int IZ = iz + numMyElements['z'] * pos['z'];
+
+        int GEID = IZ * numGlobalElements['p'] + IY * numGlobalElements['x'] + IX;
+        int offset = IZ * numGlobalVertices['p'] + IY * numGlobalVertices['x'] + IX;
 
         domain.setGlobalConnectivity(GEID, 0, offset);
         domain.setGlobalConnectivity(GEID, 1, offset + 1);
@@ -161,21 +200,27 @@ int main(int argc, char *argv[])
   double hy = length['y'] / numGlobalElements['y'];
   double hz = length['z'] / numGlobalElements['z'];
 
-  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  for (int iz = 0; iz < numMyVertices['z']; ++iz)
   {
-    for (int iy = 0; iy < numGlobalVertices['y']; ++iy)
+    for (int iy = 0; iy < numMyVertices['y']; ++iy)
     {
-      for (int ix = 0; ix < numGlobalVertices['x']; ++ix)
+      for (int ix = 0; ix < numMyVertices['x']; ++ix)
       {
-        int GVID = iz * numGlobalVertices['p'] + iy * numGlobalVertices['x'] + ix;
-        domain.setGlobalCoordinates(GVID, 0, hx * ix);
-        domain.setGlobalCoordinates(GVID, 1, hy * iy);
-        domain.setGlobalCoordinates(GVID, 2, hz * iz);
+        int IX = ix + numMyElements['x'] * pos['x'];
+        int IY = iy + numMyElements['y'] * pos['y'];
+        int IZ = iz + numMyElements['z'] * pos['z'];
+
+        int GVID = IZ * numGlobalVertices['p'] + IY * numGlobalVertices['x'] + IX;
+        domain.setGlobalCoordinates(GVID, 0, hx * IX);
+        domain.setGlobalCoordinates(GVID, 1, hy * IY);
+        domain.setGlobalCoordinates(GVID, 2, hz * IZ);
       }
     }
   }
 
   domain.freezeCoordinates();
+
+#if 0
 
   int numGlobalBoundaries = 2 * numGlobalVertices['p'] +
                             2 * numGlobalVertices['q'] +
@@ -327,6 +372,7 @@ int main(int argc, char *argv[])
   }
 
   boundary.freezeCoordinates();
+#endif
 
   Epetra_Map matrixMap(domain.getNumGlobalVertices(), 0, comm);
 
@@ -340,7 +386,7 @@ int main(int argc, char *argv[])
 
   LHS.PutScalar(0.0);
 
-  problem.imposeDirichletBoundaryConditions(boundary, A, RHS, LHS);
+//  problem.imposeDirichletBoundaryConditions(boundary, A, RHS, LHS);
 
   // ============================================================ //
   // Solving the linear system is the next step, quite easy       //
