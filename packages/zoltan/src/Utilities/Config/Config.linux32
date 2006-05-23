@@ -1,0 +1,172 @@
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+##############################################################################
+#  Environment variables for compiling the Zoltan and test drivers for
+#  linux on SNL's LAN.  
+#  The variable F90_COMPILER should be set to "absoft", "fujitsu", "lahey",
+#  "nas", "pgi", "psr" or "nag" (the default).  This variable is used only
+#  in this architecture's makefile.
+#  The variable MPI_VERSION should be set to "lam" (the default) or "mpich"; 
+#  this variable is used only in this architecture's makefile.
+#  For explanations of these variables, please see Config.generic.
+##############################################################################
+
+F90_COMPILER		= nag
+MPI_VERSION 		= lam
+
+ifeq "$(F90_COMPILER)" "absoft"
+F90 = abf90
+FFLAGS = -YEXT_NAMES=LCS -YCFRL=1 -YEXT_SFX=_ -lU77
+F90CFLAGS = -DFMANGLE=UNDERSCORE
+SPPR_HEAD = spprinc.absoft
+FARG = farg_typical
+F90_MODULE_PREFIX = -p 
+else
+ifeq "$(F90_COMPILER)" "fujitsu"
+F90 = f95
+FFLAGS = -Am -X9 -static-flib
+F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
+SPPR_HEAD = spprinc.most
+FARG = farg_typical
+F90_MODULE_PREFIX = -I
+else
+ifeq "$(F90_COMPILER)" "lahey"
+F90 = lf95
+FFLAGS = --staticlink
+F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
+SPPR_HEAD = spprinc.most
+FARG = farg_typical
+F90_MODULE_PREFIX = -I
+else
+ifeq "$(F90_COMPILER)" "nas"
+F90 = nasf95
+FFLAGS = -nocheckint
+F90CFLAGS = -DFMANGLE=UNDERSCORE
+SPPR_HEAD = spprinc.nas
+FARG = farg_nas
+F90_MODULE_PREFIX =
+else
+ifeq "$(F90_COMPILER)" "pgi"
+F90 = pgf90
+FFLAGS =
+F90CFLAGS = -DFMANGLE=UNDERSCORE -DPGI
+SPPR_HEAD = spprinc.most
+FARG = farg_typical
+F90_MODULE_PREFIX = -I
+else
+ifeq "$(F90_COMPILER)" "psr"
+F90 = psrf90
+FFLAGS =
+F90CFLAGS = -DFMANGLE=UNDERSCORE
+SPPR_HEAD = spprinc.most
+FARG = farg_typical
+# not sure, -H may only be for include files, not module information files
+F90_MODULE_PREFIX = -H
+else
+# default is NAG
+F90 = nagf95
+FFLAGS = -mismatch
+F90CFLAGS = -DFMANGLE=UNDERSCORE
+SPPR_HEAD = spprinc.most
+FARG = farg_nagf95
+F90_MODULE_PREFIX = -I
+endif
+endif
+endif
+endif
+endif
+endif
+
+DEFS 			= 
+
+RANLIB			= ranlib
+AR			= ar r
+
+CC			= mpicc -m32 -Wall -Werror-implicit-function-declaration
+CPPC			= mpiCC -m32 -Wall -Werror-implicit-function-declaration
+
+# ifeq "$(MPI_VERSION)" "lam"
+# INCLUDE_PATH		= -I$(LAMHOME)/include
+# else
+# INCLUDE_PATH          = -I$(MPIR_HOME)/include
+# endif
+
+DBG_FLAGS		= -g -Wall
+OPT_FLAGS		= -O2 
+CFLAGS 			= $(DBG_FLAGS)
+
+LOCAL_F90		= $(F90)
+
+ifeq "$(MPI_VERSION)" "lam"
+# We use mpicc to link, so we don't need to set the variables below.
+MPI_LIB		= 
+MPI_LIBPATH	= 
+endif
+
+# Some users have needed these libraries.  If your linker can't find getarg or
+# iargc, uncomment these paths and try again.
+#MPI_LIB = -lg2c
+#MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
+
+
+#PARMETIS_LIBPATH        = -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3 
+#PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+
+#JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
+#JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
+#JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
+
+#NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
+#NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
+
+#PATOH_LIBPATH           = -L/Net/local/proj/zoltan/arch/pclinux/PaToH
+#PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/pclinux/PaToH
+
+#PARKWAY_LIBPATH        = -L/home/umit/prgs/parkway-2.0
+#PARKWAY_INCPATH        = -I/home/umit/prgs/parkway-2.0
+
+#----------------------------------------------------------------
+# Definitions required to build vtk_view and vtk_write.  Pre-built
+# versions may be found on SNL's LAN in the architecture specific
+# "bin" directory.  To rebuild, you need to provide paths to VTK
+# libraries and include files.  There are versions of these as well
+# on the LAN.  The latest version of VTK may be obtained from www.vtk.org.
+#
+# The location of the VTK libraries, built with OpenGL
+#
+#VTK_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/vtk
+#VTK_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/vtk
+
+# The location of the X libraries, and the X libraries required, if any
+#
+#X_LIBPATH = -L/usr/X11R6/lib
+#X_LIBS    = -lXt
+
+# The location of the GL or Mesa libraries, and the libraries
+#
+#GL_LIBPATH = -L/usr/lib
+#GL_LIBS    = -lMesaGL
+
+# vtk_write does off screen rendering and so requires the Mesa GL
+# libraries.  It also requires a different version of VTK, one that
+# was built with the MANGLED_MESA option and with Mesa GL header files.
+
+#VTK_OFFSCREEN_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/vtkMesa
+#VTK_OFFSCREEN_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/vtkMesa
+
+#MESA_LIBPATH = -L/Net/local/proj/zoltan/arch/linux/lib/Mesa
+#MESA_INCPATH = -I/Net/local/proj/zoltan/arch/linux/include/Mesa
+#MESA_LIBS = -lGL  -lGLU -lOSMesa
+#----------------------------------------------------------------
+
