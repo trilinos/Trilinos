@@ -117,7 +117,7 @@ int main(int argc, char* argv[])
   const ST offDiag = -1.0, diag = 2.0;
   int numEntries; ST values[3]; int indexes[3];
   ST prec_value[1]; int prec_index[1];
-  prec_value[0] = 1.0;
+  prec_value[0] = 1.0/diag; // Diagonal preconditioning
   for( int k = 0; k < numMyElements; ++k ) {
     const int rowIndex = myGlobalElements[k];
     prec_index[0] = rowIndex;
@@ -154,10 +154,10 @@ int main(int argc, char* argv[])
     Prec = Teuchos::rcp( new Thyra::TpetraLinearOp<OT,ST>(
                     Teuchos::rcp_implicit_cast<Tpetra::Operator<OT,ST> >(tpetra_Prec) ) );
 
-  // Create a Thyra default (left) preconditioner (DefPrec) using the Thyra linear operator (Prec)
+  // Create a Thyra default preconditioner (DefPrec) using the Thyra linear operator (Prec)
   RefCountPtr<Thyra::DefaultPreconditioner<ST> >
     DefPrec = Teuchos::rcp( new Thyra::DefaultPreconditioner<ST>() );
-  DefPrec->initializeLeft( Prec );
+  DefPrec->initializeUnspecified( Prec );
 
   //
   // Set the parameters for the Belos LOWS Factory and create a parameter list.
@@ -167,9 +167,9 @@ int main(int argc, char* argv[])
   int             maxIterations          = globalDim;
   int             maxRestarts            = 0;
   int             gmresKrylovLength      = globalDim;
-  int             outputFrequency        = 10;
+  int             outputFrequency        = 50;
   bool            outputMaxResOnly       = true;
-  MT              maxResid               = 1e-6;
+  MT              maxResid               = 1e-3;
 
   ST one = Teuchos::ScalarTraits<ST>::one();
   ST zero = Teuchos::ScalarTraits<ST>::zero();
@@ -204,6 +204,9 @@ int main(int argc, char* argv[])
 
   // Set the parameter list to specify the behavior of the factory.
   belosLOWSFactory->setParameterList( belosLOWSFPL );
+
+  // Set the output stream and the verbosity level (prints to std::cout by defualt)
+  belosLOWSFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<ST> >
