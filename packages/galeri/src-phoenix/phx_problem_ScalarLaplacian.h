@@ -141,32 +141,21 @@ class ScalarLaplacian : public Base
         for (int j = 0; j < numEntries; ++j)
           if (indices[j] != i) values[j] = 0.0;
           else values[j] = 1.0;
-          RHS[0][i] = rowValues[0][i]; // FIXME
+          RHS[0][i] = rowValues[0][i]; 
       }
       else
       {
         for (int j = 0; j < numEntries; ++j)
         {
           if (indices[j] == i) continue;
-          if (colValues[indices[j]] != min) values[j] = 0.0;
+          if (colValues[indices[j]] != min) 
+          {
+            RHS[0][i] -= values[j] * colValues[indices[j]];
+            values[j] = 0.0;
+          }
         }
       }
     }
-  }
-
-  Epetra_FECrsMatrix* getMatrix()
-  {
-    return(A_.get());
-  }
-
-  Epetra_FEVector* getLHS()
-  {
-    return(LHS_.get());
-  }
-
-  Epetra_FEVector* getRHS()
-  {
-    return(RHS_.get());
   }
 
   virtual void 
@@ -409,11 +398,6 @@ class ScalarLaplacian : public Base
 
 private:
   RefCountPtr<phx::quadrature::Element> IE_, NE_;
-  RefCountPtr<Epetra_Map> matrixMap_;
-  RefCountPtr<Epetra_FECrsMatrix> A_;
-  RefCountPtr<Epetra_FEVector> LHS_;
-  RefCountPtr<Epetra_FEVector> RHS_;
-
 }; // class Base
 
 } // namespace problem

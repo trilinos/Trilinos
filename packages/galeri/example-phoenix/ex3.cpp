@@ -60,13 +60,13 @@ class Laplacian
                   const double& phi_i)
 
     {
-      return(2.0 * phi_i);
+      return(-getExactSolution('f', x, y, z) * phi_i);
     }
 
     static inline double
     getBoundaryValue(const double& x, const double& y, const double& z)
     {
-      return(0.0);
+      return(getExactSolution('f', x, y, z));
     }
 
     static inline char
@@ -80,9 +80,13 @@ class Laplacian
                      const double& y, const double& z)
     {
       if (what == 'f')
-        return(x * (1 - x));
+        return(exp(x) + exp(y) + exp(z));
       else if (what == 'x')
-        return(1.0 - 2.0 * x);
+        return(exp(x));
+      else if (what == 'y')
+        return(exp(y));
+      else if (what == 'z')
+        return(exp(z));
       else
         return(0.0);
     }
@@ -106,9 +110,9 @@ int main(int argc, char *argv[])
   phx::grid::Loadable domain, boundary;
 
   map<char, int> numGlobalElements;
-  numGlobalElements['x'] = 2;
-  numGlobalElements['y'] = 2;
-  numGlobalElements['z'] = 2;
+  numGlobalElements['x'] = 20;
+  numGlobalElements['y'] = 20;
+  numGlobalElements['z'] = 20;
   numGlobalElements['p'] = numGlobalElements['x'] * numGlobalElements['y'];
   numGlobalElements['q'] = numGlobalElements['y'] * numGlobalElements['z'];
   numGlobalElements['r'] = numGlobalElements['x'] * numGlobalElements['z'];
@@ -173,7 +177,7 @@ int main(int argc, char *argv[])
 
   domain.freezeCoordinates();
 
-  int numGlobalBoundaries = 2 * numGlobalVertices['p'];
+  int numGlobalBoundaries = 2 * numGlobalVertices['p'] +
                             2 * numGlobalVertices['q'] +
                             2 * numGlobalVertices['r'];
   boundary.initialize(comm, numGlobalBoundaries, -1, "Point");
@@ -201,6 +205,46 @@ int main(int argc, char *argv[])
     }
   }
 
+  // front 
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int ix = 0; ix < numGlobalVertices['x']; ++ix)
+    {
+      int GBID = iz * numGlobalVertices['p'] + ix;
+      boundary.setGlobalConnectivity(count++, 0, GBID);
+    }
+  }
+
+  // rear 
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int ix = 0; ix < numGlobalVertices['x']; ++ix)
+    {
+      int GBID = (iz + 1) * numGlobalVertices['p'] - numGlobalVertices['x'] + ix;
+      boundary.setGlobalConnectivity(count++, 0, GBID);
+    }
+  }
+
+  // left 
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int iy = 0; iy < numGlobalVertices['y']; ++iy)
+    {
+      int GBID = iz * numGlobalVertices['p'] + iy * numGlobalVertices['x'];
+      boundary.setGlobalConnectivity(count++, 0, GBID);
+    }
+  }
+
+  // right 
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int iy = 0; iy < numGlobalVertices['y']; ++iy)
+    {
+      int GBID = iz * numGlobalVertices['p'] + (iy + 1) * numGlobalVertices['x'] - 1;
+      boundary.setGlobalConnectivity(count++, 0, GBID);
+    }
+  }
+
   boundary.freezeConnectivity();
 
   // bottom
@@ -221,7 +265,8 @@ int main(int argc, char *argv[])
   {
     for (int ix = 0; ix < numGlobalVertices['x']; ++ix)
     {
-      int GBID = iy * numGlobalVertices['x'] + ix;
+      int GBID = iy * numGlobalVertices['x'] + ix +
+        numGlobalVertices['p'] * numGlobalElements['z'];
 
       boundary.setGlobalCoordinates(GBID, 0, hx * ix);
       boundary.setGlobalCoordinates(GBID, 1, hy * iy);
@@ -229,9 +274,59 @@ int main(int argc, char *argv[])
     }
   }
 
-  boundary.freezeCoordinates();
+  // front
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int ix = 0; ix < numGlobalVertices['x']; ++ix)
+    {
+      int GBID = iz * numGlobalVertices['p'] + ix;
 
-  cout << boundary;
+      boundary.setGlobalCoordinates(GBID, 0, hx * ix);
+      boundary.setGlobalCoordinates(GBID, 1, 0.0);
+      boundary.setGlobalCoordinates(GBID, 2, hz * iz);
+    }
+  }
+
+  // rear
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int ix = 0; ix < numGlobalVertices['x']; ++ix)
+    {
+      int GBID = (iz + 1) * numGlobalVertices['p'] - numGlobalVertices['x'] + ix;
+
+      boundary.setGlobalCoordinates(GBID, 0, hx * ix);
+      boundary.setGlobalCoordinates(GBID, 1, length['y']);
+      boundary.setGlobalCoordinates(GBID, 2, hz * iz);
+    }
+  }
+
+  // left 
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int iy = 0; iy < numGlobalVertices['y']; ++iy)
+    {
+      int GBID = iz * numGlobalVertices['p'] + iy * numGlobalVertices['x'];
+
+      boundary.setGlobalCoordinates(GBID, 0, 0.0);
+      boundary.setGlobalCoordinates(GBID, 1, hy * iy);
+      boundary.setGlobalCoordinates(GBID, 2, hz * iz);
+    }
+  }
+
+  // right 
+  for (int iz = 0; iz < numGlobalVertices['z']; ++iz)
+  {
+    for (int iy = 0; iy < numGlobalVertices['y']; ++iy)
+    {
+      int GBID = iz * numGlobalVertices['p'] + (iy + 1) * numGlobalVertices['x'] - 1;
+
+      boundary.setGlobalCoordinates(GBID, 0, length['x']);
+      boundary.setGlobalCoordinates(GBID, 1, hy * iy);
+      boundary.setGlobalCoordinates(GBID, 2, hz * iz);
+    }
+  }
+
+  boundary.freezeCoordinates();
 
   Epetra_Map matrixMap(domain.getNumGlobalVertices(), 0, comm);
 
@@ -239,7 +334,7 @@ int main(int argc, char *argv[])
   Epetra_FEVector    LHS(matrixMap);
   Epetra_FEVector    RHS(matrixMap);
 
-  phx::problem::ScalarLaplacian<Laplacian> problem("Hex", 8, 8);
+  phx::problem::ScalarLaplacian<Laplacian> problem("Hex", 1, 8);
 
   problem.integrate(domain, A, RHS);
 
@@ -260,8 +355,6 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 16);
 
   solver.Iterate(1550, 1e-9);
-
-  cout << LHS;
 
   phx::viz::MEDIT::Write(comm, domain, "sol", LHS);
 

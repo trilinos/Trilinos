@@ -210,7 +210,7 @@ class Loadable : public core::Object
     
     inline void setGlobalCoordinates(const int GID, const int index, const double value)
     {
-      COO_->SumIntoGlobalValue(GID, index, value);
+      COO_->ReplaceGlobalValue(GID, index, value);
     }
 
     inline double& getGlobalCoordinates(const int GID, const int index)
