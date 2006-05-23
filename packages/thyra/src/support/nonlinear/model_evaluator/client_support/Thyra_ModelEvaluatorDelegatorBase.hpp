@@ -46,7 +46,7 @@ namespace Thyra {
  * <tt>ModelEvaluatorBase::InArgs</tt> and
  * <tt>ModelEvaluatorBase::OutArgs</tt> classes should not require any changes
  * here.
- *
+ * 
  * The only functions that a client must override in order to create a
  * concrete subcalss is the <tt>evalModel()</tt> function.  All other
  * functions have implementations here that simply delegate to the model
