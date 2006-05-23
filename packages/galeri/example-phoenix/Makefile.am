@@ -40,16 +40,16 @@ EXEEXT = .exe
 noinst_PROGRAMS = ex1 ex2 ex3
 
 ex1_SOURCES      = $(srcdir)/ex1.cpp
-ex1_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-ex1_CXXFLAGS     = $(GALERI_INCLUDES)
-ex1_LDADD        = $(GALERI_LIBS)
+ex1_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
+ex1_CXXFLAGS     = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
+ex1_LDADD        = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix
 
 ex2_SOURCES      = $(srcdir)/ex2.cpp
-ex2_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-ex2_CXXFLAGS     = $(GALERI_INCLUDES)
-ex2_LDADD        = $(GALERI_LIBS)
+ex2_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
+ex2_CXXFLAGS     = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
+ex2_LDADD        = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix
 
 ex3_SOURCES      = $(srcdir)/ex3.cpp
-ex3_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
-ex3_CXXFLAGS     = $(GALERI_INCLUDES)
-ex3_LDADD        = $(GALERI_LIBS)
+ex3_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
+ex3_CXXFLAGS     = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
+ex3_LDADD        = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix

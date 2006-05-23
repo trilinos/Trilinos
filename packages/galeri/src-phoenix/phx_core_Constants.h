@@ -8,10 +8,6 @@ namespace phx {
         static const int MIN;
         static const int MAX;
     };
-
-    const int Constants::MIN = -1;
-    const int Constants::MAX = -2;
   }
 }
-
 #endif

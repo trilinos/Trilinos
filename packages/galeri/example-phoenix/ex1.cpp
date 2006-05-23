@@ -6,29 +6,15 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVector.h"
 #include "AztecOO.h"
 
-#include "../src-phoenix/phx_core_Object.h"
-#include "../src-phoenix/phx_core_Utils.h"
-#include "../src-phoenix/phx_grid_Element.h"
-#include "../src-phoenix/phx_grid_Segment.h"
-#include "../src-phoenix/phx_grid_Triangle.h"
-#include "../src-phoenix/phx_grid_Quad.h"
-#include "../src-phoenix/phx_grid_Tet.h"
-#include "../src-phoenix/phx_grid_Hex.h"
-#include "../src-phoenix/phx_grid_Loadable.h"
-#include "../src-phoenix/phx_grid_SerialXML.h"
-#include "../src-phoenix/phx_grid_Generator.h"
-#include "../src-phoenix/phx_quadrature_Element.h"
-#include "../src-phoenix/phx_quadrature_Segment.h"
-#include "../src-phoenix/phx_quadrature_Triangle.h"
-#include "../src-phoenix/phx_quadrature_Quad.h"
-#include "../src-phoenix/phx_quadrature_Tet.h"
-#include "../src-phoenix/phx_quadrature_Hex.h"
-#include "../src-phoenix/phx_problem_ScalarLaplacian.h"
-#include "../src-phoenix/phx_viz_MEDIT.h"
-#include "../src-phoenix/phx_viz_VTK.h"
-#include <fstream>
+#include "phx_core_Object.h"
+#include "phx_core_Utils.h"
+#include "phx_grid_Segment.h"
+#include "phx_grid_Loadable.h"
+#include "phx_quadrature_Segment.h"
+#include "phx_problem_ScalarLaplacian.h"
 
 using namespace phx;
 

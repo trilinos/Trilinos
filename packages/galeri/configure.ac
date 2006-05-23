@@ -368,6 +368,7 @@ AC_CONFIG_FILES([
 		Makefile.export
 		Makefile.export.galeri
 		src/Makefile
+		src-phoenix/Makefile
 		example/Makefile
 		example-phoenix/Makefile
 		test/Makefile

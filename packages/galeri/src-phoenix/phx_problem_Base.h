@@ -1,7 +1,20 @@
 #ifndef PHX_PROBLEM_BASE_H
 #define PHX_PROBLEM_BASE_H
 
-#include "Epetra_FEVector.h"
+class Epetra_FECrsMatrix;
+class Epetra_FEVector;
+class Epetra_MultiVector;
+class Epetra_SerialDenseMatrix;
+class Epetra_SerialDenseVector;
+
+namespace phx {
+  namespace quadrature {
+    class Element;
+  }
+  namespace grid {
+    class Loadable;
+  }
+}
 
 namespace phx {
 namespace problem {

@@ -1,7 +1,7 @@
 #ifndef PHX_LOADABLE_GRID_H
 #define PHX_LOADABLE_GRID_H
 
-#include "Galeri_ConfigDefs.h"
+#include "../src/Galeri_ConfigDefs.h"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_Hashtable.hpp"

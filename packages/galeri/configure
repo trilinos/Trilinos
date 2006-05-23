@@ -11511,7 +11511,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.galeri src/Makefile example/Makefile example-phoenix/Makefile test/Makefile test/VerySimple/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.galeri src/Makefile src-phoenix/Makefile example/Makefile example-phoenix/Makefile test/Makefile test/VerySimple/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12270,6 +12270,7 @@ do
   "Makefile.export" ) CONFIG_FILES="$CONFIG_FILES Makefile.export" ;;
   "Makefile.export.galeri" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.galeri" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
+  "src-phoenix/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-phoenix/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
   "example-phoenix/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-phoenix/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;

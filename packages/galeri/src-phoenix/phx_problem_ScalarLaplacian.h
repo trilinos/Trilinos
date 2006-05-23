@@ -1,7 +1,7 @@
 #ifndef PHX_PROBLEM_SCALAR_LAPLACIAN_H
 #define PHX_PROBLEM_SCALAR_LAPLACIAN_H
 
-#include <limits>
+#include "Epetra_Import.h"
 
 #include "phx_core_Constants.h"
 #include "phx_problem_Base.h"

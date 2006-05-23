@@ -14,10 +14,10 @@
 
 @SET_MAKE@
 
-#@HEADER
+# @HEADER
 # ************************************************************************
 # 
-#                     New_Package Example Package
+#                     Galeri Example Package
 #                 Copyright (2004) Sandia Corporation
 # 
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -37,14 +37,15 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+# Questions? Contact Marzio Sala (marzio.sala@gmail.com) 
 # 
 # ************************************************************************
-#@HEADER
+# @HEADER
 
 # The following line helps the test harness recover from build errors.
 
-SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES)
+
+SOURCES = $(libphoenix_a_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,9 +68,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = ex1$(EXEEXT) ex2$(EXEEXT) ex3$(EXEEXT)
-subdir = example-phoenix
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = src-phoenix
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -103,25 +104,31 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Galeri_config.h
 CONFIG_CLEAN_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am_ex1_OBJECTS = ex1-ex1.$(OBJEXT)
-ex1_OBJECTS = $(am_ex1_OBJECTS)
-am_ex2_OBJECTS = ex2-ex2.$(OBJEXT)
-ex2_OBJECTS = $(am_ex2_OBJECTS)
-am_ex3_OBJECTS = ex3-ex3.$(OBJEXT)
-ex3_OBJECTS = $(am_ex3_OBJECTS)
+AR = ar
+ARFLAGS = cru
+am__installdirs = $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
+libLIBRARIES_INSTALL = $(INSTALL_DATA)
+LIBRARIES = $(lib_LIBRARIES)
+libphoenix_a_DEPENDENCIES =
+am__objects_1 = phx_core_Utils.$(OBJEXT) phx_core_Constants.$(OBJEXT) \
+	phx_grid_Generator.$(OBJEXT)
+am_libphoenix_a_OBJECTS = $(am__objects_1)
+libphoenix_a_OBJECTS = $(am_libphoenix_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ex1-ex1.Po ./$(DEPDIR)/ex2-ex2.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ex3-ex3.Po
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/phx_core_Constants.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/phx_core_Utils.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/phx_grid_Generator.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES)
-DIST_SOURCES = $(ex1_SOURCES) $(ex2_SOURCES) $(ex3_SOURCES)
+SOURCES = $(libphoenix_a_SOURCES)
+DIST_SOURCES = $(libphoenix_a_SOURCES)
+includeHEADERS_INSTALL = $(INSTALL_HEADER)
+HEADERS = $(include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -158,7 +165,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -269,18 +276,67 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-ex1_SOURCES = $(srcdir)/ex1.cpp
-ex1_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
-ex1_CXXFLAGS = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
-ex1_LDADD = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix
-ex2_SOURCES = $(srcdir)/ex2.cpp
-ex2_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
-ex2_CXXFLAGS = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
-ex2_LDADD = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix
-ex3_SOURCES = $(srcdir)/ex3.cpp
-ex3_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
-ex3_CXXFLAGS = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
-ex3_LDADD = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix
+CORE_H = $(srcdir)/phx_problem_ScalarLaplacian.h
+CORE = $(srcdir)/phx_core_Utils.cpp \
+       $(srcdir)/phx_core_Constants.cpp \
+       $(srcdir)/phx_grid_Generator.cpp
+
+AM_CPPFLAGS = -I$(srcdir)                      \
+              -I$(top_srcdir)/../epetra/src    \
+	      -I$(top_builddir)/../epetra/src  \
+	      -I$(top_srcdir)/../teuchos/src   \
+	      -I$(top_builddir)/../teuchos/src \
+	      -I$(top_srcdir)/../epetraext/src/inout   \
+	      -I$(top_srcdir)/../epetraext/src   \
+	      -I$(top_builddir)/../epetraext/src \
+              -I$(srcdir)/../src                 \
+              -I$(top_srcdir)/../src    
+
+
+# ------------------------------------------------------------------------
+# phoenix library specifications
+# ------------------------------------------------------------------------
+PHOENIX_LIB = libphoenix.a
+PHOENIX_H = $(CORE_H) 
+libphoenix_a_SOURCES = $(CORE) 
+@USE_ALTERNATE_AR_FALSE@libphoenix_a_AR = $(AR) cru
+
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libphoenix_a_AR = $(ALTERNATE_AR)
+
+# ------------------------------------------------------------------------
+# Some C++ compilers create extra .o-files for templates. We need to
+# be sure to include these, and this is the hack to do it.
+# ------------------------------------------------------------------------
+libphoenix_a_LIBADD = $(XTRALDADD)
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+lib_LIBRARIES = $(PHOENIX_LIB)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(includedir)
+# ------------------------------------------------------------------------
+include_HEADERS = $(PHOENIX_H) 
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(execincludedir)
+# ------------------------------------------------------------------------
+
+# All Trilinos headers are now installed in the same directory
+execincludedir = $(exec_prefix)/include
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make maintainer-clean'
+# ------------------------------------------------------------------------
+MAINTAINERCLEANFILES = Makefile.in 
 all: all-am
 
 .SUFFIXES:
@@ -294,9 +350,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example-phoenix/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src-phoenix/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example-phoenix/Makefile
+	  $(AUTOMAKE) --foreign  src-phoenix/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -314,18 +370,39 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-libLIBRARIES: $(lib_LIBRARIES)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(libdir)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    f="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f"; \
+	    $(libLIBRARIES_INSTALL) $$p $(DESTDIR)$(libdir)/$$f; \
+	  else :; fi; \
+	done
+	@$(POST_INSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  if test -f $$p; then \
+	    p="`echo $$p | sed -e 's|^.*/||'`"; \
+	    echo " $(RANLIB) $(DESTDIR)$(libdir)/$$p"; \
+	    $(RANLIB) $(DESTDIR)$(libdir)/$$p; \
+	  else :; fi; \
+	done
 
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-ex1$(EXEEXT): $(ex1_OBJECTS) $(ex1_DEPENDENCIES) 
-	@rm -f ex1$(EXEEXT)
-	$(CXXLINK) $(ex1_LDFLAGS) $(ex1_OBJECTS) $(ex1_LDADD) $(LIBS)
-ex2$(EXEEXT): $(ex2_OBJECTS) $(ex2_DEPENDENCIES) 
-	@rm -f ex2$(EXEEXT)
-	$(CXXLINK) $(ex2_LDFLAGS) $(ex2_OBJECTS) $(ex2_LDADD) $(LIBS)
-ex3$(EXEEXT): $(ex3_OBJECTS) $(ex3_DEPENDENCIES) 
-	@rm -f ex3$(EXEEXT)
-	$(CXXLINK) $(ex3_LDFLAGS) $(ex3_OBJECTS) $(ex3_LDADD) $(LIBS)
+uninstall-libLIBRARIES:
+	@$(NORMAL_UNINSTALL)
+	@list='$(lib_LIBRARIES)'; for p in $$list; do \
+	  p="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(libdir)/$$p"; \
+	  rm -f $(DESTDIR)$(libdir)/$$p; \
+	done
+
+clean-libLIBRARIES:
+	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
+libphoenix.a: $(libphoenix_a_OBJECTS) $(libphoenix_a_DEPENDENCIES) 
+	-rm -f libphoenix.a
+	$(libphoenix_a_AR) libphoenix.a $(libphoenix_a_OBJECTS) $(libphoenix_a_LIBADD)
+	$(RANLIB) libphoenix.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -333,9 +410,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ex1-ex1.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ex2-ex2.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ex3-ex3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phx_core_Constants.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phx_core_Utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phx_grid_Generator.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -353,54 +430,71 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-ex1-ex1.o: $(srcdir)/ex1.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex1_CXXFLAGS) $(CXXFLAGS) -MT ex1-ex1.o -MD -MP -MF "$(DEPDIR)/ex1-ex1.Tpo" -c -o ex1-ex1.o `test -f '$(srcdir)/ex1.cpp' || echo '$(srcdir)/'`$(srcdir)/ex1.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex1-ex1.Tpo" "$(DEPDIR)/ex1-ex1.Po"; else rm -f "$(DEPDIR)/ex1-ex1.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex1.cpp' object='ex1-ex1.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex1-ex1.Po' tmpdepfile='$(DEPDIR)/ex1-ex1.TPo' @AMDEPBACKSLASH@
+phx_core_Utils.o: $(srcdir)/phx_core_Utils.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT phx_core_Utils.o -MD -MP -MF "$(DEPDIR)/phx_core_Utils.Tpo" -c -o phx_core_Utils.o `test -f '$(srcdir)/phx_core_Utils.cpp' || echo '$(srcdir)/'`$(srcdir)/phx_core_Utils.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/phx_core_Utils.Tpo" "$(DEPDIR)/phx_core_Utils.Po"; else rm -f "$(DEPDIR)/phx_core_Utils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/phx_core_Utils.cpp' object='phx_core_Utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/phx_core_Utils.Po' tmpdepfile='$(DEPDIR)/phx_core_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex1_CXXFLAGS) $(CXXFLAGS) -c -o ex1-ex1.o `test -f '$(srcdir)/ex1.cpp' || echo '$(srcdir)/'`$(srcdir)/ex1.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o phx_core_Utils.o `test -f '$(srcdir)/phx_core_Utils.cpp' || echo '$(srcdir)/'`$(srcdir)/phx_core_Utils.cpp
 
-ex1-ex1.obj: $(srcdir)/ex1.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex1_CXXFLAGS) $(CXXFLAGS) -MT ex1-ex1.obj -MD -MP -MF "$(DEPDIR)/ex1-ex1.Tpo" -c -o ex1-ex1.obj `if test -f '$(srcdir)/ex1.cpp'; then $(CYGPATH_W) '$(srcdir)/ex1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex1.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex1-ex1.Tpo" "$(DEPDIR)/ex1-ex1.Po"; else rm -f "$(DEPDIR)/ex1-ex1.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex1.cpp' object='ex1-ex1.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex1-ex1.Po' tmpdepfile='$(DEPDIR)/ex1-ex1.TPo' @AMDEPBACKSLASH@
+phx_core_Utils.obj: $(srcdir)/phx_core_Utils.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT phx_core_Utils.obj -MD -MP -MF "$(DEPDIR)/phx_core_Utils.Tpo" -c -o phx_core_Utils.obj `if test -f '$(srcdir)/phx_core_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/phx_core_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phx_core_Utils.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/phx_core_Utils.Tpo" "$(DEPDIR)/phx_core_Utils.Po"; else rm -f "$(DEPDIR)/phx_core_Utils.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/phx_core_Utils.cpp' object='phx_core_Utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/phx_core_Utils.Po' tmpdepfile='$(DEPDIR)/phx_core_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex1_CXXFLAGS) $(CXXFLAGS) -c -o ex1-ex1.obj `if test -f '$(srcdir)/ex1.cpp'; then $(CYGPATH_W) '$(srcdir)/ex1.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex1.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o phx_core_Utils.obj `if test -f '$(srcdir)/phx_core_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/phx_core_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phx_core_Utils.cpp'; fi`
 
-ex2-ex2.o: $(srcdir)/ex2.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex2_CXXFLAGS) $(CXXFLAGS) -MT ex2-ex2.o -MD -MP -MF "$(DEPDIR)/ex2-ex2.Tpo" -c -o ex2-ex2.o `test -f '$(srcdir)/ex2.cpp' || echo '$(srcdir)/'`$(srcdir)/ex2.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex2-ex2.Tpo" "$(DEPDIR)/ex2-ex2.Po"; else rm -f "$(DEPDIR)/ex2-ex2.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex2.cpp' object='ex2-ex2.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex2-ex2.Po' tmpdepfile='$(DEPDIR)/ex2-ex2.TPo' @AMDEPBACKSLASH@
+phx_core_Constants.o: $(srcdir)/phx_core_Constants.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT phx_core_Constants.o -MD -MP -MF "$(DEPDIR)/phx_core_Constants.Tpo" -c -o phx_core_Constants.o `test -f '$(srcdir)/phx_core_Constants.cpp' || echo '$(srcdir)/'`$(srcdir)/phx_core_Constants.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/phx_core_Constants.Tpo" "$(DEPDIR)/phx_core_Constants.Po"; else rm -f "$(DEPDIR)/phx_core_Constants.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/phx_core_Constants.cpp' object='phx_core_Constants.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/phx_core_Constants.Po' tmpdepfile='$(DEPDIR)/phx_core_Constants.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex2_CXXFLAGS) $(CXXFLAGS) -c -o ex2-ex2.o `test -f '$(srcdir)/ex2.cpp' || echo '$(srcdir)/'`$(srcdir)/ex2.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o phx_core_Constants.o `test -f '$(srcdir)/phx_core_Constants.cpp' || echo '$(srcdir)/'`$(srcdir)/phx_core_Constants.cpp
 
-ex2-ex2.obj: $(srcdir)/ex2.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex2_CXXFLAGS) $(CXXFLAGS) -MT ex2-ex2.obj -MD -MP -MF "$(DEPDIR)/ex2-ex2.Tpo" -c -o ex2-ex2.obj `if test -f '$(srcdir)/ex2.cpp'; then $(CYGPATH_W) '$(srcdir)/ex2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex2.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex2-ex2.Tpo" "$(DEPDIR)/ex2-ex2.Po"; else rm -f "$(DEPDIR)/ex2-ex2.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex2.cpp' object='ex2-ex2.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex2-ex2.Po' tmpdepfile='$(DEPDIR)/ex2-ex2.TPo' @AMDEPBACKSLASH@
+phx_core_Constants.obj: $(srcdir)/phx_core_Constants.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT phx_core_Constants.obj -MD -MP -MF "$(DEPDIR)/phx_core_Constants.Tpo" -c -o phx_core_Constants.obj `if test -f '$(srcdir)/phx_core_Constants.cpp'; then $(CYGPATH_W) '$(srcdir)/phx_core_Constants.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phx_core_Constants.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/phx_core_Constants.Tpo" "$(DEPDIR)/phx_core_Constants.Po"; else rm -f "$(DEPDIR)/phx_core_Constants.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/phx_core_Constants.cpp' object='phx_core_Constants.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/phx_core_Constants.Po' tmpdepfile='$(DEPDIR)/phx_core_Constants.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex2_CXXFLAGS) $(CXXFLAGS) -c -o ex2-ex2.obj `if test -f '$(srcdir)/ex2.cpp'; then $(CYGPATH_W) '$(srcdir)/ex2.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex2.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o phx_core_Constants.obj `if test -f '$(srcdir)/phx_core_Constants.cpp'; then $(CYGPATH_W) '$(srcdir)/phx_core_Constants.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phx_core_Constants.cpp'; fi`
 
-ex3-ex3.o: $(srcdir)/ex3.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex3_CXXFLAGS) $(CXXFLAGS) -MT ex3-ex3.o -MD -MP -MF "$(DEPDIR)/ex3-ex3.Tpo" -c -o ex3-ex3.o `test -f '$(srcdir)/ex3.cpp' || echo '$(srcdir)/'`$(srcdir)/ex3.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex3-ex3.Tpo" "$(DEPDIR)/ex3-ex3.Po"; else rm -f "$(DEPDIR)/ex3-ex3.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex3.cpp' object='ex3-ex3.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex3-ex3.Po' tmpdepfile='$(DEPDIR)/ex3-ex3.TPo' @AMDEPBACKSLASH@
+phx_grid_Generator.o: $(srcdir)/phx_grid_Generator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT phx_grid_Generator.o -MD -MP -MF "$(DEPDIR)/phx_grid_Generator.Tpo" -c -o phx_grid_Generator.o `test -f '$(srcdir)/phx_grid_Generator.cpp' || echo '$(srcdir)/'`$(srcdir)/phx_grid_Generator.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/phx_grid_Generator.Tpo" "$(DEPDIR)/phx_grid_Generator.Po"; else rm -f "$(DEPDIR)/phx_grid_Generator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/phx_grid_Generator.cpp' object='phx_grid_Generator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/phx_grid_Generator.Po' tmpdepfile='$(DEPDIR)/phx_grid_Generator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex3_CXXFLAGS) $(CXXFLAGS) -c -o ex3-ex3.o `test -f '$(srcdir)/ex3.cpp' || echo '$(srcdir)/'`$(srcdir)/ex3.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o phx_grid_Generator.o `test -f '$(srcdir)/phx_grid_Generator.cpp' || echo '$(srcdir)/'`$(srcdir)/phx_grid_Generator.cpp
 
-ex3-ex3.obj: $(srcdir)/ex3.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex3_CXXFLAGS) $(CXXFLAGS) -MT ex3-ex3.obj -MD -MP -MF "$(DEPDIR)/ex3-ex3.Tpo" -c -o ex3-ex3.obj `if test -f '$(srcdir)/ex3.cpp'; then $(CYGPATH_W) '$(srcdir)/ex3.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex3.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ex3-ex3.Tpo" "$(DEPDIR)/ex3-ex3.Po"; else rm -f "$(DEPDIR)/ex3-ex3.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ex3.cpp' object='ex3-ex3.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ex3-ex3.Po' tmpdepfile='$(DEPDIR)/ex3-ex3.TPo' @AMDEPBACKSLASH@
+phx_grid_Generator.obj: $(srcdir)/phx_grid_Generator.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT phx_grid_Generator.obj -MD -MP -MF "$(DEPDIR)/phx_grid_Generator.Tpo" -c -o phx_grid_Generator.obj `if test -f '$(srcdir)/phx_grid_Generator.cpp'; then $(CYGPATH_W) '$(srcdir)/phx_grid_Generator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phx_grid_Generator.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/phx_grid_Generator.Tpo" "$(DEPDIR)/phx_grid_Generator.Po"; else rm -f "$(DEPDIR)/phx_grid_Generator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/phx_grid_Generator.cpp' object='phx_grid_Generator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/phx_grid_Generator.Po' tmpdepfile='$(DEPDIR)/phx_grid_Generator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ex3_CXXFLAGS) $(CXXFLAGS) -c -o ex3-ex3.obj `if test -f '$(srcdir)/ex3.cpp'; then $(CYGPATH_W) '$(srcdir)/ex3.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ex3.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o phx_grid_Generator.obj `if test -f '$(srcdir)/phx_grid_Generator.cpp'; then $(CYGPATH_W) '$(srcdir)/phx_grid_Generator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/phx_grid_Generator.cpp'; fi`
 uninstall-info-am:
+install-includeHEADERS: $(include_HEADERS)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(includedir)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f"; \
+	  $(includeHEADERS_INSTALL) $$d$$p $(DESTDIR)$(includedir)/$$f; \
+	done
+
+uninstall-includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(include_HEADERS)'; for p in $$list; do \
+	  f="`echo $$p | sed -e 's|^.*/||'`"; \
+	  echo " rm -f $(DESTDIR)$(includedir)/$$f"; \
+	  rm -f $(DESTDIR)$(includedir)/$$f; \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -477,8 +571,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) all-local
+all-am: Makefile $(LIBRARIES) $(HEADERS) all-local
 installdirs:
+	$(mkdir_p) $(DESTDIR)$(libdir) $(DESTDIR)$(includedir)
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -503,9 +598,10 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -523,9 +619,9 @@ info: info-am
 
 info-am:
 
-install-data-am:
+install-data-am: install-includeHEADERS
 
-install-exec-am:
+install-exec-am: install-libLIBRARIES
 
 install-info: install-info-am
 
@@ -550,26 +646,36 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am
+uninstall-am: uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-noinstPROGRAMS ctags distclean \
+	clean-generic clean-libLIBRARIES ctags distclean \
 	distclean-compile distclean-generic distclean-tags distdir dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-exec install-exec-am \
-	install-info install-info-am install-man install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+	install-includeHEADERS install-info install-info-am \
+	install-libLIBRARIES install-man install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+	uninstall-am uninstall-includeHEADERS uninstall-info-am \
+	uninstall-libLIBRARIES
 
 
 all-local:
 	@echo ""
-	@echo "Trilinos package galeri subdirectory example-phoenix built successfully."
+	@echo "Trilinos package galeri subdirectory src-phoenix built successfully."
 	@echo ""
 
-include $(top_builddir)/Makefile.export
+# ------------------------------------------------------------------------
+# Library Target for Circular Dependencies
+# ------------------------------------------------------------------------
+
+all-libs:
+	cd $(top_builddir)/../epetra ; $(MAKE) all-libs
+	cd $(top_builddir)/../teuchos ; $(MAKE) all-libs
+	$(MAKE) libphoenix.a
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
