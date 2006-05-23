@@ -890,8 +890,8 @@ GID_lookup           *lookup_myHshVtxs = NULL;
             if (ew_op == PHG_FLAG_ERROR_EDGE_WEIGHTS){
               for (w=0; w<ew_dim; w++){
                 if (src[w] != dest[w]){
-                  /* TODO - error message here */
-                  return ZOLTAN_FATAL;
+                  FATAL_ERROR(
+     "Different processes supplied different edge weights for the same edge");
                 }
               }
             } else if (ew_op == PHG_MAX_EDGE_WEIGHTS){
@@ -948,7 +948,6 @@ GID_lookup           *lookup_myHshVtxs = NULL;
   
       ZOLTAN_FREE(&gid_weights);
     }
-
 
     /* 
      * If we remove dense edges, do it now.  
@@ -1033,7 +1032,10 @@ GID_lookup           *lookup_myHshVtxs = NULL;
                  myHshEdges.edgeGID + (next_id * num_gid_entries),
                  myHshEdges.edgeGID + (i * num_gid_entries));
 
-              myHshEdges.numPins[next_id] = myHshEdges.numPins[i];
+              /* Don't need to re-write numPins, wgts because
+               * we are done with them.
+               */
+
             }
             next_id++;
           }
@@ -1251,14 +1253,10 @@ GID_lookup           *lookup_myHshVtxs = NULL;
     ZOLTAN_FREE(&myPins.hashIdx);
     ZOLTAN_FREE(&myPins.eGIDs);
 
-    /* Done with table of consolidated edge info */
+    /* Done with consolidated edge info (except for myHshEdges.GnEdge) */
 
     free_GID_lookup_table(&lookup_myHshEdges);
-    ZOLTAN_FREE(&myHshEdges.edgeGID);
-    ZOLTAN_FREE(&myHshEdges.edgeGNO);
-    ZOLTAN_FREE(&myHshEdges.numPins);
-    ZOLTAN_FREE(&myHshEdges.wgt);
-
+    free_zoltan_temp_edges(&myHshEdges);
   }
 
   /***********************************************************************/
