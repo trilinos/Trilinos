@@ -452,13 +452,14 @@ End:
 void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg)
 {
   if (zoltan_hg != NULL) {
-    Zoltan_Multifree(__FILE__, __LINE__, 10, &zoltan_hg->GIDs,
+    Zoltan_Multifree(__FILE__, __LINE__, 11, &zoltan_hg->GIDs,
                                             &zoltan_hg->LIDs,
                                             &zoltan_hg->Input_Parts,
                                             &zoltan_hg->Output_Parts,
                                             &zoltan_hg->Remove_EGIDs,
                                             &zoltan_hg->Remove_ELIDs,
                                             &zoltan_hg->Remove_Esize,
+                                            &zoltan_hg->Remove_GEsize,
                                             &zoltan_hg->Remove_Ewgt,
                                             &zoltan_hg->Remove_Pin_GIDs,
                                             &zoltan_hg->Remove_Pin_Procs);

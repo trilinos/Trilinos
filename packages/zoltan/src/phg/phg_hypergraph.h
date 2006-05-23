@@ -163,7 +163,8 @@ struct Zoltan_HGraph {
   int nRemove;              /* # of input hyperedges removed */
   ZOLTAN_ID_PTR Remove_EGIDs;/* GIDs of removed hyperedges */
   ZOLTAN_ID_PTR Remove_ELIDs;/* LIDs of removed hyperedges */
-  int *Remove_Esize;        /* Size (# of vtx) in each removed hyperedge */
+  int *Remove_Esize;    /* local size on this proc of each removed hyperedge */
+  int *Remove_GEsize;   /* global number of vtx in each removed hyperedge */
   float *Remove_Ewgt;       /* Edge weights for each removed hyperedge */
   ZOLTAN_ID_PTR Remove_Pin_GIDs; /* GIDs of vertices */
   int *Remove_Pin_Procs;         /* Process owning each pin (Pin callbacks only) */
@@ -210,21 +211,14 @@ extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
 extern void Zoltan_HG_Print(ZZ*, HGraph*, Partition, FILE*, char*);
 extern void Zoltan_HG_HGraph_Print(ZZ *zz, ZHG *, HGraph *, Partition, FILE *fp);
     
-extern int Zoltan_HG_Hypergraph_Edge_Callbacks(ZZ *, ZHG *, int, float, int, 
-  int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, 
-  ZOLTAN_ID_PTR *, int **);
-extern int Zoltan_HG_Hypergraph_Pin_Callbacks(ZZ *, ZHG *, int, float, int,
-  int, void *, int,
-  int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **,
-  int *, ZOLTAN_ID_PTR *);
 extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int, float, int, int *,
   ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *,
   int **);
 extern int Zoltan_Call_Hypergraph_Pin_Query(ZZ *zz, int *num_lists,
    int *num_pins, ZOLTAN_ID_PTR *edg_GID, int **row_ptr, 
    ZOLTAN_ID_PTR *vtx_GID);
-
-    
+int Zoltan_HG_ignore_some_edges(ZZ *, ZHG *, int, float, int, int *,
+  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *, float *, ZOLTAN_ID_PTR, int *, int);
 
     
 #ifdef __cplusplus

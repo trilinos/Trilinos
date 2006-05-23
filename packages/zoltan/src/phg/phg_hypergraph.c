@@ -86,12 +86,26 @@ int Zoltan_HG_HGraph_Free(
   HGraph *hg
 )
 {
-  if (hg)
+  if (hg){
+/*
     Zoltan_Multifree (__FILE__, __LINE__, 11, 
      &hg->coor, &hg->vwgt, &hg->ewgt,
      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->dist_x,
      &hg->dist_y, &hg->vmap, &hg->fixed);
+*/
 
+ZOLTAN_FREE(&hg->coor); 
+ZOLTAN_FREE(&hg->vwgt); 
+ZOLTAN_FREE(&hg->ewgt);
+ZOLTAN_FREE(&hg->hindex); 
+ZOLTAN_FREE(&hg->hvertex); 
+ZOLTAN_FREE(&hg->vindex); 
+ZOLTAN_FREE(&hg->vedge); 
+ZOLTAN_FREE(&hg->dist_x);
+ZOLTAN_FREE(&hg->dist_y); 
+ZOLTAN_FREE(&hg->vmap); 
+ZOLTAN_FREE(&hg->fixed);
+  }
   return ZOLTAN_OK;
 }
 
