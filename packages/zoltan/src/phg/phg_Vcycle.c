@@ -481,20 +481,6 @@ Refine:
       if (hgp->output_level >= PHG_DEBUG_PLOT)
 	Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->Part,
 			"partitioned plot");
-        
-      if (do_timing) {
-	ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-	ZOLTAN_TIMER_START(zz->ZTime, timer_project, hgc->Communicator);
-      }
-      if (vcycle_timing) {
-	if (vcycle->timer_project < 0) {
-	  char str[80];
-	  sprintf(str, "VC Project Up %d", hg->info);
-	  vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
-	}
-	ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_project,
-			   hgc->Communicator);
-      }
     }
 
     if (finer)  {
@@ -502,6 +488,20 @@ Refine:
             
       /* Project coarse partition to fine partition */
       if (finer->comm_plan) {
+	if (do_timing) {
+	  ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
+	  ZOLTAN_TIMER_START(zz->ZTime, timer_project, hgc->Communicator);
+	}
+	if (vcycle_timing) {
+	  if (vcycle->timer_project < 0) {
+	    char str[80];
+	    sprintf(str, "VC Project Up %d", hg->info);
+	    vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
+	  }
+	  ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_project,
+			     hgc->Communicator);
+	}
+        
 	/* easy to assign partitions to internal matches */
 	for (i = 0; i < finer->hg->nVtx; i++)
 	  if (finer->LevelMap[i] >= 0)   /* if considers only the local vertices */
