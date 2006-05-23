@@ -481,20 +481,20 @@ Refine:
       if (hgp->output_level >= PHG_DEBUG_PLOT)
 	Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->Part,
 			"partitioned plot");
-    }
         
-    if (do_timing) {
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
-      ZOLTAN_TIMER_START(zz->ZTime, timer_project, hgc->Communicator);
-    }
-    if (vcycle_timing) {
-      if (vcycle->timer_project < 0) {
-	char str[80];
-	sprintf(str, "VC Project Up %d", hg->info);
-	vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
+      if (do_timing) {
+	ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);
+	ZOLTAN_TIMER_START(zz->ZTime, timer_project, hgc->Communicator);
       }
-      ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_project,
-			 hgc->Communicator);
+      if (vcycle_timing) {
+	if (vcycle->timer_project < 0) {
+	  char str[80];
+	  sprintf(str, "VC Project Up %d", hg->info);
+	  vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
+	}
+	ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_project,
+			   hgc->Communicator);
+      }
     }
 
     if (finer)  {
@@ -542,6 +542,14 @@ Refine:
 
 	ZOLTAN_FREE (&rbuffer);                  
 	Zoltan_Comm_Destroy (&finer->comm_plan);                   
+
+	if (do_timing) {
+	  ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hgc->Communicator);
+	  ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
+	}
+	if (vcycle_timing)
+	  ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project,
+			    hgc->Communicator);
       } else {
 	/* ints local and partition numbers */
 	int *sendbuf = NULL, size = finer->vlno ? 2 * hg->nVtx : 0;
@@ -597,14 +605,6 @@ Refine:
 	Zoltan_Comm_Destroy (&finer->comm_plan);
       }
     }
-
-    if (do_timing) {
-      ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hgc->Communicator);
-      ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
-    }
-    if (vcycle_timing)
-      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project,
-                        hgc->Communicator);
 
     vcycle = finer;
   }       /* while (vcycle) */
