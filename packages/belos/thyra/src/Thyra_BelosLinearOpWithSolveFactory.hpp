@@ -155,208 +155,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOp(
   ,const ESupportSolveUse                                    supportSolveUse
   ) const
 {
-
-  using Teuchos::RefCountPtr;
-  using Teuchos::rcp;
-  using Teuchos::set_extra_data;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
-  typedef MultiVectorBase<Scalar>    MV_t;
-  typedef LinearOpBase<Scalar>       LO_t;
-
-  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
-  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nEntering Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOp(...) ...\n";
-
-  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
-  VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
-  
-  //
-  // Unwrap the forward operator
-  //
-
-  // ToDo: Once we generate preconditioners internally
-
-  //
-  // Get the BelosLinearOpWithSolve interface
-  //
-  TEST_FOR_EXCEPT(Op==NULL);
-  BelosLinearOpWithSolve<Scalar>
-    *belosOp = &Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
-  //
-  // Get/Create the preconditioner
-  //
-  RefCountPtr<PreconditionerBase<Scalar> >         myPrec = Teuchos::null;
-  RefCountPtr<const PreconditionerBase<Scalar> >   prec = Teuchos::null;
-  if(precFactory_.get()) {
-    myPrec =
-      ( !belosOp->isExternalPrec()
-        ? Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(belosOp->extract_prec())
-        : Teuchos::null
-        );
-    if(myPrec.get()) {
-      // ToDo: Get the forward operator and validate that it is the same
-      // operator that is used here!
-    }
-    else {
-      myPrec = precFactory_->createPrec();
-    }
-    precFactory_->initializePrec(fwdOp,&*myPrec);
-    prec = myPrec;
-  }
-  //
-  // Create the Belos linear problem
-  //
-  typedef Belos::LinearProblem<Scalar,MV_t,LO_t> LP_t;
-  RefCountPtr<LP_t>
-    lp = rcp(new LP_t());
-  //
-  // Set the operator
-  //
-  lp->SetOperator(fwdOp);
-  //
-  // Set the preconditioner
-  //
-  if(prec.get()) {
-    RefCountPtr<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
-    RefCountPtr<const LinearOpBase<Scalar> > left        = prec->getLeftPrecOp();
-    RefCountPtr<const LinearOpBase<Scalar> > right       = prec->getRightPrecOp();
-    TEST_FOR_EXCEPTION(
-      !( left.get() || right.get() || unspecified.get() ), std::logic_error
-      ,"Error, at least one preconditoner linear operator objects must be set!"
-      );
-    if(unspecified.get()) {
-      lp->SetRightPrec(unspecified);
-      // ToDo: Allow user to determine whether this should be placed on the
-      // left or on the right through a parameter in the parameter list!
-    }
-    else {
-      // Set a left, right or split preconditioner
-      TEST_FOR_EXCEPTION(
-        left.get(),std::logic_error
-        ,"Error, we can not currently handle a left preconditioner!"
-        );
-      lp->SetRightPrec(right);
-    }
-  }
-  if(myPrec.get()) {
-    set_extra_data<RefCountPtr<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",&lp);
-  }
-  else if(prec.get()) {
-    set_extra_data<RefCountPtr<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",&lp);
-  }
-  //
-  // Set the block size
-  //
-  int blockSize = BlockSize_default;
-  if(paramList_.get()) {
-    blockSize = paramList_->get(BlockSize_name,blockSize);
-  }
-  lp->SetBlockSize(blockSize);
-  //
-  // Create the output manager 
-  //
-  typedef Belos::OutputManager<Scalar> OutputManager_t;
-  const int belosVerbLevel =
-    (
-      verbLevel == Teuchos::VERB_DEFAULT || static_cast<int>(verbLevel)>=static_cast<int>(Teuchos::VERB_LOW)
-      ? Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails
-      : Belos::Errors
-      );
-  RefCountPtr<OutputManager_t>
-    outputManager = rcp(new OutputManager_t(0,belosVerbLevel));
-  // Note: The stream itself will be set in the BelosLinearOpWithSolve object!
-  //
-  // Create the default status test
-  //
-  int         defaultMaxIterations = MaxIters_default;
-  int         defaultMaxRestarts   = MaxRestarts_default;
-  ScalarMag   defaultResNorm       = DefaultRelResNorm_default;
-  int         outputFrequency      = Outputter_OutputFrequency_default;
-  bool        outputMaxResOnly     = Outputter_OutputMaxResOnly_default;
-  if(paramList_.get()) {
-    defaultMaxIterations = paramList_->get(MaxIters_name,defaultMaxIterations);
-    defaultMaxRestarts = paramList_->get(MaxRestarts_name,defaultMaxRestarts);
-    defaultResNorm = paramList_->get(DefaultRelResNorm_name,defaultResNorm);
-    Teuchos::ParameterList &outputterSL = paramList_->sublist(Outputter_name);
-    outputFrequency = outputterSL.get(Outputter_OutputFrequency_name,outputFrequency);
-    outputMaxResOnly = outputterSL.get(Outputter_OutputMaxResOnly_name,outputMaxResOnly);
-  }
-  //
-  typedef Belos::StatusTestResNorm<Scalar,MV_t,LO_t>      StatusTestResNorm_t;
-  typedef Belos::StatusTestMaxIters<Scalar,MV_t,LO_t>     StatusTestMaxIters_t;
-  typedef Belos::StatusTestMaxRestarts<Scalar,MV_t,LO_t>  StatusTestMaxRestarts_t;
-  typedef Belos::StatusTestOutputter<Scalar,MV_t,LO_t>    StatusTestOutputter_t;
-  typedef Belos::StatusTestCombo<Scalar,MV_t,LO_t>        StatusTestCombo_t;
-  RefCountPtr<StatusTestMaxIters_t>
-    maxItersST = rcp(new StatusTestMaxIters_t(defaultMaxIterations));
-  RefCountPtr<StatusTestMaxRestarts_t>
-    maxRestartsST = rcp(new StatusTestMaxRestarts_t(defaultMaxRestarts));
-  RefCountPtr<StatusTestResNorm_t>
-    resNormST = rcp(new StatusTestResNorm_t(defaultResNorm,outputMaxResOnly));
-  RefCountPtr<StatusTestOutputter_t>
-    outputterResNormST = rcp(new StatusTestOutputter_t());
-  outputterResNormST->outputFrequency(outputFrequency);
-  outputterResNormST->outputMaxResOnly(outputMaxResOnly);
-  outputterResNormST->resString("||A*x-b||/||b||");
-  outputterResNormST->set_resNormStatusTest(resNormST);
-  outputterResNormST->set_outputManager(outputManager);
-  RefCountPtr<StatusTestCombo_t>
-    maxItersOrRestartsST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersST,*maxRestartsST));
-  set_extra_data(maxItersST,"maxItersST",&maxItersOrRestartsST);
-  set_extra_data(maxRestartsST,"maxRestartsST",&maxItersOrRestartsST);
-  RefCountPtr<StatusTestCombo_t>
-    comboST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersOrRestartsST,*outputterResNormST));
-  set_extra_data(maxItersOrRestartsST,"maxItersOrRestartsST",&comboST);
-  set_extra_data(outputterResNormST,"resNormST",&comboST);
-  //
-  // Generate the solver
-  //
-  typedef Belos::IterativeSolver<Scalar,MV_t,LO_t> IterativeSolver_t;
-  RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
-  RefCountPtr<Teuchos::ParameterList> gmresPL;
-  int maxNumberOfKrylovVectors = -1; // Only gets used if getPL.get()!=NULL
-  if(useGmres_) {
-    // Set the PL
-    gmresPL = Teuchos::rcp(new Teuchos::ParameterList());
-    gmresPL->set("Length",1);
-    // Note, the "Length" will be reset based on the number of RHS in the
-    // BelosLOWS::solve(...) function!  This is needed to avoid memory
-    // problems!  Above I just set it to 1 to avoid any memory allocation
-    // problems!
-    maxNumberOfKrylovVectors = GMRES_MaxNumberOfKrylovVectors_default;
-    std::string GMRES_Variant = GMRES_Variant_default;
-    if(paramList_.get()) {
-      Teuchos::ParameterList
-        &_gmresPL = paramList_->sublist(GMRES_name);
-      maxNumberOfKrylovVectors = _gmresPL.get(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
-      GMRES_Variant = _gmresPL.get(GMRES_Variant_name,GMRES_Variant_default);
-    }
-    gmresPL->set(GMRES_Variant_name,GMRES_Variant);
-    // Create the solver!
-    iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
-  }
-  else {
-    iterativeSolver = rcp(new Belos::BlockCG<Scalar,MV_t,LO_t>(lp,comboST,outputManager));
-  }
-  //
-  // Initialize the LOWS object
-  //
-  const bool adjustableBlockSize =
-    ( paramList_.get() ? paramList_->get(AdjustableBlockSize_name,AdjustableBlockSize_default) : AdjustableBlockSize_default );
-  belosOp->initialize(lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver,outputManager,prec,false,Teuchos::null,supportSolveUse);
-  belosOp->setOStream(out);
-  belosOp->setVerbLevel(verbLevel);
-#ifdef _DEBUG
-  if(paramList_.get()) {
-    // Make sure we read the list correctly
-    paramList_->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
-  }
-#endif
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
-    *out << "\nLeaving Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOp(...) ...\n";
+  using Teuchos::null;
+  initializeOpImpl(fwdOp,null,null,false,Op,supportSolveUse);
 }
 
 template<class Scalar>
@@ -365,14 +165,18 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeAndReuseOp(
   ,LinearOpWithSolveBase<Scalar>                             *Op
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  using Teuchos::null;
+  initializeOpImpl(fwdOp,null,null,true,Op,SUPPORT_SOLVE_UNSPECIFIED);
 }
 
 template<class Scalar>
-bool BelosLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(const EPreconditionerInputType precOpType) const
+bool BelosLinearOpWithSolveFactory<Scalar>::supportsPreconditionerInputType(
+  const EPreconditionerInputType precOpType
+  ) const
 {
-  TEST_FOR_EXCEPT(true);
-  return false;
+  if(precFactory_.get())
+    return true;
+  return (precOpType==PRECONDITIONER_INPUT_TYPE_AS_OPERATOR);
 }
 
 template<class Scalar>
@@ -383,7 +187,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializePreconditionedOp(
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  using Teuchos::null;
+  initializeOpImpl(fwdOp,null,prec,false,Op,supportSolveUse);
 }
 
 template<class Scalar>
@@ -394,7 +199,8 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeApproxPreconditionedOp(
   ,const ESupportSolveUse                                             supportSolveUse
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  using Teuchos::null;
+  initializeOpImpl(fwdOp,approxFwdOp,null,false,Op,supportSolveUse);
 }
 
 template<class Scalar>
@@ -537,6 +343,245 @@ void BelosLinearOpWithSolveFactory<Scalar>::updateThisValidParamList()
       thisValidParamList_->sublist(precFactoryName_).setParameters(*precFactoryValidParamList);
     }
   }
+}
+
+template<class Scalar>
+void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >             &fwdOp
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >            &approxFwdOp
+  ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >      &prec_in
+  ,const bool                                                         reusePrec
+  ,LinearOpWithSolveBase<Scalar>                                      *Op
+  ,const ESupportSolveUse                                             supportSolveUse
+  ) const
+{
+
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Teuchos::set_extra_data;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef MultiVectorBase<Scalar>    MV_t;
+  typedef LinearOpBase<Scalar>       LO_t;
+
+  const Teuchos::RefCountPtr<Teuchos::FancyOStream> out       = this->getOStream();
+  const Teuchos::EVerbosityLevel                    verbLevel = this->getVerbLevel();
+  Teuchos::OSTab tab(out);
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nEntering Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
+
+  typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<Scalar> > VOTSPF;
+  VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
+  
+  //
+  // Unwrap the forward operator
+  //
+
+  // ToDo: Once we generate preconditioners internally
+
+  //
+  // Get the BelosLinearOpWithSolve interface
+  //
+  TEST_FOR_EXCEPT(Op==NULL);
+  BelosLinearOpWithSolve<Scalar>
+    *belosOp = &Teuchos::dyn_cast<BelosLinearOpWithSolve<Scalar> >(*Op);
+  //
+  // Get/Create the preconditioner
+  //
+  RefCountPtr<PreconditionerBase<Scalar> >         myPrec = Teuchos::null;
+  RefCountPtr<const PreconditionerBase<Scalar> >   prec = Teuchos::null;
+  if(prec_in.get()) {
+    // Use an externally defined preconditioner
+    prec = prec_in;
+  }
+  else {
+    // Try and generate a preconditioner on our own
+    if(precFactory_.get()) {
+      myPrec =
+        ( !belosOp->isExternalPrec()
+          ? Teuchos::rcp_const_cast<PreconditionerBase<Scalar> >(belosOp->extract_prec())
+          : Teuchos::null
+          );
+      bool hasExistingPrec = false;
+      if(myPrec.get()) {
+        hasExistingPrec = true;
+        // ToDo: Get the forward operator and validate that it is the same
+        // operator that is used here!
+      }
+      else {
+        hasExistingPrec = false;
+        myPrec = precFactory_->createPrec();
+      }
+      if( hasExistingPrec && reusePrec ) {
+        // Just reuse the existing preconditioner again!
+      }
+      else {
+        // Update the preconditioner
+        if(approxFwdOp.get())
+          precFactory_->initializePrec(approxFwdOp,&*myPrec);
+        else
+          precFactory_->initializePrec(fwdOp,&*myPrec);
+      }
+      prec = myPrec;
+    }
+  }
+  //
+  // Create the Belos linear problem
+  //
+  typedef Belos::LinearProblem<Scalar,MV_t,LO_t> LP_t;
+  RefCountPtr<LP_t>
+    lp = rcp(new LP_t());
+  //
+  // Set the operator
+  //
+  lp->SetOperator(fwdOp);
+  //
+  // Set the preconditioner
+  //
+  if(prec.get()) {
+    RefCountPtr<const LinearOpBase<Scalar> > unspecified = prec->getUnspecifiedPrecOp();
+    RefCountPtr<const LinearOpBase<Scalar> > left        = prec->getLeftPrecOp();
+    RefCountPtr<const LinearOpBase<Scalar> > right       = prec->getRightPrecOp();
+    TEST_FOR_EXCEPTION(
+      !( left.get() || right.get() || unspecified.get() ), std::logic_error
+      ,"Error, at least one preconditoner linear operator objects must be set!"
+      );
+    if(unspecified.get()) {
+      lp->SetRightPrec(unspecified);
+      // ToDo: Allow user to determine whether this should be placed on the
+      // left or on the right through a parameter in the parameter list!
+    }
+    else {
+      // Set a left, right or split preconditioner
+      TEST_FOR_EXCEPTION(
+        left.get(),std::logic_error
+        ,"Error, we can not currently handle a left preconditioner!"
+        );
+      lp->SetRightPrec(right);
+    }
+  }
+  if(myPrec.get()) {
+    set_extra_data<RefCountPtr<PreconditionerBase<Scalar> > >(myPrec,"Belos::InternalPrec",&lp);
+  }
+  else if(prec.get()) {
+    set_extra_data<RefCountPtr<const PreconditionerBase<Scalar> > >(prec,"Belos::ExternalPrec",&lp);
+  }
+  //
+  // Set the block size
+  //
+  int blockSize = BlockSize_default;
+  if(paramList_.get()) {
+    blockSize = paramList_->get(BlockSize_name,blockSize);
+  }
+  lp->SetBlockSize(blockSize);
+  //
+  // Create the output manager 
+  //
+  typedef Belos::OutputManager<Scalar> OutputManager_t;
+  const int belosVerbLevel =
+    (
+      verbLevel == Teuchos::VERB_DEFAULT || static_cast<int>(verbLevel)>=static_cast<int>(Teuchos::VERB_LOW)
+      ? Belos::Warnings | Belos::FinalSummary | Belos::IterationDetails
+      : Belos::Errors
+      );
+  RefCountPtr<OutputManager_t>
+    outputManager = rcp(new OutputManager_t(0,belosVerbLevel));
+  // Note: The stream itself will be set in the BelosLinearOpWithSolve object!
+  //
+  // Create the default status test
+  //
+  int         defaultMaxIterations = MaxIters_default;
+  int         defaultMaxRestarts   = MaxRestarts_default;
+  ScalarMag   defaultResNorm       = DefaultRelResNorm_default;
+  int         outputFrequency      = Outputter_OutputFrequency_default;
+  bool        outputMaxResOnly     = Outputter_OutputMaxResOnly_default;
+  if(paramList_.get()) {
+    defaultMaxIterations = paramList_->get(MaxIters_name,defaultMaxIterations);
+    defaultMaxRestarts = paramList_->get(MaxRestarts_name,defaultMaxRestarts);
+    defaultResNorm = paramList_->get(DefaultRelResNorm_name,defaultResNorm);
+    Teuchos::ParameterList &outputterSL = paramList_->sublist(Outputter_name);
+    outputFrequency = outputterSL.get(Outputter_OutputFrequency_name,outputFrequency);
+    outputMaxResOnly = outputterSL.get(Outputter_OutputMaxResOnly_name,outputMaxResOnly);
+  }
+  //
+  typedef Belos::StatusTestResNorm<Scalar,MV_t,LO_t>      StatusTestResNorm_t;
+  typedef Belos::StatusTestMaxIters<Scalar,MV_t,LO_t>     StatusTestMaxIters_t;
+  typedef Belos::StatusTestMaxRestarts<Scalar,MV_t,LO_t>  StatusTestMaxRestarts_t;
+  typedef Belos::StatusTestOutputter<Scalar,MV_t,LO_t>    StatusTestOutputter_t;
+  typedef Belos::StatusTestCombo<Scalar,MV_t,LO_t>        StatusTestCombo_t;
+  RefCountPtr<StatusTestMaxIters_t>
+    maxItersST = rcp(new StatusTestMaxIters_t(defaultMaxIterations));
+  RefCountPtr<StatusTestMaxRestarts_t>
+    maxRestartsST = rcp(new StatusTestMaxRestarts_t(defaultMaxRestarts));
+  RefCountPtr<StatusTestResNorm_t>
+    resNormST = rcp(new StatusTestResNorm_t(defaultResNorm,outputMaxResOnly));
+  RefCountPtr<StatusTestOutputter_t>
+    outputterResNormST = rcp(new StatusTestOutputter_t());
+  outputterResNormST->outputFrequency(outputFrequency);
+  outputterResNormST->outputMaxResOnly(outputMaxResOnly);
+  outputterResNormST->resString("||A*x-b||/||b||");
+  outputterResNormST->set_resNormStatusTest(resNormST);
+  outputterResNormST->set_outputManager(outputManager);
+  RefCountPtr<StatusTestCombo_t>
+    maxItersOrRestartsST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersST,*maxRestartsST));
+  set_extra_data(maxItersST,"maxItersST",&maxItersOrRestartsST);
+  set_extra_data(maxRestartsST,"maxRestartsST",&maxItersOrRestartsST);
+  RefCountPtr<StatusTestCombo_t>
+    comboST = rcp(new StatusTestCombo_t(StatusTestCombo_t::OR,*maxItersOrRestartsST,*outputterResNormST));
+  set_extra_data(maxItersOrRestartsST,"maxItersOrRestartsST",&comboST);
+  set_extra_data(outputterResNormST,"resNormST",&comboST);
+  //
+  // Generate the solver
+  //
+  typedef Belos::IterativeSolver<Scalar,MV_t,LO_t> IterativeSolver_t;
+  RefCountPtr<IterativeSolver_t> iterativeSolver = Teuchos::null;
+  RefCountPtr<Teuchos::ParameterList> gmresPL;
+  int maxNumberOfKrylovVectors = -1; // Only gets used if getPL.get()!=NULL
+  if(useGmres_) {
+    // Set the PL
+    gmresPL = Teuchos::rcp(new Teuchos::ParameterList());
+    gmresPL->set("Length",1);
+    // Note, the "Length" will be reset based on the number of RHS in the
+    // BelosLOWS::solve(...) function!  This is needed to avoid memory
+    // problems!  Above I just set it to 1 to avoid any memory allocation
+    // problems!
+    maxNumberOfKrylovVectors = GMRES_MaxNumberOfKrylovVectors_default;
+    std::string GMRES_Variant = GMRES_Variant_default;
+    if(paramList_.get()) {
+      Teuchos::ParameterList
+        &_gmresPL = paramList_->sublist(GMRES_name);
+      maxNumberOfKrylovVectors = _gmresPL.get(GMRES_MaxNumberOfKrylovVectors_name,GMRES_MaxNumberOfKrylovVectors_default);
+      GMRES_Variant = _gmresPL.get(GMRES_Variant_name,GMRES_Variant_default);
+    }
+    gmresPL->set(GMRES_Variant_name,GMRES_Variant);
+    // Create the solver!
+    iterativeSolver = rcp(new Belos::BlockGmres<Scalar,MV_t,LO_t>(lp,comboST,outputManager,gmresPL));
+  }
+  else {
+    iterativeSolver = rcp(new Belos::BlockCG<Scalar,MV_t,LO_t>(lp,comboST,outputManager));
+  }
+  //
+  // Initialize the LOWS object
+  //
+  const bool adjustableBlockSize =
+    ( paramList_.get()
+      ? paramList_->get(AdjustableBlockSize_name,AdjustableBlockSize_default)
+      : AdjustableBlockSize_default );
+  belosOp->initialize(
+    lp,adjustableBlockSize,maxNumberOfKrylovVectors,gmresPL,resNormST,iterativeSolver,outputManager
+    ,prec,myPrec.get()==NULL,approxFwdOp,supportSolveUse
+    );
+  belosOp->setOStream(out);
+  belosOp->setVerbLevel(verbLevel);
+#ifdef _DEBUG
+  if(paramList_.get()) {
+    // Make sure we read the list correctly
+    paramList_->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep
+  }
+#endif
+  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+    *out << "\nLeaving Thyra::BelosLinearOpWithSolveFactory<"<<ST::name()<<">::initializeOpImpl(...) ...\n";
+
 }
 
 } // namespace Thyra

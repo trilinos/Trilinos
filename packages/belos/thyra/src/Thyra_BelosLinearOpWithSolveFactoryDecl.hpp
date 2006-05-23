@@ -188,7 +188,17 @@ private:
   // Private member functions
 
   static Teuchos::RefCountPtr<const Teuchos::ParameterList> generateAndGetValidParameters();
+
   void updateThisValidParamList();
+
+  void initializeOpImpl(
+    const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >             &fwdOp
+    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >            &approxFwdOp
+    ,const Teuchos::RefCountPtr<const PreconditionerBase<Scalar> >      &prec
+    ,const bool                                                         reusePrec
+    ,LinearOpWithSolveBase<Scalar>                                      *Op
+    ,const ESupportSolveUse                                             supportSolveUse
+    ) const;
 
 };
 
