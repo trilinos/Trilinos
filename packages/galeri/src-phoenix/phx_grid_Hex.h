@@ -15,7 +15,7 @@ class Hex : public Element
     Hex()
     {
       setLabel("phx::grid::Hex");
-      setNumVertices(3);
+      setNumVertices(8);
       setNumComponents(6);
       Quad component;
       for (int i = 0; i < 6; ++i)

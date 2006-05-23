@@ -38,13 +38,27 @@ public:
       if (iproc == comm.MyPID())
       {
         medit.open(FileName.c_str(),ios::app);
-        for (int i = 0; i < linearCoord.MyLength(); ++i)
+        if (phx::core::Utils::getNumDimensions() == 2)
         {
-          medit << setw(12) << setiosflags(ios::showpoint) 
-                << setw(12) << linearCoord[0][i] << " "
-                << setw(12) << linearCoord[1][i] << " "
-                << setw(12) << "0.0 1" << endl;
+          for (int i = 0; i < linearCoord.MyLength(); ++i)
+          {
+            medit << setw(12) << setiosflags(ios::showpoint) 
+              << setw(12) << linearCoord[0][i] << " "
+              << setw(12) << linearCoord[1][i] << " "
+              << setw(12) << "0.0 1" << endl;
+          }
         }
+        else if (phx::core::Utils::getNumDimensions() == 3)
+        {
+          for (int i = 0; i < linearCoord.MyLength(); ++i)
+          {
+            medit << setw(12) << setiosflags(ios::showpoint) 
+              << setw(12) << linearCoord[0][i] << " "
+              << setw(12) << linearCoord[1][i] << " "
+              << setw(12) << linearCoord[2][i] << " 1" << endl;
+          }
+        }
+          
         medit.close();
       }
       comm.Barrier();
@@ -57,10 +71,12 @@ public:
         medit.open(FileName.c_str(),ios::app);
         if (iproc == 0)
         {
-          if (patch.getElement().getLabel() == "phx::grid::Triangle")
+          if (patch.getElementType() == "Triangle")
             medit << "Triangles " << patch.getNumGlobalElements() << endl;
-          else if (patch.getElement().getLabel() == "phx::grid::Quad")
+          else if (patch.getElementType() == "Quad")
             medit << "Quadrilaterals " << patch.getNumGlobalElements() << endl;
+          else if (patch.getElementType() == "Hex")
+            medit << "Hexahedra " << patch.getNumGlobalElements() << endl;
           else
           {
             cout << "NOT SUPPORTED YET" << endl;

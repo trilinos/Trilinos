@@ -22,6 +22,7 @@ public:
     numBasisFunctions_ = 8;
 
     J_.Reshape(3,3);
+
     basis_rs_.Reshape(numLocalNodes_, numQuadrNodes_);
     basis_dr_.Reshape(numLocalNodes_, numQuadrNodes_);
     basis_ds_.Reshape(numLocalNodes_, numQuadrNodes_);
@@ -40,12 +41,10 @@ public:
     weight_.Reshape(numQuadrNodes_, 1);
 
     coord_.Reshape(numLocalNodes_, 3);
-    for (int i = 0; i < numLocalNodes_; ++i)
-      for (int j = 0; j < 3; ++j)
-        coord_(i, j) = 0.0;
 
     qr_.Reshape(numQuadrNodes_, 1);
     qs_.Reshape(numQuadrNodes_, 1);
+    qt_.Reshape(numQuadrNodes_, 1);
 
     switch (numQuadrNodes_) {
     case 1:      
@@ -72,8 +71,8 @@ public:
       qt_[2]     =  -0.57735026918963;    
       weight_[2] = 1;
 
-      qs_[3]     =   0.57735026918963;
-      qr_[3]     =  -0.57735026918963;
+      qs_[3]     =  -0.57735026918963;
+      qr_[3]     =   0.57735026918963;
       qt_[3]     =  -0.57735026918963;
       weight_[3] = 1;
 
@@ -92,8 +91,8 @@ public:
       qt_[6]     =   0.57735026918963;    
       weight_[6] = 1;
 
-      qs_[7]     =   0.57735026918963;
-      qr_[7]     =  -0.57735026918963;
+      qs_[7]     =  -0.57735026918963;
+      qr_[7]     =   0.57735026918963;
       qt_[7]     =   0.57735026918963;
       weight_[7] = 1;
 
@@ -141,6 +140,7 @@ public:
                    [ g h l ]
      */
 
+    // FIXME: MAKE STATIC VARIABLES
     double x[8], y[8], z[8];
 
     x[0] = -1.0; x[1] =  1.0; x[2] =  1.0; x[3] = -1.0; x[4] = -1.0; x[5] =  1.0; x[6] =  1.0; x[7] = -1.0;
@@ -170,7 +170,7 @@ public:
 
     if (det_J_ < 0) det_J_ = - det_J_;
 
-    TEST_FOR_EXCEPTION(det_J_ != 0, std::logic_error,
+    TEST_FOR_EXCEPTION(det_J_ == 0, std::logic_error,
                        "element has zero determinant");
 
     divide_by = - 1.0 / (det_J_);

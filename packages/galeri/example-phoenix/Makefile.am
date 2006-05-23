@@ -37,7 +37,7 @@ include $(top_builddir)/Makefile.export
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = ex1 ex2
+noinst_PROGRAMS = ex1 ex2 ex3
 
 ex1_SOURCES      = $(srcdir)/ex1.cpp
 ex1_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
@@ -48,3 +48,8 @@ ex2_SOURCES      = $(srcdir)/ex2.cpp
 ex2_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
 ex2_CXXFLAGS     = $(GALERI_INCLUDES)
 ex2_LDADD        = $(GALERI_LIBS)
+
+ex3_SOURCES      = $(srcdir)/ex3.cpp
+ex3_DEPENDENCIES = $(top_builddir)/src/libgaleri.a
+ex3_CXXFLAGS     = $(GALERI_INCLUDES)
+ex3_LDADD        = $(GALERI_LIBS)

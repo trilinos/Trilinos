@@ -51,13 +51,13 @@ public:
     {
       basis_dx_[i] = basis_dr_(i, quadrNode) * J_(0,0) +
                      basis_ds_(i, quadrNode) * J_(0,1) +
-                     basis_ds_(i, quadrNode) * J_(0,2);
+                     basis_dt_(i, quadrNode) * J_(0,2);
       basis_dy_[i] = basis_dr_(i, quadrNode) * J_(1,0) +
                      basis_ds_(i, quadrNode) * J_(1,1) +
-                     basis_ds_(i, quadrNode) * J_(1,2);
+                     basis_dt_(i, quadrNode) * J_(1,2);
       basis_dz_[i] = basis_dr_(i, quadrNode) * J_(2,0) +
                      basis_ds_(i, quadrNode) * J_(2,1) +
-                     basis_ds_(i, quadrNode) * J_(2,2);
+                     basis_dt_(i, quadrNode) * J_(2,2);
     }
   }
 
