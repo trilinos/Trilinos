@@ -36,7 +36,7 @@ public:
   {
   }
 
-  /** \name Functions to Overridden from Tpetra::Operator. */
+  /** \name Functions Overridden from Tpetra::Operator. */
   //@{
   
   //! Returns the VectorSpace associated with the domain of this linear operator.
