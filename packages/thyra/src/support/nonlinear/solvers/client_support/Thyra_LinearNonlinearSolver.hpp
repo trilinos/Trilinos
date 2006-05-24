@@ -55,6 +55,7 @@ public:
   SolveStatus<Scalar> solve(
     VectorBase<Scalar>              *x
     ,const SolveCriteria<Scalar>    *solveCriteria
+    ,VectorBase<Scalar>             *delta
     );
   /** \brief . */
   Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > get_nonconst_W();
@@ -96,6 +97,7 @@ template <class Scalar>
 SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
   VectorBase<Scalar>             *x
   ,const SolveCriteria<Scalar>   *solveCriteria
+  ,VectorBase<Scalar>            *delta = NULL
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -108,7 +110,9 @@ SolveStatus<Scalar> LinearNonlinearSolver<Scalar>::solve(
   Teuchos::RefCountPtr<VectorBase<Scalar> > m_dx = createMember(model_->get_x_space());
   Thyra::solve( *J_, NOTRANS, *f, &*m_dx );
   // Set the solution: x = x - m_dx
-  Vp_StV( x, Scalar(-ST::one()), *m_dx );
+  Vt_S( &*m_dx, Scalar(-ST::one()) );
+  Vp_V( x, *m_dx );
+  if (delta != NULL) assign( delta, *m_dx );
   // Return default status
   return SolveStatus<Scalar>();
 }

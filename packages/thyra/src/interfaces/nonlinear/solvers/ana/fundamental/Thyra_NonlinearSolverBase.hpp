@@ -98,6 +98,7 @@ public:
   virtual SolveStatus<Scalar> solve(
     VectorBase<Scalar>             *x
     ,const SolveCriteria<Scalar>   *solveCriteria = NULL
+    ,VectorBase<Scalar>            *delta = NULL
     ) = 0;
   
   //@}

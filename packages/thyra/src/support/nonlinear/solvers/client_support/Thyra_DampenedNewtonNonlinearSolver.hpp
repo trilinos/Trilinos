@@ -103,6 +103,7 @@ public:
   SolveStatus<Scalar> solve(
     VectorBase<Scalar>              *x
     ,const SolveCriteria<Scalar>    *solveCriteria
+    ,VectorBase<Scalar>             *delta = NULL
     );
   /** \brief . */
   Teuchos::RefCountPtr<const VectorBase<Scalar> > get_current_x() const;
@@ -183,7 +184,8 @@ SolveStatus<Scalar>
 DampenedNewtonNonlinearSolver<Scalar>::solve(
   VectorBase<Scalar>                    *x_inout
   ,const SolveCriteria<Scalar>          *solveCriteria
-  )
+  ,VectorBase<Scalar>                   *delta
+  ) 
 {
   using std::endl;
   // Validate input
@@ -205,6 +207,8 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   Teuchos::RefCountPtr<VectorBase<Scalar> >            x     = Teuchos::rcp(x_inout,false);
   Teuchos::RefCountPtr<VectorBase<Scalar> >            dx    = createMember(model_->get_x_space());
   Teuchos::RefCountPtr<VectorBase<Scalar> >            x_new = createMember(model_->get_x_space());
+  Teuchos::RefCountPtr<VectorBase<Scalar> >            ee    = createMember(model_->get_x_space());
+  V_S(&*ee,ST::zero());
   // Get convergence criteria
   ScalarMag tol = this->defaultTol();
   int maxIters = this->defaultMaxNewtonIterations();
@@ -271,6 +275,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     assign( &*dx, ST::zero() );       // Initial guess for the linear solve
     Thyra::solve(*J_,NOTRANS,*f,&*dx); // Solve: J*dx = f
     Vt_S( &*dx, Scalar(-ST::one()) ); // dx *= -1.0
+    Vp_V( &*ee, *dx);                 // ee += dx
     if(out.get() && showNewtonDetails) *out << "\n||dx||inf = " << norm_inf(*dx) << endl;
     if(out.get() && dumpAll) *out << "\ndy =\n" << *dx;
     // Perform backtracking armijo line search
@@ -337,6 +342,7 @@ exit:
     if( out.get() && (showNewtonIters || showNewtonDetails)) *out << endl << oss.str() << endl;
   }
   if(x_inout != x.get()) assign( x_inout, *x ); // Assign the final point
+  if(delta != NULL) assign( delta, *ee );
   current_x_ = x_inout->clone_v(); // Remember the final point
   J_is_current_ = newtonIter==1; // J is only current with x if initial point was converged!
   if(out.get() && showNewtonDetails) *out
