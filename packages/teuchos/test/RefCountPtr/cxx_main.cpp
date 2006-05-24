@@ -150,6 +150,7 @@ void deallocHandleA(A** handle)
   std::cout << "\nCalled deallocHandleA(...)!\n";
   A *ptr = *handle;
   delete ptr;
+  *handle = 0;
 }
 
 /*
