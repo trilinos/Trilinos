@@ -37,7 +37,7 @@ include $(top_builddir)/Makefile.export
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = ex1 ex2 ex3
+noinst_PROGRAMS = ex1 ex2 ex3 ex4
 
 ex1_SOURCES      = $(srcdir)/ex1.cpp
 ex1_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
@@ -53,3 +53,8 @@ ex3_SOURCES      = $(srcdir)/ex3.cpp
 ex3_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
 ex3_CXXFLAGS     = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
 ex3_LDADD        = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix
+
+ex4_SOURCES      = $(srcdir)/ex4.cpp
+ex4_DEPENDENCIES = $(top_builddir)/src-phoenix/libphoenix.a
+ex4_CXXFLAGS     = $(GALERI_INCLUDES) -I$(top_srcdir)/src-phoenix
+ex4_LDADD        = $(GALERI_LIBS) -L../src-phoenix/ -lphoenix

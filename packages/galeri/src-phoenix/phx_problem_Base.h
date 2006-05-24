@@ -1,7 +1,7 @@
 #ifndef PHX_PROBLEM_BASE_H
 #define PHX_PROBLEM_BASE_H
 
-class Epetra_FECrsMatrix;
+class Epetra_RowMatrix;
 class Epetra_FEVector;
 class Epetra_MultiVector;
 class Epetra_SerialDenseMatrix;
@@ -24,8 +24,9 @@ class Base : public phx::core::Object
   public:
     virtual ~Base() {}
 
+    // FIXME: Only MultiVector and not FEVector??
     virtual void integrate(phx::grid::Loadable& domain,
-                         Epetra_FECrsMatrix& A,
+                         Epetra_RowMatrix& A,
                          Epetra_FEVector& RHS) = 0;
 
     virtual void computeNorms(phx::grid::Loadable& domain,

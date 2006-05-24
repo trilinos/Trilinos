@@ -1,6 +1,9 @@
-#ifndef PHX_PROBLEM_SCALAR_LAPLACIAN_H
-#define PHX_PROBLEM_SCALAR_LAPLACIAN_H
+#ifndef PHX_PROBLEM_VECTOR_LAPLACIAN_H
+#define PHX_PROBLEM_VECTOR_LAPLACIAN_H
 
+#include "Epetra_FECrsGraph.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVector.h"
 #include "Epetra_Import.h"
 
 #include "phx_core_Constants.h"
@@ -19,12 +22,15 @@ namespace phx {
 namespace problem {
   
 template<class T>
-class ScalarLaplacian : public Base
+class VectorLaplacian // FIXME????? : public Base
 {
   public:
-  ScalarLaplacian(const string& elementType,
+  VectorLaplacian(const int numPDEs,
+                  const string& elementType,
                   const int integrationDegree = phx::core::Constants::MIN, 
-                  const int normDegree = phx::core::Constants::MAX) 
+                  const int normDegree = phx::core::Constants::MAX) :
+    equation_(0),
+    numPDEs_(numPDEs)
   {
     if (elementType == "Segment")
     {
@@ -56,17 +62,54 @@ class ScalarLaplacian : public Base
                          "input elementType not recognized, " << elementType);
   }
 
-  ~ScalarLaplacian() {}
+  ~VectorLaplacian() {}
+
+  virtual void createGraph(phx::grid::Loadable& domain,
+                           Epetra_FECrsGraph& A)
+  {
+    int ierr;
+
+    int numVerticesPerElement = domain.getNumVerticesPerElement();
+    int localSize = numVerticesPerElement * numPDEs_;
+
+    Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
+
+    for (int i = 0; i < domain.getNumMyElements(); ++i)
+    {
+      int GEID = domain.getGEID(i);
+      // load the element vertex IDs
+      for (int j = 0; j < numVerticesPerElement; ++j)
+        vertexList[j] = domain.getGlobalConnectivity(GEID, j);
+
+      ierr = A.InsertGlobalIndices(numVerticesPerElement, vertexList.Values(),
+                                   numVerticesPerElement, vertexList.Values());
+
+      TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+                         "InsertGlobalIndices() returned a negative value, "
+                         << ierr);
+    }
+
+    // FIXME: :SHOULD BE A PARAMETER...
+    A.GlobalAssemble();
+  }
 
   virtual void integrate(phx::grid::Loadable& domain,
-                         Epetra_FECrsMatrix& A,
+                         Epetra_RowMatrix& RowA,
                          Epetra_FEVector& RHS)
   {
-    // FIXME: BUILD GRAPH FIRST???
+    int ierr;
+
+    Epetra_FEVbrMatrix& A = dynamic_cast<Epetra_FEVbrMatrix&>(RowA);
+
+    // FIXME: build graph first??
     int numVerticesPerElement = domain.getNumVerticesPerElement();
+    int localSize = numVerticesPerElement * numPDEs_;
+
     Epetra_IntSerialDenseVector vertexList(numVerticesPerElement);
-    Epetra_SerialDenseMatrix elementLHS(numVerticesPerElement, numVerticesPerElement);
-    Epetra_SerialDenseVector elementRHS(numVerticesPerElement);
+    Epetra_SerialDenseMatrix elementLHS(localSize, localSize);
+    Epetra_SerialDenseVector elementRHS(localSize);
+
+    Epetra_SerialDenseMatrix entry(numPDEs_, numPDEs_);
 
     for (int i = 0; i < domain.getNumMyElements(); ++i)
     {
@@ -82,7 +125,32 @@ class ScalarLaplacian : public Base
 
       integrateOverElement(*IE_, elementLHS, elementRHS);
 
-      A.InsertGlobalValues(vertexList, elementLHS);
+      for (int j = 0; j < numVerticesPerElement; ++j)
+      {
+        ierr = A.BeginSumIntoGlobalValues(vertexList[j], vertexList.Length(),
+                                          vertexList.Values());
+        TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+                           "SubmitBlockEntry() returned a negative value, "
+                           << ierr);
+
+        for (int k = 0; k < numVerticesPerElement; ++k)
+        {
+          for (int ieq = 0; ieq < numPDEs_; ++ieq)
+            for (int jeq = 0; jeq < numPDEs_; ++jeq)
+              entry(ieq, jeq) = elementLHS(j * numPDEs_ + ieq, k * numPDEs_ + jeq);
+
+          ierr = A.SubmitBlockEntry(entry.A(), numPDEs_, numPDEs_, numPDEs_);
+          TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+                             "SubmitBlockEntry() returned a negative value, "
+                             << ierr);
+        }
+
+        ierr = A.EndSubmitEntries();
+        TEST_FOR_EXCEPTION(ierr < 0, std::logic_error,
+                           "SubmitBlockEntry() returned a negative value, "
+                           << ierr);
+      }
+
       RHS.SumIntoGlobalValues(vertexList, elementRHS);
     }
 
@@ -90,15 +158,80 @@ class ScalarLaplacian : public Base
     RHS.GlobalAssemble();
   }
 
+  virtual void integrateOverElement(phx::quadrature::Element& QE,
+                         Epetra_SerialDenseMatrix& ElementLHS, 
+                         Epetra_SerialDenseMatrix& ElementRHS)
+  {
+    ElementLHS.Scale(0.0);
+    ElementRHS.Scale(0.0);
+#if 0
+    for (int i = 0; i < ElementLHS.M(); ++i)
+      for (int j = 0; j < ElementLHS.N(); ++j)
+        ElementLHS(i, j) = 0.0;
+
+    for (int i = 0; i < ElementRHS.M(); ++i)
+      for (int j = 0; j < ElementRHS.N(); ++j)
+        ElementRHS(i, j) = 0.0;
+#endif
+
+    // cycle over all quadrature nodes
+
+    for (int ii = 0 ; ii < QE.getNumQuadrNodes() ; ii++) 
+    {
+      double xq, yq, zq;
+
+      QE.computeQuadrNodes(ii, xq, yq, zq);
+      QE.computeJacobian(ii);
+      QE.computeDerivatives(ii);
+
+      const double& weight = QE.getQuadrWeight(ii);
+      const double& det    = QE.getDetJacobian(ii);
+
+      for (int i = 0 ; i < QE.getNumBasisFunctions() ; ++i) 
+      {
+        const double& phi_i   = QE.getPhi(i);
+        const double& phi_x_i = QE.getPhiX(i);
+        const double& phi_y_i = QE.getPhiY(i);
+        const double& phi_z_i = QE.getPhiZ(i);
+
+        for (int j = 0 ; j < QE.getNumBasisFunctions() ; ++j) 
+        {
+          const double& phi_j   = QE.getPhi(j);
+          const double& phi_x_j = QE.getPhiX(j);
+          const double& phi_y_j = QE.getPhiY(j);
+          const double& phi_z_j = QE.getPhiZ(j);
+
+          for (int ieq = 0; ieq < numPDEs_; ++ieq)
+          {
+            for (int jeq = 0; jeq < numPDEs_; ++jeq)
+            {
+              double contrib = T::getElementLHS(xq, yq, zq, ieq, jeq,
+                                                phi_i, phi_x_i, phi_y_i, phi_z_i,
+                                                phi_j, phi_x_j, phi_y_j, phi_z_j);
+              contrib *= weight * det;
+
+              ElementLHS(i * numPDEs_ + ieq, j * numPDEs_ + jeq) += contrib;
+            }
+
+            ElementRHS(i * numPDEs_ + ieq, 0) += 
+              weight * det * T::getElementRHS(xq, yq, zq, ieq, phi_i);
+          }
+        }
+      }
+    }
+  }
+
   void imposeDirichletBoundaryConditions(phx::grid::Loadable& boundary,
-                                         Epetra_FECrsMatrix& A,
+                                         Epetra_RowMatrix& RowA,
                                          Epetra_FEVector& RHS,
                                          Epetra_FEVector& LHS)
   {
+    Epetra_FEVbrMatrix& A = dynamic_cast<Epetra_FEVbrMatrix&>(RowA);
+
     TEST_FOR_EXCEPTION(A.Filled() == false, std::logic_error,
                        "input matrix must be filled");
 
-    const Epetra_Map& matrixMap = A.RowMatrixRowMap();
+    const Epetra_BlockMap& matrixMap = A.RowMatrixRowMap();
 
     double min = numeric_limits<double>::min();
 
@@ -115,10 +248,14 @@ class ScalarLaplacian : public Base
         for (int j = 0; j < phx::core::Utils::getNumDimensions(); ++j)
           coord[j] = boundary.getGlobalCoordinates(GVID, j);
 
-        if (T::getBoundaryType(boundary.getID(), coord[0], coord[1], coord[2]) == 'd')
+        for (int ieq = 0; ieq < numPDEs_; ++ieq)
         {
-          double value = T::getBoundaryValue(coord[0], coord[1], coord[2]);
-          rowValues.ReplaceGlobalValues(1, &GVID, &value);
+          int j = GVID * numPDEs_ + ieq;
+          if (T::getBoundaryType(boundary.getID(), coord[0], coord[1], coord[2], ieq) == 'd')
+          {
+            double value = T::getBoundaryValue(coord[0], coord[1], coord[2], ieq);
+            rowValues.ReplaceGlobalValues(1, &j, &value);
+          }
         }
       }
     }
@@ -130,31 +267,47 @@ class ScalarLaplacian : public Base
     Epetra_Import importer(A.RowMatrixColMap(), matrixMap);
     colValues.Import(rowValues, importer, Insert); 
 
-    for (int i = 0; i < A.NumMyRows(); ++i)
+    for (int blockRow = 0; blockRow < A.NumMyBlockRows(); ++blockRow)
     {
-      int* indices;
-      double* values;
-      int numEntries;
-      A.ExtractMyRowView(i, numEntries, values, indices);
+      int rowDim, numBlockEntries;
+      int* blockIndices;
+      Epetra_SerialDenseMatrix** values;
 
-      if (rowValues[0][i] != min)
+      A.ExtractMyBlockRowView(blockRow, rowDim, numBlockEntries, blockIndices,
+                              values);
+
+      // cycle over all equations in this block row
+      for (int ieq = 0; ieq < numPDEs_; ++ieq)
       {
-        for (int j = 0; j < numEntries; ++j)
+        // this is the global row ID
+        int row = blockRow * numPDEs_ + ieq;
+
+        if (rowValues[0][row] != min)
         {
-          if (indices[j] != i) values[j] = 0.0;
-          else values[j] = 1.0;
-        }
-        RHS[0][i] = rowValues[0][i];  // FIXME???
-      }
-      else
-      {
-        for (int j = 0; j < numEntries; ++j)
-        {
-          if (indices[j] == i) continue;
-          if (colValues[indices[j]] != min) 
+          for (int j = 0; j < numBlockEntries; ++j)
           {
-            RHS[0][i] -= values[j] * colValues[indices[j]];
-            values[j] = 0.0;
+            for (int jeq = 0; jeq < numPDEs_; ++jeq)
+              (*values[j])(ieq, jeq) = 0.0;
+
+            if (blockIndices[j] == blockRow) 
+              (*values[j])(ieq, ieq) = 1.0;
+          }
+          RHS[0][row] = rowValues[0][row]; 
+        }
+        else
+        {
+          for (int j = 0; j < numBlockEntries; ++j)
+          {
+            for (int jeq = 0; jeq < numPDEs_; ++jeq)
+            {
+              int col = blockIndices[j] * numPDEs_ + jeq;
+              if (col == row) continue;
+              if (colValues[col] != min) 
+              {
+                RHS[0][row] -= (*values[j])(ieq, jeq) * colValues[col];
+                (*values[j])(ieq, jeq) = 0.0;
+              }
+            }
           }
         }
       }
@@ -213,7 +366,6 @@ class ScalarLaplacian : public Base
     exaNormL2 = sqrt(exaNormL2); exaSemiNormH1 = sqrt(exaSemiNormH1);
     errNormL2 = sqrt(errNormL2); errSemiNormH1 = sqrt(errSemiNormH1);
     solNormL2 = sqrt(solNormL2); solSemiNormH1 = sqrt(solSemiNormH1);
-
   }
 
   virtual void computeNorms(phx::grid::Loadable& domain,
@@ -237,58 +389,6 @@ class ScalarLaplacian : public Base
       cout << "|x_ex|_1       = " << exaSemiNormH1 << endl;
       cout << "|x_ex - x_h|_1 = " << errSemiNormH1 << endl;
       cout << endl;
-    }
-  }
-
-  virtual void integrateOverElement(phx::quadrature::Element& QE,
-                         Epetra_SerialDenseMatrix& ElementLHS, 
-                         Epetra_SerialDenseMatrix& ElementRHS)
-  {
-    for (int i = 0; i < ElementLHS.M(); ++i)
-      for (int j = 0; j < ElementLHS.N(); ++j)
-        ElementLHS(i, j) = 0.0;
-
-    for (int i = 0; i < ElementRHS.M(); ++i)
-      for (int j = 0; j < ElementRHS.N(); ++j)
-        ElementRHS(i, j) = 0.0;
-
-    // cycle over all quadrature nodes
-
-    for (int ii = 0 ; ii < QE.getNumQuadrNodes() ; ii++) 
-    {
-      double xq, yq, zq;
-
-      QE.computeQuadrNodes(ii, xq, yq, zq);
-      QE.computeJacobian(ii);
-      QE.computeDerivatives(ii);
-
-      const double& weight = QE.getQuadrWeight(ii);
-      const double& det    = QE.getDetJacobian(ii);
-
-      for (int i = 0 ; i < QE.getNumBasisFunctions() ; ++i) 
-      {
-        const double& phi_i   = QE.getPhi(i);
-        const double& phi_x_i = QE.getPhiX(i);
-        const double& phi_y_i = QE.getPhiY(i);
-        const double& phi_z_i = QE.getPhiZ(i);
-
-        for (int j = 0 ; j < QE.getNumBasisFunctions() ; ++j) 
-        {
-          const double& phi_j   = QE.getPhi(j);
-          const double& phi_x_j = QE.getPhiX(j);
-          const double& phi_y_j = QE.getPhiY(j);
-          const double& phi_z_j = QE.getPhiZ(j);
-
-          double contrib = T::getElementLHS(xq, yq, zq,
-                                            phi_i, phi_x_i, phi_y_i, phi_z_i,
-                                            phi_j, phi_x_j, phi_y_j, phi_z_j);
-          contrib *= weight * det;
-
-          ElementLHS(i, j) += contrib;
-        }
-
-        ElementRHS(i, 0) += weight * det * T::getElementRHS(xq, yq, zq, phi_i);
-      }
     }
   }
 
@@ -357,10 +457,10 @@ class ScalarLaplacian : public Base
         sol_derz += QE.getPhiZ(k) * elementSol(k, 0);
       }
 
-      sol      -= T::getExactSolution('f', xq, yq, zq);
-      sol_derx -= T::getExactSolution('x', xq, yq, zq);
-      sol_dery -= T::getExactSolution('y', xq, yq, zq);
-      sol_derz -= T::getExactSolution('z', xq, yq, zq);
+      sol      -= T::getExactSolution('f', xq, yq, zq, equation_);
+      sol_derx -= T::getExactSolution('x', xq, yq, zq, equation_);
+      sol_dery -= T::getExactSolution('y', xq, yq, zq, equation_);
+      sol_derz -= T::getExactSolution('z', xq, yq, zq, equation_);
 
       elementNorm(0, 0) += weight * det * sol * sol;
       elementNorm(1, 0) += weight * det * (sol_derx * sol_derx +
@@ -387,10 +487,10 @@ class ScalarLaplacian : public Base
       const double& weight = QE.getQuadrWeight(ii);
       const double& det    = QE.getDetJacobian(ii);
 
-      double sol      = T::getExactSolution('f', xq, yq, zq);
-      double sol_derx = T::getExactSolution('x', xq, yq, zq);
-      double sol_dery = T::getExactSolution('y', xq, yq, zq);
-      double sol_derz = T::getExactSolution('z', xq, yq, zq);
+      double sol      = T::getExactSolution('f', xq, yq, zq, equation_);
+      double sol_derx = T::getExactSolution('x', xq, yq, zq, equation_);
+      double sol_dery = T::getExactSolution('y', xq, yq, zq, equation_);
+      double sol_derz = T::getExactSolution('z', xq, yq, zq, equation_);
 
       elementNorm(0, 0) += weight * det * sol * sol;
       elementNorm(1, 0) += weight * det * (sol_derx * sol_derx +
@@ -399,7 +499,14 @@ class ScalarLaplacian : public Base
     }
   }
 
+  void setEquation(const int& equation)
+  {
+    equation_ = equation;
+  }
+
 private:
+  int equation_;
+  int numPDEs_;
   RefCountPtr<phx::quadrature::Element> IE_, NE_;
 }; // class Base
 
