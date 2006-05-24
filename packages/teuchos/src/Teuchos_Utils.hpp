@@ -46,6 +46,7 @@ namespace Teuchos
   class Utils
     {
     public:
+
       /**
        * print a description of the current build
        */
@@ -97,6 +98,12 @@ namespace Teuchos
        * Set the chopping value, below which numbers are considered to be zero
        */
       static void setChopVal(double chopVal) {chopVal_ = chopVal;}
+      /** \brief parallel extention . */
+      static std::string getParallelExtension(
+        int    procRank = -1
+        ,int   numProcs = -1
+        );
+      /** \brief Get a parallel file name . */
 
     private:
       static double chopVal_;
