@@ -298,6 +298,29 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
        )
     ) success=false;
+  
+  // Test V_StVpStV
+  if(out) *out << "\nTesting V_StVpStV(&*z,alpha,*v1,beta,*v2) ...\n";
+  v1 = createMember(vecSpc);
+  v2 = createMember(vecSpc);
+  v3 = createMember(vecSpc);
+  x  = createMember(vecSpc);
+  z  = createMember(vecSpc);
+  alpha = Scalar(1.2345);
+  beta = Scalar(5.4321);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v1);
+  randomize(Scalar(Scalar(-10)*ST::one()),Scalar(Scalar(10)*ST::one()),&*v2);
+  V_StVpStV(&*v3,alpha,*v1,beta,*v2);
+  V_StV(&*z,alpha,*v1);
+  Vp_StV(&*z,beta,*v2);
+  V_V(&*x,*v3);
+  Vp_V(&*x,*z,Scalar(-ST::one()));
+  if(!testMaxErr<Scalar>(
+       "norm_2(*x)",norm_2(*x)
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
 
   // Test Vp_V
   if(out) *out << "\nTesting Vp_V(&*v1,*v2,beta) ...\n";

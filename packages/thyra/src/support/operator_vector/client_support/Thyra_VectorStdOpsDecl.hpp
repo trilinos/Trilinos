@@ -286,6 +286,11 @@ void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x, const VectorBase
 template<class Scalar>
 void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 
+/** \brief <tt>z(i) = alpha*x(i) + beta*y(i), i = 0...z->space()->dim()-1</tt>.
+ */
+template<class Scalar>
+void V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const Scalar &beta, const VectorBase<Scalar>& y );
+
 //@}
 
 /** \defgroup Thyra_Op_Vec_VectorStdOpsComparable_grp Subset of vector operations for types supporting relational operators.

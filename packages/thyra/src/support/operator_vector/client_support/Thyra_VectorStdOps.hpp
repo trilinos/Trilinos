@@ -406,6 +406,16 @@ void Thyra::V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBas
     );
 }
 
+template<class Scalar>
+void Thyra::V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha, const VectorBase<Scalar>& x, const Scalar &beta, const VectorBase<Scalar>& y )
+{
+  linear_combination(
+    2,Teuchos::arrayArg<Scalar>(alpha,beta)()
+    ,Teuchos::arrayArg<const VectorBase<Scalar>*>(&x,&y)()
+    ,Teuchos::ScalarTraits<Scalar>::zero(),z
+    );
+}
+
 //
 // For real types only
 //
