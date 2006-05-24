@@ -1,4 +1,5 @@
 #include "Thyra_MultiVectorSerialization.hpp"
+#include "Teuchos_Utils.hpp"
 
 namespace Thyra {
 
@@ -45,9 +46,7 @@ public:
 
 private:
 
-  int procRank_;
-  int numProcs_;
-  int maxProcOrder_;
+  std::string parallelExtension_;
 
 };
 
@@ -69,22 +68,7 @@ void ParallelMultiVectorFileIO<Scalar>::setProcRankAndSize(
   ,int  numProcs
   )
 {
-  if( numProcs > 0 ) {
-    procRank_ = procRank;
-    numProcs_ = numProcs;
-  }
-  else {
-    numProcs_ = Teuchos::GlobalMPISession::getNProc();
-    procRank_ = Teuchos::GlobalMPISession::getRank();
-  }
-  maxProcOrder_ = 1;
-  double tmp = numProcs_;
-  for( int i = 0; i < 10; ++i, tmp *= 0.1 ) {
-    if(tmp > 1.0)
-      ++maxProcOrder_;
-    else
-      break;
-  }
+  parallelExtension_ = Teuchos::Utils::getParallelExtension(procRank,numProcs);
 }
 
 template<class Scalar>
@@ -94,17 +78,9 @@ ParallelMultiVectorFileIO<Scalar>::getParallelFileName(
   ) const
 {
   std::ostringstream parallelFileName;
-  parallelFileName
-    << fileNameBase
-    << "."
-    << std::setfill('0')
-    << std::right << std::setw(maxProcOrder_)
-    << numProcs_
-    << "."
-    << std::setfill('0')
-    << std::right << std::setw(maxProcOrder_)
-    << procRank_;
-    ;
+  parallelFileName << fileNameBase;
+  if(parallelExtension_.length())
+    parallelFileName << "." << parallelExtension_;
   return parallelFileName.str();
 }
 
