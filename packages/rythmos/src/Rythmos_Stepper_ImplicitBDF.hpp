@@ -49,14 +49,14 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     /** \brief . */
     ImplicitBDFStepper(
       const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >        &model
-      ,const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> >  &solver
+      ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
       );
 
     /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
-    void setSolver(const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver);
+    void setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver);
 
     /** \brief . */
     Scalar TakeStep(Scalar dt);
@@ -105,7 +105,7 @@ class ImplicitBDFStepper : public Stepper<Scalar>
 
     // 05/05/06 tscoffe:  I hate the underscores for private variables!
     Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > model;
-    Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > solver;
+    Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > solver;
     Thyra::SingleResidSSDAEModelEvaluator<Scalar>   neModel;
 
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn0;
@@ -163,7 +163,23 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     Scalar nextTimePt;
     bool constantStepSize;
 
-    Teuchos::ParameterList magicNumber;
+    // Magic Numbers:
+    Scalar h0_safety;
+    Scalar h0_max_factor;
+    Scalar h_phase0_incr;
+    Scalar h_max_inv;
+    Scalar Tkm1_Tk_safety;
+    Scalar Tkp1_Tk_safety;
+    Scalar r_factor;
+    Scalar r_safety;
+    Scalar r_fudge;
+    Scalar r_min;
+    Scalar r_max;
+    Scalar r_hincr_test;
+    Scalar r_hincr;
+    int    max_LET_fail;
+    Scalar minTimeStep;
+    Scalar maxTimeStep;
 
     bool stepAttemptStatus;
     int newtonConvergenceStatus;
@@ -178,7 +194,7 @@ class ImplicitBDFStepper : public Stepper<Scalar>
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver
+  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -224,9 +240,23 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   initialPhase=true;
   constantStepSize=false;
 
-  Teuchos::ParameterList magicNumber;
-  setDefaultMagicNumbers(magicNumber);
-  
+  h0_safety      = Scalar(2.0);
+  h0_max_factor  = Scalar(0.001);
+  h_phase0_incr  = Scalar(2.0);
+  h_max_inv      = Scalar(0.0);
+  Tkm1_Tk_safety = Scalar(2.0);
+  Tkp1_Tk_safety = Scalar(0.5);
+  r_factor       = Scalar(0.9);
+  r_safety       = Scalar(2.0);
+  r_fudge        = Scalar(0.0001);
+  r_min          = Scalar(0.125);
+  r_max          = Scalar(0.9);
+  r_hincr_test   = Scalar(2.0);
+  r_hincr        = Scalar(2.0);
+  max_LET_fail   = 15;
+  minTimeStep    = Scalar(0.0);
+  maxTimeStep    = Scalar(10.0); // FIX THIS!
+
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
@@ -237,22 +267,22 @@ void ImplicitBDFStepper<Scalar>::setDefaultMagicNumbers(
     Teuchos::ParameterList &magicNumberList)
 {
   // Magic Number Defaults:
-  magicNumberList.set<Scalar>( "h0_safety",      Scalar(2.0)     );
-  magicNumberList.set<Scalar>( "h0_max_factor",  Scalar(0.001)  );
-  magicNumberList.set<Scalar>( "h_phase0_incr",  Scalar(2.0)     );
-  magicNumberList.set<Scalar>( "h_max_inv",      Scalar(0.0)     );
-  magicNumberList.set<Scalar>( "Tkm1_Tk_safety", Scalar(2.0)     );
-  magicNumberList.set<Scalar>( "Tkp1_Tk_safety", Scalar(0.5)     );
-  magicNumberList.set<Scalar>( "r_factor",       Scalar(0.9)     );
-  magicNumberList.set<Scalar>( "r_safety",       Scalar(2.0)     );
-  magicNumberList.set<Scalar>( "r_fudge",        Scalar(0.0001)  );
-  magicNumberList.set<Scalar>( "r_min",          Scalar(0.125)   );
-  magicNumberList.set<Scalar>( "r_max",          Scalar(0.9)     );
-  magicNumberList.set<Scalar>( "r_hincr_test",   Scalar(2.0)     );
-  magicNumberList.set<Scalar>( "r_hincr",        Scalar(2.0)     );
-  magicNumberList.set<int>   ( "max_LET_fail",   15              );
-  magicNumberList.set<Scalar>( "minTimeStep",    Scalar(0.0)     );
-  magicNumberList.set<Scalar>( "maxTimeStep",    Scalar(10.0)    ); // FIX THIS!
+  h0_safety      = magicNumberList.get<Scalar>( "h0_safety",      Scalar(2.0)     );
+  h0_max_factor  = magicNumberList.get<Scalar>( "h0_max_factor",  Scalar(0.001)   );
+  h_phase0_incr  = magicNumberList.get<Scalar>( "h_phase0_incr",  Scalar(2.0)     );
+  h_max_inv      = magicNumberList.get<Scalar>( "h_max_inv",      Scalar(0.0)     );
+  Tkm1_Tk_safety = magicNumberList.get<Scalar>( "Tkm1_Tk_safety", Scalar(2.0)     );
+  Tkp1_Tk_safety = magicNumberList.get<Scalar>( "Tkp1_Tk_safety", Scalar(0.5)     );
+  r_factor       = magicNumberList.get<Scalar>( "r_factor",       Scalar(0.9)     );
+  r_safety       = magicNumberList.get<Scalar>( "r_safety",       Scalar(2.0)     );
+  r_fudge        = magicNumberList.get<Scalar>( "r_fudge",        Scalar(0.0001)  );
+  r_min          = magicNumberList.get<Scalar>( "r_min",          Scalar(0.125)   );
+  r_max          = magicNumberList.get<Scalar>( "r_max",          Scalar(0.9)     );
+  r_hincr_test   = magicNumberList.get<Scalar>( "r_hincr_test",   Scalar(2.0)     );
+  r_hincr        = magicNumberList.get<Scalar>( "r_hincr",        Scalar(2.0)     );
+  max_LET_fail   = magicNumberList.get<int>   ( "max_LET_fail",   15              );
+  minTimeStep    = magicNumberList.get<Scalar>( "minTimeStep",    Scalar(0.0)     );
+  maxTimeStep    = magicNumberList.get<Scalar>( "maxTimeStep",    Scalar(10.0)    ); // FIX THIS!
 }
 
 template<class Scalar>
@@ -262,7 +292,11 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
   model = model_;
   time = ST::zero();
   xn0 = model->getNominalValues().get_x()->clone_v();
-  xpn0 = model->getNominalValues().get_x_dot()->clone_v();
+  xpn0 = model->getNominalValues().get_x()->clone_v();
+  x_dot_base = model->getNominalValues().get_x_dot()->clone_v();
+  y_pred = model->getNominalValues().get_x()->clone_v();
+  y_dot_pred = model->getNominalValues().get_x_dot()->clone_v();
+  delta = model->getNominalValues().get_x()->clone_v();
   residual = Thyra::createMember(model->get_f_space());
   errWtVec = xn0->clone_v();
   xHistory.push_back(xn0->clone_v());
@@ -277,7 +311,7 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
 }
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<const Thyra::NonlinearSolverBase<Scalar> > &solver_)
+void ImplicitBDFStepper<Scalar>::setSolver(const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver_)
 {
   solver = solver_;
 }
@@ -313,7 +347,9 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     // 
     // 05/08/06 tscoffe:  I really need to get the update, not the solution from
     // the nonlinear solver.
-    solver->solve( neModel, &*xn0, NULL, &*ee ); 
+    if(solver->getModel().get()!=&neModel)
+      solver->setModel( Teuchos::rcp(&neModel,false) );
+    solver->solve( &*xn0, NULL, &*ee ); 
     newtonConvergenceStatus = 0; // this should be updated from solver
     
     // check error and evaluate LTE
@@ -530,11 +566,6 @@ template<class Scalar>
 void ImplicitBDFStepper<Scalar>::initialize()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  // Set up magic numbers:
-  Scalar h0_safety = magicNumber.get<Scalar>( "h0_safety" );
-  Scalar h0_max_factor = magicNumber.get<Scalar>( "h0_max_factor" );
-  Scalar h_max_inv = magicNumber.get<Scalar>( "h_max_inv" );
-
   // we assume the solution vector is available here 
   // Note that I'm using currSolutionPtr instead of
   // nextSolutionPtr because this is the first step.
@@ -586,9 +617,6 @@ void ImplicitBDFStepper<Scalar>::initialize()
 template<class Scalar>
 Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder()
 {
-  // Set up magic numbers
-  Scalar Tkm1_Tk_safety = magicNumber.get<Scalar>( "Tkm1_Tk_safety" );
-
 // This routine puts its output in newOrder_
 
 // This routine changes the following variables:
@@ -646,16 +674,6 @@ void ImplicitBDFStepper<Scalar>::rejectStep()
 // This routine reads but does not change the following variables:
 //    stepAttemptStatus, r_factor, r_safety, Est, r_fudge, r_min, r_max,
 //    minTimeStep, maxTimeStep, time, stopTime 
-
-  // Set up magic numbers
-  Scalar r_factor = magicNumber.get<Scalar>( "r_factor" );
-  Scalar r_safety = magicNumber.get<Scalar>( "r_safety" );
-  Scalar r_fudge = magicNumber.get<Scalar>( "r_fudge" );
-  Scalar r_min = magicNumber.get<Scalar>( "r_min" );
-  Scalar r_max = magicNumber.get<Scalar>( "r_max" );
-  Scalar minTimeStep = magicNumber.get<Scalar>( "minTimeStep" );
-  Scalar maxTimeStep = magicNumber.get<Scalar>( "maxTimeStep" );
-  int max_LET_fail = magicNumber.get<int>( "max_LET_fail" );
 
   // Only update the time step if we are NOT running constant stepsize.
   bool adjustStep = (!constantStepSize);
@@ -754,18 +772,6 @@ template<class Scalar>
 void ImplicitBDFStepper<Scalar>::completeStep()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-
-  // Set up magic numbers
-  Scalar h_phase0_incr = magicNumber.get<Scalar>( "h_phase0_incr" );
-  Scalar Tkp1_Tk_safety = magicNumber.get<Scalar>( "Tkp1_Tk_safety" );
-  Scalar r_hincr_test = magicNumber.get<Scalar>( "r_hincr_test" );
-  Scalar r_hincr = magicNumber.get<Scalar>( "r_hincr" );
-  Scalar r_safety = magicNumber.get<Scalar>( "r_safety" );
-  Scalar r_fudge = magicNumber.get<Scalar>( "r_fudge" );
-  Scalar r_min = magicNumber.get<Scalar>( "r_min" );
-  Scalar r_max = magicNumber.get<Scalar>( "r_max" );
-  Scalar minTimeStep = magicNumber.get<Scalar>( "minTimeStep" );
-  Scalar maxTimeStep = magicNumber.get<Scalar>( "maxTimeStep" );
 
   numberOfSteps ++;
   nef = 0;
