@@ -20,15 +20,10 @@ extern "C" {
 #include "zoltan_comm.h"
 
 
-/*   UVC TODO:
-   In the coarsening code that doesn't do net suffling (get from CVS!)
-      right now we're stoping after identifying locally
-     (in processors rows) identical nets; we will investigate
-     what percentage of the identical nets will be identified
-     by this method and later we may decide to implement global
-     identical net removal.
-*/
+
+#define COARSEN_WITH_NET_SHUFFLING
     
+
 
 #define PLAN_TAG 32010      /* tag for comm plan */ 
 
@@ -176,7 +171,6 @@ static void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
 }
 
 
-
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
    match are clustered to a single vertex. Currently, we allow more
    than two vertices to be merged/grouped locally on a proc, but
@@ -184,7 +178,7 @@ static void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
    All hyperedges are kept; identical hyperedges are not collapsed. 
    The array LevelMap is the mapping of
    the old vertices to the new vertices. It will be used to pass a partition
-   of the coarse graph back to the original graph. Uses Umit's net shuffling */
+   of the coarse graph back to the original graph.                         */
 int Zoltan_PHG_Coarsening
 ( ZZ     *zz,         /* the Zoltan data structure */
   HGraph *hg,         /* information about hypergraph, weights, etc. */
@@ -208,7 +202,7 @@ int Zoltan_PHG_Coarsening
   PHGComm                *hgc = hg->comm;
   struct Zoltan_Comm_Obj *plan=NULL;
   MPI_Op                 idenOp;
-int header;
+
   static int timer_merge=-1, timer_shuffle=-1, timer_remove=-1, timer_theend=-1;
   int time_details = (hgp->use_timers > 3);
 
@@ -251,11 +245,7 @@ int header;
   c_hg->vmap    = NULL;             /* only needed by rec-bisec */
   c_hg->redl    = hg->redl;  /* to stop coarsening near desired count */
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
-
-c_hg->fixed = (hg->fixed) ? (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)) : NULL;
-if (c_hg->fixed)
-  for (i = 0; i < hg->nVtx; i++)
-     c_hg->fixed[i] = -1;
+  c_hg->fixed = (hg->fixed) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
   
   /* (over) estimate number of external matches that we need to send data to */
   count = 0; 
@@ -303,45 +293,45 @@ if (c_hg->fixed)
       }
     } else if (!vmark[i]) {     /* local matching, packing and groupings */
       int v = i;
-int fixed = -1;
+      int fixed = -1; 
       while (!vmark[v])  {
-if (hg->fixed && hg->fixed[v] >= 0)
-  fixed = hg->fixed[v];
-        
+        if (hg->fixed && hg->fixed[v] >= 0)
+          fixed = hg->fixed[v];
         LevelMap[v] = c_hg->nVtx;         /* next available coarse vertex */      
         vmark[v] = 1;  /* flag this as done already */
         v = match[v];  
       }
-if (c_hg->fixed)      
-c_hg->fixed[c_hg->nVtx] = fixed;      
+      if (hg->fixed)
+        c_hg->fixed[c_hg->nVtx] = fixed;      
       ++c_hg->nVtx;
     }
   }
   *LevelSndCnt = count;
   
   /* size and allocate the send buffer */
-header = (hg->fixed) ? 4 : 3;
-  size += ((header + hg->VtxWeightDim) * count); 
+  {
+  int header = (hg->fixed ? 4 : 3);
+  size += ((header + hg->VtxWeightDim) * count);
   if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))
       MEMORY_ERROR;
-  
+  }
   
   /* Message is list of <gno, vweights, gno's edge count, list of edge lno's> */
   /* We pack ints and floats into same buffer */
   ip = (int*) buffer;
   for (i = 0; i < count; i++)  {
-      int lno=listlno[i], sz=hg->vindex[lno+1] - hg->vindex[lno];
-      int *ip_old = ip;
-      
+    int lno=listlno[i], sz=hg->vindex[lno+1] - hg->vindex[lno];
+    int *ip_old = ip;
     *ip++ = listlno[i];             /* source lno */
     *ip++ = listgno[i];             /* destination vertex gno */
-if (hg->fixed)    
-*ip++ = hg->fixed[lno];
-    
+    if (hg->fixed)
+      *ip++ = hg->fixed[lno];
+      
     /* UVC Assumes a float is no larger than an int which true in almost all
        platforms except prehistoric 16-bit platforms. */
     memcpy(ip, &hg->vwgt[lno*hg->VtxWeightDim], sizeof(float)*hg->VtxWeightDim);
     ip += hg->VtxWeightDim;
+    
     *ip++ = sz;                    /* count */
     memcpy(ip, &hg->vedge[hg->vindex[lno]], sizeof(int)*sz);
     ip +=  sz;
@@ -388,11 +378,16 @@ if (hg->fixed)
   /* index all received data for rapid lookup */
   *LevelCnt   = 0;
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
-    int j, sz, source_lno=ip[i++];
-    int lno=VTX_GNO_TO_LNO (hg, ip[i++]);
-if (c_hg->fixed)    
-c_hg->fixed[LevelMap[lno]] = ip[i++];
-    
+    int j, sz, source_lno, lno;
+
+    source_lno              = ip[i++];
+    lno = VTX_GNO_TO_LNO (hg, ip[i++]);
+       
+    if (hg->fixed)  {
+      int fixed = ip[i++];
+      c_hg->fixed [LevelMap[lno]] = (fixed >= 0) ? fixed : hg->fixed[lno];
+      } 
+     
     float *pw=(float*) &ip[i];
 
     (*LevelData)[(*LevelCnt)++] = source_lno;
@@ -413,7 +408,7 @@ c_hg->fixed[LevelMap[lno]] = ip[i++];
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, lno=VTX_GNO_TO_LNO (hg, ip[i+1]);
 
-    i += 2+hg->VtxWeightDim;  /* skip slno+gno+vertex weights */
+    i += (hg->fixed ? 3 : 2) + hg->VtxWeightDim;  /* skip header + vtx weights */
     sz = ip[i++];             /* get sz to a diff var, skip size*/
     for (j=0; j<sz; ++j)      /* count extra vertices per edge */
         ahvertex[--ahindex[ip[i+j]]] = lno;
@@ -750,7 +745,6 @@ c_hg->fixed[LevelMap[lno]] = ip[i++];
   if (idx!=c_hg->nPins || ni!=c_hg->nEdge)
       errexit("idx(%d)!=c_hg->nPins(%d) || ni(%d)!=c_hg->nEdge(%d)", idx, c_hg->nPins, ni, c_hg->nEdge);
 #endif
-
 
   /* We need to compute dist_x, dist_y */
   if (!(c_hg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
