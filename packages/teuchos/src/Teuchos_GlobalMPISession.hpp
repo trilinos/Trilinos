@@ -63,6 +63,11 @@ public:
    * \param out   [in] If <tt>out!=NULL</tt>, then a small message on each
    *              processor will be printed to this stream.  The default is <tt>&std::cerr</tt>.
    *
+   * If the option <tt>--teuchos-suppress-startup-banner</tt> is found, the
+   * this option will be removed from <tt>argv[]</tt> before being passed to
+   * <tt>MPI_Init(...)</tt> and the startup output message to <tt>*out</tt>
+   * will be suppressed.
+   *
    * <b>Warning!</b> This constructor can only be called once per
    * executable or an error is printed to std::cerr and an exception will
    * be thrown!

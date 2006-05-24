@@ -38,8 +38,10 @@ int GlobalMPISession::nProc_ = 1 ;
 GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
 {
   std::ostringstream oss;
+
   // Above is used to create all output before sending to *out to avoid
   // jumbled parallel output between processors
+
 #ifdef HAVE_MPI
   // initialize MPI
 	int mpiHasBeenStarted = 0, mpierr = 0;
@@ -75,7 +77,21 @@ GlobalMPISession::GlobalMPISession( int* argc, char*** argv, std::ostream *out )
   oss << "Teuchos::GlobalMPISession::GlobalMPISession(): started serial run" << std::endl;
 #endif
 #ifndef TEUCHOS_SUPPRESS_PROC_STARTUP_BANNER
-  if(out)
+  // See if we should suppress the startup banner
+  bool printStartupBanner = true;
+  const std::string suppress_option("--teuchos-suppress-startup-banner");
+  for( int opt_i = 0; opt_i < *argc; ++opt_i ) { 
+    if( suppress_option == (*argv)[opt_i] ) {
+      // We are suppressing the output!
+      printStartupBanner = false;
+      // Remove this option!
+      // Note that (*argv)[*argc]==0 but convention so we copy it too!
+      for( int i = opt_i; i < *argc; ++i )
+        (*argv)[i] = (*argv)[i+1];
+      --*argc;
+    }
+  }
+  if( out && printStartupBanner )
     *out << oss.str();
 #endif
 }
