@@ -338,6 +338,10 @@ ModelEvaluator::get_x_init() const
 { return Teuchos::null; }
 
 Teuchos::RefCountPtr<const Epetra_Vector>
+ModelEvaluator::get_x_dot_init() const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<const Epetra_Vector>
 ModelEvaluator::get_p_init(int l) const
 { return Teuchos::null; }
 

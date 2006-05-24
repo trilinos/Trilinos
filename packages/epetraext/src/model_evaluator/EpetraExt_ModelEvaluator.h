@@ -475,6 +475,9 @@ public:
   virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
 
   /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot_init() const;
+
+  /** \brief . */
   virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
 
   /** \brief . */
