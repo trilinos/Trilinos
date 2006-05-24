@@ -33,6 +33,8 @@
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Teuchos_Time.hpp"
 
+//#define THYRA_DEFAULT_FINAL_POINT_CAPTURE_MODEL_EVALUATOR_DUMP_ALL
+
 namespace Thyra {
 
 /** \brief This class wraps any ModelEvaluator object and allows the client to
@@ -125,6 +127,11 @@ template<class Scalar>
 const ModelEvaluatorBase::InArgs<Scalar>&
 DefaultFinalPointCaptureModelEvaluator<Scalar>::getFinalPoint() const
 {
+#ifdef THYRA_DEFAULT_FINAL_POINT_CAPTURE_MODEL_EVALUATOR_DUMP_ALL
+  *Teuchos::VerboseObjectBase::getDefaultOStream()
+    << "\nDefaultFinalPointCaptureModelEvaluator<Scalar>::getFinalPoint():"
+    << " finalPoint =\n" << Teuchos::describe(finalPoint_,Teuchos::VERB_EXTREME);
+#endif  
   return finalPoint_;
 }
 
@@ -172,6 +179,11 @@ void DefaultFinalPointCaptureModelEvaluator<Scalar>::reportFinalPoint(
   finalPointWasSolved_ = wasSolved;
   if(!this->isUnderlyingModelConst())
     this->getNonconstUnderlyingModel()->reportFinalPoint(finalPoint,wasSolved);
+#ifdef THYRA_DEFAULT_FINAL_POINT_CAPTURE_MODEL_EVALUATOR_DUMP_ALL
+  *Teuchos::VerboseObjectBase::getDefaultOStream()
+    << "\nDefaultFinalPointCaptureModelEvaluator<Scalar>::reportFinalPoint(...):"
+    << " finalPoint =\n" << Teuchos::describe(finalPoint_,Teuchos::VERB_EXTREME);
+#endif  
 }
 
 // Public functions overridden from Teuchos::Describable
