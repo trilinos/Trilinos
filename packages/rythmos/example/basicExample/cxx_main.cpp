@@ -138,6 +138,7 @@ int main(int argc, char *argv[])
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
     bool implicitFlag = ((method_val==METHOD_BE) | (method_val==METHOD_BDF));
+    //std::cout << "implicitFlag = " << implicitFlag << std::endl;
     params.set( "implicit", implicitFlag );
     params.set( "Lambda_min", lambda_min );
     params.set( "Lambda_max", lambda_max );
@@ -185,8 +186,8 @@ int main(int argc, char *argv[])
       } 
       else 
       {
-        //stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver));
         TEST_FOR_EXCEPT(true); // RAB: Above is commented out due to lack of other commits
+        //stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver));
         method = "Implicit BDF";
       }
     } else {

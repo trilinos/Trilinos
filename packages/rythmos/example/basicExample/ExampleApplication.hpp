@@ -61,6 +61,8 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
   /** \brief . */
+  Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot_init() const;
+  /** \brief . */
   Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
   /** \brief . */
   InArgs createInArgs() const;
