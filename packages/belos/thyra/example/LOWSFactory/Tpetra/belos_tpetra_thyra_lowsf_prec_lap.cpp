@@ -81,6 +81,9 @@ int main(int argc, char* argv[])
   typedef Teuchos::ScalarTraits<ST>::magnitudeType MT;  // Magnitude-type typdef
   typedef int OT;                   // Ordinal-type typdef
 
+  ST one = Teuchos::ScalarTraits<ST>::one();
+  ST zero = Teuchos::ScalarTraits<ST>::zero();
+  
   //
   // Create 2D Laplacian using Tpetra::CisMatrix
   //
@@ -117,7 +120,7 @@ int main(int argc, char* argv[])
   const ST offDiag = -1.0, diag = 2.0;
   int numEntries; ST values[3]; int indexes[3];
   ST prec_value[1]; int prec_index[1];
-  prec_value[0] = 1.0/diag; // Diagonal preconditioning
+  prec_value[0] = one/diag;   // Diagonal preconditioning
   for( int k = 0; k < numMyElements; ++k ) {
     const int rowIndex = myGlobalElements[k];
     prec_index[0] = rowIndex;
@@ -167,13 +170,10 @@ int main(int argc, char* argv[])
   int             maxIterations          = globalDim;
   int             maxRestarts            = 0;
   int             gmresKrylovLength      = globalDim;
-  int             outputFrequency        = 50;
+  int             outputFrequency        = 100;
   bool            outputMaxResOnly       = true;
   MT              maxResid               = 1e-3;
 
-  ST one = Teuchos::ScalarTraits<ST>::one();
-  ST zero = Teuchos::ScalarTraits<ST>::zero();
-  
   Teuchos::RefCountPtr<Teuchos::ParameterList>
     belosLOWSFPL = Teuchos::rcp( new Teuchos::ParameterList() );
   
@@ -206,6 +206,7 @@ int main(int argc, char* argv[])
   belosLOWSFactory->setParameterList( belosLOWSFPL );
 
   // Set the output stream and the verbosity level (prints to std::cout by defualt)
+  // NOTE:  Set to VERB_NONE for no output from the solver.
   belosLOWSFactory->setVerbLevel(Teuchos::VERB_LOW);
 
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.

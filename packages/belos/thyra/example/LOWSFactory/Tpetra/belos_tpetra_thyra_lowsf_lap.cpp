@@ -147,9 +147,9 @@ int main(int argc, char* argv[])
   int             maxIterations          = globalDim;
   int             maxRestarts            = 0;
   int             gmresKrylovLength      = globalDim;
-  int             outputFrequency        = 10;
+  int             outputFrequency        = 100;
   bool            outputMaxResOnly       = true;
-  MT              maxResid               = 1e-6;
+  MT              maxResid               = 1e-3;
 
   ST one = Teuchos::ScalarTraits<ST>::one();
   ST zero = Teuchos::ScalarTraits<ST>::zero();
@@ -182,9 +182,13 @@ int main(int argc, char* argv[])
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<ST> >
     belosLOWSFactory = Teuchos::rcp(new Thyra::BelosLinearOpWithSolveFactory<ST>());
 
+  // Set the output stream and the verbosity level (prints to std::cout by defualt)
+  // NOTE:  Set to VERB_NONE for no output from the solver.
+  belosLOWSFactory->setVerbLevel(Teuchos::VERB_LOW);
+  
   // Set the parameter list to specify the behavior of the factory.
   belosLOWSFactory->setParameterList( belosLOWSFPL );
-
+  
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<ST> >
     nsA = belosLOWSFactory->createOp();
