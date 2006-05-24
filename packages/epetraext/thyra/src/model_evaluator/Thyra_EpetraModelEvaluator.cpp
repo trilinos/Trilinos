@@ -79,6 +79,9 @@ void EpetraModelEvaluator::initialize(
     lowerBounds_.set_x( create_MPIVectorBase( epetraModel_->get_x_lower_bounds(), x_space_ ) );
     upperBounds_.set_x( create_MPIVectorBase( epetraModel_->get_x_upper_bounds(), x_space_ ) );
   }
+  if(initialGuess_.supports(MEB::IN_ARG_x_dot)) {
+    initialGuess_.set_x_dot( create_MPIVectorBase( epetraModel_->get_x_dot_init(), x_space_ ) );
+  }
   for( int l = 0; l < static_cast<int>(p_space_.size()); ++l ) {
     initialGuess_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l] ) );
     lowerBounds_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_lower_bounds(l), p_space_[l] ) );
