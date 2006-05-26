@@ -394,7 +394,7 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 	  //or global_col is out of range (less than 0 or non local).
 	  return(err);
 	}
-        if (err > 1) {
+        if (err == 2) {
           cerr << "EpetraExt::MatrixMatrix::Multiply Warning: failed to insert"
               << " value in result matrix at position "<<global_row<<","
               <<global_col<<", possibly because result matrix has a column-map"
@@ -1334,7 +1334,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
       }
       else {
         err = B.InsertGlobalValues( Row, NumEntries, Values, Indices );
-        assert( err == 0 || err == 1 );
+        assert( err == 0 || err == 1 || err == 3 );
       }
     }
   }
