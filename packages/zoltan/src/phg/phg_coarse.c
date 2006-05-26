@@ -379,6 +379,7 @@ int Zoltan_PHG_Coarsening
   *LevelCnt   = 0;
   for (ip = (int*) rbuffer, i = 0; i < size; )  {
     int j, sz, source_lno, lno;
+    float *pw;
 
     source_lno              = ip[i++];
     lno = VTX_GNO_TO_LNO (hg, ip[i++]);
@@ -388,7 +389,7 @@ int Zoltan_PHG_Coarsening
       c_hg->fixed [LevelMap[lno]] = (fixed >= 0) ? fixed : hg->fixed[lno];
       } 
      
-    float *pw=(float*) &ip[i];
+    pw=(float*) &ip[i];
 
     (*LevelData)[(*LevelCnt)++] = source_lno;
     (*LevelData)[(*LevelCnt)++] = lno;              /* to lookup in part[] */
