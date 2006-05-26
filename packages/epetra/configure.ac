@@ -112,7 +112,7 @@ TAC_ARG_CONFIG_MPI
 # ------------------------------------------------------------------------
 
 AC_PROG_CC(cc gcc)
-AC_PROG_CXX(CC g++ gcc c++ cxx)
+AC_PROG_CXX(CC g++ c++ cxx)
 AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
@@ -128,13 +128,6 @@ if test "X" = "X"; then
   EPETRA_BUILD_DIRECTORY=`pwd`
   AC_MSG_RESULT($EPETRA_BUILD_DIRECTORY)
 fi
-
-# ------------------------------------------------------------------------
-# Checks for --enable-debug, --enable-optimize, --enable-profile, --enable-purify
-# Changes flags and compiler names accordingly
-# ------------------------------------------------------------------------
-
-TAC_ARG_ENABLE_COMPILER_OPTIONS
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -158,17 +151,6 @@ TAC_ARG_WITH_AR
 # MPI link check
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
-
-# ------------------------------------------------------------------------
-# Special check for case of running on TFLOP
-# ------------------------------------------------------------------------
-AC_MSG_CHECKING([if host is TFLOP (and therefore needs special TFLOP define statement)])
-if test "X${host}" = "Xtflop"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE(TFLOP,,[define if compiling for ASCI Red, aka TFLOP])
-else
-  AC_MSG_RESULT(no)
-fi
 
 # ------------------------------------------------------------------------
 # Checks for header files
@@ -202,31 +184,9 @@ if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" 
   AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Epetra requires at least one or the other.]])
 fi
 
-if test "X${host}" != "Xtflop"; then
-  if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find cmath or math.h.  Epetra requires at least one or the other.]])
-  fi
-else
-  # TFLOP
-  if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-    AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Epetra requires at least one or the other.]])
-  fi
-fi  
-
-# Checks for typedefs, structures, and compiler characteristics.
-AC_C_CONST
-AC_C_INLINE
-
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics
-# ------------------------------------------------------------------------
-AC_CXX_NAMESPACES
-AC_CXX_HAVE_STL
-AC_CXX_BOOL
-AC_CXX_MUTABLE
-AC_CXX_NEW_FOR_SCOPING
-#AC_CXX_STD_IOS_BASE_FMTFLAGS
-AC_CXX_STD_SPRINTF
+if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find cmath or math.h.  Epetra requires at least one or the other.]])
+fi
 
 # ------------------------------------------------------------------------
 # Checks for Makefile.export related systems
@@ -303,12 +263,6 @@ dnl Replace `main' with a function in -lm:
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
-dnl Check for user-specified names for LAPACK and BLAS
-TAC_ARG_WITH_BLASLIB
-TAC_ARG_WITH_LAPACKLIB
-
-## works with the ACX_BLAS macro
-
 # find or choose to supply valid blas and lapack libraries
 
   ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
@@ -317,10 +271,6 @@ TAC_ARG_WITH_LAPACKLIB
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
-
-# ------------------------------------------------------------------------
-# Checks for compiler characteristics
-# ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
 # Checks for linker characteristics
@@ -348,15 +298,6 @@ else
 fi
 
 AC_SUBST(TRILINOS_TEMPLATE_OBJS)
-
-# ------------------------------------------------------------------------
-# Checks for library functions
-# ------------------------------------------------------------------------
-
-# ------------------------------------------------------------------------
-# Checks for system services
-# ------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
