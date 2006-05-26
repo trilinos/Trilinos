@@ -78,8 +78,9 @@ void MPISession::init(int* argc, void*** argv)
     }
   else
     {
-#endif
+#else
   cerr << "Teuchos::MPISession::init() started serial run" << endl;
+#endif
 #ifdef HAVE_MPI
     }
 #endif
