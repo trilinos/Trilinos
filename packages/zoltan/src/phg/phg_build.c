@@ -578,7 +578,7 @@ GID_lookup           *lookup_myHshVtxs = NULL;
       myPins.esizes[i] = pinIdx[i+1] - pinIdx[i];
     }
 
-    ZOLTAN_FREE(pinIdx);
+    ZOLTAN_FREE(&pinIdx);
 
     /*
      * Determine the process owning each of my pin vertices.
