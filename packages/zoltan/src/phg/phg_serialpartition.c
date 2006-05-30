@@ -482,9 +482,16 @@ static int seq_part (
     if (hg->fixed)
       if (hg->fixed[i] >= 0){
         /* Set partition number for fixed vtx. */
-        part[i] = hg->fixed[i];
+        if (hg->bisec_split < 0){
+          /* direct k-way, use part numbers directly */
+          part[i] = hg->fixed[i];
+        }
+        else{
+          /* recursive bisection, map to 0-1 part numbers */
+          part[i] = (hg->fixed[i] < hg->bisec_split ? 0 : 1);
+        }
         /* Add up weights of fixed vertices for each partition */
-        fixed_wgts[hg->fixed[i]] += hg->vwgt[i*vwgtdim];
+        fixed_wgts[part[i]] += hg->vwgt[i*vwgtdim];
       }
   }
 
