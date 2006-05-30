@@ -253,6 +253,18 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
         if (ncomm->myProc!=-1)  /* ncomm's first row now bcast to other rows */
             MPI_Bcast(nhg->vwgt, nVtx*ohg->VtxWeightDim, MPI_FLOAT, 0, ncomm->col_comm);
     }    
+
+    /* communicate fixed vertices, if any */
+    if (ohg->fixed) {
+        if (nVtx)
+            nhg->fixed = (int *) ZOLTAN_MALLOC(nVtx*sizeof(int));
+        --msg_tag;
+        Zoltan_Comm_Do(plan, msg_tag, (char *) ohg->fixed,
+                       sizeof(int), (char *) nhg->fixed);
+        if (ncomm->myProc!=-1)  /* ncomm's first row now bcast to other rows */
+            MPI_Bcast(nhg->fixed, nVtx, MPI_INT, 0, ncomm->col_comm);
+    }    
+    /* this comm plan is no longer needed. */
     Zoltan_Comm_Destroy(&plan);
 
     
