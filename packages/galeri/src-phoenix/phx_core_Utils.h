@@ -5,6 +5,10 @@
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 
+#define PHX_MAX(x,y) (( (x) > (y) ) ? x : y)
+#define PHX_MIN(x,y) (( (x) < (y) ) ? x : y) 
+#define PHX_SGN(x) (((x) < 0.0) ? -1.0 : 1.0) 
+
 namespace phx {
 namespace core {
 
