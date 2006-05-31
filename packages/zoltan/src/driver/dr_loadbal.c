@@ -1500,10 +1500,10 @@ void get_hg_compressed_pin_storage(
   int *row_ptr;
   int nedges;
   int gid = num_gid_entries - 1;
-  *ierr = ZOLTAN_OK;
   int i, k;
 
   START_CALLBACK_TIMER;
+  *ierr = ZOLTAN_OK;
 
   mesh = (MESH_INFO_PTR) data;
   if (data == NULL) {
