@@ -318,7 +318,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   Vp_V(&*x,*z,Scalar(-ST::one()));
   if(!testMaxErr<Scalar>(
        "norm_2(*x)",norm_2(*x)
-       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       ,"10*error_tol",ScalarMag(ScalarMag(10)*error_tol()),"warning_tol",warning_tol(),out
        )
     ) success=false;
 
