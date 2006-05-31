@@ -1101,13 +1101,28 @@ matrix solvers. Note: Amesos solvers requires
 \end{table}
 %
 %--------------------------------------------------------------------%
-\subsection{Parallel Performance}
+\subsection{Tips for Achieving Good Parallel Performance}
 \label{parallel performance}
 %--------------------------------------------------------------------%
 %
 This section gives a few tips on tuning \ML's parallel performance.
 
-\subsubsection{Dynamic Load-balancing}
+\subsubsection{Hints for the Impatient User}
+
+\be
+   \item Use the matrix repartitioning option.   This is discussed in detail
+in the next section, \S\ref{dynamic load balancing}.
+   \item In order to reduce message-passing latency, try limiting the number
+of multigrid levels to 3 or 4.  The syntax is described in
+\S\ref{multigrid cycle options}.
+   \item Instead of doing a direct solve on the coarsest level, try a few
+smoothing sweeps instead.  See \S\ref{coarsest grid parameters}.
+   \item For a symmetric positive definite linear system, choose a
+smoother  whose computational kernel is a matvec, such as the Chebyshev
+polynomial smoother.  See \S\ref{smoothing parameters}.
+\ee
+
+\subsubsection{Dynamic Load-balancing} \label{dynamic load balancing}
 \ML\ supports dynamic load-balancing of coarse-level matrices in the multigrid
 preconditioner.
 This is extremely important for two reasons.
@@ -1146,8 +1161,8 @@ unknowns that are node-based.
 \end{verbatim}
 
 \noindent
-The following code demonstrates repartitioning for a matrix with
-unknowns that are edge-based.
+The following code demonstrates repartitioning for a system arising from the
+eddy current approximations to Maxwell's equations.
 
 \begin{verbatim}
   Teuchos::ParameterList MLList;
@@ -1270,7 +1285,7 @@ that only block maps with constant element size can be
 considered. Default: 1.}
 
 %-------------------------------------%
-\subsubsection{Multigrid Cycle Options}
+\subsubsection{Multigrid Cycle Options}\label{multigrid cycle options}
 %-------------------------------------%
 
 \choicebox{\tt cycle applications}{[{\tt int}] Number of applications of the
@@ -1361,7 +1376,7 @@ scheme). Default: 128.}
   restriction is defined as $R_\ell = P_\ell^T$. Default: {\tt false}.}
 
 %----------------------------------%
-\subsubsection{Smoothing Parameters}
+\subsubsection{Smoothing Parameters}\label{smoothing parameters}
 %----------------------------------%
 
 \choicebox{\tt smoother: sweeps $\star$}{[{\tt int}] Number of sweeps of smoother. 
@@ -1434,7 +1449,7 @@ the range $(0,2)$.}
 Default: 1.}
 
 %--------------------------------------%
-\subsubsection{Coarsest Grid Parameters}
+\subsubsection{Coarsest Grid Parameters}\label{coarsest grid parameters}
 %--------------------------------------%
 
 \choicebox{\tt coarse: max size}{[{\tt int}] Maximum dimension of the coarse grid. \ML\ will
