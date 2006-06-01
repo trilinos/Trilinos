@@ -41,6 +41,7 @@ void initialize_element(ELEM_INFO *elem)
   elem->border = 0;
   elem->elem_blk = 0;
   elem->my_part = -1;
+  elem->fixed_part = -1;
   elem->perm_value = -1;
   elem->invperm_value = -1;
   for (i=0; i<MAX_CPU_WGTS; i++)
@@ -80,6 +81,7 @@ int j;
   elem->globalID = -1;
   elem->border = 0;
   elem->my_part = -1;
+  elem->fixed_part = -1;
   elem->perm_value = -1;
   elem->invperm_value = -1;
   elem->nadj = 0;
