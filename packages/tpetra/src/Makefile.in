@@ -151,6 +151,8 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_Object.hpp \
 	$(srcdir)/Tpetra_Vector.hpp $(srcdir)/Tpetra_VectorData.hpp \
 	$(srcdir)/Tpetra_CisMatrix.hpp \
 	$(srcdir)/Tpetra_CisMatrixData.hpp \
+	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_MultiVector.hpp $(srcdir)/Tpetra_Operator.hpp \
 	$(srcdir)/Tpetra_MpiPlatform.hpp $(srcdir)/Tpetra_MpiComm.hpp \
 	$(srcdir)/Tpetra_MpiData.hpp $(srcdir)/Tpetra_MpiTraits.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -360,7 +362,10 @@ COMP_H = \
 	$(srcdir)/Tpetra_Vector.hpp \
 	$(srcdir)/Tpetra_VectorData.hpp \
 	$(srcdir)/Tpetra_CisMatrix.hpp \
-	$(srcdir)/Tpetra_CisMatrixData.hpp
+	$(srcdir)/Tpetra_CisMatrixData.hpp \
+	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_MultiVector.hpp \
+	$(srcdir)/Tpetra_Operator.hpp 
 
 COMP = 
 
