@@ -96,8 +96,9 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
   return( weights );
 }
 
-Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
-                               const Epetra_Vector& weights)
+Teuchos::RefCountPtr<Epetra_Map>
+create_balanced_map(const Epetra_BlockMap& input_map,
+		    const Epetra_Vector& weights)
 {
   const Epetra_Comm& input_comm = input_map.Comm();
 
@@ -228,9 +229,10 @@ Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
   delete [] sts;
 #endif
 
-  Epetra_Map tmp_map(global_num_rows, new_num_local, &new_gids[0],
-                     0, input_comm);
-  return(tmp_map);
+  Teuchos::RefCountPtr<Epetra_Map> new_map =
+    Teuchos::rcp(new Epetra_Map(global_num_rows, new_num_local, &new_gids[0],
+				0, input_comm));
+  return(new_map);
 }
 
 void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,

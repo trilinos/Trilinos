@@ -33,6 +33,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #define _Isorropia_Epetra_utils_hpp_
 
 #include <Isorropia_configdefs.hpp>
+#include <Teuchos_RefCountPtr.hpp>
 
 #ifdef HAVE_EPETRA
 class Epetra_Map;
@@ -71,8 +72,9 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
   fact that Epetra_Map is a light-weight reference-counted "front-end"
   object with an underlying data-object.
 */
-Epetra_Map create_balanced_map(const Epetra_BlockMap& input_map,
-                               const Epetra_Vector& weights);
+Teuchos::RefCountPtr<Epetra_Map>
+create_balanced_map(const Epetra_BlockMap& input_map,
+		    const Epetra_Vector& weights);
 
 /** Given an Epetra_BlockMap object, fill a vector of length numprocs+1
   with each processor's starting offset into the Epetra_BlockMap's global

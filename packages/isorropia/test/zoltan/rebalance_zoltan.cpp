@@ -30,8 +30,8 @@
 #include <Isorropia_configdefs.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Rebalance.hpp>
-
-#include <Teuchos_CommandLineProcessor.hpp>
+#include <Isorropia_Partitioner.hpp>
+#include <Isorropia_Redistributor.hpp>
 
 #include <ispatest_utils.hpp>
 #include <ispatest_epetra_utils.hpp>
@@ -59,7 +59,6 @@ Epetra_CrsMatrix* create_epetra_test_matrix_1(int numProcs,
 
 bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose);
 bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose);
-bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose);
 bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose);
 #endif
 
@@ -98,9 +97,6 @@ int main(int argc, char** argv) {
     test_rebalance_epetra_crsmatrix(numProcs, localProc, verbose);
 
   test_passed = test_passed &&
-    test_rebalance_epetra_rowmatrix(numProcs, localProc, verbose);
-
-  test_passed = test_passed &&
     test_rebalance_epetra_linproblem(numProcs, localProc, verbose);
 #else
   std::cout << "rebalance_zoltan main: currently can only test "
@@ -134,11 +130,12 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
   Epetra_CrsMatrix* input_matrix =
     create_epetra_test_matrix_1(numProcs, localProc, verbose);
 
-  //Call the Isorropia rebalance method allowing default behavior. (I.e.,
-  //we won't specify any parameters, weights, etc.) Default behavior should
-  //be to balance the matrix so that the number of nonzeros on each processor
-  //is roughly equal. i.e., by default, weights for each row are assumed to
-  //be the number of nonzeros in that row.
+  //Default behavior should be to balance the matrix so that the number of
+  //nonzeros on each processor is roughly equal. i.e., by default, weights
+  //for each row are assumed to be the number of nonzeros in that row.
+
+  Teuchos::ParameterList paramlist;
+  paramlist.set("Balancing package", "Zoltan");
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
@@ -147,86 +144,7 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
                 << std::endl;
     }
 
-    balanced_matrix = Isorropia::create_balanced_copy(*input_matrix);
-  }
-  catch(std::exception& exc) {
-    std::cout << "caught exception: " << exc.what() << std::endl;
-    return(false);
-  }
-
-  //Now check the result matrix and make sure that the number of nonzeros
-  //is indeed equal on each processor. (We constructed the input matrix
-  //so that a correct rebalancing would result in the same number of
-  //nonzeros being on each processor.)
-  const Epetra_Map& bal_rowmap = balanced_matrix->RowMap();
-  int bal_local_num_rows = bal_rowmap.NumMyElements();
-
-  //count the local nonzeros.
-  if (verbose) {
-    std::cout << " counting local nnz for balanced matrix..." << std::endl;
-  }
-
-  int num_nonzeros = 0;
-  for(int i=0; i<bal_local_num_rows; ++i) {
-    num_nonzeros += balanced_matrix->NumMyEntries(i);
-  }
-
-  const Epetra_Comm& comm = input_matrix->Comm();
-
-  int global_num_nonzeros;
-  comm.SumAll(&num_nonzeros, &global_num_nonzeros, 1);
-
-  int avg_nnz_per_proc = global_num_nonzeros/numProcs;
-
-  if (verbose) {
-    std::cout << " making sure local nnz ("<<num_nonzeros
-             <<") is the same on every proc...\n" << std::endl;
-  }
-
-  if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
-
-  int local_int_result = test_passed ? 1 : 0;
-  int global_int_result;
-  comm.MinAll(&local_int_result, &global_int_result, 1);
-
-  delete input_matrix;
-
-  test_passed = global_int_result==1 ? true : false;
-
-  if (!test_passed && verbose) {
-    std::cout << "test FAILED!" << std::endl;
-  }
-
-  return(test_passed);
-}
-
-//-------------------------------------------------------------------
-bool test_rebalance_epetra_rowmatrix(int numProcs, int localProc, bool verbose)
-{
-  bool test_passed = false;
-#ifndef HAVE_MPI
-  return(test_passed);
-#endif
-
-  Epetra_CrsMatrix* input_matrix =
-    create_epetra_test_matrix_1(numProcs, localProc, verbose);
-
-  Epetra_RowMatrix* input_rowmatrix = input_matrix;
-
-  //Call the Isorropia rebalance method allowing default behavior. (I.e.,
-  //we won't specify any parameters, weights, etc.) Default behavior should
-  //be to balance the matrix so that the number of nonzeros on each processor
-  //is roughly equal. i.e., by default, weights for each row are assumed to
-  //be the number of nonzeros in that row.
-
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
-  try {
-    if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_RowMatrix)..."
-                << std::endl;
-    }
-
-    balanced_matrix = Isorropia::create_balanced_copy(*input_rowmatrix);
+    balanced_matrix = Isorropia::create_balanced_copy(*input_matrix, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
@@ -294,25 +212,35 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   Epetra_Vector* b = new Epetra_Vector(input_matrix->RowMap());
   Epetra_LinearProblem problem(input_matrix, x, b);
 
-  //Call the Isorropia rebalance method allowing default behavior. (I.e.,
-  //we won't specify any parameters, weights, etc.) Default behavior should
-  //be to balance the matrix so that the number of nonzeros on each processor
-  //is roughly equal. i.e., by default, weights for each row are assumed to
-  //be the number of nonzeros in that row.
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  paramlist->set("Balancing package", "Zoltan");
 
-  Teuchos::RefCountPtr<Epetra_LinearProblem> balanced_problem;
-  try {
-    if (verbose) {
-      std::cout << " calling Isorropia::create_balanced_copy(Epetra_LinearProblem)..."
-                << std::endl;
-    }
+  //Wrap a RefCountPtr around the matrix graph, and specify 'false', meaning
+  //that the RefCountPtr will not take ownership of the graph (will not
+  //delete it).
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> graph =
+    Teuchos::rcp( &(input_matrix->Graph()), false);
 
-    balanced_problem = Isorropia::create_balanced_copy(problem);
-  }
-  catch(std::exception& exc) {
-    std::cout << "caught exception: " << exc.what() << std::endl;
-    return(false);
-  }
+  Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
+    Teuchos::rcp(new Isorropia::Partitioner(graph, paramlist));
+
+  partitioner->compute_partition();
+
+  Isorropia::Redistributor rd(partitioner);
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix =
+    rd.redistribute(*(problem.GetMatrix()));
+
+  Teuchos::RefCountPtr<Epetra_MultiVector> bal_x =
+    rd.redistribute(*(problem.GetLHS()));
+
+  Teuchos::RefCountPtr<Epetra_MultiVector> bal_b =
+    rd.redistribute(*(problem.GetRHS()));
+
+  Teuchos::RefCountPtr<Epetra_LinearProblem> balanced_problem =
+    Teuchos::rcp(new Epetra_LinearProblem(bal_matrix.get(),
+					  bal_x.get(), bal_b.get()));
 
   //Now check the result matrix and make sure that the number of nonzeros
   //is indeed equal on each processor. (We constructed the input matrix
@@ -323,6 +251,7 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
 
   //count the local nonzeros.
   if (verbose) {
+    std::cout << "test_rebalance_epetra_linproblem: " << std::endl;
     std::cout << " counting local nnz for balanced matrix..." << std::endl;
   }
 
@@ -332,10 +261,6 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
     balanced_problem->GetMatrix()->NumMyRowEntries(i,numrowentries);
     num_nonzeros += numrowentries;
   }
-
-  delete balanced_problem->GetMatrix();
-  delete balanced_problem->GetLHS();
-  delete balanced_problem->GetRHS();
 
   const Epetra_Comm& comm = input_matrix->Comm();
 
@@ -379,11 +304,11 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   Epetra_CrsGraph* input_graph =
     create_epetra_test_graph_1(numProcs, localProc, verbose);
 
-  //Call the Isorropia rebalance method allowing default behavior. (I.e.,
-  //we won't specify any parameters, weights, etc.) Default behavior should
-  //be to balance the graph so that the number of nonzeros on each processor
-  //is roughly equal. i.e., by default, weights for each row are assumed to
-  //be the number of nonzeros in that row.
+  //We'll specify that the package Zoltan should be used to perform the
+  //repartitioning, and call the Isorropia::create_balanced_copy function.
+  //Default behavior should be to balance the graph so that the number of
+  //nonzeros on each processor is roughly equal. i.e., by default, weights
+  //for each row are assumed to be the number of nonzeros in that row.
 
   Teuchos::ParameterList paramlist;
   paramlist.set("Balancing package", "Zoltan");
@@ -399,6 +324,7 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
+    delete input_graph;
     return(false);
   }
 

@@ -54,8 +54,19 @@ namespace Isorropia {
 #ifdef HAVE_EPETRA
 
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
-create_balanced_copy(const Epetra_CrsMatrix& input_matrix)
+create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+		     Teuchos::ParameterList& paramlist)
 {
+  std::string bal_package_str("Balancing package");
+  std::string bal_package = paramlist.get(bal_package_str, "none_specified");
+  if (bal_package == "Zoltan" || bal_package == "zoltan") {
+#ifdef HAVE_EPETRAEXT_ZOLTAN
+    return( Isorropia_Zoltan::create_balanced_copy(input_matrix, paramlist) );
+#else
+    throw Isorropia::Exception("Zoltan requested, but epetraext-zoltan not enabled.");
+#endif
+  }
+
   //first, create a weights vector which contains the number of nonzeros
   //per row in the input_matrix.
   Epetra_Vector* weights = 0;
@@ -124,14 +135,13 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   //first, figure out what the balanced row-distribution should be, and
   //create a Epetra_Map that describes that row-distribution.
   const Epetra_Comm& comm = input_matrix.Comm();
-  //construct a dummy map that will be replaced by the result of the
-  //create_balanced_map function...
-  Epetra_Map bal_rowmap(10, 0, comm);
+
+  //bal_rowmap will be the result of the create_balanced_map function...
+  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    Epetra_Map tmp_map =
+    bal_rowmap =
       Isorropia::Epetra_Utils::create_balanced_map(input_matrix.RowMap(),
                                                       row_weights);
-    bal_rowmap = tmp_map;
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -142,7 +152,7 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   //next, create a new Epetra_CrsMatrix (which will be the return-value of
   //this function) with the new row-distribution.
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
-    Isorropia::redistribute_rows(input_matrix, bal_rowmap);
+    Isorropia::redistribute_rows(input_matrix, *bal_rowmap);
 
   if (input_matrix.Filled()) {
     //If input_matrix.Filled(), the call FillComplete() on balanced_matrix.
@@ -162,14 +172,13 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   //first, figure out what the balanced row-distribution should be, and
   //create a Epetra_Map that describes that row-distribution.
   const Epetra_Comm& comm = input_matrix.Comm();
-  //construct a dummy map that will be replaced by the result of the
-  //create_balanced_map function...
-  Epetra_Map bal_rowmap(10, 0, comm);
+
+  //bal_rowmap that will be the result of the create_balanced_map function...
+  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    Epetra_Map tmp_map =
+    bal_rowmap =
       Isorropia::Epetra_Utils::create_balanced_map(input_matrix.RowMatrixRowMap(),
 						   row_weights);
-    bal_rowmap = tmp_map;
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -180,7 +189,7 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   //next, create a new Epetra_CrsMatrix (which will be the return-value of
   //this function) with the new row-distribution.
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
-    Isorropia::redistribute_rows(input_matrix, bal_rowmap);
+    Isorropia::redistribute_rows(input_matrix, *bal_rowmap);
 
   if (input_matrix.Filled()) {
     //If input_matrix.Filled(), the call FillComplete() on balanced_matrix.
@@ -244,12 +253,11 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   const Epetra_Comm& comm = input_graph.Comm();
   //construct a dummy map that will be replaced by the result of the
   //create_balanced_map function...
-  Epetra_Map bal_rowmap(10, 0, comm);
+  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    Epetra_Map tmp_map =
+    bal_rowmap =
       Isorropia::Epetra_Utils::create_balanced_map(input_graph.RowMap(),
                                                    row_weights);
-    bal_rowmap = tmp_map;
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -260,7 +268,7 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   //next, create a new Epetra_CrsGraph (which will be the return-value of
   //this function) with the new row-distribution.
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
-    Isorropia::redistribute_rows(input_graph, bal_rowmap);
+    Isorropia::redistribute_rows(input_graph, *bal_rowmap);
 
   if (input_graph.Filled()) {
     //If input_graph.Filled(), the call FillComplete() on balanced_graph.

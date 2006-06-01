@@ -39,6 +39,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra_utils.hpp>
+#include <Isorropia_Rebalance.hpp>
 
 #include <Teuchos_RefCountPtr.hpp>
 
@@ -66,6 +67,38 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
 		     Teuchos::ParameterList& paramlist)
 {
+  Teuchos::RefCountPtr<Epetra_Map> bal_map =
+    Isorropia_Zoltan::create_balanced_map(input_graph, paramlist);
+
+  Teuchos::RefCountPtr<Epetra_CrsGraph> bal_graph =
+    Isorropia::redistribute_rows(input_graph, *bal_map);
+
+  bal_graph->FillComplete();
+
+  return(bal_graph);
+}
+
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+		     Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RefCountPtr<Epetra_Map> bal_map =
+    Isorropia_Zoltan::create_balanced_map(input_matrix.Graph(), paramlist);
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix =
+    Isorropia::redistribute_rows(input_matrix, *bal_map);
+
+  bal_matrix->FillComplete();
+
+  return(bal_matrix);
+}
+
+Teuchos::RefCountPtr<Epetra_Map>
+create_balanced_map(const Epetra_CrsGraph& input_graph,
+		    Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RefCountPtr<Epetra_Map> bal_map;
+
   std::string bal_alg_str("Balancing algorithm");
   std::string bal_alg = paramlist.get(bal_alg_str, "none_specified");
   if (bal_alg == "hypergraph") {
@@ -75,15 +108,13 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   std::string part_method_str("PARMETIS_METHOD");
   std::string part_method = paramlist.get(part_method_str, "PartKway");
 
-  int err;
-
   Epetra_CrsGraph& nonconst_input = const_cast<Epetra_CrsGraph&>(input_graph);
 
   //Setup Load Balance Object
   float version;
   char * dummy = 0;
   Zoltan::LoadBalance LB( 0, &dummy, &version );
-  err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(nonconst_input.Comm()).Comm() );
+  int err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(nonconst_input.Comm()).Comm() );
   if( err == ZOLTAN_OK ) err = LB.Set_Param( "LB_METHOD", "PARMETIS" );
   if( err == ZOLTAN_OK ) err = LB.Set_Param( "PARMETIS_METHOD", part_method );
 
@@ -91,20 +122,18 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   EpetraExt::CrsGraph_Transpose transposeTransform;
   Epetra_CrsGraph & TransGraph = transposeTransform( nonconst_input );
   EpetraExt::ZoltanQuery Query( nonconst_input, &TransGraph );
-  if( err == ZOLTAN_OK ) err = LB.Set_QueryObject( &Query );
-
-  if( err != ZOLTAN_OK )
-  { cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; exit(0); }
+  if( err == ZOLTAN_OK ) {
+    err = LB.Set_QueryObject( &Query );
+  }
+  else {
+    cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; return(bal_map);
+  }
 
   //Generate Load Balance
-  int changes;
-  int num_gid_entries, num_lid_entries;
-  int num_import;
+  int changes, num_gid_entries, num_lid_entries, num_import, num_export;
   ZOLTAN_ID_PTR import_global_ids, import_local_ids;
-  int * import_procs;
-  int num_export;
   ZOLTAN_ID_PTR export_global_ids, export_local_ids;
-  int * export_procs;
+  int * import_procs, * export_procs;
 
   nonconst_input.Comm().Barrier();
   err = LB.Balance( &changes,
@@ -123,56 +152,36 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   std::vector<int> newElementList( newNumMyElements );
 
   std::set<int> gidSet;
-  for( int i = 0; i < num_export; ++i )
+  for( int i = 0; i < num_export; ++i ) {
     gidSet.insert( export_global_ids[i] );
+  }
 
   //Add unmoved indices to new list
   int loc = 0;
-  for( int i = 0; i < numMyElements; ++i )
-    if( !gidSet.count( elementList[i] ) )
+  for( int i = 0; i < numMyElements; ++i ) {
+    if( !gidSet.count( elementList[i] ) ) {
       newElementList[loc++] = elementList[i];
+    }
+  }
   
   //Add imports to end of list
-  for( int i = 0; i < num_import; ++i )
+  for( int i = 0; i < num_import; ++i ) {
     newElementList[loc+i] = import_global_ids[i];
+  }
 
   //Free Zoltan Data
-  if( err == ZOLTAN_OK )
+  if( err == ZOLTAN_OK ) {
     err = LB.Free_Data( &import_global_ids, &import_local_ids, &import_procs,
                          &export_global_ids, &export_local_ids, &export_procs );
+  }
 
   //Create Import Map
-  Epetra_Map* NewRowMap_ = new Epetra_Map( nonconst_input.RowMap().NumGlobalElements(),
-                                           newNumMyElements,
-                                           &newElementList[0],
-                                           nonconst_input.RowMap().IndexBase(),
-                                           nonconst_input.RowMap().Comm() );
-
-  //Create Importer
-  Epetra_Import Importer( *NewRowMap_, nonconst_input.RowMap() );
-
-  //Create New Graph
-  Teuchos::RefCountPtr<Epetra_CrsGraph> bal_graph =
-    Teuchos::rcp(new Epetra_CrsGraph( Copy, *NewRowMap_, 0 ));
-
-  bal_graph->Import( nonconst_input, Importer, Insert );
-  bal_graph->FillComplete();
-
-//   Zoltan::LoadBalance LB2( 0, &dummy, &version );
-//   err = LB2.Create( dynamic_cast<const Epetra_MpiComm&>(orig.Comm()).Comm() );
-//   if( err == ZOLTAN_OK ) err = LB2.Set_Param( "LB_METHOD", "PARMETIS" );
-//   if( err == ZOLTAN_OK ) err = LB2.Set_Param( "PARMETIS_METHOD", partitionMethod_ );
-//   CrsGraph_Transpose transTrans;
-//   Epetra_CrsGraph & trans2 = transTrans( *bal_graph );
-//   ZoltanQuery query( *bal_graph, &trans2 );
-//   if( err == ZOLTAN_OK ) err = LB2.Set_QueryObject( &query );
-//   err = LB2.Balance( &changes,
-//                      &num_gid_entries, &num_lid_entries,
-//                      &num_import, &import_global_ids, &import_local_ids, &import_procs,
-//                      &num_export, &export_global_ids, &export_local_ids, &export_procs );
-//   LB2.Evaluate( 1, 0, 0, 0, 0, 0, 0 );
-
-  return(bal_graph);
+  bal_map =
+    Teuchos::rcp(new Epetra_Map( nonconst_input.RowMap().NumGlobalElements(),
+				 newNumMyElements, &newElementList[0],
+				 nonconst_input.RowMap().IndexBase(),
+				 nonconst_input.RowMap().Comm() ));
+  return( bal_map );
 }
 
 }//namespace Isorropia_Zoltan

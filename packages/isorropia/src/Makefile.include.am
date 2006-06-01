@@ -36,13 +36,17 @@
 # ------------------------------------------------------------------------
 
 CORE = \
+	$(srcdir)/Isorropia_Partitioner.cpp \
 	$(srcdir)/Isorropia_Rebalance.cpp \
+	$(srcdir)/Isorropia_Redistributor.cpp \
 	$(srcdir)/Isorropia_Zoltan_Rebalance.cpp \
 	$(srcdir)/Isorropia_Utils.cpp \
 	$(srcdir)/Isorropia_Epetra_utils.cpp \
 	$(srcdir)/Isorropia_Exception.cpp
 
 CORE_H = \
+	$(srcdir)/Isorropia_Partitioner.hpp \
+	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Rebalance.hpp \
 	$(srcdir)/Isorropia_Zoltan_Rebalance.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \

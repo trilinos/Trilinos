@@ -82,6 +82,37 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
 		     Teuchos::ParameterList& paramlist);
 
+/** Create a balanced copy of an input Epetra_CrsMatrix.
+
+  This function represents a basic case, not accepting weights.
+  By default, it uses a self-contained internal implementation
+  rather than interfacing to a third-party library such as Zoltan.
+
+  If the ParameterList object contains a string parameter with
+  name == "Balancing package" and value == "Zoltan", then the Zoltan
+  library is used to perform the balancing.
+
+  Furthmore, if the ParameterList object contains a string parameter with
+  name == "Partitioning algorithm" then possible values are "graph"
+  or "hypergraph" (not yet supported). If "Zoltan" has not been specified
+  as the "Balancing package", then "Partitioning algorithm" is ignored.
+
+  The rebalancing is 1-D, row-wise, and attempts to make the number
+  of nonzeros equal in each partition. I.e., it is equivalent to specifying
+  a weighted rebalance where the weights are the number of nonzeros in
+  each row.
+*/
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
+		     Teuchos::ParameterList& paramlist);
+
+/** Create a map which describes the layout of rows resulting from the
+   repartitioning of the input graph object.
+*/
+Teuchos::RefCountPtr<Epetra_Map>
+create_balanced_map(const Epetra_CrsGraph& input_graph,
+		    Teuchos::ParameterList& paramlist);
+
 #endif //HAVE_EPETRA
 
 }//namespace Isorropia_Zoltan
