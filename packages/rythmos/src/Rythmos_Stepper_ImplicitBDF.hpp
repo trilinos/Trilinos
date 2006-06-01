@@ -74,11 +74,9 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     std::string description() const;
 
     /** \brief . */
-    std::ostream& describe(
-      std::ostream                &out
+    void describe(
+      Teuchos::FancyOStream       &out
       ,const Teuchos::EVerbosityLevel      verbLevel
-      ,const std::string          leadingIndent
-      ,const std::string          indentSpacer
       ) const;
 
     bool ErrWtVecSet(
@@ -395,28 +393,25 @@ std::string ImplicitBDFStepper<Scalar>::description() const
 }
 
 template<class Scalar>
-std::ostream& ImplicitBDFStepper<Scalar>::describe(
-      std::ostream                &out
+void ImplicitBDFStepper<Scalar>::describe(
+      Teuchos::FancyOStream                &out
       ,const Teuchos::EVerbosityLevel      verbLevel
-      ,const std::string          leadingIndent
-      ,const std::string          indentSpacer
       ) const
 {
   if (verbLevel == Teuchos::VERB_EXTREME)
   {
     out << description() << "::describe" << std::endl;
     out << "model = " << std::endl;
-    out << model->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    model->describe(out,verbLevel);
     out << "solver = " << std::endl;
-    out << solver->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    solver->describe(out,verbLevel);
     out << "xn0 = " << std::endl;
-    out << xn0->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    xn0->describe(out,verbLevel);
     out << "time = " << time << std::endl;
     out << "time_old = " << time_old << std::endl;
 //    out << "neModel = " << std::endl;
 //    out << neModel->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
   }
-  return(out);
 }
 
 template<class Scalar>

@@ -45,7 +45,7 @@
 #include "Rythmos_Stepper_ForwardEuler.hpp"
 #include "Rythmos_Stepper_BackwardEuler.hpp"
 #include "Rythmos_Stepper_ExplicitRK.hpp"
-//#include "Rythmos_Stepper_ImplicitBDF.hpp"
+#include "Rythmos_Stepper_ImplicitBDF.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -65,6 +65,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_FancyOStream.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
 
@@ -186,8 +187,8 @@ int main(int argc, char *argv[])
       } 
       else 
       {
-        TEST_FOR_EXCEPT(true); // RAB: Above is commented out due to lack of other commits
-        //stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver));
+        //TEST_FOR_EXCEPT(true); // RAB: Above is commented out due to lack of other commits
+        stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver));
         method = "Implicit BDF";
       }
     } else {
@@ -195,7 +196,8 @@ int main(int argc, char *argv[])
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
 #ifdef Rythmos_DEBUG
-    cout << stepper.describe(cout,Teuchos::VERB_EXTREME," ","  ");
+    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    stepper.describe(*out,Teuchos::VERB_EXTREME);
 #endif // Rythmos_DEBUG
 
     double t0 = 0.0;
@@ -207,7 +209,7 @@ int main(int argc, char *argv[])
     {
       double dt_taken = stepper.TakeStep(dt);
 #ifdef Rythmos_DEBUG
-      cout << stepper.describe(cout,Teuchos::VERB_EXTREME," ","  ");
+      stepper.describe(*out,Teuchos::VERB_EXTREME);
 #endif // Rythmos_DEBUG
       if (dt_taken != dt)
       {
