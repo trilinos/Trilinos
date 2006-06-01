@@ -65,7 +65,7 @@ Partitioner::~Partitioner()
 {
 }
 
-void Partitioner::compute_partition()
+void Partitioner::compute_partitioning()
 {
   std::string bal_package_str("Balancing package");
   std::string bal_package = paramlist_->get(bal_package_str, "none_specified");

@@ -66,7 +66,7 @@ public:
 
   /** Method which does the work...
    */
-  void compute_partition();
+  void compute_partitioning();
 
   /** Number of elements to be located on the local processor
       in the new partitioning.

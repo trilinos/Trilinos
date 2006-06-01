@@ -300,10 +300,7 @@ AC_CONFIG_FILES([
     src/Makefile
     src/Makefile.include
     example/Makefile
-    example/matrix_1/Makefile
-    example/matrix_1/Makefile.include
-    example/linearsystem/Makefile
-    example/linearsystem/Makefile.include
+    example/Makefile.include
     test/Makefile
     test/rebalance_1d_default/Makefile
     test/rebalance_1d_default/Makefile.include

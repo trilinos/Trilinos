@@ -29,7 +29,8 @@
 
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_CrsGraph
-//and Epetra_CrsMatrix object, and using Isorropia to rebalance them.
+//and Epetra_CrsMatrix object, and using Isorropia's create_balanced_copy
+//function to rebalance them.
 //--------------------------------------------------------------------
 
 //Include Isorropia_Exception.hpp only because the helper functions at
@@ -40,6 +41,8 @@
 //The Isorropia user-interface functions being demonstrated are declared
 //in Isorropia_Rebalance.hpp.
 #include <Isorropia_Rebalance.hpp>
+
+#include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -96,9 +99,16 @@ int main(int argc, char** argv) {
     std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
   }
 
+  //We won't set any parameters in this example, but a parameter-list is
+  //required. If we wanted the repartitioning operation to use the Zoltan
+  //package, we could specify that like this:
+  //    paramlist.set("Balancing package", "Zoltan");
+  //
+  Teuchos::ParameterList paramlist;
+
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
-    balanced_graph = Isorropia::create_balanced_copy(*crsgraph);
+    balanced_graph = Isorropia::create_balanced_copy(*crsgraph, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "matrix_1 example: Isorropia::create_balanced_copy threw "
@@ -163,7 +173,7 @@ int main(int argc, char** argv) {
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
-    balanced_matrix = Isorropia::create_balanced_copy(*crsmatrix);
+    balanced_matrix = Isorropia::create_balanced_copy(*crsmatrix, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "matrix_1 example: Isorropia::create_balanced_copy(matrix)"

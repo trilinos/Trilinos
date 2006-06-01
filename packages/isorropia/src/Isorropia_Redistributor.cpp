@@ -81,6 +81,8 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph)
 
   new_graph->Import(input_graph, *importer_, Insert);
 
+  new_graph->FillComplete();
+
   return( new_graph );
 }
 
@@ -96,6 +98,8 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix)
 
   new_matrix->Import(input_matrix, *importer_, Insert);
 
+  new_matrix->FillComplete();
+
   return( new_matrix );
 }
 
@@ -110,6 +114,8 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix)
     Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, 0));
 
   new_matrix->Import(input_matrix, *importer_, Insert);
+
+  new_matrix->FillComplete();
 
   return( new_matrix );
 }

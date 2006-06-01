@@ -37,9 +37,10 @@
 //potentially throw exceptions.
 #include <Isorropia_Exception.hpp>
 
-//The Isorropia user-interface functions being demonstrated are declared
-//in Isorropia_Rebalance.hpp.
-#include <Isorropia_Rebalance.hpp>
+//The Isorropia symbols being demonstrated are declared
+//in these headers:
+#include <Isorropia_Partitioner.hpp>
+#include <Isorropia_Redistributor.hpp>
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -87,39 +88,70 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
-  //Call Isorropia functions to create a balanced copy of the objects
-  //in linprob. By default, the result matrix is balanced so that
-  //the number of nonzeros on each processor is equal or close to equal.
+  //We'll need a Teuchos::ParameterList object to pass to the
+  //Isorropia::Partitioner class.
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist =
+    Teuchos::rcp(new Teuchos::ParameterList);
+
+  //(We won't pass any parameters in this example. But if we wanted
+  // the Zoltan package to be used for the partitioning operation, we
+  // could specify that like this:
+  //       paramlist->set("Balancing package", "Zoltan");
+
+  //We also need to pass a Epetra_CrsGraph object to the
+  //Isorropia::Partitioner class. (This requirement may be removed in
+  //the future...) So next we'll get the row-matrix from the linear-
+  //problem, cast it to a crs-matrix, then obtain the crs-graph and
+  //wrap that in a Teuchos::RefCountPtr.
+
+  Epetra_RowMatrix* rowmatrix = linprob->GetMatrix();
+  Epetra_CrsMatrix* crsmatrix = dynamic_cast<Epetra_CrsMatrix*>(rowmatrix);
+
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> graph =
+    Teuchos::rcp(&(crsmatrix->Graph()), false);
+  //The 'false' parameter specifies that the RefCountPtr should not take
+  //ownership of the graph object.
+
+  //Now create the partitioner object...
+  Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
+    Teuchos::rcp(new Isorropia::Partitioner(graph, paramlist));
+
+  partitioner->compute_partitioning();
+
+  //Next create a Redistributor object and use it to create balanced
+  //copies of the objects in linprob. By default, the result matrix is
+  //balanced so that the number of nonzeros on each processor is equal
+  //or close to equal.
+
+  Isorropia::Redistributor rd(partitioner);
+
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix;
+  Teuchos::RefCountPtr<Epetra_MultiVector> bal_x;
+  Teuchos::RefCountPtr<Epetra_MultiVector> bal_b;
+
   //Use a try-catch block because Isorropia will throw an exception
   //if it encounters a fatal error.
 
   if (localProc == 0) {
-    std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
+    std::cout << " calling Isorropia::Redistributor::redistribute..."
+        << std::endl;
   }
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
-    balanced_matrix = Isorropia::create_balanced_copy(*linprob->GetMatrix());
+    bal_matrix = rd.redistribute(*linprob->GetMatrix());
+    bal_x = rd.redistribute(*linprob->GetLHS());
+    bal_b = rd.redistribute(*linprob->GetRHS());
   }
   catch(std::exception& exc) {
-    std::cout << "linsys example: Isorropia::create_balanced_copy threw "
+    std::cout << "linsys example: Isorropia::Redistributor threw "
          << "exception '" << exc.what() << "' on proc "
          << localProc << std::endl;
     MPI_Finalize();
     return(-1);
   }
 
-  //Now redistribute the problem's vectors to match the rowmap of the
-  //balanced matrix.
-
-  const Epetra_BlockMap& bal_rowmap = balanced_matrix->RowMap();
-  Teuchos::RefCountPtr<Epetra_MultiVector> x =
-     Isorropia::redistribute(*linprob->GetLHS(), bal_rowmap);
-  Teuchos::RefCountPtr<Epetra_MultiVector> b = 
-     Isorropia::redistribute(*linprob->GetRHS(), bal_rowmap);
-
-  Epetra_LinearProblem balanced_problem(balanced_matrix.get(),
-                                        x.get(), b.get());
+  Epetra_LinearProblem balanced_problem(bal_matrix.get(),
+                                        bal_x.get(), bal_b.get());
 
 
   //Now simply query and print out information regarding the local sizes
