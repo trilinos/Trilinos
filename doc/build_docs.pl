@@ -10,6 +10,14 @@
 ###############################################################################
 
 use strict;
+use Getopt::Long;
+
+# Read in commandline options
+my $skipBuild = 0;
+
+GetOptions(
+  "skip-build!" => \$skipBuild
+   );
 
 # Figure out Trilinos directory
 my $trilinosDir = `pwd`;
@@ -24,8 +32,13 @@ my @indexList = ();
 use File::Find;
 use File::Basename;
 print "\n";
-print "\nGenerating package documentation ...\n";
-find (\&buildDocs, $trilinosDir);
+if(!$skipBuild) {
+  print "\nGenerating package documentation ...\n";
+  find (\&buildDocs, $trilinosDir);
+}
+else {
+  print "\nSkipping generation of package documentation ...\n";
+}
 print "\nGenerating list of documentation directories ...\n";
 find (\&fillIndexList, "$trilinosDir/packages");
 
@@ -46,20 +59,24 @@ print PAGE "<ul>\n";
 
 # Variables for use in generating pdfs
 my $output = "";
-my $failed = "";
+my $failed = 0;
 
 # Trilinos Overview
 print "Trilinos Overview...\n";
 chdir("$trilinosDir/doc/OverviewSANDreport");
-$output = `make -f classicMakefile pdf 2>&1`;
-$failed = $?;
+if(!$skipBuild) {
+  $output = `make -f classicMakefile pdf 2>&1`;
+  $failed = $?;
+}
 if (!$failed) { print PAGE "<li><a href=\"./OverviewSANDreport/TrilinosOverview.pdf\">Trilinos Overview (.pdf)</a></li>\n"; }
 
 # Trilinos User Guide
 print "Trilinos User Guide...\n";
 chdir("$trilinosDir/doc/UserGuide");
-$output = `make -f classicMakefile pdf 2>&1`;
-$failed = $?;
+if(!$skipBuild) {
+  $output = `make -f classicMakefile pdf 2>&1`;
+  $failed = $?;
+}
 if (!$failed) { print PAGE "<li><a href=\"./UserGuide/TrilinosUserGuide.pdf\">Trilinos User Guide (.pdf)</a></li>\n"; }
 
 # Trilinos Tutorial
@@ -75,8 +92,10 @@ if (stat("EpetraPerformanceGuide.pdf")) { print PAGE "<li><a href=\"./packages/e
 # Trilinos Developer Guide
 print "Trilinos Developer Guide...\n";
 chdir("$trilinosDir/doc/DevGuide");
-$output = `make -f classicMakefile pdf 2>&1`;
-$failed = $?;
+if(!$skipBuild) {
+  $output = `make -f classicMakefile pdf 2>&1`;
+  $failed = $?;
+}
 if (!$failed) { print PAGE "<li><a href=\"./DevGuide/TrilinosDevGuide.pdf\">Trilinos Developers Guide (.pdf)</a></li>\n"; }
 
 # Package documentation section
