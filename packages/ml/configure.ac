@@ -117,7 +117,7 @@ AC_PREREQ(2.52)
 
 TAC_ARG_CONFIG_MPI
 
-AC_PROG_CXX(CC g++ gcc c++ cxx)
+AC_PROG_CXX(CC g++ c++ cxx)
 
 AC_ARG_ENABLE( ml_multiple_rhs,
              AC_HELP_STRING([--enable-ml_multiple_rhs],[Enables blocked code
@@ -148,7 +148,7 @@ AC_DEFINE_UNQUOTED(ML_MULTIPLE_RHS_BLOCK_FACTOR, $ac_cv_use_ml_multiple_rhs,
 fi
 
 AC_PROG_CC(cc gcc)
-AC_PROG_F77(f77 g77 f90 xlf90)
+AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
