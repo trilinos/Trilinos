@@ -428,6 +428,22 @@ struct Zoltan_Struct {
   void *Get_HG_Edge_Weights_Data;                /* Ptr to user defined data
                                         to be passed to Get_HG_Edge_Weights() */
   /***************************************************************************/
+  ZOLTAN_NUM_FIXED_OBJ_FN *Get_Num_Fixed_Obj;
+                                            /* Fn ptr to get a processor's
+                                               number of fixed objects.      */
+  ZOLTAN_NUM_FIXED_OBJ_FORT_FN *Get_Num_Fixed_Obj_Fort;  
+                                            /* Fortran version               */
+  void *Get_Num_Fixed_Obj_Data;             /* Ptr to user defined data to be
+                                               passed to Get_Num_Fixed_Obj() */
+  /***************************************************************************/
+  ZOLTAN_FIXED_OBJ_LIST_FN *Get_Fixed_Obj_List;
+                                            /* Fn ptr to get a processor's
+                                               number of fixed objects.      */
+  ZOLTAN_FIXED_OBJ_LIST_FORT_FN *Get_Fixed_Obj_List_Fort;  
+                                            /* Fortran version               */
+  void *Get_Fixed_Obj_List_Data;            /* Ptr to user defined data to be
+                                               passed to Get_Fixed_Obj_List()*/
+  /***************************************************************************/
   ZOLTAN_OBJ_SIZE_FN *Get_Obj_Size;    /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for

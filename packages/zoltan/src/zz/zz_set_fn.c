@@ -217,6 +217,14 @@ int ierr;
     ierr = Zoltan_Set_HG_Edge_Weights_Fn(zz, 
                   (ZOLTAN_HG_EDGE_WEIGHTS_FN *) fn, data);
     break;
+  case ZOLTAN_NUM_FIXED_OBJ_FN_TYPE:
+    ierr = Zoltan_Set_Num_Fixed_Obj_Fn(zz, 
+                  (ZOLTAN_NUM_FIXED_OBJ_FN *) fn, data);
+    break;
+  case ZOLTAN_FIXED_OBJ_LIST_FN_TYPE:
+    ierr = Zoltan_Set_Fixed_Obj_List_Fn(zz, 
+                  (ZOLTAN_FIXED_OBJ_LIST_FN *) fn, data);
+    break;
   default:
     sprintf(msg, "ZOLTAN_FN_TYPE %d is invalid.\n"
             "Value must be in range 0 to %d.", fn_type, ZOLTAN_MAX_FN_TYPES);
@@ -703,6 +711,32 @@ int Zoltan_Set_HG_Edge_Weights_Fn(
 {
   zz->Get_HG_Edge_Weights = fn;
   zz->Get_HG_Edge_Weights_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Num_Fixed_Obj_Fn(
+  ZZ *zz, 
+  ZOLTAN_NUM_FIXED_OBJ_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Num_Fixed_Obj = fn;
+  zz->Get_Num_Fixed_Obj_Data = data;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Fixed_Obj_List_Fn(
+  ZZ *zz, 
+  ZOLTAN_FIXED_OBJ_LIST_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Fixed_Obj_List = fn;
+  zz->Get_Fixed_Obj_List_Data = data;
   return ZOLTAN_OK;
 }
 

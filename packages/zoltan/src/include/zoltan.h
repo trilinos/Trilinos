@@ -2457,6 +2457,18 @@ extern int Zoltan_Set_HG_Edge_Weights_Fn(
   void *data_ptr
 );
 
+extern int Zoltan_Set_Num_Fixed_Obj_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_NUM_FIXED_OBJ_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Fixed_Obj_List_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_FIXED_OBJ_LIST_FN *fn_ptr, 
+  void *data_ptr
+);
+
 /*****************************************************************************/
 /*
  *  Function to change a parameter value within Zoltan.
