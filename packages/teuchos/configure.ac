@@ -121,8 +121,8 @@ TAC_ARG_CONFIG_MPI
 # ------------------------------------------------------------------------
 
 AC_PROG_CC(cc gcc)
-AC_PROG_CXX(CC g++ gcc c++ cxx)
-AC_PROG_F77(f77 g77 f90 xlf90)
+AC_PROG_CXX(CC g++ c++ cxx)
+AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -613,7 +613,13 @@ if test "X$ac_cv_use_teuchos_tests" != "Xno" || test "X$ac_cv_use_teuchos_exampl
 # checks for libraries now
 dnl Replace `main' with a function in -lm:
 #  #np# These lines can be removed if the math lib is not needed.
-AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+AC_SEARCH_LIBS(pow,[m],,[AC_MSG_ERROR(Error encountered when checking for math library.  ***Almost 
+always this error is caused by a typo in the list of configure arguments 
+that is not related to the math library.  Look especially for missing 
+quotes or hyphens in any value related to compiler flags or libraries.
+For an error message that may assist in finding the problem grep for 
+"checking for library containing pow" in the file 
+packages/teuchos/config.log and read the next several lines.)])
 AC_CHECK_FUNCS([pow sqrt])
 
 ### Include Blas/Lapack example here. ###  For now, developers should see
