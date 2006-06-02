@@ -1,120 +1,20 @@
 /*!
-\mainpage %Belos: A Block Linear Solvers Package
+\mainpage %Belos: A Linear Solvers Package
 
-\image html Belos-Interfaces-Harder.gif "UML class diagram showing basic Belos object-oriented design"
 
-\section Belos_classes Belos classes
+\section belos_browser Browse all of Belos as a single doxygen collection
 
-<ul>
+You can browse all of Belos as a <A HREF="../../browser/doc/html/index.html">single
+doxygen collection</A>. Warning, this is not the recommended way to learn
+about Belos software.  However, this is a good way to browse the <a
+href="../../browser/doc/html/dirs.html">directory structure of belos</a>, to <a
+href="../../browser/doc/html/files.html">locate files</a>, etc.
 
-<li><b>%Belos interface classes</b>
+\section belos_thyra Thyra support
 
-The most fundamental of the interface classes define a protocol for
-determining when a set of RHSs are sufficiently converged or when
-iteration should be ended.  These interfaces are shown below:
-
-<ul>
-<li>
-<tt>Belos::StatusTest</tt> defines an interface for checking the
-status of a block iterative linear solver.  This class decouples concrete iterative
-solvers from user-defined status tests.
-<li>
-<tt>Belos::BasicIterationState</tt> defines an interface for
-presenting the current state of the block iterative solver to a
-<tt>Belos::StatusTest</tt>.
-<li>
-<tt>Belos::LinearProblemState</tt> presents the current state of a
-linear problem to a <tt>Belos::StatusTest</tt>.
-<li>
-</ul>
-
-It is absoluting critical that the above interfaces be standarized
-upon since it is impossible to write a sophisticated nonlinear
-abstract numerical algorithm (ANA) that allows inexact solves without
-precise control over the linear solver.
-
-The next set of abstract classes provide a convenient means to access
-and invoke a concrete iterative linear solver and to help in making
-the development of concrete iterative linear solvers easier.
-
-<ul>
-<li>
-<tt>Belos::BasicIteration</tt> defines an interface for
-abstracting concrete iterative linear solvers away for
-clients.  This is the basic interface that allows a client to access
-an iterative linear solver without knowing the exact concrete
-implemenation.
-<li>
-<tt>Belos::LinearProblemIteration</tt> defines an interface to a
-linear problem for managing the current block system that is designed
-to be accessed by a concrete <tt>Belos::BasicIteration</tt> subclass.
-<li>
-<tt>Belos::LinearProblemSetup</tt> defines an interface to be
-accessed by a client to setup the definition of a linear problem by
-setting the operator, left and/or right precondtioners, left and/or
-right scaling vectors, RHS multi-vector and LHS multi-vector (with
-initial guess).  This interface also allows setting the status
-test and block size.
-</ul>
-
-The above interface classes satisfy all of the requirements spelled
-out in ???.
-
-<li><b>Convenient implementations</b>
-
-The following classes define convient implementations of the basic
-interface classes but are not at all required for standardization.
-
-<ul>
-<li>
-<tt>Belos::LinearProblem</tt> is a 100\% general implementation of
-<tt>Belos::LinearProblemSetup</tt> (and therefore also
-<tt>Belos::LinearProblemIteration</tt> and
-<tt>Belos::LinearProblemState</tt>).
-<li>
-<tt>Belos::NativeNormStatusTest</tt> is a concrete implementation
-of a <tt>Belos::StatusTest</tt> that checks the native relative
-residual norm against a set of tolerances.
-<li>
-<tt>Belos::ResidualNormStatusTest</tt> is a concrete
-implementation of a <tt>Belos::StatusTest</tt> that checks the
-unscaled unpreconditioned residual norm against a set of tolerances.
-<li>
-<tt>Belos::SummaryOutputterStatusTest</tt> is a concrete
-implementation of a <tt>Belos::StatusTest</tt> that does nothing more
-than print summary information about each iterative solver iteration.
-</ul>
-
-Note that the subclasses <tt>Belos::NativeNormStatusTest</tt>,
-<tt>Belos::StatusTest</tt> and <tt>Belos::ResidualNormStatusTest</tt>
-are examples of the <b><tt>ConcreteStatusTest</tt></b> subclass shown
-in the above UML class diagram.
-
-<li><b>Example/prototypical concrete iterative linear solvers</b>
-
-The following classes are concrete implementations of
-<tt>Belos::BasicIteration</tt> that are provided primarily for testing
-and demonstration purposes.  These represent examples of the
-<b><tt>ConcreteIterativeLinearSolver</tt></b> subclass shown in the above UML
-class diagram.
-
-<ul>
-<li>
-<tt>Belos::NonblockCg</tt> is a concrete implementation of a CG
-iterative linear solver that simultaniously solves for multiple RHS but is
-not a true block solver.  The primary purpose of this class is to test
-deflation.
-<li>
-<tt>Belos::NonblockGmres</tt> is a concrete implementation of a
-GMRES iterative linear solver that solves only single RHS at a time.  The
-primary purpose of this class is to test some of the special use cases related
-GMRES solvers.
-</ul>
-
-</ul>
-
-\todo Add an output manager
-
-\todo Add functions for manipulating a parameter list
+The <a href="../../thyra/doc/html/index.html">Belos to Thyra Linear Solver
+Adapters</a> take <tt>Thyra::LinearOpBase</tt> objects and turn them into
+<tt>Thyra::LinearOpWithSolveBase</tt> objects which can then be used to solve
+linear systems using %Belos linear solvers implementations.
 
 */
