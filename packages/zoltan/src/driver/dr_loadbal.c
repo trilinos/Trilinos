@@ -45,6 +45,8 @@ extern "C" {
 static int Num_GID = 1, Num_LID = 1;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
+static void setup_fixed_obj(MESH_INFO_PTR mesh);
+
 
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to determine a new load balance.                    */
@@ -83,6 +85,9 @@ ZOLTAN_HG_SIZE_CS_FN get_hg_size_compressed_pin_storage;
 ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN get_hg_size_edge_weights;
 ZOLTAN_HG_CS_FN get_hg_compressed_pin_storage;
 ZOLTAN_HG_EDGE_WEIGHTS_FN get_hg_edge_weights;
+
+ZOLTAN_NUM_FIXED_OBJ_FN get_num_fixed_obj;
+ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -135,6 +140,31 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
   }
+
+  if (Test.Fixed_Objects) {
+    /* Set partition assignment return lists so we can check the fixed
+       objects' assignments */
+    if (Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION ASSIGNMENTS")) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)\n");
+      return 0;
+    }
+
+    /* Register fixed object callback functions */
+    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
+                      (void (*)()) get_num_fixed_obj,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+
+    if (Zoltan_Set_Fn(zz, ZOLTAN_FIXED_OBJ_LIST_FN_TYPE,
+                      (void (*)()) get_fixed_obj_list,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+  }
+
 
   if (Test.Local_Partitions == 1) {
     /* Compute Proc partitions for each processor */
@@ -467,10 +497,11 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int num_gid_entries;           /* Number of array entries in a global ID.  */
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
-  int i;                         /* Loop index                               */
+  int i, j;                      /* Loop index                               */
   int ierr=ZOLTAN_OK;
   double stime = 0.0, mytime = 0.0, maxtime = 0.0;
   char fname[128];
+  ELEM_INFO *current_elem = NULL;
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -493,6 +524,9 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       strcat(fname, ".before");
       Zoltan_Generate_Files(zz, fname, 1, 1, 1, 1);
     }
+
+    if (Test.Fixed_Objects) 
+      setup_fixed_obj(mesh);
   
     /*
      * Call Zoltan
@@ -500,7 +534,6 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 #ifdef TIMER_CALLBACKS
     Timer_Callback_Time = 0.0;
 #endif /* TIMER_CALLBACKS */
-
 
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
@@ -535,6 +568,63 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       printf("DRIVER:  Min/Max Import: %d %d\n", gmin[0], gmax[0]);
       printf("DRIVER:  Min/Max Export: %d %d\n", gmin[1], gmax[1]);
     }
+    }
+
+    if (Test.Fixed_Objects) {
+      int errcnt = 0, gerrcnt = 0;
+      /* Import lists are actually partition assignments, not imports,
+         since RETURN_LISTS = PARTITION ASSIGNMENTS.
+         Need to test for correctness of fixed objects and
+         build export lists */
+
+      /* First, a sanity check.... */
+      if (num_exported != mesh->num_elems) {
+        Gen_Error(0, 
+            "fatal:  num_exported != mesh->num_elems after LB_Partition\n");
+        return 0;
+      }
+
+      /* Reuse the memory from partition assignments for export lists. */
+      /* We'll fill in the exports after checking the part assignment values.*/
+      num_exported = 0;
+
+      for (i = 0; i < mesh->num_elems; i++) {
+        current_elem = &(mesh->elements[export_lids[i]]);
+
+        /* check for errors if the element is fixed */
+        if ((current_elem->fixed_part != -1) &&
+            (export_to_part[i] != current_elem->fixed_part)) {
+          errcnt++;
+          printf("%d:  Object %d fixed to %d but assigned to %d\n",
+                 Proc, current_elem->globalID, current_elem->fixed_part,
+                 export_to_part[i]);
+        }
+   
+        /* check whether element is to be exported (new proc or new part) */
+        if ((export_procs[i] != Proc) || 
+            (export_to_part[i] != current_elem->my_part)) {
+          /* element to be exported */
+          export_procs[num_exported] = export_procs[i];
+          export_to_part[num_exported] = export_to_part[i];
+          for (j = 0; j < num_gid_entries; j++)
+            export_gids[num_exported*num_gid_entries+j] = 
+                        export_gids[i*num_gid_entries+j];
+          for (j = 0; j < num_lid_entries; j++)
+            export_lids[num_exported*num_lid_entries+j] = 
+                        export_lids[i*num_lid_entries+j];
+          num_exported++;
+        }
+      }
+      /* Now migration should work as before. */
+
+      /* Exit if error in fixed objects' assignments. */
+      MPI_Allreduce(&errcnt, &gerrcnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+      if (gerrcnt) {
+        Zoltan_LB_Free_Part(&export_gids, &export_lids,
+                            &export_procs, &export_to_part);
+        Gen_Error(0, "Fatal:  Fixed objects' assignments incorrect.");
+        return 0;
+      }
     }
 
 #ifdef ZOLTAN_NEMESIS
@@ -1607,6 +1697,67 @@ End:
   return; 
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+int get_num_fixed_obj(void *data, int *ierr)
+{
+MESH_INFO_PTR mesh;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return 0;
+  }
+  mesh = (MESH_INFO_PTR) data;
+
+  *ierr = ZOLTAN_OK; /* set error code */
+
+  STOP_CALLBACK_TIMER;
+
+  return(mesh->num_fixed_elems);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_fixed_obj_list(void *data, int num_fixed_obj, 
+  int num_gid_entries, int num_lid_entries,
+  ZOLTAN_ID_PTR fixed_gids, ZOLTAN_ID_PTR fixed_lids,
+  int *fixed_part, int *ierr)
+{
+MESH_INFO_PTR mesh;
+int i, cnt;
+int ngid = num_gid_entries-1;
+int nlid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  mesh = (MESH_INFO_PTR) data;
+
+  cnt = 0;
+  for (i = 0; i < mesh->num_elems; i++)
+    if (mesh->elements[i].fixed_part != -1) {
+      fixed_gids[cnt*num_gid_entries+ngid] =
+                 (ZOLTAN_ID_TYPE) mesh->elements[i].globalID;
+      if (num_lid_entries)
+        fixed_lids[cnt*num_lid_entries+nlid] = i;
+      fixed_part[cnt] = mesh->elements[i].fixed_part;
+      cnt++;
+    }
+
+  if (cnt == num_fixed_obj)
+    *ierr = ZOLTAN_OK; /* set error code */
+  else
+    *ierr = ZOLTAN_FATAL;
+
+  STOP_CALLBACK_TIMER;
+}
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1880,6 +2031,74 @@ int i;
     x[2] = 0.5 * (xlo[2] + xhi[2]);
     test_point_drops(fp, x, zz, Proc, procs, proccnt, parts, partcnt, 
                      test_both);
+  }
+}
+
+/*****************************************************************************/
+static void setup_fixed_obj(MESH_INFO_PTR mesh)
+{
+int i;
+int proc, nprocs;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+
+  /* Initialize fixed elements in mesh */
+  mesh->num_fixed_elems = 0;
+  for (i = 0; i < mesh->num_elems; i++) mesh->elements[i].fixed_part = -1;
+
+  switch (Test.Fixed_Objects) {
+  case 1:
+      /* Fix 100% of objects */
+      /* For now, assume NUM_GLOBAL_PARTITIONS == nprocs; 
+         we'll change later */
+      for (i = 0; i < mesh->num_elems; i++) {
+        mesh->elements[i].fixed_part = i % nprocs;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 2:
+      /* Fix 50% of objects */
+      /* For now, assume NUM_GLOBAL_PARTITIONS == nprocs; 
+         we'll change later */
+      for (i = 1; i < mesh->num_elems; i+=2) {
+        mesh->elements[i].fixed_part = i % nprocs;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 3:
+      /* Fix 10% of objects */
+      /* For now, assume NUM_GLOBAL_PARTITIONS == nprocs; 
+         we'll change later */
+      for (i = 1; i < mesh->num_elems; i+=10) {
+        mesh->elements[i].fixed_part = i % nprocs;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 4:
+      /* Fix 100% of objects to partition 1 */
+      for (i = 0; i < mesh->num_elems; i++) {
+        mesh->elements[i].fixed_part = 1;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 5:
+      /* Fix 50% of objects to partition 1 */
+      for (i = mesh->num_elems/2; i < mesh->num_elems; i++) {
+        mesh->elements[i].fixed_part = 1;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 6:
+      /* Fix 10% of objects to partition 1 */
+      for (i = 0; i < mesh->num_elems/10; i++) {
+        mesh->elements[i].fixed_part = 1;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 7:
+      /* Fix 0% of objects */
+      break;
   }
 }
 

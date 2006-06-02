@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
   /* Initialize flags */
   Test.DDirectory = 0;
   Test.Local_Partitions = 0;
+  Test.Fixed_Objects = 0;
   Test.Drops = 0;
   Test.RCB_Box = 0;
   Test.Multi_Callbacks = 0;
@@ -506,7 +507,8 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
 
   mesh->dd = NULL;
   mesh->data_type = MESH;
-  mesh->num_elems = mesh->num_nodes
+  mesh->num_elems = mesh->num_fixed_elems
+                  = mesh->num_nodes
                   = mesh->num_dims
                   = mesh->num_el_blks
                   = mesh->num_node_sets

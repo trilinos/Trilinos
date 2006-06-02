@@ -86,6 +86,8 @@ enum Zoltan_Fn_Type {
   ZOLTAN_HG_CS_FN_TYPE,
   ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE,
   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE,
+  ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
+  ZOLTAN_FIXED_OBJ_LIST_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
@@ -1843,6 +1845,68 @@ typedef void ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN(
   ZOLTAN_ID_PTR edge_GID,
   ZOLTAN_ID_PTR edge_LID,
   float *edge_weight,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return
+ *  the number of objects on a given processor fixed to particular partitions.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *  Output:
+ *    ierr                --  error code
+ *  Returned value:       --  the number of fixed objects on this processor.
+ */
+
+typedef int ZOLTAN_NUM_FIXED_OBJ_FN(
+  void *data, 
+  int *ierr
+);
+
+typedef int ZOLTAN_NUM_FIXED_OBJ_FORT_FN(
+  void *data, 
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return a list of fixed objects and the partitions to
+ *  which they are fixed.
+ *
+ *  Input:
+ *    data                --  pointer to user defined data structure
+ *    num_fixed_obj       --  number of fixed objects to be stored
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *  Output:
+ *    fixed_gids          --  global IDs of fixed objects
+ *    fixed_lids          --  local IDs of fixed objects
+ *    fixed_part          --  partition assignment of fixed objects
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_FIXED_OBJ_LIST_FN(
+  void *data,
+  int num_fixed_obj,
+  int num_gid_entries,
+  int num_lid_entries,
+  ZOLTAN_ID_PTR fixed_gids,
+  ZOLTAN_ID_PTR fixed_lids,
+  int *fixed_part,
+  int *ierr
+);
+
+typedef void ZOLTAN_FIXED_OBJ_LIST_FORT_FN(
+  void *data,
+  int *num_fixed_obj,
+  int *num_gid_entries,
+  int *num_lid_entries,
+  ZOLTAN_ID_PTR fixed_gids,
+  ZOLTAN_ID_PTR fixed_lids,
+  int *fixed_part,
   int *ierr
 );
 

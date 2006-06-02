@@ -115,8 +115,10 @@ struct Mesh_Description
                                    Valid types are MESH, GRAPH, or HYPERGRAPH.*/
   int     vwgt_dim;             /* number of weights per element.            */
   int     ewgt_dim;             /* number of weights per graph edge.         */
-  int     num_nodes;		/* number of nodes on this processor         */
-  int     num_elems;		/* number of elements on this processor      */
+  int     num_nodes;		/* number of nodes on this processor.        */
+  int     num_elems;		/* number of elements on this processor.     */
+  int     num_fixed_elems;	/* number of elements on this processor that
+                                   should be fixed to a particular partition.*/
   int     num_dims;		/* number of dimensions for the mesh         */
   int     num_el_blks;		/* number of element blocks in the mesh      */
   int     num_node_sets;	/* number of node sets in the mesh           */
@@ -207,6 +209,10 @@ struct Test_Flags {
   int DDirectory;           /* Exercises data directories */
   int Local_Partitions;     /* Sets NUM_LOCAL_PARTITIONS parameter in various
                                ways. */
+  int Fixed_Objects;        /* Registers functions for assigning fixed
+                               objects; sets fixed_part within elements in
+                               various way; sets RETURN_LISTS to 
+                               "PARTITION ASSIGNMENTS" */
   int Drops;                /* Exercises point- and box-assign. */
   int RCB_Box;              /* Exercises Zoltan_RCB_Box. */
   int Multi_Callbacks;      /* Exercises list-based callback functions. */

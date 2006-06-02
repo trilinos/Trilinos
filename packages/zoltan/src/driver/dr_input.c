@@ -390,6 +390,13 @@ int read_cmd_file (
                     &Test.Local_Partitions, &n) == 1)
       continue;                /* Unusual Partition generation testing flag */
 
+    else if (sscanf(line, " test fixed objects" SKIPEQ "%d%n",
+                    &Test.Fixed_Objects, &n) == 1)
+      continue;                /* Unusual Partition generation testing flag */
+    else if (sscanf(line, " test fixed object" SKIPEQ "%d%n",
+                    &Test.Fixed_Objects, &n) == 1)
+      continue;                /* Unusual Partition generation testing flag */
+
     else if (sscanf(line, " test multi callbacks" SKIPEQ "%d%n",
                     &Test.Multi_Callbacks, &n) == 1)
       continue;             /* List-based (MULTI) callback function testing */
@@ -563,12 +570,13 @@ void brdcst_cmd_info (
 {
   int ctrl_id;
   int size;
-  int int_params[15];  /* Make sure this array is large enough */
+  int int_params[16];  /* Make sure this array is large enough */
 
   int j = 0;
   int_params[j++] = Debug_Driver;
   int_params[j++] = Test.DDirectory;
   int_params[j++] = Test.Local_Partitions;
+  int_params[j++] = Test.Fixed_Objects;
   int_params[j++] = Test.Multi_Callbacks;
   int_params[j++] = Test.Null_Lists;
   int_params[j++] = Output.Text;
@@ -588,6 +596,7 @@ void brdcst_cmd_info (
   Debug_Driver           = int_params[j++];
   Test.DDirectory        = int_params[j++];
   Test.Local_Partitions  = int_params[j++];
+  Test.Fixed_Objects     = int_params[j++];
   Test.Multi_Callbacks   = int_params[j++];
   Test.Null_Lists        = int_params[j++];
   Output.Text            = int_params[j++];
