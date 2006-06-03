@@ -684,6 +684,8 @@ private:
   bool verbose_;
   //! Number of PDE equations.
   int NumPDEEqns_;
+  //! Number of iterations to use in profiling
+  int profileIterations_;
 
   //@}
 

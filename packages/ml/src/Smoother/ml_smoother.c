@@ -3790,8 +3790,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    if (Amat->to != NULL) {
      sprintf(str,"TAT_%d",Amat->to->levelnum);
      ML_Operator_Set_Label( tmpmat,str);
-     num_its = ML_Operator_Profile_GetIterations();
-     ML_Operator_Profile(tmpmat, NULL, num_its);
+     ML_Operator_Profile(tmpmat, NULL);
 
    }
 

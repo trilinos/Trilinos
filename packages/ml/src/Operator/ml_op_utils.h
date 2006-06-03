@@ -66,7 +66,7 @@ extern int ML_overlap(ML_Operator *oldA, ML_Operator *newA, int overlap,
 		      ML_CommInfoOP **nonOverlapped_2_Overlapped);
 extern void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
                                          int perfAndCommStats);
-extern void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits);
+extern void ML_Operator_Profile(ML_Operator *A, char *appendlabel);
 extern void ML_Operator_Profile_SetIterations(int numits);
 extern int ML_Operator_Profile_GetIterations();
 extern int ML_Operator_Get_Nnz(ML_Operator *A);

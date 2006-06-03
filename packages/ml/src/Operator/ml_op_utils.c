@@ -2235,13 +2235,17 @@ void ML_Operator_ReportStatistics(ML_Operator *mat, char *appendlabel,
   int numits                number of applies to perform
 *******************************************************************************/
 
-void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
+void ML_Operator_Profile(ML_Operator *A, char *appendlabel)
 {
+  int numits = ML_Operator_Profile_GetIterations();
 #if defined(ML_TIMING)
   int j, ntimes;
   double *xvec,*bvec;
   double apply_time, apply_without_comm_time, pre_time, post_time;
   double t0;
+
+  if (numits <= 0)
+    return;
 
   xvec = (double *) ML_allocate((A->invec_leng) * sizeof(double));
   ML_random_vec(xvec, A->invec_leng, A->comm);

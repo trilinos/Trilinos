@@ -71,9 +71,10 @@ int ML_AGG_Smoother_Wrapper(void *obj, int leng1, double *outvec, int leng2,
 int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start, 
                        int increment_or_decrement, ML_Aggregate *ag)
 {
-   int    level, idata;
+   int    level, idata, i;
    double dnnz = 0;
    ML_Aggregate *ml_ag;
+   int profile_its;
 #ifdef ML_TIMING
    double t0;
 #endif
@@ -162,6 +163,13 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    dnnz = ML_gsum_double( dnnz, ml->comm );
    ml_ag->operator_complexity += dnnz;
 
+   for (i=0; i<level; i++) {
+     int thisLevel = ml->LevelID[i];
+     ML_Operator_Profile(ml->Amat+thisLevel,NULL);
+     if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
+     if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
+   }
+
    idata = ML_gmax_int(idata, ml->comm);
    if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
       ML_Aggregate_Print_Complexity( ml_ag );
@@ -184,7 +192,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
 		       void *data, ML_Aggregate *ag)
 {
    int level, next, flag, count=1;
-   int i, j, bail_flag, N_input_vector;
+   int i, j, k, bail_flag, N_input_vector;
    ML_Operator *Pmat;
    ML_CommInfoOP *getrow_comm; 
    ML_Operator *Ptent;
@@ -207,6 +215,8 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    ml->ML_finest_level = fine_level;
    level = fine_level;
    next  = next_level(ml, level, ag);
+   k = 0;
+   ml->LevelID[k++] = fine_level;
 
    while (next >= 0) 
    {
@@ -300,6 +310,7 @@ MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
       level = next;
+      ml->LevelID[k++] = next;
       next  = next_level(ml, next, ag);
       count++;
    }
@@ -2273,7 +2284,7 @@ int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
 						int increment_or_decrement,
 						ML_Aggregate *ag)
 {
-   int    level, idata;
+   int    level, idata, i;
    double dnnz = 0;
    ML_Aggregate *ml_ag;
 #ifdef ML_TIMING
@@ -2348,6 +2359,13 @@ int ML_Gen_MultiLevelHierarchy_UsingAggregation(ML *ml, int start,
       dnnz = ml->Amat[start+1-level].N_nonzeros;
    dnnz = ML_gsum_double( dnnz, ml->comm );
    ml_ag->operator_complexity += dnnz;
+                                                                                
+   for (i=0; i<level; i++) {
+     int thisLevel = ml->LevelID[i];
+     ML_Operator_Profile(ml->Amat+thisLevel,NULL);
+     if (i != level-1) ML_Operator_Profile(ml->Rmat+thisLevel,NULL);
+     if (i != 0)       ML_Operator_Profile(ml->Pmat+thisLevel,NULL);
+   }
 
    idata = ML_gmax_int(idata, ml->comm);
    if ( ml->comm->ML_mypid == 0 && ml_ag->print_flag < ML_Get_PrintLevel()) 
@@ -2370,7 +2388,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
         void *user_data)
 {
    int level, next, flag, count=1;
-   int i, j, bail_flag, N_input_vector;
+   int i, j, k, bail_flag, N_input_vector;
    ML_Operator *Amat, *Pmat, *Ptent;
    ML_CommInfoOP *getrow_comm;
    int aux_flag;
@@ -2383,6 +2401,8 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
    ml->ML_finest_level = fine_level;
    level = fine_level;
    next  = user_next_level(ml, level, user_data);
+   k = 0;
+   ml->LevelID[k++] = fine_level;
 
    while (next >= 0) 
    {
@@ -2511,6 +2531,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
         ml->Amat[next].aux_data->threshold = ml->Amat[level].aux_data->threshold * 1.0;
 
       level = next;
+      ml->LevelID[k++] = next;
       next  = user_next_level(ml, next, user_data);
 
       count++;

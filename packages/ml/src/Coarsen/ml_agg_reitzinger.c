@@ -29,7 +29,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                     int smooth_flag, double smooth_factor,
                     double beta)
 {
-  int profile_its;
   int coarsest_level, counter, Nghost, i, *Tcoarse_bindx = NULL;
   int *Tcoarse_rowptr, nz_ptr, row_length, j, *temp_bindx = NULL;
   double *Tcoarse_val = NULL, *temp_val = NULL;
@@ -112,10 +111,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   sprintf(str,"Tmat_%d",fine_level); ML_Operator_Set_Label(Tmat,str);
   sprintf(str,"Ttrans_%d",fine_level); ML_Operator_Set_Label(Tmat_trans,str);
   ML_Operator_ChangeToChar(Tfine);
-  profile_its = ML_Operator_Profile_GetIterations();
-  ML_Operator_Profile(Tfine, NULL, profile_its);
+  ML_Operator_Profile(Tfine, NULL);
   ML_Operator_ChangeToChar(Tmat_trans);
-  ML_Operator_Profile(Tmat_trans, NULL, profile_its);
+  ML_Operator_Profile(Tmat_trans, NULL);
 
   /********************************************************************/
   /* Set up the operators corresponding to regular unsmoothed         */
@@ -124,7 +122,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   Nnz_finegrid = ML_Operator_Get_Nnz(ml_edges->Amat+fine_level);
   Nnz_allgrids = Nnz_finegrid;
   ml_edges->ML_finest_level = fine_level;
-  ML_Operator_Profile(ml_edges->Amat+fine_level, "edge", profile_its);
+  ML_Operator_Profile(ml_edges->Amat+fine_level, "edge");
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                                       ML_DECREASING, ag);
@@ -443,7 +441,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
      ML_free(pos_coarse_dirichlet);
      ML_free(neg_coarse_dirichlet);
-     ML_Operator_Profile(Rn_coarse, "node", profile_its);
+     ML_Operator_Profile(Rn_coarse, "node");
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Rn_coarse);
 #endif
@@ -470,7 +468,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
        sprintf(str,"Node%d",grid_level);
        ML_Operator_ReportStatistics(ml_nodes->Amat+grid_level,str,ML_FALSE);
      }
-     ML_Operator_Profile(Kn_coarse, "node", profile_its);
+     ML_Operator_Profile(Kn_coarse, "node");
 
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Kn_coarse);
@@ -1122,7 +1120,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
   VT_end(ml_vt_build_Pe_state);
 #endif
    
-     ML_Operator_Profile(Pn_coarse, "node", profile_its);
+     ML_Operator_Profile(Pn_coarse, "node");
 #ifdef ML_MAXWELL_FREE_NODE_HIERARCHY
      ML_Operator_Clean(Pn_coarse);
 #endif
@@ -1352,7 +1350,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
                  &(ml_edges->SingleLevel[grid_level]), 
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Operator_ChangeToSinglePrecision(ml_edges->Pmat+grid_level);
-     ML_Operator_Profile(Pe, "edge", profile_its);
+     ML_Operator_Profile(Pe, "edge");
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level, NULL);
      ML_Operator_ChangeToSinglePrecision(&(ml_edges->Rmat[grid_level+1]));
      ML_memory_check("L%d TransP end",grid_level);
@@ -1381,7 +1379,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
      }
 
      Pe = &(ml_edges->Amat[grid_level]);
-     ML_Operator_Profile(Pe, "edge_before_repartition", profile_its);
+     ML_Operator_Profile(Pe, "edge_before_repartition");
 
      ML_memory_check("L%d EdgeRepartition",grid_level);
      perm = ML_repartition_Acoarse(ml_edges, grid_level+1, grid_level,
@@ -1404,12 +1402,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
 
      if (ML_Repartition_Status(ml_edges) == ML_TRUE)
        ML_memory_check("L%d EdgeRepartition end",grid_level);
-     ML_Operator_Profile(Tcoarse, NULL, profile_its);
-     ML_Operator_Profile(Tcoarse_trans, NULL, profile_its);
+     ML_Operator_Profile(Tcoarse, NULL);
+     ML_Operator_Profile(Tcoarse_trans, NULL);
      Pe = Tcoarse;
      ML_Operator_ImplicitTranspose(&(ml_edges->Rmat[grid_level+1]),
 				   &(ml_edges->Pmat[grid_level]), ML_TRUE);
-     ML_Operator_Profile(ml_edges->Rmat+grid_level+1, "edge", profile_its);
+     ML_Operator_Profile(ml_edges->Rmat+grid_level+1, "edge");
 
      ML_memory_check("L%d RAP end",grid_level);
 

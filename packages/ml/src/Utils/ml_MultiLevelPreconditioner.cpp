@@ -1406,6 +1406,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
       agg_->minimizing_energy_droptol = List_.get("energy minimization: droptol", 0.0);
     }
 
+    profileIterations_ = List_.get("profile: operator iterations", 0);
+    ML_Operator_Profile_SetIterations(profileIterations_);
     NumLevels_ = 
       ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 
@@ -1486,7 +1488,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
     string DampingType = List_.get("R and P smoothing: damping", "default");
     if (DampingType == "non-smoothed") smooth_flag = ML_NO;
     double enrichBeta = List_.get("R and P smoothing: enrich beta",0.0);
-    
+
+    profileIterations_ = List_.get("profile: operator iterations", 0);
+    ML_Operator_Profile_SetIterations(profileIterations_);
     NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
                             LevelID_[0], Direction,agg_,
                             TMatrixML_,TMatrixTransposeML_, 
@@ -1771,6 +1775,8 @@ ReComputePreconditioner()
     cout << PrintMsg_ << "Re-computing the preconditioner..." << endl;
   }
 
+  profileIterations_ = List_.get("profile: operator iterations", 0);
+  ML_Operator_Profile_SetIterations(profileIterations_);
   ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
 
   if (verbose_)
