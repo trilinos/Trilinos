@@ -104,6 +104,8 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_nos1.mtx nos1.mtx                                      
 	cp  $(srcdir)/In_nos5.mtx nos5.mtx                                      
 	cp  $(srcdir)/In_FourByFour.mtx FourByFour.mtx                          
+	cp  $(srcdir)/In_StructurallySingular.mtx StructurallySingular.mtx                          
+	cp  $(srcdir)/In_NumericallySingular.mtx NumericallySingular.mtx                          
 	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx                              
 	cp  $(srcdir)/In_MissingADiagonal.mtx MissingADiagonal.mtx                              
 	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx                                  
@@ -147,6 +149,8 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
         $(srcdir)/In_nos1.mtx \
         $(srcdir)/In_nos5.mtx \
         $(srcdir)/In_FourByFour.mtx \
+        $(srcdir)/In_StructurallySingular.mtx \
+        $(srcdir)/In_NumericallySingular.mtx \
         $(srcdir)/In_Diagonal.mtx \
         $(srcdir)/In_MissingADiagonal.mtx \
         $(srcdir)/In_KheadK.mtx \
@@ -193,6 +197,8 @@ clean:  clean-am
         nos1.mtx \
         nos5.mtx \
         FourByFour.mtx \
+        StructurallySingular.mtx \
+        NumericallySingular.mtx \
         Diagonal.mtx \
         MissingADiagonal.mtx \
         KheadK.mtx \
