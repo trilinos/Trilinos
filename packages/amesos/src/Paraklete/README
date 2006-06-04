@@ -1,6 +1,0 @@
-To run, and test on a small matrix:
-
-make
-mpirun -np 8 pk ibm
-
-The output should be the same as in the Output/ directory.
