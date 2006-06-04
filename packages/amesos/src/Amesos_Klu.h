@@ -86,7 +86,8 @@ do not suffer much fill-in (such as most circuit matrices when
 permuted properly) dense matrix kernels do not help, and the
 asymptotic run-time is of practical importance.
 
-The \c klu_btf code first permutes the matrix to upper block
+The \c klu_
+btf code first permutes the matrix to upper block
 triangular form (using two algorithms by Duff and Reid,
 MC13 and MC21, in the ACM Collected Algorithms).  It then permutes
 each block via a symmetric minimum degree ordering (AMD, by Amestoy,
@@ -221,6 +222,8 @@ private:
         symbolic factorization and accompanying information.  
       SymbolicFactorizationOK_ = true; 
     Note:  All action is performed on process 0
+
+    Returns non-zero if the symbolic factorization failed
   */
       
   int PerformSymbolicFactorization(); 
@@ -323,7 +326,7 @@ private:
   Teuchos::RefCountPtr<Epetra_Import> ImportToSerial_;
   Teuchos::RefCountPtr<Epetra_Import> ImportRangeToSerial_;
   Teuchos::RefCountPtr<Epetra_Import> ImportDomainToSerial_;
-  
+
 };  // class Amesos_Klu  
 
 #endif /* AMESOS_KLU_H */

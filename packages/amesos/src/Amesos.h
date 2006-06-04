@@ -30,6 +30,7 @@
 
 #ifndef _AMESOS_FACTORY_H_
 #define _AMESOS_FACTORY_H_
+
 #include "Amesos_BaseSolver.h"
 
 //! Amesos:  A method for binding a third party direct solver to an Epetra_LinearProblem.

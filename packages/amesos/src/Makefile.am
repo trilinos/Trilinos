@@ -131,51 +131,36 @@ if HAVE_AMESOS_KLU
 #  hence they are commented out from here.  
 #
 KLU_H = \
-	$(srcdir)/klu_btf/klu_btf.h \
-	$(srcdir)/klu_btf/klu_dump.h \
-	$(srcdir)/klu_kernel/klu_kernel.h\
-	$(srcdir)/klu_btf/klu_btf_internal.h \
-	$(srcdir)/klu_kernel/klu.h \
-	$(srcdir)/klu_kernel/tictoc.h \
-	$(srcdir)/btf/btf.h \
-	$(srcdir)/metis-4.0/Lib/metis.h \
-	$(srcdir)/AMD/Include/amd.h \
-	$(srcdir)/colamd/colamd.h \
+	$(srcdir)/UFsparse/KLU/Include/klu.h \
+	$(srcdir)/UFsparse/KLU/Include/klu_internal.h \
+	$(srcdir)/UFsparse/KLU/Include/klu_version.h \
+	$(srcdir)/UFsparse/BTF/Include/btf.h \
+	$(srcdir)/UFsparse/BTF/Include/btf_internal.h \
 	$(srcdir)/Amesos_Klu.h
 
 KLU = \
 	$(srcdir)/Amesos_Klu.cpp \
-	$(srcdir)/AMD/Source/amd_1.c \
-	$(srcdir)/AMD/Source/amd_2.c \
-	$(srcdir)/AMD/Source/amd_aat.c \
-	$(srcdir)/AMD/Source/amd_control.c \
-	$(srcdir)/AMD/Source/amd_defaults.c \
-	$(srcdir)/AMD/Source/amd_dump.c \
-	$(srcdir)/AMD/Source/amd_info.c \
-	$(srcdir)/AMD/Source/amd_order.c \
-	$(srcdir)/AMD/Source/amd_postorder.c \
-	$(srcdir)/AMD/Source/amd_post_tree.c \
-	$(srcdir)/AMD/Source/amd_preprocess.c \
-	$(srcdir)/AMD/Source/amd_valid.c \
-	$(srcdir)/AMD/Source/amd_internal.h \
-	$(srcdir)/btf/btf_order.c \
-	$(srcdir)/btf/btf_internal.h \
-	$(srcdir)/btf/maxtrans.c \
-	$(srcdir)/btf/strongcomp.c \
-	$(srcdir)/colamd/colamd.c \
-	$(srcdir)/klu_btf/klu_btf_analyze.c \
-	$(srcdir)/klu_btf/klu_btf_analyze_given.c \
-	$(srcdir)/klu_btf/klu_btf_defaults.c \
-	$(srcdir)/klu_btf/klu_btf_factor.c \
-	$(srcdir)/klu_btf/klu_btf_free_numeric.c \
-	$(srcdir)/klu_btf/klu_btf_free_symbolic.c \
-	$(srcdir)/klu_btf/klu_btf_refactor.c \
-	$(srcdir)/klu_btf/klu_btf_scale.c \
-	$(srcdir)/klu_btf/klu_btf_solve.c \
-	$(srcdir)/klu_btf/klu_btf_tsolve.c \
-	$(srcdir)/klu_btf/klu_dump.c \
-	$(srcdir)/klu_kernel/klu.c \
-	$(srcdir)/klu_kernel/klu_kernel.c
+	$(srcdir)/UFsparse/KLU/Source/klu_analyze.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_analyze_given.c \
+	$(srcdir)/UFsparse/KLU/Source/klu.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_defaults.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_diagnostics.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_dump.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_extract.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_factor.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_free_numeric.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_free_symbolic.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_kernel.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_memory.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_refactor.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_scale.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_solve.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_sort.c \
+	$(srcdir)/UFsparse/KLU/Source/klu_tsolve.c \
+	$(srcdir)/UFsparse/BTF/Source/btf_order.c \
+	$(srcdir)/UFsparse/BTF/Source/maxtrans.c \
+	$(srcdir)/UFsparse/BTF/Source/strongcomp.c
+
 
 else
 KLU_H =
@@ -233,140 +218,109 @@ PASTIX_H =
 PASTIX =
 endif
 
+
+PARAKLETE_KLU_COMMON = \
+	$(srcdir)/UFsparse/AMD/Source/amd_1.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_2.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_aat.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_control.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_defaults.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_dump.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_global.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_info.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_order.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_postorder.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_post_tree.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_preprocess.c \
+	$(srcdir)/UFsparse/AMD/Source/amd_valid.c \
+	$(srcdir)/UFsparse/COLAMD/colamd.c \
+	$(srcdir)/UFsparse/COLAMD/colamd_global.c 
+
+PARAKLETE_KLU_COMMON_H = \
+	$(srcdir)/UFsparse/AMD/Include/amd.h \
+	$(srcdir)/UFsparse/AMD/Include/amd_internal.h \
+	$(srcdir)/UFsparse/COLAMD/colamd.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_check.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_core.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_internal.h \
+	$(srcdir)/UFsparse/CHOLMOD/Include/cholmod_partition.h 
+
+if HAVE_AMESOS_PARAKLETE
+PARAKLETE_KLU = ${PARAKLETE_KLU_COMMON}
+PARAKLETE_KLU_H = ${PARAKLETE_KLU_COMMON_H}
+else
+if HAVE_AMESOS_KLU
+PARAKLETE_KLU = ${PARAKLETE_KLU_COMMON}
+PARAKLETE_KLU_H = ${PARAKLETE_KLU_COMMON_H}
+else
+PARAKLETE_KLU = 
+endif 
+endif
+
 if HAVE_AMESOS_PARAKLETE
 PARAKLETE_H = \
-	$(srcdir)/CColamd/ccolamd.h \
-	$(srcdir)/CColamd/ccolamd_internal.h \
-	$(srcdir)/metis-4.0/Lib/defs.h \
-	$(srcdir)/metis-4.0/Lib/macros.h \
-	$(srcdir)/metis-4.0/Lib/metis.h \
-	$(srcdir)/metis-4.0/Lib/proto.h \
-	$(srcdir)/metis-4.0/Lib/rename.h \
-	$(srcdir)/metis-4.0/Lib/struct.h \
 	$(srcdir)/Amesos_Paraklete.h \
-	$(srcdir)/Paraklete/paraklete.h \
-	$(srcdir)/CColamd/ccolamd.h \
-	$(srcdir)/Cholmod/Include/cholmod_check.h \
-	$(srcdir)/Cholmod/Include/cholmod_core.h \
-	$(srcdir)/Cholmod/Include/cholmod.h \
-	$(srcdir)/Cholmod/Include/cholmod_internal.h \
-	$(srcdir)/Cholmod/Include/cholmod_partition.h \
-	$(srcdir)/AMD/Include/amd.h \
-	$(srcdir)/Cholmod/Cholesky/cholmod_lsolve.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_ltsolve.c \
-	$(srcdir)/AMD/Source/amd_internal.h
+	$(srcdir)/UFsparse/PARAKLETE/paraklete.h \
+	$(srcdir)/UFsparse/CCOLAMD/ccolamd.h 
 
-#  Note:  Paraklete rewuires KLU (for colamd) 
+#  Note:  PARAKLETE rewuires KLU (for colamd) 
 
 BOGUSMEX= \
-	$(srcdir)/CColamd/ccolamdmex.c \
-	$(srcdir)/CColamd/csymamdmex.c
+	$(srcdir)/UFsparse/CCOLAMD/ccolamdmex.c \
+	$(srcdir)/UFsparse/CCOLAMD/csymamdmex.c
 
 PARAKLETE = \
-	$(srcdir)/CColamd/ccolamd.c \
-	$(srcdir)/CColamd/ccolamd_apply_order.c \
-	$(srcdir)/CColamd/ccolamd_fsize.c \
-	$(srcdir)/CColamd/ccolamd_post_tree.c \
-	$(srcdir)/CColamd/ccolamd_postorder.c \
-	$(srcdir)/metis-4.0/Lib/coarsen.c \
-	$(srcdir)/metis-4.0/Lib/fm.c \
-	$(srcdir)/metis-4.0/Lib/initpart.c \
-	$(srcdir)/metis-4.0/Lib/match.c \
-	$(srcdir)/metis-4.0/Lib/ccgraph.c \
-	$(srcdir)/metis-4.0/Lib/memory.c \
-	$(srcdir)/metis-4.0/Lib/pmetis.c \
-	$(srcdir)/metis-4.0/Lib/pqueue.c \
-	$(srcdir)/metis-4.0/Lib/refine.c \
-	$(srcdir)/metis-4.0/Lib/util.c \
-	$(srcdir)/metis-4.0/Lib/timing.c \
-	$(srcdir)/metis-4.0/Lib/debug.c \
-	$(srcdir)/metis-4.0/Lib/bucketsort.c \
-	$(srcdir)/metis-4.0/Lib/graph.c \
-	$(srcdir)/metis-4.0/Lib/stat.c \
-	$(srcdir)/metis-4.0/Lib/kmetis.c \
-	$(srcdir)/metis-4.0/Lib/kwayrefine.c \
-	$(srcdir)/metis-4.0/Lib/kwayfm.c \
-	$(srcdir)/metis-4.0/Lib/balance.c \
-	$(srcdir)/metis-4.0/Lib/ometis.c \
-	$(srcdir)/metis-4.0/Lib/srefine.c \
-	$(srcdir)/metis-4.0/Lib/sfm.c \
-	$(srcdir)/metis-4.0/Lib/separator.c \
-	$(srcdir)/metis-4.0/Lib/mincover.c \
-	$(srcdir)/metis-4.0/Lib/mmd.c \
-	$(srcdir)/metis-4.0/Lib/mesh.c \
-	$(srcdir)/metis-4.0/Lib/meshpart.c \
-	$(srcdir)/metis-4.0/Lib/frename.c \
-	$(srcdir)/metis-4.0/Lib/fortran.c \
-	$(srcdir)/metis-4.0/Lib/myqsort.c \
-	$(srcdir)/metis-4.0/Lib/compress.c \
-	$(srcdir)/metis-4.0/Lib/parmetis.c \
-	$(srcdir)/metis-4.0/Lib/estmem.c \
-	$(srcdir)/metis-4.0/Lib/mpmetis.c \
-	$(srcdir)/metis-4.0/Lib/mcoarsen.c \
-	$(srcdir)/metis-4.0/Lib/mmatch.c \
-	$(srcdir)/metis-4.0/Lib/minitpart.c \
-	$(srcdir)/metis-4.0/Lib/mbalance.c \
-	$(srcdir)/metis-4.0/Lib/mrefine.c \
-	$(srcdir)/metis-4.0/Lib/mutil.c \
-	$(srcdir)/metis-4.0/Lib/mfm.c \
-	$(srcdir)/metis-4.0/Lib/mkmetis.c \
-	$(srcdir)/metis-4.0/Lib/mkwayrefine.c \
-	$(srcdir)/metis-4.0/Lib/mkwayfmh.c \
-	$(srcdir)/metis-4.0/Lib/mrefine2.c \
-	$(srcdir)/metis-4.0/Lib/minitpart2.c \
-	$(srcdir)/metis-4.0/Lib/mbalance2.c \
-	$(srcdir)/metis-4.0/Lib/mfm2.c \
-	$(srcdir)/metis-4.0/Lib/kvmetis.c \
-	$(srcdir)/metis-4.0/Lib/kwayvolrefine.c \
-	$(srcdir)/metis-4.0/Lib/kwayvolfm.c \
-	$(srcdir)/metis-4.0/Lib/subdomains.c \
-	$(srcdir)/Paraklete/pk.c \
-	$(srcdir)/Paraklete/test_memory.c \
-	$(srcdir)/Paraklete/paraklete_analyze.c \
-	$(srcdir)/Paraklete/paraklete_factorize.c \
-	$(srcdir)/Paraklete/paraklete_kernel.c \
-	$(srcdir)/Paraklete/paraklete_solve.c \
-	$(srcdir)/Paraklete/paraklete_node.c \
-	$(srcdir)/Paraklete/paraklete_lsolve_node.c \
-	$(srcdir)/Paraklete/paraklete_usolve_node.c \
-	$(srcdir)/AMD/Source/amd_1.c \
-	$(srcdir)/AMD/Source/amd_2.c \
-	$(srcdir)/AMD/Source/amd_aat.c \
-	$(srcdir)/AMD/Source/amd_control.c \
-	$(srcdir)/AMD/Source/amd_defaults.c \
-	$(srcdir)/AMD/Source/amd_dump.c \
-	$(srcdir)/AMD/Source/amd_info.c \
-	$(srcdir)/AMD/Source/amd_order.c \
-	$(srcdir)/AMD/Source/amd_postorder.c \
-	$(srcdir)/AMD/Source/amd_post_tree.c \
-	$(srcdir)/AMD/Source/amd_preprocess.c \
-	$(srcdir)/AMD/Source/amd_valid.c \
-	$(srcdir)/Cholmod/Core/cholmod_common.c \
-	$(srcdir)/Cholmod/Core/cholmod_dense.c \
-	$(srcdir)/Cholmod/Core/cholmod_factor.c \
-	$(srcdir)/Cholmod/Core/cholmod_memory.c \
-	$(srcdir)/Cholmod/Core/cholmod_postorder.c \
-	$(srcdir)/Cholmod/Core/cholmod_sparse.c \
-	$(srcdir)/Cholmod/Core/cholmod_band.c \
-	$(srcdir)/Cholmod/Core/cholmod_copy.c \
-	$(srcdir)/Cholmod/Core/cholmod_triplet.c \
-	$(srcdir)/Cholmod/Core/cholmod_error.c \
-	$(srcdir)/Cholmod/Core/cholmod_aat.c \
-	$(srcdir)/Cholmod/Core/cholmod_add.c \
-	$(srcdir)/Cholmod/Check/cholmod_check.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_amd.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_analyze.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_colamd.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_etree.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_factorize.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_solve.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_resymbol.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_rowcolcounts.c \
-	$(srcdir)/Cholmod/Cholesky/cholmod_rowfac.c \
-	$(srcdir)/Cholmod/Partition/cholmod_ccolamd.c \
-	$(srcdir)/Cholmod/Partition/cholmod_csymamd.c \
-	$(srcdir)/Cholmod/Partition/cholmod_metis.c \
-	$(srcdir)/Cholmod/Partition/cholmod_nd.c \
+	$(srcdir)/UFsparse/PARAKLETE/memory.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_analyze.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_factorize.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_kernel.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_solve.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_node.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_lsolve_node.c \
+	$(srcdir)/UFsparse/PARAKLETE/paraklete_usolve_node.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_common.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_dense.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_change_factor.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_memory.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_complex.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_transpose.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_sparse.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_band.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_copy.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_triplet.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_error.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_aat.c \
+	$(srcdir)/UFsparse/CHOLMOD/Core/cholmod_add.c \
+	$(srcdir)/UFsparse/CHOLMOD/Check/cholmod_check.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_postorder.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_amd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_colamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_etree.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_rowcolcounts.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_solve.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_resymbol.c \
+	$(srcdir)/UFsparse/CHOLMOD/Cholesky/cholmod_analyze.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_ccolamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_camd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_csymamd.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_metis.c \
+	$(srcdir)/UFsparse/CHOLMOD/Partition/cholmod_nesdis.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_1.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_2.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_aat.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_control.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_defaults.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_dump.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_info.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_order.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_postorder.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_preprocess.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_valid.c \
+	$(srcdir)/UFsparse/CAMD/Source/camd_global.c \
+	$(srcdir)/UFsparse/CCOLAMD/ccolamd.c \
+	$(srcdir)/UFsparse/CCOLAMD/ccolamd_global.c \
 	$(srcdir)/Amesos_Paraklete.cpp
 else
 PARAKLETE_H =
@@ -466,8 +420,8 @@ endif
 #AM_CPPFLAGS = -I$(top_srcdir)/../epetraext/src/transform \
 #	-I$(top_srcdir)/../epetraext/src \
 #	-I$(top_srcdir)/../epetra/src \
-#	-I$(top_srcdir)/src/AMD/Include \
-#	-I$(top_srcdir)/src/AMD/Source \
+#	-I$(top_srcdir)/src/UFsparse/AMD/Include \
+#	-I$(top_srcdir)/src/UFsparse/AMD/Source \
 #	-I$(top_srcdir)/src/colamd \
 #	-I$(top_srcdir)/src/btf \
 #	-I$(top_srcdir)/src/klu_btf \
@@ -492,16 +446,15 @@ EXPORT_INCLUDES = $(AMESOS_INCLUDES)
 endif
 
 AM_CPPFLAGS = $(EXPORT_INCLUDES) $(EPETRA_EXT_INCLUDE) $(SLUSERIAL_CPPFLAGS) $(KUNDERT_CPPFLAGS) \
-	      -I$(top_srcdir)/src/AMD/Include \
-	      -I$(top_srcdir)/src/AMD/Source \
-	      -I$(top_srcdir)/src/Paraklete \
-	      -I$(top_srcdir)/src/Cholmod/Include \
-	      -I$(top_srcdir)/src/metis-4.0/Lib/ \
-	      -I$(top_srcdir)/src/CColamd \
-	      -I$(top_srcdir)/src/colamd \
-	      -I$(top_srcdir)/src/btf \
-	      -I$(top_srcdir)/src/klu_btf \
-	      -I$(top_srcdir)/src/klu_kernel 
+	      -I$(top_srcdir)/src/UFsparse/AMD/Include \
+	      -I$(top_srcdir)/src/UFsparse/PARAKLETE \
+	      -I$(top_srcdir)/src/UFsparse/CHOLMOD/Include \
+	      -I$(top_srcdir)/src/UFsparse/CCOLAMD \
+	      -I$(top_srcdir)/src/UFsparse/COLAMD \
+	      -I$(top_srcdir)/src/UFsparse/BTF/Include \
+	      -I$(top_srcdir)/src/UFsparse/CAMD/Include \
+	      -I$(top_srcdir)/src/UFsparse/UFconfig \
+	      -I$(top_srcdir)/src/UFsparse/KLU/Include 
 
 # ------------------------------------------------------------------------
 # Amesos library specifications
@@ -514,11 +467,12 @@ AMESOS_H = \
 	$(SUPPORT_H) \
 	$(DSCPACK_H) \
 	$(UMFPACK_H) \
-	$(KLU_H) \
 	$(MUMPS_H) \
 	$(PARDISO_H) \
 	$(TAUCS_H) \
 	$(PASTIX_H) \
+	$(PARAKLETE_KLU_H) \
+	$(KLU_H) \
 	$(PARAKLETE_H) \
 	$(MC64_H) \
 	$(SCALAPACK_H) \
@@ -536,12 +490,13 @@ AMESOS_H = \
 libamesos_a_SOURCES = \
 	$(SUPPORT) \
 	$(DSCPACK) \
-	$(KLU) \
 	$(UMFPACK) \
 	$(MUMPS) \
 	$(PARDISO) \
 	$(TAUCS) \
 	$(PASTIX) \
+	$(PARAKLETE_KLU) \
+	$(KLU) \
 	$(PARAKLETE) \
 	$(MC64) \
 	$(SCALAPACK) \

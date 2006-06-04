@@ -33,26 +33,74 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 #include "Amesos_Support.h"
+
 extern "C" {
   // #include "amd.h"
-#include "klu_btf.h"
+#include "klu.h"
 #if 0
 #include "klu_dump.h"
 #endif
 }
 
+#define USE_TEUCHOS_REFCOUNT_PTR
+
+namespace {
+
+using Teuchos::RefCountPtr;
+
+template<class T, class DeleteFunctor>
+class DeallocFunctorDeleteWithCommon
+{
+public:
+  DeallocFunctorDeleteWithCommon(
+				 const RefCountPtr<klu_common>  &common
+				 ,DeleteFunctor                        deleteFunctor
+				 )
+    : common_(common), deleteFunctor_(deleteFunctor)
+    {}
+  typedef T ptr_t;
+  void free( T* ptr ) {
+    if(ptr) deleteFunctor_(&ptr,&*common_);
+  }
+private:
+  Teuchos::RefCountPtr<klu_common> common_;
+  DeleteFunctor deleteFunctor_;
+  DeallocFunctorDeleteWithCommon(); // Not defined and not to be called!
+};
+
+template<class T, class DeleteFunctor>
+DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
+deallocFunctorDeleteWithCommon(
+			       const RefCountPtr<klu_common>  &common
+			       ,DeleteFunctor                        deleteFunctor
+			       )
+{
+  return DeallocFunctorDeleteWithCommon<T,DeleteFunctor>(common,deleteFunctor);
+}
+
+
+} // namespace 
+
 class Amesos_Klu_Pimpl {
 public:
-   Teuchos::RefCountPtr<klu_symbolic> Symbolic_ ;
-   Teuchos::RefCountPtr<klu_numeric> Numeric_ ;
+#ifdef USE_TEUCHOS_REFCOUNT_PTR
+  Teuchos::RefCountPtr<klu_symbolic> Symbolic_;
+  Teuchos::RefCountPtr<klu_numeric> Numeric_;
+  Teuchos::RefCountPtr<klu_common> common_;
+#else
+  klu_symbolic* Symbolic_ ;
+  klu_numeric* Numeric_ ;
+  klu_common control ;
+  
 
-#if 0
   Amesos_Klu_Pimpl():
     Symbolic_(0),
     Numeric_(0)
   {}
 
   ~Amesos_Klu_Pimpl(void){
+    if ( Symbolic_ ) klu_free_symbolic( &Symbolic_, &control );
+    if ( Numeric_ ) klu_free_numeric( &Numeric_, &control );
   }
 #endif 
 } ;
@@ -91,7 +139,7 @@ int Amesos_Klu::ExportToSerial()
     assert ( RowMatrixA_ != 0 ) ; 
     if (  AddZeroToDiag_==0 && numentries_ != RowMatrixA_->NumGlobalNonzeros()) { 
       cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
-      AMESOS_CHK_ERR( -2 );
+      AMESOS_CHK_ERR( -3 );
     }
     assert ( ImportToSerial_.get() != 0 ) ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
@@ -117,14 +165,14 @@ int Amesos_Klu::ExportToSerial()
       cerr << " Amesos_Klu cannot handle this matrix.  " ;
       if ( Reindex_ ) {
 	cerr << "Unknown error" << endl ; 
-	AMESOS_CHK_ERR( -5 );
+	AMESOS_CHK_ERR( -4 );
       } else {
 	cerr << " Try setting the Reindex parameter to true. " << endl ; 
 #ifndef HAVE_AMESOS_EPETRAEXT
 	cerr << " You will need to rebuild the Amesos library with the EpetraExt library to use the reindex feature" << endl ; 
 	cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << endl ;
 #endif
-	AMESOS_CHK_ERR( -3 );
+	AMESOS_CHK_ERR( -5 );
       }
     }
   }
@@ -185,7 +233,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
   CrsMatrixA_ = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
 
   if  ( Reindex_ ) {
-    if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR(-4);
+    if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR(-7);
 #ifdef HAVE_AMESOS_EPETRAEXT
     const Epetra_Map& OriginalMap = CrsMatrixA_->RowMap();
     StdIndex_ = rcp( new Amesos_StandardIndex( OriginalMap  ) );
@@ -197,7 +245,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
 #else
     cerr << "Amesos_Klu requires EpetraExt to reindex matrices." << endl 
 	 <<  " Please rebuild with the EpetraExt library by adding --enable-epetraext to your configure invocation" << endl ;
-    AMESOS_CHK_ERR(-4);
+    AMESOS_CHK_ERR(-8);
 #endif
   } else { 
     StdIndexMatrix_ = RowMatrixA_ ;
@@ -224,7 +272,7 @@ int Amesos_Klu::CreateLocalMatrixAndExporters()
     SerialBextract_ = rcp (new Epetra_MultiVector(*SerialMap_,NumVectors_));
 
     ImportToSerial_ = rcp(new Epetra_Import ( *SerialMap_, StdIndexMatrix_->RowMatrixRowMap() ) );
-    if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-5);
+    if (ImportToSerial_.get() == 0) AMESOS_CHK_ERR(-9);
 
     SerialCrsMatrixA_ = rcp( new Epetra_CrsMatrix(Copy, *SerialMap_, 0) ) ;
     SerialMatrix_ = &*SerialCrsMatrixA_ ;
@@ -294,7 +342,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 	  if( CrsMatrix->
 	      ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
 				ColIndices ) != 0 ) 
-	    AMESOS_CHK_ERR( -6 );
+	    AMESOS_CHK_ERR( -10 );
 	  if ( MyRow == 0 ) {
 	    Ai = ColIndices ;
 	    Aval = RowValues ;
@@ -318,14 +366,14 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime)
 	  if( CrsMatrix->
 	      ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues,
 				ColIndices ) != 0 ) 
-	    AMESOS_CHK_ERR( -6 );
+	    AMESOS_CHK_ERR( -11 );
 
 	} else {
 	  if( SerialMatrix_->
 			  ExtractMyRowCopy( MyRow, MaxNumEntries_,
 					    NumEntriesThisRow, &RowValuesV_[0],
 					    &ColIndicesV_[0] ) != 0 ) 
-	    AMESOS_CHK_ERR( -6 );
+	    AMESOS_CHK_ERR( -12 );
 
 	  RowValues =  &RowValuesV_[0];
 	  ColIndices = &ColIndicesV_[0];
@@ -397,16 +445,24 @@ int Amesos_Klu::PerformSymbolicFactorization()
   ResetTime(0);
 
   if (MyPID_ == 0) {
-#if 0
-    if (PrivateKluData_->Symbolic_) {
-	klu_btf_free_symbolic (&(PrivateKluData_->Symbolic_)) ;
-    }
-#endif
 
+    PrivateKluData_->common_ = rcp(new klu_common());
+    klu_defaults(&*PrivateKluData_->common_) ;
     PrivateKluData_->Symbolic_ =
-	rcp( klu_btf_analyze (NumGlobalElements_, &Ap[0], Ai, (klu_control *) 0),
-		 deallocFunctorHandleDelete<klu_symbolic>(klu_btf_free_symbolic), false  );
-    //    if ( PrivateKluData_->Symbolic_ == 0 ) AMESOS_CHK_ERR( 1 ) ;
+      rcp(
+	  klu_analyze (NumGlobalElements_, &Ap[0], Ai,  &*PrivateKluData_->common_ ) 
+	  ,deallocFunctorDeleteWithCommon<klu_symbolic>(PrivateKluData_->common_,klu_free_symbolic)
+	  ,false
+	  );
+
+	const  bool symbolic_ok =  (PrivateKluData_->Symbolic_.get() != NULL) 
+	  && PrivateKluData_->common_->status == KLU_OK ;
+	if ( ! symbolic_ok ) {
+	  cout << __FILE__ << "::" << __LINE__ <<
+	    " NumericallySingularMatrixError MyPID_ == 0 " ;
+	  AMESOS_CHK_ERR( NumericallySingularMatrixError ) ;
+	}
+
   }
 
   AddTime("symbolic", 0);
@@ -429,36 +485,32 @@ int Amesos_Klu::PerformNumericFactorization( )
     bool factor_with_pivoting = true ;
 
     // set the default parameters
-    klu_control control ;
-    klu_btf_defaults (&control) ;
-    control.scale = ScaleMethod_ ;
+    PrivateKluData_->common_->scale = ScaleMethod_ ;
+
+  const bool NumericNonZero =  PrivateKluData_->Numeric_.get() != 0 ; 
 
     // see if we can "refactorize"
-    if ( refactorize_ && PrivateKluData_->Numeric_.get() ) {
-
+  if ( refactorize_ && NumericNonZero ) { 
 	// refactorize using the existing Symbolic and Numeric objects, and
-	// using the identical pivot ordering as the prior klu_btf_factor.
+	// using the identical pivot ordering as the prior klu_factor.
 	// No partial pivoting is done.
-	int result = klu_btf_refactor (&Ap[0], Ai, Aval,
-		    &*PrivateKluData_->Symbolic_, &control,
-		    &*PrivateKluData_->Numeric_) ;
-
+	int result = klu_refactor (&Ap[0], Ai, Aval,
+		    &*PrivateKluData_->Symbolic_, 
+		    &*PrivateKluData_->Numeric_, &*PrivateKluData_->common_) ;
 	// Did it work?
-	if ( result == KLU_OK) {
+	const  bool refactor_ok = result == 1 && PrivateKluData_->common_->status == KLU_OK ;
+	if ( refactor_ok ) { 
 
-	    // Get the largest and smallest entry on the diagonal of U
-	    double umin = (PrivateKluData_->Numeric_)->umin ;
-	    double umax = (PrivateKluData_->Numeric_)->umax ;
+	    double rcond ;
 
-	    // compute a crude estimate of the reciprocal of
-	    // the condition number
-	    double rcond = umin / umax ;
+	    klu_rcond (&*PrivateKluData_->Symbolic_,
+		    &*PrivateKluData_->Numeric_,
+		    &rcond, &*PrivateKluData_->common_) ;
 
 	    if ( rcond > rcond_threshold_ ) {
 		// factorizing without pivot worked fine.  We are done.
 		factor_with_pivoting = false ;
 	    }
-
 	}
     }
 
@@ -469,18 +521,19 @@ int Amesos_Klu::PerformNumericFactorization( )
 	// refactorize parameter is false, or we tried to refactorize and
 	// found it to be too inaccurate.
 
-#if 0
-	// destroy the existing Numeric object, if it exists
-	if ( PrivateKluData_->Numeric_ ) {
-	    klu_btf_free_numeric (&(PrivateKluData_->Numeric_)) ;
-	}
-#endif
 	// factor the matrix using partial pivoting
 	PrivateKluData_->Numeric_ =
-	    rcp( klu_btf_factor (&Ap[0], Ai, Aval,
-				 &*PrivateKluData_->Symbolic_, &control),
-		 deallocFunctorHandleDelete<klu_numeric>(klu_btf_free_numeric), true );
-	//	if ( PrivateKluData_->Numeric_ == 0 ) AMESOS_CHK_ERR( 2 ) ;
+	    rcp( klu_factor(&Ap[0], Ai, Aval,
+			    &*PrivateKluData_->Symbolic_, &*PrivateKluData_->common_),
+		 deallocFunctorDeleteWithCommon<klu_numeric>(PrivateKluData_->common_,klu_free_numeric)
+		 ,false
+		 );
+
+	const  bool numeric_ok =  PrivateKluData_->Numeric_.get()!=NULL 
+	  && PrivateKluData_->common_->status == KLU_OK ;
+	if ( ! numeric_ok ) AMESOS_CHK_ERR( NumericallySingularMatrixError ) ;
+
+
     }
 
   }
@@ -526,13 +579,13 @@ int Amesos_Klu::SymbolicFactorization()
   //  NumericFactorization() or Solve()
   //
   if ( TrustMe_ ) { 
-     if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR(10 );
-     if( UseDataInPlace_ != 1 ) AMESOS_CHK_ERR( 10 ) ;
-     if( Reindex_ )  AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetLHS() )  AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetRHS() )  AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetLHS()->NumVectors() ) AMESOS_CHK_ERR( 10 ) ;
-     if( ! Problem_->GetRHS()->NumVectors() ) AMESOS_CHK_ERR( 10 ) ; 
+     if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR( -15 );
+     if( UseDataInPlace_ != 1 ) AMESOS_CHK_ERR( -15 ) ;
+     if( Reindex_ )  AMESOS_CHK_ERR( -15 ) ;
+     if( ! Problem_->GetLHS() )  AMESOS_CHK_ERR( -15 ) ;
+     if( ! Problem_->GetRHS() )  AMESOS_CHK_ERR( -15 ) ;
+     if( ! Problem_->GetLHS()->NumVectors() ) AMESOS_CHK_ERR( -15 ) ;
+     if( ! Problem_->GetRHS()->NumVectors() ) AMESOS_CHK_ERR( -15 ) ; 
      SerialB_ = Problem_->GetRHS() ;
      SerialX_ = Problem_->GetLHS() ;
      NumVectors_ = SerialX_->NumVectors();
@@ -688,11 +741,11 @@ int Amesos_Klu::Solve()
       SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
     }
     if (UseTranspose()) {
-      klu_btf_solve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
-		     SerialXlda_, NumVectors_, &SerialXBvalues_[0] );
+      klu_solve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
+		     SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
     } else {
-      klu_btf_tsolve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
-		      SerialXlda_, NumVectors_, &SerialXBvalues_[0] );
+      klu_tsolve( &*PrivateKluData_->Symbolic_, &*PrivateKluData_->Numeric_,
+		      SerialXlda_, NumVectors_, &SerialXBvalues_[0], &*PrivateKluData_->common_ );
     }
   }
 

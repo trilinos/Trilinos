@@ -411,7 +411,8 @@ int Amesos_Lapack::DenseToFactored()
 
   if (MyPID_ == 0) {
     AMESOS_CHK_ERR(DenseSolver_.SetMatrix(DenseMatrix_));
-    AMESOS_CHK_ERR(DenseSolver_.Factor());
+    int DenseSolverReturn = DenseSolver_.Factor();
+    if (DenseSolverReturn == 2 ) return NumericallySingularMatrixError ;
   }
 
   AddTime("numeric");

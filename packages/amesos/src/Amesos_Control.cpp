@@ -43,6 +43,7 @@ void Amesos_Control::SetControlParameters( const Teuchos::ParameterList &Paramet
   if( ParameterList.isParameter("Refactorize") )
     refactorize_ = ParameterList.get<bool>("Refactorize");
 
+
   // threshold for determining if refactorize worked OK
   // UNUSED at present - KSS June 2004
   if( ParameterList.isParameter("RcondThreshold") )

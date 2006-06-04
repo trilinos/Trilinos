@@ -87,14 +87,14 @@ Amesos_Superlu::Amesos_Superlu(const Epetra_LinearProblem &prob ):
 			0, 
 			&DummyArray[0],
 			0, 
-			SLU_DN, SLU_D, SLU_GE);
+			SLU::SLU_DN, SLU::SLU_D, SLU::SLU_GE);
     
   dCreate_Dense_Matrix( &(data_->B), 
 			0, 
 			0, 
 			&DummyArray[0],
 			0, 
-			SLU_DN, SLU_D, SLU_GE);
+			SLU::SLU_DN, SLU::SLU_D, SLU::SLU_GE);
 }
 
 //=============================================================================
@@ -289,7 +289,7 @@ int Amesos_Superlu::Factor()
     /* Create matrix A in the format expected by SuperLU. */
     dCreate_CompCol_Matrix( &(data_->A), NumGlobalRows_, NumGlobalRows_,
 			    NumGlobalNonzeros_, &Aval_[0],
-			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
+			    &Ai_[0], &Ap_[0], SLU::SLU_NR, SLU::SLU_D, SLU::SLU_GE );
   }
 
   AddTime("conversion", 0);
@@ -370,7 +370,7 @@ int Amesos_Superlu::ReFactor()
     /* Create matrix A in the format expected by SuperLU. */
     dCreate_CompCol_Matrix( &(data_->A), NumGlobalRows_, NumGlobalRows_,
 			    NumGlobalNonzeros_, &Aval_[0],
-			    &Ai_[0], &Ap_[0], SLU_NR, SLU_D, SLU_GE );
+			    &Ai_[0], &Ap_[0], SLU::SLU_NR, SLU::SLU_D, SLU::SLU_GE );
   }
 
   return 0;
@@ -408,7 +408,7 @@ int Amesos_Superlu::NumericFactorization()
   }  else { 
     AMESOS_CHK_ERR(Factor());
     FactorizationOK_ = true;
-    SLUopt.Fact = DOFACT;
+    SLUopt.Fact = SLU::DOFACT;
   }
 
   int Ierr[1];
@@ -447,16 +447,16 @@ int Amesos_Superlu::NumericFactorization()
     Xstore->lda = NumGlobalRows_; 
     Xstore->nzval = &DummyArray[0];
 
-    SuperLUStat_t SLU_stat ;
-    StatInit( &SLU_stat ) ; 
-    assert( SLUopt.Fact == DOFACT); 
+    SuperLUstat_t SLU_stat ;
+    SLU::StatInit( &SLU_stat ) ; 
+    assert( SLUopt.Fact == SLU::DOFACT); 
     dgssvx( &(SLUopt), &(data_->A), 
 	    &perm_c_[0], &perm_r_[0], &etree_[0], &equed_, &R_[0], 
 	    &C_[0], &(data_->L), &(data_->U), NULL, 0, 
 	    &(data_->B), &(data_->X), &rpg, &rcond, &ferr_[0], 
 	    &berr_[0], &(data_->mem_usage), &SLU_stat,
 	    &Ierr[0] );
-    StatFree( &SLU_stat ) ; 
+    SLU::StatFree( &SLU_stat ) ; 
   }
 
   AddTime("numeric", 0);
@@ -570,8 +570,8 @@ int Amesos_Superlu::Solve()
 
     AddTime("overhead", 1); // NOTE: only timings on processor 0 will be meaningful
 
-    SuperLUStat_t SLU_stat ;
-    StatInit( &SLU_stat ) ;//    Copy the scheme used in dgssvx1.c 
+    SLU::SuperLUstat_t SLU_stat ;
+    SLU::StatInit( &SLU_stat ) ;//    Copy the scheme used in dgssvx1.c 
     data_->SLU_options.Fact = FACTORED ; 
     SLU::superlu_options_t& SLUopt =  data_->SLU_options ; 
     if (UseTranspose()) 

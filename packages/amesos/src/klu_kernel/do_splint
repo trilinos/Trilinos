@@ -1,5 +1,0 @@
-#
-splint -predboolint -realcompare +boolint +relaxtypes -nullstate -branchstate \
-    -temptrans -compdef -nullpass -usedef -unqualifiedtrans -nullderef \
-    -exportlocal \
-    klu.c klu_kernel.c

@@ -49,7 +49,7 @@ class Amesos_Paraklete_Pimpl {
 public:
 
 
-  cholmod_sparse cs_A_ ;
+  cholmod_sparse pk_A_ ;
   paraklete_common Common_ ; 
 #ifdef USE_REF_COUNT_PTR
   Teuchos::RefCountPtr<paraklete_symbolic> LUsymbolic_ ;
@@ -64,9 +64,13 @@ public:
   {}
 
   ~Amesos_Paraklete_Pimpl(void){
-    paraklete_free_symbolic (&LUsymbolic_, &Common_) ; \
-    paraklete_free_numeric (&LUnumeric_, &Common_) ; \
-
+    if (LUsymbolic_) {
+      paraklete_free_symbolic (&LUsymbolic_, &Common_) ; 
+      cholmod_finish( &Common_.cm );
+    }
+    if (LUnumeric_) {
+      paraklete_free_numeric (&LUnumeric_, &Common_) ; 
+    }
   }
 #endif
 
@@ -273,7 +277,7 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
 //      (i.e. CreateLocalMatrixAndExporters() has been callded)
 //
 //  Postconditions:
-//    cs_A_ contains the matrix as Paraklete needs it
+//    pk_A_ contains the matrix as Paraklete needs it
 //
 //
 int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
@@ -380,28 +384,31 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
       }
       Ap[MyRow] = Ai_index ;
     }
-  PrivateParakleteData_->cs_A_.nrow = NumGlobalElements_ ; 
+  PrivateParakleteData_->pk_A_.nrow = NumGlobalElements_ ; 
 #if 1
-  cholmod_sparse& cs_A =  PrivateParakleteData_->cs_A_ ;
-  cs_A.nrow = NumGlobalElements_ ; 
-  cs_A.ncol = NumGlobalElements_ ; 
-  cs_A.nzmax = numentries_ ; 
-  cs_A.p = &Ap[0] ;
-  cs_A.i = Ai ;
-  cs_A.nz = 0; 
+  cholmod_sparse& pk_A =  PrivateParakleteData_->pk_A_ ;
+  pk_A.nrow = NumGlobalElements_ ; 
+  pk_A.ncol = NumGlobalElements_ ; 
+  pk_A.nzmax = numentries_ ; 
+  pk_A.p = &Ap[0] ;
+  pk_A.i = Ai ;
+  pk_A.nz = 0; 
   if ( firsttime ) { 
-    cs_A.x = 0 ; 
+    pk_A.x = 0 ; 
+    pk_A.xtype = CHOLMOD_PATTERN ; 
   }
   else
-    cs_A.x = Aval ; 
+  {
+    pk_A.x = Aval ; 
+    pk_A.xtype = CHOLMOD_REAL ; 
+  }
 
-  cs_A.z = 0 ; 
-  cs_A.stype = 0 ; //  symmetric 
-  cs_A.itype = CHOLMOD_INT ; 
-  cs_A.xtype = CHOLMOD_REAL ; 
-  cs_A.dtype = CHOLMOD_DOUBLE ; 
-  cs_A.sorted = 0 ; 
-  cs_A.packed = 1 ; 
+  pk_A.z = 0 ; 
+  pk_A.stype = 0 ; //  symmetric 
+  pk_A.itype = CHOLMOD_INT ; 
+  pk_A.dtype = CHOLMOD_DOUBLE ; 
+  pk_A.sorted = 0 ; 
+  pk_A.packed = 1 ; 
 #endif
   }
 
@@ -448,11 +455,11 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
 
 #if USE_REF_COUNT_PTR
     PrivateParakleteData_->LUsymbolic_ =
-	rcp( paraklete_analyze ( &*PrivateParakleteData_->cs_A_, &PrivateParakleteData_->Common_ ),
+	rcp( paraklete_analyze ( &*PrivateParakleteData_->pk_A_, &PrivateParakleteData_->Common_ ),
 		 deallocFunctorHandleDelete<paraklete_symbolic>(paraklete_free_symbolic), false  );
 #else
     PrivateParakleteData_->LUsymbolic_ =
-      paraklete_analyze ( &PrivateParakleteData_->cs_A_, 
+      paraklete_analyze ( &PrivateParakleteData_->pk_A_, 
 			  &PrivateParakleteData_->Common_ ) ;
 #endif
 
@@ -486,13 +493,13 @@ int Amesos_Paraklete::PerformNumericFactorization( )
 
 #ifdef USE_REF_COUNT_PTR
 	PrivateParakleteData_->LUnumeric_ =
-	  rcp( paraklete_factorize ( &PrivateParakleteData_->cs_A_,
+	  rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
 				     &*PrivateParakleteData_->LUsymbolic_, 
 				     &PrivateParakleteData_->Common_ ), 
 		 deallocFunctorHandleDelete<paraklete_numeric>( paraklete_free_numeric), true );
 #else
 	PrivateParakleteData_->LUnumeric_ =
-	  paraklete_factorize ( &PrivateParakleteData_->cs_A_,
+	  paraklete_factorize ( &PrivateParakleteData_->pk_A_,
 				&*PrivateParakleteData_->LUsymbolic_, 
 				&PrivateParakleteData_->Common_ ) ;
 #endif
@@ -517,13 +524,14 @@ bool Amesos_Paraklete::MatrixShapeOK() const {
 }
 
 
-void my_handler (int status, char *msg)
+void my_handler (int status, char *file, int line, char *msg)
 {
-    printf ("Error handler: %d: %s\n", status, msg) ;
+    printf ("Error handler: %s %d %d: %s\n", file, line, status, msg) ;
     if (status != CHOLMOD_OK)
     {
 	fprintf (stderr, "\n\n*********************************************\n");
-	fprintf (stderr, "**** Test failure: %d %s\n", status, msg) ;
+	fprintf (stderr, "**** Test failure: %s %d %d %s\n", file, line,
+	    status, msg) ;
 	fprintf (stderr, "*********************************************\n\n");
 	fflush (stderr) ;
 	fflush (stdout) ;
@@ -571,21 +579,19 @@ int Amesos_Paraklete::SymbolicFactorization()
      }
   }
 
-  paraklete_common& cs_common =  PrivateParakleteData_->Common_ ;
-  cholmod_common *cm = &(cs_common.cm) ;
-  cholmod_start (CHOLMOD_INT, CHOLMOD_REAL, CHOLMOD_DOUBLE, cm) ;
+  paraklete_common& pk_common =  PrivateParakleteData_->Common_ ;
+  cholmod_common *cm = &(pk_common.cm) ;
+  cholmod_start (cm) ;
   DEBUG_INIT ("pk") ;
-  cs_common.nproc = Comm().NumProc() ;
-  cs_common.myid = Comm().MyPID() ; 
+  pk_common.nproc = Comm().NumProc() ;
+  pk_common.myid = Comm().MyPID() ; 
   cm->print = 1 ;
   cm->precise = TRUE ;
-  cm->ieee = FALSE ;
-  cm->blas_conform = FALSE ;
   cm->error_handler = my_handler ;
   
-  cs_common.tol_diag = 0.001 ;
-  cs_common.tol_offdiag = 0.1 ;
-  cs_common.growth = 2. ;
+  pk_common.tol_diag = 0.001 ;
+  pk_common.tol_offdiag = 0.1 ;
+  pk_common.growth = 2. ;
 
   
 
@@ -740,6 +746,7 @@ int Amesos_Paraklete::Solve()
       paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
 			&SerialXBvalues_[0],  &PrivateParakleteData_->Common_ );
     } else {  // bug - I expect this one to fail - KSS 
+      AMESOS_CHK_ERR( 101 ) ; 
       paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
 			&SerialXBvalues_[0],  &PrivateParakleteData_->Common_ );
     }

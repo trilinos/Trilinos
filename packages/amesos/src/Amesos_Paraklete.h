@@ -133,12 +133,14 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  //! SetUseTranpose(true) is more efficient in Amesos_Paraklete
+  //! SetUseTranpose() fails 
   /*! 
     If SetUseTranspose() is set to true, 
+    return 1; 
+
     \f$A^T X = B\f$ is computed.
   */  
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(UseTranspose?0:1);};
 
   bool UseTranspose() const {return(UseTranspose_);};
 

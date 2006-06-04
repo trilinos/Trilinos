@@ -41,6 +41,9 @@
 #ifndef _AMESOS_BASESOLVER_H_
 #define _AMESOS_BASESOLVER_H_
 
+const int StructurallySingularMatrixError = -21;
+const int NumericallySingularMatrixError = -22;
+
 #include "Teuchos_ParameterList.hpp"
 #include "Epetra_LinearProblem.h"
 class Epetra_LinearProblem;
