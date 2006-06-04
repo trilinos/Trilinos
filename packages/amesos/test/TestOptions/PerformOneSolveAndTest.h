@@ -12,4 +12,5 @@ int PerformOneSolveAndTest(const char* AmesosClass,
 			   int Levels, 
 			   const double Rcond,
 			   double& relerror,
-			   double& relresidual) ;
+			   double& relresidual,
+			   int ExpectedError = 0) ;

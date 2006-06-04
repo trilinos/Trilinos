@@ -71,6 +71,12 @@ relerror = 1.3e15; relresidual=1e15; return(1);}  }\
 //  matrix, this can be tested by setting AddToAllDiagonalElements to true ; 
 //
 //  See bug #1928 for further discussion.
+//
+//  ExpectedError
+//  =============
+//
+//  ExpectedError allows us to test for Singular and Structurally Singular matrices
+//    ExpectedError = StructurallySingularMatrix or NumericallySingularMatrix
 
 
 int PerformOneSolveAndTest( const char* AmesosClass,
@@ -83,10 +89,11 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 			    int Levels, 
 			    const double Rcond,
 			    double& relerror,
-			    double& relresidual )
+			    double& relresidual,
+			    int ExpectedError )
 {
 
-  bool AddToAllDiagonalElements =  ParamList.get( "AddZeroToDiag", false );
+  bool AddToAllDiagonalElements =  ParamList.get( "AddZeroToDiag", false ) ;
 
 
   bool TrustMe = ParamList.get( "TrustMe", false );
@@ -122,14 +129,16 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   Epetra_CrsMatrix* MatPtr = &*MyMat ;
 
   const string AC = AmesosClass ;
-  if ( AC != "Amesos_Pardiso" ) {
-    OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, MyVerbose, 
-					ParamList, MatPtr, Rcond ) );
-  } else {
-    if (MyVerbose) cout << " AC = "  << AC << " not tested in Partial Factorization" <<endl ;   // bug #1915
+  if ( ExpectedError == 0 ) { 
+    if ( AC != "Amesos_Pardiso" ) {
+      OUR_CHK_ERR ( PartialFactorization( AmesosClass, Comm, transpose, MyVerbose, 
+					  ParamList, MatPtr, Rcond ) );
+    } else {
+      if (MyVerbose) cout << " AC = "  << AC << " not tested in Partial Factorization" <<endl ;   // bug #1915
+    }
   }
 
-  if (ParamList.isParameter("AddToDiag")) { 
+  if (ParamList.isParameter("AddToDiag") ) { 
       int oldtracebackmode = InMat->GetTracebackMode( ) ;   
 
     //
@@ -160,7 +169,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     assert(MyMatWithDiag->ReplaceDiagonalValues( Diag ) >= 0 ) ;   // This may return 1 indicating that structurally non-zero elements were left untouched. 
 
       InMat->SetTracebackMode( oldtracebackmode ) ;   
-
   } else { 
     MyMatWithDiag = rcp( new Epetra_CrsMatrix( *InMat ) ); 
   }
@@ -221,8 +229,8 @@ int PerformOneSolveAndTest( const char* AmesosClass,
     //  Phase 1:  Compute b = A' A' A xexact
     //
     Problem.SetOperator( MyRowMat );
-    Epetra_CrsMatrix* ECM = dynamic_cast<Epetra_CrsMatrix*>(MyRowMat) ; 
-    
+    //    Epetra_CrsMatrix* ECM = dynamic_cast<Epetra_CrsMatrix*>(MyRowMat) ; 
+
     //
     //  We only set transpose if we have to - this allows valgrind to check
     //  that transpose is set to a default value before it is used.
@@ -237,9 +245,53 @@ int PerformOneSolveAndTest( const char* AmesosClass,
       Problem.SetRHS( &FixedRHS );
       assert( OptStorage) ;
     }
-    OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
-    OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
+    // bug #2184
+    //  Structurally singular matrices are not detected by 
+    //  Amesos_Klu::SymbolicFactorization() but they are detected by
+    //  Amesos_Klu::NumericFactorization()
+    if ( ExpectedError == StructurallySingularMatrixError )
+      ExpectedError = NumericallySingularMatrixError ;
+    if ( ExpectedError == StructurallySingularMatrixError ) {
+      Epetra_CrsMatrix* ECM = dynamic_cast<Epetra_CrsMatrix*>(MyRowMat) ; 
+      int oldtracebackmode = ECM->GetTracebackMode( ) ;         
+      ECM->SetTracebackMode(0);  // We expect an error, but we don't want it to print out
+
+      const int SymbolicFactorizationReturn = Abase->SymbolicFactorization(  ) ; 
+      ECM->SetTracebackMode(oldtracebackmode);
+      // bug #2245 - Amesos fails to return error consistently across all 
+      // processes.  When this bug is fixed, remove "iam == 0 &&" from the next line 
+      if ( iam == 0 && SymbolicFactorizationReturn != ExpectedError ) {
+	cout << " SymbolicFactorization returned " << SymbolicFactorizationReturn 
+	     << " should be " << ExpectedError << endl ; 
+	OUR_CHK_ERR( 1 ) ; 
+      } else { 
+	return 0;   //  Returned the correct error code for this matrix 
+      }
+    } else { 
+      const int SymbolicFactorizationReturn = Abase->SymbolicFactorization(  ) ; 
+      OUR_CHK_ERR( SymbolicFactorizationReturn ) ; 
+    }
+    if ( ExpectedError == NumericallySingularMatrixError ) {
+      Epetra_CrsMatrix* ECM = dynamic_cast<Epetra_CrsMatrix*>(MyRowMat) ; 
+      int oldtracebackmode = ECM->GetTracebackMode( ) ;   
+      ECM->SetTracebackMode(0); // We expect an error, but we don't want it to print out
+
+      const int NumericFactorizationReturn = Abase->NumericFactorization(  ) ; 
+      ECM->SetTracebackMode(oldtracebackmode);
+      // bug #2245 - Amesos fails to return error consistently across all 
+      // processes.  When this bug is fixed, remove "iam == 0 &&" from the next line 
+      if ( iam == 0 && NumericFactorizationReturn != ExpectedError ) {
+	cout << " NumericFactorization returned " << NumericFactorizationReturn 
+	     << " should be " << ExpectedError << endl ; 
+	OUR_CHK_ERR( 1 ) ; 
+      } else { 
+	return 0;   //  Returned the correct error code for this matrix 
+      }
+    } else {
+      const int NumericFactorizationReturn = Abase->NumericFactorization(  ) ; 
+      OUR_CHK_ERR( NumericFactorizationReturn ) ; 
+    }
     int ind[1];
     double val[1];
     ind[0] = 0;
@@ -409,23 +461,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 			<< " norm( sAAx - cAAx ) / norm(sAAx ) = " 
 			<< norm_diff /norm_one << endl ; 
 
-#if 0
-   cout << endl << " sAx = " ;
-    sAx.Print ( cout ) ; 
-
-    cout << endl << " cAx = " ;
-    cAx.Print ( cout ) ; 
-
-    cout << endl << " xexact = " ;
-    xexact.Print ( cout ) ; 
-
-    cout << endl << " b = " ;
-    b.Print ( cout ) ; 
-
-    cout << endl << " MyMatWithDiag = " ;
-    MyMatWithDiag->Print ( cout ) ; 
-    cout << endl << " ParamList = " << ParamList << endl ; 
-#endif
 
     
 

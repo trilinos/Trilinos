@@ -38,7 +38,7 @@
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_Time.h"
+#include "Amesos_Time.h"
 
 #ifdef HAVE_AMESOS_KUNDERT
 #include "KundertOO.h"
@@ -127,6 +127,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 		       SparseSolverType SparseSolver,
 		       bool transpose, 
 		       int special, AMESOS_MatrixType matrix_type ) {
+
+
+
 
   int iam = Comm.MyPID() ;
 
@@ -440,17 +443,43 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) {
 
+
+      using namespace Teuchos;
+
+      Amesos_Time AT; 
+      AT.InitTime(Comm, 2);
+      AT.ResetTime(0);
+
       Teuchos::ParameterList ParamList ;
       //	ParamList.set("OutputLevel",2);
       Amesos_Klu A_klu( Problem ); 
       ParamList.set( "MaxProcs", -3 );
-      //      ParamList.set( "TrustMe", true );
+      ParamList.set( "TrustMe", false );
+      //  ParamList.set( "Refactorize", true );
       EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ) ; 
       EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
+  AT.AddTime("Setup", 0);
       EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
+  AT.AddTime("Symbolic", 0);
       EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
+  AT.AddTime("Numeric", 0);
+      EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
+  AT.AddTime("Refactor", 0);
       //      for ( int i=0; i<100000 ; i++ ) 
 	EPETRA_CHK_ERR( A_klu.Solve(  ) ); 
+  AT.AddTime("Solve", 0);
+
+  double SetupTime = AT.GetTime("Setup");
+  double SymbolicTime = AT.GetTime("Symbolic");
+  double NumericTime = AT.GetTime("Numeric");
+  double RefactorTime = AT.GetTime("Refactor");
+  double SolveTime = AT.GetTime("Solve");
+
+  cout << __FILE__ << "::"  << __LINE__ << " SetupTime = " << SetupTime << endl ; 
+  cout << __FILE__ << "::"  << __LINE__ << " SymbolicTime = " << SymbolicTime - SetupTime << endl ; 
+  cout << __FILE__ << "::"  << __LINE__ << " NumericTime = " << NumericTime - SymbolicTime<< endl ; 
+  cout << __FILE__ << "::"  << __LINE__ << " RefactorTime = " << RefactorTime - NumericTime << endl ; 
+  cout << __FILE__ << "::"  << __LINE__ << " SolveTime = " << SolveTime - RefactorTime << endl ; 
 
 #endif
     } else { 

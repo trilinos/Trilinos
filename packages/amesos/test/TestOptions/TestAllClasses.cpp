@@ -6,6 +6,7 @@
 #include "TestSuperludist.h"
 #include "TestScalapack.h"
 #include "TestKlu.h"
+#include "Amesos.h"
  
 int TestAllClasses( const vector<string> AmesosClasses,
 		    int EpetraMatrixType,
@@ -40,6 +41,15 @@ int TestAllClasses( const vector<string> AmesosClasses,
   bool a662_bus_out = ( StringFilename.find("662_bus_out") < StringFilename.find("xdz_notaname_garbage") );
   bool MissingADiagonal = ( StringFilename.find("MissingADiagonal") < StringFilename.find("xdz_notaname_garbage") ) ||
     ( StringFilename.find("ImpcolB.rua") < StringFilename.find("xdz_notaname_garbage") );
+  bool FileIsDiagonal = ( StringFilename.find("Diagonal") < StringFilename.find("xdz_notaname_garbage") ) &&
+    ! MissingADiagonal ; 
+
+  bool NumericallySingular = ( StringFilename.find("NumericallySingular") < StringFilename.find("xdz_notaname_garbage") );
+  bool StructurallySingular = ( StringFilename.find("StructurallySingular") < StringFilename.find("xdz_notaname_garbage") );
+
+  int ExpectedError = 0;
+  if ( NumericallySingular ) ExpectedError = NumericallySingularMatrixError ;
+  if ( StructurallySingular ) ExpectedError = StructurallySingularMatrixError ;
 
   const Epetra_Map& row_map = Amat->RowMap() ; 
 
@@ -48,6 +58,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
   if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && EpetraMatrixType == 1 ) 
     return 0 ;   //  Can't reindex a RowMatrix because we don't know the indices up front 
+
+
 
   bool ReIndex = ReindexRowMap || ReindexColMap ; 
 
@@ -77,6 +89,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
       }
       if ( AmesosClasses[i] == "Amesos_Scalapack") { 
 	bool RunScalapackTest = true;
+	if ( ExpectedError != 0 )  RunScalapackTest = false ;   //  Bug #1227
 	if ( ReindexRowMap || ReindexColMap ) RunScalapackTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunScalapackTest = false ;   //  Bug #1403
@@ -97,6 +110,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	  RunUmfpackTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunUmfpackTest = false ;   //  Bug #1403
+	if ( ExpectedError != 0 )  RunUmfpackTest = false ;   //  Bug #1227
 
 	if ( RunUmfpackTest && verbose) cout << " Testing UMFPACK " << endl ; 
 	
@@ -109,6 +123,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 							 Rcond, 
 							 RowMapEqualsColMap,
 							 false,
+							ExpectedError,
 							 maxrelerror, 
 							 maxrelresidual, 
 							 NumTheseTests ) ;
@@ -143,6 +158,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	  RunKluTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
 	  RunKluTest = false ;   //  Bug #1403
+	if ( ExpectedError != 0 )  RunUmfpackTest = false ;   //  Bug #1227
 
 
 
@@ -158,12 +174,14 @@ int TestAllClasses( const vector<string> AmesosClasses,
 							 Rcond, 
 							 RowMapEqualsColMap,
 							 false,
+						    ExpectedError,
 							 maxrelerror, 
 							 maxrelresidual, 
 							 NumTheseTests ) ;
 #endif
       } else if ( AmesosClasses[i] == "Amesos_Lapack" ) {
 	bool RunLapackTest = true;
+	if ( ExpectedError == NumericallySingularMatrixError )  RunLapackTest = false ;   //  Bug #1227
 	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) && row_map.DistributedGlobal() ) 
 	  RunLapackTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
@@ -172,19 +190,21 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( RunLapackTest && verbose) cout << " Testing LAPACK " << endl ; 
 	
 	if ( RunLapackTest ) Errors = TestOtherClasses("Amesos_Lapack",
-							 EpetraMatrixType,
-							 Amat, 
-							 transpose, 
-							 verbose, 
-							 Levels, 
-							 Rcond, 
-							 RowMapEqualsColMap,
-							 false,
-							 maxrelerror, 
-							 maxrelresidual, 
-							 NumTheseTests ) ;
+						       EpetraMatrixType,
+						       Amat, 
+						       transpose, 
+						       verbose, 
+						       Levels, 
+						       Rcond, 
+						       RowMapEqualsColMap,
+						       false,
+						       ExpectedError,
+						       maxrelerror, 
+						       maxrelresidual, 
+						       NumTheseTests ) ;
       } else if ( AmesosClasses[i] == "Amesos_Taucs" ) {
 	bool RunTaucsTest = true;
+	if ( ExpectedError != 0 )  RunTaucsTest = false ;   //  Bug #1227
 	if ( ( ReindexRowMap != 0  || ReindexColMap != 0 ) ) 
 	  RunTaucsTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
@@ -207,12 +227,14 @@ int TestAllClasses( const vector<string> AmesosClasses,
 						      Rcond, 
 						      RowMapEqualsColMap,
 						      false, 
+						       ExpectedError,
 						      maxrelerror, 
 						      maxrelresidual, 
 						      NumTheseTests ) ;
 
       } else if ( AmesosClasses[i] == "Amesos_Pardiso" ) {
 	bool RunPardisoTest = true;
+	if ( ExpectedError != 0 )  RunPardisoTest = false ;   //  Bug #1227
 	if ( ReindexRowMap != 0  || ReindexColMap != 0 ) // Bug #969 
 	  RunPardisoTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) 
@@ -236,12 +258,14 @@ int TestAllClasses( const vector<string> AmesosClasses,
 							 Rcond, 
 							 RowMapEqualsColMap,
 							 false,
+							ExpectedError,
 							 maxrelerror, 
 							 maxrelresidual, 
 							 NumTheseTests ) ;
 
       } else if ( AmesosClasses[i] == "Amesos_Mumps" ) {
 	bool RunMumpsTest = true;
+	if ( ExpectedError != 0 )  RunMumpsTest = false ;   //  Bug #1227
 	if ( ( ReindexRowMap || ReindexColMap ) ) 
 	  RunMumpsTest = false ;   //  Bug #969
 	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunMumpsTest = false ;   //  Bug #1403
@@ -258,6 +282,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 						       Rcond, 
 						       RowMapEqualsColMap,
 						      false,
+						      ExpectedError,
 						       maxrelerror, 
 						       maxrelresidual, 
 						       NumTheseTests ) ;
@@ -281,6 +306,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ( RangeMapType ==2 && DomainMapType == 1 && distribute == 1 && EpetraMatrixType == 2 && transpose == 0 && Superlu_rua ) ) RunKluTest = false ;   //  Bug #2000
 
 	if ( RunKluTest && verbose) cout << " Testing KLU " << endl ; 
+	if ( RunKluTest && verbose) cout << " Testing KLU ExpectedError = " 
+					 << ExpectedError << endl ; 
 
 	if ( RunKluTest ) Errors = TestKlu( Amat, 
 					    EpetraMatrixType,
@@ -291,6 +318,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 					    ParamList, 
 					    RowMapEqualsColMap, 
 					    false,
+					    ExpectedError,
 					    maxrelerror, 
 					    maxrelresidual, 
 					    NumTheseTests ) ;
@@ -315,6 +343,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 
       } else if ( AmesosClasses[i] == "Amesos_Superlu" ) {
 	bool RunSuperluTest = true;
+	if ( ExpectedError != 0 )  RunSuperluTest = false ;   //  Bug #1227
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
 	  RunSuperluTest = false ;   //  Bug #969
 	if ( MissingADiagonal ) RunSuperluTest = false ; // Bug #1404
@@ -334,6 +363,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				     Rcond, 
 				     RowMapEqualsColMap,
 				     false,
+						       ExpectedError,
 				     maxrelerror, 
 				     maxrelresidual, 
 				     NumTheseTests ) ;
@@ -357,6 +387,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	       << " Errors = " <<  Errors << endl ;  
       } else if ( AmesosClasses[i] == "Amesos_Pastix" ) {
 	bool RunPastixTest = true;
+	if ( ExpectedError != 0 )  RunPastixTest = false ;   //  Bug #1227
+
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) && Amat->Comm().NumProc() > 1  )  //  Bug #969
 	  RunPastixTest = false ;   //  Bug #969
 	if ( MissingADiagonal ) RunPastixTest = false ; // Bug #1404
@@ -374,6 +406,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				     Rcond, 
 				     RowMapEqualsColMap,
 				     false,
+						       ExpectedError,
 				     maxrelerror, 
 				     maxrelresidual, 
 				     NumTheseTests ) ;
@@ -401,10 +434,11 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	       << endl ;  
 	}
 	bool RunParakleteTest = true;
+	if ( ExpectedError != 0 )  RunParakleteTest = false ;   //  Bug #1227
 	if ( (   ReindexColMap != 0  ) )  //  Bug #969
 	  RunParakleteTest = false ;   //  Bug #969
 
-	//	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunParakleteTest = false ;   //  Bug #1403
+	if ( ( RangeMapType != 0 || DomainMapType != 0 ) ) RunParakleteTest = false ;   //  Bug #1403
 	Teuchos::ParameterList ParamList;
 	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
 	if ( ( RangeMapType != 0 || DomainMapType != 0 || distribute ) ) 
@@ -414,6 +448,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ( ReindexRowMap || ReindexColMap ) ) 
 	  RunParakleteTest = false ;  
 #endif
+	if ( FileIsDiagonal )
+	  RunParakleteTest = false ;     //  bogus bug doit fixthis fixit
 	//	if ( ImpcolB ) RunParakleteTest = false ;   // See bug #1928 
 
 	if ( RunParakleteTest ) {
@@ -427,6 +463,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				     Rcond, 
 				     RowMapEqualsColMap,
 				     false,
+						       ExpectedError,
 				     maxrelerror, 
 				     maxrelresidual, 
 				     NumTheseTests ) ;
@@ -441,6 +478,7 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	assert( sym_int == sym_int_out ) ; 
 
 	bool RunDscpackTest = true;
+	if ( ExpectedError != 0 )  RunDscpackTest = false ;   //  Bug #1227
 	if ( ! symmetric ) RunDscpackTest = false ; 
 	if ( (  ReindexRowMap != 0 ||  ReindexColMap != 0  ) )  //  Bug #969
 	  RunDscpackTest = false ;   //  Bug #969
@@ -460,12 +498,14 @@ int TestAllClasses( const vector<string> AmesosClasses,
 				    Rcond, 
 				    RowMapEqualsColMap,
 				    false,
+						       ExpectedError,
 				    maxrelerror, 
 				    maxrelresidual, 
 				    NumTheseTests ) ;
 	} 
       } else if ( AmesosClasses[i] == "Amesos_Superludist" ) {
 	bool RunSuperludistTest = true;
+	if ( ExpectedError != 0 )  RunSuperludistTest = false ;   //  Bug #1227
 	if ( transpose ) { 
 	  RunSuperludistTest = false ;    // Bug #822
 	}

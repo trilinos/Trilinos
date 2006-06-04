@@ -83,6 +83,7 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
       SuperludistParams.set( "MaxProcesses", 2 );
       //  ParamList.print( cerr, 10 ) ; 
       
+      const int ExpectedError = 0 ;
       int Errors = PerformOneSolveAndTest("Amesos_Superludist",
 					  EpetraMatrixType,
 					  Comm, 
@@ -93,7 +94,8 @@ int TestSuperludist( Epetra_CrsMatrix *& Amat,
 					  Levels,
 					  Rcond, 
 					  relerror, 
-					  relresidual) ;
+					  relresidual,
+					  ExpectedError ) ;
       
       if ( Errors < 0 ) {
 	NumErrors++;

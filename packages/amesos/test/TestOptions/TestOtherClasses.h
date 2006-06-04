@@ -9,6 +9,7 @@ int TestOtherClasses( const char* AmesosClass,
 		      const double Rcond,
 		      bool RowMapEqualsColMap, 
 		      bool TestAddZeroToDiag,
+		      int ExpectedError,
 		      double &maxrelerror, 
 		      double &maxrelresidual,
 		      int &NumTests ) ;

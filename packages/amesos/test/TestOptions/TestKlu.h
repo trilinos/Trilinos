@@ -10,6 +10,7 @@ int TestKlu( Epetra_CrsMatrix *& Amat,
 	     Teuchos::ParameterList ParamList, 
 	     bool RowMapEqualsColMap, 
              bool TestAddZeroToDiag,
+	     int ExpectedError,
 	     double &maxrelerror, 
 	     double &maxrelresidual,
 	     int &NumTests ) ;

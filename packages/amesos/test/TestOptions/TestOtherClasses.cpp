@@ -17,6 +17,7 @@ int TestOtherClasses( const char* AmesosClass,
 		      const double Rcond,
 		      bool RowMapEqualsColMap, 
 		      bool TestAddZeroToDiag,
+		      int ExpectedError,
 		      double &maxrelerror, 
 		      double &maxrelresidual,
 		      int &NumTests ) {
@@ -59,7 +60,7 @@ int TestOtherClasses( const char* AmesosClass,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
+					relresidual, ExpectedError ) ; 
 
     if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
 				  << " AmesosClass= " << AmesosClass 
@@ -148,7 +149,7 @@ int TestOtherClasses( const char* AmesosClass,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
+					relresidual, ExpectedError ) ; 
 
 
     if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
@@ -207,7 +208,7 @@ int TestOtherClasses( const char* AmesosClass,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
+					relresidual, ExpectedError ) ; 
 
 
     if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
@@ -266,7 +267,7 @@ int TestOtherClasses( const char* AmesosClass,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ; 
+					relresidual, ExpectedError ) ; 
       
     if (MyVerbose  || ( Errors && iam==0 )  ) cout << __FILE__ << "::" << __LINE__ 
 				  << " AmesosClass= " << AmesosClass 
@@ -314,7 +315,7 @@ int TestOtherClasses( const char* AmesosClass,
 					Levels,
 					Rcond, 
 					relerror, 
-					relresidual ) ;
+					relresidual, ExpectedError ) ;
 
     if (Errors < 0 ) {
       if (MyVerbose ) cout << AmesosClass << " not built in this executable " << endl ; 
