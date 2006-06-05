@@ -18,7 +18,6 @@ CPPFLAGS="-I/local/arch/sun/sunos/mpi/mpich/lib/sun4/ch_p4 \
 --disable-default-packages \
 --enable-amesos \
 --enable-amesos-klu \
---enable-amesos-paraklete \
 --enable-amesos-dscpack \
 --enable-amesos-superlu \
 --enable-amesos-superludist \

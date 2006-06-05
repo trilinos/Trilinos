@@ -8,11 +8,13 @@ FFLAGS=-O3 \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libumfpack_linux_lam.a \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/libamd_linux_lam.a \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05/libsuperlu_linux_lam.a \
+/u/TrilinosTestHarness/Trilinos3PL/prebuilt/metis-4.0/libmetis_linux.a \
 /u/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1/libsuperludist_linux_lam.a -llapack -lblas -lg2c" \
 --with-incdirs="-I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/dscpack-1.0 \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superludist-2.0.1 \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/umfpack-4.4/ \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/superlu-3.0.july05 \
+-I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/metis-4.0 \
 -I/u/TrilinosTestHarness/Trilinos3PL/prebuilt/taucs-2.2" \
 --enable-mpi \
 --with-mpi-compilers \
