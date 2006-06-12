@@ -166,6 +166,7 @@ typedef struct _myObj{  /* Vertices returned in Get_Obj_List queries */
   ZOLTAN_ID_PTR vtxGID; /* Global ID of each vertex */
   int    *vtx_gno;      /* Global numbers in range [0,GnVtx-1] */
   float  *vwgt;         /* Vertex weights for nVtx on processor objects */
+  int    *fixed;        /* vertex assignments for fixed vertices RTHRTH */ 
   int    *vtxHash;      /* Process to which GID hashes, temporary owner */
   int    *numHedges;    /* Number of hyperedges containing vertex       */
 }zoltan_objects;
@@ -321,6 +322,11 @@ GID_lookup           *lookup_myHshEdges = NULL;
 zoltan_temp_vertices myHshVtxs;
 GID_lookup           *lookup_myHshVtxs = NULL;
 
+int GnFixed=0, nFixed=0;                                     /* RTHRTH */
+int *tmpfixed = NULL, *fixed_callbk = NULL;              /* RTHRTH */
+ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
+
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   memset(&myObjs, 0, sizeof(zoltan_objects));
@@ -398,6 +404,49 @@ GID_lookup           *lookup_myHshVtxs = NULL;
                        myObjs.size, num_gid_entries);
 
   if (!lookup_myObjs) MEMORY_ERROR;
+  
+
+  if (zz->Get_Num_Fixed_Obj) {  /* RTHRTH */
+    nFixed = zz->Get_Num_Fixed_Obj (zz->Get_Num_Fixed_Obj_Data, &ierr);
+    if (ierr != ZOLTAN_OK) {
+       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error getting Number of Fixed Objs");
+       goto End;
+    }
+    MPI_Allreduce (&nFixed, &GnFixed, 1, MPI_INT, MPI_SUM, zz->Communicator);
+    
+    if (GnFixed && nFixed && zhg->nObj)  {
+      fixed_callbk = (int*) ZOLTAN_MALLOC (sizeof(int) * nFixed);
+      myObjs.fixed = (int*) ZOLTAN_MALLOC (sizeof(int) * zhg->nObj);
+      fixedGIDs    = ZOLTAN_MALLOC_GID_ARRAY (zz, zhg->nObj);
+      fixedLIDs    = ZOLTAN_MALLOC_LID_ARRAY (zz, zhg->nObj);
+       
+      if (!fixed_callbk || !myObjs.fixed || !fixedGIDs || !fixedLIDs)
+        MEMORY_ERROR;
+          
+      for (i = 0; i < zhg->nObj; i++)
+        myObjs.fixed[i] = -1;              /* default - no fixed assignment */
+       
+      if (zz->Get_Fixed_Obj_List) {
+        zz->Get_Fixed_Obj_List (zz->Get_Fixed_Obj_List_Data, nFixed,
+         num_gid_entries, num_lid_entries, fixedGIDs, fixedLIDs, fixed_callbk,
+         &ierr);
+        if (ierr != ZOLTAN_OK) {
+          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error getting Fixed Obj List");
+          goto End;
+          }         
+             
+        for (i = 0; i < nFixed; i++) {
+          j = lookup_GID (lookup_myObjs, fixedGIDs + (i * num_gid_entries));
+          if (j < 0)
+            FATAL_ERROR ("Unexpected Fixed Vertex GID received");
+          myObjs.fixed[j] = fixed_callbk[i];  /* overwrite fixed assignment */
+        }
+      }
+      ZOLTAN_FREE (&fixedGIDs);
+      ZOLTAN_FREE (&fixedLIDs);
+    }
+  }     
+ 
 
   if (hypergraph_callbacks){
     /*
@@ -1544,6 +1593,17 @@ GID_lookup           *lookup_myHshVtxs = NULL;
 
   tmpwgts = (float *)ZOLTAN_CALLOC(sizeof(float), nwgt);
   phg->vwgt = (float *)ZOLTAN_MALLOC(sizeof(float) * nwgt);
+  
+  if (GnFixed) {                              /* RTHRTH */
+    tmpfixed   = (int*) ZOLTAN_MALLOC (phg->nVtx * sizeof(int));
+    phg->fixed = (int*) ZOLTAN_MALLOC (phg->nVtx * sizeof(int));
+
+    if (!tmpfixed || !phg->fixed)
+      MEMORY_ERROR;
+      
+    for (i = 0 ; i < phg->nVtx; i++)
+      tmpfixed[i] = -2;  
+  } 
 
   if (phg->nVtx && 
        (!tmpparts || !*input_parts || !tmpwgts || !phg->vwgt)) MEMORY_ERROR;
@@ -1552,9 +1612,10 @@ GID_lookup           *lookup_myHshVtxs = NULL;
     for (i = 0; i < myObjs.size; i++) {
       idx = myObjs.vtx_gno[i];
       tmpparts[idx] = zhg->Input_Parts[i];
-      for (j=0; j<dim; j++){
+      for (j=0; j<dim; j++)
         tmpwgts[idx*dim + j] = myObjs.vwgt[i*dim + j];
-      }
+      if (GnFixed)                                             /* RTHRTH */
+        tmpfixed[idx] = myObjs.fixed[i];
     }
   }
   else {
@@ -1573,12 +1634,22 @@ GID_lookup           *lookup_myHshVtxs = NULL;
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       goto End;
     }
-
+    
+    if (GnFixed) {                                  /* RTHRTH */
+       msg_tag++;
+       ierr = Zoltan_Comm_Do (zhg->VtxPlan, msg_tag, (char*) myObjs.fixed,
+         sizeof(int), (char*) phg->fixed);
+       if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN))
+         goto End;         
+    }
+       
     for (i = 0; i < nrecv; i++) {
       idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
       tmpparts[idx] = (*input_parts)[i];
       for (j=0; j<dim; j++){
-        tmpwgts[idx*dim + j] = phg->vwgt[i*dim + j];
+        tmpwgts[idx*dim + j] = phg->vwgt[i*dim + j];  
+      if (GnFixed)                                       /* RTHRTH */
+         tmpfixed[idx] = phg->fixed[i];         
       }
     }
   }
@@ -1595,8 +1666,14 @@ GID_lookup           *lookup_myHshVtxs = NULL;
     rc = MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX, 
                   phg->comm->col_comm);
     CHECK_FOR_MPI_ERROR(rc)
-  }
 
+    if (GnFixed) {                                          /* RTHRTH */
+       rc = MPI_Allreduce(tmpfixed, phg->fixed, phg->nVtx, MPI_INT, MPI_MAX,
+            phg->comm->col_comm);
+       CHECK_FOR_MPI_ERROR(rc);
+    }   
+  }
+  ZOLTAN_FREE(&tmpfixed);
   ZOLTAN_FREE(&tmpparts);
   ZOLTAN_FREE(&tmpwgts);
 
@@ -1717,6 +1794,9 @@ End:
     Zoltan_PHG_Free_Hypergraph_Data(zhg);
   }
 
+  ZOLTAN_FREE(&tmpfixed);
+  ZOLTAN_FREE(&fixed_callbk);
+  
   free_zoltan_objects(&myObjs);
   free_zoltan_pins(&myPins);   /* we get errors here */
   free_zoltan_ews(&myEWs);
@@ -1779,6 +1859,7 @@ static void free_zoltan_objects(zoltan_objects *zo)
   ZOLTAN_FREE(&(zo->vwgt));
   ZOLTAN_FREE(&(zo->vtxHash));
   ZOLTAN_FREE(&(zo->numHedges));
+  ZOLTAN_FREE(&zo->fixed);
 }
 static void free_zoltan_pins(zoltan_pins *zp)
 {

@@ -247,6 +247,11 @@ int Zoltan_PHG_Coarsening
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   c_hg->fixed = (hg->fixed) ? (int*)ZOLTAN_MALLOC(hg->nVtx * sizeof(int)) : NULL;
   
+if (c_hg->fixed)  
+  for (i = 0; i < hg->nVtx; i++)
+    c_hg->fixed[i] = -2;  
+  
+  
   /* (over) estimate number of external matches that we need to send data to */
   count = 0; 
   for (i = 0; i < hg->nVtx; i++)
@@ -759,6 +764,11 @@ int Zoltan_PHG_Coarsening
   MPI_Scan(&c_hg->nEdge, c_hg->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
   MPI_Allgather(c_hg->dist_y, 1, MPI_INT, &(c_hg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
   c_hg->dist_y[0] = 0;  
+  
+if (c_hg->fixed)
+  for (i = 0; i < c_hg->nVtx; i++)
+    if (c_hg->fixed[i] == -2)
+      printf ("RTHRTH BAD COARSENING for FIXED VERTICES\n"); 
 
   ierr = Zoltan_HG_Create_Mirror(zz, c_hg);
 #ifdef _DEBUG1
