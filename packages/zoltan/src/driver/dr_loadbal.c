@@ -639,7 +639,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
      */
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
-    if (new_decomp && num_exported != -1 && num_imported != -1){
+    if (new_decomp && (num_exported != -1 || num_imported != -1)){ // EBEB  6/8/06
       /* Migrate if new decomposition and RETURN_LISTS != NONE */
       if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
           num_imported, import_gids, import_lids, import_procs, import_to_part,
@@ -2070,8 +2070,9 @@ int proc, nprocs;
       /* Fix 10% of objects */
       /* For now, assume NUM_GLOBAL_PARTITIONS == nprocs; 
          we'll change later */
-      for (i = 1; i < mesh->num_elems; i+=10) {
+      for (i = 0; i < mesh->num_elems; i+=10) {
         mesh->elements[i].fixed_part = i % nprocs;
+        /* printf("%d: i=%d, Fixed object %d to %d\n", proc, i, mesh->elements[i].globalID, i % nprocs); */
         mesh->num_fixed_elems++;
       }
       break;
@@ -2097,6 +2098,29 @@ int proc, nprocs;
       }
       break;
   case 7:
+      /* Fix one object on each proc. */
+      for (i = 0; i < MIN(1, mesh->num_elems); i++) {
+        mesh->elements[i].fixed_part = proc;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 8:
+      /* Fix two objects on half the procs */
+      if (proc%2){
+        for (i = 0; i < MIN(2, mesh->num_elems); i++) {
+          mesh->elements[i].fixed_part = proc;
+          mesh->num_fixed_elems++;
+        }
+      }
+      break;
+  case 9:
+      /* Fix myproc objects on each proc. */
+      for (i = 0; i < MIN(proc, mesh->num_elems); i++) {
+        mesh->elements[i].fixed_part = proc;
+        mesh->num_fixed_elems++;
+      }
+      break;
+  case 10:
       /* Fix 0% of objects */
       break;
   }
