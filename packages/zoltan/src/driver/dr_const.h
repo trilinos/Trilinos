@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MIN(A,B)                (((A) < (B)) ? (A) : (B))
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
