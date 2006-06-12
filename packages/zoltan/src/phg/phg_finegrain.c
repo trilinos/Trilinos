@@ -50,16 +50,15 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  /* Allocate new hgraph. Copy over relevant fields. */
+  /* Allocate new hgraph. Initialize relevant fields. */
   fg = *fg_hg = (HGraph *) ZOLTAN_MALLOC(sizeof(HGraph));
-
+  Zoltan_HG_HGraph_Init(fg);
   fg->comm = hg->comm;
-  fg->info = hg->info;
   fg->nVtx = hg->nPins;
   fg->nEdge = hg->nVtx + hg->nEdge;
-  fg->nPins = 2* hg->nPins;
-  fg->VtxWeightDim  = hg->VtxWeightDim; 
-  fg->EdgeWeightDim = hg->EdgeWeightDim; 
+  fg->nPins = 2*hg->nPins;
+  fg->VtxWeightDim  = 0;
+  fg->EdgeWeightDim = 0;
 
   /* Allocate space for vertex-based lookup in new fine grain hgraph.  */
   fg->vindex = (int *) ZOLTAN_MALLOC((fg->nVtx+1)*sizeof(int));
@@ -72,13 +71,26 @@ char *yo = "Zoltan_PHG_Build_Finegrain";
   /* Each vertex (column) in the old hg becomes an hyperedge */
   k = 0;
   for (i=0; i<hg->nEdge; i++){
-    for (j=hg->hindex[i]; j<hg->hindex[i+1]-1; j++){
+    for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++){
       fg->vindex[k] = 2*k;
       fg->vedge[2*k] = i;
-      fg->vedge[2*k+1] = hg->nEdge+hg->hvertex[j]; /* Check? */
+      fg->vedge[2*k+1] = hg->nEdge+hg->hvertex[j]; 
       k++;
     }
   }
+  fg->vindex[k] = 2*k; /* k = fg->nVtx */
+
+#ifdef DEBUG
+  printf("Debug: fine hgraph (vertex-based). nvtx=%d, nedge=%d, nPins=%d\n", fg->nVtx, fg->nEdge, fg->nPins);
+  printf("Debug: vindex: ");
+  for (i=0; i<=fg->nVtx; i++)
+    printf(" %d ", fg->vindex[i]);
+  printf("\n");
+  printf("Debug: vedge: ");
+  for (i=0; i<fg->nPins; i++)
+    printf(" %d ", fg->vedge[i]);
+  printf("\n");
+#endif
 
   /* Mirror hypergraph. This sets up hindex. */
   ierr = Zoltan_HG_Create_Mirror(zz, fg); 
