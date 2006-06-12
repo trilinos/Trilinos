@@ -262,8 +262,12 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     shg->hindex = col_hindex;
     shg->hvertex = col_hvertex;
 
+    // EBEB 6/6/06
+    /* Copy vwgt and fixed arrays so shg owns this memory */
     for (i = 0; i < shg->VtxWeightDim*shg->nVtx; i++)
       shg->vwgt[i] = phg->vwgt[i];
+    for (i = 0; i < shg->nVtx; i++)
+      shg->fixed[i] = phg->fixed[i];
   }
 
   else {
@@ -338,6 +342,15 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     /* Gather fixed array, if any  */
     if (phg->fixed){
   
+#define DEBUG_
+#ifdef DEBUG_
+      uprintf(phg->comm, "Debug in PHG_gather before gather. phg->fixed =");
+      for (i=0; i<phg->nVtx; i++){
+        printf(" %d ", phg->fixed[i]);
+      }
+      printf("\n");
+#endif
+
       /* Can use the same each array. */
       /* Need to compute new disp array. */
   
@@ -348,6 +361,14 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
       
       MPI_Allgatherv(phg->fixed, phg->nVtx, MPI_FLOAT, 
                      shg->fixed, each, disp, MPI_FLOAT, phg->comm->row_comm);
+
+#ifdef DEBUG_
+      uprintf(phg->comm, "Debug in PHG_gather after gather. shg->fixed =");
+      for (i=0; i<shg->nVtx; i++){
+        printf(" %d ", shg->fixed[i]);
+      }
+      printf("\n");
+#endif
     }
 
     /* Gather vertex weights, if any. */
