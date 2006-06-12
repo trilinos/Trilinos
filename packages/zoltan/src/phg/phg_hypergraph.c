@@ -62,6 +62,7 @@ void Zoltan_HG_HGraph_Init(
   phg->EdgeWeightDim   = 0;
   phg->VtxWeightDim = 0;
   phg->ratio = 0.5;
+  phg->bisec_split   = -1;  // EBEB 6/7/06
 
   phg->comm    = NULL;
   phg->coor    = NULL;
@@ -75,6 +76,7 @@ void Zoltan_HG_HGraph_Init(
   phg->dist_y  = NULL;
   phg->vmap    = NULL;
   phg->fixed   = NULL;
+
 }
 
 
