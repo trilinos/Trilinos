@@ -481,6 +481,7 @@ static int seq_part (
     weight_sum += hg->vwgt[i*vwgtdim];
     if (hg->fixed)
       if (hg->fixed[i] >= 0){
+        uprintf(hg->comm, "bisec_split=%d, i=%d, fixed=%d\n", hg->bisec_split, i, hg->fixed[i]);
         /* Set partition number for fixed vtx. */
         if (hg->bisec_split < 0){
           /* direct k-way, use part numbers directly */
@@ -488,12 +489,19 @@ static int seq_part (
         }
         else{
           /* recursive bisection, map to 0-1 part numbers */
-          part[i] = (hg->fixed[i] < hg->bisec_split ? 0 : 1);
+          part[i] = (hg->fixed[i] <= hg->bisec_split ? 0 : 1);
         }
         /* Add up weights of fixed vertices for each partition */
         fixed_wgts[part[i]] += hg->vwgt[i*vwgtdim];
       }
   }
+ 
+#define DEBUG_
+#ifdef DEBUG_
+  if (hg->fixed)
+    printf("fixed[0,1]= %d, %d\n", hg->fixed[0], hg->fixed[1]);
+  printf("part[0,1]= %d, %d\n", part[0], part[1]);
+#endif
 
   /* Sum up all the target partition weights. */
   /* Only use first vweight for now. */
