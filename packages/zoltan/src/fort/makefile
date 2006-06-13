@@ -83,6 +83,8 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_hgsizecs.if			set_hgsizecs.fn \
 		set_hgedgeweights.if		set_hgedgeweights.fn \
 		set_hgsizeedgeweights.if	set_hgsizeedgeweights.fn \
+                set_numfixedobj.if              set_numfixedobj.fn \
+                set_fixedobjlist.if             set_fixedobjlist.fn \
 		set_numcoarseobj.if.lbif 	set_numcoarseobj.fn.lbfn \
 		set_coarseobjlist.if.lbif 	set_coarseobjlist.fn.lbfn \
 		set_firstcoarseobj.if.lbif	set_firstcoarseobj.fn.lbfn \

@@ -93,7 +93,10 @@ public :: &
    ZOLTAN_HG_SIZE_CS_FN_TYPE, &
    ZOLTAN_HG_CS_FN_TYPE, &
    ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE, &
-   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE
+   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE, &
+   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE, &
+   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE
+
 
 public :: &
    ZOLTAN_OTHER_REF, &
@@ -158,7 +161,8 @@ public :: &
    Zoltan_Set_Obj_Size_Multi_Fn, &
    Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn, &
    Zoltan_Set_HG_Size_CS_Fn, Zoltan_Set_HG_CS_Fn, &
-   Zoltan_Set_HG_Size_Edge_Weights_Fn, Zoltan_Set_HG_Edge_Weights_Fn 
+   Zoltan_Set_HG_Size_Edge_Weights_Fn, Zoltan_Set_HG_Edge_Weights_Fn , &
+   Zoltan_Set_Num_Fixed_Obj_Fn, Zoltan_Set_Fixed_Obj_List_Fn
 
 public :: &
    Zoltan_Get_Child_Order
@@ -245,7 +249,9 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_HG_SIZE_CS_FN_TYPE       = ZOLTAN_FN_TYPES(37_Zoltan_INT), &
    ZOLTAN_HG_CS_FN_TYPE            = ZOLTAN_FN_TYPES(38_Zoltan_INT), &
    ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE = ZOLTAN_FN_TYPES(39_Zoltan_INT), &
-   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE      = ZOLTAN_FN_TYPES(40_Zoltan_INT)
+   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE      = ZOLTAN_FN_TYPES(40_Zoltan_INT), &
+   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE      = ZOLTAN_FN_TYPES(41_Zoltan_INT), &
+   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE      = ZOLTAN_FN_TYPES(42_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
@@ -1244,6 +1250,8 @@ end interface
 #include "set_hgsizeedgeweights.if"
 #include "set_hgcs.if"
 #include "set_hgedgeweights.if"
+#include "set_numfixedobj.if"
+#include "set_fixedobjlist.if"
 
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.
@@ -2442,6 +2450,9 @@ end subroutine Zf90_Reftree_Get_Child_Order
 #include "set_hgsizeedgeweights.fn"
 #include "set_hgcs.fn"
 #include "set_hgedgeweights.fn"
+#include "set_numfixedobj.fn"
+#include "set_fixedobjlist.fn"
+
 
 !-------------------------------------------------------------------------
 ! Include LB_* interface for backward compatibility.
