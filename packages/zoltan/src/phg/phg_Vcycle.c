@@ -21,7 +21,6 @@ extern "C" {
 #include <limits.h>
 
 #define PROCESSOR_REDUCTION
-/* #define DEBUG_ */
 
     /*
 #define _DEBUG
@@ -329,26 +328,12 @@ int Zoltan_PHG_Partition (
         goto End;
       }
 
-#ifdef DEBUG_
-  uprintf(hg->comm, "Before coarsening, fixed = ");
-  for (i=0; i<hg->nVtx; i++)
-    printf(" %d ", hg->fixed[i]);
-  printf("\n");
-#endif
       /* Construct coarse hypergraph and LevelMap */
       err = Zoltan_PHG_Coarsening (zz, hg, match, coarser->hg, vcycle->LevelMap,
        &vcycle->LevelCnt, &vcycle->LevelSndCnt, &vcycle->LevelData, 
        &vcycle->comm_plan, hgp);
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) 
         goto End;
-#ifdef DEBUG_
-  if (hg->fixed){
-    uprintf(hg->comm, "After coarsening, fixed = ");
-    for (i=0; i<coarser->hg->nVtx; i++)
-      printf(" %d ", coarser->hg->fixed[i]);
-    printf("\n");
-  }
-#endif
 
       if (vcycle_timing)
         ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_coarse,
@@ -445,18 +430,6 @@ int Zoltan_PHG_Partition (
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
-
-#ifdef DEBUG_
-  uprintf(hg->comm, "After coarse partition, fixed = ");
-  for (i=0; i<hg->nVtx; i++)
-    printf(" %d ", hg->fixed[i]);
-  printf("\n");
- 
-  uprintf(hg->comm, "After coarse partition, part = ");
-  for (i=0; i<hg->nVtx; i++)
-    printf(" %d ", vcycle->Part[i]);
-  printf("\n");
-#endif
 
   if (do_timing) {
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarsepart, hgc->Communicator);
@@ -597,8 +570,15 @@ Refine:
 	hgc = finer->hg->comm; /* updating hgc is required when the processors
 				   change */
 	/* Create comm plan to unredistributed processors */
-	Zoltan_Comm_Create(&finer->comm_plan, finer->vlno ? hg->nVtx : 0,
-			   finer->vdest, hgc->Communicator, COMM_TAG+2, &size);
+	err = Zoltan_Comm_Create(&finer->comm_plan, finer->vlno ? hg->nVtx : 0,
+				 finer->vdest, hgc->Communicator, COMM_TAG+2,
+				 &size);
+
+	if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+	  ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Zoltan_Comm_Create failed.");
+	  goto End;
+	}
+
 	/* allocate rec buffer to exchange sendbuf information */
 	rbuffer = NULL;
 	if (finer->hg->nVtx) {
