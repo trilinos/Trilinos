@@ -82,6 +82,7 @@ RTOP_OPS_LIB_H = \
   $(srcdir)/ops_lib/RTOpPack_ROpGetSubVector.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpNormInf.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProd.hpp\
+  $(srcdir)/ops_lib/RTOpPack_TOpEleWiseProdUpdate.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpMax.hpp\
   $(srcdir)/ops_lib/RTOpPack_ROpSum.hpp\
   $(srcdir)/ops_lib/RTOpPack_TOpLinearCombination.hpp\
