@@ -377,6 +377,18 @@ public:
     return Zoltan_Set_HG_Edge_Weights_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
+  int Set_Num_Fixed_Obj_Fn    ( ZOLTAN_NUM_FIXED_OBJ_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_Num_Fixed_Obj_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
+  int Set_Fixed_Obj_List_Fn    ( ZOLTAN_FIXED_OBJ_LIST_FN * fn_ptr,
+                               void * data = 0 )
+  {
+    return Zoltan_Set_Fixed_Obj_List_Fn( ZZ_Ptr, fn_ptr, data );
+  }
+  ///--------------------------
   int Set_Pre_Migrate_PP_Fn  ( ZOLTAN_PRE_MIGRATE_PP_FN * fn_ptr,
                                void * data = 0 )
   {
