@@ -33,8 +33,11 @@ viewed as a more sophisticated alternative to
 the traditional graph partitioning.
 <p>A hypergraph consists of vertices and hyperedges. A hyperedge
 connects
-one or more vertices. A graph is a special case of a hypergraph where
-each edge has size two (two vertices). The hypergraph model is well
+one or more vertices. 
+A graph can be cast as a hypergraph in one of two ways: either every
+pair of neighboring vertices form a hyperedge, or a vertex and all
+its neighbors form a hyperedge.
+The hypergraph model is well
 suited to parallel computing, where vertices correspond to data objects
 and hyperedges represent the communication requirements. The basic
 partitioning problem is to partition the vertices into <i>k</i>
@@ -113,6 +116,15 @@ return valid input data; 0 or 1. (This slows performance; intended for<br>
  style="font-style: italic;">(CHECK_GRAPH)</span><br>
       </td>
       <td style="vertical-align: top;">debugging.)<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">&nbsp;&nbsp;&nbsp; <span
+ style="font-style: italic;">PHG_FROM_GRAPH_METHOD</span><br>
+      </td>
+      <td style="vertical-align: top;">Method for converting a graph to a hypergraph:<br>
+      <span style="font-style: italic;">neighbors</span> - a vertex and all it's graph neighbors form a hyperedge<br>
+      <span style="font-style: italic;">pairs</span> - every pair of neighboring vertices form a hyperedge<br>
       </td>
     </tr>
     <tr>
@@ -228,6 +240,11 @@ Valid values:<br>
       <td><br>
       </td>
       <td><span style="font-style: italic;">PHG_OUTPUT_LEVEL=0</span></td>
+    </tr>
+    <tr>
+      <td><br>
+      </td>
+      <td><i>PHG_FROM_GRAPH_METHOD=neighbors</i></td>
     </tr>
     <tr>
       <td><br>
