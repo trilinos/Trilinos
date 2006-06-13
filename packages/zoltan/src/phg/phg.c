@@ -46,6 +46,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_NPROC_VERTEX",                NULL,  "INT",    0},
   {"PHG_NPROC_EDGE",                  NULL,  "INT",    0},
   {"PHG_COARSENING_LIMIT",            NULL,  "INT",    0},
+  {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},
   {"PHG_COARSENING_METHOD",           NULL,  "STRING", 0},
   {"PHG_COARSENING_METHOD_FAST",      NULL,  "STRING", 0},
   {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
@@ -308,10 +309,11 @@ int **exp_to_part )         /* list of partitions to which exported objs
         err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
   
         if (hgp.output_level >= PHG_DEBUG_LIST)     
-          uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
+          uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s/%s p=%d "
                   "bal=%.2f cutl=%.2f\n", 
                   hg->info, hg->nVtx, hg->nEdge, hg->nPins,
-                  hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
+                  hgp.convert_str, hgp.redm_str, 
+                  hgp.coarsepartition_str, hgp.refinement_str, p,
                   Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, p, parts),
                   Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
             
@@ -510,6 +512,7 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_VERTEX", &hgp->nProc_x_req);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_EDGE", &hgp->nProc_y_req);
   Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_LIMIT", &hgp->redl);
+  Zoltan_Bind_Param(PHG_params, "PHG_FROM_GRAPH_METHOD", hgp->convert_str);
   Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD_FAST", hgp->redm_fast);
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER", &hgp->visit_order);
@@ -551,6 +554,7 @@ int Zoltan_PHG_Initialize_Params(
   
   /* Set default values */
   strncpy(hgp->hgraph_pkg,       "default", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->convert_str,    "neighbors", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_str,             "ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_fast,          "l-ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "auto", MAX_PARAM_STRING_LEN);

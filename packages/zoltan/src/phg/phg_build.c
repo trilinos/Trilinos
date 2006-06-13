@@ -1007,7 +1007,7 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
                edgeSizeThreshold, final_output, 
                &myPins.nHedges,
                myPins.edgeGID, elids, myPins.esizes, myPins.edgeGSize,
-               myPins.ewgt, myPins.pinGID, myPins.pinProc, 0);
+               myPins.ewgt, myPins.pinGID, myPins.pinProc);
 
     if (myPins.nHedges < nEdge){  /* some of my edges were removed */
       myPins.numPins = 0;
@@ -1111,7 +1111,7 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
 
     /* Graph query functions, one hyperedge per vertex */
 
-    ierr = Zoltan_HG_Graph_Callbacks(zz, zhg,
+    ierr = Zoltan_HG_Graph_Callbacks(zz, zhg, hgp,
                                      myObjs.GnVtx, edgeSizeThreshold,
                                      final_output, &myPins.nHedges,
                                      &myPins.edgeGID, &elids,
@@ -1176,7 +1176,7 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
   for (i=0; i<nRequests; i++){
     j = lookup_GID(lookup_myObjs, pin_requests + ( i * num_gid_entries));
 
-    if (j < 0) FATAL_ERROR("Unexpected vertex GID received)");
+    if (j < 0) FATAL_ERROR("Unexpected vertex GID received");
 
     pin_info[i] = myObjs.vtx_gno[j];
     myObjs.numHedges[j]++;
@@ -1798,7 +1798,7 @@ End:
   ZOLTAN_FREE(&fixed_callbk);
   
   free_zoltan_objects(&myObjs);
-  free_zoltan_pins(&myPins);   /* we get errors here */
+  free_zoltan_pins(&myPins);
   free_zoltan_ews(&myEWs);
   free_zoltan_temp_edges(&myHshEdges);
   free_zoltan_temp_vertices(&myHshVtxs);

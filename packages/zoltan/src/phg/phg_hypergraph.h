@@ -211,14 +211,17 @@ extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
 extern void Zoltan_HG_Print(ZZ*, HGraph*, Partition, FILE*, char*);
 extern void Zoltan_HG_HGraph_Print(ZZ *zz, ZHG *, HGraph *, Partition, FILE *fp);
     
-extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int, float, int, int *,
+struct PHGPartParamsStruct;  /* Forward declaration */
+
+extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, struct PHGPartParamsStruct *,
+  int, float, int, int *,
   ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *,
   int **);
 extern int Zoltan_Call_Hypergraph_Pin_Query(ZZ *zz, int *num_lists,
    int *num_pins, ZOLTAN_ID_PTR *edg_GID, int **row_ptr, 
    ZOLTAN_ID_PTR *vtx_GID);
 int Zoltan_HG_ignore_some_edges(ZZ *, ZHG *, int, float, int, int *,
-  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *, float *, ZOLTAN_ID_PTR, int *, int);
+  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *, float *, ZOLTAN_ID_PTR, int *);
 
     
 #ifdef __cplusplus

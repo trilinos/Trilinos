@@ -56,6 +56,7 @@ struct PHGPartParamsStruct {
                                     for all requested partitions. */
   int kway;                      /* 1 -> direct kway, 0->recursive bisection */
   int redl;                      /* Reduction limit (constant). */
+  char convert_str[MAX_PARAM_STRING_LEN];  /* Graph->HG conversion method. */
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
   char redm_fast[MAX_PARAM_STRING_LEN]; /* Fast reduction method string. */
   char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/
