@@ -40,6 +40,9 @@
 
 namespace Rythmos {
 
+enum BDFactionFlag { ACTION_UNSET, ACTION_LOWER, ACTION_MAINTAIN, ACTION_RAISE };
+enum BDFstatusFlag { PREDICT_AGAIN, CONTINUE_ANYWAY, REP_ERR_FAIL, REP_CONV_FAIL };
+
 /** \brief . */
 template<class Scalar>
 class ImplicitBDFStepper : public Stepper<Scalar>
@@ -48,9 +51,19 @@ class ImplicitBDFStepper : public Stepper<Scalar>
 
     /** \brief . */
     ImplicitBDFStepper(
-      const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >        &model
+      const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
       ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
       );
+
+    /** \brief . */
+    ImplicitBDFStepper(
+      const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> >  &model
+      ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> >  &solver
+      ,Teuchos::ParameterList &parameterList
+      );
+
+    /** \brief . */
+    void InitializeStepper(Teuchos::ParameterList &implicitBDFParameters);
 
     /** \brief . */
     void setModel(const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model);
@@ -80,12 +93,17 @@ class ImplicitBDFStepper : public Stepper<Scalar>
       ) const;
 
     bool ErrWtVecSet(
-      Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &w, 
-      Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &y
+      Thyra::VectorBase<Scalar> *w, 
+      const Thyra::VectorBase<Scalar> &y
       );
 
+    Scalar WRMSNorm(
+      const Thyra::VectorBase<Scalar> &w
+      , const Thyra::VectorBase<Scalar> &y
+      ) const;
 
   private:
+
 
     void obtainPredictor();
     void obtainResidual();
@@ -96,7 +114,7 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     void updateCoeffs();
     void initialize();
     Scalar checkReduceOrder();
-    void rejectStep();
+    BDFstatusFlag rejectStep();
     void completeStep();
 
     void setDefaultMagicNumbers(Teuchos::ParameterList &magicNumberList);
@@ -109,9 +127,8 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn0;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xpn0;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_base;
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_pred;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_pred;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y_pred;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > y_dot_pred;
     std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > xHistory;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > delta;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual;
@@ -158,7 +175,6 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     int newOrder;
     bool initialPhase;
     Scalar stopTime;
-    Scalar nextTimePt;
     bool constantStepSize;
 
     // Magic Numbers:
@@ -182,7 +198,6 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     bool stepAttemptStatus;
     int newtonConvergenceStatus;
 
-    enum actionFlag { ACTION_UNSET, ACTION_LOWER, ACTION_MAINTAIN, ACTION_RAISE };
 
 };
 
@@ -190,17 +205,15 @@ class ImplicitBDFStepper : public Stepper<Scalar>
 // Defintions
 
 template<class Scalar>
-ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
-  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
-  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
-  )
+void ImplicitBDFStepper<Scalar>::InitializeStepper(
+    Teuchos::ParameterList &implicitBDFParameters
+    )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  // We should accept a parameter list to specify the maxord, reltol, abstol, and magic numbers
   // Initialize algorithm coefficients
+  maxOrder = implicitBDFParameters.get<int>( "maxOrder", 5 ); // maximum order
   currentOrder=1; // Current order of integration
   oldOrder=1; // previous order of integration
-  maxOrder=5;  // maximum order = min(5,user option maxord) - see below.
   usedOrder=1;  // order used in current step (used after currentOrder is updated)
   alpha_s=Scalar(-ST::one());  // $\alpha_s$ fixed-leading coefficient of this BDF method
   alpha.reserve(maxOrder+1);  // $\alpha_j(n)=h_n/\psi_j(n)$ coefficient used in local error test
@@ -236,24 +249,38 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   Tkp1=ST::zero();
   newOrder=1;
   initialPhase=true;
-  constantStepSize=false;
 
-  h0_safety      = Scalar(2.0);
-  h0_max_factor  = Scalar(0.001);
-  h_phase0_incr  = Scalar(2.0);
-  h_max_inv      = Scalar(0.0);
-  Tkm1_Tk_safety = Scalar(2.0);
-  Tkp1_Tk_safety = Scalar(0.5);
-  r_factor       = Scalar(0.9);
-  r_safety       = Scalar(2.0);
-  r_fudge        = Scalar(0.0001);
-  r_min          = Scalar(0.125);
-  r_max          = Scalar(0.9);
-  r_hincr_test   = Scalar(2.0);
-  r_hincr        = Scalar(2.0);
-  max_LET_fail   = 15;
-  minTimeStep    = Scalar(0.0);
-  maxTimeStep    = Scalar(10.0); // FIX THIS!
+  relErrTol = implicitBDFParameters.get<Scalar>( "relErrTol", Scalar(1.0e-4) );
+  absErrTol = implicitBDFParameters.get<Scalar>( "absErrTol", Scalar(1.0e-6) );
+  constantStepSize = implicitBDFParameters.get<bool>( "constantStepSize", false );
+  stopTime = implicitBDFParameters.get<Scalar>( "stopTime", Scalar(10.0) );
+
+  setDefaultMagicNumbers(implicitBDFParameters.sublist("magicNumbers"));
+
+}
+
+template<class Scalar>
+ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
+  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+  ,Teuchos::ParameterList &parameterList
+  )
+{
+  InitializeStepper(parameterList);
+
+  // Now we instantiate the model and the solver
+  setModel(model);
+  setSolver(solver);
+}
+
+template<class Scalar>
+ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
+  const Teuchos::RefCountPtr<const Thyra::ModelEvaluator<Scalar> > &model
+  ,const Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<Scalar> > &solver
+  )
+{
+  Teuchos::ParameterList emptyList;
+  InitializeStepper(emptyList);
 
   // Now we instantiate the model and the solver
   setModel(model);
@@ -280,7 +307,7 @@ void ImplicitBDFStepper<Scalar>::setDefaultMagicNumbers(
   r_hincr        = magicNumberList.get<Scalar>( "r_hincr",        Scalar(2.0)     );
   max_LET_fail   = magicNumberList.get<int>   ( "max_LET_fail",   15              );
   minTimeStep    = magicNumberList.get<Scalar>( "minTimeStep",    Scalar(0.0)     );
-  maxTimeStep    = magicNumberList.get<Scalar>( "maxTimeStep",    Scalar(10.0)    ); // FIX THIS!
+  maxTimeStep    = magicNumberList.get<Scalar>( "maxTimeStep",    Scalar(10.0)    ); 
 }
 
 template<class Scalar>
@@ -292,11 +319,12 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
   xn0 = model->getNominalValues().get_x()->clone_v();
   xpn0 = model->getNominalValues().get_x()->clone_v();
   x_dot_base = model->getNominalValues().get_x_dot()->clone_v();
-  y_pred = model->getNominalValues().get_x()->clone_v();
-  y_dot_pred = model->getNominalValues().get_x_dot()->clone_v();
+  x_pred = model->getNominalValues().get_x()->clone_v();
+  x_dot_pred = model->getNominalValues().get_x_dot()->clone_v();
   delta = model->getNominalValues().get_x()->clone_v();
   residual = Thyra::createMember(model->get_f_space());
   errWtVec = xn0->clone_v();
+  ErrWtVecSet(&*errWtVec,*xn0);
   xHistory.push_back(xn0->clone_v());
   xHistory.push_back(xpn0->clone_v());
   for (int i=2 ; i<maxOrder ; ++i)
@@ -319,6 +347,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   initialize();
+  BDFstatusFlag status;
   while (1)
   {
     // Set up problem coefficients (and handle first step)
@@ -338,8 +367,8 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     //   t_base = tn+dt
     //
     Scalar coeff_x_dot = Scalar(-ST::one())*alpha_s/hh;
-    V_StVpStV( &*x_dot_base, ST::one(), *y_dot_pred, alpha_s/hh, *y_pred );
-    neModel.initialize(model,coeff_x_dot,x_dot_base,ST::one(),Teuchos::null,time_old+hh,y_pred);
+    V_StVpStV( &*x_dot_base, ST::one(), *x_dot_pred, alpha_s/hh, *x_pred );
+    neModel.initialize(model,coeff_x_dot,x_dot_base,ST::one(),Teuchos::null,time_old+hh,x_pred);
     //
     // Solve the implicit nonlinear system to a tolerance of ???
     // 
@@ -355,9 +384,13 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     
     // Check LTE here:
     if ((ck*dnorm) > ST::one())
-      rejectStep(); 
+      status = rejectStep(); 
     else 
       break;
+    if (status == CONTINUE_ANYWAY)
+      break;
+    if (status == REP_ERR_FAIL)
+      return(Scalar(-ST::one()));
   }
 
   completeStep();  
@@ -407,10 +440,33 @@ void ImplicitBDFStepper<Scalar>::describe(
     solver->describe(out,verbLevel);
     out << "xn0 = " << std::endl;
     xn0->describe(out,verbLevel);
+    out << "xpn0 = " << std::endl;
+    xpn0->describe(out,verbLevel);
+    out << "x_dot_base = " << std::endl;
+    x_dot_base->describe(out,verbLevel);
+    out << "x_pred = " << std::endl;
+    x_pred->describe(out,verbLevel);
+    out << "x_dot_pred = " << std::endl;
+    x_dot_pred->describe(out,verbLevel);
+    out << "xHistory = " << std::endl;
+    for (int i=0 ; i < maxOrder ; ++i)
+    {
+      out << "xHistory[" << i << "] = " << std::endl;
+      xHistory[i]->describe(out,verbLevel);
+    }
+    out << "delta = " << std::endl;
+    delta->describe(out,verbLevel);
+    out << "residual = " << std::endl;
+    residual->describe(out,verbLevel);
+    out << "errWtVec = " << std::endl;
+    errWtVec->describe(out,verbLevel);
+    out << "ee = " << std::endl;
+    ee->describe(out,verbLevel);
     out << "time = " << time << std::endl;
     out << "time_old = " << time_old << std::endl;
-//    out << "neModel = " << std::endl;
-//    out << neModel->describe(out,verbLevel,leadingIndent,indentSpacer) << std::endl;
+    out << "hh = " << hh << std::endl;
+    out << "neModel = " << std::endl;
+    neModel.describe(out,verbLevel);
   }
 }
 
@@ -561,22 +617,20 @@ template<class Scalar>
 void ImplicitBDFStepper<Scalar>::initialize()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  // we assume the solution vector is available here 
-  // Note that I'm using currSolutionPtr instead of
-  // nextSolutionPtr because this is the first step.
 
   // Choose initial step-size
   Scalar time_to_stop = stopTime - time;
   Scalar currentTimeStep;
   if (constantStepSize)
   {
-    currentTimeStep = 0.1 * time_to_stop;
-    currentTimeStep = min(hh, currentTimeStep);
+    currentTimeStep = hh;
+    //currentTimeStep = 0.1 * time_to_stop;
+    //currentTimeStep = min(hh, currentTimeStep);
   }
   else
   {
     // compute an initial step-size based on rate of change in the solution initially
-    Scalar ypnorm = norm_2(*errWtVec,*xHistory[1]);
+    Scalar ypnorm = WRMSNorm(*errWtVec,*xHistory[1]);
     if (ypnorm > ST::zero())  // time-dependent DAE
     {
       currentTimeStep = min(h0_max_factor*abs(time_to_stop),sqrt(2.0)/(h0_safety*ypnorm));
@@ -622,7 +676,7 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder()
 //    currentOrder, sigma, dsDae.newtonCorrectionPtr, dsDae.qNewtonCorrectionPtr,
 //    dsDae.errWtVecPtr, dsDae.qErrWtVecPtr, dsDae.xHistory, dsDae.qHistory
 
-  Scalar dnorm = norm_2(*errWtVec,*delta);
+  Scalar dnorm = WRMSNorm(*errWtVec,*delta);
   Ek = sigma[currentOrder]*dnorm;
   Tk = Scalar(currentOrder+1)*Ek;
   Est = Ek;
@@ -630,13 +684,13 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder()
   if (currentOrder>1)
   {
     V_VpV(&*delta,*xHistory[currentOrder],*ee);
-    dnorm = norm_2(*errWtVec,*delta);
+    dnorm = WRMSNorm(*errWtVec,*delta);
     Ekm1 = sigma[currentOrder-1]*dnorm;
     Tkm1 = currentOrder*Ekm1;
     if (currentOrder>2)
     {
       Vp_V(&*delta,*xHistory[currentOrder-1]);
-      dnorm = norm_2(*errWtVec,*delta);
+      dnorm = WRMSNorm(*errWtVec,*delta);
       Ekm2 = sigma[currentOrder-2]*dnorm;
       Tkm2 = (currentOrder-1)*Ekm2;
       if (max(Tkm1,Tkm2)<=Tk)
@@ -655,7 +709,7 @@ Scalar ImplicitBDFStepper<Scalar>::checkReduceOrder()
 }
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::rejectStep()
+BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
 {
 
 // This routine puts its output in newTimeStep and newOrder
@@ -675,20 +729,20 @@ void ImplicitBDFStepper<Scalar>::rejectStep()
 
   Scalar newTimeStep = hh;
   Scalar rr = 1.0; // step size ratio = new step / old step
+  nef++;
+  if (nef >= max_LET_fail)  
+  {
+    cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep:  " 
+          << "  Maximum number of local error test failures.  " << endl;
+    return(REP_ERR_FAIL);
+  }
   if ((stepAttemptStatus == false) && (adjustStep))
   {
     initialPhase = false;
-    nef++;
     restoreHistory();
     // restore psi_
 //    for (int i=1;i<=currentOrder;++i)
 //      psi[i-1] = psi[i] - hh;
-
-    if (nef >= max_LET_fail)  
-    {
-      cerr << "Rythmos_Stepper_ImplicitBDF::rejectStep:  " 
-           << "  Maximum number of local error test failures.  " << endl;
-    }
 
     if ((newtonConvergenceStatus <= 0))
     {
@@ -760,7 +814,9 @@ void ImplicitBDFStepper<Scalar>::rejectStep()
       nextTimePt      = stopTime;
       hh = stopTime - time;
     }
+    return(CONTINUE_ANYWAY);
   }
+  return(PREDICT_AGAIN);
 }
 
 template<class Scalar>
@@ -796,7 +852,7 @@ void ImplicitBDFStepper<Scalar>::completeStep()
   }
   else // not in the initial phase of integration
   {
-    int action = ACTION_UNSET;
+    BDFactionFlag action = ACTION_UNSET;
     if (newOrder == currentOrder-1)
       action = ACTION_LOWER;
     else if (newOrder == maxOrder)
@@ -810,7 +866,7 @@ void ImplicitBDFStepper<Scalar>::completeStep()
     else // consider changing the order 
     {
       V_StVpStV(&*delta,ST::one(),*ee,Scalar(-ST::one()),*xHistory[currentOrder+1]);
-      Scalar dnorm = norm_2(*errWtVec,*delta);
+      Scalar dnorm = WRMSNorm(*errWtVec,*delta);
       Tkp1 = dnorm;
       Ekp1 = Tkp1/(currentOrder+2);
       if (currentOrder == 1)
@@ -857,6 +913,7 @@ void ImplicitBDFStepper<Scalar>::completeStep()
   // the step-size and everything to do with the newton correction vectors.
   updateHistory();
 
+  ErrWtVecSet(&*errWtVec,*xn0);
 
   // 12/01/05 tscoffe:  This is necessary to avoid currentTimeStep == 0 right
   // before a breakpoint.  So I'm checking to see if time is identically
@@ -899,18 +956,27 @@ void ImplicitBDFStepper<Scalar>::completeStep()
 }
 
 template<class Scalar>
-bool ImplicitBDFStepper<Scalar>::ErrWtVecSet(Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > &w, Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > &y)
+bool ImplicitBDFStepper<Scalar>::ErrWtVecSet(Thyra::VectorBase<Scalar> *w_in, const Thyra::VectorBase<Scalar> &y)
 {
-  abs(&*w,*y);
-  V_StVpS(&*w,relErrTol,*w,absErrTol);
-  reciprocal(&*w,*w);
-  Vt_V(&*w,*w); // We square w because of how weighted norm_2 is computed.
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  Thyra::VectorBase<Scalar> &w = *w_in;
+  abs(&w,y);
+  Vt_S(&w,relErrTol);
+  Vp_S(&w,absErrTol);
+  reciprocal(&w,w);
+  Vt_StV(&w,ST::one(),w); // We square w because of how weighted norm_2 is computed.
   // divide by N to get RMS norm
-  int N = y->size();
-  Vt_S(&*w,Scalar(1.0/N));
+  int N = y.space()->dim();
+  Vt_S(&w,Scalar(1.0/N));
   // Now you can compute WRMS norm as:
   // Scalar WRMSnorm = norm_2(w,y); // WRMS norm of y with respect to weights w.
   return true; // This should be updated to reflect success of reciprocal
+}
+
+template<class Scalar>
+Scalar ImplicitBDFStepper<Scalar>::WRMSNorm(const Thyra::VectorBase<Scalar> &w, const Thyra::VectorBase<Scalar> &y) const
+{
+  return(norm_2(w,y));
 }
 
 } // namespace Rythmos
