@@ -412,7 +412,7 @@ int Amesos_Mumps::SymbolicFactorization()
   if (Comm().MyPID() < MaxProcs_) 
   {
     dmumps_c(&(MDS));   //  Initialize MUMPS
-    CheckError();
+    static_cast<void>( CheckError( ) );   // Can hang 
   }
 
   MDS.n = Matrix().NumGlobalRows();
@@ -465,7 +465,15 @@ int Amesos_Mumps::SymbolicFactorization()
 
   AddTime("symbolic");
 
-  CheckError();
+  int IntWrong = CheckError()?1:0 ; 
+  int AnyWrong;
+  Comm().SumAll( &IntWrong, &AnyWrong, 1 ) ; 
+  bool Wrong = AnyWrong > 0 ; 
+
+
+  if ( Wrong ) {
+      AMESOS_CHK_ERR( StructurallySingularMatrixError ) ; 
+  }
 
   IsSymbolicFactorizationOK_ = true ;
   NumSymbolicFact_++;  
@@ -504,7 +512,15 @@ int Amesos_Mumps::NumericFactorization()
 
   AddTime("numeric");
   
-  CheckError();
+  int IntWrong = CheckError()?1:0 ; 
+  int AnyWrong;
+  Comm().SumAll( &IntWrong, &AnyWrong, 1 ) ; 
+  bool Wrong = AnyWrong > 0 ; 
+
+
+  if ( Wrong ) {
+      AMESOS_CHK_ERR( NumericallySingularMatrixError ) ; 
+  }
 
   IsNumericFactorizationOK_ = true;
   NumNumericFact_++;  
@@ -542,7 +558,7 @@ int Amesos_Mumps::Solve()
       MDS.rhs = (*vecX)[j];
 
       dmumps_c(&(MDS)) ;  // Perform solve
-      CheckError();
+      static_cast<void>( CheckError( ) );   // Can hang 
       AddTime("solve");
     }
   } 
@@ -564,7 +580,7 @@ int Amesos_Mumps::Solve()
       ResetTime();
       if (Comm().MyPID() < MaxProcs_) 
 	dmumps_c(&(MDS)) ;  // Perform solve
-      CheckError();
+      static_cast<void>( CheckError( ) );   // Can hang 
 
       AddTime("solve");
     }
@@ -706,7 +722,7 @@ void Amesos_Mumps::PrintStatus() const
 }
 
 //=============================================================================
-void Amesos_Mumps::CheckError() 
+int Amesos_Mumps::CheckError() 
 {
   bool Wrong = ((MDS.INFOG(1) != 0) || (MDS.INFO(1) != 0))
                && (Comm().MyPID() < MaxProcs_);
@@ -728,7 +744,10 @@ void Amesos_Mumps::CheckError()
 	 << ", INFO(2) = " << MDS.INFO(2) << endl;
   }
 
-  if (Wrong) exit(EXIT_FAILURE);
+  if (Wrong) 
+      return 1 ;
+  else
+      return 0 ;
 }
 
 // ======================================================================

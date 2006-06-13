@@ -325,7 +325,7 @@ protected:
   int ConvertToTriplet(const bool OnlyValues);     
 
   //! Checks for MUMPS error, prints them if any. See MUMPS' manual.
-  void CheckError();
+  int CheckError();
 
   //! Check input parameters.
   void CheckParameters();
