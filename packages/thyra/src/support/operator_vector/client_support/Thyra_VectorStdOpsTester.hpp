@@ -212,11 +212,12 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   bool success = true;
   if(out) *out << "\nvecSpc.dim() = " << vecSpc.dim() << std::endl;
 
-  if(out) *out << "\nCreating vectors v1, v2, v3, x and z ...\n";
+  if(out) *out << "\nCreating vectors v1, v2, v3, v4, x and z ...\n";
   Teuchos::RefCountPtr<VectorBase<Scalar> >
     v1 = createMember(vecSpc),
     v2 = createMember(vecSpc),
     v3 = createMember(vecSpc),
+    v4 = createMember(vecSpc),
     x  = createMember(vecSpc),
     z  = createMember(vecSpc);
 
@@ -276,6 +277,113 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   
   Scalar alpha;
   Scalar beta;
+
+  // Test Vt_S
+  if(out) *out << "\nTesting Vt_S(&*z,alpha) ...\n";
+  v1  = createMember(vecSpc);
+  v2  = createMember(vecSpc);
+  if (ST::isComplex)
+    alpha = (Scalar(1.2345), Scalar(1.2345));
+  else
+    alpha = Scalar(1.2345);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-ST::one()),ST::one(),&*v1);
+  V_V(&*v2,*v1);
+  Vt_S(&*v1,alpha);
+  Scalar norm_alpha_v1 = norm_2(*v1);
+  Scalar alpha_norm_v1 = ST::magnitude(alpha)*norm_2(*v2);
+  if(!testMaxErr<Scalar>(
+       "norm_alpha_v1 - alpha_norm_v1",ST::magnitude(norm_alpha_v1-alpha_norm_v1)
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+  
+  // Test V_StV
+  if(out) *out << "\nTesting V_StV(&*z,alpha,*v) ...\n";
+  v1  = createMember(vecSpc);
+  v2  = createMember(vecSpc);
+  z   = createMember(vecSpc);
+  alpha = Scalar(-1.2345);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-ST::one()),ST::one(),&*v1);
+  V_StV(&*v2,alpha,*v1);
+  Vt_S(&*v1,alpha);
+  V_V(&*z,*v1);
+  Vp_V(&*z,*v2,Scalar(-ST::one()));
+  if(!testMaxErr<Scalar>(
+       "norm_2(*z)",norm_2(*z)
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+
+
+  // Test Vp_StV
+  if(out) *out << "\nTesting Vp_StV(&*z,alpha,*v) ...\n";
+  v1  = createMember(vecSpc);
+  v2  = createMember(vecSpc);
+  v3  = createMember(vecSpc);
+  z   = createMember(vecSpc);
+  alpha = Scalar(-1.2345);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-ST::one()),ST::one(),&*v1); // v1 = rand
+  randomize(Scalar(-ST::one()),ST::one(),&*v2); // v2 = rand
+  V_V(&*v3,*v1); // v3 = v1
+  Vp_StV(&*v1,alpha,*v2); // v1 += alpha*v2
+  V_StV(&*z,alpha,*v2); // z = alpha*v2
+  Vp_V(&*z,*v3); // z += v3
+  V_V(&*v3,*v1); // v3 = v1
+  Vp_V(&*v3,*z,Scalar(-ST::one())); // v3 -= z
+  if(!testMaxErr<Scalar>(
+       "norm_2(*v3)",norm_2(*v3)
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+  
+  // Test ele_wise_prod
+  if(out) *out << "\nTesting ele_wise_prod(alpha,*v1, *v2, &*z) ...\n";
+  v1  = createMember(vecSpc);
+  v2  = createMember(vecSpc);
+  v3  = createMember(vecSpc);
+  z   = createMember(vecSpc);
+  alpha = Scalar(-1.2345);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-ST::one()),ST::one(),&*v1); // v1 = rand
+  randomize(Scalar(-ST::one()),ST::one(),&*v2); // v2 = rand
+  randomize(Scalar(-ST::one()),ST::one(),&*v3); // v3 = rand
+  V_V(&*v4, *v1); // v4 = v1
+  V_V(&*z, *v2); // z = v2
+  ele_wise_prod(alpha, *v2, *v3, &*v1); // v1 += alpha * v2 * v3
+  ele_wise_prod_update(alpha, *v3, &*z); // z *= alpha * v3
+  Vp_V(&*z, *v4); // z += v4
+  V_V(&*v2, *v1); // v2 = v1
+  Vp_V(&*v2, *z, Scalar(-ST::one())); // v2 -= z
+  if(!testMaxErr<Scalar>(
+       "norm_2(*v2)",norm_2(*v2)
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
+
+  // Test Vt_StV
+  if(out) *out << "\nTesting Vt_StV(&*z, alpha, *v) ...\n";
+  v1  = createMember(vecSpc);
+  v2  = createMember(vecSpc);
+  v3  = createMember(vecSpc);
+  z   = createMember(vecSpc);
+  alpha = Scalar(-1.2345);
+  seed_randomize<Scalar>(12345);
+  randomize(Scalar(-ST::one()),ST::one(),&*v1); // v1 = rand
+  randomize(Scalar(-ST::one()),ST::one(),&*v2); // v2 = rand
+  V_V(&*v3,*v1); // v3 = v1
+  Vt_StV(&*v1,alpha,*v2); // v1 *= alpha*v2
+  V_S(&*z,ST::zero()); // z = 0
+  Vp_StVtV(&*z,alpha,*v3,*v2); // z += alpha*v3*v2
+  V_V(&*v2,*v1); // v2 = v1
+  Vp_V(&*v2,*z,Scalar(-ST::one())); // v2 -= z
+  if(!testMaxErr<Scalar>(
+       "norm_2(*v2)",norm_2(*v2)
+       ,"error_tol",error_tol(),"warning_tol",warning_tol(),out
+       )
+    ) success=false;
 
   // Test V_StVpV
   if(out) *out << "\nTesting V_StVpV(&*z,alpha,*v1,*v2) ...\n";

@@ -51,6 +51,7 @@
 #include "RTOpPack_TOpAXPY.hpp"
 #include "RTOpPack_TOpEleWiseDivide.hpp"
 #include "RTOpPack_TOpEleWiseProd.hpp"
+#include "RTOpPack_TOpEleWiseProdUpdate.hpp"
 #include "RTOpPack_TOpLinearCombination.hpp"
 #include "RTOpPack_TOpScaleVector.hpp"
 #include "RTOpPack_TOpReciprocal.hpp"
@@ -240,6 +241,35 @@ void Thyra::ele_wise_prod(
   const VectorBase<Scalar>* vecs[]      = { &v_rhs1, &v_rhs2 };
   VectorBase<Scalar>*       targ_vecs[] = { v_lhs };
   applyOp<Scalar>(ele_wise_prod_op,2,vecs,1,targ_vecs,(RTOpPack::ReductTarget*)NULL);
+}
+
+template<class Scalar>
+void Thyra::Vp_StVtV(
+  VectorBase<Scalar>* v_lhs
+  ,const Scalar& alpha, const VectorBase<Scalar>& v_rhs1, const VectorBase<Scalar>& v_rhs2
+  )
+{
+  ele_wise_prod(alpha,v_rhs1,v_rhs2,v_lhs);
+}
+
+template<class Scalar>
+void Thyra::ele_wise_prod_update(
+  const Scalar& alpha, const VectorBase<Scalar>& v_rhs1, VectorBase<Scalar>* v_lhs )
+{
+#ifdef _DEBUG
+  TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"ele_wise_prod_update(...), Error");
+#endif
+  RTOpPack::TOpEleWiseProdUpdate<Scalar> ele_wise_prod_update_op(alpha);
+  const VectorBase<Scalar>* vecs[]      = { &v_rhs1 };
+  VectorBase<Scalar>*       targ_vecs[] = { v_lhs };
+  applyOp<Scalar>(ele_wise_prod_update_op,1,vecs,1,targ_vecs,(RTOpPack::ReductTarget*)NULL);
+}
+
+template<class Scalar>
+void Thyra::Vt_StV(
+  VectorBase<Scalar>* v_lhs, const Scalar& alpha, const VectorBase<Scalar>& x )
+{
+  ele_wise_prod_update(alpha,x,v_lhs);
 }
 
 template<class Scalar>

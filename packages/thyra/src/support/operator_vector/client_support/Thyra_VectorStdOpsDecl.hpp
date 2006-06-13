@@ -146,6 +146,21 @@ void reciprocal( VectorBase<Scalar>* y, const VectorBase<Scalar>& x );
 template<class Scalar>
 void ele_wise_prod( const Scalar& alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& v, VectorBase<Scalar>* y );
 
+/** \brief Element-wise product update: <tt>y(i) += alpha * x(i) * v(i), i = 0...y->space()->dim()-1</tt>.
+ */
+template<class Scalar>
+void Vp_StVtV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar>& x, const VectorBase<Scalar>& v);
+
+/** \brief Element-wise product update: <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
+ */
+template<class Scalar>
+void ele_wise_prod_update( const Scalar& alpha, const VectorBase<Scalar>& x, VectorBase<Scalar>* y );
+
+/** \brief Element-wise product update: <tt>y(i) *= alpha * x(i), i = 0...y->space()->dim()-1</tt>.
+ */
+template<class Scalar>
+void Vt_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<Scalar> &x );
+
 /** \brief Element-wise division update: <tt>y(i) += alpha * x(i) / v(i), i = 0...y->space()->dim()-1</tt>.
  */
 template<class Scalar>
