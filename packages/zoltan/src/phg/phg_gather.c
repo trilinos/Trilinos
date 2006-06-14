@@ -262,12 +262,12 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     shg->hindex = col_hindex;
     shg->hvertex = col_hvertex;
 
-    // EBEB 6/6/06
     /* Copy vwgt and fixed arrays so shg owns this memory */
     for (i = 0; i < shg->VtxWeightDim*shg->nVtx; i++)
       shg->vwgt[i] = phg->vwgt[i];
-    for (i = 0; i < shg->nVtx; i++)
-      shg->fixed[i] = phg->fixed[i];
+    if (phg->fixed)
+      for (i = 0; i < shg->nVtx; i++)
+        shg->fixed[i] = phg->fixed[i];
   }
 
   else {
