@@ -64,10 +64,9 @@ namespace Isorropia {
   name == "Balancing package" and value == "Zoltan", then the Zoltan
   library is used to perform the balancing.
 
-  Furthmore, if the ParameterList object contains a string parameter with
-  name == "Partitioning algorithm" then possible values are "graph"
-  or "hypergraph" (not yet supported). If "Zoltan" has not been specified
-  as the "Balancing package", then "Partitioning algorithm" is ignored.
+  If the Zoltan package is specified, then the parameter-list will also
+  be checked for Zoltan parameters such as "LB_METHOD". Valid values for
+  the LB_METHOD parameter include "GRAPH" and "HYPERGRAPH", and others.
 
   The rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
@@ -134,10 +133,9 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   name == "Balancing package" and value == "Zoltan", then the Zoltan
   library is used to perform the balancing.
 
-  Furthmore, if the ParameterList object contains a string parameter with
-  name == "Partitioning algorithm" then possible values are "graph"
-  or "hypergraph" (not yet supported). If "Zoltan" has not been specified
-  as the "Balancing package", then "Partitioning algorithm" is ignored.
+  If the Zoltan package is specified, then the parameter-list will also
+  be checked for Zoltan parameters such as "LB_METHOD". Valid values for
+  the LB_METHOD parameter include "GRAPH" and "HYPERGRAPH", and others.
 
   The rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying

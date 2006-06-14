@@ -70,7 +70,7 @@ void Partitioner::compute_partitioning()
   std::string bal_package_str("Balancing package");
   std::string bal_package = paramlist_->get(bal_package_str, "none_specified");
   if (bal_package == "Zoltan" || bal_package == "zoltan") {
-#ifdef HAVE_EPETRAEXT_ZOLTAN
+#ifdef HAVE_ISORROPIA_ZOLTAN
     new_map_ = Isorropia_Zoltan::create_balanced_map(*input_graph_, *paramlist_);
 #else
     throw Isorropia::Exception("Zoltan requested, but epetraext-zoltan not enabled.");

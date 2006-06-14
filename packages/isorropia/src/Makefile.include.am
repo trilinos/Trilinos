@@ -53,9 +53,34 @@ CORE_H = \
 	$(srcdir)/Isorropia_Epetra_utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp
 
+ZOLTAN = \
+	$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp \
+	$(srcdir)/zoltan/IZoltan_LoadBalance.cpp \
+	$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp \
+	$(srcdir)/zoltan/IZoltan_MigrationFunctions.cpp \
+	$(srcdir)/zoltan/IZoltan_MigrationObject.cpp \
+	$(srcdir)/zoltan/IZoltan_QueryContainer.cpp \
+	$(srcdir)/zoltan/IZoltan_QueryFunctions.cpp \
+	$(srcdir)/zoltan/IZoltan_QueryObject.cpp
+
+ZOLTAN_H = \
+	$(srcdir)/zoltan/Isorropia_ZoltanQuery.h \
+	$(srcdir)/zoltan/IZoltan_LoadBalance.h \
+	$(srcdir)/zoltan/IZoltan_MigrationContainer.h \
+	$(srcdir)/zoltan/IZoltan_MigrationFunctions.h \
+	$(srcdir)/zoltan/IZoltan_MigrationObject.h \
+	$(srcdir)/zoltan/IZoltan_QueryContainer.h \
+	$(srcdir)/zoltan/IZoltan_QueryFunctions.h \
+	$(srcdir)/zoltan/IZoltan_QueryObject.h
+
 DEFAULT_INCLUDES = \
 	-I$(top_builddir)/src $(EPETRA_INCLUDES) $(TEUCHOS_INCLUDES) \
-	$(EPETRAEXT_INCLUDES) -I$(top_srcdir)/src
+	$(EPETRAEXT_INCLUDES) -I$(top_srcdir)/src -I$(top_srcdir)/src/zoltan
+
+if BUILD_ZOLTAN
+ZOLTAN_SOURCES = $(ZOLTAN)
+ZOLTAN_HEADERFILES = $(ZOLTAN_H)
+endif
 
 # ------------------------------------------------------------------------
 # Isorropia library specifications
@@ -65,7 +90,7 @@ ISORROPIA_LIB = libisorropia.a
 
 
 libisorropia_a_SOURCES = \
-	$(CORE)
+	$(CORE) $(ZOLTAN_SOURCES)
 
 
 #We need the following to support separate build directories
@@ -97,7 +122,7 @@ libisorropia_a_LIBADD = $(TRILINOS_TEMPLATE_OBJS) $(XTRALDADD)
 
 lib_LIBRARIES = $(ISORROPIA_LIB)
 
-include_HEADERS = $(CORE_H)
+include_HEADERS = $(CORE_H) $(ZOLTAN_HEADERFILES)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

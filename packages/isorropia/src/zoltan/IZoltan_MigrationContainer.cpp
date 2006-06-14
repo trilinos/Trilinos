@@ -1,0 +1,76 @@
+//-------------------------------------------------------------------------
+// Copyright Notice
+//
+// Copyright (c) 2000, Sandia Corporation, Albuquerque, NM.
+//-------------------------------------------------------------------------
+
+//-------------------------------------------------------------------------
+// Filename       : $Zoltan_MigrationContainer.h$
+//
+// Purpose        : Static container object allowing C style calls
+//		    from Zoltan to access Dynamic MigrationObject's.
+//
+// Special Notes  : 
+//
+// Creator        : Robert J. Hoekstra, Parallel Computational Science
+//
+// Creation Date  : 08/04/2000
+//
+// Revision Information:
+// ---------------------
+//
+// Revision Number: $$
+//
+// Revision Date  : $$
+//
+// Current Owner  : $$
+//-------------------------------------------------------------------------
+
+#include <IZoltan_MigrationContainer.h>
+
+#include <IZoltan_MigrationObject.h>
+
+
+int Zoltan::MigrationContainer::CurrentObject = 0;
+
+std::map< int, Zoltan::MigrationObject * > Zoltan::MigrationContainer::StaticMap;
+
+void Zoltan::MigrationContainer::setMigrationID( const int & id )
+{
+  CurrentObject = id;
+}
+
+const int & Zoltan::MigrationContainer::getMigrationID()
+{
+  return CurrentObject;
+}
+
+bool Zoltan::MigrationContainer::registerMigrationObject( const int & id, 
+		Zoltan::MigrationObject * obj_ptr )
+{
+  if( StaticMap.find( id ) == StaticMap.end() )
+  {
+    StaticMap[ id ] = obj_ptr;
+    return true;
+  }
+  else
+  {
+    // Redundant id
+    return false;
+  }
+}
+
+Zoltan::MigrationObject * Zoltan::MigrationContainer::getMigrationObject(
+	const int & id )
+{
+  if( StaticMap.find( id ) != StaticMap.end() )
+  {
+    return StaticMap[ id ];
+  }
+  else
+  {
+    // Not found
+    return 0;
+  }
+}
+

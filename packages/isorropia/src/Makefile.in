@@ -28,9 +28,9 @@
 #@HEADER
 
 
-@HAVE_TEUCHOS_TRUE@ include ../../teuchos/Makefile.export.teuchos
+include ../../teuchos/Makefile.export.teuchos
 @HAVE_EPETRA_TRUE@ include ../../epetra/Makefile.export.epetra
-@HAVE_EPETRAEXT_ZOLTAN_TRUE@ include ../../epetraext/Makefile.export.epetraext
+@HAVE_EPETRAEXT_TRUE@ include ../../epetraext/Makefile.export.epetraext
 
 include Makefile.include
 

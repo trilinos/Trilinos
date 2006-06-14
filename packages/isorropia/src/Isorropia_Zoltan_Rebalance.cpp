@@ -31,7 +31,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_Zoltan_Rebalance.hpp>
 
-#ifdef HAVE_EPETRAEXT_ZOLTAN
+#ifdef HAVE_ISORROPIA_ZOLTAN
 
 #ifndef HAVE_MPI
 #error "Isorropia_Zoltan requires MPI."
@@ -56,10 +56,12 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Epetra_LinearProblem.h>
 #endif
 
+#ifdef HAVE_EPETRAEXT
 #include <EpetraExt_Transpose_CrsGraph.h>
+#endif
 
-#include <EpetraExt_ZoltanQuery.h>
-#include <Zoltan_LoadBalance.h>
+#include <Isorropia_ZoltanQuery.h>
+#include <IZoltan_LoadBalance.h>
 
 namespace Isorropia_Zoltan {
 
@@ -99,15 +101,6 @@ create_balanced_map(const Epetra_CrsGraph& input_graph,
 {
   Teuchos::RefCountPtr<Epetra_Map> bal_map;
 
-  std::string bal_alg_str("Balancing algorithm");
-  std::string bal_alg = paramlist.get(bal_alg_str, "none_specified");
-  if (bal_alg == "hypergraph") {
-    throw Isorropia::Exception("hypergraph partitioning not yet supported.");
-  }
-
-  std::string part_method_str("PARMETIS_METHOD");
-  std::string part_method = paramlist.get(part_method_str, "PartKway");
-
   Epetra_CrsGraph& nonconst_input = const_cast<Epetra_CrsGraph&>(input_graph);
 
   //Setup Load Balance Object
@@ -115,13 +108,34 @@ create_balanced_map(const Epetra_CrsGraph& input_graph,
   char * dummy = 0;
   Zoltan::LoadBalance LB( 0, &dummy, &version );
   int err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(nonconst_input.Comm()).Comm() );
-  if( err == ZOLTAN_OK ) err = LB.Set_Param( "LB_METHOD", "PARMETIS" );
-  if( err == ZOLTAN_OK ) err = LB.Set_Param( "PARMETIS_METHOD", part_method );
+
+  std::string lb_method_str("LB_METHOD");
+
+  //check for the user-specified value of LB_METHOD, and use "GRAPH" if
+  //none is specified.
+  std::string lb_meth = paramlist.get(lb_method_str, "GRAPH");
+
+  if ( err == ZOLTAN_OK ) {
+    err = LB.Set_Param( lb_method_str.c_str(), lb_meth.c_str() );
+  }
+
+  if (lb_meth == "GRAPH" || lb_meth == "PARMETIS") {
+    std::string par_method_str("PARMETIS_METHOD");
+    std::string par_method = paramlist.get(par_method_str, "PartKway");
+
+    if( err == ZOLTAN_OK ) err = LB.Set_Param( "PARMETIS_METHOD", par_method );
+  }
+
+  if (lb_meth == "HYPERGRAPH") {
+    //tell the load-balance object to register the hypergraph query functions
+    //instead of the regular graph query functions.
+    LB.Set_Hypergraph();
+  }
 
   //Setup Query Object
   EpetraExt::CrsGraph_Transpose transposeTransform;
   Epetra_CrsGraph & TransGraph = transposeTransform( nonconst_input );
-  EpetraExt::ZoltanQuery Query( nonconst_input, &TransGraph );
+  Isorropia::ZoltanQuery Query( nonconst_input, &TransGraph );
   if( err == ZOLTAN_OK ) {
     err = LB.Set_QueryObject( &Query );
   }

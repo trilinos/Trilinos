@@ -1,0 +1,12 @@
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, IsorropiaTests) {
+   DIRS = utest,
+          rebalance_1d_default,
+          zoltan;
+   ARGS = --v;
+   COMM = SERIAL, MPI;
+}
+

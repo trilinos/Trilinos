@@ -192,14 +192,15 @@ AC_CXX_STD_SPRINTF
 # ------------------------------------------------------------------------
 # Optional package dependency
 # ------------------------------------------------------------------------
-# The following section is required to decide if Teuchos and/or Epetra support
+# The following section is required to decide if Epetra and/or Zoltan support
 # should be built.
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, teuchos, TEUCHOS, HAVE_TEUCHOS, yes, [Build Teuchos support in Isorropia.], [Build Teuchos support in Isorropia.  Can be overridden with --disable-isorropia-teuchos.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetra, EPETRA, HAVE_EPETRA, yes, [Build Epetra support in Isorropia.], [Build Epetra support in Isorropia.  Can be overridden with --disable-isorropia-epetra.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext_zoltan, EPETRAEXT_ZOLTAN, HAVE_EPETRAEXT_ZOLTAN, yes, [Build EpetraExt-zoltan support in Isorropia.], [Build EpetraExt-zoltan support in Isorropia.  Can be overridden with --disable-isorropia-epetraext-zoltan.])
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( isorropia, zoltan, [Enable Isorropia interface support for Zoltan], ISORROPIA_ZOLTAN)
+AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_isorropia_zoltan" != "Xno"])
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext, EPETRAEXT, HAVE_EPETRAEXT, yes, [Use EpetraExt in Isorropia.], [Use EpetraExt in Isorropia.  Can be overridden with --disable-isorropia-epetraext.])
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built

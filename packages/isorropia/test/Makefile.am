@@ -34,7 +34,7 @@ all-local:
 	@echo "Trilinos package isorropia subdirectory test built successfully."
 	@echo ""
 
-if HAVE_EPETRAEXT_ZOLTAN
+if BUILD_ZOLTAN
 ZOLTAN_TEST_DIR = zoltan
 ZOLTAN_TEST = rebalance_zoltan.exe
 else

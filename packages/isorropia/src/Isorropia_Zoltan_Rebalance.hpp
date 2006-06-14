@@ -34,7 +34,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_configdefs.hpp>
 
-#ifdef HAVE_EPETRAEXT_ZOLTAN
+#ifdef HAVE_ISORROPIA_ZOLTAN
 
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -117,7 +117,7 @@ create_balanced_map(const Epetra_CrsGraph& input_graph,
 
 }//namespace Isorropia_Zoltan
 
-//the following endif closes the '#ifdef HAVE_EPETRAEXT_ZOLTAN' block.
+//the following endif closes the '#ifdef HAVE_ISORROPIA_ZOLTAN' block.
 #endif
 
 #endif

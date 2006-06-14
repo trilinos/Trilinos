@@ -168,7 +168,7 @@ void test_create_comm_plan(bool verbose)
   }
 }
 
-void test_read_distribution(bool verbose)
+void test_read_distribution(bool verbose, const char* path)
 {
   if (verbose) {
     std::cout << "testing ispatest::read_distribution... ";
@@ -178,13 +178,17 @@ void test_read_distribution(bool verbose)
   std::vector<int> cols1;
   std::vector<int> partitions1;
 
-  ispatest::read_distribution("utest_dist1", rows1, cols1, partitions1);
+  std::string fullname(path);
+  fullname += "/utest_dist1";
+  ispatest::read_distribution(fullname.c_str(), rows1, cols1, partitions1);
 
   std::vector<int> rows2;
   std::vector<int> cols2;
   std::vector<int> partitions2;
 
-  ispatest::read_distribution("utest_dist2", rows2, cols2, partitions2);
+  fullname = path;
+  fullname += "/utest_dist2";
+  ispatest::read_distribution(fullname.c_str(), rows2, cols2, partitions2);
 
   //We know that the utest_dist1 file should contain 6
   //row-col-partition triplets. So we'll check the vectors to see if
@@ -204,7 +208,9 @@ void test_read_distribution(bool verbose)
   std::vector<int> cols3;
   std::vector<int> partitions3;
 
-  ispatest::read_distribution("utest_dist3", rows3, cols3, partitions3);
+  fullname = path;
+  fullname += "/utest_dist3";
+  ispatest::read_distribution(fullname.c_str(), rows3, cols3, partitions3);
 
   //We know that utest_dist3 should contain the same rows and cols as
   //utest_dist1 and utest_dist2, but different partitions.
@@ -234,6 +240,11 @@ void run_serial_utests(bool verbose)
 
   test_create_comm_plan(verbose);
 
-  test_read_distribution(verbose);
+  try {
+    test_read_distribution(verbose, ".");
+  }
+  catch(...) {
+    test_read_distribution(verbose, "./utest");
+  }
 }
 

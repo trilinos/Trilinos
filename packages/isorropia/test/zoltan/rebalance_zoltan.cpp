@@ -136,6 +136,7 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
 
   Teuchos::ParameterList paramlist;
   paramlist.set("Balancing package", "Zoltan");
+  paramlist.set("LB_METHOD", "HYPERGRAPH");
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
@@ -386,7 +387,7 @@ Epetra_CrsMatrix* create_epetra_test_matrix_1(int numProcs,
   //create an Epetra_CrsMatrix with rows spread un-evenly over
   //processors.
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int local_num_rows = 800;
+  int local_num_rows = 360;
   int nnz_per_row = local_num_rows/4+1;
   int global_num_rows = numProcs*local_num_rows;
 
@@ -439,7 +440,7 @@ Epetra_CrsGraph* create_epetra_test_graph_1(int numProcs,
   //create an Epetra_CrsGraph with rows spread un-evenly over
   //processors.
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int local_num_rows = 800;
+  int local_num_rows = 360;
   int nnz_per_row = local_num_rows/4+1;
   int global_num_rows = numProcs*local_num_rows;
 

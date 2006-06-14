@@ -12,7 +12,8 @@ frequently. (including function-names, file-names, etc.)
 
 \subsection isorropia_functions Isorropia Functions
 
-Currently Isorropia's user interface consists of the
+Currently Isorropia's user interface consists of the Partitioner and
+Redistributor classes, and the 
 <a href="namespaceIsorropia.html">create_balanced_copy functions</a>,
 which take an input object (either Epetra_CrsGraph or Epetra_CrsMatrix)
 and return a copy which is balanced across partitions.

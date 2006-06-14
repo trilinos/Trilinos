@@ -60,7 +60,7 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   std::string bal_package_str("Balancing package");
   std::string bal_package = paramlist.get(bal_package_str, "none_specified");
   if (bal_package == "Zoltan" || bal_package == "zoltan") {
-#ifdef HAVE_EPETRAEXT_ZOLTAN
+#ifdef HAVE_ISORROPIA_ZOLTAN
     return( Isorropia_Zoltan::create_balanced_copy(input_matrix, paramlist) );
 #else
     throw Isorropia::Exception("Zoltan requested, but epetraext-zoltan not enabled.");
@@ -209,7 +209,7 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   std::string bal_package_str("Balancing package");
   std::string bal_package = paramlist.get(bal_package_str, "none_specified");
   if (bal_package == "Zoltan" || bal_package == "zoltan") {
-#ifdef HAVE_EPETRAEXT_ZOLTAN
+#ifdef HAVE_ISORROPIA_ZOLTAN
     return( Isorropia_Zoltan::create_balanced_copy(input_graph, paramlist) );
 #else
     throw Isorropia::Exception("Zoltan requested, but epetraext-zoltan not enabled.");
