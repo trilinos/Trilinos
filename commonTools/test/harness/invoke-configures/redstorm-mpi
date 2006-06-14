@@ -36,6 +36,7 @@
 --enable-epetra \
 --enable-epetraext \
 --enable-ifpack \
+--enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
 --enable-loca \
