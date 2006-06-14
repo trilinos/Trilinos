@@ -143,7 +143,7 @@ namespace Teuchos {
     //! Returns the name of this scalar type.
     static inline std::string name()           { (void)UndefinedScalarTraits<T>::notDefined(); return 0; };
     //! Returns a number of magnitudeType that is the square root of this scalar type \c x. 
-    static inline magnitudeType squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); };
+    static inline T squareroot(T x) { return UndefinedScalarTraits<T>::notDefined(); };
   };
   
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
