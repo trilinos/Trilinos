@@ -1,0 +1,54 @@
+# CVS File Information
+#    Current revision: $Revision$
+#    Branch:           $Branch$
+#    Last modified:    $Date$
+#    Modified by:      $Author$
+
+
+These are some short instructions for installing MatrixPortal on your local
+machine.  You will need root or sudo access.
+
+System requirements
+-------------------
+
+Linux or Mac OS
+apache http and php servers running
+python      Version 2.x or greater.
+swig        Version x.x or greater.
+numpy       Version x.x or greater.
+PyChart      Version x.x or greater.
+PyChart      Version x.x or greater.
+
+Trilinos    Configured, compiled, and *installed*.  "--enable-pytrilinos" and
+            "--enable-python" are required configuration options.  See
+            configure.txt for an example configuration line.
+
+
+
+How to install
+--------------
+
+Edit the file ml/python/MatrixPortal/common/config.php.  Add a section for your
+machine, using one of the previous sections as a template.  Set $MACHINE equal
+to the label of the section you just created.
+
+Next, you need to create a few directories and links.
+
+1) Create a symbolic link in /var/www/html to the MatrixPortal directory that
+contains step_process.py.
+
+2) Create the directories for your definitions of $HBMatrixDirectory,
+$H5MatrixDirectory, $TempDirectory, and $ImageDirectory.
+
+
+FAQs
+----
+In step 1, if you see "Linear problems from the Harwell/Boeing collection" at
+the very bottom of the page with nothing following it, you have probably made a
+mistake in common/config.php.
+
+
+Known problems
+--------------
+
+Parallel does not currently work.
