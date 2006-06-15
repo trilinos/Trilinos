@@ -128,11 +128,11 @@ PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
-NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
+#NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
+#NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
 
-PATOH_LIBPATH           = -L/Net/local/proj/zoltan/arch/pclinux/PaToH
-PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/pclinux/PaToH
+#PATOH_LIBPATH           = -L/Net/local/proj/zoltan/arch/pclinux/PaToH
+#PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/pclinux/PaToH
 
 #PARKWAY_LIBPATH        = -L/home/umit/prgs/parkway-2.0
 #PARKWAY_INCPATH        = -I/home/umit/prgs/parkway-2.0
