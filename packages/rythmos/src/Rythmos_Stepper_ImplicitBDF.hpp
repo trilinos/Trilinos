@@ -127,8 +127,6 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xn0;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > xpn0;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_base;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_pred;
-    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x_dot_pred;
     std::vector<Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > > xHistory;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > delta;
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > residual;
@@ -136,8 +134,6 @@ class ImplicitBDFStepper : public Stepper<Scalar>
     Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > ee;
 
     Scalar time;
-    Scalar nextTime;
-    Scalar time_old;
 
 
     typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
@@ -319,8 +315,6 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
   xn0 = model->getNominalValues().get_x()->clone_v();
   xpn0 = model->getNominalValues().get_x()->clone_v();
   x_dot_base = model->getNominalValues().get_x_dot()->clone_v();
-  x_pred = model->getNominalValues().get_x()->clone_v();
-  x_dot_pred = model->getNominalValues().get_x_dot()->clone_v();
   delta = model->getNominalValues().get_x()->clone_v();
   residual = Thyra::createMember(model->get_f_space());
   errWtVec = xn0->clone_v();
@@ -367,8 +361,8 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     //   t_base = tn+dt
     //
     Scalar coeff_x_dot = Scalar(-ST::one())*alpha_s/hh;
-    V_StVpStV( &*x_dot_base, ST::one(), *x_dot_pred, alpha_s/hh, *x_pred );
-    neModel.initialize(model,coeff_x_dot,x_dot_base,ST::one(),Teuchos::null,time_old+hh,x_pred);
+    V_StVpStV( &*x_dot_base, ST::one(), *xpn0, alpha_s/hh, *xn0 );
+    neModel.initialize(model,coeff_x_dot,x_dot_base,ST::one(),Teuchos::null,time+hh,xn0);
     //
     // Solve the implicit nonlinear system to a tolerance of ???
     // 
@@ -444,10 +438,6 @@ void ImplicitBDFStepper<Scalar>::describe(
     xpn0->describe(out,verbLevel);
     out << "x_dot_base = " << std::endl;
     x_dot_base->describe(out,verbLevel);
-    out << "x_pred = " << std::endl;
-    x_pred->describe(out,verbLevel);
-    out << "x_dot_pred = " << std::endl;
-    x_dot_pred->describe(out,verbLevel);
     out << "xHistory = " << std::endl;
     for (int i=0 ; i < maxOrder ; ++i)
     {
@@ -463,7 +453,6 @@ void ImplicitBDFStepper<Scalar>::describe(
     out << "ee = " << std::endl;
     ee->describe(out,verbLevel);
     out << "time = " << time << std::endl;
-    out << "time_old = " << time_old << std::endl;
     out << "hh = " << hh << std::endl;
     out << "neModel = " << std::endl;
     neModel.describe(out,verbLevel);
@@ -648,8 +637,6 @@ void ImplicitBDFStepper<Scalar>::initialize()
   }
   hh = currentTimeStep;
 
-  nextTime = time + hh;
-
   // x history
   assign(&*xHistory[0],*xn0);
   V_S(&*xHistory[1],ST::zero());
@@ -717,7 +704,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
 // This routine changes the following variables:
 //    initialPhase, nef, psi, newTimeStep,
 //    newOrder, currentOrder, currentTimeStep, dsDae.xHistory,
-//    dsDae.qHistory, nextTimePt, nextTime,
+//    dsDae.qHistory, nextTimePt, 
 //    currentTimeStepSum, nextTimePt
 
 // This routine reads but does not change the following variables:
@@ -826,7 +813,7 @@ void ImplicitBDFStepper<Scalar>::completeStep()
 
   numberOfSteps ++;
   nef = 0;
-  time = nextTime;
+  time += hh;
   //
   // Only update the time step if we are NOT running constant stepsize.
   bool adjustStep = (!constantStepSize);
@@ -936,8 +923,6 @@ void ImplicitBDFStepper<Scalar>::completeStep()
         newTimeStep = stopTime - time;
       }
 
-      nextTime = nextTimePt;
-
       hh = newTimeStep;
     }
     else // if time step is constant for this step:
@@ -949,8 +934,6 @@ void ImplicitBDFStepper<Scalar>::completeStep()
         nextTimePt      = stopTime;
         hh = stopTime - time;
       }
-
-      nextTime = nextTimePt;
     }
   }
 }
