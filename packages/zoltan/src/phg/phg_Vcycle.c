@@ -200,9 +200,8 @@ int Zoltan_PHG_Partition (
 
   PHGComm *hgc = hg->comm;
   VCycle  *vcycle=NULL, *del=NULL;
-  int  i, err = ZOLTAN_OK, middle;
-  int  origVcnt     = hg->dist_x[hgc->nProc_x];   /* for processor */
-  int  origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
+  int  i, err = ZOLTAN_OK, middle, tot_nPins;
+  int  origVpincnt; /* for processor reduction test */
   int  prevVcnt     = 2*hg->dist_x[hgc->nProc_x]; /* initialized so that the */
   int  prevVedgecnt = 2*hg->dist_y[hgc->nProc_y]; /* while loop will be entered
 						     before any coarsening */
@@ -236,6 +235,9 @@ int Zoltan_PHG_Partition (
 
     ZOLTAN_TIMER_START(zz->ZTime, timer_vcycle, hgc->Communicator);
   }
+
+  MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,hgc->Communicator);
+  origVpincnt = tot_nPins;
 
   if (!(vcycle = newVCycle(zz, hg, parts, NULL, vcycle_timing))) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
@@ -350,13 +352,14 @@ int Zoltan_PHG_Partition (
         goto End;
       vcycle = coarser;
       hg = vcycle->hg;
+      MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,hgc->Communicator);
 
       if (hgc->nProc>1 &&
-	  (hg->dist_x[hgc->nProc_x] < (int) (0.5 * origVcnt + 0.5) ||
-	   hg->dist_y[hgc->nProc_y] < (int) (0.5 * origVedgecnt + 0.5))) {
+	  (tot_nPins < (int) (0.5 * origVpincnt + 0.5))) {
 	/* redistribute to half the processors */
-	origVcnt     = hg->dist_x[hgc->nProc_x];   /* update for processor */
-	origVedgecnt = hg->dist_y[hgc->nProc_y];   /* reduction test */
+	MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,
+		      hgc->Communicator); /* update for processor reduction */
+	origVpincnt = tot_nPins;          /* test */ 
 
 #ifdef PROCESSOR_REDUCTION
 	if (hg->nVtx&&!(hg->vmap=(int*)ZOLTAN_MALLOC(hg->nVtx*sizeof(int)))) {
