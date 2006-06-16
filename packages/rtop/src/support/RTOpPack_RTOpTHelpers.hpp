@@ -58,6 +58,12 @@ public:
   ReductTargetScalar( const Scalar &scalar = Teuchos::ScalarTraits<Scalar>::zero() ) : scalar_(scalar) {}
   void set( const Scalar &scalar ) { scalar_ = scalar; }
   const Scalar& get() const { return scalar_; }
+  std::string description() const
+    {
+      std::ostringstream oss;
+      oss << "RTOpPack::ReductTargetScalar<"<<Teuchos::ScalarTraits<Scalar>::name()<<">{scalar="<<scalar_<<"}";
+      return oss.str();
+    }
 private:
   Scalar scalar_;
 };

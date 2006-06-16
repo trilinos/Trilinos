@@ -59,9 +59,14 @@ RTOP_SUPPORT_H = \
   $(srcdir)/support/RTOpPack_RTOpServer.hpp\
   $(srcdir)/support/RTOpPack_RTOpServerDecl.hpp\
   $(srcdir)/support/RTOpPack_RTOpTHelpers.hpp\
+  $(srcdir)/support/RTOpPack_SPMD_apply_op_decl.hpp\
   $(srcdir)/support/RTOpPack_TOpUnaryFuncPtrDecl.hpp\
   $(srcdir)/support/RTOpPack_MPI_apply_op_decl.hpp\
   $(srcdir)/support/RTOpPack_TOpUnaryFuncPtr.hpp
+
+RTOP_SUPPORT = \
+  $(srcdir)/support/RTOpPack_MPI_apply_op.cpp\
+  $(srcdir)/support/RTOpPack_SPMD_apply_op.cpp
 
 RTOP_SUPPORT_C_H = \
   $(srcdir)/support/RTOp_MPI_config.h\
@@ -127,7 +132,8 @@ RTOP_H = \
   $(RTOP_OPS_LIB_H)
 
 librtop_a_SOURCES = \
-  $(RTOP_SUPPORT_C)
+  $(RTOP_SUPPORT_C) \
+  $(RTOP_SUPPORT)
 
 #We need the following to support separate build directories
 

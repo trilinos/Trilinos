@@ -32,6 +32,7 @@
 #include "RTOpPack_Types.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_PrimitiveTypeTraits.hpp"
+#include "Teuchos_Describable.hpp"
 
 namespace RTOpPack {
 
@@ -39,12 +40,10 @@ namespace RTOpPack {
  */
 //@{
 
-/** \brief Abstract base class for all reduction object.
+/** \brief Abstract base class for all reduction objects.
  */
-class ReductTarget {
-public:
-  virtual ~ReductTarget() {}
-};
+class ReductTarget : public Teuchos::Describable
+{};
 
 /** \brief Templated interface to vector reduction/transformation operators {abstract}.
  *
@@ -155,7 +154,7 @@ public:
  * communication between processors.
  */
 template<class Scalar>
-class RTOpT {
+class RTOpT : public Teuchos::Describable {
 public:
 
   /** @name public types */
@@ -229,7 +228,7 @@ public:
    * no reduction operation performed).
    */
   virtual void extract_reduct_obj_state(
-    const ReductTarget     &reduct_obj
+    const ReductTarget        &reduct_obj
     ,int                      num_values
     ,primitive_value_type     value_data[]
     ,int                      num_indexes
@@ -249,7 +248,7 @@ public:
     ,const index_type              index_data[]
     ,int                           num_chars
     ,const char_type               char_data[]
-    ,ReductTarget               *reduct_obj
+    ,ReductTarget                 *reduct_obj
     ) const;
 
   //@}
@@ -257,8 +256,6 @@ public:
   /** @name Operator functions */
   //@{
 
-  /// Mandatory virtual destructor.
-  virtual ~RTOpT();
   /** \brief Return the name (as a null-terminated C-style string) of the operator.
    *
    * This name is used to differentiate an operator subclass from all
@@ -424,8 +421,8 @@ public:
    * IncompatibleVecs is thrown.
    */
   virtual void apply_op(
-    const int   num_vecs,       const ConstSubVectorView<Scalar>         sub_vecs[]
-    ,const int  num_targ_vecs,  const SubVectorView<Scalar>  targ_sub_vecs[]
+    const int   num_vecs,       const ConstSubVectorView<Scalar>  sub_vecs[]
+    ,const int  num_targ_vecs,  const SubVectorView<Scalar>       targ_sub_vecs[]
     ,ReductTarget *reduct_obj
     ) const = 0;
 

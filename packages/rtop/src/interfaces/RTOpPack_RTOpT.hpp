@@ -112,10 +112,6 @@ void RTOpT<Scalar>::load_reduct_obj_state(
 // Operator functions
 
 template<class Scalar>
-RTOpT<Scalar>::~RTOpT()
-{}
-
-template<class Scalar>
 const char* RTOpT<Scalar>::op_name() const
 {
   return op_name_.c_str();

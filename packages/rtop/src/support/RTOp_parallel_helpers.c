@@ -48,7 +48,7 @@ void RTOp_parallel_calc_overlap(
   /* ToDo: Check the rest of the preconditions! */
 #endif
   /* Dimension of global sub-vector */
-  global_sub_dim = sub_dim_in ? sub_dim_in : global_dim_in - first_ele_off_in;
+  global_sub_dim = sub_dim_in >= 0 ? sub_dim_in : global_dim_in - first_ele_off_in;
   /*
    * We need to determine if the local elements stored in this process overlap
    * with the global sub-vector that the client has requested.

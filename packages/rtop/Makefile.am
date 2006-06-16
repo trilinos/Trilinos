@@ -89,8 +89,7 @@ all-local:
 #  of tests.
 
 if BUILD_TESTS
-#TEST_SUBDIR=test
-# ToDo: Add tests!
+TEST_SUBDIR=test
 endif
 
 if BUILD_EXAMPLES 

@@ -33,22 +33,47 @@
 #include "Teuchos_RawMPITraits.hpp"
 #include "Teuchos_Workspace.hpp"
 #ifdef RTOp_USE_MPI
-#  include "Teuchos_MPIReductionOpBase.hpp"
+//#  include "Teuchos_MPIReductionOpBase.hpp"
+#  include "Teuchos_MpiReductionOpSetter.hpp"
 #endif
 
+#ifdef RTOPPACK_MPI_APPLY_OP_DUMP
+#  include "Teuchos_VerboseObject.hpp"
+#endif // RTOPPACK_MPI_APPLY_OP_DUMP
+
 namespace RTOpPack {
+
+#ifdef RTOPPACK_MPI_APPLY_OP_DUMP
+template<class Scalar>
+void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg )
+{
+  Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::rcp(&out_arg,false);
+  Teuchos::OSTab tab(out);
+  *out << "globalOffset="<<v.globalOffset()<<"\n";
+  *out << "subDim="<<v.subDim()<<"\n";
+  *out << "values:\n";
+  tab.incrTab();
+  for( int i = 0; i < v.subDim(); ++i )
+    *out << " " << v(i) << ":" << (v.globalOffset()+i);
+  *out << "\n";
+}
+
+#  include "Teuchos_VerboseObject.hpp"
+#endif // RTOPPACK_MPI_APPLY_OP_DUMP
 
 #ifdef RTOp_USE_MPI
 
 template<class Scalar>
-class MPIReductionOp : public Teuchos::MPIReductionOpBase {
+class MpiReductionOp : public Teuchos::MpiReductionOpBase {
 public:
 
-  MPIReductionOp(
+  MpiReductionOp(
     const Teuchos::RefCountPtr<const RTOpT<Scalar> >  &op
     )
     : op_(op)
-    { *op; }
+    {
+      *op; // Assert not null
+    }
 
   void reduce(
     void              *invec
@@ -87,9 +112,9 @@ public:
 private:
   Teuchos::RefCountPtr<const RTOpT<Scalar> >  op_;
   // Not defined and not to be called!
-  MPIReductionOp();
-  MPIReductionOp(const MPIReductionOp<Scalar>&);
-  MPIReductionOp<Scalar>& operator=(const MPIReductionOp<Scalar>&);
+  MpiReductionOp();
+  MpiReductionOp(const MpiReductionOp<Scalar>&);
+  MpiReductionOp<Scalar>& operator=(const MpiReductionOp<Scalar>&);
 };
 
 
@@ -404,8 +429,8 @@ void RTOpPack::MPI_all_reduce(
     // Setup the mpi-compatible global function object for this
     // reduction operator and create the MPI_Op object.
     //
-    Teuchos::MPIReductionOpCreator
-      mpi_op_setter( Teuchos::rcp(new MPIReductionOp<Scalar>(Teuchos::rcp(&op,false))) ); // Destructor will release everything!
+    Teuchos::MpiReductionOpSetter
+      mpi_op_setter( Teuchos::rcp(new MpiReductionOp<Scalar>(Teuchos::rcp(&op,false))) ); // Destructor will release everything!
     //
     // Call MPI
     //
@@ -445,66 +470,136 @@ void RTOpPack::MPI_apply_op(
   ,ReductTarget*                            reduct_objs[]
   )
 {
+#ifdef RTOPPACK_MPI_APPLY_OP_DUMP
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::OSTab tab(out);
+  if(show_mpi_apply_op_dump) {
+    *out << "\nEntering RTOpPack::MPI_apply_op(...) ...\n";
+    *out
+      << "\ncomm = " << comm
+      << "\nop = " << op.description()
+      << "\nroot_rank = " << root_rank
+      << "\nnum_cols = " << num_cols
+      << "\nnum_vecs = " << num_vecs
+      << "\nnum_targ_vecs = " << num_targ_vecs
+      << "\n";
+    if( num_vecs && sub_vecs ) {
+      *out << "\nInput vectors:\n";
+      Teuchos::OSTab tab(out);
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        for( int k = 0; k < num_vecs; ++k ) {
+          *out << "\nvecs["<<kc<<","<<k<<"] =\n";
+          print(sub_vecs[kc*num_vecs+k],*out);
+        }
+      }
+    }
+    if( num_targ_vecs && sub_targ_vecs ) {
+      *out << "\nInput/output vectors *before* transforamtion:\n";
+      Teuchos::OSTab tab(out);
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        for( int k = 0; k < num_targ_vecs; ++k ) {
+          *out << "\nvecs["<<kc<<","<<k<<"] =\n";
+          print(sub_targ_vecs[kc*num_targ_vecs+k],*out);
+        }
+      }
+    }
+    if(reduct_objs) {
+      *out << "\nInput/output reduction objects *before* reduction:\n";
+      Teuchos::OSTab tab(out);
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        *out
+          << "\nreduct_objs["<<kc<<"] =\n"
+          << describe(*reduct_objs[kc],Teuchos::VERB_EXTREME);
+      }
+    }
+  }
+#endif // RTOPPACK_MPI_APPLY_OP_DUMP
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
   if( reduct_objs == NULL && sub_vecs == NULL && sub_targ_vecs == NULL ) {
     // This is a transformation operation with no data on this processor.
     // Therefore, we can just exist!
-    return;
   }
-  const int localSubDim =
-    ( num_vecs
-      ? ( sub_vecs ? sub_vecs[0].subDim() : 0 )
-      : ( sub_targ_vecs ? sub_targ_vecs[0].subDim() : 0 )
-      );
-  // See if we need to do any global communication at all?
-  if( comm == MPI_COMM_NULL || reduct_objs == NULL ) {
-    if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
-      for( int kc = 0; kc < num_cols; ++kc ) {
-        op.apply_op(
-          num_vecs,sub_vecs+kc*num_vecs,num_targ_vecs,sub_targ_vecs+kc*num_targ_vecs
-          ,reduct_objs ? reduct_objs[kc] : NULL
-          );
+  else {
+    const int localSubDim =
+      ( num_vecs
+        ? ( sub_vecs ? sub_vecs[0].subDim() : 0 )
+        : ( sub_targ_vecs ? sub_targ_vecs[0].subDim() : 0 )
+        );
+    // See if we need to do any global communication at all?
+    if( comm == MPI_COMM_NULL || reduct_objs == NULL ) {
+      if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
+        for( int kc = 0; kc < num_cols; ++kc ) {
+          op.apply_op(
+            num_vecs,sub_vecs+kc*num_vecs,num_targ_vecs,sub_targ_vecs+kc*num_targ_vecs
+            ,reduct_objs ? reduct_objs[kc] : NULL
+            );
+        }
       }
     }
-    return;
-  }
-  // Check the preconditions for excluding empty target vectors.
-  TEST_FOR_EXCEPTION(
-    ( ( num_vecs && !sub_vecs) || ( num_targ_vecs && !sub_targ_vecs) ) && !( !sub_vecs && !sub_targ_vecs )
-    ,std::logic_error
-    ,"MPI_apply_op(...): Error, invalid arguments num_vecs = " << num_vecs
-    << ", sub_vecs = " << sub_vecs << ", num_targ_vecs = " << num_targ_vecs
-    << ", sub_targ_vecs = " << sub_targ_vecs
-    );
-  //
-  // There is a non-null reduction target object and we are using
-  // MPI so we need to reduce it across processors
-  //
-  // Allocate the intermediate target object and perform the
-  // reduction for the vector elements on this processor.
-  //
-  Workspace<Teuchos::RefCountPtr<ReductTarget> >
-    i_reduct_objs( wss, num_cols );
-  for( int kc = 0; kc < num_cols; ++kc ) {
-    i_reduct_objs[kc] = op.reduct_obj_create();
-    if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
-      op.apply_op(
-        num_vecs, sub_vecs+kc*num_vecs, num_targ_vecs, sub_targ_vecs+kc*num_targ_vecs
-        ,&*i_reduct_objs[kc]
+    else {
+      // Check the preconditions for excluding empty target vectors.
+      TEST_FOR_EXCEPTION(
+        ( ( num_vecs && !sub_vecs) || ( num_targ_vecs && !sub_targ_vecs) ) && !( !sub_vecs && !sub_targ_vecs )
+        ,std::logic_error
+        ,"MPI_apply_op(...): Error, invalid arguments num_vecs = " << num_vecs
+        << ", sub_vecs = " << sub_vecs << ", num_targ_vecs = " << num_targ_vecs
+        << ", sub_targ_vecs = " << sub_targ_vecs
         );
+      //
+      // There is a non-null reduction target object and we are using
+      // MPI so we need to reduce it across processors
+      //
+      // Allocate the intermediate target object and perform the
+      // reduction for the vector elements on this processor.
+      //
+      Workspace<Teuchos::RefCountPtr<ReductTarget> >
+        i_reduct_objs( wss, num_cols );
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        i_reduct_objs[kc] = op.reduct_obj_create();
+        if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
+          op.apply_op(
+            num_vecs, sub_vecs+kc*num_vecs, num_targ_vecs, sub_targ_vecs+kc*num_targ_vecs
+            ,&*i_reduct_objs[kc]
+            );
+        }
+      }
+      //
+      // Reduce the local intermediate reduction objects into the global reduction objects
+      //
+      Workspace<const ReductTarget*>
+        _i_reduct_objs( wss, num_cols );
+      for( int kc = 0; kc < num_cols; ++kc )
+        _i_reduct_objs[kc] = &*i_reduct_objs[kc];
+      MPI_all_reduce(comm,op,root_rank,num_cols,&_i_reduct_objs[0],reduct_objs);
     }
   }
-  //
-  // Reduce the local intermediate reduction objects into the global reduction objects
-  //
-  Workspace<const ReductTarget*>
-    _i_reduct_objs( wss, num_cols );
-  for( int kc = 0; kc < num_cols; ++kc )
-    _i_reduct_objs[kc] = &*i_reduct_objs[kc];
-  MPI_all_reduce(comm,op,root_rank,num_cols,&_i_reduct_objs[0],reduct_objs);
-
+#ifdef RTOPPACK_MPI_APPLY_OP_DUMP
+  if(show_mpi_apply_op_dump) {
+    if( num_targ_vecs && sub_targ_vecs ) {
+      *out << "\nInput/output vectors *after* transforamtion:\n";
+      Teuchos::OSTab tab(out);
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        for( int k = 0; k < num_targ_vecs; ++k ) {
+          *out << "\nvecs["<<kc<<","<<k<<"] =\n";
+          print(sub_targ_vecs[kc*num_targ_vecs+k],*out);
+        }
+      }
+    }
+    if(reduct_objs) {
+      *out << "\nInput/output reduction objects *after* reduction:\n";
+      Teuchos::OSTab tab(out);
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        *out
+          << "\nreduct_objs["<<kc<<"] =\n"
+          << describe(*reduct_objs[kc],Teuchos::VERB_EXTREME);
+      }
+    }
+    *out << "\nLeaving RTOpPack::MPI_apply_op(...) ...\n";
+  }
+#endif // RTOPPACK_MPI_APPLY_OP_DUMP
 }
 
 #endif // RTOPPACK_MPI_APPLY_OP_HPP

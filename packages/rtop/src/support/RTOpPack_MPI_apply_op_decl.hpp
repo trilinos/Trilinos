@@ -30,8 +30,15 @@
 #define RTOPPACK_MPI_APPLY_OP_DECL_HPP
 
 #include "RTOpPack_RTOpT.hpp"
+#include "RTOp_MPI_config.h"
+
+#define RTOPPACK_MPI_APPLY_OP_DUMP
 
 namespace RTOpPack {
+
+#ifdef RTOPPACK_MPI_APPLY_OP_DUMP
+extern bool show_mpi_apply_op_dump;
+#endif // RTOPPACK_MPI_APPLY_OP_DUMP
 
 /** \brief Initialize MPI compatible type signature arrays for
  * reduction/transformation operator object instance data and

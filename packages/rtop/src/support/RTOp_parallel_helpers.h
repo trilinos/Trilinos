@@ -46,7 +46,7 @@ extern "C" {
  * @param  first_ele_off [in] Determines the first element in 'v' which is used to define
  *                       the logical sub-vector 'g' (see above).
  * @param  sub_dim       [in] Determines the length of the logical sub-vector 'g' (see above).
- *                       If <tt>sub_dim == 0</tt> then <tt>sub_dim = global_dim - first_ele_off</tt>
+ *                       If <tt>sub_dim < 0</tt> then <tt>sub_dim = global_dim - first_ele_off</tt>
  *                       is used in its place.
  * @param  global_off [in] Determines the offset of the logical subvector 'g' into the logical
  *                       global vector 'p' (see above).
@@ -71,7 +71,7 @@ extern "C" {
  * <li><tt>local_sub_dim > 0</tt>
  * <li><tt>0 <= local_off <= global_dim - local_sub_dim</tt>
  * <li><tt>1 <= first_ele_off <= global_dim</tt>
- * <li>[<tt>sub_dim != 0</tt>] <tt>0 < sub_dim <= global_dim - first_ele_off</tt>
+ * <li>[<tt>sub_dim > 0</tt>] <tt>0 < sub_dim <= global_dim - first_ele_off</tt>
  * <li><tt>0 <= global_off</tt>
  * </ul>
  *

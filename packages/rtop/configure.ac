@@ -291,6 +291,8 @@ AC_CONFIG_FILES([
     Makefile 
     Makefile.export.rtop
     src/Makefile
+    test/Makefile
+    test/spmd/Makefile
     ])
 
 AC_OUTPUT()
