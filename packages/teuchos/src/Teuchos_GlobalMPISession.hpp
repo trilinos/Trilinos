@@ -61,7 +61,7 @@ public:
    * \param argc  [in] Argment passed into <tt>main(argc,argv)</tt>
    * \param argv  [in] Argment passed into <tt>main(argc,argv)</tt>
    * \param out   [in] If <tt>out!=NULL</tt>, then a small message on each
-   *              processor will be printed to this stream.  The default is <tt>&std::cerr</tt>.
+   *              processor will be printed to this stream.  The default is <tt>&std::cout</tt>.
    *
    * If the option <tt>--teuchos-suppress-startup-banner</tt> is found, the
    * this option will be removed from <tt>argv[]</tt> before being passed to
@@ -69,10 +69,10 @@ public:
    * will be suppressed.
    *
    * <b>Warning!</b> This constructor can only be called once per
-   * executable or an error is printed to std::cerr and an exception will
+   * executable or an error is printed to <tt>*out</tt> and an exception will
    * be thrown!
    */
-  GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cerr );
+  GlobalMPISession( int* argc, char*** argv, std::ostream *out = &std::cout );
   
   /** \brief Calls <tt>MPI_Finalize()</tt> if MPI is enabled.
    */
