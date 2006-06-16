@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
   int             maxIterations          = 400;
   int             maxRestarts            = 25;
   int             gmresKrylovLength      = 25;
-  int             outputFrequency        = 10;
+  int             outputFrequency        = 1;
   bool            outputMaxResOnly       = true;
   double          maxResid               = 1e-6;
   
@@ -132,6 +132,9 @@ int main(int argc, char* argv[])
   // Set the parameter list to specify the behavior of the factory.
   belosLOWSFactory->setParameterList( belosLOWSFPL );
 
+  // Set the output stream and the verbosity level (prints to std::cout by defualt)
+  belosLOWSFactory->setVerbLevel(Teuchos::VERB_LOW);
+
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<double> >
     nsA = belosLOWSFactory->createOp();
@@ -185,7 +188,7 @@ int main(int argc, char* argv[])
     if (rel_res > maxResid)
       success = false;
     *out << "RHS " << i+1 << " : " 
-	 << std::setw(16) << std::right << rel_res << endl;
+         << std::setw(16) << std::right << rel_res << endl;
   }
 
   return ( success ? 0 : 1 );
