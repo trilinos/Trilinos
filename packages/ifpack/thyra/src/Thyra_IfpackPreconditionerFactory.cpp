@@ -162,7 +162,13 @@ void IfpackPreconditionerFactory::initializePrec(
   //
   // Permform initialization if needed
   //
-  const bool startingOver = (ifpack_precOp.get() == NULL);
+  //const bool startingOver = (ifpack_precOp.get() == NULL);
+  const bool startingOver = true;
+  // ToDo: Comment back in the above original version of startingOver to allow
+  // for resuse.  Rob H. just pointed out to me that a memory leak is being
+  // created when you just call Ifpack_ILU::Compute() over and over again.
+  // Rob H. said that he will check in a fix the the development branch when
+  // he can.
   if(startingOver) {
     if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
       *out << "\nCreating the initial Ifpack_Preconditioner object of type \'"<<toString(precType_)<<"\' ...\n";
