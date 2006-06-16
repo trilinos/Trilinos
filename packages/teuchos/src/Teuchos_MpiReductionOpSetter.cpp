@@ -26,9 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_MPIReductionOpBase.hpp"
-
-#ifdef HAVE_MPI
+#include "Teuchos_MpiReductionOpSetter.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
 
 //
 // This implementation of handling the reduction operator
@@ -37,12 +36,52 @@
 //
 
 //
-// Management of the reduction operator object
+// The callback that an MPI implementation will actually call
+//
+
+extern "C" {
+
+void Teuchos_MPI_reduction_op(
+  void              *invec
+  ,void             *inoutvec
+  ,int              *len
+  ,MPI_Datatype     *datatype
+  );
+
+} // extern "C"
+
+//
+// Manage the reduction operation as static data.  I have used access
+// functions here to allow more insulation for other implementations other
+// other than just single threaded programs.
 //
 
 namespace {
 
-Teuchos::RefCountPtr<const Teuchos::MPIReductionOpBase> the_reduct_op = Teuchos::null;
+Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase> the_reduct_op = Teuchos::null;
+
+Teuchos::RefCountPtr<const Teuchos::OpaqueWrapper<MPI_Op> > the_mpi_op = Teuchos::null;
+
+Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase> get_reduct_op()
+{
+  return the_reduct_op;
+}
+
+void set_reduct_op( const Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase>& reduct_op )
+{
+  using Teuchos::null;
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT( get_reduct_op() != null && reduct_op != null  );
+#endif
+  if(!the_mpi_op.get()) {
+    MPI_Op mpi_op = MPI_OP_NULL;
+    TEST_FOR_EXCEPT(
+      0!=MPI_Op_create( &Teuchos_MPI_reduction_op ,1 ,&mpi_op ) // Assume op is commutative?
+      );
+    the_mpi_op = Teuchos::opaqueWrapper(mpi_op,MPI_Op_free);
+  }
+  the_reduct_op = reduct_op;
+}
 
 } // namespace
 
@@ -52,47 +91,34 @@ void Teuchos_MPI_reduction_op(
   void              *invec
   ,void             *inoutvec
   ,int              *len
-  ,MPI_Datatype    *datatype
+  ,MPI_Datatype     *datatype
   )
 {
-  Teuchos::get_reduct_op()->reduce(invec,inoutvec,len,datatype);
+  get_reduct_op()->reduce(invec,inoutvec,len,datatype);
 }
 
 } // extern "C"
 
-void Teuchos::set_reduct_op( const RefCountPtr<const MPIReductionOpBase>& reduct_op )
-{
-  TEST_FOR_EXCEPT( get_reduct_op() != null && reduct_op != null  );
-  the_reduct_op = reduct_op;
-}
-
-Teuchos::RefCountPtr<const Teuchos::MPIReductionOpBase>
-Teuchos::get_reduct_op()
-{
-  return the_reduct_op;
-}
-
 namespace Teuchos {
 
-//
-// Defintion of MPIReductionOpCreator
-//
-
-MPIReductionOpCreator::MPIReductionOpCreator( const Teuchos::RefCountPtr<const MPIReductionOpBase>& reduct_op )
+MpiReductionOpSetter::MpiReductionOpSetter(
+  const Teuchos::RefCountPtr<const MpiReductionOpBase>& reduct_op
+  )
 {
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT(!reduct_op.get())
+#endif
   set_reduct_op(reduct_op);
-  mpi_op_ = MPI_OP_NULL;
-  TEST_FOR_EXCEPT(
-    0!=MPI_Op_create( &Teuchos_MPI_reduction_op ,1 ,&mpi_op_ ) // Assume op is commutative?
-    );
 }
 
-MPIReductionOpCreator::~MPIReductionOpCreator()
+MpiReductionOpSetter::~MpiReductionOpSetter()
 {
-  MPI_Op_free(&mpi_op_);
   set_reduct_op( null );
 }
 
-} // namespace Teuchos
+MPI_Op MpiReductionOpSetter::mpi_op() const
+{
+  return (*the_mpi_op)();
+}
 
-#endif // HAVE_MPI
+} // namespace Teuchos
