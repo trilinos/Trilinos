@@ -61,21 +61,27 @@ public:
      constructors will accept other object types.)
   */
   EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-                    Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist);
+                    const Teuchos::ParameterList& paramlist);
 
   /**
      Constructor that accepts an Epetra_CrsGraph object. (Other
      constructors will accept other object types.)
   */
   EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-                    Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist);
+                    const Teuchos::ParameterList& paramlist);
 
   /** Destructor */
   virtual ~EpetraPartitioner();
 
+  /** Set parameters from a Teuchos::ParameterList object.
+   */
+  void setParameters(const Teuchos::ParameterList& paramlist);
+
   /** Method which does the work...
    */
   void compute_partitioning();
+
+  bool partitioning_already_computed() const;
 
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
@@ -95,12 +101,13 @@ private:
 
   Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
   Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist_;
+  Teuchos::ParameterList paramlist_;
   Teuchos::RefCountPtr<Epetra_Vector> weights_;
 
   std::map<int,int> exports_, imports_;
   std::vector<int> myNewElements_;
 
+  bool partitioning_already_computed_;
 };//class Partitioner
 
 #endif //HAVE_EPETRA

@@ -57,9 +57,11 @@ namespace Epetra_Utils {
 #ifdef HAVE_EPETRA
 /** Given a Partitioner object, create a target map representing the
    new partitioning.
+   This function calls partitioner.compute_partitioning() if it has not
+   already been called.
 */
 Teuchos::RefCountPtr<Epetra_Map>
-create_target_map(const Epetra_Comm& comm, const Partitioner& partitioner);
+create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
 
 /** Return a vector containing weights that are equal to the number of
   nonzeros per row in the input_matrix. The returned vector will have

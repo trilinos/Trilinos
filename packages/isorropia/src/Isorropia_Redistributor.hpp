@@ -57,9 +57,11 @@ namespace Isorropia {
 
 class Redistributor {
 public:
-  /** Constructor
+  /** Constructor.
+      This constructor calls partitioner.compute_partitioning() if it
+      has not already been called.
    */
-  Redistributor(Teuchos::RefCountPtr<const Partitioner> partitioner);
+  Redistributor(Teuchos::RefCountPtr<Partitioner> partitioner);
 
   /** Destructor
    */
@@ -106,7 +108,7 @@ public:
 private:
   void create_importer(const Epetra_BlockMap& src_map);
 
-  Teuchos::RefCountPtr<const Partitioner> partitioner_;
+  Teuchos::RefCountPtr<Partitioner> partitioner_;
   Teuchos::RefCountPtr<Epetra_Import> importer_;
   Teuchos::RefCountPtr<Epetra_Map> target_map_;
 

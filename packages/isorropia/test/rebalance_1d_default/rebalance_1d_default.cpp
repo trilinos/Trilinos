@@ -392,8 +392,7 @@ bool test_rebalance_epetra_linproblem2(int numProcs, int localProc, bool verbose
   Epetra_Vector* b = new Epetra_Vector(input_matrix->RowMap());
   Epetra_LinearProblem problem(input_matrix, x, b);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist =
-    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList paramlist;
 
   //Wrap a RefCountPtr around the matrix graph, and specify 'false', meaning
   //that the RefCountPtr will not take ownership of the graph (will not
@@ -403,8 +402,6 @@ bool test_rebalance_epetra_linproblem2(int numProcs, int localProc, bool verbose
 
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
     Teuchos::rcp(new Isorropia::EpetraPartitioner(graph, paramlist));
-
-  partitioner->compute_partitioning();
 
   Isorropia::Redistributor rd(partitioner);
 

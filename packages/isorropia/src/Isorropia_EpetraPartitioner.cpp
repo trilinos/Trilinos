@@ -56,34 +56,43 @@ namespace Isorropia {
 
 EpetraPartitioner::
 EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-                  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist)
+                  const Teuchos::ParameterList& paramlist)
   : input_map_(),
     input_graph_(input_graph),
-    paramlist_(paramlist)
+    paramlist_(),
+    partitioning_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
   weights_ = Teuchos::rcp(Epetra_Utils::create_row_weights_nnz(*input_graph));
+  paramlist_ = paramlist;
 }
 
 EpetraPartitioner::
 EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-                  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist)
+                  const Teuchos::ParameterList& paramlist)
   : input_map_(),
     input_graph_(),
-    paramlist_(paramlist)
+    paramlist_(),
+    partitioning_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
   weights_ = Teuchos::rcp(Epetra_Utils::create_row_weights_nnz(*input_matrix));
+  paramlist_ = paramlist;
 }
 
 EpetraPartitioner::~EpetraPartitioner()
 {
 }
 
+void EpetraPartitioner::setParameters(const Teuchos::ParameterList& paramlist)
+{
+  paramlist_ = paramlist;
+}
+
 void EpetraPartitioner::compute_partitioning()
 {
   std::string bal_package_str("Balancing package");
-  std::string bal_package = paramlist_->get(bal_package_str, "none_specified");
+  std::string bal_package = paramlist_.get(bal_package_str, "none_specified");
   int err = 0;
   if (bal_package == "Zoltan" || bal_package == "zoltan") {
 #ifdef HAVE_ISORROPIA_ZOLTAN
@@ -93,7 +102,7 @@ void EpetraPartitioner::compute_partitioning()
       throw Isorropia::Exception(str1+str2);
     }
 
-    err = Isorropia_Zoltan::repartition(*input_graph_, *paramlist_,
+    err = Isorropia_Zoltan::repartition(*input_graph_, paramlist_,
                                         myNewElements_, exports_, imports_);
 #else
     throw Isorropia::Exception("Zoltan requested, but zoltan not enabled.");
@@ -109,6 +118,13 @@ void EpetraPartitioner::compute_partitioning()
   if (err != 0) {
     throw Isorropia::Exception("error in repartitioning");
   }
+
+  partitioning_already_computed_ = true;
+}
+
+bool EpetraPartitioner::partitioning_already_computed() const
+{
+  return partitioning_already_computed_;
 }
 
 int EpetraPartitioner::newPartitionNumber(int myElem) const

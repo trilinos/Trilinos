@@ -54,12 +54,15 @@ namespace Isorropia {
 
 #ifdef HAVE_EPETRA
 
-Redistributor::Redistributor(Teuchos::RefCountPtr<const Partitioner> partitioner)
+Redistributor::Redistributor(Teuchos::RefCountPtr<Partitioner> partitioner)
   : partitioner_(partitioner),
   importer_(),
   target_map_(),
   created_importer_(false)
 {
+  if (!partitioner_->partitioning_already_computed()) {
+    partitioner_->compute_partitioning();
+  }
 }
 
 Redistributor::~Redistributor()

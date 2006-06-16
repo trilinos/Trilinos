@@ -61,11 +61,8 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
     Teuchos::rcp(&(input_matrix.Graph()), false);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlistrcp =
-    Teuchos::rcp(&paramlist, false);
-
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(input_graph, paramlistrcp));
+    Teuchos::rcp(new EpetraPartitioner(input_graph, paramlist));
 
   const Epetra_Comm& comm = input_graph->RowMap().Comm();
 
@@ -134,7 +131,7 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
     Teuchos::rcp(&(input_matrix.Graph()), false);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+  Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new EpetraPartitioner(input_graph, paramlist));
@@ -174,7 +171,7 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   Teuchos::RefCountPtr<const Epetra_RowMatrix> input_rowmat =
     Teuchos::rcp(&input_matrix, false);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+  Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new EpetraPartitioner(input_rowmat, paramlist));
@@ -214,11 +211,8 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Teuchos::RefCountPtr<const Epetra_CrsGraph> in_graph =
     Teuchos::rcp(&input_graph, false);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlistrcp =
-    Teuchos::rcp(&paramlist, false);
-
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(in_graph, paramlistrcp));
+    Teuchos::rcp(new EpetraPartitioner(in_graph, paramlist));
 
   const Epetra_Comm& comm = input_graph.RowMap().Comm();
 
@@ -255,7 +249,7 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Teuchos::RefCountPtr<const Epetra_CrsGraph> in_graph =
     Teuchos::rcp(&input_graph, false);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+  Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new EpetraPartitioner(in_graph, paramlist));
@@ -294,7 +288,7 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem)
   Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmat =
     Teuchos::rcp(input_problem.GetMatrix(), false);
 
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+  Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
     Teuchos::rcp(new EpetraPartitioner(rowmat, paramlist));

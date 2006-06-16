@@ -60,8 +60,12 @@ namespace Epetra_Utils {
 
 #ifdef HAVE_EPETRA
 Teuchos::RefCountPtr<Epetra_Map>
-create_target_map(const Epetra_Comm& comm, const Partitioner& partitioner)
+create_target_map(const Epetra_Comm& comm, Partitioner& partitioner)
 {
+  if (!partitioner.partitioning_already_computed()) {
+    partitioner.compute_partitioning();
+  }
+
   int myPID = comm.MyPID();
   int numMyElements = partitioner.numElemsInPartition(myPID);
   std::vector<int> myElements(numMyElements);
@@ -259,6 +263,8 @@ repartition(const Epetra_BlockMap& input_map,
       for(int j=0; j<num_recv; ++j) {
 	imports[myNewElements[recv_offset+j]] = proc;
       }
+
+      i += 3;
     }
   }
   delete [] reqs;

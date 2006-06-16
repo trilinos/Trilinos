@@ -32,6 +32,9 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #ifndef _Isorropia_Partitioner_hpp_
 #define _Isorropia_Partitioner_hpp_
 
+#include <Isorropia_configdefs.hpp>
+#include <Teuchos_ParameterList.hpp>
+
 /** Isorropia is the namespace that contains isorropia's declarations
   for classes and functions.
 */
@@ -46,9 +49,15 @@ public:
   /** Destructor */
   virtual ~Partitioner() {}
 
+  virtual void setParameters(const Teuchos::ParameterList& paramlist) = 0;
+
   /** Method which does the work...
    */
   virtual void compute_partitioning() = 0;
+
+  /** Query whether compute_partitioning() has already been called.
+   */
+  virtual bool partitioning_already_computed() const = 0;
 
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
