@@ -39,6 +39,7 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_MeritFunction_Generic.H"
+#include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::Polynomial::
@@ -346,6 +347,10 @@ checkConvergence(double newValue, double oldValue,
 		 int nIters,
 		 int nNonlinearIters) const
 {
+  NOX::StatusTest::FiniteValue checkNAN;
+  if (checkNAN.finiteNumberTest(newValue) !=0)
+    return false;
+
   if ((nIters == 1) && (doForceInterpolation))
     return false;
 

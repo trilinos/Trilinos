@@ -39,6 +39,7 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 #include "NOX_MeritFunction_Generic.H"
+#include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::Backtrack::
@@ -111,7 +112,10 @@ compute(NOX::Abstract::Group& grp, double& step,
 	       << "-- Backtrack Line Search -- \n";
   }
 
-  while ((newF >= oldF) && (!isFailed)) 
+  NOX::StatusTest::FiniteValue checkNAN;
+
+  while ( ((newF >= oldF) || (checkNAN.finiteNumberTest(newF) !=0))
+	 && (!isFailed)) 
   {
 
     if (utils->isPrintType(Utils::InnerIteration)) 
