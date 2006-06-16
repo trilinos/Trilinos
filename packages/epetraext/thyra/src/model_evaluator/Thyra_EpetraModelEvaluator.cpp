@@ -255,15 +255,18 @@ ModelEvaluatorBase::OutArgs<double> EpetraModelEvaluator::createOutArgs() const
   outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
   for(int l=0; l<Np; ++l) {
     outArgs.setSupports(OUT_ARG_DfDp,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp,l)));
-    outArgs.set_DfDp_properties(l,convert(epetraOutArgs.get_DfDp_properties(l)));
+    if(!outArgs.supports(OUT_ARG_DfDp,l).none())
+      outArgs.set_DfDp_properties(l,convert(epetraOutArgs.get_DfDp_properties(l)));
   }
   for(int j=0; j<Ng; ++j) {
     outArgs.setSupports(OUT_ARG_DgDx,j,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx,j)));
-    outArgs.set_DgDx_properties(j,convert(epetraOutArgs.get_DgDx_properties(j)));
+    if(!outArgs.supports(OUT_ARG_DgDx,j).none())
+      outArgs.set_DgDx_properties(j,convert(epetraOutArgs.get_DgDx_properties(j)));
   }
   for(int j=0; j<Ng; ++j) for(int l=0; l<Np; ++l) {
     outArgs.setSupports(OUT_ARG_DgDp,j,l,convert(epetraOutArgs.supports(EME::OUT_ARG_DgDp,j,l)));
-    outArgs.set_DgDp_properties(j,l,convert(epetraOutArgs.get_DgDp_properties(j,l)));
+    if(!outArgs.supports(OUT_ARG_DgDp,j,l).none())
+      outArgs.set_DgDp_properties(j,l,convert(epetraOutArgs.get_DgDp_properties(j,l)));
   }
   outArgs.setSupports(OUT_ARG_f_poly,epetraOutArgs.supports(EME::OUT_ARG_f_poly));
   return outArgs;
