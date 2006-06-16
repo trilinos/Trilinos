@@ -30,7 +30,7 @@
 #include <Isorropia_configdefs.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Rebalance.hpp>
-#include <Isorropia_Partitioner.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
 #include <Isorropia_Redistributor.hpp>
 
 #include <ispatest_utils.hpp>
@@ -224,7 +224,7 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
     Teuchos::rcp( &(input_matrix->Graph()), false);
 
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::Partitioner(graph, paramlist));
+    Teuchos::rcp(new Isorropia::EpetraPartitioner(graph, paramlist));
 
   partitioner->compute_partitioning();
 

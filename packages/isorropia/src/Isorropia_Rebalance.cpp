@@ -30,9 +30,10 @@ Questions? Contact Alan Williams (william@sandia.gov)
 //@HEADER
 
 #include <Isorropia_Rebalance.hpp>
-#include <Isorropia_Zoltan_Rebalance.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra_utils.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
+#include <Isorropia_Redistributor.hpp>
 
 #include <Teuchos_RefCountPtr.hpp>
 
@@ -57,22 +58,20 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
 		     Teuchos::ParameterList& paramlist)
 {
-  std::string bal_package_str("Balancing package");
-  std::string bal_package = paramlist.get(bal_package_str, "none_specified");
-  if (bal_package == "Zoltan" || bal_package == "zoltan") {
-#ifdef HAVE_ISORROPIA_ZOLTAN
-    return( Isorropia_Zoltan::create_balanced_copy(input_matrix, paramlist) );
-#else
-    throw Isorropia::Exception("Zoltan requested, but epetraext-zoltan not enabled.");
-#endif
-  }
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
+    Teuchos::rcp(&(input_matrix.Graph()), false);
 
-  //first, create a weights vector which contains the number of nonzeros
-  //per row in the input_matrix.
-  Epetra_Vector* weights = 0;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlistrcp =
+    Teuchos::rcp(&paramlist, false);
+
+  Teuchos::RefCountPtr<Partitioner> partitioner =
+    Teuchos::rcp(new EpetraPartitioner(input_graph, paramlistrcp));
+
+  const Epetra_Comm& comm = input_graph->RowMap().Comm();
+
+  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    weights = Isorropia::Epetra_Utils::
-       create_row_weights_nnz(input_matrix.Graph());
+    bal_rowmap = Isorropia::Epetra_Utils::create_target_map(comm, *partitioner);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -80,17 +79,17 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
     throw Isorropia::Exception(str1+str2);
   }
 
-  //now, call the other overloading of 'create_balanced_copy', which
-  //accepts a weights vector.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
-  try {
-    balanced_matrix =
-      Isorropia::create_balanced_copy(input_matrix, *weights);
-    delete weights;
-  }
-  catch(std::exception& exc) {
-    delete weights;
-    throw exc;
+  //next, create a new Epetra_CrsMatrix (which will be the return-value of
+  //this function) with the new row-distribution.
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix =
+    Isorropia::redistribute_rows(input_matrix, *bal_rowmap);
+
+  if (input_matrix.Filled()) {
+    //If input_matrix.Filled(), then call FillComplete() on balanced_matrix.
+    //Potential problem: what if matrix isn't square? Would it be
+    //appropriate to use the domain-map and range-map from input_matrix??
+
+    balanced_matrix->FillComplete();
   }
 
   return balanced_matrix;
@@ -132,16 +131,19 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
                      const Epetra_Vector& row_weights)
 {
-  //first, figure out what the balanced row-distribution should be, and
-  //create a Epetra_Map that describes that row-distribution.
-  const Epetra_Comm& comm = input_matrix.Comm();
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph =
+    Teuchos::rcp(&(input_matrix.Graph()), false);
 
-  //bal_rowmap will be the result of the create_balanced_map function...
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+
+  Teuchos::RefCountPtr<Partitioner> partitioner =
+    Teuchos::rcp(new EpetraPartitioner(input_graph, paramlist));
+
+  const Epetra_Comm& comm = input_graph->RowMap().Comm();
+
   Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    bal_rowmap =
-      Isorropia::Epetra_Utils::create_balanced_map(input_matrix.RowMap(),
-                                                      row_weights);
+    bal_rowmap = Isorropia::Epetra_Utils::create_target_map(comm, *partitioner);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -155,7 +157,7 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
     Isorropia::redistribute_rows(input_matrix, *bal_rowmap);
 
   if (input_matrix.Filled()) {
-    //If input_matrix.Filled(), the call FillComplete() on balanced_matrix.
+    //If input_matrix.Filled(), then call FillComplete() on balanced_matrix.
     //Potential problem: what if matrix isn't square? Would it be
     //appropriate to use the domain-map and range-map from input_matrix??
 
@@ -169,16 +171,19 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 create_balanced_copy(const Epetra_RowMatrix& input_matrix,
                      const Epetra_Vector& row_weights)
 {
-  //first, figure out what the balanced row-distribution should be, and
-  //create a Epetra_Map that describes that row-distribution.
-  const Epetra_Comm& comm = input_matrix.Comm();
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> input_rowmat =
+    Teuchos::rcp(&input_matrix, false);
 
-  //bal_rowmap that will be the result of the create_balanced_map function...
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+
+  Teuchos::RefCountPtr<Partitioner> partitioner =
+    Teuchos::rcp(new EpetraPartitioner(input_rowmat, paramlist));
+
+  const Epetra_Comm& comm = input_matrix.RowMatrixRowMap().Comm();
+
   Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    bal_rowmap =
-      Isorropia::Epetra_Utils::create_balanced_map(input_matrix.RowMatrixRowMap(),
-						   row_weights);
+    bal_rowmap = Isorropia::Epetra_Utils::create_target_map(comm, *partitioner);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -206,21 +211,20 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
 		     Teuchos::ParameterList& paramlist)
 {
-  std::string bal_package_str("Balancing package");
-  std::string bal_package = paramlist.get(bal_package_str, "none_specified");
-  if (bal_package == "Zoltan" || bal_package == "zoltan") {
-#ifdef HAVE_ISORROPIA_ZOLTAN
-    return( Isorropia_Zoltan::create_balanced_copy(input_graph, paramlist) );
-#else
-    throw Isorropia::Exception("Zoltan requested, but epetraext-zoltan not enabled.");
-#endif
-  }
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> in_graph =
+    Teuchos::rcp(&input_graph, false);
 
-  //first, create a weights vector which contains the number of nonzeros
-  //per row in the input_graph.
-  Epetra_Vector* weights = 0;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlistrcp =
+    Teuchos::rcp(&paramlist, false);
+
+  Teuchos::RefCountPtr<Partitioner> partitioner =
+    Teuchos::rcp(new EpetraPartitioner(in_graph, paramlistrcp));
+
+  const Epetra_Comm& comm = input_graph.RowMap().Comm();
+
+  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    weights = Isorropia::Epetra_Utils::create_row_weights_nnz(input_graph);
+    bal_rowmap = Isorropia::Epetra_Utils::create_target_map(comm, *partitioner);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -228,17 +232,17 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
     throw Isorropia::Exception(str1+str2);
   }
 
-  //now, call the other overloading of 'create_balanced_copy', which
-  //accepts a weights vector.
-  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
-  try {
-    balanced_graph =
-      Isorropia::create_balanced_copy(input_graph, *weights);
-    delete weights;
-  }
-  catch(std::exception& exc) {
-    delete weights;
-    throw exc;
+  //next, create a new Epetra_CrsGraph (which will be the return-value of
+  //this function) with the new row-distribution.
+  Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph =
+    Isorropia::redistribute_rows(input_graph, *bal_rowmap);
+
+  if (input_graph.Filled()) {
+    //If input_graph.Filled(), then call FillComplete() on balanced_graph.
+    //Potential problem: what if input_graph isn't square? Would it be
+    //appropriate to use the domain-map and range-map from input_graph??
+
+    balanced_graph->FillComplete();
   }
 
   return balanced_graph;
@@ -248,16 +252,19 @@ Teuchos::RefCountPtr<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
                      const Epetra_Vector& row_weights)
 {
-  //first, figure out what the balanced row-distribution should be, and
-  //create a Epetra_Map that describes that row-distribution.
-  const Epetra_Comm& comm = input_graph.Comm();
-  //construct a dummy map that will be replaced by the result of the
-  //create_balanced_map function...
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> in_graph =
+    Teuchos::rcp(&input_graph, false);
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+
+  Teuchos::RefCountPtr<Partitioner> partitioner =
+    Teuchos::rcp(new EpetraPartitioner(in_graph, paramlist));
+
+  const Epetra_Comm& comm = in_graph->RowMap().Comm();
+
   Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    bal_rowmap =
-      Isorropia::Epetra_Utils::create_balanced_map(input_graph.RowMap(),
-                                                   row_weights);
+    bal_rowmap = Isorropia::Epetra_Utils::create_target_map(comm, *partitioner);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -284,12 +291,21 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
 Teuchos::RefCountPtr<Epetra_LinearProblem>
 create_balanced_copy(const Epetra_LinearProblem& input_problem)
 {
-  //first, create a weights vector which contains the number of nonzeros
-  //per row in the input_graph.
-  Epetra_Vector* weights = 0;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmat =
+    Teuchos::rcp(input_problem.GetMatrix(), false);
+
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist;
+
+  Teuchos::RefCountPtr<Partitioner> partitioner =
+    Teuchos::rcp(new EpetraPartitioner(rowmat, paramlist));
+
+  Isorropia::Redistributor rd(partitioner);
+
+  const Epetra_Comm& comm = rowmat->RowMatrixRowMap().Comm();
+
+  Teuchos::RefCountPtr<Epetra_Map> bal_rowmap;
   try {
-    weights =
-      Isorropia::Epetra_Utils::create_row_weights_nnz(*input_problem.GetMatrix());
+    bal_rowmap = Isorropia::Epetra_Utils::create_target_map(comm, *partitioner);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy: caught exception: ");
@@ -297,25 +313,16 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem)
     throw Isorropia::Exception(str1+str2);
   }
 
-  //call another overloading of 'create_balanced_copy', which
-  //accepts a weights vector and rebalances a matrix.
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
-  try {
-    balanced_matrix =
-      Isorropia::create_balanced_copy(*input_problem.GetMatrix(), *weights);
-  }
-  catch(std::exception& exc) {
-    delete weights;
-    throw exc;
-  }
+  Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy, *bal_rowmap, 0);
+  Epetra_MultiVector* x =
+    new Epetra_MultiVector(*bal_rowmap, input_problem.GetLHS()->NumVectors());
+  Epetra_MultiVector* b =
+    new Epetra_MultiVector(*bal_rowmap, input_problem.GetRHS()->NumVectors());
 
-  //redistribute input_problem's vector objects to match the row-distribution
-  //of the new balanced_matrix.
-  Teuchos::RefCountPtr<Epetra_MultiVector> x;
-  Teuchos::RefCountPtr<Epetra_MultiVector> b;
   try {
-    x = redistribute(*input_problem.GetLHS(), balanced_matrix->RowMap());
-    b = redistribute(*input_problem.GetLHS(), balanced_matrix->RowMap());
+    rd.redistribute(*input_problem.GetMatrix(), *A);
+    rd.redistribute(*input_problem.GetLHS(), *x);
+    rd.redistribute(*input_problem.GetRHS(), *b);
   }
   catch(std::exception& exc) {
     std::string str1("create_balanced_copy(Epetra_LinearProblem): caught exception:");
@@ -323,17 +330,8 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem)
     throw Isorropia::Exception(str1+str2);
   }
 
-  delete weights;
-
   Teuchos::RefCountPtr<Epetra_LinearProblem> linprob =
-    Teuchos::rcp(new Epetra_LinearProblem(balanced_matrix.get(),
-                                          x.get(), b.get()));
-
-  //have the RefCountPtrs release ownership of the matrix and vectors,
-  //otherwise those objects would be destroyed when this function returns.
-  balanced_matrix.release();
-  x.release();
-  b.release();
+    Teuchos::rcp(new Epetra_LinearProblem(A, x, b));
 
   return( linprob );
 }

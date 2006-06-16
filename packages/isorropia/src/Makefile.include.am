@@ -36,24 +36,24 @@
 # ------------------------------------------------------------------------
 
 CORE = \
-	$(srcdir)/Isorropia_Partitioner.cpp \
+	$(srcdir)/Isorropia_EpetraPartitioner.cpp \
 	$(srcdir)/Isorropia_Rebalance.cpp \
 	$(srcdir)/Isorropia_Redistributor.cpp \
-	$(srcdir)/Isorropia_Zoltan_Rebalance.cpp \
 	$(srcdir)/Isorropia_Utils.cpp \
 	$(srcdir)/Isorropia_Epetra_utils.cpp \
 	$(srcdir)/Isorropia_Exception.cpp
 
 CORE_H = \
+	$(srcdir)/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Rebalance.hpp \
-	$(srcdir)/Isorropia_Zoltan_Rebalance.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
 	$(srcdir)/Isorropia_Epetra_utils.hpp \
 	$(srcdir)/Isorropia_Exception.hpp
 
 ZOLTAN = \
+	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.cpp \
 	$(srcdir)/zoltan/Isorropia_ZoltanQuery.cpp \
 	$(srcdir)/zoltan/IZoltan_LoadBalance.cpp \
 	$(srcdir)/zoltan/IZoltan_MigrationContainer.cpp \
@@ -64,6 +64,7 @@ ZOLTAN = \
 	$(srcdir)/zoltan/IZoltan_QueryObject.cpp
 
 ZOLTAN_H = \
+	$(srcdir)/zoltan/Isorropia_Zoltan_Repartition.hpp \
 	$(srcdir)/zoltan/Isorropia_ZoltanQuery.h \
 	$(srcdir)/zoltan/IZoltan_LoadBalance.h \
 	$(srcdir)/zoltan/IZoltan_MigrationContainer.h \

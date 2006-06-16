@@ -29,42 +29,81 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_Partitioner_hpp_
-#define _Isorropia_Partitioner_hpp_
+#ifndef _Isorropia_EpetraPartitioner_hpp_
+#define _Isorropia_EpetraPartitioner_hpp_
+
+#include <Isorropia_configdefs.hpp>
+#include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_ParameterList.hpp>
+
+#include <Isorropia_Partitioner.hpp>
+
+#ifdef HAVE_EPETRA
+class Epetra_Map;
+class Epetra_BlockMap;
+class Epetra_Import;
+class Epetra_Vector;
+class Epetra_MultiVector;
+class Epetra_CrsGraph;
+class Epetra_CrsMatrix;
+class Epetra_RowMatrix;
+class Epetra_LinearProblem;
 
 /** Isorropia is the namespace that contains isorropia's declarations
   for classes and functions.
 */
 namespace Isorropia {
 
-/** Abstract base class for computing a new partitioning and
-  describing the layout of elements in the new partitions.
-*/
-class Partitioner {
+class EpetraPartitioner : public Partitioner {
 public:
+  /**
+     Constructor that accepts an Epetra_CrsGraph object. (Other
+     constructors will accept other object types.)
+  */
+  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+                    Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist);
+
+  /**
+     Constructor that accepts an Epetra_CrsGraph object. (Other
+     constructors will accept other object types.)
+  */
+  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+                    Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist);
 
   /** Destructor */
-  virtual ~Partitioner() {}
+  virtual ~EpetraPartitioner();
 
   /** Method which does the work...
    */
-  virtual void compute_partitioning() = 0;
+  void compute_partitioning();
 
   /** Return the new partition ID for a given element that
      resided locally in the old partitioning.
   */
-  virtual int newPartitionNumber(int myElem) const = 0;
+  int newPartitionNumber(int myElem) const;
 
   /** Return the number of elements in a given partition.
   */
-  virtual int numElemsInPartition(int partition) const = 0;
+  int numElemsInPartition(int partition) const;
 
   /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
   */
-  virtual void elemsInPartition(int partition, int* elementList, int len) const = 0;
+  void elemsInPartition(int partition, int* elementList, int len) const;
+
+private:
+
+  Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist_;
+  Teuchos::RefCountPtr<Epetra_Vector> weights_;
+
+  std::map<int,int> exports_, imports_;
+  std::vector<int> myNewElements_;
 
 };//class Partitioner
+
+#endif //HAVE_EPETRA
 
 }//namespace Isorropia
 

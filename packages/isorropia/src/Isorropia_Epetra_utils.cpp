@@ -32,6 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Utils.hpp>
 #include <Isorropia_Epetra_utils.hpp>
+#include <Isorropia_Partitioner.hpp>
 
 #ifdef HAVE_EPETRA
 #include <Epetra_Map.h>
@@ -58,6 +59,20 @@ namespace Isorropia {
 namespace Epetra_Utils {
 
 #ifdef HAVE_EPETRA
+Teuchos::RefCountPtr<Epetra_Map>
+create_target_map(const Epetra_Comm& comm, const Partitioner& partitioner)
+{
+  int myPID = comm.MyPID();
+  int numMyElements = partitioner.numElemsInPartition(myPID);
+  std::vector<int> myElements(numMyElements);
+  partitioner.elemsInPartition(myPID, &myElements[0], numMyElements);
+
+  Teuchos::RefCountPtr<Epetra_Map> target_map =
+    Teuchos::rcp(new Epetra_Map(-1, numMyElements, &myElements[0], 0, comm));
+
+  return(target_map);
+}
+
 Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix)
 {
   const Epetra_BlockMap& input_rowmap = input_matrix.RowMatrixRowMap();
@@ -96,11 +111,17 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph)
   return( weights );
 }
 
-Teuchos::RefCountPtr<Epetra_Map>
-create_balanced_map(const Epetra_BlockMap& input_map,
-		    const Epetra_Vector& weights)
+int
+repartition(const Epetra_BlockMap& input_map,
+	    const Epetra_Vector& weights,
+	    std::vector<int>& myNewElements,
+            std::map<int,int>& exports,
+            std::map<int,int>& imports)
 {
   const Epetra_Comm& input_comm = input_map.Comm();
+
+  exports.clear();
+  imports.clear();
 
   //first we're going to collect weights onto proc 0.
   int myPID = input_comm.MyPID();
@@ -163,7 +184,7 @@ create_balanced_map(const Epetra_BlockMap& input_map,
 
   //Create the list to hold local elements for the new map.
   int new_num_local = all_proc_new_offsets[myPID+1]-all_proc_new_offsets[myPID];
-  std::vector<int> new_gids(new_num_local);
+  myNewElements.resize(new_num_local);
 
 #ifdef HAVE_MPI
   int tag = 1212121;
@@ -183,7 +204,7 @@ create_balanced_map(const Epetra_BlockMap& input_map,
     int recv_offset = recv_info[i+1];
     int num_recv = recv_info[i+2];
     
-    MPI_Irecv(&new_gids[recv_offset], num_recv, MPI_INT, proc,
+    MPI_Irecv(&myNewElements[recv_offset], num_recv, MPI_INT, proc,
              tag, mpicomm, &reqs[i/3]);
     i += 3;
   }
@@ -198,11 +219,15 @@ create_balanced_map(const Epetra_BlockMap& input_map,
     MPI_Send((void*)&old_gids[send_offset], num_send, MPI_INT,
              proc, tag, mpicomm);
 
+    for(int j=0; j<num_send; ++j) {
+      exports[old_gids[send_offset+j]] = proc;
+    }
+
     i += 3;
   }
 #endif
 
-  //copy any overlapping elements from old_gids into new_gids.
+  //copy any overlapping elements from old_gids into myNewElements.
   int old_start = all_proc_old_offsets[myPID];
   int new_start = all_proc_new_offsets[myPID];
   int old_end = all_proc_old_offsets[myPID+1]-1;
@@ -217,22 +242,30 @@ create_balanced_map(const Epetra_BlockMap& input_map,
   int num_copy = overlap_end - overlap_start + 1;
 
   for(int j=0; j<num_copy; ++j) {
-    new_gids[copy_dest_offset++] = old_gids[copy_src_offset++];
+    myNewElements[copy_dest_offset++] = old_gids[copy_src_offset++];
   }
 
 #ifdef HAVE_MPI
   //make sure the recvs are finished...
   if (recv_info.size() > 0) {
     MPI_Waitall(recv_info.size()/3, reqs, sts);
+
+    unsigned i=0;
+    while(i<recv_info.size()) {
+      int proc = recv_info[i];
+      int recv_offset = recv_info[i+1];
+      int num_recv = recv_info[i+2];
+
+      for(int j=0; j<num_recv; ++j) {
+	imports[myNewElements[recv_offset+j]] = proc;
+      }
+    }
   }
   delete [] reqs;
   delete [] sts;
 #endif
 
-  Teuchos::RefCountPtr<Epetra_Map> new_map =
-    Teuchos::rcp(new Epetra_Map(global_num_rows, new_num_local, &new_gids[0],
-				0, input_comm));
-  return(new_map);
+  return(0);
 }
 
 void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,

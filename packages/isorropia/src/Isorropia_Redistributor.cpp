@@ -31,7 +31,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_Redistributor.hpp>
 #include <Isorropia_Rebalance.hpp>
-#include <Isorropia_Zoltan_Rebalance.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra_utils.hpp>
 #include <Isorropia_Partitioner.hpp>
@@ -57,16 +56,31 @@ namespace Isorropia {
 
 Redistributor::Redistributor(Teuchos::RefCountPtr<const Partitioner> partitioner)
   : partitioner_(partitioner),
-  importer_(NULL),
-  target_map_(NULL),
+  importer_(),
+  target_map_(),
   created_importer_(false)
 {
 }
 
 Redistributor::~Redistributor()
 {
-  delete importer_;
-  delete target_map_;
+}
+
+void Redistributor::redistribute(const Epetra_SrcDistObject& src,
+				 Epetra_DistObject& target)
+{
+  if (!created_importer_) {
+    create_importer(src.Map());
+  }
+  else {
+    if (!src.Map().PointSameAs(importer_->SourceMap()) ||
+	!target.Map().PointSameAs(importer_->TargetMap())) {
+      created_importer_ = false;
+      create_importer(src.Map());
+    }
+  }
+
+  target.Import(src, *importer_, Insert);
 }
 
 Teuchos::RefCountPtr<Epetra_CrsGraph>
@@ -139,14 +153,10 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
   if (created_importer_) return;
 
-  int numMyNewElements = partitioner_->newNumMyElements();
-  std::vector<int> myElements(numMyNewElements);
-  partitioner_->myNewElements(&myElements[0], numMyNewElements);
+  target_map_ = Isorropia::Epetra_Utils::create_target_map(src_map.Comm(),
+							   *partitioner_);
 
-  target_map_ = new Epetra_Map(-1, numMyNewElements, &myElements[0],
-			       0, src_map.Comm());
-
-  importer_ = new Epetra_Import(*target_map_, src_map);
+  importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));
 
   created_importer_ = true;
 }

@@ -29,72 +29,51 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_Epetra_utils_hpp_
-#define _Isorropia_Epetra_utils_hpp_
+#ifndef _Isorropia_Zoltan_Repartition_hpp_
+#define _Isorropia_Zoltan_Repartition_hpp_
 
 #include <Isorropia_configdefs.hpp>
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
+
 #include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
-class Epetra_Comm;
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Import;
 class Epetra_Vector;
-class Epetra_RowMatrix;
+class Epetra_MultiVector;
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
+class Epetra_RowMatrix;
+class Epetra_LinearProblem;
 #endif
 
-/** Isorropia is the namespace that contains isorropia's declarations
-  for classes and functions.
+/** Isorropia_Zoltan is the namespace that contains isorropia's
+  Zoltan-specific classes and functions.
 */
-namespace Isorropia {
-  class Partitioner;
-
-namespace Epetra_Utils {
+namespace Isorropia_Zoltan {
 
 #ifdef HAVE_EPETRA
-/** Given a Partitioner object, create a target map representing the
-   new partitioning.
-*/
-Teuchos::RefCountPtr<Epetra_Map>
-create_target_map(const Epetra_Comm& comm, const Partitioner& partitioner);
-
-/** Return a vector containing weights that are equal to the number of
-  nonzeros per row in the input_matrix. The returned vector will have
-  the same size and distribution as input_matrix's row-map.
-*/
-Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
-
-/** Return a vector containing weights that are equal to the number of
-  nonzeros per row in the input_graph. The returned vector will have
-  the same size and distribution as input_graph's row-map.
-*/
-Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
 
 /** Calculate a new partitioning, and fill lists with new elements for
     the local partition, as well as export and import lists.
 */
 int
-repartition(const Epetra_BlockMap& input_map,
-	    const Epetra_Vector& weights,
+repartition(const Epetra_CrsGraph& input_graph,
+	    Teuchos::ParameterList& paramlist,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,
             std::map<int,int>& imports);
 
-/** Given an Epetra_BlockMap object, fill a vector of length numprocs+1
-  with each processor's starting offset into the Epetra_BlockMap's global
-  set of elements (the last position will contain num-global-elements).
-  Gather the vector of offsets onto all processors.
-*/
-void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
-                                    std::vector<int>& all_proc_offsets);
-
 #endif //HAVE_EPETRA
 
-}//namespace Epetra_Utils
-}//namespace Isorropia
+}//namespace Isorropia_Zoltan
+
+//the following endif closes the '#ifdef HAVE_ISORROPIA_ZOLTAN' block.
+#endif
 
 #endif
 

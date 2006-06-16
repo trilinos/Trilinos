@@ -46,6 +46,8 @@ class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 class Epetra_RowMatrix;
 class Epetra_LinearProblem;
+class Epetra_SrcDistObject;
+class Epetra_DistObject;
 
 /** Isorropia is the namespace that contains isorropia's declarations
   for classes and functions.
@@ -62,6 +64,12 @@ public:
   /** Destructor
    */
   virtual ~Redistributor();
+
+  /** Method to redistribute a Epetra_SrcDistObject into a
+      Epetra_DistObject.
+  */
+  void redistribute(const Epetra_SrcDistObject& src,
+		    Epetra_DistObject& target);
 
   /** Method to accept a Epetra_CrsGraph object, and
       return a redistributed Epetra_CrsGraph object.
@@ -99,8 +107,8 @@ private:
   void create_importer(const Epetra_BlockMap& src_map);
 
   Teuchos::RefCountPtr<const Partitioner> partitioner_;
-  Epetra_Import* importer_;
-  Epetra_Map* target_map_;
+  Teuchos::RefCountPtr<Epetra_Import> importer_;
+  Teuchos::RefCountPtr<Epetra_Map> target_map_;
 
   bool created_importer_;
 

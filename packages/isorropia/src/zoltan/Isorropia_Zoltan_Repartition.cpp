@@ -29,7 +29,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#include <Isorropia_Zoltan_Rebalance.hpp>
+#include <Isorropia_Zoltan_Repartition.hpp>
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
@@ -38,8 +38,6 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #endif
 
 #include <Isorropia_Exception.hpp>
-#include <Isorropia_Epetra_utils.hpp>
-#include <Isorropia_Rebalance.hpp>
 
 #include <Teuchos_RefCountPtr.hpp>
 
@@ -65,39 +63,12 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 namespace Isorropia_Zoltan {
 
-Teuchos::RefCountPtr<Epetra_CrsGraph>
-create_balanced_copy(const Epetra_CrsGraph& input_graph,
-		     Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RefCountPtr<Epetra_Map> bal_map =
-    Isorropia_Zoltan::create_balanced_map(input_graph, paramlist);
-
-  Teuchos::RefCountPtr<Epetra_CrsGraph> bal_graph =
-    Isorropia::redistribute_rows(input_graph, *bal_map);
-
-  bal_graph->FillComplete();
-
-  return(bal_graph);
-}
-
-Teuchos::RefCountPtr<Epetra_CrsMatrix>
-create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
-		     Teuchos::ParameterList& paramlist)
-{
-  Teuchos::RefCountPtr<Epetra_Map> bal_map =
-    Isorropia_Zoltan::create_balanced_map(input_matrix.Graph(), paramlist);
-
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix =
-    Isorropia::redistribute_rows(input_matrix, *bal_map);
-
-  bal_matrix->FillComplete();
-
-  return(bal_matrix);
-}
-
-Teuchos::RefCountPtr<Epetra_Map>
-create_balanced_map(const Epetra_CrsGraph& input_graph,
-		    Teuchos::ParameterList& paramlist)
+int
+repartition(const Epetra_CrsGraph& input_graph,
+            Teuchos::ParameterList& paramlist,
+            std::vector<int>& myNewElements,
+            std::map<int,int>& exports,
+            std::map<int,int>& imports)
 {
   Teuchos::RefCountPtr<Epetra_Map> bal_map;
 
@@ -140,7 +111,8 @@ create_balanced_map(const Epetra_CrsGraph& input_graph,
     err = LB.Set_QueryObject( &Query );
   }
   else {
-    cout << "Setup of Zoltan Load Balancing Objects FAILED!\n"; return(bal_map);
+    cout << "Setup of Zoltan Load Balancing Objects FAILED!\n";
+    return(err);
   }
 
   //Generate Load Balance
@@ -151,10 +123,9 @@ create_balanced_map(const Epetra_CrsGraph& input_graph,
 
   nonconst_input.Comm().Barrier();
   err = LB.Balance( &changes,
-                     &num_gid_entries, &num_lid_entries,
-                     &num_import, &import_global_ids, &import_local_ids, &import_procs,
-                     &num_export, &export_global_ids, &export_local_ids, &export_procs );
-  LB.Evaluate( 1, 0, 0, 0, 0, 0, 0 );
+                    &num_gid_entries, &num_lid_entries,
+                    &num_import, &import_global_ids, &import_local_ids, &import_procs,
+                    &num_export, &export_global_ids, &export_local_ids, &export_procs );
   nonconst_input.Comm().Barrier();
 
   //Generate New Element List
@@ -163,24 +134,27 @@ create_balanced_map(const Epetra_CrsGraph& input_graph,
   nonconst_input.RowMap().MyGlobalElements( &elementList[0] );
 
   int newNumMyElements = numMyElements - num_export + num_import;
-  std::vector<int> newElementList( newNumMyElements );
+  myNewElements.resize( newNumMyElements );
 
-  std::set<int> gidSet;
   for( int i = 0; i < num_export; ++i ) {
-    gidSet.insert( export_global_ids[i] );
+    exports[export_global_ids[i]] = export_procs[i];
+  }
+
+  for( int i = 0; i < num_import; ++i ) {
+    imports[import_global_ids[i]] = import_procs[i];
   }
 
   //Add unmoved indices to new list
   int loc = 0;
   for( int i = 0; i < numMyElements; ++i ) {
-    if( !gidSet.count( elementList[i] ) ) {
-      newElementList[loc++] = elementList[i];
+    if( !exports.count( elementList[i] ) ) {
+      myNewElements[loc++] = elementList[i];
     }
   }
   
   //Add imports to end of list
   for( int i = 0; i < num_import; ++i ) {
-    newElementList[loc+i] = import_global_ids[i];
+    myNewElements[loc+i] = import_global_ids[i];
   }
 
   //Free Zoltan Data
@@ -189,13 +163,7 @@ create_balanced_map(const Epetra_CrsGraph& input_graph,
                          &export_global_ids, &export_local_ids, &export_procs );
   }
 
-  //Create Import Map
-  bal_map =
-    Teuchos::rcp(new Epetra_Map( nonconst_input.RowMap().NumGlobalElements(),
-				 newNumMyElements, &newElementList[0],
-				 nonconst_input.RowMap().IndexBase(),
-				 nonconst_input.RowMap().Comm() ));
-  return( bal_map );
+  return( 0 );
 }
 
 }//namespace Isorropia_Zoltan
