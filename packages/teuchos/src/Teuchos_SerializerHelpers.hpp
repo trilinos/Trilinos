@@ -43,7 +43,7 @@ public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ReferenceTypeSerializationBuffer(
     const Serializer<Ordinal,T> &serializer
-    ,const Ordinal count, T* buffer[]
+    ,const Ordinal count, T*const buffer[]
     );
   /** \brief Deserialize from the interal <tt>char[]</tt> buffer back to the
    * original <tt>T*[]</tt> buffer.
@@ -56,7 +56,7 @@ public:
 private:
   const Serializer<Ordinal,T>  &serializer_;
   Ordinal                      count_;
-  T*                           *buffer_;
+  T*const                      *buffer_;
   Array<char>                  charBuffer_;
   // Not defined and not to be called
   ReferenceTypeSerializationBuffer();
@@ -73,7 +73,7 @@ public:
   /** \brief Serialize to an internally stored <tt>char[]</tt> buffer. */
   ConstReferenceTypeSerializationBuffer(
     const Serializer<Ordinal,T> &serializer
-    ,const Ordinal count, const T* buffer[]
+    ,const Ordinal count, const T*const buffer[]
     );
   /** \brief Free the internal <tt>char[]</tt> buffer (no data to be written
    * back).
@@ -86,7 +86,7 @@ public:
 private:
   const Serializer<Ordinal,T>  &serializer_;
   Ordinal                      count_;
-  const T*                     *buffer_;
+  const T*const                *buffer_;
   Ordinal                      bytes_;
   Array<char>                  charBuffer_;
   // Not defined and not to be called
@@ -112,7 +112,7 @@ public:
    */
   ~ReferenceTypeDeserializationBuffer();
   /** \brief . */
-  T** getBuffer() const;
+  T*const* getBuffer() const;
   /** \brief . */
   Ordinal getCount() const;
 private:
@@ -120,7 +120,7 @@ private:
   typedef Array<T*>               buffer_t;
   const Serializer<Ordinal,T>  &serializer_;
   Ordinal                      bytes_;
-  char*                        charBuffer_;
+  char                         *charBuffer_;
   buffer_ptr_t                 buffer_ptr_;
   buffer_t                     buffer_;
   // Not defined and not to be called
@@ -146,7 +146,7 @@ public:
    */
   ~ConstReferenceTypeDeserializationBuffer();
   /** \brief . */
-  const T** getBuffer() const;
+  const T*const* getBuffer() const;
   /** \brief . */
   Ordinal getCount() const;
 private:
@@ -154,7 +154,7 @@ private:
   typedef Array<T*>               buffer_t;
   const Serializer<Ordinal,T>  &serializer_;
   Ordinal                      bytes_;
-  const char*                  charBuffer_;
+  const char                   *charBuffer_;
   buffer_ptr_t                 buffer_ptr_;
   buffer_t                     buffer_;
   // Not defined and not to be called
@@ -173,14 +173,13 @@ private:
 template <typename Ordinal, typename T>
 ReferenceTypeSerializationBuffer<Ordinal,T>::ReferenceTypeSerializationBuffer(
   const Serializer<Ordinal,T> &serializer
-  ,const Ordinal count, T* buffer[]
+  ,const Ordinal count, T*const buffer[]
   )
   :serializer_(serializer), count_(count), buffer_(buffer)
 {
   const Ordinal bytes = serializer_.getBufferSize(count_);
   charBuffer_.resize(bytes);
-  serializer_.serialize(count_,const_cast<const T**>(buffer_),bytes,&charBuffer_[0]);
-  // The above const_cast should be safe in the way that it is being used?
+  serializer_.serialize(count_,buffer_,bytes,&charBuffer_[0]);
 }
 
 template <typename Ordinal, typename T>
@@ -194,6 +193,8 @@ char* ReferenceTypeSerializationBuffer<Ordinal,T>::getCharBuffer() const
 {
   typedef ReferenceTypeSerializationBuffer<Ordinal,T>* this_ptr_t;
   return &(const_cast<this_ptr_t>(this)->charBuffer_)[0];
+  // The above const_cast is a better alternative to declaring charBuffer_ to
+  // be mutable, in my opinion.
 }
 
 template <typename Ordinal, typename T>
@@ -209,7 +210,7 @@ Ordinal ReferenceTypeSerializationBuffer<Ordinal,T>::getBytes() const
 template <typename Ordinal, typename T>
 ConstReferenceTypeSerializationBuffer<Ordinal,T>::ConstReferenceTypeSerializationBuffer(
   const Serializer<Ordinal,T> &serializer
-  ,const Ordinal count, const T* buffer[]
+  ,const Ordinal count, const T*const buffer[]
   )
   :serializer_(serializer), count_(count), buffer_(buffer)
 {
@@ -267,16 +268,17 @@ template <typename Ordinal, typename T>
 ReferenceTypeDeserializationBuffer<Ordinal,T>::~ReferenceTypeDeserializationBuffer()
 {
   serializer_.serialize(
-    buffer_.size(),const_cast<const T**>(&buffer_[0]),bytes_,charBuffer_
+    buffer_.size(),&buffer_[0],bytes_,charBuffer_
     );
-  // The above const_cast should be just fine given how I am using this?
 }
 
 template <typename Ordinal, typename T>
-T** ReferenceTypeDeserializationBuffer<Ordinal,T>::getBuffer() const
+T*const* ReferenceTypeDeserializationBuffer<Ordinal,T>::getBuffer() const
 {
-  return const_cast<T**>(&buffer_[0]);
-  // The above const cast should be okay given how it is being used!
+  typedef ReferenceTypeDeserializationBuffer<Ordinal,T>* this_ptr_t;
+  return &(const_cast<this_ptr_t>(this)->buffer_)[0];
+  // The above const_cast is a better alternative to declaring buffer_ to be
+  // mutable, in my opinion.
 }
 
 template <typename Ordinal, typename T>
@@ -319,9 +321,9 @@ ConstReferenceTypeDeserializationBuffer<Ordinal,T>::~ConstReferenceTypeDeseriali
 }
 
 template <typename Ordinal, typename T>
-const T** ConstReferenceTypeDeserializationBuffer<Ordinal,T>::getBuffer() const
+const T*const* ConstReferenceTypeDeserializationBuffer<Ordinal,T>::getBuffer() const
 {
-  return const_cast<const T**>(&buffer_[0]);
+  return &buffer_[0];
 }
 
 template <typename Ordinal, typename T>

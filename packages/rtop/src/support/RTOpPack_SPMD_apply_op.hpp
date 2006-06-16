@@ -192,10 +192,10 @@ ReductTargetSerializer<Scalar>::getBufferSize(const index_type count) const
 
 template<class Scalar>
 void ReductTargetSerializer<Scalar>::serialize(
-  const index_type       count
-  ,const ReductTarget*   reduct_objs[]
-  ,const index_type      bytes
-  ,char                  charBuffer[]
+  const index_type              count
+  ,const ReductTarget * const   reduct_objs[]
+  ,const index_type             bytes
+  ,char                         charBuffer[]
   ) const
 {
 #ifdef _DEBUG
@@ -225,7 +225,7 @@ void ReductTargetSerializer<Scalar>::deserialize(
   const index_type       bytes
   ,const char            charBuffer[]
   ,const index_type      count
-  ,ReductTarget*         reduct_objs[]
+  ,ReductTarget * const  reduct_objs[]
   ) const
 {
 #ifdef _DEBUG
@@ -257,8 +257,8 @@ ReductTargetReductionOp<Scalar>::ReductTargetReductionOp(
 template<class Scalar>
 void ReductTargetReductionOp<Scalar>::reduce(
   const Ordinal              count
-  ,const ReductTarget*       inBuffer[]
-  ,ReductTarget*             inoutBuffer[]
+  ,const ReductTarget*const  inBuffer[]
+  ,ReductTarget*const        inoutBuffer[]
   ) const
 {
   for( int i = 0; i < count; ++i )
@@ -295,7 +295,7 @@ void RTOpPack::SPMD_apply_op(
   ,const RTOpPack::ConstSubMultiVectorView<Scalar>   sub_multi_vecs[]
   ,const int                                         num_targ_multi_vecs
   ,const RTOpPack::SubMultiVectorView<Scalar>        targ_sub_multi_vecs[]
-  ,RTOpPack::ReductTarget*                           reduct_objs[]
+  ,RTOpPack::ReductTarget*const                      reduct_objs[]
   )
 {
   using Teuchos::Workspace;
@@ -336,7 +336,7 @@ void RTOpPack::SPMD_apply_op(
   ,const ConstSubVectorView<Scalar>         sub_vecs[]
   ,const int                                num_targ_vecs
   ,const SubVectorView<Scalar>              sub_targ_vecs[]
-  ,ReductTarget*                            reduct_objs[]
+  ,ReductTarget*const                       reduct_objs[]
   )
 {
 #ifdef RTOPPACK_SPMD_APPLY_OP_DUMP
@@ -445,10 +445,10 @@ void RTOpPack::SPMD_apply_op(
           serializer(Teuchos::rcp(&op,false));
         ReductTargetReductionOp<Scalar>
           reductOp(Teuchos::rcp(&op,false));
-      reduceAll(
-        *comm,serializer,reductOp
-        ,num_cols,&_i_reduct_objs[0],reduct_objs
-        );
+        reduceAll(
+          *comm,serializer,reductOp
+          ,num_cols,&_i_reduct_objs[0],reduct_objs
+          );
       }
     }
   }

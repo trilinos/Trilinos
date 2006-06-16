@@ -71,9 +71,9 @@ void MPIVectorBase<Scalar>::applyOp(
   MPI_Comm                        comm_in
   ,const RTOpPack::RTOpT<Scalar>  &op
   ,const int                      num_vecs
-  ,const VectorBase<Scalar>*      vecs[]
+  ,const VectorBase<Scalar>*const vecs[]
   ,const int                      num_targ_vecs
-  ,VectorBase<Scalar>*            targ_vecs[]
+  ,VectorBase<Scalar>*const       targ_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
   ,const Index                    first_ele_offset_in
   ,const Index                    sub_dim_in
@@ -206,9 +206,9 @@ template<class Scalar>
 void MPIVectorBase<Scalar>::applyOp(
   const RTOpPack::RTOpT<Scalar>   &op
   ,const int                      num_vecs
-  ,const VectorBase<Scalar>*      vecs[]
+  ,const VectorBase<Scalar>*const vecs[]
   ,const int                      num_targ_vecs
-  ,VectorBase<Scalar>*            targ_vecs[]
+  ,VectorBase<Scalar>*const       targ_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
   ,const Index                    first_ele_offset
   ,const Index                    sub_dim

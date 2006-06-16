@@ -100,10 +100,10 @@ public:
   index_type getBufferSize(const index_type count) const;
   /** \brief . */
   void serialize(
-    const index_type       count
-    ,const ReductTarget*   reduct_objs[]
-    ,const index_type      bytes
-    ,char                  charBuffer[]
+    const index_type            count
+    ,const ReductTarget* const  reduct_objs[]
+    ,const index_type           bytes
+    ,char                       charBuffer[]
     ) const;
   /** \brief . */
   Teuchos::RefCountPtr<ReductTarget> createObj() const;
@@ -112,7 +112,7 @@ public:
     const index_type       bytes
     ,const char            charBuffer[]
     ,const index_type      count
-    ,ReductTarget*         reduct_objs[]
+    ,ReductTarget* const   reduct_objs[]
     ) const;
   //@}
 private:
@@ -146,8 +146,8 @@ public:
   /** \brief . */
   void reduce(
     const Ordinal              count
-    ,const ReductTarget*       inBuffer[]
-    ,ReductTarget*             inoutBuffer[]
+    ,const ReductTarget*const  inBuffer[]
+    ,ReductTarget*const        inoutBuffer[]
     ) const;
   //@}
 private:
@@ -192,7 +192,7 @@ void SPMD_apply_op(
   ,const ConstSubMultiVectorView<Scalar>   sub_multi_vecs[]
   ,const int                               num_targ_multi_vecs
   ,const SubMultiVectorView<Scalar>        targ_sub_multi_vecs[]
-  ,ReductTarget*                           reduct_objs[]
+  ,ReductTarget*const                      reduct_objs[]
   );
 
 /** \brief Apply an RTOp in SMPD mode to a set of columns to a set of
@@ -211,7 +211,7 @@ void  SPMD_apply_op(
   ,const ConstSubVectorView<Scalar>         sub_vecs[]
   ,const int                                num_targ_vecs
   ,const SubVectorView<Scalar>              sub_targ_vecs[]
-  ,ReductTarget*                            reduct_objs[]
+  ,ReductTarget*const                       reduct_objs[]
   );
 
 } // end namespace RTOpPack

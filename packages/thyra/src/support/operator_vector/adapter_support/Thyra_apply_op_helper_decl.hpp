@@ -47,9 +47,9 @@ void apply_op_validate_input(
   ,const VectorSpaceBase<Scalar>  &space
   ,const RTOpPack::RTOpT<Scalar>  &op
   ,const int                      num_vecs
-  ,const VectorBase<Scalar>*      vecs[]
+  ,const VectorBase<Scalar>*const      vecs[]
   ,const int                      num_targ_vecs
-  ,VectorBase<Scalar>*            targ_vecs[]
+  ,VectorBase<Scalar>*const            targ_vecs[]
   ,RTOpPack::ReductTarget         *reduct_obj
   ,const Index                    first_ele_offset
   ,const Index                    sub_dim
@@ -65,20 +65,20 @@ void apply_op_validate_input(
  */
 template<class Scalar>
 void apply_op_validate_input(
-  const char                      func_name[]
-  ,const VectorSpaceBase<Scalar>  &domain
-  ,const VectorSpaceBase<Scalar>  &range
-  ,const RTOpPack::RTOpT<Scalar>  &primary_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    primary_first_ele_offset
-  ,const Index                    primary_sub_dim
-  ,const Index                    primary_global_offset
-  ,const Index                    secondary_first_ele_offset
-  ,const Index                    secondary_sub_dim
+  const char                            Func_name[]
+  ,const VectorSpaceBase<Scalar>        &domain
+  ,const VectorSpaceBase<Scalar>        &range
+  ,const RTOpPack::RTOpT<Scalar>        &primary_op
+  ,const int                            num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+  ,const int                            num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+  ,RTOpPack::ReductTarget*const         reduct_objs[]
+  ,const Index                          primary_first_ele_offset
+  ,const Index                          primary_sub_dim
+  ,const Index                          primary_global_offset
+  ,const Index                          secondary_first_ele_offset
+  ,const Index                          secondary_sub_dim
   );
 
 /** \brief Implements reduction/transformation operators for all serial
@@ -93,16 +93,16 @@ void apply_op_validate_input(
  */
 template<class Scalar>
 void apply_op_serial(
-  const VectorSpaceBase<Scalar>  &space
-  ,const RTOpPack::RTOpT<Scalar> &op
-  ,const int                     num_vecs
-  ,const VectorBase<Scalar>*     vecs[]
-  ,const int                     num_targ_vecs
-  ,VectorBase<Scalar>*           targ_vecs[]
-  ,RTOpPack::ReductTarget        *reduct_obj
-  ,const Index                   first_ele_offset
-  ,const Index                   sub_dim
-  ,const Index                   global_offset
+  const VectorSpaceBase<Scalar>   &space
+  ,const RTOpPack::RTOpT<Scalar>  &op
+  ,const int                      num_vecs
+  ,const VectorBase<Scalar>*const vecs[]
+  ,const int                      num_targ_vecs
+  ,VectorBase<Scalar>*const       targ_vecs[]
+  ,RTOpPack::ReductTarget         *reduct_obj
+  ,const Index                    first_ele_offset
+  ,const Index                    sub_dim
+  ,const Index                    global_offset
   );
 
 /** \brief Implements reduction/transformation operators for all serial
@@ -117,19 +117,19 @@ void apply_op_serial(
  */
 template<class Scalar>
 void apply_op_serial(
-  const VectorSpaceBase<Scalar>   &domain
-  ,const VectorSpaceBase<Scalar>  &range
-  ,const RTOpPack::RTOpT<Scalar>  &primary_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    primary_first_ele_offset
-  ,const Index                    primary_sub_dim
-  ,const Index                    primary_global_offset
-  ,const Index                    secondary_first_ele_offset
-  ,const Index                    secondary_sub_dim
+  const VectorSpaceBase<Scalar>         &domain
+  ,const VectorSpaceBase<Scalar>        &range
+  ,const RTOpPack::RTOpT<Scalar>        &primary_op
+  ,const int                            num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+  ,const int                            num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+  ,RTOpPack::ReductTarget*const         reduct_objs[]
+  ,const Index                          primary_first_ele_offset
+  ,const Index                          primary_sub_dim
+  ,const Index                          primary_global_offset
+  ,const Index                          secondary_first_ele_offset
+  ,const Index                          secondary_sub_dim
   );
 
 } // end namespace Thyra

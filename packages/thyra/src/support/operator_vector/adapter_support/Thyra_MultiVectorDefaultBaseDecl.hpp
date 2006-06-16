@@ -83,17 +83,17 @@ public:
    * <tt>this->col(j)</tt> for <tt>j = 0 ... this->range()->dim()-1</tt>.
    */
   virtual void applyOp(
-    const RTOpPack::RTOpT<Scalar>   &primary_op
-    ,const int                      num_multi_vecs
-    ,const MultiVectorBase<Scalar>* multi_vecs[]
-    ,const int                      num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-    ,RTOpPack::ReductTarget*        reduct_objs[]
-    ,const Index                    primary_first_ele_offset
-    ,const Index                    primary_sub_dim
-    ,const Index                    primary_global_offset
-    ,const Index                    secondary_first_ele_offset
-    ,const Index                    secondary_sub_dim
+    const RTOpPack::RTOpT<Scalar>         &primary_op
+    ,const int                            num_multi_vecs
+    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+    ,const int                            num_targ_multi_vecs
+    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+    ,RTOpPack::ReductTarget*const         reduct_objs[]
+    ,const Index                          primary_first_ele_offset
+    ,const Index                          primary_sub_dim
+    ,const Index                          primary_global_offset
+    ,const Index                          secondary_first_ele_offset
+    ,const Index                          secondary_sub_dim
     ) const;
   /** \brief .
    *
@@ -101,18 +101,18 @@ public:
    * objects is taken.
    */
   virtual void applyOp(
-    const RTOpPack::RTOpT<Scalar>   &primary_op
-    ,const RTOpPack::RTOpT<Scalar>  &secondary_op
-    ,const int                      num_multi_vecs
-    ,const MultiVectorBase<Scalar>* multi_vecs[]
-    ,const int                      num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-    ,RTOpPack::ReductTarget         *reduct_obj
-    ,const Index                    primary_first_ele_offset
-    ,const Index                    primary_sub_dim
-    ,const Index                    primary_global_offset
-    ,const Index                    secondary_first_ele_offset
-    ,const Index                    secondary_sub_dim
+    const RTOpPack::RTOpT<Scalar>         &primary_op
+    ,const RTOpPack::RTOpT<Scalar>        &secondary_op
+    ,const int                            num_multi_vecs
+    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+    ,const int                            num_targ_multi_vecs
+    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+    ,RTOpPack::ReductTarget               *reduct_obj
+    ,const Index                          primary_first_ele_offset
+    ,const Index                          primary_sub_dim
+    ,const Index                          primary_global_offset
+    ,const Index                          secondary_first_ele_offset
+    ,const Index                          secondary_sub_dim
     ) const;
   /** \brief .
    *

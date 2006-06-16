@@ -670,17 +670,17 @@ public:
    * ... this->range()->dim()-1</tt>.
    */
   virtual void applyOp(
-    const RTOpPack::RTOpT<Scalar>   &primary_op
-    ,const int                      num_multi_vecs
-    ,const MultiVectorBase<Scalar>* multi_vecs[]
-    ,const int                      num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-    ,RTOpPack::ReductTarget*        reduct_objs[]
-    ,const Index                    primary_first_ele_offset
-    ,const Index                    primary_sub_dim
-    ,const Index                    primary_global_offset
-    ,const Index                    secondary_first_ele_offset
-    ,const Index                    secondary_sub_dim
+    const RTOpPack::RTOpT<Scalar>         &primary_op
+    ,const int                            num_multi_vecs
+    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+    ,const int                            num_targ_multi_vecs
+    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+    ,RTOpPack::ReductTarget*const         reduct_objs[]
+    ,const Index                          primary_first_ele_offset
+    ,const Index                          primary_sub_dim
+    ,const Index                          primary_global_offset
+    ,const Index                          secondary_first_ele_offset
+    ,const Index                          secondary_sub_dim
     ) const = 0;
 
   /** \brief Apply a reduction/transformation operator column by column and
@@ -704,18 +704,18 @@ public:
    * array of reduction objects is taken.
    */
   virtual void applyOp(
-    const RTOpPack::RTOpT<Scalar>   &primary_op
-    ,const RTOpPack::RTOpT<Scalar>  &secondary_op
-    ,const int                      num_multi_vecs
-    ,const MultiVectorBase<Scalar>* multi_vecs[]
-    ,const int                      num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-    ,RTOpPack::ReductTarget         *reduct_obj
-    ,const Index                    primary_first_ele_offset
-    ,const Index                    primary_sub_dim
-    ,const Index                    primary_global_offset
-    ,const Index                    secondary_first_ele_offset
-    ,const Index                    secondary_sub_dim
+    const RTOpPack::RTOpT<Scalar>         &primary_op
+    ,const RTOpPack::RTOpT<Scalar>        &secondary_op
+    ,const int                            num_multi_vecs
+    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+    ,const int                            num_targ_multi_vecs
+    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+    ,RTOpPack::ReductTarget               *reduct_obj
+    ,const Index                          primary_first_ele_offset
+    ,const Index                          primary_sub_dim
+    ,const Index                          primary_global_offset
+    ,const Index                          secondary_first_ele_offset
+    ,const Index                          secondary_sub_dim
     ) const = 0;
 
   //@}
@@ -885,8 +885,8 @@ public:
    * implementation.
    */
   virtual void acquireDetachedView(
-    const Range1D                                &rowRng
-    ,const Range1D                               &colRng
+    const Range1D                            &rowRng
+    ,const Range1D                           &colRng
     ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
     ) = 0;
 
@@ -971,31 +971,31 @@ in simpler use cases.
 template<class Scalar>
 inline
 void applyOp(
-  const RTOpPack::RTOpT<Scalar>   &primary_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    primary_first_ele_offset
+  const RTOpPack::RTOpT<Scalar>        &primary_op
+  ,const int                           num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const multi_vecs[]
+  ,const int                           num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const       targ_multi_vecs[]
+  ,RTOpPack::ReductTarget*const        reduct_objs[]
+  ,const Index                         primary_first_ele_offset
 #ifndef __sun
-                                                         = 0
+                                       = 0
 #endif
-  ,const Index                    primary_sub_dim
+  ,const Index                         primary_sub_dim
 #ifndef __sun
-                                                         = -1
+                                       = -1
 #endif
-  ,const Index                    primary_global_offset
+  ,const Index                         primary_global_offset
 #ifndef __sun
-                                                         = 0
+                                       = 0
 #endif
-  ,const Index                    secondary_first_ele_offset
+  ,const Index                         secondary_first_ele_offset
 #ifndef __sun
-                                                         = 0
+                                       = 0
 #endif
-  ,const Index                    secondary_sub_dim
+  ,const Index                         secondary_sub_dim
 #ifndef __sun
-                                                         = -1
+                                       = -1
 #endif
   )
 {
@@ -1019,12 +1019,12 @@ void applyOp(
 template<class Scalar>
 inline
 void applyOp(
-  const RTOpPack::RTOpT<Scalar>   &primary_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget*        reduct_objs[]
+  const RTOpPack::RTOpT<Scalar>        &primary_op
+  ,const int                           num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const multi_vecs[]
+  ,const int                           num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const       targ_multi_vecs[]
+  ,RTOpPack::ReductTarget*const        reduct_objs[]
   )
 {
   applyOp(
@@ -1043,32 +1043,32 @@ void applyOp(
 template<class Scalar>
 inline
 void applyOp(
-  const RTOpPack::RTOpT<Scalar>   &primary_op
-  ,const RTOpPack::RTOpT<Scalar>  &secondary_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    primary_first_ele_offset
+  const RTOpPack::RTOpT<Scalar>        &primary_op
+  ,const RTOpPack::RTOpT<Scalar>       &secondary_op
+  ,const int                           num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const multi_vecs[]
+  ,const int                           num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const       targ_multi_vecs[]
+  ,RTOpPack::ReductTarget              *reduct_obj
+  ,const Index                         primary_first_ele_offset
 #ifndef __sun
-                                                         = 0
+                                       = 0
 #endif
-  ,const Index                    primary_sub_dim
+  ,const Index                         primary_sub_dim
 #ifndef __sun
-                                                         = -1
+                                       = -1
 #endif
-  ,const Index                    primary_global_offset
+  ,const Index                         primary_global_offset
 #ifndef __sun
-                                                         = 0
+                                       = 0
 #endif
-  ,const Index                    secondary_first_ele_offset
+  ,const Index                         secondary_first_ele_offset
 #ifndef __sun
-                                                         = 0
+                                       = 0
 #endif
-  ,const Index                    secondary_sub_dim
+  ,const Index                         secondary_sub_dim
 #ifndef __sun
-                                                         = -1
+                                       = -1
 #endif
   )
 {
@@ -1093,13 +1093,13 @@ void applyOp(
 template<class Scalar>
 inline
 void applyOp(
-  const RTOpPack::RTOpT<Scalar>   &primary_op
-  ,const RTOpPack::RTOpT<Scalar>  &secondary_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget         *reduct_obj
+  const RTOpPack::RTOpT<Scalar>        &primary_op
+  ,const RTOpPack::RTOpT<Scalar>       &secondary_op
+  ,const int                           num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const multi_vecs[]
+  ,const int                           num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const       targ_multi_vecs[]
+  ,RTOpPack::ReductTarget              *reduct_obj
   )
 {
   applyOp(

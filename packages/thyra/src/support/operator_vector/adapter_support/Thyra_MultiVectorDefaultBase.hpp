@@ -61,17 +61,17 @@ MultiVectorDefaultBase<Scalar>::clone_mv() const
 
 template<class Scalar>
 void MultiVectorDefaultBase<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>   &prim_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget*        reduct_objs[]
-  ,const Index                    prim_first_ele_offset_in
-  ,const Index                    prim_sub_dim_in
-  ,const Index                    prim_global_offset_in
-  ,const Index                    sec_first_ele_offset_in
-  ,const Index                    sec_sub_dim_in
+  const RTOpPack::RTOpT<Scalar>         &prim_op
+  ,const int                            num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+  ,const int                            num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+  ,RTOpPack::ReductTarget*const         reduct_objs[]
+  ,const Index                          prim_first_ele_offset_in
+  ,const Index                          prim_sub_dim_in
+  ,const Index                          prim_global_offset_in
+  ,const Index                          sec_first_ele_offset_in
+  ,const Index                          sec_sub_dim_in
   ) const
 {
   using Teuchos::Workspace;
@@ -130,18 +130,18 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
 
 template<class Scalar>
 void MultiVectorDefaultBase<Scalar>::applyOp(
-  const RTOpPack::RTOpT<Scalar>   &prim_op
-  ,const RTOpPack::RTOpT<Scalar>  &sec_op
-  ,const int                      num_multi_vecs
-  ,const MultiVectorBase<Scalar>* multi_vecs[]
-  ,const int                      num_targ_multi_vecs
-  ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-  ,RTOpPack::ReductTarget         *reduct_obj
-  ,const Index                    prim_first_ele_offset_in
-  ,const Index                    prim_sub_dim_in
-  ,const Index                    prim_global_offset_in
-  ,const Index                    sec_first_ele_offset_in
-  ,const Index                    sec_sub_dim_in
+  const RTOpPack::RTOpT<Scalar>         &prim_op
+  ,const RTOpPack::RTOpT<Scalar>        &sec_op
+  ,const int                            num_multi_vecs
+  ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+  ,const int                            num_targ_multi_vecs
+  ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+  ,RTOpPack::ReductTarget               *reduct_obj
+  ,const Index                          prim_first_ele_offset_in
+  ,const Index                          prim_sub_dim_in
+  ,const Index                          prim_global_offset_in
+  ,const Index                          sec_first_ele_offset_in
+  ,const Index                          sec_sub_dim_in
   ) const
 {
   using Teuchos::Workspace;

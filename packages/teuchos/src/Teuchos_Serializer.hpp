@@ -69,7 +69,7 @@ public:
    */
   virtual void serialize(
     const Ordinal          count
-    ,const T*              objs[]
+    ,const T * const       objs[]
     ,const Ordinal         bytes
     ,char                  charBuffer[]
     ) const = 0;
@@ -100,7 +100,7 @@ public:
     const Ordinal         bytes
     ,const char           charBuffer[]
     ,const Ordinal        count
-    ,T*                   objs[]
+    ,T * const            objs[]
     ) const = 0;
 
 };

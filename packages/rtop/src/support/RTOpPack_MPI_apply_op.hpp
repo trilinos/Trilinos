@@ -290,7 +290,7 @@ void RTOpPack::MPI_apply_op(
   ,const RTOpPack::ConstSubMultiVectorView<Scalar>   sub_multi_vecs[]
   ,const int                                         num_targ_multi_vecs
   ,const RTOpPack::SubMultiVectorView<Scalar>        targ_sub_multi_vecs[]
-  ,RTOpPack::ReductTarget*                           reduct_objs[]
+  ,RTOpPack::ReductTarget*const                      reduct_objs[]
   )
 {
   using Teuchos::Workspace;
@@ -328,8 +328,8 @@ void RTOpPack::MPI_all_reduce(
   ,const RTOpT<Scalar>                &op
   ,const int                          root_rank
   ,const int                          num_cols
-  ,const ReductTarget*                i_reduct_objs[]
-  ,ReductTarget*                      reduct_objs[]
+  ,const ReductTarget*const           i_reduct_objs[]
+  ,ReductTarget*const                 reduct_objs[]
   )
 {
   using Teuchos::Workspace;
@@ -467,7 +467,7 @@ void RTOpPack::MPI_apply_op(
   ,const ConstSubVectorView<Scalar>         sub_vecs[]
   ,const int                                num_targ_vecs
   ,const SubVectorView<Scalar>              sub_targ_vecs[]
-  ,ReductTarget*                            reduct_objs[]
+  ,ReductTarget*const                       reduct_objs[]
   )
 {
 #ifdef RTOPPACK_MPI_APPLY_OP_DUMP

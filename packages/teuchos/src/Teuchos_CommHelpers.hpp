@@ -109,7 +109,7 @@ void broadcast(
 template<typename Ordinal, typename Packet>
 void broadcast(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int rootRank, const Ordinal count, Packet* buffer[]
+  ,const int rootRank, const Ordinal count, Packet*const buffer[]
   );
 
 /** \brief Gather objects that use value semantics from every process to every
@@ -132,8 +132,8 @@ void gatherAll(
 template<typename Ordinal, typename Packet>
 void gatherAll(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal sendCount, const Packet* sendBuffer[]
-  ,const Ordinal recvCount, Packet* recvBuffer[]
+  ,const Ordinal sendCount, const Packet*const sendBuffer[]
+  ,const Ordinal recvCount, Packet*const recvBuffer[]
   );
 
 /** \brief Collective reduce all of objects using value semantics using a
@@ -166,7 +166,7 @@ template<typename Ordinal, typename Packet>
 void reduceAll(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet* sendBuffer[], Packet* globalReducts[]
+  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
   );
 
 /** \brief Reduce and Scatter objects object that use value semantics using a
@@ -202,8 +202,8 @@ template<typename Ordinal, typename Packet>
 void reduceAllAndScatter(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal sendCount, const Packet* sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet* myGlobalReducts[]
+  ,const Ordinal sendCount, const Packet*const sendBuffer[] 
+  ,const Ordinal recvCounts[], Packet*const myGlobalReducts[]
   );
 
 /** \brief Scan/Reduce objects that use value semantics using a user-defined
@@ -236,7 +236,7 @@ template<typename Ordinal, typename Packet>
 void scan(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet* sendBuffer[], Packet* scanReducts[]
+  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
   );
 
 /** \brief Send objects that use values semantics to another process.
@@ -256,7 +256,7 @@ void send(
 template<typename Ordinal, typename Packet>
 void send(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal count, const Packet* sendBuffer[], const int destRank
+  ,const Ordinal count, const Packet*const sendBuffer[], const int destRank
   );
 
 /** \brief Receive objects that use values semantics from another process.
@@ -276,7 +276,7 @@ int receive(
 template<typename Ordinal, typename Packet>
 int receive(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int sourceRank, const Ordinal count, Packet* recvBuffer[] 
+  ,const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   );
 
 //
@@ -551,7 +551,7 @@ void Teuchos::broadcast(
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int rootRank, const Ordinal count, Packet* buffer[]
+  ,const int rootRank, const Ordinal count, Packet*const buffer[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -591,8 +591,8 @@ void Teuchos::gatherAll(
 template<typename Ordinal, typename Packet>
 void Teuchos::gatherAll(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal sendCount, const Packet* sendBuffer[]
-  ,const Ordinal recvCount, Packet* recvBuffer[]
+  ,const Ordinal sendCount, const Packet*const sendBuffer[]
+  ,const Ordinal recvCount, Packet*const recvBuffer[]
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -641,7 +641,7 @@ template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet* sendBuffer[], Packet* globalReducts[]
+  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
   )
 {
   TEUCHOS_COMM_TIME_MONITOR(
@@ -718,8 +718,8 @@ template<typename Ordinal, typename Packet>
 void Teuchos::reduceAllAndScatter(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal sendCount, const Packet* sendBuffer[] 
-  ,const Ordinal recvCounts[], Packet* myGlobalReducts[]
+  ,const Ordinal sendCount, const Packet*const sendBuffer[] 
+  ,const Ordinal recvCounts[], Packet*const myGlobalReducts[]
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -768,7 +768,7 @@ template<typename Ordinal, typename Packet>
 void Teuchos::scan(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
-  ,const Ordinal count, const Packet* sendBuffer[], Packet* scanReducts[]
+  ,const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -796,7 +796,7 @@ void Teuchos::send(
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const Ordinal count, const Packet* sendBuffer[], const int destRank
+  ,const Ordinal count, const Packet*const sendBuffer[], const int destRank
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!
@@ -824,7 +824,7 @@ int Teuchos::receive(
 template<typename Ordinal, typename Packet>
 int Teuchos::receive(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
-  ,const int sourceRank, const Ordinal count, Packet* recvBuffer[] 
+  ,const int sourceRank, const Ordinal count, Packet*const recvBuffer[] 
   )
 {
   TEST_FOR_EXCEPT(true); // ToDo: Implement and test when needed!

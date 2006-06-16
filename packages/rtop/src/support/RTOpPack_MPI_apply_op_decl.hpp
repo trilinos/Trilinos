@@ -144,7 +144,7 @@ void MPI_apply_op(
   ,const ConstSubMultiVectorView<Scalar>   sub_multi_vecs[]
   ,const int                               num_targ_multi_vecs
   ,const SubMultiVectorView<Scalar>        targ_sub_multi_vecs[]
-  ,ReductTarget*                           reduct_objs[]
+  ,ReductTarget*const                      reduct_objs[]
   );
 
 /** \brief Perform global reduction of reduction target objects.
@@ -173,8 +173,8 @@ void MPI_all_reduce(
   ,const RTOpT<Scalar>                &op
   ,const int                          root_rank
   ,const int                          num_cols
-  ,const ReductTarget*                i_reduct_objs[]
-  ,ReductTarget*                      reduct_objs[]
+  ,const ReductTarget*const           i_reduct_objs[]
+  ,ReductTarget*const                 reduct_objs[]
   );
 
 /** \brief Apply an RTOp in SMPD mode with MPI to a set of columns to a set of
@@ -194,7 +194,7 @@ void  MPI_apply_op(
   ,const ConstSubVectorView<Scalar>         sub_vecs[]
   ,const int                                num_targ_vecs
   ,const SubVectorView<Scalar>              sub_targ_vecs[]
-  ,ReductTarget*                            reduct_objs[]
+  ,ReductTarget*const                       reduct_objs[]
   );
 
 } // end namespace RTOpPack

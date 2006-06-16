@@ -108,9 +108,9 @@ public:
   void applyOp(
     const RTOpPack::RTOpT<Scalar>    &op
     ,const int                       num_vecs
-    ,const VectorBase<Scalar>*       vecs[]
+    ,const VectorBase<Scalar>*const  vecs[]
     ,const int                       num_targ_vecs
-    ,VectorBase<Scalar>*             targ_vecs[]
+    ,VectorBase<Scalar>*const        targ_vecs[]
     ,RTOpPack::ReductTarget          *reduct_obj
     ,const Index                     first_ele
     ,const Index                     sub_dim

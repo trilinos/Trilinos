@@ -60,8 +60,8 @@ public:
   /** \brief . */
   virtual void reduce(
     const Ordinal     count
-    ,const T*         inBuffer[]
-    ,T*               inoutBuffer[]
+    ,const T*const     inBuffer[]
+    ,T*const           inoutBuffer[]
     ) const = 0;
 };
 

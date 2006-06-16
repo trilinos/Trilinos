@@ -146,31 +146,31 @@ public:
   //@{
   /** \brief . */
   void applyOp(
-    const RTOpPack::RTOpT<Scalar>   &primary_op
-    ,const int                      num_multi_vecs
-    ,const MultiVectorBase<Scalar>* multi_vecs[]
-    ,const int                      num_targ_multi_vecs
-    ,MultiVectorBase<Scalar>*       targ_multi_vecs[]
-    ,RTOpPack::ReductTarget*        reduct_objs[]
-    ,const Index                    primary_first_ele
-    ,const Index                    primary_sub_dim
-    ,const Index                    primary_global_offset
-    ,const Index                    secondary_first_ele
-    ,const Index                    secondary_sub_dim
+    const RTOpPack::RTOpT<Scalar>         &primary_op
+    ,const int                            num_multi_vecs
+    ,const MultiVectorBase<Scalar>*const  multi_vecs[]
+    ,const int                            num_targ_multi_vecs
+    ,MultiVectorBase<Scalar>*const        targ_multi_vecs[]
+    ,RTOpPack::ReductTarget*const         reduct_objs[]
+    ,const Index                          primary_first_ele
+    ,const Index                          primary_sub_dim
+    ,const Index                          primary_global_offset
+    ,const Index                          secondary_first_ele
+    ,const Index                          secondary_sub_dim
     ) const;
   /** \brief . */
   void acquireDetachedView(
-    const Range1D                       &rowRng
-    ,const Range1D                      &colRng
+    const Range1D                               &rowRng
+    ,const Range1D                              &colRng
     ,RTOpPack::ConstSubMultiVectorView<Scalar>  *sub_mv
     ) const;
   /** \brief . */
   void releaseDetachedView( RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv ) const;
   /** \brief . */
   void acquireDetachedView(
-    const Range1D                                &rowRng
-    ,const Range1D                               &colRng
-    ,RTOpPack::SubMultiVectorView<Scalar>    *sub_mv
+    const Range1D                           &rowRng
+    ,const Range1D                          &colRng
+    ,RTOpPack::SubMultiVectorView<Scalar>   *sub_mv
     );
   /** \brief . */
   void commitDetachedView( RTOpPack::SubMultiVectorView<Scalar>* sub_mv );
