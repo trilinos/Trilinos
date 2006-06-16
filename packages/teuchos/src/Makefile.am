@@ -83,7 +83,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
   $(srcdir)/Teuchos_MpiComm.hpp \
-  $(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
@@ -143,7 +142,6 @@ CORE = \
 	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
-  $(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \

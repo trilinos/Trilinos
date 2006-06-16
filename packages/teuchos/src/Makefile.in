@@ -117,7 +117,6 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp $(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
-	$(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp $(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
@@ -136,6 +135,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_Utils.cpp \
 	$(srcdir)/Teuchos_VerboseObject.cpp \
 	$(srcdir)/Teuchos_Workspace.cpp \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
 	$(srcdir)/Teuchos_FileInputSource.cpp \
 	$(srcdir)/Teuchos_FileInputStream.cpp \
@@ -159,10 +159,9 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_CompObject.$(OBJEXT) Teuchos_Describable.$(OBJEXT) \
 	Teuchos_dyn_cast.$(OBJEXT) Teuchos_ErrorPolling.$(OBJEXT) \
 	Teuchos_exit.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
-	Teuchos_GlobalMPISession.$(OBJEXT) \
-	Teuchos_MpiReductionOpSetter.$(OBJEXT) \
-	Teuchos_MPIComm.$(OBJEXT) Teuchos_MPISession.$(OBJEXT) \
-	Teuchos_Object.$(OBJEXT) Teuchos_ParameterEntry.$(OBJEXT) \
+	Teuchos_GlobalMPISession.$(OBJEXT) Teuchos_MPIComm.$(OBJEXT) \
+	Teuchos_MPISession.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
+	Teuchos_ParameterEntry.$(OBJEXT) \
 	Teuchos_ParameterList.$(OBJEXT) \
 	Teuchos_ParameterListAcceptor.$(OBJEXT) \
 	Teuchos_PerformanceMonitorUtils.$(OBJEXT) \
@@ -285,9 +284,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
-	$(srcdir)/Teuchos_MpiComm.hpp \
-	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
-	$(srcdir)/Teuchos_MPIComm.hpp \
+	$(srcdir)/Teuchos_MpiComm.hpp $(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp $(srcdir)/Teuchos_Object.hpp \
@@ -332,6 +329,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_VerboseObject.hpp \
 	$(srcdir)/Teuchos_VerbosityLevel.hpp \
 	$(srcdir)/Teuchos_Workspace.hpp $(srcdir)/Teuchos_Version.hpp \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.hpp \
 	$(srcdir)/Teuchos_FileInputSource.hpp \
 	$(srcdir)/Teuchos_FileInputStream.hpp \
@@ -544,7 +542,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
   $(srcdir)/Teuchos_MpiComm.hpp \
-  $(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
@@ -604,7 +601,6 @@ CORE = \
 	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
-  $(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
@@ -1100,22 +1096,6 @@ Teuchos_GlobalMPISession.obj: $(srcdir)/Teuchos_GlobalMPISession.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_GlobalMPISession.obj `if test -f '$(srcdir)/Teuchos_GlobalMPISession.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_GlobalMPISession.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_GlobalMPISession.cpp'; fi`
 
-Teuchos_MpiReductionOpSetter.o: $(srcdir)/Teuchos_MpiReductionOpSetter.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MpiReductionOpSetter.o -MD -MP -MF "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" -c -o Teuchos_MpiReductionOpSetter.o `test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MpiReductionOpSetter.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po"; else rm -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' object='Teuchos_MpiReductionOpSetter.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po' tmpdepfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MpiReductionOpSetter.o `test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MpiReductionOpSetter.cpp
-
-Teuchos_MpiReductionOpSetter.obj: $(srcdir)/Teuchos_MpiReductionOpSetter.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MpiReductionOpSetter.obj -MD -MP -MF "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" -c -o Teuchos_MpiReductionOpSetter.obj `if test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po"; else rm -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' object='Teuchos_MpiReductionOpSetter.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po' tmpdepfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MpiReductionOpSetter.obj `if test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; fi`
-
 Teuchos_MPIComm.o: $(srcdir)/Teuchos_MPIComm.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MPIComm.o -MD -MP -MF "$(DEPDIR)/Teuchos_MPIComm.Tpo" -c -o Teuchos_MPIComm.o `test -f '$(srcdir)/Teuchos_MPIComm.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MPIComm.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MPIComm.Tpo" "$(DEPDIR)/Teuchos_MPIComm.Po"; else rm -f "$(DEPDIR)/Teuchos_MPIComm.Tpo"; exit 1; fi
@@ -1435,6 +1415,22 @@ Teuchos_Workspace.obj: $(srcdir)/Teuchos_Workspace.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_Workspace.Po' tmpdepfile='$(DEPDIR)/Teuchos_Workspace.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_Workspace.obj `if test -f '$(srcdir)/Teuchos_Workspace.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_Workspace.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_Workspace.cpp'; fi`
+
+Teuchos_MpiReductionOpSetter.o: $(srcdir)/Teuchos_MpiReductionOpSetter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MpiReductionOpSetter.o -MD -MP -MF "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" -c -o Teuchos_MpiReductionOpSetter.o `test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MpiReductionOpSetter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po"; else rm -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' object='Teuchos_MpiReductionOpSetter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po' tmpdepfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MpiReductionOpSetter.o `test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MpiReductionOpSetter.cpp
+
+Teuchos_MpiReductionOpSetter.obj: $(srcdir)/Teuchos_MpiReductionOpSetter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MpiReductionOpSetter.obj -MD -MP -MF "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" -c -o Teuchos_MpiReductionOpSetter.obj `if test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po"; else rm -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' object='Teuchos_MpiReductionOpSetter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po' tmpdepfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MpiReductionOpSetter.obj `if test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; fi`
 
 Teuchos_ExpatHandlerAdapter.o: $(srcdir)/Teuchos_ExpatHandlerAdapter.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ExpatHandlerAdapter.o -MD -MP -MF "$(DEPDIR)/Teuchos_ExpatHandlerAdapter.Tpo" -c -o Teuchos_ExpatHandlerAdapter.o `test -f '$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp; \
