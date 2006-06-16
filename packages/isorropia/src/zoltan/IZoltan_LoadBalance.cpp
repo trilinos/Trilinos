@@ -24,6 +24,7 @@
 //
 // Current Owner  : $$
 //-------------------------------------------------------------------------
+#include <Isorropia_Exception.hpp>
 
 #include <IZoltan_LoadBalance.h>
 #include <IZoltan_QueryContainer.h>
@@ -45,6 +46,9 @@ Zoltan::LoadBalance::LoadBalance( int argc,
   ObjectID = ObjectCount++;
 
   int tmpReturn = Zoltan_Initialize( argc, argv, ver );
+  if (tmpReturn != ZOLTAN_OK) {
+    throw Isorropia::Exception("Zoltan::LoadBalance: ERROR in Zoltan_Initialize");
+  }
 }
 
 Zoltan::LoadBalance::~LoadBalance()

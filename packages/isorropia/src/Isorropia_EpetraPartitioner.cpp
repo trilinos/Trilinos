@@ -139,26 +139,26 @@ int EpetraPartitioner::newPartitionNumber(int myElem) const
 
 int EpetraPartitioner::numElemsInPartition(int partition) const
 {
-  int myPart = input_graph_->RowMap().Comm().MyPID();
+  int myPart = input_map_->Comm().MyPID();
   if (partition != myPart) {
     throw Isorropia::Exception("EpetraPartitioner::numElemsInPartition not implemented for non-local partitions.");
   }
 
-  return(myPart);
+  return(myNewElements_.size());
 }
 
 void
 EpetraPartitioner::elemsInPartition(int partition, int* elementList, int len) const
 {
-  int myPart = input_graph_->RowMap().Comm().MyPID();
+  int myPart = input_map_->Comm().MyPID();
   if (partition != myPart) {
     throw Isorropia::Exception("error in Epetra_Map::MyGlobalElements");
   }
 
-  int length = len;
+  unsigned length = len;
   if (myNewElements_.size() < length) length = myNewElements_.size();
 
-  for(int i=0; i<length; ++i) {
+  for(unsigned i=0; i<length; ++i) {
     elementList[i] = myNewElements_[i];
   }
 }
@@ -166,3 +166,4 @@ EpetraPartitioner::elemsInPartition(int partition, int* elementList, int len) co
 #endif //HAVE_EPETRA
 
 }//namespace Isorropia
+

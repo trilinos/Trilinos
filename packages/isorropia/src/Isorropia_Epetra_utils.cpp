@@ -122,6 +122,12 @@ repartition(const Epetra_BlockMap& input_map,
             std::map<int,int>& exports,
             std::map<int,int>& imports)
 {
+  if (!input_map.PointSameAs(weights.Map())) {
+    std::string str1("Epetra_Utils::repartition ERROR, input_map not ");
+    std::string str2("equivalent size/layout to weights.Map()");
+    throw Isorropia::Exception(str1+str2);
+  }
+
   const Epetra_Comm& input_comm = input_map.Comm();
 
   exports.clear();

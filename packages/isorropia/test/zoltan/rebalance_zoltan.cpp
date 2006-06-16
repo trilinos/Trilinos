@@ -178,10 +178,12 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
 
   if (verbose) {
     std::cout << " making sure local nnz ("<<num_nonzeros
-             <<") is the same on every proc...\n" << std::endl;
+             <<") is (nearly) the same on every proc...\n" << std::endl;
   }
 
-  if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
+  double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
+
+  if (std::abs(numerator/num_nonzeros) < 0.2 ) test_passed = true;
 
   int local_int_result = test_passed ? 1 : 0;
   int global_int_result;
@@ -269,10 +271,12 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
 
   if (verbose) {
     std::cout << " making sure local nnz ("<<num_nonzeros
-             <<") is the same on every proc...\n" << std::endl;
+             <<") is (nearly) the same on every proc...\n" << std::endl;
   }
 
-  if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
+  double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
+
+  if (std::abs(numerator/num_nonzeros) < 0.1 ) test_passed = true;
 
   int local_int_result = test_passed ? 1 : 0;
   int global_int_result;
@@ -352,10 +356,12 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
 
   if (verbose) {
     std::cout << " making sure local nnz ("<<num_nonzeros
-             <<") is the same on every proc...\n" << std::endl;
+             <<") is (nearly) the same on every proc...\n" << std::endl;
   }
 
-  if (num_nonzeros == avg_nnz_per_proc) test_passed = true;
+  double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
+
+  if (std::abs(numerator/num_nonzeros) < 0.1 ) test_passed = true;
 
   int local_int_result = test_passed ? 1 : 0;
   int global_int_result;

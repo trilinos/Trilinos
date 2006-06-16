@@ -54,18 +54,22 @@ class Epetra_LinearProblem;
 */
 namespace Isorropia {
 
+/** An Epetra-oriented implementation of the Partitioner interface.
+ */
 class EpetraPartitioner : public Partitioner {
 public:
   /**
-     Constructor that accepts an Epetra_CrsGraph object. (Other
-     constructors will accept other object types.)
+     Constructor that accepts an Epetra_CrsGraph object.
+     A Teuchos::RefCountPtr is used here because a reference to the
+     input object is held for the life of this object.
   */
   EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
                     const Teuchos::ParameterList& paramlist);
 
   /**
-     Constructor that accepts an Epetra_CrsGraph object. (Other
-     constructors will accept other object types.)
+     Constructor that accepts an Epetra_RowMatrix object.
+     A Teuchos::RefCountPtr is used here because a reference to the
+     input object is held for the life of this object.
   */
   EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
                     const Teuchos::ParameterList& paramlist);
@@ -73,14 +77,21 @@ public:
   /** Destructor */
   virtual ~EpetraPartitioner();
 
-  /** Set parameters from a Teuchos::ParameterList object.
+  /** Set parameters from a Teuchos::ParameterList object. The input
+      ParameterList object is copied into an internal ParameterList
+      attribute. The input paramlist object may be altered or
+      destroyed as soon as this method returns.
    */
   void setParameters(const Teuchos::ParameterList& paramlist);
 
-  /** Method which does the work...
+  /** Compute a rebalanced partitioning for the data in the object
+      that this class was constructed with.
    */
   void compute_partitioning();
 
+  /** Query whether the method compute_partitioning() has already been
+      called on this class instance.
+  */
   bool partitioning_already_computed() const;
 
   /** Return the new partition ID for a given element that
@@ -89,11 +100,13 @@ public:
   int newPartitionNumber(int myElem) const;
 
   /** Return the number of elements in a given partition.
+      (Currently only implemented for the case where 'partition' is local.)
   */
   int numElemsInPartition(int partition) const;
 
   /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
+      (Currently only implemented for the case where 'partition' is local.)
   */
   void elemsInPartition(int partition, int* elementList, int len) const;
 

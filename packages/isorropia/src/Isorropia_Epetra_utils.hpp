@@ -55,6 +55,7 @@ namespace Isorropia {
 namespace Epetra_Utils {
 
 #ifdef HAVE_EPETRA
+
 /** Given a Partitioner object, create a target map representing the
    new partitioning.
    This function calls partitioner.compute_partitioning() if it has not
@@ -75,8 +76,26 @@ Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
 */
 Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
 
-/** Calculate a new partitioning, and fill lists with new elements for
-    the local partition, as well as export and import lists.
+/** Calculate a new partitioning, and fill output containers with new
+    elements for the local partition, as well as export and import lists.
+
+    \param input_map Input map describing the existing or 'old' partitioning.
+
+    \param weights Input vector giving a weight for each element in input_map.
+    weights.Map() is required to be the same size and layout as input_map.
+
+    \param myNewElements Output vector containing all elements that will
+    reside on the local partition in the new partitioning.
+
+    \param exports Output map contains set of export elements, and maps them
+    to the processors that they are to be exported to.
+
+    \param imports Output map contains set of import elements, and maps them
+    to the processors that they are to be imported from.
+
+    \return Error-code, 0 if successful. This probably should be a void
+    function, since a serious error will result in an exception-throw
+    rather than an integer-code error-return.
 */
 int
 repartition(const Epetra_BlockMap& input_map,

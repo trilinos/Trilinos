@@ -126,7 +126,7 @@ int Isorropia::ZoltanQuery::Number_Edges  ( void * data,
 {
   int LocalRow = graph_.LRID( *global_id );
 
-  if( LocalRow != -1 && LocalRow == *local_id )
+  if( LocalRow != -1 && LocalRow == (int)*local_id )
   {
     *ierr = ZOLTAN_OK;
 

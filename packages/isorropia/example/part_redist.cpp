@@ -29,7 +29,7 @@
 
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_LinearProblem
-//object, and using Isorropia to rebalance it.
+//object, and using Isorropia to create a rebalanced copy of it.
 //--------------------------------------------------------------------
 
 //Include Isorropia_Exception.hpp only because the helper functions at
@@ -39,7 +39,7 @@
 
 //The Isorropia symbols being demonstrated are declared
 //in these headers:
-#include <Isorropia_Partitioner.hpp>
+#include <Isorropia_EpetraPartitioner.hpp>
 #include <Isorropia_Redistributor.hpp>
 
 #ifdef HAVE_MPI
@@ -90,8 +90,7 @@ int main(int argc, char** argv) {
 
   //We'll need a Teuchos::ParameterList object to pass to the
   //Isorropia::Partitioner class.
-  Teuchos::RefCountPtr<Teuchos::ParameterList> paramlist =
-    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList paramlist;
 
   //(We won't pass any parameters in this example. But if we wanted
   // the Zoltan package to be used for the partitioning operation, we
@@ -99,7 +98,7 @@ int main(int argc, char** argv) {
   //       paramlist->set("Balancing package", "Zoltan");
 
   //We also need to pass a Epetra_CrsGraph object to the
-  //Isorropia::Partitioner class. (This requirement may be removed in
+  //Isorropia::EpetraPartitioner class. (This requirement may be removed in
   //the future...) So next we'll get the row-matrix from the linear-
   //problem, cast it to a crs-matrix, then obtain the crs-graph and
   //wrap that in a Teuchos::RefCountPtr.
@@ -114,9 +113,8 @@ int main(int argc, char** argv) {
 
   //Now create the partitioner object...
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::Partitioner(graph, paramlist));
+    Teuchos::rcp(new Isorropia::EpetraPartitioner(graph, paramlist));
 
-  partitioner->compute_partitioning();
 
   //Next create a Redistributor object and use it to create balanced
   //copies of the objects in linprob. By default, the result matrix is
@@ -130,7 +128,7 @@ int main(int argc, char** argv) {
   Teuchos::RefCountPtr<Epetra_MultiVector> bal_b;
 
   //Use a try-catch block because Isorropia will throw an exception
-  //if it encounters a fatal error.
+  //if it encounters an error.
 
   if (localProc == 0) {
     std::cout << " calling Isorropia::Redistributor::redistribute..."

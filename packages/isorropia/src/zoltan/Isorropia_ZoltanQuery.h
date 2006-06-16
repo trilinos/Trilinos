@@ -58,12 +58,15 @@ class ZoltanQuery : public Zoltan::QueryObject
 
  public:
 
-  ///
   /** Constructor
    */
   ZoltanQuery( const Epetra_CrsGraph & graph,
                const Epetra_CrsGraph * tgraph = 0,
                bool localEdgesOnly = false );
+
+  /** Destructor
+   */
+  virtual ~ZoltanQuery() {}
 
   //General Functions
   int Number_Objects  ( void * data,

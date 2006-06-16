@@ -55,6 +55,10 @@ class Epetra_DistObject;
 namespace Isorropia {
   class Partitioner;
 
+/** Class which is constructed with a Partitioner instance, and
+     provides several methods for redistributing Epetra objects
+     given the partitioning computed by the Partitioner object.
+*/
 class Redistributor {
 public:
   /** Constructor.
