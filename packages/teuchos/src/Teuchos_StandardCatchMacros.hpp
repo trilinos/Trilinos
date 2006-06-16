@@ -54,16 +54,22 @@
  */
 #define TEUCHOS_STANDARD_CATCH_STATEMENTS(VERBOSE,ERR_STREAM,SUCCESS_FLAG) \
 	catch( const std::exception &excpt ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) \
+		if((VERBOSE)) { \
+      std::ostringstream oss; \
+      oss \
         << "p="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught standard exception of type \'" \
         <<typeid(excpt).name()<<"\' : " << excpt.what() << std::endl; \
+      (ERR_STREAM) << oss.str(); \
     (SUCCESS_FLAG) = false; \
+    } \
 	} \
 	catch( ... ) { \
-		if((VERBOSE)) \
-			(ERR_STREAM) << "p="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown exception\n"; \
-    (SUCCESS_FLAG) = false; \
+		if((VERBOSE)) { \
+      std::ostringstream oss; \
+      oss << "p="<<::Teuchos::GlobalMPISession::getRank()<<": *** Caught an unknown exception\n"; \
+      (ERR_STREAM) << oss.str(); \
+      (SUCCESS_FLAG) = false; \
+    } \
 	}
 
 #endif // TEUCHOS_STANDARD_CATCH_MACROS_HPP
