@@ -149,6 +149,27 @@ namespace Teuchos {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
   template<>
+  struct ScalarTraits<char>
+  {
+    typedef char magnitudeType;
+		static const bool isComplex = false;
+		static const bool isComparable = true;
+		static const bool hasMachineParameters = false;
+    // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
+    static inline magnitudeType magnitude(char a) { return ::abs(a); };
+    static inline char zero()  { return 0; };
+    static inline char one()   { return 1; };
+    static inline char conjugate(char x) { return x; };
+    static inline char real(char x) { return x; };
+    static inline char imag(char x) { return 0; };
+    static inline void seedrandom(unsigned int s) { srand(s); };
+    //static inline char random() { return (-1 + 2*rand()); };  // RAB: This version should be used to be consistent with others
+    static inline char random() { return rand(); };             // RAB: This version should be used for an unsigned char, not char
+    static inline std::string name() { return "char"; };
+    static inline char squareroot(char x) { return (char) ::sqrt((double) x); };
+  };
+
+  template<>
   struct ScalarTraits<int>
   {
     typedef int magnitudeType;

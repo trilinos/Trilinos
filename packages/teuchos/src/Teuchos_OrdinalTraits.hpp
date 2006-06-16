@@ -82,6 +82,24 @@ namespace Teuchos {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
 	template<>
+	struct OrdinalTraits<char> {
+
+		static const bool hasMachineParameters = false;
+		static inline char zero()                   {return(0);};
+		static inline char one()                    {return(1);};
+		static inline std::string name()           {return("char");};
+	};
+
+	template<>
+	struct OrdinalTraits<short int> {
+
+		static const bool hasMachineParameters = false;
+		static inline short int zero()                   {return(0);};
+		static inline short int one()                    {return(1);};
+		static inline std::string name()           {return("short int");};
+	};
+
+	template<>
 	struct OrdinalTraits<int> {
 
 		static const bool hasMachineParameters = false;

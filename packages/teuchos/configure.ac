@@ -594,6 +594,14 @@ fi
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, boost, [Enable support for some of boost], TEUCHOS_BOOST, no)
 AM_CONDITIONAL(HAVE_TEUCHOS_BOOST, [test "X$ac_cv_use_teuchos_boost" != "Xno"])
 
+#
+# --enable-teuchos-comm-timers
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, comm-timers, [Enable timers for Teuchos::Comm related software], 
+		TEUCHOS_COMM_TIMERS, yes )
+AM_CONDITIONAL(HAVE_TEUCHOS_COMM_TIMERS, [test "X$ac_cv_use_teuchos_comm-timers" != "Xno"])
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
@@ -729,6 +737,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		test/Makefile
 		test/BLAS/Makefile
+		test/Comm/Makefile
 		test/LAPACK/Makefile
 		test/DenseMatrix/Makefile
 		test/dyn_cast/Makefile

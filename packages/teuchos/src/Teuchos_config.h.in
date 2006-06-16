@@ -198,6 +198,9 @@
 /* Define if want to build teuchos-boost */
 #undef HAVE_TEUCHOS_BOOST
 
+/* Define if want to build teuchos-comm-timers */
+#undef HAVE_TEUCHOS_COMM_TIMERS
+
 /* Define if want to build teuchos-complex */
 #undef HAVE_TEUCHOS_COMPLEX
 

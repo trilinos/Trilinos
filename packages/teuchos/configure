@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE HAVE_TEUCHOS_BOOST_TRUE HAVE_TEUCHOS_BOOST_FALSE FLIBS BLAS_LIBS LAPACK_LIBS USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE TRILINOS_TEMPLATE_OBJS ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR USE_ALTERNATE_AR CXXCPP EGREP BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE HAVE_TEUCHOS_COMPLEX_TRUE HAVE_TEUCHOS_COMPLEX_FALSE HAVE_TEUCHOS_EXTENDED_TRUE HAVE_TEUCHOS_EXTENDED_FALSE HAVE_TEUCHOS_BOOST_TRUE HAVE_TEUCHOS_BOOST_FALSE HAVE_TEUCHOS_COMM_TIMERS_TRUE HAVE_TEUCHOS_COMM_TIMERS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE TRILINOS_TEMPLATE_OBJS ac_aux_dir TEUCHOS_BUILD_DIRECTORY MPI_LIBS MPI_LIBDIR MPI_INC MPI_DIR LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -905,6 +905,9 @@ Optional Features:
                           Enable Teuchos interface support for the LibXML2
                           Library (default is no)
   --enable-teuchos-boost  Enable support for some of boost (default is no)
+  --enable-teuchos-comm-timers
+                          Enable timers for Teuchos::Comm related software
+                          (default is yes, )
   --enable-export-makefiles
                           Creates export makefiles in the install (prefix)
                           directory. This option requires perl to be set in
@@ -3837,7 +3840,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3840:" \
+echo "$as_me:3843:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9813,6 +9816,46 @@ else
 fi
 
 
+#
+# --enable-teuchos-comm-timers
+#
+
+
+# Check whether --enable-teuchos-comm-timers or --disable-teuchos-comm-timers was given.
+if test "${enable_teuchos_comm_timers+set}" = set; then
+  enableval="$enable_teuchos_comm_timers"
+  ac_cv_use_teuchos_comm-timers=$enableval
+else
+  ac_cv_use_teuchos_comm-timers=yes
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos-comm-timers" >&5
+echo $ECHO_N "checking whether to use teuchos-comm-timers... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos_comm-timers" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS_COMM_TIMERS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_teuchos_comm-timers" != "Xno"; then
+  HAVE_TEUCHOS_COMM_TIMERS_TRUE=
+  HAVE_TEUCHOS_COMM_TIMERS_FALSE='#'
+else
+  HAVE_TEUCHOS_COMM_TIMERS_TRUE='#'
+  HAVE_TEUCHOS_COMM_TIMERS_FALSE=
+fi
+
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------
@@ -9872,7 +9915,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:9875: \"$ac_link\") >&5
+(eval echo $as_me:9918: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -9950,7 +9993,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:9953: \"$ac_link\") >&5
+(eval echo $as_me:9996: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -12985,7 +13028,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:12988: \"$ac_link\") >&5
+(eval echo $as_me:13031: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13063,7 +13106,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:13066: \"$ac_link\") >&5
+(eval echo $as_me:13109: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -13314,7 +13357,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.teuchos src/Makefile test/Makefile test/BLAS/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/exit/Makefile test/FancyOutputting/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/Workspace/Makefile test/Polling/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/run-teuchos-tests.pl test/scripts/daily/mpi/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile"
+                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.teuchos src/Makefile test/Makefile test/BLAS/Makefile test/Comm/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/exit/Makefile test/FancyOutputting/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/Workspace/Makefile test/Polling/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/run-teuchos-tests.pl test/scripts/daily/mpi/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -13496,6 +13539,13 @@ if test -z "${HAVE_TEUCHOS_BOOST_TRUE}" && test -z "${HAVE_TEUCHOS_BOOST_FALSE}"
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_BOOST\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_TEUCHOS_BOOST\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_TEUCHOS_COMM_TIMERS_TRUE}" && test -z "${HAVE_TEUCHOS_COMM_TIMERS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_TEUCHOS_COMM_TIMERS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_TEUCHOS_COMM_TIMERS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -13970,6 +14020,7 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/BLAS/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/BLAS/Makefile" ;;
+  "test/Comm/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Comm/Makefile" ;;
   "test/LAPACK/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/LAPACK/Makefile" ;;
   "test/DenseMatrix/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/DenseMatrix/Makefile" ;;
   "test/dyn_cast/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/dyn_cast/Makefile" ;;
@@ -14170,6 +14221,8 @@ s,@HAVE_TEUCHOS_EXTENDED_TRUE@,$HAVE_TEUCHOS_EXTENDED_TRUE,;t t
 s,@HAVE_TEUCHOS_EXTENDED_FALSE@,$HAVE_TEUCHOS_EXTENDED_FALSE,;t t
 s,@HAVE_TEUCHOS_BOOST_TRUE@,$HAVE_TEUCHOS_BOOST_TRUE,;t t
 s,@HAVE_TEUCHOS_BOOST_FALSE@,$HAVE_TEUCHOS_BOOST_FALSE,;t t
+s,@HAVE_TEUCHOS_COMM_TIMERS_TRUE@,$HAVE_TEUCHOS_COMM_TIMERS_TRUE,;t t
+s,@HAVE_TEUCHOS_COMM_TIMERS_FALSE@,$HAVE_TEUCHOS_COMM_TIMERS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t

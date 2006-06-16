@@ -26,21 +26,20 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
-	@echo ""
-	@echo "Trilinos package teuchos subdirectory test built successfully."
-	@echo ""
+include $(top_builddir)/Makefile.export.teuchos
 
-if HAVE_TEUCHOS_EXTENDED
-CONTAINERS_SUBDIR = Containers
-XML_SUBDIR = XML
-FANCY_OUTPUTTING_SUBDIR = FancyOutputting
-endif
-STANDARD_SUBDIRS = scripts BLAS DenseMatrix dyn_cast exit LAPACK ParameterList RefCountPtr Time Workspace Polling Comm
+bin_PROGRAMS = Comm_test
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR) $(FANCY_OUTPUTTING_SUBDIR)
+Comm_test_SOURCES = \
+	$(srcdir)/Comm_test.cpp
 
-EXTRA_DIST = definition
+Comm_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
+Comm_test_LDADD = $(TEUCHOS_LIBS)
+
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
+
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =

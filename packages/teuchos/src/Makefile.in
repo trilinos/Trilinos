@@ -117,9 +117,9 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_ErrorPolling.cpp $(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
-	$(srcdir)/Teuchos_MPIComm.cpp \
-	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \
-	$(srcdir)/Teuchos_MPISession.cpp $(srcdir)/Teuchos_Object.cpp \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
+	$(srcdir)/Teuchos_MPIComm.cpp $(srcdir)/Teuchos_MPISession.cpp \
+	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
@@ -159,10 +159,10 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_CompObject.$(OBJEXT) Teuchos_Describable.$(OBJEXT) \
 	Teuchos_dyn_cast.$(OBJEXT) Teuchos_ErrorPolling.$(OBJEXT) \
 	Teuchos_exit.$(OBJEXT) Teuchos_Flops.$(OBJEXT) \
-	Teuchos_GlobalMPISession.$(OBJEXT) Teuchos_MPIComm.$(OBJEXT) \
-	Teuchos_MPIReductionOpBase.$(OBJEXT) \
-	Teuchos_MPISession.$(OBJEXT) Teuchos_Object.$(OBJEXT) \
-	Teuchos_ParameterEntry.$(OBJEXT) \
+	Teuchos_GlobalMPISession.$(OBJEXT) \
+	Teuchos_MpiReductionOpSetter.$(OBJEXT) \
+	Teuchos_MPIComm.$(OBJEXT) Teuchos_MPISession.$(OBJEXT) \
+	Teuchos_Object.$(OBJEXT) Teuchos_ParameterEntry.$(OBJEXT) \
 	Teuchos_ParameterList.$(OBJEXT) \
 	Teuchos_ParameterListAcceptor.$(OBJEXT) \
 	Teuchos_PerformanceMonitorUtils.$(OBJEXT) \
@@ -174,8 +174,9 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) \
 	Teuchos_TimeMonitor.$(OBJEXT) Teuchos_Utils.$(OBJEXT) \
 	Teuchos_VerboseObject.$(OBJEXT) Teuchos_Workspace.$(OBJEXT)
 am__objects_2 =
-@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
-am__objects_4 = Teuchos_ExpatHandlerAdapter.$(OBJEXT) \
+am__objects_3 = Teuchos_MpiReductionOpSetter.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
+am__objects_5 = Teuchos_ExpatHandlerAdapter.$(OBJEXT) \
 	Teuchos_FileInputSource.$(OBJEXT) \
 	Teuchos_FileInputStream.$(OBJEXT) Teuchos_HashUtils.$(OBJEXT) \
 	Teuchos_Libxml2HandlerAdapter.$(OBJEXT) \
@@ -190,10 +191,10 @@ am__objects_4 = Teuchos_ExpatHandlerAdapter.$(OBJEXT) \
 	Teuchos_XMLParameterListReader.$(OBJEXT) \
 	Teuchos_XMLParameterListWriter.$(OBJEXT) \
 	Teuchos_XMLParser.$(OBJEXT)
-@HAVE_TEUCHOS_EXTENDED_TRUE@am__objects_5 = $(am__objects_4)
+@HAVE_TEUCHOS_EXTENDED_TRUE@am__objects_6 = $(am__objects_5)
 am_libteuchos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
-	$(am__objects_2) $(am__objects_3) $(am__objects_5)
+	$(am__objects_2) $(am__objects_4) $(am__objects_6)
 libteuchos_a_OBJECTS = $(am_libteuchos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -211,8 +212,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_HashUtils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Libxml2HandlerAdapter.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_MPIComm.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_MPIReductionOpBase.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_MPISession.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_Object.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterEntry.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Teuchos_ParameterList.Po \
@@ -251,6 +252,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libteuchos_a_SOURCES) $(EXTRA_libteuchos_a_SOURCES)
 DIST_SOURCES = $(am__libteuchos_a_SOURCES_DIST) \
 	$(EXTRA_libteuchos_a_SOURCES)
@@ -260,12 +265,15 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_arrayArg.hpp \
 	$(srcdir)/Teuchos_basic_oblackholestream.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp $(srcdir)/Teuchos_BLAS_wrappers.hpp \
-	$(srcdir)/Teuchos_BLAS_types.hpp \
+	$(srcdir)/Teuchos_BLAS_types.hpp $(srcdir)/Teuchos_Comm.hpp \
+	$(srcdir)/Teuchos_CommHelpers.hpp \
+	$(srcdir)/Teuchos_CommUtilities.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
 	$(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
+	$(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
@@ -277,16 +285,20 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
+	$(srcdir)/Teuchos_MpiComm.hpp \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
-	$(srcdir)/Teuchos_MPIReductionOpBase.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp $(srcdir)/Teuchos_Object.hpp \
+	$(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
+	$(srcdir)/Teuchos_ReductionOp.hpp \
+	$(srcdir)/Teuchos_ReductionOpHelpers.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
@@ -300,6 +312,11 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
+	$(srcdir)/Teuchos_SerialComm.hpp \
+	$(srcdir)/Teuchos_SerializationTraits.hpp \
+	$(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
+	$(srcdir)/Teuchos_Serializer.hpp \
+	$(srcdir)/Teuchos_SerializerHelpers.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
@@ -378,6 +395,8 @@ HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
 HAVE_TEUCHOS_BOOST_FALSE = @HAVE_TEUCHOS_BOOST_FALSE@
 HAVE_TEUCHOS_BOOST_TRUE = @HAVE_TEUCHOS_BOOST_TRUE@
+HAVE_TEUCHOS_COMM_TIMERS_FALSE = @HAVE_TEUCHOS_COMM_TIMERS_FALSE@
+HAVE_TEUCHOS_COMM_TIMERS_TRUE = @HAVE_TEUCHOS_COMM_TIMERS_TRUE@
 HAVE_TEUCHOS_COMPLEX_FALSE = @HAVE_TEUCHOS_COMPLEX_FALSE@
 HAVE_TEUCHOS_COMPLEX_TRUE = @HAVE_TEUCHOS_COMPLEX_TRUE@
 HAVE_TEUCHOS_EXTENDED_FALSE = @HAVE_TEUCHOS_EXTENDED_FALSE@
@@ -475,7 +494,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 
-#np# Note the following paragraph.
+# Note the following paragraph.
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
@@ -484,13 +503,13 @@ target_vendor = @target_vendor@
 # ------------------------------------------------------------------------
 
 #
-#np# There is, at present, no distinction between most of the categories, 
-#np# other than those which start with EXTRA_.  All categories which do not
-#np# start with EXTRA_ are included in all builds.  Categories which start
-#np# with EXTRA_ are included in some builds (typically controlled by 
-#np# --with-xyz or --without-xyz)
+# There is, at present, no distinction between most of the categories, 
+# other than those which start with EXTRA_.  All categories which do not
+# start with EXTRA_ are included in all builds.  Categories which start
+# with EXTRA_ are included in some builds (typically controlled by 
+# --with-xyz or --without-xyz)
 #
-#np# Make sure to list all source files in one of the following categories.
+# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
@@ -501,11 +520,15 @@ CORE_H = \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
+	$(srcdir)/Teuchos_Comm.hpp \
+  $(srcdir)/Teuchos_CommHelpers.hpp \
+  $(srcdir)/Teuchos_CommUtilities.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
   $(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
+  $(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
@@ -520,17 +543,21 @@ CORE_H = \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
+  $(srcdir)/Teuchos_MpiComm.hpp \
+  $(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
-	$(srcdir)/Teuchos_MPIReductionOpBase.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
+  $(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
+  $(srcdir)/Teuchos_ReductionOp.hpp \
+  $(srcdir)/Teuchos_ReductionOpHelpers.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
@@ -539,11 +566,17 @@ CORE_H = \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
+	$(srcdir)/Teuchos_ReductionOp.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
+	$(srcdir)/Teuchos_SerialComm.hpp \
+  $(srcdir)/Teuchos_SerializationTraits.hpp \
+  $(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
+  $(srcdir)/Teuchos_Serializer.hpp \
+  $(srcdir)/Teuchos_SerializerHelpers.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
@@ -571,8 +604,8 @@ CORE = \
 	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
+  $(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
-	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
@@ -646,14 +679,19 @@ SERIAL_H =
 SERIAL = 
 
 #
-#np#  Files which are included in select builds are typically have
-#np#  names that start with EXTRA
+#  Files which are included in select builds are typically have
+#  names that start with EXTRA
 #
-#np#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
-#np#  set up by TAC_ARC_CONFIG_MPI 
+#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
+#  set up by TAC_ARC_CONFIG_MPI 
 #
-EXTRA_MPI_H = 
-EXTRA_MPI = 
+EXTRA_MPI_H = \
+	$(srcdir)/Teuchos_MpiComm.hpp \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp 
+
+EXTRA_MPI = \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.cpp 
+
 @HAVE_MPI_FALSE@MPI_H = 
 @HAVE_MPI_TRUE@MPI_H = \
 @HAVE_MPI_TRUE@	$(EXTRA_MPI_H)
@@ -678,16 +716,16 @@ DIST =
 COMP_H = 
 COMP = 
 
-#np# The following section can be duplicated for building multiple libraries -
-#np# make sure to list the correct categories with each library.
-#np# replace teuchos with the name of the package being autotool'ed here
+# The following section can be duplicated for building multiple libraries -
+# make sure to list the correct categories with each library.
+# replace teuchos with the name of the package being autotool'ed here
 # ------------------------------------------------------------------------
 # Teuchos library specifications
 # ------------------------------------------------------------------------
-#np# replace teuchos with the name of the package being autotool'ed here
+# replace teuchos with the name of the package being autotool'ed here
 TEUCHOS_LIB = libteuchos.a
 
-#np# replace new_package with the name of the package being autotool'ed here
+# replace new_package with the name of the package being autotool'ed here
 TEUCHOS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
@@ -701,7 +739,7 @@ TEUCHOS_H = \
 	$(EXTENDED_H)
 
 
-#np# replace new_package with the name of the package being autotool'ed here
+# replace new_package with the name of the package being autotool'ed here
 libteuchos_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
@@ -713,7 +751,7 @@ libteuchos_a_SOURCES = \
 	$(EXTENDED)
 
 
-#np# replace new_package with the name of the package being autotool'ed here
+# replace new_package with the name of the package being autotool'ed here
 EXTRA_libteuchos_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) \
@@ -866,8 +904,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_HashUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Libxml2HandlerAdapter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_MPIComm.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_MPIReductionOpBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_MPISession.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_Object.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterEntry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterList.Po@am__quote@
@@ -1062,6 +1100,22 @@ Teuchos_GlobalMPISession.obj: $(srcdir)/Teuchos_GlobalMPISession.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_GlobalMPISession.obj `if test -f '$(srcdir)/Teuchos_GlobalMPISession.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_GlobalMPISession.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_GlobalMPISession.cpp'; fi`
 
+Teuchos_MpiReductionOpSetter.o: $(srcdir)/Teuchos_MpiReductionOpSetter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MpiReductionOpSetter.o -MD -MP -MF "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" -c -o Teuchos_MpiReductionOpSetter.o `test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MpiReductionOpSetter.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po"; else rm -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' object='Teuchos_MpiReductionOpSetter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po' tmpdepfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MpiReductionOpSetter.o `test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MpiReductionOpSetter.cpp
+
+Teuchos_MpiReductionOpSetter.obj: $(srcdir)/Teuchos_MpiReductionOpSetter.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MpiReductionOpSetter.obj -MD -MP -MF "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" -c -o Teuchos_MpiReductionOpSetter.obj `if test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo" "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po"; else rm -f "$(DEPDIR)/Teuchos_MpiReductionOpSetter.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MpiReductionOpSetter.cpp' object='Teuchos_MpiReductionOpSetter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.Po' tmpdepfile='$(DEPDIR)/Teuchos_MpiReductionOpSetter.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MpiReductionOpSetter.obj `if test -f '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MpiReductionOpSetter.cpp'; fi`
+
 Teuchos_MPIComm.o: $(srcdir)/Teuchos_MPIComm.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MPIComm.o -MD -MP -MF "$(DEPDIR)/Teuchos_MPIComm.Tpo" -c -o Teuchos_MPIComm.o `test -f '$(srcdir)/Teuchos_MPIComm.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MPIComm.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MPIComm.Tpo" "$(DEPDIR)/Teuchos_MPIComm.Po"; else rm -f "$(DEPDIR)/Teuchos_MPIComm.Tpo"; exit 1; fi
@@ -1077,22 +1131,6 @@ Teuchos_MPIComm.obj: $(srcdir)/Teuchos_MPIComm.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MPIComm.Po' tmpdepfile='$(DEPDIR)/Teuchos_MPIComm.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MPIComm.obj `if test -f '$(srcdir)/Teuchos_MPIComm.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MPIComm.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MPIComm.cpp'; fi`
-
-Teuchos_MPIReductionOpBase.o: $(srcdir)/Teuchos_MPIReductionOpBase.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MPIReductionOpBase.o -MD -MP -MF "$(DEPDIR)/Teuchos_MPIReductionOpBase.Tpo" -c -o Teuchos_MPIReductionOpBase.o `test -f '$(srcdir)/Teuchos_MPIReductionOpBase.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MPIReductionOpBase.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MPIReductionOpBase.Tpo" "$(DEPDIR)/Teuchos_MPIReductionOpBase.Po"; else rm -f "$(DEPDIR)/Teuchos_MPIReductionOpBase.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MPIReductionOpBase.cpp' object='Teuchos_MPIReductionOpBase.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MPIReductionOpBase.Po' tmpdepfile='$(DEPDIR)/Teuchos_MPIReductionOpBase.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MPIReductionOpBase.o `test -f '$(srcdir)/Teuchos_MPIReductionOpBase.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MPIReductionOpBase.cpp
-
-Teuchos_MPIReductionOpBase.obj: $(srcdir)/Teuchos_MPIReductionOpBase.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MPIReductionOpBase.obj -MD -MP -MF "$(DEPDIR)/Teuchos_MPIReductionOpBase.Tpo" -c -o Teuchos_MPIReductionOpBase.obj `if test -f '$(srcdir)/Teuchos_MPIReductionOpBase.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MPIReductionOpBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MPIReductionOpBase.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Teuchos_MPIReductionOpBase.Tpo" "$(DEPDIR)/Teuchos_MPIReductionOpBase.Po"; else rm -f "$(DEPDIR)/Teuchos_MPIReductionOpBase.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_MPIReductionOpBase.cpp' object='Teuchos_MPIReductionOpBase.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Teuchos_MPIReductionOpBase.Po' tmpdepfile='$(DEPDIR)/Teuchos_MPIReductionOpBase.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_MPIReductionOpBase.obj `if test -f '$(srcdir)/Teuchos_MPIReductionOpBase.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_MPIReductionOpBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_MPIReductionOpBase.cpp'; fi`
 
 Teuchos_MPISession.o: $(srcdir)/Teuchos_MPISession.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_MPISession.o -MD -MP -MF "$(DEPDIR)/Teuchos_MPISession.Tpo" -c -o Teuchos_MPISession.o `test -f '$(srcdir)/Teuchos_MPISession.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_MPISession.cpp; \

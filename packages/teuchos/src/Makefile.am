@@ -33,7 +33,7 @@ all-local:
 	@echo "Trilinos package teuchos subdirectory src built successfully."
 	@echo ""
 
-#np# Note the following paragraph.
+# Note the following paragraph.
 # ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
@@ -42,13 +42,13 @@ all-local:
 # ------------------------------------------------------------------------
 
 #
-#np# There is, at present, no distinction between most of the categories, 
-#np# other than those which start with EXTRA_.  All categories which do not
-#np# start with EXTRA_ are included in all builds.  Categories which start
-#np# with EXTRA_ are included in some builds (typically controlled by 
-#np# --with-xyz or --without-xyz)
+# There is, at present, no distinction between most of the categories, 
+# other than those which start with EXTRA_.  All categories which do not
+# start with EXTRA_ are included in all builds.  Categories which start
+# with EXTRA_ are included in some builds (typically controlled by 
+# --with-xyz or --without-xyz)
 #
-#np# Make sure to list all source files in one of the following categories.
+# Make sure to list all source files in one of the following categories.
 CORE_H = \
 	$(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_AbstractFactoryStd.hpp \
@@ -59,11 +59,15 @@ CORE_H = \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_BLAS_types.hpp \
+	$(srcdir)/Teuchos_Comm.hpp \
+  $(srcdir)/Teuchos_CommHelpers.hpp \
+  $(srcdir)/Teuchos_CommUtilities.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
 	$(srcdir)/Teuchos_CompileTimeAssert.hpp \
 	$(srcdir)/Teuchos_CompObject.hpp \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
   $(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
+  $(srcdir)/Teuchos_DefaultComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
@@ -78,17 +82,21 @@ CORE_H = \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
+  $(srcdir)/Teuchos_MpiComm.hpp \
+  $(srcdir)/Teuchos_MpiReductionOpSetter.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
-	$(srcdir)/Teuchos_MPIReductionOpBase.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
 	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
+  $(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_PrimitiveTypeTraits.hpp \
+  $(srcdir)/Teuchos_ReductionOp.hpp \
+  $(srcdir)/Teuchos_ReductionOpHelpers.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.hpp \
 	$(srcdir)/Teuchos_PolynomialTraits.hpp \
@@ -97,11 +105,17 @@ CORE_H = \
 	$(srcdir)/Teuchos_PromotionTraits.hpp \
 	$(srcdir)/Teuchos_Range1D.hpp \
 	$(srcdir)/Teuchos_RawMPITraits.hpp \
+	$(srcdir)/Teuchos_ReductionOp.hpp \
 	$(srcdir)/Teuchos_RefCountPtrDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtr.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
+	$(srcdir)/Teuchos_SerialComm.hpp \
+  $(srcdir)/Teuchos_SerializationTraits.hpp \
+  $(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
+  $(srcdir)/Teuchos_Serializer.hpp \
+  $(srcdir)/Teuchos_SerializerHelpers.hpp \
 	$(srcdir)/Teuchos_SerialDenseMatrix.hpp \
 	$(srcdir)/Teuchos_SerialDenseVector.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
@@ -129,8 +143,8 @@ CORE = \
 	$(srcdir)/Teuchos_exit.cpp \
 	$(srcdir)/Teuchos_Flops.cpp \
 	$(srcdir)/Teuchos_GlobalMPISession.cpp \
+  $(srcdir)/Teuchos_MpiReductionOpSetter.cpp \
 	$(srcdir)/Teuchos_MPIComm.cpp \
-	$(srcdir)/Teuchos_MPIReductionOpBase.cpp \
 	$(srcdir)/Teuchos_MPISession.cpp \
 	$(srcdir)/Teuchos_Object.cpp \
 	$(srcdir)/Teuchos_ParameterEntry.cpp \
@@ -173,7 +187,6 @@ EXTRA_EXTENDED_H = \
 	$(srcdir)/Teuchos_XMLParameterListWriter.hpp \
 	$(srcdir)/Teuchos_XMLParser.hpp
 
-
 EXTRA_EXTENDED = \
 	$(srcdir)/Teuchos_ExpatHandlerAdapter.cpp \
 	$(srcdir)/Teuchos_FileInputSource.cpp \
@@ -210,15 +223,18 @@ SERIAL_H =
 SERIAL = 
 
 #
-#np#  Files which are included in select builds are typically have
-#np#  names that start with EXTRA
+#  Files which are included in select builds are typically have
+#  names that start with EXTRA
 #
-#np#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
-#np#  set up by TAC_ARC_CONFIG_MPI 
+#  EXTRA_MPI is control by --with-mpi and --without-mpi which is
+#  set up by TAC_ARC_CONFIG_MPI 
 #
-EXTRA_MPI_H =
+EXTRA_MPI_H = \
+	$(srcdir)/Teuchos_MpiComm.hpp \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp 
 
-EXTRA_MPI = 
+EXTRA_MPI = \
+	$(srcdir)/Teuchos_MpiReductionOpSetter.cpp 
 
 if HAVE_MPI 
 MPI_H = \
@@ -262,16 +278,16 @@ COMP_H =
 
 COMP = 
 
-#np# The following section can be duplicated for building multiple libraries -
-#np# make sure to list the correct categories with each library.
-#np# replace teuchos with the name of the package being autotool'ed here
+# The following section can be duplicated for building multiple libraries -
+# make sure to list the correct categories with each library.
+# replace teuchos with the name of the package being autotool'ed here
 # ------------------------------------------------------------------------
 # Teuchos library specifications
 # ------------------------------------------------------------------------
-#np# replace teuchos with the name of the package being autotool'ed here
+# replace teuchos with the name of the package being autotool'ed here
 TEUCHOS_LIB = libteuchos.a
 
-#np# replace new_package with the name of the package being autotool'ed here
+# replace new_package with the name of the package being autotool'ed here
 TEUCHOS_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
@@ -285,7 +301,7 @@ TEUCHOS_H = \
 	$(EXTENDED_H)
 
 
-#np# replace new_package with the name of the package being autotool'ed here
+# replace new_package with the name of the package being autotool'ed here
 libteuchos_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
@@ -296,7 +312,7 @@ libteuchos_a_SOURCES = \
 	$(MPI) \
 	$(EXTENDED)
 
-#np# replace new_package with the name of the package being autotool'ed here
+# replace new_package with the name of the package being autotool'ed here
 EXTRA_libteuchos_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) \
