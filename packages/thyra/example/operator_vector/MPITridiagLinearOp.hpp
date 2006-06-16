@@ -50,18 +50,18 @@
  \end{array}\right].
  \f]
  *
- * If there is only \f$N = 1\f$ processor the arrays <tt>lower[]</tt>,
- * <tt>diag[]</tt>, and <tt>upper[]</tt> of dimension
- * <tt>localDim-1</tt>, <tt>localDim</tt> and <tt>localDim-1</tt>
- * respectively are stored (see <tt>initialize()</tt>).
+ * If there is only \f$N = 1\f$ processes then the arrays <tt>lower[]</tt>,
+ * <tt>diag[]</tt>, and <tt>upper[]</tt> of dimension <tt>localDim-1</tt>,
+ * <tt>localDim</tt> and <tt>localDim-1</tt> respectively are stored (see
+ * <tt>initialize()</tt>).
  *
- * If there \f$N > 1\f$ processors then locally this class stores
- * slightly different arrays of data depending on which processor this
- * is and processor-to-processor communication is required.
+ * If there \f$N > 1\f$ processes then locally this class stores
+ * slightly different arrays of data depending on which process this
+ * is and process-to-process communication is required.
  *
  * <ul>
  *
- * <li> On processor 0 with \f$n_0\f$ local vector elements the
+ * <li> On process 0 with \f$n_0\f$ local vector elements the
  * following sub-matrix is stored:
  *
  \f[
@@ -80,7 +80,7 @@
  * <tt>localDim</tt> and <tt>localDim</tt> respectively are stored
  * (see <tt>initialize()</tt>).
  *
- * <li> On processor \f$i\f$, where \f$0 < i < N-1\f$, with local
+ * <li> On process \f$i\f$, where \f$0 < i < N-1\f$, with local
  * offset \f$g_i\f$ and \f$n_i\f$ local vector elements the following
  * sub-matrix is stored:
  *
@@ -98,7 +98,7 @@
  * <tt>localDim</tt> and <tt>localDim</tt> respectively are stored
  * (see <tt>initialize()</tt>).
  *
- * <li> On processor \f$N-1\f$ with local offset \f$g_{N-1}\f$ and
+ * <li> On process \f$N-1\f$ with local offset \f$g_{N-1}\f$ and
  * \f$n_{N-1}\f$ local vector elements the following sub-matrix is
  * stored:
  *
@@ -230,7 +230,7 @@ protected:
       // Get raw pointers to vector data to make me feel better!
       const Scalar *x = local_x_in.values();
       Scalar       *y = local_y_out->values();
-      // Determine what processor we are
+      // Determine what process we are
       const bool first = ( procRank_ == 0 ), last = ( procRank_ == numProc_-1 );
       // Communicate ghost elements
       Scalar x_km1, x_kp1;
