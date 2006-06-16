@@ -142,15 +142,11 @@ void DefaultProductVector<Scalar>::applyOp(
     ,"DefaultProductVector::applyOp(...): Error, "
     "first_ele_offset_in = " << first_ele_offset_in << " is not in range [0,"<<(n-1)<<"]" );
   TEST_FOR_EXCEPTION(
-    sub_dim_in < 0, std::invalid_argument
-    ,"DefaultProductVector::applyOp(...): Error, "
-    "sub_dim_in = " << sub_dim_in << " is not acceptable" );
-  TEST_FOR_EXCEPTION(
     global_offset_in < 0, std::invalid_argument
     ,"DefaultProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << " is not acceptable" );
   TEST_FOR_EXCEPTION(
-    sub_dim_in > 0 && sub_dim_in - first_ele_offset_in > n, std::length_error
+    sub_dim_in >= 0 && sub_dim_in - first_ele_offset_in > n, std::length_error
     ,"DefaultProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << ", sub_dim_in = " << sub_dim_in
     << "first_ele_offset_in = " << first_ele_offset_in << " and n = " << n
@@ -233,7 +229,7 @@ void DefaultProductVector<Scalar>::applyOp(
   }
   // Perform the reduction on each vector segment at a time.
   const Index this_dim = n;
-  const Index sub_dim  = ( sub_dim_in == 0
+  const Index sub_dim  = ( sub_dim_in < 0
                            ? this_dim - first_ele_offset_in
                            : sub_dim_in );
   Index num_elements_remaining = sub_dim;

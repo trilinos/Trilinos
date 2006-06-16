@@ -124,21 +124,21 @@ void MPIMultiVectorBase<Scalar>::applyOp(
   // Get the overlap in the current process with the input logical sub-vector
   // from (first_ele_offset_in,sub_dim_in,global_offset_in)
   Teuchos_Index  overlap_first_local_ele_off  = 0;
-  Teuchos_Index  overalap_local_sub_dim       = 0;
+  Teuchos_Index  overlap_local_sub_dim        = 0;
   Teuchos_Index  overlap_global_offset        = 0;
   RTOp_parallel_calc_overlap(
     globalDim_, localSubDim_, localOffset_, pri_first_ele_offset_in, pri_sub_dim_in, pri_global_offset_in
-    ,&overlap_first_local_ele_off, &overalap_local_sub_dim, &overlap_global_offset
+    ,&overlap_first_local_ele_off, &overlap_local_sub_dim, &overlap_global_offset
     );
   const Range1D
     local_rng = (
       overlap_first_local_ele_off>=0
-      ? Range1D( localOffset_+overlap_first_local_ele_off, localOffset_+overlap_first_local_ele_off+overalap_local_sub_dim-1 )
+      ? Range1D( localOffset_+overlap_first_local_ele_off, localOffset_+overlap_first_local_ele_off+overlap_local_sub_dim-1 )
       : Range1D::Invalid
       ),
     col_rng(
       sec_first_ele_offset_in
-      ,sec_sub_dim_in ? sec_first_ele_offset_in+sec_sub_dim_in-1 : numCols-1
+      ,sec_sub_dim_in >= 0 ? sec_first_ele_offset_in+sec_sub_dim_in-1 : numCols-1
       );
   // Create sub-vector views of all of the *participating* local data
   Workspace<RTOpPack::ConstSubMultiVectorView<Scalar> > sub_multi_vecs(wss,num_multi_vecs);

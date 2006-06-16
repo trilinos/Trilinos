@@ -33,6 +33,7 @@
 #include "Thyra_ScalarProdVectorSpaceBase.hpp"
 #include "Thyra_DefaultMPIVectorSpaceFactory.hpp"
 #ifdef RTOp_USE_MPI
+#  include "Thyra_MPIVectorSpaceUtilities.hpp"
 #  include "Teuchos_RawMPITraits.hpp"
 #endif
 
@@ -103,48 +104,10 @@ void MPIVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
       MPI_Comm_rank( mpiComm, &procRank );
     }
     if( numProc > 1 && (localSubDim_ < globalDim || globalDim < 0) ) {
-      //
-      // Here we will make a map code out of just the local
-      // sub-dimension on each processor.  If each processor
-      // has the same number of local elements, then the maps
-      // will be the same and this is all you need for
-      // RTOp compatibility unless the operations are not
-      // coordinate invariant.  I will work on this issue
-      // if it becomes a problem.
-      //
-      Index localCode = localSubDim_ % (procRank+1) + localSubDim_;
-      MPI_Allreduce(
-        &localCode                              // sendbuf
-        ,&mapCode_                              // recvbuf
-        ,IRMT::adjustCount(1)                   // count
-        ,IRMT::type()                           // datatype
-        ,IRMT::sumOp()                          // op
-        ,mpiComm                                // comm
-        );
-      // Set the default localOffset automatically
-      Index localOffset = localSubDim_;
-      MPI_Scan(
-        &localOffset                            // sendbuf
-        ,&defaultLocalOffset_                   // recvbuf
-        ,IRMT::adjustCount(1)                   // count
-        ,IRMT::type()                           // datatype
-        ,IRMT::sumOp()                          // op
-        ,mpiComm                                // comm
-        );
-      defaultLocalOffset_ -= localSubDim_;
-      //int procRank; MPI_Comm_rank( mpiComm, &procRank );
-      //std::cout << "\nMPIVectorSpaceBase<Scalar>::updateState(): procRank = " << procRank << ", defaultLocalOffset = " << defaultLocalOffset_ << std::endl;
-      // 
-      // Determine the global dimension
-      if( globalDim < 0 ) {
-        MPI_Allreduce(
-          (void*)&localSubDim_                    // sendbuf
-          ,&defaultGlobalDim_                     // recvbuf
-          ,IRMT::adjustCount(1)                   // count
-          ,IRMT::type()                           // datatype
-          ,IRMT::sumOp()                          // op
-          ,mpiComm                                // comm
-          );
+      mapCode_ = MPIVectorSpaceUtilities::computeMapCode(mpiComm,localSubDim_);
+      defaultLocalOffset_ = MPIVectorSpaceUtilities::computeLocalOffset(mpiComm,localSubDim_);
+      if( globalDim < 1 ) {
+        defaultGlobalDim_ = MPIVectorSpaceUtilities::computeGlobalDim(mpiComm,localSubDim_);
       }
       else {
         defaultGlobalDim_ = globalDim;

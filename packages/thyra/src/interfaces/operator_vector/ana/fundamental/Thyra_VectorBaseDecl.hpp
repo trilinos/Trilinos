@@ -260,8 +260,8 @@ public:
   /** \brief Free an explicit view of a sub-vector.
    *
    * @param  sub_vec
-   *				[in/out] The memory referred to by <tt>sub_vec->values()</tt>
-   *				will be released if it was allocated and <tt>*sub_vec</tt>
+   *        [in/out] The memory referred to by <tt>sub_vec->values()</tt>
+   *        will be released if it was allocated and <tt>*sub_vec</tt>
    *              will be zeroed out using <tt>sub_vec->set_uninitialized()</tt>.
    *
    * <b>Preconditions:</b><ul>
@@ -330,11 +330,11 @@ public:
   /** \brief Commit changes for a mutable explicit view of a sub-vector.
    *
    * @param sub_vec
-   *				[in/out] The data in <tt>sub_vec->values()</tt> will be written
+   *        [in/out] The data in <tt>sub_vec->values()</tt> will be written
    *              back internal storage and the memory referred to by
    *              <tt>sub_vec->values()</tt> will be released if it was allocated
-   *				and <tt>*sub_vec</tt> will be zeroed out using
-   *				<tt>sub_vec->set_uninitialized()</tt>.
+   *        and <tt>*sub_vec</tt> will be zeroed out using
+   *        <tt>sub_vec->set_uninitialized()</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
@@ -358,17 +358,17 @@ public:
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>this->space().get()!=NULL</tt> (throw <tt>std::logic_error</tt>)
-   * <li> <tt>sub_vec.global_offset + sub_vec.sub_dim < this->space()->dim()</tt>
+   * <li> <tt>sub_vec.globalOffset() + sub_vec.subDim() < this->space()->dim()</tt>
    *      (<tt>throw std::out_of_range</tt>)
    * </ul>
     *
    * <b>Postconditions:</b><ul>
    * <li> All of the elements in the range
-   *      <tt>[sub_vec.global_offset,sub_vec.global_offset+sub_vec.sub_dim-1]</tt>
+   *      <tt>[sub_vec.globalOffset(),sub_vec.globalOffset()+sub_vec.subDim()-1]</tt>
    *      in <tt>*this</tt> are set to 0.0 except for those that have that
    *      have entries in <tt>sub_vec</tt> which are set to the values specified
-   *      by <tt>(*this)(sub_vec.global_offset+vec.local_offset+sub_vec.indices[sub_vec.indices_stride*k])
-   *      = vec.values[vec.value_stride*k]</tt>, for <tt>k = 0..sub_vec.subNz()-1</tt>
+   *      by <tt>(*this)(sub_vec.globalOffset()+vec.localOffset()+sub_vec.indices()[sub_vec.indicesStride()*k])
+   *      = vec.values[vec.valueStride()*k]</tt>, for <tt>k = 0..sub_vec.subNz()-1</tt>
    * </ul>
    *
    * After this function returns, the corresponding elements in <tt>*this</tt>
@@ -395,41 +395,45 @@ in simpler use cases.
  * <tt>op(op(v[0]...v[nv-1],z[0]...z[nz-1]),(*reduct_obj)) ->
  * z[0]...z[nz-1],(*reduct_obj)</tt>.
  *
- * @param  op	[in] Reduction/transformation operator to apply over each sub-vector
- *				and assemble the intermediate targets into <tt>reduct_obj</tt> (if
- *              <tt>reduct_obj != RTOp_REDUCT_OBJ_NULL</tt>).
+ * @param  op
+ *            [in] Reduction/transformation operator to apply over each sub-vector
+ *            and assemble the intermediate targets into <tt>reduct_obj</tt> (if
+ *            <tt>reduct_obj != RTOp_REDUCT_OBJ_NULL</tt>).
  * @param  num_vecs
- *				[in] Number of non-mutable vectors in <tt>vecs[]</tt>.
- *              If <tt>vecs==NULL</tt> then this argument is ignored but should be set to zero.
+ *           [in] Number of non-mutable vectors in <tt>vecs[]</tt>.
+ *           If <tt>vecs==NULL</tt> then this argument is ignored but should be set to zero.
  * @param  vecs
- *				[in] Array (length <tt>num_vecs</tt>) of a set of pointers to
- *				non-mutable vectors to include in the operation.
- *				The order of these vectors is significant to <tt>op</tt>.
+ *           [in] Array (length <tt>num_vecs</tt>) of a set of pointers to
+ *           non-mutable vectors to include in the operation.
+ *           The order of these vectors is significant to <tt>op</tt>.
  * @param  num_targ_vecs
- *				[in] Number of mutable vectors in <tt>targ_vecs[]</tt>.
- *              If <tt>targ_vecs==NULL</tt>	then this argument is ignored but should be set to zero.
+ *           [in] Number of mutable vectors in <tt>targ_vecs[]</tt>.
+ *           If <tt>targ_vecs==NULL</tt>  then this argument is ignored but should be set to zero.
  * @param  targ_vecs
- *				[in] Array (length <tt>num_targ_vecs</tt>) of a set of pointers to
- *				mutable vectors to include in the operation.
- *				The order of these vectors is significant to <tt>op</tt>.
- *				If <tt>targ_vecs==NULL</tt> then <tt>op</tt> is called with no mutable vectors.
+ *           [in] Array (length <tt>num_targ_vecs</tt>) of a set of pointers to
+ *           mutable vectors to include in the operation.
+ *           The order of these vectors is significant to <tt>op</tt>.
+ *           If <tt>targ_vecs==NULL</tt> then <tt>op</tt> is called with no mutable vectors.
  * @param  reduct_obj
- *				[in/out] Target object of the reduction operation.
- *				This object must have been created by the <tt>op.reduct_obj_create_raw(&reduct_obj)</tt>
- *              function first.  The reduction operation will be added to <tt>(*reduct_obj)</tt> if
- *              <tt>(*reduct_obj)</tt> has already been through a reduction.  By allowing the info in
- *              <tt>(*reduct_obj)</tt> to be added to the reduction over all of these vectors, the reduction
- *              operation can be accumulated over a set of abstract vectors	which can be useful for implementing
- *              composite vectors for instance.  If <tt>op.get_reduct_type_num_entries(...)</tt> returns
- *              <tt>num_values == 0</tt>, <tt>num_indexes == 0</tt> and <tt>num_chars == 0</tt> then
- *              <tt>reduct_obj</tt> should be set to <tt>RTOp_REDUCT_OBJ_NULL</tt> and no reduction will be performed.
+ *           [in/out] Target object of the reduction operation.
+ *           This object must have been created by the <tt>op.reduct_obj_create_raw(&reduct_obj)</tt>
+ *           function first.  The reduction operation will be added to <tt>(*reduct_obj)</tt> if
+ *           <tt>(*reduct_obj)</tt> has already been through a reduction.  By allowing the info in
+ *           <tt>(*reduct_obj)</tt> to be added to the reduction over all of these vectors, the reduction
+ *           operation can be accumulated over a set of abstract vectors  which can be useful for implementing
+ *           composite vectors for instance.  If <tt>op.get_reduct_type_num_entries(...)</tt> returns
+ *           <tt>num_values == 0</tt>, <tt>num_indexes == 0</tt> and <tt>num_chars == 0</tt> then
+ *           <tt>reduct_obj</tt> should be set to <tt>RTOp_REDUCT_OBJ_NULL</tt> and no reduction will be performed.
  * @param  first_ele_offset
- *				[in] (default = 0) The index of the first element in <tt>this</tt> to be included.
+ *           [in] (default = 0) The index of the first element in <tt>this</tt> to be included.
  * @param  sub_dim
- *              [in] (default = 0) The number of elements in these vectors to include in the reduction/transformation
- *              operation.  The value of <tt>sub_dim == 0</tt> means to include all available elements.
+ *           [in] (default = -1) The number of elements in these vectors to include in the reduction/transformation
+ *            operation.  The value of <tt>sub_dim < 0</tt> means to include all available elements.
+ *            The value of <tt>sub_dim == 0</tt> means to include none of the elements of the vector.  This last
+ *            value is somewhat undefined but has meaning in some specialized contexts (such as for SPMD
+ *            vectors).
  * @param  global_offset
- *				[in] (default = 0) The offset applied to the included vector elements.
+ *           [in] (default = 0) The offset applied to the included vector elements.
  *
  *
  * <b>Preconditions:</b><ul>
@@ -484,7 +488,7 @@ void applyOp(
 #endif
   ,const Index                    sub_dim
 #ifndef __sun
-                                                = 0
+                                                = -1
 #endif
   ,const Index                    global_offset
 #ifndef __sun
@@ -510,7 +514,7 @@ void applyOp(
   ,RTOpPack::ReductTarget         *reduct_obj
   )
 {
-  applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,0,0,0);
+  applyOp(op,num_vecs,vecs,num_targ_vecs,targ_vecs,reduct_obj,0,-1,0);
 }
 #endif
 

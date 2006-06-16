@@ -101,7 +101,8 @@ public:
    * as: <tt>localOffset=0</tt> on process 0, <tt>localOffset=5</tt> on
    * process 1, <tt>localOffset=9</tt> on process 2 and so on.
    */
-  virtual Index localOffset() const;
+  Index localOffset() const;
+  
   /** \brief .
    *
    * This method takes the data <tt>mpiComm()</tt>, <tt>numProc</tt>
@@ -128,7 +129,7 @@ public:
    * in <tt>*this</tt> vector space can not collaborate with other
    * MPI-based vector implementations.
    */
-  virtual Index mapCode() const;
+  Index mapCode() const;
 
   //@}
 

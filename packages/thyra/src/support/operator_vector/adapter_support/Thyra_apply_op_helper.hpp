@@ -63,7 +63,7 @@ void Thyra::apply_op_validate_input(
     ,func_name << " : Error!  first_ele_offset_in = "
     <<first_ele_offset_in<<" is not compatible with space.dim() = " << dim );
   TEST_FOR_EXCEPTION(
-    sub_dim_in < 0 || (sub_dim_in > 0 && sub_dim_in > dim-first_ele_offset_in), std::logic_error
+    (sub_dim_in > 0 && sub_dim_in > dim-first_ele_offset_in), std::logic_error
     ,func_name << " : Error!  first_ele_offset_in = "
     <<first_ele_offset_in<<" and sub_dim_in = "<<sub_dim_in
     <<" is not compatible with space.dim() = " << dim );
@@ -104,7 +104,7 @@ void Thyra::apply_op_validate_input(
     ,func_name << " : Error!  primary_first_ele_offset_in = "
     <<primary_first_ele_offset_in<<" is not compatible with range.dim() = " << range_dim );
   TEST_FOR_EXCEPTION(
-    primary_sub_dim_in < 0 || (primary_sub_dim_in > 0 && primary_sub_dim_in > range_dim-primary_first_ele_offset_in)
+    (primary_sub_dim_in > 0 && primary_sub_dim_in > range_dim-primary_first_ele_offset_in)
     , std::logic_error
     ,func_name << " : Error!  primary_first_ele_offset_in = "
     <<primary_first_ele_offset_in<<" and primary_sub_dim_in = "<<primary_sub_dim_in
@@ -117,7 +117,7 @@ void Thyra::apply_op_validate_input(
     ,func_name << " : Error!  secondary_first_ele_offset_in = "
     <<secondary_first_ele_offset_in<<" is not compatible with domain.dim() = " << domain_dim );
   TEST_FOR_EXCEPTION(
-    secondary_sub_dim_in < 0 || (secondary_sub_dim_in > 0 && secondary_sub_dim_in > domain_dim-secondary_first_ele_offset_in)
+    (secondary_sub_dim_in > 0 && secondary_sub_dim_in > domain_dim-secondary_first_ele_offset_in)
     , std::logic_error
     ,func_name << " : Error!  secondary_first_ele_offset_in = "
     <<secondary_first_ele_offset_in<<" and secondary_sub_dim_in = "<<secondary_sub_dim_in
@@ -153,7 +153,7 @@ void Thyra::apply_op_serial(
   // Dimension of global sub-vector
   const Index
     full_dim       = space.dim(),
-    global_sub_dim = sub_dim_in ? sub_dim_in : full_dim - first_ele_offset_in;
+    global_sub_dim = sub_dim_in >= 0 ? sub_dim_in : full_dim - first_ele_offset_in;
   const Range1D
     global_sub_rng = Range1D(first_ele_offset_in,first_ele_offset_in+global_sub_dim-1);
 
@@ -227,13 +227,13 @@ void Thyra::apply_op_serial(
   // Primary range global sub-vector
   const Index
     range_dim          = range.dim(),
-    pri_global_sub_dim = pri_sub_dim_in ? pri_sub_dim_in : range_dim - pri_first_ele_offset_in;
+    pri_global_sub_dim = pri_sub_dim_in >= 0 ? pri_sub_dim_in : range_dim - pri_first_ele_offset_in;
   const Range1D
     pri_global_sub_rng = Range1D(pri_first_ele_offset_in,pri_first_ele_offset_in+pri_global_sub_dim-1);
   // Secondary domain
   const Index
     domain_dim         = domain.dim(),
-    sec_global_sub_dim = sec_sub_dim_in ? sec_sub_dim_in : domain_dim - sec_first_ele_offset_in;
+    sec_global_sub_dim = sec_sub_dim_in >= 0 ? sec_sub_dim_in : domain_dim - sec_first_ele_offset_in;
   const Range1D
     sec_global_sub_rng = Range1D(sec_first_ele_offset_in,sec_first_ele_offset_in+sec_global_sub_dim-1);
 

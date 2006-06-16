@@ -983,7 +983,7 @@ void applyOp(
 #endif
   ,const Index                    primary_sub_dim
 #ifndef __sun
-                                                         = 0
+                                                         = -1
 #endif
   ,const Index                    primary_global_offset
 #ifndef __sun
@@ -995,7 +995,7 @@ void applyOp(
 #endif
   ,const Index                    secondary_sub_dim
 #ifndef __sun
-                                                         = 0
+                                                         = -1
 #endif
   )
 {
@@ -1028,10 +1028,10 @@ void applyOp(
   )
 {
   applyOp(
-          primary_op
-          ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-          ,reduct_objs,0,0,0,0,0
-          );
+    primary_op
+    ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
+    ,reduct_objs,0,-1,0,0,-1
+    );
 }
 #endif
 
@@ -1056,7 +1056,7 @@ void applyOp(
 #endif
   ,const Index                    primary_sub_dim
 #ifndef __sun
-                                                         = 0
+                                                         = -1
 #endif
   ,const Index                    primary_global_offset
 #ifndef __sun
@@ -1068,7 +1068,7 @@ void applyOp(
 #endif
   ,const Index                    secondary_sub_dim
 #ifndef __sun
-                                                         = 0
+                                                         = -1
 #endif
   )
 {
@@ -1103,10 +1103,10 @@ void applyOp(
   )
 {
   applyOp(
-      primary_op,secondary_op
-      ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_obj,0,0,0,0,0
-      );
+    primary_op,secondary_op
+    ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
+    ,reduct_obj,0,-1,0,0,-1
+    );
 }
 
 #endif // __sun

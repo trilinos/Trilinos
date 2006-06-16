@@ -32,6 +32,8 @@
 #include "Thyra_VectorDefaultBaseDecl.hpp"
 #include "Thyra_MPIVectorSpaceDefaultBaseDecl.hpp"
 
+#define THYRA_MPI_VECTOR_BASE_DUMP
+
 namespace Thyra {
 
 /** \brief Base class for MPI-based SPMD vectors.
@@ -289,6 +291,11 @@ private:
   // Private member functions
 
   Range1D validateRange( const Range1D& rng_in ) const;
+
+#ifdef THYRA_MPI_VECTOR_BASE_DUMP
+public:
+  static bool show_dump;
+#endif // THYRA_MPI_VECTOR_BASE_DUMP
 
 }; // end class MPIVectorBase
 

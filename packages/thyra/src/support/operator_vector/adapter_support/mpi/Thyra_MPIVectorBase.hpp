@@ -38,6 +38,10 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
+#ifdef THYRA_MPI_VECTOR_BASE_DUMP
+#  include "Teuchos_VerboseObject.hpp"
+#endif // THYRA_MPI_VECTOR_BASE_DUMP
+
 namespace Thyra {
 
 template<class Scalar>
@@ -76,6 +80,24 @@ void MPIVectorBase<Scalar>::applyOp(
   ,const Index                    global_offset_in
   ) const
 {
+#ifdef THYRA_MPI_VECTOR_BASE_DUMP
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::OSTab tab(out);
+  if(show_dump) {
+    *out << "\nEntering MPIVectorBase<Scalar>::applyOp(...) ...\n";
+    *out
+      << "\nop = " << typeid(op).name()
+      << "\nnum_vecs = " << num_vecs
+      << "\nnum_targ_vecs = " << num_targ_vecs
+      << "\nreduct_obj = " << reduct_obj
+      << "\nfirst_ele_offset_in = " << first_ele_offset_in
+      << "\nsub_dim_in = " << sub_dim_in
+      << "\nglobal_offset_in = " << global_offset_in
+      << "\n"
+      ;
+  }
+#endif // THYRA_MPI_VECTOR_BASE_DUMP
   using Teuchos::dyn_cast;
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
@@ -98,23 +120,34 @@ void MPIVectorBase<Scalar>::applyOp(
   in_applyOp_ = true;
   // First see if this is a locally replicated vector in which case
   // we treat this as a local operation only.
-  const bool locallyReplicated = (localSubDim_ == globalDim_);
+  const bool locallyReplicated = ( comm_in == MPI_COMM_NULL && localSubDim_ == globalDim_ );
   // Get the overlap in the current process with the input logical sub-vector
   // from (first_ele_offset_in,sub_dim_in,global_offset_in)
-  Teuchos_Index  overlap_first_local_ele_off  = 0;
-  Teuchos_Index  overalap_local_sub_dim       = 0;
-  Teuchos_Index  overlap_global_off           = 0;
+  Index  overlap_first_local_ele_off  = 0;
+  Index  overlap_local_sub_dim        = 0;
+  Index  overlap_global_off           = 0;
   if(localSubDim_) {
     RTOp_parallel_calc_overlap(
       globalDim_, localSubDim_, localOffset_, first_ele_offset_in, sub_dim_in, global_offset_in
-      ,&overlap_first_local_ele_off, &overalap_local_sub_dim, &overlap_global_off
+      ,&overlap_first_local_ele_off, &overlap_local_sub_dim, &overlap_global_off
       );
   }
   const Range1D local_rng = (
     overlap_first_local_ele_off>=0
-    ? Range1D( localOffset_ + overlap_first_local_ele_off, localOffset_ + overlap_first_local_ele_off + overalap_local_sub_dim - 1 )
+    ? Range1D( localOffset_ + overlap_first_local_ele_off, localOffset_ + overlap_first_local_ele_off + overlap_local_sub_dim - 1 )
     : Range1D::Invalid
     );
+#ifdef THYRA_MPI_VECTOR_BASE_DUMP
+  if(show_dump) {
+    *out
+      << "\noverlap_first_local_ele_off = " << overlap_first_local_ele_off
+      << "\noverlap_local_sub_dim = " << overlap_local_sub_dim
+      << "\noverlap_global_off = " << overlap_global_off
+      << "\nlocal_rng = ["<<local_rng.lbound()<<","<<local_rng.ubound()<<"]"
+      << "\n"
+      ;
+  }
+#endif // THYRA_MPI_VECTOR_BASE_DUMP
   // Create sub-vector views of all of the *participating* local data
   Workspace<RTOpPack::ConstSubVectorView<Scalar> > sub_vecs(wss,num_vecs);
   Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss,num_targ_vecs);
@@ -153,6 +186,11 @@ void MPIVectorBase<Scalar>::applyOp(
   }
   // Flag that we are leaving applyOp()
   in_applyOp_ = false;
+#ifdef THYRA_MPI_VECTOR_BASE_DUMP
+  if(show_dump) {
+    *out << "\nLeaving MPIVectorBase<Scalar>::applyOp(...) ...\n";
+  }
+#endif // THYRA_MPI_VECTOR_BASE_DUMP
 }
 
 // Overridden from VectorBase
@@ -319,6 +357,12 @@ Range1D MPIVectorBase<Scalar>::validateRange( const Range1D &rng_in ) const
 #endif
   return rng;
 }
+
+#ifdef THYRA_MPI_VECTOR_BASE_DUMP
+template<class Scalar>
+bool MPIVectorBase<Scalar>::show_dump = false;
+#endif // THYRA_MPI_VECTOR_BASE_DUMP
+
 
 } // end namespace Thyra
 

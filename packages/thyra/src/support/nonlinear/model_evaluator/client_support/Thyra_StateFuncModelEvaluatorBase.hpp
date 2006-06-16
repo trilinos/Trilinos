@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_DEFAULT_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
-#define THYRA_DEFAULT_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
+#ifndef THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
+#define THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
 
 #include "Thyra_ModelEvaluator.hpp"
 
@@ -38,8 +38,8 @@ namespace Thyra {
  * <tt>x -> f(x)</tt>.
  *
  * The minimum that a subclass must to is to define implementations for
- * <tt>get_x_space()</tt>, <tt>createInArgs()</tt>, <tt>createOutArgs</tt>,
- * and <tt>evalModel()</tt>.
+ * <tt>get_x_space()</tt>, <tt>get_f_space()</tt>, <tt>createInArgs()</tt>,
+ * <tt>createOutArgs</tt>, and <tt>evalModel()</tt>.
  */
 template<class Scalar>
 class StateFuncModelEvaluatorBase : virtual public ModelEvaluator<Scalar> {
@@ -85,7 +85,7 @@ public:
 // /////////////////////////////////
 // Implementations
 
-// Basic inforamtion
+// Public functions overridden from ModelEvaulator
 
 template<class Scalar>
 int StateFuncModelEvaluatorBase<Scalar>::Np() const
@@ -94,8 +94,6 @@ int StateFuncModelEvaluatorBase<Scalar>::Np() const
 template<class Scalar>
 int StateFuncModelEvaluatorBase<Scalar>::Ng() const
 { return 0; }
-
-// Vector spaces
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
@@ -122,8 +120,6 @@ StateFuncModelEvaluatorBase<Scalar>::get_g_space(int j) const
   return Teuchos::null;
 }
 
-// Initial guess and upper and lower bounds
-
 template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 StateFuncModelEvaluatorBase<Scalar>::getNominalValues() const
@@ -138,8 +134,6 @@ template<class Scalar>
 ModelEvaluatorBase::InArgs<Scalar>
 StateFuncModelEvaluatorBase<Scalar>::getUpperBounds() const
 { return this->createInArgs(); }
-
-// Factory functions for creating derivative objects
 
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> >
@@ -223,4 +217,4 @@ void StateFuncModelEvaluatorBase<Scalar>::reportFinalPoint(
 
 } // namespace Thyra
 
-#endif // THYRA_DEFAULT_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP
+#endif // THYRA_STATE_FUNC_MODEL_EVALUATOR_BASE_HPP

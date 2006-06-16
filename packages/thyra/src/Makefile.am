@@ -192,6 +192,10 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceDefaultBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceDefaultBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVector.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVectorDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVectorSpace.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVectorSpaceDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorSpaceFactory.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorSpaceFactoryDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorSpace.hpp\
@@ -201,6 +205,20 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerialization.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerializationDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_ParallelMultiVectorFileIO.hpp
+
+if HAVE_MPI
+
+SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI_H = \
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.hpp
+SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI = \
+  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.cpp
+
+else # HAVE_MPI
+
+SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI_H =
+SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI = 
+
+endif # HAVE_MPI
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
@@ -222,11 +240,12 @@ SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DefaultFiniteDifferenceModelEvaluator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DefaultFinalPointCaptureModelEvaluator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DefaultModelEvaluatorWithSolveFactory.hpp\
+  $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DefaultMultiPeriodModelEvaluator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DefaultNominalBoundsOverrideModelEvaluator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DirectionalFiniteDiffCalculator.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_ModelEvaluatorDelegatorBase.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_ModelEvaluatorHelpers.hpp\
-  $(srcdir)//support/nonlinear/model_evaluator/client_support/Thyra_StateFuncModelEvaluatorBase.hpp\
+  $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_StateFuncModelEvaluatorBase.hpp\
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_SingleResidSSDAEModelEvaluator.hpp
 
 INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H = \
@@ -265,13 +284,15 @@ THYRA_H = \
 	$(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H)\
   $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H)\
   $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H)\
+  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI_H)\
   $(INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H)\
   $(SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H)\
   $(INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H)\
   $(SUPPORT_NONLINEAR_SOLVERS_CLIENT_SUPPORT_H)
 
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
-	$(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT)
+	$(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
+  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI)
 
 #We need the following to support separate build directories
 

@@ -84,11 +84,11 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
   // Get the primary and secondary dimensions.
 
   const Index sec_dim = domain.dim();
-  const Index sec_sub_dim  = ( sec_sub_dim_in != 0      ? sec_sub_dim_in  : sec_dim  -  sec_first_ele_offset_in  );
+  const Index sec_sub_dim  = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in  );
 #ifdef _DEBUG
   const VectorSpaceBase<Scalar>  &range  = *this->range();
   const Index	prim_dim = range.dim();
-  const Index prim_sub_dim = ( prim_sub_dim_in != 0     ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
+  const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
   const char err_msg[] = "MultiVectorDefaultBase<Scalar>::applyOp(...): Error!";
   TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );
   TEST_FOR_EXCEPTION( !(0 < sec_sub_dim  && sec_sub_dim  <= sec_dim),  std::invalid_argument, err_msg );
@@ -153,11 +153,11 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
 
   // Get the primary and secondary dimensions.
   const Index sec_dim = domain.dim();
-  const Index sec_sub_dim  = ( sec_sub_dim_in != 0      ? sec_sub_dim_in  : sec_dim  -  sec_first_ele_offset_in  );
+  const Index sec_sub_dim  = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
 #ifdef _DEBUG
   const VectorSpaceBase<Scalar> &range = *this->range();
   const Index prim_dim = range.dim();
-  const Index prim_sub_dim = ( prim_sub_dim_in != 0     ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
+  const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
   const char err_msg[] = "MultiVectorDefaultBase<Scalar>::applyOp(...): Error!";
   TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );
   TEST_FOR_EXCEPTION( !(0 < sec_sub_dim  && sec_sub_dim  <= sec_dim),  std::invalid_argument, err_msg );
