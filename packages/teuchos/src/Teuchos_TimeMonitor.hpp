@@ -40,10 +40,49 @@
 #include "Teuchos_PerformanceMonitorBase.hpp"
 #include "Teuchos_Time.hpp"
 
+/** \brief Defines a static non-member function that returns a time monitor.
+ */ 
 #define TEUCHOS_TIMER(funcName, strName) \
 static Teuchos::Time& funcName()       \
 {static Teuchos::RefCountPtr<Time> rtn =        \
 Teuchos::TimeMonitor::getNewCounter(strName); return *rtn;}
+
+/** \brief Defines a timer for a specific function.
+ *
+ * Note that the name of the timer can be formated with stream inserts.
+ * For example, we can define a time monitor for a function as follows:
+ 
+ \code
+
+  template<typename Scalar>
+  void foo()
+  {
+    TEUCHOS_FUNC_TIME_MONITOR(
+      "foo<"<<Teuchos::ScalarTraits<Scalar>::name()<<">()"
+      );
+   ...
+  }
+
+ \endcode
+
+ * The timer can then be printed at the end of the program using
+
+ \code
+
+  Teuchos::TimeMonitor::summarize(std::cout);
+
+ \endcode
+ 
+ */
+#define TEUCHOS_FUNC_TIME_MONITOR( FUNCNAME ) \
+static Teuchos::RefCountPtr<Teuchos::Time>  blabla_localTimer; \
+if(!blabla_localTimer.get()) { \
+  std::ostringstream oss; \
+  oss << FUNCNAME; \
+  blabla_localTimer = Teuchos::TimeMonitor::getNewCounter(oss.str()); \
+} \
+Teuchos::TimeMonitor blabla_localTimeMonitor(*blabla_localTimer)
+
 
 namespace Teuchos
 {
