@@ -425,7 +425,8 @@ order, are:
 <li> Victoria Howle (vehowle@sandia.gov) : %Meros lead developer, %Thyra developer
 <li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer, %Thyra developer
 <li> Roger Pawlowski (rppawlo@sandia.gov) : %NOX lead developer
-<li> Eric Phipps (etphipp@sandia.gov) : %LOCA co-lead developer, %Thyra developer
+<li> Eric Phipps (etphipp@sandia.gov) : %LOCA lead developer, %Thyra developer
+<li> Bill Spotz (wfspotz@sanida.gov) : %PyTrilinos Lead devleoper, %Thyra/Python adapter developer
 <li> Heidi Thornquist (hkthorn@sandia.gov): %Belos lead developer, %Thyra developer
 <li> Allan Williams (william@sandia.gov) : %FEI lead developer, %Thyra developer
 </ul>
