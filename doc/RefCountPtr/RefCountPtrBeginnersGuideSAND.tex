@@ -1331,11 +1331,11 @@ changeable object
 & {}\texttt{const RefCountPtr<A> \&a} \\
 \hline
 array of non-changeable objects
-& {}\texttt{const A* a[]}
+& {}\texttt{const A*const a[]}
 & {}\texttt{const RefCountPtr<const A> a[]} \\
 \hline
 array of changeable objects
-& {}\texttt{A* a[]}
+& {}\texttt{A*const a[]}
 & {}\texttt{const RefCountPtr<A> a[]} \\
 \hline
 \end{tabular}
