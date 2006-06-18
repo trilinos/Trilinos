@@ -104,10 +104,10 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_nos1.mtx nos1.mtx                                      
 	cp  $(srcdir)/In_nos5.mtx nos5.mtx                                      
 	cp  $(srcdir)/In_FourByFour.mtx FourByFour.mtx                          
-	cp  $(srcdir)/In_StructurallySingular.mtx StructurallySingular.mtx                          
-	cp  $(srcdir)/In_NumericallySingular.mtx NumericallySingular.mtx                          
+	cp  $(srcdir)/In_StructurallySingular.mtx StructurallySingular.mtx   
+	cp  $(srcdir)/In_NumericallySingular.mtx NumericallySingular.mtx  
 	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx                              
-	cp  $(srcdir)/In_MissingADiagonal.mtx MissingADiagonal.mtx                              
+	cp  $(srcdir)/In_MissingADiagonal.mtx MissingADiagonal.mtx             
 	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx                                  
 	cp  $(srcdir)/In_KheadSorted.mtx  KheadSorted.mtx
 	cp  $(srcdir)/In_Khead.triS Khead.triS  
