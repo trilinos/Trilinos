@@ -38,6 +38,7 @@ extern "C" {
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"HYPERGRAPH_PACKAGE",              NULL,  "STRING", 0},
+  {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},  
   {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
   {"FINAL_OUTPUT",                    NULL,  "INT",    0},
@@ -46,7 +47,7 @@ static PARAM_VARS PHG_params[] = {
   {"PHG_NPROC_VERTEX",                NULL,  "INT",    0},
   {"PHG_NPROC_EDGE",                  NULL,  "INT",    0},
   {"PHG_COARSENING_LIMIT",            NULL,  "INT",    0},
-  {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},
+  {"PHG_COARSENING_NCANDIDATE",       NULL,  "INT",    0},  
   {"PHG_COARSENING_METHOD",           NULL,  "STRING", 0},
   {"PHG_COARSENING_METHOD_FAST",      NULL,  "STRING", 0},
   {"PHG_VERTEX_VISIT_ORDER",          NULL,  "INT",    0},
@@ -505,6 +506,7 @@ int Zoltan_PHG_Initialize_Params(
                                    another param at least it will be 0 */
   
   Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_PACKAGE", &hgp->hgraph_pkg);
+  Zoltan_Bind_Param(PHG_params, "PHG_FROM_GRAPH_METHOD", hgp->convert_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
   Zoltan_Bind_Param(PHG_params, "CHECK_GRAPH", &hgp->check_graph);   
@@ -512,7 +514,7 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_VERTEX", &hgp->nProc_x_req);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_EDGE", &hgp->nProc_y_req);
   Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_LIMIT", &hgp->redl);
-  Zoltan_Bind_Param(PHG_params, "PHG_FROM_GRAPH_METHOD", hgp->convert_str);
+  Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_NCANDIDATE", &hgp->nCand);
   Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD", hgp->redm_str);
   Zoltan_Bind_Param(PHG_params, "PHG_COARSENING_METHOD_FAST", hgp->redm_fast);
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_VISIT_ORDER", &hgp->visit_order);
@@ -556,6 +558,7 @@ int Zoltan_PHG_Initialize_Params(
   strncpy(hgp->hgraph_pkg,       "default", MAX_PARAM_STRING_LEN);
   strncpy(hgp->convert_str,    "neighbors", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_str,             "ipm", MAX_PARAM_STRING_LEN);
+  hgp->match_array_type = 0;
   strncpy(hgp->redm_fast,          "l-ipm", MAX_PARAM_STRING_LEN);
   strncpy(hgp->coarsepartition_str, "auto", MAX_PARAM_STRING_LEN);
   strncpy(hgp->refinement_str,       "fm2", MAX_PARAM_STRING_LEN);
@@ -576,6 +579,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->check_graph = 0;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0]; /* Make vector for multiconstraint */
   hgp->bal_tol_adjustment = 0.7;
+  hgp->nCand = 100;
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_NONE;
   hgp->final_output = 0;

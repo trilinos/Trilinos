@@ -21,12 +21,7 @@ extern "C" {
 
 
 
-#define COARSEN_WITH_NET_SHUFFLING
-    
-
-
 #define PLAN_TAG 32010      /* tag for comm plan */ 
-
 
 
 
@@ -40,8 +35,6 @@ extern "C" {
 #define _DEBUG1
 #endif
 
-
-extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n);
 
     
 /* UVC:
@@ -192,14 +185,15 @@ int Zoltan_PHG_Coarsening
   PHGPartParams *hgp
     )   
 {
-  char  *yo = "Zoltan_PHG_Coarsening";
-  int   ierr=ZOLTAN_OK, i, j, count, size, me, idx, ni;
+  char     *yo = "Zoltan_PHG_Coarsening";
+  PHGComm  *hgc = hg->comm;
+  int   ierr=ZOLTAN_OK, i, j, count, size, me=hgc->myProc_x, idx, ni;
   int   *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
   int   *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL, *ids=NULL, *iden;
+  int   *extmatchsendcnt=NULL, extmatchrecvcnt=0, *extmatchrecvcounts=NULL;
   float *c_ewgt=NULL;
   char  *buffer=NULL, *rbuffer=NULL;
   unsigned int           *hash=NULL, *lhash=NULL;
-  PHGComm                *hgc = hg->comm;
   struct Zoltan_Comm_Obj *plan=NULL;
   MPI_Op                 idenOp;
 
@@ -253,10 +247,30 @@ if (c_hg->fixed)
   
   
   /* (over) estimate number of external matches that we need to send data to */
-  count = 0; 
-  for (i = 0; i < hg->nVtx; i++)
-    if (match[i] < 0)
-      ++count;
+  count = 0;
+  if (hgp->match_array_type==0) { /* old style */
+      for (i = 0; i < hg->nVtx; i++)
+          if (match[i] < 0)
+              ++count;
+      extmatchrecvcnt = count;
+  } else { /* new style match array */
+      if (!(extmatchsendcnt = (int *) ZOLTAN_CALLOC(hgc->nProc_x, sizeof(int)))
+          || !(extmatchrecvcounts = (int *) ZOLTAN_MALLOC(hgc->nProc_x * sizeof(int))))
+          MEMORY_ERROR;
+      for (i = 0; i < hgc->nProc_x; ++i)
+          extmatchrecvcounts[i] = 1;
+      for (i = 0; i < hg->nVtx; i++) {
+          int px=VTX_TO_PROC_X(hg, match[i]);
+
+          if (px!=me) {
+              ++extmatchsendcnt[px];
+              ++count;              
+          }
+      }
+
+      MPI_Reduce_scatter(extmatchsendcnt, &extmatchrecvcnt, extmatchrecvcounts, MPI_INT, MPI_SUM, hgc->row_comm);
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &extmatchsendcnt, &extmatchrecvcounts);
+  }
  
   if (hg->nVtx > 0 && !(vmark = (int*) ZOLTAN_CALLOC(MAX(hg->nEdge, hg->nVtx),  sizeof(int))))
       MEMORY_ERROR;
@@ -269,57 +283,94 @@ if (c_hg->fixed)
 
   if (count > 0 && (
       !(listgno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
-   || !(listlno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
-   || !(*LevelData= (int*) ZOLTAN_MALLOC (count * sizeof(int) * 2))))
+      || !(listlno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))))
+      MEMORY_ERROR;
+  if (extmatchrecvcnt && 
+      !(*LevelData= (int*) ZOLTAN_MALLOC (extmatchrecvcnt * sizeof(int) * 2)))
       MEMORY_ERROR;
 
-  /* Assume all rows in a column have the entire (column's) matching info */
-  /* Calculate the number of resulting coarse vertices. */
-  c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
-  me = hgc->myProc_x;             /* short name, convenience variable */
-  size  = 0;                      /* size (in ints) to communicate */
-  count = 0;                      /* number of vertices to communicate */
-  for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
-    if (match[i] < 0)  {               /* external processor match */
-      int gx = -match[i]-1, proc = VTX_TO_PROC_X(hg,gx);
-      
-      /* rule to determine "ownership" of coarsened vertices between procs */
-      proc = ((gx + VTX_LNO_TO_GNO (hg,i)) & 1) ? MIN(proc, me) : MAX(proc, me);
-      
-      /* prepare to send data to owner */
-      if (proc != me)   {             /* another processor owns this vertex */
-        LevelMap[i] = -gx - 1;
-        size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
-        listgno[count]   = gx;                    /* listgno of vtx's to send */
-        listproc[count]  = proc;                  /* proc to send to */
-        listlno[count++] = i;                     /* lno of my match to gno */
-      } else   { /* myProc owns the matching across processors */ 
-        LevelMap[i] = c_hg->nVtx++;        /* next available coarse vertex */
+  if (hgp->match_array_type==0) { /* old style */
+      /* Assume all rows in a column have the entire (column's) matching info */
+      /* Calculate the number of resulting coarse verticeaas. */
+      c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
+      me = hgc->myProc_x;             /* short name, convenience variable */
+      size  = 0;                      /* size (in ints) to communicate */
+      count = 0;                      /* number of vertices to communicate */
+      for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
+          if (match[i] < 0)  {               /* external processor match */
+              int gx = -match[i]-1, proc = VTX_TO_PROC_X(hg, gx);
+              
+              /* rule to determine "ownership" of coarsened vertices between procs */
+              proc = ((gx + VTX_LNO_TO_GNO (hg,i)) & 1) ? MIN(proc, me) : MAX(proc, me);
+              
+              /* prepare to send data to owner */
+              if (proc != me)   {             /* another processor owns this vertex */
+                  LevelMap[i] = -gx - 1;
+                  size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
+                  listgno[count]   = gx;                    /* listgno of vtx's to send */
+                  listproc[count]  = proc;                  /* proc to send to */
+                  listlno[count++] = i;                     /* lno of my match to gno */
+              } else   { /* myProc owns the matching across processors */ 
+                  LevelMap[i] = c_hg->nVtx++;        /* next available coarse vertex */
+              }
+          } else if (!vmark[i]) {     /* local matching, packing and groupings */
+              int v = i;
+              int fixed = -1; 
+              while (!vmark[v])  {
+                  if (hg->fixed && hg->fixed[v] >= 0)
+                      fixed = hg->fixed[v];
+                  LevelMap[v] = c_hg->nVtx;         /* next available coarse vertex */      
+                  vmark[v] = 1;  /* flag this as done already */
+                  v = match[v];  
+              }
+              if (hg->fixed)
+                  c_hg->fixed[c_hg->nVtx] = fixed;      
+              ++c_hg->nVtx;
+          }
       }
-    } else if (!vmark[i]) {     /* local matching, packing and groupings */
-      int v = i;
-      int fixed = -1; 
-      while (!vmark[v])  {
-        if (hg->fixed && hg->fixed[v] >= 0)
-          fixed = hg->fixed[v];
-        LevelMap[v] = c_hg->nVtx;         /* next available coarse vertex */      
-        vmark[v] = 1;  /* flag this as done already */
-        v = match[v];  
+      *LevelSndCnt = count;
+  } else {  /* new style match array */
+    c_hg->nVtx = 0;                 /* counts number of new (coarsened) vertices */
+    me = hgc->myProc_x;             /* short name, convenience variable */
+    size  = 0;                      /* size (in ints) to communicate */
+    count = 0;                      /* number of vertices to communicate */
+    for (i = 0; i < hg->nVtx; ++i)
+        if (match[i] == VTX_LNO_TO_GNO(hg, i)) {
+            LevelMap[i] = c_hg->nVtx;
+            if (c_hg->fixed)
+                c_hg->fixed[c_hg->nVtx] = hg->fixed[i];
+/*            uprintf(hgc, "match[%d (gno=%d)] = %d   new vtxno=%d\n", i, VTX_LNO_TO_GNO(hg, i), match[i], c_hg->nVtx);*/
+            ++c_hg->nVtx;
+        }
+    
+    for (i = 0; i < hg->nVtx; i++)  {    /* loop over every local vertice */
+      if (match[i] != VTX_LNO_TO_GNO(hg, i))  {
+              int gx = match[i], proc = VTX_TO_PROC_X(hg, gx);
+                            
+              if (proc != me)   {             /* owner is external */
+                  LevelMap[i] = -gx - 1;     /* prepare to send data to owner */
+                  size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
+                  listgno[count]   = gx;                    /* listgno of vtx's to send */
+                  listproc[count]  = proc;                  /* proc to send to */
+                  listlno[count++] = i;                     /* lno of my match to gno */
+/*                  uprintf(hgc, "EXTMAT:  match[%d (gno=%d)] = %d \n", i, VTX_LNO_TO_GNO(hg, i), match[i]);*/
+      } else   { /* owner is local */
+                  LevelMap[i] = LevelMap[VTX_GNO_TO_LNO(hg, gx)];
+/*                  uprintf(hgc, "LOCMAT:  match[%d (gno=%d)] = %d   new vtxno=%d\n", i, VTX_LNO_TO_GNO(hg, i), match[i], LevelMap[i]);*/
+              }
       }
-      if (hg->fixed)
-        c_hg->fixed[c_hg->nVtx] = fixed;      
-      ++c_hg->nVtx;
     }
+    *LevelSndCnt = count;
+/*      errexit("this type of coarsening is not implemented yet"); */
   }
-  *LevelSndCnt = count;
   
   /* size and allocate the send buffer */
-  {
+  { 
   int header = (hg->fixed ? 4 : 3);
   size += ((header + hg->VtxWeightDim) * count);
   if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))
       MEMORY_ERROR;
-  }
+  } 
   
   /* Message is list of <gno, vweights, gno's edge count, list of edge lno's> */
   /* We pack ints and floats into same buffer */
@@ -408,6 +459,7 @@ if (c_hg->fixed)
         ++ahindex[ip[i+j]];
     i += sz;
   }
+
   for (i=0; i<hg->nEdge; ++i) /* prefix sum over ahindex */
     ahindex[i+1] += ahindex[i];
   /* now prepare ahvertex */

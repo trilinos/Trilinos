@@ -56,12 +56,22 @@ struct PHGPartParamsStruct {
                                     for all requested partitions. */
   int kway;                      /* 1 -> direct kway, 0->recursive bisection */
   int redl;                      /* Reduction limit (constant). */
+  int nCand;                     /* Maximum number of candidates per round;
+                                    currently only used in agglomerative matching */
+
   char convert_str[MAX_PARAM_STRING_LEN];  /* Graph->HG conversion method. */
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
   char redm_fast[MAX_PARAM_STRING_LEN]; /* Fast reduction method string. */
   char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/
     
   ZOLTAN_PHG_MATCHING_FN *matching;    /* Pointers to Matching function */
+  int  match_array_type;         /* interpretation of match array:
+                                    assuming (u,v, w) are matched
+                                    0 -> old style link-list
+                                         match[u] = v; match[v] = w;  match[w] = u;
+                                    1 -> all vertices point the representative
+                                         match[u] = match[v] = match[w] = u;
+                                 */
     
   int edge_scaling;              /* type of hyperedge weight scaling */
   int vtx_scaling;               /* type of vertex scaling for inner product */

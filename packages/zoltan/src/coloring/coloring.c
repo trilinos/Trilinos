@@ -58,7 +58,6 @@ static int waitPtrAndForbiddenColors(ZZ* zz, int rreqcntFx, MPI_Request *rreqsFx
 static int D2ParallelColoring (ZZ *zz, int nvtx, int nlvtx, int *visit, int *xadj, int *adj, int *xbadj, int *xadjnl, int *adjnl, int *adjproc, int *isbound, int ss, int *nColor, int *color, int **newcolored, int *mark, int gmaxdeg, G2LHash *hash, int **forbidden, int **xforbidden, int **forbiddenS, int **xforbiddenS, int *forbsize, int *forbsizeS, char color_method, char comm_pattern, int *rreqfromC, int *repliesC, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromF, int *repliesF, MPI_Request *sreqsF, MPI_Request *rreqsF, int *rreqfromFx, int *repliesFx, MPI_Request *sreqsFx, MPI_Request *rreqsFx, MPI_Status *stats, int *confChk, int *ssendsize, int *srecsize, int **ssendbuf, int **srecbuf, int ** ssp, int **srp, int **xfp, int *wset, int *wsize);
 static int D1DetectConflicts(ZZ *, int, int *, int *, int *, int *, int *, int *, int *, G2LHash *);
 static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int wsize, int *xadj, int *adj, int *adjproc, int *nColor, int *color, int *conflicts, int *rand_key, int *vmark, int *seen, int *where, int *pwhere, int **rcsendbuf, int **rcrecbuf, int *rcsendsize, int *rcrecsize, int **srp, MPI_Request *sreqsC, MPI_Request *rreqsC, int *rreqfromC, MPI_Status *stats, int *nconflict);
-static int GenPrime(int stop, int *prime_num);
     
 /*****************************************************************************/
 /*  Parameters structure for Color method.  Used in  */
@@ -234,7 +233,7 @@ int Zoltan_Color(
   MPI_Allreduce(&nvtx, &gvtx, 1, MPI_INT, MPI_SUM, zz->Communicator);        
   i = gvtx > xadj[nvtx] ? 2*xadj[nvtx] : 2*gvtx; /* i is the minimum hash size */
   i = i > nvtx ? i : 2*nvtx;   
-  if (GenPrime(i , &hsize)==ZOLTAN_MEMERR)
+  if (Zoltan_GenPrime(i , &hsize)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
   if (Zoltan_G2LHash_Create(&hash, hsize)==ZOLTAN_MEMERR)
       MEMORY_ERROR;
@@ -1790,56 +1789,6 @@ static int D2DetectConflicts(ZZ *zz, G2LHash *hash, int nlvtx, int *wset, int ws
     
     return ierr;
 }
-
-
-
-/*****************************************************************************/
-/* Returns the prime number closest to (and smaller than) stop */
-
-static int GenPrime(
-    int stop,
-    int *prime_num
-)
-{
-    int nap;
-    int num, c, i;
-    int *prime;
-    
-    prime = (int *) ZOLTAN_MALLOC(((stop/2) > 2 ? (stop/2) : 2) * sizeof(int));
-    if (!prime)
-        return ZOLTAN_MEMERR;
-    
-    prime[0] = 2; prime[1] = 3;
-    c = 2; /* initial primes */
-    
-    /* only have to check odd numbers */
-    for (num=5; num < stop; num = num + 2) {
-        nap = 0;  /* set not-a-prime false */        
-        /* cycle through list of known primes */
-        for (i=0; i < c; i++) { 
-            /* check if a previous prime divides evenly */
-            /* if so the number is not a prime */
-            if ((num % prime[i]) == 0) {
-                nap = 1;
-                break;
-            }            
-            /* stop if prime squared is bigger than the number */
-            if ((prime[i] * prime[i]) > num)
-                break;
-        }        
-        /* if not-a-prime, then we found a prime */
-        if (nap != 1) {
-           /* add prime to list of known primes */
-            prime[c] = num;
-            c++;
-        }
-    }
-    *prime_num = prime[c-1];
-
-    ZOLTAN_FREE(&prime);
-    return ZOLTAN_OK;
-}
-
 
 
 
