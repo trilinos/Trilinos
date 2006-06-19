@@ -197,7 +197,7 @@ AC_CXX_STD_SPRINTF
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetra, EPETRA, HAVE_EPETRA, yes, [Build Epetra support in Isorropia.], [Build Epetra support in Isorropia.  Can be overridden with --disable-isorropia-epetra.])
 
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( isorropia, zoltan, [Enable Isorropia interface support for Zoltan], ISORROPIA_ZOLTAN)
+TAC_ARG_ENABLE_FEATURE_SUB( isorropia, zoltan, [Enable Isorropia interface support for Zoltan], ISORROPIA_ZOLTAN, no)
 AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_isorropia_zoltan" != "Xno"])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext, EPETRAEXT, HAVE_EPETRAEXT, yes, [Use EpetraExt in Isorropia.], [Use EpetraExt in Isorropia.  Can be overridden with --disable-isorropia-epetraext.])
@@ -207,11 +207,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(isorropia, epetraext, EPETRAEXT, HAVE_EPETRAEXT, 
 # ------------------------------------------------------------------------
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( isorropia, tests, [Build Isorropia tests], ISORROPIA_TESTS)
+TAC_ARG_ENABLE_FEATURE_SUB( isorropia, tests, [Build Isorropia tests], ISORROPIA_TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_isorropia_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( isorropia, examples, [Build Isorropia examples], ISORROPIA_EXAMPLES)
+TAC_ARG_ENABLE_FEATURE_SUB( isorropia, examples, [Build Isorropia examples], ISORROPIA_EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_isorropia_examples" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
