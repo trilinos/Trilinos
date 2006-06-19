@@ -31,6 +31,7 @@
 
 #include "Thyra_MultipliedLinearOpBase.hpp"
 #include "Thyra_SingleScalarLinearOpBase.hpp"
+#include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_arrayArg.hpp"
 
 namespace Thyra {
@@ -127,7 +128,17 @@ public:
     ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
     );
 
-  /** \brief Initialize given a list of linear operators.
+  /** Calls <tt>initialize()</tt>.
+   *
+   * Rather than calling this constructor directly, consider using the non-member helper
+   * functions described \ref Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp "here".
+   */
+  DefaultMultipliedLinearOp(
+    const int                                                   numOps
+    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+    );
+
+  /** \brief Initialize given a list of non-const linear operators.
    *
    * @param  numOps  [in] Number of constituent operators.
    * @param  Ops     [in] Array (length <tt>numOps</tt>) of
@@ -151,25 +162,37 @@ public:
     ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
     );
 
-  /** \brief Set to uninitialized.
+  /** \brief Initialize given a list of const linear operators.
    *
-   * @param  numOps  [in] Number of operators (must be <tt>numOps==this->numOps()</tt>).
-   * @param  Ops     [out] Array (length <tt>numOps</tt>) that if <tt>Ops!=NULL</tt>
-   *                 then <tt>Ops[k]</tt> will be set to <tt>this->getOp(k)</tt>, for
-   *                 <tt>k=0...numOps-1</tt>.
+   * @param  numOps  [in] Number of constituent operators.
+   * @param  Ops     [in] Array (length <tt>numOps</tt>) of
+   *                 constituent linear operators and their
+   *                 aggregated default definitions of the
+   *                 non-transposed operator.
    *
    * Preconditions:<ul>
-   * <li>[<tt>Ops!=NULL</tt>] <tt>numOps==this->numOps()</tt>
+   * <li><tt>numOps > 0</tt>
+   * <li><tt>Ops != NULL</tt>
+   * <li><tt>Ops[k].op().get()!=NULL</tt>, for <tt>k=0...numOps-1</tt>
    * </ul>
+   *
+   * Postconditions:<ul>
+   * <li><tt>this->numOps()==numOps</tt>
+   * <li><tt>this->getOp(k).op().get()==Ops[k].op().get()</tt>, for <tt>k=0...numOps-1</tt>
+   * </ul>
+   */
+  void initialize(
+    const int                                                   numOps
+    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+    );
+
+  /** \brief Set to uninitialized.
    *
    * Postconditions:<ul>
    * <li><tt>this->numOps()==0</tt>
    * </ul>
    */
-  void uninitialize(
-    const int                                             numOps   = 0
-    ,Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]    = NULL
-    );
+  void uninitialize();
 
   //@}
 
@@ -179,7 +202,9 @@ public:
   /** \brief . */
   int numOps() const;
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<Scalar> > getOp(const int k);
+  bool opIsConst(const int k) const;
+  /** \brief . */
+  Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOp(const int k);
   /** \brief . */
   Teuchos::RefCountPtr<const LinearOpBase<Scalar> > getOp(const int k) const;
 
@@ -209,22 +234,20 @@ public:
 
   /** @name Overridden from LinearOpBase */
   //@{
-  /** \brief Returns <tt>this->getOp(0).range()</tt>.
-   *
-   * Preconditions:<ul>
-   * <li><tt>this->numOps()==0</tt>
-   * </ul>
+
+  /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
+   * and returns <tt>Teuchos::null</tt> otherwise.
    */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
-  /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt>.
-   *
-   * Preconditions:<ul>
-   * <li><tt>this->numOps()==0</tt>
-   * </ul>
+
+  /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
+   * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
    */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+
   /** \brief . */
   Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+
   //@}
 
 protected:
@@ -248,7 +271,7 @@ protected:
 
 private:
 
-  std::vector<Teuchos::RefCountPtr<LinearOpBase<Scalar> > >   Ops_;
+  std::vector<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > >   Ops_;
 
   void assertInitialized() const;
 
@@ -305,10 +328,8 @@ Thyra::multiply(
   return Teuchos::rcp(
     new DefaultMultipliedLinearOp<Scalar>(
       2
-      ,Teuchos::arrayArg<Teuchos::RefCountPtr<LinearOpBase<Scalar> > >(
-        Teuchos::rcp_const_cast<LinearOpBase<Scalar> >(A)
-        ,Teuchos::rcp_const_cast<LinearOpBase<Scalar> >(B)
-        )()
+      ,Teuchos::arrayArg<
+        Teuchos::RefCountPtr<const LinearOpBase<Scalar> > >(A,B)()
       )
     );
   // Note: The above const casts are okay since we protect them again in

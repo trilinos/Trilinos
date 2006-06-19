@@ -2,17 +2,18 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE = thyra/src/interfaces/operator_vector/ana/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+@INCLUDE = thyra/src/interfaces/operator_solve/ana/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+@INCLUDE = thyra/src/interfaces/operator_vector/ana/extended/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
 #
 # Package options
 #
-PROJECT_NAME           = "Extended Thyra ANA Operator/Vector Interfaces"
-OUTPUT_DIRECTORY       = ../src/interfaces/operator_vector/ana/extended/doc
+PROJECT_NAME           = "Extended Thyra ANA Operator/Solve Interfaces"
+OUTPUT_DIRECTORY       = ../src/interfaces/operator_solve/ana/extended/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../src/interfaces/operator_vector/ana/extended/doc/index.doc \
-                         ../src/interfaces/operator_vector/ana/extended \
+INPUT                  = ../src/interfaces/operator_solve/ana/extended/doc/index.doc \
+                         ../src/interfaces/operator_solve/ana/extended \
                          ./dirs.doc
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES
@@ -20,7 +21,7 @@ EXCLUDE                =
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           =
 EXAMPLE_PATTERNS       =
-IMAGE_PATH             = ../src/interfaces/operator_vector/ana/extended/doc/images
+IMAGE_PATH             =
 INPUT_FILTER           = 
 ALPHABETICAL_INDEX     = YES
 IGNORE_PREFIX          = 

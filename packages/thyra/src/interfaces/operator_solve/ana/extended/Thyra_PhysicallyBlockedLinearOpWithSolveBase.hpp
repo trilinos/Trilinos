@@ -30,65 +30,33 @@
 #define THYRA_PHYSICALLY_BLOCKED_LINEAR_OP_WITH_SOLVE_BASE_HPP
 
 #include "Thyra_BlockedLinearOpWithSolveBase.hpp"
+#include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 
 namespace Thyra {
 
-/** \brief .
+/** \brief Base interface for filling an implicit
+ * <tt>LinearOpWithSolveBase</tt> object as a set of
+ * <tt>LinearOpWithSolveBase<tt> and <tt>>LinearOpBase</tt> blocks.
  *
  * ToDo: Finish documentation.
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template<class RangeScalar, class DomainScalar=RangeScalar>
-class PhysicallyBlockedLinearOpBase
-  : virtual public BlockLinearOpBase<RangeScalar,DomainScalar>
+class PhysicallyBlockedLinearOpWithSolveBase
+  : virtual public BlockedLinearOpWithSolveBase<RangeScalar,DomainScalar>
+  , virtual public PhysicallyBlockedLinearOpBase<RangeScalar,DomainScalar>
 {
 public:
 
-  /** \brief Begin a block fill where the product range and domain spaces will
-   * be created on the fly.
-   *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>this->blockFillIsActive()==true</tt>
-   * <li><tt>this->productRange().get()==NULL</tt>
-   * <li><tt>this->productDomain().get()==NULL</tt>
-   * </ul>
-   */
-  virtual void beginBlockFill() = 0;
-
-  /** \brief Begin a block fill where the product range and domain spaces
-   * are set a priori.
-   *
-   * \param  productRange
-   *           [in] The product space to use of the range space.
-   * \param  productRange
-   *           [in] The product space to use of the domain space.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li><tt>productRange.get()!=NULL && productRange->dim() > 0</tt>
-   * <li><tt>productDomain.get()!=NULL && productDomain->dim() > 0</tt>
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>this->blockFillIsActive()==true</tt>
-   * <li><tt>this->productRange().get()==productRange.get()</tt>
-   * <li><tt>this->productDomain().get()==productDomain.get()</tt>
-   * </ul>
-   */
-  virtual void beginBlockFill(
-    const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  &productRange
-    ,const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > &productDomain
-    ) = 0;
-  
-  /** \brief Determines if a block fill is active or not . */
-  virtual bool blockFillIsActive() const = 0;
-
-  /** \brief Determines if the block <tt>(i,j)</tt> can be filled or not.
+  /** \brief Determines if the block <tt>(i,j)</tt> can be filled with a
+   * <tt>LinearOpWithSolveBase</tt> object or not.
    *
    * \param  i  [in] Zero-based index for the block row.
    * \param  j  [in] Zero-based index for the block column.
    *
    * <b>Preconditions:</b><ul>
+   * <li>this->blockFillIsActive()==true</tt>
    * <li><tt>i >= 0 && j >= 0</tt>
    * <li>[<tt>this->productRange().get()!=NULL</tt>]
    *       <tt>i < this->productRange()->numBlocks()</tt>
@@ -96,9 +64,9 @@ public:
    *       <tt>j < this->productDomain()->numBlocks()</tt>
    * </ul>
    */
-  virtual bool acceptsBlock(const int i, const int j) const = 0;
+  virtual bool acceptsBlockLOWSB(const int i, const int j) const = 0;
   
-  /** \brief Set a non-const block linear operator.
+  /** \brief Set a non-const block <tt>LinearOpWithSolveBase</tt> object.
    *
    * \param  i  [in] Zero-based index for the block row.
    * \param  j  [in] Zero-based index for the block column.
@@ -106,15 +74,15 @@ public:
    *            [in] The block operator being set.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>this->acceptsBlock(i,j)==true</tt>
+   * <li><tt>this->acceptsBlockLOWS(i,j)==true</tt>
    * </ul>
    */
-  virtual void setBlock(
+  virtual void setNonconstBlockLOWS(
     const int i, const int j
-    ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &block
+    ,const Teuchos::RefCountPtr<LinearOpWithSolveBase<Scalar> > &block
     ) = 0;
   
-  /** \brief Set a const block linear operator.
+  /** \brief Set a const block <tt>LinearOpWithSolveBase</tt> object.
    *
    * \param  i  [in] Zero-based index for the block row.
    * \param  j  [in] Zero-based index for the block column.
@@ -122,23 +90,13 @@ public:
    *            [in] The block operator being set.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>this->acceptsBlock(i,j)==true</tt>
+   * <li><tt>this->acceptsBlockLOWS(i,j)==true</tt>
    * </ul>
    */
-  virtual void setBlock(
+  virtual void setBlockLOWS(
     const int i, const int j
-    ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &block
+    ,const Teuchos::RefCountPtr<const LinearOpWithSolveBase<Scalar> > &block
     ) = 0;
-  
-  /** \brief End a block fill after which <tt>*this</tt> object can be used.
-   *
-   * <b>Postconditions:</b><ul>
-   * <li><tt>this->blockFillIsActive()==false</tt>
-   * <li><tt>this->productRange().get()!=NULL</tt>
-   * <li><tt>this->productDomain().get()!=NULL</tt>
-   * </ul>
-   */
-  virtual void endBlockFill() = 0;
 
 };
 

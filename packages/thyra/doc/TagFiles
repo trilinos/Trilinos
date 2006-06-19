@@ -3,6 +3,7 @@ TAGFILES += \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesOperatorVectorANAFundamental.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/operator_vector/ana/fundamental/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesOperatorVectorANAExtended.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/operator_vector/ana/extended/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesOperatorSolveANAFundamental.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/operator_solve/ana/fundamental/doc/html \
+  $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesOperatorSolveANAExtended.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/operator_solve/ana/extended/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesNonlinearModelEvaluatorANAFundamental.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraInterfacesNonlinearSolversANAFundamental.tag=$(TRILINOS_HOME)/packages/thyra/src/interfaces/nonlinear/solvers/ana/fundamental/doc/html \
   $(TRILINOS_HOME)/packages/common/tag_files/ThyraSupportOperatorVector.tag=$(TRILINOS_HOME)/packages/thyra/src/support/operator_vector/doc/html \

@@ -31,12 +31,19 @@ define interoperability between objects in many contexts.
         or more constituent <tt>Thyra::MultiVectorBase</tt> objects.
     </ul>
 
-  <li> <b>Composite linear operator base classes</b>
+  <li> <b>Composite and other linear operator base classes</b>
   
     <ul>
     <li><tt>Thyra::ScaledAdjointLinearOpBase</tt> is the base class for all decorator subclasses that implicitly
       scale and/or transpose a <tt>Thyra::LinearOpBase</tt> object.
-    <li>...
+    <li><tt>Thyra::ZeroLinearOpBase</tt> defines the interface for a zero linear operator.
+    <li><tt>Thyra::IdentityLinearOpBase</tt> defines the interface for an identity linear operator \f$I\f$.
+    <li><tt>Thyra::AddedLinearOpBase</tt> defines the interface for implicitly added linear operators.
+    <li><tt>Thyra::MultipliedLinearOpBase</tt> defines the interface for implicitly added linear operators.
+    <li><tt>Thyra::DiagonalLinearOpBase</tt> defines the interface for a basic diagonal linear operator.
+    <li><tt>Thyra::BlockedLinearOpBase</tt> is a base class for a logically blocked <tt>LinearOpBase</tt>.
+    <li><tt>Thyra::PhysicallyBlockedLinearOpBase</tt> is a base class for a blocked
+      blocked <tt>LinearOpBase</tt> object where the blocks can be set externally.
     </ul>
 
   <li> <b>MPI-Specific ANA-based interfaces</b>

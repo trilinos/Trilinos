@@ -9,6 +9,8 @@ rm -r ../src/interfaces/operator_vector/ana/extended/doc/html
 
 rm -r ../src/interfaces/operator_solve/ana/fundamental/doc/html
 
+rm -r ../src/interfaces/operator_solve/ana/extended/doc/html
+
 rm -r ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
 
 rm -r ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html
@@ -31,6 +33,8 @@ mkdir ../src/interfaces/operator_vector/ana/fundamental/doc/html
 mkdir ../src/interfaces/operator_vector/ana/extended/doc/html
 
 mkdir ../src/interfaces/operator_solve/ana/fundamental/doc/html
+
+mkdir ../src/interfaces/operator_solve/ana/extended/doc/html
 
 mkdir ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html
 

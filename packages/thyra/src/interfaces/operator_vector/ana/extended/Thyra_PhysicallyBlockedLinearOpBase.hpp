@@ -46,7 +46,7 @@ namespace Thyra {
  */
 template<class RangeScalar, class DomainScalar=RangeScalar>
 class PhysicallyBlockedLinearOpBase
-  : virtual public BlockLinearOpBase<RangeScalar,DomainScalar>
+  : virtual public BlockedLinearOpBase<RangeScalar,DomainScalar>
 {
 public:
 
@@ -94,6 +94,7 @@ public:
    * \param  j  [in] Zero-based index for the block column.
    *
    * <b>Preconditions:</b><ul>
+   * <li>this->blockFillIsActive()==true</tt>
    * <li><tt>i >= 0 && j >= 0</tt>
    * <li>[<tt>this->productRange().get()!=NULL</tt>]
    *       <tt>i < this->productRange()->numBlocks()</tt>
@@ -114,7 +115,7 @@ public:
    * <li><tt>this->acceptsBlock(i,j)==true</tt>
    * </ul>
    */
-  virtual void setBlock(
+  virtual void setNonconstBlock(
     const int i, const int j
     ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &block
     ) = 0;
@@ -136,6 +137,9 @@ public:
     ) = 0;
   
   /** \brief End a block fill after which <tt>*this</tt> object can be used.
+   *
+   * If a valid linear operator object can not be formed from what was set
+   * then a ??? exception will be thrown.
    *
    * <b>Postconditions:</b><ul>
    * <li><tt>this->blockFillIsActive()==false</tt>

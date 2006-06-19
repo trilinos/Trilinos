@@ -33,6 +33,12 @@ echo
 doxygen ../src/interfaces/operator_solve/ana/fundamental/doc/Doxyfile
 
 echo
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_solve/ana/extended ..."
+echo
+
+doxygen ../src/interfaces/operator_solve/ana/extended/doc/Doxyfile
+
+echo
 echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental ..."
 echo
 

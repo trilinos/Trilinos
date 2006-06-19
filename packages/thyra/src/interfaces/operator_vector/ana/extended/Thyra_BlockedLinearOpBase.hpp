@@ -104,7 +104,7 @@ public:
    * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >
-  getBlock(const int i, const int j) = 0; 
+  getNonconstBlock(const int i, const int j) = 0; 
 
   /** \brief Return a const view of the block <tt>(i,j)</tt> if it exists.
    *

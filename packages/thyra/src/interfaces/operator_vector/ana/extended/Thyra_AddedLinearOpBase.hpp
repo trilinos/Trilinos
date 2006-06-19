@@ -26,19 +26,19 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
-#define THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
+#ifndef THYRA_ADDED_LINEAR_OP_BASE_HPP
+#define THYRA_ADDED_LINEAR_OP_BASE_HPP
 
 #include "Thyra_LinearOpBase.hpp"
 
 namespace Thyra {
 
-/** \brief Interface class for implicitly multiplied linear operators.
+/** \brief Interface class for implicitly added linear operators.
  *
- * This interface represents a multiplied linear operator <tt>M</tt> of the form:
+ * This interface represents a added linear operator <tt>M</tt> of the form:
  \verbatim
  
- M = Op[0] * Op[1] * ... * Op[numOps-1]
+ M = Op[0] + Op[1] + ... + Op[numOps-1]
  \endverbatim
  *
  * where <tt>Op[]</tt> is an array of <tt>numOps</tt> <tt>LinearOpBase</tt>
@@ -51,13 +51,13 @@ namespace Thyra {
  \verbatim
 
  y = alpha*M*x + beta*y
-   = alpha * ( Op[0] * ( Op[1] * ( .... ( Op[numOps-1] * x ) ... ) ) ) + beta * y
+   = alpha * ( Op[0] * x + Op[1] * x + ...  + Op[numOps-1] * x ) + beta * y
  \endverbatim
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template<class Scalar>
-class MultipliedLinearOpBase : virtual public LinearOpBase<Scalar> {
+class AddedLinearOpBase : virtual public LinearOpBase<Scalar> {
 public:
 
   /** @name Pure virtual functions that must be overridden by subclasses */
@@ -106,4 +106,4 @@ public:
 
 } // namespace Thyra
 
-#endif	// THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
+#endif	// THYRA_ADDED_LINEAR_OP_BASE_HPP

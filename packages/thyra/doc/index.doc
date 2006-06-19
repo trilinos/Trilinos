@@ -16,6 +16,7 @@
     <li><a href="index.html#interfaces_operator_solve">Operator Solve Interfaces</a>
       <ul>
       <li><a href="index.html#interfaces_operator_solve_ana_fundamental">Fundamental ANA Operator Solve Interfaces</a>
+      <li><a href="index.html#interfaces_operator_solve_ana_extended">Extended ANA Operator Solve Interfaces</a>
       </ul>
     <li><a href="index.html#interfaces_nonlinear">Nonlinear Interfaces</a>
       <ul>
@@ -117,6 +118,13 @@ structure of thyra</a>.
     interface to preconditioners, linear solvers
     (<tt>Thyra::LinearOpWithSolveBase</tt>) and factories for these (i.e.
     <tt>Thyra::LinearOpWithSolveBase</tt> and <tt>Thyra::PreconditionerFactoryBase</tt>)
+
+  <li> <b><a href="../../src/interfaces/operator_solve/ana/extended/doc/html/index.html">
+    Extended ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_extended"></a>
+
+    Included here are a variety extended interfaces that build on the fundamental operator/solve
+    interfaces.  Examples include <tt>Thyra::BlockedLinearOpWithSolveBase.</tt> and
+    <tt>Thyra::PhysicallyBlockedLinearOpWithSolveBase</tt>.
 
   </ul>
 

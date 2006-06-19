@@ -50,6 +50,15 @@ DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
 }
 
 template<class Scalar>
+DefaultMultipliedLinearOp<Scalar>::DefaultMultipliedLinearOp(
+  const int                                                   numOps
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
+  )
+{
+  initialize(numOps,Ops);
+}
+
+template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::initialize(
   const int                                                   numOps
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
@@ -68,22 +77,38 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
   }
 #endif
   Ops_.resize(numOps);
-  std::copy( Ops, Ops+numOps, Ops_.begin() );
+  for( int k = 0; k < numOps; ++k )
+    Ops_[k].initialize(Ops[k]);
 }
 
 template<class Scalar>
-void DefaultMultipliedLinearOp<Scalar>::uninitialize(
-  const int                                             numOps
-  ,Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
+void DefaultMultipliedLinearOp<Scalar>::initialize(
+  const int                                                   numOps
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
   )
 {
 #ifdef _DEBUG
-  TEST_FOR_EXCEPT( Ops!=NULL && numOps!=this->numOps() );
+  TEST_FOR_EXCEPT( numOps <= 0 || Ops == NULL );
+  for( int k = 0; k < numOps; ++k ) {
+    TEST_FOR_EXCEPT( Ops[k].get() == NULL );
+    if( k < numOps-1 ) {
+      THYRA_ASSERT_VEC_SPACES(
+        "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
+        ,*Ops[k]->domain(), *Ops[k+1]->range()
+        );
+    }
+  }
 #endif
-  if(Ops) std::copy( Ops_.begin(), Ops_.end(), Ops );
-  Ops_.resize(0);
+  Ops_.resize(numOps);
+  for( int k = 0; k < numOps; ++k )
+    Ops_[k].initialize(Ops[k]);
 }
 
+template<class Scalar>
+void DefaultMultipliedLinearOp<Scalar>::uninitialize()
+{
+  Ops_.resize(0);
+}
 
 // Overridden from Teuchos::Describable
                                                 
@@ -147,21 +172,32 @@ int DefaultMultipliedLinearOp<Scalar>::numOps() const
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<LinearOpBase<Scalar> > DefaultMultipliedLinearOp<Scalar>::getOp(const int k)
+bool DefaultMultipliedLinearOp<Scalar>::opIsConst(const int k) const
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
-  return Ops_[k];
+  return Ops_[k].isConst();
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<const LinearOpBase<Scalar> > DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+DefaultMultipliedLinearOp<Scalar>::getNonconstOp(const int k)
 {
 #ifdef _DEBUG
   TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
-  return Ops_[k];
+  return Ops_[k].getNonconstObj();
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
+{
+#ifdef _DEBUG
+  TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
+#endif
+  return Ops_[k].getConstObj();
 }
 
 // Overridden from LinearOpBase

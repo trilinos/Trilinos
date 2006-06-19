@@ -65,7 +65,7 @@ public:
    * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
-  getBlockLOWS(const int i, const int j) = 0; 
+  getNonconstBlockLOWS(const int i, const int j) = 0; 
 
   /** \brief Return a const view of the block <tt>(i,j)</tt> if it exists.
    *
