@@ -45,15 +45,55 @@ extern "C" {
 #undef NDEBUG
 #include <assert.h>
 
+namespace {
+
+using Teuchos::RefCountPtr;
+
+template<class T, class DeleteFunctor>
+class DeallocFunctorDeleteWithCommon
+{
+public:
+  DeallocFunctorDeleteWithCommon(
+				 const RefCountPtr<paraklete_common>  &common
+				 ,DeleteFunctor                        deleteFunctor
+				 )
+    : common_(common), deleteFunctor_(deleteFunctor)
+    {}
+  typedef T ptr_t;
+  void free( T* ptr ) {
+    if(ptr) deleteFunctor_(&ptr,&*common_);
+  }
+private:
+  Teuchos::RefCountPtr<paraklete_common> common_;
+  DeleteFunctor deleteFunctor_;
+  DeallocFunctorDeleteWithCommon(); // Not defined and not to be called!
+};
+
+template<class T, class DeleteFunctor>
+DeallocFunctorDeleteWithCommon<T,DeleteFunctor>
+deallocFunctorDeleteWithCommon(
+			       const RefCountPtr<paraklete_common>  &common
+			       ,DeleteFunctor                        deleteFunctor
+			       )
+{
+  return DeallocFunctorDeleteWithCommon<T,DeleteFunctor>(common,deleteFunctor);
+}
+
+
+} // namespace 
+
+
+
 class Amesos_Paraklete_Pimpl {
 public:
 
 
   cholmod_sparse pk_A_ ;
-  paraklete_common Common_ ; 
+#define  USE_REF_COUNT_PTR
 #ifdef USE_REF_COUNT_PTR
   Teuchos::RefCountPtr<paraklete_symbolic> LUsymbolic_ ;
   Teuchos::RefCountPtr<paraklete_numeric> LUnumeric_ ;
+  Teuchos::RefCountPtr<paraklete_common> common_;
 #else
   paraklete_symbolic* LUsymbolic_ ; 
   paraklete_numeric* LUnumeric_ ; 
@@ -453,10 +493,13 @@ int Amesos_Paraklete::PerformSymbolicFactorization()
 {
   ResetTime(0);
 
-#if USE_REF_COUNT_PTR
+#ifdef USE_REF_COUNT_PTR
     PrivateParakleteData_->LUsymbolic_ =
-	rcp( paraklete_analyze ( &*PrivateParakleteData_->pk_A_, &PrivateParakleteData_->Common_ ),
-		 deallocFunctorHandleDelete<paraklete_symbolic>(paraklete_free_symbolic), false  );
+	rcp( paraklete_analyze ( &PrivateParakleteData_->pk_A_, &*PrivateParakleteData_->common_ )
+	     ,deallocFunctorDeleteWithCommon<paraklete_symbolic>(PrivateParakleteData_->common_,
+								 paraklete_free_symbolic)
+	     ,false
+	     );
 #else
     PrivateParakleteData_->LUsymbolic_ =
       paraklete_analyze ( &PrivateParakleteData_->pk_A_, 
@@ -483,20 +526,14 @@ int Amesos_Paraklete::PerformNumericFactorization( )
 
     bool factor_with_pivoting = true ;
 
-    // set the default parameters
-#if 0
-    klu_control control ;
-    klu_btf_defaults (&control) ;
-    control.scale = ScaleMethod_ ;
-#endif
-
-
 #ifdef USE_REF_COUNT_PTR
 	PrivateParakleteData_->LUnumeric_ =
 	  rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
 				     &*PrivateParakleteData_->LUsymbolic_, 
-				     &PrivateParakleteData_->Common_ ), 
-		 deallocFunctorHandleDelete<paraklete_numeric>( paraklete_free_numeric), true );
+				     &*PrivateParakleteData_->common_ ) 
+	  ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
+	  ,false
+	  );
 #else
 	PrivateParakleteData_->LUnumeric_ =
 	  paraklete_factorize ( &PrivateParakleteData_->pk_A_,
@@ -579,7 +616,10 @@ int Amesos_Paraklete::SymbolicFactorization()
      }
   }
 
-  paraklete_common& pk_common =  PrivateParakleteData_->Common_ ;
+
+  PrivateParakleteData_->common_ = rcp(new paraklete_common());
+
+  paraklete_common& pk_common =  *PrivateParakleteData_->common_ ;
   cholmod_common *cm = &(pk_common.cm) ;
   cholmod_start (cm) ;
   DEBUG_INIT ("pk") ;
@@ -744,11 +784,11 @@ int Amesos_Paraklete::Solve()
     assert( NumVectors_ == 1 ) ; 
     if (UseTranspose()) {
       paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
-			&SerialXBvalues_[0],  &PrivateParakleteData_->Common_ );
+			&SerialXBvalues_[0],  &*PrivateParakleteData_->common_ );
     } else {  // bug - I expect this one to fail - KSS 
       AMESOS_CHK_ERR( 101 ) ; 
       paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
-			&SerialXBvalues_[0],  &PrivateParakleteData_->Common_ );
+			&SerialXBvalues_[0],  &*PrivateParakleteData_->common_ );
     }
 
   AddTime("solve", 0);
