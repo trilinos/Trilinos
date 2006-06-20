@@ -30,9 +30,9 @@
 #define TEUCHOS_DEFAULT_COMM_HPP
 
 #include "Teuchos_RefCountPtr.hpp"
-#include "Teuchos_SerialComm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
-#  include "Teuchos_MpiComm.hpp"
+#  include "Teuchos_DefaultMpiComm.hpp"
 #endif
 
 namespace Teuchos {

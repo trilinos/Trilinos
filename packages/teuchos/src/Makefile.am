@@ -68,6 +68,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
   $(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
   $(srcdir)/Teuchos_DefaultComm.hpp \
+  $(srcdir)/Teuchos_DefaultMpiComm.hpp \
+	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
 	$(srcdir)/Teuchos_dyn_cast.hpp \
@@ -82,7 +84,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_oblackholestream.hpp \
-  $(srcdir)/Teuchos_MpiComm.hpp \
 	$(srcdir)/Teuchos_MPIComm.hpp \
 	$(srcdir)/Teuchos_MPIContainerComm.hpp \
 	$(srcdir)/Teuchos_MPISession.hpp \
@@ -110,7 +111,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversionsDecl.hpp \
 	$(srcdir)/Teuchos_RefCountPtrBoostSharedPtrConversions.hpp \
 	$(srcdir)/Teuchos_ScalarTraits.hpp \
-	$(srcdir)/Teuchos_SerialComm.hpp \
   $(srcdir)/Teuchos_SerializationTraits.hpp \
   $(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
   $(srcdir)/Teuchos_Serializer.hpp \
