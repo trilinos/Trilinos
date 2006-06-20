@@ -12,7 +12,7 @@ RUN (beowulf-nightly-serial) {
     INVOKE-CONFIGURE    = linux-beowulf;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -33,7 +33,7 @@ RUN (beowulf-nightly-mpi) {
     MPI-START           = lamboot /home/mnphenow/.lamhosts;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -52,7 +52,7 @@ RUN (beowulf-coverage) {
    #TEST-CATEGORY       = COVERAGE; # set up later
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -71,7 +71,7 @@ RUN (herouxsmp-nightly-serial) {
     MAKE-COMMAND        = make -j4;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -93,7 +93,7 @@ RUN (herouxsmp-nightly-mpi) {
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -112,7 +112,7 @@ RUN (paunchy-nightly-serial) {
     MAKE-COMMAND        = /Net/local/gnu/bin/gmake;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -134,7 +134,7 @@ RUN (paunchy-nightly-mpi) {
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -153,7 +153,7 @@ RUN (atlantis-nightly-serial) {
     MAKE-COMMAND        = gmake;
     TEST-CATEGORY       = FRAMEWORK;
     TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -173,7 +173,7 @@ RUN (atlantis-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 5;
     TTR-DIR             = /scratch1/mnpheno/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 ###############################################################################
@@ -237,7 +237,7 @@ RUN (s858352-nightly-serial) {
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;
     TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
@@ -258,7 +258,7 @@ RUN (s858352-nightly-mpi) {
     MPI-START           = lamboot;
     MPI-STOP            = lamhalt;
     TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
-    SSG-USERNAME        = mnphenow;
+    SSG-USERNAME        = mnpheno;
 
 }
 
