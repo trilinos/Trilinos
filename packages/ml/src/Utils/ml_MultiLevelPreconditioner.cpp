@@ -2195,6 +2195,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   double MLSalpha = List_.get("coarse: MLS alpha",27.0);
   int MLSPolynomialOrder = List_.get("coarse: MLS polynomial order",3);
+
+  char msg[80];
+  sprintf(msg,"Coarse solve (level %d) : ", LevelID_[NumLevels_-1]);
     
   int MaxProcs = List_.get("coarse: max processes", -1);
 
@@ -2298,7 +2301,36 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   else if( CoarseSolution == "symmetric block Gauss-Seidel" ) 
     ML_Gen_Smoother_SymBlockGaussSeidel(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER,
                                         NumSmootherSteps, Omega, NumPDEEqns_);
-  else if( CoarseSolution == "do-nothing" ) {
+
+  else if(CoarseSolution == "user-defined" ||CoarseSolution == "user defined") {
+    // ============ //
+    // user-defined //
+    // ============ //
+
+    int (*userSmootherPtr)(ML_Smoother *, int, double *, int, double *);
+    userSmootherPtr = NULL;
+    userSmootherPtr = List_.get("coarse: user-defined function",
+                                userSmootherPtr);
+    string userSmootherName;
+    userSmootherName = List_.get("coarse: user-defined name", "User-defined");
+
+    if( verbose_ ) cout << msg << userSmootherName << " (sweeps=" 
+			 << NumSmootherSteps << ", post-smoothing only)" << endl;
+
+    if (userSmootherPtr == NULL) {
+      if (Comm().MyPID() == 0)
+        cerr << ErrorMsg_
+             << "No pointer to user-defined smoother function found." << endl;
+      ML_EXIT(EXIT_FAILURE);
+    }
+    ML_Operator *data;
+    ML_Get_Amatrix(ml_, LevelID_[NumLevels_-1], &data);
+    ML_Set_Smoother(ml_, LevelID_[NumLevels_-1], ML_POSTSMOOTHER, data,
+                    userSmootherPtr,
+                    const_cast<char *>(userSmootherName.c_str()));
+
+  } else if( CoarseSolution == "do-nothing" ) {
+
     // do nothing, ML will not use any coarse solver 
   } else {
     if( Comm().MyPID() == 0 ) {
@@ -2308,7 +2340,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       cout << ErrorMsg_ << "<MLS> / <Hiptmair> / <Amesos-LAPACK> / <Amesos-KLU> /" << endl;
       cout << ErrorMsg_ << "<Amesos-UMFPACK> / <Amesos-Superludist> / <Amesos-Superlu> /" << endl;
       cout << ErrorMsg_ << "<Amesos-MUMPS> / <block Gauss-Seidel> /" << endl;
-      cout << ErrorMsg_ << "<symmetric block Gauss-Seidel>";
+      cout << ErrorMsg_ << "<symmetric block Gauss-Seidel> / <user-defined>"
+           << endl;
     }
 
     ML_EXIT(-1);
