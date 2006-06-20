@@ -1,21 +1,24 @@
 #!/bin/sh
 
-if [ ${#} != 2 ] ; then \
+if [ ${#} != 3 ] ; then \
 echo " ";\
-echo " usage: run_tests <path-to-Trilinos> <build-sub-dir>";\
+echo " usage: run_tests <path-to-Trilinos> <build-sub-dir> <mpi-launch-cmd>";\
 echo " ";\
-echo " example: 'runtests /home/me/Trilinos bld_linux'";\
+echo " example: % runtests /home/me/Trilinos bld_linux 'mpirun -np ' ";\
+echo " ";\
+echo "  (Note the quotes around the mpirun command, since it contains spaces)";\
 echo " ";\
 exit 1;\
 fi
 
 trilinosdir=${1}
 builddir=${2}
+mpiruncmd=${3}
 
 perl ../../../commonTools/test/utilities/runtests \
    --comm=mpi --category=FRAMEWORK --packages=isorropia \
    --trilinos-dir=${trilinosdir} \
    --build-dir=${builddir} \
-   --mpi-go="mpirun -machinefile ~/machinefile -np " \
+   --mpi-go="${mpiruncmd}" \
    --output-dir=${trilinosdir}/${builddir}/packages/isorropia/test
 
