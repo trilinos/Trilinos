@@ -29,7 +29,7 @@
 #ifndef THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP
 #define THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP
 
-#include "Thyra_MultipliedLinearOpBase.hpp"
+#include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_arrayArg.hpp"
@@ -68,6 +68,14 @@ class DefaultBlockedLinearOp
 {
 public:
 
+  /** @name Constructors */
+  //@{
+
+  /** \brief . */
+  DefaultBlockedLinearOp();
+
+  //@}
+
   /** @name Overridden from PhysicallyBlockedLinearOpBase */
   //@{
 
@@ -101,22 +109,20 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<RangeScalar> >
-  /** \brief . */
+  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
   productRange() const;
   /** \brief . */
-  Teuchos::RefCountPtr<const ProductVectorSpaceBase<DomainScalar> >
-  /** \brief . */
+  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
   productDomain() const;
   /** \brief . */
   bool blockExists(const int i, const int j) const; 
   /** \brief . */
   bool blockIsConst(const int i, const int j) const; 
   /** \brief . */
-  Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >
+  Teuchos::RefCountPtr<LinearOpBase<Scalar> >
   getNonconstBlock(const int i, const int j); 
   /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
   getBlock(const int i, const int j) const; 
 
   //@}
@@ -200,6 +206,44 @@ private:
 
 };
 
+/** \brief Form an implicit block 2x2 linear operator <tt>return = [ A00, A01; A10, A11 ]</tt>.
+
+ * <tt>A</tt> and <tt>B</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+block2x2(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A11
+  );
+
 } // namespace Thyra
+
+// /////////////////////////////////////
+// Template Implementations
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Thyra::block2x2(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A11
+  )
+{
+  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill();
+  M->setBlock(0,0,A00);
+  M->setBlock(0,1,A01);
+  M->setBlock(1,0,A10);
+  M->setBlock(1,1,A11);
+  M->endBlockFill();
+  return M;
+}
 
 #endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP

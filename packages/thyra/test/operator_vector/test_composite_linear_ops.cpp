@@ -30,6 +30,7 @@
 #include "Thyra_DefaultMPIVectorSpace.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
@@ -268,6 +269,20 @@ bool run_composite_linear_ops_tests(
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A7,out.get());
   if(!result) success = false;
+
+/*
+ 
+  if(out.get()) *out << "\nCreating a blocked linear operator A8 = [ A6, A1; A1^H, origA ] ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A8 = block2x2( A6, A1, adjoint(A1), origA );
+  if(out.get()) *out << "\nA8 =\n" << describe(*A8,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  
+  if(out.get()) *out << "\nTesting A8 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A8,out.get());
+  if(!result) success = false;
+
+*/
 
   if(out.get()) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
 
