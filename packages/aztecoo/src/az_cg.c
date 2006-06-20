@@ -261,11 +261,11 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
     }
 
     p_ap_dot = AZ_gdot(N, p, ap, proc_config);
-    if (fabs(p_ap_dot) < brkdown_tol) {
+    if (p_ap_dot < brkdown_tol) {
 
       /* possible problem */
 
-      if (AZ_breakdown_f(N, p, ap, p_ap_dot, proc_config)) {
+      if (p_ap_dot < 0 || AZ_breakdown_f(N, p, ap, p_ap_dot, proc_config)) {
 
         /* something wrong */
 
@@ -278,7 +278,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
                                   options, proc_config);
         return;
       }
-      else brkdown_tol = 0.1 * fabs(p_ap_dot);
+      else brkdown_tol = 0.1 * p_ap_dot;
     }
 
     alpha  = r_z_dot / p_ap_dot;
