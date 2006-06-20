@@ -60,6 +60,7 @@ bool run_composite_linear_ops_tests(
   typedef Teuchos::ScalarTraits<ScalarMag> STM;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
+  using Teuchos::rcp_const_cast;
   using Teuchos::dyn_cast;
   using Teuchos::OSTab;
 
@@ -253,6 +254,19 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nTesting A6 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A6,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a non-const multiplicative operator A7 = origA^H*A1 ...\n";
+  RefCountPtr<Thyra::LinearOpBase<Scalar> >
+    A7 = multiply(
+      rcp_const_cast<Thyra::LinearOpBase<Scalar> >(adjoint(origA))
+      ,rcp_const_cast<Thyra::LinearOpBase<Scalar> >(A1)
+      );
+  if(out.get()) *out << "\nA7 =\n" << describe(*A7,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+
+  if(out.get()) *out << "\nTesting A7 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A7,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";

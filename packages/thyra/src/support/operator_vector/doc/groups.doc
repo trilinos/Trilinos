@@ -756,7 +756,7 @@ are shown below:
     that should be sufficient for most use cases.
 <li><tt>Thyra::DefaultProductVector</tt> is a general concrete implementation of <tt>Thyra::ProductVectorBase</tt>
     that should be sufficient for most use cases.
-<li><tt>Thyra::ProductMultiVector</tt> is a general concrete implementation of <tt>Thyra::ProductMultiVectorBase</tt>
+<li><tt>Thyra::DefaultProductMultiVector</tt> is a general concrete implementation of <tt>Thyra::ProductMultiVectorBase</tt>
     that should be sufficient for most use cases. (ToDo: This needs to be implemented!)
 </ul>
 
@@ -767,7 +767,7 @@ When using product vector spaces, product vectors and product
 multi-vectors it is generally the case where a concrete
 <tt>Thyra::DefaultProductVectorSpace</tt> object is first created and then
 <tt>Thyra::DefaultProductVector</tt> and
-<tt>Thyra::ProductMultiVector</tt> objects are created by the
+<tt>Thyra::DefaultProductMultiVector</tt> objects are created by the
 functions <tt>Thyra::DefaultProductVectorSpace::createMember()</tt> and
 <tt>Thyra::DefaultProductVectorSpace::createMembers()</tt>.  See
 \ref Thyra_Op_Vec_product_vec_spc_prg_grp "this example"
@@ -780,14 +780,42 @@ There are several different types of useful composite
 useful composite linear operator subclasses are shown below:
 
 <ul>
-<li><tt>Thyra::DefaultDiagonalLinearOp</tt> is a simple concrete subclass that defines a diagonal <tt>Thyra::LinearOpBase</tt>
-    \f$M = \gamma \; \mbox{diag}(d) \in \Re^{n \times n}\f$
-    out of any <tt>Thyra::VectorBase</tt> object for the diagonal \f$d \in \Re^n\f$.
-<li><tt>Thyra::DefaultScaledAdjointLinearOp</tt> is a simple concrete decorator subclass that defines an
-    implicit scaled and/or adjoined (or transposed) linear operator \f$M = \gamma \; op(A)\f$.
-<li><tt>Thyra::DefaultMultipliedLinearOp</tt> is a simple concrete composite subclass that defines a composite multiplicative
-    <tt>Thyra::LinearOpBase</tt> of the form \f$M = \gamma \; A_1 A_2 \ldots A_m}\f$ composed out of one or more
-    constituent linear operators \f$A_1, A_2 \ldots A_m\f$.
+
+<li><tt>Thyra::DefaultDiagonalLinearOp</tt> is a simple concrete subclass
+  that defines a diagonal linear operator
+
+  \f$M = \mbox{diag}(d) \in \Re^{n \times n}\f$
+
+  out of any <tt>Thyra::VectorBase</tt> object for the diagonal \f$d \in \Re^n\f$.
+
+<li><tt>Thyra::DefaultScaledAdjointLinearOp</tt> is a simple concrete
+  decorator subclass that defines an
+  implicit scaled and/or adjoined (or transposed) linear operator
+
+  \f$M = \gamma \; op(A)\f$.
+
+<li><tt>Thyra::DefaultMultipliedLinearOp</tt> is a simple concrete composite
+  subclass that defines a composite multiplicative
+  <tt>Thyra::LinearOpBase</tt> of the form
+
+  \f$M =\; A_1 A_2 \ldots A_m}\f$
+
+  composed out of one or more constituent linear operators
+  \f$A_0, A_1 \ldots A_{m-1}\f$.
+
+<li><tt>Thyra::DefaultBlockedLinearOp</tt> is a simple concrete composite
+  subclass that defines a composite blocking of
+  <tt>Thyra::LinearOpBase</tt> objects of the form
+
+  \f$M = \begin{array}{cccc}
+    A_{0,0} & A_{0,1} & \ldots & A_{0,N} \\
+    A_{1,0} & A_{1,1} & \ldots & A_{1,N} \\
+    \vdots &  \vdots  & \ddots & \vdots \\
+    A_{M,0} & A_{M,1} & \ldots & A_{M,N}
+  \end{array}\f$
+
+  composed out of one or more constituent linear operators.
+
 </ul>
 
 </ol>

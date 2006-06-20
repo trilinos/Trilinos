@@ -28,6 +28,6 @@ IGNORE_PREFIX          =
 #
 # Links to other packages
 #
-GENERATE_TAGFILE       = ../../common/tag_files/ThyraInterfacesOperatorVectorANAExtended.tag
+GENERATE_TAGFILE       = ../../common/tag_files/ThyraInterfacesOperatorSolveANAExtended.tag
 ALLEXTERNALS           = NO
 EXTERNAL_GROUPS        = NO
