@@ -3,25 +3,44 @@
 \endhtmlonly
 
 User warning: Isorropia is in the early stages of development. We are still
-going through requirements-prototyping cycles, so everything is still changing
-frequently. (including function-names, file-names, etc.)
+going through requirements-prototyping cycles, so everything is still
+changing frequently. (including function-names, file-names, etc.)
 
 \section isorropia_intro Introduction
 
+Isorropia is a repartitioning/rebalancing package, intended to assist
+with redistributing objects such as matrices and matrix-graphs in a
+parallel execution setting, to allow for more efficient computations.
+
+Isorropia is primarily an interface to the Zoltan library, but can be
+built and used with minimal capability without Zoltan. To enable Zoltan
+support, you need to add '--enable-isorropia-zoltan' to your Trilinos
+configure command, and provide include-paths and library specifications
+for Zoltan version 2.0 (provide these to configure using the
+'--with-incdirs' and '--with-libs' configure arguments).
+
 \section isorropia_startup Overview of Isorropia.
 
-\subsection isorropia_functions Isorropia Functions
+Isorropia's user interface consists of the Isorropia::Partitioner and
+Isorropia::Redistributor classes, and the
+Isorropia::create_balanced_copy functions.
 
-Currently Isorropia's user interface consists of the Partitioner and
-Redistributor classes, and the 
-<a href="namespaceIsorropia.html">create_balanced_copy functions</a>,
-which take an input object (either Epetra_CrsGraph or Epetra_CrsMatrix)
-and return a copy which is balanced across partitions.
+The Isorropia::create_balanced_copy functions are free-standing functions
+(not class members) which simply take an input object (Epetra_CrsGraph,
+Epetra_CrsMatrix, etc.) and return a copy which is balanced across
+partitions.
 
-\subsection isorropia_classes Isorropia Classes
+For more sophisticated use-cases, such as performing one partitioning
+and then using it to redistribute multiple objects, it is more
+efficient to use the Partitioner and Redistributor classes.
 
-\subsection isorropia_epetra Isorropia and Epetra
+Isorropia::Partitioner is an interface class (abstract base class), and
+currently the only implementation of this interface is the
+Isorropia::EpetraPartitioner class.
 
 \subsection isorropia_example Example Codes
+
+A couple of example programs which demonstrate using Isorropia are
+provided in the 'packages/isorropia/example' subdirectory.
 
 */
