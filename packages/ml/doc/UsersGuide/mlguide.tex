@@ -1089,7 +1089,11 @@ parameter {\tt coarse: damping parameter}) as a solver. \\
 \verb!Amesos-Superludist! & Use \superludist\ through \amesos. \\
 \verb!Amesos-MUMPS! & Use double precision version of \mumps~through
 \amesos. \\
-\verb!SuperLU! & Use \ML\ interface to \superlu (depreacated). \\
+\verb!user-defined! & User-defined smoothing function.  The function must conform to
+the prototype {\tt int (*)(ML\_Smoother *, int inLength, double *invec, int outLength,
+ double *outvec)}. The number of sweeps is controlled via {\tt coarse: sweeps}. See
+{\tt ml/examples/BasicExamples/ml\_user\_smoothing.cpp}.\\
+\verb!SuperLU! & Use \ML\ interface to \superlu (deprecated). \\
 \hline
 \end{tabular}
 \caption{ML\_Epetra::MultiLevelPreconditioner: Some of the available coarse
@@ -1464,6 +1468,13 @@ See Table~\ref{tab:ml:coarse}. Default: {\tt Amesos\_KLU}.}
 Gauss-Seidel}, and {\tt Hiptmair}.)
  Number of
 sweeps in the coarse solver. Default: 1.}
+
+\choicebox{\tt coarse: user-defined function}{[{\tt int (*)(ML\_Smoother *, int
+inLength, double *invec, int outLength, double *outvec)}] Pointer to user-defined
+smoothing function.  Default: {\tt NULL}.}
+
+\choicebox{\tt coarse: user-defined name}{[{\tt string}] Label for user-defined
+smoother. Default: ``User-defined".}
 
 \choicebox{\tt coarse: damping factor}{[{\tt double}] (Only for {\tt Jacobi}
                                                        and {\tt Gauss-Seidel}.)
