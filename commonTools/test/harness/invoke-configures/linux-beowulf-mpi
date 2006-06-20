@@ -26,10 +26,10 @@ FFLAGS=-O3 \
 --enable-amesos-dscpack \
 --enable-amesos-paraklete \
 --disable-amesos-pardiso \
---enable-amesos-superlu \
+--disable-amesos-superlu \
 --enable-amesos-superludist \
 --enable-amesos-taucs \
---disable-amesos-tests \
+--enable-amesos-tests \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
