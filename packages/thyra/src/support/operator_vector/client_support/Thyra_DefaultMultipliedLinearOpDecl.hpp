@@ -210,6 +210,24 @@ public:
 
   //@}
 
+  /** @name Overridden from LinearOpBase */
+  //@{
+
+  /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
+   * and returns <tt>Teuchos::null</tt> otherwise.
+   */
+  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
+
+  /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
+   * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
+   */
+  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
+
+  /** \brief . */
+  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
+
+  //@}
+
   /** @name Overridden from Teuchos::Describable */
   //@{
                                                 
@@ -232,33 +250,16 @@ public:
 
   //@}
 
-  /** @name Overridden from LinearOpBase */
-  //@{
-
-  /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
-   * and returns <tt>Teuchos::null</tt> otherwise.
-   */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > range() const;
-
-  /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
-   * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
-   */
-  Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > domain() const;
-
-  /** \brief . */
-  Teuchos::RefCountPtr<const LinearOpBase<Scalar> > clone() const;
-
-  //@}
-
 protected:
 
   /** @name Overridden from SingleScalarLinearOpBase */
   //@{
+
   /** \brief Returns <tt>true</tt> only if all constituent operators support
    * <tt>M_trans</tt>.
    */
-  /** \brief . */
   bool opSupported(ETransp M_trans) const;
+
   /** \brief . */
   void apply(
     const ETransp                     M_trans
@@ -267,6 +268,7 @@ protected:
     ,const Scalar                     alpha
     ,const Scalar                     beta
     ) const;
+
   //@}
 
 private:
@@ -285,6 +287,20 @@ private:
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
+
+/** \brief Form an implicit multiplication of two linear operators: <tt>return = A * B</tt>.
+ *
+ * This function simply creates a <tt>DefaultMultipliedLinearOp</tt> given
+ * <tt>A</tt> and <tt>B</tt>.
+ *
+ * \ingroup Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<LinearOpBase<Scalar> >
+multiply(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
+  );
 
 /** \brief Form an implicit multiplication of two linear operators: <tt>return = A * B</tt>.
  *
@@ -316,6 +332,25 @@ void DefaultMultipliedLinearOp<Scalar>::assertInitialized() const
 
 // ///////////////////////
 // Inline non-members
+
+template<class Scalar>
+inline
+Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Thyra::multiply(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
+  )
+{
+  return Teuchos::rcp(
+    new DefaultMultipliedLinearOp<Scalar>(
+      2
+      ,Teuchos::arrayArg<
+        Teuchos::RefCountPtr<LinearOpBase<Scalar> > >(A,B)()
+      )
+    );
+  // Note: The above const casts are okay since we protect them again in
+  // returning a constant object.
+}
 
 template<class Scalar>
 inline

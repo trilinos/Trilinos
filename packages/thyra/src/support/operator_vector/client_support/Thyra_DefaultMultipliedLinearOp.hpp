@@ -110,59 +110,6 @@ void DefaultMultipliedLinearOp<Scalar>::uninitialize()
   Ops_.resize(0);
 }
 
-// Overridden from Teuchos::Describable
-                                                
-template<class Scalar>
-std::string DefaultMultipliedLinearOp<Scalar>::description() const
-{
-  assertInitialized();
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
-  std::ostringstream oss;
-  oss << "Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">{numOps = "<<numOps()<<"}";
-  return oss.str();
-}
-
-template<class Scalar>
-void DefaultMultipliedLinearOp<Scalar>::describe(
-  Teuchos::FancyOStream                &out_arg
-  ,const Teuchos::EVerbosityLevel      verbLevel
-  ) const
-{
-  typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RefCountPtr;
-  using Teuchos::FancyOStream;
-  using Teuchos::OSTab;
-  assertInitialized();
-  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
-  OSTab tab(out);
-  const int numOps = Ops_.size();
-  switch(verbLevel) {
-    case Teuchos::VERB_DEFAULT:
-    case Teuchos::VERB_LOW:
-      *out << this->description() << std::endl;
-      break;
-    case Teuchos::VERB_MEDIUM:
-    case Teuchos::VERB_HIGH:
-    case Teuchos::VERB_EXTREME:
-    {
-      *out
-        << "type = \'Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">\', "
-        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
-      OSTab tab(out);
-      *out
-        <<  "numOps="<< numOps << std::endl
-        <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
-      tab.incrTab();
-      for( int k = 0; k < numOps; ++k ) {
-        *out << "Op["<<k<<"] =\n" << Teuchos::describe(*getOp(k),verbLevel);
-      }
-      break;
-    }
-    default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
-  }
-}
-
 // Overridden form MultipliedLinearOpBase
 
 template<class Scalar>
@@ -224,6 +171,61 @@ DefaultMultipliedLinearOp<Scalar>::clone() const
 {
   return Teuchos::null; // Not supported yet but could be!
 }
+
+// Overridden from Teuchos::Describable
+                                                
+template<class Scalar>
+std::string DefaultMultipliedLinearOp<Scalar>::description() const
+{
+  assertInitialized();
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  std::ostringstream oss;
+  oss << "Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">{numOps = "<<numOps()<<"}";
+  return oss.str();
+}
+
+template<class Scalar>
+void DefaultMultipliedLinearOp<Scalar>::describe(
+  Teuchos::FancyOStream                &out_arg
+  ,const Teuchos::EVerbosityLevel      verbLevel
+  ) const
+{
+  typedef Teuchos::ScalarTraits<Scalar>  ST;
+  using Teuchos::RefCountPtr;
+  using Teuchos::FancyOStream;
+  using Teuchos::OSTab;
+  assertInitialized();
+  RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  const int numOps = Ops_.size();
+  switch(verbLevel) {
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_LOW:
+      *out << this->description() << std::endl;
+      break;
+    case Teuchos::VERB_MEDIUM:
+    case Teuchos::VERB_HIGH:
+    case Teuchos::VERB_EXTREME:
+    {
+      *out
+        << "type = \'Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">\', "
+        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+      OSTab tab(out);
+      *out
+        <<  "numOps="<< numOps << std::endl
+        <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
+      tab.incrTab();
+      for( int k = 0; k < numOps; ++k ) {
+        *out << "Op["<<k<<"] =\n" << Teuchos::describe(*getOp(k),verbLevel);
+      }
+      break;
+    }
+    default:
+      TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
+// protected
 
 // Overridden from SingleScalarLinearOpBase
 
