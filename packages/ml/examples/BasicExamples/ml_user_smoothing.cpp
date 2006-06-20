@@ -167,6 +167,13 @@ int main(int argc, char *argv[])
   //Use symmetric Gauss-Seidel on all subsequent levels.
   MLList.set("smoother: type (level 1)", "symmetric Gauss-Seidel");
 
+  //user-defined smoothing for a 1-level method only
+  //to use this, uncomment the next 3 lines and comment out the direct-solver
+  //settings further below
+  //MLList.set("coarse: type", "user-defined");
+  //MLList.set("coarse: user-defined function",userSmoother);
+  //MLList.set("coarse: user-defined name","myJacobi");
+
 
 #ifdef HAVE_ML_AMESOS
   // solve with serial direct solver KLU
