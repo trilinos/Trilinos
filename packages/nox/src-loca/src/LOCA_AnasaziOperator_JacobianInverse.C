@@ -33,6 +33,7 @@
 #include "LOCA_AnasaziOperator_JacobianInverse.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
+#include "NOX_Parameter_List.H"
 
 LOCA::AnasaziOperator::JacobianInverse::JacobianInverse(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,

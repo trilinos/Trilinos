@@ -32,6 +32,8 @@
 
 #include "Epetra_config.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Map.h"
+#include "Epetra_Comm.h"
 #include "LOCA_Epetra_IdentityOp.H"
 
 LOCA::Epetra::IdentityOp::IdentityOp(

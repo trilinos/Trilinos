@@ -38,6 +38,7 @@
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
+#include "NOX_Parameter_List.H"
 
 LOCA::MultiPredictor::Tangent::Tangent(
 	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
