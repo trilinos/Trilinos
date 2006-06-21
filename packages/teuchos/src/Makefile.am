@@ -68,7 +68,6 @@ CORE_H = \
 	$(srcdir)/Teuchos_ConfigDefs.hpp \
   $(srcdir)/Teuchos_ConstNonconstObjectContainer.hpp \
   $(srcdir)/Teuchos_DefaultComm.hpp \
-  $(srcdir)/Teuchos_DefaultMpiComm.hpp \
 	$(srcdir)/Teuchos_DefaultSerialComm.hpp \
 	$(srcdir)/Teuchos_DataAccess.hpp \
 	$(srcdir)/Teuchos_Describable.hpp \
@@ -230,7 +229,7 @@ SERIAL =
 #  set up by TAC_ARC_CONFIG_MPI 
 #
 EXTRA_MPI_H = \
-	$(srcdir)/Teuchos_MpiComm.hpp \
+  $(srcdir)/Teuchos_DefaultMpiComm.hpp \
 	$(srcdir)/Teuchos_MpiReductionOpSetter.hpp 
 
 EXTRA_MPI = \
