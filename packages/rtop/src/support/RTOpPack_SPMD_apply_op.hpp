@@ -155,9 +155,10 @@ void RTOpPack::deserialize(
     );
 #endif
   op.load_reduct_obj_state(
-    num_values,   num_values  ? PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]) : 0
-    ,num_indexes, num_indexes ? ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]) : 0
-    ,num_chars,   num_chars   ? CTST::convertFromCharPtr(&reduct_obj_ext[chars_off])   : 0
+                           num_values_in,   
+                           num_values_in  ? PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]) : 0
+                           ,num_indexes_in, num_indexes_in ? ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]) : 0
+    ,num_chars_in,   num_chars_in   ? CTST::convertFromCharPtr(&reduct_obj_ext[chars_off])   : 0
     ,reduct_obj
     );
   // ToDo: Change above implementation to only require indirect serialization!
