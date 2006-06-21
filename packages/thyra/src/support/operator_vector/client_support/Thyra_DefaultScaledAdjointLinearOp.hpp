@@ -228,7 +228,10 @@ void DefaultScaledAdjointLinearOp<Scalar>::apply(
   ) const
 {
   assertInitialized();
-  Thyra::apply(*this->getOrigOp(),trans_trans(M_trans,this->overallTransp()),X,Y,Scalar(this->overallScalar()*alpha),beta);
+  Thyra::apply(
+    *this->getOrigOp(),trans_trans(M_trans,this->overallTransp())
+    ,X,Y,Scalar(this->overallScalar()*alpha),beta
+    );
 }
 
 // Overridden from ScaledAdointLinearOpBase

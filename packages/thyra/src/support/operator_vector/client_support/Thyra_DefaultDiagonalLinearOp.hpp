@@ -169,7 +169,12 @@ void DefaultDiagonalLinearOp<Scalar>::apply(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( ST::isComplex && !(M_trans==NOTRANS||M_trans==TRANS) );
+  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES(
+    "DefaultDiagonalLinearOp<Scalar>::apply(...)",*this,M_trans,x,y
+    );
+#endif // TEUCHOS_DEBUG  
   typedef Teuchos::ScalarTraits<Scalar> ST;
   if( beta != ST::one() ) Vt_S( y, beta );
   ele_wise_prod( alpha, x, *diag_.getConstObj(), y );

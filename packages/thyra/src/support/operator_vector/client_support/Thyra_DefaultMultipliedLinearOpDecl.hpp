@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTIPLIED_LINEAR_OP_DECL_HPP
-#define THYRA_MULTIPLIED_LINEAR_OP_DECL_HPP
+#ifndef THYRA_DEFAULT_MULTIPLIED_LINEAR_OP_DECL_HPP
+#define THYRA_DEFAULT_MULTIPLIED_LINEAR_OP_DECL_HPP
 
 #include "Thyra_MultipliedLinearOpBase.hpp"
 #include "Thyra_SingleScalarLinearOpBase.hpp"
@@ -282,6 +282,7 @@ private:
   std::vector<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > >   Ops_;
 
   void assertInitialized() const;
+  void validateOps();
 
   // Not defined and not to be called
   DefaultMultipliedLinearOp(const DefaultMultipliedLinearOp&);
@@ -336,45 +337,4 @@ void DefaultMultipliedLinearOp<Scalar>::assertInitialized() const
 
 }	// end namespace Thyra
 
-// ///////////////////////
-// Inline non-members
-
-template<class Scalar>
-inline
-Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
-Thyra::multiply(
-  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
-  )
-{
-  return Teuchos::rcp(
-    new DefaultMultipliedLinearOp<Scalar>(
-      2
-      ,Teuchos::arrayArg<
-        Teuchos::RefCountPtr<LinearOpBase<Scalar> > >(A,B)()
-      )
-    );
-  // Note: The above const casts are okay since we protect them again in
-  // returning a constant object.
-}
-
-template<class Scalar>
-inline
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-Thyra::multiply(
-  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &B
-  )
-{
-  return Teuchos::rcp(
-    new DefaultMultipliedLinearOp<Scalar>(
-      2
-      ,Teuchos::arrayArg<
-        Teuchos::RefCountPtr<const LinearOpBase<Scalar> > >(A,B)()
-      )
-    );
-  // Note: The above const casts are okay since we protect them again in
-  // returning a constant object.
-}
-
-#endif	// THYRA_MULTIPLIED_LINEAR_OP_DECL_HPP
+#endif	// THYRA_DEFAULT_MULTIPLIED_LINEAR_OP_DECL_HPP

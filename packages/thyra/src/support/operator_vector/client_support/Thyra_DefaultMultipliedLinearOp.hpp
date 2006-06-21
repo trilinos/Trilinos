@@ -26,11 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTIPLICATIVE_LINEAR_OP_HPP
-#define THYRA_MULTIPLICATIVE_LINEAR_OP_HPP
+#ifndef THYRA_DEFAULT_MULTIPLICATIVE_LINEAR_OP_HPP
+#define THYRA_DEFAULT_MULTIPLICATIVE_LINEAR_OP_HPP
 
 #include "Thyra_DefaultMultipliedLinearOpDecl.hpp"
 #include "Thyra_AssertOp.hpp"
+#include "Teuchos_Utils.hpp"
 
 namespace Thyra {
 
@@ -64,21 +65,10 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
   )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( numOps <= 0 || Ops == NULL );
-  for( int k = 0; k < numOps; ++k ) {
-    TEST_FOR_EXCEPT( Ops[k].get() == NULL );
-    if( k < numOps-1 ) {
-      THYRA_ASSERT_VEC_SPACES(
-        "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
-        ,*Ops[k]->domain(), *Ops[k+1]->range()
-        );
-    }
-  }
-#endif
   Ops_.resize(numOps);
   for( int k = 0; k < numOps; ++k )
     Ops_[k].initialize(Ops[k]);
+  validateOps();
 }
 
 template<class Scalar>
@@ -87,21 +77,10 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
   )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( numOps <= 0 || Ops == NULL );
-  for( int k = 0; k < numOps; ++k ) {
-    TEST_FOR_EXCEPT( Ops[k].get() == NULL );
-    if( k < numOps-1 ) {
-      THYRA_ASSERT_VEC_SPACES(
-        "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
-        ,*Ops[k]->domain(), *Ops[k+1]->range()
-        );
-    }
-  }
-#endif
   Ops_.resize(numOps);
   for( int k = 0; k < numOps; ++k )
     Ops_[k].initialize(Ops[k]);
+  validateOps();
 }
 
 template<class Scalar>
@@ -251,6 +230,11 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
 {
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
+#ifdef TEUCHOS_DEBUG
+  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
+    "DefaultMultipliedLinearOp<Scalar>::apply(...)",*this,M_trans,X,Y
+    );
+#endif // TEUCHOS_DEBUG  
   const int numOps = Ops_.size();
   const Index m = X.domain()->dim();
   if( real_trans(M_trans)==NOTRANS ) {
@@ -276,7 +260,7 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
     //
     // Y = alpha * M' * X + beta*Y
     // =>
-    // Y = alpha * ( Op[numOps-1]' * ( .... ( Op[1]' * ( Op[0]' * X ) ) ... ) ) + beta * Y
+    // Y = alpha * Op[numOps-1]' * Op[1]' * ... * Op[0]' * X + beta * Y
     //
     RefCountPtr<MultiVectorBase<Scalar> > T_km1, T_k; // Temporary propagated between loops 
     for( int k = 0; k <= numOps-1; ++k ) {
@@ -293,6 +277,68 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
   }
 }
 
+// private
+
+template<class Scalar>
+void DefaultMultipliedLinearOp<Scalar>::validateOps()
+{
+  typedef std::string s;
+  using Teuchos::toString;
+#ifdef TEUCHOS_DEBUG
+  try {
+    const int numOps = Ops_.size();
+    for( int k = 0; k < numOps; ++k ) {
+      TEST_FOR_EXCEPT( Ops_[k]().get() == NULL );
+      if( k < numOps-1 ) {
+        THYRA_ASSERT_VEC_SPACES_NAMES(
+          "DefaultMultipliedLinearOp<Scalar>::initialize(...)"
+          ,*Ops_[k]()->domain(),("(*Ops_["+toString(k)+"]->domain())")
+          ,*Ops_[k+1]()->range(),("(*Ops_["+toString(k+1)+"]->range())")
+          );
+      }
+    }
+  }
+  catch(...) {
+    uninitialize();
+    throw;
+  }
+#endif
+}
+
 }	// end namespace Thyra
 
-#endif	// THYRA_MULTIPLICATIVE_LINEAR_OP_HPP
+template<class Scalar>
+Teuchos::RefCountPtr<Thyra::LinearOpBase<Scalar> >
+Thyra::multiply(
+  const Teuchos::RefCountPtr<LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
+  )
+{
+  using Teuchos::arrayArg;
+  using Teuchos::RefCountPtr;
+  return Teuchos::rcp(
+    new DefaultMultipliedLinearOp<Scalar>(
+      2
+      ,arrayArg<RefCountPtr<LinearOpBase<Scalar> > >(A,B)()
+      )
+    );
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Thyra::multiply(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &B
+  )
+{
+  using Teuchos::arrayArg;
+  using Teuchos::RefCountPtr;
+  return Teuchos::rcp(
+    new DefaultMultipliedLinearOp<Scalar>(
+      2
+      ,arrayArg<RefCountPtr<const LinearOpBase<Scalar> > >(A,B)()
+      )
+    );
+}
+
+#endif	// THYRA_DEFAULT_MULTIPLICATIVE_LINEAR_OP_HPP

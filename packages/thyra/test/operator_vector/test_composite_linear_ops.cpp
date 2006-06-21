@@ -40,6 +40,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 /** \brief Main test driver function for testing various composite linear operator classes
  */
@@ -61,6 +62,7 @@ bool run_composite_linear_ops_tests(
   typedef Teuchos::ScalarTraits<ScalarMag> STM;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
+  using Teuchos::null;
   using Teuchos::rcp_const_cast;
   using Teuchos::dyn_cast;
   using Teuchos::OSTab;
@@ -250,7 +252,7 @@ bool run_composite_linear_ops_tests(
   result = linearOpTester.check(*A5,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out << "\nCreating a multiplicative operator A6 = origA^H*A1 ...\n";
+  if(out.get()) *out << "\nCreating a multiplied operator A6 = origA^H*A1 ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A6 = multiply(adjoint(origA),A1);
   if(out.get()) *out << "\nA6 =\n" << describe(*A6,verbLevel);
@@ -262,7 +264,20 @@ bool run_composite_linear_ops_tests(
   // Note that testing the symmetry above helps to check the transpose mode
   // against the non-transpose mode!
 
-  if(out.get()) *out << "\nCreating a non-const multiplicative operator A7 = origA^H*A1 ...\n";
+#ifdef TEUCHOS_DEBUG
+  if(out.get()) *out << "\nCreating an invalid multiplied operator A6b = origA*origA (should throw an exception) ...\n\n";
+  try {
+    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+      A6b = multiply(origA,origA);
+    result = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,result)
+  if(out.get())
+    *out << "\nCaught expected exception : " << (result?"failed\n":"passed\n");
+  if(result) success = false;
+#endif // TEUCHOS_DEBUG
+
+  if(out.get()) *out << "\nCreating a non-const multiplied operator A7 = origA^H*A1 ...\n";
   RefCountPtr<Thyra::LinearOpBase<Scalar> >
     A7 = multiply(
       rcp_const_cast<Thyra::LinearOpBase<Scalar> >(adjoint(origA))
@@ -277,7 +292,10 @@ bool run_composite_linear_ops_tests(
 
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A8 = [ A6, A1^H; A1, 0 ] ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A8 = Thyra::block2x2<Scalar>( A6, adjoint(A1), A1, Teuchos::null );
+    A8 = Thyra::block2x2<Scalar>(
+      A6,  adjoint(A1)
+      ,A1, null
+      );
   if(out.get()) *out << "\nA8 =\n" << describe(*A8,verbLevel);
   
   if(out.get()) *out << "\nTesting A8 ...\n";
@@ -285,9 +303,60 @@ bool run_composite_linear_ops_tests(
   result = symLinearOpTester.check(*A8,out.get());
   if(!result) success = false;
 
+#ifdef TEUCHOS_DEBUG
+  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A8b = [ A6, A1^H; A1, A1 ] (should throw an exception) ...\n\n";
+  try {
+    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+      A8b = Thyra::block2x2<Scalar>(
+        A6,  adjoint(A1)
+        ,A1, A1
+        );
+    result = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,result)
+  if(out.get())
+    *out << "\nCaught expected exception : " << (result?"failed\n":"passed\n");
+  if(result) success = false;
+#endif // TEUCHOS_DEBUG
+
+#ifdef TEUCHOS_DEBUG
+  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A8c = [ A1, A1 ; 0, 0 ] (should throw an exception) ...\n\n";
+  try {
+    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+      A8c = Thyra::block2x2<Scalar>(
+        A1,    A1
+        ,null, null
+        );
+    result = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,result)
+  if(out.get())
+    *out << "\nCaught expected exception : " << (result?"failed\n":"passed\n");
+  if(result) success = false;
+#endif // TEUCHOS_DEBUG
+
+#ifdef TEUCHOS_DEBUG
+  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A8d = [ A1, 0; A1, 0 ] (should throw an exception) ...\n\n";
+  try {
+    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+      A8d = Thyra::block2x2<Scalar>(
+        A1,  null
+        ,A1, null
+        );
+    result = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,result)
+  if(out.get())
+    *out << "\nCaught expected exception : " << (result?"failed\n":"passed\n");
+  if(result) success = false;
+#endif // TEUCHOS_DEBUG
+
   if(out.get()) *out << "\nCreating a blocked 2x1 linear operator A9 = [ A6; A1 ] ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A9 = Thyra::block2x1<Scalar>( A6, A1 );
+    A9 = Thyra::block2x1<Scalar>(
+      A6
+      ,A1
+      );
   if(out.get()) *out << "\nA9 =\n" << describe(*A9,verbLevel);
   
   if(out.get()) *out << "\nTesting A9 ...\n";
@@ -362,18 +431,9 @@ int main( int argc, char* argv[] ) {
 #endif
 
   } // end try
-  catch( const std::exception &excpt ) {
-    if(verbose)
-      std::cerr << "p="<<procRank<<": *** Caught a standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    if(verbose)
-      std::cerr << "p="<<procRank<<": *** Caught an unknown exception!\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
-  if( verbose && procRank==0 ) {
+  if( verbose ) {
     if(success) *out << "\nAll of the tests seem to have run successfully!\n";
     else        *out << "\nOh no! at least one of the tests failed!\n";	
   }
