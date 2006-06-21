@@ -390,12 +390,12 @@ int main( int argc, char* argv[] ) {
 #endif
 
 #ifndef _INTEL // Intel compiler does not seem to be doing dynamic cast correctly?
-#ifdef _DEBUG  // operator->() only throws exception when _DEBUG is defined
+#ifdef TEUCHOS_DEBUG  // operator->() only throws exception when TEUCHOS_DEBUG is defined
 			try {
 				// Try to cast form one interface to another that is not supported (B2 -> B1).
 				// The RefCountPtr<B1> returned from rcp_dynamic_cast<...> should be null!
 				// Note that RefCountPtr<...>::optertor->() should throw an exception in debug
-				// mode (i.e. _DEBUG is defined) but even so no memory leak occurs.  If you
+				// mode (i.e. TEUCHOS_DEBUG is defined) but even so no memory leak occurs.  If you
 				// don't believe me then step through with a debugger and see for yourself.
 				TEST_FOR_EXCEPT( rcp_dynamic_cast<B1>( rcp(new B2) )->B1_g() != B1_g_return );
 				return -1; // Should not be executed!

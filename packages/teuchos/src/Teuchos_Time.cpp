@@ -31,7 +31,34 @@
 
 #include "Teuchos_Time.hpp"
 
-using namespace Teuchos;
+#if defined(__INTEL_COMPILER) && defined(_WIN32)
+
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <assert.h>
+
+namespace {
+
+bool seconds_initialized = false;
+LARGE_INTEGER start_count, count_freq;	// counts per sec.
+
+inline void seconds_initialize() {
+  if( seconds_initialized ) return;
+  // Figure out how often the performance counter increments
+  ::QueryPerformanceFrequency( &count_freq );
+  // Set this thread's priority as high as reasonably possible to prevent
+    // timeslice interruptions
+    ::SetThreadPriority( ::GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL );
+  // Get the first count.
+  assert( QueryPerformanceCounter( &start_count ) );
+  seconds_initialized = true;
+}
+
+}	// end namespace
+
+#endif // defined(__INTEL_COMPILER) && defined(_WIN32)
+
+namespace Teuchos {
 
 //=============================================================================
 Time::Time(const string& name, bool start) 
@@ -91,10 +118,21 @@ double Time::wallTime()
 
 #elif ICL
 
-		clock_t start;
+  clock_t start;
 
-		start = clock();
-		return( (double)( start ) / CLOCKS_PER_SEC );
+  start = clock();
+  return( (double)( start ) / CLOCKS_PER_SEC );
+
+#elif defined(__INTEL_COMPILER) && defined(_WIN32)
+
+  seconds_initialize();
+  LARGE_INTEGER count;
+  QueryPerformanceCounter( &count );
+  // "QuadPart" is a 64 bit integer (__int64).  VC++ supports them!
+  const double
+    sec = (double)( count.QuadPart - start_count.QuadPart ) / count_freq.QuadPart;
+  //std::cout << "ticks = " << ticks << ", sec = " << sec << std::endl;
+  return sec;
 
 #else
 
@@ -117,3 +155,5 @@ double Time::wallTime()
 #endif
 
 }
+
+} // namespace Teuchos

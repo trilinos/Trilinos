@@ -42,7 +42,7 @@
 #  define REFCOUNTPTR_INLINE
 #endif
 
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 #  define TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
 #endif
 
@@ -106,7 +106,7 @@ Teuchos::...</tt> declarations.  This removes the need to explicitly use
 the <tt>Teuchos</tt> namespace.  Note that some of the runtime checks are
 denoted as "debug runtime checked" which means that checking will only be
 performed in a debug build (that is one where the macro
-TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL, or _DEBUG is defined at compile time).
+TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL, or TEUCHOS_DEBUG is defined at compile time).
 
 <ol>
 

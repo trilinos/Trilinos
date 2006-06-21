@@ -227,7 +227,7 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::reduceAllAndScatter(...)"
     );
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Ordinal sumRecvBytes = 0;
   for( Ordinal i = 0; i < size_; ++i )
     sumRecvBytes += recvCounts[i];
@@ -289,7 +289,7 @@ void MpiComm<Ordinal>::send(
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::send(...)"
     );
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     ! ( 0 <= destRank && destRank < size_ ), std::logic_error
     ,"Error, destRank = " << destRank << " is not < 0 or is not"
@@ -310,7 +310,7 @@ int MpiComm<Ordinal>::receive(
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::receive(...)"
     );
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     sourceRank >=0 && !(sourceRank < size_), std::logic_error
     ,"Error, sourceRank = " << sourceRank << " is not < 0 or is not"

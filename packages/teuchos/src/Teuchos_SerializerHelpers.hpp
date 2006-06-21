@@ -250,7 +250,7 @@ ReferenceTypeDeserializationBuffer<Ordinal,T>::ReferenceTypeDeserializationBuffe
 {
   const Ordinal extent = serializer_.getBufferSize(1);
   const Ordinal count = bytes_ / extent;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( bytes_ % extent == 0 ) );
 #endif
   buffer_ptr_.resize(count);
@@ -300,7 +300,7 @@ ConstReferenceTypeDeserializationBuffer<Ordinal,T>::ConstReferenceTypeDeserializ
 {
   const Ordinal extent = serializer_.getBufferSize(1);
   const Ordinal count = bytes_ / extent;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( bytes_ % extent == 0 ) );
 #endif
   buffer_ptr_.resize(count);

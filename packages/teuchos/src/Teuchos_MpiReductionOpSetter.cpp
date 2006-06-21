@@ -70,7 +70,7 @@ Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase> get_reduct_op()
 void set_reduct_op( const Teuchos::RefCountPtr<const Teuchos::MpiReductionOpBase>& reduct_op )
 {
   using Teuchos::null;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( get_reduct_op() != null && reduct_op != null  );
 #endif
   if(!the_mpi_op.get()) {
@@ -105,7 +105,7 @@ MpiReductionOpSetter::MpiReductionOpSetter(
   const Teuchos::RefCountPtr<const MpiReductionOpBase>& reduct_op
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!reduct_op.get())
 #endif
   set_reduct_op(reduct_op);

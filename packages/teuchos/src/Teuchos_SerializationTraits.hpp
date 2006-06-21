@@ -157,7 +157,7 @@ public:
     const Ordinal count, const T buffer[], const Ordinal bytes, char charBuffer[]
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPT(bytes!=fromCountToIndirectBytes(count));
 #endif
       const char *_buffer = convertToCharPtr(buffer);
@@ -169,7 +169,7 @@ public:
     const Ordinal bytes, const char charBuffer[], const Ordinal count, T buffer[]
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPT(count!=fromIndirectBytesToCount(bytes));
 #endif
       char *_buffer = convertToCharPtr(buffer);

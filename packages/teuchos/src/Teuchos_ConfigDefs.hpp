@@ -78,6 +78,10 @@
 
 #include "Teuchos_config.h"
 
+#ifdef HAVE_TEUCHOS_DEBUG
+#  define TEUCHOS_DEBUG
+#endif
+
 #ifdef __cplusplus
 
 /******************************************************************************

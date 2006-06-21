@@ -35,67 +35,65 @@
 
 namespace Teuchos 
 {
-  /** 
-   * Class ConstHandleable provides an abstract interface for polymorphic
-   * conversion from raw pointers to const smart pointers. Recall from the
-   * Teuchos RefCountPtr documentation that one should never create
-   * directly a smart pointer from a raw pointer; rather, smart pointers
-   * should be created through a call to rcp(). The type of the argument
-   * to rcp() must be known at compile time. This makes the syntax
-   * \code
-   * ConstHandle h = new Derived();
-   * \endcode
-   * impossible with the straightforward implementation in which 
-   * ConstHandle takes
-   * a raw pointer to a Base. In order to preserve this clean syntax, we
-   * require any handles supporting this syntax to take a raw
-   * pointer to a ConstHandleable<Base>, where ConstHandleable<Base> 
-   * provides a getConstRcp() method which returns the result of 
-   a call to rcp() on this. 
+  /** \brief Class ConstHandleable provides an abstract interface for
+   * polymorphic conversion from raw pointers to const smart pointers.
+   *
+   * Recall from the Teuchos RefCountPtr documentation that one should never
+   * create directly a smart pointer from a raw pointer; rather, smart
+   * pointers should be created through a call to rcp(). The type of the
+   * argument to rcp() must be known at compile time. This makes the syntax
+   * \code ConstHandle h = new Derived(); \endcode impossible with the
+   * straightforward implementation in which ConstHandle takes a raw pointer
+   * to a Base. In order to preserve this clean syntax, we require any handles
+   * supporting this syntax to take a raw pointer to a ConstHandleable<Base>,
+   * where ConstHandleable<Base> provides a getConstRcp() method which returns
+   * the result of a call to rcp() on this.
    */
   template <typename Base> 
   class ConstHandleable 
   {
   public:
-    /** Virtual dtor */
-    virtual ~ConstHandleable(){;}
+    /** \brief . */
+    virtual ~ConstHandleable(){}
 
-    /** Return a safely-created RefCountPtr to the base type */
+    /** \brief Virtual dtorReturn a safely-created RefCountPtr to the base
+     * type */
     virtual RefCountPtr<const Base> getConstRcp() const = 0 ;
   };
 
-  /** 
-   * Class Handleable provides an abstract interface for polymorphic
-   * conversion from raw pointers to smart pointers. Recall from the
-   * Teuchos RefCountPtr documentation that one should never create
-   * directly a smart pointer from a raw pointer; rather, smart pointers
-   * should be created through a call to rcp(). The type of the argument
-   * to rcp() must be known at compile time. This makes the syntax
-   * \code
-   * Handle h = new Derived();
-   * \endcode
-   * impossible with the straightforward implementation in which Handle takes
-   * a raw pointer to a Base. In order to preserve this clean syntax, we
-   * require any handles supporting this syntax to take a raw
-   * pointer to a Handleable<Base>, where Handleable<Base> provides a 
-   * getRcp() method which returns the result of a call to rcp() on this.
+  /** \brief Class Handleable provides an abstract interface for polymorphic
+   * conversion from raw pointers to smart pointers.
+   *
+   * Recall from the Teuchos RefCountPtr documentation that one should never
+   * create directly a smart pointer from a raw pointer; rather, smart
+   * pointers should be created through a call to rcp(). The type of the
+   * argument to rcp() must be known at compile time. This makes the syntax
+   * \code Handle h = new Derived(); \endcode impossible with the
+   * straightforward implementation in which Handle takes a raw pointer to a
+   * Base. In order to preserve this clean syntax, we require any handles
+   * supporting this syntax to take a raw pointer to a Handleable<Base>, where
+   * Handleable<Base> provides a getRcp() method which returns the result of a
+   * call to rcp() on this.
    */
   template <typename Base> 
   class Handleable : public virtual ConstHandleable<Base>
   {
   public:
-    /** Virtual dtor */
+
+    /** \brief . */
     virtual ~Handleable(){;}
 
-    /** Return a safely-created RefCountPtr to the base type */
+    /** \brief Return a safely-created RefCountPtr to the base type */
     virtual RefCountPtr<Base> getRcp() = 0 ;
+
   };
 }
 
 
-/** \def
- * Use this macro as an easy way to implement the Handleable interface
- * in a derived class. For example,
+/** \brief Use this macro as an easy way to implement the Handleable interface
+ * in a derived class.
+ *
+ * For example,
  *
  * \code
  * class Derived : public Handleable<Base>
@@ -106,14 +104,11 @@ namespace Teuchos
  * \endcode
  */
 #define TEUCHOS_GET_RCP(Base)                                           \
-  /** Teuchos::ConstHandleable<##Base> interface */                     \
   virtual Teuchos::RefCountPtr<const Base> getConstRcp() const {return rcp(this);} \
-  /** Teuchos::Handleable<##Base> interface */                          \
   virtual Teuchos::RefCountPtr<Base > getRcp() {return rcp(this);} 
 
-/** \def 
- * Use this macro as an easy way to implement the ConstHandleable interface
- * in a derived class. For example,
+/** \brief Use this macro as an easy way to implement the ConstHandleable
+ * interface in a derived class. For example,
  *
  * \code
  * class Derived : public ConstHandleable<Base>
@@ -124,7 +119,6 @@ namespace Teuchos
  * \endcode
  */
 #define TEUCHOS_GET_CONST_RCP(Base) \
-/** Teuchos::ConstHandleable<##Base> interface */                            \
 virtual Teuchos::RefCountPtr<const Base> getConstRcp() const {return rcp(this);}
 
 

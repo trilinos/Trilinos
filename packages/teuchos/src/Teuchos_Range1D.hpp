@@ -63,7 +63,7 @@ namespace Teuchos {
  *
  * Constructing using <tt>\ref Range1D::Range1D "Range1D(lbound,ubound)"</tt>
  * yields a finite-dimensional zero-based range.  The validity of constructed
- * range will only be checked if <tt>_DEBUG</tt> is defined.
+ * range will only be checked if <tt>TEUCHOS_DEBUG</tt> is defined.
  *
  * There are many \ref Range1D_funcs_grp "non-member functions" that can be
  * used with <tt>%Range1D</tt> objects.
@@ -295,7 +295,7 @@ Range1D& Range1D::operator-=( Index incr ) {
 // See Range1D.cpp
 inline
 void Range1D::assert_valid_range(int lbound, int ubound) const {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     lbound < 0, std::range_error
     ,"Range1D::assert_valid_range(): Error, lbound ="<<lbound<<" must be greater than or equal to 0."

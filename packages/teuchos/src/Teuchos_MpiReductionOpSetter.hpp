@@ -160,7 +160,7 @@ void MpiReductionOp<Ordinal>::reduce(
   ,MPI_Datatype     *datatype
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!invec);
   TEST_FOR_EXCEPT(!inoutvec);
   TEST_FOR_EXCEPT(!len);

@@ -85,7 +85,7 @@ template <typename CoeffT>
 Teuchos::RefCountPtr<CoeffT>
 Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) 
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::getCoefficient(i): " << 
@@ -99,7 +99,7 @@ template <typename CoeffT>
 Teuchos::RefCountPtr<const CoeffT>
 Teuchos::Polynomial<CoeffT>::getCoefficient(unsigned int i) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::getCoefficient(i): " << 
@@ -113,7 +113,7 @@ template <typename CoeffT>
 void
 Teuchos::Polynomial<CoeffT>::setCoefficient(unsigned int i, const CoeffT& v) 
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::setCoefficient(i,v): " << 
@@ -133,7 +133,7 @@ Teuchos::Polynomial<CoeffT>::setCoefficientPtr(
 	                          unsigned int i,
 	                          const Teuchos::RefCountPtr<CoeffT>& v)
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(i > d, 
 		     std::out_of_range,
 		     "Polynomial<CoeffT>::setCoefficientPtr(i,v): " << 
@@ -151,7 +151,7 @@ Teuchos::Polynomial<CoeffT>::evaluate(
 {
   bool evaluate_xdot = (xdot != NULL);
 
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   for (unsigned int i=0; i<=d; i++)
     TEST_FOR_EXCEPTION(coeff[i] == Teuchos::null, 
 		       std::runtime_error,

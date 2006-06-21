@@ -673,7 +673,7 @@ void Teuchos::reduceAllAndScatter(
     <<OrdinalTraits<Ordinal>::name()<<","<<ScalarTraits<Packet>::name()
     <<">( value type, user-defined op )"
     );
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Ordinal sumRecvCounts = 0;
   const int size = Teuchos::size(comm);
   for( Ordinal i = 0; i < size; ++i )

@@ -68,7 +68,7 @@ public:
     ,primitiveType         primitiveObjs[]
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( numPrimitiveObjs!=1 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
 #endif
       primitiveObjs[0] = obj;
@@ -80,7 +80,7 @@ public:
     ,T                     *obj
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( numPrimitiveObjs!=1 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
 #endif
       *obj = primitiveObjs[0];
@@ -104,7 +104,7 @@ public:
     ,primitiveType         primitiveObjs[]
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( numPrimitiveObjs!=2 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
 #endif
       primitiveObjs[0] = obj.real();
@@ -117,7 +117,7 @@ public:
     ,std::complex<T>       *obj
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( numPrimitiveObjs!=2 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
 #endif
       *obj = std::complex<T>( primitiveObjs[0], primitiveObjs[1] );
@@ -145,7 +145,7 @@ public:
     ,primitiveType         primitiveObjs[]
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( numPrimitiveObjs!=10 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
 #endif
 			TEST_FOR_EXCEPT(true); // ToDo: Implement
@@ -157,7 +157,7 @@ public:
     ,mpf_class             *obj
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( numPrimitiveObjs!=10 || primitiveObjs==NULL, std::invalid_argument, "Error!" );
 #endif
 			TEST_FOR_EXCEPT(true); // ToDo: Implement

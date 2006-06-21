@@ -148,7 +148,7 @@ void SerialComm<Ordinal>::gatherAll(
   ,const Ordinal recvBytes, char recvBuffer[]
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!(sendBytes==recvBytes));
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,recvBuffer);
@@ -170,7 +170,7 @@ void SerialComm<Ordinal>::reduceAllAndScatter(
   ,const Ordinal recvCounts[], const Ordinal blockSize, char myGlobalReducts[]
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( recvCounts==NULL || blockSize*recvCounts[0] != sendBytes ); 
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,myGlobalReducts);

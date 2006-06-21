@@ -204,6 +204,9 @@
 /* Define if want to build teuchos-complex */
 #undef HAVE_TEUCHOS_COMPLEX
 
+/* Define if want to build teuchos-debug */
+#undef HAVE_TEUCHOS_DEBUG
+
 /* Define if want to build teuchos-examples */
 #undef HAVE_TEUCHOS_EXAMPLES
 

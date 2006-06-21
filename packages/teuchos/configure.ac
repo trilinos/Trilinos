@@ -600,7 +600,14 @@ AM_CONDITIONAL(HAVE_TEUCHOS_BOOST, [test "X$ac_cv_use_teuchos_boost" != "Xno"])
 
 TAC_ARG_ENABLE_FEATURE_SUB( teuchos, comm-timers, [Enable timers for Teuchos::Comm related software], 
 		TEUCHOS_COMM_TIMERS, yes )
-AM_CONDITIONAL(HAVE_TEUCHOS_COMM_TIMERS, [test "X$ac_cv_use_teuchos_comm-timers" != "Xno"])
+#AM_CONDITIONAL(HAVE_TEUCHOS_COMM_TIMERS, [test "X$ac_cv_use_teuchos_comm-timers" != "Xno"])
+
+#
+# --enable-teuchos-debug
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, debug, [Enable optional extra debugging checkes], 
+		TEUCHOS_DEBUG, yes )
 
 # ------------------------------------------------------------------------
 # Checks for libraries
