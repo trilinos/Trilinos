@@ -92,6 +92,24 @@ void DefaultClusteredMPIProductVector<Scalar>::uninitialize(
 // Overridden from ProductVectorBase
 
 template <class Scalar>
+Teuchos::RefCountPtr<VectorBase<Scalar> >
+DefaultClusteredMPIProductVector<Scalar>::getNonconstVectorBlock(const int k)
+{
+  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
+  return vecs_[k];
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const VectorBase<Scalar> >
+DefaultClusteredMPIProductVector<Scalar>::getVectorBlock(const int k) const
+{
+  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
+  return vecs_[k];
+}
+
+// Overridden from ProductVectorBase
+
+template <class Scalar>
 Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
 DefaultClusteredMPIProductVector<Scalar>::productSpace() const
 {
@@ -106,19 +124,17 @@ bool DefaultClusteredMPIProductVector<Scalar>::blockIsConst(const int k) const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::getNonconstBlock(const int k)
+Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+DefaultClusteredMPIProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
-  return vecs_[k];
+  return getNonconstVectorBlock(k);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::getBlock(const int k) const
+Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+DefaultClusteredMPIProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {
-  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
-  return vecs_[k];
+  return getVectorBlock(k);
 }
 
 // Overridden from VectorBase
