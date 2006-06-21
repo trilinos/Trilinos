@@ -80,6 +80,8 @@ CORE_H = \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_getConst.hpp \
+	$(srcdir)/Teuchos_Handle.hpp \
+	$(srcdir)/Teuchos_Handleable.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
 	$(srcdir)/Teuchos_map.hpp \

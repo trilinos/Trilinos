@@ -743,6 +743,7 @@ AC_CONFIG_FILES([
 		test/dyn_cast/Makefile
 		test/exit/Makefile
 		test/FancyOutputting/Makefile
+		test/Handle/Makefile
 		test/ParameterList/Makefile
 		test/Containers/Makefile
 		test/Time/Makefile

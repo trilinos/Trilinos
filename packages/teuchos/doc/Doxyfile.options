@@ -72,10 +72,12 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 SEARCH_INCLUDES        = YES
 INCLUDE_FILE_PATTERNS  = 
-PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI
+PREDEFINED             = DOXYGEN_COMPILE DOXYGEN_SHOULD_SKIP_THIS EPETRA_MPI \
+"TEUCHOS_GET_RCP(Base)=/** Teuchos::ConstHandleable<##Base> interface */ virtual Teuchos::RefCountPtr<const Base> getConstRcp() const {return rcp(this);} /** Teuchos::Handleable<##Base> interface */ virtual Teuchos::RefCountPtr<Base > getRcp() {return rcp(this);}"
 INCLUDE_PATH           = ../../../../Trilinos/packages/teuchos/src
 EXPAND_AS_DEFINED      = STANDARD_MEMBER_COMPOSITION_MEMBERS STANDARD_COMPOSITION_MEMBERS \
-                         STANDARD_NONCONST_COMPOSITION_MEMBERS STANDARD_CONST_COMPOSITION_MEMBERS
+                         STANDARD_NONCONST_COMPOSITION_MEMBERS STANDARD_CONST_COMPOSITION_MEMBERS \
+TEUCHOS_GET_RCP TEUCHOS_GET_CONST_RCP
 #
 # What kind of documentation is generated
 #
