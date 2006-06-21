@@ -618,7 +618,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
-      printf("\n%s  Requested # partitions = %1d, actual # partitions = %1d\n", yo, nparts, maxpart+1);
+      printf("\n%s  Requested # partitions = %1d, actual # non-empty partitions = %1d\n", yo, nparts, maxpart+1);
       printf("%s  Statistics with respect to %1d partitions: \n", yo, nparts);
       printf("%s                         Min.     Max.      Sum  Imbalance\n", yo);
       printf("%s  No. of objects   :  %8d %8d %8d   %5.3f\n",
