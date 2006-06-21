@@ -477,7 +477,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 			 else             index++;
            }
 		   if ( index < 0 || index >= nvblocks )
-             printf("ERROR : in almalgamation %d => %d(%d).\n",mat_indx[k],
+             printf("ERROR : in almalgamation %d => %d(%d).  Have you specified the correct number of DOFs?\n",mat_indx[k],
 			      index,nvblocks);
            if (col_entered[index] == 'F') 
            {
