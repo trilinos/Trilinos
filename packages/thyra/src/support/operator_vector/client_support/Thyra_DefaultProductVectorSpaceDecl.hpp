@@ -272,7 +272,7 @@ public:
   bool hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
   /// Returns <tt>getBlock(0)->smallVecSpcFcty()</tt>
   Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
-  /// Returns a <tt>ProductMultiVector</tt> object
+  /// Returns a <tt>DefaultProductMultiVector</tt> object
   Teuchos::RefCountPtr< MultiVectorBase<Scalar> > createMembers(int numMembers) const;
   /// Clones the object as promised
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;

@@ -31,6 +31,7 @@
 
 #include "Thyra_DefaultBlockedLinearOpDecl.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Utils.hpp"
 
@@ -121,7 +122,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
         " and we can not complete the block fill!"
         );
     }
-    for(int j = 0; j < numRowBlocks_; ++j) {
+    for(int j = 0; j < numColBlocks_; ++j) {
       TEST_FOR_EXCEPTION(
         !domainBlocks_[j].get(), std::logic_error
         ,"DefaultBlockedLinearOp<Scalar>::endBlockFill():"
@@ -337,13 +338,85 @@ bool DefaultBlockedLinearOp<Scalar>::opSupported(
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::apply(
   const ETransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
+  ,const MultiVectorBase<Scalar>    &X_in
+  ,MultiVectorBase<Scalar>          *Y_inout
   ,const Scalar                     alpha
   ,const Scalar                     beta
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+  using Teuchos::RefCountPtr;
+  using Teuchos::dyn_cast;
+  typedef Teuchos::ScalarTraits<Scalar>                ST;
+  typedef RefCountPtr<MultiVectorBase<Scalar> >        MultiVectorPtr;
+  typedef RefCountPtr<const MultiVectorBase<Scalar> >  ConstMultiVectorPtr;
+  typedef RefCountPtr<const LinearOpBase<Scalar> >     ConstLinearOpPtr;
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(Y_inout==NULL);
+#endif // TEUCHOS_DEBUG  
+  const ProductMultiVectorBase<Scalar>
+    &X = dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in);
+  ProductMultiVectorBase<Scalar>
+    &Y = dyn_cast<ProductMultiVectorBase<Scalar> >(*Y_inout);
+  if( real_trans(M_trans)==NOTRANS ) {
+    //
+    // Y = alpha * M * X + beta*Y
+    //
+    // =>
+    //
+    // [ Y[0] ] = alpha * [ Op[0,0], Op[0,1], ... , Op[0,N] ] * [ X[0] ] + beta*[ Y[0] ]
+    // [ Y[1] ]           [ Op[1,0], Op[1,1], ... , Op[1,N] ]   [ X[1] ]        [ Y[1] ]
+    // [ .    ]           [ .        .              .       ]   [ .    ]        [ .    ]
+    // [ Y[M] ]           [ Op[M,0], Op[M,1], ... , Op[M,N] ]   [ X[N] ]        [ Y[M] ]
+    //
+    // =>
+    //
+    // Y[i] = beta+Y[i] + sum(alpha*Op[i,j]*X[j],j=0...numColBlocks-1), i=0...numRowBlocks-1
+    //
+    for( int i = 0; i < numRowBlocks_; ++i ) {
+      MultiVectorPtr Y_i = Y.getNonconstMultiVectorBlock(i);
+      for( int j = 0; j < numColBlocks_; ++j ) {
+        ConstLinearOpPtr     Op_i_j = getBlock(i,j);
+        ConstMultiVectorPtr  X_j    = X.getMultiVectorBlock(j);
+        if(j==0) {
+          if(Op_i_j.get())  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,beta);
+          else              scale(beta,&*Y_i);
+        }
+        else {
+          if(Op_i_j.get())  Thyra::apply(*Op_i_j,M_trans,*X_j,&*Y_i,alpha,ST::one());
+        }
+      }
+    }
+  }
+  else {
+    //
+    // Y = alpha * M * X + beta*Y
+    //
+    // =>
+    //
+    // [ Y[0] ] = alpha * [ Op[0,0]^T, Op[1,0]^T, ... , Op[M,0]^T ] * [ X[0] ] + beta*[ Y[0] ]
+    // [ Y[1] ]           [ Op[0,1]^T, Op[1,1]^T, ... , Op[M,1]^T ]   [ X[1] ]        [ Y[1] ]
+    // [ .    ]           [ .        .              .             ]   [ .    ]        [ .    ]
+    // [ Y[N] ]           [ Op[0,N]^T, Op[1,N]^T, ... , Op[M,N]^T ]   [ X[M] ]        [ Y[N] ]
+    //
+    // =>
+    //
+    // Y[i] = beta+Y[i] + sum(alpha*Op[j,i]^T*X[j],j=0...numRowBlocks-1), i=0...numColBlocks-1
+    //
+    for( int i = 0; i < numColBlocks_; ++i ) {
+      MultiVectorPtr Y_i = Y.getNonconstMultiVectorBlock(i);
+      for( int j = 0; j < numRowBlocks_; ++j ) {
+        ConstLinearOpPtr     Op_j_i = getBlock(j,i);
+        ConstMultiVectorPtr  X_j    = X.getMultiVectorBlock(j);
+        if(j==0) {
+          if(Op_j_i.get())  Thyra::apply(*Op_j_i,M_trans,*X_j,&*Y_i,alpha,beta);
+          else              scale(beta,&*Y_i);
+        }
+        else {
+          if(Op_j_i.get())  Thyra::apply(*Op_j_i,M_trans,*X_j,&*Y_i,alpha,ST::one());
+        }
+      }
+    }
+  }
 }
 
 // private
@@ -428,7 +501,7 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
       ,*block.domain(),("block["+toString(i)+","+toString(j)+"].domain()")
       );
   }
-#endif
+#endif // TEUCHOS_DEBUG
   if(!productRange_.get()) {
     if(!rangeBlocks_[i].get())
       rangeBlocks_[i] = block.range();
@@ -439,5 +512,57 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
 }
 
 } // namespace Thyra
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Thyra::block2x2(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A11
+  )
+{
+  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(2,2);
+  if(A00.get()) M->setBlock(0,0,A00);
+  if(A01.get()) M->setBlock(0,1,A01);
+  if(A10.get()) M->setBlock(1,0,A10);
+  if(A11.get()) M->setBlock(1,1,A11);
+  M->endBlockFill();
+  return M;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Thyra::block2x1(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
+  )
+{
+  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(2,1);
+  if(A00.get()) M->setBlock(0,0,A00);
+  if(A10.get()) M->setBlock(1,0,A10);
+  M->endBlockFill();
+  return M;
+}
+
+template<class Scalar>
+Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+Thyra::block1x2(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
+  )
+{
+  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
+    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
+  M->beginBlockFill(1,2);
+  if(A00.get()) M->setBlock(0,0,A00);
+  if(A01.get()) M->setBlock(0,1,A01);
+  M->endBlockFill();
+  return M;
+}
 
 #endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_HPP

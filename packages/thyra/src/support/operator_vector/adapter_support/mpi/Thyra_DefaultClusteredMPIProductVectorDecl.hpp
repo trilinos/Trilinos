@@ -93,7 +93,9 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productSpace() const;
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > getBlock(const int k); 
+  bool blockIsConst(const int k) const; 
+  /** \brief . */
+  Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstBlock(const int k); 
   /** \brief . */
   Teuchos::RefCountPtr<const VectorBase<Scalar> > getBlock(const int k) const;
 

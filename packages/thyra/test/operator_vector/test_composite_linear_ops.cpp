@@ -259,6 +259,8 @@ bool run_composite_linear_ops_tests(
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A6,out.get());
   if(!result) success = false;
+  // Note that testing the symmetry above helps to check the transpose mode
+  // against the non-transpose mode!
 
   if(out.get()) *out << "\nCreating a non-const multiplicative operator A7 = origA^H*A1 ...\n";
   RefCountPtr<Thyra::LinearOpBase<Scalar> >
@@ -273,7 +275,7 @@ bool run_composite_linear_ops_tests(
   result = symLinearOpTester.check(*A7,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out << "\nCreating a blocked linear operator A8 = [ A6, A1; A1^H, 0 ] ...\n";
+  if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A8 = [ A6, A1^H; A1, 0 ] ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A8 = Thyra::block2x2<Scalar>( A6, adjoint(A1), A1, Teuchos::null );
   if(out.get()) *out << "\nA8 =\n" << describe(*A8,verbLevel);
@@ -281,6 +283,26 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nTesting A8 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A8,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a blocked 2x1 linear operator A9 = [ A6; A1 ] ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A9 = Thyra::block2x1<Scalar>( A6, A1 );
+  if(out.get()) *out << "\nA9 =\n" << describe(*A9,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A9 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = linearOpTester.check(*A9,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a blocked 1x2 linear operator A10 = [ A8, A9 ] ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A10 = Thyra::block1x2<Scalar>( A8, A9 );
+  if(out.get()) *out << "\nA10 =\n" << describe(*A10,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A10 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = linearOpTester.check(*A10,out.get());
   if(!result) success = false;
 
   if(out.get()) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";

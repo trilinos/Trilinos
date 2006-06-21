@@ -9,7 +9,7 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    TESTS = ana/operator_vector/test_composite_linear_ops.exe;
+    TESTS = ./operator_vector/test_composite_linear_ops.exe;
     ARGS = --use-mpi --verbose;
     COMM = MPI,SERIAL;
 }

@@ -46,9 +46,9 @@ namespace Thyra {
 
  \verbatim
  
-  M =  [ Op[0,0], Op[0,1], ... , Op[0,N];
-         Op[1,0], Op[1,1], ... , Op[1,N];
-         .        .              .
+  M =  [ Op[0,0], Op[0,1], ... , Op[0,N];  
+         Op[1,0], Op[1,1], ... , Op[1,N];  
+         .        .              .         
          Op[M,0], Op[M,1], ... , Op[M,N]; ]
 
  \endverbatim
@@ -230,9 +230,7 @@ private:
 
 };
 
-/** \brief Form an implicit block 2x2 linear operator <tt>return = [ A00, A01; A10, A11 ]</tt>.
-
- * <tt>A</tt> and <tt>B</tt>.
+/** \brief Form an implicit block 2x2 linear operator <tt>[ A00, A01; A10, A11 ]</tt>.
  *
  * \relates DefaultBlockedLinearOp
  */
@@ -245,29 +243,28 @@ block2x2(
   ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A11
   );
 
-} // namespace Thyra
-
-// /////////////////////////////////////
-// Template Implementations
-
+/** \brief Form an implicit block 2x1 linear operator <tt>[ A00; A10 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
 template<class Scalar>
-Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-Thyra::block2x2(
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+block2x1(
+  const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
+  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
+  );
+
+/** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
+block1x2(
   const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    &A00
   ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A01
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A10
-  ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >   &A11
-  )
-{
-  Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
-    M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
-  M->beginBlockFill(2,2);
-  if(A00.get()) M->setBlock(0,0,A00);
-  if(A01.get()) M->setBlock(0,1,A01);
-  if(A10.get()) M->setBlock(1,0,A10);
-  if(A11.get()) M->setBlock(1,1,A11);
-  M->endBlockFill();
-  return M;
-}
+  );
+
+} // namespace Thyra
 
 #endif	// THYRA_DEFAULT_BLOCKED_LINEAR_OP_DECL_HPP

@@ -121,6 +121,24 @@ void DefaultProductVector<Scalar>::uninitialize()
 // Overridden from ProductVectorBase
 
 template <class Scalar>
+Teuchos::RefCountPtr<VectorBase<Scalar> >
+DefaultProductVector<Scalar>::getNonconstVectorBlock(const int k)
+{
+  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+  return vecs_[k].getNonconstObj();
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<const VectorBase<Scalar> >
+DefaultProductVector<Scalar>::getVectorBlock(const int k) const
+{
+  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+  return vecs_[k].getConstObj();
+}
+
+// Overridden from ProductMultiVectorBase
+
+template <class Scalar>
 Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
 DefaultProductVector<Scalar>::productSpace() const
 {
@@ -135,19 +153,17 @@ bool DefaultProductVector<Scalar>::blockIsConst(const int k) const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
-DefaultProductVector<Scalar>::getNonconstBlock(const int k)
+Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+DefaultProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
-  return vecs_[k].getNonconstObj();
+  return getNonconstVectorBlock(k);
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultProductVector<Scalar>::getBlock(const int k) const
+Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+DefaultProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {
-  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
-  return vecs_[k].getConstObj();
+  return getVectorBlock(k);
 }
 
 // Overridden from VectorBase

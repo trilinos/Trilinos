@@ -29,12 +29,9 @@
 #ifndef THYRA_PRODUCT_VECTOR_BASE_HPP
 #define THYRA_PRODUCT_VECTOR_BASE_HPP
 
-#include "Thyra_VectorBase.hpp"
+#include "Thyra_ProductMultiVectorBase.hpp"
 
 namespace Thyra {
-
-/** \brief . */
-template <class Scalar> class ProductVectorSpaceBase;
 
 /** \brief Base interface for product vectors.
  *
@@ -71,34 +68,14 @@ template <class Scalar> class ProductVectorSpaceBase;
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
 template<class Scalar>
-class ProductVectorBase : virtual public VectorBase<Scalar> {
+class ProductVectorBase
+  : virtual public VectorBase<Scalar>
+  , virtual public ProductMultiVectorBase<Scalar>
+{
 public:
 
-  /** \brief . */
-  using VectorBase<Scalar>::applyOp;
-
-  /** \brief Returns the associated product vector space.
-   *
-   * If <tt>*this</tt> is uninitialized then
-   * <tt>return.get()==NULL</tt>.
-   */
-  virtual Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
-  productSpace() const = 0;
-
-  /** \brief Return if the <tt>k</tt>th vector block is const only.
-   *
-   * \param  k [in] The (zero-based) <tt>k</tt>th block index specifying
-   *           which vector block to access.
-   *
-   * Preconditions:<ul>
-   * <li> <tt>productSpace().get()!=NULL</tt>
-   * <li> <tt>0 <= k && k < productSpace()->numBlocks()</tt>
-   * </ul>
-   */
-  virtual bool blockIsConst(const int k) const = 0; 
-
-  /** \brief Returns a non-persisting non-<tt>const</tt> view of the (zero-based)
-   * <tt>k</tt>th block vector.
+  /** \brief Returns a non-persisting non-<tt>const</tt> view of the
+   * (zero-based) <tt>k</tt>th block vector.
    *
    * \param  k [in] The (zero-based) <tt>k</tt>th block index
    *           specifying which vector block to access.
@@ -118,7 +95,8 @@ public:
    * performed until the view returned from this function is released as
    * described above.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstBlock(const int k) = 0; 
+  virtual Teuchos::RefCountPtr<VectorBase<Scalar> >
+  getNonconstVectorBlock(const int k) = 0; 
 
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
    * <tt>k</tt>th block vector.
@@ -131,7 +109,8 @@ public:
    * <li> <tt>0 <= k <= productSpace()->numBlocks()-1tt>
    * </ul>
    */
-  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> > getBlock(const int k) const = 0; 
+  virtual Teuchos::RefCountPtr<const VectorBase<Scalar> >
+  getVectorBlock(const int k) const = 0; 
 
 };
 

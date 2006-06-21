@@ -125,13 +125,25 @@ public:
   //@{
 
   /** \brief . */
+  Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
+  /** \brief . */
+  Teuchos::RefCountPtr<const VectorBase<Scalar> > getVectorBlock(const int k) const;
+
+  //@}
+
+  /** @name Overridden from ProductMultiVectorBase */
+  //@{
+
+  /** \brief . */
   Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productSpace() const;
   /** \brief . */
   bool blockIsConst(const int k) const; 
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstBlock(const int k); 
+  Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
+  getNonconstMultiVectorBlock(const int k);
   /** \brief . */
-  Teuchos::RefCountPtr<const VectorBase<Scalar> > getBlock(const int k) const;
+  Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
+  getMultiVectorBlock(const int k) const;
 
   //@}
 
@@ -176,7 +188,7 @@ private:
   // Private data members
 
   Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  productSpace_;
-  std::vector<CNVC>                                               vecs_;
+  Teuchos::Array<CNVC>                                            vecs_;
   // cache
   int numBlocks_;
 

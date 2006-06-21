@@ -36,45 +36,50 @@
 
 namespace Thyra {
 
-/** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates a
- * multiplicative linear operator out of one or more constituent
+/** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates an
+ * implicitly multiplied linear operator out of one or more constituent
  * <tt>LinearOpBase</tt> objects.
  *
- * This class represents a multiplicative linear operator <tt>M</tt> of the form:
+ * This class represents a multiplied linear operator <tt>M</tt> of the form:
+
  \verbatim
  
  M = Op[0] * Op[1] * ... * Op[numOps-1]
+
  \endverbatim
- *
+
  * where <tt>Op[]</tt> is an array of <tt>numOps</tt> <tt>LinearOp</tt>
  * objects.  Of course the operator <tt>M</tt> is not constructed explicitly
  * but instead just applies the constituent linear operators accordingly using
  * temporaries.
  *
  * In other words, this class defines <tt>apply()</tt> as:
- *
+
  \verbatim
 
  y = alpha*M*x + beta*y
    = alpha * ( Op[0] * ( Op[1] * ( .... ( Op[numOps-1] * x ) ... ) ) ) + beta * y
+
  \endverbatim
- *
+
  * for the case where <tt>M_trans==NOTRANS</tt> and as:
- *
+
  \verbatim
 
  y = alpha*M'*x + beta*y
    = alpha * ( Op[numOps-1]' * ( .... ( Op[1]' * ( Op[0]' * x ) ) ... ) ) + beta * y
+
  \endverbatim
+
+ * for the case where <tt>real_trans(M_trans)!=NOTRANS</tt> (where the
+ * transpose <tt>'</tt> either defines <tt>TRANS</tt> or <tt>CONJTRANS</tt>).
  *
- * for the case where <tt>M_trans!=NOTRANS</tt> (where the transpose
- * <tt>'</tt> either defines <tt>TRANS</tt> or <tt>CONJTRANS</tt>).
- *
- * Constructing a multiplicative operator is easy.  For example, suppose one
- * wants to construct the multiplicative operator <tt>D =  A * B' * C</tt>.
- * To do so one would do:
+ * Constructing a multiplied operator is easy.  For example, suppose one wants
+ * to construct the multiplied operator <tt>D = A * B' * C</tt>.  To do so one
+ * would do:
 
  \code
+
  template<class Scalar>
  void constructD(
     const Teuchos::RefCountPtr<const Thyra::LinearOpBase<Scalar> >   &A
@@ -90,10 +95,11 @@ namespace Thyra {
        )
      );
  }
+
  \endcode
- *
+
  * Rather than calling the constructor directly, consider using the non-member helper
- * functions described \ref Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp "here".
+ * functions described \ref Thyra_Op_Vec_MultipliedLinearOp_helpers_grp "here".
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
@@ -112,7 +118,7 @@ public:
 
   /** \brief Constructs to uninitialized.
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->numOps()==0</tt>
    * </ul>
    */
@@ -121,7 +127,7 @@ public:
   /** Calls <tt>initialize()</tt>.
    *
    * Rather than calling this constructor directly, consider using the non-member helper
-   * functions described \ref Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp "here".
+   * functions described \ref Thyra_Op_Vec_MultipliedLinearOp_helpers_grp "here".
    */
   DefaultMultipliedLinearOp(
     const int                                                   numOps
@@ -131,7 +137,7 @@ public:
   /** Calls <tt>initialize()</tt>.
    *
    * Rather than calling this constructor directly, consider using the non-member helper
-   * functions described \ref Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp "here".
+   * functions described \ref Thyra_Op_Vec_MultipliedLinearOp_helpers_grp "here".
    */
   DefaultMultipliedLinearOp(
     const int                                                   numOps
@@ -146,13 +152,13 @@ public:
    *                 aggregated default definitions of the
    *                 non-transposed operator.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>numOps > 0</tt>
    * <li><tt>Ops != NULL</tt>
    * <li><tt>Ops[k].op().get()!=NULL</tt>, for <tt>k=0...numOps-1</tt>
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->numOps()==numOps</tt>
    * <li><tt>this->getOp(k).op().get()==Ops[k].op().get()</tt>, for <tt>k=0...numOps-1</tt>
    * </ul>
@@ -170,13 +176,13 @@ public:
    *                 aggregated default definitions of the
    *                 non-transposed operator.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>numOps > 0</tt>
    * <li><tt>Ops != NULL</tt>
    * <li><tt>Ops[k].op().get()!=NULL</tt>, for <tt>k=0...numOps-1</tt>
    * </ul>
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->numOps()==numOps</tt>
    * <li><tt>this->getOp(k).op().get()==Ops[k].op().get()</tt>, for <tt>k=0...numOps-1</tt>
    * </ul>
@@ -188,7 +194,7 @@ public:
 
   /** \brief Set to uninitialized.
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->numOps()==0</tt>
    * </ul>
    */
@@ -283,7 +289,7 @@ private:
 
 };
 
-/** \defgroup Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp  Helper functions for creating DefaultMultipliedLinearOp objects.
+/** \defgroup Thyra_Op_Vec_MultipliedLinearOp_helpers_grp  Helper functions for creating DefaultMultipliedLinearOp objects.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
@@ -293,7 +299,7 @@ private:
  * This function simply creates a <tt>DefaultMultipliedLinearOp</tt> given
  * <tt>A</tt> and <tt>B</tt>.
  *
- * \ingroup Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp
+ * \ingroup Thyra_Op_Vec_MultipliedLinearOp_helpers_grp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
@@ -307,7 +313,7 @@ multiply(
  * This function simply creates a <tt>DefaultMultipliedLinearOp</tt> given
  * <tt>A</tt> and <tt>B</tt>.
  *
- * \ingroup Thyra_Op_Vec_MultipliciateLinearOp_helpers_grp
+ * \ingroup Thyra_Op_Vec_MultipliedLinearOp_helpers_grp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >

@@ -99,8 +99,15 @@ DefaultClusteredMPIProductVector<Scalar>::productSpace() const
 }
 
 template <class Scalar>
+bool DefaultClusteredMPIProductVector<Scalar>::blockIsConst(const int k) const
+{
+  TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
+  return false;
+}
+
+template <class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::getBlock(const int k)
+DefaultClusteredMPIProductVector<Scalar>::getNonconstBlock(const int k)
 {
   TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
   return vecs_[k];

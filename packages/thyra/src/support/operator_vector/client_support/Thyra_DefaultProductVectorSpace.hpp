@@ -186,11 +186,16 @@ Scalar DefaultProductVectorSpace<Scalar>::scalarProd(
     &x = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(x_in),
     &y = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(y_in);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( numBlocks!=x.productSpace()->numBlocks() || numBlocks!=y.productSpace()->numBlocks() );
+  TEST_FOR_EXCEPT(
+    numBlocks!=x.productSpace()->numBlocks()
+    || numBlocks!=y.productSpace()->numBlocks()
+    );
 #endif
   Scalar scalarProd = Teuchos::ScalarTraits<Scalar>::zero();
   for( int k = 0; k < numBlocks; ++k )
-    scalarProd += (*vecSpaces_)[k]->scalarProd(*x.getBlock(k),*y.getBlock(k));
+    scalarProd += (*vecSpaces_)[k]->scalarProd(
+      *x.getVectorBlock(k),*y.getVectorBlock(k)
+      );
   return scalarProd;
 }
 
@@ -276,7 +281,10 @@ template<class Scalar>
 Teuchos::RefCountPtr< MultiVectorBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::createMembers(int numMembers) const
 {
-  return VectorSpaceDefaultBase<Scalar>::createMembers(numMembers); // ToDo: Specialize for ProductMultiVector when needed!
+  if(numMembers==1)
+    return createMember();
+  return VectorSpaceDefaultBase<Scalar>::createMembers(numMembers);
+  // ToDo: Specialize to return DefaultProductMultiVector when needed!
 }
 
 template<class Scalar>
