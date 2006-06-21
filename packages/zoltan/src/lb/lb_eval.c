@@ -504,7 +504,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     for (i=0; i<vwgt_dim; i++) 
       obj_wgt[i] = tmp_vwgt[i];
   }
-  if (cut_wgt){
+  if (cut_wgt && have_graph_callbacks){
     for (i=0; i<zz->Edge_Weight_Dim; i++) 
       cut_wgt[i] = tmp_cutwgt[i];
   }
@@ -599,7 +599,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     }
 
     /* Min, max, sum for cut weights. */
-    if (zz->Edge_Weight_Dim>0){
+    if (zz->Edge_Weight_Dim>0 && have_graph_callbacks){
       for (i=0; i<zz->Edge_Weight_Dim; i++)
         tmp_cutwgt[i] = FLT_MAX; /*min */
       for (i=zz->Edge_Weight_Dim; i<3*zz->Edge_Weight_Dim; i++)
@@ -614,7 +614,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           tmp_cutwgt[isum*zz->Edge_Weight_Dim+i] += cutwgt_arr_glob[j*zz->Edge_Weight_Dim+i]; 
         }
       }
-
     }
 
     /* Print min-max-sum of results */
