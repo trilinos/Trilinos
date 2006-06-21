@@ -235,6 +235,7 @@ int main(int argc, char *argv[])
     int numSteps = 0;
     double t0 = 0.0;
     double dt = (finalTime-t0)/N;
+    double time = t0;
 
     if (step_method_val == FIXED_STEP)
     {
@@ -258,7 +259,6 @@ int main(int argc, char *argv[])
     }
     else // (step_method_val == VARIABLE_STEP)
     {
-      double time = t0;
       while (time < finalTime)
       {
         double dt_taken = stepper.TakeStep();

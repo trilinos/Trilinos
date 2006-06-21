@@ -37,6 +37,7 @@
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Thyra_SingleResidSSDAEModelEvaluator.hpp"
+#include "Thyra_SolveSupportTypes.hpp"
 
 namespace Rythmos {
 
@@ -427,6 +428,7 @@ template<class Scalar>
 Scalar ImplicitBDFStepper<Scalar>::TakeStep()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
   {
@@ -441,6 +443,8 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
   {
     // Set up problem coefficients (and handle first step)
     updateCoeffs();
+    // Set Error weight vector
+    ErrWtVecSet(&*errWtVec,*xn0);
     // compute predictor
     obtainPredictor();
     // solve nonlinear problem (as follows)
@@ -465,15 +469,31 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     // the nonlinear solver.
     if(solver->getModel().get()!=&neModel)
       solver->setModel( Teuchos::rcp(&neModel,false) );
-    solver->solve( &*xn0, NULL, &*delta ); 
-    newtonConvergenceStatus = 0; // this should be updated from solver
-    
+    /* // Thyra::TimeStepNewtonNonlinearSolver uses a built in solveCriteria, so you can't pass one in.
+       // I believe this is the correct solveCriteria for IDA though.
+    Thyra::SolveMeasureType nonlinear_solve_measure_type(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_ONE); 
+    ScalarMag tolerance = relErrTol/ScalarMag(10.0); // This should be changed to match the condition in IDA
+    Thyra::SolveCriteria<Scalar> nonlinearSolveCriteria(nonlinear_solve_measure_type, tolerance);
+    Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver->solve( &*xn0, &nonlinearSolveCriteria, &*delta ); 
+    */
+    Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver->solve( &*xn0, NULL, &*delta ); 
+    if (nonlinearSolveStatus.solveStatus == Thyra::SOLVE_STATUS_CONVERGED) 
+      newtonConvergenceStatus = 0;
+    else 
+      newtonConvergenceStatus = -1;
+
     // check error and evaluate LTE
     Scalar dnorm = checkReduceOrder();
     
 #ifdef Rythmos_DEBUG
     if (debugLevel > 1)
     {
+      *debug_out << "xn0 = " << std::endl;
+      xn0->describe(*debug_out,Teuchos::VERB_EXTREME);
+      *debug_out << "delta = " << std::endl;
+      delta->describe(*debug_out,Teuchos::VERB_EXTREME);
+      *debug_out << "xHistory[0] = " << std::endl;
+      xHistory[0]->describe(*debug_out,Teuchos::VERB_EXTREME);
       *debug_out << "ck = " << ck << endl;
       *debug_out << "dnorm = " << dnorm << endl;
       *debug_out << "Local Truncation Error Check: (ck*dnorm) < 1:  (" << ck*dnorm << ") <?= 1" << endl;
@@ -550,7 +570,7 @@ void ImplicitBDFStepper<Scalar>::describe(
     out << "x_dot_base = " << std::endl;
     x_dot_base->describe(out,verbLevel);
     out << "xHistory = " << std::endl;
-    for (int i=0 ; i < maxOrder ; ++i)
+    for (int i=0 ; i < max(2,maxOrder) ; ++i)
     {
       out << "xHistory[" << i << "] = " << std::endl;
       xHistory[i]->describe(out,verbLevel);
@@ -664,6 +684,22 @@ void ImplicitBDFStepper<Scalar>::updateHistory()
   {
     Vp_V( &*xHistory[j], *xHistory[j+1] );
   }
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    debug_out->pushLinePrefix("updateHistory");
+    *debug_out << "{" << endl;
+    debug_out->pushTab();
+    for (int i=0;i<max(2,maxOrder);++i)
+    {
+      *debug_out << "xHistory[" << i << "] = " << endl;
+      xHistory[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+    }
+    debug_out->popTab();
+    *debug_out << "}" << endl;
+    debug_out->popLinePrefix();
+  }
+#endif // Rythmos_DEBUG
 
 }
 
@@ -968,7 +1004,7 @@ BDFstatusFlag ImplicitBDFStepper<Scalar>::rejectStep()
 //    for (int i=1;i<=currentOrder;++i)
 //      psi[i-1] = psi[i] - hh;
 
-    if ((newtonConvergenceStatus <= 0))
+    if ((newtonConvergenceStatus < 0))
     {
       /// 11/11/05 erkeite:  If the Newton solver fails, don't 
       // rely on the error estimate - it may be full of Nan's.
@@ -1205,8 +1241,6 @@ void ImplicitBDFStepper<Scalar>::completeStep()
   // 03/22/04 tscoffe:  Note that updating the history has nothing to do with
   // the step-size and everything to do with the newton correction vectors.
   updateHistory();
-
-  ErrWtVecSet(&*errWtVec,*xn0);
 
   // 12/01/05 tscoffe:  This is necessary to avoid currentTimeStep == 0 right
   // before a breakpoint.  So I'm checking to see if time is identically
