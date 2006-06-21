@@ -496,8 +496,7 @@ static int seq_part (
       }
   }
  
-#define DEBUG_
-#ifdef DEBUG_
+#if 0
   if (hg->fixed)
     printf("fixed[0,1]= %d, %d\n", hg->fixed[0], hg->fixed[1]);
   printf("part[0,1]= %d, %d\n", part[0], part[1]);
