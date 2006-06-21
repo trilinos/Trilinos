@@ -275,6 +275,7 @@ std::ostream& operator<<(std::ostream& os, const ConstVector& v)
 
 int main(int argc, char** argv)
 {
+  int state = 0;
   cout << Teuchos::Teuchos_Version() << endl << endl;
 
   try
@@ -301,21 +302,31 @@ int main(int argc, char** argv)
 
       Vector a = 2.0*(x+y+3.0*z);
       cout << "a=" << endl;
+      double err = 0.0;
       for (int i=0; i<a.dim(); i++)
         {
           cout << i << " " << a.getElement(i) << endl;
+          double x_i = x.getElement(i);
+          double y_i = y.getElement(i);
+          double z_i = z.getElement(i);
+          double t = 2.0*(x_i + y_i + 3.0*z_i);
+          err += ::fabs(t - a.getElement(i));
         }
-      
       
       VectorSpace s2 = new VecSpaceA(5);
       VecBase* vb = new VecA(5, s2.ptr());
       Vector b = vb;
 
       cout << "b = " << b << endl;
+
+      if (err > 1.0e-12) state = 1;
     }
   catch(std::exception& e)
     {
       cerr << e.what() << endl;
+      state = 1;
     }
   MPISession::finalize();
+
+  return state;
 }
