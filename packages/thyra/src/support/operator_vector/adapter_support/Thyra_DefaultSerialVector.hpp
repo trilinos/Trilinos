@@ -99,7 +99,7 @@ void DefaultSerialVector<Scalar>::initialize(
   )
 {
   if(vecSpc.get()) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION( vecSpc.get()!=NULL && dim != vecSpc->dim(), std::invalid_argument, "DefaultSerialVector<Scalar>::initialize(...): Error!" );
 #endif
     space_serial_ = vecSpc;
@@ -117,7 +117,7 @@ void DefaultSerialVector<Scalar>::initialize(
 template<class Scalar>
 void DefaultSerialVector<Scalar>::getData( Scalar** values, Index* stride )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(values==NULL || stride==NULL);
 #endif
   *values = v_.get();
@@ -127,7 +127,7 @@ void DefaultSerialVector<Scalar>::getData( Scalar** values, Index* stride )
 template<class Scalar>
 void DefaultSerialVector<Scalar>::commitData( Scalar** values )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( values==NULL || *values==NULL );
 #endif
   // There is nothing to commit, the client had direct pointer access to internal data!
@@ -137,7 +137,7 @@ void DefaultSerialVector<Scalar>::commitData( Scalar** values )
 template<class Scalar>
 void DefaultSerialVector<Scalar>::getData( const Scalar** values, Index* stride ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(values==NULL || stride==NULL);
 #endif
   *values = v_.get();
@@ -147,7 +147,7 @@ void DefaultSerialVector<Scalar>::getData( const Scalar** values, Index* stride 
 template<class Scalar>
 void DefaultSerialVector<Scalar>::freeData( const Scalar** values ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( values==NULL || *values==NULL );
 #endif
   // There is nothing to free!

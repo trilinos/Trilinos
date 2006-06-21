@@ -93,7 +93,7 @@ void AztecOOLinearOpWithSolve::initialize(
   ,const double                                                           aztecSolverScalar
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
   TEST_FOR_EXCEPT(aztecFwdSolver.get()==NULL);
 #endif
@@ -292,7 +292,7 @@ void AztecOOLinearOpWithSolve::solve(
   // Validate input
   //
   TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
-//#ifdef _DEBUG
+//#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!this->solveSupportsTrans(M_trans));
   TEST_FOR_EXCEPT( numBlocks && blockSolveCriteria && !this->solveSupportsSolveMeasureType(M_trans,blockSolveCriteria[0].solveCriteria.solveMeasureType) );
   TEST_FOR_EXCEPT(X==NULL);

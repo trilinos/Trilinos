@@ -45,7 +45,7 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
   ,const Teuchos::RefCountPtr<LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( leftPrecOp.get()==NULL && rightPrecOp.get()==NULL ); 
 #endif
   if(leftPrecOp.get()) leftPrecOp_.initialize(leftPrecOp);
@@ -58,7 +58,7 @@ DefaultPreconditioner<RangeScalar,DomainScalar>::DefaultPreconditioner(
   ,const Teuchos::RefCountPtr<const LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( leftPrecOp.get()==NULL && rightPrecOp.get()==NULL ); 
 #endif
   leftPrecOp_.initialize(leftPrecOp);

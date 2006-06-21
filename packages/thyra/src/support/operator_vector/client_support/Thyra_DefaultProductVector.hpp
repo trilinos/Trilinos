@@ -46,7 +46,24 @@ DefaultProductVector<Scalar>::DefaultProductVector()
 template <class Scalar>
 DefaultProductVector<Scalar>::DefaultProductVector(
   const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >               vecs[]
+  )
+{
+  initialize(productSpace);
+}
+
+template <class Scalar>
+DefaultProductVector<Scalar>::DefaultProductVector(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
+  )
+{
+  initialize(productSpace,vecs);
+}
+
+template <class Scalar>
+DefaultProductVector<Scalar>::DefaultProductVector(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
   )
 {
   initialize(productSpace,vecs);
@@ -55,30 +72,47 @@ DefaultProductVector<Scalar>::DefaultProductVector(
 template <class Scalar>
 void DefaultProductVector<Scalar>::initialize(
   const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >               vecs[]
   )
 {
   // ToDo: Validate input!
   numBlocks_ = productSpace->numBlocks();
   productSpace_ = productSpace;
   vecs_.resize(numBlocks_);
-  if(vecs) {
-    std::copy( vecs, vecs + numBlocks_, &vecs_[0] );
-  }
-  else {
-    for( int k = 0; k < numBlocks_; ++k )
-      vecs_[k] = createMember(productSpace->getBlock(k));
-  }
+  for( int k = 0; k < numBlocks_; ++k )
+    vecs_[k].initialize(createMember(productSpace->getBlock(k)));
 }
 
 template <class Scalar>
-void DefaultProductVector<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  *productSpace
-  ,Teuchos::RefCountPtr<VectorBase<Scalar> >               vecs[]
+void DefaultProductVector<Scalar>::initialize(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
   )
 {
-  if(productSpace) *productSpace = productSpace_;
-  if(vecs) std::copy( &vecs_[0], &vecs_[0]+numBlocks_, vecs );
+  // ToDo: Validate input!
+  numBlocks_ = productSpace->numBlocks();
+  productSpace_ = productSpace;
+  vecs_.resize(numBlocks_);
+  for( int k = 0; k < numBlocks_; ++k )
+    vecs_[k].initialize(vecs[k]);
+}
+
+template <class Scalar>
+void DefaultProductVector<Scalar>::initialize(
+  const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
+  )
+{
+  // ToDo: Validate input!
+  numBlocks_ = productSpace->numBlocks();
+  productSpace_ = productSpace;
+  vecs_.resize(numBlocks_);
+  for( int k = 0; k < numBlocks_; ++k )
+    vecs_[k].initialize(vecs[k]);
+}
+
+template <class Scalar>
+void DefaultProductVector<Scalar>::uninitialize()
+{
   productSpace_ = Teuchos::null;
   vecs_.resize(0);
   numBlocks_ = 0;
@@ -94,11 +128,18 @@ DefaultProductVector<Scalar>::productSpace() const
 }
 
 template <class Scalar>
-Teuchos::RefCountPtr<VectorBase<Scalar> >
-DefaultProductVector<Scalar>::getBlock(const int k)
+bool DefaultProductVector<Scalar>::blockIsConst(const int k) const
 {
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
-  return vecs_[k];
+  return vecs_[k].isConst();
+}
+
+template <class Scalar>
+Teuchos::RefCountPtr<VectorBase<Scalar> >
+DefaultProductVector<Scalar>::getNonconstBlock(const int k)
+{
+  TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
+  return vecs_[k].getNonconstObj();
 }
 
 template <class Scalar>
@@ -106,7 +147,7 @@ Teuchos::RefCountPtr<const VectorBase<Scalar> >
 DefaultProductVector<Scalar>::getBlock(const int k) const
 {
   TEST_FOR_EXCEPT( k < 0 || numBlocks_-1 < k);
-  return vecs_[k];
+  return vecs_[k].getConstObj();
 }
 
 // Overridden from VectorBase
@@ -136,7 +177,7 @@ void DefaultProductVector<Scalar>::applyOp(
   //
   const Index	n = productSpace_->dim();
   // Validate the compatibility of the vectors!
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= first_ele_offset_in && first_ele_offset_in+1 <= n), std::out_of_range
     ,"DefaultProductVector::applyOp(...): Error, "
@@ -172,7 +213,9 @@ void DefaultProductVector<Scalar>::applyOp(
   }
 #endif
   // Get the index of an incore-only input vector and input/output vector?
-  const bool this_isInCore = productSpace_->hasInCoreView(Range1D(),VIEW_TYPE_DETACHED,STRIDE_TYPE_NONUNIT);
+  const bool this_isInCore = productSpace_->hasInCoreView(
+    Range1D(),VIEW_TYPE_DETACHED,STRIDE_TYPE_NONUNIT
+    );
   int incore_vec_k = -1, incore_targ_vec_k = -1;
   // Dynamic cast the pointers for the vector arguments
   Workspace<const DefaultProductVector<Scalar>*>
@@ -252,9 +295,9 @@ void DefaultProductVector<Scalar>::applyOp(
     if( local_sub_dim <= 0 )
       break;
     for( int i = 0; i < num_vecs; ++i )       // Fill constituent vectors for block k
-      sub_vecs[i] = &*vecs_args[i]->vecs_[k];
+      sub_vecs[i] = &*vecs_args[i]->vecs_[k].getConstObj();
     for( int j = 0; j < num_targ_vecs; ++j )  // Fill constituent target vectors for block k
-      sub_targ_vecs[j] = &*targ_vecs_args[j]->vecs_[k];
+      sub_targ_vecs[j] = &*targ_vecs_args[j]->vecs_[k].getNonconstObj();
     Thyra::applyOp( 
       op
       ,num_vecs,num_vecs?&sub_vecs[0]:NULL
@@ -280,13 +323,18 @@ void DefaultProductVector<Scalar>::acquireDetachedView(
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
-  if( rng.lbound() + rng.size() <= kth_global_offset + vecs_[kth_vector_space]->space()->dim() ) {
+  if(
+    rng.lbound() + rng.size()
+    <= kth_global_offset + vecs_[kth_vector_space].getConstObj()->space()->dim()
+    )
+  {
     // This involves only one sub-vector so just return it.
-    const_cast<const VectorBase<Scalar>*>(&*vecs_[kth_vector_space])->acquireDetachedView(
-      rng - kth_global_offset, sub_vec );
+    const_cast<const VectorBase<Scalar>*>(
+      &*vecs_[kth_vector_space].getConstObj()
+      )->acquireDetachedView( rng - kth_global_offset, sub_vec );
     sub_vec->setGlobalOffset( sub_vec->globalOffset() + kth_global_offset );
   }
   else {
@@ -308,13 +356,17 @@ void DefaultProductVector<Scalar>::releaseDetachedView(
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset()+1,&kth_vector_space,&kth_global_offset);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
-  if( sub_vec->globalOffset() + sub_vec->subDim() <= kth_global_offset +  vecs_[kth_vector_space]->space()->dim() ) {
+  if(
+    sub_vec->globalOffset() + sub_vec->subDim()
+    <= kth_global_offset +  vecs_[kth_vector_space].getConstObj()->space()->dim()
+    )
+  {
     // This sub_vec was extracted from a single constituent vector
     sub_vec->setGlobalOffset( sub_vec->globalOffset() - kth_global_offset );
-    vecs_[kth_vector_space]->releaseDetachedView(sub_vec);
+    vecs_[kth_vector_space].getConstObj()->releaseDetachedView(sub_vec);
   }
   else {
     // This sub_vec was created by the default implementation!
@@ -332,13 +384,18 @@ void DefaultProductVector<Scalar>::acquireDetachedView(
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
-  if( rng.lbound() + rng.size() <= kth_global_offset + vecs_[kth_vector_space]->space()->dim() ) {
+  if(
+    rng.lbound() + rng.size()
+    <= kth_global_offset + vecs_[kth_vector_space].getConstObj()->space()->dim()
+    )
+  {
     // This involves only one sub-vector so just return it.
-    vecs_[kth_vector_space]->acquireDetachedView(
-      rng - kth_global_offset, sub_vec );
+    vecs_[kth_vector_space].getConstObj()->acquireDetachedView(
+      rng - kth_global_offset, sub_vec
+      );
     sub_vec->setGlobalOffset( sub_vec->globalOffset() + kth_global_offset );
   }
   else {
@@ -360,13 +417,17 @@ void DefaultProductVector<Scalar>::commitDetachedView(
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset()+1,&kth_vector_space,&kth_global_offset);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
-  if( sub_vec->globalOffset() + sub_vec->subDim() <= kth_global_offset +  vecs_[kth_vector_space]->space()->dim() ) {
+  if(
+    sub_vec->globalOffset() + sub_vec->subDim()
+    <= kth_global_offset +  vecs_[kth_vector_space].getConstObj()->space()->dim()
+    )
+  {
     // This sub_vec was extracted from a single constituent vector
     sub_vec->setGlobalOffset( sub_vec->globalOffset() - kth_global_offset );
-    vecs_[kth_vector_space]->commitDetachedView(sub_vec);
+    vecs_[kth_vector_space].getNonconstObj()->commitDetachedView(sub_vec);
   }
   else {
     // This sub_vec was created by the default implementation!
@@ -382,14 +443,18 @@ void DefaultProductVector<Scalar>::setSubVector(
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec.globalOffset()+1,&kth_vector_space,&kth_global_offset);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
-  if( sub_vec.globalOffset() + sub_vec.subDim() <= kth_global_offset + vecs_[kth_vector_space]->space()->dim() ) {
+  if(
+    sub_vec.globalOffset() + sub_vec.subDim()
+    <= kth_global_offset + vecs_[kth_vector_space].getConstObj()->space()->dim()
+    )
+  {
     // This sub-vector fits into a single constituent vector
     RTOpPack::SparseSubVectorT<Scalar> sub_vec_g = sub_vec;
     sub_vec_g.setGlobalOffset( sub_vec_g.globalOffset() - kth_global_offset );
-    vecs_[kth_vector_space]->setSubVector(sub_vec_g);
+    vecs_[kth_vector_space].getNonconstObj()->setSubVector(sub_vec_g);
   }
   else {
     // Let the default implementation take care of this.  ToDo: In the future

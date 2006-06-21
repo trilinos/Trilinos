@@ -70,12 +70,12 @@ void EpetraOperatorViewExtractorStd::getEpetraOpView(
   ,double                                                   *epetraOpScalar
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(epetraOp==NULL);
   TEST_FOR_EXCEPT(epetraOpTransp==NULL);
   TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
   TEST_FOR_EXCEPT(epetraOpAdjointSupport==NULL);
-#endif // _DEBUG
+#endif // TEUCHOS_DEBUG
   double                                              wrappedFwdOpScalar = 0.0;
   ETransp                                             wrappedFwdOpTransp = NOTRANS;
   Teuchos::RefCountPtr<const LinearOpBase<double> >   wrappedFwdOp; 

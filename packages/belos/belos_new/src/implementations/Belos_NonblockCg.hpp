@@ -213,7 +213,7 @@ void NonblockCg<Scalar>::getCurrNativeResiduals(
 	) const
 {
 	if(norms) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 		TEST_FOR_EXCEPT( currBlockSize != lpi_->getCurrBlockSize() );
 #endif
 		if(!R_native_norms_updated_) {
@@ -242,7 +242,7 @@ bool NonblockCg<Scalar>::adjointRequired() const
 template<class Scalar>
 void NonblockCg<Scalar>::setProblem( const RefCountPtr<LinearProblemIteration<Scalar> > &lpi )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT(lpi.get()==NULL);
 #endif
 	lpi_ = lpi;
@@ -278,7 +278,7 @@ IterateReturn NonblockCg<Scalar>::iterate( const int maxNumIter )
 				opPrecType_ = COMPOSITE_OP;
 			}
 			else {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 				TEST_FOR_EXCEPT( lpi_->getRightPrecSymmetry() != OP_SYMMETRIC );
 #endif
 				opPrecType_ = RIGHT_PREC;
@@ -286,7 +286,7 @@ IterateReturn NonblockCg<Scalar>::iterate( const int maxNumIter )
 		}
 		else {
 			if(leftPrec.op().get()) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 				TEST_FOR_EXCEPT( lpi_->getLeftPrecSymmetry() != OP_SYMMETRIC );
 #endif
 				opPrecType_ = LEFT_PREC;

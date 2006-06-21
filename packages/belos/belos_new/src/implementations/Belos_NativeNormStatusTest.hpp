@@ -151,7 +151,7 @@ void NativeNormStatusTest<Scalar>::protectedCheckStatus(
 		bis.getProblem().getCurrRhsIndexes( currNumRhs, &currRhsIndexes_[0] );
 		for( int k = 0; k < currNumRhs; ++k ) {
 			const int origRhsIndex = currRhsIndexes_[k];
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 			TEST_FOR_EXCEPT( origRhsIndex > static_cast<int>(tols.size()) );
 #endif
 			if( R_native_norms_[k] <= tols[origRhsIndex-1] )  status[k] = STATUS_CONVERGED;

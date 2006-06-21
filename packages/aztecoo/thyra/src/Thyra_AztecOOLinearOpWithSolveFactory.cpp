@@ -199,7 +199,7 @@ void AztecOOLinearOpWithSolveFactory::uninitializeOp(
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
   AztecOOLinearOpWithSolve
@@ -349,7 +349,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   typedef Teuchos::VerboseObjectTempState<PreconditionerFactoryBase<double> > VOTSPF;
   VOTSPF precFactoryOutputTempState(precFactory_,out,verbLevel);
 
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
   //
@@ -755,7 +755,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   aztecOp->outputEveryRhs(outputEveryRhs_);
   aztecOp->setOStream(this->getOStream());
   aztecOp->setVerbLevel(this->getVerbLevel());
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   if(paramList_.get())
     paramList_->validateParameters(*this->getValidParameters());
 #endif

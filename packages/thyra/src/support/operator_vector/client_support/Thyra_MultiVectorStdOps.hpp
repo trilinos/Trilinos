@@ -132,7 +132,7 @@ Thyra::norm_1( const MultiVectorBase<Scalar>& V )
 template<class Scalar>
 void Thyra::scale( Scalar alpha, MultiVectorBase<Scalar>* V )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"assign(...), Error!");
 #endif
   if(alpha==Teuchos::ScalarTraits<Scalar>::zero()) {
@@ -153,7 +153,7 @@ void Thyra::scale( Scalar alpha, MultiVectorBase<Scalar>* V )
 template<class Scalar>
 void Thyra::scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
   bool is_compatible = U.range()->isCompatible(*a.space());
   TEST_FOR_EXCEPTION(
@@ -177,7 +177,7 @@ void Thyra::scaleUpdate( const VectorBase<Scalar>& a, const MultiVectorBase<Scal
 template<class Scalar>
 void Thyra::assign( MultiVectorBase<Scalar>* V, Scalar alpha )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"assign(...), Error!");
 #endif
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
@@ -191,7 +191,7 @@ void Thyra::assign( MultiVectorBase<Scalar>* V, Scalar alpha )
 template<class Scalar>
 void Thyra::assign( MultiVectorBase<Scalar>* V, const MultiVectorBase<Scalar>& U )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"assign(...), Error!");
 #endif
   RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
@@ -206,7 +206,7 @@ void Thyra::assign( MultiVectorBase<Scalar>* V, const MultiVectorBase<Scalar>& U
 template<class Scalar>
 void Thyra::update( Scalar alpha, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
 #endif
   RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);
@@ -218,7 +218,7 @@ void Thyra::update( Scalar alpha, const MultiVectorBase<Scalar>& U, MultiVectorB
 template<class Scalar>
 void Thyra::update( Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& U, MultiVectorBase<Scalar>* V )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
   bool is_compatible = U.range()->isCompatible(*V->range());
   TEST_FOR_EXCEPTION(
@@ -238,7 +238,7 @@ void Thyra::update( Scalar alpha[], Scalar beta, const MultiVectorBase<Scalar>& 
 template<class Scalar>
 void Thyra::update( const MultiVectorBase<Scalar>& U, Scalar alpha[], Scalar beta, MultiVectorBase<Scalar>* V )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"update(...), Error!");
   bool is_compatible = U.range()->isCompatible(*V->range());
     TEST_FOR_EXCEPTION(
@@ -265,7 +265,7 @@ void Thyra::linear_combination(
   ,MultiVectorBase<Scalar>          *Y
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(Y==NULL,std::logic_error,"linear_combination(...), Error!");
 #endif
   if( beta == Teuchos::ScalarTraits<Scalar>::one() && m == 1 ) {
@@ -284,7 +284,7 @@ void Thyra::linear_combination(
 template<class Scalar>
 void Thyra::randomize( Scalar l, Scalar u, MultiVectorBase<Scalar>* V )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"randomize(...), Error!");
 #endif
   const int m = V->domain()->dim();

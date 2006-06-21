@@ -305,7 +305,7 @@ void accumulateSolveStatus(
   ,SolveStatus<Scalar>           *overallSolveStatus
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(overallSolveStatus==NULL);
 #endif
   switch(solveStatus.solveStatus) {

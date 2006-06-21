@@ -51,7 +51,7 @@ LinearOpScalarProd<Scalar>::LinearOpScalarProd( const Teuchos::RefCountPtr<const
 template<class Scalar>
 void LinearOpScalarProd<Scalar>::initialize( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &op )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(op.get()==NULL);
 #endif
   op_ = op;
@@ -85,7 +85,7 @@ void LinearOpScalarProd<Scalar>::apply(
   ,const Scalar                         beta
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Y==NULL);
 #endif
   Teuchos::RefCountPtr<MultiVectorBase<Scalar> >

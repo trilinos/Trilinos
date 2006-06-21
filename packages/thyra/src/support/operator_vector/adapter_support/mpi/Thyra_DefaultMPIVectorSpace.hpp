@@ -53,7 +53,7 @@ DefaultMPIVectorSpace<Scalar>::DefaultMPIVectorSpace( MPI_Comm mpiComm, const In
 template<class Scalar>
 void DefaultMPIVectorSpace<Scalar>::initialize( MPI_Comm mpiComm, const Index localSubDim, const Index globalDim )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   //TEST_FOR_EXCEPT( !( localSubDim > 0 ) );
   TEST_FOR_EXCEPT( !( localSubDim >= 0 ) );
 #endif
@@ -126,7 +126,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
 DefaultMPIVectorSpace<Scalar>::createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localSubDim_ != raw_v.subDim() );
 #endif
   return Teuchos::rcp(
@@ -142,7 +142,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 DefaultMPIVectorSpace<Scalar>::createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localSubDim_ != raw_v.subDim() );
 #endif
   return Teuchos::rcp(
@@ -158,7 +158,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
 DefaultMPIVectorSpace<Scalar>::createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
 #endif
   return Teuchos::rcp(
@@ -175,7 +175,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
 DefaultMPIVectorSpace<Scalar>::createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localSubDim_ != raw_mv.subDim() );
 #endif
   return Teuchos::rcp(

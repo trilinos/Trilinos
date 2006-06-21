@@ -69,7 +69,7 @@ const char* toString( const EStatusType status )
 	if(status==STATUS_CONVERGED) return "STATUS_CONVERGED";
 	if(status==STATUS_FAILED) return "STATUS_FAILED";
 	if(status==STATUS_NAN) return "STATUS_NAN";
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT(true); // Should never get here!
 #endif
 	return "*** Invalid value for status ***";
@@ -92,7 +92,7 @@ const char* toString( const EIterateTermination iterateTermination )
 		return "TERMINATION_STATUS_TEST";
 	if( iterateTermination == TERMINATION_MAX_NUM_ITER )
 		return "TERMINATION_MAX_NUM_ITER";
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT(true); // Should never get here!
 #endif
 	return "*** Invalid value for iterateTermination ***";
@@ -120,7 +120,7 @@ const char* toString( const ENativeResidualType nativeResidualType )
 {
  	if(nativeResidualType==NATIVE_RESIDUAL_UNPRECONDITIONED) return "NATIVE_RESIDUAL_UNPRECONDITIONED";
 	if(nativeResidualType==NATIVE_RESIDUAL_PRECONDITIONED) return "NATIVE_RESIDUAL_PRECONDITIONED";
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT(true); // Should never get here!
 #endif
 	return "*** Invalid value for nativeResidualType ***";

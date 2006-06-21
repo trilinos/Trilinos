@@ -69,7 +69,7 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
   const Teuchos::RefCountPtr<VectorBase<Scalar> > &col_vec
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const char err_msg[] = "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
   TEST_FOR_EXCEPTION( col_vec.get() == NULL,           std::invalid_argument, err_msg ); 
   TEST_FOR_EXCEPTION( col_vec->space().get() == NULL,  std::invalid_argument, err_msg ); 
@@ -88,7 +88,7 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<VectorBase<Scalar> >              col_vecs[]
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const char err_msg[] = "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
   TEST_FOR_EXCEPTION( range.get()   == NULL, std::invalid_argument, err_msg ); 
   TEST_FOR_EXCEPTION( domain.get()  == NULL, std::invalid_argument, err_msg ); 
@@ -152,7 +152,7 @@ void DefaultColumnwiseMultiVector<Scalar>::apply(
   ,const Scalar                beta
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("MultiVectorBase<Scalar>::apply()",*this,M_trans,x,y);
 #endif
   const Index nc = this->domain()->dim();
@@ -209,7 +209,7 @@ DefaultColumnwiseMultiVector<Scalar>::subView( const Range1D& col_rng_in )
 {
   const Index numCols = domain_->dim();
   const Range1D col_rng = Teuchos::full_range(col_rng_in,0,numCols-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !( col_rng.ubound() < numCols ), std::logic_error
     ,"DefaultColumnwiseMultiVector<Scalar>::subView(col_rng): Error, the input range col_rng = ["<<col_rng.lbound()<<","<<col_rng.ubound()<<"] "

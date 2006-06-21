@@ -267,13 +267,13 @@ void RealComplexFFTLinearOp<RealScalar>::updateReal(
   ,Thyra::MultiVectorBase<DomainScalar>          *V
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( V==NULL );
 #endif  
   typedef Teuchos::ScalarTraits<Scalar> ST;
   Thyra::ConstDetachedMultiVectorView<RangeScalar>           ev_V_complex(V_complex);
   Thyra::DetachedMultiVectorView<DomainScalar>   ev_V(*V);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( ev_V_complex.subDim() != ev_V.subDim() || ev_V_complex.numSubCols() != ev_V.numSubCols() );
 #endif  
   if( beta == ST::zero() ) {

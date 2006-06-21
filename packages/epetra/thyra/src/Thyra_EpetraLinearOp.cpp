@@ -66,7 +66,7 @@ void EpetraLinearOp::initialize(
 {
   // Validate input, allocate spaces, validate ...
   namespace mmp = MemMngPack;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( op.get()==NULL, std::invalid_argument, "EpetraLinearOp::initialize(...): Error!" );
 #endif
   Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > range, domain;
@@ -153,7 +153,7 @@ void EpetraLinearOp::getEpetraOpView(
   ,EAdjointEpetraOp                       *epetraOpAdjointSupport
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(epetraOp==NULL);
   TEST_FOR_EXCEPT(epetraOpTransp==NULL);
   TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
@@ -172,7 +172,7 @@ void EpetraLinearOp::getEpetraOpView(
   ,EAdjointEpetraOp                             *epetraOpAdjointSupport
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(epetraOp==NULL);
   TEST_FOR_EXCEPT(epetraOpTransp==NULL);
   TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
@@ -214,7 +214,7 @@ void EpetraLinearOp::euclideanApply(
   ) const
 {
   const ETransp real_M_trans = real_trans(M_trans);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   // ToDo: Assert vector spaces!
   TEST_FOR_EXCEPTION(
     real_M_trans==TRANS && adjointSupport_==EPETRA_OP_ADJOINT_UNSUPPORTED

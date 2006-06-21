@@ -70,7 +70,7 @@ void AmesosLinearOpWithSolve::initialize(
   ,const double                                              amesosSolverScalar
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
   TEST_FOR_EXCEPT(epetraLP.get()==NULL);
   TEST_FOR_EXCEPT(amesosSolver.get()==NULL);
@@ -198,7 +198,7 @@ void AmesosLinearOpWithSolve::solve(
 {
   typedef SolveCriteria<double>  SC;
   typedef SolveStatus<double>    SS;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(X==NULL);
   TEST_FOR_EXCEPT(blockSolveCriteria==NULL && blockSolveStatus!=NULL);
 #endif

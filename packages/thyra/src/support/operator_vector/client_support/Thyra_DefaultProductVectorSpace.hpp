@@ -101,7 +101,7 @@ void DefaultProductVectorSpace<Scalar>::getVecSpcPoss(
   ) const
 {
   // Validate the preconditions
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= i && i < this->dim()), std::out_of_range
     ,"VectorSpaceBlocked::get_vector_space_position(...): Error, i = "
@@ -170,7 +170,9 @@ template<class Scalar>
 Teuchos::RefCountPtr< VectorBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::createMember() const
 {
-  return Teuchos::rcp(new DefaultProductVector<Scalar>(Teuchos::rcp(this,false),NULL));
+  return Teuchos::rcp(
+    new DefaultProductVector<Scalar>(Teuchos::rcp(this,false))
+    );
 }
 
 template<class Scalar>
@@ -183,7 +185,7 @@ Scalar DefaultProductVectorSpace<Scalar>::scalarProd(
   const ProductVectorBase<Scalar>
     &x = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(x_in),
     &y = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(y_in);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( numBlocks!=x.productSpace()->numBlocks() || numBlocks!=y.productSpace()->numBlocks() );
 #endif
   Scalar scalarProd = Teuchos::ScalarTraits<Scalar>::zero();
@@ -202,7 +204,7 @@ void DefaultProductVectorSpace<Scalar>::scalarProds(
   using Teuchos::Workspace;
   const VectorSpaceBase<Scalar> &domain = *X_in.domain();
   const Index m = domain.dim();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(scalar_prods==NULL);
   TEST_FOR_EXCEPT( !domain.isCompatible(*Y_in.domain()) );
 #endif
@@ -216,13 +218,13 @@ void DefaultProductVectorSpace<Scalar>::scalarProds(
   const ProductMultiVectorBase<Scalar>
     &X = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in),
     &Y = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(Y_in);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( numBlocks!=X.productSpace()->numBlocks() || numBlocks!=Y.productSpace()->numBlocks() );
 #endif
   Workspace<Scalar> _scalar_prods(wss,m,false);
   std::fill_n( scalar_prods, m, Teuchos::ScalarTraits<Scalar>::zero() );
   for( int k = 0; k < numBlocks; ++k ) {
-    (*vecSpaces_)[k]->scalarProds(*X.getBlock(k),*Y.getBlock(k),&_scalar_prods[0]);
+    (*vecSpaces_)[k]->scalarProds(*X.getMultiVectorBlock(k),*Y.getMultiVectorBlock(k),&_scalar_prods[0]);
     for( int j = 0; j < m; ++j ) scalar_prods[j] += _scalar_prods[j];
   }
 }
@@ -235,7 +237,7 @@ bool DefaultProductVectorSpace<Scalar>::hasInCoreView(const Range1D& rng_in, con
   int    kth_vector_space  = -1;
   Index  kth_global_offset = 0;
   this->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
 #endif
   if( rng.lbound() + rng.size() <= kth_global_offset + (*vecSpaces_)[kth_vector_space]->dim() ) {

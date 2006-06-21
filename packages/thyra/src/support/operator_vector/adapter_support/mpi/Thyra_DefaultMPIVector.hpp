@@ -59,7 +59,7 @@ void DefaultMPIVector<Scalar>::initialize(
   ,const Index                                                         stride
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(mpiSpace.get()==NULL);
   TEST_FOR_EXCEPT(mpiSpace->localSubDim() > 0 && localValues.get()==NULL);
   TEST_FOR_EXCEPT(stride==0);
@@ -108,7 +108,7 @@ DefaultMPIVector<Scalar>::mpiSpace() const
 template<class Scalar>
 void DefaultMPIVector<Scalar>::getLocalData( Scalar** localValues, Index* stride )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues==NULL );
   TEST_FOR_EXCEPT( stride==NULL );
 #endif
@@ -119,7 +119,7 @@ void DefaultMPIVector<Scalar>::getLocalData( Scalar** localValues, Index* stride
 template<class Scalar>
 void DefaultMPIVector<Scalar>::commitLocalData( Scalar* localValues )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues!=&*localValues_ );
 #endif
   // Nothing to commit!
@@ -128,7 +128,7 @@ void DefaultMPIVector<Scalar>::commitLocalData( Scalar* localValues )
 template<class Scalar>
 void DefaultMPIVector<Scalar>::getLocalData( const Scalar** localValues, Index* stride ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues==NULL );
   TEST_FOR_EXCEPT( stride==NULL );
 #endif
@@ -139,7 +139,7 @@ void DefaultMPIVector<Scalar>::getLocalData( const Scalar** localValues, Index* 
 template<class Scalar>
 void DefaultMPIVector<Scalar>::freeLocalData( const Scalar* localValues ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues!=&*localValues_ );
 #endif
   // Nothing to free!

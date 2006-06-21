@@ -146,7 +146,7 @@ Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Index i )
 template<class Scalar>
 void Thyra::set_ele( Index i, Scalar alpha, VectorBase<Scalar>* v )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v==NULL,std::logic_error,"set_ele(...), Error!");
 #endif
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
@@ -157,7 +157,7 @@ void Thyra::set_ele( Index i, Scalar alpha, VectorBase<Scalar>* v )
 template<class Scalar>
 void Thyra::put_scalar( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"put_scalar(...), Error!");
 #endif
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
@@ -168,7 +168,7 @@ void Thyra::put_scalar( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 template<class Scalar>
 void Thyra::copy( const VectorBase<Scalar>& v_rhs, VectorBase<Scalar>* v_lhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"copy(...), Error!");
 #endif
   RTOpPack::TOpAssignVectors<Scalar> assign_vectors_op;
@@ -180,7 +180,7 @@ void Thyra::copy( const VectorBase<Scalar>& v_rhs, VectorBase<Scalar>* v_lhs )
 template<class Scalar>
 void Thyra::add_scalar( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"add_scalar(...), Error!");
 #endif
   RTOpPack::TOpAddScalar<Scalar> add_scalar_op(alpha);
@@ -191,7 +191,7 @@ void Thyra::add_scalar( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 template<class Scalar>
 void Thyra::scale( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"scale(...), Error!");
 #endif
   if( alpha == Teuchos::ScalarTraits<Scalar>::zero() ) {
@@ -207,7 +207,7 @@ void Thyra::scale( const Scalar& alpha, VectorBase<Scalar>* v_lhs )
 template<class Scalar>
 void Thyra::abs( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(y==NULL,std::logic_error,"assign(...), Error!");
 #endif
   RTOpPack::TOpAbs<Scalar> abs_op;
@@ -219,7 +219,7 @@ void Thyra::abs( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 template<class Scalar>
 void Thyra::reciprocal( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(y==NULL,std::logic_error,"assign(...), Error!");
 #endif
   RTOpPack::TOpReciprocal<Scalar> recip_op;
@@ -234,7 +234,7 @@ void Thyra::ele_wise_prod(
   ,VectorBase<Scalar>* v_lhs
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"ele_wise_prod(...), Error");
 #endif
   RTOpPack::TOpEleWiseProd<Scalar> ele_wise_prod_op(alpha);
@@ -256,7 +256,7 @@ template<class Scalar>
 void Thyra::ele_wise_prod_update(
   const Scalar& alpha, const VectorBase<Scalar>& v_rhs1, VectorBase<Scalar>* v_lhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"ele_wise_prod_update(...), Error");
 #endif
   RTOpPack::TOpEleWiseProdUpdate<Scalar> ele_wise_prod_update_op(alpha);
@@ -278,7 +278,7 @@ void Thyra::ele_wise_divide(
   ,VectorBase<Scalar>* v_lhs
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"ele_wise_divide(...), Error");
 #endif
   RTOpPack::TOpEleWiseDivide<Scalar> ele_wise_divide_op(alpha);
@@ -296,7 +296,7 @@ void Thyra::linear_combination(
   ,VectorBase<Scalar>          *y
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(y==NULL,std::logic_error,"linear_combination(...), Error!");
 #endif
   if( beta == Teuchos::ScalarTraits<Scalar>::one() && m == 1 ) {
@@ -321,7 +321,7 @@ void Thyra::seed_randomize( unsigned int s )
 template<class Scalar>
 void Thyra::randomize( Scalar l, Scalar u, VectorBase<Scalar>* v )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v==NULL,std::logic_error,"Vt_S(...), Error");
 #endif
   RTOpPack::TOpRandomize<Scalar> random_vector_op(l,u);
@@ -373,7 +373,7 @@ void Thyra::V_StV( VectorBase<Scalar>* y, const Scalar& alpha, const VectorBase<
 template<class Scalar>
 void Thyra::Vp_StV( VectorBase<Scalar>* v_lhs, const Scalar& alpha, const VectorBase<Scalar>& v_rhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(v_lhs==NULL,std::logic_error,"Vp_StV(...), Error!");
 #endif
   RTOpPack::TOpAXPY<Scalar> axpy_op(alpha);

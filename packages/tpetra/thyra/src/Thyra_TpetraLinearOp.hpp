@@ -440,7 +440,7 @@ void TpetraLinearOp<Ordinal,Scalar>::getTpetraOpView(
   ,EAdjointTpetraOp                                         *tpetraOpAdjointSupport
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(tpetraOp==NULL);
   TEST_FOR_EXCEPT(tpetraOpAdjointSupport==NULL);
 #endif
@@ -454,7 +454,7 @@ void TpetraLinearOp<Ordinal,Scalar>::getTpetraOpView(
   ,EAdjointTpetraOp                                               *tpetraOpAdjointSupport
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(tpetraOp==NULL);
   TEST_FOR_EXCEPT(tpetraOpAdjointSupport==NULL);
 #endif
@@ -518,7 +518,7 @@ void TpetraLinearOp<Ordinal,Scalar>::euclideanApply(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   const ETransp real_M_trans = real_trans(M_trans);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   // ToDo: Assert vector spaces!
   TEST_FOR_EXCEPTION(
     !opSupported(M_trans), Exceptions::OpNotSupported

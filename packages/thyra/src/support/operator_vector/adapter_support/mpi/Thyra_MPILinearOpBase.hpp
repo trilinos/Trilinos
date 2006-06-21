@@ -62,7 +62,7 @@ void MPILinearOpBase<Scalar>::euclideanApply(
   ,const Scalar                     beta
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("MPILinearOpBase<Scalar>::euclideanApply()",*this,M_trans,X,Y);
 #endif
   const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >
@@ -94,7 +94,7 @@ void MPILinearOpBase<Scalar>::setSpaces(
   )
 {
   // Validate input
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
@@ -115,7 +115,7 @@ void MPILinearOpBase<Scalar>::setLocalDimensions(
   ,const Index                                                localDimDomain
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localDimRange <= 0 );
   TEST_FOR_EXCEPT( localDimDomain <= 0 );
 #endif

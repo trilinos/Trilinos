@@ -85,7 +85,7 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
 
   const Index sec_dim = domain.dim();
   const Index sec_sub_dim  = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in  );
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>  &range  = *this->range();
   const Index	prim_dim = range.dim();
   const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
@@ -154,7 +154,7 @@ void MultiVectorDefaultBase<Scalar>::applyOp(
   // Get the primary and secondary dimensions.
   const Index sec_dim = domain.dim();
   const Index sec_sub_dim  = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar> &range = *this->range();
   const Index prim_dim = range.dim();
   const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
@@ -210,7 +210,7 @@ void MultiVectorDefaultBase<Scalar>::acquireDetachedView(
   const Range1D
     rowRng = rowRng_in.full_range() ? Range1D(0,rangeDim-1)  : rowRng_in,
     colRng = colRng_in.full_range() ? Range1D(0,domainDim-1) : colRng_in;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(rowRng.ubound() < rangeDim), std::out_of_range
     ,"MultiVectorDefaultBase<Scalar>::acquireDetachedView(...): Error, rowRng = ["
@@ -280,7 +280,7 @@ void MultiVectorDefaultBase<Scalar>::commitDetachedView(
   RTOpPack::SubMultiVectorView<Scalar>* sub_mv
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     sub_mv==NULL, std::logic_error, "MultiVectorDefaultBase<Scalar>::commitDetachedView(...): Error!"
     );
@@ -354,7 +354,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) c
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore        *wss      = Teuchos::get_default_workspace_store().get();
   const VectorSpaceBase<Scalar>  &range    = *this->range();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>  &domain   = *this->domain();
   const Index                    dimDomain = domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
@@ -364,7 +364,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] ) c
   Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > > col_vecs(wss,numCols);
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       !( 0 <= col_k && col_k < dimDomain ), std::invalid_argument
       ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"
@@ -382,7 +382,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore        *wss      = Teuchos::get_default_workspace_store().get();
   const VectorSpaceBase<Scalar>  &range    = *this->range();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>  &domain   = *this->domain();
   const Index                    dimDomain = domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
@@ -392,7 +392,7 @@ MultiVectorDefaultBase<Scalar>::subView( const int numCols, const int cols[] )
   Workspace< Teuchos::RefCountPtr< VectorBase<Scalar> > > col_vecs(wss,numCols);
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       !( 0 <= col_k && col_k < dimDomain ), std::invalid_argument
       ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"

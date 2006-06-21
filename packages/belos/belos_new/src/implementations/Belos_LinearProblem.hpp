@@ -281,7 +281,7 @@ template<class Scalar>
 inline
 void LinearProblem<Scalar>::assertTotalNumRhs() const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPTION( totalNumRhs_ <= 0, std::logic_error, "LinearProblem<Scalar>: Error, precondition not satisfied!" );
 #endif
 }
@@ -290,7 +290,7 @@ template<class Scalar>
 inline
 void LinearProblem<Scalar>::assertCurrNumRhs() const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPTION( currNumRhs_ <= 0, std::logic_error, "LinearProblem<Scalar>: Error, precondition not satisfied!" );
 #endif
 }
@@ -328,7 +328,7 @@ void LinearProblem<Scalar>::getCurrRhsIndexes(
 	) const
 {
 	assertCurrNumRhs();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( currNumRhs != currNumRhs_ );
 #endif
 	std::copy( &currRhsIndexes_[0], &currRhsIndexes_[0]+currNumRhs, currRhsIndexes );
@@ -403,7 +403,7 @@ const TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getCurrResidual() con
 #endif
 	assertCurrNumRhs();
 	TEST_FOR_EXCEPT( leftScaling_.get() ); // Can't handle scaling yet!
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( isCurrLhsUpdated_==false );
 #endif
 	if(!isCurrResidualComputed_) {
@@ -544,7 +544,7 @@ TSFCore::MultiVector<Scalar>& LinearProblem<Scalar>::getLhs() const
 template<class Scalar>
 void LinearProblem<Scalar>::setBlockSize( const int blockSize )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( blockSize <= 0 );
 #endif
 	blockSize_ = blockSize;
@@ -578,7 +578,7 @@ StatusTest<Scalar>* LinearProblem<Scalar>::getStatusTest()
 template<class Scalar>
 bool LinearProblem<Scalar>::setupCurrSystem()
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( currFirstRhsOffset_  > totalNumRhs_ );
 #endif
 	// See if we are finished yet or not
@@ -704,7 +704,7 @@ void LinearProblem<Scalar>::computeCurrCompositeResidual(
 {
 	assertCurrNumRhs();
 	if( currLhs==NULL && currRhs==NULL ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 		TEST_FOR_EXCEPT( !isCurrLhsUpdated_ );
 #endif
 		const TSFCore::MultiVector<Scalar> &currResidual = const_cast<const LinearProblem<Scalar>*>(this)->getCurrResidual();
@@ -806,7 +806,7 @@ void LinearProblem<Scalar>::initialize(
 	,const RefCountPtr<TSFCore::MultiVector<Scalar> >        &lhs
 	)
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( op.op().get() == NULL );
 	TEST_FOR_EXCEPT( rhs.get() == NULL );
 	TEST_FOR_EXCEPT( lhs.get() == NULL );
@@ -821,7 +821,7 @@ void LinearProblem<Scalar>::initialize(
 template<class Scalar>
 void LinearProblem<Scalar>::setOperator( const TSFCore::LinearOpHandle<Scalar> &op, const EOpSymmetry symmetry )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( op.op().get() == NULL );
 #endif
 	operator_           = op;
@@ -839,7 +839,7 @@ TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getOperator()
 template<class Scalar>
 void LinearProblem<Scalar>::setRightPrec( const TSFCore::LinearOpHandle<Scalar> &rightPrec, const EOpSymmetry symmetry )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( rightPrec.op().get() == NULL );
 #endif
 	rightPrec_           = rightPrec;
@@ -857,7 +857,7 @@ TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getRightPrec()
 template<class Scalar>
 void LinearProblem<Scalar>::setLeftPrec( const TSFCore::LinearOpHandle<Scalar> &leftPrec, const EOpSymmetry symmetry )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( leftPrec.op().get() == NULL );
 #endif
 	leftPrec_           = leftPrec;
@@ -875,7 +875,7 @@ TSFCore::LinearOpHandle<Scalar> LinearProblem<Scalar>::getLeftPrec()
 template<class Scalar>
 void LinearProblem<Scalar>::setRhs( const RefCountPtr<const TSFCore::MultiVector<Scalar> > &rhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( rhs.get() == NULL );
 #endif
 	rhs_ = rhs;
@@ -893,7 +893,7 @@ LinearProblem<Scalar>::getRhs()
 template<class Scalar>
 void LinearProblem<Scalar>::setLhs( const RefCountPtr<TSFCore::MultiVector<Scalar> > &lhs )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT( lhs.get() == NULL );
 #endif
 	lhs_ = lhs;
@@ -919,7 +919,7 @@ void LinearProblem<Scalar>::setStatusTest( const RefCountPtr<StatusTest<Scalar> 
 template<class Scalar>
 void LinearProblem<Scalar>::completeSetup()
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	const char funcName[] = "LinearProblem<Scalar>::completeSetup()";
 	TEST_FOR_EXCEPTION( operator_.op().get() == NULL, std::logic_error, funcName<<", Error!" );
 	TEST_FOR_EXCEPTION( rhs_.get() == NULL, std::logic_error, funcName<<", Error!"  );

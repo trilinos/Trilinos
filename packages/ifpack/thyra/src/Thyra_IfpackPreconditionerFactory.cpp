@@ -113,7 +113,7 @@ void IfpackPreconditionerFactory::initializePrec(
   Teuchos::OSTab tab(out);
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out << "\nEntering Thyra::IfpackPreconditionerFactory::initializePrec(...) ...\n";
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(fwdOp.get()==NULL);
   TEST_FOR_EXCEPT(prec==NULL);
 #endif

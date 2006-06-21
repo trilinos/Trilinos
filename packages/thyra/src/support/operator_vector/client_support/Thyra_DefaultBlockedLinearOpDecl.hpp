@@ -31,7 +31,9 @@
 
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
 #include "Thyra_SingleScalarLinearOpBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
+#include "Teuchos_Array.hpp"
 #include "Teuchos_arrayArg.hpp"
 
 namespace Thyra {
@@ -68,6 +70,9 @@ class DefaultBlockedLinearOp
 {
 public:
 
+  /** \brief . */
+  using LinearOpBase<Scalar>::apply;
+
   /** @name Constructors */
   //@{
 
@@ -80,7 +85,9 @@ public:
   //@{
 
   /** \brief . */
-  void beginBlockFill();
+  void beginBlockFill(
+    const int numRowBlocks, const int numColBlocks
+    );
   /** \brief . */
   void beginBlockFill(
     const Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  &productRange
@@ -102,6 +109,8 @@ public:
     );
   /** \brief . */
   void endBlockFill();
+  /** \brief . */
+  void uninitialize();
 
   //@}
 
@@ -189,16 +198,31 @@ private:
   // Private types
 
   typedef Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > CNCLO;
+  typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vec_array_t;
 
   // /////////////////////////
   // Private data members
+
+  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  productRange_;
+  Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  productDomain_;
+  int                                                          numRowBlocks_;
+  int                                                          numColBlocks_;
  
-  std::vector<CNCLO> Ops_; // M x N
+  std::vector<CNCLO>        Ops_; // M x N
+
+  vec_array_t    rangeBlocks_;
+  vec_array_t    domainBlocks_;
+  bool           blockFillIsActive_;
 
   // ///////////////////////////
   // Private member functions
   
-  void assertInitialized() const;
+  void resetStorage( const int numRowBlocks, const int numColBlocks  );
+  void assertBlockFillIsActive(bool) const;
+  void assertBlockRowCol(const int i, const int j) const;
+  void setBlockSpaces(
+    const int i, const int j, const LinearOpBase<Scalar> &block
+    );
 
   // Not defined and not to be called
   DefaultBlockedLinearOp(const DefaultBlockedLinearOp&);
@@ -237,11 +261,11 @@ Thyra::block2x2(
 {
   Teuchos::RefCountPtr<PhysicallyBlockedLinearOpBase<Scalar> >
     M = Teuchos::rcp(new DefaultBlockedLinearOp<Scalar>());
-  M->beginBlockFill();
-  M->setBlock(0,0,A00);
-  M->setBlock(0,1,A01);
-  M->setBlock(1,0,A10);
-  M->setBlock(1,1,A11);
+  M->beginBlockFill(2,2);
+  if(A00.get()) M->setBlock(0,0,A00);
+  if(A01.get()) M->setBlock(0,1,A01);
+  if(A10.get()) M->setBlock(1,0,A10);
+  if(A11.get()) M->setBlock(1,1,A11);
   M->endBlockFill();
   return M;
 }

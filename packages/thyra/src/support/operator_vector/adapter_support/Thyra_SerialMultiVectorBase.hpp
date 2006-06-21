@@ -87,7 +87,7 @@ void SerialMultiVectorBase<Scalar>::applyOp(
   ,const Index                         sec_sub_dim_in
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   // ToDo: Validate input!
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
@@ -217,7 +217,7 @@ void SerialMultiVectorBase<Scalar>::euclideanApply(
   //     Y = beta * Y + alpha * M' * X
   //
 
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("SerialMultiVectorBase<Scalar>::euclideanApply()",*this,M_trans,X,Y);
 #endif
 
@@ -314,7 +314,7 @@ template<class Scalar>
 Range1D SerialMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in ) const
 {
   const Range1D rowRng = Teuchos::full_range(rowRng_in,0,numRows_-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= rowRng.lbound() && rowRng.ubound() < numRows_), std::invalid_argument
     ,"SerialMultiVectorBase<Scalar>::validateRowRange(rowRng): Error, the range rowRng = ["
@@ -329,7 +329,7 @@ template<class Scalar>
 Range1D SerialMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in ) const
 {
   const Range1D colRng = Teuchos::full_range(colRng_in,0,numCols_-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= colRng.lbound() && colRng.ubound() < numCols_), std::invalid_argument
     ,"SerialMultiVectorBase<Scalar>::validateColRange(colRng): Error, the range colRng = ["

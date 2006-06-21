@@ -60,8 +60,8 @@ void VectorDefaultBase<Scalar>::describe(
   RefCountPtr<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   *out
-    << "type = \'" << this->description()
-    << "\', size = " << this->space()->dim() << "\n";
+    << this->description()
+    << "{dim="<<this->space()->dim()<<"}\n";
   tab.incrTab();
   if(verbLevel >= Teuchos::VERB_HIGH) {
     RTOpPack::ConstSubVectorView<Scalar> sv;
@@ -116,7 +116,7 @@ void VectorDefaultBase<Scalar>::apply(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Validate input
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("VectorDefaultBase<Scalar>::apply()",*this,M_trans,x,y);
 #endif
   // Here M = m (where m is a column vector)
@@ -158,7 +158,7 @@ template<class Scalar>
 inline
 void VectorDefaultBase<Scalar>::validateColRng( const Range1D &col_rng ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( col_rng.full_range() || ( col_rng.lbound() == 0 && col_rng.ubound() == 0) ) );
 #endif
 }
@@ -167,7 +167,7 @@ template<class Scalar>
 inline
 void VectorDefaultBase<Scalar>::validateColIndexes(  const int numCols, const int cols[] ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( numCols != 1 || cols == NULL || cols[0] != 0 );
 #endif
 }
@@ -179,7 +179,7 @@ VectorDefaultBase<Scalar>::col(Index j)
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVector<Scalar>::col(j) called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( j != 0 );
 #endif
   return Teuchos::rcp(this,false);
@@ -249,13 +249,13 @@ void VectorDefaultBase<Scalar>::acquireDetachedView(
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVector<Scalar>::acquireDetachedView() const called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
   validateColRng(colRng);
   RTOpPack::ConstSubVectorView<Scalar> sv;
   acquireDetachedView(rowRng,&sv);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( sv.stride() != 1 ); // Can't handle non-unit stride yet but we could
 #endif
   sub_mv->initialize( sv.globalOffset(), sv.subDim(), 0, 1, sv.values(), sv.subDim() );
@@ -267,7 +267,7 @@ void VectorDefaultBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubMultiVect
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVector<Scalar>::releaseDetachedView() const called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
   RTOpPack::ConstSubVectorView<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
@@ -285,13 +285,13 @@ void VectorDefaultBase<Scalar>::acquireDetachedView(
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVector<Scalar>::acquireDetachedView() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
   validateColRng(colRng);
   RTOpPack::SubVectorView<Scalar> sv;
   acquireDetachedView(rowRng,&sv);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( sv.stride() != 1 ); // Can't handle non-unit stride yet but we could
 #endif
   sub_mv->initialize( sv.globalOffset(), sv.subDim(), 0, 1, sv.values(), sv.subDim() );
@@ -303,7 +303,7 @@ void VectorDefaultBase<Scalar>::commitDetachedView( RTOpPack::SubMultiVectorView
 #ifdef THYRA_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVector<Scalar>::commitDetachedView() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_mv==NULL);
 #endif
   RTOpPack::SubVectorView<Scalar> sv(sub_mv->globalOffset(),sub_mv->subDim(),sub_mv->values(),1);
@@ -330,7 +330,7 @@ void VectorDefaultBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOp
 {
   using Teuchos::dyn_cast;
   const Range1D rng = rng_in.full_range() ? Range1D(0,this->space()->dim()-1) : rng_in;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(rng.ubound() < this->space()->dim()), std::out_of_range
     ,"VectorDefaultBase<Scalar>::acquireDetachedView(rng,...): Error, rng = ["<<rng.lbound()<<","<<rng.ubound()

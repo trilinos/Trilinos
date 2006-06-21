@@ -46,7 +46,7 @@ void SingleRhsLinearOpWithSolveBase<Scalar>::solve(
   ,SolveStatus<Scalar>                  blockSolveStatus[]
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( numBlocks < 0 );
   TEST_FOR_EXCEPT( numBlocks > 0 && blockSolveCriteria==NULL );
 #endif

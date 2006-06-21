@@ -142,7 +142,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   ) const
 {
   Teuchos::TimeMonitor overallTimeMonitor(*overallTimer);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
   //
@@ -346,7 +346,7 @@ void AmesosLinearOpWithSolveFactory::uninitializeOp(
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
   AmesosLinearOpWithSolve

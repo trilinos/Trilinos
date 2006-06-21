@@ -56,9 +56,13 @@ class SerialVectorBase : virtual public VectorDefaultBase<Scalar> {
 public:
 
   /** \brief . */
-  using VectorDefaultBase<Scalar>::describe;
-  /** \brief . */
   using VectorDefaultBase<Scalar>::applyOp;
+  /** \brief . */
+  using VectorBase<Scalar>::acquireDetachedView;
+  /** \brief . */
+  using VectorBase<Scalar>::releaseDetachedView;
+  /** \brief . */
+  using VectorBase<Scalar>::commitDetachedView;
 
   /** @name Constructors */
   //@{

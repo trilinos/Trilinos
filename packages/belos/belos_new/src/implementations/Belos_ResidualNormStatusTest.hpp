@@ -158,7 +158,7 @@ void ResidualNormStatusTest<Scalar>::protectedCheckStatus(
 		bis.getProblem().getCurrRhsIndexes( currNumRhs, &currRhsIndexes_[0] );
 		for( int k = 0; k < currNumRhs; ++k ) {
 			const int origRhsIndex = currRhsIndexes_[k];
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 			TEST_FOR_EXCEPT( origRhsIndex > static_cast<int>(tols.size())  );
 #endif
 			const typename ST::magnitudeType R_rel_norm = R_bar_norms_[k] / R_bar_0_norms_[k];

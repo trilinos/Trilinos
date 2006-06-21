@@ -59,7 +59,7 @@ public:
   void randomize( Thyra::MultiVectorBase<Scalar> *mv )
     {
       typedef Teuchos::ScalarTraits<Scalar> ST;
-#     ifdef _DEBUG
+#     ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPT( mv == NULL );
       TEST_FOR_EXCEPT( mv->range()->dim() % 2 != 0 );
 #     endif

@@ -48,7 +48,7 @@ public:
   MultiVectorAllocator( const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > &vs, int numMembers )
     : vs_(vs), numMembers_(numMembers)
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( vs.get()==NULL, std::logic_error, "Error!" );
 #endif			
     }

@@ -87,7 +87,7 @@ public:
       using Teuchos::Workspace;
       Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
       // Validate input
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPT( static_cast<int>(alpha_.size()) != num_vecs );
       TEST_FOR_EXCEPT( sub_vecs == NULL );
       TEST_FOR_EXCEPT( num_targ_vecs != 1 );
@@ -100,7 +100,7 @@ public:
       Workspace<const Scalar*> v_val(wss,num_vecs,false);
       Workspace<ptrdiff_t>     v_s(wss,num_vecs,false);
       for( int k = 0; k < num_vecs; ++k ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
         TEST_FOR_EXCEPT( sub_vecs[k].subDim() != subDim );
         TEST_FOR_EXCEPT( sub_vecs[k].globalOffset() != targ_sub_vecs[0].globalOffset() );
 #endif					

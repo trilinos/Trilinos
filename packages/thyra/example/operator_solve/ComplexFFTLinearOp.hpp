@@ -152,7 +152,7 @@ void ComplexFFTLinearOp<RealScalar>::apply(
   ) const
 {
   typedef Teuchos::ScalarTraits< std::complex<RealScalar> > ST;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS ) );
 #endif
   // Update y first
@@ -205,7 +205,7 @@ ComplexFFTLinearOp<RealScalar>::solve(
   ) const
 {
   typedef Teuchos::ScalarTraits< std::complex<RealScalar> > ST;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS ) );
 #endif
   Thyra::apply( *this, M_trans==Thyra::NOTRANS?Thyra::CONJTRANS:Thyra::NOTRANS, b, x );

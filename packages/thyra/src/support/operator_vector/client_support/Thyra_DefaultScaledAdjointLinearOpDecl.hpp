@@ -499,7 +499,7 @@ template<class Scalar>
 inline
 void DefaultScaledAdjointLinearOp<Scalar>::assertInitialized() const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( origOp_.get() == NULL );
 #endif
 }

@@ -142,7 +142,7 @@ void DefaultClusteredMPIProductVector<Scalar>::applyOp(
   //
   const Index	n = productSpace_->dim();
   // Validate input
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= first_ele_offset_in && first_ele_offset_in < n), std::out_of_range
     ,"DefaultClusteredMPIProductVector::applyOp(...): Error, "
@@ -183,14 +183,14 @@ void DefaultClusteredMPIProductVector<Scalar>::applyOp(
   //
   Workspace<const DefaultClusteredMPIProductVector<Scalar>*> cl_vecs(wss,num_vecs);
   for( int k = 0; k < num_vecs; ++k ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPT(vecs[k]==NULL);
 #endif
     cl_vecs[k] = &dyn_cast<const DefaultClusteredMPIProductVector<Scalar> >(*vecs[k]);
   }
   Workspace<DefaultClusteredMPIProductVector<Scalar>*> cl_targ_vecs(wss,num_targ_vecs);
   for( int k = 0; k < num_targ_vecs; ++k ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPT(targ_vecs[k]==NULL);
 #endif
     cl_targ_vecs[k] = &dyn_cast<DefaultClusteredMPIProductVector<Scalar> >(*targ_vecs[k]);

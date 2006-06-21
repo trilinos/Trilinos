@@ -53,13 +53,20 @@ public:
   /** \brief Begin a block fill where the product range and domain spaces will
    * be created on the fly.
    *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>numRowBlocks > 0</tt>
+   * <li><tt>numColBlocks > 0</tt>
+   * </ul>
+   *
    * <b>Postconditions:</b><ul>
    * <li><tt>this->blockFillIsActive()==true</tt>
    * <li><tt>this->productRange().get()==NULL</tt>
    * <li><tt>this->productDomain().get()==NULL</tt>
    * </ul>
    */
-  virtual void beginBlockFill() = 0;
+  virtual void beginBlockFill(
+    const int numRowBlocks, const int numColBlocks
+    ) = 0;
 
   /** \brief Begin a block fill where the product range and domain spaces
    * are set a priori.
@@ -148,6 +155,16 @@ public:
    * </ul>
    */
   virtual void endBlockFill() = 0;
+  
+  /** \brief Set to uninitlaized.
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->blockFillIsActive()==false</tt>
+   * <li><tt>this->productRange().get()==NULL</tt>
+   * <li><tt>this->productDomain().get()==NULL</tt>
+   * </ul>
+   */
+  virtual void uninitialize() = 0;
 
 };
 

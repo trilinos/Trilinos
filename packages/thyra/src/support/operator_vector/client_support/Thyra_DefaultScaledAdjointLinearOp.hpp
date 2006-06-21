@@ -44,12 +44,12 @@ void DefaultScaledAdjointLinearOp<Scalar>::initialize(
   )
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     Op.get()==NULL, std::invalid_argument
     ,"DefaultScaledAdjointLinearOp<"<<ST::name()<<">::initialize(scalar,transp,Op): Error!, Op.get()==NULL is not allowed!"
     );
-#endif // _DEBUG
+#endif // TEUCHOS_DEBUG
   Teuchos::RefCountPtr<DefaultScaledAdjointLinearOp<Scalar> >
     saOp = Teuchos::rcp_dynamic_cast<DefaultScaledAdjointLinearOp<Scalar> >(Op);
   if(saOp.get()) {
@@ -155,8 +155,9 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "type = \'DefaultScaledAdjointLinearOp<" << ST::name() << ">\', "
-        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+        << "DefaultScaledAdjointLinearOp<" << ST::name() << ">{"
+        << "rangeDim=" << this->range()->dim()
+        << ",domainDim=" << this->domain()->dim() << "}\n";
       OSTab tab(out);
       *out
         <<  "overallScalar="<< overallScalar() << std::endl

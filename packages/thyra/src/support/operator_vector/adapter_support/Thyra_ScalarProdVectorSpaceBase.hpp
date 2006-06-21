@@ -75,7 +75,7 @@ bool ScalarProdVectorSpaceBase<Scalar>::isEuclidean() const
 template<class Scalar>
 Scalar ScalarProdVectorSpaceBase<Scalar>::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_VEC_SPACES("ScalarProdVectorSpaceBase<Scalar>::scalarProd(...)",*x.space(),*this);
   THYRA_ASSERT_VEC_SPACES("ScalarProdVectorSpaceBase<Scalar>::scalarProd(...)",*y.space(),*this);
 #endif
@@ -85,7 +85,7 @@ Scalar ScalarProdVectorSpaceBase<Scalar>::scalarProd( const VectorBase<Scalar>& 
 template<class Scalar>
 void ScalarProdVectorSpaceBase<Scalar>::scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_VEC_SPACES("ScalarProdVectorSpaceBase<Scalar>::scalarProds(...)",*X.range(),*this);
   THYRA_ASSERT_VEC_SPACES("ScalarProdVectorSpaceBase<Scalar>::scalarProds(...)",*Y.range(),*this);
   THYRA_ASSERT_VEC_SPACES("ScalarProdVectorSpaceBase<Scalar>::scalarProds(...)",*X.domain(),*Y.domain());

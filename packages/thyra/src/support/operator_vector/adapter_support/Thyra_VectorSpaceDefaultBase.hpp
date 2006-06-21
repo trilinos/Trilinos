@@ -96,7 +96,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::SubVectorView<Scalar> &raw_v ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
 #endif
   // Create a vector
@@ -120,7 +120,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_v.subDim() != this->dim() );
 #endif
   // Create a vector
@@ -137,7 +137,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
 #endif
   // Create a multi-vector
@@ -161,7 +161,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( raw_mv.subDim() != this->dim() );
 #endif
   // Create a multi-vector

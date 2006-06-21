@@ -102,7 +102,7 @@ void MPIMultiVectorBase<Scalar>::applyOp(
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   const Index numCols = this->domain()->dim();
   const MPIVectorSpaceBase<Scalar> &mpiSpc = *mpiSpace();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
     ,"MPIMultiVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
@@ -318,7 +318,7 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
 
   // Get the MPI communicator
   MPI_Comm mpiComm = mpiSpc.mpiComm();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>
     &Y_range = *Y->range(),
     &X_range = *X.range();
@@ -370,7 +370,7 @@ void MPIMultiVectorBase<Scalar>::euclideanApply(
   timer.stop();
   std::cout << "\nMPIMultiVectorBase<Scalar>::apply(...): Time for getting view = " << timer.totalElapsedTime() << " seconds\n";
 #endif
-#ifdef _DEBUG		
+#ifdef TEUCHOS_DEBUG		
   TEST_FOR_EXCEPTION(
     real_trans(M_trans)==NOTRANS && ( M_local.numSubCols() != X_local.subDim() || X_local.numSubCols() != Y_local.numSubCols() )
     , Exceptions::IncompatibleVectorSpaces
@@ -574,7 +574,7 @@ template<class Scalar>
 Range1D MPIMultiVectorBase<Scalar>::validateRowRange( const Range1D &rowRng_in ) const
 {
   const Range1D rowRng = Teuchos::full_range(rowRng_in,0,globalDim_-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !( 0 <= rowRng.lbound() && rowRng.ubound() < globalDim_ ), std::invalid_argument
     ,"MPIMultiVectorBase<Scalar>::validateRowRange(rowRng): Error, the range rowRng = ["
@@ -589,7 +589,7 @@ template<class Scalar>
 Range1D MPIMultiVectorBase<Scalar>::validateColRange( const Range1D &colRng_in ) const
 {
   const Range1D colRng = Teuchos::full_range(colRng_in,0,numCols_-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= colRng.lbound() && colRng.ubound() < numCols_), std::invalid_argument
     ,"MPIMultiVectorBase<Scalar>::validateColRange(colRng): Error, the range colRng = ["

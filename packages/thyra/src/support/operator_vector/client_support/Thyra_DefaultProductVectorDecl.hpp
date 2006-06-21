@@ -31,6 +31,7 @@
 
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
+#include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 namespace Thyra {
 
@@ -59,14 +60,31 @@ public:
 
   /** \brief . */
   using ProductVectorBase<Scalar>::applyOp;
+  /** \brief . */
+  using VectorBase<Scalar>::acquireDetachedView;
+  /** \brief . */
+  using VectorBase<Scalar>::releaseDetachedView;
+  /** \brief . */
+  using VectorBase<Scalar>::commitDetachedView;
 
   /** @name Constructors/initializers/accessors */
   //@{
 
-  /// Constructs to initialized (calls <tt>initialize()</tt>).
+  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductVector(
     const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >               vecs[]
+    );
+
+  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
+  DefaultProductVector(
+    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
+    );
+
+  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
+  DefaultProductVector(
+    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
     );
 
   /** \brief Initialize.
@@ -75,17 +93,31 @@ public:
    */
   void initialize(
     const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >               vecs[]
+    );
+
+  /** \brief Initialize.
+   *
+   * ToDo: Finish documentation.
+   */
+  void initialize(
+    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                      vecs[]
+    );
+
+  /** \brief Initialize.
+   *
+   * ToDo: Finish documentation.
+   */
+  void initialize(
+    const Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RefCountPtr<const VectorBase<Scalar> >                vecs[]
     );
 
   /** \brief Uninitialize.
    *
    * ToDo: Finish documentation.
    */
-  void uninitialize(
-    Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  *productSpace = NULL
-    ,Teuchos::RefCountPtr<VectorBase<Scalar> >               vecs[]        = NULL
-    );
+  void uninitialize();
 
   //@}
 
@@ -95,7 +127,9 @@ public:
   /** \brief . */
   Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productSpace() const;
   /** \brief . */
-  Teuchos::RefCountPtr<VectorBase<Scalar> > getBlock(const int k); 
+  bool blockIsConst(const int k) const; 
+  /** \brief . */
+  Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstBlock(const int k); 
   /** \brief . */
   Teuchos::RefCountPtr<const VectorBase<Scalar> > getBlock(const int k) const;
 
@@ -134,18 +168,23 @@ public:
 private:
 
   // //////////////////////////////
+  // Private types
+
+  typedef Teuchos::ConstNonconstObjectContainer<VectorBase<Scalar> > CNVC;
+
+  // //////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >       productSpace_;
-  std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > >       vecs_;
+  Teuchos::RefCountPtr<const DefaultProductVectorSpace<Scalar> >  productSpace_;
+  std::vector<CNVC>                                               vecs_;
   // cache
   int numBlocks_;
-
 
 protected:
 
   // //////////////////////////////
   // Protected member functions
+
   // Added to allow TSFExtended DefaultProductVector to derive from this.
   DefaultProductVector();
 

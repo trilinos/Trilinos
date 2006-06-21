@@ -190,7 +190,7 @@ void TOpSetSubVector<Scalar>::load_op_state(
   )
 {
   typedef Teuchos::PrimitiveTypeTraits<Scalar> PTT;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( num_chars!=0 );
   TEST_FOR_EXCEPT( !value_data );
   TEST_FOR_EXCEPT( !index_data );

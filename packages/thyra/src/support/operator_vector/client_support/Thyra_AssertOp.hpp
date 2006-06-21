@@ -75,12 +75,12 @@ template<class Scalar>
 std::ostream& operator<<( std::ostream& o, const dump_vec_spaces_t<Scalar>& d )
 {
   o << "Error, " << d.vec_space1_name << " at address " << &d.vec_space1
-    << " of type \'" << typeid(d.vec_space1).name()
-    << "\' with dimension " << d.vec_space1_name << ".dim() = " << d.vec_space1.dim()
+    << " described as " << d.vec_space1.description()
+    << " with dimension " << d.vec_space1_name << ".dim() = " << d.vec_space1.dim()
     << " is not compatible with "
     << d.vec_space2_name  << " at address " << &d.vec_space2
-    << " of type \'" << typeid(d.vec_space2).name()
-    << "\' with dimension " << d.vec_space2_name << ".dim() = " << d.vec_space2.dim();
+    << " described as " << d.vec_space2.description()
+    << " with dimension " << d.vec_space2_name << ".dim() = " << d.vec_space2.dim();
   return o;
 }
 

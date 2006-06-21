@@ -113,7 +113,7 @@ void DefaultMPIMultiVector<Scalar>::initialize(
   ,const Index                                                           leadingDim
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(mpiRangeSpace.get()==NULL);
   TEST_FOR_EXCEPT(domainSpace.get()==NULL);
   TEST_FOR_EXCEPT(localValues.get()==NULL);
@@ -176,7 +176,7 @@ DefaultMPIMultiVector<Scalar>::col(Index j)
 #ifdef THYRA_MPI_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nMPIMultiVectorStd<Scalar>::col() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= j && j < this->domain()->dim() ) );
 #endif
   return Teuchos::rcp(
@@ -274,7 +274,7 @@ void DefaultMPIMultiVector<Scalar>::getLocalData( Scalar **localValues, Index *l
 #ifdef THYRA_MPI_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nMPIMultiVectorStd<Scalar>::getLocalData() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues==NULL );
   TEST_FOR_EXCEPT( leadingDim==NULL );
 #endif
@@ -288,7 +288,7 @@ void DefaultMPIMultiVector<Scalar>::commitLocalData( Scalar *localValues )
 #ifdef THYRA_MPI_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nMPIMultiVectorStd<Scalar>::commitLocalData() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues!=&*localValues_ );
 #endif
   // Nothing to commit!
@@ -300,7 +300,7 @@ void DefaultMPIMultiVector<Scalar>::getLocalData( const Scalar **localValues, In
 #ifdef THYRA_MPI_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nMPIMultiVectorStd<Scalar>::getLocalData() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues==NULL );
   TEST_FOR_EXCEPT( leadingDim==NULL );
 #endif
@@ -311,7 +311,7 @@ void DefaultMPIMultiVector<Scalar>::getLocalData( const Scalar **localValues, In
 template<class Scalar>
 void DefaultMPIMultiVector<Scalar>::freeLocalData( const Scalar *localValues ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( localValues!=&*localValues_ );
 #endif
 #ifdef THYRA_MPI_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
@@ -326,7 +326,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<Scalar>
 DefaultMPIMultiVector<Scalar>::createContiguousCopy( const int numCols, const int cols[] ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>  &domain   = *domainSpace_;
   const Index                    dimDomain = domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
@@ -340,7 +340,7 @@ DefaultMPIMultiVector<Scalar>::createContiguousCopy( const int numCols, const in
   Scalar       *lvv  = &*localValuesView;
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       !( 0<= col_k && col_k < dimDomain ), std::invalid_argument
       ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [0,"<<(dimDomain-1)<<"]!"

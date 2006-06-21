@@ -134,6 +134,12 @@ public:
   using MultiVectorBase<Scalar>::applyOp;
   /** \brief . */
   using MultiVectorBase<Scalar>::col;
+  /** \brief . */
+  using MultiVectorBase<Scalar>::acquireDetachedView;
+  /** \brief . */
+  using MultiVectorBase<Scalar>::releaseDetachedView;
+  /** \brief . */
+  using MultiVectorBase<Scalar>::commitDetachedView;
 
   /** @name Space membership */
   //@{

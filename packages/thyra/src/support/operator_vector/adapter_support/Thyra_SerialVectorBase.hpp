@@ -71,7 +71,7 @@ void SerialVectorBase<Scalar>::applyOp(
   ,const Index                    global_offset
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::logic_error
     ,"SerialVectorBase::applyOp(...): Error, something is not right here!" );
@@ -94,7 +94,7 @@ void SerialVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpP
 {
   const Index   this_dim = this->space()->dim(); // ToDo: Cache this!
   const Range1D rng      = Teuchos::full_range(rng_in,0,this_dim-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !( rng.ubound() < this_dim ), std::out_of_range
     ,"SerialVectorBase<Scalar>::acquireDetachedView(...) : Error, "
@@ -122,7 +122,7 @@ void SerialVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpP
 {
   const Index   this_dim = this->space()->dim(); // ToDo: Cache this!
   const Range1D rng      = Teuchos::full_range(rng_in,0,this_dim-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !( rng.ubound() < this_dim ), std::out_of_range
     ,"SerialVectorBase<Scalar>::acquireDetachedView(...) : Error, "

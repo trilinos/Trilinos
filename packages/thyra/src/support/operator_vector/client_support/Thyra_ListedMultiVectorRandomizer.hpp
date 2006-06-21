@@ -112,12 +112,12 @@ bool ListedMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Sc
 template<class Scalar>
 void ListedMultiVectorRandomizer<Scalar>::randomize( MultiVectorBase<Scalar> *mv )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( mv==NULL );
   TEST_FOR_EXCEPT( multiVecs_.size()==0 );
 #endif
   const Teuchos::RefCountPtr<const MultiVectorBase<Scalar> > currMV = multiVecs_[curr_mv_i_];
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->range(), *mv->range() );
   THYRA_ASSERT_VEC_SPACES("ListedMultiVectorRandomizer<Scalar>::randomize(mv)", *currMV->domain(), *mv->domain() );
 #endif

@@ -47,9 +47,9 @@ Thyra::create_MPIVectorSpaceBase(
   const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( !epetra_map.get(), std::invalid_argument, "create_MPIVectorSpaceBase::initialize(...): Error!" );
-#endif // _DEBUG
+#endif // TEUCHOS_DEBUG
   MPI_Comm mpiComm;
 #ifdef RTOp_USE_MPI
   const Epetra_MpiComm
@@ -57,13 +57,13 @@ Thyra::create_MPIVectorSpaceBase(
   if(epetra_mpi_comm) {
     //std::cout << "EpetraVectorSpace::initialize(...): Using an Epetra_MpiComm!\n";
     mpiComm = epetra_mpi_comm->Comm();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       mpiComm == MPI_COMM_NULL, std::logic_error
       ,"EpetraVectorSpace::initialize(...), Error, if using Epetra_MpiComm then "
       "the associated MPI_Comm object can not be MPI_COMM_NULL!"
       );
-#endif // _DEBUG
+#endif // TEUCHOS_DEBUG
      //std::cout << "EpetraVectorSpace::initialize(...): mpiComm = " << mpiComm << std::endl;
   }
   else {
@@ -83,7 +83,7 @@ Thyra::create_MPIVectorSpaceBase(
         ,epetra_map->NumGlobalElements()
         )
       );
-#ifndef _DEBUG
+#ifndef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         vs->dim() != epetra_map->NumGlobalElements(), std::logic_error
         ,"create_MPIVectorSpaceBase(...): Error, vs->dim() = "<<vs->dim()<<" != "
@@ -100,7 +100,7 @@ Thyra::create_MPIVectorBase(
   ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(space.get()==NULL);
 #endif
   if(!epetra_v.get()) return Teuchos::null;
@@ -120,7 +120,7 @@ Thyra::create_MPIVectorBase(
   ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(space.get()==NULL);
 #endif
   if(!epetra_v.get()) return Teuchos::null;
@@ -141,7 +141,7 @@ Thyra::create_MPIMultiVectorBase(
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
@@ -168,7 +168,7 @@ Thyra::create_MPIMultiVectorBase(
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
@@ -194,7 +194,7 @@ Thyra::get_Epetra_Vector(
   ,const Teuchos::RefCountPtr<VectorBase<double> >    &v
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
@@ -263,7 +263,7 @@ Thyra::get_Epetra_Vector(
   ,const Teuchos::RefCountPtr<const VectorBase<double> >   &v
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
@@ -325,7 +325,7 @@ Thyra::get_Epetra_MultiVector(
   ,const Teuchos::RefCountPtr<MultiVectorBase<double> >    &mv
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
@@ -397,7 +397,7 @@ Thyra::get_Epetra_MultiVector(
   ,const Teuchos::RefCountPtr<const MultiVectorBase<double> >   &mv
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
     epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );

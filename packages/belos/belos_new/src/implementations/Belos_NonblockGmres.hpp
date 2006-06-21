@@ -245,7 +245,7 @@ void NonblockGmres<Scalar>::getCurrNativeResiduals(
 	) const
 {
 	if(norms) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 		TEST_FOR_EXCEPT( currBlockSize != 1 );
 #endif
 		norms[0] = rel_r_nrm_;
@@ -266,7 +266,7 @@ bool NonblockGmres<Scalar>::adjointRequired() const
 template<class Scalar>
 void NonblockGmres<Scalar>::setProblem( const RefCountPtr<LinearProblemIteration<Scalar> > &lpi )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 	TEST_FOR_EXCEPT(lpi.get()==NULL);
 #endif
 	lpi_ = lpi;

@@ -83,6 +83,7 @@ public:
    * <b>Preconditions:</b><ul>
    * <li><tt>0 <= i && i < this->productRange()->numBlocks()</tt>
    * <li><tt>0 <= j && j < this->productDomain()->numBlocks()</tt>
+   * <li><tt>this->blockExists(i,j)==true</tt>
    * </ul>
    */
   virtual bool blockIsConst(const int i, const int j) const = 0; 

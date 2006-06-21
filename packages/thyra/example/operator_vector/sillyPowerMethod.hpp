@@ -58,7 +58,7 @@ bool sillyPowerMethod(
   typedef Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
   typedef Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > VectorPtr;
   // Initialize
-  if(out) *out << "\nStarting power method ...\n\n";
+  if(out) *out << "\nStarting power method (target tolerrance = "<<tolerance<<") ...\n\n";
   VectorPtr q = createMember(A.domain()), z = createMember(A.range()), r = createMember(A.range());
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(-one), Scalar(+one), &*z );
@@ -75,6 +75,7 @@ bool sillyPowerMethod(
       if( r_nrm < tolerance ) return true;  // Success!
     }
   }
+  if(out) *out << "\nMaximum number of iterations exceeded with ||-lambda*q + z|| > tolerence = " << tolerance << "\n";
   return false; // Failure
 } // end sillyPowerMethod
 

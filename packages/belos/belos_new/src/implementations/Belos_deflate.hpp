@@ -119,7 +119,7 @@ void deflate(
 {
 	int i_lower = 0;
 	for( int k = 0; k < numToRemove; ++k ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 		TEST_FOR_EXCEPT( !( 0 < indexesToRemove[k] && indexesToRemove[k] <= size ) );
 		TEST_FOR_EXCEPT( k < numToRemove -1 && !( 0 < indexesToRemove[k+1] && indexesToRemove[k+1] <= size ) );
 		TEST_FOR_EXCEPT( k < numToRemove -1 && !( 0 < indexesToRemove[k+1] && indexesToRemove[k+1] <= size ) );
@@ -147,7 +147,7 @@ void deflate(
 {
 	int i_lower = 0;
 	for( int k = 0; k < numToRemove; ++k ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
 		TEST_FOR_EXCEPT( !( 0 < indexesToRemove[k] && indexesToRemove[k] <= size ) );
 		TEST_FOR_EXCEPT( k < numToRemove -1 && !( 0 < indexesToRemove[k+1] && indexesToRemove[k+1] <= size ) );
 		TEST_FOR_EXCEPT( k < numToRemove -1 && !( 0 < indexesToRemove[k+1] && indexesToRemove[k+1] <= size ) );

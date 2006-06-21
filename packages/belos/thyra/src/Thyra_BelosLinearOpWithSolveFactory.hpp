@@ -212,7 +212,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::uninitializeOp(
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
 #endif
   BelosLinearOpWithSolve<Scalar>
@@ -573,7 +573,7 @@ void BelosLinearOpWithSolveFactory<Scalar>::initializeOpImpl(
     );
   belosOp->setOStream(out);
   belosOp->setVerbLevel(verbLevel);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   if(paramList_.get()) {
     // Make sure we read the list correctly
     paramList_->validateParameters(*this->getValidParameters(),1); // Validate 0th and 1st level deep

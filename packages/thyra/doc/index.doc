@@ -263,7 +263,7 @@ the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
 consistently using these macros is is easy to set a breakpoint in a debugger
 just before an exception is thrown by setting a breakpoint on the function
 <tt>TestForException_break()</tt>.  If the code is configured with the macro
-<tt>_DEBUG</tt> defined (i.e. <tt>CPPFLAGS="-D_DEBUG ..."</tt>) then a lot of
+<tt>TEUCHOS_DEBUG</tt> defined (i.e. <tt>CPPFLAGS="-D_DEBUG ..."</tt>) then a lot of
 runtime validation is performed.  Whenever development work is being performed
 this macro should always be enabled since a lot of errors will be caught that
 would be hard to diagnose otherwise.

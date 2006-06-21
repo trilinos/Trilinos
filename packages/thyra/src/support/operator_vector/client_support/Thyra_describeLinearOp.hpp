@@ -55,13 +55,13 @@ void Thyra::describeLinearOp(
   const Teuchos::RefCountPtr<const VectorSpaceBase<DomainScalar> >
     domain = A.domain();
   if(!range.get()) {
-    *out << ", range=NULL, domain=NULL\n"; 
+    *out << "{range=NULL,domain=NULL}\n"; 
     return;
   }
   const Index dimDomain = domain->dim(), dimRange = range->dim();
   *out
-    << ", rangeDim = " << dimRange
-    << ", domainDim = " << dimDomain << "\n";
+    << "{rangeDim=" << dimRange
+    << ",domainDim=" << dimDomain << "}\n";
   if(verbLevel >= Teuchos::VERB_EXTREME) {
     // Copy into dense matrix by column
     Teuchos::RefCountPtr<VectorBase<DomainScalar> > e_j = createMember(A.domain());

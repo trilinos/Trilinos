@@ -82,34 +82,49 @@ public:
    * If <tt>*this</tt> is uninitialized then
    * <tt>return.get()==NULL</tt>.
    */
-  virtual Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> > productSpace() const = 0;
+  virtual Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
+  productSpace() const = 0;
 
-  /** \brief Returns a non-persisting non-<tt>const</tt> view of the (zero-based)
-   * <tt>ith</tt> block vector.
+  /** \brief Return if the <tt>k</tt>th vector block is const only.
    *
-   * @param k [in] The (zero-based) <tt>kth</tt> block index specifying which block to access.
+   * \param  k [in] The (zero-based) <tt>k</tt>th block index specifying
+   *           which vector block to access.
    *
    * Preconditions:<ul>
    * <li> <tt>productSpace().get()!=NULL</tt>
-   * <li> <tt>0 <= k <= productSpace()->numBlocks()-1</tt>
+   * <li> <tt>0 <= k && k < productSpace()->numBlocks()</tt>
+   * </ul>
+   */
+  virtual bool blockIsConst(const int k) const = 0; 
+
+  /** \brief Returns a non-persisting non-<tt>const</tt> view of the (zero-based)
+   * <tt>k</tt>th block vector.
+   *
+   * \param  k [in] The (zero-based) <tt>k</tt>th block index
+   *           specifying which vector block to access.
+   *
+   * Preconditions:<ul>
+   * <li> <tt>productSpace().get()!=NULL</tt>
+   * <li> <tt>0 <= k && k < productSpace()->numBlocks()</tt>
+   * <li> <tt>blockIsConst(k)==false</tt>
    * </ul>
    *
-   * Note that <tt>*this</tt> is not guaranteed to be modified until
-   * the smart pointer returned from this function, as well as any
-   * other smart pointers created from this smart pointer, are
-   * destroyed.  This requirement allows more flexibility in how this
-   * function is implemented.
+   * Note that <tt>*this</tt> is not guaranteed to be modified until the smart
+   * pointer returned from this function, as well as any other smart pointers
+   * created from this smart pointer, are destroyed.  This requirement allows
+   * more flexibility in how this function is implemented.
    *
-   * Also note that no further interactions with <tt>*this</tt> should
-   * be performed until the view returned from this function is
-   * released as described above.
+   * Also note that no further interactions with <tt>*this</tt> should be
+   * performed until the view returned from this function is released as
+   * described above.
    */
-  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > getBlock(const int k) = 0; 
+  virtual Teuchos::RefCountPtr<VectorBase<Scalar> > getNonconstBlock(const int k) = 0; 
 
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
-   * <tt>ith</tt> block vector.
+   * <tt>k</tt>th block vector.
    *
-   * @param k [in] The (zero-based) <tt>kth</tt> block index specifying which block to access.
+   * \param  k [in] The (zero-based) <tt>k</tt>th block index specifying which
+   *           vectorblock to access.
    *
    * Preconditions:<ul>
    * <li> <tt>productSpace().get()!=NULL</tt>

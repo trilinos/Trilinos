@@ -40,7 +40,7 @@ void Thyra::unwrap(
   ,const LinearOpBase<Scalar>*    *origOp
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( scalar==NULL );
   TEST_FOR_EXCEPT( transp==NULL );
   TEST_FOR_EXCEPT( origOp==NULL );
@@ -68,7 +68,7 @@ void Thyra::unwrap(
   ,Teuchos::RefCountPtr<const LinearOpBase<Scalar> >          *origOp
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( scalar==NULL );
   TEST_FOR_EXCEPT( transp==NULL );
   TEST_FOR_EXCEPT( origOp==NULL );

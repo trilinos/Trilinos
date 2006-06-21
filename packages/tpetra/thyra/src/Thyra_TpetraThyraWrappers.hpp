@@ -264,9 +264,9 @@ Thyra::create_VectorSpace(
   const Teuchos::RefCountPtr<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( !tpetra_vs.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
-#endif // _DEBUG
+#endif // TEUCHOS_DEBUG
   MPI_Comm mpiComm;
 #ifdef HAVE_MPI
   const Tpetra::MpiComm<Ordinal,Scalar>
@@ -274,13 +274,13 @@ Thyra::create_VectorSpace(
   if(tpetra_mpi_comm) {
     //std::cout << "EpetraVectorSpace::initialize(...): Using an Tpetra::MpiComm<Ordinal,Scalar>!\n";
     mpiComm = tpetra_mpi_comm->getMpiComm();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       mpiComm == MPI_COMM_NULL, std::logic_error
       ,"EpetraVectorSpace::initialize(...), Error, if using Tpetra::MpiComm<Ordinal,Scalar> then "
       "the associated MPI_Comm object can not be MPI_COMM_NULL!"
       );
-#endif // _DEBUG
+#endif // TEUCHOS_DEBUG
      //std::cout << "EpetraVectorSpace::initialize(...): mpiComm = " << mpiComm << std::endl;
   }
   else {
@@ -298,7 +298,7 @@ Thyra::create_VectorSpace(
         ,tpetra_vs->getNumGlobalEntries()
         )
       );
-#ifndef _DEBUG
+#ifndef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         vs->dim() != tpetra_vs->getNumGlobalEntries(), std::logic_error
         ,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
@@ -371,7 +371,7 @@ Thyra::get_Tpetra_Vector(
   // data.  This code is not fragile but you have to know what you are doing
   // if you are going to modify it!
   //
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
     thyra_vs = create_VectorSpace<Ordinal,Scalar>(Teuchos::rcp(&tpetra_vs,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );
@@ -443,7 +443,7 @@ Thyra::get_Tpetra_Vector(
   ,const Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >   &v
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
     thyra_vs = create_VectorSpace<Ordinal,Scalar>(Teuchos::rcp(&tpetra_vs,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Tpetra_Vector(tpetra_vs,v)", *thyra_vs, *v->space() );

@@ -62,7 +62,7 @@ void SerialLinearOpBase<Scalar>::euclideanApply(
   ,const Scalar                     beta
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES("SerialLinearOpBase<Scalar>::apply()",*this,M_trans,X,Y);
 #endif
   const ConstDetachedMultiVectorView<Scalar>         X_ev(X);
@@ -85,7 +85,7 @@ void SerialLinearOpBase<Scalar>::setSpaces(
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    &domain
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
@@ -99,7 +99,7 @@ void SerialLinearOpBase<Scalar>::setDimensions(
   ,const Index                                               dimDomain
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( dimRange <= 0 );
   TEST_FOR_EXCEPT( dimDomain <= 0 );
 #endif

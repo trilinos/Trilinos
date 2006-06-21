@@ -323,7 +323,7 @@ template<class Scalar>
 inline
 void DefaultMultipliedLinearOp<Scalar>::assertInitialized() const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( numOps() > 0 ) );
 #endif
 }

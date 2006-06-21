@@ -143,7 +143,7 @@ void RTOpPack::deserialize(
     values_off      = num_chars_off   + index_type_size,
     indexes_off     = values_off      + num_values_in  * prim_value_type_size,
     chars_off       = indexes_off     + num_indexes_in * index_type_size;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   int num_values = -1, num_indexes = -1, num_chars = -1;
   ITST::deserialize(index_type_size,&reduct_obj_ext[num_values_off],1,&num_values);
   ITST::deserialize(index_type_size,&reduct_obj_ext[num_indexes_off],1,&num_indexes);
@@ -199,7 +199,7 @@ void ReductTargetSerializer<Scalar>::serialize(
   ,char                         charBuffer[]
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !(count > 0) );
   TEST_FOR_EXCEPT( !reduct_objs );
   TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );
@@ -229,7 +229,7 @@ void ReductTargetSerializer<Scalar>::deserialize(
   ,ReductTarget * const  reduct_objs[]
   ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !(bytes > 0) );
   TEST_FOR_EXCEPT( !charBuffer );
   TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );

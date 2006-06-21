@@ -118,7 +118,7 @@ public:
   /** \brief . */
   void setRawVal( const Scalar &rawVal, ReductTarget *reduct_obj ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( reduct_obj==NULL, std::invalid_argument, "Error!" );
 #endif
       using Teuchos::dyn_cast;
@@ -167,7 +167,7 @@ public:
     ,char_type                char_data[]
     ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -186,7 +186,7 @@ public:
     ,ReductTarget                  *reduct_obj
     ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -232,7 +232,7 @@ public:
   /** \brief . */
   void setRawVal( const ScalarIndex<Scalar> &rawVal, ReductTarget *reduct_obj ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( reduct_obj==NULL, std::invalid_argument, "Error!" );
 #endif
       using Teuchos::dyn_cast;
@@ -276,7 +276,7 @@ public:
     ,char_type                char_data[]
     ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes==0 || index_data==NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -297,7 +297,7 @@ public:
     ,ReductTarget                  *reduct_obj
     ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes==0 || index_data==NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -340,7 +340,7 @@ public:
   /** \brief . */
   void setRawVal( const index_type &rawVal, ReductTarget *reduct_obj ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION( reduct_obj==NULL, std::invalid_argument, "Error!" );
 #endif
       using Teuchos::dyn_cast;
@@ -390,7 +390,7 @@ public:
     ,char_type                char_data[]
     ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values!=0 || value_data!=NULL || num_indexes!=1 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -410,7 +410,7 @@ public:
     ) const
     {
       using Teuchos::dyn_cast;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values!=0 || value_data!=NULL || num_indexes!=1 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -464,7 +464,7 @@ public:
     ,char_type                      char_data[]
     ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -482,7 +482,7 @@ public:
     ,const char_type              char_data[]
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -539,7 +539,7 @@ public:
     ,char_type                      char_data[]
     ) const
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"
@@ -558,7 +558,7 @@ public:
     ,const char_type              char_data[]
     )
     {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         num_values==0 || value_data==NULL || num_indexes!=0 || index_data!=NULL || num_chars!=0 || char_data!=NULL
         ,std::invalid_argument, "Error!"

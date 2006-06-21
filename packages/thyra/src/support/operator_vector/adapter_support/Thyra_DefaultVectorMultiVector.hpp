@@ -58,7 +58,7 @@ void DefaultVectorMultiVector<Scalar>::initialize(
   const Teuchos::RefCountPtr<MultiVectorBase<Scalar> > &mv
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( mv.get() == NULL, std::invalid_argument, "Error!" );
   TEST_FOR_EXCEPTION( mv->domain().get() == NULL, std::invalid_argument, "Error!" );
   TEST_FOR_EXCEPTION( mv->domain()->dim() != 1, std::invalid_argument, "Error!" );
@@ -286,7 +286,7 @@ void DefaultVectorMultiVector<Scalar>::acquireDetachedView( const Range1D& rng, 
 #ifdef THYRA_VECTOR_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVectorMultiVector<Scalar>::acquireDetachedView() const called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_vec==NULL);
 #endif
   RTOpPack::ConstSubMultiVectorView<Scalar> sub_mv;
@@ -300,7 +300,7 @@ void DefaultVectorMultiVector<Scalar>::releaseDetachedView( RTOpPack::ConstSubVe
 #ifdef THYRA_VECTOR_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVectorMultiVector<Scalar>::releaseDetachedView() const called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_vec==NULL);
 #endif
   RTOpPack::ConstSubMultiVectorView<Scalar> sub_mv(sub_vec->globalOffset(),sub_vec->subDim(),0,1,sub_vec->values(),sub_vec->subDim());
@@ -314,7 +314,7 @@ void DefaultVectorMultiVector<Scalar>::acquireDetachedView( const Range1D& rng, 
 #ifdef THYRA_VECTOR_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVectorMultiVector<Scalar>::acquireDetachedView() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_vec==NULL);
 #endif
   RTOpPack::SubMultiVectorView<Scalar> sub_mv;
@@ -328,7 +328,7 @@ void DefaultVectorMultiVector<Scalar>::commitDetachedView( RTOpPack::SubVectorVi
 #ifdef THYRA_VECTOR_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
   std::cerr << "\nVectorMultiVector<Scalar>::commitDetachedView() called!\n";
 #endif
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(sub_vec==NULL);
 #endif
   RTOpPack::SubMultiVectorView<Scalar> sub_mv(sub_vec->globalOffset(),sub_vec->subDim(),0,1,sub_vec->values(),sub_vec->subDim());

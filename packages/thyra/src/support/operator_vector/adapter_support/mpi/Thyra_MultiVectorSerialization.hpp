@@ -94,12 +94,12 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
       localSubDim = mpi_vec_spc->localSubDim();
     const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
     DetachedMultiVectorView<Scalar> local_mv(*mv,localRng,Range1D());
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif
     Index localSubDim_in;
     in >> localSubDim_in;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       localSubDim != localSubDim_in, std::logic_error
       , "Error, localSubDim = "<<localSubDim<<" does not match the read in value of "
@@ -108,7 +108,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
 #endif
     Index numSubCols_in;
     in >> numSubCols_in;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       local_mv.numSubCols() != numSubCols_in, std::logic_error
       , "Error, numSubCols = "<<local_mv.numSubCols()<<" does not match the read in value of "
@@ -126,12 +126,12 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
     else {
       // Row-wise
       for( Index i = 0; i < localSubDim; ++i ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
         TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif
         Index i_in;
         in >> i_in;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
         TEST_FOR_EXCEPTION(
           i != i_in, std::logic_error
           , "Error, i = "<<i<<" does not match the read in value of "
@@ -139,7 +139,7 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
           );
 #endif
         for( Index j = 0; j < local_mv.numSubCols(); ++j ) {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
           TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif
           in >> local_mv(i,j);

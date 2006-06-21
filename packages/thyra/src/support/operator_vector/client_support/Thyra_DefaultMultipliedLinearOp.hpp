@@ -64,7 +64,7 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >          Ops[]
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( numOps <= 0 || Ops == NULL );
   for( int k = 0; k < numOps; ++k ) {
     TEST_FOR_EXCEPT( Ops[k].get() == NULL );
@@ -87,7 +87,7 @@ void DefaultMultipliedLinearOp<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> >    Ops[]
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( numOps <= 0 || Ops == NULL );
   for( int k = 0; k < numOps; ++k ) {
     TEST_FOR_EXCEPT( Ops[k].get() == NULL );
@@ -121,7 +121,7 @@ int DefaultMultipliedLinearOp<Scalar>::numOps() const
 template<class Scalar>
 bool DefaultMultipliedLinearOp<Scalar>::opIsConst(const int k) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
   return Ops_[k].isConst();
@@ -131,7 +131,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::getNonconstOp(const int k)
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
   return Ops_[k].getNonconstObj();
@@ -141,7 +141,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
 DefaultMultipliedLinearOp<Scalar>::getOp(const int k) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= k && k < numOps() ) );
 #endif
   return Ops_[k].getConstObj();
@@ -208,8 +208,9 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
     case Teuchos::VERB_EXTREME:
     {
       *out
-        << "type = \'Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">\', "
-        << "rangeDim = " << this->range()->dim() << ", domainDim = " << this->domain()->dim() << std::endl;
+        << "Thyra::DefaultMultipliedLinearOp<" << ST::name() << ">{"
+        << "rangeDim=" << this->range()->dim()
+        << ",domainDim="<< this->domain()->dim() << "}\n";
       OSTab tab(out);
       *out
         <<  "numOps="<< numOps << std::endl

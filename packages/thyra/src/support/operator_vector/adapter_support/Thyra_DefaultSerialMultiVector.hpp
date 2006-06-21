@@ -120,7 +120,7 @@ void DefaultSerialMultiVector<Scalar>::initialize(
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domain
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
 #endif
@@ -140,7 +140,7 @@ void DefaultSerialMultiVector<Scalar>::initialize(
   ,const Index                                                           leadingDim
   )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range.get()==NULL);
   TEST_FOR_EXCEPT(domain.get()==NULL);
   TEST_FOR_EXCEPT(values.get()==NULL);
@@ -213,7 +213,7 @@ Teuchos::RefCountPtr<VectorBase<Scalar> >
 DefaultSerialMultiVector<Scalar>::col(Index j)
 {
   using Teuchos::rcp;
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= j && j < numCols_ ) );
 #endif
 #ifdef THYRA_SERIAL_MULTI_VECTOR_STD_VERBOSE_TO_ERROR_OUT
@@ -330,7 +330,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<Scalar>
 DefaultSerialMultiVector<Scalar>::createContiguousCopy( const int numCols, const int cols[] ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>  &domain   = *domain_;
   const Index                    dimDomain = domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
@@ -344,7 +344,7 @@ DefaultSerialMultiVector<Scalar>::createContiguousCopy( const int numCols, const
   Scalar       *lvv  = &*valuesView;
   for( int k = 0; k < numCols; ++k ) {
     const int col_k = cols[k];
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
       col_k < 1 || dimDomain < col_k, std::invalid_argument
       ,msg_err << " col["<<k<<"] = " << col_k << " is not in the range [1,"<<dimDomain<<"]!"

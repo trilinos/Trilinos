@@ -68,6 +68,9 @@ bool run_composite_linear_ops_tests(
   RefCountPtr<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
 
+  const Teuchos::EVerbosityLevel
+    verbLevel = dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH;
+
   if(out.get()) *out << "\n*** Entering run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
 
   bool success = true, result;
@@ -95,7 +98,7 @@ bool run_composite_linear_ops_tests(
   Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*mvOrigA );
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     origA = mvOrigA;
-  if(out.get()) *out << "\norigA =\n" << describe(*origA,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\norigA =\n" << describe(*origA,verbLevel);
 
   if(out.get()) *out << "\nTesting origA ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -105,7 +108,7 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nCreating implicit scaled linear operator A1 = scale(0.5,origA) ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A1 = scale(Scalar(0.5),origA);
-  if(out.get()) *out << "\nA1 =\n" << describe(*A1,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA1 =\n" << describe(*A1,verbLevel);
 
   if(out.get()) *out << "\nTesting A1 ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -172,7 +175,7 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nCreating implicit scaled linear operator A2 = adjoint(A1) ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A2 = adjoint(A1);
-  if(out.get()) *out << "\nA2 =\n" << describe(*A2,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA2 =\n" << describe(*A2,verbLevel);
 
   if(out.get()) *out << "\nTesting A2 ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -187,7 +190,7 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nCreating implicit scaled, adjoined linear operator A3 = adjoint(scale(2.0,(A2)) ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A3 = adjoint(scale(Scalar(2.0),A2));
-  if(out.get()) *out << "\nA3 =\n" << describe(*A3,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA3 =\n" << describe(*A3,verbLevel);
 
   if(out.get()) *out << "\nTesting A3 ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -216,7 +219,7 @@ bool run_composite_linear_ops_tests(
         )
       );
   if(!ST::isComplex) A4 = transpose(adjoint(A4)); // Should result in CONJ
-  if(out.get()) *out << "\nA4 =\n" << describe(*A4,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA4 =\n" << describe(*A4,verbLevel);
 
   if(out.get()) *out << "\nTesting A4 ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -240,7 +243,7 @@ bool run_composite_linear_ops_tests(
         )
       );
   if(!ST::isComplex) A5 = transpose(adjoint(A5)); // Should result in CONJ
-  if(out.get()) *out << "\nA5 =\n" << describe(*A5,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA5 =\n" << describe(*A5,verbLevel);
 
   if(out.get()) *out << "\nTesting A5 ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -250,7 +253,7 @@ bool run_composite_linear_ops_tests(
   if(out.get()) *out << "\nCreating a multiplicative operator A6 = origA^H*A1 ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
     A6 = multiply(adjoint(origA),A1);
-  if(out.get()) *out << "\nA6 =\n" << describe(*A6,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA6 =\n" << describe(*A6,verbLevel);
 
   if(out.get()) *out << "\nTesting A6 ...\n";
   Thyra::seed_randomize<Scalar>(0);
@@ -263,26 +266,22 @@ bool run_composite_linear_ops_tests(
       rcp_const_cast<Thyra::LinearOpBase<Scalar> >(adjoint(origA))
       ,rcp_const_cast<Thyra::LinearOpBase<Scalar> >(A1)
       );
-  if(out.get()) *out << "\nA7 =\n" << describe(*A7,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+  if(out.get()) *out << "\nA7 =\n" << describe(*A7,verbLevel);
 
   if(out.get()) *out << "\nTesting A7 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A7,out.get());
   if(!result) success = false;
 
-/*
- 
-  if(out.get()) *out << "\nCreating a blocked linear operator A8 = [ A6, A1; A1^H, origA ] ...\n";
+  if(out.get()) *out << "\nCreating a blocked linear operator A8 = [ A6, A1; A1^H, 0 ] ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A8 = block2x2( A6, A1, adjoint(A1), origA );
-  if(out.get()) *out << "\nA8 =\n" << describe(*A8,dumpAll?Teuchos::VERB_EXTREME:Teuchos::VERB_HIGH);
+    A8 = Thyra::block2x2<Scalar>( A6, adjoint(A1), A1, Teuchos::null );
+  if(out.get()) *out << "\nA8 =\n" << describe(*A8,verbLevel);
   
   if(out.get()) *out << "\nTesting A8 ...\n";
   Thyra::seed_randomize<Scalar>(0);
   result = symLinearOpTester.check(*A8,out.get());
   if(!result) success = false;
-
-*/
 
   if(out.get()) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
 
@@ -297,18 +296,12 @@ int main( int argc, char* argv[] ) {
   bool success = true;
   bool verbose = true;
 
-  MPI_Init(&argc,&argv);
 
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
+  const int numProc = Teuchos::GlobalMPISession::getNProc();
   MPI_Comm mpiComm = MPI_COMM_WORLD;
-  int procRank, numProc;
-  MPI_Comm_size( mpiComm, &numProc );
-  MPI_Comm_rank( mpiComm, &procRank );
 
-/*
-  // Setup the output stream (do output only on root process!)
-  Teuchos::oblackholestream black_hole_out;
-  std::ostream &out = ( procRank == 0 ? std::cout : black_hole_out );
-*/
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
@@ -362,8 +355,6 @@ int main( int argc, char* argv[] ) {
     if(success) *out << "\nAll of the tests seem to have run successfully!\n";
     else        *out << "\nOh no! at least one of the tests failed!\n";	
   }
-
-  MPI_Finalize();
   
   return success ? 0 : 1;
 

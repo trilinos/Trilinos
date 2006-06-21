@@ -102,7 +102,7 @@ void MPIVectorBase<Scalar>::applyOp(
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   const MPIVectorSpaceBase<Scalar> &mpiSpc = *mpiSpace();
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   // ToDo: Validate input!
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
@@ -256,7 +256,7 @@ void MPIVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack
 template<class Scalar>
 void MPIVectorBase<Scalar>::releaseDetachedView( RTOpPack::ConstSubVectorView<Scalar>* sub_vec ) const
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     sub_vec==NULL || sub_vec->globalOffset() < 0 || sub_vec->globalOffset() + sub_vec->subDim() > globalDim_
     ,std::logic_error
@@ -306,7 +306,7 @@ void MPIVectorBase<Scalar>::acquireDetachedView( const Range1D& rng_in, RTOpPack
 template<class Scalar>
 void MPIVectorBase<Scalar>::commitDetachedView( RTOpPack::SubVectorView<Scalar>* sub_vec )
 {
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     sub_vec==NULL || sub_vec->globalOffset() < 0 || sub_vec->globalOffset() + sub_vec->subDim() > globalDim_
     ,std::logic_error
@@ -347,7 +347,7 @@ template<class Scalar>
 Range1D MPIVectorBase<Scalar>::validateRange( const Range1D &rng_in ) const
 {
   const Range1D rng = Teuchos::full_range(rng_in,0,globalDim_-1);
-#ifdef _DEBUG
+#ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= rng.lbound() && rng.ubound() < globalDim_), std::invalid_argument
     ,"MPIVectorBase<Scalar>::validateRange(...): Error, the range ["
