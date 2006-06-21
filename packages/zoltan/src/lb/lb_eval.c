@@ -196,30 +196,19 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     maxpart = get_max_partition(zz, zhg->Input_Parts, zhg->nObj);
 
-    if (maxpart+1 != nparts){
-      sprintf(msg, 
-        "Actual # of partitions (%1d) != requested # partitions (%1d)", 
-        maxpart+1, nparts);
-      if (zz->Proc==0){
-        ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-        printf("%s No cut statistics available.\n", yo);
-      }
+    /* Perform cut calculations and find global max, min and sum */
+    ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
+
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
+      Zoltan_PHG_Free_Hypergraph_Data(zhg);
+      ZOLTAN_FREE(&zhg);
+      ZOLTAN_FREE(&zhg->Output_Parts);
+      return ZOLTAN_FATAL;
     }
-    else{
-      /* Perform cut calculations and find global max, min and sum */
-      ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
-  
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zoltan_PHG_Removed_Cuts failed!");
-        Zoltan_PHG_Free_Hypergraph_Data(zhg);
-        ZOLTAN_FREE(&zhg);
-        ZOLTAN_FREE(&zhg->Output_Parts);
-        return ZOLTAN_FATAL;
-      }
-              
-      MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
-                    MPI_DOUBLE, MPI_SUM, zz->Communicator);
-    }
+            
+    MPI_Allreduce(hgraph_local_stats, hgraph_global_sum, 2,
+                  MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
     vwgt_dim = zhg->HG.VtxWeightDim;
     num_obj = zhg->nObj;
@@ -680,7 +669,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
           imbal[i]);
       }
 
-      if (have_pin_callbacks && (maxpart+1 == nparts)) {
+      if (have_pin_callbacks){
         printf("%s  Hyperedge (k-1)-connectivity cut:     %8.0f\n", yo, 
                 hgraph_global_sum[0]);
         printf("%s  No. cut hyperedges:                   %8.0f\n\n", yo,
