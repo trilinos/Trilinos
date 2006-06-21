@@ -149,6 +149,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
  	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
 	test "X$ac_cv_use_capo" != "Xno" ||
+	test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_moocho" != "Xno" ||
 	test "X$ac_cv_use_rtop" != "Xno" ||
 	test "X$ac_cv_use_rythmos" != "Xno" ||
