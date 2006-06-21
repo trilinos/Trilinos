@@ -362,9 +362,6 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     if ( Teuchos::is_null(fmPtr) )
       fmPtr = Teuchos::rcp(new Epetra_Vector(x));
 
-  // Create a reference to the extra perturbed residual vector
-  Epetra_Vector& fm = *fmPtr;
-
   double scaleFactor = 1.0;
   if ( diffType == Backward )
     scaleFactor = -1.0;
@@ -410,7 +407,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     if ( diffType == Centered ) {
       if (map.MyGID(k))
         x_perturb[map.LID(k)] -= 2.0 * eta;
-      computeF(x_perturb,fm, NOX::Epetra::Interface::Required::FD_Res);
+      computeF(x_perturb,*fmPtr, NOX::Epetra::Interface::Required::FD_Res);
     }
 
     // Compute the column k of the Jacobian
@@ -419,7 +416,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
       Jc.Scale( 1.0/(scaleFactor * eta) );
     }
     else {
-      Jc.Update(1.0, fp, -1.0, fm, 0.0);
+      Jc.Update(1.0, fp, -1.0, *fmPtr, 0.0);
       Jc.Scale( 1.0/(2.0 * eta) );
     }
 

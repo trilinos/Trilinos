@@ -143,9 +143,6 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if ( Teuchos::is_null(fmPtr) )
       fmPtr = Teuchos::rcp(new NOX::Epetra::Vector(fo));
 
-  // Create a reference to the extra perturbed residual vector
-  NOX::Epetra::Vector& fm = *fmPtr;
-
   double scaleFactor = 1.0;
   if ( diffType == Backward )
   scaleFactor = -1.0;
@@ -185,12 +182,12 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     Y.Scale(-2.0);
     perturbX.update(scaleFactor,nevY,1.0);
     if (!useGroupForComputeF)
-      interface->computeF(perturbX.getEpetraVector(), fm.getEpetraVector(), 
+      interface->computeF(perturbX.getEpetraVector(), fmPtr->getEpetraVector(),
 			  NOX::Epetra::Interface::Required::MF_Res);
     else{
       groupPtr->setX(perturbX);
       groupPtr->computeF();
-      fm = dynamic_cast<const NOX::Epetra::Vector&>
+      *fmPtr = dynamic_cast<const NOX::Epetra::Vector&>
         (groupPtr->getF());
     }
   }
@@ -201,7 +198,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     nevY.scale( 1.0/(scaleFactor * eta) );
   }
   else {
-    nevY.update(1.0, fp, -1.0, fm, 0.0);
+    nevY.update(1.0, fp, -1.0, *fmPtr, 0.0);
     nevY.scale( 1.0/(2.0 * eta) );
   }
 

@@ -163,9 +163,6 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     if ( Teuchos::is_null(fmPtr) )
       fmPtr = Teuchos::rcp(new Epetra_Vector(x));
 
-  // Create a reference to the extra perturbed residual vector
-  Epetra_Vector& fm = *fmPtr;
-
   double scaleFactor = 1.0;
   if ( diffType == Backward )
     scaleFactor = -1.0;
@@ -246,13 +243,13 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     if ( diffType == Centered ) {
       xCol_perturb->Update(-2.0, *mappedColorVect, 1.0);
       if( coloringType == NOX_SERIAL )
-        computeF(*xCol_perturb, fm,
+        computeF(*xCol_perturb, *fmPtr,
                  NOX::Epetra::Interface::Required::FD_Res);
       else {
         //x_perturb.Export(*xCol_perturb, *rowColImporter, Insert);
         for (int i=0; i<x_perturb.MyLength(); i++)
           x_perturb[i] = (*xCol_perturb)[columnMap->LID(map.GID(i))];
-        computeF(x_perturb, fm, NOX::Epetra::Interface::Required::FD_Res);
+        computeF(x_perturb, *fmPtr, NOX::Epetra::Interface::Required::FD_Res);
       }
     }
 
@@ -262,7 +259,7 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
       Jc.Update(1.0, fp, -1.0, fo, 0.0);
     }
     else {
-      Jc.Update(1.0, fp, -1.0, fm, 0.0);
+      Jc.Update(1.0, fp, -1.0, *fmPtr, 0.0);
     }
 
     // Insert nonzero column entries into the jacobian
