@@ -72,3 +72,10 @@
     COMM = SERIAL;
 }
 
+# Vector 1DfemTransient with ImplicitBDF
+(FRAMEWORK,INSTALL) {
+    TESTS = ../example/epetra/1Dfem/1DfemTransient.exe;
+    ARGS = --verbose --method=BDF;
+    COMM = SERIAL;
+}
+
