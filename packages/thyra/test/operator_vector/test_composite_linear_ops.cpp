@@ -28,7 +28,10 @@
 
 #include "Thyra_DefaultSerialVectorSpace.hpp"
 #include "Thyra_DefaultMPIVectorSpace.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -290,24 +293,74 @@ bool run_composite_linear_ops_tests(
   result = symLinearOpTester.check(*A7,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A8 = [ A6, A1^H; A1, 0 ] ...\n";
+  if(out.get()) *out << "\nCreating an added operator A8 = origA + A1 ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A8 = Thyra::block2x2<Scalar>(
-      A6,  adjoint(A1)
-      ,A1, null
-      );
+    A8 = add(origA,A1);
   if(out.get()) *out << "\nA8 =\n" << describe(*A8,verbLevel);
-  
+
   if(out.get()) *out << "\nTesting A8 ...\n";
   Thyra::seed_randomize<Scalar>(0);
-  result = symLinearOpTester.check(*A8,out.get());
+  result = linearOpTester.check(*A8,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a symmetric added operator A8b = A6 + adjoint(origA)*origA ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A8b = add(A6,multiply(adjoint(origA),origA));
+  if(out.get()) *out << "\nA8b =\n" << describe(*A8b,verbLevel);
+
+  if(out.get()) *out << "\nTesting A8b ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A8b,out.get());
   if(!result) success = false;
 
 #ifdef TEUCHOS_DEBUG
-  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A8b = [ A6, A1^H; A1, A1 ] (should throw an exception) ...\n\n";
+  if(out.get()) *out << "\nCreating an invalid added operator A8c = origA + adjoint(origA) (should throw an exception) ...\n\n";
   try {
     RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-      A8b = Thyra::block2x2<Scalar>(
+      A8c = add(origA,adjoint(origA));
+    result = true;
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,out.get()?*out:std::cerr,result)
+  if(out.get())
+    *out << "\nCaught expected exception : " << (result?"failed\n":"passed\n");
+  if(result) success = false;
+#endif // TEUCHOS_DEBUG
+
+  if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9 = [ A6, A1^H; A1, null ] ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A9 = Thyra::block2x2<Scalar>(
+      A6,  adjoint(A1)
+      ,A1, null
+      );
+  if(out.get()) *out << "\nA9 =\n" << describe(*A9,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A9 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A9,out.get());
+  if(!result) success = false;
+  // Note that testing the symmetry above helps to check the transpose mode
+  // against the non-transpose mode!
+
+  if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9a = [ null, A1^H; A1, null ] ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A9a = Thyra::block2x2<Scalar>(
+      null,  adjoint(A1)
+      ,A1,   null
+      );
+  if(out.get()) *out << "\nA9a =\n" << describe(*A9a,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A9a ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A9a,out.get());
+  if(!result) success = false;
+  // Note that testing the symmetry above helps to check the transpose mode
+  // against the non-transpose mode!
+  
+#ifdef TEUCHOS_DEBUG
+  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A9b = [ A6, A1^H; A1, A1 ] (should throw an exception) ...\n\n";
+  try {
+    RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+      A9b = Thyra::block2x2<Scalar>(
         A6,  adjoint(A1)
         ,A1, A1
         );
@@ -320,10 +373,10 @@ bool run_composite_linear_ops_tests(
 #endif // TEUCHOS_DEBUG
 
 #ifdef TEUCHOS_DEBUG
-  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A8c = [ A1, A1 ; 0, 0 ] (should throw an exception) ...\n\n";
+  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A9c = [ A1, A1 ; null, null ] (should throw an exception) ...\n\n";
   try {
     RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-      A8c = Thyra::block2x2<Scalar>(
+      A9c = Thyra::block2x2<Scalar>(
         A1,    A1
         ,null, null
         );
@@ -336,10 +389,10 @@ bool run_composite_linear_ops_tests(
 #endif // TEUCHOS_DEBUG
 
 #ifdef TEUCHOS_DEBUG
-  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A8d = [ A1, 0; A1, 0 ] (should throw an exception) ...\n\n";
+  if(out.get()) *out << "\nCreating an invalid blocked 2x2 operator A9d = [ A1, null; A1, null ] (should throw an exception) ...\n\n";
   try {
     RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-      A8d = Thyra::block2x2<Scalar>(
+      A9d = Thyra::block2x2<Scalar>(
         A1,  null
         ,A1, null
         );
@@ -351,22 +404,12 @@ bool run_composite_linear_ops_tests(
   if(result) success = false;
 #endif // TEUCHOS_DEBUG
 
-  if(out.get()) *out << "\nCreating a blocked 2x1 linear operator A9 = [ A6; A1 ] ...\n";
+  if(out.get()) *out << "\nCreating a blocked 2x1 linear operator A10 = [ A6; A1 ] ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A9 = Thyra::block2x1<Scalar>(
+    A10 = Thyra::block2x1<Scalar>(
       A6
       ,A1
       );
-  if(out.get()) *out << "\nA9 =\n" << describe(*A9,verbLevel);
-  
-  if(out.get()) *out << "\nTesting A9 ...\n";
-  Thyra::seed_randomize<Scalar>(0);
-  result = linearOpTester.check(*A9,out.get());
-  if(!result) success = false;
-
-  if(out.get()) *out << "\nCreating a blocked 1x2 linear operator A10 = [ A8, A9 ] ...\n";
-  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A10 = Thyra::block1x2<Scalar>( A8, A9 );
   if(out.get()) *out << "\nA10 =\n" << describe(*A10,verbLevel);
   
   if(out.get()) *out << "\nTesting A10 ...\n";
@@ -374,6 +417,49 @@ bool run_composite_linear_ops_tests(
   result = linearOpTester.check(*A10,out.get());
   if(!result) success = false;
 
+  if(out.get()) *out << "\nCreating a blocked 1x2 linear operator A11 = [ A9, A10 ] ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A11 = Thyra::block1x2<Scalar>( A9, A10 );
+  if(out.get()) *out << "\nA11 =\n" << describe(*A11,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A11 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = linearOpTester.check(*A11,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a zero linear operator A12 = 0 (range and domain spaces of origA) ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A12 = Thyra::zero(origA->range(),origA->domain());
+  if(out.get()) *out << "\nA12 =\n" << describe(*A12,verbLevel);
+
+  if(out.get()) *out << "\nTesting A12 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = linearOpTester.check(*A12,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A13 = [ zero, A1^H; A1, zero ] ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A13 = Thyra::block2x2<Scalar>(
+      Thyra::zero(A1->domain(),A1->domain()),  adjoint(A1)
+      ,A1,                                     Thyra::zero(A1->range(),A1->range())
+      );
+  if(out.get()) *out << "\nA13 =\n" << describe(*A13,verbLevel);
+  
+  if(out.get()) *out << "\nComparing A9a == A13 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = linearOpTester.compare(*A9a,*A13,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a zero linear operator A14 = I (range space of origA) ...\n";
+  RefCountPtr<const Thyra::LinearOpBase<Scalar> >
+    A14 = Thyra::identity(origA->range());
+  if(out.get()) *out << "\nA14 =\n" << describe(*A14,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A14 ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A14,out.get());
+  if(!result) success = false;
+  
   if(out.get()) *out << "\n*** Leaving run_composite_linear_ops_tests<"<<ST::name()<<">(...) ...\n";
 
   return success;
