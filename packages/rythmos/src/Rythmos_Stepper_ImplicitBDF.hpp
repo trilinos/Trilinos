@@ -260,6 +260,7 @@ void ImplicitBDFStepper<Scalar>::InitializeStepper(
 #ifdef Rythmos_DEBUG
   debugLevel = implicitBDFParameters.get<int>( "debugLevel", 1 );
   debug_out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  debug_out->precision(15);
   debug_out->setMaxLenLinePrefix(28);
   debug_out->pushLinePrefix("Rythmos::ImplicitBDFStepper");
   debug_out->setShowLinePrefix(true);
@@ -402,7 +403,7 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
   model = model_;
   time = ST::zero();
   xn0 = model->getNominalValues().get_x()->clone_v();
-  xpn0 = model->getNominalValues().get_x()->clone_v();
+  xpn0 = model->getNominalValues().get_x_dot()->clone_v(); 
   x_dot_base = model->getNominalValues().get_x_dot()->clone_v();
   delta = model->getNominalValues().get_x()->clone_v();
   residual = Thyra::createMember(model->get_f_space());
@@ -415,7 +416,7 @@ void ImplicitBDFStepper<Scalar>::setModel(const Teuchos::RefCountPtr<const Thyra
     xHistory.push_back(xn0->clone_v()); 
     V_S(&*xHistory[i],ST::zero());
   }
-
+  initialize(); // Now that we have the model, we can do our initialization 
 }
 
 template<class Scalar>
@@ -437,7 +438,6 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     debug_out->pushTab();
   }
 #endif // Rythmos_DEBUG
-  initialize();
   BDFstatusFlag status;
   while (1)
   {
@@ -492,8 +492,11 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
       xn0->describe(*debug_out,Teuchos::VERB_EXTREME);
       *debug_out << "delta = " << std::endl;
       delta->describe(*debug_out,Teuchos::VERB_EXTREME);
-      *debug_out << "xHistory[0] = " << std::endl;
-      xHistory[0]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      for (int i=0; i<max(2,maxOrder); ++i)
+      {
+        *debug_out << "xHistory[" << i << "] = " << std::endl;
+        xHistory[i]->describe(*debug_out,Teuchos::VERB_EXTREME);
+      }
       *debug_out << "ck = " << ck << endl;
       *debug_out << "dnorm = " << dnorm << endl;
       *debug_out << "Local Truncation Error Check: (ck*dnorm) < 1:  (" << ck*dnorm << ") <?= 1" << endl;
@@ -519,7 +522,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep()
     debug_out->popLinePrefix();
   }
 #endif // Rythmos_DEBUG
-  return(hh);
+  return(usedStep);
 }
 
 template<class Scalar>
@@ -534,7 +537,7 @@ Scalar ImplicitBDFStepper<Scalar>::TakeStep(Scalar dt)
 template<class Scalar>
 Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> > ImplicitBDFStepper<Scalar>::get_solution() const
 {
-  return(xn0);
+  return(xHistory[0]);
 }
 
 template<class Scalar>
@@ -592,6 +595,16 @@ template<class Scalar>
 void ImplicitBDFStepper<Scalar>::obtainPredictor()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
+
+#ifdef Rythmos_DEBUG
+  if (debugLevel > 1)
+  {
+    debug_out->pushLinePrefix("obtainPredictor");
+    *debug_out << "{" << endl;
+    debug_out->pushTab();
+    *debug_out << "currentOrder = " << currentOrder << std::endl;
+  }
+#endif // Rythmos_DEBUG
   
   // prepare history array for prediction
   for (int i=nscsco;i<=currentOrder;++i)
@@ -610,9 +623,6 @@ void ImplicitBDFStepper<Scalar>::obtainPredictor()
 #ifdef Rythmos_DEBUG
   if (debugLevel > 1)
   {
-    debug_out->pushLinePrefix("obtainPredictor");
-    *debug_out << "{" << endl;
-    debug_out->pushTab();
     *debug_out << "xn0 = " << std::endl;
     xn0->describe(*debug_out,Teuchos::VERB_EXTREME);
     *debug_out << "xpn0 = " << std::endl;
