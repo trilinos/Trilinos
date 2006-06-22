@@ -25,6 +25,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include <vector>
 #include <map>
+#include "ml_MultiLevelPreconditioner.h"
 
 class Epetra_Map;
 class Epetra_BlockMap;
