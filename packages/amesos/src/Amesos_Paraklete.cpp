@@ -89,30 +89,9 @@ public:
 
 
   cholmod_sparse pk_A_ ;
-#define  USE_REF_COUNT_PTR
-#ifdef USE_REF_COUNT_PTR
   Teuchos::RefCountPtr<paraklete_symbolic> LUsymbolic_ ;
   Teuchos::RefCountPtr<paraklete_numeric> LUnumeric_ ;
   Teuchos::RefCountPtr<paraklete_common> common_;
-#else
-  paraklete_symbolic* LUsymbolic_ ; 
-  paraklete_numeric* LUnumeric_ ; 
-  
-  Amesos_Paraklete_Pimpl():
-    LUsymbolic_(0),
-    LUnumeric_(0)
-  {}
-
-  ~Amesos_Paraklete_Pimpl(void){
-    if (LUsymbolic_) {
-      paraklete_free_symbolic (&LUsymbolic_, &Common_) ; 
-      cholmod_finish( &Common_.cm );
-    }
-    if (LUnumeric_) {
-      paraklete_free_numeric (&LUnumeric_, &Common_) ; 
-    }
-  }
-#endif
 
 
 
@@ -156,6 +135,8 @@ int Amesos_Paraklete::ExportToSerial()
       cerr << " The number of non zero entries in the matrix has changed since the last call to SymbolicFactorization().  " ;
       AMESOS_CHK_ERR( -2 );
     }
+
+    if ( transposer_.get() != 0  ) transposer_->fwd() ;
     assert ( ImportToSerial_.get() != 0 ) ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
@@ -252,24 +233,46 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
   //  we allow the user to control re-indexing through the "Reindex" parameter.
   //
   CrsMatrixA_ = dynamic_cast<Epetra_CrsMatrix *>(Problem_->GetOperator());
+  Epetra_CrsMatrix* CcsMatrixA = 0 ; 
+
+
+  //
+  //  CcsMatrixA points to a matrix in Compressed Column Format 
+  //  i.e. the format needed by Paraklete.  If we are solving  
+  //  A^T x = b, CcsMatrixA = CrsMatrixA_, otherwise we must 
+  //  transpose the matrix.
+  //
+    if (UseTranspose()) {
+      CcsMatrixA = CrsMatrixA_ ;
+    } else {
+      bool MakeDataContiguous = true;
+      transposer_ = rcp ( new EpetraExt::RowMatrix_Transpose( MakeDataContiguous ));
+
+      CcsMatrixA = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposer_)(*CrsMatrixA_))));
+    }
+
 
   if  ( Reindex_ ) {
-    if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR(-4);
+    if ( CcsMatrixA == 0 ) AMESOS_CHK_ERR(-4);
 #ifdef HAVE_AMESOS_EPETRAEXT
-    const Epetra_Map& OriginalMap = CrsMatrixA_->RowMap();
+    const Epetra_Map& OriginalMap = CcsMatrixA->RowMap();
     StdIndex_ = rcp( new Amesos_StandardIndex( OriginalMap  ) );
-    //const Epetra_Map& OriginalColMap = CrsMatrixA_->RowMap();
+    //const Epetra_Map& OriginalColMap = CcsMatrixA->RowMap();
     StdIndexDomain_ = rcp( new Amesos_StandardIndex( OriginalDomainMap  ) );
     StdIndexRange_ = rcp( new Amesos_StandardIndex( OriginalRangeMap  ) );
 
-    StdIndexMatrix_ = StdIndex_->StandardizeIndex( CrsMatrixA_ );
+    StdIndexMatrix_ = StdIndex_->StandardizeIndex( CcsMatrixA );
 #else
     cerr << "Amesos_Paraklete requires EpetraExt to reindex matrices." << endl 
 	 <<  " Please rebuild with the EpetraExt library by adding --enable-epetraext to your configure invocation" << endl ;
     AMESOS_CHK_ERR(-4);
 #endif
   } else { 
-    StdIndexMatrix_ = RowMatrixA_ ;
+    if ( UseTranspose() ){ 
+      StdIndexMatrix_ = RowMatrixA_ ;
+    } else {
+      StdIndexMatrix_ = CcsMatrixA ;
+    } 
   }
 
   //
@@ -425,7 +428,6 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
       Ap[MyRow] = Ai_index ;
     }
   PrivateParakleteData_->pk_A_.nrow = NumGlobalElements_ ; 
-#if 1
   cholmod_sparse& pk_A =  PrivateParakleteData_->pk_A_ ;
   pk_A.nrow = NumGlobalElements_ ; 
   pk_A.ncol = NumGlobalElements_ ; 
@@ -449,7 +451,6 @@ int Amesos_Paraklete::ConvertToParakleteCRS(bool firsttime)
   pk_A.dtype = CHOLMOD_DOUBLE ; 
   pk_A.sorted = 0 ; 
   pk_A.packed = 1 ; 
-#endif
   }
 
 
@@ -492,19 +493,13 @@ int Amesos_Paraklete::SetParameters( const Teuchos::ParameterList &ParameterList
 int Amesos_Paraklete::PerformSymbolicFactorization() 
 {
   ResetTime(0);
-
-#ifdef USE_REF_COUNT_PTR
+  
     PrivateParakleteData_->LUsymbolic_ =
 	rcp( paraklete_analyze ( &PrivateParakleteData_->pk_A_, &*PrivateParakleteData_->common_ )
 	     ,deallocFunctorDeleteWithCommon<paraklete_symbolic>(PrivateParakleteData_->common_,
 								 paraklete_free_symbolic)
 	     ,false
 	     );
-#else
-    PrivateParakleteData_->LUsymbolic_ =
-      paraklete_analyze ( &PrivateParakleteData_->pk_A_, 
-			  &PrivateParakleteData_->Common_ ) ;
-#endif
 
   AddTime("symbolic", 0);
 
@@ -526,7 +521,6 @@ int Amesos_Paraklete::PerformNumericFactorization( )
 
     bool factor_with_pivoting = true ;
 
-#ifdef USE_REF_COUNT_PTR
 	PrivateParakleteData_->LUnumeric_ =
 	  rcp( paraklete_factorize ( &PrivateParakleteData_->pk_A_,
 				     &*PrivateParakleteData_->LUsymbolic_, 
@@ -534,12 +528,6 @@ int Amesos_Paraklete::PerformNumericFactorization( )
 	  ,deallocFunctorDeleteWithCommon<paraklete_numeric>(PrivateParakleteData_->common_,paraklete_free_numeric)
 	  ,false
 	  );
-#else
-	PrivateParakleteData_->LUnumeric_ =
-	  paraklete_factorize ( &PrivateParakleteData_->pk_A_,
-				&*PrivateParakleteData_->LUsymbolic_, 
-				&PrivateParakleteData_->Common_ ) ;
-#endif
 
   AddTime("numeric", 0);
 
@@ -586,6 +574,8 @@ int Amesos_Paraklete::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
   
+  transposer_ = static_cast<Teuchos::ENull>( 0 ); 
+
   InitTime(Comm(), 2);
 
   ResetTime(1);
@@ -781,16 +771,9 @@ int Amesos_Paraklete::Solve()
       SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
     }
   }
-    assert( NumVectors_ == 1 ) ; 
-    if (UseTranspose()) {
-      paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
-			&SerialXBvalues_[0],  &*PrivateParakleteData_->common_ );
-    } else {  // bug - I expect this one to fail - KSS 
-      AMESOS_CHK_ERR( 101 ) ; 
-      paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
-			&SerialXBvalues_[0],  &*PrivateParakleteData_->common_ );
-    }
-
+  assert( NumVectors_ == 1 ) ; 
+  paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
+		    &SerialXBvalues_[0],  &*PrivateParakleteData_->common_ );
   AddTime("solve", 0);
 
   //  Copy X back to the original vector

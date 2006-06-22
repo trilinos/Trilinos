@@ -56,6 +56,10 @@
 #endif
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+#ifdef HAVE_AMESOS_EPETRAEXT
+#include "EpetraExt_Transpose_RowMatrix.h"
+#endif
+
 
 // class EpetraExt::MultiVector_Reindex ;
 // class EpetraExt::CrsMatrix_Reindex ;
@@ -133,14 +137,12 @@ public:
   */
   bool MatrixShapeOK() const ;
 
-  //! SetUseTranpose() fails 
+  //! SetUseTranpose()
   /*! 
     If SetUseTranspose() is set to true, 
-    return 1; 
-
     \f$A^T X = B\f$ is computed.
   */  
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(UseTranspose?0:1);};
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
   bool UseTranspose() const {return(UseTranspose_);};
 
@@ -257,6 +259,14 @@ private:
   Epetra_RowMatrix* RowMatrixA_;
   //! Operator converted to a CrsMatrix
   Epetra_CrsMatrix* CrsMatrixA_;
+  //
+  //  transposer_ transposes a CrsMatrix 
+  //  Created in CreateLocalMatrixAndExporters
+  //  Used in ExportToSerial()
+  //
+#ifdef HAVE_AMESOS_EPETRAEXT
+  Teuchos::RefCountPtr<EpetraExt::RowMatrix_Transpose> transposer_;
+#endif
 #if 0
   //! Points to an object which reindexes a MultiVector to a contiguous map
   Teuchos::RefCountPtr<EpetraExt::MultiVector_Reindex> VecTrans_;
