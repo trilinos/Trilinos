@@ -132,14 +132,15 @@ Thyra::norm_1( const MultiVectorBase<Scalar>& V )
 template<class Scalar>
 void Thyra::scale( Scalar alpha, MultiVectorBase<Scalar>* V )
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(V==NULL,std::logic_error,"assign(...), Error!");
 #endif
-  if(alpha==Teuchos::ScalarTraits<Scalar>::zero()) {
-    assign( V, Teuchos::ScalarTraits<Scalar>::zero() );
+  if(alpha==ST::zero()) {
+    assign( V, ST::zero() );
     return;
   }
-  if(alpha==Teuchos::ScalarTraits<Scalar>::one()) {
+  if(alpha==ST::one()) {
     return;
   }
   RTOpPack::TOpScaleVector<Scalar> scale_vector_op(alpha);
