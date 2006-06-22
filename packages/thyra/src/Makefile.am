@@ -164,6 +164,7 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultVectorMultiVector.hpp\
@@ -172,6 +173,9 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorSpaceDefaultBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper_decl.hpp
+
+SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT = \
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H = \
   $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBase.hpp\
@@ -292,6 +296,7 @@ THYRA_H = \
 
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
 	$(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
+  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT) \
   $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI)
 
 #We need the following to support separate build directories

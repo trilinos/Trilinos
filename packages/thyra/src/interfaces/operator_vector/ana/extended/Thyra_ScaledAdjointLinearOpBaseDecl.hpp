@@ -77,7 +77,7 @@ public:
    * Note that <tt>*this</tt> is only guaranteed to be fully modified once the
    * returned RCP goes away.
    */
-  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > getOrigOp() = 0;
+  virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOrigOp() = 0;
 
   /** \brief Return the const original linear operator <tt>origOp</tt>.
    */

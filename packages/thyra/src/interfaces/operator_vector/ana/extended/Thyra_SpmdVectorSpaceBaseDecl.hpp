@@ -47,7 +47,7 @@ namespace Thyra {
  * use case:
  * <ul>
  * <li> Serial vectors in one process with <tt>localSubDim()==dim()</tt>.
- *      In this case, the <tt>SPMD_Comm</tt> returned from <tt>mpiComm()</tt> can
+ *      In this case, the <tt>SPMD_Comm</tt> returned from <tt>getComm()</tt> can
  *      be <tt>SPMD_COMM_NULL</tt>.
  * <li> Distributed parallel vectors in two or more processes with
  *      <tt>localSubDim() < dim()</tt>.  This implementation assumes
@@ -66,7 +66,7 @@ namespace Thyra {
  * <tt>SpmdMultiVectorBase::applyOp()</tt> functions in all of the above
  * described use cases.  This interface returns an SPMD communicator (of which
  * all compatible vector spaces must have the same communicator obviously)
- * through the method <tt>mpiComm()</tt>.
+ * through the method <tt>getComm()</tt>.
  *
  * <A NAME="SpmdVectorSpaceBase_Vector_layout"></A>
  * <b>%VectorBase data layout:</b>
@@ -100,7 +100,7 @@ namespace Thyra {
  *
  * <b>Notes to subclass developers:</b>
  *
- * The pure virtual methods <tt>mpiComm()</tt> and <tt>localSubDim()</tt>
+ * The pure virtual methods <tt>getComm()</tt> and <tt>localSubDim()</tt>
  * declared in this interface along with the pure virtual methods
  * <tt>dim()</tt> and <tt>createMember()</tt> are the only methods that must
  * be overridden.
@@ -122,7 +122,7 @@ public:
 
   /** \brief Returns the SPMD communicator.
    */
-  virtual Teuchos::RefCountPtr<const Teuchos::Comm<Index> > mpiComm() const = 0;
+  virtual Teuchos::RefCountPtr<const Teuchos::Comm<Index> > getComm() const = 0;
 
   /** \brief Returns the number of local elements stored on this process.
    *

@@ -103,17 +103,20 @@ am__DEPENDENCIES_1 =
 libthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__libthyra_a_SOURCES_DIST = $(srcdir)/Thyra_Version.cpp \
 	$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp \
+	$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp \
 	$(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.cpp
 am__objects_1 = Thyra_TestingTools.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_2 =  \
+am__objects_2 = Thyra_SpmdVectorSpaceUtilities.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_3 =  \
 @HAVE_MPI_TRUE@	Thyra_MPIVectorSpaceUtilities.$(OBJEXT)
 am_libthyra_a_OBJECTS = Thyra_Version.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2)
+	$(am__objects_2) $(am__objects_3)
 libthyra_a_OBJECTS = $(am_libthyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Thyra_MPIVectorSpaceUtilities.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Thyra_TestingTools.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Thyra_Version.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -227,6 +230,7 @@ am__include_HEADERS_DIST = $(srcdir)/Thyra_ConfigDefs.hpp \
 	$(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp \
 	$(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBase.hpp \
 	$(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBaseDecl.hpp \
+	$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.hpp \
 	$(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBase.hpp \
 	$(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBaseDecl.hpp \
 	$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultVectorMultiVector.hpp \
@@ -558,6 +562,7 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultVectorMultiVector.hpp\
@@ -566,6 +571,9 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorSpaceDefaultBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper_decl.hpp
+
+SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT = \
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H = \
   $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBase.hpp\
@@ -670,6 +678,7 @@ THYRA_H = \
 
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
 	$(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
+  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT) \
   $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI)
 
 @USE_ALTERNATE_AR_FALSE@libthyra_a_AR = $(AR) cru
@@ -811,6 +820,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_MPIVectorSpaceUtilities.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_TestingTools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_Version.Po@am__quote@
 
@@ -861,6 +871,22 @@ Thyra_TestingTools.obj: $(srcdir)/support/operator_vector/client_support/Thyra_T
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_TestingTools.Po' tmpdepfile='$(DEPDIR)/Thyra_TestingTools.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_TestingTools.obj `if test -f '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; fi`
+
+Thyra_SpmdVectorSpaceUtilities.o: $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_SpmdVectorSpaceUtilities.o -MD -MP -MF "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Tpo" -c -o Thyra_SpmdVectorSpaceUtilities.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Tpo" "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po"; else rm -f "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp' object='Thyra_SpmdVectorSpaceUtilities.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po' tmpdepfile='$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_SpmdVectorSpaceUtilities.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
+
+Thyra_SpmdVectorSpaceUtilities.obj: $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_SpmdVectorSpaceUtilities.obj -MD -MP -MF "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Tpo" -c -o Thyra_SpmdVectorSpaceUtilities.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Tpo" "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po"; else rm -f "$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp' object='Thyra_SpmdVectorSpaceUtilities.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po' tmpdepfile='$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_SpmdVectorSpaceUtilities.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; fi`
 
 Thyra_MPIVectorSpaceUtilities.o: $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_MPIVectorSpaceUtilities.o -MD -MP -MF "$(DEPDIR)/Thyra_MPIVectorSpaceUtilities.Tpo" -c -o Thyra_MPIVectorSpaceUtilities.o `test -f '$(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.cpp; \
