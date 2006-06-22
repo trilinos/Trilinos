@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
     bool version = false;  // display version information 
     double reltol = 1.0e-2;
     double abstol = 1.0e-4;
+    int maxOrder = 5;
 #ifdef Rythmos_DEBUG
     int debugLevel = 2; // debugLevel is used when Rythmos_DEBUG ifdef is set.
 #endif // Rythmos_DEBUG
@@ -125,6 +126,7 @@ int main(int argc, char *argv[])
     clp.setOption( "version", "run", &version, "Version of this code" );
     clp.setOption( "reltol", &reltol, "Relative Error Tolerance" );
     clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
+    clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
 #ifdef Rythmos_DEBUG
     clp.setOption( "debuglevel", &debugLevel, "Debug Level for Rythmos" );
 #endif // Rythmos_DEBUG
@@ -212,7 +214,7 @@ int main(int argc, char *argv[])
         //TEST_FOR_EXCEPT(true); // RAB: Above is commented out due to lack of other commits
         Teuchos::ParameterList BDFparams;
         BDFparams.set( "stopTime", finalTime );
-        BDFparams.set( "maxOrder", 5 );
+        BDFparams.set( "maxOrder", maxOrder );
         BDFparams.set( "relErrTol", reltol );
         BDFparams.set( "absErrTol", abstol );
 #ifdef Rythmos_DEBUG
