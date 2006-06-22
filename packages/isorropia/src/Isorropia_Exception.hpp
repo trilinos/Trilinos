@@ -34,7 +34,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #include <Isorropia_configdefs.hpp>
 
-/** Isorropia is the namespace that contains isorropia's declarations
+/** Isorropia is the namespace that contains Isorropia's declarations
   for classes and functions.
 */
 namespace Isorropia {

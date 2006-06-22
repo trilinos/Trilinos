@@ -72,7 +72,8 @@ public:
   virtual ~Redistributor();
 
   /** Method to redistribute a Epetra_SrcDistObject into a
-      Epetra_DistObject.
+      Epetra_DistObject. The caller is required to have constructed
+      the target object using the correct target map.
   */
   void redistribute(const Epetra_SrcDistObject& src,
 		    Epetra_DistObject& target);

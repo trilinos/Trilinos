@@ -11,10 +11,12 @@ changing frequently. (including function-names, file-names, etc.)
 Isorropia is a repartitioning/rebalancing package, intended to assist
 with redistributing objects such as matrices and matrix-graphs in a
 parallel execution setting, to allow for more efficient computations.
+To enable Isorropia in your Trilinos build, provide the argument
+'--enable-isorropia' to configure.
 
 Isorropia is primarily an interface to the Zoltan library, but can be
-built and used with minimal capability without Zoltan. To enable Zoltan
-support, you need to add '--enable-isorropia-zoltan' to your Trilinos
+built and used with minimal capability without Zoltan. To enable Isorropia's
+Zoltan support, you need to add '--enable-isorropia-zoltan' to your Trilinos
 configure command, and provide include-paths and library specifications
 for Zoltan version 2.0 (provide these to configure using the
 '--with-incdirs' and '--with-libs' configure arguments).
@@ -42,5 +44,9 @@ Isorropia::EpetraPartitioner class.
 
 A couple of example programs which demonstrate using Isorropia are
 provided in the 'packages/isorropia/example' subdirectory.
+
+The following is packages/isorropia/example/part_redist.cpp:
+
+\verbinclude ../example/part_redist.cpp
 
 */

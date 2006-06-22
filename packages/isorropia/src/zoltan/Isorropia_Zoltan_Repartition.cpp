@@ -56,6 +56,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 #ifdef HAVE_EPETRAEXT
 #include <EpetraExt_Transpose_CrsGraph.h>
+#include <EpetraExt_Transpose_RowMatrix.h>
 #endif
 
 #include <Isorropia_ZoltanQuery.h>

@@ -39,8 +39,8 @@
 #include <Isorropia_Exception.hpp>
 
 //The Isorropia user-interface functions being demonstrated are declared
-//in Isorropia_Rebalance.hpp.
-#include <Isorropia_Rebalance.hpp>
+//in Isorropia_Epetra.hpp.
+#include <Isorropia_Epetra.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -64,6 +64,8 @@ Epetra_CrsMatrix* create_epetra_matrix(int numProcs,
                                        int localProc);
 #endif
 
+/** matrix_1 example program demonstrating Isorropia usage.
+*/
 int main(int argc, char** argv) {
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
@@ -108,7 +110,8 @@ int main(int argc, char** argv) {
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
-    balanced_graph = Isorropia::create_balanced_copy(*crsgraph, paramlist);
+    balanced_graph =
+      Isorropia::Epetra::create_balanced_copy(*crsgraph, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "matrix_1 example: Isorropia::create_balanced_copy threw "
@@ -168,12 +171,14 @@ int main(int argc, char** argv) {
   }
 
   if (localProc == 0) {
-    std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
+    std::cout << " calling Isorropia::Epetra::create_balanced_copy..."
+            << std::endl;
   }
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
-    balanced_matrix = Isorropia::create_balanced_copy(*crsmatrix, paramlist);
+    balanced_matrix =
+      Isorropia::Epetra::create_balanced_copy(*crsmatrix, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "matrix_1 example: Isorropia::create_balanced_copy(matrix)"

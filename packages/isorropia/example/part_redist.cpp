@@ -39,7 +39,7 @@
 
 //The Isorropia symbols being demonstrated are declared
 //in these headers:
-#include <Isorropia_EpetraPartitioner.hpp>
+#include <Isorropia_Epetra.hpp>
 #include <Isorropia_Redistributor.hpp>
 
 #ifdef HAVE_MPI
@@ -92,28 +92,39 @@ int main(int argc, char** argv) {
   //Isorropia::Partitioner class.
   Teuchos::ParameterList paramlist;
 
-  //(We won't pass any parameters in this example. But if we wanted
-  // the Zoltan package to be used for the partitioning operation, we
-  // could specify that like this:
-  //       paramlist->set("Balancing package", "Zoltan");
+  // If Zoltan is available, we'll specify that the Zoltan package be
+  // used for the partitioning operation.
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  paramlist.set("Balancing package", "Zoltan");
+  paramlist.set("LB_METHOD", "HYPERGRAPH");
+#else
+  // If Zoltan is not available, a simple linear partitioner will be
+  // used to partition such that the number of nonzeros is equal (or
+  // close to equal) on each processor. No parameter is necessary to
+  // specify this.
+#endif
 
-  //We also need to pass a Epetra_CrsGraph object to the
-  //Isorropia::EpetraPartitioner class. (This requirement may be removed in
-  //the future...) So next we'll get the row-matrix from the linear-
-  //problem, cast it to a crs-matrix, then obtain the crs-graph and
-  //wrap that in a Teuchos::RefCountPtr.
+  //If we're using Zoltan, we need to pass a Epetra_CrsGraph object (instead
+  //of a Epetra_RowMatrix) when creating the Isorropia::Partitioner.
+  //(This requirement is imposed by an underlying Isorropia_ZoltanQuery
+  // object, and may be removed in the near future. It would result in
+  // a run-time error...)
+  //So next we'll get the row-matrix from the linear-problem, cast it to
+  //a crs-matrix, then obtain the crs-graph and wrap that in a
+  //Teuchos::RefCountPtr.
 
   Epetra_RowMatrix* rowmatrix = linprob->GetMatrix();
-  Epetra_CrsMatrix* crsmatrix = dynamic_cast<Epetra_CrsMatrix*>(rowmatrix);
 
+  Epetra_CrsMatrix* crsmatrix = dynamic_cast<Epetra_CrsMatrix*>(rowmatrix);
   Teuchos::RefCountPtr<const Epetra_CrsGraph> graph =
     Teuchos::rcp(&(crsmatrix->Graph()), false);
   //The 'false' parameter specifies that the RefCountPtr should not take
   //ownership of the graph object.
 
-  //Now create the partitioner object...
+  //Now create the partitioner object using an Isorropia factory-like
+  //function...
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::EpetraPartitioner(graph, paramlist));
+    Isorropia::Epetra::create_partitioner(graph, paramlist);
 
 
   //Next create a Redistributor object and use it to create balanced
@@ -191,7 +202,7 @@ int main(int argc, char** argv) {
   MPI_Finalize();
 
 #else
-  std::cout << "linsys: must have both MPI and EPETRA. Make sure Trilinos "
+  std::cout << "part_redist: must have both MPI and EPETRA. Make sure Trilinos "
     << "is configured with --enable-mpi and --enable-epetra." << std::endl;
 #endif
 
@@ -215,7 +226,6 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
   //create an Epetra_CrsMatrix with rows spread un-evenly over
   //processors.
   Epetra_MpiComm comm(MPI_COMM_WORLD);
-  int nnz_per_row = local_n/4+1;
   int global_num_rows = numProcs*local_n;
 
   int mid_proc = numProcs/2;
@@ -243,21 +253,31 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
   Epetra_Map rowmap(global_num_rows, local_n, 0, comm);
 
   //create a matrix
+  int nnz_per_row = 5;
   Epetra_CrsMatrix* matrix =
     new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row);
 
   // Add  rows one-at-a-time
   double negOne = -1.0;
-  double posTwo = 2.0;
+  double posTwo = 4.0;
   for (int i=0; i<local_n; i++) {
     int GlobalRow = matrix->GRID(i);
-    int RowLess1 = GlobalRow - 1; int RowPlus1 = GlobalRow + 1;
+    int RowLess1 = GlobalRow - 1;
+    int RowPlus1 = GlobalRow + 1;
+    int RowLess2 = GlobalRow - 2;
+    int RowPlus2 = GlobalRow + 2;
 
-    if (RowLess1!=-1) {
+    if (RowLess2>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess2);
+    }
+    if (RowLess1>=0) {
       matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess1);
     }
-    if (RowPlus1!=global_num_rows) {
+    if (RowPlus1<global_num_rows) {
       matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus1);
+    }
+    if (RowPlus2<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus2);
     }
     matrix->InsertGlobalValues(GlobalRow, 1, &posTwo, &GlobalRow);
   }

@@ -29,7 +29,7 @@
 
 #include <Isorropia_configdefs.hpp>
 #include <Isorropia_Exception.hpp>
-#include <Isorropia_Rebalance.hpp>
+#include <Isorropia_Epetra.hpp>
 #include <Isorropia_EpetraPartitioner.hpp>
 #include <Isorropia_Redistributor.hpp>
 
@@ -145,7 +145,8 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
                 << std::endl;
     }
 
-    balanced_matrix = Isorropia::create_balanced_copy(*input_matrix, paramlist);
+    balanced_matrix =
+      Isorropia::Epetra::create_balanced_copy(*input_matrix, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;
@@ -322,7 +323,8 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
                 << std::endl;
     }
 
-    balanced_graph = Isorropia::create_balanced_copy(*input_graph, paramlist);
+    balanced_graph =
+      Isorropia::Epetra::create_balanced_copy(*input_graph, paramlist);
   }
   catch(std::exception& exc) {
     std::cout << "caught exception: " << exc.what() << std::endl;

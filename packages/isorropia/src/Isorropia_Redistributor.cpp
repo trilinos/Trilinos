@@ -30,9 +30,8 @@ Questions? Contact Alan Williams (william@sandia.gov)
 //@HEADER
 
 #include <Isorropia_Redistributor.hpp>
-#include <Isorropia_Rebalance.hpp>
 #include <Isorropia_Exception.hpp>
-#include <Isorropia_Epetra_utils.hpp>
+#include <Isorropia_Epetra.hpp>
 #include <Isorropia_Partitioner.hpp>
 
 #include <Teuchos_RefCountPtr.hpp>
@@ -156,7 +155,7 @@ void Redistributor::create_importer(const Epetra_BlockMap& src_map)
 {
   if (created_importer_) return;
 
-  target_map_ = Isorropia::Epetra_Utils::create_target_map(src_map.Comm(),
+  target_map_ = Isorropia::Epetra::create_target_map(src_map.Comm(),
 							   *partitioner_);
 
   importer_ = Teuchos::rcp(new Epetra_Import(*target_map_, src_map));

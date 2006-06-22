@@ -40,8 +40,16 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 namespace Isorropia {
 
-/** Abstract base class for computing a new partitioning and
+/** Interface (abstract base class) for computing a new partitioning and
   describing the layout of elements in the new partitions.
+
+  If the methods which describe the new partitioning (e.g., 
+  newPartitionNumber(), etc.) are called before compute_partitioning()
+  has been called, behavior is not well defined. Implementations will
+  either return empty/erroneous data, or throw an exception. In most
+  cases, implementations will probably call compute_partitioning()
+  internally in a constructor or factory method, so this won't usually
+  be an issue.
 */
 class Partitioner {
 public:
@@ -56,12 +64,21 @@ public:
   */
   virtual void setParameters(const Teuchos::ParameterList& paramlist) = 0;
 
-  /** Method which does the work of computing a new partitioning. Instances
-      of this interface will typically be constructed with an object or
-      information describing the existing ('old') partitioning. This method
-      then computes a rebalanced partitioning for that input data.
+  /** Method which does the work of computing a new partitioning.
+     Implementations of this interface will typically be constructed
+     with an object or information describing the existing ('old')
+     partitioning. This method computes a 'new' rebalanced
+     partitioning for that input data.
+
+     \param force_repartitioning Optional argument defaults to false.
+        Depending on the implementation, compute_partitioning() should
+        only perform a repartitioning the first time it is called, and
+        subsequent repeated calls are no-ops. If the user's intent is
+        to re-compute the partitioning (e.g., if parameters or other
+        inputs have been changed), then setting this flag to true
+        will force a new partitioning to be computed.
    */
-  virtual void compute_partitioning() = 0;
+  virtual void compute_partitioning(bool force_repartitioning=false) = 0;
 
   /** Query whether compute_partitioning() has already been called.
    */
@@ -79,7 +96,9 @@ public:
   /** Fill user-allocated list (of length len) with the
       global element ids to be located in the given partition.
   */
-  virtual void elemsInPartition(int partition, int* elementList, int len) const = 0;
+  virtual void elemsInPartition(int partition,
+                                int* elementList,
+                                int len) const = 0;
 
 };//class Partitioner
 

@@ -40,11 +40,16 @@ Isorropia::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
                                      bool localEdgesOnly )
 : graph_(graph),
   tgraph_(tgraph),
+  map_(graph.RowMap()),
   localEdgesOnly_(localEdgesOnly)
 {
-  int numMyRows = graph_.NumMyRows();
+  if (tgraph != 0) {
+    tmap_ = &(tgraph->RowMap());
+  }
+
+  int numMyRows = map_.NumMyElements();
   int maxRows;
-  graph_.Comm().MaxAll( &numMyRows, &maxRows, 1 );
+  map_.Comm().MaxAll( &numMyRows, &maxRows, 1 );
 
   LBProc_.resize( numMyRows );
 
@@ -58,11 +63,11 @@ Isorropia::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
                                  numIndices,
                                  &indexList[0] );
     LBProc_[i].resize( numIndices );
-    graph_.RowMap().RemoteIDList( numIndices, &indexList[0], &LBProc_[i][0], 0 );
+    map_.RemoteIDList( numIndices, &indexList[0], &LBProc_[i][0], 0 );
   }
 
   for( int i = numMyRows; i < maxRows; ++i )
-    graph_.RowMap().RemoteIDList( numIndices, &indexList[0], &LBProc_[numMyRows-1][0], 0 );
+    map_.RemoteIDList( numIndices, &indexList[0], &LBProc_[numMyRows-1][0], 0 );
 
   if( tgraph_ )
   {
@@ -77,14 +82,14 @@ Isorropia::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
                                      numIndices,
                                      &indexList[0] );
       LBProc_Trans_[i].resize( numIndices );
-      tgraph_->RowMap().RemoteIDList( numIndices, &indexList[0], &LBProc_Trans_[i][0], 0 );
+      tmap_->RemoteIDList( numIndices, &indexList[0], &LBProc_Trans_[i][0], 0 );
     }
 
     for( int i = numMyRows; i < maxRows; ++i )
-      tgraph_->RowMap().RemoteIDList( numIndices, &indexList[0], &LBProc_Trans_[numMyRows-1][0], 0 );
+      tmap_->RemoteIDList( numIndices, &indexList[0], &LBProc_Trans_[numMyRows-1][0], 0 );
   }
 
-  graph_.Comm().Barrier();
+  map_.Comm().Barrier();
 }
 
 //General Functions
@@ -93,7 +98,7 @@ int Isorropia::ZoltanQuery::Number_Objects        ( void * data,
 {
   *ierr = ZOLTAN_OK;
 
-  return graph_.NumMyRows();
+  return map_.NumMyElements();
 }
 
 void Isorropia::ZoltanQuery::Object_List  ( void * data,
@@ -107,11 +112,11 @@ void Isorropia::ZoltanQuery::Object_List  ( void * data,
 {
   *ierr = ZOLTAN_OK;
 
-  int rows = graph_.NumMyRows();
+  int rows = map_.NumMyElements();
 
-  graph_.RowMap().MyGlobalElements( ((int *) global_ids) );
+  map_.MyGlobalElements( ((int *) global_ids) );
 
-  int Index = graph_.RowMap().IndexBase();
+  int Index = map_.IndexBase();
   for( int i = 0; i < rows; i++, Index++ )
     local_ids[i] = Index;
 }
@@ -124,7 +129,7 @@ int Isorropia::ZoltanQuery::Number_Edges  ( void * data,
                                         ZOLTAN_ID_PTR local_id,
                                         int * ierr )
 {
-  int LocalRow = graph_.LRID( *global_id );
+  int LocalRow = map_.LID( *global_id );
 
   if( LocalRow != -1 && LocalRow == (int)*local_id )
   {
@@ -261,8 +266,8 @@ void Isorropia::ZoltanQuery::HG_Size_CS ( void * data,
                                           int* format,
 					  int * ierr )
 {
-  *num_lists = graph_.NumMyRows();
-  *num_pins = graph_.NumMyNonzeros();
+  *num_lists = tmap_->NumMyElements();
+  *num_pins = tgraph_->NumMyNonzeros();
 
   *format = ZOLTAN_COMPRESSED_EDGE;
 
@@ -286,33 +291,32 @@ void Isorropia::ZoltanQuery::HG_CS ( void * data,
      return;
   }
 
-  if (num_row_or_col != graph_.NumMyRows()) {
+  if (num_row_or_col != tgraph_->NumMyRows()) {
     std::cout << "ZoltanQuery::HG_CS: num_row_or_col (= "<<num_row_or_col
         << ") != NumMyRows (= " << graph_.NumMyRows() << std::endl;
     *ierr = ZOLTAN_FATAL;
     return;
   }
 
-  if (num_pins != graph_.NumMyNonzeros()) {
+  if (num_pins != tgraph_->NumMyNonzeros()) {
     std::cout << "ZoltanQuery::HG_CS: num_pins (= "<<num_pins
         << ") != NumMyNonzeros (= " << graph_.NumMyNonzeros() << std::endl;
     *ierr = ZOLTAN_FATAL;
     return;
   }
 
-  const Epetra_BlockMap& rowmap = graph_.RowMap();
   int* rows = (int*)vtxedge_GID;
-  rowmap.MyGlobalElements(rows);
+  tmap_->MyGlobalElements(rows);
 
   int offset = 0;
   for(int i=0; i<num_row_or_col; ++i) {
     vtxedge_ptr[i] = offset;
 
-    int rowlen = graph_.NumMyIndices(i);
+    int rowlen = tgraph_->NumMyIndices(i);
 
     int checkNumIndices;
     int* indices = (int*)(&(pin_GID[offset]));
-    graph_.ExtractMyRowCopy(i, rowlen, checkNumIndices, indices);
+    tgraph_->ExtractMyRowCopy(i, rowlen, checkNumIndices, indices);
 
     offset += rowlen;
   }

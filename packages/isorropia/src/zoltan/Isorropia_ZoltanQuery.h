@@ -36,7 +36,9 @@
 
 #include <vector>
 
+class Epetra_BlockMap;
 class Epetra_CrsGraph;
+class Epetra_RowMatrix;
 
 namespace Isorropia {
 
@@ -50,6 +52,8 @@ class ZoltanQuery : public Zoltan::QueryObject
 
   const Epetra_CrsGraph & graph_;
   const Epetra_CrsGraph * tgraph_;
+  const Epetra_BlockMap& map_;
+  const Epetra_BlockMap* tmap_;
 
   std::vector< std::vector<int> > LBProc_;
   std::vector< std::vector<int> > LBProc_Trans_;

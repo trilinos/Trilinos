@@ -54,40 +54,72 @@ class Epetra_LinearProblem;
 */
 namespace Isorropia {
 
-/** An Epetra-oriented implementation of the Partitioner interface.
+/** An Epetra-specific implementation of the Partitioner interface.
  */
 class EpetraPartitioner : public Partitioner {
 public:
   /**
      Constructor that accepts an Epetra_CrsGraph object.
-     A Teuchos::RefCountPtr is used here because a reference to the
-     input object is held for the life of this object.
+
+     \param input_graph Matrix-graph object for which a new partitioning
+        is to be computed. A Teuchos::RefCountPtr is used here because a
+        reference to the input object may be held by this object after
+        this constructor completes and returns.
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. No reference to this input
+        object is held after this constructor completes.
+
+     \param compute_partitioning_now Optional argument defaults to true.
+        If true, the method compute_partitioning() will be called before
+        this constructor returns.
   */
   EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-                    const Teuchos::ParameterList& paramlist);
+                    const Teuchos::ParameterList& paramlist,
+                    bool compute_partitioning_now=true);
 
   /**
      Constructor that accepts an Epetra_RowMatrix object.
-     A Teuchos::RefCountPtr is used here because a reference to the
-     input object is held for the life of this object.
+
+     \param input_matrix Matrix object for which a new partitioning is
+        to be computed. A Teuchos::RefCountPtr is used here because a
+        reference to the input object may be held by this object after
+        this constructor completes and returns.
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. No reference to this input
+        object is held after this constructor completes.
+
+     \param compute_partitioning_now Optional argument defaults to true.
+        If true, the method compute_partitioning() will be called before
+        this constructor returns.
   */
   EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-                    const Teuchos::ParameterList& paramlist);
+                    const Teuchos::ParameterList& paramlist,
+                    bool compute_partitioning_now=true);
 
   /** Destructor */
   virtual ~EpetraPartitioner();
 
   /** Set parameters from a Teuchos::ParameterList object. The input
       ParameterList object is copied into an internal ParameterList
-      attribute. The input paramlist object may be altered or
-      destroyed as soon as this method returns.
+      attribute, and no reference to the input object is held after
+      this function returns. (Thus, the input paramlist object may be
+      altered or destroyed as soon as this method returns.)
    */
   void setParameters(const Teuchos::ParameterList& paramlist);
 
   /** Compute a rebalanced partitioning for the data in the object
       that this class was constructed with.
+
+      \param force_repartitioning Optional argument defaults to false. By
+         default, compute_partitioning() only does anything the first time
+         it is called, and subsequent repeated calls are no-ops. If the user's
+         intent is to re-compute the partitioning (e.g., if parameters
+         or other inputs have been changed), then setting this flag to
+         true will force a new partitioning to be computed.
    */
-  void compute_partitioning();
+  void compute_partitioning(bool force_repartitioning=false);
 
   /** Query whether the method compute_partitioning() has already been
       called on this class instance.
@@ -121,6 +153,7 @@ private:
   std::vector<int> myNewElements_;
 
   bool partitioning_already_computed_;
+
 };//class Partitioner
 
 #endif //HAVE_EPETRA

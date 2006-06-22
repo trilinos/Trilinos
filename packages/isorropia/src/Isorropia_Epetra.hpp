@@ -29,22 +29,23 @@ Questions? Contact Alan Williams (william@sandia.gov)
 */
 //@HEADER
 
-#ifndef _Isorropia_Rebalance_hpp_
-#define _Isorropia_Rebalance_hpp_
+#ifndef _Isorropia_Epetra_hpp_
+#define _Isorropia_Epetra_hpp_
 
 #include <Isorropia_configdefs.hpp>
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
 
 #ifdef HAVE_EPETRA
+class Epetra_Comm;
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_Import;
 class Epetra_Vector;
 class Epetra_MultiVector;
+class Epetra_RowMatrix;
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
-class Epetra_RowMatrix;
 class Epetra_LinearProblem;
 #endif
 
@@ -52,8 +53,43 @@ class Epetra_LinearProblem;
   for classes and functions.
 */
 namespace Isorropia {
+  class Partitioner;
+
+/** The Epetra namespace contains Isorropia's Epetra-specific
+  functions.
+*/
+namespace Epetra {
 
 #ifdef HAVE_EPETRA
+
+/** Given an input matrix-graph that is to be repartitioned, and a parameter-
+    list (possibly specifying the partitioning package/method etc.),
+    create an instance of Isorropia::Partitioner. This is a factory
+    function, the run-time type of the returned Partitioner is
+    Isorropia::EpetraPartitioner.
+*/
+Teuchos::RefCountPtr<Isorropia::Partitioner>
+create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+		   const Teuchos::ParameterList& paramlist);
+
+/** Given an input row-matrix that is to be repartitioned, and a parameter-
+    list (possibly specifying the partitioning package/method etc.),
+    create an instance of Isorropia::Partitioner. This is a factory
+    function, the run-time type of the returned Partitioner is
+    Isorropia::EpetraPartitioner.
+*/
+Teuchos::RefCountPtr<Isorropia::Partitioner>
+create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+		   const Teuchos::ParameterList& paramlist);
+
+/** Given a Partitioner object, create a target map representing the
+   new partitioning.
+   This function calls partitioner.compute_partitioning() if it has not
+   already been called.
+*/
+Teuchos::RefCountPtr<Epetra_Map>
+create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
+
 /** Create a balanced copy of an input Epetra_CrsMatrix.
 
   This function represents a basic case, not accepting weights.
@@ -75,7 +111,7 @@ namespace Isorropia {
 */
 Teuchos::RefCountPtr<Epetra_CrsMatrix>
   create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
-		     Teuchos::ParameterList& paramlist);
+                     Teuchos::ParameterList& paramlist);
 
 /** Create a balanced copy of an input Epetra_RowMatrix.
 
@@ -144,7 +180,7 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
 */
 Teuchos::RefCountPtr<Epetra_CrsGraph>
 create_balanced_copy(const Epetra_CrsGraph& input_graph,
-		     Teuchos::ParameterList& paramlist);
+                     Teuchos::ParameterList& paramlist);
 
 /** Create a balanced copy of an input Epetra_CrsGraph, accounting for
    user-supplied weights assigned to each row.
@@ -270,8 +306,60 @@ Teuchos::RefCountPtr<Epetra_Vector>
                const Epetra_Map& target_map,
                Epetra_Import* importer=0);
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
+
+/** Return a vector containing weights that are equal to the number of
+  nonzeros per row in the input_matrix. The returned vector will have
+  the same size and distribution as input_matrix's row-map.
+*/
+Epetra_Vector* create_row_weights_nnz(const Epetra_RowMatrix& input_matrix);
+
+/** Return a vector containing weights that are equal to the number of
+  nonzeros per row in the input_graph. The returned vector will have
+  the same size and distribution as input_graph's row-map.
+*/
+Epetra_Vector* create_row_weights_nnz(const Epetra_CrsGraph& input_graph);
+
+/** Calculate a new partitioning, and fill output containers with new
+    elements for the local partition, as well as export and import lists.
+
+    \param input_map Input map describing the existing or 'old' partitioning.
+
+    \param weights Input vector giving a weight for each element in input_map.
+    weights.Map() is required to be the same size and layout as input_map.
+
+    \param myNewElements Output vector containing all elements that will
+    reside on the local partition in the new partitioning.
+
+    \param exports Output map contains set of export elements, and maps them
+    to the processors that they are to be exported to.
+
+    \param imports Output map contains set of import elements, and maps them
+    to the processors that they are to be imported from.
+
+    \return Error-code, 0 if successful. This probably should be a void
+    function, since a serious error will result in an exception-throw
+    rather than an integer-code error-return.
+*/
+int
+repartition(const Epetra_BlockMap& input_map,
+	    const Epetra_Vector& weights,
+            std::vector<int>& myNewElements,
+            std::map<int,int>& exports,
+            std::map<int,int>& imports);
+
+/** Given an Epetra_BlockMap object, fill a vector of length numprocs+1
+  with each processor's starting offset into the Epetra_BlockMap's global
+  set of elements (the last position will contain num-global-elements).
+  Gather the vector of offsets onto all processors.
+*/
+void gather_all_proc_global_offsets(const Epetra_BlockMap& blkmap,
+                                    std::vector<int>& all_proc_offsets);
+
+#endif //DOXYGEN_SHOULD_SKIP_THIS
 #endif //HAVE_EPETRA
 
+}//namespace Epetra
 }//namespace Isorropia
 
 #endif

@@ -32,7 +32,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_EpetraPartitioner.hpp>
 #include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_Exception.hpp>
-#include <Isorropia_Epetra_utils.hpp>
+#include <Isorropia_Epetra.hpp>
 
 #include <Teuchos_RefCountPtr.hpp>
 
@@ -56,28 +56,38 @@ namespace Isorropia {
 
 EpetraPartitioner::
 EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-                  const Teuchos::ParameterList& paramlist)
+                  const Teuchos::ParameterList& paramlist,
+                  bool compute_partitioning_now)
   : input_map_(),
     input_graph_(input_graph),
     paramlist_(),
     partitioning_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  weights_ = Teuchos::rcp(Epetra_Utils::create_row_weights_nnz(*input_graph));
+  weights_ = Teuchos::rcp(Epetra::create_row_weights_nnz(*input_graph));
   paramlist_ = paramlist;
+
+  if (compute_partitioning_now) {
+    compute_partitioning();
+  }
 }
 
 EpetraPartitioner::
 EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-                  const Teuchos::ParameterList& paramlist)
+                  const Teuchos::ParameterList& paramlist,
+                  bool compute_partitioning_now)
   : input_map_(),
     input_graph_(),
     paramlist_(),
     partitioning_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  weights_ = Teuchos::rcp(Epetra_Utils::create_row_weights_nnz(*input_matrix));
+  weights_ = Teuchos::rcp(Epetra::create_row_weights_nnz(*input_matrix));
   paramlist_ = paramlist;
+
+  if (compute_partitioning_now) {
+    compute_partitioning();
+  }
 }
 
 EpetraPartitioner::~EpetraPartitioner()
@@ -89,8 +99,14 @@ void EpetraPartitioner::setParameters(const Teuchos::ParameterList& paramlist)
   paramlist_ = paramlist;
 }
 
-void EpetraPartitioner::compute_partitioning()
+void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
 {
+  if (partitioning_already_computed_) {
+    if (!force_repartitioning) {
+      return;
+    }
+  }
+
   std::string bal_package_str("Balancing package");
   std::string bal_package = paramlist_.get(bal_package_str, "none_specified");
   int err = 0;
@@ -109,7 +125,7 @@ void EpetraPartitioner::compute_partitioning()
 #endif
   }
   else {
-    err = Isorropia::Epetra_Utils::repartition(*input_map_,
+    err = Isorropia::Epetra::repartition(*input_map_,
                                                *weights_,
                                                myNewElements_,
                                                exports_, imports_);
