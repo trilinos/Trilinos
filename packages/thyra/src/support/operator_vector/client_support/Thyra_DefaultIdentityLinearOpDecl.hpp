@@ -161,7 +161,7 @@ private:
 
 };
 
-/** \brief Create a identity linear operator with given range and domain spaces.
+/** \brief Create an identity linear operator with given a vector space.
  *
  * \relates DefaultIdentityLinearOp
  */

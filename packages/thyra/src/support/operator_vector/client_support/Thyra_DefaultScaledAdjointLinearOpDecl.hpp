@@ -316,18 +316,6 @@ private:
 
 };
 
-/** \defgroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp Helper functions for creating scaled/adjoint linear operators.
-
-These are helper functions for creating and manipulating
-<tt>DefaultScaledAdjointLinearOp</tt> objects.  In general, clients should create
-dynamically allocated <tt>DefaultScaledAdjointLinearOp</tt> objects by calling these
-helper functions and not by directly calling the constructor for
-<tt>DefaultScaledAdjointLinearOp<tt>.
-
-\ingroup Thyra_Op_Vec_ANA_Development_grp
-
-*/
-
 /** \brief Build an implicit non-<tt>const</tt> scaled linear operator.
  *
  * Returns <tt>Teuchos::rcp(new DefaultScaledAdjointLinearOp<Scalar>(scalar,NOTRANS,Op)</tt>.
@@ -340,7 +328,7 @@ helper functions and not by directly calling the constructor for
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
@@ -358,7 +346,7 @@ scale( const Scalar &scalar, const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
@@ -376,7 +364,7 @@ scale( const Scalar &scalar, const Teuchos::RefCountPtr<const LinearOpBase<Scala
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
@@ -394,7 +382,7 @@ adjoint( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
@@ -412,7 +400,7 @@ adjoint( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
@@ -430,7 +418,7 @@ transpose( const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &Op );
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >
@@ -448,7 +436,7 @@ transpose( const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &Op );
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
@@ -466,7 +454,7 @@ scaleAndAdjoint( const Scalar &scalar, const ETransp &transp, const Teuchos::Ref
  * <li><tt>return.get()!=NULL</tt>
  * </ul>
  *
- * \ingroup Thyra_Op_Vec_ScaledAdjointedLinearOp_helpers_grp
+ * \relates DefaultScaledAdjointLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >

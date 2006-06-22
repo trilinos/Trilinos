@@ -254,17 +254,9 @@ private:
 
 };
 
-/** \defgroup Thyra_Op_Vec_AddedLinearOp_helpers_grp  Helper functions for creating DefaultAddedLinearOp objects.
+/** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
- */
-
-/** \brief Form an implicit multiplication of two linear operators: <tt>return = A * B</tt>.
- *
- * This function simply creates a <tt>DefaultAddedLinearOp</tt> given
- * <tt>A</tt> and <tt>B</tt>.
- *
- * \ingroup Thyra_Op_Vec_AddedLinearOp_helpers_grp
+ * \relates DefaultAddedLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<LinearOpBase<Scalar> >
@@ -273,12 +265,9 @@ add(
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> >   &B
   );
 
-/** \brief Form an implicit multiplication of two linear operators: <tt>return = A * B</tt>.
+/** \brief Form an implicit addition of two linear operators: <tt>M = A + B</tt>.
  *
- * This function simply creates a <tt>DefaultAddedLinearOp</tt> given
- * <tt>A</tt> and <tt>B</tt>.
- *
- * \ingroup Thyra_Op_Vec_AddedLinearOp_helpers_grp
+ * \relates DefaultAddedLinearOp
  */
 template<class Scalar>
 Teuchos::RefCountPtr<const LinearOpBase<Scalar> >

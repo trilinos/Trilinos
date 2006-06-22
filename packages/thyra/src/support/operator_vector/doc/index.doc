@@ -15,7 +15,7 @@ useful as a developer's reference and should only be used as such.
 
 <ul>
 <li> \ref Thyra_Op_Vec_intro_sec
-<li> \ref Thyra_Op_Vec_foundational_interfaces_sec
+<li> \ref Thyra_Op_Vec_fundamental_interfaces_sec
 <li> \ref thyra_operator_vector_use_cases_sec
 <li> \ref thyra_operator_vector_examples_sec
 <li> \ref Thyra_Op_Vec_links_to_other_documentation_sec
@@ -36,7 +36,7 @@ helpful examples.
 This main page provides the starting point for all of the documentation for
 the %Thyra Operator/Vector Interfaces.
 
-\section Thyra_Op_Vec_foundational_interfaces_sec Foundational Thyra Operator/Vector Interfaces
+\section Thyra_Op_Vec_fundamental_interfaces_sec Fundamental Thyra Operator/Vector Interfaces
 
 \image html ThyraOperatorVectorSimple.gif "Fundamental Thyra ANA operator/vector interfaces (Note: above graphic is not hyper-linked!)"
 
@@ -54,19 +54,19 @@ The most fundamental abstract interfaces contained in the %Thyra package
 
 From here on out, the abstract C++ classes <tt>Thyra::VectorSpaceBase</tt>,
 <tt>Thyra::VectorBase</tt>, <tt>Thyra::MultiVectorBase</tt> and
-<tt>Thyra::LinearOpBase</tt> will be referred to as the <b><em>foundational
+<tt>Thyra::LinearOpBase</tt> will be referred to as the <b><em>fundamental
 %Thyra operator/vector interfaces</em></b>.
 
 The rest of the C++ classes and non-member functions described in this doxygen
 collection are designed to support one of a number of different use cases
-associated with the above foundational %Thyra operator/vector interfaces.
+associated with the above fundamental %Thyra operator/vector interfaces.
 
-\section thyra_operator_vector_use_cases_sec Use Cases for Foundational Thyra Operator/Vector Interfaces
+\section thyra_operator_vector_use_cases_sec Use Cases for Fundamental Thyra Operator/Vector Interfaces
 
 Here we outline three common use cases related to the \ref
-Thyra_Op_Vec_foundational_interfaces_sec .
+Thyra_Op_Vec_fundamental_interfaces_sec .
 
-There are primarily three different use cases related to the foundational
+There are primarily three different use cases related to the fundamental
 %Thyra operator/vector interfaces shown above.  The first, and by far the most
 important, is the use of the \ref Thyra_Op_Vec_ANA_Interoperability_grp.  This
 first use case is really the main reason for the creation of %Thyra in the
@@ -76,7 +76,7 @@ Thyra_Op_Vec_Adapters_grp of vector spaces, vectors, multi-vectors and linear
 operators.  These types of subclass implementations are also known as
 "adapter" subclasses if they "adapt" some pre-existing set of classes or
 interfaces (which is often the case).  The third use case is the use of the
-\ref Thyra_Op_Vec_ANA_Development_grp.  While the foundational %Thyra
+\ref Thyra_Op_Vec_ANA_Development_grp.  While the fundamental %Thyra
 operator/vector interface classes were not directly designed for this use
 case, with some minimal helper functions and classes, directly writing ANA
 implementations in terms of %Thyra objects is quite straightforward.

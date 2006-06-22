@@ -39,15 +39,17 @@ namespace Thyra {
  * operators.
  *
  * This class represents a diagonal linear operator <tt>M</tt> of the form:
+
  \verbatim
 
  M = diag(diag)
+
  \endverbatim
- *
+ 
  * where <tt>diag</tt> is a <tt>VectorBase</tt> object.
  *
  * The defined operator implements <tt>this->apply()</tt> as follows:
- *
+ 
  \verbatim
 
  y = alpha*op(M)*x + beta*y
@@ -55,8 +57,9 @@ namespace Thyra {
  =>
 
  y(i) = alpha*diag(i)*x(i) + beta*y(i), for i = 0 ... n-1
+
  \endverbatim
- *
+ 
  * where <tt>n = this->domain()->dim()</tt>.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp

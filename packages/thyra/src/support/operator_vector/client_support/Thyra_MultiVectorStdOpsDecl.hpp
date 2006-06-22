@@ -37,12 +37,12 @@
 namespace Thyra {
 
 
-/** \defgroup Thyra_Op_Vec_MultiVectorStdOps_grp Collection of all vector operations
+/** \defgroup Thyra_Op_Vec_MultiVectorStdOps_grp Collection of all multi-vector operations
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 
-/** \defgroup Thyra_Op_Vec_MultiVectorStdOpsAll_grp Collection of vector operations for all scalar types.
+/** \defgroup Thyra_Op_Vec_MultiVectorStdOpsAll_grp Collection of multi-vector operations for all scalar types.
  *
  * \ingroup Thyra_Op_Vec_MultiVectorStdOps_grp
  */

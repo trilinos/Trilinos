@@ -81,7 +81,7 @@ structure of thyra</a>.
   <ul>
 
   <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
-    Fundamental ANA Operator/Vector Interfaces</a></b>  <a name="interfaces_operator_vector_ana_fundamental"></a>
+    Fundamental ANA Operator/Vector Interfaces</a></b>  <a name="interfaces_operator_vector_ana_fundamental"></a> \f$\Leftarrow\f$ <b>Link</b>
 
     \image html ThyraOperatorVectorSimple.gif
 
@@ -92,7 +92,7 @@ structure of thyra</a>.
     and <tt>Thyra::LinearOpBase</tt>.
 
   <li> <b><a href="../../src/interfaces/operator_vector/ana/extended/doc/html/index.html">
-    Extended ANA Operator/Vector Interfaces</a></b><a name="interfaces_operator_vector_ana_extended"></a>
+    Extended ANA Operator/Vector Interfaces</a></b><a name="interfaces_operator_vector_ana_extended"></a> \f$\Leftarrow\f$ <b>Link</b>
 
     These are some interfaces based on the
     above Fundamental ANA Operator/Vector Interfaces and provide other pieces of functionality
@@ -110,7 +110,7 @@ structure of thyra</a>.
   <ul>
 
   <li> <b><a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
-    Fundamental ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_fundamental"></a>
+    Fundamental ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_fundamental"></a> \f$\Leftarrow\f$ <b>Link</b>
 
     \image html LinearOpWithSolveAndFactory75.jpg
 
@@ -120,7 +120,7 @@ structure of thyra</a>.
     <tt>Thyra::LinearOpWithSolveBase</tt> and <tt>Thyra::PreconditionerFactoryBase</tt>)
 
   <li> <b><a href="../../src/interfaces/operator_solve/ana/extended/doc/html/index.html">
-    Extended ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_extended"></a>
+    Extended ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_extended"></a> \f$\Leftarrow\f$ <b>Link</b>
 
     Included here are a variety extended interfaces that build on the fundamental operator/solve
     interfaces.  Examples include <tt>Thyra::BlockedLinearOpWithSolveBase.</tt> and
@@ -132,7 +132,7 @@ structure of thyra</a>.
 
   <ul>
 
-  <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
+  <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html"> \f$\Leftarrow\f$ <b>Link</b>
     Fundamental ANA Model Evaluator Interfaces</a></b><a name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
 
     \image html ModelEvaluator75.gif
@@ -140,7 +140,7 @@ structure of thyra</a>.
     Contained here are interfaces for nonlinear models such as <tt>Thyra::ModelEvaluator</tt>.
 
   <li><b><a href="../../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html/index.html">
-    Fundamental ANA Nonlinear Solver Interfaces</a></b><a name="interfaces_nonlinear_solvers_ana_fundamental"></a>
+    Fundamental ANA Nonlinear Solver Interfaces</a></b><a name="interfaces_nonlinear_solvers_ana_fundamental"></a> \f$\Leftarrow\f$ <b>Link</b>
 
     Contained here are interfaces for nonlinear equation solvers.
 
@@ -157,7 +157,7 @@ structure of thyra</a>.
 <ul>
 
 <li> <b><a href="../../src/support/operator_vector/doc/html/index.html">
-  Operator/Vector Support</a></b><a name="support_operator_vector"></a>
+  Operator/Vector Support</a></b><a name="support_operator_vector"></a> \f$\Leftarrow\f$ <b>Link</b>
 
   Described here is a fairly large collection of ANA or client support and
   adapter support software based on the operator/vector
@@ -171,21 +171,21 @@ structure of thyra</a>.
   in this short description.
 
 <li> <b><a href="../../src/support/operator_solve/doc/html/index.html">
-  Operator Solve Support</a></b><a name="support_operator_solve"></a>
+  Operator Solve Support</a></b><a name="support_operator_solve"></a> \f$\Leftarrow\f$ <b>Link</b>
 
   This collection contains support software for the operator/solve interfaces.
   Examples include testing software like <tt>Thyra::LinearOpWithSolveTester</tt>
   and <em>decorator</em> subclasses like <tt>Thyra::DefaultDiagonalLinearOpWithSolve</tt>.
 
 <li> <b><a href="../../src/support/nonlinear/model_evaluator/doc/html/index.html">
-  Nonlinear Model Evaluator Support</a></b><a name="support_nonlinear_model_evaluator"></a>
+  Nonlinear Model Evaluator Support</a></b><a name="support_nonlinear_model_evaluator"></a> \f$\Leftarrow\f$ <b>Link</b>
 
   This includes support software for the nonlinear model evaluator interfaces.
   Examples include <tt>decorator</tt> subclasses like
   <tt>Thyra::SingleResidSSDAEModelEvaluator</tt>.
 
 <li> <b><a href="../../src/support/nonlinear/solvers/doc/html/index.html">
-   Nonlinear Solvers Support</a></b><a name="support_nonlinear_solvers"></a>
+   Nonlinear Solvers Support</a></b><a name="support_nonlinear_solvers"></a> \f$\Leftarrow\f$ <b>Link</b>
 
    Contained here in is support software for the nonlinear solver interfaces and
    some simple concrete implementations.  Simple concrete nonlinear equation solver
@@ -262,11 +262,15 @@ exceptions should inherit from the standard base class
 the macros <tt>TEST_FOR_EXCEPTION()</tt> or <tt>TEST_FOR_EXCEPT()</tt>.  By
 consistently using these macros is is easy to set a breakpoint in a debugger
 just before an exception is thrown by setting a breakpoint on the function
-<tt>TestForException_break()</tt>.  If the code is configured with the macro
-<tt>TEUCHOS_DEBUG</tt> defined (i.e. <tt>CPPFLAGS="-D_DEBUG ..."</tt>) then a lot of
-runtime validation is performed.  Whenever development work is being performed
-this macro should always be enabled since a lot of errors will be caught that
-would be hard to diagnose otherwise.
+<tt>TestForException_break()</tt>.  If Trilinos is configured with
+<tt>--enable-teuchos-debug</tt> then a lot of runtime error checking is
+performed in %Thyra support software, as well as in many other software
+packages.  Whenever development work is being performed this option should
+always be enabled since a lot of errors will be caught that would be hard to
+diagnose otherwise.  Significant effort has gone into developing this error
+checking code and in the information that is embedded in the exception objects
+(all derived from <tt>std::exception</tt>) that are thrown when errors are
+detected.
 
 </ul>
 
@@ -275,11 +279,12 @@ would be hard to diagnose otherwise.
 The %Thyra code described here is dependent on the following Trilinos packages:
 
 <ul>
-<li><b><a href="../../../teuchos/doc/html/index.html">teuchos</a></b>: This package supplies basic utility classes such
-as <tt>Teuchos::RefCountPtr</tt> and <tt>Teuchos::BLAS</tt> that
-%Thyra software is dependent on.
-<li><b><a href="../../../rtop/doc/html/index.html">rtop</a></b>: This package supplies the basic interfaces for
-vector reduction/transformation operators as well as support code and a library of pre-written RTOp subclasses.
+<li><b><a href="../../../teuchos/doc/html/index.html">teuchos</a></b>: This
+package supplies basic utility classes such as <tt>Teuchos::RefCountPtr</tt>
+and <tt>Teuchos::BLAS</tt> that %Thyra software is dependent on.
+<li><b><a href="../../../rtop/doc/html/index.html">rtop</a></b>: This package
+supplies the basic interfaces for vector reduction/transformation operators as
+well as support code and a library of pre-written RTOp subclasses.
 </ul>
 
 \section thyra_configuration_sec Configuration of the Thyra Package
@@ -310,6 +315,9 @@ The %Thyra package is also affected by configure options passed to
 other packages and some of these options are:
 
 <ul>
+<li><b><tt>--enable-teuchos-debug</tt></b>: Causes a great deal
+of return error checking code to be added to the Thyra support
+software.
 <li><b><tt>--enable-teuchos-complex</tt></b>: Causes the
 <tt>std::complex<></tt> scalar type to be used in templated examples
 and tests.
@@ -434,7 +442,7 @@ order, are:
 <li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer, %Thyra developer
 <li> Roger Pawlowski (rppawlo@sandia.gov) : %NOX lead developer
 <li> Eric Phipps (etphipp@sandia.gov) : %LOCA lead developer, %Thyra developer
-<li> Bill Spotz (wfspotz@sanida.gov) : %PyTrilinos Lead devleoper, %Thyra/Python adapter developer
+<li> Bill Spotz (wfspotz@sanida.gov) : %PyTrilinos Lead developer, %Thyra/Python adapter developer
 <li> Heidi Thornquist (hkthorn@sandia.gov): %Belos lead developer, %Thyra developer
 <li> Allan Williams (william@sandia.gov) : %FEI lead developer, %Thyra developer
 </ul>

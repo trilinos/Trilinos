@@ -1,5 +1,5 @@
 
-/** \defgroup Thyra_Op_Vec_use_cases_grp Use Cases for the Foundational Thyra Operator/Vector Interfaces
+/** \defgroup Thyra_Op_Vec_use_cases_grp Use Cases for the Fundamental Thyra Operator/Vector Interfaces
 
 \brief Here we outline three common use cases related to the \ref
 Thyra_Op_Vec_foundational_interfaces_sec.
@@ -20,7 +20,7 @@ non-member functions.
 
 */
 
-/** \defgroup Thyra_Op_Vec_ANA_Interoperability_grp Thyra Operator/Vector Interfaces as an Interoperability Layer for Abstract Numerical Algorithms (ANAs)
+/** \defgroup Thyra_Op_Vec_ANA_Interoperability_grp Interoperability Interfaces for linear Abstract Numerical Algorithms (ANAs)
 
 \ingroup Thyra_Op_Vec_use_cases_grp
 
@@ -641,7 +641,7 @@ these subclasses for MPI SPMD platforms.
 
 */
 
-/** \defgroup Thyra_Op_Vec_ANA_Development_grp Thyra Operator/Vector Interfaces as an API for the Development of Abstract Numerical Algorithms (ANAs)
+/** \defgroup Thyra_Op_Vec_ANA_Development_grp Development of linear Abstract Numerical Algorithms (ANAs)
 
 \ingroup Thyra_Op_Vec_use_cases_grp
 
@@ -775,11 +775,27 @@ of how product vector spaces are used.
 
 <li> <b>Miscellaneous aggregate linear operators</b>
 
-There are several different types of useful composite
-<tt>Thyra::LinearOpBase</tt> subclasses that one can define.  A few
-useful composite linear operator subclasses are shown below:
+These are several different types of useful composite/decorator
+<tt>Thyra::LinearOpBase</tt> subclasses.  These concrete subclasses provide
+the building blocks for arbitararly complex implicitly composed linear
+operators.  Default implementations for these implicit linear operator
+subclasses are shown below:
 
 <ul>
+
+<li><tt>Thyra::DefaultZeroLinearOp</tt> is used to define
+  a zero linear operator of the form:
+
+  \f$M = 0 \in \Re^{m \times n}\f$
+
+  defined in terms of two vector spaces (a range and a domain).
+
+<li><tt>Thyra::DefaultIdentityLinearOp</tt> is used to define
+  an identity linear operator of the form:
+
+  \f$M = I \in \Re^{n \times n}\f$
+
+  defined in terms of a single vector space.
 
 <li><tt>Thyra::DefaultDiagonalLinearOp</tt> is a simple concrete subclass
   that defines a diagonal linear operator
@@ -793,6 +809,15 @@ useful composite linear operator subclasses are shown below:
   implicit scaled and/or adjoined (or transposed) linear operator
 
   \f$M = \gamma \; op(A)\f$.
+
+<li><tt>Thyra::DefaultAddedLinearOp</tt> is a simple concrete composite
+  subclass that represent the implicit addition of two or more constituent 
+  <tt>Thyra::LinearOpBase</tt> objects of the form
+
+  \f$M =\; A_1 + A_2 + \ldots + A_m}\f$
+
+  composed out of one or more constituent linear operators
+  \f$A_0, A_1 \ldots A_{m-1}\f$.
 
 <li><tt>Thyra::DefaultMultipliedLinearOp</tt> is a simple concrete composite
   subclass that defines a composite multiplicative
