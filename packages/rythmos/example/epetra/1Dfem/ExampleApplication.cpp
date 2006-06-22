@@ -99,6 +99,15 @@ ExampleApplication::get_x_init() const
   return x_init;
 }
 
+Teuchos::RefCountPtr<const Epetra_Vector>
+ExampleApplication::get_x_dot_init() const
+{
+  Epetra_Vector& soln = problemInterfacePtr_->getSolution();
+  Teuchos::RefCountPtr<Epetra_Vector> x_dot_init = Teuchos::rcp(new Epetra_Vector(soln));
+  x_dot_init->PutScalar(0.0);
+  return x_dot_init;
+}
+
 Teuchos::RefCountPtr<Epetra_Operator>
 ExampleApplication::create_W() const
 {

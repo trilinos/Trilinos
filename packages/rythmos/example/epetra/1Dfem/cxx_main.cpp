@@ -45,6 +45,7 @@
 #include "Rythmos_Stepper_ForwardEuler.hpp"
 #include "Rythmos_Stepper_BackwardEuler.hpp"
 #include "Rythmos_Stepper_ExplicitRK.hpp"
+#include "Rythmos_Stepper_ImplicitBDF.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -64,7 +65,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 
-enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK };
+enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
+enum STEP_METHOD { STEP_METHOD_FIXED, STEP_METHOD_VARIABLE };
 
 int main(int argc, char *argv[])
 {
@@ -82,15 +84,22 @@ int main(int argc, char *argv[])
     MPI_Comm_rank( mpiComm, &procRank );
 #endif // HAVE_MPI
 
+    STEP_METHOD step_method = STEP_METHOD_FIXED;
     int numElements = 201; // number of elements in vector
     double finalTime = 1.0; // ODE final time
     int N = 100;  // number of steps to take
-    const int num_methods = 3;
-    const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK };
-    const char * method_names[] = { "FE", "BE", "ERK" };
+    const int num_methods = 4;
+    const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
+    const char * method_names[] = { "FE", "BE", "ERK", "BDF" };
     EMethod method_val = METHOD_BE;
     double maxError = 0.01;
     bool version = false;  // display version information 
+    double reltol = 1.0e-2;
+    double abstol = 1.0e-4;
+    int maxOrder = 5;
+#ifdef Rythmos_DEBUG
+    int debugLevel = 2; // debugLevel is used when Rythmos_DEBUG ifdef is set.
+#endif // Rythmos_DEBUG
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -99,8 +108,15 @@ int main(int argc, char *argv[])
     clp.setOption( "method", &method_val, num_methods, method_values, method_names, "Integration method" );
     clp.setOption( "numsteps", &N, "Number of integration steps to take" );
     clp.setOption( "maxerror", &maxError, "Maximum error" );
+    clp.setOption( "reltol", &reltol, "Relative Error Tolerance" );
+    clp.setOption( "abstol", &abstol, "Absolute Error Tolerance" );
+    clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
+#ifdef Rythmos_DEBUG
+    clp.setOption( "debuglevel", &debugLevel, "Debug Level for Rythmos" );
+#endif // Rythmos_DEBUG
+
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -129,7 +145,7 @@ int main(int argc, char *argv[])
     // Create the factory for the LinearOpWithSolveBase object
     Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
-    if(method_val == METHOD_BE)
+    if((method_val == METHOD_BE) or (method_val == METHOD_BDF))
     {
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
       W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
@@ -159,25 +175,80 @@ int main(int argc, char *argv[])
       nonlinearSolver = _nonlinearSolver;
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
       method = "Backward Euler";
+    } else if (method_val == METHOD_BDF) {
+      Teuchos::RefCountPtr<Thyra::NonlinearSolverBase<double> >
+        nonlinearSolver;
+      Teuchos::RefCountPtr<Thyra::TimeStepNewtonNonlinearSolver<double> >
+        _nonlinearSolver = Teuchos::rcp(new Thyra::TimeStepNewtonNonlinearSolver<double>());
+      _nonlinearSolver->defaultTol(1e-3*maxError);
+      nonlinearSolver = _nonlinearSolver;
+      Teuchos::ParameterList BDFparams;
+      BDFparams.set( "stopTime", finalTime );
+      BDFparams.set( "maxOrder", maxOrder );
+      BDFparams.set( "relErrTol", reltol );
+      BDFparams.set( "absErrTol", abstol );
+#ifdef Rythmos_DEBUG
+      BDFparams.set( "debugLevel", debugLevel );
+#endif // Rythmos_DEBUG
+      stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
+      step_method = STEP_METHOD_VARIABLE;
+      method = "Implicit BDF";
     } else {
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::Stepper<double> &stepper = *stepper_ptr;
 
+#ifdef Rythmos_DEBUG
+    Teuchos::RefCountPtr<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+    if (debugLevel > 1)
+    {
+      stepper.describe(*out,Teuchos::VERB_EXTREME);
+    }
+#endif // Rythmos_DEBUG
+
     double t0 = 0.0;
     double t1 = finalTime;
     double dt = (t1-t0)/N;
+    double time = t0;
+    int numSteps = 0;
 
-    // Integrate forward with fixed step sizes:
-    for (int i=1 ; i<=N ; ++i)
+    if (step_method == STEP_METHOD_FIXED)
     {
-      double dt_taken = stepper.TakeStep(dt);
-      if (dt_taken != dt)
+      // Integrate forward with fixed step sizes:
+      for (int i=1 ; i<=N ; ++i)
       {
-        cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;
-        break;
+        double dt_taken = stepper.TakeStep(dt);
+        numSteps++;
+        if (dt_taken != dt)
+        {
+          cerr << "Error, stepper took step of dt = " << dt_taken << " when asked to take step of dt = " << dt << std::endl;
+          break;
+        }
+        time += dt_taken;
       }
     }
+    else // step_method == STEP_METHOD_VARIABLE
+    {
+      while (time < finalTime)
+      {
+        double dt_taken = stepper.TakeStep();
+        numSteps++;
+#ifdef Rythmos_DEBUG
+        if (debugLevel > 1)
+        {
+          stepper.describe(*out,Teuchos::VERB_EXTREME);
+        }
+#endif // Rythmos_DEBUG
+        if (dt_taken < 0)
+        {
+          cerr << "Error, stepper failed for some reason with step taken = " << dt_taken << endl;
+          break;
+        }
+        time += dt_taken;
+        cout << "Took stepsize of: " << dt_taken << " time = " << time << endl;
+      }
+    }
+    cout << "Integrated to time = " << time << endl;
     // Get solution out of stepper:
     Teuchos::RefCountPtr<const Thyra::VectorBase<double> > x_computed_thyra_ptr = stepper.get_solution();
     // Convert Thyra::VectorBase to Epetra_Vector
@@ -195,6 +266,7 @@ int main(int argc, char *argv[])
       std::cout << "Integrating 1DfemTransient t = " << t0 
                 << " to t = " << t1 << std::endl;
       std::cout << "using " << method << "." << std::endl;
+      std::cout << "Took " << numSteps << " steps." << std::endl;
     }
     int MyLength = x_computed.MyLength();
     double error = 0;
