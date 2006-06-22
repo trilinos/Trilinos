@@ -151,6 +151,9 @@ int main(int argc, char *argv[])
       return(1);
     }
 
+#ifdef Rythmos_DEBUG
+    std::cout.precision(15);
+#endif // Rythmos_DEBUG
     
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
@@ -209,7 +212,7 @@ int main(int argc, char *argv[])
         //TEST_FOR_EXCEPT(true); // RAB: Above is commented out due to lack of other commits
         Teuchos::ParameterList BDFparams;
         BDFparams.set( "stopTime", finalTime );
-        BDFparams.set( "maxOrder", 1 );
+        BDFparams.set( "maxOrder", 5 );
         BDFparams.set( "relErrTol", reltol );
         BDFparams.set( "absErrTol", abstol );
 #ifdef Rythmos_DEBUG
