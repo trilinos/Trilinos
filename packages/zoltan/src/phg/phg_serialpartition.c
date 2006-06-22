@@ -516,10 +516,10 @@ static int seq_part (
   /* Loop through all vertices in specified order, and assign
      partition numbers.  */                                        
   for (i=0; i<hg->nVtx; i++) {
+    /* If order==NULL, then use linear order. */
+    j = order ? order[i] : i;
     /* for non-fixed vertices */
     if ((!hg->fixed) || (hg->fixed[i] == -1)){
-      /* If order==NULL, then use linear order. */
-      j = order ? order[i] : i;
       part[j] = pnumber;
       old_sum = part_sum;
       part_sum += hg->vwgt[j*vwgtdim];
