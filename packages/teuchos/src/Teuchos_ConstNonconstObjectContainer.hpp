@@ -99,6 +99,10 @@ public:
    */
   RefCountPtr<const ObjType> getConstObj() const
     { return constObj_; }
+  /** \brief Perform shorthand for <tt>getConstObj(). */
+  RefCountPtr<const ObjType> operator()() const
+    { return getConstObj(); }
+  
 private:
   RefCountPtr<const ObjType>   constObj_;
   bool                         isConst_;
