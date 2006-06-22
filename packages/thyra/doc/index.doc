@@ -80,8 +80,9 @@ structure of thyra</a>.
 
   <ul>
 
-  <li> <b><a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
-    Fundamental ANA Operator/Vector Interfaces</a></b>  <a name="interfaces_operator_vector_ana_fundamental"></a> \f$\Leftarrow\f$ <b>Link</b>
+  <li> <b>Fundamental ANA Operator/Vector Interfaces 
+    [<a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
+    doxygen collection</a>]</b> <a name="interfaces_operator_vector_ana_fundamental"></a>
 
     \image html ThyraOperatorVectorSimple.gif
 
@@ -91,8 +92,9 @@ structure of thyra</a>.
     include <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>, <tt>Thyra::MultiVectorBase</tt>,
     and <tt>Thyra::LinearOpBase</tt>.
 
-  <li> <b><a href="../../src/interfaces/operator_vector/ana/extended/doc/html/index.html">
-    Extended ANA Operator/Vector Interfaces</a></b><a name="interfaces_operator_vector_ana_extended"></a> \f$\Leftarrow\f$ <b>Link</b>
+  <li> <b>Extended ANA Operator/Vector Interfaces
+    [<a href="../../src/interfaces/operator_vector/ana/extended/doc/html/index.html">
+    doxygen collection</a>]</b><a name="interfaces_operator_vector_ana_extended"></a>
 
     These are some interfaces based on the
     above Fundamental ANA Operator/Vector Interfaces and provide other pieces of functionality
@@ -109,8 +111,9 @@ structure of thyra</a>.
 
   <ul>
 
-  <li> <b><a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
-    Fundamental ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_fundamental"></a> \f$\Leftarrow\f$ <b>Link</b>
+  <li> <b>Fundamental ANA Operator Solve Interfaces
+    [<a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
+    doxygen collection</a>]</b><a name="interfaces_operator_solve_ana_fundamental"></a>
 
     \image html LinearOpWithSolveAndFactory75.jpg
 
@@ -119,8 +122,9 @@ structure of thyra</a>.
     (<tt>Thyra::LinearOpWithSolveBase</tt>) and factories for these (i.e.
     <tt>Thyra::LinearOpWithSolveBase</tt> and <tt>Thyra::PreconditionerFactoryBase</tt>)
 
-  <li> <b><a href="../../src/interfaces/operator_solve/ana/extended/doc/html/index.html">
-    Extended ANA Operator Solve Interfaces</a></b><a name="interfaces_operator_solve_ana_extended"></a> \f$\Leftarrow\f$ <b>Link</b>
+  <li> <b>Extended ANA Operator Solve Interfaces
+    [<a href="../../src/interfaces/operator_solve/ana/extended/doc/html/index.html">
+    doxygen collection</a>]</b><a name="interfaces_operator_solve_ana_extended"></a>
 
     Included here are a variety extended interfaces that build on the fundamental operator/solve
     interfaces.  Examples include <tt>Thyra::BlockedLinearOpWithSolveBase.</tt> and
@@ -132,15 +136,17 @@ structure of thyra</a>.
 
   <ul>
 
-  <li><b><a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html"> \f$\Leftarrow\f$ <b>Link</b>
-    Fundamental ANA Model Evaluator Interfaces</a></b><a name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
+  <li> <b>Fundamental ANA Model Evaluator Interfaces
+    [<a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
+    doxygen collection</a>]</b><a name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
 
     \image html ModelEvaluator75.gif
 
     Contained here are interfaces for nonlinear models such as <tt>Thyra::ModelEvaluator</tt>.
 
-  <li><b><a href="../../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html/index.html">
-    Fundamental ANA Nonlinear Solver Interfaces</a></b><a name="interfaces_nonlinear_solvers_ana_fundamental"></a> \f$\Leftarrow\f$ <b>Link</b>
+  <li> <b>Fundamental ANA Nonlinear Solver Interfaces
+    [<a href="../../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html/index.html">
+    doxygen collection</a>]</b><a name="interfaces_nonlinear_solvers_ana_fundamental"></a>
 
     Contained here are interfaces for nonlinear equation solvers.
 
@@ -156,8 +162,9 @@ structure of thyra</a>.
 
 <ul>
 
-<li> <b><a href="../../src/support/operator_vector/doc/html/index.html">
-  Operator/Vector Support</a></b><a name="support_operator_vector"></a> \f$\Leftarrow\f$ <b>Link</b>
+<li> <b>Operator/Vector Support
+  [<a href="../../src/support/operator_vector/doc/html/index.html">
+  doxygen collection</a>]</b><a name="support_operator_vector"></a>
 
   Described here is a fairly large collection of ANA or client support and
   adapter support software based on the operator/vector
@@ -170,27 +177,31 @@ structure of thyra</a>.
   of software is really too vast to give a full sense of what it contains
   in this short description.
 
-<li> <b><a href="../../src/support/operator_solve/doc/html/index.html">
-  Operator Solve Support</a></b><a name="support_operator_solve"></a> \f$\Leftarrow\f$ <b>Link</b>
+<li> <b>Operator Solve Support
+  [<a href="../../src/support/operator_solve/doc/html/index.html">
+  doxygen collection</a>]</b><a name="support_operator_solve"></a>
 
   This collection contains support software for the operator/solve interfaces.
   Examples include testing software like <tt>Thyra::LinearOpWithSolveTester</tt>
   and <em>decorator</em> subclasses like <tt>Thyra::DefaultDiagonalLinearOpWithSolve</tt>.
 
-<li> <b><a href="../../src/support/nonlinear/model_evaluator/doc/html/index.html">
-  Nonlinear Model Evaluator Support</a></b><a name="support_nonlinear_model_evaluator"></a> \f$\Leftarrow\f$ <b>Link</b>
+<li> <b>Nonlinear Model Evaluator Support
+  [<a href="../../src/support/nonlinear/model_evaluator/doc/html/index.html">
+  doxygen collection</a>]</b><a name="support_nonlinear_model_evaluator"></a>
 
   This includes support software for the nonlinear model evaluator interfaces.
   Examples include <tt>decorator</tt> subclasses like
   <tt>Thyra::SingleResidSSDAEModelEvaluator</tt>.
 
-<li> <b><a href="../../src/support/nonlinear/solvers/doc/html/index.html">
-   Nonlinear Solvers Support</a></b><a name="support_nonlinear_solvers"></a> \f$\Leftarrow\f$ <b>Link</b>
+<li> <b>Nonlinear Solvers Support
+  [<a href="../../src/support/nonlinear/solvers/doc/html/index.html">
+  doxygen collection</a>]</b><a name="support_nonlinear_solvers"></a>
 
-   Contained here in is support software for the nonlinear solver interfaces and
-   some simple concrete implementations.  Simple concrete nonlinear equation solver
-   implementations include examples <tt>Thyra::LinearNonlinearSolver</tt>
-   and <tt>Thyra::DampenedNewtonNonlinearSolver</tt>.
+  Contained here in is support software for the nonlinear solver interfaces
+  and some simple concrete implementations.  Simple concrete nonlinear
+  equation solver implementations include examples
+  <tt>Thyra::LinearNonlinearSolver</tt>
+  and <tt>Thyra::DampenedNewtonNonlinearSolver</tt>.
 
 </ul>
 
