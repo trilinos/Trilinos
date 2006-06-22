@@ -443,8 +443,8 @@ int TestAllClasses( const vector<string> AmesosClasses,
 	if ( ReindexRowMap != 0 )  ParamList.set( "Reindex", true );
 	if ( ( RangeMapType != 0 || DomainMapType != 0 || distribute ) ) 
 	  ParamList.set( "DontTrustMe", true );
-	if ( ! transpose ) RunParakleteTest = false ; // Bug #1953 
-	//     DOES NOT WORK YET if ( ! transpose && EpetraMatrixType != 0 ) RunParakleteTest = false ; // Paraklete can't handle non-transposed Row Matrices   // this prevents others tests from executing - see bug #2279 
+	//	if ( ! transpose ) RunParakleteTest = false ; // Bug #1953 
+	if ( ! transpose && EpetraMatrixType != 0 ) RunParakleteTest = false ; // Paraklete can't handle non-transposed Row Matrices   // this prevents others tests from executing - see bug #2279 
 #ifndef HAVE_AMESOS_EPETRAEXT
 	if ( ( ReindexRowMap || ReindexColMap ) ) 
 	  RunParakleteTest = false ;  

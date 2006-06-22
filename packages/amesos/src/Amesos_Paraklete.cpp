@@ -136,7 +136,13 @@ int Amesos_Paraklete::ExportToSerial()
       AMESOS_CHK_ERR( -2 );
     }
 
-    if ( transposer_.get() != 0  ) transposer_->fwd() ;
+    
+    if ( transposer_.get() != 0  ) {
+      //      int OriginalTracebackMode = CrsMatrixA_->GetTracebackMode();
+      //      CrsMatrixA_->SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) );
+      transposer_->fwd() ;
+      //      CrsMatrixA_->SetTracebackMode( OriginalTracebackMode );
+    }
     assert ( ImportToSerial_.get() != 0 ) ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
@@ -245,10 +251,15 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
     if (UseTranspose()) {
       CcsMatrixA = CrsMatrixA_ ;
     } else {
+      if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR( -7 );   //  Amesos_Paraklete only supports CrsMatrix objects in the non-transpose case
       bool MakeDataContiguous = true;
       transposer_ = rcp ( new EpetraExt::RowMatrix_Transpose( MakeDataContiguous ));
 
+      int OriginalTracebackMode = CrsMatrixA_->GetTracebackMode();
+      CrsMatrixA_->SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) );
+
       CcsMatrixA = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposer_)(*CrsMatrixA_))));
+      CrsMatrixA_->SetTracebackMode( OriginalTracebackMode );
     }
 
 
