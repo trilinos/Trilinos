@@ -506,14 +506,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-    if( !run_composite_linear_ops_tests<float>(mpiComm,n,useMpi,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
-    if( !run_composite_linear_ops_tests<double>(mpiComm,n,useMpi,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<float>(mpiComm,n,useMpi,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<double>(mpiComm,n,useMpi,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-    if( !run_composite_linear_ops_tests<std::complex<float> >(mpiComm,n,useMpi,float(1e-5),dumpAll,verbose?&*out:NULL) ) success = false;
-    if( !run_composite_linear_ops_tests<std::complex<double> >(mpiComm,n,useMpi,double(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<std::complex<float> >(mpiComm,n,useMpi,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<std::complex<double> >(mpiComm,n,useMpi,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 #if defined(HAVE_TEUCHOS_GNU_MP) && !defined(RTOp_USE_MPI) // mpf_class can not be used with MPI yet!
-    if( !run_composite_linear_ops_tests<mpf_class>(mpiComm,n,useMpi,mpf_class(1e-14),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<mpf_class>(mpiComm,n,useMpi,mpf_class(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 
   } // end try
