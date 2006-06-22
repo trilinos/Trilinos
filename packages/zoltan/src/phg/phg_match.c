@@ -1599,7 +1599,7 @@ static int pmatching_agg_ipm (ZZ *zz,
           rows[k++] = (r - rec) - 1;  /* points to gno */
         }
       /* UVCUVC */
-      if (k!=hgc->nProc_y)
+      if (k>hgc->nProc_y)
           errexit("k(%d)!=nProc_y(%d)", k, hgc->nProc_y);
     
       /* merge partial i.p. sum data to compute total inner products */
