@@ -35,7 +35,7 @@
 
 namespace Teuchos { template<typename Ordinal> class Comm; }
 
-#define RTOPPACK_SPMD_APPLY_OP_DUMP
+//#define RTOPPACK_SPMD_APPLY_OP_DUMP
 
 namespace RTOpPack {
 

@@ -439,8 +439,15 @@ void RTOpPack::SPMD_apply_op(
       //
       Workspace<const ReductTarget*>
         _i_reduct_objs( wss, num_cols );
-      for( int kc = 0; kc < num_cols; ++kc )
+      Workspace<Teuchos::RefCountPtr<ReductTarget> >
+        i_i_reduct_objs( wss, num_cols );
+      Workspace<ReductTarget*>
+        _i_i_reduct_objs( wss, num_cols );
+      for( int kc = 0; kc < num_cols; ++kc ) {
         _i_reduct_objs[kc] = &*i_reduct_objs[kc];
+        i_i_reduct_objs[kc] = op.reduct_obj_create();
+        _i_i_reduct_objs[kc] = &*i_i_reduct_objs[kc];
+      }
       if(1) {
         ReductTargetSerializer<Scalar>
           serializer(Teuchos::rcp(&op,false));
@@ -448,8 +455,11 @@ void RTOpPack::SPMD_apply_op(
           reductOp(Teuchos::rcp(&op,false));
         reduceAll(
           *comm,serializer,reductOp
-          ,num_cols,&_i_reduct_objs[0],reduct_objs
+          ,num_cols,&_i_reduct_objs[0],&_i_i_reduct_objs[0]
           );
+      }
+      for( int kc = 0; kc < num_cols; ++kc ) {
+        op.reduce_reduct_objs(*_i_i_reduct_objs[kc],reduct_objs[kc]);
       }
     }
   }
