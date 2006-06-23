@@ -72,9 +72,9 @@ public:
 
   /** \brief Determine if the <tt>k</tt>th constituent operator is const-only or not.
    *
-   * @param  k  [in] The zero-based index of the constituent operator to return.
+   * \param  k  [in] The zero-based index of the constituent operator to return.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt> 0 <= k < this->numOps()</tt>
    * </ul>
    */
@@ -82,19 +82,20 @@ public:
 
   /** \brief Return the <tt>k</tt>th non-constant constituent operator.
    *
-   * @param  k  [in] The zero-based index of the constituent operator to return.
+   * \param  k  [in] The zero-based index of the constituent operator to return.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt> 0 <= k < this->numOps()</tt>
+   * <li><tt>this->opIsConst(k)==false</tt>
    * </ul>
    */
   virtual Teuchos::RefCountPtr<LinearOpBase<Scalar> > getNonconstOp(const int k) = 0;
 
   /** \brief Return the <tt>k</tt>th constant constituent operator.
    *
-   * @param  k  [in] The zero-based index of the constituent operator to return.
+   * \param  k  [in] The zero-based index of the constituent operator to return.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt> 0 <= k < this->numOps()</tt>
    * </ul>
    */

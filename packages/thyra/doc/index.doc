@@ -254,11 +254,11 @@ subclasses, may need to be templated on a local index (ordinal) type.
 
 <li><b>Dynamic memory management</b>
 
-All of the code in the %Thyra package almost exclusively uses the
+All of the code in the %Thyra and related packages almost exclusively use the
 <tt>%Teuchos</tt> smart reference counted pointer class
 <tt>Teuchos::RefCountPtr</tt> to handle dynamically allocated memory with
-object-oriented programming.  %Thyra also religiously uses the idioms
-described in <a
+object-oriented programming.  %Thyra also rigorously uses the idioms described
+in <a
 href="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">this
 report</a> for passing object to and from functions that involve
 <tt>Teuchos::RefCountPtr</tt> .

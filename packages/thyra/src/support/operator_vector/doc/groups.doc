@@ -174,6 +174,16 @@ very general and efficient concrete MPI SPMD subclasses for vector spaces,
 vectors, and multi-vectors as well as a support class for creating concrete
 SPMD linear operator implementations.
 
+<li><b>\ref Thyra_Op_Vec_spmd_adapters_grp</b>
+
+Click \ref Thyra_Op_Vec_spmd_adapters_grp "here" if you want to know about
+support for developing %Thyra subclass implementations for SPMD
+distributed-memory platforms.  These platforms are most commonly used in
+large-scale scientific computing.  Note that the above link also describes
+very general and efficient concrete SPMD subclasses for vector spaces,
+vectors, and multi-vectors as well as a support class for creating concrete
+SPMD linear operator implementations.
+
 </ol>
 
 </ol>
@@ -640,6 +650,230 @@ there is really no need for any other concrete implementations of
 these subclasses for MPI SPMD platforms.
 
 */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/** \defgroup Thyra_Op_Vec_spmd_adapters_grp Thyra Operator/Vector Subclasses for SPMD Distributed-Memory Platforms
+
+\ingroup Thyra_Op_Vec_Adapters_grp
+
+\brief The package %Thyra includes subclasses for common SPMD vector
+spaces, vectors, and multi-vectors which are described here.
+
+When interfacing to most other well designed packages, there should be no need
+to create new concrete SPMD vector space, vector or multi-vector
+subclasses given the subclasses described below.
+
+\section Thyra_Op_Vec_spmd_adapters_classes_sec Subclasses for SPMD Thyra Implementations
+
+<ol>
+
+<li> <b>\ref Thyra_Op_Vec_adapters_Spmd_support_grp</b>
+
+Click \ref Thyra_Op_Vec_adapters_Spmd_support_grp "here" if you want to know
+about the basic support base subclasses for a common type of SPMD
+vector and multi-vector implementation that all of the concrete
+implementations described below depend on.
+
+<li> <b>Concrete SPMD subclasses</b>
+
+Below are some concrete implementations of %Thyra classes that are
+derived from the
+\ref Thyra_Op_Vec_adapters_Spmd_support_grp "basic SPMD-support base subclasses"
+mentioned above.
+
+<ol>
+
+<li> <b>\ref Thyra_Op_Vec_adapters_Spmd_concrete_std_grp</b>
+
+Click \ref Thyra_Op_Vec_adapters_Spmd_concrete_std_grp "here" if you want to
+know about some general, yet very efficient, concrete implementations of
+SPMD vector spaces, vectors and multi-vectors.
+
+<li> <b><a href="../../../../../../epetra/thyra/doc/html/index.html">Epetra to Thyra Operator/Vector Adapters</a></b> (separate doxygen collection)
+
+Click <a href="../../../../../../epetra/thyra/doc/html/index.html">here</a> if
+you want to know about some general code that takes Epetra objects and creates
+%Thyra wrappers for them.
+
+</ol>
+
+</ol>
+
+*/
+
+/** \defgroup Thyra_Op_Vec_adapters_Spmd_support_grp Thyra Operator/Vector Base Support Subclasses for SPMD Thyra Implementations
+
+\ingroup Thyra_Op_Vec_spmd_adapters_grp
+
+\brief The package %Thyra contains base subclasses that support a
+common type of SPMD implementation of vectors and
+multi-vectors that are described here.
+
+The UML class diagram below shows the subclasses described here:
+
+\image html SpmdVectorSpaceDefaultBase.gif "Support base subclasses for SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
+
+The base subclasses described here provide support for a simple, yet
+general, category of SPMD vectors, multi-vectors and vector
+spaces.
+
+<ul>
+
+<li><tt>Thyra::SpmdVectorSpaceDefaultBase</tt> abstracts the the types of
+SPMD distributed-memory data distributions supported by these base
+subclasses.  This vector space base class assumes a unique
+partitioning of vector and multi-vector elements to a set of
+processors where there exists no ghost elements.
+
+<li><tt>Thyra::SpmdVectorBase</tt> is a base subclass for
+SPMD <tt>%Thyra::%VectorBase</tt> objects.  This class defines concrete
+implementations for the <tt>%Thyra::%VectorBase</tt> virtual functions
+<tt>%applyOp()</tt>, <tt>%acquireDetachedView() const</tt>, <tt>%releaseDetachedView()
+const</tt>, <tt>%acquireDetachedView()</tt> and <tt>%commitDetachedView()</tt>.
+These functions are implemented given explicit access to local processor
+elements as returned by the <tt>getLocalData()</tt> functions overridden
+in a subclass object.
+
+<li><tt>Thyra::SpmdMultiVectorBase</tt> is a base subclass for
+SPMD <tt>%Thyra::%MultiVectorBase</tt> objects.  This class
+defines concrete implementations for the
+<tt>%Thyra::%MultiVectorBase</tt> virtual functions <tt>%applyOp()</tt>,
+<tt>%acquireDetachedView() const</tt>, <tt>%releaseDetachedView()
+const</tt>, <tt>%acquireDetachedView()</tt> and
+<tt>%commitDetachedView()</tt>.  These functions are implemented
+given explicit access to local processor elements as returned by the
+<tt>getLocalData()</tt> functions overridden in a subclass object.  In
+addition, this subclass derives from
+<tt>Thyra::EuclideanLinearOpBase</tt> so that any
+application-specific scalar product is automatically supported.  The
+multi-vector version of
+<tt>Thyra::SpmdMultiVectorBase::euclideanApply()</tt> is implemented
+by calling <tt>Teuchos::BLAS::GEMM()</tt> on each local processor to
+access level-3 BLAS.  Therefore, if %Teuchos is configured to link to
+optimized BLAS then this base subclass will provided a near optimal
+implementation of a SPMD multi-vector.
+
+</ul>
+
+One of the big advantages of deriving concrete SPMD
+implementations from these base subclasses is that they provide automatic
+interoperability between different concrete subclasses.  This type of
+automatic interoperability is demonstrated in ???this testing program???.
+
+\section Thyra_Op_Vec_spmd_adapters_linear_op_sec Base Subclasses for SPMD Thyra::LinearOpBase Implementations
+
+To facilitate the creation of concrete SPMD linear operators the
+following simple but very general base class is supplied:
+
+<ul> <li><tt>Thyra::SpmdLinearOpBase</tt> is a general base subclass
+for SPMD platforms that only requires concrete subclass
+implementations to override one function that accepts explicit local
+vector data.  </ul>
+
+*/
+
+/** \defgroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp Efficient Generic SPMD Concrete Thyra Operator/Vector Subclass Implementations
+
+\ingroup Thyra_Op_Vec_spmd_adapters_grp
+
+\brief The package %Thyra contains highly efficient concrete
+implementations of SPMD vector space, vector and multi-vector
+subclasses.
+
+\image html DefaultSpmdVectorSpace.gif "Concrete subclasses for SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
+
+\section Thyra_Op_Vec_adapters_Spmd_concrete_std_classes_grp Concrete SPMD Subclasses
+
+The concrete subclasses described here derive directly from the \ref
+\ref Thyra_Op_Vec_adapters_Spmd_support_grp.
+
+<ul>
+
+<li><tt>Thyra::DefaultSpmdVectorSpaceFactory</tt> is a concrete
+<tt>%Thyra::%VectorSpaceFactoryBase</tt> subclass implementation that
+creates locally replicated <tt>%Thyra::%DefaultSpmdVectorSpace</tt> objects
+given their dimension.  This class is meant to create domain spaces for
+any SPMD multi-vector object it is is used as such (for
+example, see <tt>Thyra::SpmdVectorSpaceDefaultBase::smallVecSpcFcty()</tt>).
+
+<li><tt>Thyra::DefaultSpmdVectorSpace</tt> is a general
+<tt>%Thyra::%VectorSpaceBase</tt> subclass implementation for 
+SPMD vector spaces which creates <tt>%Thyra::%DefaultSpmdVector</tt> and
+<tt>%Thyra::%DefaultSpmdMultiVector</tt> objects.
+
+<li><tt>Thyra::DefaultSpmdVector</tt> is a very general, highly
+efficient <tt>%Thyra::%VectorBase</tt> subclass implementation for
+SPMD vectors.  Objects of this type can be constructed
+from a variety of data sources due to the magic of
+<tt>%Teuchos::%RefCountPtr</tt>.
+
+<li><tt>Thyra::DefaultSpmdMultiVector</tt> is a very general, highly
+efficient <tt>%Thyra::%MultiVectorBase</tt> subclass implementation for
+SPMD multi-vectors.  Objects of this type can be constructed
+from a variety of data sources due to the magic of
+<tt>%Teuchos::%RefCountPtr</tt>.
+
+</ul>
+
+Together, these concrete subclasses provide a complete and highly
+efficient implementation for SPMD vector, multi-vector and
+vector space objects.  From the standpoint of the needs of an ANA,
+there is really no need for any other concrete implementations of
+these subclasses for SPMD platforms.
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /** \defgroup Thyra_Op_Vec_ANA_Development_grp Development of linear Abstract Numerical Algorithms (ANAs)
 
