@@ -905,7 +905,7 @@ Optional Features:
                           Enable Teuchos interface support for the LibXML2
                           Library (default is no)
   --enable-teuchos-boost  Enable support for some of boost (default is no)
-  --enable-teuchos-comm-timers
+  --enable-teuchos-comm_timers
                           Enable timers for Teuchos::Comm related software
                           (default is yes, )
   --enable-teuchos-debug  Enable optional extra debugging checkes (default is
@@ -9819,22 +9819,22 @@ fi
 
 
 #
-# --enable-teuchos-comm-timers
+# --enable-teuchos-comm_timers
 #
 
 
-# Check whether --enable-teuchos-comm-timers or --disable-teuchos-comm-timers was given.
+# Check whether --enable-teuchos-comm_timers or --disable-teuchos-comm_timers was given.
 if test "${enable_teuchos_comm_timers+set}" = set; then
   enableval="$enable_teuchos_comm_timers"
-  ac_cv_use_teuchos_comm-timers=$enableval
+  ac_cv_use_teuchos_comm_timers=$enableval
 else
-  ac_cv_use_teuchos_comm-timers=yes
+  ac_cv_use_teuchos_comm_timers=yes
 fi;
 
-echo "$as_me:$LINENO: checking whether to use teuchos-comm-timers" >&5
-echo $ECHO_N "checking whether to use teuchos-comm-timers... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use teuchos-comm_timers" >&5
+echo $ECHO_N "checking whether to use teuchos-comm_timers... $ECHO_C" >&6
 
-if test "X$ac_cv_use_teuchos_comm-timers" != "Xno"; then
+if test "X$ac_cv_use_teuchos_comm_timers" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
@@ -9847,7 +9847,7 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-#AM_CONDITIONAL(HAVE_TEUCHOS_COMM_TIMERS, [test "X$ac_cv_use_teuchos_comm-timers" != "Xno"])
+#AM_CONDITIONAL(HAVE_TEUCHOS_COMM_TIMERS, [test "X$ac_cv_use_teuchos_comm_timers" != "Xno"])
 
 #
 # --enable-teuchos-debug
