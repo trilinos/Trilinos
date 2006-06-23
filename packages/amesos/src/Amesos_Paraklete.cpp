@@ -136,13 +136,14 @@ int Amesos_Paraklete::ExportToSerial()
       AMESOS_CHK_ERR( -2 );
     }
 
-    
+#ifdef HAVE_AMESOS_EPETRAEXT
     if ( transposer_.get() != 0  ) {
       //      int OriginalTracebackMode = CrsMatrixA_->GetTracebackMode();
       //      CrsMatrixA_->SetTracebackMode( EPETRA_MIN( OriginalTracebackMode, 0) );
       transposer_->fwd() ;
       //      CrsMatrixA_->SetTracebackMode( OriginalTracebackMode );
     }
+#endif
     assert ( ImportToSerial_.get() != 0 ) ; 
     AMESOS_CHK_ERR(SerialCrsMatrixA_->Import(*StdIndexMatrix_, 
 					     *ImportToSerial_, Insert ));
@@ -252,6 +253,7 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
       CcsMatrixA = CrsMatrixA_ ;
     } else {
       if ( CrsMatrixA_ == 0 ) AMESOS_CHK_ERR( -7 );   //  Amesos_Paraklete only supports CrsMatrix objects in the non-transpose case
+#ifdef HAVE_AMESOS_EPETRAEXT
       bool MakeDataContiguous = true;
       transposer_ = rcp ( new EpetraExt::RowMatrix_Transpose( MakeDataContiguous ));
 
@@ -260,6 +262,11 @@ int Amesos_Paraklete::CreateLocalMatrixAndExporters()
 
       CcsMatrixA = &(dynamic_cast<Epetra_CrsMatrix&>(((*transposer_)(*CrsMatrixA_))));
       CrsMatrixA_->SetTracebackMode( OriginalTracebackMode );
+#else
+      cerr << "Amesos_Paraklete requires the EpetraExt library to solve non-transposed problems. " << endl ; 
+      cerr << " To rebuild Amesos with EpetraExt, add --enable-epetraext to your configure invocation" << endl ;
+      AMESOS_CHK_ERR( -3 );
+#endif
     }
 
 
@@ -585,7 +592,9 @@ int Amesos_Paraklete::SymbolicFactorization()
   IsSymbolicFactorizationOK_ = false;
   IsNumericFactorizationOK_ = false;
   
+#ifdef HAVE_AMESOS_EPETRAEXT
   transposer_ = static_cast<Teuchos::ENull>( 0 ); 
+#endif
 
   InitTime(Comm(), 2);
 
@@ -782,9 +791,10 @@ int Amesos_Paraklete::Solve()
       SerialX_->Scale(1.0, *SerialB_ ) ;    // X = B (Klu overwrites B with X)
     }
   }
-  assert( NumVectors_ == 1 ) ; 
-  paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
-		    &SerialXBvalues_[0],  &*PrivateParakleteData_->common_ );
+  for (int i = 0; i < NumVectors_ ; i++ ) { 
+    paraklete_solve(  &*PrivateParakleteData_->LUnumeric_, &*PrivateParakleteData_->LUsymbolic_,
+		      &SerialXBvalues_[i*SerialXlda_],  &*PrivateParakleteData_->common_ );
+  }
   AddTime("solve", 0);
 
   //  Copy X back to the original vector

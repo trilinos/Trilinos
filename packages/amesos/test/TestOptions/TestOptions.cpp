@@ -804,7 +804,7 @@ int NextMain( int argc, char *argv[] ) {
 
 #ifndef HAVE_AMESOS_EPETRAEXT
     if ( ! quiet && Comm.MyPID() == 0 ) 
-      cout << "Amesos has been built without epetraext, capabilites requiring epetraext, such as reindexing, will not be tested" << endl ; 
+      cout << "Amesos has been built without epetraext, capabilites requiring epetraext, such as reindexing and Amesos_Paraklete non-transpose solves, will not be tested" << endl ; 
 #endif
 
   for (int i=0; i < NumAmesosClasses; i++ ) {

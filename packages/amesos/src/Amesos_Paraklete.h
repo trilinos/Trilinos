@@ -61,8 +61,6 @@
 #endif
 
 
-// class EpetraExt::MultiVector_Reindex ;
-// class EpetraExt::CrsMatrix_Reindex ;
 //! Amesos_Paraklete:  A serial, unblocked code ideal for getting started and for very sparse matrices, such as circuit matrces.
 
 /*! 
@@ -266,14 +264,6 @@ private:
   //
 #ifdef HAVE_AMESOS_EPETRAEXT
   Teuchos::RefCountPtr<EpetraExt::RowMatrix_Transpose> transposer_;
-#endif
-#if 0
-  //! Points to an object which reindexes a MultiVector to a contiguous map
-  Teuchos::RefCountPtr<EpetraExt::MultiVector_Reindex> VecTrans_;
-  //! Points to an object which reindexes a CrsMatrix to a contiguous map
-  Teuchos::RefCountPtr<EpetraExt::CrsMatrix_Reindex> MatTrans_;
-  //! Points to a Contiguous Map 
-  Teuchos::RefCountPtr<Epetra_Map> ContiguousMap_;
 #endif
   //! Points to a Serial Map (unused if UseDataInPlace_ == 1 )
   Teuchos::RefCountPtr<Epetra_Map> SerialMap_;

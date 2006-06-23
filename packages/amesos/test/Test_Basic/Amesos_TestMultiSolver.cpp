@@ -71,8 +71,8 @@
 #ifdef HAVE_AMESOS_PASTIX
 #include "Amesos_Pastix.h"
 #endif
-#ifdef HAVE_AMESOS_PARKLETE
-#include "Amesos_Parklete.h"
+#ifdef HAVE_AMESOS_PARAKLETE
+#include "Amesos_Paraklete.h"
 #endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
@@ -350,6 +350,18 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       EPETRA_CHK_ERR( klu.SymbolicFactorization(  ) ); 
       EPETRA_CHK_ERR( klu.NumericFactorization(  ) ); 
       EPETRA_CHK_ERR( klu.Solve( ) ); 
+#endif
+#ifdef HAVE_AMESOS_PARAKLETE
+    } else if ( SparseSolver == PARAKLETE ) { 
+      Teuchos::ParameterList ParamList ;
+      Amesos_Paraklete paraklete( Problem ) ; 
+      ParamList.set( "MaxProcs", -3 );
+      EPETRA_CHK_ERR( paraklete.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( paraklete.SetUseTranspose( transpose ) ); 
+    
+      EPETRA_CHK_ERR( paraklete.SymbolicFactorization(  ) ); 
+      EPETRA_CHK_ERR( paraklete.NumericFactorization(  ) ); 
+      EPETRA_CHK_ERR( paraklete.Solve( ) ); 
 #endif
 #ifdef HAVE_AMESOS_SLUS
     } else if ( SparseSolver == SuperLU ) { 
