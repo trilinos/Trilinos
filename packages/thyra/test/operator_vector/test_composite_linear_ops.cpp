@@ -40,9 +40,9 @@
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_dyn_cast.hpp"
-#include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 /** \brief Main test driver function for testing various composite linear operator classes
@@ -472,7 +472,6 @@ int main( int argc, char* argv[] ) {
 
   bool success = true;
   bool verbose = true;
-
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   const int procRank = Teuchos::GlobalMPISession::getRank();
