@@ -80,7 +80,7 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	cp  $(srcdir)/In_AmesosTaucs.csh AmesosTaucs.csh 
 	cp  $(srcdir)/In_AmesosPardiso.csh AmesosPardiso.csh 
 	cp  $(srcdir)/In_AmesosPastix.csh AmesosPastix.csh 
-	cp  $(srcdir)/In_AmesosParaklete.csh AmesosParaklete.csh 
+	cp  $(amesos_paraklete_test) AmesosParaklete.csh 
 	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
 	cp  $(srcdir)/In_AmesosKluSerial.csh AmesosKluSerial.csh 
 	cp  $(srcdir)/In_AmesosSuperluSerial.csh AmesosSuperluSerial.csh 
@@ -127,6 +127,13 @@ else
 amesos_test_SOURCES = $(srcdir)/DoNothing.cpp
 endif
 
+if HAVE_AMESOS_EPETRAEXT
+amesos_paraklete_test = $(srcdir)/In_AmesosParaklete.csh
+else
+amesos_paraklete_test = $(srcdir)/In_AmesosParaklete_Sans_EpetraExt.csh
+endif
+
+
 TestBasic_DEPENDENCIES = $(top_builddir)/src/libamesos.a
 TestBasic_LDADD        = ${EXAMPLE_LIBS}
 
@@ -165,6 +172,7 @@ EXTRA_DIST = $(srcdir)/662_bus.rsa \
 	$(srcdir)/In_AmesosPardiso.csh \
 	$(srcdir)/In_AmesosPastix.csh \
 	$(srcdir)/In_AmesosParaklete.csh \
+	$(srcdir)/In_AmesosParaklete_Sans_EpetraExt.csh \
 	$(srcdir)/In_AmesosMumps.csh \
 	$(srcdir)/In_AmesosKluSerial.csh  $(srcdir)/In_AmesosSuperluSerial.csh \
 	$(srcdir)/In_AmesosUmfpackSerial.csh \
