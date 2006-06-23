@@ -26,13 +26,16 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+//#include "Thyra_DefaultSerialVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
 #include "Thyra_MultiVectorStdOpsTester.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_arrayArg.hpp"
 
 namespace Thyra {
@@ -48,11 +51,12 @@ bool run_std_ops_tests(
   )
 {
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
   using Teuchos::OSTab;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Thyra::Index Index;
 
   RefCountPtr<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
@@ -69,7 +73,10 @@ bool run_std_ops_tests(
   bool success = true;
 
   if(out.get()) *out << "\nCreating a serial vector space svs with n="<<n<<" vector elements ...\n";
-  const DefaultSerialVectorSpace<Scalar>  svs(n);
+  //const DefaultSerialVectorSpace<Scalar>  svs(n);
+  const RefCountPtr<const Teuchos::Comm<Index> >
+    comm = Teuchos::DefaultComm<Index>::getComm();
+  const DefaultSpmdVectorSpace<Scalar>  svs(comm,n,-1);
 
   if(out.get()) *out << "\nTesting standard vector ops with svs ...\n";
   if(!vectorStdOpsTester.checkStdOps(svs,OSTab(out).getOStream().get(),dumpAll)) success = false;
@@ -84,7 +91,8 @@ bool run_std_ops_tests(
   std::vector<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
-    spaceBlock = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
+    spaceBlock = Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
+    //spaceBlock = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
 
@@ -109,6 +117,10 @@ int main( int argc, char* argv[] ) {
   bool success = true;
   bool verbose = true;
   bool dumpAll = false;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
+  const int numProc = Teuchos::GlobalMPISession::getNProc();
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

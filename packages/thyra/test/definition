@@ -3,7 +3,8 @@
 #
 
 (FRAMEWORK, INSTALL) {
-    TESTS = ../example/operator_vector/sillyCgSolve_mpi.exe;
+    TESTS = ../example/operator_vector/sillyCgSolve_mpi.exe,
+            ./operator_vector/test_std_ops.exe;
     ARGS = --verbose;
     COMM = MPI,SERIAL;
 }

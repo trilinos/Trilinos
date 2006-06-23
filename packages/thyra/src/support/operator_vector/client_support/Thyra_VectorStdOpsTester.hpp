@@ -33,6 +33,13 @@
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_arrayArg.hpp"
 
+//#define THYRA_VECTOR_STD_OPS_TESTER_DUMP
+
+#ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
+#  include "RTOpPack_SPMD_apply_op_decl.hpp"
+#  include "Thyra_SpmdVectorBase.hpp"
+#endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
+
 namespace Thyra {
 
 // VectorStdOpsTesterComparable (using partial specialization to only do tests in some cases)
@@ -230,10 +237,18 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   
   if(out) *out << "\nabs(&*z,*v1);\n";
   abs(&*z,*v1);
+#ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
+  SpmdVectorBase<Scalar>::show_dump = true;
+  RTOpPack::show_spmd_apply_op_dump = true;
+#endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
   if(!testRelErr<Scalar>(
        "sum(*z)",sum(*z),"2.0*vecSpc.dim()",Scalar(2.0)*Scalar(vecSpc.dim())
        ,"error_tol",error_tol(),"warning_tol",warning_tol(),out)
     ) success=false;
+#ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
+  SpmdVectorBase<Scalar>::show_dump = false;
+  RTOpPack::show_spmd_apply_op_dump = false;
+#endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
   
   if(out) *out << "\nreciprocal(&*z,*v1);\n";
   reciprocal(&*z,*v1);

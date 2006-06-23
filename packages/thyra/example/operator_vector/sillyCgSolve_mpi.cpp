@@ -66,11 +66,6 @@ bool runCgSolveExample(
   typedef typename ST::magnitudeType    ScalarMag;
   bool success = true;
   bool result;
-/*
-  // Setup the output stream (do output only on root process!)
-  Teuchos::oblackholestream black_hole_out;
-  std::ostream &out = ( procRank == 0 ? std::cout : black_hole_out );
-*/
   // ToDo: Get VerboseObjectBase to automatically setup for parallel
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
