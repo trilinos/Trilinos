@@ -435,7 +435,7 @@ sillyCgSolve_epetra.cpp </a>
 
 */
 
-/** \defgroup Epetra_Thyra_epetra_adapters_testing_prg_grp Testing Program for TSFCore/Epetra Adapters
+/** \defgroup Epetra_Thyra_epetra_adapters_testing_prg_grp Testing Program for Thyra/Epetra Adapters
 
 \ingroup Epetra_Thyra_Op_Vec_examples_grp
 
@@ -468,7 +468,7 @@ defined):
 \until endif
 
 This program then creates two different (parallel or serial) vector
-spaces where one is of type <tt>TSFCore::EpetraVectorSpace</tt> and
+spaces where one is of type <tt>Thyra::EpetraVectorSpace</tt> and
 the other is some non-Epetra vector space:
 
 \skip RefCountPtr
@@ -485,13 +485,13 @@ mundane and we show a few of these simpler examples before going onto
 some more interesting ones.
 
 These vectors and multi-vectors are then initialized using the
-<tt>TSFCore::assign()</tt> wrapper functions:
+<tt>Thyra::assign()</tt> wrapper functions:
 
 \skip assign
 \until neV2
 
 The one norms of these vectors and multi-vectors are are then computed
-using various overloads of <tt>TSFCore::norm_1()</tt> as:
+using various overloads of <tt>Thyra::norm_1()</tt> as:
 
 \skip Scalar
 \until neV2_nrm
@@ -563,7 +563,7 @@ multi-vector objects is the following lines:
 
 Now we show how an <tt>Epetra_Operator</tt> object is wrapped by a
 <tt>Thyra::EpetraLinearOp</tt> object to give the %Epetra object a
-%TSFCore skin.
+%Thyra skin.
 
 First we create a simple diagonal %Epetra operator in the following
 lines of code:
