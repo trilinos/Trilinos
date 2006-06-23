@@ -85,7 +85,7 @@ bool testComm(
     if(procRank==0) {
       *out << "\nReceiving data specifically from p="<<numProcs-1<<" ...\n";
       std::fill_n(&recvBuff[0],count,Packet(0));
-      const int sourceRank = receive(comm,numProcs-1,count,&recvBuff[0]);
+//      const int sourceRank = receive(comm,numProcs-1,count,&recvBuff[0]);
       *out << "\nChecking that recvBuffer[] == numProcs * sendBuffer[] ...";
       result = true;
       for( int i = 0; i < count; ++i ) {
