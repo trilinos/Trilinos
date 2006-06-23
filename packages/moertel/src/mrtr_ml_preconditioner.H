@@ -139,6 +139,7 @@ public:
                                     RefCountPtr<Epetra_CrsMatrix> A,
                                     RefCountPtr<Epetra_CrsMatrix> WT,
                                     RefCountPtr<Epetra_CrsMatrix> B,
+                                    RefCountPtr<Epetra_Map>       Annmap,
                                     ParameterList& mlparams,
                                     bool constructnow = true);
 
@@ -245,7 +246,19 @@ private:
   Mortar_ML_Preconditioner operator = (const Mortar_ML_Preconditioner& old);
   
   // the v-cycle
+#if 1 // old working version
   int MultiLevelSA(const MultiVector& b_f,MultiVector& x_f, int level) const;
+#endif
+#if 0 // experimental version I
+  int MultiLevelSA(const MultiVector& b1_f,
+                   const MultiVector& b2_f,
+                   MultiVector& x1_f, 
+                   MultiVector& x2_f, 
+                   int level) const;
+#endif
+#if 0 // experimental version II
+  int MultiLevelSA(const MultiVector& b_f,MultiVector& x_f, int level) const;
+#endif
 
   // some helpers
   inline const Operator& P(const int i) const { return (mlapiPmod_[i]); }
@@ -265,12 +278,37 @@ private:
   RefCountPtr<Epetra_CrsMatrix>  WT_;          // mortar scaling
   RefCountPtr<Epetra_CrsMatrix>  B_;           // mortar constraints
 
+  RefCountPtr<Epetra_Map>        Annmap_;      // row map of Ann
+
   vector<Operator>               mlapiImBWT_;  // operator I - B * W^TT on each grid                     
   vector<Operator>               mlapiImWBT_;  // operator I - W * B^T on each grid                     
   vector<Operator>               mlapiRmod_;   // modified restriction                     
   vector<Operator>               mlapiPmod_;   // modified prolongation                    
   vector<Operator>               mlapiAtilde_; // operator Atilde on each grid                       
   vector<InverseOperator>        mlapiS_;      // smoother on each grid
+
+#if 0 // additional data for experimental version I 
+  RefCountPtr<Epetra_Map>        Arrmap_;      // row map of Arr
+  RefCountPtr<Epetra_CrsMatrix>  Atilde11_;
+  RefCountPtr<Epetra_CrsMatrix>  Ahat11_;
+  RefCountPtr<Epetra_CrsMatrix>  M_;
+  RefCountPtr<Epetra_CrsMatrix>  MT_;
+  Operator                       mlapiAtilde11_;
+  Operator                       mlapiAhat11_;
+  Operator                       mlapiM_;
+  Operator                       mlapiMT_;
+  InverseOperator                G_;
+#endif  
+
+#if 0 // additional data for experimental version II
+  RefCountPtr<Epetra_Map>        Arrmap_;      // row map of Arr
+  RefCountPtr<Epetra_CrsMatrix>  Asplit_;      // uncoupled version of A
+  RefCountPtr<Epetra_CrsMatrix>  Atildesplit_; // uncoupled modified version of Atilde
+  RefCountPtr<Epetra_CrsMatrix>  Ahat_;        
+  vector<Operator>               mlapiAtildesplit_;  
+  vector<Operator>               mlapiAhat_;  
+  inline const Operator& Ahat(const int i) const { return (mlapiAhat_[i]); }
+#endif  
 
 }; // class  ConstrainedPreconditioner : public virtual Epetra_Operator
 }  // namespace ConstrainedPreconditioner

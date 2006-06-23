@@ -207,6 +207,8 @@ private:
   RefCountPtr<Epetra_CrsMatrix>                     WT_;
   RefCountPtr<Epetra_CrsMatrix>                     B_;
   RefCountPtr<Epetra_CrsMatrix>                     I_;  
+  RefCountPtr<Epetra_Map>                           Annmap_;
+  RefCountPtr<map<int,int> >                        lm_to_dof_;
 };
 
 } // namespace MOERTEL

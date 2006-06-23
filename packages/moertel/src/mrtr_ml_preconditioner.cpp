@@ -41,6 +41,7 @@ MOERTEL::Mortar_ML_Preconditioner::Mortar_ML_Preconditioner(
                                     RefCountPtr<Epetra_CrsMatrix> A,
                                     RefCountPtr<Epetra_CrsMatrix> WT,
                                     RefCountPtr<Epetra_CrsMatrix> B,
+                                    RefCountPtr<Epetra_Map>       Annmap,
                                     ParameterList& mlparams,
                                     bool constructnow) :
 iscomputed_(false),
@@ -48,7 +49,8 @@ mlparams_(mlparams),
 Atilde_(Atilde),
 A_(A),
 WT_(WT),
-B_(B)                                    
+B_(B),
+Annmap_(Annmap)
 {
   label_  = "MOERTEL::Mortar_ML_Preconditioner";
 
@@ -64,6 +66,7 @@ B_(B)
   return;
 }
 
+#if 1 // working version
 /*----------------------------------------------------------------------*
  |  apply multigrid linear preconditioner (public)           m.gee 03/06|
  *----------------------------------------------------------------------*/
@@ -120,13 +123,15 @@ int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
 #endif
 
 #if 0
-  Epetra_MultiVector Ytmp(B_->DomainMap(),1,false);
+  Epetra_MultiVector Ytmp(B_->DomainMap(),1,true);
   B_->Multiply(true,Y,Ytmp);
   cout << Ytmp; exit(0);
 #endif
   return 0;
 }
+#endif
 
+#if 1 // working version
 /*----------------------------------------------------------------------*
  |  apply multigrid linear preconditioner (private)          m.gee 03/06|
  *----------------------------------------------------------------------*/
@@ -137,6 +142,7 @@ int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
   if (level == maxlevels_-1)
   {
     x_f = S(level) * b_f;
+    //x_f = ImWBT(level) * x_f;
     return 0;
   }
   
@@ -168,7 +174,9 @@ int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
   
   return 0;
 }
+#endif
 
+#if 1 // working version with standard smoothers
 /*----------------------------------------------------------------------*
  |  compute the preconditioner (public)                      m.gee 03/06|
  *----------------------------------------------------------------------*/
@@ -197,14 +205,7 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   
   // make the multiplication of BWT
   RefCountPtr<Epetra_CrsMatrix> BWT = rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,0));
-  RefCountPtr<Epetra_CrsMatrix> tmp = rcp(new Epetra_CrsMatrix(Copy,BWT->RowMap(),5,false));
-  for (int i=0; i<tmp->NumMyRows(); ++i)
-  {
-    int grid = tmp->GRID(i);
-    double zero = 0.0;
-    int err = tmp->InsertGlobalValues(grid,1,&zero,&grid);
-    if (err<0) ML_THROW("Padding of BWT matrix failed", -1);
-  }
+  RefCountPtr<Epetra_CrsMatrix> tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
   MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*tmp,1.0);
   tmp->FillComplete(BWT->DomainMap(),BWT->RangeMap());
   BWT = tmp;
@@ -289,7 +290,6 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
     mlparams_.set("workspace: current level",level);
     GetPtent(mlapiA,mlparams_,NS,Ptent,NextNS);
     NS = NextNS;
-    fflush(stdout);
     
     if (damping)
     {
@@ -385,3 +385,609 @@ bool MOERTEL::Mortar_ML_Preconditioner::Compute()
   iscomputed_ = true;
   return true;
 }
+#endif
+
+#if 0 // experimental version I
+/*----------------------------------------------------------------------*
+ |  apply multigrid linear preconditioner (public)           m.gee 03/06|
+ *----------------------------------------------------------------------*/
+int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
+                     const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
+{
+  if (!iscomputed_)
+  {
+    MOERTEL::Mortar_ML_Preconditioner& tmp = 
+                       const_cast<MOERTEL::Mortar_ML_Preconditioner&>(*this);
+    tmp.Compute();
+  }
+  
+  Epetra_Vector x(View,X,0);
+  Epetra_Vector* x1;
+  Epetra_Vector* x2;
+  MOERTEL::SplitVector(x,*Arrmap_,x1,*Annmap_,x2);
+
+  Epetra_Vector y(View,Y,0);
+  Epetra_Vector* y1;
+  Epetra_Vector* y2;
+  MOERTEL::SplitVector(y,*Arrmap_,y1,*Annmap_,y2);
+  
+  // create a mlapi space for x1 and x2
+  Space space1;
+  Space space2;
+  const Epetra_BlockMap& map1 = x1->Map();
+  const Epetra_BlockMap& map2 = x2->Map();
+  space1.Reshape(map1.NumGlobalElements(),map1.NumMyElements(),map1.MyGlobalElements());
+  space2.Reshape(map2.NumGlobalElements(),map2.NumMyElements(),map2.MyGlobalElements());
+  
+  // create input/output vectors in mlapi
+  MultiVector b1_f(space1,1,false);
+  MultiVector x1_f(space1,1,false);
+  MultiVector b2_f(space2,1,false);
+  MultiVector x2_f(space2,1,false);
+  const int nele1 = map1.NumMyElements();
+  const int nele2 = map2.NumMyElements();
+  for (int i=0; i<nele1; ++i)
+  {
+    x1_f(i) = (*y1)[i];
+    b1_f(i) = (*x1)[i];
+  }
+  for (int i=0; i<nele2; ++i)
+  {
+    x2_f(i) = (*y2)[i];
+    b2_f(i) = (*x2)[i];
+  }
+  
+  // call AMG
+  MultiLevelSA(b1_f,b2_f,x1_f,x2_f,0);
+  
+  // copy solution back
+  for (int i=0; i<nele1; ++i)
+    (*y1)[i] = x1_f(i); 
+  for (int i=0; i<nele2; ++i)
+    (*y2)[i] = x2_f(i); 
+  MOERTEL::MergeVector(*y1,*y2,y);
+  
+  return 0;
+}
+#endif
+
+#if 0 // new experimental version I
+/*----------------------------------------------------------------------*
+ |  apply multigrid linear preconditioner (private)          m.gee 03/06|
+ *----------------------------------------------------------------------*/
+int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(
+                                            const MultiVector& b1_f,
+                                            const MultiVector& b2_f,
+                                                  MultiVector& x1_f, 
+                                                  MultiVector& x2_f, 
+                                                  int level) const 
+{
+  MultiVector r1_f(b1_f.GetVectorSpace(),1,false);
+  MultiVector z1_f(b1_f.GetVectorSpace(),1,false);
+  
+  // presmoothing
+  x1_f = 0;
+  G_.Apply(b1_f,x1_f);
+  x2_f = mlapiMT_ * x1_f;
+  x2_f.Scale(-1.0);
+  
+  // compute residual
+  r1_f = b1_f - mlapiAhat11_ * x1_f;
+
+  // postsmoothing
+  z1_f = 0;
+  G_.Apply(r1_f,z1_f);
+  x1_f = x1_f + z1_f;
+  x2_f = mlapiMT_ * x1_f;
+  x2_f.Scale(-1.0);
+
+
+
+  return 0;
+}
+#endif
+
+
+
+#if 0 // new experimental version I
+/*----------------------------------------------------------------------*
+ |  compute the preconditioner (public)                      m.gee 03/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Mortar_ML_Preconditioner::Compute()
+{
+
+  iscomputed_ = false;
+  
+  MLAPI::Init();
+  
+  // get parameters
+  int     maxlevels     = mlparams_.get("max levels",10);
+  int     maxcoarsesize = mlparams_.get("coarse: max size",10);
+  double* nullspace     = mlparams_.get("null space: vectors",(double*)NULL);
+  int     nsdim         = mlparams_.get("null space: dimension",1);
+  int     numpde        = mlparams_.get("PDE equations",1);
+  double  damping       = mlparams_.get("aggregation: damping factor",1.33);
+  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  
+  // create the 2 rowmaps
+  Arrmap_ = rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
+  RefCountPtr<Epetra_Map> map1 = Arrmap_;
+  RefCountPtr<Epetra_Map> map2 = Annmap_;
+
+  // split Atilde
+  //
+  //  Atilde11 Atilde12
+  //  Atilde21 Atilde22
+  //
+  RefCountPtr<Epetra_CrsMatrix> Atilde11;
+  RefCountPtr<Epetra_CrsMatrix> Atilde12;
+  RefCountPtr<Epetra_CrsMatrix> Atilde21;
+  RefCountPtr<Epetra_CrsMatrix> Atilde22;
+  MOERTEL::SplitMatrix2x2(Atilde_,map1,map2,Atilde11,Atilde12,Atilde21,Atilde22);
+  Atilde11_ = Atilde11;
+  
+  // build BWT (padded to full size)
+  //
+  //  0   Mr Dinv
+  //  0    I
+  //
+  RefCountPtr<Epetra_CrsMatrix> BWT = rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,0));
+  RefCountPtr<Epetra_CrsMatrix> tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
+  MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*tmp,0.0);
+  tmp->FillComplete(BWT->DomainMap(),BWT->RangeMap());
+  BWT = tmp;
+  tmp = null;
+  
+  // split BWT to obtain M = Mr Dinv
+  RefCountPtr<Epetra_CrsMatrix> Zero11;
+  RefCountPtr<Epetra_CrsMatrix> M;
+  RefCountPtr<Epetra_CrsMatrix> Zero21;
+  RefCountPtr<Epetra_CrsMatrix> I22;
+  MOERTEL::SplitMatrix2x2(BWT,map1,map2,Zero11,M,Zero21,I22);
+  M_ = M;
+  
+  // transpose BWT to get WBT and split again
+  tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
+  MOERTEL::MatrixMatrixAdd(*BWT,true,1.0,*tmp,0.0);
+  tmp->FillComplete();
+  RefCountPtr<Epetra_CrsMatrix> Zero12;
+  MOERTEL::SplitMatrix2x2(tmp,map1,map2,Zero11,Zero12,MT_,I22);
+  
+  // build matrix Ahat11 = Atilde11 + M Atilde22 M^T    
+  RefCountPtr<Epetra_CrsMatrix> Ahat11 = rcp(new Epetra_CrsMatrix(Copy,*map1,50,false));
+  MOERTEL::MatrixMatrixAdd(*Atilde11,false,1.0,*Ahat11,0.0);
+  RefCountPtr<Epetra_CrsMatrix> tmp1 = rcp(MOERTEL::MatMatMult(*Atilde22,false,*M,true,0));
+  RefCountPtr<Epetra_CrsMatrix> tmp2 = rcp(MOERTEL::MatMatMult(*M,false,*tmp1,false,0));
+  MOERTEL::MatrixMatrixAdd(*tmp2,false,-1.0,*Ahat11,1.0);
+  Ahat11->FillComplete();
+  Ahat11->OptimizeStorage();
+  Ahat11_ = Ahat11;
+  
+  // build mlapi objects
+  Space space1(*map1);
+  Space space2(*map2);
+  mlapiAtilde11_.Reshape(space1,space1,Atilde11_.get(),false);
+  mlapiAhat11_.Reshape(space1,space1,Ahat11_.get(),false);
+  mlapiM_.Reshape(space2,space1,M_.get(),false);
+  mlapiMT_.Reshape(space1,space2,MT_.get(),false);
+  
+  // build the smoother G(Atilde11)
+  G_.Reshape(mlapiAtilde11_,smoothertype,mlparams_);
+
+  iscomputed_ = true;
+  return true;
+}
+#endif
+
+
+#if 0 // experimental version II
+/*----------------------------------------------------------------------*
+ |  apply multigrid linear preconditioner (public)           m.gee 03/06|
+ *----------------------------------------------------------------------*/
+int MOERTEL::Mortar_ML_Preconditioner::ApplyInverse(
+                     const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
+{
+  if (!iscomputed_)
+  {
+    MOERTEL::Mortar_ML_Preconditioner& tmp = 
+                       const_cast<MOERTEL::Mortar_ML_Preconditioner&>(*this);
+    tmp.Compute();
+  }
+  
+#if 0
+  Epetra_Vector x(View,X,0);
+  Epetra_Vector xtmp(B_->DomainMap(),false);
+  Epetra_Vector xtmp2(x.Map(),false);
+  // make X (residual) satisfy constraints 
+  // do X = (I-BW^T)X
+  WT_->Multiply(false,x,xtmp);
+  B_->Multiply(false,xtmp,xtmp2);
+  x.Update(-1.0,xtmp2,1.0);
+#endif
+
+  // create a Space
+  const Epetra_BlockMap& bmap = X.Map();
+  Space space;
+  space.Reshape(bmap.NumGlobalElements(),bmap.NumMyElements(),bmap.MyGlobalElements());
+  
+  // create input/output mlapi multivectors
+  MultiVector b_f(space,1,false);
+  MultiVector x_f(space,1,false);
+  const int nele = X.Map().NumMyElements();
+  for (int i=0; i<nele; ++i)
+  {
+    x_f(i) = Y[0][i];
+    b_f(i) = X[0][i];
+  }
+  
+  // call AMG
+  MultiLevelSA(b_f,x_f,0);
+  
+  // copy solution back
+  for (int i=0; i<nele; ++i)
+    Y[0][i] = x_f(i);
+  
+#if 0
+  // make Y (search direction) satisfy constraints
+  // do Y = (I-WB^T)Y
+  Epetra_Vector y(View,Y,0);
+  B_->Multiply(true,y,xtmp);
+  WT_->Multiply(true,xtmp,xtmp2);
+  y.Update(-1.0,xtmp2,1.0);
+#endif
+
+#if 0
+  Epetra_MultiVector Ytmp(B_->DomainMap(),1,true);
+  B_->Multiply(true,Y,Ytmp);
+  cout << Ytmp; exit(0);
+#endif
+  
+  return 0;
+}
+#endif
+
+#if 0 // new experimental version II
+/*----------------------------------------------------------------------*
+ |  apply multigrid linear preconditioner (private)          m.gee 03/06|
+ *----------------------------------------------------------------------*/
+int MOERTEL::Mortar_ML_Preconditioner::MultiLevelSA(const MultiVector& b_f,
+                                                          MultiVector& x_f, 
+                                                          int level) const 
+{
+  if (level == maxlevels_-1)
+  {
+    x_f = 0;
+    S(level).Apply(b_f,x_f);
+    x_f = ImWBT(level) * x_f;
+    return 0;
+  }
+
+  MultiVector r_f(b_f.GetVectorSpace(),1,false);
+  MultiVector z_f(b_f.GetVectorSpace(),1,false);
+  MultiVector r_c(P(level).GetDomainSpace(),1,false);
+  MultiVector z_c(P(level).GetDomainSpace(),1,false);
+
+  // presmoothing
+  x_f = 0;
+  S(level).Apply(b_f,x_f);
+  x_f = ImWBT(level) * x_f; 
+
+
+  // compute residual (different operator)
+  r_f = b_f - Ahat(level) * x_f;
+  
+  // restrict
+  r_c = R(level) * r_f;
+  
+  // solve coarser problem
+  MultiLevelSA(r_c,z_c,level+1);
+  
+  // prolongate
+  x_f = x_f + P(level) * z_c;
+  x_f = ImWBT(level) * x_f; 
+  
+  // recompute residual using a different operator
+  r_f = b_f - Ahat(level) * x_f;
+  
+  // postsmoothing
+  z_f = 0;
+  S(level).Apply(r_f,z_f);
+  z_f = ImWBT(level) * z_f; 
+  x_f = x_f + z_f;
+
+  return 0;
+}
+#endif
+
+
+
+#if 0 // new experimental version II
+/*----------------------------------------------------------------------*
+ |  compute the preconditioner (public)                      m.gee 03/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::Mortar_ML_Preconditioner::Compute()
+{
+
+  iscomputed_ = false;
+  
+  MLAPI::Init();
+  
+  // get parameters
+  int     maxlevels     = mlparams_.get("max levels",10);
+  int     maxcoarsesize = mlparams_.get("coarse: max size",10);
+  double* nullspace     = mlparams_.get("null space: vectors",(double*)NULL);
+  int     nsdim         = mlparams_.get("null space: dimension",1);
+  int     numpde        = mlparams_.get("PDE equations",1);
+  double  damping       = mlparams_.get("aggregation: damping factor",1.33);
+  string  eigenanalysis = mlparams_.get("eigen-analysis: type", "Anorm");
+  string  smoothertype  = mlparams_.get("smoother: type","symmetric Gauss-Seidel");
+  string  coarsetype    = mlparams_.get("coarse: type","Amesos-KLU");
+  string  ptype         = mlparams_.get("prolongator: type","mod_full");
+  
+  // create the missing rowmap Arrmap_ 
+  Arrmap_ = rcp(MOERTEL::SplitMap(A_->RowMap(),*Annmap_));
+  RefCountPtr<Epetra_Map> map1 = Arrmap_;
+  RefCountPtr<Epetra_Map> map2 = Annmap_;
+
+  // split Atilde
+  //
+  //  Atilde11 Atilde12
+  //  Atilde21 Atilde22
+  //
+  RefCountPtr<Epetra_CrsMatrix> Atilde11;
+  RefCountPtr<Epetra_CrsMatrix> Atilde12;
+  RefCountPtr<Epetra_CrsMatrix> Atilde21;
+  RefCountPtr<Epetra_CrsMatrix> Atilde22;
+  MOERTEL::SplitMatrix2x2(Atilde_,map1,map2,Atilde11,Atilde12,Atilde21,Atilde22);
+  
+  // build Atildesplit
+  //
+  //  Atilde11  0
+  //  0         I
+  //
+  Atildesplit_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMap(),50,false));
+  MOERTEL::MatrixMatrixAdd(*Atilde11,false,1.0,*Atildesplit_,0.0);
+  RefCountPtr<Epetra_CrsMatrix> tmp = rcp(MOERTEL::PaddedMatrix(*map2,1.0,1));
+  tmp->FillComplete();
+  MOERTEL::MatrixMatrixAdd(*tmp,false,1.0,*Atildesplit_,1.0);
+  Atildesplit_->FillComplete();
+  Atildesplit_->OptimizeStorage();
+  
+  // split A
+  //
+  //  A11 A12
+  //  A21 A22
+  //
+  RefCountPtr<Epetra_CrsMatrix> A11;
+  RefCountPtr<Epetra_CrsMatrix> A12;
+  RefCountPtr<Epetra_CrsMatrix> A21;
+  RefCountPtr<Epetra_CrsMatrix> A22;
+  MOERTEL::SplitMatrix2x2(A_,map1,map2,A11,A12,A21,A22);
+  
+  // build Asplit_
+  //
+  //  A11  0
+  //  0    A22
+  //
+  Asplit_ = rcp(new Epetra_CrsMatrix(Copy,A_->RowMap(),50,false));
+  MOERTEL::MatrixMatrixAdd(*A11,false,1.0,*Asplit_,0.0);
+  MOERTEL::MatrixMatrixAdd(*A22,false,1.0,*Asplit_,1.0);
+  Asplit_->FillComplete();
+  Asplit_->OptimizeStorage();
+  
+  // build BWT (padded to full size)
+  //
+  //  0   Mr Dinv
+  //  0    I
+  //
+  RefCountPtr<Epetra_CrsMatrix> BWT = rcp(MOERTEL::MatMatMult(*B_,false,*WT_,false,10));
+                                tmp = rcp(MOERTEL::PaddedMatrix(BWT->RowMap(),0.0,25));
+  MOERTEL::MatrixMatrixAdd(*BWT,false,1.0,*tmp,0.0);
+  tmp->FillComplete(BWT->DomainMap(),BWT->RangeMap());
+  BWT = tmp;
+  tmp = null;
+  
+  // split BWT to obtain M = Mr Dinv
+  RefCountPtr<Epetra_CrsMatrix> Zero11;
+  RefCountPtr<Epetra_CrsMatrix> M;
+  RefCountPtr<Epetra_CrsMatrix> Zero21;
+  RefCountPtr<Epetra_CrsMatrix> I22;
+  MOERTEL::SplitMatrix2x2(BWT,map1,map2,Zero11,M,Zero21,I22);
+  
+  
+  // build matrix Ahat11 = Atilde11 - M Atilde22 M^T    
+  RefCountPtr<Epetra_CrsMatrix> Ahat11 = rcp(new Epetra_CrsMatrix(Copy,*map1,50,false));
+  MOERTEL::MatrixMatrixAdd(*Atilde11,false,1.0,*Ahat11,0.0);
+  RefCountPtr<Epetra_CrsMatrix> tmp1 = rcp(MOERTEL::MatMatMult(*Atilde22,false,*M,true,10));
+  RefCountPtr<Epetra_CrsMatrix> tmp2 = rcp(MOERTEL::MatMatMult(*M,false,*tmp1,false,10));
+  MOERTEL::MatrixMatrixAdd(*tmp2,false,-1.0,*Ahat11,1.0);
+  Ahat11->FillComplete();
+  Ahat11->OptimizeStorage();
+  
+  // build matrix Ahat
+  //
+  //  Ahat11   0   =   Atilde11 - M Atilde22 M^T   0
+  //  0        0       0                           0
+  //
+  Ahat_ = rcp(MOERTEL::PaddedMatrix(A_->RowMap(),0.0,25));
+  MOERTEL::MatrixMatrixAdd(*Ahat11,false,1.0,*Ahat_,0.0);
+  Ahat_->FillComplete();
+  Ahat_->OptimizeStorage();
+
+  
+  // build mlapi objects
+  Space space(A_->RowMatrixRowMap());
+  Operator mlapiAsplit(space,space,Asplit_.get(),false);
+  Operator mlapiAtildesplit(space,space,Atildesplit_.get(),false);
+  Operator mlapiAhat(space,space,Ahat_.get(),false);
+  Operator mlapiBWT(space,space,BWT.get(),false);
+  Operator mlapiBWTcoarse;
+  Operator ImBWTfine = GetIdentity(space,space) - mlapiBWT;
+  Operator ImBWTcoarse;
+  Operator Ptent;
+  Operator P;
+  Operator Pmod;
+  Operator Rtent;
+  Operator R;
+  Operator Rmod;
+  Operator IminusA;
+  Operator C;
+  InverseOperator S;
+  
+  mlapiAtildesplit_.resize(maxlevels);
+  mlapiAhat_.resize(maxlevels);
+  mlapiImBWT_.resize(maxlevels);                       
+  mlapiImWBT_.resize(maxlevels);                       
+  mlapiRmod_.resize(maxlevels);                       
+  mlapiPmod_.resize(maxlevels);                       
+  mlapiS_.resize(maxlevels);
+
+  mlapiAtildesplit_[0] = mlapiAtildesplit;
+  mlapiAhat_[0]        = mlapiAhat;
+  mlapiImBWT_[0]       = ImBWTfine;
+  mlapiImWBT_[0]       = GetTranspose(ImBWTfine);
+  
+  
+  // build nullspace
+  MultiVector NS;
+  MultiVector NextNS;
+  NS.Reshape(mlapiAsplit.GetRangeSpace(),nsdim);
+  if (nullspace)
+  {
+    for (int i=0; i<nsdim; ++i)
+      for (int j=0; j<NS.GetMyLength(); ++j)
+        NS(j,i) = nullspace[i*NS.GetMyLength()+j];
+  }
+  else
+  {
+    if (numpde==1) NS = 1.0;
+    else
+    {
+      NS = 0.0;
+      for (int i=0; i<NS.GetMyLength(); ++i)
+        for (int j=0; j<numpde; ++j)
+          if ( i % numpde == j)
+            NS(i,j) = 1.0;
+    }
+  }
+  
+  double lambdamax;
+  
+  // construct the hierarchy
+  int level=0;
+  for (level=0; level<maxlevels-1; ++level)
+  {
+    // this level's smoothing operator
+    mlapiAtildesplit = mlapiAtildesplit_[level];
+
+    // build smoother
+    if (Comm().MyPID()==0)
+    {
+      ML_print_line("-", 78);
+      cout << "MOERTEL/ML : creating smoother level " << level << endl; 
+      fflush(stdout);
+    }
+    S.Reshape(mlapiAtildesplit,smoothertype,mlparams_);
+    
+    if (level) mlparams_.set("PDE equations", NS.GetNumVectors());
+    
+    if (Comm().MyPID()==0)
+    {
+      ML_print_line("-", 80);
+      cout << "MOERTEL/ML : creating level " << level+1 << endl;
+      ML_print_line("-", 80);
+      fflush(stdout);
+    }
+    mlparams_.set("workspace: current level",level);
+    
+    // get tentative prolongator based on decoupled original system
+    GetPtent(mlapiAsplit,mlparams_,NS,Ptent,NextNS);
+    NS = NextNS;
+    
+    // do prolongator smoothing
+    if (damping)
+    {
+      if (eigenanalysis == "Anorm")
+        lambdamax = MaxEigAnorm(mlapiAsplit,true);
+      else if (eigenanalysis == "cg")
+        lambdamax = MaxEigCG(mlapiAsplit,true);
+      else if (eigenanalysis == "power-method")
+        lambdamax = MaxEigPowerMethod(mlapiAsplit,true);
+      else ML_THROW("incorrect parameter (" + eigenanalysis + ")", -1);
+      
+      IminusA = GetJacobiIterationOperator(mlapiAsplit,damping/lambdamax);
+      P       = IminusA * Ptent;
+      R       = GetTranspose(P);
+      Rtent   = GetTranspose(Ptent);
+    }
+    else
+    {
+      P     = Ptent;
+      Rtent = GetTranspose(Ptent);
+      R     = Rtent;
+      lambdamax = -1.0;
+    }
+    
+    // do variational coarse grid of split original matrix Asplit
+    C = GetRAP(R,mlapiAsplit,P);
+    
+    // compute the mortar projections on coarse grid
+    mlapiBWTcoarse = GetRAP(Rtent,mlapiBWT,Ptent); 
+    ImBWTcoarse    = GetIdentity(C.GetDomainSpace(),C.GetRangeSpace());    
+    ImBWTcoarse    = ImBWTcoarse - mlapiBWTcoarse;
+    
+    // do modified prolongation and restriction
+    if (ptype=="mod_full")
+      Rmod = ImBWTcoarse * ( R * ImBWTfine ) + mlapiBWTcoarse * ( R * mlapiBWT ); 
+    else if (ptype=="mod_middle")
+      Rmod = ImBWTcoarse * ( R * ImBWTfine ); 
+    else if (ptype=="mod_simple")
+      Rmod = R * ImBWTfine; 
+    else if (ptype=="original")
+      Rmod = R; 
+    else
+      ML_THROW("incorrect parameter ( " + ptype + " )", -1);
+    Pmod = GetTranspose(Rmod);
+    
+    // store matrix for construction of next level
+    mlapiAsplit = C;
+    
+    // make coarse smoothing operator
+    // make coarse residual operator
+    mlapiAtildesplit_[level+1] = GetRAP(Rmod,mlapiAtildesplit,Pmod);
+    mlapiAhat_[level+1]        = GetRAP(Rmod,mlapiAhat_[level],Pmod);
+    mlapiImBWT_[level]         = ImBWTfine;
+    mlapiImBWT_[level+1]       = ImBWTcoarse;
+    mlapiImWBT_[level]         = GetTranspose(ImBWTfine);
+    mlapiImWBT_[level+1]       = GetTranspose(ImBWTcoarse);
+    mlapiRmod_[level]          = Rmod;
+    mlapiPmod_[level]          = Pmod;
+    mlapiS_[level]             = S;
+    
+    // prepare for next level
+    mlapiBWT  = mlapiBWTcoarse;
+    ImBWTfine = ImBWTcoarse;
+    
+    // break if coarsest level is below specified size
+    if (mlapiAsplit.GetNumGlobalRows() <= maxcoarsesize)
+    {
+      ++level;
+      break;
+    }
+    
+  } // for (level=0; level<maxlevels-1; ++level)
+  
+  // do coarse smoother
+  S.Reshape(mlapiAtildesplit_[level],coarsetype,mlparams_);
+  mlapiS_[level] = S;
+  
+  // store max number of levels
+  maxlevels_ = level+1;
+
+  iscomputed_ = true;
+  return true;
+}
+#endif

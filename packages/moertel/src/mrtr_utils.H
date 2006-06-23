@@ -57,6 +57,7 @@
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "Epetra_Export.h"
 #include "ml_common.h"
 #include "ml_include.h"
 #include "ml_epetra_utils.h"
@@ -250,6 +251,14 @@ Epetra_CrsMatrix* MatMatMult(const Epetra_CrsMatrix& A, bool transA,
                              const Epetra_CrsMatrix& B, bool transB,
                              int outlevel);
 
+
+/*!
+\brief Allocate and return a matrix padded with val on the diagonal. 
+       FillComplete() is NOT called on exit.
+*/
+Epetra_CrsMatrix* PaddedMatrix(const Epetra_Map rowmap, double val,const int numentriesperrow);
+
+
 /*!
 \brief Strip out values from a matrix below a certain tolerance
 
@@ -263,6 +272,63 @@ on the result.
 \return The new matrix upon success, NULL otherwise
 */
 Epetra_CrsMatrix* StripZeros(Epetra_CrsMatrix& A, double eps);
+
+/*!
+\brief split a matrix into a 2x2 block system where the rowmap of one of the blocks is given
+
+Splits a given matrix into a 2x2 block system where the rowmap of one of the blocks is given
+on input. Blocks A11 and A22 are assumed to be square.
+All values on entry have to be Teuchos::null except the given rowmap and matrix A.
+Note that either A11rowmap or A22rowmap or both have to be nonzero. In case
+both rowmaps are supplied they have to be an exact and nonoverlapping split of A->RowMap().
+Matrix blocks are FillComplete() on exit.
+
+\param A         : Matrix A on input
+\param A11rowmap : rowmap of A11 or null 
+\param A22rowmap : rowmap of A22 or null 
+\param A11       : on exit matrix block A11 
+\param A12       : on exit matrix block A12 
+\param A21       : on exit matrix block A21 
+\param A22       : on exit matrix block A22 
+*/
+bool SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
+                    RefCountPtr<Epetra_Map>& A11rowmap,
+                    RefCountPtr<Epetra_Map>& A22rowmap,
+                    RefCountPtr<Epetra_CrsMatrix>& A11,
+                    RefCountPtr<Epetra_CrsMatrix>& A12,
+                    RefCountPtr<Epetra_CrsMatrix>& A21,
+                    RefCountPtr<Epetra_CrsMatrix>& A22);
+
+/*!
+\brief split a rowmap of matrix A
+
+splits A->RowMap() into 2 maps and returns them, where one of the rowmaps has
+to be given on input
+
+\param Amap      : Map to split on input
+\param Agiven    : on entry submap that is given and part of Amap 
+\return the remainder map of Amap that is not overlapping with Agiven 
+*/
+Epetra_Map* MOERTEL::SplitMap(const Epetra_Map& Amap,
+                              const Epetra_Map& Agiven);
+
+/*!
+\brief split a vector into 2 non-overlapping pieces
+
+*/
+bool MOERTEL::SplitVector(const Epetra_Vector& x,
+                          const Epetra_Map& x1map,
+                          Epetra_Vector*&   x1,
+                          const Epetra_Map& x2map,
+                          Epetra_Vector*&   x2);
+
+/*!
+\brief merge results from 2 vectors into one (assumes matching submaps)
+
+*/
+bool MOERTEL::MergeVector(const Epetra_Vector& x1,
+                          const Epetra_Vector& x2,
+                          Epetra_Vector& xresult);
 
 /*!
 \brief Print matrix to file

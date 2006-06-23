@@ -229,6 +229,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSaddleProblem()
   return saddlematrix_.get();
 }
 
+#if 0 // old working version (slow)
 /*----------------------------------------------------------------------*
  | Create the spd system (public)                            mwgee 12/05|
  | Note that this is collective for ALL procs                           |
@@ -324,7 +325,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
       }
     }
   }
-  
+  lm_to_dof_ = rcp(new map<int,int>(lm_to_dof)); // this is a very useful map for the moertel_ml_preconditioner
   /*
                _              _
               |               |
@@ -384,7 +385,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   int err=0;
   //--------------------------------------------------------------------------
   // 1) create the rangemap of Ann
-  vector<int> myanngids(100);
+  vector<int> myanngids(problemmap_->NumMyElements());
   int count=0;
   map<int,int>::iterator intintcurr;
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
@@ -400,11 +401,75 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     int numglobalelements;
   Comm().SumAll(&count,&numglobalelements,1);
   Epetra_Map* annmap = new Epetra_Map(numglobalelements,count,&myanngids[0],0,Comm());
+  annmap_ = rcp(annmap);
   myanngids.clear();
-  
+
+#if 0
   //--------------------------------------------------------------------------
-  // 2) create WT
-  Epetra_CrsMatrix* WT = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
+  // 1.5) split matrix into blocks Arr Arn Anr Ann
+  RefCountPtr<Epetra_Map>       A11row = null;
+  RefCountPtr<Epetra_Map>       A22row = annmap_;
+  RefCountPtr<Epetra_CrsMatrix> A11    = null;
+  RefCountPtr<Epetra_CrsMatrix> A12    = null;
+  RefCountPtr<Epetra_CrsMatrix> A21    = null;
+  RefCountPtr<Epetra_CrsMatrix> A22    = null;
+  MOERTEL::SplitMatrix2x2(inputmatrix_,A11row,A22row,A11,A12,A21,A22);
+#endif
+  
+#if 0
+  //--------------------------------------------------------------------------
+  // 1.7) create a shifted version of M and D
+  Epetra_CrsMatrix* MTshifted = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
+  Epetra_CrsMatrix* Dshifted  = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
+  vector<int> gindices(500);
+  for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
+  {
+    const int lmdof = intintcurr->first;
+    const int dof   = intintcurr->second;
+    if (D_->MyGRID(lmdof)==false)
+      continue;
+    const int lmlrid = D_->LRID(lmdof);
+    int numentries;
+    int* indices;
+    double* values;
+    
+    // do D
+    err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (numentries>(int)gindices.size()) gindices.resize(numentries);
+    for (int j=0; j<numentries; ++j)
+    {
+      gindices[j] = D_->GCID(indices[j]);
+      if (gindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+    }
+    err = Dshifted->InsertGlobalValues(dof,numentries,values,&gindices[0]);       
+    if (err<0) cout << "Dshifted->InsertGlobalValues returned err=" << err << endl;
+    
+    // do MT
+    err = M_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "M_->ExtractMyRowView returned err=" << err << endl;
+    if (numentries>(int)gindices.size()) gindices.resize(numentries);
+    for (int j=0; j<numentries; ++j)
+    {
+      gindices[j] = M_->GCID(indices[j]);
+      if (gindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+    }
+    err = MTshifted->InsertGlobalValues(dof,numentries,values,&gindices[0]);       
+    if (err<0) cout << "MTshifted->InsertGlobalValues returned err=" << err << endl;
+    
+  }
+  gindices.clear();
+  Dshifted->FillComplete(*problemmap_,*annmap);  
+  Dshifted->OptimizeStorage();
+  MTshifted->FillComplete(*problemmap_,*annmap);  
+  MTshifted->OptimizeStorage();
+  Dshifted_ = rcp(Dshifted);
+  MTshifted_ = rcp(MTshifted);
+#endif
+
+  //--------------------------------------------------------------------------
+  // 2) create WT, D and MT
+  Epetra_CrsMatrix* WT        = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
   for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
   {
     int lmdof = intintcurr->first;
@@ -412,7 +477,6 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
     if (D_->MyGRID(lmdof)==false)
       continue;
     int lmlrid = D_->LRID(lmdof);
-    if (lmlrid<0) cout << "Cannot find lmlrid for lmdof\n";
     int numentries;
     int* indices;
     double* values;
@@ -444,6 +508,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   }
   WT->FillComplete(*problemmap_,*annmap);  
   WT_ = rcp(WT);
+
   //--------------------------------------------------------------------------
   // 3) create B
   // create a temporary matrix with rowmap of the Ann block
@@ -570,7 +635,7 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
   //--------------------------------------------------------------------------
   // tidy up
   lm_to_dof.clear();
-  delete annmap;
+  //delete annmap;
   //delete WT; WT = NULL;
   delete trans; B = NULL;
 
@@ -581,6 +646,310 @@ Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
 
   return spdmatrix_.get();
 }
+#endif
+
+#if 1 // new version (faster)
+/*----------------------------------------------------------------------*
+ | Create the spd system (public)                            mwgee 12/05|
+ | Note that this is collective for ALL procs                           |
+ *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* MOERTEL::Manager::MakeSPDProblem()
+{
+  // time this process
+  Epetra_Time time(Comm());
+  time.ResetStartTime();
+
+  // check whether all interfaces are complete and integrated
+  map<int,RefCountPtr<MOERTEL::Interface> >::iterator curr;
+  for (curr=interface_.begin(); curr != interface_.end(); ++curr)
+  {
+    if (curr->second->IsComplete() == false)
+    {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** interface " << curr->second->Id() << " is not Complete()\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }
+    if (curr->second->IsIntegrated() == false)
+    {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** interface " << curr->second->Id() << " is not integrated yet\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+    }
+  }
+  
+  // check whether we have a problemmap_
+  if (problemmap_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** No problemmap_ set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+  
+  // check whether we have a constraintsmap_
+  if (constraintsmap_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** onstraintsmap is NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+  
+  // check for saddlemap_
+  if (saddlemap_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** saddlemap_==NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+
+  // check for inputmatrix
+  if (inputmatrix_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** No inputmatrix set\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+
+  // check whether we have M and D matrices
+  if (D_==null || M_==null)
+  {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** Matrix M or D is NULL\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      return NULL;
+  }
+  
+  // we need a map from lagrange multiplier dofs to primal dofs on the same node
+  vector<MOERTEL::Node*> nodes(0);
+  map<int,int> lm_to_dof;
+  for (curr=interface_.begin(); curr!=interface_.end(); ++curr)
+  {
+    RefCountPtr<MOERTEL::Interface> inter = curr->second;
+    inter->GetNodeView(nodes);
+    for (int i=0; i<(int)nodes.size(); ++i)
+    {
+      if (!nodes[i]->Nlmdof()) 
+        continue;
+      const int* dof = nodes[i]->Dof();
+      const int* lmdof = nodes[i]->LMDof();
+      for (int j=0; j<nodes[i]->Nlmdof(); ++j)
+      {
+        //cout << "j " << j << " maps lmdof " << lmdof[j] << " to dof " << dof[j] << endl;
+        lm_to_dof[lmdof[j]] = dof[j];
+      }
+    }
+  }
+  lm_to_dof_ = rcp(new map<int,int>(lm_to_dof)); // this is a very useful map for the moertel_ml_preconditioner
+  /*
+               _              _
+              |               |
+              |  Arr  Arn  Mr | 
+         S =  |               |
+              |  Anr  Ann  D  | 
+              |
+              |  MrT  D    0  |
+              |_          _   |
+
+               _           _
+              |            |
+              |  Arr  Arn  | 
+         A =  |            |
+              |  Anr  Ann  | 
+              |_          _|
+  
+        1) Ann is square and we need it's Range/DomainMap annmap
+        
+               _         _
+        WT =  |_ 0 Dinv _|
+
+        2) Build WT (has rowmap/rangemap annmap and domainmap problemmap_)
+             
+               _    _
+              |     |
+              |  Mr | 
+         B =  |     |
+              |  D  | 
+              |_   _|
+  
+        3) Build B (has rowmap/rangemap problemmap_ and domainmap annmap)
+        
+        4) Build I, the identity matrix with maps problemmap_,problemmap_);
+        
+  */    
+  
+  int err=0;
+  //--------------------------------------------------------------------------
+  // 1) create the rangemap of Ann
+  vector<int> myanngids(problemmap_->NumMyElements());
+  int count=0;
+  map<int,int>::iterator intintcurr;
+  for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
+  {
+    if (problemmap_->MyGID(intintcurr->second)==false) 
+      continue;
+    if ((int)myanngids.size()<=count) 
+      myanngids.resize(myanngids.size()+50);
+    myanngids[count] = intintcurr->second;
+    ++count;
+  }
+  myanngids.resize(count);
+    int numglobalelements;
+  Comm().SumAll(&count,&numglobalelements,1);
+  Epetra_Map* annmap = new Epetra_Map(numglobalelements,count,&myanngids[0],0,Comm());
+  annmap_ = rcp(annmap);
+  myanngids.clear();
+
+
+  //--------------------------------------------------------------------------
+  // 2) create WT
+  Epetra_CrsMatrix* WT        = new Epetra_CrsMatrix(Copy,*annmap,1,false); 
+  for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
+  {
+    int lmdof = intintcurr->first;
+    int dof   = intintcurr->second;
+    if (D_->MyGRID(lmdof)==false)
+      continue;
+    int lmlrid = D_->LRID(lmdof);
+    int numentries;
+    int* indices;
+    double* values;
+    err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    bool foundit = false;
+    for (int j=0; j<numentries; ++j)
+    {
+      int gcid = D_->GCID(indices[j]);
+      if (gcid<0) cout << "Cannot find gcid for indices[j]\n";
+      //cout << "Proc " << Comm().MyPID() << " lmdof " << lmdof << " dof " << dof << " gcid " << gcid << " val " << values[j] << endl;
+      if (gcid==dof)
+      {
+        double val = 1./values[j];
+        err = WT->InsertGlobalValues(dof,1,&val,&dof);
+        if (err<0) cout << "WT->InsertGlobalValues returned err=" << err << endl;
+        foundit = true;
+        break;
+      }
+    }
+    if (!foundit)
+    {
+      cout << "***ERR*** MOERTEL::Manager::MakeSPDProblem:\n"
+           << "***ERR*** Cannot compute inverse of D_\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      cout << "lmdof " << lmdof << " dof " << dof << endl;
+      return NULL;
+    }  
+  }
+  WT->FillComplete(*problemmap_,*annmap);  
+  WT_ = rcp(WT);
+
+  //--------------------------------------------------------------------------
+  // 3) create B
+  // create a temporary matrix with rowmap of the Ann block
+  Epetra_CrsMatrix* tmp = new Epetra_CrsMatrix(Copy,*annmap,120);
+  vector<int> newindices(100);
+  for (intintcurr=lm_to_dof.begin(); intintcurr!=lm_to_dof.end(); ++intintcurr)
+  {
+    int lmdof = intintcurr->first;
+    int dof   = intintcurr->second;
+    if (D_->MyGRID(lmdof)==false)
+      continue;
+    int lmlrid = D_->LRID(lmdof);
+    if (lmlrid<0) cout << "Cannot find lmlrid for lmdof\n";
+    int numentries;
+    int* indices;
+    double* values;
+    
+    // extract and add values from D
+    err = D_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "D_->ExtractMyRowView returned err=" << err << endl;
+    if (numentries>(int)newindices.size()) newindices.resize(numentries);
+    for (int j=0; j<numentries; ++j)
+    {
+      newindices[j] = D_->GCID(indices[j]);
+      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+    }
+    //cout << "Inserting from D in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
+    //cout << endl;
+    err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
+    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+  
+    // extract and add values from M
+    err = M_->ExtractMyRowView(lmlrid,numentries,values,indices);
+    if (err) cout << "M_->ExtractMyRowView returned err=" << err << endl;
+    if (numentries>(int)newindices.size()) newindices.resize(numentries);
+    for (int j=0; j<numentries; ++j)
+    {
+      newindices[j] = M_->GCID(indices[j]);
+      if (newindices[j]<0) cout << "Cannot find gcid for indices[j]\n";
+    }
+    //cout << "Inserting from M in row " << dof << " cols/val ";
+    //for (int j=0; j<numentries; ++j) cout << newindices[j] << "/" << values[j] << " ";
+    //cout << endl;
+    err = tmp->InsertGlobalValues(dof,numentries,values,&newindices[0]);
+    if (err) cout << "tmp->InsertGlobalValues returned err=" << err << endl;
+  }
+  tmp->FillComplete(*(problemmap_.get()),*annmap);
+
+  // B is transposed of tmp
+  EpetraExt::RowMatrix_Transpose* trans = new EpetraExt::RowMatrix_Transpose(false);
+  Epetra_CrsMatrix* B = &(dynamic_cast<Epetra_CrsMatrix&>(((*trans)(const_cast<Epetra_CrsMatrix&>(*tmp)))));
+  delete tmp; tmp = NULL;
+  B_ = rcp(new Epetra_CrsMatrix(*B));
+  newindices.clear();
+
+  //--------------------------------------------------------------------------
+  // 4) create I
+  Epetra_CrsMatrix* I = MOERTEL::PaddedMatrix(*problemmap_,1.0,1);
+  I->FillComplete(*problemmap_,*problemmap_);
+  I_ = rcp(I);
+
+  //--------------------------------------------------------------------------
+  // 5) Build BWT = B * WT
+  Epetra_CrsMatrix* BWT = MOERTEL::MatMatMult(*B,false,*WT,false,OutLevel()); 
+
+  //--------------------------------------------------------------------------
+  // 6) create CBT = (I-BWT)*A*W*BT
+  Epetra_CrsMatrix* spdrhs = new Epetra_CrsMatrix(Copy,*problemmap_,10,false);
+  MOERTEL::MatrixMatrixAdd(*BWT,false,-1.0,*spdrhs,0.0);
+  MOERTEL::MatrixMatrixAdd(*I,false,1.0,*spdrhs,1.0);
+  spdrhs->FillComplete();
+  spdrhs->OptimizeStorage();
+  spdrhs_ = rcp(spdrhs);
+  
+  Epetra_CrsMatrix* tmp1 = MOERTEL::MatMatMult(*inputmatrix_,false,*WT,true,OutLevel());
+  Epetra_CrsMatrix* tmp2 = MOERTEL::MatMatMult(*tmp1,false,*B,true,OutLevel());   
+  delete tmp1;
+  Epetra_CrsMatrix* CBT  = MOERTEL::MatMatMult(*spdrhs,false,*tmp2,false,OutLevel());   
+  delete tmp2;
+  
+  //--------------------------------------------------------------------------
+  // 7) create spdmatrix_ = A - CBT - (CBT)^T
+  spdmatrix_ = rcp(new Epetra_CrsMatrix(Copy,*problemmap_,10,false));
+  MOERTEL::MatrixMatrixAdd(*inputmatrix_,false,1.0,*spdmatrix_,0.0);
+  MOERTEL::MatrixMatrixAdd(*CBT,false,-1.0,*spdmatrix_,1.0);
+  MOERTEL::MatrixMatrixAdd(*CBT,true,-1.0,*spdmatrix_,1.0);
+  delete CBT; CBT = NULL;
+  spdmatrix_->FillComplete(); 
+  spdmatrix_->OptimizeStorage();
+
+  //--------------------------------------------------------------------------
+  // tidy up
+  lm_to_dof.clear();
+  delete trans; B = NULL;
+  // time this process
+  double t = time.ElapsedTime();
+  if (OutLevel()>5 && Comm().MyPID()==0)
+    cout << "MOERTEL (Proc 0): Construct spd system in " << t << " sec\n";
+
+  return spdmatrix_.get();
+}
+#endif
 
 /*----------------------------------------------------------------------*
  | Return the right hand side matrix of the reduced system   mwgee 01/06|

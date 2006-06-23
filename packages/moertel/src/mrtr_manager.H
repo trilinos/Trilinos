@@ -598,9 +598,13 @@ protected:
   RefCountPtr<Epetra_CrsMatrix> saddlematrix_;        // the matrix of the saddle problem;
   RefCountPtr<Epetra_CrsMatrix> spdmatrix_;           // the spd matrix of the problem;
   RefCountPtr<Epetra_CrsMatrix> spdrhs_;              // the matrix to left-muttliply the rhs vector with for the spd problem
+  
+  RefCountPtr<map<int,int> >    lm_to_dof_;           // maps lagrange multiplier dofs to primary dofs (slave side))
+  
   RefCountPtr<Epetra_CrsMatrix> I_;
   RefCountPtr<Epetra_CrsMatrix> WT_;
   RefCountPtr<Epetra_CrsMatrix> B_;
+  RefCountPtr<Epetra_Map>       annmap_;
 
   RefCountPtr<Teuchos::ParameterList> integrationparams_; // parameter list with integration parameters
   RefCountPtr<Teuchos::ParameterList> solverparams_;  // solution parameters passed from the user    

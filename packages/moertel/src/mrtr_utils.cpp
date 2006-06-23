@@ -398,10 +398,10 @@ int MOERTEL::MatrixMatrixAdd(const Epetra_CrsMatrix& A, bool transposeA,double s
     
   B.Scale(scalarB);
   
-  //Loop over B's rows and sum into
+  //Loop over Aprime's rows and sum into
   int MaxNumEntries = EPETRA_MAX( Aprime->MaxNumEntries(), B.MaxNumEntries() );
   int NumEntries;
-  vector<int> Indices(MaxNumEntries);
+  vector<int>    Indices(MaxNumEntries);
   vector<double> Values(MaxNumEntries);
 
   int NumMyRows = Aprime->NumMyRows();
@@ -528,8 +528,8 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(Epetra_CrsMatrix& A, bool transA,
   // wrap the input matrices as ML_Operator
   ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix*)Atrans,mlA);
   ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix*)Btrans,mlB);
-  //ML_Operator_Print(mlA,"I");
-  //ML_Operator_Print(mlB,"WT");
+  //ML_Operator_Print(mlA,"mlA");
+  //ML_Operator_Print(mlB,"mlB");
   
   // make the multiply
   ML_2matmult(mlA,mlB,mlC,ML_EpetraCRS_MATRIX);
@@ -604,6 +604,29 @@ Epetra_CrsMatrix* MOERTEL::MatMatMult(const Epetra_CrsMatrix& A, bool transA,
   }
 
   return C;
+}
+
+/*----------------------------------------------------------------------*
+ | Allocate and return a matrix padded with zeros on the diagonal  06/06|
+ *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* MOERTEL::PaddedMatrix(const Epetra_Map rowmap, double val, const int numentriesperrow)
+{
+  Epetra_CrsMatrix* tmp = new Epetra_CrsMatrix(Copy,rowmap,numentriesperrow,false);
+  const int numrows = tmp->NumMyRows();
+  for (int i=0; i<numrows; ++i)
+  {
+    int grid = tmp->GRID(i);
+    int err = tmp->InsertGlobalValues(grid,1,&val,&grid);
+    if (err<0)
+    {
+      cout << "***ERR*** MOERTEL::PaddedMatrix:\n"
+           << "***ERR*** Cannot insert values into matrix\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      delete tmp;
+      return NULL;
+    }
+  }                                                              
+  return tmp;
 }
 
 /*----------------------------------------------------------------------*
@@ -810,4 +833,380 @@ bool MOERTEL::Print_Graph(string name, Epetra_CrsGraph& A, int ibase)
   return true;
 }
 
+/*----------------------------------------------------------------------*
+ | split matrix into 2x2 block system with given rowmap A22rowmap  06/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::SplitMatrix2x2(RefCountPtr<Epetra_CrsMatrix> A,
+                             RefCountPtr<Epetra_Map>& A11rowmap,
+                             RefCountPtr<Epetra_Map>& A22rowmap,
+                             RefCountPtr<Epetra_CrsMatrix>& A11,
+                             RefCountPtr<Epetra_CrsMatrix>& A12,
+                             RefCountPtr<Epetra_CrsMatrix>& A21,
+                             RefCountPtr<Epetra_CrsMatrix>& A22)
+{
+  if (A==null)
+  {
+    cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+         << "***ERR*** A == null on entry\n"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  if (A11rowmap==null && A22rowmap != null)
+    A11rowmap = rcp(MOERTEL::SplitMap(A->RowMap(),*A22rowmap));
+  else if (A11rowmap != null && A22rowmap != null);
+  else if (A11rowmap != null && A22rowmap == null)
+    A22rowmap = rcp(MOERTEL::SplitMap(A->RowMap(),*A11rowmap));
+  else
+  {
+    cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+         << "***ERR*** Either A11rowmap OR A22rowmap or both have to be not null"
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
 
+  const Epetra_Comm& Comm   = A->Comm();
+  const Epetra_Map&  A22map = *(A22rowmap.get());
+  const Epetra_Map&  A11map = *(A11rowmap.get());
+  
+  //----------------------------- create a parallel redundant map of A22map
+  map<int,int> a22gmap;
+  {
+    vector<int> a22global(A22map.NumGlobalElements());
+    int count=0;
+    for (int proc=0; proc<Comm.NumProc(); ++proc)
+    {
+      int length = 0;
+      if (proc==Comm.MyPID())
+      {
+        for (int i=0; i<A22map.NumMyElements(); ++i)
+        {
+          a22global[count+length] = A22map.GID(i);
+          ++length;
+        }
+      }
+      Comm.Broadcast(&length,1,proc);
+      Comm.Broadcast(&a22global[count],length,proc);
+      count += length;
+    }
+    if (count != A22map.NumGlobalElements())
+    {
+      cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+           << "***ERR*** mismatch in dimensions\n"
+           << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+      exit(EXIT_FAILURE);
+    }
+    // create the map
+    for (int i=0; i<count; ++i)
+      a22gmap[a22global[i]] = 1;
+    a22global.clear();
+  }
+  
+  //--------------------------------------------------- create matrix A22
+  A22 = rcp(new Epetra_CrsMatrix(Copy,A22map,100));
+  {
+    vector<int>    a22gcindices(100);
+    vector<double> a22values(100);
+    for (int i=0; i<A->NumMyRows(); ++i)
+    {
+      const int grid = A->GRID(i);
+      if (A22map.MyGID(grid)==false)
+        continue;
+      //cout << "Row " << grid << " in A22 Columns ";
+      int     numentries;
+      double* values;
+      int*    cindices;
+      int err = A->ExtractMyRowView(i,numentries,values,cindices);
+      if (err)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+      if (numentries>(int)a22gcindices.size())
+      {
+        a22gcindices.resize(numentries);
+        a22values.resize(numentries);
+      }
+      int count=0;
+      for (int j=0; j<numentries; ++j)
+      {
+        const int gcid = A->ColMap().GID(cindices[j]);
+        // see whether we have gcid in a22gmap
+        map<int,int>::iterator curr = a22gmap.find(gcid);
+        if (curr==a22gmap.end()) continue;
+        //cout << gcid << " ";
+        a22gcindices[count] = gcid;
+        a22values[count]    = values[j];
+        ++count;
+      }
+      //cout << endl; fflush(stdout);
+      // add this filtered row to A22
+      err = A22->InsertGlobalValues(grid,count,&a22values[0],&a22gcindices[0]);
+      if (err<0)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A22->InsertGlobalValues returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+    } //for (int i=0; i<A->NumMyRows(); ++i)
+    a22gcindices.clear();
+    a22values.clear();
+  }  
+  A22->FillComplete();
+  A22->OptimizeStorage();
+
+  //----------------------------------------------------- create matrix A11
+  A11 = rcp(new Epetra_CrsMatrix(Copy,A11map,100));
+  {
+    vector<int>    a11gcindices(100);
+    vector<double> a11values(100);
+    for (int i=0; i<A->NumMyRows(); ++i)
+    {
+      const int grid = A->GRID(i);
+      if (A11map.MyGID(grid)==false) continue;
+      int     numentries;
+      double* values;
+      int*    cindices;
+      int err = A->ExtractMyRowView(i,numentries,values,cindices);
+      if (err)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+      if (numentries>(int)a11gcindices.size())
+      {
+        a11gcindices.resize(numentries);
+        a11values.resize(numentries);
+      }
+      int count=0;
+      for (int j=0; j<numentries; ++j)
+      {
+        const int gcid = A->ColMap().GID(cindices[j]);
+        // see whether we have gcid as part of a22gmap
+        map<int,int>::iterator curr = a22gmap.find(gcid);
+        if (curr!=a22gmap.end()) continue;
+        a11gcindices[count] = gcid;
+        a11values[count] = values[j];
+        ++count;
+      }
+      err = A11->InsertGlobalValues(grid,count,&a11values[0],&a11gcindices[0]);
+      if (err<0)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A11->InsertGlobalValues returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+    } // for (int i=0; i<A->NumMyRows(); ++i)
+    a11gcindices.clear();
+    a11values.clear();
+  }
+  A11->FillComplete();
+  A11->OptimizeStorage();
+  
+  //---------------------------------------------------- create matrix A12
+  A12 = rcp(new Epetra_CrsMatrix(Copy,A11map,100));
+  {
+    vector<int>    a12gcindices(100);
+    vector<double> a12values(100);
+    for (int i=0; i<A->NumMyRows(); ++i)
+    {
+      const int grid = A->GRID(i);
+      if (A11map.MyGID(grid)==false) continue;
+      int     numentries;
+      double* values;
+      int*    cindices;
+      int err = A->ExtractMyRowView(i,numentries,values,cindices);
+      if (err)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+      if (numentries>(int)a12gcindices.size())
+      {
+        a12gcindices.resize(numentries);
+        a12values.resize(numentries);
+      }
+      int count=0;
+      for (int j=0; j<numentries; ++j)
+      {
+        const int gcid = A->ColMap().GID(cindices[j]);
+        // see whether we have gcid as part of a22gmap
+        map<int,int>::iterator curr = a22gmap.find(gcid);
+        if (curr==a22gmap.end()) continue;
+        a12gcindices[count] = gcid;
+        a12values[count] = values[j];
+        ++count;
+      }
+      err = A12->InsertGlobalValues(grid,count,&a12values[0],&a12gcindices[0]);
+      if (err<0)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A12->InsertGlobalValues returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+    } // for (int i=0; i<A->NumMyRows(); ++i)
+    a12values.clear();
+    a12gcindices.clear();
+  }
+  A12->FillComplete(A22map,A11map);
+  A12->OptimizeStorage();
+
+  //----------------------------------------------------------- create A21  
+  A21 = rcp(new Epetra_CrsMatrix(Copy,A22map,100));
+  {
+    vector<int>    a21gcindices(100);
+    vector<double> a21values(100);
+    for (int i=0; i<A->NumMyRows(); ++i)
+    {
+      const int grid = A->GRID(i);
+      if (A22map.MyGID(grid)==false) continue;
+      int     numentries;
+      double* values;
+      int*    cindices;
+      int err = A->ExtractMyRowView(i,numentries,values,cindices);
+      if (err)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A->ExtractMyRowView returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+      if (numentries>(int)a21gcindices.size())
+      {
+        a21gcindices.resize(numentries);
+        a21values.resize(numentries);
+      }
+      int count=0;
+      for (int j=0; j<numentries; ++j)
+      {
+        const int gcid = A->ColMap().GID(cindices[j]);
+        // see whether we have gcid as part of a22gmap
+        map<int,int>::iterator curr = a22gmap.find(gcid);
+        if (curr!=a22gmap.end()) continue;
+        a21gcindices[count] = gcid;
+        a21values[count] = values[j];
+        ++count;
+      }
+      err = A21->InsertGlobalValues(grid,count,&a21values[0],&a21gcindices[0]);
+      if (err<0)
+      {
+        cout << "***ERR*** MOERTEL::SplitMatrix2x2_A22row_given:\n"
+             << "***ERR*** A12->InsertGlobalValues returned " << err << endl
+             << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+        exit(EXIT_FAILURE);
+      }
+    } // for (int i=0; i<A->NumMyRows(); ++i)
+    a21values.clear();
+    a21gcindices.clear();
+  }
+  A21->FillComplete(A11map,A22map);
+  A21->OptimizeStorage();
+  
+  //-------------------------------------------------------------- tidy up
+  a22gmap.clear();
+  return true;
+}                                          
+
+
+/*----------------------------------------------------------------------*
+ | split a map into 2 pieces with given Agiven                     06/06|
+ *----------------------------------------------------------------------*/
+Epetra_Map* MOERTEL::SplitMap(const Epetra_Map& Amap,
+                              const Epetra_Map& Agiven)
+{
+  const Epetra_Comm& Comm = Amap.Comm();
+  const Epetra_Map&  Ag = Agiven;
+  
+  int count=0;
+  vector<int> myaugids(Amap.NumMyElements());
+  for (int i=0; i<Amap.NumMyElements(); ++i)
+  {
+    const int gid = Amap.GID(i);
+    if (Ag.MyGID(gid)) continue;
+    myaugids[count] = gid;
+    ++count;
+  }
+  myaugids.resize(count);
+  int gcount;
+  Comm.SumAll(&count,&gcount,1);
+  Epetra_Map* Aunknown = new Epetra_Map(gcount,count,&myaugids[0],0,Comm);
+  myaugids.clear();
+  return Aunknown;
+}                                          
+
+/*----------------------------------------------------------------------*
+ | split a vector into 2 pieces with given submaps                 06/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::SplitVector(const Epetra_Vector& x,
+                          const Epetra_Map& x1map,
+                          Epetra_Vector*&   x1,
+                          const Epetra_Map& x2map,
+                          Epetra_Vector*&   x2)
+{
+  x1 = new Epetra_Vector(x1map,false);
+  x2 = new Epetra_Vector(x2map,false);
+
+  //use an exporter or importer object
+  Epetra_Export exporter_x1(x.Map(),x1map);
+  Epetra_Export exporter_x2(x.Map(),x2map);
+  
+  int err = x1->Export(x,exporter_x1,Insert);
+  if (err)
+  {
+    cout << "***ERR*** MOERTEL::SplitVector:\n"
+         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  err = x2->Export(x,exporter_x2,Insert);
+  if (err)
+  {
+    cout << "***ERR*** MOERTEL::SplitVector:\n"
+         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+  
+  return true;
+}                                          
+
+/*----------------------------------------------------------------------*
+ | merge content of 2 vectors into one (assumes matching submaps)  06/06|
+ *----------------------------------------------------------------------*/
+bool MOERTEL::MergeVector(const Epetra_Vector& x1,
+                          const Epetra_Vector& x2,
+                          Epetra_Vector& xresult)
+{
+  //use an exporter or importer object
+  Epetra_Export exporter_x1(x1.Map(),xresult.Map());
+  Epetra_Export exporter_x2(x2.Map(),xresult.Map());
+  
+  int err = xresult.Export(x1,exporter_x1,Insert);
+  if (err)
+  {
+    cout << "***ERR*** MOERTEL::SplitVector:\n"
+         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+
+  err = xresult.Export(x2,exporter_x2,Insert); 
+  if (err)
+  {
+    cout << "***ERR*** MOERTEL::SplitVector:\n"
+         << "***ERR*** Export returned " << err << endl
+         << "***ERR*** file/line: " << __FILE__ << "/" << __LINE__ << "\n";
+    exit(EXIT_FAILURE);
+  }
+
+  return true;
+}                                          

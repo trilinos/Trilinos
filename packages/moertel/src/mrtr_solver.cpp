@@ -92,7 +92,9 @@ bool MOERTEL::Solver::Solve(RefCountPtr<Teuchos::ParameterList> params,
   origmatrix_ = manager.inputmatrix_;
   WT_         = manager.WT_;     
   B_          = manager.B_;      
-  I_          = manager.I_;      
+  I_          = manager.I_;
+  Annmap_     = manager.annmap_; 
+  lm_to_dof_  = manager.lm_to_dof_;     
   return Solve();
 }
 
@@ -303,15 +305,18 @@ bool MOERTEL::Solver::Solve_MLAztec(ParameterList& mlparams,
   
   if (preconditioner=="AZ_user_precond")
     if (mlprec_==null || matrixisnew_);
+    {
 #if 1
       mlprec_ = rcp(new MOERTEL::Mortar_ML_Preconditioner(matrix_,
                                                           origmatrix_,
                                                           WT_,B_,
+                                                          Annmap_,
                                                           mlparams));
 #else // change mlprec_ in mrtr_solver.H as well to test black box ML
       mlprec_ = rcp(new ML_Epetra::MultiLevelPreconditioner(*matrix_,mlparams,true));
 #endif
-  
+    }
+    
   // create the Aztec solver
   aztecsolver_ = rcp(new AztecOO());  
   aztecsolver_->SetAztecDefaults();
