@@ -26,6 +26,7 @@ FFLAGS=-O3 \
 --enable-amesos-umfpack \
 --enable-amesos-dscpack \
 --enable-amesos-pardiso \
+--enable-amesos-superlu \
 --enable-amesos-superludist \
 --enable-amesos-taucs \
 --enable-anasazi \
