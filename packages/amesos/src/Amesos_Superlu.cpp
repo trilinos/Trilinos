@@ -447,7 +447,7 @@ int Amesos_Superlu::NumericFactorization()
     Xstore->lda = NumGlobalRows_; 
     Xstore->nzval = &DummyArray[0];
 
-    SuperLUstat_t SLU_stat ;
+    SLU::SuperLUStat_t SLU_stat ;
     SLU::StatInit( &SLU_stat ) ; 
     assert( SLUopt.Fact == SLU::DOFACT); 
     dgssvx( &(SLUopt), &(data_->A), 
@@ -570,7 +570,7 @@ int Amesos_Superlu::Solve()
 
     AddTime("overhead", 1); // NOTE: only timings on processor 0 will be meaningful
 
-    SLU::SuperLUstat_t SLU_stat ;
+    SLU::SuperLUStat_t SLU_stat ;
     SLU::StatInit( &SLU_stat ) ;//    Copy the scheme used in dgssvx1.c 
     data_->SLU_options.Fact = FACTORED ; 
     SLU::superlu_options_t& SLUopt =  data_->SLU_options ; 
