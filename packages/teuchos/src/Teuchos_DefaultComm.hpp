@@ -70,7 +70,7 @@ DefaultComm<Ordinal>::getComm()
 {
   if(!comm_.get()) {
 #ifdef HAVE_MPI
-    comm_ = rcp(new MpiComm<Ordinal>(opaqueWrapper(MPI_COMM_WORLD)));
+    comm_ = rcp(new MpiComm<Ordinal>(opaqueWrapper((MPI_Comm)MPI_COMM_WORLD)));
 #else // HAVE_MPI    
     comm_ = rcp(new SerialComm<Ordinal>());
 #endif // HAVE_MPI    
