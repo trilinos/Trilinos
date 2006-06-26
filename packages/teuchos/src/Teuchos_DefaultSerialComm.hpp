@@ -207,6 +207,8 @@ int SerialComm<Ordinal>::receive(
     ,"SerialComm<Ordinal>::receive(...): Error, you can not call receive(...) when you"
     " only have one process!"
     );
+  // The next line will never be reached, but a return is required on some platforms
+  return 0; 
 }
 
 // Overridden from Describable
