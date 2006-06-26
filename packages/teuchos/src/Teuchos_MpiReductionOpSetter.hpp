@@ -43,7 +43,7 @@ namespace Teuchos {
  *
  * Note, <tt>HAVE_MPI</tt> must be defined to use this class!.
  */
-class MpiReductionOpBase : Describable {
+class MpiReductionOpBase : virtual public Describable {
 public:
   /** \brief . */
   virtual void reduce(
