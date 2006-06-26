@@ -31,6 +31,7 @@ RUN (beowulf-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 16;
     MPI-START           = lamboot /home/mnphenow/.lamhosts;
+    MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /common/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
@@ -91,6 +92,7 @@ RUN (herouxsmp-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 4;
     MPI-START           = lamboot;
+    MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /u/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
@@ -132,6 +134,7 @@ RUN (paunchy-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 4;
     MPI-START           = lamboot;
+    MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;    
     TTR-DIR             = /local/proj/trilinos/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
@@ -192,6 +195,7 @@ RUN (redstormXcompile-nightly-mpi) {
 #    MAX-PROC            = 16;
     BUILD-ONLY          = YES;
 #    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /projects/trilinos/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
@@ -215,6 +219,7 @@ RUN (redstorm-nightly-mpi) {
     BUILD-ONLY		= YES;
     MPI-GO              = yod -sz;
 #    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /ufs/home/users/jmwille/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
@@ -235,6 +240,7 @@ RUN (s858352-nightly-serial) {
     INVOKE-CONFIGURE    = darwin-s858352;
     TEST-CATEGORY       = FRAMEWORK;
     MPI-START           = lamboot;
+    MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;
     TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
@@ -256,6 +262,7 @@ RUN (s858352-nightly-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 2;
     MPI-START           = lamboot;
+    MPI-PING            = mpitask;
     MPI-STOP            = lamhalt;
     TTR-DIR             = /Users/mnpheno/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = mnpheno;
@@ -278,6 +285,7 @@ RUN (sass2889-nightly-mpi) {
     MAX-PROC            = 16;
 #    BUILD-ONLY          = YES;
 #    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;
@@ -300,6 +308,7 @@ RUN (sasg1099-nightly-mpi) {
     MAX-PROC            = 16;
 #    BUILD-ONLY          = YES;
 #    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
                                                                                 
@@ -321,6 +330,7 @@ RUN (nwcc-nightly-mpi) {
     MAX-PROC            = 16;
 #    BUILD-ONLY          = YES;
 #    MPI-START           = lamboot;
+#    MPI-PING            = mpitask;
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
                                                                                 
@@ -342,6 +352,7 @@ RUN (qt-alegra-mpi) {
     MAX-PROC            = 2;
 #    BUILD-ONLY          = YES;
 #    MPI-START           = lamboot;
+#g    MPI-PING            = mpitask;
 #    MPI-STOP            = lamhalt;
     TTR-DIR             = /scratch_qt/jmwille/TrilinosTestHarness/TrilinosTestResults;
     SSG-USERNAME        = jmwille;

@@ -436,6 +436,9 @@ exit $exitStatus;
             if ($buildOptions{'MPI-START'}) {   
                 $cmd .= "--mpi-start=\"".$buildOptions{'MPI-START'}."\" ";       
             }
+            if ($buildOptions{'MPI-PING'}) {   
+                $cmd .= "--mpi-ping=\"".$buildOptions{'MPI-PING'}."\" ";       
+            }
             if ($buildOptions{'MPI-STOP'}) {   
                 $cmd .= "--mpi-stop=\"".$buildOptions{'MPI-STOP'}."\" ";       
             }
