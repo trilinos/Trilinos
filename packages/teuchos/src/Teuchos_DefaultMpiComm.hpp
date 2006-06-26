@@ -38,7 +38,33 @@
 #include "Teuchos_Workspace.hpp"
 #include "mpi.h"
 
+//#define TEUCHOS_MPI_COMM_DUMP
+
+#ifdef TEUCHOS_MPI_COMM_DUMP
+#  include "Teuchos_VerboseObject.hpp"
+#endif
+
 namespace Teuchos {
+
+#ifdef TEUCHOS_MPI_COMM_DUMP
+template<typename Ordinal>
+void dumpCharBuffer(
+  const std::string &funcName, const std::string &buffName
+  ,const Ordinal bytes, const char buff[]
+  )
+{
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  Teuchos::OSTab tab(out);
+  *out
+    << "\n" << funcName << "::" << buffName << ":";
+  tab.incrTab();
+  for( Ordinal i = 0; i < bytes; ++i ) {
+    *out << buffName << "[" << i << "] = " << buff[i] << "\n";
+  }
+  *out << "\n";
+}
+#endif // TEUCHOS_MPI_COMM_DUMP
 
 /** \brief Concrete communicator subclass based on MPI.
  *
@@ -124,6 +150,11 @@ private:
 
   // Not defined and not to be called!
   MpiComm();
+
+#ifdef TEUCHOS_MPI_COMM_DUMP
+public:
+  static bool show_dump;
+#endif // TEUCHOS_MPI_COMM_DUMP
 	
 };
 
@@ -233,7 +264,7 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
     sumRecvBytes += recvCounts[i];
   sumRecvBytes *= blockSize;
   TEST_FOR_EXCEPT(!(sumRecvBytes==sendBytes));
-#endif
+#endif // TEUCHOS_DEBUG
   WorkspaceStore* wss = get_default_workspace_store().get();
   // Create a of recvCount[] if Ordinal!=int
   const bool Ordinal_is_int = typeid(int)==typeid(Ordinal);
@@ -295,7 +326,15 @@ void MpiComm<Ordinal>::send(
     ,"Error, destRank = " << destRank << " is not < 0 or is not"
     " in the range [0,"<<size_-1<<"]!"
     );
-#endif
+#endif // TEUCHOS_DEBUG
+#ifdef TEUCHOS_MPI_COMM_DUMP
+  if(show_dump) {
+    dumpCharBuffer<Ordinal>(
+      "Teuchos::MpiComm<Ordinal>::send(...)"
+      ,"sendBuffer", bytes, sendBuffer
+      );
+  }
+#endif // TEUCHOS_MPI_COMM_DUMP
   MPI_Send(
     const_cast<char*>(sendBuffer),bytes,MPI_CHAR,destRank,tag_,*mpiComm_
     );
@@ -316,7 +355,7 @@ int MpiComm<Ordinal>::receive(
     ,"Error, sourceRank = " << sourceRank << " is not < 0 or is not"
     " in the range [0,"<<(size_-1)<<"]!"
     );
-#endif
+#endif // TEUCHOS_DEBUG
   MPI_Status status;
   MPI_Recv(
     recvBuffer,bytes,MPI_CHAR
@@ -324,6 +363,14 @@ int MpiComm<Ordinal>::receive(
     ,tag_,*mpiComm_
     ,&status
     );
+#ifdef TEUCHOS_MPI_COMM_DUMP
+  if(show_dump) {
+    dumpCharBuffer<Ordinal>(
+      "Teuchos::MpiComm<Ordinal>::receive(...)"
+      ,"recvBuffer", bytes, recvBuffer
+      );
+  }
+#endif // TEUCHOS_MPI_COMM_DUMP
   return status.MPI_SOURCE;
   // ToDo: What about error handling???
 }
@@ -342,6 +389,11 @@ std::string MpiComm<Ordinal>::description() const
     <<"}";
   return oss.str();
 }
+
+#ifdef TEUCHOS_MPI_COMM_DUMP
+template<typename Ordinal>
+bool MpiComm<Ordinal>::show_dump = false;
+#endif // TEUCHOS_MPI_COMM_DUMP
 
 } // namespace Teuchos
 
