@@ -58,7 +58,6 @@ struct SLUData
   SLU::fact_t refactor_option ;         //  SamePattern or SamePattern_SameRowPerm 
 };
 
-using namespace SLU;
 using namespace Teuchos;
 
 //=============================================================================
@@ -572,12 +571,12 @@ int Amesos_Superlu::Solve()
 
     SLU::SuperLUStat_t SLU_stat ;
     SLU::StatInit( &SLU_stat ) ;//    Copy the scheme used in dgssvx1.c 
-    data_->SLU_options.Fact = FACTORED ; 
+    data_->SLU_options.Fact = SLU::FACTORED ; 
     SLU::superlu_options_t& SLUopt =  data_->SLU_options ; 
     if (UseTranspose()) 
-      SLUopt.Trans = TRANS; 
+      SLUopt.Trans = SLU::TRANS; 
     else
-      SLUopt.Trans = NOTRANS; 
+      SLUopt.Trans = SLU::NOTRANS; 
 
     //#ifdef USE_DGSTRF
     //    assert( equed_ == 'N' ) ; 
