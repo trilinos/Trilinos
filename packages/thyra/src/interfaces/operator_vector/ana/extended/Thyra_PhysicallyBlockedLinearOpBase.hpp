@@ -51,7 +51,20 @@ class PhysicallyBlockedLinearOpBase
 public:
 
   /** \brief Begin a block fill where the product range and domain spaces will
-   * be created on the fly.
+   * be created on the fly and the number of block rows and columns is not
+   * known in advance.
+   *
+   * <b>Postconditions:</b><ul>
+   * <li><tt>this->blockFillIsActive()==true</tt>
+   * <li><tt>this->productRange().get()==NULL</tt>
+   * <li><tt>this->productDomain().get()==NULL</tt>
+   * </ul>
+   */
+  virtual void beginBlockFill() = 0;
+
+  /** \brief Begin a block fill where the product range and domain spaces will
+   * be created on the fly but the total number of block rows and block
+   * columns is known in advance.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>numRowBlocks > 0</tt>

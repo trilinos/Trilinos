@@ -85,6 +85,8 @@ public:
   //@{
 
   /** \brief . */
+  void beginBlockFill();
+  /** \brief . */
   void beginBlockFill(
     const int numRowBlocks, const int numColBlocks
     );
@@ -200,19 +202,31 @@ private:
   typedef Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > CNCLO;
   typedef Teuchos::Array<Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> > > vec_array_t;
 
+  template<class Scalar2>
+  struct BlockEntry {
+    BlockEntry() : i(-1), j(-1) {}
+    BlockEntry( const int i_in, const int j_in, const CNCLO &block_in )
+      :i(i_in),j(j_in),block(block_in)
+      {}
+    int      i;
+    int      j;
+    CNCLO    block;
+  };
+
   // /////////////////////////
   // Private data members
 
   Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  productRange_;
   Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >  productDomain_;
-  int                                                          numRowBlocks_;
-  int                                                          numColBlocks_;
+  int                                                          numRowBlocks_; // M
+  int                                                          numColBlocks_; // N
  
-  std::vector<CNCLO>        Ops_; // M x N
-
-  vec_array_t    rangeBlocks_;
-  vec_array_t    domainBlocks_;
-  bool           blockFillIsActive_;
+  std::vector<CNCLO>                   Ops_;        // Final M x N storage
+ 
+  vec_array_t                          rangeBlocks_;
+  vec_array_t                          domainBlocks_;
+  std::vector<BlockEntry<Scalar> >     Ops_stack_;  // Temp stack of ops begin filled (if Ops_.size()==0).
+ bool                                  blockFillIsActive_;
 
   // ///////////////////////////
   // Private member functions
@@ -222,6 +236,11 @@ private:
   void assertBlockRowCol(const int i, const int j) const;
   void setBlockSpaces(
     const int i, const int j, const LinearOpBase<Scalar> &block
+    );
+  template<class LinearOpType>
+  void setBlockImpl(
+    const int i, const int j
+    ,const Teuchos::RefCountPtr<LinearOpType> &block
     );
 
   // Not defined and not to be called

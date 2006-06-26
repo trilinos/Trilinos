@@ -67,6 +67,7 @@ bool run_composite_linear_ops_tests(
   using Teuchos::rcp;
   using Teuchos::null;
   using Teuchos::rcp_const_cast;
+  using Teuchos::rcp_dynamic_cast;
   using Teuchos::dyn_cast;
   using Teuchos::OSTab;
 
@@ -340,6 +341,53 @@ bool run_composite_linear_ops_tests(
   if(!result) success = false;
   // Note that testing the symmetry above helps to check the transpose mode
   // against the non-transpose mode!
+
+  if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9_a = [ A6, A1^H; A1, null ] using pre-formed range and domain product spaces ...\n";
+  RefCountPtr<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
+    A9_a = rcp(new Thyra::DefaultBlockedLinearOp<Scalar>());
+  A9_a->beginBlockFill(
+    rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(A9,true)->productRange()
+    ,rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar> >(A9,true)->productDomain()
+    );
+  A9_a->setBlock(0,0,A6);
+  A9_a->setBlock(0,1,adjoint(A1));
+  A9_a->setBlock(1,0,A1);
+  A9_a->endBlockFill();
+  if(out.get()) *out << "\nA9_a =\n" << describe(*A9_a,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A9_a ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A9_a,out.get());
+  if(!result) success = false;
+  // Note that testing the symmetry above helps to check the transpose mode
+  // against the non-transpose mode!
+  
+  if(out.get()) *out << "\nComparing A9 == A9_a ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = linearOpTester.compare(*A9,*A9_a,out.get());
+  if(!result) success = false;
+
+  if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9_b = [ A6, A1^H; A1, null ] using flexible fill ...\n";
+  RefCountPtr<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
+    A9_b = rcp(new Thyra::DefaultBlockedLinearOp<Scalar>());
+  A9_b->beginBlockFill();
+  A9_b->setBlock(0,0,A6);
+  A9_b->setBlock(0,1,adjoint(A1));
+  A9_b->setBlock(1,0,A1);
+  A9_b->endBlockFill();
+  if(out.get()) *out << "\nA9_b =\n" << describe(*A9_b,verbLevel);
+  
+  if(out.get()) *out << "\nTesting A9_b ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = symLinearOpTester.check(*A9_b,out.get());
+  if(!result) success = false;
+  // Note that testing the symmetry above helps to check the transpose mode
+  // against the non-transpose mode!
+  
+  if(out.get()) *out << "\nComparing A9 == A9_b ...\n";
+  Thyra::seed_randomize<Scalar>(0);
+  result = linearOpTester.compare(*A9,*A9_b,out.get());
+  if(!result) success = false;
 
   if(out.get()) *out << "\nCreating a blocked 2x2 linear operator A9a = [ null, A1^H; A1, null ] ...\n";
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >

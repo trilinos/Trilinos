@@ -47,14 +47,19 @@ DefaultBlockedLinearOp<Scalar>::DefaultBlockedLinearOp()
 // Overridden from PhysicallyBlockedLinearOpBase
 
 template<class Scalar>
+void DefaultBlockedLinearOp<Scalar>::beginBlockFill()
+{
+  assertBlockFillIsActive(false);
+  resetStorage(0,0);
+}
+
+template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
   const int numRowBlocks, const int numColBlocks
   )
 {
   assertBlockFillIsActive(false);
   resetStorage(numRowBlocks,numColBlocks);
-  rangeBlocks_.resize(numRowBlocks);
-  domainBlocks_.resize(numColBlocks);
 }
 
 template<class Scalar>
@@ -92,8 +97,7 @@ void DefaultBlockedLinearOp<Scalar>::setNonconstBlock(
   ,const Teuchos::RefCountPtr<LinearOpBase<Scalar> > &block
   )
 {
-  setBlockSpaces(i,j,*block);
-  Ops_[numRowBlocks_*j+i] = block;
+  setBlockImpl(i,j,block);
 }
 
 template<class Scalar>
@@ -102,8 +106,7 @@ void DefaultBlockedLinearOp<Scalar>::setBlock(
   ,const Teuchos::RefCountPtr<const LinearOpBase<Scalar> > &block
   )
 {
-  setBlockSpaces(i,j,*block);
-  Ops_[numRowBlocks_*j+i] = block;
+  setBlockImpl(i,j,block);
 }
 
 template<class Scalar>
@@ -112,6 +115,7 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
   using Teuchos::rcp;
   using Teuchos::arrayArg;
   assertBlockFillIsActive(true);
+  // Create the product range and domain spaces if these are not already set.
   if(!productRange_.get()) {
 #ifdef TEUCHOS_DEBUG
     for(int i = 0; i < numRowBlocks_; ++i) {
@@ -131,19 +135,32 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
         );
     }
 #endif
+    productRange_
+      = rcp(
+        new DefaultProductVectorSpace<Scalar>(
+          numRowBlocks_,&rangeBlocks_[0]
+          )
+        );
+    productDomain_
+      = rcp(
+        new DefaultProductVectorSpace<Scalar>(
+          numColBlocks_,&domainBlocks_[0]
+          )
+        );
   }
-  productRange_
-    = rcp(
-      new DefaultProductVectorSpace<Scalar>(
-        numRowBlocks_,&rangeBlocks_[0]
-        )
-      );
-  productDomain_
-    = rcp(
-      new DefaultProductVectorSpace<Scalar>(
-        numColBlocks_,&domainBlocks_[0]
-        )
-      );
+  numRowBlocks_ = productRange_->numBlocks();
+  numColBlocks_ = productDomain_->numBlocks();
+  rangeBlocks_.resize(0);
+  domainBlocks_.resize(0);
+  // Insert the block LOB objects if doing a flexible fill.
+  if(Ops_stack_.size()) {
+    Ops_.resize(numRowBlocks_*numColBlocks_);
+    for( int k = 0; k < Ops_stack_.size(); ++k ) {
+      const BlockEntry<Scalar> &block_i_j = Ops_stack_[k];
+      Ops_[numRowBlocks_*block_i_j.j+block_i_j.i] = block_i_j.block;
+    }
+    Ops_stack_.resize(0);
+  }
   blockFillIsActive_ = false;
 }
 
@@ -155,6 +172,7 @@ void DefaultBlockedLinearOp<Scalar>::uninitialize()
   numRowBlocks_ = 0;
   numColBlocks_ = 0;
   Ops_.resize(0);
+  Ops_stack_.resize(0);
   rangeBlocks_.resize(0);
   domainBlocks_.resize(0);
   blockFillIsActive_ = false;
@@ -400,7 +418,7 @@ void DefaultBlockedLinearOp<Scalar>::resetStorage(
   numRowBlocks_ = numRowBlocks;
   numColBlocks_ = numColBlocks;
   Ops_.resize(numRowBlocks_*numColBlocks_);
-  if(productRange_.get()) {
+  if(!productRange_.get()) {
     rangeBlocks_.resize(numRowBlocks);
     domainBlocks_.resize(numColBlocks);
   }
@@ -424,13 +442,25 @@ void DefaultBlockedLinearOp<Scalar>::assertBlockRowCol(
 {
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
-    !( 0 <= i && i < numRowBlocks_ ), std::logic_error
-    ,"Error, i="<<i<<" does not fall in the range [0,"<<numRowBlocks_-1<<"]!"
+    !( 0 <= i ), std::logic_error
+    ,"Error, i="<<i<<" is invalid!"
     );
   TEST_FOR_EXCEPTION(
-    !( 0 <= j && j < numColBlocks_ ), std::logic_error
-    ,"Error, j="<<j<<" does not fall in the range [0,"<<numColBlocks_-1<<"]!"
+    !( 0 <= j ), std::logic_error
+    ,"Error, j="<<j<<" is invalid!"
     );
+  // Only validate upper range if the number of row and column blocks is
+  // fixed!
+  if(Ops_.size()) {
+    TEST_FOR_EXCEPTION(
+      !( 0 <= i && i < numRowBlocks_ ), std::logic_error
+      ,"Error, i="<<i<<" does not fall in the range [0,"<<numRowBlocks_-1<<"]!"
+      );
+    TEST_FOR_EXCEPTION(
+      !( 0 <= j && j < numColBlocks_ ), std::logic_error
+      ,"Error, j="<<j<<" does not fall in the range [0,"<<numColBlocks_-1<<"]!"
+      );
+  }
 #endif
 }
 
@@ -445,39 +475,84 @@ void DefaultBlockedLinearOp<Scalar>::setBlockSpaces(
   assertBlockRowCol(i,j);
   // Validate that if the vector space block is already set that it is
   // compatible with the block that is being set.
+  if( i < numRowBlocks_ && j < numColBlocks_ ) {
 #ifdef TEUCHOS_DEBUG
-  Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-    rangeBlock = (
-      productRange_.get()
-      ? productRange_->getBlock(i)
-      : rangeBlocks_[i]
-      ),
-    domainBlock = (
-      productDomain_.get()
-      ? productDomain_->getBlock(j)
-      : domainBlocks_[j]
-      );
-  if(rangeBlock.get()) {
-    THYRA_ASSERT_VEC_SPACES_NAMES(
-      "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block)"
-      ,*rangeBlock,("(*productRange->getBlock("+toString(i)+"))")
-      ,*block.range(),("(*block["+toString(i)+","+toString(j)+"].range())")
-      );
-  }
-  if(domainBlock.get()) {
-    THYRA_ASSERT_VEC_SPACES_NAMES(
-      "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block)"
-      ,*domainBlock,("(*productDomain->getBlock("+toString(j)+"))")
-      ,*block.domain(),("(*block["+toString(i)+","+toString(j)+"].domain())")
-      );
-  }
+    Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
+      rangeBlock = (
+        productRange_.get()
+        ? productRange_->getBlock(i)
+        : rangeBlocks_[i]
+        ),
+      domainBlock = (
+        productDomain_.get()
+        ? productDomain_->getBlock(j)
+        : domainBlocks_[j]
+        );
+    if(rangeBlock.get()) {
+      THYRA_ASSERT_VEC_SPACES_NAMES(
+        "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block)"
+        ,*rangeBlock,("(*productRange->getBlock("+toString(i)+"))")
+        ,*block.range(),("(*block["+toString(i)+","+toString(j)+"].range())")
+        );
+    }
+    if(domainBlock.get()) {
+      THYRA_ASSERT_VEC_SPACES_NAMES(
+        "DefaultBlockedLinearOp<Scalar>::setBlockSpaces(i,j,block)"
+        ,*domainBlock,("(*productDomain->getBlock("+toString(j)+"))")
+        ,*block.domain(),("(*block["+toString(i)+","+toString(j)+"].domain())")
+        );
+    }
 #endif // TEUCHOS_DEBUG
+  }
+  // Add spaces missing range and domain space blocks if we are doing a
+  // flexible fill (otherwise these loops will not be executed)
+  for( int k = numRowBlocks_; k <= i; ++k )
+    rangeBlocks_.push_back(Teuchos::null);
+  for( int k = numColBlocks_; k <= j; ++k )
+    domainBlocks_.push_back(Teuchos::null);
+  // Set the incoming range and domain blocks if not already set
   if(!productRange_.get()) {
     if(!rangeBlocks_[i].get())
       rangeBlocks_[i] = block.range();
     if(!domainBlocks_[j].get()) {
       domainBlocks_[j] = block.domain();
     }
+  }
+  // Update the current number of row and columns blocks if doing a flexible
+  // fill.
+  if(!Ops_.size()) {
+    numRowBlocks_ = rangeBlocks_.size();
+    numColBlocks_ = domainBlocks_.size();
+  }
+}
+
+template<class Scalar>
+template<class LinearOpType>
+void DefaultBlockedLinearOp<Scalar>::setBlockImpl(
+  const int i, const int j
+  ,const Teuchos::RefCountPtr<LinearOpType> &block
+  )
+{
+  setBlockSpaces(i,j,*block);
+  if(Ops_.size()) {
+    // We are doing a fill with a fixed number of row and column blocks so we
+    // can just set this.
+    Ops_[numRowBlocks_*j+i] = block;
+  }
+  else {
+    // We are doing a flexible fill so add the block to the stack of blocks or
+    // replace a block that already exists.
+    bool foundBlock = false;
+    for( int k = 0; k < Ops_stack_.size(); ++k ) {
+      BlockEntry<Scalar> &block_i_j = Ops_stack_[k];
+      if( block_i_j.i == i && block_i_j.j == j ) {
+        block_i_j.block = block;
+        foundBlock = true;
+        break;
+      }
+    }
+    if(!foundBlock)
+      Ops_stack_.push_back(BlockEntry<Scalar>(i,j,block));
   }
 }
 
