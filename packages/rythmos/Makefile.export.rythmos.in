@@ -5,21 +5,22 @@ include @abs_top_builddir@/../epetra/Makefile.export.epetra
 include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
 
 @ENABLE_RYTHMOS_AMESOS_TRUE@include @abs_top_builddir@/../amesos/Makefile.export.amesos
-@ENABLE_RYTHMOS_AMESOS_TRUE@RYTHMOS_AMESOS_INCLUDES = \
-@ENABLE_RYTHMOS_AMESOS_TRUE@	-I@abs_top_srcdir@/amesos/src \
-@ENABLE_RYTHMOS_AMESOS_TRUE@	-I@abs_top_builddir@/amesos/src \
-@ENABLE_RYTHMOS_AMESOS_TRUE@	$(AMESOS_INCLUDES)
-@ENABLE_RYTHMOS_AMESOS_TRUE@RYTHMOS_AMESOS_LIBS = -L@abs_top_builddir@/amesos/src $(AMESOS_LIBS)
+@ENABLE_RYTHMOS_AMESOS_TRUE@RYTHMOS_AMESOS_INCLUDES = $(AMESOS_INCLUDES)
+@ENABLE_RYTHMOS_AMESOS_TRUE@RYTHMOS_AMESOS_LIBS = $(AMESOS_LIBS)
+
+@ENABLE_RYTHMOS_AZTECOO_TRUE@include @abs_top_builddir@/../aztecoo/Makefile.export.aztecoo
+@ENABLE_RYTHMOS_AZTECOO_TRUE@RYTHMOS_AZTECOO_INCLUDES = $(AZTECOO_INCLUDES)
+@ENABLE_RYTHMOS_AZTECOO_TRUE@RYTHMOS_AZTECOO_LIBS = $(AZTECOO_LIBS)
 
 # Note: the order of the includes here _should_ not be important, unless something is messed up.
 _RYTHMOS_INCLUDES = \
   -I@abs_top_srcdir@/src \
   -I@abs_top_builddir@/src \
-  $(RYTHMOS_AMESOS_INCLUDES) $(EPETRAEXT_INCLUDES) $(EPETRA_INCLUDES) $(THYRA_INCLUDES) $(TEUCHOS_INCLUDES)
+  $(RYTHMOS_AMESOS_INCLUDES) $(RYTHMOS_AZTECOO_INCLUDES) $(EPETRAEXT_INCLUDES) $(EPETRA_INCLUDES) $(THYRA_INCLUDES) $(TEUCHOS_INCLUDES)
 
 # Note, the order of the library depandancies is critical (higher level libraries from left to right)
 _RYTHMOS_LIBS = \
-  @LDFLAGS@ -L@abs_top_builddir@/src -lrythmos $(RYTHMOS_AMESOS_LIBS) $(EPETRAEXT_LIBS)\
+  @LDFLAGS@ -L@abs_top_builddir@/src -lrythmos $(RYTHMOS_AMESOS_LIBS) $(RYTHMOS_AZTECOO_LIBS) $(EPETRAEXT_LIBS)\
   $(EPETRA_LIBS) $(THYRA_LIBS) $(TEUCHOS_LIBS) @LIBS@ @FLIBS@ 
 
 @USING_GNUMAKE_TRUE@RYTHMOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_RYTHMOS_INCLUDES))

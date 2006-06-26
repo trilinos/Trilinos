@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE ENABLE_RYTHMOS_AMESOS_TRUE ENABLE_RYTHMOS_AMESOS_FALSE ENABLE_RYTHMOS_NOX_TRUE ENABLE_RYTHMOS_NOX_FALSE HAVE_NEWP_SWAHILI_TRUE HAVE_NEWP_SWAHILI_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP USING_EXPORT_MAKEFILES_TRUE USING_EXPORT_MAKEFILES_FALSE PERL_EXE HAVE_PERL USING_PERL_TRUE USING_PERL_FALSE USING_GNUMAKE_TRUE USING_GNUMAKE_FALSE ENABLE_RYTHMOS_AMESOS_TRUE ENABLE_RYTHMOS_AMESOS_FALSE ENABLE_RYTHMOS_AZTECOO_TRUE ENABLE_RYTHMOS_AZTECOO_FALSE ENABLE_RYTHMOS_NOX_TRUE ENABLE_RYTHMOS_NOX_FALSE HAVE_NEWP_SWAHILI_TRUE HAVE_NEWP_SWAHILI_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE BUILD_EXAMPLES_TRUE BUILD_EXAMPLES_FALSE PYTHON_USE_TRUE PYTHON_USE_FALSE PYTHON PYTHON_PREFIX PYTHON_EXECPREFIX BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE PYTHON_CSPEC PYTHON_LSPEC WITH_SWIG SWIG SWIG_LIB SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG FLIBS BLAS_LIBS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -721,13 +721,13 @@ echo X"$0" |
   	  /^X\(\/\).*/{ s//\1/; q; }
   	  s/.*/./; q'`
   srcdir=$ac_confdir
-  if test ! -r $srcdir/$ac_unique_file; then
+  if test ! -r "$srcdir/$ac_unique_file"; then
     srcdir=..
   fi
 else
   ac_srcdir_defaulted=no
 fi
-if test ! -r $srcdir/$ac_unique_file; then
+if test ! -r "$srcdir/$ac_unique_file"; then
   if test "$ac_srcdir_defaulted" = yes; then
     { echo "$as_me: error: cannot find sources ($ac_unique_file) in $ac_confdir or .." >&2
    { (exit 1); exit 1; }; }
@@ -736,7 +736,7 @@ if test ! -r $srcdir/$ac_unique_file; then
    { (exit 1); exit 1; }; }
   fi
 fi
-(cd $srcdir && test -r ./$ac_unique_file) 2>/dev/null ||
+(cd $srcdir && test -r "./$ac_unique_file") 2>/dev/null ||
   { echo "$as_me: error: sources are in $srcdir, but \`cd $srcdir' does not work" >&2
    { (exit 1); exit 1; }; }
 srcdir=`echo "$srcdir" | sed 's%\([^\\/]\)[\\/]*$%\1%'`
@@ -889,6 +889,12 @@ Optional Features:
                           --disable-rythmos-amesos.
   --enable-rythmos-amesos Build the Amesos operator/vector adapater support in
                           Rythmos.
+  --enable-aztecoo        Build the AztecOO operator/vector adapater support
+                          in Rythmos. Can be overridden with
+                          --disable-rythmos-aztecoo.
+  --enable-rythmos-aztecoo
+                          Build the AztecOO operator/vector adapater support
+                          in Rythmos.
   --enable-nox            Build in NOX support in Rythmos. Can be overridden
                           with --disable-rythmos-nox.
   --enable-rythmos-nox    Build in NOX support in Rythmos.
@@ -3843,7 +3849,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3846:" \
+echo "$as_me:3852:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -6942,6 +6948,59 @@ fi
 
 
 
+# Check whether --enable-aztecoo or --disable-aztecoo was given.
+if test "${enable_aztecoo+set}" = set; then
+  enableval="$enable_aztecoo"
+  ac_cv_implicit_use_aztecoo=$enableval
+else
+  ac_cv_implicit_use_aztecoo=no
+fi;
+
+if test "Xyes" != "Xno"; then
+  ac_cv_rythmos_using_aztecoo_default=$ac_cv_implicit_use_aztecoo
+else
+  ac_cv_rythmos_using_aztecoo_default=no
+fi
+
+# Check whether --enable-rythmos-aztecoo or --disable-rythmos-aztecoo was given.
+if test "${enable_rythmos_aztecoo+set}" = set; then
+  enableval="$enable_rythmos_aztecoo"
+  ac_cv_use_aztecoo=$enableval
+else
+  ac_cv_use_aztecoo=$ac_cv_rythmos_using_aztecoo_default
+fi;
+
+echo "$as_me:$LINENO: checking whether to build optional aztecoo dependent code in rythmos" >&5
+echo $ECHO_N "checking whether to build optional aztecoo dependent code in rythmos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_aztecoo" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_AZTECOO 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_aztecoo" = "Xyes"; then
+  ENABLE_RYTHMOS_AZTECOO_TRUE=
+  ENABLE_RYTHMOS_AZTECOO_FALSE='#'
+else
+  ENABLE_RYTHMOS_AZTECOO_TRUE='#'
+  ENABLE_RYTHMOS_AZTECOO_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-nox or --disable-nox was given.
 if test "${enable_nox+set}" = set; then
   enableval="$enable_nox"
@@ -8245,7 +8304,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8248: \"$ac_link\") >&5
+(eval echo $as_me:8307: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8323,7 +8382,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8326: \"$ac_link\") >&5
+(eval echo $as_me:8385: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10869,7 +10928,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10872: \"$ac_link\") >&5
+(eval echo $as_me:10931: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10947,7 +11006,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10950: \"$ac_link\") >&5
+(eval echo $as_me:11009: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11339,6 +11398,13 @@ if test -z "${ENABLE_RYTHMOS_AMESOS_TRUE}" && test -z "${ENABLE_RYTHMOS_AMESOS_F
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_AMESOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_RYTHMOS_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${ENABLE_RYTHMOS_AZTECOO_TRUE}" && test -z "${ENABLE_RYTHMOS_AZTECOO_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_AZTECOO\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"ENABLE_RYTHMOS_AZTECOO\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -12083,6 +12149,8 @@ s,@USING_GNUMAKE_TRUE@,$USING_GNUMAKE_TRUE,;t t
 s,@USING_GNUMAKE_FALSE@,$USING_GNUMAKE_FALSE,;t t
 s,@ENABLE_RYTHMOS_AMESOS_TRUE@,$ENABLE_RYTHMOS_AMESOS_TRUE,;t t
 s,@ENABLE_RYTHMOS_AMESOS_FALSE@,$ENABLE_RYTHMOS_AMESOS_FALSE,;t t
+s,@ENABLE_RYTHMOS_AZTECOO_TRUE@,$ENABLE_RYTHMOS_AZTECOO_TRUE,;t t
+s,@ENABLE_RYTHMOS_AZTECOO_FALSE@,$ENABLE_RYTHMOS_AZTECOO_FALSE,;t t
 s,@ENABLE_RYTHMOS_NOX_TRUE@,$ENABLE_RYTHMOS_NOX_TRUE,;t t
 s,@ENABLE_RYTHMOS_NOX_FALSE@,$ENABLE_RYTHMOS_NOX_FALSE,;t t
 s,@HAVE_NEWP_SWAHILI_TRUE@,$HAVE_NEWP_SWAHILI_TRUE,;t t
