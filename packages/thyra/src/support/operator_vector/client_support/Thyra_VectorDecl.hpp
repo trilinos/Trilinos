@@ -32,8 +32,10 @@
 #include "Teuchos_Handle.hpp"
 #include "Thyra_ConfigDefs.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VecOpMacros.hpp"
 #include "RTOpPack_Types.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 // namespace ThyraOverloadedOps
 // {
@@ -105,13 +107,13 @@ namespace Thyra
     void addInto(Vector<Scalar>& other, Thyra::LCSign sign) const ;
 
     /** */
-    Scalar operator[](int globalIndex) const ;
+    Scalar operator[](Index globalIndex) const ;
 
     /** */
     ConstVector<Scalar> convert() const {return *this;}
       
     /** get read-only block */
-    ConstVector<Scalar> getBlock(int i) const ;
+    ConstVector<Scalar> getBlock(Index i) const ;
     
   };
 
@@ -120,7 +122,7 @@ namespace Thyra
    * Return the dimension of the vector 
    */
   template <class Scalar> 
-  int dim(const ConstVector<Scalar>& x) ;
+  Index dim(const ConstVector<Scalar>& x) ;
 
 
   /** */
@@ -146,19 +148,19 @@ namespace Thyra
     class IndexObject
     {
     public:
-      IndexObject(const Teuchos::RefCountPtr<VectorBase<Scalar> >& v, int i)
-        : v_(v), count_(new int), dataView_(), i_(i)
+      IndexObject(const Teuchos::RefCountPtr<VectorBase<Scalar> >& v, Index i)
+        : v_(v), count_(new int), i_(i)
       {
         *count_ = 1;
-        v_->acquireDetachedView(Range1D(i,i), &dataView_);
-        //        v_->acquireDetachedView(Range1D(0, v_->space()->dim()-1), &dataView_);
+        val_ = valGotten_ = get_ele(*v_,i_);
       }
       
       IndexObject(const IndexObject& other)
         : v_(other.v_), count_(other.count_), 
-          dataView_(other.dataView_), i_(other.i_)
+          valGotten_(other.valGotten_), val_(other.val_), i_(other.i_)
       {
-        cerr << "IO copy ctor" << endl;
+        *Teuchos::VerboseObjectBase::getDefaultOStream()
+          << "IO copy ctor" << endl;
         (*count_)++;
       }
 
@@ -166,23 +168,25 @@ namespace Thyra
       {
         if (--(*count_)==0) 
           {
-            v_->commitDetachedView(&dataView_);
+            if( val_ != valGotten_ )
+              set_ele( i_, val_, &*v_ );
             delete count_;
           }
       }
 
-      operator Scalar () const {return dataView_[i_];}
+      operator Scalar () const {return val_;}
 
       IndexObject& operator=(const double& value)
       {
-        dataView_[i_] = value;
+        val_ = value;
         return *this;
       }
     private:
       Teuchos::RefCountPtr<VectorBase<Scalar> > v_;
       int* count_;
-      RTOpPack::SubVectorView<Scalar> dataView_;
-      int i_;
+      Scalar valGotten_;
+      Scalar val_;
+      Index i_;
       // undefined empty ctor
       IndexObject();
       // undefined assignment op
@@ -212,9 +216,10 @@ namespace Thyra
     Vector<Scalar>& acceptCopyOf(const ConstVector<Scalar>& x);
 
     /** */
-    IndexObject operator[](int globalIndex)
+    IndexObject operator[](Index globalIndex)
     {
-      cout << "calling non-const [] " << endl;
+      *Teuchos::VerboseObjectBase::getDefaultOStream()
+        << "calling non-const [] " << endl;
       return IndexObject(this->ptr(), globalIndex);
     }
 

@@ -16,6 +16,12 @@
 }
 
 (FRAMEWORK, INSTALL) {
+    TESTS = ./operator_vector/test_handles.exe;
+    ARGS = --local-dim=4, --local-dim=4 --output-show-proc-rank --output-to-root-rank-only=-1;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK, INSTALL) {
     TESTS = operator_vector/test_product_space.exe,
 	    operator_vector/test_std_ops.exe,
 	    ../example/operator_vector/sillyCgSolve_serial.exe,

@@ -41,7 +41,7 @@ namespace Thyra
 {
   /** */
   template <class Scalar> inline
-  Scalar ConstVector<Scalar>::operator[](int globalIndex) const 
+  Scalar ConstVector<Scalar>::operator[](Index globalIndex) const 
   {
     cout << "calling const [] " << endl;
     ConstDetachedVectorView<Scalar> view(this->ptr(), Range1D(0, dim(*this)-1));
@@ -99,7 +99,7 @@ namespace Thyra
    * Return the dimension of the vector 
    */
   template <class Scalar> inline
-  int dim(const ConstVector<Scalar>& x) 
+  Index dim(const ConstVector<Scalar>& x) 
   {
     return x.ptr()->space()->dim();
   }
@@ -157,11 +157,11 @@ namespace Thyra
   
   /** \relates Vector */
   template <class Scalar> inline  
-  void setElement(const Vector<Scalar>& x, int i, const Scalar& x_i);
+  void setElement(const Vector<Scalar>& x, Index i, const Scalar& x_i);
 
   /** \relates ConstVector */
   template <class Scalar> inline  
-  const Scalar& getElement(const ConstVector<Scalar>& x, int i);
+  const Scalar& getElement(const ConstVector<Scalar>& x, Index i);
 
 
 }
