@@ -27,7 +27,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "Epetra_JadMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
@@ -39,49 +39,55 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 
-// At this point, we are not support reduced storage capabilities
-#undef REDUCED_STORAGE_SUPPORT
-
-// When we do, we will need to add a check for climits vs limits.h because some machine, esp. IRIX 
-// platforms do not have climits.
-#ifdef REDUCED_STORAGE_SUPPORT
-#include <climits>
-#endif
 
 //==============================================================================
-Epetra_JadMatrix::Epetra_JadMatrix(const Epetra_RowMatrix & Matrix) 
-  : Comm_(Matrix.RowMatrixRowMap().Comm().Clone()),
-    OperatorDomainMap_(Matrix.OperatorDomainMap()),
-    OperatorRangeMap_(Matrix.OperatorRangeMap()),
-    RowMatrixRowMap_(Matrix.RowMatrixRowMap()),
-    RowMatrixColMap_(Matrix.RowMatrixColMap()),
-    NumMyRows_(Matrix.NumMyRows()),
-    NumMyCols_(Matrix.NumMyCols()),
-    NumMyNonzeros_(Matrix.NumMyNonzeros()),
-    NumGlobalNonzeros_(Matrix.NumGlobalNonzeros()),
-    Values_(0),
-    Indices_(0),
-    IndexOffset_(0),
-    Profile_(0),
-    RowPerm_(0),
-    InvRowPerm_(0),
-    UseTranspose_(Matrix.UseTranspose()),
-    HasNormInf_(Matrix.HasNormInf()),
-    LowerTriangular_(Matrix.LowerTriangular()),
-    UpperTriangular_(Matrix.UpperTriangular()),
-    NumJaggedDiagonals_(Matrix.MaxNumEntries()),
+Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Epetra_Map & ColMap) 
+  : Comm_(RowMap.Comm().Clone()),
+    OperatorDomainMap_(RowMap()),
+    OperatorRangeMap_(RowMap()),
+    RowMatrixRowMap_(RowMap()),
+    RowMatrixColMap_(ColMap()),
+    NumMyNonzeros_(0),
+    NumGlobalNonzeros_(0),
+    MaxNumEntries_(0),
+    UseTranspose_(false),
+    HasNormInf_(true),
+    LowerTriangular_(false),
+    UpperTriangular_(false),
     ImportVector_(0),
     ExportVector_(0),
     Importer_(0),
     Exporter_(0)
 {
-  if (!Matrix.Filled()) throw ReportError("Input matrix must have called FillComplete()", -1);
-  Allocate(Matrix);
-  SetLabel("Epetra::JadMatrix");
+  Setup();
+  SetLabel("Epetra::BasicRowMatrix");
 }
 
 //==============================================================================
-Epetra_JadMatrix::~Epetra_JadMatrix(){
+Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Epetra_Map & ,  Epetra_Map & DomainMap, const Epetra_Map & RangeMap) 
+  : Comm_(RowMap.Comm().Clone()),
+    OperatorDomainMap_(DomainMap()),
+    OperatorRangeMap_(RangeMap()),
+    RowMatrixRowMap_(RowMap()),
+    RowMatrixColMap_(ColMap()),
+    NumMyNonzeros_(0),
+    NumGlobalNonzeros_(0),
+    MaxNumEntries_(0),
+    UseTranspose_(false),
+    HasNormInf_(true),
+    LowerTriangular_(true),
+    UpperTriangular_(true),
+    ImportVector_(0),
+    ExportVector_(0),
+    Importer_(0),
+    Exporter_(0)
+{
+  Setup();
+  SetLabel("Epetra::BasicRowMatrix");
+}
+
+//==============================================================================
+Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix(){
 
   if (ImportVector_!=0) delete ImportVector_;
   ImportVector_=0;
@@ -95,152 +101,59 @@ Epetra_JadMatrix::~Epetra_JadMatrix(){
 }
 
 //==============================================================================
-int Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckStructure) {
-
-  int NumEntries;
-  int * Indices = 0;
-  double * Values =0;
-
-  int ierr = 0;
-
-  try { // If matrix is an Epetra_CrsMatrix, we can get date much more cheaply
-
-    const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Matrix);
-
-    for (int i1=0; i1<NumMyRows_; i1++) {
-      
-      EPETRA_CHK_ERR(A.ExtractMyRowView(i1, NumEntries, Values, Indices)); // Get the current row based on the permutation
-      int i = InvRowPerm_[i1]; // Determine permuted row location
-      for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[i];
-      if (CheckStructure)
-	for (int j=0; j< NumEntries; j++) if (Indices_[IndexOffset_[j]+i] != Indices[i]) ierr = - 1;
-    }
-  }
-  catch (...) { // Otherwise just live with RowMatrix interface
-    
-    Epetra_SerialDenseVector curValues(NumJaggedDiagonals_);
-    Epetra_IntSerialDenseVector curIndices(NumJaggedDiagonals_);
-    Indices = curIndices.Values();
-    Values = curValues.Values();
-    for (int i1=0; i1<NumMyRows_; i1++) {
-      EPETRA_CHK_ERR(Matrix.ExtractMyRowCopy(i1, NumJaggedDiagonals_, NumEntries, Values, Indices)); // Get current row based on the permutation
-      int i = InvRowPerm_[i1]; // Determine permuted row location
-      for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[i];
-      if (CheckStructure)
-	for (int j=0; j< NumEntries; j++) if (Indices_[IndexOffset_[j]+i] != Indices[i]) ierr = - 1;
-    }
-  }
-  EPETRA_CHK_ERR(ierr);
-  return(ierr);
-}
-
-//==============================================================================
-int Epetra_JadMatrix::Allocate(const Epetra_RowMatrix & Matrix) {
+int Epetra_BasicRowMatrix::Setup() {
 
   // Check if non-trivial import/export operators
-  if (!(Matrix.RowMatrixRowMap().SameAs(Matrix.OperatorRangeMap()))) 
-    Exporter_ = new Epetra_Export(Matrix.RowMatrixRowMap(), Matrix.OperatorRangeMap());
+  if (!(RowMatrixRowMap().SameAs(OperatorRangeMap()))) 
+    Exporter_ = new Epetra_Export(RowMatrixRowMap(), OperatorRangeMap());
   
-  if (Matrix.RowMatrixImporter()!=0) 
-    Importer_ = new Epetra_Import(Matrix.RowMatrixColMap(), Matrix.OperatorDomainMap());
-
-  // Allocate IndexOffset storage
-
-  IndexOffset_.Resize(NumJaggedDiagonals_+1);
-
-  // Next compute permutation of rows
-  RowPerm_.Resize(NumMyRows_);
-  InvRowPerm_.Resize(NumMyRows_);
-  Profile_.Resize(NumMyRows_);
-  for (int i=0; i<NumMyRows_; i++) {
-    int NumEntries;
-    Matrix.NumMyRowEntries(i, NumEntries);
-    Profile_[i] = NumEntries;
-    RowPerm_[i] = i;
-  }
-
-  Epetra_Util sorter;
-  int * RowPerm = RowPerm_.Values();
-  sorter.Sort(false, NumMyRows_, Profile_.Values(), 0, 0, 1, &RowPerm);
-  for (int i=0; i<NumMyRows_; i++) InvRowPerm_[RowPerm[i]] = i; // Compute inverse row permutation
-
-  // Now build IndexOffsets:  These contain the lengths of the jagged diagonals
-
-  for (int i=0; i<NumJaggedDiagonals_; i++) IndexOffset_[i] = 0;
-
-  int curOffset = NumMyRows_;
-  int * curIndex = IndexOffset_.Values(); // point to first index (will be incremented immediately below)
-  for (int i=1; i<NumJaggedDiagonals_+1; i++) {
-    curIndex++;
-    while (*curIndex==0) {
-      if (Profile_[curOffset-1]<i) curOffset--;
-      else *curIndex = *(curIndex-1) + curOffset; // Set the length of the current jagged diagonal (plus scan sum)
-    }
-  }
-
-  Values_.Resize(NumMyNonzeros_);
-  Indices_.Resize(NumMyNonzeros_);
-
-  int NumEntries;
-  int * Indices = 0;
-  double * Values =0;
-
-  try { // If matrix is an Epetra_CrsMatrix, we can get data much more cheaply
-
-    const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Matrix);
-
-    for (int i1=0; i1<NumMyRows_; i1++) {
-
-      EPETRA_CHK_ERR(A.ExtractMyRowView(i1, NumEntries, Values, Indices)); // Get the current row
-      int i = InvRowPerm_[i1]; // Determine permuted row location
-      for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[j];
-      for (int j=0; j< NumEntries; j++) Indices_[IndexOffset_[j]+i] = Indices[j];
-    }
-  }
-  catch (...) { // Otherwise just live with RowMatrix interface
-
-  Epetra_SerialDenseVector curValues(NumJaggedDiagonals_);
-  Epetra_IntSerialDenseVector curIndices(NumJaggedDiagonals_);
-  Indices = curIndices.Values();
-  Values = curValues.Values();
-    for (int i1=0; i1<NumMyRows_; i1++) {
-      EPETRA_CHK_ERR(Matrix.ExtractMyRowCopy(i1, NumJaggedDiagonals_, NumEntries, Values, Indices)); // Get  current row based on the permutation
-      int i = InvRowPerm_[i1]; // Determine permuted row location
-	for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[j];
-	for (int j=0; j< NumEntries; j++) Indices_[IndexOffset_[j]+i] = Indices[j];
-    }
-  }
-  return(0);
-}
-//=============================================================================
-int Epetra_JadMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const {
-
-  if(MyRow < 0 || MyRow >= NumMyRows_)
-    EPETRA_CHK_ERR(-1); // Not in Row range
-
-  int i = InvRowPerm_[MyRow]; // Determine permuted row location
-  NumEntries = Profile_[i]; // NNZ in current row
-  if(NumEntries > Length)
-    EPETRA_CHK_ERR(-2); // Not enough space for copy. Needed size is passed back in NumEntries
-
-  for (int j=0; j< NumEntries; j++) Values[j] = Values_[IndexOffset_[j]+i];
-  for (int j=0; j< NumEntries; j++) Indices[j] = Indices_[IndexOffset_[j]+i];
-  return(0);
-}
-//=============================================================================
-int Epetra_JadMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const {
-
-  // Crude implementation in terms of ExtractMyRowCopy
+  if (!(RowMatrixColMap().SamesAs(OperatorDomainMap())))
+    Importer_ = new Epetra_Import(RowMatrixColMap(), OperatorDomainMap());
 
   Epetra_SerialDenseVector Values(MaxNumEntries());
   Epetra_IntSerialDenseVector Indices(MaxNumEntries());
-  EPETRA_CHK_ERR(ExtractMyRowCopy(MyRow, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
-  
-  
-  return(1); // Return 1 because this is an expensive implementation (in runtime)
+  int NumEntries;
+
+  for(int i = 0; i < NumMyRows_; i++) {
+    EPETRA_CHK_ERR(ExtractMyRowCopy(RowPerm_[i], MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
+    int ii = RowMatrixRowMap().GID(i);
+    
+    Diagonal[i] = 0.0;
+    for(int j = 0; j < NumEntries; j++) {
+      if(ii == RowMatrixColMap().GID(Indices[j])) {
+	Diagonal[i] = Values[j];
+	break;
+      }
+    }
+  }
+
+  return(0);
 }
 //=============================================================================
-int Epetra_JadMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
+int Epetra_BasicRowMatrix::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const {
+
+  return(-1);
+}
+//=============================================================================
+int Epetra_BasicRowMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const {
+
+  return(-1);
+}
+//=============================================================================
+int Epetra_BasicRowMatrix::MaxNumEntries() const {
+
+  int NumMyRows = RowMatrixRowMap().NumMyPoints();
+  MaxNumEntries_ = 0;
+  int NumEntries = 0;
+  for (int i=0; i<NumMyRows; i++) {
+    EPETRA_CHK_ERR(ExtractMyRowCopy(MyRow, NumEntries));
+    if (NumEntries>MaxNumEntries_) MaxNumEntries_ = NumEntries;
+  }
+  
+  return(0); // Return 1 because this is an expensive implementation (in runtime)
+}
+//=============================================================================
+int Epetra_BasicRowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
 
   if(!RowMatrixRowMap().SameAs(Diagonal.Map())) 
     EPETRA_CHK_ERR(-2); // Maps must be the same
@@ -266,7 +179,7 @@ int Epetra_JadMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
   return(0);
 }
 //=============================================================================
-int Epetra_JadMatrix::InvRowSums(Epetra_Vector & x) const {
+int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
   int ierr = 0;
   int i, j;
   Epetra_SerialDenseVector Values(MaxNumEntries());
@@ -316,7 +229,7 @@ int Epetra_JadMatrix::InvRowSums(Epetra_Vector & x) const {
   return(0);
 }
 //=============================================================================
-int Epetra_JadMatrix::LeftScale(const Epetra_Vector & x) {
+int Epetra_BasicRowMatrix::LeftScale(const Epetra_Vector & x) {
   double* xp = 0;
   double curValue;
   int curRowIndex, curColIndex;
@@ -340,7 +253,7 @@ int Epetra_JadMatrix::LeftScale(const Epetra_Vector & x) {
   return(0);
 }
 //=============================================================================
-int Epetra_JadMatrix::InvColSums(Epetra_Vector & x) const {
+int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
   int ierr = 0;
   int i, j;
   Epetra_SerialDenseVector Values(MaxNumEntries());
@@ -390,7 +303,7 @@ int Epetra_JadMatrix::InvColSums(Epetra_Vector & x) const {
   return(0);
 }
 //=============================================================================
-int Epetra_JadMatrix::RightScale(const Epetra_Vector & x) {
+int Epetra_BasicRowMatrix::RightScale(const Epetra_Vector & x) {
   double* xp = 0;
   double curValue;
   int curRowIndex, curColIndex;
@@ -414,7 +327,7 @@ int Epetra_JadMatrix::RightScale(const Epetra_Vector & x) {
   return(0);
 }
 //=============================================================================
-double Epetra_JadMatrix::NormInf() const {
+double Epetra_BasicRowMatrix::NormInf() const {
   double NormInf = -1.0;
   Epetra_SerialDenseVector Values(MaxNumEntries());
   Epetra_IntSerialDenseVector Indices(MaxNumEntries());
@@ -439,7 +352,7 @@ double Epetra_JadMatrix::NormInf() const {
   return(NormInf);
 }
 //=============================================================================
-double Epetra_JadMatrix::NormOne() const {
+double Epetra_BasicRowMatrix::NormOne() const {
   double NormOne = -1.0;
   Epetra_SerialDenseVector Values(MaxNumEntries());
   Epetra_IntSerialDenseVector Indices(MaxNumEntries());
@@ -465,7 +378,7 @@ double Epetra_JadMatrix::NormOne() const {
   return(NormOne);
 }
 //=============================================================================
-int Epetra_JadMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+int Epetra_BasicRowMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
   //
   // This function forms the product Y = A * Y or Y = A' * X
   //
@@ -543,7 +456,7 @@ int Epetra_JadMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   return(0);
 }
 //=======================================================================================================
-void Epetra_JadMatrix::UpdateImportVector(int NumVectors) const {
+void Epetra_BasicRowMatrix::UpdateImportVector(int NumVectors) const {
   if(Importer() != 0) {
     if(ImportVector_ != 0) {
       if(ImportVector_->NumVectors() != NumVectors) {
@@ -557,7 +470,7 @@ void Epetra_JadMatrix::UpdateImportVector(int NumVectors) const {
   return;
 }
 //=======================================================================================================
-void Epetra_JadMatrix::UpdateExportVector(int NumVectors) const {
+void Epetra_BasicRowMatrix::UpdateExportVector(int NumVectors) const {
   if(Exporter() != 0) {
     if(ExportVector_ != 0) {
       if(ExportVector_->NumVectors() != NumVectors) {
@@ -570,475 +483,9 @@ void Epetra_JadMatrix::UpdateExportVector(int NumVectors) const {
   }
   return;
 }
+
 //=======================================================================================================
-void Epetra_JadMatrix::GeneralMM(bool TransA, double ** X, int LDX, double ** Y, int LDY, int NumVectors) const {
-
-  if (LDX==0 || LDY==0 || NumVectors==1) {// Can't unroll RHS if X or Y not strided
-    for (int k=0; k<NumVectors; k++) GeneralMV(TransA, X[k], Y[k]);
-  }
-  else if (NumVectors==2) // Special 2 RHS case (does unrolling in both NumVectors and NumJaggedDiagonals)
-    GeneralMM2RHS(TransA, X[0], LDX, Y[0], LDY);
-  // Otherwise unroll RHS only
-  else
-    GeneralMM3RHS(TransA, X, LDX, Y, LDY, NumVectors);
-
-  return;
-}
-//=======================================================================================================
-void Epetra_JadMatrix::GeneralMM3RHS(bool TransA, double ** X, int ldx, double ** Y, int ldy, int NumVectors) const {
-
-  // Routine for 3 or more RHS
-
-  const double * Values = Values_.Values();
-  const int * Indices = Indices_.Values();
-  const int * IndexOffset = IndexOffset_.Values();
-  const int * RowPerm = RowPerm_.Values();
-  for (int j=0; j<NumVectors; j++) {
-    double * y = Y[j];
-    if (!TransA)
-      for (int i=0; i<NumMyRows_; i++) y[i] = 0.0;
-    else
-      for (int i=0; i<NumMyCols_; i++) y[i] = 0.0;
-  }
-
-  int nv = NumVectors%5; if (nv==0) nv=5;
-    double * x = X[0];
-    double * y = Y[0];
- 
-
-  for (int k=0; k<NumVectors; k+=5) {
-    
-    for (int j=0; j<NumJaggedDiagonals_; j++) {
-      const int * curIndices = Indices+IndexOffset[j];
-      const double * curValues = Values+IndexOffset[j];
-      int jaggedDiagonalLength = IndexOffset[j+1]-IndexOffset[j];
-      switch (nv){
-      case 1:
-	{
-	  if (!TransA) {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int ix = curIndices[i];
-	      int iy = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  else {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int iy = curIndices[i];
-	      int ix = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  break;
-	}
-      case 2:
-	{
-	  if (!TransA) {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int ix = curIndices[i];
-	      int iy = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  else {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int iy = curIndices[i];
-	      int ix = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  break;
-	}
-      case 3:
-	{
-	  if (!TransA) {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int ix = curIndices[i];
-	      int iy = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  else {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int iy = curIndices[i];
-	      int ix = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  break;
-	}
-      case 4:
-	{
-	  if (!TransA) {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int ix = curIndices[i];
-	      int iy = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  else {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int iy = curIndices[i];
-	      int ix = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  break;
-	}
-      case 5:
-	{
-	  if (!TransA) {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int ix = curIndices[i];
-	      int iy = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  else {
-#pragma _CRI ivdep
-	    for (int i=0; i<jaggedDiagonalLength; i++) {
-	      int iy = curIndices[i];
-	      int ix = RowPerm[i];
-	      double val = curValues[i];
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	      iy+=ldy; ix+=ldx;
-	      y[iy] += val*x[ix];
-	    }
-	  }
-	  break;
-	}
-      }
-    }
-    x += nv*ldx;
-    y += nv*ldy;
-    nv = 5; // After initial remainder, we will always do 5 RHS
-  }
-  return;
-}
-//=======================================================================================================
-void Epetra_JadMatrix::GeneralMM2RHS(bool TransA, double * x, int ldx, double * y, int ldy) const {
-
-  // special 2 rhs case
-
-  const double * Values = Values_.Values();
-  const int * Indices = Indices_.Values();
-  const int * IndexOffset = IndexOffset_.Values();
-  const int * RowPerm = RowPerm_.Values();
-  if (!TransA) 
-    for (int i=0; i<NumMyRows_; i++) {
-      y[i] = 0.0;
-      y[i+ldy] = 0.0;
-    }
-  else
-    for (int i=0; i<NumMyCols_; i++) {
-      y[i] = 0.0;
-      y[i+ldy] = 0.0;
-    }
-
-  int j = 0;
-  while (j<NumJaggedDiagonals_) {
-  int j0 = j;
-  int jaggedDiagonalLength = IndexOffset[j+1]-IndexOffset[j];
-    j++;
-    // check if other diagonals have same length up to a max of 2
-    while ((j<NumJaggedDiagonals_-1) && (IndexOffset[j+1]-IndexOffset[j]==jaggedDiagonalLength) && (j-j0<2)) j++;
-    
-    int numDiags = j-j0;
-    assert(numDiags<3 && numDiags>0);
-    assert(j<NumJaggedDiagonals_+1);
-    
-    switch (numDiags){
-    case 1:
-      {
-	const int * curIndices = Indices+IndexOffset[j0];
-	const double * curValues = Values+IndexOffset[j0];
-	if (!TransA) {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    int ix = curIndices[i];
-	    int iy = RowPerm[i];
-	    y[iy] += curValues[i]*x[ix];
-	    iy+=ldy; ix+=ldx;
-	    y[iy] += curValues[i]*x[ix];
-	  }
-	}
-	else {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++){
-	    int iy = curIndices[i];
-	    int ix = RowPerm[i];
-	    y[iy] += curValues[i]*x[ix];
-	    iy+=ldy; ix+=ldx;
-	    y[iy] += curValues[i]*x[ix];
-	  }
-	}
-	break;
-      }
-    case 2:
-      {
-	const int * curIndices0 = Indices+IndexOffset[j0];
-	const double * curValues0 = Values+IndexOffset[j0++];
-	const int * curIndices1 = Indices+IndexOffset[j0];
-	const double * curValues1 = Values+IndexOffset[j0];
-	if (!TransA) {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    int ix0 = curIndices0[i];
-	    int ix1 = curIndices1[i];
-	    int iy = RowPerm[i];
-	    y[iy] += 
-	      curValues0[i]*x[ix0] +
-	      curValues1[i]*x[ix1];
-	    iy+=ldy; ix0+=ldx; ix1+=ldx;
-	    y[iy] += 
-	      curValues0[i]*x[ix0] +
-	      curValues1[i]*x[ix1];
-	  }
-	}
-	else {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    int iy0 = curIndices0[i];
-	    int iy1 = curIndices1[i];
-	    int ix = RowPerm[i];
-	    double xval = x[ix];
-	    y[iy0] += curValues0[i]*xval;
-	    y[iy1] += curValues1[i]*xval;
-	    ix+=ldx; iy0+=ldy; iy1+=ldy;
-	    xval = x[ix];
-	    y[iy0] += curValues0[i]*xval;
-	    y[iy1] += curValues1[i]*xval;
-	  }
-	}
-      }
-      break;
-    }
-  }
-  return;
-}
-//=======================================================================================================
-void Epetra_JadMatrix::GeneralMV(bool TransA, double * x, double * y)  const {
-  
-  const double * Values = Values_.Values();
-  const int * Indices = Indices_.Values();
-  const int * IndexOffset = IndexOffset_.Values();
-  const int * RowPerm = RowPerm_.Values();
-  if (!TransA)
-    for (int i=0; i<NumMyRows_; i++) y[i] = 0.0;
-  else
-    for (int i=0; i<NumMyCols_; i++) y[i] = 0.0;
-
-  int j = 0;
-  while (j<NumJaggedDiagonals_) {
-  int j0 = j;
-  int jaggedDiagonalLength = IndexOffset[j+1]-IndexOffset[j];
-    j++;
-    // check if other diagonals have same length up to a max of 5
-    while ((j<NumJaggedDiagonals_-1) && (IndexOffset[j+1]-IndexOffset[j]==jaggedDiagonalLength) && (j-j0<5)) j++;
-    
-    int numDiags = j-j0;
-    assert(numDiags<6 && numDiags>0);
-    assert(j<NumJaggedDiagonals_+1);
-    
-    switch (numDiags){
-    case 1:
-      {
-	const int * curIndices = Indices+IndexOffset[j0];
-	const double * curValues = Values+IndexOffset[j0];
-	if (!TransA) {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++)
-	    y[RowPerm[i]] += curValues[i]*x[curIndices[i]];
-	}
-	else {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++)
-	    y[curIndices[i]] += curValues[i]*x[RowPerm[i]];
-	}
-	break;
-      }
-    case 2:
-      {
-	const int * curIndices0 = Indices+IndexOffset[j0];
-	const double * curValues0 = Values+IndexOffset[j0++];
-	const int * curIndices1 = Indices+IndexOffset[j0];
-	const double * curValues1 = Values+IndexOffset[j0];
-	if (!TransA) {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
-	      curValues0[i]*x[curIndices0[i]] +
-	      curValues1[i]*x[curIndices1[i]];
-	  }
-	}
-	else {
-	  //#pragma _CRI ivdep  (Collisions possible)
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    double xval = x[RowPerm[i]];
-	    y[curIndices0[i]] += curValues0[i]*xval;
-	    y[curIndices1[i]] += curValues1[i]*xval;
-	  }
-	}
-      }
-      break;
-    case 3:
-      {
-	const int * curIndices0 = Indices+IndexOffset[j0];
-	const double * curValues0 = Values+IndexOffset[j0++];
-	const int * curIndices1 = Indices+IndexOffset[j0];
-	const double * curValues1 = Values+IndexOffset[j0++];
-	const int * curIndices2 = Indices+IndexOffset[j0];
-	const double * curValues2 = Values+IndexOffset[j0];
-	if (!TransA) {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
-	      curValues0[i]*x[curIndices0[i]] +
-	      curValues1[i]*x[curIndices1[i]] +
-	      curValues2[i]*x[curIndices2[i]];
-	  }
-	}
-	else {
-	  //#pragma _CRI ivdep  (Collisions possible)
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    double xval = x[RowPerm[i]];
-	    y[curIndices0[i]] += curValues0[i]*xval;
-	    y[curIndices1[i]] += curValues1[i]*xval;
-	    y[curIndices2[i]] += curValues2[i]*xval;
-	  }
-	}
-      }
-      break;
-    case 4:
-      {
-	const int * curIndices0 = Indices+IndexOffset[j0];
-	const double * curValues0 = Values+IndexOffset[j0++];
-	const int * curIndices1 = Indices+IndexOffset[j0];
-	const double * curValues1 = Values+IndexOffset[j0++];
-	const int * curIndices2 = Indices+IndexOffset[j0];
-	const double * curValues2 = Values+IndexOffset[j0++];
-	const int * curIndices3 = Indices+IndexOffset[j0];
-	const double * curValues3 = Values+IndexOffset[j0];
-	if (!TransA) {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
-	      curValues0[i]*x[curIndices0[i]] +
-	      curValues1[i]*x[curIndices1[i]] +
-	      curValues2[i]*x[curIndices2[i]] +
-	      curValues3[i]*x[curIndices3[i]];
-	  }
-	}
-	else {
-	  //#pragma _CRI ivdep  (Collisions possible)
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    double xval = x[RowPerm[i]];
-	    y[curIndices0[i]] += curValues0[i]*xval;
-	    y[curIndices1[i]] += curValues1[i]*xval;
-	    y[curIndices2[i]] += curValues2[i]*xval;
-	    y[curIndices3[i]] += curValues3[i]*xval;
-	  }
-	}
-      }
-      break;
-    case 5:
-      {
-	const int * curIndices0 = Indices+IndexOffset[j0];
-	const double * curValues0 = Values+IndexOffset[j0++];
-	const int * curIndices1 = Indices+IndexOffset[j0];
-	const double * curValues1 = Values+IndexOffset[j0++];
-	const int * curIndices2 = Indices+IndexOffset[j0];
-	const double * curValues2 = Values+IndexOffset[j0++];
-	const int * curIndices3 = Indices+IndexOffset[j0];
-	const double * curValues3 = Values+IndexOffset[j0++];
-	const int * curIndices4 = Indices+IndexOffset[j0];
-	const double * curValues4 = Values+IndexOffset[j0];
-	if (!TransA) {
-#pragma _CRI ivdep
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    y[RowPerm[i]] += 
-	      curValues0[i]*x[curIndices0[i]] +
-	      curValues1[i]*x[curIndices1[i]] +
-	      curValues2[i]*x[curIndices2[i]] +
-	      curValues3[i]*x[curIndices3[i]] +
-	      curValues4[i]*x[curIndices4[i]];
-	  }
-	}
-	else {
-	  // #pragma _CRI ivdep (Collisions possible)
-	  for (int i=0; i<jaggedDiagonalLength; i++) {
-	    double xval = x[RowPerm[i]];
-	    y[curIndices0[i]] += curValues0[i]*xval;
-	    y[curIndices1[i]] += curValues1[i]*xval;
-	    y[curIndices2[i]] += curValues2[i]*xval;
-	    y[curIndices3[i]] += curValues3[i]*xval;
-	    y[curIndices4[i]] += curValues4[i]*xval;
-	  }
-	}
-      }
-      break;
-    }
-  }
-  return;
-}
-//=======================================================================================================
-void Epetra_JadMatrix::Print(ostream& os) const {
+void Epetra_BasicRowMatrix::Print(ostream& os) const {
 
   const Epetra_BlockMap * RowMap;
   const Epetra_BlockMap * ColMap;

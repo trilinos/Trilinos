@@ -29,8 +29,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 //@HEADER
 
-#ifndef EPETRA_JADMATRIX_H
-#define EPETRA_JADMATRIX_H
+#ifndef EPETRA_BASICROWMATRIX_H
+#define EPETRA_BASICROWMATRIX_H
 
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Object.h"
@@ -46,42 +46,42 @@ class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_Export;
 
-//! Epetra_JadMatrix: A class for constructing matrix objects optimized for common kernels.
+//! Epetra_BasicRowMatrix: A class for constructing matrix objects optimized for common kernels.
 
-/*! The Epetra_JadMatrix class takes an existing Epetra_RowMatrix ojbect, analyzes it and 
+/*! The Epetra_BasicRowMatrix class takes an existing Epetra_RowMatrix ojbect, analyzes it and 
     builds a jagged diagonal equivalent of it. Once constructed, it is also possible to 
     update the values of the matrix with values from another Epetra_RowMatrix that has
     the identical structure.
     
 */    
 
-class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public virtual Epetra_RowMatrix  {
+class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, public virtual Epetra_RowMatrix  {
       
  public:
 
   //@{ \name Constructors/Destructor.
-  //! Epetra_JadMatrix constuctor.
+  //! Epetra_BasicRowMatrix constuctor.
   /* The constructor for this class requires a fully constructed instance of an Epetra_RowMatrix
      object.
      \param Matrix (In) An existing Epetra_RowMatrix.
      \pre Matrix must have Matrix.Filled()==true.
   */
-  Epetra_JadMatrix(const Epetra_RowMatrix & Matrix);
+  Epetra_BasicRowMatrix(const Epetra_RowMatrix & Matrix);
 
-  //! Epetra_JadMatrix Destructor
-  virtual ~Epetra_JadMatrix();
+  //! Epetra_BasicRowMatrix Destructor
+  virtual ~Epetra_BasicRowMatrix();
   //@}
   
   //@{ \name Post-construction modifications.
   //! Update values using a matrix with identical structure.
   /* Updates the values only using a matrix that has exactly the same structure as
-     the matrix used to construct this Epetra_JadMatrix object.  Once the constructor
+     the matrix used to construct this Epetra_BasicRowMatrix object.  Once the constructor
      is called, the Matrix argument is no longer needed.
      \param Matrix (In) An existing Epetra_RowMatrix with \e identical structure to 
-            the matrix used to create this Epetra_JadMatrix.
+            the matrix used to create this Epetra_BasicRowMatrix.
      \param CheckStructure (In) Optional argument, by default is false.  If set to true, 
             the method will check to see if the structure of Matrix is compatible with
-	    the structure of matrix used to create this Epetra_JadMatrix.  Performing
+	    the structure of matrix used to create this Epetra_BasicRowMatrix.  Performing
 	    this check has signficant overhead, so it should only be turned on for debugging.
      \pre Matrix must have Matrix.Filled()==true.
   */ 
@@ -161,7 +161,7 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
 
   //@{ \name Computational methods.
 
-    //! Returns the result of a Epetra_JadMatrix multiplied by a Epetra_MultiVector X in Y.
+    //! Returns the result of a Epetra_BasicRowMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
     \param In
 	   TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
@@ -174,7 +174,7 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
   */
     int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    //! Returns the result of a Epetra_JadMatrix solve with a Epetra_MultiVector X in Y (not implemented).
+    //! Returns the result of a Epetra_BasicRowMatrix solve with a Epetra_MultiVector X in Y (not implemented).
     /*! 
     \param In
 	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
@@ -191,7 +191,7 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
   */
     int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return(-1);}
 
-    //! Computes the sum of absolute values of the rows of the Epetra_JadMatrix, results returned in x.
+    //! Computes the sum of absolute values of the rows of the Epetra_BasicRowMatrix, results returned in x.
     /*! The vector x will return such that x[i] will contain the inverse of sum of the absolute values of the 
         \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to LeftScale()
@@ -204,7 +204,7 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
   */
     int InvRowSums(Epetra_Vector& x) const;
 
-    //! Scales the Epetra_JadMatrix on the left with a Epetra_Vector x.
+    //! Scales the Epetra_BasicRowMatrix on the left with a Epetra_Vector x.
     /*! The \e this matrix will be scaled such that A(i,j) = x(i)*A(i,j) where i denotes the row number of A
         and j denotes the column number of A.
     \param In
@@ -214,7 +214,7 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
   */
     int LeftScale(const Epetra_Vector& x);
 
-    //! Computes the sum of absolute values of the columns of the Epetra_JadMatrix, results returned in x.
+    //! Computes the sum of absolute values of the columns of the Epetra_BasicRowMatrix, results returned in x.
     /*! The vector x will return such that x[j] will contain the inverse of sum of the absolute values of the 
         \e this matrix will be sca such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.  Using the resulting vector from this function as input to 
@@ -227,7 +227,7 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
   */
     int InvColSums(Epetra_Vector& x) const;
 
-    //! Scales the Epetra_JadMatrix on the right with a Epetra_Vector x.
+    //! Scales the Epetra_BasicRowMatrix on the right with a Epetra_Vector x.
     /*! The \e this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
         and j denotes the global column number of A.
     \param In
@@ -365,7 +365,7 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
     \return Integer error code, set to 0 if successful.
   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-    return(Epetra_JadMatrix::Multiply(Epetra_JadMatrix::UseTranspose(), X, Y));}
+    return(Epetra_BasicRowMatrix::Multiply(Epetra_BasicRowMatrix::UseTranspose(), X, Y));}
 
     //! Returns the result of a Epetra_RowMatrix inverse applied to an Epetra_MultiVector X in Y.
     /*! 
@@ -452,4 +452,4 @@ class Epetra_JadMatrix: public Epetra_CompObject, public Epetra_Object, public v
   Epetra_Export * Exporter_;
 
 };
-#endif /* EPETRA_JADMATRIX_H */
+#endif /* EPETRA_BASICROWMATRIX_H */
