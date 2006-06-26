@@ -110,6 +110,11 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorSpaceDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_TestingToolsDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorImpl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorOpTester.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorSpaceDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_VectorSpaceImpl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorSpaceTester.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorSpaceTesterDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_VectorStdOps.hpp\
