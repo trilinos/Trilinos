@@ -76,6 +76,9 @@ namespace Teuchos
     const RefCountPtr<const PointerType>& ptr() const {return ptr_;}
 
 
+    /** Access to raw pointer */
+    const PointerType * const rawPtr() {return this->ptr().get();}
+
   protected:
     /** \brief The empty ctor will only be called by Handle ctors */
     explicit ConstHandle() : ptr_() {;}
@@ -149,20 +152,12 @@ namespace Teuchos
       setRcp(rawPtr->getRcp());
     }
 
-    /** \brief Read/write access to the underlying smart pointer.
-     *
-     * \note This returns by value, not by reference. Returning by reference would
-     * be <b> very </b> dangerous in this context, because it would be possible
-     * to assign to the return value, e.g.,
-     * \code
-     * someHandle.ptr() = rcp(Blah());
-     * \endcode
-     * That would have the effect of desynchronizing the non-const
-     * and const pointers stored by this object, with catastrophic consequences. 
-     * Returning by value prevents this
-     * disaster.
+    /** \brief Read/write access to the underlying smart pointer. 
      */
     RefCountPtr<PointerType> ptr() {return this->nonConstPtr();}
+
+    /** Access to raw pointer */
+    PointerType* rawPtr() {return this->nonConstPtr().get();}
 
   };
 
