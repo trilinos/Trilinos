@@ -309,26 +309,26 @@ to be given on input
 \param Agiven    : on entry submap that is given and part of Amap 
 \return the remainder map of Amap that is not overlapping with Agiven 
 */
-Epetra_Map* MOERTEL::SplitMap(const Epetra_Map& Amap,
-                              const Epetra_Map& Agiven);
+Epetra_Map* SplitMap(const Epetra_Map& Amap,
+                     const Epetra_Map& Agiven);
 
 /*!
 \brief split a vector into 2 non-overlapping pieces
 
 */
-bool MOERTEL::SplitVector(const Epetra_Vector& x,
-                          const Epetra_Map& x1map,
-                          Epetra_Vector*&   x1,
-                          const Epetra_Map& x2map,
-                          Epetra_Vector*&   x2);
+bool SplitVector(const Epetra_Vector& x,
+                 const Epetra_Map& x1map,
+                 Epetra_Vector*&   x1,
+                 const Epetra_Map& x2map,
+                 Epetra_Vector*&   x2);
 
 /*!
 \brief merge results from 2 vectors into one (assumes matching submaps)
 
 */
-bool MOERTEL::MergeVector(const Epetra_Vector& x1,
-                          const Epetra_Vector& x2,
-                          Epetra_Vector& xresult);
+bool MergeVector(const Epetra_Vector& x1,
+                 const Epetra_Vector& x2,
+                 Epetra_Vector& xresult);
 
 /*!
 \brief Print matrix to file
