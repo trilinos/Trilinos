@@ -323,7 +323,7 @@ zoltan_temp_vertices myHshVtxs;
 GID_lookup           *lookup_myHshVtxs = NULL;
 
 int GnFixed=0, nFixed=0;                                     /* RTHRTH */
-int *tmpfixed = NULL, *fixed_callbk = NULL;              /* RTHRTH */
+int *tmpfixed = NULL, *fixedPart = NULL;              /* RTHRTH */
 ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
 
 
@@ -415,12 +415,12 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
     MPI_Allreduce (&nFixed, &GnFixed, 1, MPI_INT, MPI_SUM, zz->Communicator);
     
     if (GnFixed && nFixed && zhg->nObj)  {
-      fixed_callbk = (int*) ZOLTAN_MALLOC (sizeof(int) * nFixed);
+      fixedPart = (int*) ZOLTAN_MALLOC (sizeof(int) * nFixed);
       myObjs.fixed = (int*) ZOLTAN_MALLOC (sizeof(int) * zhg->nObj);
-      fixedGIDs    = ZOLTAN_MALLOC_GID_ARRAY (zz, zhg->nObj);
-      fixedLIDs    = ZOLTAN_MALLOC_LID_ARRAY (zz, zhg->nObj);
+      fixedGIDs    = ZOLTAN_MALLOC_GID_ARRAY (zz, nFixed);
+      fixedLIDs    = ZOLTAN_MALLOC_LID_ARRAY (zz, nFixed);
        
-      if (!fixed_callbk || !myObjs.fixed || !fixedGIDs || !fixedLIDs)
+      if (!fixedPart || !myObjs.fixed || !fixedGIDs || !fixedLIDs)
         MEMORY_ERROR;
           
       for (i = 0; i < zhg->nObj; i++)
@@ -428,7 +428,7 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
        
       if (zz->Get_Fixed_Obj_List) {
         zz->Get_Fixed_Obj_List (zz->Get_Fixed_Obj_List_Data, nFixed,
-         num_gid_entries, num_lid_entries, fixedGIDs, fixedLIDs, fixed_callbk,
+         num_gid_entries, num_lid_entries, fixedGIDs, fixedLIDs, fixedPart,
          &ierr);
         if (ierr != ZOLTAN_OK) {
           ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error getting Fixed Obj List");
@@ -439,11 +439,12 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
           j = lookup_GID (lookup_myObjs, fixedGIDs + (i * num_gid_entries));
           if (j < 0)
             FATAL_ERROR ("Unexpected Fixed Vertex GID received");
-          myObjs.fixed[j] = fixed_callbk[i];  /* overwrite fixed assignment */
+          myObjs.fixed[j] = fixedPart[i];  /* overwrite fixed assignment */
         }
       }
-      ZOLTAN_FREE (&fixedGIDs);
-      ZOLTAN_FREE (&fixedLIDs);
+      ZOLTAN_FREE(&fixedGIDs);
+      ZOLTAN_FREE(&fixedLIDs);
+      ZOLTAN_FREE(&fixedPart);
     }
   }     
  
@@ -1795,7 +1796,6 @@ End:
   }
 
   ZOLTAN_FREE(&tmpfixed);
-  ZOLTAN_FREE(&fixed_callbk);
   
   free_zoltan_objects(&myObjs);
   free_zoltan_pins(&myPins);
