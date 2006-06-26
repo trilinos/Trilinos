@@ -20,7 +20,6 @@ extern "C" {
 #include "phg_distrib.h"
 #include <limits.h>
 
-#define PROCESSOR_REDUCTION
 
     /*
 #define _DEBUG
@@ -355,13 +354,12 @@ int Zoltan_PHG_Partition (
       MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,hgc->Communicator);
 
       if (hgc->nProc>1 &&
-	  (tot_nPins < (int) (0.5 * origVpincnt + 0.5))) {
+	  (tot_nPins < (int) (hgp->ProRedL * origVpincnt + 0.5))) {
 	/* redistribute to half the processors */
 	MPI_Allreduce(&hg->nPins,&tot_nPins,1,MPI_INT,MPI_SUM,
 		      hgc->Communicator); /* update for processor reduction */
 	origVpincnt = tot_nPins;          /* test */ 
 
-#ifdef PROCESSOR_REDUCTION
 	if (hg->nVtx&&!(hg->vmap=(int*)ZOLTAN_MALLOC(hg->nVtx*sizeof(int)))) {
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: hg->vmap");
 	  return ZOLTAN_MEMERR;
@@ -370,7 +368,7 @@ int Zoltan_PHG_Partition (
 	for (i = 0; i < hg->nVtx; i++)
 	  hg->vmap[i] = i;
 
-	middle = (int)((float) (hgc->nProc-1) * 0.5);
+	middle = (int)((float) (hgc->nProc-1) * hgp->ProRedL);
 
 	if (hgp->nProc_x_req!=1 && hgp->nProc_y_req!=1) { /* Want 2D decomp */
 	  if ((middle+1) > SMALL_PRIME && Zoltan_PHG_isPrime(middle+1))
@@ -403,7 +401,6 @@ int Zoltan_PHG_Partition (
 
 	hg = vcycle->hg;
 	hg->redl = hgp->redl; /* not set with hg creation */
-#endif
       }
   }
 

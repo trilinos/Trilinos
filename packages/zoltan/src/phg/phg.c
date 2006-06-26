@@ -68,6 +68,7 @@ static PARAM_VARS PHG_params[] = {
   {"ADD_OBJ_WEIGHT",                  NULL,  "STRING", 0},
   {"PHG_EDGE_WEIGHT_OPERATION",       NULL,  "STRING", 0},
   {"PHG_RANDOMIZE_INPUT",             NULL,  "INT",    0},    
+  {"PHG_PROCESSOR_REDUCTION_LIMIT",   NULL,  "FLOAT",  0},
   { "PATOH_ALLOC_POOL0",              NULL,  "INT",    0},
   { "PATOH_ALLOC_POOL1",              NULL,  "INT",    0},   
   {NULL,                              NULL,  NULL,     0}     
@@ -548,6 +549,8 @@ int Zoltan_PHG_Initialize_Params(
                                  (void *) edge_weight_op);
   Zoltan_Bind_Param(PHG_params, "PHG_RANDOMIZE_INPUT",
                                  (void*) &hgp->RandomizeInitDist);  
+  Zoltan_Bind_Param(PHG_params, "PHG_PROCESSOR_REDUCTION_LIMIT",
+		                 (void*) &hgp->ProRedL);
   Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL0",
                                  (void*) &hgp->patoh_alloc_pool0);
   Zoltan_Bind_Param(PHG_params, "PATOH_ALLOC_POOL1",
@@ -593,6 +596,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->RandomizeInitDist = 0;
   hgp->EdgeSizeThreshold = 0.25;  
   hgp->hybrid_keep_factor = 0.;
+  hgp->ProRedL = 0.5;
   hgp->patoh_alloc_pool0 = 0;
   hgp->patoh_alloc_pool1 = 0;
   

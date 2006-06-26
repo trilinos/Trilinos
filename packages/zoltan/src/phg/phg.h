@@ -127,6 +127,7 @@ struct PHGPartParamsStruct {
                         weight for the same edge: add, take max, flag error */
   int RandomizeInitDist;  /* Flag indicating whether to randomly distribute
                              vertices and edges passed as input to PHG. */
+  float ProRedL;           /* V-cycle processor reduction limit in % of pins */
   int patoh_alloc_pool0,    /* to adjust patoh's memory pre-allocation amount */
       patoh_alloc_pool1;    
 };
