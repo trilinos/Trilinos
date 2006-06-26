@@ -25,6 +25,7 @@ my $buildDir;           # build directory           (required argument)
 my $category;           # test category             (required argument) 
 my $maxProc;            # maximum processors        (default: 4)
 my $mpiStart;           # mpi startup command       (default: NONE)
+my $mpiPing;            # mpi ping command          (default: NONE)
 my $mpiStop;            # mpi shutdown command      (default: NONE)
 my $mpiGo;              # mpi-go command            (default: mpirun -np )
 my @packages;           # array of packages to test
@@ -96,6 +97,7 @@ cleanUp();
                     "category=s" => \$category,
                     "max-proc=i" => \$maxProc,
                     "mpi-start=s" => \$mpiStart,
+                    "mpi-ping=s" => \$mpiPing,
                     "mpi-stop=s" => \$mpiStop,
                     "mpi-go=s" => \$mpiGo,
                     "packages=s" => \$packageList,
@@ -173,6 +175,18 @@ cleanUp();
             }
         } else {
             $mpiStart = ""; 
+        }
+        
+        # Check for valid mpi-ping command.
+        if ($mpiPing) { 
+            $mpiPing =~ m/^(\S+)/;
+            my $mpiPingProg = $1;
+            `which $mpiPingProg`;
+            if ($?) {
+                die "cannot find mpi-ping command: $mpiPingProg\n";
+            }
+        } else {
+            $mpiPing = ""; 
         }
         
         # Check for valid mpi-stop command.
@@ -295,6 +309,7 @@ cleanUp();
         $message .= "  \$category = $category\n";
         $message .= "  \$maxProc = $maxProc\n";
         $message .= "  \$mpiStart = $mpiStart\n";
+        $message .= "  \$mpiPing = $mpiPing\n";
         $message .= "  \$mpiStop = $mpiStop\n";
         $message .= "  \$mpiGo = $mpiGo\n";
         $message .= "  \$outputDir = $outputDir\n";
@@ -395,6 +410,12 @@ cleanUp();
             chdir $testListAoH[$i]{'definitionDir'} or next; # Potentially revist... 
             if ($testListAoH[$i]{'descendDirs'} eq "YES") {                
                 chdir $testListAoH[$i]{'directory'} or die "cannot chdir to ".$testListAoH[$i]{'directory'}.", died";
+            }
+            
+            # If valid mpi-ping command, check to see if mpi is running and,
+            # if not, restart it.
+            if ($comm eq "mpi" && $mpiPing && system("$mpiPing 1>/dev/null 2>/dev/null")) {
+                if ($mpiStart) { system("$mpiStart 1>/dev/null 2>/dev/null"); }
             }
                 
             # Print progress message.
@@ -1406,11 +1427,14 @@ cleanUp();
         print "  --mpi-start=COMMAND    Specify the mpi startup command for this system.\n";
         print "                         Default: NONE\n";
         print "\n";
+        print "  --mpi-ping=COMMAND     Specify the mpi 'ping' or 'status' command for this system.\n";
+        print "                         Default: NONE\n";
+        print "\n";
         print "  --mpi-stop=COMMAND     Specify the mpi shutdown command for this system.\n";
         print "                         Default: NONE\n";
         print "\n";
         print "  --mpi-go=COMMAND       Specify the mpi-go command for this system.\n";
-        print "                         Default: \"mpi-go -np \"\n";
+        print "                         Default: \"mpirun -np \"\n";
         print "\n";
         print "  --packages=P1[,P2]     Specify the packages to test.  Separate multiple\n";
         print "                         packages with commas.  Omit to test all built\n";
