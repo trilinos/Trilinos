@@ -59,6 +59,9 @@
 // Includes for Amesos:
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 
+// Includes for AztecOO:
+#include "Thyra_AztecOOLinearOpWithSolveFactory.hpp"
+
 #include <string>
 
 // Includes for Teuchos:
@@ -177,6 +180,7 @@ int main(int argc, char *argv[])
     if((method_val == METHOD_BE) | (method_val == METHOD_BDF))
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
       W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
+      //W_factory = Teuchos::rcp(new Thyra::AztecOOLinearOpWithSolveFactory());
 
     // create interface to problem
     Teuchos::RefCountPtr<ExampleApplication>
