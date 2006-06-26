@@ -119,8 +119,6 @@ struct Mesh_Description
   int     ewgt_dim;             /* number of weights per graph edge.         */
   int     num_nodes;		/* number of nodes on this processor.        */
   int     num_elems;		/* number of elements on this processor.     */
-  int     num_fixed_elems;	/* number of elements on this processor that
-                                   should be fixed to a particular partition.*/
   int     num_dims;		/* number of dimensions for the mesh         */
   int     num_el_blks;		/* number of element blocks in the mesh      */
   int     num_node_sets;	/* number of node sets in the mesh           */

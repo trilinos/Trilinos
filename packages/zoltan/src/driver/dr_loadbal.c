@@ -142,13 +142,6 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   if (Test.Fixed_Objects) {
-    /* Set partition assignment return lists so we can check the fixed
-       objects' assignments */
-    if (Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION ASSIGNMENTS")) {
-      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)\n");
-      return 0;
-    }
-
     /* Register fixed object callback functions */
     if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
                       (void (*)()) get_num_fixed_obj,
@@ -497,7 +490,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int num_gid_entries;           /* Number of array entries in a global ID.  */
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
-  int i, j;                      /* Loop index                               */
+  int i;                      /* Loop index                               */
+  int errcnt, gerrcnt;
   int ierr=ZOLTAN_OK;
   double stime = 0.0, mytime = 0.0, maxtime = 0.0;
   char fname[128];
@@ -570,63 +564,6 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
     }
 
-    if (Test.Fixed_Objects) {
-      int errcnt = 0, gerrcnt = 0;
-      /* Import lists are actually partition assignments, not imports,
-         since RETURN_LISTS = PARTITION ASSIGNMENTS.
-         Need to test for correctness of fixed objects and
-         build export lists */
-
-      /* First, a sanity check.... */
-      if (num_exported != mesh->num_elems) {
-        Gen_Error(0, 
-            "fatal:  num_exported != mesh->num_elems after LB_Partition\n");
-        return 0;
-      }
-
-      /* Reuse the memory from partition assignments for export lists. */
-      /* We'll fill in the exports after checking the part assignment values.*/
-      num_exported = 0;
-
-      for (i = 0; i < mesh->num_elems; i++) {
-        current_elem = &(mesh->elements[export_lids[i]]);
-
-        /* check for errors if the element is fixed */
-        if ((current_elem->fixed_part != -1) &&
-            (export_to_part[i] != current_elem->fixed_part)) {
-          errcnt++;
-          printf("%d:  Object %d fixed to %d but assigned to %d\n",
-                 Proc, current_elem->globalID, current_elem->fixed_part,
-                 export_to_part[i]);
-        }
-   
-        /* check whether element is to be exported (new proc or new part) */
-        if ((export_procs[i] != Proc) || 
-            (export_to_part[i] != current_elem->my_part)) {
-          /* element to be exported */
-          export_procs[num_exported] = export_procs[i];
-          export_to_part[num_exported] = export_to_part[i];
-          for (j = 0; j < num_gid_entries; j++)
-            export_gids[num_exported*num_gid_entries+j] = 
-                        export_gids[i*num_gid_entries+j];
-          for (j = 0; j < num_lid_entries; j++)
-            export_lids[num_exported*num_lid_entries+j] = 
-                        export_lids[i*num_lid_entries+j];
-          num_exported++;
-        }
-      }
-      /* Now migration should work as before. */
-
-      /* Exit if error in fixed objects' assignments. */
-      MPI_Allreduce(&errcnt, &gerrcnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-      if (gerrcnt) {
-        Zoltan_LB_Free_Part(&export_gids, &export_lids,
-                            &export_procs, &export_to_part);
-        Gen_Error(0, "Fatal:  Fixed objects' assignments incorrect.");
-        return 0;
-      }
-    }
-
 #ifdef ZOLTAN_NEMESIS
     if (pio_info->file_type == NEMESIS_FILE && Output.Nemesis) {
       i = write_elem_vars(Proc, mesh, pio_info, num_exported, export_gids,
@@ -653,6 +590,31 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       printf("DRIVER:  Total migration time = %g\n", maxtime);
+
+    /* Test whether Fixed Object assignments are correct */
+    if (Test.Fixed_Objects) {
+      for (errcnt=0, i = 0; i < mesh->num_elems; i++) {
+        current_elem = &(mesh->elements[i]);
+        if (current_elem->fixed_part != -1 &&
+            current_elem->fixed_part != current_elem->my_part) {
+          errcnt++;
+          printf("%d:  Object %d fixed to %d but assigned to %d\n",
+                 Proc, current_elem->globalID, current_elem->fixed_part,
+                 current_elem->my_part);
+        }
+      }
+      MPI_Allreduce(&errcnt, &gerrcnt, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+      if (gerrcnt) {
+        Zoltan_LB_Free_Part(&import_gids, &import_lids,
+                            &import_procs, &import_to_part);
+        Zoltan_LB_Free_Part(&export_gids, &export_lids,
+                            &export_procs, &export_to_part);
+        Gen_Error(0, "Fatal:  Fixed objects' assignments incorrect.");
+        return 0;
+      }
+      else if (Proc == 0)
+        printf("%d:  All fixed objects are correct.\n", Proc);
+    }
 
     /*
      * Test copy function
@@ -1703,6 +1665,7 @@ End:
 int get_num_fixed_obj(void *data, int *ierr)
 {
 MESH_INFO_PTR mesh;
+int i, cnt;
 
   START_CALLBACK_TIMER;
 
@@ -1712,11 +1675,15 @@ MESH_INFO_PTR mesh;
   }
   mesh = (MESH_INFO_PTR) data;
 
+  for (cnt=0, i = 0; i < mesh->num_elems; i++)
+    if (mesh->elements[i].fixed_part != -1) 
+      cnt++;
+
   *ierr = ZOLTAN_OK; /* set error code */
 
   STOP_CALLBACK_TIMER;
 
-  return(mesh->num_fixed_elems);
+  return(cnt);
 }
 
 /*****************************************************************************/
@@ -1736,6 +1703,7 @@ int nlid = num_lid_entries-1;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
+    printf("Bad data field in get_fixed_obj_list\n");
     return;
   }
   mesh = (MESH_INFO_PTR) data;
@@ -1753,8 +1721,10 @@ int nlid = num_lid_entries-1;
 
   if (cnt == num_fixed_obj)
     *ierr = ZOLTAN_OK; /* set error code */
-  else
+  else {
+    printf("Count mismatch in get_fixed_obj_list %d %d \n", cnt, num_fixed_obj);
     *ierr = ZOLTAN_FATAL;
+  }
 
   STOP_CALLBACK_TIMER;
 }
@@ -2044,7 +2014,6 @@ int proc, nprocs;
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
   /* Initialize fixed elements in mesh */
-  mesh->num_fixed_elems = 0;
   for (i = 0; i < mesh->num_elems; i++) mesh->elements[i].fixed_part = -1;
 
   switch (Test.Fixed_Objects) {
@@ -2054,7 +2023,6 @@ int proc, nprocs;
          we'll change later */
       for (i = 0; i < mesh->num_elems; i++) {
         mesh->elements[i].fixed_part = i % nprocs;
-        mesh->num_fixed_elems++;
       }
       break;
   case 2:
@@ -2063,7 +2031,6 @@ int proc, nprocs;
          we'll change later */
       for (i = 1; i < mesh->num_elems; i+=2) {
         mesh->elements[i].fixed_part = i % nprocs;
-        mesh->num_fixed_elems++;
       }
       break;
   case 3:
@@ -2073,35 +2040,30 @@ int proc, nprocs;
       for (i = 0; i < mesh->num_elems; i+=10) {
         mesh->elements[i].fixed_part = i % nprocs;
         /* printf("%d: i=%d, Fixed object %d to %d\n", proc, i, mesh->elements[i].globalID, i % nprocs); */
-        mesh->num_fixed_elems++;
       }
       break;
   case 4:
       /* Fix 100% of objects to partition 1 */
       for (i = 0; i < mesh->num_elems; i++) {
         mesh->elements[i].fixed_part = 1;
-        mesh->num_fixed_elems++;
       }
       break;
   case 5:
       /* Fix 50% of objects to partition 1 */
       for (i = mesh->num_elems/2; i < mesh->num_elems; i++) {
         mesh->elements[i].fixed_part = 1;
-        mesh->num_fixed_elems++;
       }
       break;
   case 6:
       /* Fix 10% of objects to partition 1 */
       for (i = 0; i < mesh->num_elems/10; i++) {
         mesh->elements[i].fixed_part = 1;
-        mesh->num_fixed_elems++;
       }
       break;
   case 7:
       /* Fix one object on each proc. */
       for (i = 0; i < MIN(1, mesh->num_elems); i++) {
         mesh->elements[i].fixed_part = proc;
-        mesh->num_fixed_elems++;
       }
       break;
   case 8:
@@ -2109,7 +2071,6 @@ int proc, nprocs;
       if (proc%2){
         for (i = 0; i < MIN(2, mesh->num_elems); i++) {
           mesh->elements[i].fixed_part = proc;
-          mesh->num_fixed_elems++;
         }
       }
       break;
@@ -2117,7 +2078,6 @@ int proc, nprocs;
       /* Fix myproc objects on each proc. */
       for (i = 0; i < MIN(proc, mesh->num_elems); i++) {
         mesh->elements[i].fixed_part = proc;
-        mesh->num_fixed_elems++;
       }
       break;
   case 10:

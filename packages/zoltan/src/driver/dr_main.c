@@ -507,8 +507,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
 
   mesh->dd = NULL;
   mesh->data_type = MESH;
-  mesh->num_elems = mesh->num_fixed_elems
-                  = mesh->num_nodes
+  mesh->num_elems = mesh->num_nodes
                   = mesh->num_dims
                   = mesh->num_el_blks
                   = mesh->num_node_sets
