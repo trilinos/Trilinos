@@ -220,7 +220,8 @@ COMP_H = \
 	$(srcdir)/Epetra_FEVbrMatrix.h \
 	$(srcdir)/Epetra_FEVector.h \
 	$(srcdir)/Epetra_IntVector.h \
-	$(srcdir)/Epetra_JadOperator.h
+	$(srcdir)/Epetra_BasicRowMatrix.h \
+	$(srcdir)/Epetra_JadMatrix.h
 
 
 COMP = \
@@ -238,7 +239,8 @@ COMP = \
 	$(srcdir)/Epetra_FEVbrMatrix.cpp \
 	$(srcdir)/Epetra_FEVector.cpp \
 	$(srcdir)/Epetra_IntVector.cpp \
-	$(srcdir)/Epetra_JadOperator.cpp
+	$(srcdir)/Epetra_BasicRowMatrix.cpp \
+	$(srcdir)/Epetra_JadMatrix.cpp
 
 
 # ------------------------------------------------------------------------
