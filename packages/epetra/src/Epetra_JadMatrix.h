@@ -90,16 +90,11 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
 
     //! Returns a copy of the specified local row in user-provided arrays.
     /*! 
-    \param In
-           MyRow - Local row to extract.
-    \param In
-	   Length - Length of Values and Indices.
-    \param Out
-	   NumEntries - Number of nonzero entries extracted.
-    \param Out
-	   Values - Extracted values for this row.
-    \param Out
-	   Indices - Extracted global column indices for the corresponding values.
+    \param MyRow (In) - Local row to extract.
+    \param Length (In) - Length of Values and Indices.
+    \param NumEntries (Out) - Number of nonzero entries extracted.
+    \param Values (Out) - Extracted values for this row.
+    \param Indices (Out) - Extracted global column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful, set to -1 if MyRow not valid, -2 if Length is too short (NumEntries will have required length).
   */
@@ -107,14 +102,10 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
 
     //! Returns a reference to the ith entry in the matrix, along with its row and column index.
     /*! 
-    \param In
-           CurEntry - Local entry to extract.
-    \param Out
-	   Value - Extracted reference to current values.
-    \param Out
-	   RowIndex - Row index for current entry.
-    \param Out
-	   ColIndex - Column index for current entry.
+    \param CurEntry (In) - Local entry to extract.
+    \param Value (Out) - Extracted reference to current values.
+    \param RowIndex (Out) - Row index for current entry.
+    \param ColIndex (Out) - Column index for current entry.
 	  
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
@@ -122,20 +113,16 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
       if (CurEntry>=NumMyNonzeros_) EPETRA_CHK_ERR(-1); 
       Value = &(Values_[0])+CurEntry;
       ColIndex = Indices_[CurEntry];
-      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) RowIndex = InvRowPerm_[IndexOffset_[j]-CurEntry];
+      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) {RowIndex = RowPerm_[CurEntry-IndexOffset_[j]]; break;}
       return(0);
     }
 
     //! Returns a const reference to the ith entry in the matrix, along with its row and column index.
     /*! 
-    \param In
-           CurEntry - Local entry to extract.
-    \param Out
-	   Value - Extracted reference to current values.
-    \param Out
-	   RowIndex - Row index for current entry.
-    \param Out
-	   ColIndex - Column index for current entry.
+    \param CurEntry (In) - Local entry to extract.
+    \param Value (Out) - Extracted reference to current values.
+    \param RowIndex (Out) - Row index for current entry.
+    \param ColIndex (Out) - Column index for current entry.
 	  
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
@@ -143,7 +130,7 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
       if (CurEntry>=NumMyNonzeros_) EPETRA_CHK_ERR(-1); 
       Value = &Values_[0]+CurEntry;
       ColIndex = Indices_[CurEntry];
-      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) RowIndex = InvRowPerm_[IndexOffset_[j]-CurEntry];
+      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) RowIndex = RowPerm_[IndexOffset_[j]-CurEntry];
       return(0);
     }
 
@@ -205,7 +192,7 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
   void GeneralMM(bool TransA, double ** X, int LDX, double ** Y, int LDY, int NumVectors) const;
   void GeneralMM3RHS(bool TransA, double ** X, int LDX, double ** Y, int LDY, int NumVectors) const;
   void GeneralMM2RHS(bool TransA, double * x, int ldx, double * y, int ldy) const;
-  int Allocate(const Epetra_RowMatrix & Matrix);
+  void Allocate(const Epetra_RowMatrix & Matrix);
 
   Epetra_SerialDenseVector Values_;
   Epetra_IntSerialDenseVector Indices_;

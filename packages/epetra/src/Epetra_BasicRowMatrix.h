@@ -97,12 +97,12 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
      problem changes, specifically if the nonzero count in any given row changes, then this function should be called
      to update these constants.
   */ 
-  virtual int ComputeStructureConstants();
+  virtual void ComputeStructureConstants() const;
   //! Update the constants associated with the values of the matrix.
   /* Several numeric constants are pre-computed to save excess computations.  However, if the values of the
      problem change, then this function should be called to update these constants.
   */ 
-  virtual int ComputeNumericConstants();
+  virtual void ComputeNumericConstants() const;
   //@}
   
   //@{ \name User-required implementation methods.
@@ -250,7 +250,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
      \warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
     */ 
-    virtual double NormInf() const{return(NormInf_);}
+    virtual double NormInf() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormInf_);}
 
     //! Returns the one norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_1\f$ such that
@@ -259,10 +259,10 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
      \warning This method is supported if and only if the Epetra_RowMatrix Object that was used to create this supports this method.
 
     */ 
-    virtual double NormOne() const{return(NormOne_);}
+    virtual double NormOne() const{if (!HaveNumericConstants_) ComputeNumericConstants(); return(NormOne_);}
 
     //! Returns the number of nonzero entries in the global matrix.
-    virtual int NumGlobalNonzeros() const{return(NumGlobalNonzeros_);}
+    virtual int NumGlobalNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumGlobalNonzeros_);}
 
     //! Returns the number of global matrix rows.
     virtual int NumGlobalRows() const {return(OperatorRangeMap().NumGlobalPoints());}
@@ -274,7 +274,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     virtual int NumGlobalDiagonals() const{return(OperatorDomainMap().NumGlobalPoints());}
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
-    virtual int NumMyNonzeros() const{return(NumMyNonzeros_);}
+    virtual int NumMyNonzeros() const{if (!HaveStructureConstants_) ComputeStructureConstants(); return(NumMyNonzeros_);}
 
     //! Returns the number of matrix rows owned by the calling processor.
     virtual int NumMyRows() const {return(OperatorRangeMap().NumMyPoints());}
@@ -286,7 +286,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     virtual int NumMyDiagonals() const {return(OperatorRangeMap().NumMyPoints());}
 
     //! Returns the maximum number of nonzero entries across all rows on this processor.
-    virtual int MaxNumEntries() const{return(MaxNumEntries_);}
+    virtual int MaxNumEntries() const{ if (!HaveStructureConstants_) ComputeStructureConstants(); return(MaxNumEntries_);}
 
     //! Returns the Epetra_Map object associated with the domain of this operator.
     virtual const Epetra_Map & OperatorDomainMap() const {return(OperatorDomainMap_);}
@@ -341,7 +341,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     \return Integer error code, set to 0 if successful.
   */
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-    return(Epetra_BasicRowMatrix::Multiply(Epetra_BasicRowMatrix::UseTranspose(), X, Y));}
+    return(Multiply(Epetra_BasicRowMatrix::UseTranspose(), X, Y));}
 
     //! Returns the result of a Epetra_RowMatrix inverse applied to an Epetra_MultiVector X in Y.
     /*! 
@@ -391,6 +391,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
  protected:
 
+  void Setup();
   void UpdateImportVector(int NumVectors) const;
   void UpdateExportVector(int NumVectors) const;
   Epetra_Comm * Comm_;
@@ -399,18 +400,20 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
   Epetra_Map RowMatrixRowMap_;
   Epetra_Map RowMatrixColMap_;
   
-  int NumMyNonzeros_;
-  int NumGlobalNonzeros_;
-  int MaxNumEntries_;
-  double NormInf_;
-  double NormOne_;
+  mutable int NumMyNonzeros_;
+  mutable int NumGlobalNonzeros_;
+  mutable int MaxNumEntries_;
+  mutable double NormInf_;
+  mutable double NormOne_;
   int NumMyRows_;
   int NumMyCols_;
 
   bool UseTranspose_;
   bool HasNormInf_;
-  bool LowerTriangular_;
-  bool UpperTriangular_;
+  mutable bool LowerTriangular_;
+  mutable bool UpperTriangular_;
+  mutable bool HaveStructureConstants_;
+  mutable bool HaveNumericConstants_;
     
 
   mutable Epetra_MultiVector * ImportVector_;

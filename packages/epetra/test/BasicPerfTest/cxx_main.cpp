@@ -26,6 +26,7 @@
 // ************************************************************************
 //@HEADER
 
+#define EPETRA_HAVE_JADMATRIX
 #define EPETRA_SHORT_PERFTEST
 #define EPETRA_HAVE_STATICPROFILE
 #include "Epetra_Map.h"
@@ -48,8 +49,8 @@
 #endif
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
-#ifdef EPETRA_HAVE_JADOPERATOR
-#include "Epetra_JadOperator.h"
+#ifdef EPETRA_HAVE_JADMATRIX
+#include "Epetra_JadMatrix.h"
 #endif
 
 // prototypes
@@ -97,8 +98,8 @@ void GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int n
 
 void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
 		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary);
-#ifdef EPETRA_HAVE_JADOPERATOR
-void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
+#ifdef EPETRA_HAVE_JADMATRIX
+void runJadMatrixTests(Epetra_JadMatrix * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
 		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary);
 #endif
 void runLUMatrixTests(Epetra_CrsMatrix * L,  Epetra_MultiVector * bL, Epetra_MultiVector * btL, Epetra_MultiVector * xexactL, 
@@ -360,17 +361,17 @@ int main(int argc, char *argv[])
 			 map, A, b, bt, xexact, StaticProfile, false);
 
       
-#ifdef EPETRA_HAVE_JADOPERATOR
+#ifdef EPETRA_HAVE_JADMATRIX
       
       timer.ResetStartTime();
-      Epetra_JadOperator JA(*A);
+      Epetra_JadMatrix JA(*A);
       elapsed_time = timer.ElapsedTime();
       if (verbose) cout << "Time to create Jagged diagonal matrix = " << elapsed_time << endl;
 
       //cout << "A = " << *A << endl;
       //cout << "JA = " << JA << endl;
 
-      runJadOperatorTests(&JA, b, bt, xexact, StaticProfile, verbose, summary);
+      runJadMatrixTests(&JA, b, bt, xexact, StaticProfile, verbose, summary);
 
 #endif
       runMatrixTests(A, b, bt, xexact, StaticProfile, verbose, summary);
@@ -900,8 +901,8 @@ void runMatrixTests(Epetra_CrsMatrix * A,  Epetra_MultiVector * b, Epetra_MultiV
   }
   return;
 }
-#ifdef EPETRA_HAVE_JADOPERATOR
-void runJadOperatorTests(Epetra_JadOperator * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
+#ifdef EPETRA_HAVE_JADMATRIX
+void runJadMatrixTests(Epetra_JadMatrix * A,  Epetra_MultiVector * b, Epetra_MultiVector * bt,
 		    Epetra_MultiVector * xexact, bool StaticProfile, bool verbose, bool summary) {
 
   Epetra_MultiVector z(*b);

@@ -56,14 +56,15 @@ Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Ep
     HasNormInf_(true),
     LowerTriangular_(true),
     UpperTriangular_(true),
+    HaveStructureConstants_(false),
+    HaveNumericConstants_(false),
     ImportVector_(0),
     ExportVector_(0),
     Importer_(0),
     Exporter_(0)
 {
-  ComputeStructureConstants();
-  ComputeNumericConstants();
   SetLabel("Epetra::BasicRowMatrix");
+  Setup();
 }
 
 //==============================================================================
@@ -83,12 +84,15 @@ Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Ep
     HasNormInf_(true),
     LowerTriangular_(true),
     UpperTriangular_(true),
+    HaveStructureConstants_(false),
+    HaveNumericConstants_(false),
     ImportVector_(0),
     ExportVector_(0),
     Importer_(0),
     Exporter_(0)
 {
   SetLabel("Epetra::BasicRowMatrix");
+  Setup();
 }
 
 //==============================================================================
@@ -106,7 +110,7 @@ Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix(){
 }
 
 //==============================================================================
-int Epetra_BasicRowMatrix::ComputeStructureConstants() {
+void Epetra_BasicRowMatrix::Setup() {
 
   // Check if non-trivial import/export operators
   if (!(RowMatrixRowMap().SameAs(OperatorRangeMap()))) 
@@ -116,30 +120,33 @@ int Epetra_BasicRowMatrix::ComputeStructureConstants() {
     Importer_ = new Epetra_Import(RowMatrixColMap(), OperatorDomainMap());
 
   NumMyRows_ = RowMatrixRowMap().NumMyPoints();
-  NumMyRows_ = RowMatrixColMap().NumMyPoints();
+  NumMyCols_ = RowMatrixColMap().NumMyPoints();
+}
+
+//==============================================================================
+void Epetra_BasicRowMatrix::ComputeStructureConstants() const {
   MaxNumEntries_ = 0;
   NumMyNonzeros_ = 0;
   NumGlobalNonzeros_ = 0;
   int NumEntries = 0;
   for (int i=0; i<NumMyRows_; i++) {
-    EPETRA_CHK_ERR(NumMyRowEntries(i, NumEntries));
+    NumMyRowEntries(i, NumEntries);
     NumMyNonzeros_ += NumEntries;
     if (NumEntries>MaxNumEntries_) MaxNumEntries_ = NumEntries;
   }
 
   RowMatrixRowMap().Comm().SumAll(&NumMyNonzeros_, &NumGlobalNonzeros_, 1);
-
-  return(0);
+  HaveStructureConstants_ = true;
 }
 //=============================================================================
-int Epetra_BasicRowMatrix::ComputeNumericConstants() {
+void Epetra_BasicRowMatrix::ComputeNumericConstants() const {
   Epetra_SerialDenseVector Values(MaxNumEntries());
   Epetra_IntSerialDenseVector Indices(MaxNumEntries());
   int NumEntries;
   Epetra_Vector x1(RowMatrixRowMap()); // Need temp vector for row sums
   Epetra_Vector x2(RowMatrixColMap()); // Need temp vector for column sums
   for(int i = 0; i < NumMyRows_; i++) {
-    EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
+    ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values());
     for(int j = 0; j < NumEntries; j++) {
       x1[i] += fabs(Values[j]);
       x2[Indices[i]] += fabs(Values[j]);
@@ -167,7 +174,7 @@ int Epetra_BasicRowMatrix::ComputeNumericConstants() {
     x2.MaxValue(&NormOne_); // Find max
 
   UpdateFlops(2*NumGlobalNonzeros());
-  return(0);
+  HaveNumericConstants_ = true;
 }
 //=============================================================================
 int Epetra_BasicRowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
@@ -266,6 +273,7 @@ int Epetra_BasicRowMatrix::LeftScale(const Epetra_Vector & x) {
   else {
     EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.
   }
+  HaveNumericConstants_ = false;
   UpdateFlops(NumGlobalNonzeros());
   return(0);
 }
@@ -340,6 +348,7 @@ int Epetra_BasicRowMatrix::RightScale(const Epetra_Vector & x) {
   else {
     EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.
   }
+  HaveNumericConstants_ = false;
   UpdateFlops(NumGlobalNonzeros());
   return(0);
 }
