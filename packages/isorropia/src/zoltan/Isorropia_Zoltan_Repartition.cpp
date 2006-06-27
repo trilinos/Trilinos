@@ -107,9 +107,12 @@ repartition(const Epetra_CrsGraph& input_graph,
   //Setup Query Object
   EpetraExt::CrsGraph_Transpose transposeTransform;
   Epetra_CrsGraph & TransGraph = transposeTransform( nonconst_input );
-  Isorropia::ZoltanQuery Query( nonconst_input, &TransGraph );
+
+  Zoltan::QueryObject* queryObject =
+    new Isorropia::ZoltanQuery(nonconst_input, &TransGraph);
+
   if( err == ZOLTAN_OK ) {
-    err = LB.Set_QueryObject( &Query );
+    err = LB.Set_QueryObject( queryObject );
   }
   else {
     cout << "Setup of Zoltan Load Balancing Objects FAILED!\n";
@@ -163,6 +166,8 @@ repartition(const Epetra_CrsGraph& input_graph,
     err = LB.Free_Data( &import_global_ids, &import_local_ids, &import_procs,
                          &export_global_ids, &export_local_ids, &export_procs );
   }
+
+  delete queryObject;
 
   return( 0 );
 }

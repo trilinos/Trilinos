@@ -34,6 +34,8 @@
 #include <Epetra_Comm.h>
 
 #include <algorithm>
+// #include <fstream>
+// #include <sstream>
 
 Isorropia::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
                                      const Epetra_CrsGraph * tgraph,
@@ -43,53 +45,81 @@ Isorropia::ZoltanQuery::ZoltanQuery( const Epetra_CrsGraph & graph,
   map_(graph.RowMap()),
   localEdgesOnly_(localEdgesOnly)
 {
+  int localProc = map_.Comm().MyPID();
+
+  const Epetra_BlockMap& colmap = graph_.ColMap();
+  int num_colmap_elems = colmap.NumMyElements();
+
+  std::vector<int> elems(num_colmap_elems*2);
+  colmap.MyGlobalElements(&elems[0]);
+  map_.RemoteIDList(num_colmap_elems, &elems[0],
+		      &elems[num_colmap_elems], 0);
+
+  int i;
+  for(i=0; i<num_colmap_elems; ++i) {
+    int proc = elems[num_colmap_elems+i];
+    if (proc != localProc) {
+      procmap_.insert(std::pair<int,int>(elems[i], proc));
+    }
+  }
+
+  int num_local_rows = map_.NumMyElements();
+  ugraph_.resize(num_local_rows);
+  int maxNumIndices = graph_.MaxNumIndices();
+  std::vector<int> indices(maxNumIndices);
+  int numIndices;
+
+  for(i=0; i<num_local_rows; ++i) {
+    std::set<int>& rowset = ugraph_[i];
+    int row = map_.GID(i);
+    graph_.ExtractGlobalRowCopy(row, maxNumIndices,
+				numIndices, &indices[0]);
+    for(int j=0; j<numIndices; ++j) {
+      if (indices[j] != row) {
+	rowset.insert(indices[j]);
+      }
+    }
+  }
+
   if (tgraph != 0) {
     tmap_ = &(tgraph->RowMap());
-  }
+    const Epetra_BlockMap& tcolmap = tgraph->ColMap();
+    int num_tcolmap_elems = tcolmap.NumMyElements();
 
-  int numMyRows = map_.NumMyElements();
-  int maxRows;
-  map_.Comm().MaxAll( &numMyRows, &maxRows, 1 );
+    elems.resize(num_tcolmap_elems*2);
 
-  LBProc_.resize( numMyRows );
+    tcolmap.MyGlobalElements(&elems[0]);
+    map_.RemoteIDList(num_tcolmap_elems, &elems[0],
+			 &elems[num_tcolmap_elems], 0);
 
-  int numIndices;
-  int maxNumIndices = graph_.MaxNumIndices();
-  vector<int> indexList( maxNumIndices );
-  for( int i = 0; i < numMyRows; ++i )
-  {
-    graph_.ExtractGlobalRowCopy( graph_.GRID(i),
-                                 maxNumIndices,
-                                 numIndices,
-                                 &indexList[0] );
-    LBProc_[i].resize( numIndices );
-    map_.RemoteIDList( numIndices, &indexList[0], &LBProc_[i][0], 0 );
-  }
+    std::map<int,int>::iterator iter_end = procmap_.end();
 
-  for( int i = numMyRows; i < maxRows; ++i )
-    map_.RemoteIDList( numIndices, &indexList[0], &LBProc_[numMyRows-1][0], 0 );
-
-  if( tgraph_ )
-  {
-    LBProc_Trans_.resize( numMyRows );
-
-    maxNumIndices = tgraph_->MaxNumIndices();
-    indexList.resize(maxNumIndices);
-    for( int i = 0; i < numMyRows; ++i )
-    {
-      tgraph_->ExtractGlobalRowCopy( tgraph_->GRID(i),
-                                     maxNumIndices,
-                                     numIndices,
-                                     &indexList[0] );
-      LBProc_Trans_[i].resize( numIndices );
-      tmap_->RemoteIDList( numIndices, &indexList[0], &LBProc_Trans_[i][0], 0 );
+    for(i=0; i<num_tcolmap_elems; ++i) {
+      int elem = elems[i];
+      int proc = elems[num_tcolmap_elems+i];
+      if (proc != localProc) {
+	std::map<int,int>::iterator iter = procmap_.find(elem);
+	if (iter == iter_end) {
+	  procmap_.insert(std::pair<int,int>(elem, proc));
+	}
+      }
     }
 
-    for( int i = numMyRows; i < maxRows; ++i )
-      tmap_->RemoteIDList( numIndices, &indexList[0], &LBProc_Trans_[numMyRows-1][0], 0 );
-  }
+    maxNumIndices = tgraph_->MaxNumIndices();
+    indices.resize(maxNumIndices);
 
-  map_.Comm().Barrier();
+    for(i=0; i<num_local_rows; ++i) {
+      std::set<int>& rowset = ugraph_[i];
+      int row = tmap_->GID(i);
+      tgraph_->ExtractGlobalRowCopy(row, maxNumIndices,
+				    numIndices, &indices[0]);
+      for(int j=0; j<numIndices; ++j) {
+	if (indices[j] != row) {
+	  rowset.insert(indices[j]);
+	}
+      }
+    }
+  }
 }
 
 //General Functions
@@ -117,8 +147,9 @@ void Isorropia::ZoltanQuery::Object_List  ( void * data,
   map_.MyGlobalElements( ((int *) global_ids) );
 
   int Index = map_.IndexBase();
-  for( int i = 0; i < rows; i++, Index++ )
+  for( int i = 0; i < rows; i++, Index++ ) {
     local_ids[i] = Index;
+  }
 }
 
 //Graph Based Functions
@@ -129,55 +160,16 @@ int Isorropia::ZoltanQuery::Number_Edges  ( void * data,
                                         ZOLTAN_ID_PTR local_id,
                                         int * ierr )
 {
-  int LocalRow = map_.LID( *global_id );
+  int row = *global_id;
+  int LocalRow = map_.LID(row);
 
-  if( LocalRow != -1 && LocalRow == (int)*local_id )
+  if( LocalRow >= 0 && LocalRow == (int)*local_id )
   {
     *ierr = ZOLTAN_OK;
 
-    int NumIndices = graph_.NumMyIndices( LocalRow );
-    int IndiceCountReturn;
+    int NumIndices = ugraph_[LocalRow].size();
 
-    vector<int> nbr_edges( NumIndices );
-    assert( graph_.ExtractGlobalRowCopy( ((int) *global_id),
-                                         NumIndices,
-                                         IndiceCountReturn,
-                                         &(nbr_edges[0]) ) == 0 );
-    assert( NumIndices == IndiceCountReturn );
-    sort( nbr_edges.begin(), nbr_edges.end() );
-
-    bool self = false;
-    for(int i = 0; i < NumIndices; ++i )
-      if( nbr_edges[i] == ((int) *global_id) )
-      { self = true; break; }
-
-    int nonLocalEdges = 0;
-    if( localEdgesOnly_ )
-      for( int i = 0; i < NumIndices; ++i )
-        if( !graph_.MyGRID(nbr_edges[i]) ) ++nonLocalEdges;
-
-    if( tgraph_ )
-    {
-      int tNumIndices = tgraph_->NumMyIndices( LocalRow );
-      vector<int> t_nbr_edges( tNumIndices );
-
-      assert( tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
-                                           tNumIndices,
-                                           IndiceCountReturn,
-                                           &(t_nbr_edges[0]) ) == 0 );
-      assert( tNumIndices == IndiceCountReturn );
-
-      for( int i = 0; i < tNumIndices; ++i )
-        if( !binary_search( nbr_edges.begin(), nbr_edges.end(), t_nbr_edges[i] ) )
-        {
-          ++NumIndices;
-          if( localEdgesOnly_ && !graph_.MyGRID(t_nbr_edges[i]) ) ++nonLocalEdges;
-        }
-    }
-
-//cout << "Indices Cnt: " << ((int)*global_id) << " " << ((int)*local_id) << " " << NumIndices-(self?1:0)-nonLocalEdges  << endl;
-    return NumIndices - (self?1:0) - nonLocalEdges;
-
+    return NumIndices;
   }
   else
   {
@@ -197,67 +189,56 @@ void Isorropia::ZoltanQuery::Edge_List    ( void * data,
                                         float * edge_weights,
                                         int * ierr )
 {
-  int NumIndices = graph_.NumMyIndices( ((int) *local_id) );
+  int row = *global_id;
+  int LocalRow = map_.LID(row);
 
-  int IndiceCountReturn;
+  if (LocalRow < 0 || LocalRow != (int)*local_id) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
 
-  if( NumIndices != -1 )
-  {
-    vector<int> nbr_edges( NumIndices );
-    assert( graph_.ExtractGlobalRowCopy( ((int) *global_id), 
-                                         NumIndices,
-                                         IndiceCountReturn,
-                                         &(nbr_edges[0]) ) == 0 );
-    assert( NumIndices == IndiceCountReturn );
+  int localProc = map_.Comm().MyPID();
 
-    int ii = 0;
-    for( int i = 0; i < NumIndices; ++i )
-      if( nbr_edges[ i ] != ((int) *global_id) )
-        if( !localEdgesOnly_ || graph_.MyGRID(nbr_edges[i]) )
-        {
-          neighbor_global_ids[ ii ] = nbr_edges[ i ];
-          neighbor_procs[ ii ] = LBProc_[(int) *local_id][ i ];
-          ++ii;
-        }
+  std::set<int>& rowset = ugraph_[LocalRow];
 
-    if( tgraph_ )
-    {
-      sort( nbr_edges.begin(), nbr_edges.end() );
+  std::set<int>::const_iterator
+    iter = rowset.begin(),
+    iter_end = rowset.end();
 
-      int tNumIndices = tgraph_->NumMyIndices( ((int) *local_id) );
-      vector<int> t_nbr_edges( tNumIndices );
+  int offset = 0;
+  for(; iter != iter_end; ++iter) {
+    int index = *iter;
+    neighbor_global_ids[offset] = index;
 
-      assert( tgraph_->ExtractGlobalRowCopy( ((int) *global_id),
-                                           tNumIndices,
-                                           IndiceCountReturn,
-                                           &(t_nbr_edges[0]) ) == 0 );
-      assert( tNumIndices == IndiceCountReturn );
+    if (map_.MyGID(index)) {
+      neighbor_procs[offset] = localProc;
+    }
+    else {
+      std::map<int,int>::const_iterator
+	iter = procmap_.find(index),
+	iter_end = procmap_.end();
+      if (iter == iter_end) {
+	*ierr = ZOLTAN_FATAL;
+	return;
+      }
 
-      for( int i = 0; i < tNumIndices; ++i )
-        if( !binary_search( nbr_edges.begin(), nbr_edges.end(), t_nbr_edges[i] ) )
-          if( !localEdgesOnly_ || graph_.MyGRID(t_nbr_edges[i]) )
-          {
-            neighbor_global_ids[ii] = t_nbr_edges[i];
-            neighbor_procs[ii] = LBProc_Trans_[(int) *local_id][i];
-            ++ii;
-          }
+      neighbor_procs[offset] = (*iter).second;
     }
 
-
-/*
-cout << "Edge List: " << ((int) *global_id) << " " << ((int) *local_id) << endl;
-cout << "NumIndices: " << NumIndices << " " << "ii: " << ii << endl;
-for( int i = 0; i < ii; ++i )
-  cout << " " << ((int *) neighbor_global_ids)[i] << " " <<
-        neighbor_procs[i] << endl;
-cout << endl;
-*/
-
-    *ierr = ZOLTAN_OK;
+    ++offset;
   }
-  else
-    *ierr = ZOLTAN_FATAL;
 
+//   std::ostringstream osstr;
+//   osstr << "ZQ2.out."<<localProc;
+//   static std::ofstream* ofs =
+//     new std::ofstream(osstr.str().c_str(), std::ios::out);
+//   *ofs << localProc << " row " << row << ": ";
+//   for(int i=0; i<offset; ++i) {
+//     *ofs << "("<<neighbor_global_ids[i]<<","<<neighbor_procs[i]<<") ";
+//   }
+//   *ofs << std::endl;
+
+  *ierr = ZOLTAN_OK;
 }
 
 void Isorropia::ZoltanQuery::HG_Size_CS ( void * data,

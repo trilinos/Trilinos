@@ -35,6 +35,8 @@
 #include <IZoltan_QueryObject.h>
 
 #include <vector>
+#include <set>
+#include <map>
 
 class Epetra_BlockMap;
 class Epetra_CrsGraph;
@@ -55,8 +57,9 @@ class ZoltanQuery : public Zoltan::QueryObject
   const Epetra_BlockMap& map_;
   const Epetra_BlockMap* tmap_;
 
-  std::vector< std::vector<int> > LBProc_;
-  std::vector< std::vector<int> > LBProc_Trans_;
+  std::map<int,int> procmap_;
+
+  std::vector< std::set<int> > ugraph_;
 
   const bool localEdgesOnly_;
 

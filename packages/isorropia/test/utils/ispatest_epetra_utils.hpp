@@ -45,8 +45,9 @@ class Epetra_CrsMatrix;
 */
 namespace ispatest {
 
-/** Fill a matrix with the specified number of nonzeros per row.
-  Call FillComplete on the matrix before returning. If any non-zero error
+/** Fill a matrix with the specified number of nonzeros per row, using
+  matrix.InsertGlobalValues.
+  Call FillComplete on the matrix before returning. If any negative error
   code is returned by an Epetra method, that will be the return value
   of this function.
 */

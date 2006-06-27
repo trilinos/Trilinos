@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-  int local_n = 5000;
+  int local_n = 40000;
 
   //Create a Epetra_LinearProblem object.
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
   // used for the partitioning operation.
 #ifdef HAVE_ISORROPIA_ZOLTAN
   paramlist.set("Balancing package", "Zoltan");
-  paramlist.set("LB_METHOD", "HYPERGRAPH");
+  paramlist.set("LB_METHOD", "GRAPH");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
@@ -253,7 +253,7 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
   Epetra_Map rowmap(global_num_rows, local_n, 0, comm);
 
   //create a matrix
-  int nnz_per_row = 5;
+  int nnz_per_row = 9;
   Epetra_CrsMatrix* matrix =
     new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row);
 
@@ -266,7 +266,17 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
     int RowPlus1 = GlobalRow + 1;
     int RowLess2 = GlobalRow - 2;
     int RowPlus2 = GlobalRow + 2;
+    int RowLess3 = GlobalRow - 3;
+    int RowPlus3 = GlobalRow + 3;
+    int RowLess4 = GlobalRow - 4;
+    int RowPlus4 = GlobalRow + 4;
 
+    if (RowLess4>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess4);
+    }
+    if (RowLess3>=0) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess3);
+    }
     if (RowLess2>=0) {
       matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowLess2);
     }
@@ -279,6 +289,13 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
     if (RowPlus2<global_num_rows) {
       matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus2);
     }
+    if (RowPlus3<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus3);
+    }
+    if (RowPlus4<global_num_rows) {
+      matrix->InsertGlobalValues(GlobalRow, 1, &negOne, &RowPlus4);
+    }
+
     matrix->InsertGlobalValues(GlobalRow, 1, &posTwo, &GlobalRow);
   }
 
