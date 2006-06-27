@@ -76,6 +76,10 @@
 #undef VERSION
 #endif
 
+#ifdef HAVE_NUMERIC_LIMITS
+#undef HAVE_NUMERIC_LIMITS
+#endif
+
 #include "Teuchos_config.h"
 
 #ifdef HAVE_TEUCHOS_DEBUG
