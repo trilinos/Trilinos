@@ -164,6 +164,14 @@ BTF =
 
 endif
 
+#The compilation of readEpetraLinearSystem.cpp depends on Triutils
+
+EXTRA_TRIUTILS_INOUT_H = \
+     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h
+
+EXTRA_TRIUTILS_INOUT = \
+     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
+
 EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_mmio.h \
      $(srcdir)/inout/EpetraExt_RowMatrixOut.h \
@@ -174,7 +182,6 @@ EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_CrsMatrixIn.h \
      $(srcdir)/inout/EpetraExt_MultiVectorIn.h \
      $(srcdir)/inout/EpetraExt_VectorIn.h\
-     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
      $(srcdir)/inout/EpetraExt_Exception.h \
      $(srcdir)/inout/EpetraExt_Utils.h \
      $(srcdir)/inout/EpetraExt_XMLReader.h \
@@ -193,7 +200,6 @@ EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_CrsMatrixIn.cpp \
      $(srcdir)/inout/EpetraExt_MultiVectorIn.cpp \
      $(srcdir)/inout/EpetraExt_VectorIn.cpp\
-     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
      $(srcdir)/inout/EpetraExt_Utils.cpp \
      $(srcdir)/inout/EpetraExt_XMLReader.cpp \
      $(srcdir)/inout/EpetraExt_XMLWriter.cpp \
@@ -202,11 +208,23 @@ EXTRA_INOUT = \
 
 if BUILD_INOUT
 
+if BUILD_EPETRAEXT_TRIUTILS
+
+INOUT_H = \
+	$(EXTRA_INOUT_H) $(EXTRA_TRIUTILS_INOUT_H)
+
+INOUT = \
+   $(EXTRA_INOUT) $(EXTRA_TRIUTILS_INOUT)
+
+else
+
 INOUT_H = \
     $(EXTRA_INOUT_H)
 
 INOUT = \
     $(EXTRA_INOUT)
+
+endif
 
 else
 
@@ -531,7 +549,7 @@ MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
 # ------------------------------------------------------------------------
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
-if BUILD_TRIUTILS
+if BUILD_EPETRAEXT_TRIUTILS 
 BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
 else
 BUILD_TRIUTILS_LIBS = 

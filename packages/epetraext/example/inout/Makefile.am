@@ -28,19 +28,10 @@
 
 EXEEXT = .exe
 
-if HAVE_EPETRAEXT_HDF5
-if HAVE_EPETRAEXT_TEUCHOS
-HDF5Files = HDF5_IO HDF5Converter HDF5_MATLAB
 include $(top_builddir)/../teuchos/Makefile.export.teuchos
-else
-HDF5Files = 
-TEUCHOS_LIBS =
-TEUCHOS_INCLUDES =
-endif
-else
-HDF5Files = 
-TEUCHOS_LIBS =
-TEUCHOS_INCLUDES =
+
+if HAVE_EPETRAEXT_HDF5
+HDF5Files = HDF5_IO HDF5Converter HDF5_MATLAB
 endif
 
 noinst_PROGRAMS = MatrixMarket_IO XML_IO $(HDF5Files) 

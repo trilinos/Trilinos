@@ -338,10 +338,8 @@ fi
 # Interfaces to other Trilinos packages
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, teuchos, EPETRAEXT_TEUCHOS, BUILD_TEUCHOS, yes, [Build teuchos support in epetraext, which is required in some examples.], [Build teuchos support in epetraext.  Can be overridden with --disable-epetraext-teuchos.])
-AM_CONDITIONAL(HAVE_EPETRAEXT_TEUCHOS, [test "X$ac_cv_use_epetraext_teuchos" != "Xyes"])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, triutils, EPETRAEXT_TRIUTILS, BUILD_TRIUTILS, yes, [Build triutils support in epetraext.], [Build triutils support in epetraext. Can be overridden with --disable-epetraext-triutils.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(epetraext, triutils, EPETRAEXT_TRIUTILS, BUILD_EPETRAEXT_TRIUTILS, yes, [Build triutils support in epetraext.], [Build triutils support in epetraext. Can be overridden with --disable-epetraext-triutils.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(
   epetraext, thyra, EPETRAEXT_THYRA, ENABLE_EPETRAEXT_THYRA, yes

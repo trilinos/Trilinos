@@ -5,7 +5,7 @@ include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
 include @abs_top_builddir@/../epetra/Makefile.export.epetra
 
 ## Optional dependency on triutils
-@BUILD_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@include @abs_top_builddir@/../triutils/Makefile.export.triutils
 
 ## Optional dependency on thyra
 @ENABLE_EPETRAEXT_THYRA_TRUE@include @abs_top_builddir@/../thyra/Makefile.export.thyra

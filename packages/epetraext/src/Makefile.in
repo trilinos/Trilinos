@@ -155,7 +155,6 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/inout/EpetraExt_CrsMatrixIn.cpp \
 	$(srcdir)/inout/EpetraExt_MultiVectorIn.cpp \
 	$(srcdir)/inout/EpetraExt_VectorIn.cpp \
-	$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
 	$(srcdir)/inout/EpetraExt_Utils.cpp \
 	$(srcdir)/inout/EpetraExt_XMLReader.cpp \
 	$(srcdir)/inout/EpetraExt_XMLWriter.cpp \
@@ -221,12 +220,14 @@ am__objects_7 = EpetraExt_mmio.$(OBJEXT) \
 	EpetraExt_VectorOut.$(OBJEXT) EpetraExt_BlockMapOut.$(OBJEXT) \
 	EpetraExt_BlockMapIn.$(OBJEXT) EpetraExt_CrsMatrixIn.$(OBJEXT) \
 	EpetraExt_MultiVectorIn.$(OBJEXT) EpetraExt_VectorIn.$(OBJEXT) \
-	EpetraExt_readEpetraLinearSystem.$(OBJEXT) \
 	EpetraExt_Utils.$(OBJEXT) EpetraExt_XMLReader.$(OBJEXT) \
 	EpetraExt_XMLWriter.$(OBJEXT) EpetraExt_HDF5.$(OBJEXT) \
 	EpetraExt_HDF5_DistObject.$(OBJEXT)
-@BUILD_INOUT_TRUE@am__objects_8 = $(am__objects_7)
-am__objects_9 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
+am__objects_8 = EpetraExt_readEpetraLinearSystem.$(OBJEXT)
+@BUILD_EPETRAEXT_TRIUTILS_FALSE@@BUILD_INOUT_TRUE@am__objects_9 = $(am__objects_7)
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@am__objects_9 = $(am__objects_7) \
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@	$(am__objects_8)
+am__objects_10 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
 	EpetraExt_ZoltanOrder_CrsGraph.$(OBJEXT) \
 	EpetraExt_ZoltanQuery.$(OBJEXT) Zoltan_LoadBalance.$(OBJEXT) \
 	Zoltan_MigrationContainer.$(OBJEXT) \
@@ -234,33 +235,32 @@ am__objects_9 = EpetraExt_Zoltan_CrsGraph.$(OBJEXT) \
 	Zoltan_MigrationObject.$(OBJEXT) \
 	Zoltan_QueryContainer.$(OBJEXT) \
 	Zoltan_QueryFunctions.$(OBJEXT) Zoltan_QueryObject.$(OBJEXT)
-am__objects_10 =
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@am__objects_11 =  \
-@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@	$(am__objects_9)
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_11 =  \
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_9) \
-@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_10)
-am__objects_12 = EpetraExt_MapColoring.$(OBJEXT) \
+am__objects_11 =
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_ZOLTAN_TRUE@am__objects_12 = $(am__objects_10)
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@am__objects_12 =  \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_10) \
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_ZOLTAN_TRUE@	$(am__objects_11)
+am__objects_13 = EpetraExt_MapColoring.$(OBJEXT) \
 	EpetraExt_MapColoringIndex.$(OBJEXT)
-@BUILD_COLORING_TRUE@am__objects_13 = $(am__objects_12)
-am__objects_14 = EpetraExt_MatlabEngine.$(OBJEXT) \
+@BUILD_COLORING_TRUE@am__objects_14 = $(am__objects_13)
+am__objects_15 = EpetraExt_MatlabEngine.$(OBJEXT) \
 	EpetraExt_PutMultiVector.$(OBJEXT) \
 	EpetraExt_PutRowMatrix.$(OBJEXT) \
 	EpetraExt_PutBlockMap.$(OBJEXT)
-@BUILD_MATLAB_TRUE@am__objects_15 = $(am__objects_14)
-am__objects_16 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
+@BUILD_MATLAB_TRUE@am__objects_16 = $(am__objects_15)
+am__objects_17 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
 	EpetraExt_BlockMultiVector.$(OBJEXT) \
 	EpetraExt_BlockVector.$(OBJEXT) \
 	EpetraExt_BlockUtility.$(OBJEXT)
-am__objects_17 = EpetraExt_MultiMpiComm.$(OBJEXT)
-@HAVE_MPI_TRUE@am__objects_18 = $(am__objects_17)
-@BUILD_BLOCK_TRUE@am__objects_19 = $(am__objects_16) $(am__objects_18)
-am__objects_20 = EpetraExt_ModelEvaluator.$(OBJEXT)
-@BUILD_MODEL_EVALUATOR_TRUE@am__objects_21 = $(am__objects_20)
+am__objects_18 = EpetraExt_MultiMpiComm.$(OBJEXT)
+@HAVE_MPI_TRUE@am__objects_19 = $(am__objects_18)
+@BUILD_BLOCK_TRUE@am__objects_20 = $(am__objects_17) $(am__objects_19)
+am__objects_21 = EpetraExt_ModelEvaluator.$(OBJEXT)
+@BUILD_MODEL_EVALUATOR_TRUE@am__objects_22 = $(am__objects_21)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
-	$(am__objects_6) $(am__objects_8) $(am__objects_11) \
-	$(am__objects_13) $(am__objects_15) $(am__objects_19) \
-	$(am__objects_21)
+	$(am__objects_6) $(am__objects_9) $(am__objects_12) \
+	$(am__objects_14) $(am__objects_16) $(am__objects_20) \
+	$(am__objects_22)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -373,7 +373,6 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/inout/EpetraExt_CrsMatrixIn.h \
 	$(srcdir)/inout/EpetraExt_MultiVectorIn.h \
 	$(srcdir)/inout/EpetraExt_VectorIn.h \
-	$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
 	$(srcdir)/inout/EpetraExt_Exception.h \
 	$(srcdir)/inout/EpetraExt_Utils.h \
 	$(srcdir)/inout/EpetraExt_XMLReader.h \
@@ -428,6 +427,8 @@ BUILD_COLORING_FALSE = @BUILD_COLORING_FALSE@
 BUILD_COLORING_TRUE = @BUILD_COLORING_TRUE@
 BUILD_EPETRAEXT_PYTHON_FALSE = @BUILD_EPETRAEXT_PYTHON_FALSE@
 BUILD_EPETRAEXT_PYTHON_TRUE = @BUILD_EPETRAEXT_PYTHON_TRUE@
+BUILD_EPETRAEXT_TRIUTILS_FALSE = @BUILD_EPETRAEXT_TRIUTILS_FALSE@
+BUILD_EPETRAEXT_TRIUTILS_TRUE = @BUILD_EPETRAEXT_TRIUTILS_TRUE@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_EXPERIMENTAL_FALSE = @BUILD_EXPERIMENTAL_FALSE@
@@ -442,12 +443,8 @@ BUILD_PYTHON_FALSE = @BUILD_PYTHON_FALSE@
 BUILD_PYTHON_TRUE = @BUILD_PYTHON_TRUE@
 BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
 BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
-BUILD_TEUCHOS_FALSE = @BUILD_TEUCHOS_FALSE@
-BUILD_TEUCHOS_TRUE = @BUILD_TEUCHOS_TRUE@
 BUILD_TRANSFORM_FALSE = @BUILD_TRANSFORM_FALSE@
 BUILD_TRANSFORM_TRUE = @BUILD_TRANSFORM_TRUE@
-BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
-BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 BUILD_ZOLTAN_FALSE = @BUILD_ZOLTAN_FALSE@
 BUILD_ZOLTAN_TRUE = @BUILD_ZOLTAN_TRUE@
 CC = @CC@
@@ -478,8 +475,6 @@ FLIBS = @FLIBS@
 GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_EPETRAEXT_HDF5_FALSE = @HAVE_EPETRAEXT_HDF5_FALSE@
 HAVE_EPETRAEXT_HDF5_TRUE = @HAVE_EPETRAEXT_HDF5_TRUE@
-HAVE_EPETRAEXT_TEUCHOS_FALSE = @HAVE_EPETRAEXT_TEUCHOS_FALSE@
-HAVE_EPETRAEXT_TEUCHOS_TRUE = @HAVE_EPETRAEXT_TEUCHOS_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_PERL = @HAVE_PERL@
@@ -695,6 +690,14 @@ EXTRA_BTF = \
 @BUILD_BTF_TRUE@BTF = \
 @BUILD_BTF_TRUE@     $(EXTRA_BTF)
 
+
+#The compilation of readEpetraLinearSystem.cpp depends on Triutils
+EXTRA_TRIUTILS_INOUT_H = \
+     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h
+
+EXTRA_TRIUTILS_INOUT = \
+     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
+
 EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_mmio.h \
      $(srcdir)/inout/EpetraExt_RowMatrixOut.h \
@@ -705,7 +708,6 @@ EXTRA_INOUT_H = \
      $(srcdir)/inout/EpetraExt_CrsMatrixIn.h \
      $(srcdir)/inout/EpetraExt_MultiVectorIn.h \
      $(srcdir)/inout/EpetraExt_VectorIn.h\
-     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.h \
      $(srcdir)/inout/EpetraExt_Exception.h \
      $(srcdir)/inout/EpetraExt_Utils.h \
      $(srcdir)/inout/EpetraExt_XMLReader.h \
@@ -724,21 +726,26 @@ EXTRA_INOUT = \
      $(srcdir)/inout/EpetraExt_CrsMatrixIn.cpp \
      $(srcdir)/inout/EpetraExt_MultiVectorIn.cpp \
      $(srcdir)/inout/EpetraExt_VectorIn.cpp\
-     $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp \
      $(srcdir)/inout/EpetraExt_Utils.cpp \
      $(srcdir)/inout/EpetraExt_XMLReader.cpp \
      $(srcdir)/inout/EpetraExt_XMLWriter.cpp \
      $(srcdir)/inout/EpetraExt_HDF5.cpp \
      $(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
 
+@BUILD_EPETRAEXT_TRIUTILS_FALSE@@BUILD_INOUT_TRUE@INOUT_H = \
+@BUILD_EPETRAEXT_TRIUTILS_FALSE@@BUILD_INOUT_TRUE@    $(EXTRA_INOUT_H)
+
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@INOUT_H = \
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@	$(EXTRA_INOUT_H) $(EXTRA_TRIUTILS_INOUT_H)
+
 @BUILD_INOUT_FALSE@INOUT_H = 
-@BUILD_INOUT_TRUE@INOUT_H = \
-@BUILD_INOUT_TRUE@    $(EXTRA_INOUT_H)
+@BUILD_EPETRAEXT_TRIUTILS_FALSE@@BUILD_INOUT_TRUE@INOUT = \
+@BUILD_EPETRAEXT_TRIUTILS_FALSE@@BUILD_INOUT_TRUE@    $(EXTRA_INOUT)
+
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@INOUT = \
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@@BUILD_INOUT_TRUE@   $(EXTRA_INOUT) $(EXTRA_TRIUTILS_INOUT)
 
 @BUILD_INOUT_FALSE@INOUT = 
-@BUILD_INOUT_TRUE@INOUT = \
-@BUILD_INOUT_TRUE@    $(EXTRA_INOUT)
-
 EXTRA_ZOLTAN_H = \
      $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.h \
      $(srcdir)/zoltan/EpetraExt_ZoltanOrder_CrsGraph.h \
@@ -957,12 +964,12 @@ MAINTAINERCLEANFILES = Makefile.in
 # Files to be deleted by 'make clean'
 # ------------------------------------------------------------------------
 MOSTLYCLEANFILES = $(TRILINOS_TEMPLATE_OBJS)
-@BUILD_TRIUTILS_FALSE@BUILD_TRIUTILS_LIBS = 
+@BUILD_EPETRAEXT_TRIUTILS_FALSE@BUILD_TRIUTILS_LIBS = 
 
 # ------------------------------------------------------------------------
 # Library Target for Circular Dependencies
 # ------------------------------------------------------------------------
-@BUILD_TRIUTILS_TRUE@BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
+@BUILD_EPETRAEXT_TRIUTILS_TRUE@BUILD_TRIUTILS_LIBS = cd $(top_builddir)/../triutils ; $(MAKE) all-libs 
 all: EpetraExt_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -1660,22 +1667,6 @@ EpetraExt_VectorIn.obj: $(srcdir)/inout/EpetraExt_VectorIn.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_VectorIn.obj `if test -f '$(srcdir)/inout/EpetraExt_VectorIn.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_VectorIn.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_VectorIn.cpp'; fi`
 
-EpetraExt_readEpetraLinearSystem.o: $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_readEpetraLinearSystem.o -MD -MP -MF "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" -c -o EpetraExt_readEpetraLinearSystem.o `test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po"; else rm -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' object='EpetraExt_readEpetraLinearSystem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po' tmpdepfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_readEpetraLinearSystem.o `test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
-
-EpetraExt_readEpetraLinearSystem.obj: $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_readEpetraLinearSystem.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" -c -o EpetraExt_readEpetraLinearSystem.obj `if test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po"; else rm -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' object='EpetraExt_readEpetraLinearSystem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po' tmpdepfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_readEpetraLinearSystem.obj `if test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; fi`
-
 EpetraExt_Utils.o: $(srcdir)/inout/EpetraExt_Utils.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_Utils.o -MD -MP -MF "$(DEPDIR)/EpetraExt_Utils.Tpo" -c -o EpetraExt_Utils.o `test -f '$(srcdir)/inout/EpetraExt_Utils.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_Utils.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_Utils.Tpo" "$(DEPDIR)/EpetraExt_Utils.Po"; else rm -f "$(DEPDIR)/EpetraExt_Utils.Tpo"; exit 1; fi
@@ -1755,6 +1746,22 @@ EpetraExt_HDF5_DistObject.obj: $(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_HDF5_DistObject.Po' tmpdepfile='$(DEPDIR)/EpetraExt_HDF5_DistObject.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_HDF5_DistObject.obj `if test -f '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_HDF5_DistObject.cpp'; fi`
+
+EpetraExt_readEpetraLinearSystem.o: $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_readEpetraLinearSystem.o -MD -MP -MF "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" -c -o EpetraExt_readEpetraLinearSystem.o `test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po"; else rm -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' object='EpetraExt_readEpetraLinearSystem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po' tmpdepfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_readEpetraLinearSystem.o `test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' || echo '$(srcdir)/'`$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
+
+EpetraExt_readEpetraLinearSystem.obj: $(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_readEpetraLinearSystem.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" -c -o EpetraExt_readEpetraLinearSystem.obj `if test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo" "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po"; else rm -f "$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp' object='EpetraExt_readEpetraLinearSystem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.Po' tmpdepfile='$(DEPDIR)/EpetraExt_readEpetraLinearSystem.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_readEpetraLinearSystem.obj `if test -f '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; then $(CYGPATH_W) '$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/inout/EpetraExt_readEpetraLinearSystem.cpp'; fi`
 
 EpetraExt_Zoltan_CrsGraph.o: $(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_Zoltan_CrsGraph.o -MD -MP -MF "$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Tpo" -c -o EpetraExt_Zoltan_CrsGraph.o `test -f '$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/zoltan/EpetraExt_Zoltan_CrsGraph.cpp; \

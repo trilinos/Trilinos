@@ -66,9 +66,6 @@
 #undef HAVE_EPETRAEXT_TESTS
 
 /* Define if want to build with epetraext enabled */
-#undef HAVE_EPETRAEXT_TEUCHOS
-
-/* Define if want to build with epetraext enabled */
 #undef HAVE_EPETRAEXT_THYRA
 
 /* Define if want to build with epetraext enabled */
