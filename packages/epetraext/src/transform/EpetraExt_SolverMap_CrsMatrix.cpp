@@ -55,12 +55,14 @@ operator()( OriginalTypeRef orig )
 
   //test if matrix has missing local columns in its col map
   const Epetra_Map & RowMap = orig.RowMap();
+  const Epetra_Map & DomainMap = orig.DomainMap();
   const Epetra_Map & ColMap = orig.ColMap();
   const Epetra_Comm & Comm = RowMap.Comm();
   int NumMyRows = RowMap.NumMyElements();
+  int NumCols = DomainMap.NumMyElements();
   int Match = 0;
-  for( int i = 0; i < NumMyRows; ++i )
-    if( RowMap.GID(i) != ColMap.GID(i) )
+  for( int i = 0; i < NumCols; ++i )
+    if( DomainMap.GID(i) != ColMap.GID(i) )
     {
       Match = 1;
       break;
@@ -75,30 +77,22 @@ operator()( OriginalTypeRef orig )
   }
   else
   {
-//    cout << "RowMap\n";
-//    cout << RowMap;
-//    cout << "ColMap\n";
-//    cout << ColMap;
     //create ColMap with all local rows included
-    vector<int> Cols(NumMyRows);
-    for( int i = 0; i < NumMyRows; ++i )
-      Cols[i] = RowMap.GID(i);
+    vector<int> Cols(NumCols);
+    //fill Cols list with GIDs of all local columns 
+    for( int i = 0; i < NumCols; ++i )
+      Cols[i] = DomainMap.GID(i);
 
+    //now append to Cols any ghost column entries
     int NumMyCols = ColMap.NumMyElements();
     for( int i = 0; i < NumMyCols; ++i )
-      if( !RowMap.MyGID( ColMap.GID(i) ) ) Cols.push_back( ColMap.GID(i) );
+      if( !DomainMap.MyGID( ColMap.GID(i) ) ) Cols.push_back( ColMap.GID(i) );
     
     int NewNumMyCols = Cols.size();
     int NewNumGlobalCols;
     Comm.SumAll( &NewNumMyCols, &NewNumGlobalCols, 1 );
-    NewColMap_ = new Epetra_Map( NewNumGlobalCols, NewNumMyCols,  &Cols[0], RowMap.IndexBase(), Comm );
-
-    cout << RowMap;
-    Comm.Barrier();
-    cout << ColMap;
-    Comm.Barrier();
-    cout << *NewColMap_;
-    Comm.Barrier();
+    //create new column map
+    NewColMap_ = new Epetra_Map( NewNumGlobalCols, NewNumMyCols,&Cols[0], DomainMap.IndexBase(), Comm );
 
     //New Graph
     vector<int> NumIndicesPerRow( NumMyRows );
@@ -115,9 +109,8 @@ operator()( OriginalTypeRef orig )
       orig.Graph().ExtractGlobalRowCopy( RowGID, MaxNumEntries, NumEntries, &Indices[0] );
       NewGraph_->InsertGlobalIndices( RowGID, NumEntries, &Indices[0] );
     }
-    NewGraph_->FillComplete();
-
-//    cout << *NewGraph_;
+    const Epetra_Map & RangeMap = orig.RangeMap();
+    NewGraph_->FillComplete(DomainMap,RangeMap);
 
     //intial construction of matrix 
     Epetra_CrsMatrix * NewMatrix = new Epetra_CrsMatrix( View, *NewGraph_ );
@@ -135,7 +128,7 @@ operator()( OriginalTypeRef orig )
       NewMatrix->InsertMyValues( i, indicesCnt, myValues, myIndices );
     }
 
-    NewMatrix->FillComplete();
+    NewMatrix->FillComplete(DomainMap,RangeMap);
 
     newObj_ = NewMatrix;
   }
