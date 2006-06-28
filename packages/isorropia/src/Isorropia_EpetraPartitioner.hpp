@@ -68,8 +68,7 @@ public:
 
      \param paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.
-
+        object is held after this constructor completes.<br>
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the balancing. Also, any
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
@@ -96,8 +95,7 @@ public:
 
      \param paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. No reference to this input
-        object is held after this constructor completes.
-
+        object is held after this constructor completes.<br>
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the balancing. Also, any
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
@@ -121,8 +119,7 @@ public:
       ParameterList object is copied into an internal ParameterList
       attribute, and no reference to the input object is held after
       this function returns. (Thus, the input paramlist object may be
-      altered or destroyed as soon as this method returns.)
-
+      altered or destroyed as soon as this method returns.)<br>
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the balancing. Also, any
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
