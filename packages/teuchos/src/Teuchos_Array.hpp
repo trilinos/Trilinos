@@ -138,10 +138,11 @@ namespace Teuchos
   template<class T> inline
   void Array<T>::indexCheckCrash(int i) const
   {
-    TEST_FOR_EXCEPTION(i<0 || i>=length(), std::range_error,
-                       "Array<T>::indexCheckCrash: "
-                       "index " << i << "out of range [0, "<< length() << ")");
-      
+    TEST_FOR_EXCEPTION(
+      !( 0 <= i && i < length() ), std::range_error,
+      "Array<"<<typeid(T).name()<<">::indexCheckCrash: "
+      "index " << i << " out of range [0, "<< length() << ")"
+      );
   }
 
   // print in form (), (1), or (1,2)
