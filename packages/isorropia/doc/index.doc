@@ -40,7 +40,24 @@ Isorropia::Partitioner is an interface class (abstract base class), and
 currently the only implementation of this interface is the
 Isorropia::EpetraPartitioner class.
 
-\subsection isorropia_example Example Codes
+\section zoltanparams Passing parameters through to Zoltan
+
+Some Isorropia classes accept a Teuchos::ParameterList object. To
+specify that Zoltan be used to perform the partitioning, create a
+sublist with name "Zoltan" in the parameter-list object. Then, any
+parameters that should be passed to Zoltan itself, can be stored in
+the sublist exactly as they appear in the Zoltan users guide. Example:
+\verbatim
+  Teuchos::ParameterList params;
+  Teuchos::ParameterList& sublist = params.sublist("Zoltan");
+  sublist.set("LB_METHOD", "GRAPH");
+  sublist.set("PARMETIS_METHOD", "PARTKWAY");
+\endverbatim
+Refer to the Zoltan users guide (available at
+<a href=http://www.cs.sandia.gov/zoltan>www.cs.sandia.gov/zoltan</a>)
+for available Zoltan parameters.
+
+\section isorropia_example Example Codes
 
 A couple of example programs which demonstrate using Isorropia are
 provided in the 'packages/isorropia/example' subdirectory.

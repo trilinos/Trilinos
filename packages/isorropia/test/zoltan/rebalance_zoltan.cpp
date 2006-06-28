@@ -130,13 +130,10 @@ bool test_rebalance_epetra_crsmatrix(int numProcs, int localProc, bool verbose)
   Epetra_CrsMatrix* input_matrix =
     create_epetra_test_matrix_1(numProcs, localProc, verbose);
 
-  //Default behavior should be to balance the matrix so that the number of
-  //nonzeros on each processor is roughly equal. i.e., by default, weights
-  //for each row are assumed to be the number of nonzeros in that row.
-
+  //We'll use Zoltan for the rebalancing:
   Teuchos::ParameterList paramlist;
-  paramlist.set("Balancing package", "Zoltan");
-  paramlist.set("LB_METHOD", "HYPERGRAPH");
+  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
+  sublist.set("LB_METHOD", "HYPERGRAPH");
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> balanced_matrix;
   try {
@@ -217,7 +214,9 @@ bool test_rebalance_epetra_linproblem(int numProcs, int localProc, bool verbose)
   Epetra_LinearProblem problem(input_matrix, x, b);
 
   Teuchos::ParameterList paramlist;
-  paramlist.set("Balancing package", "Zoltan");
+  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
+  sublist.set("LB_METHOD", "GRAPH");
+  sublist.set("PARMETIS_METHOD", "PARTKWAY");
 
   //Wrap a RefCountPtr around the matrix graph, and specify 'false', meaning
   //that the RefCountPtr will not take ownership of the graph (will not
@@ -314,7 +313,9 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   //for each row are assumed to be the number of nonzeros in that row.
 
   Teuchos::ParameterList paramlist;
-  paramlist.set("Balancing package", "Zoltan");
+  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
+  sublist.set("LB_METHOD", "GRAPH");
+  sublist.set("PARMETIS_METHOD", "PARTKWAY");
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
@@ -362,8 +363,12 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   }
 
   double numerator = 1.0*(num_nonzeros - avg_nnz_per_proc);
-
-  if (std::abs(numerator/num_nonzeros) < 0.1 ) test_passed = true;
+  double ratio = std::abs(numerator/num_nonzeros);
+  if (ratio < 0.1 ) test_passed = true;
+  else {
+    std::cout << "proc " << comm.MyPID()
+         << ", imbalance ratio: " << ratio << std::endl;
+  }
 
   int local_int_result = test_passed ? 1 : 0;
   int global_int_result;
@@ -374,7 +379,7 @@ bool test_rebalance_epetra_graph(int numProcs, int localProc, bool verbose)
   test_passed = global_int_result==1 ? true : false;
 
   if (!test_passed && verbose) {
-    std::cout << "test FAILED!" << std::endl;
+    std::cout << "test FAILED! (imbalance ratio: " <<ratio<<")" << std::endl;
   }
 
   return(test_passed);

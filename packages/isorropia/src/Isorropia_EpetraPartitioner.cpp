@@ -107,10 +107,10 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
     }
   }
 
-  std::string bal_package_str("Balancing package");
-  std::string bal_package = paramlist_.get(bal_package_str, "none_specified");
   int err = 0;
-  if (bal_package == "Zoltan" || bal_package == "zoltan") {
+
+  std::string zoltan("Zoltan");
+  if (paramlist_.isSublist(zoltan)) {
 #ifdef HAVE_ISORROPIA_ZOLTAN
     if (input_graph_.get() == NULL) {
       std::string str1("compute_partitioning ERROR: input_graph NULL, possibily ");
@@ -118,7 +118,9 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
       throw Isorropia::Exception(str1+str2);
     }
 
-    err = Isorropia_Zoltan::repartition(*input_graph_, paramlist_,
+    Teuchos::ParameterList& sublist = paramlist_.sublist(zoltan);
+
+    err = Isorropia_Zoltan::repartition(*input_graph_, sublist,
                                         myNewElements_, exports_, imports_);
 #else
     throw Isorropia::Exception("Zoltan requested, but zoltan not enabled.");

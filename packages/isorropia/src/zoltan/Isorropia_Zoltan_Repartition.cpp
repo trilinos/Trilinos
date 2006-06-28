@@ -64,6 +64,39 @@ Questions? Contact Alan Williams (william@sandia.gov)
 
 namespace Isorropia_Zoltan {
 
+void
+set_zoltan_parameters(Zoltan::LoadBalance& LB,
+		      const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::ParameterList::ConstIterator
+    iter = paramlist.begin(),
+    iter_end = paramlist.end();
+
+  for(; iter != iter_end; ++iter) {
+    const std::string& name = iter->first;
+    const Teuchos::ParameterEntry& param = iter->second;
+
+    if (param.isType<std::string>()) {
+      const std::string& value = Teuchos::getValue<std::string>(param);
+      LB.Set_Param(name, value);
+    }
+    else if (param.isType<double>()) {
+      double value = Teuchos::getValue<double>(param);
+      std::ostringstream osstr;
+      osstr << value;
+      std::string str = osstr.str();
+      LB.Set_Param(name, str);
+    }
+    else if (param.isType<int>()) {
+      int value = Teuchos::getValue<int>(param);
+      std::ostringstream osstr;
+      osstr << value;
+      std::string str = osstr.str();
+      LB.Set_Param(name, str);
+    }
+  }
+}
+
 int
 repartition(const Epetra_CrsGraph& input_graph,
             Teuchos::ParameterList& paramlist,
@@ -81,28 +114,23 @@ repartition(const Epetra_CrsGraph& input_graph,
   Zoltan::LoadBalance LB( 0, &dummy, &version );
   int err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(nonconst_input.Comm()).Comm() );
 
+  //if LB_METHOD has not been specified, then set it to GRAPH.
   std::string lb_method_str("LB_METHOD");
+  if (!paramlist.isParameter(lb_method_str)) {
+    paramlist.set(lb_method_str, "GRAPH");
+  }
 
-  //check for the user-specified value of LB_METHOD, and use "GRAPH" if
-  //none is specified.
+  //check for the value of LB_METHOD (using "GRAPH" by default)
   std::string lb_meth = paramlist.get(lb_method_str, "GRAPH");
-
-  if ( err == ZOLTAN_OK ) {
-    err = LB.Set_Param( lb_method_str.c_str(), lb_meth.c_str() );
-  }
-
-  if (lb_meth == "GRAPH" || lb_meth == "PARMETIS") {
-    std::string par_method_str("PARMETIS_METHOD");
-    std::string par_method = paramlist.get(par_method_str, "PartKway");
-
-    if( err == ZOLTAN_OK ) err = LB.Set_Param( "PARMETIS_METHOD", par_method );
-  }
 
   if (lb_meth == "HYPERGRAPH") {
     //tell the load-balance object to register the hypergraph query functions
     //instead of the regular graph query functions.
     LB.Set_Hypergraph();
   }
+
+  //go ahead and pass the parameters in paramlist to Zoltan
+  set_zoltan_parameters(LB, paramlist);
 
   //Setup Query Object
   EpetraExt::CrsGraph_Transpose transposeTransform;

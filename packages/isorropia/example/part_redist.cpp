@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-  int local_n = 40000;
+  int local_n = 4000;
 
   //Create a Epetra_LinearProblem object.
 
@@ -93,10 +93,13 @@ int main(int argc, char** argv) {
   Teuchos::ParameterList paramlist;
 
   // If Zoltan is available, we'll specify that the Zoltan package be
-  // used for the partitioning operation.
+  // used for the partitioning operation, by creating a parameter
+  // sublist named "Zoltan".
+  // In the sublist, we'll set parameters that we want sent to Zoltan.
 #ifdef HAVE_ISORROPIA_ZOLTAN
-  paramlist.set("Balancing package", "Zoltan");
-  paramlist.set("LB_METHOD", "GRAPH");
+  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
+  sublist.set("LB_METHOD", "GRAPH");
+  sublist.set("PARMETIS_METHOD", "PARTKWAY");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
