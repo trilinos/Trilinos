@@ -70,6 +70,14 @@ public:
         internal ParameterList attribute. No reference to this input
         object is held after this constructor completes.
 
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the balancing. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
      \param compute_partitioning_now Optional argument defaults to true.
         If true, the method compute_partitioning() will be called before
         this constructor returns.
@@ -90,6 +98,14 @@ public:
         internal ParameterList attribute. No reference to this input
         object is held after this constructor completes.
 
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the balancing. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
      \param compute_partitioning_now Optional argument defaults to true.
         If true, the method compute_partitioning() will be called before
         this constructor returns.
@@ -106,6 +122,14 @@ public:
       attribute, and no reference to the input object is held after
       this function returns. (Thus, the input paramlist object may be
       altered or destroyed as soon as this method returns.)
+
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the balancing. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
    */
   void setParameters(const Teuchos::ParameterList& paramlist);
 

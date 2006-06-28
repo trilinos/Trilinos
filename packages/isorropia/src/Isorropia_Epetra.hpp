@@ -67,6 +67,14 @@ namespace Epetra {
     create an instance of Isorropia::Partitioner. This is a factory
     function, the run-time type of the returned Partitioner is
     Isorropia::EpetraPartitioner.
+
+    To specify that Zoltan be used as the underlying partitioner, create a
+    sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
+    put any parameters that should be relayed straight to Zoltan.
+    Refer to the Zoltan users guide for specific parameters that Zoltan
+    recognizes. A couple of important ones are "LB_METHOD" (valid values
+    include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+    0 to 10, default is 1), etc.
 */
 Teuchos::RefCountPtr<Isorropia::Partitioner>
 create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
@@ -77,6 +85,14 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
     create an instance of Isorropia::Partitioner. This is a factory
     function, the run-time type of the returned Partitioner is
     Isorropia::EpetraPartitioner.
+
+    To specify that Zoltan be used as the underlying partitioner, create a
+    sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
+    put any parameters that should be relayed straight to Zoltan.
+    Refer to the Zoltan users guide for specific parameters that Zoltan
+    recognizes. A couple of important ones are "LB_METHOD" (valid values
+    include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+    0 to 10, default is 1), etc.
 */
 Teuchos::RefCountPtr<Isorropia::Partitioner>
 create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
@@ -96,13 +112,13 @@ create_target_map(const Epetra_Comm& comm, Partitioner& partitioner);
   By default, it uses a self-contained internal implementation
   rather than interfacing to a third-party library such as Zoltan.
 
-  If the ParameterList object contains a string parameter with
-  name == "Balancing package" and value == "Zoltan", then the Zoltan
-  library is used to perform the balancing.
-
-  If the Zoltan package is specified, then the parameter-list will also
-  be checked for Zoltan parameters such as "LB_METHOD". Valid values for
-  the LB_METHOD parameter include "GRAPH" and "HYPERGRAPH", and others.
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the balancing. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
 
   The rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
@@ -165,13 +181,13 @@ Teuchos::RefCountPtr<Epetra_CrsMatrix>
   By default, it uses a self-contained internal implementation
   rather than interfacing to a third-party library such as Zoltan.
 
-  If the ParameterList object contains a string parameter with
-  name == "Balancing package" and value == "Zoltan", then the Zoltan
-  library is used to perform the balancing.
-
-  If the Zoltan package is specified, then the parameter-list will also
-  be checked for Zoltan parameters such as "LB_METHOD". Valid values for
-  the LB_METHOD parameter include "GRAPH" and "HYPERGRAPH", and others.
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the balancing. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
 
   The rebalancing is 1-D, row-wise, and attempts to make the number
   of nonzeros equal in each partition. I.e., it is equivalent to specifying
