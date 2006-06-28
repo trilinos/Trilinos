@@ -68,6 +68,12 @@ void dumpCharBuffer(
 
 /** \brief Concrete communicator subclass based on MPI.
  *
+ * <b>Assertions:</b><ul>
+ * <li><tt>getRawMpiComm().get()!=NULL && *getRawMpiComm()!=MPI_COMM_NULL</tt>
+ * <li><tt>getSize() > 0</tt>
+ * <li><tt>0 <= getRank() && getRank() < getSize()</tt>
+ * </ul>
+ *
  * ToDo: Finish documentation!
  */
 template<typename Ordinal>
@@ -77,10 +83,18 @@ public:
   /** \name Constructors */
   //@{
 
-  /** \brief . */
+  /** \brief Construct given a wrapped MPI_Comm oqaque object.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>rawMpiComm.get()!=NULL && *rawMpiComm != MPI_COMM_NULL</tt>
+   * </ul>
+   */
   MpiComm(
-    const RefCountPtr<OpaqueWrapper<MPI_Comm> > &mpiComm
+    const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
     );
+
+  /** \brief Return the embedded wrapped opaque <tt>MPI_Comm</tt> object. */
+  RefCountPtr<const OpaqueWrapper<MPI_Comm> > getRawMpiComm() const;
 
   //@}
 
@@ -143,10 +157,10 @@ private:
   static int const maxTag_ = 26099; // ""
   static int tagCounter_;
 
-  RefCountPtr<OpaqueWrapper<MPI_Comm> > mpiComm_;
-  int                                   rank_;
-  int                                   size_;
-  int                                   tag_;
+  RefCountPtr<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
+  int                                         rank_;
+  int                                         size_;
+  int                                         tag_;
 
   // Not defined and not to be called!
   MpiComm();
@@ -157,6 +171,25 @@ public:
 #endif // TEUCHOS_MPI_COMM_DUMP
 	
 };
+
+/** \brief Helper function that creates a dynamically allocated
+ * <tt>MpiComm</tt> object or returns <tt>Teuchos::null</tt> to correctly
+ * represent a null communicator.
+ *
+ * <b>Postconditions:</b></ul>
+ * <li>[<tt>rawMpiComm.get()!=NULL && *rawMpiComm!=MPI_COMM_NULL</tt>]
+ *     <tt>return.get()!=NULL</tt>
+ * <li>[<tt>rawMpiComm.get()==NULL || *rawMpiComm==MPI_COMM_NULL</tt>]
+ *     <tt>return.get()==NULL</tt>
+ * </ul>
+ *
+ * \relates MpiComm
+ */
+template<typename Ordinal>
+RefCountPtr<MpiComm<Ordinal> >
+createMpiComm(
+  const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
+  );
 
 // ////////////////////////
 // Implementations
@@ -170,12 +203,14 @@ int MpiComm<Ordinal>::tagCounter_ = MpiComm<Ordinal>::minTag_;
 
 template<typename Ordinal>
 MpiComm<Ordinal>::MpiComm(
-  const RefCountPtr<OpaqueWrapper<MPI_Comm> > &mpiComm
+  const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
   )
 {
-  mpiComm_ = mpiComm.assert_not_null();
-  MPI_Comm_size(*mpiComm_,&size_);
-  MPI_Comm_rank(*mpiComm_,&rank_);
+  TEST_FOR_EXCEPT( rawMpiComm.get()==NULL );
+  TEST_FOR_EXCEPT( *rawMpiComm == MPI_COMM_NULL );
+  rawMpiComm_ = rawMpiComm;
+  MPI_Comm_size(*rawMpiComm_,&size_);
+  MPI_Comm_rank(*rawMpiComm_,&rank_);
   if(tagCounter_ > maxTag_)
     tagCounter_ = minTag_;
   tag_ = tagCounter_++;
@@ -201,7 +236,7 @@ void MpiComm<Ordinal>::barrier() const
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::barrier()"
     );
-  MPI_Barrier(*mpiComm_);
+  MPI_Barrier(*rawMpiComm_);
 }
   
 template<typename Ordinal>
@@ -212,7 +247,7 @@ void MpiComm<Ordinal>::broadcast(
   TEUCHOS_COMM_TIME_MONITOR(
     "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">::broadcast(...)"
     );
-  MPI_Bcast(buffer,bytes,MPI_CHAR,rootRank,*mpiComm_);
+  MPI_Bcast(buffer,bytes,MPI_CHAR,rootRank,*rawMpiComm_);
 }
   
 template<typename Ordinal>
@@ -228,7 +263,7 @@ void MpiComm<Ordinal>::gatherAll(
   MPI_Allgather(
     const_cast<char *>(sendBuffer),sendBytes,MPI_CHAR
     ,recvBuffer,sendBytes,MPI_CHAR
-    ,*mpiComm_
+    ,*rawMpiComm_
     );
 }
   
@@ -244,7 +279,7 @@ void MpiComm<Ordinal>::reduceAll(
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
   MPI_Allreduce(
     const_cast<char*>(sendBuffer),globalReducts,bytes,MPI_CHAR,op.mpi_op()
-    ,*mpiComm_
+    ,*rawMpiComm_
     );
 }
 
@@ -283,7 +318,7 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
   }
   MPI_Datatype _chars_type;
   MPI_Type_contiguous(blockSize,MPI_CHAR,&_chars_type);
-  RefCountPtr<OpaqueWrapper<MPI_Datatype> >
+  RefCountPtr<const OpaqueWrapper<MPI_Datatype> >
     chars_type = opaqueWrapper(_chars_type,MPI_Type_free);
   // Perform the operation
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
@@ -292,7 +327,7 @@ void MpiComm<Ordinal>::reduceAllAndScatter(
     ,const_cast<int*>(int_recvCounts)
     ,*chars_type
     ,op.mpi_op()
-    ,*mpiComm_
+    ,*rawMpiComm_
     );
 }
   
@@ -308,7 +343,7 @@ void MpiComm<Ordinal>::scan(
   MpiReductionOpSetter op(mpiReductionOp(rcp(&reductOp,false)));
   MPI_Scan(
     const_cast<char*>(sendBuffer),scanReducts,bytes,MPI_CHAR,op.mpi_op()
-    ,*mpiComm_
+    ,*rawMpiComm_
     );
 }
 
@@ -336,7 +371,7 @@ void MpiComm<Ordinal>::send(
   }
 #endif // TEUCHOS_MPI_COMM_DUMP
   MPI_Send(
-    const_cast<char*>(sendBuffer),bytes,MPI_CHAR,destRank,tag_,*mpiComm_
+    const_cast<char*>(sendBuffer),bytes,MPI_CHAR,destRank,tag_,*rawMpiComm_
     );
   // ToDo: What about error handling???
 }
@@ -360,7 +395,7 @@ int MpiComm<Ordinal>::receive(
   MPI_Recv(
     recvBuffer,bytes,MPI_CHAR
     ,sourceRank >= 0 ? sourceRank : MPI_ANY_SOURCE
-    ,tag_,*mpiComm_
+    ,tag_,*rawMpiComm_
     ,&status
     );
 #ifdef TEUCHOS_MPI_COMM_DUMP
@@ -385,7 +420,7 @@ std::string MpiComm<Ordinal>::description() const
     << "Teuchos::MpiComm<"<<OrdinalTraits<Ordinal>::name()<<">"
     << "{"
     << "size="<<size_
-    << ",mpiComm="<<static_cast<MPI_Comm>(*mpiComm_)
+    << ",rawMpiComm="<<static_cast<MPI_Comm>(*rawMpiComm_)
     <<"}";
   return oss.str();
 }
@@ -396,5 +431,16 @@ bool MpiComm<Ordinal>::show_dump = false;
 #endif // TEUCHOS_MPI_COMM_DUMP
 
 } // namespace Teuchos
+
+template<typename Ordinal>
+Teuchos::RefCountPtr<Teuchos::MpiComm<Ordinal> >
+Teuchos::createMpiComm(
+  const RefCountPtr<const OpaqueWrapper<MPI_Comm> > &rawMpiComm
+  )
+{
+  if( rawMpiComm.get()!=NULL && *rawMpiComm != MPI_COMM_NULL )
+    return rcp(new MpiComm<Ordinal>(rawMpiComm));
+  return Teuchos::null;
+}
 
 #endif // TEUCHOS_MPI_COMM_HPP
