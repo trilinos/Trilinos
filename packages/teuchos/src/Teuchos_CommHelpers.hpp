@@ -92,7 +92,7 @@ int size(const Comm<Ordinal>& comm);
 template<typename Ordinal>
 void barrier(const Comm<Ordinal>& comm);
 
-/** \brief Broadcast objects that use value semantics.
+/** \brief Broadcast array of objects that use value semantics.
  *
  * \relates Comm
  */
@@ -102,7 +102,17 @@ void broadcast(
   ,const int rootRank, const Ordinal count, Packet buffer[]
   );
 
-/** \brief Broadcast objects that use reference semantics.
+/** \brief Broadcast single object that use value semantics.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void broadcast(
+  const Comm<Ordinal>& comm
+  ,const int rootRank, Packet *object
+  );
+
+/** \brief Broadcast array of objects that use reference semantics.
  *
  * \relates Comm
  */
@@ -112,8 +122,8 @@ void broadcast(
   ,const int rootRank, const Ordinal count, Packet*const buffer[]
   );
 
-/** \brief Gather objects that use value semantics from every process to every
- * process.
+/** \brief Gather array of objects that use value semantics from every process
+ * to every process.
  *
  * \relates Comm
  */
@@ -124,8 +134,8 @@ void gatherAll(
   ,const Ordinal recvCount, Packet recvBuffer[]
   );
 
-/** \brief Gather objects that use reference semantics from every process to
- * every process.
+/** \brief Gather array of objects that use reference semantics from every
+ * process to every process.
  *
  * \relates Comm
  */
@@ -136,8 +146,8 @@ void gatherAll(
   ,const Ordinal recvCount, Packet*const recvBuffer[]
   );
 
-/** \brief Collective reduce all of objects using value semantics using a
- * user-defined reduction operator.
+/** \brief Collective reduce all of array of objects using value semantics
+ * using a user-defined reduction operator.
  *
  * \relates Comm
  */
@@ -147,8 +157,8 @@ void reduceAll(
   ,const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
   );
 
-/** \brief Collective reduce all of objects using value semantics using a
- * pre-defined reduction type.
+/** \brief Collective reduce all of array of objects using value semantics
+ * using a pre-defined reduction type.
  *
  * \relates Comm
  */
@@ -158,7 +168,19 @@ void reduceAll(
   ,const Ordinal count, const Packet sendBuffer[], Packet globalReducts[]
   );
 
-/** \brief Collective reduce all for objects using reference semantics.
+/** \brief Collective reduce all for single object using value semantics using
+ * a pre-defined reduction type.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void reduceAll(
+  const Comm<Ordinal>& comm, const EReductionType reductType
+  ,const Packet &send, Packet *globalReduct
+  );
+
+/** \brief Collective reduce all for array of objects using reference
+ * semantics.
  *
  * \relates Comm
  */
@@ -169,8 +191,8 @@ void reduceAll(
   ,const Ordinal count, const Packet*const sendBuffer[], Packet*const globalReducts[]
   );
 
-/** \brief Reduce and Scatter objects object that use value semantics using a
- * user-defined reduction object.
+/** \brief Reduce and Scatter array of objects that use value semantics using
+ * a user-defined reduction object.
  *
  * \relates Comm
  */
@@ -181,8 +203,8 @@ void reduceAllAndScatter(
   ,const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
-/** \brief Reduce and Scatter objects object that use value semantics using a
- * a pre-defined reduction type.
+/** \brief Reduce and Scatter array of objects that use value semantics using
+ * a a pre-defined reduction type.
  *
  * \relates Comm
  */
@@ -193,7 +215,7 @@ void reduceAllAndScatter(
   ,const Ordinal recvCounts[], Packet myGlobalReducts[]
   );
 
-/** \brief Reduce and Scatter objects object that use reference semantics
+/** \brief Reduce and Scatter array of objects that use reference semantics
  * using a user-defined reduction object.
  *
  * \relates Comm
@@ -206,8 +228,8 @@ void reduceAllAndScatter(
   ,const Ordinal recvCounts[], Packet*const myGlobalReducts[]
   );
 
-/** \brief Scan/Reduce objects that use value semantics using a user-defined
- * reduction operator.
+/** \brief Scan/Reduce array of objects that use value semantics using a
+ * user-defined reduction operator.
  *
  * \relates Comm
  */
@@ -217,7 +239,8 @@ void scan(
   ,const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
   );
 
-/** \brief Scan/Reduce using predefined reduction type.
+/** \brief Scan/Reduce array of objects using value semantics using a
+ * predefined reduction type.
  *
  * \relates Comm
  */
@@ -227,7 +250,18 @@ void scan(
   ,const Ordinal count, const Packet sendBuffer[], Packet scanReducts[]
   );
 
-/** \brief Scan/Reduce objects that use reference semantics using a
+/** \brief Scan/Reduce single object using value semantics using a predefined
+ * reduction type.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void scan(
+  const Comm<Ordinal>& comm, const EReductionType reductType
+  ,const Packet &send, Packet *scanReduct
+  );
+
+/** \brief Scan/Reduce array of objects that use reference semantics using a
  * user-defined reduction operator.
  *
  * \relates Comm
@@ -249,6 +283,16 @@ void send(
   ,const Ordinal count, const Packet sendBuffer[], const int destRank
   );
 
+/** \brief Send a single object that use values semantics to another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void send(
+  const Comm<Ordinal>& comm
+  ,const Packet &send, const int destRank
+  );
+
 /** \brief Send objects that use reference semantics to another process.
  *
  * \relates Comm
@@ -267,6 +311,16 @@ template<typename Ordinal, typename Packet>
 int receive(
   const Comm<Ordinal>& comm
   ,const int sourceRank, const Ordinal count, Packet recvBuffer[] 
+  );
+
+/** \brief Receive a single object that use values semantics from another process.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+int receive(
+  const Comm<Ordinal>& comm
+  ,const int sourceRank, Packet *recv 
   );
 
 /** \brief Receive objects that use reference semantics from another process.
@@ -550,6 +604,15 @@ void Teuchos::broadcast(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::broadcast(
+  const Comm<Ordinal>& comm
+  ,const int rootRank, Packet *object
+  )
+{
+  broadcast(comm,rootRank,1,object);
+}
+
+template<typename Ordinal, typename Packet>
+void Teuchos::broadcast(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const int rootRank, const Ordinal count, Packet*const buffer[]
   )
@@ -635,6 +698,15 @@ void Teuchos::reduceAll(
   std::auto_ptr<ValueTypeReductionOp<Ordinal,Packet> >
     reductOp(createOp<Ordinal,Packet>(reductType));
   reduceAll(comm,*reductOp,count,sendBuffer,globalReducts);
+}
+
+template<typename Ordinal, typename Packet>
+void Teuchos::reduceAll(
+  const Comm<Ordinal>& comm, const EReductionType reductType
+  ,const Packet &send, Packet *globalReduct
+  )
+{
+  reduceAll(comm,reductType,1,&send,globalReduct);
 }
 
 template<typename Ordinal, typename Packet>
@@ -766,6 +838,15 @@ void Teuchos::scan(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
+  const Comm<Ordinal>& comm, const EReductionType reductType
+  ,const Packet &send, Packet *globalReduct
+  )
+{
+  scan(comm,reductType,1,&send,globalReduct);
+}
+
+template<typename Ordinal, typename Packet>
+void Teuchos::scan(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const ReferenceTypeReductionOp<Ordinal,Packet> &reductOp
   ,const Ordinal count, const Packet*const sendBuffer[], Packet*const scanReducts[]
@@ -795,6 +876,15 @@ void Teuchos::send(
 
 template<typename Ordinal, typename Packet>
 void Teuchos::send(
+  const Comm<Ordinal>& comm
+  ,const Packet &send, const int destRank
+  )
+{
+  Teuchos::send<Ordinal,Packet>(comm,1,&send,destRank);
+}
+
+template<typename Ordinal, typename Packet>
+void Teuchos::send(
   const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer
   ,const Ordinal count, const Packet*const sendBuffer[], const int destRank
   )
@@ -819,6 +909,15 @@ int Teuchos::receive(
     sourceRank
     ,charRecvBuffer.getBytes(),charRecvBuffer.getCharBuffer()
     );
+}
+
+template<typename Ordinal, typename Packet>
+int Teuchos::receive(
+  const Comm<Ordinal>& comm
+  ,const int sourceRank, Packet *recv 
+  )
+{
+  return Teuchos::receive<Ordinal,Packet>(comm,sourceRank,1,recv);
 }
 
 template<typename Ordinal, typename Packet>
