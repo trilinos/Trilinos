@@ -16,6 +16,8 @@
 
 #include <zoltan.h>
 
+class Epetra_BlockMap;
+
 namespace Zoltan {
 
 //! Zoltan::QueryObject: A base class from which the user can derive an application specific support class for Zoltan's query callback functions.
@@ -29,6 +31,8 @@ class QueryObject
 {
 
 public:
+
+  virtual const Epetra_BlockMap& RowMap() = 0;
 
   //@{ \name Virtual General Query Methods.
 

@@ -101,12 +101,21 @@ int main(int argc, char** argv) {
     std::cout << " calling Isorropia::create_balanced_copy..." << std::endl;
   }
 
-  //We won't set any parameters in this example, but a parameter-list is
-  //required. If we wanted the repartitioning operation to use the Zoltan
-  //package, we could specify that like this:
-  //    paramlist.set("Balancing package", "Zoltan");
-  //
   Teuchos::ParameterList paramlist;
+  // If Zoltan is available, we'll specify that the Zoltan package be
+  // used for the partitioning operation, by creating a parameter
+  // sublist named "Zoltan".
+  // In the sublist, we'll set parameters that we want sent to Zoltan.
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
+  sublist.set("LB_METHOD", "GRAPH");
+  sublist.set("PARMETIS_METHOD", "PARTKWAY");
+#else
+  // If Zoltan is not available, a simple linear partitioner will be
+  // used to partition such that the number of nonzeros is equal (or
+  // close to equal) on each processor. No parameter is necessary to
+  // specify this.
+#endif
 
   Teuchos::RefCountPtr<Epetra_CrsGraph> balanced_graph;
   try {
@@ -169,6 +178,16 @@ int main(int argc, char** argv) {
     MPI_Finalize();
     return(-1);
   }
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  //This time, we'll try hypergraph partitioning.
+  sublist.set("LB_METHOD", "HYPERGRAPH");
+#else
+  // If Zoltan is not available, a simple linear partitioner will be
+  // used to partition such that the number of nonzeros is equal (or
+  // close to equal) on each processor. No parameter is necessary to
+  // specify this.
+#endif
 
   if (localProc == 0) {
     std::cout << " calling Isorropia::Epetra::create_balanced_copy..."

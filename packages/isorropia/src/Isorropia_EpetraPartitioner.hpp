@@ -167,6 +167,7 @@ private:
 
   Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
   Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix_;
   Teuchos::ParameterList paramlist_;
   Teuchos::RefCountPtr<Epetra_Vector> weights_;
 

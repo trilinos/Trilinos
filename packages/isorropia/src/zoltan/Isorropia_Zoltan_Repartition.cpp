@@ -98,21 +98,78 @@ set_zoltan_parameters(Zoltan::LoadBalance& LB,
 }
 
 int
-repartition(const Epetra_CrsGraph& input_graph,
+repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
             Teuchos::ParameterList& paramlist,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,
             std::map<int,int>& imports)
 {
-  Teuchos::RefCountPtr<Epetra_Map> bal_map;
+  Epetra_CrsGraph* nonconst = const_cast<Epetra_CrsGraph*>(input_graph.get());
 
-  Epetra_CrsGraph& nonconst_input = const_cast<Epetra_CrsGraph&>(input_graph);
+  EpetraExt::CrsGraph_Transpose transposeTransform;
+  Epetra_CrsGraph & TransGraph = transposeTransform( *nonconst );
 
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> tgraph =
+    Teuchos::rcp(&TransGraph, false);
+
+  Zoltan::QueryObject* queryObject =
+    new Isorropia::ZoltanQuery(input_graph, tgraph);
+
+  const Epetra_Comm* ecomm = &(input_graph->RowMap().Comm());
+  const Epetra_MpiComm* empicomm = dynamic_cast<const Epetra_MpiComm*>(ecomm);
+  if (empicomm == 0) {
+    throw Isorropia::Exception("repartition failed to dynamic_cast Epetra_Comm to Epetra_MpiComm");
+  }
+
+  MPI_Comm mpicomm = empicomm->Comm();
+
+  return( load_balance(mpicomm, paramlist, *queryObject,
+		       myNewElements, exports, imports) );
+}
+
+int
+repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+            Teuchos::ParameterList& paramlist,
+            std::vector<int>& myNewElements,
+            std::map<int,int>& exports,
+            std::map<int,int>& imports)
+{
+  Epetra_RowMatrix* nonconst = const_cast<Epetra_RowMatrix*>(input_matrix.get());
+
+  EpetraExt::RowMatrix_Transpose transposeTransform;
+  Epetra_RowMatrix & TransMatrix = transposeTransform( *nonconst );
+
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> trowmat =
+    Teuchos::rcp(&TransMatrix, false);
+
+  Zoltan::QueryObject* queryObject =
+    new Isorropia::ZoltanQuery(input_matrix, trowmat);
+
+  const Epetra_Comm* ecomm = &(input_matrix->RowMatrixRowMap().Comm());
+  const Epetra_MpiComm* empicomm = dynamic_cast<const Epetra_MpiComm*>(ecomm);
+  if (empicomm == 0) {
+    throw Isorropia::Exception("repartition failed to dynamic_cast Epetra_Comm to Epetra_MpiComm");
+  }
+
+  MPI_Comm mpicomm = empicomm->Comm();
+
+  return( load_balance(mpicomm, paramlist, *queryObject,
+		       myNewElements, exports, imports) );
+}
+
+int
+load_balance(MPI_Comm comm,
+	     Teuchos::ParameterList& paramlist,
+	     Zoltan::QueryObject& queryObject,
+	     std::vector<int>& myNewElements,
+	     std::map<int,int>& exports,
+	     std::map<int,int>& imports)
+{
   //Setup Load Balance Object
   float version;
   char * dummy = 0;
   Zoltan::LoadBalance LB( 0, &dummy, &version );
-  int err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(nonconst_input.Comm()).Comm() );
+  int err = LB.Create( comm );
 
   //if LB_METHOD has not been specified, then set it to GRAPH.
   std::string lb_method_str("LB_METHOD");
@@ -132,18 +189,8 @@ repartition(const Epetra_CrsGraph& input_graph,
   //go ahead and pass the parameters in paramlist to Zoltan
   set_zoltan_parameters(LB, paramlist);
 
-  //Setup Query Object
-  EpetraExt::CrsGraph_Transpose transposeTransform;
-  Epetra_CrsGraph & TransGraph = transposeTransform( nonconst_input );
-
-  Zoltan::QueryObject* queryObject =
-    new Isorropia::ZoltanQuery(nonconst_input, &TransGraph);
-
-  if( err == ZOLTAN_OK ) {
-    err = LB.Set_QueryObject( queryObject );
-  }
-  else {
-    cout << "Setup of Zoltan Load Balancing Objects FAILED!\n";
+  err = LB.Set_QueryObject( &queryObject );
+  if (err != ZOLTAN_OK) {
     return(err);
   }
 
@@ -153,17 +200,15 @@ repartition(const Epetra_CrsGraph& input_graph,
   ZOLTAN_ID_PTR export_global_ids, export_local_ids;
   int * import_procs, * export_procs;
 
-  nonconst_input.Comm().Barrier();
   err = LB.Balance( &changes,
                     &num_gid_entries, &num_lid_entries,
                     &num_import, &import_global_ids, &import_local_ids, &import_procs,
                     &num_export, &export_global_ids, &export_local_ids, &export_procs );
-  nonconst_input.Comm().Barrier();
 
   //Generate New Element List
-  int numMyElements = nonconst_input.RowMap().NumMyElements();
+  int numMyElements = queryObject.RowMap().NumMyElements();
   std::vector<int> elementList( numMyElements );
-  nonconst_input.RowMap().MyGlobalElements( &elementList[0] );
+  queryObject.RowMap().MyGlobalElements( &elementList[0] );
 
   int newNumMyElements = numMyElements - num_export + num_import;
   myNewElements.resize( newNumMyElements );
@@ -194,8 +239,6 @@ repartition(const Epetra_CrsGraph& input_graph,
     err = LB.Free_Data( &import_global_ids, &import_local_ids, &import_procs,
                          &export_global_ids, &export_local_ids, &export_procs );
   }
-
-  delete queryObject;
 
   return( 0 );
 }

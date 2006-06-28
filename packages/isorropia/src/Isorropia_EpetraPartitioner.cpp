@@ -60,6 +60,7 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
                   bool compute_partitioning_now)
   : input_map_(),
     input_graph_(input_graph),
+    input_matrix_(),
     paramlist_(),
     partitioning_already_computed_(false)
 {
@@ -78,6 +79,7 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
                   bool compute_partitioning_now)
   : input_map_(),
     input_graph_(),
+    input_matrix_(input_matrix),
     paramlist_(),
     partitioning_already_computed_(false)
 {
@@ -112,16 +114,23 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
   std::string zoltan("Zoltan");
   if (paramlist_.isSublist(zoltan)) {
 #ifdef HAVE_ISORROPIA_ZOLTAN
-    if (input_graph_.get() == NULL) {
-      std::string str1("compute_partitioning ERROR: input_graph NULL, possibily ");
-      std::string str2("because Epetra_RowMatrix input to Partitioner.");
-      throw Isorropia::Exception(str1+str2);
-    }
 
     Teuchos::ParameterList& sublist = paramlist_.sublist(zoltan);
 
-    err = Isorropia_Zoltan::repartition(*input_graph_, sublist,
-                                        myNewElements_, exports_, imports_);
+    if (input_graph_.get() == 0 && input_matrix_.get() == 0) {
+      std::string str1("Isorropia::EpetraPartitioner::compute_partitioning ERROR: ");
+      std::string str2("not holding valid input graph or matrix.");
+      throw Isorropia::Exception(str1+str2);
+    }
+
+    if (input_graph_.get() == 0) {
+      err = Isorropia_Zoltan::repartition(input_matrix_, sublist,
+					  myNewElements_, exports_, imports_);
+    }
+    else {
+      err = Isorropia_Zoltan::repartition(input_graph_, sublist,
+					  myNewElements_, exports_, imports_);
+    }
 #else
     throw Isorropia::Exception("Zoltan requested, but zoltan not enabled.");
 #endif

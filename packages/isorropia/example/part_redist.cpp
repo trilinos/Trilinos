@@ -98,8 +98,7 @@ int main(int argc, char** argv) {
   // In the sublist, we'll set parameters that we want sent to Zoltan.
 #ifdef HAVE_ISORROPIA_ZOLTAN
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
-  sublist.set("PARMETIS_METHOD", "PARTKWAY");
+  sublist.set("LB_METHOD", "HYPERGRAPH");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
@@ -107,27 +106,16 @@ int main(int argc, char** argv) {
   // specify this.
 #endif
 
-  //If we're using Zoltan, we need to pass a Epetra_CrsGraph object (instead
-  //of a Epetra_RowMatrix) when creating the Isorropia::Partitioner.
-  //(This requirement is imposed by an underlying Isorropia_ZoltanQuery
-  // object, and may be removed in the near future. It would result in
-  // a run-time error...)
-  //So next we'll get the row-matrix from the linear-problem, cast it to
-  //a crs-matrix, then obtain the crs-graph and wrap that in a
-  //Teuchos::RefCountPtr.
 
   Epetra_RowMatrix* rowmatrix = linprob->GetMatrix();
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmat =
+    Teuchos::rcp(rowmatrix, false);
 
-  Epetra_CrsMatrix* crsmatrix = dynamic_cast<Epetra_CrsMatrix*>(rowmatrix);
-  Teuchos::RefCountPtr<const Epetra_CrsGraph> graph =
-    Teuchos::rcp(&(crsmatrix->Graph()), false);
-  //The 'false' parameter specifies that the RefCountPtr should not take
-  //ownership of the graph object.
 
   //Now create the partitioner object using an Isorropia factory-like
   //function...
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Isorropia::Epetra::create_partitioner(graph, paramlist);
+    Isorropia::Epetra::create_partitioner(rowmat, paramlist);
 
 
   //Next create a Redistributor object and use it to create balanced

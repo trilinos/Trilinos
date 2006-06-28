@@ -39,6 +39,10 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Teuchos_RefCountPtr.hpp>
 #include <Teuchos_ParameterList.hpp>
 
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
+
 #ifdef HAVE_EPETRA
 class Epetra_Map;
 class Epetra_BlockMap;
@@ -51,6 +55,8 @@ class Epetra_RowMatrix;
 class Epetra_LinearProblem;
 #endif
 
+#include <Isorropia_ZoltanQuery.h>
+
 /** Isorropia_Zoltan is the namespace that contains isorropia's
   Zoltan-specific classes and functions.
 */
@@ -62,11 +68,29 @@ namespace Isorropia_Zoltan {
     the local partition, as well as export and import lists.
 */
 int
-repartition(const Epetra_CrsGraph& input_graph,
+repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 	    Teuchos::ParameterList& paramlist,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,
             std::map<int,int>& imports);
+
+/** Calculate a new partitioning, and fill lists with new elements for
+    the local partition, as well as export and import lists.
+*/
+int
+repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+	    Teuchos::ParameterList& paramlist,
+            std::vector<int>& myNewElements,
+            std::map<int,int>& exports,
+            std::map<int,int>& imports);
+
+int
+load_balance(MPI_Comm comm,
+	     Teuchos::ParameterList& paramlist,
+	     Zoltan::QueryObject& queryObject,
+	     std::vector<int>& myNewElements,
+	     std::map<int,int>& exports,
+	     std::map<int,int>& imports);
 
 #endif //HAVE_EPETRA
 

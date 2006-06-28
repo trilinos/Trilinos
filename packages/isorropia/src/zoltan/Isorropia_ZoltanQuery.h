@@ -33,6 +33,7 @@
 #include "Isorropia_configdefs.hpp"
 
 #include <IZoltan_QueryObject.h>
+#include <Teuchos_RefCountPtr.hpp>
 
 #include <vector>
 #include <set>
@@ -51,10 +52,11 @@ namespace Isorropia {
  */
 class ZoltanQuery : public Zoltan::QueryObject
 {
-
-  const Epetra_CrsGraph & graph_;
-  const Epetra_CrsGraph * tgraph_;
-  const Epetra_BlockMap& map_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix_;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> tmatrix_;
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> graph_;
+  Teuchos::RefCountPtr<const Epetra_CrsGraph> tgraph_;
+  const Epetra_BlockMap* map_;
   const Epetra_BlockMap* tmap_;
 
   std::map<int,int> procmap_;
@@ -67,13 +69,21 @@ class ZoltanQuery : public Zoltan::QueryObject
 
   /** Constructor
    */
-  ZoltanQuery( const Epetra_CrsGraph & graph,
-               const Epetra_CrsGraph * tgraph = 0,
+  ZoltanQuery( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
+               Teuchos::RefCountPtr<const Epetra_CrsGraph> tgraph,
+               bool localEdgesOnly = false );
+
+  /** Constructor
+   */
+  ZoltanQuery( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
+               Teuchos::RefCountPtr<const Epetra_RowMatrix> tmatrix,
                bool localEdgesOnly = false );
 
   /** Destructor
    */
   virtual ~ZoltanQuery() {}
+
+  const Epetra_BlockMap& RowMap() { return *map_ ; }
 
   //General Functions
   int Number_Objects  ( void * data,
