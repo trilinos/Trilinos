@@ -157,6 +157,7 @@ CommandLineProcessor::parse(
   add_extra_output_setup_options();
 	std::string        opt_name;
 	std::string        opt_val_str;
+	const std::string  echo_cl_opt = "echo-command-line";
 	const std::string  help_opt = "help";
 	const std::string  pause_opt = "pause-for-debugging";
 	int procRank = GlobalMPISession::getRank();
@@ -171,6 +172,15 @@ CommandLineProcessor::parse(
 			else {
 				continue;
 			}
+		}
+		if( opt_name == echo_cl_opt ) {
+			if(errout && procRank == 0) {
+        *errout << "\nEchoing the command-line:\n\n";
+        for( int i = 0; i < argc; ++i )
+          *errout << argv[i] << " ";
+        *errout << "\n\n";
+      }
+			continue;
 		}
 		if( opt_name == help_opt ) {
 			if(errout) printHelpMessage( argv[0], *errout );
@@ -263,7 +273,7 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
     }
     opt_name_w += 2;
     
-    // Print the help message
+    // Some built-in options
     out
       << "Usage: " << program_name << " [options]\n"
       << spc_chars << "options:\n"
@@ -288,6 +298,17 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
       << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
 #endif
       << "Pauses for user input to allow attaching a debugger"
+      << endl
+      << spc_chars
+      << "--"
+#ifdef HAVE_STD_IOS_BASE_FMTFLAGS
+      << std::left << setw(opt_name_w) << "echo-command-line"
+      << std::left << setw(opt_type_w) << " "
+#else
+      << std::setiosflags(std::ios::left) << setw(opt_name_w) << "echo-command-line"
+      << std::setiosflags(std::ios::left) << setw(opt_type_w) << " "
+#endif
+      << "Echo the command-line but continue as normal"
       << endl;
     for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
       // print top line with option name, type and short documentation string

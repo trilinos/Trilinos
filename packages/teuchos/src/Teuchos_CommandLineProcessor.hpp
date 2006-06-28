@@ -48,7 +48,8 @@ namespace Teuchos {
  * ToDo:  Finish documentation.
  */
 
-/** \brief Class that helps parse command line input arguments from <tt>(argc,argv[])</tt> and set options.
+/** \brief Class that helps parse command line input arguments from
+ * <tt>(argc,argv[])</tt> and set options.
  *
  * This class will process command-line arguments in the form of <tt>(argc,argv[])</tt>
  * and set user-defined options.  This class can also work in a number of modes.
@@ -93,13 +94,13 @@ public:
 
 	/** \brief Default Constructor
 	 *
-	 * @param  throwExceptions
+	 * \param  throwExceptions
 	 *               [in] If <tt>true</tt> then <tt>this->parse()</tt> with throw
 	 *               exceptions instead of returning <tt>!=PARSE_SUCCESSFUL</tt>.
-	 * @param  recogniseAllOptions
+	 * \param  recogniseAllOptions
 	 *               [in] If <tt>true</tt> then <tt>this->parse()</tt> with simply
 	 *               ignore options that it does not recognize.
-   * @param  addOutputSetupOptions
+   * \param  addOutputSetupOptions
    *               [in] If <tt>true</tt> then options will be automatically added
    *               to setup <tt>Teuchos::VerboseObjectBase::getDefaultOStream()</tt>.
 	 */
@@ -137,19 +138,20 @@ public:
 	/** \name Set up options */
   //@{
   
-  /** \brief Set a documentation sting for the entire program printed when --help is specified. */
+  /** \brief Set a documentation sting for the entire program printed when
+   * --help is specified. */
   void setDocString( const char doc_string[] );
 
 	/** \brief Set a boolean option.
 	 *
-	 * @param  option_true    [in] (null terminated string) If this option is found then
+	 * \param  option_true    [in] (null terminated string) If this option is found then
 	 *                        <tt>*option_val = true</tt> will be set.
-	 * @param  option_false   [in] (null terminated string) If this option is found then
+	 * \param  option_false   [in] (null terminated string) If this option is found then
 	 *                        <tt>*option_val = false</tt> will be set.
-	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
+	 * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
 	 *                        will be set according to <tt>(argc,argv[])</tt>.
-	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -161,12 +163,12 @@ public:
 
 	/** \brief Set an integer option.
 	 *
-	 * @param  option_name    [in] (null terminated string) The name of the option
+	 * \param  option_name    [in] (null terminated string) The name of the option
 	 *                        (without the leading '--' or trailing '=').
-	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
+	 * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
 	 *                        will be set according to <tt>(argc,argv[])</tt>.
-	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -177,12 +179,12 @@ public:
 
 	/** \brief Set a floating-point option.
 	 *
-	 * @param  option_name    [in] (null terminated string) The name of the option
+	 * \param  option_name    [in] (null terminated string) The name of the option
 	 *                        (without the leading '--' or trailing '=').
-	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
+	 * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
 	 *                        will be set according to <tt>(argc,argv[])</tt>.
-	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -193,12 +195,12 @@ public:
 
 	/** \brief Set a string option.
 	 *
-	 * @param  option_name    [in] (null terminated string) The name of the option
+	 * \param  option_name    [in] (null terminated string) The name of the option
 	 *                        (without the leading '--' or trailing '=').
-	 * @param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
+	 * \param  option_val     [in/out] On input, <tt>*option_val</tt> gives the default value
 	 *                        of the option (used for printing in --help).  On output,
 	 *                        will be set according to <tt>(argc,argv[])</tt>.
-	 * @param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
+	 * \param  documentation  [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *                        gives the documentation for the option.
 	 */
 	void setOption(
@@ -209,26 +211,26 @@ public:
 	
 	/** \brief Set an enumeration option (templated by enumeration type).
 	 *
-	 * @param  enum_option_name
+	 * \param  enum_option_name
 	 *              [in] (null terminated string) The name of the option
 	 *              (without the leading '--' or trailing '=').
-	 * @param  enum_option_val
+	 * \param  enum_option_val
 	 *              [in/out] On input, <tt>*enum_option_val</tt> give the default
 	 *              value of the enumeration (used for printing in --help).
 	 *              After <tt>parse()</tt> finished executing successfully, 
 	 *              <tt>*enum_option_val</tt> will contain the user-selected
 	 *              value of the enumeration.
-	 * @param  num_enum_opt_values
+	 * \param  num_enum_opt_values
 	 *              [in] Gives the number of possible option values to select
-	 * @param  enum_opt_values
+	 * \param  enum_opt_values
 	 *              [in] Array (length <tt>num_enum_opt_values</tt>)) that gives
 	 *              the numeric values for each option.  The values in this
 	 *              array are used to set the actual option <tt>*enum_option_val</tt>.
-	 * @param  enum_opt_names
+	 * \param  enum_opt_names
 	 *              [in] Array (length <tt>num_enum_opt_values</tt>)) that gives
 	 *              the string names for each option.  The strings in this function
 	 *              are what is used in the commandline.
-	 * @param  documentation
+	 * \param  documentation
 	 *              [in] If <tt>!=NULL</tt>, then this null terminated string
 	 *              gives the documentation for the option.
 	 *
@@ -238,7 +240,7 @@ public:
 	template <class EType>
 	void setOption(
 		const char    enum_option_name[]
-		,EType       *enum_option_val
+		,EType        *enum_option_val
 		,const int    num_enum_opt_values
 		,const EType  enum_opt_values[]
 		,const char*  enum_opt_names[]
@@ -252,10 +254,10 @@ public:
 
 	/** \brief Parse a command line.
 	 *
-	 * @param  argc    [in] number of entries in argv[]
-	 * @param  argv    [in/out] array (length argc) of command line arguments.
+	 * \param  argc    [in] number of entries in argv[]
+	 * \param  argv    [in/out] array (length argc) of command line arguments.
 	 *                 argv[0] should be the name of the program on the shell as usual.
-	 * @param  errout  [out] If <tt>!=NULL</tt> then error and help messages are sent here.
+	 * \param  errout  [out] If <tt>!=NULL</tt> then error and help messages are sent here.
 	 *                 The default is set to <tt>&std::cerr</tt>.
 	 *
 	 * Postconditions:
@@ -312,7 +314,7 @@ public:
 	EParseCommandLineReturn  parse(
 		int             argc
 		,char*          argv[]
-		,std::ostream   *errout    = &std::cerr
+		,std::ostream   *errout = &std::cerr
 		) const;
 
 	//@}
@@ -322,7 +324,7 @@ public:
 
 	/** \brief Print the help message.
 	 *
-	 * @param  out  [in/out] The stream the documentation will be printed to.
+	 * \param  out  [in/out] The stream the documentation will be printed to.
 	 *
 	 * This will print a formatted set of documentation that shows what
 	 * options are set, what their default values are and any
