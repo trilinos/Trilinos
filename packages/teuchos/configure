@@ -13380,7 +13380,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.teuchos src/Makefile test/Makefile test/BLAS/Makefile test/Comm/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/exit/Makefile test/FancyOutputting/Makefile test/Handle/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/Workspace/Makefile test/Polling/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/run-teuchos-tests.pl test/scripts/daily/mpi/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile"
+                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.teuchos src/Makefile test/Makefile test/BLAS/Makefile test/Comm/Makefile test/LAPACK/Makefile test/DenseMatrix/Makefile test/dyn_cast/Makefile test/exit/Makefile test/FancyOutputting/Makefile test/Handle/Makefile test/ParameterList/Makefile test/Containers/Makefile test/Time/Makefile test/RefCountPtr/Makefile test/XML/Makefile test/XMLParser/Makefile test/Workspace/Makefile test/Polling/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/run-teuchos-tests.pl test/scripts/daily/mpi/Makefile example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -14048,6 +14048,7 @@ do
   "test/Time/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Time/Makefile" ;;
   "test/RefCountPtr/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/RefCountPtr/Makefile" ;;
   "test/XML/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/XML/Makefile" ;;
+  "test/XMLParser/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/XMLParser/Makefile" ;;
   "test/Workspace/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Workspace/Makefile" ;;
   "test/Polling/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Polling/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;

@@ -756,6 +756,7 @@ AC_CONFIG_FILES([
 		test/Time/Makefile
 		test/RefCountPtr/Makefile
 		test/XML/Makefile
+		test/XMLParser/Makefile
 		test/Workspace/Makefile
 		test/Polling/Makefile
 		test/scripts/Makefile
