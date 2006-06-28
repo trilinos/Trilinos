@@ -55,9 +55,15 @@ public:
    */
   static Teuchos::RefCountPtr<const Comm<Ordinal> > getComm();
 
+  /** \brief Return a serial comm if the input comm in null.
+   */
+  static Teuchos::RefCountPtr<const Comm<Ordinal> >
+  getDefaultSerialComm( const Teuchos::RefCountPtr<const Comm<Ordinal> > &comm );
+
 private:
 
   static Teuchos::RefCountPtr<const Comm<Ordinal> > comm_;
+  static Teuchos::RefCountPtr<const Comm<Ordinal> > defaultSerialComm_;
 
 };
 
@@ -80,7 +86,24 @@ DefaultComm<Ordinal>::getComm()
 
 template<typename Ordinal>
 Teuchos::RefCountPtr<const Teuchos::Comm<Ordinal> >
+DefaultComm<Ordinal>::getDefaultSerialComm(
+  const Teuchos::RefCountPtr<const Comm<Ordinal> > &comm
+  )
+{
+  if( comm.get() )
+    return comm;
+  else
+    return defaultSerialComm_;
+}
+
+template<typename Ordinal>
+Teuchos::RefCountPtr<const Teuchos::Comm<Ordinal> >
 DefaultComm<Ordinal>::comm_ = Teuchos::null;
+
+template<typename Ordinal>
+Teuchos::RefCountPtr<const Teuchos::Comm<Ordinal> >
+DefaultComm<Ordinal>::defaultSerialComm_
+= Teuchos::rcp(new Teuchos::SerialComm<Ordinal>());
 
 } // namespace Teuchos
 
