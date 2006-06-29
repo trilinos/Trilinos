@@ -100,6 +100,9 @@ int MatrixMarketFileToMultiVector( const char *filename, const Epetra_BlockMap &
     }
   }
 
+  if (fclose(handle)) return(-1);
+  
   return(0);
 }
+
 } // namespace EpetraExt
