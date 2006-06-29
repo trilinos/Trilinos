@@ -46,7 +46,7 @@ template <class Scalar> class SpmdVectorBase;
  * The default constructor is made private to avoid accidental default
  * construction.
  *
- * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
 class DefaultClusteredSpmdProductVector

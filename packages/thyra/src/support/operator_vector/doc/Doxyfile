@@ -16,8 +16,8 @@ INPUT                  = ../src/support/operator_vector/doc/index.doc \
                          ../src/support/operator_vector/client_support \
                          ../src/support/operator_vector/adapter_support \
                          ./dirs.doc \
-                         ../example/operator_vector/SerialTridiagLinearOp.hpp \
-                         ../example/operator_vector/MPITridiagLinearOp.hpp \
+                         ../example/operator_vector/ExampleTridiagSerialLinearOp.hpp \
+                         ../example/operator_vector/ExampleTridiagSpmdLinearOp.hpp \
                          ../example/operator_vector/sillyCgSolve.hpp \
                          ../example/operator_vector/sillyPowerMethod.hpp
 FILE_PATTERNS          = *.h *c *.hpp *.cpp

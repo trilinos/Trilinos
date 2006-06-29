@@ -39,7 +39,7 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
 class SpmdMultiVectorSerializer {

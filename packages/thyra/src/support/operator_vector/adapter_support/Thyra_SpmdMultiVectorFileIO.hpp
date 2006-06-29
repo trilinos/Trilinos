@@ -36,6 +36,8 @@ namespace Thyra {
 
 /** \brief Utility class for reading and writing parallel (or any serial)
  * Thyra vectors to and from parallel files.
+ *
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
 class SpmdMultiVectorFileIO {

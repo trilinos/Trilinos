@@ -171,9 +171,9 @@ structure of thyra</a>.
   interfaces.  For example, you will find things as unit testing classes
   (e.g. <tt>Thyra::LinearOpTester</tt>), and concrete product spaces/vectors/multi-vectors
   (e.g. <tt>Thyra::DefaultProductVectorSpace</tt>).  Also included is adapter support
-  and concrete implementations for serial and MPI-based space/vector/multi-vector implementations
-  (e.g. <tt>Thyra::DefaultSerialVectorSpace</tt> and <tt>Thyra::DefaultMPIVectorSpace</tt>).
-  Several examples are also included including once for CG and the Power Method .  This collection
+  and concrete implementations for serial and SPMD space/vector/multi-vector implementations
+  (e.g. <tt>Thyra::DefaultSpmdVectorSpace</tt>).  Several examples are also
+  included including once for CG and the Power Method .  This collection
   of software is really too vast to give a full sense of what it contains
   in this short description.
 
@@ -236,8 +236,8 @@ independent</em> code and all of the %Thyra software uses this traits class.
 Any scalar type that is to be used as a <tt>Scalar</tt> must provide a
 specialization of this traits class (see source code for
 <tt>Teuchos_ScalarTraits.hpp</tt> for examples of how to do this).  In
-addition, if MPI is to be used then specializations of the traits classes
-<tt>Teuchos::PrimitiveTypeTraits</tt> and <tt>Teuchos::RawMPITraits</tt> must
+addition, if SPMD distributed-memory computing is to be used then
+specializations of the traits class <tt>Teuchos::SerializationTraits</tt> must
 also be provided.
 
 The %Thyra interfaces and related software are not templated on an index

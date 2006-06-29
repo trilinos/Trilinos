@@ -60,7 +60,11 @@ directory with no impact on interoperability.
 
 This directory combines any and all support code related to operator
 (i.e. matrices), vector spaces, vectors etc. that is geared toward making
-operator/vector objects easier to use.
+operator/vector objects easier to use but is totally indepenent of any
+specific type of vector space, vector, multi-vector, or linear operator
+implementation.  For example, none of the code in this directory depends on
+the operator_vector/adapter_support code and therefore does not assume a
+serial or an SPMD environment.
 
 */
 

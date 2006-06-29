@@ -32,14 +32,10 @@
 #include "Thyra_ConfigDefs.hpp"
 
 
-/** \def
- * Boilerplate code for defining unary vector transformation operations
+/** \brief Boilerplate code for defining unary vector transformation
+ * operations.
  */ 
-
 #define THYRA_UNARY_VECTOR_OP(opName, intoOpName, thyraOpName, descr)   \
-  /* \relates Vector                                                    \
-   * Returns descr as a new vector                                      \
-   */                                                                   \
   template <class Scalar> inline                                        \
   Thyra::Vector<Scalar> opName(const Converter<Scalar, ConstVector<Scalar> >& x) \
   {                                                                     \
@@ -48,9 +44,6 @@
     intoOpName(y, rtn);                                                 \
     return rtn;                                                         \
   }                                                                     \
-  /* \relates Vector                                                    \
-   * Computes descr and writes into the acceptor vector                 \
-   */                                                                   \
   template <class Scalar> inline                                        \
   void intoOpName(const Converter<Scalar, ConstVector<Scalar> >& donorSource,   \
                   Vector<Scalar>& acceptor)                             \
@@ -66,31 +59,19 @@
   }      
 
       
-/** \def
- * Boilerplate code for declaring unary vector transformation operations
+/** \brief Boilerplate code for declaring unary vector transformation
+ * operations.
  */                                                         
 #define THYRA_UNARY_VECTOR_OP_DECL(opName, intoOpName, thyraOpName, descr) \
-  /** \relates Vector                                                   \
-   * Returns descr as a new vector                                      \
-   */                                                                   \
   template <class Scalar>                                               \
   Vector<Scalar> opName(const Converter<Scalar, ConstVector<Scalar> >& x);      \
-  /** \relates Vector                                                   \
-   * Computes descr and writes into the acceptor vector                 \
-   */                                                                   \
   template <class Scalar>                                               \
   void intoOpName(const Converter<Scalar, ConstVector<Scalar> >& donor,         \
                   Vector<Scalar>& acceptor)
 
-
-
-/** \def
- * Boilerplate code for defining unary vector reduction operations
+/** \brief Boilerplate code for defining unary vector reduction operations.
  */ 
 #define THYRA_UNARY_VECTOR_ROP(funcName, ROpName, descr)    \
-  /** \relates Vector                                       \
-   * Returns the descr of a vector                          \
-   */                                                       \
   template <class Scalar> inline                            \
   Scalar funcName(const Converter<Scalar, ConstVector<Scalar> >& x) \
   {                                                         \
@@ -98,17 +79,10 @@
     return Thyra::ROpName(*(y.ptr)());                      \
   }                                                                    
 
-
-
-/** \def
- * Boilerplate code for declaring unary vector reduction operations
+/** \brief Boilerplate code for declaring unary vector reduction operations.
  */ 
 #define THYRA_UNARY_VECTOR_ROP_DECL(funcName, ROpName, descr) \
-  /** \relates Vector                                         \
-   * Returns the descr of a vector                            \
-   */                                                         \
   template <class Scalar>                                     \
   Scalar funcName(const Converter<Scalar, ConstVector<Scalar> >& x)           
-
 
 #endif

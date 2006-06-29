@@ -41,7 +41,7 @@ namespace Thyra {
  * <tt>LinearOpBase::applyTranspose()</tt> and is not meant to be used as an
  * client interface.
  *
- * \ingroup Thyra_Op_Vec_general_adapter_support_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 class SingleScalarLinearOpBase : virtual public LinearOpDefaultBase<Scalar> {

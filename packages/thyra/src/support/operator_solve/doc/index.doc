@@ -54,9 +54,28 @@ Thyra ANA Operator Solve Interfaces</a>.
 
 <ul>
 
-<li> <a href="../../../../interfaces/operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator/Vector Interfaces</a>
-<li> <a href="../../../../interfaces/operator_solve/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator Solve Interfaces</a>
-<li> <a href="../../../../../doc/html/index.html">Main Thyra package documentation page</a>
+<li> <b><a href="../../../../../doc/html/index.html">Main Thyra package documentation page</a></b>
+
+<li> <b><a href="../../../../interfaces/operator_vector/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator/Vector Interfaces</a></b>
+
+<li> <b><a href="../../../../interfaces/operator_solve/ana/fundamental/doc/html/index.html">Fundamental Thyra ANA Operator Solve Interfaces</a></b>
+
+<li><b><a href="../../../../../../amesos/thyra/doc/html/index.html">ANA Linear Solver
+Adapters for Amesos</a></b>: This software defines the implementation of the
+extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
+<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
+<tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
+take any <tt>Epetra_RowMatrix</tt> object embedded in a
+<tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
+direct linear solver.
+
+<li><b><a href="../../../../../../aztecoo/thyra/doc/html/index.html">ANA Linear Solver
+Adapters for AztecOO</a></b>: This software defines the implementation of the
+extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
+<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
+class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
+object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
+to to define an iterative linear solver such as GMRES or CG.
 
 </ul>
 

@@ -29,7 +29,6 @@
 #ifndef THYRA_VECTOR_SPACE_DEFAULT_BASE_DECL_HPP
 #define THYRA_VECTOR_SPACE_DEFAULT_BASE_DECL_HPP
 
-#include "Thyra_OperatorVectorAdapterSupportTypes.hpp"
 #include "Thyra_VectorSpaceBaseDecl.hpp"
 
 namespace Thyra {
@@ -53,7 +52,7 @@ namespace Thyra {
  * implementing <tt>createMembers()</tt> also entails defining a concrete
  * <tt>MultiVectorBase</tt> subclass.
  *
- * \ingroup Thyra_Op_Vec_Adapters_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 class VectorSpaceDefaultBase : virtual public VectorSpaceBase<Scalar> {

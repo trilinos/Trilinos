@@ -63,7 +63,7 @@ namespace Thyra {
  * The default copy constructor and assign operator are allowed and they work
  * correctly and perform shallow copies of the constituent vector spaces!
  *
- * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class Scalar>
 class DefaultClusteredSpmdProductVectorSpace

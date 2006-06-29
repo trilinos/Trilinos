@@ -29,7 +29,6 @@
 #ifndef THYRA_LINEAR_OP_DEFAULT_DECL_HPP
 #define THYRA_LINEAR_OP_DEFAULT_DECL_HPP
 
-#include "Thyra_OperatorVectorAdapterSupportTypes.hpp"
 #include "Thyra_LinearOpBaseDecl.hpp"
 
 namespace Thyra {
@@ -37,7 +36,7 @@ namespace Thyra {
 /** \brief Node subclass that provides a good default implementation for
  * the <tt>describe()</tt> function.
  *
- * \ingroup Thyra_Op_Vec_Adapters_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class RangeScalar, class DomainScalar = RangeScalar>
 class LinearOpDefaultBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {

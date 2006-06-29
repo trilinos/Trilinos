@@ -90,9 +90,9 @@ collection.
 
 <li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
 
-<li> \ref Thyra_Op_Vec_Adapters_grp
-
 <li> \ref Thyra_Op_Vec_ANA_Development_grp
+
+<li> \ref Thyra_Op_Vec_Adapters_grp
 
 </ol>
 
@@ -132,23 +132,6 @@ Adapters for Epetra</a></b>: This software allows the creation of
 <tt>Thyra::VectorSpaceBase</tt>, <tt>Thyra::VectorBase</tt>,
 <tt>Thyra::MultiVectorBase</tt>, and <tt>Thyra::LinearOpBase</tt> objects out
 of Epetra objects.
-
-<li><b><a href="../../../../../../amesos/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for Amesos</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of
-<tt>Amesos_BaseSolver</tt> implementations.  These adapters allow a client to
-take any <tt>Epetra_RowMatrix</tt> object embedded in a
-<tt>Thyra::EpetraLinearOp</tt> object and immediately use to to define a
-direct linear solver.
-
-<li><b><a href="../../../../../../aztecoo/thyra/doc/html/index.html">ANA Linear Solver
-Adapters for AztecOO</a></b>: This software defines the implementation of the
-extended interfaces <tt>Thyra::LinearOpWithSolveBase</tt> and
-<tt>Thyra::LinearOpWithSolveFactoryBase</tt> in terms of the <tt>AztecOO</tt>
-class.  These adapters allow a client to take any <tt>Epetra_RowMatrix</tt>
-object embedded in a <tt>Thyra::EpetraLinearOp</tt> object and immediately use
-to to define an iterative linear solver such as GMRES or CG.
 
 </ul>
 

@@ -49,7 +49,7 @@ namespace Thyra {
  * should be overridden if subviews are important.  The default implementation
  * will not achieve near-optimal performance in many cases.
  *
- * \ingroup Thyra_Op_Vec_Adapters_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 class MultiVectorDefaultBase

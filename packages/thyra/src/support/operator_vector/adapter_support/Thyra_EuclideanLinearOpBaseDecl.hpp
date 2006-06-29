@@ -29,6 +29,7 @@
 #ifndef THYRA_EUCLIDEAN_LINEAR_OP_DECL_HPP
 #define THYRA_EUCLIDEAN_LINEAR_OP_DECL_HPP
 
+#include "Thyra_OperatorVectorAdapterSupportTypes.hpp"
 #include "Thyra_LinearOpDefaultBaseDecl.hpp"
 
 namespace Thyra {
