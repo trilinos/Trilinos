@@ -37,7 +37,7 @@ objects, that can only be written to files.
 An example of usage is reported in file epetraext/example/inout/XML_IO.cpp.
 
 Writing objects goes as follows. Let \c Map, \c Matrix, \c LHS and \c RHS an 
-Epetra_Map, Epetra_CrsMatrix, and two Epetra_MultiVector's, respectively. First, we define and XMLWriter object
+Epetra_Map, Epetra_CrsMatrix, and two Epetra_MultiVector's, respectively. First, we define an XMLWriter object
 \code
 EpetraExt::XMLWriter XMLWriter(Comm, "data.xml");
 \endcode
