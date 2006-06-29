@@ -116,6 +116,8 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   else {
     A->FillComplete();
   }
+  
+  if (fclose(handle)) return(-1);
 
   return(0);
 }
