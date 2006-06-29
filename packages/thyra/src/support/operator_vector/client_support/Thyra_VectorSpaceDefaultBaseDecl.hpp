@@ -41,43 +41,22 @@ namespace Thyra {
  * <b>Notes to Subclass Developers</b>
  *
  * Because of the default multi-vector implementation used in this node
- * subclasses, a concrete subclass is only required to override three methods:
- * <tt>dim()</tt>, <tt>isCompatible()</tt> and <tt>createMember()</tt>.  Note
- * that implementing the <tt>createMember()</tt> method also entails defining
- * a concrete <tt>VectorBase</tt> subclass.
+ * subclasses, a concrete subclass is only required to override four
+ * functions: <tt>dim()</tt>, <tt>isCompatible()</tt>, <tt>createMember()</tt>
+ * and <tt.smallVecSpcFcty()</tt>.  Note that implementing the
+ * <tt>createMember()</tt> method also entails defining a concrete
+ * <tt>VectorBase</tt> subclass and defining <tt>smallVecSpcFcty()</tt>
+ * entails defining a concrete <tt>VectorSpaceFactoryBase</tt> subclass.
  *
  * If a subclass can support specialized multi-vectors, then the
  * <tt>createMembers()</tt> function should be overridden as well.  Note that
  * implementing <tt>createMembers()</tt> also entails defining a concrete
- * <tt>MultiVectorBase</tt> subclass.  For some types of concrete
- * <tt>MultiVectorBase</tt> subclass implementations (e.g. serial
- * multi-vectors), the same default <tt>VectorSpaceFactoryBase</tt> typed
- * object returned from the <tt>smallVecSpcFcty()</tt> override provided in
- * this node subclass can be reused in the concrete subclass.  However, more
- * specialized <tt>MultiVectorBase</tt> subclasses (e.g. distributed memory
- * parallel) may require an override of the <tt>smallVecSpcFcty()</tt> method
- * to return a specialized type of <tt>VectorSpaceFactoryBase</tt> object.
+ * <tt>MultiVectorBase</tt> subclass.
  *
  * \ingroup Thyra_Op_Vec_Adapters_grp
  */
 template<class Scalar>
 class VectorSpaceDefaultBase : virtual public VectorSpaceBase<Scalar> {
-public:
-
-  /** @name Public functions overridden from VectorSpaceBase */ 
-  //@{
-
-  /** \brief .
-   *
-   * The default implementation returns <tt>dynamic_cast<
-   * SerialVectorSpaceFactory<Scalar> >(return.get())!=NULL</tt>.  Note that
-   * if a subclass overrides <tt>createMembers()</tt> then it may also need to
-   * override this method as well.
-   */
-  Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
-
-  //@}
-
 protected:
 
   /** @name Protected functions overridden from VectorSpaceBase */

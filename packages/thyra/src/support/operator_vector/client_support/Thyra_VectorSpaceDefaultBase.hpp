@@ -31,7 +31,6 @@
 
 #include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
-#include "Thyra_DefaultSpmdVectorSpaceFactory.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultColumnwiseMultiVector.hpp"
@@ -76,14 +75,7 @@ private:
   const RTOpPack::SubMultiVectorView<Scalar>  raw_mv_;
 };
 
-// Overridden from VectorSpaceBase
-
-template<class Scalar>
-Teuchos::RefCountPtr<const VectorSpaceFactoryBase<Scalar> >
-VectorSpaceDefaultBase<Scalar>::smallVecSpcFcty() const
-{
-  return Teuchos::rcp(new DefaultSpmdVectorSpaceFactory<Scalar>());
-}
+// Overridden protected functions from VectorSpaceBase
 
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> > 
