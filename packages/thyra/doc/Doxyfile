@@ -15,6 +15,7 @@ INPUT                  = ./index.doc \
                          ./dirs.doc \
                          ./faq.doc
 IMAGE_PATH             = ./images ../src/support/operator_vector/doc/images
+EXAMPLE_PATH           = ../example
 EXCLUDE                = 
 EXAMPLE_PATTERNS       =
 INPUT_FILTER           = 
