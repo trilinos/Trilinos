@@ -31,12 +31,13 @@
 %{
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_CrsSingletonFilter.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
-#include "Epetra_JadOperator.h"
+#include "Epetra_JadMatrix.h"
 #include "Epetra_LinearProblem.h"
 
 // Local includes
@@ -79,16 +80,19 @@
 %ignore Epetra_CrsMatrix::ExtractGlobalRowView(int,int,int&,double*&);
 %ignore Epetra_CrsMatrix::ExtractMyRowView(    int,int,int&,double*&);
 %ignore Epetra_CrsMatrix::ExtractCrsDataPointers(int*&,int*&,double*&);
+%ignore Epetra_BasicRowMatrix::ExtractMyEntryView(int,double*,int&,int&);
+%ignore Epetra_JadMatrix::ExtractMyEntryView(int,double*,int&,int&);
 
 // Rename directives
 %rename(Operator          ) Epetra_Operator;
 %rename(RowMatrix         ) Epetra_RowMatrix;
+%rename(BasicRowMatrix    ) Epetra_BasicRowMatrix;
 %rename(CrsMatrix         ) Epetra_CrsMatrix;
 %rename(FECrsMatrix       ) Epetra_FECrsMatrix;
 %rename(CrsSingletonFilter) Epetra_CrsSingletonFilter;
 %rename(VbrMatrix         ) Epetra_VbrMatrix;
 %rename(FEVbrMatrix       ) Epetra_FEVbrMatrix;
-%rename(JadOperator       ) Epetra_JadOperator;
+%rename(JadMatrix         ) Epetra_JadMatrix;
 %rename(LinearProblem     ) Epetra_LinearProblem;
 
 // Exceptions
@@ -102,19 +106,20 @@ EXCEPTION_HANDLER(Epetra_CrsMatrix    ,SumIntoMyValues    )
 EXCEPTION_HANDLER(Epetra_CrsMatrix    ,OptimizeStorage    )
 EXCEPTION_HANDLER(Epetra_CrsMatrix    ,__setitem__        )
 EXCEPTION_HANDLER(Epetra_FastCrsMatrix,FastCrsMatrix      )
-EXCEPTION_HANDLER(Epetra_JadOperator  ,Epetra_JadOperator )
+EXCEPTION_HANDLER(Epetra_JadMatrix    ,Epetra_JadMatrix   )
 
 // Include directives
 %warnfilter(473) Epetra_Operator;
 %warnfilter(473) Epetra_RowMatrix;
 %include "Epetra_Operator.h"
 %include "Epetra_RowMatrix.h"
+%include "Epetra_BasicRowMatrix.h"
 %include "Epetra_CrsMatrix.h"
 %include "Epetra_FECrsMatrix.h"
 %include "Epetra_CrsSingletonFilter.h"
 %include "Epetra_VbrMatrix.h"
 %include "Epetra_FEVbrMatrix.h"
-%include "Epetra_JadOperator.h"
+%include "Epetra_JadMatrix.h"
 %include "Epetra_LinearProblem.h"
 
 // Macro code
