@@ -383,9 +383,9 @@ uninstall-am: uninstall-info-am
 
 @USING_EXPORT_MAKEFILES_TRUE@install-data-local:
 @USING_EXPORT_MAKEFILES_TRUE@	$(mkinstalldirs) $(exec_prefix)/example/thyra ; \
-@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../ana/operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
-@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../ana/operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
-@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../ana/operator_vector/SerialTridiagLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
+@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
+@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
+@USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/../operator_vector/ExampleTridiagSerialLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
 @USING_EXPORT_MAKEFILES_TRUE@  $(INSTALL_DATA) $(srcdir)/Makefile $(exec_prefix)/example/thyra/.
 
 @USING_EXPORT_MAKEFILES_FALSE@install-data-local:

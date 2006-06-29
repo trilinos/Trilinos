@@ -295,14 +295,23 @@ INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBaseDecl.hpp
 
 INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_AddedLinearOpBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_BlockedLinearOpBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_DiagonalLinearOpBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_IdentityLinearOpBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MultiVectorRandomizerBase.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_VectorSpaceConverterBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MultipliedLinearOpBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_PhysicallyBlockedLinearOpBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_PolynomialVectorTraits.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ProductMultiVectorBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ProductVectorBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ProductVectorSpaceBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ScaledAdjointLinearOpBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ScaledAdjointLinearOpBaseDecl.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_PolynomialVectorTraits.hpp
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_SpmdVectorSpaceBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_SpmdVectorSpaceBaseDecl.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_VectorSpaceConverterBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ZeroLinearOpBase.hpp
 
 INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\

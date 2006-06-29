@@ -32,9 +32,9 @@ if USING_EXPORT_MAKEFILES
 
 install-data-local:
 	$(mkinstalldirs) $(exec_prefix)/example/thyra ; \
-  $(INSTALL_DATA) $(srcdir)/../ana/operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
-  $(INSTALL_DATA) $(srcdir)/../ana/operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
-  $(INSTALL_DATA) $(srcdir)/../ana/operator_vector/SerialTridiagLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
+  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve.hpp $(exec_prefix)/example/thyra/. ; \
+  $(INSTALL_DATA) $(srcdir)/../operator_vector/sillyCgSolve_serial.cpp $(exec_prefix)/example/thyra/. ; \
+  $(INSTALL_DATA) $(srcdir)/../operator_vector/ExampleTridiagSerialLinearOp.hpp $(exec_prefix)/example/thyra/. ; \
   $(INSTALL_DATA) $(srcdir)/Makefile $(exec_prefix)/example/thyra/.
 
 else
