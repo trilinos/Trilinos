@@ -28,6 +28,7 @@
 */
 
 #include "test_single_aztecoo_thyra_solver.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "az_aztec_defs.h"
@@ -70,6 +71,8 @@ struct MatrixTestPacket {
 
 int main(int argc, char* argv[])
 {
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   
   using Teuchos::CommandLineProcessor;
 

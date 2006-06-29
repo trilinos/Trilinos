@@ -40,8 +40,9 @@
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_OpaqueWrapper.hpp"
 #include "Teuchos_Time.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #ifdef RTOp_USE_MPI
 #  include "Epetra_MpiComm.h"
 #endif
@@ -117,6 +118,9 @@ int main( int argc, char* argv[] )
   using Thyra::NOTRANS;
   using Thyra::TRANS;
   using Thyra::apply;
+  using Thyra::create_VectorSpace;
+  using Thyra::create_Vector;
+  using Thyra::create_MultiVector;
   
   bool verbose = true;
   bool dumpAll = false;
@@ -211,10 +215,15 @@ int main( int argc, char* argv[] )
       if(verbose) *out << "\nCreating vector space using Epetra_MpiComm ...\n";
       epetra_comm = rcp(new Epetra_MpiComm(mpiComm));
       epetra_map = rcp(new Epetra_Map(-1,local_dim,0,*epetra_comm));
-      epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
+      epetra_vs = Thyra::create_VectorSpace(epetra_map);
       // Non-Epetra vector space
-      if(verbose) *out << "\nCreating Thyra::DefaultMPIVectorSpace ...\n";
-      non_epetra_vs = rcp(new Thyra::DefaultMPIVectorSpace<Scalar>(mpiComm,local_dim,-1));
+      if(verbose) *out << "\nCreating Thyra::DefaultSpmdVectorSpace ...\n";
+      non_epetra_vs = rcp(
+        new Thyra::DefaultSpmdVectorSpace<Scalar>(
+          Thyra::create_Comm(epetra_comm)
+          ,local_dim,-1
+          )
+        );
     }
     else {
 #endif
@@ -225,10 +234,10 @@ int main( int argc, char* argv[] )
       if(verbose) *out << "\nCreating vector space using Epetra_SerialComm ...\n";
       epetra_comm = rcp(new Epetra_SerialComm);
       epetra_map = rcp(new Epetra_LocalMap(local_dim,0,*epetra_comm));
-      epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
+      epetra_vs = Thyra::create_VectorSpace(epetra_map);
       // Non-Epetra vector space
-      if(verbose) *out << "\nCreating Thyra::DefaultMPIVectorSpace ...\n";
-      non_epetra_vs = rcp(new Thyra::DefaultMPIVectorSpace<Scalar>(MPI_COMM_NULL,local_dim,-1));
+      if(verbose) *out << "\nCreating Thyra::DefaultSpmdVectorSpace ...\n";
+      non_epetra_vs = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(local_dim));
 #ifdef RTOp_USE_MPI
     }
 #endif // end create vector spacdes [Doxygen looks for this!]
@@ -690,8 +699,8 @@ int main( int argc, char* argv[] )
 
     if(1) {
 
-      Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >
-        mpi_vs = Teuchos::rcp_dynamic_cast<const Thyra::MPIVectorSpaceBase<Scalar> >(epetra_vs,true);
+      Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >
+        mpi_vs = Teuchos::rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<Scalar> >(epetra_vs,true);
       Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<Scalar> >
         sp_domain = Teuchos::rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<Scalar> >(eV1->domain(),true);
 
@@ -703,9 +712,9 @@ int main( int argc, char* argv[] )
 
       if(verbose) *out << "\nCreating non-const VectorBase t1 and MultiVectorBase T1 objects from et1 and eT2 ...\n";
       Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
-        t1 = create_MPIVectorBase(et1,mpi_vs);
+        t1 = create_Vector(et1,mpi_vs);
       Teuchos::RefCountPtr<Thyra::MultiVectorBase<Scalar> >
-        T1 = create_MPIMultiVectorBase(eT1,mpi_vs,sp_domain);
+        T1 = create_MultiVector(eT1,mpi_vs,sp_domain);
 
       if(verbose) *out << "\nPerforming t1 = ev1 ...\n";
       assign( &*t1, *ev1 );
@@ -737,9 +746,9 @@ int main( int argc, char* argv[] )
 
       if(verbose) *out << "\nCreating const VectorBase ct1 and MultiVectorBase cT1 objects from et1 and eT2 ...\n";
       Teuchos::RefCountPtr<const Thyra::VectorBase<Scalar> >
-        ct1 = create_MPIVectorBase(Teuchos::rcp_implicit_cast<const Epetra_Vector>(et1),mpi_vs);
+        ct1 = create_Vector(Teuchos::rcp_implicit_cast<const Epetra_Vector>(et1),mpi_vs);
       Teuchos::RefCountPtr<const Thyra::MultiVectorBase<Scalar> >
-        cT1 = create_MPIMultiVectorBase(Teuchos::rcp_implicit_cast<const Epetra_MultiVector>(eT1),mpi_vs,sp_domain);
+        cT1 = create_MultiVector(Teuchos::rcp_implicit_cast<const Epetra_MultiVector>(eT1),mpi_vs,sp_domain);
 
       if(!testRelErr(
            "sum(ct1)",Thyra::sum(*ct1),"sum(ev1)",sum(*ev1)
@@ -884,7 +893,7 @@ int main( int argc, char* argv[] )
     }
     
     if(verbose)
-      *out << "\nPerforming eV1 = eV2 (using Thyra::MPIMultiVectorBase::applyOp(...)) " << num_time_loops_1 << " times ...\n";
+      *out << "\nPerforming eV1 = eV2 (using Thyra::SpmdMultiVectorBase::applyOp(...)) " << num_time_loops_1 << " times ...\n";
     timer.start(true);
     for(int k = 0; k < num_time_loops_1; ++k ) {
       Thyra::assign( &*eV1, *eV2 );
@@ -908,7 +917,7 @@ int main( int argc, char* argv[] )
 
     if(verbose)
       *out
-        << "\n*** (C.2) Comparing Thyra::MPIMultiVectorBase::apply() verses raw Epetra_MultiVector::Multiply()\n";
+        << "\n*** (C.2) Comparing Thyra::SpmdMultiVectorBase::apply() verses raw Epetra_MultiVector::Multiply()\n";
 
     const double flop_adjust_factor_2 = 2.0;
     const int num_time_loops_2 = int( max_flop_rate / ( flop_adjust_factor_2* local_dim * num_mv_cols * num_mv_cols ) ) + 1;
@@ -935,7 +944,7 @@ int main( int argc, char* argv[] )
     }
     
     if(verbose)
-      *out << "\nPerforming eV1'*eV2 (using Thyra::MPIMultiVectorBase::apply(...)) "	<< num_time_loops_2 << " times ...\n";
+      *out << "\nPerforming eV1'*eV2 (using Thyra::SpmdMultiVectorBase::apply(...)) "	<< num_time_loops_2 << " times ...\n";
     timer.start(true);
     for(int k = 0; k < num_time_loops_2; ++k ) {
       apply( *eV1, TRANS, *eV2, &*T );
@@ -948,7 +957,7 @@ int main( int argc, char* argv[] )
     
     // RAB: 2004/01/05: Note, even though the Thyra adapter does
     // not actually call Epetra_MultiVector::Multiply(...), the
-    // implementation in Thyra::MPIMultiVectorBase::apply(...)
+    // implementation in Thyra::SpmdMultiVectorBase::apply(...)
     // performs almost exactly the same flops and calls dgemm(...)
     // as well.  Herefore, except for some small overhead, the raw
     // Epetra and the Thyra wrapped computations should give
@@ -997,19 +1006,12 @@ int main( int argc, char* argv[] )
     // computations should give ab*out exactly the same runtime for
     // almost all cases.
 
-    if(verbose) {
-      if(success) *out << "\nCongratulations! All of the tests seem to have run sucessfully!\n";
-      else        *out << "\nOh no! at least one of the tests did not check out!\n";
-    }
-
   } // end try
-  catch( const std::exception &excpt ) {
-    std::cerr << "p="<<procRank<<": *** Caught a standard exception: " << excpt.what() << std::endl;
-    success = -1;
-  }
-  catch( ... ) {
-    std::cerr << "p="<<procRank<<": *** Caught an unknown exception!\n";
-    success = -1;
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
+
+  if(verbose) {
+    if(success) *out << "\nCongratulations! All of the tests seem to have run sucessfully!\n";
+    else        *out << "\nOh no! at least one of the tests did not check out!\n";
   }
 
   return (success ? 0 : -1);

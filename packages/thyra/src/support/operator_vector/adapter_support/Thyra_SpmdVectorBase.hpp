@@ -32,6 +32,7 @@
 #include "Thyra_SpmdVectorBaseDecl.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
+#include "Thyra_apply_op_helper.hpp"
 #include "RTOp_parallel_helpers.h"
 #include "RTOpPack_SPMD_apply_op.hpp"
 #include "Teuchos_Workspace.hpp"

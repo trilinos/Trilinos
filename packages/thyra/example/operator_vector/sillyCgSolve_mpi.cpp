@@ -26,28 +26,28 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MPITridiagLinearOp.hpp"
+#include "ExampleTridiagSpmdLinearOp.hpp"
 #include "sillyCgSolve.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Time.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 //
-// This example program is meant to show how easy it is to create MPI
-// Thyra objects and use them with an ANA (CG in this case).
+// This example program is meant to show how easy it is to create MPI Thyra
+// objects and use them with an ANA (CG in this case).
 //
 // This example uses a silly concrete tridiagonal matrix class called
-// MPITridiagLinearOp that demonstrates how to write such
-// subclasses.
+// ExampleTridiagSpmdLinearOp that demonstrates how to write such subclasses.
 //
 template<class Scalar>
 bool runCgSolveExample(
-  MPI_Comm                                                       mpiComm
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> > &comm
   ,const int                                                     procRank
   ,const int                                                     numProc
   ,const int                                                     localDim
@@ -98,7 +98,7 @@ bool runCgSolveExample(
   }
   lower[kl] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one;     // Last local row
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A = rcp(new MPITridiagLinearOp<Scalar>(mpiComm,localDim,&lower[0],&diag[0],&upper[0]));
+    A = rcp(new ExampleTridiagSpmdLinearOp<Scalar>(comm,localDim,&lower[0],&diag[0],&upper[0]));
   if(verbose) *out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
   // (A.2) Testing the linear operator constructed linear operator
   if(verbose) *out << "\nTesting the constructed linear operator A ...\n";
@@ -165,7 +165,9 @@ int main(int argc, char *argv[])
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   const int procRank = Teuchos::GlobalMPISession::getRank();
   const int numProc = Teuchos::GlobalMPISession::getNProc();
-  MPI_Comm mpiComm = MPI_COMM_WORLD;
+
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+    comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -201,34 +203,27 @@ int main(int argc, char *argv[])
     TEST_FOR_EXCEPTION( localDim < 2, std::logic_error, "Error, localDim=" << localDim << " < 2 is not allowed!" );
 
     // Run using float
-    result = runCgSolveExample<float>(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<float>(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using double
-    result = runCgSolveExample<double>(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<double>(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
 
     // Run using std::complex<float>
-    result = runCgSolveExample<std::complex<float> >(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<float> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
     // Run using std::complex<double>
-    result = runCgSolveExample<std::complex<double> >(mpiComm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<double> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
 
 #endif		
 
   }
-  catch( const std::exception &excpt ) {
-    std::cerr << "*** p="<<procRank<<": Caught standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    std::cerr << "*** p="<<procRank<<":Caught an unknown exception\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
   if( verbose && procRank==0 ) {
     if(success) *out << "\nAll of the tests seem to have run successfully!\n";

@@ -26,30 +26,30 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTI_VECTOR_SERIALIZATION_DECL_HPP
-#define THYRA_MULTI_VECTOR_SERIALIZATION_DECL_HPP
+#ifndef THYRA_SPMD_MULTI_VECTOR_SERIALIZER_DECL_HPP
+#define THYRA_SPMD_MULTI_VECTOR_SERIALIZER_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 
 namespace Thyra {
 
-/** \brief Concrete utility class for reading and writing MPI-based
- * SPMD MultiVectorBase objects to and from standard streams.
+/** \brief Concrete utility class for reading and writing SPMD MultiVectorBase
+ * objects to and from standard streams.
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_adapters_MPI_support_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
  */
 template<class Scalar>
-class MultiVectorSerialization {
+class SpmdMultiVectorSerializer {
 public:
 
   /// Set to true if to use binary IO and to false if using ASCII.
   STANDARD_MEMBER_COMPOSITION_MEMBERS( bool, binaryMode )
 
   /** \brief . */
-  MultiVectorSerialization(
+  SpmdMultiVectorSerializer(
     const bool  binaryMode = false
     );
 
@@ -63,10 +63,10 @@ public:
    *
    * ToDo: Finish documentation!
    */
-  void unserialize( std::istream& in, MultiVectorBase<Scalar>* mv ) const;
+  void deserialize( std::istream& in, MultiVectorBase<Scalar>* mv ) const;
 
-}; // end class MultiVectorSerialization
+}; // end class SpmdMultiVectorSerializer
 
 } // end namespace Thyra
 
-#endif // THYRA_MULTI_VECTOR_SERIALIZATION_DECL_HPP
+#endif // THYRA_SPMD_MULTI_VECTOR_SERIALIZER_DECL_HPP

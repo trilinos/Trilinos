@@ -114,7 +114,13 @@ bool VectorSpaceTester<Scalar>::check(
   result = vectorTester_.multiVectorTester().check(*mv,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out <<endl<< "*** Leaving Thyra::VectorSpaceTester<"<<ST::name()<<">::check(vs,...) ...\n";
+  if(out.get()) {
+    if(success)
+      *out << endl <<"Congratulations, this VectorSpaceBase object seems to check out!\n";
+    else
+      *out << endl <<"Oh no, at least one of the tests performed with this VectorSpaceBase object failed (see above failures)!\n";
+    *out << endl << "*** Leaving VectorSpaceTester<"<<ST::name()<<">::check(vs,...)\n";
+  }
   
   return success;
 

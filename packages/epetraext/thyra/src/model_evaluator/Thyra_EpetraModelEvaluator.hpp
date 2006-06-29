@@ -143,8 +143,8 @@ private:
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > p_map_t;
   typedef std::vector<Teuchos::RefCountPtr<const Epetra_Map> > g_map_t;
 
-  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> > > p_space_t;
-  typedef std::vector<Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> > > g_space_t;
+  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > > p_space_t;
+  typedef std::vector<Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> > > g_space_t;
 
   // ////////////////////
   // Private data mebers
@@ -155,9 +155,9 @@ private:
   p_map_t                                                            p_map_;
   g_map_t                                                            g_map_;
   Teuchos::RefCountPtr<const Epetra_Map>                             f_map_;
-  Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >     x_space_;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> >     x_space_;
   p_space_t                                                          p_space_;
-  Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >     f_space_;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> >     f_space_;
   g_space_t                                                          g_space_;
   ModelEvaluatorBase::InArgs<double>                                 initialGuess_;
   ModelEvaluatorBase::InArgs<double>                                 lowerBounds_;

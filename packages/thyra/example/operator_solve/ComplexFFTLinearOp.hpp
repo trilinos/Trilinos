@@ -31,7 +31,7 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_SingleRhsLinearOpWithSolveBase.hpp"
-#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "serial_1D_FFT.hpp"
 
@@ -87,7 +87,9 @@ protected:
   /** \brief . */
   bool solveSupportsTrans(Thyra::ETransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveMeasureType(Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType) const;
+  bool solveSupportsSolveMeasureType(
+    Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType
+    ) const;
   //@}
 
   /** @name Overridden from SingleRhsLinearOpWithSolveBase */
@@ -113,7 +115,11 @@ private:
 template<class RealScalar>
 ComplexFFTLinearOp<RealScalar>::ComplexFFTLinearOp( const int N )
 {
-  space_ = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace< std::complex<RealScalar> >(int(std::pow(double(2),N))));
+  space_ = Teuchos::rcp(
+    new Thyra::DefaultSpmdVectorSpace< std::complex<RealScalar> >(
+      int(std::pow(double(2),N))
+      )
+    );
 }
 
 // Overridden from LinearOpBase
@@ -188,7 +194,9 @@ bool ComplexFFTLinearOp<RealScalar>::solveSupportsTrans(Thyra::ETransp M_trans) 
 }
 
 template<class RealScalar>
-bool ComplexFFTLinearOp<RealScalar>::solveSupportsSolveMeasureType(Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType) const
+bool ComplexFFTLinearOp<RealScalar>::solveSupportsSolveMeasureType(
+  Thyra::ETransp M_trans, const Thyra::SolveMeasureType& solveMeasureType
+  ) const
 {
   return ( M_trans == Thyra::NOTRANS || M_trans == Thyra::CONJTRANS );
 }

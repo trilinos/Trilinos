@@ -26,10 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SERIAL_TRIDIAG_LINEAR_OP_HPP
-#define THYRA_SERIAL_TRIDIAG_LINEAR_OP_HPP
+#ifndef THYRA_EXAMPLE_TRIDIAG_SERIAL_LINEAR_OP_HPP
+#define THYRA_EXAMPLE_TRIDIAG_SERIAL_LINEAR_OP_HPP
 
-#include "Thyra_SerialLinearOpBase.hpp"
+#include "Thyra_SpmdLinearOpBase.hpp"
 
 /** \brief Simple example subclass for serial tridiagonal matrices.
  *
@@ -66,7 +66,7 @@
  * \ingroup Thyra_Op_Vec_examples_cg_serial_grp
  */
 template<class Scalar>
-class SerialTridiagLinearOp : public Thyra::SerialLinearOpBase<Scalar> {
+class ExampleTridiagSerialLinearOp : public Thyra::SpmdLinearOpBase<Scalar> {
 private:
 
   Thyra::Index         dim_;
@@ -77,13 +77,13 @@ private:
 public:
 
   /** \brief . */
-  using Thyra::SerialLinearOpBase<Scalar>::euclideanApply;
+  using Thyra::SpmdLinearOpBase<Scalar>::euclideanApply;
 
   /// Construct to uninitialized
-  SerialTridiagLinearOp() : dim_(0) {}
+  ExampleTridiagSerialLinearOp() : dim_(0) {}
 
   /// Calls <tt>initialize()</tt>.
-  SerialTridiagLinearOp( const Thyra::Index dim, const Scalar lower[], const Scalar diag[], const Scalar upper[] )
+  ExampleTridiagSerialLinearOp( const Thyra::Index dim, const Scalar lower[], const Scalar diag[], const Scalar upper[] )
     { this->initialize(dim,lower,diag,upper);	}
   
   /** Initialize given lower, diagonal and upper arrays of data.
@@ -110,7 +110,7 @@ public:
     )
     {
       TEST_FOR_EXCEPT( dim < 2 );
-      this->setDimensions(dim,dim); // We must tell the base class our dimension to setup range() and domain()
+      this->setLocalDimensions(Teuchos::null,dim,dim); // Needed to setup range() and domain()
       dim_ = dim;
       lower_.resize(dim-1);  for( int k = 0; k < dim-1; ++k ) lower_[k] = lower[k];
       diag_.resize(dim);     for( int k = 0; k < dim;   ++k ) diag_[k]  = diag[k];
@@ -121,7 +121,7 @@ public:
 
   std::string description() const
     {
-      return (std::string("SerialTridiagLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
+      return (std::string("ExampleTridiagSerialLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
     }
 
 protected:
@@ -130,12 +130,12 @@ protected:
 
   bool opSupported(Thyra::ETransp M_trans) const { return true; }  // This class supports everything!
 
-  // Overridden from SerialLinearOpBase
+  // Overridden from SpmdLinearOpBase
 
   void euclideanApply(
     const Thyra::ETransp                         M_trans
-    ,const RTOpPack::ConstSubVectorView<Scalar>          &x_in
-    ,const RTOpPack::SubVectorView<Scalar>   *y_out
+    ,const RTOpPack::ConstSubVectorView<Scalar>  &x_in
+    ,const RTOpPack::SubVectorView<Scalar>       *y_out
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const
@@ -183,6 +183,6 @@ protected:
       }
     }
 
-};	// end class SerialTridiagLinearOp
+};	// end class ExampleTridiagSerialLinearOp
 
-#endif	// THYRA_SERIAL_TRIDIAG_LINEAR_OP_HPP
+#endif	// THYRA_EXAMPLE_TRIDIAG_SERIAL_LINEAR_OP_HPP

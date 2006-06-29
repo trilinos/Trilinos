@@ -64,8 +64,6 @@ INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBaseDecl.hpp
 
 INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
-  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MPIVectorSpaceBase.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MPIVectorSpaceBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_MultiVectorRandomizerBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_VectorSpaceConverterBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_ProductMultiVectorBase.hpp\
@@ -130,7 +128,22 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT = \
   $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_OperatorVectorAdapterSupportTypes.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultClusteredSpmdProductVector.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultClusteredSpmdProductVectorDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultClusteredSpmdProductVectorSpace.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultClusteredSpmdProductVectorSpaceDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultColumnwiseMultiVector.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultColumnwiseMultiVectorDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdMultiVector.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdMultiVectorDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVector.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpaceDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpaceFactory.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpaceFactoryDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultVectorMultiVector.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultVectorMultiVectorDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.hpp\
@@ -141,26 +154,11 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProdDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_MultiVectorDefaultBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_MultiVectorDefaultBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultColumnwiseMultiVector.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultColumnwiseMultiVectorDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_OperatorVectorAdapterSupportTypes.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SerialMultiVectorBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SerialMultiVectorBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialMultiVector.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialMultiVectorDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SerialVectorBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SerialVectorBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SerialVectorSpaceBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SerialVectorSpaceBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialVectorSpaceFactory.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialVectorSpaceFactoryDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialVectorSpace.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialVectorSpaceDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialVector.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSerialVectorDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleRhsEuclideanLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleRhsEuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleRhsLinearOpBase.hpp\
@@ -169,11 +167,20 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarLinearOpBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdLinearOpBase.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdLinearOpBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdMultiVectorBase.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdMultiVectorBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdMultiVectorFileIO.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdMultiVectorSerializer.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdMultiVectorSerializerDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorBase.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceDefaultBase.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorDefaultBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultVectorMultiVector.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultVectorMultiVectorDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorSpaceDefaultBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_VectorSpaceDefaultBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper.hpp\
@@ -183,51 +190,12 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H = \
-  $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_DefaultSerialVectorSpaceConverter.hpp\
   $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_DefaultSerialVectorSpaceConverterDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialLinearOpBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialLinearOpBaseDecl.hpp
-
-SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H = \
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPILinearOpBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPILinearOpBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIMultiVectorBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIMultiVectorBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIMultiVector.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIMultiVectorDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceDefaultBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceDefaultBaseDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVector.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVectorDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVectorSpace.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultClusteredMPIProductVectorSpaceDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorSpaceFactory.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorSpaceFactoryDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorSpace.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorSpaceDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVector.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_DefaultMPIVectorDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerialization.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MultiVectorSerializationDecl.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_ParallelMultiVectorFileIO.hpp
-
-if HAVE_MPI
-
-SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI_H = \
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.hpp
-SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI = \
-  $(srcdir)/support/operator_vector/adapter_support/mpi/Thyra_MPIVectorSpaceUtilities.cpp
-
-else # HAVE_MPI
-
-SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI_H =
-SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI = 
-
-endif # HAVE_MPI
+  $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialLinearOpBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBase.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/serial/Thyra_SerialVectorSpaceConverterBaseDecl.hpp
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
@@ -292,8 +260,6 @@ THYRA_H = \
   $(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H)\
 	$(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H)\
   $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H)\
-  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_H)\
-  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI_H)\
   $(INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H)\
   $(SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H)\
   $(INTERFACES_NONLINEAR_SOLVERS_ANA_FUNDAMENTAL_H)\
@@ -301,8 +267,7 @@ THYRA_H = \
 
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
 	$(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
-  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT) \
-  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_MPI_MPI)
+  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT)
 
 #We need the following to support separate build directories
 

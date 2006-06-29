@@ -6,6 +6,7 @@
     DIRS = Read;
     DESCEND_DIRS = YES;
     COMM = SERIAL, MPI;
+#    COMM = SERIAL;
 }
 
 (FRAMEWORK, INSTALL, TriutilsPyTests) {

@@ -27,7 +27,6 @@
 // @HEADER
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
-//#include "Thyra_DefaultSerialVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_VectorStdOpsTester.hpp"
 #include "Thyra_MultiVectorStdOpsTester.hpp"

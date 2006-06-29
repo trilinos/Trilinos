@@ -9,7 +9,6 @@ _THYRA_INCLUDES = \
   -I@abs_top_srcdir@/src/interfaces/nonlinear/solvers/ana/fundamental\
   -I@abs_top_srcdir@/src/support/operator_vector/adapter_support\
   -I@abs_top_srcdir@/src/support/operator_vector/adapter_support/serial\
-  -I@abs_top_srcdir@/src/support/operator_vector/adapter_support/mpi\
   -I@abs_top_srcdir@/src/support/operator_vector/client_support\
   -I@abs_top_srcdir@/src/support/operator_solve/client_support\
   -I@abs_top_srcdir@/src/support/nonlinear/model_evaluator/client_support\

@@ -30,7 +30,7 @@
 #define THYRA_REAL_COMPLEX_FFT_LINEAR_OP_HPP
 
 #include "ComplexFFTLinearOp.hpp"
-#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DefaultSerialVectorSpaceConverter.hpp"
 #include "serial_1D_FFT.hpp"
@@ -121,7 +121,7 @@ public:
 
 private:
 
-  Thyra::DefaultSerialVectorSpaceConverter<DomainScalar,RangeScalar>          realToComplexConverter_;
+  Thyra::DefaultSerialVectorSpaceConverter<DomainScalar,RangeScalar>      realToComplexConverter_;
   ComplexFFTLinearOp<RealScalar>                                          complexFFTOp_;
   Teuchos::RefCountPtr< const Thyra::VectorSpaceBase< RealScalar > >      domain_;
   

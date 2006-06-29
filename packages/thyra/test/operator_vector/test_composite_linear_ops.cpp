@@ -26,8 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_DefaultSerialVectorSpace.hpp"
-#include "Thyra_DefaultMPIVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
@@ -42,6 +41,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
@@ -49,12 +49,12 @@
  */
 template <class Scalar>
 bool run_composite_linear_ops_tests(
-  MPI_Comm                                                      mpiComm
-  ,const int                                                    n
-  ,const bool                                                   useMpi
-  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType  &tol
-  ,const bool                                                   dumpAll
-  ,Teuchos::FancyOStream                                        *out_arg
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >   comm
+  ,const int                                                       n
+  ,const bool                                                      useSpmd
+  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType     &tol
+  ,const bool                                                      dumpAll
+  ,Teuchos::FancyOStream                                           *out_arg
   )
 {
 
@@ -94,8 +94,9 @@ bool run_composite_linear_ops_tests(
   symLinearOpTester.symmetry_error_tol(STM::squareroot(error_tol));
 
   RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > space;
-  if(useMpi) space = rcp(new Thyra::DefaultMPIVectorSpace<Scalar>(mpiComm,n,-1));
-  else       space = rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
+  if(useSpmd) space = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
+  else       space = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n));
+  if(out.get()) *out << "\nUsing a basic vector space described as " << describe(*space,verbLevel) << " ...\n";
   
   if(out.get()) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";
   RefCountPtr<Thyra::MultiVectorBase<Scalar> >
@@ -524,7 +525,9 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   const int procRank = Teuchos::GlobalMPISession::getRank();
   const int numProc = Teuchos::GlobalMPISession::getNProc();
-  MPI_Comm mpiComm = MPI_COMM_WORLD;
+
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+    comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -536,7 +539,7 @@ int main( int argc, char* argv[] ) {
     //
 
     int n         = 4;
-    bool useMpi   = false;
+    bool useSpmd   = true;
     bool dumpAll  = false;
 
     CommandLineProcessor  clp;
@@ -544,7 +547,7 @@ int main( int argc, char* argv[] ) {
     clp.addOutputSetupOptions(true);
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
     clp.setOption( "local-dim", &n, "Local number of elements in each constituent vector." );
-    clp.setOption( "use-mpi", "use-serial", &useMpi, "Determines if MPI or serial vector space is used." );
+    clp.setOption( "use-spmd", "use-serial", &useSpmd, "Determines if MPI or serial vector space is used." );
     clp.setOption( "dump-all", "no-dump-all", &dumpAll, "Determines if vectors are printed or not." );
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
@@ -553,14 +556,14 @@ int main( int argc, char* argv[] ) {
     // Run the tests
     //
 
-    if( !run_composite_linear_ops_tests<float>(mpiComm,n,useMpi,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
-    if( !run_composite_linear_ops_tests<double>(mpiComm,n,useMpi,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<float>(comm,n,useSpmd,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<double>(comm,n,useSpmd,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #if defined(HAVE_COMPLEX) && defined(HAVE_TEUCHOS_COMPLEX)
-    if( !run_composite_linear_ops_tests<std::complex<float> >(mpiComm,n,useMpi,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
-    if( !run_composite_linear_ops_tests<std::complex<double> >(mpiComm,n,useMpi,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<std::complex<float> >(comm,n,useSpmd,float(1e-4),dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_composite_linear_ops_tests<std::complex<double> >(comm,n,useSpmd,double(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
-#if defined(HAVE_TEUCHOS_GNU_MP) && !defined(RTOp_USE_MPI) // mpf_class can not be used with MPI yet!
-    if( !run_composite_linear_ops_tests<mpf_class>(mpiComm,n,useMpi,mpf_class(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
+#if defined(HAVE_TEUCHOS_GNU_MP) && !defined(USE_MPI) // mpf_class can not be used with MPI yet!
+    if( !run_composite_linear_ops_tests<mpf_class>(comm,n,useSpmd,mpf_class(1e-12),dumpAll,verbose?&*out:NULL) ) success = false;
 #endif
 
   } // end try

@@ -30,7 +30,7 @@
 #define THYRA_EPETRA_LINEAR_OP_HPP
 
 #include "Thyra_EpetraLinearOpBase.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
 
 namespace Thyra {
 
@@ -84,8 +84,8 @@ public:
     ,ETransp                                                           opTrans         = NOTRANS
     ,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
     ,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
-    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
+    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdRange       = Teuchos::null
+    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdDomain      = Teuchos::null
     );
 
   /** \brief Initialize
@@ -103,15 +103,15 @@ public:
    *                  <tt>adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt> then <tt>this->opSupported(TRANS)</tt>
    *                  will return <tt>true</tt>.  If <tt>adjointSupport==EPETRA_OP_ADJOINT_UNSUPPORTED</tt> then
    *                  <tt>this->opSupported(TRANS)</tt> will return <tt>false</tt>.
-   * @param  mpiRange
+   * @param  spmdRange
    *                  [in] Smart pointer to the range space for the <tt>Epetra_Operator</tt>.  The default
    *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
-   *                  a new <tt>MPIVectorSpace</tt> given range map from <tt>op</tt>.  A client may only bother
+   *                  a new <tt>SpmdVectorSpace</tt> given range map from <tt>op</tt>.  A client may only bother
    *                  to specify this space if one wants to override the defintion of the scalar product.
-   * @param  mpiDomain
+   * @param  spmdDomain
    *                  [in] Smart pointer to the domain space for the <tt>Epetra_Operator</tt>.  The default
    *                  value is <tt>Teuchos::null</tt> in which case <tt>*this</tt> will allocate
-   *                  a new <tt>DefaultMPIVectorSpace</tt> given map from <tt>op</tt>.  A client may only bother
+   *                  a new <tt>DefaultSpmdVectorSpace</tt> given map from <tt>op</tt>.  A client may only bother
    *                  to specify this space if one wants to override the defintion of the scalar product.
    *
    * Preconditions:<ul>
@@ -120,10 +120,10 @@ public:
    *
    * Postconditions:<ul>
    * <li> <tt>this->epetra_op().get() == op.get()</tt>
-   * <li> [<tt>mpiRange.get() != NULL</tt>] <tt>this->mpiRange().get() == mpiRange.get()</tt>
-   * <li> [<tt>mpiDomain.get() != NULL</tt>] <tt>this->mpiDomain().get() == mpiDomain.get()</tt>
-   * <li> [<tt>mpiRange.get() == NULL</tt>] <tt>this->mpiRange().get() != NULL</tt>
-   * <li> [<tt>mpiDomain.get() == NULL</tt>] <tt>this->mpiDomain().get() != NULL</tt>
+   * <li> [<tt>spmdRange.get() != NULL</tt>] <tt>this->spmdRange().get() == spmdRange.get()</tt>
+   * <li> [<tt>spmdDomain.get() != NULL</tt>] <tt>this->spmdDomain().get() == spmdDomain.get()</tt>
+   * <li> [<tt>spmdRange.get() == NULL</tt>] <tt>this->spmdRange().get() != NULL</tt>
+   * <li> [<tt>spmdDomain.get() == NULL</tt>] <tt>this->spmdDomain().get() != NULL</tt>
    * <li> <tt>this->opSupported(NOTRANS) == true</tt>
    * <li> <tt>this->opSupported(TRNAS) == adjointSupport==EPETRA_OP_ADJOINT_SUPPORTED</tt>
    * </ul>
@@ -133,8 +133,8 @@ public:
     ,ETransp                                                           opTrans         = NOTRANS
     ,EApplyEpetraOpAs                                                  applyAs         = EPETRA_OP_APPLY_APPLY
     ,EAdjointEpetraOp                                                  adjointSupport  = EPETRA_OP_ADJOINT_SUPPORTED
-    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange       = Teuchos::null
-    ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain      = Teuchos::null
+    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdRange       = Teuchos::null
+    ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdDomain      = Teuchos::null
     );
   
   /** \brief Set to uninitialized and optionally return the current state.
@@ -149,27 +149,27 @@ public:
     ,ETransp                                                    *opTrans        = NULL
     ,EApplyEpetraOpAs                                           *applyAs        = NULL
     ,EAdjointEpetraOp                                           *adjointSupport = NULL
-    ,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiRange       = NULL
-    ,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiDomain      = NULL
+    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  *spmdRange       = NULL
+    ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  *spmdDomain      = NULL
     );
 
-  /** \brief Return a smart pointer to the MPIVectorSpaceBase object for the range.
+  /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the range.
    *
    * Postconditions:<ul>
    * <li> [<tt>this->range().get() != NULL</tt>] <tt>return.get() != NULL</tt>
    * <li> [<tt>this->range().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiRange() const;
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > spmdRange() const;
 
-  /** \brief Return a smart pointer to the MPIVectorSpaceBase object for the domain.
+  /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the domain.
    *
    * Postconditions:<ul>
    * <li> [<tt>this->domain().get() != NULL</tt>] <tt>return.get() != NULL</tt>
    * <li> [<tt>this->domain().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > mpiDomain() const;
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > spmdDomain() const;
 
   /** \brief . */
   Teuchos::RefCountPtr<Epetra_Operator> epetra_op();
@@ -210,9 +210,9 @@ public:
   /** @name Overridden from EuclideanLinearOpBase */
   //@{
 
-  /// Returns <tt>this->mpiRange()</tt>
+  /// Returns <tt>this->spmdRange()</tt>
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
-  /// Returns <tt>this->mpiDomain()</tt>
+  /// Returns <tt>this->spmdDomain()</tt>
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
   /** \brief . */
   void euclideanApply(
@@ -261,7 +261,7 @@ protected:
    * vector space objects, and allocation is delegated to a virtual
    * allocator function.
    */
-  virtual Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > 
+  virtual Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > 
   allocateDomain(
     const Teuchos::RefCountPtr<Epetra_Operator>  &op 
     ,ETransp                                     op_trans 
@@ -277,7 +277,7 @@ protected:
    * vector space objects, and allocation is delegated to a virtual
    * allocator function.
    */
-  virtual Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >
+  virtual Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >
   allocateRange( 
     const Teuchos::RefCountPtr<Epetra_Operator>  &op 
     ,ETransp                                     op_trans 
@@ -294,8 +294,8 @@ private:
   ETransp                                                   opTrans_;
   EApplyEpetraOpAs                                          applyAs_;
   EAdjointEpetraOp                                          adjointSupport_;
-  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >  range_;
-  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >  domain_;
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  range_;
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  domain_;
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >  sp_range_;
   Teuchos::RefCountPtr< const ScalarProdVectorSpaceBase<Scalar> >  sp_domain_;
   // ////////////////////////////////////

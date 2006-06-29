@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   epetra_map = Teuchos::rcp(new Epetra_Map(NumElements, 0, *epetra_comm));
   // Construct a VectorSpace from the map
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > epetra_vs;
-  epetra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
+  epetra_vs = Thyra::create_VectorSpace(epetra_map);
   
 
   // Create x and b vectors

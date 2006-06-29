@@ -30,7 +30,9 @@
 #include "createTridiagEpetraLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -74,23 +76,18 @@ int main(int argc, char *argv[])
   bool success = true;
   bool verbose = true;
   bool result;
-  int procRank = 0;
-  
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
   
   //
-  // (A) Get basic MPI info
+  // (A) Setup and get basic MPI info
   //
   
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
+  const int numProc  = Teuchos::GlobalMPISession::getNProc();
 #ifdef HAVE_MPI
-  int numProc;
   MPI_Comm mpiComm = MPI_COMM_WORLD;
-  MPI_Comm_size( mpiComm, &numProc );
-  MPI_Comm_rank( mpiComm, &procRank );
 #endif
-
+  
   //
   // (B) Setup the output stream (do output only on root process!)
   //
@@ -172,23 +169,12 @@ int main(int argc, char *argv[])
     if(verbose) *out << "\n  Estimate of dominate eigenvalue lambda = " << lambda << std::endl;
     
   }
-  catch( const std::exception &excpt ) {
-    std::cerr << "p="<<procRank<<": *** Caught standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    std::cerr << "p="<<procRank<<": *** Caught an unknown exception\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
   
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
     else         *out << "\nOh no! At least one of the tests failed!\n";
   }
-
-#ifdef HAVE_MPI
-   MPI_Finalize();
-#endif
 
   return success ? 0 : 1;
 

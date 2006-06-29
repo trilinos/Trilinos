@@ -26,28 +26,30 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTI_VECTOR_SERIALIZATION_HPP
-#define THYRA_MULTI_VECTOR_SERIALIZATION_HPP
+#ifndef THYRA_SPMD_MULTI_VECTOR_SERIALIZER_HPP
+#define THYRA_SPMD_MULTI_VECTOR_SERIALIZER_HPP
 
-#include "Thyra_MultiVectorSerializationDecl.hpp"
-#include "Thyra_MPIVectorSpaceDefaultBase.hpp"
+#include "Thyra_SpmdMultiVectorSerializerDecl.hpp"
+#include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 
 namespace Thyra {
 
 template<class Scalar>
-MultiVectorSerialization<Scalar>::MultiVectorSerialization(
+SpmdMultiVectorSerializer<Scalar>::SpmdMultiVectorSerializer(
   const bool  binaryMode
   )
   :binaryMode_(binaryMode)
 {}
 
 template<class Scalar>
-void MultiVectorSerialization<Scalar>::serialize( const MultiVectorBase<Scalar>& mv, std::ostream& out ) const
+void SpmdMultiVectorSerializer<Scalar>::serialize(
+  const MultiVectorBase<Scalar>& mv, std::ostream& out
+  ) const
 {
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >
-    mpi_vec_spc = Teuchos::rcp_dynamic_cast<const MPIVectorSpaceBase<Scalar> >(mv.range());
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
+    mpi_vec_spc = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(mv.range());
   out.precision(std::numeric_limits<Scalar>::digits10+4);
   if( mpi_vec_spc.get() ) {
     // This is a mpi-based vector space so let's just write the local
@@ -77,15 +79,17 @@ void MultiVectorSerialization<Scalar>::serialize( const MultiVectorBase<Scalar>&
   else {
     //  This is a serial (or locally replicated) vector space so
     // just write all of the multi-vector elements here.
-    TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-MPI spaces yet" );
+    TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-SPMD spaces yet" );
   }
 }
 
 template<class Scalar>
-void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVectorBase<Scalar>* mv ) const
+void SpmdMultiVectorSerializer<Scalar>::deserialize(
+  std::istream& in, MultiVectorBase<Scalar>* mv
+  ) const
 {
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >
-    mpi_vec_spc = Teuchos::rcp_dynamic_cast<const MPIVectorSpaceBase<Scalar> >(mv->range());
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >
+    mpi_vec_spc = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(mv->range());
   if( mpi_vec_spc.get() ) {
     // This is a mpi-based vector space so let's just read the local
     // multi-vector elements (row-by-row).
@@ -150,10 +154,10 @@ void MultiVectorSerialization<Scalar>::unserialize( std::istream& in, MultiVecto
   else {
     //  This is a serial (or locally replicated) vector space so
     // just read all of the multi-vector elements here.
-    TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-MPI spaces yet" );
+    TEST_FOR_EXCEPTION( true, std::logic_error, "Does not handle non-SPMD spaces yet" );
   }
 }
 
 } // end namespace Thyra
 
-#endif // THYRA_MULTI_VECTOR_SERIALIZATION_HPP
+#endif // THYRA_SPMD_MULTI_VECTOR_SERIALIZER_HPP

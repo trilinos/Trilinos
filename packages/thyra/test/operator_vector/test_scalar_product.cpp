@@ -30,8 +30,8 @@
 
 #ifndef __sun
 
-#include "Thyra_DefaultSerialVectorSpace.hpp"
-#include "Thyra_DefaultSerialMultiVector.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DefaultSpmdMultiVector.hpp"
 #include "Thyra_LinearOpScalarProd.hpp"
 #include "Thyra_EuclideanScalarProd.hpp"
 #include "Thyra_VectorBase.hpp"
@@ -72,13 +72,13 @@ bool run_scalar_product_tests(
 
   bool success = true, result;
 
-  RefCountPtr<Thyra::ScalarProdVectorSpaceBase<Scalar> >
-    domain = rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n/2)),
-    range  = rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
+  RefCountPtr<Thyra::DefaultSpmdVectorSpace<Scalar> >
+    domain = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n/2)),
+    range  = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n));
 
-  RefCountPtr<Thyra::DefaultSerialMultiVector<Scalar> >
-    op_coeff = rcp(new Thyra::DefaultSerialMultiVector<Scalar>(range,domain)),
-    op       = rcp(new Thyra::DefaultSerialMultiVector<Scalar>(range,domain));
+  RefCountPtr<Thyra::DefaultSpmdMultiVector<Scalar> >
+    op_coeff = rcp(new Thyra::DefaultSpmdMultiVector<Scalar>(range,domain)),
+    op       = rcp(new Thyra::DefaultSpmdMultiVector<Scalar>(range,domain));
 
   RefCountPtr<Thyra::DefaultDiagonalLinearOp<Scalar> >
     domainScalarProdOp = rcp(

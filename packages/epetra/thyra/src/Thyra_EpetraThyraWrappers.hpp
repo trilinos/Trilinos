@@ -30,8 +30,10 @@
 #define THYRA_EPETRA_THYRA_WRAPPERS_HPP
 
 #include "Thyra_EpetraTypes.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
-#include "Thyra_MPIMultiVectorBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#include "Thyra_SpmdMultiVectorBase.hpp"
+
+namespace Teuchos { template<class Ordinal> class Comm; }
 
 namespace Thyra {
 
@@ -40,12 +42,21 @@ namespace Thyra {
 \ingroup Epetra_Thyra_Op_Vec_adapters_grp
 
 This set of functions provides some general utility code for wrapping Epetra
-objects in standard %Thyra MPI subclass implementations and for getting Epetra
+objects in standard %Thyra Spmd subclass implementations and for getting Epetra
 views of %Thyra objects.
 
 */
 
-/** \brief Concrete an <tt>MPIVectorSpaceBase</tt> object given an <tt>Epetra_Map</tt>
+/** \brief Given an <tt>Epetra_Comm</tt> object, return an equivalent
+ * <tt>Teuchos::Comm>/tt> object.
+ *
+ * If a successful conversion could not be performed then
+ * <tt>return.get()==NULL</tt>.
+ */
+Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );
+
+/** \brief Concrete an <tt>SpmdVectorSpaceBase</tt> object given an <tt>Epetra_Map</tt>
  * object.
  *
  * \param  epetra_map  [in] The Epetra map defining the partitioning of elements
@@ -63,7 +74,7 @@ views of %Thyra objects.
  * </ul>
  *
  * This uses an <tt>Epetra_Map</tt> object to initialize a compatible
- * <tt>DefaultMPIVectorSpace</tt> object.
+ * <tt>DefaultSpmdVectorSpace</tt> object.
  *
  * The fact that this function only accepts an <tt>Epetra_Map</tt> object
  * means that only maps that have elements of size one can be used to define a
@@ -72,18 +83,18 @@ views of %Thyra objects.
  * maps are of type <tt>Epetra_Map</tt>.
  *
  * This function works properly even if Epetra is not compiled with support
- * for MPI (i.e. <tt>HAVE_MPI</tt> is not defined when compiling and linking).
- * If MPI support is not compiled into Epetra, then the dummy implementation
+ * for Spmd (i.e. <tt>HAVE_Spmd</tt> is not defined when compiling and linking).
+ * If Spmd support is not compiled into Epetra, then the dummy implementation
  * defined in <tt>RTOp_mpi.h</tt> is used instead.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<double> >
-create_MPIVectorSpaceBase(
+Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<double> >
+create_VectorSpace(
   const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
   );
 
-/** \brief Create a non-<tt>const</tt> <tt>MPIVectorBase</tt> object from
+/** \brief Create a non-<tt>const</tt> <tt>SpmdVectorBase</tt> object from
  * a <tt>const> <tt>Epetra_Vector</tt> object.
  *
  * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
@@ -102,19 +113,19 @@ create_MPIVectorSpaceBase(
  * input <tt>RefCountPtr<Epetra_Vector></tt> wrapped
  * <tt>Epetra_Vector</tt> object.  It is also stated that
  * <tt>*epetra_v</tt> will only be guaranteed to be modifed after the last
- * <tt>RefCountPtr</tt> to the returned <tt>MPIVectorBase</tt> is
+ * <tt>RefCountPtr</tt> to the returned <tt>SpmdVectorBase</tt> is
  * destroyed.  In addition, <tt>*return</tt> is only valid as long as
  * one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<MPIVectorBase<double> >
-create_MPIVectorBase(
+Teuchos::RefCountPtr<SpmdVectorBase<double> >
+create_Vector(
   const Teuchos::RefCountPtr<Epetra_Vector>                                &epetra_v
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &space
   );
 
-/** \brief Create an <tt>const</tt> <tt>MPIVectorBase</tt> wrapper object
+/** \brief Create an <tt>const</tt> <tt>SpmdVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Epetra_Vector</tt> object.
  *
  * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
@@ -136,13 +147,13 @@ create_MPIVectorBase(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const MPIVectorBase<double> >
-create_MPIVectorBase(
+Teuchos::RefCountPtr<const SpmdVectorBase<double> >
+create_Vector(
   const Teuchos::RefCountPtr<const Epetra_Vector>                          &epetra_v
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &space
   );
 
-/** \brief Create a non-<tt>const</tt> <tt>MPIMultiVectorBase</tt> object from
+/** \brief Create a non-<tt>const</tt> <tt>SpmdMultiVectorBase</tt> object from
  * a <tt>const> <tt>Epetra_MultiVector</tt> object.
  *
  * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
@@ -159,20 +170,20 @@ create_MPIVectorBase(
  * input <tt>RefCountPtr<Epetra_MultiVector></tt> wrapped
  * <tt>Epetra_MultiVector</tt> object.  It is also stated that
  * <tt>*epetra_mv</tt> will only be guaranteed to be modifed after the last
- * <tt>RefCountPtr</tt> to the returned <tt>MPIMultiVectorBase</tt> is
+ * <tt>RefCountPtr</tt> to the returned <tt>SpmdMultiVectorBase</tt> is
  * destroyed.  In addition, <tt>*return</tt> is only valid as long as
  * one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<MPIMultiVectorBase<double> >
-create_MPIMultiVectorBase(
+Teuchos::RefCountPtr<SpmdMultiVectorBase<double> >
+create_MultiVector(
   const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &range
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
   );
 
-/** \brief Create an <tt>const</tt> <tt>MPIMultiVectorBase</tt> wrapper object
+/** \brief Create an <tt>const</tt> <tt>SpmdMultiVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Epetra_MultiVector</tt> object.
  *
  * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
@@ -192,10 +203,10 @@ create_MPIMultiVectorBase(
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-Teuchos::RefCountPtr<const MPIMultiVectorBase<double> >
-create_MPIMultiVectorBase(
+Teuchos::RefCountPtr<const SpmdMultiVectorBase<double> >
+create_MultiVector(
   const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &range
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
   );
 

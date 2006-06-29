@@ -32,8 +32,6 @@
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_VectorSpaceDecl.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
-#include "Thyra_SerialVectorSpaceBase.hpp"
 #include "Teuchos_Describable.hpp"
 
 namespace Thyra
@@ -65,53 +63,6 @@ namespace Thyra
   {
     return Thyra::createMember(this->ptr());
   }
-    
-
-
-  //========================================================================
-  template <class Scalar>
-  int VectorSpace<Scalar>::lowestLocallyOwnedIndex() const
-  {
-    const Thyra::MPIVectorSpaceBase<Scalar>* mpiSpace 
-      = dynamic_cast<const Thyra::MPIVectorSpaceBase<Scalar>*>(this->ptr().get());
-    if (mpiSpace != 0)
-      {
-        return mpiSpace->localOffset();
-      }
-    const Thyra::SerialVectorSpaceBase<Scalar>* serialSpace 
-      = dynamic_cast<const Thyra::SerialVectorSpaceBase<Scalar>*>(this->ptr().get());
-    if (serialSpace != 0)
-      {
-        return 0;
-      }
-    TEST_FOR_EXCEPTION(mpiSpace == 0 && serialSpace==0, runtime_error,
-                       "don't know how to compute lowest local index for "
-                       "a vector space that is neither MPI nor serial");
-    return 0;
-  }
-
-  //========================================================================
-  template <class Scalar>
-  int VectorSpace<Scalar>::numLocalElements() const
-  {
-    const Thyra::MPIVectorSpaceBase<Scalar>* mpiSpace 
-      = dynamic_cast<const Thyra::MPIVectorSpaceBase<Scalar>*>(this->ptr().get());
-    if (mpiSpace != 0)
-      {
-        return mpiSpace->localSubDim();
-      }
-    const Thyra::SerialVectorSpaceBase<Scalar>* serialSpace 
-      = dynamic_cast<const Thyra::SerialVectorSpaceBase<Scalar>*>(this->ptr().get());
-    if (serialSpace != 0)
-      {
-        return dim();
-      }
-    TEST_FOR_EXCEPTION(mpiSpace == 0 && serialSpace==0, runtime_error,
-                       "don't know how to compute number of local elements for "
-                       "a vector space that is neither MPI nor serial");
-    return 0;
-  }
-    
 
 
 
@@ -222,9 +173,7 @@ namespace Thyra
     return productSpace(Teuchos::tuple(s1, s2, s3));
   }
 
-}
-
-
+} // namespace Thyra
 
 
 #endif

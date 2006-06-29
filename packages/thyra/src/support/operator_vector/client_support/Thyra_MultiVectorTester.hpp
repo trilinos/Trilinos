@@ -85,7 +85,13 @@ bool MultiVectorTester<Scalar>::check(
   result =linearOpTester_.check(mv,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out <<endl<< "*** Leaving Thyra::MultiVectorTester<"<<ST::name()<<">::check(mv,...) ...\n";
+  if(out.get()) {
+    if(success)
+      *out << endl <<"Congratulations, this MultiVectorBase object seems to check out!\n";
+    else
+      *out << endl <<"Oh no, at least one of the tests performed with this MultiVectorBase object failed (see above failures)!\n";
+    *out << endl << "*** Leaving MultiVectorTester<"<<ST::name()<<">::check(mv,...)\n";
+  }
   
   return success;
 

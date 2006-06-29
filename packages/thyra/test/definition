@@ -10,24 +10,17 @@
 }
 
 (FRAMEWORK, INSTALL) {
-    TESTS = ./operator_vector/test_composite_linear_ops.exe;
-    ARGS = --use-mpi --verbose;
-    COMM = MPI,SERIAL;
-}
-
-(FRAMEWORK, INSTALL) {
-    TESTS = ./operator_vector/test_handles.exe;
-    ARGS = --local-dim=4, --local-dim=4 --output-show-proc-rank --output-to-root-rank-only=-1;
-    COMM = MPI,SERIAL;
+    TESTS = ../example/operator_vector/sillyCgSolve_serial.exe,
+	    ../example/operator_vector/sillyPowerMethod_serial.exe;
+    ARGS = --verbose;
+    COMM = SERIAL;
 }
 
 (FRAMEWORK, INSTALL) {
     TESTS = operator_vector/test_product_space.exe,
-	    operator_vector/test_std_ops.exe,
-	    ../example/operator_vector/sillyCgSolve_serial.exe,
-	    ../example/operator_vector/sillyPowerMethod_serial.exe;
+            operator_vector/test_std_ops.exe;
     ARGS = --verbose;
-    COMM = SERIAL;
+    COMM = MPI, SERIAL;
 }
 
 (FRAMEWORK, INSTALL) {
@@ -48,6 +41,12 @@
     TESTS = operator_vector/test_composite_linear_ops.exe;
     ARGS = --use-serial --verbose;
     COMM = SERIAL;
+}
+
+(FRAMEWORK, INSTALL) {
+    TESTS = ./operator_vector/test_composite_linear_ops.exe;
+    ARGS = --use-spmd --verbose;
+    COMM = MPI,SERIAL;
 }
 
 (FRAMEWORK, INSTALL) {

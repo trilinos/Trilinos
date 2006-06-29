@@ -98,11 +98,39 @@ template<class Scalar>
 DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
   const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  )
+{
+  initialize(spmdRangeSpace,domainSpace);
+}
+
+template<class Scalar>
+DefaultSpmdMultiVector<Scalar>::DefaultSpmdMultiVector(
+  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
   ,const Teuchos::RefCountPtr<Scalar>                                    &localValues
   ,const Index                                                           leadingDim
   )
 {
   initialize(spmdRangeSpace,domainSpace,localValues,leadingDim);
+}
+
+template<class Scalar>
+void DefaultSpmdMultiVector<Scalar>::initialize(
+  const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
+  ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+  )
+{
+  const Index localSubDim = spmdRangeSpace->localSubDim();
+  initialize(
+    spmdRangeSpace
+    ,domainSpace
+    ,Teuchos::rcp(
+      localSubDim ? new Scalar[localSubDim*domainSpace->dim()] : 0
+      ,Teuchos::DeallocArrayDelete<Scalar>()
+      ,true
+      )
+    ,localSubDim
+    );
 }
 
 template<class Scalar>

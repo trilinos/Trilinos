@@ -38,7 +38,7 @@
 #include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "RTOpPack_ROpGetSubVector.hpp"
 #include "RTOpPack_TOpSetSubVector.hpp"
@@ -92,7 +92,8 @@ VectorDefaultBase<Scalar>::domain() const
   std::cerr << "\nVector<Scalar>::domain() called!\n";
 #endif
   if(!domain_.get())
-    const_cast<VectorDefaultBase<Scalar>*>(this)->domain_ = Teuchos::rcp(new DefaultSerialVectorSpace<Scalar>(1));
+    const_cast<VectorDefaultBase<Scalar>*>(this)->domain_
+      = Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(1));
   return domain_;
 }
 

@@ -29,9 +29,11 @@
 #include "createTridiagEpetraLinearOp.hpp"
 #include "sillyCgSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_DefaultMPIVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 //
 // Main driver program for epetra implementation of CG.
@@ -44,29 +46,24 @@ int main(int argc, char *argv[])
   bool success = true;
   bool verbose = true;
   bool result;
-  int procRank = 0;
-  
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
   
   //
-  // (A) Get basic MPI info
+  // (A) Setup and get basic MPI info
   //
-  
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  const int procRank = Teuchos::GlobalMPISession::getRank();
+  const int numProc  = Teuchos::GlobalMPISession::getNProc();
 #ifdef HAVE_MPI
-  int numProc;
   MPI_Comm mpiComm = MPI_COMM_WORLD;
-  MPI_Comm_size( mpiComm, &numProc );
-  MPI_Comm_rank( mpiComm, &procRank );
 #endif
 
   //
   // (B) Setup the output stream (do output only on root process!)
   //
   
-  Teuchos::oblackholestream black_hole_out;
-  std::ostream &out = ( procRank == 0 ? std::cout : black_hole_out );
+  Teuchos::RefCountPtr<Teuchos::FancyOStream>
+    out = Teuchos::VerboseObjectBase::getDefaultOStream();
   
   try {
 
@@ -94,7 +91,7 @@ int main(int argc, char *argv[])
 
     TEST_FOR_EXCEPTION( globalDim < 2, std::logic_error, "Error, globalDim=" << globalDim << " < 2 is not allowed!" );
 
-    if(verbose) out << "\n***\n*** Running CG example using Epetra implementation\n***\n" << std::scientific;
+    if(verbose) *out << "\n***\n*** Running CG example using Epetra implementation\n***\n" << std::scientific;
 
     //
     // (D) Setup a simple linear system with tridagonal operator:
@@ -106,30 +103,18 @@ int main(int argc, char *argv[])
     //       [                 -1   a*2 ]
     //
     // (D.1) Create the tridagonal matrix operator
-    if(verbose) out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
+    if(verbose) *out << "\n(1) Constructing tridagonal Epetra matrix A of global dimension = " << globalDim << " ...\n";
     RefCountPtr<Thyra::LinearOpBase<double> >
       A = createTridiagEpetraLinearOp(
         globalDim
 #ifdef HAVE_MPI
         ,mpiComm
 #endif
-        ,diagScale,verbose,out
+        ,diagScale,verbose,*out
         );
     // (D.2) Create RHS vector b and set to a random value
-    RefCountPtr<const Thyra::VectorSpaceBase<double> > b_space;
-    if(useWithNonEpetraVectors) {
-      // Create a new vector space for RHS vector b that is different the operator range space but compatible
-      RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > 
-        A_range = Teuchos::rcp_dynamic_cast<const Thyra::MPIVectorSpaceBase<double> >(A->range(),true); // Throw if fail!
-      b_space = Teuchos::rcp(new Thyra::DefaultMPIVectorSpace<double>(A_range->mpiComm(),A_range->localSubDim(),-1));
-      // Note, this new vector space will create vectors of concrete type Thyra::DefaultMPIVector which are
-      // compatible but not the same as the concrete type Thyra::EpetraVector created by EpetraVectorSpace
-    }
-    else {
-      // Have the RHS vector b use the same vector space as the operator A range space
+    RefCountPtr<const Thyra::VectorSpaceBase<double> >
       b_space = A->range();
-      // Note, this vector space will create vectors of concrete type Thyra::EpetraVector
-    }
     // (D.3) Create the RHS vector b and initialize it to a random vector
     RefCountPtr<Thyra::VectorBase<double> > b = createMember(b_space);
     Thyra::seed_randomize<double>(0);
@@ -140,7 +125,7 @@ int main(int argc, char *argv[])
     //
     // (E) Solve the linear system with the silly CG solver
     //
-    result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,verbose?&out:0);
+    result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,verbose?&*out:0);
     if(!result) success = false;
     //
     // (F) Check that the linear system was solved to the specified tolerance
@@ -153,28 +138,17 @@ int main(int argc, char *argv[])
     result = rel_err <= relaxTol;
     if(!result) success = false;
     if(verbose)
-      out
+      *out
         << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")
         <<"2.0*tolerance = "<<relaxTol<<": "<<(result?"passed":"failed")<<std::endl;
     
   }
-  catch( const std::exception &excpt ) {
-    std::cerr << "p="<<procRank<<": *** Caught standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    std::cerr << "p="<<procRank<<": *** Caught an unknown exception\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
   
   if (verbose) {
-    if(success)  out << "\nCongratulations! All of the tests checked out!\n";
-    else         out << "\nOh no! At least one of the tests failed!\n";
+    if(success)  *out << "\nCongratulations! All of the tests checked out!\n";
+    else         *out << "\nOh no! At least one of the tests failed!\n";
   }
-
-#ifdef HAVE_MPI
-   MPI_Finalize();
-#endif
 
   return success ? 0 : 1;
 

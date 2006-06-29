@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<const Epetra_Map> epetra_map = Teuchos::rcp( new Epetra_Map(NumGlobalElements, 0, *epetra_comm) );
 
   // Construct a Thyra vector space
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > thyra_vs = Thyra::create_MPIVectorSpaceBase(epetra_map);
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > thyra_vs = Thyra::create_VectorSpace(epetra_map);
 
   // Create x vector
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x  = Thyra::createMember(thyra_vs);

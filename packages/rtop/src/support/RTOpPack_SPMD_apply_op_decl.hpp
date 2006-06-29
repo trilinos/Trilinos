@@ -158,6 +158,21 @@ private:
   ReductTargetReductionOp<Scalar>& operator=(const ReductTargetReductionOp<Scalar>&);
 };
 
+/** \brief Reduce a set of reduction objects.
+ *
+ * ToDo: Finish documentation!
+ *
+ * \ingroup RTOpPack_parallel_helpers_grp
+ */
+template<class Scalar>
+void SPMD_all_reduce(
+  const Teuchos::Comm<index_type>     *comm
+  ,const RTOpT<Scalar>                &op
+  ,const int                          num_cols
+  ,const ReductTarget*const           i_reduct_objs[]
+  ,ReductTarget*const                 reduct_objs[]
+  );
+
 /** \brief Apply an RTOp in SMPD mode to a set of vectors with contiguous
  * storage per process.
  *

@@ -26,14 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_SPACE_DECL_HPP
-#define THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_SPACE_DECL_HPP
+#ifndef THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP
+#define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP
 
 #include "Thyra_VectorSpaceBaseDecl.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
-#include "RTOp_MPI_config.h"
-#include "Teuchos_OpaqueWrapper.hpp"
 
 namespace Thyra {
 
@@ -42,15 +40,16 @@ namespace Thyra {
  * many different processes and creates a single vector space.
  *
  * What this class does is to take different vector space objects distributed
- * over a set of clusters of processes and then creates a single vector space object.
+ * over a set of different clusters of processes and then creates a single
+ * vector space object.
  *
  * Let <tt>numClusters</tt> be the number of clusters that the processes in
  * the global communicator are partitioned into.  Each cluster of processes is
  * represented by another communicator known in this process as
  * <tt>intraClusterComm</tt>.  The communicator that links the root of each
  * cluster is called <tt>interClusterComm</tt>. All communication is performed
- * with just these two communicators.  There is not overall glocal
- * communicator that encompasses all of the processes.
+ * with just these two communicators.  There is no overall global communicator
+ * that encompasses all of the processes.
  *
  * Within a cluster of processes, the number of constituent vector space
  * objects must be the same. Let <tt>v[0]..v[numBlocks-1]</tt> be the
@@ -64,10 +63,10 @@ namespace Thyra {
  * The default copy constructor and assign operator are allowed and they work
  * correctly and perform shallow copies of the constituent vector spaces!
  *
- * \ingroup Thyra_Op_Vec_adapters_MPI_support_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
  */
 template<class Scalar>
-class DefaultClusteredMPIProductVectorSpace
+class DefaultClusteredSpmdProductVectorSpace
   : public ProductVectorSpaceBase<Scalar>
   , protected VectorSpaceDefaultBase<Scalar>
 {
@@ -77,15 +76,15 @@ public:
   //@{
 
   /** \brief . */
-  DefaultClusteredMPIProductVectorSpace();
+  DefaultClusteredSpmdProductVectorSpace();
 
   /** \brief . */
-  DefaultClusteredMPIProductVectorSpace(
-    const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >   &intraClusterComm
-    ,const int                                                      clusterRootRank
-    ,const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >  &interClusterComm
-    ,const int                                                      numBlocks
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+  DefaultClusteredSpmdProductVectorSpace(
+    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+    ,const int                                                       clusterRootRank
+    ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+    ,const int                                                       numBlocks
+    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
     );
 
   /** \brief Initalize.
@@ -99,9 +98,9 @@ public:
    * \param  interClusterComm
    *            [in] Defines the communicator between the root processes of all of the
    *            clusters.  For the root process of each cluster
-   *            <tt>*interClusterComm!=MPI_COMM_NULL</tt>,
+   *            <tt>*interClusterComm!=Spmd_COMM_NULL</tt>,
    *            otherwise <tt>interClusterComm==Teuchos::null</tt> or 
-   *            <tt>*interClusterComm==MPI_COMM_NULL</tt>.
+   *            <tt>*interClusterComm==Spmd_COMM_NULL</tt>.
    * \param  numBlocks
    *            [in] Number of vector space blocks for this cluster of processes.
    * \param  vecSpaces
@@ -109,21 +108,21 @@ public:
    *            for this cluster of processes.
    */
   void initialize(
-    const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >   &intraClusterComm
-    ,const int                                                      clusterRootRank
-    ,const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >  &interClusterComm
-    ,const int                                                      numBlocks
-    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+    ,const int                                                       clusterRootRank
+    ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+    ,const int                                                       numBlocks
+    ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
     );
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> > intraClusterComm() const;
+  Teuchos::RefCountPtr<const Teuchos::Comm<Index> > intraClusterComm() const;
 
   /** \brief . */
   int clusterRootRank() const;
 
   /** \brief . */
-  Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> > interClusterComm() const;
+  Teuchos::RefCountPtr<const Teuchos::Comm<Index> > interClusterComm() const;
 
   /** \bief The some of the dimensions of the block vector spaces in this
    * cluster.
@@ -154,11 +153,15 @@ public:
   /** \brief . */
   Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
   /** \brief . */
-  void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
+  void scalarProds(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[]
+    ) const;
   /** \brief . */
   bool isEuclidean() const;
   /** \brief . */
-  bool hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
+  bool hasInCoreView(
+    const Range1D& rng, const EViewType viewType, const EStrideType strideType
+    ) const;
   /** \brief . */
   Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> > clone() const;
   //@}
@@ -195,9 +198,9 @@ private:
   // //////////////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >  intraClusterComm_;
+  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >  intraClusterComm_;
   int                                                      clusterRootRank_;
-  Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >  interClusterComm_;
+  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >  interClusterComm_;
   vecSpaces_t vecSpaces_; // size == numBlocks
   bool isEuclidean_;
   Index globalDim_;     // The global dimension of all of the block vectors in
@@ -214,37 +217,37 @@ private:
 // Inline defintions
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >
-DefaultClusteredMPIProductVectorSpace<Scalar>::intraClusterComm() const
+Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+DefaultClusteredSpmdProductVectorSpace<Scalar>::intraClusterComm() const
 {
   return intraClusterComm_;
 }
 
 template<class Scalar>
-int DefaultClusteredMPIProductVectorSpace<Scalar>::clusterRootRank() const
+int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterRootRank() const
 {
   return clusterRootRank_;
 }
 
 template<class Scalar>
-Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >
-DefaultClusteredMPIProductVectorSpace<Scalar>::interClusterComm() const
+Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+DefaultClusteredSpmdProductVectorSpace<Scalar>::interClusterComm() const
 {
   return interClusterComm_;
 }
 
 template<class Scalar>
-int DefaultClusteredMPIProductVectorSpace<Scalar>::clusterSubDim() const
+int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterSubDim() const
 {
   return clusterSubDim_;
 }
 
 template<class Scalar>
-int DefaultClusteredMPIProductVectorSpace<Scalar>::clusterOffset() const
+int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterOffset() const
 {
   return clusterOffset_;
 }
 
 } // end namespace Thyra
 
-#endif // THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_SPACE_DECL_HPP
+#endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP

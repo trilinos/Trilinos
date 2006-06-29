@@ -3,10 +3,13 @@
 #define THYRA_TPETRA_THYRA_WRAPPERS_HPP
 
 #include "Thyra_TpetraTypes.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
-#include "Thyra_MPIVectorBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
+#include "Tpetra_SerialComm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 #ifdef HAVE_MPI
-#include "Tpetra_MpiComm.hpp"
+#  include "Tpetra_MpiComm.hpp"
+#  include "Teuchos_DefaultMpiComm.hpp"
 #endif
 
 namespace Thyra {
@@ -20,7 +23,19 @@ objects in %Thyra object and for getting %Tpetra views of %Thyra objects.
 
 */
 
-/** \brief Concrete an <tt>MPIVectorSpaceBase</tt> object given an
+/** \brief Given a <tt>Tpetra::Comm</tt> object, return an equivalent
+ * <tt>Teuchos::Comm>/tt> object.
+ *
+ * If a successful conversion could not be performed then
+ * <tt>return.get()==NULL</tt>.
+ */
+template<typename Ordinal, typename Packet>
+Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+create_Comm(
+  const Teuchos::RefCountPtr<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
+  );
+
+/** \brief Concrete an <tt>SpmdVectorSpaceBase</tt> object given an
  * <tt>Tpetra::VectorSpace</tt> object.
  *
  * \param  tpetra_vs  [in] The Tpetra vector space defining the partitioning of elements
@@ -38,17 +53,17 @@ objects in %Thyra object and for getting %Tpetra views of %Thyra objects.
  * </ul>
  *
  * This uses an <tt>Tpetra::VectorSpace</tt> object to initialize a compatible
- * <tt>DefaultMPIVectorSpace</tt> object.
+ * <tt>DefaultSpmdVectorSpace</tt> object.
  *
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<const MPIVectorSpaceDefaultBase<Scalar> >
+Teuchos::RefCountPtr<const SpmdVectorSpaceDefaultBase<Scalar> >
 create_VectorSpace(
   const Teuchos::RefCountPtr<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
   );
 
-/** \brief Create a non-<tt>const</tt> <tt>MPIVectorBase</tt> object from
+/** \brief Create a non-<tt>const</tt> <tt>SpmdVectorBase</tt> object from
  * a <tt>const> <tt>Tpetra::Vector</tt> object.
  *
  * @param  tpetra_v  [in] Smart pointer to the <tt>Tpetra::Vector</tt> object to wrap.
@@ -65,20 +80,20 @@ create_VectorSpace(
  * input <tt>RefCountPtr<Tpetra::Vector<Ordinal,Scalar> ></tt> wrapped
  * <tt>Tpetra::Vector</tt> object.  It is also stated that
  * <tt>*tpetra_v</tt> will only be guaranteed to be modifed after the last
- * <tt>RefCountPtr</tt> to the returned <tt>MPIVectorBase</tt> object is
+ * <tt>RefCountPtr</tt> to the returned <tt>SpmdVectorBase</tt> object is
  * destroyed.  In addition, <tt>*return</tt> is only valid as long as
  * one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<MPIVectorBase<Scalar> >
+Teuchos::RefCountPtr<SpmdVectorBase<Scalar> >
 create_Vector(
   const Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >      &tpetra_v
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >   &space       = Teuchos::null
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >   &space       = Teuchos::null
   );
 
-/** \brief Create an <tt>const</tt> <tt>MPIVectorBase</tt> wrapper object
+/** \brief Create an <tt>const</tt> <tt>SpmdVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Tpetra::Vector</tt> object.
  *
  * @param  tpetra_v  [in] Smart pointer to the <tt>Tpetra::Vector</tt> object to wrap.
@@ -99,10 +114,10 @@ create_Vector(
  * \ingroup Thyra_Tpetra_Thyra_Wrappers_grp
  */
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<const MPIVectorBase<Scalar> >
+Teuchos::RefCountPtr<const SpmdVectorBase<Scalar> >
 create_Vector(
   const Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >  &tpetra_v
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >     &space       = Teuchos::null
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >     &space       = Teuchos::null
   );
 
 /** \brief Get a non-<tt>const</tt> <tt>Tpetra::Vector</tt> view from a
@@ -258,8 +273,48 @@ private:
 } // namespace TpetraUtils
 } // namespace Thyra
 
+template<typename Ordinal, typename Packet>
+Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+Thyra::create_Comm(
+  const Teuchos::RefCountPtr<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
+  )
+{
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::set_extra_data;
+
+  RefCountPtr<const Tpetra::SerialComm<Ordinal,Packet> >
+    serialTpetraComm = rcp_dynamic_cast<const Tpetra::SerialComm<Ordinal,Packet> >(tpetraComm);
+  if( serialTpetraComm.get() ) {
+    RefCountPtr<const Teuchos::SerialComm<Index> >
+      serialComm = rcp(new Teuchos::SerialComm<Index>());
+    set_extra_data( serialTpetraComm, "serialTpetraComm", &serialComm );
+    return serialComm;
+  }
+
+#ifdef HAVE_MPI
+  
+  RefCountPtr<const Tpetra::MpiComm<Ordinal,Packet> >
+    mpiTpetraComm = rcp_dynamic_cast<const Tpetra::MpiComm<Ordinal,Packet> >(tpetraComm);
+  if( mpiTpetraComm.get() ) {
+    RefCountPtr<const Teuchos::OpaqueWrapper<MPI_Comm> >
+      rawMpiComm = Teuchos::opaqueWrapper(mpiTpetraComm->getMpiComm());
+    set_extra_data( mpiTpetraComm, "mpiTpetraComm", &rawMpiComm );
+    RefCountPtr<const Teuchos::MpiComm<Index> >
+      mpiComm = rcp(new Teuchos::MpiComm<Index>(rawMpiComm));
+    return mpiComm;
+  }
+
+#endif // HAVE_MPI
+  
+  // If you get here then the failed!
+  return Teuchos::null;
+
+}
+
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceDefaultBase<Scalar> >
+Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceDefaultBase<Scalar> >
 Thyra::create_VectorSpace(
   const Teuchos::RefCountPtr<const Tpetra::VectorSpace<Ordinal,Scalar> > &tpetra_vs
   )
@@ -267,33 +322,14 @@ Thyra::create_VectorSpace(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( !tpetra_vs.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
-  MPI_Comm mpiComm;
-#ifdef HAVE_MPI
-  const Tpetra::MpiComm<Ordinal,Scalar>
-    *tpetra_mpi_comm = dynamic_cast<const Tpetra::MpiComm<Ordinal,Scalar>*>(&tpetra_vs->comm());
-  if(tpetra_mpi_comm) {
-    //std::cout << "EpetraVectorSpace::initialize(...): Using an Tpetra::MpiComm<Ordinal,Scalar>!\n";
-    mpiComm = tpetra_mpi_comm->getMpiComm();
-#ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
-      mpiComm == MPI_COMM_NULL, std::logic_error
-      ,"EpetraVectorSpace::initialize(...), Error, if using Tpetra::MpiComm<Ordinal,Scalar> then "
-      "the associated MPI_Comm object can not be MPI_COMM_NULL!"
-      );
-#endif // TEUCHOS_DEBUG
-     //std::cout << "EpetraVectorSpace::initialize(...): mpiComm = " << mpiComm << std::endl;
-  }
-  else {
-    mpiComm = MPI_COMM_NULL;
-  }
-#else // HAVE_MPI
-  mpiComm = MPI_COMM_NULL;
-#endif // HAVE_MPI
+  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+    comm = create_Comm(Teuchos::rcp(&tpetra_vs->comm(),false)).assert_not_null();
+  Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", &comm );
   const Index localSubDim = tpetra_vs->getNumMyEntries();
-  Teuchos::RefCountPtr<DefaultMPIVectorSpace<Scalar> >
+  Teuchos::RefCountPtr<DefaultSpmdVectorSpace<Scalar> >
     vs = Teuchos::rcp(
-      new DefaultMPIVectorSpace<Scalar>(
-        mpiComm
+      new DefaultSpmdVectorSpace<Scalar>(
+        comm
         ,localSubDim
         ,tpetra_vs->getNumGlobalEntries()
         )
@@ -310,15 +346,15 @@ Thyra::create_VectorSpace(
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<Thyra::MPIVectorBase<Scalar> >
+Teuchos::RefCountPtr<Thyra::SpmdVectorBase<Scalar> >
 Thyra::create_Vector(
   const Teuchos::RefCountPtr<Tpetra::Vector<Ordinal,Scalar> >             &tpetra_v
-  ,const Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >   &space_in
+  ,const Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >   &space_in
   )
 {
   if(!tpetra_v.get()) return Teuchos::null;
   // Create the space if it is missing
-  Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >
+  Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >
     space = space_in;
   if(!space.get())
     space =
@@ -328,22 +364,22 @@ Thyra::create_Vector(
   // New local view of raw data
   Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
-  Teuchos::RefCountPtr<MPIVectorBase<Scalar> >
-    v = Teuchos::rcp(new DefaultMPIVector<Scalar>(space,Teuchos::rcp(localValues,false),1));
+  Teuchos::RefCountPtr<SpmdVectorBase<Scalar> >
+    v = Teuchos::rcp(new DefaultSpmdVector<Scalar>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
 }
 
 template<class Ordinal, class Scalar>
-Teuchos::RefCountPtr<const Thyra::MPIVectorBase<Scalar> >
+Teuchos::RefCountPtr<const Thyra::SpmdVectorBase<Scalar> >
 Thyra::create_Vector(
   const Teuchos::RefCountPtr<const Tpetra::Vector<Ordinal,Scalar> >       &tpetra_v
-  ,const Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >   &space_in
+  ,const Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >   &space_in
   )
 {
   if(!tpetra_v.get()) return Teuchos::null;
   // Create the space if it is missing
-  Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<Scalar> >
+  Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<Scalar> >
     space = space_in;
   if(!space.get())
     space =
@@ -353,8 +389,8 @@ Thyra::create_Vector(
   // New local view of raw data
   const Scalar *localValues = &(*tpetra_v)[0]; // This points to contiguous memory!
   // Build the Vector with a view of the data
-  Teuchos::RefCountPtr<const MPIVectorBase<Scalar> >
-    v = Teuchos::rcp(new DefaultMPIVector<Scalar>(space,Teuchos::rcp(const_cast<Scalar*>(localValues),false),1));
+  Teuchos::RefCountPtr<const SpmdVectorBase<Scalar> >
+    v = Teuchos::rcp(new DefaultSpmdVector<Scalar>(space,Teuchos::rcp(const_cast<Scalar*>(localValues),false),1));
   Teuchos::set_extra_data( tpetra_v, "Tpetra_Vector", &v );
   return v;
 }
@@ -388,11 +424,11 @@ Thyra::get_Tpetra_Vector(
   //
   // The assumption that we (rightly) make here is that if the vector spaces
   // are compatible, that either the vectors are both in-core or the vector
-  // spaces are both derived from MPIVectorSpaceBase and have compatible
+  // spaces are both derived from SpmdVectorSpaceBase and have compatible
   // distributions.
   // 
   const VectorSpaceBase<Scalar>  &vs = *v->range();
-  const MPIVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<Scalar>*>(&vs);
+  const SpmdVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<Scalar>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
@@ -463,11 +499,11 @@ Thyra::get_Tpetra_Vector(
   //
   // The assumption that we (rightly) make here is that if the vector spaces
   // are compatible, that either the vectors are both in-core or the vector
-  // spaces are both derived from MPIVectorSpaceBase and have compatible
+  // spaces are both derived from SpmdVectorSpaceBase and have compatible
   // distributions.
   // 
   const VectorSpaceBase<Scalar>  &vs = *v->range();
-  const MPIVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<Scalar>*>(&vs);
+  const SpmdVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<Scalar>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //

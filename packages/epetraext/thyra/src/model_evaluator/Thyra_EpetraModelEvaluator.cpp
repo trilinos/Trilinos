@@ -58,34 +58,34 @@ void EpetraModelEvaluator::initialize(
   //
   W_factory_ = W_factory;
   //
-  x_space_ = create_MPIVectorSpaceBase( x_map_ = epetraModel_->get_x_map() );
-  f_space_ = create_MPIVectorSpaceBase( f_map_ = epetraModel_->get_f_map() );
+  x_space_ = create_VectorSpace( x_map_ = epetraModel_->get_x_map() );
+  f_space_ = create_VectorSpace( f_map_ = epetraModel_->get_f_map() );
   //
   EpetraExt::ModelEvaluator::InArgs inArgs = epetraModel_->createInArgs();
   p_map_.resize(inArgs.Np()); p_space_.resize(inArgs.Np());
   for( int l = 0; l < static_cast<int>(p_space_.size()); ++l )
-    p_space_[l] = create_MPIVectorSpaceBase( p_map_[l] = epetraModel_->get_p_map(l) );
+    p_space_[l] = create_VectorSpace( p_map_[l] = epetraModel_->get_p_map(l) );
   //
   EpetraExt::ModelEvaluator::OutArgs outArgs = epetraModel_->createOutArgs();
   g_map_.resize(outArgs.Ng()); g_space_.resize(outArgs.Ng());
   for( int j = 0; j < static_cast<int>(g_space_.size()); ++j )
-    g_space_[j] = create_MPIVectorSpaceBase( g_map_[j] = epetraModel_->get_g_map(j) );
+    g_space_[j] = create_VectorSpace( g_map_[j] = epetraModel_->get_g_map(j) );
   //
   initialGuess_ = this->createInArgs();
   lowerBounds_ = this->createInArgs();
   upperBounds_ = this->createInArgs();
   if(initialGuess_.supports(MEB::IN_ARG_x)) {
-    initialGuess_.set_x( create_MPIVectorBase( epetraModel_->get_x_init(), x_space_ ) );
-    lowerBounds_.set_x( create_MPIVectorBase( epetraModel_->get_x_lower_bounds(), x_space_ ) );
-    upperBounds_.set_x( create_MPIVectorBase( epetraModel_->get_x_upper_bounds(), x_space_ ) );
+    initialGuess_.set_x( create_Vector( epetraModel_->get_x_init(), x_space_ ) );
+    lowerBounds_.set_x( create_Vector( epetraModel_->get_x_lower_bounds(), x_space_ ) );
+    upperBounds_.set_x( create_Vector( epetraModel_->get_x_upper_bounds(), x_space_ ) );
   }
   if(initialGuess_.supports(MEB::IN_ARG_x_dot)) {
-    initialGuess_.set_x_dot( create_MPIVectorBase( epetraModel_->get_x_dot_init(), x_space_ ) );
+    initialGuess_.set_x_dot( create_Vector( epetraModel_->get_x_dot_init(), x_space_ ) );
   }
   for( int l = 0; l < static_cast<int>(p_space_.size()); ++l ) {
-    initialGuess_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_init(l), p_space_[l] ) );
-    lowerBounds_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_lower_bounds(l), p_space_[l] ) );
-    upperBounds_.set_p( l, create_MPIVectorBase( epetraModel_->get_p_upper_bounds(l), p_space_[l] ) );
+    initialGuess_.set_p( l, create_Vector( epetraModel_->get_p_init(l), p_space_[l] ) );
+    lowerBounds_.set_p( l, create_Vector( epetraModel_->get_p_lower_bounds(l), p_space_[l] ) );
+    upperBounds_.set_p( l, create_Vector( epetraModel_->get_p_upper_bounds(l), p_space_[l] ) );
   }
   if(initialGuess_.supports(MEB::IN_ARG_t)) {
     initialGuess_.set_t(epetraModel_->get_t_init());

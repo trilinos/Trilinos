@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "SerialTridiagLinearOp.hpp"
+#include "ExampleTridiagSerialLinearOp.hpp"
 #include "sillyCgSolve.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
@@ -36,13 +36,14 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 //
 // This example program is meant to show how easy it is to create
 // serial Thyra objects and use them with an ANA (CG in this case).
 //
 // This example uses a silly concrete tridiagonal matrix class called
-// SerialTridiagLinearOp that demonstrates how to write and use such
+// ExampleSpmdTridiagLinearOp that demonstrates how to write and use such
 // subclasses.
 //
 template<class Scalar>
@@ -56,7 +57,7 @@ bool runCgSolveExample(
   ,const int                                                     maxNumIters
   )
 {
-  using Teuchos::RefCountPtr; using Teuchos::rcp;
+  using Teuchos::RefCountPtr; using Teuchos::rcp; using Teuchos::null;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::multiply; using Thyra::scale;
@@ -89,7 +90,7 @@ bool runCgSolveExample(
   }
   lower[k-1] = low; diag[k] = diagTerm;                       // Last row
   RefCountPtr<const Thyra::LinearOpBase<Scalar> >
-    A = rcp(new SerialTridiagLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]));
+    A = rcp(new ExampleTridiagSerialLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]));
   // (A.2) Testing the linear operator constructed linear operator
   if(verbose) *out << "\nTesting the constructed linear operator A ...\n";
   Thyra::LinearOpTester<Scalar> linearOpTester;
@@ -235,14 +236,7 @@ int main(int argc, char *argv[])
 #endif
 
   }
-  catch( const std::exception &excpt ) {
-    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    std::cerr << "*** Caught an unknown exception\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
   if (verbose) {
     if(success)   *out << "\nCongratulations! All of the tests checked out!\n";

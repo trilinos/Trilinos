@@ -27,10 +27,11 @@
 // @HEADER
 
 #include "sillyPowerMethod.hpp"
-#include "SerialTridiagLinearOp.hpp"
+#include "ExampleTridiagSerialLinearOp.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 //
 // This example function is meant to show how easy it is to create
@@ -80,8 +81,8 @@ bool runPowerMethodExample(
     lower[k-1] = -one; diag[k] = two; upper[k] = -one;   //  Middle rows
   }
   lower[k-1] = -one; diag[k] = two;                      //  Last row
-  Teuchos::RefCountPtr<SerialTridiagLinearOp<Scalar> >
-    A = Teuchos::rcp( new SerialTridiagLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]) );
+  Teuchos::RefCountPtr<ExampleTridiagSerialLinearOp<Scalar> >
+    A = Teuchos::rcp( new ExampleTridiagSerialLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]) );
   if( verbose && dumpAll ) *out << "\nA =\n" << *A;
 
   //
@@ -199,14 +200,7 @@ int main(int argc, char *argv[])
 #endif
     
   }
-  catch( const std::exception &excpt ) {
-    std::cerr << "*** Caught standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    std::cerr << "*** Caught an unknown exception\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
   
   if (verbose) {
     if(success)  *out << "\nCongratulations! All of the tests checked out!\n";

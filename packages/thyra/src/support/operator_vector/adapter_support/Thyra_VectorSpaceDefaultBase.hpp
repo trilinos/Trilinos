@@ -31,7 +31,7 @@
 
 #include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
-#include "Thyra_DefaultSerialVectorSpaceFactory.hpp"
+#include "Thyra_DefaultSpmdVectorSpaceFactory.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultColumnwiseMultiVector.hpp"
@@ -82,7 +82,7 @@ template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceFactoryBase<Scalar> >
 VectorSpaceDefaultBase<Scalar>::smallVecSpcFcty() const
 {
-  return Teuchos::rcp(new DefaultSerialVectorSpaceFactory<Scalar>());
+  return Teuchos::rcp(new DefaultSpmdVectorSpaceFactory<Scalar>());
 }
 
 template<class Scalar>

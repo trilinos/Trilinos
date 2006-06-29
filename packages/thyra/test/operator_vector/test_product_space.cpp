@@ -27,10 +27,13 @@
 // @HEADER
 
 #include "Thyra_DefaultProductVectorSpace.hpp"
-#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
 /** \brief Main test driver function for composite product spaces
@@ -68,12 +71,15 @@ bool run_product_space_tests(
 
   std::vector<Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+    comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
+  const int numProcs = size(*comm);
   Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> >
-    spaceBlock = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
+    spaceBlock = Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
-
-  if(out.get()) *out << "\nA)Performing basic tests on product vectors with serial constituent vectors ...\n";
+  
+  if(out.get()) *out << "\nA) Performing basic tests on product vectors with serial constituent vectors ...\n";
 
   if(out.get()) *out << "\nCreating a product space ps with numBlocks="<<numBlocks<<" and n="<<n<<"vector elements per block ...\n";
 
@@ -89,86 +95,90 @@ bool run_product_space_tests(
   if(out.get()) *out << "\nTesting the product space ps ...\n";
 
   if(out.get()) *out << "\nps.dim()=";
-  result = ps.dim() == n*numBlocks;
+  result = ps.dim() == numProcs*n*numBlocks;
   if(!result) success = false;
   if(out.get()) *out
-    << ps.dim() << " == n*numBlocks=" << n*numBlocks
+    << ps.dim() << " == numProcs*n*numBlocks=" << numProcs*n*numBlocks
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
-
+  
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of ps ...\n";
   result = vectorSpaceTester.check(ps,out.get());
   if(!result) success = false;
 
-  if(out.get()) *out
-    << "\nB) Test the compatibility of serial vectors and product vectors with serial blocks."
-    << "\n   These tests demonstrate the principle of how all in-core vectors are compatible ...\n";
+  if(numProcs==1) {
 
-  const Scalar
-    one   = ST::one(),
-    two   = Scalar(2)*one,
-    three = Scalar(3)*one;
+    if(out.get()) *out
+      << "\nB) Test the compatibility of serial vectors and product vectors with serial blocks."
+      << "\n   These tests demonstrate the principle of how all in-core vectors are compatible ...\n";
+    
+    const Scalar
+      one   = ST::one(),
+      two   = Scalar(2)*one,
+      three = Scalar(3)*one;
+    
+    if(out.get()) *out << "\nCreating a serial vector space ss with numBlocks*n=" << numBlocks*n << " vector elements ...\n";
+    
+    Thyra::DefaultSpmdVectorSpace<Scalar> ss(numBlocks*n);
+    
+    if(out.get()) *out << "\nTesting the serial space ss ...\n";
+    result = vectorSpaceTester.check(ss,out.get());
+    if(!result) success = false;
+    
+    if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+      pv1 = createMember(ps),
+      pv2 = createMember(ps);
+    
+    if(out.get()) *out << "\nassign(&pv1,2.0) ...\n";
+    Thyra::assign( &*pv1, two );
+    
+    if(out.get()) *out << "\nassign(&pv1,3.0) ...\n";
+    Thyra::assign( &*pv2, three );
+    
+    if(out.get()) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
+    Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
+      sv1 = createMember(ss),
+      sv2 = createMember(ss);
+    
+    if(out.get()) *out << "\nassign(&sv1,*pv1) ...\n";
+    Thyra::assign( &*sv1, *pv1 );
+    
+    if(out.get()) *out << "\nsum(sv1)=";
+    sresult1 = Thyra::sum(*sv1);
+    sresult2 = two*Scalar(ps.dim());
+    result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
+               < ST::magnitude( tol ) );
+    if(!result) success = false;
+    if(out.get()) *out
+      << sresult1 << " == 2*ps.dim()=" << sresult2
+      << " : " << ( result ? "passed" : "failed" ) << std::endl;
+    
+    if(out.get() && dumpAll) *out
+      << "\nsv1 =\n" << *sv1;
+    
+    if(out.get()) *out << "\nassign(&pv2,*sv1) ...\n";
+    Thyra::assign( &*pv2, *sv1 );
+    
+    if(out.get()) *out << "\nsum(pv2)=";
+    sresult1 = Thyra::sum(*pv2);
+    sresult2 = two*Scalar(ps.dim());
+    result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
+               < ST::magnitude( tol ) );
+    if(!result) success = false;
+    if(out.get()) *out
+      << sresult1 << " == 2*ps.dim()=" << sresult2
+      << " : " << ( result ? "passed" : "failed" ) << std::endl;
+    
+    if(out.get() && dumpAll) *out
+      << "\npv2 =\n" << *pv2;
+    
+    // ToDo: Finish tests!
 
-  if(out.get()) *out << "\nCreating a serial vector space ss with numBlocks*n=" << numBlocks*n << " vector elements ...\n";
-
-  Thyra::DefaultSerialVectorSpace<Scalar> ss(numBlocks*n);
-
-  if(out.get()) *out << "\nTesting the serial space ss ...\n";
-  result = vectorSpaceTester.check(ss,out.get());
-  if(!result) success = false;
-
-  if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
-    pv1 = createMember(ps),
-    pv2 = createMember(ps);
-
-  if(out.get()) *out << "\nassign(&pv1,2.0) ...\n";
-  Thyra::assign( &*pv1, two );
-
-  if(out.get()) *out << "\nassign(&pv1,3.0) ...\n";
-  Thyra::assign( &*pv2, three );
-
-  if(out.get()) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
-  Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> >
-    sv1 = createMember(ss),
-    sv2 = createMember(ss);
-
-  if(out.get()) *out << "\nassign(&sv1,*pv1) ...\n";
-  Thyra::assign( &*sv1, *pv1 );
-
-  if(out.get()) *out << "\nsum(sv1)=";
-  sresult1 = Thyra::sum(*sv1);
-  sresult2 = two*Scalar(ps.dim());
-  result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
-             < ST::magnitude( tol ) );
-  if(!result) success = false;
-  if(out.get()) *out
-    << sresult1 << " == 2*ps.dim()=" << sresult2
-    << " : " << ( result ? "passed" : "failed" ) << std::endl;
-  
-  if(out.get() && dumpAll) *out
-    << "\nsv1 =\n" << *sv1;
-
-  if(out.get()) *out << "\nassign(&pv2,*sv1) ...\n";
-  Thyra::assign( &*pv2, *sv1 );
-
-  if(out.get()) *out << "\nsum(pv2)=";
-  sresult1 = Thyra::sum(*pv2);
-  sresult2 = two*Scalar(ps.dim());
-  result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
-             < ST::magnitude( tol ) );
-  if(!result) success = false;
-  if(out.get()) *out
-    << sresult1 << " == 2*ps.dim()=" << sresult2
-    << " : " << ( result ? "passed" : "failed" ) << std::endl;
-  
-  if(out.get() && dumpAll) *out
-    << "\npv2 =\n" << *pv2;
-
-  // ToDo: Finish tests!
-
+  }
+    
   if(out.get()) *out
     << "\n*** Leaving run_product_space_tests<"<<ST::name()<<">(...) ...\n";
-
+  
   return success;
 
 } // end run_product_space_tests() [Doxygen looks for this!]
@@ -179,6 +189,8 @@ int main( int argc, char* argv[] ) {
 
   bool success = true;
   bool verbose = true;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   Teuchos::RefCountPtr<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -221,16 +233,7 @@ int main( int argc, char* argv[] ) {
 #endif
 
   } // end try
-  catch( const std::exception &excpt ) {
-    if(verbose)
-      std::cerr << "*** Caught a standard exception : " << excpt.what() << std::endl;
-    success = false;
-  }
-  catch( ... ) {
-    if(verbose)
-      std::cerr << "*** Caught an unknown exception!\n";
-    success = false;
-  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
   if(verbose) {
     if(success)

@@ -26,54 +26,54 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_SPACE_HPP
-#define THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_SPACE_HPP
+#ifndef THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_HPP
+#define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_HPP
 
-#include "Thyra_DefaultClusteredMPIProductVectorSpaceDecl.hpp"
-#include "Thyra_MPIVectorSpaceBase.hpp"
-#include "Thyra_DefaultClusteredMPIProductVector.hpp"
+#include "Thyra_DefaultClusteredSpmdProductVectorSpaceDecl.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
+#include "Thyra_DefaultClusteredSpmdProductVector.hpp"
 #include "Thyra_VectorSpaceDefaultBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_MPIVectorSpaceUtilities.hpp"
+#include "Thyra_SpmdVectorSpaceUtilities.hpp"
 
 namespace Thyra {
 
 // Constructors/Intializers/Accessors
 
 template<class Scalar>
-DefaultClusteredMPIProductVectorSpace<Scalar>::DefaultClusteredMPIProductVectorSpace()
+DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVectorSpace()
   :isEuclidean_(false),globalDim_(0),clusterSubDim_(-1),clusterOffset_(-1)
 {}
 
 template<class Scalar>
-DefaultClusteredMPIProductVectorSpace<Scalar>::DefaultClusteredMPIProductVectorSpace(
-  const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >   &intraClusterComm
-  ,const int                                                      clusterRootRank
-  ,const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >  &interClusterComm
-  ,const int                                                      numBlocks
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVectorSpace(
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+  ,const int                                                       clusterRootRank
+  ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+  ,const int                                                       numBlocks
+  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
 {
   initialize(intraClusterComm,clusterRootRank,interClusterComm,numBlocks,vecSpaces);
 }
 
 template<class Scalar>
-void DefaultClusteredMPIProductVectorSpace<Scalar>::initialize(
-  const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >   &intraClusterComm
-  ,const int                                                      clusterRootRank
-  ,const Teuchos::RefCountPtr<Teuchos::OpaqueWrapper<MPI_Comm> >  &interClusterComm
-  ,const int                                                      numBlocks
-  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >     vecSpaces[]
+void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >          &intraClusterComm
+  ,const int                                                       clusterRootRank
+  ,const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >         &interClusterComm
+  ,const int                                                       numBlocks
+  ,const Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
 {
   // Set state
   intraClusterComm_ = intraClusterComm.assert_not_null();
   clusterRootRank_ = clusterRootRank;
-  interClusterComm_ = interClusterComm.assert_not_null();
+  interClusterComm_ = interClusterComm; // This can be NULL!
   vecSpaces_.resize(numBlocks);
   isEuclidean_ = true;
-  int clusterSubDim = 0;
+  Index clusterSubDim = 0;
   for( int k = 0; k < numBlocks; ++k ) {
     clusterSubDim += vecSpaces[k]->dim();
     if(!vecSpaces[k]->isEuclidean())
@@ -82,18 +82,22 @@ void DefaultClusteredMPIProductVectorSpace<Scalar>::initialize(
   }
   // We must compute the offsets between clusters and the global dimension by
   // only involving the root process in each cluster.
-  if(*interClusterComm_!=MPI_COMM_NULL) {
-    clusterOffset_ = MPIVectorSpaceUtilities::computeLocalOffset(
+  if(interClusterComm_.get()) {
+    clusterOffset_ = SpmdVectorSpaceUtilities::computeLocalOffset(
       *interClusterComm_,clusterSubDim
       );
-    globalDim_ = MPIVectorSpaceUtilities::computeGlobalDim(
+    globalDim_ = SpmdVectorSpaceUtilities::computeGlobalDim(
       *interClusterComm_,clusterSubDim
     );
   }
-  // Here must then scatter the values to all processes within each cluster.
-  MPIVectorSpaceUtilities::broadcast(*intraClusterComm_,clusterRootRank_,&clusterOffset_);
-  MPIVectorSpaceUtilities::broadcast(*intraClusterComm_,clusterRootRank_,&globalDim_);
-  // ToDo: Make the above a single broadcast to be more efficient!
+  // Here must then broadcast the values to all processes within each cluster.
+  if(1) {
+    const Index num = 2;
+    Index buff[num] = { clusterOffset_, globalDim_ };
+    broadcast(*intraClusterComm_,clusterRootRank_,num,&buff[0]);
+    clusterOffset_ = buff[0];
+    globalDim_     = buff[1];
+  }
   //
   clusterSubDim_ = clusterSubDim;
   // ToDo: Do a global communication across all clusters to see if all vector
@@ -105,10 +109,10 @@ void DefaultClusteredMPIProductVectorSpace<Scalar>::initialize(
 // Overridden form Teuchos::Describable
 
 template<class Scalar>
-std::string DefaultClusteredMPIProductVectorSpace<Scalar>::description() const
+std::string DefaultClusteredSpmdProductVectorSpace<Scalar>::description() const
 {
   std::ostringstream oss;
-  oss << "DefaultClusteredMPIProductVectorSpace{";
+  oss << "DefaultClusteredSpmdProductVectorSpace{";
   oss << "numBlocks="<<vecSpaces_.size();
   oss << ",globalDim="<<globalDim_;
   oss << ",clusterOffset="<<clusterOffset_;
@@ -119,13 +123,13 @@ std::string DefaultClusteredMPIProductVectorSpace<Scalar>::description() const
 // Public overridden from VectorSpaceBase
 
 template<class Scalar>
-Index DefaultClusteredMPIProductVectorSpace<Scalar>::dim() const
+Index DefaultClusteredSpmdProductVectorSpace<Scalar>::dim() const
 {
   return globalDim_;
 }
 
 template<class Scalar>
-bool DefaultClusteredMPIProductVectorSpace<Scalar>::isCompatible(
+bool DefaultClusteredSpmdProductVectorSpace<Scalar>::isCompatible(
   const VectorSpaceBase<Scalar>& vecSpc
   ) const
 {
@@ -139,7 +143,7 @@ bool DefaultClusteredMPIProductVectorSpace<Scalar>::isCompatible(
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceFactoryBase<Scalar> >
-DefaultClusteredMPIProductVectorSpace<Scalar>::smallVecSpcFcty() const
+DefaultClusteredSpmdProductVectorSpace<Scalar>::smallVecSpcFcty() const
 {
   if(!vecSpaces_.size())
     return Teuchos::null;
@@ -147,7 +151,7 @@ DefaultClusteredMPIProductVectorSpace<Scalar>::smallVecSpcFcty() const
 }
 
 template<class Scalar>
-Scalar DefaultClusteredMPIProductVectorSpace<Scalar>::scalarProd(
+Scalar DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProd(
   const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
   ) const
 {
@@ -157,7 +161,7 @@ Scalar DefaultClusteredMPIProductVectorSpace<Scalar>::scalarProd(
 }
 
 template<class Scalar>
-void DefaultClusteredMPIProductVectorSpace<Scalar>::scalarProds(
+void DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProds(
   const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y
   ,Scalar scalar_prods[]
   ) const
@@ -168,7 +172,7 @@ void DefaultClusteredMPIProductVectorSpace<Scalar>::scalarProds(
     );
   return dots(X,Y,scalar_prods);
   // ToDo:
-  // * Create DefaultClusteredMPIProductMultiVector subclass
+  // * Create DefaultClusteredSpmdProductMultiVector subclass
   // * Cast X and Y this type
   // * Accumulate the scalar products across all of the blocks in this cluster
   // * Accumulate the full scalar products across all of the clusters
@@ -178,13 +182,13 @@ void DefaultClusteredMPIProductVectorSpace<Scalar>::scalarProds(
 }
 
 template<class Scalar>
-bool DefaultClusteredMPIProductVectorSpace<Scalar>::isEuclidean() const
+bool DefaultClusteredSpmdProductVectorSpace<Scalar>::isEuclidean() const
 {
   return isEuclidean_;
 }
 
 template<class Scalar>
-bool DefaultClusteredMPIProductVectorSpace<Scalar>::hasInCoreView(
+bool DefaultClusteredSpmdProductVectorSpace<Scalar>::hasInCoreView(
   const Range1D& rng, const EViewType viewType, const EStrideType strideType
   ) const
 {
@@ -193,22 +197,22 @@ bool DefaultClusteredMPIProductVectorSpace<Scalar>::hasInCoreView(
 
 template<class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
-DefaultClusteredMPIProductVectorSpace<Scalar>::clone() const
+DefaultClusteredSpmdProductVectorSpace<Scalar>::clone() const
 {
-  return Teuchos::rcp(new DefaultClusteredMPIProductVectorSpace<Scalar>(*this));
+  return Teuchos::rcp(new DefaultClusteredSpmdProductVectorSpace<Scalar>(*this));
 }
 
 // Protected overridden from ProductVectorSpaceBase
 
 template<class Scalar>
-int DefaultClusteredMPIProductVectorSpace<Scalar>::numBlocks() const
+int DefaultClusteredSpmdProductVectorSpace<Scalar>::numBlocks() const
 {
   return vecSpaces_.size();
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<const VectorSpaceBase<Scalar> >
-DefaultClusteredMPIProductVectorSpace<Scalar>::getBlock(const int k) const
+DefaultClusteredSpmdProductVectorSpace<Scalar>::getBlock(const int k) const
 {
   TEST_FOR_EXCEPT( !( 0 <= k && k < vecSpaces_.size() ) );
   return vecSpaces_[k];
@@ -218,15 +222,15 @@ DefaultClusteredMPIProductVectorSpace<Scalar>::getBlock(const int k) const
 
 template<class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-DefaultClusteredMPIProductVectorSpace<Scalar>::createMember() const
+DefaultClusteredSpmdProductVectorSpace<Scalar>::createMember() const
 {
   using Teuchos::rcp;
-  return rcp(new DefaultClusteredMPIProductVector<Scalar>(rcp(this,false),NULL));
+  return rcp(new DefaultClusteredSpmdProductVector<Scalar>(rcp(this,false),NULL));
 }
 
 template<class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-DefaultClusteredMPIProductVectorSpace<Scalar>::createMembers(int numMembers) const
+DefaultClusteredSpmdProductVectorSpace<Scalar>::createMembers(int numMembers) const
 {
   return VectorSpaceDefaultBase<Scalar>::createMembers(numMembers);
   // ToDo: Provide an optimized multi-vector implementation when needed!
@@ -234,4 +238,4 @@ DefaultClusteredMPIProductVectorSpace<Scalar>::createMembers(int numMembers) con
 
 } // end namespace Thyra
 
-#endif // THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_SPACE_HPP
+#endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_HPP

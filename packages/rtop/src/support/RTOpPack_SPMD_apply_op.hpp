@@ -269,6 +269,38 @@ void ReductTargetReductionOp<Scalar>::reduce(
 } // namespace RTOpPack
 
 template<class Scalar>
+void RTOpPack::SPMD_all_reduce(
+  const Teuchos::Comm<index_type>     *comm
+  ,const RTOpT<Scalar>                &op
+  ,const int                          num_cols
+  ,const ReductTarget*const           i_reduct_objs[]
+  ,ReductTarget*const                 reduct_objs[]
+  )
+{
+  using Teuchos::Workspace;
+  Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
+  Workspace<Teuchos::RefCountPtr<ReductTarget> >
+    i_i_reduct_objs( wss, num_cols );
+  Workspace<ReductTarget*>
+    _i_i_reduct_objs( wss, num_cols );
+  for( int kc = 0; kc < num_cols; ++kc ) {
+    i_i_reduct_objs[kc] = op.reduct_obj_create();
+    _i_i_reduct_objs[kc] = &*i_i_reduct_objs[kc];
+  }
+  ReductTargetSerializer<Scalar>
+    serializer(Teuchos::rcp(&op,false));
+  ReductTargetReductionOp<Scalar>
+    reductOp(Teuchos::rcp(&op,false));
+  reduceAll(
+    *comm,serializer,reductOp
+    ,num_cols,&i_reduct_objs[0],&_i_i_reduct_objs[0]
+    );
+  for( int kc = 0; kc < num_cols; ++kc ) {
+    op.reduce_reduct_objs(*_i_i_reduct_objs[kc],reduct_objs[kc]);
+  }
+}
+
+template<class Scalar>
 void RTOpPack::SPMD_apply_op(
   const Teuchos::Comm<index_type>               *comm
   ,const RTOpT<Scalar>                          &op
@@ -439,28 +471,10 @@ void RTOpPack::SPMD_apply_op(
       //
       Workspace<const ReductTarget*>
         _i_reduct_objs( wss, num_cols );
-      Workspace<Teuchos::RefCountPtr<ReductTarget> >
-        i_i_reduct_objs( wss, num_cols );
-      Workspace<ReductTarget*>
-        _i_i_reduct_objs( wss, num_cols );
       for( int kc = 0; kc < num_cols; ++kc ) {
         _i_reduct_objs[kc] = &*i_reduct_objs[kc];
-        i_i_reduct_objs[kc] = op.reduct_obj_create();
-        _i_i_reduct_objs[kc] = &*i_i_reduct_objs[kc];
       }
-      if(1) {
-        ReductTargetSerializer<Scalar>
-          serializer(Teuchos::rcp(&op,false));
-        ReductTargetReductionOp<Scalar>
-          reductOp(Teuchos::rcp(&op,false));
-        reduceAll(
-          *comm,serializer,reductOp
-          ,num_cols,&_i_reduct_objs[0],&_i_i_reduct_objs[0]
-          );
-      }
-      for( int kc = 0; kc < num_cols; ++kc ) {
-        op.reduce_reduct_objs(*_i_i_reduct_objs[kc],reduct_objs[kc]);
-      }
+      SPMD_all_reduce(comm,op,num_cols,&_i_reduct_objs[0],reduct_objs);
     }
   }
 #ifdef RTOPPACK_SPMD_APPLY_OP_DUMP

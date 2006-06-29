@@ -155,8 +155,8 @@ int main(int argc, char *argv[])
     Teuchos::rcp( &K->OperatorDomainMap(), false );
 
   // create a Thyra::VectorSpaceBase
-  Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceBase<double> > epetra_vs = 
-    Thyra::create_MPIVectorSpaceBase(Map);
+  Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceBase<double> > epetra_vs = 
+    Thyra::create_VectorSpace(Map);
 
   // then, a ScalarProdVectorSpaceBase
   Teuchos::RefCountPtr<const Thyra::ScalarProdVectorSpaceBase<double> > sp_domain = 
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
 
   // create a MultiVectorBase (from the Epetra_MultiVector)
   Teuchos::RefCountPtr<Thyra::MultiVectorBase<double> > thyra_ivec = 
-    Thyra::create_MPIMultiVectorBase(Teuchos::rcp_implicit_cast<Epetra_MultiVector>(ivec), 
+    Thyra::create_MultiVector(Teuchos::rcp_implicit_cast<Epetra_MultiVector>(ivec), 
                                      epetra_vs,sp_domain);
 
   // Create Thyra LinearOpBase objects from the Epetra_Operator objects

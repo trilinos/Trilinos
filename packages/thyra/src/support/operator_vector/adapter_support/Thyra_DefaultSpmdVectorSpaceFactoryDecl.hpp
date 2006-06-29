@@ -31,6 +31,8 @@
 
 #include "Thyra_VectorSpaceFactoryBaseDecl.hpp"
 
+namespace Teuchos { template<typename Ordinal> class Comm; }
+
 namespace Thyra {
 
 /** \brief Concrete implementation of a vector-space factory for a
@@ -52,18 +54,19 @@ template<class Scalar>
 class DefaultSpmdVectorSpaceFactory : public VectorSpaceFactoryBase<Scalar> {
 public:
 
-  /** \brief Construct with an <tt>Spmd_Comm</tt> object.
+  /** \brief Construct with a <tt>Teuchos::Comm</tt> object.
    *
    * \param  comm
    *           [in] The  communicator.  This object must be maintained
    *           by the client the entire time that <tt>this</tt> is in use.
+   *           It is allowed for <tt>comm.get()==NULL</tt>.
    * 
    * Postconditions:<ul>
    * <li><tt>this->getComm().get() == comm.get()</tt>
    * </ul>
    */
   DefaultSpmdVectorSpaceFactory(
-    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
+    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm = Teuchos::null
     );
 
   /** \brief Return the Spmd communicator. */
@@ -95,8 +98,6 @@ public:
 private:
 
   Teuchos::RefCountPtr<const Teuchos::Comm<Index> >  comm_;
-
-  DefaultSpmdVectorSpaceFactory(); // Not defined and not to be called!
     
 }; // end class DefaultSpmdVectorSpaceFactory
 

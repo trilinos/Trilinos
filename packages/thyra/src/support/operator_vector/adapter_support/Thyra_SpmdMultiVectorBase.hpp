@@ -31,7 +31,7 @@
 
 #include "Thyra_SpmdMultiVectorBaseDecl.hpp"
 #include "Thyra_MultiVectorDefaultBase.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
+#include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "RTOpPack_SPMD_apply_op.hpp"

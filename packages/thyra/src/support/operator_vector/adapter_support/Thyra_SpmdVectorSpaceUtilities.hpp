@@ -45,9 +45,6 @@ Index computeLocalOffset( const Teuchos::Comm<Index> &comm, const Index localSub
 /** \brief . */
 Index computeGlobalDim( const Teuchos::Comm<Index> &comm, const Index localSubDim );
 
-/** \brief . */
-void broadcast( const Teuchos::Comm<Index> &comm, const int rootRank, Index* value );
-
 } // namespace SpmdVectorSpaceUtiltities
 
 } // namespace Thyra

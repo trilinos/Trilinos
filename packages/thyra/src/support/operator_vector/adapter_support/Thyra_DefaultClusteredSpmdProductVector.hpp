@@ -26,14 +26,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_HPP
-#define THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_HPP
+#ifndef THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_HPP
+#define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_HPP
 
-#include "Thyra_DefaultClusteredMPIProductVectorDecl.hpp"
-#include "Thyra_DefaultClusteredMPIProductVectorSpace.hpp"
-#include "Thyra_MPIVectorBase.hpp"
+#include "Thyra_DefaultClusteredSpmdProductVectorDecl.hpp"
+#include "Thyra_DefaultClusteredSpmdProductVectorSpace.hpp"
+#include "Thyra_SpmdVectorBase.hpp"
 #include "RTOp_parallel_helpers.h"
-#include "RTOpPack_MPI_apply_op.hpp"
+#include "RTOpPack_SPMD_apply_op.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_arrayArg.hpp"
@@ -43,24 +43,24 @@ namespace Thyra {
 // Constructors/initializers/accessors
 
 template <class Scalar>
-DefaultClusteredMPIProductVector<Scalar>::DefaultClusteredMPIProductVector()
+DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector()
 {
   uninitialize();
 }
 
 template <class Scalar>
-DefaultClusteredMPIProductVector<Scalar>::DefaultClusteredMPIProductVector(
-  const Teuchos::RefCountPtr<const DefaultClusteredMPIProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                  vecs[]
+DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector(
+  const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
   )
 {
   initialize(productSpace,vecs);
 }
 
 template <class Scalar>
-void DefaultClusteredMPIProductVector<Scalar>::initialize(
-  const Teuchos::RefCountPtr<const DefaultClusteredMPIProductVectorSpace<Scalar> >  &productSpace
-  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                  vecs[]
+void DefaultClusteredSpmdProductVector<Scalar>::initialize(
+  const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+  ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
   )
 {
   // ToDo: Validate input!
@@ -77,9 +77,9 @@ void DefaultClusteredMPIProductVector<Scalar>::initialize(
 }
 
 template <class Scalar>
-void DefaultClusteredMPIProductVector<Scalar>::uninitialize(
-  Teuchos::RefCountPtr<const DefaultClusteredMPIProductVectorSpace<Scalar> >  *productSpace
-  ,Teuchos::RefCountPtr<VectorBase<Scalar> >                                  vecs[]
+void DefaultClusteredSpmdProductVector<Scalar>::uninitialize(
+  Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace
+  ,Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
   )
 {
   const int numBlocks = vecs_.size();
@@ -93,7 +93,7 @@ void DefaultClusteredMPIProductVector<Scalar>::uninitialize(
 
 template <class Scalar>
 Teuchos::RefCountPtr<VectorBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::getNonconstVectorBlock(const int k)
+DefaultClusteredSpmdProductVector<Scalar>::getNonconstVectorBlock(const int k)
 {
   TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
   return vecs_[k];
@@ -101,7 +101,7 @@ DefaultClusteredMPIProductVector<Scalar>::getNonconstVectorBlock(const int k)
 
 template <class Scalar>
 Teuchos::RefCountPtr<const VectorBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::getVectorBlock(const int k) const
+DefaultClusteredSpmdProductVector<Scalar>::getVectorBlock(const int k) const
 {
   TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
   return vecs_[k];
@@ -111,13 +111,13 @@ DefaultClusteredMPIProductVector<Scalar>::getVectorBlock(const int k) const
 
 template <class Scalar>
 Teuchos::RefCountPtr<const ProductVectorSpaceBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::productSpace() const
+DefaultClusteredSpmdProductVector<Scalar>::productSpace() const
 {
   return productSpace_;
 }
 
 template <class Scalar>
-bool DefaultClusteredMPIProductVector<Scalar>::blockIsConst(const int k) const
+bool DefaultClusteredSpmdProductVector<Scalar>::blockIsConst(const int k) const
 {
   TEST_FOR_EXCEPT( ! ( 0 <= k && k < vecs_.size() ) );
   return false;
@@ -125,14 +125,14 @@ bool DefaultClusteredMPIProductVector<Scalar>::blockIsConst(const int k) const
 
 template <class Scalar>
 Teuchos::RefCountPtr<MultiVectorBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
+DefaultClusteredSpmdProductVector<Scalar>::getNonconstMultiVectorBlock(const int k)
 {
   return getNonconstVectorBlock(k);
 }
 
 template <class Scalar>
 Teuchos::RefCountPtr<const MultiVectorBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::getMultiVectorBlock(const int k) const
+DefaultClusteredSpmdProductVector<Scalar>::getMultiVectorBlock(const int k) const
 {
   return getVectorBlock(k);
 }
@@ -141,13 +141,13 @@ DefaultClusteredMPIProductVector<Scalar>::getMultiVectorBlock(const int k) const
 
 template <class Scalar>
 Teuchos::RefCountPtr< const VectorSpaceBase<Scalar> >
-DefaultClusteredMPIProductVector<Scalar>::space() const
+DefaultClusteredSpmdProductVector<Scalar>::space() const
 {
   return productSpace_;
 }
 
 template <class Scalar>
-void DefaultClusteredMPIProductVector<Scalar>::applyOp(
+void DefaultClusteredSpmdProductVector<Scalar>::applyOp(
   const RTOpPack::RTOpT<Scalar>    &op
   ,const int                       num_vecs
   ,const VectorBase<Scalar>*const  vecs[]
@@ -168,15 +168,15 @@ void DefaultClusteredMPIProductVector<Scalar>::applyOp(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     !(0 <= first_ele_offset_in && first_ele_offset_in < n), std::out_of_range
-    ,"DefaultClusteredMPIProductVector::applyOp(...): Error, "
+    ,"DefaultClusteredSpmdProductVector::applyOp(...): Error, "
     "first_ele_offset_in = " << first_ele_offset_in << " is not in range [0,"<<(n-1)<<"]" );
   TEST_FOR_EXCEPTION(
     global_offset_in < 0, std::invalid_argument
-    ,"DefaultClusteredMPIProductVector::applyOp(...): Error, "
+    ,"DefaultClusteredSpmdProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << " is not acceptable" );
   TEST_FOR_EXCEPTION(
     sub_dim_in > 0 && sub_dim_in - first_ele_offset_in > n, std::length_error
-    ,"DefaultClusteredMPIProductVector::applyOp(...): Error, "
+    ,"DefaultClusteredSpmdProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << ", sub_dim_in = " << sub_dim_in
     << "first_ele_offset_in = " << first_ele_offset_in << " and n = " << n
     << " are not compatible" );
@@ -185,7 +185,7 @@ void DefaultClusteredMPIProductVector<Scalar>::applyOp(
     test_failed = !this->space()->isCompatible(*vecs[k]->space());
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
-      ,"DefaultClusteredMPIProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
+      ,"DefaultClusteredSpmdProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
       <<"of type \'"<<typeid(*vecs[k]->space()).name()<<"\' is not compatible with this "
       <<"\'VectorSpaceBlocked\' vector space!"
       );
@@ -194,37 +194,37 @@ void DefaultClusteredMPIProductVector<Scalar>::applyOp(
     test_failed = !this->space()->isCompatible(*targ_vecs[k]->space());
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
-      ,"DefaultClusteredMPIProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() "
+      ,"DefaultClusteredSpmdProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() "
       <<"of type \'"<<typeid(*vecs[k]->space()).name()<<"\' is not compatible with this "
       <<"\'VectorSpaceBlocked\' vector space!"
       );
   }
 #endif
   //
-  // Cast all of the vector arguments to DefaultClusteredMPIProductVector and
+  // Cast all of the vector arguments to DefaultClusteredSpmdProductVector and
   // make sure that they are all compatible!
   //
-  Workspace<const DefaultClusteredMPIProductVector<Scalar>*> cl_vecs(wss,num_vecs);
+  Workspace<const DefaultClusteredSpmdProductVector<Scalar>*> cl_vecs(wss,num_vecs);
   for( int k = 0; k < num_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPT(vecs[k]==NULL);
 #endif
-    cl_vecs[k] = &dyn_cast<const DefaultClusteredMPIProductVector<Scalar> >(*vecs[k]);
+    cl_vecs[k] = &dyn_cast<const DefaultClusteredSpmdProductVector<Scalar> >(*vecs[k]);
   }
-  Workspace<DefaultClusteredMPIProductVector<Scalar>*> cl_targ_vecs(wss,num_targ_vecs);
+  Workspace<DefaultClusteredSpmdProductVector<Scalar>*> cl_targ_vecs(wss,num_targ_vecs);
   for( int k = 0; k < num_targ_vecs; ++k ) {
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPT(targ_vecs[k]==NULL);
 #endif
-    cl_targ_vecs[k] = &dyn_cast<DefaultClusteredMPIProductVector<Scalar> >(*targ_vecs[k]);
+    cl_targ_vecs[k] = &dyn_cast<DefaultClusteredSpmdProductVector<Scalar> >(*targ_vecs[k]);
   }
   //
   // Get the overlap of the element for this cluster that will participate in
   // the RTOp operation.
   //
-  MPI_Comm
-    intraClusterComm = *productSpace_->intraClusterComm(),
-    interClusterComm = *productSpace_->interClusterComm();
+  const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+    intraClusterComm = productSpace_->intraClusterComm(),
+    interClusterComm = productSpace_->interClusterComm();
   const Index
     clusterSubDim = productSpace_->clusterSubDim(),
     clusterOffset = productSpace_->clusterOffset(),
@@ -297,11 +297,10 @@ void DefaultClusteredMPIProductVector<Scalar>::applyOp(
     // First, accumulate the global reduction across all of the elements by
     // just performing the global reduction involving the root processes of
     // each cluster.
-    if(interClusterComm!=MPI_COMM_NULL) {
-      RTOpPack::MPI_all_reduce(
-        interClusterComm
+    if(interClusterComm.get()) {
+      RTOpPack::SPMD_all_reduce(
+        &*interClusterComm
         ,op
-        ,-1
         ,1
         ,Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*i_reduct_obj)()
         ,Teuchos::arrayArg<RTOpPack::ReductTarget*>(&*icl_reduct_obj)()
@@ -312,17 +311,19 @@ void DefaultClusteredMPIProductVector<Scalar>::applyOp(
     // in each cluster have empty reductions in *icl_reduct_obj.  The last
     // thing to do is to just perform the reduction within each cluster of
     // processes and to add into the in/out *reduct_obj.
-    RTOpPack::MPI_all_reduce(
-      intraClusterComm
+    RTOpPack::SPMD_all_reduce(
+      &*intraClusterComm
       ,op
-      ,-1
       ,1
       ,Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*icl_reduct_obj)()
       ,Teuchos::arrayArg<RTOpPack::ReductTarget*>(reduct_obj)()
       );
+    // ToDo: Replace the above operation with a reduction across clustes into
+    // reduct_obj in the root processes and then broadcast the result to all
+    // of the slave processes.
   }
 }
 
 } // namespace Thyra
 
-#endif // THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_HPP
+#endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_HPP

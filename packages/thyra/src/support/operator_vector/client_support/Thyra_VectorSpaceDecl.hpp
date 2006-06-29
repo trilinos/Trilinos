@@ -38,7 +38,7 @@
 namespace Thyra
 {
 
-  /** 
+  /** \brief Handle class for <tt>VectorSpaceBase</tt>.
    *
    */
   template <class Scalar>
@@ -52,12 +52,6 @@ namespace Thyra
 
     /** Return the dimension of the space */
     int dim() const {return this->ptr()->dim();}
-
-    /** Return the lowest global index accessible on this processor */
-    int lowestLocallyOwnedIndex() const ;
-
-    /** Return the number of elements owned by this processor */
-    int numLocalElements() const ;
 
     /** Check compatibility with another space. Implementation note: 
      * we don't know if the argument vec space is a handle to another
@@ -98,7 +92,6 @@ namespace Thyra
 
     /** set the i-th subblock */
     void setBlock(int i, const VectorSpace<Scalar>& space);
-
 
   };
 

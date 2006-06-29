@@ -59,13 +59,27 @@ public:
    */
   DefaultSpmdVectorSpace();
 
-  /** \brief Calls <tt>initialize()</tt>. */
+  /** \brief Calls <tt>initialize()</tt> to construct a serial space. */
+  DefaultSpmdVectorSpace( const Index dim );
+
+  /** \brief Calls <tt>initialize()</tt> to construct an SPMD space. */
   DefaultSpmdVectorSpace(
     const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
     ,const Index localSubDim, const Index globalDim
     );
 
-  /** \brief Initialize.
+  /** \brief Initialize a serial space.
+   *
+   * \param  dim
+   *           [in] Gives the dimension of the vector space.
+   *
+   * Equivalent to calling <tt>this->initialize(Teuchos::null,dim,dim)</tt>
+   */
+  void initialize(
+    const Index dim
+    );
+
+  /** \brief Initialize an SPMD space.
    *
    * \param  comm
    *           [in] The communicator.  This object must be maintained

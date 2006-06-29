@@ -27,58 +27,80 @@
 // @HEADER
 
 #include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_DefaultMPIVectorSpace.hpp"
-#include "Thyra_DefaultMPIMultiVector.hpp"
-#include "Thyra_DefaultMPIVector.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DefaultSpmdMultiVector.hpp"
+#include "Thyra_DefaultSpmdVector.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
+#include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
+
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
-#ifdef RTOp_USE_MPI
-#include "Epetra_MpiComm.h"
+#include "Epetra_SerialComm.h"
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
-Teuchos::RefCountPtr<const Thyra::MPIVectorSpaceDefaultBase<double> >
-Thyra::create_MPIVectorSpaceBase(
+Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >
+Thyra::create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm )
+{
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::set_extra_data;
+
+  RefCountPtr<const Epetra_SerialComm>
+    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(epetraComm);
+  if( serialEpetraComm.get() ) {
+    RefCountPtr<const Teuchos::SerialComm<Index> >
+      serialComm = rcp(new Teuchos::SerialComm<Index>());
+    set_extra_data( serialEpetraComm, "serialEpetraComm", &serialComm );
+    return serialComm;
+  }
+
+#ifdef HAVE_MPI
+  
+  RefCountPtr<const Epetra_MpiComm>
+    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(epetraComm);
+  if( mpiEpetraComm.get() ) {
+    RefCountPtr<const Teuchos::OpaqueWrapper<MPI_Comm> >
+      rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
+    set_extra_data( mpiEpetraComm, "mpiEpetraComm", &rawMpiComm );
+    RefCountPtr<const Teuchos::MpiComm<Index> >
+      mpiComm = rcp(new Teuchos::MpiComm<Index>(rawMpiComm));
+    return mpiComm;
+  }
+
+#endif // HAVE_MPI
+  
+  // If you get here then the failed!
+  return Teuchos::null;
+
+}
+
+Teuchos::RefCountPtr<const Thyra::SpmdVectorSpaceDefaultBase<double> >
+Thyra::create_VectorSpace(
   const Teuchos::RefCountPtr<const Epetra_Map> &epetra_map
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION( !epetra_map.get(), std::invalid_argument, "create_MPIVectorSpaceBase::initialize(...): Error!" );
+  TEST_FOR_EXCEPTION( !epetra_map.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
-  MPI_Comm mpiComm;
-#ifdef RTOp_USE_MPI
-  const Epetra_MpiComm
-    *epetra_mpi_comm = dynamic_cast<const Epetra_MpiComm*>(&epetra_map->Comm());
-  if(epetra_mpi_comm) {
-    //std::cout << "EpetraVectorSpace::initialize(...): Using an Epetra_MpiComm!\n";
-    mpiComm = epetra_mpi_comm->Comm();
-#ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
-      mpiComm == MPI_COMM_NULL, std::logic_error
-      ,"EpetraVectorSpace::initialize(...), Error, if using Epetra_MpiComm then "
-      "the associated MPI_Comm object can not be MPI_COMM_NULL!"
-      );
-#endif // TEUCHOS_DEBUG
-     //std::cout << "EpetraVectorSpace::initialize(...): mpiComm = " << mpiComm << std::endl;
-  }
-  else {
-    //std::cout << "EpetraVectorSpace::initialize(...): Not using an Epetra_MpiComm!\n";
-    mpiComm = MPI_COMM_NULL;
-  }
-#else // RTOp_USE_MPI
-  //std::cout << "EpetraVectorSpace::initialize(...): Not using an Epetra_MpiComm!\n";
-  mpiComm = MPI_COMM_NULL;
-#endif // RTOp_USE_MPI
+  Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
+    comm = create_Comm(Teuchos::rcp(&epetra_map->Comm(),false)).assert_not_null();
+  Teuchos::set_extra_data( epetra_map, "epetra_map", &comm );
   const Index localSubDim = epetra_map->NumMyElements();
-  Teuchos::RefCountPtr<DefaultMPIVectorSpace<double> >
+  Teuchos::RefCountPtr<DefaultSpmdVectorSpace<double> >
     vs = Teuchos::rcp(
-      new DefaultMPIVectorSpace<double>(
-        mpiComm
+      new DefaultSpmdVectorSpace<double>(
+        comm
         ,localSubDim
         ,epetra_map->NumGlobalElements()
         )
@@ -86,7 +108,7 @@ Thyra::create_MPIVectorSpaceBase(
 #ifndef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(
         vs->dim() != epetra_map->NumGlobalElements(), std::logic_error
-        ,"create_MPIVectorSpaceBase(...): Error, vs->dim() = "<<vs->dim()<<" != "
+        ,"create_VectorSpace(...): Error, vs->dim() = "<<vs->dim()<<" != "
         "epetra_map->NumGlobalElements() = "<<epetra_map->NumGlobalElements()<<"!"
         );
 #endif		
@@ -94,10 +116,10 @@ Thyra::create_MPIVectorSpaceBase(
   return vs;
 }
 
-Teuchos::RefCountPtr<Thyra::MPIVectorBase<double> >
-Thyra::create_MPIVectorBase(
+Teuchos::RefCountPtr<Thyra::SpmdVectorBase<double> >
+Thyra::create_Vector(
   const Teuchos::RefCountPtr<Epetra_Vector>                                &epetra_v
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >          &space
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -108,16 +130,16 @@ Thyra::create_MPIVectorBase(
   double *localValues;
   epetra_v->ExtractView( &localValues );
   // Build the Vector
-  Teuchos::RefCountPtr<MPIVectorBase<double> >
-    v = Teuchos::rcp(new DefaultMPIVector<double>(space,Teuchos::rcp(localValues,false),1));
+  Teuchos::RefCountPtr<SpmdVectorBase<double> >
+    v = Teuchos::rcp(new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( epetra_v, "Epetra_Vector", &v );
   return v;
 }
 
-Teuchos::RefCountPtr<const Thyra::MPIVectorBase<double> >
-Thyra::create_MPIVectorBase(
+Teuchos::RefCountPtr<const Thyra::SpmdVectorBase<double> >
+Thyra::create_Vector(
   const Teuchos::RefCountPtr<const Epetra_Vector>                          &epetra_v
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &space
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &space
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -128,16 +150,16 @@ Thyra::create_MPIVectorBase(
   double *localValues;
   epetra_v->ExtractView( &localValues );
   // Build the Vector
-  Teuchos::RefCountPtr<const MPIVectorBase<double> >
-    v = Teuchos::rcp(new DefaultMPIVector<double>(space,Teuchos::rcp(localValues,false),1));
+  Teuchos::RefCountPtr<const SpmdVectorBase<double> >
+    v = Teuchos::rcp(new DefaultSpmdVector<double>(space,Teuchos::rcp(localValues,false),1));
   Teuchos::set_extra_data( epetra_v, "Epetra_Vector", &v );
   return v;
 }
 
-Teuchos::RefCountPtr<Thyra::MPIMultiVectorBase<double> >
-Thyra::create_MPIMultiVectorBase(
+Teuchos::RefCountPtr<Thyra::SpmdMultiVectorBase<double> >
+Thyra::create_MultiVector(
   const Teuchos::RefCountPtr<Epetra_MultiVector>                           &epetra_mv
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &range
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
   )
 {
@@ -155,16 +177,16 @@ Thyra::create_MPIMultiVectorBase(
     TEST_FOR_EXCEPT(true); // ToDo: Implement!
   }
   // Build the MultiVector
-  Teuchos::RefCountPtr<MPIMultiVectorBase<double> >
-    mv = Teuchos::rcp(new DefaultMPIMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
+  Teuchos::RefCountPtr<SpmdMultiVectorBase<double> >
+    mv = Teuchos::rcp(new DefaultSpmdMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
   Teuchos::set_extra_data( epetra_mv, "Epetra_MultiVector", &mv );
   return mv;
 }
 
-Teuchos::RefCountPtr<const Thyra::MPIMultiVectorBase<double> >
-Thyra::create_MPIMultiVectorBase(
+Teuchos::RefCountPtr<const Thyra::SpmdMultiVectorBase<double> >
+Thyra::create_MultiVector(
   const Teuchos::RefCountPtr<const Epetra_MultiVector>                     &epetra_mv
-  ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<double> >           &range
+  ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<double> >           &range
   ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<double> >    &domain
   )
 {
@@ -182,8 +204,8 @@ Thyra::create_MPIMultiVectorBase(
     TEST_FOR_EXCEPT(true); // ToDo: Implement!
   }
   // Build the MultiVector
-  Teuchos::RefCountPtr<const MPIMultiVectorBase<double> >
-    mv = Teuchos::rcp(new DefaultMPIMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
+  Teuchos::RefCountPtr<const SpmdMultiVectorBase<double> >
+    mv = Teuchos::rcp(new DefaultSpmdMultiVector<double>(range,domain,Teuchos::rcp(localValues,false),leadingDim));
   Teuchos::set_extra_data( epetra_mv, "Epetra_MultiVector", &mv );
   return mv;
 }
@@ -196,7 +218,7 @@ Thyra::get_Epetra_Vector(
 {
 #ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
-    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+    epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
 #endif
   //
@@ -211,11 +233,11 @@ Thyra::get_Epetra_Vector(
   //
   // The assumption that we (rightly) make here is that if the vector spaces
   // are compatible, that either the multi-vectors are both in-core or the
-  // vector spaces are both derived from MPIVectorSpaceBase and have
+  // vector spaces are both derived from SpmdVectorSpaceBase and have
   // compatible maps.
   // 
   const VectorSpaceBase<double>  &vs = *v->range();
-  const MPIVectorSpaceBase<double> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
@@ -265,7 +287,7 @@ Thyra::get_Epetra_Vector(
 {
 #ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
-    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+    epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_Vector(map,v)", *epetra_vs, *v->space() );
 #endif
   //
@@ -284,7 +306,7 @@ Thyra::get_Epetra_Vector(
   // Same as above function except as stated below
   //
   const VectorSpaceBase<double> &vs = *v->range();
-  const MPIVectorSpaceBase<double> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   // Get an explicit *non-mutable* view of all of the elements in
@@ -327,7 +349,7 @@ Thyra::get_Epetra_MultiVector(
 {
 #ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
-    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+    epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
 #endif
   //
@@ -342,11 +364,11 @@ Thyra::get_Epetra_MultiVector(
   //
   // The assumption that we (rightly) make here is that if the vector spaces
   // are compatible, that either the multi-vectors are both in-core or the
-  // vector spaces are both derived from MPIVectorSpaceBase and have
+  // vector spaces are both derived from SpmdVectorSpaceBase and have
   // compatible maps.
   // 
   const VectorSpaceBase<double> &vs = *mv->range();
-  const MPIVectorSpaceBase<double> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
@@ -399,7 +421,7 @@ Thyra::get_Epetra_MultiVector(
 {
 #ifdef TEUCHOS_DEBUG
   Teuchos::RefCountPtr<const VectorSpaceBase<double> >
-    epetra_vs = create_MPIVectorSpaceBase(Teuchos::rcp(&map,false));
+    epetra_vs = create_VectorSpace(Teuchos::rcp(&map,false));
   THYRA_ASSERT_VEC_SPACES( "Thyra::get_Epetra_MultiVector(map,mv)", *epetra_vs, *mv->range() );
 #endif
   //
@@ -415,7 +437,7 @@ Thyra::get_Epetra_MultiVector(
   // Same as above function except as stated below
   //
   const VectorSpaceBase<double> &vs = *mv->range();
-  const MPIVectorSpaceBase<double> *mpi_vs = dynamic_cast<const MPIVectorSpaceBase<double>*>(&vs);
+  const SpmdVectorSpaceBase<double> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
   const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
   const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   // Get an explicit *non-mutable* view of all of the elements in

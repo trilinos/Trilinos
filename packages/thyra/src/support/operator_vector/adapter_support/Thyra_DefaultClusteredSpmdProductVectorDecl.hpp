@@ -26,30 +26,30 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_DECL_HPP
-#define THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_DECL_HPP
+#ifndef THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_DECL_HPP
+#define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_DECL_HPP
 
 #include "Thyra_ProductVectorBase.hpp"
 
 namespace Thyra {
 
 /** \brief . */
-template <class Scalar> class DefaultClusteredMPIProductVectorSpace;
+template <class Scalar> class DefaultClusteredSpmdProductVectorSpace;
 
 /** \brief . */
-template <class Scalar> class MPIVectorBase;
+template <class Scalar> class SpmdVectorBase;
 
-/** \brief Concrete implementation of a clustered MPI-based product vector.
+/** \brief Concrete implementation of a clustered Spmd-based product vector.
  *
  * ToDo: Finish documentation!
  *
  * The default constructor is made private to avoid accidental default
  * construction.
  *
- * \ingroup Thyra_Op_Vec_adapters_MPI_support_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
  */
 template<class Scalar>
-class DefaultClusteredMPIProductVector
+class DefaultClusteredSpmdProductVector
   : virtual public ProductVectorBase<Scalar>
   , virtual protected VectorDefaultBase<Scalar>
 {
@@ -61,10 +61,13 @@ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
-  /// Constructs to initialized (calls <tt>initialize()</tt>).
-  DefaultClusteredMPIProductVector(
-    const Teuchos::RefCountPtr<const DefaultClusteredMPIProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                  vecs[]
+  /** \brief Constructs to uninitialized (see postconditions for <tt>uninitialize()</tt>). */
+  DefaultClusteredSpmdProductVector();
+
+  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
+  DefaultClusteredSpmdProductVector(
+    const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
     );
 
   /** \brief Initialize.
@@ -72,8 +75,8 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RefCountPtr<const DefaultClusteredMPIProductVectorSpace<Scalar> >  &productSpace
-    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                  vecs[]
+    const Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+    ,const Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]
     );
 
   /** \brief Uninitialize.
@@ -81,8 +84,8 @@ public:
    * ToDo: Finish documentation.
    */
   void uninitialize(
-    Teuchos::RefCountPtr<const DefaultClusteredMPIProductVectorSpace<Scalar> >  *productSpace = NULL
-    ,Teuchos::RefCountPtr<VectorBase<Scalar> >                                  vecs[]        = NULL
+    Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace = NULL
+    ,Teuchos::RefCountPtr<VectorBase<Scalar> >                                   vecs[]        = NULL
     );
 
   //@}
@@ -136,18 +139,11 @@ private:
   // //////////////////////////////
   // Private data members
 
-  Teuchos::RefCountPtr<const DefaultClusteredMPIProductVectorSpace<Scalar> >       productSpace_;
-  std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > >                          vecs_;
-
-protected:
-
-  // //////////////////////////////
-  // Protected member functions
-  // Added to allow TSFExtended DefaultClusteredMPIProductVector to derive from this.
-  DefaultClusteredMPIProductVector();
+  Teuchos::RefCountPtr<const DefaultClusteredSpmdProductVectorSpace<Scalar> >   productSpace_;
+  std::vector<Teuchos::RefCountPtr<VectorBase<Scalar> > >                       vecs_;
 
 };
 
 } // namespace Thyra
 
-#endif // THYRA_DEFAULT_CLUSTERED_MPI_PRODUCT_VECTOR_DECL_HPP
+#endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_DECL_HPP

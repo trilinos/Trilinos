@@ -26,14 +26,13 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MPI_TRIDIAG_LINEAR_OP_HPP
-#define THYRA_MPI_TRIDIAG_LINEAR_OP_HPP
+#ifndef THYRA_EXAMPLE_TRIDIAG_SPMD_LINEAR_OP_HPP
+#define THYRA_EXAMPLE_TRIDIAG_SPMD_LINEAR_OP_HPP
 
-#include "Thyra_MPILinearOpBase.hpp"
-#include "Teuchos_PrimitiveTypeTraits.hpp"
-#include "Teuchos_RawMPITraits.hpp"
+#include "Thyra_SpmdLinearOpBase.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
-/** \brief Simple example subclass for MPI tridiagonal matrices.
+/** \brief Simple example subclass for Spmd tridiagonal matrices.
  *
  * This subclass represents a linear operator for tridiagonal matrices
  * of the global form:
@@ -128,15 +127,15 @@
  * See the source code for this simple example by clicking on the
  * link to the definition below.
  *
- * \ingroup Thyra_Op_Vec_examples_cg_MPI_grp
+ * \ingroup Thyra_Op_Vec_examples_cg_Spmd_grp
  */
 template<class Scalar>
-class MPITridiagLinearOp : public Thyra::MPILinearOpBase<Scalar> {
+class ExampleTridiagSpmdLinearOp : public Thyra::SpmdLinearOpBase<Scalar> {
 private:
 
-  MPI_Comm             mpiComm_;
+  Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> >  comm_;
   int                  procRank_;
-  int                  numProc_;
+  int                  numProcs_;
   Thyra::Index         localDim_;
   std::vector<Scalar>  lower_;   // size = ( procRank == 0         ? localDim - 1 : localDim )    
   std::vector<Scalar>  diag_;    // size = localDim
@@ -147,22 +146,26 @@ private:
 public:
 
   /** \brief . */
-  using Thyra::MPILinearOpBase<Scalar>::euclideanApply;
+  using Thyra::SpmdLinearOpBase<Scalar>::euclideanApply;
 
   /// Construct to uninitialized
-  MPITridiagLinearOp() : mpiComm_(MPI_COMM_NULL), procRank_(0), numProc_(0) {}
+  ExampleTridiagSpmdLinearOp() : procRank_(0), numProcs_(0) {}
 
   /// Calls <tt>initialize()</tt>.
-  MPITridiagLinearOp( MPI_Comm mpiComm, const Thyra::Index localDim, const Scalar lower[], const Scalar diag[], const Scalar upper[] )
-    { this->initialize(mpiComm,localDim,lower,diag,upper);	}
+  ExampleTridiagSpmdLinearOp(
+    const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> > &comm
+    ,const Thyra::Index localDim, const Scalar lower[], const Scalar diag[], const Scalar upper[] )
+    { this->initialize(comm,localDim,lower,diag,upper);	}
   
   /** Initialize given lower, diagonal and upper arrays of data.
    *
-   * @param  mpiComm   [in] MPI Communicator (allowed to be MPI_COMM_NULL)
+   * @param  comm      [in] Communicator (allowed to be Teuchos::null)
    * @param  localDim  [in] Dimension of this matrix (must be >= 2).
-   * @param  lower     [in] Array (length <tt>( procRank == 0 ? localDim - 1 : localDim )</tt>) of the lower diagonal elements
+   * @param  lower     [in] Array (length <tt>( procRank == 0 ? localDim - 1 : localDim )</tt>)
+   *                   of the lower diagonal elements
    * @param  diag      [in] Array (length <tt>localDim</tt>) of the central diagonal elements
-   * @param  upper     [in] Array (length <tt>( procRank == numProc-1 ? localDim - 1 : localDim )</tt>) of the upper diagonal elements
+   * @param  upper     [in] Array (length <tt>( procRank == numProc-1 ? localDim - 1 : localDim )</tt>)
+   *                   of the upper diagonal elements
    *
    * Preconditions:<ul>
    * <li><tt>localDim >= 2</tt>
@@ -174,7 +177,7 @@ public:
    * </ul>
    */
   void initialize(
-    MPI_Comm                        mpiComm
+    const Teuchos::RefCountPtr<const Teuchos::Comm<Thyra::Index> > &comm
     ,const Thyra::Index             localDim // >= 2
     ,const Scalar                   lower[]  // size == ( procRank == 0         ? localDim - 1 : localDim )
     ,const Scalar                   diag[]   // size == localDim
@@ -182,14 +185,14 @@ public:
     )
     {
       TEST_FOR_EXCEPT( localDim < 2 );
-      this->setLocalDimensions(mpiComm,localDim,localDim); // We must tell the base class our local dimensions to setup range() and domain()
-      mpiComm_  = mpiComm;
+      this->setLocalDimensions(comm,localDim,localDim); // Needed to set up range() and domain()
+      comm_  = Teuchos::DefaultComm<Thyra::Index>::getDefaultSerialComm(comm);
       localDim_ = localDim;
-      MPI_Comm_size( mpiComm, &numProc_ );
-      MPI_Comm_rank( mpiComm, &procRank_ );
+      numProcs_ = comm->getSize();
+      procRank_ = comm->getRank();
       const Thyra::Index
-        lowerDim = ( procRank_ == 0          ? localDim - 1 : localDim ),
-        upperDim = ( procRank_ == numProc_-1 ? localDim - 1 : localDim );
+        lowerDim = ( procRank_ == 0           ? localDim - 1 : localDim ),
+        upperDim = ( procRank_ == numProcs_-1 ? localDim - 1 : localDim );
       lower_.resize(lowerDim);  for( int k = 0; k < lowerDim; ++k ) lower_[k] = lower[k];
       diag_.resize(localDim);   for( int k = 0; k < localDim; ++k ) diag_[k]  = diag[k];
       upper_.resize(upperDim);  for( int k = 0; k < upperDim; ++k ) upper_[k] = upper[k];
@@ -199,7 +202,7 @@ public:
 
   std::string description() const
     {
-      return (std::string("MPITridiagLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
+      return (std::string("ExampleTridiagSpmdLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
     }
 
 protected:
@@ -217,8 +220,8 @@ protected:
 
   void euclideanApply(
     const Thyra::ETransp                         M_trans
-    ,const RTOpPack::ConstSubVectorView<Scalar>          &local_x_in
-    ,const RTOpPack::SubVectorView<Scalar>   *local_y_out
+    ,const RTOpPack::ConstSubVectorView<Scalar>  &local_x_in
+    ,const RTOpPack::SubVectorView<Scalar>       *local_y_out
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const
@@ -231,7 +234,7 @@ protected:
       const Scalar *x = local_x_in.values();
       Scalar       *y = local_y_out->values();
       // Determine what process we are
-      const bool first = ( procRank_ == 0 ), last = ( procRank_ == numProc_-1 );
+      const bool first = ( procRank_ == 0 ), last = ( procRank_ == numProcs_-1 );
       // Communicate ghost elements
       Scalar x_km1, x_kp1;
       communicate( first, last, x, &x_km1, &x_kp1 );
@@ -252,56 +255,33 @@ protected:
       //std::cout << "\ny = ["; for(k=0;k<localDim_;++k) { std::cout << y[k]; if(k<localDim_-1) std::cout << ","; } std::cout << "]\n";
     }
 
-};	// end class MPITridiagLinearOp
+};	// end class ExampleTridiagSpmdLinearOp
 
 // private
 
 template<class Scalar>
-void MPITridiagLinearOp<Scalar>::communicate(
+void ExampleTridiagSpmdLinearOp<Scalar>::communicate(
   const bool first, const bool last, const Scalar x[], Scalar *x_km1, Scalar *x_kp1
   ) const
 {
-  if(numProc_ > 1 ) {
-    // Get the types so allow interaction with MPI
-    typedef Teuchos::PrimitiveTypeTraits<Scalar>  PTT;
-    typedef typename PTT::primitiveType           PT;
-    typedef Teuchos::RawMPITraits<PT>             PRMT;
-    MPI_Datatype primMPIType = PRMT::type();
-    const int numPrimObjs = PTT::numPrimitiveObjs();
-    MPI_Status status;
-    // Setup buffer
-    std::vector<PT> buff(numPrimObjs);
-    // Send and receive x[localDim_-1] forward and copy into x_km1
-    if(last) {
-      MPI_Recv( &buff[0], PRMT::adjustCount(numPrimObjs), primMPIType, procRank_-1, 0, mpiComm_, &status );
-      PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_km1 );
-    }
-    else {
-      PTT::extractPrimitiveObjs( x[localDim_-1], numPrimObjs, &buff[0] );
-      if(first) {
-        MPI_Send( &buff[0], numPrimObjs, primMPIType, procRank_+1, 0, mpiComm_ );
-      }
-      else {
-        MPI_Sendrecv_replace( &buff[0], numPrimObjs, primMPIType, procRank_+1, 0, procRank_-1, 0, mpiComm_, &status );
-        PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_km1 );
-      }
-    }
-    // Send and receive x[0] backward and copy into x_kp1
-    if(first) {
-      MPI_Recv( &buff[0], numPrimObjs, primMPIType, procRank_+1, 0, mpiComm_, &status );
-      PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_kp1 );
-    }
-    else {
-      PTT::extractPrimitiveObjs( x[0], numPrimObjs, &buff[0] );
-      if(last) {
-        MPI_Send( &buff[0], numPrimObjs, primMPIType, procRank_-1, 0, mpiComm_ );
-      }
-      else {
-        MPI_Sendrecv_replace( &buff[0], numPrimObjs, primMPIType, procRank_-1, 0, procRank_+1, 0, mpiComm_, &status );
-        PTT::loadPrimitiveObjs( numPrimObjs, &buff[0], x_kp1 );
-      }
-    }
-  }
+  const bool isEven = (procRank_ % 2 == 0);
+  const bool isOdd = !isEven;
+  // 1) Send x[localDim_-1] from each even process forward to the next odd
+  // process where it is received in x_km1.
+  if( isEven && procRank_+1 < numProcs_ ) send(*comm_,x[localDim_-1],procRank_+1);
+  if( isOdd && procRank_-1 >= 0 )         receive(*comm_,procRank_-1,x_km1);
+  // 2) Send x[0] from each odd process backward to the previous even
+  // process where it is received in x_kp1.
+  if( isOdd && procRank_-1 >= 0 )         send(*comm_,x[0],procRank_-1);
+  if( isEven && procRank_+1 < numProcs_ ) receive(*comm_,procRank_+1,x_kp1);
+  // 3) Send x[localDim_-1] from each odd process forward to the next even
+  // process where it is received in x_km1.
+  if( isOdd && procRank_+1 < numProcs_ )  send(*comm_,x[localDim_-1],procRank_+1);
+  if( isEven && procRank_-1 >= 0 )        receive(*comm_,procRank_-1,x_km1);
+  // 4) Send x[0] from each even process backward to the previous odd
+  // process where it is received in x_kp1.
+  if(isEven && procRank_-1 >= 0 )         send(*comm_,x[0],procRank_-1);
+  if(isOdd && procRank_+1 < numProcs_ )   receive(*comm_,procRank_+1,x_kp1);
 }
 
-#endif	// THYRA_MPI_TRIDIAG_LINEAR_OP_HPP
+#endif	// THYRA_EXAMPLE_TRIDIAG_SPMD_LINEAR_OP_HPP

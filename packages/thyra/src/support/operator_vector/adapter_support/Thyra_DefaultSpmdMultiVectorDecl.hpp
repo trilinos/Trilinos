@@ -68,15 +68,43 @@ public:
   DefaultSpmdMultiVector(
     const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >          &spmdRangeSpace
     ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   &domainSpace
+    );
+
+  /// Calls <tt>initialize()</tt>
+  DefaultSpmdMultiVector(
+    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >          &spmdRangeSpace
+    ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >   &domainSpace
     ,const Teuchos::RefCountPtr<Scalar>                                     &localValues
     ,const Index                                                            leadingDim
     );
 
-  /** \brief Initialize.
+  /** \brief Initialize only with vector spaces where storage is allocated
+   * internally..
    *
    * \param  spmdRangeSpace
    *           [in] Smart pointer to <tt>SpmdVectorSpaceBase</tt> object
-   *           that defines the data distribution for <tt>spmdSpace()</tt> and <tt>range()</tt>.
+   *           that defines the data distribution for <tt>spmdSpace()</tt>
+   *           and <tt>range()</tt>.
+   * \param  domainSpace
+   *           [in] Smart pointer to <tt>VectorSpaceBase</tt> object
+   *           that defines <tt>domain()</tt> space.
+   *
+   * <b>Preconditions:</b><ul>
+   * <li><tt>spmdRangeSpace.get()!=NULL</tt>
+   * <li><tt>domainSpace.get()!=NULL</tt>
+   * </ul>
+   */
+  void initialize(
+    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >         &spmdRangeSpace
+    ,const Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >  &domainSpace
+    );
+
+  /** \brief Initialize using externally allocated storage.
+   *
+   * \param  spmdRangeSpace
+   *           [in] Smart pointer to <tt>SpmdVectorSpaceBase</tt> object
+   *           that defines the data distribution for <tt>spmdSpace()</tt>
+   *           and <tt>range()</tt>.
    * \param  domainSpace
    *           [in] Smart pointer to <tt>VectorSpaceBase</tt> object
    *           that defines <tt>domain()</tt> space.
@@ -90,7 +118,7 @@ public:
    * \param  leadingDim
    *           [in] The leading dimension of the multi-vector.
    *
-   * Preconditions:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>spmdRangeSpace.get()!=NULL</tt>
    * <li><tt>domainSpace.get()!=NULL</tt>
    * <li><tt>localValues.get()!=NULL</tt>
@@ -106,7 +134,7 @@ public:
 
   /** \brief Set to an uninitialized state.
    *
-   * Postconditions:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->spmdSpace().get() == NULL</tt>.
    */
   void uninitialize(

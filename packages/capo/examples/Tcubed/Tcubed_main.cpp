@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 
 
   // Create x vector
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > xs  = Thyra::create_MPIVectorSpaceBase(emap);
+  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<Scalar> > xs  = Thyra::create_VectorSpace(emap);
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > x  = Thyra::createMember(xs);
   Teuchos::RefCountPtr<Thyra::VectorBase<Scalar> > removeme  = Thyra::createMember(xs);
 

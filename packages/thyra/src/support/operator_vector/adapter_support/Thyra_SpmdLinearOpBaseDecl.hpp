@@ -26,30 +26,30 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MPI_LINEAR_OP_BASE_DECL_HPP
-#define THYRA_MPI_LINEAR_OP_BASE_DECL_HPP
+#ifndef THYRA_SPMD_LINEAR_OP_BASE_DECL_HPP
+#define THYRA_SPMD_LINEAR_OP_BASE_DECL_HPP
 
 #include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
-#include "RTOp_MPI_config.h"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
+
+namespace Teuchos { template<class Ordinal> class Comm; }
 
 namespace Thyra {
 
-template<class Scalar> class MPIVectorSpaceBase;
+template<class Scalar> class SpmdVectorSpaceBase;
 
-/** \brief Base subclass for simplistic MPI SPMD linear operators.
+/** \brief Base subclass for simplistic SPMD linear operators.
  *
  * This subclass defines machinery for developing concrete
- * <tt>LinearOpBase</tt> subclasses for MPI SPMD vectors where it is
- * assumed that all of the local elements in associated vectors and
- * multi-vectors are immediately and cheaply available on each
- * processor.
+ * <tt>LinearOpBase</tt> subclasses for SPMD environments where it is assumed
+ * that all of the local elements in associated vectors and multi-vectors are
+ * immediately and cheaply available in each process.
  *
  * This base subclass derives from <tt>EuclideanLinearOpBase</tt> and
  * therefore any application-specific scalar products can easily be
  * incorporated.
  *
- * <b>Notes to subclass developers</b>
+ * <b>Notes to subclass developers:</b>
  *
  * The only function that a subclass must override in order to provide
  * a concrete implementation is the explicit single-vector version
@@ -62,14 +62,15 @@ template<class Scalar> class MPIVectorSpaceBase;
  * <tt>RTOpPack::SubVectorView</tt>.  Getting raw pointers out of
  * these objects is easy.
  *
- * It is very easy to create concrete subclasses of
- * <tt>MPILinearOpBase</tt> (see <tt>MPITridiagLinearOp</tt> for
- * a concrete example).  All one has to do is to create a derived base class
- * (<tt>MyMPILinearOp</tt> for example) of the form:
- *
+ * It is easy to create concrete subclasses of <tt>SpmdLinearOpBase</tt> (see
+ * <tt>SpmdTridiagLinearOp</tt> for a concrete example).  All one has to do is
+ * to create a derived base class (<tt>MySpmdLinearOp</tt> for example) of the
+ * form:
+ 
  \code
+
 template<class Scalar>
-class MyMPILinearOp : public MPILinearOpBase<Scalar> {
+class MySpmdLinearOp : public SpmdLinearOpBase<Scalar> {
 private:
   // Declare your classes private data
   ...
@@ -80,8 +81,8 @@ protected:
   // Override the version of euclideanApply() that takes explicit data
   void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::ConstSubVectorView<Scalar>          &local_x_in
-    ,const RTOpPack::SubVectorView<Scalar>   *local_y_out
+    ,const RTOpPack::ConstSubVectorView<Scalar>  &local_x_in
+    ,const RTOpPack::SubVectorView<Scalar>       *local_y_out
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const
@@ -101,20 +102,21 @@ protected:
         ...
       }
   };
+
  \endcode
- *
+ 
  * Of course the above function will have to perform some type of
- * processor-to-processor communication in order to apply any
- * non-trivial distributed-memory linear operator but that is always
- * the case.
+ * process-to-process communication in order to apply any non-trivial
+ * distributed-memory linear operator but that is always the case.
  *
- * If you do not need to handle arbitrary scalar data types then you
- * do not have to support them.  For example, to define a subclass
- * that only supports <b><tt>double</tt></b> you would declare a
- * non-templated version of the form:
- *
+ * If you do not need to handle arbitrary scalar data types then you do not
+ * have to support them.  For example, to define a subclass that only supports
+ * <b><tt>double</tt></b> you would declare a non-templated version of the
+ * form:
+ 
  \code
-class MyMPILinearOp : public MPILinearOpBase<double> {
+
+class MySpmdLinearOp : public SpmdLinearOpBase<double> {
 private:
   // Declare your classes private data
   ...
@@ -125,8 +127,8 @@ protected:
   // Override the version of euclideanApply() that takes explicit data
   void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::ConstSubVectorView<double>          &local_x_in
-    ,const RTOpPack::SubVectorView<double>   *local_y_out
+    ,const RTOpPack::ConstSubVectorView<double>  &local_x_in
+    ,const RTOpPack::SubVectorView<double>       *local_y_out
     ,const double                                alpha
     ,const double                                beta
     ) const
@@ -146,29 +148,29 @@ protected:
         ...
       }
   };
+
  \endcode
- *
+ 
  * By default, pointers to explicit data returned from
- * <tt>local_x.values()</tt> and <tt>local_y->values()</tt> above are
- * forced to have unit stride to simplify things.  However, if your
- * subclass can efficiently handle non-unit stride vector data (as the
- * BLAS can for example) then you can allow this by calling the
- * function <tt>this->forceUnitStride()</tt> and passing in
- * <tt>false</tt>.  The function <tt>this->forceUnitStride()</tt> can
- * only be called by your subclasses as it is declared
- * <tt>protected</tt> so do not worry about silly users messing with
- * this, it is none of their business.
+ * <tt>local_x.values()</tt> and <tt>local_y->values()</tt> above are forced
+ * to have unit stride to simplify things.  However, if your subclass can
+ * efficiently handle non-unit stride vector data (as the BLAS can for
+ * example) then you can allow this by calling the function
+ * <tt>this->forceUnitStride()</tt> and passing in <tt>false</tt>.  The
+ * function <tt>this->forceUnitStride()</tt> can only be called by your
+ * subclasses as it is declared <tt>protected</tt> so do not worry about silly
+ * users messing with this, it is none of their business.
  *
  * The explicit multi-vector version of \ref apply_expl_multi_vec "euclideanApply()"
- * has a default implementation that calls the explicit
- * single-vector version (that a subclass must supply) one column at a
- * time.  A subclass should only override this default multi-vector version
- * if it can do something more efficient.
+ * has a default implementation that calls the explicit single-vector version
+ * (that a subclass must supply) one column at a time.  A subclass should only
+ * override this default multi-vector version if it can do something more
+ * efficient for multi-vectors.
  *
- * \ingroup Thyra_Op_Vec_adapters_MPI_support_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_support_grp
  */
 template<class Scalar>
-class MPILinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<Scalar> {
+class SpmdLinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<Scalar> {
 public:
 
   /** \brief . */
@@ -200,9 +202,9 @@ protected:
 
   /** \brief Set if unit stride is forced for vector data views or not
    *
-   * @param forceUnitStride  [in]
+   * \param forceUnitStride  [in]
    *
-   * Postconditions:<ul>
+   * <b><b>Postconditions:</b></b><ul>
    * <li><tt>this->forceUnitStride() == forceUnitStride</tt>
    * </ul>
    */
@@ -210,53 +212,56 @@ protected:
 
   /** Construct to uninitialized
    *
-   * Postconditions:<ul>
+   * <b><b>Postconditions:</b></b><ul>
    * <li><tt>this->domain().get() == NULL</tt>
    * <li><tt>this->range().get() == NULL</tt>
    * </ul>
    */
-  MPILinearOpBase();
+  SpmdLinearOpBase();
 
-  /** \brief Initialize vector spaces using pre-formed <tt>MPIVectorSpaceBase</tt> objects.
+  /** \brief Initialize vector spaces using pre-formed <tt>SpmdVectorSpaceBase</tt> objects.
    *
-   * @param  domain   [in] Smart pointer to domain space
-   * @param  range    [in] Smart pointer to range space
+   * \param  domain   [in] Smart pointer to domain space
+   * \param  range    [in] Smart pointer to range space
    *
-   * Precondition:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>domain.get() != NULL</tt>
    * <li><tt>range.get()  != NULL</tt>
    * </ul>
    *
-   * Postcondition:<ul>
+   * <b>Postconditions:</b><ul>
    * <li><tt>this->domain().get() == domain.get()</tt>
    * <li><tt>this->range().get()  == range.get()</tt>
    * </ul>
    */
   virtual void setSpaces(
-    const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >      &range
-    ,const Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >     &domain
+    const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >      &range
+    ,const Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >     &domain
     );
 
-  /** \brief Initialize vector spaces given local dimensions (uses <tt>DefaultMPIVectorSpace</tt>).
+  /** \brief Initialize vector spaces given local dimensions (uses <tt>DefaultSpmdVectorSpace</tt>).
    *
-   * @param  mpiComm         [in] MPI Communicator
-   * @param  localDimRange   [in] The local number of vector elements in the domain space.
-   * @param  localDimDomain  [in] The local number of vector elements in the domain space.
+   * \param  comm
+   *          [in] Spmd Communicator
+   * \param  localDimRange
+   *          [in] The local number of vector elements in the domain space.
+   * \param  localDimDomain
+   *          [in] The local number of vector elements in the domain space.
    *
-   * Precondition:<ul>
+   * <b>Preconditions:</b><ul>
    * <li><tt>localDimRange  > 0</tt>
    * <li><tt>localDimDomain > 0</tt>
    * </ul>
    *
-   * Postcondition:<ul>
-   * <li><tt>dynamic_cast<MPIVectorSpace<Scalar>&>(*this->range()).localSubDim() == localDimRange</tt>
-   * <li><tt>dynamic_cast<MPIVectorSpace<Scalar>&>(*this->domain()).localSubDim() == localDimDomain</tt>
-   * <li><tt>dynamic_cast<const DefaultMPIVectorSpace<Scalar>*>(this->range().get())  != NULL</tt>
-   * <li><tt>dynamic_cast<const DefaultMPIVectorSpace<Scalar>*>(this->domain().get()) != NULL</tt>
+   * <b>Postconditions:</b><ul>
+   * <li><tt>dynamic_cast<SpmdVectorSpace<Scalar>&>(*this->range()).localSubDim() == localDimRange</tt>
+   * <li><tt>dynamic_cast<SpmdVectorSpace<Scalar>&>(*this->domain()).localSubDim() == localDimDomain</tt>
+   * <li><tt>dynamic_cast<const DefaultSpmdVectorSpace<Scalar>*>(this->range().get())  != NULL</tt>
+   * <li><tt>dynamic_cast<const DefaultSpmdVectorSpace<Scalar>*>(this->domain().get()) != NULL</tt>
    * </ul>
    */
   virtual void setLocalDimensions(
-    MPI_Comm                                                    mpiComm 
+    const Teuchos::RefCountPtr<const Teuchos::Comm<Index> >     &comm
     ,const Index                                                localDimRange
     ,const Index                                                localDimDomain
     );
@@ -280,8 +285,8 @@ protected:
    */
   virtual void euclideanApply(
     const ETransp                                M_trans
-    ,const RTOpPack::ConstSubVectorView<Scalar>          &local_x
-    ,const RTOpPack::SubVectorView<Scalar>   *local_y
+    ,const RTOpPack::ConstSubVectorView<Scalar>  &local_x
+    ,const RTOpPack::SubVectorView<Scalar>       *local_y
     ,const Scalar                                alpha
     ,const Scalar                                beta
     ) const = 0;
@@ -308,8 +313,8 @@ protected:
    */
   virtual void euclideanApply(
     const ETransp                                     M_trans
-    ,const RTOpPack::ConstSubMultiVectorView<Scalar>          &local_X
-    ,const RTOpPack::SubMultiVectorView<Scalar>   *local_Y
+    ,const RTOpPack::ConstSubMultiVectorView<Scalar>  &local_X
+    ,const RTOpPack::SubMultiVectorView<Scalar>       *local_Y
     ,const Scalar                                     alpha
     ,const Scalar                                     beta
     ) const;
@@ -318,8 +323,8 @@ protected:
 
 private:
 
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    range_;
-  Teuchos::RefCountPtr<const MPIVectorSpaceBase<Scalar> >    domain_;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >    range_;
+  Teuchos::RefCountPtr<const SpmdVectorSpaceBase<Scalar> >    domain_;
   Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    sp_range_;
   Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<Scalar> >    sp_domain_;
 
@@ -327,4 +332,4 @@ private:
 
 }	// end namespace Thyra
 
-#endif	// THYRA_MPI_LINEAR_OP_BASE_DECL_HPP
+#endif	// THYRA_SPMD_LINEAR_OP_BASE_DECL_HPP

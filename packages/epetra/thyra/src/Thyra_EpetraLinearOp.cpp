@@ -48,11 +48,11 @@ EpetraLinearOp::EpetraLinearOp(
   ,ETransp                                                           opTrans
   ,EApplyEpetraOpAs                                                  applyAs
   ,EAdjointEpetraOp                                                  adjointSupport
-  ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange
-  ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain
+  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdRange
+  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdDomain
   )
 {
-  initialize(op,opTrans,applyAs,adjointSupport,mpiRange,mpiDomain);
+  initialize(op,opTrans,applyAs,adjointSupport,spmdRange,spmdDomain);
 }
 
 void EpetraLinearOp::initialize(
@@ -60,8 +60,8 @@ void EpetraLinearOp::initialize(
   ,ETransp                                                           opTrans
   ,EApplyEpetraOpAs                                                  applyAs
   ,EAdjointEpetraOp                                                  adjointSupport
-  ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiRange
-  ,const Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >    &mpiDomain
+  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdRange
+  ,const Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >   &spmdDomain
   )
 {
   // Validate input, allocate spaces, validate ...
@@ -69,13 +69,13 @@ void EpetraLinearOp::initialize(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( op.get()==NULL, std::invalid_argument, "EpetraLinearOp::initialize(...): Error!" );
 #endif
-  Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> > range, domain;
-  if(mpiRange.get())
-    range = mpiRange;
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> > range, domain;
+  if(spmdRange.get())
+    range = spmdRange;
   else
     range = ( applyAs==EPETRA_OP_APPLY_APPLY ? allocateRange(op,opTrans)  : allocateDomain(op,opTrans) );
-  if(mpiDomain.get())
-    domain = mpiDomain;
+  if(spmdDomain.get())
+    domain = spmdDomain;
   else
     domain  = ( applyAs==EPETRA_OP_APPLY_APPLY ? allocateDomain(op,opTrans) : allocateRange(op,opTrans)  );
   Teuchos::RefCountPtr<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >
@@ -97,8 +97,8 @@ void EpetraLinearOp::uninitialize(
   ,ETransp                                                    *opTrans
   ,EApplyEpetraOpAs                                           *applyAs
   ,EAdjointEpetraOp                                           *adjointSupport
-  ,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiRange
-  ,Teuchos::RefCountPtr< const MPIVectorSpaceBase<Scalar> >   *mpiDomain
+  ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  *spmdRange
+  ,Teuchos::RefCountPtr< const SpmdVectorSpaceBase<Scalar> >  *spmdDomain
   )
 {
 
@@ -106,8 +106,8 @@ void EpetraLinearOp::uninitialize(
   if(opTrans) *opTrans = opTrans_;
   if(applyAs) *applyAs = applyAs_;
   if(adjointSupport) *adjointSupport = adjointSupport_;
-  if(mpiRange) *mpiRange = range_;
-  if(mpiDomain) *mpiDomain = domain_;
+  if(spmdRange) *spmdRange = range_;
+  if(spmdDomain) *spmdDomain = domain_;
 
   op_      = Teuchos::null;
   opTrans_ = NOTRANS;
@@ -120,14 +120,14 @@ void EpetraLinearOp::uninitialize(
 
 }
 
-Teuchos::RefCountPtr< const MPIVectorSpaceBase<EpetraLinearOp::Scalar> >
-EpetraLinearOp::mpiRange() const
+Teuchos::RefCountPtr< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> >
+EpetraLinearOp::spmdRange() const
 {
   return range_;
 }
 
-Teuchos::RefCountPtr< const MPIVectorSpaceBase<EpetraLinearOp::Scalar> >
-EpetraLinearOp::mpiDomain() const
+Teuchos::RefCountPtr< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> >
+EpetraLinearOp::spmdDomain() const
 {
   return domain_;
 }
@@ -280,9 +280,9 @@ void EpetraLinearOp::euclideanApply(
     // Y_inout += alpha * T
     update(
       alpha
-      ,*create_MPIMultiVectorBase(
+      ,*create_MultiVector(
         Teuchos::rcp(&Teuchos::getConst(T),false)
-        ,Teuchos::rcp_dynamic_cast<const MPIVectorSpaceBase<Scalar> >(Y_inout->range(),true)
+        ,Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(Y_inout->range(),true)
         ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(Y_inout->domain(),true)
         )
       ,Y_inout
@@ -364,23 +364,23 @@ void EpetraLinearOp::describe(
 
 // Allocators for domain and range spaces
 
-Teuchos::RefCountPtr< const MPIVectorSpaceBase<EpetraLinearOp::Scalar> > 
+Teuchos::RefCountPtr< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> > 
 EpetraLinearOp::allocateDomain(
   const Teuchos::RefCountPtr<Epetra_Operator>  &op 
   ,ETransp                                     op_trans 
   )  const
 {
-  return create_MPIVectorSpaceBase(Teuchos::rcp(&op->OperatorDomainMap(),false));
+  return create_VectorSpace(Teuchos::rcp(&op->OperatorDomainMap(),false));
   // ToDo: What about the transpose argument???, test this!!!
 }
 
-Teuchos::RefCountPtr< const MPIVectorSpaceBase<EpetraLinearOp::Scalar> > 
+Teuchos::RefCountPtr< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> > 
 EpetraLinearOp::allocateRange(
   const Teuchos::RefCountPtr<Epetra_Operator>  &op 
   ,ETransp                                     op_trans 
   )  const
 {
-  return create_MPIVectorSpaceBase(Teuchos::rcp(&op->OperatorRangeMap(),false));
+  return create_VectorSpace(Teuchos::rcp(&op->OperatorRangeMap(),false));
   // ToDo: What about the transpose argument???, test this!!!
 }
 

@@ -47,7 +47,7 @@ Index SpmdVectorSpaceUtilities::computeMapCode(
   const int procRank = size(comm);
   Index mapCode = -1;
   Index localCode = localSubDim % (procRank+1) + localSubDim;
-  reduceAll(comm,Teuchos::REDUCE_SUM,1,&localCode,&mapCode);
+  reduceAll(comm,Teuchos::REDUCE_SUM,localCode,&mapCode);
   return mapCode;
 }
 
@@ -57,7 +57,7 @@ Index SpmdVectorSpaceUtilities::computeLocalOffset(
 {
   Index localOffset;
   Index _localOffset = localSubDim;
-  scan(comm,Teuchos::REDUCE_SUM,1,&_localOffset,&localOffset);
+  scan(comm,Teuchos::REDUCE_SUM,_localOffset,&localOffset);
   localOffset -= localSubDim;
   return localOffset;
 }
@@ -67,15 +67,8 @@ Index SpmdVectorSpaceUtilities::computeGlobalDim(
   )
 {
   Index globalDim = -1;
-  reduceAll(comm,Teuchos::REDUCE_SUM,1,&localSubDim,&globalDim);
+  reduceAll(comm,Teuchos::REDUCE_SUM,localSubDim,&globalDim);
   return globalDim;
-}
-
-void SpmdVectorSpaceUtilities::broadcast(
-  const Teuchos::Comm<Index> &comm, const int rootRank, Index* value
-  )
-{
-  broadcast(comm,rootRank,1,value);
 }
 
 } // namespace Thyra

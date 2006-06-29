@@ -51,7 +51,9 @@ bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  eFwdOp->getEpetraOpView(&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport);
+  eFwdOp->getEpetraOpView(
+    &epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport
+    );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
     return false;
   return true;
@@ -75,16 +77,18 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   ETransp                                     epetraFwdOpTransp;
   EApplyEpetraOpAs                            epetraFwdOpApplyAs;
   EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  eFwdOp.getEpetraOpView(&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport);
+  eFwdOp.getEpetraOpView(
+    &epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport
+    );
   const Epetra_RowMatrix &eRMOp  = Teuchos::dyn_cast<const Epetra_RowMatrix>(*epetraFwdOp);
   const Epetra_Map &map = eRMOp.OperatorDomainMap();
   Teuchos::RefCountPtr<Epetra_Vector>
     e_diag = Teuchos::rcp(new Epetra_Vector(map));
   eRMOp.ExtractDiagonalCopy(*e_diag);
-  Teuchos::RefCountPtr< const MPIVectorSpaceBase<double> >
-    space = create_MPIVectorSpaceBase(Teuchos::rcp(new Epetra_Map(map)));
-  Teuchos::RefCountPtr< const MPIVectorBase<double> >
-    diag = create_MPIVectorBase(e_diag,space);
+  Teuchos::RefCountPtr< const SpmdVectorSpaceBase<double> >
+    space = create_VectorSpace(Teuchos::rcp(new Epetra_Map(map)));
+  Teuchos::RefCountPtr< const SpmdVectorBase<double> >
+    diag = create_Vector(e_diag,space);
   Teuchos::set_extra_data<Teuchos::RefCountPtr<const LinearOpBase<double> > >(
     fwdOp, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOp", &diag
     );
@@ -104,8 +108,10 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
 {
   using Teuchos::get_extra_data;
   TEST_FOR_EXCEPT(Op==NULL);
-  DefaultDiagonalLinearOpWithSolve<double> &diagOp = Teuchos::dyn_cast<DefaultDiagonalLinearOpWithSolve<double> >(*Op);
-  Teuchos::RefCountPtr< const VectorBase<double> > diag = diagOp.getDiag();
+  DefaultDiagonalLinearOpWithSolve<double>
+    &diagOp = Teuchos::dyn_cast<DefaultDiagonalLinearOpWithSolve<double> >(*Op);
+  Teuchos::RefCountPtr< const VectorBase<double> >
+    diag = diagOp.getDiag();
   if( fwdOp ) {
     if(diag.get()) {
       *fwdOp =
@@ -123,7 +129,9 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
 
 // Overridden from ParameterListAcceptor
 
-void DiagonalEpetraLinearOpWithSolveFactory::setParameterList(Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList)
+void DiagonalEpetraLinearOpWithSolveFactory::setParameterList(
+  Teuchos::RefCountPtr<Teuchos::ParameterList> const& paramList
+  )
 {}
 
 Teuchos::RefCountPtr<Teuchos::ParameterList>

@@ -45,12 +45,29 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
+  const Index dim
+  )
+  :localSubDim_(0),numProc_(0),procRank_(0)
+{
+  initialize(dim);
+}
+
+template<class Scalar>
+DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
   const Teuchos::RefCountPtr<const Teuchos::Comm<Index> > &comm
   ,const Index localSubDim, const Index globalDim
   )
   :localSubDim_(0),numProc_(0),procRank_(0)
 {
   initialize(comm,localSubDim,globalDim);
+}
+
+template<class Scalar>
+void DefaultSpmdVectorSpace<Scalar>::initialize(
+  const Index dim
+  )
+{
+  this->initialize(Teuchos::null,dim,dim);
 }
 
 template<class Scalar>
@@ -121,12 +138,6 @@ DefaultSpmdVectorSpace<Scalar>::createMembers(int numMembers) const
       ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         this->smallVecSpcFcty()->createVecSpc(numMembers),true
         )
-      ,Teuchos::rcp(
-        localSubDim_ ? new Scalar[localSubDim_*numMembers] : 0
-        ,Teuchos::DeallocArrayDelete<Scalar>()
-        ,true
-        )
-      ,localSubDim_
       )
     );
 }

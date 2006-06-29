@@ -30,6 +30,7 @@
 #define THYRA_SCALAR_PROD_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
+#include "Thyra_EuclideanLinearOpBaseDecl.hpp"
 
 namespace Thyra {
 
