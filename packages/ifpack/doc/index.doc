@@ -17,7 +17,7 @@
 
 \section ifp_intro Introduction
 
-IFPACK, developed by Marzio Sala and Micheal Heroux (SNL 9214), 
+IFPACK, developed by Marzio Sala (ETHZ/D-INFK) and Micheal Heroux (SNL 9214), 
 provides a suite of object-oriented algebraic preconditioners
 for the solution of preconditioned iterative solvers.  IFPACK
 constructors expect an Epetra_RowMatrix object for construction.
@@ -84,6 +84,8 @@ Ifpack_Preconditioner can be used to apply the inverse of the diagonal blocks.
 <li> Exact factorizations (through class Ifpack_Amesos):
   - all Amesos classes can be used to compute the LU factorization
     of a given matrix.
+
+<li> Chebyshev polynomials (through class Ifpack_Chebyshev).
 
 </ul>
 
