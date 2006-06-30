@@ -389,6 +389,22 @@ private: // Data members
   Map params_;
 };
 
+/** \brief Returns true if two parameter lists are the same.
+ *
+ * \relates ParameterList
+ */
+bool operator==( const ParameterList& list1, const ParameterList& list2 );
+
+/** \brief Returns true if two parameter lists are <b>not</tt> the same.
+ *
+ * \relates ParameterList
+ */
+inline
+bool operator!=( const ParameterList& list1, const ParameterList& list2 )
+{
+  return !( list1 == list2 );
+}
+
 // /////////////////////////////////////////////////////
 // Inline and Template Function Definitions
 

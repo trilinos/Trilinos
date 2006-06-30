@@ -114,7 +114,7 @@ public:
 
   //@}
 
-  /** \name Attribute Methods */
+  /** \name Attribute/Query Methods */
   //@{
   
   //! Return whether or not the value has been used; i.e., whether or not the value has been retrieved via a get function.
@@ -123,11 +123,11 @@ public:
   //! Return whether or not the value itself is a list.
   bool isList() const;
 
-  /*! \brief Test the type of the data being contained. */
+  //! Test the type of the data being contained.
   template <typename T>
   bool isType() const;
 
-  /** Indicate whether this entry takes on the default value */
+  //! Indicate whether this entry takes on the default value.
   bool isDefault() const;
 
   //@}
@@ -169,9 +169,30 @@ private:
     in the ParameterEntry class, since the user does not have to pass in a pointer of type \c T.
 */
 template<typename T>
-T& getValue( const ParameterEntry &entry )
+inline T& getValue( const ParameterEntry &entry )
 {
   return entry.getValue((T*)NULL);
+}
+
+/*! \relates ParameterEntry 
+    \brief Returns true if two ParameterEntry objects are equal.
+*/
+inline bool operator==(const ParameterEntry& e1, const ParameterEntry& e2) 
+{ 
+  return (
+    e1.getAny() == e2.getAny()
+    && e1.isList()== e2.isList()
+    && e1.isUsed() == e2.isUsed()
+    && e1.isDefault() == e2.isDefault()
+    );
+}
+
+/*! \relates ParameterEntry 
+    \brief Returns true if two ParameterEntry objects are <b>not</b> equal.
+*/
+inline bool operator!=(const ParameterEntry& e1, const ParameterEntry& e2) 
+{ 
+  return !( e1 == e2 );
 }
 
 /*! \relates ParameterEntry 

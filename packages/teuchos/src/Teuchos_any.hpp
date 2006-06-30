@@ -96,6 +96,19 @@ public:
 		{
 			return content ? content->type() : typeid(void);
 		}
+	
+	//! \brief Return if two any objects are the same or not. 
+	bool same( const any &other ) const
+		{
+      if( this->empty() && other.empty() )
+        return true;
+      else if( this->empty() && !other.empty() )
+        return false;
+      else if( !this->empty() && other.empty() )
+        return false;
+      // !this->empty() && !other.empty()
+      return content->same(*other.content);
+		}
 
 	//! Print this value to the output stream <tt>os</tt>
 	void print(std::ostream& os) const
@@ -117,8 +130,10 @@ public:
 		virtual const std::type_info & type() const = 0;
 		/** \brief . */
 		virtual placeholder * clone() const = 0;
-                /** \brief . */
-                virtual void print(std::ostream & os) const = 0;
+		/** \brief . */
+		virtual bool same( const placeholder &other ) const = 0;
+    /** \brief . */
+    virtual void print(std::ostream & os) const = 0;
 	};
 	
 	/** \brief . */
@@ -131,14 +146,25 @@ public:
 			: held(value)
 			{}
 		/** \brief . */
-		virtual const std::type_info & type() const
+		const std::type_info & type() const
 			{ return typeid(ValueType); }
 		/** \brief . */
-		virtual placeholder * clone() const
+		placeholder * clone() const
 			{ return new holder(held); }
-                /** \brief . */
-                virtual void print(std::ostream & os) const
-                        { os << held; }
+		/** \brief . */
+		bool same( const placeholder &other ) const
+      {
+        if( type() != other.type() ) {
+          return false;
+        }
+        // type() == other.type()
+        const ValueType
+          &other_held = dynamic_cast<const holder<ValueType>&>(other).held;
+        return held == other_held;
+      }
+    /** \brief . */
+    void print(std::ostream & os) const
+      { os << held; }
 		/** \brief . */
 		ValueType held;
 	};
@@ -222,6 +248,22 @@ inline std::string toString(const any &rhs)
   std::ostringstream oss;
   rhs.print(oss);
 	return oss.str();
+}
+
+/*! \relates any
+    \brief Returns true if two any objects have the same value.
+*/
+inline bool operator==( const any &a, const any &b )
+{
+  return a.same(b);
+}
+
+/*! \relates any
+    \brief Returns true if two any objects <b>do not</tt> have the same value.
+*/
+inline bool operator!=( const any &a, const any &b )
+{
+  return !a.same(b);
 }
 
 /*! \relates any

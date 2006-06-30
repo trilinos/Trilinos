@@ -365,3 +365,29 @@ void ParameterList::updateSubListNames(int depth)
 }
 
 } // namespace Teuchos
+
+bool Teuchos::operator==( const ParameterList& list1, const ParameterList& list2 )
+{
+  bool isSame = true;
+  ParameterList::ConstIterator itr1, itr2;
+  for(
+    itr1 = list1.begin(), itr2 = list2.begin();
+    itr1 != list1.end() && itr2 != list2.end();
+    ++itr1, ++itr2
+    )
+  {
+    const std::string    &entryName1   = list1.name(itr1);
+    const std::string    &entryName2   = list2.name(itr2);
+    const ParameterEntry &entry1       = list1.entry(itr1);
+    const ParameterEntry &entry2       = list2.entry(itr2);
+    if( entryName1 != entryName2 )
+      isSame = false;
+    else if( entry1 != entry2 )
+      isSame = false;
+    // Note that the above statement automatically recursively compare the
+    // sublists since ParameterList objects are stored in the 'any' variable
+    // held by the ParameterEntry object and this same comparison operator will
+    // be used.
+  }
+  return isSame;
+}

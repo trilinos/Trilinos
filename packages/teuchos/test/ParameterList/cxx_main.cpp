@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
   bool verbose = false;
   int FailedTests = 0;
   int procRank = 0;
+  bool result;
 
 #ifdef HAVE_MPI
   MPI_Init( &argc, &argv );
@@ -625,14 +626,14 @@ int main(int argc, char *argv[])
   try {
     getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerances");
     if (verbose) cout << "Did not throw exception, error!\n";
-    FailedTests += 1;
+    ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
-    FailedTests += 1;
+    ++FailedTests;
   }
 
   if (verbose) {
@@ -643,14 +644,14 @@ int main(int argc, char *argv[])
   try {
     getParameter<int>(PL_Main.sublist("Direction").sublist("Newton").sublist("Linear Solver"),"Tolerance");
     if (verbose) cout << "Did not throw exception, error!\n";
-    FailedTests += 1;
+    ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
-    FailedTests += 1;
+    ++FailedTests;
   }
 
   //-----------------------------------------------------------
@@ -671,7 +672,7 @@ int main(int argc, char *argv[])
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
-    FailedTests += 1;
+    ++FailedTests;
   }
 
   if (verbose) {
@@ -683,14 +684,14 @@ int main(int argc, char *argv[])
     PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",10.0); // Should be an int!
     PL_Main_copy.validateParameters(PL_Main);
     if (verbose) cout << "Did not throw exception, error!\n";
-    FailedTests += 1;
+    ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
-    FailedTests += 1;
+    ++FailedTests;
   }
   PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",10); // Put back the valid int!
 
@@ -703,14 +704,14 @@ int main(int argc, char *argv[])
     PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iter",10);
     PL_Main_copy.validateParameters(PL_Main);
     if (verbose) cout << "Did not throw exception, error!\n";
-    FailedTests += 1;
+    ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
-    FailedTests += 1;
+    ++FailedTests;
   }
 
   if (verbose) {
@@ -722,14 +723,14 @@ int main(int argc, char *argv[])
     PL_Main_copy.sublist("Line Search").sublist("Polynomials").set("Max Iters",10); // param correct, sublist wrong
     PL_Main_copy.validateParameters(PL_Main);
     if (verbose) cout << "Did not throw exception, error!\n";
-    FailedTests += 1;
+    ++FailedTests;
   }
   catch(const Teuchos::Exceptions::InvalidParameter &e) {
     cerr << "caught expected Teuchos::Exceptions::InvalidParameter: " << e.what() << endl;
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception: " << e.what() << endl;
-    FailedTests += 1;
+    ++FailedTests;
   }
 
   if (verbose) {
@@ -743,7 +744,48 @@ int main(int argc, char *argv[])
   }
   catch(const std::exception &e) {
     cerr << "caught unexpected exception " << e.what() << endl;
-    FailedTests += 1;
+    ++FailedTests;
+  }
+
+  //-----------------------------------------------------------
+  // Compare lists
+  //-----------------------------------------------------------
+
+  if (verbose) {
+    print_break();
+    cout << "Checking that PL_Main == PL_Main == true : ";
+  }
+  result = PL_Main == PL_Main;
+  if(!result)
+    ++FailedTests;
+  if (verbose) {
+    cout << ( result ? "passed" : "failed" ) << "\n";
+    print_break();
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Checking that PL_Main != PL_Main == false : ";
+  }
+  result = !(PL_Main != PL_Main);
+  if(!result)
+    ++FailedTests;
+  if (verbose) {
+    cout << ( result ? "passed" : "failed" ) << "\n";
+    print_break();
+  }
+
+  if (verbose) {
+    print_break();
+    cout << "Changing PL_Main_copy and checking that PL_Main_copy != PL_Main == true : ";
+  }
+  PL_Main_copy.sublist("Line Search").sublist("Polynomial").set("Max Iters",100); // Not the default!
+  result = (PL_Main_copy != PL_Main);
+  if(!result)
+    ++FailedTests;
+  if (verbose) {
+    cout << ( result ? "passed" : "failed" ) << "\n";
+    print_break();
   }
 
   //-----------------------------------------------------------
