@@ -7,6 +7,7 @@
           Comm,
          CrsGraph,
          CrsMatrix,
+         RowMatrix,
          CrsRectMatrix,
          Directory,
          FECrsGraph,

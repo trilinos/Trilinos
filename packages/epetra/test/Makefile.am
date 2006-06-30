@@ -33,7 +33,7 @@ all-local:
 	@echo "Trilinos package epetra subdirectory test built successfully."
 	@echo ""
 
-SUBDIRS = src BlockMap CrsGraph CrsMatrix CrsRectMatrix Directory \
+SUBDIRS = src BlockMap CrsGraph CrsMatrix RowMatrix CrsRectMatrix Directory \
 FECrsGraph FECrsMatrix FEVbrMatrix FEVector ImportExport \
 IntSerialDense Map MapColoring \
 MultiVector Object RowMatrixTransposer SerialDense SerialSpdDense \
@@ -44,6 +44,7 @@ BlockMap/BlockMap_test.exe \
 Comm/Comm_test.exe \
 CrsGraph/CrsGraph_test.exe \
 CrsMatrix/CrsMatrix_test.exe \
+RowMatrix/RowMatrix_test.exe \
 CrsRectMatrix/CrsRectMatrix_test.exe \
 Directory/Directory_test.exe \
 FECrsGraph/FECrsGraph_test.exe \
