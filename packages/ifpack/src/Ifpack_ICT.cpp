@@ -43,7 +43,6 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Util.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Hashtable.hpp"
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
@@ -102,20 +101,31 @@ void Ifpack_ICT::Destroy()
 int Ifpack_ICT::SetParameters(Teuchos::ParameterList& List)
 {
 
-  LevelOfFill_ = List.get("fact: ict level-of-fill",LevelOfFill_);
-  Athresh_ = List.get("fact: absolute threshold", Athresh_);
-  Rthresh_ = List.get("fact: relative threshold", Rthresh_);
-  Relax_ = List.get("fact: relax value", Relax_);
-  DropTolerance_ = List.get("fact: drop tolerance", DropTolerance_);
+  try
+  {
+    LevelOfFill_ = List.get("fact: ict level-of-fill",LevelOfFill_);
+    Athresh_ = List.get("fact: absolute threshold", Athresh_);
+    Rthresh_ = List.get("fact: relative threshold", Rthresh_);
+    Relax_ = List.get("fact: relax value", Relax_);
+    DropTolerance_ = List.get("fact: drop tolerance", DropTolerance_);
 
-  // set label
-  Label_ = "ICT (fill=" + Ifpack_toString(LevelOfFill())
-    + ", athr=" + Ifpack_toString(AbsoluteThreshold()) 
-    + ", rthr=" + Ifpack_toString(RelativeThreshold())
-    + ", relax=" + Ifpack_toString(RelaxValue())
-    + ")";
+    // set label
+    Label_ = "ICT (fill=" + Ifpack_toString(LevelOfFill())
+      + ", athr=" + Ifpack_toString(AbsoluteThreshold()) 
+      + ", rthr=" + Ifpack_toString(RelativeThreshold())
+      + ", relax=" + Ifpack_toString(RelaxValue())
+      + ")";
 
-  return(0);
+    return(0);
+  }
+  catch (...)
+  {
+    cerr << "Caught an exception while parsing the parameter list" << endl;
+    cerr << "This typically means that a parameter was set with the" << endl;
+    cerr << "wrong type (for example, int instead of double). " << endl;
+    cerr << "please check the documentation for the type required by each parameer." << endl;
+    IFPACK_CHK_ERR(-1);
+  }
 }
 
 //==========================================================================
@@ -210,7 +220,12 @@ int Ifpack_ICT::Compute()
   EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&diag_val, &diag_idx));
 
   int oldSize = RowNnz;
-  Ifpack_HashTable::Init(A_.MaxNumEntries() + 1);
+
+  // this is a bit magic
+  int hash_size = 1024;
+  while (hash_size < (int)(A_.MaxNumEntries() * LevelOfFill()))
+    hash_size *= 2;
+  Ifpack_HashTable Hash(hash_size - 1, 1);
 
   // start factorization for line 1
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
@@ -242,7 +257,7 @@ int Ifpack_ICT::Compute()
     if (LOF == 0) LOF = 1;
 
     // convert line `row_i' into hash for fast access
-    Ifpack_HashTable Hash(oldSize * 2 + 1);
+    Hash.reset();
 
     double h_ii = 0.0;
     for (int i = 0 ; i < RowNnz ; ++i) {
@@ -252,7 +267,7 @@ int Ifpack_ICT::Compute()
       }
       else if (RowIndices[i] < row_i)
       {
-        Hash.Add(RowIndices[i], RowValues[i]);
+        Hash.set(RowIndices[i], RowValues[i], true);
       }
     }
       
@@ -263,8 +278,8 @@ int Ifpack_ICT::Compute()
 
       short int flops = 0;
       double h_ij = 0.0, h_jj = 0.0;
-      // note: Get() returns 0.0 if col_j is not found
-      h_ij = Hash.Get(col_j);
+      // note: get() returns 0.0 if col_j is not found
+      h_ij = Hash.get(col_j);
 
       // get pointers to row `col_j'
       int* ColIndices;
@@ -278,7 +293,7 @@ int Ifpack_ICT::Compute()
         if (col_k == col_j)
           h_jj = ColValues[k];
         else {
-          double xxx = Hash.Get(col_k);
+          double xxx = Hash.get(col_k);
           if (xxx != 0.0)
           {
             h_ij -= ColValues[k] * xxx;
@@ -291,14 +306,14 @@ int Ifpack_ICT::Compute()
 
       if (IFPACK_ABS(h_ij) > DropTolerance_)
       {
-        Hash.Replace(col_j, h_ij);
+        Hash.set(col_j, h_ij);
       }
     
       // only approx
       ComputeFlops_ += 2.0 * flops + 1;
     }
 
-    int size = Hash.Size();
+    int size = Hash.getNumEntries();
 
     vector<double> AbsRow(size);
     int count = 0;
@@ -307,17 +322,8 @@ int Ifpack_ICT::Compute()
     vector<int> keys(size + 1);
     vector<double> values(size + 1);
 
-    Hash.Arrayify(&keys[0], &values[0]);
-    /*
-    Hash.Reset();
-    count = 0;
-    for (int i = 0 ; i < Hash.Size() ; ++i)
-    {
-      double val;
-      Hash.Next(val);
-      AbsRow[count++] = IFPACK_ABS(val);
-    }
-    */
+    Hash.arrayify(&keys[0], &values[0]);
+
     for (int i = 0 ; i < size ; ++i)
     {
       AbsRow[i] = IFPACK_ABS(values[i]);
@@ -372,7 +378,6 @@ int Ifpack_ICT::Compute()
     oldSize = size;
   }
 
-  Ifpack_HashTable::Finalize();
   IFPACK_CHK_ERR(H_->FillComplete());
 
 #if 0

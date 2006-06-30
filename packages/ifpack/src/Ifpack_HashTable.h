@@ -28,228 +28,183 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 //@HEADER
 
+/* \file Ifpack_HashTable.h
+ *
+ * \brief HashTable used in Ifpack_ICT and Ifpack_ILUT.
+ *
+ * \author Marzio Sala, ETHZ/D-INFK.
+ *
+ * \date Last modified on 30-Jun-06.
+ */
+
 #ifndef IFPACK_HASHTABLE_H
 #define IFPACK_HASHTABLE_H
 
-#include "Ifpack_Utils.h"
-
-// ============================================================================ 
-// Contains a single entry of the hash table
-struct Node
-{
-  int Key;
-  double Value;
-  Node * Ptr;
-};
-
-// ============================================================================ 
-// Contains an array of nodes with a linked list
-struct NodeArray
-{
-  int pos;
-  int size;
-  Node* Array;
-  NodeArray* Next;
-};
+#include "Ifpack_ConfigDefs.h"
 
 // ============================================================================
-// Copied from ~/Trilinos/packages/epetra/src/Epetra_HashTable.h;
-// then modified to make it faster for IFPACK's needs. The idea is the 
-// following: each (Key, Value) is stored in a Node; to avoid too many calls
-// to new/delete, method GetNewNode() returns a pointer from the array
-// NodeArray, of size ChunkSize.
+// Hash table with good performances and high level of memory reuse.
+// Given a maximum number of keys n_keys, this class allocates chunks of memory
+// to store n_keys keys and values. 
 //
 // Usage:
 //
-// 1) before using any Ifpack_HashTable object, allocate memory:
-//
-//    Ifpack_HashTable::Init(ChunkSize);
-//
-// 2) allocate one or more objects:
+// 1) Instantiate a object,
 //
 //    Ifpack_HashTable Hash(size);
 //
+//    size should be a prime number, like 2^k - 1.
+//
 // 3) use it, then delete it:
 //
-//    Hash.Add(...)
-//    Hash.Get(...)
-//    Hash.Arrayify(...)
+//    Hash.get(key, value)       --> returns the value stored on key, or 0.0 
+//                                   if not found.
+//    Hash.set(key, value)       --> sets the value in the hash table, replace
+//                                   existing values.
+//    Hash.set(key, value, true) --> to sum into an already inserted value
+//    Hash.arrayify(...)
 //
 // 4) clean memory:
 //
-//    Ifpack_HashTable::Finalize()
-//
-//
-// \note This class is "delicate", there is no copy constructor, several
-// checks are skipped. It is NOT intended to be a general purpose hash table,
-// for this please refer to
-// Trilinos/packages/teuchos/src/Teuchos_HashTable.hpp. 
+//    Hash.reset();
 //
 // \author Marzio Sala, ETHZ/COLAB
 //
-// \date 21-Oct-05
+// \date 30-Jun-06
 // ============================================================================ 
-class Ifpack_HashTable
+
+class Ifpack_HashTable 
 {
- public:
-
-  Ifpack_HashTable (const int size, const unsigned int seed = (2654435761U) )
-  {
-    Size_ = size;
-    Seed_ = seed;
-    start_ = Size_;
-    end_ = 0;
-
-    if (size<=0)
+  public:
+    //! constructor.
+    Ifpack_HashTable(const int n_keys = 1031, const int n_sets = 1)
     {
-      cout << "Bad table size (" << size << ")" << endl;
-      throw(-1);
-    }
+      n_keys_ = n_keys;
+      n_sets_ = n_sets;
+      seed_ = (2654435761U);
 
-    Container_ = new Node * [size];
+      keys_.reserve(50);
+      vals_.reserve(50);
 
-    for (int i = 0; i < size; ++i) Container_[i] = 0;
+      keys_.resize(n_sets_);
+      vals_.resize(n_sets_);
 
-    NumValues_ = 0;
-    current_ = Container_[0];
-    Data_ = FirstData_;
-  }
-
-  static void Init(const int size)
-  {
-    FirstData_ = new NodeArray;
-    FirstData_->size = size;
-    FirstData_->Array = new Node[FirstData_->size];
-    FirstData_->pos = 0;
-    FirstData_->Next = 0;
-  }
-
-  static void Finalize()
-  {
-    NodeArray* Next;
-    do 
-    {
-      Next = FirstData_->Next;
-      delete[] FirstData_->Array;
-      delete FirstData_;
-      FirstData_ = Next;
-    }
-    while (Next != 0);
-  }
-
-  ~Ifpack_HashTable()
-  {
-    delete[] Container_;
-  }
-
-  void Replace(const int key, const double value)
-  {
-    Node * n = Container_[ Func(key) ];
-    while( n && (n->Key != key) ) n = n->Ptr;
-    if (n) n->Value = value;
-    else    
-      Add(key, value);
-  }
-
-  inline Node* GetNewNode()
-  {
-    int& pos = Data_->pos;
-    Node* Next; // node to be returned back ("allocated")
-    if (pos != Data_->size - 1)
-    {
-      // If I have space in this NodeArray, use it
-      Next = &(Data_->Array[pos]);
-      ++pos;
-    }
-    else
-    {
-      // Need to go to the next array
-      if (Data_->Next != 0)
+      for (int i = 0; i < n_sets_; ++i)
       {
-        // array has already been allocated, use it
-        Data_ = Data_->Next;
-        Data_->pos = 0;
+        keys_[i].resize(n_keys_);
+        vals_[i].resize(n_keys_);
       }
-      else
-      {
-        // need to allocate one new array
-        NodeArray* NextArray = new NodeArray;
-        NextArray->size = Data_->size;
-        NextArray->Array = new Node[Data_->size];
-        NextArray->pos = 0;
-        NextArray->Next = 0;
-        Data_->Next = NextArray;
-        Data_ = NextArray;
-      }
-      Next = &(Data_->Array[Data_->pos]);
-      ++(Data_->pos);
+
+      counter_.resize(n_keys_);
+      for (int i = 0; i < n_keys_; ++i) counter_[i] = 0;
     }
-    return (Next);
-  }
 
-  void Add(const int key, const double value)
-  {
-    int v = Func(key);
-    Node * n1 = Container_[v];
-    Container_[v] = GetNewNode(); 
-    Container_[v]->Key = key;
-    Container_[v]->Value = value;
-    Container_[v]->Ptr = n1;
-    ++NumValues_;
-
-    if (v < start_) start_ = v;
-    if (v > end_)   end_ = v;
-  }
-
-  inline int Size()
-  {
-    return(NumValues_);
-  }
-
-  double Get(const int key)
-  {
-    Node * n = Container_[ Func(key) ];
-    while( n && (n->Key != key) ) n = n->Ptr;
-    if( n ) return n->Value;
-    else    return 0.0;
-  }
-
-  // \warning: we don't check for bounds, the arrays are supposed to be long
-  // enough (i.e., NumValues()) to store all entries.
-  void Arrayify(int* keys, double* values)
-  {
-    int count = 0;
-    for (int i = start_ ; i <= end_ ; ++i)
+    //! Returns an element from the hash table, or 0.0 if not found.
+    inline double get(const int key)
     {
-      current_ = Container_[i];
-      while (current_ != 0)
+      int hashed_key = doHash(key);
+
+      for (int set = 0; set < counter_[hashed_key]; ++set)
       {
-        values[count] = current_->Value;
-        keys[count] = current_->Key;
-        ++count;
-        current_ = current_->Ptr;
+        if (keys_[set][hashed_key] == key)  
+          return(vals_[set][hashed_key]);
       }
-    }
-  }
 
- private:
-  Ifpack_HashTable& operator=(const Ifpack_HashTable& src)
+      return(0.0);
+    }
+
+    //! Sets an element in the hash table.
+    inline void set(const int key, const double value,
+                    const bool addToValue = false)
     {
-      //not currently supported
-      abort();
-      return(*this);
+      int hashed_key = doHash(key);
+      int& hashed_counter = counter_[hashed_key];
+
+      for (int set = 0; set < hashed_counter; ++set)
+      {
+        if (keys_[set][hashed_key] == key)
+        {
+          if (addToValue)
+            vals_[set][hashed_key] += value;
+          else
+            vals_[set][hashed_key] = value;
+          return;
+        }
+      }
+
+      if (hashed_counter < n_sets_)
+      {
+        keys_[hashed_counter][hashed_key] = key;
+        vals_[hashed_counter][hashed_key] = value;
+        ++hashed_counter;
+        return;
+      }
+
+      vector<int> new_key;
+      vector<double> new_val;
+
+      keys_.push_back(new_key);
+      vals_.push_back(new_val);
+      keys_[n_sets_].resize(n_keys_);
+      vals_[n_sets_].resize(n_keys_);
+
+      keys_[n_sets_][hashed_key] = key;
+      vals_[n_sets_][hashed_key] = value;
+      ++hashed_counter;
+      ++n_sets_;
     }
 
-  int NumValues_;
-  Node* current_;
-  int start_; // first non-empty container
-  int end_; // last non-empty container
-  static NodeArray* Data_; // used to store data
-  static NodeArray* FirstData_; // pointer to the first NodeArray.
-  Node** Container_;
+    /*! \brief Resets the entries of the already allocated memory. This
+     *  method can be used to clean an array, to be reused without additional
+     *  memory allocation/deallocation.
+     */
+    inline void reset()
+    {
+      memset(&counter_[0], 0, sizeof(int) * n_keys_);
+    }
 
-  int Size_;
-  unsigned int Seed_;
-  inline int Func( const int key ) { return (Seed_ ^ key)%Size_; }
+    //! Returns the number of stored entries.
+    inline int getNumEntries() const 
+    {
+      int n_entries = 0;
+      for (int key = 0; key < n_keys_; ++key)
+        n_entries += counter_[key];
+      return(n_entries);
+    }
+
+    //! Converts the contents in array format for both keys and values.
+    void arrayify(int* key_array, double* val_array)
+    {
+      int count = 0;
+      for (int key = 0; key < n_keys_; ++key)
+        for (int set = 0; set < counter_[key]; ++set)
+        {
+          key_array[count] = keys_[set][key];
+          val_array[count] = vals_[set][key];
+          ++count;
+        }
+    }
+
+    //! Basic printing routine.
+    void print()
+    {
+      cout << "n_keys = " << n_keys_ << endl;
+      cout << "n_sets = " << n_sets_ << endl;
+    }
+
+  private:
+    //! Performs the hashing.
+    inline int doHash(const int key)
+    {
+      return (key % n_keys_);
+      //return ((seed_ ^ key) % n_keys_);
+    }
+
+    int n_keys_;
+    int n_sets_;
+    vector<vector<double> > vals_;
+    vector<vector<int> > keys_;
+    vector<int> counter_;
+    unsigned int seed_;
 };
 #endif

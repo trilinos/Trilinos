@@ -33,6 +33,7 @@
 #include "Ifpack_ILUT.h"
 #include "Ifpack_Condest.h"
 #include "Ifpack_Utils.h"
+#include "Ifpack_HashTable.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -103,19 +104,31 @@ void Ifpack_ILUT::Destroy()
 //==========================================================================
 int Ifpack_ILUT::SetParameters(Teuchos::ParameterList& List)
 {
-  LevelOfFill_ = List.get("fact: ilut level-of-fill",LevelOfFill());
-  if (LevelOfFill_ <= 0.0)
-    IFPACK_CHK_ERR(-2); // must be greater than 0.0
+  try 
+  {
+    LevelOfFill_ = List.get<double>("fact: ilut level-of-fill", LevelOfFill());
+    if (LevelOfFill_ <= 0.0)
+      IFPACK_CHK_ERR(-2); // must be greater than 0.0
 
-  Athresh_ = List.get("fact: absolute threshold", Athresh_);
-  Rthresh_ = List.get("fact: relative threshold", Rthresh_);
-  Relax_ = List.get("fact: relax value", Relax_);
+    Athresh_ = List.get<double>("fact: absolute threshold", Athresh_);
+    Rthresh_ = List.get<double>("fact: relative threshold", Rthresh_);
+    Relax_ = List.get<double>("fact: relax value", Relax_);
 
-  Label_ = "IFPACK ILUT (fill=" + Ifpack_toString(LevelOfFill())
-    + ", relax=" + Ifpack_toString(RelaxValue())
-    + ", athr=" + Ifpack_toString(AbsoluteThreshold())
-    + ", rthr=" + Ifpack_toString(RelativeThreshold())
-    + ")";
+    Label_ = "IFPACK ILUT (fill=" + Ifpack_toString(LevelOfFill())
+      + ", relax=" + Ifpack_toString(RelaxValue())
+      + ", athr=" + Ifpack_toString(AbsoluteThreshold())
+      + ", rthr=" + Ifpack_toString(RelativeThreshold())
+      + ")";
+    return(0);
+  }
+  catch (...)
+  {
+    cerr << "Caught an exception while parsing the parameter list" << endl;
+    cerr << "This typically means that a parameter was set with the" << endl;
+    cerr << "wrong type (for example, int instead of double). " << endl;
+    cerr << "please check the documentation for the type required by each parameer." << endl;
+    IFPACK_CHK_ERR(-1);
+  }
 
   return(0);
 }
@@ -227,7 +240,16 @@ int Ifpack_ILUT::Compute()
   IFPACK_CHK_ERR(L_->InsertGlobalValues(0,1,&(RowValuesU[0]),
                                         &(RowIndicesU[0])));
 
-  vector<double> AbsRow;
+  int hash_size = 128;
+  while (hash_size < (int) 1.5 * A_.MaxNumEntries() * LevelOfFill())
+    hash_size *= 2;
+
+  Ifpack_HashTable SingleRowU(hash_size - 1, 1);
+  Ifpack_HashTable SingleRowL(hash_size - 1, 1);
+
+  vector<int> keys;      keys.reserve(hash_size * 10);
+  vector<double> values; values.reserve(hash_size * 10);
+  vector<double> AbsRow; AbsRow.reserve(hash_size * 10);
 
   // =================== //
   // start factorization //
@@ -235,8 +257,8 @@ int Ifpack_ILUT::Compute()
   
   double this_proc_flops = 0.0;
 
-  for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
-
+  for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) 
+  {
     // get row `row_i' of the matrix, store in U pointers
     IFPACK_CHK_ERR(A_.ExtractMyRowCopy(row_i,Length,RowNnzU,
                                        &RowValuesU[0],&RowIndicesU[0]));
@@ -279,15 +301,14 @@ int Ifpack_ILUT::Compute()
     if (FillU == 0) FillU = 1;
 
     // convert line `row_i' into STL map for fast access
-    map<int,double> SingleRowU;
+    SingleRowU.reset();
 
     for (int i = 0 ; i < RowNnzU ; ++i) {
-        SingleRowU[RowIndicesU[i]] = RowValuesU[i];
+        SingleRowU.set(RowIndicesU[i], RowValuesU[i]);
     }
       
     // for the multipliers
-    map<int,double> SingleRowL;
-    map<int,double>::iterator where;
+    SingleRowL.reset();
 
     int start_col = NumMyRows_;
     for (int i = 0 ; i < RowNnzU ; ++i)
@@ -317,23 +338,19 @@ int Ifpack_ILUT::Compute()
       if (DiagonalValueK == 0.0)
         DiagonalValueK = AbsoluteThreshold();
       
-      where = SingleRowU.find(col_k);
-      if (where != SingleRowU.end() && 
-          IFPACK_ABS((*where).second) > DropTolerance()) {
-        SingleRowL[col_k] = (*where).second / DiagonalValueK;
+      double xxx = SingleRowU.get(col_k);
+      if (IFPACK_ABS(xxx) > DropTolerance()) {
+        SingleRowL.set(col_k, xxx / DiagonalValueK);
         ++flops;
 
         for (int j = 0 ; j < ColNnzK ; ++j) {
           int col_j = ColIndicesK[j];
 
-          if (col_j < col_k)
-            continue;
+          if (col_j < col_k) continue;
 
-          where = SingleRowL.find(col_k);
-          if (where == SingleRowL.end())
-            continue;
-
-          SingleRowU[col_j] -= SingleRowL[col_k] * ColValuesK[j];
+          double yyy = SingleRowL.get(col_k);
+          if (yyy !=  0.0)
+            SingleRowU.set(col_j, -yyy * ColValuesK[j], true);
           flops += 2;
         }
       }
@@ -347,12 +364,17 @@ int Ifpack_ILUT::Compute()
 
     // drop elements to satisfy LevelOfFill(), start with L
     count = 0;
-    AbsRow.resize(SingleRowL.size());
-    for (where = SingleRowL.begin() ; where != SingleRowL.end() ; ++where) {
-      if (IFPACK_ABS((*where).second) > DropTolerance()) {
-        AbsRow[count++] = IFPACK_ABS((*where).second);
+    int sizeL = SingleRowL.getNumEntries();
+    keys.resize(sizeL);
+    values.resize(sizeL);
+
+    AbsRow.resize(sizeL);
+
+    SingleRowL.arrayify(&keys[0], &values[0]);
+    for (int i = 0; i < sizeL; ++i)
+      if (IFPACK_ABS(values[i]) > DropTolerance()) {
+        AbsRow[count++] = IFPACK_ABS(values[i]);
       }
-    }
 
     if (count > FillL) {
       nth_element(AbsRow.begin(), AbsRow.begin() + FillL, AbsRow.begin() + count, 
@@ -360,14 +382,12 @@ int Ifpack_ILUT::Compute()
       cutoff = AbsRow[FillL];
     }
 
-    // set the multipliers in L_
-    for (where = SingleRowL.begin() ; where != SingleRowL.end() ; ++where) {
-      if (IFPACK_ABS((*where).second) >= cutoff) {
-        IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &((*where).second),
-                                              (int*)&((*where).first)));
+    for (int i = 0; i < sizeL; ++i) {
+      if (IFPACK_ABS(values[i]) >= cutoff) {
+        IFPACK_CHK_ERR(L_->InsertGlobalValues(row_i,1, &values[i], (int*)&keys[i]));
       }
       else
-        DiscardedElements += (*where).second;
+        DiscardedElements += values[i];
     }
 
     // FIXME: DOES IT WORK IN PARALLEL ???
@@ -377,12 +397,18 @@ int Ifpack_ILUT::Compute()
 
     // same business with U_
     count = 0;
-    AbsRow.resize(SingleRowU.size());
-    for (where = SingleRowU.begin() ; where != SingleRowU.end() ; ++where) {
-      if ((*where).first >= row_i && IFPACK_ABS((*where).second) > DropTolerance()) {
-        AbsRow[count++] = IFPACK_ABS((*where).second);
+    int sizeU = SingleRowU.getNumEntries();
+    AbsRow.resize(sizeU + 1);
+    keys.resize(sizeU + 1);
+    values.resize(sizeU + 1);
+
+    SingleRowU.arrayify(&keys[0], &values[0]);
+
+    for (int i = 0; i < sizeU; ++i)
+      if (keys[i] >= row_i && IFPACK_ABS(values[i]) > DropTolerance())
+      {
+        AbsRow[count++] = IFPACK_ABS(values[i]);
       }
-    }
 
     if (count > FillU) {
       nth_element(AbsRow.begin(), AbsRow.begin() + FillU, AbsRow.begin() + count, 
@@ -391,16 +417,17 @@ int Ifpack_ILUT::Compute()
     }
 
     // sets the factors in U_
-    for (where = SingleRowU.begin() ; where != SingleRowU.end() ; ++where) {
-      int col = (*where).first;
-      double val = (*where).second;
+    for (int i = 0; i < sizeU; ++i) 
+    {
+      int col = keys[i];
+      double val = values[i];
 
       if (col >= row_i) {
         if (IFPACK_ABS(val) >= cutoff || row_i == col) {
           IFPACK_CHK_ERR(U_->InsertGlobalValues(row_i,1, &val, &col));
         }
         else
-          DiscardedElements += (*where).second;
+          DiscardedElements += val;
       }
     }
 
