@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(graphedge_weights_SOURCES) $(matrix_1_SOURCES) $(part_redist_SOURCES) $(vert_weights_SOURCES)
+SOURCES = $(graphedge_weights_SOURCES) $(hgedge_weights_SOURCES) $(matrix_1_SOURCES) $(part_redist_SOURCES) $(vert_weights_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -108,12 +108,15 @@ CONFIG_CLEAN_FILES = Makefile
 @BUILD_EXAMPLES_TRUE@am__EXEEXT_1 = matrix_1$(EXEEXT) \
 @BUILD_EXAMPLES_TRUE@	part_redist$(EXEEXT) \
 @BUILD_EXAMPLES_TRUE@	vert_weights$(EXEEXT) \
-@BUILD_EXAMPLES_TRUE@	graphedge_weights$(EXEEXT)
+@BUILD_EXAMPLES_TRUE@	graphedge_weights$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@	hgedge_weights$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_graphedge_weights_OBJECTS =  \
 	graphedge_weights-graphedge_weights.$(OBJEXT)
 graphedge_weights_OBJECTS = $(am_graphedge_weights_OBJECTS)
 am__DEPENDENCIES_1 =
+am_hgedge_weights_OBJECTS = hgedge_weights-hgedge_weights.$(OBJEXT)
+hgedge_weights_OBJECTS = $(am_hgedge_weights_OBJECTS)
 am_matrix_1_OBJECTS = matrix_1-matrix_1.$(OBJEXT)
 matrix_1_OBJECTS = $(am_matrix_1_OBJECTS)
 am_part_redist_OBJECTS = part_redist-part_redist.$(OBJEXT)
@@ -127,10 +130,12 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(graphedge_weights_SOURCES) $(matrix_1_SOURCES) \
-	$(part_redist_SOURCES) $(vert_weights_SOURCES)
-DIST_SOURCES = $(graphedge_weights_SOURCES) $(matrix_1_SOURCES) \
-	$(part_redist_SOURCES) $(vert_weights_SOURCES)
+SOURCES = $(graphedge_weights_SOURCES) $(hgedge_weights_SOURCES) \
+	$(matrix_1_SOURCES) $(part_redist_SOURCES) \
+	$(vert_weights_SOURCES)
+DIST_SOURCES = $(graphedge_weights_SOURCES) $(hgedge_weights_SOURCES) \
+	$(matrix_1_SOURCES) $(part_redist_SOURCES) \
+	$(vert_weights_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -282,7 +287,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 DEFAULT_INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
-@BUILD_EXAMPLES_TRUE@PROGS = matrix_1 part_redist vert_weights graphedge_weights
+@BUILD_EXAMPLES_TRUE@PROGS = matrix_1 part_redist vert_weights graphedge_weights hgedge_weights
 matrix_1_SOURCES = $(srcdir)/matrix_1.cpp
 matrix_1_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a
@@ -316,6 +321,15 @@ graphedge_weights_DEPENDENCIES = \
 
 graphedge_weights_CXXFLAGS = $(EPETRA_INCLUDES)
 graphedge_weights_LDADD = \
+      -L$(top_builddir)/src -lisorropia \
+      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+hgedge_weights_SOURCES = $(srcdir)/hgedge_weights.cpp
+hgedge_weights_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+hgedge_weights_CXXFLAGS = $(EPETRA_INCLUDES)
+hgedge_weights_LDADD = \
       -L$(top_builddir)/src -lisorropia \
       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
@@ -360,6 +374,9 @@ clean-noinstPROGRAMS:
 graphedge_weights$(EXEEXT): $(graphedge_weights_OBJECTS) $(graphedge_weights_DEPENDENCIES) 
 	@rm -f graphedge_weights$(EXEEXT)
 	$(CXXLINK) $(graphedge_weights_LDFLAGS) $(graphedge_weights_OBJECTS) $(graphedge_weights_LDADD) $(LIBS)
+hgedge_weights$(EXEEXT): $(hgedge_weights_OBJECTS) $(hgedge_weights_DEPENDENCIES) 
+	@rm -f hgedge_weights$(EXEEXT)
+	$(CXXLINK) $(hgedge_weights_LDFLAGS) $(hgedge_weights_OBJECTS) $(hgedge_weights_LDADD) $(LIBS)
 matrix_1$(EXEEXT): $(matrix_1_OBJECTS) $(matrix_1_DEPENDENCIES) 
 	@rm -f matrix_1$(EXEEXT)
 	$(CXXLINK) $(matrix_1_LDFLAGS) $(matrix_1_OBJECTS) $(matrix_1_LDADD) $(LIBS)
@@ -377,6 +394,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/graphedge_weights-graphedge_weights.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hgedge_weights-hgedge_weights.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrix_1-matrix_1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/part_redist-part_redist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vert_weights-vert_weights.Po@am__quote@
@@ -408,6 +426,20 @@ graphedge_weights-graphedge_weights.obj: $(srcdir)/graphedge_weights.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/graphedge_weights.cpp' object='graphedge_weights-graphedge_weights.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(graphedge_weights_CXXFLAGS) $(CXXFLAGS) -c -o graphedge_weights-graphedge_weights.obj `if test -f '$(srcdir)/graphedge_weights.cpp'; then $(CYGPATH_W) '$(srcdir)/graphedge_weights.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/graphedge_weights.cpp'; fi`
+
+hgedge_weights-hgedge_weights.o: $(srcdir)/hgedge_weights.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hgedge_weights_CXXFLAGS) $(CXXFLAGS) -MT hgedge_weights-hgedge_weights.o -MD -MP -MF "$(DEPDIR)/hgedge_weights-hgedge_weights.Tpo" -c -o hgedge_weights-hgedge_weights.o `test -f '$(srcdir)/hgedge_weights.cpp' || echo '$(srcdir)/'`$(srcdir)/hgedge_weights.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/hgedge_weights-hgedge_weights.Tpo" "$(DEPDIR)/hgedge_weights-hgedge_weights.Po"; else rm -f "$(DEPDIR)/hgedge_weights-hgedge_weights.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/hgedge_weights.cpp' object='hgedge_weights-hgedge_weights.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hgedge_weights_CXXFLAGS) $(CXXFLAGS) -c -o hgedge_weights-hgedge_weights.o `test -f '$(srcdir)/hgedge_weights.cpp' || echo '$(srcdir)/'`$(srcdir)/hgedge_weights.cpp
+
+hgedge_weights-hgedge_weights.obj: $(srcdir)/hgedge_weights.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hgedge_weights_CXXFLAGS) $(CXXFLAGS) -MT hgedge_weights-hgedge_weights.obj -MD -MP -MF "$(DEPDIR)/hgedge_weights-hgedge_weights.Tpo" -c -o hgedge_weights-hgedge_weights.obj `if test -f '$(srcdir)/hgedge_weights.cpp'; then $(CYGPATH_W) '$(srcdir)/hgedge_weights.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/hgedge_weights.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/hgedge_weights-hgedge_weights.Tpo" "$(DEPDIR)/hgedge_weights-hgedge_weights.Po"; else rm -f "$(DEPDIR)/hgedge_weights-hgedge_weights.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/hgedge_weights.cpp' object='hgedge_weights-hgedge_weights.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hgedge_weights_CXXFLAGS) $(CXXFLAGS) -c -o hgedge_weights-hgedge_weights.obj `if test -f '$(srcdir)/hgedge_weights.cpp'; then $(CYGPATH_W) '$(srcdir)/hgedge_weights.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/hgedge_weights.cpp'; fi`
 
 matrix_1-matrix_1.o: $(srcdir)/matrix_1.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(matrix_1_CXXFLAGS) $(CXXFLAGS) -MT matrix_1-matrix_1.o -MD -MP -MF "$(DEPDIR)/matrix_1-matrix_1.Tpo" -c -o matrix_1-matrix_1.o `test -f '$(srcdir)/matrix_1.cpp' || echo '$(srcdir)/'`$(srcdir)/matrix_1.cpp; \

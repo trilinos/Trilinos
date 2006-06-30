@@ -209,7 +209,8 @@ load_balance(MPI_Comm comm,
     }
   }
 
-  if (queryObject.haveGraphEdgeWeights()) {
+  if (queryObject.haveGraphEdgeWeights() ||
+      queryObject.haveHypergraphEdgeWeights()) {
     if (!paramlist.isParameter("EDGE_WEIGHT_DIM")) {
       paramlist.set("EDGE_WEIGHT_DIM", "1");
     }

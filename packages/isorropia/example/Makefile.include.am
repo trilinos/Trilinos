@@ -32,7 +32,7 @@ EXEEXT = .exe
 DEFAULT_INCLUDES= -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
 
 if BUILD_EXAMPLES
-PROGS = matrix_1 part_redist vert_weights graphedge_weights
+PROGS = matrix_1 part_redist vert_weights graphedge_weights hgedge_weights
 endif
 
 noinst_PROGRAMS = $(PROGS)
@@ -75,6 +75,16 @@ graphedge_weights_DEPENDENCIES = \
 
 graphedge_weights_CXXFLAGS = $(EPETRA_INCLUDES)
 graphedge_weights_LDADD = \
+      -L$(top_builddir)/src -lisorropia \
+      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+hgedge_weights_SOURCES = $(srcdir)/hgedge_weights.cpp
+
+hgedge_weights_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+hgedge_weights_CXXFLAGS = $(EPETRA_INCLUDES)
+hgedge_weights_LDADD = \
       -L$(top_builddir)/src -lisorropia \
       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 

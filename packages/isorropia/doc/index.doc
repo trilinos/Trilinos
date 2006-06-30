@@ -12,8 +12,9 @@ To enable Isorropia in your Trilinos build, provide the argument
 
 Isorropia is primarily an interface to the Zoltan library, but can be
 built and used with minimal capability without Zoltan. To enable Isorropia's
-Zoltan support, you need to add '--enable-isorropia-zoltan' to your Trilinos
-configure command, and provide include-paths and library specifications
+Zoltan support, you need to add '--enable-isorropia-zoltan' and
+'--enable-epetraext' to your Trilinos configure command, and provide
+include-paths and library specifications
 for Zoltan version 2.0 (provide these to configure using the
 '--with-incdirs' and '--with-libs' configure arguments).
 

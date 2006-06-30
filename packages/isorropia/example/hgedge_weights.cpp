@@ -29,8 +29,9 @@
 
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_RowMatrix
-//object, and using Isorropia to create a rebalanced copy of it.
-//Vertex weights are used to influence the repartitioning.
+//object, and using Isorropia to create a rebalanced copy of it using
+//Zoltan's Hypergraph partitioning.
+//Hypergraph edge weights are used to influence the repartitioning.
 //--------------------------------------------------------------------
 
 //Include Isorropia_Exception.hpp only because the helper functions at
@@ -76,7 +77,7 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-  int local_n = 4000;
+  int local_n = 1200;
 
   //Create a Epetra_RowMatrix object.
 
@@ -102,7 +103,7 @@ int main(int argc, char** argv) {
   // In the sublist, we'll set parameters that we want sent to Zoltan.
 #ifdef HAVE_ISORROPIA_ZOLTAN
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "GRAPH");
+  sublist.set("LB_METHOD", "HYPERGRAPH");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
@@ -111,18 +112,18 @@ int main(int argc, char** argv) {
 #endif
 
 
-  //Now we're going to create a Epetra_Vector with vertex weights to
-  //be used in the repartitioning operation.
-  Teuchos::RefCountPtr<Epetra_Vector> vweights =
+  //Now we're going to create a Epetra_Vector with weights to
+  //be used as hypergraph edge weights in the repartitioning operation.
+  Teuchos::RefCountPtr<Epetra_Vector> hge_weights =
     Teuchos::rcp(new Epetra_Vector(rowmatrix->RowMatrixRowMap()));
 
-  double* vals = vweights->Values();
+  double* vals = hge_weights->Values();
   const Epetra_BlockMap& map = rowmatrix->RowMatrixRowMap();
   int num = map.NumMyElements();
 
   //For this demo, we'll assign the weights to be elem+1, where 'elem' is
   //the global-id of the corresponding row. (If we don't use +1, zoltan
-  //complains that the first vertex has a zero weight.)
+  //complains that the first one has a zero weight.)
 
   //Using these linearly-increasing weights should cause the partitioner
   //to put an UN-EQUAL number of rows on each processor...
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
   Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs =
     Teuchos::rcp(new Isorropia::Epetra::CostDescriber);
 
-  costs->setVertexWeights(vweights);
+  costs->setHypergraphEdgeWeights(hge_weights);
 
   //Now create the partitioner object using an Isorropia factory-like
   //function...
