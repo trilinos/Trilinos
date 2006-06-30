@@ -26,12 +26,12 @@
 // ************************************************************************
 //@HEADER
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
-#include <string.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cassert>
+#include <string>
+#include <cmath>
+#include <vector>
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_MultiVector.h"
@@ -106,14 +106,14 @@ int main(int argc, char *argv[])
 
   int NumMyElements = Map.NumMyElements();
 
-  int * MyGlobalElements = new int[NumMyElements];
-    Map.MyGlobalElements(MyGlobalElements);
+  vector<int> MyGlobalElements(NumMyElements);
+    Map.MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
 
-  int * NumNz = new int[NumMyElements];
+    vector<int> NumNz(NumMyElements);
 
   // We are building a tridiagonal matrix where each row has (-1 2 -1)
   // So we need 2 off-diagonal terms (except for the first and last equation)
@@ -126,16 +126,16 @@ int main(int argc, char *argv[])
 
   // Create a Epetra_Matrix
 
-  Epetra_CrsMatrix A(Copy, Map, NumNz);
+  Epetra_CrsMatrix A(Copy, Map, &NumNz[0]);
   
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
 
 
-  double *Values = new double[2];
+  vector<double> Values(2);
   Values[0] = -1.0; Values[1] = -1.0;
-  int *Indices = new int[2];
+  vector<int> Indices(2);
   double two = 2.0;
   int NumEntries;
   
@@ -157,10 +157,10 @@ int main(int argc, char *argv[])
 	Indices[1] = MyGlobalElements[i]+1;
 	NumEntries = 2;
       }
-     ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
+     ierr = A.InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
      assert(ierr==0);
      // Put in the diagonal entry
-     ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i);
+     ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, &MyGlobalElements[i]);
      assert(ierr==0);
     }
    
@@ -195,14 +195,12 @@ int main(int argc, char *argv[])
 
   if (A.MyGlobalRow(0)) {
     int numvals = A.NumGlobalEntries(0);
-    double * Rowvals = new double [numvals];
-    int    * Rowinds = new int    [numvals];
-    A.ExtractGlobalRowCopy(0, numvals, numvals, Rowvals, Rowinds); // Get A[0,0]
+    vector<double> Rowvals(numvals);
+    vector<int> Rowinds(numvals);
+    A.ExtractGlobalRowCopy(0, numvals, numvals, &Rowvals[0], &Rowinds[0]); // Get A[0,0]
     for (i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
 
-    A.ReplaceGlobalValues(0, numvals, Rowvals, Rowinds);
-    delete [] Rowvals;
-    delete [] Rowinds;
+    A.ReplaceGlobalValues(0, numvals, &Rowvals[0], &Rowinds[0]);
   }
  
   // Iterate (again)
@@ -219,11 +217,6 @@ int main(int argc, char *argv[])
 
 
   // Release all objects
-  delete [] NumNz;
-  delete [] Values;
-  delete [] Indices;
-  delete [] MyGlobalElements;
-			
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif

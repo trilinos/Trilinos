@@ -430,6 +430,14 @@ class Epetra_BlockMap: public Epetra_Object {
   //@}
 
   //@{ \name Miscellaneous boolean tests
+  //! Returns true if map GIDs are 1-to-1.
+  /*! Certain operations involving Epetra_BlockMap and Epetra_Map objects are well-defined only if
+      the map GIDs are uniquely present in the map.  In other words, if a GID occurs in the map, it occurs
+      only once on a single processor and nowhere else.  This boolean test returns true if this property
+      is true, otherwise it returns false.
+  */
+  bool  UniqueGIDs() const {return(true);};
+
   //! Returns true if map has constant element size.
   bool  ConstantElementSize() const {return(BlockMapData_->ConstantElementSize_);};
 

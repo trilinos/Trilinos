@@ -99,6 +99,8 @@ void Epetra_BasicRowMatrix::SetMaps(const Epetra_Map & RowMap, const Epetra_Map 
   HaveStructureConstants_ = false;
   HaveNumericConstants_ = false;
 
+  if (!OperatorDomainMap().UniqueGIDs()) throw RowMatrixRowMap().ReportError("At least one GID is repeated in domain map. Domain and range maps must have unique GIDs", -1);
+  if (!OperatorRangeMap().UniqueGIDs()) throw RowMatrixRowMap().ReportError("At least one GID is repeated in range map. Domain and range maps must have unique GIDs", -2);
   SetImportExport();
 }
 
