@@ -41,7 +41,7 @@
 
 //==============================================================================
 Epetra_JadMatrix::Epetra_JadMatrix(const Epetra_RowMatrix & Matrix) 
-  : Epetra_BasicRowMatrix(Matrix.RowMatrixRowMap(), Matrix.RowMatrixColMap(), Matrix.OperatorDomainMap(), Matrix.OperatorRangeMap()),
+  : Epetra_BasicRowMatrix(Matrix.RowMatrixRowMap().Comm()),
     Values_(0),
     Indices_(0),
     IndexOffset_(0),
@@ -50,6 +50,7 @@ Epetra_JadMatrix::Epetra_JadMatrix(const Epetra_RowMatrix & Matrix)
     InvRowPerm_(0),
     NumJaggedDiagonals_(Matrix.MaxNumEntries())
 {
+  SetMaps(Matrix.RowMatrixRowMap(), Matrix.RowMatrixColMap(), Matrix.OperatorDomainMap(), Matrix.OperatorRangeMap());
   if (!Matrix.Filled()) throw Matrix.RowMatrixRowMap().ReportError("Input matrix must have called FillComplete()", -1);
   Allocate(Matrix);
   SetLabel("Epetra::JadMatrix");

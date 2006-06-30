@@ -41,12 +41,12 @@
 
 
 //==============================================================================
-Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Epetra_Map & ColMap) 
-  : Comm_(RowMap.Comm().Clone()),
-    OperatorDomainMap_(RowMap),
-    OperatorRangeMap_(RowMap),
-    RowMatrixRowMap_(RowMap),
-    RowMatrixColMap_(ColMap),
+Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm & Comm) 
+  : Comm_(Comm.Clone()),
+    OperatorDomainMap_(Epetra_Map(0,0,Comm)),
+    OperatorRangeMap_(Epetra_Map(0,0,Comm)),
+    RowMatrixRowMap_(Epetra_Map(0,0,Comm)),
+    RowMatrixColMap_(Epetra_Map(0,0,Comm)),
     NumMyNonzeros_(0),
     NumGlobalNonzeros_(0),
     MaxNumEntries_(0),
@@ -58,41 +58,13 @@ Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Ep
     UpperTriangular_(true),
     HaveStructureConstants_(false),
     HaveNumericConstants_(false),
+    HaveMaps_(false),
     ImportVector_(0),
     ExportVector_(0),
     Importer_(0),
     Exporter_(0)
 {
   SetLabel("Epetra::BasicRowMatrix");
-  Setup();
-}
-
-//==============================================================================
-Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Epetra_Map & ColMap, 
-					     const Epetra_Map & DomainMap, const Epetra_Map & RangeMap) 
-  : Comm_(RowMap.Comm().Clone()),
-    OperatorDomainMap_(DomainMap),
-    OperatorRangeMap_(RangeMap),
-    RowMatrixRowMap_(RowMap),
-    RowMatrixColMap_(ColMap),
-    NumMyNonzeros_(0),
-    NumGlobalNonzeros_(0),
-    MaxNumEntries_(0),
-    NormInf_(0.0),
-    NormOne_(0.0),
-    UseTranspose_(false),
-    HasNormInf_(true),
-    LowerTriangular_(true),
-    UpperTriangular_(true),
-    HaveStructureConstants_(false),
-    HaveNumericConstants_(false),
-    ImportVector_(0),
-    ExportVector_(0),
-    Importer_(0),
-    Exporter_(0)
-{
-  SetLabel("Epetra::BasicRowMatrix");
-  Setup();
 }
 
 //==============================================================================
@@ -110,7 +82,28 @@ Epetra_BasicRowMatrix::~Epetra_BasicRowMatrix(){
 }
 
 //==============================================================================
-void Epetra_BasicRowMatrix::Setup() {
+void Epetra_BasicRowMatrix::SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap) {
+
+  SetMaps(RowMap, ColMap, RowMap, RowMap);
+}
+
+//==============================================================================
+void Epetra_BasicRowMatrix::SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap, 
+			const Epetra_Map & DomainMap, const Epetra_Map & RangeMap) {
+
+  RowMatrixRowMap_ = RowMap;
+  RowMatrixColMap_ = ColMap;
+  OperatorDomainMap_ = DomainMap;
+  OperatorRangeMap_ = RangeMap;
+  HaveMaps_ = true;
+  HaveStructureConstants_ = false;
+  HaveNumericConstants_ = false;
+
+  SetImportExport();
+}
+
+//==============================================================================
+void Epetra_BasicRowMatrix::SetImportExport() {
 
   // Check if non-trivial import/export operators
   if (!(RowMatrixRowMap().SameAs(OperatorRangeMap()))) 

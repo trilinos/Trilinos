@@ -46,34 +46,79 @@ class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_Export;
 
-//! Epetra_BasicRowMatrix: A class for constructing matrix objects optimized for common kernels.
+//! Epetra_BasicRowMatrix: A class for simplifying the development of Epetra_RowMatrix adapters.
 
-/*! The Epetra_BasicRowMatrix class takes an existing Epetra_RowMatrix ojbect, analyzes it and 
-    builds a jagged diagonal equivalent of it. Once constructed, it is also possible to 
-    update the values of the matrix with values from another Epetra_RowMatrix that has
-    the identical structure.
-    
+/*! The Epetra_BasicRowMatrix is an adapter class for Epetra_RowMatrix that implements most of the Epetra_RowMatrix
+    methods using reasonable default implementations.  The Epetra_RowMatrix class has 39 pure virtual methods, requiring
+    the adapter class to implement all of them. 
+    Epetra_BasicRowMatrix has only 4 pure virtual methods that must be implemented:
+<ol>
+<li> ExtractMyRowCopy: Provide a row of values and indices for a specified local row.
+<li> ExtractMyEntriyView (const and non-const versions): Provide the memory address the ith nonzero term stored on the
+     calling processor, along with its corresponding local row and column index, where i goes from 0 to the NumMyNonzeros()-1.
+     The order in which the nonzeros are traversed is not specified and is up to the adapter implementation.
+<li> NumMyRowEntries: Provide the number of entries for a specified local row.
+</ol>
+
+In addition, most adapters will probably re-implement the Multiply() method and perhaps the Solve() method, although one or the other
+may be implemented to return -1, signaling that there is no valid implementation.  By default, the Multiply() method is implemented using
+ExtractMyRowCopy, which can usual be improved upon.  By default Solve() and ApplyInverse() are implemented to return -1 (not implemented).
+
+All other implemented methods in Epetra_BasicRowMatrix should not exhibit a signficant performance degradation, either because they are relatively
+small and fast, or because they are not a significant portion of the runtime for most codes.  All methods are virtual, so they can be re-implemented
+by the adapter.
+
+In addition to implementing the above methods, an adapter must inherit the Epetra_BasicRowMatrix interface and call the Epetra_BasicRowMatrix
+constructor as part of the adapter constructor.  There are two constructors.  The first requires the user to pass in the RowMap and ColMap, both
+of which are Epetra_Map objects.  On each processor the RowMap (ColMap) must contain the global IDs (GIDs) of the rows (columns) that the processor cares about.  
+The first constructor requires only these two maps, assuming that the RowMap will also serve as the DomainMap and RangeMap.  In this case, the
+RowMap must be 1-to-1, meaning that if a global ID appears on one processor, it appears only once on that processor and does not appear on any other
+processor.  For many sparse matrix data structures, it is the case that a given row is completely owned by one processor and that the global matrix
+is square.  The first constructor is for this situation.
+
+The second constructor allows the caller to specify all four maps.  In this case the DomainMap, the layout of multivectors/vectors that are in the
+domain of the matrix (the x vector if computing y = A*x), must be 1-to-1.  Also, the RangeMap, the layout of y must be 1-to-1.  The RowMap and ColMap
+do not need to be 1-to-1, but the GIDs must be found in the RangeMap and DomainMap, respectively.
+
+Note that Epetra_Operator is a base class for Epetra_RowMatrix, so any adapter
+for Epetra_BasicRowMatrix (or Epetra_RowMatrix) is also an adapter for Epetra_Operator.
+
+An example of how to provide an adapter for Epetra_BasicRowMatrix can be found by looking at Epetra_JadMatrix.
+
 */    
 
 class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, public virtual Epetra_RowMatrix  {
       
  public:
 
-  //@{ \name Constructors/Destructor.
+  //@{ \name Constructor/Destructor.
   //! Epetra_BasicRowMatrix constuctor.
-  /* This constructor takes a row and column map.  On each processor these maps describe the global rows and columns, resp, 
-     that the processor will care about.  Note that these maps do not have to be one-to-one.  In other words, a row ID can appear
-     on more than one processor, as can a column ID.
+  /* This constructor requires a valid Epetra_Comm object as its only argument.  The constructor will use Comm to build
+     Epetra_Maps objects: RowMap, ColMap, DomainMap and RangeMap.  However, these will be zero-length (trivial) maps that
+     \e must be reset by calling one of the two SetMap() methods listed below.
+     \param Comm (In) An Epetra_Comm containing a valid Comm object.
+  */
+  Epetra_BasicRowMatrix(const Epetra_Comm & Comm);
+
+  //! Epetra_BasicRowMatrix Destructor
+  virtual ~Epetra_BasicRowMatrix();
+  //@}
+  
+  //@{ \name Setup functions.
+  //! Set maps (Version 1); call this function or the next, but not both.
+  /* This method takes a row and column map.  On each processor these maps describe the global rows and columns, resp, 
+     that the processor will care about.  Note that the ColMap does not have to be one-to-one.  In other words, a column ID can appear
+     on more than one processor.  The RowMap \e must be 1-to-1.
      \param RowMap (In) An Epetra_Map containing on each processor a list of GIDs of rows that the processor cares about.
      \param ColMap (In) An Epetra_Map containing on each processor a list of GIDs of columns that the processor cares about.
 
-     In this constructor, the domain and range maps are assumed to be the same as the row map.  Note that this requires that 
+     In this method, the domain and range maps are assumed to be the same as the row map.  Note that this requires that 
      the global matrix be square.  If the matrix is not square, or the domain vectors or range vectors do not have the same layout
      as the rows, then the second constructor should be called.
   */
-  Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Epetra_Map & ColMap);
+  void SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap);
 
-  //! Epetra_BasicRowMatrix constuctor.
+  //! Set maps (Version 2); call this function or the previous, but not both.
   /* This constructor takes a row, column, domain and range map.  On each processor these maps describe the global rows, columns, domain
      and range, resp, that the processor will care about.  The domain and range maps must be one-to-one, but note that the row and column
      maps do not have to be one-to-one.  In other words, a row ID can appear
@@ -84,26 +129,11 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
      \param RangeMap (In) An Epetra_Map describing the distribution of range vectors and multivectors.
 
   */
-  Epetra_BasicRowMatrix(const Epetra_Map & RowMap, const Epetra_Map & ColMap, 
-			const Epetra_Map & DomainMap, const Epetra_Map & RangeMap);
+  void SetMaps(const Epetra_Map & RowMap, const Epetra_Map & ColMap, 
+	       const Epetra_Map & DomainMap, const Epetra_Map & RangeMap);
 
-  //! Epetra_BasicRowMatrix Destructor
-  virtual ~Epetra_BasicRowMatrix();
   //@}
-  
-  //@{ \name Post-construction modifications.
-  //! Update the constants associated with the structure of the matrix.
-  /* Several constants are pre-computed to save excess computations.  However, if the structure of the
-     problem changes, specifically if the nonzero count in any given row changes, then this function should be called
-     to update these constants.
-  */ 
-  virtual void ComputeStructureConstants() const;
-  //! Update the constants associated with the values of the matrix.
-  /* Several numeric constants are pre-computed to save excess computations.  However, if the values of the
-     problem change, then this function should be called to update these constants.
-  */ 
-  virtual void ComputeNumericConstants() const;
-  //@}
+
   
   //@{ \name User-required implementation methods.
 
@@ -391,9 +421,24 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
  protected:
 
+  //@{ \name Post-construction modifications.
+  //! Update the constants associated with the structure of the matrix: Call only if structure changes from the initial RowMatrix.
+  /* Several constants are pre-computed to save excess computations.  However, if the structure of the
+     problem changes, specifically if the nonzero count in any given row changes, then this function should be called
+     to update these constants.
+  */ 
+  virtual void ComputeStructureConstants() const;
+  //! Update the constants associated with the values of the matrix: Call only if values changes from the initial RowMatrix.
+  /* Several numeric constants are pre-computed to save excess computations.  However, if the values of the
+     problem change, then this function should be called to update these constants.
+  */ 
+  virtual void ComputeNumericConstants() const;
+  //@}
+
   void Setup();
   void UpdateImportVector(int NumVectors) const;
   void UpdateExportVector(int NumVectors) const;
+  void SetImportExport();
   Epetra_Comm * Comm_;
   Epetra_Map OperatorDomainMap_;
   Epetra_Map OperatorRangeMap_;
@@ -414,6 +459,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
   mutable bool UpperTriangular_;
   mutable bool HaveStructureConstants_;
   mutable bool HaveNumericConstants_;
+  mutable bool HaveMaps_;
     
 
   mutable Epetra_MultiVector * ImportVector_;

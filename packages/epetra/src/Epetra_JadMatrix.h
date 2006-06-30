@@ -146,9 +146,6 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
     */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
 
-     //! Returns a character string describing the operator
-     virtual const char* Label() const {return(Epetra_Object::Label());}
-  
     //@}
 
   //@{ \name Computational methods.
