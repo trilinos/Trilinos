@@ -55,9 +55,14 @@ class Epetra_LinearProblem;
 namespace Isorropia {
   class CostDescriber;
 
+/** The Epetra namespace contains Isorropia's Epetra-specific
+  classes and functions.
+*/
+namespace Epetra {
+
 /** An Epetra-specific implementation of the Partitioner interface.
  */
-class EpetraPartitioner : public Partitioner {
+class Partitioner : public Isorropia::Partitioner {
 public:
   /**
      Constructor that accepts an Epetra_CrsGraph object.
@@ -82,9 +87,9 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-                    const Teuchos::ParameterList& paramlist,
-                    bool compute_partitioning_now=true);
+  Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+              const Teuchos::ParameterList& paramlist,
+              bool compute_partitioning_now=true);
 
   /**
      Constructor that accepts an Epetra_CrsGraph object and a CostDescriber.
@@ -93,6 +98,9 @@ public:
         is to be computed. A Teuchos::RefCountPtr is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
+
+     \param costs CostDescriber object which allows for user-specified
+       weights of varying types to be provided to the partitioner.
 
      \param paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. No reference to this input
@@ -109,10 +117,10 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
-		    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
-                    const Teuchos::ParameterList& paramlist,
-                    bool compute_partitioning_now=true);
+  Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+              Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+              const Teuchos::ParameterList& paramlist,
+              bool compute_partitioning_now=true);
 
   /**
      Constructor that accepts an Epetra_RowMatrix object.
@@ -137,9 +145,9 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-                    const Teuchos::ParameterList& paramlist,
-                    bool compute_partitioning_now=true);
+  Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+              const Teuchos::ParameterList& paramlist,
+              bool compute_partitioning_now=true);
 
   /**
      Constructor that accepts an Epetra_RowMatrix object and a
@@ -149,6 +157,9 @@ public:
         to be computed. A Teuchos::RefCountPtr is used here because a
         reference to the input object may be held by this object after
         this constructor completes and returns.
+
+     \param costs CostDescriber object which allows for user-specified
+       weights of varying types to be provided to the partitioner.
 
      \param paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. No reference to this input
@@ -165,13 +176,13 @@ public:
         If true, the method compute_partitioning() will be called before
         this constructor returns.
   */
-  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
-		    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
-                    const Teuchos::ParameterList& paramlist,
-                    bool compute_partitioning_now=true);
+  Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+              Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+              const Teuchos::ParameterList& paramlist,
+              bool compute_partitioning_now=true);
 
   /** Destructor */
-  virtual ~EpetraPartitioner();
+  virtual ~Partitioner();
 
   /** Set parameters from a Teuchos::ParameterList object. The input
       ParameterList object is copied into an internal ParameterList
@@ -237,9 +248,10 @@ private:
 
 };//class Partitioner
 
-#endif //HAVE_EPETRA
-
+}//namespace Epetra
 }//namespace Isorropia
+
+#endif //HAVE_EPETRA
 
 #endif
 

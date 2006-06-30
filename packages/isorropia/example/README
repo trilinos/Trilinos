@@ -1,5 +1,5 @@
 
-This directory (isorropia/example) contains a couple of example programs
+This directory (isorropia/example) contains a number of example programs
 that demonstrate using Isorropia to rebalance Epetra objects.
 
 The programs can be run like this (for example):

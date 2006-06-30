@@ -30,7 +30,7 @@
 //--------------------------------------------------------------------
 //This file is a self-contained example of creating an Epetra_RowMatrix
 //object, and using Isorropia to create a rebalanced copy of it.
-//Furthermore vertex weights are used to influence the repartitioning.
+//Vertex weights are used to influence the repartitioning.
 //--------------------------------------------------------------------
 
 //Include Isorropia_Exception.hpp only because the helper functions at
@@ -56,12 +56,13 @@
 #include <Epetra_LinearProblem.h>
 #endif
 
-//Declaration for helper-function that creates epetra objects. This
+//Declaration for helper-function that creates epetra rowmatrix objects. This
 //function is implemented at the bottom of this file.
 #ifdef HAVE_EPETRA
-Teuchos::RefCountPtr<const Epetra_RowMatrix> create_epetra_rowmatrix(int numProcs,
-                                            int localProc,
-                                            int local_n);
+Teuchos::RefCountPtr<const Epetra_RowMatrix>
+  create_epetra_rowmatrix(int numProcs,
+                          int localProc,
+                          int local_n);
 #endif
 
 int main(int argc, char** argv) {
@@ -77,7 +78,7 @@ int main(int argc, char** argv) {
 
   int local_n = 4000;
 
-  //Create a Epetra_LinearProblem object.
+  //Create a Epetra_RowMatrix object.
 
   Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmatrix;
   try {
@@ -121,10 +122,10 @@ int main(int argc, char** argv) {
 
   //For this demo, we'll assign the weights to be elem+1, where 'elem' is
   //the global-id of the corresponding row. (If we don't use +1, zoltan
-  //complains that one of the vertices has a zero weight.)
+  //complains that the first vertex has a zero weight.)
 
-  //Using these ramped-up weights should cause the partitioner
-  //to *NOT* put an equal number of rows on each processor...
+  //Using these linearly-increasing weights should cause the partitioner
+  //to put an UN-EQUAL number of rows on each processor...
   for(int i=0; i<num; ++i) {
     vals[i] = 1.0*(map.GID(i)+1);
   }
@@ -140,8 +141,8 @@ int main(int argc, char** argv) {
     Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
 
 
-  //Next create a Redistributor object and use it to create balanced
-  //copies of the objects in linprob.
+  //Next create a Redistributor object and use it to create a repartitioned
+  //copy of the matrix.
 
   Isorropia::Redistributor rd(partitioner);
 
@@ -167,7 +168,7 @@ int main(int argc, char** argv) {
   }
 
 
-  //Now simply query and print out information regarding the local sizes
+  //Now query and print out information regarding the local sizes
   //of the original problem and the resulting balanced problem.
 
   int rows1 = rowmatrix->NumMyRows();
@@ -189,7 +190,7 @@ int main(int argc, char** argv) {
 
     if (p != localProc) continue;
 
-    std::cout << "proc " << p << ": balanced matrix local rows: "
+    std::cout << "proc " << p << ": repartitioned matrix local rows: "
        << bal_rows << ", local NNZ: " << bal_nnz << std::endl;
   }
 
@@ -200,57 +201,37 @@ int main(int argc, char** argv) {
   MPI_Finalize();
 
 #else
-  std::cout << "part_redist: must have both MPI and EPETRA. Make sure Trilinos "
-    << "is configured with --enable-mpi and --enable-epetra." << std::endl;
+  std::cout << "vert_weights: must have both MPI and EPETRA. Make sure "
+    << "Trilinos is configured with --enable-mpi and --enable-epetra."
+     << std::endl;
 #endif
 
   return(0);
 }
 
 //Below is the implementation of the helper-function that creates the
-//poorly-balanced epetra objects for use in the above example program.
+//poorly-balanced epetra rowmatrix for use in the above example program.
 
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-Teuchos::RefCountPtr<const Epetra_RowMatrix> create_epetra_rowmatrix(int numProcs,
-                                          int localProc,
-                                          int local_n)
+Teuchos::RefCountPtr<const Epetra_RowMatrix>
+ create_epetra_rowmatrix(int numProcs,
+                         int localProc,
+                         int local_n)
 {
   if (localProc == 0) {
-    std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
+    std::cout << " creating Epetra_CrsMatrix with even row-distribution..."
             << std::endl;
   }
 
-  //create an Epetra_CrsMatrix with rows spread un-evenly over
+  //create an Epetra_CrsMatrix with rows spread evenly over
   //processors.
+
   Epetra_MpiComm comm(MPI_COMM_WORLD);
   int global_num_rows = numProcs*local_n;
 
-  int mid_proc = numProcs/2;
-  bool num_procs_even = numProcs%2==0 ? true : false;
-
-  int adjustment = local_n/2;
-
-  //adjust local_n so that it's not equal on all procs.
-  if (localProc < mid_proc) {
-    local_n -= adjustment;
-  }
-  else {
-    local_n += adjustment;
-  }
-
-  //if numProcs is not an even number, undo the local_n adjustment
-  //on one proc so that the total will still be correct.
-  if (localProc == numProcs-1) {
-    if (num_procs_even == false) {
-      local_n -= adjustment;
-    }
-  }
-
-  //now we're ready to create a row-map.
   Epetra_Map rowmap(global_num_rows, local_n, 0, comm);
 
-  //create a matrix
   int nnz_per_row = 9;
   Teuchos::RefCountPtr<Epetra_CrsMatrix> matrix =
     Teuchos::rcp(new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row));

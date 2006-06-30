@@ -66,6 +66,7 @@ class ZoltanQuery : public Zoltan::QueryObject
   std::vector< std::set<int> > ugraph_;
   std::vector<int> iwork_;
   std::vector<float> fwork_;
+  int worklen_;
 
   const bool localEdgesOnly_;
 

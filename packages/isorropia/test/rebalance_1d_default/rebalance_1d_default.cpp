@@ -403,7 +403,7 @@ bool test_rebalance_epetra_linproblem2(int numProcs, int localProc, bool verbose
     Teuchos::rcp( &(input_matrix->Graph()), false);
 
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::EpetraPartitioner(graph, paramlist));
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(graph, paramlist));
 
   Isorropia::Redistributor rd(partitioner);
 

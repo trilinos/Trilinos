@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
 
-  int local_n = 4000;
+  int local_n = 600;
 
   //Create a Epetra_LinearProblem object.
 
@@ -152,7 +152,7 @@ int main(int argc, char** argv) {
                                         bal_x.get(), bal_b.get());
 
 
-  //Now simply query and print out information regarding the local sizes
+  //Now query and print out information regarding the local sizes
   //of the original problem and the resulting balanced problem.
 
   int rows1 = linprob->GetMatrix()->NumMyRows();

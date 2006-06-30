@@ -55,8 +55,8 @@ namespace Isorropia {
 
 #ifdef HAVE_EPETRA
 
-EpetraPartitioner::
-EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Epetra::Partitioner::
+Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
                   const Teuchos::ParameterList& paramlist,
                   bool compute_partitioning_now)
   : input_map_(),
@@ -74,8 +74,8 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
   }
 }
 
-EpetraPartitioner::
-EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+Epetra::Partitioner::
+Partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		  Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
                   const Teuchos::ParameterList& paramlist,
                   bool compute_partitioning_now)
@@ -94,8 +94,8 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
   }
 }
 
-EpetraPartitioner::
-EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Epetra::Partitioner::
+Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
                   const Teuchos::ParameterList& paramlist,
                   bool compute_partitioning_now)
   : input_map_(),
@@ -113,8 +113,8 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
   }
 }
 
-EpetraPartitioner::
-EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+Epetra::Partitioner::
+Partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		  Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
                   const Teuchos::ParameterList& paramlist,
                   bool compute_partitioning_now)
@@ -133,16 +133,16 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
   }
 }
 
-EpetraPartitioner::~EpetraPartitioner()
+Epetra::Partitioner::~Partitioner()
 {
 }
 
-void EpetraPartitioner::setParameters(const Teuchos::ParameterList& paramlist)
+void Epetra::Partitioner::setParameters(const Teuchos::ParameterList& paramlist)
 {
   paramlist_ = paramlist;
 }
 
-void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
+void Epetra::Partitioner::compute_partitioning(bool force_repartitioning)
 {
   if (partitioning_already_computed_) {
     if (!force_repartitioning) {
@@ -151,7 +151,7 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
   }
 
   if (input_graph_.get() == 0 && input_matrix_.get() == 0) {
-    std::string str1("Isorropia::EpetraPartitioner::compute_partitioning ERROR: ");
+    std::string str1("Isorropia::Epetra::Partitioner::compute_partitioning ERROR: ");
     std::string str2("not holding valid input graph or matrix.");
     throw Isorropia::Exception(str1+str2);
   }
@@ -197,12 +197,12 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
   partitioning_already_computed_ = true;
 }
 
-bool EpetraPartitioner::partitioning_already_computed() const
+bool Epetra::Partitioner::partitioning_already_computed() const
 {
   return partitioning_already_computed_;
 }
 
-int EpetraPartitioner::newPartitionNumber(int myElem) const
+int Epetra::Partitioner::newPartitionNumber(int myElem) const
 {
   std::map<int,int>::const_iterator iter = exports_.find(myElem);
   if (iter != exports_.end()) {
@@ -212,18 +212,18 @@ int EpetraPartitioner::newPartitionNumber(int myElem) const
   return( input_graph_->RowMap().Comm().MyPID() );
 }
 
-int EpetraPartitioner::numElemsInPartition(int partition) const
+int Epetra::Partitioner::numElemsInPartition(int partition) const
 {
   int myPart = input_map_->Comm().MyPID();
   if (partition != myPart) {
-    throw Isorropia::Exception("EpetraPartitioner::numElemsInPartition not implemented for non-local partitions.");
+    throw Isorropia::Exception("Epetra::Partitioner::numElemsInPartition not implemented for non-local partitions.");
   }
 
   return(myNewElements_.size());
 }
 
 void
-EpetraPartitioner::elemsInPartition(int partition, int* elementList, int len) const
+Epetra::Partitioner::elemsInPartition(int partition, int* elementList, int len) const
 {
   int myPart = input_map_->Comm().MyPID();
   if (partition != myPart) {

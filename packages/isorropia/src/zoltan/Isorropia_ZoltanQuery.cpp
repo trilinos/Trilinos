@@ -423,16 +423,16 @@ void Isorropia::ZoltanQuery::Edge_List    ( void * data,
 
   if (weight_dim > 0) {
     if (costs_->haveGraphEdgeWeights()) {
-      int rowlen = costs_->getNumGraphEdges(row);
-      if ((int)iwork_.size() < rowlen) {
-	iwork_.resize(rowlen);
-	fwork_.resize(rowlen);
+      worklen_ = costs_->getNumGraphEdges(row);
+      if ((int)iwork_.size() < worklen_) {
+	iwork_.resize(worklen_);
+	fwork_.resize(worklen_);
       }
 
-      costs_->getGraphEdgeWeights(row, rowlen,
+      costs_->getGraphEdgeWeights(row, worklen_,
 				  &iwork_[0], &fwork_[0]);
       float* fworkptr = &fwork_[0];
-      Sort_with_companions(true, rowlen, &iwork_[0], 1, &fworkptr, 0, 0);
+      Sort_with_companions(true, worklen_, &iwork_[0], 1, &fworkptr, 0, 0);
     }
   }
 
@@ -447,6 +447,10 @@ void Isorropia::ZoltanQuery::Edge_List    ( void * data,
     neighbor_global_ids[offset] = index;
 
     if (weight_dim > 0) {
+      while(ioffset<worklen_) {
+	if (iwork_[ioffset] >= index) break;
+	++ioffset;
+      }
       if (index == iwork_[ioffset]) {
 	edge_weights[offset] = fwork_[ioffset++];
       }

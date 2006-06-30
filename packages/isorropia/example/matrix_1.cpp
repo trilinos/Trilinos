@@ -57,11 +57,11 @@
 //Declarations for helper-functions that create epetra objects. These
 //functions are implemented at the bottom of this file.
 #ifdef HAVE_EPETRA
-Epetra_CrsGraph* create_epetra_graph(int numProcs,
-                                     int localProc);
+Teuchos::RefCountPtr<Epetra_CrsGraph>
+  create_epetra_graph(int numProcs, int localProc);
 
-Epetra_CrsMatrix* create_epetra_matrix(int numProcs,
-                                       int localProc);
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+  create_epetra_matrix(int numProcs, int localProc);
 #endif
 
 /** matrix_1 example program demonstrating Isorropia usage.
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
   //Create a Epetra_CrsGraph object. This graph will be the input to
   //the Isorropia rebalancing function...
 
-  Epetra_CrsGraph* crsgraph = 0;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> crsgraph;
   try {
     crsgraph = create_epetra_graph(numProcs, localProc);
   }
@@ -130,7 +130,7 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
-  //Now simply query and print out information regarding the local sizes
+  //Now query and print out information regarding the local sizes
   //of the input graph and the resulting balanced graph.
 
   int graphrows1 = crsgraph->NumMyRows();
@@ -156,9 +156,6 @@ int main(int argc, char** argv) {
        << bal_graph_rows << ", local NNZ: " << bal_graph_nnz << std::endl;
   }
 
-  //Finally, delete the pointer objects that we asked to be created.
-  delete crsgraph;
-
   if (localProc == 0) {
     std::cout << std::endl;
   }
@@ -168,7 +165,7 @@ int main(int argc, char** argv) {
   //and then have Isorropia::create_balanced_copy create a copy which is
   //balanced so that the number of nonzeros are equal on each processor.
 
-  Epetra_CrsMatrix* crsmatrix = 0;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> crsmatrix;
   try {
     crsmatrix = create_epetra_matrix(numProcs, localProc);
   }
@@ -182,11 +179,6 @@ int main(int argc, char** argv) {
 #ifdef HAVE_ISORROPIA_ZOLTAN
   //This time, we'll try hypergraph partitioning.
   sublist.set("LB_METHOD", "HYPERGRAPH");
-#else
-  // If Zoltan is not available, a simple linear partitioner will be
-  // used to partition such that the number of nonzeros is equal (or
-  // close to equal) on each processor. No parameter is necessary to
-  // specify this.
 #endif
 
   if (localProc == 0) {
@@ -230,8 +222,6 @@ int main(int argc, char** argv) {
         << bal_mat_rows << ", local NNZ: " << bal_mat_nnz << std::endl;
   }
 
-  delete crsmatrix;
-
   MPI_Finalize();
 
 #else
@@ -247,8 +237,8 @@ int main(int argc, char** argv) {
 
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-Epetra_CrsMatrix* create_epetra_matrix(int numProcs,
-                                       int localProc)
+Teuchos::RefCountPtr<Epetra_CrsMatrix>
+  create_epetra_matrix(int numProcs, int localProc)
 {
   if (localProc == 0) {
     std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
@@ -287,8 +277,8 @@ Epetra_CrsMatrix* create_epetra_matrix(int numProcs,
   Epetra_Map rowmap(global_num_rows, local_num_rows, 0, comm);
 
   //create a matrix
-  Epetra_CrsMatrix* matrix =
-    new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row);
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> matrix =
+    Teuchos::rcp(new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row));
 
   std::vector<int> indices(nnz_per_row);
   std::vector<double> coefs(nnz_per_row);
@@ -330,8 +320,8 @@ Epetra_CrsMatrix* create_epetra_matrix(int numProcs,
   return(matrix);
 }
 
-Epetra_CrsGraph* create_epetra_graph(int numProcs,
-                                     int localProc)
+Teuchos::RefCountPtr<Epetra_CrsGraph>
+  create_epetra_graph(int numProcs, int localProc)
 {
   if (localProc == 0) {
     std::cout << " creating Epetra_CrsGraph with un-even distribution..."
@@ -370,8 +360,8 @@ Epetra_CrsGraph* create_epetra_graph(int numProcs,
   Epetra_Map rowmap(global_num_rows, local_num_rows, 0, comm);
 
   //create a graph
-  Epetra_CrsGraph* graph =
-    new Epetra_CrsGraph(Copy, rowmap, nnz_per_row);
+  Teuchos::RefCountPtr<Epetra_CrsGraph> graph =
+    Teuchos::rcp(new Epetra_CrsGraph(Copy, rowmap, nnz_per_row));
 
   std::vector<int> indices(nnz_per_row);
   std::vector<double> coefs(nnz_per_row);

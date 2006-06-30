@@ -2,10 +2,6 @@
 \htmlonly
 \endhtmlonly
 
-User warning: Isorropia is in the early stages of development. We are still
-going through requirements-prototyping cycles, so everything is still
-changing frequently. (including function-names, file-names, etc.)
-
 \section isorropia_intro Introduction
 
 Isorropia is a repartitioning/rebalancing package, intended to assist

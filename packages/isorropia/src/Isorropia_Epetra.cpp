@@ -66,7 +66,7 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		   const Teuchos::ParameterList& paramlist)
 {
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::EpetraPartitioner(input_graph, paramlist));
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(input_graph, paramlist));
   return(partitioner);
 }
 
@@ -76,7 +76,7 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		   const Teuchos::ParameterList& paramlist)
 {
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::EpetraPartitioner(input_graph, costs, paramlist));
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(input_graph, costs, paramlist));
   return(partitioner);
 }
 
@@ -85,7 +85,7 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		   const Teuchos::ParameterList& paramlist)
 {
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::EpetraPartitioner(input_matrix, paramlist));
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(input_matrix, paramlist));
   return(partitioner);
 }
 
@@ -95,12 +95,12 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		   const Teuchos::ParameterList& paramlist)
 {
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Teuchos::rcp(new Isorropia::EpetraPartitioner(input_matrix, costs, paramlist));
+    Teuchos::rcp(new Isorropia::Epetra::Partitioner(input_matrix, costs, paramlist));
   return(partitioner);
 }
 
 Teuchos::RefCountPtr<Epetra_Map>
-create_target_map(const Epetra_Comm& comm, Partitioner& partitioner)
+create_target_map(const Epetra_Comm& comm, Isorropia::Partitioner& partitioner)
 {
   if (!partitioner.partitioning_already_computed()) {
     partitioner.compute_partitioning();
@@ -355,7 +355,7 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
     Teuchos::rcp(&(input_matrix.Graph()), false);
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(input_graph, paramlist));
+    Teuchos::rcp(new Epetra::Partitioner(input_graph, paramlist));
 
   const Epetra_Comm& comm = input_graph->RowMap().Comm();
 
@@ -427,7 +427,7 @@ create_balanced_copy(const Epetra_CrsMatrix& input_matrix,
   Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(input_graph, paramlist));
+    Teuchos::rcp(new Epetra::Partitioner(input_graph, paramlist));
 
   const Epetra_Comm& comm = input_graph->RowMap().Comm();
 
@@ -467,7 +467,7 @@ create_balanced_copy(const Epetra_RowMatrix& input_matrix,
   Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(input_rowmat, paramlist));
+    Teuchos::rcp(new Epetra::Partitioner(input_rowmat, paramlist));
 
   const Epetra_Comm& comm = input_matrix.RowMatrixRowMap().Comm();
 
@@ -505,7 +505,7 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
     Teuchos::rcp(&input_graph, false);
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(in_graph, paramlist));
+    Teuchos::rcp(new Epetra::Partitioner(in_graph, paramlist));
 
   const Epetra_Comm& comm = input_graph.RowMap().Comm();
 
@@ -545,7 +545,7 @@ create_balanced_copy(const Epetra_CrsGraph& input_graph,
   Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(in_graph, paramlist));
+    Teuchos::rcp(new Epetra::Partitioner(in_graph, paramlist));
 
   const Epetra_Comm& comm = in_graph->RowMap().Comm();
 
@@ -584,7 +584,7 @@ create_balanced_copy(const Epetra_LinearProblem& input_problem)
   Teuchos::ParameterList paramlist;
 
   Teuchos::RefCountPtr<Partitioner> partitioner =
-    Teuchos::rcp(new EpetraPartitioner(rowmat, paramlist));
+    Teuchos::rcp(new Epetra::Partitioner(rowmat, paramlist));
 
   Isorropia::Redistributor rd(partitioner);
 

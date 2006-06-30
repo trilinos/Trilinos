@@ -52,7 +52,9 @@ namespace Isorropia {
   The caller which needs the weights (i.e., the partitioner) can
   save time/work by querying whether "non-default" weights are
   specified, and if not, then simply use weights of 1.0 rather than
-  making the call to obtain the weights arrays.
+  making the call to obtain the weights arrays. The queries for
+  whether weights are provided are the methods haveVertexWeights(),
+  haveGraphEdgeWeights() and haveHypergraphEdgeWeights().
 */
 class CostDescriber {
 public:
