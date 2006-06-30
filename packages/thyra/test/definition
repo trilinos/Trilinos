@@ -55,6 +55,11 @@
     COMM = SERIAL;
 }
 
+(FRAMEWORK, INSTALL) {
+    TESTS = ../example/generate-sample-output.pl;
+    COMM = SERIAL;
+}
+
 (FRAMEWORK, INSTALL, ThyraPyTests) {
     DIRS = ../python/test;
     EXIT-STATUS = STRING-COMPARISON;

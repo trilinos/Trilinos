@@ -165,7 +165,7 @@ protected:
  * Calls <tt>M.euclideanApply(...,X,Y,alpha,beta)</tt> or
  * <tt>M.euclideanApplyTranspose(...,X,Y,alpha,beta)</tt>.
  *
- * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ * \relates EuclideanLinearOpBase
  */
 template<class Scalar>
 inline void euclideanApply(

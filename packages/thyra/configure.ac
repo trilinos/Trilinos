@@ -293,6 +293,7 @@ AC_CONFIG_FILES([
     Makefile.export.thyra
     src/Makefile
     example/Makefile
+    example/generate-sample-output.pl.stub
     example/operator_vector/Makefile
     example/operator_solve/Makefile
     example/external/Makefile

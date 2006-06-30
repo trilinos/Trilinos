@@ -28,9 +28,13 @@
 
 # The following line helps the test harness recover from build errors.
 
-all-local:
+all-local: generate-sample-output.pl
 	@echo ""
 	@echo "Trilinos package thyra subdirectory example built successfully."
 	@echo ""
 
 SUBDIRS = operator_vector operator_solve external
+
+generate-sample-output.pl : generate-sample-output.pl.stub
+	cp generate-sample-output.pl.stub generate-sample-output.pl
+	chmod a+x generate-sample-output.pl

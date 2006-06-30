@@ -65,7 +65,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 subdir = example
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/generate-sample-output.pl.stub.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
 	$(top_srcdir)/config/az_python.m4 \
@@ -86,7 +87,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Thyra_Config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = generate-sample-output.pl.stub
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -273,6 +274,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+generate-sample-output.pl.stub: $(top_builddir)/config.status $(srcdir)/generate-sample-output.pl.stub.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd
@@ -522,10 +525,14 @@ uninstall-info: uninstall-info-recursive
 	uninstall-info-am
 
 
-all-local:
+all-local: generate-sample-output.pl
 	@echo ""
 	@echo "Trilinos package thyra subdirectory example built successfully."
 	@echo ""
+
+generate-sample-output.pl : generate-sample-output.pl.stub
+	cp generate-sample-output.pl.stub generate-sample-output.pl
+	chmod a+x generate-sample-output.pl
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

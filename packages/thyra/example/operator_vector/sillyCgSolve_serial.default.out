@@ -1,0 +1,156 @@
+
+***
+*** Running silly CG solver using scalar type = 'float' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001 ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<float,float>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<float>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<float,float>::check(...)
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<float,float>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<float>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<float,float>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    ExampleTridiagSerialLinearOp<float>{rangeDim=500,domainDim=500}
+  
+  describe b:
+    DefaultSpmdVector<float>{dim=500}
+  
+  describe x:
+    DefaultSpmdVector<float>{dim=500}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+000
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 6.768250e-001
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 1.586830e-001
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 3.874917e-002
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 9.400059e-003
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 2.241088e-003
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 5.136720e-004
+  Iter = 217, ||b-A*x||/||b-A*x0|| = 1.038897e-004
+  Iter = 218, ||b-A*x||/||b-A*x0|| = 9.815032e-005
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 6.379066e-003/2.120641e+001 = 3.008084e-004 <= 10.0*tolerance = 9.999999e-004: passed
+
+Total time = 6.000000e-002 sec
+
+***
+*** Running silly CG solver using scalar type = 'double' ...
+***
+
+Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+000 ...
+
+Testing the constructed linear operator A ...
+  
+  *** Entering LinearOpTester<double,double>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<double>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==false: Skipping check of symmetry ...
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<double,double>::check(...)
+
+Testing the linear operator used with the solve ...
+  
+  *** Entering LinearOpTester<double,double>::check(op,...) ...
+  
+  describe op:
+    ExampleTridiagSerialLinearOp<double>{rangeDim=500,domainDim=500}
+  
+  Checking the domain and range spaces ... passed!
+  
+  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
+  
+  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
+  
+  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
+  
+  this->check_for_symmetry()==true: Performing check of symmetry ... passed!
+  
+  Congratulations, this LinearOpBase object seems to check out!
+  
+  *** Leaving LinearOpTester<double,double>::check(...)
+
+Solving the linear system with sillyCgSolve(...) ...
+  
+  Starting CG solver ...
+  
+  describe A:
+    ExampleTridiagSerialLinearOp<double>{rangeDim=500,domainDim=500}
+  
+  describe b:
+    DefaultSpmdVector<double>{dim=500}
+  
+  describe x:
+    DefaultSpmdVector<double>{dim=500}
+  
+  Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+000
+  Iter = 31, ||b-A*x||/||b-A*x0|| = 6.768643e-001
+  Iter = 62, ||b-A*x||/||b-A*x0|| = 1.586982e-001
+  Iter = 93, ||b-A*x||/||b-A*x0|| = 3.875455e-002
+  Iter = 124, ||b-A*x||/||b-A*x0|| = 9.401826e-003
+  Iter = 155, ||b-A*x||/||b-A*x0|| = 2.241628e-003
+  Iter = 186, ||b-A*x||/||b-A*x0|| = 5.138224e-004
+  Iter = 217, ||b-A*x||/||b-A*x0|| = 1.039247e-004
+  Iter = 218, ||b-A*x||/||b-A*x0|| = 9.818353e-005
+
+Checking the residual ourselves ...
+  
+  ||b-A*x||/||b|| = 2.082119e-003/2.120640e+001 = 9.818353e-005 <= 10.0*tolerance = 1.000000e-003: passed
+
+Total time = 6.000000e-002 sec
+
+Congratulations! All of the tests checked out!
