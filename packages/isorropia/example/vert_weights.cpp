@@ -134,8 +134,6 @@ int main(int argc, char** argv) {
 
   costs->setVertexWeights(vweights);
 
-  Teuchos::RefCountPtr<const Isorropia::CostDescriber> ccosts;
-  ccosts = costs;
   //Now create the partitioner object using an Isorropia factory-like
   //function...
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
