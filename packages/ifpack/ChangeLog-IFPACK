@@ -31,6 +31,14 @@ Please submit IFPACK bugs at software.sandia.gov/buzgilla.
 
 ------------------------------------------------------------------------------
 	
+Jun 2006:
+
+*) Changed the hash table class for ICT and ILUT. The latter is 
+   then much faster than the previous version. The new class has a
+   better memory usage and it is simpler to modify and extend.
+
+------------------------------------------------------------------------------
+	
 Apr 2006:
 
 *) Added Chebyshev preconditioner with diagonal scaling.
