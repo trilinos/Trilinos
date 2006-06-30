@@ -32,7 +32,7 @@ EXEEXT = .exe
 DEFAULT_INCLUDES= -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
 
 if BUILD_EXAMPLES
-PROGS = matrix_1 part_redist
+PROGS = matrix_1 part_redist vert_weights
 endif
 
 noinst_PROGRAMS = $(PROGS)
@@ -55,6 +55,16 @@ part_redist_DEPENDENCIES = \
 
 part_redist_CXXFLAGS = $(EPETRA_INCLUDES)
 part_redist_LDADD = \
+      -L$(top_builddir)/src -lisorropia \
+      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+vert_weights_SOURCES = $(srcdir)/vert_weights.cpp
+
+vert_weights_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+vert_weights_CXXFLAGS = $(EPETRA_INCLUDES)
+vert_weights_LDADD = \
       -L$(top_builddir)/src -lisorropia \
       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 

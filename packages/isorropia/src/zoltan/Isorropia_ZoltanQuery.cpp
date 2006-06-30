@@ -28,6 +28,7 @@
 // @HEADER
 
 #include <Isorropia_ZoltanQuery.h>
+#include <Isorropia_CostDescriber.hpp>
 
 #include <Epetra_CrsGraph.h>
 #include <Epetra_RowMatrix.h>
@@ -38,6 +39,43 @@
 // #include <fstream>
 // #include <sstream>
 
+void Sort_with_companions(bool SortAscending, int NumKeys, int * Keys,
+			  int NumFloatCompanions,float ** floatCompanions,
+			  int NumIntCompanions, int ** intCompanions)
+{
+  int i;
+
+  int n = NumKeys;
+  int * const list = Keys;
+  int m = n/2;
+
+  while (m > 0) {
+    int max = n - m;
+    for (int j=0; j<max; j++) {
+      for (int k=j; k>=0; k-=m) {
+	if ((SortAscending && list[k+m] >= list[k]) ||
+	    ( !SortAscending && list[k+m] <= list[k]))
+	  break;
+	int temp = list[k+m];
+	list[k+m] = list[k];
+	list[k] = temp;
+	for (i=0; i<NumFloatCompanions; i++) {
+	  float dtemp = floatCompanions[i][k+m];
+	  floatCompanions[i][k+m] = floatCompanions[i][k];
+	  floatCompanions[i][k] = dtemp;
+	}
+	for (i=0; i<NumIntCompanions; i++) {
+	  int itemp = intCompanions[i][k+m];
+	  intCompanions[i][k+m] = intCompanions[i][k];
+	  intCompanions[i][k] = itemp;
+	}
+      }
+    }
+    m = m/2;
+  }
+}
+
+
 Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
                                      Teuchos::RefCountPtr<const Epetra_CrsGraph> tgraph,
                                      bool localEdgesOnly )
@@ -46,17 +84,76 @@ Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_CrsGraph>
     graph_(graph),
     tgraph_(tgraph),
     map_(&(graph->RowMap())),
-  localEdgesOnly_(localEdgesOnly)
+    costs_(),
+    localEdgesOnly_(localEdgesOnly)
+{
+  fill_procmap(graph_.get(), tgraph_.get());
+  fill_ugraph(graph_.get(), tgraph_.get());
+}
+
+Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
+                                     Teuchos::RefCountPtr<const Epetra_RowMatrix> tmatrix,
+                                     bool localEdgesOnly )
+  : matrix_(matrix),
+    tmatrix_(tmatrix),
+    graph_(),
+    tgraph_(),
+    map_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
+    costs_(),
+    localEdgesOnly_(localEdgesOnly)
+{
+  fill_procmap(matrix_.get(), tmatrix_.get());
+  fill_ugraph(matrix_.get(), tmatrix_.get());
+}
+
+Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_CrsGraph> graph,
+                                     Teuchos::RefCountPtr<const Epetra_CrsGraph> tgraph,
+				     Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+                                     bool localEdgesOnly )
+  : matrix_(),
+    tmatrix_(),
+    graph_(graph),
+    tgraph_(tgraph),
+    map_(&(graph->RowMap())),
+    costs_(costs),
+    localEdgesOnly_(localEdgesOnly)
+{
+  fill_procmap(graph_.get(), tgraph_.get());
+  fill_ugraph(graph_.get(), tgraph_.get());
+}
+
+Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
+                                     Teuchos::RefCountPtr<const Epetra_RowMatrix> tmatrix,
+				     Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+                                     bool localEdgesOnly )
+  : matrix_(matrix),
+    tmatrix_(tmatrix),
+    graph_(),
+    tgraph_(),
+    map_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
+    costs_(costs),
+    localEdgesOnly_(localEdgesOnly)
+{
+  fill_procmap(matrix_.get(), tmatrix_.get());
+  fill_ugraph(matrix_.get(), tmatrix_.get());
+}
+
+Isorropia::ZoltanQuery::~ZoltanQuery()
+{
+}
+
+void Isorropia::ZoltanQuery::fill_procmap(const Epetra_CrsGraph* graph,
+					  const Epetra_CrsGraph* tgraph)
 {
   int localProc = map_->Comm().MyPID();
 
-  const Epetra_BlockMap& colmap = graph_->ColMap();
+  const Epetra_BlockMap& colmap = graph->ColMap();
   int num_colmap_elems = colmap.NumMyElements();
 
   std::vector<int> elems(num_colmap_elems*2);
   colmap.MyGlobalElements(&elems[0]);
   map_->RemoteIDList(num_colmap_elems, &elems[0],
-		      &elems[num_colmap_elems], 0);
+		     &elems[num_colmap_elems], 0);
 
   int i;
   for(i=0; i<num_colmap_elems; ++i) {
@@ -66,25 +163,7 @@ Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_CrsGraph>
     }
   }
 
-  int num_local_rows = map_->NumMyElements();
-  ugraph_.resize(num_local_rows);
-  int maxNumIndices = graph_->MaxNumIndices();
-  std::vector<int> indices(maxNumIndices);
-  int numIndices;
-
-  for(i=0; i<num_local_rows; ++i) {
-    std::set<int>& rowset = ugraph_[i];
-    int row = map_->GID(i);
-    graph_->ExtractGlobalRowCopy(row, maxNumIndices,
-				numIndices, &indices[0]);
-    for(int j=0; j<numIndices; ++j) {
-      if (indices[j] != row) {
-	rowset.insert(indices[j]);
-      }
-    }
-  }
-
-  if (tgraph.get() != 0) {
+  if (tgraph != 0) {
     tmap_ = &(tgraph->RowMap());
     const Epetra_BlockMap& tcolmap = tgraph->ColMap();
     int num_tcolmap_elems = tcolmap.NumMyElements();
@@ -107,37 +186,15 @@ Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_CrsGraph>
 	}
       }
     }
-
-    maxNumIndices = tgraph_->MaxNumIndices();
-    indices.resize(maxNumIndices);
-
-    for(i=0; i<num_local_rows; ++i) {
-      std::set<int>& rowset = ugraph_[i];
-      int row = tmap_->GID(i);
-      tgraph_->ExtractGlobalRowCopy(row, maxNumIndices,
-				    numIndices, &indices[0]);
-      for(int j=0; j<numIndices; ++j) {
-	if (indices[j] != row) {
-	  rowset.insert(indices[j]);
-	}
-      }
-    }
   }
 }
 
-Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_RowMatrix> matrix,
-                                     Teuchos::RefCountPtr<const Epetra_RowMatrix> tmatrix,
-                                     bool localEdgesOnly )
-  : matrix_(matrix),
-    tmatrix_(tmatrix),
-    graph_(),
-    tgraph_(),
-    map_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
-    localEdgesOnly_(localEdgesOnly)
+void Isorropia::ZoltanQuery::fill_procmap(const Epetra_RowMatrix* matrix,
+					  const Epetra_RowMatrix* tmatrix)
 {
   int localProc = map_->Comm().MyPID();
 
-  const Epetra_BlockMap& colmap = (const Epetra_BlockMap&)matrix_->RowMatrixColMap();
+  const Epetra_BlockMap& colmap = (const Epetra_BlockMap&)matrix->RowMatrixColMap();
   int num_colmap_elems = colmap.NumMyElements();
 
   std::vector<int> elems(num_colmap_elems*2);
@@ -153,27 +210,7 @@ Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_RowMatrix
     }
   }
 
-  int num_local_rows = map_->NumMyElements();
-  ugraph_.resize(num_local_rows);
-  int maxNumIndices = matrix_->MaxNumEntries();
-  std::vector<int> indices(maxNumIndices);
-  std::vector<double> coefs(maxNumIndices);
-  int numIndices;
-
-  for(i=0; i<num_local_rows; ++i) {
-    std::set<int>& rowset = ugraph_[i];
-    int row = map_->GID(i);
-    matrix_->ExtractMyRowCopy(i, maxNumIndices,
-			      numIndices, &coefs[0], &indices[0]);
-    for(int j=0; j<numIndices; ++j) {
-      int globalj = colmap.GID(indices[j]);
-      if (globalj != row) {
-	rowset.insert(globalj);
-      }
-    }
-  }
-
-  if (tmatrix.get() != 0) {
+  if (tmatrix != 0) {
     tmap_ = (const Epetra_BlockMap*)&(tmatrix->RowMatrixRowMap());
     const Epetra_BlockMap& tcolmap =
       (const Epetra_BlockMap&)tmatrix->RowMatrixColMap();
@@ -197,15 +234,83 @@ Isorropia::ZoltanQuery::ZoltanQuery( Teuchos::RefCountPtr<const Epetra_RowMatrix
 	}
       }
     }
+  }
+}
 
-    maxNumIndices = tmatrix_->MaxNumEntries();
+void Isorropia::ZoltanQuery::fill_ugraph(const Epetra_CrsGraph* graph,
+					 const Epetra_CrsGraph* tgraph)
+{
+  int num_local_rows = map_->NumMyElements();
+  ugraph_.resize(num_local_rows);
+  int maxNumIndices = graph->MaxNumIndices();
+  std::vector<int> indices(maxNumIndices);
+  int i, numIndices;
+
+  for(i=0; i<num_local_rows; ++i) {
+    std::set<int>& rowset = ugraph_[i];
+    int row = map_->GID(i);
+    graph->ExtractGlobalRowCopy(row, maxNumIndices,
+				numIndices, &indices[0]);
+    for(int j=0; j<numIndices; ++j) {
+      if (indices[j] != row) {
+	rowset.insert(indices[j]);
+      }
+    }
+  }
+
+  if (tgraph != 0) {
+    maxNumIndices = tgraph->MaxNumIndices();
+    indices.resize(maxNumIndices);
+
+    for(i=0; i<num_local_rows; ++i) {
+      std::set<int>& rowset = ugraph_[i];
+      int row = tmap_->GID(i);
+      tgraph->ExtractGlobalRowCopy(row, maxNumIndices,
+				    numIndices, &indices[0]);
+      for(int j=0; j<numIndices; ++j) {
+	if (indices[j] != row) {
+	  rowset.insert(indices[j]);
+	}
+      }
+    }
+  }
+}
+
+void Isorropia::ZoltanQuery::fill_ugraph(const Epetra_RowMatrix* matrix,
+					 const Epetra_RowMatrix* tmatrix)
+{
+  int num_local_rows = map_->NumMyElements();
+  ugraph_.resize(num_local_rows);
+  int maxNumIndices = matrix->MaxNumEntries();
+  std::vector<int> indices(maxNumIndices);
+  std::vector<double> coefs(maxNumIndices);
+  int i, numIndices;
+  const Epetra_BlockMap& colmap = (const Epetra_BlockMap&)matrix->RowMatrixColMap();
+
+  for(i=0; i<num_local_rows; ++i) {
+    std::set<int>& rowset = ugraph_[i];
+    int row = map_->GID(i);
+    matrix->ExtractMyRowCopy(i, maxNumIndices,
+			      numIndices, &coefs[0], &indices[0]);
+    for(int j=0; j<numIndices; ++j) {
+      int globalj = colmap.GID(indices[j]);
+      if (globalj != row) {
+	rowset.insert(globalj);
+      }
+    }
+  }
+
+  if (tmatrix != 0) {
+    const Epetra_BlockMap& tcolmap =
+      (const Epetra_BlockMap&)tmatrix->RowMatrixColMap();
+    maxNumIndices = tmatrix->MaxNumEntries();
     indices.resize(maxNumIndices);
     coefs.resize(maxNumIndices);
 
     for(i=0; i<num_local_rows; ++i) {
       std::set<int>& rowset = ugraph_[i];
       int row = tmap_->GID(i);
-      tmatrix_->ExtractMyRowCopy(i, maxNumIndices,
+      tmatrix->ExtractMyRowCopy(i, maxNumIndices,
 				 numIndices, &coefs[0], &indices[0]);
       for(int j=0; j<numIndices; ++j) {
 	int globalj = tcolmap.GID(indices[j]);
@@ -239,7 +344,20 @@ void Isorropia::ZoltanQuery::Object_List  ( void * data,
 
   int rows = map_->NumMyElements();
 
-  map_->MyGlobalElements( ((int *) global_ids) );
+  if (weight_dim > 0 && !haveVertexWeights()) {
+    std::cout << "ZoltanQuery::Object_List ERROR, weight_dim > 0 "
+	      << "but weights not available." << std::endl;
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  if (weight_dim > 0) {
+    costs_->getVertexWeights(rows, (int*)global_ids,
+			     object_weights);
+  }
+  else {
+    map_->MyGlobalElements( ((int *) global_ids) );
+  }
 
   int Index = map_->IndexBase();
   for( int i = 0; i < rows; i++, Index++ ) {
@@ -284,6 +402,13 @@ void Isorropia::ZoltanQuery::Edge_List    ( void * data,
                                         float * edge_weights,
                                         int * ierr )
 {
+  if (weight_dim > 0 && !haveGraphEdgeWeights()) {
+    std::cout << "ZoltanQuery::Edge_List: ERROR, weight_dim > 0, but no "
+	      << "weights are available."<<std::endl;
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
   int row = *global_id;
   int LocalRow = map_->LID(row);
 
@@ -296,14 +421,36 @@ void Isorropia::ZoltanQuery::Edge_List    ( void * data,
 
   std::set<int>& rowset = ugraph_[LocalRow];
 
+  if (weight_dim > 0) {
+    if (costs_->haveGraphEdgeWeights()) {
+      int rowlen = costs_->getNumGraphEdges(row);
+      if ((int)iwork_.size() < rowlen) {
+	iwork_.resize(rowlen);
+	fwork_.resize(rowlen);
+      }
+
+      costs_->getGraphEdgeWeights(row, rowlen,
+				  &iwork_[0], &fwork_[0]);
+      float* fworkptr = &fwork_[0];
+      Sort_with_companions(true, rowlen, &iwork_[0], 1, &fworkptr, 0, 0);
+    }
+  }
+
   std::set<int>::const_iterator
     iter = rowset.begin(),
     iter_end = rowset.end();
 
   int offset = 0;
+  int ioffset = 0;
   for(; iter != iter_end; ++iter) {
     int index = *iter;
     neighbor_global_ids[offset] = index;
+
+    if (weight_dim > 0) {
+      if (index == iwork_[ioffset]) {
+	edge_weights[offset] = fwork_[ioffset++];
+      }
+    }
 
     if (map_->MyGID(index)) {
       neighbor_procs[offset] = localProc;
@@ -431,4 +578,74 @@ void Isorropia::ZoltanQuery::HG_CS ( void * data,
   }
 
   *ierr = ZOLTAN_OK;
+}
+
+void Isorropia::ZoltanQuery::HG_Size_Edge_Weights(void * data,
+			    int* num_edges,
+			    int* ierr)
+{
+  *num_edges = tmap_->NumMyElements();
+  *ierr = ZOLTAN_OK;
+}
+
+void Isorropia::ZoltanQuery::HG_Edge_Weights(void * data,
+		       int num_gid_entries,
+		       int num_lid_entries,
+		       int num_edges,
+		       int edge_weight_dim,
+		       ZOLTAN_ID_PTR edge_GID,
+		       ZOLTAN_ID_PTR edge_LID,
+		       float* edge_weights,
+		       int* ierr)
+{
+  if (costs_.get() == 0) {
+    std::cout << "ZoltanQuery::HG_Edge_Weights: ERROR, don't have CostDescriber."
+	      << std::endl;
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  if (num_gid_entries != 1) {
+    std::cout << "ZoltanQuery::HG_Edge_Weights: num_gid_entries="<<num_gid_entries
+        << ", not yet allowed by this implementation!"<< std::endl;
+     *ierr = ZOLTAN_FATAL;
+     return;
+  }
+
+  if (num_edges != tmap_->NumMyElements()) {
+    std::cout << "ZoltanQuery::HG_Edge_Weights: num_edges="<<num_edges
+	      << ", expected "<<tmap_->NumMyElements() << std::endl;
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  costs_->getHypergraphEdgeWeights(num_edges, (int*)edge_GID,
+				   edge_weights);
+  *ierr = ZOLTAN_OK;
+}
+
+bool Isorropia::ZoltanQuery::haveVertexWeights() const
+{
+  if (costs_.get() != 0) {
+    if (costs_->haveVertexWeights()) return(true);
+  }
+
+  return(false);
+}
+
+bool Isorropia::ZoltanQuery::haveGraphEdgeWeights() const
+{
+  if (costs_.get() != 0) {
+    if (costs_->haveGraphEdgeWeights()) return(true);
+  }
+
+  return(false);
+}
+bool Isorropia::ZoltanQuery::haveHypergraphEdgeWeights() const
+{
+  if (costs_.get() != 0) {
+    if (costs_->haveHypergraphEdgeWeights()) return(true);
+  }
+
+  return(false);
 }

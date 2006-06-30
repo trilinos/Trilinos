@@ -57,6 +57,10 @@ class Epetra_LinearProblem;
 
 #include <Isorropia_ZoltanQuery.h>
 
+namespace Isorropia {
+  class CostDescriber;
+}
+
 /** Isorropia_Zoltan is the namespace that contains isorropia's
   Zoltan-specific classes and functions.
 */
@@ -69,6 +73,7 @@ namespace Isorropia_Zoltan {
 */
 int
 repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+	    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
 	    Teuchos::ParameterList& paramlist,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,
@@ -79,6 +84,7 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 */
 int
 repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+	    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
 	    Teuchos::ParameterList& paramlist,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,

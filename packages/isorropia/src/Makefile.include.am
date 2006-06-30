@@ -36,6 +36,7 @@
 # ------------------------------------------------------------------------
 
 CORE = \
+	$(srcdir)/Isorropia_EpetraCostDescriber.cpp \
 	$(srcdir)/Isorropia_EpetraPartitioner.cpp \
 	$(srcdir)/Isorropia_Redistributor.cpp \
 	$(srcdir)/Isorropia_Utils.cpp \
@@ -43,6 +44,8 @@ CORE = \
 	$(srcdir)/Isorropia_Exception.cpp
 
 CORE_H = \
+	$(srcdir)/Isorropia_CostDescriber.hpp \
+	$(srcdir)/Isorropia_EpetraCostDescriber.hpp \
 	$(srcdir)/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \

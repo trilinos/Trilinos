@@ -158,6 +158,21 @@ public:
                     ZOLTAN_ID_PTR pin_GID,
                     int* ierr);
 
+  //Hypergraph Weights Functions
+  static void HG_Size_Edge_Weights(void * data,
+				   int* num_edges,
+				   int* ierr);
+
+  static void HG_Edge_Weights(void * data,
+			      int num_gid_entries,
+			      int num_lid_entries,
+			      int num_edges,
+			      int edge_weight_dim,
+			      ZOLTAN_ID_PTR edge_GID,
+			      ZOLTAN_ID_PTR edge_LID,
+			      float* edge_weights,
+			      int* ierr);
+
   //Tree Based Functions
   static int Number_Coarse_Objects    (	void * data,
 					int * ierr );

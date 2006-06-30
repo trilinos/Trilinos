@@ -265,6 +265,32 @@ void Zoltan::QueryObject::HG_CS(void* data,
   *ierr = ZOLTAN_FATAL;
 }
 
+void Zoltan::QueryObject::HG_Size_Edge_Weights(void * data,
+				    int* num_edges,
+				    int* ierr)
+{
+  std::cout << "Error: Zoltan::QueryObject::HG_Size_Edge_Weights( void *, int*, "
+        << " int* ) must be implemented." << std::endl;
+
+  *ierr = ZOLTAN_FATAL;
+}
+
+void Zoltan::QueryObject::HG_Edge_Weights(void * data,
+			      int num_gid_entries,
+			      int num_lid_entries,
+			      int num_edges,
+			      int edge_weight_dim,
+			      ZOLTAN_ID_PTR edge_GID,
+			       ZOLTAN_ID_PTR edge_LID,
+			      float* edge_weights,
+			      int* ierr)
+{
+  std::cout << "Error: Zoltan::QueryObject::HG_Edge_Weights( void *, int*, "
+        << " int* ) must be implemented." << std::endl;
+
+  *ierr = ZOLTAN_FATAL;
+}
+
   //Tree Based Functions
 int Zoltan::QueryObject::Number_Coarse_Objects (	void * data,
 						int * ierr )

@@ -28,8 +28,9 @@
 //@HEADER
 
 //--------------------------------------------------------------------
-//This file is a self-contained example of creating an Epetra_LinearProblem
+//This file is a self-contained example of creating an Epetra_RowMatrix
 //object, and using Isorropia to create a rebalanced copy of it.
+//Furthermore vertex weights are used to influence the repartitioning.
 //--------------------------------------------------------------------
 
 //Include Isorropia_Exception.hpp only because the helper functions at
@@ -40,6 +41,7 @@
 //The Isorropia symbols being demonstrated are declared
 //in these headers:
 #include <Isorropia_Epetra.hpp>
+#include <Isorropia_EpetraCostDescriber.hpp>
 #include <Isorropia_Redistributor.hpp>
 
 #ifdef HAVE_MPI
@@ -57,7 +59,7 @@
 //Declaration for helper-function that creates epetra objects. This
 //function is implemented at the bottom of this file.
 #ifdef HAVE_EPETRA
-Epetra_LinearProblem* create_epetra_problem(int numProcs,
+Teuchos::RefCountPtr<const Epetra_RowMatrix> create_epetra_rowmatrix(int numProcs,
                                             int localProc,
                                             int local_n);
 #endif
@@ -77,13 +79,14 @@ int main(int argc, char** argv) {
 
   //Create a Epetra_LinearProblem object.
 
-  Epetra_LinearProblem* linprob = 0;
+  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmatrix;
   try {
-    linprob = create_epetra_problem(numProcs, localProc, local_n);
+    rowmatrix = create_epetra_rowmatrix(numProcs, localProc, local_n);
   }
   catch(std::exception& exc) {
-    std::cout << "linsys example: create_epetra_problem threw exception '"
-          << exc.what() << "' on proc " << localProc << std::endl;
+    std::cout << "vert_weights example: create_epetra_rowmatrix threw"
+         << " exception '" << exc.what() << "' on proc "
+         << localProc << std::endl;
     MPI_Finalize();
     return(-1);
   }
@@ -98,7 +101,7 @@ int main(int argc, char** argv) {
   // In the sublist, we'll set parameters that we want sent to Zoltan.
 #ifdef HAVE_ISORROPIA_ZOLTAN
   Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
-  sublist.set("LB_METHOD", "HYPERGRAPH");
+  sublist.set("LB_METHOD", "GRAPH");
 #else
   // If Zoltan is not available, a simple linear partitioner will be
   // used to partition such that the number of nonzeros is equal (or
@@ -107,15 +110,36 @@ int main(int argc, char** argv) {
 #endif
 
 
-  Epetra_RowMatrix* rowmatrix = linprob->GetMatrix();
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> rowmat =
-    Teuchos::rcp(rowmatrix, false);
+  //Now we're going to create a Epetra_Vector with vertex weights to
+  //be used in the repartitioning operation.
+  Teuchos::RefCountPtr<Epetra_Vector> vweights =
+    Teuchos::rcp(new Epetra_Vector(rowmatrix->RowMatrixRowMap()));
 
+  double* vals = vweights->Values();
+  const Epetra_BlockMap& map = rowmatrix->RowMatrixRowMap();
+  int num = map.NumMyElements();
 
+  //For this demo, we'll assign the weights to be elem+1, where 'elem' is
+  //the global-id of the corresponding row. (If we don't use +1, zoltan
+  //complains that one of the vertices has a zero weight.)
+
+  //Using these ramped-up weights should cause the partitioner
+  //to *NOT* put an equal number of rows on each processor...
+  for(int i=0; i<num; ++i) {
+    vals[i] = 1.0*(map.GID(i)+1);
+  }
+
+  Teuchos::RefCountPtr<Isorropia::Epetra::CostDescriber> costs =
+    Teuchos::rcp(new Isorropia::Epetra::CostDescriber);
+
+  costs->setVertexWeights(vweights);
+
+  Teuchos::RefCountPtr<const Isorropia::CostDescriber> ccosts;
+  ccosts = costs;
   //Now create the partitioner object using an Isorropia factory-like
   //function...
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
-    Isorropia::Epetra::create_partitioner(rowmat, paramlist);
+    Isorropia::Epetra::create_partitioner(rowmatrix, costs, paramlist);
 
 
   //Next create a Redistributor object and use it to create balanced
@@ -124,8 +148,6 @@ int main(int argc, char** argv) {
   Isorropia::Redistributor rd(partitioner);
 
   Teuchos::RefCountPtr<Epetra_CrsMatrix> bal_matrix;
-  Teuchos::RefCountPtr<Epetra_MultiVector> bal_x;
-  Teuchos::RefCountPtr<Epetra_MultiVector> bal_b;
 
   //Use a try-catch block because Isorropia will throw an exception
   //if it encounters an error.
@@ -136,9 +158,7 @@ int main(int argc, char** argv) {
   }
 
   try {
-    bal_matrix = rd.redistribute(*linprob->GetMatrix());
-    bal_x = rd.redistribute(*linprob->GetLHS());
-    bal_b = rd.redistribute(*linprob->GetRHS());
+    bal_matrix = rd.redistribute(*rowmatrix);
   }
   catch(std::exception& exc) {
     std::cout << "linsys example: Isorropia::Redistributor threw "
@@ -148,17 +168,14 @@ int main(int argc, char** argv) {
     return(-1);
   }
 
-  Epetra_LinearProblem balanced_problem(bal_matrix.get(),
-                                        bal_x.get(), bal_b.get());
-
 
   //Now simply query and print out information regarding the local sizes
   //of the original problem and the resulting balanced problem.
 
-  int rows1 = linprob->GetMatrix()->NumMyRows();
-  int bal_rows = balanced_problem.GetMatrix()->NumMyRows();
-  int nnz1 = linprob->GetMatrix()->NumMyNonzeros();
-  int bal_nnz = balanced_problem.GetMatrix()->NumMyNonzeros();
+  int rows1 = rowmatrix->NumMyRows();
+  int bal_rows = bal_matrix->NumMyRows();
+  int nnz1 = rowmatrix->NumMyNonzeros();
+  int bal_nnz = bal_matrix->NumMyNonzeros();
 
   for(p=0; p<numProcs; ++p) {
     MPI_Barrier(MPI_COMM_WORLD);
@@ -174,15 +191,9 @@ int main(int argc, char** argv) {
 
     if (p != localProc) continue;
 
-    std::cout << "proc " << p << ": balanced prob local rows: "
+    std::cout << "proc " << p << ": balanced matrix local rows: "
        << bal_rows << ", local NNZ: " << bal_nnz << std::endl;
   }
-
-  //Finally, delete the pointer objects that we asked to be created.
-  delete linprob->GetMatrix();
-  delete linprob->GetLHS();
-  delete linprob->GetRHS();
-  delete linprob;
 
   if (localProc == 0) {
     std::cout << std::endl;
@@ -203,9 +214,9 @@ int main(int argc, char** argv) {
 
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-Epetra_LinearProblem* create_epetra_problem(int numProcs,
-                                            int localProc,
-                                            int local_n)
+Teuchos::RefCountPtr<const Epetra_RowMatrix> create_epetra_rowmatrix(int numProcs,
+                                          int localProc,
+                                          int local_n)
 {
   if (localProc == 0) {
     std::cout << " creating Epetra_CrsMatrix with un-even distribution..."
@@ -243,8 +254,8 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
 
   //create a matrix
   int nnz_per_row = 9;
-  Epetra_CrsMatrix* matrix =
-    new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row);
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> matrix =
+    Teuchos::rcp(new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row));
 
   // Add  rows one-at-a-time
   double negOne = -1.0;
@@ -293,9 +304,7 @@ Epetra_LinearProblem* create_epetra_problem(int numProcs,
     throw Isorropia::Exception("create_epetra_matrix: error in matrix.FillComplete()");
   }
 
-  Epetra_Vector* x = new Epetra_Vector(rowmap);
-  Epetra_Vector* b = new Epetra_Vector(rowmap);
-  return(new Epetra_LinearProblem(matrix, x, b));
+  return(matrix);
 }
 
 #endif //HAVE_MPI && HAVE_EPETRA

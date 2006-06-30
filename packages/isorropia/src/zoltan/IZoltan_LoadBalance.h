@@ -71,6 +71,8 @@ public:
 
  void Register_Hypergraph_Query_Fns();
 
+ void Register_Hypergraph_Weights_Query_Fns();
+
  //! Replaces Zoltan_LB_Balance
  int Balance  ( int * changes,
                 int * num_gid_entries,
@@ -139,6 +141,14 @@ public:
 
  ///
  int Set_HG_CS_Fn            ( ZOLTAN_HG_CS_FN * fn_ptr,
+                              void * data = 0 );
+
+ ///
+ int Set_HG_Size_Edge_Weights_Fn            ( ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN * fn_ptr,
+                              void * data = 0 );
+
+ ///
+ int Set_HG_Edge_Weights_Fn            ( ZOLTAN_HG_EDGE_WEIGHTS_FN * fn_ptr,
                               void * data = 0 );
 
  ///

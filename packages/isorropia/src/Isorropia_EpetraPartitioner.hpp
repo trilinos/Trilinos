@@ -53,6 +53,7 @@ class Epetra_LinearProblem;
   for classes and functions.
 */
 namespace Isorropia {
+  class CostDescriber;
 
 /** An Epetra-specific implementation of the Partitioner interface.
  */
@@ -86,6 +87,34 @@ public:
                     bool compute_partitioning_now=true);
 
   /**
+     Constructor that accepts an Epetra_CrsGraph object and a CostDescriber.
+
+     \param input_graph Matrix-graph object for which a new partitioning
+        is to be computed. A Teuchos::RefCountPtr is used here because a
+        reference to the input object may be held by this object after
+        this constructor completes and returns.
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. No reference to this input
+        object is held after this constructor completes.<br>
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the balancing. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+     \param compute_partitioning_now Optional argument defaults to true.
+        If true, the method compute_partitioning() will be called before
+        this constructor returns.
+  */
+  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+		    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+                    const Teuchos::ParameterList& paramlist,
+                    bool compute_partitioning_now=true);
+
+  /**
      Constructor that accepts an Epetra_RowMatrix object.
 
      \param input_matrix Matrix object for which a new partitioning is
@@ -109,6 +138,35 @@ public:
         this constructor returns.
   */
   EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+                    const Teuchos::ParameterList& paramlist,
+                    bool compute_partitioning_now=true);
+
+  /**
+     Constructor that accepts an Epetra_RowMatrix object and a
+     CostDescriber.
+
+     \param input_matrix Matrix object for which a new partitioning is
+        to be computed. A Teuchos::RefCountPtr is used here because a
+        reference to the input object may be held by this object after
+        this constructor completes and returns.
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. No reference to this input
+        object is held after this constructor completes.<br>
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the balancing. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  Refer to the Zoltan users guide for specific parameters that Zoltan
+  recognizes. A couple of important ones are "LB_METHOD" (valid values
+  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+  0 to 10, default is 1), etc.
+
+     \param compute_partitioning_now Optional argument defaults to true.
+        If true, the method compute_partitioning() will be called before
+        this constructor returns.
+  */
+  EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+		    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
                     const Teuchos::ParameterList& paramlist,
                     bool compute_partitioning_now=true);
 
@@ -168,6 +226,7 @@ private:
   Teuchos::RefCountPtr<const Epetra_BlockMap> input_map_;
   Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph_;
   Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix_;
+  Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs_;
   Teuchos::ParameterList paramlist_;
   Teuchos::RefCountPtr<Epetra_Vector> weights_;
 

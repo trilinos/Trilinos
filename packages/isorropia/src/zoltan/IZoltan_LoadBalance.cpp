@@ -27,6 +27,7 @@
 #include <Isorropia_Exception.hpp>
 
 #include <IZoltan_LoadBalance.h>
+#include <IZoltan_QueryObject.h>
 #include <IZoltan_QueryContainer.h>
 #include <IZoltan_QueryFunctions.h>
 #include <IZoltan_MigrationContainer.h>
@@ -111,6 +112,18 @@ int Zoltan::LoadBalance::Set_HG_CS_Fn     ( ZOLTAN_HG_CS_FN * fn_ptr,
                                                  void * data )
 {
   return Zoltan_Set_HG_CS_Fn( LoadBalance_Ptr_, fn_ptr, data );
+}
+
+int Zoltan::LoadBalance::Set_HG_Size_Edge_Weights_Fn     ( ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN * fn_ptr,
+                                                 void * data )
+{
+  return Zoltan_Set_HG_Size_Edge_Weights_Fn( LoadBalance_Ptr_, fn_ptr, data );
+}
+
+int Zoltan::LoadBalance::Set_HG_Edge_Weights_Fn     ( ZOLTAN_HG_EDGE_WEIGHTS_FN * fn_ptr,
+                                                 void * data )
+{
+  return Zoltan_Set_HG_Edge_Weights_Fn( LoadBalance_Ptr_, fn_ptr, data );
 }
 
 int Zoltan::LoadBalance::Set_Num_Geom_Fn      (	ZOLTAN_NUM_GEOM_FN * fn_ptr,
@@ -363,6 +376,10 @@ int Zoltan::LoadBalance::Set_QueryObject( Zoltan::QueryObject * query_obj_ptr )
 
   if (hypergraph_) {
     Register_Hypergraph_Query_Fns();
+
+    if (query_obj_ptr->haveHypergraphEdgeWeights()) {
+      Register_Hypergraph_Weights_Query_Fns();
+    }
   }
 
   return ZOLTAN_OK;
@@ -381,6 +398,23 @@ void Zoltan::LoadBalance::Register_Hypergraph_Query_Fns()
   Set_HG_Size_CS_Fn       ( Zoltan::QueryFunctions::HG_Size_CS,
                             0 );
   Set_HG_CS_Fn            ( Zoltan::QueryFunctions::HG_CS,
+                            0 );
+#endif
+}
+
+void Zoltan::LoadBalance::Register_Hypergraph_Weights_Query_Fns()
+{
+#ifdef ZOLTAN_OLD_CALLBACK
+  Set_CallBack_Fn( ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE,
+	reinterpret_cast<void *> (Zoltan::QueryFunctions::HG_Size_Edge_Weights),
+	0 );
+  Set_CallBack_Fn( ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE,
+	reinterpret_cast<void *> (Zoltan::QueryFunctions::HG_Edge_Weights),
+	0 );
+#else
+  Set_HG_Size_Edge_Weights_Fn  ( Zoltan::QueryFunctions::HG_Size_Edge_Weights,
+                            0 );
+  Set_HG_Edge_Weights_Fn       ( Zoltan::QueryFunctions::HG_Edge_Weights,
                             0 );
 #endif
 }

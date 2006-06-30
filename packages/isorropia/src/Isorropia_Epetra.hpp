@@ -54,9 +54,10 @@ class Epetra_LinearProblem;
 */
 namespace Isorropia {
   class Partitioner;
+  class CostDescriber;
 
 /** The Epetra namespace contains Isorropia's Epetra-specific
-  functions.
+  classes and functions.
 */
 namespace Epetra {
 
@@ -80,6 +81,25 @@ Teuchos::RefCountPtr<Isorropia::Partitioner>
 create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 		   const Teuchos::ParameterList& paramlist);
 
+/** Given an input matrix-graph that is to be repartitioned, and a parameter-
+    list (possibly specifying the partitioning package/method etc.),
+    create an instance of Isorropia::Partitioner. This is a factory
+    function, the run-time type of the returned Partitioner is
+    Isorropia::EpetraPartitioner.
+
+    To specify that Zoltan be used as the underlying partitioner, create a
+    sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
+    put any parameters that should be relayed straight to Zoltan.
+    Refer to the Zoltan users guide for specific parameters that Zoltan
+    recognizes. A couple of important ones are "LB_METHOD" (valid values
+    include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+    0 to 10, default is 1), etc.
+*/
+Teuchos::RefCountPtr<Isorropia::Partitioner>
+create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+		   Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+		   const Teuchos::ParameterList& paramlist);
+
 /** Given an input row-matrix that is to be repartitioned, and a parameter-
     list (possibly specifying the partitioning package/method etc.),
     create an instance of Isorropia::Partitioner. This is a factory
@@ -96,6 +116,25 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 */
 Teuchos::RefCountPtr<Isorropia::Partitioner>
 create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+		   const Teuchos::ParameterList& paramlist);
+
+/** Given an input row-matrix that is to be repartitioned, and a parameter-
+    list (possibly specifying the partitioning package/method etc.),
+    create an instance of Isorropia::Partitioner. This is a factory
+    function, the run-time type of the returned Partitioner is
+    Isorropia::EpetraPartitioner.
+
+    To specify that Zoltan be used as the underlying partitioner, create a
+    sublist named "Zoltan" in the ParameterList object. Then, in that sublist,
+    put any parameters that should be relayed straight to Zoltan.
+    Refer to the Zoltan users guide for specific parameters that Zoltan
+    recognizes. A couple of important ones are "LB_METHOD" (valid values
+    include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
+    0 to 10, default is 1), etc.
+*/
+Teuchos::RefCountPtr<Isorropia::Partitioner>
+create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+		   Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
 		   const Teuchos::ParameterList& paramlist);
 
 /** Given a Partitioner object, create a target map representing the

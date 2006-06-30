@@ -33,6 +33,7 @@ Questions? Contact Alan Williams (william@sandia.gov)
 #include <Isorropia_Zoltan_Repartition.hpp>
 #include <Isorropia_Exception.hpp>
 #include <Isorropia_Epetra.hpp>
+#include <Isorropia_CostDescriber.hpp>
 
 #include <Teuchos_RefCountPtr.hpp>
 
@@ -61,11 +62,31 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
   : input_map_(),
     input_graph_(input_graph),
     input_matrix_(),
+    costs_(),
     paramlist_(),
     partitioning_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  weights_ = Teuchos::rcp(Epetra::create_row_weights_nnz(*input_graph));
+  paramlist_ = paramlist;
+
+  if (compute_partitioning_now) {
+    compute_partitioning();
+  }
+}
+
+EpetraPartitioner::
+EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+		  Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+                  const Teuchos::ParameterList& paramlist,
+                  bool compute_partitioning_now)
+  : input_map_(),
+    input_graph_(input_graph),
+    input_matrix_(),
+    costs_(costs),
+    paramlist_(),
+    partitioning_already_computed_(false)
+{
+  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
   paramlist_ = paramlist;
 
   if (compute_partitioning_now) {
@@ -80,11 +101,31 @@ EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
   : input_map_(),
     input_graph_(),
     input_matrix_(input_matrix),
+    costs_(),
     paramlist_(),
     partitioning_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  weights_ = Teuchos::rcp(Epetra::create_row_weights_nnz(*input_matrix));
+  paramlist_ = paramlist;
+
+  if (compute_partitioning_now) {
+    compute_partitioning();
+  }
+}
+
+EpetraPartitioner::
+EpetraPartitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+		  Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+                  const Teuchos::ParameterList& paramlist,
+                  bool compute_partitioning_now)
+  : input_map_(),
+    input_graph_(),
+    input_matrix_(input_matrix),
+    costs_(costs),
+    paramlist_(),
+    partitioning_already_computed_(false)
+{
+  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
   paramlist_ = paramlist;
 
   if (compute_partitioning_now) {
@@ -109,6 +150,12 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
     }
   }
 
+  if (input_graph_.get() == 0 && input_matrix_.get() == 0) {
+    std::string str1("Isorropia::EpetraPartitioner::compute_partitioning ERROR: ");
+    std::string str2("not holding valid input graph or matrix.");
+    throw Isorropia::Exception(str1+str2);
+  }
+
   int err = 0;
 
   std::string zoltan("Zoltan");
@@ -117,18 +164,12 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
 
     Teuchos::ParameterList& sublist = paramlist_.sublist(zoltan);
 
-    if (input_graph_.get() == 0 && input_matrix_.get() == 0) {
-      std::string str1("Isorropia::EpetraPartitioner::compute_partitioning ERROR: ");
-      std::string str2("not holding valid input graph or matrix.");
-      throw Isorropia::Exception(str1+str2);
-    }
-
     if (input_graph_.get() == 0) {
-      err = Isorropia_Zoltan::repartition(input_matrix_, sublist,
+      err = Isorropia_Zoltan::repartition(input_matrix_, costs_, sublist,
 					  myNewElements_, exports_, imports_);
     }
     else {
-      err = Isorropia_Zoltan::repartition(input_graph_, sublist,
+      err = Isorropia_Zoltan::repartition(input_graph_, costs_, sublist,
 					  myNewElements_, exports_, imports_);
     }
 #else
@@ -136,6 +177,13 @@ void EpetraPartitioner::compute_partitioning(bool force_repartitioning)
 #endif
   }
   else {
+    if (input_graph_.get() != 0) {
+      weights_ = Teuchos::rcp(Epetra::create_row_weights_nnz(*input_graph_));
+    }
+    else {
+      weights_ = Teuchos::rcp(Epetra::create_row_weights_nnz(*input_matrix_));
+    }
+
     err = Isorropia::Epetra::repartition(*input_map_,
                                                *weights_,
                                                myNewElements_,

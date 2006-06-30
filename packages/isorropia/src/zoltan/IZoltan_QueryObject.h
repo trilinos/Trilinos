@@ -33,6 +33,9 @@ class QueryObject
 public:
 
   virtual const Epetra_BlockMap& RowMap() = 0;
+  virtual bool haveVertexWeights() const = 0;
+  virtual bool haveGraphEdgeWeights() const = 0;
+  virtual bool haveHypergraphEdgeWeights() const = 0;
 
   //@{ \name Virtual General Query Methods.
 
@@ -46,7 +49,7 @@ public:
 				int num_lid_entries,
 				ZOLTAN_ID_PTR global_ids, 
 				ZOLTAN_ID_PTR local_ids,
-				int weight_dim,
+				int obj_weight_dim,
 				float * object_weights,
 				int * ierr );
 
@@ -56,7 +59,7 @@ public:
 				int num_lid_entries,
 				ZOLTAN_ID_PTR first_global_id, 
 				ZOLTAN_ID_PTR first_local_id,
-				int weight_dim,
+				int first_weight_dim,
 				float * first_weight,
 				int * ierr );
 
@@ -68,7 +71,7 @@ public:
 				ZOLTAN_ID_PTR local_id,
 				ZOLTAN_ID_PTR next_global_id, 
 				ZOLTAN_ID_PTR next_local_id,
-				int weight_dim,
+				int next_weight_dim,
 				float * next_weight,
 				int * ierr );
 
@@ -149,7 +152,7 @@ public:
 				ZOLTAN_ID_PTR local_id,
 				ZOLTAN_ID_PTR neighbor_global_ids,
 				int * neighbor_procs,
-				int weight_dim,
+				int edge_weight_dim,
 				float * edge_weights,
 				int * ierr );
 
@@ -174,6 +177,22 @@ public:
                      int* vtxedge_ptr,
                      ZOLTAN_ID_PTR pin_GID,
                      int* ierr);
+
+  //! Supports ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN
+  virtual void HG_Size_Edge_Weights(void * data,
+				    int* num_edges,
+				    int* ierr);
+
+  //! Supports ZOLTAN_HG_EDGE_WEIGHTS_FN
+  virtual void HG_Edge_Weights(void * data,
+			      int num_gid_entries,
+			      int num_lid_entries,
+			      int num_edges,
+			      int edge_weight_dim,
+			      ZOLTAN_ID_PTR edge_GID,
+			       ZOLTAN_ID_PTR edge_LID,
+			      float* edge_weights,
+			      int* ierr);
   //@}
 
   //@{ Tree Based Functions

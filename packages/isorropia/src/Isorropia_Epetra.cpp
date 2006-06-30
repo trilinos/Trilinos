@@ -71,11 +71,31 @@ create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 }
 
 Teuchos::RefCountPtr<Isorropia::Partitioner>
+create_partitioner(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+		   Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+		   const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
+    Teuchos::rcp(new Isorropia::EpetraPartitioner(input_graph, costs, paramlist));
+  return(partitioner);
+}
+
+Teuchos::RefCountPtr<Isorropia::Partitioner>
 create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 		   const Teuchos::ParameterList& paramlist)
 {
   Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
     Teuchos::rcp(new Isorropia::EpetraPartitioner(input_matrix, paramlist));
+  return(partitioner);
+}
+
+Teuchos::RefCountPtr<Isorropia::Partitioner>
+create_partitioner(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+		   Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
+		   const Teuchos::ParameterList& paramlist)
+{
+  Teuchos::RefCountPtr<Isorropia::Partitioner> partitioner =
+    Teuchos::rcp(new Isorropia::EpetraPartitioner(input_matrix, costs, paramlist));
   return(partitioner);
 }
 

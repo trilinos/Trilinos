@@ -99,6 +99,7 @@ set_zoltan_parameters(Zoltan::LoadBalance& LB,
 
 int
 repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
+	    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
             Teuchos::ParameterList& paramlist,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,
@@ -112,8 +113,13 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
   Teuchos::RefCountPtr<const Epetra_CrsGraph> tgraph =
     Teuchos::rcp(&TransGraph, false);
 
-  Zoltan::QueryObject* queryObject =
-    new Isorropia::ZoltanQuery(input_graph, tgraph);
+  Teuchos::RefCountPtr<Zoltan::QueryObject> queryObject;
+  if (costs.get() == 0) {
+    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_graph, tgraph));
+  }
+  else {
+    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_graph, tgraph, costs));
+  }
 
   const Epetra_Comm* ecomm = &(input_graph->RowMap().Comm());
   const Epetra_MpiComm* empicomm = dynamic_cast<const Epetra_MpiComm*>(ecomm);
@@ -129,6 +135,7 @@ repartition(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 
 int
 repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
+	    Teuchos::RefCountPtr<const Isorropia::CostDescriber> costs,
             Teuchos::ParameterList& paramlist,
             std::vector<int>& myNewElements,
             std::map<int,int>& exports,
@@ -142,8 +149,13 @@ repartition(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
   Teuchos::RefCountPtr<const Epetra_RowMatrix> trowmat =
     Teuchos::rcp(&TransMatrix, false);
 
-  Zoltan::QueryObject* queryObject =
-    new Isorropia::ZoltanQuery(input_matrix, trowmat);
+  Teuchos::RefCountPtr<Zoltan::QueryObject> queryObject;
+  if (costs.get() == 0) {
+    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_matrix, trowmat));
+  }
+  else {
+    queryObject = Teuchos::rcp(new Isorropia::ZoltanQuery(input_matrix, trowmat, costs));
+  }
 
   const Epetra_Comm* ecomm = &(input_matrix->RowMatrixRowMap().Comm());
   const Epetra_MpiComm* empicomm = dynamic_cast<const Epetra_MpiComm*>(ecomm);
@@ -186,7 +198,24 @@ load_balance(MPI_Comm comm,
     LB.Set_Hypergraph();
   }
 
-  //go ahead and pass the parameters in paramlist to Zoltan
+  //Now check whether the QueryObject is holding weights. If so, and if
+  //the parameter-list doesn't already contain settings for OBJ_WEIGHT_DIM
+  //and EDGE_WEIGHT_DIM, we'll set them as appropriate.
+  //(Note that no zoltan parameter needs to be set for hypergraph edge weights,
+  // as that is handled through query functions.)
+  if (queryObject.haveVertexWeights()) {
+    if (!paramlist.isParameter("OBJ_WEIGHT_DIM")) {
+      paramlist.set("OBJ_WEIGHT_DIM", "1");
+    }
+  }
+
+  if (queryObject.haveGraphEdgeWeights()) {
+    if (!paramlist.isParameter("EDGE_WEIGHT_DIM")) {
+      paramlist.set("EDGE_WEIGHT_DIM", "1");
+    }
+  }
+
+  //now pass the parameters in paramlist to Zoltan
   set_zoltan_parameters(LB, paramlist);
 
   err = LB.Set_QueryObject( &queryObject );

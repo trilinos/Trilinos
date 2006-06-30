@@ -247,7 +247,35 @@ void Zoltan::QueryFunctions::HG_CS(void* data,
                  format, vtxedge_GID, vtxedge_ptr, pin_GID, ierr);
 }
 
-  //Tree Based Functions
+void Zoltan::QueryFunctions::HG_Size_Edge_Weights(void * data,
+						  int* num_edges,
+						  int* ierr)
+{
+  Zoltan::QueryObject * obj_ptr = Zoltan::QueryContainer::getQueryObject(
+        Zoltan::QueryContainer::getQueryID() );
+
+  obj_ptr->HG_Size_Edge_Weights(data, num_edges, ierr);
+}
+
+void Zoltan::QueryFunctions::HG_Edge_Weights(void * data,
+					     int num_gid_entries,
+					     int num_lid_entries,
+					     int num_edges,
+					     int edge_weight_dim,
+					     ZOLTAN_ID_PTR edge_GID,
+					     ZOLTAN_ID_PTR edge_LID,
+					     float* edge_weights,
+					     int* ierr)
+{
+  Zoltan::QueryObject * obj_ptr = Zoltan::QueryContainer::getQueryObject(
+        Zoltan::QueryContainer::getQueryID() );
+
+  obj_ptr->HG_Edge_Weights(data, num_gid_entries, num_lid_entries,
+			   num_edges, edge_weight_dim, edge_GID, edge_LID,
+			   edge_weights, ierr);
+}
+
+//Tree Based Functions
 int Zoltan::QueryFunctions::Number_Coarse_Objects      (	void * data,
 							int * ierr )
 {

@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(matrix_1_SOURCES) $(part_redist_SOURCES)
+SOURCES = $(matrix_1_SOURCES) $(part_redist_SOURCES) $(vert_weights_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -106,13 +106,16 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Isorropia_autoheader.h
 CONFIG_CLEAN_FILES = Makefile
 @BUILD_EXAMPLES_TRUE@am__EXEEXT_1 = matrix_1$(EXEEXT) \
-@BUILD_EXAMPLES_TRUE@	part_redist$(EXEEXT)
+@BUILD_EXAMPLES_TRUE@	part_redist$(EXEEXT) \
+@BUILD_EXAMPLES_TRUE@	vert_weights$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_matrix_1_OBJECTS = matrix_1-matrix_1.$(OBJEXT)
 matrix_1_OBJECTS = $(am_matrix_1_OBJECTS)
 am__DEPENDENCIES_1 =
 am_part_redist_OBJECTS = part_redist-part_redist.$(OBJEXT)
 part_redist_OBJECTS = $(am_part_redist_OBJECTS)
+am_vert_weights_OBJECTS = vert_weights-vert_weights.$(OBJEXT)
+vert_weights_OBJECTS = $(am_vert_weights_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -120,8 +123,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(matrix_1_SOURCES) $(part_redist_SOURCES)
-DIST_SOURCES = $(matrix_1_SOURCES) $(part_redist_SOURCES)
+SOURCES = $(matrix_1_SOURCES) $(part_redist_SOURCES) \
+	$(vert_weights_SOURCES)
+DIST_SOURCES = $(matrix_1_SOURCES) $(part_redist_SOURCES) \
+	$(vert_weights_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -273,7 +278,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 DEFAULT_INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/test/utils -I$(top_builddir)/src -I$(srcdir) $(TEUCHOS_INCLUDES)
-@BUILD_EXAMPLES_TRUE@PROGS = matrix_1 part_redist
+@BUILD_EXAMPLES_TRUE@PROGS = matrix_1 part_redist vert_weights
 matrix_1_SOURCES = $(srcdir)/matrix_1.cpp
 matrix_1_DEPENDENCIES = \
 	$(top_builddir)/src/libisorropia.a
@@ -289,6 +294,15 @@ part_redist_DEPENDENCIES = \
 
 part_redist_CXXFLAGS = $(EPETRA_INCLUDES)
 part_redist_LDADD = \
+      -L$(top_builddir)/src -lisorropia \
+      $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
+
+vert_weights_SOURCES = $(srcdir)/vert_weights.cpp
+vert_weights_DEPENDENCIES = \
+        $(top_builddir)/src/libisorropia.a
+
+vert_weights_CXXFLAGS = $(EPETRA_INCLUDES)
+vert_weights_LDADD = \
       -L$(top_builddir)/src -lisorropia \
       $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
@@ -336,6 +350,9 @@ matrix_1$(EXEEXT): $(matrix_1_OBJECTS) $(matrix_1_DEPENDENCIES)
 part_redist$(EXEEXT): $(part_redist_OBJECTS) $(part_redist_DEPENDENCIES) 
 	@rm -f part_redist$(EXEEXT)
 	$(CXXLINK) $(part_redist_LDFLAGS) $(part_redist_OBJECTS) $(part_redist_LDADD) $(LIBS)
+vert_weights$(EXEEXT): $(vert_weights_OBJECTS) $(vert_weights_DEPENDENCIES) 
+	@rm -f vert_weights$(EXEEXT)
+	$(CXXLINK) $(vert_weights_LDFLAGS) $(vert_weights_OBJECTS) $(vert_weights_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -345,6 +362,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/matrix_1-matrix_1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/part_redist-part_redist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vert_weights-vert_weights.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -387,6 +405,20 @@ part_redist-part_redist.obj: $(srcdir)/part_redist.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/part_redist.cpp' object='part_redist-part_redist.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(part_redist_CXXFLAGS) $(CXXFLAGS) -c -o part_redist-part_redist.obj `if test -f '$(srcdir)/part_redist.cpp'; then $(CYGPATH_W) '$(srcdir)/part_redist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/part_redist.cpp'; fi`
+
+vert_weights-vert_weights.o: $(srcdir)/vert_weights.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vert_weights_CXXFLAGS) $(CXXFLAGS) -MT vert_weights-vert_weights.o -MD -MP -MF "$(DEPDIR)/vert_weights-vert_weights.Tpo" -c -o vert_weights-vert_weights.o `test -f '$(srcdir)/vert_weights.cpp' || echo '$(srcdir)/'`$(srcdir)/vert_weights.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vert_weights-vert_weights.Tpo" "$(DEPDIR)/vert_weights-vert_weights.Po"; else rm -f "$(DEPDIR)/vert_weights-vert_weights.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vert_weights.cpp' object='vert_weights-vert_weights.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vert_weights_CXXFLAGS) $(CXXFLAGS) -c -o vert_weights-vert_weights.o `test -f '$(srcdir)/vert_weights.cpp' || echo '$(srcdir)/'`$(srcdir)/vert_weights.cpp
+
+vert_weights-vert_weights.obj: $(srcdir)/vert_weights.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vert_weights_CXXFLAGS) $(CXXFLAGS) -MT vert_weights-vert_weights.obj -MD -MP -MF "$(DEPDIR)/vert_weights-vert_weights.Tpo" -c -o vert_weights-vert_weights.obj `if test -f '$(srcdir)/vert_weights.cpp'; then $(CYGPATH_W) '$(srcdir)/vert_weights.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vert_weights.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/vert_weights-vert_weights.Tpo" "$(DEPDIR)/vert_weights-vert_weights.Po"; else rm -f "$(DEPDIR)/vert_weights-vert_weights.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vert_weights.cpp' object='vert_weights-vert_weights.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vert_weights_CXXFLAGS) $(CXXFLAGS) -c -o vert_weights-vert_weights.obj `if test -f '$(srcdir)/vert_weights.cpp'; then $(CYGPATH_W) '$(srcdir)/vert_weights.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vert_weights.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
