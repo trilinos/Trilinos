@@ -46,6 +46,8 @@ class Epetra_MultiVector;
 
 namespace Teuchos {
   class ParameterList;
+  template<class T>
+  class RefCountPtr;  
 }
 
 //! Ifpack_ILUT: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.
@@ -316,9 +318,9 @@ private:
   //! Reference to the communicator object.
   const Epetra_Comm& Comm_;
   //! L factor
-  Epetra_CrsMatrix* L_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> L_;
   //! U factor
-  Epetra_CrsMatrix* U_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> U_;
   //! Condition number estimate.
   double Condest_;
   //! relaxation value
@@ -361,8 +363,8 @@ private:
   mutable Epetra_Time Time_;
   //! Global number of nonzeros in L and U factors
   int GlobalNonzeros_;
-  Epetra_SerialComm* SerialComm_;
-  Epetra_Map* SerialMap_;
+  Teuchos::RefCountPtr<Epetra_SerialComm> SerialComm_;
+  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
 }; // Ifpack_ILUT
 
 #endif // HAVE_IFPACK_TEUCHOS

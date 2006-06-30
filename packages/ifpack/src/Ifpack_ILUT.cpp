@@ -43,15 +43,16 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Util.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 #include <functional>
+
+using namespace Teuchos;
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
 Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(A->Comm()),
-  L_(0),
-  U_(0),
   Condest_(-1.0),
   Relax_(0.),
   Athresh_(0.0),
@@ -71,9 +72,7 @@ Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix* A) :
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   Time_(Comm()),
-  GlobalNonzeros_(0),
-  SerialComm_(0),
-  SerialMap_(0)
+  GlobalNonzeros_(0)
 {
   // do nothing here..
 }
@@ -87,16 +86,6 @@ Ifpack_ILUT::~Ifpack_ILUT()
 //==============================================================================
 void Ifpack_ILUT::Destroy()
 {
-  if (L_) delete L_; L_ = 0;
-
-  if (U_) delete U_; U_ = 0;
-
-  if (SerialComm_)
-  {
-    delete SerialComm_; SerialComm_ = 0;
-    delete SerialMap_;  SerialMap_  = 0;
-  }
-
   IsInitialized_ = false;
   IsComputed_ = false;
 }
@@ -187,21 +176,21 @@ int Ifpack_ILUT::Compute()
 
   if (distributed)
   {
-    SerialComm_ = new Epetra_SerialComm;
-    SerialMap_ = new Epetra_Map(NumMyRows_, 0, *SerialComm_);
-    assert (SerialComm_ != 0);
-    assert (SerialMap_ != 0);
+    SerialComm_ = rcp(new Epetra_SerialComm);
+    SerialMap_ = rcp(new Epetra_Map(NumMyRows_, 0, *SerialComm_));
+    assert (SerialComm_.get() != 0);
+    assert (SerialMap_.get() != 0);
   }
   else
-    SerialMap_ = const_cast<Epetra_Map*>(&A_.RowMatrixRowMap());
+    SerialMap_ = rcp(const_cast<Epetra_Map*>(&A_.RowMatrixRowMap()), false);
   
   int RowNnzU;
 
-  L_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-  U_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
+  L_ = rcp(new Epetra_CrsMatrix(Copy, *SerialMap_, 0));
+  U_ = rcp(new Epetra_CrsMatrix(Copy, *SerialMap_, 0));
 
-  if ((L_ == 0) || (U_ == 0))
-    IFPACK_CHK_ERR(-5);
+  if ((L_.get() == 0) || (U_.get() == 0))
+    IFPACK_CHK_ERR(-5); // memory allocation error
 
   // insert first row in U_ and L_
   IFPACK_CHK_ERR(A_.ExtractMyRowCopy(0,Length,RowNnzU,

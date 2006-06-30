@@ -39,21 +39,12 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
+using namespace Teuchos;
 
 //==============================================================================
 Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
   A_(Matrix),
-  Graph_(0),
-  CrsGraph_(0),
-  IlukRowMap_(0),
-  IlukDomainMap_(0),
-  IlukRangeMap_(0),
   Comm_(Matrix->Comm()),
-  L_(0),
-  U_(0),
-  L_Graph_(0),
-  U_Graph_(0),
-  D_(0),
   UseTranspose_(false),
   NumMyDiagonals_(0),
   RelaxValue_(0.0),
@@ -82,7 +73,7 @@ Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
 //==============================================================================
 void Ifpack_ILU::Destroy()
 {
-
+/*
   if (L_)             delete L_;             L_ = 0;
   if (U_)             delete U_;             U_ = 0;
   if (D_)             delete D_;             D_ = 0;
@@ -93,11 +84,10 @@ void Ifpack_ILU::Destroy()
   if (IlukRowMap_)    delete IlukRowMap_;    IlukRowMap_ = 0;
   if (IlukDomainMap_) delete IlukDomainMap_; IlukDomainMap_ = 0;
   if (IlukRangeMap_)  delete IlukRangeMap_;  IlukRangeMap_ = 0;
-
+*/
   // reset pointers to already allocated stuff
   U_DomainMap_ = 0;
   L_RangeMap_ = 0;
-  
 }
 
 //==========================================================================
@@ -119,14 +109,11 @@ int Ifpack_ILU::SetParameters(Teuchos::ParameterList& List)
 int Ifpack_ILU::ComputeSetup() 
 {
 
-  L_ = new Epetra_CrsMatrix(Copy, Graph().L_Graph());
-  U_ = new Epetra_CrsMatrix(Copy, Graph().U_Graph());
-  D_ = new Epetra_Vector(Graph().L_Graph().RowMap());
-  if ((L_ == 0) || (U_ == 0) || (D_ == 0))
+  L_ = rcp(new Epetra_CrsMatrix(Copy, Graph().L_Graph()));
+  U_ = rcp(new Epetra_CrsMatrix(Copy, Graph().U_Graph()));
+  D_ = rcp(new Epetra_Vector(Graph().L_Graph().RowMap()));
+  if ((L_.get() == 0) || (U_.get() == 0) || (D_.get() == 0))
     IFPACK_CHK_ERR(-5);
-
-  L_Graph_ = 0;
-  U_Graph_ = 0;
 
   // Get Maximun Row length
   int MaxNumEntries = Matrix().MaxNumEntries();
@@ -265,13 +252,10 @@ int Ifpack_ILU::Initialize()
     // the graph from a given Epetra_RowMatrix. Note
     // that at this point we are ignoring any possible
     // graph coming from VBR matrices.
-    if (CrsGraph_)
-      delete CrsGraph_;
     int size = A_->MaxNumEntries();
-    CrsGraph_ = new Epetra_CrsGraph(Copy,A_->RowMatrixRowMap(),
-				   size);
-    if (CrsGraph_ == 0)
-      IFPACK_CHK_ERR(-5);
+    CrsGraph_ = rcp(new Epetra_CrsGraph(Copy,A_->RowMatrixRowMap(), size));
+    if (CrsGraph_.get() == 0)
+      IFPACK_CHK_ERR(-5); // memory allocation error
 
     vector<int> Indices(size);
     vector<double> Values(size);
@@ -296,16 +280,16 @@ int Ifpack_ILU::Initialize()
 
     // always overlap zero, wider overlap will be handled
     // by the AdditiveSchwarz preconditioner.
-    Graph_ = new Ifpack_IlukGraph(*CrsGraph_, LevelOfFill_, 0);
+    Graph_ = rcp(new Ifpack_IlukGraph(*CrsGraph_, LevelOfFill_, 0));
 
   }
   else {
     // see comment above for the overlap.
-    Graph_ = new Ifpack_IlukGraph(CrsMatrix->Graph(), LevelOfFill_, 0);
+    Graph_ = rcp(new Ifpack_IlukGraph(CrsMatrix->Graph(), LevelOfFill_, 0));
   }
 
-  if (Graph_ == 0)
-    IFPACK_CHK_ERR(-5);
+  if (Graph_.get() == 0)
+    IFPACK_CHK_ERR(-5); // memory allocation error
   IFPACK_CHK_ERR(Graph_->ConstructFilledGraph());
 
   IsInitialized_ = true;

@@ -43,6 +43,8 @@ class Epetra_Map;
 class Epetra_MultiVector;
 namespace Teuchos {
   class ParameterList;
+  template<class T>
+  class RefCountPtr;  
 }
 
 //! Ifpack_IC: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.
@@ -323,8 +325,8 @@ class Ifpack_IC: public Ifpack_Preconditioner {
 
   Epetra_RowMatrix &A_;
   const Epetra_Comm & Comm_;
-  Epetra_CrsMatrix * U_;
-  Epetra_Vector * D_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> U_;
+  Teuchos::RefCountPtr<Epetra_Vector> D_;
   bool UseTranspose_;
 
   double Condest_;

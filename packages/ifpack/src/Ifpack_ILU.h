@@ -51,6 +51,8 @@
 #ifdef HAVE_IFPACK_TEUCHOS
 namespace Teuchos {
   class ParameterList;
+  template<class T>
+  class RefCountPtr;
 }
 #endif
 
@@ -365,22 +367,22 @@ private:
   
   //! Pointer to the Epetra_RowMatrix to factorize
   Epetra_RowMatrix* A_;
-  Ifpack_IlukGraph* Graph_;
-  Epetra_CrsGraph* CrsGraph_;
-  Epetra_Map * IlukRowMap_;
-  Epetra_Map * IlukDomainMap_;
-  Epetra_Map * IlukRangeMap_;
+  Teuchos::RefCountPtr<Ifpack_IlukGraph> Graph_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> CrsGraph_;
+  Teuchos::RefCountPtr<Epetra_Map> IlukRowMap_;
+  Teuchos::RefCountPtr<Epetra_Map> IlukDomainMap_;
+  Teuchos::RefCountPtr<Epetra_Map> IlukRangeMap_;
   const Epetra_Map * U_DomainMap_;
   const Epetra_Map * L_RangeMap_;
   const Epetra_Comm & Comm_;
   //! Contains the L factors
-  Epetra_CrsMatrix * L_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> L_;
   //! Contains the U factors.
-  Epetra_CrsMatrix * U_;
-  Epetra_CrsGraph * L_Graph_;
-  Epetra_CrsGraph * U_Graph_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> U_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> L_Graph_;
+  Teuchos::RefCountPtr<Epetra_CrsGraph> U_Graph_;
   //! Diagonal of factors
-  Epetra_Vector * D_;
+  Teuchos::RefCountPtr<Epetra_Vector> D_;
   bool UseTranspose_;
 
   int NumMyDiagonals_;

@@ -43,13 +43,13 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Util.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
 
 //==============================================================================
 // FIXME: allocate Comm_ and Time_ the first Initialize() call
 Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(A_.Comm()),
-  H_(0),
   Condest_(-1.0),
   Athresh_(0.0),
   Rthresh_(1.0),
@@ -69,9 +69,7 @@ Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   Time_(Comm()),
-  GlobalNonzeros_(0),
-  SerialComm_(0),
-  SerialMap_(0)
+  GlobalNonzeros_(0)
 {
   // do nothing here
 }
@@ -85,14 +83,6 @@ Ifpack_ICT::~Ifpack_ICT()
 //==============================================================================
 void Ifpack_ICT::Destroy()
 {
-  if (H_) delete H_; H_ = 0;
-
-  if (SerialComm_)
-  {
-    delete SerialComm_; SerialComm_ = 0;
-    delete SerialMap_;  SerialMap_  = 0;
-  }
-
   IsInitialized_ = false;
   IsComputed_ = false;
 }
@@ -168,20 +158,20 @@ int Ifpack_ICT::Compute()
 
   if (distributed)
   {
-    SerialComm_ = new Epetra_SerialComm;
-    SerialMap_ = new Epetra_Map(NumMyRows_, 0, *SerialComm_);
-    assert (SerialComm_ != 0);
-    assert (SerialMap_ != 0);
+    SerialComm_ = Teuchos::rcp(new Epetra_SerialComm);
+    SerialMap_ = Teuchos::rcp(new Epetra_Map(NumMyRows_, 0, *SerialComm_));
+    assert (SerialComm_.get() != 0);
+    assert (SerialMap_.get() != 0);
   }
   else
-    SerialMap_ = const_cast<Epetra_Map*>(&A_.RowMatrixRowMap());
+    SerialMap_ = Teuchos::rcp(const_cast<Epetra_Map*>(&A_.RowMatrixRowMap()), false);
 
   int RowNnz;
   double flops = 0.0;
 
-  H_ = new Epetra_CrsMatrix(Copy,*SerialMap_,0);
-  if (H_ == 0)
-    IFPACK_CHK_ERR(-5);
+  H_ = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*SerialMap_,0));
+  if (H_.get() == 0)
+    IFPACK_CHK_ERR(-5); // memory allocation error
 
   // get A(0,0) element and insert it (after sqrt)
   IFPACK_CHK_ERR(A_.ExtractMyRowCopy(0,Length,RowNnz,

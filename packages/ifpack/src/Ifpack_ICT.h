@@ -44,11 +44,11 @@ class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
 
-#ifdef HAVE_IFPACK_TEUCHOS
 namespace Teuchos {
   class ParameterList;
+  template<class T>
+  class RefCountPtr;  
 }
-#endif
 
 //! Ifpack_ICT: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.
 
@@ -333,7 +333,7 @@ private:
   //! Reference to the communicator.
   const Epetra_Comm& Comm_;
   //! Contains the Cholesky factorization.
-  Epetra_CrsMatrix* H_;
+  Teuchos::RefCountPtr<Epetra_CrsMatrix> H_;
   //! Contains the estimate of the condition number, if -1.0 if not computed.
   double Condest_;
   //! Absolute threshold.
@@ -376,8 +376,8 @@ private:
   mutable Epetra_Time Time_;
   //! Global number of nonzeros in L and U factors
   int GlobalNonzeros_;
-  Epetra_SerialComm* SerialComm_;
-  Epetra_Map* SerialMap_;
+  Teuchos::RefCountPtr<Epetra_SerialComm> SerialComm_;
+  Teuchos::RefCountPtr<Epetra_Map> SerialMap_;
 };
 
 #endif // IFPACK_TEUCHOS

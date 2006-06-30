@@ -41,13 +41,13 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Util.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_RefCountPtr.hpp"
+using namespace Teuchos;
 
 //==============================================================================
 Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
   A_(*A),
   Comm_(A->Comm()),
-  U_(0),
-  D_(0),
   UseTranspose_(false),
   Condest_(-1.0),
   Athresh_(0.0),
@@ -75,12 +75,8 @@ Ifpack_IC::Ifpack_IC(Epetra_RowMatrix* A) :
 
 }
 //==============================================================================
-Ifpack_IC::~Ifpack_IC(){
-
-
-  delete U_;
-  delete D_; // Diagonal is stored separately.  We store the inverse.
-
+Ifpack_IC::~Ifpack_IC()
+{
   if (Lict_ != 0) {
     Ifpack_AIJMatrix * Lict = (Ifpack_AIJMatrix *) Lict_;
     delete [] Lict->ptr;
@@ -128,17 +124,12 @@ int Ifpack_IC::Initialize()
 int Ifpack_IC::ComputeSetup()
 {
   // (re)allocate memory for ICT factors
-  if (U_) 
-    delete U_;
-  if (D_)
-    delete D_;
+  U_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(), 
+                                Matrix().RowMatrixRowMap(), 0));
+  D_ = rcp(new Epetra_Vector(Matrix().RowMatrixRowMap()));
 
-  U_ = new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(), 
-			    Matrix().RowMatrixRowMap(), 0);
-  D_ = new Epetra_Vector(Matrix().RowMatrixRowMap());
-
-  if (U_ == 0 || D_ == 0)
-    IFPACK_CHK_ERR(-5);
+  if (U_.get() == 0 || D_.get() == 0)
+    IFPACK_CHK_ERR(-5); // memory allocation error
 
   int ierr = 0;
   int i, j;
@@ -231,7 +222,7 @@ int Ifpack_IC::Compute() {
   int * ptr=0, * ind;
   double * val, * rhs, * lhs;
 
-  int ierr = Epetra_Util_ExtractHbData(U_, 0, 0, m, n, nz, ptr, ind,
+  int ierr = Epetra_Util_ExtractHbData(U_.get(), 0, 0, m, n, nz, ptr, ind,
 				       val, Nrhs, rhs, ldrhs, lhs, ldlhs);
   if (ierr < 0) 
     IFPACK_CHK_ERR(ierr);
@@ -258,12 +249,10 @@ int Ifpack_IC::Compute() {
 
   // Get rid of unnecessary data
   delete [] ptr;
-  delete U_;
-  delete D_;
 
   // Create Epetra View of L from crout_ict
-  U_ = new Epetra_CrsMatrix(View, A_.RowMatrixRowMap(), A_.RowMatrixRowMap(),0);
-  D_ = new Epetra_Vector(View, A_.RowMatrixRowMap(), Ldiag_);
+  U_ = rcp(new Epetra_CrsMatrix(View, A_.RowMatrixRowMap(), A_.RowMatrixRowMap(),0));
+  D_ = rcp(new Epetra_Vector(View, A_.RowMatrixRowMap(), Ldiag_));
 
   ptr = Lict->ptr;
   ind = Lict->col;
