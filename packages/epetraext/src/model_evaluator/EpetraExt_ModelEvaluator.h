@@ -151,6 +151,9 @@ public:
       : Teuchos::RefCountPtr<ObjType>(obj), evalType_(evalType) {}
     /** \brief . */
     EEvalType getType() const { return evalType_; }
+    /** \brief . */
+    void reset( const Teuchos::RefCountPtr<ObjType> &obj, EEvalType evalType ) 
+    { this->operator=(obj); evalType_ = evalType; }
   private:
     EEvalType                      evalType_;
   };
