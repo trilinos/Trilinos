@@ -213,7 +213,7 @@ the Epetra_Operator interface.  Any class (including all Epetra matrix classes, 
 that implements the Epetra_Operator interface can be used.  The final major abstract interface in Epetra is Epetra_RowMatrix.
 Any solver algorithm that needs access to matrix coefficients can obtain this information via the Epetra_RowMatrix interface.
 All Epetra sparse matrix classes implement this interface.  AztecOO, Ifpack, ML and other packages access matrix coefficients
-via the Epetra_RowMatrix interface.
+via the Epetra_RowMatrix interface.  
 
 By using abstract base classes to access external functionality and then providing a wide range of default
 implementations.  Novel adapters to Epetra_Comm have been developed experimentally, but no production code is available
@@ -222,6 +222,12 @@ constructed but can be implicitly applied.  Examples include ``matrix-free'' met
 and implicit inverses via iterative methods.  Most preconditioners are easily expressed as Epetra_Operator objects.  Epetra_RowMatrix
 is often extended to provide support for alternative data structures, or to eliminate the need to explicitly store matrix coefficients
 but instead build them ``on-the-fly'' row-by-row as needed.
+
+Note: Although Epetra_RowMatrix is the base class that is used to access matrix
+coefficient information, if you want to provide your own implementation of Epetra_RowMatrix, it is probably best to inherit
+from the Epetra_BasicRowMatrix.  Epetra_BasicRowMatrix provides a reasonable implementation of most Epetra_RowMatrix methods
+and reduces the number of methods you must implement from 39 to between 4 and 6.  To see an example of how to make your
+own Epetra_RowMatrix class using Epetra_BasicRowMatrix as a starting point, see the Epetra_JadMatrix class.
 
 \subsubsection why_not_abstract_vector Why not abstract multivector and vector classes?
 
