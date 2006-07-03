@@ -54,7 +54,7 @@ class Epetra_Export;
     Epetra_BasicRowMatrix has only 4 pure virtual methods that must be implemented:
 <ol>
 <li> ExtractMyRowCopy: Provide a row of values and indices for a specified local row.
-<li> ExtractMyEntriyView (const and non-const versions): Provide the memory address the ith nonzero term stored on the
+<li> ExtractMyEntriyView (const and non-const versions): Provide the memory address of the ith nonzero term stored on the
      calling processor, along with its corresponding local row and column index, where i goes from 0 to the NumMyNonzeros()-1.
      The order in which the nonzeros are traversed is not specified and is up to the adapter implementation.
 <li> NumMyRowEntries: Provide the number of entries for a specified local row.
