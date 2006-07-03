@@ -7,84 +7,18 @@
 #
 # This script must be run from
 #
-#  TRILINOS_BUILD_DIR/packages/thyra/example
+#  TRILINOS_BUILD_DIR/packages/thyra/test
 #
 # and it will be when run by the test harness.
+#
+
+#
+# Things you do *NOT* have to change!
 #
 
 use strict;
 
 my $abs_top_srcdir = "@abs_top_srcdir@";
-my $abs_top_builddir = "@abs_top_builddir@";
-my $rel_build_to_src = relative_path($abs_top_builddir,$abs_top_srcdir);
-
-#
-# sillyCgSolve_serial.exe
-#
-
-run_cmnd(
-  "../example/operator_vector/sillyCgSolve_serial.exe"
-  ,"../$rel_build_to_src/example/operator_vector/sillyCgSolve_serial.default.out"
-  );
-
-run_cmnd(
-  "../example/operator_vector/sillyCgSolve_serial.exe --echo-command-line --help"
-  ,"../$rel_build_to_src/example/operator_vector/sillyCgSolve_serial.help.out"
-  );
-
-run_cmnd(
-  "../example/operator_vector/sillyCgSolve_serial.exe --echo-command-line --unsym-op"
-  ,"../$rel_build_to_src/example/operator_vector/sillyCgSolve_serial.unsym-op.out"
-  );
-
-#
-# Subroutines
-#
-
-sub relative_path {
-  my $path_from = shift;
-  my $path_to = shift;
-  my @path_from = split("/",$path_from);
-  my @path_to = split("/",$path_to);
-  my $path_from_depth = non_rel_path_depth(\@path_from);
-  my $path_to_depth = non_rel_path_depth(\@path_to);
-  my $common_i;
-  for( $common_i = 0; $common_i < 1000; ++$common_i ) {
-    #print "path_from[$common_i] = $path_from[$common_i]\n";
-    #print "path_to[$common_i]   = $path_to[$common_i]\n";
-    if($path_from[$common_i] ne $path_to[$common_i]) {
-      last;
-    }
-  }
-  print "common_i = $common_i\n";
-  print "path_from_depth = $path_from_depth\n";
-  my $from_depth = $path_from_depth - $common_i;
-  print "from_depth = $from_depth\n";
-  my $rel_path = "";
-  for( my $i = 0; $i < $from_depth-1; ++$i ) {
-    if($i > 0 ) {
-      $rel_path .= "/";
-    }
-    $rel_path .= "..";
-  }
-  for( my $i = $common_i; $i < $path_to_depth; ++$i ) {
-    $rel_path .= "/" . $path_to[$i]
-  }
-  print "rel_path = $rel_path\n";
-  return $rel_path;
-}
-
-sub non_rel_path_depth {
-  my $path_array_ref = shift;
-  my $total_depth = scalar(@$path_array_ref);
-  my $i;
-  for( $i = $total_depth -1; $i >= 0 ; --$i ) {
-    if( $$path_array_ref[$i] ne "." && $$path_array_ref[$i] ne ".." ) {
-      last;
-    }
-  }
-  return $i + 1;
-}
 
 sub run_cmnd {
   my $cmnd = shift;
@@ -93,3 +27,48 @@ sub run_cmnd {
   print "\nRunning command:\n\n$total_cmnd\n";
   system($total_cmnd);
 }
+
+#
+# Things you change for your package
+#
+
+# sillyCgSolve_serial.cpp
+
+run_cmnd(
+  "../example/operator_vector/sillyCgSolve_serial.exe"
+  ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_serial.default.out"
+  );
+run_cmnd(
+  "../example/operator_vector/sillyCgSolve_serial.exe --echo-command-line --help"
+  ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_serial.help.out"
+  );
+run_cmnd(
+  "../example/operator_vector/sillyCgSolve_serial.exe --echo-command-line --unsym-op"
+  ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_serial.unsym-op.out"
+  );
+
+# sillyCgSolve_mpi.cpp
+
+run_cmnd(
+  "../example/operator_vector/sillyCgSolve_mpi.exe"
+  ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_mpi.default.out"
+  );
+run_cmnd(
+  "../example/operator_vector/sillyCgSolve_mpi.exe --echo-command-line --help"
+  ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_mpi.help.out"
+  );
+run_cmnd(
+  "../example/operator_vector/sillyCgSolve_mpi.exe --echo-command-line --unsym-op"
+  ,"$abs_top_srcdir/example/operator_vector/sillyCgSolve_mpi.unsym-op.out"
+  );
+
+# sillyPowerMethod_serial.cpp
+
+run_cmnd(
+  "../example/operator_vector/sillyPowerMethod_serial.exe"
+  ,"$abs_top_srcdir/example/operator_vector/sillyPowerMethod_serial.default.out"
+  );
+run_cmnd(
+  "../example/operator_vector/sillyPowerMethod_serial.exe --echo-command-line --help"
+  ,"$abs_top_srcdir/example/operator_vector/sillyPowerMethod_serial.help.out"
+  );

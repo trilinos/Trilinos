@@ -1,0 +1,8 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
+
+Echoing the command-line:
+
+c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\thyra\example\operator_vector\sillyCgSolve_mpi.exe --echo-command-line --unsym-op 
+
+
+c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\thyra\example\operator_vector\sillyCgSolve_mpi.exe : Error, the 2nd option '--unsym-op' was not recognized (use --help)!

@@ -1,37 +1,19 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
 
 ***
 *** Running silly CG solver using scalar type = 'float' ...
 ***
 
-Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001 ...
+Constructing tridiagonal matrix A of local dimension = 500 and diagonal multiplier = 1.001 ...
+
+Global dimension of A = 500
 
 Testing the constructed linear operator A ...
   
   *** Entering LinearOpTester<float,float>::check(op,...) ...
   
   describe op:
-    ExampleTridiagSerialLinearOp<float>{rangeDim=500,domainDim=500}
-  
-  Checking the domain and range spaces ... passed!
-  
-  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
-  
-  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
-  
-  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
-  
-  this->check_for_symmetry()==false: Skipping check of symmetry ...
-  
-  Congratulations, this LinearOpBase object seems to check out!
-  
-  *** Leaving LinearOpTester<float,float>::check(...)
-
-Testing the linear operator used with the solve ...
-  
-  *** Entering LinearOpTester<float,float>::check(op,...) ...
-  
-  describe op:
-    ExampleTridiagSerialLinearOp<float>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<float>{rangeDim=500,domainDim=500}
   
   Checking the domain and range spaces ... passed!
   
@@ -52,7 +34,7 @@ Solving the linear system with sillyCgSolve(...) ...
   Starting CG solver ...
   
   describe A:
-    ExampleTridiagSerialLinearOp<float>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<float>{rangeDim=500,domainDim=500}
   
   describe b:
     DefaultSpmdVector<float>{dim=500}
@@ -74,41 +56,22 @@ Checking the residual ourselves ...
   
   ||b-A*x||/||b|| = 6.379066e-003/2.120641e+001 = 3.008084e-004 <= 10.0*tolerance = 9.999999e-004: passed
 
-Total time = 7.000000e-002 sec
+Total time = 5.000000e-002 sec
 
 ***
 *** Running silly CG solver using scalar type = 'double' ...
 ***
 
-Constructing tridiagonal matrix A of dimension = 500 and diagonal multiplier = 1.001000e+000 ...
+Constructing tridiagonal matrix A of local dimension = 500 and diagonal multiplier = 1.001000e+000 ...
+
+Global dimension of A = 500
 
 Testing the constructed linear operator A ...
   
   *** Entering LinearOpTester<double,double>::check(op,...) ...
   
   describe op:
-    ExampleTridiagSerialLinearOp<double>{rangeDim=500,domainDim=500}
-  
-  Checking the domain and range spaces ... passed!
-  
-  this->check_linear_properties()==true: Checking the linear properties of the forward linear operator ... passed!
-  
-  (this->check_linear_properties()&&this->check_adjoint())==false: Skipping the check of the linear properties of the adjoint operator!
-  
-  this->check_adjoint()==false: Skipping check for the agreement of the adjoint and forward operators!
-  
-  this->check_for_symmetry()==false: Skipping check of symmetry ...
-  
-  Congratulations, this LinearOpBase object seems to check out!
-  
-  *** Leaving LinearOpTester<double,double>::check(...)
-
-Testing the linear operator used with the solve ...
-  
-  *** Entering LinearOpTester<double,double>::check(op,...) ...
-  
-  describe op:
-    ExampleTridiagSerialLinearOp<double>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<double>{rangeDim=500,domainDim=500}
   
   Checking the domain and range spaces ... passed!
   
@@ -129,7 +92,7 @@ Solving the linear system with sillyCgSolve(...) ...
   Starting CG solver ...
   
   describe A:
-    ExampleTridiagSerialLinearOp<double>{rangeDim=500,domainDim=500}
+    ExampleTridiagSpmdLinearOp<double>{rangeDim=500,domainDim=500}
   
   describe b:
     DefaultSpmdVector<double>{dim=500}
@@ -153,4 +116,4 @@ Checking the residual ourselves ...
 
 Total time = 7.000000e-002 sec
 
-Congratulations! All of the tests checked out!
+All of the tests seem to have run successfully!

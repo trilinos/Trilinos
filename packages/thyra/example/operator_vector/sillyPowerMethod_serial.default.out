@@ -1,0 +1,78 @@
+
+***
+*** Running power method example using scalar type = 'float' ...
+***
+
+(1) Constructing tridiagonal matrix A of dimension = 4 ...
+
+(2) Running the power method on matrix A ...
+  
+  Starting power method (target tolerrance = 1.000000e-003) ...
+  
+  Iter = 0, lambda = 5.000000e-001, ||A*q-lambda*q|| = 5.000000e-001
+  Iter = 4, lambda = 2.618026e+000, ||A*q-lambda*q|| = 4.339995e-003
+  Iter = 8, lambda = 2.618040e+000, ||A*q-lambda*q|| = 2.324696e-003
+  Iter = 12, lambda = 2.618106e+000, ||A*q-lambda*q|| = 8.478714e-003
+  Iter = 16, lambda = 2.618990e+000, ||A*q-lambda*q|| = 3.089838e-002
+  Iter = 20, lambda = 2.630600e+000, ||A*q-lambda*q|| = 1.113907e-001
+  Iter = 24, lambda = 2.762823e+000, ||A*q-lambda*q|| = 3.518876e-001
+  Iter = 28, lambda = 3.310566e+000, ||A*q-lambda*q|| = 4.614450e-001
+  Iter = 32, lambda = 3.585739e+000, ||A*q-lambda*q|| = 1.767804e-001
+  Iter = 36, lambda = 3.615532e+000, ||A*q-lambda*q|| = 4.995899e-002
+  Iter = 39, lambda = 3.617674e+000, ||A*q-lambda*q|| = 1.896930e-002
+  
+  Maximum number of iterations exceeded with ||-lambda*q + z|| > tolerence = 1.000000e-003
+  
+  Estimate of dominate eigenvalue lambda = 3.617674e+000
+
+(3) Increasing first diagonal entry by factor of 10 ...
+
+(4) Running the power method again on matrix A ...
+  
+  Starting power method (target tolerrance = 1.000000e-003) ...
+  
+  Iter = 0, lambda = 5.002753e+000, ||A*q-lambda*q|| = 8.095009e+000
+  Iter = 4, lambda = 2.005555e+001, ||A*q-lambda*q|| = 4.551036e-003
+  Iter = 8, lambda = 2.005556e+001, ||A*q-lambda*q|| = 3.762348e-006
+  
+  Estimate of dominate eigenvalue lambda = 2.005556e+001
+
+***
+*** Running power method example using scalar type = 'double' ...
+***
+
+(1) Constructing tridiagonal matrix A of dimension = 4 ...
+
+(2) Running the power method on matrix A ...
+  
+  Starting power method (target tolerrance = 1.000000e-003) ...
+  
+  Iter = 0, lambda = 5.000001e-001, ||A*q-lambda*q|| = 5.000000e-001
+  Iter = 4, lambda = 2.618026e+000, ||A*q-lambda*q|| = 4.339931e-003
+  Iter = 8, lambda = 2.618039e+000, ||A*q-lambda*q|| = 2.323716e-003
+  Iter = 12, lambda = 2.618106e+000, ||A*q-lambda*q|| = 8.475031e-003
+  Iter = 16, lambda = 2.618989e+000, ||A*q-lambda*q|| = 3.088496e-002
+  Iter = 20, lambda = 2.630589e+000, ||A*q-lambda*q|| = 1.113434e-001
+  Iter = 24, lambda = 2.762714e+000, ||A*q-lambda*q|| = 3.517784e-001
+  Iter = 28, lambda = 3.310380e+000, ||A*q-lambda*q|| = 4.615225e-001
+  Iter = 32, lambda = 3.585712e+000, ||A*q-lambda*q|| = 1.768526e-001
+  Iter = 36, lambda = 3.615530e+000, ||A*q-lambda*q|| = 4.998064e-002
+  Iter = 39, lambda = 3.617674e+000, ||A*q-lambda*q|| = 1.897764e-002
+  
+  Maximum number of iterations exceeded with ||-lambda*q + z|| > tolerence = 1.000000e-003
+  
+  Estimate of dominate eigenvalue lambda = 3.617674e+000
+
+(3) Increasing first diagonal entry by factor of 10 ...
+
+(4) Running the power method again on matrix A ...
+  
+  Starting power method (target tolerrance = 1.000000e-003) ...
+  
+  Iter = 0, lambda = 5.002754e+000, ||A*q-lambda*q|| = 8.095010e+000
+  Iter = 4, lambda = 2.005555e+001, ||A*q-lambda*q|| = 4.551056e-003
+  Iter = 8, lambda = 2.005556e+001, ||A*q-lambda*q|| = 3.756988e-006
+  
+  Estimate of dominate eigenvalue lambda = 2.005556e+001
+
+Oh no! At least one of the tests failed!
