@@ -505,7 +505,7 @@ REFCOUNTPTR_INLINE
 void Teuchos::set_extra_data( const T1 &extra_data, const std::string& name, Teuchos::RefCountPtr<T2> *p, EPrePostDestruction destroy_when, bool force_unique )
 {
 	p->assert_not_null();
-	p->access_node()->set_extra_data( extra_data, name, destroy_when, force_unique );
+	p->access_node()->set_extra_data( any(extra_data), name, destroy_when, force_unique );
 }
 
 template<class T1, class T2>
@@ -588,6 +588,13 @@ const Dealloc_T*
 Teuchos::get_optional_dealloc( const Teuchos::RefCountPtr<T>& p )
 {
 	return get_optional_dealloc<Dealloc_T>(const_cast<RefCountPtr<T>&>(p));
+}
+
+template<class T>
+std::ostream& Teuchos::operator<<( std::ostream& out, const RefCountPtr<T>& p )
+{
+  out << "RCP<"<<typeid(T).name()<<">{ptr="<<p.get()<<",node="<<p.access_node()<<",count="<<p.count()<<"}";
+  return out;
 }
 
 #endif // TEUCHOS_REFCOUNTPTR_HPP

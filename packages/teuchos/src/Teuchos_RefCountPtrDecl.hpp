@@ -1096,6 +1096,14 @@ Dealloc_T* get_optional_dealloc( RefCountPtr<T>& p );
 template<class Dealloc_T, class T>
 const Dealloc_T* get_optional_dealloc( const RefCountPtr<T>& p );
 
+/** \brief Output stream inserter.
+ *
+ * The implementation of this function just print pointer addresses and
+ * therefore puts not restrictions on the data types involved.
+ */
+template<class T>
+std::ostream& operator<<( std::ostream& out, const RefCountPtr<T>& p );
+
 //@}
 
 } // end namespace Teuchos

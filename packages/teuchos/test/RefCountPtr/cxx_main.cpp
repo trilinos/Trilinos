@@ -255,6 +255,8 @@ int main( int argc, char* argv[] ) {
 		// Create some smart pointers
 
 		RefCountPtr<A>       a_ptr1  = rcp(new C);
+		if(verbose)
+			out << "\na_ptr1 = " << a_ptr1 << "\n";
 #ifndef __sun
 		// RAB: 2003/11/24: The Sun compiler ("Forte Developer 7 C++
 		// 5.4 2002/03/09" returned from CC -V) does not seem to be
