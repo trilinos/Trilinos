@@ -121,6 +121,8 @@ print r.Norm2()
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
 #include "Epetra_JadOperator.h"
 
 // Epetra python includes
