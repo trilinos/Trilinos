@@ -91,15 +91,13 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     SizeIsConst_(Directory.SizeIsConst_),
     AllMinGIDs_(0)
 {
-  int i;
-
   if (Directory.DirectoryMap_!=0) DirectoryMap_ = new Epetra_Map(Directory.DirectoryMap());
 
   int Dir_NumMyElements = DirectoryMap_->NumMyElements();
 
   if (Directory.ProcList_!=0) {
     ProcList_ = new int[Dir_NumMyElements];
-    for (i=0; i<Dir_NumMyElements; i++) ProcList_[i] = Directory.ProcList_[i];
+    for (int i=0; i<Dir_NumMyElements; i++) ProcList_[i] = Directory.ProcList_[i];
   }
   if (Directory.LocalIndexList_!=0) {
     LocalIndexList_ = new int[Dir_NumMyElements];
@@ -276,7 +274,7 @@ int Epetra_BasicDirectory::Generate(const Epetra_BlockMap& Map)
   //for (i=0; i< packetSize*num_recvs; i++) import_elements[i] = 0;
 
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char *> (export_elements), 
-		  packetSize * sizeof( int ),
+			    packetSize * (int)sizeof( int ),
                   len_import_elements,
 		  c_import_elements ));
   import_elements = reinterpret_cast<int *>(c_import_elements);
@@ -455,7 +453,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 	
         int len_Size_imports = 0;
 	EPETRA_CHK_ERR(Size_Distor->Do( reinterpret_cast<char*> (Size_exports),
-                                        2 * sizeof( int ),
+                                        2 * (int)sizeof( int ),
                                         len_Size_imports,
                                         c_Size_imports));
 	Size_imports = reinterpret_cast<int*>(c_Size_imports);
@@ -520,7 +518,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 
   //Check for unfound GlobalEntries and set corresponding Procs to -1
   int NumMissing = 0;
-  {for( int i = 0; i < NumEntries; ++i )
+  {for( i = 0; i < NumEntries; ++i )
     if( dir_procs[i] == -1 )
     {
       Procs[i] = -1;
@@ -560,7 +558,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const Epetra_BlockMap& Map,
 
   int NumRecv = NumEntries - NumMissing;
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char*> (exports),
-                            PacketSize * sizeof( int ),
+                            PacketSize * (int)sizeof( int ),
                             len_imports,
                             c_imports));
   imports = reinterpret_cast<int*>(c_imports);
@@ -626,4 +624,19 @@ void Epetra_BasicDirectory::Print( ostream & os) const {
   }
 
   return;
+}
+
+//--------------------------------------------------------------------------------
+Epetra_BasicDirectory& Epetra_BasicDirectory::operator=(const Epetra_BasicDirectory& src)
+{
+  (void)src;
+  //not currently supported
+  bool throw_error = true;
+  if (throw_error) {
+    std::cerr << std::endl
+	      << "Epetra_BasicDirectory::operator= not supported."
+	      << std::endl;
+    throw -1;
+  }
+  return( *this );
 }

@@ -81,6 +81,10 @@ class Epetra_FECrsGraph : public Epetra_CrsGraph {
   /** Destructor */
   virtual ~Epetra_FECrsGraph();
 
+  //Let the compiler know we intend to overload the base-class function
+  //InsertGlobalIndices rather than hide it.
+  using Epetra_CrsGraph::InsertGlobalIndices;
+
   /** Insert a rectangular, dense 'submatrix' of entries (matrix nonzero
       positions) into the graph.
 

@@ -350,6 +350,7 @@ int Epetra_MapColoring::MaxNumColors() const {
 }
 //=========================================================================
 int Epetra_MapColoring::CheckSizes(const Epetra_SrcDistObject& Source) {
+  (void)Source;//prevents unused variable compiler warning
   return(0);
 }
 
@@ -359,8 +360,9 @@ int Epetra_MapColoring::CopyAndPermute(const Epetra_SrcDistObject& Source,
 				       int NumPermuteIDs,
                                        int * PermuteToLIDs, 
 				       int *PermuteFromLIDs,
-                                       const Epetra_OffsetIndex * Indexor) {
-
+                                       const Epetra_OffsetIndex * Indexor)
+{
+  (void)Indexor;
   const Epetra_MapColoring & A = dynamic_cast<const Epetra_MapColoring &>(Source);
 
   int * From = A.ElementColors();
@@ -389,16 +391,17 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_SrcDistObject & Source,
 				       int & SizeOfPacket,
 				       int * Sizes,
 				       bool & VarSizes,
-                                       Epetra_Distributor & Distor) {
-
-
-
+                                       Epetra_Distributor & Distor)
+{
+  (void)Sizes;
+  (void)VarSizes;
+  (void)Distor;
   const Epetra_MapColoring & A = dynamic_cast<const Epetra_MapColoring &>(Source);
 
   int  * From = A.ElementColors();
   int * IntExports = 0;
 
-  SizeOfPacket = sizeof(int); 
+  SizeOfPacket = (int)sizeof(int); 
 
   if (NumExportIDs*SizeOfPacket>LenExports) {
     if (LenExports>0) delete [] Exports;
@@ -426,7 +429,14 @@ int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
                                          int & SizeOfPacket, 
 					 Epetra_Distributor & Distor, 
 					 Epetra_CombineMode CombineMode,
-                                         const Epetra_OffsetIndex * Indexor ) {
+                                         const Epetra_OffsetIndex * Indexor )
+{
+  (void)Source;
+  (void)LenImports;
+  (void)Imports;
+  (void)SizeOfPacket;
+  (void)Distor;
+  (void)Indexor;
   int j;
   
   if(    CombineMode != Add

@@ -138,6 +138,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    enum { ROW_MAJOR = 0, COLUMN_MAJOR = 3 };
 
+   //Let the compiler know we intend to overload the following base-class
+   //functions, rather than hide them.
+   using Epetra_CrsMatrix::SumIntoGlobalValues;
+   using Epetra_CrsMatrix::InsertGlobalValues;
+   using Epetra_CrsMatrix::ReplaceGlobalValues;
+
    /** Sum a Fortran-style table (single-dimensional packed-list) of
        coefficients into the matrix, adding them to any coefficients that
        may already exist at the specified row/column locations.

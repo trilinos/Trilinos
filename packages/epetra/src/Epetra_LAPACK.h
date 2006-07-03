@@ -371,7 +371,7 @@ class Epetra_LAPACK {
 // Epetra_LAPACK constructor
 inline Epetra_LAPACK::Epetra_LAPACK(void){}
 // Epetra_LAPACK constructor
-inline Epetra_LAPACK::Epetra_LAPACK(const Epetra_LAPACK& LAPACK){}
+inline Epetra_LAPACK::Epetra_LAPACK(const Epetra_LAPACK& LAPACK){(void)LAPACK;}
 // Epetra_LAPACK destructor
 inline Epetra_LAPACK::~Epetra_LAPACK(){}
 

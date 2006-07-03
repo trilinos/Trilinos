@@ -1052,9 +1052,17 @@ int Epetra_VbrMatrix::OptimizeStorage() {
   return(0);
 }
 //==========================================================================
-int Epetra_VbrMatrix::ExtractGlobalRowCopy(int GlobalRow, int Length, 
-					   int & NumEntries, double *Values, int * Indices) const {
-
+int Epetra_VbrMatrix::ExtractGlobalRowCopy(int GlobalRow,
+					   int Length, 
+					   int & NumEntries,
+					   double *Values,
+					   int * Indices) const
+{
+  (void)GlobalRow;
+  (void)Length;
+  (void)NumEntries;
+  (void)Values;
+  (void)Indices;
   cout << "Must implement..." << endl;
   return(0);
 }
@@ -1177,8 +1185,12 @@ int Epetra_VbrMatrix::ExtractBlockDimsCopy(int NumBlockEntries, int * ColDims) c
 }
 
 //==========================================================================
-int Epetra_VbrMatrix::ExtractEntryCopy(int SizeOfValues, double * Values, int LDA, bool SumInto) const
+int Epetra_VbrMatrix::ExtractEntryCopy(int SizeOfValues,
+				       double * Values,
+				       int LDA,
+				       bool SumInto) const
 {
+  (void)SumInto;
   if (CurExtractEntry_==-1) EPETRA_CHK_ERR(-1); // No BeginCopy routine was called
   int CurColDim = Entries_[CurExtractBlockRow_][CurExtractEntry_]->N();
   if (LDA*CurColDim>SizeOfValues) EPETRA_CHK_ERR(-2);  // Not enough space
@@ -2300,9 +2312,12 @@ void Epetra_VbrMatrix::BlockRowMultiply(bool TransA,
   return;
 }
 //=============================================================================
-int Epetra_VbrMatrix::Solve(bool Upper, bool TransA, bool UnitDiagonal,
-			    const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+int Epetra_VbrMatrix::Solve(bool Upper, bool TransA,
+			    bool UnitDiagonal,
+			    const Epetra_MultiVector& X,
+			    Epetra_MultiVector& Y) const
 {
+  (void)UnitDiagonal;
   //
   // This function find Y such that LY = X or UY = X or the transpose cases.
   //
@@ -2443,7 +2458,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
     int RowDim = *RowElementSizeList++;
     if (DoRows) {
       for (int ii=0; ii < NumEntries; ii++) {
-	double * x = xp+xoff;
+	double * xptr = xp+xoff;
 	double * A = BlockRowValues[ii]->A();
 	int LDA = BlockRowValues[ii]->LDA();
 	int BlockIndex = BlockRowIndices[ii];
@@ -2451,7 +2466,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
 	for (int j=0; j<ColDim; j++) {
 	  double * curEntry = A + j*LDA;
 	  for (int k=0; k<RowDim; k++)
-	    x[k] += fabs(*curEntry++);
+	    xptr[k] += fabs(*curEntry++);
 	}
       }
     }
@@ -2573,7 +2588,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
     int RowDim = *RowElementSizeList++;
     if (DoRows) {
       for (int ii=0; ii < NumEntries; ii++) {
-	double * x = xp+xoff;
+	double * xptr = xp+xoff;
 	double * A = BlockRowValues[ii]->A();
 	int LDA = BlockRowValues[ii]->LDA();
 	int BlockIndex = BlockRowIndices[ii];
@@ -2581,7 +2596,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
 	for (int j=0; j<ColDim; j++) {
 	  double * curEntry = A + j*LDA;
 	  for (int k=0; k<RowDim; k++)
-	    *curEntry++ *= x[k];
+	    *curEntry++ *= xptr[k];
 	}
       }
     }
@@ -2754,8 +2769,9 @@ int Epetra_VbrMatrix::CopyAndPermute(const Epetra_SrcDistObject & Source,
                                      int NumPermuteIDs,
                                      int * PermuteToLIDs,
                                      int *PermuteFromLIDs,
-                                     const Epetra_OffsetIndex * Indexor) {
-  
+                                     const Epetra_OffsetIndex * Indexor)
+{
+  (void)Indexor; 
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
   int i, j;
   
@@ -2831,8 +2847,12 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
                                      int & SizeOfPacket,
                                      int * Sizes,
                                      bool & VarSizes,
-                                     Epetra_Distributor & Distor) {
-  
+                                     Epetra_Distributor & Distor)
+{
+  (void)LenExports;
+  (void)Sizes;
+  (void)VarSizes;
+  (void)Distor; 
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
 
   double * DoubleExports = 0;
@@ -2840,8 +2860,8 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
   int GlobalMaxNumBlockEntries = A.GlobalMaxNumBlockEntries();
   // Will have GlobalMaxNumEntries doubles, GlobalMaxNumEntries +2 ints, pack them interleaved
   int DoublePacketSize = GlobalMaxNumNonzeros +  
-    (((2*GlobalMaxNumBlockEntries+3)+sizeof(int)-1)*sizeof(int))/sizeof(double);
-  SizeOfPacket = DoublePacketSize * sizeof(double); 
+    (((2*GlobalMaxNumBlockEntries+3)+(int)sizeof(int)-1)*(int)sizeof(int))/(int)sizeof(double);
+  SizeOfPacket = DoublePacketSize * (int)sizeof(double); 
 
   if (DoublePacketSize*NumExportIDs>LenExports_) {
     if (LenExports_>0) delete [] Exports_;
@@ -2910,8 +2930,12 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
                                        int & SizeOfPacket, 
                                        Epetra_Distributor & Distor, 
                                        Epetra_CombineMode CombineMode,
-                                       const Epetra_OffsetIndex * Indexor) {
-
+                                       const Epetra_OffsetIndex * Indexor)
+{
+  (void)LenImports;
+  (void)SizeOfPacket;
+  (void)Distor;
+  (void)Indexor;
   if (NumImportIDs<=0) return(0);
 
   if(   CombineMode != Add
@@ -2933,7 +2957,7 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   int GlobalMaxNumBlockEntries = A.GlobalMaxNumBlockEntries();
   // Will have GlobalMaxNumEntries doubles, GlobalMaxNumEntries +2 ints, pack them interleaved
   int DoublePacketSize = GlobalMaxNumNonzeros +  
-    (((2*GlobalMaxNumBlockEntries+3)+sizeof(int)-1)*sizeof(int))/sizeof(double);
+    (((2*GlobalMaxNumBlockEntries+3)+(int)sizeof(int)-1)*(int)sizeof(int))/(int)sizeof(double);
   // Unpack it...
 
 

@@ -168,6 +168,10 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   */
     Epetra_SerialDenseVector& operator = (const Epetra_SerialDenseVector& Source);
 
+    //let the compiler know we intend to overload the base-class function
+    //operator() rather than hide it.
+    using Epetra_SerialDenseMatrix::operator();
+
   //! Element access function.
   /*!
     Returns the specified element of the vector.  Bounds checking is enforced.

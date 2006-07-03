@@ -46,14 +46,23 @@ Epetra_SerialComm::Epetra_SerialComm(const Epetra_SerialComm& Comm)
 void Epetra_SerialComm::Barrier() const {}
 //=============================================================================
 int Epetra_SerialComm::Broadcast(double * Values, int Count, int Root) const {
+  (void)Values;
+  (void)Count;
+  (void)Root;
   return(0);
 }
 //=============================================================================
 int Epetra_SerialComm::Broadcast(int * Values, int Count, int Root) const {
+  (void)Values;
+  (void)Count;
+  (void)Root;
   return(0);
 }
 //=============================================================================
 int Epetra_SerialComm::Broadcast(long * Values, int Count, int Root) const {
+  (void)Values;
+  (void)Count;
+  (void)Root;
   return(0);
 }
 //=============================================================================

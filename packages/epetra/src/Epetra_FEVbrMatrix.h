@@ -193,6 +193,10 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
   */
     int BeginSumIntoGlobalValues(int BlockRow, int NumBlockEntries, int *BlockIndices);
 
+    //Let the compiler know we intend to overload the base-class function
+    //SubmitBlockEntry rather than hide it.
+    using Epetra_VbrMatrix::SubmitBlockEntry;
+
     //! Submit a block entry to the indicated block row and column specified in the Begin routine.
     /* Submit a block entry that will recorded in the block row that was initiated by one of the
        Begin routines listed above.  Once a one of the following routines: BeginInsertGlobalValues(),

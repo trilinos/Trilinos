@@ -278,3 +278,16 @@ void Epetra_DistObject::Print(ostream& os) const {
   }
   return;
 }
+
+//------------------------------------------------------------------------------
+Epetra_DistObject& Epetra_DistObject::operator=(const Epetra_DistObject& src)
+{
+  (void)src;
+  //not currently supported
+  bool throw_error = true;
+  if (throw_error) {
+    throw ReportError("Epetra_DistObject::operator= is not supported.",-1);
+  }
+
+  return(*this);
+}

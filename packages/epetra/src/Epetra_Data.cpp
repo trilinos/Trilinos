@@ -35,7 +35,10 @@ Epetra_Data::Epetra_Data()
 
 //=============================================================================
 Epetra_Data::Epetra_Data(const Epetra_Data & Data)
-	: ReferenceCount_(1) {}
+	: ReferenceCount_(1)
+{
+  (void)Data; //prevents unused variable compiler warning
+}
 
 //=============================================================================
 Epetra_Data::~Epetra_Data() {}

@@ -71,6 +71,7 @@ int Epetra_Object::GetTracebackMode() {
 
 //=============================================================================
 void Epetra_Object::Print(ostream & os) const {
+  (void)os;//prevents unused variable compiler-warning
   // os << Label_; // No need to print label, since ostream does it already
   return;
 }

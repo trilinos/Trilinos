@@ -257,12 +257,7 @@ class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObje
   int *Sizes_;
 
  private:
-  Epetra_DistObject& operator=(const Epetra_DistObject& src)
-    {
-      //not currently supported
-      abort();
-      return(*this);
-    }
+  Epetra_DistObject& operator=(const Epetra_DistObject& src);
 
 };
 

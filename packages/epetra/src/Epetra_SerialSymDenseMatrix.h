@@ -160,6 +160,10 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
 
   //@{ \name Set Methods
 
+  //let the compiler know we intend to overload the base-class Shape function,
+  //rather than hide it.  
+  using Epetra_SerialDenseMatrix::Shape;
+
   //! Set dimensions of a Epetra_SerialSymDenseMatrix object; init values to zero.
   /*!
     \param In 
@@ -172,7 +176,12 @@ class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
     \return Integer error code, set to 0 if successful.
   */
   int Shape(int NumRowsCols) {return(Epetra_SerialDenseMatrix::Shape(NumRowsCols,NumRowsCols));};
+
+  //let the compiler know we intend to overload the base-class Reshape function,
+  //rather than hide it.
   
+  using Epetra_SerialDenseMatrix::Reshape;
+
   //! Reshape a Epetra_SerialSymDenseMatrix object.
   /*!
     \param In 

@@ -38,6 +38,7 @@ Epetra_Flops::Epetra_Flops(void)
 Epetra_Flops::Epetra_Flops(const Epetra_Flops& Flops)
   : Flops_(0.0)
 {
+  (void)Flops; //prevents unused variable compiler-warning
 }
 //=============================================================================
 Epetra_Flops::~Epetra_Flops(void)  

@@ -126,12 +126,7 @@ class Epetra_RowMatrixTransposer {
   
  private: 
   void DeleteData();
-  Epetra_RowMatrixTransposer& operator=(const Epetra_RowMatrixTransposer& src)
-    {
-      //not currently supported
-      abort();
-      return(*this);
-    }
+  Epetra_RowMatrixTransposer& operator=(const Epetra_RowMatrixTransposer& src);
 
 	Epetra_RowMatrix * OrigMatrix_;
 	Epetra_CrsMatrix * TransposeMatrix_;

@@ -174,7 +174,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
     }
     // If row has single entry, color it and associated column with color=1
     if (NumIndices==1) {
-      int j = Indices[0];
+      j = Indices[0];
       ColHasRowWithSingleton[j]++;
       RowMapColors[i] = 1;
       ColMapColors[j] = 1;
@@ -220,7 +220,7 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   NumMyColSingletons_ = 0;
   // Count singleton columns (that were not already counted as singleton rows)
   for (j=0; j<NumMyCols; j++) {
-    int i = RowIDs[j];
+    i = RowIDs[j];
     // Check if column is a singleton
     if (ColProfiles[j]==1) {
       // Check to see if this column already eliminated by the row check above

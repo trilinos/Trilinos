@@ -143,6 +143,10 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
   //! Epetra_IntSerialDenseVector destructor.  
   virtual ~Epetra_IntSerialDenseVector ();
 
+  //bring the base-class operator() into the current scope, in order to tell the
+  //compiler that we intend to overload it, rather than hide it.
+  using Epetra_IntSerialDenseMatrix::operator();
+
   //! Element access function.
   /*!
     Returns the specified element of the vector.
@@ -216,25 +220,29 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
   //@{ \name Expert-only unsupported methods
 
-  //! Reset an existing IntSerialDenseVector to point to another Vector.
-	/*! Allows an existing IntSerialDenseVector to become a View of another
-		vector's data, regardless of the DataAccess mode of the Source vector.
-		It is assumed that the Source vector is an independent vector, and 
-		no checking is done to verify this.
+  //Bring the base-class MakeViewOf method into the current scope so that the
+  //compiler knows we intend to overload it, rather than hide it.
+  using Epetra_IntSerialDenseMatrix::MakeViewOf;
 
-		This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used so that
-		an existing (Copy) vector can be converted to a View. This frees up
-		memory that CrsGraph no longer needs.
+  //! Reset an existing IntSerialDenseVector to point to another Vector.
+  /*! Allows an existing IntSerialDenseVector to become a View of another
+    vector's data, regardless of the DataAccess mode of the Source vector.
+    It is assumed that the Source vector is an independent vector, and 
+    no checking is done to verify this.
+
+    This is used by Epetra_CrsGraph in the OptimizeStorage method. It is used
+    so that an existing (Copy) vector can be converted to a View. This frees up
+    memory that CrsGraph no longer needs.
 		
-		@param Source The IntSerialDenseVector this will become a view of.
+    @param Source The IntSerialDenseVector this will become a view of.
 		
-		\return Integer error code, set to 0 if successful.
-		
-		\warning This method is extremely dangerous and should only be used by experts.
-	*/
+    \return Integer error code, set to 0 if successful.
+
+    \warning This method is extremely dangerous and should only be used by experts.
+  */
 	
-	int MakeViewOf(const Epetra_IntSerialDenseVector& Source);
-	//@}
+  int MakeViewOf(const Epetra_IntSerialDenseVector& Source);
+  //@}
 };
 
 // inlined definitions of op() and op[]

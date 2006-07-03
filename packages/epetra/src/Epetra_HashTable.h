@@ -117,8 +117,12 @@ class Epetra_HashTable : public Epetra_Object
  private:
   Epetra_HashTable& operator=(const Epetra_HashTable& src)
     {
+      (void)src;
       //not currently supported
-      abort();
+      bool throw_error = true;
+      if (throw_error) {
+	throw ReportError("Epetra_HashTable::operator= not supported.",-1);
+      }
       return(*this);
     }
 

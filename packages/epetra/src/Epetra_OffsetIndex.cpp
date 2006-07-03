@@ -240,7 +240,7 @@ void Epetra_OffsetIndex::GenerateRemoteOffsets_( const Epetra_CrsGraph & SourceG
   int * RecvArray = 0;
   int RecvArraySize = 0;
   Distor.Do( reinterpret_cast<char *>(SourceArray),
-             sizeof(int),
+             (int)sizeof(int),
              Sizes,
              RecvArraySize,
              cRecvArray );

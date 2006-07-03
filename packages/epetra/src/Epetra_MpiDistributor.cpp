@@ -184,6 +184,7 @@ int Epetra_MpiDistributor::CreateFromSends( const int & NumExportIDs,
                                             bool Deterministic,
                                             int & NumRemoteIDs )
 {
+  (void)Deterministic;
   nexports_ = NumExportIDs;
 
   int i;
@@ -498,7 +499,7 @@ int Epetra_MpiDistributor::ComputeSends_( int num_imports,
 
   int len_c_export_objs = 0;
   EPETRA_CHK_ERR( tmp_plan.Do(reinterpret_cast<char *> (import_objs),
-			      2 * sizeof( int ), 
+			      2 * (int)sizeof( int ), 
 			      len_c_export_objs,
 			      c_export_objs) );
   int * export_objs = reinterpret_cast<int *>(c_export_objs);
@@ -819,7 +820,7 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
     if( nsends_+self_msg_ )
       Sort_ints_( sort_val, index, (nsends_+self_msg_) );
 
-    int sum = 0;
+    sum = 0;
     for( i = 0; i < (nsends_+self_msg_); ++i )
     {
       starts_to_ptr_[ index[i] ] = sum;
@@ -1230,4 +1231,16 @@ int Epetra_MpiDistributor::Sort_ints_(
     delete [] pos; 
  
     return 0;
+}
+
+//-------------------------------------------------------------------------
+Epetra_MpiDistributor& Epetra_MpiDistributor::operator=(const Epetra_MpiDistributor& src)
+{
+  (void)src;
+  //not currently supported
+  bool throw_error = true;
+  if (throw_error) {
+    throw ReportError("Epetra_MpiDistributor::operator= not supported.",-1);
+  }
+  return( *this );
 }

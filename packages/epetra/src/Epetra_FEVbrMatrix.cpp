@@ -255,7 +255,7 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete)
     return(0);
   }
 
-  int i, j;
+  int i;
 
   //In this method we need to gather all the non-local (overlapping) data
   //that's been input on each processor, into the
@@ -301,7 +301,7 @@ int Epetra_FEVbrMatrix::GlobalAssemble(bool callFillComplete)
   int insertPoint = -1;
 
   for(i=0; i<numNonlocalBlockRows_; ++i) {
-    for(j=0; j<nonlocalBlockRowLengths_[i]; ++j) {
+    for(int j=0; j<nonlocalBlockRowLengths_[i]; ++j) {
       int col = nonlocalBlockCols_[i][j];
       int offset = Epetra_Util_binary_search(col, cols, numCols, insertPoint);
       if (offset < 0) {
@@ -542,6 +542,7 @@ int Epetra_FEVbrMatrix::SetupForNonlocalSubmits(int BlockRow,
 						bool IndicesAreLocal,
 						Epetra_CombineMode SubmitMode)
 {
+  (void)IndicesAreLocal;
   if (ignoreNonLocalEntries_) {
     curRowOffset_ = 0;
     return(0);

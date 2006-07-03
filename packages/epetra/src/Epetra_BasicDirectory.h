@@ -106,12 +106,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
   //@}
 
  private:
-  Epetra_BasicDirectory& operator=(const Epetra_BasicDirectory& src)
-    {
-      //not currently supported
-      abort();
-      return( *this );
-    }
+  Epetra_BasicDirectory& operator=(const Epetra_BasicDirectory& src);
 
   void create_ProcListArrays();
 

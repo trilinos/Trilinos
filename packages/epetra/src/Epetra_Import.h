@@ -273,8 +273,12 @@ in the above example to do an export operation to y, adding the contributions th
  private:
  Epetra_Import& operator=(const Epetra_Import& src)
    {
+     (void)src;
      //not currently supported
-     abort();
+     bool throw_error = true;
+     if (throw_error) {
+       throw ReportError("Epetra_Import::operator= not supported.",-1);
+     }
      return(*this);
    }
 

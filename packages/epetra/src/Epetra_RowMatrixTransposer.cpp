@@ -332,3 +332,20 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
 
   return(0);
 }
+
+Epetra_RowMatrixTransposer&
+Epetra_RowMatrixTransposer::operator=(const Epetra_RowMatrixTransposer& src)
+{
+  (void)src;//prevents unused variable compiler warning
+
+  //not currently supported
+  bool throw_error = true;
+  if (throw_error) {
+    std::cerr << std::endl
+	      << "Epetra_RowMatrixTransposer::operator= not supported."
+	      <<std::endl;
+    throw -1;
+  }
+
+  return(*this);
+}

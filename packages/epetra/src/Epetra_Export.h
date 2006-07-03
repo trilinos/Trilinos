@@ -274,12 +274,7 @@ and entries 5 and 6 on PEs 1 and 2.
  friend class Epetra_BlockMap;
 
  private:
- Epetra_Export& operator=(const Epetra_Export& src)
-   {
-     //not currently supported
-     abort();
-     return(*this);
-   }
+ Epetra_Export& operator=(const Epetra_Export& src);
 
   Epetra_BlockMap TargetMap_;
   Epetra_BlockMap SourceMap_;

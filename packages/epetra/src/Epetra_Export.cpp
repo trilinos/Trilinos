@@ -289,3 +289,15 @@ void Epetra_Export::Print(ostream & os) const
   os << "Epetra_Export Print Needs attention!!!!" << endl;
   return;
 }
+
+//----------------------------------------------------------------------------
+Epetra_Export& Epetra_Export::operator=(const Epetra_Export& src)
+{
+  (void)src;
+  //not currently supported
+  bool throw_err = true;
+  if (throw_err) {
+    throw ReportError("Epetra_Export::operator= not supported.",-1);
+  }
+  return(*this);
+}

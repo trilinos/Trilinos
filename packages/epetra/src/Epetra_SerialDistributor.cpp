@@ -32,18 +32,21 @@
 
 //==============================================================================
 // Epetra_SerialDistributor constructor
-Epetra_SerialDistributor::Epetra_SerialDistributor(const Epetra_SerialComm & Comm): 
-Epetra_Object("Epetra::SerialDistributor"),
-nrecvs_(0),
-nsends_(0)
-{}
+Epetra_SerialDistributor::Epetra_SerialDistributor(const Epetra_SerialComm & Comm)
+  : Epetra_Object("Epetra::SerialDistributor"),
+    nrecvs_(0),
+    nsends_(0)
+{
+  (void)Comm;
+}
 
 //==============================================================================
-Epetra_SerialDistributor::Epetra_SerialDistributor(const Epetra_SerialDistributor & Plan):
-Epetra_Object("Epetra::SerialDistributor"),
-nrecvs_(Plan.nrecvs_),
-nsends_(Plan.nsends_)
-{}
+Epetra_SerialDistributor::Epetra_SerialDistributor(const Epetra_SerialDistributor & Plan)
+  : Epetra_Object("Epetra::SerialDistributor"),
+    nrecvs_(Plan.nrecvs_),
+    nsends_(Plan.nsends_)
+{
+}
 
 //==============================================================================
 // Epetra_SerialDistributor destructor
@@ -57,10 +60,11 @@ Epetra_SerialDistributor::~Epetra_SerialDistributor() {
 // - create communication plan given a known list of procs to send to
 //---------------------------------------------------------------------------
 int Epetra_SerialDistributor::CreateFromSends( const int & NumExportIDs,
-			           const int * ExportPIDs,
-				   bool Deterministic,
-			           int & NumRemoteIDs )
+					       const int * ExportPIDs,
+					       bool Deterministic,
+					       int & NumRemoteIDs )
 {
+  (void)Deterministic;
   NumRemoteIDs = 0;
 
   //In a SerialDistributor, myproc == 0 by definition.
@@ -94,6 +98,13 @@ int Epetra_SerialDistributor::CreateFromRecvs( const int & NumRemoteIDs,
 				   int *& ExportGIDs,
 				   int *& ExportPIDs )
 {
+  (void)NumRemoteIDs;
+  (void)RemoteGIDs;
+  (void)RemotePIDs;
+  (void)Deterministic;
+  (void)NumExportIDs;
+  (void)ExportGIDs;
+  (void)ExportPIDs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -122,6 +133,10 @@ int Epetra_SerialDistributor::DoReverse(char * export_objs,
                                         int & len_import_objs,
                                         char *& import_objs )
 {
+  (void)export_objs;
+  (void)obj_size;
+  (void)len_import_objs;
+  (void)import_objs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -134,6 +149,10 @@ int Epetra_SerialDistributor::DoPosts(char * export_objs,
                                       int & len_import_objs,
                                       char *& import_objs )
 {
+  (void)export_objs;
+  (void)obj_size;
+  (void)len_import_objs;
+  (void)import_objs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -156,6 +175,10 @@ int Epetra_SerialDistributor::DoReversePosts(char * export_objs,
                                              int & len_import_objs,
                                              char *& import_objs )
 {
+  (void)export_objs;
+  (void)obj_size;
+  (void)len_import_objs;
+  (void)import_objs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -178,6 +201,11 @@ int Epetra_SerialDistributor::Do(char * export_objs,
                                  int & len_import_objs,
                                  char *& import_objs )
 {
+  (void)export_objs;
+  (void)obj_size;
+  (void)sizes;
+  (void)len_import_objs;
+  (void)import_objs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -190,6 +218,11 @@ int Epetra_SerialDistributor::DoReverse(char * export_objs,
                                         int & len_import_objs,
                                         char *& import_objs )
 {
+  (void)export_objs;
+  (void)obj_size;
+  (void)sizes;
+  (void)len_import_objs;
+  (void)import_objs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -203,6 +236,11 @@ int Epetra_SerialDistributor::DoPosts(char * export_objs,
                                       int & len_import_objs,
                                       char *& import_objs )
 {
+  (void)export_objs;
+  (void)obj_size;
+  (void)sizes;
+  (void)len_import_objs;
+  (void)import_objs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }
@@ -217,6 +255,11 @@ int Epetra_SerialDistributor::DoReversePosts(char * export_objs,
                                              int & len_import_objs,
                                              char *& import_objs )
 {
+  (void)export_objs;
+  (void)obj_size;
+  (void)sizes;
+  (void)len_import_objs;
+  (void)import_objs;
   EPETRA_CHK_ERR(-1); // This method should never be called 
   return(-1);
 }

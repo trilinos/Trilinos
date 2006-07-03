@@ -345,6 +345,9 @@ class Epetra_Vector : public Epetra_MultiVector {
 
   //@{ \name Extraction methods
 
+  //Let the compiler know we intend to overload the base-class ExtractCopy
+  //function, rather than hide it.
+  using Epetra_MultiVector::ExtractCopy;
 
   //! Put vector values into user-provided array.
   /*!
@@ -355,6 +358,10 @@ class Epetra_Vector : public Epetra_MultiVector {
   */
   int ExtractCopy(double *V) const;
   
+  //Let the compiler know we intend to overload the base-class ExtractView
+  //function, rather than hide it.
+  using Epetra_MultiVector::ExtractView;
+
   //! Set user-provided address of V.
   /*!
     \param Out
@@ -380,6 +387,10 @@ class Epetra_Vector : public Epetra_MultiVector {
     //@}
     
   //@{ \name Expert-only unsupported methods
+
+  //Let the compiler know we intend to overload the base-class ResetView
+  //function, rather than hide it.
+  using Epetra_MultiVector::ResetView;
 
   //! Reset the view of an existing vector to point to new user data.
 	/*! Allows the (very) light-weight replacement of multivector values for an

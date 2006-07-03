@@ -415,7 +415,12 @@ This function performs a variety of matrix-matrix multiply operations.
     \return Integer error code, set to 0 if successful.
  
   */
-    virtual int ApplyInverse(const Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & Y) { return (-1); }
+    virtual int ApplyInverse(const Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & Y)
+    {
+      (void)X;//prevents unused variable compiler warning
+      (void)Y;
+      return (-1);
+    }
  
     //! Returns a character string describing the operator
     virtual const char * Label() const { return Epetra_Object::Label(); }

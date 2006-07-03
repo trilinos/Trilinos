@@ -155,7 +155,7 @@ class Epetra_BLAS {
 // Epetra_BLAS constructor
 inline Epetra_BLAS::Epetra_BLAS(void){}
 // Epetra_BLAS constructor
-inline Epetra_BLAS::Epetra_BLAS(const Epetra_BLAS& BLAS){}
+inline Epetra_BLAS::Epetra_BLAS(const Epetra_BLAS& BLAS){(void)BLAS;}
 // Epetra_BLAS destructor
 inline Epetra_BLAS::~Epetra_BLAS(){}
 

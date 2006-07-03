@@ -1945,8 +1945,9 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
 				     int & SizeOfPacket,
                                      int * Sizes,
                                      bool & VarSizes,
-                                     Epetra_Distributor & Distor) {
-	
+                                     Epetra_Distributor & Distor)
+{
+  (void)Distor;	
   // Rest of work can be done using RowMatrix only  
   const Epetra_RowMatrix & A = dynamic_cast<const Epetra_RowMatrix &>(Source);
 
@@ -1962,12 +1963,12 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_SrcDistObject & Source,
     A.NumMyRowEntries( ExportLIDs[i], NumEntries );
     // Will have NumEntries doubles, NumEntries +2 ints, pack them interleaved     Sizes[i] = NumEntries;
     Sizes[i] = NumEntries;
-    IntSizes[i] = 1 + (((NumEntries+2)*sizeof(int))/sizeof(double));
+    IntSizes[i] = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
     TotalSendLength += (Sizes[i]+IntSizes[i]);
   }    
          
   double * DoubleExports = 0; 
-  SizeOfPacket = sizeof(double); 
+  SizeOfPacket = (int)sizeof(double);
        
   //setup buffer locally for memory management by this object
   if( TotalSendLength*SizeOfPacket > LenExports )
@@ -2035,8 +2036,12 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
                                        int & SizeOfPacket, 
 				       Epetra_Distributor & Distor, 
 				       Epetra_CombineMode CombineMode,
-                                       const Epetra_OffsetIndex * Indexor ) {
-	
+                                       const Epetra_OffsetIndex * Indexor )
+{
+  (void)Source;
+  (void)LenImports;
+  (void)SizeOfPacket;
+  (void)Distor;
   if (NumImportIDs<=0) return(0);
 	
   if (   CombineMode != Add
@@ -2062,7 +2067,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   dintptr = (double *) Imports;
   intptr = (int *) dintptr;
   NumEntries = intptr[1];
-  IntSize = 1 + (((NumEntries+2)*sizeof(int))/sizeof(double));
+  IntSize = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
   valptr = dintptr + IntSize;
  
   for (i=0; i<NumImportIDs; i++)
@@ -2108,7 +2113,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_SrcDistObject & Source,
       dintptr += IntSize + NumEntries;
       intptr = (int *) dintptr;
       NumEntries = intptr[1];
-      IntSize = 1 + (((NumEntries+2)*sizeof(int))/sizeof(double));
+      IntSize = 1 + (((NumEntries+2)*(int)sizeof(int))/(int)sizeof(double));
       valptr = dintptr + IntSize;
     }
   }

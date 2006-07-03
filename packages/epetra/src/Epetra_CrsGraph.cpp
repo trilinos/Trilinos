@@ -643,10 +643,8 @@ int Epetra_CrsGraph::TransformToLocal(const Epetra_BlockMap* DomainMap, const Ep
 }
 
 // private =====================================================================
-int Epetra_CrsGraph::ComputeGlobalConstants() {
-  int i;
-  int j;
-
+int Epetra_CrsGraph::ComputeGlobalConstants()
+{
   if(GlobalConstantsComputed()) 
     return(0);
 
@@ -689,13 +687,13 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
     int* ColElementSizeList = RowElementSizeList;
     if(Importer() != 0) 
       ColElementSizeList = ColMap().ElementSizeList();
-    for(i = 0; i < numMyBlockRows; i++){
+    for(int i = 0; i < numMyBlockRows; i++){
       int NumEntries = CrsGraphData_->NumIndicesPerRow_[i];
       int* Indices = CrsGraphData_->Indices_[i];
       if(NumEntries > 0) {
 	int CurNumNonzeros = 0;
 	int RowDim = RowElementSizeList[i];
-	for(j = 0; j < NumEntries; j++) {
+	for(int j = 0; j < NumEntries; j++) {
 	  int ColDim = ColElementSizeList[Indices[j]];
 	  CurNumNonzeros += RowDim*ColDim;
 	  CrsGraphData_->MaxColDim_ = EPETRA_MAX(CrsGraphData_->MaxColDim_, ColDim);
@@ -859,7 +857,7 @@ void epetra_crsgraph_compress_out_duplicates(int len, int* list, int& newlen)
 
     if (*(ptr0-1) != *ptr1) *ptr0++ = *ptr1;
 
-    int num_removed = ptr_end - ptr0 + 1;
+    int num_removed = (int)(ptr_end - ptr0 + 1);
     newlen = len - num_removed;
   }
   else {
@@ -942,7 +940,10 @@ int Epetra_CrsGraph::RemoveRedundantIndices()
 }
 
 // private =====================================================================
-int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap) {
+int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap,
+				const Epetra_BlockMap& RangeMap)
+{
+  (void)RangeMap;
   int i;
   int j;
 
@@ -959,7 +960,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_B
   int numDomainElements = DomainMap.NumMyElements();
   bool * LocalGIDs  = 0;
   if (numDomainElements>0) LocalGIDs  = new bool[numDomainElements];
-  for (int i=0; i<numDomainElements; i++) LocalGIDs[i] = false; // Assume domain GIDs are not local
+  for (i=0; i<numDomainElements; i++) LocalGIDs[i] = false; // Assume domain GIDs are not local
 
   // In principle it is good to have RemoteGIDs and RemotGIDList be as long as the number of remote GIDs
   // on this processor, but this would require two passes through the column IDs, so we make it 100
@@ -1173,7 +1174,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
   int * indices = CrsGraphData_->NumIndicesPerRow_.Values();
   int curNumIndices = indices[0];
   indices[0] = 0;
-  for (int i=0; i<numMyBlockRows; ++i) {
+  for (i=0; i<numMyBlockRows; ++i) {
     int nextNumIndices = indices[i+1];
     indices[i+1] = indices[i]+curNumIndices;
     curNumIndices = nextNumIndices;
@@ -1193,7 +1194,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
     int* tmp = CrsGraphData_->All_Indices_.Values();
     int * IndexOffset = CrsGraphData_->IndexOffset_ .Values();
     for(i = 0; i < numMyBlockRows; i++) {
-      int NumIndices = IndexOffset[i+1] - IndexOffset[i];
+      NumIndices = IndexOffset[i+1] - IndexOffset[i];
       int* ColIndices = CrsGraphData_->Indices_[i];
       if (tmp!=ColIndices) { // No need to copy if pointing to same space
 	for(j = 0; j < NumIndices; j++) 
@@ -1397,6 +1398,7 @@ int Epetra_CrsGraph::CopyAndPermuteRowMatrix(const Epetra_RowMatrix& A,
 					     int* PermuteFromLIDs,
                                              const Epetra_OffsetIndex * Indexor)
 {
+  (void)Indexor;
   int i;
   int j;
   int NumIndices;
@@ -1447,6 +1449,7 @@ int Epetra_CrsGraph::CopyAndPermuteCrsGraph(const Epetra_CrsGraph& A,
 					    int* PermuteFromLIDs,
                                             const Epetra_OffsetIndex * Indexor)
 {
+  (void)Indexor;
   int i;
   int Row;
   int NumIndices;
@@ -1525,7 +1528,7 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_SrcDistObject& Source,
 
   VarSizes = true;
 
-  SizeOfPacket = sizeof(int); 
+  SizeOfPacket = (int)sizeof(int); 
 
   if(NumExportIDs <= 0) return(0);
 
@@ -1582,6 +1585,11 @@ int Epetra_CrsGraph::PackAndPrepareCrsGraph(const Epetra_CrsGraph& A,
                                             bool& VarSizes,
 					    Epetra_Distributor& Distor)
 {
+  (void)LenExports;
+  (void)SizeOfPacket;
+  (void)Sizes;
+  (void)VarSizes;
+  (void)Distor;
   int i;
   int NumIndices;
   int* Indices = 0;
@@ -1622,7 +1630,12 @@ int Epetra_CrsGraph::PackAndPrepareRowMatrix(const Epetra_RowMatrix& A,
                                              int* Sizes,
                                              bool& VarSizes,
 					     Epetra_Distributor& Distor)
-{  
+{
+  (void)LenExports;
+  (void)SizeOfPacket;
+  (void)Sizes;
+  (void)VarSizes;
+  (void)Distor;
   int i;
   int j;
   int NumIndices;
@@ -1672,6 +1685,12 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_SrcDistObject& Source,
                                       Epetra_CombineMode CombineMode,
                                       const Epetra_OffsetIndex * Indexor) 
 {
+  (void)Source;
+  (void)LenImports;
+  (void)SizeOfPacket;
+  (void)Distor;
+  (void)CombineMode;
+  (void)Indexor;
   if(NumImportIDs <= 0) 
     return(0);
 

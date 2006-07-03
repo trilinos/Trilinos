@@ -146,6 +146,10 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
 
   //@{ \name Set Methods
 
+  //Let the compiler know we intend to overload the SetMatrix function,
+  //rather than hide it.
+  using Epetra_SerialDenseSolver::SetMatrix;
+
   //! Sets the pointers for coefficient matrix; special version for symmetric matrices
   int SetMatrix(Epetra_SerialSymDenseMatrix & A);
   //@}
@@ -232,6 +236,10 @@ class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
   /*! If SCOND() is >= 0.1 and AMAX() is not close to overflow or underflow, then equilibration is not needed.
    */
   double SCOND() {return(SCOND_);};
+
+  //Let the compiler know we intend to overload the AMAX function,
+  //rather than hide it.
+  using Epetra_SerialDenseSolver::AMAX;
 
   //! Returns the absolute value of the largest entry of the \e this matrix (returns -1 if not yet computed).
   double AMAX() {return(AMAX_);};  
