@@ -48,7 +48,7 @@ public:
 
 	//! Templated constructor
 	template<typename ValueType>
-	any(const ValueType & value)
+	explicit any(const ValueType & value)
 		: content(new holder<ValueType>(value))
 		{}
 	

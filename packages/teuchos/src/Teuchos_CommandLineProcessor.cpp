@@ -96,11 +96,11 @@ void CommandLineProcessor::setOption(
   add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_true)]
-		= opt_val_val_t(OPT_BOOL_TRUE,option_val);
+		= opt_val_val_t(OPT_BOOL_TRUE,any(option_val));
 	options_list_[std::string(option_false)]
-		= opt_val_val_t(OPT_BOOL_FALSE,option_val);
+		= opt_val_val_t(OPT_BOOL_FALSE,any(option_val));
 	options_documentation_list_.push_back(
-		opt_doc_t(OPT_BOOL_TRUE,option_true,option_false,std::string(documentation?documentation:""),option_val) );
+		opt_doc_t(OPT_BOOL_TRUE,option_true,option_false,std::string(documentation?documentation:""),any(option_val)) );
 }
 
 void CommandLineProcessor::setOption(
@@ -112,9 +112,9 @@ void CommandLineProcessor::setOption(
   add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_name)]
-		= opt_val_val_t(OPT_INT,option_val);
+		= opt_val_val_t(OPT_INT,any(option_val));
 	options_documentation_list_.push_back(
-		opt_doc_t(OPT_INT,option_name,"",std::string(documentation?documentation:""),option_val) );
+		opt_doc_t(OPT_INT,option_name,"",std::string(documentation?documentation:""),any(option_val)) );
 }
 
 void CommandLineProcessor::setOption(
@@ -126,9 +126,9 @@ void CommandLineProcessor::setOption(
   add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_name)]
-		= opt_val_val_t(OPT_DOUBLE,option_val);
+		= opt_val_val_t(OPT_DOUBLE,any(option_val));
 	options_documentation_list_.push_back(
-		opt_doc_t(OPT_DOUBLE,option_name,"",std::string(documentation?documentation:""),option_val) );
+		opt_doc_t(OPT_DOUBLE,option_name,"",std::string(documentation?documentation:""),any(option_val)) );
 }
 
 void CommandLineProcessor::setOption(
@@ -140,9 +140,9 @@ void CommandLineProcessor::setOption(
   add_extra_output_setup_options();
 	TEST_FOR_EXCEPT(!(option_val!=NULL));
 	options_list_[std::string(option_name)]
-		= opt_val_val_t(OPT_STRING,option_val);
+		= opt_val_val_t(OPT_STRING,any(option_val));
 	options_documentation_list_.push_back(
-		opt_doc_t(OPT_STRING,option_name,"",std::string(documentation?documentation:""),option_val) );
+		opt_doc_t(OPT_STRING,option_name,"",std::string(documentation?documentation:""),any(option_val)) );
 }
 
 // Parse command line
@@ -455,9 +455,9 @@ void CommandLineProcessor::setEnumOption(
 		);
 	const int opt_id = enum_opt_data_list_.size()-1;
 	options_list_[std::string(enum_option_name)]
-		= opt_val_val_t(OPT_ENUM_INT,opt_id);
+		= opt_val_val_t(OPT_ENUM_INT,any(opt_id));
 	options_documentation_list_.push_back(
-		opt_doc_t(OPT_ENUM_INT,enum_option_name,"",std::string(documentation?documentation:""),opt_id)
+		opt_doc_t(OPT_ENUM_INT,enum_option_name,"",std::string(documentation?documentation:""),any(opt_id))
 		);
 }
 
