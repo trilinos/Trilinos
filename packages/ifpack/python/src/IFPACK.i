@@ -71,6 +71,8 @@ Finally, the following functions are avaiable in the IFPACK module:
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Operator.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
 #include "Epetra_JadOperator.h"
 
 // Epetra python includes
