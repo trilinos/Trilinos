@@ -39,14 +39,14 @@
 #include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 // **************************************************************************
 // *** Constructor
 // **************************************************************************
 NOX::Direction::Utils::InexactNewton::
 InexactNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-	      NOX::Parameter::List& directionSublist) :
+	      Teuchos::ParameterList& directionSublist) :
   paramsPtr(0)
 {
   reset(gd, directionSublist);
@@ -64,23 +64,23 @@ NOX::Direction::Utils::InexactNewton::~InexactNewton()
 // **************************************************************************
 bool NOX::Direction::Utils::InexactNewton::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-      NOX::Parameter::List& directionSublist)
+      Teuchos::ParameterList& directionSublist)
 {
   globalDataPtr = gd;
   printing = gd->getUtils();
   paramsPtr = &directionSublist;
 
-  directionMethod = paramsPtr->getParameter("Method", "Newton");
+  directionMethod = paramsPtr->get("Method", "Newton");
   
-  NOX::Parameter::List& p = paramsPtr->sublist(directionMethod);
+  Teuchos::ParameterList& p = paramsPtr->sublist(directionMethod);
 
-  setTolerance = p.getParameter("Set Tolerance in Parameter List", true);
+  setTolerance = p.get("Set Tolerance in Parameter List", true);
 
-  method = p.getParameter("Forcing Term Method", "Constant");
+  method = p.get("Forcing Term Method", "Constant");
 
   if (method == "Constant") {  
     forcingTermMethod = Constant;
-    eta_k = p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-4);
+    eta_k = p.sublist("Linear Solver").get("Tolerance", 1.0e-4);
   }
   else {
     
@@ -94,11 +94,11 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
       throwError("reset", "\"Forcing Term Method\" is invalid!");
     }
 
-    eta_min = p.getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  
-    eta_max = p.getParameter("Forcing Term Maximum Tolerance", 0.9);
-    eta_initial = p.getParameter("Forcing Term Initial Tolerance", 0.01);
-    alpha = p.getParameter("Forcing Term Alpha", 1.5);
-    gamma = p.getParameter("Forcing Term Gamma", 0.9);
+    eta_min = p.get("Forcing Term Minimum Tolerance", 1.0e-4);  
+    eta_max = p.get("Forcing Term Maximum Tolerance", 0.9);
+    eta_initial = p.get("Forcing Term Initial Tolerance", 0.01);
+    alpha = p.get("Forcing Term Alpha", 1.5);
+    gamma = p.get("Forcing Term Gamma", 0.9);
     eta_k = eta_min;
     
   }
@@ -126,7 +126,7 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
     }
     if (setTolerance)
       paramsPtr->sublist(directionMethod).sublist("Linear Solver").
-	setParameter("Tolerance", eta_k);
+	set("Tolerance", eta_k);
 
     return eta_k;
   }
@@ -138,7 +138,7 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
   double eta_km1 = 0.0;
   if (eta_last < 0.0)
     eta_km1 = paramsPtr->sublist(directionMethod).
-      sublist("Linear Solver").getParameter("Tolerance", 0.0);
+      sublist("Linear Solver").get("Tolerance", 0.0);
   else
     eta_km1 = eta_last;
 
@@ -273,7 +273,7 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
   // Set the new linear solver tolerance
   if (setTolerance) 
     paramsPtr->sublist(directionMethod).sublist("Linear Solver").
-      setParameter("Tolerance", eta_k);
+      set("Tolerance", eta_k);
 
   if (printing->isPrintType(NOX::Utils::Details)) 
     printing->out() << indent << "Forcing Term: " << eta_k << endl;

@@ -315,14 +315,14 @@ public:
 
   //! Constructor
   Polynomial(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& params);
+	     Teuchos::ParameterList& params);
   
   //! Destructor
   ~Polynomial();
   
   // derived
   bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& params);
+	     Teuchos::ParameterList& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -549,7 +549,7 @@ protected:
   /*! We need this to later create an "Output" sublist to store output
       parameters from #counterUtil. 
   */
-  NOX::Parameter::List* paramsPtr;
+  Teuchos::ParameterList* paramsPtr;
 
   //! Common line search printing utilities.
   NOX::LineSearch::Utils::Printing print;

@@ -39,7 +39,7 @@
 #include "NOX_Solver_PrePostOperator.H"	 // class data element
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Tensor.H"   // class data element
-#include "NOX_Parameter_List.H"	    // class data element
+#include "Teuchos_ParameterList.hpp"	    // class data element
 #include "NOX_LineSearch_Tensor.H"  // class data element
 
 // Forward declarations
@@ -123,14 +123,14 @@ public:
   //! %TensorBasedTest-method constructor. 
   TensorBasedTest(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests,
-		  const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~TensorBasedTest();
 
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests,
-		     const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType getStatus();
@@ -139,7 +139,7 @@ public:
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const NOX::Parameter::List& getParameterList() const;
+  virtual const Teuchos::ParameterList& getList() const;
 
   //!  Return the direction object
   virtual const NOX::Direction::Tensor& getDirection() const;
@@ -176,7 +176,7 @@ protected:
   NOX::StatusTest::CheckType checkType;
 
   //! Input parameters.
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
 
   //! Linesearch
   NOX::LineSearch::Tensor lineSearch;

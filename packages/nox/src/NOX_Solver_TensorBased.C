@@ -35,7 +35,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 
@@ -52,7 +52,7 @@
 NOX::Solver::TensorBased::
 TensorBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 	    const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	    const Teuchos::RefCountPtr<NOX::Parameter::List>& p) :
+	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr(xGrp),		
@@ -100,7 +100,7 @@ void NOX::Solver::TensorBased::init()
 bool NOX::Solver::TensorBased::
 reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& p)
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p)
 {
   solnPtr = xGrp;
   testPtr = t;
@@ -113,10 +113,10 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   prePostOperator.reset(utilsPtr, paramsPtr->sublist("Solver Options"));
 
   // *** Reset direction parameters ***
-  NOX::Parameter::List& dirParams = paramsPtr->sublist("Direction");
+  Teuchos::ParameterList& dirParams = paramsPtr->sublist("Direction");
 
   // Determine the specific type of direction to compute
-  string choice = dirParams.getParameter("Method", "Tensor");
+  string choice = dirParams.get("Method", "Tensor");
   if (choice == "Tensor")
     requestedBaseStep = TensorStep;
   else if (choice == "Newton")
@@ -131,17 +131,17 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   }
 
   // Make a reference to the sublist holding the global strategy parameters
-  NOX::Parameter::List& teParams = dirParams.sublist(choice);
+  Teuchos::ParameterList& teParams = dirParams.sublist(choice);
 
   //  Copy Method into "Compute Step" (temporary hack for data scripts)
-  dirParams.setParameter("Compute Step", choice);
+  dirParams.set("Compute Step", choice);
 
   // Initialize direction parameters for this object
-  doRescue = teParams.getParameter("Rescue Bad Newton Solve", true);
+  doRescue = teParams.get("Rescue Bad Newton Solve", true);
 
   // Get the checktype
   checkType = (NOX::StatusTest::CheckType) paramsPtr->
-    sublist("Solver Options").getParameter("Status Test Check Type", 
+    sublist("Solver Options").get("Status Test Check Type", 
 					   NOX::StatusTest::Minimal);
 
   // Determine whether we should use the Modified Tensor method
@@ -149,7 +149,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   if (requestedBaseStep == TensorStep)
   {
     useModifiedMethod = 
-      dirParams.getParameter("Use Modified Bouaricha", true);
+      dirParams.get("Use Modified Bouaricha", true);
     if (useModifiedMethod  &&
 	utilsPtr->isPrintType(NOX::Utils::Parameters))
       utilsPtr->out() << "Using Modifed Bouaricha method" << endl;
@@ -157,10 +157,10 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
 
   
   // *** Reset parameters for Line Search ***
-  NOX::Parameter::List& lsParams = paramsPtr->sublist("Line Search");
+  Teuchos::ParameterList& lsParams = paramsPtr->sublist("Line Search");
 
   // Determine the specific type of tensor linesearch to perform
-  choice = lsParams.getParameter("Method", "Curvilinear");
+  choice = lsParams.get("Method", "Curvilinear");
 
   if (choice == "Curvilinear")
     lsType = Curvilinear;
@@ -181,13 +181,13 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
     throw "NOX Error";
   }
   //  Copy Method into "Submethod" (temporary hack for data scripts)
-  lsParams.setParameter("Submethod", choice);
+  lsParams.set("Submethod", choice);
 
   // Make a reference to the sublist holding the global strategy parameters
-  NOX::Parameter::List& gsParams = lsParams.sublist(choice);
+  Teuchos::ParameterList& gsParams = lsParams.sublist(choice);
 
   // Decide what step to use in case of linesearch failure
-  choice = gsParams.getParameter("Recovery Step Type", "Constant");
+  choice = gsParams.get("Recovery Step Type", "Constant");
   if (choice == "Constant")
     recoveryStepType = Constant;          // Use value in "Recovery Step"
   else if (choice == "Last Computed Step") 
@@ -200,13 +200,13 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
   }
 
   // Initialize linesearch parameters for this object
-  minStep = gsParams.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = gsParams.getParameter("Default Step", 1.0);
-  recoveryStep = gsParams.getParameter("Recovery Step", 0.0); // exit on fail
-  maxIters = gsParams.getParameter("Max Iters", 40);
-  alpha = gsParams.getParameter("Alpha Factor", 1.0e-4);
+  minStep = gsParams.get("Minimum Step", 1.0e-12);
+  defaultStep = gsParams.get("Default Step", 1.0);
+  recoveryStep = gsParams.get("Recovery Step", 0.0); // exit on fail
+  maxIters = gsParams.get("Max Iters", 40);
+  alpha = gsParams.get("Alpha Factor", 1.0e-4);
 
-  choice = gsParams.getParameter("Lambda Selection", "Halving");
+  choice = gsParams.get("Lambda Selection", "Halving");
   if (choice == "Halving")
     lambdaSelection = Halving;
   else if (choice == "Quadratic") 
@@ -220,7 +220,7 @@ reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp,
     throw "NOX Error";
   }
 
-  choice = gsParams.getParameter("Sufficient Decrease Condition",
+  choice = gsParams.get("Sufficient Decrease Condition",
 				 "Armijo-Goldstein");
   if (choice == "Armijo-Goldstein") 
     convCriteria = ArmijoGoldstein;     // This is the only one implemented
@@ -375,9 +375,9 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::solve()
     printUpdate();
   }
 
-  NOX::Parameter::List& outputParams = paramsPtr->sublist("Output");
-  outputParams.setParameter("Nonlinear Iterations", nIter);
-  outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+  Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");
+  outputParams.set("Nonlinear Iterations", nIter);
+  outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
   prePostOperator.runPostSolve(*this);
 
@@ -401,8 +401,8 @@ int NOX::Solver::TensorBased::getNumIterations() const
   return nIter;
 }
 
-const NOX::Parameter::List&
-NOX::Solver::TensorBased::getParameterList() const
+const Teuchos::ParameterList&
+NOX::Solver::TensorBased::getList() const
 {
   return *paramsPtr;
 }
@@ -463,9 +463,9 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 {
   NOX::Abstract::Group::ReturnType status;
   
-  NOX::Parameter::List& linearParams = paramsPtr->sublist("Direction").
+  Teuchos::ParameterList& linearParams = paramsPtr->sublist("Direction").
     sublist(paramsPtr->sublist("Direction").
-	    getParameter("Method","Tensor")).
+	    get("Method","Tensor")).
     sublist("Linear Solver");
 
   // Compute F at current solution.
@@ -522,7 +522,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 #endif
 
     // Save some parameters and use them later...
-    double tol = linearParams.getParameter("Tolerance", 1e-4);
+    double tol = linearParams.get("Tolerance", 1e-4);
     double relativeResidual = residualNorm /
       solver.getPreviousSolutionGroup().getNormF();
 
@@ -539,7 +539,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
       double newTol = tol / relativeResidual;
       if (newTol > 0.99)
 	newTol = 0.99;  // force at least one iteration
-      linearParams.setParameter("Tolerance",  newTol);
+      linearParams.set("Tolerance",  newTol);
       if (utilsPtr->isPrintType(NOX::Utils::Details))
 	utilsPtr->out() << "  Setting tolerance to " << utilsPtr->sciformat(newTol,6) << endl;
     }
@@ -574,7 +574,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (isInitialGuessGood) 
     {
       tmpVecPtr->update(1.0, *tensorVecPtr, 1.0);
-      linearParams.setParameter("Tolerance",  tol);
+      linearParams.set("Tolerance",  tol);
     }
 #endif
 
@@ -582,7 +582,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (linearParams.sublist("Output").
 	isParameter("Number of Linear Iterations"))
       tempVal1 = linearParams.sublist("Output").
-	getParameter("Number of Linear Iterations",0);
+	get("Number of Linear Iterations",0);
 
 #if DEBUG_LEVEL > 0
     // Compute residual of linear system with initial guess...
@@ -623,7 +623,7 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   if (linearParams.sublist("Output").
       isParameter("Number of Linear Iterations"))
     tempVal2 = linearParams.sublist("Output").
-      getParameter("Number of Linear Iterations",0);
+      get("Number of Linear Iterations",0);
   numJ2vMults += (tempVal1 > tempVal2) ? tempVal1 : tempVal2;
   
 #ifdef CHECK_RESIDUALS

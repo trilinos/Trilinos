@@ -253,7 +253,7 @@ void Problem_Manager::createDependency( GenericEpetraProblem & problemA,
 
 //-----------------------------------------------------------------------------
 
-void Problem_Manager::registerParameters(const Teuchos::RefCountPtr<NOX::Parameter::List>& List)
+void Problem_Manager::registerParameters(const Teuchos::RefCountPtr<Teuchos::ParameterList>& List)
 {
   nlParams = List;
 }
@@ -509,8 +509,8 @@ void Problem_Manager::registerComplete()
   //  dynamic_cast<NOX::Epetra::Interface::Required&>(interface);
   compositeNOXSoln = new NOX::Epetra::Vector(*(compositeSoln.get()));
 
-  NOX::Parameter::List & printParams = nlParams->sublist("Printing");
-  NOX::Parameter::List & lsParams    = nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
+  Teuchos::ParameterList & printParams = nlParams->sublist("Printing");
+  Teuchos::ParameterList & lsParams    = nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
   // Setup appropriate operators and their use
 
@@ -547,8 +547,8 @@ void Problem_Manager::registerComplete()
         compositeSoln) );
   }
 
-  //lsParams.setParameter("Preconditioning", "None");
-  lsParams.setParameter("Preconditioner", "AztecOO");
+  //lsParams.set("Preconditioning", "None");
+  lsParams.set("Preconditioner", "AztecOO");
   compositeGroup = Teuchos::rcp(new NOX::Epetra::Group(nlParams->sublist("Printing"), 
 					interface, *compositeNOXSoln, 
 					composite_linearSystem));

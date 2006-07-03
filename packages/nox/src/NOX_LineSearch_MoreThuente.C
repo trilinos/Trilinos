@@ -35,14 +35,14 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::MoreThuente::
 MoreThuente(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-	    Parameter::List& params) :
+	    Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   print(gd->getUtils()),
   slope(gd),
@@ -57,7 +57,7 @@ NOX::LineSearch::MoreThuente::~MoreThuente()
 
 bool NOX::LineSearch::MoreThuente::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      Parameter::List& params)
+      Teuchos::ParameterList& params)
 { 
   globalDataPtr = gd;
   meritFuncPtr = gd->getMeritFunction();
@@ -65,15 +65,15 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   slope.reset(gd);
 
   paramsPtr = &params;
-  NOX::Parameter::List& p = params.sublist("More'-Thuente");
-  ftol = p.getParameter("Sufficient Decrease", 1.0e-4);
-  gtol = p.getParameter("Curvature Condition", 0.9999);
-  xtol = p.getParameter("Interval Width", 1.0e-15);
-  stpmin = p.getParameter("Minimum Step", 1.0e-12);
-  stpmax = p.getParameter("Maximum Step", 1.0e+6);
-  maxfev = p.getParameter("Max Iters", 20);
-  defaultstep = p.getParameter("Default Step", 1.0);
-  recoverystep = p.getParameter("Recovery Step", defaultstep);
+  Teuchos::ParameterList& p = params.sublist("More'-Thuente");
+  ftol = p.get("Sufficient Decrease", 1.0e-4);
+  gtol = p.get("Curvature Condition", 0.9999);
+  xtol = p.get("Interval Width", 1.0e-15);
+  stpmin = p.get("Minimum Step", 1.0e-12);
+  stpmax = p.get("Maximum Step", 1.0e+6);
+  maxfev = p.get("Max Iters", 20);
+  defaultstep = p.get("Default Step", 1.0);
+  recoverystep = p.get("Recovery Step", defaultstep);
 
   // Check the input parameters for errors.
   if ((ftol < 0.0) || 
@@ -90,7 +90,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 
   counter.reset();
 
-  string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
+  string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
   if (choice == "Ared/Pred") 
     suffDecrCond = AredPred;
   else if (choice == "Armijo-Goldstein") 
@@ -101,7 +101,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
 
-  choice = p.getParameter("Recovery Step Type", "Constant");
+  choice = p.get("Recovery Step Type", "Constant");
   if (choice == "Constant")
     recoveryStepType = Constant;
   else if (choice == "Last Computed Step") {
@@ -113,7 +113,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
 
-  useOptimizedSlopeCalc = p.getParameter("Optimize Slope Calculation", false);
+  useOptimizedSlopeCalc = p.get("Optimize Slope Calculation", false);
 
   return true;
 }
@@ -196,10 +196,12 @@ cvsrch(Abstract::Group& newgrp, double& stp, const Abstract::Group& oldgrp,
   double dgy = dginit;
 
   // Get the linear solve tolerance for adjustable forcing term
-  const NOX::Parameter::List& p = s.getParameterList();
+  const Teuchos::ParameterList& p = s.getList();
   double eta_original = 0.0;
   double eta = 0.0;
-  eta_original = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", -1.0);
+  eta_original = const_cast<Teuchos::ParameterList&>(p).sublist("Direction").
+    sublist("Newton").sublist("Linear Solver").
+    get(std::string("Tolerance"), -1.0);
   eta = eta_original;
   
 

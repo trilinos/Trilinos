@@ -33,7 +33,7 @@
 #include "NOX_Direction_Manager.H" // class definition
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Direction_Newton.H"
 #include "NOX_Direction_SteepestDescent.H"
 #include "NOX_Direction_NonlinearCG.H"
@@ -55,7 +55,7 @@ Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
 
 NOX::Direction::Manager::
 Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-	NOX::Parameter::List& params) :
+	Teuchos::ParameterList& params) :
   method("")
 {
   reset(gd, params);
@@ -68,11 +68,11 @@ NOX::Direction::Manager::~Manager()
 
 bool NOX::Direction::Manager::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      NOX::Parameter::List& params)
+      Teuchos::ParameterList& params)
 {
   utils = gd->getUtils();
 
-  string newmethod = params.getParameter("Method", "Newton");
+  string newmethod = params.get("Method", "Newton");
 
   // If the method has not changeed, just call reset on the method.
   if (method == newmethod) 
@@ -101,11 +101,11 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 #endif
   else if (method == "User Defined") {
     if (params.INVALID_TEMPLATE_QUALIFIER
-	isParameterRcp<NOX::Direction::Generic>
+	isType< Teuchos::RefCountPtr<NOX::Direction::Generic> >
 	("User Defined Direction")) {
       
       ptr = params.INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<NOX::Direction::Generic>
+	get< Teuchos::RefCountPtr<NOX::Direction::Generic> >
 	("User Defined Direction");
       ptr->reset(gd, params);
     }

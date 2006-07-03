@@ -107,6 +107,35 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 am__DEPENDENCIES_1 =
 libnoxepetra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am__libnoxepetra_a_SOURCES_DIST = $(srcdir)/NOX_Epetra_Vector.C \
+	$(srcdir)/NOX_Epetra_VectorSpace_L2.C \
+	$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.C \
+	$(srcdir)/NOX_Epetra_MultiVector.C \
+	$(srcdir)/NOX_Epetra_Group.C \
+	$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.C \
+	$(srcdir)/NOX_Epetra_MatrixFree.C \
+	$(srcdir)/NOX_Epetra_FiniteDifference.C \
+	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.C \
+	$(srcdir)/NOX_Epetra_Scaling.C \
+	$(srcdir)/NOX_Epetra_BroydenOperator.C $(srcdir)/NOX_Epetra.H \
+	$(srcdir)/NOX_Epetra_Vector.H \
+	$(srcdir)/NOX_Epetra_VectorSpace.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_L2.H \
+	$(srcdir)/NOX_Epetra_VectorSpace_ScaledL2.H \
+	$(srcdir)/NOX_Epetra_MultiVector.H \
+	$(srcdir)/NOX_Epetra_Group.H \
+	$(srcdir)/NOX_Epetra_Interface_Required.H \
+	$(srcdir)/NOX_Epetra_Interface_Jacobian.H \
+	$(srcdir)/NOX_Epetra_Interface_Preconditioner.H \
+	$(srcdir)/NOX_Epetra_LinearSystem.H \
+	$(srcdir)/NOX_Epetra_LinearSystem_AztecOO.H \
+	$(srcdir)/NOX_Epetra_MatrixFree.H \
+	$(srcdir)/NOX_Epetra_FiniteDifference.H \
+	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
+	$(srcdir)/NOX_Epetra_Scaling.H \
+	$(srcdir)/NOX_Epetra_BroydenOperator.H \
+	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C \
+	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
 am__objects_1 = NOX_Epetra_Vector.$(OBJEXT) \
 	NOX_Epetra_VectorSpace_L2.$(OBJEXT) \
 	NOX_Epetra_VectorSpace_ScaledL2.$(OBJEXT) \
@@ -118,7 +147,9 @@ am__objects_1 = NOX_Epetra_Vector.$(OBJEXT) \
 	NOX_Epetra_Scaling.$(OBJEXT) \
 	NOX_Epetra_BroydenOperator.$(OBJEXT)
 am__objects_2 =
-am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2)
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__objects_3 = NOX_Epetra_ModelEvaluatorInterface.$(OBJEXT)
+am_libnoxepetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_2)
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -129,6 +160,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Group.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_MatrixFree.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_MultiVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Scaling.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NOX_Epetra_Vector.Po \
@@ -144,7 +176,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libnoxepetra_a_SOURCES)
-DIST_SOURCES = $(libnoxepetra_a_SOURCES)
+DIST_SOURCES = $(am__libnoxepetra_a_SOURCES_DIST)
 am__include_HEADERS_DIST = $(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_Vector.H \
 	$(srcdir)/NOX_Epetra_VectorSpace.H \
@@ -161,7 +193,8 @@ am__include_HEADERS_DIST = $(srcdir)/NOX_Epetra.H \
 	$(srcdir)/NOX_Epetra_FiniteDifference.H \
 	$(srcdir)/NOX_Epetra_FiniteDifferenceColoring.H \
 	$(srcdir)/NOX_Epetra_Scaling.H \
-	$(srcdir)/NOX_Epetra_BroydenOperator.H
+	$(srcdir)/NOX_Epetra_BroydenOperator.H \
+	$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 ETAGS = etags
@@ -414,11 +447,17 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_Scaling.C \
 	$(srcdir)/NOX_Epetra_BroydenOperator.C
 
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@MODELEVAL = \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@        $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C
+
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@MODELEVAL_H = \
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@        $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
+
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(MODELEVAL) $(MODELEVAL_H)
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(NOX_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -431,7 +470,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 @BUILD_LIBNOXEPETRA_TRUE@lib_LIBRARIES = libnoxepetra.a
 
 # List of all headers to install in $(includedir)
-@BUILD_LIBNOXEPETRA_TRUE@include_HEADERS = $(EPETRA_H)
+@BUILD_LIBNOXEPETRA_TRUE@include_HEADERS = $(EPETRA_H) $(MODELEVAL_H)
 @USE_ALTERNATE_AR_FALSE@libnoxepetra_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
@@ -537,6 +576,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_LinearSystem_AztecOO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_MatrixFree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Scaling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NOX_Epetra_Vector.Po@am__quote@
@@ -734,6 +774,22 @@ NOX_Epetra_BroydenOperator.obj: $(srcdir)/NOX_Epetra_BroydenOperator.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_BroydenOperator.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_BroydenOperator.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_BroydenOperator.obj `if test -f '$(srcdir)/NOX_Epetra_BroydenOperator.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_BroydenOperator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_BroydenOperator.C'; fi`
+
+NOX_Epetra_ModelEvaluatorInterface.o: $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_ModelEvaluatorInterface.o -MD -MP -MF "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Tpo" -c -o NOX_Epetra_ModelEvaluatorInterface.o `test -f '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Tpo" "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C' object='NOX_Epetra_ModelEvaluatorInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_ModelEvaluatorInterface.o `test -f '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C' || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C
+
+NOX_Epetra_ModelEvaluatorInterface.obj: $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT NOX_Epetra_ModelEvaluatorInterface.obj -MD -MP -MF "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Tpo" -c -o NOX_Epetra_ModelEvaluatorInterface.obj `if test -f '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Tpo" "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Po"; else rm -f "$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C' object='NOX_Epetra_ModelEvaluatorInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.Po' tmpdepfile='$(DEPDIR)/NOX_Epetra_ModelEvaluatorInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Epetra_ModelEvaluatorInterface.obj `if test -f '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; then $(CYGPATH_W) '$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)

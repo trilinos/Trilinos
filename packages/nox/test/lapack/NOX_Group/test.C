@@ -39,12 +39,12 @@
 int main(int argc, char *argv[]) {
 
   // Set up the printing utilities
-  NOX::Parameter::List noxParams;
-  NOX::Parameter::List& printParams = noxParams.sublist("Printing");
-  printParams.setParameter("Output Precision", 5);
+  Teuchos::ParameterList noxParams;
+  Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
+  printParams.set("Output Precision", 5);
   if (argc > 1) { 
     if (argv[1][0]=='-' && argv[1][1]=='v')
-       printParams.setParameter("Output Information", 
+       printParams.set("Output Information", 
 			NOX::Utils::OuterIteration + 
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
 			NOX::Utils::Warning +
 			NOX::Utils::TestDetails);
     else
-       printParams.setParameter("Output Information", NOX::Utils::Error);
+       printParams.set("Output Information", NOX::Utils::Error);
   }
   NOX::Utils printing(printParams);
 

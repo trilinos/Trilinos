@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 // Additional NOX setup
 
   // Create the top level parameter list
-  NOX::Parameter::List nlParams;
+  Teuchos::ParameterList nlParams;
 
   // Allow options to be set from command line or from file
   NOX::Petsc::Options optionHandler(nlParams, ctx.rank);

@@ -56,7 +56,7 @@
 #include "AztecOO.h"
 
 // User's application specific files 
-#include "1DfemInterface.H" 
+#include "1DfemModelEvaluator.H" 
 #include "1DfemPrePostOperator.H"
 
 #include "Teuchos_ParameterList.hpp"
@@ -108,36 +108,19 @@ int main(int argc, char *argv[])
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RefCountPtr<Interface> interface = 
-    Teuchos::rcp(new Interface(NumGlobalElements, Comm));
+  Teuchos::RefCountPtr<ModelEvaluatorInterface> interface = 
+    Teuchos::rcp(new ModelEvaluatorInterface(NumGlobalElements, Comm));
+
+  // Get the vector from the Problem
+  Teuchos::RefCountPtr<Epetra_Vector> soln = 
+    Teuchos::rcp_const_cast<Epetra_Vector>(interface->get_x_init());
+  Teuchos::RefCountPtr<NOX::Epetra::Vector> noxSoln = 
+    Teuchos::rcp(new NOX::Epetra::Vector(soln, 
+					 NOX::Epetra::Vector::CreateView));
 
   // Set the PDE factor (for nonlinear forcing term).  This could be specified
   // via user input.
-  interface->setPDEfactor(100000.0);
-
-  // Use a scaled vector space.  The scaling must also be registered
-  // with the linear solver so the linear system is consistent!
-  Teuchos::RefCountPtr<Epetra_Vector> scaleVec = 
-    Teuchos::rcp(new Epetra_Vector( *(interface->getSolution())));
-  scaleVec->PutScalar(2.0);
-  Teuchos::RefCountPtr<NOX::Epetra::Scaling> scaling = 
-    Teuchos::rcp(new NOX::Epetra::Scaling);
-  scaling->addUserScaling(NOX::Epetra::Scaling::Left, scaleVec);
-
-  // Use a weighted vector space for scaling all norms
-  Teuchos::RefCountPtr<NOX::Epetra::VectorSpace> weightedVectorSpace = 
-    Teuchos::rcp(new NOX::Epetra::VectorSpaceScaledL2(scaling));
-
-  // Get the vector from the Problem
-  Teuchos::RefCountPtr<Epetra_Vector> soln = interface->getSolution();
-  Teuchos::RefCountPtr<NOX::Epetra::Vector> noxSoln = 
-    Teuchos::rcp(new NOX::Epetra::Vector(soln, 
-					 NOX::Epetra::Vector::CreateCopy,
-					 NOX::DeepCopy,
-					 weightedVectorSpace));
-
-  // Initial Guess 
-  noxSoln->init(2.0);
+  interface->setPDEfactor(1000.0);
 
   // Begin Nonlinear Solver ************************************
 
@@ -147,17 +130,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
-  nlParams.set("Nonlinear Solver", "Inexact Trust Region Based");
-  nlParams.sublist("Trust Region").
-    set("Inner Iteration Method", "Inexact Trust Region");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  
-  // RPP: Commenting this line out.  There is now a default for MPI
-  // specific builds.  We are testing that it works here.
-  // //printParams.set("MyPID", MyPID);
-
+  printParams.set("MyPID", MyPID); 
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
   if (verbose)
@@ -166,7 +143,7 @@ int main(int argc, char *argv[])
 			     NOX::Utils::OuterIterationStatusTest + 
 			     NOX::Utils::InnerIteration +
 			     NOX::Utils::LinearSolverDetails +
-			     NOX::Utils::Parameters + 
+		    //NOX::Utils::Parameters + 
 			     NOX::Utils::Details + 
 			     NOX::Utils::Warning +
                              NOX::Utils::Debug +
@@ -179,11 +156,15 @@ int main(int argc, char *argv[])
   // Create a print class for controlling output below
   NOX::Utils printing(printParams);
 
+  // Sublist for line search 
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+  searchParams.set("Method", "Full Step");
+
   // Sublist for direction
   Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
   dirParams.set("Method", "Newton");
   Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
-    newtonParams.set("Forcing Term Method", "Type 1");
+    newtonParams.set("Forcing Term Method", "Constant");
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
@@ -194,13 +175,7 @@ int main(int argc, char *argv[])
   // Various Preconditioner options
   //lsParams.set("Preconditioner", "AztecOO");
   lsParams.set("Preconditioner", "Ifpack");
-  lsParams.set("Max Age Of Prec", 1);
-
-  // Sublist for Cauchy direction
-  Teuchos::ParameterList& cauchyDirParams = nlParams.sublist("Cauchy Direction");
-  cauchyDirParams.set("Method", "Steepest Descent");
-  Teuchos::ParameterList& sdParams = cauchyDirParams.sublist("Steepest Descent");
-  sdParams.set("Scaling Type", "Quadratic Model Min");
+  lsParams.set("Max Age Of Prec", 5);
 
   // Add a user defined pre/post operator object
   Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> ppo =
@@ -212,24 +187,40 @@ int main(int argc, char *argv[])
   nlParams.sublist("Solver Options").
     set("Status Test Check Type", NOX::StatusTest::Complete);
 
-  // User supplied (Epetra_RowMatrix)
-  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = interface->getJacobian();
+  // Wrap the model evaluator in a nox epetra interface object
+  Teuchos::RefCountPtr<NOX::Epetra::ModelEvaluatorInterface> nox_interface = 
+    Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(interface));
+
+  // Create all possible Epetra_Operators.
+  // 1. User supplied (Epetra_RowMatrix)
+  Teuchos::RefCountPtr<Epetra_RowMatrix> Analytic = 
+    Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(interface->create_W());
+  // 2. Matrix-Free (Epetra_Operator)
+  Teuchos::RefCountPtr<NOX::Epetra::MatrixFree> MF = 
+    Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams, nox_interface, 
+					     *noxSoln));
+  // 3. Finite Difference (Epetra_RowMatrix)
+  Teuchos::RefCountPtr<NOX::Epetra::FiniteDifference> FD = 
+    Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams, nox_interface, 
+						   *soln));
 
   // Create the linear system
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = interface;
-  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = nox_interface;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = MF;
+  Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner> iPrec = FD;
   Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq,
-						      iJac, Analytic, 
-						      *noxSoln,
-						      scaling));
+						      //interface, 
+						      iJac, MF, 
+						      iPrec, FD, 
+						      *soln));
   
   // Create the Group
+  NOX::Epetra::Vector initialGuess(soln, NOX::Epetra::Vector::CreateView);
   Teuchos::RefCountPtr<NOX::Epetra::Group> grpPtr = 
     Teuchos::rcp(new NOX::Epetra::Group(printParams, 
 					iReq, 
-					*noxSoln, 
+					initialGuess, 
 					linSys));  
   NOX::Epetra::Group& grp = *grpPtr;
 
@@ -253,7 +244,7 @@ int main(int argc, char *argv[])
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(200));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
   Teuchos::RefCountPtr<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
@@ -276,14 +267,14 @@ int main(int argc, char *argv[])
     getEpetraVector();
 
   // Output the parameter list
-  if (verbose) {
-    if (printing.isPrintType(NOX::Utils::Parameters)) {
-      printing.out() << endl << "Final Parameters" << endl
-	   << "****************" << endl;
-      solver.getList().print(printing.out());
-      printing.out() << endl;
-    }
-  }
+//   if (verbose) {
+//     if (printing.isPrintType(NOX::Utils::Parameters)) {
+//       printing.out() << endl << "Final Parameters" << endl
+// 	   << "****************" << endl;
+//       solver.getList().print(printing.out());
+//       printing.out() << endl;
+//     }
+//   }
 
   // Print solution
   char file_name[25];
@@ -306,34 +297,27 @@ int main(int argc, char *argv[])
 	printing.out() << "Nonlinear solver failed to converge!" << endl;
   }
 #ifndef HAVE_MPI 
-  // 2. Linear solve iterations (14) - SERIAL TEST ONLY!
+  // 2. Linear solve iterations (53) - SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 14) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 53) {
     status = 2;
   }
 #endif
-  // 3. Nonlinear solve iterations (17)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) != 17)
+  // 3. Nonlinear solve iterations (10)
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations", 0) != 10)
     status = 3;
   // 4. Test the pre/post iterate options
   {
   UserPrePostOperator* ppoPtr = dynamic_cast<UserPrePostOperator*>(ppo.get());
-  if (ppoPtr->getNumRunPreIterate() != 17)
+  if (ppoPtr->getNumRunPreIterate() != 10)
     status = 4;
-  if (ppoPtr->getNumRunPostIterate() != 17)
+  if (ppoPtr->getNumRunPostIterate() != 10)
     status = 4;
   if (ppoPtr->getNumRunPreSolve() != 1)
     status = 4;
   if (ppoPtr->getNumRunPostSolve() != 1)
     status = 4;
   }
-  // 5. Number of Cauchy steps (3)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Trust Region").sublist("Output").get("Number of Cauchy Steps", 0) != 3)
-    status = 5;
-  // 6. Number of Newton steps (14)
-  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Trust Region").sublist("Output").get("Number of Newton Steps", 0) != 14)
-    status = 6;
-
   // Summarize test results 
   if (status == 0)
     printing.out() << "Test passed!" << endl;

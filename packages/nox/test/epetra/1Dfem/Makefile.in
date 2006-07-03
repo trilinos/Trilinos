@@ -43,7 +43,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES)
+SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) $(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) $(1DfemScaledInexactTrustRegion_SOURCES) $(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -71,7 +71,7 @@ host_triplet = @host@
 @BUILD_EPETRA_TESTS_TRUE@	1DfemScaledInexactTrustRegion$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemTransient$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemMLPreconditioner$(EXEEXT) \
-@BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1)
+@BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test/epetra/1Dfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -104,6 +104,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 @BUILD_BELOS_TESTS_TRUE@am__EXEEXT_1 = 1DfemBelos$(EXEEXT)
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@am__EXEEXT_2 = 1DfemWithModelEvaluator$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_1Dfem_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemPrePostOperator.$(OBJEXT) 1Dfem.$(OBJEXT)
@@ -128,16 +129,23 @@ am_1DfemScaledInexactTrustRegion_OBJECTS = 1DfemInterface.$(OBJEXT) \
 am_1DfemTransient_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemTransient.$(OBJEXT)
 1DfemTransient_OBJECTS = $(am_1DfemTransient_OBJECTS)
+am_1DfemWithModelEvaluator_OBJECTS = 1DfemPrePostOperator.$(OBJEXT) \
+	1DfemModelEvaluator.$(OBJEXT) \
+	1DfemWithModelEvaluator.$(OBJEXT)
+1DfemWithModelEvaluator_OBJECTS =  \
+	$(am_1DfemWithModelEvaluator_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/1Dfem.Po ./$(DEPDIR)/1DfemBelos.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemInterface.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemMLPreconditioner.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemModelEvaluator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemPrePostOperator.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemScaled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/1DfemScaledInexactTrustRegion.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/1DfemTransient.Po
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemTransient.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/1DfemWithModelEvaluator.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -150,11 +158,11 @@ LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
 	$(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
-	$(1DfemTransient_SOURCES)
+	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemBelos_SOURCES) \
 	$(1DfemMLPreconditioner_SOURCES) $(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
-	$(1DfemTransient_SOURCES)
+	$(1DfemTransient_SOURCES) $(1DfemWithModelEvaluator_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -372,6 +380,7 @@ target_vendor = @target_vendor@
 @USING_GNUMAKE_TRUE@TEST_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_TEST_INCLUDES))
 AM_CPPFLAGS = $(TEST_INCLUDES)
 @BUILD_BELOS_TESTS_TRUE@1DFEM_BELOS = 1DfemBelos
+@BUILD_EPETRA_TESTS_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@1DFEM_WITHMODELEVALUATOR = 1DfemWithModelEvaluator
 1Dfem_SOURCES = \
 	        $(srcdir)/1DfemInterface.H \
                 $(srcdir)/1DfemInterface.C \
@@ -439,6 +448,18 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
                               $(top_builddir)/src-belos/libnoxbelos.a
 
 1DfemBelos_LDADD = $(TEST_LIBS)
+1DfemWithModelEvaluator_SOURCES = \
+                         $(srcdir)/1DfemPrePostOperator.H \
+                         $(srcdir)/1DfemPrePostOperator.C \
+	                 $(srcdir)/1DfemModelEvaluator.H \
+                         $(srcdir)/1DfemModelEvaluator.C \
+                         $(srcdir)/1DfemWithModelEvaluator.C
+
+1DfemWithModelEvaluator_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemWithModelEvaluator_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -493,6 +514,9 @@ clean-noinstPROGRAMS:
 1DfemTransient$(EXEEXT): $(1DfemTransient_OBJECTS) $(1DfemTransient_DEPENDENCIES) 
 	@rm -f 1DfemTransient$(EXEEXT)
 	$(CXXLINK) $(1DfemTransient_LDFLAGS) $(1DfemTransient_OBJECTS) $(1DfemTransient_LDADD) $(LIBS)
+1DfemWithModelEvaluator$(EXEEXT): $(1DfemWithModelEvaluator_OBJECTS) $(1DfemWithModelEvaluator_DEPENDENCIES) 
+	@rm -f 1DfemWithModelEvaluator$(EXEEXT)
+	$(CXXLINK) $(1DfemWithModelEvaluator_LDFLAGS) $(1DfemWithModelEvaluator_OBJECTS) $(1DfemWithModelEvaluator_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -504,10 +528,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemBelos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemMLPreconditioner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemModelEvaluator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemPrePostOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemScaled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemScaledInexactTrustRegion.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemTransient.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemWithModelEvaluator.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -652,6 +678,38 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemTransient.Po' tmpdepfile='$(DEPDIR)/1DfemTransient.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemTransient.obj `if test -f '$(srcdir)/1DfemTransient.C'; then $(CYGPATH_W) '$(srcdir)/1DfemTransient.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemTransient.C'; fi`
+
+1DfemModelEvaluator.o: $(srcdir)/1DfemModelEvaluator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemModelEvaluator.o -MD -MP -MF "$(DEPDIR)/1DfemModelEvaluator.Tpo" -c -o 1DfemModelEvaluator.o `test -f '$(srcdir)/1DfemModelEvaluator.C' || echo '$(srcdir)/'`$(srcdir)/1DfemModelEvaluator.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemModelEvaluator.Tpo" "$(DEPDIR)/1DfemModelEvaluator.Po"; else rm -f "$(DEPDIR)/1DfemModelEvaluator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemModelEvaluator.C' object='1DfemModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemModelEvaluator.Po' tmpdepfile='$(DEPDIR)/1DfemModelEvaluator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemModelEvaluator.o `test -f '$(srcdir)/1DfemModelEvaluator.C' || echo '$(srcdir)/'`$(srcdir)/1DfemModelEvaluator.C
+
+1DfemModelEvaluator.obj: $(srcdir)/1DfemModelEvaluator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemModelEvaluator.obj -MD -MP -MF "$(DEPDIR)/1DfemModelEvaluator.Tpo" -c -o 1DfemModelEvaluator.obj `if test -f '$(srcdir)/1DfemModelEvaluator.C'; then $(CYGPATH_W) '$(srcdir)/1DfemModelEvaluator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemModelEvaluator.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemModelEvaluator.Tpo" "$(DEPDIR)/1DfemModelEvaluator.Po"; else rm -f "$(DEPDIR)/1DfemModelEvaluator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemModelEvaluator.C' object='1DfemModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemModelEvaluator.Po' tmpdepfile='$(DEPDIR)/1DfemModelEvaluator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemModelEvaluator.obj `if test -f '$(srcdir)/1DfemModelEvaluator.C'; then $(CYGPATH_W) '$(srcdir)/1DfemModelEvaluator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemModelEvaluator.C'; fi`
+
+1DfemWithModelEvaluator.o: $(srcdir)/1DfemWithModelEvaluator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemWithModelEvaluator.o -MD -MP -MF "$(DEPDIR)/1DfemWithModelEvaluator.Tpo" -c -o 1DfemWithModelEvaluator.o `test -f '$(srcdir)/1DfemWithModelEvaluator.C' || echo '$(srcdir)/'`$(srcdir)/1DfemWithModelEvaluator.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemWithModelEvaluator.Tpo" "$(DEPDIR)/1DfemWithModelEvaluator.Po"; else rm -f "$(DEPDIR)/1DfemWithModelEvaluator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemWithModelEvaluator.C' object='1DfemWithModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemWithModelEvaluator.Po' tmpdepfile='$(DEPDIR)/1DfemWithModelEvaluator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemWithModelEvaluator.o `test -f '$(srcdir)/1DfemWithModelEvaluator.C' || echo '$(srcdir)/'`$(srcdir)/1DfemWithModelEvaluator.C
+
+1DfemWithModelEvaluator.obj: $(srcdir)/1DfemWithModelEvaluator.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemWithModelEvaluator.obj -MD -MP -MF "$(DEPDIR)/1DfemWithModelEvaluator.Tpo" -c -o 1DfemWithModelEvaluator.obj `if test -f '$(srcdir)/1DfemWithModelEvaluator.C'; then $(CYGPATH_W) '$(srcdir)/1DfemWithModelEvaluator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemWithModelEvaluator.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/1DfemWithModelEvaluator.Tpo" "$(DEPDIR)/1DfemWithModelEvaluator.Po"; else rm -f "$(DEPDIR)/1DfemWithModelEvaluator.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemWithModelEvaluator.C' object='1DfemWithModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/1DfemWithModelEvaluator.Po' tmpdepfile='$(DEPDIR)/1DfemWithModelEvaluator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemWithModelEvaluator.obj `if test -f '$(srcdir)/1DfemWithModelEvaluator.C'; then $(CYGPATH_W) '$(srcdir)/1DfemWithModelEvaluator.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemWithModelEvaluator.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

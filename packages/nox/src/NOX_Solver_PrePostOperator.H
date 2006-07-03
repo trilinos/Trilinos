@@ -38,13 +38,15 @@
 #include "NOX_Abstract_PrePostOperator.H"
 
 // Forward declaration
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
   class Utils;
   namespace Solver {
     class Generic;
   }
   namespace Parameter {
-    class List;
     class PrePostOperator;
   }
 }
@@ -81,7 +83,7 @@ public:
 
   //! Ctor.
   PrePostOperator(const Teuchos::RefCountPtr<NOX::Utils>& utils, 
-		  NOX::Parameter::List& solverOptionsSubList);
+		  Teuchos::ParameterList& solverOptionsSubList);
 
   //! Destructor.
   virtual ~PrePostOperator();
@@ -89,7 +91,7 @@ public:
   //! Resets the pre/post operator.
   virtual void
   reset(const Teuchos::RefCountPtr<NOX::Utils>& utils, 
-	NOX::Parameter::List& solverOptionsSublist);
+	Teuchos::ParameterList& solverOptionsSublist);
 
   //! User defined method that will be executed at the start of a call to NOX::Solver::Generic::iterate().
   virtual void runPreIterate(const NOX::Solver::Generic& solver);

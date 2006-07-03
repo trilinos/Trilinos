@@ -51,13 +51,13 @@ public:
   Options();
 
   //! Constructor
-  Options(NOX::Parameter::List& params, int rank = 0);
+  Options(Teuchos::ParameterList& params, int rank = 0);
 
   //! Destructor
   ~Options();
 
   //! Set parameter list based on options on command line or from file
-  bool setOptions(NOX::Parameter::List& params);
+  bool setOptions(Teuchos::ParameterList& params);
 
   //! Get reference to the final (combo) status test
   NOX::StatusTest::Combo& getStatusTest();

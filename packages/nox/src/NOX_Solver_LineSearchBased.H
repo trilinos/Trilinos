@@ -37,7 +37,7 @@
 #include "NOX_LineSearch_Manager.H"      // class data element
 #include "NOX_Direction_Manager.H"       // class data element
 #include "NOX_Solver_PrePostOperator.H"  // class data element
-#include "NOX_Parameter_List.H"	         // class data element
+#include "Teuchos_ParameterList.hpp"	         // class data element
 #include "NOX_Utils.H"		         // class data element
 #include "Teuchos_RefCountPtr.hpp"       // class data element
 
@@ -107,18 +107,18 @@ public:
 
   //! Constructor
   /*!
-    See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, NOX::Parameter::List&) for description
+    See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&, Teuchos::ParameterList&) for description
    */
   LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 		  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		  const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+		  const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~LineSearchBased();
 
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType getStatus();
@@ -127,7 +127,7 @@ public:
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const NOX::Parameter::List& getParameterList() const;
+  virtual const Teuchos::ParameterList& getList() const;
 
   //! Return the line search step size from the current iteration
   virtual double getStepSize() const;
@@ -161,7 +161,7 @@ protected:
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
 
   //! Linesearch. 
   NOX::LineSearch::Manager lineSearch; 

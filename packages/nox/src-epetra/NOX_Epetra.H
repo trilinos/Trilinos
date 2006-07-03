@@ -28,7 +28,7 @@
 //@HEADER
 
 //NOX::Epetra Objects
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Epetra_VectorSpace.H"
 #include "NOX_Epetra_VectorSpace_L2.H"
 #include "NOX_Epetra_VectorSpace_ScaledL2.H"
@@ -45,3 +45,6 @@
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
 #include "NOX_Epetra_BroydenOperator.H"
 
+#ifdef HAVE_NOX_EPETRAEXT
+#include "NOX_Epetra_ModelEvaluatorInterface.H"
+#endif

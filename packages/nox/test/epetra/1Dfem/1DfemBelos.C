@@ -121,20 +121,20 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& nlParams = *(nlParamsPtr.get());
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
 
   // Set the printing parameters in the "Printing" sublist
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID); 
-  printParams.setParameter("Output Precision", 3);
-  printParams.setParameter("Output Processor", 0);
+  Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
+  printParams.set("MyPID", MyPID); 
+  printParams.set("Output Precision", 3);
+  printParams.set("Output Processor", 0);
   if (verbose) {
-    printParams.setParameter("Output Information", 
+    printParams.set("Output Information", 
 			     NOX::Utils::OuterIteration + 
 			     NOX::Utils::OuterIterationStatusTest + 
 			     NOX::Utils::InnerIteration +
@@ -143,31 +143,31 @@ int main(int argc, char *argv[])
 			     NOX::Utils::Warning);
   }
   else
-    printParams.setParameter("Output Information",NOX::Utils::Error);
+    printParams.set("Output Information",NOX::Utils::Error);
 
   // Create a print handler for output control
   NOX::Utils utils(printParams);
 
   // Sublist for line search 
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+  searchParams.set("Method", "Full Step");
 
   // Sublist for direction
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  dirParams.setParameter("Method", "Newton");
-  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-  newtonParams.setParameter("Forcing Term Method", "Constant");
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+  dirParams.set("Method", "Newton");
+  Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
+  newtonParams.set("Forcing Term Method", "Constant");
 
   // Sublist for linear solver for the Newton method
-  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
-  //lsParams.setParameter("Aztec Solver", "GMRES"); 
-  lsParams.setParameter("Belos Solver", "GMRES"); 
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Preconditioner", "Ifpack");
-  lsParams.setParameter("Preconditioner Operator", "Use Jacobian");
-  lsParams.setParameter("Output Frequency", 0);
-  lsParams.setParameter("Verbosity Level", 1);
+  Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+  //lsParams.set("Aztec Solver", "GMRES"); 
+  lsParams.set("Belos Solver", "GMRES"); 
+  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Preconditioner", "Ifpack");
+  lsParams.set("Preconditioner Operator", "Use Jacobian");
+  lsParams.set("Output Frequency", 0);
+  lsParams.set("Verbosity Level", 1);
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
     if (utils.isPrintType(NOX::Utils::Parameters)) {
       utils.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getParameterList().print(utils.out());
+      solver.getList().print(utils.out());
       utils.out() << endl;
     }
   }
@@ -255,7 +255,7 @@ int main(int argc, char *argv[])
       utils.out() << "Nonlinear solver failed to converge!" << endl;
   }
   // 2. Nonlinear solve iterations (10)
-  if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations", 0) != 10)
+  if (solver.getList().sublist("Output").get("Nonlinear Iterations", 0) != 10)
     status = 1;
   
   

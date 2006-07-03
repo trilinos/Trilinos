@@ -63,7 +63,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_LineSearch_Tensor.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_Direction_Tensor.H"
@@ -71,7 +71,7 @@
 
 NOX::LineSearch::Tensor::
 Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-       Parameter::List& params) :
+       Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   paramsPtr(NULL),
   print(gd->getUtils()),
@@ -88,7 +88,7 @@ NOX::LineSearch::Tensor::~Tensor()
 
 bool NOX::LineSearch::Tensor::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      NOX::Parameter::List& lsParams)
+      Teuchos::ParameterList& lsParams)
 {
   globalDataPtr = gd;
   utils = *(gd->getUtils());
@@ -99,7 +99,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   multsJv = 0;
   
   // Determine the specific type of tensor linesearch to perform
-  string choice = lsParams.getParameter("Method", "Curvilinear");
+  string choice = lsParams.get("Method", "Curvilinear");
 
   utils.out() << choice << endl;
   
@@ -122,14 +122,14 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
   //  Copy Method into "Submethod" (temporary hack for data scripts)
-  lsParams.setParameter("Submethod", choice);
+  lsParams.set("Submethod", choice);
 
   // Make a reference to the sublist holding the global strategy parameters
-  NOX::Parameter::List& gsParams = lsParams.sublist(choice);
+  Teuchos::ParameterList& gsParams = lsParams.sublist(choice);
 
 #ifdef CODE_FROM_TENSORBASED  
   // Decide what step to use in case of linesearch failure
-  choice = gsParams.getParameter("Recovery Step Type", "Constant");
+  choice = gsParams.get("Recovery Step Type", "Constant");
   if (choice == "Constant")
     recoveryStepType = Constant;          // Use value in "Recovery Step"
   else if (choice == "Last Computed Step") 
@@ -143,13 +143,13 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 #endif
 
   // Initialize linesearch parameters for this object
-  minStep = gsParams.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = gsParams.getParameter("Default Step", 1.0);
-  recoveryStep = gsParams.getParameter("Recovery Step", 0.0); // exit on fail
-  maxIters = gsParams.getParameter("Max Iters", 40);
-  alpha = gsParams.getParameter("Alpha Factor", 1.0e-4);
+  minStep = gsParams.get("Minimum Step", 1.0e-12);
+  defaultStep = gsParams.get("Default Step", 1.0);
+  recoveryStep = gsParams.get("Recovery Step", 0.0); // exit on fail
+  maxIters = gsParams.get("Max Iters", 40);
+  alpha = gsParams.get("Alpha Factor", 1.0e-4);
 
-  choice = gsParams.getParameter("Lambda Selection", "Halving");
+  choice = gsParams.get("Lambda Selection", "Halving");
   if (choice == "Halving")
     lambdaSelection = Halving;
   else if (choice == "Quadratic") 
@@ -163,7 +163,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
 
-  choice = gsParams.getParameter("Sufficient Decrease Condition",
+  choice = gsParams.get("Sufficient Decrease Condition",
 				 "Armijo-Goldstein");
   if (choice == "Armijo-Goldstein") 
     suffDecrCond = ArmijoGoldstein;     // This is the only one implemented
@@ -183,15 +183,15 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 
 #ifdef OLD_CODE
   // Initialize linesearch parameters for this object
-  minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = lsparams.getParameter("Default Step", 1.0);
-  recoveryStep = lsparams.getParameter("Recovery Step", 0.0); // exit on fail
-  maxIters = lsparams.getParameter("Max Iters", 40);
-  alpha = lsparams.getParameter("Alpha Factor", 1.0e-4);
+  minStep = lsparams.get("Minimum Step", 1.0e-12);
+  defaultStep = lsparams.get("Default Step", 1.0);
+  recoveryStep = lsparams.get("Recovery Step", 0.0); // exit on fail
+  maxIters = lsparams.get("Max Iters", 40);
+  alpha = lsparams.get("Alpha Factor", 1.0e-4);
   paramsPtr = &params;
 
   // Do line search and compute new soln.
-  string choice = lsparams.getParameter("Submethod", "Curvilinear");
+  string choice = lsparams.get("Submethod", "Curvilinear");
 
   if (choice == "Curvilinear")
     lsType = Curvilinear;
@@ -207,12 +207,12 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 	   << "\"Line Search\" \nparameter is invalid.  Using curvilinear "
 	   << "line search." << endl;
     }
-    lsparams.setParameter("Submethod", "Curvilinear");
+    lsparams.set("Submethod", "Curvilinear");
     lsType = Curvilinear;
   }
 
 
-  choice = lsparams.getParameter("Lambda Selection", "Halving");
+  choice = lsparams.get("Lambda Selection", "Halving");
   if (choice == "Halving") {
     lambdaSelection = Halving;
   }
@@ -226,7 +226,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   }
 
 
-  choice = lsparams.getParameter("Sufficient Decrease Condition",
+  choice = lsparams.get("Sufficient Decrease Condition",
 				 "Armijo-Goldstein");
   if (choice == "Ared/Pred") 
     convCriteria = AredPred;
@@ -315,7 +315,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   if (utils.isPrintType(NOX::Utils::InnerIteration)) {
     utils.out() << "\n" << NOX::Utils::fill(72) << "\n";
     utils.out() << "-- Tensor Line Search ("
-	 << paramsPtr->getParameter("Submethod","Curvilinear")
+	 << paramsPtr->get("Submethod","Curvilinear")
 	 << ") -- \n";
   }
 
@@ -330,11 +330,11 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   int lsIterations = 1;
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
-  string dirString = s.getParameterList().sublist("Direction").
-    getParameter("Method", "Tensor");
+  string dirString = const_cast<Teuchos::ParameterList&>(s.getList()).
+    sublist("Direction").get("Method", "Tensor");
   double eta = (suffDecrCond == AredPred) ? 
-    s.getParameterList().sublist("Direction").sublist(dirString).
-    sublist("Linear Solver").getParameter("Tolerance", -1.0) : 0.0;
+    const_cast<Teuchos::ParameterList&>(s.getList()).sublist("Direction").
+    sublist(dirString).sublist("Linear Solver").get("Tolerance", -1.0) : 0.0;
 
   // Get Old function value
   const Abstract::Group& oldsoln = s.getPreviousSolutionGroup();
@@ -451,7 +451,7 @@ bool NOX::LineSearch::Tensor::performLinesearch(NOX::Abstract::Group& newsoln,
   dir2 = Teuchos::null;
 
   if (suffDecrCond == AredPred)
-    paramsPtr->setParameter("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
+    paramsPtr->set("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
 
   return (!isFailed);
 }

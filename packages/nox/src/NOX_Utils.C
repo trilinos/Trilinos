@@ -32,7 +32,7 @@
 
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
@@ -61,7 +61,7 @@ NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess,
     myStream = blackholeStream;
 }
 
-NOX::Utils::Utils(NOX::Parameter::List& p)
+NOX::Utils::Utils(Teuchos::ParameterList& p)
 {
   this->reset(p);
 }
@@ -89,39 +89,39 @@ NOX::Utils& NOX::Utils::operator=(const NOX::Utils& source)
   return *this;
 }
 
-void NOX::Utils::reset(NOX::Parameter::List& p)
+void NOX::Utils::reset(Teuchos::ParameterList& p)
 {
   // Basic info
-  printTest = p.getParameter("Output Information", 0xf);
+  printTest = p.get("Output Information", 0xf);
 #ifdef HAVE_MPI
   if (p.isParameter("MyPID"))
-    myPID = p.getParameter("MyPID", 0);
+    myPID = p.get("MyPID", 0);
   else {
     MPI_Comm_rank(MPI_COMM_WORLD, &myPID);
     // Set the default in the parameter list
-    p.getParameter("MyPID", myPID);
+    p.get("MyPID", myPID);
   }
 #else
-  myPID = p.getParameter("MyPID", 0);
+  myPID = p.get("MyPID", 0);
 #endif
-  printProc = p.getParameter("Output Processor", 0);
-  precision = p.getParameter("Output Precision", 3);
+  printProc = p.get("Output Processor", 0);
+  precision = p.get("Output Precision", 3);
   
   // Output streams
   blackholeStream = Teuchos::rcp(new Teuchos::oblackholestream);
 
-  if (p.isParameterRcp<std::ostream>("Output Stream"))
+  if (p.isType< Teuchos::RefCountPtr<std::ostream> >("Output Stream"))
     printStream =
       (p).INVALID_TEMPLATE_QUALIFIER
-      getRcpParameter<std::ostream>("Output Stream");
+      get< Teuchos::RefCountPtr<std::ostream> >("Output Stream");
   else 
     printStream = Teuchos::rcp(&(std::cout), false);
   myStream = (myPID == printProc) ? printStream : blackholeStream;
   
-  if (p.isParameterRcp<std::ostream>("Error Stream"))
+  if (p.isType< Teuchos::RefCountPtr<std::ostream> >("Error Stream"))
     errorStream =
       (p).INVALID_TEMPLATE_QUALIFIER
-      getRcpParameter<std::ostream>("Error Stream");
+      get< Teuchos::RefCountPtr<std::ostream> >("Error Stream");
   else 
     errorStream = Teuchos::rcp(&(std::cerr), false);
 }

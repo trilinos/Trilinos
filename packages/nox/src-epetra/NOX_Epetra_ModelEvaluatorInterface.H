@@ -1,0 +1,103 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#ifndef NOX_EPETRA_MODEL_EVALUATOR_INTERFACE_H
+#define NOX_EPETRA_MODEL_EVALUATOR_INTERFACE_H
+
+#include "NOX_Common.H"
+#include "NOX_Epetra_Interface_Required.H"
+#include "NOX_Epetra_Interface_Jacobian.H"
+#include "NOX_Epetra_Interface_Preconditioner.H"
+#include "Teuchos_RefCountPtr.hpp"
+#include "EpetraExt_ModelEvaluator.h"
+  
+namespace NOX {
+namespace Epetra {
+
+  /*!
+    \brief Wrapper for an EpetraExt::ModelEvaluator
+ 
+    If an application interfaces their code to solvers using the EpetraExt::ModelEvaluator, this class provides a wrapper so that the model evaluator can be used instead of having the user write concrete versions of the NOX::Epetra::Interface objects.
+
+  */
+  class ModelEvaluatorInterface : public NOX::Epetra::Interface::Required,
+				  public NOX::Epetra::Interface::Jacobian,
+                                  public NOX::Epetra::Interface::Preconditioner
+  {
+    
+  public:
+    
+    //! Constructor
+    ModelEvaluatorInterface(const Teuchos::RefCountPtr<EpetraExt::ModelEvaluator>& m);
+    
+    //! Destructor
+    virtual ~ModelEvaluatorInterface();
+    
+    virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& F, 
+			  const FillType fillFlag);
+    
+    virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
+    
+    virtual bool computePreconditioner(const Epetra_Vector& x, 
+				       Epetra_Operator& M,
+				       Teuchos::ParameterList* precParams = 0);
+    
+  protected:
+    
+    //! RCP to the Model Evaluator.
+    Teuchos::RefCountPtr<EpetraExt::ModelEvaluator> model_;
+    
+    //! Inargs object.
+    EpetraExt::ModelEvaluator::InArgs inargs_;
+    
+    //! Outargs object.
+    EpetraExt::ModelEvaluator::OutArgs outargs_;
+    
+
+    //! RCP for the solution vector.
+    Teuchos::RefCountPtr<const Epetra_Vector> x_;
+
+    //! RCP for the residual vector.
+    Teuchos::RefCountPtr<Epetra_Vector> f_;
+
+    //! RCP for the Jacobian operator.
+    Teuchos::RefCountPtr<Epetra_Operator> jacobian_;
+
+    //! RCP for the residual vector wrapper.
+    EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f_;
+    
+    
+  };
+} // namespace Epetra
+} // namespace NOX
+
+#endif

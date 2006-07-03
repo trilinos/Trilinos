@@ -155,7 +155,7 @@ public:
   virtual Epetra_CrsGraph& getGraph();
 
   // Output results 
-  virtual void outputResults(NOX::Solver::Manager& solver, NOX::Parameter::List& printParams);
+  virtual void outputResults(NOX::Solver::Manager& solver, Teuchos::ParameterList& printParams);
 
   // Output problem description
   virtual void outputStatus( ostream & os ) 

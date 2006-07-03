@@ -38,7 +38,7 @@
 #include "NOX_Common.H"		   
 
 #include "NOX_Direction_Generic.H" // base class
-#include "NOX_Parameter_List.H"	   // class data element 
+#include "Teuchos_ParameterList.hpp"	   // class data element 
 #include "Teuchos_RefCountPtr.hpp" // class data element
 
 // Forward declaration
@@ -276,14 +276,14 @@ public:
 
   //! Constructor
   QuasiNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	      NOX::Parameter::List& params);
+	      Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~QuasiNewton();
 
   // derived
   virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		     NOX::Parameter::List& params);
+		     Teuchos::ParameterList& params);
 
   // derived
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -311,7 +311,7 @@ private:
     \note This is pointer rather than a reference to allow for the
     reset function. It should not be deleted.
    */
-  NOX::Parameter::List* paramsPtr;
+  Teuchos::ParameterList* paramsPtr;
 
   //! Storage of \f$(s,y)\f$ pairs and related attributes
   Memory memory;

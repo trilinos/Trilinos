@@ -426,16 +426,16 @@ types of solvers and so forth should be used.
 
 \code
 // Create the list of solver parameters
-NOX::Parameter::List solverParameters;
+Teuchos::ParameterList solverParameters;
 
 // Set the solver (this is the default)
-solverParameters.setParameter("Nonlinear Solver", "Line Search Based");
+solverParameters.set("Nonlinear Solver", "Line Search Based");
 
 // Create the line search parameters sublist
-NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
+Teuchos::ParameterList& lineSearchParameters = solverParameters.sublist("Line Search");
 
 // Set the line search method
-lineSearchParameters.setParameter("Method","More'-Thuente");
+lineSearchParameters.set("Method","More'-Thuente");
 \endcode
 
 For a full list of parameters; see \ref parameters.
@@ -454,7 +454,7 @@ NOX::StatusTest::StatusType status = solver.solve();
 
 // Print the answer
 cout << "\n" << "-- Parameter List From Solver --" << "\n";
-solver.getParameterList().print(cout);
+solver.getList().print(cout);
 
 // Get the answer
 grp = solver.getSolutionGroup();
@@ -1548,7 +1548,7 @@ immediately before the word that is causing the link. For example,
 /*! \page parameters NOX Parameter Reference Page
 
   All parameters are specified via parameter lists as defined by the
-  NOX::Parameter::List class.
+  Teuchos::ParameterList class.
 
   Here is the basic hierarchical structure of the top level list that
   is passed to a NOX::Solver::Manager object constructor reset call.
@@ -1712,7 +1712,7 @@ immediately before the word that is causing the link. For example,
      \verbatim 
   Teuchos::RefCountPtr<UserPrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
-  nlParams.sublist("Solver Options").setParameter
+  nlParams.sublist("Solver Options").set
     <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", ppo);
      \endverbatim
 
@@ -1811,15 +1811,15 @@ immediately before the word that is causing the link. For example,
   Optionally (5), the user may supply a second operator, M for the
   preconditioner.
 
-  (1) The printing parameter list is a NOX::Parameter::List that
+  (1) The printing parameter list is a Teuchos::ParameterList that
   descibes the type of output requested from NOX.  See \ref parameters
   for more details.  A simple example is:
   \verbatim
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID); 
-  printParams.setParameter("Output Precision", 3);
-  printParams.setParameter("Output Processor", 0);
-  printParams.setParameter("Output Information", 
+  Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
+  printParams.set("MyPID", MyPID); 
+  printParams.set("Output Precision", 3);
+  printParams.set("Output Processor", 0);
+  printParams.set("Output Information", 
 			NOX::Utils::OuterIteration + 
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
@@ -1828,7 +1828,7 @@ immediately before the word that is causing the link. For example,
 			NOX::Utils::Warning);
   \endverbatim
 
-  (2) The linear solver parameter list is a NOX::Parameter::List
+  (2) The linear solver parameter list is a Teuchos::ParameterList
   object.  A list of all parameters available can be found in
   NOX::Epetra::Group.  Below is a simple example of how to use the
   aztecOO iterative solver in epetra to use GMRES with ilut
@@ -1836,16 +1836,16 @@ immediately before the word that is causing the link. For example,
   compatible with every Jacobian and preconditioner operator - see
   NOX::Epetra::Group for more details):
   \verbatim
-  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 50); 
-  lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");
-  lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  lsParams.setParameter("Overlap", 2);   
-  lsParams.setParameter("Fill Factor", 2);   
-  lsParams.setParameter("Drop Tolerance", 1.0e-12);   
+  Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Output Frequency", 50); 
+  lsParams.set("Preconditioning", "AztecOO: Jacobian Matrix");
+  lsParams.set("Aztec Preconditioner", "ilut"); 
+  lsParams.set("Overlap", 2);   
+  lsParams.set("Fill Factor", 2);   
+  lsParams.set("Drop Tolerance", 1.0e-12);   
   \endverbatim
 
   (3) The initial guess is stored in an Epetra_Vector.  Below is an

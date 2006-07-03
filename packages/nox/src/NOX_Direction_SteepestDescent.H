@@ -102,14 +102,14 @@ public:
 
   //! Constructor
   SteepestDescent(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-		  NOX::Parameter::List& params);
+		  Teuchos::ParameterList& params);
 
   //! Destructor
   ~SteepestDescent();
 
   // derived
   bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& params);
+	     Teuchos::ParameterList& params);
 
   // derived
   bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 

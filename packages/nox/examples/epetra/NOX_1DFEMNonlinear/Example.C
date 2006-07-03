@@ -40,7 +40,6 @@
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Epetra.H"
-#include "NOX_Parameter_Teuchos2NOX.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -112,20 +111,20 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& nlParams = *nlParamsPtr.get();
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& nlParams = *nlParamsPtr.get();
 
   // Set the nonlinear solver method
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
+  //nlParams.set("Nonlinear Solver", "Trust Region Based");
 
   // Set the printing parameters in the "Printing" sublist
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID); 
-  printParams.setParameter("Output Precision", 3);
-  printParams.setParameter("Output Processor", 0);
-  printParams.setParameter("Output Information", 
+  Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
+  printParams.set("MyPID", MyPID); 
+  printParams.set("Output Precision", 3);
+  printParams.set("Output Processor", 0);
+  printParams.set("Output Information", 
 			NOX::Utils::OuterIteration + 
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
@@ -137,46 +136,46 @@ int main(int argc, char *argv[])
   NOX::Utils utils(printParams);
 
   // Sublist for line search 
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Method", "Interval Halving");
-  //searchParams.setParameter("Method", "Polynomial");
-  //searchParams.setParameter("Method", "NonlinearCG");
-  //searchParams.setParameter("Method", "Quadratic");
-  //searchParams.setParameter("Method", "More'-Thuente");
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+  searchParams.set("Method", "Full Step");
+  //searchParams.set("Method", "Interval Halving");
+  //searchParams.set("Method", "Polynomial");
+  //searchParams.set("Method", "NonlinearCG");
+  //searchParams.set("Method", "Quadratic");
+  //searchParams.set("Method", "More'-Thuente");
 
   // Sublist for direction
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-//  dirParams.setParameter("Method", "Modified-Newton");
-//  NOX::Parameter::List& newtonParams = dirParams.sublist("Modified-Newton");
-//    newtonParams.setParameter("Max Age of Jacobian", 2);
-  dirParams.setParameter("Method", "Newton");
-  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
-    //newtonParams.setParameter("Forcing Term Method", "Type 1");
-    //newtonParams.setParameter("Forcing Term Method", "Type 2");
-    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-  //dirParams.setParameter("Method", "Steepest Descent");
-  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
-    //sdParams.setParameter("Scaling Type", "None");
-    //sdParams.setParameter("Scaling Type", "2-Norm");
-    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
-  //dirParams.setParameter("Method", "NonlinearCG");
-  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-    //nlcgParams.setParameter("Restart Frequency", 2000);
-    //nlcgParams.setParameter("Precondition", "On");
-    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+//  dirParams.set("Method", "Modified-Newton");
+//  Teuchos::ParameterList& newtonParams = dirParams.sublist("Modified-Newton");
+//    newtonParams.set("Max Age of Jacobian", 2);
+  dirParams.set("Method", "Newton");
+  Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
+    newtonParams.set("Forcing Term Method", "Constant");
+    //newtonParams.set("Forcing Term Method", "Type 1");
+    //newtonParams.set("Forcing Term Method", "Type 2");
+    //newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
+    //newtonParams.set("Forcing Term Maximum Tolerance", 0.1);
+  //dirParams.set("Method", "Steepest Descent");
+  //Teuchos::ParameterList& sdParams = dirParams.sublist("Steepest Descent");
+    //sdParams.set("Scaling Type", "None");
+    //sdParams.set("Scaling Type", "2-Norm");
+    //sdParams.set("Scaling Type", "Quadratic Model Min");
+  //dirParams.set("Method", "NonlinearCG");
+  //Teuchos::ParameterList& nlcgParams = dirParams.sublist("Nonlinear CG");
+    //nlcgParams.set("Restart Frequency", 2000);
+    //nlcgParams.set("Precondition", "On");
+    //nlcgParams.set("Orthogonalize", "Polak-Ribiere");
+    //nlcgParams.set("Orthogonalize", "Fletcher-Reeves");
 
   // Sublist for linear solver for the Newton method
-  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4); 
-  lsParams.setParameter("Preconditioner", "None");
-  //lsParams.setParameter("Preconditioner", "Ifpack");
-  lsParams.setParameter("Max Age Of Prec", 5); 
+  Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Tolerance", 1e-4); 
+  lsParams.set("Preconditioner", "None");
+  //lsParams.set("Preconditioner", "Ifpack");
+  lsParams.set("Max Age Of Prec", 5); 
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created by the user using inheritance of the abstract base class:
@@ -243,10 +242,10 @@ int main(int argc, char *argv[])
   pl_converter.SaveToXMLFile("input.xml", *nlParamsPtr);
 
   cout << "Reading parameter list from \"input.xml\"" << cout;
-  Teuchos::RefCountPtr<NOX::Parameter::List> finalParamsPtr
+  Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr
     = pl_converter.ReadFromXMLFile("input.xml");
 #else
-  Teuchos::RefCountPtr<NOX::Parameter::List> finalParamsPtr = nlParamsPtr;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr = nlParamsPtr;
 #endif
 
   // Create the method
@@ -267,7 +266,7 @@ int main(int argc, char *argv[])
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(utils.out());
+    solver.getList().print(utils.out());
     utils.out() << endl;
   }
 

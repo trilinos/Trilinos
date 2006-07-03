@@ -76,7 +76,7 @@ namespace Abstract {
 
   \code
   Teuchos::RefCountPtr<Foo> foo = Teuchos::rcp(new Foo);
-  params.sublist("Sovler Options").setParameter<NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", foo);
+  params.sublist("Sovler Options").set<NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", foo);
   \endcode
 
   </ol>

@@ -157,21 +157,21 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& nlParams = *(nlParamsPtr.get());
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
+  //nlParams.set("Nonlinear Solver", "Trust Region Based");
 
   // Set the printing parameters in the "Printing" sublist
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
+  Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
   if (verbose) {
-    printParams.setParameter("MyPID", MyPID); 
-    printParams.setParameter("Output Precision", 3);
-    printParams.setParameter("Output Processor", 0);
-    printParams.setParameter("Output Information", 
+    printParams.set("MyPID", MyPID); 
+    printParams.set("Output Precision", 3);
+    printParams.set("Output Processor", 0);
+    printParams.set("Output Information", 
 			     NOX::Utils::OuterIteration + 
 			     NOX::Utils::OuterIterationStatusTest + 
 			     NOX::Utils::InnerIteration +
@@ -180,28 +180,28 @@ int main(int argc, char *argv[])
 			     NOX::Utils::Warning);
   }
   else
-    printParams.setParameter("Output Information", NOX::Utils::Error);
+    printParams.set("Output Information", NOX::Utils::Error);
 
   // Create a print handle object
   NOX::Utils utils(printParams);
 
   // Sublist for line search 
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+  searchParams.set("Method", "Full Step");
 
   // Sublist for direction
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  dirParams.setParameter("Method", "Newton");
-  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+  dirParams.set("Method", "Newton");
+  Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
+    newtonParams.set("Forcing Term Method", "Constant");
 
   // Sublist for linear solver for the Newton method
-  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 0);    
-  lsParams.setParameter("Preconditioner", "AztecOO"); 
+  Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Output Frequency", 0);    
+  lsParams.set("Preconditioner", "AztecOO"); 
 
   // Create the interface between the test problem and the nonlinear solver
   Teuchos::RefCountPtr<Problem_Interface> interface = 
@@ -343,7 +343,7 @@ int main(int argc, char *argv[])
     if (utils.isPrintType(NOX::Utils::Parameters)) {
       utils.out() << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      solver.getParameterList().print(utils.out());
+      solver.getList().print(utils.out());
       utils.out() << endl;
     }
   }
@@ -368,12 +368,12 @@ int main(int argc, char *argv[])
     testStatus = 1;
   }
   // 2. Nonlinear Iterations (3)
-  if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations",0) != 3) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations",0) != 3) {
     testStatus = 2;
   }
 #ifndef HAVE_MPI
   // 3. Linear Iterations (9)
-  if (solver.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Total Number of Linear Iterations",0) != 9) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 9) {
     testStatus = 3;
   }
 #endif

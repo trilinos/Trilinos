@@ -70,16 +70,16 @@ int main(int argc, char *argv[]) {
   int NumProc = Comm.NumProc();
 
   // Set up the printing utilities
-  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& noxParams = *(noxParamsPtr.get());
+  Teuchos::RefCountPtr<Teuchos::ParameterList> noxParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& noxParams = *(noxParamsPtr.get());
   // Only print output if the "-v" flag is set on the command line
-  NOX::Parameter::List& printParams = noxParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID); 
-  printParams.setParameter("Output Precision", 5);
-  printParams.setParameter("Output Processor", 0);
+  Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
+  printParams.set("MyPID", MyPID); 
+  printParams.set("Output Precision", 5);
+  printParams.set("Output Processor", 0);
   if( verbose )
-    printParams.setParameter("Output Information", 
+    printParams.set("Output Information", 
 		NOX::Utils::OuterIteration + 
 		NOX::Utils::OuterIterationStatusTest + 
 		NOX::Utils::InnerIteration +
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 		NOX::Utils::Warning +
 		NOX::Utils::TestDetails);
   else
-    printParams.setParameter("Output Information", NOX::Utils::Error +
+    printParams.set("Output Information", NOX::Utils::Error +
 		NOX::Utils::TestDetails);
 
   NOX::Utils printing(printParams);

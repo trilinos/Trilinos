@@ -89,7 +89,7 @@ namespace NOX {
 
       NOX::Abstract::Group::ReturnType computeGradient();
 
-      NOX::Abstract::Group::ReturnType computeNewton(NOX::Parameter::List& params);
+      NOX::Abstract::Group::ReturnType computeNewton(Teuchos::ParameterList& params);
 
       //@}
 
@@ -114,18 +114,18 @@ namespace NOX {
       NOX::Abstract::Group::ReturnType applyJacobianTranspose(const NOX::Abstract::Vector& input, 
 							      NOX::Abstract::Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianInverse(NOX::Parameter::List& params, 
+      NOX::Abstract::Group::ReturnType applyJacobianInverse(Teuchos::ParameterList& params, 
 							    const NOX::LAPACK::Vector& input, 
 				Vector& result) const;
 
-      NOX::Abstract::Group::ReturnType applyJacobianInverse(NOX::Parameter::List& params, 
+      NOX::Abstract::Group::ReturnType applyJacobianInverse(Teuchos::ParameterList& params, 
 							    const NOX::Abstract::Vector& input, 
 							    NOX::Abstract::Vector& result) const;
 
       //! applyJacobianInverse for multiple right-hand sides
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianInverseMultiVector(
-				    NOX::Parameter::List& params, 
+				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
   

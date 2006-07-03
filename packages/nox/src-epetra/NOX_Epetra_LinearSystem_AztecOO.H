@@ -34,17 +34,19 @@
 #include "NOX_Epetra_Vector.H"	// class data element
 #include "NOX_Utils.H"          // class data element
 #include "NOX_Common.H"         // class data element (string)
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Time.h"        // class data element
 #ifdef HAVE_NOX_ML_EPETRA
 #include "Epetra_Map.h" // This appears to be needed to precede the ml include
 #include "ml_epetra_preconditioner.h"
 #endif
-#include "NOX_Parameter_Arbitrary.H"
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 // Forward declares
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
   namespace Epetra {
     class Scaling;
@@ -53,9 +55,6 @@ namespace NOX {
       class Jacobian;
       class Preconditioner;
     }
-  }
-  namespace Parameter {
-    class List;
   }
 }
 class Epetra_Vector;
@@ -309,8 +308,8 @@ public:
     NOX::Epetra::MatrixFree object.
    */
   LinearSystemAztecOO(
-    NOX::Parameter::List& printingParams, 
-    NOX::Parameter::List& linearSolverParams,
+    Teuchos::ParameterList& printingParams, 
+    Teuchos::ParameterList& linearSolverParams,
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
     const NOX::Epetra::Vector& cloneVector,
     const Teuchos::RefCountPtr<NOX::Epetra::Scaling> scalingObject = 
@@ -323,8 +322,8 @@ public:
     See the parameter key "Preconditioner Operator" for more details.
    */
   LinearSystemAztecOO(
-    NOX::Parameter::List& printingParams, 
-    NOX::Parameter::List& linearSolverParams, 
+    Teuchos::ParameterList& printingParams, 
+    Teuchos::ParameterList& linearSolverParams, 
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
     const Teuchos::RefCountPtr<Epetra_Operator>& J,
@@ -339,8 +338,8 @@ public:
     to using a NOX::Epetra::MatrixFree object.
    */
   LinearSystemAztecOO(
-    NOX::Parameter::List& printingParams, 
-    NOX::Parameter::List& linearSolverParams, 
+    Teuchos::ParameterList& printingParams, 
+    Teuchos::ParameterList& linearSolverParams, 
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec,
     const Teuchos::RefCountPtr<Epetra_Operator>& M,
@@ -352,8 +351,8 @@ public:
   //! Jacobian (J) and %Preconditioner (M).  
   //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
   LinearSystemAztecOO(
-    NOX::Parameter::List& printingParams, 
-    NOX::Parameter::List& linearSolverParams, 
+    Teuchos::ParameterList& printingParams, 
+    Teuchos::ParameterList& linearSolverParams, 
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& iJac, 
     const Teuchos::RefCountPtr<Epetra_Operator>& J,  
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& iPrec, 
@@ -371,17 +370,17 @@ public:
   virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input, 
 				      NOX::Epetra::Vector& result) const;
   
-  virtual bool applyJacobianInverse(NOX::Parameter::List& linearSolverParams, 
+  virtual bool applyJacobianInverse(Teuchos::ParameterList& linearSolverParams, 
 				    const NOX::Epetra::Vector& input, 
 				    NOX::Epetra::Vector& result);
 
   virtual bool applyRightPreconditioning(bool useTranspose,
-				   NOX::Parameter::List& linearSolverParams, 
+				   Teuchos::ParameterList& linearSolverParams, 
 				   const NOX::Epetra::Vector& input, 
 				   NOX::Epetra::Vector& result) const;
 
   virtual bool createPreconditioner(const NOX::Epetra::Vector& x, 
-				    NOX::Parameter::List& linearSolverParams,
+				    Teuchos::ParameterList& linearSolverParams,
 				    bool recomputeGraph) const;
   
   /*! 
@@ -393,7 +392,7 @@ public:
   virtual bool destroyPreconditioner() const;
 
   //! Reset the linear solver parameters
-  virtual void reset(NOX::Parameter::List& linearSolverParams);
+  virtual void reset(Teuchos::ParameterList& linearSolverParams);
 
   //! Get the scaling object
   virtual Teuchos::RefCountPtr<NOX::Epetra::Scaling> getScaling();
@@ -457,20 +456,20 @@ public:
 protected:
 
   //! Parse the parameter list and set the corresponding options in the AztecOO solver onject.
-  virtual void setAztecOptions(const NOX::Parameter::List& lsParams, 
+  virtual void setAztecOptions(Teuchos::ParameterList& lsParams, 
 			       AztecOO& aztec) const;
   
   //! Creates an internally owned Epetra_Operator for the Jacobian. 
   virtual bool createJacobianOperator(
-       NOX::Parameter::List& printParams,
-       NOX::Parameter::List& lsParams,
+       Teuchos::ParameterList& printParams,
+       Teuchos::ParameterList& lsParams,
        const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector); 
 
   //! Creates an internally owned Epetra_Operator for the Preconditioner. 
   virtual bool createPrecOperator(
-       NOX::Parameter::List& printParams,
-       NOX::Parameter::List& lsParams,
+       Teuchos::ParameterList& printParams,
+       Teuchos::ParameterList& lsParams,
        const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& iReq, 
        const NOX::Epetra::Vector& cloneVector); 
 
@@ -484,21 +483,21 @@ protected:
     NOX::Epetra::Group::ifpackPreconditioner).  This is called from
     NOX::Epetra::Group::computePreconditioner().
   */
-  virtual bool createIfpackPreconditioner(NOX::Parameter::List& p) const;
+  virtual bool createIfpackPreconditioner(Teuchos::ParameterList& p) const;
 
   /*! 
     \brief 
     Allocates the objects required for using the new version of ifpack preconditioners via the Ifpack Create factory.
     This is called from NOX::Epetra::Group::computePreconditioner().
   */
-  virtual bool createNewIfpackPreconditioner(NOX::Parameter::List& p) const;
+  virtual bool createNewIfpackPreconditioner(Teuchos::ParameterList& p) const;
 
 #ifdef HAVE_NOX_ML_EPETRA
   /*! 
     \brief 
     Allocates the objects required for using ML preconditioners
   */
-  virtual bool createMLPreconditioner(NOX::Parameter::List& p) const;
+  virtual bool createMLPreconditioner(Teuchos::ParameterList& p) const;
 #endif
 
   /*! 

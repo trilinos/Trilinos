@@ -115,7 +115,7 @@
 // *** Constructor
 // **************************************************************************
 NOX::Direction::Tensor::Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-			       NOX::Parameter::List& params) :
+			       Teuchos::ParameterList& params) :
   inexactNewtonUtils(gd, params)
 {
   hess = NULL;
@@ -176,7 +176,7 @@ NOX::Direction::Tensor::~Tensor()
 
 bool NOX::Direction::Tensor::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      NOX::Parameter::List& params)
+      Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
@@ -192,27 +192,27 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   
   paramsPtr = &params;
 
-  NOX::Parameter::List& p = paramsPtr->sublist("Tensor");
-  doRescue = p.getParameter("Rescue Bad Newton Solve", true);
+  Teuchos::ParameterList& p = paramsPtr->sublist("Tensor");
+  doRescue = p.get("Rescue Bad Newton Solve", true);
   
-  NOX::Parameter::List& localParams = p.sublist("Linear Solver");
+  Teuchos::ParameterList& localParams = p.sublist("Linear Solver");
   localParamsPtr = &(p.sublist("Linear Solver"));
 
   // Reset the inexact Newton Utilities (including linear solve tolerance)
   inexactNewtonUtils.reset(gd, params);
-  tol = localParams.getParameter("Tolerance", 1e-4);
+  tol = localParams.get("Tolerance", 1e-4);
 
   // Krylov solver parameters
-  kmax = localParams.getParameter("Size of Krylov Subspace", 30);
-  // maxRestarts = localParams.getParameter("Max Restarts", 0);
-  // maxRestarts = kmax / localParams.getParameter("Max Iterations", 30) - 1;
-  maxRestarts = (localParams.getParameter("Max Iterations", 30) / kmax) - 1;
+  kmax = localParams.get("Size of Krylov Subspace", 30);
+  // maxRestarts = localParams.get("Max Restarts", 0);
+  // maxRestarts = kmax / localParams.get("Max Iterations", 30) - 1;
+  maxRestarts = (localParams.get("Max Iterations", 30) / kmax) - 1;
   if (maxRestarts < 0)
     maxRestarts = 0;
-  outputFreq = localParams.getParameter("Output Frequency", 20);
+  outputFreq = localParams.get("Output Frequency", 20);
   isSubspaceAugmented = false;
 
-  string choice = localParams.getParameter("Compute Step", "Tensor");
+  string choice = localParams.get("Compute Step", "Tensor");
   if (choice == "Tensor") {
     requestedBaseStep = TensorStep3;
   }
@@ -240,7 +240,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   }
 
 
-  choice = localParams.getParameter("Reorthogonalize", "As Needed");
+  choice = localParams.get("Reorthogonalize", "As Needed");
   if (choice == "Never") {
     reorth = Never;
   }
@@ -256,13 +256,13 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   }
 
 
-  choice = localParams.getParameter("Preconditioning", "None");
+  choice = localParams.get("Preconditioning", "None");
   if (choice == "None") {
     precondition = None;
-    localParams.setParameter("Preconditioning Side", "None");
+    localParams.set("Preconditioning Side", "None");
   }
   else {
-    choice = localParams.getParameter("Preconditioning Side", "Left");
+    choice = localParams.get("Preconditioning Side", "Left");
     if (choice == "Left") {
       precondition = Left;
     }
@@ -281,7 +281,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   // Determine whether to use a shortcut method for computing rhs V'*ac
   useShortcutMethod = false;
   if (requestedBaseStep == TensorStep3  &&  precondition != Right)
-    useShortcutMethod = localParams.getParameter("Use Shortcut Method", true);
+    useShortcutMethod = localParams.get("Use Shortcut Method", true);
   
   isMinvTransAvailable = true;
   
@@ -325,7 +325,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
       kmax = probSize;
 
       // Update parameter list with the actual value used
-      localParamsPtr->setParameter("Size of Krylov Subspace", kmax);
+      localParamsPtr->set("Size of Krylov Subspace", kmax);
     }
 
     maxDim = kmax + pmax;
@@ -451,16 +451,16 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 #endif // DEBUG_LEVEL
 
   double lsTol = tol;
-//  string lsMethod = solver.getParameterList().sublist("Line Search")
-//    .getParameter("Method", "Tensor");
-//  if (solver.getParameterList().sublist("Line Search").sublist(lsMethod)
+//  string lsMethod = solver.getList().sublist("Line Search")
+//    .get("Method", "Tensor");
+//  if (solver.getList().sublist("Line Search").sublist(lsMethod)
 //      .isParameter("Adjusted Tolerance"))
-//    lsTol = solver.getParameterList().sublist("Line Search").sublist(lsMethod)
-//      .getParameter("Adjusted Tolerance", tol);
-  if (solver.getParameterList().sublist("Line Search").
+//    lsTol = solver.getList().sublist("Line Search").sublist(lsMethod)
+//      .get("Adjusted Tolerance", tol);
+  if (solver.getList().sublist("Line Search").
       isParameter("Adjusted Tolerance"))
-    lsTol = solver.getParameterList().sublist("Line Search").
-      getParameter("Adjusted Tolerance", tol);
+    lsTol = const_cast<Teuchos::ParameterList&>(solver.getList()).
+      sublist("Line Search").get("Adjusted Tolerance", tol);
   utils->out() << "Adjusted tolerance = " << lsTol << endl;
   
   // Compute inexact forcing term if requested.
@@ -468,7 +468,7 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
 					      solver.getPreviousSolutionGroup(),
 					      solver.getNumIterations(),
 					      solver, lsTol);
-  //tol = localParamsPtr->getParameter("Tolerance", 1.0e-4);
+  //tol = localParamsPtr->get("Tolerance", 1.0e-4);
 
   // Compute the error tolerance, tol*||Fc||  or  tol*||Minv*Fc||
   if (precondition == Left) {
@@ -543,8 +543,8 @@ bool NOX::Direction::Tensor::compute(NOX::Abstract::Vector& dir,
   }
 
   // Set output parameters to pass back to calling function
-  NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
-  outputList.setParameter("Arnoldi iterations", arnoldiIters);
+  Teuchos::ParameterList& outputList = paramsPtr->sublist("Output");
+  outputList.set("Arnoldi iterations", arnoldiIters);
     
 
 #ifndef FENGPULLIAM
@@ -2410,7 +2410,7 @@ void NOX::Direction::Tensor::printDirectionInfo(char* dirName,
 NOX::Abstract::Group::ReturnType
 NOX::Direction::Tensor::applyPreconditioner(bool useTranspose,
 					    const NOX::Abstract::Group& soln,
-					    NOX::Parameter::List& params,
+					    Teuchos::ParameterList& params,
 					    const NOX::Abstract::Vector& input,
 					    NOX::Abstract::Vector& result,
 					    char* errLocation) const

@@ -32,7 +32,7 @@
 
 #include "NOX_Epetra_Group.H"	// class definition
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_Epetra_Interface_Required.H"
 #include "Epetra_Vector.h"
@@ -43,7 +43,7 @@ using namespace NOX;
 using namespace NOX::Epetra;
 using namespace Teuchos;
 
-Group::Group(NOX::Parameter::List& printParams,
+Group::Group(Teuchos::ParameterList& printParams,
 	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
 	     const NOX::Epetra::Vector& x):
   utils(printParams),
@@ -65,7 +65,7 @@ Group::Group(NOX::Parameter::List& printParams,
   resetIsValid();
 }
 
-Group::Group(NOX::Parameter::List& printParams,
+Group::Group(Teuchos::ParameterList& printParams,
 	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
 	     const NOX::Epetra::Vector& x,
 	     const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys):
@@ -321,7 +321,7 @@ Abstract::Group::ReturnType Group::computeGradient()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p) 
+Abstract::Group::ReturnType Group::computeNewton(Teuchos::ParameterList& p) 
 {
   if (isNewton())
     return Abstract::Group::Ok;
@@ -379,14 +379,14 @@ Abstract::Group::ReturnType Group::applyJacobian(const NOX::Epetra::Vector& inpu
   return status == true ? Abstract::Group::Ok : Abstract::Group::Failed;
 }
 
-Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, const Abstract::Vector &input, Abstract::Vector &result) const
+Abstract::Group::ReturnType Group::applyJacobianInverse (Teuchos::ParameterList &p, const Abstract::Vector &input, Abstract::Vector &result) const
 {
   const NOX::Epetra::Vector& epetraInput = dynamic_cast<const NOX::Epetra::Vector&>(input);
   NOX::Epetra::Vector& epetraResult = dynamic_cast<NOX::Epetra::Vector&>(result);
   return applyJacobianInverse(p, epetraInput, epetraResult);
 }
 
-Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
+Abstract::Group::ReturnType Group::applyJacobianInverse (Teuchos::ParameterList &p, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) const
 {
   if (!isJacobian()) 
     return Abstract::Group::BadDependency;
@@ -431,7 +431,7 @@ Abstract::Group::ReturnType Group::applyJacobianTranspose(const NOX::Epetra::Vec
 
 Abstract::Group::ReturnType Group::applyRightPreconditioning(
 				      bool useTranspose,
-				      Parameter::List& params,
+				      Teuchos::ParameterList& params,
 				      const Abstract::Vector& input, 
 				      Abstract::Vector& result) const
 {
@@ -443,7 +443,7 @@ Abstract::Group::ReturnType Group::applyRightPreconditioning(
 
 Abstract::Group::ReturnType Group::applyRightPreconditioning(
 				       bool useTranspose, 
-				       Parameter::List& linearSolverParams,
+				       Teuchos::ParameterList& linearSolverParams,
 				       const NOX::Epetra::Vector& input, 
 				       NOX::Epetra::Vector& result) const
 {

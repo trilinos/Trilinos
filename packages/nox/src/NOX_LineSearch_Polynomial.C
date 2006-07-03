@@ -37,14 +37,14 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_StatusTest_FiniteValue.H"
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::Polynomial::
 Polynomial(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	   Parameter::List& params) :
+	   Teuchos::ParameterList& params) :
   globalDataPtr(gd),
   paramsPtr(NULL),
   print(gd->getUtils()),
@@ -60,7 +60,7 @@ NOX::LineSearch::Polynomial::~Polynomial()
 
 bool NOX::LineSearch::Polynomial::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      Parameter::List& params)
+      Teuchos::ParameterList& params)
 { 
   globalDataPtr = gd;
   meritFuncPtr = gd->getMeritFunction();
@@ -68,9 +68,9 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
   paramsPtr = &params;
   slopeUtil.reset(gd);
 
-  NOX::Parameter::List& p = params.sublist("Polynomial");
+  Teuchos::ParameterList& p = params.sublist("Polynomial");
   
-  string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
+  string choice = p.get("Sufficient Decrease Condition", "Armijo-Goldstein");
 
   if (choice == "Armijo-Goldstein")
     suffDecrCond = ArmijoGoldstein;  
@@ -84,7 +84,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
 
-  choice = p.getParameter("Interpolation Type", "Cubic");
+  choice = p.get("Interpolation Type", "Cubic");
 
   if (choice == "Cubic") 
     interpolationType = Cubic;
@@ -98,7 +98,7 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
 
-  choice = p.getParameter("Recovery Step Type", "Constant");
+  choice = p.get("Recovery Step Type", "Constant");
 
   if (choice == "Constant")
     recoveryStepType = Constant;
@@ -110,17 +110,17 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     throw "NOX Error";
   }
 
-  minStep = p.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = p.getParameter("Default Step", 1.0);
-  recoveryStep = p.getParameter("Recovery Step", defaultStep);
-  maxIters = p.getParameter("Max Iters", 100);
-  alpha = p.getParameter("Alpha Factor", 1.0e-4);
-  minBoundFactor = p.getParameter("Min Bounds Factor", 0.1);
-  maxBoundFactor = p.getParameter("Max Bounds Factor", 0.5);
-  doForceInterpolation = p.getParameter("Force Interpolation", false);
-  useCounter = p.getParameter("Use Counters", true);
-  maxIncreaseIter = p.getParameter("Maximum Iteration for Increase", 0);
-  maxRelativeIncrease = p.getParameter("Allowed Relative Increase", 1.e2);
+  minStep = p.get("Minimum Step", 1.0e-12);
+  defaultStep = p.get("Default Step", 1.0);
+  recoveryStep = p.get("Recovery Step", defaultStep);
+  maxIters = p.get("Max Iters", 100);
+  alpha = p.get("Alpha Factor", 1.0e-4);
+  minBoundFactor = p.get("Min Bounds Factor", 0.1);
+  maxBoundFactor = p.get("Max Bounds Factor", 0.5);
+  doForceInterpolation = p.get("Force Interpolation", false);
+  useCounter = p.get("Use Counters", true);
+  maxIncreaseIter = p.get("Maximum Iteration for Increase", 0);
+  maxRelativeIncrease = p.get("Allowed Relative Increase", 1.e2);
 
   // Is increase allowed?
   doAllowIncrease = (maxIncreaseIter > 0);
@@ -145,11 +145,12 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
     counter.incrementNumLineSearches();
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
-  string direction = s.getParameterList().sublist("Direction")
-    .getParameter("Method", "Newton");
+  string direction = const_cast<Teuchos::ParameterList&>(s.getList()).
+    sublist("Direction").get("Method", "Newton");
   double eta = (suffDecrCond == AredPred) ? 
-    s.getParameterList().sublist("Direction").sublist(direction)
-    .sublist("Linear Solver").getParameter("Tolerance", -1.0) : 0.0;
+    const_cast<Teuchos::ParameterList&>(s.getList()).
+    sublist("Direction").sublist(direction).sublist("Linear Solver").
+    get("Tolerance", -1.0) : 0.0;
 
   // Computations with old group
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
@@ -332,7 +333,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   string message = (isFailed) ? "(USING RECOVERY STEP!)" : "(STEP ACCEPTED!)";
   print.printStep(nIters, step, oldValue, newValue, message, (suffDecrCond != AredPred));
 
-  paramsPtr->setParameter("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
+  paramsPtr->set("Adjusted Tolerance", 1.0 - step * (1.0 - eta));
 
   if (useCounter)
     counter.setValues(*paramsPtr);

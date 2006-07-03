@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "1DfemPrePostOperator.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Solver_Generic.H"
 
 

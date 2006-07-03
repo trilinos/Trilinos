@@ -18,7 +18,7 @@
 #define NOX_TEST_UTILS_H
 
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 
 namespace NOX
@@ -121,11 +121,11 @@ bool getNextInt(const string& line, string::size_type& pos, int& value);
 */
 
 
-bool parseTextInputFile(const string filename, NOX::Parameter::List& params);
+bool parseTextInputFile(const string filename, Teuchos::ParameterList& params);
 
 //! Process a single line of the text input file.
-bool processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
-			      NOX::Parameter::List*& subPtr);
+bool processTextInputFileLine(const string& line, Teuchos::ParameterList& params, 
+			      Teuchos::ParameterList*& subPtr);
 
 } // namespace NOX
 

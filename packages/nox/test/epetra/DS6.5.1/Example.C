@@ -113,20 +113,20 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& nlParams = *(nlParamsPtr.get());
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
 
   // Set the printing parameters in the "Printing" sublist
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID); 
-  printParams.setParameter("Output Precision", 5);
-  printParams.setParameter("Output Processor", 0);
+  Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
+  printParams.set("MyPID", MyPID); 
+  printParams.set("Output Precision", 5);
+  printParams.set("Output Processor", 0);
   if ( verbose )
-    printParams.setParameter("Output Information",
+    printParams.set("Output Information",
                      NOX::Utils::OuterIteration +
                      NOX::Utils::OuterIterationStatusTest +
                      NOX::Utils::InnerIteration +
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
                      NOX::Utils::Warning +
                      NOX::Utils::TestDetails);
   else
-    printParams.setParameter("Output Information", NOX::Utils::Error +
+    printParams.set("Output Information", NOX::Utils::Error +
                      NOX::Utils::TestDetails);
 
   NOX::Utils printing(printParams);
@@ -160,30 +160,30 @@ int main(int argc, char *argv[])
     cout << "Serial Run" << endl;
 #endif
   // Sublist for line search 
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   // This test is designed to exercise the following linesearch
-  searchParams.setParameter("Method", "Polynomial");
+  searchParams.set("Method", "Polynomial");
 
   // Sublist for direction
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  dirParams.setParameter("Method", "Newton");
-  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+  dirParams.set("Method", "Newton");
+  Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
+    newtonParams.set("Forcing Term Method", "Constant");
 
   // Sublist for linear solver for the Newton method
-  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 20);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Preconditioner", "None");   
+  Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Max Iterations", 20);  
+  lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Preconditioner", "None");   
   if( verbose )
-    lsParams.setParameter("Output Frequency", 1);    
+    lsParams.set("Output Frequency", 1);    
 
   // Debugging output
 #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
-  lsParams.setParameter("Write Linear System", true);
-  lsParams.setParameter("Write Linear System File Prefix", "LinSys_Output_Test");
+  lsParams.set("Write Linear System", true);
+  lsParams.set("Write Linear System File Prefix", "LinSys_Output_Test");
 #endif
 #endif
 
@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
   if (printing.isPrintType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(cout);
+    solver.getList().print(cout);
     cout << endl;
   }
 
@@ -260,23 +260,23 @@ int main(int argc, char *argv[])
     testStatus = 1;
   }
   // 2. Nonlinear Iterations (7)
-  if (solver.getParameterList().sublist("Output").getParameter("Nonlinear Iterations",0) != 7) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Output").get("Nonlinear Iterations",0) != 7) {
     testStatus = 2;
   }
   // 3. Linear Iterations (14)
-  if (solver.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Total Number of Linear Iterations",0) != 14) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 14) {
     testStatus = 3;
   }
   // 4. Number of Non-trivial Line Searches (2)
-  if (solver.getParameterList().sublist("Line Search").sublist("Output").getParameter("Total Number of Non-trivial Line Searches",0) != 2) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Line Search").sublist("Output").get("Total Number of Non-trivial Line Searches",0) != 2) {
     testStatus = 4;
   }
   // 5. Number of Line Search Inner Iterations (4)
-  if (solver.getParameterList().sublist("Line Search").sublist("Output").getParameter("Total Number of Line Search Inner Iterations",0) != 4) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Line Search").sublist("Output").get("Total Number of Line Search Inner Iterations",0) != 4) {
     testStatus = 5;
   }
   // 6. Number of Failed Line Searches (0)
-  if (solver.getParameterList().sublist("Line Search").sublist("Output").getParameter("Total Number of Failed Line Searches",-1) != 0) {
+  if (const_cast<Teuchos::ParameterList&>(solver.getList()).sublist("Line Search").sublist("Output").get("Total Number of Failed Line Searches",-1) != 0) {
     testStatus = 6;
   }
 

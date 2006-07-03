@@ -31,25 +31,25 @@
 //@HEADER
 
 #include "NOX_GlobalData.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_MeritFunction_SumOfSquares.H"
 
 NOX::GlobalData::
-GlobalData(const Teuchos::RefCountPtr<NOX::Parameter::List>& noxParams)
+GlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& noxParams)
 {
   paramListPtr = noxParams;
 
   utilsPtr = Teuchos::rcp(new NOX::Utils(noxParams->sublist("Printing")));
 
-  NOX::Parameter::List& solverOptionsList = 
+  Teuchos::ParameterList& solverOptionsList = 
     noxParams->sublist("Solver Options");
   
   if (solverOptionsList.INVALID_TEMPLATE_QUALIFIER
-      isParameterRcp<NOX::MeritFunction::Generic>
+      isType< Teuchos::RefCountPtr<NOX::MeritFunction::Generic> >
       ("User Defined Merit Function")) {
     
     meritFunctionPtr = solverOptionsList.INVALID_TEMPLATE_QUALIFIER
-      getRcpParameter<NOX::MeritFunction::Generic>
+      get< Teuchos::RefCountPtr<NOX::MeritFunction::Generic> >
       ("User Defined Merit Function");
   }
   else {
@@ -85,7 +85,7 @@ NOX::GlobalData::getMeritFunction() const
   return meritFunctionPtr;
 }
 
-Teuchos::RefCountPtr<NOX::Parameter::List> 
+Teuchos::RefCountPtr<Teuchos::ParameterList> 
 NOX::GlobalData::getNoxParameterList() const
 {
   return paramListPtr;

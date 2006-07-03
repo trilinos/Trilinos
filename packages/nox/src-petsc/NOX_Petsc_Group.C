@@ -31,13 +31,13 @@
 //@HEADER
 
 #include "NOX.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 #include "NOX_Petsc_Group.H"	// class definition
 #include "NOX_Petsc_Interface.H"
 #include "NOX_Petsc_Vector.H"
 #include "NOX_Petsc_SharedJacobian.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 // External include files - linking to Petsc
 #include "petscsles.h" 
@@ -271,7 +271,7 @@ Abstract::Group::ReturnType Group::computeGradient()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType Group::computeNewton(NOX::Parameter::List& p) 
+Abstract::Group::ReturnType Group::computeNewton(Teuchos::ParameterList& p) 
 {
   if (isNewton())
     return Abstract::Group::Ok;
@@ -363,7 +363,7 @@ Group::applyJacobian(const Vector& input, Vector& result) const
 
 
 Abstract::Group::ReturnType 
-Group::applyRightPreconditioning(Parameter::List& params, 
+Group::applyRightPreconditioning(Teuchos::ParameterList& params, 
                                  const Abstract::Vector& input, 
                                  Abstract::Vector& result) const
 {

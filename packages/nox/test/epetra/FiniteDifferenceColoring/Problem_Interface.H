@@ -62,7 +62,7 @@ public:
 
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
   bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M,
-			     NOX::Parameter::List* precParams = 0);
+			     Teuchos::ParameterList* precParams = 0);
 
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 

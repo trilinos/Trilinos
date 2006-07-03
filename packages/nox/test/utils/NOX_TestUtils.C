@@ -98,8 +98,8 @@ bool NOX::getNextDouble(const string& line, string::size_type& pos, double& valu
   return ((sscanf(field.c_str(), "%le", &value)) == 1);
 }
 
-bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
-					NOX::Parameter::List*& subPtr)
+bool NOX::processTextInputFileLine(const string& line, Teuchos::ParameterList& params, 
+					Teuchos::ParameterList*& subPtr)
 {
   
   string::size_type pos;	// current position inside line
@@ -161,7 +161,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       }
       else
       {
-	subPtr->setParameter(field, tmpint);
+	subPtr->set(field, tmpint);
 	return true;
       }
     }
@@ -173,7 +173,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       }
       else
       {
-	subPtr->setParameter(field, (tmpstring == "true") );
+	subPtr->set(field, (tmpstring == "true") );
 	return true;
       }
     }
@@ -185,7 +185,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       }
       else
       {
-	subPtr->setParameter(field, tmpdouble);
+	subPtr->set(field, tmpdouble);
 	return true;
       }
     }
@@ -197,7 +197,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       }
       else
       {
-	subPtr->setParameter(field, tmpstring);
+	subPtr->set(field, tmpstring);
 	return true;
       }
     }
@@ -217,7 +217,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
 	  return false;
       }
       
-      subPtr->setParameter(field, tmpvector);	
+      subPtr->set(field, tmpvector);	
       return true;
       }*/
     else
@@ -248,7 +248,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       tmpvector.resize(n);
       for (int i = 0; i < n; i ++)
 	linein >> tmpvector[i];
-      params.sublist("Solver").setParameter("Initial X", tmpvector);
+      params.sublist("Solver").set("Initial X", tmpvector);
     }
     */
 
@@ -257,7 +257,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       linein >> c;
       linein >> tmpdouble;
       tmpvalue.setValueTo(true, tmpdouble);
-      params.sublist("Solver").setParameter("Initial F", tmpvalue);
+      params.sublist("Solver").set("Initial F", tmpvalue);
     }
     */
 
@@ -273,7 +273,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       tmpvector.resize(n);
       for (int i = 0; i < n; i ++)
 	linein >> tmpvector[i];
-      params.sublist("Bounds").setParameter("Lower", tmpvector);
+      params.sublist("Bounds").set("Lower", tmpvector);
       
     }
     */
@@ -290,7 +290,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
       tmpvector.resize(n);
       for (int i = 0; i < n; i ++)
 	linein >> tmpvector[i];
-      params.sublist("Bounds").setParameter("Upper", tmpvector);
+      params.sublist("Bounds").set("Upper", tmpvector);
       
     }
     */
@@ -299,21 +299,21 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
     {
       linein >> c;
       linein >> tmpstring;
-      params.sublist("Evaluator").setParameter("Executable Name", tmpstring);
+      params.sublist("Evaluator").set("Executable Name", tmpstring);
     }
     
     else if (field == "params_prefix") 
     {
       linein >> c;
       linein >> tmpstring;
-      params.sublist("Evaluator").setParameter("Input Prefix", tmpstring);
+      params.sublist("Evaluator").set("Input Prefix", tmpstring);
     }
     
     else if (field == "result_prefix") 
     {
       linein >> c;
       linein >> tmpstring;
-      params.sublist("Evaluator").setParameter("Output Prefix", tmpstring);
+      params.sublist("Evaluator").set("Output Prefix", tmpstring);
     }
     
     else 
@@ -325,7 +325,7 @@ bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& par
   return true;
 }
 
-bool NOX::parseTextInputFile(const string filename, NOX::Parameter::List& params)
+bool NOX::parseTextInputFile(const string filename, Teuchos::ParameterList& params)
 {
   // Open the input file
   ifstream fin;
@@ -338,7 +338,7 @@ bool NOX::parseTextInputFile(const string filename, NOX::Parameter::List& params
   }
 
   string line;			// one line from input file
-  NOX::Parameter::List* subPtr;	// sublist pointer
+  Teuchos::ParameterList* subPtr;	// sublist pointer
 
   subPtr = &params;
 

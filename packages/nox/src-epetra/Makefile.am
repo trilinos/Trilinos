@@ -75,11 +75,19 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_Scaling.C \
 	$(srcdir)/NOX_Epetra_BroydenOperator.C
 
+if BUILD_NOX_EPETRAEXT_SUPPORT
+MODELEVAL = \
+        $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.C
+
+MODELEVAL_H = \
+        $(srcdir)/NOX_Epetra_ModelEvaluatorInterface.H
+endif
+
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
 # ------------------------------------------------------------------------
 
-libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H)
+libnoxepetra_a_SOURCES = $(EPETRA) $(EPETRA_H) $(MODELEVAL) $(MODELEVAL_H)
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
@@ -106,7 +114,7 @@ lib_LIBRARIES = libnoxepetra.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(EPETRA_H)
+include_HEADERS = $(EPETRA_H) $(MODELEVAL_H)
 
 endif
 

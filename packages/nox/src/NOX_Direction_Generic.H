@@ -36,6 +36,9 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 // Forward declarations
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
   class GlobalData;
   namespace Abstract {
@@ -45,9 +48,6 @@ namespace NOX {
   namespace Solver {
     class Generic;
     class LineSearchBased;
-  }
-  namespace Parameter {
-    class List;
   }
 }
 
@@ -81,7 +81,7 @@ public:
 
   //! Reset direction based on possibly new parameters.
   virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		     NOX::Parameter::List& params) = 0;
+		     Teuchos::ParameterList& params) = 0;
   
   /*!
     \brief Compute the direction vector, \c dir, for a specific method given

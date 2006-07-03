@@ -79,14 +79,14 @@ public:
   */
   Manager(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-	  const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+	  const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
 
   //! Destructor.
   ~Manager();
 
   bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 	     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
   
   bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp,
 	     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
@@ -103,7 +103,7 @@ public:
 
   int getNumIterations() const;
 
-  const NOX::Parameter::List& getParameterList() const;
+  const Teuchos::ParameterList& getList() const;
 
 private:
 

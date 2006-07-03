@@ -34,14 +34,14 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 
 NOX::Solver::LineSearchBased::
 LineSearchBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
 		const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-		const Teuchos::RefCountPtr<NOX::Parameter::List>& p) :
+		const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr(xGrp),		                       // pointer to xGrp
@@ -66,7 +66,7 @@ void NOX::Solver::LineSearchBased::init()
 
   // Get the checktype
   checkType = (NOX::StatusTest::CheckType) paramsPtr->
-    sublist("Solver Options").getParameter("Status Test Check Type", 
+    sublist("Solver Options").get("Status Test Check Type", 
 					   NOX::StatusTest::Minimal);
 
   // Print out parameters
@@ -82,7 +82,7 @@ void NOX::Solver::LineSearchBased::init()
 bool NOX::Solver::LineSearchBased::
 reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xGrp, 
       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& p) 
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   solnPtr = xGrp;
@@ -220,9 +220,9 @@ NOX::StatusTest::StatusType NOX::Solver::LineSearchBased::solve()
     printUpdate();
   }
 
-  NOX::Parameter::List& outputParams = paramsPtr->sublist("Output");
-  outputParams.setParameter("Nonlinear Iterations", nIter);
-  outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+  Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");
+  outputParams.set("Nonlinear Iterations", nIter);
+  outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
   prePostOperator.runPostSolve(*this);
 
@@ -246,8 +246,8 @@ int NOX::Solver::LineSearchBased::getNumIterations() const
   return nIter;
 }
 
-const NOX::Parameter::List& 
-NOX::Solver::LineSearchBased::getParameterList() const
+const Teuchos::ParameterList& 
+NOX::Solver::LineSearchBased::getList() const
 {
   return *paramsPtr;
 }

@@ -36,11 +36,11 @@
 #include "NOX_Common.H"
 
 // Forward declaration
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
   class Utils;
-  namespace Parameter {
-    class List;
-  }
 }
 
 namespace NOX {
@@ -94,7 +94,7 @@ public:
 
   //! Sets the common line search data in an "Output" sublist of the
   //! lineSearchParams list that is supplied in the method call.
-  virtual bool setValues(NOX::Parameter::List& lineSearchParams);
+  virtual bool setValues(Teuchos::ParameterList& lineSearchParams);
 
   /** @name Increment Methods
       

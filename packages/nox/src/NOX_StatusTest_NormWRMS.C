@@ -181,13 +181,13 @@ checkStatus(const Solver::Generic& problem,
   // Since the list is const, a sublist call to a non-existent sublist 
   // throws an error.  Therefore we have to check the existence of each 
   // sublist before we call it.
-  const NOX::Parameter::List& p = problem.getParameterList();
+  const Teuchos::ParameterList& p = problem.getList();
   if (niters == 1) {
-    if (p.isParameterSublist("Direction")) {
-      if (p.sublist("Direction").isParameterSublist("Newton")) {
-	if (p.sublist("Direction").sublist("Newton").isParameterSublist("Linear Solver")) {
-	  if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isParameterSublist("Output")) {
-	    if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").isParameterDouble("Achieved Tolerance")) {
+    if (p.isSublist("Direction")) {
+      if (p.sublist("Direction").isSublist("Newton")) {
+	if (p.sublist("Direction").sublist("Newton").isSublist("Linear Solver")) {
+	  if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isSublist("Output")) {
+	    if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").isType<double>("Achieved Tolerance")) {
 	      printCriteria3Info = true;
 	    }
 	  }
@@ -198,8 +198,9 @@ checkStatus(const Solver::Generic& problem,
   
   StatusType status3 = Converged;
   if (printCriteria3Info) {
-    achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").
-      sublist("Output").getParameter("Achieved Tolerance", -1.0);
+    achievedTol = const_cast<Teuchos::ParameterList&>(problem.getList()).
+      sublist("Direction").sublist("Newton").sublist("Linear Solver").
+      sublist("Output").get("Achieved Tolerance", -1.0);
     status3 = (achievedTol <= beta) ? Converged : Unconverged;
   }
 

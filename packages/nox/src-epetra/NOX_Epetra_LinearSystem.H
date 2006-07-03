@@ -96,7 +96,7 @@ public:
     
     The parameter list contains the linear solver options.
   */
-  virtual bool applyJacobianInverse(NOX::Parameter::List &params, 
+  virtual bool applyJacobianInverse(Teuchos::ParameterList &params, 
 				    const NOX::Epetra::Vector &input, 
 				    NOX::Epetra::Vector &result) = 0;
 
@@ -120,7 +120,7 @@ public:
     The parameter list contains the linear solver options.
   */
   virtual bool applyRightPreconditioning(bool useTranspose,
-				      NOX::Parameter::List& params, 
+				      Teuchos::ParameterList& params, 
 				      const NOX::Epetra::Vector& input, 
 				      NOX::Epetra::Vector& result) const = 0;
 
@@ -147,7 +147,7 @@ public:
     isValid flag for the preconditioner and will control when to call this.
   */
   virtual bool createPreconditioner(const NOX::Epetra::Vector& x, 
-				    NOX::Parameter::List& p,
+				    Teuchos::ParameterList& p,
 				    bool recomputeGraph) const = 0;
 
   /*!

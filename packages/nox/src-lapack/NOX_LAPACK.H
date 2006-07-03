@@ -31,7 +31,7 @@
 //@HEADER
 
 //NOX::BLAS Objects
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_LAPACK_Matrix.H"
 #include "NOX_LAPACK_Vector.H"
 #include "NOX_LAPACK_Group.H"

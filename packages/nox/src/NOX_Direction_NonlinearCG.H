@@ -148,14 +148,14 @@ public:
 
   //! Constructor. 
   NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	      Parameter::List& params);
+	      Teuchos::ParameterList& params);
 
   //! Destructor.
   virtual ~NonlinearCG();
 
   //! derived
   virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		     Parameter::List& p);
+		     Teuchos::ParameterList& p);
 
   //! derived
   virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
@@ -195,7 +195,7 @@ private:
   Teuchos::RefCountPtr<Abstract::Vector> diffVecPtr;  
 
   //! Input parameters.
-  Parameter::List* paramsPtr;	
+  Teuchos::ParameterList* paramsPtr;	
 
   //! Orthogonalization parameter \f$ \beta \f$.
   double beta;			

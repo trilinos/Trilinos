@@ -46,7 +46,7 @@
 NOX::Solver::Manager::
 Manager(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
 	const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
-	const Teuchos::RefCountPtr<Parameter::List>& p) :
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   utils(p->sublist("Printing")),
   method(""),
   ptr(NULL)
@@ -68,10 +68,10 @@ NOX::Solver::Manager::~Manager()
 bool NOX::Solver::Manager::
 reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
       const Teuchos::RefCountPtr<StatusTest::Generic>& tests, 
-      const Teuchos::RefCountPtr<Parameter::List>& params)
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
 {
   string newmethod = 
-    params->getParameter("Nonlinear Solver", "Line Search Based");
+    params->get("Nonlinear Solver", "Line Search Based");
 
   if ((method == newmethod) && (ptr != NULL))
   {
@@ -187,10 +187,10 @@ int NOX::Solver::Manager::getNumIterations() const
   return ptr->getNumIterations();
 }
 
-const NOX::Parameter::List& NOX::Solver::Manager::getParameterList() const
+const Teuchos::ParameterList& NOX::Solver::Manager::getList() const
 {
-  checkNullPtr("getParameterList");
-  return ptr->getParameterList();
+  checkNullPtr("getList");
+  return ptr->getList();
 }
 
 // PRIVATE

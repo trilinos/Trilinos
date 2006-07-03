@@ -42,7 +42,7 @@
 
 NOX::Direction::Newton::
 Newton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-       NOX::Parameter::List& p)
+       Teuchos::ParameterList& p)
 {
   reset(gd, p);
 }
@@ -53,33 +53,32 @@ NOX::Direction::Newton::~Newton()
 
 bool NOX::Direction::Newton::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      NOX::Parameter::List& params)
+      Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
 
   paramsPtr = &params;
 
-  NOX::Parameter::List& p = params.sublist("Newton");
+  Teuchos::ParameterList& p = params.sublist("Newton");
 
-  doRescue = p.getParameter("Rescue Bad Newton Solve", true);
+  doRescue = p.get("Rescue Bad Newton Solve", true);
   if (!p.sublist("Linear Solver").isParameter("Tolerance"))
-    p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
+    p.sublist("Linear Solver").get("Tolerance", 1.0e-10);
 
   
-  if ((!p.isParameter("Forcing Term Method")) ||
-      (p.isParameterEqual("Forcing Term Method", "Constant"))) {  
+  if ( p.get("Forcing Term Method", "Constant") == "Constant" ) {  
     useAdjustableForcingTerm = false;
-    eta_k = p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-4);
+    eta_k = p.sublist("Linear Solver").get("Tolerance", 1.0e-4);
   }
   else {
     useAdjustableForcingTerm = true;
-    method = p.getParameter("Forcing Term Method", "Type 1");
-    eta_min = p.getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  
-    eta_max = p.getParameter("Forcing Term Maximum Tolerance", 0.9);
-    eta_initial = p.getParameter("Forcing Term Initial Tolerance", 0.01);
-    alpha = p.getParameter("Forcing Term Alpha", 1.5);
-    gamma = p.getParameter("Forcing Term Gamma", 0.9);
+    method = p.get("Forcing Term Method", "Type 1");
+    eta_min = p.get("Forcing Term Minimum Tolerance", 1.0e-4);  
+    eta_max = p.get("Forcing Term Maximum Tolerance", 0.9);
+    eta_initial = p.get("Forcing Term Initial Tolerance", 0.01);
+    alpha = p.get("Forcing Term Alpha", 1.5);
+    gamma = p.get("Forcing Term Gamma", 0.9);
     eta_k = eta_min;
   }
 
@@ -155,7 +154,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   // NOTE: These values are changing at each nonlinear iteration and 
   // must be updated from the parameter list each time a reset is called!
   double eta_km1 = paramsPtr->sublist("Newton").sublist("Linear Solver")
-                   .getParameter("Tolerance", 0.0);
+                   .get("Tolerance", 0.0);
 
   // Tolerance may have been adjusted in a line search algorithm so we 
   // have to account for this.
@@ -298,7 +297,7 @@ bool NOX::Direction::Newton::resetForcingTerm(const NOX::Abstract::Group& soln,
   
   // Set the new linear solver tolerance
   paramsPtr->sublist("Newton").sublist("Linear Solver")
-    .setParameter("Tolerance", eta_k);
+    .set("Tolerance", eta_k);
 
   if (utils->isPrintType(Utils::Details)) 
     utils->out() << indent << "Forcing Term: " << eta_k << endl;

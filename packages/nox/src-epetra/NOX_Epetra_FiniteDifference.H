@@ -88,21 +88,21 @@ class FiniteDifference : public Epetra_RowMatrix,
   enum DifferenceType {Forward, Backward, Centered};
 
   //! Constructor with scalar beta.
-  FiniteDifference(NOX::Parameter::List& printingParams,
+  FiniteDifference(Teuchos::ParameterList& printingParams,
                    const Teuchos::RefCountPtr<Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
 		   double beta = 1.0e-6, 
 		   double alpha = 1.0e-4);
 
   //! Constructor with vector beta.
-  FiniteDifference(NOX::Parameter::List& printingParams,
+  FiniteDifference(Teuchos::ParameterList& printingParams,
                    const Teuchos::RefCountPtr<Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
 		   const Teuchos::RefCountPtr<const Epetra_Vector>& beta, 
 		   double alpha = 1.0e-4);
 
   //! Constructor that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
-  FiniteDifference(NOX::Parameter::List& printingParams,
+  FiniteDifference(Teuchos::ParameterList& printingParams,
                    const Teuchos::RefCountPtr<Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
 		   const Teuchos::RefCountPtr<Epetra_CrsGraph>& g, 
@@ -110,7 +110,7 @@ class FiniteDifference : public Epetra_RowMatrix,
 		   double alpha = 1.0e-4);
 
   //! Constructor with output control that takes a pre-constructed Epetra_CrsGraph so it does not have to determine the non-zero entries in the matrix.
-  FiniteDifference(NOX::Parameter::List& printingParams,
+  FiniteDifference(Teuchos::ParameterList& printingParams,
                    const Teuchos::RefCountPtr<Interface::Required>& i, 
 		   const NOX::Epetra::Vector& initialGuess,
 		   const Teuchos::RefCountPtr<Epetra_CrsGraph>& g, 
@@ -237,7 +237,7 @@ class FiniteDifference : public Epetra_RowMatrix,
   //! Compute an Epetra_RowMatrix to be used by Aztec preconditioners given the specified input vector, x. Returns true if computation was successful.
   virtual bool computePreconditioner(const Epetra_Vector& x,
 				     Epetra_Operator& Prec,
-				     NOX::Parameter::List* precParams = 0);
+				     Teuchos::ParameterList* precParams = 0);
 
   //! Set the type of perturbation method used (default is Forward)
   virtual void setDifferenceMethod( DifferenceType type );

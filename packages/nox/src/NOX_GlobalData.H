@@ -36,13 +36,13 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 // Global data objects forward declarations
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
   class Utils;
   namespace MeritFunction {
     class Generic;
-  }
-  namespace Parameter {
-    class List;
   }
 }
 
@@ -64,7 +64,7 @@ namespace NOX {
   public:
     
     //! Consturctor using the top level NOX parameter list.
-    GlobalData(const Teuchos::RefCountPtr<NOX::Parameter::List>& noxParams);
+    GlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& noxParams);
 
     //! Constructor taking a ref-count pointer to each global object.
     GlobalData(const Teuchos::RefCountPtr<NOX::Utils>& utils,
@@ -91,7 +91,7 @@ namespace NOX {
        stores a reference to a sublist should also store the global
        data object.
     */
-    Teuchos::RefCountPtr<NOX::Parameter::List> getNoxParameterList() const;
+    Teuchos::RefCountPtr<Teuchos::ParameterList> getNoxParameterList() const;
 
   private:
 
@@ -132,7 +132,7 @@ namespace NOX {
        stores a reference to a sublist should also store the global
        data object.
     */
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramListPtr;
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramListPtr;
 
   }; // Class GlobalData
 

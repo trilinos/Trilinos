@@ -236,20 +236,20 @@ int main(int argc, char *argv[])
   // parameter list as wwell as its own convergence test(s).
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> nlParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& nlParams = *(nlParamsPtr.get());
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
   // Set the nonlinear solver method
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
+  //nlParams.set("Nonlinear Solver", "Trust Region Based");
 
   // Set the printing parameters in the "Printing" sublist
-  NOX::Parameter::List& printParams = nlParams.sublist("Printing");
-  printParams.setParameter("MyPID", MyPID); 
-  printParams.setParameter("Output Precision", 3);
-  printParams.setParameter("Output Processor", 0);
-  printParams.setParameter("Output Information", 
+  Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
+  printParams.set("MyPID", MyPID); 
+  printParams.set("Output Precision", 3);
+  printParams.set("Output Processor", 0);
+  printParams.set("Output Information", 
 			NOX::Utils::OuterIteration + 
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
@@ -258,62 +258,62 @@ int main(int argc, char *argv[])
 			NOX::Utils::Warning);
 
   // Sublist for line search 
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
-  //searchParams.setParameter("Method", "Interval Halving");
-  //searchParams.setParameter("Method", "Polynomial");
-  //searchParams.setParameter("Method", "NonlinearCG");
-  //searchParams.setParameter("Method", "Quadratic");
-  //searchParams.setParameter("Method", "More'-Thuente");
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+  searchParams.set("Method", "Full Step");
+  //searchParams.set("Method", "Interval Halving");
+  //searchParams.set("Method", "Polynomial");
+  //searchParams.set("Method", "NonlinearCG");
+  //searchParams.set("Method", "Quadratic");
+  //searchParams.set("Method", "More'-Thuente");
 
   // Sublist for direction
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  dirParams.setParameter("Method", "Newton");
-  NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
-    //newtonParams.setParameter("Forcing Term Method", "Type 1");
-    //newtonParams.setParameter("Forcing Term Method", "Type 2");
-    //newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-    //newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
-  //dirParams.setParameter("Method", "Steepest Descent");
-  //NOX::Parameter::List& sdParams = dirParams.sublist("Steepest Descent");
-    //sdParams.setParameter("Scaling Type", "None");
-    //sdParams.setParameter("Scaling Type", "2-Norm");
-    //sdParams.setParameter("Scaling Type", "Quadratic Model Min");
-  //dirParams.setParameter("Method", "NonlinearCG");
-  //NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-    //nlcgParams.setParameter("Restart Frequency", 2000);
-    //nlcgParams.setParameter("Precondition", "On");
-    //nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+  dirParams.set("Method", "Newton");
+  Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
+    newtonParams.set("Forcing Term Method", "Constant");
+    //newtonParams.set("Forcing Term Method", "Type 1");
+    //newtonParams.set("Forcing Term Method", "Type 2");
+    //newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
+    //newtonParams.set("Forcing Term Maximum Tolerance", 0.1);
+  //dirParams.set("Method", "Steepest Descent");
+  //Teuchos::ParameterList& sdParams = dirParams.sublist("Steepest Descent");
+    //sdParams.set("Scaling Type", "None");
+    //sdParams.set("Scaling Type", "2-Norm");
+    //sdParams.set("Scaling Type", "Quadratic Model Min");
+  //dirParams.set("Method", "NonlinearCG");
+  //Teuchos::ParameterList& nlcgParams = dirParams.sublist("Nonlinear CG");
+    //nlcgParams.set("Restart Frequency", 2000);
+    //nlcgParams.set("Precondition", "On");
+    //nlcgParams.set("Orthogonalize", "Polak-Ribiere");
+    //nlcgParams.set("Orthogonalize", "Fletcher-Reeves");
 
   // Sublist for linear solver for the Newton method
-  NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 800);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 50);    
-  //lsParams.setParameter("Preconditioning", "None");   
-  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
-  lsParams.setParameter("Preconditioner", "AztecOO");   
-  //lsParams.setParameter("Preconditioner", "Ifpack");
-  //lsParams.setParameter("Graph Fill", 2);
-  //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
-  //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
-  //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
-  //lsParams.setParameter("Overlap", 2);  
-  //lsParams.setParameter("Graph Fill", 2); 
-  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  //lsParams.setParameter("Overlap", 2);   
-  //lsParams.setParameter("Fill Factor", 2);   
-  //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
-  //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
-  //lsParams.setParameter("Polynomial Order", 6); 
+  Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Output Frequency", 50);    
+  //lsParams.set("Preconditioning", "None");   
+  //lsParams.set("Preconditioning", "AztecOO: Jacobian Matrix");   
+  lsParams.set("Preconditioner", "AztecOO");   
+  //lsParams.set("Preconditioner", "Ifpack");
+  //lsParams.set("Graph Fill", 2);
+  //lsParams.set("Preconditioning", "AztecOO: User RowMatrix"); 
+  //lsParams.set("Preconditioning", "User Supplied Preconditioner");
+  //lsParams.set("Aztec Preconditioner", "ilu"); 
+  //lsParams.set("Overlap", 2);  
+  //lsParams.set("Graph Fill", 2); 
+  //lsParams.set("Aztec Preconditioner", "ilut"); 
+  //lsParams.set("Overlap", 2);   
+  //lsParams.set("Fill Factor", 2);   
+  //lsParams.set("Drop Tolerance", 1.0e-12);   
+  //lsParams.set("Aztec Preconditioner", "Polynomial"); 
+  //lsParams.set("Polynomial Order", 6); 
 #ifdef HAVE_NOX_ML_EPETRA
   
-  //lsParams.setParameter("Preconditioner", "ML");
+  //lsParams.set("Preconditioner", "ML");
   //Teuchos::ParameterList MLList;
-  //if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
+  //if( lsParams.get("Preconditioner", "None") == "ML" ) {
   //  // This Teuchos parameter list is needed for ML
   //
   //  // These specifications come straight from the example in 
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
   //  // solve with serial direct solver KLU
   //  MLList.set("coarse: type","Jacobi");
   //
-  //  lsParams.setParameter("ML Teuchos Parameter List", &MLList);
+  //  lsParams.set("ML Teuchos Parameter List", &MLList);
   //}
 #endif
 

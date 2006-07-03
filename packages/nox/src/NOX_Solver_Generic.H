@@ -36,10 +36,10 @@
 #include "NOX_StatusTest_Generic.H"  // for NOX::StatusTest::StatusType
 
 // Forward declarations
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
-  namespace Parameter {
-    class List;
-  }
   namespace Abstract {
     class Group;
   }
@@ -67,7 +67,7 @@ namespace Solver {
   <li>Find the solution via solve() or perform a single iterations via iterate().
   <li>Get information about the current solver state via
       getSolutionGroup(), getPreviousSolutionGroup(),
-      getNumIterations(), and getParameterList() --- particularily
+      getNumIterations(), and getList() --- particularily
       useful for NOX::StatusTest methods.
   <li>Get the current status of the solver via getStatus().
   </ul>
@@ -108,7 +108,7 @@ public:
   virtual bool 
   reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 	const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& params) = 0;
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& params) = 0;
 
   /*! 
     \brief A soft reset of the nonlinear solver for a new problem.
@@ -149,7 +149,7 @@ public:
   virtual int getNumIterations() const = 0;
 
   //! Return a refernece to the solver parameters.
-  virtual const NOX::Parameter::List& getParameterList() const = 0;
+  virtual const Teuchos::ParameterList& getList() const = 0;
 
 };
 } // namespace Solver

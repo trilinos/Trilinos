@@ -33,7 +33,7 @@
 #include "NOX_Abstract_PrePostOperator.H"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_Solver_Manager.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_StatusTest_Combo.H"
 #include "NOX_StatusTest_NormF.H"

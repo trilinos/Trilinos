@@ -37,12 +37,12 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 // Forward declaration
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
   class Utils;
   class GlobalData;
-  namespace Parameter {
-    class List;
-  }
   namespace Abstract {
     class Vector;
     class Group;
@@ -143,7 +143,7 @@ namespace Utils {
 computeForcingTerm() the value of the forcing term will be set in the
 parmaeter list pointed to by the InexactNewton object.  It will be set
 under paramsPtr->sublist(<directionMethod>).sublist("Linear
-Solver").setParameter("Tolerance", eta_k). Defaults to true.
+Solver").set("Tolerance", eta_k). Defaults to true.
 
 </ul>
 
@@ -172,14 +172,14 @@ public:
 
   //! Constructor
   InexactNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		NOX::Parameter::List& directionSublist);
+		Teuchos::ParameterList& directionSublist);
 
   //! Destructor
   virtual ~InexactNewton();
 
   //! Reset the utilities
   virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-		     NOX::Parameter::List& directionSublist);
+		     Teuchos::ParameterList& directionSublist);
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
@@ -223,7 +223,7 @@ private:
     \note This is a pointer rather than a reference to allow for the
     reset function. 
    */
-  NOX::Parameter::List* paramsPtr;
+  Teuchos::ParameterList* paramsPtr;
 
   //! Vector containing the predicted RHS
   Teuchos::RefCountPtr<NOX::Abstract::Vector> predRhs;

@@ -1,0 +1,9 @@
+#/usr/bin/tcsh
+foreach f (*.H *.C)
+  echo $f
+  perl ./string-replace.pl 'NOX_Parameter_List.H' 'Teuchos_ParameterList.hpp' $f
+  perl ./string-replace.pl 'NOX::Parameter::List' 'Teuchos::ParameterList' $f
+  perl ./string-replace.pl 'Parameter::List' 'Teuchos::ParameterList' $f
+  perl ./string-replace.pl 'getParameter' 'get' $f
+  perl ./string-replace.pl 'setParameter' 'set' $f
+end

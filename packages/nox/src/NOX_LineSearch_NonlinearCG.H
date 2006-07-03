@@ -136,14 +136,14 @@ public:
 
   //! Constructor
   NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	      NOX::Parameter::List& params);
+	      Teuchos::ParameterList& params);
 
   //! Destructor
   ~NonlinearCG();
   
   // derived
   bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& params);
+	     Teuchos::ParameterList& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 

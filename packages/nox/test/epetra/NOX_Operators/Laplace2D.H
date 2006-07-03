@@ -165,7 +165,7 @@ public:
     return true;
   }
 
-  bool computePreconditioner(const Epetra_Vector & x, Epetra_Operator & Op, NOX::Parameter::List *)
+  bool computePreconditioner(const Epetra_Vector & x, Epetra_Operator & Op, Teuchos::ParameterList *)
   {
 
     Problem_->UpdateJacobian(x);

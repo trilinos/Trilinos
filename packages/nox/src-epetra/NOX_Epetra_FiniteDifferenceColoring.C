@@ -49,7 +49,7 @@ using namespace NOX::Epetra;
 // This constructor is needed for inheritance but is inadequate for using
 // coloring in parallel since the raw matrix graph is not known.
 FiniteDifferenceColoring::FiniteDifferenceColoring(
-	 NOX::Parameter::List& printingParams,
+	 Teuchos::ParameterList& printingParams,
 	 const Teuchos::RefCountPtr<Interface::Required>& i,
 	 const NOX::Epetra::Vector& x,
 	 const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap_,
@@ -83,7 +83,7 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
 }
 
 FiniteDifferenceColoring::FiniteDifferenceColoring(
-         NOX::Parameter::List& printingParams,
+         Teuchos::ParameterList& printingParams,
 	 const Teuchos::RefCountPtr<Interface::Required>& i,
 	 const NOX::Epetra::Vector& x,
 	 const Teuchos::RefCountPtr<Epetra_CrsGraph>& rawGraph_,

@@ -69,7 +69,7 @@ class Foo : public NOX::Parameter::MeritFunction {
 
 \code
 Foo foo();
-params.sublist("Solver Options").setParameter("User Defined Merit Function", foo);
+params.sublist("Solver Options").set("User Defined Merit Function", foo);
 \endcode
 
 </ol>

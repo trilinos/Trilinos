@@ -36,7 +36,7 @@
 #define NOX_DIRECTION_MODIFIEDNEWTON_H
 
 #include "NOX_Direction_Generic.H" // base class
-#include "NOX_Parameter_List.H"	   // class data element 
+#include "Teuchos_ParameterList.hpp"	   // class data element 
 #include "Teuchos_RefCountPtr.hpp"
 
 // Forward Declarations
@@ -79,14 +79,14 @@ public:
 
   //! Constructor
   ModifiedNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		 NOX::Parameter::List& params);
+		 Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~ModifiedNewton();
 
   // derived
   virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		     NOX::Parameter::List& params);
+		     Teuchos::ParameterList& params);
 
   // derived
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -129,7 +129,7 @@ private:
     \note This is pointer rather than a reference to allow for the
     reset function. 
    */
-  NOX::Parameter::List* paramsPtr;
+  Teuchos::ParameterList* paramsPtr;
 
   //! Determined based on "Rescue Bad Newton Solve". Used in rescueBadNewtonSolve
   bool doRescue;

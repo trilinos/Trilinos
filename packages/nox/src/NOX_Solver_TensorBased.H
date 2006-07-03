@@ -38,7 +38,7 @@
 #include "NOX_Solver_PrePostOperator.H"  // class data member
 #include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Direction_Manager.H"  // class data element
-#include "NOX_Parameter_List.H"	    // class data element
+#include "Teuchos_ParameterList.hpp"	    // class data element
 #include "NOX_Utils.H"	            // class data element
 #include "Teuchos_RefCountPtr.hpp"  // class data element
 
@@ -264,14 +264,14 @@ public:
   */
   TensorBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 	      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
 
   //! Destructor
   virtual ~TensorBased();
 
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		     const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests);
   virtual NOX::StatusTest::StatusType getStatus();
@@ -280,7 +280,7 @@ public:
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const NOX::Parameter::List& getParameterList() const;
+  virtual const Teuchos::ParameterList& getList() const;
 
 protected:
   
@@ -394,16 +394,16 @@ protected:
   NOX::StatusTest::CheckType checkType;
 
   //! Input parameters.
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
 
   //! Line Search parameters.
-  //NOX::Parameter::List& lsParams;	
+  //Teuchos::ParameterList& lsParams;	
 
   //! Direction parameters.
-  //NOX::Parameter::List& dirParams;	
+  //Teuchos::ParameterList& dirParams;	
 
   //! Parameters for the Linear Solver of the local model.
-  NOX::Parameter::List* linearParamsPtr;	
+  Teuchos::ParameterList* linearParamsPtr;	
 
   //! Current step.
   double stepSize;			

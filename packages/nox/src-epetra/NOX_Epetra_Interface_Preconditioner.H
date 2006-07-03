@@ -38,10 +38,8 @@
 // Forward declarations
 class Epetra_Vector;
 class Epetra_Operator;
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 
 namespace NOX {
@@ -67,7 +65,7 @@ public:
   //! Computes a user defined preconditioner.
   virtual bool computePreconditioner(const Epetra_Vector& x, 
 				     Epetra_Operator& M,
-				     NOX::Parameter::List* precParams = 0) = 0;
+				     Teuchos::ParameterList* precParams = 0) = 0;
  
 };
 } // namespace Interface

@@ -35,6 +35,10 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
+// Forward Declarations
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
   class GlobalData;
   namespace Abstract {
@@ -43,9 +47,6 @@ namespace NOX {
   }
   namespace Solver {
     class Generic;
-  }
-  namespace Parameter {
-    class List;
   }
 }
 
@@ -72,7 +73,7 @@ public:
 
   //! Reset parameters
   virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		     NOX::Parameter::List& params) = 0;
+		     Teuchos::ParameterList& params) = 0;
   
   //! Perform a line search
   /*!

@@ -84,7 +84,7 @@ class MatrixFree : public Epetra_Operator,
 
     The vector \c x is used to clone the solution vector.
   */
-  MatrixFree(NOX::Parameter::List& printParams, 
+  MatrixFree(Teuchos::ParameterList& printParams, 
 	     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
 	     const NOX::Epetra::Vector& cloneVector, 
 	     bool useNewPerturbation = false);

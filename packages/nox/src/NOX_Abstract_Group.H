@@ -37,10 +37,10 @@
 #include "NOX_Common.H" // for string 
 #include "Teuchos_RefCountPtr.hpp" 
 
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
-  namespace Parameter {
-    class List;
-  }
   namespace Abstract {
     class MultiVector;
   }
@@ -247,7 +247,7 @@ namespace Abstract {
      <li> NOX::Abstract::Group::Ok - Otherwise
      </ul>
    */
-   virtual NOX::Abstract::Group::ReturnType computeNewton(NOX::Parameter::List& params);
+   virtual NOX::Abstract::Group::ReturnType computeNewton(Teuchos::ParameterList& params);
 
    //@}
 
@@ -324,7 +324,7 @@ namespace Abstract {
      linear solve.
    */
    virtual NOX::Abstract::Group::ReturnType 
-   applyJacobianInverse(NOX::Parameter::List& params, 
+   applyJacobianInverse(Teuchos::ParameterList& params, 
 			const NOX::Abstract::Vector& input, 
 			NOX::Abstract::Vector& result) const;
 
@@ -364,7 +364,7 @@ namespace Abstract {
    */
    virtual NOX::Abstract::Group::ReturnType 
    applyRightPreconditioning(bool useTranspose,
-			     NOX::Parameter::List& params,
+			     Teuchos::ParameterList& params,
 			     const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
   //@}
@@ -403,7 +403,7 @@ namespace Abstract {
     * block solver is available.
     */
    virtual NOX::Abstract::Group::ReturnType 
-   applyJacobianInverseMultiVector(NOX::Parameter::List& params, 
+   applyJacobianInverseMultiVector(Teuchos::ParameterList& params, 
 				   const NOX::Abstract::MultiVector& input, 
 				   NOX::Abstract::MultiVector& result) const;
    
@@ -416,7 +416,7 @@ namespace Abstract {
    virtual NOX::Abstract::Group::ReturnType 
    applyRightPreconditioningMultiVector(
 				    bool useTranspose,
-				    NOX::Parameter::List& params,
+				    Teuchos::ParameterList& params,
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
 

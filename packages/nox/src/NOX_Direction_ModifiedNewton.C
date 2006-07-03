@@ -41,12 +41,12 @@
 
 NOX::Direction::ModifiedNewton::
 ModifiedNewton(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	       NOX::Parameter::List& p)
+	       Teuchos::ParameterList& p)
 {
   reset(gd, p);
   ageOfJacobian = -1;
-  if (p.sublist("Modified-Newton").getParameter("Max Age of Jacobian", 10) < 0)
-    p.sublist("Modified-Newton").setParameter("Max Age of Jacobian", 0);
+  if (p.sublist("Modified-Newton").get("Max Age of Jacobian", 10) < 0)
+    p.sublist("Modified-Newton").set("Max Age of Jacobian", 0);
 }
 
 NOX::Direction::ModifiedNewton::~ModifiedNewton()
@@ -55,18 +55,18 @@ NOX::Direction::ModifiedNewton::~ModifiedNewton()
 
 bool NOX::Direction::ModifiedNewton::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      NOX::Parameter::List& params)
+      Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
   
   paramsPtr = &params;
 
-  NOX::Parameter::List& p = params.sublist("Modified-Newton");
+  Teuchos::ParameterList& p = params.sublist("Modified-Newton");
 
-  doRescue = p.getParameter("Rescue Bad Newton Solve", true);
+  doRescue = p.get("Rescue Bad Newton Solve", true);
   if (!p.sublist("Linear Solver").isParameter("Tolerance"))
-    p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
+    p.sublist("Linear Solver").get("Tolerance", 1.0e-10);
   ageOfJacobian = -1;
   return true;
 }
@@ -83,7 +83,7 @@ compute(NOX::Abstract::Vector& dir,
   if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to compute F");
 
-  maxAgeOfJacobian = paramsPtr->sublist("Modified-Newton").getParameter("Max Age of Jacobian", 10);
+  maxAgeOfJacobian = paramsPtr->sublist("Modified-Newton").get("Max Age of Jacobian", 10);
 
   if (Teuchos::is_null(oldJacobianGrpPtr)) {
     oldJacobianGrpPtr = soln.clone(DeepCopy);

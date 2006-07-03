@@ -53,7 +53,8 @@ NOX::Direction::Broyden::BroydenMemoryUnit::~BroydenMemoryUnit()
 
 }
 
-void NOX::Direction::Broyden::BroydenMemoryUnit::reset(const NOX::Abstract::Vector& d)
+void NOX::Direction::Broyden::BroydenMemoryUnit::
+reset(const NOX::Abstract::Vector& d)
 {
   // Copy d into s
   if (Teuchos::is_null(sptr))
@@ -122,7 +123,8 @@ void NOX::Direction::Broyden::BroydenMemory::reset()
   index.resize(0);
 }
 
-void NOX::Direction::Broyden::BroydenMemory::push(const NOX::Abstract::Vector& d)
+void NOX::Direction::Broyden::BroydenMemory::
+push(const NOX::Abstract::Vector& d)
 {
   // Do nothing if the Brodyen memory size is zero.
   if (mMax == 0)
@@ -168,7 +170,8 @@ NOX::Direction::Broyden::BroydenMemory::operator[](int i)
 //------------------------------------------------------------
 
 NOX::Direction::Broyden::
-Broyden(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, Parameter::List& p) :
+Broyden(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+	Teuchos::ParameterList& p) :
   lsParamsPtr(NULL),
   inexactNewtonUtils(gd, p)
 {
@@ -181,31 +184,32 @@ NOX::Direction::Broyden::~Broyden()
 }
 
 bool NOX::Direction::Broyden::
-reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, Parameter::List& params)
+reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
+      Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
 
-  NOX::Parameter::List&  p = params.sublist("Broyden");
+  Teuchos::ParameterList&  p = params.sublist("Broyden");
 
   // Save a pointer to the Linear Solver sublist
   lsParamsPtr = &p.sublist("Linear Solver"); 
 
   // Set the default linear solver tolerance
   //if (!lsParamsPtr->isParameter("Tolerance"))
-  //lsParamsPtr->getParameter("Tolerance", 1.0e-4);
+  //lsParamsPtr->get("Tolerance", 1.0e-4);
 
   // Reset the inexact Newton Utilities (including linear solve tolerance)
   inexactNewtonUtils.reset(gd, params);
 
   // Get the restart frequency
-  cntMax = p.getParameter("Restart Frequency", 10);
+  cntMax = p.get("Restart Frequency", 10);
 
   // Get the maximum convergence rate
-  maxConvRate = p.getParameter("Max Convergence Rate", 1.0);
+  maxConvRate = p.get("Max Convergence Rate", 1.0);
 
   // Get the memory size
-  memorySizeMax = p.getParameter("Memory", cntMax);
+  memorySizeMax = p.get("Memory", cntMax);
   
   // Reset the memory
   memory.reset(memorySizeMax);

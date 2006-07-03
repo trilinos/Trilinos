@@ -51,7 +51,6 @@ libnox_a_SOURCES = \
 	$(ABSTRACT) \
 	$(LINESEARCH) \
 	$(DIRECTION) \
-	$(PARAMETER) \
 	$(SOLVER) \
 	$(MERITFUNCTION) \
 	$(STATUSTEST) \
@@ -70,7 +69,6 @@ include_HEADERS = \
 	$(ABSTRACT_H) \
 	$(LINESEARCH_H) \
 	$(DIRECTION_H) \
-	$(PARAMETER_H) \
 	$(SOLVER_H) \
 	$(MERITFUNCTION_H) \
 	$(STATUSTEST_H) \
@@ -178,19 +176,6 @@ DIRECTION = \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_SteepestDescent.C \
         $(srcdir)/NOX_Direction_Utils_InexactNewton.C
-
-PARAMETER_H = \
-	$(srcdir)/NOX_Parameter_Entry.H \
-        $(srcdir)/NOX_Parameter_Arbitrary.H \
-	$(srcdir)/NOX_Parameter_AnyPtr.H \
-	$(srcdir)/NOX_Parameter_Rcp.H \
-	$(srcdir)/NOX_Parameter_List.H \
-	$(srcdir)/NOX_Parameter_Teuchos2NOX.H 
-
-PARAMETER = \
-	$(srcdir)/NOX_Parameter_Entry.C \
-	$(srcdir)/NOX_Parameter_List.C \
-	$(srcdir)/NOX_Parameter_Teuchos2NOX.C
 
 SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \

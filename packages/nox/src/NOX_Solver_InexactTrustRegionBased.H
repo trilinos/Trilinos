@@ -38,7 +38,7 @@
 // Class data elements
 #include "NOX_LineSearch_Manager.H" 
 #include "NOX_Direction_Manager.H"  
-#include "NOX_Parameter_List.H"	    
+#include "Teuchos_ParameterList.hpp"	    
 #include "NOX_Direction_Utils_InexactNewton.H" 
 #include "NOX_Solver_PrePostOperator.H"
 #include "Teuchos_RefCountPtr.hpp"
@@ -277,14 +277,14 @@ public:
   InexactTrustRegionBased(
      const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-     const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+     const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
 
   //! Destructor
   virtual ~InexactTrustRegionBased();
 
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-		     const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t);
   virtual NOX::StatusTest::StatusType getStatus();
@@ -293,7 +293,7 @@ public:
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const NOX::Parameter::List& getParameterList() const;
+  virtual const Teuchos::ParameterList& getList() const;
 
 protected:
   
@@ -385,7 +385,7 @@ protected:
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> testPtr;		
 
   //! Input parameters.
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
 
   //! Inexact Newton utitilities.
   NOX::Direction::Utils::InexactNewton inNewtonUtils;

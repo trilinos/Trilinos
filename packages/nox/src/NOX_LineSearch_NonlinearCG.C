@@ -33,13 +33,13 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 
 NOX::LineSearch::NonlinearCG::
 NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	    Parameter::List& params)
+	    Teuchos::ParameterList& params)
 {
   reset(gd, params);
 }
@@ -51,10 +51,10 @@ NOX::LineSearch::NonlinearCG::~NonlinearCG()
 
 bool NOX::LineSearch::NonlinearCG::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      Parameter::List& params)
+      Teuchos::ParameterList& params)
 { 
   utils = gd->getUtils();
-  //NOX::Parameter::List& p = params.sublist("NonlinearCG");
+  //Teuchos::ParameterList& p = params.sublist("NonlinearCG");
   return true;
 }
 

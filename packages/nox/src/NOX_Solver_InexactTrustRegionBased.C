@@ -34,7 +34,7 @@
 #include "NOX_Solver_InexactTrustRegionBased.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 #include "NOX_MeritFunction_Generic.H"
@@ -49,7 +49,7 @@ using namespace NOX::Solver;
 NOX::Solver::InexactTrustRegionBased::
 InexactTrustRegionBased(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
 			const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
-			const Teuchos::RefCountPtr<Parameter::List>& p) :
+			const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utils(globalDataPtr->getUtils()), 
   solnPtr(grp),		// pointer to grp
@@ -106,7 +106,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
 
   // Get the checktype
   checkType = (NOX::StatusTest::CheckType) paramsPtr->
-    sublist("Solver Options").getParameter("Status Test Check Type", 
+    sublist("Solver Options").get("Status Test Check Type", 
 					   NOX::StatusTest::Minimal);
 
   // Print out initialization information
@@ -119,7 +119,7 @@ void NOX::Solver::InexactTrustRegionBased::init()
   // Get the trust region method
   string methodChoice = 
     paramsPtr->sublist("Trust Region").
-    getParameter("Inner Iteration Method", "Inexact Trust Region");
+    get("Inner Iteration Method", "Inexact Trust Region");
   if (methodChoice == "Standard Trust Region")
     method = Standard;
   else if (methodChoice == "Inexact Trust Region")
@@ -131,76 +131,76 @@ void NOX::Solver::InexactTrustRegionBased::init()
     throw "NOX Error";
   }
 
-  // Set default parameter settings using getParameter() if they are not set
+  // Set default parameter settings using get() if they are not set
   // Default directions 
-  paramsPtr->sublist("Direction").getParameter("Method", "Newton");
+  paramsPtr->sublist("Direction").get("Method", "Newton");
   paramsPtr->sublist("Cauchy Direction")
-    .getParameter("Method", "Steepest Descent");
+    .get("Method", "Steepest Descent");
   paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent")
-    .getParameter("Scaling Type", "Quadratic Model Min");
+    .get("Scaling Type", "Quadratic Model Min");
 
   newton.reset(globalDataPtr, paramsPtr->sublist("Direction"));
   cauchy.reset(globalDataPtr, paramsPtr->sublist("Cauchy Direction"));
   inNewtonUtils.reset(globalDataPtr, paramsPtr->sublist("Direction"));
 
   minRadius = paramsPtr->sublist("Trust Region")
-    .getParameter("Minimum Trust Region Radius", 1.0e-6);
+    .get("Minimum Trust Region Radius", 1.0e-6);
   if (minRadius <= 0.0) 
     invalid("Minimum Trust Region Radius", minRadius);
 
   maxRadius = paramsPtr->sublist("Trust Region")
-    .getParameter("Maximum Trust Region Radius", 1.0e+10);
+    .get("Maximum Trust Region Radius", 1.0e+10);
   if (maxRadius <= minRadius) 
     invalid("Maximum Trust Region Radius", maxRadius);
 
   minRatio = paramsPtr->sublist("Trust Region")
-    .getParameter("Minimum Improvement Ratio", 1.0e-4);
+    .get("Minimum Improvement Ratio", 1.0e-4);
   if (minRatio <= 0.0) 
     invalid("Minimum Improvement Ratio", minRatio);
 
   contractTriggerRatio = paramsPtr->sublist("Trust Region")
-    .getParameter("Contraction Trigger Ratio", 0.1);
+    .get("Contraction Trigger Ratio", 0.1);
   if (contractTriggerRatio < minRatio) 
     invalid("Contraction Trigger Ratio", contractTriggerRatio);
 
   expandTriggerRatio = paramsPtr->sublist("Trust Region")
-    .getParameter("Expansion Trigger Ratio", 0.75);
+    .get("Expansion Trigger Ratio", 0.75);
   if (expandTriggerRatio <= contractTriggerRatio) 
     invalid("Expansion Trigger Ratio", expandTriggerRatio);
 
   contractFactor = paramsPtr->sublist("Trust Region")
-    .getParameter("Contraction Factor", 0.25);
+    .get("Contraction Factor", 0.25);
   if ((contractFactor <= 0.0) || (contractFactor >= 1)) 
     invalid("Contraction Factor", contractFactor);
 
   expandFactor = paramsPtr->sublist("Trust Region")
-    .getParameter("Expansion Factor", 4.0);
+    .get("Expansion Factor", 4.0);
   if (expandFactor <= 1.0) 
     invalid("Expansion Factor", expandFactor);
 
   recoveryStep = paramsPtr->sublist("Trust Region")
-    .getParameter("Recovery Step", 1.0);
+    .get("Recovery Step", 1.0);
   if (recoveryStep < 0.0) 
     invalid("Recovery Step", recoveryStep);
 
   useCauchyInNewtonDirection = paramsPtr->sublist("Trust Region")
-    .getParameter("Use Cauchy in Newton Direction", false);
+    .get("Use Cauchy in Newton Direction", false);
 
   // Check for using Homer Walker's Ared/Pred ratio calculation
   useAredPredRatio = paramsPtr->sublist("Trust Region")
-    .getParameter("Use Ared/Pred Ratio Calculation", false);
+    .get("Use Ared/Pred Ratio Calculation", false);
 
   // Check for dogleg minimization routine (only vaild for inexact algorithm)
   useDoglegMinimization = paramsPtr->sublist("Trust Region")
-    .getParameter("Use Dogleg Segment Minimization", false);
+    .get("Use Dogleg Segment Minimization", false);
 
   // Check for statistics tracking
   useCounters = paramsPtr->sublist("Trust Region")
-    .getParameter("Use Counters", true);
+    .get("Use Counters", true);
 
   // Check for writing statistics to the parameter list
   useCounters = paramsPtr->sublist("Trust Region")
-    .getParameter("Write Output Parameters", true);
+    .get("Write Output Parameters", true);
 
 }
 
@@ -233,7 +233,7 @@ void NOX::Solver::InexactTrustRegionBased::throwError(const string& method,
 bool NOX::Solver::InexactTrustRegionBased::
 reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
       const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<Parameter::List>& p) 
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utils = globalDataPtr->getUtils();
@@ -729,10 +729,10 @@ NOX::Solver::InexactTrustRegionBased::iterateInexact()
 
 	if (!computedNewtonDir) {
 	  string directionMethod = paramsPtr->sublist("Direction").
-	    getParameter("Method", "Newton");
-	  NOX::Parameter::List& lsParams = paramsPtr->sublist("Direction").
+	    get("Method", "Newton");
+	  Teuchos::ParameterList& lsParams = paramsPtr->sublist("Direction").
 	    sublist(directionMethod).sublist("Linear Solver");
-	  lsParams.setParameter("Tolerance", eta);
+	  lsParams.set("Tolerance", eta);
 	  if (useCauchyInNewtonDirection)
 	    newtonVec.update(1.0, cauchyVec, 0.0);
 	  else
@@ -990,20 +990,20 @@ NOX::StatusTest::StatusType NOX::Solver::InexactTrustRegionBased::solve()
   }
 
   if (writeOutputParamsToList) {
-    Parameter::List& outputParams = paramsPtr->sublist("Output");
-    outputParams.setParameter("Nonlinear Iterations", nIter);
-    outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+    Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");
+    outputParams.set("Nonlinear Iterations", nIter);
+    outputParams.set("2-Norm of Residual", solnPtr->getNormF());
     if (useCounters) {
-      Parameter::List& trOutputParams = paramsPtr->
+      Teuchos::ParameterList& trOutputParams = paramsPtr->
 	sublist("Trust Region").sublist("Output");
-      trOutputParams.setParameter("Number of Cauchy Steps", numCauchySteps);
-      trOutputParams.setParameter("Number of Newton Steps", numNewtonSteps);
-      trOutputParams.setParameter("Number of Dogleg Steps", numDoglegSteps);
-      trOutputParams.setParameter("Number of Trust Region Inner Iterations", 
+      trOutputParams.set("Number of Cauchy Steps", numCauchySteps);
+      trOutputParams.set("Number of Newton Steps", numNewtonSteps);
+      trOutputParams.set("Number of Dogleg Steps", numDoglegSteps);
+      trOutputParams.set("Number of Trust Region Inner Iterations", 
 				  numTrustRegionInnerIterations);
       if (numDoglegSteps != 0) {
-	trOutputParams.setParameter("Dogleg Steps: Average Fraction of Newton Step Length", (sumDoglegFracNewtonLength/((double)numDoglegSteps)));
-	trOutputParams.setParameter("Dogleg Steps: Average Fraction Between Cauchy and Newton Direction", (sumDoglegFracCauchyToNewton/((double)numDoglegSteps)));
+	trOutputParams.set("Dogleg Steps: Average Fraction of Newton Step Length", (sumDoglegFracNewtonLength/((double)numDoglegSteps)));
+	trOutputParams.set("Dogleg Steps: Average Fraction Between Cauchy and Newton Direction", (sumDoglegFracCauchyToNewton/((double)numDoglegSteps)));
       }
 
     }
@@ -1041,10 +1041,10 @@ int NOX::Solver::InexactTrustRegionBased::getNumIterations() const
 }
 
 //*************************************************************************
-//**** getParameterList
+//**** getList
 //*************************************************************************
-const Parameter::List& 
-NOX::Solver::InexactTrustRegionBased::getParameterList() const
+const Teuchos::ParameterList& 
+NOX::Solver::InexactTrustRegionBased::getList() const
 {
   return *paramsPtr;
 }

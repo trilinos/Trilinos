@@ -94,8 +94,8 @@ NOX::Parameter::LineSearchConstructorT<Foo> foo;
 <li> Create the appropriate entries in the parameter list, as follows.
 
 \code
-params.sublist("Line Search").setParameter("Method", "User Defined");
-params.sublist("Line Search").setParameter("User Defined Constructor", foo);
+params.sublist("Line Search").set("Method", "User Defined");
+params.sublist("Line Search").set("User Defined Constructor", foo);
 \endcode
 
 </ol>
@@ -110,14 +110,14 @@ public:
 
   //! Constructor
   Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	  NOX::Parameter::List& params);
+	  Teuchos::ParameterList& params);
 
   //! Destructor
   ~Manager();
 
   // derived
   bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& params);
+	     Teuchos::ParameterList& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 

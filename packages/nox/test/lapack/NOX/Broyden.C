@@ -171,20 +171,20 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new NOX::LAPACK::Group(broyden));
 
   // Create the top level parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> solverParametersPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& solverParameters = *solverParametersPtr;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> solverParametersPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& solverParameters = *solverParametersPtr;
 
   // Set the nonlinear solver method
-  //solverParameters.setParameter("Nonlinear Solver", "Tensor-Krylov Based");
-  solverParameters.setParameter("Nonlinear Solver", "Tensor Based");
+  //solverParameters.set("Nonlinear Solver", "Tensor-Krylov Based");
+  solverParameters.set("Nonlinear Solver", "Tensor Based");
   
   // Sublist for printing parameters
-  NOX::Parameter::List& printParams = solverParameters.sublist("Printing");
-  //printParams.setParameter("MyPID", 0); 
-  printParams.setParameter("Output Precision", 3);
-  printParams.setParameter("Output Processor", 0);
-  printParams.setParameter("Output Information", 
+  Teuchos::ParameterList& printParams = solverParameters.sublist("Printing");
+  //printParams.set("MyPID", 0); 
+  printParams.set("Output Precision", 3);
+  printParams.set("Output Processor", 0);
+  printParams.set("Output Information", 
 			NOX::Utils::OuterIteration + 
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
@@ -194,34 +194,34 @@ int main(int argc, char *argv[])
   NOX::Utils utils(printParams);
 
   // Sublist for direction parameters
-  NOX::Parameter::List& directionParameters = 
+  Teuchos::ParameterList& directionParameters = 
     solverParameters.sublist("Direction");
-  directionParameters.setParameter("Method","Tensor");
+  directionParameters.set("Method","Tensor");
 
   // Sublist for local solver parameters
-  //NOX::Parameter::List& localSolverParameters = 
+  //Teuchos::ParameterList& localSolverParameters = 
   //directionParameters.sublist("Tensor").sublist("Linear Solver");
-  //localSolverParameters.setParameter("Tolerance", 1e-4);
-  //localSolverParameters.setParameter("Reorthogonalize","Always");
-  //localSolverParameters.setParameter("Output Frequency",1);
-  //localSolverParameters.setParameter("Max Restarts", 2);
-  //localSolverParameters.setParameter("Size of Krylov Subspace", 15);
-  //localSolverParameters.setParameter("Preconditioning","Tridiagonal");
-  //localSolverParameters.setParameter("Preconditioning Side","None");
-  //localSolverParameters.setParameter("Use Shortcut Method",false);
+  //localSolverParameters.set("Tolerance", 1e-4);
+  //localSolverParameters.set("Reorthogonalize","Always");
+  //localSolverParameters.set("Output Frequency",1);
+  //localSolverParameters.set("Max Restarts", 2);
+  //localSolverParameters.set("Size of Krylov Subspace", 15);
+  //localSolverParameters.set("Preconditioning","Tridiagonal");
+  //localSolverParameters.set("Preconditioning Side","None");
+  //localSolverParameters.set("Use Shortcut Method",false);
 
   // Sublist for line search parameters
-  NOX::Parameter::List& globalStrategyParameters = 
+  Teuchos::ParameterList& globalStrategyParameters = 
     solverParameters.sublist("Line Search");
-  globalStrategyParameters.setParameter("Method","Curvilinear");
+  globalStrategyParameters.set("Method","Curvilinear");
   
   // Sublist for line search parameters
-  NOX::Parameter::List& lineSearchParameters =
+  Teuchos::ParameterList& lineSearchParameters =
     globalStrategyParameters.sublist(globalStrategyParameters.
-				     getParameter("Method","Curvilinear"));
+				     get("Method","Curvilinear"));
 
-  lineSearchParameters.setParameter("Lambda Selection","Halving");
-  lineSearchParameters.setParameter("Max Iters",20);
+  lineSearchParameters.set("Lambda Selection","Halving");
+  lineSearchParameters.set("Max Iters",20);
 
   // 
   // Update parameters from an input file if the input file was provided in command
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
           if (argc < 3)
             {
               cout << "Error: A parameter input file was expected but not found. \n" << endl;
-              printParams.setParameter("Output Information", NOX::Utils::Error);
+              printParams.set("Output Information", NOX::Utils::Error);
 	      NOX::Utils printing(printParams);
               return 0;
             }
@@ -281,7 +281,7 @@ int main(int argc, char *argv[])
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     cout << "\n" << "-- Parameter List Used in Solver --" << endl;
-    solver.getParameterList().print(cout);
+    solver.getList().print(cout);
     cout << endl;
   }
 

@@ -36,7 +36,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_StatusTest_FiniteValue.H"
@@ -44,7 +44,7 @@
 
 NOX::LineSearch::Backtrack::
 Backtrack(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	  NOX::Parameter::List& params)
+	  Teuchos::ParameterList& params)
 {
   reset(gd, params);
 }
@@ -56,19 +56,19 @@ NOX::LineSearch::Backtrack::~Backtrack()
 
 bool NOX::LineSearch::Backtrack::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      NOX::Parameter::List& params)
+      Teuchos::ParameterList& params)
 { 
   utils = gd->getUtils();
   meritFunctionPtr = gd->getMeritFunction();
 
-  NOX::Parameter::List& p = params.sublist("Backtrack");
+  Teuchos::ParameterList& p = params.sublist("Backtrack");
 
-  minStep = p.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = p.getParameter("Default Step", 1.0);
-  recoveryStep = p.getParameter("Recovery Step", defaultStep);
-  maxIters = p.getParameter("Max Iters", 100);
+  minStep = p.get("Minimum Step", 1.0e-12);
+  defaultStep = p.get("Default Step", 1.0);
+  recoveryStep = p.get("Recovery Step", defaultStep);
+  maxIters = p.get("Max Iters", 100);
 
-  reductionFactor = p.getParameter("Reduction Factor", 0.5);
+  reductionFactor = p.get("Reduction Factor", 0.5);
   if ((reductionFactor <= 0.0)  || (reductionFactor >= 1.0)) {
     utils->err() << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" 
 		 << reductionFactor << "\" for \"Reduction Factor\"!  " 

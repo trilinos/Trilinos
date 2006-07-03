@@ -60,7 +60,7 @@ bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x)
 }
 bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, 
 					      Epetra_Operator& Prec,
-                       NOX::Parameter::List* precParams)
+                       Teuchos::ParameterList* precParams)
 {
   // Pass through to let the Problem fill its owned matrix
   return problem.evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0);
@@ -604,11 +604,11 @@ bool CMD_computeGradient::doCommand( std::string commandLine )
 
 bool CMD_computeNewton::doCommand( std::string commandLine )
 {
-  const NOX::Parameter::List & const_lsParams = solver.getParameterList().
+  const Teuchos::ParameterList & const_lsParams = solver.getList().
                                                        sublist("Direction").
                                                        sublist("Newton").
                                                        sublist("Linear Solver");
-  NOX::Parameter::List & lsParams = const_cast<NOX::Parameter::List &>(const_lsParams);
+  Teuchos::ParameterList & lsParams = const_cast<Teuchos::ParameterList &>(const_lsParams);
   NOX::Abstract::Group::ReturnType returnStatus = groupPtr->computeNewton(lsParams);
   cout << "Return Status = " << returnMsg[ returnStatus ] << endl;
   return true;

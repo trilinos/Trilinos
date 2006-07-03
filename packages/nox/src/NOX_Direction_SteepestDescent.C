@@ -34,14 +34,14 @@
 #include "NOX_Direction_SteepestDescent.H" // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_GlobalData.H"
 
 NOX::Direction::SteepestDescent::
 SteepestDescent(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-		NOX::Parameter::List& params)
+		Teuchos::ParameterList& params)
 {
   reset(gd, params);
 }
@@ -53,15 +53,15 @@ NOX::Direction::SteepestDescent::~SteepestDescent()
 
 bool NOX::Direction::SteepestDescent::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      NOX::Parameter::List& params)
+      Teuchos::ParameterList& params)
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
   meritFuncPtr = gd->getMeritFunction();
 
-  NOX::Parameter::List& p = params.sublist("Steepest Descent");
+  Teuchos::ParameterList& p = params.sublist("Steepest Descent");
 
-  const string tmp = p.getParameter("Scaling Type", "2-Norm");
+  const string tmp = p.get("Scaling Type", "2-Norm");
   if (tmp == "2-Norm")
     scaleType = NOX::Direction::SteepestDescent::TwoNorm;
   else if (tmp == "F 2-Norm")

@@ -33,7 +33,7 @@
 #include "NOX.H"
 #include "NOX_Common.H"
 #include "NOX_Epetra.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Abstract_PrePostOperator.H"
 
 #include "Epetra_Vector.h"
@@ -89,14 +89,14 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
  public:
 
   //! Constructor taking an initial matrix to be updated
-  BroydenOperator(NOX::Parameter::List & nlParams, 
+  BroydenOperator(Teuchos::ParameterList & nlParams, 
 		  Epetra_Vector & solnVec,
                   const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0, 
 		  bool verbose = false);
 
   //! Constructor taking an initial matrix to be updated along with a Jacobian matrix whose values replace those of the %Broyden update.
   BroydenOperator(
-       NOX::Parameter::List & nlParams, 
+       Teuchos::ParameterList & nlParams, 
        Epetra_Vector & solnVec,
        const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0, 
        const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& jacInt,
@@ -105,7 +105,7 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
 
   //! Constructor taking an initial matrix to be updated along with a preconditioning matrix whose values replace those of the %Broyden update.
   BroydenOperator(
-   NOX::Parameter::List & nlParams, 
+   Teuchos::ParameterList & nlParams, 
    Epetra_Vector & solnVec,
    const Teuchos::RefCountPtr<Epetra_CrsMatrix>& broydMat0,
    const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& precInt,
@@ -130,7 +130,7 @@ class BroydenOperator : public NOX::Abstract::PrePostOperator,
   //! Allow for fill of preconditioning matrix whose values will replace corresponding entries in the %Broyden matrix.
   virtual bool computePreconditioner( const Epetra_Vector &, 
 				      Epetra_Operator& Prec,
-                                      NOX::Parameter::List * params = 0 );
+                                      Teuchos::ParameterList * params = 0 );
 
   //! Update the %Broyden matrix using changes in residuals the solution vector from the most recent nnlinear iteration.
   virtual void runPostIterate( const NOX::Solver::Generic & solver);

@@ -29,22 +29,26 @@
                                                                                 
 // NOX include (for iostream, cmath, etc...)
 #include "NOX_Common.H"
+
 #include "Teuchos_ParameterList.hpp"
 
 // Class Definition
-#include "1DfemInterface.H"
+#include "1DfemModelEvaluator.H"
 
 // Epetra includes
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Import.h"
+#include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 
-// Constructor - creates the Epetra objects (maps and vectors) 
-Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
-                     double xmax_) :
+ModelEvaluatorInterface::ModelEvaluatorInterface(int numGlobalElements, 
+						 Epetra_Comm& comm, 
+						 double xmin_,
+						 double xmax_) :
   NumGlobalElements(numGlobalElements),
   NumMyElements(0),  // gets set after map creation
   MyPID(comm.MyPID()),
@@ -53,8 +57,6 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   xmax(xmax_),
   factor(1.0),
   Comm(&comm),
-  StandardMap(0),
-  OverlapMap(0),
   Importer(0),
   rhs(0),
   Graph(0)
@@ -62,7 +64,7 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
 
   // Construct a Source Map that puts approximately the same 
   // Number of equations on each processor in uniform global ordering
-  StandardMap = new Epetra_Map(NumGlobalElements, 0, *Comm);
+  StandardMap = Teuchos::rcp(new Epetra_Map(NumGlobalElements, 0, *Comm));
 
   // Get the number of elements owned by this processor
   NumMyElements = StandardMap->NumMyElements();
@@ -70,7 +72,7 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   // Construct an overlaped map for the finite element fill *************
   // For single processor jobs, the overlap and standard map are the same
   if (NumProc == 1) {
-    OverlapMap = new Epetra_Map(*StandardMap);
+    OverlapMap = Teuchos::rcp(new Epetra_Map(*StandardMap));
   } else {
 
     int OverlapNumMyElements;
@@ -89,8 +91,9 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
     for (int i = 0; i < OverlapNumMyElements; i ++) 
       OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
     
-    OverlapMap = new Epetra_Map(-1, OverlapNumMyElements, 
-			    OverlapMyGlobalElements, 0, *Comm);
+    OverlapMap = Teuchos::rcp(new Epetra_Map(-1, OverlapNumMyElements, 
+					     OverlapMyGlobalElements, 0, 
+					     *Comm));
 
     delete [] OverlapMyGlobalElements;
 
@@ -121,46 +124,26 @@ Interface::Interface(int numGlobalElements, Epetra_Comm& comm, double xmin_,
   
 }
 
-// Destructor
-Interface::~Interface()
+ModelEvaluatorInterface::~ModelEvaluatorInterface()
 {
   delete Graph;
   delete Importer;
-  delete OverlapMap;
-  delete StandardMap;
 }
 
-bool Interface::computeF(const Epetra_Vector& x, 
-		      Epetra_Vector& FVec, 
-		      NOX::Epetra::Interface::Required::FillType fillType)
-{
-  return evaluate(fillType, &x, &FVec, 0);
+void ModelEvaluatorInterface::evalModel(const InArgs& inArgs, 
+					const OutArgs& outArgs) const
+{    
+  Epetra_RowMatrix* tmp = dynamic_cast<Epetra_RowMatrix*>
+    (outArgs.get_W().get());
+  
+  this->evaluate( inArgs.get_x().get(), outArgs.get_f().get(), tmp );
+
+  return;
 }
 
-bool Interface::computeJacobian(const Epetra_Vector& x,
-				Epetra_Operator& Jac)
-{
-  return evaluate(NOX::Epetra::Interface::Required::Jac, &x, 0, 0);
-}
-
-bool Interface::computePrecMatrix(const Epetra_Vector& x)
-{
-  return evaluate(NOX::Epetra::Interface::Required::Prec, &x, 0, 0);
-}
-bool Interface::computePreconditioner(const Epetra_Vector& x,
-				      Epetra_Operator& Prec,
-				      Teuchos::ParameterList* precParams)
-{
-  cout << "ERROR: Interface::preconditionVector() - "
-       << "Use Explicit Jaciban only for this test problem!" << endl;
-  throw "Interface Error";
-}
-
-// Matrix and Residual Fills
-bool Interface::evaluate(NOX::Epetra::Interface::Required::FillType flag, 
-			 const Epetra_Vector* soln, 
-			 Epetra_Vector* tmp_rhs, 
-			 Epetra_RowMatrix* tmp_matrix)
+bool ModelEvaluatorInterface::evaluate(const Epetra_Vector* soln, 
+				       Epetra_Vector* tmp_rhs, 
+				       Epetra_RowMatrix* tmp_matrix) const
 {
   //Determine what to fill (F or Jacobian)
   bool fillF = false;
@@ -169,26 +152,9 @@ bool Interface::evaluate(NOX::Epetra::Interface::Required::FillType flag,
     fillF = true;
     rhs = tmp_rhs;
   }
-  else {
+  if (tmp_matrix != 0) {
     fillMatrix = true;
   }
-
-  // "flag" can be used to determine how accurate your fill of F should be
-  // depending on why we are calling evaluate (Could be using computeF to 
-  // populate a Jacobian or Preconditioner).
-  if (flag == NOX::Epetra::Interface::Required::Residual) {
-    // Do nothing for now
-  }
-  else if (flag == NOX::Epetra::Interface::Required::Jac) {
-    // Do nothing for now
-  }
-  else if (flag == NOX::Epetra::Interface::Required::Prec) {
-    // Do nothing for now
-  }
-  else if (flag == NOX::Epetra::Interface::Required::User) {
-    // Do nothing for now
-  }
-
 
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
@@ -284,22 +250,57 @@ bool Interface::evaluate(NOX::Epetra::Interface::Required::FillType flag,
   return true;
 }
 
-Teuchos::RefCountPtr<Epetra_Vector> Interface::getSolution()
+Teuchos::RefCountPtr<const Epetra_Map> ModelEvaluatorInterface::
+get_x_map() const
+{
+  return StandardMap;
+}
+  
+Teuchos::RefCountPtr<const Epetra_Map> ModelEvaluatorInterface::
+get_f_map() const
+{
+  return StandardMap;
+}
+  
+Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluatorInterface::
+get_x_init() const
 {
   return initialSolution;
 }
   
-Teuchos::RefCountPtr<Epetra_Vector> Interface::getMesh()
-{
-  return xptr;
-}
-  
-Teuchos::RefCountPtr<Epetra_CrsMatrix> Interface::getJacobian()
+Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluatorInterface::
+create_W() const
 {
   return jacobian;
 }
+  
+EpetraExt::ModelEvaluator::InArgs ModelEvaluatorInterface::
+createInArgs() const
+{
+  EpetraExt::ModelEvaluator::InArgsSetup inArgs;
+  inArgs.setModelEvalDescription("NOX 1D Finite Element Test Problem");
+  inArgs.setSupports(IN_ARG_x,true);
+  return inArgs;
+}
 
-bool Interface::createGraph()
+EpetraExt::ModelEvaluator::OutArgs ModelEvaluatorInterface::
+createOutArgs() const
+{
+  EpetraExt::ModelEvaluator::OutArgsSetup outArgs;
+  outArgs.setModelEvalDescription("NOX 1D Finite Element Test Problem");
+  outArgs.setSupports(OUT_ARG_f,true);
+  outArgs.setSupports(OUT_ARG_W,true);
+  outArgs.set_W_properties(
+    DerivativeProperties(
+      DERIV_LINEARITY_NONCONST
+      ,DERIV_RANK_FULL
+      ,false // supportsAdjoint
+      )
+    );
+  return outArgs;
+}
+
+bool ModelEvaluatorInterface::createGraph()
 {
   if (Graph != 0) {
     delete Graph;
@@ -339,7 +340,7 @@ bool Interface::createGraph()
 }
 
 // Set initialSolution to desired initial condition
-bool Interface::initializeSoln()
+bool ModelEvaluatorInterface::initializeSoln()
 {
   initialSolution->PutScalar(1.0); // Default initialization
   return true;

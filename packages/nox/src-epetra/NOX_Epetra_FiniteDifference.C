@@ -36,7 +36,7 @@
 
 #include "NOX_Abstract_Group.H"
 #include "NOX_Epetra_Vector.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 
 #include "NOX_Epetra_FiniteDifference.H"
@@ -45,7 +45,7 @@ using namespace NOX;
 using namespace NOX::Epetra;
 
 FiniteDifference::FiniteDifference(
-    NOX::Parameter::List& printingParams,
+    Teuchos::ParameterList& printingParams,
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
     double beta_,
@@ -69,7 +69,7 @@ FiniteDifference::FiniteDifference(
 
 FiniteDifference::
 FiniteDifference(
-    NOX::Parameter::List& printingParams,
+    Teuchos::ParameterList& printingParams,
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
     const Teuchos::RefCountPtr<const Epetra_Vector>& beta_,
@@ -93,7 +93,7 @@ FiniteDifference(
 }
 
 FiniteDifference::FiniteDifference(
-    NOX::Parameter::List& printingParams,
+    Teuchos::ParameterList& printingParams,
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
     const Teuchos::RefCountPtr<Epetra_CrsGraph>& userGraph,
@@ -120,7 +120,7 @@ FiniteDifference::FiniteDifference(
 }
 
 FiniteDifference::FiniteDifference(
-    NOX::Parameter::List& printingParams,
+    Teuchos::ParameterList& printingParams,
     const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i,
     const NOX::Epetra::Vector& x,
     const Teuchos::RefCountPtr<Epetra_CrsGraph>& userGraph,
@@ -441,7 +441,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
 
 bool FiniteDifference::computePreconditioner(const Epetra_Vector& x,
 					     Epetra_Operator& Prec,
-					     NOX::Parameter::List* precParams)
+					     Teuchos::ParameterList* precParams)
 {
   return computeJacobian(x, *this);
 }

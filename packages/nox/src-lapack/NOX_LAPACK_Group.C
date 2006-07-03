@@ -244,7 +244,7 @@ NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeGradient()
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeNewton(NOX::Parameter::List& p) 
+NOX::Abstract::Group::ReturnType NOX::LAPACK::Group::computeNewton(Teuchos::ParameterList& p) 
 {
   if (isNewton())
     return NOX::Abstract::Group::Ok;
@@ -324,7 +324,7 @@ NOX::LAPACK::Group::applyJacobianTranspose(const Vector& input, Vector& result) 
 }
 
 NOX::Abstract::Group::ReturnType 
-NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p, 
+NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& p, 
 					 const Abstract::Vector& input, 
 					 NOX::Abstract::Vector& result) const 
 {
@@ -334,7 +334,7 @@ NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p,
 }
 
 NOX::Abstract::Group::ReturnType 
-NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p, 
+NOX::LAPACK::Group::applyJacobianInverse(Teuchos::ParameterList& p, 
 					 const Vector& input, 
 					 Vector& result) const 
 {
@@ -372,7 +372,7 @@ NOX::LAPACK::Group::applyJacobianInverse(NOX::Parameter::List& p,
 
 NOX::Abstract::Group::ReturnType 
 NOX::LAPACK::Group::applyJacobianInverseMultiVector(
-				     NOX::Parameter::List& p, 
+				     Teuchos::ParameterList& p, 
 				     const NOX::Abstract::MultiVector& input, 
 				     NOX::Abstract::MultiVector& result) const 
 {

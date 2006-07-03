@@ -41,13 +41,13 @@
 #include "petscsles.h"	
 
 // Forward declares
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
 namespace Petsc {
 class Interface;
 class SharedJacobian;
-}
-namespace Parameter {
-class List;
 }
 }
 
@@ -95,7 +95,7 @@ public:
 
   virtual Abstract::Group::ReturnType computeGradient();
 
-  virtual Abstract::Group::ReturnType computeNewton(Parameter::List& params);
+  virtual Abstract::Group::ReturnType computeNewton(Teuchos::ParameterList& params);
 
   //@}
 
@@ -131,7 +131,7 @@ public:
   applyRightPreconditioning(const Vector& input, Vector& result) const;
   //! See above
   virtual Abstract::Group::ReturnType 
-  applyRightPreconditioning(Parameter::List&, const Abstract::Vector& input, Abstract::Vector& result) const;
+  applyRightPreconditioning(Teuchos::ParameterList&, const Abstract::Vector& input, Abstract::Vector& result) const;
   
   //@}
 

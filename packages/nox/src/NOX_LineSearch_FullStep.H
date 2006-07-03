@@ -54,14 +54,14 @@ public:
 
   //! Constructor
   FullStep(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	   NOX::Parameter::List& params);
+	   Teuchos::ParameterList& params);
 
   //! Destructor
   ~FullStep();
   
   // derived
   bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& params);
+	     Teuchos::ParameterList& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 

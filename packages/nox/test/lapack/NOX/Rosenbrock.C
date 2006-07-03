@@ -146,18 +146,18 @@ private:
 int main(int argc, char *argv[]) {
 
   // Set up the printing utilities
-  Teuchos::RefCountPtr<NOX::Parameter::List> noxParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& noxParams = *noxParamsPtr.get();
-  NOX::Parameter::List& printParams = noxParams.sublist("Printing");
-  printParams.setParameter("Output Precision", 5);
+  Teuchos::RefCountPtr<Teuchos::ParameterList> noxParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& noxParams = *noxParamsPtr.get();
+  Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
+  printParams.set("Output Precision", 5);
        
   string paramFilename;     
   bool   usingParamInputFile = false;
 
   if (argc > 1) { 
     if (argv[1][0]=='-' && argv[1][1]=='v')
-       printParams.setParameter("Output Information", 
+       printParams.set("Output Information", 
 			NOX::Utils::OuterIteration + 
 			NOX::Utils::OuterIterationStatusTest + 
 			NOX::Utils::InnerIteration +
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
        if (argc < 3)
          {
             cout << "Error: An input parameter file was expected but not found. \n" << endl;
-            printParams.setParameter("Output Information", NOX::Utils::Error);
+            printParams.set("Output Information", NOX::Utils::Error);
 	    NOX::Utils printing(printParams);
             return 1;
          }
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 
       }
     else
-       printParams.setParameter("Output Information", NOX::Utils::Error);
+       printParams.set("Output Information", NOX::Utils::Error);
   }
   NOX::Utils printing(printParams);
 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
 
   // Print the answer
   cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver.getParameterList().print(cout);
+  solver.getList().print(cout);
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 

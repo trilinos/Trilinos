@@ -37,7 +37,7 @@
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Direction_Utils_InexactNewton.H" // class data element
-#include "NOX_Parameter_List.H"	   // class data element 
+#include "Teuchos_ParameterList.hpp"	   // class data element 
 #include "Teuchos_RefCountPtr.hpp" // class data element
 
 // Forward declaration
@@ -312,14 +312,14 @@ public:
 
   //! Constructor
   Broyden(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-	  NOX::Parameter::List& params);
+	  Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~Broyden();
 
   // derived
   virtual bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-		     NOX::Parameter::List& params);
+		     Teuchos::ParameterList& params);
 
   //! Not supported for this direction - only works for line search based solver
   virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
@@ -372,7 +372,7 @@ private:
     \note This is pointer rather than a reference to allow for the
     reset function. It should not be deleted in the destructor.
    */
-  NOX::Parameter::List* lsParamsPtr;
+  Teuchos::ParameterList* lsParamsPtr;
 
   //! Group to hold the "old" Jacobian
   Teuchos::RefCountPtr<NOX::Abstract::Group> oldJacobianGrpPtr;

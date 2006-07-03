@@ -34,7 +34,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_MeritFunction_Generic.H"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
@@ -45,7 +45,7 @@ using namespace NOX::Solver;
 TrustRegionBased::
 TrustRegionBased(const Teuchos::RefCountPtr<Abstract::Group>& grp,
 		 const Teuchos::RefCountPtr<StatusTest::Generic>& t,
-		 const Teuchos::RefCountPtr<Parameter::List>& p) :
+		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
   utilsPtr(globalDataPtr->getUtils()), 
   solnPtr(grp),		
@@ -80,58 +80,58 @@ void TrustRegionBased::init()
     paramsPtr->print(utilsPtr->out(),5);
   }
 
-  // Set default parameter settings using getParameter() if they are not set
-  paramsPtr->sublist("Direction").getParameter("Method", "Newton");
+  // Set default parameter settings using get() if they are not set
+  paramsPtr->sublist("Direction").get("Method", "Newton");
   paramsPtr->sublist("Cauchy Direction").
-    getParameter("Method", "Steepest Descent");
+    get("Method", "Steepest Descent");
   paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent").
-    getParameter("Scaling Type", "Quadratic Model Min");
+    get("Scaling Type", "Quadratic Model Min");
 
   newton.reset(globalDataPtr, paramsPtr->sublist("Direction"));
   cauchy.reset(globalDataPtr, paramsPtr->sublist("Cauchy Direction"));
 
   minRadius = paramsPtr->sublist("Trust Region").
-    getParameter("Minimum Trust Region Radius", 1.0e-6);
+    get("Minimum Trust Region Radius", 1.0e-6);
   if (minRadius <= 0) 
     invalid("Minimum Trust Region Radius", minRadius);
 
-  maxRadius = paramsPtr->sublist("Trust Region").getParameter("Maximum Trust Region Radius", 1.0e+10);
+  maxRadius = paramsPtr->sublist("Trust Region").get("Maximum Trust Region Radius", 1.0e+10);
   if (maxRadius <= minRadius) 
     invalid("Maximum Trust Region Radius", maxRadius);
 
-  minRatio = paramsPtr->sublist("Trust Region").getParameter("Minimum Improvement Ratio", 1.0e-4);
+  minRatio = paramsPtr->sublist("Trust Region").get("Minimum Improvement Ratio", 1.0e-4);
   if (minRatio <= 0) 
     invalid("Minimum Improvement Ratio", minRatio);
 
-  contractTriggerRatio = paramsPtr->sublist("Trust Region").getParameter("Contraction Trigger Ratio", 0.1);
+  contractTriggerRatio = paramsPtr->sublist("Trust Region").get("Contraction Trigger Ratio", 0.1);
   if (contractTriggerRatio < minRatio) 
     invalid("Contraction Trigger Ratio", contractTriggerRatio);
 
-  expandTriggerRatio = paramsPtr->sublist("Trust Region").getParameter("Expansion Trigger Ratio", 0.75);
+  expandTriggerRatio = paramsPtr->sublist("Trust Region").get("Expansion Trigger Ratio", 0.75);
   if (expandTriggerRatio <= contractTriggerRatio) 
     invalid("Expansion Trigger Ratio", expandTriggerRatio);
 
-  contractFactor = paramsPtr->sublist("Trust Region").getParameter("Contraction Factor", 0.25);
+  contractFactor = paramsPtr->sublist("Trust Region").get("Contraction Factor", 0.25);
   if ((contractFactor <= 0) || (contractFactor >= 1)) 
     invalid("Contraction Factor", contractFactor);
 
-  expandFactor = paramsPtr->sublist("Trust Region").getParameter("Expansion Factor", 4.0);
+  expandFactor = paramsPtr->sublist("Trust Region").get("Expansion Factor", 4.0);
   if (expandFactor <= 1) 
     invalid("Expansion Factor", expandFactor);
 
-  recoveryStep = paramsPtr->sublist("Trust Region").getParameter("Recovery Step", 1.0);
+  recoveryStep = paramsPtr->sublist("Trust Region").get("Recovery Step", 1.0);
   if (recoveryStep < 0) 
     invalid("Recovery Step", recoveryStep);
 
   // Get the checktype
   checkType = (NOX::StatusTest::CheckType) paramsPtr->
-    sublist("Solver Options").getParameter("Status Test Check Type", 
+    sublist("Solver Options").get("Status Test Check Type", 
 					   NOX::StatusTest::Minimal);
 
   // Check for the using Homer Walker's Ared/Pred ratio calculation
   useAredPredRatio = 
     paramsPtr->sublist("Trust Region").
-    getParameter("Use Ared/Pred Ratio Calculation", false);
+    get("Use Ared/Pred Ratio Calculation", false);
 
 }
 
@@ -148,7 +148,7 @@ invalid(const string& name, double value) const
 bool TrustRegionBased::
 reset(const Teuchos::RefCountPtr<Abstract::Group>& grp, 
       const Teuchos::RefCountPtr<StatusTest::Generic>& t, 
-      const Teuchos::RefCountPtr<Parameter::List>& p) 
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& p) 
 {
   globalDataPtr = Teuchos::rcp(new NOX::GlobalData(p));
   utilsPtr = globalDataPtr->getUtils(); 
@@ -481,9 +481,9 @@ NOX::StatusTest::StatusType TrustRegionBased::solve()
     printUpdate();
   }
 
-  Parameter::List& outputParams = paramsPtr->sublist("Output");
-  outputParams.setParameter("Nonlinear Iterations", nIter);
-  outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
+  Teuchos::ParameterList& outputParams = paramsPtr->sublist("Output");
+  outputParams.set("Nonlinear Iterations", nIter);
+  outputParams.set("2-Norm of Residual", solnPtr->getNormF());
 
   prePostOperator.runPostSolve(*this);
 
@@ -505,7 +505,7 @@ int TrustRegionBased::getNumIterations() const
   return nIter;
 }
 
-const Parameter::List& TrustRegionBased::getParameterList() const
+const Teuchos::ParameterList& TrustRegionBased::getList() const
 {
   return *paramsPtr;
 }

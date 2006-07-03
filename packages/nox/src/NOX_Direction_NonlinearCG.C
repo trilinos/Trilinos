@@ -34,7 +34,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
@@ -43,7 +43,7 @@ using namespace NOX;
 using namespace NOX::Direction;
 
 NonlinearCG::NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-			 Parameter::List& params) :
+			 Teuchos::ParameterList& params) :
   paramsPtr(0)
 {
   reset(gd, params);
@@ -52,15 +52,17 @@ NonlinearCG::NonlinearCG(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
 
 bool NonlinearCG::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      Parameter::List& params) 
+      Teuchos::ParameterList& params) 
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
   paramsPtr = &params;
-  NOX::Parameter::List& nlcgParams = paramsPtr->sublist("Nonlinear CG");
-  restartFrequency = nlcgParams.getParameter("Restart Frequency", 10);
-  doPrecondition = nlcgParams.isParameterEqual("Precondition", "On");
-  usePRbeta = nlcgParams.isParameterEqual("Orthogonalize", "Polak-Ribiere");
+  Teuchos::ParameterList& nlcgParams = paramsPtr->sublist("Nonlinear CG");
+  restartFrequency = nlcgParams.get("Restart Frequency", 10);
+  if ( nlcgParams.get("Precondition", "Off") == "On" )
+    doPrecondition = true;
+  if ( nlcgParams.get("Orthogonalize", "Fletcher-Reeves") ==  "Polak-Ribiere")
+    usePRbeta = true;
   return true;
 }
 
@@ -109,7 +111,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
     return false;
   }
   dir = soln.getF();  
-  if(paramsPtr->sublist("Nonlinear CG").isParameterEqual("Precondition", "On")) {
+  if(doPrecondition) {
     if(!soln.isJacobian())
       ok = soln.computeJacobian();
       if (ok != Abstract::Group::Ok) {
@@ -139,7 +141,7 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
 
 // Two choices (for now) for orthogonalizing descent direction with previous:
 
-    if(paramsPtr->sublist("Nonlinear CG").isParameterEqual("Orthogonalize", "Polak-Ribiere"))
+    if(usePRbeta)
     {
 //                     Polak-Ribiere beta
 

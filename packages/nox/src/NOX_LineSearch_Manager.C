@@ -34,7 +34,7 @@
 
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
 
@@ -55,7 +55,7 @@ Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd) :
 
 NOX::LineSearch::Manager::
 Manager(const Teuchos::RefCountPtr<NOX::GlobalData>& gd, 
-	NOX::Parameter::List& params) :
+	Teuchos::ParameterList& params) :
   method("")
 {
   reset(gd, params);
@@ -68,11 +68,11 @@ NOX::LineSearch::Manager::~Manager()
 
 bool NOX::LineSearch::Manager::
 reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-      Parameter::List& params)
+      Teuchos::ParameterList& params)
 {
   utils = gd->getUtils();
 
-  string newmethod = params.getParameter("Method", "Full Step");
+  string newmethod = params.get("Method", "Full Step");
   
   // If the method has not changeed, just call reset on the method.
   if (method == newmethod) {
@@ -93,11 +93,11 @@ reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
     ptr = Teuchos::rcp(new NonlinearCG(gd, params));
   else if (method == "User Defined") {
     if (params.INVALID_TEMPLATE_QUALIFIER
-	isParameterRcp<NOX::LineSearch::Generic>
+	isType< Teuchos::RefCountPtr<NOX::LineSearch::Generic> >
 	("User Defined Line Search")) {
       
       ptr = params.INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<NOX::LineSearch::Generic>
+	get< Teuchos::RefCountPtr<NOX::LineSearch::Generic> >
 	("User Defined Line Search");
       ptr->reset(gd, params);
     }

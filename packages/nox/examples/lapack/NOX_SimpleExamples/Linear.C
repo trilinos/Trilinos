@@ -331,62 +331,62 @@ int main(int argc, char* argv[])
 					    normf, maxiters));
 
   // ** Paramter List **
-  Teuchos::RefCountPtr<NOX::Parameter::List> solverParamsPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& solverParams = *solverParamsPtr.get();
+  Teuchos::RefCountPtr<Teuchos::ParameterList> solverParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& solverParams = *solverParamsPtr.get();
 
   // -- Output Level --
-  solverParams.sublist("Printing").setParameter("Output Information", 
+  solverParams.sublist("Printing").set("Output Information", 
 						    NOX::Utils::Warning + 
 						    NOX::Utils::OuterIteration + 
 						    NOX::Utils::InnerIteration + 
 						    NOX::Utils::Parameters);
 
   // -- Solver --
-  solverParams.setParameter("Nonlinear Solver", "Line Search Based");
+  solverParams.set("Nonlinear Solver", "Line Search Based");
 
   // -- Line Search --
-  NOX::Parameter::List& lineSearchParams = solverParams.sublist("Line Search");
+  Teuchos::ParameterList& lineSearchParams = solverParams.sublist("Line Search");
 
 
   string lineSearchType = (argc >= 3) ? argv[2] : "Exact";
 
   if (lineSearchType == "None")
   {
-    lineSearchParams.setParameter("Method", "Full Step");
+    lineSearchParams.set("Method", "Full Step");
   }
   else if (lineSearchType == "Poly")
   {
-    lineSearchParams.setParameter("Method", "Polynomial");
+    lineSearchParams.set("Method", "Polynomial");
   }
   else if (lineSearchType == "Backtrack")
   {
-    lineSearchParams.setParameter("Method", "Backtrack");
+    lineSearchParams.set("Method", "Backtrack");
   }
   else // "Exact"
   {
-    lineSearchParams.setParameter("Method", "Polynomial");
-    NOX::Parameter::List& polyParams = lineSearchParams.sublist("Polynomial");
-    polyParams.setParameter("Force Interpolation", true);
-    polyParams.setParameter("Sufficient Decrease Condition", "None");
-    polyParams.setParameter("Default Step", 1.0);
-    polyParams.setParameter("Min Bounds Factor", 0.0);
+    lineSearchParams.set("Method", "Polynomial");
+    Teuchos::ParameterList& polyParams = lineSearchParams.sublist("Polynomial");
+    polyParams.set("Force Interpolation", true);
+    polyParams.set("Sufficient Decrease Condition", "None");
+    polyParams.set("Default Step", 1.0);
+    polyParams.set("Min Bounds Factor", 0.0);
   }
 
   // -- Direction --
-  NOX::Parameter::List& directionParams = solverParams.sublist("Direction");
+  Teuchos::ParameterList& directionParams = solverParams.sublist("Direction");
   
   // Set direction type
   string directionMethod = (argc >= 4) ? argv[3] : "Newton";
-  directionParams.setParameter("Method", directionMethod);
+  directionParams.set("Method", directionMethod);
 
   // Set memory size
   if (argc >= 5) 
-    directionParams.sublist(directionMethod).setParameter("Memory", atoi(argv[4]));
+    directionParams.sublist(directionMethod).set("Memory", atoi(argv[4]));
 
   // One last detail
   if ((directionMethod == "Broyden") && (lineSearchType == "Poly"))
-    directionParams.sublist(directionMethod).setParameter("Compute Jacobian", true);
+    directionParams.sublist(directionMethod).set("Compute Jacobian", true);
 
   // ** Solve **
   
@@ -404,7 +404,7 @@ int main(int argc, char* argv[])
 
   // Print the final parameter list from the solver
   cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver.getParameterList().print(cout);
+  solver.getList().print(cout);
 
   // Get the answer from the solver
   NOX::LAPACK::Group solnGrp = 

@@ -62,14 +62,14 @@ public:
 
   //! Constructor
   Tensor(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	 NOX::Parameter::List& params);
+	 Teuchos::ParameterList& params);
 
   //! Destructor
   ~Tensor();
   
   // derived
   bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& lsParams);
+	     Teuchos::ParameterList& lsParams);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -145,7 +145,7 @@ protected:
   Teuchos::RefCountPtr<NOX::GlobalData> globalDataPtr;
 
   //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters from the counter object.  
-  NOX::Parameter::List* paramsPtr;
+  Teuchos::ParameterList* paramsPtr;
 
   //! Printing Utils
   NOX::Utils utils;

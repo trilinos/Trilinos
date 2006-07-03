@@ -85,13 +85,13 @@ int main(int argc, char *argv[])
     cout << "**************************" << endl;
     cout << "Building utils2 using ctor #2...";
   }
-  NOX::Parameter::List p;
-  p.setParameter("Output Information", outputInfo);
-  p.setParameter("MyPID", myPID);
-  p.setParameter("OutputProcessor", printProc);
-  p.setParameter("Output Precision", 3);
-  p.setParameter<std::ostream>("Output Stream", outputstream);
-  p.setParameter<std::ostream>("Error Stream", outputstream);
+  Teuchos::ParameterList p;
+  p.set("Output Information", outputInfo);
+  p.set("MyPID", myPID);
+  p.set("OutputProcessor", printProc);
+  p.set("Output Precision", 3);
+  p.set("Output Stream", outputstream);
+  p.set("Error Stream", outputstream);
   NOX::Utils utils2(p);
   if (myPID == printProc)
     cout << "Done!" << endl;
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
   
     Teuchos::RefCountPtr<std::ostream> fileStream = 
       Teuchos::rcp(new std::ofstream("testfile.out"));
-    p.setParameter<std::ostream>("Output Stream", fileStream);
+    p.set("Output Stream", fileStream);
     NOX::Utils utils4(p);
     
     std::string testLine = "Supercalifragilisticexpialidocious";

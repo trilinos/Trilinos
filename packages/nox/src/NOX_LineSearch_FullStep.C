@@ -36,17 +36,17 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_GlobalData.H"
 
 using namespace NOX;
 using namespace NOX::LineSearch;
 
 FullStep::FullStep(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		   Parameter::List& params) 
+		   Teuchos::ParameterList& params) 
 {
-  NOX::Parameter::List& p = params.sublist("Full Step");
-  stepSize = p.getParameter("Full Step", 1.0);
+  Teuchos::ParameterList& p = params.sublist("Full Step");
+  stepSize = p.get("Full Step", 1.0);
 }
 
 FullStep::~FullStep()
@@ -55,10 +55,10 @@ FullStep::~FullStep()
 }
 
 bool FullStep::reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-		     Parameter::List& params)
+		     Teuchos::ParameterList& params)
 {
-  NOX::Parameter::List& p = params.sublist("Full Step");
-  stepSize = p.getParameter("Full Step", 1.0);
+  Teuchos::ParameterList& p = params.sublist("Full Step");
+  stepSize = p.get("Full Step", 1.0);
   return true;
 }
 

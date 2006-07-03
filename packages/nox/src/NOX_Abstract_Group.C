@@ -33,6 +33,7 @@
 #include "NOX_Abstract_Group.H"
 
 #include "NOX_Abstract_MultiVector.H"
+#include "Teuchos_ParameterList.hpp"
 
 NOX::Abstract::Group::ReturnType 
 NOX::Abstract::Group::computeJacobian()
@@ -47,7 +48,7 @@ NOX::Abstract::Group::computeGradient()
 }
 
 NOX::Abstract::Group::ReturnType 
-NOX::Abstract::Group::computeNewton(NOX::Parameter::List& params)
+NOX::Abstract::Group::computeNewton(Teuchos::ParameterList& params)
 {
   return NOX::Abstract::Group::NotDefined;
 }
@@ -67,7 +68,7 @@ NOX::Abstract::Group::applyJacobianTranspose(const NOX::Abstract::Vector& input,
 }
 
 NOX::Abstract::Group::ReturnType 
-NOX::Abstract::Group::applyJacobianInverse(NOX::Parameter::List& params, 
+NOX::Abstract::Group::applyJacobianInverse(Teuchos::ParameterList& params, 
 					   const NOX::Abstract::Vector& input, 
 					   NOX::Abstract::Vector& result) const
 {
@@ -76,7 +77,7 @@ NOX::Abstract::Group::applyJacobianInverse(NOX::Parameter::List& params,
 
 NOX::Abstract::Group::ReturnType 
 NOX::Abstract::Group::applyRightPreconditioning(bool useTranspose,
-						NOX::Parameter::List& params, 
+						Teuchos::ParameterList& params, 
 						const NOX::Abstract::Vector& input, 
 						NOX::Abstract::Vector& result
 						) const
@@ -130,7 +131,7 @@ NOX::Abstract::Group::applyJacobianTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyJacobianInverseMultiVector(
-                                    NOX::Parameter::List& params, 
+                                    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const
 {
@@ -154,7 +155,7 @@ NOX::Abstract::Group::applyJacobianInverseMultiVector(
 NOX::Abstract::Group::ReturnType
 NOX::Abstract::Group::applyRightPreconditioningMultiVector(
 				   bool useTranspose,
-				   NOX::Parameter::List& params,
+				   Teuchos::ParameterList& params,
 				   const NOX::Abstract::MultiVector& input, 
 				   NOX::Abstract::MultiVector& result) const
 {

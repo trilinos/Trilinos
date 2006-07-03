@@ -38,10 +38,8 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 // Forward declarations
-namespace NOX {
-namespace Parameter {
-class List;
-}
+namespace Teuchos {
+  class ParameterList;
 }
 
 namespace NOX {
@@ -164,7 +162,7 @@ public:
 	Teuchos::null);
 
   //! Constructor via a parameter list
-  Utils(NOX::Parameter::List& p);
+  Utils(Teuchos::ParameterList& p);
 
   //! Copy constructor
   Utils(const NOX::Utils& u);
@@ -176,7 +174,7 @@ public:
   NOX::Utils& operator=(const NOX::Utils& source);
 
   //! Reset the printing parameters
-  void reset(NOX::Parameter::List& p);
+  void reset(Teuchos::ParameterList& p);
 
   //! Returns true if this is a valid print type
   bool isPrintType(NOX::Utils::MsgType type) const;

@@ -142,7 +142,7 @@ class FiniteDifferenceColoring : public FiniteDifference {
  
   //! Constructor with output control
   FiniteDifferenceColoring(
-      NOX::Parameter::List& printingParams,
+      Teuchos::ParameterList& printingParams,
       const Teuchos::RefCountPtr<Interface::Required>& i, 
       const NOX::Epetra::Vector& initialGuess, 
       const Teuchos::RefCountPtr<Epetra_MapColoring>& colorMap,
@@ -153,7 +153,7 @@ class FiniteDifferenceColoring : public FiniteDifference {
 
   //! Constructor with output control
   FiniteDifferenceColoring(
-      NOX::Parameter::List& printingParams,
+      Teuchos::ParameterList& printingParams,
       const Teuchos::RefCountPtr<Interface::Required>& i, 
       const NOX::Epetra::Vector& initialGuess, 
       const Teuchos::RefCountPtr<Epetra_CrsGraph>& rawGraph,

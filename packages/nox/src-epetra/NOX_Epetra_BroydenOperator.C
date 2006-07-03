@@ -36,7 +36,7 @@ using namespace NOX;
 using namespace NOX::Epetra;
 
 BroydenOperator::BroydenOperator(
-       NOX::Parameter::List & nlParams, 
+       Teuchos::ParameterList & nlParams, 
        Epetra_Vector & solnVec,
        const Teuchos::RefCountPtr<Epetra_CrsMatrix>& mat,
        bool verbose_ ) :
@@ -55,13 +55,11 @@ BroydenOperator::BroydenOperator(
   // ownership.  What happens if a user write their own PPO?
   Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
     Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").setParameter
-    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", 
-				     me);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
 }
 
 BroydenOperator::BroydenOperator(
-      NOX::Parameter::List & nlParams, 
+      Teuchos::ParameterList & nlParams, 
       Epetra_Vector & solnVec,
       const Teuchos::RefCountPtr<Epetra_CrsMatrix> & mat,
       const Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian>& jacInt,
@@ -84,13 +82,11 @@ BroydenOperator::BroydenOperator(
   // ownership.  What happens if a user write their own PPO?
   Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
     Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").setParameter
-    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", 
-				     me);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
 }
 
 BroydenOperator::BroydenOperator(
- NOX::Parameter::List & nlParams, 
+ Teuchos::ParameterList & nlParams, 
  Epetra_Vector & solnVec,
  const Teuchos::RefCountPtr<Epetra_CrsMatrix>& mat,
  const Teuchos::RefCountPtr<NOX::Epetra::Interface::Preconditioner>& precInt,
@@ -113,9 +109,7 @@ BroydenOperator::BroydenOperator(
   // ownership.  What happens if a user write their own PPO?
   Teuchos::RefCountPtr<NOX::Abstract::PrePostOperator> me = 
     Teuchos::rcp(this, false);
-  nlParams.sublist("Solver Options").setParameter
-    <NOX::Abstract::PrePostOperator>("User Defined Pre/Post Operator", 
-				     me);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", me);
 }
 
 BroydenOperator::BroydenOperator(const BroydenOperator & bOp) :
@@ -158,7 +152,7 @@ bool BroydenOperator::computeJacobian(const Epetra_Vector & x,
 
 bool BroydenOperator::computePreconditioner(const Epetra_Vector & x,
 					    Epetra_Operator& Prec,
-           NOX::Parameter::List * pList)
+           Teuchos::ParameterList * pList)
 {
   if( !Teuchos::is_null(precIntPtr) ) {
     precIntPtr->computePreconditioner(x, Prec, pList);

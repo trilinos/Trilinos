@@ -155,14 +155,14 @@ GenericEpetraProblem::createMaps()
 
 void 
 GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver, 
-                   NOX::Parameter::List& printParams)
+                   Teuchos::ParameterList& printParams)
 {
   // Output the parameter list
   NOX::Utils utils(printParams);
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(cout);
+    solver.getList().print(cout);
     cout << endl;
   }
 

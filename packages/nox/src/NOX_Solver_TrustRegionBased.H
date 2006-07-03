@@ -36,7 +36,7 @@
 #include "NOX_Solver_Generic.H"	        // base class
 #include "NOX_LineSearch_Manager.H"     // class data element
 #include "NOX_Direction_Manager.H"      // class data element
-#include "NOX_Parameter_List.H"	        // class data element
+#include "Teuchos_ParameterList.hpp"	        // class data element
 #include "NOX_Utils.H"	                // class data element
 #include "NOX_Solver_PrePostOperator.H" // class data element
 
@@ -236,14 +236,14 @@ public:
   */
   TrustRegionBased(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		   const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-		   const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+		   const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t, 
-		     const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+		     const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
   virtual bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& xgrp, 
 		     const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t);
   virtual NOX::StatusTest::StatusType getStatus();
@@ -252,7 +252,7 @@ public:
   virtual const NOX::Abstract::Group& getSolutionGroup() const;
   virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const NOX::Parameter::List& getParameterList() const;
+  virtual const Teuchos::ParameterList& getList() const;
 
 protected:
   
@@ -308,7 +308,7 @@ protected:
   NOX::StatusTest::CheckType checkType;
 
   //! Input parameters.
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramsPtr;	
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramsPtr;	
 
   //! %Newton %Search %Direction. 
   NOX::Direction::Manager newton; 

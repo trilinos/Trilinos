@@ -68,7 +68,7 @@ bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatr
   }
   return problem.evaluate(MATRIX_ONLY, &x, NULL, precMatrix);
 }
-bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M, NOX::Parameter::List* precParams)
+bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M, Teuchos::ParameterList* precParams)
 {
   cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jaciban only for this test problem!" << endl;
   throw 1;

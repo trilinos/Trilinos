@@ -90,7 +90,7 @@ public:
                         bool interfacialCoupling = false);
 
   // Register NLSolver parameter list
-  void registerParameters(const Teuchos::RefCountPtr<NOX::Parameter::List>& List);
+  void registerParameters(const Teuchos::RefCountPtr<Teuchos::ParameterList>& List);
 
   // Register Convergence Test(s)
   void registerStatusTest(const Teuchos::RefCountPtr<NOX::StatusTest::Combo>& comboTest);
@@ -207,7 +207,7 @@ private:
 
 public:
   // Made these public for now
-  Teuchos::RefCountPtr<NOX::Parameter::List> nlParams; // NLSolver parameter list
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParams; // NLSolver parameter list
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> statusTest;       // Convergence criterion (ia)
 
 private:

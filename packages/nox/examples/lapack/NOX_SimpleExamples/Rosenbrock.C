@@ -164,25 +164,25 @@ int main()
 					    statusTestA, statusTestB));
 
   // Create the list of solver parameters
-  Teuchos::RefCountPtr<NOX::Parameter::List> solverParametersPtr =
-    Teuchos::rcp(new NOX::Parameter::List);
-  NOX::Parameter::List& solverParameters = *solverParametersPtr;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> solverParametersPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& solverParameters = *solverParametersPtr;
 
   // Set the level of output (this is the default)
-  solverParameters.sublist("Printing").setParameter("Output Information", 
+  solverParameters.sublist("Printing").set("Output Information", 
 						    NOX::Utils::Warning + 
 						    NOX::Utils::OuterIteration + 
 						    NOX::Utils::InnerIteration + 
 						    NOX::Utils::Parameters);
 
   // Set the solver (this is the default)
-  solverParameters.setParameter("Nonlinear Solver", "Line Search Based");
+  solverParameters.set("Nonlinear Solver", "Line Search Based");
 
   // Create the line search parameters sublist
-  NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
+  Teuchos::ParameterList& lineSearchParameters = solverParameters.sublist("Line Search");
 
   // Set the line search method
-  lineSearchParameters.setParameter("Method","More'-Thuente");
+  lineSearchParameters.set("Method","More'-Thuente");
 
   // Create the solver
   NOX::Solver::Manager solver(grp, statusTestsCombo, solverParametersPtr);
@@ -196,7 +196,7 @@ int main()
 
   // Print the parameter list
   cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver.getParameterList().print(cout);
+  solver.getList().print(cout);
 
   // Get the answer
   NOX::LAPACK::Group solnGrp = 

@@ -78,12 +78,12 @@ public:
     limited to simple algorithms like nonlinear-CG with no
     preconditioning.
   */
-  Group(NOX::Parameter::List& printingParams, 
+  Group(Teuchos::ParameterList& printingParams, 
 	const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
 	const NOX::Epetra::Vector& initialGuess);
 
   //! Standard Constructor.
-  Group(NOX::Parameter::List& printingParams, 
+  Group(Teuchos::ParameterList& printingParams, 
 	const Teuchos::RefCountPtr<NOX::Epetra::Interface::Required>& i, 
 	const NOX::Epetra::Vector& initialGuess, 
 	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys);
@@ -120,7 +120,7 @@ public:
 
   virtual NOX::Abstract::Group::ReturnType computeGradient();
 
-  virtual NOX::Abstract::Group::ReturnType computeNewton(NOX::Parameter::List& params);
+  virtual NOX::Abstract::Group::ReturnType computeNewton(Teuchos::ParameterList& params);
 
   //@}
 
@@ -173,21 +173,21 @@ in NOX::Abstract::Group
      The parameter "Reuse Preconditioner" is a boolean that tells the group to turn off control of preconditioner recalculation.  This is a dangerous flag but can really speed the computations if the user knows what they are doing.  Toggling this flag is left to the user (ideally it should be done through a status test).  Defaults to false.
    */
   virtual NOX::Abstract::Group::ReturnType 
-  applyJacobianInverse(NOX::Parameter::List &params, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) 
+  applyJacobianInverse(Teuchos::ParameterList &params, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) 
     const;
   virtual NOX::Abstract::Group::ReturnType 
-  applyJacobianInverse(NOX::Parameter::List &params, const NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) 
+  applyJacobianInverse(Teuchos::ParameterList &params, const NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) 
     const;
 
   virtual NOX::Abstract::Group::ReturnType 
   applyRightPreconditioning(bool useTranspose,
-			    NOX::Parameter::List& params, 
+			    Teuchos::ParameterList& params, 
 			    const NOX::Epetra::Vector& input, 
 			    NOX::Epetra::Vector& result) const;
 
   virtual NOX::Abstract::Group::ReturnType 
   applyRightPreconditioning(bool useTranspose, 
-			    NOX::Parameter::List& params, 
+			    Teuchos::ParameterList& params, 
 			    const NOX::Abstract::Vector& input, 
 			    NOX::Abstract::Vector& result) const;
 

@@ -32,7 +32,7 @@
 
 #include "NOX_LineSearch_Utils_Counters.H"
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 NOX::LineSearch::Utils::Counters::Counters()
 {
@@ -52,13 +52,13 @@ void NOX::LineSearch::Utils::Counters::reset()
   totalNumIterations = 0;
 }
 
-bool NOX::LineSearch::Utils::Counters::setValues(NOX::Parameter::List& lineSearchParams) 
+bool NOX::LineSearch::Utils::Counters::setValues(Teuchos::ParameterList& lineSearchParams) 
 {
-  NOX::Parameter::List& outputList = lineSearchParams.sublist("Output");
-  outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
-  outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);
-  outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);
-  outputList.setParameter("Total Number of Line Search Inner Iterations", totalNumIterations);
+  Teuchos::ParameterList& outputList = lineSearchParams.sublist("Output");
+  outputList.set("Total Number of Line Search Calls", totalNumLineSearchCalls);
+  outputList.set("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);
+  outputList.set("Total Number of Failed Line Searches", totalNumFailedLineSearches);
+  outputList.set("Total Number of Line Search Inner Iterations", totalNumIterations);
   return true;
 }
 

@@ -193,14 +193,14 @@ public:
 
   //! Constructor
   MoreThuente(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	      NOX::Parameter::List& params);
+	      Teuchos::ParameterList& params);
   
   //! Destructor
   ~MoreThuente();
   
   // derived
   bool reset(const Teuchos::RefCountPtr<NOX::GlobalData>& gd,
-	     NOX::Parameter::List& params);
+	     Teuchos::ParameterList& params);
 
   // derived
   bool compute(NOX::Abstract::Group& newgrp, double& step, 
@@ -458,7 +458,7 @@ private:
   NOX::LineSearch::Utils::Slope slope;
 
   //! Pointer to the input parameter list.  This is saved so data stored in the counter object can be written to the "Output" parameter list.
-  NOX::Parameter::List* paramsPtr;
+  Teuchos::ParameterList* paramsPtr;
 
   //! Sufficient decrease parameter
   double ftol;

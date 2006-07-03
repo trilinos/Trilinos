@@ -46,7 +46,13 @@ if BUILD_BELOS_TESTS
 endif
 
 if BUILD_EPETRA_TESTS
-noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner $(1DFEM_BELOS)
+
+if BUILD_NOX_EPETRAEXT_SUPPORT
+1DFEM_WITHMODELEVALUATOR = 1DfemWithModelEvaluator
+endif
+
+noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner $(1DFEM_BELOS) $(1DFEM_WITHMODELEVALUATOR)
+
 endif
 
 1Dfem_SOURCES = \
@@ -122,3 +128,15 @@ endif
 
 1DfemBelos_LDADD = $(TEST_LIBS)
 
+1DfemWithModelEvaluator_SOURCES = \
+                         $(srcdir)/1DfemPrePostOperator.H \
+                         $(srcdir)/1DfemPrePostOperator.C \
+	                 $(srcdir)/1DfemModelEvaluator.H \
+                         $(srcdir)/1DfemModelEvaluator.C \
+                         $(srcdir)/1DfemWithModelEvaluator.C
+
+1DfemWithModelEvaluator_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemWithModelEvaluator_LDADD = $(TEST_LIBS)
