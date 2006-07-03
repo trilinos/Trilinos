@@ -1,4 +1,5 @@
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Array.hpp"	
 #include "Teuchos_Version.hpp"
 
 int main(int argc, char* argv[])
@@ -18,6 +19,17 @@ int main(int argc, char* argv[])
      value to the expected data type, an explicit cast can be used with the ``set'' method:
   */
   My_List.set("Tolerance", (float)(1e-10));
+
+  /* Reference-counted pointers can also be passed through a Teuchos::ParameterList.
+     To illustrate this we will use the Teuchos::Array class to create an array of 10 doubles
+     representing an initial guess for a linear solver, whose memory is being managed by a 
+     Teuchos::RefCountPtr.
+   */
+
+  Teuchos::RefCountPtr<Teuchos::Array<double> > rcp_Array = 
+    Teuchos::rcp( new Teuchos::Array<double>( 10, 0.0 ) );
+  
+  My_List.set("Initial Guess", rcp_Array);
 
   /* A hierarchy of parameter lists can be constructed using {\tt Teuchos::ParameterList}.  This 
      means another parameter list is a valid {\it value} in any parameter list.  To create a sublist
@@ -77,6 +89,17 @@ int main(int argc, char* argv[])
   }
   catch ( std::exception& e) {
     tol = 1e-6;
+  }
+
+  /* We can use this same syntax to get reference-counted objects out of the parameter
+     list, like the initial guess.
+  */
+  try {
+    Teuchos::RefCountPtr<Teuchos::Array<double> > init_guess = 
+      Teuchos::getParameter<Teuchos::RefCountPtr<Teuchos::Array<double> > >(My_List, "Initial Guess");
+  }
+  catch ( std::exception& e) {
+    cout << e.what() << endl;
   }
 
   // A parameter list can be sent to the output stream:
