@@ -1,0 +1,23 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
+
+Echoing the command-line:
+
+c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\epetra\thyra\example\sillyCgSolve_epetra.exe --echo-command-line --help 
+
+Usage: c:\_mystuff\PROJECTS\Trilinos.base\BUILDS\INTEL\SERIAL_DEBUG\packages\epetra\thyra\example\sillyCgSolve_epetra.exe [options]
+  options:
+  --help                                 Prints this help message
+  --pause-for-debugging                  Pauses for user input to allow attaching a debugger
+  --echo-command-line                    Echo the command-line but continue as normal
+  --verbose                      bool    Determines if any output is printed or not.
+  --quiet                                (default: --verbose)
+  --global-dim                   int     Global dimension of the linear system.
+                                         (default: --global-dim=500)
+  --diag-scale                   double  Scaling of the diagonal to improve conditioning.
+                                         (default: --diag-scale=1.001)
+  --use-with-non-epetra-vectors  bool    Use non-epetra vectors with Epetra operator or not.
+  --use-with-epetra-vectors              (default: --use-with-epetra-vectors)
+  --tol                          double  Relative tolerance for linear system solve.
+                                         (default: --tol=0.0001)
+  --max-num-iters                int     Maximum of CG iterations.
+                                         (default: --max-num-iters=300)

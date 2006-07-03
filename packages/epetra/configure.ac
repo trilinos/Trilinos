@@ -379,6 +379,7 @@ AC_CONFIG_FILES([
 		thyra/Makefile
 		thyra/src/Makefile
 		thyra/example/Makefile
+		thyra/example/generate-sample-output.pl.stub
 		thyra/test/Makefile
 		])
 

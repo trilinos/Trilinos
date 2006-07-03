@@ -230,67 +230,17 @@ found at:
 where <tt>./</tt> is the base build directory for <tt>epetra</tt>
 (e.g. <tt>???/Trilinos/$BUILD_DIR/packages/epetra</tt>).
 
-This example program should run successfully with no arguments and, at
-the time of this writing, produces the following output:
+This example program should run successfully with no arguments and produces
+the following output:
 
-\verbatim
+\verbinclude sillyPowerMethod_epetra.default.out
 
-$ ./sillyPowerMethod_epetra.exe
+This example program also takes a number of command-line options.  To see what
+the command-line options are, use the <tt>--help</tt> option.  The
+command-line options returned from <tt>./sillyPowerMethod_epetra.exe
+--echo-command-line --help</tt> are:
 
-***
-*** Running power method example using Epetra implementation
-***
-
-(1) Constructing tridagonal Epetra matrix A of global dimension = 4 ...
-
-Creating Epetra_SerialComm ...
-
-(2) Running the power method on matrix A ...
-
-Starting power method ...
-
-Iter = 0, lambda = 2.634806e+00, ||A*q-lambda*q|| = 9.051834e-01
-Iter = 4, lambda = 3.552293e+00, ||A*q-lambda*q|| = 2.496007e-01
-Iter = 8, lambda = 3.612831e+00, ||A*q-lambda*q|| = 7.194514e-02
-Iter = 12, lambda = 3.617641e+00, ||A*q-lambda*q|| = 1.981868e-02
-Iter = 16, lambda = 3.618004e+00, ||A*q-lambda*q|| = 5.435543e-03
-Iter = 20, lambda = 3.618032e+00, ||A*q-lambda*q|| = 1.490271e-03
-Iter = 24, lambda = 3.618034e+00, ||A*q-lambda*q|| = 4.085797e-04
-
-  Estimate of dominate eigenvalue lambda = 3.618034e+00
-
-(4) Running the power method again on matrix A ...
-
-Starting power method ...
-
-Iter = 0, lambda = 1.791493e+01, ||A*q-lambda*q|| = 5.881543e+00
-Iter = 4, lambda = 2.005555e+01, ||A*q-lambda*q|| = 3.251777e-03
-Iter = 8, lambda = 2.005556e+01, ||A*q-lambda*q|| = 2.681092e-06
-
-  Estimate of dominate eigenvalue lambda = 2.005556e+01
-
-Congratulations! All of the tests checked out!
-
-\endverbatim
-
-This example program also takes a number of command-line options.  To
-see what the command-line options are, use the <tt>--help</tt> option.
-At the time of this writing, the command-line options returned from
-<tt>./sillyPowerMethod_epetra.exe --help</tt> are:
-
-\verbatim
-$ ./sillyPowerMethod_epetra.exe --help
-Usage: ./sillyPowerMethod_epetra [options]
-  options:
-  --help                         Prints this help message
-  --pause-for-debugging          Pauses for user input to allow attaching a debugger
-  --verbose              bool    Determines if any output is printed or not.
-  --quiet                        (default: --verbose)
-  --global-dim           int     Global dimension of the linear system.
-                                 (default: --global-dim=4)
-  --dump-all             bool    Determines if quantities are dumped or not.
-  --no-dump                      (default: --no-dump)
-\endverbatim
+\verbinclude sillyPowerMethod_epetra.help.out
 
 To see the full listing of this example program click: <a
 href="sillyPowerMethod__epetra_8cpp-example.html">
@@ -368,66 +318,17 @@ can be found at:
 where <tt>./</tt> is the base build directory for <tt>epetra</tt>
 (e.g. <tt>???/Trilinos/$BUILD_DIR/packages/epetra</tt>).
 
-This example program should run successfully with no arguments and, at
-the time of this writing, produces the following output:
+This example program should run successfully with no arguments and produces
+the following output:
 
-\verbatim
+\verbinclude sillyCgSolve_epetra.default.out
 
-$ ./sillyCgSolve_epetra.exe
+This example program also takes a number of command-line options.  To see what
+the command-line options are, use the <tt>--help</tt> option.  The
+command-line options returned from <tt>./sillyCgSolve_epetra.exe
+--echo-command-line --help</tt> are:
 
-***
-*** Running CG example using Epetra implementation
-***
-
-(1) Constructing tridagonal Epetra matrix A of global dimension = 500 ...
-
-Creating Epetra_SerialComm ...
-
-Starting CG solver ...
-
-  Type of A = 'N5Thyra14EpetraLinearOpE'
-  Type of b = 'N5Thyra12MPIVectorStdIdEE'
-  Type of x = 'N5Thyra12MPIVectorStdIdEE'
-
-Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+00
-Iter = 31, ||b-A*x||/||b-A*x0|| = 2.812612e-01
-Iter = 62, ||b-A*x||/||b-A*x0|| = 6.590140e-02
-Iter = 93, ||b-A*x||/||b-A*x0|| = 1.382036e-02
-Iter = 124, ||b-A*x||/||b-A*x0|| = 3.547269e-03
-Iter = 155, ||b-A*x||/||b-A*x0|| = 9.842233e-04
-Iter = 186, ||b-A*x||/||b-A*x0|| = 1.892296e-04
-Iter = 204, ||b-A*x||/||b-A*x0|| = 9.615059e-05
-
-||b-A*x||/||b|| = 1.249378e-03/1.299397e+01 = 9.615059e-05 <= 2.0*tolerance = 2.000000e-04: passed
-
-Congratulations! All of the tests checked out!
-
-\endverbatim
-
-This example program also takes a number of command-line options.  To
-see what the command-line options are, use the <tt>--help</tt> option.
-At the time of this writing, the command-line options returned from
-<tt>./sillyCgSolve_epetra.exe --help</tt> are:
-
-\verbatim
-$ ./sillyCgSolve_epetra.exe --help
-Usage: ./sillyCgSolve_epetra [options]
-  options:
-  --help                                 Prints this help message
-  --pause-for-debugging                  Pauses for user input to allow attaching a debugger
-  --verbose                      bool    Determines if any output is printed or not.
-  --quiet                                (default: --verbose)
-  --global-dim                   int     Global dimension of the linear system.
-                                         (default: --global-dim=500)
-  --diag-scale                   double  Scaling of the diagonal to improve conditioning.
-                                         (default: --diag-scale=1.001)
-  --use-with-non-epetra-vectors  bool    Use non-epetra vectors with Epetra operator or not.
-  --use-with-epetra-vectors              (default: --use-with-epetra-vectors)
-  --tol                          double  Relative tolerance for linear system solve.
-                                         (default: --tol=0.0001)
-  --max-num-iters                int     Maximum of CG iterations.
-                                         (default: --max-num-iters=300)
-\endverbatim
+\verbinclude sillyCgSolve_epetra.help.out
 
 To see the full listing of this example program click: <a
 href="sillyCgSolve__epetra_8cpp-example.html">

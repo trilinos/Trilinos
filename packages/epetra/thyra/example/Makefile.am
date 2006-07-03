@@ -28,6 +28,8 @@
 
 EXEEXT = .exe
 
+all-local: generate-sample-output.pl
+
 #
 # Actual programs
 #
@@ -44,6 +46,10 @@ sillyCgSolve_epetra_LDADD = $(common_ldadd)
 sillyPowerMethod_epetra_SOURCES = $(srcdir)/sillyPowerMethod_epetra.cpp $(common_sources)
 sillyPowerMethod_epetra_DEPENDENCIES = $(common_dependencies)
 sillyPowerMethod_epetra_LDADD = $(common_ldadd)
+
+generate-sample-output.pl : generate-sample-output.pl.stub
+	cp generate-sample-output.pl.stub generate-sample-output.pl
+	chmod a+x generate-sample-output.pl
 
 #
 # Common stuff

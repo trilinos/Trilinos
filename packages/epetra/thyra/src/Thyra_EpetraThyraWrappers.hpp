@@ -48,10 +48,12 @@ views of %Thyra objects.
 */
 
 /** \brief Given an <tt>Epetra_Comm</tt> object, return an equivalent
- * <tt>Teuchos::Comm>/tt> object.
+ * <tt>Teuchos::Comm</tt> object.
  *
  * If a successful conversion could not be performed then
  * <tt>return.get()==NULL</tt>.
+ *
+ * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
 Teuchos::RefCountPtr<const Teuchos::Comm<Index> >
 create_Comm( const Teuchos::RefCountPtr<const Epetra_Comm> &epetraComm );

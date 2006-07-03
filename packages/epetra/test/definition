@@ -67,3 +67,8 @@
     ARGS = --verbose;
     COMM = SERIAL, MPI;
 }
+
+(DOCUMENTATION) {
+    TESTS = ../thyra/example/generate-sample-output.pl;
+    COMM = SERIAL;
+}

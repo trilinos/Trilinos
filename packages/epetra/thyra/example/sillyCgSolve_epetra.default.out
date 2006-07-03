@@ -1,0 +1,38 @@
+Teuchos::GlobalMPISession::GlobalMPISession(): started serial run
+
+***
+*** Running CG example using Epetra implementation
+***
+
+(1) Constructing tridagonal Epetra matrix A of global dimension = 500 ...
+
+Creating Epetra_SerialComm ...
+
+Starting CG solver ...
+
+describe A:
+  type = 'Thyra::EpetraLinearOp', rangeDim = 500, domainDim = 500
+    op='class Epetra_CrsMatrix'
+    opTrans=NOTRANS
+    applyAs=EPETRA_OP_APPLY_APPLY
+    adjointSupport=EPETRA_OP_ADJOINT_SUPPORTED
+
+describe b:
+  DefaultSpmdVector<double>{dim=500}
+
+describe x:
+  DefaultSpmdVector<double>{dim=500}
+
+Iter = 0, ||b-A*x||/||b-A*x0|| = 1.000000e+000
+Iter = 31, ||b-A*x||/||b-A*x0|| = 6.768643e-001
+Iter = 62, ||b-A*x||/||b-A*x0|| = 1.586982e-001
+Iter = 93, ||b-A*x||/||b-A*x0|| = 3.875455e-002
+Iter = 124, ||b-A*x||/||b-A*x0|| = 9.401826e-003
+Iter = 155, ||b-A*x||/||b-A*x0|| = 2.241628e-003
+Iter = 186, ||b-A*x||/||b-A*x0|| = 5.138224e-004
+Iter = 217, ||b-A*x||/||b-A*x0|| = 1.039247e-004
+Iter = 218, ||b-A*x||/||b-A*x0|| = 9.818353e-005
+
+||b-A*x||/||b|| = 2.082119e-003/2.120640e+001 = 9.818353e-005 <= 2.0*tolerance = 2.000000e-004: passed
+
+Congratulations! All of the tests checked out!
