@@ -59,6 +59,14 @@
 #include "Problem_Interface.H" // Interface file to NOX
 #include "FiniteElementProblem.H"              
 
+// Required for reading and writing parameter lists from xml format
+#ifdef HAVE_TEUCHOS_EXPAT
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_FileInputSource.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
+#endif
+
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -232,18 +240,31 @@ int main(int argc, char *argv[])
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
-
+  
 #ifdef HAVE_TEUCHOS_EXPAT
-  // Test writing of param list to XML file, and rereading it
-  // into a new parameter list.
-  NOX::Parameter::Teuchos2NOX pl_converter;
 
-  cout << "Writing parameter list to \"input.xml\"" << cout;
-  pl_converter.SaveToXMLFile("input.xml", *nlParamsPtr);
-
-  cout << "Reading parameter list from \"input.xml\"" << cout;
+  // Write the parameter list to a file
+  cout << "Writing parameter list to \"input.xml\"" << endl;
+  std::string output_filename = "input.xml";
+  Teuchos::XMLParameterListWriter xml_converter;
+  Teuchos::XMLObject xml_pl = xml_converter.toXML(*nlParamsPtr);
+  ofstream of(output_filename.c_str()); 
+  of << xml_pl << endl;
+  of.close();
+  
+  // Read in the parameter list from a file
+  cout << "Reading parameter list from \"input.xml\"" << endl;
+  Teuchos::FileInputSource fileSrc(output_filename);
+  // Convert the file data into an xml object
+  Teuchos::XMLObject xml_obj = fileSrc.getObject();
+  // Create a xml to teuchos::parameterlist converter
+  Teuchos::XMLParameterListReader xml_to_pl_converter;
+  // Create a teuchos parameter list
   Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr
-    = pl_converter.ReadFromXMLFile("input.xml");
+    = Teuchos::rcp(new Teuchos::ParameterList);
+  // convert the teuchos xml object to a parameter list
+  (*finalParamsPtr) = xml_to_pl_converter.toParameterList(xml_obj);
+  
 #else
   Teuchos::RefCountPtr<Teuchos::ParameterList> finalParamsPtr = nlParamsPtr;
 #endif
