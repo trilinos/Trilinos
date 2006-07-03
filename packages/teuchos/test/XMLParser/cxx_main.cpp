@@ -52,9 +52,9 @@ int main(int argc, void** argv)
       MPISession::init(&argc, &argv);
 
       /* create a ParameterList object */
-      ParameterList problem;
-      ParameterList solver;
-      ParameterList prec;
+      ParameterList problem("Problem");
+      ParameterList solver("Solver");
+      ParameterList prec("Preconditioner");
       prec.set("type", "ILUk");
       prec.set("k", 2);
       solver.set("Preconditioner",prec);
@@ -64,12 +64,18 @@ int main(int argc, void** argv)
       solver.set("tol", 1.0e-10);
       problem.set("Solver",solver);
 
+      cout << "*** ParameterList" << endl;
+      cout << problem << endl;
+
       /* create an XML object from the ParameterList */
       XMLParameterListWriter xml2pl;
       XMLObject xmlprob1 = xml2pl.toXML(problem);
 
       /* write the XML to a string */
       string strproblem = xmlprob1.toString();
+
+      cout << "*** ParameterList.toXML" << endl;
+      cout << xmlprob1 << endl;
 
       /* create a input source, parser to read the string */
       StringInputSource src(strproblem);
@@ -78,16 +84,20 @@ int main(int argc, void** argv)
       /* parse XML in a string */
       XMLObject xmlprob2 = parser.parse();
 
+      cout << "*** parser.parse" << endl;
+      cout << xmlprob2 << endl;
+
       /* convert the new XML object to a ParameterList */
       XMLParameterListReader pl2xml;
       ParameterList problem2 = pl2xml.toParameterList(xmlprob2);
 
+      cout << "*** XML.toParameterList" << endl;
+      cout << problem2 << endl;
+
       /* check that the new parameter list matches the old one */
-      /* FINISH: how to do this?
       if (problem2 != problem) {
         testfailed = true;
       }
-      */
     }
   catch(std::exception& e)
     {
