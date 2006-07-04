@@ -42,6 +42,7 @@ extern "C" {
 #endif
 
 
+static int Num_Global_Parts;
 static int Num_GID = 1, Num_LID = 1;
 static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
@@ -111,6 +112,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   /* Allocate space for arrays. */
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  Num_Global_Parts = nprocs;
   psize = (float *) malloc(nprocs*sizeof(float)); 
   partid = (int *) malloc(2*nprocs*sizeof(int)); 
   idx = partid + nprocs;
@@ -120,8 +122,11 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     if (prob->params[i].Index>=0)
       ierr = Zoltan_Set_Param_Vec(zz, prob->params[i].Name, prob->params[i].Val,
              prob->params[i].Index);
-    else
+    else {
       ierr = Zoltan_Set_Param(zz, prob->params[i].Name, prob->params[i].Val);
+      if (strcasecmp(prob->params[i].Name, "NUM_GLOBAL_PARTITIONS") == 0)
+        Num_Global_Parts = atoi(prob->params[i].Val);
+    }
     if (ierr == ZOLTAN_FATAL) {
       sprintf(errmsg,
               "fatal: error in Zoltan_Set_Param when setting parameter %s\n",
@@ -2019,26 +2024,20 @@ int proc, nprocs;
   switch (Test.Fixed_Objects) {
   case 1:
       /* Fix 100% of objects */
-      /* For now, assume NUM_GLOBAL_PARTITIONS == nprocs; 
-         we'll change later */
       for (i = 0; i < mesh->num_elems; i++) {
-        mesh->elements[i].fixed_part = i % nprocs;
+        mesh->elements[i].fixed_part = i % Num_Global_Parts;
       }
       break;
   case 2:
       /* Fix 50% of objects */
-      /* For now, assume NUM_GLOBAL_PARTITIONS == nprocs; 
-         we'll change later */
       for (i = 1; i < mesh->num_elems; i+=2) {
-        mesh->elements[i].fixed_part = i % nprocs;
+        mesh->elements[i].fixed_part = i % Num_Global_Parts;
       }
       break;
   case 3:
       /* Fix 10% of objects */
-      /* For now, assume NUM_GLOBAL_PARTITIONS == nprocs; 
-         we'll change later */
       for (i = 0; i < mesh->num_elems; i+=10) {
-        mesh->elements[i].fixed_part = i % nprocs;
+        mesh->elements[i].fixed_part = i % Num_Global_Parts;
         /* printf("%d: i=%d, Fixed object %d to %d\n", proc, i, mesh->elements[i].globalID, i % nprocs); */
       }
       break;
