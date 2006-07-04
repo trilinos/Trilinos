@@ -124,7 +124,8 @@ void get_node_ids(int elem_id, int* node_ids)
 }
 
 matrix_data::matrix_data(int num_quad_elements,
-                         int num_dof_per_node)
+                         int num_dof_per_node,
+			 bool make_numerically_nonsymmetric)
  : numrows_(0),
    numcols_(0),
    rows_(0),
@@ -185,7 +186,12 @@ matrix_data::matrix_data(int num_quad_elements,
       int len = rowlengths_[i]*dim;
       coefs_[i] = new double[len];
       for(j=0; j<len; ++j) {
-        coefs_[i][j] = 1.0;
+	if (make_numerically_nonsymmetric) {
+	  coefs_[i][j] = 1.0*(j+1);
+	}
+	else {
+	  coefs_[i][j] = 1.0;
+	}
       }
     }
   }
@@ -226,6 +232,23 @@ double* matrix_data::coefs(int row, int col)
 
   int dim = blocksize_*blocksize_;
   return( &(coefs_[row_idx][col_idx*dim]) );
+}
+
+void matrix_data::copy_local_data_to_matrix(Epetra_CrsMatrix& A)
+{
+  const Epetra_Map& rowmap = A.RowMap();
+
+  for(int i=0; i<numrows_; ++i) {
+    int row = rows_[i];
+    if (rowmap.MyGID(row)) {
+      int err = A.ReplaceGlobalValues(row, rowlengths_[i],
+				      coefs_[i], colindices_[i]);
+      if (err < 0) {
+	err = A.InsertGlobalValues(row, rowlengths_[i],
+				   coefs_[i], colindices_[i]);
+      }
+    }
+  }
 }
 
 bool matrix_data::compare_local_data(const Epetra_CrsMatrix& A)

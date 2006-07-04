@@ -491,28 +491,31 @@ class Epetra_BlockMap: public Epetra_Object {
   virtual void Print(ostream & os) const;
 
   //! Access function for Epetra_Comm communicator.
-  const Epetra_Comm & Comm() const {return(*BlockMapData_->Comm_);};
+  const Epetra_Comm & Comm() const {return(*BlockMapData_->Comm_);}
 
-	//! Assignment Operator
-	Epetra_BlockMap & operator=(const Epetra_BlockMap & map);
+  bool IsOneToOne() const {return(BlockMapData_->OneToOne_);}
+
+  //! Assignment Operator
+  Epetra_BlockMap & operator=(const Epetra_BlockMap & map);
 
   //@}
 
   //@{ \name Expert Users and Developers Only
 
-	//! Returns the reference count of BlockMapData.
-	/*! (Intended for testing purposes.) */
-	int ReferenceCount() const {return(BlockMapData_->ReferenceCount());};
+  //! Returns the reference count of BlockMapData.
+  /*! (Intended for testing purposes.) */
+  int ReferenceCount() const {return(BlockMapData_->ReferenceCount());}
 
-	//! Returns a pointer to the BlockMapData instance this BlockMap uses. 
-	/*! (Intended for developer use only for testing purposes.) */
-	const Epetra_BlockMapData * DataPtr() const {return(BlockMapData_);};
+  //! Returns a pointer to the BlockMapData instance this BlockMap uses. 
+  /*! (Intended for developer use only for testing purposes.) */
+  const Epetra_BlockMapData * DataPtr() const {return(BlockMapData_);}
 
   //@}
   
  private: // These need to be accessible to derived map classes.
   
   void GlobalToLocalSetup();
+  bool DetermineIsOneToOne();
   bool IsDistributedGlobal(int NumGlobalElements, int NumMyElements) const;
   void CheckValidNGE(int NumGlobalElements);
   void EndOfConstructorOps();

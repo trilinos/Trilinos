@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   int IndexBase = 0;
   int ElementSize = 7;
   bool DistributedGlobal = (NumGlobalElements>NumMyElements);
-  
+  bool IsOneToOne = true;
   Epetra_BlockMap * Map;
 
   // Test exceptions
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose) cout << "Checking Epetra_BlockMap(-2, ElementSize, IndexBase, Comm)" << endl;
-    Epetra_BlockMap Map(-2, ElementSize, IndexBase, Comm);
+    Epetra_BlockMap TestMap(-2, ElementSize, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error != -1) {
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
 
   try {
     if (verbose) cout << "Checking Epetra_BlockMap(2, 3, ElementSize, IndexBase, Comm)" << endl;
-    Epetra_BlockMap Map(2, 3, ElementSize, IndexBase, Comm);
+    Epetra_BlockMap TestMap(2, 3, ElementSize, IndexBase, Comm);
   }
   catch (int Error) {
     if (Error != -4) {
@@ -143,8 +143,8 @@ int main(int argc, char *argv[]) {
   Map = new Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, ElementSize, 0,
-									NumGlobalElements*ElementSize, NumMyElements*ElementSize,
-									IndexBase, Comm, DistributedGlobal);
+		  NumGlobalElements*ElementSize, NumMyElements*ElementSize,
+		  IndexBase, Comm, DistributedGlobal,IsOneToOne);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
@@ -157,11 +157,33 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, 0, ElementSize, 0,
                    NumGlobalElements*ElementSize, NumMyElements*ElementSize,
-		   IndexBase, Comm, DistributedGlobal);
+		  IndexBase, Comm, DistributedGlobal,IsOneToOne);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
+  delete Map;
+
+  // Test User-defined arbitrary distribution constructor and fill MyGlobalElements
+  // such that the map is not one-to-one.
+  int NumMyElems = 5;
+  int NumGlobalElems = (Comm.NumProc()+1)*NumMyElems;
+  int myFirstElem = Comm.MyPID()*NumMyElems;
+  if (Comm.MyPID() == 0) NumMyElems *= 2;
+
+  int* myElems = new int[NumMyElems];
+  for(int ii=0; ii<NumMyElems; ++ii) {
+    myElems[ii] = myFirstElem + ii;
+  }
+
+  Map = new Epetra_BlockMap(NumGlobalElems, NumMyElems, myElems, 1, 0, Comm);
+
+  if (verbose) cout << "Checking non-oneToOne Epetra_BlockMap(...)"<<endl;
+  ierr = Map->IsOneToOne() == false ? 0 : -1;
+  EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
+
+  delete [] myElems;
   delete Map;
 
   // Test User-defined arbitrary distribution constructor
@@ -180,7 +202,7 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)" << endl;
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize, 0,
                   NumGlobalElements*ElementSize, NumMyElements*ElementSize,
-                  IndexBase, Comm, DistributedGlobal);
+                  IndexBase, Comm, DistributedGlobal,IsOneToOne);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
@@ -210,8 +232,8 @@ int main(int argc, char *argv[]) {
 														IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)" << endl;
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize, ElementSizeList,
-									NumGlobalEquations, NumMyEquations,
-									IndexBase, Comm, DistributedGlobal);
+		  NumGlobalEquations, NumMyEquations,
+		  IndexBase, Comm, DistributedGlobal,IsOneToOne);
 	
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
@@ -251,8 +273,8 @@ int main(int argc, char *argv[]) {
   // Back to testing copy constructor
   if (verbose) cout << "Checking Epetra_BlockMap(*Map)" << endl;
   ierr = checkmap(*Map1, NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize, ElementSizeList,
-									NumGlobalEquations, NumMyEquations,
-									IndexBase, Comm, DistributedGlobal);
+		  NumGlobalEquations, NumMyEquations,
+		  IndexBase, Comm, DistributedGlobal,IsOneToOne);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
@@ -297,63 +319,63 @@ int main(int argc, char *argv[]) {
   delete[] MyGlobalElements;
   delete Map1;
 
-	// test reference counting
-	ierr = 0;
+  // test reference counting
+  ierr = 0;
 
-	if (verbose) 
+  if (verbose) 
     cout << endl << endl
 	 << "*******************************************************************************************" << endl
 	 << "        Testing reference counting now....................................................." << endl
 	 << "*******************************************************************************************" << endl << endl;
 
-	Epetra_BlockMap b1(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
-	int b1count = b1.ReferenceCount();
-	const Epetra_BlockMapData* b1addr = b1.DataPtr();
-	EPETRA_TEST_ERR(!(b1count==1),ierr); // count should be 1
-	if(verbose) cout << "Default constructor. \nb1= " << b1count << "  " << b1addr << endl;
+  Epetra_BlockMap b1(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
+  int b1count = b1.ReferenceCount();
+  const Epetra_BlockMapData* b1addr = b1.DataPtr();
+  EPETRA_TEST_ERR(!(b1count==1),ierr); // count should be 1
+  if(verbose) cout << "Default constructor. \nb1= " << b1count << "  " << b1addr << endl;
 	
-	Epetra_BlockMap* b2 = new Epetra_BlockMap(b1);
-	int b2count = b2->ReferenceCount();
-	const Epetra_BlockMapData* b2addr = b2->DataPtr();
-	int b1countold = b1count;
-	b1count = b1.ReferenceCount();
-	EPETRA_TEST_ERR(!(b2count==b1count && b1count==(b1countold+1)),ierr); // both counts should be 2
-	EPETRA_TEST_ERR(!(b1addr==b2addr),ierr); // addresses should be same
-	if(verbose) cout << "Copy constructor. \nb1= " << b1count << "  " << b1addr << "\nb2= " << b2count << "  " << b2addr << endl;
+  Epetra_BlockMap* b2 = new Epetra_BlockMap(b1);
+  int b2count = b2->ReferenceCount();
+  const Epetra_BlockMapData* b2addr = b2->DataPtr();
+  int b1countold = b1count;
+  b1count = b1.ReferenceCount();
+  EPETRA_TEST_ERR(!(b2count==b1count && b1count==(b1countold+1)),ierr); // both counts should be 2
+  EPETRA_TEST_ERR(!(b1addr==b2addr),ierr); // addresses should be same
+  if(verbose) cout << "Copy constructor. \nb1= " << b1count << "  " << b1addr << "\nb2= " << b2count << "  " << b2addr << endl;
 
-	delete b2;
-	b1countold = b1count;
-	b1count = b1.ReferenceCount();
-	EPETRA_TEST_ERR(!(b1count==b1countold-1), ierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(b1addr==b1.DataPtr()), ierr); // b1addr should be unchanged
-	if(verbose) cout << "b2 destroyed. \nb1= " << b1count << "  " << b1addr << endl;
+  delete b2;
+  b1countold = b1count;
+  b1count = b1.ReferenceCount();
+  EPETRA_TEST_ERR(!(b1count==b1countold-1), ierr); // count should have decremented (to 1)
+  EPETRA_TEST_ERR(!(b1addr==b1.DataPtr()), ierr); // b1addr should be unchanged
+  if(verbose) cout << "b2 destroyed. \nb1= " << b1count << "  " << b1addr << endl;
 
-	{ // inside of braces to test stack deallocation.
-		if(verbose) cout << "Assignment operator, post construction" << endl;
-		Epetra_BlockMap b3(NumGlobalElements, NumMyElements, ElementSize, IndexBase-1, Comm);
-		int b3count = b3.ReferenceCount();
-		const Epetra_BlockMapData* b3addr = b3.DataPtr();
-		EPETRA_TEST_ERR(!(b3count==1),ierr); // b3count should be 1 initially
-		EPETRA_TEST_ERR(!(b1addr!=b3addr),ierr); // b1 and b3 should have different ptr addresses
-		if(verbose) cout << "Prior to assignment: \nb1= " << b1count << "  " << b1addr << "\nb3= " << b3count << "  " << b3addr << endl;
-		b3 = b1;
-		b3count = b3.ReferenceCount();
-		b3addr = b3.DataPtr();
-		b1countold = b1count;
-		b1count = b1.ReferenceCount();
-		EPETRA_TEST_ERR(!(b3count==b1count && b1count==b1countold+1),ierr); // both counts should be 2
-		EPETRA_TEST_ERR(!(b1addr==b3addr),ierr); // addresses should be same
-		if(verbose) cout << "After assignment: \nb1= " << b1count << "  " << b1addr << "\nb3= " << b3count << "  " << b3addr << endl;
-	}
-	b1countold = b1count;
-	b1count = b1.ReferenceCount();
-	EPETRA_TEST_ERR(!(b1count==b1countold-1), ierr); // count should have decremented (to 1)
-	EPETRA_TEST_ERR(!(b1addr==b1.DataPtr()), ierr); // b1addr should be unchanged
-	if (verbose) cout << "b3 destroyed. \nb1= " << b1count << "  " << b1addr << endl;
+  { // inside of braces to test stack deallocation.
+    if(verbose) cout << "Assignment operator, post construction" << endl;
+    Epetra_BlockMap b3(NumGlobalElements, NumMyElements, ElementSize, IndexBase-1, Comm);
+    int b3count = b3.ReferenceCount();
+    const Epetra_BlockMapData* b3addr = b3.DataPtr();
+    EPETRA_TEST_ERR(!(b3count==1),ierr); // b3count should be 1 initially
+    EPETRA_TEST_ERR(!(b1addr!=b3addr),ierr); // b1 and b3 should have different ptr addresses
+    if(verbose) cout << "Prior to assignment: \nb1= " << b1count << "  " << b1addr << "\nb3= " << b3count << "  " << b3addr << endl;
+    b3 = b1;
+    b3count = b3.ReferenceCount();
+    b3addr = b3.DataPtr();
+    b1countold = b1count;
+    b1count = b1.ReferenceCount();
+    EPETRA_TEST_ERR(!(b3count==b1count && b1count==b1countold+1),ierr); // both counts should be 2
+    EPETRA_TEST_ERR(!(b1addr==b3addr),ierr); // addresses should be same
+    if(verbose) cout << "After assignment: \nb1= " << b1count << "  " << b1addr << "\nb3= " << b3count << "  " << b3addr << endl;
+  }
+  b1countold = b1count;
+  b1count = b1.ReferenceCount();
+  EPETRA_TEST_ERR(!(b1count==b1countold-1), ierr); // count should have decremented (to 1)
+  EPETRA_TEST_ERR(!(b1addr==b1.DataPtr()), ierr); // b1addr should be unchanged
+  if (verbose) cout << "b3 destroyed. \nb1= " << b1count << "  " << b1addr << endl;
 
-	EPETRA_TEST_ERR(ierr,returnierr);
+  EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && (ierr == 0)) cout << "Checked OK\n\n" <<endl;
-	// done with reference counting testing
+  // done with reference counting testing
 
 #ifdef EPETRA_MPI
   MPI_Finalize();

@@ -104,8 +104,15 @@ int Epetra_LinearProblem::LeftScale(const Epetra_Vector & D)
 {
   if (A_==0) EPETRA_CHK_ERR(-1); // No matrix defined
   if (B_==0) EPETRA_CHK_ERR(-2); // No RHS defined
-  EPETRA_CHK_ERR(A_->LeftScale(D));
-  EPETRA_CHK_ERR(B_->Multiply(1.0, D, *B_, 0.0));
+  if (A_->UseTranspose()) {
+    EPETRA_CHK_ERR(A_->RightScale(D));
+    EPETRA_CHK_ERR(X_->ReciprocalMultiply(1.0, D, *X_, 0.0));
+  }
+  else {
+    EPETRA_CHK_ERR(A_->LeftScale(D));
+    EPETRA_CHK_ERR(B_->Multiply(1.0, D, *B_, 0.0));
+  }
+
   return(0);
 }
 //=============================================================================
@@ -113,8 +120,14 @@ int Epetra_LinearProblem::RightScale(const Epetra_Vector & D)
 {
   if (A_==0) EPETRA_CHK_ERR(-1); // No matrix defined
   if (X_==0) EPETRA_CHK_ERR(-2); // No LHS defined
-  EPETRA_CHK_ERR(A_->RightScale(D));
-  EPETRA_CHK_ERR(X_->ReciprocalMultiply(1.0, D, *X_, 0.0));
+  if (A_->UseTranspose()) {
+    EPETRA_CHK_ERR(A_->LeftScale(D));
+    EPETRA_CHK_ERR(B_->Multiply(1.0, D, *B_, 0.0));
+  }
+  else {
+    EPETRA_CHK_ERR(A_->RightScale(D));
+    EPETRA_CHK_ERR(X_->ReciprocalMultiply(1.0, D, *X_, 0.0));
+  }
   return(0);
 }
 //=============================================================================

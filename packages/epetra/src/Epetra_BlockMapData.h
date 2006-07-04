@@ -90,6 +90,7 @@ class Epetra_BlockMapData : public Epetra_Data {
   bool ConstantElementSize_;
   bool LinearMap_;
   bool DistributedGlobal_;
+  bool OneToOne_;
 
   int LastContiguousGID_;
   int LastContiguousGIDLoc_;

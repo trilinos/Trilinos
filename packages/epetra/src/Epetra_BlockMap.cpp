@@ -81,6 +81,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int ElementSize, int Ind
   BlockMapData_->MinMyGID_ = start_index + BlockMapData_->IndexBase_;
   BlockMapData_->MaxMyGID_ = BlockMapData_->MinMyGID_ + BlockMapData_->NumMyElements_ - 1;
   BlockMapData_->DistributedGlobal_ = IsDistributedGlobal(BlockMapData_->NumGlobalElements_, BlockMapData_->NumMyElements_);
+  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
 
   EndOfConstructorOps();
 }
@@ -152,6 +153,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
   else
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
+  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
+
   EndOfConstructorOps();
 }
 
@@ -245,6 +248,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
   else
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
+  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
+
   EndOfConstructorOps();
 }
 
@@ -313,7 +318,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
   }
 
   BlockMapData_->DistributedGlobal_ = IsDistributedGlobal(NumGlobalElements, NumMyElements);  
-  
+
   // Local Map and uniprocessor case:  Each processor gets a complete copy of all elements
   if (!BlockMapData_->DistributedGlobal_ || NumProc == 1) {
     BlockMapData_->NumGlobalElements_ = BlockMapData_->NumMyElements_;
@@ -362,6 +367,8 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements,
   else
     throw ReportError("Internal Error.  Report to Epetra developer", -99);
   
+  BlockMapData_->OneToOne_ = DetermineIsOneToOne();
+
   EndOfConstructorOps();
 }
 
@@ -766,6 +773,21 @@ int Epetra_BlockMap::RemoteIDList(int NumIDs, const int * GIDList,
 						 PIDList, LIDList, SizeList) );
 
   return(0);
+}
+
+//==============================================================================
+bool Epetra_BlockMap::DetermineIsOneToOne()
+{
+  if (BlockMapData_->Directory_ == NULL) {
+    BlockMapData_->Directory_ = Comm().CreateDirectory(*this);
+  }
+
+  Epetra_Directory* directory = BlockMapData_->Directory_;
+  if (directory == NULL) {
+    throw ReportError("Epetra_BlockMap::IsOneToOne ERROR, CreateDirectory failed.",-1);
+  }
+
+  return(directory->GIDsAllUniquelyOwned());
 }
 
 //==============================================================================

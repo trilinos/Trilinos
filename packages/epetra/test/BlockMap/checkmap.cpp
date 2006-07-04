@@ -31,7 +31,8 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 	     int *MyGlobalElements, int ElementSize, int * ElementSizeList,
 	     int NumGlobalPoints, int NumMyPoints,
 	     int IndexBase, Epetra_Comm& Comm,
-	     bool DistributedGlobal)
+	     bool DistributedGlobal,
+	     bool IsOneToOne)
 {
 
   int i, ierr=0, forierr=0;// forierr is used in for loops, then is tested
@@ -47,7 +48,9 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   
   EPETRA_TEST_ERR(DistributedGlobal!=Map.DistributedGlobal(),ierr);
 
-      int *MyElementSizeList;
+  EPETRA_TEST_ERR(IsOneToOne!=Map.IsOneToOne(),ierr);
+
+  int *MyElementSizeList;
 
   if (ElementSizeList==0)
     {

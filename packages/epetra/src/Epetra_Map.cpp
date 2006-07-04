@@ -60,11 +60,15 @@ Epetra_Map::Epetra_Map(const Epetra_Map& map)
 }
 
 //==============================================================================
-Epetra_Map::~Epetra_Map(void) {}
+Epetra_Map::~Epetra_Map(void)
+{
+}
 
 //=============================================================================
-Epetra_Map & Epetra_Map::operator= (const Epetra_Map& map) {
-	if(this != &map)
-		Epetra_BlockMap::operator=(map); // call this->Epetra_BlockMap::operator=
-	return(*this);
+Epetra_Map & Epetra_Map::operator= (const Epetra_Map& map)
+{
+  if(this != &map) {
+    Epetra_BlockMap::operator=(map); // call this->Epetra_BlockMap::operator=
+  }
+  return(*this);
 }

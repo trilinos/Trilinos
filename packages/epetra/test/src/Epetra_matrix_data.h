@@ -35,15 +35,16 @@ namespace epetra_test {
 
 /** matrix_data is a very simple data source to be used for filling test matrices.
     It is serial; the intent is that a test program declares this class to be
-    of full (global) size, then fills the local portion of the test matrix from
-    the appropriate section of the data in this class.
+    of full (global) size on each processor, then fills the local portion of
+    the test matrix from the appropriate section of the data in this class.
 */
 class matrix_data {
  public:
   matrix_data(int num_rows, int* rowlengths, int blocksize=1);
   matrix_data(int num_rows, int num_cols, int num_off_diagonals, int blocksize);
-  matrix_data(int num_quad_elements, int num_dof_per_node);
-  ~matrix_data();
+  matrix_data(int num_quad_elements, int num_dof_per_node,
+	      bool make_numerically_nonsymmetric=false);
+  virtual ~matrix_data();
 
   int numrows() { return(numrows_); }
   int numcols() { return(numcols_); }
@@ -55,6 +56,15 @@ class matrix_data {
   double** coefs() { return(coefs_); }
   double* coefs(int row, int col);
 
+  /** The portion of this matrix_data object's data that corresponds to
+      the locally-owned rows of A, will be copied into A. A.FillComplete()
+      will NOT be called.
+  */
+  void copy_local_data_to_matrix(Epetra_CrsMatrix& A);
+
+  /** Compare the local rows of A to the corresponding rows of this
+      matrix_data object's data.
+  */ 
   bool compare_local_data(const Epetra_CrsMatrix& A);
 
  private:
