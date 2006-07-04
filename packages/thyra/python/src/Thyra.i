@@ -51,7 +51,7 @@ in-depth information."
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
-#include "Thyra_DefaultSerialVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_OperatorVectorTypes.hpp"
@@ -86,8 +86,8 @@ using namespace std;
 %include "Teuchos_RefCountPtrDecl.hpp"
 %include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 %include "Thyra_ScalarProdVectorSpaceBaseDecl.hpp"
-%include "Thyra_SerialVectorSpaceBaseDecl.hpp"
-%include "Thyra_DefaultSerialVectorSpaceDecl.hpp"
+%include "Thyra_SpmdVectorSpaceBaseDecl.hpp"
+%include "Thyra_DefaultSpmdVectorSpaceDecl.hpp"
 %include "Thyra_VectorStdOpsDecl.hpp"
 
 // Macro for an interface, templated on type
@@ -115,8 +115,8 @@ using namespace std;
 %template (VectorBase_ ## type)      	       Thyra::VectorBase<type>;
 %template (VectorSpaceDefaultBase_ ## type)    Thyra::VectorSpaceDefaultBase<type>;
 %template (ScalarProdVectorSpaceBase_ ## type) Thyra::ScalarProdVectorSpaceBase<type>;
-%template (SerialVectorSpaceBase_ ## type)     Thyra::SerialVectorSpaceBase<type>;
-%template (SerialVectorSpaceStd_ ## type)      Thyra::DefaultSerialVectorSpace<type>;
+%template (SerialVectorSpaceBase_ ## type)     Thyra::SpmdVectorSpaceBase<type>;
+%template (SerialVectorSpaceStd_ ## type)      Thyra::DefaultSpmdVectorSpace<type>;
 %template (createMember_ ## type)              Thyra::createMember<type>;
 %template (V_S_ ## type)                       Thyra::V_S<type>;
 %template (sum_ ## type)                       Thyra::sum<type>;
