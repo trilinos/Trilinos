@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
@@ -47,7 +47,7 @@ LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
 ExtendedGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
       const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& grp)
   : LOCA::Extended::MultiAbstractGroup(),
     LOCA::MultiContinuation::AbstractGroup(),
@@ -66,7 +66,7 @@ ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = turningPointParams->getParameter(
+  string bifParamName = turningPointParams->get(
 						  "Bifurcation Parameter",
 						  "None");
   const ParameterVector& p = grpPtr->getParams();
@@ -74,7 +74,7 @@ ExtendedGroup(
 
   // Get symmetric flag
   bool isSymmetric = 
-    turningPointParams->getParameter("Symmetric Jacobian", false);
+    turningPointParams->get("Symmetric Jacobian", false);
 
   // Compute/get initial "a" & "b" vectors
   Teuchos::RefCountPtr<NOX::Abstract::Vector> aVecPtr;
@@ -82,7 +82,7 @@ ExtendedGroup(
   getInitialVectors(aVecPtr, bVecPtr, isSymmetric);
 
   // Create constraint equation
-  string constraintMethod = turningPointParams->getParameter(
+  string constraintMethod = turningPointParams->get(
 						  "Constraint Method",
 						  "Default");
   if (constraintMethod == "Default")
@@ -216,7 +216,7 @@ computeGradient()
    
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-computeNewton(NOX::Parameter::List& params) 
+computeNewton(Teuchos::ParameterList& params) 
 {
   return conGroup->computeNewton(params);
 }
@@ -239,7 +239,7 @@ applyJacobianTranspose(const NOX::Abstract::Vector& input,
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-applyJacobianInverse(NOX::Parameter::List& params, 
+applyJacobianInverse(Teuchos::ParameterList& params, 
 		     const NOX::Abstract::Vector& input,
 		     NOX::Abstract::Vector& result) const 
 {
@@ -264,7 +264,7 @@ applyJacobianTransposeMultiVector(const NOX::Abstract::MultiVector& input,
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::ExtendedGroup::
-applyJacobianInverseMultiVector(NOX::Parameter::List& params,
+applyJacobianInverseMultiVector(Teuchos::ParameterList& params,
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const 
 {
@@ -639,7 +639,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
 
   // Get method
   string method = 
-    turningPointParams->getParameter("Initial Null Vector Computation",
+    turningPointParams->get("Initial Null Vector Computation",
 				     "User Provided");
   if (method == "Solve df/dp") {
     NOX::Abstract::Group::ReturnType status;
@@ -668,7 +668,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
 							     callingFunction);
 
     // Compute b = J^-1*dfdp
-    Teuchos::RefCountPtr<NOX::Parameter::List> lsParams =
+    Teuchos::RefCountPtr<Teuchos::ParameterList> lsParams =
       parsedParams->getSublist("Linear Solver");
     status = grpPtr->applyJacobianInverse(*lsParams, (*fdfdp)[1], *bVecPtr);
     finalStatus = 
@@ -687,7 +687,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
 	   string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
 	   string(" to compute initial left null vector"));
       
-      Teuchos::RefCountPtr<NOX::Parameter::List> lsParams =
+      Teuchos::RefCountPtr<Teuchos::ParameterList> lsParams =
 	parsedParams->getSublist("Linear Solver");
       status = 
 	ts_grp->applyJacobianTransposeInverse(*lsParams, (*fdfdp)[1], 
@@ -715,7 +715,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
     }
     aVecPtr = 
       (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
-      getRcpParameter<NOX::Abstract::Vector>("Initial A Vector");
+      get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Initial A Vector");
 
     // Get initial "b" vector
     if (!isSymmetric) {
@@ -725,7 +725,7 @@ getInitialVectors(Teuchos::RefCountPtr<NOX::Abstract::Vector>& aVecPtr,
       }
       bVecPtr = 
 	(*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
-        getRcpParameter<NOX::Abstract::Vector>("Initial B Vector");
+        get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Initial B Vector");
     }
   }
 }

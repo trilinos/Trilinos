@@ -42,7 +42,7 @@
 LOCA::Pitchfork::MooreSpence::PhippsBordering::PhippsBordering(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& slvrParams) : 
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams) : 
   globalData(global_data),
   solverParams(slvrParams),
   group(),
@@ -104,7 +104,7 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::setBlocks(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::Pitchfork::MooreSpence::PhippsBordering::solve(
-	   NOX::Parameter::List& params,
+	   Teuchos::ParameterList& params,
 	   const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
            LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const
 {
@@ -205,7 +205,7 @@ LOCA::Pitchfork::MooreSpence::PhippsBordering::solve(
 // are result_param have the same dimensions as their input counterparts
 NOX::Abstract::Group::ReturnType 
 LOCA::Pitchfork::MooreSpence::PhippsBordering::solveContiguous(
-		  NOX::Parameter::List& params,
+		  Teuchos::ParameterList& params,
 		  const NOX::Abstract::MultiVector& input_x,
 		  const NOX::Abstract::MultiVector& input_null,
 		  const NOX::Abstract::MultiVector::DenseMatrix& input_slack,

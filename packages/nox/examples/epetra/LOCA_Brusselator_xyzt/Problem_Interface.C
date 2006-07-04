@@ -100,7 +100,7 @@ bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatr
 
 bool Problem_Interface::computePreconditioner(const Epetra_Vector& x, 
 					      Epetra_Operator& Prec,
-					      NOX::Parameter::List* p)
+					      Teuchos::ParameterList* p)
 {
   cout << "ERROR: Problem_Interface::preconditionVector() - Use Explicit Jacobian only for this test problem!" << endl;
   throw 1;

@@ -66,8 +66,8 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x,
 void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
 {
   for (int i = 0; i < params.length(); i++ ) {
-    //problem.setParameter(params.getLabel(i), params.getValue(i)); 
-    paramLib.setParameterValue(params.getLabel(i), params.getValue(i));
+    //problem.set(params.getLabel(i), params.getValue(i)); 
+    paramLib.setValue(params.getLabel(i), params.getValue(i));
   }
 }
 //-----------------------------------------------------------------------------

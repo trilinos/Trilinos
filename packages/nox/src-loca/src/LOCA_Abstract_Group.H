@@ -82,7 +82,7 @@ namespace LOCA {
 //        * \brief Constructor with parameter list 
 //        * (for LOCA::Bifurcation::TPBord::SingularSolveGroup).
 //        */
-//       Group(NOX::Parameter::List& params,
+//       Group(Teuchos::ParameterList& params,
 // 	    const DerivUtils& deriv = LOCA::DerivUtils());
  
       //! Copy constructor
@@ -105,7 +105,7 @@ namespace LOCA {
        * NOX::Abstract::Group::NotDefined.
        */
       virtual NOX::Abstract::Group::ReturnType
-      applyShiftedMatrixInverse(NOX::Parameter::List& params, 
+      applyShiftedMatrixInverse(Teuchos::ParameterList& params, 
 				const NOX::Abstract::Vector& input,
                                 NOX::Abstract::Vector& result,
                                 double shift);
@@ -123,7 +123,7 @@ namespace LOCA {
        * NOX::Abstract::Group::NotDefined.
        */
  //      virtual NOX::Abstract::Group::ReturnType
-//       applyComplexInverse(NOX::Parameter::List& params,
+//       applyComplexInverse(Teuchos::ParameterList& params,
 // 			  const NOX::Abstract::Vector& input_real,
 // 			  const NOX::Abstract::Vector& input_imag,
 // 			  double frequency,

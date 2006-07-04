@@ -36,10 +36,8 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 // forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -109,12 +107,12 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
       create(
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
 
       //! Return strategy name given by \c bifurcationParams
       string 
-      strategyName(NOX::Parameter::List& bifurcationParams) const;
+      strategyName(Teuchos::ParameterList& bifurcationParams) const;
 
     private:
 

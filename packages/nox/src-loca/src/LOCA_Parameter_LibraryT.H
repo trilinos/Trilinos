@@ -38,7 +38,7 @@
 
 template <class ValueType>
 void
-LOCA::Parameter::Library::setParameterValue(const string& name, 
+LOCA::Parameter::Library::setValue(const string& name, 
 					    const ValueType& value) {
   // Get entry 
   LOCA::Parameter::Entry<ValueType>& entry = getEntry<ValueType>(name);
@@ -49,7 +49,7 @@ LOCA::Parameter::Library::setParameterValue(const string& name,
 
 template <class ValueType>
 ValueType
-LOCA::Parameter::Library::getParameterValue(const string& name) const {
+LOCA::Parameter::Library::getValue(const string& name) const {
 
   // Get entry 
   const LOCA::Parameter::Entry<ValueType>& entry = getEntry<ValueType>(name);

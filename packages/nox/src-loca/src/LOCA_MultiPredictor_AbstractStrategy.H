@@ -35,7 +35,7 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 
-#include "NOX_Abstract_Group.H"  // for ReturnType, Parameter::List
+#include "NOX_Abstract_Group.H"  // for ReturnType, Teuchos::ParameterList
 
 // Forward declarations
 namespace LOCA {
@@ -70,7 +70,7 @@ namespace LOCA {
      *   Derived(
      *   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
      *   const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams);
      *   ...
      * };
      * \endcode

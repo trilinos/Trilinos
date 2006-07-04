@@ -62,8 +62,8 @@ namespace LOCA {
       JacobianInverse(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
       //! Destructor
@@ -112,10 +112,10 @@ namespace LOCA {
       string myLabel;
 
       //! Stores parameters relating to the operator
-      Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams;
 
       //! Stores linear solver parameters
-      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
       //! Stores group representing Jacobian
       Teuchos::RefCountPtr<NOX::Abstract::Group> grp;

@@ -104,7 +104,7 @@ namespace LOCA {
        * Either A, F, or G may be zero by passing NULL.  
        */
       NOX::Abstract::Group::ReturnType  
-      solve(NOX::Parameter::List& params,
+      solve(Teuchos::ParameterList& params,
 	    const NOX::Abstract::Group& grp,
 	    const NOX::Abstract::MultiVector* A,
 	    const NOX::Abstract::MultiVector::DenseMatrix& C,
@@ -121,7 +121,7 @@ namespace LOCA {
        * Either A, F, or G may be zero by passing NULL.  
        */
       NOX::Abstract::Group::ReturnType  
-      solveTranspose(NOX::Parameter::List& params,
+      solveTranspose(Teuchos::ParameterList& params,
 		     const LOCA::Abstract::TransposeSolveGroup& grp,
 		     const NOX::Abstract::MultiVector* A,
 		     const NOX::Abstract::MultiVector::DenseMatrix& C,

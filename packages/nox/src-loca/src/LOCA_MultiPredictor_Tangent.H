@@ -68,8 +68,8 @@ namespace LOCA {
        * solve to compute tangent vectors \f$v\f$.
        */
       Tangent(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams,
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~Tangent();
@@ -127,7 +127,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Stores linear solver parameters
-      Teuchos::RefCountPtr<NOX::Parameter::List> linSolverParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> linSolverParams;
 
       //! Stores derivative of residual w.r.t. parameters
       Teuchos::RefCountPtr<NOX::Abstract::MultiVector> fdfdp;

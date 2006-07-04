@@ -63,7 +63,7 @@ LOCAData::LOCAData(
      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& top_params,
      const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
-     const Teuchos::RefCountPtr<NOX::Parameter::List>& par,
+     const Teuchos::RefCountPtr<Teuchos::ParameterList>& par,
      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
      const Teuchos::RefCountPtr< list<ParamData> >& conParamData) :
   globalData(global_data),
@@ -82,13 +82,13 @@ LOCAData::LOCAData(
   minRadius(0.0),
   solutionMax(0.0)
 {
-  Teuchos::RefCountPtr<NOX::Parameter::List> stepperList = 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> stepperList = 
     topParams->getSublist("Stepper");
   maxNonlinearIterations = 
-    static_cast<double>(stepperList->getParameter("Max Nonlinear Iterations", 
+    static_cast<double>(stepperList->get("Max Nonlinear Iterations", 
 						 15));
-  aggressiveness = stepperList->getParameter("Aggressiveness", 0.0);
-  solutionMax = stepperList->getParameter("Max Solution Component", 1.0e16);
+  aggressiveness = stepperList->get("Aggressiveness", 0.0);
+  solutionMax = stepperList->get("Max Solution Component", 1.0e16);
 }
 
 MFImplicitMF MFIMFCreateLOCA(LOCAData* data)

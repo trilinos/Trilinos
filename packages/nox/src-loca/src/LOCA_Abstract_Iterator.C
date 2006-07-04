@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 #include "LOCA_Abstract_Iterator.H"    // class definition
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 LOCA::Abstract::Iterator::Iterator() :
   stepNumber(0),
@@ -41,7 +41,7 @@ LOCA::Abstract::Iterator::Iterator() :
 {
 }
 
-LOCA::Abstract::Iterator::Iterator(NOX::Parameter::List& p) :
+LOCA::Abstract::Iterator::Iterator(Teuchos::ParameterList& p) :
   stepNumber(0),
   numFailedSteps(0),
   numTotalSteps(0),
@@ -62,14 +62,14 @@ LOCA::Abstract::Iterator::Iterator(const LOCA::Abstract::Iterator& it) :
 LOCA::Abstract::Iterator::~Iterator() {}
 
 bool 
-LOCA::Abstract::Iterator::resetIterator(NOX::Parameter::List& p) 
+LOCA::Abstract::Iterator::resetIterator(Teuchos::ParameterList& p) 
 {
   stepNumber = 0;
   numFailedSteps = 0;
   numTotalSteps = 0;
   iteratorStatus = LOCA::Abstract::Iterator::NotFinished;
 
-  maxSteps = p.getParameter("Max Steps",100);
+  maxSteps = p.get("Max Steps",100);
   
   return true;
 }

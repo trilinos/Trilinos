@@ -92,7 +92,7 @@ namespace LOCA {
 	 * \brief Constructor with initial data passed through parameter lists.
 	 */
 	ExtendedGroup(LOCA::Bifurcation::HopfBord::AbstractGroup& g, 
-		      NOX::Parameter::List& bifParamList);
+		      Teuchos::ParameterList& bifParamList);
   
 	//! Constructor to set the base group, bifurcation paramter, length vector.
 	ExtendedGroup(LOCA::Bifurcation::HopfBord::AbstractGroup& g,
@@ -189,7 +189,7 @@ namespace LOCA {
 
 	//! Compute %Newton direction using bordering algorithm
 	virtual NOX::Abstract::Group::ReturnType 
-	computeNewton(NOX::Parameter::List& params);
+	computeNewton(Teuchos::ParameterList& params);
 
 	//@}
 
@@ -209,13 +209,13 @@ namespace LOCA {
 
 	//! Applies the inverse of the extended Jacobian matrix using the bordering algorithm
 	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianInverse(NOX::Parameter::List& params, 
+	applyJacobianInverse(Teuchos::ParameterList& params, 
 			     const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
 
 	//! Applies the inverse of the extended Jacobian matrix using the bordering algorithm for multiple right-hand sides
 	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianInverseMulti(NOX::Parameter::List& params, 
+	applyJacobianInverseMulti(Teuchos::ParameterList& params, 
 				  const NOX::Abstract::Vector* const* inputs, 
 				  NOX::Abstract::Vector** results, int nVecs) const;
 	//@}

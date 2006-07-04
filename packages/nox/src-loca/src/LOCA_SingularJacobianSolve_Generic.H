@@ -33,7 +33,7 @@
 #ifndef LOCA_SINGULARJACOBIANSOLVE_GENERIC_H
 #define LOCA_SINGULARJACOBIANSOLVE_GENERIC_H
 
-#include "NOX_Abstract_Group.H"  // for ReturnType, Parameter::List
+#include "NOX_Abstract_Group.H"  // for ReturnType, Teuchos::ParameterList
 
 // Forward declarations
 namespace LOCA {
@@ -77,7 +77,7 @@ namespace LOCA {
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params) = 0;
+      reset(Teuchos::ParameterList& params) = 0;
   
       /*! 
 	\brief Compute solution to singular system.
@@ -86,7 +86,7 @@ namespace LOCA {
 	parameters.
       */
       virtual NOX::Abstract::Group::ReturnType 
-      compute(NOX::Parameter::List& params,
+      compute(Teuchos::ParameterList& params,
 	      LOCA::Continuation::AbstractGroup& grp,
 	      const NOX::Abstract::Vector& input,
 	      const NOX::Abstract::Vector& approxNullVec,
@@ -100,7 +100,7 @@ namespace LOCA {
 	parameters.
       */
       virtual NOX::Abstract::Group::ReturnType 
-      computeMulti(NOX::Parameter::List& params,
+      computeMulti(Teuchos::ParameterList& params,
 		   LOCA::Continuation::AbstractGroup& grp,
 		   const NOX::Abstract::Vector*const* inputs,
 		   const NOX::Abstract::Vector& approxNullVec,

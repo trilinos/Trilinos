@@ -86,7 +86,7 @@ namespace LOCA {
      *   Derived(
      *   const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
      *   const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
      *   ...
      * };
      * \endcode
@@ -213,7 +213,7 @@ namespace LOCA {
        * The \em params argument is the linear solver parameters. 
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverse(NOX::Parameter::List& params,
+      applyInverse(Teuchos::ParameterList& params,
 		   const NOX::Abstract::MultiVector* F,
 		   const NOX::Abstract::MultiVector::DenseMatrix* G,
 		   NOX::Abstract::MultiVector& X,
@@ -226,7 +226,7 @@ namespace LOCA {
        * The \em params argument is the linear solver parameters. 
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverseTranspose(NOX::Parameter::List& params,
+      applyInverseTranspose(Teuchos::ParameterList& params,
 			    const NOX::Abstract::MultiVector* F,
 			    const NOX::Abstract::MultiVector::DenseMatrix* G,
 			    NOX::Abstract::MultiVector& X,

@@ -36,7 +36,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 #include "LOCA_Abstract_Iterator.H"    // base class
-#include "NOX_Parameter_List.H"	       // class data element
+#include "Teuchos_ParameterList.hpp"	       // class data element
 #include "NOX_Solver_Manager.H"	       // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
@@ -86,7 +86,7 @@ namespace LOCA {
     NewStepper(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
 	       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+	       const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
 
     //! Destructor
     virtual ~NewStepper();
@@ -96,7 +96,7 @@ namespace LOCA {
     reset(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	  const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
 	  const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& t,
-	  const Teuchos::RefCountPtr<NOX::Parameter::List>& p);
+	  const Teuchos::RefCountPtr<Teuchos::ParameterList>& p);
 
     //! Return the current solution group.
     virtual Teuchos::RefCountPtr<const LOCA::MultiContinuation::AbstractGroup> 
@@ -112,8 +112,8 @@ namespace LOCA {
     getBifurcationGroup() const;
 
     //! Return the output parameters from the stepper algorithm.
-    virtual Teuchos::RefCountPtr<const NOX::Parameter::List> 
-    getParameterList() const;
+    virtual Teuchos::RefCountPtr<const Teuchos::ParameterList> 
+    getList() const;
 
     /*! @brief Return the current nonlinear solver pointer.
      *
@@ -210,10 +210,10 @@ namespace LOCA {
     Teuchos::RefCountPtr<NOX::StatusTest::Generic> statusTestPtr;
 
     //! Pointer to parameter list passed in constructor/reset method
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramListPtr;
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramListPtr;
 
     //! Pointer to stepper parameters
-    Teuchos::RefCountPtr<NOX::Parameter::List> stepperList;
+    Teuchos::RefCountPtr<Teuchos::ParameterList> stepperList;
 
     //! Solver (a.k.a corrector)
     Teuchos::RefCountPtr<NOX::Solver::Manager> solverPtr;

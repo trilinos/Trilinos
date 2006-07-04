@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Parameter_SublistParser.H"
@@ -56,13 +56,13 @@ LOCA::MultiPredictor::Factory::~Factory()
 Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::MultiPredictor::Factory::create(
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams)
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams)
 {
   string methodName = "LOCA::MultiPredictor::Factory::create()";
   Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> strategy;
 
   // Get solver sublist
-  Teuchos::RefCountPtr<NOX::Parameter::List> solverParams = 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams = 
     topParams->getSublist("Linear Solver");
 
   // Get name of strategy
@@ -95,12 +95,12 @@ LOCA::MultiPredictor::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = predictorParams->getParameter("User-Defined Name",
+    string userDefinedName = predictorParams->get("User-Defined Name",
 							   "???");
     if ((*predictorParams).INVALID_TEMPLATE_QUALIFIER
-	  isParameterRcp<LOCA::MultiPredictor::AbstractStrategy>(userDefinedName))
+	isType< Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName))
       strategy = (*predictorParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::MultiPredictor::AbstractStrategy>(userDefinedName);
+	get< Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,
@@ -118,7 +118,7 @@ LOCA::MultiPredictor::Factory::create(
 
 const string&
 LOCA::MultiPredictor::Factory::strategyName(
-				  NOX::Parameter::List& predictorParams) const
+				  Teuchos::ParameterList& predictorParams) const
 {
-  return predictorParams.getParameter("Method", "Constant");
+  return predictorParams.get("Method", "Constant");
 }

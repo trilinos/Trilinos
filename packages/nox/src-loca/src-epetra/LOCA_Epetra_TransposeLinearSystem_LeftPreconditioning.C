@@ -44,7 +44,7 @@
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 LeftPreconditioning(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	     const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys_) :
   globalData(global_data),
   linsys(linsys_),
@@ -68,7 +68,7 @@ LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 
 bool
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
-applyJacobianTransposeInverse(NOX::Parameter::List &params, 
+applyJacobianTransposeInverse(Teuchos::ParameterList &params, 
 			      const NOX::Epetra::Vector &input, 
 			      NOX::Epetra::Vector &result)
 {  
@@ -113,7 +113,7 @@ computeJacobianTranspose(const NOX::Epetra::Vector& x)
 bool
 LOCA::Epetra::TransposeLinearSystem::LeftPreconditioning::
 createTransposePreconditioner(const NOX::Epetra::Vector& x, 
-			      NOX::Parameter::List& p)
+			      Teuchos::ParameterList& p)
 {
   // Compute the preconditioner and set it to use the transpose
   bool res1 = linsys->destroyPreconditioner();

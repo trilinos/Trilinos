@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_MultiPredictor_Restart.H"
 #include "LOCA_GlobalData.H"
 #include "NOX_Utils.H"
@@ -40,7 +40,7 @@
 
 LOCA::MultiPredictor::Restart::Restart(
 	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams) :
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor()
 {
@@ -52,15 +52,15 @@ LOCA::MultiPredictor::Restart::Restart(
     globalData->locaErrorCheck->throwError(func, name + " is not set!");
 
   if ((*predParams).INVALID_TEMPLATE_QUALIFIER
-        isParameterRcp<LOCA::MultiContinuation::ExtendedMultiVector>(name)) 
+      isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> >(name)) 
     predictor = (*predParams).INVALID_TEMPLATE_QUALIFIER
-      getRcpParameter<LOCA::MultiContinuation::ExtendedMultiVector>(name);
+      get< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedMultiVector> >(name);
 
   else if ((*predParams).INVALID_TEMPLATE_QUALIFIER
-	     isParameterRcp<LOCA::MultiContinuation::ExtendedVector>(name)) {
+	   isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> >(name)) {
     Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> v =
       (*predParams).INVALID_TEMPLATE_QUALIFIER
-        getRcpParameter<LOCA::MultiContinuation::ExtendedVector>(name);
+      get< Teuchos::RefCountPtr<LOCA::MultiContinuation::ExtendedVector> >(name);
     predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(v->createMultiVector(1, NOX::DeepCopy));
   }
   else

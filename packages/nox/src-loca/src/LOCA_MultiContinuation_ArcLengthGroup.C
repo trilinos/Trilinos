@@ -35,14 +35,14 @@
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
 #include "LOCA_MultiPredictor_AbstractStrategy.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "NOX_Utils.H"
 
 LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& continuationParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& continuationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)
@@ -62,16 +62,16 @@ LOCA::MultiContinuation::ArcLengthGroup::ArcLengthGroup(
   LOCA::MultiContinuation::ExtendedGroup::setConstraints(cons);
 
   double theta0 = 
-    continuationParams->getParameter("Initial Scale Factor", 1.0);
+    continuationParams->get("Initial Scale Factor", 1.0);
   doArcLengthScaling = 
-    continuationParams->getParameter("Enable Arc Length Scaling",true); 
+    continuationParams->get("Enable Arc Length Scaling",true); 
   gGoal = 
-    continuationParams->getParameter("Goal Arc Length Parameter Contribution",
+    continuationParams->get("Goal Arc Length Parameter Contribution",
 				     0.5);
   gMax = 
-    continuationParams->getParameter("Max Arc Length Parameter Contribution", 
+    continuationParams->get("Max Arc Length Parameter Contribution", 
 				     0.8);
-  thetaMin = continuationParams->getParameter("Min Scale Factor", 1.0e-3);
+  thetaMin = continuationParams->get("Min Scale Factor", 1.0e-3);
   
   for (int i=0; i<numParams; i++)
     theta[i] = theta0;

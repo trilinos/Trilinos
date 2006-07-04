@@ -37,10 +37,10 @@
 
 // forward declarations
 class Epetra_Operator;
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
-  namespace Parameter {
-    class List;
-  }
   namespace Epetra {
     class LinearSystem;
   }
@@ -96,11 +96,11 @@ namespace LOCA {
 	 */
 	Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>
 	create(
-	    const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys);
 
 	//! Return strategy name given by \c solverParams
-	const string& strategyName(NOX::Parameter::List& solverParams) const;
+	const string& strategyName(Teuchos::ParameterList& solverParams) const;
 
       private:
 

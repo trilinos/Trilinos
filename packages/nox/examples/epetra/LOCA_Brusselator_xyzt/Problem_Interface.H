@@ -80,7 +80,7 @@ public:
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.  (NOX::Epetra::Interface::Preconditioner)
   bool computePreconditioner(const Epetra_Vector& x, 
 			     Epetra_Operator& Prec,
-			     NOX::Parameter::List* p);
+			     Teuchos::ParameterList* p);
 
   //! Compute an explicit MassMatrix (LOCA::Epetra::Interface::MassMatrix)
   bool computeMassMatrix(const Epetra_Vector& x);

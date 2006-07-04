@@ -83,7 +83,7 @@ namespace LOCA {
        * recomputed.
        */
       virtual NOX::Abstract::Group::ReturnType
-      applyShiftedMatrixInverse(NOX::Parameter::List& params, 
+      applyShiftedMatrixInverse(Teuchos::ParameterList& params, 
 				const NOX::Abstract::Vector& input,
                                 NOX::Abstract::Vector& result,
                                 double shift) = 0;

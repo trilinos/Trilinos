@@ -121,7 +121,7 @@ LOCA::Continuation::StatusTest::ParameterUpdateNorm::print(ostream& stream,
 
 
 double 
-LOCA::Continuation::StatusTest::ParameterUpdateNorm::getParameterUpdateNorm() const
+LOCA::Continuation::StatusTest::ParameterUpdateNorm::getUpdateNorm() const
 {
   return paramUpdateNorm;
 }   

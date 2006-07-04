@@ -34,7 +34,7 @@
 #define LOCA_SINGULARJACOBIANSOLVE_MANAGER_H
 
 #include "LOCA_SingularJacobianSolve_Generic.H"  // base class
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 namespace LOCA {
 
@@ -62,10 +62,10 @@ namespace LOCA {
     public:
 
       //! Constructor. 
-      Manager(NOX::Parameter::List& params);
+      Manager(Teuchos::ParameterList& params);
 
       //! Constructor. 
-      Manager(const NOX::Parameter::List& params = NOX::Parameter::List());
+      Manager(const Teuchos::ParameterList& params = Teuchos::ParameterList());
 
       //! Copy constructor
       Manager(const Manager& source);
@@ -86,11 +86,11 @@ namespace LOCA {
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params);
+      reset(Teuchos::ParameterList& params);
   
       //! Computes solution based on method parameter
       virtual NOX::Abstract::Group::ReturnType 
-      compute(NOX::Parameter::List& params,
+      compute(Teuchos::ParameterList& params,
 	      LOCA::Continuation::AbstractGroup& grp,
 	      const NOX::Abstract::Vector& input,
 	      const NOX::Abstract::Vector& approxNullVec,
@@ -99,7 +99,7 @@ namespace LOCA {
 
       //! Computes solution based on method parameter for multiple RHS
       virtual NOX::Abstract::Group::ReturnType 
-      computeMulti(NOX::Parameter::List& params,
+      computeMulti(Teuchos::ParameterList& params,
 		   LOCA::Continuation::AbstractGroup& grp,
 		   const NOX::Abstract::Vector*const* inputs,
 		   const NOX::Abstract::Vector& approxNullVec,

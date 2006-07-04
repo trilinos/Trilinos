@@ -50,10 +50,8 @@
 #include "LOCA_Pitchfork_MooreSpence_SolverFactory.H"
 
 // Forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -121,7 +119,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
     createPredictorStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams);
 
     //! Create continuation strategy
     /*!
@@ -133,7 +131,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
     createContinuationStrategy(
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
@@ -148,7 +146,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
     createBifurcationStrategy(
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp);
 
     //! Create step size control strategy
@@ -160,7 +158,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>
     createStepSizeStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams);
 
     //! Create bordered system solver strategy
     /*!
@@ -172,7 +170,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
     createBorderedSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
     //! Create eigensolver strategy
     /*!
@@ -183,7 +181,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
     createEigensolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
 
     //! Create eigenvalue sort strategy
     /*!
@@ -194,7 +192,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
     createEigenvalueSortStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
 
     //! Create strategy to save eigenvector/value data
     /*!
@@ -206,7 +204,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>
     createSaveEigenDataStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
 
     //! Create Anasazi operator strategy
     /*!
@@ -218,8 +216,8 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
     createAnasaziOperatorStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	 const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp);
 
     //! Create Moore-Spence turning point solver strategy
@@ -232,7 +230,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
     createMooreSpenceTurningPointSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
     //! Create Moore-Spence pitchfork solver strategy
     /*!
@@ -244,7 +242,7 @@ namespace LOCA {
     Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>
     createMooreSpencePitchforkSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
     //@}
 

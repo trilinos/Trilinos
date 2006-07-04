@@ -33,13 +33,13 @@
 #include "LOCA_Bifurcation_HopfBord_ExtendedGroup.H"
 #include "LOCA_Bifurcation_HopfBord_AbstractGroup.H" 
 #include "LOCA_Parameter_Vector.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
 
 LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
 			      LOCA::Bifurcation::HopfBord::AbstractGroup& g,
-			      NOX::Parameter::List& bifParamList)
+			      Teuchos::ParameterList& bifParamList)
   : grpPtr(&g),
     hopfXVec(g.getX(), g.getX(), g.getX(), 0.0, 0.0),
     hopfFVec(g.getX(), g.getX(), g.getX(), 0.0, 0.0),
@@ -62,7 +62,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
     LOCA::ErrorCheck::throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = bifParamList.getParameter("Bifurcation Parameter",
+  string bifParamName = bifParamList.get("Bifurcation Parameter",
 						  "None");
   const ParameterVector& p = grpPtr->getParams();
   bifParamId = p.getIndex(bifParamName);
@@ -92,11 +92,11 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::ExtendedGroup(
     LOCA::ErrorCheck::throwError(func,
 				 "\"Initial Frequency\" name is not set!");
   }
-  double frequency = bifParamList.getParameter("Initial Frequency",0.0);
+  double frequency = bifParamList.get("Initial Frequency",0.0);
 
-  bool perturbSoln = bifParamList.getParameter("Perturb Initial Solution", 
+  bool perturbSoln = bifParamList.get("Perturb Initial Solution", 
 					       false);
-  double perturbSize = bifParamList.getParameter("Relative Perturbation Size", 
+  double perturbSize = bifParamList.get("Relative Perturbation Size", 
 						 1.0e-3);
 
   hopfXVec.getRealEigenVec() = *realEigenVecPtr;
@@ -545,7 +545,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::computeGradient()
    
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::HopfBord::ExtendedGroup::computeNewton(
-						NOX::Parameter::List& params) 
+						Teuchos::ParameterList& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
@@ -697,7 +697,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverse(
-					 NOX::Parameter::List& params,
+					 Teuchos::ParameterList& params,
 					 const NOX::Abstract::Vector& input,
 					 NOX::Abstract::Vector& result) const 
 {
@@ -715,7 +715,7 @@ LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverse(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::HopfBord::ExtendedGroup::applyJacobianInverseMulti(
-			    NOX::Parameter::List& params,
+			    Teuchos::ParameterList& params,
 			    const NOX::Abstract::Vector* const* inputs,
 			    NOX::Abstract::Vector** results, int nVecs) const 
 {

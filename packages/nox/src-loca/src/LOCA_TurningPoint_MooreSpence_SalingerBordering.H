@@ -100,7 +100,7 @@ namespace LOCA {
 	SalingerBordering(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
 	//! Destructor
 	virtual ~SalingerBordering();
@@ -131,7 +131,7 @@ namespace LOCA {
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	solve(
-	   NOX::Parameter::List& params,
+	   Teuchos::ParameterList& params,
 	   const LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& input,
 	   LOCA::TurningPoint::MooreSpence::ExtendedMultiVector& result) const;
 
@@ -140,7 +140,7 @@ namespace LOCA {
 	//! Solves equations with contiguous arguments
 	NOX::Abstract::Group::ReturnType 
 	solveContiguous(
-	          NOX::Parameter::List& params,
+	          Teuchos::ParameterList& params,
 		  const NOX::Abstract::MultiVector& input_x,
 		  const NOX::Abstract::MultiVector& input_null,
 	          const NOX::Abstract::MultiVector::DenseMatrix& input_param,
@@ -162,7 +162,7 @@ namespace LOCA {
 	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 	
 	//! Solver parameters
-	Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+	Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
 	//! Underlying group
 	Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup> group;

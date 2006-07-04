@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 #include "LOCA_LAPACK_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
@@ -57,7 +57,7 @@ bool
 LOCA::LAPACK::Factory::createBorderedSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
        Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy)
 {
   // Instantiate DGGEV strategy if requested
@@ -76,7 +76,7 @@ bool
 LOCA::LAPACK::Factory::createEigensolverStrategy(
          const string& strategyName,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
 	 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>& strategy)
 {
   // Instantiate DGGEV strategy if requested

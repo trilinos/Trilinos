@@ -129,7 +129,7 @@ namespace LOCA {
 	Constraint(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
 	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
 	 bool is_symmetric,
 	 const NOX::Abstract::Vector& a,
@@ -256,7 +256,7 @@ namespace LOCA {
 	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<NOX::Parameter::List> turningPointParams;
+	Teuchos::RefCountPtr<Teuchos::ParameterList> turningPointParams;
 
 	//! Pointer to base group that defines \f$F\f$
 	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> grpPtr;

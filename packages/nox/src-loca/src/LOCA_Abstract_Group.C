@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Abstract_Group.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
@@ -50,7 +50,7 @@ LOCA::Abstract::Group::Group(
 {
 }
 
-// LOCA::Abstract::Group::Group(NOX::Parameter::List& params, 
+// LOCA::Abstract::Group::Group(Teuchos::ParameterList& params, 
 // 			     const LOCA::DerivUtils& d)
 //   : LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup(d)
 // {
@@ -76,7 +76,7 @@ LOCA::Abstract::Group::~Group()
 
 NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::applyShiftedMatrixInverse(
-					   NOX::Parameter::List& params, 
+					   Teuchos::ParameterList& params, 
 					   const NOX::Abstract::Vector& input,
 					   NOX::Abstract::Vector& result,
 					   double shift)
@@ -89,7 +89,7 @@ LOCA::Abstract::Group::applyShiftedMatrixInverse(
 
 // NOX::Abstract::Group::ReturnType
 // LOCA::Abstract::Group::applyComplexInverse(
-// 			       NOX::Parameter::List& params,
+// 			       Teuchos::ParameterList& params,
 // 			       const NOX::Abstract::Vector& input_real,
 // 			       const NOX::Abstract::Vector& input_imag,
 // 			       double frequency,

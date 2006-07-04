@@ -107,7 +107,7 @@ namespace LOCA {
        * Either F, or G may be zero by passing NULL.
        */
       NOX::Abstract::Group::ReturnType  
-      solve(NOX::Parameter::List& params,
+      solve(Teuchos::ParameterList& params,
 	    const NOX::Abstract::Group& grp,
 	    const LOCA::MultiContinuation::ConstraintInterface& B,
 	    const NOX::Abstract::MultiVector::DenseMatrix& C,
@@ -124,7 +124,7 @@ namespace LOCA {
        * Either F, or G may be zero by passing NULL.  
        */
       NOX::Abstract::Group::ReturnType  
-      solve(NOX::Parameter::List& params,
+      solve(Teuchos::ParameterList& params,
 	    const NOX::Abstract::Group& grp,
 	    const NOX::Abstract::MultiVector& B,
 	    const NOX::Abstract::MultiVector::DenseMatrix& C,
@@ -142,7 +142,7 @@ namespace LOCA {
        * Either F, or G may be zero by passing NULL.  
        */
       NOX::Abstract::Group::ReturnType  
-      solveTranspose(NOX::Parameter::List& params,
+      solveTranspose(Teuchos::ParameterList& params,
 		     const LOCA::Abstract::TransposeSolveGroup& grp,
 		     const LOCA::MultiContinuation::ConstraintInterface& B,
 		     const NOX::Abstract::MultiVector::DenseMatrix& C,
@@ -160,7 +160,7 @@ namespace LOCA {
        * Either F, or G may be zero by passing NULL.  
        */
       NOX::Abstract::Group::ReturnType  
-      solveTranspose(NOX::Parameter::List& params,
+      solveTranspose(Teuchos::ParameterList& params,
 		     const LOCA::Abstract::TransposeSolveGroup& grp,
 		     const NOX::Abstract::MultiVector& B,
 		     const NOX::Abstract::MultiVector::DenseMatrix& C,

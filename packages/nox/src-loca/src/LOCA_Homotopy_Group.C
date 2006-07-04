@@ -31,13 +31,13 @@
 //@HEADER
 
 #include "LOCA_Homotopy_Group.H"      // class definition
-#include "NOX_Parameter_List.H"      // data member
+#include "Teuchos_ParameterList.hpp"      // data member
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Homotopy::Group::Group(
-		 NOX::Parameter::List& locaSublist,
+		 Teuchos::ParameterList& locaSublist,
 		 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
 		 double scalarRandom,
 		 double scalarInitialGuess) :
@@ -74,7 +74,7 @@ LOCA::Homotopy::Group::Group(
 }
 
 LOCA::Homotopy::Group::Group(
-		 NOX::Parameter::List& locaSublist,
+		 Teuchos::ParameterList& locaSublist,
 		 const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
 		 const NOX::Abstract::Vector& randomVector) :
   grpPtr(g),
@@ -362,7 +362,7 @@ LOCA::Homotopy::Group::computeGradient()
 }
    
 NOX::Abstract::Group::ReturnType
-LOCA::Homotopy::Group::computeNewton(NOX::Parameter::List& params) 
+LOCA::Homotopy::Group::computeNewton(Teuchos::ParameterList& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
@@ -437,7 +437,7 @@ LOCA::Homotopy::Group::applyJacobianTranspose(
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Homotopy::Group::applyJacobianInverse(NOX::Parameter::List& params,
+LOCA::Homotopy::Group::applyJacobianInverse(Teuchos::ParameterList& params,
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -545,30 +545,30 @@ LOCA::Homotopy::Group::resetIsValidFlags()
 }
 
 void
-LOCA::Homotopy::Group::setStepperParameters(NOX::Parameter::List& params)
+LOCA::Homotopy::Group::setStepperParameters(Teuchos::ParameterList& params)
 {
   
   // Create the stepper sublist
-  NOX::Parameter::List& stepperList = params.sublist("Stepper");
-  stepperList.setParameter("Continuation Method", "Natural");
-  stepperList.setParameter("Continuation Parameter", conParamLabel);
-  stepperList.setParameter("Initial Value", 0.0);
-  stepperList.setParameter("Max Value", 1.0);
-  stepperList.setParameter("Min Value", -1.0);
-  stepperList.setParameter("Max Steps", 50);
+  Teuchos::ParameterList& stepperList = params.sublist("Stepper");
+  stepperList.set("Continuation Method", "Natural");
+  stepperList.set("Continuation Parameter", conParamLabel);
+  stepperList.set("Initial Value", 0.0);
+  stepperList.set("Max Value", 1.0);
+  stepperList.set("Min Value", -1.0);
+  stepperList.set("Max Steps", 50);
 
   // Create predictor sublist
-  NOX::Parameter::List& predictorList = params.sublist("Predictor");
-  predictorList.setParameter("Method", "Constant");
+  Teuchos::ParameterList& predictorList = params.sublist("Predictor");
+  predictorList.set("Method", "Constant");
 
   // Create step size sublist
-  NOX::Parameter::List& stepSizeList = params.sublist("Step Size");
-  //stepSizeList.setParameter("Method", "Constant");
-  stepSizeList.setParameter("Method", "Adaptive");
-  stepSizeList.setParameter("Initial Step Size", 0.1);
-  stepSizeList.setParameter("Min Step Size", 1.0e-2);
-  stepSizeList.setParameter("Max Step Size", 1.0);
-  stepSizeList.setParameter("Aggressiveness", 0.5);
+  Teuchos::ParameterList& stepSizeList = params.sublist("Step Size");
+  //stepSizeList.set("Method", "Constant");
+  stepSizeList.set("Method", "Adaptive");
+  stepSizeList.set("Initial Step Size", 0.1);
+  stepSizeList.set("Min Step Size", 1.0e-2);
+  stepSizeList.set("Max Step Size", 1.0);
+  stepSizeList.set("Aggressiveness", 0.5);
   return;
 }
 

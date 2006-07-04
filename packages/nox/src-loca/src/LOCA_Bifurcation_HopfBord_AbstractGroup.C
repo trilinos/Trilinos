@@ -30,13 +30,13 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
 #include "LOCA_ErrorCheck.H"
 
 NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::HopfBord::AbstractGroup::applyComplexInverseMulti(
-			     NOX::Parameter::List& params,
+			     Teuchos::ParameterList& params,
 			     const NOX::Abstract::Vector* const* inputs_real,
 			     const NOX::Abstract::Vector* const* inputs_imag,
 			     double frequency,

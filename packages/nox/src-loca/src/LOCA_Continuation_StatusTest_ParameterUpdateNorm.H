@@ -106,7 +106,7 @@ namespace LOCA {
 	//@{
 
 	//! Returns the value of weighted parameter update norm.
-	double getParameterUpdateNorm() const;
+	double getUpdateNorm() const;
 
 	//! Returns the realative tolerance set in the constructor.
 	double getRTOL() const;

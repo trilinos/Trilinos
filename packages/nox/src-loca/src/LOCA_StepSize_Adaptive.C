@@ -40,18 +40,18 @@
 LOCA::StepSize::Adaptive::Adaptive(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams) :
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams) :
   LOCA::StepSize::Constant(global_data, topParams, stepsizeParams),
   agrValue(0.0),
   maxNonlinearSteps(0.0)
 {
-  agrValue = stepsizeParams->getParameter("Aggressiveness", 0.0);
+  agrValue = stepsizeParams->get("Aggressiveness", 0.0);
 
   // Get maximum number of nonlinear iterations from stepper parameters
-  Teuchos::RefCountPtr<NOX::Parameter::List> p = 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> p = 
     topParams->getSublist("Stepper");
   maxNonlinearSteps = 
-    static_cast<double>(p->getParameter("Max Nonlinear Iterations", 15));
+    static_cast<double>(p->get("Max Nonlinear Iterations", 15));
 }
 
 LOCA::StepSize::Adaptive::~Adaptive()

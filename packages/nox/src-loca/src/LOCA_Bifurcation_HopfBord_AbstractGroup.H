@@ -95,7 +95,7 @@ namespace LOCA {
 	 * The argument \b frequency stores \f$\omega\f$.
 	 */
 	virtual NOX::Abstract::Group::ReturnType
-	applyComplexInverse(NOX::Parameter::List& params,
+	applyComplexInverse(Teuchos::ParameterList& params,
 			    const NOX::Abstract::Vector& input_real,
 			    const NOX::Abstract::Vector& input_imag,
 			    double frequency,
@@ -193,7 +193,7 @@ namespace LOCA {
 	 */
 	virtual NOX::Abstract::Group::ReturnType
 	applyComplexInverseMulti(
-			     NOX::Parameter::List& params,
+			     Teuchos::ParameterList& params,
 			     const NOX::Abstract::Vector* const* inputs_real,
 			     const NOX::Abstract::Vector* const* inputs_imag,
 			     double frequency,

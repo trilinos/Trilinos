@@ -33,7 +33,7 @@
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_SingularJacobianSolve_Default.H"
 
-LOCA::SingularJacobianSolve::Default::Default(NOX::Parameter::List& params)
+LOCA::SingularJacobianSolve::Default::Default(Teuchos::ParameterList& params)
 {
   reset(params);
 }
@@ -68,14 +68,14 @@ LOCA::SingularJacobianSolve::Default::operator=(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::SingularJacobianSolve::Default::reset(NOX::Parameter::List& params) 
+LOCA::SingularJacobianSolve::Default::reset(Teuchos::ParameterList& params) 
 {
   return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType 
 LOCA::SingularJacobianSolve::Default::compute(
-				NOX::Parameter::List& params,
+				Teuchos::ParameterList& params,
 				LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& input,
 			        const NOX::Abstract::Vector& approxNullVec,
@@ -87,7 +87,7 @@ LOCA::SingularJacobianSolve::Default::compute(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::SingularJacobianSolve::Default::computeMulti(
-				NOX::Parameter::List& params,
+				Teuchos::ParameterList& params,
 				LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector*const* inputs,
 				const NOX::Abstract::Vector& approxNullVec,

@@ -43,7 +43,7 @@
 LOCA::BorderedSolver::Bordering::Bordering(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& slvrParams): 
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   grp(),
@@ -176,7 +176,7 @@ LOCA::BorderedSolver::Bordering::applyTranspose(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Bordering::applyInverse(
-			      NOX::Parameter::List& params,
+			      Teuchos::ParameterList& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
 			      NOX::Abstract::MultiVector& X,
@@ -239,7 +239,7 @@ LOCA::BorderedSolver::Bordering::applyInverse(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Bordering::applyInverseTranspose(
-			      NOX::Parameter::List& params,
+			      Teuchos::ParameterList& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
 			      NOX::Abstract::MultiVector& X,
@@ -328,7 +328,7 @@ LOCA::BorderedSolver::Bordering::applyInverseTranspose(
 // C,G=0 are taken into account
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Bordering::solveFZero(
-		       NOX::Parameter::List& params,
+		       Teuchos::ParameterList& params,
 		       const NOX::Abstract::MultiVector* AA,
 		       const LOCA::MultiContinuation::ConstraintInterface* BB,
 		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -392,7 +392,7 @@ LOCA::BorderedSolver::Bordering::solveFZero(
 // It also assumes F and A are in a contiguous multivec, stored in F
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Bordering::solveContiguous(
-		       NOX::Parameter::List& params,
+		       Teuchos::ParameterList& params,
 		       const NOX::Abstract::MultiVector* AA,
 		       const LOCA::MultiContinuation::ConstraintInterface* BB,
 		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -460,7 +460,7 @@ LOCA::BorderedSolver::Bordering::solveContiguous(
 // C,G=0 are taken into account
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Bordering::solveFZeroTrans(
-		       NOX::Parameter::List& params,
+		       Teuchos::ParameterList& params,
 		       const NOX::Abstract::MultiVector* AA,
 		       const NOX::Abstract::MultiVector* BB,
 		       const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -526,7 +526,7 @@ LOCA::BorderedSolver::Bordering::solveFZeroTrans(
 // It also assumes F and B are in a contiguous multivec, stored in F
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Bordering::solveContiguousTrans(
-		       NOX::Parameter::List& params,
+		       Teuchos::ParameterList& params,
 		       const NOX::Abstract::MultiVector* AA,
 		       const NOX::Abstract::MultiVector* BB,
 		       const NOX::Abstract::MultiVector::DenseMatrix* CC,

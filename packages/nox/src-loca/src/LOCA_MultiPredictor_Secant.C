@@ -41,7 +41,7 @@
 LOCA::MultiPredictor::Secant::Secant(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams) :
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   firstStepPredictor(),
   isFirstStep(true),
@@ -50,7 +50,7 @@ LOCA::MultiPredictor::Secant::Secant(
   secant(),
   initialized(false)
 {
-  Teuchos::RefCountPtr<NOX::Parameter::List> firstStepList = 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> firstStepList = 
     topParams->getSublist("First Step Predictor");
   firstStepPredictor = globalData->locaFactory->createPredictorStrategy(
 							       topParams,

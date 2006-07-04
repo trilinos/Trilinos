@@ -33,7 +33,7 @@
 #include "LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Epetra_LinearSystem.H"
 #include "NOX_Epetra_Scaling.H"
 #include "Epetra_RowMatrix.h"
@@ -41,7 +41,7 @@
 LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::
 ExplicitTranspose(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	     const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys_) :
   globalData(global_data),
   linsys(linsys_),
@@ -53,7 +53,7 @@ ExplicitTranspose(
   // Get transpose scaling object
   if (solverParams->isParameter("Transpose Scaling"))
     scaling_trans = (*solverParams).INVALID_TEMPLATE_QUALIFIER 
-      getRcpParameter<NOX::Epetra::Scaling>("Transpose Scaling");
+      get< Teuchos::RefCountPtr<NOX::Epetra::Scaling> >("Transpose Scaling");
 }
 
 LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::
@@ -63,7 +63,7 @@ LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::
 
 bool
 LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::
-applyJacobianTransposeInverse(NOX::Parameter::List &params, 
+applyJacobianTransposeInverse(Teuchos::ParameterList &params, 
 			      const NOX::Epetra::Vector &input, 
 			      NOX::Epetra::Vector &result)
 {  
@@ -117,7 +117,7 @@ computeJacobianTranspose(const NOX::Epetra::Vector& x)
 bool
 LOCA::Epetra::TransposeLinearSystem::ExplicitTranspose::
 createTransposePreconditioner(const NOX::Epetra::Vector& x, 
-			      NOX::Parameter::List& p)
+			      Teuchos::ParameterList& p)
 {
   // We're done if the linear system doesn't define a preconditioner
   if (!linsys->hasPreconditioner())

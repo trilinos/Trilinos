@@ -78,7 +78,7 @@ public:
   Epetra_CrsMatrix& getJacobian();
 
   // Set a bifurcation parameter in the application physics
-  bool setParameter(string label, double value);
+  bool set(string label, double value);
 
 private:
 

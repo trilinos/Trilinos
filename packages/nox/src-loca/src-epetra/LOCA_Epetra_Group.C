@@ -33,7 +33,7 @@
 #include "LOCA_Epetra_Group.H"	          // class definition
 
 #include "LOCA_Epetra_Interface_Required.H"        // class data members
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
@@ -46,7 +46,7 @@
 
 LOCA::Epetra::Group::Group(
 	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    NOX::Parameter::List& printingParams, 
+	    Teuchos::ParameterList& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p) :
@@ -63,7 +63,7 @@ LOCA::Epetra::Group::Group(
 
 LOCA::Epetra::Group::Group(
 	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    NOX::Parameter::List& printingParams, 
+	    Teuchos::ParameterList& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
 	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
@@ -81,7 +81,7 @@ LOCA::Epetra::Group::Group(
 
 LOCA::Epetra::Group::Group(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	NOX::Parameter::List& printingParams, 
+	Teuchos::ParameterList& printingParams, 
 	const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i, 
 	NOX::Epetra::Vector& initialGuess, 
 	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
@@ -178,7 +178,7 @@ LOCA::Epetra::Group::computeJacobian()
 
 NOX::Abstract::Group::ReturnType 
 LOCA::Epetra::Group::applyJacobianTransposeInverse(
-				    NOX::Parameter::List& params, 
+				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::Vector& input, 
 				    NOX::Abstract::Vector& result) const
 {
@@ -226,7 +226,7 @@ LOCA::Epetra::Group::applyJacobianTransposeInverse(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::Epetra::Group::applyJacobianTransposeInverseMultiVector(
-				    NOX::Parameter::List& params, 
+				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const
 {
@@ -505,7 +505,7 @@ LOCA::Epetra::Group::applyShiftedMatrix(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::applyShiftedMatrixInverse(
-					    NOX::Parameter::List& params,
+					    Teuchos::ParameterList& params,
 					    const NOX::Abstract::Vector& input,
 					    NOX::Abstract::Vector& result,
 					    double shift)
@@ -538,7 +538,7 @@ LOCA::Epetra::Group::applyShiftedMatrixInverse(
     Epetra_Vector& epetra_dummy = dummy.getEpetraVector();    
     Teuchos::RefCountPtr<LOCA::Epetra::ShiftInvertInterface> interface = 
       Teuchos::rcp(new LOCA::Epetra::ShiftInvertInterface); 
-    NOX::Parameter::List& solveList = params.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver");
+    Teuchos::ParameterList& solveList = params.sublist("NOX").sublist("Direction").sublist("Newton").sublist("Linear Solver");
 
     NOX::Epetra::LinearSystemAztecOO shiftsys(
 	params,

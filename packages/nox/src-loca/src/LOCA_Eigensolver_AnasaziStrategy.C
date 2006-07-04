@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "NOX_Abstract_MultiVector.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_GlobalData.H"
 #include "NOX_Utils.H"
@@ -49,7 +49,7 @@
 LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams_,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams) :
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigParams) :
   globalData(global_data),
   topParams(topParams_),
   eigenParams(eigParams),
@@ -72,24 +72,24 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
   solverParams = topParams->getSublist("Linear Solver");
 
   // Get values out of parameter list
-  blksz = eigenParams->getParameter("Block Size", 1);
-  length = eigenParams->getParameter("Arnoldi Size", 30); 
-  nev = eigenParams->getParameter("NEV", 4);   
-  tol = eigenParams->getParameter("Tol", 1.0e-7);
-  step = eigenParams->getParameter("Convergence Check", 1);    
-  restart = eigenParams->getParameter("Restarts",1);
-  debug = eigenParams->getParameter("Debug Level",1);
+  blksz = eigenParams->get("Block Size", 1);
+  length = eigenParams->get("Arnoldi Size", 30); 
+  nev = eigenParams->get("NEV", 4);   
+  tol = eigenParams->get("Tol", 1.0e-7);
+  step = eigenParams->get("Convergence Check", 1);    
+  restart = eigenParams->get("Restarts",1);
+  debug = eigenParams->get("Debug Level",1);
 
   // Set default on which eigenvalues are of interest.  
   // Different defaults for Cayley and others.
-  if (eigenParams->getParameter("Operator","Jacobian Inverse") == "Cayley")
-    which = eigenParams->getParameter("Sorting Order","CA");   
+  if (eigenParams->get("Operator","Jacobian Inverse") == "Cayley")
+    which = eigenParams->get("Sorting Order","CA");   
   else  
-    which = eigenParams->getParameter("Sorting Order","LM");
+    which = eigenParams->get("Sorting Order","LM");
 
-  saveEV = eigenParams->getParameter("Save Eigenvectors", 0);
-  cayleyPole = eigenParams->getParameter("Cayley Pole",0.0);
-  cayleyZero = eigenParams->getParameter("Cayley Zero",0.0);
+  saveEV = eigenParams->get("Save Eigenvectors", 0);
+  cayleyPole = eigenParams->get("Cayley Pole",0.0);
+  cayleyZero = eigenParams->get("Cayley Zero",0.0);
 
   //  Make sure saveEV is an appropriate value
   if (saveEV > nev)

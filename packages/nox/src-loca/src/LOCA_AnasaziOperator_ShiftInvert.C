@@ -31,15 +31,15 @@
 //@HEADER
 
 #include "LOCA_AnasaziOperator_ShiftInvert.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::ShiftInvert::ShiftInvert(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams_,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams_,
 	const Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup>& grp_)
   : globalData(global_data),
     myLabel("Shift-Invert"),
@@ -57,7 +57,7 @@ LOCA::AnasaziOperator::ShiftInvert::ShiftInvert(
   NOX::Abstract::Group::ReturnType status;
 
   // Get parameters
-  shift = eigenParams->getParameter("Shift",0.0);
+  shift = eigenParams->get("Shift",0.0);
 
   // Compute Jacobian matrix
   status = grp->computeJacobian();

@@ -50,7 +50,7 @@ LOCA::BorderedSolver::UpperTriangularBlockElimination::
 
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::UpperTriangularBlockElimination::
-solve(NOX::Parameter::List& params,
+solve(Teuchos::ParameterList& params,
       const NOX::Abstract::Group& grp,
       const NOX::Abstract::MultiVector* A,
       const NOX::Abstract::MultiVector::DenseMatrix& C,
@@ -139,7 +139,7 @@ solve(NOX::Parameter::List& params,
 
 NOX::Abstract::Group::ReturnType
 LOCA::BorderedSolver::UpperTriangularBlockElimination::
-solveTranspose(NOX::Parameter::List& params,
+solveTranspose(Teuchos::ParameterList& params,
 	       const LOCA::Abstract::TransposeSolveGroup& grp,
 	       const NOX::Abstract::MultiVector* A,
 	       const NOX::Abstract::MultiVector::DenseMatrix& C,

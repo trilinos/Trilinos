@@ -56,7 +56,7 @@ int testTransposeSolve(
 		 double abstol,
 		 Epetra_Comm& Comm,
 		 const Teuchos::RefCountPtr<LOCA::GlobalData>& globalData,
-		 const Teuchos::RefCountPtr<NOX::Parameter::List>& paramList)
+		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& paramList)
 {
   int ierr = 0;
 
@@ -94,11 +94,11 @@ int testTransposeSolve(
     Teuchos::rcp(&Problem.getJacobian(),false);
 
   // Get sublists
-  NOX::Parameter::List& nlParams = paramList->sublist("NOX");
-  NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  NOX::Parameter::List& newParams = dirParams.sublist("Newton");
-  NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
+  Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+  Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+  Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
+  Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
     
   // Create the linear systems
   Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
@@ -171,14 +171,14 @@ int testTransposeSolve(
     F->clone(NOX::ShapeCopy); 
 
   // Set up linear solver lists
-  NOX::Parameter::List lsParams_tp = lsParams;
-  NOX::Parameter::List lsParams_lp = lsParams;
-  NOX::Parameter::List lsParams_ep = lsParams;
-  lsParams_tp.setParameter("Transpose Solver Method",
+  Teuchos::ParameterList lsParams_tp = lsParams;
+  Teuchos::ParameterList lsParams_lp = lsParams;
+  Teuchos::ParameterList lsParams_ep = lsParams;
+  lsParams_tp.set("Transpose Solver Method",
 			   "Transpose Preconditioner");
-  lsParams_lp.setParameter("Transpose Solver Method",
+  lsParams_lp.set("Transpose Solver Method",
 			   "Left Preconditioning");
-  lsParams_ep.setParameter("Transpose Solver Method",
+  lsParams_ep.set("Transpose Solver Method",
 			   "Explicit Transpose");
 
   NOX::Abstract::Group::ReturnType status;
@@ -199,7 +199,7 @@ int testTransposeSolve(
 				       "Residual");
   
   // Test transpose solve with transposed left-preconditioner
-  if (lsParams.getParameter("Preconditioner", "None") != "None") {
+  if (lsParams.get("Preconditioner", "None") != "None") {
     if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
       globalData->locaUtils->out() << std::endl << 
 	"\t***** " << 
@@ -234,7 +234,7 @@ int testTransposeSolve(
   
   
   // Compare solutions
-  if (lsParams.getParameter("Preconditioner", "None") != "None") {
+  if (lsParams.get("Preconditioner", "None") != "None") {
     if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
       globalData->locaUtils->out() << std::endl << 
 	"\t***** " << 
@@ -311,16 +311,16 @@ int main(int argc, char *argv[])
     }
 
     // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-      Teuchos::rcp(new NOX::Parameter::List);
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
 
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("MyPID", MyPID);
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("MyPID", MyPID);
     if (verbose)
-       nlPrintParams.setParameter("Output Information", 
+       nlPrintParams.set("Output Information", 
 				  NOX::Utils::Error +
 				  NOX::Utils::Details +
 				  NOX::Utils::OuterIteration + 
@@ -330,24 +330,24 @@ int main(int argc, char *argv[])
 				  NOX::Utils::StepperIteration +
 				  NOX::Utils::StepperDetails);
      else
-       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
+       nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create the "Direction" sublist for the "Line Search Based" solver
-    NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-    NOX::Parameter::List& newParams = dirParams.sublist("Newton");
-    NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
-    lsParams.setParameter("Aztec Solver", "GMRES");  
-    lsParams.setParameter("Max Iterations", ls_its);  
-    lsParams.setParameter("Tolerance", lstol);
+    Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+    Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
+    Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
+    lsParams.set("Aztec Solver", "GMRES");  
+    lsParams.set("Max Iterations", ls_its);  
+    lsParams.set("Tolerance", lstol);
     if (verbose)
-      lsParams.setParameter("Output Frequency", 1);
+      lsParams.set("Output Frequency", 1);
     else
-      lsParams.setParameter("Output Frequency", 0);
-    lsParams.setParameter("Scaling", "None");             
+      lsParams.set("Output Frequency", 0);
+    lsParams.set("Scaling", "None");             
     
-    //lsParams.setParameter("Overlap", 2);   
-    //lsParams.setParameter("Fill Factor", 2.0); 
-    //lsParams.setParameter("Drop Tolerance", 1.0e-12);
+    //lsParams.set("Overlap", 2);   
+    //lsParams.set("Fill Factor", 2.0); 
+    //lsParams.set("Drop Tolerance", 1.0e-12);
 
     // Create Epetra factory
     Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
 	"********** " << 
 	"Testing Transpose Solves With Ifpack Preconditioner" << 
 	" **********" << std::endl;
-    lsParams.setParameter("Preconditioner", "Ifpack");
+    lsParams.set("Preconditioner", "Ifpack");
     ierr += testTransposeSolve(NumGlobalElements, nRHS, reltol, abstol,
 			       Comm, globalData, paramList);
 
@@ -373,8 +373,8 @@ int main(int argc, char *argv[])
 	"********** " << 
 	"Testing Transpose Solves With No Preconditioner" << 
 	" **********" << std::endl;
-    lsParams.setParameter("Preconditioner", "None");
-    lsParams.setParameter("Max Iterations", NumGlobalElements+1);  
+    lsParams.set("Preconditioner", "None");
+    lsParams.set("Max Iterations", NumGlobalElements+1);  
     ierr += testTransposeSolve(NumGlobalElements, nRHS, reltol, abstol,
 			       Comm, globalData, paramList);
 

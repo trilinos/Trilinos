@@ -124,7 +124,7 @@ namespace LOCA {
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	solve(
-	  NOX::Parameter::List& params,
+	  Teuchos::ParameterList& params,
 	  const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
           LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const = 0;
 

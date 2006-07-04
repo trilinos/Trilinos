@@ -45,7 +45,7 @@
 LOCA::BorderedSolver::EpetraAugmented::EpetraAugmented(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& slvrParams): 
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   grp(),
@@ -220,7 +220,7 @@ LOCA::BorderedSolver::EpetraAugmented::applyTranspose(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::EpetraAugmented::applyInverse(
-			      NOX::Parameter::List& params,
+			      Teuchos::ParameterList& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
 			      NOX::Abstract::MultiVector& X,

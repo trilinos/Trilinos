@@ -38,13 +38,13 @@
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Factory.H"
 #include "NOX_Utils.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 Constraint(
     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
     const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-    const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
+    const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
     const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
     bool is_symmetric,
     const NOX::Abstract::Vector& a,
@@ -84,11 +84,11 @@ Constraint(
 
   // Options
   updateVectorsEveryContinuationStep = 
-    turningPointParams->getParameter(
+    turningPointParams->get(
 			       "Update Null Vectors Every Continuation Step", 
 			       true);
   updateVectorsEveryIteration = 
-    turningPointParams->getParameter(
+    turningPointParams->get(
 			      "Update Null Vectors Every Nonlinear Iteration", 
 			      false);
 }
@@ -276,7 +276,7 @@ computeConstraints()
   one(0,0) = dn;
 
   // Get linear solver parameters
-  Teuchos::RefCountPtr<NOX::Parameter::List> linear_solver_params =
+  Teuchos::RefCountPtr<Teuchos::ParameterList> linear_solver_params =
     parsedParams->getSublist("Linear Solver");
 
   // Compute sigma_1 and right null vector v

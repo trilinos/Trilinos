@@ -69,7 +69,7 @@ namespace LOCA {
        * \param predParams [in] Predictor parameters as described above.
        */
       Random(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	       const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams);
+	       const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams);
 
       //! Destructor
       virtual ~Random();

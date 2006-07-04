@@ -193,24 +193,24 @@ int main(int argc, char *argv[])
     }
 
     // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-      Teuchos::rcp(new NOX::Parameter::List);
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the constraints list
-    NOX::Parameter::List& constraintsList = 
+    Teuchos::ParameterList& constraintsList = 
       locaParamsList.sublist("Constraints");
-    constraintsList.setParameter("Bordered Solver Method", "Bordering");
+    constraintsList.set("Bordered Solver Method", "Bordering");
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
 
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("MyPID", MyPID);
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("MyPID", MyPID);
     if (verbose)
-       nlPrintParams.setParameter("Output Information", 
+       nlPrintParams.set("Output Information", 
 				  NOX::Utils::Error +
 				  NOX::Utils::Details +
 				  NOX::Utils::OuterIteration + 
@@ -220,29 +220,29 @@ int main(int argc, char *argv[])
 				  NOX::Utils::StepperIteration +
 				  NOX::Utils::StepperDetails);
      else
-       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
+       nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create the "Direction" sublist for the "Line Search Based" solver
-    NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-    NOX::Parameter::List& newParams = dirParams.sublist("Newton");
-    NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
-    lsParams.setParameter("Aztec Solver", "GMRES");  
-    lsParams.setParameter("Max Iterations", 100);  
-    lsParams.setParameter("Tolerance", lstol);
+    Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+    Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
+    Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
+    lsParams.set("Aztec Solver", "GMRES");  
+    lsParams.set("Max Iterations", 100);  
+    lsParams.set("Tolerance", lstol);
     if (verbose)
-      lsParams.setParameter("Output Frequency", 1);
+      lsParams.set("Output Frequency", 1);
     else
-      lsParams.setParameter("Output Frequency", 0);
-    lsParams.setParameter("Scaling", "None");             
-    lsParams.setParameter("Preconditioner", "Ifpack");
-    //lsParams.setParameter("Preconditioner", "AztecOO");
-    //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
-    //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
-    lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-    //lsParams.setParameter("Overlap", 2);   
-    //lsParams.setParameter("Fill Factor", 2.0); 
-    //lsParams.setParameter("Drop Tolerance", 1.0e-12);
-    lsParams.setParameter("Max Age Of Prec", -2);
+      lsParams.set("Output Frequency", 0);
+    lsParams.set("Scaling", "None");             
+    lsParams.set("Preconditioner", "Ifpack");
+    //lsParams.set("Preconditioner", "AztecOO");
+    //lsParams.set("Jacobian Operator", "Matrix-Free");
+    //lsParams.set("Preconditioner Operator", "Finite Difference");
+    lsParams.set("Aztec Preconditioner", "ilut"); 
+    //lsParams.set("Overlap", 2);   
+    //lsParams.set("Fill Factor", 2.0); 
+    //lsParams.set("Drop Tolerance", 1.0e-12);
+    lsParams.set("Max Age Of Prec", -2);
 
     // Create the FiniteElementProblem class.  This creates all required
     // Epetra objects for the problem and allows calls to the 
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
 				     parsedParams->getSublist("Constraints"));
 
     // Change strategy to Householder
-    constraintsList.setParameter("Bordered Solver Method", 
+    constraintsList.set("Bordered Solver Method", 
 				 "Householder");
 
     // Create householder solver

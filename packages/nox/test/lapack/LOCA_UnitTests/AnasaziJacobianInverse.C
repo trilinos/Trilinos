@@ -61,34 +61,34 @@ int main(int argc, char *argv[])
 	verbose = true;
 
     // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-      Teuchos::rcp(new NOX::Parameter::List);
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
-    NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
+    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
 
     // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
-    NOX::Parameter::List& aList = stepperList.sublist("Eigensolver");
-    aList.setParameter("Method", "Anasazi");
-    aList.setParameter("Operator", "Jacobian Inverse");
-    aList.setParameter("Block Size", 1);
-    aList.setParameter("Arnoldi Size", narn);
-    aList.setParameter("NEV", nev);
-    aList.setParameter("Tol", arntol);
-    aList.setParameter("Convergence Check", 1);
-    aList.setParameter("Restarts",2);
-    aList.setParameter("Sorting Order","LM");
-    aList.setParameter("Debug Level",0);
+    Teuchos::ParameterList& aList = stepperList.sublist("Eigensolver");
+    aList.set("Method", "Anasazi");
+    aList.set("Operator", "Jacobian Inverse");
+    aList.set("Block Size", 1);
+    aList.set("Arnoldi Size", narn);
+    aList.set("NEV", nev);
+    aList.set("Tol", arntol);
+    aList.set("Convergence Check", 1);
+    aList.set("Restarts",2);
+    aList.set("Sorting Order","LM");
+    aList.set("Debug Level",0);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
 
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     if (verbose)
-       nlPrintParams.setParameter("Output Information", 
+       nlPrintParams.set("Output Information", 
 				  NOX::Utils::Error +
 				  NOX::Utils::Details +
 				  NOX::Utils::OuterIteration + 
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 				  NOX::Utils::StepperIteration +
 				  NOX::Utils::StepperDetails);
      else
-       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
+       nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create LAPACK factory
     Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
@@ -151,8 +151,8 @@ int main(int argc, char *argv[])
       ++ierr;
 
     // Change strategy to DGGEV
-    aList.setParameter("Method", "DGGEV");
-    aList.setParameter("Sorting Order","SM");
+    aList.set("Method", "DGGEV");
+    aList.set("Sorting Order","SM");
 
     // Create DGGEV eigensolver
     Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> dggevStrategy

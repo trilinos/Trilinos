@@ -38,10 +38,10 @@
 
 // forward declarations
 class Epetra_RowMatrix;
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
-  namespace Parameter {
-    class List;
-  }
   namespace Epetra {
     class LinearSystem;
     class Scaling;
@@ -77,7 +77,7 @@ namespace LOCA {
 	//! Constructor
 	ExplicitTranspose(
 	    const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	    const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys);
 
 	//! Destructor
@@ -95,7 +95,7 @@ namespace LOCA {
 	 * The parameter list contains the linear solver options.
 	 */
 	virtual bool 
-	applyJacobianTransposeInverse(NOX::Parameter::List &params, 
+	applyJacobianTransposeInverse(Teuchos::ParameterList &params, 
 				      const NOX::Epetra::Vector &input, 
 				      NOX::Epetra::Vector &result);
 
@@ -111,7 +111,7 @@ namespace LOCA {
 	 */
 	virtual bool 
 	createTransposePreconditioner(const NOX::Epetra::Vector& x, 
-				      NOX::Parameter::List& p);
+				      Teuchos::ParameterList& p);
 
 	//! Get Jacobian-transpose operator
 	virtual Teuchos::RefCountPtr<Epetra_Operator> 

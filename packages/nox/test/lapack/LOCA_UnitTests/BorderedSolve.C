@@ -159,23 +159,23 @@ int main(int argc, char *argv[])
 	verbose = true;
 
     // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-      Teuchos::rcp(new NOX::Parameter::List);
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the constraints list
-    NOX::Parameter::List& constraintsList = 
+    Teuchos::ParameterList& constraintsList = 
       locaParamsList.sublist("Constraints");
-    constraintsList.setParameter("Bordered Solver Method", "Bordering");
+    constraintsList.set("Bordered Solver Method", "Bordering");
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
 
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     if (verbose)
-       nlPrintParams.setParameter("Output Information", 
+       nlPrintParams.set("Output Information", 
 				  NOX::Utils::Error +
 				  NOX::Utils::Details +
 				  NOX::Utils::OuterIteration + 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
 				  NOX::Utils::StepperIteration +
 				  NOX::Utils::StepperDetails);
      else
-       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
+       nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create LAPACK factory
     Teuchos::RefCountPtr<LOCA::Abstract::Factory> lapackFactory =
@@ -231,7 +231,7 @@ int main(int argc, char *argv[])
 				     parsedParams->getSublist("Constraints"));
 
     // Change strategy to LAPACK Direct Solve
-    constraintsList.setParameter("Bordered Solver Method", 
+    constraintsList.set("Bordered Solver Method", 
 				 "LAPACK Direct Solve");
 
     // Create direct solver

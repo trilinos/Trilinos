@@ -42,8 +42,8 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 	 EpetraExt::BlockVector &solution_,
          EpetraExt::BlockVector &solutionOverlap_,
 	 Epetra_Import &overlapImporter_,
-	 NOX::Parameter::List &precPrintParams_, 
-	 NOX::Parameter::List &precLSParams_, 
+	 Teuchos::ParameterList &precPrintParams_, 
+	 Teuchos::ParameterList &precLSParams_, 
 	 const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_) :  
   jacobian(jacobian_),
   splitVec(0),
@@ -62,10 +62,10 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   jacobianBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
   massBlock(std::vector<Teuchos::RefCountPtr<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
   diagBlockSubdiag(std::vector<Teuchos::RefCountPtr<Epetra_Vector> >(globalComm_->NumTimeStepsOnDomain())),
-    isPeriodic(precLSParams_.getParameter("Periodic",false))
+    isPeriodic(precLSParams_.get("Periodic",false))
 {
 
-  string prec = lsParams.getParameter("XYZTPreconditioner","None");
+  string prec = lsParams.get("XYZTPreconditioner","None");
 
   Teuchos::RefCountPtr<NOX::Epetra::Interface::Required> iReq = 
     Teuchos::rcp(&((NOX::Epetra::Interface::Required&)*this),false);
@@ -156,7 +156,7 @@ LOCA::Epetra::xyztPrec::
   if (splitVec_NEV) delete splitVec_NEV;
   if (residual) delete residual;
 
-  string prec = lsParams.getParameter("XYZTPreconditioner","None");
+  string prec = lsParams.get("XYZTPreconditioner","None");
 
   int imax=0;
   if (prec == "Global") 
@@ -195,7 +195,7 @@ ApplyInverse(const Epetra_MultiVector& input,
 	     Epetra_MultiVector& result) const
 {
 
-  string prec = lsParams.getParameter("XYZTPreconditioner","None");
+  string prec = lsParams.get("XYZTPreconditioner","None");
 
   if (prec == "None") {
     return 0;
@@ -523,10 +523,10 @@ computeJacobian(const Epetra_Vector&, Epetra_Operator&)
 bool LOCA::Epetra::xyztPrec::
 computePreconditioner(const Epetra_Vector& x,
 		      Epetra_Operator& Prec,
-		      NOX::Parameter::List* p)
+		      Teuchos::ParameterList* p)
 {
   cout << "LOCA::Epetra::xyztPrec::computePreconditioner called - ";
-  string prec = lsParams.getParameter("XYZTPreconditioner","None");
+  string prec = lsParams.get("XYZTPreconditioner","None");
   if (prec == "Global") {
     cout << "Global Preconditioner" << endl;
     linSys[0]->destroyPreconditioner();

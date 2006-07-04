@@ -56,7 +56,7 @@ bool
 LOCA::Solver::Wrapper::
 reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
       const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& params)
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& params)
 {
   bool res = solverPtr->reset(grp, tests, params);
   resetWrapper();
@@ -113,10 +113,10 @@ LOCA::Solver::Wrapper::getNumIterations() const
   return solverPtr->getNumIterations();
 }
 
-const NOX::Parameter::List& 
-LOCA::Solver::Wrapper::getParameterList() const
+const Teuchos::ParameterList& 
+LOCA::Solver::Wrapper::getList() const
 {
-  return solverPtr->getParameterList();
+  return solverPtr->getList();
 }
 
 void 

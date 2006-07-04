@@ -67,7 +67,7 @@ namespace LOCA {
        * \param predParams [in] Predictor parameters as described above.
        */
       Restart(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams);
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams);
 
       //! Destructor
       virtual ~Restart();

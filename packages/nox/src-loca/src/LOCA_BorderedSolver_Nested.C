@@ -37,12 +37,12 @@
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
 #include "LOCA_BorderedSystem_AbstractGroup.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 LOCA::BorderedSolver::Nested::Nested(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& slvrParams): 
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   solver(),
@@ -53,7 +53,7 @@ LOCA::BorderedSolver::Nested::Nested(
   numConstraints(0)
 {
   // Get "Nested Solver" sublist
-  Teuchos::RefCountPtr<NOX::Parameter::List> nestedSolverList = 
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nestedSolverList = 
     Teuchos::rcp(&(solverParams->sublist("Nested Bordered Solver")),false);
   
   // Instantiate underlying solver
@@ -297,7 +297,7 @@ LOCA::BorderedSolver::Nested::applyTranspose(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Nested::applyInverse(
-			      NOX::Parameter::List& params,
+			      Teuchos::ParameterList& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
 			      NOX::Abstract::MultiVector& X,
@@ -353,7 +353,7 @@ LOCA::BorderedSolver::Nested::applyInverse(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::Nested::applyInverseTranspose(
-			      NOX::Parameter::List& params,
+			      Teuchos::ParameterList& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
 			      NOX::Abstract::MultiVector& X,

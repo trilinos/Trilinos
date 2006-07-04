@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
@@ -48,79 +48,79 @@ LOCA::Parameter::SublistParser::~SublistParser()
 
 void
 LOCA::Parameter::SublistParser::parseSublists(
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams)
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& topLevelParams)
 {
   // Top level sublist
   sublistMap["Top Level"] = topLevelParams;
 
   // LOCA sublist
-  NOX::Parameter::List& locaSublist = topLevelParams->sublist("LOCA");
+  Teuchos::ParameterList& locaSublist = topLevelParams->sublist("LOCA");
   sublistMap["LOCA"] = Teuchos::rcp(&locaSublist, false);
 
   // Stepper sublist
-  NOX::Parameter::List& stepperSublist = locaSublist.sublist("Stepper");
+  Teuchos::ParameterList& stepperSublist = locaSublist.sublist("Stepper");
   sublistMap["Stepper"] = Teuchos::rcp(&stepperSublist, false);
 
   // Eigensolver sublist
-  NOX::Parameter::List& eigensolverSublist = 
+  Teuchos::ParameterList& eigensolverSublist = 
     stepperSublist.sublist("Eigensolver");
   sublistMap["Eigensolver"] = Teuchos::rcp(&eigensolverSublist, false);
 
   // Constraints sublist
-  NOX::Parameter::List& constraintsSublist = 
+  Teuchos::ParameterList& constraintsSublist = 
     locaSublist.sublist("Constraints");
   sublistMap["Constraints"] = Teuchos::rcp(&constraintsSublist, false);
 
   // Bifurcation sublist
-  NOX::Parameter::List& bifurcationSublist = 
+  Teuchos::ParameterList& bifurcationSublist = 
     locaSublist.sublist("Bifurcation");
   sublistMap["Bifurcation"] = Teuchos::rcp(&bifurcationSublist, false);
 
   // Predictor sublist
-  NOX::Parameter::List& predictorSublist = locaSublist.sublist("Predictor");
+  Teuchos::ParameterList& predictorSublist = locaSublist.sublist("Predictor");
   sublistMap["Predictor"] = Teuchos::rcp(&predictorSublist, false);
 
   // First Step Predictor sublist
-  NOX::Parameter::List& fspredictorSublist = 
+  Teuchos::ParameterList& fspredictorSublist = 
     predictorSublist.sublist("First Step Predictor");
   sublistMap["First Step Predictor"] = 
     Teuchos::rcp(&fspredictorSublist, false);
 
   // Last Step Predictor sublist
-  NOX::Parameter::List& lspredictorSublist = 
+  Teuchos::ParameterList& lspredictorSublist = 
     predictorSublist.sublist("Last Step Predictor");
   sublistMap["Last Step Predictor"] = Teuchos::rcp(&lspredictorSublist, false);
 
   // Stepsize sublist
-  NOX::Parameter::List& stepsizeSublist = locaSublist.sublist("Step Size");
+  Teuchos::ParameterList& stepsizeSublist = locaSublist.sublist("Step Size");
   sublistMap["Step Size"] = Teuchos::rcp(&stepsizeSublist, false);
 
   // NOX sublist
-  NOX::Parameter::List& noxSublist = topLevelParams->sublist("NOX");
+  Teuchos::ParameterList& noxSublist = topLevelParams->sublist("NOX");
   sublistMap["NOX"] = Teuchos::rcp(&noxSublist, false);
 
   // Direction sublist
-  NOX::Parameter::List& directionSublist = noxSublist.sublist("Direction");
+  Teuchos::ParameterList& directionSublist = noxSublist.sublist("Direction");
   sublistMap["Direction"] = Teuchos::rcp(&directionSublist, false);
 
   // Newton sublist
-  NOX::Parameter::List& newtonSublist = directionSublist.sublist("Newton");
+  Teuchos::ParameterList& newtonSublist = directionSublist.sublist("Newton");
   sublistMap["Newton"] = Teuchos::rcp(&newtonSublist, false);
 
   // Linear Solver sublist
-  NOX::Parameter::List& lsSublist = newtonSublist.sublist("Linear Solver");
+  Teuchos::ParameterList& lsSublist = newtonSublist.sublist("Linear Solver");
   sublistMap["Linear Solver"] = Teuchos::rcp(&lsSublist, false);
 
   // Line Search sublist
-  NOX::Parameter::List& lineSearchSublist = noxSublist.sublist("Line Search");
+  Teuchos::ParameterList& lineSearchSublist = noxSublist.sublist("Line Search");
   sublistMap["Line Search"] = Teuchos::rcp(&lineSearchSublist, false);
 
   // Printing sublist
-  NOX::Parameter::List& printingSublist = noxSublist.sublist("Printing");
+  Teuchos::ParameterList& printingSublist = noxSublist.sublist("Printing");
   sublistMap["Printing"] = Teuchos::rcp(&printingSublist, false);
 }
 
-Teuchos::RefCountPtr<NOX::Parameter::List> 
+Teuchos::RefCountPtr<Teuchos::ParameterList> 
 LOCA::Parameter::SublistParser::getSublist(const string& name)
 {
   // Find name in list, if it exists.

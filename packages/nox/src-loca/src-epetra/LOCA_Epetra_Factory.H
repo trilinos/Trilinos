@@ -71,7 +71,7 @@ namespace LOCA {
       createBorderedSolverStrategy(
        const string& strategyName,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
        Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>& strategy);
 
       //@}

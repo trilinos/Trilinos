@@ -41,7 +41,7 @@
 LOCA::StepSize::Constant::Constant(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams) :
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams) :
   globalData(global_data),
   maxStepSize(1.0e+12),
   minStepSize(1.0e-12),
@@ -51,13 +51,13 @@ LOCA::StepSize::Constant::Constant(
   prevStepSize(0.0),
   isFirstStep(true)
 {
-  maxStepSize = stepsizeParams->getParameter("Max Step Size", 1.0e+12);
-  minStepSize = stepsizeParams->getParameter("Min Step Size", 1.0e-12);
-  startStepSize = stepsizeParams->getParameter("Initial Step Size", 1.0);
+  maxStepSize = stepsizeParams->get("Max Step Size", 1.0e+12);
+  minStepSize = stepsizeParams->get("Min Step Size", 1.0e-12);
+  startStepSize = stepsizeParams->get("Initial Step Size", 1.0);
   failedFactor = 
-    stepsizeParams->getParameter("Failed Step Reduction Factor", 0.5);
+    stepsizeParams->get("Failed Step Reduction Factor", 0.5);
   successFactor = 
-    stepsizeParams->getParameter("Successful Step Increase Factor", 1.26);
+    stepsizeParams->get("Successful Step Increase Factor", 1.26);
 }
 
 LOCA::StepSize::Constant::~Constant()

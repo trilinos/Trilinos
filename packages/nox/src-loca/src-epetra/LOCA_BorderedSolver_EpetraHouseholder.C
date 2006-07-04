@@ -45,7 +45,7 @@
 #include "LOCA_Epetra_LowRankUpdateRowMatrix.H"
 #include "LOCA_Epetra_TransposeLinearSystem_AbstractStrategy.H"
 #include "LOCA_Epetra_TransposeLinearSystem_Factory.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_BorderedSolver_LowerTriangularBlockElimination.H"
 #include "LOCA_BorderedSolver_UpperTriangularBlockElimination.H"
 #include "LOCA_Abstract_TransposeSolveGroup.H"
@@ -53,7 +53,7 @@
 LOCA::BorderedSolver::EpetraHouseholder::EpetraHouseholder(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& slvrParams): 
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& slvrParams): 
   globalData(global_data),
   solverParams(slvrParams),
   grp(),
@@ -85,9 +85,9 @@ LOCA::BorderedSolver::EpetraHouseholder::EpetraHouseholder(
   use_P_For_Prec(false)
 {
   includeUV = 
-    solverParams->getParameter("Include UV In Preconditioner", false);
+    solverParams->get("Include UV In Preconditioner", false);
   use_P_For_Prec = 
-    solverParams->getParameter("Use P For Preconditioner", false);
+    solverParams->get("Use P For Preconditioner", false);
 }
 
 LOCA::BorderedSolver::EpetraHouseholder::~EpetraHouseholder()
@@ -311,7 +311,7 @@ LOCA::BorderedSolver::EpetraHouseholder::applyTranspose(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::EpetraHouseholder::applyInverse(
-			      NOX::Parameter::List& params,
+			      Teuchos::ParameterList& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
 			      NOX::Abstract::MultiVector& X,
@@ -494,7 +494,7 @@ LOCA::BorderedSolver::EpetraHouseholder::applyInverse(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::BorderedSolver::EpetraHouseholder::applyInverseTranspose(
-			      NOX::Parameter::List& params,
+			      Teuchos::ParameterList& params,
 			      const NOX::Abstract::MultiVector* F,
 			      const NOX::Abstract::MultiVector::DenseMatrix* G,
 			      NOX::Abstract::MultiVector& X,

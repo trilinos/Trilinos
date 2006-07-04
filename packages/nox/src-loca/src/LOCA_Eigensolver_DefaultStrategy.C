@@ -38,7 +38,7 @@
 LOCA::Eigensolver::DefaultStrategy::DefaultStrategy(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) :
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) :
   globalData(global_data)
 {
 }

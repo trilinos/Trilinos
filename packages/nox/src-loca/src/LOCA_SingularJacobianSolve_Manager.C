@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Continuation_AbstractGroup.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_SingularJacobianSolve_Manager.H"
 #include "LOCA_SingularJacobianSolve_Default.H"
 #include "LOCA_SingularJacobianSolve_Nic.H"
@@ -40,18 +40,18 @@
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::SingularJacobianSolve::Manager::Manager(NOX::Parameter::List& params) :
+LOCA::SingularJacobianSolve::Manager::Manager(Teuchos::ParameterList& params) :
   method(),
   singularSolverPtr(NULL)
 {
   reset(params);
 }
 
-LOCA::SingularJacobianSolve::Manager::Manager(const NOX::Parameter::List& params) :
+LOCA::SingularJacobianSolve::Manager::Manager(const Teuchos::ParameterList& params) :
   method(),
   singularSolverPtr(NULL)
 {
-  NOX::Parameter::List p(params);
+  Teuchos::ParameterList p(params);
   reset(p);
 }
 
@@ -96,9 +96,9 @@ LOCA::SingularJacobianSolve::Manager::operator=(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::SingularJacobianSolve::Manager::reset(NOX::Parameter::List& params) 
+LOCA::SingularJacobianSolve::Manager::reset(Teuchos::ParameterList& params) 
 {
-  string newmethod = params.getParameter("Method", "Default");
+  string newmethod = params.get("Method", "Default");
 
   if (method != newmethod) {
     delete singularSolverPtr;
@@ -126,7 +126,7 @@ LOCA::SingularJacobianSolve::Manager::reset(NOX::Parameter::List& params)
 
 NOX::Abstract::Group::ReturnType 
 LOCA::SingularJacobianSolve::Manager::compute(
-				NOX::Parameter::List& params,
+				Teuchos::ParameterList& params,
 				LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& input,
 			        const NOX::Abstract::Vector& approxNullVec,
@@ -149,7 +149,7 @@ LOCA::SingularJacobianSolve::Manager::compute(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::SingularJacobianSolve::Manager::computeMulti(
-				NOX::Parameter::List& params,
+				Teuchos::ParameterList& params,
 				LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector*const* inputs,
 				const NOX::Abstract::Vector& approxNullVec,

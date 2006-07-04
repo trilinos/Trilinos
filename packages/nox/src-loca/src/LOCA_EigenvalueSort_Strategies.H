@@ -38,10 +38,8 @@
 #include "NOX_Abstract_Group.H"   // for ReturnType
 
 // Forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -70,7 +68,7 @@ namespace LOCA {
      * public:
      *   Derived(
      *      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-     *      const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+     *      const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
      *   ...
      * };
      * \endcode
@@ -150,7 +148,7 @@ namespace LOCA {
        */
       LargestMagnitude(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) {}
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestMagnitude() {}
@@ -191,7 +189,7 @@ namespace LOCA {
        */
       SmallestMagnitude(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) {}
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestMagnitude() {}
@@ -232,7 +230,7 @@ namespace LOCA {
        */
       LargestReal(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) {}
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestReal() {}
@@ -273,7 +271,7 @@ namespace LOCA {
        */
       SmallestReal(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) {}
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestReal() {}
@@ -314,7 +312,7 @@ namespace LOCA {
        */
       LargestImaginary(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) {}
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~LargestImaginary() {}
@@ -355,7 +353,7 @@ namespace LOCA {
        */
       SmallestImaginary(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) {}
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) {}
 
       //! Destructor
       ~SmallestImaginary() {}
@@ -397,7 +395,7 @@ namespace LOCA {
        */
       LargestRealInverseCayley(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
 
       //! Destructor
       ~LargestRealInverseCayley() {}

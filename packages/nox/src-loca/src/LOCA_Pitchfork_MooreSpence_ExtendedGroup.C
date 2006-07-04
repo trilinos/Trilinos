@@ -34,7 +34,7 @@
 #include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
 #include "LOCA_Pitchfork_MooreSpence_SolverStrategy.H"
 #include "LOCA_Parameter_Vector.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
@@ -44,7 +44,7 @@
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
          const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
 	 const Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup>& g)
   : LOCA::Extended::MultiAbstractGroup(),
     LOCA::MultiContinuation::AbstractGroup(),
@@ -78,7 +78,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = pitchforkParams->getParameter(
+  string bifParamName = pitchforkParams->get(
 						  "Bifurcation Parameter",
 						  "None");
   const ParameterVector& p = grpPtr->getParams();
@@ -90,7 +90,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> asymVecPtr = 
     (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-      getRcpParameter<NOX::Abstract::Vector>("Antisymmetric Vector");
+    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Antisymmetric Vector");
 
   if (!pitchforkParams->isParameter("Length Normalization Vector")) {
     globalData->locaErrorCheck->throwError(func,
@@ -98,7 +98,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> lenVecPtr = 
     (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-      getRcpParameter<NOX::Abstract::Vector>("Length Normalization Vector");
+    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Length Normalization Vector");
 
   if (!pitchforkParams->isParameter("Initial Null Vector")) {
     globalData->locaErrorCheck->throwError(func,
@@ -106,12 +106,12 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::ExtendedGroup(
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVecPtr = 
     (*pitchforkParams).INVALID_TEMPLATE_QUALIFIER 
-      getRcpParameter<NOX::Abstract::Vector>("Initial Null Vector");
+    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Initial Null Vector");
 
-  bool perturbSoln = pitchforkParams->getParameter(
+  bool perturbSoln = pitchforkParams->get(
 					       "Perturb Initial Solution", 
 					       false);
-  double perturbSize = pitchforkParams->getParameter(
+  double perturbSize = pitchforkParams->get(
 						 "Relative Perturbation Size", 
 						 1.0e-3);
   asymMultiVec = 
@@ -345,7 +345,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeGradient()
    
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::computeNewton(
-						 NOX::Parameter::List& params) 
+						 Teuchos::ParameterList& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
@@ -433,7 +433,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianInverse(
-					  NOX::Parameter::List& params, 
+					  Teuchos::ParameterList& params, 
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -565,7 +565,7 @@ LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Pitchfork::MooreSpence::ExtendedGroup::applyJacobianInverseMultiVector( 
-				     NOX::Parameter::List& params, 	
+				     Teuchos::ParameterList& params, 	
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {

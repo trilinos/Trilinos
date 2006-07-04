@@ -73,7 +73,7 @@ namespace LOCA {
       NaturalGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& continuationParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& continuationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);

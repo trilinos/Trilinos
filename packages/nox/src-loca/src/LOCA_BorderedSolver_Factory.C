@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
@@ -52,7 +52,7 @@ LOCA::BorderedSolver::Factory::~Factory()
 Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
 LOCA::BorderedSolver::Factory::create(
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
 {
   string methodName = "LOCA::BorderedSolver::Factory::create()";
   Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> strategy;
@@ -74,12 +74,12 @@ LOCA::BorderedSolver::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = solverParams->getParameter("User-Defined Name",
+    string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isParameterRcp<LOCA::BorderedSolver::AbstractStrategy>(userDefinedName))
+	isType< Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::BorderedSolver::AbstractStrategy>(userDefinedName);
+	get< Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,
@@ -97,7 +97,7 @@ LOCA::BorderedSolver::Factory::create(
 
 const string&
 LOCA::BorderedSolver::Factory::strategyName(
-				  NOX::Parameter::List& solverParams) const
+				  Teuchos::ParameterList& solverParams) const
 {
-  return solverParams.getParameter("Bordered Solver Method", "Bordering");
+  return solverParams.get("Bordered Solver Method", "Bordering");
 }

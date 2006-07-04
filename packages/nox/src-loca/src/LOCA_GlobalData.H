@@ -36,11 +36,11 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 // Global data objects forward declarations
+namespace Teuchos {
+    class ParameterList;
+}
 namespace NOX {
   class Utils;
-  namespace Parameter {
-    class List;
-  }
 }
 namespace LOCA {
   class ErrorCheck;
@@ -97,7 +97,7 @@ namespace LOCA {
 
   //! Creates and initializes a LOCA::GlobalData object
   Teuchos::RefCountPtr<LOCA::GlobalData>
-  createGlobalData(const Teuchos::RefCountPtr<NOX::Parameter::List>& paramList,
+  createGlobalData(const Teuchos::RefCountPtr<Teuchos::ParameterList>& paramList,
 		   const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory = Teuchos::null);
 
   //! De-initializes a LOCA::GlobalData object for destruction

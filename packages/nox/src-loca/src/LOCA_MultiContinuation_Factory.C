@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
@@ -52,7 +52,7 @@ LOCA::MultiContinuation::Factory::~Factory()
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
 LOCA::MultiContinuation::Factory::create(
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)
@@ -84,12 +84,12 @@ LOCA::MultiContinuation::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = stepperParams->getParameter("User-Defined Name",
+    string userDefinedName = stepperParams->get("User-Defined Name",
 							 "???");
     if ((*stepperParams).INVALID_TEMPLATE_QUALIFIER
-	  isParameterRcp<LOCA::MultiContinuation::AbstractStrategy>(userDefinedName))
+	isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> >(userDefinedName))
       strategy = (*stepperParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::MultiContinuation::AbstractStrategy>(userDefinedName);
+	get< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,
@@ -107,7 +107,7 @@ LOCA::MultiContinuation::Factory::create(
 
 const string&
 LOCA::MultiContinuation::Factory::strategyName(
-				  NOX::Parameter::List& stepperParams) const
+				  Teuchos::ParameterList& stepperParams) const
 {
-  return stepperParams.getParameter("Continuation Method", "Natural");
+  return stepperParams.get("Continuation Method", "Natural");
 }

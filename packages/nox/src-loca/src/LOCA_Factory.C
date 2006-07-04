@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
@@ -89,7 +89,7 @@ LOCA::Factory::~Factory()
 Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
 LOCA::Factory::createPredictorStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams)
 {
   string methodName = "LOCA::Factory::createPredictorStrategy()";
   Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy> strategy;
@@ -115,7 +115,7 @@ LOCA::Factory::createPredictorStrategy(
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>
 LOCA::Factory::createContinuationStrategy(
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& stepperParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepperParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)
@@ -146,7 +146,7 @@ LOCA::Factory::createContinuationStrategy(
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Factory::createBifurcationStrategy(
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
   string methodName = "LOCA::Factory::createBifurcationStrategy()";
@@ -173,7 +173,7 @@ LOCA::Factory::createBifurcationStrategy(
 Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy>
 LOCA::Factory::createStepSizeStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams)
 {
   string methodName = "LOCA::Factory::createStepSizeStrategy()";
   Teuchos::RefCountPtr<LOCA::StepSize::AbstractStrategy> strategy;
@@ -199,7 +199,7 @@ LOCA::Factory::createStepSizeStrategy(
 Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy>
 LOCA::Factory::createBorderedSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
 {
   string methodName = "LOCA::Factory::createBorderedSolverStrategy()";
   Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> strategy;
@@ -225,7 +225,7 @@ LOCA::Factory::createBorderedSolverStrategy(
 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
 LOCA::Factory::createEigensolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Factory::createEigensolverStrategy()";
   Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
@@ -251,7 +251,7 @@ LOCA::Factory::createEigensolverStrategy(
 Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy>
 LOCA::Factory::createEigenvalueSortStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Factory::createEigenvalueSortStrategy()";
   Teuchos::RefCountPtr<LOCA::EigenvalueSort::AbstractStrategy> strategy;
@@ -277,7 +277,7 @@ LOCA::Factory::createEigenvalueSortStrategy(
 Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy>
 LOCA::Factory::createSaveEigenDataStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Factory::createSaveEigenDataStrategy()";
   Teuchos::RefCountPtr<LOCA::SaveEigenData::AbstractStrategy> strategy;
@@ -303,8 +303,8 @@ LOCA::Factory::createSaveEigenDataStrategy(
 Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
 LOCA::Factory::createAnasaziOperatorStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	 const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
 {
   string methodName = "LOCA::Factory::createAnasaziOperatorStrategy()";
@@ -334,7 +334,7 @@ LOCA::Factory::createAnasaziOperatorStrategy(
 Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::SolverStrategy>
 LOCA::Factory::createMooreSpenceTurningPointSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::Factory::createMooreSpenceTurningPointSolverStrategy()";
@@ -363,7 +363,7 @@ LOCA::Factory::createMooreSpenceTurningPointSolverStrategy(
 Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::SolverStrategy>
 LOCA::Factory::createMooreSpencePitchforkSolverStrategy(
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams)
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams)
 {
   string methodName = 
     "LOCA::Factory::createMooreSpencePitchforkSolverStrategy()";

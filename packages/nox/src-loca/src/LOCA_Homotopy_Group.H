@@ -78,7 +78,7 @@ namespace LOCA {
   
       //! Constructor to set the base group and generate the "%Stepper" sublist for homotopy continuation.
       /*! 
-	The locaSublist variable is the "LOCA" sublist (of type NOX::Parameter::List) that will be used in loca continuation runs.
+	The locaSublist variable is the "LOCA" sublist (of type Teuchos::ParameterList) that will be used in loca continuation runs.
 
 	The variables scalarRandomVector and scalarInitialGuess are used to give some control over the generation of the random vector.  In certain instances we have seen the random vector force the solution to a set of variables that are unphysical and could break the function evaluations (cause them to return nan).  For example, in heat transfer problems, the temperature could be the dependent variable.  If the solution vector has an unphysical temperature (the random vector could force the temperature to negative or near zero values for the solution at \f$ \lambda = 0\f$) then property evaluations could break.  The random vector can be modified to keep the values near the initial guess based on values supplied to the constructor of the HomotopyGroup: 
 
@@ -94,13 +94,13 @@ namespace LOCA {
 
 	IMPORTANT: For homotopy to work correctly you should not change the starting and stopping parameter values (0.0 and 1.0 respectively) set in the "%Stepper" sublist.
       */
-      Group(NOX::Parameter::List& locaSublist,
+      Group(Teuchos::ParameterList& locaSublist,
 	    const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
 	    double scaleRandom = 1.0,
 	    double scaleInitialGuess = 0.0);
 
       //! Constructor with a user supplied random vector.
-      Group(NOX::Parameter::List& locaSublist,
+      Group(Teuchos::ParameterList& locaSublist,
 	    const Teuchos::RefCountPtr<LOCA::Homotopy::AbstractGroup>& g,
 	    const NOX::Abstract::Vector& randomVector);
 
@@ -181,7 +181,7 @@ namespace LOCA {
 
       //! Compute %Newton direction using bordering algorithm
       virtual NOX::Abstract::Group::ReturnType 
-      computeNewton(NOX::Parameter::List& params);
+      computeNewton(Teuchos::ParameterList& params);
 
       //@}
 
@@ -201,7 +201,7 @@ namespace LOCA {
 
       //! Applies the inverse of the extended Jacobian matrix using the bordering algorithm
       virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianInverse(NOX::Parameter::List& params, 
+      applyJacobianInverse(Teuchos::ParameterList& params, 
 			   const NOX::Abstract::Vector& input, 
 			   NOX::Abstract::Vector& result) const;
       //@}
@@ -277,7 +277,7 @@ namespace LOCA {
       void resetIsValidFlags();
 
       //! Creates and sets the "Stepper" parameter sublist
-      void setStepperParameters(NOX::Parameter::List& params);
+      void setStepperParameters(Teuchos::ParameterList& params);
 
     protected:
 

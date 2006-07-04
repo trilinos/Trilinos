@@ -38,10 +38,8 @@
 #include "NOX_Common.H"
 
 // Forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -62,7 +60,7 @@ namespace LOCA {
 
       //! Map type to hold sublists
       typedef map<string, 
-		  Teuchos::RefCountPtr<NOX::Parameter::List> > SublistMap;
+		  Teuchos::RefCountPtr<Teuchos::ParameterList> > SublistMap;
 
       //! Iterator type to traverse SublistMap
       typedef SublistMap::iterator SublistMapIterator;
@@ -77,10 +75,10 @@ namespace LOCA {
 
       //! Parse parameter list to find sublists
       void parseSublists(
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& topLevelParams);
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& topLevelParams);
 
       //! Return sublist of name \c name
-      Teuchos::RefCountPtr<NOX::Parameter::List> 
+      Teuchos::RefCountPtr<Teuchos::ParameterList> 
       getSublist(const string& name);
 
     private:

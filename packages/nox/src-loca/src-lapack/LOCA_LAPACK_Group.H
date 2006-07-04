@@ -104,7 +104,7 @@ namespace LOCA {
        * LOCA::Bifurcation::TPBord::SingularSolveGroup)
        */
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    NOX::Parameter::List& params,
+	    Teuchos::ParameterList& params,
 	    LOCA::LAPACK::Interface& i, bool hasMassMat = false);
 
       //! Constructor with used and allocated dimensions of matrices
@@ -113,7 +113,7 @@ namespace LOCA {
 
       //! Constructor with parameter list and with used, allocated dims
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    NOX::Parameter::List& params,
+	    Teuchos::ParameterList& params,
 	    LOCA::LAPACK::Interface& i, int m, int n, bool hasMassMat = false);
 
       //! Copy constructor
@@ -162,14 +162,14 @@ namespace LOCA {
 
       //! Solve Jacobian-tranpose system 
       virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianTransposeInverse(NOX::Parameter::List& params, 
+      applyJacobianTransposeInverse(Teuchos::ParameterList& params, 
 				    const NOX::Abstract::Vector& input, 
 				    NOX::Abstract::Vector& result) const;
 
       //! Solve Jacobian-tranpose system with multiple right-hand sides
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianTransposeInverseMultiVector(
-				    NOX::Parameter::List& params, 
+				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
 
@@ -272,7 +272,7 @@ namespace LOCA {
 
       //! Solve \f$(J+i\omega B)(y+iz) = a+ib\f$
       virtual NOX::Abstract::Group::ReturnType
-      applyComplexInverse(NOX::Parameter::List& params,
+      applyComplexInverse(Teuchos::ParameterList& params,
 			  const NOX::Abstract::Vector& input_real,
 			  const NOX::Abstract::Vector& input_imag,
 			  double frequency,
@@ -281,7 +281,7 @@ namespace LOCA {
 
       //! applyComplexInverse for multiple right-hand-sides
       virtual NOX::Abstract::Group::ReturnType
-      applyComplexInverseMulti(NOX::Parameter::List& params,
+      applyComplexInverseMulti(Teuchos::ParameterList& params,
 			       const NOX::Abstract::Vector* const* inputs_real,
 			       const NOX::Abstract::Vector* const* inputs_imag,
 			       double frequency,

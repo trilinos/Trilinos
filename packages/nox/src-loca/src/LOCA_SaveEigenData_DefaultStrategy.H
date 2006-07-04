@@ -36,10 +36,8 @@
 #include "LOCA_SaveEigenData_AbstractStrategy.H" // base class
 
 // Forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -66,7 +64,7 @@ namespace LOCA {
       DefaultStrategy(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
       
       //! Destructor
       virtual ~DefaultStrategy();

@@ -68,7 +68,7 @@ namespace LOCA {
     public:
 
       //! Constructor. 
-      ItRef(NOX::Parameter::List& params);
+      ItRef(Teuchos::ParameterList& params);
 
       //! Copy constructor
       ItRef(const ItRef& source);
@@ -92,11 +92,11 @@ namespace LOCA {
 	There are no additional parameters for the Nic calculation.
       */
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params);
+      reset(Teuchos::ParameterList& params);
   
       //! Computes the solution as described above.
       virtual NOX::Abstract::Group::ReturnType 
-      compute(NOX::Parameter::List& params,
+      compute(Teuchos::ParameterList& params,
 	      LOCA::Continuation::AbstractGroup& grp,
 	      const NOX::Abstract::Vector& input,
 	      const NOX::Abstract::Vector& approxNullVec,
@@ -105,7 +105,7 @@ namespace LOCA {
 
       //! Computes solution for multiple RHS 
       virtual NOX::Abstract::Group::ReturnType 
-      computeMulti(NOX::Parameter::List& params,
+      computeMulti(Teuchos::ParameterList& params,
 		   LOCA::Continuation::AbstractGroup& grp,
 		   const NOX::Abstract::Vector*const* inputs,
 		   const NOX::Abstract::Vector& approxNullVec,

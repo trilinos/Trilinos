@@ -200,7 +200,7 @@ namespace LOCA {
 	ExtendedGroup(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
          const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
 	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g);
 
 	//! Copy constructor.
@@ -264,7 +264,7 @@ namespace LOCA {
 
 	//! Compute %Newton direction using applyJacobianInverse().
 	virtual NOX::Abstract::Group::ReturnType 
-	computeNewton(NOX::Parameter::List& params);
+	computeNewton(Teuchos::ParameterList& params);
   
 	//! Computes the extended Jacobian vector product
 	virtual NOX::Abstract::Group::ReturnType 
@@ -278,7 +278,7 @@ namespace LOCA {
 
 	//! Applies the inverse of the extended Jacobian matrix 
 	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianInverse(NOX::Parameter::List& params, 
+	applyJacobianInverse(Teuchos::ParameterList& params, 
 			     const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
 
@@ -296,7 +296,7 @@ namespace LOCA {
 	//! Applies Jacobian inverse for extended system
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianInverseMultiVector(
-				    NOX::Parameter::List& params, 
+				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
   
@@ -534,7 +534,7 @@ namespace LOCA {
 	Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 
 	//! Bifurcation parameter list
-	Teuchos::RefCountPtr<NOX::Parameter::List> turningPointParams;
+	Teuchos::RefCountPtr<Teuchos::ParameterList> turningPointParams;
 
 	//! Pointer to base group that defines \f$F\f$
 	Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup> grpPtr;

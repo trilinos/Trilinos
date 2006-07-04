@@ -276,7 +276,7 @@ Epetra_CrsMatrix& FiniteElementProblem::getJacobian()
   return *A;
 }
 
-bool FiniteElementProblem::setParameter(string label, double value)
+bool FiniteElementProblem::set(string label, double value)
 {
   if (label == "Nonlinear Factor")
     factor = value;
@@ -288,7 +288,7 @@ bool FiniteElementProblem::setParameter(string label, double value)
     // do nothing for now
   }
   else {
-    cout << "ERROR: FiniteElementProblem::setParameter() - label is invalid "
+    cout << "ERROR: FiniteElementProblem::set() - label is invalid "
 	 << "for this problem!" << endl;
     exit(-1);
   }

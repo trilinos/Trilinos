@@ -34,7 +34,7 @@
 #include "LOCA_SingularJacobianSolve_NicDay.H"
 #include "LOCA_ErrorCheck.H"
 
-LOCA::SingularJacobianSolve::NicDay::NicDay(NOX::Parameter::List& params)
+LOCA::SingularJacobianSolve::NicDay::NicDay(Teuchos::ParameterList& params)
 {
   reset(params);
 }
@@ -69,14 +69,14 @@ LOCA::SingularJacobianSolve::NicDay::operator=(
 }
 
 NOX::Abstract::Group::ReturnType 
-LOCA::SingularJacobianSolve::NicDay::reset(NOX::Parameter::List& params) 
+LOCA::SingularJacobianSolve::NicDay::reset(Teuchos::ParameterList& params) 
 {
   return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType 
 LOCA::SingularJacobianSolve::NicDay::compute(
-				NOX::Parameter::List& params,
+				Teuchos::ParameterList& params,
 				LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector& input,
 			        const NOX::Abstract::Vector& approxNullVec,
@@ -105,7 +105,7 @@ LOCA::SingularJacobianSolve::NicDay::compute(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::SingularJacobianSolve::NicDay::computeMulti(
-				NOX::Parameter::List& params,
+				Teuchos::ParameterList& params,
 				LOCA::Continuation::AbstractGroup& grp,
 				const NOX::Abstract::Vector*const* inputs,
 				const NOX::Abstract::Vector& approxNullVec,

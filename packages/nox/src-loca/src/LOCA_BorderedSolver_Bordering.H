@@ -102,7 +102,7 @@ namespace LOCA {
       Bordering(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~Bordering();
@@ -204,7 +204,7 @@ namespace LOCA {
        * \em F or \em G pointers may be NULL.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverse(NOX::Parameter::List& params,
+      applyInverse(Teuchos::ParameterList& params,
 		   const NOX::Abstract::MultiVector* F,
 		   const NOX::Abstract::MultiVector::DenseMatrix* G,
 		   NOX::Abstract::MultiVector& X,
@@ -223,7 +223,7 @@ namespace LOCA {
        * must implement LOCA::Abstract::TransposeSolveGroup.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverseTranspose(NOX::Parameter::List& params,
+      applyInverseTranspose(Teuchos::ParameterList& params,
 			    const NOX::Abstract::MultiVector* F,
 			    const NOX::Abstract::MultiVector::DenseMatrix* G,
 			    NOX::Abstract::MultiVector& X,
@@ -235,7 +235,7 @@ namespace LOCA {
        * \brief Solves the extended system when F = 0
        */
       NOX::Abstract::Group::ReturnType  
-      solveFZero(NOX::Parameter::List& params,
+      solveFZero(Teuchos::ParameterList& params,
 		 const NOX::Abstract::MultiVector* AA,
 		 const LOCA::MultiContinuation::ConstraintInterface* BB,
 		 const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -247,7 +247,7 @@ namespace LOCA {
        * \brief Solves the extended system when F and A are contiguous
        */
       NOX::Abstract::Group::ReturnType  
-      solveContiguous(NOX::Parameter::List& params,
+      solveContiguous(Teuchos::ParameterList& params,
 		      const NOX::Abstract::MultiVector* AA,
 		      const LOCA::MultiContinuation::ConstraintInterface* BB,
 		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -262,7 +262,7 @@ namespace LOCA {
        * \brief Solves the transpose of the extended system when F = 0
        */
       NOX::Abstract::Group::ReturnType  
-      solveFZeroTrans(NOX::Parameter::List& params,
+      solveFZeroTrans(Teuchos::ParameterList& params,
 		      const NOX::Abstract::MultiVector* AA,
 		      const NOX::Abstract::MultiVector* BB,
 		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -276,7 +276,7 @@ namespace LOCA {
        */
       NOX::Abstract::Group::ReturnType  
       solveContiguousTrans(
-		      NOX::Parameter::List& params,
+		      Teuchos::ParameterList& params,
 		      const NOX::Abstract::MultiVector* AA,
 		      const NOX::Abstract::MultiVector* BB,
 		      const NOX::Abstract::MultiVector::DenseMatrix* CC,
@@ -301,7 +301,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Solver parameters
-      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
       //! Pointer to group storing J
       Teuchos::RefCountPtr<const NOX::Abstract::Group> grp;

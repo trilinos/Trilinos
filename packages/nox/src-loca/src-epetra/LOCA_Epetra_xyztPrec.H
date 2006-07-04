@@ -31,7 +31,7 @@
 #define LOCA_EPETRA_XYZTPREC_H_
 
 #include "NOX_Common.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "NOX_Epetra_Interface_Required.H"
 #include "NOX_Epetra_Interface_Jacobian.H"
 #include "NOX_Epetra_Interface_Preconditioner.H"
@@ -65,8 +65,8 @@ class xyztPrec : public Epetra_Operator,
 	   EpetraExt::BlockVector& solution,
 	   EpetraExt::BlockVector& solutionOverlap,
 	   Epetra_Import &overlapImporter,
-	   NOX::Parameter::List& precPrintParams, 
-	   NOX::Parameter::List& precLSParams, 
+	   Teuchos::ParameterList& precPrintParams, 
+	   Teuchos::ParameterList& precLSParams, 
 	   const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm_);
 
   //! Destructor
@@ -104,7 +104,7 @@ class xyztPrec : public Epetra_Operator,
   // Inherited from NOX::Epetra::Interface::Preconditioner
   virtual bool computePreconditioner(const Epetra_Vector& x,
 				     Epetra_Operator& Prec,
-				     NOX::Parameter::List* p = 0);
+				     Teuchos::ParameterList* p = 0);
 
 
   // New in LOCA::Epetra::xyztPrec
@@ -121,8 +121,8 @@ private:
   EpetraExt::BlockVector& solution;
   EpetraExt::BlockVector& solutionOverlap;
   Epetra_Import& overlapImporter;
-  NOX::Parameter::List& printParams;
-  NOX::Parameter::List& lsParams;
+  Teuchos::ParameterList& printParams;
+  Teuchos::ParameterList& lsParams;
   const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> globalComm;
 
   // Objects created in constructor

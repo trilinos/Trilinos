@@ -120,7 +120,7 @@ LOCA::Bifurcation::PitchforkBord::StatusTest::ParameterUpdateNorm::print(
 
 
 double 
-LOCA::Bifurcation::PitchforkBord::StatusTest::ParameterUpdateNorm::getParameterUpdateNorm() const
+LOCA::Bifurcation::PitchforkBord::StatusTest::ParameterUpdateNorm::getUpdateNorm() const
 {
   return paramUpdateNorm;
 }   

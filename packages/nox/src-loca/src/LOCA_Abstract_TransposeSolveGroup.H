@@ -59,14 +59,14 @@ namespace LOCA {
 
       //! Solve Jacobian-tranpose system
       virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianTransposeInverse(NOX::Parameter::List& params, 
+      applyJacobianTransposeInverse(Teuchos::ParameterList& params, 
 				    const NOX::Abstract::Vector& input, 
 				    NOX::Abstract::Vector& result) const = 0;
 
       //! Solve Jacobian-tranpose system with multiple right-hand sides
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianTransposeInverseMultiVector(
-				NOX::Parameter::List& params, 
+				Teuchos::ParameterList& params, 
 				const NOX::Abstract::MultiVector& input, 
 				NOX::Abstract::MultiVector& result) const = 0;
 

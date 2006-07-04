@@ -94,8 +94,8 @@ public:
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass,
        const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm,
-       NOX::Parameter::List *precPrintParams = 0, 
-       NOX::Parameter::List *precLSParams = 0);
+       Teuchos::ParameterList *precPrintParams = 0, 
+       Teuchos::ParameterList *precLSParams = 0);
 
   //! Destructor
   virtual ~xyzt();
@@ -151,8 +151,8 @@ private:
   std::vector< std::vector<int> >* rowStencil;
   std::vector<int>* rowIndex;
   // xyztPrec object created in constructor
-  NOX::Parameter::List* precPrintParams;
-  NOX::Parameter::List* precLSParams;
+  Teuchos::ParameterList* precPrintParams;
+  Teuchos::ParameterList* precLSParams;
   LOCA::Epetra::xyztPrec* preconditioner;
   Epetra_CrsMatrix* splitJacCrs;
   Epetra_CrsMatrix* splitMassCrs;

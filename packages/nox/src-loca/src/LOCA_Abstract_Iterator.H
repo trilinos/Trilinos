@@ -33,10 +33,8 @@
 #ifndef LOCA_ABSTRACT_ITERATOR_H
 #define LOCA_ABSTRACT_ITERATOR_H
 
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 
 namespace LOCA {
@@ -97,7 +95,7 @@ namespace LOCA {
       };
 
       //! Constructor 
-      Iterator(NOX::Parameter::List& p);
+      Iterator(Teuchos::ParameterList& p);
 
       //! Copy Constructor
       Iterator(const Iterator& it);
@@ -106,7 +104,7 @@ namespace LOCA {
       virtual ~Iterator();
 
       //! Reset the iterator to start a new iteration
-      virtual bool resetIterator(NOX::Parameter::List& p);
+      virtual bool resetIterator(Teuchos::ParameterList& p);
 
       //! Return the status of the iterator
       virtual IteratorStatus getIteratorStatus() const;

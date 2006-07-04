@@ -94,11 +94,11 @@ namespace LOCA {
 
       //! Set parameter given by \em name to value \em value
       template <class ValueType>
-      void setParameterValue(const string& name, const ValueType& value);
+      void setValue(const string& name, const ValueType& value);
 
       //! Get parameter given by \em name
       template <class ValueType>
-      ValueType getParameterValue(const string& name) const;
+      ValueType getValue(const string& name) const;
 
       //! Add a new parameter to library using the default setting mechanism
       /*!

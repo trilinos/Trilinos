@@ -95,7 +95,7 @@ namespace LOCA {
       Nested(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~Nested();
@@ -197,7 +197,7 @@ namespace LOCA {
        * \em F or \em G pointers may be NULL.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverse(NOX::Parameter::List& params,
+      applyInverse(Teuchos::ParameterList& params,
 		   const NOX::Abstract::MultiVector* F,
 		   const NOX::Abstract::MultiVector::DenseMatrix* G,
 		   NOX::Abstract::MultiVector& X,
@@ -213,7 +213,7 @@ namespace LOCA {
        * \em F or \em G pointers may be NULL.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverseTranspose(NOX::Parameter::List& params,
+      applyInverseTranspose(Teuchos::ParameterList& params,
 			    const NOX::Abstract::MultiVector* F,
 			    const NOX::Abstract::MultiVector::DenseMatrix* G,
 			    NOX::Abstract::MultiVector& X,
@@ -233,7 +233,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Solver parameters
-      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
       //! Underlying solver
       Teuchos::RefCountPtr<LOCA::BorderedSolver::AbstractStrategy> solver;

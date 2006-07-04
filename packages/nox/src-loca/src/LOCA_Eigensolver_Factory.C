@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
@@ -54,7 +54,7 @@ LOCA::Eigensolver::Factory::~Factory()
 Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy>
 LOCA::Eigensolver::Factory::create(
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams)
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams)
 {
   string methodName = "LOCA::Eigensolver::Factory::create()";
   Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> strategy;
@@ -81,12 +81,12 @@ LOCA::Eigensolver::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = eigenParams->getParameter("User-Defined Name",
+    string userDefinedName = eigenParams->get("User-Defined Name",
 						       "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	  isParameterRcp<LOCA::Eigensolver::AbstractStrategy>(userDefinedName))
+	isType< Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::Eigensolver::AbstractStrategy>(userDefinedName);
+	get< Teuchos::RefCountPtr<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,
@@ -104,7 +104,7 @@ LOCA::Eigensolver::Factory::create(
 
 const string&
 LOCA::Eigensolver::Factory::strategyName(
-				  NOX::Parameter::List& eigenParams) const
+				  Teuchos::ParameterList& eigenParams) const
 {
-  return eigenParams.getParameter("Method", "Default");
+  return eigenParams.get("Method", "Default");
 }

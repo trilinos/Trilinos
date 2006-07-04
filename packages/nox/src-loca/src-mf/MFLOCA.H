@@ -66,7 +66,7 @@ struct LOCAData {
      const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& top_params,
      const Teuchos::RefCountPtr<NOX::Solver::Generic>& s, 
      const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy>& g, 
-     const Teuchos::RefCountPtr<NOX::Parameter::List>& par,
+     const Teuchos::RefCountPtr<Teuchos::ParameterList>& par,
      const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& st,
      const Teuchos::RefCountPtr< list<ParamData> >& conParamData);
 
@@ -74,7 +74,7 @@ struct LOCAData {
   Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> topParams;
   Teuchos::RefCountPtr<NOX::Solver::Generic> solver;
   Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractStrategy> grp;
-  Teuchos::RefCountPtr<NOX::Parameter::List> p;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> p;
   Teuchos::RefCountPtr<NOX::StatusTest::Generic> status;
   Teuchos::RefCountPtr< list<ParamData> > paramData;
   MFNSpace space;

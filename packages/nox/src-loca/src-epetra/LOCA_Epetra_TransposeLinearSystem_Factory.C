@@ -30,7 +30,9 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
+
+#include "NOX_Common.H" // for NOX_Config.h
 
 #include "LOCA_Epetra_TransposeLinearSystem_Factory.H"
 #include "LOCA_Epetra_TransposeLinearSystem_AbstractStrategy.H"
@@ -54,7 +56,7 @@ LOCA::Epetra::TransposeLinearSystem::Factory::~Factory()
 
 Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>
 LOCA::Epetra::TransposeLinearSystem::Factory::create(
-		const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+		const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 		const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linsys)
 {
   string methodName = "LOCA::Epetra::TransposeLinearSystem::Factory::create()";
@@ -82,12 +84,12 @@ LOCA::Epetra::TransposeLinearSystem::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = solverParams->getParameter("User-Defined Name",
+    string userDefinedName = solverParams->get("User-Defined Name",
 							"???");
     if ((*solverParams).INVALID_TEMPLATE_QUALIFIER
-	isParameterRcp<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>(userDefinedName))
+	isType< Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName))
       strategy = (*solverParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy>(userDefinedName);
+	get< Teuchos::RefCountPtr<LOCA::Epetra::TransposeLinearSystem::AbstractStrategy> >(userDefinedName);
     else 
       globalData->locaErrorCheck->throwError(
 				      methodName,
@@ -105,8 +107,8 @@ LOCA::Epetra::TransposeLinearSystem::Factory::create(
 
 const string&
 LOCA::Epetra::TransposeLinearSystem::Factory::strategyName(
-				  NOX::Parameter::List& solverParams) const
+				  Teuchos::ParameterList& solverParams) const
 {
-  return solverParams.getParameter("Transpose Solver Method", 
+  return solverParams.get("Transpose Solver Method", 
 				   "Transpose Preconditioner");
 }

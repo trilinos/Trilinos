@@ -41,10 +41,8 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H" // class data element
 
 // forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -149,7 +147,7 @@ namespace LOCA {
 
       //! Compute Newton direction for extended continuation system
       virtual NOX::Abstract::Group::ReturnType 
-      computeNewton(NOX::Parameter::List& params);
+      computeNewton(Teuchos::ParameterList& params);
 
       //! Applies Jacobian for extended system
       virtual NOX::Abstract::Group::ReturnType 
@@ -163,7 +161,7 @@ namespace LOCA {
 
       //! Applies Jacobian inverse for extended system
       virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianInverse(NOX::Parameter::List& params, 
+      applyJacobianInverse(Teuchos::ParameterList& params, 
 			   const NOX::Abstract::Vector& input, 
 			   NOX::Abstract::Vector& result) const;
 
@@ -181,7 +179,7 @@ namespace LOCA {
       //! Applies Jacobian inverse for extended system
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianInverseMultiVector(
-				    NOX::Parameter::List& params, 
+				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
 
@@ -410,7 +408,7 @@ namespace LOCA {
       ExtendedGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& continuationParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& continuationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs);
@@ -436,7 +434,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::Parameter::SublistParser> parsedParams;
 
       //! Continuation parameter list
-      Teuchos::RefCountPtr<NOX::Parameter::List> continuationParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> continuationParams;
 
       //! Pointer to underlying group
       Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> grpPtr;

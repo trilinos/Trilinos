@@ -40,10 +40,8 @@
 #include "Anasazi_LOCA_Sort.H"                 // class element
 
 // Forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -99,7 +97,7 @@ namespace LOCA {
       AnasaziStrategy(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams);
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams);
       
       //! Destructor
       virtual ~AnasaziStrategy();
@@ -140,10 +138,10 @@ namespace LOCA {
       typedef LOCA::AnasaziOperator::AbstractStrategy OP;
 
       //! Eigensolver parameter list
-      Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams;
 
       //! Linear solver parameter list
-      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
       //! The block size
       int blksz;

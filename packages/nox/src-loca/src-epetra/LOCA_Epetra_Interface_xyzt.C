@@ -43,8 +43,8 @@ xyzt::xyzt(
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitJac_,
        const Teuchos::RefCountPtr<Epetra_RowMatrix> &splitMass_, 
        const Teuchos::RefCountPtr<EpetraExt::MultiMpiComm> &globalComm_,
-       NOX::Parameter::List *precPrintParams_,
-       NOX::Parameter::List *precLSParams_) :
+       Teuchos::ParameterList *precPrintParams_,
+       Teuchos::ParameterList *precLSParams_) :
   iReq(iReq_), 
   iJac(iJac_), 
   iMass(iMass_),
@@ -66,7 +66,7 @@ xyzt::xyzt(
   conStep(0),
   precPrintParams(precPrintParams_), 
   precLSParams(precLSParams_),
-  isPeriodic(precLSParams_->getParameter("Periodic",false))
+  isPeriodic(precLSParams_->get("Periodic",false))
 {
    if (globalComm->MyPID()==0) {
      cout  << "--------------XYZT Partition Info---------------"

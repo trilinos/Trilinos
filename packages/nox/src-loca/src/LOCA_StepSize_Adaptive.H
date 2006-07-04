@@ -69,7 +69,7 @@ namespace LOCA {
       Adaptive(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& stepsizeParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& stepsizeParams);
 
       //! Destructor
       virtual ~Adaptive();

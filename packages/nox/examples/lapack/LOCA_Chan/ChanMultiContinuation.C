@@ -48,67 +48,67 @@ int main()
   try {
 
     // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-      Teuchos::rcp(new NOX::Parameter::List);
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+      Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
+    Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
-    NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
-    stepperList.setParameter("Continuation Method", "Arc Length");
-    stepperList.setParameter("Number of Continuation Parameters", 2);
-    stepperList.setParameter("Epsilon", 0.1);
-    stepperList.setParameter("Max Charts", 10000);
-    stepperList.setParameter("Verbosity", 1);
-    stepperList.setParameter("Page Charts", 1);
-    stepperList.setParameter("Dump Polyhedra", true);
-    stepperList.setParameter("Dump Centers", false);
-    stepperList.setParameter("Filename", "MFresults");
-    stepperList.setParameter("Enable Arc Length Scaling", false);
-    stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.setParameter("Aggressiveness", 0.01);
-    stepperList.setParameter("Max Solution Component", 30.0);
+    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
+    stepperList.set("Continuation Method", "Arc Length");
+    stepperList.set("Number of Continuation Parameters", 2);
+    stepperList.set("Epsilon", 0.1);
+    stepperList.set("Max Charts", 10000);
+    stepperList.set("Verbosity", 1);
+    stepperList.set("Page Charts", 1);
+    stepperList.set("Dump Polyhedra", true);
+    stepperList.set("Dump Centers", false);
+    stepperList.set("Filename", "MFresults");
+    stepperList.set("Enable Arc Length Scaling", false);
+    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
+    stepperList.set("Aggressiveness", 0.01);
+    stepperList.set("Max Solution Component", 30.0);
 
     // Create sublist for each continuation parameter
-    NOX::Parameter::List& paramList1 = 
+    Teuchos::ParameterList& paramList1 = 
       stepperList.sublist("Continuation Parameter 1");
-    paramList1.setParameter("Parameter Name", "alpha");
-    paramList1.setParameter("Initial Value", alpha);
-    paramList1.setParameter("Max Value", 5.0/scale);
-    paramList1.setParameter("Min Value", 0.0/scale);
-    paramList1.setParameter("Initial Step Size", 0.1/scale);
-    paramList1.setParameter("Max Step Size", 0.2/scale);
-    paramList1.setParameter("Min Step Size", 1.0e-3/scale);
+    paramList1.set("Parameter Name", "alpha");
+    paramList1.set("Initial Value", alpha);
+    paramList1.set("Max Value", 5.0/scale);
+    paramList1.set("Min Value", 0.0/scale);
+    paramList1.set("Initial Step Size", 0.1/scale);
+    paramList1.set("Max Step Size", 0.2/scale);
+    paramList1.set("Min Step Size", 1.0e-3/scale);
     
-    NOX::Parameter::List& paramList2 = 
+    Teuchos::ParameterList& paramList2 = 
       stepperList.sublist("Continuation Parameter 2");
-    paramList2.setParameter("Parameter Name", "beta");
-    paramList2.setParameter("Initial Value", beta);
-    paramList2.setParameter("Max Value", 2.0);
-    paramList2.setParameter("Min Value", 0.0);
-    paramList2.setParameter("Initial Step Size", 0.1);
-    paramList2.setParameter("Max Step Size", 0.2);
-    paramList2.setParameter("Min Step Size", 1.0e-3);
+    paramList2.set("Parameter Name", "beta");
+    paramList2.set("Initial Value", beta);
+    paramList2.set("Max Value", 2.0);
+    paramList2.set("Min Value", 0.0);
+    paramList2.set("Initial Step Size", 0.1);
+    paramList2.set("Max Step Size", 0.2);
+    paramList2.set("Min Step Size", 1.0e-3);
 
 
     // Create bifurcation sublist
-    NOX::Parameter::List& bifurcationList = 
+    Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Type", "None");
+    bifurcationList.set("Type", "None");
 
     // Create predictor sublist
-    NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
-    //predictorList.setParameter("Method", "Constant");
-    predictorList.setParameter("Method", "Tangent");
-    //predictorList.setParameter("Method", "Secant");
+    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+    //predictorList.set("Method", "Constant");
+    predictorList.set("Method", "Tangent");
+    //predictorList.set("Method", "Secant");
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
-    nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+    nlParams.set("Nonlinear Solver", "Line Search Based");
 
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("Output Information", 
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("Output Information", 
 			       NOX::Utils::Details +
 			       NOX::Utils::OuterIteration + 
 			       NOX::Utils::InnerIteration + 
@@ -166,7 +166,7 @@ int main()
       globalData->locaUtils->out() 
 	<< std::endl << "Final Parameters" << std::endl
 	<< "****************" << std::endl;
-      stepper.getParameterList()->print(globalData->locaUtils->out());
+      stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
 

@@ -32,7 +32,7 @@
 
 #include "LOCA_GlobalData.H"
 #include "NOX_Utils.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Factory.H"
 
@@ -52,7 +52,7 @@ LOCA::GlobalData::~GlobalData()
 
 Teuchos::RefCountPtr<LOCA::GlobalData>
 LOCA::createGlobalData(
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& paramList,
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& paramList,
 	      const Teuchos::RefCountPtr<LOCA::Abstract::Factory>& userFactory)
 {
   // Create a global data object with null data fields

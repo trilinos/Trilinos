@@ -115,70 +115,70 @@ int main(int argc, char *argv[])
   // Begin LOCA Solver ************************************
 
   // Create parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-    Teuchos::rcp(new NOX::Parameter::List);
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::rcp(new Teuchos::ParameterList);
 
   // Create LOCA sublist
-  NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
+  Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
   // Create the stepper sublist and set the stepper parameters
-  NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
-  locaStepperList.setParameter("Continuation Method", "Arc Length");
-  locaStepperList.setParameter("Bordered Solver Method", "Householder");
-  locaStepperList.setParameter("Number of Continuation Parameters", 2);
-  locaStepperList.setParameter("Epsilon", 0.1);
-  locaStepperList.setParameter("Max Charts", 10000);
-  locaStepperList.setParameter("Verbosity", 1);
-  locaStepperList.setParameter("Page Charts", 1);
-  locaStepperList.setParameter("Dump Polyhedra", true);
-  locaStepperList.setParameter("Dump Centers", false);
-  locaStepperList.setParameter("Filename", "MFresults");
-  locaStepperList.setParameter("Enable Arc Length Scaling", false);
-  locaStepperList.setParameter("Max Nonlinear Iterations", 15);
-  locaStepperList.setParameter("Aggressiveness", 0.0);
-  locaStepperList.setParameter("Max Solution Component", 6.0);
+  Teuchos::ParameterList& locaStepperList = locaParamsList.sublist("Stepper");
+  locaStepperList.set("Continuation Method", "Arc Length");
+  locaStepperList.set("Bordered Solver Method", "Householder");
+  locaStepperList.set("Number of Continuation Parameters", 2);
+  locaStepperList.set("Epsilon", 0.1);
+  locaStepperList.set("Max Charts", 10000);
+  locaStepperList.set("Verbosity", 1);
+  locaStepperList.set("Page Charts", 1);
+  locaStepperList.set("Dump Polyhedra", true);
+  locaStepperList.set("Dump Centers", false);
+  locaStepperList.set("Filename", "MFresults");
+  locaStepperList.set("Enable Arc Length Scaling", false);
+  locaStepperList.set("Max Nonlinear Iterations", 15);
+  locaStepperList.set("Aggressiveness", 0.0);
+  locaStepperList.set("Max Solution Component", 6.0);
 
   // Create sublist for each continuation parameter
-  NOX::Parameter::List& paramList1 = 
+  Teuchos::ParameterList& paramList1 = 
     locaStepperList.sublist("Continuation Parameter 1");
-  paramList1.setParameter("Parameter Name", "Right BC");
-  paramList1.setParameter("Initial Value", 0.1);
-  paramList1.setParameter("Max Value", 4.0);
-  paramList1.setParameter("Min Value", 0.0);
-  paramList1.setParameter("Initial Step Size", 0.1);
-  paramList1.setParameter("Max Step Size", 0.2);
-  paramList1.setParameter("Min Step Size", 1.0e-3);
+  paramList1.set("Parameter Name", "Right BC");
+  paramList1.set("Initial Value", 0.1);
+  paramList1.set("Max Value", 4.0);
+  paramList1.set("Min Value", 0.0);
+  paramList1.set("Initial Step Size", 0.1);
+  paramList1.set("Max Step Size", 0.2);
+  paramList1.set("Min Step Size", 1.0e-3);
 
-  NOX::Parameter::List& paramList2 = 
+  Teuchos::ParameterList& paramList2 = 
     locaStepperList.sublist("Continuation Parameter 2");
-  paramList2.setParameter("Parameter Name", "Nonlinear Factor");
-  paramList2.setParameter("Initial Value", 1.0);
-  paramList2.setParameter("Max Value", 4.0);
-  paramList2.setParameter("Min Value", 0.0);
-  paramList2.setParameter("Initial Step Size", 0.1);
-  paramList2.setParameter("Max Step Size", 0.2);
-  paramList2.setParameter("Min Step Size", 1.0e-3);
+  paramList2.set("Parameter Name", "Nonlinear Factor");
+  paramList2.set("Initial Value", 1.0);
+  paramList2.set("Max Value", 4.0);
+  paramList2.set("Min Value", 0.0);
+  paramList2.set("Initial Step Size", 0.1);
+  paramList2.set("Max Step Size", 0.2);
+  paramList2.set("Min Step Size", 1.0e-3);
 
 
   // Create bifurcation sublist
-  NOX::Parameter::List& bifurcationList = 
+  Teuchos::ParameterList& bifurcationList = 
     locaParamsList.sublist("Bifurcation");
-  bifurcationList.setParameter("Type", "None");
+  bifurcationList.set("Type", "None");
 
   // Create predictor sublist
-  NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
-  //predictorList.setParameter("Method", "Constant");
-  predictorList.setParameter("Method", "Tangent");
-  //predictorList.setParameter("Method", "Secant");
+  Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+  //predictorList.set("Method", "Constant");
+  predictorList.set("Method", "Tangent");
+  //predictorList.set("Method", "Secant");
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
-  NOX::Parameter::List& nlParams = paramList->sublist("NOX");
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+  Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
 
   // Create the NOX printing parameter list
-  NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-  nlPrintParams.setParameter("MyPID", MyPID); 
-  nlPrintParams.setParameter("Output Information", 
+  Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+  nlPrintParams.set("MyPID", MyPID); 
+  nlPrintParams.set("Output Information", 
 			     NOX::Utils::OuterIteration + 
 			     NOX::Utils::OuterIterationStatusTest + 
 			     NOX::Utils::InnerIteration +
@@ -190,45 +190,45 @@ int main(int argc, char *argv[])
 			     NOX::Utils::StepperDetails);
 
   // Create the "Line Search" sublist for the "Line Search Based" solver
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
-  searchParams.setParameter("Max Iters", 7);
-  searchParams.setParameter("Default Step", 1.0000);
-  searchParams.setParameter("Recovery Step", 0.0001);
-  searchParams.setParameter("Minimum Step", 0.0001);
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+  searchParams.set("Method", "Full Step");
+  searchParams.set("Max Iters", 7);
+  searchParams.set("Default Step", 1.0000);
+  searchParams.set("Recovery Step", 0.0001);
+  searchParams.set("Minimum Step", 0.0001);
 
   // Create the "Direction" sublist for the "Line Search Based" solver
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  NOX::Parameter::List& newParams = dirParams.sublist("Newton");
-  dirParams.setParameter("Method", "Newton");
-  newParams.setParameter("Forcing Term Method", "Constant");
-  //newParams.setParameter("Forcing Term Method", "Type 1");
-  //newParams.setParameter("Forcing Term Method", "Type 2");
-  //newParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-  //newParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+  Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
+  dirParams.set("Method", "Newton");
+  newParams.set("Forcing Term Method", "Constant");
+  //newParams.set("Forcing Term Method", "Type 1");
+  //newParams.set("Forcing Term Method", "Type 2");
+  //newParams.set("Forcing Term Minimum Tolerance", 1.0e-4);
+  //newParams.set("Forcing Term Maximum Tolerance", 0.1);
 
   // Create the "Linear Solver" sublist for the "Direction" sublist
-  NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 100);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 50);    
-  lsParams.setParameter("Scaling", "None");             
-  //lsParams.setParameter("Scaling", "Row Sum");          
-  //lsParams.setParameter("Preconditioning", "None");   
-  lsParams.setParameter("Preconditioner", "Ifpack");
-  //lsParams.setParameter("Preconditioning", "AztecOO: Jacobian Matrix");   
-  //lsParams.setParameter("Preconditioning", "AztecOO: User RowMatrix"); 
-  //lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
-  //lsParams.setParameter("Aztec Preconditioner", "ilu"); 
-  //lsParams.setParameter("Overlap", 2);  
-  //lsParams.setParameter("Graph Fill", 2); 
-  //lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  //lsParams.setParameter("Overlap", 2);   
-  //lsParams.setParameter("Fill Factor", 2.0);   
-  //lsParams.setParameter("Drop Tolerance", 1.0e-12);   
-  //lsParams.setParameter("Aztec Preconditioner", "Polynomial"); 
-  //lsParams.setParameter("Polynomial Order", 6); 
+  Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Max Iterations", 100);  
+  lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Output Frequency", 50);    
+  lsParams.set("Scaling", "None");             
+  //lsParams.set("Scaling", "Row Sum");          
+  //lsParams.set("Preconditioning", "None");   
+  lsParams.set("Preconditioner", "Ifpack");
+  //lsParams.set("Preconditioning", "AztecOO: Jacobian Matrix");   
+  //lsParams.set("Preconditioning", "AztecOO: User RowMatrix"); 
+  //lsParams.set("Preconditioning", "User Supplied Preconditioner");
+  //lsParams.set("Aztec Preconditioner", "ilu"); 
+  //lsParams.set("Overlap", 2);  
+  //lsParams.set("Graph Fill", 2); 
+  //lsParams.set("Aztec Preconditioner", "ilut"); 
+  //lsParams.set("Overlap", 2);   
+  //lsParams.set("Fill Factor", 2.0);   
+  //lsParams.set("Drop Tolerance", 1.0e-12);   
+  //lsParams.set("Aztec Preconditioner", "Polynomial"); 
+  //lsParams.set("Polynomial Order", 6); 
 
   // Create and initialize the parameter vector
   LOCA::ParameterVector pVector;
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(searchParams.getParameter("Max Iters", 10)));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(searchParams.get("Max Iters", 10)));
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(wrms);
@@ -296,7 +296,7 @@ int main(int argc, char *argv[])
     globalData->locaUtils->out() 
       << std::endl << "Final Parameters" << std::endl
       << "****************" << std::endl;
-    stepper.getParameterList()->print(globalData->locaUtils->out());
+    stepper.getList()->print(globalData->locaUtils->out());
     globalData->locaUtils->out() << std::endl;
   }
 

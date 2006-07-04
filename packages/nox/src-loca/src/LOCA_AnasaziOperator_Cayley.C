@@ -31,15 +31,15 @@
 //@HEADER
 
 #include "LOCA_AnasaziOperator_Cayley.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
 LOCA::AnasaziOperator::Cayley::Cayley(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams_,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams_,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams_,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams_,
 	const Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup>& grp_)
   : globalData(global_data),
     myLabel("Cayley Transformation"),
@@ -58,8 +58,8 @@ LOCA::AnasaziOperator::Cayley::Cayley(
   NOX::Abstract::Group::ReturnType status;
 
   // Get parameters
-  sigma = eigenParams->getParameter("Cayley Pole",0.0);
-  mu = eigenParams->getParameter("Cayley Zero",0.0);
+  sigma = eigenParams->get("Cayley Pole",0.0);
+  mu = eigenParams->get("Cayley Zero",0.0);
 
   // Compute Jacobian matrix
   status = grp->computeJacobian();

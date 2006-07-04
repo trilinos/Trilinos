@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_MultiPredictor_Random.H"
 #include "LOCA_GlobalData.H"
 #include "NOX_Utils.H"
@@ -39,12 +39,12 @@
 
 LOCA::MultiPredictor::Random::Random(
 	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams) :
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor(),
   secant(),
   initialized(false),
-  epsilon(predParams->getParameter("Epsilon", 1.0e-3))
+  epsilon(predParams->get("Epsilon", 1.0e-3))
 {
 }
 

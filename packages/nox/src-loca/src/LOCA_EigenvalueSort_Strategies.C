@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "Teuchos_LAPACK.hpp"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_EigenvalueSort_Strategies.H"
 
@@ -404,12 +404,12 @@ LOCA::EigenvalueSort::SmallestImaginary::sort(int n, double* r_evals,
 
 LOCA::EigenvalueSort::LargestRealInverseCayley::LargestRealInverseCayley(
 	     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	     const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams) :
+	     const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams) :
   sigma(0.0),
   mu(0.0)
 {
-  sigma = eigenParams->getParameter("Cayley Pole",0.0);
-  mu = eigenParams->getParameter("Cayley Zero",0.0);
+  sigma = eigenParams->get("Cayley Pole",0.0);
+  mu = eigenParams->get("Cayley Zero",0.0);
 }
 
 NOX::Abstract::Group::ReturnType 

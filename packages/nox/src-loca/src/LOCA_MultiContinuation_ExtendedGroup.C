@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Parameter_Vector.H"
@@ -125,7 +125,7 @@ LOCA::MultiContinuation::ExtendedGroup::computeGradient()
    
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::computeNewton(
-					       NOX::Parameter::List& params) 
+					       Teuchos::ParameterList& params) 
 {
   return conGroup->computeNewton(params);
 }
@@ -148,7 +148,7 @@ LOCA::MultiContinuation::ExtendedGroup::applyJacobianTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobianInverse(
-					  NOX::Parameter::List& params, 
+					  Teuchos::ParameterList& params, 
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -173,7 +173,7 @@ LOCA::MultiContinuation::ExtendedGroup::applyJacobianTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ExtendedGroup::applyJacobianInverseMultiVector(
-				     NOX::Parameter::List& params,
+				     Teuchos::ParameterList& params,
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {
@@ -568,7 +568,7 @@ LOCA::MultiContinuation::ExtendedGroup::fillC(
 LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
       const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& conParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& conParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp,
       const Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const vector<int>& paramIDs)

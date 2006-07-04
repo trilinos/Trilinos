@@ -106,7 +106,7 @@ namespace LOCA {
 	//@{
    
 	//! Returns the value of scaled parameter residual norm
-	double getParameterResidualNorm() const;
+	double getResidualNorm() const;
 
 	//! Returns the realative tolerance set in the constructor.
 	double getRTOL() const;

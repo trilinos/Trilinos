@@ -41,7 +41,6 @@
 // LOCA Objects
 #include "LOCA.H"
 #include "LOCA_Epetra.H"
-#include "NOX_Parameter_Teuchos2NOX.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -60,6 +59,14 @@
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
 #include "FiniteElementProblem.H"              
+
+// Required for reading and writing parameter lists from xml format
+#ifdef HAVE_TEUCHOS_EXPAT
+#include "Teuchos_XMLObject.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_FileInputSource.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
+#endif
 
 using namespace std;
 
@@ -115,76 +122,76 @@ int main(int argc, char *argv[])
   // Begin LOCA Solver ************************************
 
   // Create parameter list
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramList = 
-    Teuchos::rcp(new NOX::Parameter::List);
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList = 
+    Teuchos::rcp(new Teuchos::ParameterList);
 
   // Create LOCA sublist
-  NOX::Parameter::List& locaParamsList = paramList->sublist("LOCA");
+  Teuchos::ParameterList& locaParamsList = paramList->sublist("LOCA");
 
   // Create the stepper sublist and set the stepper parameters
-  NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
-  //locaStepperList.setParameter("Continuation Method", "Natural");
-  locaStepperList.setParameter("Continuation Method", "Arc Length");
-  locaStepperList.setParameter("Bordered Solver Method", "Householder");
-  locaStepperList.setParameter("Continuation Parameter", "Right BC");
-  //locaStepperList.setParameter("Continuation Parameter", "Nonlinear Factor");
-  locaStepperList.setParameter("Initial Value", 0.1/scale);
-  locaStepperList.setParameter("Max Value", 100.0/scale);
-  locaStepperList.setParameter("Min Value", 0.05/scale);
-  locaStepperList.setParameter("Max Steps", 30);
-  locaStepperList.setParameter("Max Nonlinear Iterations", 15);
-  locaStepperList.setParameter("Enable Arc Length Scaling", true);
-  locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
-  locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
-  locaStepperList.setParameter("Initial Scale Factor", 1.0);
-  locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
-  locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
-  locaStepperList.setParameter("Min Tangent Factor", 0.8);
-  locaStepperList.setParameter("Tangent Factor Exponent",1.5);
+  Teuchos::ParameterList& locaStepperList = locaParamsList.sublist("Stepper");
+  //locaStepperList.set("Continuation Method", "Natural");
+  locaStepperList.set("Continuation Method", "Arc Length");
+  locaStepperList.set("Bordered Solver Method", "Householder");
+  locaStepperList.set("Continuation Parameter", "Right BC");
+  //locaStepperList.set("Continuation Parameter", "Nonlinear Factor");
+  locaStepperList.set("Initial Value", 0.1/scale);
+  locaStepperList.set("Max Value", 100.0/scale);
+  locaStepperList.set("Min Value", 0.05/scale);
+  locaStepperList.set("Max Steps", 30);
+  locaStepperList.set("Max Nonlinear Iterations", 15);
+  locaStepperList.set("Enable Arc Length Scaling", true);
+  locaStepperList.set("Goal Arc Length Parameter Contribution", 0.5);
+  locaStepperList.set("Max Arc Length Parameter Contribution", 0.7);
+  locaStepperList.set("Initial Scale Factor", 1.0);
+  locaStepperList.set("Min Scale Factor", 1.0e-8);
+  locaStepperList.set("Enable Tangent Factor Step Size Scaling",false);
+  locaStepperList.set("Min Tangent Factor", 0.8);
+  locaStepperList.set("Tangent Factor Exponent",1.5);
 
   // Create bifurcation sublist
-    NOX::Parameter::List& bifurcationList = 
+    Teuchos::ParameterList& bifurcationList = 
       locaParamsList.sublist("Bifurcation");
-    bifurcationList.setParameter("Type", "None");
+    bifurcationList.set("Type", "None");
 
   // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
-  locaStepperList.setParameter("Compute Eigenvalues",true);
-  NOX::Parameter::List& aList = locaStepperList.sublist("Eigensolver");
-  aList.setParameter("Method", "Anasazi");
-  aList.setParameter("Block Size", 1);
-  aList.setParameter("Arnoldi Size", 10);
-  aList.setParameter("NEV", 3);
-  aList.setParameter("Tol", 2.0e-7);
-  aList.setParameter("Convergence Check", 1);
-  aList.setParameter("Restarts",2);
-  aList.setParameter("Frequency",1);
-  aList.setParameter("Debug Level",0);
+  locaStepperList.set("Compute Eigenvalues",true);
+  Teuchos::ParameterList& aList = locaStepperList.sublist("Eigensolver");
+  aList.set("Method", "Anasazi");
+  aList.set("Block Size", 1);
+  aList.set("Arnoldi Size", 10);
+  aList.set("NEV", 3);
+  aList.set("Tol", 2.0e-7);
+  aList.set("Convergence Check", 1);
+  aList.set("Restarts",2);
+  aList.set("Frequency",1);
+  aList.set("Debug Level",0);
   
   // Create predictor sublist
-  NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
-  //predictorList.setParameter("Method", "Constant");
-  predictorList.setParameter("Method", "Tangent");
-  //predictorList.setParameter("Method", "Secant");
+  Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+  //predictorList.set("Method", "Constant");
+  predictorList.set("Method", "Tangent");
+  //predictorList.set("Method", "Secant");
 
   // Create step size sublist
-  NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
-  //stepSizeList.setParameter("Method", "Constant");
-  stepSizeList.setParameter("Method", "Adaptive");
-  stepSizeList.setParameter("Initial Step Size", 0.1/scale);
-  stepSizeList.setParameter("Min Step Size", 1.0e-3/scale);
-  stepSizeList.setParameter("Max Step Size", 2000.0/scale);
-  stepSizeList.setParameter("Aggressiveness", 0.1);
-  stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
-  stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
+  Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
+  //stepSizeList.set("Method", "Constant");
+  stepSizeList.set("Method", "Adaptive");
+  stepSizeList.set("Initial Step Size", 0.1/scale);
+  stepSizeList.set("Min Step Size", 1.0e-3/scale);
+  stepSizeList.set("Max Step Size", 2000.0/scale);
+  stepSizeList.set("Aggressiveness", 0.1);
+  stepSizeList.set("Failed Step Reduction Factor", 0.5);
+  stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
-  NOX::Parameter::List& nlParams = paramList->sublist("NOX");
-  nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+  Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+  nlParams.set("Nonlinear Solver", "Line Search Based");
 
   // Create the NOX printing parameter list
-  NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-  nlPrintParams.setParameter("MyPID", MyPID); 
-  nlPrintParams.setParameter("Output Information", 
+  Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+  nlPrintParams.set("MyPID", MyPID); 
+  nlPrintParams.set("Output Information", 
 			     NOX::Utils::OuterIteration + 
 			     NOX::Utils::OuterIterationStatusTest + 
 			     NOX::Utils::InnerIteration +
@@ -195,34 +202,34 @@ int main(int argc, char *argv[])
 			     NOX::Utils::StepperDetails);
 
   // Create the "Line Search" sublist for the "Line Search Based" solver
-  NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  searchParams.setParameter("Method", "Full Step");
-  searchParams.setParameter("Max Iters", 7);
-  searchParams.setParameter("Default Step", 1.0000);
-  searchParams.setParameter("Recovery Step", 0.0001);
-  searchParams.setParameter("Minimum Step", 0.0001);
+  Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
+  searchParams.set("Method", "Full Step");
+  searchParams.set("Max Iters", 7);
+  searchParams.set("Default Step", 1.0000);
+  searchParams.set("Recovery Step", 0.0001);
+  searchParams.set("Minimum Step", 0.0001);
 
   // Create the "Direction" sublist for the "Line Search Based" solver
-  NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-  NOX::Parameter::List& newParams = dirParams.sublist("Newton");
-  dirParams.setParameter("Method", "Newton");
-  newParams.setParameter("Forcing Term Method", "Constant");
+  Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+  Teuchos::ParameterList& newParams = dirParams.sublist("Newton");
+  dirParams.set("Method", "Newton");
+  newParams.set("Forcing Term Method", "Constant");
 
   // Create the "Linear Solver" sublist for the "Direction" sublist
-  NOX::Parameter::List& lsParams = newParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "GMRES");  
-  lsParams.setParameter("Max Iterations", 100);  
-  lsParams.setParameter("Tolerance", 1e-4);
-  lsParams.setParameter("Output Frequency", 1);    
-  lsParams.setParameter("Scaling", "None");             
-  lsParams.setParameter("Preconditioner", "Ifpack");
-  //lsParams.setParameter("Preconditioner", "AztecOO");
-  //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
-  //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
-  lsParams.setParameter("Aztec Preconditioner", "ilut"); 
-  //lsParams.setParameter("Overlap", 2);   
-  //lsParams.setParameter("Fill Factor", 2.0); 
-  //lsParams.setParameter("Drop Tolerance", 1.0e-12);
+  Teuchos::ParameterList& lsParams = newParams.sublist("Linear Solver");
+  lsParams.set("Aztec Solver", "GMRES");  
+  lsParams.set("Max Iterations", 100);  
+  lsParams.set("Tolerance", 1e-4);
+  lsParams.set("Output Frequency", 1);    
+  lsParams.set("Scaling", "None");             
+  lsParams.set("Preconditioner", "Ifpack");
+  //lsParams.set("Preconditioner", "AztecOO");
+  //lsParams.set("Jacobian Operator", "Matrix-Free");
+  //lsParams.set("Preconditioner Operator", "Finite Difference");
+  lsParams.set("Aztec Preconditioner", "ilut"); 
+  //lsParams.set("Overlap", 2);   
+  //lsParams.set("Fill Factor", 2.0); 
+  //lsParams.set("Drop Tolerance", 1.0e-12);
 
   // Create and initialize the parameter vector
   LOCA::ParameterVector pVector;
@@ -268,24 +275,38 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<NOX::StatusTest::NormF> wrms = 
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
   Teuchos::RefCountPtr<NOX::StatusTest::MaxIters> maxiters = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(searchParams.getParameter("Max Iters", 10)));
+    Teuchos::rcp(new NOX::StatusTest::MaxIters(searchParams.get("Max Iters", 10)));
   Teuchos::RefCountPtr<NOX::StatusTest::Combo> combo = 
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(wrms);
   combo->addStatusTest(maxiters);
 
 #ifdef HAVE_TEUCHOS_EXPAT
-  // Test writing of param list to XML file, and rereading it
-  // into a new parameter list.
-  NOX::Parameter::Teuchos2NOX pl_converter;
-                                                                                                                                        
-  cout << "Writing parameter list to \"input.xml\"" << cout;
-  pl_converter.SaveToXMLFile("input.xml", *paramList);
-                                                                                                                                        
-  cout << "Reading parameter list from \"input.xml\"" << cout;
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramList2 = pl_converter.ReadFromXMLFile("input.xml");
+
+  // Write the parameter list to a file
+  cout << "Writing parameter list to \"input.xml\"" << endl;
+  std::string output_filename = "input.xml";
+  Teuchos::XMLParameterListWriter xml_converter;
+  Teuchos::XMLObject xml_pl = xml_converter.toXML(*paramList);
+  ofstream of(output_filename.c_str()); 
+  of << xml_pl << endl;
+  of.close();
+  
+  // Read in the parameter list from a file
+  cout << "Reading parameter list from \"input.xml\"" << endl;
+  Teuchos::FileInputSource fileSrc(output_filename);
+  // Convert the file data into an xml object
+  Teuchos::XMLObject xml_obj = fileSrc.getObject();
+  // Create a xml to teuchos::parameterlist converter
+  Teuchos::XMLParameterListReader xml_to_pl_converter;
+  // Create a teuchos parameter list
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList2
+    = Teuchos::rcp(new Teuchos::ParameterList);
+  // convert the teuchos xml object to a parameter list
+  (*paramList2) = xml_to_pl_converter.toParameterList(xml_obj);
+  
 #else
-  Teuchos::RefCountPtr<NOX::Parameter::List> paramList2 = paramList;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> paramList2 = paramList;
 #endif
 
   // Create the stepper  
@@ -303,7 +324,7 @@ int main(int argc, char *argv[])
     globalData->locaUtils->out() 
       << std::endl << "Final Parameters" << std::endl
       << "****************" << std::endl;
-    stepper.getParameterList()->print(globalData->locaUtils->out());
+    stepper.getList()->print(globalData->locaUtils->out());
     globalData->locaUtils->out() << std::endl;
   }
 

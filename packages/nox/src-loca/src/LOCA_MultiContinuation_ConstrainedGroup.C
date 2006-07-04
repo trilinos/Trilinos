@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_ConstraintInterface.H"
 #include "LOCA_MultiContinuation_ConstraintInterfaceMVDX.H"
@@ -46,7 +46,7 @@
 LOCA::MultiContinuation::ConstrainedGroup::ConstrainedGroup(
        const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& conParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& conParams,
        const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& g,
        const Teuchos::RefCountPtr<LOCA::MultiContinuation::ConstraintInterface>& constraints,
        const vector<int>& paramIDs)
@@ -390,7 +390,7 @@ LOCA::MultiContinuation::ConstrainedGroup::computeGradient()
    
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ConstrainedGroup::computeNewton(
-					       NOX::Parameter::List& params) 
+					       Teuchos::ParameterList& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
@@ -479,7 +479,7 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverse(
-					  NOX::Parameter::List& params, 
+					  Teuchos::ParameterList& params, 
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -576,7 +576,7 @@ LOCA::MultiContinuation::ConstrainedGroup::applyJacobianTransposeMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::ConstrainedGroup::applyJacobianInverseMultiVector(
-				     NOX::Parameter::List& params,
+				     Teuchos::ParameterList& params,
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {

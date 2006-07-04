@@ -37,10 +37,10 @@
 
 // Forward declares
 class Epetra_Operator;
+namespace Teuchos {
+  class ParameterList;
+}
 namespace NOX {
-  namespace Parameter {
-    class List;
-  }
   namespace Epetra {
     class Vector;
   }
@@ -76,7 +76,7 @@ namespace LOCA {
 	 * The parameter list contains the linear solver options.
 	 */
 	virtual bool 
-	applyJacobianTransposeInverse(NOX::Parameter::List &params, 
+	applyJacobianTransposeInverse(Teuchos::ParameterList &params, 
 				      const NOX::Epetra::Vector &input, 
 				      NOX::Epetra::Vector &result) = 0;
 
@@ -92,7 +92,7 @@ namespace LOCA {
 	 */
 	virtual bool 
 	createTransposePreconditioner(const NOX::Epetra::Vector& x, 
-				      NOX::Parameter::List& p) = 0;
+				      Teuchos::ParameterList& p) = 0;
 
 	//! Get Jacobian-transpose operator
 	virtual Teuchos::RefCountPtr<Epetra_Operator> 

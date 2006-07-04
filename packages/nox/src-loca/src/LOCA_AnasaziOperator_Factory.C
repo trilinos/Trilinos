@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
@@ -53,8 +53,8 @@ LOCA::AnasaziOperator::Factory::~Factory()
 Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy>
 LOCA::AnasaziOperator::Factory::create(
        const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-       const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
+       const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
        const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp)
 {
   string methodName = "LOCA::AnasaziOperator::Factory::create()";
@@ -104,11 +104,11 @@ LOCA::AnasaziOperator::Factory::create(
 
     // Get name of user-defined strategy
     string userDefinedName = 
-      eigenParams->getParameter("Operator User-Defined Name", "???");
+      eigenParams->get("Operator User-Defined Name", "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	  isParameterRcp<LOCA::AnasaziOperator::AbstractStrategy>(userDefinedName))
+	isType< Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::AnasaziOperator::AbstractStrategy>(userDefinedName);
+	get< Teuchos::RefCountPtr<LOCA::AnasaziOperator::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,
@@ -126,7 +126,7 @@ LOCA::AnasaziOperator::Factory::create(
 
 const string&
 LOCA::AnasaziOperator::Factory::strategyName(
-				  NOX::Parameter::List& eigenParams) const
+				  Teuchos::ParameterList& eigenParams) const
 {
-  return eigenParams.getParameter("Operator", "Jacobian Inverse");
+  return eigenParams.get("Operator", "Jacobian Inverse");
 }

@@ -96,7 +96,7 @@ namespace LOCA {
       //! Implementation of reset method (forwarded to wrapped solver)
       bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
 		 const Teuchos::RefCountPtr<NOX::StatusTest::Generic>& tests, 
-		 const Teuchos::RefCountPtr<NOX::Parameter::List>& params);
+		 const Teuchos::RefCountPtr<Teuchos::ParameterList>& params);
   
       //! Implementation of reset method (forwarded to wrapped solver)
       bool reset(const Teuchos::RefCountPtr<NOX::Abstract::Group>& grp, 
@@ -130,10 +130,10 @@ namespace LOCA {
       int getNumIterations() const;
       
       /*! 
-       * \brief Implementation of getParameterList method (forwarded to 
+       * \brief Implementation of getList method (forwarded to 
        * wrapped solver)
        */
-      const NOX::Parameter::List& getParameterList() const;
+      const Teuchos::ParameterList& getList() const;
 
     protected:
 

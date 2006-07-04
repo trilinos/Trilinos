@@ -97,7 +97,7 @@ namespace LOCA {
 	ModifiedConstraint(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
 	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MinimallyAugmented::AbstractGroup>& g,
 	 bool is_symmetric,
 	 const NOX::Abstract::Vector& a,

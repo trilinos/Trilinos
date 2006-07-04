@@ -105,7 +105,7 @@ LOCA::Continuation::StatusTest::ParameterResidualNorm::print(ostream& stream,
 } 
 
 double 
-LOCA::Continuation::StatusTest::ParameterResidualNorm::getParameterResidualNorm() const
+LOCA::Continuation::StatusTest::ParameterResidualNorm::getResidualNorm() const
 {
   return paramResidualNorm;
 }

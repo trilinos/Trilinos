@@ -60,52 +60,52 @@ int main()
     grp.setParams(p);
 
     // Create parameter list
-    NOX::Parameter::List paramList;
+    Teuchos::ParameterList paramList;
 
     // Create LOCA sublist
-    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+    Teuchos::ParameterList& locaParamsList = paramList.sublist("LOCA");
 
     // Create the stepper sublist and set the stepper parameters
-    NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
-    //stepperList.setParameter("Continuation Method", "Natural");
-    stepperList.setParameter("Continuation Method", "Arc Length");
-    stepperList.setParameter("Continuation Parameter", "alpha");
-    stepperList.setParameter("Initial Value", alpha);
-    stepperList.setParameter("Max Value", 5.0/scale);
-    stepperList.setParameter("Min Value", -1.0/scale);
-    stepperList.setParameter("Max Steps", 100);
-    stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
-    stepperList.setParameter("Enable Arc Length Scaling", true);
-    stepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
-    stepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
-    stepperList.setParameter("Initial Scale Factor", 1.0);
-    stepperList.setParameter("Min Scale Factor", 1.0e-8);
-    stepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
-    stepperList.setParameter("Min Tangent Factor", -1.0);
-    stepperList.setParameter("Tangent Factor Exponent",1.0);
-    stepperList.setParameter("Compute Eigenvalues",false);
+    Teuchos::ParameterList& stepperList = locaParamsList.sublist("Stepper");
+    //stepperList.set("Continuation Method", "Natural");
+    stepperList.set("Continuation Method", "Arc Length");
+    stepperList.set("Continuation Parameter", "alpha");
+    stepperList.set("Initial Value", alpha);
+    stepperList.set("Max Value", 5.0/scale);
+    stepperList.set("Min Value", -1.0/scale);
+    stepperList.set("Max Steps", 100);
+    stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
+    stepperList.set("Enable Arc Length Scaling", true);
+    stepperList.set("Goal Arc Length Parameter Contribution", 0.5);
+    stepperList.set("Max Arc Length Parameter Contribution", 0.7);
+    stepperList.set("Initial Scale Factor", 1.0);
+    stepperList.set("Min Scale Factor", 1.0e-8);
+    stepperList.set("Enable Tangent Factor Step Size Scaling",false);
+    stepperList.set("Min Tangent Factor", -1.0);
+    stepperList.set("Tangent Factor Exponent",1.0);
+    stepperList.set("Compute Eigenvalues",false);
 
     // Create predictor sublist
-    NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
-    predictorList.setParameter("Method", "Constant");
-    //predictorList.setParameter("Method", "Tangent");
-    //predictorList.setParameter("Method", "Secant");
+    Teuchos::ParameterList& predictorList = locaParamsList.sublist("Predictor");
+    predictorList.set("Method", "Constant");
+    //predictorList.set("Method", "Tangent");
+    //predictorList.set("Method", "Secant");
 
     // Create step size sublist
-    NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.setParameter("Method", "Constant");
-    //stepSizeList.setParameter("Method", "Adaptive");
-    stepSizeList.setParameter("Initial Step Size", 0.1);
-    //stepSizeList.setParameter("Min Step Size", 1.0e-3/scale);
-    //stepSizeList.setParameter("Max Step Size", 10.0/scale);
-    //stepSizeList.setParameter("Max Step Size", 1.0);
-    stepSizeList.setParameter("Aggressiveness", 0.5);
-    stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
-    stepSizeList.setParameter("Successful Step Increase Factor", 1.26); // for constant
+    Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
+    stepSizeList.set("Method", "Constant");
+    //stepSizeList.set("Method", "Adaptive");
+    stepSizeList.set("Initial Step Size", 0.1);
+    //stepSizeList.set("Min Step Size", 1.0e-3/scale);
+    //stepSizeList.set("Max Step Size", 10.0/scale);
+    //stepSizeList.set("Max Step Size", 1.0);
+    stepSizeList.set("Aggressiveness", 0.5);
+    stepSizeList.set("Failed Step Reduction Factor", 0.5);
+    stepSizeList.set("Successful Step Increase Factor", 1.26); // for constant
 
     // Set the LOCA Utilities
-    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
-    locaUtilsList.setParameter("Output Information", 
+    Teuchos::ParameterList& locaUtilsList = locaParamsList.sublist("Utilities");
+    locaUtilsList.set("Output Information", 
 			       LOCA::Utils::Warning +
 			       LOCA::Utils::StepperIteration +
 			       LOCA::Utils::StepperDetails +
@@ -114,19 +114,19 @@ int main()
 			       LOCA::Utils::SolverDetails);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
-    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
-    nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+    Teuchos::ParameterList& nlParams = paramList.sublist("NOX");
+    nlParams.set("Nonlinear Solver", "Line Search Based");
 
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("Output Information", 
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("Output Information", 
 			       NOX::Utils::Details +
 			       NOX::Utils::OuterIteration + 
 			       NOX::Utils::InnerIteration + 
 			       NOX::Utils::Warning +
 			       NOX::Utils::Error);
 
-    //NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-    //NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
+    //Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
+    //Teuchos::ParameterList& lsParams = dirParams.sublist("Linear Solver");
 
     // Set up the status tests
     Teuchos::RefCountPtr<NOX::StatusTest::NormF> statusTestA = 
@@ -158,7 +158,7 @@ int main()
     if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
       cout << endl << "Final Parameters" << endl
 	   << "****************" << endl;
-      stepper.getParameterList().print(cout);
+      stepper.getList().print(cout);
       cout << endl;
     }
   }

@@ -120,7 +120,7 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::print(
 
 
 double 
-LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getParameterUpdateNorm() const
+LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::getUpdateNorm() const
 {
   return paramUpdateNorm;
 }   

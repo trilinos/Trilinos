@@ -36,10 +36,8 @@
 #include "Teuchos_RefCountPtr.hpp"
 
 // forward declarations
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   class GlobalData;
@@ -90,10 +88,10 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::MultiPredictor::AbstractStrategy>
       create(
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& predictorParams);
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& predictorParams);
 
       //! Return strategy name given by \c predictorParams
-      const string& strategyName(NOX::Parameter::List& predictorParams) const;
+      const string& strategyName(Teuchos::ParameterList& predictorParams) const;
 
     private:
 

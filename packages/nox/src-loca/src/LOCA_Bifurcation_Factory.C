@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_ErrorCheck.H"
 
@@ -55,7 +55,7 @@ LOCA::Bifurcation::Factory::~Factory()
 Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Bifurcation::Factory::create(
       const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-      const Teuchos::RefCountPtr<NOX::Parameter::List>& bifurcationParams,
+      const Teuchos::RefCountPtr<Teuchos::ParameterList>& bifurcationParams,
       const Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup>& grp)
 {
   string methodName = "LOCA::Bifurcation::Factory::create()";
@@ -127,13 +127,13 @@ LOCA::Bifurcation::Factory::create(
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
-    string userDefinedName = bifurcationParams->getParameter(
+    string userDefinedName = bifurcationParams->get(
 							 "User-Defined Name",
 							 "???");
     if ((*bifurcationParams).INVALID_TEMPLATE_QUALIFIER
-	  isParameterRcp<LOCA::MultiContinuation::AbstractGroup>(userDefinedName))
+	isType< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> >(userDefinedName))
       strategy = (*bifurcationParams).INVALID_TEMPLATE_QUALIFIER
-	getRcpParameter<LOCA::MultiContinuation::AbstractGroup>(userDefinedName);
+	get< Teuchos::RefCountPtr<LOCA::MultiContinuation::AbstractGroup> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
 				       methodName,
@@ -151,15 +151,15 @@ LOCA::Bifurcation::Factory::create(
 
 string
 LOCA::Bifurcation::Factory::strategyName(
-				NOX::Parameter::List& bifurcationParams) const
+				Teuchos::ParameterList& bifurcationParams) const
 {
   // Get bifurcation type
-  string bif_type =  bifurcationParams.getParameter("Type", "None");
+  string bif_type =  bifurcationParams.get("Type", "None");
 
   // Get the formulation
   if (bif_type == "Turning Point" || bif_type == "Pitchfork") {
     string formulation = 
-      bifurcationParams.getParameter("Formulation", "Moore-Spence");
+      bifurcationParams.get("Formulation", "Moore-Spence");
     bif_type += ":  " + formulation;
   }
 

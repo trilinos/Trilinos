@@ -30,7 +30,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
@@ -48,15 +48,15 @@
 LOCA::Eigensolver::DGGEVStrategy::DGGEVStrategy(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& tpParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigParams) :
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigParams) :
   globalData(global_data),
   topParams(tpParams),
   eigenParams(eigParams),
   nev(4),
   which("LM")
 {
-  nev = eigenParams->getParameter("NEV", 4);
-  which = eigenParams->getParameter("Sorting Order","LM");
+  nev = eigenParams->get("NEV", 4);
+  which = eigenParams->get("Sorting Order","LM");
 }
 
 LOCA::Eigensolver::DGGEVStrategy::~DGGEVStrategy() 

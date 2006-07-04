@@ -34,7 +34,7 @@
 #include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
 #include "LOCA_TurningPoint_MooreSpence_SolverStrategy.H"
 #include "LOCA_Parameter_Vector.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 #include "LOCA_GlobalData.H"
 #include "LOCA_Factory.H"
 #include "LOCA_Parameter_SublistParser.H"
@@ -44,7 +44,7 @@
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
          const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& tpParams,
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& tpParams,
 	 const Teuchos::RefCountPtr<LOCA::TurningPoint::MooreSpence::AbstractGroup>& g)
   : LOCA::Extended::MultiAbstractGroup(),
     LOCA::MultiContinuation::AbstractGroup(),
@@ -76,7 +76,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     globalData->locaErrorCheck->throwError(func,
 				 "\"Bifurcation Parameter\" name is not set!");
   }
-  string bifParamName = turningPointParams->getParameter(
+  string bifParamName = turningPointParams->get(
 						  "Bifurcation Parameter",
 						  "None");
   const ParameterVector& p = grpPtr->getParams();
@@ -88,7 +88,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> lenVecPtr = 
     (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
-      getRcpParameter<NOX::Abstract::Vector>("Length Normalization Vector");
+    get< Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Length Normalization Vector");
 
   if (!turningPointParams->isParameter("Initial Null Vector")) {
     globalData->locaErrorCheck->throwError(func,
@@ -96,12 +96,12 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   }
   Teuchos::RefCountPtr<NOX::Abstract::Vector> nullVecPtr = 
     (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
-      getRcpParameter<NOX::Abstract::Vector>("Initial Null Vector");
+    get<Teuchos::RefCountPtr<NOX::Abstract::Vector> >("Initial Null Vector");
 
-  bool perturbSoln = turningPointParams->getParameter(
+  bool perturbSoln = turningPointParams->get(
 					       "Perturb Initial Solution", 
 					       false);
-  double perturbSize = turningPointParams->getParameter(
+  double perturbSize = turningPointParams->get(
 						 "Relative Perturbation Size", 
 						 1.0e-3);
 
@@ -317,7 +317,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeGradient()
    
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::computeNewton(
-						 NOX::Parameter::List& params) 
+						 Teuchos::ParameterList& params) 
 {
   if (isValidNewton)
     return NOX::Abstract::Group::Ok;
@@ -405,7 +405,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTranspose(
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverse(
-					  NOX::Parameter::List& params, 
+					  Teuchos::ParameterList& params, 
 					  const NOX::Abstract::Vector& input,
 					  NOX::Abstract::Vector& result) const 
 {
@@ -528,7 +528,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianTransposeMultiVecto
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::applyJacobianInverseMultiVector( 
-				     NOX::Parameter::List& params, 	
+				     Teuchos::ParameterList& params, 	
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const 
 {

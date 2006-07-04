@@ -90,8 +90,8 @@ namespace LOCA {
       ShiftInvert(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& eigenParams,
-	const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& eigenParams,
+	const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams,
 	const Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup>& grp);
 
       //! Destructor
@@ -144,10 +144,10 @@ namespace LOCA {
       string myLabel;
 
       //! Stores parameters relating to the operator
-      Teuchos::RefCountPtr<NOX::Parameter::List> eigenParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> eigenParams;
 
       //! Stores linear solver parameters
-      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
       //! Stores group representing Jacobian and Mass matrix
       Teuchos::RefCountPtr<LOCA::TimeDependent::AbstractGroup> grp;

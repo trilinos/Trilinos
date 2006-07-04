@@ -41,10 +41,8 @@
 #include "LOCA_Epetra_Interface_TimeDependent.H"
 
 // Forward declares
-namespace NOX {
-  namespace Parameter {
-    class List;
-  }
+namespace Teuchos {
+  class ParameterList;
 }
 namespace LOCA {
   namespace Epetra {
@@ -100,14 +98,14 @@ namespace LOCA {
        * preconditioning.
        */
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    NOX::Parameter::List& printingParams, 
+	    Teuchos::ParameterList& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess,
 	    const LOCA::ParameterVector& p);
 
       //! Standard Constructor.
       Group(const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	    NOX::Parameter::List& printingParams, 
+	    Teuchos::ParameterList& printingParams, 
 	    const Teuchos::RefCountPtr<LOCA::Epetra::Interface::Required>& i, 
 	    NOX::Epetra::Vector& initialGuess, 
 	    const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
@@ -116,7 +114,7 @@ namespace LOCA {
       //! Constructor with time-dependent interface
       Group(
 	const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	NOX::Parameter::List& printingParams,
+	Teuchos::ParameterList& printingParams,
         const Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent>& i,
 	NOX::Epetra::Vector& initialGuess,
 	const Teuchos::RefCountPtr<NOX::Epetra::LinearSystem>& linSys,
@@ -175,14 +173,14 @@ namespace LOCA {
 
       //! Solve Jacobian-tranpose system 
       virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianTransposeInverse(NOX::Parameter::List& params, 
+      applyJacobianTransposeInverse(Teuchos::ParameterList& params, 
 				    const NOX::Abstract::Vector& input, 
 				    NOX::Abstract::Vector& result) const;
 
       //! Solve Jacobian-tranpose system with multiple right-hand sides
       virtual NOX::Abstract::Group::ReturnType 
       applyJacobianTransposeInverseMultiVector(
-				    NOX::Parameter::List& params, 
+				    Teuchos::ParameterList& params, 
 				    const NOX::Abstract::MultiVector& input, 
 				    NOX::Abstract::MultiVector& result) const;
 
@@ -318,7 +316,7 @@ namespace LOCA {
       //! Solve the linear system with the shifted matrix, using the same
       //! solver and settings as for the Jacobian matrix.
       virtual NOX::Abstract::Group::ReturnType 
-      applyShiftedMatrixInverse(NOX::Parameter::List& params,
+      applyShiftedMatrixInverse(Teuchos::ParameterList& params,
 				const NOX::Abstract::Vector& input,
 				NOX::Abstract::Vector& result,
 				double shift);

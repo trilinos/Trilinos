@@ -231,7 +231,7 @@ namespace LOCA {
       EpetraHouseholder(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~EpetraHouseholder();
@@ -338,7 +338,7 @@ namespace LOCA {
        * Householder scheme.
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverse(NOX::Parameter::List& params,
+      applyInverse(Teuchos::ParameterList& params,
 		   const NOX::Abstract::MultiVector* F,
 		   const NOX::Abstract::MultiVector::DenseMatrix* G,
 		   NOX::Abstract::MultiVector& X,
@@ -351,7 +351,7 @@ namespace LOCA {
        * The \em params argument is the linear solver parameters. 
        */
       virtual NOX::Abstract::Group::ReturnType 
-      applyInverseTranspose(NOX::Parameter::List& params,
+      applyInverseTranspose(Teuchos::ParameterList& params,
 			    const NOX::Abstract::MultiVector* F,
 			    const NOX::Abstract::MultiVector::DenseMatrix* G,
 			    NOX::Abstract::MultiVector& X,
@@ -392,7 +392,7 @@ namespace LOCA {
       Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 
       //! Solver parameters
-      Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+      Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
       //! Pointer to group storing J
       Teuchos::RefCountPtr<const LOCA::Epetra::Group> grp;

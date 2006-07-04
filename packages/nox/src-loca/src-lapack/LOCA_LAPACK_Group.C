@@ -52,7 +52,7 @@ LOCA::LAPACK::Group::Group(
 
 LOCA::LAPACK::Group::Group(
 		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		     NOX::Parameter::List& params,
+		     Teuchos::ParameterList& params,
 		     LOCA::LAPACK::Interface& interface,
 		     bool hasMassMat) : 
   NOX::LAPACK::Group(interface), 
@@ -86,7 +86,7 @@ LOCA::LAPACK::Group::Group(
 
 LOCA::LAPACK::Group::Group(
 		     const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-		     NOX::Parameter::List& params,
+		     Teuchos::ParameterList& params,
 		     LOCA::LAPACK::Interface& interface,
 		     int m, int n, bool hasMassMat) : 
   NOX::LAPACK::Group(interface, m, n), 
@@ -161,7 +161,7 @@ LOCA::LAPACK::Group::computeJacobian() {
 
 NOX::Abstract::Group::ReturnType 
 LOCA::LAPACK::Group::applyJacobianTransposeInverse(
-				     NOX::Parameter::List& p, 
+				     Teuchos::ParameterList& p, 
 				     const NOX::Abstract::Vector& input, 
 				     NOX::Abstract::Vector& result) const 
 {
@@ -209,7 +209,7 @@ LOCA::LAPACK::Group::applyJacobianTransposeInverse(
 
 NOX::Abstract::Group::ReturnType 
 LOCA::LAPACK::Group::applyJacobianTransposeInverseMultiVector(
-				     NOX::Parameter::List& p, 
+				     Teuchos::ParameterList& p, 
 				     const NOX::Abstract::MultiVector& input, 
 				     NOX::Abstract::MultiVector& result) const 
 {
@@ -389,7 +389,7 @@ LOCA::LAPACK::Group::isMassMatrix() const
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexInverse(
-			       NOX::Parameter::List& params,
+			       Teuchos::ParameterList& params,
 			       const NOX::Abstract::Vector& input_real,
 			       const NOX::Abstract::Vector& input_imag,
 			       double frequency,
@@ -415,7 +415,7 @@ LOCA::LAPACK::Group::applyComplexInverse(
 
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::applyComplexInverseMulti(
-			       NOX::Parameter::List& params,
+			       Teuchos::ParameterList& params,
 			       const NOX::Abstract::Vector* const* inputs_real,
 			       const NOX::Abstract::Vector* const* inputs_imag,
 			       double frequency,

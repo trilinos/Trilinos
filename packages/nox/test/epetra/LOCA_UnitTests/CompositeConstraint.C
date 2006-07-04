@@ -91,14 +91,14 @@ int main(int argc, char *argv[])
     pVector.addParameter("Param 5",  2.53);
 
     // Create parameter list
-    Teuchos::RefCountPtr<NOX::Parameter::List> paramList =
-      Teuchos::rcp(new NOX::Parameter::List);
+    Teuchos::RefCountPtr<Teuchos::ParameterList> paramList =
+      Teuchos::rcp(new Teuchos::ParameterList);
 
-    NOX::Parameter::List& nlParams = paramList->sublist("NOX");
-    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.setParameter("MyPID", MyPID);
+    Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
+    Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.set("MyPID", MyPID);
     if (verbose)
-       nlPrintParams.setParameter("Output Information", 
+       nlPrintParams.set("Output Information", 
 				  NOX::Utils::Error +
 				  NOX::Utils::Details +
 				  NOX::Utils::OuterIteration + 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 				  NOX::Utils::StepperIteration +
 				  NOX::Utils::StepperDetails);
      else
-       nlPrintParams.setParameter("Output Information", NOX::Utils::Error);
+       nlPrintParams.set("Output Information", NOX::Utils::Error);
 
     // Create global data object
     Teuchos::RefCountPtr<LOCA::GlobalData> globalData =

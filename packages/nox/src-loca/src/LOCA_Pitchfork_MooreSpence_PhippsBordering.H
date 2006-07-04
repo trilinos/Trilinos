@@ -150,7 +150,7 @@ namespace LOCA {
 	PhippsBordering(
 	 const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
 	 const Teuchos::RefCountPtr<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams);
+	 const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams);
 
 	//! Destructor
 	virtual ~PhippsBordering();
@@ -184,7 +184,7 @@ namespace LOCA {
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	solve(
-	     NOX::Parameter::List& params,
+	     Teuchos::ParameterList& params,
              const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
              LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const;
 
@@ -193,7 +193,7 @@ namespace LOCA {
 	//! Solves equations with contiguous arguments
 	NOX::Abstract::Group::ReturnType 
 	solveContiguous(
-	          NOX::Parameter::List& params,
+	          Teuchos::ParameterList& params,
 		  const NOX::Abstract::MultiVector& input_x,
 		  const NOX::Abstract::MultiVector& input_null,
 		  const NOX::Abstract::MultiVector::DenseMatrix& input_slack,
@@ -217,7 +217,7 @@ namespace LOCA {
 	Teuchos::RefCountPtr<LOCA::GlobalData> globalData;
 	
 	//! Solver parameters
-	Teuchos::RefCountPtr<NOX::Parameter::List> solverParams;
+	Teuchos::RefCountPtr<Teuchos::ParameterList> solverParams;
 
 	//! Underlying group
 	Teuchos::RefCountPtr<LOCA::Pitchfork::MooreSpence::AbstractGroup> group;

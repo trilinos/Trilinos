@@ -38,12 +38,12 @@
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
 #include "LOCA_MultiContinuation_ExtendedVector.H"
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
-#include "NOX_Parameter_List.H"
+#include "Teuchos_ParameterList.hpp"
 
 LOCA::MultiPredictor::Tangent::Tangent(
 	      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& predParams,
-	      const Teuchos::RefCountPtr<NOX::Parameter::List>& solverParams) :
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& predParams,
+	      const Teuchos::RefCountPtr<Teuchos::ParameterList>& solverParams) :
   globalData(global_data),
   linSolverParams(solverParams),
   fdfdp(),
