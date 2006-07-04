@@ -489,7 +489,7 @@ static int seq_part (
         }
         else{
           /* recursive bisection, map to 0-1 part numbers */
-          part[i] = (hg->fixed[i] <= hg->bisec_split ? 0 : 1);
+          part[i] = (hg->fixed[i] < hg->bisec_split ? 0 : 1);
         }
         /* Add up weights of fixed vertices for each partition */
         fixed_wgts[part[i]] += hg->vwgt[i*vwgtdim];
