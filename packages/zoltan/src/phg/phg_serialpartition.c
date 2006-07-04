@@ -178,7 +178,7 @@ const int num_coarse_iter = 1 + 9/zz->Num_Proc;
     for (i =  0; i < phg->nVtx; i++)
       part[i] = 0;
   }
-  else if (numPart >= phg->dist_x[phg->comm->nProc_x]) { 
+  else if (!phg->fixed && numPart >= phg->dist_x[phg->comm->nProc_x]) { 
     /* more partitions than vertices, trivial answer */
     for (i = 0; i < phg->nVtx; i++)
       part[i] = phg->dist_x[phg->comm->myProc_x]+i;
