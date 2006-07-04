@@ -329,6 +329,11 @@ public:
     return(*this);
   }
 
+  bool operator==(const MultiVector& rhs) const
+  {
+    return(false);
+  }
+
   //! Sets the name of \c this object, does not touch vector elements or space.
   MultiVector& operator=(const string& Label)
   {
