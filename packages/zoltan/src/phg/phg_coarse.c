@@ -443,7 +443,7 @@ if (c_hg->fixed)
     if (hg->fixed)  {
       int fixed = ip[i++];
       c_hg->fixed [LevelMap[lno]] = (fixed >= 0) ? fixed : hg->fixed[lno];
-      } 
+    } 
      
     pw=(float*) &ip[i];
 

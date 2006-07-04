@@ -862,7 +862,7 @@ fixed = hg->fixed[candidate_gno];
         for (i = 0; i < m; i++)  {
           lno = index[i];
           if (sums[lno] > PSUM_THRESHOLD
-&& (hg->fixed == 0 || !(hg->fixed[lno] >= 0 && fixed >= 0
+&& (hg->fixed == NULL || !(hg->fixed[lno] >= 0 && fixed >= 0
 && hg->fixed[lno] != fixed)))
             aux[count++] = lno;      /* save lno for significant partial sum */
           else
