@@ -84,6 +84,8 @@ The most important classes of the EpetraExt module are:
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_PyOperator.h"
 #include "Epetra_PyRowMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
 
 // EpetraExt includes
 #include "EpetraExt_Version.h"
