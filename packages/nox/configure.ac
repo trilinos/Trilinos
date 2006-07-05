@@ -770,8 +770,8 @@ AC_DEFUN([PETSC_INCLUDE_CHECK],
   elif test -f ${PETSC_DIR}/include/$2; then
     $1_INC=${PETSC_DIR}/include
     AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${PETSC_DIR}/src/sys/src/mpiuni/$2; then
-    $1_INC=${PETSC_DIR}/src/sys/src/mpiuni
+  elif test -f ${PETSC_DIR}/include/mpiuni/$2; then
+    $1_INC=${PETSC_DIR}/include/mpiuni
     AC_MSG_RESULT([${$1_INC}])
   else
     AC_MSG_RESULT(no)
@@ -808,12 +808,6 @@ AC_DEFUN([PETSC_LIB_CHECK],
   [AC_HELP_STRING([--with-$1-libdir],[specify location of $1 library])],
   [$1_LIBDIR=$withval])
 
-  AC_MSG_CHECKING(whether PETSC_BOPT is defined)
-  if test -n "${PETSC_BOPT}"; then
-     AC_MSG_RESULT([yes (${PETSC_BOPT})])
-  else
-     AC_MSG_ERROR([Cannot find PETSC_BOPT environment variable. Please define.])  fi
-
   AC_MSG_CHECKING(whether PETSC_DIR is defined)
   if test -n "${PETSC_DIR}"; then
      AC_MSG_RESULT([yes (${PETSC_DIR})])
@@ -825,8 +819,8 @@ AC_DEFUN([PETSC_LIB_CHECK],
   if test -n "${$1_LIBDIR}" && test -f ${$1_LIBDIR}/lib$1.a; then
     LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
     AC_MSG_RESULT(yes)
-  elif test -f ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}/lib$1.a; then
-    LDFLAGS="-L${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH} ${LDFLAGS}"
+  elif test -f ${PETSC_DIR}/lib/${PETSC_ARCH}/lib$1.a; then
+    LDFLAGS="-L${PETSC_DIR}/lib/${PETSC_ARCH} ${LDFLAGS}"
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
