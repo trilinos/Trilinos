@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_XMLParameterListReader.hpp"	
+#include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_StrUtils.hpp"
 
@@ -74,35 +74,59 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
           const string& type = child.getRequired("type");
           
           bool isDefault = false;
+          bool isUsed = false;
           if (child.hasAttribute("isDefault")) 
             {
               isDefault = child.getRequiredBool("isDefault");
             }
+          if (child.hasAttribute("isUsed")) 
+            {
+              isUsed = child.getRequiredBool("isUsed");
+            }
+
+          // setValue assigns isUsed to false
+          // getValue assigns isUsed to true
+
           ParameterEntry entry;
           if (type=="double" || type=="float")
             {
               entry.setValue<double>(child.getRequiredDouble("value"), 
                                      isDefault);
+              if (isUsed) {
+                double tmp = entry.getValue<double>(&tmp);
+              }
             }
           else if (type=="int")
             {
               entry.setValue<int>(child.getRequiredInt("value"), 
                                   isDefault);
+              if (isUsed) {
+                int tmp = entry.getValue<int>(&tmp);
+              }
             }
           else if (type=="bool")
             {
               entry.setValue<bool>(child.getRequiredBool("value"), 
                                    isDefault);
+              if (isUsed) {
+                bool tmp = entry.getValue<bool>(&tmp);
+              }
             }
           else if (type=="string")
             {
               entry.setValue<string>(child.getRequired("value"), 
-                                   isDefault);
+                                     isDefault);
+              if (isUsed) {
+                string tmp = entry.getValue<string>(&tmp);
+              }
             }
           else 
             {
               entry.setValue<string>(child.getRequired("value"), 
                                    isDefault);
+              if (isUsed) {
+                string tmp = entry.getValue<string>(&tmp);
+              }
             }
           rtn.setEntry(name, entry);
         }

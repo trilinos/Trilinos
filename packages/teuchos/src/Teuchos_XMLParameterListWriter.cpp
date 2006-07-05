@@ -108,5 +108,10 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       rtn.addAttribute("isDefault", "true");
     }
 
+  if (entry.isUsed())
+    {
+      rtn.addAttribute("isUsed","true");
+    }
+
   return rtn;
 }
