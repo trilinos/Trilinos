@@ -20,8 +20,8 @@ for Zoltan version 2.0 (provide these to configure using the
 
 \section isorropia_startup Overview of Isorropia.
 
-Isorropia's user interface consists of the Isorropia::Partitioner and
-Isorropia::Redistributor classes, and the
+Isorropia's user interface consists primarily of the Isorropia::Partitioner,
+Isorropia::Redistributor and Isorropia::CostDescriber classes, as well as the
 Isorropia::create_balanced_copy functions.
 
 The Isorropia::create_balanced_copy functions are free-standing functions
@@ -31,11 +31,22 @@ partitions.
 
 For more sophisticated use-cases, such as performing one partitioning
 and then using it to redistribute multiple objects, it is more
-efficient to use the Partitioner and Redistributor classes.
+efficient to use the Isorropia::Partitioner and Isorropia::Redistributor
+classes. The general usage model is to:<br>
+<ol>
+<li> create a Isorropia::Partitioner instance (providing as input the
+ matrix-graph or row-matrix object that is to be re-partitioned, and
+ optionally a Isorropia::CostDescriber instance with weights/costs to
+ influence the partitioning).
+<li> create a Isorropia::Redistributor object (providing as input a
+Isorropia::Partitioner instance)
+<li> Use the Isorropia::Redistributor to redistribute one or more objects
+ to the new partitioning.
+</ol>
 
-Isorropia::Partitioner is an interface class (abstract base class), and
-currently the only implementation of this interface is the
-Isorropia::EpetraPartitioner class.
+Isorropia is currently aimed primarily at repartitioning/redistributing
+Epetra objects, including Epetra_CrsGraph, Epetra_RowMatrix (which includes
+Epetra_CrsMatrix and Epetra_VbrMatrix) and Epetra_MultiVector.
 
 \section zoltanparams Passing parameters through to Zoltan
 
@@ -59,7 +70,11 @@ for available Zoltan parameters.
 A couple of example programs which demonstrate using Isorropia are
 provided in the 'packages/isorropia/example' subdirectory.
 
-The following is packages/isorropia/example/part_redist.cpp:
+The program shown below is packages/isorropia/example/part_redist.cpp, which
+demonstrates a simple repartitioning operation which does not use
+user-specified weights/costs. Other programs in the example subdirectory
+demonstrate the use of weights/costs data to influence the partitioner. See
+vert_weights.cpp, graph_edge_weights.cpp and hgedge_weights.cpp.
 
 \verbinclude ../example/part_redist.cpp
 
