@@ -50,6 +50,7 @@
 #include "LOCA_Eigensolver_AbstractStrategy.H"
 #include "LOCA_SaveEigenData_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_ConstrainedGroup.H"
+#include "LOCA_MultiContinuation_ConstraintInterface.H"
 
 LOCA::NewStepper::NewStepper(
                      const Teuchos::RefCountPtr<LOCA::GlobalData>& global_data,
