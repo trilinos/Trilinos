@@ -88,9 +88,6 @@ LinearSystemAztecOO(
   jacType(EpetraOperator),
   precType(EpetraOperator),
   precMatrixSource(UseJacobian),
-#ifdef HAVE_NOX_ML_EPETRA
-  MLPreconditionerPtr(0),
-#endif
   scaling(s),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
@@ -127,9 +124,6 @@ LinearSystemAztecOO(
   jacPtr(jacobian),
   precType(EpetraOperator),
   precMatrixSource(UseJacobian),
-#ifdef HAVE_NOX_ML_EPETRA
-  MLPreconditionerPtr(0),
-#endif
   scaling(s),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
@@ -167,9 +161,6 @@ LinearSystemAztecOO(
   precType(EpetraOperator),
   precPtr(preconditioner),
   precMatrixSource(SeparateMatrix),
-#ifdef HAVE_NOX_ML_EPETRA
-  MLPreconditionerPtr(0),
-#endif
   scaling(s),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
@@ -210,9 +201,6 @@ LinearSystemAztecOO(
   precType(EpetraOperator),
   precPtr(preconditioner),
   precMatrixSource(SeparateMatrix),
-#ifdef HAVE_NOX_ML_EPETRA
-  MLPreconditionerPtr(0),
-#endif
   scaling(s),
   conditionNumberEstimate(0.0),
   isPrecConstructed(false),
@@ -891,14 +879,14 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     
     if (precMatrixSource == UseJacobian) {
       createMLPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(MLPreconditionerPtr);
+      aztecSolverPtr->SetPrecOperator(MLPreconditionerPtr.get());
     }
     else if (precMatrixSource == SeparateMatrix) {
       
       precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					      *precPtr, &p);
       createMLPreconditioner(p);
-      aztecSolverPtr->SetPrecOperator(MLPreconditionerPtr);
+      aztecSolverPtr->SetPrecOperator(MLPreconditionerPtr.get());
     }
 
   }
@@ -1186,20 +1174,18 @@ createMLPreconditioner(Teuchos::ParameterList& p) const
 {
   //for ML we need a Epetra_RowMatrix
 
-  if (MLPreconditionerPtr != 0) 
+  if( !Teuchos::is_null(MLPreconditionerPtr) ) 
     throwError("createMLPreconditioner", "ML Prec NOT NULL");
 
   // Ensure we have a valid Teuchos parameter list to pass to ML
-  const Teuchos::ParameterList* constTeuchosParams = 
-    p.getAnyConstPtrParameter<Teuchos::ParameterList>("ML Teuchos Parameter List");
-  if ( !constTeuchosParams ) {
-    if (utils.isPrintType(NOX::Utils::Error))
-      utils.out() << "ERROR: NOX::Epetra::LinearSystemAztecOO::"
-           << "createMLPreconditioner() - "
-           << "Could not obtain the required Teuchos::ParameterList "
-           << "from \"ML Teuchos Parameter List\" " << endl;
-    throw "NOX Error";
-  }
+  Teuchos::ParameterList& teuchosParams = p.sublist("ML Teuchos Parameter List");
+
+  if (utils.isPrintType(Utils::Debug)) 
+  {
+    utils.out() << "NOX::Epetra::LinearSolverAztecOO : createMLPreconditioner - \n"
+         << "  using Teuchos parameter : " << endl;
+    teuchosParams.print(utils.out());
+  } 
 
   // check to see if it is a Crs matrix
   if (precType == EpetraCrsMatrix) {
@@ -1215,8 +1201,8 @@ createMLPreconditioner(Teuchos::ParameterList& p) const
       throwError("createMLPreconditioner", 
 		 "Dynamic cast to CRS Matrix failed!");
 
-    MLPreconditionerPtr = new ML_Epetra::MultiLevelPreconditioner(
-                                  *crs, *constTeuchosParams, true);
+    MLPreconditionerPtr = Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(
+                                  *crs, teuchosParams, true) );
     return true;
   }
 
@@ -1240,8 +1226,8 @@ createMLPreconditioner(Teuchos::ParameterList& p) const
       throwError("createMLPreconditioner", 
 		 "FiniteDifference: Underlying matrix NOT CRS Matrix!");
 
-    MLPreconditionerPtr = new ML_Epetra::MultiLevelPreconditioner(
-                                  *crs, *constTeuchosParams, true);
+    MLPreconditionerPtr = Teuchos::rcp( new ML_Epetra::MultiLevelPreconditioner(
+                                  *crs, teuchosParams, true) );
     return true;
   }
   
@@ -1272,10 +1258,8 @@ bool NOX::Epetra::LinearSystemAztecOO::destroyPreconditioner() const
       newIfpackPreconditionerPtr = Teuchos::null;
     }
 #ifdef HAVE_NOX_ML_EPETRA
-    else if (precAlgorithm == ML_) {
-      delete MLPreconditionerPtr;
-      MLPreconditionerPtr = 0;
-    }
+    else if (precAlgorithm == ML_)
+      MLPreconditionerPtr = Teuchos::null;
 #endif
     if (utils.isPrintType(Utils::LinearSolverDetails)) {
       utils.out() << "\n       Destroying preconditioner" << endl;

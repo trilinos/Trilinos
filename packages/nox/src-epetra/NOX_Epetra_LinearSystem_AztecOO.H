@@ -576,7 +576,8 @@ protected:
   /*! \brief Stores the ml preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
-  mutable ML_Epetra::MultiLevelPreconditioner* MLPreconditionerPtr;
+  mutable Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner> 
+  MLPreconditionerPtr;
 #endif
 
   //! Scaling object supplied by the user
