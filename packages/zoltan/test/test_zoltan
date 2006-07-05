@@ -628,6 +628,7 @@ if (! $no_chaco ) then
       @ dropfail = 0
       @ droptest = 0
       @ skip = 0  # Was used to skip certain methods in previous versions.
+      setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
 
       if (! $skip ) then
 
@@ -763,6 +764,7 @@ if (! $no_nemesis ) then
       @ dropfail = 0
       @ droptest = 0
       @ skip = 0
+      setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
 
       if (! $skip ) then
 

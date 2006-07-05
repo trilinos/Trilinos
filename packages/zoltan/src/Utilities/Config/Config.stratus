@@ -23,6 +23,7 @@ RANLIB			= ranlib
 AR			= ar r
 
 CC          		= cc
+CPPC			= cxx
 INCLUDE_PATH		= -I/usr/include
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
