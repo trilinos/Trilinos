@@ -331,6 +331,11 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@USING_GNUMAKE_FALSE@EXAMPLE_LIBS = $(NOX_LIBS)
+@USING_GNUMAKE_TRUE@EXAMPLE_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
+@USING_GNUMAKE_FALSE@EXAMPLE_INCLUDES = $(NOX_INCLUDES)
+@USING_GNUMAKE_TRUE@EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/FiniteDifference.C $(srcdir)/FiniteDifference.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
@@ -342,7 +347,7 @@ example_CXXFLAGS = $(PETSC_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-petsc
 
 example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-petsc \
-                -lnoxpetsc ${PETSC_LIB} -lnox
+                -lnoxpetsc ${PETSC_LIB} -lnox -lteuchos
 
 all: all-am
 
@@ -620,6 +625,9 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am uninstall-info-am
 
+
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
 
 @BUILD_PETSC_EXAMPLES_TRUE@include ${PETSC_DIR}/bmake/common/base
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

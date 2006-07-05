@@ -83,7 +83,7 @@ bool FiniteDifference::evaluate(FillType f,
   if((flag == RHS_ONLY) || (flag == ALL)) {
     ierr = FormFunction(*snes, *soln, *rhs, ctx);CHKERRQ(ierr);
     PetscScalar minusOne = 1.0;
-    ierr = VecScale(&minusOne, *rhs);CHKERRQ(ierr);
+    ierr = VecScale( *rhs, minusOne );CHKERRQ(ierr);
   }
 
   // Begin Jacobian fill

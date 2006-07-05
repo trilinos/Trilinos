@@ -144,7 +144,8 @@ int main(int argc, char *argv[])
      - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   Mat J;
-  ierr = MatCreate(PETSC_COMM_WORLD,PETSC_DECIDE,PETSC_DECIDE,N,N,&J);CHKERRQ(ierr);
+  ierr = MatCreate( PETSC_COMM_SELF, &J );
+  ierr = MatSetSizes( J, PETSC_DECIDE, PETSC_DECIDE, N, N);
   ierr = MatSetFromOptions(J);CHKERRQ(ierr);
 
   // This should be replaced by NOX interface setup
@@ -167,12 +168,15 @@ int main(int argc, char *argv[])
    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
   PetscReal zero = 0.0, pfive = 0.5, one = 1.0;
-  ierr = VecSet(&one,x);CHKERRQ(ierr);
+  ierr = VecSet( x, one );CHKERRQ(ierr);
 
 // Additional NOX setup
 
   // Create the top level parameter list
-  Teuchos::ParameterList nlParams;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
+
 
   // Allow options to be set from command line or from file
   NOX::Petsc::Options optionHandler(nlParams, ctx.rank);
@@ -183,11 +187,12 @@ int main(int argc, char *argv[])
   Problem_Interface interface(Problem);
 
   // Create the Group
-  NOX::Petsc::Group* grp = new NOX::Petsc::Group(interface, x, J);
+  //NOX::Petsc::Group* grp = new NOX::Petsc::Group(interface, x, J);
+  Teuchos::RefCountPtr<NOX::Petsc::Group> grp = Teuchos::rcp( new NOX::Petsc::Group(interface, x, J) );
   grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve
-  NOX::Solver::Manager solver(*grp, optionHandler.getStatusTest(), nlParams);
+  NOX::Solver::Manager solver(grp, optionHandler.getStatusTest(), nlParamsPtr);
   NOX::StatusTest::StatusType status = solver.solve();
 
   if (status != NOX::StatusTest::Converged)
