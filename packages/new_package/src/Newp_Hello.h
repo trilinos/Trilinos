@@ -75,6 +75,9 @@ public:
   /** \brief . */
   Newp_Hello(const Newp_Hello& Source);
 
+  /** \brief . */
+  virtual ~Newp_Hello();
+
   //@}
   
   /** \name Print functions */
@@ -87,7 +90,7 @@ public:
 
  private:
 
-  const Epetra_Comm Comm_ ; // Must be stored by value since this is a handle!
+  const Epetra_Comm *Comm_ ; // Must be cloned!
 
 };
 

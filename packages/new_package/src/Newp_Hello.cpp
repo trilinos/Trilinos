@@ -29,16 +29,20 @@
 
 #include "Newp_Hello.h"
 #include "Epetra_Comm.h"
-//=============================================================================
-Newp_Hello::Newp_Hello(const Epetra_Comm& Comm):Comm_(Comm) {} 
 
 //=============================================================================
-Newp_Hello::Newp_Hello(const Newp_Hello& Source):Comm_(Source.Comm_) {} 
+Newp_Hello::Newp_Hello(const Epetra_Comm& Comm):Comm_(Comm.Clone()) {} 
+
+//=============================================================================
+Newp_Hello::Newp_Hello(const Newp_Hello& Source):Comm_(Source.Comm_->Clone()) {} 
+
+//=============================================================================
+Newp_Hello::~Newp_Hello() { if(Comm_) delete Comm_; } 
 
 //=======================================================================
 void Newp_Hello::Print(ostream& os) const {
-  int MyPID = Comm_.MyPID();
-  int NumProc = Comm_.NumProc();
+  int MyPID = Comm_->MyPID();
+  int NumProc = Comm_->NumProc();
   
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
@@ -52,10 +56,11 @@ void Newp_Hello::Print(ostream& os) const {
     }
 
     // Do a few global ops to give I/O a chance to complete
-    Comm_.Barrier();
-    Comm_.Barrier();
-    Comm_.Barrier();
+    Comm_->Barrier();
+    Comm_->Barrier();
+    Comm_->Barrier();
   }
-  return; }
+  return;
+}
 
 
