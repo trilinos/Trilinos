@@ -36,7 +36,7 @@
 
 // ---------- Standard Includes ----------
 #include <iostream>
-#include "petscsles.h"
+#include "petscksp.h"
 #include "NOX_Petsc_Interface.H"
 
 // ---------- Forward Declarations ----------

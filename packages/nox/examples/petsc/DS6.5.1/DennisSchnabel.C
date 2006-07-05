@@ -28,7 +28,7 @@
 //@HEADER
                                                                                 
 #include "NOX_Common.H"
-#include "petscsles.h"
+#include "petscksp.h"
 
 #include "DennisSchnabel.H"
 
@@ -39,8 +39,8 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
 
   // Commonly used variables
   int i, ierr;
-  ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&MyPID);//CHKERRQ(ierr);// Process ID
-  ierr = MPI_Comm_size(PETSC_COMM_WORLD,&NumProc);//CHKERRQ(ierr);// # Procs 
+  ierr = MPI_Comm_rank(PETSC_COMM_WORLD,&MyPID);
+  ierr = MPI_Comm_size(PETSC_COMM_WORLD,&NumProc);
 
   // Construct a Source Map that puts approximately the same 
   // Number of equations on each processor in uniform global ordering
@@ -76,13 +76,14 @@ DennisSchnabel::DennisSchnabel(int numGlobalElements) :
 
   // Construct Linear Objects  
   initialSolution = new Vec;
-  ierr = VecCreate(PETSC_COMM_WORLD, initialSolution);//CHKERRQ(ierr);
-  ierr = VecSetSizes(*initialSolution, PETSC_DECIDE, 2);//CHKERRQ(ierr);
-  ierr = VecSetFromOptions(*initialSolution);//CHKERRQ(ierr);
+  ierr = VecCreate(PETSC_COMM_WORLD, initialSolution);
+  ierr = VecSetSizes(*initialSolution, PETSC_DECIDE, 2);
+  ierr = VecSetFromOptions(*initialSolution);
 
   A = new Mat;
-  MatCreate(PETSC_COMM_WORLD, PETSC_DECIDE, PETSC_DECIDE, 2, 2, A);//CHKERRQ(ierr);
-  ierr = MatSetFromOptions(*A);//CHKERRQ(ierr);
+  ierr = MatCreate(PETSC_COMM_SELF,A);
+  ierr = MatSetSizes(*A,PETSC_DECIDE,PETSC_DECIDE,2,2);
+  ierr = MatSetFromOptions(*A);
 
   // Create Mapping for overlap solution vector using Petsc IS
   overlapSolution = new Vec;
@@ -152,9 +153,9 @@ bool DennisSchnabel::evaluate(FillType f,
   if((flag == RHS_ONLY) || (flag == ALL)) {
 
     // Zero out the RHS vector
-    //ierr = VecSet(&zero, *rhs);CHKERRQ(ierr);
-    //ierr = VecAssemblyBegin(*rhs);CHKERRQ(ierr);
-    //ierr = VecAssemblyEnd(*rhs);CHKERRQ(ierr);
+    //ierr = VecSet(&zero, *rhs);
+    //ierr = VecAssemblyBegin(*rhs);
+    //ierr = VecAssemblyEnd(*rhs);
 
     // Processor 0 always fills the first equation.
     if(NumProc==1) {

@@ -49,7 +49,7 @@ static char help[] =
 
 
 // Petsc Objects
-#include "petscsles.h"
+#include "petscksp.h"
 /*
   Include "petscsles.h" so that we can use SLES solvers.  Note that this file
   automatically includes:
@@ -120,14 +120,16 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  NOX::Parameter::List nlParams;
+  Teuchos::RefCountPtr<Teuchos::ParameterList> nlParamsPtr =
+    Teuchos::rcp(new Teuchos::ParameterList);
+  Teuchos::ParameterList& nlParams = *(nlParamsPtr.get());
 
   NOX::Petsc::Options optionHandler(nlParams, MyPID);
 
   // Do a check to see if the correct linesearch is set.
-  if(!nlParams.sublist("Line Search").isParameterEqual("Method", "Polynomial"))
-    if(MyPID==0) cout << "\n\tWARNING: Linesearch is not set to "
-                      << "polynomial !!\n" << endl;
+  //if(!nlParams.sublist("Line Search").isParameterEqual("Method", "Polynomial"))
+  //  if(MyPID==0) cout << "\n\tWARNING: Linesearch is not set to "
+  //                    << "polynomial !!\n" << endl;
 
   // Create the interface between the test problem and the nonlinear solver
   // This is created using inheritance of the abstract base class:
@@ -138,11 +140,11 @@ int main(int argc, char *argv[])
   Mat& A = Problem.getJacobian();
 
   // Create the Group
-  NOX::Petsc::Group grp(interface, soln, A);
-  grp.computeF(); // Needed to establish the initial convergence state
+  Teuchos::RefCountPtr<NOX::Petsc::Group> grp = Teuchos::rcp( new NOX::Petsc::Group(interface, soln, A) );
+  grp->computeF(); // Needed to establish the initial convergence state
 
   // Create the method and solve
-  NOX::Solver::Manager solver(grp, optionHandler.getStatusTest(), nlParams);
+  NOX::Solver::Manager solver(grp, optionHandler.getStatusTest(), nlParamsPtr);
   NOX::StatusTest::StatusType status = solver.solve();
 
   if (status != NOX::StatusTest::Converged)

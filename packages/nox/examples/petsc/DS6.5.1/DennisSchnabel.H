@@ -40,7 +40,7 @@
 #define _NOX_EXAMPLE_DENNIS_SCHNABEL_651_H
 
 // Forward Declarations
-#include "petscsles.h"
+#include "petscksp.h"
 
 // Flag to tell the evaluate routine what objects to fill
 enum FillType {RHS_ONLY, MATRIX_ONLY, ALL}; 
