@@ -29,6 +29,7 @@
 
 #ifndef _NEWP_HELLO_H_
 #define _NEWP_HELLO_H_
+
 #include "New_Package_ConfigDefs.h"
 #include "Newp_Hello.h"
 
@@ -38,54 +39,55 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Comm.h"
-//! Newp_Hello: A sample class 
 
-/*! The Newp_Hello class prints out a "Hello World" type message
-
-<b>A typical heading</b>
-<ul>
-  <li> A typical first list entry
-  <li> A typical second list entry
-</ul>
-
-<b>Another typical heading</b>
-
-*/
-
-//=========================================================================
+/** \brief A sample class.
+ *
+ * This class prints out a "Hello World" type message.
+ *
+ * Here is what output from this class looks like for an example program:
+ *
+ * \verbinclude hello_test.out
+ *
+ * <b>A typical heading</b>
+ * <ul>
+ * <li> A typical first list entry
+ * <li> A typical second list entry
+ * </ul>
+ *
+ * <b>Another typical heading</b>
+ */
 class Newp_Hello {
-
-  public:
-
-  //@{ \name Constructors/destructors.
-  //! Basic Newp_Hello constuctor.
-  /*! Creates a Newp_Hello object and fills with default values.  
-
-    \warning Newp_Hello is English language only.  In Africa use Newp_Jambo.
-
-    \param Comm In
-           An Epetra Communicator 
-
-    \return  Newp_Hello object
-
-  */
+public:
+  
+  /** \name Constructors/destructors. */
+  //@{
+  
+  /** \brief Creates a Newp_Hello object and fills with default values.
+   * 
+   * \param  Comm [in] An Epetra Communicator.
+   *
+   * \warning Newp_Hello is English language only.  In Africa use Newp_Jambo.
+   * 
+   * \return  Newp_Hello object
+   */
   Newp_Hello(const Epetra_Comm& Comm);
 
-  //! Newp_Hello copy constructor.
-  
+  /** \brief . */
   Newp_Hello(const Newp_Hello& Source);
+
   //@}
   
-  //@{ \name Print methods
+  /** \name Print functions */
+  //@{
 
-  //! Print method
+  /** \brief . */
   virtual void Print(ostream & os) const;
-  //@}
 
+  //@}
 
  private:
 
-  const Epetra_Comm& Comm_ ; 
+  const Epetra_Comm Comm_ ; // Must be stored by value since this is a handle!
 
 };
 

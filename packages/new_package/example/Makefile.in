@@ -69,7 +69,8 @@ POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = hello_test$(EXEEXT) RunValgrind$(EXEEXT)
 subdir = example
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/generate-sample-output.pl.stub.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -100,7 +101,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/New_Package_config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = generate-sample-output.pl.stub
 PROGRAMS = $(noinst_PROGRAMS)
 am_RunValgrind_OBJECTS =
 RunValgrind_OBJECTS = $(am_RunValgrind_OBJECTS)
@@ -338,6 +339,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+generate-sample-output.pl.stub: $(top_builddir)/config.status $(srcdir)/generate-sample-output.pl.stub.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -636,10 +639,14 @@ uninstall-info: uninstall-info-recursive
 	tags tags-recursive uninstall uninstall-am uninstall-info-am
 
 
-all-local:
+all-local: generate-sample-output.pl
 	@echo ""
 	@echo "Trilinos package new_package subdirectory example built successfully."
 	@echo ""
+
+generate-sample-output.pl : generate-sample-output.pl.stub
+	cp generate-sample-output.pl.stub generate-sample-output.pl
+	chmod a+x generate-sample-output.pl
 
 #
 #  This is a crude but effective way to move files from the source tree to the build tree

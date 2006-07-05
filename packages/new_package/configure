@@ -11099,7 +11099,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export.new_package src/Makefile example/Makefile test/Makefile test/Hello_Test/Makefile test/Jambo_Test/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
+                                                                                                                                                      ac_config_files="$ac_config_files Makefile Makefile.export.new_package src/Makefile example/Makefile example/generate-sample-output.pl.stub test/Makefile test/Hello_Test/Makefile test/Jambo_Test/Makefile python/Makefile python/src/Makefile python/src/TRILINOS_HOME_DIR python/src/__init__.py python/src/.deps/dummy python/test/Makefile python/example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11823,6 +11823,7 @@ do
   "Makefile.export.new_package" ) CONFIG_FILES="$CONFIG_FILES Makefile.export.new_package" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/generate-sample-output.pl.stub" ) CONFIG_FILES="$CONFIG_FILES example/generate-sample-output.pl.stub" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/Hello_Test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Hello_Test/Makefile" ;;
   "test/Jambo_Test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Jambo_Test/Makefile" ;;

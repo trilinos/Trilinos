@@ -417,6 +417,7 @@ AC_CONFIG_FILES([
 		Makefile.export.new_package
 		src/Makefile
 		example/Makefile
+    example/generate-sample-output.pl.stub
 		test/Makefile
 		test/Hello_Test/Makefile
 		test/Jambo_Test/Makefile
