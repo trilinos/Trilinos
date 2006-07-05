@@ -70,6 +70,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
+    NormFrob_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
@@ -96,6 +97,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
+    NormFrob_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
@@ -122,6 +124,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
+    NormFrob_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
@@ -149,6 +152,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
+    NormFrob_(0.0),
     NumMyRows_(RowMap.NumMyPoints()),
     ImportVector_(0),
     ExportVector_(0),
@@ -174,6 +178,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& 
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
+    NormFrob_(0.0),
     NumMyRows_(Graph.NumMyRows()),
     ImportVector_(0),
     ExportVector_(0),
@@ -201,6 +206,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
     All_Values_(0),
     NormInf_(0.0),
     NormOne_(0.0),
+    NormFrob_(0.0),
     NumMyRows_(Matrix.NumMyRows()),
     ImportVector_(0),
     ExportVector_(0),
@@ -232,6 +238,7 @@ Epetra_CrsMatrix& Epetra_CrsMatrix::operator=(const Epetra_CrsMatrix& src)
   All_Values_ = 0;
   NormInf_ = -1.0;
   NormOne_ = -1.0;
+  NormFrob_ = -1.0;
   NumMyRows_ = src.NumMyRows_;
   ImportVector_ = 0;
   ExportVector_ = 0;
@@ -270,6 +277,7 @@ void Epetra_CrsMatrix::InitializeDefaults() { // Initialize all attributes that 
   All_Values_ = 0;
   NormInf_ = -1.0;
   NormOne_ = -1.0;
+  NormFrob_ = -1.0;
   ImportVector_ = 0;
   ExportVector_ = 0;
 
@@ -512,6 +520,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
 
   if(!StaticGraph()) {
     EPETRA_CHK_ERR(Graph_.InsertIndices(Row, NumEntries, Indices));
@@ -553,6 +562,7 @@ int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, double * srcV
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
 
   EPETRA_CHK_ERR(ierr);
   return(0);
@@ -583,6 +593,7 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * srcValue
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
 
   EPETRA_CHK_ERR(ierr);
   return(0);
@@ -609,6 +620,7 @@ int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
 
   EPETRA_CHK_ERR(ierr);
   return(0);
@@ -662,6 +674,7 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
 
   EPETRA_CHK_ERR(ierr);
 
@@ -694,6 +707,7 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * srcValue
   EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
   return(0);
 }
 
@@ -717,6 +731,7 @@ int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, double * srcV
 
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
 
   EPETRA_CHK_ERR(ierr);
 
@@ -1051,6 +1066,8 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
   EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
+
   return(0);
 }
 //==========================================================================
@@ -1432,6 +1449,8 @@ int Epetra_CrsMatrix::LeftScale(const Epetra_Vector& x) {
   }
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
+
   UpdateFlops(NumGlobalNonzeros());
 
   return(0);
@@ -1471,6 +1490,8 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
   }
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
+
   UpdateFlops(NumGlobalNonzeros());
   return(0);
 }
@@ -1574,6 +1595,44 @@ double Epetra_CrsMatrix::NormOne() const {
     delete x_tmp;
   UpdateFlops(NumGlobalNonzeros());
   return(NormOne_);
+}
+//=============================================================================
+double Epetra_CrsMatrix::NormFrobenius() const {
+
+#if 0
+  //
+  //  Commenting this section out disables caching, ie. 
+  //  causes the norm to be computed each time NormFrobenius is called.  
+  //  See bug #1151 for a full discussion.  
+  //
+  double MinNorm ; 
+  Comm().MinAll( &NormFrob_, &MinNorm, 1 ) ; 
+
+  if( MinNorm >= 0.0) 
+    return(NormFrob_);
+#endif
+
+  if(!Filled()) 
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  double local_sum = 0.0;
+
+  for(int i = 0; i < NumMyRows_; i++) {
+    int     NumEntries = NumMyEntries(i);
+    double* RowValues  = Values(i);
+    for(int j = 0; j < NumEntries; j++) {
+      local_sum += RowValues[j]*RowValues[j];
+    }
+  }
+
+  double global_sum = 0.0;
+  Comm().SumAll(&local_sum, &global_sum, 1);
+
+  NormFrob_ = sqrt(global_sum);
+
+  UpdateFlops(NumGlobalNonzeros());
+
+  return(NormFrob_);
 }
 //=========================================================================
 int Epetra_CrsMatrix::CheckSizes(const Epetra_SrcDistObject & Source) {

@@ -898,6 +898,20 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   EPETRA_TEST_ERR( CrsB->RightScale( CrsY ), ierr ) ; 
   EPETRA_TEST_ERR(! ( B->NormOne() == CrsB->NormOne() ), ierr ) ; 
 
+  double B_norm_frob = B->NormFrobenius();
+  double CrsB_norm_frob = CrsB->NormFrobenius();
+  //need to use a fairly large tolerance when comparing the frobenius
+  //norm from a vbr-matrix and a crs-matrix, because the point-entries
+  //are visited in different orders during the norm calculation, causing
+  //round-off differences to accumulate. That's why we choose 1.e-7
+  //instead of a smaller number like 1.e-13 or so.
+  if (fabs(B_norm_frob-CrsB_norm_frob) > 1.e-7) {
+    std::cout << "fabs(B_norm_frob-CrsB_norm_frob): "
+      << fabs(B_norm_frob-CrsB_norm_frob) << std::endl;
+    std::cout << "VbrMatrix::NormFrobenius test FAILED."<<std::endl;
+    EPETRA_TEST_ERR(-99, ierr);
+  }
+  if (verbose) std::cout << "\n\nVbrMatrix::NormFrobenius OK"<<std::endl<<std::endl;
 
   if (debug) Comm.Barrier();
 

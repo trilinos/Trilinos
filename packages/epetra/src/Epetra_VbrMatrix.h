@@ -854,6 +854,13 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     */ 
     double NormOne() const;
 
+    //! Returns the frobenius norm of the global matrix.
+    /* Returns the quantity \f[ \| A \|_{Frobenius} = \sqrt{\sum_{i=1}^m \sum_{j=1}^n\|a_{ij}\|^2}\f]
+       \warning the NormFrobenius() method will not properly calculate the frobenius norm for a matrix that
+       has entries which are replicated on multiple processors. In that case, the returned
+       norm will be larger than the true norm.
+    */
+    double NormFrobenius() const;
 
     //! Returns the maximum row dimension of all block entries on this processor.
     int MaxRowDim() const {return(Graph_->MaxRowDim());};
@@ -1306,6 +1313,7 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
 
   mutable double NormInf_;
   mutable double NormOne_;
+  mutable double NormFrob_;
 
   mutable Epetra_MultiVector * ImportVector_;
   mutable Epetra_MultiVector * ExportVector_;

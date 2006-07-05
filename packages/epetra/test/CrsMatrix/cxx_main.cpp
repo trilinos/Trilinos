@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 
 
   //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
+  //  if (rank==0) cout << "Press any key to continue..."<< std::endl;
   //  if (rank==0) cin >> tmp;
   //  Comm.Barrier();
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
 
   if(verbose && MyPID==0)
-    cout << Epetra_Version() << endl << endl;
+    cout << Epetra_Version() << std::endl << std::endl;
 
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
 		    << " is alive."<<endl;
@@ -206,7 +206,7 @@ int main(int argc, char *argv[])
 		forierr += !(A.NumMyEntries(i)==NumNz[i]+1);
   EPETRA_TEST_ERR(forierr,ierr);
 
-  if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
+  if (verbose) cout << "\n\nNumEntries function check OK" << std::endl<< std::endl;
 
   EPETRA_TEST_ERR(check_graph_sharing(Comm),ierr);
 
@@ -239,14 +239,14 @@ int main(int argc, char *argv[])
   double total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << endl<< endl;
+  if (verbose) cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << std::endl<< std::endl;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 	
   // Solve transpose problem
 
   if (verbose) cout << "\n\nUsing transpose of matrix and solving again (should give same result).\n\n"
-		    << endl;
+		    << std::endl;
   // Iterate
   lambda = 0.0;
   flopcounter.ResetFlops();
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
   total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) cout << "\n\nTotal MFLOPs for transpose solve = " << MFLOPs << endl<< endl;
+  if (verbose) cout << "\n\nTotal MFLOPs for transpose solve = " << MFLOPs << std::endl<< endl;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -881,6 +881,21 @@ cout << A2;
   }
   else
     if (verbose) cout << endl << "InvRowSums tests PASSED" << endl << endl;
+
+  A3cm.PutScalar(2.0);
+  int nnz_A3cm = A3cm.Graph().NumGlobalNonzeros();
+  double check_frobnorm = sqrt(nnz_A3cm*4.0);
+  double frobnorm = A3cm.NormFrobenius();
+
+  bool frobnorm_test_failed = false;
+  if (fabs(check_frobnorm-frobnorm) > 1.e-13) {
+    frobnorm_test_failed = true;
+  }
+
+  if (frobnorm_test_failed) {
+    if (verbose) std::cout << "Frobenius-norm test FAILED."<<std::endl;
+    EPETRA_TEST_ERR(-65, ierr);
+  }
 
   delete [] Values2;
   delete [] Indices2;

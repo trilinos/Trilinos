@@ -49,6 +49,9 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_BlockMap& 
     matrixFillCompleteCalled_(false),
     NumMyBlockRows_(RowMap.NumMyElements()),
     CV_(CV),
+    NormInf_(0.0),
+    NormOne_(0.0),
+    NormFrob_(0.0),
     squareFillCompleteCalled_(false)
 {
   InitializeDefaults();
@@ -260,6 +263,7 @@ void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that 
   All_Values_Orig_ = 0;
   NormInf_ = -1.0;
   NormOne_ = -1.0;
+  NormFrob_ = -1.0;
   ImportVector_ = 0;
 
   NumBlockEntriesPerRow_  = 0;
@@ -445,6 +449,7 @@ int Epetra_VbrMatrix::PutScalar(double ScalarConstant)
   }
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
   return(0);
 }
 
@@ -466,6 +471,7 @@ int Epetra_VbrMatrix::Scale(double ScalarConstant)
   }
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
   return(0);
 }
 //==========================================================================
@@ -636,7 +642,8 @@ int Epetra_VbrMatrix::EndSubmitEntries() {
   }
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
-  return(0);
+  NormFrob_ = -1.0;
+ return(0);
 }
 
 //==========================================================================
@@ -1346,6 +1353,7 @@ int Epetra_VbrMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
   }
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
   EPETRA_CHK_ERR(ierr);
   return(0);
 }
@@ -2620,6 +2628,7 @@ int Epetra_VbrMatrix::Scale(bool DoRows, const Epetra_Vector& x) {
   if (x_tmp!=0) delete x_tmp;
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
+  NormFrob_ = -1.0;
   UpdateFlops(NumGlobalNonzeros());
 
   EPETRA_CHK_ERR(ierr);
@@ -2738,6 +2747,80 @@ double Epetra_VbrMatrix::NormOne() const {
   delete x;
   UpdateFlops(NumGlobalNonzeros());
   return(NormOne_);
+}
+//=============================================================================
+double Epetra_VbrMatrix::NormFrobenius() const {
+
+#if 0
+  //
+  //  Commenting this section out disables caching, ie. 
+  //  causes the norm to be computed each time NormOne is called.  
+  //  See bug #1151 for a full discussion.  
+  //
+  double MinNorm ; 
+  Comm().MinAll( &NormFrob_, &MinNorm, 1 ) ; 
+
+  if( MinNorm >= 0.0) 
+    return(NormFrob_);
+#endif
+
+  int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
+  int * ElementSize = ElementSizeList_;
+  int ** Indices = Indices_;
+  Epetra_SerialDenseMatrix*** Entries = Entries_;
+
+  double local_sum = 0.0;
+
+  for (int i=0; i < NumMyBlockRows_; i++) {
+    int NumEntries = *NumBlockEntriesPerRow++;
+    int RowDim = *ElementSize++;
+    int *    BlockRowIndices = *Indices++;
+    Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
+
+    for(int ii=0; ii<NumEntries; ++ii) {
+      double* A = BlockRowValues[ii]->A();
+      int LDA = BlockRowValues[ii]->LDA();
+      int colDim = BlockRowValues[ii]->N();
+      for(int j=0; j<colDim; ++j) {
+        for(int k=0; k<RowDim; ++k) {
+          local_sum += A[k]*A[k];
+        }
+        A += LDA;
+      }
+    }
+
+//The following commented-out code performs the calculation by running
+//all the way across each point-entry row before going to the next.
+//This is the order in which the CrsMatrix frobenius norm is calculated,
+//but for a VbrMatrix it is faster to run the block-entries in
+//column-major order (which is how they're stored), as the above code
+//does.
+//But if the same matrix is stored in both Vbr and Crs form, and you wish
+//to compare the frobenius norms, it is necessary to run through the
+//coefficients in the same order to avoid round-off differences.
+//
+//    for(int k=0; k<RowDim; ++k) {
+//      for(int ii=0; ii<NumEntries; ++ii) {
+//        double* A = BlockRowValues[ii]->A();
+//        int LDA = BlockRowValues[ii]->LDA();
+//        int colDim = BlockRowValues[ii]->N();
+//        for(int j=0; j<colDim; ++j) {
+//          double Ak = A[k+j*LDA];
+//          local_sum += Ak*Ak;
+//        }
+//      }
+//    }
+
+  }
+
+  double global_sum = 0.0;
+  Comm().SumAll(&local_sum, &global_sum, 1);
+
+  NormFrob_ = sqrt(global_sum);
+
+  UpdateFlops(NumGlobalNonzeros());
+
+  return(NormFrob_);
 }
 //=============================================================================
 void Epetra_VbrMatrix::BlockRowNormOne(int RowDim, int NumEntries, int * BlockRowIndices,

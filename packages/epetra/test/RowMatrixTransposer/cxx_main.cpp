@@ -274,7 +274,9 @@ int checkResults(Epetra_RowMatrix * A, Epetra_CrsMatrix * transA,
 
   if (residual > 1.0e-10) ierr++;
 
-  if (ierr!=0 && verbose) cerr << "Status: Test failed" << endl;
+  if (ierr!=0 && verbose) {
+    cerr << "Status: Test failed" << endl;
+  }
   else if (verbose) cerr << "Status: Test passed" << endl;
 
   return(ierr);
