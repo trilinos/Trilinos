@@ -65,7 +65,8 @@ Vector::~Vector()
   }
 }
 
-Abstract::Vector& Vector::operator=(const Vec& source)
+Abstract::Vector& 
+Vector::operator=(const Vec& source)
 {
   VecCopy(source, petscVec);
   name = "Unnamed";
@@ -73,12 +74,14 @@ Abstract::Vector& Vector::operator=(const Vec& source)
   return *this;
 }
 
-Abstract::Vector& Vector::operator=(const Abstract::Vector& source)
+Abstract::Vector& 
+Vector::operator=(const Abstract::Vector& source)
 {
   return operator=(dynamic_cast<const Vector&>(source));
 }
 
-Abstract::Vector& Vector::operator=(const Vector& source)
+Abstract::Vector& 
+Vector::operator=(const Vector& source)
 {
   VecCopy(source.getPetscVector(), petscVec);
   isAlloc = source.isAlloc;
@@ -86,7 +89,8 @@ Abstract::Vector& Vector::operator=(const Vector& source)
   return *this;
 }
 
-int Vector::allocate(const Vec& source, CopyType type)
+int 
+Vector::allocate(const Vec& source, CopyType type)
 {
  
   int ierr = VecDuplicate(source, &petscVec);
@@ -111,77 +115,90 @@ int Vector::allocate(const Vec& source, CopyType type)
   return ierr;
 }
 
-Vec& Vector::getPetscVector()
+Vec& 
+Vector::getPetscVector()
 {
   return petscVec;
 }
 
-const Vec& Vector::getPetscVector() const
+const Vec& 
+Vector::getPetscVector() const
 {
   return petscVec;
 }
 
-Abstract::Vector& Vector::init(double value)
+Abstract::Vector& 
+Vector::init(double value)
 {
-  VecSet(&value, petscVec);
+  VecSet(petscVec, value);
   return *this;
 }
 
-Abstract::Vector& Vector::abs(const Abstract::Vector& base)
+Abstract::Vector& 
+Vector::abs(const Abstract::Vector& base)
 {
   return abs(dynamic_cast<const Vector&>(base));
 }
 
-Abstract::Vector& Vector::abs(const Vector& base)
+Abstract::Vector& 
+Vector::abs(const Vector& base)
 {
   VecCopy(base.getPetscVector(), petscVec);
   VecAbs(petscVec);
   return *this;
 }
 
-Abstract::Vector& Vector::reciprocal(const Abstract::Vector& base)
+Abstract::Vector& 
+Vector::reciprocal(const Abstract::Vector& base)
 {
   return reciprocal(dynamic_cast<const Vector&>(base));
 }
 
-Abstract::Vector& Vector::reciprocal(const Vector& base)
+Abstract::Vector& 
+Vector::reciprocal(const Vector& base)
 {
   VecCopy(base.getPetscVector(), petscVec);
   VecReciprocal(petscVec);
   return *this;
 }
 
-Abstract::Vector& Vector::scale(double alpha)
+Abstract::Vector& 
+Vector::scale(double alpha)
 {
-  VecScale(&alpha, petscVec);
+  VecScale(petscVec, alpha);
   return *this;
 }
 
-Abstract::Vector& Vector::scale(const Abstract::Vector& a)
+Abstract::Vector& 
+Vector::scale(const Abstract::Vector& a)
 {
   return scale(dynamic_cast<const Petsc::Vector&>(a));
 }
   
-Abstract::Vector& Vector::scale(const Vector& a)
+Abstract::Vector& 
+Vector::scale(const Vector& a)
 {
   VecPointwiseMult(petscVec, a.getPetscVector(), petscVec);
   return *this;
 } 
   
-Abstract::Vector& Vector::update(double alpha, const Abstract::Vector& a, 
+Abstract::Vector& 
+Vector::update(double alpha, const Abstract::Vector& a, 
 				 double gammaval)
 {
   return update(alpha, dynamic_cast<const Vector&>(a), gammaval);
 }
 
-Abstract::Vector& Vector::update(double alpha, const Vector& a, 
+Abstract::Vector& 
+Vector::update(double alpha, const Vector& a, 
 				 double gammaval)
 {
-  VecAXPBY(&alpha, &gammaval, a.getPetscVector(), petscVec);
+  VecAXPBY(petscVec, alpha, gammaval, a.getPetscVector());
   return *this;
 }
 
-Abstract::Vector& Vector::update(double alpha, const Abstract::Vector& a, 
+Abstract::Vector& 
+Vector::update(double alpha, const Abstract::Vector& a, 
 				 double beta, const Abstract::Vector& b,
 				 double gammaval)
 {
@@ -189,23 +206,27 @@ Abstract::Vector& Vector::update(double alpha, const Abstract::Vector& a,
 		beta, dynamic_cast<const Vector&>(b), gammaval);
 }
 
-Abstract::Vector& Vector::update(double alpha, const Vector& a, 
+Abstract::Vector& 
+Vector::update(double alpha, const Vector& a, 
 				 double beta, const Vector& b,
 				 double gammaval)
 {
-  VecAXPBY(&alpha, &gammaval, a.getPetscVector(), petscVec);
-  VecAXPY(&beta, b.getPetscVector(), petscVec);
+  VecAXPBY(petscVec, alpha, gammaval, a.getPetscVector());
+  VecAXPY(petscVec, beta, b.getPetscVector());
   return *this;
 }
 
 
-Abstract::Vector* Vector::clone(CopyType type) const
+Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+Vector::clone(CopyType type) const
 {
-  Vector* newVec = new Vector(petscVec, type);
+  Teuchos::RefCountPtr<NOX::Abstract::Vector> newVec = 
+    Teuchos::rcp(new NOX::Petsc::Vector(petscVec, type));
   return newVec;
 }
 
-double Vector::norm(Abstract::Vector::NormType type) const
+double 
+Vector::norm(Abstract::Vector::NormType type) const
 {
   double n;
   switch (type) {
@@ -223,12 +244,14 @@ double Vector::norm(Abstract::Vector::NormType type) const
   return n;
 }
 
-double Vector::norm(const Abstract::Vector& weights) const
+double 
+Vector::norm(const Abstract::Vector& weights) const
 {
   return norm(dynamic_cast<const Vector&>(weights));
 }
 
-double Vector::norm(const Vector& weights) const
+double 
+Vector::norm(const Vector& weights) const
 {
   double n = 0.0;
   cerr << "Norm type not supported for weighted norm" << endl;
@@ -236,19 +259,22 @@ double Vector::norm(const Vector& weights) const
   return n;
 }
 
-double Vector::innerProduct(const Abstract::Vector& y) const
+double 
+Vector::innerProduct(const Abstract::Vector& y) const
 {
   return innerProduct(dynamic_cast<const Vector&>(y));
 }
 
-double Vector::innerProduct(const Vector& y) const
+double 
+Vector::innerProduct(const Vector& y) const
 {
   double dotprod;
   VecDot(y.getPetscVector(), petscVec, &dotprod);
   return dotprod;
 }
 
-int Vector::length() const
+int 
+Vector::length() const
 {
   int size;
   VecGetSize(petscVec, &size);

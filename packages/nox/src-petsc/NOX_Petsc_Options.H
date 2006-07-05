@@ -60,7 +60,7 @@ public:
   bool setOptions(Teuchos::ParameterList& params);
 
   //! Get reference to the final (combo) status test
-  NOX::StatusTest::Combo& getStatusTest();
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo> & getStatusTest();
 
 private:
 
@@ -71,10 +71,10 @@ private:
   int rank;   // proc ID used with output utils
  
   //! Supported convergence criteria
-  NOX::StatusTest::MaxIters* testMaxIters;
-  NOX::StatusTest::NormF* testNormF;
-  NOX::StatusTest::NormUpdate* testNormUpdate;
-  NOX::StatusTest::Combo* testCombo;
+  Teuchos::RefCountPtr<NOX::StatusTest::MaxIters>    testMaxIters;
+  Teuchos::RefCountPtr<NOX::StatusTest::NormF>       testNormF;
+  Teuchos::RefCountPtr<NOX::StatusTest::NormUpdate>  testNormUpdate;
+  Teuchos::RefCountPtr<NOX::StatusTest::Combo>       testCombo;
   
 };
 } // namespace Petsc

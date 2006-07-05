@@ -40,7 +40,7 @@
 #include "Teuchos_ParameterList.hpp"
 
 // External include files - linking to Petsc
-#include "petscsles.h" 
+#include "petscksp.h" 
 
 using namespace NOX;
 using namespace NOX::Petsc;
@@ -110,18 +110,22 @@ void Group::resetIsValid() //private
   isValidPreconditioner = false;
 }
 
-Abstract::Group* Group::clone(CopyType type) const 
+Teuchos::RefCountPtr<NOX::Abstract::Group> 
+Group::clone(CopyType type) const 
 {
-  Group* newgrp = new Group(*this, type);
+  Teuchos::RefCountPtr<NOX::Abstract::Group> newgrp = 
+    Teuchos::rcp(new NOX::Petsc::Group(*this, type));
   return newgrp;
 }
 
-Abstract::Group& Group::operator=(const Abstract::Group& source)
+Abstract::Group& 
+Group::operator=(const Abstract::Group& source)
 {
   return operator=(dynamic_cast<const Group&> (source));
 }
 
-Abstract::Group& Group::operator=(const Group& source)
+Abstract::Group& 
+Group::operator=(const Group& source)
 {
   // Copy the xVector
   xVector = source.xVector;
@@ -155,22 +159,23 @@ Abstract::Group& Group::operator=(const Group& source)
   return *this;
 }
 
-void Group::setX(const Abstract::Vector& y)
+void 
+Group::setX(const Abstract::Vector& y)
 {
   setX(dynamic_cast<const Vector&> (y));
   return;
 }
 
-void Group::setX(const Vector& y)
+void 
+Group::setX(const Vector& y)
 {
   resetIsValid();
   xVector = y;
   return;
 }
 
-void Group::computeX(const Abstract::Group& grp, 
-					const Abstract::Vector& d, 
-					double step) 
+void 
+Group::computeX(const Abstract::Group& grp, const Abstract::Vector& d, double step) 
 {
   // Cast to appropriate type, then call the "native" computeX
   const Group& petscgrp = dynamic_cast<const Group&> (grp);
@@ -179,14 +184,16 @@ void Group::computeX(const Abstract::Group& grp,
   return;
 }
 
-void Group::computeX(const Group& grp, const Vector& d, double step) 
+void 
+Group::computeX(const Group& grp, const Vector& d, double step) 
 {
   resetIsValid();
   xVector.update(1.0, grp.xVector, step, d);
   return;
 }
 
-Abstract::Group::ReturnType Group::computeF() 
+Abstract::Group::ReturnType 
+Group::computeF() 
 {
   if (isF())
     return Abstract::Group::Ok;
@@ -208,7 +215,8 @@ Abstract::Group::ReturnType Group::computeF()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType Group::computeJacobian() 
+Abstract::Group::ReturnType 
+Group::computeJacobian() 
 {
   // Skip if the Jacobian is already valid
   if (isJacobian())
@@ -242,7 +250,8 @@ Abstract::Group::ReturnType Group::computeJacobian()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType Group::computeGradient() 
+Abstract::Group::ReturnType 
+Group::computeGradient() 
 {
   if (isGradient())
     return Abstract::Group::Ok;
@@ -271,7 +280,8 @@ Abstract::Group::ReturnType Group::computeGradient()
   return Abstract::Group::Ok;
 }
 
-Abstract::Group::ReturnType Group::computeNewton(Teuchos::ParameterList& p) 
+Abstract::Group::ReturnType 
+Group::computeNewton(Teuchos::ParameterList& p) 
 {
   if (isNewton())
     return Abstract::Group::Ok;
@@ -289,44 +299,55 @@ Abstract::Group::ReturnType Group::computeNewton(Teuchos::ParameterList& p)
   // Get the Jacobian
   Mat& Jacobian = sharedJacobian.getJacobian(this);
 
-  // Create Petsc SLES problem for the linear solve
+  // Create Petsc KSP problem for the linear solve
 
-  SLES sles;
+  KSP ksp;
+  KSPConvergedReason reason;
 
-  int ierr = SLESCreate(PETSC_COMM_WORLD,&sles);//CHKERRQ(ierr);
-
-  //ierr = SLESGetKSP(sles, &ksp);CHKERRQ(ierr);
-  //ierr = SLESGetPC(sles, &pc);CHKERRQ(ierr);
-
-  //ierr = PCLUSetUseInPlace(pc);CHKERRQ(ierr);
-  //ierr = KSPSetTolerances(ksp, tol, tol, PETSC_DEFAULT, 10);CHKERRQ(ierr);
+  int ierr = KSPCreate(PETSC_COMM_WORLD,&ksp);
 
   /*
      Set operators. Here the matrix that defines the linear system
      also serves as the preconditioning matrix.
   */
-  ierr = SLESSetOperators(sles,Jacobian,Jacobian,
-                       DIFFERENT_NONZERO_PATTERN);//CHKERRQ(ierr);
+  ierr = KSPSetOperators(ksp,Jacobian,Jacobian, DIFFERENT_NONZERO_PATTERN);
 
   /*
      Set runtime options (e.g., -ksp_type <type> -pc_type <type>)
   */
 
-  ierr = SLESSetFromOptions(sles);//CHKERRQ(ierr);
+  ierr = KSPSetFromOptions(ksp);
 
   /*
-     Solve linear system.  Here we explicitly call SLESSetUp() for more
+     Solve linear system.  Here we explicitly call KSPSetUp() for more
      detailed performance monitoring of certain preconditioners, such
-     as ICC and ILU.  This call is optional, as SLESSetUp() will
-     automatically be called within SLESSolve() if it hasn't been
+     as ICC and ILU.  This call is optional, as KSPSetUp() will
+     automatically be called within KSPSolve() if it hasn't been
      called already.
   */
-  ierr = SLESSetUp(sles,RHSVector.getPetscVector(),
-                        NewtonVector.getPetscVector());//CHKERRQ(ierr);
+  ierr = KSPSetUp(ksp);
+
   int its = 0;
   // Need to put a check on ierr.
-  ierr = SLESSolve(sles,RHSVector.getPetscVector(),
-                        NewtonVector.getPetscVector(),&its);//CHKERRQ(ierr);
+  ierr = KSPSolve( ksp, RHSVector.getPetscVector(), NewtonVector.getPetscVector() );
+
+  // Ascertain convergence status
+  ierr = KSPGetConvergedReason(ksp,&reason);
+
+  if( reason == KSP_DIVERGED_INDEFINITE_PC ) 
+  {
+    cout << "\nDivergence because of indefinite preconditioner;\n";
+    cout << "Run the executable again but with -pc_ilu_shift option.\n";
+  } 
+  else if( reason < 0 ) 
+  {
+    cout << "\nOther kind of divergence: this should not happen.\n";
+  } 
+  else 
+  {
+    ierr = KSPGetIterationNumber( ksp, &its );
+    cout << "\nConvergence in " << its << " iterations.\n";
+  }
 
   // Scale soln by -1
   NewtonVector.scale(-1.0);
@@ -387,29 +408,27 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
   // Set up preconditioner context
   PC pc;
 
-  int ierr = PCCreate(PETSC_COMM_WORLD,&pc);//CHKERRQ(ierr);
+  int ierr = PCCreate(PETSC_COMM_WORLD,&pc);
 
   // Here a default to jacobi (jacobian-diagonal-inverse) is established
   // but can be overridden via specification of pc_type in .petscrc
-  //ierr = PCSetType(pc, PCJACOBI);CHKERRQ(ierr);
 
   // This allows more general preconditioning via specification of -pc_type 
   // in .petscrc
-  ierr = PCSetFromOptions(pc);//CHKERRQ(ierr);
+  ierr = PCSetFromOptions(pc);
 
   /*
      Set operators and vector. Here the matrix that defines the linear system
      also serves as the preconditioning matrix.
   */
-  ierr = PCSetOperators(pc,Jacobian,Jacobian,
-                       DIFFERENT_NONZERO_PATTERN);//CHKERRQ(ierr);
-  ierr = PCSetVector(pc,r);//CHKERRQ(ierr);
+  ierr = PCSetOperators(pc,Jacobian,Jacobian, DIFFERENT_NONZERO_PATTERN);
+  ierr = PCSetUp(pc);
 
   // Apply the preconditioner
-  ierr = PCApply(pc,input.getPetscVector(),r, PC_RIGHT);//CHKERRQ(ierr);
+  ierr = PCApply(pc,input.getPetscVector(),r);
 
   // Cleanup
-  ierr = PCDestroy(pc);//CHKERRQ(ierr);
+  ierr = PCDestroy(pc);
 
   return Abstract::Group::Ok;
 }
@@ -440,37 +459,44 @@ Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 }
 
 
-bool Group::isF() const 
+bool 
+Group::isF() const 
 {   
   return isValidRHS;
 }
 
-bool Group::isJacobian() const 
+bool 
+Group::isJacobian() const 
 {  
   return ((sharedJacobian.isOwner(this)) && (isValidJacobian));
 }
 
-bool Group::isGradient() const 
+bool 
+Group::isGradient() const 
 {   
   return isValidGrad;
 }
 
-bool Group::isNewton() const 
+bool 
+Group::isNewton() const 
 {   
   return isValidNewton;
 }
 
-bool Group::isPreconditioner() const 
+bool 
+Group::isPreconditioner() const 
 {   
   return isValidPreconditioner;
 }
 
-const Abstract::Vector& Group::getX() const 
+const Abstract::Vector& 
+Group::getX() const 
 {
   return xVector;
 }
 
-const Abstract::Vector& Group::getF() const 
+const Abstract::Vector& 
+Group::getF() const 
 {  
   if (!isF()) {
     cerr << "ERROR: NOX::Petsc::Group::getF() - invalid RHS" << endl;
@@ -480,7 +506,8 @@ const Abstract::Vector& Group::getF() const
   return RHSVector;
 }
 
-double Group::getNormF() const
+double 
+Group::getNormF() const
 {
   if (!isF()) {
     cerr << "ERROR: NOX::Petsc::Group::getNormF() - invalid RHS" << endl;
@@ -490,7 +517,8 @@ double Group::getNormF() const
   return normRHS;
 }
 
-const Abstract::Vector& Group::getGradient() const 
+const Abstract::Vector& 
+Group::getGradient() const 
 { 
   if (!isGradient()) {
     cerr << "ERROR: NOX::Petsc::Group::getGradient() - invalid gradient" << endl;
@@ -500,7 +528,8 @@ const Abstract::Vector& Group::getGradient() const
   return gradVector;
 }
 
-const Abstract::Vector& Group::getNewton() const 
+const Abstract::Vector& 
+Group::getNewton() const 
 {
   if (!isNewton()) {
     cerr << "ERROR: NOX::Petsc::Group::getNewton() - invalid Newton vector" << endl;

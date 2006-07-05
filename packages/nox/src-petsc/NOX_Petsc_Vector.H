@@ -128,7 +128,8 @@ class Vector : public Abstract::Vector {
 
   //@{ \name Creating new Vectors. 
 
-  virtual Abstract::Vector* clone(CopyType type = DeepCopy) const;
+  virtual Teuchos::RefCountPtr<NOX::Abstract::Vector> 
+  clone(CopyType type = DeepCopy) const;
 
   //@}
 

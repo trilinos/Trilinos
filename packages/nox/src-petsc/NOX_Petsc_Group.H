@@ -38,7 +38,7 @@
 #include "NOX_Common.H" // class data element (string)
 
 #include "petscsnes.h"	
-#include "petscsles.h"	
+#include "petscksp.h"	
 
 // Forward declares
 namespace Teuchos {
@@ -169,7 +169,8 @@ public:
 
   //@}
 
-  virtual Abstract::Group* clone(CopyType type = DeepCopy) const;
+  virtual Teuchos::RefCountPtr<NOX::Abstract::Group> 
+  clone(CopyType type = DeepCopy) const;
 
 protected:
 
