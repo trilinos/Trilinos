@@ -75,6 +75,7 @@ struct PHGPartParamsStruct {
     
   int edge_scaling;              /* type of hyperedge weight scaling */
   int vtx_scaling;               /* type of vertex scaling for inner product */
+  int vtx_scal_size;                   /* size of vtx_scal array */
   float *vtx_scal;                     /* vtx scaling array */
   int LocalCoarsePartition;            /* 1 -> apply coarse partitioner locally;
                                           0 -> gather entire HG to each proc

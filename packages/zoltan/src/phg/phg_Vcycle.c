@@ -419,7 +419,10 @@ int Zoltan_PHG_Partition (
      "coarsening plot");
 
   /* free array that may have been allocated in matching */
-  if (hgp->vtx_scal) ZOLTAN_FREE(&(hgp->vtx_scal));
+  if (hgp->vtx_scal) {
+    hgp->vtx_scal_size = 0;
+    ZOLTAN_FREE(&(hgp->vtx_scal));
+  }
 
   if (do_timing) {
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_vcycle, hgc->Communicator);

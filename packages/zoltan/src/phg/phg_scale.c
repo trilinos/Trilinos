@@ -133,10 +133,21 @@ int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
   if ((hgp->vtx_scaling==0) || (hg->nVtx==0))
     return ZOLTAN_OK;
 
+  /* See whether vtx_scal is large enough; nVtx may have increased due to
+     processor reduction */
+  if (hgp->vtx_scal && (hgp->vtx_scal_size < hg->nVtx)) {
+    hgp->vtx_scal_size = 0;
+    ZOLTAN_FREE(&(hgp->vtx_scal));
+  }
+
   /* Allocate vtx_scal array if necessary */
-  if (hgp->vtx_scal==NULL){  /* first level in V-cycle */
-    if (!(hgp->vtx_scal = (float*) ZOLTAN_MALLOC (hg->nVtx *
+  if (hgp->vtx_scal==NULL){  
+    /* first level in V-cycle or ...*/
+    /* nVtx increased due to processor reduction */
+    hgp->vtx_scal_size = hg->nVtx;
+    if (!(hgp->vtx_scal = (float*) ZOLTAN_MALLOC (hgp->vtx_scal_size *
                            sizeof(float)))) {
+       hgp->vtx_scal_size = 0;
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;
     }
