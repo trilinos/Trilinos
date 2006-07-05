@@ -29,9 +29,22 @@
 # ************************************************************************
 #@HEADER
 
+# Include NOX export makefile
+include $(top_builddir)/Makefile.export.nox
+
 if BUILD_PETSC_EXAMPLES
 include ${PETSC_DIR}/bmake/common/base
 endif
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(NOX_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(NOX_INCLUDES))
+else
+EXAMPLE_LIBS     = $(NOX_LIBS)
+EXAMPLE_INCLUDES = $(NOX_INCLUDES)
+endif
+
+AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
@@ -50,5 +63,5 @@ example_CXXFLAGS = $(PETSC_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-petsc
 
 example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-petsc \
-                -lnoxpetsc ${PETSC_LIB} -lnox
+                -lnoxpetsc ${PETSC_LIB} -lnox -lteuchos
 
