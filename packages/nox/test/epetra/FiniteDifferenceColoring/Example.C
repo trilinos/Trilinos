@@ -27,7 +27,7 @@
 // ************************************************************************
 //@HEADER
                                                                                 
-// 1D Finite Element Test Problem
+// 1D Finite Element Test Problem - Requires EpetraExt
 /* Solves the nonlinear equation:
  *
  * d2u 
@@ -36,6 +36,51 @@
  *
  * subject to @ x=0, u=1
  */
+
+#include "NOX_Common.H" // needed to determine HAVE_NOX_EPETRAEXT
+
+// Ensure we have the required EpetraExt library built
+
+#ifndef HAVE_NOX_EPETRAEXT
+
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
+int main(int argc, char *argv[])
+{
+  // Initialize MPI
+#ifdef HAVE_MPI
+  MPI_Init(&argc,&argv);
+#endif
+
+  // Create a communicator for Epetra objects
+#ifdef HAVE_MPI
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  // Summarize test results
+  if( Comm.MyPID() == 0 )
+    cout << "Test failed! This test requires the EpetraExt library." << endl;
+
+#ifdef HAVE_MPI
+  MPI_Finalize() ;
+#endif
+
+  int ierr = -1;
+
+  // Final return value (0 = successfull, non-zero = failure)
+  return ierr ;
+}
+
+#else  // The real test
+
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
 
 // NOX Objects
 #include "NOX.H"
@@ -58,13 +103,6 @@
 #include "AztecOO.h"
 
 #include <vector>
-#ifdef HAVE_NOX_EPETRAEXT 	// Use epetraext package in Trilinos
-#include "EpetraExt_MapColoring.h"
-#include "EpetraExt_MapColoringIndex.h"
-#else  // Otherwise use the local version of the needed coloring files
-#include "nox_EDT_CrsGraph_MapColoring.H"
-#include "nox_EDT_CrsGraph_MapColoringIndex.H"
-#endif
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX
@@ -182,24 +220,19 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new Problem_Interface(Problem));
 
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
-#ifndef HAVE_NOX_EPETRAEXT
-  bool verbose_ = false;
-  Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
-    Teuchos::rcp(Epetra_Transform::CrsGraph_MapColoring( verbose_ )( *(Problem.getGraph())));
-  Epetra_Transform::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  Teuchos::RefCountPtr< vector<Epetra_IntVector> > columns = 
-    Teuchos::rcp(colorMapIndex(*(Problem.getGraph())));
-#else
   bool verbose_ = false;
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
     EpetraExt::CrsGraph_MapColoring::GREEDY;
+
   EpetraExt::CrsGraph_MapColoring tmpMapColoring( algType, verbose_ );
+
   Teuchos::RefCountPtr<Epetra_MapColoring> colorMap = 
     Teuchos::rcp(&tmpMapColoring(*(Problem.getGraph())));
+
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
+
   Teuchos::RefCountPtr< vector<Epetra_IntVector> > columns = 
     Teuchos::rcp(&colorMapIndex(*(Problem.getGraph())));
-#endif
 
   // Use this constructor to create the graph numerically as a means of timing
   // the old way of looping without colors :
@@ -312,3 +345,4 @@ int main(int argc, char *argv[])
   // Final return value (0 = successfull, non-zero = failure)
   return ierr ;
 }
+#endif

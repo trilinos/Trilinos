@@ -44,7 +44,7 @@ AM_CPPFLAGS = $(EXAMPLE_INCLUDES)
 
 EXEEXT = .exe
 
-if BUILD_EPETRA_TESTS
+if BUILD_NOX_EPETRAEXT_SUPPORT
 noinst_PROGRAMS = FiniteDifferenceColoring
 endif
 
@@ -55,15 +55,7 @@ FiniteDifferenceColoring_SOURCES = \
 	$(srcdir)/Basis.C \
         $(srcdir)/Basis.H \
 	$(srcdir)/Problem_Interface.C \
-        $(srcdir)/Problem_Interface.H \
-	$(srcdir)/nox_EDT_CrsGraph_MapColoring.C \
-        $(srcdir)/nox_EDT_CrsGraph_MapColoring.H \
-	$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C \
-        $(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.H \
-	$(srcdir)/nox_EDT_CrsGraph_Transpose.C \
-        $(srcdir)/nox_EDT_CrsGraph_Transpose.H \
-        $(srcdir)/nox_Epetra_DistTransform.H \
-        $(srcdir)/nox_Epetra_Transform.H
+        $(srcdir)/Problem_Interface.H 
 
 FiniteDifferenceColoring_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a

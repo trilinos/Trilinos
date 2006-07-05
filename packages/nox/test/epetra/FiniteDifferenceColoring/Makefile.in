@@ -66,8 +66,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@BUILD_EPETRA_TESTS_TRUE@noinst_PROGRAMS =  \
-@BUILD_EPETRA_TESTS_TRUE@	FiniteDifferenceColoring$(EXEEXT)
+@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@noinst_PROGRAMS = FiniteDifferenceColoring$(EXEEXT)
 subdir = test/epetra/FiniteDifferenceColoring
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -102,10 +101,7 @@ CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_FiniteDifferenceColoring_OBJECTS = Example.$(OBJEXT) \
 	FiniteElementProblem.$(OBJEXT) Basis.$(OBJEXT) \
-	Problem_Interface.$(OBJEXT) \
-	nox_EDT_CrsGraph_MapColoring.$(OBJEXT) \
-	nox_EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
-	nox_EDT_CrsGraph_Transpose.$(OBJEXT)
+	Problem_Interface.$(OBJEXT)
 FiniteDifferenceColoring_OBJECTS =  \
 	$(am_FiniteDifferenceColoring_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -117,10 +113,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Basis.Po ./$(DEPDIR)/Example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -355,15 +348,7 @@ FiniteDifferenceColoring_SOURCES = \
 	$(srcdir)/Basis.C \
         $(srcdir)/Basis.H \
 	$(srcdir)/Problem_Interface.C \
-        $(srcdir)/Problem_Interface.H \
-	$(srcdir)/nox_EDT_CrsGraph_MapColoring.C \
-        $(srcdir)/nox_EDT_CrsGraph_MapColoring.H \
-	$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C \
-        $(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.H \
-	$(srcdir)/nox_EDT_CrsGraph_Transpose.C \
-        $(srcdir)/nox_EDT_CrsGraph_Transpose.H \
-        $(srcdir)/nox_Epetra_DistTransform.H \
-        $(srcdir)/nox_Epetra_Transform.H
+        $(srcdir)/Problem_Interface.H 
 
 FiniteDifferenceColoring_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a
@@ -419,9 +404,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FiniteElementProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Problem_Interface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Po@am__quote@
 
 .C.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -502,54 +484,6 @@ Problem_Interface.obj: $(srcdir)/Problem_Interface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Problem_Interface.Po' tmpdepfile='$(DEPDIR)/Problem_Interface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Problem_Interface.obj `if test -f '$(srcdir)/Problem_Interface.C'; then $(CYGPATH_W) '$(srcdir)/Problem_Interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Problem_Interface.C'; fi`
-
-nox_EDT_CrsGraph_MapColoring.o: $(srcdir)/nox_EDT_CrsGraph_MapColoring.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nox_EDT_CrsGraph_MapColoring.o -MD -MP -MF "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Tpo" -c -o nox_EDT_CrsGraph_MapColoring.o `test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoring.C' || echo '$(srcdir)/'`$(srcdir)/nox_EDT_CrsGraph_MapColoring.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Tpo" "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Po"; else rm -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/nox_EDT_CrsGraph_MapColoring.C' object='nox_EDT_CrsGraph_MapColoring.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Po' tmpdepfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nox_EDT_CrsGraph_MapColoring.o `test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoring.C' || echo '$(srcdir)/'`$(srcdir)/nox_EDT_CrsGraph_MapColoring.C
-
-nox_EDT_CrsGraph_MapColoring.obj: $(srcdir)/nox_EDT_CrsGraph_MapColoring.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nox_EDT_CrsGraph_MapColoring.obj -MD -MP -MF "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Tpo" -c -o nox_EDT_CrsGraph_MapColoring.obj `if test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoring.C'; then $(CYGPATH_W) '$(srcdir)/nox_EDT_CrsGraph_MapColoring.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/nox_EDT_CrsGraph_MapColoring.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Tpo" "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Po"; else rm -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/nox_EDT_CrsGraph_MapColoring.C' object='nox_EDT_CrsGraph_MapColoring.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.Po' tmpdepfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoring.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nox_EDT_CrsGraph_MapColoring.obj `if test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoring.C'; then $(CYGPATH_W) '$(srcdir)/nox_EDT_CrsGraph_MapColoring.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/nox_EDT_CrsGraph_MapColoring.C'; fi`
-
-nox_EDT_CrsGraph_MapColoringIndex.o: $(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nox_EDT_CrsGraph_MapColoringIndex.o -MD -MP -MF "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Tpo" -c -o nox_EDT_CrsGraph_MapColoringIndex.o `test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C' || echo '$(srcdir)/'`$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Tpo" "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Po"; else rm -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C' object='nox_EDT_CrsGraph_MapColoringIndex.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Po' tmpdepfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nox_EDT_CrsGraph_MapColoringIndex.o `test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C' || echo '$(srcdir)/'`$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C
-
-nox_EDT_CrsGraph_MapColoringIndex.obj: $(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nox_EDT_CrsGraph_MapColoringIndex.obj -MD -MP -MF "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Tpo" -c -o nox_EDT_CrsGraph_MapColoringIndex.obj `if test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C'; then $(CYGPATH_W) '$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Tpo" "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Po"; else rm -f "$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C' object='nox_EDT_CrsGraph_MapColoringIndex.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.Po' tmpdepfile='$(DEPDIR)/nox_EDT_CrsGraph_MapColoringIndex.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nox_EDT_CrsGraph_MapColoringIndex.obj `if test -f '$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C'; then $(CYGPATH_W) '$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/nox_EDT_CrsGraph_MapColoringIndex.C'; fi`
-
-nox_EDT_CrsGraph_Transpose.o: $(srcdir)/nox_EDT_CrsGraph_Transpose.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nox_EDT_CrsGraph_Transpose.o -MD -MP -MF "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Tpo" -c -o nox_EDT_CrsGraph_Transpose.o `test -f '$(srcdir)/nox_EDT_CrsGraph_Transpose.C' || echo '$(srcdir)/'`$(srcdir)/nox_EDT_CrsGraph_Transpose.C; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Tpo" "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Po"; else rm -f "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/nox_EDT_CrsGraph_Transpose.C' object='nox_EDT_CrsGraph_Transpose.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Po' tmpdepfile='$(DEPDIR)/nox_EDT_CrsGraph_Transpose.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nox_EDT_CrsGraph_Transpose.o `test -f '$(srcdir)/nox_EDT_CrsGraph_Transpose.C' || echo '$(srcdir)/'`$(srcdir)/nox_EDT_CrsGraph_Transpose.C
-
-nox_EDT_CrsGraph_Transpose.obj: $(srcdir)/nox_EDT_CrsGraph_Transpose.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT nox_EDT_CrsGraph_Transpose.obj -MD -MP -MF "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Tpo" -c -o nox_EDT_CrsGraph_Transpose.obj `if test -f '$(srcdir)/nox_EDT_CrsGraph_Transpose.C'; then $(CYGPATH_W) '$(srcdir)/nox_EDT_CrsGraph_Transpose.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/nox_EDT_CrsGraph_Transpose.C'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Tpo" "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Po"; else rm -f "$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/nox_EDT_CrsGraph_Transpose.C' object='nox_EDT_CrsGraph_Transpose.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/nox_EDT_CrsGraph_Transpose.Po' tmpdepfile='$(DEPDIR)/nox_EDT_CrsGraph_Transpose.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o nox_EDT_CrsGraph_Transpose.obj `if test -f '$(srcdir)/nox_EDT_CrsGraph_Transpose.C'; then $(CYGPATH_W) '$(srcdir)/nox_EDT_CrsGraph_Transpose.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/nox_EDT_CrsGraph_Transpose.C'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
