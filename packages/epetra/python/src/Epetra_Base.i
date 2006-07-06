@@ -237,7 +237,7 @@ static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NUL
   // Define the __str__() method, used by the python str() operator on any
   // object given to the python print command.
   string __str__() {
-    stringstream os;
+    std::stringstream os;
     self->Print(os);             // Put the output in os
     string s = os.str();         // Extract the string from os
     int last = s.length();       // Get the last index
