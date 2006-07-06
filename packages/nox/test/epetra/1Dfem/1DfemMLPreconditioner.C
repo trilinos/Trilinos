@@ -216,7 +216,14 @@ int main(int argc, char *argv[])
     // solve with serial direct solver KLU
     MLList.set("coarse: type","Jacobi");
   
-    lsParams.set("ML Teuchos Parameter List", &MLList);
+    // Set ML output verbosity
+    if( verbose )
+      MLList.set("output", 10);
+    else
+      MLList.set("output", 0);
+
+    lsParams.set("ML Teuchos Parameter List", MLList);
+
   }
 #endif
 
