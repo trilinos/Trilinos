@@ -61,10 +61,10 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) {
   int numrows = In->NumGlobalRows();
   int numcols = In->NumGlobalCols();
 
-  vector <int> Ap( numcols+1 );       // Column i is stored in Aval(Ap[i]..Ap[i+1]-1)
-  vector <int> nextAp( numcols+1 );   // Where to store next value in Column i
-  vector <int> Ai( EPETRA_MAX( numcols, numentries) ) ; //  Row indices
-  vector <double> Aval( EPETRA_MAX( numcols, numentries) ) ; 
+  std::vector <int> Ap( numcols+1 );       // Column i is stored in Aval(Ap[i]..Ap[i+1]-1)
+  std::vector <int> nextAp( numcols+1 );   // Where to store next value in Column i
+  std::vector <int> Ai( EPETRA_MAX( numcols, numentries) ) ; //  Row indices
+  std::vector <double> Aval( EPETRA_MAX( numcols, numentries) ) ; 
 
   if ( iam == 0 ) { 
 
@@ -72,7 +72,7 @@ int CrsMatrixTranspose( Epetra_CrsMatrix *In,  Epetra_CrsMatrix *Out ) {
     //
     //  Count the number of entries in each column
     //
-    vector <int>RowsPerCol( numcols ) ; 
+    std::vector <int>RowsPerCol( numcols ) ; 
     for ( int i = 0 ; i < numcols ; i++ ) RowsPerCol[i] = 0 ; 
     for ( int MyRow = 0; MyRow <numrows; MyRow++ ) {
       assert( In->ExtractMyRowView( MyRow, NumRowEntries, RowValues, ColIndices ) == 0 ) ;

@@ -109,7 +109,7 @@ extern "C" {
 int main(int argc, char **argv)
 {
 
-  vector <double> BBval ; 
+  std::vector <double> BBval ; 
   BBval.resize(12);
   //
   //  The following are the values returned from the tester
@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 #endif
 
   FILE *matrix_fd;
-  ofstream summary_file;
+  std::ofstream summary_file;
 
   if ( ( MyPID == 0 )  ) { 
     matrix_fd = fopen( argv[2], "r" ) ; 
@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     }
 
     if ( log ) { 
-      SparseDirectTimingVars::log_file.open( LongOutputFileName, ios::app ) ; 
+      SparseDirectTimingVars::log_file.open( LongOutputFileName, std::ios::app ) ; 
       if ( SparseDirectTimingVars::log_file.fail() ) {
 	cerr << "Unable to open " << LongOutputFileName << " for writing" << endl ; 
 	exit_value = - 1; 
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
     }
 
     if ( summary ) {
-      summary_file.open( ShortOutputFileName, ios::app ) ; 
+      summary_file.open( ShortOutputFileName, std::ios::app ) ; 
       if ( summary_file.fail() ) {
 	cerr << "Unable to open " << ShortOutputFileName << " for writing" << endl ; 
 	exit_value = - 1; 

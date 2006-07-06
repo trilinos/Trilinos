@@ -39,12 +39,12 @@ void SparseSolverResult::Print(ostream & os) const {
 }
 
 void SparseSolverResult::PrintSummary(ostream & os) const {
-  os << setw(9) << setprecision(2) << Anorm ; 
+  os << std::setw(9) << std::setprecision(2) << Anorm ; 
   if ( error != UnUsedDbl && Xnorm != UnUsedDbl ) 
-    { os << setw(9) << setprecision(2) << error/Xnorm << " " ; } else os << " error is unknown " ; 
+    { os << std::setw(9) << std::setprecision(2) << error/Xnorm << " " ; } else os << " error is unknown " ; 
   if ( residual != UnUsedDbl && Bnorm != UnUsedDbl ) 
-    { os << setw(9) << setprecision(2) << residual/Bnorm << " " ; } else os << " residual is unknown " ; 
-  os << setw(10) << setprecision(4) << total_time  ; 
+    { os << std::setw(9) << std::setprecision(2) << residual/Bnorm << " " ; } else os << " residual is unknown " ; 
+  os << std::setw(10) << std::setprecision(4) << total_time  ; 
 #if 0
   double TotalWallClock = 0.0 ; 
   if ( RedistribTime_.WallTime() != UnUsedDbl )
@@ -55,18 +55,18 @@ void SparseSolverResult::PrintSummary(ostream & os) const {
     { TotalWallClock += FactorTime_.WallTime() ; } ; 
   if ( SolveTime_.WallTime() != UnUsedDbl )
     { TotalWallClock += SolveTime_.WallTime() ; } ; 
-  os << setw(10) << setprecision(4) << TotalWallClock  ; 
+  os << std::setw(10) << std::setprecision(4) << TotalWallClock  ; 
 #endif
   if ( first_time != UnUsedDbl ) 
-    os << setw(10) << setprecision(4) << first_time  ; 
+    os << std::setw(10) << std::setprecision(4) << first_time  ; 
   else
     os << "        na " ; 
   if ( middle_time != UnUsedDbl ) 
-    os << setw(10) << setprecision(4) << last_time - middle_time ; 
+    os << std::setw(10) << std::setprecision(4) << last_time - middle_time ; 
   else
     os << "        na " ; 
   if ( last_time != UnUsedDbl ) 
-    os << setw(10) << setprecision(4) << last_time - first_time ; 
+    os << std::setw(10) << std::setprecision(4) << last_time - first_time ; 
   else
     os << "        na " ; 
 

@@ -40,7 +40,7 @@ class SparseDirectTimingVars
  private:
  public:
   static SparseSolverResult SS_Result ; 
-  static ofstream log_file ; 
+  static std::ofstream log_file ; 
 
 } ;
 #endif
