@@ -26,6 +26,10 @@
 #include "zoltan_comm_cpp.h"
 #include "zoltan_dd_cpp.h"
 
+/* F90 names must be less than 31 characters, support old name */
+#define Set_HG_Size_Edge_Weights_Fn    Set_HG_Size_Edge_Wts_Fn 
+#define Set_HG_Edge_Weights_Fn         Set_HG_Edge_Wts_Fn 
+
 extern "C"{
 extern void Zoltan_RCB_Print_Structure(struct Zoltan_Struct *zz, int howMany); 
 extern void Zoltan_RIB_Print_Structure(struct Zoltan_Struct *zz, int howMany);
@@ -365,16 +369,16 @@ public:
     return Zoltan_Set_HG_CS_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
-  int Set_HG_Size_Edge_Weights_Fn    ( ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN * fn_ptr,
+  int Set_HG_Size_Edge_Wts_Fn    ( ZOLTAN_HG_SIZE_EDGE_WTS_FN * fn_ptr,
                                void * data = 0 )
   {
-    return Zoltan_Set_HG_Size_Edge_Weights_Fn( ZZ_Ptr, fn_ptr, data );
+    return Zoltan_Set_HG_Size_Edge_Wts_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
-  int Set_HG_Edge_Weights_Fn    ( ZOLTAN_HG_EDGE_WEIGHTS_FN * fn_ptr,
+  int Set_HG_Edge_Wts_Fn    ( ZOLTAN_HG_EDGE_WTS_FN * fn_ptr,
                                void * data = 0 )
   {
-    return Zoltan_Set_HG_Edge_Weights_Fn( ZZ_Ptr, fn_ptr, data );
+    return Zoltan_Set_HG_Edge_Wts_Fn( ZZ_Ptr, fn_ptr, data );
   }
   ///--------------------------
   int Set_Num_Fixed_Obj_Fn    ( ZOLTAN_NUM_FIXED_OBJ_FN * fn_ptr,

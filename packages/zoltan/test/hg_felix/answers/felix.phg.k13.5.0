@@ -7,14 +7,14 @@ File Name		= felix
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-7	0	-1	-1
-12	1	-1	-1
-26	0	-1	-1
-30	0	-1	-1
-31	0	-1	-1
-32	0	-1	-1
-66	1	-1	-1
-67	1	-1	-1
-69	1	-1	-1
-70	1	-1	-1
-71	1	-1	-1
+24	0	-1	-1
+28	1	-1	-1
+29	1	-1	-1
+30	1	-1	-1
+39	1	-1	-1
+47	0	-1	-1
+48	0	-1	-1
+49	0	-1	-1
+50	0	-1	-1
+51	0	-1	-1
+68	1	-1	-1

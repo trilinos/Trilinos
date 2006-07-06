@@ -5,12 +5,11 @@ Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
 File Type		= matrixmarket+
 File Name		= vwgt
 Parallel Disk Info	= number=0
+zoltan parameters       = obj_weight_dim=1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-6	14	-1	-1
-10	12	-1	-1
-11	10	-1	-1
-12	1	-1	-1
-15	6	-1	-1
-16	0	-1	-1
-20	3	-1	-1
+0	12	-1	-1
+5	4	-1	-1
+6	8	-1	-1
+11	1	-1	-1
+24	3	-1	-1

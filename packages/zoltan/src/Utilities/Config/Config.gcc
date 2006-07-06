@@ -34,8 +34,8 @@ DBG_FLAGS		= -g
 OPT_FLAGS		= -O
 CFLAGS 			= $(DBG_FLAGS)
 
-F90			= f90
-LOCAL_F90		= f90
+F90			= f90 -ansi
+LOCAL_F90		= f90 -ansi
 F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DNO_MPI2
 FFLAGS    		= 
 SPPR_HEAD 		= spprinc.most

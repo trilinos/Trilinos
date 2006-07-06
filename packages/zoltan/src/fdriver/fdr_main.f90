@@ -59,9 +59,9 @@ implicit none
   integer(Zoltan_INT) :: alloc_stat
 
 ! KDDKDD
-  character(len=32) :: filename
-  character(len=10) :: mystring
-  integer :: i, j, fp
+!  character(len=32) :: filename
+!  character(len=10) :: mystring
+!  integer :: fp
 ! KDDKDD
 ! interface blocks for external procedures
 
@@ -192,19 +192,19 @@ end interface
   endif
 
 ! KDDKDD  TEMPORARY OUTPUT
-  if (Mesh%nhedges > 0) then
-    write (mystring, "(i1)" ) Proc
-    filename = "helpme."//mystring
-    open(unit=fp,file=filename,action="write")
-    write(fp,*) "Hyperedges:"
-    do i = 0, Mesh%nhedges-1
-      write(fp,*) "Edge ", Mesh%hgid(i)
-      do j = Mesh%hindex(i), Mesh%hindex(i+1)-1
-        write(fp, *) "        ", Mesh%hvertex(j)
-      enddo
-    enddo
-    close(unit=fp)
-  endif
+!  if (Mesh%nhedges > 0) then
+!    write (mystring, "(i1)" ) Proc
+!    filename = "helpme."//mystring
+!    open(unit=fp,file=filename,action="write")
+!    write(fp,*) "Hyperedges:"
+!    do i = 0, Mesh%nhedges-1
+!      write(fp,*) "Edge ", Mesh%hgid(i)
+!      do j = Mesh%hindex(i), Mesh%hindex(i+1)-1
+!        write(fp, *) "        ", Mesh%hvertex(j)
+!     enddo
+!   enddo
+!   close(unit=fp)
+! endif
 ! KDDKDD  END TEMPORARY OUTPUT
 
 !  /*

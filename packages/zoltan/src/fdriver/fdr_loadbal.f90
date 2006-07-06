@@ -310,14 +310,14 @@ type(PARIO_INFO) :: pio_info
   if (.true.) then 
 !   Register hypergraph edge weight query functions
 
-    if (Zoltan_Set_Hg_Size_Edge_Weights_Fn(zz_obj, get_hg_size_edge_weights, &
+    if (Zoltan_Set_Hg_Size_Edge_Wts_Fn(zz_obj, get_hg_size_edge_weights, &
                 mesh_wrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.
       goto 9999
     endif
 
-    if (Zoltan_Set_Hg_Edge_Weights_Fn(zz_obj, get_hg_edge_weights, &
+    if (Zoltan_Set_Hg_Edge_Wts_Fn(zz_obj, get_hg_edge_weights, &
                 mesh_wrapper) == ZOLTAN_FATAL) then
       print *, "fatal:  error returned from Zoltan_Set_Fn()"
       run_zoltan = .false.

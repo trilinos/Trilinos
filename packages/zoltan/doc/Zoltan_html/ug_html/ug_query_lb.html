@@ -56,8 +56,8 @@ functions are required by individual algorithms.
 <blockquote>
 <b><a href="#ZOLTAN_HG_SIZE_CS_FN">ZOLTAN_HG_SIZE_CS_FN</a></b>
 <b><br><a href="#ZOLTAN_HG_CS_FN">ZOLTAN_HG_CS_FN</a></b>
-<b><br><a href="#ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN">ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN</a></b>
-<b><br><a href="#ZOLTAN_HG_EDGE_WEIGHTS_FN">ZOLTAN_HG_EDGE_WEIGHTS_FN</a></b>
+<b><br><a href="#ZOLTAN_HG_SIZE_EDGE_WTS_FN">ZOLTAN_HG_SIZE_EDGE_WTS_FN</a></b>
+<b><br><a href="#ZOLTAN_HG_EDGE_WTS_FN">ZOLTAN_HG_EDGE_WTS_FN</a></b>
 </blockquote>
 <a href="#Tree-based Functions">Tree-Based Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
@@ -1992,14 +1992,14 @@ listed in <i>vtxedge_GID</i>.
 </center>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN"></a>
+<a NAME="ZOLTAN_HG_SIZE_EDGE_WTS_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN</b>
+typedef void <b>ZOLTAN_HG_SIZE_EDGE_WTS_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;*<i>num_edges</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -2008,7 +2008,7 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_HG_Size_Edge_Weights</i></b>(<i>data, num_edges, ierr</i>)&nbsp;
+<td>SUBROUTINE <b><i>Get_HG_Size_Edge_Wts</i></b>(<i>data, num_edges, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_edges
 <br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
@@ -2022,12 +2022,12 @@ query functions</a> for an explanation.&nbsp;</td>
 
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN</b> returns
+<hr WIDTH="100%">A <b>ZOLTAN_HG_SIZE_EDGE_WTS_FN</b> returns
 the number of hyperedges for which a process will supply edge weights.
 The number of weights per hyperedge was supplied by the application
 with the <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>
 parameter.  The actual edge weights will be supplied with a 
-<b><a href="#ZOLTAN_HG_EDGE_WEIGHTS_FN">ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE</a></b>
+<b><a href="#ZOLTAN_HG_EDGE_WTS_FN">ZOLTAN_HG_EDGE_WTS_FN_TYPE</a></b>
 function.
 <br> <br>
 This query function is not required.  If no hyperedge weights are
@@ -2038,7 +2038,7 @@ supplied, Zoltan will assume every hyperedge has weight 1.0.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -2068,14 +2068,14 @@ will be supplied.
 </table>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_HG_EDGE_WEIGHTS_FN"></a>
+<a NAME="ZOLTAN_HG_EDGE_WTS_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C and C++:</td>
 
 <td WIDTH="85%">
-typedef void <b>ZOLTAN_HG_EDGE_WEIGHTS_FN</b>
+typedef void <b>ZOLTAN_HG_EDGE_WTS_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
@@ -2090,7 +2090,7 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_HG_Edge_Weights</i></b>(<i>data, num_gid_entries, num_lid_entries, num_edges, edge_weight_dim, edge_GID, edge_LID, edge_weight,
+<td>SUBROUTINE <b><i>Get_HG_Edge_Wts</i></b>(<i>data, num_gid_entries, num_lid_entries, num_edges, edge_weight_dim, edge_GID, edge_LID, edge_weight,
 ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_edges, edge_weight_dim&nbsp;
@@ -2108,7 +2108,7 @@ query functions</a> for an explanation.&nbsp;</td>
 
 </table>
 
-<hr WIDTH="100%">A <b>ZOLTAN_HG_EDGE_WEIGHTS_FN</b> returns
+<hr WIDTH="100%">A <b>ZOLTAN_HG_EDGE_WTS_FN</b> returns
 edges weights for a set of hypergraph edges.  The number of weights
 supplied for each hyperedge should equal the value of the
 <a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>
@@ -2127,7 +2127,7 @@ supplied, Zoltan will assume every hyperedge has weight 1.0.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE</b></td>
 </tr>
 
 <tr>

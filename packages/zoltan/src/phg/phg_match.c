@@ -947,8 +947,8 @@ fixed = hg->fixed[candidate_gno];
               lno = rec [rows[i]++];                    
               if (sums[lno] == 0.0)       /* is this first time for this lno? */
                 aux[m++] = lno;           /* then save the lno */
-              f = (float *) (rec + rows[i]++);
-              sums[lno] += *f;    /* sum the psums */
+              f = (float*) (rec + rows[i]++);        
+              sums[lno] += *f;            /* sum the psums */
             }
           }
 

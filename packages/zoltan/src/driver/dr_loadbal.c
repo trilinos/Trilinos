@@ -83,9 +83,9 @@ ZOLTAN_PARTITION_MULTI_FN get_partition_multi;
 ZOLTAN_PARTITION_FN get_partition;
 
 ZOLTAN_HG_SIZE_CS_FN get_hg_size_compressed_pin_storage;
-ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN get_hg_size_edge_weights;
+ZOLTAN_HG_SIZE_EDGE_WTS_FN get_hg_size_edge_weights;
 ZOLTAN_HG_CS_FN get_hg_compressed_pin_storage;
-ZOLTAN_HG_EDGE_WEIGHTS_FN get_hg_edge_weights;
+ZOLTAN_HG_EDGE_WTS_FN get_hg_edge_weights;
 
 ZOLTAN_NUM_FIXED_OBJ_FN get_num_fixed_obj;
 ZOLTAN_FIXED_OBJ_LIST_FN get_fixed_obj_list;
@@ -421,7 +421,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       return 0;
     }
 
-    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE,
+    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE,
                       (void (*)()) get_hg_size_edge_weights,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
@@ -435,7 +435,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       return 0;
     }
 
-    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE,
+    if (Zoltan_Set_Fn(zz, ZOLTAN_HG_EDGE_WTS_FN_TYPE,
                       (void (*)()) get_hg_edge_weights,
                       (void *) mesh) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
@@ -536,14 +536,18 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
-    if (Zoltan_LB_Partition(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
+    ierr = Zoltan_LB_Partition(zz, &new_decomp, 
+                 &num_gid_entries, &num_lid_entries,
                  &num_imported, &import_gids,
                  &import_lids, &import_procs, &import_to_part,
                  &num_exported, &export_gids,
-                 &export_lids, &export_procs, &export_to_part) == ZOLTAN_FATAL){
+                 &export_lids, &export_procs, &export_to_part);
+
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       Gen_Error(0, "fatal:  error returned from Zoltan_LB_Partition()\n");
       return 0;
     }
+
     mytime = MPI_Wtime() - stime;
     MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)

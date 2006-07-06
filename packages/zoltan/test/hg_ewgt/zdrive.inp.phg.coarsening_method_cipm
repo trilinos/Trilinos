@@ -6,3 +6,5 @@ File Type		= matrixmarket+
 Zoltan Parameters       = PHG_COARSENING_METHOD = c-ipm
 File Name		= ewgt
 Parallel Disk Info	= number=0
+Zoltan Parameters       = edge_weight_dim=1
+

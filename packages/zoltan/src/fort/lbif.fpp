@@ -111,12 +111,7 @@ end type LB_Struct
 !--------------------------------------------------------------------------
 ! defined constants corresponding to Zoltan enumerated types
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-type(ZOLTAN_FN_TYPEF) :: &
-#else
 type(ZOLTAN_FN_TYPEF), parameter :: &
-#endif
 ! KDD:  The following is not the most elegant way to write these assignments.
 ! KDD:  I'd prefer, e.g.,  LB_NUM_EDGES_FN_TYPE = ZOLTAN_NUM_EDGES_FN_TYPE,
 ! KDD:  Such assignment works for integer, but for user-defined types
@@ -149,12 +144,7 @@ type(ZOLTAN_FN_TYPEF), parameter :: &
    LB_NUM_CHILD_FN_TYPE        = &
       ZOLTAN_FN_TYPEF(ZOLTAN_NUM_CHILD_FN_TYPE%choice)
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-type(ZOLTAN_FN_TYPES) :: &
-#else
 type(ZOLTAN_FN_TYPES), parameter :: &
-#endif
 ! KDD:  The following is not the most elegant way to write these assignments.
 ! KDD:  I'd prefer, e.g.,  LB_EDGE_LIST_FN_TYPE = ZOLTAN_EDGE_LIST_FN_TYPE,
 ! KDD:  Such assignment works for integer, but for user-defined types
@@ -188,24 +178,14 @@ type(ZOLTAN_FN_TYPES), parameter :: &
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in lb/lbi_const.h
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-integer(Zoltan_INT) :: &
-#else
 integer(Zoltan_INT), parameter :: &
-#endif
   LB_OTHER_REF     = ZOLTAN_OTHER_REF, &
   LB_IN_ORDER      = ZOLTAN_IN_ORDER, &
   LB_TRI_BISECT    = ZOLTAN_TRI_BISECT, &
   LB_QUAD_QUAD     = ZOLTAN_QUAD_QUAD, &
   LB_HEX3D_OCT     = ZOLTAN_HEX3D_OCT
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-integer(Zoltan_INT) :: &
-#else
 integer(Zoltan_INT), parameter :: &
-#endif
    LB_OK     = ZOLTAN_OK, &
    LB_WARN   = ZOLTAN_WARN, &
    LB_FATAL  = ZOLTAN_FATAL, &

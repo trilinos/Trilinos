@@ -429,7 +429,7 @@ int read_cmd_file (
                     &Debug_Driver,&n)==1)
       continue;                                /* The Debug reporting level */
 
-    else if (sscanf(line, " zoltan parameter %*[s\t ]%[=]%n", dummy, &n)==1) {
+    else if (sscanf(line, " zoltan parameter%*[^=]%[=]%n", string, &n) == 1)  {
       pline = line;
       while (pline+n < pmax && sscanf(pline += n, NEXTARG LASTARG "%n",
                                    prob->params[prob->num_params].Name,

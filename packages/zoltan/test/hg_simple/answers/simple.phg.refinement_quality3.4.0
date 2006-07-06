@@ -7,9 +7,9 @@ File Name		= simple
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-0	0	-1	-1
-1	0	-1	-1
-2	0	-1	-1
-3	0	-1	-1
-5	0	-1	-1
-7	0	-1	-1
+13	0	-1	-1
+14	0	-1	-1
+18	0	-1	-1
+19	0	-1	-1
+23	0	-1	-1
+24	0	-1	-1

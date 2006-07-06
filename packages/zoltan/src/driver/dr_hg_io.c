@@ -891,7 +891,7 @@ float pinVal;
 int *myi, *myj, *myvno, *myeno;
 char *line, *token, *linestr, *pinBuf, *vwgtBuf, *ewgtBuf;
 float *myvwgt, *myewgt;
-char cmesg[160];
+char cmesg[256];
 
   *nGlobalEdges = *nGlobalVtxs = *nMyPins = 0;
   *nMyVtx = *nMyEdgeWgts = *vtxWDim = *edgeWDim = 0;
@@ -921,7 +921,7 @@ char cmesg[160];
             &vdim, &numew, &edim);
 
   if (rc != 7){
-    snprintf(cmesg, 160,"%s\nFirst line should have 7 values in it\n",linestr);
+    sprintf(cmesg, "%s\nFirst line should have 7 values in it\n",linestr);
     Gen_Error(0, cmesg);
     return 0;
   }
@@ -983,7 +983,7 @@ char cmesg[160];
     rc = sscanf(linestr, "%d %d %f %d", &eid, &vid, &pinVal, &proc);
     if ((rc != 4) || (eid < 1) || (eid > nedges) ||
         (vid < 1) || (vid > nvtxs) || (proc < 0) || (proc >= nFileProcs)){
-      snprintf(cmesg,160,"%s\nlooking for \"edge vertex pin process\"\n",linestr);
+      sprintf(cmesg,"%s\nlooking for \"edge vertex pin process\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
     }
@@ -1030,7 +1030,7 @@ char cmesg[160];
     if (token) proc = atoi(token);
     if ((rc != 1) || !token || 
          (vid < 1) || (vid > nvtxs) || (proc < 0) || (proc >= nFileProcs)){
-      snprintf(cmesg,160,
+      sprintf(cmesg,
       "%s\nlooking for \"vertex {optional weights} process\"\n",linestr);
       Gen_Error(0, cmesg);
       goto failure;
@@ -1071,7 +1071,7 @@ char cmesg[160];
       if (token) proc = atoi(token);
       if ((rc != 1) || !token || 
           (eid < 1) || (eid > nedges) || (proc < 0) || (proc >= nFileProcs)){
-        snprintf(cmesg,160,
+        sprintf(cmesg,
         "%s\nlooking for \"edge {optional weights} process\"\n",linestr);
         Gen_Error(0, cmesg);
         goto failure;
@@ -1177,7 +1177,7 @@ char cmesg[160];
         for (j=0; j<vdim; j++){
           token = get_token(linestr, 1 + j, strlen(linestr));
           if (!token){
-            snprintf(cmesg,160,"%s\nCan't find %d vertex weights\n",linestr,vdim);
+            sprintf(cmesg,"%s\nCan't find %d vertex weights\n",linestr,vdim);
             Gen_Error(0, cmesg);
             goto failure;
           }
@@ -1212,7 +1212,7 @@ char cmesg[160];
         for (j=0; j<edim; j++){
           token = get_token(linestr, 1 + j, strlen(linestr));
           if (!token){
-            snprintf(cmesg,160,"%s\nCan't find %d edge weights\n",linestr,edim);
+            sprintf(cmesg,"%s\nCan't find %d edge weights\n",linestr,edim);
             Gen_Error(0, cmesg);
             goto failure;
           }

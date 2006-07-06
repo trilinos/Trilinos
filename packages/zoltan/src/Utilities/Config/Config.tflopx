@@ -29,7 +29,7 @@ DBG_FLAGS		= -g
 OPT_FLAGS		= -O3 -Minfo=all
 CFLAGS = $(OPT_FLAGS)
 
-F90			= pgf90 -cougar
+F90			= pgf90 -cougar -Mstandard
 LOCAL_F90		= f90
 F90CFLAGS 		= -DFMANGLE=UNDERSCORE -DPGI -DNO_MPI2
 FFLAGS    		=

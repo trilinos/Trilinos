@@ -1,11 +1,11 @@
-interface Zoltan_Set_HG_Size_Edge_Weights_Fn
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn0s
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn1s
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn2s
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn3s
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn4s
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn5s
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn6s
-   module procedure Zf90_Set_HG_Size_Edge_Weights_Fn7s
+interface Zoltan_Set_HG_Size_Edge_Wts_Fn
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn0s
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn1s
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn2s
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn3s
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn4s
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn5s
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn6s
+   module procedure Zf90_Set_HG_Size_Edge_Wts_Fn7s
 end interface
 

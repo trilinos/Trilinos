@@ -413,20 +413,20 @@ struct Zoltan_Struct {
   void *Get_HG_CS_Data;                /* Ptr to user defined data
                                         to be passed to Get_HG_CS() */
   /***************************************************************************/
-  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *Get_HG_Size_Edge_Weights;    
+  ZOLTAN_HG_SIZE_EDGE_WTS_FN *Get_HG_Size_Edge_Wts;    
                                        /* Fn ptr to get size of hypergraph
                                           edge weights to be returned.  */
-  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN *Get_HG_Size_Edge_Weights_Fort;
+  ZOLTAN_HG_SIZE_EDGE_WTS_FORT_FN *Get_HG_Size_Edge_Wts_Fort;
                                        /* Fortran version            */
-  void *Get_HG_Size_Edge_Weights_Data;     /* Ptr to user defined data
-                                  to be passed to Get_HG_Size_Edge_Weights() */
+  void *Get_HG_Size_Edge_Wts_Data;     /* Ptr to user defined data to be
+                                          passed to Get_HG_Size_Edge_Wts() */
   /***************************************************************************/
-  ZOLTAN_HG_EDGE_WEIGHTS_FN *Get_HG_Edge_Weights;    
+  ZOLTAN_HG_EDGE_WTS_FN *Get_HG_Edge_Wts;    
                                        /* Fn ptr to get hyperedge weights */
-  ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN *Get_HG_Edge_Weights_Fort;
+  ZOLTAN_HG_EDGE_WTS_FORT_FN *Get_HG_Edge_Wts_Fort;
                                        /* Fortran version            */
-  void *Get_HG_Edge_Weights_Data;                /* Ptr to user defined data
-                                        to be passed to Get_HG_Edge_Weights() */
+  void *Get_HG_Edge_Wts_Data;                /* Ptr to user defined data
+                                        to be passed to Get_HG_Edge_Wts() */
   /***************************************************************************/
   ZOLTAN_NUM_FIXED_OBJ_FN *Get_Num_Fixed_Obj;
                                             /* Fn ptr to get a processor's
@@ -496,7 +496,7 @@ struct Zoltan_Struct {
   void *Unpack_Obj_Multi_Data;         /* Ptr to user defined data to be
                                           passed to Unpack_Obj_Multi()       */
   /***************************************************************************/
-  ZOLTAN_GET_PROCESSOR_NAME_FN *Get_Processor_Name; 
+  ZOLTAN_PROC_NAME_FN *Get_Processor_Name; 
                                        /* Fn ptr to get proc name   */
   void *Get_Processor_Name_Data;       /* Ptr to user defined data   */
 

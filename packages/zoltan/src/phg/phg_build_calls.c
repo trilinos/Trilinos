@@ -545,7 +545,8 @@ int num_pins, num_hedges, prefix_sum_hedges;
   wgt_ptr = gewgts = 
     (float *)ZOLTAN_MALLOC(sizeof(float) * ewgtdim * tot_nbors);
 
-  if (!nbor_gids|| !nbor_procs|| (ewgtdim && !gewgts)){
+  if ((num_gids && (!nbor_gids || !nbor_procs)) || 
+      (tot_nbors && ewgtdim && !gewgts)){
     ierr = ZOLTAN_MEMERR;
     Zoltan_Multifree(__FILE__, __LINE__, 3, &nbor_gids, &nbor_procs, &gewgts);
     ZOLTAN_FREE(&num_nbors);
@@ -929,15 +930,15 @@ int *keep_pin_procs, *remove_pin_procs, *in_pin_procs;
           if (pins){
             if (keep_pins < in_pins)
               ZOLTAN_COPY_GID_ARRAY(keep_pins, in_pins, zz, esizes[i]);
-            keep_pins += (esizes[i] * num_gid_entries);
           }
           if (pinProcs){
             if (keep_pin_procs < in_pin_procs)
               memcpy(keep_pin_procs, in_pin_procs, esizes[i] * sizeof(int));
-            keep_pin_procs += esizes[i];
           }
         }
         nkeep++;
+        keep_pins += (esizes[i] * num_gid_entries);
+        keep_pin_procs += esizes[i];
       }
       else if (return_removed) {
         /* Remove the edges from egids/elids; don't want to have to 

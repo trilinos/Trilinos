@@ -1,6 +1,6 @@
 
-function Zf90_Set_HG_Edge_Weights_Fn0s(zz,fn_ptr)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn0s
+function Zf90_Set_HG_Edge_Wts_Fn0s(zz,fn_ptr)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn0s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(dummy, num_gid_entries, num_lid_entries, nedges, ew_dim, &
@@ -19,15 +19,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr))
+Zf90_Set_HG_Edge_Wts_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr))
 #else
-Zf90_Set_HG_Edge_Weights_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr)
+Zf90_Set_HG_Edge_Wts_Fn0s = Zfw_Set_Fn0s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn0s
+end function Zf90_Set_HG_Edge_Wts_Fn0s
 
 
-function Zf90_Set_HG_Edge_Weights_Fn1s(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn1s
+function Zf90_Set_HG_Edge_Wts_Fn1s(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn1s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim, &
@@ -47,15 +47,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_HG_Edge_Wts_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_HG_Edge_Weights_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_HG_Edge_Wts_Fn1s = Zfw_Set_Fn1s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn1s
+end function Zf90_Set_HG_Edge_Wts_Fn1s
 
 
-function Zf90_Set_HG_Edge_Weights_Fn2s(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn2s
+function Zf90_Set_HG_Edge_Wts_Fn2s(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn2s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim, & 
@@ -75,15 +75,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_HG_Edge_Wts_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_HG_Edge_Weights_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_HG_Edge_Wts_Fn2s = Zfw_Set_Fn2s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn2s
+end function Zf90_Set_HG_Edge_Wts_Fn2s
 
 
-function Zf90_Set_HG_Edge_Weights_Fn3s(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn3s
+function Zf90_Set_HG_Edge_Wts_Fn3s(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn3s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
@@ -103,15 +103,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_HG_Edge_Wts_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_HG_Edge_Weights_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_HG_Edge_Wts_Fn3s = Zfw_Set_Fn3s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn3s
+end function Zf90_Set_HG_Edge_Wts_Fn3s
 
 
-function Zf90_Set_HG_Edge_Weights_Fn4s(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn4s
+function Zf90_Set_HG_Edge_Wts_Fn4s(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn4s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
@@ -133,15 +133,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_HG_Edge_Wts_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_HG_Edge_Weights_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_HG_Edge_Wts_Fn4s = Zfw_Set_Fn4s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn4s
+end function Zf90_Set_HG_Edge_Wts_Fn4s
 
 
-function Zf90_Set_HG_Edge_Weights_Fn5s(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn5s
+function Zf90_Set_HG_Edge_Wts_Fn5s(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn5s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
@@ -163,15 +163,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_HG_Edge_Wts_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_HG_Edge_Weights_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_HG_Edge_Wts_Fn5s = Zfw_Set_Fn5s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn5s
+end function Zf90_Set_HG_Edge_Wts_Fn5s
 
 
-function Zf90_Set_HG_Edge_Weights_Fn6s(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn6s
+function Zf90_Set_HG_Edge_Wts_Fn6s(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn6s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
@@ -193,15 +193,15 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_HG_Edge_Wts_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_HG_Edge_Weights_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_HG_Edge_Wts_Fn6s = Zfw_Set_Fn6s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn6s
+end function Zf90_Set_HG_Edge_Wts_Fn6s
 
 
-function Zf90_Set_HG_Edge_Weights_Fn7s(zz,fn_ptr,data)
-integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Weights_Fn7s
+function Zf90_Set_HG_Edge_Wts_Fn7s(zz,fn_ptr,data)
+integer(Zoltan_INT) :: Zf90_Set_HG_Edge_Wts_Fn7s
 type(Zoltan_Struct) INTENT_IN zz
 interface
   subroutine fn_ptr(data, num_gid_entries, num_lid_entries, nedges, ew_dim , &
@@ -223,10 +223,10 @@ do i=1,nbytes
    zz_addr(i) = ichar(zz%addr%addr(i:i))
 end do
 #ifdef NASOFTWARE
-Zf90_Set_HG_Edge_Weights_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,loc(fn_ptr),data)
+Zf90_Set_HG_Edge_Wts_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,loc(fn_ptr),data)
 #else
-Zf90_Set_HG_Edge_Weights_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE%choice,fn_ptr,data)
+Zf90_Set_HG_Edge_Wts_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,ZOLTAN_HG_EDGE_WTS_FN_TYPE%choice,fn_ptr,data)
 #endif
-end function Zf90_Set_HG_Edge_Weights_Fn7s
+end function Zf90_Set_HG_Edge_Wts_Fn7s
 
 

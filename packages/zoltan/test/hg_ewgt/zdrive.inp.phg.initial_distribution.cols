@@ -4,3 +4,5 @@ Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
 File Type		= matrixmarket+, initial distribution=linear, initial pins=cols
 File Name		= ewgt
 Parallel Disk Info	= number=0
+Zoltan Parameters       = edge_weight_dim=1
+

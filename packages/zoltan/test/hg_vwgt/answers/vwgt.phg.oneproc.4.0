@@ -3,12 +3,9 @@ Zoltan Parameters       = HYPERGRAPH_PACKAGE=phg
 File Type		= matrixmarket+, initial procs = 1
 File Name		= vwgt
 Parallel Disk Info	= number=0
+zoltan parameters       = obj_weight_dim=1
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-0	0	-1	-1
-1	0	-1	-1
-5	0	-1	-1
-6	0	-1	-1
-10	0	-1	-1
-11	0	-1	-1
 15	0	-1	-1
+20	0	-1	-1
+21	0	-1	-1

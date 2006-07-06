@@ -79,7 +79,9 @@ public :: &
    ZOLTAN_POST_MIGRATE_FN_TYPE, &
    ZOLTAN_OBJ_SIZE_FN_TYPE, &
    ZOLTAN_PACK_OBJ_FN_TYPE, &
-   ZOLTAN_UNPACK_OBJ_FN_TYPE, &
+   ZOLTAN_UNPACK_OBJ_FN_TYPE
+
+public:: &
    ZOLTAN_NUM_COARSE_OBJ_FN_TYPE, &
    ZOLTAN_COARSE_OBJ_LIST_FN_TYPE, &
    ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE, &
@@ -92,11 +94,10 @@ public :: &
    ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE, &
    ZOLTAN_HG_SIZE_CS_FN_TYPE, &
    ZOLTAN_HG_CS_FN_TYPE, &
-   ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE, &
-   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE, &
+   ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE, &
+   ZOLTAN_HG_EDGE_WTS_FN_TYPE, &
    ZOLTAN_NUM_FIXED_OBJ_FN_TYPE, &
    ZOLTAN_FIXED_OBJ_LIST_FN_TYPE
-
 
 public :: &
    ZOLTAN_OTHER_REF, &
@@ -161,7 +162,7 @@ public :: &
    Zoltan_Set_Obj_Size_Multi_Fn, &
    Zoltan_Set_Pack_Obj_Multi_Fn, Zoltan_Set_Unpack_Obj_Multi_Fn, &
    Zoltan_Set_HG_Size_CS_Fn, Zoltan_Set_HG_CS_Fn, &
-   Zoltan_Set_HG_Size_Edge_Weights_Fn, Zoltan_Set_HG_Edge_Weights_Fn , &
+   Zoltan_Set_HG_Size_Edge_Wts_Fn, Zoltan_Set_HG_Edge_Wts_Fn,  &
    Zoltan_Set_Num_Fixed_Obj_Fn, Zoltan_Set_Fixed_Obj_List_Fn
 
 public :: &
@@ -196,12 +197,7 @@ type ZOLTAN_FN_TYPES
    integer(Zoltan_INT) :: choice
 end type ZOLTAN_FN_TYPES
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-type(ZOLTAN_FN_TYPEF) :: &
-#else
 type(ZOLTAN_FN_TYPEF), parameter :: &
-#endif
    ZOLTAN_NUM_EDGES_FN_TYPE        = ZOLTAN_FN_TYPEF(0_Zoltan_INT), &
    ZOLTAN_NUM_GEOM_FN_TYPE         = ZOLTAN_FN_TYPEF(4_Zoltan_INT), &
    ZOLTAN_NUM_OBJ_FN_TYPE          = ZOLTAN_FN_TYPEF(7_Zoltan_INT), &
@@ -217,12 +213,7 @@ type(ZOLTAN_FN_TYPEF), parameter :: &
    ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(28_Zoltan_INT), &
    ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(34_Zoltan_INT)
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-type(ZOLTAN_FN_TYPES) :: &
-#else
 type(ZOLTAN_FN_TYPES), parameter :: &
-#endif
    ZOLTAN_NUM_EDGES_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(1_Zoltan_INT), &
    ZOLTAN_EDGE_LIST_FN_TYPE        = ZOLTAN_FN_TYPES(2_Zoltan_INT), &
    ZOLTAN_EDGE_LIST_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(3_Zoltan_INT), &
@@ -245,23 +236,18 @@ type(ZOLTAN_FN_TYPES), parameter :: &
    ZOLTAN_PACK_OBJ_MULTI_FN_TYPE   = ZOLTAN_FN_TYPES(32_Zoltan_INT), &
    ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE = ZOLTAN_FN_TYPES(33_Zoltan_INT), &
    ZOLTAN_PARTITION_MULTI_FN_TYPE  = ZOLTAN_FN_TYPES(35_Zoltan_INT), &
-   ZOLTAN_GET_PROCESSOR_NAME_FN_TYPE = ZOLTAN_FN_TYPES(36_Zoltan_INT), &
+   ZOLTAN_PROC_NAME_FN_TYPE        = ZOLTAN_FN_TYPES(36_Zoltan_INT), &
    ZOLTAN_HG_SIZE_CS_FN_TYPE       = ZOLTAN_FN_TYPES(37_Zoltan_INT), &
    ZOLTAN_HG_CS_FN_TYPE            = ZOLTAN_FN_TYPES(38_Zoltan_INT), &
-   ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE = ZOLTAN_FN_TYPES(39_Zoltan_INT), &
-   ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE      = ZOLTAN_FN_TYPES(40_Zoltan_INT), &
-   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE      = ZOLTAN_FN_TYPES(41_Zoltan_INT), &
-   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE      = ZOLTAN_FN_TYPES(42_Zoltan_INT)
+   ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE = ZOLTAN_FN_TYPES(39_Zoltan_INT), &
+   ZOLTAN_HG_EDGE_WTS_FN_TYPE      = ZOLTAN_FN_TYPES(40_Zoltan_INT), &
+   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE    = ZOLTAN_FN_TYPES(41_Zoltan_INT), &
+   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE   = ZOLTAN_FN_TYPES(42_Zoltan_INT)
 
 ! Type of refinement used when building a refinement tree
 ! These values must agree with the values in zoltan.h
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-integer(Zoltan_INT) :: &
-#else
 integer(Zoltan_INT), parameter :: &
-#endif
   ZOLTAN_OTHER_REF     = 0_Zoltan_INT, &
   ZOLTAN_IN_ORDER      = 1_Zoltan_INT, &
   ZOLTAN_TRI_BISECT    = 2_Zoltan_INT, &
@@ -271,12 +257,7 @@ integer(Zoltan_INT), parameter :: &
 ! Error codes for LB library
 ! These values must agree with the values in zoltan.h
 
-#ifdef SUNSOFT
-! bug in SunSoft compiler prevents using parameter
-integer(Zoltan_INT) :: &
-#else
 integer(Zoltan_INT), parameter :: &
-#endif
    ZOLTAN_OK     =  0_Zoltan_INT, &
    ZOLTAN_WARN   =  1_Zoltan_INT, &
    ZOLTAN_FATAL  = -1_Zoltan_INT, &

@@ -771,7 +771,7 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
 
     /* Process to which edge is assigned calculates # of pins in the edge */
 
-    elids = ZOLTAN_MALLOC_GID_ARRAY(zz, myPins.nHedges);
+    elids = ZOLTAN_MALLOC_LID_ARRAY(zz, myPins.nHedges);
 
     if (myPins.nHedges && !elids) MEMORY_ERROR;
     
@@ -824,14 +824,14 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
     /*
      * Process to which edge is assigned calculates edge weights. 
      */
-    if (ew_dim && zz->Get_HG_Size_Edge_Weights && zz->Get_HG_Edge_Weights){
+    if (ew_dim && zz->Get_HG_Size_Edge_Wts && zz->Get_HG_Edge_Wts){
   
       /*
        * Get edge weights
        */
   
-      zz->Get_HG_Size_Edge_Weights(
-                   zz->Get_HG_Size_Edge_Weights_Data, &myEWs.size, &ierr);
+      zz->Get_HG_Size_Edge_Wts(
+                   zz->Get_HG_Size_Edge_Wts_Data, &myEWs.size, &ierr);
   
   
       if ((ierr!=ZOLTAN_OK) && (ierr!=ZOLTAN_WARN)){
@@ -849,7 +849,7 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
           MEMORY_ERROR;
         }
   
-        zz->Get_HG_Edge_Weights(zz->Get_HG_Edge_Weights_Data,
+        zz->Get_HG_Edge_Wts(zz->Get_HG_Edge_Wts_Data,
                     zz->Num_GID, zz->Num_LID, myEWs.size, ew_dim,
                     myEWs.edgeGID, ew_lids, myEWs.wgt, &ierr);
   
@@ -1121,6 +1121,8 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
                                      &myPins.pinProc);
 
     if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+             "Error returned from Zoltan_HG_Graph_Callbacks.");
       goto End;
     }
 
@@ -1951,7 +1953,7 @@ int Zoltan_PHG_Removed_Cuts(
  */
 static char *yo = "Zoltan_PHG_Removed_Cuts";
 int ierr = ZOLTAN_OK;
-int i, j, k, cnt, ncnt, nparts;
+int i, j, k, cnt, ncnt, nparts, max_parts;
 struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
 struct Hash_Node **hash_tab = NULL;   /* GIDs to global numbering system.   */
 int npins = 0;                   /* # of pins in removed hyperedges */
@@ -2126,7 +2128,14 @@ double ewgt;
    *   Does the following calculation need to reflect this?
    */
 
-  parts = (int *) ZOLTAN_CALLOC(zz->LB.Num_Global_Parts, sizeof(int));
+  max_parts = zz->LB.Num_Global_Parts;
+  for (cnt=0, i = 0; i < zhg->nRemove; i++) {
+    for (j = 0; j < zhg->Remove_Esize[i]; j++) {
+      if (pin_parts[cnt] >= max_parts) max_parts = pin_parts[cnt]+1;
+      cnt++;
+    }
+  }
+  parts = (int *) ZOLTAN_CALLOC(max_parts, sizeof(int));
   if (!parts) MEMORY_ERROR;
 
   cnt = 0;

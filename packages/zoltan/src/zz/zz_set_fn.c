@@ -209,13 +209,13 @@ int ierr;
     ierr = Zoltan_Set_HG_CS_Fn(zz, 
                   (ZOLTAN_HG_CS_FN *) fn, data);
     break;
-  case ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE:
-    ierr = Zoltan_Set_HG_Size_Edge_Weights_Fn(zz, 
-                  (ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *) fn, data);
+  case ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE:
+    ierr = Zoltan_Set_HG_Size_Edge_Wts_Fn(zz, 
+                  (ZOLTAN_HG_SIZE_EDGE_WTS_FN *) fn, data);
     break;
-  case ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE:
-    ierr = Zoltan_Set_HG_Edge_Weights_Fn(zz, 
-                  (ZOLTAN_HG_EDGE_WEIGHTS_FN *) fn, data);
+  case ZOLTAN_HG_EDGE_WTS_FN_TYPE:
+    ierr = Zoltan_Set_HG_Edge_Wts_Fn(zz, 
+                  (ZOLTAN_HG_EDGE_WTS_FN *) fn, data);
     break;
   case ZOLTAN_NUM_FIXED_OBJ_FN_TYPE:
     ierr = Zoltan_Set_Num_Fixed_Obj_Fn(zz, 
@@ -690,27 +690,27 @@ int Zoltan_Set_HG_CS_Fn(
 }
 /*****************************************************************************/
 
-int Zoltan_Set_HG_Size_Edge_Weights_Fn(
+int Zoltan_Set_HG_Size_Edge_Wts_Fn(
   ZZ *zz, 
-  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *fn, 
+  ZOLTAN_HG_SIZE_EDGE_WTS_FN *fn, 
   void *data
 )
 {
-  zz->Get_HG_Size_Edge_Weights = fn;
-  zz->Get_HG_Size_Edge_Weights_Data = data;
+  zz->Get_HG_Size_Edge_Wts = fn;
+  zz->Get_HG_Size_Edge_Wts_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
-int Zoltan_Set_HG_Edge_Weights_Fn(
+int Zoltan_Set_HG_Edge_Wts_Fn(
   ZZ *zz, 
-  ZOLTAN_HG_EDGE_WEIGHTS_FN *fn, 
+  ZOLTAN_HG_EDGE_WTS_FN *fn, 
   void *data
 )
 {
-  zz->Get_HG_Edge_Weights = fn;
-  zz->Get_HG_Edge_Weights_Data = data;
+  zz->Get_HG_Edge_Wts = fn;
+  zz->Get_HG_Edge_Wts_Data = data;
   return ZOLTAN_OK;
 }
 

@@ -47,7 +47,6 @@ extern "C" {
 static int eval_edge_list(ZZ *, int, int, ZOLTAN_ID_PTR, int *, ZOLTAN_ID_PTR,
   int *, float *, int, int, int, int *, int *, int *, int *, float *,
   int *, float *, int *, int *);
-static int get_max_partition(ZZ *zz, int *parts, int nparts);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -86,7 +85,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int i, j, k, max_edges, num_edges;
   int cuts, comm_vol;
   int num_obj = 0, num_adj, num_boundary, ierr, compute_part;
-  int nproc = zz->Num_Proc, nparts, maxpart, obj_wgt_dim;
+  int nproc = zz->Num_Proc; 
+  int nparts, nonempty_nparts, max_nparts, req_nparts, obj_wgt_dim;
   int stats[4*NUM_STATS];
   int imin, imax, isum, iimbal;
   int *proc_count=NULL, *part_count=NULL, *nbors_proc=NULL;
@@ -108,7 +108,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   int sum;
   char msg[256];
   /* Arrays for partition data. */
-  int *nobj_arr, *cut_arr, *bndry_arr, *commvol_arr, *all_arr, *all_arr_glob;
+  int *max_arr, *nobj_arr, *cut_arr, *bndry_arr; 
+  int *commvol_arr, *all_arr, *all_arr_glob;
   float *vwgt_arr, *vwgt_arr_glob, *cutwgt_arr, *cutwgt_arr_glob;
 
   int vwgt_dim;
@@ -130,7 +131,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   nbors_global = NULL;
   nbors_proc = proc_count = part_count = NULL;
   vwgt_arr = vwgt_arr_glob = cutwgt_arr = cutwgt_arr_glob = NULL;
-  nobj_arr = cut_arr = bndry_arr = all_arr = all_arr_glob = NULL;
+  max_arr = nobj_arr = cut_arr = bndry_arr = all_arr = all_arr_glob = NULL;
   edges_per_obj = NULL;
   part_sizes = NULL;
 
@@ -143,8 +144,21 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     goto End;
   }
 
-  nparts = zz->LB.Num_Global_Parts; /* Requested number of partitions. */
-  maxpart = -1;                     /* flag that it's not computed     */
+  /* Get:
+   *   Requested number of partitions
+   *
+   *   Actual number of partitions 
+   *     -may be more or less if partitioning has not yet occured, 
+   *      because each process will report that it's objects are 
+   *      in a partition equal to it's rank.
+   *     -may be less than requested if partitioning yielded empty
+   *      partitions
+   *
+   *   Maximum possible number of partitions
+   */
+
+  req_nparts = zz->LB.Num_Global_Parts;     /* requested */
+  nparts = 0;                               /* actual    */
 
   /* Have graph or hypergraph query functions? */
   have_graph_callbacks = 
@@ -182,7 +196,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
              NULL,   /* no parameters */
              NULL);  /* initial partition assignment irrelevant */
 
-    if (ierr == ZOLTAN_FATAL){
+    if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
       Zoltan_PHG_Free_Hypergraph_Data(zhg);
       ZOLTAN_FREE(&zhg);
       ZOLTAN_TRACE_EXIT(zz, yo);
@@ -193,8 +207,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       zhg->Output_Parts = (int *)ZOLTAN_MALLOC(sizeof(int) * zhg->nObj);
       memcpy(zhg->Output_Parts, zhg->Input_Parts, sizeof(int) * zhg->nObj);
     }
-
-    maxpart = get_max_partition(zz, zhg->Input_Parts, zhg->nObj);
 
     /* Perform cut calculations and find global max, min and sum */
     ierr = Zoltan_PHG_Removed_Cuts(zz, zhg, hgraph_local_stats);
@@ -234,20 +246,48 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   compute_part = (zz->Get_Partition != NULL || zz->Get_Partition_Multi != NULL);
 
   if (compute_part){
+    int tmp_max_nparts;
 
-    if (maxpart < 0){ /* Compute actual number of partitions. */
-      maxpart = get_max_partition(zz, part, num_obj);
-    }
+    /* Compute max_nparts -- 
+     * max of nproc, input partitions and requested partitions 
+     */
+    tmp_max_nparts = MAX(nproc, req_nparts); 
+    for (i = 0; i < num_obj; i++)
+      if (part[i] >= tmp_max_nparts) tmp_max_nparts = part[i]+1;
+    MPI_Allreduce(&tmp_max_nparts, &max_nparts, 1, MPI_INT, MPI_MAX,
+                  zz->Communicator);
 
-    if (maxpart+1 > nparts){
-      ierr = ZOLTAN_WARN;
-      sprintf(msg, "Actual number of partitions (%1d) is greater than requested # partitions (%1d)", maxpart+1, nparts);
-      if (zz->Proc==0){
-        ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-        printf("%s No load-balance statistics available.\n", yo);
-      }
+    nobj_arr = (int *)  ZOLTAN_CALLOC(max_nparts, sizeof(int));
+    max_arr = (int *)  ZOLTAN_MALLOC(max_nparts * sizeof(int));
+
+    if (max_nparts && (!nobj_arr || !max_arr)){
+      ZOLTAN_FREE(&nobj_arr);
+      ZOLTAN_FREE(&max_arr);
+      ierr = ZOLTAN_MEMERR;
       goto End;
     }
+
+    /* Count the local number of objects in each partition, get the
+     * global number of partitions, and get the global number of 
+     * non-empty partitions. 
+     */
+
+    for (i=0; i<num_obj; i++){
+      nobj_arr[part[i]]++;
+    }
+
+    MPI_Allreduce(nobj_arr, max_arr, max_nparts, MPI_INT, MPI_MAX,
+                  zz->Communicator);
+
+    nonempty_nparts = 0;
+    for (i=0; i<max_nparts; i++){
+      if (max_arr[i] > 0)
+        nonempty_nparts++;
+    }
+
+    nparts = max_nparts;
+
+    ZOLTAN_FREE(&max_arr);
 
     /* Allocate space. */
     all_arr = (int *)  ZOLTAN_CALLOC(2*NUM_STATS*nparts, sizeof(int));
@@ -257,8 +297,10 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
-    nobj_arr = all_arr;
-    cut_arr  = nobj_arr + nparts;
+    memcpy(all_arr, nobj_arr, nparts * sizeof(int));
+    ZOLTAN_FREE(&nobj_arr);
+
+    cut_arr  = all_arr + nparts;
     bndry_arr  = cut_arr + nparts;
     commvol_arr  = bndry_arr + nparts;
     all_arr_glob = all_arr + NUM_STATS*nparts;
@@ -266,10 +308,6 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     cutwgt_arr = vwgt_arr_glob + nparts * vwgt_dim;
     cutwgt_arr_glob = cutwgt_arr + nparts*(zz->Edge_Weight_Dim);
 
-    /* Count number of objects. */
-    for (i=0; i<num_obj; i++){
-      nobj_arr[part[i]]++;
-    }
   }
 
   /* Compute object weight sums */
@@ -618,7 +656,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
     /* Print min-max-sum of results */
     if (zz->Proc == zz->Debug_Proc){
-      printf("\n%s  Requested # partitions = %1d, actual # non-empty partitions = %1d\n", yo, nparts, maxpart+1);
+      printf("\n%s  Partition count: %1d requested, %1d computed, %1d non-empty\n", yo, req_nparts, nparts, nonempty_nparts);
       printf("%s  Statistics with respect to %1d partitions: \n", yo, nparts);
       printf("%s                         Min.     Max.      Sum  Imbalance\n", yo);
       printf("%s  No. of objects   :  %8d %8d %8d   %5.3f\n",
@@ -712,20 +750,6 @@ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
 
   return ierr;
-}
-static int get_max_partition(ZZ *zz, int *parts, int nparts)
-{
-  int i, maxpart=0;
-    
-  for (i=0; i<nparts; i++)
-    if (parts[i]>maxpart) 
-      maxpart = parts[i];
-
-  i = maxpart;
-  MPI_Allreduce(&i, &maxpart, 1, MPI_INT, MPI_MAX,
-                zz->Communicator);
-
-  return maxpart;
 }
 /***************************************************************************/
 static int eval_edge_list(

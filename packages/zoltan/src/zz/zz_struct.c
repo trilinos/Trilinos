@@ -235,8 +235,8 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Edge_List = NULL;
   zz->Get_HG_Size_CS = NULL;
   zz->Get_HG_CS = NULL;
-  zz->Get_HG_Size_Edge_Weights = NULL;
-  zz->Get_HG_Edge_Weights = NULL;
+  zz->Get_HG_Size_Edge_Wts = NULL;
+  zz->Get_HG_Edge_Wts = NULL;
   zz->Get_Num_Geom = NULL;
   zz->Get_Geom_Multi = NULL;
   zz->Get_Geom = NULL;
@@ -263,8 +263,8 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Edge_List_Fort = NULL;
   zz->Get_HG_Size_CS_Fort = NULL;
   zz->Get_HG_CS_Fort = NULL;
-  zz->Get_HG_Size_Edge_Weights_Fort = NULL;
-  zz->Get_HG_Edge_Weights_Fort = NULL;
+  zz->Get_HG_Size_Edge_Wts_Fort = NULL;
+  zz->Get_HG_Edge_Wts_Fort = NULL;
   zz->Get_Num_Geom_Fort = NULL;
   zz->Get_Geom_Multi_Fort = NULL;
   zz->Get_Geom_Fort = NULL;
@@ -291,8 +291,8 @@ static void Zoltan_Init(ZZ* zz)
   zz->Get_Edge_List_Data = NULL;
   zz->Get_HG_Size_CS_Data = NULL;
   zz->Get_HG_CS_Data = NULL;
-  zz->Get_HG_Size_Edge_Weights_Data = NULL;
-  zz->Get_HG_Edge_Weights_Data = NULL;
+  zz->Get_HG_Size_Edge_Wts_Data = NULL;
+  zz->Get_HG_Edge_Wts_Data = NULL;
   zz->Get_Num_Geom_Data = NULL;
   zz->Get_Geom_Data = NULL;
   zz->Get_Num_Obj_Data = NULL;

@@ -32,7 +32,7 @@ typedef void ZOLTAN_VOID_FN(void);
 extern "C" {
 #endif
 
-#define ZOLTAN_VERSION_NUMBER   2.0
+#define ZOLTAN_VERSION_NUMBER   2.01
 
 /*****************************************************************************
  *  Data types and functions describing the interface between the
@@ -81,17 +81,25 @@ enum Zoltan_Fn_Type {
   ZOLTAN_UNPACK_OBJ_MULTI_FN_TYPE,
   ZOLTAN_PARTITION_FN_TYPE,
   ZOLTAN_PARTITION_MULTI_FN_TYPE,
-  ZOLTAN_GET_PROCESSOR_NAME_FN_TYPE,
+  ZOLTAN_PROC_NAME_FN_TYPE,
   ZOLTAN_HG_SIZE_CS_FN_TYPE,
   ZOLTAN_HG_CS_FN_TYPE,
-  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE,
-  ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE,
+  ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE,
+  ZOLTAN_HG_EDGE_WTS_FN_TYPE,
   ZOLTAN_NUM_FIXED_OBJ_FN_TYPE,
   ZOLTAN_FIXED_OBJ_LIST_FN_TYPE,
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
 typedef enum Zoltan_Fn_Type ZOLTAN_FN_TYPE;
+
+/* Definitions to support name change for 31-character F90 names */
+#define ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN_TYPE   ZOLTAN_HG_SIZE_EDGE_WTS_FN_TYPE
+#define ZOLTAN_HG_EDGE_WEIGHTS_FN_TYPE        ZOLTAN_HG_EDGE_WTS_FN_TYPE
+#define ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN        ZOLTAN_HG_SIZE_EDGE_WTS_FN
+#define ZOLTAN_HG_EDGE_WEIGHTS_FN             ZOLTAN_HG_EDGE_WTS_FN
+#define Zoltan_Set_HG_Size_Edge_Weights_Fn    Zoltan_Set_HG_Size_Edge_Wts_Fn
+#define Zoltan_Set_HG_Edge_Weights_Fn         Zoltan_Set_HG_Edge_Wts_Fn
 
 /*****************************************************************************
  * Enumerated type used to indicate what type of refinement was used when
@@ -1313,7 +1321,7 @@ typedef void ZOLTAN_POST_MIGRATE_FORT_FN(
  *    ierr                -- error code
  */
 
-typedef void ZOLTAN_GET_PROCESSOR_NAME_FN(
+typedef void ZOLTAN_PROC_NAME_FN(
   void *data,
   char *name,
   int *length, 
@@ -1792,13 +1800,13 @@ typedef int ZOLTAN_HG_CS_FORT_FN(
  *    ierr                --  error code
  */
 
-typedef void ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN(
+typedef void ZOLTAN_HG_SIZE_EDGE_WTS_FN(
   void *data,
   int *num_edges,
   int *ierr
 );
 
-typedef void ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN(
+typedef void ZOLTAN_HG_SIZE_EDGE_WTS_FORT_FN(
   void *data,
   int *num_edges,
   int *ierr
@@ -1824,7 +1832,7 @@ typedef void ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FORT_FN(
  *    ierr         --  error code
  */
 
-typedef void ZOLTAN_HG_EDGE_WEIGHTS_FN(
+typedef void ZOLTAN_HG_EDGE_WTS_FN(
   void *data,
   int num_gid_entries,
   int num_lid_entries,
@@ -1836,7 +1844,7 @@ typedef void ZOLTAN_HG_EDGE_WEIGHTS_FN(
   int *ierr
 );
 
-typedef void ZOLTAN_HG_EDGE_WEIGHTS_FORT_FN(
+typedef void ZOLTAN_HG_EDGE_WTS_FORT_FN(
   void *data,
   int *num_gid_entries,
   int *num_lid_entries,
@@ -2445,15 +2453,15 @@ extern int Zoltan_Set_HG_CS_Fn(
   void *data_ptr
 );
 
-extern int Zoltan_Set_HG_Size_Edge_Weights_Fn(
+extern int Zoltan_Set_HG_Size_Edge_Wts_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_HG_SIZE_EDGE_WEIGHTS_FN *fn_ptr, 
+  ZOLTAN_HG_SIZE_EDGE_WTS_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int Zoltan_Set_HG_Edge_Weights_Fn(
+extern int Zoltan_Set_HG_Edge_Wts_Fn(
   struct Zoltan_Struct *zz, 
-  ZOLTAN_HG_EDGE_WEIGHTS_FN *fn_ptr, 
+  ZOLTAN_HG_EDGE_WTS_FN *fn_ptr, 
   void *data_ptr
 );
 
