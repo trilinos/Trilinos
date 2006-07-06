@@ -21,8 +21,8 @@ PyObject * Epetra_RowMatrix_GetEntries(const Epetra_RowMatrix& Matrix,
   PyObject* PyValues;
   int NumEntries, Length;
   Length = Matrix.MaxNumEntries();
-  vector<int>    Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int>    Indices(Length);
+  std::vector<double> Values(Length);
   int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
   ierr = Matrix.ExtractMyRowCopy(MyRow, Length, NumEntries, &Values[0],
                                  &Indices[0]);
@@ -54,8 +54,8 @@ PyObject* Epetra_RowMatrix_GetEntry(Epetra_RowMatrix& Matrix,
   int NumEntries, Length, ierr;
   double val = 0.0;
   Length = Matrix.MaxNumEntries();
-  vector<int>    Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int>    Indices(Length);
+  std::vector<double> Values(Length);
   int MyRow = Matrix.RowMatrixRowMap().LID(GlobalRow);
   int MyCol = Matrix.RowMatrixColMap().LID(GlobalCol);
 
