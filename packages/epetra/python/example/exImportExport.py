@@ -39,13 +39,25 @@
 # 
 # This example should be run with more than one processor
 # -------------------------------------------------------------------------
+from optparse import *
 
-try:
-  import setpath
-  import Epetra
-except ImportError:
-  from PyTrilinos import Epetra
-  print "Using system-installed Epetra"
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
+    import setpath
+    import Epetra
+else:
+  try:
+    import setpath
+    import Epetra
+  except ImportError:
+    from PyTrilinos import Epetra
+    print "Using system-installed Epetra"
 
 def main():
 
