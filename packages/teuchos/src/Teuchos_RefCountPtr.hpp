@@ -233,17 +233,16 @@ RefCountPtr<T>::~RefCountPtr()
 
 template<class T>
 REFCOUNTPTR_INLINE
-RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T>& r_ptr) {
-	if(node_) {
-		if( r_ptr.node_ == node_ )
-			return *this; // Assignment to self!
-		if( !node_->deincr_count() ) {
+RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T>& r_ptr)
+{
+  if( this == &r_ptr )
+    return *this; // Assignment to self
+	if( node_ && !node_->deincr_count() ) {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODES
-      remove_RefCountPtr_node(node_);
+    remove_ArrayRefCountPtr_node(node_);
 #endif
-			delete node_;
-		}
-	}
+    delete node_;
+  }
 	ptr_  = r_ptr.ptr_;
 	node_ = r_ptr.node_;
 	if(node_) node_->incr_count();
