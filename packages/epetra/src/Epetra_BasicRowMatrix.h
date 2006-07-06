@@ -158,7 +158,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 	  
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
-    virtual int ExtractMyEntryView(int CurEntry, double *Value, int & RowIndex, int & ColIndex) = 0;
+    virtual int ExtractMyEntryView(int CurEntry, double * & Value, int & RowIndex, int & ColIndex) = 0;
 
     //! Returns a const reference to the ith entry in the matrix, along with its row and column index.
     /*! 
@@ -169,7 +169,7 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 	  
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
-    virtual int ExtractMyEntryView(int CurEntry, double const * Value, int & RowIndex, int & ColIndex) const = 0;
+    virtual int ExtractMyEntryView(int CurEntry, double const * & Value, int & RowIndex, int & ColIndex) const = 0;
 
     //! Return the current number of values stored for the specified local row.
     /*! Similar to NumMyEntries() except NumEntries is returned as an argument
@@ -264,10 +264,10 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     virtual bool Filled() const {return(true);}
 
     //! If matrix is lower triangular, this query returns true, otherwise it returns false.
-    bool LowerTriangular() const {return(LowerTriangular_);}
+    bool LowerTriangular() const {if (!HaveNumericConstants_) ComputeNumericConstants(); return(LowerTriangular_);}
 
     //! If matrix is upper triangular, this query returns true, otherwise it returns false.
-    virtual bool UpperTriangular() const {return(UpperTriangular_);}
+    virtual bool UpperTriangular() const {if (!HaveNumericConstants_) ComputeNumericConstants(); return(UpperTriangular_);}
 
   //@}
   

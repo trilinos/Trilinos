@@ -76,9 +76,9 @@ int Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckSt
       
       EPETRA_CHK_ERR(A.ExtractMyRowView(i1, NumEntries, Values, Indices)); // Get the current row based on the permutation
       int i = InvRowPerm_[i1]; // Determine permuted row location
-      for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[i];
+      for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[j];
       if (CheckStructure)
-	for (int j=0; j< NumEntries; j++) if (Indices_[IndexOffset_[j]+i] != Indices[i]) ierr = - 1;
+	for (int j=0; j< NumEntries; j++) if (Indices_[IndexOffset_[j]+i] != Indices[j]) ierr = - 1;
     }
   }
   catch (...) { // Otherwise just live with RowMatrix interface
@@ -90,11 +90,13 @@ int Epetra_JadMatrix::UpdateValues(const Epetra_RowMatrix & Matrix, bool CheckSt
     for (int i1=0; i1<NumMyRows_; i1++) {
       EPETRA_CHK_ERR(Matrix.ExtractMyRowCopy(i1, NumJaggedDiagonals_, NumEntries, Values, Indices)); // Get current row based on the permutation
       int i = InvRowPerm_[i1]; // Determine permuted row location
-      for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[i];
+      for (int j=0; j< NumEntries; j++) Values_[IndexOffset_[j]+i] = Values[j];
       if (CheckStructure)
-	for (int j=0; j< NumEntries; j++) if (Indices_[IndexOffset_[j]+i] != Indices[i]) ierr = - 1;
+	for (int j=0; j< NumEntries; j++) if (Indices_[IndexOffset_[j]+i] != Indices[j]) ierr = - 1;
     }
   }
+
+  HaveNumericConstants_ = false;
   EPETRA_CHK_ERR(ierr);
   return(ierr);
 }

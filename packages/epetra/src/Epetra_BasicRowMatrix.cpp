@@ -144,9 +144,9 @@ void Epetra_BasicRowMatrix::ComputeNumericConstants() const {
     ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values());
     for(int j = 0; j < NumEntries; j++) {
       x1[i] += fabs(Values[j]);
-      x2[Indices[i]] += fabs(Values[j]);
-      if (j<i) UpperTriangular_ = false;
-      if (j>i) LowerTriangular_ = false;
+      x2[Indices[j]] += fabs(Values[j]);
+      if (Indices[j]<i) UpperTriangular_ = false;
+      if (Indices[j]>i) LowerTriangular_ = false;
     }
   }
 
@@ -250,20 +250,20 @@ int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
 //=============================================================================
 int Epetra_BasicRowMatrix::LeftScale(const Epetra_Vector & x) {
   double* xp = 0;
-  double curValue;
+  double *curValue;
   int curRowIndex, curColIndex;
   if(OperatorRangeMap().SameAs(x.Map()) && Exporter() != 0) {
     Epetra_Vector xtmp(RowMatrixRowMap());
     xtmp.Import(x,*Exporter(),Insert);
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, &curValue, curRowIndex, curColIndex);
-      curValue *= xtmp[curRowIndex];
+      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      *curValue *= xtmp[curRowIndex];
     }
   }
   else if (RowMatrixRowMap().SameAs(x.Map()))
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, &curValue, curRowIndex, curColIndex);
-      curValue *= x[curRowIndex];
+      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      *curValue *= x[curRowIndex];
     }
   else {
     EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.
@@ -325,20 +325,20 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
 //=============================================================================
 int Epetra_BasicRowMatrix::RightScale(const Epetra_Vector & x) {
   double* xp = 0;
-  double curValue;
+  double *curValue;
   int curRowIndex, curColIndex;
   if(OperatorDomainMap().SameAs(x.Map()) && Importer() != 0) {
     Epetra_Vector xtmp(RowMatrixColMap());
     xtmp.Import(x,*Importer(),Insert);
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, &curValue, curRowIndex, curColIndex);
-      curValue *= xtmp[curColIndex];
+      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      *curValue *= xtmp[curColIndex];
     }
   }
   else if (RowMatrixColMap().SameAs(x.Map()))
     for (int i=0; i<NumMyNonzeros_; i++) {
-      ExtractMyEntryView(i, &curValue, curRowIndex, curColIndex);
-      curValue *= x[curColIndex];
+      ExtractMyEntryView(i, curValue, curRowIndex, curColIndex);
+      *curValue *= x[curColIndex];
     }
   else {
     EPETRA_CHK_ERR(-2); // The Map of x must be the RowMap or RangeMap of A.

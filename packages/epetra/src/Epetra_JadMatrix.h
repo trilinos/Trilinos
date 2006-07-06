@@ -109,9 +109,9 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
 	  
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
-    int ExtractMyEntryView(int CurEntry, double *Value, int & RowIndex, int & ColIndex) { 
+    int ExtractMyEntryView(int CurEntry, double * &Value, int & RowIndex, int & ColIndex) { 
       if (CurEntry>=NumMyNonzeros_) EPETRA_CHK_ERR(-1); 
-      Value = &(Values_[0])+CurEntry;
+      Value = &Values_[CurEntry];
       ColIndex = Indices_[CurEntry];
       for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) {RowIndex = RowPerm_[CurEntry-IndexOffset_[j]]; break;}
       return(0);
@@ -126,11 +126,11 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
 	  
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
-    int ExtractMyEntryView(int CurEntry, double const * Value, int & RowIndex, int & ColIndex) const { 
+    int ExtractMyEntryView(int CurEntry, double const * & Value, int & RowIndex, int & ColIndex) const { 
       if (CurEntry>=NumMyNonzeros_) EPETRA_CHK_ERR(-1); 
-      Value = &Values_[0]+CurEntry;
+      Value = &Values_[CurEntry];
       ColIndex = Indices_[CurEntry];
-      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) RowIndex = RowPerm_[IndexOffset_[j]-CurEntry];
+      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) RowIndex = RowPerm_[CurEntry-IndexOffset_[j]];
       return(0);
     }
 
