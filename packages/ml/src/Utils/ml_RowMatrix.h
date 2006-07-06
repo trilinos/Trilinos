@@ -338,15 +338,15 @@ private:
   //! Maximum number of elements in a row.
   int MaxNumEntries_;
   //! Diagonal elements of the matrix.
-  vector<double> Diagonal_;
+  std::vector<double> Diagonal_;
   //! Contains the nonzero elements in a local row.
-  vector<int> NumMyRowEntries_;
+  std::vector<int> NumMyRowEntries_;
   //! Work vector for getrow().
   mutable int Allocated_;
   //! Work vector for getrow().
-  mutable vector<int> Indices_;
+  mutable std::vector<int> Indices_;
   //! Work vector for getrow().
-  mutable vector<double> Values_;
+  mutable std::vector<double> Values_;
   //! Contains the infinity norm of the matrix.
   double NormInf_;
   //! Number of local nonzeros.

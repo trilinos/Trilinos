@@ -170,10 +170,10 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
     Comm().ScanSum(&Ncols,&Ncols_offset,1); 
     Ncols_offset -= Ncols;
 
-    vector<double> global_col_id; 
+    std::vector<double> global_col_id; 
     global_col_id.resize(Ncols + Nghost + 1);
 
-    vector<int> global_col_id_as_int; 
+    std::vector<int> global_col_id_as_int; 
     global_col_id_as_int.resize(Ncols + Nghost + 1);
 
     for (int i = 0 ; i < Ncols ; ++i) {
