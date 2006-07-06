@@ -15,11 +15,13 @@
 
 (FRAMEWORK, INSTALL, New_PackagePyTests) {
     DIRS = ../python/test;
+    ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
 
 (FRAMEWORK, INSTALL, New_PackagePyExamples) {
     DIRS = ../python/example;
+    ARGS = --testharness;
     COMM = SERIAL, MPI(1-4);
 }
