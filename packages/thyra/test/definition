@@ -62,11 +62,13 @@
 
 (FRAMEWORK, INSTALL, ThyraPyTests) {
     DIRS = ../python/test;
+    ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
 
 (FRAMEWORK, INSTALL, ThyraPyExamples) {
     DIRS = ../python/example;
+    ARGS = --testharness;
     COMM = SERIAL, MPI(1-4);
 }
