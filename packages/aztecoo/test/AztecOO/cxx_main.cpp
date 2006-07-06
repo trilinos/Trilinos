@@ -537,8 +537,6 @@ int test_AZ_iterate_AZ_pre_calc_AZ_reuse(Epetra_Comm& Comm,
          <<options[AZ_solver] <<", precond "<<options[AZ_precond]<<"/"
          << options[AZ_subdomain_solve]<<")"<<endl;
   }
-  int numProcs = Comm.NumProc();
-  int localProc = Comm.MyPID();
 
   int* proc_config = new int[AZ_PROC_SIZE];
 
@@ -728,8 +726,6 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
   if (verbose) {
     cout << "testing AZ_iterate/AZ_scale_f with 'old' Aztec"<<endl;
   }
-  int numProcs = Comm.NumProc();
-  int localProc = Comm.MyPID();
 
   int* proc_config = new int[AZ_PROC_SIZE];
 
@@ -748,6 +744,9 @@ int test_AZ_iterate_then_AZ_scale_f(Epetra_Comm& Comm, bool verbose)
                                                proc_config, Amat,
                                                  external, update_index,
                                                  external_index);
+  if (err != 0) {
+    return(err);
+  }
  
   int* options = new int[AZ_OPTIONS_SIZE];
   double* params = new double[AZ_PARAMS_SIZE];

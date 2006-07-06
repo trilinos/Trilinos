@@ -54,8 +54,6 @@ int main(int argc, char *argv[]) {
   Epetra_Vector x(Map);
   Epetra_Vector xx(Map);
 
-  int NumEntries;
-
   if (verbose)
     cout << "Proc = " << Comm.MyPID() << "  NumMyElements=" << NumMyElements << endl;
     
@@ -99,7 +97,6 @@ int main(int argc, char *argv[]) {
   // First solve using default status test from Aztec (AZ_r0: ||r||_2/||r0||_2)
   // **************************************************************************
   solver.Iterate(NumGlobalElements, 1.0E-14);
-  double defaultAztecRes = solver.TrueResidual();
   if (verbose1)
     cout << "Solver performed " << solver.NumIters() << " iterations." << endl
 	 << "Norm of recursive residual = " << solver.RecursiveResidual() << endl << endl;
@@ -123,7 +120,6 @@ int main(int argc, char *argv[]) {
   solver.SetStatusTest( &cst );
 
   solver.Iterate(NumGlobalElements*3, 1.0E-14);
-  double defaultStatusTestRes = solver.TrueResidual();
   if (verbose1)
     cout << "Solver performed " << solver.NumIters() << " iterations." << endl
 	 << "Norm of recursive residual = " << solver.RecursiveResidual() << endl << endl;

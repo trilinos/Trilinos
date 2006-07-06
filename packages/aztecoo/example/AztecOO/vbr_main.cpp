@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 			&val_msr,  &bindx_msr, &xguess, &b, &xexact);
 
   double *val;
-  int NumGlobalElements, NumGlobalBlockEntries, *indx, *rpntr, *cpntr, *bpntr, *bindx;
+  int NumGlobalElements, *indx, *rpntr, *cpntr, *bpntr, *bindx;
   int NumMyBlockEntries, NumMyElements, * MyGlobalElements;
   
   Trilinos_Util_create_vbr(comm, argv[2],

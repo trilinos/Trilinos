@@ -38,15 +38,12 @@
 #endif
 
 int main(int argc, char* argv[]) {
-  bool verbose = false;  // used to set verbose false on non-root processors
   bool verbose1 = false; // user's command-line argument
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose1 = true;
 
   int err;
   int returnierr = 0;
-  int size = 1;
-  int rank = 0;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);

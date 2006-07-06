@@ -113,7 +113,7 @@ class AztecOO_StatusTest {
   //@}
 
   virtual void PrintStatus(ostream& os, AztecOO_StatusType type) const {
-    os << setiosflags(ios::left) << setw(13) << setfill('.');
+    os << std::setiosflags(std::ios::left) << std::setw(13) << std::setfill('.');
     switch (type) {
     case  Failed:
       os << "Failed";
@@ -126,9 +126,9 @@ class AztecOO_StatusTest {
       os << "**";
       break;
     }
-    os << setiosflags(ios::right) << setfill(' ');
+    os << std::setiosflags(std::ios::right) << std::setfill(' ');
     return;
-  };
+  }
 };
 
 

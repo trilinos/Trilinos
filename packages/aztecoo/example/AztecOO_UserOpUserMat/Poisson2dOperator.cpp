@@ -122,7 +122,7 @@ int Poisson2dOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   double * importx1 = 0;
   double * importx2 = 0;
   int nx = nx_;
-  int ny = ny_;
+  //int ny = ny_;
 
   for (int j=0; j < X.NumVectors(); j++) {
 

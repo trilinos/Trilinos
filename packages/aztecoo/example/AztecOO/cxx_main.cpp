@@ -54,37 +54,20 @@
 int main(int argc, char *argv[])
 {
   int    *update;                  /* vector elements updated on this node. */
-  int    *indx;   /* MSR format of real and imag parts */
   int    *bindx;
-  int    *bpntr;
-  int    *rpntr;
-  int    *cpntr;
-  int    indexBase = 0; 
   double *val;
-  double *xguess, *b, *xexact, *xsolve;
-  int    n_nonzeros, n_blk_nonzeros, ierr;
+  double *xguess, *b, *xexact;
+  int    n_nonzeros, ierr;
   int    N_update;           /* # of block unknowns updated on this node    */
   int    numLocalEquations;
                                  /* Number scalar equations on this node */
-  int    numGlobalEquations, numGlobalBlocks; /* Total number of equations */
-  int    numLocalBlocks;
-  int    *blockSizes, *numNzBlks, *blkColInds;
+  int    numGlobalEquations; /* Total number of equations */
   int    *numNz, *ColInds;
-  int    N_external, N_blk_eqns;
-  int    blk_row, *blk_col_inds;
   int    row,     *col_inds, numEntries;
   double *row_vals;
 
-  double *val_msr;
-  int *bindx_msr;
-  
-  double norm, d ;
+  int i;
 
-  int has_global_indices, option;
-  int i, j, m, mp;
-  int ione = 1;
-
-  double time ;
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);

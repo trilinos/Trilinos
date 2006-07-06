@@ -49,8 +49,6 @@ int main(int argc, char *argv[]) {
   Epetra_Vector x(Map);
   Epetra_Vector xx(Map);
 
-  int NumEntries;
-
   if (verbose)
     cout << "Proc = " << Comm.MyPID() << "  NumMyElements=" << NumMyElements << endl;
     
