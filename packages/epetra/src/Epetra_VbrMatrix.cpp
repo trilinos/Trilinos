@@ -2766,7 +2766,6 @@ double Epetra_VbrMatrix::NormFrobenius() const {
 
   int * NumBlockEntriesPerRow = NumBlockEntriesPerRow_;
   int * ElementSize = ElementSizeList_;
-  int ** Indices = Indices_;
   Epetra_SerialDenseMatrix*** Entries = Entries_;
 
   double local_sum = 0.0;
@@ -2774,7 +2773,6 @@ double Epetra_VbrMatrix::NormFrobenius() const {
   for (int i=0; i < NumMyBlockRows_; i++) {
     int NumEntries = *NumBlockEntriesPerRow++;
     int RowDim = *ElementSize++;
-    int *    BlockRowIndices = *Indices++;
     Epetra_SerialDenseMatrix** BlockRowValues  = *Entries++;
 
     for(int ii=0; ii<NumEntries; ++ii) {

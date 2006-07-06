@@ -106,14 +106,14 @@ int main(int argc, char *argv[])
 
   int NumMyElements = Map.NumMyElements();
 
-  vector<int> MyGlobalElements(NumMyElements);
+  std::vector<int> MyGlobalElements(NumMyElements);
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
   // on this processor
 
-    vector<int> NumNz(NumMyElements);
+    std::vector<int> NumNz(NumMyElements);
 
   // We are building a tridiagonal matrix where each row has (-1 2 -1)
   // So we need 2 off-diagonal terms (except for the first and last equation)
@@ -133,9 +133,9 @@ int main(int argc, char *argv[])
   // Off diagonal Values will always be -1
 
 
-  vector<double> Values(2);
+  std::vector<double> Values(2);
   Values[0] = -1.0; Values[1] = -1.0;
-  vector<int> Indices(2);
+  std::vector<int> Indices(2);
   double two = 2.0;
   int NumEntries;
   
@@ -195,8 +195,8 @@ int main(int argc, char *argv[])
 
   if (A.MyGlobalRow(0)) {
     int numvals = A.NumGlobalEntries(0);
-    vector<double> Rowvals(numvals);
-    vector<int> Rowinds(numvals);
+    std::vector<double> Rowvals(numvals);
+    std::vector<int> Rowinds(numvals);
     A.ExtractGlobalRowCopy(0, numvals, numvals, &Rowvals[0], &Rowinds[0]); // Get A[0,0]
     for (i=0; i<numvals; i++) if (Rowinds[i] == 0) Rowvals[i] *= 10.0;
 

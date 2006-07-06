@@ -94,12 +94,6 @@ const double Epetra_Underflow = 2.23E-308;
 #include <stdlib.h>
 #endif
 
-#ifdef HAVE_CSTDIO
-#include <cstdio>
-#else
-#include <stdio.h>
-#endif
-
 #ifdef HAVE_CASSERT
 #include <cassert>
 #else
@@ -108,7 +102,7 @@ const double Epetra_Underflow = 2.23E-308;
 
 #ifdef HAVE_STRING
 #include <string>
-#else
+#elif HAVE_STRING_H
 #include <string.h>
 #endif
 
@@ -118,37 +112,30 @@ const double Epetra_Underflow = 2.23E-308;
 #include <iostream.h>
 #endif
 
-/* Every line that begins with 'using' should eventually be dependent
-   on some check within the configure script */
 
-
-#ifndef TFLOP
-#ifndef JANUS_STLPORT
 #ifdef HAVE_CMATH
 #include <cmath>
 #else
 #include <math.h>
 #endif
-#else /* JANUS_STLPORT */
-#include <math.h>
-#endif /* JANUS_STLPORT */
-using namespace std;
-#else /* TFLOP defined */
+
 #ifdef HAVE_IOMANIP
 #include <iomanip>
 #else
 #include <iomanip.h>
 #endif
+
 #ifdef HAVE_STRING
 using std::string;
 #endif
+
 #ifdef HAVE_IOSTREAM
 using std::istream;
 using std::ostream;
 using std::cerr;
 using std::cout;
 using std::endl;
-#endif
+using std::flush;
 #endif
 
 /*-----------------------------------------------------------------------
@@ -171,14 +158,6 @@ using std::endl;
 #define false 0
 
 #endif
-
-// RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
-//#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
-/*#ifdef EPETRA_ANSI_CPP
-  typedef std::ios_base::fmtflags   Epetra_fmtflags;
-  #else
-  typedef long int                  Epetra_fmtflags;
-  #endif*/
 
 #ifndef HAVE_FORMAT_IO
 const bool Epetra_FormatStdout = false; // Set true if the ostream << operator should format output
@@ -211,22 +190,14 @@ const int DefaultTracebackMode = 0;
 #include <iostream>
 #include <math.h>
 #include <string>
-using namespace std;
 
-#elif defined(TFLOP)
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <assert.h>
-#include <string>
 using std::string;
-#include <iostream>
-#include <iomanip>
 using std::istream;
 using std::ostream;
 using std::cerr;
 using std::cout;
 using std::endl;
+using std::flush;
 
 #else
 
@@ -236,7 +207,14 @@ using std::endl;
 #include <iostream>
 #include <cmath>
 #include <string>
-using namespace std;
+
+using std::string;
+using std::istream;
+using std::ostream;
+using std::cerr;
+using std::cout;
+using std::endl;
+using std::flush;
 
 #endif
 
@@ -258,14 +236,6 @@ using namespace std;
 #define false 0
 
 #endif
-
-// RAB: 2002/1/25: Define EPETRA_ANSI_CPP as an argument to the compiler!
-//#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
-/*#ifdef EPETRA_ANSI_CPP
-  typedef std::ios_base::fmtflags   Epetra_fmtflags;
-  #else
-  typedef long int                  Epetra_fmtflags;
-  #endif */
 
 const bool Epetra_FormatStdout = true; // Set true if the ostream << operator should format output
 const int DefaultTracebackMode = 1;
