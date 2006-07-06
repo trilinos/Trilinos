@@ -31,7 +31,7 @@
 
 void Trilinos_Util_CountTriples( const char *data_file, 
 				 bool symmetric, 
-				 vector<int> &non_zeros,
+				 std::vector<int> &non_zeros,
 				 int &N_rows, int &nnz, 
 				 const Epetra_Comm  &comm, 
 				 bool TimDavisHeader=false, 

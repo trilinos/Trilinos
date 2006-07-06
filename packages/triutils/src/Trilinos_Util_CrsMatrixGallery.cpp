@@ -654,7 +654,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
     }
     Epetra_Util Utils;
     int *ArrayOfIntPointers[1];
-    double *ArrayOfDoublePointers[1];
+    //    double *ArrayOfDoublePointers[1];
     ArrayOfIntPointers[0] =  &sortable_positions[0];
     //    ArrayOfDoublePointers[0] =  &sortable_values[0];
     Utils.Sort( true, NumGlobalElements_*2, &sortable_values[0], 
@@ -1558,9 +1558,9 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
   //    d
   for( int i=0 ; i<NumMyElements_; ++i ) {
 
-    bool isBorder = false;
+    //bool isBorder = false;
 
-    int NumEntries=0;
+    //int NumEntries=0;
     GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
 			       left, right, lower, upper);
 

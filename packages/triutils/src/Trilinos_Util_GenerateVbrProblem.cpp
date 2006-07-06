@@ -124,9 +124,9 @@ void Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, i
   A = new Epetra_VbrMatrix(Copy, *map, 0); // Construct matrix
 
 	int * indices = new int[npoints];
-	double * values = new double[npoints];
+//	double * values = new double[npoints];
 
-	double dnpoints = (double) npoints;
+//	double dnpoints = (double) npoints;
 
 	// This section of code creates a vector of random values that will be used to create
 	// light-weight dense matrices to pass into the VbrMatrix construction process.

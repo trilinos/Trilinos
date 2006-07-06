@@ -49,13 +49,13 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
                       
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
-  vector<int> non_zeros;   // Number of non-zeros in each row
+  std::vector<int> non_zeros;   // Number of non-zeros in each row
   Trilinos_Util_CountMatrixMarket( data_file, non_zeros, N_rows, nnz, comm ) ; 
 
-  vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
-  vector<int> inds(nnz);     //  Column Indices
-  vector<double> vals(nnz);  //  Matrix values
-  vector<int> iptrs ;        //  Current pointers into inds and vals for each row
+  std::vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
+  std::vector<int> inds(nnz);     //  Column Indices
+  std::vector<double> vals(nnz);  //  Matrix values
+  std::vector<int> iptrs ;        //  Current pointers into inds and vals for each row
 
   if(comm.MyPID() == 0)  { 
     //  ptrs, inds and vals together constitute a compressed row storage of the matrix.
@@ -74,19 +74,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
     fgets( buffer, BUFSIZE, in_file ) ;  // Pick symmetry info off of this string 
     bool symmetric = false ; 
     string headerline1 = buffer;
-#ifdef TFLOP
-    // This is a fix for Janus since its string class does not recognize
-    // string::npos.  The integer returned when "symmetric" is not found in 
-    // the string makes no logical sense and must be a system dependent variable. 
-    // However, since find returns the index of the first position in the 
-    // string where "symmetric" is found, we will check to see if this 
-    // number is larger than the buffer size.  This fix works for Janus, but is
-    // not recommended for other platforms since find may also return a 
-    // negative number. ( HKT 3/16/2004 )
-    if ( headerline1.find("symmetric") < BUFSIZE ) symmetric = true;
-#else
     if ( headerline1.find("symmetric") != string::npos) symmetric = true; 
-#endif
     fgets( buffer, BUFSIZE, in_file ) ;
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
@@ -140,7 +128,7 @@ int Trilinos_Util_ReadMatrixMarket2Epetra( char *data_file,
 
   assert( diag || A->NoDiagonal() ) ;
 
-  vector<double> xyz(N_rows);
+  std::vector<double> xyz(N_rows);
   
   x = new Epetra_Vector(Copy, *map, &xyz[0]);
   b = new Epetra_Vector(Copy, *map, &xyz[0]);

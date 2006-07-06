@@ -42,7 +42,7 @@
 //
 void Trilinos_Util_CountTriples( const char *data_file, 
 				 bool symmetric, 
-				 vector<int> &non_zeros,
+				 std::vector<int> &non_zeros,
 				 int &N_rows, int &nnz, 
 				 const Epetra_Comm  &comm, 
 				 bool TimDavisHeader=false,
@@ -94,7 +94,7 @@ void Trilinos_Util_CountTriples( const char *data_file,
 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
       int i, j; 
-      double val ; 
+      float val ; 
       i = -13 ;   // Check for blank lines 
       sscanf( buffer, "%d %d %f", &i, &j, &val ) ; 
       if ( ZeroBased ) { i++; j++ ; } 

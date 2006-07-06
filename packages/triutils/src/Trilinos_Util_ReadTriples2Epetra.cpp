@@ -56,7 +56,7 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 
   const int BUFSIZE = 800 ; 
   char buffer[BUFSIZE] ; 
-  vector<int> non_zeros;   // Number of non-zeros in each row
+  std::vector<int> non_zeros;   // Number of non-zeros in each row
   Trilinos_Util_CountTriples( data_file, symmetric, non_zeros, N_rows, nnz, comm, TimDavisHeader, ZeroBased ) ;
 
 #if 0
@@ -67,7 +67,7 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
 #endif
  
   int NumNonZeroRows=0;
-  vector<int> MapIndices;
+  std::vector<int> MapIndices;
   if(comm.MyPID() == 0)  { 
     if ( NonUniformMap ) {
       for (int i= 0; i<N_rows; i++ )  if( non_zeros[i] > 0 ) NumNonZeroRows++;
@@ -87,9 +87,9 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
     comm.Broadcast( &MapIndices[0], NumNonZeroRows, 0 ) ; 
   }
 
-  vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
-  vector<int> inds(nnz);     //  Column Indices
-  vector<double> vals(nnz);  //  Matrix values
+  std::vector<int> ptrs(N_rows+1) ; // Pointers into inds and vals for the start of each row
+  std::vector<int> inds(nnz);     //  Column Indices
+  std::vector<double> vals(nnz);  //  Matrix values
 
   if(comm.MyPID() == 0)  { 
     //  ptrs, inds and vals together constitute a compressed row storage of the matrix.
@@ -103,7 +103,7 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
       ptrs[i+1] = ptrs[i] + non_zeros[i]; 
     }
 
-    vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
+    std::vector<int> iptrs = ptrs ; //  Current pointers into inds and vals for each row
 
     if ( TimDavisHeader ) fgets( buffer, BUFSIZE, in_file ); // Throw away the Tim Davis Header Line 
     while ( fgets( buffer, BUFSIZE, in_file ) ) { 
@@ -148,9 +148,9 @@ int Trilinos_Util_ReadTriples2Epetra( char *data_file,
     }
   A->FillComplete();
 
-  vector<double> hbx(N_rows);
-  vector<double> hbb(N_rows);
-  vector<double> hbxexact(N_rows);
+  std::vector<double> hbx(N_rows);
+  std::vector<double> hbb(N_rows);
+  std::vector<double> hbxexact(N_rows);
 
   
   x = new Epetra_Vector(Copy, *map, &hbx[0]);
