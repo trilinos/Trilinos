@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
 
    	if (buf[0] < 0) {
 	  cout << "Enter size of matrix " << endl;
-	  cin >> buf[0];
+	  std::cin >> buf[0];
 	}
 	if (buf[1] < 0) { 
 	  cout << "Enter number of processors to which each row is assigned "  << endl;
-	  cin >> buf[1];
+	  std::cin >> buf[1];
 	}
 
      }
