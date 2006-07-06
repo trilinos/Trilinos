@@ -34,17 +34,28 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
+from   numpy    import *
+from   optparse import *
 import sys
+import unittest
 
-try:
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
     import setpath
     import Epetra
-except ImportError:
-    from PyTrilinos import Epetra
-    print >>sys.stderr, "Using system-installed Epetra"
-
-from   numpy  import *
-import unittest
+else:
+    try:
+        import setpath
+        import Epetra
+    except ImportError:
+        from PyTrilinos import Epetra
+        print >>sys.stderr, "Using system-installed Epetra"
 
 ##########################################################################
 
@@ -146,7 +157,7 @@ if __name__ == "__main__":
     # Run the test suite
     if iAmRoot: print >>sys.stderr, \
           "\n*************************\nTesting Epetra.CompObject\n*************************\n"
-    verbosity = 2 * int(iAmRoot)
+    verbosity = options.verbosity * int(iAmRoot)
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
 
     # Exit with a code that indicates the total number of errors and failures
