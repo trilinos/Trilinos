@@ -35,6 +35,10 @@
 using namespace std;
 #endif
 
+#if NDARRAY_VERSION == 0x00090504
+#define PyArray_ANYORDER -1
+#endif
+
 // Static variables
 const Epetra_SerialComm   Epetra_NumPyIntVector::defaultComm = Epetra_SerialComm();
 PyArrayObject           * Epetra_NumPyIntVector::tmp_array   = NULL               ;
@@ -200,7 +204,7 @@ Epetra_NumPyIntVector::~Epetra_NumPyIntVector()
 // =============================================================================
 PyObject * Epetra_NumPyIntVector::ExtractCopy() const
 {
-  return PyArray_Copy(array);
+  return PyArray_NewCopy(array,PyArray_ANYORDER);
 }
 
 // =============================================================================
