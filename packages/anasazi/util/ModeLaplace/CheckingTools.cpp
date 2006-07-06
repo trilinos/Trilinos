@@ -147,13 +147,13 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
   int qc = Q.NumVectors();
   int qexc = Qex.NumVectors();
 
-  double *mQ = new (nothrow) double[qr];
+  double *mQ = new (std::nothrow) double[qr];
   if (mQ == 0) {
     info = -1;
     return info;
   }
 
-  double *z = new (nothrow) double[qexc*qc];
+  double *z = new (std::nothrow) double[qexc*qc];
   if (z == 0) {
     delete[] mQ;
     info = -1;
@@ -179,7 +179,7 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
   // Compute the SVD
 
   int svSize = (qc > qexc) ? qexc : qc;
-  double *sv = new (nothrow) double[svSize];
+  double *sv = new (std::nothrow) double[svSize];
   if (sv == 0) {
     delete[] z;
     info  = -1;
@@ -188,7 +188,7 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
 
   // lwork is larger than the value suggested by LAPACK
   int lwork = (qexc > qc) ? qexc + 5*qc : qc + 5*qexc;
-  double *work = new (nothrow) double[lwork];
+  double *work = new (std::nothrow) double[lwork];
   if (work == 0) {
     delete[] z;
     delete[] sv;
@@ -233,7 +233,7 @@ int CheckingTools::errorSubspaces(const Epetra_MultiVector &Q, const Epetra_Mult
     cout << " Reference space built with " << Qex.NumVectors() << " vectors." << endl;
     cout << " Dimension of computed space: " << Q.NumVectors() << endl;
     cout << endl;
-    cout.setf(ios::scientific, ios::floatfield);
+    cout.setf(std::ios::scientific, std::ios::floatfield);
     cout.precision(4);
     cout << " Smallest singular value = " << sv[0] << endl;
     cout << " Largest singular value  = " << sv[svSize-1] << endl;
@@ -264,7 +264,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
   int qr = Q.MyLength();
   int qc = Q.NumVectors();
 
-  double *work = new (nothrow) double[2*qr];
+  double *work = new (std::nothrow) double[2*qr];
   if (work == 0)
     return;
 
@@ -312,7 +312,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
       cout << " ";
       cout.width(4);
       cout.precision(8);
-      cout.setf(ios::scientific, ios::floatfield);
+      cout.setf(std::ios::scientific, std::ios::floatfield);
       cout << j+1 << ". " << lambda[j] << " ";
       if (normWeight) {
         cout << residualUser << " ";
@@ -365,7 +365,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
   int qr = Q.MyLength();
   int qc = Q.NumVectors();
 
-  double *work = new (nothrow) double[2*qr];
+  double *work = new (std::nothrow) double[2*qr];
   if (work == 0)
     return;
 
@@ -411,7 +411,7 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
       cout << " ";
       cout.width(4);
       cout.precision(8);
-      cout.setf(ios::scientific, ios::floatfield);
+      cout.setf(std::ios::scientific, std::ios::floatfield);
       cout << j+1 << ". " << lambda[j] << " ";
       cout << residualMinv << " ";
       cout << ((lambda[j] == 0.0) ? 0.0 : residualMinv/lambda[j]) << " ";
@@ -455,7 +455,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
 
   // Allocate working arrays
 
-  int *used = new (nothrow) int[numDiscrete + nev];
+  int *used = new (std::nothrow) int[numDiscrete + nev];
   if (used == 0) {
     return nMax;
   }
@@ -511,7 +511,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
       if (myPid == 0) {
         cout << "      ************** ************** ";
         cout.precision(8);
-        cout.setf(ios::scientific, ios::floatfield);
+        cout.setf(std::ios::scientific, std::ios::floatfield);
         cout << lambda[i];
         cout << "  *********  *********" << endl;
       }
@@ -531,7 +531,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
         cout.width(4);
         cout << i+1 << ". ";
         cout.precision(8);
-        cout.setf(ios::scientific, ios::floatfield);
+        cout.setf(std::ios::scientific, std::ios::floatfield);
         cout << continuous[i] << " " << discrete[i] << " ";
         cout << "**************  *********  ";
         cout.precision(3);
@@ -546,7 +546,7 @@ int CheckingTools::errorLambda(double *continuous, double *discrete, int numDisc
         cout.width(4);
         cout << i+1 << ". ";
         cout.precision(8);
-        cout.setf(ios::scientific, ios::floatfield);
+        cout.setf(std::ios::scientific, std::ios::floatfield);
         cout << continuous[i] << " " << discrete[i] << " " << lambda[used[i]] << "  ";
         cout.precision(3);
         cout << fabs(lambda[used[i]]-discrete[i])/discrete[i] << "  ";
