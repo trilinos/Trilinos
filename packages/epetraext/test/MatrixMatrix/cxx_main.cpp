@@ -423,7 +423,6 @@ int run_test(Epetra_Comm& Comm,
   }
 
   const Epetra_Map* rowmap = transA ? &(A->DomainMap()) : &(A->RowMap());
-  const Epetra_Map* Cdomainmap = transB ? &(B->RangeMap()) : B_domain_map;
 
   C = new Epetra_CrsMatrix(Copy, *rowmap, 1);
 
@@ -636,7 +635,6 @@ int two_proc_test(Epetra_Comm& Comm,
   int numGlobalCols = 10;
   int numMyCols = 5;
   int* mycols = new int[numGlobalCols];
-  int myFirstCol = thisproc*5;
   int i;
   for(i=0; i<numGlobalCols; ++i) {
     mycols[i] = i;

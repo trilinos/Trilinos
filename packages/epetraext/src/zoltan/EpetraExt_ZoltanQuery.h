@@ -25,7 +25,7 @@
 // 
 // ***********************************************************************
 //@HEADER
-                                                                                                    
+
 #ifndef EPETRAEXT_ZOLTANQUERY_H
 #define EPETRAEXT_ZOLTANQUERY_H
 

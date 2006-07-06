@@ -41,9 +41,9 @@ BlockCrsMatrix::BlockCrsMatrix(
         int RowIndex,
         const Epetra_Comm & GlobalComm  ) 
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, vector< vector<int> >(1,RowStencil), vector<int>(1,RowIndex), GlobalComm )) ),
-    RowIndices_( vector<int>(1,RowIndex) ),
-    RowStencil_( vector< vector<int> >(1,RowStencil) ),
     BaseGraph_( BaseGraph ),
+    RowStencil_( vector< vector<int> >(1,RowStencil) ),
+    RowIndices_( vector<int>(1,RowIndex) ),
     Offset_(BlockUtility::CalculateOffset(BaseGraph.RowMap()))
 {
 }
@@ -55,9 +55,9 @@ BlockCrsMatrix::BlockCrsMatrix(
         const vector<int> & RowIndices,
         const Epetra_Comm & GlobalComm  ) 
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, RowStencil, RowIndices, GlobalComm )) ),
-    RowIndices_( RowIndices ),
-    RowStencil_( RowStencil ),
     BaseGraph_( BaseGraph ),
+    RowStencil_( RowStencil ),
+    RowIndices_( RowIndices ),
     Offset_(BlockUtility::CalculateOffset(BaseGraph.RowMap()))
 {
 }
@@ -69,9 +69,9 @@ BlockCrsMatrix::BlockCrsMatrix(
         const vector<int> & RowIndices,
         const Epetra_Comm & GlobalComm  ) 
   : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseMatrix, RowStencil, RowIndices, GlobalComm )) ),
-    RowIndices_( RowIndices ),
-    RowStencil_( RowStencil ),
     BaseGraph_( Copy, BaseMatrix.RowMatrixRowMap(), 1 ), //Junk to satisfy constructor
+    RowStencil_( RowStencil ),
+    RowIndices_( RowIndices ),
     Offset_(BlockUtility::CalculateOffset(BaseMatrix.RowMatrixRowMap()))
 {
 }
@@ -79,9 +79,9 @@ BlockCrsMatrix::BlockCrsMatrix(
 //==============================================================================
 BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix ) 
   : Epetra_CrsMatrix( dynamic_cast<const Epetra_CrsMatrix &>( Matrix ) ),
-    RowIndices_( Matrix.RowIndices_ ),
-    RowStencil_( Matrix.RowStencil_ ),
     BaseGraph_( Matrix.BaseGraph_ ),
+    RowStencil_( Matrix.RowStencil_ ),
+    RowIndices_( Matrix.RowIndices_ ),
     Offset_( Matrix.Offset_ )
 {
 }
@@ -134,7 +134,7 @@ void BlockCrsMatrix::ExtractBlock(Epetra_CrsMatrix & BaseMatrix, const int Row, 
 
 //  const Epetra_CrsGraph & BaseGraph = BaseMatrix.Graph();
   const Epetra_BlockMap & BaseMap = BaseMatrix.RowMatrixRowMap();
-  const Epetra_BlockMap & BaseColMap = BaseMatrix.RowMatrixColMap();
+  //const Epetra_BlockMap & BaseColMap = BaseMatrix.RowMatrixColMap();
 
   // This routine extracts entries of a BaseMatrix from a big  BlockCrsMatrix
   // It performs the following operation on the global IDs row-by-row
