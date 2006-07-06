@@ -574,6 +574,7 @@ int Zoltan_PHG_Initialize_Params(
   hgp->LocalCoarsePartition = 0;
   hgp->edge_scaling = 0;
   hgp->vtx_scaling = 0;
+  hgp->vtx_scal_size = 0;
   hgp->vtx_scal = NULL;  /* Array for storing vertex degree scale vector. 
                             Should perhaps go in hg structure, not the
                             param struct? */
