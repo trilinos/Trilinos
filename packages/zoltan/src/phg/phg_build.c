@@ -1214,61 +1214,58 @@ ZOLTAN_ID_PTR fixedGIDs = NULL, fixedLIDs = NULL;        /* RTHRTH */
     nEdge = myPins.nHedges;
   }
 
-  if (nEdge > 0){
+  if (randomizeInitDist) {  
+    /* Randomize the input edges */
+    int tmp;
+    memset(gtotal, 0, (3*zz->Num_Proc+1)*sizeof(int)); /* gtotal was alloc'ed
+                                                          for vertices */
 
-    if (randomizeInitDist) {  
-      /* Randomize the input edges */
-      int tmp;
-      memset(gtotal, 0, (3*zz->Num_Proc+1)*sizeof(int)); /* gtotal was alloc'ed
-                                                            for vertices */
-  
-      /* Compute random processor bin. */
-      /* Temporarily store processor bin number in egno. */
-      /* Count how many local vtxs selected processor bin */
-      for (i = 0; i < nEdge; i++) {
-        egno[i] = Zoltan_Rand_InRange(NULL, zz->Num_Proc);
-        mycnt[egno[i]]++;
-      }
-      /* Compute prefix of mycnt */
-      rc = MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
-      CHECK_FOR_MPI_ERROR(rc)
-      rc = MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
-                    zz->Communicator);
-      CHECK_FOR_MPI_ERROR(rc)
-  
-      /* Compute first gno for vertices going to each target bin */
-      for (tmp = 0, i = 0; i < zz->Num_Proc; i++) {
-        gcnt[i] -= mycnt[i];
-        tmp += gtotal[i];
-        gtotal[i] = tmp - gtotal[i];
-      }
-      myHshEdges.GnEdge = gtotal[zz->Num_Proc] = tmp;
-  
-      /* Assign gnos sequential from gcnt[bin]. */
-      for (i=0; i< nEdge; i++) {
-        tmp = egno[i];
-        egno[i] = gtotal[tmp] + gcnt[tmp];
-        gcnt[tmp]++;
-      }
+    /* Compute random processor bin. */
+    /* Temporarily store processor bin number in egno. */
+    /* Count how many local vtxs selected processor bin */
+    for (i = 0; i < nEdge; i++) {
+      egno[i] = Zoltan_Rand_InRange(NULL, zz->Num_Proc);
+      mycnt[egno[i]]++;
     }
-    else {
-      rc = MPI_Scan (&nEdge, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
-      CHECK_FOR_MPI_ERROR(rc)
-  
-      /* Gather data from all procs */
-  
-      rc = MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
-                     &(gtotal[1]), 1, MPI_INT, zz->Communicator);
-      CHECK_FOR_MPI_ERROR(rc)
-      gtotal[0] = 0;
-      myHshEdges.GnEdge = gtotal[nProc];
-  
-      /* Assign global numbers to edges. */
-      for (i = 0; i < nEdge; i++)
-        egno[i] = gtotal[zz->Proc] + i;
+    /* Compute prefix of mycnt */
+    rc = MPI_Scan(mycnt, gcnt, zz->Num_Proc, MPI_INT, MPI_SUM, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
+    rc = MPI_Allreduce(mycnt, gtotal, zz->Num_Proc, MPI_INT, MPI_SUM, 
+                  zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
+
+    /* Compute first gno for vertices going to each target bin */
+    for (tmp = 0, i = 0; i < zz->Num_Proc; i++) {
+      gcnt[i] -= mycnt[i];
+      tmp += gtotal[i];
+      gtotal[i] = tmp - gtotal[i];
     }
-    ZOLTAN_FREE(&gtotal);
+    myHshEdges.GnEdge = gtotal[zz->Num_Proc] = tmp;
+
+    /* Assign gnos sequential from gcnt[bin]. */
+    for (i=0; i< nEdge; i++) {
+      tmp = egno[i];
+      egno[i] = gtotal[tmp] + gcnt[tmp];
+      gcnt[tmp]++;
+    }
   }
+  else {
+    rc = MPI_Scan (&nEdge, gtotal, 1, MPI_INT, MPI_SUM, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
+
+    /* Gather data from all procs */
+
+    rc = MPI_Allgather (&(gtotal[0]), 1, MPI_INT,
+                   &(gtotal[1]), 1, MPI_INT, zz->Communicator);
+    CHECK_FOR_MPI_ERROR(rc)
+    gtotal[0] = 0;
+    myHshEdges.GnEdge = gtotal[nProc];
+
+    /* Assign global numbers to edges. */
+    for (i = 0; i < nEdge; i++)
+      egno[i] = gtotal[zz->Proc] + i;
+  }
+  ZOLTAN_FREE(&gtotal);
 
   if (hypergraph_callbacks){
 
