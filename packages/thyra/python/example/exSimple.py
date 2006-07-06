@@ -1,8 +1,24 @@
 #! /usr/bin/env python
 
-import setpath
-import Epetra   # This will initialize MPI if we are running the MPI test harness
-import Thyra
+from optparse import *
+
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
+    import setpath
+    import Epetra, Thyra
+else:
+    try:
+        import setpath
+        import Epetra, Thyra
+    except ImportError:
+        from PyTrilinos import Epetra, Thyra
+        print >>sys.stderr, "Using system-installed Epetra, Thyra"
 
 vs = Thyra.SerialVectorSpaceStd_double(4)
 print "vs.dim() =", vs.dim()
