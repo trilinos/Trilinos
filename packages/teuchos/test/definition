@@ -3,7 +3,8 @@
 #
 
 (FRAMEWORK,INSTALL) {
-    TESTS = RefCountPtr/RefCountPtr_test.exe;
+    TESTS = RefCountPtr/RefCountPtr_test.exe,
+            RefCountPtr/ArrayRefCountPtr_test.exe;
     ARGS = --verbose;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI,SERIAL;

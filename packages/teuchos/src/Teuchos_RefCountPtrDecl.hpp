@@ -552,21 +552,24 @@ public:
 	/** \brief Removes a reference to a dynamically allocated object and possibly deletes
 	 * the object if owned.
 	 *
-	 * Peforms <tt>delete ...</tt> if <tt>this->has_ownership() == true</tt> and
-	 * <tt>this->count() == 1</tt>.  If <tt>this->count() == 1</tt> but <tt>this->has_ownership() == false</tt>
-	 * then the object is not deleted.
-	 * If <tt>this->count() > 1</tt> then then internal reference count
-	 * shared by all the other related <tt>RefCountPtr<...></tt> objects for this shared
-	 * object is deincremented by one.  If <tt>this->get() == NULL</tt> then nothing happens.
+	 * Deletes the object if <tt>this->has_ownership() == true</tt> and
+	 * <tt>this->count() == 1</tt>.  If <tt>this->count() == 1</tt> but
+	 * <tt>this->has_ownership() == false</tt> then the object is not deleted.
+	 * If <tt>this->count() > 1</tt> then the internal reference count shared by
+	 * all the other related <tt>RefCountPtr<...></tt> objects for this shared
+	 * object is deincremented by one.  If <tt>this->get() == NULL</tt> then
+	 * nothing happens.
 	 */
 	~RefCountPtr();
-	/** \brief Copy the pointer to the referenced object and increment the reference count.
+	/** \brief Copy the pointer to the referenced object and increment the
+	 * reference count.
 	 *
-	 * If <tt>this->has_ownership() == true</tt> and <tt>this->count() == 1</tt> before this operation
-	 * is called, then the object pointed to by <tt>this->get()</tt> will be deleted (using <tt>delete</tt>)
-	 * prior to binding to the pointer (possibly <tt>NULL</tt>) pointed to in <tt>r_ptr</tt>.
-	 * Assignment to self (i.e. <tt>this->get() == r_ptr.get()</tt>) is harmless and this
-	 * function does nothing.
+	 * If <tt>this->has_ownership() == true</tt> and <tt>this->count() == 1</tt>
+	 * before this operation is called, then the object pointed to by
+	 * <tt>this->get()</tt> will be deleted (usually using <tt>delete</tt>)
+	 * prior to binding to the pointer (possibly <tt>NULL</tt>) pointed to in
+	 * <tt>r_ptr</tt>.  Assignment to self (i.e. <tt>this->get() ==
+	 * r_ptr.get()</tt>) is harmless and this function does nothing.
 	 *
 	 * Postconditons:
 	 * <ul>

@@ -30,15 +30,21 @@ EXEEXT = .exe
 
 include $(top_builddir)/Makefile.export.teuchos
 
-bin_PROGRAMS = RefCountPtr_test
+bin_PROGRAMS = RefCountPtr_test ArrayRefCountPtr_test
 
 RefCountPtr_test_SOURCES = $(srcdir)/cxx_main.cpp
 
 RefCountPtr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 
-AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
-
 RefCountPtr_test_LDADD = $(TEUCHOS_LIBS)
+
+ArrayRefCountPtr_test_SOURCES = $(srcdir)/ArrayRefCountPtr_test.cpp
+
+ArrayRefCountPtr_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+
+ArrayRefCountPtr_test_LDADD = $(TEUCHOS_LIBS)
+
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 
 # This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
 LIBS =

@@ -43,6 +43,9 @@ namespace Teuchos {
 template<typename Ordinal, typename T>
 class Serializer {
 public:
+
+  /** \brief . */
+  virtual ~Serializer() {}
   
   /** \brief Return an estimate for the maximum storage for <tt>count</tt>
    * objects to be serialized.
