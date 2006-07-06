@@ -473,13 +473,15 @@ int Zoltan_HG_Graph_Callbacks(
  *
  * If PHG_FROM_GRAPH_METHOD="neighbors":
  * Each vertex yields a hyperedge containing the vertex and all its
- * graph neighbors.  
+ * graph neighbors.  If a graph has no edges, each resulting hyperedge
+ * will contain exactly one vertex.
  *
  * If PHG_FROM_GRAPH_METHOD="pairs":
  * Every pair of vertices that are neighbors in the graph form a hyperedge.
+ * If the graph has no edges, the resulting hypergraph will also have
+ * no edges.
  *
  * Dense hyperedges are removed.
- * TODO: go over this and test it and clean it up
  */
 static char *yo = "Zoltan_HG_Graph_Callbacks";
 int ierr = ZOLTAN_OK;
@@ -527,11 +529,11 @@ int num_pins, num_hedges, prefix_sum_hedges;
   }
   
   if ((tot_nbors == 0) && (!use_all_neighbors)){
-    /* Since there are no connected vertex pairs, there are no
-     * hyperedges.  Is this an error?  Or should we build
-     * a hg where each he has one vertex, by setting use_all_neighbors=1?
+    /* 
+     * Since there are no connected vertices, there are no hyperedges. 
      */
-    use_all_neighbors = 1;
+    ZOLTAN_FREE(&num_nbors); 
+    goto End;
   }
 
   if (use_all_neighbors){
