@@ -63,13 +63,13 @@ void Epetra_datfile(const Epetra_CrsMatrix* A, char fname[])
 {
   int i, j, NumEntries, *Indices;
   double *Values;
-  ofstream fout;
+  std::ofstream fout;
   sprintf(fname, "%s.dat", fname);
   fout.open(fname);
   for (i=0; i<A->NumMyRows(); i++) {
     A->ExtractMyRowView(i, NumEntries, Values, Indices);
     for (j=0; j<NumEntries; j++) {
-      fout << A->GRID(i) << " " << A->GCID(Indices[j]) << setw(22) << setprecision(15)
+      fout << A->GRID(i) << " " << A->GCID(Indices[j]) << std::setw(22) << std::setprecision(15)
 	   << Values[j] << endl;
     }
   }
@@ -80,12 +80,12 @@ void spmat_datfile(int nrow, int rowbegp [], int colidxp [],
 				 double val[], char fname[])
 {
   int i, j;
-  ofstream fout;
+  std::ofstream fout;
   sprintf(fname, "%s.dat", fname);
   fout.open(fname);
   for (i=0; i<nrow; i++) {
     for (j=rowbegp[i]; j<rowbegp[i+1]; j++) {
-      fout << i << " " << colidxp[j] << setw(22) << setprecision(15)
+      fout << i << " " << colidxp[j] << std::setw(22) << std::setprecision(15)
 	   << val[j] << endl;
     }
   }
@@ -95,7 +95,7 @@ void spmat_datfile(int nrow, int rowbegp [], int colidxp [],
 void Epetra_datfile(int* A, int N, char fname[])
 {
   int i;
-  ofstream fout;
+  std::ofstream fout;
   sprintf(fname, "%s.dat", fname);
   fout.open(fname);
   for (i=0; i<N; i++) fout << A[i] << endl;
@@ -254,7 +254,7 @@ void tie_down_coarse(int n,
   /*
   subspace_iteration(n, rowbeg, colidx, vals, bound_flag, scale_option, 
                      nextra, tied_down, AKc, Xvecs, ne);
-  ofstream ffout;
+  std::ofstream ffout;
   ffout.open("coarse_mat.dat");
   for (i=0; i<n; i++) 
     for (j=rowbeg[i]; j<rowbeg[i+1]; j++)
@@ -292,13 +292,13 @@ void subspace_iteration(int n, int rowbeg[], int colidx[],
       if (colidx[j] == i) vals[j] += dtol*dmin;
   /*
   if (MyPID == 1) {
-    ofstream fout;
+    std::ofstream fout;
     fout.open("A.dat");
     fout << setiosflags(ios::scientific | ios::uppercase);
     for (i=0; i<n; i++) {
       for (j=rowbeg[i]; j<rowbeg[i+1]; j++) {
-	fout << i+1 << " " << colidx[j]+1 << " " << setw(22) <<
-	  setprecision(15) << vals[j] << endl;
+	fout << i+1 << " " << colidx[j]+1 << " " << std::setw(22) <<
+	  std::setprecision(15) << vals[j] << endl;
       }
     }
     fout.close();
@@ -355,17 +355,17 @@ void subspace_iteration(int n, int rowbeg[], int colidx[],
     EB.GEMM(TRANSA, TRANSB, q, q, n, ALPHA, SOL, n, SOL, n, BETA,    X, q);   
     /*
     if (MyPID == 1) {
-      ofstream fout;
+      std::ofstream fout;
       fout.open("AA.m");
       fout << "TEMP = zeros(" << q << "," << q << ");" << endl;
       fout << "X    = zeros(" << q << "," << q << ");" << endl;
       fout << setiosflags(ios::scientific | ios::uppercase);
       for (i=0; i<q; i++) {
 	for (j=0; j<q; j++) {
-	  fout << "TEMP(" << i+1 << "," << j+1 << ") = " << setw(22) <<
-	    setprecision(15) <<  TEMP[i+q*j] << ";" << endl;
-	  fout << "X(   " << i+1 << "," << j+1 << ") = " << setw(22) <<
-	    setprecision(15) <<     X[i+q*j] << ";" << endl;
+	  fout << "TEMP(" << i+1 << "," << j+1 << ") = " << std::setw(22) <<
+	    std::setprecision(15) <<  TEMP[i+q*j] << ";" << endl;
+	  fout << "X(   " << i+1 << "," << j+1 << ") = " << std::setw(22) <<
+	    std::setprecision(15) <<     X[i+q*j] << ";" << endl;
 	}
       }
       fout.close();
@@ -418,7 +418,7 @@ void subspace_iteration(int n, int rowbeg[], int colidx[],
   /*  
   if (ne > 0) {
     for (i=0; i<q; i++) cout << "lambda[" << i << "]= " << LAMBDA[i] << endl;
-    ofstream ffout;
+    std::ofstream ffout;
     ffout.open("coarse_vec.dat");
     for (i=0; i<n; i++) {
       for (j=0; j<ne; j++) ffout << X[i+j*n] << " ";

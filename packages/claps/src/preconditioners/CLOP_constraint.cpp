@@ -32,7 +32,7 @@
 #include <assert.h>
 
 CLOP_constraint::CLOP_constraint(const Epetra_CrsMatrix* A_, 
-				 ofstream  *fout_,
+				 std::ofstream  *fout_,
 				 const int print_flag_) 
   : A(A_), Comm(A->Comm()), print_flag(print_flag_)
 {

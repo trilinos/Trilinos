@@ -144,7 +144,7 @@ class CLOP_solver
   double *rhoa, *betaa, *pApa, *Etri, *Dtri, *econa, *lambda_local;
   double *lambda, *ortho_vec, *pAp_vec, *ortho_sum, *PAP, *PAP_sum, *PAP_store;
   double *VV, *HH, *RR, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
-  ofstream fout;
+  std::ofstream fout;
   CLOP_sub *Asub;
   CLAPS_sparse_lu *Kc_fac;
 };

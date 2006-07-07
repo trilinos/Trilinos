@@ -176,6 +176,6 @@ class CLIP_solver
   double *P_ortho, *AP_ortho, *orth1, *orth2, *PhirTPhir;
   double *VV, *RR, *HH, *zz, *cc, *ss, *norms, *gmres_vec, *gmres_sum;
   bool *owner_flag;
-  ofstream fout;
+  std::ofstream fout;
 };
 #endif // CLIP_SOLVER_HPP

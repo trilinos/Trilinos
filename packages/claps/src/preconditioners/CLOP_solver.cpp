@@ -336,7 +336,7 @@ void CLOP_solver::construct_Overlap()
   char fname[101]; int NumIndices, *Indices;
   sprintf(fname,"%s%d","test", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream ffout;
+  std::ofstream ffout;
   ffout.open(fname);
   ffout << ASt_red->NumMyRows() << endl;
   for (i=0; i<ASt_red->NumMyRows(); i++) ffout << ASt_red->GRID(i) << endl;
@@ -723,7 +723,7 @@ void CLOP_solver::construct_Overlap_Subs(Epetra_CrsGraph* & Overlap_Subs)
   char fname[101];
   sprintf(fname,"%s%d","test_g", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream ffout;
+  std::ofstream ffout;
   ffout.open(fname);
   int NumEntries, *Indices;
   ffout << Overlap_Graph.MaxNumIndices() << endl;
@@ -945,7 +945,7 @@ void CLOP_solver::assemble_Phi()
   char fname[101];
   sprintf(fname,"%s%d","test", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream ffout;
+  std::ofstream ffout;
   ffout.open(fname);
   int N, NumEntries, *Indices;
   double *Values;
@@ -1062,7 +1062,7 @@ void CLOP_solver::factor_coarse_stiff()
 	cout << i << " " << colidx_KC[j] << " " << KC[j] << endl;
       }
     }
-    ofstream ffout;
+    std::ofstream ffout;
     ffout.open("coarse_rcv.dat");
     ffout << ncdof << endl;
     ffout << nnz_KC << endl;
@@ -1152,7 +1152,7 @@ void CLOP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   double starttime, endtime;
   Comm.Barrier();
   if (MyPID == 0) starttime = MPI_Wtime();
-  if (print_flag >= 0) fout.open("CLOP_solver.data", ios::app);
+  if (print_flag >= 0) fout.open("CLOP_solver.data", std::ios::app);
   if (gmres_flag == 0) {
     pcg_solve(uStand, fStand, num_iter, pcg_status);
     solver_status = pcg_status;
@@ -1324,21 +1324,21 @@ void CLOP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
       fout << "condition # estimate      relative residual" 
 	   << "   iteration" << endl;
       if (pcg_iter == num_iter) calculate_condition(pcg_iter);
-      fout << setiosflags(ios::scientific | ios::uppercase);
+      fout << setiosflags(std::ios::scientific | std::ios::uppercase);
       for (i=0; i<num_iter; i++) {
 	double ee = 0;
 	if (pcg_iter == num_iter) ee = econa[i]; 
 	fout << " " 
-	     << setw(17) << setprecision(10) << ee 
+	     << std::setw(17) << std::setprecision(10) << ee 
 	     << "       " 
-	     << setw(17) << setprecision(10) << rcurra[i+1]/rorig
+	     << std::setw(17) << std::setprecision(10) << rcurra[i+1]/rorig
 	     << "        " 
 	     << i+1 << endl;
       }
     }
-    fout << resetiosflags(ios::scientific);
-    fout << resetiosflags(ios::uppercase);
-    fout << setprecision(6);
+    fout << resetiosflags(std::ios::scientific);
+    fout << resetiosflags(std::ios::uppercase);
+    fout << std::setprecision(6);
   }
 }
 
@@ -1471,19 +1471,19 @@ void CLOP_solver::gmres_solve(Epetra_Vector* uStand,
       if (iflag == 2) {
 	cout << "condition # estimate      relative residual" 
 	     << "   iteration" << endl;
-	cout << setiosflags(ios::scientific | ios::uppercase);
+	cout << setiosflags(std::ios::scientific | std::ios::uppercase);
 	for (i=0; i<num_iter; i++) {
 	  cout << " " 
-	       << setw(17) << setprecision(10) << 0
+	       << std::setw(17) << std::setprecision(10) << 0
 	       << "       " 
-	       << setw(17) << setprecision(10) << fabs(norms[i])
+	       << std::setw(17) << std::setprecision(10) << fabs(norms[i])
 	       << "        " 
 	       << i+1 << endl;
 	}
       }
-      cout << resetiosflags(ios::scientific);
-      cout << resetiosflags(ios::uppercase);
-      cout << setprecision(6);
+      cout << resetiosflags(std::ios::scientific);
+      cout << resetiosflags(std::ios::uppercase);
+      cout << std::setprecision(6);
     }
   }
 }
@@ -1834,7 +1834,7 @@ void CLOP_solver::calculate_multipliers(Epetra_Vector* uStand,
   char fname[101];
   sprintf(fname,"%s%d","test", MyPID);
   sprintf(fname, "%s.dat", fname);
-  ofstream ffout;
+  std::ofstream ffout;
   ffout.open(fname);
   int N;
   N = Exporter_lam->SourceMap().NumMyElements();
@@ -1933,18 +1933,18 @@ void CLOP_solver::spmat_datfile(const Epetra_CrsMatrix & A, char fname[],
 {
   int i, j, NumEntries, *Indices, grow, gcol;
   double *Values;
-  ofstream ffout;
+  std::ofstream ffout;
   ffout.open(fname);
   for (i=0; i<A.NumMyRows(); i++) { 
     A.ExtractMyRowView(i, NumEntries, Values, Indices);
     for (j=0; j<NumEntries; j++) {
       if (opt == 1)
-	ffout << i+1 << " " << Indices[j]+1 << setw(22) << setprecision(15)
+	ffout << i+1 << " " << Indices[j]+1 << std::setw(22) << std::setprecision(15)
 	     << Values[j] << endl;
       if (opt == 2) {
 	grow = A.GRID(i); gcol = A.GCID(Indices[j]);
-	ffout << grow+1 << " " << gcol+1 << setw(22) 
-	     << setprecision(15) << Values[j] << endl;
+	ffout << grow+1 << " " << gcol+1 << std::setw(22) 
+	     << std::setprecision(15) << Values[j] << endl;
       }
     }
   }

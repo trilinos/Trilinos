@@ -257,7 +257,7 @@ void CLIP_solver::process_constraints()
     char fname[101];
     sprintf(fname,"%s%d","test", MyPID);
     sprintf(fname, "%s.dat", fname);
-    ofstream ffout;
+    std::ofstream ffout;
     ffout.open(fname);
     ffout << ASub->NumMyRows() << endl;
     for (i=0; i<ASub->NumMyRows(); i++) ffout << ASub->GRID(i) << endl;
@@ -586,7 +586,7 @@ void CLIP_solver::determine_dof_sets()
   int *ival = new int[ndof_sub];
   int *icount = new int[ndof_set]; myzero(icount, ndof_set);
   for (i=0; i<ndof_sub; i++) {
-    double *lower = lower_bound(&values[0], &values[ndof_set], dval_orig[i]);
+    double *lower = std::lower_bound(&values[0], &values[ndof_set], dval_orig[i]);
     ival[i] = (int) (lower - &values[0]);
     icount[ival[i]]++;
     /*
@@ -1247,7 +1247,7 @@ void CLIP_solver::calculate_coarse()
       fout << "coarse problem dimension = " << ngather << endl;
     nnz = rowbeg[ngather];
     /*
-    ofstream ffout;
+    std::ofstream ffout;
     ffout.open("coarse_mat.dat");
     for (i=0; i<ngather; i++) 
       for (j=rowbeg[i]; j<rowbeg[i+1]; j++)
@@ -1611,7 +1611,7 @@ void CLIP_solver::solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
   max_added_cor = max_added_corner;
   Comm.Barrier();
   if (MyPID == 0) starttime = MPI_Wtime();
-  if (print_flag >= 0) fout.open("CLIP_solver.data", ios::app);
+  if (print_flag >= 0) fout.open("CLIP_solver.data", std::ios::app);
   if (krylov_method != 1) {
     pcg_solve(uStand, fStand, num_iter, pcg_status);
     solver_status = pcg_status;
@@ -1893,21 +1893,21 @@ void CLIP_solver::pcg_solve(Epetra_Vector* uStand, const Epetra_Vector* fStand,
 	fout << "condition # estimate      relative residual" 
 	     << "   iteration" << endl;
 	calculate_condition(cg_iter);
-	fout << setiosflags(ios::scientific | ios::uppercase);
+	fout << setiosflags(std::ios::scientific | std::ios::uppercase);
 	for (i=0; i<num_iter; i++) {
 	  double ee = 0;
 	  if (i >= (num_iter-cg_iter)) ee = econa[i-(num_iter-cg_iter)]; 
 	  fout << " " 
-	       << setw(17) << setprecision(10) << ee 
+	       << std::setw(17) << std::setprecision(10) << ee 
 	       << "       " 
-	       << setw(17) << setprecision(10) << rcurra[i+1]/rorig
+	       << std::setw(17) << std::setprecision(10) << rcurra[i+1]/rorig
 	       << "        " 
 	       << i+1 << endl;
 	}
       }
-      fout << resetiosflags(ios::scientific);
-      fout << resetiosflags(ios::uppercase);
-      fout << setprecision(6);
+      fout << resetiosflags(std::ios::scientific);
+      fout << resetiosflags(std::ios::uppercase);
+      fout << std::setprecision(6);
     }
   }
 }
@@ -2108,7 +2108,7 @@ double CLIP_solver::stat_cond()
     char fname[101];
     sprintf(fname,"%s%d","test_crd_", MyPID);
     sprintf(fname, "%s.dat", fname);
-    ofstream ffout;
+    std::ofstream ffout;
     ffout.open(fname);
     ffout << ndof_sub << endl;
     ffout << nI << endl;
@@ -2579,18 +2579,18 @@ void CLIP_solver::spmat_datfile(const Epetra_CrsMatrix & A, char fname[],
 {
   int i, j, NumEntries, *Indices, grow, gcol;
   double *Values;
-  ofstream ffout;
+  std::ofstream ffout;
   ffout.open(fname);
   for (i=0; i<A.NumMyRows(); i++) { 
     A.ExtractMyRowView(i, NumEntries, Values, Indices);
     for (j=0; j<NumEntries; j++) {
       if (opt == 1)
-	ffout << i+1 << " " << Indices[j]+1 << setw(22) << setprecision(15)
+	ffout << i+1 << " " << Indices[j]+1 << std::setw(22) << std::setprecision(15)
 	     << Values[j] << endl;
       if (opt == 2) {
 	grow = A.GRID(i); gcol = A.GCID(Indices[j]);
-	ffout << grow+1 << " " << gcol+1 << setw(22) 
-	     << setprecision(15) << Values[j] << endl;
+	ffout << grow+1 << " " << gcol+1 << std::setw(22) 
+	     << std::setprecision(15) << Values[j] << endl;
       }
     }
   }
