@@ -55,7 +55,10 @@ namespace Teuchos {
  * memory if <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt> is defined which it is if
  * <tt>--enable-teuchos-abc</tt> is given to the <tt>configure</tt> script.
  * In order to be able to check access, every <tt>%ArrayRefCountPtr</tt> must
- * be constructed given a range of .
+ * be constructed given a range.  When <tt>HAVE_TEUCHOS_ARRAY_BOUNDSCHECK</tt>
+ * is defined, this class simply does not give up a raw pointer or raw
+ * reference to any internally referenced object if that object does not fall
+ * with the range of valid data.
  *
  * ToDo: Finish documentation!
  */
@@ -183,11 +186,9 @@ public:
 
   /** \brief Get the raw C++ pointer to the underlying object.
    *
-   * If past the end of the valid range, then this function returns NULL.
-	 *
 	 * <b>Preconditions:</b><ul>
-   * <li><tt>this->lowerOffset() <= 0</tt>
-   * <li><tt>this->upperOffset() >= 0</tt>
+   * <li>[<tt>*this != null</tt>] <tt>this->lowerOffset() <= 0</tt>
+   * <li>[<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
 	 * </ul>
 	 */
 	T* get() const;
@@ -230,6 +231,30 @@ public:
    */
 	ArrayRefCountPtr<T> operator++(int);
 
+	/** \brief Prefix deincrement of pointer (i.e. --ptr).
+   *
+   * Does nothing if <tt>this->get() == NULL</tt>.
+	 *
+	 * <b>Postconditions:</b><ul>
+   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->get()</tt> is deincremented by <tt>1</tt>
+   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->lowerOffset()</tt> is incremented by <tt>1</tt>
+   * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
+	 * </ul>
+   */
+	ArrayRefCountPtr<T>& operator--();
+
+	/** \brief Postfix deincrement of pointer (i.e. ptr--).
+   *
+   * Does nothing if <tt>this->get() == NULL</tt>.
+	 *
+	 * <b>Postconditions:</b><ul>
+   * <li><tt>this->get()</tt> is dincremented by <tt>1</tt>
+   * <li><tt>this->lowerOffset()</tt> is incremented by <tt>1</tt>
+   * <li><tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
+	 * </ul>
+   */
+	ArrayRefCountPtr<T> operator--(int);
+
 	/** \brief Pointer integer increment (i.e. ptr+=offset).
    *
    * Does nothing if <tt>this->get() == NULL</tt>.
@@ -263,6 +288,10 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>return->lowerOffset() == this->lowerOffset() - offset</tt>
    * <li>[<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() - offset</tt>
 	 * </ul>
+   *
+   * Note that since implicit conversion of <tt>ArrayRefCountPtr<T></tt>
+   * objects is not allowed that it does not help at all to make this function
+   * into a non-member function.
    */
 	ArrayRefCountPtr<T> operator+(Ordinal offset) const;
 
@@ -275,6 +304,10 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>return->lowerOffset() == this->lowerOffset() + offset</tt>
    * <li>[<tt>this->get()!=NULL</tt>] <tt>return->upperOffset() == this->upperOffset() + offset</tt>
 	 * </ul>
+   *
+   * Note that since implicit conversion of <tt>ArrayRefCountPtr<T></tt>
+   * objects is not allowed that it does not help at all to make this function
+   * into a non-member function.
    */
 	ArrayRefCountPtr<T> operator-(Ordinal offset) const;
 
@@ -285,7 +318,8 @@ public:
 
 	/** \brief Return object for only const access to data.
    *
-   *
+   * This function should compile only sucessfully if the type <tt>T</tt> is
+   * not already declared <tt>const</tt>!
    */
 	ArrayRefCountPtr<const T> getConst() const;
 
@@ -294,16 +328,16 @@ public:
 	 * <b>Preconditions:</b><ul>
 	 * <li><tt>this->get() != NULL</tt>
    * <li><tt>this->lowerOffset() <= lowerOffset</tt>
-   * <li><tt>upperOffset <= this->upperOffset()</tt>
+   * <li><tt>lowerOffset + size - 1 <= this->upperOffset()</tt>
 	 * </ul>
 	 *
 	 * <b>Postconditions:</b><ul>
    * <li><tt>return->get() == this->get() + lowerOffset</tt>
    * <li><tt>return->lowerOffset() == 0</tt>
-   * <li><tt>return->upperOffset() == upperOffset - lowerOffset</tt>
+   * <li><tt>return->upperOffset() == size-1</tt>
 	 * </ul>
    */
-	ArrayRefCountPtr<T> subview( Ordinal lowerOffset, Ordinal upperOffset ) const;
+	ArrayRefCountPtr<T> subview( Ordinal lowerOffset, Ordinal size ) const;
 
   //@}
 
@@ -334,7 +368,7 @@ public:
   Ordinal upperOffset() const;
 
   /** \brief The total number of items in the managed array
-   * (i.e. <tt>upperOffset()-lowerOffset()-1</tt>).
+   * (i.e. <tt>upperOffset()-lowerOffset()+1</tt>).
    */
   Ordinal dim() const;
 
@@ -445,7 +479,7 @@ public:
    * this->upperOffset() < upperOffset</tt>, otherwise returns reference to
    * <tt>*this</tt>
    */
-	const ArrayRefCountPtr<T>& assert_in_range( Ordinal lowerOffset, Ordinal upperOffset ) const;
+	const ArrayRefCountPtr<T>& assert_in_range( Ordinal lowerOffset, Ordinal size ) const;
 
   //@}
 
@@ -477,6 +511,7 @@ public:
 	// not allow me to declare template functions as friends.
 	ArrayRefCountPtr( T* p, Ordinal lowerOffset, Ordinal upperOffset, node_t* node);
 	T*&           access_ptr();
+	T*            access_ptr() const; // No preconditions
 	node_t*&      access_node();
 	node_t*       access_node() const;
 #endif
@@ -501,7 +536,7 @@ public:
 template<class T>
 ArrayRefCountPtr<T> arcp(
   T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
-  ,typename ArrayRefCountPtr<T>::Ordinal upperOffset
+  ,typename ArrayRefCountPtr<T>::Ordinal size
   , bool owns_mem = true
   );
 
@@ -513,16 +548,47 @@ ArrayRefCountPtr<T> arcp(
 template<class T, class Dealloc_T>
 ArrayRefCountPtr<T> arcp(
   T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
-  ,typename ArrayRefCountPtr<T>::Ordinal upperOffset
+  ,typename ArrayRefCountPtr<T>::Ordinal size
   , Dealloc_T dealloc, bool owns_mem
   );
  
 /** \brief Allocate a new array just given a dimension.
  *
+ *
+ * <b>Warning!</b> The memory is allocated using <tt>new T[dim]</tt> and is
+ * *not* initialized (unless there is a default constructor for a user-defined
+ * type).
+ *
  * \relates ArrayRefCountPtr
  */
 template<class T>
 ArrayRefCountPtr<T> arcp( typename ArrayRefCountPtr<T>::Ordinal dim );
+
+/** \brief Wrap an <tt>std::vector<T></tt> object as an
+ * <tt>ArrayRefCountPtr<T></tt> object.
+ */
+template<class T>
+ArrayRefCountPtr<T> arcp( const RefCountPtr<std::vector<T> > &v );
+
+/** \brief Get an <tt>std::vector<T></tt> object out of an
+ * <tt>ArrayRefCountPtr<T></tt> object that was created using the
+ * <tt>arcp()</tt> above to wrap the vector in the first place..
+ */
+template<class T>
+RefCountPtr<std::vector<T> > get_std_vector( const ArrayRefCountPtr<T> &ptr );
+
+/** \brief Wrap a <tt>const std::vector<T></tt> object as an
+ * <tt>ArrayRefCountPtr<const T></tt> object.
+ */
+template<class T>
+ArrayRefCountPtr<const T> arcp( const RefCountPtr<const std::vector<T> > &v );
+
+/** \brief Get a <tt>const std::vector<T></tt> object out of an
+ * <tt>ArrayRefCountPtr<const T></tt> object that was created using the
+ * <tt>arcp()</tt> above to wrap the vector in the first place.
+ */
+template<class T>
+RefCountPtr<const std::vector<T> > get_std_vector( const ArrayRefCountPtr<const T> &ptr );
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
@@ -545,16 +611,14 @@ bool operator==( const ArrayRefCountPtr<T> &p, ENull );
 template<class T>
 bool operator!=( const ArrayRefCountPtr<T> &p, ENull );
 
-/** \brief Return true if two <tt>ArrayRefCountPtr</tt> objects point to the same
- * referenced-counted object and have the same node.
+/** \brief .
  *
  * \relates ArrayRefCountPtr
  */
 template<class T1, class T2>
 bool operator==( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 );
 
-/** \brief Return true if two <tt>ArrayRefCountPtr</tt> objects do not point to the
- * same referenced-counted object and have the same node.
+/** \brief .
  *
  * \relates ArrayRefCountPtr
  */

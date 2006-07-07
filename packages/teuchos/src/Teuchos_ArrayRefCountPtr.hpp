@@ -111,26 +111,34 @@ ArrayRefCountPtr<T>& ArrayRefCountPtr<T>::operator=(const ArrayRefCountPtr<T>& r
 
 template<class T>
 inline
-T* ArrayRefCountPtr<T>::operator->() const {
+T* ArrayRefCountPtr<T>::operator->() const
+{
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assert_in_range(0,0);
+  assert_in_range(0,1);
 #endif
 	return ptr_;
 }
 
 template<class T>
 inline
-T& ArrayRefCountPtr<T>::operator*() const {
+T& ArrayRefCountPtr<T>::operator*() const
+{
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assert_in_range(0,0);
+  assert_in_range(0,1);
 #endif
 	return *ptr_;
 }
 
 template<class T>
 inline
-T* ArrayRefCountPtr<T>::get() const {
-	return ptr_;
+T* ArrayRefCountPtr<T>::get() const
+{
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+  if(ptr_) {
+    assert_in_range(0,1);
+  }
+#endif
+  return ptr_;
 }
 
 template<class T>
@@ -138,7 +146,7 @@ REFCOUNTPTR_INLINE
 T& ArrayRefCountPtr<T>::operator[](Ordinal offset) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assert_in_range(offset,offset);
+  assert_in_range(offset,1);
 #endif
   return ptr_[offset];
 }
@@ -149,9 +157,6 @@ template<class T>
 REFCOUNTPTR_INLINE
 ArrayRefCountPtr<T>& ArrayRefCountPtr<T>::operator++()
 {
-#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-	assert_not_null();
-#endif
   if(ptr_) {
     ++ptr_;
     --lowerOffset_;
@@ -164,9 +169,6 @@ template<class T>
 REFCOUNTPTR_INLINE
 ArrayRefCountPtr<T> ArrayRefCountPtr<T>::operator++(int)
 {
-#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-	assert_not_null();
-#endif
   ArrayRefCountPtr<T> r_ptr = *this;
   ++(*this);
   return r_ptr;
@@ -174,11 +176,29 @@ ArrayRefCountPtr<T> ArrayRefCountPtr<T>::operator++(int)
 
 template<class T>
 REFCOUNTPTR_INLINE
+ArrayRefCountPtr<T>& ArrayRefCountPtr<T>::operator--()
+{
+  if(ptr_) {
+    --ptr_;
+    ++lowerOffset_;
+    ++upperOffset_;
+  }
+  return *this;
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
+ArrayRefCountPtr<T> ArrayRefCountPtr<T>::operator--(int)
+{
+  ArrayRefCountPtr<T> r_ptr = *this;
+  --(*this);
+  return r_ptr;
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
 ArrayRefCountPtr<T>& ArrayRefCountPtr<T>::operator+=(Ordinal offset)
 {
-#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-	assert_not_null();
-#endif
   if(ptr_) {
     ptr_ += offset;
     lowerOffset_ -= offset;
@@ -191,9 +211,6 @@ template<class T>
 REFCOUNTPTR_INLINE
 ArrayRefCountPtr<T>& ArrayRefCountPtr<T>::operator-=(Ordinal offset)
 {
-#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-	assert_not_null();
-#endif
   if(ptr_) {
     ptr_ -= offset;
     lowerOffset_ += offset;
@@ -233,15 +250,15 @@ ArrayRefCountPtr<const T> ArrayRefCountPtr<T>::getConst() const
 template<class T>
 REFCOUNTPTR_INLINE
 ArrayRefCountPtr<T>
-ArrayRefCountPtr<T>::subview( Ordinal lowerOffset, Ordinal upperOffset ) const
+ArrayRefCountPtr<T>::subview( Ordinal lowerOffset, Ordinal size ) const
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
-  assert_in_range(lowerOffset,upperOffset);
+  assert_in_range(lowerOffset,size);
 #endif
   ArrayRefCountPtr<T> ptr = *this;
   ptr.ptr_ = ptr.ptr_ + lowerOffset;
   ptr.lowerOffset_ = 0;
-  ptr.upperOffset_ = upperOffset - lowerOffset;
+  ptr.upperOffset_ = size-1;
   return ptr;
 }
 
@@ -258,7 +275,8 @@ int ArrayRefCountPtr<T>::count() const {
 template<class T>
 REFCOUNTPTR_INLINE
 template <class T2>
-bool ArrayRefCountPtr<T>::shares_resource(const ArrayRefCountPtr<T2>& r_ptr) const {
+bool ArrayRefCountPtr<T>::shares_resource(const ArrayRefCountPtr<T2>& r_ptr) const
+{
 	return node_ == r_ptr.access_node();
   // Note: above, r_ptr is *not* the same class type as *this so we can not
   // access its node_ member directly!  This is an interesting detail to the
@@ -356,13 +374,13 @@ ArrayRefCountPtr<T>::assert_not_null() const
 template<class T>
 inline
 const ArrayRefCountPtr<T>&
-ArrayRefCountPtr<T>::assert_in_range( Ordinal lowerOffset, Ordinal upperOffset ) const
+ArrayRefCountPtr<T>::assert_in_range( Ordinal lowerOffset, Ordinal size ) const
 {
   assert_not_null();
   TEST_FOR_EXCEPTION(
-    !( lowerOffset_ <= lowerOffset && upperOffset <= upperOffset_ ), std::logic_error
+    !( lowerOffset_ <= lowerOffset && lowerOffset+size-1 <= upperOffset_ ), std::logic_error
     ,"Teuchos::ArrayRefCountPtr<"<<typeid(T).name()<<">::assert_in_range:"
-    " Error, [lowerOffset,upperOffset] = ["<<lowerOffset<<","<<upperOffset<<"] does not lie in the"
+    " Error, [lowerOffset,lowerOffset+size-1] = ["<<lowerOffset<<","<<(lowerOffset+size-1)<<"] does not lie in the"
     " range ["<<lowerOffset_<<","<<upperOffset_<<"]!"
     );
 	return *this;
@@ -435,6 +453,11 @@ T*& ArrayRefCountPtr<T>::access_ptr()
 
 template<class T>
 inline
+T* ArrayRefCountPtr<T>::access_ptr() const
+{	return ptr_; }
+
+template<class T>
+inline
 typename ArrayRefCountPtr<T>::node_t*& ArrayRefCountPtr<T>::access_node()
 {	return node_; }
 
@@ -452,11 +475,11 @@ inline
 Teuchos::ArrayRefCountPtr<T>
 Teuchos::arcp(
 T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
-  ,typename ArrayRefCountPtr<T>::Ordinal upperOffset
+  ,typename ArrayRefCountPtr<T>::Ordinal size
   ,bool owns_mem
   )
 {
-	return ArrayRefCountPtr<T>(p,lowerOffset,upperOffset,owns_mem);
+	return ArrayRefCountPtr<T>(p,lowerOffset,lowerOffset+size-1,owns_mem);
 }
 
 template<class T, class Dealloc_T>
@@ -464,11 +487,11 @@ inline
 Teuchos::ArrayRefCountPtr<T>
 Teuchos::arcp(
 T* p, typename ArrayRefCountPtr<T>::Ordinal lowerOffset
-  ,typename ArrayRefCountPtr<T>::Ordinal upperOffset
+  ,typename ArrayRefCountPtr<T>::Ordinal size
   ,Dealloc_T dealloc, bool owns_mem
   )
 {
-	return ArrayRefCountPtr<T>(p,lowerOffset,upperOffset,dealloc,owns_mem);
+	return ArrayRefCountPtr<T>(p,lowerOffset,lowerOffset+size-1,dealloc,owns_mem);
 }
 
 template<class T>
@@ -481,69 +504,101 @@ Teuchos::arcp( typename ArrayRefCountPtr<T>::Ordinal dim )
 
 template<class T>
 REFCOUNTPTR_INLINE
+Teuchos::ArrayRefCountPtr<T>
+Teuchos::arcp( const RefCountPtr<std::vector<T> > &v )
+{
+  Teuchos::ArrayRefCountPtr<T> ptr = arcp(&(*v)[0],0,v->size(),false);
+  set_extra_data( v, "std::vector", &ptr );
+  return ptr;
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
+Teuchos::RefCountPtr<std::vector<T> >
+Teuchos::get_std_vector( const ArrayRefCountPtr<T> &ptr )
+{
+  return get_extra_data<RefCountPtr<std::vector<T> > >(ptr,"std::vector");
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
+Teuchos::ArrayRefCountPtr<const T>
+Teuchos::arcp( const RefCountPtr<const std::vector<T> > &v )
+{
+  Teuchos::ArrayRefCountPtr<const T> ptr = arcp(&(*v)[0],0,v->size(),false);
+  set_extra_data( v, "std::vector", &ptr );
+  return ptr;
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
+Teuchos::RefCountPtr<const std::vector<T> >
+Teuchos::get_std_vector( const ArrayRefCountPtr<const T> &ptr )
+{
+  return get_extra_data<RefCountPtr<const std::vector<T> > >(ptr,"std::vector");
+}
+
+template<class T>
+REFCOUNTPTR_INLINE
 bool Teuchos::is_null( const ArrayRefCountPtr<T> &p )
 {
-  return p.get() == NULL;
+  return p.access_ptr() == NULL;
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator==( const ArrayRefCountPtr<T> &p, ENull )
 {
-  return p.get() == NULL;
+  return p.access_ptr() == NULL;
 }
 
 template<class T>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator!=( const ArrayRefCountPtr<T> &p, ENull )
 {
-  return p.get() != NULL;
+  return p.access_ptr() != NULL;
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator==( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  return p1.access_node() == p2.access_node();
+  return p1.access_ptr() == p2.access_ptr();
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator!=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  return p1.access_node() != p2.access_node();
+  return p1.access_ptr() != p2.access_ptr();
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator<( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  TEST_FOR_EXCEPT(true);
-  return false;
+  return p1.access_ptr() < p2.access_ptr();
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator<=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  TEST_FOR_EXCEPT(true);
-  return false;
+  return p1.access_ptr() <= p2.access_ptr();
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator>( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  TEST_FOR_EXCEPT(true);
-  return false;
+  return p1.access_ptr() > p2.access_ptr();
 }
 
 template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator>=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
-  TEST_FOR_EXCEPT(true);
-  return false;
+  return p1.access_ptr() >= p2.access_ptr();
 }
 
 template<class T2, class T1>
@@ -661,7 +716,7 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayRefCountPtr<T>&
 {
   out
     << TypeNameTraits<ArrayRefCountPtr<T> >::name() << "{"
-    << "ptr="<<static_cast<const void*>(p.get())
+    << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
     <<",lowerOffset="<<p.lowerOffset()
     <<",upperOffset="<<p.upperOffset()
     <<",dim="<<p.dim()
