@@ -1,15 +1,34 @@
 #! /usr/bin/env python
+
+from   optparse import *
 import sys
 
-#try:
-import setpath
-import Epetra
-import Galeri
-import AztecOO
-import ML
-#except ImportError:
-#  from PyTrilinos import Epetra, Galeri, AztecOO, ML
-#  print "Using installed versions of Epetra, Galeri, AztecOO, ML"
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
+  import setpath
+  import Epetra
+  import AztecOO
+  import Triutils
+  import ML
+else:
+  try:
+    import setpath
+    import Epetra
+    import Galeri
+    import AztecOO
+    import ML
+  except ImportError:
+    from PyTrilinos import Epetra
+    from PyTrilinos import Galeri
+    from PyTrilinos import AztecOO
+    from PyTrilinos import ML
+    print >>sys.stderr, "Using installed versions of Epetra, Galeri, AztecOO, ML"
 
 def main(comm):
 
