@@ -1,11 +1,34 @@
 #! /usr/bin/env python
-try:
+
+from   optparse import *
+import sys
+
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
     import setpath
-except ImportError:
-    from PyTrilinos import Epetra, AztecOO, Triutils, ML
-    print "Using installed versions of ML, Triutils, AztecOO, Epetra"
+    import Epetra
+    import AztecOO
+    import Triutils
+    import ML
 else:
-    import Epetra, AztecOO, Triutils, ML
+    try:
+        import setpath
+        import Epetra
+        import AztecOO
+        import Triutils
+        import ML
+    except ImportError:
+        from PyTrilinos import Epetra
+        from PyTrilinos import AztecOO
+        from PyTrilinos import Triutils
+        from PyTrilinos import ML
+        print >>sys.stderr, "Using installed versions of ML, Triutils, AztecOO, Epetra"
 
 # builds the linear system matrix and sets up starting solution and
 # right-hand side
