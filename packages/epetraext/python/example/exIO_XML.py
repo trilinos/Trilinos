@@ -66,7 +66,6 @@ def main():
     map = Epetra.Map(n, 0, comm)
     x   = Epetra.Vector(map)
     x.Random()
-    print "x =", x
 
     matrix = Epetra.CrsMatrix(Epetra.Copy, map, 0)
 
@@ -75,7 +74,6 @@ def main():
         matrix[grid,grid] = grid
 
     matrix.FillComplete()
-    print "matrix =\n", matrix
 
     # -------------------------------- #
     # Part I: Write elements to a file #
@@ -84,9 +82,15 @@ def main():
     XMLWriter = EpetraExt.XMLWriter(comm, "data.xml")
 
     XMLWriter.Create("test xml file")
+    if iAmRoot: print "Writing map ...",
     XMLWriter.Write("map"   , map   )
+    if iAmRoot: print "ok"
+    if iAmRoot: print "Writing vector ...",
     XMLWriter.Write("x"     , x     )
+    if iAmRoot: print "ok"
+    if iAmRoot: print "Writing matrix ...",
     XMLWriter.Write("matrix", matrix)
+    if iAmRoot: print "ok"
     XMLWriter.Close()
 
     # --------------------------------- #
@@ -95,24 +99,31 @@ def main():
 
     XMLReader = EpetraExt.XMLReader(comm, "data.xml")
 
+    if iAmRoot: print "Reading map ...",
     map2 = XMLReader.ReadMap("map")
-    if map2 == None:
-        print "FAIL:  map2 == None on processor", myPID
+    if map2 is None:
+        print "FAIL:  map2 is None on processor", myPID
         return 1
+    if iAmRoot: print "ok"
 
+    if iAmRoot: print "Reading vector ...",
     x2 = XMLReader.ReadMultiVector("x")
-    if x2 == None:
-        print "FAIL:  x2 == None on processor", myPID
+    if x2 is None:
+        print "FAIL:  x2 is None on processor", myPID
         return 1
+    if iAmRoot: print "ok"
 
+    if iAmRoot: print "Reading matrix ...",
     matrix2 = XMLReader.ReadCrsMatrix("matrix")
-    if matrix2 == None:
-        print "FAIL: matrix2 == None on processor", myPID
+    if matrix2 is None:
+        print "FAIL: matrix2 is None on processor", myPID
         return 1
+    if iAmRoot: print "ok"
 
     x2.Update(1.0, x, -1.0)
     norm = x2.Norm2()
 
+    if iAmRoot: print "Checking tolerance ...",
     if abs(norm) < tolerance:
         if iAmRoot: print "ok"
     else:
