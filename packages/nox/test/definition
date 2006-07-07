@@ -45,6 +45,7 @@
 # NOX Python tests
 (FRAMEWORK,INSTALL,NOXPyTests) {
     DIRS = ../python/test;
+    ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
@@ -52,6 +53,7 @@
 # NOX Python examples
 (FRAMEWORK,NOXPyExamples) {
     DIRS = ../python/example-epetra;
+    ARGS = --testharness;
     COMM = SERIAL, MPI(1-4);
 }
 
