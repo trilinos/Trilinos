@@ -594,7 +594,7 @@ std::ostream& Teuchos::operator<<( std::ostream& out, const RefCountPtr<T>& p )
 {
   out
     << TypeNameTraits<RefCountPtr<T> >::name() << "{"
-    << "ptr="<<static_cast<void*>(p.get())
+    << "ptr="<<(const void*)(p.get()) // I can't find any alternative to this C cast :-(
     <<",node="<<p.access_node()
     <<",count="<<p.count()
     <<"}";
