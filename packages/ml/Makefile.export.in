@@ -100,7 +100,7 @@ NOX_BUILD_DIRECTORY = $(ML_BUILD_DIRECTORY)/../nox
 @ML_USING_ANASAZI_TRUE@ANASAZI_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../anasazi/src -I$(ANASAZI_BUILD_DIRECTORY)/src
 @ML_USING_GALERI_TRUE@GALERI_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../galeri/src -I$(GALERI_BUILD_DIRECTORY)/src -I$(ML_SOURCE_DIRECTORY)/../galeri/src/Maps -I$(ML_SOURCE_DIRECTORY)/../galeri/src/CrsMatrices
 @ML_USING_EPETRA_TRUE@EPETRA_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetra/src -I$(EPETRA_BUILD_DIRECTORY)/src
-@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetraext/src -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/coloring -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/transform  -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/inout   -I$(EPETRAEXT_BUILD_DIRECTORY)/src
+@ML_USING_EPETRAEXT_TRUE@EPETRAEXT_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../epetraext/src -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/coloring -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/transform  -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/inout  -I$(ML_SOURCE_DIRECTORY)/../epetraext/src/model_evaluator  -I$(EPETRAEXT_BUILD_DIRECTORY)/src
 @ML_USING_NOX_TRUE@NOX_INCLUDES = -I$(ML_SOURCE_DIRECTORY)/../nox/src -I$(ML_SOURCE_DIRECTORY)/../nox/src-epetra -I$(NOX_BUILD_DIRECTORY)/src
 
 ##########################################################################

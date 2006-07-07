@@ -928,29 +928,29 @@ Optional Features:
                           for --enable-ml_metis.
   --enable-ifpack         Enable IFPACK support. Ifpack, a Trilinos package,
                           can provide incomplete factorization smoothers to
-                          ML. Ifpack requires --enable_epetra. See notes for
+                          ML. Ifpack requires --enable-epetra. See notes for
                           --enable-ml_metis. Can be overridden with
                           --disable-ml-ifpack.
   --enable-ml-ifpack      Enable IFPACK support. Ifpack, a Trilinos package,
                           can provide incomplete factorization smoothers to
-                          ML. Ifpack requires --enable_epetra. See notes for
+                          ML. Ifpack requires --enable-epetra. See notes for
                           --enable-ml_metis.
   --enable-teuchos        Enable TEUCHOS support. Teuchos, a Trilinos package,
                           is required by the class Epetra_ML_Preconditioner.
-                          Teuchos requires --enable_epetra. See notes for
+                          Teuchos requires --enable-epetra. See notes for
                           --enable-ml_metis. Can be overridden with
                           --disable-ml-teuchos.
   --enable-ml-teuchos     Enable TEUCHOS support. Teuchos, a Trilinos package,
                           is required by the class Epetra_ML_Preconditioner.
-                          Teuchos requires --enable_epetra. See notes for
+                          Teuchos requires --enable-epetra. See notes for
                           --enable-ml_metis.
   --enable-anasazi        Enable ANASAZI support. Anasazi, a Trilinos package,
                           can be used for eigenvalue estimates. Anasazi
-                          requires --enable_epetra and --enable-teuchos. Can
+                          requires --enable-epetra and --enable-teuchos. Can
                           be overridden with --disable-ml-anasazi.
   --enable-ml-anasazi     Enable ANASAZI support. Anasazi, a Trilinos package,
                           can be used for eigenvalue estimates. Anasazi
-                          requires --enable_epetra and --enable-teuchos.
+                          requires --enable-epetra and --enable-teuchos.
   --enable-aztecoo        Enable AztecOO support. AztecOO, a Trilinos package,
                           can be used in adaptive preconditioning. Requires
                           --enable-epetra --enable-teuchos. See notes for
@@ -961,10 +961,10 @@ Optional Features:
                           --enable-epetra --enable-teuchos. See notes for
                           --enable-ml_metis.
   --enable-epetraext      Enable EpetraExt support. EpetraExt requires
-                          --enable_epetra. See notes for --enable-ml_metis.
+                          --enable-epetra. See notes for --enable-ml_metis.
                           Can be overridden with --disable-ml-epetraext.
   --enable-ml-epetraext   Enable EpetraExt support. EpetraExt requires
-                          --enable_epetra. See notes for --enable-ml_metis.
+                          --enable-epetra. See notes for --enable-ml_metis.
   --enable-galeri         Enable Galeri support. Galeri, a Trilinos package,
                           is used in some ML examples to construct the linear
                           system. Can be overridden with --disable-ml-galeri.
