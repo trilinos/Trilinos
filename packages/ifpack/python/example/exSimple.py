@@ -1,22 +1,37 @@
 #! /usr/bin/env python
+
+from   optparse import *
 import sys
 
-#try:
-import setpath
-import Epetra
-import Galeri
-import AztecOO
-import IFPACK
-#except:
-#  try: 
-#    # Loading Epetra should ensure MPI_Init() and MPI_Finalize()
-#    from PyTrilinos import Epetra
-#    from PyTrilinos import Galeri, AztecOO, IFPACK
-#    print "Using system-installed Epetra, Galeri, AztecOO, IFPACK"
-#  except:
-#    print "You need the Epetra, AztecOO, Galeri and IFPACK"
-#    print "modules to run this examples."
-#    sys.exit(0)
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
+  import setpath
+  import Epetra
+  import Triutils
+  import Galeri
+  import AztecOO
+  import IFPACK
+else:
+  try:
+    import setpath
+    import Epetra
+    import Triutils
+    import Galeri
+    import AztecOO
+    import IFPACK
+  except:
+    from PyTrilinos import Epetra
+    from PyTrilinos import Triutils
+    from PyTrilinos import Galeri
+    from PyTrilinos import AztecOO
+    from PyTrilinos import IFPACK
+    print >>sys.stderr, "Using system-installed Epetra, Galeri, AztecOO, IFPACK"
 
 comm    = Epetra.PyComm()
 iAmRoot = comm.MyPID() == 0
@@ -26,14 +41,12 @@ def main():
   # read the matrix from file in H/B format. The filename is specified by the
   # first argument in the compile line. If no filename is specified, then the
   # code build a matrix using matrix gallery.
-  args = sys.argv[1:]
   if len(args) == 0:
     nx = 30; ny = 30
-    GaleriList = {
-      "n": nx * ny,
-      "nx": nx,
-      "ny": ny
-    }
+    GaleriList = {"n"  : nx * ny,
+                  "nx" : nx,
+                  "ny" : ny
+                  }
     Map = Galeri.CreateMap("Linear", comm, GaleriList)
     Matrix = Galeri.CreateCrsMatrix("Recirc2D", Map, GaleriList)
     Exact = Epetra.Vector(Map) 
@@ -43,11 +56,7 @@ def main():
     LHS.PutScalar(0.0)   # fix starting solution
     Matrix.Multiply(False, Exact, RHS) # fix rhs corresponding to Exact
   else:
-    try:
-      Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], comm)
-    except:
-      print "Specified matrix cannot be found"
-      exit(0)
+    Map, Matrix, LHS, RHS, Exact = Triutils.ReadHB(args[0], comm)
 
   # Creates the IFPACK preconditioner, in this case an incomplete
   # Cholesky factorization, with fill-in of 5
