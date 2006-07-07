@@ -29,36 +29,50 @@
 # @header
 
 """
-Usage is: ./exSolvers.py <solver-type>
+Usage is: ./exSolvers.py <options> <solver-type>
+    where <options> can be
+        -t, --testharness    Force testing of local build modules
     where <solver-type> can be:
-        - Amesos_Lapack (DEFAULT)
-        - Amesos_Klu
-        - Amesos_Umfpack
-        - Amesos_Superlu
-        - Amesos_Superludist
-        - Amesos_Dscpack
-        - Amesos_Mumps
+        Amesos_Lapack (DEFAULT)
+        Amesos_Klu
+        Amesos_Umfpack
+        Amesos_Superlu
+        Amesos_Superludist
+        Amesos_Dscpack
+        Amesos_Mumps
 """
 
-# System import
+from   optparse import *
 import sys
 
-# PyTrilinos imports
-#try:
-import setpath
-#except ImportError:
-#  from PyTrilinos import Epetra, Amesos
-#  print "Using system-installed Epetra, Amesos"
-#else:
-import Epetra
-import Amesos
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
+    import setpath
+    import Epetra
+    import Amesos
+else:
+    try:
+        import setpath
+        import Epetra
+        import Amesos
+    except ImportError:
+        from PyTrilinos import Epetra, Amesos
+        print >>sys.stderr, "Using system-installed Epetra, Amesos"
+
+######################################################################
 
 def main():
     Comm = Epetra.PyComm()
     numProc = Comm.NumProc()
     iAmRoot = Comm.MyPID() == 0
 
-    args = sys.argv[1:]
+    #args = sys.argv[1:]
     if len(args) == 0:
         Type = "Amesos_Lapack"
     else:
