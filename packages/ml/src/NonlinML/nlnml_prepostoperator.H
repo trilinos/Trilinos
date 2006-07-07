@@ -66,7 +66,6 @@
 
 // NOX headers
 #include "NOX_Abstract_PrePostOperator.H"	
-#include "NOX_Parameter_Arbitrary.H"	
 #include "NOX_Epetra_Group.H"	
 #include "NOX_Solver_Generic.H"	
 
@@ -83,8 +82,7 @@ namespace NLNML
 {
 
 
-class NLNML_PrePostOperator : public virtual NOX::Abstract::PrePostOperator,
-                              public virtual NOX::Parameter::Arbitrary
+class NLNML_PrePostOperator : public virtual NOX::Abstract::PrePostOperator
 {
 public:
 
@@ -92,21 +90,17 @@ public:
               RefCountPtr<NLNML::NLNML_CoarseLevelNoxInterface> coarseinterface,
               RefCountPtr<NLNML::NLNML_FineLevelNoxInterface> finterface);
 
+  NLNML_PrePostOperator(NLNML_PrePostOperator& old);
   NLNML_PrePostOperator(const NLNML::NLNML_PrePostOperator& old);
 
   virtual ~NLNML_PrePostOperator();
   
   void runPreSolve(const NOX::Solver::Generic& solver);
   
-  Arbitrary* clone() const
-  { NLNML::NLNML_PrePostOperator* A = new NLNML::NLNML_PrePostOperator(*this);
-    return A;}
-  
   const string& getType() const { return type_; }
 
 private:
 
-  NLNML_PrePostOperator(NLNML_PrePostOperator& old);
   NLNML_PrePostOperator operator = (const NLNML_PrePostOperator& old);
 
 protected:

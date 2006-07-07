@@ -83,7 +83,6 @@
 #include "NOX_Epetra_Group.H"
 #include "NOX_Solver_Manager.H"
 #include "NOX_Epetra_FiniteDifferenceColoring.H"
-#include "NOX_Parameter_List.H"
 #include "NOX_Epetra_Vector.H"
 
 // own headers
@@ -269,7 +268,7 @@ public:
    */
   virtual bool computePreconditioner(const Epetra_Vector& x, 
 				     Epetra_Operator& M,
-				     NOX::Parameter::List* precParams = 0);
+				     Teuchos::ParameterList* precParams = 0);
   
   //! ApplyInverse the preconditioner
   /*! 

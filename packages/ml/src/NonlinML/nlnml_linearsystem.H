@@ -76,12 +76,12 @@ public:
   bool applyJacobianTranspose(const NOX::Epetra::Vector& input, 
 		              NOX::Epetra::Vector& result) const;
 
-  bool applyJacobianInverse(NOX::Parameter::List &params, 
+  bool applyJacobianInverse(Teuchos::ParameterList &params, 
 		            const NOX::Epetra::Vector &input, 
 		            NOX::Epetra::Vector &result);
 
   bool applyRightPreconditioning(bool useTranspose,
-				 NOX::Parameter::List& params, 
+				 Teuchos::ParameterList& params, 
 				 const NOX::Epetra::Vector& input, 
 				 NOX::Epetra::Vector& result) const;
 
@@ -92,7 +92,7 @@ public:
   bool computeJacobian(const NOX::Epetra::Vector& x);
 
   bool createPreconditioner(const NOX::Epetra::Vector& x, 
-			    NOX::Parameter::List& p,
+			    Teuchos::ParameterList& p,
 			    bool recomputeGraph) const;
 
   // Because of reuse features I prefer to do this myself

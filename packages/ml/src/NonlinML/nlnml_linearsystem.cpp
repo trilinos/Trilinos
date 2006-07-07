@@ -110,7 +110,7 @@ printlevel_(printlevel)
  *----------------------------------------------------------------------*/
 bool NLNML::NLNML_LinearSystem::applyRightPreconditioning(
                                  bool useTranspose,
-				 NOX::Parameter::List& params, 
+				 Teuchos::ParameterList& params, 
 				 const NOX::Epetra::Vector& input, 
 				 NOX::Epetra::Vector& result) const
 {
@@ -156,7 +156,7 @@ bool NLNML::NLNML_LinearSystem::computeJacobian(const NOX::Epetra::Vector& x)
  *----------------------------------------------------------------------*/
 bool NLNML::NLNML_LinearSystem::createPreconditioner(
                             const NOX::Epetra::Vector& x, 
-			    NOX::Parameter::List& p,
+			    Teuchos::ParameterList& p,
 			    bool recomputeGraph) const
 {
   if (level_==0)
@@ -261,7 +261,7 @@ bool NLNML::NLNML_LinearSystem::applyJacobianTranspose(
  |                                                            m.gee 3/06|
  *----------------------------------------------------------------------*/
 bool NLNML::NLNML_LinearSystem::applyJacobianInverse(
-                                         NOX::Parameter::List &params, 
+                                         Teuchos::ParameterList &params, 
 		                         const NOX::Epetra::Vector &input, 
 		                         NOX::Epetra::Vector &result)
 {

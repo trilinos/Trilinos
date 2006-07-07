@@ -178,71 +178,71 @@ fineJac_(fineJac)
   // ------------------------------------------------------------------------
   // set up NOX on this level   
   // ------------------------------------------------------------------------
-  nlparams_ = rcp(new NOX::Parameter::List());
-  NOX::Parameter::List& printParams = nlparams_->sublist("Printing");  
-  printParams.setParameter("MyPID", comm_.MyPID()); 
-  printParams.setParameter("Output Precision", 14);
-  printParams.setParameter("Output Processor", 0);
+  nlparams_ = rcp(new Teuchos::ParameterList());
+  Teuchos::ParameterList& printParams = nlparams_->sublist("Printing");  
+  printParams.set("MyPID", comm_.MyPID()); 
+  printParams.set("Output Precision", 14);
+  printParams.set("Output Processor", 0);
   if (OutLevel()>9)
-    printParams.setParameter("Output Information",
+    printParams.set("Output Information",
                              NOX::Utils::OuterIteration + 
 			     NOX::Utils::Warning);
   else if (OutLevel()>8)
-    printParams.setParameter("Output Information",
+    printParams.set("Output Information",
 	                     NOX::Utils::Warning);
   else
-    printParams.setParameter("Output Information",0);
+    printParams.set("Output Information",0);
   
   if (!Level() && applyconstraints)
-    nlparams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator",*prepost_);
+    nlparams_->sublist("Solver Options").set("User Defined Pre/Post Operator",prepost_);
   
-  nlparams_->setParameter("Nonlinear Solver", "Line Search Based");    
-  NOX::Parameter::List& searchParams = nlparams_->sublist("Line Search");
-  NOX::Parameter::List* lsParamsptr  = 0;
+  nlparams_->set("Nonlinear Solver", "Line Search Based");    
+  Teuchos::ParameterList& searchParams = nlparams_->sublist("Line Search");
+  Teuchos::ParameterList* lsParamsptr  = 0;
   if (isnlncg)
   {
-    searchParams.setParameter("Method", "NonlinearCG");
-    NOX::Parameter::List& dirParams = nlparams_->sublist("Direction"); 
-    dirParams.setParameter("Method", "NonlinearCG");
-    NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
-    nlcgParams.setParameter("Restart Frequency", 10);                         
-    nlcgParams.setParameter("Precondition", "On");
-    nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
-    //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
+    searchParams.set("Method", "NonlinearCG");
+    Teuchos::ParameterList& dirParams = nlparams_->sublist("Direction"); 
+    dirParams.set("Method", "NonlinearCG");
+    Teuchos::ParameterList& nlcgParams = dirParams.sublist("Nonlinear CG");
+    nlcgParams.set("Restart Frequency", 10);                         
+    nlcgParams.set("Precondition", "On");
+    nlcgParams.set("Orthogonalize", "Polak-Ribiere");
+    //nlcgParams.set("Orthogonalize", "Fletcher-Reeves");
 
-    NOX::Parameter::List& lsParams = nlcgParams.sublist("Linear Solver");     
-    lsParams.setParameter("Aztec Solver", "CG"); 
-    lsParams.setParameter("Max Iterations", 1);  
-    lsParams.setParameter("Tolerance", 1e-11);
-    lsParams.setParameter("Output Frequency", 0);   
-    lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");   
-    lsParams.setParameter("Preconditioner","User Defined");
+    Teuchos::ParameterList& lsParams = nlcgParams.sublist("Linear Solver");     
+    lsParams.set("Aztec Solver", "CG"); 
+    lsParams.set("Max Iterations", 1);  
+    lsParams.set("Tolerance", 1e-11);
+    lsParams.set("Output Frequency", 0);   
+    lsParams.set("Preconditioning", "User Supplied Preconditioner");   
+    lsParams.set("Preconditioner","User Defined");
   }
   else
   {
-    searchParams.setParameter("Method", "Full Step");
-    NOX::Parameter::List& dirParams = nlparams_->sublist("Direction");
-    dirParams.setParameter("Method", "Newton");
-    NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
-    newtonParams.setParameter("Forcing Term Method", "Constant");
-    //newtonParams.setParameter("Forcing Term Method", "Type 1");
-    //newtonParams.setParameter("Forcing Term Method", "Type 2");
-    newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-6);
-    newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
+    searchParams.set("Method", "Full Step");
+    Teuchos::ParameterList& dirParams = nlparams_->sublist("Direction");
+    dirParams.set("Method", "Newton");
+    Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
+    newtonParams.set("Forcing Term Method", "Constant");
+    //newtonParams.set("Forcing Term Method", "Type 1");
+    //newtonParams.set("Forcing Term Method", "Type 2");
+    newtonParams.set("Forcing Term Minimum Tolerance", 1.0e-6);
+    newtonParams.set("Forcing Term Maximum Tolerance", 0.1);
 
-    NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+    Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
     lsParamsptr = &lsParams;
-    lsParams.setParameter("Size of Krylov Subspace", 100);
-    lsParams.setParameter("Aztec Solver", "GMRES"); 
-    lsParams.setParameter("Max Iterations", niterscg); 
+    lsParams.set("Size of Krylov Subspace", 100);
+    lsParams.set("Aztec Solver", "GMRES"); 
+    lsParams.set("Max Iterations", niterscg); 
     double norm = getParameter("nlnML absolute residual tolerance",1.0e-06); 
-    lsParams.setParameter("Tolerance",norm); 
+    lsParams.set("Tolerance",norm); 
     if (OutLevel()>9)
-      lsParams.setParameter("Output Frequency",10);
+      lsParams.set("Output Frequency",10);
     else
-      lsParams.setParameter("Output Frequency",0);   
-    lsParams.setParameter("Preconditioning", "User Supplied Preconditioner");
-    lsParams.setParameter("Preconditioner","User Defined");
+      lsParams.set("Output Frequency",0);   
+    lsParams.set("Preconditioning", "User Supplied Preconditioner");
+    lsParams.set("Preconditioner","User Defined");
   }
   
   // create the initial guess     
@@ -300,7 +300,7 @@ NLNML::NLNML_NonlinearLevel::~NLNML_NonlinearLevel()
 bool NLNML::NLNML_NonlinearLevel::computePreconditioner(
                                      const Epetra_Vector& x, 
 				     Epetra_Operator& M,
-				     NOX::Parameter::List* precParams)
+				     Teuchos::ParameterList* precParams)
 {
   return true;  
 }

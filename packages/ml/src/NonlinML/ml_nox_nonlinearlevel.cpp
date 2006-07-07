@@ -232,8 +232,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    // ------------------------------------------------------------------------
    // set up NOX on this level   
    // ------------------------------------------------------------------------
-   nlParams_ = new NOX::Parameter::List();
-   NOX::Parameter::List& printParams = nlParams_->sublist("Printing");        
+   nlParams_ = new Teuchos::ParameterList();
+   Teuchos::ParameterList& printParams = nlParams_->sublist("Printing");        
    printParams.setParameter("MyPID", comm_.MyPID()); 
    printParams.setParameter("Output Precision", 14);
    printParams.setParameter("Output Processor", 0);
@@ -250,20 +250,20 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   if (level_==0)
     nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
   nlParams_->setParameter("Nonlinear Solver", "Line Search Based");         
-  NOX::Parameter::List& searchParams = nlParams_->sublist("Line Search");
-  NOX::Parameter::List* lsParamsptr  = 0;
+  Teuchos::ParameterList& searchParams = nlParams_->sublist("Line Search");
+  Teuchos::ParameterList* lsParamsptr  = 0;
   if (isnlnCG_)
   {
      searchParams.setParameter("Method", "NonlinearCG");
-     NOX::Parameter::List& dirParams = nlParams_->sublist("Direction"); 
+     Teuchos::ParameterList& dirParams = nlParams_->sublist("Direction"); 
      dirParams.setParameter("Method", "NonlinearCG");
-     NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
+     Teuchos::ParameterList& nlcgParams = dirParams.sublist("Nonlinear CG");
      nlcgParams.setParameter("Restart Frequency", 10);                         
      nlcgParams.setParameter("Precondition", "On");
      nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
      //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
-     NOX::Parameter::List& lsParams = nlcgParams.sublist("Linear Solver");     
+     Teuchos::ParameterList& lsParams = nlcgParams.sublist("Linear Solver");     
      lsParams.setParameter("Aztec Solver", "CG"); 
      lsParams.setParameter("Max Iterations", 1);  
      lsParams.setParameter("Tolerance", 1e-11);
@@ -275,16 +275,16 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   {
      searchParams.setParameter("Method", "Full Step");
      // Sublist for direction
-     NOX::Parameter::List& dirParams = nlParams_->sublist("Direction");
+     Teuchos::ParameterList& dirParams = nlParams_->sublist("Direction");
      dirParams.setParameter("Method", "Newton");
-     NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+     Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
      newtonParams.setParameter("Forcing Term Method", "Constant");
      //newtonParams.setParameter("Forcing Term Method", "Type 1");
      //newtonParams.setParameter("Forcing Term Method", "Type 2");
      newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-6);
      newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
 
-     NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
      lsParamsptr = &lsParams;
      lsParams.setParameter("Size of Krylov Subspace", 100);
      lsParams.setParameter("Aztec Solver", "GMRES"); 
@@ -566,8 +566,8 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    // ------------------------------------------------------------------------
    // set up NOX on this level   
    // ------------------------------------------------------------------------
-   nlParams_ = new NOX::Parameter::List();
-   NOX::Parameter::List& printParams = nlParams_->sublist("Printing");        
+   nlParams_ = new Teuchos::ParameterList();
+   Teuchos::ParameterList& printParams = nlParams_->sublist("Printing");        
    printParams.setParameter("MyPID", comm_.MyPID()); 
    printParams.setParameter("Output Precision", 9);
    printParams.setParameter("Output Processor", 0);
@@ -588,20 +588,20 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   if (level_==0)
     nlParams_->sublist("Solver Options").setParameter("User Defined Pre/Post Operator", *coarseprepost_);
   nlParams_->setParameter("Nonlinear Solver", "Line Search Based");         
-  NOX::Parameter::List& searchParams = nlParams_->sublist("Line Search");
-  NOX::Parameter::List* lsParamsptr  = 0;
+  Teuchos::ParameterList& searchParams = nlParams_->sublist("Line Search");
+  Teuchos::ParameterList* lsParamsptr  = 0;
   if (isnlnCG_)
   {
      searchParams.setParameter("Method", "NonlinearCG");
-     NOX::Parameter::List& dirParams = nlParams_->sublist("Direction"); 
+     Teuchos::ParameterList& dirParams = nlParams_->sublist("Direction"); 
      dirParams.setParameter("Method", "NonlinearCG");
-     NOX::Parameter::List& nlcgParams = dirParams.sublist("Nonlinear CG");
+     Teuchos::ParameterList& nlcgParams = dirParams.sublist("Nonlinear CG");
      nlcgParams.setParameter("Restart Frequency", 10);                         
      nlcgParams.setParameter("Precondition", "On");
      nlcgParams.setParameter("Orthogonalize", "Polak-Ribiere");
      //nlcgParams.setParameter("Orthogonalize", "Fletcher-Reeves");
 
-     NOX::Parameter::List& lsParams = nlcgParams.sublist("Linear Solver");     
+     Teuchos::ParameterList& lsParams = nlcgParams.sublist("Linear Solver");     
      lsParams.setParameter("Aztec Solver", "CG"); 
      lsParams.setParameter("Max Iterations", 1);  
      lsParams.setParameter("Tolerance", 1e-11);
@@ -613,16 +613,16 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
   {
      searchParams.setParameter("Method", "Full Step");
      // Sublist for direction
-     NOX::Parameter::List& dirParams = nlParams_->sublist("Direction");
+     Teuchos::ParameterList& dirParams = nlParams_->sublist("Direction");
      dirParams.setParameter("Method", "Newton");
-     NOX::Parameter::List& newtonParams = dirParams.sublist("Newton");
+     Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
      newtonParams.setParameter("Forcing Term Method", "Constant");
      //newtonParams.setParameter("Forcing Term Method", "Type 1");
      //newtonParams.setParameter("Forcing Term Method", "Type 2");
      newtonParams.setParameter("Forcing Term Minimum Tolerance", 1.0e-6);
      newtonParams.setParameter("Forcing Term Maximum Tolerance", 0.1);
 
-     NOX::Parameter::List& lsParams = newtonParams.sublist("Linear Solver");
+     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
      lsParamsptr = &lsParams;
      lsParams.setParameter("Aztec Solver", "CG"); 
      lsParams.setParameter("Max Iterations", nitersCG_);  
@@ -1113,7 +1113,7 @@ bool ML_NOX::ML_Nox_NonlinearLevel::create_Nox_Convergencetest(double conv_normF
  | compute this level's prec to this level's nlnCG                      |
  *----------------------------------------------------------------------*/
 bool ML_NOX::ML_Nox_NonlinearLevel::computePreconditioner(const Epetra_Vector& x,
-			                                  NOX::Parameter::List* precParams)
+			                                  Teuchos::ParameterList* precParams)
 {
 #if 0
    cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::computePreconditioner:\n"

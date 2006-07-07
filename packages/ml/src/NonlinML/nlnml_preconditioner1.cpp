@@ -213,7 +213,7 @@ bool NLNML::NLNML_Preconditioner::CheckInputParameters(ParameterList& params)
 bool NLNML::NLNML_Preconditioner::computePreconditioner(
                                      const Epetra_Vector& x, 
 				     Epetra_Operator& M,
-				     NOX::Parameter::List* precParams)
+				     Teuchos::ParameterList* precParams)
 {
   if (&M != this)
   {
@@ -1102,8 +1102,8 @@ RefCountPtr<Epetra_CrsMatrix> NLNML::NLNML_Preconditioner::ComputeFineLevelJacob
   int ncalls = interface_->getnumcallscomputeF();
   interface_->setnumcallscomputeF(0);
 
-  RefCountPtr<NOX::Parameter::List> dummylist = 
-                                             rcp(new NOX::Parameter::List());
+  RefCountPtr<Teuchos::ParameterList> dummylist = 
+                                             rcp(new Teuchos::ParameterList());
   
   NOX::Epetra::Vector nx(x); 
   

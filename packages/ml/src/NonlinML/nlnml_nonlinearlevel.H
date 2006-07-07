@@ -125,7 +125,7 @@ public:
 
   bool computePreconditioner(const Epetra_Vector& x, 
 			     Epetra_Operator& M,
-			     NOX::Parameter::List* precParams = 0);
+			     Teuchos::ParameterList* precParams = 0);
 
   const Epetra_Comm & Comm() const {return(comm_);}
   
@@ -165,11 +165,11 @@ private:
 
   template<typename kind>
   kind getParameter(string name,kind dvalue) const
-  { return params_->get(name,dvalue); }
+  { return (*params_).template get(name,dvalue); }
 
   template<typename kind>
   void setParameter(string name,kind dvalue) const
-  { params_->set(name,dvalue); return; }
+  { (*params_).template set(name,dvalue); return; }
 
   int                                                     level_;
   bool                                                    isnlncg_;
@@ -187,7 +187,7 @@ private:
   RefCountPtr<NLNML::NLNML_PrePostOperator>               prepost_;
   RefCountPtr<Epetra_Vector>                              xthis_;
   RefCountPtr<NLNML::NLNML_ConstrainedMultiLevelOperator> thislevel_prec_;
-  RefCountPtr<NOX::Parameter::List>                       nlparams_;
+  RefCountPtr<Teuchos::ParameterList>                     nlparams_;
   RefCountPtr<NOX::Epetra::MatrixFree>                    thislevel_A_;
   RefCountPtr<NLNML::NLNML_LinearSystem>                  thislevel_linSys_;
   RefCountPtr<NOX::Epetra::LinearSystemAztecOO>           azlinSys_;
