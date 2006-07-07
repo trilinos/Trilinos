@@ -78,12 +78,14 @@
 
 (FRAMEWORK, INSTALL, AmesosPyTests) {
     DIRS = ../python/test;
+    ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
 
 (FRAMEWORK, INSTALL, AmesosPyExamples) {
     DIRS = ../python/example;
+    ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
