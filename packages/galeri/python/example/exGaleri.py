@@ -5,14 +5,26 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
+from   optparse import *
 import sys
 
-try:
-  import setpath
-  import Epetra, Galeri
-except ImportError:
-  from PyTrilinos import Epetra, Galeri
-  print >>sys.stderr, "Using system-installed Epetra, Galeri"
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
+    import setpath
+    import Epetra, Galeri
+else:
+    try:
+        import setpath
+        import Epetra, Galeri
+    except ImportError:
+        from PyTrilinos import Epetra, Galeri
+        print >>sys.stderr, "Using system-installed Epetra, Galeri"
 
 # Create a communicator
 comm    = Epetra.PyComm()
@@ -22,12 +34,11 @@ iAmRoot = comm.MyPID() == 0
 # Create a Cartesian map, containing nx x ny x NumProcs nodes
 nx = 2
 ny = 2 * numProc
-List = {
-  "nx": nx,               # number of nodes in the X-direction
-  "ny": ny,               # number of nodes in the Y-directioN
-  "mx": 1,                # number of processors in the X-direction
-  "my": numProc           # number of processors in the Y-direction
-}
+List = {"nx": nx,               # number of nodes in the X-direction
+        "ny": ny,               # number of nodes in the Y-directioN
+        "mx": 1,                # number of processors in the X-direction
+        "my": numProc           # number of processors in the Y-direction
+        }
 
 # Creating a map corresponding to a 2D Cartesian distribuion
 if iAmRoot: print "Creating a Map..."
@@ -49,7 +60,7 @@ VbrMatrix = Galeri.CreateVbrMatrix(CrsMatrix, 2);
 LHS = Epetra.Vector(Map)
 LHS.PutScalar(12.0)
 RHS = Epetra.Vector(Map)
-LinearProblem = Epetra.LinearProblem(CrsMatrix, LHS, RHS)
+#LinearProblem = Epetra.LinearProblem(CrsMatrix, LHS, RHS)
 # Now the linear problem is not solved, use for example AztecOO with IFPACK or
 # ML, or Amesos
 norm = Galeri.ComputeNorm(CrsMatrix, LHS, RHS)

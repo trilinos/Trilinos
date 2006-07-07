@@ -5,14 +5,26 @@
 # use "import ..." for Trilinos modules.  This prevents us from accidentally
 # picking up a system-installed version and ensures that we are testing the
 # build module.
+from   optparse import *
 import sys
 
-try:
+parser = OptionParser()
+parser.add_option("-t", "--testharness", action="store_true",
+                  dest="testharness", default=False,
+                  help="test local build modules; prevent loading system-installed modules")
+parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
+                  help="set the verbosity level [default 2]")
+options,args = parser.parse_args()
+if options.testharness:
   import setpath
   import Epetra, Galeri
-except ImportError:
-  from PyTrilinos import Epetra, Galeri
-  print >>sys.stderr, "Using system-installed Epetra, Galeri"
+else:
+  try:
+    import setpath
+    import Epetra, Galeri
+  except ImportError:
+    from PyTrilinos import Epetra, Galeri
+    print >>sys.stderr, "Using system-installed Epetra, Galeri"
 
 # Creates a communicator, which is an Epetra_MpiComm if Trilinos was
 # configured with MPI support, serial otherwise.
