@@ -126,12 +126,14 @@
             ../python/example/exMLAPI_Smoother.py,
             ../python/example/exPyOperator.py,
             ../python/example/exPyRowMatrix.py;
+    ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM  = SERIAL;
 }
 
 (FRAMEWORK, INSTALL, MLPyTests) {
     DIRS = ../python/test;
+    ARGS = --testharness;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI(1-4);
 }
