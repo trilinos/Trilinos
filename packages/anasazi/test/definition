@@ -37,11 +37,13 @@
 
 (FRAMEWORK, INSTALL, AnasaziPyTests) {
       DIRS = ../python/test;
+      ARGS = --testharness;
       EXIT-STATUS = STRING-COMPARISON;
       COMM = SERIAL, MPI(1-4);
 }
 
 (FRAMEWORK, INSTALL, AnasaziPyExamples) {
       DIRS = ../python/example;
+      ARGS = --testharness;
       COMM = SERIAL, MPI(1-4);
 }
