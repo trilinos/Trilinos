@@ -195,8 +195,10 @@ void test_ArrayRefCountPtr(
 int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
-  using Teuchos::ArrayRefCountPtr;
   using Teuchos::null;
+  using Teuchos::RefCountPtr;
+  using Teuchos::rcp;
+  using Teuchos::ArrayRefCountPtr;
   using Teuchos::arcp;
   using Teuchos::arcp_reinterpret_cast;
 	
@@ -331,6 +333,17 @@ int main( int argc, char* argv[] ) {
     // double!
     test_ArrayRefCountPtr(double_ptr2,verbose,*out);
 #endif
+
+    if(verbose)
+      *out << "\nCreating an array of RefCountPtr objects!\n";
+
+    ArrayRefCountPtr<RefCountPtr<double> >
+      rcp_ptr1 = arcp<RefCountPtr<double> >(num_doubles);
+
+    for( int i = 0; i < num_doubles; ++i )
+      rcp_ptr1[i] = rcp(new double(i));
+
+    test_ArrayRefCountPtr_iterators(rcp_ptr1,verbose,*out);
     
     // ToDo: Fill in the rest of the tests!
     

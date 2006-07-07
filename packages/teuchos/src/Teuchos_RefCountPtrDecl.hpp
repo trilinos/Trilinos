@@ -699,6 +699,16 @@ public:
 
 };	// end class RefCountPtr<...>
 
+/** \brief Traits specialization.
+ *
+ * \relates RefCountPtr
+ */
+template<typename T>
+class TypeNameTraits<RefCountPtr<T> > {
+public:
+  static std::string name() { return "RefCountPtr<"+TypeNameTraits<T>::name()+">"; }
+};
+
 /** \brief Create a <tt>RefCountPtr</tt> object properly typed.
  *
  * @param  p  [in] Pointer to an object to be reference counted.

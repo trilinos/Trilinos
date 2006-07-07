@@ -593,7 +593,7 @@ template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const RefCountPtr<T>& p )
 {
   out
-    << "RCP<"<<typeid(T).name()<<">{"
+    << TypeNameTraits<RefCountPtr<T> >::name() << "{"
     << "ptr="<<static_cast<void*>(p.get())
     <<",node="<<p.access_node()
     <<",count="<<p.count()

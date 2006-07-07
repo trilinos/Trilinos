@@ -483,6 +483,16 @@ public:
 
 };	// end class ArrayRefCountPtr<...>
 
+/** \brief Traits specialization.
+ *
+ * \relates RefCountPtr
+ */
+template<typename T>
+class TypeNameTraits<ArrayRefCountPtr<T> > {
+public:
+  static std::string name() { return "ArrayRefCountPtr<"+TypeNameTraits<T>::name()+">"; }
+};
+
 /** \brief Wrapps a preallocated array of data with the assumption to call the
  * array version of delete.
  *

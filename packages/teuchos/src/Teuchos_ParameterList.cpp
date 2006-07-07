@@ -125,7 +125,7 @@ std::string ParameterList::currentParametersString() const
     const ParameterEntry  &entry       = this->entry(itr);
     if(i) oss << ",";
     oss
-      << "\""<<entryName<<"\":"<<entry.getAny().type().name()
+      << "\""<<entryName<<"\":"<<entry.getAny().typeName()
       <<"="<<filterValueToString(entry);
   }
   oss << "}";
@@ -158,7 +158,7 @@ ParameterList& ParameterList::sublist(const string& name)
     TEST_FOR_EXCEPTION(
       !entry(i).isList(), std::runtime_error,
       " Parameter " << name << " is not a list, it is of type \""
-      <<entry(i).getAny().type().name()<<"\"!" );
+      <<entry(i).getAny().typeName()<<"\"!" );
     return getValue<ParameterList>(entry(i));
   }
 
@@ -207,7 +207,7 @@ ostream& ParameterList::print(ostream& os, int indent, bool showTypes) const
         os << ' ';
       os << name(i);
       if(showTypes)
-        os << " : " << entry_i.getAny().type().name();
+        os << " : " << entry_i.getAny().typeName();
       os << " = " << entry_i << endl;
     }
     // Print sublists second
@@ -313,12 +313,12 @@ void ParameterList::validateParameters(
     TEST_FOR_EXCEPTION(
       !( validEntry!=NULL && validType )
       ,Exceptions::InvalidParameter
-      ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny().type().name()<<"\""
+      ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny().typeName()<<"\""
       ",value=\""<<filterValueToString(entry)<<"\"} in the parameter (sub)list \""<<this->name()<<"\" "
       << ( validEntry==NULL
            ? "was not found in the list of valid parameters"
            : std::string("exists in the list of valid parameters but has the wrong type.  The correct type is \"")
-           +validEntry->getAny().type().name()+std::string("\"")
+           +validEntry->getAny().typeName()+std::string("\"")
         )
       << ". The valid parameters and types are "<<validParamList.currentParametersString()
       );

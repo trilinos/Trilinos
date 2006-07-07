@@ -660,7 +660,7 @@ template<class T>
 std::ostream& Teuchos::operator<<( std::ostream& out, const ArrayRefCountPtr<T>& p )
 {
   out
-    << "ARCP<"<<typeid(T).name()<<">{"
+    << TypeNameTraits<ArrayRefCountPtr<T> >::name() << "{"
     << "ptr="<<static_cast<const void*>(p.get())
     <<",lowerOffset="<<p.lowerOffset()
     <<",upperOffset="<<p.upperOffset()

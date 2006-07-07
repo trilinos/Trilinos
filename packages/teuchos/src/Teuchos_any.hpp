@@ -6,6 +6,7 @@
 */
 
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 
 //
 // This file was taken from the boost library which contained the
@@ -97,6 +98,12 @@ public:
 			return content ? content->type() : typeid(void);
 		}
 	
+	//! Return the name of the type
+	std::string typeName() const
+		{
+			return content ? content->typeName() : "NONE";
+		}
+	
 	//! \brief Return if two any objects are the same or not. 
 	bool same( const any &other ) const
 		{
@@ -128,6 +135,8 @@ public:
 		virtual ~placeholder() {}
 		/** \brief . */
 		virtual const std::type_info & type() const = 0;
+    /** \brief . */
+    virtual std::string typeName() const = 0;
 		/** \brief . */
 		virtual placeholder * clone() const = 0;
 		/** \brief . */
@@ -148,6 +157,9 @@ public:
 		/** \brief . */
 		const std::type_info & type() const
 			{ return typeid(ValueType); }
+		/** \brief . */
+    std::string typeName() const
+      { return TypeNameTraits<ValueType>::name(); }
 		/** \brief . */
 		placeholder * clone() const
 			{ return new holder(held); }
@@ -208,18 +220,19 @@ public:
 template<typename ValueType>
 ValueType& any_cast(any &operand)
 {
+  const std::string ValueTypeName = TypeNameTraits<ValueType>::name();
 	TEST_FOR_EXCEPTION(
 		operand.type() != typeid(ValueType), bad_any_cast
-		,"any_cast<" << typeid(ValueType).name() << "(operand): Error, cast to type \'"
-		<< typeid(any::holder<ValueType>).name() << "\' failed since the actual underlying type is \'"
+		,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
+		<< "any::holder<"<<ValueTypeName<<"> failed since the actual underlying type is \'"
 		<< typeid(*operand.access_content()).name() << "!"
 		);
 	any::holder<ValueType>
 		*dyn_cast_content = dynamic_cast<any::holder<ValueType>*>(operand.access_content());
 	TEST_FOR_EXCEPTION(
 		!dyn_cast_content, std::logic_error
-		,"any_cast<" << typeid(ValueType).name() << "(operand): Error, cast to type \'"
-		<< typeid(any::holder<ValueType>).name() << "\' failed but should not have and the actual underlying type is \'"
+		,"any_cast<"<<ValueTypeName <<">(operand): Error, cast to type "
+		<< "any::holder<"<<ValueTypeName<<"> failed but should not have and the actual underlying type is \'"
 		<< typeid(*operand.access_content()).name() << "!"
 		);
 	return dyn_cast_content->held;

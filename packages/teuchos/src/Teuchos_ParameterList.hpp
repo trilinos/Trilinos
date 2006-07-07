@@ -389,6 +389,16 @@ private: // Data members
   Map params_;
 };
 
+/** \brief Traits specialization.
+ *
+ * \relates ParameterList
+ */
+template<>
+class TypeNameTraits<ParameterList> {
+public:
+  static std::string name() { return "ParameterList"; }
+};
+
 /** \brief Returns true if two parameter lists are the same.
  *
  * \relates ParameterList
@@ -533,15 +543,7 @@ bool ParameterList::isType(const string& name, T* ptr) const
   // If parameter doesn't exist, return false.
   if (i == params_.end()) 
     return false;
-  // Try to cast the parameter to the type we think it should be.
-  try {
-    getValue<T>(entry(i));
-  }
-  catch( std::exception& e ) {
-    return false;
-  }
-  // If no exception was thrown, we should be OK.
-  return true;
+  return entry(i).getAny().type() == typeid(T);
 }
 #endif
   
@@ -552,15 +554,7 @@ bool ParameterList::isType(const string& name) const
   // If parameter doesn't exist, return false.
   if (i == params_.end()) 
     return false;
-  // Try to cast the parameter to the type we think it should be.
-  try {
-    getValue<T>(entry(i));
-  }
-  catch( std::exception& e ) {
-    return false;
-  }
-  // If no exception was thrown, we should be OK.
-  return true;
+  return entry(i).getAny().type() == typeid(T);
 }
 
 // private

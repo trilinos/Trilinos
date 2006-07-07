@@ -30,6 +30,7 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_getConst.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
@@ -57,6 +58,10 @@ int main(int argc, char *argv[])
   MPI_Init( &argc, &argv );
   MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 #endif
+
+  bool success = true;
+
+  try {
 
   // Read options from the command line. 
   CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -809,6 +814,10 @@ int main(int argc, char *argv[])
   // Return -1 if there are any failed tests, 
   // else 0 will be returned indicating a clean finish!  
   //-----------------------------------------------------------
+
+  } // end try
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,success);
+  if(!success) ++FailedTests;
 
 #ifdef HAVE_MPI
   MPI_Finalize();  
