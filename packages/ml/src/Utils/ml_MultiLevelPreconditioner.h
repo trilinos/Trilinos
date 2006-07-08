@@ -6,7 +6,7 @@
 
 /* NOTICE:  The United States Government is granted for itself and others
  * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
- * license in ths data to reproduce, prepare derivative works, and
+ * license in this data to reproduce, prepare derivative works, and
  * perform publicly and display publicly.  Beginning five (5) years from
  * July 25, 2001, the United States Government is granted for itself and
  * others acting on its behalf a paid-up, nonexclusive, irrevocable
@@ -99,6 +99,10 @@ class Epetra_VbrMatrix;
 #include "Epetra_MsrMatrix.h"
 #endif
 #include "Teuchos_ParameterList.hpp"
+
+#ifdef HAVE_ML_EPETRAEXT
+#include "EpetraExt_SolverMap_CrsMatrix.h"
+#endif
 
 namespace ML_Epetra
 {
@@ -221,49 +225,82 @@ public:
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
                            const bool ComputePrec = true);
 
-  //! Constructs a MultiLevelPreconditioner. Retrives parameters from \c List.
+  //! Constructs a MultiLevelPreconditioner. Retrieves parameters from \c List.
   
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 			   const Teuchos::ParameterList & List,
 			   const bool ComputePrec = true);
 
-  //! Constructs a MultiLevelPreconditioner from an ML_Operator. Retrives parameters from \c List.
+  //! Constructs a MultiLevelPreconditioner from an ML_Operator. Retrieves parameters from \c List.
   
   MultiLevelPreconditioner(ML_Operator* Operator,
 			   const Teuchos::ParameterList& List,
 			   const bool ComputePrec = true);
   
-  /*! Constructs a MultiLevelPreconditioner for Maxwell equations. The
-    constructor requires the edge matrix, the discrete grad T, and the
-    nodal matrix.
+  //! \brief MultiLevelPreconditioner constructor for Maxwell's equations.
+  /*! Takes the stiffness and mass terms of the matrix combined. 
+
+      \param EdgeMatrix - (In) Linear matrix to be solved.
+      \param GradMatrix - (In) Node-to-edge connectivity matrix, a.k.a,
+                               topological gradient
+      \param NodeMatrix - (In) Auxiliary nodal finite element matrix
+      \param List - (In) Teuchos parameter list containing solver options.
+      \param ComputePrec - (In) Optional argument that specifies whether to
+                                create preconditioner immediately. 
+                                Default is true.
   */
+
   MultiLevelPreconditioner(const Epetra_RowMatrix& EdgeMatrix,
-			   const Epetra_RowMatrix& TMatrix,
+			   const Epetra_RowMatrix& GradMatrix,
 			   const Epetra_RowMatrix& NodeMatrix,
 			   const Teuchos::ParameterList& List,
 			   const bool ComputePrec = true);
+  
+  //! \brief MultiLevelPreconditioner constructor for Maxwell's equations.
+  /*! Takes the stiffness and mass terms of the matrix separately. 
 
-  /*! Constructs a MultiLevelPreconditioner for Maxwell equations. The
-    constructor requires the edge curl-curl matrix, the edge mass matrix,
-    the discrete grad T, and the nodal matrix.
+      \param CurlCurlMatrix - (In) The curl-curl (stiffness) term of the
+                                   matrix to be solved.
+      \param MassMatrix - (In) The mass term of the matrix to be solved.
+      \param GradMatrix - (In) Node-to-edge connectivity matrix, a.k.a,
+                               topological gradient
+      \param NodeMatrix - (In) Auxiliary nodal finite element matrix
+      \param List - (In) Teuchos parameter list containing solver options.
+      \param ComputePrec - (In) Optional argument that specifies whether to
+                                create preconditioner immediately.
+                                Default is true.
   */
-MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
+
+  MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
              const Epetra_RowMatrix & MassMatrix,
              const Epetra_RowMatrix & TMatrix,
              const Epetra_RowMatrix & NodeMatrix,
              const Teuchos::ParameterList & List,
              const bool ComputePrec = true);
-  //! Constructs an MultiLevelPreconditioner for Maxwell equations. Retrives parameters from \c List.
-  /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
-    requires the edge matrix, the connectivity matrix T, the nodal matrix.
-  */
+
 #ifdef HAVE_ML_AZTECOO
-MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
-                         ML_Operator * ML_TMatrix,
-                         AZ_MATRIX * AZ_NodeMatrix,
+  //! MultiLevelPreconditioner constructor for Maxwell's equations.
+  /*! Takes the stiffness and mass terms of the matrix combined.  The edge
+      matrix is of type Epetra_Msr, a light-weight wrapper for old-style Aztec
+      MSR matrices.  This is intended as transition code for Aztec users.
+
+      \param EdgeMatrix - (In) Linear matrix to be solved.
+      \param GradMatrix - (In) Node-to-edge connectivity matrix, a.k.a,
+                               topological gradient
+      \param NodeMatrix - (In) Auxiliary nodal finite element matrix
+      \param proc_config - (In) Aztec array specifying processor layout.
+      \param List - (In) Teuchos parameter list containing solver options.
+      \param ComputePrec - (In) Optional argument that specifies whether to
+                                create preconditioner immediately.
+                                Default is true.
+  */
+
+  MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
+                         ML_Operator * GradMatrix,
+                         AZ_MATRIX * NodeMatrix,
                          int       * proc_config,
                          const Teuchos::ParameterList & List,
-                         const bool ComputePrec);
+                         const bool ComputePrec = true);
 #endif
 
   //@}
@@ -283,7 +320,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
   //! Prints label associated to this object.
   const char* Label() const{return(Label_);};  
   
-  //! Prints unused parameters in the input ParameterList on standard output. */
+  //! Prints unused parameters in the input ParameterList on standard output.
   void PrintUnused() const
   {
     List_.unused(std::cout);
@@ -559,11 +596,8 @@ private:
   //! Initializes object with defauls values.
   int Initialize();
 
-  //! Sets smoothers for non-Maxwell equations.
+  //! Sets smoothers.
   int SetSmoothers();
-
-  //! Sets smoothers for Maxwell equations.
-  int SetSmoothersMaxwell();
 
   //! Sets coarse level solvers.
   int SetCoarse();
@@ -577,8 +611,27 @@ private:
   //! Sets the null space for non-Maxwell problems.
   int SetNullSpace();
 
-  //! Sets the null space for Maxwell equations.
-  int SetNullSpaceMaxwell();
+  //! Checks correctness of null space (discrete gradient) for Maxwell problems.
+  //! The curl-curl and mass matrices must be supplied separately.
+  void CheckNullSpace();
+
+  //! Applies boundary conditions to gradient matrix.  (Maxwell's equations)
+  void Apply_BCsToGradient( const Epetra_RowMatrix & EdgeMatrix,
+                            const Epetra_RowMatrix & T);
+
+  //! Transforms Epetra matrix column map (if necessary) to be compatible with
+  /*! how ML handles column indices.  Any matrix that cannot be dynamically
+      cast to an Epetra_CrsMatrix will not be changed.
+
+      \param A - (In) Matrix that is to be transformed.
+      \param transform - (In) EpetraExt widget that does the transformation.
+      \param matrixName - (In) Optional label for the incoming matrix.
+   */
+
+  Epetra_RowMatrix*
+ML_Epetra::MultiLevelPreconditioner::ModifyEpetraMatrixColMap(const
+Epetra_RowMatrix &A, EpetraExt::CrsMatrix_SolverMap &transform, const char*
+matrixName);
 
   //! Sets prolongator smoother parameters.
   int SetSmoothingDamping();
@@ -680,7 +733,7 @@ private:
   string PrintMsg_;
   //! all cerr's have this prefix (default'd in Initialize() )
   char ErrorMsg_[80];
-  //! true of information has to be printed on this process
+  //! true if information has to be printed on this process
   bool verbose_;
   //! Number of PDE equations.
   int NumPDEEqns_;
@@ -706,11 +759,23 @@ private:
   bool CreatedML_Kn_;
   //! T matrix for Maxwell
   const Epetra_RowMatrix* TMatrix_;
+#ifdef HAVE_ML_EPETRAEXT
+  //! Structure for compatibility between Epetra and ML column maps.
+  EpetraExt::CrsMatrix_SolverMap RowMatrixColMapTrans_;
+  //! Structure for compatibility between Epetra and ML column maps.
+  EpetraExt::CrsMatrix_SolverMap NodeMatrixColMapTrans_;
+  //! Structure for compatibility between Epetra and ML column maps.
+  EpetraExt::CrsMatrix_SolverMap TMatrixColMapTrans_;
+  //! Structure for compatibility between Epetra and ML column maps.
+  EpetraExt::CrsMatrix_SolverMap CurlCurlMatrixColMapTrans_;
+  //! Structure for compatibility between Epetra and ML column maps.
+  EpetraExt::CrsMatrix_SolverMap MassMatrixColMapTrans_;
+#endif
   bool CreatedTMatrix_;
   ML_Operator* TMatrixML_;
   ML_Operator* TMatrixTransposeML_;
   ML_Operator** Tmat_array, ** Tmat_trans_array;
-  //! ML structures for Maxwell
+  //! Auxiliary ML structure for Maxwell's equations.
   ML* ml_nodes_;
 
   void** nodal_args_,** edge_args_;

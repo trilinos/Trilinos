@@ -53,9 +53,15 @@ using namespace Teuchos;
  * - \c Gauss-Seidel
  * - \c symmetric Gauss-Seidel
  * - \c block Gauss-Seidel
+ * - \c symmetric block Gauss-Seidel
  * - \c MLS
+ * - \c Chebyshev
+ * - \c self
  * - \c Aztec
  * - \c IFPACK
+ * - \c Hiptmair
+ * - \c ParaSails
+ * - \c user-defined
  * - \c do-nothing
  */
 int ML_Epetra::MultiLevelPreconditioner::SetSmoothers() 

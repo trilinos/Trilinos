@@ -382,31 +382,34 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & List,
 // ============================================================================
 /*! Set values for Maxwell:
  * - \c "default values" = "maxwell"
- * - \c "max levels" = 10
- * - \c "output" = 10
- * - \c "PDE equations" = 1
- * - \c "increasing or decreasing" = "decreasing"
- * - \c "aggregation: type" = "Uncoupled-MIS"
- * - \c "aggregation: damping factor" = 1.3333
- * - \c "coarse: max size" = 75
- * - \c "aggregation: threshold" = 0.0
- * - \c "smoother: sweeps" = 2
- * - \c "smoother: damping factor" = 0.67
- * - \c "smoother: type" = "MLS"
- * - \c "smoother: MLS polynomial order" = 4
- * - \c "smoother: pre or post" = "both"
- * - \c "coarse: type" = "Amesos-Klu"
- * - \c "prec type" = "MGV"
- * - \c "print unused" = -2
+   - General
+       - \c "max levels" = 10
+       - \c "output" = 10
+       - \c "prec type" = "MGV"
+       - \c "PDE equations" = 1
+       - \c "print unused" = -2
+   - Coarsening
+       - \c "increasing or decreasing" = "decreasing"
+       - \c "aggregation: type" = "Uncoupled-MIS"
+       - \c "aggregation: damping factor" = 1.3333
+       - \c "coarse: max size" = 75
+       - \c "aggregation: threshold" = 0.0
+   - Smoothing
+       - \c "smoother: type" = "Hiptmair"
+       - \c "smoother: sweeps" = 2
+       - \c "smoother: Hiptmair efficient symmetric" = true
+       - \c "smoother: damping factor" = 1.0
+       - \c "smoother: type" = "MLS"
+       - \c "smoother: MLS polynomial order" = 3
+       - \c "smoother: pre or post" = "both"
+   - Coarse Solution
+       - \c "coarse: type" = "Amesos-KLU"
  */
 int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, 
 				  int * options, double * params)
 {
-
   List.set("default values","maxwell");
-
   List.set("max levels",10);
-
   List.set("output",10);
   
   List.set("PDE equations",1);
@@ -426,7 +429,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List,
   List.set("aggregation: threshold",0.0);
 
   // Hiptmair for all levels but coarsest
-  List.set("smoother: sweeps",1);
+  List.set("smoother: sweeps",2);
 
   List.set("smoother: damping factor",1.0);
 
@@ -457,22 +460,26 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List,
 
 // ============================================================================
 /*! Set default values for classical smoothed aggregation:
- * - \c "default values" = "SA"
- * - \c "max levels" = 10
- * - \c "output" = 8
- * - \c "PDE equations" = 1
- * - \c "increasing or decreasing" = "increasing"
- * - \c "aggregation: type" = "Uncoupled"
- * - \c "aggregation: damping factor" = 1.3333
- * - \c "coarse: max size" = 16
- * - \c "aggregation: threshold" = 0.0
- * - \c "smoother: sweeps" = 2
- * - \c "smoother: damping factor" = 0.67
- * - \c "smoother: type" = "Gauss-Seidel
- * - \c "smoother: pre or post" = "both"
- * - \c "coarse: type" = "Amesos-KLU"
- * - \c "prec type" = "MGV"
- * - \c "print unused" = -2
+  - \c "default values" = "SA"
+   - General
+        - \c "max levels" = 10
+        - \c "output" = 8
+        - \c "PDE equations" = 1
+        - \c "prec type" = "MGV"
+        - \c "print unused" = -2
+   - Coarsening
+        - \c "increasing or decreasing" = "increasing"
+        - \c "aggregation: type" = "Uncoupled-MIS"
+        - \c "aggregation: damping factor" = 1.3333
+        - \c "coarse: max size" = 16
+        - \c "aggregation: threshold" = 0.0
+   - Smoothing
+        - \c "smoother: sweeps" = 2
+        - \c "smoother: damping factor" = 0.67
+        - \c "smoother: type" = "symmetric Gauss-Seidel"
+        - \c "smoother: pre or post" = "both"
+   - Coarse Solution
+        - \c "coarse: type" = "Amesos-KLU"
  */
 int ML_Epetra::SetDefaultsSA(ParameterList & List, 
 			     int * options, double * params)

@@ -24,13 +24,6 @@ using namespace Teuchos;
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
-{
-  return(0);
-}
-
-// ================================================ ====== ==== ==== == =
-
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
 {
   int NullSpaceDim = NumPDEEqns_;

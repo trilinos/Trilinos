@@ -28,7 +28,7 @@
  *
  *  \author Marzio Sala, SNL, 9214
  *
- *  \date Last update to Doxygen: 22-Jul-04
+ *  \date Last update to Doxygen: 07-Jul-2006
  *
  */
 
@@ -46,12 +46,13 @@
  *   used only as last resort!
  */
 
-/*
-  Current revision: 1.50
-  Branch:           $Branch$
-  Last modified:    2004/12/03 17:20:05
-  Modified by:      msala
- */
+/*#############################################################################
+# CVS File Information
+#    Current revision: $Revision$
+#    Branch:           $Branch$
+#    Last modified:    $Date$
+#    Modified by:      $Author$
+#############################################################################*/
 
 #include "ml_common.h"
 #include "ml_include.h"
@@ -70,6 +71,7 @@
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_SerialDenseSolver.h"
 #include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Epetra_Time.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
@@ -381,6 +383,8 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
     ML_CHK_ERRV(-2); // error on discrete grad
   }
 
+  int mypid = TMatrix.Comm().MyPID();
+
   List_ = List;
 
   ML_CHK_ERRV(Initialize());
@@ -427,38 +431,10 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
     ML_CHK_ERRV(-2); // error on discrete grad
   }
 
-  // TODO Apply bc's to TMatrix here
-
-  // Check that the null space is correct.
-  Epetra_Vector XXX(TMatrix.OperatorDomainMap());
-  Epetra_Vector YYY(TMatrix.OperatorRangeMap());
-  Epetra_Vector ZZZ(TMatrix.OperatorRangeMap());
-  XXX.Random();
-  double norm;
-  XXX.Norm2(&norm);
-  XXX.Scale(1.0/norm);
-  TMatrix.Multiply(false,XXX,YYY);
-  CurlCurlMatrix.Multiply(false,YYY,ZZZ);
-  ZZZ.Norm2(&norm);
-  int mypid = CurlCurlMatrix.Comm().MyPID();
-  if (mypid ==0)
-    cout << "Checking curl/gradient relationship" << endl;
-  double norminf = CurlCurlMatrix.NormInf();
-  if (mypid == 0) {
-    if (norm > (1e-12 * norminf))
-      cout << endl
-           << "**WARNING** ||curlcurl * grad * vrand|| = " << norm << endl
-           << "**WARNING** Either the curl-curl or the null space may be wrong."
-           << endl << endl;
-    else
-      cout << "||curlcurl * grad * vrand|| = " << norm << endl;
-  }
-
   List_ = List;
 
-  Epetra_RowMatrix *cc = const_cast<Epetra_RowMatrix*> (&CurlCurlMatrix);
-  Epetra_RowMatrix *mm = const_cast<Epetra_RowMatrix*> (&MassMatrix);
-  RowMatrix_ = Epetra_MatrixAdd(cc,mm,1.0);
+  // later on, this will be reset to the sum of the curl-curl and mass
+  RowMatrix_ = & CurlCurlMatrix;
 
   ML_CHK_ERRV(Initialize());
 
@@ -619,6 +595,8 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   ML_Kn_ = 0;
   CreatedML_Kn_ = false;
   EdgeMatrix_ = 0;
+  CurlCurlMatrix_ = 0;
+  MassMatrix_ = 0;
   TMatrix_ = 0;
   ml_nodes_ = 0;
   TMatrixML_ = 0;
@@ -840,27 +818,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   if( verbose_ ) cout << "Number of PDE equations = " << NumPDEEqns_ << endl;
   
-#ifdef HAVE_ML_EPETRAEXT
-  // ============================================================== //
-  // dump matrix in matrix market format using EpetraExt            //
-  // ============================================================== //
-  
-  if (List_.get("dump matrix: enable", false)) {
-    string FileName = List_.get("dump matrix: file name", "ml-matrix.mm");
-    char FileName2[80];
-    static int count = 0;
-    if (FileName == "auto-count")
-      sprintf(FileName2,"ml-matrix-%d.mm",count++);
-    else
-      sprintf(FileName2,"%s",FileName.c_str());
-
-    if (verbose_)
-      cout << PrintMsg_ << "Print matrix on file `" << FileName2 << "'..." << endl;
-    EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *RowMatrix_, 
-                                           "Epetra_RowMatrix", "printed by MultiLevelPreconditioner");
-  }
-#endif
-
   int MaxCreationLevels = NumLevels_;
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
   
@@ -894,8 +851,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     ml_->output_level = OutputLevel;
 
+    RowMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,RowMatrixColMapTrans_,
+                                          "Main linear system");
     int NumMyRows;
-    
     NumMyRows = RowMatrix_->NumMyRows();
     int N_ghost = RowMatrix_->NumMyCols() - NumMyRows;
     
@@ -1007,8 +965,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     }
     else {
-      //*Avbr = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
-      //*Acrs = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
       if (Avbr) {
         // check that the number of PDEs is constant
         if( Avbr->NumMyRows() % Avbr->NumMyBlockRows() != 0 ){
@@ -1085,6 +1041,22 @@ ComputePreconditioner(const bool CheckPreconditioner)
       Direction = ML_DECREASING;
     ML_Set_LevelID(ml_,Direction);
 
+    // if curl-curl and mass matrix were given separately, add them
+    if (CurlCurlMatrix_) {
+      CurlCurlMatrix_ = ModifyEpetraMatrixColMap(*CurlCurlMatrix_,
+                                                CurlCurlMatrixColMapTrans_,
+                                                "(curl,curl)");
+      MassMatrix_ = ModifyEpetraMatrixColMap(*MassMatrix_,
+                                             MassMatrixColMapTrans_,"mass");
+      Epetra_RowMatrix *cc = const_cast<Epetra_RowMatrix*>(CurlCurlMatrix_);
+      Epetra_RowMatrix *mm = const_cast<Epetra_RowMatrix*>(MassMatrix_);
+      RowMatrix_ = Epetra_MatrixAdd(cc,mm,1.0);
+    }
+
+    EdgeMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,
+                                           RowMatrixColMapTrans_,
+                                           "edge element matrix");
+    RowMatrix_ = EdgeMatrix_;
     NumMyRows = EdgeMatrix_->NumMyRows();
     N_ghost   = EdgeMatrix_->NumMyCols() - NumMyRows;
     
@@ -1109,6 +1081,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     
     ML_Create(&ml_nodes_,MaxCreationLevels);
     ML_Set_Label(ml_nodes_, "nodes");
+    NodeMatrix_ = ModifyEpetraMatrixColMap(*NodeMatrix_,
+                                           NodeMatrixColMapTrans_,"Node");
     NumMyRows = NodeMatrix_->NumMyRows();
     N_ghost   = NodeMatrix_->NumMyCols() - NumMyRows;
     
@@ -1271,13 +1245,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // set null space                                                         //
   // ====================================================================== //
 
-  if( SolvingMaxwell_ == false ) {
+  if( SolvingMaxwell_ == false )
     ML_CHK_ERR(SetNullSpace());
-  }
-  else {
-    //JJH 5/9/05 this can be deleted
-    ML_CHK_ERR(SetNullSpaceMaxwell());
-  }
   
   OutputList_.set("time: initial phase", InitialTime.ElapsedTime() 
                   + OutputList_.get("time: initial phase", 0.0));
@@ -1285,7 +1254,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   // ====================================================================== //
   // Build hierarchy using smoothed aggregation.                            //
-  // Then, retrive parameters for each level. Default values are given by   //
+  // Then, retrieve parameters for each level. Default values are given by   //
   // entries in parameter list without (level %d)                           //
   // ====================================================================== //
 
@@ -1298,64 +1267,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if (SolvingMaxwell_ == false) {
 
     bool CreateFakeProblem = false;
-#ifdef OLD_AUX
-    CreateFakeProblem = List_.get("aggregation: use auxiliary matrix", false);
-
-    // west claims attentions, the VBR junk is a small gift to her
-    Epetra_FECrsMatrix* FakeCrsMatrix = 0;
-
-    bool MyCodeIsQuestionable = true;
-    Epetra_VbrMatrix* MeDummy;
-    int NumMyRowElements = 0;
-    Epetra_SerialDenseMatrix** oldValues = 0;
-
-    // difficile a credersi, ma una porcheria di questo tipo
-    // ha le sue foxxuxe ragioni
-    if (CreateFakeProblem == true) {
-
-      Time.ResetStartTime();
-
-      // it appears that west doesn't really like vector<vector<XXX> >
-      MeDummy = const_cast<Epetra_VbrMatrix*>
-        (dynamic_cast<const Epetra_VbrMatrix*>(RowMatrix_));
-
-      if (MeDummy && MyCodeIsQuestionable) {
-
-        NumMyRowElements = MeDummy->RowMap().NumMyElements();
-        oldValues = new Epetra_SerialDenseMatrix*[NumMyRowElements];
-
-        for (int LocalRow = 0; LocalRow < NumMyRowElements ; ++LocalRow) {
-
-          int RowDim, NumBlockEntries;
-          int* BlockIndices;
-          Epetra_SerialDenseMatrix** MatrixValues;
-
-          MeDummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
-                                       BlockIndices,MatrixValues);
-          oldValues[LocalRow] = new Epetra_SerialDenseMatrix[NumBlockEntries];
-
-          for (int i = 0 ; i < NumBlockEntries ; ++i) {
-            Epetra_SerialDenseMatrix& Mat = *(MatrixValues[i]);
-            int rows = Mat.M();
-            int cols = Mat.N();
-            oldValues[LocalRow][i].Shape(rows,cols);
-            for (int j = 0 ; j < rows ; ++j)
-              for (int k = 0 ; k < cols ; ++k)
-                oldValues[LocalRow][i](j,k) = Mat(j,k);
-          }
-        }
-
-        // change the original matrix, RowMatrix_
-        ML_CHK_ERR(CreateAuxiliaryMatrixVbr(MeDummy));
-      }
-      else
-        ML_CHK_ERR(CreateAuxiliaryMatrixCrs(FakeCrsMatrix));
-
-      if (verbose_)
-        cout << PrintMsg_ << "Time to build the finest-level auxiliary matrix = "
-             << Time.ElapsedTime() << " (s)" << endl;
-    }
-#endif
     
     if (!CreateFakeProblem && List_.get("aggregation: aux: enable", false))
     {
@@ -1415,70 +1326,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
       cout << PrintMsg_ << "Time to build the hierarchy = " 
            << Time.ElapsedTime() << " (s)" << endl;
     
-#ifdef OLD_AUX
-    if (CreateFakeProblem == true) {
+  } // if (SolvingMaxwell_ == false)
+  else {
 
-      Time.ResetStartTime();
-    
-      if (MeDummy && MyCodeIsQuestionable) {
+    TMatrix_ = ModifyEpetraMatrixColMap(*TMatrix_,
+                                        TMatrixColMapTrans_,"Gradient");
+    Apply_BCsToGradient( *EdgeMatrix_, *TMatrix_);
 
-        for (int LocalRow = 0; LocalRow < NumMyRowElements ; ++LocalRow) {
-
-          int RowDim, NumBlockEntries;
-          int* BlockIndices;
-          Epetra_SerialDenseMatrix** MatrixValues;
-
-          MeDummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
-                                       BlockIndices,MatrixValues);
-
-          for (int i = 0 ; i < NumBlockEntries ; ++i) {
-            Epetra_SerialDenseMatrix& Mat = *(MatrixValues[i]);
-            int rows = Mat.M();
-            int cols = Mat.N();
-            for (int j = 0 ; j < rows ; ++j)
-              for (int k = 0 ; k < cols ; ++k)
-                Mat(j,k) = oldValues[LocalRow][i](j,k);
-          }
-          delete[] oldValues[LocalRow];
-        }
-        delete[] oldValues;
-
-      }
-      else if (FakeCrsMatrix) {
-        ml_->Amat[LevelID_[0]].data = (void *)RowMatrix_;
-        delete FakeCrsMatrix;
-      }
-
-      // generate new hierarchy with "good" matrix
-      if (verbose_) {
-    cout << endl;
-    cout << PrintMsg_ 
-         << "*** Now re-building the ML hierarchy with the actual matrix..." 
-         << endl;
-    cout << endl;
-      }
-
-      ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
-
-      if (verbose_)
-        cout << PrintMsg_ << "Time to re-build the hierarchy = " 
-             << Time.ElapsedTime() << " (s)" << endl;
-      Time.ResetStartTime();
-
-    } // nothing special to be done if CreateFakeProblem is false
-#endif
-      
-  } else {
+    if (CurlCurlMatrix_ != 0) CheckNullSpace();
 
     if( TMatrixML_ == 0 ) {
-
       // convert TMatrix to ML_Operator
-
       TMatrixML_ = ML_Operator_Create(ml_->comm);
-
       ML_Operator_WrapEpetraMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),
                                    TMatrixML_);
-
     }
 
     TMatrixTransposeML_ = ML_Operator_Create(ml_->comm);
@@ -1499,6 +1360,58 @@ ComputePreconditioner(const bool CheckPreconditioner)
                             enrichBeta);
 
   }
+
+#ifdef HAVE_ML_EPETRAEXT
+  // ============================================================== //
+  // dump matrix in matrix market format using EpetraExt            //
+  // ============================================================== //
+  
+  if (List_.get("dump matrix: enable", false)) {
+    string FileName = List_.get("dump matrix: file name", "ml-matrix.mm");
+    char FileName2[80];
+    static int count = 0;
+    char comment[80];
+    sprintf(comment,"printed by MultiLevelPreconditioner, %d processors",
+            Comm().NumProc());
+
+    if (SolvingMaxwell_) {
+      sprintf(FileName2,"ml-matrix-%s.mm","edge");
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *RowMatrix_, 
+                              "Maxwell -- edge finite element matrix",
+                              comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","curlcurl");
+      if (CurlCurlMatrix_)
+        EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *CurlCurlMatrix_, 
+                                "Maxwell -- (curl,curl) matrix",
+                                comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","mass");
+      if (MassMatrix_)
+        EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *MassMatrix_, 
+                                "Maxwell -- mass matrix",
+                                comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","gradient");
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *TMatrix_, 
+                                "Maxwell -- gradient matrix",
+                                comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","node");
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *NodeMatrix_, 
+                                "Maxwell -- auxiliary nodal FE matrix",
+                                comment);
+    }
+    else {
+      if (FileName == "auto-count")
+        sprintf(FileName2,"ml-matrix-%d.mm",count++);
+      else
+        sprintf(FileName2,"%s",FileName.c_str());
+  
+      if (verbose_)
+        cout << PrintMsg_ << "Print matrix on file `" << FileName2
+             << "'..." << endl;
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *RowMatrix_, 
+                     "Epetra_RowMatrix", comment);
+    }
+  }
+#endif
 
   {
     int NL2 = OutputList_.get("max number of levels", 0);
@@ -1856,6 +1769,14 @@ ReComputePreconditioner()
 
 // ================================================ ====== ==== ==== == =
 
+/*! Print the individual operators in the multigrid hierarchy.
+
+ \param whichHierarchy (In) By default, this method prints the main
+                            multigrid hierarchy. If solving Maxwell's
+                            equations, and this is set to anything other than
+                            "main", the auxiliary node hierarchy will print.
+*/
+
 void ML_Epetra::MultiLevelPreconditioner::
 Print(const char *whichHierarchy)
 {
@@ -1892,35 +1813,36 @@ Print(const char *whichHierarchy)
       auxSuffix[0] = '\0';
     }
 
+    char name[80];
     // Amat (one for each level)
     for( int i=0 ; i<NumLevels_ ; ++i ) {
-      char name[80];
       sprintf(name,"Amat_%d%s", LevelID_[i],auxSuffix);
-      ML_Operator_Print(&(mlptr->Amat[LevelID_[i]]), name);
+      ML_Operator_Print_UsingGlobalOrdering(mlptr->Amat+LevelID_[i], name,
+                                            NULL,NULL);
     }
-    
+
     // Pmat (one for each level, except last)
     for( int i=1 ; i<NumLevels_ ; ++i ) {
-      char name[80];
       sprintf(name,"Pmat_%d%s", LevelID_[i],auxSuffix);
-      ML_Operator_Print(&(mlptr->Pmat[LevelID_[i]]), name);
+      ML_Operator_Print_UsingGlobalOrdering(mlptr->Pmat+LevelID_[i], name,
+                                            NULL,NULL);
     }
 
     // Rmat (one for each level, except first)
     for( int i=0 ; i<NumLevels_-1 ; ++i ) {
-      char name[80];
       sprintf(name,"Rmat_%d%s", LevelID_[i],auxSuffix);
+      //FIXME
       ML_Operator_Print(&(mlptr->Rmat[LevelID_[i]]), name);
     }
 
-    // Tmat (one for each level, except first)
+    // Tmat (one for each level)
     if (SolvingMaxwell_)
       for( int i=0 ; i<NumLevels_ ; ++i ) {
-        char name[80];
         sprintf(name,"Tmat_%d", LevelID_[i]);
-        ML_Operator_Print(Tmat_array[LevelID_[i]], name);
+        ML_Operator_Print_UsingGlobalOrdering(Tmat_array[LevelID_[i]], name,
+                                              NULL,NULL);
       }
-  
+
   }
 } //Print() method
 
@@ -3144,37 +3066,54 @@ int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
   return 0;
 }
 
-#ifdef FIXTHIS //FIXME
+// ============================================================================
+
 void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
-             const Epetra_RowMatrix & CC,
-             const Epetra_RowMatrix & T)
-/*****************************************************************************/
+             const Epetra_RowMatrix & iEdgeMatrix,
+             const Epetra_RowMatrix & iGrad)
 {
-  // CC is the curl-curl matrix.
-  // T is the gradient matrix.
-                                                                                
+  /* This function zeros out columns of T that are no longer in the null space
+     of the curl-curl matrix because of Dirichlet boundary conditions.
+     Input:
+         EdgeMatrix         curl-curl matrix
+         Grad               gradient matrix
+     Output:
+         Grad               gradient matrix with columns zeroed out
+
+     Comments: The graph of Grad is unchanged.
+  */
+
+  const Epetra_CrsMatrix *EdgeMatrix = dynamic_cast<const Epetra_CrsMatrix*>
+                                           (&iEdgeMatrix );
+  const Epetra_CrsMatrix *Grad = dynamic_cast<const Epetra_CrsMatrix*>(&iGrad );
+
+  if (EdgeMatrix == 0 || Grad == 0) {
+    if (verbose_)
+      cout << "Not applying Dirichlet boundary conditions to gradient "
+           << "because cast failed." << endl;
+    return;
+  }
+
   // locate Dirichlet edges
-  int *dirichletEdges = new int[CC.NumMyRows()];
-  cout << "scanning for dirichlet rows" << endl;
+  int *dirichletEdges = new int[EdgeMatrix->NumMyRows()];
+  int mypid = EdgeMatrix->Comm().MyPID();
   int numBCEdges = 0;
-  for (int i=0; i<CC.NumMyRows(); i++) {
+  for (int i=0; i<EdgeMatrix->NumMyRows(); i++) {
     int numEntries, *cols;
     double *vals;
-    int ierr = CC.ExtractMyRowView(i,numEntries,vals,cols);
+    int ierr = EdgeMatrix->ExtractMyRowView(i,numEntries,vals,cols);
     if (ierr == 0) {
       int nz=0;
       for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
       if (nz == 1) {
         dirichletEdges[numBCEdges++] = i;
-        //cout << "** bc edge " << i << " found" << endl;
       }
     }
   }
-    cout << "pid " << CC.Comm_().MyPID() << ": found "
-         << numBCEdges << " bc edges" << endl;
 
-  const Epetra_Map & ColMap = T.ColMap();
-  Epetra_Map globalMap(T.NumGlobalCols(),1,Comm_);
+  const Epetra_Map & ColMap = Grad->ColMap();
+  int indexBase = ColMap.IndexBase();
+  Epetra_Map globalMap(Grad->NumGlobalCols(),indexBase,EdgeMatrix->Comm());
 
   // create the exporter from this proc's column map to global 1-1 column map
   Epetra_Export Exporter(ColMap,globalMap);
@@ -3190,7 +3129,7 @@ void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
     int numEntries;
     double *vals;
     int *cols;
-    T.ExtractMyRowView(dirichletEdges[i],numEntries,vals,cols);
+    Grad->ExtractMyRowView(dirichletEdges[i],numEntries,vals,cols);
     for (int j=0; j < numEntries; j++)
       myColsToZero[ cols[j] ] = 1;
   }
@@ -3204,19 +3143,89 @@ void ML_Epetra::MultiLevelPreconditioner::Apply_BCsToGradient(
   // now zero out the columns
   // -------------------------
 
-  for (int i=0; i < T.NumMyRows(); i++) {
+  for (int i=0; i < Grad->NumMyRows(); i++) {
     int numEntries;
     double *vals;
     int *cols;
-    T.ExtractMyRowView(i,numEntries,vals,cols);
+    Grad->ExtractMyRowView(i,numEntries,vals,cols);
     for (int j=0; j < numEntries; j++) {
-      if (myColsToZero[ cols[j] ] > 0)
+      if (myColsToZero[ cols[j] ] > 0) {
         vals[j] = 0.0;
+      }
     }
   }
   delete [] dirichletEdges;
-}
-#endif //FIXTHIS
+} //Apply_BCsToGradient
+
+// ============================================================================
+
+void ML_Epetra::MultiLevelPreconditioner::
+CheckNullSpace()
+{
+  // Check that the null space is correct.
+  Epetra_Vector XXX(TMatrix_->OperatorDomainMap());
+  Epetra_Vector YYY(TMatrix_->OperatorRangeMap());
+  Epetra_Vector ZZZ(TMatrix_->OperatorRangeMap());
+  XXX.Random();
+  double norm;
+  XXX.Norm2(&norm);
+  XXX.Scale(1.0/norm);
+  TMatrix_->Multiply(false,XXX,YYY);
+  CurlCurlMatrix_->Multiply(false,YYY,ZZZ);
+  ZZZ.Norm2(&norm);
+  int mypid = CurlCurlMatrix_->Comm().MyPID();
+  if (mypid ==0)
+    cout << "Checking curl/gradient relationship" << endl;
+  double norminf = CurlCurlMatrix_->NormInf();
+  if (mypid == 0) {
+    if (norm > (1e-12 * norminf))
+      cout << endl
+           << "**WARNING** ||curlcurl * grad * vrand|| = " << norm << endl
+           << "**WARNING** Either the curl-curl or the null space may be wrong."
+           << endl << endl;
+    else
+      cout << "||curlcurl * grad * vrand|| = " << norm << endl;
+  }
+} //CheckNullSpace()
+
+// ============================================================================
+
+Epetra_RowMatrix* ML_Epetra::MultiLevelPreconditioner::
+ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
+                         EpetraExt::CrsMatrix_SolverMap &transform,
+                         const char *matrixLabel)
+{
+    Epetra_RowMatrix *B;
+    Epetra_CrsMatrix *Acrs;
+
+#ifdef HAVE_ML_EPETRAEXT
+    const Epetra_CrsMatrix *Atmp = dynamic_cast<const Epetra_CrsMatrix*>(&A);
+    if (Atmp != 0) {
+      Acrs = const_cast<Epetra_CrsMatrix*>(Atmp);
+      B = &(transform(*Acrs));
+    }
+    else
+      B = const_cast<Epetra_RowMatrix *>(&A);
+
+    if (verbose_) {
+      if (B != &A)
+        printf("** Transforming column map of %s matrix\n", matrixLabel);
+      else
+        printf("** Leaving column map of %s matrix unchanged\n",matrixLabel);
+    }
+
+    return B;
+#else
+    B = &A;
+    if (verbose_) {
+      cout << "WARNING: You have not configured with --enable-epetra_ext. "
+           << "The preconditioner " << endl
+           << "WARNING: may not work as expected. Proceed at your own "
+           << "risk." << endl;
+    }
+    return B;
+#endif
+} //ModifyEpetraMatrixColMap()
 
 
 #endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS */
