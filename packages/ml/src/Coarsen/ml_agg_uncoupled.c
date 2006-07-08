@@ -94,15 +94,6 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    int NumBlockRows;
    /*ms*/
    char *true_bdry;
-#ifdef ML_NEWDROPSCHEME
-   double maxentry, minentry;
-   double stddev;
-   double threshold1=1.0, threshold2 = 1.0e-2, threshold3 = 1.0e-4; double dsum1, dsum2; double gamma;
-   double *scaledvals;
-   int totaldropped = 0, localnnz, localdropped;
-   int totalnnz = 0;
-   static double multiplier = 0.20;
-#endif
 #ifdef ML_AGGR_INAGGR
    char fname[80];
    FILE *fp;
@@ -111,24 +102,6 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    /* ============================================================= */
    /* get the machine information and matrix references             */
    /* ============================================================= */
-#ifdef ML_NEWDROPSCHEME
-   if (comm->ML_mypid == 0) {
-     printf("*****************\n\nNew dropping scheme\n  multiplier = %4.3f\n*********************\n",multiplier);
-     fflush(stdout);
-   }
-
-   if (multiplier == 0.0) {
-     dsum1 = 0.0;
-     if (comm->ML_mypid == 0) {
-       while (dsum1 <= 0 || dsum1 >= 1.0) {
-         printf("multiplier (0,1)? ");
-         fscanf(stdin,"%lf",&dsum1);
-       }
-     }
-     multiplier = ML_gsum_double(dsum1, comm);
-   }
-#endif
-
    mypid          = comm->ML_mypid;
    epsilon        = ml_ag->threshold;
    nullspace_dim  = ml_ag->nullspace_dim;
@@ -149,17 +122,6 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    if ( diff_level == 0 ) ml_ag->curr_threshold = ml_ag->threshold;
    epsilon = ml_ag->curr_threshold;
    ml_ag->curr_threshold *= 0.5;
-
-/*
-   diff_level = ml_ag->begin_level - ml_ag->cur_level;
-   if ( diff_level < 0 ) diff_level = - diff_level;
-   if ( diff_level > 0 )
-   { 
-      printf("ML_Aggregate_CoarsenUncoupled should be called only at");
-      printf("          the fineset level.\n");
-      exit(1);
-   }
-*/
 
    if ( mypid == 0 && printflag  < ML_Get_PrintLevel())
      {
@@ -206,36 +168,42 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    nz_cnt = zerodiag_cnt = 0;
    for ( i = 0; i < Nrows; i++ ) 
-     {
-       diagonal[i] = 0.0;
-       while (getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind, 
-			 col_val,&m) == 0 ) 
-	 {
-	   ML_free(col_ind);
-	   ML_free(col_val);
-	   maxnnz_per_row = maxnnz_per_row * 2 + 1; 
-	   col_ind = (int *)    ML_allocate(maxnnz_per_row*sizeof(int));
-	   col_val = (double *) ML_allocate(maxnnz_per_row*sizeof(double));
-	 }
-       for ( j = 0; j < m; j++ ) 
-	 {
-	   if ( col_ind[j] == i ) diagonal[i] = col_val[j];
-	 }
-       nz_cnt += m;
-       if ( diagonal[i] == 0.0 ) {nz_cnt++; zerodiag_cnt++;}
-       if (m < 2) true_bdry[i] = 'T';
-     }
-   if ( zerodiag_cnt > 0 ) 
-     {
-       printf("Aggregation Coarsening : %d zero diag\n", zerodiag_cnt);
-     }
-#ifndef ML_NEWDROPSCHEME
-   if ( epsilon == 0.0 && diagonal != NULL ) 
-     {
-       ML_free(diagonal);
-       diagonal = NULL;
-     }
+   {
+#ifdef FIXBRUNNERBUG
+     int rowNzCount=0;
 #endif
+     diagonal[i] = 0.0;
+     while (getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind, 
+             col_val,&m) == 0 ) 
+     {
+       ML_free(col_ind);
+       ML_free(col_val);
+       maxnnz_per_row = maxnnz_per_row * 2 + 1; 
+       col_ind = (int *)    ML_allocate(maxnnz_per_row*sizeof(int));
+       col_val = (double *) ML_allocate(maxnnz_per_row*sizeof(double));
+     }
+     for ( j = 0; j < m; j++ ) {
+       if ( col_ind[j] == i ) diagonal[i] = col_val[j];
+#ifdef FIXBRUNNERBUG
+       else if (col_val[j] != 0.0) rowNzCount++;
+#endif
+     }
+     nz_cnt += m;
+     if ( diagonal[i] == 0.0 ) {nz_cnt++; zerodiag_cnt++;}
+#ifndef FIXBRUNNERBUG
+     if (m < 2) true_bdry[i] = 'T';
+#else
+     if (rowNzCount == 0) true_bdry[i] = 'T';
+#endif
+   }
+   if ( zerodiag_cnt > 0 ) 
+   {
+     printf("Aggregation Coarsening : %d zero diag\n", zerodiag_cnt);
+   }
+   if ( epsilon == 0.0 && diagonal != NULL ) {
+     ML_free(diagonal);
+     diagonal = NULL;
+   }
 
    /* ------------------------------------------------------------- */
    /* allocate memory for the entire matrix (only the column indices*/
@@ -264,102 +232,13 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    nz_cnt = Nrows + 1;
    mat_indx[0] = nz_cnt; 
-#ifdef ML_NEWDROPSCHEME /* new dropping scheme */
-   scaledvals = (double *) ML_allocate( maxnnz_per_row * sizeof(double));
-   totalnnz = 0;
-#endif
-
 
    for ( i = 0; i < Nrows; i++ ) 
    {
      getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind,col_val, &m);
      if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
-#ifdef ML_NEWDROPSCHEME /* new dropping scheme */
-     totalnnz += m;
-     /* test 1 -- has user requested no dropping? */
-     if (threshold1 == 0.0) {
-       for (j = 0; j < m; j++) {
-         jnode = col_ind[j];
-	     if ( jnode != i && jnode < Nrows && col_val[j] != 0.0)
-            mat_indx[nz_cnt++] = col_ind[j];
-	   }
-     }
-     else
-     {
-       dsum1 = 0.0; dsum2 = 0.0; maxentry = -1.0; minentry = 1.0e+50; localnnz = 0;
-       /* find max scaled off-diagonal */
-       for (j = 0; j < m; j++)
-       {
-         jnode = col_ind[j];
-  	     if ( jnode != i && jnode < Nrows)
-         {
-           localnnz += 1;
-           dcompare1 =  sqrt(ML_dabs(diagonal[i] * diagonal[jnode]));
-           if (dcompare1 != 0.0)
-             scaledvals[j] = ML_dabs(col_val[j] / dcompare1);
-           else
-             scaledvals[j] = ML_dabs(col_val[j]);
-           dsum1 += scaledvals[j] * scaledvals[j]; /* for stddev */
-           dsum2 += scaledvals[j];                 /* for stddev */
-           if ( scaledvals[j] > maxentry) maxentry = scaledvals[j];
-           if ( scaledvals[j] < minentry) minentry = scaledvals[j];
-         }
-       }
-       /*
-       if (mypid == 0) {
-         printf("(%d) row %d, maxentry = %e\n", mypid,i,maxentry);
-         fflush(stdout);
-       }
-       */
-       /* test 2:  If the maximum off-diagonal is not too small, 
-                   possibly do some selective dropping. 
-                   Otherwise, all off-diags are very small, and
-                   so drop everybody. */
-       if (maxentry > threshold2)
-       {
-         dcompare1 = dsum1 - (1.0/m)*dsum2*dsum2;
-         stddev = sqrt( 1.0/(m-1) * dcompare1 );
-         /*boost it a bit to not drop so aggressively */
-         stddev = stddev* 2;
-         /*stddev = stddev* 3; */
-         /*
-         if (mypid == 0) {
-           printf("(%d) row %d, dcompare1 = %e, dsum1 = %e, dsum2 = %e,  std deviation =  %lf stddev = %e\n", mypid,i,dcompare1, dsum1, dsum2, stddev, stddev);
-           fflush(stdout);
-         }
-         */
-         /* test 3: if stddev < threshold3 (i.e, is very small)
-                    keep all entries.  If stddev >= threshold3, selectively
-                    drop */
-         if (stddev < threshold3) {
-           for (j = 0; j < m; j++) {
-             jnode = col_ind[j];
-	         if ( jnode != i && jnode < Nrows && col_val[j] != 0.0)
-                mat_indx[nz_cnt++] = jnode;
-	       }
-         }
-         else {
-           /* this allows the user some dropping control */
-           /*gamma = maxentry - ((1-threshold1) * maxentry + threshold1 * stddev);*/
-           /*gamma = (0.60 + diff_level*0.05) * maxentry; */
-           /*gamma = multiplier * maxentry;*/
-           gamma = maxentry - stddev;
-           localdropped = 0;
-           for (j = 0; j < m; j++) {
-             jnode = col_ind[j];
-	         if ( jnode != i && jnode < Nrows) {
-               /* test 4: is each scaled entry "close" to the max entry? */
-               if (scaledvals[j] >= gamma) mat_indx[nz_cnt++] = jnode;
-               else localdropped++;
-             }
-	       }
-           totaldropped += localdropped;
-           /*printf("\t(%d) row %d, gamma = %e, dropped %d of %d, maxentry = %e, minentry = %e, stddev = %e\n", mypid,i,gamma,localdropped,localnnz,maxentry,minentry,stddev);*/
-         }
-       }
-       else totaldropped += localnnz;
-     }
-#else /* previous dropping scheme */
+
+     int itmp = nz_cnt;
      for (j = 0; j < m; j++) 
      {
        jnode = col_ind[j];
@@ -378,17 +257,17 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 	   else if ( jnode != i && jnode < Nrows && col_val[j] != 0.0)
           mat_indx[nz_cnt++] = col_ind[j];
 	 }
-#endif /*ifdef ML_NEWDROPSCHEME*/
      mat_indx[i+1] = nz_cnt;
-     if ( m <= 1 ) mat_indx[i] = -mat_indx[i]; /*JJH checking for Dir. b.c.*/
+     /* JJH 6/28/06
+     printf("(%d) nz_cnt - itmp = %d, m = %d\n",i,nz_cnt-itmp,m);
+     */
+#ifdef FIXBRUNNERBUG
+     if ( nz_cnt-itmp ==0 ) mat_indx[i] = -mat_indx[i];
+#else
+     if ( m <= 1 ) mat_indx[i] = -mat_indx[i];/*JJH checking for Dir. b.c.*/
                                                /*hmmm ... mat_indx = 0 ?   */
-   }
-#ifdef ML_NEWDROPSCHEME
-   ML_gsum_scalar_int(&totalnnz,&i,comm);
-   ML_gsum_scalar_int(&totaldropped,&i,comm);
-   if (mypid == 0 && 7 < ML_Get_PrintLevel())
-     printf("=======> dropped %d out of %d nonzeros\n",totaldropped, totalnnz);
 #endif
+   }
    ML_free(col_ind);
    ML_free(col_val);
    if ( diagonal != NULL ) ML_free(diagonal);
