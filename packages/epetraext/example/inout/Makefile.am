@@ -28,7 +28,7 @@
 
 EXEEXT = .exe
 
-include $(top_builddir)/../teuchos/Makefile.export.teuchos
+include $(top_builddir)/Makefile.export.epetraext
 
 if HAVE_EPETRAEXT_HDF5
 HDF5Files = HDF5_IO HDF5Converter HDF5_MATLAB
@@ -39,90 +39,29 @@ noinst_PROGRAMS = MatrixMarket_IO XML_IO $(HDF5Files)
 MatrixMarket_IO_SOURCES = $(srcdir)/MatrixMarket_IO.cpp
 MatrixMarket_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
 				  $(top_builddir)/../epetra/src/libepetra.a
-MatrixMarket_IO_CXXFLAGS = -I$(top_srcdir)/src/inout \
-			      -I$(top_srcdir)/src \
-			      -I$(top_builddir)/src \
-			      -I$(top_srcdir)/../epetra/src \
-			      -I$(top_builddir)/../epetra/src \
-			      -I$(top_srcdir)/../triutils/src \
-			      -I$(top_builddir)/../triutils/src
-MatrixMarket_IO_LDADD = $(top_builddir)/src/libepetraext.a \
-			   $(top_builddir)/../epetra/src/libepetra.a \
-			   $(top_builddir)/../triutils/src/libtriutils.a \
-			   $(LIBS) \
-			   $(BLAS_LIBS) \
-			   $(FLIBS)
+MatrixMarket_IO_CXXFLAGS = $(EPETRAEXT_INCLUDES)
+MatrixMarket_IO_LDADD = $(EPETRAEXT_LIBS)
 
 XML_IO_SOURCES = $(srcdir)/XML_IO.cpp
 XML_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
 		      $(top_builddir)/../epetra/src/libepetra.a
-XML_IO_CXXFLAGS = -I$(top_srcdir)/src/inout \
-		  -I$(top_srcdir)/src \
-		  -I$(top_builddir)/src \
-		  -I$(top_srcdir)/../epetra/src \
-		  -I$(top_builddir)/../epetra/src \
-		  -I$(top_srcdir)/../teuchos/src \
-		  -I$(top_builddir)/../teuchos/src
-XML_IO_LDADD = $(top_builddir)/src/libepetraext.a \
-	       $(top_builddir)/../epetra/src/libepetra.a \
-	       $(top_builddir)/../teuchos/src/libteuchos.a \
-	       $(LIBS) \
-	       $(BLAS_LIBS) \
-	       $(FLIBS)
+XML_IO_CXXFLAGS = $(EPETRAEXT_INCLUDES)
+XML_IO_LDADD = $(EPETRAEXT_LIBS)
 
 HDF5_IO_SOURCES = $(srcdir)/HDF5_IO.cpp
 HDF5_IO_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
 			  $(top_builddir)/../epetra/src/libepetra.a
-HDF5_IO_CXXFLAGS = -I$(top_srcdir)/src/inout \
-		      -I$(top_srcdir)/src \
-		      -I$(top_builddir)/src \
-		      -I$(top_srcdir)/../epetra/src \
-		      -I$(top_builddir)/../epetra/src \
-		      -I$(top_srcdir)/../triutils/src \
-		      -I$(top_builddir)/../triutils/src \
-		      $(TEUCHOS_INCLUDES) 
-HDF5_IO_LDADD = $(top_builddir)/src/libepetraext.a \
-		   $(top_builddir)/../epetra/src/libepetra.a \
-		   $(top_builddir)/../triutils/src/libtriutils.a \
-		   $(TEUCHOS_LIBS) \
-		   $(LIBS) \
-		   $(BLAS_LIBS) \
-		   $(FLIBS)
+HDF5_IO_CXXFLAGS = $(EPETRAEXT_INCLUDES)
+HDF5_IO_LDADD = $(EPETRAEXT_LIBS)
 
 HDF5_MATLAB_SOURCES = $(srcdir)/HDF5_MATLAB.cpp
 HDF5_MATLAB_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
 			   $(top_builddir)/../epetra/src/libepetra.a
-HDF5_MATLAB_CXXFLAGS = -I$(top_srcdir)/src/inout \
-		       -I$(top_srcdir)/src \
-		       -I$(top_builddir)/src \
-		       -I$(top_srcdir)/../epetra/src \
-		       -I$(top_builddir)/../epetra/src \
-		       -I$(top_srcdir)/../triutils/src \
-		       -I$(top_builddir)/../triutils/src \
-		       $(TEUCHOS_INCLUDES) 
-HDF5_MATLAB_LDADD = $(top_builddir)/src/libepetraext.a \
-		    $(top_builddir)/../epetra/src/libepetra.a \
-		    $(top_builddir)/../triutils/src/libtriutils.a \
-		    $(TEUCHOS_LIBS) \
-		    $(LIBS) \
-		    $(BLAS_LIBS) \
-		    $(FLIBS)
+HDF5_MATLAB_CXXFLAGS = $(EPETRAEXT_INCLUDES)
+HDF5_MATLAB_LDADD = $(EPETRAEXT_LIBS)
 
 HDF5Converter_SOURCES = $(srcdir)/HDF5Converter.cpp
 HDF5Converter_DEPENDENCIES = $(top_builddir)/src/libepetraext.a \
 			     $(top_builddir)/../epetra/src/libepetra.a
-HDF5Converter_CXXFLAGS = -I$(top_srcdir)/src/inout \
-			 -I$(top_srcdir)/src \
-			 -I$(top_builddir)/src \
-			 -I$(top_srcdir)/../epetra/src \
-			 -I$(top_builddir)/../epetra/src \
-			 -I$(top_srcdir)/../triutils/src \
-			 -I$(top_builddir)/../triutils/src \
-			 $(TEUCHOS_INCLUDES) 
-HDF5Converter_LDADD = $(top_builddir)/src/libepetraext.a \
-		      $(top_builddir)/../epetra/src/libepetra.a \
-		      $(top_builddir)/../triutils/src/libtriutils.a \
-		      $(TEUCHOS_LIBS) \
-		      $(LIBS) \
-		      $(BLAS_LIBS) \
-		      $(FLIBS)
+HDF5Converter_CXXFLAGS = $(EPETRAEXT_INCLUDES)
+HDF5Converter_LDADD = $(EPETRAEXT_LIBS)
