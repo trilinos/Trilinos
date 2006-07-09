@@ -54,13 +54,7 @@ Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 // System includes
 #include <sstream>
 
-#include "Galeri_ConfigDefs.h"
-#include "Galeri_Version.h"
-#include "Galeri_Maps.h"
-#include "Galeri_CrsMatrices.h"
-#include "Galeri_VbrMatrices.h"
-#include "Galeri_Utils.h"
-#include "Galeri_ReadHB.h"
+// Epetra includes
 #include "Epetra_Comm.h"
 #include "Epetra_SerialComm.h"
 #ifdef HAVE_MPI
@@ -70,19 +64,34 @@ Galeri requires the Epetra and Teuchos modules of PyTrilinos.
 #include "Epetra_Map.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BasicRowMatrix.h"
-#include "Epetra_JadMatrix.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_JadMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_LinearProblem.h"
+
+// Epetra Python utility code
 #include "Epetra_PyRowMatrix.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
+
+// Teuchos includes
 #include "Teuchos_ParameterList.hpp"
+
+// Teuchos Python utility code
 #include "PyTeuchos_Utils.h"
+
+// Galeri includes
+#include "Galeri_ConfigDefs.h"
+#include "Galeri_Version.h"
+#include "Galeri_Maps.h"
+#include "Galeri_CrsMatrices.h"
+#include "Galeri_VbrMatrices.h"
+#include "Galeri_Utils.h"
+#include "Galeri_ReadHB.h"
 // Only needed to let SWIG define SWIGTYPE_p_Epetra_Vector, otherwise
-// underfined. 
+// undefined. 
 void Galeri_Dummy(Epetra_Vector* xxx)
 {
   cout << "Don't use this..." << endl;
