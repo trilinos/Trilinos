@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_XMLParameterListWriter.hpp"	
+#include "Teuchos_XMLParameterListWriter.hpp"
 
 using namespace Teuchos;
 
@@ -64,32 +64,32 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
   if (entry.isType<int>())
     {
       type = "int";
-      value = toString(getValue<int>(entry));
+      value = toString(any_cast<int>(entry.getAny(false)));
     }
   else if (entry.isType<double>())
     {
       type = "double";
-      value = toString(getValue<double>(entry));
+      value = toString(any_cast<double>(entry.getAny(false)));
     }
   else if (entry.isType<float>())
     {
       type = "float";
-      value = toString(getValue<float>(entry));
+      value = toString(any_cast<float>(entry.getAny(false)));
     }
   else if (entry.isType<string>())
     {
       type = "string";
-      value = getValue<string>(entry);
+      value = toString(any_cast<string>(entry.getAny(false)));
     }
   else if (entry.isType<char>())
     {
       type = "char";
-      value = toString(getValue<char>(entry));
+      value = toString(any_cast<char>(entry.getAny(false)));
     }
   else if (entry.isType<bool>())
     {
       type = "bool";
-      value = toString(getValue<bool>(entry));
+      value = toString(any_cast<bool>(entry.getAny(false)));
     }
   else
     {

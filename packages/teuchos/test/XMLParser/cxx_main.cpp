@@ -55,16 +55,28 @@ int main(int argc, void** argv)
       ParameterList problem("Problem");
       ParameterList solver("Solver");
       ParameterList prec("Preconditioner");
-      prec.set("type", "ILUk");
+      prec.set("type", "ILUk");           // set some of these to isUsed for completeness
+      {
+        string tmp = prec.get<string>("type");
+      }
       prec.set("k", 2);
       solver.set("Preconditioner",prec);
-      solver.set("type", "gmres");
+      solver.set("type", "gmres");        // set some of these to isUsed for completeness
+      {
+        string tmp = solver.get<string>("type");
+      }
       solver.set("maxiters", 1000);
       solver.set("restarts", 100);
-      solver.set("tol", 1.0e-10);
+      solver.set("special1","\"&\"");     // test the XML outputting and parsing for correctness
+      solver.set("special2","\'&\'");     // test the XML outputting and parsing for correctness
+      solver.set("special3","\"&\'");     // test the XML outputting and parsing for correctness
+      solver.set("tol", 1.0e-10);         // set some of these to isUsed for completeness
+      {
+        double tmp = solver.get<double>("tol");
+      }
       problem.set("Solver",solver);
 
-      cout << "*** ParameterList" << endl;
+      cout << "*** ParameterList (original)" << endl;
       cout << problem << endl;
 
       /* create an XML object from the ParameterList */
@@ -72,9 +84,11 @@ int main(int argc, void** argv)
       XMLObject xmlprob1 = xml2pl.toXML(problem);
 
       /* write the XML to a string */
-      string strproblem = xmlprob1.toString();
+      ostringstream ss;
+      ss << xmlprob1;
+      string strproblem = ss.str();
 
-      cout << "*** ParameterList.toXML" << endl;
+      cout << "*** XML from ParameterListParameterListWriter.toXML().toString()" << endl;
       cout << xmlprob1 << endl;
 
       /* create a input source, parser to read the string */
@@ -84,14 +98,14 @@ int main(int argc, void** argv)
       /* parse XML in a string */
       XMLObject xmlprob2 = parser.parse();
 
-      cout << "*** parser.parse" << endl;
+      cout << "*** XML from XMLParser.parse()" << endl;
       cout << xmlprob2 << endl;
 
       /* convert the new XML object to a ParameterList */
       XMLParameterListReader pl2xml;
       ParameterList problem2 = pl2xml.toParameterList(xmlprob2);
 
-      cout << "*** XML.toParameterList" << endl;
+      cout << "*** ParameterList from XMLParameterListReader.toParameterList()" << endl;
       cout << problem2 << endl;
 
       /* check that the new parameter list matches the old one */

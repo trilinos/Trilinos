@@ -103,14 +103,16 @@ public:
   T& getValue(T *ptr) const;
 
   /*! \brief Direct access to the Teuchos::any data value underlying this
-   *  object.
+   *  object. The bool argument \c activeQry (default: true) indicates that the 
+   *  call to getAny() will set the isUsed() value of the ParameterEntry to true.
    */
-  any& getAny();
+  any& getAny(bool activeQry = true);
 
   /*! \brief Constant direct access to the Teuchos::any data value underlying this
-   *  object.
+   *  object. The bool argument \c activeQry (default: true) indicates that the 
+   *  call to getAny() will set the isUsed() value of the ParameterEntry to true.
    */
-  const any& getAny() const;
+  const any& getAny(bool activeQry = true) const;
 
   //@}
 
@@ -242,12 +244,22 @@ T& ParameterEntry::getValue(T *ptr) const
 }
 
 inline
-any& ParameterEntry::getAny()
-{ return val_; }
+any& ParameterEntry::getAny(bool activeQry)
+{ 
+  if (activeQry == true) {
+    isUsed_ = true;
+  }
+  return val_; 
+}
 
 inline
-const any& ParameterEntry::getAny() const
-{ return val_; }
+const any& ParameterEntry::getAny(bool activeQry) const
+{ 
+  if (activeQry == true) {
+    isUsed_ = true;
+  }
+  return val_; 
+}
 
 // Attribute Methods
 

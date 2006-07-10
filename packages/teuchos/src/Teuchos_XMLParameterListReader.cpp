@@ -76,13 +76,13 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
           bool isDefault = false;
           bool isUsed = false;
           if (child.hasAttribute("isDefault")) 
-            {
-              isDefault = child.getRequiredBool("isDefault");
-            }
+          {
+            isDefault = child.getRequiredBool("isDefault");
+          }
           if (child.hasAttribute("isUsed")) 
-            {
-              isUsed = child.getRequiredBool("isUsed");
-            }
+          {
+            isUsed = child.getRequiredBool("isUsed");
+          }
 
           // setValue assigns isUsed to false
           // getValue assigns isUsed to true
