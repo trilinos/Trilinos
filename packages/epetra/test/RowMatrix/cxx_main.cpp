@@ -41,20 +41,36 @@
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
 #include <vector>
+#include <string>
 
 // prototypes
 
-bool checkValues( double x, double y){ if (fabs((x-y)/x) > 0.01) return(true); else return(false);}
+int checkValues( double x, double y, string message = "", bool verbose = false) { 
+  if (fabs((x-y)/x) > 0.01) {
+    return(1); 
+    if (verbose) cout << "********** " << message << " check failed.********** " << endl;
+  }
+  else {
+    if (verbose) cout << message << " check OK." << endl;    
+    return(0);
+  }
+}
 
-bool checkMultiVectors( Epetra_MultiVector & X, Epetra_MultiVector & Y) {
+int checkMultiVectors( Epetra_MultiVector & X, Epetra_MultiVector & Y, string message = "", bool verbose = false) {
   int numVectors = X.NumVectors();
   int length = Y.MyLength();
   int badvalue = 0;
   int globalbadvalue = 0;
   for (int j=0; j<numVectors; j++)
     for (int i=0; i< length; i++) 
-      if (checkValues(X[j][i], Y[j][i])) badvalue = 1;
+      if (checkValues(X[j][i], Y[j][i])==1) badvalue = 1;
   X.Map().Comm().MaxAll(&badvalue, &globalbadvalue, 1);
+
+  if (verbose) {
+    if (globalbadvalue==0) cout << message << " check OK." << endl;
+    else cout << "********* " << message << " check failed.********** " << endl;
+  }
+  return(globalbadvalue);
 }
 
 int check(Epetra_RowMatrix & A, Epetra_RowMatrix & B, bool verbose);
@@ -210,11 +226,15 @@ int main(int argc, char *argv[])
   z.SetFlopCounter(A);
   resid.SetFlopCounter(A);
   JadA.SetFlopCounter(A);
+  JadA1.SetFlopCounter(A);
+  JadA2.SetFlopCounter(A);
+  
 
   if (verbose) cout << "=======================================" << endl
 		    << "Testing Jad using CrsMatrix as input..." << endl
 		    << "=======================================" << endl;
 
+  A.ResetFlops();
   powerMethodTests(A, JadA, Map, q, z, resid, verbose);
 
   // Increase diagonal dominance
@@ -234,11 +254,13 @@ int main(int argc, char *argv[])
     A.ReplaceGlobalValues(0, numvals, &Rowvals[0], &Rowinds[0]);
   }
   JadA.UpdateValues(A);
+  A.ResetFlops();
   powerMethodTests(A, JadA, Map, q, z, resid, verbose);
 
   if (verbose) cout << "================================================================" << endl
 		          << "Testing Jad using Jad matrix as input matrix for construction..." << endl
 		          << "================================================================" << endl;
+  JadA1.ResetFlops();
   powerMethodTests(JadA1, JadA2, Map, q, z, resid, verbose);
 
 #ifdef EPETRA_MPI
@@ -269,6 +291,8 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   double elapsed_time = timer.ElapsedTime() - startTime;
   double total_flops = q.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
+  double lambdaref = lambda;
+  double flopsref = total_flops;
 
   if (verbose) 
 	  cout << "\n\nTotal MFLOPs for reference first solve = " << MFLOPs << endl
@@ -285,6 +309,9 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
 	  cout << "\n\nTotal MFLOPs for candidate first solve = " << MFLOPs << endl
 		  <<     "Total FLOPS                            = " <<total_flops <<endl<<endl;
 
+  EPETRA_TEST_ERR(checkValues(lambda,lambdaref," No-transpose Power Method result", verbose),ierr);
+  EPETRA_TEST_ERR(checkValues(total_flops,flopsref," No-transpose Power Method flop count", verbose),ierr);
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
 	
   // Solve transpose problem
@@ -298,6 +325,8 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   elapsed_time = timer.ElapsedTime() - startTime;
   total_flops = q.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
+  lambdaref = lambda;
+  flopsref = total_flops;
 
   if (verbose) 
 	 cout << "\n\nTotal MFLOPs for reference transpose solve = " << MFLOPs << endl
@@ -313,6 +342,9 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   if (verbose) 
 	  cout << "\n\nTotal MFLOPs for candidate transpose solve = " << MFLOPs << endl
 		  <<     "Total FLOPS                                = " <<total_flops <<endl<<endl;
+
+  EPETRA_TEST_ERR(checkValues(lambda,lambdaref,"Transpose Power Method result", verbose),ierr);
+  EPETRA_TEST_ERR(checkValues(total_flops,flopsref,"Transpose Power Method flop count", verbose),ierr);
 
   EPETRA_TEST_ERR(check(A, JadA, verbose),ierr);
 
@@ -393,11 +425,11 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
     B.SetUseTranspose(transA);
     A.Apply(X,YA1);
     A.Multiply(transA, X, YA2);
-    EPETRA_TEST_ERR(checkMultiVectors(YA1,YA2),ierr);
+    EPETRA_TEST_ERR(checkMultiVectors(YA1,YA2,"A Multiply and A Apply", verbose),ierr);
     B.Apply(X,YB1);
-    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB1),ierr);
+    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB1,"A Multiply and B Multiply", verbose),ierr);
     B.Multiply(transA, X, YB2);
-    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB2),ierr);
+    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB2,"A Multiply and B Apply", verbose), ierr);
     
   }
   {// transpose case
@@ -413,11 +445,11 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
     B.SetUseTranspose(transA);
     A.Apply(X,YA1);
     A.Multiply(transA, X, YA2);
-    EPETRA_TEST_ERR(checkMultiVectors(YA1,YA2),ierr);
+    EPETRA_TEST_ERR(checkMultiVectors(YA1,YA2, "A Multiply and A Apply (transpose)", verbose),ierr);
     B.Apply(X,YB1);
-    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB1),ierr);
+    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB1, "A Multiply and B Multiply (transpose)", verbose),ierr);
     B.Multiply(transA, X,YB2);
-    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB2),ierr);
+    EPETRA_TEST_ERR(checkMultiVectors(YA1,YB2, "A Multiply and B Apply (transpose)", verbose),ierr);
     
   }
 
@@ -425,22 +457,22 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
   EPETRA_TEST_ERR(A.ExtractDiagonalCopy(diagA),ierr);
   Epetra_Vector diagB(B.RowMatrixRowMap());
   EPETRA_TEST_ERR(B.ExtractDiagonalCopy(diagB),ierr);
-  EPETRA_TEST_ERR(checkMultiVectors(diagA,diagB),ierr);
+  EPETRA_TEST_ERR(checkMultiVectors(diagA,diagB, "ExtractDiagonalCopy", verbose),ierr);
 
   Epetra_Vector rowA(A.RowMatrixRowMap());
   EPETRA_TEST_ERR(A.InvRowSums(rowA),ierr);
   Epetra_Vector rowB(B.RowMatrixRowMap());
   EPETRA_TEST_ERR(B.InvRowSums(rowB);,ierr)
-  EPETRA_TEST_ERR(checkMultiVectors(rowA,rowB),ierr);
+  EPETRA_TEST_ERR(checkMultiVectors(rowA,rowB, "InvRowSums", verbose),ierr);
 
   Epetra_Vector colA(A.RowMatrixColMap());
   EPETRA_TEST_ERR(A.InvColSums(colA),ierr);
   Epetra_Vector colB(B.RowMatrixColMap());
   EPETRA_TEST_ERR(B.InvColSums(colB),ierr);
-  EPETRA_TEST_ERR(checkMultiVectors(colA,colB),ierr);
+  EPETRA_TEST_ERR(checkMultiVectors(colA,colB, "InvColSums", verbose),ierr);
 
-  EPETRA_TEST_ERR(checkValues(A.NormInf(), B.NormInf()), ierr);
-  EPETRA_TEST_ERR(checkValues(A.NormOne(), B.NormOne()),ierr);
+  EPETRA_TEST_ERR(checkValues(A.NormInf(), B.NormInf(), "NormInf before scaling", verbose), ierr);
+  EPETRA_TEST_ERR(checkValues(A.NormOne(), B.NormOne(), "NormOne before scaling", verbose),ierr);
 
   EPETRA_TEST_ERR(A.RightScale(colA),ierr);  
   EPETRA_TEST_ERR(B.RightScale(colB),ierr);
@@ -450,8 +482,8 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
   EPETRA_TEST_ERR(B.LeftScale(rowB),ierr);
 
 
-  EPETRA_TEST_ERR(checkValues(A.NormInf(), B.NormInf()), ierr);
-  EPETRA_TEST_ERR(checkValues(A.NormOne(), B.NormOne()),ierr);
+  EPETRA_TEST_ERR(checkValues(A.NormInf(), B.NormInf(), "NormInf after scaling", verbose), ierr);
+  EPETRA_TEST_ERR(checkValues(A.NormOne(), B.NormOne(), "NormOne after scaling", verbose),ierr);
 
   vector<double> valuesA(A.MaxNumEntries());
   vector<int> indicesA(A.MaxNumEntries());  
