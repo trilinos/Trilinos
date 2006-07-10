@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
   if(verbose && rank!=0) 
 		verbose = false;
 
-  int NumMyEquations = 10000;
+  int NumMyEquations = 100000;
   int NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
   if(MyPID < 3) 
     NumMyEquations++;
@@ -236,9 +236,9 @@ int main(int argc, char *argv[])
   JadA.UpdateValues(A);
   powerMethodTests(A, JadA, Map, q, z, resid, verbose);
 
-  if (verbose) cout << "========================================" << endl
-		    << "Testing Jad using Jad matrix as input..." << endl
-		    << "=======================================" << endl;
+  if (verbose) cout << "================================================================" << endl
+		          << "Testing Jad using Jad matrix as input matrix for construction..." << endl
+		          << "================================================================" << endl;
   powerMethodTests(JadA1, JadA2, Map, q, z, resid, verbose);
 
 #ifdef EPETRA_MPI
@@ -254,8 +254,8 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   // variable needed for iteration
   double lambda = 0.0;
   // int niters = 10000;
-  int niters = 200;
-  double tolerance = 1.0e-1;
+  int niters = 300;
+  double tolerance = 1.0e-2;
   int ierr = 0;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -270,7 +270,9 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   double total_flops = q.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) cout << "\n\nTotal MFLOPs for Crs first solve = " << MFLOPs << endl<< endl;
+  if (verbose) 
+	  cout << "\n\nTotal MFLOPs for reference first solve = " << MFLOPs << endl
+		  <<     "Total FLOPS                            = " <<total_flops <<endl<<endl;
 
   lambda = 0.0;
   startTime = timer.ElapsedTime();
@@ -279,7 +281,9 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   total_flops = q.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) cout << "\n\nTotal MFLOPs for Jad first solve = " << MFLOPs << endl<< endl;
+  if (verbose) 
+	  cout << "\n\nTotal MFLOPs for candidate first solve = " << MFLOPs << endl
+		  <<     "Total FLOPS                            = " <<total_flops <<endl<<endl;
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -295,7 +299,9 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   total_flops = q.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) cout << "\n\nTotal MFLOPs for Crs transpose solve = " << MFLOPs << endl<< endl;
+  if (verbose) 
+	 cout << "\n\nTotal MFLOPs for reference transpose solve = " << MFLOPs << endl
+		 <<     "Total FLOPS                                = " <<total_flops <<endl<<endl;
 
   lambda = 0.0;
   startTime = timer.ElapsedTime();
@@ -304,7 +310,9 @@ int powerMethodTests(Epetra_RowMatrix & A, Epetra_RowMatrix & JadA, Epetra_Map &
   total_flops = q.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) cout << "\n\nTotal MFLOPs for Jad transpose solve = " << MFLOPs << endl<< endl;
+  if (verbose) 
+	  cout << "\n\nTotal MFLOPs for candidate transpose solve = " << MFLOPs << endl
+		  <<     "Total FLOPS                                = " <<total_flops <<endl<<endl;
 
   EPETRA_TEST_ERR(check(A, JadA, verbose),ierr);
 
