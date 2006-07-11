@@ -132,7 +132,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator ++itr and < ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
-    for( int i = 0; itr < ptr+dim; ++i, ++itr )
+    for( int i = 0; itr < ptr.end(); ++i, ++itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -140,7 +140,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator itr++ and <= ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
-    for( int i = 0;  itr <= ptr+dim-1; ++i, itr++ )
+    for( int i = 0;  itr <= ptr.end()-1; ++i, itr++ )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -148,7 +148,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator itr+=1 and != ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
-    for( int i = 0; itr != ptr+dim; ++i, itr+=1 )
+    for( int i = 0; itr != ptr.end(); ++i, itr+=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -156,7 +156,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator itr=itr+1 and == ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin();
-    for( int i = 0; !( itr == ptr+dim ); ++i, itr=itr+1 )
+    for( int i = 0; !( itr == ptr.end() ); ++i, itr=itr+1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
@@ -166,7 +166,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator --itr and >= ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; itr >= ptr; --i, --itr )
+    for( int i = dim-1; itr >= ptr.begin(); --i, --itr )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -174,7 +174,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator itr-- and > ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; itr+1 > ptr; i--, itr-- )
+    for( int i = dim-1; itr+1 > ptr.begin(); i--, itr-- )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -182,7 +182,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator itr-=1 and != ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; itr+1 != ptr; i--, itr-=1 )
+    for( int i = dim-1; itr+1 != ptr.begin(); i--, itr-=1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
   
@@ -190,7 +190,7 @@ void test_ArrayRefCountPtr_iterators(
     if(verbose)
       *out << "\nChecking iterator itr=itr-1 and == ...\n";
     typename ArrayRefCountPtr<T>::const_iterator itr = ptr.begin()+dim-1;
-    for( int i = dim-1; !( itr+1 == ptr ); i--, itr=itr-1 )
+    for( int i = dim-1; !( itr+1 == ptr.begin() ); i--, itr=itr-1 )
       TEST_FOR_EXCEPT( !(*itr == ptr[i]) );
   }
 
