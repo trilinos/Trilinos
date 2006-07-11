@@ -66,9 +66,11 @@ int main(int argc, char* argv[])
   
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
+  // --------------------------------------------------------------------------------
   //
   // Create the scalar-type typedefs
   //
+  // --------------------------------------------------------------------------------
 
 #ifdef HAVE_COMPLEX
   typedef std::complex<double> ST;
@@ -80,9 +82,11 @@ int main(int argc, char* argv[])
   typedef Teuchos::ScalarTraits<ST>::magnitudeType MT;
   typedef int OT;
 
+  // --------------------------------------------------------------------------------
   //
   // Create 2D Laplacian using Tpetra::CisMatrix
   //
+  // --------------------------------------------------------------------------------
 
 #ifdef HAVE_MPI
   MPI_Comm mpiComm = MPI_COMM_WORLD;
@@ -139,7 +143,6 @@ int main(int argc, char* argv[])
     A = Teuchos::rcp( new Thyra::TpetraLinearOp<OT,ST>(
                       Teuchos::rcp_implicit_cast<Tpetra::Operator<OT,ST> >(tpetra_A) ) );
 
-  //
   // Set the parameters for the Belos LOWS Factory and create a parameter list.
   // NOTE:  All the code below only uses Thyra and is independent of Tpetra.
   //
@@ -172,16 +175,103 @@ int main(int argc, char* argv[])
   // (this will be set during the residual check at the end)
   bool success = true;
 
+  // --------------------------------------------------------------------------------
+  //
+  // Create the right-hand sides and solution vectors
+  //
+  // --------------------------------------------------------------------------------
+
   // Number of random right-hand sides we will be solving for.
   int numRhs = 5;
 
-  // Get the domain space for the Thyra linear operator 
-  Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<ST> > domain = A->domain();
+  // Create smart pointer to right-hand side and solution vector to be filled in below.
+  Teuchos::RefCountPtr<Thyra::MultiVectorBase<ST> > x, b;
+
+  if (numRhs==1) {
+    //
+    // In this case we can construct vectors using Tpetra and just "wrap" them in Thyra objects.
+    //
+
+    // Create RHS vector
+    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > tpetra_b =
+      Teuchos::rcp( new Tpetra::Vector<OT,ST>(vectorSpace) );
+
+    // Randomize RHS vector
+    tpetra_b->setAllToRandom();
+
+    // Wrap Tpetra vector as Thyra vector
+    b = Thyra::create_Vector(tpetra_b);
+    
+    // Create solution (LHS) vector
+    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > tpetra_x =
+      Teuchos::rcp( new Tpetra::Vector<OT,ST>(vectorSpace) );
+
+    // Initialize solution to zero
+    tpetra_x->setAllToScalar( zero );
+
+    // Wrap Tpetra vector as Thyra vector
+    x = Thyra::create_Vector(tpetra_x);
+
+  } 
+  else {
+    //
+    // In this case we can construct the multivector using Thyra and extract columns of
+    // the multivector as Tpetra vector, which can then be filled.  This is because
+    // Tpetra does not have a multivector object and Thyra will emulate the multivector.
+    //
+    
+    // Get the domain space for the Thyra linear operator 
+    Teuchos::RefCountPtr<const Thyra::VectorSpaceBase<ST> > domain = A->domain();
+    
+    // Create a right-hand side and solution vectors with numRhs vectors in it.
+    x = Thyra::createMembers(domain, numRhs);
+    b = Thyra::createMembers(domain, numRhs);
+
+    // Extract the Tpetra vector from the columns of the multivector and fill them with 
+    // random numbers (b) or zeros (x).
+
+    for ( int j=0; j<numRhs; ++j ) {
+      //
+      // Get the j-th column from b as a Tpetra vector and randomize it.
+      // 
+      Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+	tpetra_b_j = Thyra::get_Tpetra_Vector(vectorSpace,b->col(j));
+      tpetra_b_j->setAllToRandom();
+      // 
+      // Get the j-th column from x as a Tpetra vector and set it to zero.
+      //
+      Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+	tpetra_x_j = Thyra::get_Tpetra_Vector(vectorSpace,x->col(j));
+      tpetra_x_j->setAllToScalar( zero );
+      //
+      // NOTE: Tpetra vectors have element access via the [] operator.
+      //       So and additional approach for filling in a Tpetra vector is:
+      //
+      for ( int i=0; i<numMyElements; ++i ) {
+	//
+	// Get the global index.
+	//
+	const int rowIndex = myGlobalElements[ i ];
+
+	// Set the entry to zero.
+	(*tpetra_x_j)[ rowIndex ] = zero;
+      }
+    }
+  }
+  
+  // --------------------------------------------------------------------------------
+  //
+  // Create the linear operator with solve factory/object and solve the linear
+  // system using the iterative solvers in Belos.
+  //
+  // NOTE:  This is the only part of the code that solely uses Thyra.
+  //
+  // --------------------------------------------------------------------------------
 
   // Create the Belos LOWS factory.
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveFactoryBase<ST> >
     belosLOWSFactory = Teuchos::rcp(new Thyra::BelosLinearOpWithSolveFactory<ST>());
-
+  
   // Set the output stream and the verbosity level (prints to std::cout by defualt)
   // NOTE:  Set to VERB_NONE for no output from the solver.
   belosLOWSFactory->setVerbLevel(Teuchos::VERB_LOW);
@@ -192,58 +282,61 @@ int main(int argc, char* argv[])
   // Create a BelosLinearOpWithSolve object from the Belos LOWS factory.
   Teuchos::RefCountPtr<Thyra::LinearOpWithSolveBase<ST> >
     nsA = belosLOWSFactory->createOp();
-
+  
   // Initialize the BelosLinearOpWithSolve object with the Thyra linear operator.
   belosLOWSFactory->initializeOp( A, &*nsA );
-
-  // Create a right-hand side with numRhs vectors in it and randomize it.
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> > 
-    b = Thyra::createMembers(domain, numRhs);
-  Thyra::seed_randomize<ST>(0);
-  Thyra::randomize(-one, one, &*b);
-
-  // Create an initial vector with numRhs vectors in it and initialize it to zero.
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> >
-    x = Thyra::createMembers(domain, numRhs);
-  Thyra::assign(&*x, zero);
-
+  
   // Perform solve using the linear operator to get the approximate solution of Ax=b,
   // where b is the right-hand side and x is the left-hand side.
   Thyra::SolveStatus<ST> solveStatus;
   solveStatus = Thyra::solve( *nsA, Thyra::NONCONJ_ELE, *b, &*x );
-
+  
   // Print out status of solve.
   *out << "\nBelos LOWS Status: "<< solveStatus << endl;
-
-  //
-  // Compute residual and ST check convergence.
-  //
-  std::vector<MT> norm_b(numRhs), norm_res(numRhs);
-  Teuchos::RefCountPtr< Thyra::MultiVectorBase<ST> >
-    y = Thyra::createMembers(domain, numRhs);
-
-  // Compute the column norms of the right-hand side b.
-  Thyra::norms_2( *b, &norm_b[0] );
-
-  // Compute y=A*x, where x is the solution from the linear solver.
-  A->apply( Thyra::NONCONJ_ELE, *x, &*y );
   
-  // Compute A*x-b = y-b
-  Thyra::update( -one, *b, &*y );
+  // --------------------------------------------------------------------------------
+  // Compute residual and check convergence.
+  // NOTE: We will do this by extracting the Tpetra vectors from the multivector.
+  //
+  // NOTE 2: We are using scalar traits here instead of the magnitude type
+  //         because Tpetra defines its norm methods to return the scalar type.
+  // --------------------------------------------------------------------------------
+  std::vector<ST> norm_b(numRhs), norm_res(numRhs);
+  
+  for ( int j=0; j<numRhs; ++j ) {
+    //
+    // Get the j-th columns from x and b as Tpetra vectors.
+    // 
+    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+      tpetra_x_j = Thyra::get_Tpetra_Vector(vectorSpace,x->col(j));
 
-  // Compute the column norms of A*x-b.
-  Thyra::norms_2( *y, &norm_res[0] );
+    Teuchos::RefCountPtr<Tpetra::Vector<OT,ST> > 
+      tpetra_b_j = Thyra::get_Tpetra_Vector(vectorSpace,b->col(j));
+    
+    // Compute the column norms of the right-hand side b.
+    norm_b[j] = tpetra_b_j->norm2();
+      
+    // Compute y=A*x, where x is the solution from the linear solver.
+    Tpetra::Vector<OT,ST> y(vectorSpace);
+    tpetra_A->apply( *tpetra_x_j, y );
+
+    // Compute b-A*x = b-y
+    y.update( one, *tpetra_b_j, -one );
+
+    // Compute the column norms of A*x-b.
+    norm_res[j] = y.norm2();
+  }
 
   // Print out the final relative residual norms.
   MT rel_res = 0.0;
   *out << "Final relative residual norms" << endl;  
   for (int i=0; i<numRhs; ++i) {
-    rel_res = norm_res[i]/norm_b[i];
+    rel_res = Teuchos::ScalarTraits<ST>::real(norm_res[i]/norm_b[i]);
     if (rel_res > maxResid)
       success = false;
     *out << "RHS " << i+1 << " : " 
          << std::setw(16) << std::right << rel_res << endl;
   }
-
+  
   return ( success ? 0 : 1 );
 }
