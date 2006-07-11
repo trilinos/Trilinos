@@ -71,6 +71,7 @@ public:
     - 0 : general unsymmetric matrix;
     - 1 : SPD;
     - 2 : general symmetric matrix.
+    UNUSED - See bug #2331 and bug #2332
     */
   int MatrixProperty_;        
 

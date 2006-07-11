@@ -68,10 +68,10 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   MDS.job = -777;
   
   // load up my default parameters
-  ICNTL[1]  = -1;  // Turn off error messages
-  ICNTL[2]  = -1;  // Turn off diagnostic printing
-  ICNTL[3]  = -1;  // Turn off global information messages
-  ICNTL[4]  = -1;
+  ICNTL[1]  = -1;  // Turn off error messages  6=on, -1 =off
+  ICNTL[2]  = -1;  // Turn off diagnostic printing  6=on, -1=off
+  ICNTL[3]  = -1;  // Turn off global information messages   6=on, -1=off
+  ICNTL[4]  = -1;  // 3 = most msgs; -1= none  
   ICNTL[5]  = 0;   // Matrix is given in elemental (i.e. triplet) from
   ICNTL[6]  = 7;   // Choose column permutation automatically
   ICNTL[7]  = 7;   // Choose ordering method automatically
@@ -97,7 +97,7 @@ void Amesos_Mumps::Destroy()
   { 
     // destroy instance of the package
     MDS.job = -2;
-    
+
     if (Comm().MyPID() < MaxProcs_) dmumps_c(&(MDS));
     
 #if 0
@@ -139,7 +139,17 @@ int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
   }
 
   ResetTime();
-
+  
+#ifdef EXTRA_DEBUG_INFO
+  Epetra_CrsMatrix* Eptr = dynamic_cast<Epetra_CrsMatrix*>( ptr );
+  if ( ptr->NumGlobalNonzeros() < 300 ) SetICNTL(4,3 );  // Enable more debug info for small matrices
+  if ( ptr->NumGlobalNonzeros() < 42 && Eptr ) { 
+      cout << " Matrix = " << endl ; 
+      Eptr->Print( cout ) ; 
+  } else {
+      assert( Eptr );
+  }
+#endif
 
   Row.resize(ptr->NumMyNonzeros());
   Col.resize(ptr->NumMyNonzeros());
@@ -334,7 +344,7 @@ void Amesos_Mumps::CheckParameters()
 
   // optimal value for MaxProcs == -1
   
-  int OptNumProcs1 = 1 + EPETRA_MAX(NumRows/10000, NumGlobalNonzeros/1000000);
+  int OptNumProcs1 = 1 + EPETRA_MAX(NumRows/10000, NumGlobalNonzeros/100000);
   OptNumProcs1 = EPETRA_MIN(Comm().NumProc(),OptNumProcs1);
 
   // optimal value for MaxProcs == -2
@@ -358,6 +368,7 @@ void Amesos_Mumps::CheckParameters()
 
   // few checks
   if (MaxProcs_ > Comm().NumProc()) MaxProcs_ = Comm().NumProc();
+//  if ( MaxProcs_ > 1 ) MaxProcs_ = Comm().NumProc();     // Bug - bogus kludge here  - didn't work anyway
 }
 
 //=============================================================================
@@ -405,14 +416,21 @@ int Amesos_Mumps::SymbolicFactorization()
   
   MDS.job = -1  ;     //  Initialization
   MDS.par = 1 ;       //  Host IS involved in computations
-  MDS.sym = MatrixProperty_;
+//  MDS.sym = MatrixProperty_;
+  MDS.sym =  0;       //  MatrixProperty_ is unititalized.  Furthermore MUMPS 
+                      //  expects only half of the matrix to be provided for
+                      //  symmetric matrices.  Hence setting MDS.sym to be non-zero
+                      //  indicating that the matrix is symmetric will only work
+                      //  if we change ConvertToTriplet to pass only half of the 
+                      //  matrix.  Bug #2331 and Bug #2332 
+
 
   RedistrMatrix(true);
 
   if (Comm().MyPID() < MaxProcs_) 
   {
     dmumps_c(&(MDS));   //  Initialize MUMPS
-    static_cast<void>( CheckError( ) );   // Can hang 
+    static_cast<void>( CheckError( ) );  
   }
 
   MDS.n = Matrix().NumGlobalRows();
@@ -691,6 +709,7 @@ void Amesos_Mumps::PrintStatus() const
   cout << "Amesos_Mumps : Percentage of nonzero elements = "
        << 100.0*Matrix().NumGlobalNonzeros()/(pow(Matrix().NumGlobalRows(),2.0)) << endl;
   cout << "Amesos_Mumps : Use transpose = " << UseTranspose_ << endl;
+//  MatrixProperty_ is unused - see bug #2331 and bug #2332 in this file and bugzilla
   if (MatrixProperty_ == 0) cout << "Amesos_Mumps : Matrix is general unsymmetric" << endl;
   if (MatrixProperty_ == 2) cout << "Amesos_Mumps : Matrix is general symmetric" << endl;
   if (MatrixProperty_ == 1) cout << "Amesos_Mumps : Matrix is SPD" << endl;
