@@ -53,7 +53,7 @@ class Epetra_Import: public Epetra_Object {
 
   //! Constructs a Epetra_Import object from the source and target maps.
   /*! This constructor builds an Epetra_Import object by comparing the GID lists of the source and
-      target maps, as discussed above.
+      target maps.
       \param TargetMap (In) Map containing the GIDs from which data should be imported to each processor from
              the source map whenever an import operation is performed using this importer.
       \param  SourceMap (In) Map containing the GIDs that should be used for importing data.
@@ -61,7 +61,7 @@ class Epetra_Import: public Epetra_Object {
       \warning Note that the SourceMap \e must have GIDs uniquely owned, each GID of the source map can occur only once.
 
 
-  Builds an import object that will transfer object built with SourceMap to objects built with TargetMap.
+  Builds an import object that will transfer objects built with SourceMap to objects built with TargetMap.
 
     A Epetra_Import object categorizes the elements of the target map into three sets as follows:
     <ol>
