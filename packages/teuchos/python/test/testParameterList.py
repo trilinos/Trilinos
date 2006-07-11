@@ -141,6 +141,110 @@ class ParameterListTestCase(unittest.TestCase):
         "Test Teuchos.ParameterList set method for an unsupported type"
         self.assertRaises(TypeError, self.plist.set, "bad parameter", (1,2,3))
 
+    def testGetDefault(self):
+        "Test Teuchos.ParameterList get method using default value"
+        default = None
+        self.assertEqual(self.plist.get("junk",None), None)
+
+    def testSublistNew(self):
+        "Test Teuchos.ParameterList sublist method for new sublist"
+        sublist = self.plist.sublist("new")
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        sublist = self.plist.get("new")
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+
+    def testSublistOld(self):
+        "Test Teuchos.ParameterList sublist method for existing sublist"
+        sublist = self.plist.sublist("new")
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+        sublist = self.plist.sublist("new")
+        self.assertEqual(isinstance(sublist, Teuchos.ParameterList), True)
+
+    def testSublistBad(self):
+        "Test Teuchos.ParameterList sublist method for non-sublist"
+        self.plist.set("new", 1)
+        self.assertRaises(RuntimeError, self.plist.sublist, "new")
+
+    def testIsParameterTrue(self):
+        "Test Teuchos.ParameterList isParameter method existing parameter"
+        name = "string parameter"
+        self.plist.set(name,"Hello")
+        self.assertEqual(self.plist.isParameter(name), True)
+
+    def testIsParameterFalse(self):
+        "Test Teuchos.ParameterList isParameter method nonexisting parameter"
+        name = "parameter"
+        self.assertEqual(self.plist.isParameter(name), False)
+
+    def testIsSublistTrue(self):
+        "Test Teuchos.ParameterList isSublist method existing sublist"
+        name = "sublist"
+        self.plist.sublist(name)
+        self.assertEqual(self.plist.isSublist(name), True)
+
+    def testIsSublistFalse1(self):
+        "Test Teuchos.ParameterList isSublist method existing non-sublist parameter"
+        name = "string parameter"
+        self.plist.set(name,"Hello")
+        self.assertEqual(self.plist.isSublist(name), False)
+
+    def testIsSublistFalse2(self):
+        "Test Teuchos.ParameterList isSublist method nonexisting parameter"
+        name = "parameter"
+        self.assertEqual(self.plist.isSublist(name), False)
+
+    def testPrint0(self):
+        "Test Teuchos.ParameterList _print method for empty list"
+        fName = "testParameterList.dat"
+        f = open(fName, "w")
+        self.plist._print(f)
+        f.close()
+        self.assertEqual(open(fName,"r").read(), "[empty list]\n")
+
+    def testPrint1(self):
+        "Test Teuchos.ParameterList _print method for non-empty list"
+        names  = ["max its","tolerance"]
+        values = [100      , 1e-6      ]
+        for i in range(len(names)):
+            self.plist.set(names[i], values[i])
+        fName = "testParameterList.dat"
+        f = open(fName, "w")
+        self.plist._print(f)
+        f.close()
+        lines = open(fName,"r").readlines()
+        for i in range(len(lines)):
+            self.assertEqual(lines[i], "%s = %g   [unused]\n" % (names[i], values[i]))
+
+    def testPrint2(self):
+        "Test Teuchos.ParameterList _print method for non-empty list and indentation"
+        names  = ["max its","tolerance"]
+        values = [100      , 1e-6      ]
+        for i in range(len(names)):
+            self.plist.set(names[i], values[i])
+        fName = "testParameterList.dat"
+        f = open(fName, "w")
+        self.plist._print(f,2)
+        f.close()
+        lines = open(fName,"r").readlines()
+        for i in range(len(lines)):
+            self.assertEqual(lines[i], "  %s = %g   [unused]\n" % (names[i], values[i]))
+
+    def testPrint3(self):
+        "Test Teuchos.ParameterList _print method for non-empty list, indentation and types"
+        names  = ["max its","tolerance"]
+        values = [100      , 1e-6      ]
+        types  = ["int"    ,"double"   ]
+        for i in range(len(names)):
+            self.plist.set(names[i], values[i])
+        fName = "testParameterList.dat"
+        f = open(fName, "w")
+        self.plist._print(f,2,True)
+        f.close()
+        lines = open(fName,"r").readlines()
+        for i in range(len(lines)):
+            self.assertEqual(lines[i], "  %s : %s = %g\n" %
+                             (names[i], types[i], values[i]))
+
 ####################################################################
 
 if __name__ == "__main__":
