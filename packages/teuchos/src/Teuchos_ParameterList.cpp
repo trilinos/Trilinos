@@ -158,7 +158,7 @@ ParameterList& ParameterList::sublist(const string& name)
     TEST_FOR_EXCEPTION(
       !entry(i).isList(), std::runtime_error,
       " Parameter " << name << " is not a list, it is of type \""
-      <<entry(i).getAny().typeName()<<"\"!" );
+      <<entry(i).getAny(false).typeName()<<"\"!" );
     return getValue<ParameterList>(entry(i));
   }
 
@@ -167,7 +167,7 @@ ParameterList& ParameterList::sublist(const string& name)
   return any_cast<ParameterList>(
     params_.insert(
       Map::value_type(name,ParameterEntry(newSubList,false,true))
-      ).first->second.getAny()
+      ).first->second.getAny(false)
     );
   // Note that above I am very careful to construct the parameter list entry
   // directly in the insertion call to avoid the creation of a tempory list
@@ -207,7 +207,7 @@ ostream& ParameterList::print(ostream& os, int indent, bool showTypes) const
         os << ' ';
       os << name(i);
       if(showTypes)
-        os << " : " << entry_i.getAny().typeName();
+        os << " : " << entry_i.getAny(false).typeName();
       os << " = " << entry_i << endl;
     }
     // Print sublists second
@@ -309,16 +309,16 @@ void ParameterList::validateParameters(
     OSTab tab(out);
     *out << "\nentryName=\""<<entryName<<"\"\n";
 #endif
-    const bool validType = ( validEntry!=NULL ? entry.getAny().type() == validEntry->getAny().type() : false );
+    const bool validType = ( validEntry!=NULL ? entry.getAny(false).type() == validEntry->getAny(false).type() : false );
     TEST_FOR_EXCEPTION(
       !( validEntry!=NULL && validType )
       ,Exceptions::InvalidParameter
-      ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny().typeName()<<"\""
+      ,"Error, the parameter {name=\""<<entryName<<"\",type=\""<<entry.getAny(false).typeName()<<"\""
       ",value=\""<<filterValueToString(entry)<<"\"} in the parameter (sub)list \""<<this->name()<<"\" "
       << ( validEntry==NULL
            ? "was not found in the list of valid parameters"
            : std::string("exists in the list of valid parameters but has the wrong type.  The correct type is \"")
-           +validEntry->getAny().typeName()+std::string("\"")
+           +validEntry->getAny(false).typeName()+std::string("\"")
         )
       << ". The valid parameters and types are "<<validParamList.currentParametersString()
       );
