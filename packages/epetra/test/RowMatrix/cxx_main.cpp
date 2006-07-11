@@ -41,6 +41,7 @@
 #include "../epetra_test_err.h"
 #include "Epetra_Version.h"
 #include <vector>
+#include <algorithm>
 #include <string>
 
 // prototypes
@@ -505,7 +506,7 @@ int check(Epetra_RowMatrix& A, Epetra_RowMatrix & B, bool verbose)  {
 	jj++;
       }
       EPETRA_TEST_ERR(notfound, ierr);
-      vector<int>::iterator p = find(indicesB.begin(),   indicesB.end(), curIndex);  // find curIndex in indicesB
+      vector<int>::iterator p = find(indicesB.begin(),indicesB.end(),curIndex);  // find curIndex in indicesB
       EPETRA_TEST_ERR(p==indicesB.end(), ierr);
     }
 
