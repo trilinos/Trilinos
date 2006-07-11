@@ -48,6 +48,7 @@ in-depth information."
 #include <sstream>
 
 // Teuchos includes
+#include "Teuchos_FILEstream.hpp"
 #include "Teuchos_Version.hpp"
 #include "Teuchos_RefCountPtrDecl.hpp"
 #include "Teuchos_any.hpp"
@@ -175,6 +176,22 @@ in-depth information."
 %ignore Teuchos::ParameterList::getEntryPtr(const string &);
 %ignore Teuchos::ParameterList::getEntryPtr(const string &) const;
 
+// Define macro for handling exceptions thrown by Teuchos methods and
+// constructors
+%define TEUCHOS_EXCEPTION(className,methodName)
+%exception Teuchos::className::methodName {
+  try {
+    $action
+    if (PyErr_Occurred()) SWIG_fail;
+  } catch(std::runtime_error) {
+    PyErr_SetString(PyExc_RuntimeError, "See stderr for details");
+    SWIG_fail;
+  }
+}
+%enddef
+
+TEUCHOS_EXCEPTION(ParameterList,sublist)
+
 // Auto-documentation feature.  This ensures that calling help() on a
 // wrapped method returns an argument list (or lists, in the case of
 // overloaded methods).  The "1" option includes type information in
@@ -245,6 +262,37 @@ using namespace std;
     // Type supported and name found
     else return value;
 
+  fail:
+    return NULL;
+  }
+
+  PyObject * _print(PyObject * pf=NULL, int indent=0, bool showTypes=false) {
+
+    PyObject * returnObject = pf;
+
+    // No arguments
+    if (pf==NULL) {
+      self->print(std::cout,indent,showTypes);
+      returnObject = Py_None;
+    }
+
+    // Given non-file pf argument
+    else {
+      if (!PyFile_Check(pf)) {
+	PyErr_SetString(PyExc_IOError, "_print() method expects a file object");
+	goto fail;
+      }
+
+      // Given file pf argument
+      else {
+	std::FILE *f = PyFile_AsFile(pf);
+	Teuchos::FILEstream buffer(f);
+	std::ostream os(&buffer);
+	self->print(os,indent,showTypes);
+      }
+    }
+    Py_INCREF(returnObject);
+    return returnObject;
   fail:
     return NULL;
   }
