@@ -96,7 +96,7 @@ SUBDIRS = src $(TEST_SUBDIR) $(EXAMPLE_SUBDIR)
 
 TRILINOS_HOME_DIR=@abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR=@abs_top_builddir@/../..
-TEST_CATEGORY=INSTALL
+TRILINOS_TEST_CATEGORY=INSTALL
 
 
 runtests-serial :
@@ -104,7 +104,7 @@ runtests-serial :
   --trilinos-dir=$(TRILINOS_HOME_DIR) \
   --comm=serial \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=$(TEST_CATEGORY) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
   --output-dir=@abs_top_builddir@/test/runtests-results \
   --verbosity=1 \
   --packages=teuchos
@@ -115,7 +115,7 @@ runtests-mpi :
   --comm=mpi \
   --mpi-go=$(TRILINOS_MPI_GO) \
   --build-dir=$(TRILINOS_BUILD_DIR) \
-  --category=$(TEST_CATEGORY) \
+  --category=$(TRILINOS_TEST_CATEGORY) \
   --output-dir=@abs_top_builddir@/test/runtests-results \
   --verbosity=1 \
   --packages=teuchos
