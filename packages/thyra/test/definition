@@ -55,7 +55,7 @@
     COMM = SERIAL;
 }
 
-(FRAMEWORK, INSTALL) {
+(DOCUMENTATION) {
     TESTS = ../example/generate-sample-output.pl;
     COMM = SERIAL;
 }
