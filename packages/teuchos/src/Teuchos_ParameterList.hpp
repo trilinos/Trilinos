@@ -300,7 +300,7 @@ public:
 
   /*! \brief Printing method for parameter lists.  Indenting is used to indicate
     parameter list hierarchies. */
-  ostream& print(ostream& os, int indent = 0, bool showTypes = false) const;
+  ostream& print(ostream& os, int indent = 0, bool showTypes = false, bool showFlags = true ) const;
   
   //! Print out unused parameters in the ParameterList.
   void unused(ostream& os) const;

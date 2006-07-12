@@ -142,7 +142,7 @@ public:
       Set method.  Otherwise, if the parameter was unused (not accessed through a Get method), 
       it will be followed by "[unused]".  This function is called by the "ostream& operator<<". 
   */
-  ostream& leftshift(ostream& os) const;
+  ostream& leftshift(ostream& os, bool printFlags = true) const;
 
   //@}
 

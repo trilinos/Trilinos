@@ -189,7 +189,7 @@ const ParameterList& ParameterList::sublist(const string& name) const
   return getValue<ParameterList>(entry(i));
 }
   
-ostream& ParameterList::print(ostream& os, int indent, bool showTypes) const
+ostream& ParameterList::print(ostream& os, int indent, bool showTypes, bool showFlags) const
 {
   if (params_.begin() == params_.end()) {
     for (int j = 0; j < indent; j ++)
@@ -208,7 +208,7 @@ ostream& ParameterList::print(ostream& os, int indent, bool showTypes) const
       os << name(i);
       if(showTypes)
         os << " : " << entry_i.getAny(false).typeName();
-      os << " = " << entry_i << endl;
+      os << " = "; entry_i.leftshift(os,showFlags); os << endl;
     }
     // Print sublists second
     for (ConstIterator i = params_.begin(); i != params_.end(); ++i) 
@@ -219,7 +219,7 @@ ostream& ParameterList::print(ostream& os, int indent, bool showTypes) const
       for (int j = 0; j < indent; j ++)
         os << ' ';
       os << name(i) << " -> " << endl;
-      getValue<ParameterList>(entry_i).print(os, indent + 2, showTypes);
+      getValue<ParameterList>(entry_i).print(os, indent + 2,showTypes,showFlags);
     }
   }
   return os;

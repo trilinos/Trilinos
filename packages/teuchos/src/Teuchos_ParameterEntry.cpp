@@ -73,14 +73,16 @@ void ParameterEntry::reset()
   isDefault_ = false;
 }
 
-ostream& ParameterEntry::leftshift(ostream& os) const
+ostream& ParameterEntry::leftshift(ostream& os, bool printFlags) const
 {
   if( !isList_ ) os << val_;
 
-  if (isDefault_)
-    os << "   [default]";
-  else if (!isUsed_)
-    os << "   [unused]";
+  if(printFlags) {
+    if (isDefault_)
+      os << "   [default]";
+    else if (!isUsed_)
+      os << "   [unused]";
+  }
 
   return os;
 }
