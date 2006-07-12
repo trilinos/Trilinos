@@ -89,7 +89,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = teuchos PyTrilinos rtop thyra kokkos epetra triutils \
+DIST_SUBDIRS = PyTrilinos teuchos rtop thyra kokkos epetra triutils \
 	tpetra epetraext isorropia aztecoo galeri amesos ifpack \
 	komplex claps TSFCoreUtils TSFCore belos anasazi pliris ml \
 	moertel TSF meros nox capo rythmos new_package moocho \
@@ -330,8 +330,8 @@ AUTOMAKE_OPTIONS = foreign
 
 # Must list the packages in the order that they are built!
 SUBDIRS = \
-	$(TEUCHOS_SUBDIR)      \
 	$(PYTRILINOS_SUBDIR)   \
+	$(TEUCHOS_SUBDIR)      \
 	$(RTOP_SUBDIR)         \
 	$(THYRA_SUBDIR)        \
 	$(KOKKOS_SUBDIR)       \
@@ -645,8 +645,8 @@ uninstall-info: uninstall-info-recursive
 
 
 libs:
-	$(TEUCHOS_LIBS_BUILD_CMND)
 	$(PYTRILINOS_LIBS_BUILD_CMND)
+	$(TEUCHOS_LIBS_BUILD_CMND)
 	$(RTOP_LIBS_BUILD_CMND)
 	$(THYRA_LIBS_BUILD_CMND)
 	$(KOKKOS_LIBS_BUILD_CMND)
@@ -680,8 +680,8 @@ libs:
 	$(EXTERNAL_LIBS_BUILD_CMND)
 
 all-libs:
-	$(TEUCHOS_ALL_LIBS_BUILD_CMND)
 	$(PYTRILINOS_ALL_LIBS_BUILD_CMND)
+	$(TEUCHOS_ALL_LIBS_BUILD_CMND)
 	$(RTOP_ALL_LIBS_BUILD_CMND)
 	$(THYRA_ALL_LIBS_BUILD_CMND)
 	$(KOKKOS_ALL_LIBS_BUILD_CMND)
