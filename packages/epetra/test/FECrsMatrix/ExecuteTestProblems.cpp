@@ -39,6 +39,7 @@
 
 int Drumm1(const Epetra_Map& map, bool verbose)
 {
+  (void)verbose;
   //Simple 2-element problem (element as in "finite-element") from
   //Clif Drumm. Two triangular elements, one per processor, as shown
   //here:
@@ -660,6 +661,7 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 
 int submatrix_formats(const Epetra_Comm& Comm, bool verbose)
 {
+  (void)verbose;
   //
   //This function simply verifies that the ROW_MAJOR/COLUMN_MAJOR switch works.
   //
@@ -750,6 +752,7 @@ int submatrix_formats(const Epetra_Comm& Comm, bool verbose)
 
 int rectangular(const Epetra_Comm& Comm, bool verbose)
 {
+  (void)verbose;
   int numprocs = Comm.NumProc();
   int localproc = Comm.MyPID();
   int numMyRows = 2;

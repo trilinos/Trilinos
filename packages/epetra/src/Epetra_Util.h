@@ -122,7 +122,7 @@ class Epetra_Util {
 
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
   static double Chop(const double & Value){
-    if (fabs(Value) < chopVal_) return 0;
+    if (std::abs(Value) < chopVal_) return 0;
     return Value;
   };
 
@@ -135,7 +135,7 @@ class Epetra_Util {
 
 
 // Epetra_Util constructor
-inline Epetra_Util::Epetra_Util() : Seed_(rand()) {}
+inline Epetra_Util::Epetra_Util() : Seed_(std::rand()) {}
 // Epetra_Util constructor
 inline Epetra_Util::Epetra_Util(const Epetra_Util& Util) : Seed_(Util.Seed_) {}
 // Epetra_Util destructor

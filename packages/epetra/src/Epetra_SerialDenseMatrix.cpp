@@ -339,7 +339,7 @@ double Epetra_SerialDenseMatrix::NormOne() const {
     for (j=0; j<N_; j++) {
       double sum=0.0;
       ptr = A_ + j*LDA_;
-      for (i=0; i<M_; i++) sum += fabs(*ptr++);
+      for (i=0; i<M_; i++) sum += std::abs(*ptr++);
       anorm = EPETRA_MAX(anorm, sum);
     }
     UpdateFlops(N_*N_);
@@ -359,7 +359,7 @@ double Epetra_SerialDenseMatrix::NormInf() const {
       double sum=0.0;
       ptr = A_ + i;
       for (j=0; j<N_; j++) {
-	sum += fabs(*ptr);
+	sum += std::abs(*ptr);
 	ptr += LDA_;
       }
       anorm = EPETRA_MAX(anorm, sum);

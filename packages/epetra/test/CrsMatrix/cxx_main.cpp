@@ -778,8 +778,9 @@ cout << A2;
     Values3cm[i] = MyPID + i + 1;
     Indices3cm[i]= i + MyPID;
   }
-  for (int i=0; i<NumMyElements3; i++)
-    A3cm.InsertGlobalValues(i, NumMyColumns3, Values3cm, Indices3cm);
+  for (int ii=0; ii<NumMyElements3; ii++) {
+    A3cm.InsertGlobalValues(ii, NumMyColumns3, Values3cm, Indices3cm);
+  }
 
   // The DomainMap and the RangeMap from the last test will work fine for 
   // the RangeMap and DomainMap, respectively, but I will make copies to
@@ -815,11 +816,11 @@ cout << A2;
   // We will reuse much of the data used for the partial sum tesitng.
   Epetra_Vector xRow3(RowMap3,false); 
   Epetra_CrsMatrix A4(Copy, RowMap3, NumMyElements3);
-  for (int i=0; i < NumMyElements3; i++) {
-    Values3[i] = (int)((i*.6)+1.0);
+  for (int ii=0; ii < NumMyElements3; ii++) {
+    Values3[ii] = (int)((ii*.6)+1.0);
   }
-  for (int i=0; i<NumMyRows3; i++) {
-    A4.InsertGlobalValues(myGlobalElements[i],NumMyElements3,Values3,Indices3);
+  for (int ii=0; ii<NumMyRows3; ii++) {
+    A4.InsertGlobalValues(myGlobalElements[ii],NumMyElements3,Values3,Indices3);
   }
   EPETRA_TEST_ERR(A4.FillComplete(DomainMap3, RangeMap3),ierr);
   if (verbose1) cout << A4 << endl;
@@ -847,8 +848,8 @@ cout << A2;
   Epetra_Vector xCol3cm(ColMap3cm,false);
   Epetra_CrsMatrix A4cm(Copy, RowMap3cm, ColMap3cm, NumProc+1);
   //Use values from A3cm
-  for (int i=0; i<NumMyElements3; i++) {
-    A4cm.InsertGlobalValues(i,NumMyColumns3,Values3cm,Indices3cm);
+  for (int ii=0; ii<NumMyElements3; ii++) {
+    A4cm.InsertGlobalValues(ii,NumMyColumns3,Values3cm,Indices3cm);
   }
   EPETRA_TEST_ERR(A4cm.FillComplete(DomainMap3cm, RangeMap3cm),ierr);
   if (verbose1) cout << A4cm << endl;
@@ -949,6 +950,7 @@ int power_method(bool TransA, Epetra_CrsMatrix& A, Epetra_Vector& q, Epetra_Vect
 int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
 					int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose) 
 {  
+  (void)MyGlobalElements;
   int ierr = 0, i, j, forierr = 0;
   int NumGlobalIndices;
   int NumMyIndices;

@@ -386,7 +386,7 @@ int  BuildMultiVectorTests (Epetra_MultiVector & C, const double alpha,
 	      fi = i+1; // Get float version of i and j, offset by 1.
 	      fj = j+1;
 	      Ap[j][i] = (fi*sfinv)*fj;
-	      sqrtAp[j][i] = sqrt(Ap[j][i]);
+	      sqrtAp[j][i] = std::sqrt(Ap[j][i]);
 	    }
 	}
     }
@@ -399,7 +399,7 @@ int  BuildMultiVectorTests (Epetra_MultiVector & C, const double alpha,
 	      fi = A_MyGlobalElements[i]+1; // Get float version of i and j, offset by 1.
 	      fj = j+1;
 	      Ap[j][i] = (fi*sfinv)*fj;
-	      sqrtAp[j][i] = sqrt(Ap[j][i]);
+	      sqrtAp[j][i] = std::sqrt(Ap[j][i]);
 	    }
 	}
     }
@@ -471,8 +471,8 @@ int  BuildMultiVectorTests (Epetra_MultiVector & C, const double alpha,
   // Generate norm2_sqrtA.  Can use formula for sum of first n integers. 
 
   for (i=0; i< A.NumVectors(); i++) 
-    // norm2_sqrtA[i] = sqrt((double) ((i+1)*C.GlobalLength()*(C.GlobalLength()+1)/2));
-    norm2_sqrtA[i] = sqrt(result * ((double) (i+1)));
+    // norm2_sqrtA[i] = std::sqrt((double) ((i+1)*C.GlobalLength()*(C.GlobalLength()+1)/2));
+    norm2_sqrtA[i] = std::sqrt(result * ((double) (i+1)));
 
   // Generate norminf_A, minval_A, maxval_A, meanval_A. 
 

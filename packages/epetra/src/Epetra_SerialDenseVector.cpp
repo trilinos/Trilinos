@@ -118,7 +118,7 @@ double  Epetra_SerialDenseVector::NormInf() const {
   double result = 0.0;
   int j = IAMAX(Length(), Values()); // Location of max (-1) if length zero
 
-  if (j>-1) result = fabs( (*this)[j]);
+  if (j>-1) result = std::abs( (*this)[j]);
   
   // UpdateFlops(2*Length()); // Technically there are no FLOPS
 

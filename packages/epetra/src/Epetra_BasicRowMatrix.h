@@ -204,7 +204,17 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return(-1);}
+    virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal,
+                      const Epetra_MultiVector& X,
+                      Epetra_MultiVector& Y) const
+    {
+      (void)Upper;
+      (void)Trans;
+      (void)UnitDiagonal;
+      (void)X;
+      (void)Y;
+      return(-1);
+    }
 
     //! Returns a copy of the main diagonal in a user-provided vector.
     /*! 
@@ -382,7 +392,13 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
     \return Integer error code = -1.
     \warning This method is NOT supported.
   */
-  virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return(-1);}
+  virtual int ApplyInverse(const Epetra_MultiVector& X,
+                           Epetra_MultiVector& Y) const
+   {
+     (void)X;
+     (void)Y;
+     return(-1);
+   }
 
   //! Returns true because this class can compute an Inf-norm.
   bool HasNormInf() const {return(true);}

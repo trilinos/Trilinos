@@ -178,7 +178,17 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
 
     \return Integer error code, set to 0 if successful.
   */
-    int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {return(-1);}
+    int Solve(bool Upper, bool Trans, bool UnitDiagonal,
+              const Epetra_MultiVector& X,
+              Epetra_MultiVector& Y) const
+    {
+      (void)Upper;
+      (void)Trans;
+      (void)UnitDiagonal;
+      (void)X;
+      (void)Y;
+      return(-1);
+    }
   //@}
 
 

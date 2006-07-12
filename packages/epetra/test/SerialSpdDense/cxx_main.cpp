@@ -387,7 +387,7 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
 	  double * B1, int LDB1, 
 	  double * X1, int LDX1,
 	  bool Upper, bool verbose) {  
-
+  (void)OneNorm1;
   int i;
   bool OK;
   // Test query functions
@@ -446,7 +446,7 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
   assert(solver.ReciprocalConditionEstimate(rcond)==0);
   if (verbose) {
     
-    double rcond1 = 1.0/exp(3.5*((double)N));
+    double rcond1 = 1.0/std::exp(3.5*((double)N));
     if (N==1) rcond1 = 1.0;
     cout << "\n\nSCOND = "<< rcond << " should be approx = " 
 		    << rcond1 << endl << endl;

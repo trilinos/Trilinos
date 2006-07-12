@@ -89,8 +89,6 @@ int power_method(bool TransA, Epetra_RowMatrix& A,
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, forierr = 0;
-  bool debug = false;
-
 #ifdef EPETRA_MPI
 
   // Initialize MPI
@@ -132,8 +130,6 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
 		    << " is alive."<<endl;
-
-  bool verbose1 = verbose;
 
   // Redefine verbose to only print on PE 0
   if(verbose && rank!=0) 
@@ -204,9 +200,6 @@ int main(int argc, char *argv[])
   }
   EPETRA_TEST_ERR(forierr,ierr);
 
-  int * indexOffsetTmp;
-  int * indicesTmp;
-  double * valuesTmp;
   // Finish up
   A.FillComplete();
   A.OptimizeStorage();

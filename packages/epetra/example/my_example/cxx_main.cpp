@@ -555,7 +555,7 @@ int checkCopyAndAssignment(Epetra_Comm& Comm, bool verbose) {
 int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
 	  int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose)
 {  
-
+  (void)MyGlobalElements;
   int ierr = 0;
 	int i;
 	int j;

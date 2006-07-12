@@ -100,10 +100,10 @@ double Epetra_SerialSymDenseMatrix::NormInf(void) const {
     for (j=0; j<N_; j++) {
       double sum = 0.0;
       ptr = A_ + j + j*LDA_;
-      for (i=j; i<N_; i++) sum += fabs(*ptr++);
+      for (i=j; i<N_; i++) sum += std::abs(*ptr++);
       ptr = A_ + j;
       for (i=0; i<j; i++) {
-	sum += fabs(*ptr);
+	sum += std::abs(*ptr);
 	ptr += LDA_;
       }
       anorm = EPETRA_MAX(anorm, sum);
@@ -113,10 +113,10 @@ double Epetra_SerialSymDenseMatrix::NormInf(void) const {
     for (j=0; j<N_; j++) {
       double sum = 0.0;
       ptr = A_ + j*LDA_;
-      for (i=0; i<j; i++) sum += fabs(*ptr++);
+      for (i=0; i<j; i++) sum += std::abs(*ptr++);
       ptr = A_ + j + j*LDA_;
       for (i=j; i<N_; i++) {
-	sum += fabs(*ptr);
+	sum += std::abs(*ptr);
 	ptr += LDA_;
       }
       anorm = EPETRA_MAX(anorm, sum);

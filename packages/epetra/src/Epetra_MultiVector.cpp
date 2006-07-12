@@ -781,7 +781,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++;
       }
       else if(CombineMode==AbsMax)
-        for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],fabs(*ptr++)); //
+        for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],std::abs(*ptr++)); //
       // Note:  The following form of averaging is not a true average if more that one value is combined.
       //        This might be an issue in the future, but we leave this way for now.
       else if(CombineMode==Average)
@@ -820,7 +820,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
         for (j=0; j<NumImportIDs; j++) {
           jj = ImportLIDs[j];
           for (i=0; i<NumVectors; i++)
-            To[i][jj] = EPETRA_MAX( To[i][jj], fabs(*ptr++) );
+            To[i][jj] = EPETRA_MAX( To[i][jj], std::abs(*ptr++) );
         }
       }
       // Note:  The following form of averaging is not a true average if more that one value is combined.
@@ -874,7 +874,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	jj = MaxElementSize*ImportLIDs[j];
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<MaxElementSize; k++)
-	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], fabs(*ptr++) );
+	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr++) );
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
@@ -939,7 +939,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	int ElementSize = ToElementSizeList[ImportLIDs[j]];
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<ElementSize; k++)
-	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], fabs(*ptr++) );
+	    To[i][jj+k] = EPETRA_MAX( To[i][jj+k], std::abs(*ptr++) );
       }
     }
     // Note:  The following form of averaging is not a true average if more that one value is combined.
@@ -982,7 +982,7 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
 //=========================================================================
 int Epetra_MultiVector::Abs(const Epetra_MultiVector& A) {
 
-  // this[i][j] = fabs(A[i][j])
+  // this[i][j] = std::abs(A[i][j])
 
   int i, j;
   if (NumVectors_ != A.NumVectors()) EPETRA_CHK_ERR(-1);
@@ -992,7 +992,7 @@ int Epetra_MultiVector::Abs(const Epetra_MultiVector& A) {
 
   for (i=0; i < NumVectors_; i++) 
     for (j=0; j < MyLength_; j++)
-      Pointers_[i][j] = fabs(A_Pointers[i][j]);
+      Pointers_[i][j] = std::abs(A_Pointers[i][j]);
 
   return(0);
 }
@@ -1012,7 +1012,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
     for (j=0; j < MyLength_; j++) {
       double value = A_Pointers[i][j];
       // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)     
-      if (fabs(value)<Epetra_MinDouble) {
+      if (std::abs(value)<Epetra_MinDouble) {
 	if (value==0.0) ierr = 1;
 	else if (ierr!=1) ierr = 2;
 	Pointers_[i][j] = EPETRA_SGN(value) * Epetra_MaxDouble;
@@ -1234,7 +1234,7 @@ int  Epetra_MultiVector::Norm2 (double* Result) const {
       DoubleTemp_[i] = sum;
     }
   Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
-  for (i=0; i < NumVectors_; i++) Result[i] = sqrt(Result[i]);
+  for (i=0; i < NumVectors_; i++) Result[i] = std::sqrt(Result[i]);
   
   UpdateFlops(2*GlobalLength_*NumVectors_);
   
@@ -1254,7 +1254,7 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
     {
       DoubleTemp_[i] = 0.0;
       j = IAMAX(MyLength_, Pointers_[i]);
-      if (j>-1) DoubleTemp_[i] = fabs(Pointers_[i][j]);
+      if (j>-1) DoubleTemp_[i] = std::abs(Pointers_[i][j]);
     }
   Comm_->MaxAll(DoubleTemp_, Result, NumVectors_);
   
@@ -1294,7 +1294,7 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
     }
   Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
   double OneOverN = 1.0 / (double) GlobalLength_;
-  for (i=0; i < NumVectors_; i++) Result[i] = sqrt(Result[i]*OneOverN);
+  for (i=0; i < NumVectors_; i++) Result[i] = std::sqrt(Result[i]*OneOverN);
   
   UpdateFlops(3*GlobalLength_*NumVectors_);
   

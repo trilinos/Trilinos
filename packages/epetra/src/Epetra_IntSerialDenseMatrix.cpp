@@ -281,7 +281,7 @@ int Epetra_IntSerialDenseMatrix::OneNorm() {
 		int sum = 0;
 		ptr = A_ + j*LDA_;
 		for(int i = 0; i < M_; i++) 
-			sum += abs(*ptr++);
+			sum += std::abs(*ptr++);
 		anorm = EPETRA_MAX(anorm, sum);
 	}
 	return(anorm);
@@ -297,7 +297,7 @@ int Epetra_IntSerialDenseMatrix::InfNorm() {
 		int sum = 0;
 		ptr = A_ + i;
 		for(int j = 0; j < N_; j++) {
-			sum += abs(*ptr);
+			sum += std::abs(*ptr);
 			ptr += LDA_;
 		}
 		anorm = EPETRA_MAX(anorm, sum);

@@ -143,8 +143,8 @@ void Epetra_BasicRowMatrix::ComputeNumericConstants() const {
   for(int i = 0; i < NumMyRows_; i++) {
     ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values());
     for(int j = 0; j < NumEntries; j++) {
-      x1[i] += fabs(Values[j]);
-      x2[Indices[j]] += fabs(Values[j]);
+      x1[i] += std::abs(Values[j]);
+      x2[Indices[j]] += std::abs(Values[j]);
       if (Indices[j]<i) UpperTriangular_ = false;
       if (Indices[j]>i) LowerTriangular_ = false;
     }
@@ -212,7 +212,7 @@ int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
     double * x_tmp_p = (double*)x_tmp.Values();
     for (i=0; i < NumMyRows_; i++) {
       EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
-      for (j=0; j < NumEntries; j++)  x_tmp_p[i] += fabs(Values[j]);
+      for (j=0; j < NumEntries; j++)  x_tmp_p[i] += std::abs(Values[j]);
     }
     EPETRA_CHK_ERR(x.Export(x_tmp, *Exporter(), Add)); //Export partial row sums to x.
     int myLength = x.MyLength();
@@ -230,7 +230,7 @@ int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
     for (i=0; i < NumMyRows_; i++) {
       EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
       double scale = 0.0;
-      for (j=0; j < NumEntries; j++) scale += fabs(Values[j]);
+      for (j=0; j < NumEntries; j++) scale += std::abs(Values[j]);
       if (scale<Epetra_MinDouble) {
         if (scale==0.0) ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
         else if (ierr!=1) ierr = 2;
@@ -249,7 +249,6 @@ int Epetra_BasicRowMatrix::InvRowSums(Epetra_Vector & x) const {
 }
 //=============================================================================
 int Epetra_BasicRowMatrix::LeftScale(const Epetra_Vector & x) {
-  double* xp = 0;
   double *curValue;
   int curRowIndex, curColIndex;
   if(OperatorRangeMap().SameAs(x.Map()) && Exporter() != 0) {
@@ -289,7 +288,7 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
     for(i = 0; i < NumMyRows_; i++) {
       EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
       for(j = 0; j < NumEntries; j++) 
-        x_tmp_p[Indices[j]] += fabs(Values[j]);
+        x_tmp_p[Indices[j]] += std::abs(Values[j]);
     }
     EPETRA_CHK_ERR(x.Export(x_tmp, *Importer(), Add)); // Fill x with partial column sums
   }
@@ -297,7 +296,7 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
     for(i = 0; i < NumMyRows_; i++) {
       EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, Values.Values(), Indices.Values()));
       for(j = 0; j < NumEntries; j++) 
-        xp[Indices[j]] += fabs(Values[j]);
+        xp[Indices[j]] += std::abs(Values[j]);
     }
   }
   else { //x.Map different than both RowMatrixColMap() and OperatorDomainMap()
@@ -324,7 +323,6 @@ int Epetra_BasicRowMatrix::InvColSums(Epetra_Vector & x) const {
 }
 //=============================================================================
 int Epetra_BasicRowMatrix::RightScale(const Epetra_Vector & x) {
-  double* xp = 0;
   double *curValue;
   int curRowIndex, curColIndex;
   if(OperatorDomainMap().SameAs(x.Map()) && Importer() != 0) {
@@ -492,8 +490,6 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
   
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      int NumMyRows = NumMyRows_;
-      
       if (MyPID==0) {
 	os.width(8);
 	os <<  "   Processor ";

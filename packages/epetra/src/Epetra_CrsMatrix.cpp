@@ -1210,7 +1210,7 @@ int Epetra_CrsMatrix::InvRowSums(Epetra_Vector& x) const {
     for (i=0; i < NumMyRows_; i++) {
       int      NumEntries = NumMyEntries(i);
       double * RowValues  = Values(i);
-      for (j=0; j < NumEntries; j++)  x_tmp_p[i] += fabs(RowValues[j]);
+      for (j=0; j < NumEntries; j++)  x_tmp_p[i] += std::abs(RowValues[j]);
     }
     EPETRA_CHK_ERR(x.Export(x_tmp, *Exporter(), Add)); //Export partial row sums to x.
     int myLength = x.MyLength();
@@ -1229,7 +1229,7 @@ int Epetra_CrsMatrix::InvRowSums(Epetra_Vector& x) const {
       int      NumEntries = NumMyEntries(i);
       double * RowValues  = Values(i);
       double scale = 0.0;
-      for (j=0; j < NumEntries; j++) scale += fabs(RowValues[j]);
+      for (j=0; j < NumEntries; j++) scale += std::abs(RowValues[j]);
       if (scale<Epetra_MinDouble) {
         if (scale==0.0) ierr = 1; // Set error to 1 to signal that zero rowsum found (supercedes ierr = 2)
         else if (ierr!=1) ierr = 2;
@@ -1273,7 +1273,7 @@ int Epetra_CrsMatrix::InvRowMaxs(Epetra_Vector& x) const {
     int      NumEntries = NumMyEntries(i);
     double * RowValues  = Values(i);
     double scale = 0.0;
-    for (j=0; j < NumEntries; j++) scale = EPETRA_MAX(fabs(RowValues[j]),scale);
+    for (j=0; j < NumEntries; j++) scale = EPETRA_MAX(std::abs(RowValues[j]),scale);
     if (scale<Epetra_MinDouble) {
       if (scale==0.0) ierr = 1; // Set error to 1 to signal that zero rowmax found (supercedes ierr = 2)
       else if (ierr!=1) ierr = 2;
@@ -1313,7 +1313,7 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
       int*    ColIndices = Graph().Indices(i);
       double* RowValues  = Values(i);
       for(j = 0; j < NumEntries; j++) 
-        x_tmp_p[ColIndices[j]] += fabs(RowValues[j]);
+        x_tmp_p[ColIndices[j]] += std::abs(RowValues[j]);
     }
     EPETRA_CHK_ERR(x.Export(x_tmp, *Importer(), Add)); // Fill x with partial column sums
   }
@@ -1323,7 +1323,7 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
       int*    ColIndices = Graph().Indices(i);
       double* RowValues  = Values(i);
       for(j = 0; j < NumEntries; j++) 
-        xp[ColIndices[j]] += fabs(RowValues[j]);
+        xp[ColIndices[j]] += std::abs(RowValues[j]);
     }
   }
   else { //x.Map different than both Graph().ColMap() and Graph().DomainMap()
@@ -1385,7 +1385,7 @@ int Epetra_CrsMatrix::InvColMaxs(Epetra_Vector& x) const {
     int*    ColIndices = Graph().Indices(i);
     double* RowValues  = Values(i);
     for(j = 0; j < NumEntries; j++) 
-      xp[ColIndices[j]] = EPETRA_MAX(fabs(RowValues[j]),xp[ColIndices[j]]);
+      xp[ColIndices[j]] = EPETRA_MAX(std::abs(RowValues[j]),xp[ColIndices[j]]);
   }
 
   if(needExport) {
@@ -1531,7 +1531,7 @@ double Epetra_CrsMatrix::NormInf() const {
     int     NumEntries = NumMyEntries(i);
     double* RowValues  = Values(i);
     for(j = 0; j < NumEntries; j++) 
-      xp[i] += fabs(RowValues[j]);
+      xp[i] += std::abs(RowValues[j]);
   }
   if(Exporter() != 0) {
     x.PutScalar(0.0);
@@ -1584,7 +1584,7 @@ double Epetra_CrsMatrix::NormOne() const {
     int*    ColIndices = Graph().Indices(i);
     double* RowValues  = Values(i);
     for(j = 0; j < NumEntries; j++) 
-      xp[ColIndices[j]] += fabs(RowValues[j]);
+      xp[ColIndices[j]] += std::abs(RowValues[j]);
   }
   if(Importer() != 0) {
     x.PutScalar(0.0);
@@ -1628,7 +1628,7 @@ double Epetra_CrsMatrix::NormFrobenius() const {
   double global_sum = 0.0;
   Comm().SumAll(&local_sum, &global_sum, 1);
 
-  NormFrob_ = sqrt(global_sum);
+  NormFrob_ = std::sqrt(global_sum);
 
   UpdateFlops(NumGlobalNonzeros());
 

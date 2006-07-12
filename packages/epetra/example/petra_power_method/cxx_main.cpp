@@ -85,16 +85,16 @@ int main(int argc, char *argv[])
    {
      if (verbose) 
        cout << "Usage: " << argv[0] << " number_of_equations" << endl;
-    exit(1);
+    std::exit(1);
    }
-  int NumGlobalElements = atoi(argv[1]);
+  int NumGlobalElements = std::atoi(argv[1]);
 
   if (NumGlobalElements < NumProc)
       {
      if (verbose)
        cout << "numGlobalBlocks = " << NumGlobalElements 
 	    << " cannot be < number of processors = " << NumProc << endl;
-     exit(1);
+     std::exit(1);
       }
 
   // Construct a Map that puts approximately the same number of 

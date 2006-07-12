@@ -35,6 +35,7 @@
 
 int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 {
+  (void)NumVectors;
   const Epetra_Comm & Comm = Map.Comm();
   int ierr = 0;
   

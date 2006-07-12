@@ -460,7 +460,7 @@ int Epetra_MapColoring::UnpackAndCombine(const Epetra_SrcDistObject & Source,
     for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = ptr[j];
   else if(CombineMode==AbsMax) {
     for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = 0;
-    for (j=0; j<NumImportIDs; j++)  To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],abs(ptr[j]));
+    for (j=0; j<NumImportIDs; j++)  To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],std::abs(ptr[j]));
   }
   
   return(0);

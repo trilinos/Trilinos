@@ -45,7 +45,7 @@
 
 int main(int argc, char *argv[]) {
 
-  int ierr = 0, i, j;
+  int ierr = 0;
 
 #ifdef EPETRA_MPI
 

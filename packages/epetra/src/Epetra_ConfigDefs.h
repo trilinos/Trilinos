@@ -94,6 +94,13 @@ const double Epetra_Underflow = 2.23E-308;
 #include <stdlib.h>
 #endif
 
+#ifdef HAVE_CSTDIO
+#include <cstdio>
+using std::sprintf;
+#else
+#include <stdio.h>
+#endif
+
 #ifdef HAVE_CASSERT
 #include <cassert>
 #else
@@ -102,7 +109,8 @@ const double Epetra_Underflow = 2.23E-308;
 
 #ifdef HAVE_STRING
 #include <string>
-#elif HAVE_STRING_H
+#endif
+#ifdef HAVE_STRING_H
 #include <string.h>
 #endif
 
@@ -115,7 +123,9 @@ const double Epetra_Underflow = 2.23E-308;
 
 #ifdef HAVE_CMATH
 #include <cmath>
-#else
+using std::rand;
+#endif
+#ifdef HAVE_MATH_H
 #include <math.h>
 #endif
 
