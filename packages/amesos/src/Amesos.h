@@ -33,57 +33,62 @@
 
 #include "Amesos_BaseSolver.h"
 
-//! Amesos:  A method for binding a third party direct solver to an Epetra_LinearProblem.
-/*!  Amesos creates an instance of a solver, binding a third party direct 
-solver to an Epetra_LinearProblem, allowing access to the specified third 
-party solver through the Amesos interface (i.e. Numeric Factorization 
-SymbolicFactrozation(), Solve() and support functions.)
+/** \brief Factory for binding a third party direct solver to an
+ * Epetra_LinearProblem.
+ *
+ * Amesos creates an instance of a solver, binding a third party direct solver
+ * to an Epetra_LinearProblem, allowing access to the specified third party
+ * solver through the Amesos interface (i.e. Numeric Factorization
+ * SymbolicFactrozation(), Solve() and support functions.)
 */
-//
 class Amesos { 
-
 public: 
-  //@{ \name Creation method for char*.
-  //! Amesos Create method
-  /*! Creates an instance of the Amesos_BaseSolver class specified by 
-    ClassType.
 
-      <br \>Preconditions:<ul>
-      <li>ClassType must be one of the recognized class types.
-Return 0 on failure.
-      </li>
-      <li>ClassType must specify a third party solver that has been 
-linked with this particular implementation.  Return 0 on failure.
-      </li>
-      <li>Epetra_LinearProblem may be empty.  Although the linear problem 
-is not checked at the time of construction, the operator must be an Epetra_RowMatrix, or derived from an Epetra_RowMatrix.
+  /** \name Creation method for char* */
+  //@{
 
-      </li>
-      </ul>
-
-      <br \>Postconditions:<ul> 
-      <li>If Create() returns a non-null pointer, that pointer points to an 
-Amesos solver. 
-      </li>
-      </ul>
-  */
+  /** \brief Amesos Create method.
+   *
+   * Creates an instance of the Amesos_BaseSolver class specified by 
+   * ClassType.
+   * 
+   * <br \>Preconditions:<ul>
+   * <li>ClassType must be one of the recognized class types.
+   * Return 0 on failure.
+   * <li>ClassType must specify a third party solver that has been 
+   * linked with this particular implementation.  Return 0 on failure.
+   * <li>Epetra_LinearProblem may be empty.  Although the linear problem is
+   * not checked at the time of construction, the operator must be an
+   * Epetra_RowMatrix, or derived from an Epetra_RowMatrix.
+   * </ul>
+   * 
+   * <br \>Postconditions:<ul> 
+   * <li>If Create() returns a non-null pointer, that pointer points to an 
+   * Amesos solver. 
+   * </ul>
+   */
   Amesos_BaseSolver *Create(const char *ClassType, 
 			    const Epetra_LinearProblem& LinearProblem );
 
-  //! Creation method for string input.
+  /** \brief Creation method for string input. */
   Amesos_BaseSolver *Create(const string CT,
 			    const Epetra_LinearProblem& LinearProblem );
   // @}
   
-  // @{ Query methods
+  /** \name Query methods */
+  //@{
 
-  //! Queries whether a given interface is avaiable or not.
+  /** \brief Queries whether a given interface is avaiable or not. */
   bool Query(const char * ClassType);
 
-  //! Queries whether a given interface is avaiable or not.
+  /** \brief Queries whether a given interface is avaiable or not. */
   bool Query(const string CT);
 
-  Teuchos::ParameterList GetValidParameters(); 
+  /** \brief Get the list of valid parameters. */
+  static Teuchos::ParameterList GetValidParameters(); 
+
+  //@}
   
 };  // End of  class Amesos  
+
 #endif /* _AMESOS_FACTORY_H_ */

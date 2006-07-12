@@ -80,7 +80,7 @@ bool Thyra::test_single_belos_thyra_solver(
 
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() before setting preconditioner factory:\n";
-      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
+      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
     }
 
     if(usePreconditioner) {
@@ -99,7 +99,7 @@ bool Thyra::test_single_belos_thyra_solver(
     
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() after setting preconditioner factory:\n";
-     lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
+      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
       *out << "\nbelosLOWSFPL before setting parameters:\n";
       belosLOWSFPL->print(*OSTab(out).getOStream(),0,true);
     }

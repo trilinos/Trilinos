@@ -33,6 +33,7 @@
 #include "Thyra_AmesosLinearOpWithSolveFactory.hpp"
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraOperatorViewExtractorStd.hpp"
+#include "Amesos.h"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -460,7 +461,7 @@ AmesosLinearOpWithSolveFactory::generateAndGetValidParameters()
       );
     validParamList->set(RefactorizationPolicy_name,Amesos::toString(Amesos::REPIVOT_ON_REFACTORIZATION));
     validParamList->set(ThrowOnPreconditionerInput_name,bool(true));
-    validParamList->sublist(AMESOS_name);
+    validParamList->sublist(AMESOS_name).setParameters(::Amesos::GetValidParameters());
   }
   return validParamList;
 }

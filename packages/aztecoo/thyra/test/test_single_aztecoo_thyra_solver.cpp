@@ -116,7 +116,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       lowsFactory = Teuchos::rcp(new AztecOOLinearOpWithSolveFactory());
     if(out.get()) {
       *out << "\nlowsFactory.getValidParameters() initially:\n";
-      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
+      lowsFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
     }
     aztecooLOWSFPL->sublist("Forward Solve").set("Tolerance",maxResid);
     aztecooLOWSFPL->sublist("Adjoint Solve").set("Tolerance",maxResid);
@@ -246,7 +246,7 @@ bool Thyra::test_single_aztecoo_thyra_solver(
       if(out.get()) {
         *out << "\nprecFactory.description() = " << precFactory->description() << std::endl;
         *out << "\nprecFactory.getValidParameters() =\n";
-        precFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true);
+        precFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
       }
 
       Teuchos::RefCountPtr<Teuchos::ParameterList>

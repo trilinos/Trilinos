@@ -102,6 +102,12 @@ bool Thyra::test_single_amesos_thyra_solver(
 
   opFactory->setParameterList(Teuchos::rcp(amesosLOWSFPL,false));
 
+  if(out.get()) {
+    *out << "\nopFactory.description() = " << opFactory->description() << std::endl;
+    *out << "\nopFactory.getValidParameters() =\n";
+    opFactory->getValidParameters()->print(*OSTab(out).getOStream(),0,true,false);
+  }
+
   if(out.get()) *out << "\nC) Creating a AmesosLinearOpWithSolve object nsA ...\n";
 
   Teuchos::RefCountPtr<LinearOpWithSolveBase<double> >
