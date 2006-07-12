@@ -419,7 +419,12 @@ int main( int argc, char* argv[] ) {
 
     test_ArrayRefCountPtr_iterators(vchar_ptr2,verbose,*out);
 
+#ifndef __sun
+    // RAB: 2006/07/12: The sun compiler declares this call to
+    // get_std_vector(...) to be ambiguous (which is nonsense based on
+    // everything I know about C++)!
     TEST_FOR_EXCEPT( Teuchos::get_std_vector(vchar_ptr2)->size() != static_cast<size_t>(total_bytes) );
+#endif
     
     // ToDo: Fill in the rest of the tests!
     

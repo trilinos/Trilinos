@@ -468,7 +468,22 @@ typename ArrayRefCountPtr<T>::node_t* ArrayRefCountPtr<T>::access_node() const
 
 }	// end namespace Teuchos
 
+// ///////////////////////////////////////////
 // Non-member functions for ArrayRefCountPtr
+
+namespace Teuchos {
+namespace Utilities {
+template<class T1, class T2>
+inline void assert_shares_resource(
+  const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2
+  )
+{
+#ifdef TEUCHOS_DEBUG
+  TEST_FOR_EXCEPT(!p1.shares_resource(p2));
+#endif
+}
+} // namespace Utilities
+} // namespace Teuchos
 
 template<class T>
 inline
@@ -563,6 +578,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator==( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
+  Utilities::assert_shares_resource(p1,p2);
   return p1.access_ptr() == p2.access_ptr();
 }
 
@@ -570,6 +586,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator!=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
+  Utilities::assert_shares_resource(p1,p2);
   return p1.access_ptr() != p2.access_ptr();
 }
 
@@ -584,6 +601,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator<=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
+  Utilities::assert_shares_resource(p1,p2);
   return p1.access_ptr() <= p2.access_ptr();
 }
 
@@ -591,6 +609,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator>( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
+  Utilities::assert_shares_resource(p1,p2);
   return p1.access_ptr() > p2.access_ptr();
 }
 
@@ -598,6 +617,7 @@ template<class T1, class T2>
 REFCOUNTPTR_INLINE
 bool Teuchos::operator>=( const ArrayRefCountPtr<T1> &p1, const ArrayRefCountPtr<T2> &p2 )
 {
+  Utilities::assert_shares_resource(p1,p2);
   return p1.access_ptr() >= p2.access_ptr();
 }
 
