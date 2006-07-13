@@ -589,7 +589,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(nox, epetraext, NOX_EPETRAEXT, BUILD_NOX_EPETRAEX
 # ------------------------------------------------------------------------
 # NOX-Epetra Multiphysics support
 # ------------------------------------------------------------------------
-AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, true)
+AM_CONDITIONAL(BUILD_EPETRA_MULTIPHYSICS, false)
 
 # ------------------------------------------------------------------------
 # NOX-Epetra-ML support
